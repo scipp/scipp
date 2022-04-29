@@ -42,13 +42,6 @@ jobs:
       matrix:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
         python-version: ["3.8"]
-        include:
-        - os: ubuntu-latest
-          cmake-preset: ci-linux
-        - os: macos-latest
-          cmake-preset: ci-macos
-        - os: windows-latest
-          cmake-preset: ci-windows
 
     steps:
       - uses: actions/checkout@v3
@@ -81,7 +74,7 @@ jobs:
           path: ${{ steps.conan-cache-key.outputs.path }}
           key: conan-${{ matrix.os }}-${{ steps.conan-cache-key.outputs.key }}
 
-      - run: cmake --preset ${{ matrix.cmake-preset }}
+      - run: cmake --preset ci-${{ matrix.os }}
       - run: cmake --build --preset build
       - run: ctest --preset test
 
