@@ -109,7 +109,7 @@ If ``other`` is given but does not have a .keys() method, then update does:
 ``for k, v in other: self[k] = v``.
 
 In either case, this is followed by:
-``for k in kwargs: self[k] = other[k]``.
+``for k in kwargs: self[k] = kwargs[k]``.
 
 See Also
 --------
