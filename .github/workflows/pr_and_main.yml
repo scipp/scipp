@@ -42,13 +42,6 @@ jobs:
       matrix:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
         python-version: ["3.8"]
-        include:
-        - os: ubuntu-latest
-          cmake-preset: ci-linux
-        - os: macos-latest
-          cmake-preset: ci-macos
-        - os: windows-latest
-          cmake-preset: ci-windows
 
     steps:
       - uses: actions/checkout@v3
@@ -63,8 +56,7 @@ jobs:
         with:
           environment-file: .buildconfig/${{ matrix.os }}.yml
           cache-env: true
-          extra-specs: |
-            python=${{ matrix.python-version }}
+          extra-specs: python=${{ matrix.python-version }}
 
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.2
