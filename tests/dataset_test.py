@@ -284,7 +284,6 @@ def test_coords_update_from_sequence_of_tuples_adds_items():
 
 
 def test_coords_update_from_iterable_of_tuples_adds_items():
-
     def extra_items():
         yield 'b', sc.scalar(3.0)
         yield 'c', sc.scalar(4.0)
