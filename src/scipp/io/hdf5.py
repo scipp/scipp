@@ -226,10 +226,37 @@ class VariableIO:
         return var
 
 
+def _write_mapping(parent, mapping, override=None):
+    if override is None:
+        override = {}
+    for i, name in enumerate(mapping):
+        var_group_name = collection_element_name(name, i)
+        if (g := override.get(name)) is not None:
+            parent[var_group_name] = g
+        else:
+            g = VariableIO.write(group=parent.create_group(var_group_name),
+                                 var=mapping[name])
+            if g is None:
+                del parent[var_group_name]
+            else:
+                g.attrs['name'] = str(name)
+
+
+def _read_mapping(group, override=None):
+    if override is None:
+        override = {}
+    return {
+        g.attrs['name']: override.get(g.attrs['name'], HDF5IO.read(g))
+        for g in group.values()
+    }
+
+
 class DataArrayIO:
 
     @staticmethod
-    def write(group, data, shared_metadata=None):
+    def write(group, data, override=None):
+        if override is None:
+            override = {}
         _write_scipp_header(group, 'DataArray')
         group.attrs['name'] = data.name
         if data.data is None:
@@ -241,31 +268,19 @@ class DataArrayIO:
         # 2 separate groups.
         for view_name, view in zip(['coords', 'masks', 'attrs'], views):
             subgroup = group.create_group(view_name)
-            for i, name in enumerate(view):
-                var_group_name = collection_element_name(name, i)
-                shared = shared_metadata is not None and view_name in shared_metadata
-                if shared and (g := shared_metadata[view_name].get(name)) is not None:
-                    subgroup[var_group_name] = g
-                else:
-                    g = VariableIO.write(group=subgroup.create_group(var_group_name),
-                                         var=view[name])
-                    if g is None:
-                        del subgroup[var_group_name]
-                    else:
-                        g.attrs['name'] = str(name)
+            _write_mapping(subgroup, view, override.get(view_name))
 
     @staticmethod
-    def read(group):
+    def read(group, override=None):
         _check_scipp_header(group, 'DataArray')
+        if override is None:
+            override = {}
         from ..core import DataArray
         contents = dict()
         contents['name'] = group.attrs['name']
         contents['data'] = VariableIO.read(group['data'])
         for category in ['coords', 'masks', 'attrs']:
-            contents[category] = {
-                g.attrs['name']: VariableIO.read(g)
-                for g in group[category].values()
-            }
+            contents[category] = _read_mapping(group[category], override.get(category))
         return DataArray(**contents)
 
 
@@ -279,29 +294,21 @@ class DatasetIO:
         # data. The advantage is that we can read individual dataset entries
         # directly as data arrays.
         coords = group.create_group('coords')
-        for i, name in enumerate(data.coords):
-            var_group_name = collection_element_name(name, i)
-            g = VariableIO.write(group=coords.create_group(var_group_name),
-                                 var=data.coords[name])
-            if g is None:
-                del coords[var_group_name]
-            else:
-                g.attrs['name'] = str(name)
+        _write_mapping(coords, data.coords)
+        entries = group.create_group('entries')
 
         for i, (name, da) in enumerate(data.items()):
-            HDF5IO.write(group.create_group(collection_element_name(name, i)),
+            HDF5IO.write(entries.create_group(collection_element_name(name, i)),
                          da,
-                         shared_metadata={'coords': coords})
+                         override={'coords': coords})
 
     @staticmethod
     def read(group):
         _check_scipp_header(group, 'Dataset')
         from ..core import Dataset
+        coords = _read_mapping(group['coords'])
         return Dataset(
-            data={
-                entry.attrs['name']: HDF5IO.read(entry)
-                for name, entry in group.items() if name.startswith('elem_')
-            })
+            data=_read_mapping(group['entries'], override={'coords': coords}))
 
 
 class HDF5IO:
@@ -314,8 +321,8 @@ class HDF5IO:
         return cls._handlers[name].write(group, data, **kwargs)
 
     @classmethod
-    def read(cls, group):
-        return cls._handlers[group.attrs['scipp-type']].read(group)
+    def read(cls, group, **kwargs):
+        return cls._handlers[group.attrs['scipp-type']].read(group, **kwargs)
 
 
 def to_hdf5(obj: VariableLike, filename: Union[str, Path]):
