@@ -37,7 +37,7 @@ void bind_helper_view(py::module &m, const std::string &name) {
           py::return_value_policy::move, py::keep_alive<0, 1>());
 }
 
-template <class Other, class T, class... Ignored>
+template <class T, class... Ignored>
 void bind_common_mutable_view_operators(pybind11::class_<T, Ignored...> &view) {
   view.def("__len__", &T::size)
       .def(
@@ -151,7 +151,7 @@ template <class T>
 void bind_mutable_view(py::module &m, const std::string &name,
                        const std::string &docs) {
   py::class_<T> view(m, name.c_str(), docs.c_str());
-  bind_common_mutable_view_operators<T>(view);
+  bind_common_mutable_view_operators(view);
   bind_inequality_to_operator<T>(view);
   bind_pop(view);
   bind_is_edges(view);
@@ -183,7 +183,7 @@ template <class T>
 void bind_mutable_view_no_dim(py::module &m, const std::string &name,
                               const std::string &docs) {
   py::class_<T> view(m, name.c_str(), docs.c_str());
-  bind_common_mutable_view_operators<T>(view);
+  bind_common_mutable_view_operators(view);
   bind_inequality_to_operator<T>(view);
   bind_dict_update(view, [](T &self, const auto &key, const Variable &value) {
     self.set(key, value);
