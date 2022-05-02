@@ -223,6 +223,11 @@ class Model:
             # name = output
             if node.dependency is not None:
                 dot.edge(node.dependency.name, name)
+            for view in node.views:
+                key = str(view)
+                dot.node(key, shape='ellipse', style='filled', color='lightgrey')
+                dot.edge(name, key)
+
             # for arg in node.dependencies:
             #     if arg is None:
             #         continue
