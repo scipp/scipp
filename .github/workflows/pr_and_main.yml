@@ -68,7 +68,7 @@ jobs:
             python=${{ matrix.python-version }}
 
       - name: ccache
-        uses: hendrikmuhs/ccache-action@v1.2.1
+        uses: hendrikmuhs/ccache-action@v1.2.2
         with:
           key: ${{ matrix.os }}
 
