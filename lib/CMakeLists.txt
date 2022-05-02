@@ -52,7 +52,7 @@ endif()
 
 conan_cmake_configure(
   REQUIRES
-  benchmark/1.5.3
+  benchmark/1.6.1
   boost/1.76.0
   eigen/3.3.9
   gtest/1.11.0
@@ -77,7 +77,10 @@ if(DEFINED CMAKE_OSX_ARCHITECTURES)
   if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "arm64")
     # For Apple M1
     set(conan_settings "${conan_settings};arch=armv8")
-    set(THREADING OFF)
+    if(SKBUILD)
+      # There is no tbb pip package for this architecture yet.
+      set(THREADING OFF)
+    endif()
   endif()
 endif()
 conan_cmake_install(
