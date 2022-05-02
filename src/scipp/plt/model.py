@@ -1,4 +1,5 @@
 from .filters import Filter
+from .view import WidgetView
 
 from typing import Tuple, Iterable, Protocol, Tuple
 
@@ -56,9 +57,9 @@ from functools import partial
 
 
 class Node:
-
     def __init__(self, name, func, views=None):
         self.name = name  # TODO do we need the name?
+        self.parent_name = None
         self.dependency = None
         self.func = func
         self.views = []
@@ -73,7 +74,11 @@ class Node:
     def send_notification(self, message):
         print(f'hey there! from {self.name}: ', message)
         for view in self.views:
-            view.notify({"name": self.name, "message": message})
+            view.notify({
+                "node_name": self.name,
+                "parent_name": self.parent_name,
+                "message": message
+            })
 
     def request_data(self):
         pipeline = []
@@ -93,30 +98,38 @@ class Node:
         self.views.append(view)
 
 
-class WidgetNode(Node):
+# class WidgetNode(Node):
+#     def __init__(self, name, func, widgets):
+#         super().__init__(name, func)
+#         self._base_func = func  # func taking data array, dim, and int
+#         self._widgets = widgets
+#         self._callbacks = []
+#         for widget in self._widgets.values():
+#             widget.observe(self._update_func, names="value")
+#         # widget.observe(self._update_func(), names="value")
+#         self.add_view(widget)
 
-    def __init__(self, name, func, widgets):
-        super().__init__(name, func)
-        self._base_func = func  # func taking data array, dim, and int
-        self._widgets = widgets
-        for widget in self._widgets.values():
-            widget.observe(self._update_func(), names="value")
-        # widget.observe(self._update_func(), names="value")
-        self.add_view(widget)
+#     @property
+#     def values(self):
+#         return {key: widget.value for key, widget in self._widgets.items()}
 
-    @property
-    def values(self):
-        return {key: widget.value for key, widget in self._widgets.items()}
+#     def _update_func(self, _):
+#         self.func = partial(self._base_func, **self.values)
+#         for callback in self._callbacks:
+#             callback()
 
-    def _update_func(self, _):
-        self._func = partial(self._base_func, **self.values)
+#     def register_callback(self, callback):
+#         self._callbacks.append(callback)
+
+#     def notify(self, _):
+#         return
 
 
 class Model:
-
     def __init__(self, da):
         root_node = Node(name='root', func=lambda: da)
         self._nodes = {'root': root_node}
+        self._name = da.name
         # super().__init__({})
 
     # def __init__(self, nodes: Dict[str, Node]):
@@ -127,6 +140,7 @@ class Model:
 
     def __setitem__(self, name: str, node: Node):
         self._nodes[name] = node
+        node.parent_name = self._name
 
     def items(self) -> Iterable[Tuple[str, Node]]:
         yield from self._nodes.items()
@@ -176,8 +190,10 @@ class Model:
 
     def add_view(self, key, view):
         self[key].add_view(view)
-        if isinstance(view, WidgetFilter):
-            view.register_callback(partial(self.notify_from_dependents, node=key))
+        view.add_model_node(self[key])
+        if isinstance(view, WidgetView):
+            view.register_notification(partial(self.notify_from_dependents, node=key))
+            # view.add_model_node(self[key])
 
     # def request_data(self, name: str):
     #     pipeline = []

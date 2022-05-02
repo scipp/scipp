@@ -16,7 +16,6 @@ from typing import Any, Tuple
 
 
 class SideBar:
-
     def __init__(self, children=None):
         self._children = children if children is not None else []
 
@@ -28,7 +27,6 @@ class SideBar:
 
 
 class Figure:
-
     def __init__(self,
                  ax: Any = None,
                  figsize: Tuple[float, ...] = None,
@@ -41,7 +39,7 @@ class Figure:
                  vmax=None,
                  **kwargs):
 
-        self._models = {}
+        self._model_nodes = {}
         # self._notifications = {"data": self.update}
 
         self._fig = None
@@ -111,12 +109,14 @@ class Figure:
         self._legend = False
         self._new_artist = False
 
-    def add_model_node(self, key, node):
-        self._model_nodes[key] = node
+    def add_model_node(self, node):
+        if node.parent_name not in self._model_nodes:
+            self._model_nodes[node.parent_name] = {}
+        self._model_nodes[node.parent_name][node.name] = node
 
-    def add_notification(self, key, func):
-        self._notifications[key] = partial(func, view=self)
-        print(self._notifications[key])
+    # def add_notification(self, key, func):
+    #     self._notifications[key] = partial(func, view=self)
+    #     print(self._notifications[key])
 
     def is_widget(self) -> bool:
         """
@@ -244,8 +244,9 @@ class Figure:
         # if change["id"] == "data":
         #     self.update(new_values=self._models.get_data(change["name"]),
         #                 key=change["name"])
-        name = message["name"]
-        new_values = self._model_nodes[name].request_data()
+        name = message["node_name"]
+        parent = message["parent_name"]
+        new_values = self._model_nodes[parent][name].request_data()
         self.update(new_values=new_values, key=name)
 
     # def _update_on_notify(self, change):
