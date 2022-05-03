@@ -12,9 +12,17 @@ def counts_to_density(x: Union[_cpp.DataArray, _cpp.Dataset],
                       dim: str) -> Union[_cpp.DataArray, _cpp.Dataset]:
     """Converts counts to count density on a given dimension.
 
-    :param x: Data as counts.
-    :param dim: Dimension on which to convert.
-    :return: Data as count density.
+    Parameters
+    ----------
+    x:
+        Data as counts.
+    dim:
+        Dimension on which to convert.
+
+    Returns
+    -------
+    :
+        Data as count density.
     """
     return _call_cpp_func(_cpp.counts_to_density, x, dim)
 
@@ -23,8 +31,16 @@ def density_to_counts(x: Union[_cpp.DataArray, _cpp.Dataset],
                       dim: str) -> Union[_cpp.DataArray, _cpp.Dataset]:
     """Converts counts to count density on a given dimension.
 
-    :param x: Data as count density.
-    :param dim: Dimension on which to convert.
-    :return: Data as counts.
+    Parameters
+    ----------
+    x:
+        Data as count density.
+    dim:
+        Dimension on which to convert.
+
+    Returns
+    -------
+    :
+        Data as counts.
     """
     return _call_cpp_func(_cpp.density_to_counts, x, dim)

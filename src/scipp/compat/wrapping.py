@@ -25,7 +25,7 @@ def wrap1d(is_partial=False, accept_masks=False, keep_coords=False):
     1-D functions are typically functions from libraries such as scipy that depend
     on a single 'axis' argument.
 
-    The decorators returned by this factory apply pre- and postprcoessing as follows:
+    The decorators returned by this factory apply pre- and postprocessing as follows:
 
     - An 'axis' keyword argument will raise ``ValueError``, recommending use of 'dim'.
       The index of the provided dimension is added as axis to kwargs.
@@ -35,11 +35,14 @@ def wrap1d(is_partial=False, accept_masks=False, keep_coords=False):
       on the dimension of the function application, are added to the output data array.
       Masks are deep-copied as per the usual requirement in scipp.
 
-    :param is_partial: The wrapped function is partial, i.e., does not return a data
-                       array itself, but a callable that returns a data array. If true,
-                       the posprocessing step is not applied to the wrapped function.
-                       Instead the callable returned by the decorated function is
-                       decorated with the postprocessing step.
+    Parameters
+    ----------
+    is_partial:
+        The wrapped function is partial, i.e., does not return a data
+        array itself, but a callable that returns a data array. If true,
+        the postprocessing step is not applied to the wrapped function.
+        Instead, the callable returned by the decorated function is
+        decorated with the postprocessing step.
     """
     def decorator(func: Callable) -> Callable:
         @wraps(func)

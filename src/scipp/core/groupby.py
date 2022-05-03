@@ -16,11 +16,19 @@ def groupby(
 ) -> Union[_cpp.GroupByDataArray, _cpp.GroupByDataset]:
     """Group dataset or data array based on values of specified labels.
 
-    :param data: Input data to reduce.
-    :param group: Name of labels to use for grouping
-      or Variable to use for grouping
-    :param bins: Optional bins for grouping label values.
-    :return: GroupBy helper object.
+    Parameters
+    ----------
+    data:
+        Input data to reduce.
+    group:
+        Name of labels to use for grouping or Variable to use for grouping
+    bins:
+        Optional bins for grouping label values.
+
+    Returns
+    -------
+    :
+        GroupBy helper object.
     """
     if bins is None:
         return _cpp.groupby(data, group)

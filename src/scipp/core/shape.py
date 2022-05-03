@@ -9,27 +9,43 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from ._sizes import _parse_dims_shape_sizes
-from ..typing import VariableLike
+from ..typing import VariableLikeType
 
 
 def broadcast(
-    x: VariableLike,
+    x: VariableLikeType,
     dims: Optional[Union[List[str], Tuple[str, ...]]] = None,
     shape: Optional[Sequence[int]] = None,
     sizes: Optional[Dict[str, int]] = None,
-) -> _cpp.Variable:
+) -> VariableLikeType:
     """Broadcast a Variable or a DataArray.
+
     If the input is a DataArray, coordinates and attributes are shallow-copied
-    and masks are deep copied.
+    and masks are deep-copied.
 
     Note that scipp operations broadcast automatically, so using this function
     directly is rarely required.
 
-    :param x: Variable or DataArray to broadcast.
-    :param dims: Optional (if sizes is specified), list of new dimensions.
-    :param shape: Optional (if sizes is specified), new extents in each dimension.
-    :param sizes: Optional, new dimension labels to sizes map.
-    :return: New Variable or DataArray with requested dimension labels and shape.
+    One and only one of these sets of arguments must be given:
+
+    - ``dims`` and ``shape``
+    - ``sizes``
+
+    Parameters
+    ----------
+    x: scipp.typing.VariableLike
+        Input data to broadcast.
+    dims:
+        List of new dimensions.
+    shape:
+        New extents in each dimension.
+    sizes:
+        New dimension labels to sizes map.
+
+    Returns
+    -------
+    : Same type as input
+        New Variable or DataArray with requested dimension labels and shape.
     """
     sizes = _parse_dims_shape_sizes(dims=dims, shape=shape, sizes=sizes)
     if isinstance(x, _cpp.Variable):
@@ -47,7 +63,7 @@ def broadcast(
         raise TypeError("Broadcast only supports Variable and DataArray as inputs.")
 
 
-def concat(x: Sequence[VariableLike], dim: str) -> VariableLike:
+def concat(x: Sequence[VariableLikeType], dim: str) -> VariableLikeType:
     """Concatenate input arrays along the given dimension.
 
     Concatenation can happen in two ways:
@@ -62,13 +78,20 @@ def concat(x: Sequence[VariableLike], dim: str) -> VariableLike:
     Coords and masks for any but the given dimension are required to match
     and are copied to the output without changes.
 
-    :param x: Sequence of input variables, data arraus, or datasets.
-    :param dim: Dimension along which to concatenate.
-    :raises: If the dtype or unit does not match, or if the
-             dimensions and shapes are incompatible.
-    :return: Concatenation of the inputs.
+    Parameters
+    ----------
+    x: scipp.typing.VariableLike
+        Sequence of input variables, data arraus, or datasets.
+    dim:
+        Dimension along which to concatenate.
 
-    Examples:
+    Returns
+    -------
+    : Same type as input
+        Concatenation of the inputs.
+
+    Examples
+    --------
 
       >>> a = sc.arange('x', 3)
       >>> b = 100 * sc.arange('x', 3)
@@ -101,23 +124,44 @@ def concat(x: Sequence[VariableLike], dim: str) -> VariableLike:
     return _call_cpp_func(_cpp.concat, x, dim)
 
 
-def fold(x: VariableLike,
+def fold(x: VariableLikeType,
          dim: str,
          sizes: Optional[Dict[str, int]] = None,
          dims: Optional[Union[List[str], Tuple[str, ...]]] = None,
-         shape: Optional[Sequence[int]] = None) -> VariableLike:
+         shape: Optional[Sequence[int]] = None) -> VariableLikeType:
     """Fold a single dimension of a variable or data array into multiple dims.
 
-    :param x: Variable or DataArray to fold.
-    :param dim: A single dim label that will be folded into more dims.
-    :param sizes: A dict mapping new dims to new shapes.
-    :param dims: A list of new dims labels.
-    :param shape: A list of new dim shapes.
-    :raises: If the volume of the old shape is not equal to the
-             volume of the new shape.
-    :return: Variable or DataArray with requested dimension labels and shape.
+    One and only one of these sets of arguments must be given:
 
-    Examples:
+    - ``dims`` and ``shape``
+    - ``sizes``
+
+    Parameters
+    ----------
+    x: scipp.typing.VariableLike
+        Variable or DataArray to fold.
+    dim:
+        A single dim label that will be folded into more dims.
+    sizes:
+        A dict mapping new dims to new shapes.
+    dims:
+        A list of new dims labels.
+    shape:
+        A list of new dim shapes.
+
+    Returns
+    -------
+    : Same type as input
+        Variable or DataArray with requested dimension labels and shape.
+
+    Raises
+    ------
+    scipp.DimensionError
+        If the volume of the old shape is not equal to the
+        volume of the new shape.
+
+    Examples
+    --------
 
       >>> v = sc.arange('x', 6)
       >>> v
@@ -173,20 +217,37 @@ def fold(x: VariableLike,
     return _call_cpp_func(_cpp.fold, x, dim, sizes["dims"], new_shape)
 
 
-def flatten(x: VariableLike,
+def flatten(x: VariableLikeType,
             dims: Optional[Union[List[str], Tuple[str, ...]]] = None,
-            to: Optional[str] = None) -> VariableLike:
-    """Flatten multiple dimensions of a variable or data array into a single
-    dimension. If dims is omitted, then we flatten all of the inputs dimensions
-    into a single dim.
+            to: Optional[str] = None) -> VariableLikeType:
+    """Flatten multiple dimensions into a single dimension.
 
-    :param x: Variable or DataArray to flatten.
-    :param dims: A list of dim labels that will be flattened.
-    :param to: A single dim label for the resulting flattened dim.
-    :raises: If the bin edge coordinates cannot be stitched back together.
-    :return: Variable or DataArray with requested dimension labels and shape.
+    Parameters
+    ----------
+    x: scipp.typing.VariableLike
+        Multi-dimensional input to flatten.
+    dims:
+        A list of dim labels that will be flattened.
+        If ``None``, all dimensions will be flattened.
+    to:
+        A single dim label for the resulting flattened dim.
 
-    Examples:
+    Returns
+    -------
+    : Same type as input
+        Variable or DataArray with requested dimension labels and shape.
+
+    Raises
+    ------
+    scipp.DimensionError
+        If the input does not have a contiguous memory layout,
+        i.e. flattening would require moving data around.
+        This can be resolved by (deep-)copying the input.
+    scipp.BinEdgeError
+        If the bin edge coordinates cannot be stitched back together.
+
+    Examples
+    --------
 
       >>> v = sc.array(dims=['x', 'y'], values=np.arange(6).reshape(2, 3))
       >>> v
@@ -236,46 +297,72 @@ def flatten(x: VariableLike,
         # calling flatten without kwargs, and that in this case it semantically
         # makes more sense for the dims that we want to flatten to come first
         # in the argument list.
-        raise RuntimeError("The final flattened dimension is required.")
+        raise ValueError("The final flattened dimension is required.")
     if dims is None:
         dims = x.dims
     return _call_cpp_func(_cpp.flatten, x, dims, to)
 
 
-def transpose(x: VariableLike,
-              dims: Optional[Union[List[str], Tuple[str, ...]]] = None) -> VariableLike:
-    """Transpose dimensions of a variable, a data array, or a dataset.
+def transpose(
+        x: VariableLikeType,
+        dims: Optional[Union[List[str], Tuple[str, ...]]] = None) -> VariableLikeType:
+    """Transpose dimensions of the input.
 
-    :param x: Object to transpose.
-    :param dims: List of dimensions in desired order. If default,
-                 reverses existing order.
-    :raises: If the dtype or unit does not match, or if the
-             dimensions and shapes are incompatible.
-    :return: The absolute values of the input.
+    Parameters
+    ----------
+    x: scipp.typing.VariableLike
+        Object to transpose.
+    dims:
+        List of dimensions in desired order.
+        If ``None``, reverses existing order.
+
+    Returns
+    -------
+    : Same type as input
+        The transpose of the input.
+
+    Raises
+    ------
+    scipp.DimensionError
+        If ``dims`` are incompatible with the input data.
     """
     return _call_cpp_func(_cpp.transpose, x, dims if dims is not None else [])
 
 
 def squeeze(
-        x: VariableLike,
-        dim: Optional[Union[str, List[str], Tuple[str, ...]]] = None) -> VariableLike:
+        x: VariableLikeType,
+        dim: Optional[Union[str, List[str], Tuple[str,
+                                                  ...]]] = None) -> VariableLikeType:
     """Remove dimensions of length 1.
 
     This is equivalent to indexing the squeezed dimensions with index 0, that is
     ``squeeze(x, ['x', 'y'])`` is equivalent to ``x['x', 0]['y', 0]``.
 
-    :param x: Object to remove dimensions from.
-    :param dim: If given, the dimension(s) to squeeze.
-                If ``None``, all length-1 dimensions are squeezed.
-    :raises: If a dimension in `dim` does not have length 1.
-    :return: `x` with dimensions squeezed out.
+    Parameters
+    ----------
+    x: scipp.typing.VariableLike
+        Object to remove dimensions from.
+    dim:
+        If given, the dimension(s) to squeeze.
+        If ``None``, all length-1 dimensions are squeezed.
 
-    :seealso: :py:func:`scipp.Variable.squeeze`
-              :py:func:`scipp.DataArray.squeeze`
-              :py:func:`scipp.Dataset.squeeze`
-              :py:func:`numpy.squeeze`
+    Returns
+    -------
+    : Same type as input
+        Input with length-1 dimensions removed.
 
-    Examples:
+    Raises
+    ------
+    scipp.DimensionError
+        If a dimension in ``dim`` does not have length 1.
+
+    See Also
+    --------
+    scipp.Variable.squeeze, scipp.DataArray.squeeze,
+    scipp.Dataset.squeeze, numpy.squeeze
+
+    Examples
+    --------
 
       >>> v = sc.arange('a', 3).fold('a', {'x': 1, 'y': 3, 'z': 1})
       >>> v
