@@ -39,7 +39,8 @@ include(${CMAKE_CURRENT_BINARY_DIR}/conan.cmake)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_BINARY_DIR})
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_BINARY_DIR})
 
-if(SKBUILD)
+option(CONAN_TBB "Use TBB from conan" OFF)
+if(SKBUILD OR CONAN_TBB)
   # Conda builds install tbb via conda, not conan
   set(CONAN_ONETBB onetbb/2021.3.0)
   # The deploy generator is used to install dependencies into a know location.

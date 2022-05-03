@@ -1,0 +1,10 @@
+-r base.in
+-r extra.in
+ipykernel
+ipympl
+ipywidgets
+sphinx
+sphinx-autodoc-typehints>=1.17.0
+sphinx-book-theme==0.2  # 0.3 breaks custom launchbuttons
+sphinx-copybutton
+nbsphinx
