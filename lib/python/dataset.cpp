@@ -238,6 +238,9 @@ Returned by :py:func:`DataArray.masks`)");
       });
 
   bind_dataset_view_methods(dataset);
+  bind_dict_update(dataset,
+                   [](Dataset &self, const std::string &key,
+                      const DataArray &value) { self.setData(key, value); });
 
   bind_dataset_coord_properties(dataset);
 
