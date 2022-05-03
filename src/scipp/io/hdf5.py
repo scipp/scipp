@@ -227,7 +227,7 @@ def _write_mapping(parent, mapping, override=None):
         override = {}
     for i, name in enumerate(mapping):
         var_group_name = collection_element_name(name, i)
-        if (g := override.get(var_group_name)) is not None:
+        if (g := override.get(name)) is not None:
             parent[var_group_name] = g
         else:
             g = VariableIO.write(group=parent.create_group(var_group_name),
@@ -285,6 +285,10 @@ class DatasetIO:
         coords = group.create_group('coords')
         _write_mapping(coords, data.coords)
         entries = group.create_group('entries')
+        # We cannot use coords directly, since we need lookup by name. The key used as
+        # group name includes an integer index which may differ when writing items and
+        # is not sufficient.
+        coords = {v.attrs['name']: v for v in coords.values()}
         for i, (name, da) in enumerate(data.items()):
             HDF5IO.write(entries.create_group(collection_element_name(name, i)),
                          da,
