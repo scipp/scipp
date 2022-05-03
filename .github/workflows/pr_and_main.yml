@@ -78,14 +78,6 @@ jobs:
       - run: cmake --build --preset build
       - run: ctest --preset test
 
-      - uses: actions/setup-python@v3
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-          cache-dependency-path: |
-            requirements/test.txt
-            requirements/docs.txt
-
       - run: tox -e test
 
       - run: tox -e docs
