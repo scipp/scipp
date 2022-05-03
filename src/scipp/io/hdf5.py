@@ -242,7 +242,8 @@ def _read_mapping(group, override=None):
     if override is None:
         override = {}
     return {
-        g.attrs['name']: override.get(g.attrs['name'], HDF5IO.read(g))
+        g.attrs['name']:
+        override[g.attrs['name']] if g.attrs['name'] in override else HDF5IO.read(g)
         for g in group.values()
     }
 
