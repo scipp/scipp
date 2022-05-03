@@ -7,6 +7,7 @@ import scipp as sc
 import scipp.spatial
 import numpy as np
 import tempfile
+import h5py
 
 
 def roundtrip(obj):
@@ -214,6 +215,19 @@ def test_data_array_unsupported_PyObject_coord():
 def test_dataset():
     d = sc.Dataset(data={'a': array_1d, 'b': array_2d})
     check_roundtrip(d)
+
+
+def test_dataset_item_can_be_read_as_data_array():
+    ds = sc.Dataset(data={'a': array_1d, 'b': array_2d})
+    with tempfile.TemporaryDirectory() as path:
+        name = f'{path}/test.hdf5'
+        ds.to_hdf5(filename=name)
+        loaded = sc.Dataset()
+        with h5py.File(name, 'r') as f:
+            for entry in f['entries'].values():
+                da = sc.io.hdf5.HDF5IO.read(entry)
+                loaded[da.name] = da
+        assert sc.identical(loaded, ds)
 
 
 def test_variable_with_zero_length_dimension():
