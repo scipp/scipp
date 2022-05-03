@@ -78,15 +78,15 @@ def _pop(self, key, default=_NoDefault):
 
 def bind_pop():
     for cls in _dict_likes:
-        _bind_function_as_method(cls=cls, name='pop', func=_pop, abbreviate_doc=False)
+        bind_function_as_method(cls=cls, name='pop', func=_pop, abbreviate_doc=False)
 
 
 def bind_functions_as_methods(cls, namespace, func_names):
     for func_name, func in map(lambda n: (n, namespace[n]), func_names):
-        _bind_function_as_method(cls=cls, name=func_name, func=func)
+        bind_function_as_method(cls=cls, name=func_name, func=func)
 
 
-def _bind_function_as_method(*, cls, name, func, abbreviate_doc=True):
+def bind_function_as_method(*, cls, name, func, abbreviate_doc=True):
     setattr(cls, name,
             _convert_to_method(name=name, func=func, abbreviate_doc=abbreviate_doc))
 
