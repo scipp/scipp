@@ -57,7 +57,7 @@ from functools import partial
 
 
 class Node:
-    def __init__(self, name, func, views=None):
+    def __init__(self, func, name=None, views=None):
         self.name = name  # TODO do we need the name?
         self.parent_name = None
         self.dependency = None
@@ -72,7 +72,7 @@ class Node:
     #     return (self.dependency, )
 
     def send_notification(self, message):
-        print(f'hey there! from {self.name}: ', message)
+        # print(f'hey there! from {self.name}: ', message)
         for view in self.views:
             view.notify({
                 "node_name": self.name,
@@ -127,9 +127,10 @@ class Node:
 
 class Model:
     def __init__(self, da):
-        root_node = Node(name='root', func=lambda: da)
-        self._nodes = {'root': root_node}
         self._name = da.name
+        # root_node = Node(name='root', func=lambda: da)
+        self._nodes = {}
+        self["root"] = Node(name='root', func=lambda: da)
         # super().__init__({})
 
     # def __init__(self, nodes: Dict[str, Node]):
@@ -141,6 +142,7 @@ class Model:
     def __setitem__(self, name: str, node: Node):
         self._nodes[name] = node
         node.parent_name = self._name
+        node.name = name
 
     def items(self) -> Iterable[Tuple[str, Node]]:
         yield from self._nodes.items()
@@ -233,6 +235,13 @@ class Model:
             #         continue
             #     dot.edge(arg, name)
         return dot
+
+    def get_all_views(self):
+        views = []
+        for node in self.values():
+            for view in node.views:
+                views.append(view)
+        return views
 
 
 def _make_graphviz_digraph(*args, **kwargs):

@@ -17,7 +17,7 @@ class WidgetView:
         self._model_nodes = {}
 
         for widget in self._widgets.values():
-            widget.observe(self._update_func, names="value")
+            widget.observe(self._update_and_notify, names="value")
         # widget.observe(self._update_func(), names="value")
         # self.add_view(widget)
 
@@ -25,11 +25,14 @@ class WidgetView:
     def values(self):
         return {key: widget.value for key, widget in self._widgets.items()}
 
-    def _update_func(self, _):
-        # TODO: handle more than one model?
+    def _update_node_func(self, node):
+        print("updating func", self.values)
+        node.func = partial(self._base_func, **self.values)
+
+    def _update_and_notify(self, _):
         nodes = next(iter(self._model_nodes.values()))
         for node in nodes.values():
-            node.func = partial(self._base_func, **self.values)
+            self._update_node_func(node)
         for notification in self._notifications:
             notification()
 
@@ -42,9 +45,25 @@ class WidgetView:
             self._model_nodes[node.parent_name][node.name] = node
         # self._model_nodes[key] = node
         self._base_func = node.func
+        self._update_node_func(node)
 
     def notify(self, _):
         return
+
+    def _ipython_display_(self):
+        """
+        IPython display representation for Jupyter notebooks.
+        """
+        return self._to_widget()._ipython_display_()
+
+    def _to_widget(self):
+        """
+        """
+        # import ipywidgets as ipw
+        return ipw.VBox([
+            widget._to_widget() if hasattr(widget, "_to_widget") else widget
+            for widget in self._widgets.values()
+        ])
 
 
 # class SideBar:

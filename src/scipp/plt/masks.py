@@ -92,14 +92,14 @@ class MaskWidget:
         self._callback()
 
 
-def _hide_masks(model: DataArray, masks: MetaDataMap) -> DataArray:
-    out = model.copy()
+def hide_masks(model: DataArray, masks: MetaDataMap) -> DataArray:
+    out = model.copy(deep=False)
     for name, value in masks.items():
         if not value:
             del out.masks[name]
     return out
 
 
-class MaskFilter(WidgetFilter):
-    def __init__(self, **kwargs):
-        super().__init__(func=_hide_masks, widgets={"masks": MaskWidget(**kwargs)})
+# class MaskFilter(WidgetFilter):
+#     def __init__(self, **kwargs):
+#         super().__init__(func=_hide_masks, widgets={"masks": MaskWidget(**kwargs)})

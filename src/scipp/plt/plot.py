@@ -119,18 +119,25 @@ class Plot:
     #     self._views.append(view)
     #     self._notification_handler.add_view(view)
 
+    def render(self):
+        for model in self._models.values():
+            model.notify_from_dependents("root")
+
     def _ipython_display_(self):
         """
         IPython display representation for Jupyter notebooks.
         """
-        # self._models.run()
+        self.render()
         return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
         """
         """
         import ipywidgets as ipw
-        return ipw.VBox([view._to_widget() for view in self._views])
+        views = []
+        for model in self._models.values():
+            views += model.get_all_views()
+        return ipw.VBox([view._to_widget() for view in set(views)])
 
     def close(self):
         """

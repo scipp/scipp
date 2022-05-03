@@ -247,7 +247,8 @@ class Figure:
         name = message["node_name"]
         parent = message["parent_name"]
         new_values = self._model_nodes[parent][name].request_data()
-        self.update(new_values=new_values, key=name)
+        # print("NOTIFY", name, parent)
+        self.update(new_values=new_values, key=f"{parent}:{name}")
 
     # def _update_on_notify(self, change):
     #     self.update(new_values=self._models.get_data(change["name"]),
