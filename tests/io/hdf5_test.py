@@ -8,6 +8,7 @@ import scipp.spatial
 import numpy as np
 import tempfile
 import h5py
+import os
 
 
 def roundtrip(obj):
@@ -228,6 +229,35 @@ def test_dataset_item_can_be_read_as_data_array():
                 da = sc.io.hdf5.HDF5IO.read(entry)
                 loaded[da.name] = da
         assert sc.identical(loaded, ds)
+
+
+def test_dataset_with_many_coords():
+    rows = 10000
+    a = sc.ones(dims=['row'], shape=[rows], dtype='float64')
+    b = sc.ones(dims=['row'], shape=[rows], dtype='float64')
+    coords = {
+        k: sc.ones(dims=['row'], shape=[rows], dtype='float64')
+        for k in 'abcdefghijklmnopqrstuvwxyz'
+    }
+    ds1 = sc.Dataset(coords=coords)
+    ds1['a'] = a
+    ds2 = sc.Dataset(coords=coords)
+    ds2['a'] = a
+    ds2['b'] = b
+    with tempfile.TemporaryDirectory() as path:
+        name1 = f'{path}/test1.hdf5'
+        name2 = f'{path}/test2.hdf5'
+        ds1.to_hdf5(filename=name1)
+        ds2.to_hdf5(filename=name2)
+        size1 = os.path.getsize(name1)
+        size2 = os.path.getsize(name2)
+        # If coords were stored per-entry then we would need a factor close to 2
+        # here. 1.1 implies that there is no such full duplication.
+        assert size1 * 1.1 > size2
+        # Empirically determined extra size. This is likely brittle. We want to
+        # somehow ensure that no column is stored more than once.
+        extra = 75000
+        assert size1 < (len(ds1.coords) + 1) * rows * 8 + extra
 
 
 def test_variable_with_zero_length_dimension():
