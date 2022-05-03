@@ -2,18 +2,19 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from .. import DataArray
-from .filters import WidgetFilter
+from .view import WidgetView
+from ..utils import value_to_string
 
 import ipywidgets as ipw
 from typing import Callable
 
 
-class SlicingWidget:
+class SliceWidget:
     """
     Widgets containing a slider for each of the input's dimensions, as well as
     buttons to modify the currently displayed axes.
     """
-    def __init__(self, dims: list, sizes: dict, ndim: int):
+    def __init__(self, array, dims: list):
 
         self._controls = {}
         self._callback = None
@@ -22,13 +23,13 @@ class SlicingWidget:
         # dim_buttons: buttons to control which dimension the slider controls
         self.dim_buttons = {}
 
-        self._slider_dims = dims[:len(dims) - ndim]
+        self._slider_dims = dims
 
         for dim in dims:
             slider = ipw.IntSlider(step=1,
                                    description=dim,
                                    min=0,
-                                   max=sizes[dim],
+                                   max=array.sizes[dim],
                                    continuous_update=True,
                                    readout=True,
                                    layout={"width": "400px"})
@@ -39,13 +40,11 @@ class SlicingWidget:
             ipw.jslink((continuous_update, 'value'), (slider, 'continuous_update'))
 
             slider_readout = ipw.Label()
-            unit = ipw.Label(value='unit', layout={"width": "60px"})
 
             self._controls[dim] = {
                 'continuous': continuous_update,
                 'slider': slider,
-                'value': slider_readout,
-                'unit': unit
+                'value': slider_readout
             }
 
         for index, dim in enumerate(self._slider_dims):
@@ -72,8 +71,14 @@ class SlicingWidget:
     def value(self) -> dict:
         return {dim: self._controls[dim]['slider'].value for dim in self._slider_dims}
 
+    def update(self, new_coords):
+        for dim, c in self._controls.items():
+            if dim in new_coords:
+                c["value"].value = value_to_string(new_coords[dim].values) + str(
+                    new_coords[dim].unit)
 
-def _slicing_func(model: DataArray, slices: dict) -> DataArray:
+
+def slice_dims(model: DataArray, slices: dict) -> DataArray:
     """
     Slice the data along dimension sliders that are not disabled for all
     entries in the dict of data arrays, and return a dict of 1d value
@@ -85,14 +90,12 @@ def _slicing_func(model: DataArray, slices: dict) -> DataArray:
     return out
 
 
-class SlicingFilter(WidgetFilter):
-    def __init__(self, **kwargs):
-        super().__init__(func=_slicing_func,
-                         widgets={"slices": SlicingWidget(**kwargs)})
+class SliceView(WidgetView):
+    def __init__(self, *args, **kwargs):
+        super().__init__(widgets={"slices": SliceWidget(*args, **kwargs)})
 
-    def notify(self, change):
-        widget = self._widgets["slices"]
-        for dim in widget._slider_dims:
-            coord = self._models.get_coord(key=change["name"], dim=dim)
-            widget._controls[dim]["value"].value = str(
-                coord[dim, widget._controls[dim]["slider"].value].value)
+    def notify(self, message):
+        name = message["node_name"]
+        parent = message["parent_name"]
+        new_values = self._model_nodes[parent][name].request_data()
+        self._widgets["slices"].update(new_values.meta)

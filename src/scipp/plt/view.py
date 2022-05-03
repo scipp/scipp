@@ -26,7 +26,7 @@ class WidgetView:
         return {key: widget.value for key, widget in self._widgets.items()}
 
     def _update_node_func(self, node):
-        print("updating func", self.values)
+        # print("updating func", self.values)
         node.func = partial(self._base_func, **self.values)
 
     def _update_and_notify(self, _):
