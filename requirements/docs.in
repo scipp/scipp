@@ -1,6 +1,7 @@
 -r base.in
 -r extra.in
 ipykernel
+ipympl
 ipywidgets
 sphinx
 sphinx-autodoc-typehints>=1.17.0

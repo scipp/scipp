@@ -100,7 +100,7 @@ markupsafe==2.1.1
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.5.1
+matplotlib==3.5.2
     # via -r requirements/extra.in
 matplotlib-inline==0.1.3
     # via
@@ -108,7 +108,7 @@ matplotlib-inline==0.1.3
     #   ipython
 mistune==0.8.4
     # via nbconvert
-nbclient==0.6.0
+nbclient==0.6.2
     # via nbconvert
 nbconvert==6.5.0
     # via notebook
