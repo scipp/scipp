@@ -31,6 +31,7 @@ class PlotToolbar:
     Custom toolbar with additional buttons for controlling log scales and
     normalization, and with back/forward buttons removed.
     """
+
     def __init__(self, mpl_toolbar=None):
         self._dims = None
         self.controller = None
@@ -215,6 +216,7 @@ class PlotToolbar1d(PlotToolbar):
     """
     Custom toolbar for 1d figures.
     """
+
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -234,6 +236,7 @@ class PlotToolbar2d(PlotToolbar):
     """
     Custom toolbar for 2d figures.
     """
+
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -255,6 +258,7 @@ class PlotToolbar3d(PlotToolbar):
     """
     Custom toolbar for 3d figures.
     """
+
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)

@@ -19,6 +19,7 @@ class PlotView2d(PlotView):
     In addition, `PlotView2d` provides a dynamic image resampling for large
     input data.
     """
+
     def __init__(self, figure, formatters):
         super().__init__(figure=figure, formatters=formatters)
         self._axes = ['y', 'x']

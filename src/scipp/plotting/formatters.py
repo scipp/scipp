@@ -12,6 +12,7 @@ class LabelFormatter:
     """
     Format ticks by replacing coord values with label values.
     """
+
     def __init__(self, labels, coord):
         self.label_values = labels.values
         self.coord_values = coord.values
@@ -25,6 +26,7 @@ class VectorFormatter:
     """
     Format vector output for ticks: return 3 components as a string.
     """
+
     def __init__(self, array_values, size):
         self.array_values = array_values
         self.size = size
@@ -39,6 +41,7 @@ class StringFormatter:
     """
     Format string ticks: find closest string in coordinate array.
     """
+
     def __init__(self, array_values, size):
         self.array_values = array_values
         self.size = size
@@ -52,6 +55,7 @@ class DateFormatter:
     Format datetime ticks: adjust the time precision and update
     offset according to the currently displayed range.
     """
+
     def __init__(self, coord, labels, dim):
         self.coord_values = coord.values
         self.labels = labels

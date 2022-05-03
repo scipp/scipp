@@ -491,6 +491,7 @@ def test_plot_redraw_binned_concat_inplace():
 
 
 def test_plot_various_2d_coord():
+
     def make_array(dims, coord_name):
         return sc.DataArray(data=sc.fold(sc.arange('xx', 2 * 10), 'xx', {
             dims[0]: 10,

@@ -648,6 +648,7 @@ def test_binned_with_point_slice_does_not_modify_inputs(binned_in_a_b):
 
 
 def test_binned_computes_correct_results(binned_in_a_b):
+
     def convert(*, a2, b):
         return a2 * b
 
@@ -678,6 +679,7 @@ def test_binned_slice_computes_correct_results(slice_):
 
 
 def test_binned_without_bin_coord_computes_correct_results(binned_in_a_b):
+
     def convert(*, a, b2):
         return a * b2
 
@@ -695,6 +697,7 @@ def test_binned_without_bin_coord_computes_correct_results(binned_in_a_b):
 
 
 def test_binned_without_event_coord_computes_correct_results(binned_in_a_b):
+
     def convert(*, a, b2):
         return a * b2
 
@@ -745,6 +748,7 @@ def test_targets_arg_types(a, b):
 
 
 def test_raises_when_requested_coord_not_computed(a):
+
     def foo(a):
         return {'actual': a}
 
@@ -754,6 +758,7 @@ def test_raises_when_requested_coord_not_computed(a):
 
 
 def test_raises_when_expected_multiple_outputs_but_returned_non_dict(a):
+
     def foo(a):
         return a
 
@@ -795,6 +800,7 @@ def test_cycles(a):
 
 
 def test_new_dim_in_coord(a):
+
     def x(a):
         return a.rename_dims({'a': 'x'})
 
@@ -827,6 +833,7 @@ def test_vararg_fail(a):
 
 
 def test_arg_vs_kwarg_kwonly(a):
+
     def arg(a):
         return a
 
@@ -849,6 +856,7 @@ def test_arg_vs_kwarg_kwonly(a):
 
 
 def test_unconsumed_outputs(a):
+
     def func(a):
         return {'b': a, 'c': a}
 

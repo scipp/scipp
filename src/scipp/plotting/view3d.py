@@ -15,6 +15,7 @@ class PlotView3d(PlotView):
 
     This will also be handling profile picking events in the future.
     """
+
     def __init__(self, figure, formatters):
         super().__init__(figure=figure, formatters=formatters)
         self._axes = ['z', 'y', 'x']

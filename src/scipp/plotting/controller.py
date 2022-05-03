@@ -5,6 +5,7 @@ from .resampling_model import ResamplingMode
 
 
 class MarkerModel:
+
     def __init__(self):
         self._counter = -1
         self._markers = {}
@@ -34,6 +35,7 @@ class PlotController:
     everything to bin edges to allow for more generic code.
 
     """
+
     def __init__(self,
                  dims,
                  vmin=None,
@@ -142,6 +144,7 @@ class PlotController:
         """
         Toggle dim scale from toolbar button signal.
         """
+
         def toggle(change):
             self.scale[dim] = "log" if change['new'] else "linear"
             self.view.set_scale(scale=self.scale)

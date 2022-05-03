@@ -14,6 +14,7 @@ class DataArrayDict(dict):
     Dict of data arrays with matching dimension labels and units. Shape and
     coordinates may mismatch.
     """
+
     @property
     def dims(self):
         return next(iter(self.values())).dims
@@ -45,6 +46,7 @@ class PlotModel:
     The model is where all operations on the data (slicing and resampling) are
     performed.
     """
+
     def __init__(self, scipp_obj_dict=None):
         self._dims = None
         self._mode = None

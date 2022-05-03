@@ -13,6 +13,7 @@ class PlotModel1d(PlotModel):
     """
     Model class for 1 dimensional plots.
     """
+
     def __init__(self, *args, resolution=None, **kwargs):
         super().__init__(*args, **kwargs)
         self._resolution = resolution

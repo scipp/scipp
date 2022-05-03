@@ -13,6 +13,7 @@ class PlotModel2d(PlotModel):
     """
     Model class for 2 dimensional plots.
     """
+
     def __init__(self, *args, resolution=None, **kwargs):
         self._model = None
         super().__init__(*args, **kwargs)

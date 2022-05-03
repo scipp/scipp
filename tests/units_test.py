@@ -8,6 +8,7 @@ import numpy as np
 
 
 class TestUnits():
+
     def test_create_unit(self):
         u = sc.units.angstrom
         assert repr(u) == "\u212B" or repr(u) == "\u00C5"

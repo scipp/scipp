@@ -7,6 +7,7 @@ class Variable:
     """
     Benchmark different aspects of a Scipp variable
     """
+
     def setup(self):
         self.var1 = sc.array(dims=['x'], values=[1, 2, 3, 4, 5])
         self.var2 = sc.array(dims=['x'], values=[1, 2, 3, 4, 5])

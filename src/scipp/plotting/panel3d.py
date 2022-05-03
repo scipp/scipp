@@ -11,6 +11,7 @@ class PlotPanel3d(PlotPanel):
     Additional widgets that control the position, opacity and shape of the
     cut surface in the 3d plot.
     """
+
     def __init__(self):
         super().__init__()
 

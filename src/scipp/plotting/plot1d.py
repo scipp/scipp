@@ -24,6 +24,7 @@ def plot1d(scipp_obj_dict, **kwargs):
     displayed line, a functionality inspired by the Superplot in the Lamp
     software.
     """
+
     def builder(*,
                 dims,
                 norm=None,

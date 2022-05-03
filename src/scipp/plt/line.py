@@ -14,6 +14,7 @@ from typing import Tuple
 class Line:
     """
     """
+
     def __init__(self,
                  ax,
                  data,

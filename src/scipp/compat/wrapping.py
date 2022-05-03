@@ -44,7 +44,9 @@ def wrap1d(is_partial=False, accept_masks=False, keep_coords=False):
         Instead, the callable returned by the decorated function is
         decorated with the postprocessing step.
     """
+
     def decorator(func: Callable) -> Callable:
+
         @wraps(func)
         def function(da: DataArray, dim: str, **kwargs) -> Union[DataArray, Callable]:
             if 'axis' in kwargs:
@@ -80,6 +82,7 @@ def wrap1d(is_partial=False, accept_masks=False, keep_coords=False):
                 return da
 
             def postprocessing(func):
+
                 @wraps(func)
                 def function(*args, **kwargs):
                     return _add_observing_metadata(func(*args, **kwargs))

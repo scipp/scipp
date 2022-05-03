@@ -135,6 +135,7 @@ def test_variances_determine_weights(variance, expected):
 
 
 def test_fit_function_with_dimensionful_params_raises_UnitError_when_no_p0_given():
+
     def f(x, *, a, b):
         return a * sc.exp(-b * x)
 
@@ -143,6 +144,7 @@ def test_fit_function_with_dimensionful_params_raises_UnitError_when_no_p0_given
 
 
 def test_fit_function_with_dimensionful_params_yields_outputs_with_units():
+
     def f(x, *, a, b):
         return a * sc.exp(-b * x)
 

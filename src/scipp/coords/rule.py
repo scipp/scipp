@@ -25,6 +25,7 @@ try:
     # CoordTable is only needed for type annotations here,
     # so a protocol is enough.
     class _CoordProvider(_Protocol):
+
         def consume(self, name: str) -> Coord:
             pass
 
@@ -34,6 +35,7 @@ except ImportError:
 
 
 class Rule(ABC):
+
     def __init__(self, out_names: Tuple[str, ...]):
         self.out_names = out_names
 
@@ -56,6 +58,7 @@ class FetchRule(Rule):
 
     Can be used to abstract away retrieving coords and attrs from the input DataArray.
     """
+
     def __init__(self, out_names: Tuple[str, ...], dense_sources: Mapping[str,
                                                                           Variable],
                  event_sources: Mapping[str, Variable]):
@@ -83,6 +86,7 @@ class RenameRule(Rule):
     """
     Return the input coordinate and give it a new name.
     """
+
     def __init__(self, out_names: Tuple[str, ...], in_name: str):
         super().__init__(out_names)
         self._in_name = in_name
@@ -107,6 +111,7 @@ class ComputeRule(Rule):
     """
     Compute new coordinates using the provided callable.
     """
+
     def __init__(self, out_names: Tuple[str, ...], func: Callable):
         super().__init__(out_names)
         self._func = func

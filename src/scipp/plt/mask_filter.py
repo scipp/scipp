@@ -15,6 +15,7 @@ class MaskWidget:
     """
     Widget providing buttons to hide/show masks.
     """
+
     def __init__(self, masks: MetaDataMap, name: str = ''):
 
         self._callback = None
@@ -101,5 +102,6 @@ def _hide_masks(model: DataArray, masks: MetaDataMap) -> DataArray:
 
 
 class MaskFilter(WidgetFilter):
+
     def __init__(self, **kwargs):
         super().__init__(func=_hide_masks, widgets={"masks": MaskWidget(**kwargs)})

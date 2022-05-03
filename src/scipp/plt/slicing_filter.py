@@ -13,6 +13,7 @@ class SlicingWidget:
     Widgets containing a slider for each of the input's dimensions, as well as
     buttons to modify the currently displayed axes.
     """
+
     def __init__(self, dims: list, sizes: dict, ndim: int):
 
         self._controls = {}
@@ -86,6 +87,7 @@ def _slicing_func(model: DataArray, slices: dict) -> DataArray:
 
 
 class SlicingFilter(WidgetFilter):
+
     def __init__(self, **kwargs):
         super().__init__(func=_slicing_func,
                          widgets={"slices": SlicingWidget(**kwargs)})

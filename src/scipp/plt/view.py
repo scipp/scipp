@@ -8,6 +8,7 @@ import ipywidgets as ipw
 
 
 class SideBar:
+
     def __init__(self, children=None):
         self._children = children if children is not None else []
 
@@ -22,6 +23,7 @@ class View:
     """
     Base class for 1d and 2d figures, that holds matplotlib axes.
     """
+
     def __init__(self, **kwargs):
 
         self.figure = Figure(**kwargs)

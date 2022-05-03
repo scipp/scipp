@@ -15,6 +15,7 @@ def graph_0():
     |  \|
     g   f
     """
+
     def fd(a, b):
         pass
 
@@ -35,6 +36,7 @@ def graph_1():
      \ /
       d
     """
+
     def fd(b, c):
         pass
 
@@ -50,6 +52,7 @@ def graph_2():
     | e   f
     g_____|
     """
+
     def fe(b, d, c):
         pass
 
@@ -76,6 +79,7 @@ def graph_3():
        \ /
         i
     """
+
     def fcf(b):
         pass
 
@@ -113,6 +117,7 @@ def graph_4():
       \ /
        d
     """
+
     def fb(a):
         pass
 

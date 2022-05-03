@@ -8,6 +8,7 @@ class Pipeline(list):
     """
     A Pipeline is a list of filters that will be applied to the data
     """
+
     def run(self, model: DataArray):
         out = model
         for item in self:
@@ -16,6 +17,7 @@ class Pipeline(list):
 
 
 class Filter:
+
     def __init__(self, func):
         self._func = func
         self._callbacks = []
