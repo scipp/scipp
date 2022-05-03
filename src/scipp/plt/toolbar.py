@@ -6,6 +6,7 @@ from typing import Callable
 
 
 class ToggleButtons(ipw.ToggleButtons):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.on_msg(self._reset)
@@ -25,6 +26,7 @@ class Toolbar:
     Custom toolbar with additional buttons for controlling log scales and
     normalization, and with back/forward buttons removed.
     """
+
     def __init__(self):
         self._dims = None
         self.controller = None

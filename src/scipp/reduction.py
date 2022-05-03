@@ -8,6 +8,7 @@ from .core import concat, reduction
 
 
 class BinsReducer:
+
     def __init__(self, obj: VariableLike, dim: str):
         self._obj = obj
         self._dim = dim
@@ -18,6 +19,7 @@ class BinsReducer:
 
 
 class Reducer:
+
     def __init__(self, x: List[VariableLike]):
         self._dim = uuid.uuid4().hex
         # concat in init avoids repeated costly step in case of multiple reductions

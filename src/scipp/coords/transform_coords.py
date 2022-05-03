@@ -191,6 +191,7 @@ def _log_transform(rules: List[Rule], targets: Set[str],
 
 
 def _store_coord(da: DataArray, name: str, coord: Coord) -> None:
+
     def try_del(dest):
         if dest == Destination.coord:
             da.coords.pop(name, None)

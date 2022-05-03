@@ -14,6 +14,7 @@ from typing import Any, Tuple
 
 
 class Figure:
+
     def __init__(self,
                  ax: Any = None,
                  figsize: Tuple[float, ...] = None,

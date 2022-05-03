@@ -9,6 +9,7 @@ class PlotController2d(PlotController):
     """
     Controller class for 2d plots.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

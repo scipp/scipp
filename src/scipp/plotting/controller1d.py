@@ -11,6 +11,7 @@ class PlotController1d(PlotController):
     """
     Controller class for 1d plots.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

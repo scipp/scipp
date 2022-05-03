@@ -13,6 +13,7 @@ class PlotFigure:
     """
     Base class for 1d and 2d figures, that holds matplotlib axes.
     """
+
     def __init__(self,
                  ax=None,
                  cax=None,

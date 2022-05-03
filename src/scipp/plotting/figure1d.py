@@ -18,6 +18,7 @@ class PlotFigure1d(PlotFigure):
     `PlotFigure1d` can "keep" the currently displayed line, or "remove" a
     previously saved line.
     """
+
     def __init__(self,
                  ax=None,
                  mpl_line_params=None,
@@ -92,7 +93,9 @@ class PlotFigure1d(PlotFigure):
         self._axes_updated = True
 
     def _make_line(self, name, masks, hist):
+
         class Line:
+
             def __init__(self):
                 self.data = None
                 self.error = None

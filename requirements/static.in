@@ -1,0 +1,6 @@
+clang-format==10.0.1.1
+cmake-format
+flake8
+nbstripout
+toml
+yapf

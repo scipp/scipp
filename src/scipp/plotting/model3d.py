@@ -27,6 +27,7 @@ class ScatterPointModel:
     """
     Model representing scattered data.
     """
+
     def __init__(self, *, positions, scipp_obj_dict, resolution):
         self._scipp_obj_dict = scipp_obj_dict
         self._positions_dims = positions.dims

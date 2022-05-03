@@ -13,6 +13,7 @@ class Controller:
     """
     Controller class plots.
     """
+
     def __init__(self, models: Dict[str, DataArray], view: View):
         self._models = models
         self._view = view

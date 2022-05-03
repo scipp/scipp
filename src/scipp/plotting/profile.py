@@ -20,6 +20,7 @@ class PlotProfile(PlotFigure1d):
     Finally, it shows or hide the profile line depending on whether the mouse
     cursor is inside the main plot axes or not (`toggle_hover_visibility`).
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.current_visible_state = False
@@ -112,6 +113,7 @@ class PlotProfile(PlotFigure1d):
         """
         Toggle x-axis scale from toolbar button signal.
         """
+
         def toggle(change):
             self.ax.set_xscale("log" if change['new'] else "linear")
             self.draw()

@@ -19,6 +19,7 @@ def plot3d(scipp_obj_dict, *, positions, **kwargs):
     It is possible to add cut surfaces as cartesian, cylindrical or spherical
     planes.
     """
+
     def builder(*,
                 dims,
                 norm=None,

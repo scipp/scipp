@@ -50,6 +50,7 @@ def _build_svg(content, left, top, width, height):
 
 
 class VariableDrawer:
+
     def __init__(self, variable, margin=1.0, target_dims=None):
         self._margin = margin
         self._variable = variable
@@ -281,6 +282,7 @@ class VariableDrawer:
 
 
 class DrawerItem:
+
     def __init__(self, name, data, color):
         self._name = name
         self._data = data
@@ -297,6 +299,7 @@ class DrawerItem:
 
 
 class EllipsisItem:
+
     @staticmethod
     def append_to_svg(content, width, height, offset, layout_direction, *unused):
         x_pos = offset[0] + 0.3
@@ -323,6 +326,7 @@ def _new_size_and_offset(added_size, width, height, layout_direction):
 
 
 class DatasetDrawer:
+
     def __init__(self, dataset):
         self._dataset = dataset
 

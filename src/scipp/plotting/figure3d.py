@@ -21,6 +21,7 @@ class PlotFigure3d:
 
     It renders an interactive scene containing a point cloud using `pythreejs`.
     """
+
     def __init__(self, *, background, cmap, extend, figsize, mask_cmap, nan_color, norm,
                  pixel_size, show_outline, tick_size, xlabel, ylabel, zlabel, camera):
 

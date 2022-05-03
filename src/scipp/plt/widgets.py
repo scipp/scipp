@@ -8,6 +8,7 @@ import ipywidgets as ipw
 
 
 class WidgetCollection(list):
+
     def _ipython_display_(self):
         """
         IPython display representation for Jupyter notebooks.
@@ -22,6 +23,7 @@ class WidgetCollection(list):
 
 
 class WidgetFilter(Filter):
+
     def __init__(self, func, widgets):
         super().__init__(func=func)
         self._base_func = func  # func taking data array, dim, and int

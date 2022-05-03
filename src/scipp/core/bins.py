@@ -11,6 +11,7 @@ from .operations import islinspace
 
 
 class Lookup:
+
     def __init__(self, func: _cpp.DataArray, dim: str):
         if func.ndim == 1 and func.dtype in [
                 _cpp.DType.bool, _cpp.DType.int32, _cpp.DType.int64
@@ -55,6 +56,7 @@ class Bins:
     This class is returned from the `bins` property of variables and should
     generally not be created directly.
     """
+
     def __init__(self, obj):
         self._obj = obj
 
@@ -228,6 +230,7 @@ class Bins:
 
 class GroupbyBins:
     """Proxy for operations on bins of a groupby object."""
+
     def __init__(self, obj):
         self._obj = obj
 
