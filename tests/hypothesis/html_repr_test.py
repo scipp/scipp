@@ -8,7 +8,6 @@ from hypothesis import strategies as st
 from scipp.testing import strategies as scst
 import scipp as sc
 
-
 # Tests have an increased deadline because the default was not enough for our MacOS CI.
 # hypothesis failed the tests because of it but subsequent invocations during
 # minimization of the failing example could not reproduce the time-based failure,
@@ -17,6 +16,7 @@ import scipp as sc
 # This might indicate some hidden start up cost.
 # It might be related to complicated utf-8 strings as all failing cases contain many
 # unusual characters, many of which cannot be rendered properly on GitHub.
+
 
 @settings(deadline=1000)
 @given(scst.variables(ndim=0))
