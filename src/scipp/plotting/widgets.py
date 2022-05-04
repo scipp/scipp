@@ -30,7 +30,7 @@ class PlotWidgets:
         # all_masks_button: button to hide/show all masks in a single click
         self.all_masks_button = None
 
-        self._slider_dims = dims[:len(dims) - ndim]
+        self._slider_dims = list(dims)[:len(dims) - ndim]
 
         self.profile_button = ipw.Button(description="Profile",
                                          button_style="",
