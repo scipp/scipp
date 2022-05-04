@@ -1,9 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .. import DataArray
-from .filters import WidgetFilter
-from ..typing import MetaDataMap
+from ... import DataArray
+from ...typing import MetaDataMap
 
 from functools import partial
 from html import escape
@@ -15,6 +14,7 @@ class MaskWidget:
     """
     Widget providing buttons to hide/show masks.
     """
+
     def __init__(self, masks: MetaDataMap, name: str = ''):
 
         self._callback = None
@@ -98,8 +98,3 @@ def hide_masks(model: DataArray, masks: MetaDataMap) -> DataArray:
         if not value:
             del out.masks[name]
     return out
-
-
-# class MaskFilter(WidgetFilter):
-#     def __init__(self, **kwargs):
-#         super().__init__(func=_hide_masks, widgets={"masks": MaskWidget(**kwargs)})

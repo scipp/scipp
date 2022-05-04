@@ -11,4 +11,4 @@ plt.ioff()
 from .plot import Plot
 from .model import Node, Model
 from .figure import Figure
-from .view import WidgetView
+from . import widgets

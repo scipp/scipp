@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .. import DataArray
-from .view import WidgetView
-from ..utils import value_to_string
+from ... import DataArray
+from ...utils import value_to_string
+from .widget import WidgetView
 
 import ipywidgets as ipw
 from typing import Callable
@@ -14,6 +14,7 @@ class SliceWidget:
     Widgets containing a slider for each of the input's dimensions, as well as
     buttons to modify the currently displayed axes.
     """
+
     def __init__(self, array, dims: list):
 
         self._controls = {}
@@ -91,6 +92,7 @@ def slice_dims(model: DataArray, slices: dict) -> DataArray:
 
 
 class SliceView(WidgetView):
+
     def __init__(self, *args, **kwargs):
         super().__init__(widgets={"slices": SliceWidget(*args, **kwargs)})
 

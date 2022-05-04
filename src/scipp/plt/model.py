@@ -1,9 +1,9 @@
-from .filters import Filter
-from .view import WidgetView
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+
+from .widgets.widget import WidgetView
 
 from typing import Tuple, Iterable, Protocol, Tuple
-
-from ..utils.graph import Graph
 
 from functools import partial
 
@@ -57,6 +57,7 @@ from functools import partial
 
 
 class Node:
+
     def __init__(self, func, name=None, views=None):
         self.name = name  # TODO do we need the name?
         self.parent_name = None
@@ -126,6 +127,7 @@ class Node:
 
 
 class Model:
+
     def __init__(self, da):
         self._name = da.name
         # root_node = Node(name='root', func=lambda: da)
@@ -194,7 +196,7 @@ class Model:
         self[key].add_view(view)
         view.add_model_node(self[key])
         if isinstance(view, WidgetView):
-            view.register_notification(partial(self.notify_from_dependents, node=key))
+            view.add_notification(partial(self.notify_from_dependents, node=key))
             # view.add_model_node(self[key])
 
     # def request_data(self, name: str):
