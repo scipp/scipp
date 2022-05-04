@@ -5,6 +5,7 @@ dependencies:
   - cmake
   - conan>=1.45.0
   - cppcheck
+  - graphviz=3.0.0
   - gxx_linux-64 11.1.*
   - ninja
   - pandoc
