@@ -11,7 +11,7 @@ class WidgetView(View):
 
     def __init__(self, widgets):
         super().__init__()
-        self._base_func = None  # func  # func taking data array, dim, and int
+        self._base_func = None
         self._widgets = widgets
         self._notifications = []
         for widget in self._widgets.values():
@@ -22,7 +22,6 @@ class WidgetView(View):
         return {key: widget.value for key, widget in self._widgets.items()}
 
     def _update_node_func(self, node):
-        # print("updating func", self.values)
         node.func = partial(self._base_func, **self.values)
 
     def _update_and_notify(self, _):
@@ -41,9 +40,6 @@ class WidgetView(View):
         self._update_node_func(node)
 
     def _to_widget(self):
-        """
-        """
-        # import ipywidgets as ipw
         return ipw.VBox([
             widget._to_widget() if hasattr(widget, "_to_widget") else widget
             for widget in self._widgets.values()
