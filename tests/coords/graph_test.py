@@ -25,7 +25,7 @@ def graph_0():
     def ff(c, d):
         pass
 
-    return scgraph.RuleGraph({'d': fd, 'e': fe, 'f': ff, 'g': 'e'})
+    return scgraph.Graph({'d': fd, 'e': fe, 'f': ff, 'g': 'e'})
 
 
 def graph_1():
@@ -40,7 +40,7 @@ def graph_1():
     def fd(b, c):
         pass
 
-    return scgraph.RuleGraph({'d': fd, 'b': 'a', 'c': 'a'})
+    return scgraph.Graph({'d': fd, 'b': 'a', 'c': 'a'})
 
 
 def graph_2():
@@ -62,7 +62,7 @@ def graph_2():
     def fg(b, f):
         pass
 
-    return scgraph.RuleGraph({'b': 'a', 'e': fe, 'f': ff, 'g': fg})
+    return scgraph.Graph({'b': 'a', 'e': fe, 'f': ff, 'g': fg})
 
 
 def graph_3():
@@ -95,7 +95,7 @@ def graph_3():
     def fi(h, f):
         pass
 
-    return scgraph.RuleGraph({
+    return scgraph.Graph({
         'b': 'a',
         ('c', 'f'): fcf,
         'd': fd,
@@ -130,7 +130,7 @@ def graph_4():
     def fe(b):
         pass
 
-    return scgraph.RuleGraph({'b': fb, 'c': fc, 'd': fd, 'e': fe})
+    return scgraph.Graph({'b': fb, 'c': fc, 'd': fd, 'e': fe})
 
 
 def make_data(coords, dims=('x', )):
