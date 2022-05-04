@@ -25,6 +25,7 @@ def _as_scalar(obj, unit):
 
 
 def _wrap_func(f, p_names, p_units):
+
     def func(x, *args):
         p = {k: _as_scalar(v, u) for k, v, u in zip(p_names, args, p_units)}
         return f(x, **p).values

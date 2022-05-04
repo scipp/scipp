@@ -3,8 +3,6 @@
 
 
 class Plot:
-    """
-    """
 
     def __init__(self):
         self._models = {}

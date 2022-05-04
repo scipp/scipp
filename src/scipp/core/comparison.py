@@ -18,11 +18,17 @@ def less(x: VariableLike, y: VariableLike) -> VariableLike:
     they are ignored silently, i.e., comparison is based exclusively on
     the values.
 
-    :param x: Left input.
-    :param y: Right input.
-    :raises: If the units of inputs are not the same, or if the dtypes of
-             inputs cannot be compared.
-    :return: Booleans that are true if `a < b`.
+    Parameters
+    ----------
+    x:
+        Left input.
+    y:
+        Right input.
+
+    Returns
+    -------
+    :
+        Booleans that are true where `a < b`.
     """
     return _call_cpp_func(_cpp.less, x, y)
 
@@ -34,11 +40,17 @@ def greater(x: VariableLike, y: VariableLike) -> VariableLike:
     they are ignored silently, i.e., comparison is based exclusively on
     the values.
 
-    :param x: Left input.
-    :param y: Right input.
-    :raises: If the units of inputs are not the same, or if the dtypes of
-             inputs cannot be compared.
-    :return: Booleans that are true if `a > b`.
+    Parameters
+    ----------
+    x:
+        Left input.
+    y:
+        Right input.
+
+    Returns
+    -------
+    :
+        Booleans that are true where `a > b`.
     """
     return _call_cpp_func(_cpp.greater, x, y)
 
@@ -50,11 +62,17 @@ def less_equal(x: VariableLike, y: VariableLike) -> VariableLike:
     they are ignored silently, i.e., comparison is based exclusively on
     the values.
 
-    :param x: Left input.
-    :param y: Right input.
-    :raises: If the units of inputs are not the same, or if the dtypes of
-             inputs cannot be compared.
-    :return: Booleans that are true if `a <= b`.
+    Parameters
+    ----------
+    x:
+        Left input.
+    y:
+        Right input.
+
+    Returns
+    -------
+    :
+        Booleans that are true where `a <= b`.
     """
     return _call_cpp_func(_cpp.less_equal, x, y)
 
@@ -66,11 +84,17 @@ def greater_equal(x: VariableLike, y: VariableLike) -> VariableLike:
     they are ignored silently, i.e., comparison is based exclusively on
     the values.
 
-    :param x: Left input.
-    :param y: Right input.
-    :raises: If the units of inputs are not the same, or if the dtypes of
-             inputs cannot be compared.
-    :return: Booleans that are true if `a >= b`.
+    Parameters
+    ----------
+    x:
+        Left input.
+    y:
+        Right input.
+
+    Returns
+    -------
+    :
+        Booleans that are true where `a >= b`.
     """
     return _call_cpp_func(_cpp.greater_equal, x, y)
 
@@ -82,11 +106,17 @@ def equal(x: VariableLike, y: VariableLike) -> VariableLike:
     they are ignored silently, i.e., comparison is based exclusively on
     the values.
 
-    :param x: Left input.
-    :param y: Right input.
-    :raises: If the units of inputs are not the same, or if the dtypes of
-             inputs cannot be compared.
-    :return: Booleans that are true if `a == b`.
+    Parameters
+    ----------
+    x:
+        Left input.
+    y:
+        Right input.
+
+    Returns
+    -------
+    :
+        Booleans that are true where `a == b`.
     """
     return _call_cpp_func(_cpp.equal, x, y)
 
@@ -98,11 +128,17 @@ def not_equal(x: VariableLike, y: VariableLike) -> VariableLike:
     they are ignored silently, i.e., comparison is based exclusively on
     the values.
 
-    :param x: Left input.
-    :param y: Right input.
-    :raises: If the units of inputs are not the same, or if the dtypes of
-             inputs cannot be compared.
-    :return: Booleans that are true if `a != b`.
+    Parameters
+    ----------
+    x:
+        Left input.
+    y:
+        Right input.
+
+    Returns
+    -------
+    :
+        Booleans that are true where `a != b`.
     """
     return _call_cpp_func(_cpp.not_equal, x, y)
 
@@ -113,13 +149,21 @@ def identical(x: VariableLike,
               equal_nan: bool = False) -> VariableLike:
     """Full comparison of x and y.
 
-    :param x: Left input.
-    :param y: Right input.
-    :param equal_nan: If true, non-finite values at the same index in (x, y)
-                      are treated as equal.
-                      Signbit must match for infs.
-    :return: True if x and y have identical values, variances, dtypes, units,
-             dims, shapes, coords, and masks. Else False.
+    Parameters
+    ----------
+    x:
+        Left input.
+    y:
+        Right input.
+    equal_nan:
+        If true, non-finite values at the same index in (x, y) are treated as equal.
+        Signbit must match for infs.
+
+    Returns
+    -------
+    :
+        True if x and y have identical values, variances, dtypes, units,
+        dims, shapes, coords, and masks. Else False.
     """
     return _call_cpp_func(_cpp.identical, x, y, equal_nan=equal_nan)
 
@@ -130,8 +174,10 @@ def isclose(x: _cpp.Variable,
             rtol: _cpp.Variable = None,
             atol: _cpp.Variable = None,
             equal_nan: bool = False) -> _cpp.Variable:
-    """Compares values (x, y) element by element against absolute
-    and relative tolerances (non-symmetric).
+    """Checks element-wise if the inputs are close to each other.
+
+    Compares values of x and y element by element against absolute
+    and relative tolerances according to (non-symmetric)
 
     .. code-block:: python
 
@@ -180,7 +226,8 @@ def isclose(x: _cpp.Variable,
 
     See Also
     --------
-    scipp.allclose
+    scipp.allclose:
+        Equivalent of ``sc.all(sc.isclose(...)).value``.
     """
     if atol is None:
         atol = scalar(1e-8, unit=y.unit)
@@ -189,8 +236,9 @@ def isclose(x: _cpp.Variable,
     return _call_cpp_func(_cpp.isclose, x, y, rtol, atol, equal_nan)
 
 
-def allclose(x, y, rtol=None, atol=None, equal_nan=False):
-    """
+def allclose(x, y, rtol=None, atol=None, equal_nan=False) -> True:
+    """Checks if all elements in the inputs are close to each other.
+
     Verifies that ALL element-wise comparisons meet the condition:
 
     abs(x - y) <= atol + rtol * abs(y)
@@ -205,28 +253,42 @@ def allclose(x, y, rtol=None, atol=None, equal_nan=False):
             sqrt(x.variance) - sqrt(y.variance)) \
                 <= atol + rtol * abs(sqrt(y.variance))
 
+    Attention
+    ---------
+        Vectors and matrices are compared element-wise.
+        This is not necessarily a good measure for the similarity of `spatial`
+        dtypes like ``scipp.DType.rotation3`` or ``scipp.Dtype.affine_transform3``
+        (see :mod:`scipp.spatial`).
 
-    :param x: Left input.
-    :param y: Right input.
-    :param rtol: Tolerance value relative (to y).
-                 Can be a scalar or non-scalar.
-                 Defaults to scalar 1e-5 if unset.
-    :param atol: Tolerance value absolute. Can be a scalar or non-scalar.
-                 Defaults to scalar 1e-8 if unset and takes units from y arg.
-    :param equal_nan: if true, non-finite values at the same index in (x, y)
-                      are treated as equal.
-                      Signbit must match for infs.
-    :type x: Variable
-    :type y: Variable
-    :type rtol: Variable. May be a scalar or an array variable.
-                Cannot have variances.
-    :type atol: Variable. May be a scalar or an array variable.
-                Cannot have variances.
-    :type equal_nan: bool
-    :return: True if for all elements value <= atol + rtol * abs(y),
-             otherwise False.
+    Parameters
+    ----------
+    x:
+        Left input.
+    y:
+        Right input.
+    rtol:
+        Tolerance value relative (to y).
+        Can be a scalar or non-scalar.
+        Cannot have variances.
+        Defaults to scalar 1e-5 if unset.
+    atol:
+        Tolerance value absolute.
+        Can be a scalar or non-scalar.
+        Cannot have variances.
+        Defaults to scalar 1e-8 if unset and takes units from y arg.
+    equal_nan:
+        If true, non-finite values at the same index in (x, y) are treated as equal.
+        Signbit must match for infs.
 
-    :seealso: :py:func:`scipp.isclose` : comparing element-wise with specified tolerances
+    Returns
+    -------
+    :
+        True if for all elements ``value <= atol + rtol * abs(y)``, otherwise False.
+
+    See Also
+    --------
+    scipp.isclose:
+        Compares element-wise with specified tolerances.
     """
     return _call_cpp_func(_cpp.all,
                           isclose(x, y, rtol=rtol, atol=atol,

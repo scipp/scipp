@@ -4,26 +4,53 @@
 
 from __future__ import annotations
 
-from typing import Callable, Dict, List, Set, Tuple, Union
+from graphlib import TopologicalSorter
+from typing import Callable, Dict, Iterable, List, Set, Tuple, Union
 
 from ..core import DataArray
-from ..utils.graph import Graph
 from .rule import ComputeRule, FetchRule, RenameRule, Rule
 
 GraphDict = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
 
 
-class RuleGraph(Graph):
+class Graph:
+
     def __init__(self, graph: Union[GraphDict, Dict[str, Rule]]):
         if not graph:
-            rules = {}
+            self._rules = {}
         elif isinstance(next(iter(graph.values())), Rule):
-            rules = graph
+            self._rules: Dict[str, Rule] = graph
         else:
-            rules = _convert_to_rule_graph(graph)
-        super().__init__(rules)
+            self._rules: Dict[str, Rule] = _convert_to_rule_graph(graph)
 
-    def graph_for(self, da: DataArray, targets: Set[str]) -> RuleGraph:
+    def __getitem__(self, name: str) -> Rule:
+        return self._rules[name]
+
+    def items(self) -> Iterable[Tuple[str, Rule]]:
+        yield from self._rules.items()
+
+    def parents_of(self, node: str) -> Iterable[str]:
+        try:
+            yield from self._rules[node].dependencies
+        except KeyError:
+            # Input nodes have no parents but are not represented in the
+            # graph unless the corresponding FetchRules have been added.
+            return
+
+    def children_of(self, node: str) -> Iterable[str]:
+        for candidate, rule in self.items():
+            if node in rule.dependencies:
+                yield candidate
+
+    def nodes(self) -> Iterable[str]:
+        yield from self._rules.keys()
+
+    def nodes_topologically(self) -> Iterable[str]:
+        yield from TopologicalSorter(
+            {out: rule.dependencies
+             for out, rule in self._rules.items()}).static_order()
+
+    def graph_for(self, da: DataArray, targets: Set[str]) -> Graph:
         """
         Construct a graph containing only rules needed for the given DataArray
         and targets, including FetchRules for the inputs.
@@ -38,13 +65,13 @@ class RuleGraph(Graph):
             for name in rule.out_names:
                 subgraph[name] = rule
             depth_first_stack.extend(rule.dependencies)
-        return RuleGraph(subgraph)
+        return Graph(subgraph)
 
     def _rule_for(self, out_name: str, da: DataArray) -> Rule:
         if _is_in_meta_data(out_name, da):
             return FetchRule((out_name, ), da.meta, da.bins.meta if da.bins else {})
         try:
-            return self[out_name]  # type: ignore
+            return self._rules[out_name]
         except KeyError:
             raise KeyError(f"Coordinate '{out_name}' does not exist in the input data "
                            "and no rule has been provided to compute it.") from None
@@ -68,14 +95,14 @@ class RuleGraph(Graph):
         return dot
 
 
-def rule_sequence(rules: RuleGraph) -> List[Rule]:
+def rule_sequence(rules: Graph) -> List[Rule]:
     already_used = set()
     result = []
     for rule in filter(lambda r: r not in already_used,
                        map(lambda n: rules[n], rules.nodes_topologically())):
         already_used.add(rule)
         result.append(rule)
-    return result  # type: ignore
+    return result
 
 
 def _make_rule(products, producer) -> Rule:

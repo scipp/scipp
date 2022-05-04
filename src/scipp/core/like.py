@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from typing import Any as _Any, Union as _Union
+from typing import Any
 from .._scipp import core as _cpp
 from .variable import ones, zeros, empty, full
+from ..typing import VariableLikeType
 
 
 def _to_variable_or_data_array(var, new_values):
@@ -19,106 +20,162 @@ def _to_variable_or_data_array(var, new_values):
         return new_values
 
 
-def zeros_like(var: _Union[_cpp.Variable, _cpp.DataArray],
-               /) -> _Union[_cpp.Variable, _cpp.DataArray]:
-    """
-    Return a Variable or DataArray with the same dims, shape, unit, and dtype as the
-    input and all values initialized to 0.
+def zeros_like(obj: VariableLikeType, /) -> VariableLikeType:
+    """Return a new object with the same dims, shape, unit,
+    and dtype as the input and all elements initialized to 0.
 
     If the input has variances, all variances in the output are set to 0.
-    If the input is a data array, coordinates and attributes are shallow-copied
-    and masks are deep copied.
+    If the input is a :class:`DataArray`, coordinates and attributes are shallow-copied
+    and masks are deep-copied.
 
     Parameters
     ----------
-    var:
-        Input object defining dims, shape, unit, and dtype of the output
+    obj: scipp.Variable or scipp.DataArray
+        Input object defining dims, shape, unit, and dtype of the output.
 
     Returns
     -------
-    :
+    : Same type as input
         New object of zeros.
 
     See Also
     --------
-    zeros: Create zeros but based on given dims and shape
-    ones_like : Create an object initialized with ones
+    scipp.zeros:
+        Create zeros but based on given dims and shape.
+    scipp.ones_like:
+        Create an object initialized with ones.
+    scipp.full_like:
+        Create an object filled with a given value.
+    scipp.empty_like:
+        Create an object with uninitialized elements.
     """
-    new_values = zeros(dims=var.dims,
-                       shape=var.shape,
-                       unit=var.unit,
-                       dtype=var.dtype,
-                       with_variances=var.variances is not None)
-    return _to_variable_or_data_array(var, new_values)
+    new_values = zeros(dims=obj.dims,
+                       shape=obj.shape,
+                       unit=obj.unit,
+                       dtype=obj.dtype,
+                       with_variances=obj.variances is not None)
+    return _to_variable_or_data_array(obj, new_values)
 
 
-def ones_like(var: _Union[_cpp.Variable, _cpp.DataArray],
-              /) -> _Union[_cpp.Variable, _cpp.DataArray]:
-    """
-    Constructs a new object with the same dims, shape, unit and dtype as the input
-    (:class:`Variable` or :class:`DataArray`), but with all values initialized to 1.
+def ones_like(obj: VariableLikeType, /) -> VariableLikeType:
+    """Return a new object with the same dims, shape, unit,
+    and dtype as the input and all elements initialized to 1.
+
     If the input has variances, all variances in the output are set to 1.
     If the input is a :class:`DataArray`, coordinates and attributes are shallow-copied
-    and masks are deep copied.
+    and masks are deep-copied.
 
-    :param var: Input variable or data array.
+    Parameters
+    ----------
+    obj: scipp.Variable or scipp.DataArray
+        Input object defining dims, shape, unit, and dtype of the output.
 
-    :seealso: :py:func:`scipp.ones` :py:func:`scipp.zeros_like`
+    Returns
+    -------
+    : Same type as input
+        New object of ones.
+
+    See Also
+    --------
+    scipp.ones:
+        Create ones but based on given dims and shape.
+    scipp.zeros_like:
+        Create an object initialized with zeros.
+    scipp.full_like:
+        Create an object filled with a given value.
+    scipp.empty_like:
+        Create an object with uninitialized elements.
     """
-    new_values = ones(dims=var.dims,
-                      shape=var.shape,
-                      unit=var.unit,
-                      dtype=var.dtype,
-                      with_variances=var.variances is not None)
-    return _to_variable_or_data_array(var, new_values)
+    new_values = ones(dims=obj.dims,
+                      shape=obj.shape,
+                      unit=obj.unit,
+                      dtype=obj.dtype,
+                      with_variances=obj.variances is not None)
+    return _to_variable_or_data_array(obj, new_values)
 
 
-def empty_like(var: _Union[_cpp.Variable, _cpp.DataArray],
-               /) -> _Union[_cpp.Variable, _cpp.DataArray]:
-    """
-    Constructs a new object with the same dims, shape, unit and dtype as the input
-    (:class:`Variable` or :class:`DataArray`), but with all values uninitialized.
+def empty_like(obj: VariableLikeType, /) -> VariableLikeType:
+    """Return a new object with the same dims, shape, unit,
+    and dtype as the input and all elements uninitialized.
+
     If the input has variances, all variances in the output exist but are uninitialized.
     If the input is a :class:`DataArray`, coordinates and attributes are shallow-copied
-    and masks are deep copied.
+    and masks are deep-copied.
 
-    :param var: Input variable or data array.
+    Warning
+    -------
+    Reading from any elements before writing to them produces undefined results.
 
-    :seealso: :py:func:`scipp.empty` :py:func:`scipp.zeros_like`
-              :py:func:`scipp.ones_like`
+    Parameters
+    ----------
+    obj: scipp.Variable or scipp.DataArray
+        Input object defining dims, shape, unit, and dtype of the output
+
+    Returns
+    -------
+    : Same type as input
+        New object with uninitialized values and maybe variances.
+
+    See Also
+    --------
+    scipp.empty:
+        Create an uninitialized object based on given dims and shape.
+    scipp.zeros_like:
+        Create an object initialized with zeros.
+    scipp.ones_like:
+        Create an object initialized with ones.
+    scipp.full_like:
+        Create an object filled with a given value.
     """
-    new_values = empty(dims=var.dims,
-                       shape=var.shape,
-                       unit=var.unit,
-                       dtype=var.dtype,
-                       with_variances=var.variances is not None)
-    return _to_variable_or_data_array(var, new_values)
+    new_values = empty(dims=obj.dims,
+                       shape=obj.shape,
+                       unit=obj.unit,
+                       dtype=obj.dtype,
+                       with_variances=obj.variances is not None)
+    return _to_variable_or_data_array(obj, new_values)
 
 
-def full_like(var: _cpp.Variable,
+def full_like(obj: VariableLikeType,
               /,
-              value: _Any,
+              value: Any,
               *,
-              variance: _Any = None) -> _cpp.Variable:
-    """
-    Constructs a new object with the same dims, shape, unit and dtype as the input
-    (:class:`Variable` or :class:`DataArray`), but with all values, and optionally
-    variances, initialized to the specified ``value`` and ``variance``.
-    If the input is a :class:`DataArray`, coordinates and attributes are shallow-copied
-    and masks are deep copied.
+              variance: Any = None) -> VariableLikeType:
+    """Return a new object with the same dims, shape, unit,
+    and dtype as the input and all elements initialized to the given value.
 
-    :param var: Input variable or data array.
-    :param value: The value to fill the data with.
-    :param variance: Optional, the variance to fill the Variable with. If None
+    If the input is a :class:`DataArray`, coordinates and attributes are shallow-copied
+    and masks are deep-copied.
+
+    Parameters
+    ----------
+    obj: scipp.Variable or scipp.DataArray
+        Input object defining dims, shape, unit, and dtype of the output
+    value:
+        The value to fill the data with.
+    variance:
+        The variance to fill the Variable with. If None
         or not provided, the variances will not be set.
 
-    :seealso: :py:func:`scipp.zeros_like` :py:func:`scipp.ones_like`
-              :py:func:`scipp.empty_like`
+    Returns
+    -------
+    : Same type as input
+        New object with elements set to given values and variances.
+
+    See Also
+    --------
+    scipp.full:
+        Create an object filled with given value based on given dims and shape.
+    scipp.zeros_like:
+        Create an object initialized with zeros.
+    scipp.ones_like:
+        Create an object initialized with ones.
+    scipp.empty_like:
+        Create an object with uninitialized elements.
     """
-    new_values = full(dims=var.dims,
-                      shape=var.shape,
-                      unit=var.unit,
-                      dtype=var.dtype,
+    new_values = full(dims=obj.dims,
+                      shape=obj.shape,
+                      unit=obj.unit,
+                      dtype=obj.dtype,
                       value=value,
                       variance=variance)
-    return _to_variable_or_data_array(var, new_values)
+    return _to_variable_or_data_array(obj, new_values)

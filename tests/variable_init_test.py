@@ -264,6 +264,7 @@ def test_create_1d_size_4():
                           (sc.DType.bool, [True, False]),
                           (sc.DType.string, ['a', 'bc'])))
 def test_create_1d_dtype(values_type, dtype_and_values):
+
     def check(v):
         if dtype == sc.DType.int64:
             # The dtype varies between Windows and Linux / MacOS.
@@ -346,6 +347,7 @@ def test_create_1d_values_and_variances_array_like(values_type, variances_type):
 @pytest.mark.parametrize('values_type',
                          (tuple, list, lambda x: np.array(x, dtype=object)))
 def test_create_1d_dtype_object(values_type):
+
     def check(v):
         assert v.dtype == sc.DType.PyObject
         # Cannot iterate over an ElementArrayView.

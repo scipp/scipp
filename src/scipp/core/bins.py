@@ -11,6 +11,7 @@ from .operations import islinspace
 
 
 class Lookup:
+
     def __init__(self, func: _cpp.DataArray, dim: str):
         if func.ndim == 1 and func.dtype in [
                 _cpp.DType.bool, _cpp.DType.int32, _cpp.DType.int64
@@ -25,16 +26,20 @@ class Lookup:
 
 
 def lookup(func: _cpp.DataArray, dim: str):
-    """
-    Create a "lookup table" from a histogram (data array with bin-edge coord).
+    """Create a "lookup table" from a histogram (data array with bin-edge coord).
 
     The lookup table can be used to map, e.g., time-stamps to corresponding values
     given by a time-series log.
 
-    :param func: Histogram defining the lookup table.
-    :param dim: Dimension along which the lookup occurs.
+    Parameters
+    ----------
+    func:
+        Histogram defining the lookup table.
+    dim:
+        Dimension along which the lookup occurs.
 
-    Examples:
+    Examples
+    --------
 
       >>> x = sc.linspace(dim='x', start=0.0, stop=1.0, num=4)
       >>> vals = sc.array(dims=['x'], values=[3, 2, 1])
@@ -46,12 +51,12 @@ def lookup(func: _cpp.DataArray, dim: str):
 
 
 class Bins:
-    """
-    Proxy for access to bin contents and operations on bins of a variable.
+    """Proxy for access to bin contents and operations on bins of a variable.
 
     This class is returned from the `bins` property of variables and should
     generally not be created directly.
     """
+
     def __init__(self, obj):
         self._obj = obj
 
@@ -127,23 +132,40 @@ class Bins:
     def sum(self) -> Union[_cpp.Variable, _cpp.DataArray]:
         """Sum of each bin.
 
-        :return: The sum of each of the input bins.
-        :seealso: :py:func:`scipp.sum` for summing non-bin data
+        Returns
+        -------
+        :
+            The sum of each of the input bins.
+
+        See Also
+        --------
+        scipp.sum:
+            For summing non-bin data.
         """
         return _call_cpp_func(_cpp.bins_sum, self._obj)
 
     def mean(self) -> Union[_cpp.Variable, _cpp.DataArray]:
-        """Mean of each bin.
+        """Arithmetic mean of each bin.
 
-        :return: The mean of each of the input bins.
-        :seealso: :py:func:`scipp.mean` for calculating the mean of non-bin data
+        Returns
+        -------
+        :
+            The mean of each of the input bins.
+
+        See Also
+        --------
+        scipp.mean:
+            For calculating the mean of non-bin data.
         """
         return _call_cpp_func(_cpp.bins_mean, self._obj)
 
     def size(self) -> Union[_cpp.Variable, _cpp.DataArray]:
         """Number of events or elements in a bin.
 
-        :return: The number of elements in each of the input bins.
+        Returns
+        -------
+        :
+            The number of elements in each of the input bins.
         """
         return _call_cpp_func(_cpp.bin_sizes, self._obj)
 
@@ -154,8 +176,15 @@ class Bins:
         This is a reduction operation similar to :py:func:`scipp.sum` but operates on
         binned data. Elements (bins) are concatenated along their internal dimension.
 
-        :param dim: Reduction dimension.
-        :return: All bins along `dim` concatenated into a single bin.
+        Parameters
+        ----------
+        dim:
+            Reduction dimension.
+
+        Returns
+        -------
+        :
+            All bins along `dim` concatenated into a single bin.
         """
         if dim is not None:
             return _call_cpp_func(_cpp.buckets.concatenate, self._obj, dim)
@@ -172,10 +201,22 @@ class Bins:
 
         The bins to concatenate are obtained element-wise from `self` and `other`.
 
-        :param other: Other input containing bins.
-        :param out: Optional output buffer.
-        :raises: If `other` is not binned data.
-        :return: The bins of the two inputs merged.
+        Parameters
+        ----------
+        other:
+            Other input containing bins.
+        out:
+            Optional output buffer.
+
+        Returns
+        -------
+        :
+            The bins of the two inputs merged.
+
+        Raises
+        ------
+        scipp.DTypeError
+            If `other` is not binned data.
         """
         if out is None:
             return _call_cpp_func(_cpp.buckets.concatenate, self._obj, other)
@@ -188,9 +229,8 @@ class Bins:
 
 
 class GroupbyBins:
-    """
-    Proxy for operations on bins of a groupby object
-    """
+    """Proxy for operations on bins of a groupby object."""
+
     def __init__(self, obj):
         self._obj = obj
 
@@ -223,9 +263,16 @@ def histogram(x: Union[_cpp.DataArray, _cpp.Dataset], *,
     """Create dense data by histogramming data along all dimension given by
     edges.
 
-    :return: DataArray / Dataset with values equal to the sum
-             of values in each given bin.
-    :seealso: :py:func:`scipp.bin` for binning data.
+    Returns
+    -------
+    :
+        DataArray / Dataset with values equal to the sum
+        of values in each given bin.
+
+    See Also
+    --------
+    scipp.bin:
+        For binning data.
     """
     return _call_cpp_func(_cpp.histogram, x, bins)
 
@@ -245,14 +292,28 @@ def bin(x: _cpp.DataArray,
     If the input is binned and certain bins are masked then changing the binning
     will apply the masks, i.e., masked bins are treated as empty.
 
-    :param x: Input data.
-    :param edges: Bin edges, one per dimension to bin in.
-    :param groups: Keys to group input by one per dimension to group in.
-    :param erase: Dimension labels to remove from output.
-    :return: Binned ``x``.
-    :seealso: :py:func:`scipp.histogram` for histogramming data,
-              :py:func:`scipp.bins` for creating binned data based on
-              explicitly given index ranges.
+    Parameters
+    ----------
+    x:
+        Input data.
+    edges:
+        Bin edges, one per dimension to bin in.
+    groups:
+        Keys to group input by one per dimension to group in.
+    erase:
+        Dimension labels to remove from output.
+
+    Returns
+    -------
+    :
+        Binned ``x``.
+
+    See Also
+    --------
+    scipp.histogram:
+        For histogramming data.
+    scipp.bins:
+        For creating binned data based on explicitly given index ranges.
     """
     if erase is None:
         erase = []
@@ -281,18 +342,30 @@ def bins(*,
     are given, the output has ``dims=[dim]`` and contains all non-range slices
     along that dimension.
 
-    :param begin: Optional begin indices of bins, used for slicing ``data``.
-                  If not provided each row of ``data`` is mapped to a different
-                  bin.
-    :param end: Optional end indices of bins, used for slicing ``data``. If not
-                provided this is assumed to be ``begin + 1``.
-    :param dim: Dimension of ``data`` that will be sliced to obtain data for
-                any given bin.
-    :param data: A variable, data array, or dataset containing combined data
-                 of all bins.
-    :return: Variable containing data in bins.
-    :seealso: :py:func:`scipp.bin` for creating DataArrays based on
-              binning of coord value instead of explicitly given index ranges.
+    Parameters
+    ----------
+    begin:
+        Optional begin indices of bins, used for slicing ``data``.
+        If not provided each row of ``data`` is mapped to a different bin.
+    end:
+        Optional end indices of bins, used for slicing ``data``. If not
+        provided this is assumed to be ``begin + 1``.
+    dim:
+        Dimension of ``data`` that will be sliced to obtain data for
+        any given bin.
+    data:
+        A variable, data array, or dataset containing combined data of all bins.
+
+    Returns
+    -------
+    :
+        Variable containing data in bins.
+
+    See Also
+    --------
+    scipp.bin:
+        For creating DataArrays based on binning of coord value
+        instead of explicitly given index ranges.
     """
     return _call_cpp_func(_cpp.bins, begin, end, dim, data)
 
@@ -304,9 +377,17 @@ def bins_like(x: VariableLike, fill_value: _cpp.Variable) -> _cpp.Variable:
     to those of ``x``. Each element of ``fill_value`` defines the values of all the bin
     elements of the corresponding bin. The output shares the bin indices of ``x``.
 
-    :param x: Binned variable or data array serving as prototype for bin sizes.
-    :param fill_value: Fill values to use for the bins
-    :return: Variable containing fill value in bins.
+    Parameters
+    ----------
+    x:
+        Binned variable or data array serving as prototype for bin sizes.
+    fill_value:
+        Fill values to use for the bins.
+
+    Returns
+    -------
+    :
+        Variable containing fill value in bins.
     """
 
     var = x

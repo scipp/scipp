@@ -12,6 +12,7 @@ Features
 * Added argument `max_rows` to :func:`scipp.table` `#2526 <https://github.com/scipp/scipp/pull/2526>`_.
 * Added support for converting scalars to builtin objects via :func:`int` and :func:`float` `#2529 <https://github.com/scipp/scipp/pull/2529>`_.
 * Reduced time of initial import of scipp by delaying imports of optional dependencies `#2535 <https://github.com/scipp/scipp/pull/2535>`_.
+* Added an ``update`` method to :class:`Coords`, :class:`Attrs`, :class:`Masks`, and :class:`Dataset`  `#2558 <https://github.com/scipp/scipp/pull/2558>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~

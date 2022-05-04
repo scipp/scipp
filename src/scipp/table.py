@@ -183,6 +183,7 @@ def table(scipp_obj: VariableLike, max_rows: Optional[int] = None):
 
 
 class TableViewer:
+
     def __init__(self, scipp_obj, max_rows: Optional[int]):
         # Delayed import
         self.widgets = __import__("ipywidgets")

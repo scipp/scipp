@@ -14,6 +14,7 @@ class PlotPanel1d(PlotPanel):
     displayed line, a functionality inspired by the Superplot in the Lamp
     software.
     """
+
     def __init__(self, data_names):
         super().__init__()
 

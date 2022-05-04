@@ -18,6 +18,7 @@ def plot2d(scipp_obj_dict, **kwargs):
     It uses Matplotlib's `imshow` to view 2d arrays are images, and implements
     a dynamic image resampling for better performance with large images.
     """
+
     def builder(*,
                 dims,
                 norm=None,

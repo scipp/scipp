@@ -1,0 +1,8 @@
+graphviz
+h5py
+matplotlib
+pandas
+pooch
+pythreejs
+scipy>=1.7.0
+xarray

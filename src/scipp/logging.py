@@ -51,6 +51,7 @@ def make_log_widget(**widget_kwargs):
 
         :seealso: :py:class:`scipp.logging.WidgetHandler`
         """
+
         def __init__(self, **kwargs):
             super().__init__(**kwargs)
             self._rows_str = ''
@@ -189,6 +190,7 @@ class WidgetHandler(logging.Handler):
     Strings are formatted to replace %s with the HTML repr and %r with a plain string
     repr using ``str(x)`` and ``repr(x)`` is inaccessible.
     """
+
     def __init__(self, level: int, widget):
         super().__init__(level)
         self.widget = widget

@@ -17,6 +17,7 @@ class CoordTable:
     Coords have an associated number of usages.
     When that number drops to 0, the coord is removed.
     """
+
     def __init__(self, rules: List[Rule], targets: Set[str], options: Options):
         self._coords = {}
         self._total_usages = _apply_keep_options(_count_usages(rules), rules, targets,
@@ -53,6 +54,7 @@ def _count_usages(rules: List[Rule]) -> Dict[str, int]:
 
 def _apply_keep_options(usages: Dict[str, int], rules: List[Rule], targets: Set[str],
                         options: Options) -> Dict[str, int]:
+
     def out_names(rule_type):
         yield from filter(lambda name: name not in targets,
                           rule_output_names(rules, rule_type))

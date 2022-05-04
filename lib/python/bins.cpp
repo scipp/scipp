@@ -82,7 +82,7 @@ template <class T> py::dict bins_constituents(const Variable &var) {
 template <class T>
 void bind_bins_map_view(py::module &m, const std::string &name) {
   py::class_<T> c(m, name.c_str());
-  bind_common_mutable_view_operators<T>(c);
+  bind_common_mutable_view_operators(c);
   bind_pop(c);
 }
 

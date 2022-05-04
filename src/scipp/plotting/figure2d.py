@@ -16,6 +16,7 @@ class PlotFigure2d(PlotFigure):
     """
     Class for 2 dimensional plots, based on Matplotlib's `imshow`.
     """
+
     def __init__(self,
                  ax=None,
                  cax=None,

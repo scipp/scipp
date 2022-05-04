@@ -37,7 +37,7 @@ void bind_helper_view(py::module &m, const std::string &name) {
           py::return_value_policy::move, py::keep_alive<0, 1>());
 }
 
-template <class Other, class T, class... Ignored>
+template <class T, class... Ignored>
 void bind_common_mutable_view_operators(pybind11::class_<T, Ignored...> &view) {
   view.def("__len__", &T::size)
       .def(
@@ -62,6 +62,59 @@ void bind_common_mutable_view_operators(pybind11::class_<T, Ignored...> &view) {
       .def("__contains__", [](const T &self, const std::string &key) {
         return self.contains(typename T::key_type{key});
       });
+}
+
+template <class D> auto cast_to_dict_key(const py::handle &obj) {
+  using key_type = typename D::key_type;
+  if constexpr (std::is_same_v<key_type, std::string>) {
+    return obj.cast<std::string>();
+  } else {
+    return key_type{obj.cast<std::string>()};
+  }
+}
+
+template <class D> auto cast_to_dict_value(const py::handle &obj) {
+  using val_type = typename D::mapped_type;
+  return obj.cast<val_type>();
+}
+
+template <class T, class... Ignored, class Set>
+void bind_dict_update(pybind11::class_<T, Ignored...> &view, Set &&set_item) {
+  view.def(
+      "update",
+      [set_item](T &self, const py::object &other, const py::kwargs &kwargs) {
+        // Piggyback on dict to implement argument handling.
+        py::dict args;
+        if (!other.is_none()) {
+          args.attr("update")(other, **kwargs);
+        } else {
+          // Cannot call dict.update(None, **kwargs) because dict.update
+          // expects either an iterable as the positional argument or nothing
+          // at all (nullptr). But we cannot express 'nothing' here.
+          // The best we can do it pass None, which does not work.
+          args.attr("update")(**kwargs);
+        }
+
+        for (const auto &[key, val] : args) {
+          set_item(self, cast_to_dict_key<T>(key), cast_to_dict_value<T>(val));
+        }
+      },
+      py::arg("other") = py::none(), py::pos_only(),
+      R"doc(Update items from dict-like or iterable.
+
+If ``other`` has a .keys() method, then update does:
+``for k in other.keys(): self[k] = other[k]``.
+
+If ``other`` is given but does not have a .keys() method, then update does:
+``for k, v in other: self[k] = v``.
+
+In either case, this is followed by:
+``for k in kwargs: self[k] = kwargs[k]``.
+
+See Also
+--------
+dict.update
+)doc");
 }
 
 template <class T, class... Ignored>
@@ -92,8 +145,10 @@ template <class T>
 void bind_mutable_view(py::module &m, const std::string &name,
                        const std::string &docs) {
   py::class_<T> view(m, name.c_str(), docs.c_str());
-  bind_common_mutable_view_operators<T>(view);
+  bind_common_mutable_view_operators(view);
   bind_inequality_to_operator<T>(view);
+  bind_dict_update(view, [](T &self, const std::string &key,
+                            const Variable &value) { self.set(key, value); });
   bind_pop(view);
   bind_is_edges(view);
   view.def(
@@ -124,8 +179,10 @@ template <class T>
 void bind_mutable_view_no_dim(py::module &m, const std::string &name,
                               const std::string &docs) {
   py::class_<T> view(m, name.c_str(), docs.c_str());
-  bind_common_mutable_view_operators<T>(view);
+  bind_common_mutable_view_operators(view);
   bind_inequality_to_operator<T>(view);
+  bind_dict_update(view, [](T &self, const units::Dim &key,
+                            const Variable &value) { self.set(key, value); });
   bind_pop(view);
   bind_is_edges(view);
   view.def(

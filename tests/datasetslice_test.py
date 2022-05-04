@@ -8,6 +8,7 @@ from .common import assert_export
 
 
 class TestDatasetSlice:
+
     def setup_method(self):
         var = sc.Variable(dims=['x'], values=np.arange(5, dtype=np.int64))
         self._d = sc.Dataset(data={'a': var, 'b': var}, coords={'x': var})

@@ -45,6 +45,7 @@ def _resample(array, mode: ResamplingMode, dim, edges):
 
 
 class ResamplingModel():
+
     def __init__(self, array, *, resolution=None, bounds=None):
         """
         Model over a data array providing unified resampling functionality.
@@ -244,6 +245,7 @@ class ResamplingModel():
 
 
 class ResamplingBinnedModel(ResamplingModel):
+
     def _make_array(self, array):
         return array
 
@@ -325,6 +327,7 @@ def _replace_edge_coords(array, dims, bounds, prefix):
 
 
 class ResamplingDenseModel(ResamplingModel):
+
     def _make_array(self, array):
         array, self._prefix = _with_edges(array)
         return array

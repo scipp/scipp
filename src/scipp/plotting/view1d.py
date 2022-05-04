@@ -28,6 +28,7 @@ class PlotView1d(PlotView):
     with the `PlotProfile` plot displayed below the `PlotFigure1d`.
 
     """
+
     def __init__(self, figure, formatters):
         super().__init__(figure=figure, formatters=formatters)
         self._axes = ['x']

@@ -49,3 +49,8 @@ VariableLike = _std_typing.Union[sc.Variable, sc.DataArray, sc.Dataset]
 
 #: dict-like object mapping dimension labels to Variables.
 MetaDataMap = _std_typing.MutableMapping[str, sc.Variable]
+
+# TypeVar for use in annotations.
+# Should be hidden in rendered documentation in favor of VariableLike.
+VariableLikeType = _std_typing.TypeVar('VariableLikeType', sc.Variable, sc.DataArray,
+                                       sc.Dataset)

@@ -31,6 +31,7 @@ class PlotView:
     `PlotView` also handles the communications with the `PlotController` that
     are to do with the `PlotProfile` plot displayed below the `PlotFigure`.
     """
+
     def __init__(self, figure, formatters):
         self._dims = None
         self._scale = None

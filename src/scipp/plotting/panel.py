@@ -10,6 +10,7 @@ class PlotPanel:
     Base class for providing additional widgets on top of the base dimension
     sliders and mask display control.
     """
+
     def __init__(self):
         self.container = ipw.VBox()
         self.controller = None

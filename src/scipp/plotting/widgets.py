@@ -12,6 +12,7 @@ class PlotWidgets:
     buttons to modify the currently displayed axes.
     It also provides buttons to hide/show masks.
     """
+
     def __init__(self, *, dims, formatters, ndim, dim_label_map, masks, sizes):
 
         import ipywidgets as ipw
@@ -173,6 +174,7 @@ class PlotWidgets:
         """
         Custom update for 2D grid of toggle buttons.
         """
+
         def _update(owner=None):
             if owner.button_style == "info":
                 return
@@ -224,6 +226,7 @@ class PlotWidgets:
         When the slice thickness is changed, we update the slider range and
         update the data in the slice.
         """
+
         def _update(change=None):
             self.update_slider_range(dim,
                                      change["new"],

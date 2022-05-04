@@ -245,5 +245,7 @@ linkcheck_ignore = [
     'user-guide/binned-data/binned-data.html',
     'user-guide/masking.html',
     'visualization/plotting-overview.html',
-    'user-guide/slicing.html'
+    'user-guide/slicing.html',
+    # Many links for PRs from our release notes. Slow and unlikely to cause issues.
+    'https://github.com/scipp/scipp/pull/[0-9]+',
 ]
