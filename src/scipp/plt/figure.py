@@ -9,7 +9,6 @@ from .line import Line
 from ..utils import name_with_unit
 from .view import View
 
-from functools import partial
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
 import numpy as np

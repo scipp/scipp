@@ -18,6 +18,7 @@ class Mesh:
     """
     Class for 2 dimensional plots.
     """
+
     def __init__(self,
                  ax,
                  data,
@@ -77,16 +78,16 @@ class Mesh:
                                                            name=""))
 
             # Add event that toggles the norm of the colorbar when clicked on
-            # TODO: change this to a double-click event once this is supported in jupyterlab
-            # see https://github.com/matplotlib/ipympl/pull/446
+            # TODO: change this to a double-click event once this is supported in
+            # jupyterlab, see https://github.com/matplotlib/ipympl/pull/446
             self._cbar.ax.set_picker(5)
             self._ax.figure.canvas.mpl_connect('pick_event', self.toggle_norm)
 
             if self._cax is None:
                 self._cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
-            # When we transpose, we remove the mesh and make a new one calling _make_mesh().
-            # To ensure this doesn't add a new colorbar every time we hit transpose, we save
-            # and re-use the colorbar axis.
+            # When we transpose, remove the mesh and make a new one with _make_mesh().
+            # To ensure this does not add a new colorbar every time we hit transpose,
+            # we save and re-use the colorbar axis.
             self._cax = self._cbar.ax
         self._mesh.set_array(None)
         self._set_norm()

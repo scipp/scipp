@@ -3,7 +3,7 @@
 
 from .widgets.widget import WidgetView
 
-from typing import Tuple, Iterable, Protocol, Tuple
+from typing import Tuple, Iterable
 from functools import partial
 
 
