@@ -1,17 +1,18 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
+from abc import ABC, abstractmethod
 
-class View:
+
+class View(ABC):
 
     def __init__(self):
         self._model_nodes = {}
 
     def add_model_node(self, node):
-        if node.parent_name not in self._model_nodes:
-            self._model_nodes[node.parent_name] = {}
-        self._model_nodes[node.parent_name][node.name] = node
+        self._model_nodes.setdefault(node.parent_name, {})[node.name] = node
 
+    @abstractmethod
     def notify(self, _):
         return
 

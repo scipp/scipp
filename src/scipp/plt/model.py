@@ -14,13 +14,9 @@ class Node:
         self.parent_name = None
         self.dependency = None
         self.func = func
-        self.views = []
-        if views is not None:
-            for view in views:
-                self.views.append(view)
+        self.views = list(views or [])
 
     def send_notification(self, message):
-        # print(f'hey there! from {self.name}: ', message)
         for view in self.views:
             view.notify({
                 "node_name": self.name,
@@ -36,7 +32,7 @@ class Node:
             node = node.dependency
         else:
             pipeline.append(node.func)
-        pipeline = list(pipeline[::-1])
+        pipeline = pipeline[::-1]
         data = pipeline[0]()
         for step in pipeline[1:]:
             data = step(data)
@@ -64,22 +60,21 @@ class Model:
     def items(self) -> Iterable[Tuple[str, Node]]:
         yield from self._nodes.items()
 
-    def children_of(self, name: str) -> Iterable[str]:
-        for node in self.values():
-            if node.dependency is not None:
-                if name == node.dependency.name:
-                    yield node
+    def _children_of(self, name: str) -> Iterable[str]:
+        for node in self.nodes():
+            if node.dependency is not None and name == node.dependency.name:
+                yield node
 
     def keys(self) -> Iterable[str]:
         yield from self._nodes.keys()
 
-    def values(self) -> Iterable[str]:
+    def nodes(self) -> Iterable[str]:
         yield from self._nodes.values()
 
     def insert(self, name: str, node: Node, after: str):
         assert after in self.keys()
         self[name] = node
-        for child in self.children_of(after):
+        for child in self._children_of(after):
             child.dependency = node
         node.dependency = self[after]
 
@@ -93,7 +88,7 @@ class Model:
         while depth_first_stack:
             node = depth_first_stack.pop()
             self[node].send_notification('dummy message')
-            for child in self.children_of(node):
+            for child in self._children_of(node):
                 depth_first_stack.append(child.name)
 
     def add_view(self, key, view):
@@ -104,8 +99,8 @@ class Model:
 
     def end(self) -> Node:
         ends = []
-        for node in self.values():
-            if len(tuple(self.children_of(node.name))) == 0:
+        for node in self.nodes():
+            if len(tuple(self._children_of(node.name))) == 0:
                 ends.append(node)
         if len(ends) != 1:
             raise RuntimeError(f'No unique end node: {ends}')
@@ -127,7 +122,7 @@ class Model:
 
     def get_all_views(self):
         views = []
-        for node in self.values():
+        for node in self.nodes():
             for view in node.views:
                 views.append(view)
         return views

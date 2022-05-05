@@ -36,6 +36,7 @@ class WidgetView(View):
 
     def add_model_node(self, node):
         super().add_model_node(node)
+        # self.add_notification()
         self._base_func = node.func
         self._update_node_func(node)
 
@@ -44,3 +45,6 @@ class WidgetView(View):
             widget._to_widget() if hasattr(widget, "_to_widget") else widget
             for widget in self._widgets.values()
         ])
+
+    def notify(self, _):
+        return
