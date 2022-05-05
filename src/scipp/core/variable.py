@@ -260,7 +260,7 @@ def vectors(*,
 
 
 def array(*,
-          dims: _Iterable,
+          dims: _Iterable[str],
           values: array_like,
           variances: Optional[array_like] = None,
           unit: Union[Unit, str, None] = default_unit,
