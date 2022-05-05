@@ -12,13 +12,13 @@ matplotlib.use('Agg')
 
 def test_plot_variable():
     v = sc.arange('x', 10.0, unit='m')
-    v.plot().close()
+    v.plot()
 
 
 def test_plot_data_array():
     da = sc.DataArray(data=sc.Variable(dims=['x'], values=np.random.random(10)),
                       coords={'x': sc.arange('x', 10.0, unit='m')})
-    da.plot().close()
+    da.plot()
 
 
 def test_plot_dataset():
@@ -27,7 +27,7 @@ def test_plot_dataset():
     ds['a'] = sc.Variable(dims=['x'], values=np.random.random(N), unit=sc.units.K)
     ds['b'] = sc.Variable(dims=['x'], values=np.random.random(N), unit=sc.units.K)
     ds.coords['x'] = sc.arange('x', float(N), unit='m')
-    ds.plot().close()
+    ds.plot()
 
 
 def test_plot_data_array_with_kwargs():
@@ -37,4 +37,4 @@ def test_plot_data_array_with_kwargs():
                           'x': sc.arange('x', 5.0, unit='m'),
                           'y': sc.arange('y', 10.0, unit='m')
                       })
-    da.plot(cmap="magma", norm="log").close()
+    da.plot(cmap="magma", norm="log")

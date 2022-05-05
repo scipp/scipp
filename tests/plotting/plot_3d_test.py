@@ -6,7 +6,6 @@
 import numpy as np
 import scipp as sc
 from ..factory import make_dense_data_array, make_binned_data_array
-from .plot_helper import plot
 import matplotlib
 
 import pytest
@@ -46,36 +45,36 @@ def make_data_array_with_position_vectors():
 
 def test_plot_projection_3d():
     da = _with_fake_pos(ndim=3)
-    plot(da, positions='pos', projection="3d")
-    plot(da, positions='pos', projection="3d", resampling_mode='sum')
-    plot(da, positions='pos', projection="3d", resampling_mode='mean')
+    sc.plot(da, positions='pos', projection="3d")
+    sc.plot(da, positions='pos', projection="3d", resampling_mode='sum')
+    sc.plot(da, positions='pos', projection="3d", resampling_mode='mean')
 
 
 def test_plot_projection_3d_log_norm():
-    plot(_with_fake_pos(ndim=3), positions='pos', projection="3d", norm='log')
+    sc.plot(_with_fake_pos(ndim=3), positions='pos', projection="3d", norm='log')
 
 
 def test_plot_projection_3d_dataset():
-    plot(_with_fake_pos(ndim=3), positions='pos', projection="3d")
+    sc.plot(_with_fake_pos(ndim=3), positions='pos', projection="3d")
 
 
 def test_plot_projection_3d_with_labels():
-    plot(_with_fake_pos(ndim=3, labels=True),
-         positions='pos',
-         projection="3d",
-         labels={'x': "lab"})
+    sc.plot(_with_fake_pos(ndim=3, labels=True),
+            positions='pos',
+            projection="3d",
+            labels={'x': "lab"})
 
 
 def test_plot_projection_3d_with_masks():
-    plot(_with_fake_pos(ndim=3, masks=True), positions='pos', projection="3d")
+    sc.plot(_with_fake_pos(ndim=3, masks=True), positions='pos', projection="3d")
 
 
 def test_plot_projection_3d_with_vectors():
-    plot(make_data_array_with_position_vectors(), projection="3d", positions="xyz")
+    sc.plot(make_data_array_with_position_vectors(), projection="3d", positions="xyz")
 
 
 def test_plot_projection_3d_with_vectors_non_dim_coord():
-    plot(make_data_array_with_position_vectors(), projection="3d", positions="pos")
+    sc.plot(make_data_array_with_position_vectors(), projection="3d", positions="pos")
 
 
 def test_plot_variable_3d():
@@ -84,7 +83,7 @@ def test_plot_variable_3d():
                       values=np.random.rand(N, N, N),
                       unit=sc.units.m)
     positions = sc.vectors(dims=v3d.dims, values=np.random.rand(N, N, N, 3))
-    plot(v3d, positions=positions, projection="3d")
+    sc.plot(v3d, positions=positions, projection="3d")
 
 
 def test_plot_4d_with_masks_projection_3d():
@@ -98,17 +97,17 @@ def test_plot_4d_with_masks_projection_3d():
     da.coords['pos'] = sc.geometry.position(sc.arange(dim='pack', start=0., stop=2),
                                             sc.arange(dim='tube', start=0., stop=8),
                                             sc.arange(dim='straw', start=0., stop=7))
-    plot(da, positions='pos', projection="3d")
+    sc.plot(da, positions='pos', projection="3d")
 
 
 def test_plot_customized_axes():
     da = _with_fake_pos(ndim=3)
-    plot(da,
-         positions='pos',
-         projection="3d",
-         xlabel="MyXlabel",
-         ylabel="MyYlabel",
-         zlabel="MyZlabel")
+    sc.plot(da,
+            positions='pos',
+            projection="3d",
+            xlabel="MyXlabel",
+            ylabel="MyYlabel",
+            zlabel="MyZlabel")
 
 
 def test_plot_3d_with_2d_position_coordinate():
@@ -130,15 +129,15 @@ def test_plot_3d_with_2d_position_coordinate():
             sc.arange('t', nt + 1, dtype=np.float64)
         })
 
-    plot(da, projection="3d", positions="pos")
+    sc.plot(da, projection="3d", positions="pos")
 
 
 def test_plot_3d_binned_data():
     da = make_binned_data_array(ndim=1)
     pos = sc.vectors(dims=da.dims, values=np.random.rand(da.sizes[da.dims[0]], 3))
-    plot(da, projection='3d', positions=pos)
-    plot(da, projection='3d', positions=pos, resampling_mode='sum')
-    plot(da, projection='3d', positions=pos, resampling_mode='mean')
+    sc.plot(da, projection='3d', positions=pos)
+    sc.plot(da, projection='3d', positions=pos, resampling_mode='sum')
+    sc.plot(da, projection='3d', positions=pos, resampling_mode='mean')
 
 
 def test_plot_redraw():
@@ -149,59 +148,58 @@ def test_plot_redraw():
     p.redraw()
     after = p.view.figure.points_geometry.attributes["color"].array
     assert np.any(before != after)
-    p.close()
 
 
 def test_plot_projection_3d_with_camera():
     da = make_data_array_with_position_vectors()
     da.coords['xyz'].unit = 'm'
-    plot(da,
-         projection="3d",
-         positions="xyz",
-         camera={
-             'position': sc.vector(value=[150, 10, 10], unit='m'),
-             'look_at': sc.vector(value=[0, 0, 30], unit='m')
-         })
-    plot(da,
-         projection="3d",
-         positions="xyz",
-         camera={'position': sc.vector(value=[150, 10, 10], unit='m')})
-    plot(da,
-         projection="3d",
-         positions="xyz",
-         camera={'look_at': sc.vector(value=[0, 0, 30], unit='m')})
+    sc.plot(da,
+            projection="3d",
+            positions="xyz",
+            camera={
+                'position': sc.vector(value=[150, 10, 10], unit='m'),
+                'look_at': sc.vector(value=[0, 0, 30], unit='m')
+            })
+    sc.plot(da,
+            projection="3d",
+            positions="xyz",
+            camera={'position': sc.vector(value=[150, 10, 10], unit='m')})
+    sc.plot(da,
+            projection="3d",
+            positions="xyz",
+            camera={'look_at': sc.vector(value=[0, 0, 30], unit='m')})
 
 
 def test_plot_projection_3d_with_camera_supports_compatible_units():
     da = make_data_array_with_position_vectors()
     da.coords['xyz'].unit = 'm'
-    plot(da,
-         projection="3d",
-         positions="xyz",
-         camera={
-             'position': sc.vector(value=[150, 10, 10], unit='mm'),
-             'look_at': sc.vector(value=[0, 0, 30], unit='mm')
-         })
-    plot(da,
-         projection="3d",
-         positions="xyz",
-         camera={'position': sc.vector(value=[150, 10, 10], unit='mm')})
-    plot(da,
-         projection="3d",
-         positions="xyz",
-         camera={'look_at': sc.vector(value=[0, 0, 30], unit='mm')})
+    sc.plot(da,
+            projection="3d",
+            positions="xyz",
+            camera={
+                'position': sc.vector(value=[150, 10, 10], unit='mm'),
+                'look_at': sc.vector(value=[0, 0, 30], unit='mm')
+            })
+    sc.plot(da,
+            projection="3d",
+            positions="xyz",
+            camera={'position': sc.vector(value=[150, 10, 10], unit='mm')})
+    sc.plot(da,
+            projection="3d",
+            positions="xyz",
+            camera={'look_at': sc.vector(value=[0, 0, 30], unit='mm')})
 
 
 def test_plot_projection_3d_with_camera_raises_if_camera_param_units_wrong():
     da = make_data_array_with_position_vectors()
     da.coords['xyz'].unit = 'm'
     with pytest.raises(sc.UnitError):
-        plot(da,
-             projection="3d",
-             positions="xyz",
-             camera={'position': sc.vector(value=[150, 10, 10], unit='s')})
+        sc.plot(da,
+                projection="3d",
+                positions="xyz",
+                camera={'position': sc.vector(value=[150, 10, 10], unit='s')})
     with pytest.raises(sc.UnitError):
-        plot(da,
-             projection="3d",
-             positions="xyz",
-             camera={'look_at': sc.vector(value=[0, 0, 30], unit='s')})
+        sc.plot(da,
+                projection="3d",
+                positions="xyz",
+                camera={'look_at': sc.vector(value=[0, 0, 30], unit='s')})

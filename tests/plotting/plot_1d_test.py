@@ -6,7 +6,6 @@
 import numpy as np
 import scipp as sc
 from ..factory import make_dense_data_array, make_dense_dataset, make_binned_data_array
-from .plot_helper import plot
 import matplotlib
 
 matplotlib.use('Agg')
@@ -18,105 +17,105 @@ matplotlib.use('Agg')
 
 def test_plot_1d():
     da = make_dense_data_array(ndim=1)
-    plot(da)
-    plot(da, resampling_mode='sum')
-    plot(da, resampling_mode='mean')
+    sc.plot(da)
+    sc.plot(da, resampling_mode='sum')
+    sc.plot(da, resampling_mode='mean')
 
 
 def test_plot_1d_no_unit():
     da = make_dense_data_array(ndim=1)
     da.unit = None
-    plot(da)
-    plot(da, resampling_mode='sum')
-    plot(da, resampling_mode='mean')
+    sc.plot(da)
+    sc.plot(da, resampling_mode='sum')
+    sc.plot(da, resampling_mode='mean')
 
 
 def test_plot_1d_with_variances():
-    plot(make_dense_data_array(ndim=1, with_variance=True))
+    sc.plot(make_dense_data_array(ndim=1, with_variance=True))
 
 
 def test_plot_1d_bin_edges():
     da = make_dense_data_array(ndim=1, binedges=True)
-    plot(da)
-    plot(da, resampling_mode='sum')
-    plot(da, resampling_mode='mean')
+    sc.plot(da)
+    sc.plot(da, resampling_mode='sum')
+    sc.plot(da, resampling_mode='mean')
 
 
 def test_plot_1d_with_labels():
-    plot(make_dense_data_array(ndim=1, labels=True), labels={"xx": "lab"})
+    sc.plot(make_dense_data_array(ndim=1, labels=True), labels={"xx": "lab"})
 
 
 def test_plot_1d_with_datetime_labels():
     da = make_dense_data_array(ndim=1)
     da.coords['time'] = sc.epoch(unit='ns') + sc.arange('xx', da.sizes['xx'], unit='ns')
-    plot(da, labels={"xx": "time"})
+    sc.plot(da, labels={"xx": "time"})
 
 
 def test_plot_1d_with_attrs():
-    plot(make_dense_data_array(ndim=1, attrs=True), labels={"xx": "attr"})
+    sc.plot(make_dense_data_array(ndim=1, attrs=True), labels={"xx": "attr"})
 
 
 def test_plot_1d_log_axes():
     da = make_dense_data_array(ndim=1)
     da = sc.abs(da) + 1.0 * sc.units.counts
-    plot(da, scale={'x': 'log'})
-    plot(da, norm='log')
-    plot(da, norm='log', scale={'x': 'log'})
-    plot(da, norm='log', scale={'x': 'log'}, resampling_mode='sum')
-    plot(da, norm='log', scale={'x': 'log'}, resampling_mode='mean')
+    sc.plot(da, scale={'x': 'log'})
+    sc.plot(da, norm='log')
+    sc.plot(da, norm='log', scale={'x': 'log'})
+    sc.plot(da, norm='log', scale={'x': 'log'}, resampling_mode='sum')
+    sc.plot(da, norm='log', scale={'x': 'log'}, resampling_mode='mean')
 
 
 def test_plot_1d_bin_edges_with_variances():
-    plot(make_dense_data_array(ndim=1, with_variance=True, binedges=True))
+    sc.plot(make_dense_data_array(ndim=1, with_variance=True, binedges=True))
 
 
 def test_plot_1d_two_separate_entries():
     ds = make_dense_dataset(ndim=1)
     ds['b'].unit = 'kg'
-    plot(ds)
+    sc.plot(ds)
 
 
 def test_plot_1d_two_entries_on_same_plot():
     ds = make_dense_dataset(ndim=1)
-    plot(ds)
+    sc.plot(ds)
 
 
 def test_plot_1d_two_entries_hide_variances():
     ds = make_dense_dataset(ndim=1, with_variance=True)
     ds['b'].data.variances = None
-    plot(ds, errorbars=False)
+    sc.plot(ds, errorbars=False)
     # When variances are not present, the plot does not fail, is silently does
     # not show variances
-    plot(ds, errorbars={"a": False, "b": True})
+    sc.plot(ds, errorbars={"a": False, "b": True})
 
 
 def test_plot_1d_log_axes_two_entries_zero_data():
     a = sc.linspace(dim='xx', unit='K', start=1, stop=2, num=4)
     b = sc.zeros_like(a)  # zero data triggers special branch in limit finding
-    plot({'a': a, 'b': b}, norm='log')
+    sc.plot({'a': a, 'b': b}, norm='log')
 
 
 def test_plot_1d_with_masks():
-    plot(make_dense_data_array(ndim=1, masks=True))
+    sc.plot(make_dense_data_array(ndim=1, masks=True))
 
 
 def test_plot_collapse():
     da = make_dense_data_array(ndim=2)
-    plot(sc.collapse(da['yy', :10], keep='xx'))
+    sc.plot(sc.collapse(da['yy', :10], keep='xx'))
 
 
 def test_plot_sliceviewer_with_1d_projection():
     da = make_dense_data_array(ndim=3)
-    plot(da, projection="1d")
-    plot(da, projection="1d", resampling_mode='sum')
-    plot(da, projection="1d", resampling_mode='mean')
+    sc.plot(da, projection="1d")
+    sc.plot(da, projection="1d", resampling_mode='sum')
+    sc.plot(da, projection="1d", resampling_mode='mean')
 
 
 def test_plot_sliceviewer_with_1d_projection_with_nans():
     da = make_dense_data_array(ndim=3, binedges=True, with_variance=True)
     da.values = np.where(da.values < 0.0, np.nan, da.values)
     da.variances = np.where(da.values < 0.2, np.nan, da.variances)
-    plot(da, projection='1d')
+    sc.plot(da, projection='1d')
 
     # TODO: moving the sliders is disabled for now, because we are not in a
     # Jupyter backend and once the plot has returned, the widgets no longer
@@ -144,29 +143,29 @@ def test_plot_projection_1d_two_entries_different_dims():
 
 
 def test_plot_variable_1d():
-    plot(sc.arange('xx', 50., unit='counts'))
+    sc.plot(sc.arange('xx', 50., unit='counts'))
 
 
 def test_plot_dict_of_variables_1d():
     v1 = sc.arange('xx', 50.0, unit='s')
     v2 = 5.0 * v1
-    plot({'v1': v1, 'v2': v2})
+    sc.plot({'v1': v1, 'v2': v2})
 
 
 def test_plot_ndarray_1d():
-    plot(np.random.random(50))
+    sc.plot(np.random.random(50))
 
 
 def test_plot_dict_of_ndarrays_1d():
-    plot({'a': np.arange(20), 'b': np.random.random(50)})
+    sc.plot({'a': np.arange(20), 'b': np.random.random(50)})
 
 
 def test_plot_from_dict_variable_1d():
-    plot({"dims": ['adim'], "values": np.random.random(20)})
+    sc.plot({"dims": ['adim'], "values": np.random.random(20)})
 
 
 def test_plot_from_dict_data_array_1d():
-    plot({
+    sc.plot({
         "data": {
             "dims": ["adim"],
             "values": np.random.random(20)
@@ -182,7 +181,7 @@ def test_plot_from_dict_data_array_1d():
 
 def test_plot_dataset_view():
     ds = make_dense_dataset(ndim=2)
-    plot(ds['xx', 0])
+    sc.plot(ds['xx', 0])
 
 
 def test_plot_vector_axis_labels_1d():
@@ -196,7 +195,7 @@ def test_plot_vector_axis_labels_1d():
                                      values=np.random.random([N, 3]),
                                      unit=sc.units.m)
                       })
-    plot(da)
+    sc.plot(da)
 
 
 def test_plot_string_axis_labels_1d():
@@ -211,7 +210,7 @@ def test_plot_string_axis_labels_1d():
                               values=["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"],
                               unit='m')
                       })
-    plot(da)
+    sc.plot(da)
 
 
 def test_plot_string_axis_labels_1d_short():
@@ -225,7 +224,7 @@ def test_plot_string_axis_labels_1d_short():
                                       values=["a", "b", "c", "d", "e"],
                                       unit='m')
                       })
-    plot(da)
+    sc.plot(da)
 
 
 def test_plot_with_vector_labels():
@@ -241,7 +240,7 @@ def test_plot_with_vector_labels():
                                      values=np.random.random([N, 3]),
                                      unit='m')
                       })
-    plot(da, labels={'xx': 'labs'})
+    sc.plot(da, labels={'xx': 'labs'})
 
 
 def test_plot_vector_axis_with_labels():
@@ -257,12 +256,12 @@ def test_plot_vector_axis_with_labels():
                                      values=np.random.random([N, 3]),
                                      unit='m')
                       })
-    plot(da)
+    sc.plot(da)
 
 
 def test_plot_customized_mpl_axes():
     da = make_dense_data_array(ndim=1)
-    plot(da, title="MyTitle", xlabel="MyXlabel", ylabel="MyYlabel")
+    sc.plot(da, title="MyTitle", xlabel="MyXlabel", ylabel="MyYlabel")
 
 
 def test_plot_access_ax_and_fig():
@@ -285,13 +284,13 @@ def test_plot_access_ax_and_fig_two_entries():
 def test_plot_with_integer_coord():
     da = make_dense_data_array(ndim=1)
     da.coords['xx'] = sc.arange('xx', 50, unit='m')
-    plot(da)
+    sc.plot(da)
 
 
 def test_plot_with_integer_coord_binedges():
     da = make_dense_data_array(ndim=1, binedges=True)
     da.coords['xx'] = sc.arange('xx', 51, unit='m')
-    plot(da)
+    sc.plot(da)
 
 
 def test_plot_1d_datetime():
@@ -328,14 +327,14 @@ def test_plot_1d_datetime_with_labels():
 
 def test_plot_legend():
     da = make_dense_data_array(ndim=1)
-    plot(da, legend=False)
-    plot(da, legend={"show": False})
-    plot(da, legend={"loc": 5})
-    plot(da, legend={"show": True, "loc": 4})
+    sc.plot(da, legend=False)
+    sc.plot(da, legend={"show": False})
+    sc.plot(da, legend={"loc": 5})
+    sc.plot(da, legend={"show": True, "loc": 4})
 
 
 def test_plot_1d_with_grid():
-    plot(make_dense_data_array(ndim=1), grid=True)
+    sc.plot(make_dense_data_array(ndim=1), grid=True)
 
 
 def test_plot_redraw():
@@ -345,7 +344,6 @@ def test_plot_redraw():
     da *= 5.0
     p.redraw()
     assert p.view.figure._lines[''].data.get_ydata()[2] == 50.0 * np.sin(2.0)
-    p.close()
 
 
 def test_plot_redraw_int64():
@@ -355,16 +353,15 @@ def test_plot_redraw_int64():
     da *= 5
     p.redraw()
     assert p.view.figure._lines[''].data.get_ydata()[2] == int(50.0 * np.sin(2.0))
-    p.close()
 
 
 def test_scale_arg_subplots_independent_dims():
     d = sc.Dataset()
     d['a'] = sc.DataArray(sc.arange('x', 10), coords={'x': sc.arange('x', 10)})
     d['b'] = sc.DataArray(sc.arange('y', 5), coords={'y': sc.arange('y', 5)})
-    d.plot(scale={'x': 'log'}).close()
+    d.plot(scale={'x': 'log'})
 
 
 def test_plot_binned_with_mask():
     da = make_binned_data_array(ndim=1, masks=True)
-    da.plot().close()
+    da.plot()
