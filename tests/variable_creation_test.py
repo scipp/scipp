@@ -397,6 +397,27 @@ def test_linspace_none_unit():
     assert sc.linspace('x', 1.2, 103., 51, unit=None).unit is None
 
 
+def test_linspace_with_variables():
+    start = sc.scalar(1, unit='m')
+    stop = sc.scalar(3, unit='m')
+    assert sc.identical(sc.linspace('x', start, stop, 3),
+                        sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='m'))
+
+
+def test_linspace_with_variables_set_unit():
+    start = sc.scalar(1, unit='m')
+    stop = sc.scalar(3000, unit='mm')
+    assert sc.identical(sc.linspace('x', start, stop, 3, unit='m'),
+                        sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='m'))
+
+
+def test_linspace_with_variables_num_cannot_be_variable():
+    start = sc.scalar(1)
+    stop = sc.scalar(3)
+    with pytest.raises(TypeError):
+        sc.linspace('x', start, stop, sc.scalar(3))  # type: ignore
+
+
 def test_logspace():
     values = np.logspace(2.0, 3.0, num=4)
     var = sc.logspace('y', 2.0, 3.0, num=4, unit='s')

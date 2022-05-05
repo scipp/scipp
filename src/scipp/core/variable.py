@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Iterable as _Iterable
-from typing import Any, Sequence, Union, Optional
+from typing import Any, Optional, Sequence, TypeVar, Union
 
 import numpy as _np
 from numpy.typing import ArrayLike as array_like
@@ -17,6 +17,8 @@ from .cpp_classes import DType, Unit, Variable
 from ..units import default_unit
 from ._sizes import _parse_dims_shape_sizes
 from ..typing import DTypeLike
+
+NumberOrVar = TypeVar('NumberOrVar', Union[int, float], Variable)
 
 
 def scalar(value: Any,
@@ -288,9 +290,39 @@ def array(*,
                          dtype=dtype)
 
 
+# Assumes that all arguments are Variable or None.
+def _ensure_same_unit(*, unit, args: dict):
+    if unit == default_unit:
+        units = {key: val.unit for key, val in args.items() if val is not None}
+        if len(set(units.values())) != 1:
+            raise _cpp.UnitError(
+                f'All units of the following arguments must be equal: {units}. '
+                'You can specify a unit explicitly with the `unit` argument.')
+        unit = next(iter(units.values()))
+    return {
+        key: _cpp.to_unit(val, unit, copy=False).value if val is not None else None
+        for key, val in args.items()
+    }, unit
+
+
+# Process arguments of arange, linspace, etc and return them as plain numbers or None.
+def _normalize_range_args(*, unit, **kwargs):
+    is_var = {
+        key: isinstance(val, _cpp.Variable)
+        for key, val in kwargs.items() if val is not None
+    }
+    if any(is_var.values()):
+        if not all(is_var.values()):
+            arg_types = {key: type(val) for key, val in kwargs.items()}
+            raise TypeError('Either all of the following arguments or none have to '
+                            f'be variables: {arg_types}')
+        return _ensure_same_unit(unit=unit, args=kwargs)
+    return kwargs, unit
+
+
 def linspace(dim: str,
-             start: Union[int, float],
-             stop: Union[int, float],
+             start: NumberOrVar,
+             stop: NumberOrVar,
              num: int,
              *,
              endpoint: bool = True,
@@ -312,8 +344,9 @@ def linspace(dim: str,
     :seealso: :py:func:`scipp.geomspace` :py:func:`scipp.logspace`
               :py:func:`scipp.arange`
     """
+    range_args, unit = _normalize_range_args(unit=unit, start=start, stop=stop)
     return array(dims=[dim],
-                 values=_np.linspace(start, stop, num, endpoint=endpoint),
+                 values=_np.linspace(**range_args, num=num, endpoint=endpoint),
                  unit=unit,
                  dtype=dtype)
 
@@ -386,36 +419,10 @@ def logspace(dim: str,
                  dtype=dtype)
 
 
-def _normalize_args(*, unit, **kwargs):
-    args = {**kwargs}
-    is_var = {
-        key: isinstance(val, _cpp.Variable)
-        for key, val in args.items() if val is not None
-    }
-    if any(is_var.values()):
-        if not all(is_var.values()):
-            arg_types = {key: type(val) for key, val in args.items()}
-            raise TypeError('Either arguments all or none have to be variables, '
-                            f'got types {arg_types}')
-        if unit == default_unit:
-            units = {key: val.unit for key, val in args.items() if val is not None}
-            if len(set(units.values())) != 1:
-                raise _cpp.UnitError(
-                    f'All units must be equal, got {units}. '
-                    'You can specify a unit explicitly with the `unit` argument.')
-            unit = next(iter(units.values()))
-        args = {
-            key: _cpp.to_unit(val, unit, copy=False).value if val is not None else None
-            for key, val in args.items()
-        }
-
-    return args, unit
-
-
 def arange(dim: str,
-           start: Union[int, float, _np.datetime64],
-           stop: Union[int, float, _np.datetime64] = None,
-           step: Union[int, float] = None,
+           start: Union[NumberOrVar, _np.datetime64],
+           stop: Optional[Union[NumberOrVar, _np.datetime64]] = None,
+           step: Optional[NumberOrVar] = None,
            *,
            unit: Union[Unit, str, None] = default_unit,
            dtype: Optional[DTypeLike] = None) -> Variable:
@@ -437,7 +444,10 @@ def arange(dim: str,
     :seealso: :py:func:`scipp.linspace` :py:func:`scipp.geomspace`
               :py:func:`scipp.logspace`
     """
-    range_args, unit = _normalize_args(unit=unit, start=start, stop=stop, step=step)
+    range_args, unit = _normalize_range_args(unit=unit,
+                                             start=start,
+                                             stop=stop,
+                                             step=step)
     return array(dims=[dim], values=_np.arange(**range_args), unit=unit, dtype=dtype)
 
 
