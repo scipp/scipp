@@ -85,7 +85,7 @@ def test_index_unit_is_none():
 
 def test_index_raises_if_unit_given():
     with pytest.raises(TypeError):
-        sc.index(5, unit='')
+        sc.index(5, unit='')  # type: ignore
 
 
 def test_zeros_creates_variable_with_correct_dims_and_shape():
@@ -422,11 +422,11 @@ def test_arange():
     assert sc.identical(var, expected)
 
 
-def test_arange_with_variables():
+@pytest.mark.parametrize('unit', ('one', sc.units.default_unit))
+def test_arange_with_variables(unit):
     start = sc.scalar(1)
     stop = sc.scalar(4)
     step = sc.scalar(1)
-    unit = 'one'
     assert sc.identical(sc.arange('x', start, stop, step, unit=unit),
                         sc.array(dims=['x'], values=[1, 2, 3], unit='one'))
     assert sc.identical(sc.arange('x', start, stop, unit=unit),
@@ -434,12 +434,30 @@ def test_arange_with_variables():
     assert sc.identical(sc.arange('x', stop, unit=unit),
                         sc.array(dims=['x'], values=[0, 1, 2, 3], unit='one'))
 
+
+def test_arange_with_variables_uses_units_of_args():
+    start = sc.scalar(10.0, unit='s')
+    stop = sc.scalar(33.0, unit='s')
+    step = sc.scalar(10.0, unit='s')
     assert sc.identical(sc.arange('x', start, stop, step),
-                        sc.array(dims=['x'], values=[1, 2, 3], unit='one'))
-    assert sc.identical(sc.arange('x', start, stop),
-                        sc.array(dims=['x'], values=[1, 2, 3], unit='one'))
+                        sc.array(dims=['x'], values=[10.0, 20.0, 30.0], unit='s'))
+    assert sc.identical(
+        sc.arange('x', start, stop),
+        sc.array(dims=['x'], values=np.arange(10.0, 33.0, 1.0), unit='s'))
     assert sc.identical(sc.arange('x', stop),
-                        sc.array(dims=['x'], values=[0, 1, 2, 3], unit='one'))
+                        sc.array(dims=['x'], values=np.arange(33.0), unit='s'))
+
+
+def test_arange_with_variables_without_unit_arg_requires_same_unit():
+    start = sc.scalar(1, unit='m')
+    stop = sc.scalar(4, unit='m')
+    step = sc.scalar(1, unit='m')
+    with pytest.raises(sc.UnitError):
+        sc.arange('x', start, stop, sc.scalar(500, unit='mm'))
+    with pytest.raises(sc.UnitError):
+        sc.arange('x', start, sc.scalar(4000, unit='mm'), step)
+    with pytest.raises(sc.UnitError):
+        sc.arange('x', sc.scalar(0.001, unit='km'), stop, step)
 
 
 def test_arange_with_variables_set_unit():
@@ -449,14 +467,36 @@ def test_arange_with_variables_set_unit():
     unit = 'm'
     assert sc.identical(sc.arange('x', start, stop, step, unit=unit),
                         sc.array(dims=['x'], values=[1, 2, 3], unit='m'))
+    assert sc.identical(sc.arange('x', start, stop, unit=unit),
+                        sc.array(dims=['x'], values=[1, 2, 3], unit='m'))
+
     assert sc.identical(sc.arange('x', start, stop, step, unit='mm'),
                         sc.array(dims=['x'], values=[1000, 2000, 3000], unit='mm'))
+    assert sc.identical(sc.arange('x', start, stop, unit='cm'),
+                        sc.array(dims=['x'], values=np.arange(100, 400, 1), unit='cm'))
+
     assert sc.identical(
         sc.arange('x', start, stop, sc.scalar(500, unit='mm'), unit='mm'),
         sc.array(dims=['x'], values=[1000, 1500, 2000, 2500, 3000, 3500], unit='mm'))
+    assert sc.identical(
+        sc.arange('x', start, stop, sc.scalar(500.0, unit='mm'), unit='m'),
+        sc.array(dims=['x'], values=[1, 1.5, 2, 2.5, 3, 3.5], unit='m'))
+    # All args are integers -> truncates step.
+    assert sc.identical(
+        sc.arange('x', start, stop, sc.scalar(500, unit='mm'), unit='m'),
+        sc.array(dims=['x'], values=[1, 2, 3], unit='m'))
 
+
+def test_arange_with_variables_set_unit_must_be_convertible():
+    start = sc.scalar(1, unit='m')
+    stop = sc.scalar(4, unit='m')
+    step = sc.scalar(1, unit='m')
     with pytest.raises(sc.UnitError):
-        sc.arange('x', start, stop, sc.scalar(500, unit='mm'))
+        sc.arange('x', start, stop, step, unit='kg')
+    with pytest.raises(sc.UnitError):
+        sc.arange('x', start, stop, unit='kg')
+    with pytest.raises(sc.UnitError):
+        sc.arange('x', stop, unit='kg')
 
 
 def test_arange_with_variables_mixed_types_not_allowed():
@@ -465,9 +505,9 @@ def test_arange_with_variables_mixed_types_not_allowed():
     step = sc.scalar(1, unit='m')
     unit = 'm'
     with pytest.raises(TypeError):
-        sc.arange('x', start, stop, step)
+        sc.arange('x', start, stop, step)  # type: ignore
     with pytest.raises(TypeError):
-        sc.arange('x', start, stop, step, unit=unit)
+        sc.arange('x', start, stop, step, unit=unit)  # type: ignore
 
 
 def test_arange_with_variables_requires_scalar():
