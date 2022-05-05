@@ -7,8 +7,7 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Iterable as _Iterable
-from typing import Any as _Any, Sequence as _Sequence, Union as _Union,\
-    Optional as _Optional
+from typing import Any, Sequence, Union, Optional
 
 import numpy as _np
 from numpy.typing import ArrayLike as array_like
@@ -18,9 +17,9 @@ from ..units import default_unit
 from ._sizes import _parse_dims_shape_sizes
 
 
-def scalar(value: _Any,
-           variance: _Any = None,
-           unit: _Union[_cpp.Unit, str, None] = default_unit,
+def scalar(value: Any,
+           variance: Any = None,
+           unit: Union[_cpp.Unit, str, None] = default_unit,
            dtype: _cpp.DType = None) -> _cpp.Variable:
     """Constructs a zero dimensional :class:`Variable` with a unit and optional
     variance.
@@ -45,7 +44,7 @@ def scalar(value: _Any,
                          dtype=dtype)
 
 
-def index(value: _Any, dtype: _cpp.DType = None) -> _cpp.Variable:
+def index(value: Any, dtype: _cpp.DType = None) -> _cpp.Variable:
     """Constructs a zero dimensional :class:`Variable` representing an index.
 
     This is equivalent to calling :py:func:`scipp.scalar` with unit=None.
@@ -59,10 +58,10 @@ def index(value: _Any, dtype: _cpp.DType = None) -> _cpp.Variable:
 
 
 def zeros(*,
-          dims: _Sequence[str] = None,
-          shape: _Sequence[int] = None,
+          dims: Sequence[str] = None,
+          shape: Sequence[int] = None,
           sizes: dict = None,
-          unit: _Union[_cpp.Unit, str, None] = default_unit,
+          unit: Union[_cpp.Unit, str, None] = default_unit,
           dtype: _cpp.DType = _cpp.DType.float64,
           with_variances: bool = False) -> _cpp.Variable:
     """Constructs a :class:`Variable` with default initialized values with
@@ -93,10 +92,10 @@ def zeros(*,
 
 
 def ones(*,
-         dims: _Sequence[str] = None,
-         shape: _Sequence[int] = None,
+         dims: Sequence[str] = None,
+         shape: Sequence[int] = None,
          sizes: dict = None,
-         unit: _Union[_cpp.Unit, str, None] = default_unit,
+         unit: Union[_cpp.Unit, str, None] = default_unit,
          dtype: _cpp.DType = _cpp.DType.float64,
          with_variances: bool = False) -> _cpp.Variable:
     """Constructs a :class:`Variable` with values initialized to 1 with
@@ -122,10 +121,10 @@ def ones(*,
 
 
 def empty(*,
-          dims: _Sequence[str] = None,
-          shape: _Sequence[int] = None,
+          dims: Sequence[str] = None,
+          shape: Sequence[int] = None,
           sizes: dict = None,
-          unit: _Union[_cpp.Unit, str, None] = default_unit,
+          unit: Union[_cpp.Unit, str, None] = default_unit,
           dtype: _cpp.DType = _cpp.DType.float64,
           with_variances: bool = False) -> _cpp.Variable:
     """Constructs a :class:`Variable` with uninitialized values with given
@@ -154,13 +153,13 @@ def empty(*,
 
 
 def full(*,
-         dims: _Sequence[str] = None,
-         shape: _Sequence[int] = None,
+         dims: Sequence[str] = None,
+         shape: Sequence[int] = None,
          sizes: dict = None,
-         unit: _Union[_cpp.Unit, str, None] = default_unit,
+         unit: Union[_cpp.Unit, str, None] = default_unit,
          dtype: _cpp.DType = None,
-         value: _Any,
-         variance: _Any = None) -> _cpp.Variable:
+         value: Any,
+         variance: Any = None) -> _cpp.Variable:
     """
     Constructs a :class:`Variable` with values initialized to the specified
     value with given dimension labels and shape.
@@ -183,8 +182,8 @@ def full(*,
 
 
 def matrix(*,
-           unit: _Union[_cpp.Unit, str, None] = default_unit,
-           value: _Union[_np.ndarray, list]):
+           unit: Union[_cpp.Unit, str, None] = default_unit,
+           value: Union[_np.ndarray, list]):
     """Constructs a zero dimensional :class:`Variable` holding a single 3x3
     matrix.
 
@@ -204,9 +203,9 @@ def matrix(*,
 
 
 def matrices(*,
-             dims: _Sequence[str],
-             unit: _Union[_cpp.Unit, str, None] = default_unit,
-             values: _Union[_np.ndarray, list]):
+             dims: Sequence[str],
+             unit: Union[_cpp.Unit, str, None] = default_unit,
+             values: Union[_np.ndarray, list]):
     """Constructs a :class:`Variable` with given dimensions holding an array
     of 3x3 matrices.
 
@@ -226,8 +225,8 @@ def matrices(*,
 
 
 def vector(*,
-           unit: _Union[_cpp.Unit, str, None] = default_unit,
-           value: _Union[_np.ndarray, list]):
+           unit: Union[_cpp.Unit, str, None] = default_unit,
+           value: Union[_np.ndarray, list]):
     """Constructs a zero dimensional :class:`Variable` holding a single length-3
     vector.
 
@@ -242,9 +241,9 @@ def vector(*,
 
 
 def vectors(*,
-            dims: _Sequence[str],
-            unit: _Union[_cpp.Unit, str, None] = default_unit,
-            values: _Union[_np.ndarray, list]):
+            dims: Sequence[str],
+            unit: Union[_cpp.Unit, str, None] = default_unit,
+            values: Union[_np.ndarray, list]):
     """Constructs a :class:`Variable` with given dimensions holding an array
     of length-3 vectors.
 
@@ -261,8 +260,8 @@ def vectors(*,
 def array(*,
           dims: _Iterable,
           values: array_like,
-          variances: _Optional[array_like] = None,
-          unit: _Union[_cpp.Unit, str, None] = default_unit,
+          variances: Optional[array_like] = None,
+          unit: Union[_cpp.Unit, str, None] = default_unit,
           dtype: _cpp.DType = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with given dimensions, containing given
     values and optional variances. Dimension and value shape must match.
@@ -288,12 +287,12 @@ def array(*,
 
 
 def linspace(dim: str,
-             start: _Union[int, float],
-             stop: _Union[int, float],
+             start: Union[int, float],
+             stop: Union[int, float],
              num: int,
              *,
              endpoint: bool = True,
-             unit: _Union[_cpp.Unit, str, None] = default_unit,
+             unit: Union[_cpp.Unit, str, None] = default_unit,
              dtype: _cpp.DType = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with `num` evenly spaced samples,
     calculated over the interval `[start, stop]`.
@@ -318,12 +317,12 @@ def linspace(dim: str,
 
 
 def geomspace(dim: str,
-              start: _Union[int, float],
-              stop: _Union[int, float],
+              start: Union[int, float],
+              stop: Union[int, float],
               num: int,
               *,
               endpoint: bool = True,
-              unit: _Union[_cpp.Unit, str, None] = default_unit,
+              unit: Union[_cpp.Unit, str, None] = default_unit,
               dtype: _cpp.DType = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with values spaced evenly on a log scale
     (a geometric progression).
@@ -352,13 +351,13 @@ def geomspace(dim: str,
 
 
 def logspace(dim: str,
-             start: _Union[int, float],
-             stop: _Union[int, float],
+             start: Union[int, float],
+             stop: Union[int, float],
              num: int,
              *,
              endpoint: bool = True,
-             base: _Union[int, float] = 10.0,
-             unit: _Union[_cpp.Unit, str, None] = default_unit,
+             base: Union[int, float] = 10.0,
+             unit: Union[_cpp.Unit, str, None] = default_unit,
              dtype: _cpp.DType = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with values spaced evenly on a log scale.
 
@@ -412,11 +411,11 @@ def _normalize_args(*, unit, **kwargs):
 
 
 def arange(dim: str,
-           start: _Union[int, float, _np.datetime64],
-           stop: _Union[int, float, _np.datetime64] = None,
-           step: _Union[int, float] = None,
+           start: Union[int, float, _np.datetime64],
+           stop: Union[int, float, _np.datetime64] = None,
+           step: Union[int, float] = None,
            *,
-           unit: _Union[_cpp.Unit, str, None] = default_unit,
+           unit: Union[_cpp.Unit, str, None] = default_unit,
            dtype: _cpp.DType = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with evenly spaced values within a given
     interval.
@@ -441,9 +440,9 @@ def arange(dim: str,
 
 
 def datetime(
-        value: _Union[str, int, _np.datetime64],
+        value: Union[str, int, _np.datetime64],
         *,
-        unit: _Optional[_Union[_cpp.Unit, str, None]] = default_unit) -> _cpp.Variable:
+        unit: Optional[Union[_cpp.Unit, str, None]] = default_unit) -> _cpp.Variable:
     """Constructs a zero dimensional :class:`Variable` with a dtype of datetime64.
 
     :param value:
@@ -476,7 +475,7 @@ def datetimes(
         *,
         dims,
         values: array_like,
-        unit: _Optional[_Union[_cpp.Unit, str, None]] = default_unit) -> _cpp.Variable:
+        unit: Optional[Union[_cpp.Unit, str, None]] = default_unit) -> _cpp.Variable:
     """Constructs an array :class:`Variable` with a dtype of datetime64.
 
     :param dims: Dimension labels
@@ -505,7 +504,7 @@ def datetimes(
                  values=_np.asarray(values, dtype=f'datetime64{np_unit_str}'))
 
 
-def epoch(*, unit: _Union[_cpp.Unit, str]) -> _cpp.Variable:
+def epoch(*, unit: Union[_cpp.Unit, str]) -> _cpp.Variable:
     """Constructs a zero dimensional :class:`Variable` with a dtype of
     datetime64 that contains scipp's epoch.
 
