@@ -352,8 +352,8 @@ def linspace(dim: str,
 
 
 def geomspace(dim: str,
-              start: Union[int, float],
-              stop: Union[int, float],
+              start: NumberOrVar,
+              stop: NumberOrVar,
               num: int,
               *,
               endpoint: bool = True,
@@ -379,15 +379,16 @@ def geomspace(dim: str,
     :seealso: :py:func:`scipp.linspace` :py:func:`scipp.logspace`
               :py:func:`scipp.arange` :py:func:`numpy.geomspace`
     """
+    range_args, unit = _normalize_range_args(unit=unit, start=start, stop=stop)
     return array(dims=[dim],
-                 values=_np.geomspace(start, stop, num, endpoint=endpoint),
+                 values=_np.geomspace(**range_args, num=num, endpoint=endpoint),
                  unit=unit,
                  dtype=dtype)
 
 
 def logspace(dim: str,
-             start: Union[int, float],
-             stop: Union[int, float],
+             start: NumberOrVar,
+             stop: NumberOrVar,
              num: int,
              *,
              endpoint: bool = True,
@@ -413,8 +414,13 @@ def logspace(dim: str,
     :seealso: :py:func:`scipp.linspace` :py:func:`scipp.geomspace`
               :py:func:`scipp.arange` :py:func:`numpy.logspace`
     """
+    # Passing unit='one' enforces that start and stop are dimensionless.
+    range_args, _ = _normalize_range_args(unit='one', start=start, stop=stop)
     return array(dims=[dim],
-                 values=_np.logspace(start, stop, num, base=base, endpoint=endpoint),
+                 values=_np.logspace(**range_args,
+                                     num=num,
+                                     base=base,
+                                     endpoint=endpoint),
                  unit=unit,
                  dtype=dtype)
 

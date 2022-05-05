@@ -397,25 +397,57 @@ def test_linspace_none_unit():
     assert sc.linspace('x', 1.2, 103., 51, unit=None).unit is None
 
 
-def test_linspace_with_variables():
-    start = sc.scalar(1, unit='m')
-    stop = sc.scalar(3, unit='m')
-    assert sc.identical(sc.linspace('x', start, stop, 3),
-                        sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='m'))
+@pytest.mark.parametrize('range_fns',
+                         ((sc.linspace, np.linspace), (sc.geomspace, np.geomspace),
+                          (sc.logspace, np.logspace)),
+                         ids=('linspace', 'geomspace', 'logspace'))
+def test_xyzspace_with_variables(range_fns):
+    sc_fn, np_fn = range_fns
+    var = sc_fn('x', sc.scalar(1.0), sc.scalar(5.0), 4)
+    values = np_fn(1.0, 5.0, 4)
+    assert sc.identical(var, sc.array(dims=['x'], values=values))
 
 
-def test_linspace_with_variables_set_unit():
-    start = sc.scalar(1, unit='m')
-    stop = sc.scalar(3000, unit='mm')
-    assert sc.identical(sc.linspace('x', start, stop, 3, unit='m'),
-                        sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='m'))
+@pytest.mark.parametrize('range_fns',
+                         ((sc.linspace, np.linspace), (sc.geomspace, np.geomspace)),
+                         ids=('linspace', 'geomspace'))
+def test_xyzspace_with_variables_set_unit(range_fns):
+    sc_fn, np_fn = range_fns
+    var = sc_fn('x',
+                sc.scalar(1.0, unit='m'),
+                sc.scalar(5000.0, unit='mm'),
+                4,
+                unit='m')
+    values = np_fn(1.0, 5.0, 4)
+    assert sc.identical(var, sc.array(dims=['x'], values=values, unit='m'))
 
 
-def test_linspace_with_variables_num_cannot_be_variable():
+def test_logspace_with_variables_set_unit():
+    assert sc.identical(sc.logspace('x', sc.scalar(1.0), sc.scalar(3.0), 3, unit='m'),
+                        sc.array(dims=['x'], values=[10.0, 100.0, 1000.0], unit='m'))
+
+
+@pytest.mark.parametrize('unit', (sc.units.default_unit, 'one', 'm'))
+def test_logspace_with_variables_input_must_be_dimensionless(unit):
+    with pytest.raises(sc.UnitError):
+        sc.logspace('x', sc.scalar(1.0), sc.scalar(3.0, unit='m'), 4, unit=unit)
+    with pytest.raises(sc.UnitError):
+        sc.logspace('x', sc.scalar(1.0, unit='m'), sc.scalar(3.0), 4, unit=unit)
+    with pytest.raises(sc.UnitError):
+        sc.logspace('x',
+                    sc.scalar(1.0, unit='m'),
+                    sc.scalar(3.0, unit='m'),
+                    4,
+                    unit=unit)
+
+
+@pytest.mark.parametrize('range_fn', (sc.linspace, sc.geomspace, sc.logspace),
+                         ids=('linspace', 'geomspace', 'logspace'))
+def test_xyzspace_with_variables_num_cannot_be_variable(range_fn):
     start = sc.scalar(1)
     stop = sc.scalar(3)
     with pytest.raises(TypeError):
-        sc.linspace('x', start, stop, sc.scalar(3))  # type: ignore
+        range_fn('x', start, stop, sc.scalar(3))  # type: ignore
 
 
 def test_logspace():
