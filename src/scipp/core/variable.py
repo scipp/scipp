@@ -16,12 +16,13 @@ from .._scipp import core as _cpp
 from .cpp_classes import DType, Unit, Variable
 from ..units import default_unit
 from ._sizes import _parse_dims_shape_sizes
+from ..typing import DTypeLike
 
 
 def scalar(value: Any,
            variance: Any = None,
            unit: Union[Unit, str, None] = default_unit,
-           dtype: DType = None) -> Variable:
+           dtype: Optional[DTypeLike] = None) -> Variable:
     """Constructs a zero dimensional :class:`Variable` with a unit and optional
     variance.
 
@@ -45,7 +46,7 @@ def scalar(value: Any,
                          dtype=dtype)
 
 
-def index(value: Any, dtype: DType = None) -> Variable:
+def index(value: Any, dtype: Optional[DTypeLike] = None) -> Variable:
     """Constructs a zero dimensional :class:`Variable` representing an index.
 
     This is equivalent to calling :py:func:`scipp.scalar` with unit=None.
@@ -63,7 +64,7 @@ def zeros(*,
           shape: Sequence[int] = None,
           sizes: dict = None,
           unit: Union[Unit, str, None] = default_unit,
-          dtype: DType = DType.float64,
+          dtype: DTypeLike = DType.float64,
           with_variances: bool = False) -> Variable:
     """Constructs a :class:`Variable` with default initialized values with
     given dimension labels and shape.
@@ -97,7 +98,7 @@ def ones(*,
          shape: Sequence[int] = None,
          sizes: dict = None,
          unit: Union[Unit, str, None] = default_unit,
-         dtype: DType = DType.float64,
+         dtype: DTypeLike = DType.float64,
          with_variances: bool = False) -> Variable:
     """Constructs a :class:`Variable` with values initialized to 1 with
     given dimension labels and shape.
@@ -126,7 +127,7 @@ def empty(*,
           shape: Sequence[int] = None,
           sizes: dict = None,
           unit: Union[Unit, str, None] = default_unit,
-          dtype: DType = DType.float64,
+          dtype: DTypeLike = DType.float64,
           with_variances: bool = False) -> Variable:
     """Constructs a :class:`Variable` with uninitialized values with given
     dimension labels and shape.
@@ -158,7 +159,7 @@ def full(*,
          shape: Sequence[int] = None,
          sizes: dict = None,
          unit: Union[Unit, str, None] = default_unit,
-         dtype: DType = None,
+         dtype: Optional[DTypeLike] = None,
          value: Any,
          variance: Any = None) -> Variable:
     """
@@ -263,7 +264,7 @@ def array(*,
           values: array_like,
           variances: Optional[array_like] = None,
           unit: Union[Unit, str, None] = default_unit,
-          dtype: DType = None) -> Variable:
+          dtype: Optional[DTypeLike] = None) -> Variable:
     """Constructs a :class:`Variable` with given dimensions, containing given
     values and optional variances. Dimension and value shape must match.
     Only keyword arguments accepted.
@@ -294,7 +295,7 @@ def linspace(dim: str,
              *,
              endpoint: bool = True,
              unit: Union[Unit, str, None] = default_unit,
-             dtype: DType = None) -> Variable:
+             dtype: Optional[DTypeLike] = None) -> Variable:
     """Constructs a :class:`Variable` with `num` evenly spaced samples,
     calculated over the interval `[start, stop]`.
 
@@ -324,7 +325,7 @@ def geomspace(dim: str,
               *,
               endpoint: bool = True,
               unit: Union[Unit, str, None] = default_unit,
-              dtype: DType = None) -> Variable:
+              dtype: Optional[DTypeLike] = None) -> Variable:
     """Constructs a :class:`Variable` with values spaced evenly on a log scale
     (a geometric progression).
 
@@ -359,7 +360,7 @@ def logspace(dim: str,
              endpoint: bool = True,
              base: Union[int, float] = 10.0,
              unit: Union[Unit, str, None] = default_unit,
-             dtype: DType = None) -> Variable:
+             dtype: Optional[DTypeLike] = None) -> Variable:
     """Constructs a :class:`Variable` with values spaced evenly on a log scale.
 
     This is similar to :py:func:`scipp.geomspace`, but with endpoints specified
@@ -417,7 +418,7 @@ def arange(dim: str,
            step: Union[int, float] = None,
            *,
            unit: Union[Unit, str, None] = default_unit,
-           dtype: DType = None) -> Variable:
+           dtype: Optional[DTypeLike] = None) -> Variable:
     """Constructs a :class:`Variable` with evenly spaced values within a given
     interval.
     Values are generated within the half-open interval [start, stop)

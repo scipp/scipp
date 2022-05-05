@@ -54,3 +54,7 @@ MetaDataMap = _std_typing.MutableMapping[str, sc.Variable]
 # Should be hidden in rendered documentation in favor of VariableLike.
 VariableLikeType = _std_typing.TypeVar('VariableLikeType', sc.Variable, sc.DataArray,
                                        sc.Dataset)
+
+#: Anything that can be interpreted as a dtype.
+DTypeLike = _std_typing.Union[sc.DType, str, _std_typing.Type[int],
+                              _std_typing.Type[float], _std_typing.Type[bool]]
