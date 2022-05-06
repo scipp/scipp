@@ -5,7 +5,10 @@
 
 import typing as _std_typing
 
+import numpy.typing
+
 from ._scipp import core as sc
+from .core.cpp_classes import DataArray, Dataset, DType, Variable
 
 
 def is_scalar(obj: _std_typing.Any) -> bool:
@@ -45,16 +48,26 @@ def has_numeric_type(obj: _std_typing.Any) -> bool:
 
 #: Any object that behaves like a scipp.Variable,
 #:  that is an array with labeled dimensions.
-VariableLike = _std_typing.Union[sc.Variable, sc.DataArray, sc.Dataset]
+VariableLike = _std_typing.Union[Variable, DataArray, Dataset]
 
 #: dict-like object mapping dimension labels to Variables.
-MetaDataMap = _std_typing.MutableMapping[str, sc.Variable]
+MetaDataMap = _std_typing.MutableMapping[str, Variable]
 
 # TypeVar for use in annotations.
 # Should be hidden in rendered documentation in favor of VariableLike.
-VariableLikeType = _std_typing.TypeVar('VariableLikeType', sc.Variable, sc.DataArray,
-                                       sc.Dataset)
+VariableLikeType = _std_typing.TypeVar('VariableLikeType', Variable, DataArray, Dataset)
 
-#: Anything that can be interpreted as a dtype.
-DTypeLike = _std_typing.Union[sc.DType, str, _std_typing.Type[int],
-                              _std_typing.Type[float], _std_typing.Type[bool]]
+DTypeLike = _std_typing.Union[numpy.typing.DTypeLike, DType]
+"""Anything that can be interpreted as a dtype.
+
+This includes
+
+- :class:`scipp.DType`
+- everything that is supported by
+  `numpy.DTypeLike <https://numpy.org/devdocs/reference/typing.html#numpy.typing.DTypeLike>`_
+  e.g.
+
+  - :class:`numpy.dtype`
+  - :class:`type` objects like :class:`int` and :class:`float`
+  - names of dtypes as strings like ``'int32'`` and ``'float64'``
+"""  # noqa: E501
