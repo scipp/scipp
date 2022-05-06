@@ -570,6 +570,18 @@ def test_arange_with_variables_requires_scalar():
         sc.arange('x', sc.scalar(1), sc.array(dims=['x'], values=[1, 2]))
 
 
+def test_arange_with_variables_does_not_allow_variances():
+    start = sc.scalar(1)
+    stop = sc.scalar(4)
+    step = sc.scalar(1)
+    with pytest.raises(sc.VariancesError):
+        sc.arange('x', start, stop, sc.scalar(1.0, 0.1))
+    with pytest.raises(sc.VariancesError):
+        sc.arange('x', start, sc.scalar(4.0, 0.1), step)
+    with pytest.raises(sc.VariancesError):
+        sc.arange('x', sc.scalar(1.0, 0.1), stop, step)
+
+
 def test_arange_with_variables_mixed_dtype():
     assert sc.identical(sc.arange('x', sc.scalar(1), sc.scalar(4.0), sc.scalar(1)),
                         sc.array(dims=['x'], values=[1.0, 2.0, 3.0], dtype='float64'))

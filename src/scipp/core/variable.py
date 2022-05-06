@@ -290,6 +290,16 @@ def array(*,
                          dtype=dtype)
 
 
+def _expect_no_variances(args):
+    has_variances = [
+        key for key, val in args.items()
+        if val is not None and val.variances is not None
+    ]
+    if has_variances:
+        raise _cpp.VariancesError('Arguments cannot have variances. '
+                                  f'Passed variances in {has_variances}')
+
+
 # Assumes that all arguments are Variable or None.
 def _ensure_same_unit(*, unit, args: dict):
     if unit == default_unit:
@@ -316,6 +326,7 @@ def _normalize_range_args(*, unit, **kwargs):
             arg_types = {key: type(val) for key, val in kwargs.items()}
             raise TypeError('Either all of the following arguments or none have to '
                             f'be variables: {arg_types}')
+        _expect_no_variances(kwargs)
         return _ensure_same_unit(unit=unit, args=kwargs)
     return kwargs, unit
 
