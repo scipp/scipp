@@ -91,7 +91,7 @@ constexpr Unit c{
 namespace std {
 template <> struct hash<scipp::units::Unit> {
   std::size_t operator()(const scipp::units::Unit &u) const {
-    return hash<std::string>()(u.name());
+    return hash<llnl::units::precise_unit>()(u.underlying());
   }
 };
 } // namespace std
