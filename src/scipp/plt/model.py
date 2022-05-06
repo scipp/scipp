@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .widgets.widget import WidgetView
-
 from typing import Tuple, Iterable
 from functools import partial
 
