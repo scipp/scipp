@@ -36,7 +36,6 @@ filterwarnings = [
   "ignore:The 'asyncio_mode' default value will change to 'strict' in future:DeprecationWarning",
   'ignore::scipy.optimize._optimize.OptimizeWarning',
   # Plotting related warnings.
-  'ignore:More than 20 figures have been opened:RuntimeWarning',
   'ignore:Attempted to set non-positive :UserWarning',
   'ignore:Attempting to set identical bottom == top == 0.0 results in singular transformations; automatically expanding.:UserWarning',
   # TODO Plotting related deprecation warnings which should be addressed!
