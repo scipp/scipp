@@ -8,13 +8,21 @@ class View(ABC):
 
     def __init__(self):
         self._model_nodes = {}
+        self._notifications = []
 
     def add_model_node(self, node):
         self._model_nodes.setdefault(node.parent_name, {})[node.name] = node
 
+    def add_notification(self, notification):
+        self._notifications.append(notification)
+
     @abstractmethod
-    def notify(self, _):
+    def notify_view(self, _):
         return
+
+    def notify_models(self):
+        for notification in self._notifications:
+            notification()
 
     def _ipython_display_(self):
         """

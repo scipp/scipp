@@ -224,7 +224,7 @@ class Figure(View):
         """
         self._fig.savefig(filename, bbox_inches="tight")
 
-    def notify(self, message):
+    def notify_view(self, message):
         name = message["node_name"]
         parent = message["parent_name"]
         new_values = self._model_nodes[parent][name].request_data()

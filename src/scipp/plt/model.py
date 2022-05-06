@@ -16,9 +16,9 @@ class Node:
         self.func = func
         self.views = list(views or [])
 
-    def send_notification(self, message):
+    def notify_views(self, message):
         for view in self.views:
-            view.notify({
+            view.notify_view({
                 "node_name": self.name,
                 "parent_name": self.parent_name,
                 "message": message
@@ -71,32 +71,51 @@ class Model:
     def nodes(self) -> Iterable[str]:
         yield from self._nodes.values()
 
-    def insert(self, name: str, node: Node, after: str):
+    def _validate_names(self, name, after):
         assert after in self.keys()
+        assert name not in self.keys()
+
+    def insert(self, name: str, node: Node, after: str):
+        """
+        Insert a node in the graph, possibly rearranging the graph so that the
+        children of the `after` node become the children of the new node.
+        """
+        self._validate_names(name=name, after=after)
         self[name] = node
         for child in self._children_of(after):
             child.dependency = node
         node.dependency = self[after]
 
     def add(self, name: str, node: Node, after: str):
-        assert after in self.keys()
+        """
+        Add a node in the graph. As opposed to `insert`, this does not rearrange
+        the graph but simply makes a new branch from the `after` node.
+        """
+        self._validate_names(name=name, after=after)
         self[name] = node
         node.dependency = self[after]
 
-    def notify_from_dependents(self, node: str):
-        depth_first_stack = [node]
+    def notify_from_dependents(self, name: str):
+        depth_first_stack = [name]
         while depth_first_stack:
-            node = depth_first_stack.pop()
-            self[node].send_notification('dummy message')
-            for child in self._children_of(node):
+            name = depth_first_stack.pop()
+            self[name].notify_views('dummy message')
+            for child in self._children_of(name):
                 depth_first_stack.append(child.name)
 
     def add_view(self, key, view):
         self[key].add_view(view)
         view.add_model_node(self[key])
-        if isinstance(view, WidgetView):
-            view.add_notification(partial(self.notify_from_dependents, node=key))
+        # if isinstance(view, WidgetView):
+        view.add_notification(partial(self.notify_from_dependents, name=key))
 
+    @property
+    def root(self) -> Node:
+        for node in self.nodes():
+            if node.dependency is None:
+                return node
+
+    @property
     def end(self) -> Node:
         ends = []
         for node in self.nodes():
@@ -132,6 +151,8 @@ def _make_graphviz_digraph(*args, **kwargs):
     try:
         from graphviz import Digraph
     except ImportError:
-        raise RuntimeError('Failed to import `graphviz`, please install `graphviz` if '
-                           'using `pip`, or `python-graphviz` if using `conda`.')
+        raise RuntimeError(
+            "Failed to import `graphviz`. "
+            "Use `pip install graphviz` (requires installed `graphviz` executable) or "
+            "`conda install -c conda-forge python-graphviz`.")
     return Digraph(*args, **kwargs)

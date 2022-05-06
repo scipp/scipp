@@ -12,7 +12,7 @@ class Plot:
 
     def render(self):
         for model in self._models.values():
-            model.notify_from_dependents("root")
+            model.notify_from_dependents(model.root.name)
 
     def _ipython_display_(self):
         """

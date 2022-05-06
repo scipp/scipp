@@ -13,7 +13,6 @@ class WidgetView(View):
         super().__init__()
         self._base_func = None
         self._widgets = widgets
-        self._notifications = []
         for widget in self._widgets.values():
             widget.observe(self._update_and_notify, names="value")
 
@@ -28,15 +27,10 @@ class WidgetView(View):
         nodes = next(iter(self._model_nodes.values()))
         for node in nodes.values():
             self._update_node_func(node)
-        for notification in self._notifications:
-            notification()
-
-    def add_notification(self, notification):
-        self._notifications.append(notification)
+        self.notify_models()
 
     def add_model_node(self, node):
         super().add_model_node(node)
-        # self.add_notification()
         self._base_func = node.func
         self._update_node_func(node)
 
@@ -46,5 +40,5 @@ class WidgetView(View):
             for widget in self._widgets.values()
         ])
 
-    def notify(self, _):
+    def notify_view(self, _):
         return
