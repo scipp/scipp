@@ -46,16 +46,24 @@ def has_numeric_type(obj: _std_typing.Any) -> bool:
     return (not has_vector_type(obj)) and (not has_string_type(obj))
 
 
-#: Any object that behaves like a scipp.Variable,
-#:  that is an array with labeled dimensions.
 VariableLike = _std_typing.Union[Variable, DataArray, Dataset]
+"""Any object that behaves like a :class:`scipp.Variable`.
 
-#: dict-like object mapping dimension labels to Variables.
+More concretely, an array with labeled dimensions:
+
+- :class:`scipp.DataArray`
+- :class:`scipp.Dataset`
+- :class:`scipp.Variable`
+"""
+
 MetaDataMap = _std_typing.MutableMapping[str, Variable]
+"""dict-like object mapping dimension labels to Variables."""
 
-# TypeVar for use in annotations.
-# Should be hidden in rendered documentation in favor of VariableLike.
 VariableLikeType = _std_typing.TypeVar('VariableLikeType', Variable, DataArray, Dataset)
+"""TypeVar for use in annotations.
+
+Should be hidden in rendered documentation in favor of VariableLike.
+"""
 
 DTypeLike = _std_typing.Union[numpy.typing.DTypeLike, DType]
 """Anything that can be interpreted as a dtype.

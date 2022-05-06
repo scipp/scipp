@@ -52,6 +52,7 @@ extensions = [
 ]
 
 autodoc_type_aliases = {
+    'DTypeLike': 'DTypeLike',
     'VariableLike': 'VariableLike',
     'MetaDataMap': 'MetaDataMap',
     'array_like': 'array_like',
