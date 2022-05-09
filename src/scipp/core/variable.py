@@ -6,11 +6,10 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Iterable as _Iterable
-from typing import Any, Optional, Sequence, TypeVar, Union
+from typing import Any, Iterable, Optional, Sequence, TypeVar, Union
 
 import numpy as _np
-from numpy.typing import ArrayLike as array_like
+from numpy.typing import ArrayLike
 
 from .._scipp import core as _cpp
 from .cpp_classes import DType, Unit, Variable
@@ -439,9 +438,9 @@ def vectors(*,
 
 
 def array(*,
-          dims: _Iterable[str],
-          values: array_like,
-          variances: Optional[array_like] = None,
+          dims: Iterable[str],
+          values: ArrayLike,
+          variances: Optional[ArrayLike] = None,
           unit: Union[Unit, str, None] = default_unit,
           dtype: Optional[DTypeLike] = None) -> Variable:
     """Constructs a :class:`Variable` with given dimensions, containing given
@@ -814,7 +813,7 @@ def datetime(value: Union[str, int, _np.datetime64],
 
 def datetimes(*,
               dims,
-              values: array_like,
+              values: ArrayLike,
               unit: Optional[Union[Unit, str, None]] = default_unit) -> Variable:
     """Constructs an array :class:`Variable` with a dtype of datetime64.
 
