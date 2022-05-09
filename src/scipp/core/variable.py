@@ -33,14 +33,14 @@ def scalar(value: Any,
     value:
         Initial value.
     variance:
-        Optional, initial variance, Default=None
+        Optional, initial variance.
     unit:
-        Optional, unit. Default=dimensionless
+        Optional, unit.
     dtype: scipp.typing.DTypeLike
-        Optional, type of underlying data. Default=None,
-        in which case type is inferred from value input.
+        Optional, type of underlying data. By default,
+        the dtype is inferred from the `value` argument.
         Cannot be specified for value types of
-        str, Dataset or DataArray.
+        Dataset or DataArray.
 
     Returns
     -------
@@ -50,6 +50,27 @@ def scalar(value: Any,
     See Also
     --------
     scipp.array, scipp.empty, scipp.index, scipp.ones, scipp.zeros
+
+    Examples
+    --------
+    With deduced dtype and default unit:
+
+      >>> sc.scalar(3.14)
+      <scipp.Variable> ()    float64  [dimensionless]  [3.14]
+
+      >>> sc.scalar('a string')
+      <scipp.Variable> ()     string           [None]  ["a string"]
+
+    Or specifying a unit and dtype:
+
+      >>> sc.scalar(3.14, unit='m', dtype=int)
+      <scipp.Variable> ()      int64              [m]  [3]
+
+    Calling ``scalar`` with a list (or similar array-like object) will store that
+    object in a scalar variable and *not* create an array variable:
+
+      >>> sc.scalar([1, 2, 3])
+      <scipp.Variable> ()   PyObject           [None]  [[1, 2, 3]]
     """
     return _cpp.Variable(dims=(),
                          values=value,
@@ -68,8 +89,8 @@ def index(value: Any, dtype: Optional[DTypeLike] = None) -> Variable:
     value:
         Initial value.
     dtype: scipp.typing.DTypeLike
-        Optional, type of underlying data. Default=None,
-        in which case type is inferred from value input.
+        Optional, type of underlying data. By default,
+        the dtype is inferred from the `value` argument.
 
     Returns
     -------
@@ -79,6 +100,12 @@ def index(value: Any, dtype: Optional[DTypeLike] = None) -> Variable:
     See Also
     --------
     scipp.scalar, scipp.array
+
+    Examples
+    --------
+
+      >>> sc.index(123)
+      <scipp.Variable> ()      int64           [None]  [123]
     """
     return scalar(value=value, dtype=dtype, unit=None)
 
@@ -93,7 +120,7 @@ def zeros(*,
     """Constructs a :class:`Variable` with default initialized values with
     given dimension labels and shape.
 
-    The dims and shape can also be specified using a sizes dict.
+    The dims and shape can also be specified using a `sizes` dict.
     Optionally can add default initialized variances.
     Only keyword arguments accepted.
 
@@ -106,18 +133,30 @@ def zeros(*,
     sizes:
         Optional, dimension label to size map.
     unit:
-        Optional, unit of contents. Default=dimensionless
+        Unit of contents.
     dtype: scipp.typing.DTypeLike
-        Optional, type of underlying data. Default=float64
+        Type of underlying data.
     with_variances:
-        Optional, boolean flag, if True includes variances
-        initialized to the default value for dtype.
-        For example for a float type values and variances would all be
-        initialized to 0.0. Default=False
+        If True includes variances initialized to 0.
 
     See Also
     --------
-    scipp.array, scipp.empty, scipp.index, scipp.ones, scipp.scalar
+    scipp.array, scipp.empty, scipp.ones, scipp.scalar, scipp.zeros_like
+
+    Examples
+    --------
+
+      >>> sc.zeros(dims=['x'], shape=[4])
+      <scipp.Variable> (x: 4)    float64  [dimensionless]  [0, 0, 0, 0]
+
+      >>> sc.zeros(sizes={'x': 4})
+      <scipp.Variable> (x: 4)    float64  [dimensionless]  [0, 0, 0, 0]
+
+      >>> sc.zeros(sizes={'y': 3}, with_variances=True)
+      <scipp.Variable> (y: 3)    float64  [dimensionless]  [0, 0, 0]  [0, 0, 0]
+
+      >>> sc.zeros(sizes={'z': 3}, unit='kg', dtype=int)
+      <scipp.Variable> (z: 3)      int64             [kg]  [0, 0, 0]
     """
 
     return _cpp.zeros(**_parse_dims_shape_sizes(dims, shape, sizes),
@@ -136,7 +175,7 @@ def ones(*,
     """Constructs a :class:`Variable` with values initialized to 1 with
     given dimension labels and shape.
 
-    The dims and shape can also be specified using a sizes dict.
+    The dims and shape can also be specified using a `sizes` dict.
 
     Parameters
     ----------
@@ -147,18 +186,30 @@ def ones(*,
     sizes:
         Optional, dimension label to size map.
     unit:
-        Optional, unit of contents. Default=dimensionless
+        Unit of contents.
     dtype: scipp.typing.DTypeLike
-        Optional, type of underlying data. Default=float64
+        Type of underlying data.
     with_variances:
-        Optional, boolean flag, if True includes variances
-        initialized to the default value for dtype.
-        For example for a float type values and variances would all be
-        initialized to 0.0. Default=False
+        If True includes variances initialized to 1.
 
     See Also
     --------
-    scipp.array, scipp.empty, scipp.index, scipp.scalar, scipp.zeros
+    scipp.array, scipp.empty, scipp.ones_like, scipp.scalar, scipp.zeros
+
+    Examples
+    --------
+
+      >>> sc.ones(dims=['x'], shape=[4])
+      <scipp.Variable> (x: 4)    float64  [dimensionless]  [1, 1, 1, 1]
+
+      >>> sc.ones(sizes={'x': 4})
+      <scipp.Variable> (x: 4)    float64  [dimensionless]  [1, 1, 1, 1]
+
+      >>> sc.ones(sizes={'y': 3}, with_variances=True)
+      <scipp.Variable> (y: 3)    float64  [dimensionless]  [1, 1, 1]  [1, 1, 1]
+
+      >>> sc.ones(sizes={'z': 3}, unit='kg', dtype=int)
+      <scipp.Variable> (z: 3)      int64             [kg]  [1, 1, 1]
     """
     return _cpp.ones(**_parse_dims_shape_sizes(dims, shape, sizes),
                      unit=unit,
@@ -176,8 +227,12 @@ def empty(*,
     """Constructs a :class:`Variable` with uninitialized values with given
     dimension labels and shape.
 
-    The dims and shape can also be specified using a sizes dict.
-    USE WITH CARE! Uninitialized means that values have undetermined values.
+    The dims and shape can also be specified using a `sizes` dict.
+
+    Warning
+    -------
+    'Uninitialized' means that values have undetermined values.
+    Reading elements before writing to them is undefined behavior.
     Consider using :py:func:`scipp.zeros` unless you
     know what you are doing and require maximum performance.
 
@@ -190,18 +245,23 @@ def empty(*,
     sizes:
         Optional, dimension label to size map.
     unit:
-        Optional, unit of contents. Default=dimensionless
+        Unit of contents.
     dtype: scipp.typing.DTypeLike
-        Optional, type of underlying data. Default=float64
+        Type of underlying data.
     with_variances:
-        Optional, boolean flag, if True includes variances
-        initialized to the default value for dtype.
-        For example for a float type values and variances would all be
-        initialized to 0.0. Default=False
+        If True includes uninitialized variances.
 
     See Also
     --------
-    scipp.array, scipp.index, scipp.ones, scipp.scalar, scipp.zeros
+    scipp.array, scipp.empty_like, scipp.ones, scipp.scalar, scipp.zeros
+
+    Examples
+    --------
+
+      >>> var = sc.empty(dims=['x'], shape=[4])
+      >>> var[:] = sc.scalar(2.0)  # initialize values before printing
+      >>> var
+      <scipp.Variable> (x: 4)    float64  [dimensionless]  [2, 2, 2, 2]
     """
     return _cpp.empty(**_parse_dims_shape_sizes(dims, shape, sizes),
                       unit=unit,
@@ -210,20 +270,24 @@ def empty(*,
 
 
 def full(*,
+         value: Any,
+         variance: Any = None,
          dims: Sequence[str] = None,
          shape: Sequence[int] = None,
          sizes: dict = None,
          unit: Union[Unit, str, None] = default_unit,
-         dtype: Optional[DTypeLike] = None,
-         value: Any,
-         variance: Any = None) -> Variable:
+         dtype: Optional[DTypeLike] = None) -> Variable:
     """Constructs a :class:`Variable` with values initialized to the specified
     value with given dimension labels and shape.
 
-    The dims and shape can also be specified using a sizes dict.
+    The dims and shape can also be specified using a `sizes` dict.
 
     Parameters
     ----------
+    value:
+        The value to fill the Variable with.
+    variance:
+        The variance to fill the Variable with.
     dims:
         Optional (if sizes is specified), dimension labels.
     shape:
@@ -231,15 +295,28 @@ def full(*,
     sizes:
         Optional, dimension label to size map.
     unit:
-        Optional, unit of contents. Default=dimensionless
+        Unit of contents.
     dtype: scipp.typing.DTypeLike
-        Optional, type of underlying data. Default=float64
-    value:
-        The value to fill the Variable with
+        Type of underlying data.
 
     See Also
     --------
-    scipp.empty, scipp.ones, scipp.zeros
+    scipp.empty, scipp.full_like, scipp.ones, scipp.zeros
+
+    Examples
+    --------
+
+      >>> sc.full(value=2, dims=['x'], shape=[2])
+      <scipp.Variable> (x: 2)      int64  [dimensionless]  [2, 2]
+
+      >>> sc.full(value=2, sizes={'x': 2})
+      <scipp.Variable> (x: 2)      int64  [dimensionless]  [2, 2]
+
+      >>> sc.full(value=5, sizes={'y': 3, 'x': 2})
+      <scipp.Variable> (y: 3, x: 2)      int64  [dimensionless]  [5, 5, ..., 5, 5]
+
+      >>> sc.full(value=2.0, variance=0.1, sizes={'x': 3}, unit='s')
+      <scipp.Variable> (x: 3)    float64              [s]  [2, 2, 2]  [0.1, 0.1, 0.1]
     """
     return scalar(value=value, variance=variance, unit=unit, dtype=dtype)\
         .broadcast(**_parse_dims_shape_sizes(dims, shape, sizes)).copy()
@@ -247,7 +324,7 @@ def full(*,
 
 def matrix(*,
            unit: Union[Unit, str, None] = default_unit,
-           value: Union[ndarray, list]) -> Variable:
+           value: Union[_np.ndarray, list]) -> Variable:
     """Constructs a zero dimensional :class:`Variable` holding a single 3x3
     matrix.
 
@@ -289,8 +366,8 @@ def matrices(*,
 
 
 def vector(*,
-           unit: Union[Unit, str, None] = default_unit,
-           value: Union[_np.ndarray, list]) -> Variable:
+           value: Union[_np.ndarray, list],
+           unit: Union[Unit, str, None] = default_unit) -> Variable:
     """Constructs a zero dimensional :class:`Variable` holding a single length-3
     vector.
 
@@ -299,7 +376,7 @@ def vector(*,
     value:
         Initial value, a list or 1-D numpy array.
     unit:
-        Optional, unit. Default=dimensionless
+        Unit of contents.
 
     Returns
     -------
@@ -309,14 +386,23 @@ def vector(*,
     See Also
     --------
     scipp.vectors
+
+    Examples
+    --------
+
+      >>> sc.vector(value=[1, 2, 3])
+      <scipp.Variable> ()    vector3  [dimensionless]  [(1, 2, 3)]
+
+      >>> sc.vector(value=[4, 5, 6], unit='m')
+      <scipp.Variable> ()    vector3              [m]  [(4, 5, 6)]
     """
     return _cpp.vectors(dims=[], unit=unit, values=value)
 
 
 def vectors(*,
             dims: Sequence[str],
-            unit: Union[Unit, str, None] = default_unit,
-            values: Union[_np.ndarray, list]) -> Variable:
+            values: Union[_np.ndarray, list],
+            unit: Union[Unit, str, None] = default_unit) -> Variable:
     """Constructs a :class:`Variable` with given dimensions holding an array
     of length-3 vectors.
 
@@ -327,11 +413,27 @@ def vectors(*,
     values:
         Initial values.
     unit:
-        Optional, data unit. Default=dimensionless
+        Unit of contents.
 
     See Also
     --------
     scipp.vector
+
+    Examples
+    --------
+
+      >>> sc.vectors(dims=['x'], values=[[1, 2, 3]])
+      <scipp.Variable> (x: 1)    vector3  [dimensionless]  [(1, 2, 3)]
+
+      >>> var = sc.vectors(dims=['x'], values=[[1, 2, 3], [4, 5, 6]])
+      >>> var
+      <scipp.Variable> (x: 2)    vector3  [dimensionless]  [(1, 2, 3), (4, 5, 6)]
+      >>> var.values
+      array([[1., 2., 3.],
+             [4., 5., 6.]])
+
+      >>> sc.vectors(dims=['x'], values=[[1, 2, 3], [4, 5, 6]], unit='mm')
+      <scipp.Variable> (x: 2)    vector3             [mm]  [(1, 2, 3), (4, 5, 6)]
     """
     return _cpp.vectors(dims=dims, unit=unit, values=values)
 
@@ -344,6 +446,7 @@ def array(*,
           dtype: Optional[DTypeLike] = None) -> Variable:
     """Constructs a :class:`Variable` with given dimensions, containing given
     values and optional variances. Dimension and value shape must match.
+
     Only keyword arguments accepted.
 
     Parameters
@@ -353,17 +456,46 @@ def array(*,
     values:
         Initial values.
     variances:
-        Optional, initial variances, must be same shape
-        and size as values. Default=None
+        Initial variances, must be same shape and size as values.
     unit:
-        Optional, data unit. Default=dimensionless
+        Unit of contents
     dtype: scipp.typing.DTypeLike
-        Optional, type of underlying data. Default=None,
-        in which case type is inferred from value input.
+        Type of underlying data. By default, inferred from `values` argument.
 
     See Also
     --------
     scipp.empty, scipp.ones, scipp.scalar, scipp.zeros
+
+    Examples
+    --------
+
+      >>> sc.array(dims=['x'], values=[1, 2, 3])
+      <scipp.Variable> (x: 3)      int64  [dimensionless]  [1, 2, 3]
+
+    Multiple dimensions:
+
+      >>> sc.array(dims=['x', 'y'], values=[[1, 2, 3], [4, 5, 6]])
+      <scipp.Variable> (x: 2, y: 3)      int64  [dimensionless]  [1, 2, ..., 5, 6]
+
+    DType upcasting:
+
+      >>> sc.array(dims=['x'], values=[1, 2, 3.0])
+      <scipp.Variable> (x: 3)    float64  [dimensionless]  [1, 2, 3]
+
+    Manually specified dtype:
+
+      >>> sc.array(dims=['x'], values=[1, 2, 3], dtype=float)
+      <scipp.Variable> (x: 3)    float64  [dimensionless]  [1, 2, 3]
+
+    Set unit:
+
+      >>> sc.array(dims=['x'], values=[1, 2, 3], unit='m')
+      <scipp.Variable> (x: 3)      int64              [m]  [1, 2, 3]
+
+    Setting variances:
+
+      >>> sc.array(dims=['x'], values=[1.0, 2.0, 3.0], variances=[0.1, 0.2, 0.3])
+      <scipp.Variable> (x: 3)    float64  [dimensionless]  [1, 2, 3]  [0.1, 0.2, 0.3]
     """
     return _cpp.Variable(dims=dims,
                          values=values,
@@ -438,14 +570,24 @@ def linspace(dim: str,
         If True, `step` is the last returned value.
         Otherwise, it is not included.
     unit:
-        Optional, data unit. Default=dimensionless
+        Unit of contents
     dtype: scipp.typing.DTypeLike
-        Optional, type of underlying data. Default=None,
-        in which case type is inferred from value input.
+        Type of underlying data. By default, inferred from `value` argument.
 
     See Also
     --------
     scipp.arange, scipp.geomspace, scipp.logspace
+
+    Examples
+    --------
+
+      >>> sc.linspace('x', 2.0, 4.0, num=4)
+      <scipp.Variable> (x: 4)    float64  [dimensionless]  [2, 2.66667, 3.33333, 4]
+      >>> sc.linspace('x', 2.0, 4.0, num=4, endpoint=False)
+      <scipp.Variable> (x: 4)    float64  [dimensionless]  [2, 2.5, 3, 3.5]
+
+      >>> sc.linspace('x', 1.5, 3.0, num=4, unit='m')
+      <scipp.Variable> (x: 4)    float64              [m]  [1.5, 2, 2.5, 3]
     """
     range_args, unit = _normalize_range_args(unit=unit, start=start, stop=stop)
     return array(dims=[dim],
@@ -483,14 +625,24 @@ def geomspace(dim: str,
         If True, `step` is the last returned value.
         Otherwise, it is not included.
     unit:
-        Optional, data unit. Default=dimensionless
+        Unit of contents.
     dtype: scipp.typing.DTypeLike
-        Optional, type of underlying data. Default=None,
-        in which case type is inferred from value input.
+        Type of underlying data. By default, inferred from `value` argument.
 
     See Also
     --------
     scipp.arange, scipp.linspace, scipp.logspace
+
+    Examples
+    --------
+
+      >>> sc.geomspace('x', 1.0, 1000.0, num=4)
+      <scipp.Variable> (x: 4)    float64  [dimensionless]  [1, 10, 100, 1000]
+      >>> sc.geomspace('x', 1.0, 1000.0, num=4, endpoint=False)
+      <scipp.Variable> (x: 4)    float64  [dimensionless]  [1, 5.62341, 31.6228, 177.828]
+
+      >>> sc.geomspace('x', 1.0, 100.0, num=3, unit='s')
+      <scipp.Variable> (x: 3)    float64              [s]  [1, 10, 100]
     """
     range_args, unit = _normalize_range_args(unit=unit, start=start, stop=stop)
     return array(dims=[dim],
@@ -529,14 +681,31 @@ def logspace(dim: str,
         If True, `step` is the last returned value.
         Otherwise, it is not included.
     unit:
-        Optional, data unit. Default=dimensionless
+        Unit of contents.
     dtype: scipp.typing.DTypeLike
-        Optional, type of underlying data. Default=None,
-        in which case type is inferred from value input.
+        Type of underlying data. By default, inferred from `value` argument.
 
     See Also
     --------
     scipp.arange, scipp.geomspace, scipp.linspace
+
+    Examples
+    --------
+
+      >>> sc.logspace('x', 1, 4, num=4)
+      <scipp.Variable> (x: 4)    float64  [dimensionless]  [10, 100, 1000, 10000]
+      >>> sc.logspace('x', 1, 4, num=4, endpoint=False)
+      <scipp.Variable> (x: 4)    float64  [dimensionless]  [10, 56.2341, 316.228, 1778.28]
+
+    Set a different base:
+
+      >>> sc.logspace('x', 1, 4, num=4, base=2)
+      <scipp.Variable> (x: 4)    float64  [dimensionless]  [2, 4, 8, 16]
+
+    Set a unit:
+
+      >>> sc.logspace('x', 1, 3, num=3, unit='m')
+      <scipp.Variable> (x: 3)    float64              [m]  [10, 100, 1000]
     """
     # Passing unit='one' enforces that start and stop are dimensionless.
     range_args, _ = _normalize_range_args(unit='one', start=start, stop=stop)
@@ -561,6 +730,11 @@ def arange(dim: str,
     Values are generated within the half-open interval [start, stop)
     (in other words, the interval including start but excluding stop).
 
+    Warning
+    -------
+    The length of the output might not be numerically stable.
+    See :func:`numpy.arange`.
+
     Parameters
     ----------
     dim:
@@ -569,19 +743,29 @@ def arange(dim: str,
         Optional, the starting value of the sequence. Default=0.
     stop:
         End of interval. The interval does not include this value,
-        except in some (rare) cases where step is not an integer and floating-
-        point round-off can come into play.
+        except in some (rare) cases where step is not an integer and
+        floating-point round-off can come into play.
     step:
-        Optional, spacing between values. Default=1.
+        Spacing between values.
     unit:
-        Optional, data unit. Default=dimensionless
+        Unit of contents.
     dtype: scipp.typing.DTypeLike
-        Optional, type of underlying data. Default=None,
-        in which case type is inferred from value input.
+        Type of underlying data. By default, inferred from `value` argument.
 
     See Also
     --------
     scipp.geomspace, scipp.linspace, scipp.logspace
+
+    Examples
+    --------
+
+      >>> sc.arange('x', 1, 5)
+      <scipp.Variable> (x: 4)      int64  [dimensionless]  [1, 2, 3, 4]
+      >>> sc.arange('x', 1, 5, 0.5)
+      <scipp.Variable> (x: 8)    float64  [dimensionless]  [1, 1.5, ..., 4, 4.5]
+
+      >>> sc.arange('x', 1, 5, unit='m')
+      <scipp.Variable> (x: 4)      int64              [m]  [1, 2, 3, 4]
     """
     range_args, unit = _normalize_range_args(unit=unit,
                                              start=start,
