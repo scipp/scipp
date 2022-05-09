@@ -21,6 +21,7 @@ NumberOrVar = TypeVar('NumberOrVar', Union[int, float], Variable)
 
 
 def scalar(value: Any,
+           *,
            variance: Any = None,
            unit: Union[Unit, str, None] = default_unit,
            dtype: Optional[DTypeLike] = None) -> Variable:
@@ -78,7 +79,7 @@ def scalar(value: Any,
                          dtype=dtype)
 
 
-def index(value: Any, dtype: Optional[DTypeLike] = None) -> Variable:
+def index(value: Any, *, dtype: Optional[DTypeLike] = None) -> Variable:
     """Constructs a zero dimensional :class:`Variable` representing an index.
 
     This is equivalent to calling :py:func:`scipp.scalar` with unit=None.
