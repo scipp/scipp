@@ -18,6 +18,7 @@ Breaking changes
 ~~~~~~~~~~~~~~~~
 
 * Changed :meth:`scipp.Variable.dims` and :meth:`scipp.Variable.shape` and corresponding properties in `DataArray` and `Dataset` to return tuples `2543 <https://github.com/scipp/scipp/pull/2543>`_.
+* :func:`scipp.scalar` and :func:`scipp.index` now require keyword arguments for all but the ``value`` argument `2585 <https://github.com/scipp/scipp/pull/2585>`_.
 
 Bugfixes
 ~~~~~~~~
