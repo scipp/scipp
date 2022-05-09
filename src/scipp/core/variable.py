@@ -452,9 +452,9 @@ def array(*,
     ----------
     dims:
         Dimension labels
-    values:
+    values: numpy.typing.ArrayLike
         Initial values.
-    variances:
+    variances: numpy.typing.ArrayLike
         Initial variances, must be same shape and size as values.
     unit:
         Unit of contents
@@ -821,7 +821,7 @@ def datetimes(*,
     ----------
     dims:
         Dimension labels
-    values:
+    values: numpy.typing.ArrayLike
         Numpy array or something that can be converted to a
         Numpy array of datetimes.
     unit:
