@@ -33,7 +33,8 @@ void init_units(py::module &m) {
       .def("__pow__", [](const units::Unit &self,
                          const int64_t power) { return pow(self, power); })
       .def(py::self == py::self)
-      .def(py::self != py::self);
+      .def(py::self != py::self)
+      .def(hash(py::self));
 
   m.def("abs", [](const units::Unit &u) { return abs(u); });
   m.def("pow", [](const units::Unit &u, const int64_t power) {
