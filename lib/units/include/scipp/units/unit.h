@@ -5,6 +5,7 @@
 /// @author Neil Vaytet
 #pragma once
 
+#include <functional>
 #include <optional>
 #include <string>
 
@@ -86,3 +87,11 @@ constexpr Unit c{
     {llnl::units::precise::m / llnl::units::precise::s, 299792458}};
 
 } // namespace scipp::units
+
+namespace std {
+template <> struct hash<scipp::units::Unit> {
+  std::size_t operator()(const scipp::units::Unit &u) const {
+    return hash<llnl::units::precise_unit>()(u.underlying());
+  }
+};
+} // namespace std

@@ -85,7 +85,7 @@ def test_index_unit_is_none():
 
 def test_index_raises_if_unit_given():
     with pytest.raises(TypeError):
-        sc.index(5, unit='')
+        sc.index(5, unit='')  # type: ignore
 
 
 def test_zeros_creates_variable_with_correct_dims_and_shape():
@@ -397,6 +397,59 @@ def test_linspace_none_unit():
     assert sc.linspace('x', 1.2, 103., 51, unit=None).unit is None
 
 
+@pytest.mark.parametrize('range_fns',
+                         ((sc.linspace, np.linspace), (sc.geomspace, np.geomspace),
+                          (sc.logspace, np.logspace)),
+                         ids=('linspace', 'geomspace', 'logspace'))
+def test_xyzspace_with_variables(range_fns):
+    sc_fn, np_fn = range_fns
+    var = sc_fn('x', sc.scalar(1.0), sc.scalar(5.0), 4)
+    values = np_fn(1.0, 5.0, 4)
+    assert sc.identical(var, sc.array(dims=['x'], values=values))
+
+
+@pytest.mark.parametrize('range_fns',
+                         ((sc.linspace, np.linspace), (sc.geomspace, np.geomspace)),
+                         ids=('linspace', 'geomspace'))
+def test_xyzspace_with_variables_set_unit(range_fns):
+    sc_fn, np_fn = range_fns
+    var = sc_fn('x',
+                sc.scalar(1.0, unit='m'),
+                sc.scalar(5000.0, unit='mm'),
+                4,
+                unit='m')
+    values = np_fn(1.0, 5.0, 4)
+    assert sc.identical(var, sc.array(dims=['x'], values=values, unit='m'))
+
+
+def test_logspace_with_variables_set_unit():
+    assert sc.identical(sc.logspace('x', sc.scalar(1.0), sc.scalar(3.0), 3, unit='m'),
+                        sc.array(dims=['x'], values=[10.0, 100.0, 1000.0], unit='m'))
+
+
+@pytest.mark.parametrize('unit', (sc.units.default_unit, 'one', 'm'))
+def test_logspace_with_variables_input_must_be_dimensionless(unit):
+    with pytest.raises(sc.UnitError):
+        sc.logspace('x', sc.scalar(1.0), sc.scalar(3.0, unit='m'), 4, unit=unit)
+    with pytest.raises(sc.UnitError):
+        sc.logspace('x', sc.scalar(1.0, unit='m'), sc.scalar(3.0), 4, unit=unit)
+    with pytest.raises(sc.UnitError):
+        sc.logspace('x',
+                    sc.scalar(1.0, unit='m'),
+                    sc.scalar(3.0, unit='m'),
+                    4,
+                    unit=unit)
+
+
+@pytest.mark.parametrize('range_fn', (sc.linspace, sc.geomspace, sc.logspace),
+                         ids=('linspace', 'geomspace', 'logspace'))
+def test_xyzspace_with_variables_num_cannot_be_variable(range_fn):
+    start = sc.scalar(1)
+    stop = sc.scalar(3)
+    with pytest.raises(TypeError):
+        range_fn('x', start, stop, sc.scalar(3))  # type: ignore
+
+
 def test_logspace():
     values = np.logspace(2.0, 3.0, num=4)
     var = sc.logspace('y', 2.0, 3.0, num=4, unit='s')
@@ -420,6 +473,121 @@ def test_arange():
     var = sc.arange(dim='x', start=10, stop=21, step=2, unit='m', dtype=sc.DType.int32)
     expected = sc.Variable(dims=['x'], values=values, unit='m', dtype=sc.DType.int32)
     assert sc.identical(var, expected)
+
+
+@pytest.mark.parametrize('unit', ('one', sc.units.default_unit))
+def test_arange_with_variables(unit):
+    start = sc.scalar(1)
+    stop = sc.scalar(4)
+    step = sc.scalar(1)
+    assert sc.identical(sc.arange('x', start, stop, step, unit=unit),
+                        sc.array(dims=['x'], values=[1, 2, 3], unit='one'))
+    assert sc.identical(sc.arange('x', start, stop, unit=unit),
+                        sc.array(dims=['x'], values=[1, 2, 3], unit='one'))
+    assert sc.identical(sc.arange('x', stop, unit=unit),
+                        sc.array(dims=['x'], values=[0, 1, 2, 3], unit='one'))
+
+
+def test_arange_with_variables_uses_units_of_args():
+    start = sc.scalar(10.0, unit='s')
+    stop = sc.scalar(33.0, unit='s')
+    step = sc.scalar(10.0, unit='s')
+    assert sc.identical(sc.arange('x', start, stop, step),
+                        sc.array(dims=['x'], values=[10.0, 20.0, 30.0], unit='s'))
+    assert sc.identical(
+        sc.arange('x', start, stop),
+        sc.array(dims=['x'], values=np.arange(10.0, 33.0, 1.0), unit='s'))
+    assert sc.identical(sc.arange('x', stop),
+                        sc.array(dims=['x'], values=np.arange(33.0), unit='s'))
+
+
+def test_arange_with_variables_without_unit_arg_requires_same_unit():
+    start = sc.scalar(1, unit='m')
+    stop = sc.scalar(4, unit='m')
+    step = sc.scalar(1, unit='m')
+    with pytest.raises(sc.UnitError):
+        sc.arange('x', start, stop, sc.scalar(500, unit='mm'))
+    with pytest.raises(sc.UnitError):
+        sc.arange('x', start, sc.scalar(4000, unit='mm'), step)
+    with pytest.raises(sc.UnitError):
+        sc.arange('x', sc.scalar(0.001, unit='km'), stop, step)
+
+
+def test_arange_with_variables_set_unit():
+    start = sc.scalar(1, unit='m')
+    stop = sc.scalar(4, unit='m')
+    step = sc.scalar(1, unit='m')
+    unit = 'm'
+    assert sc.identical(sc.arange('x', start, stop, step, unit=unit),
+                        sc.array(dims=['x'], values=[1, 2, 3], unit='m'))
+    assert sc.identical(sc.arange('x', start, stop, unit=unit),
+                        sc.array(dims=['x'], values=[1, 2, 3], unit='m'))
+
+    assert sc.identical(sc.arange('x', start, stop, step, unit='mm'),
+                        sc.array(dims=['x'], values=[1000, 2000, 3000], unit='mm'))
+    assert sc.identical(sc.arange('x', start, stop, unit='cm'),
+                        sc.array(dims=['x'], values=np.arange(100, 400, 1), unit='cm'))
+
+    assert sc.identical(
+        sc.arange('x', start, stop, sc.scalar(500, unit='mm'), unit='mm'),
+        sc.array(dims=['x'], values=[1000, 1500, 2000, 2500, 3000, 3500], unit='mm'))
+    assert sc.identical(
+        sc.arange('x', start, stop, sc.scalar(500.0, unit='mm'), unit='m'),
+        sc.array(dims=['x'], values=[1, 1.5, 2, 2.5, 3, 3.5], unit='m'))
+    # All args are integers -> truncates step.
+    assert sc.identical(
+        sc.arange('x', start, stop, sc.scalar(500, unit='mm'), unit='m'),
+        sc.array(dims=['x'], values=[1, 2, 3], unit='m'))
+
+
+def test_arange_with_variables_set_unit_must_be_convertible():
+    start = sc.scalar(1, unit='m')
+    stop = sc.scalar(4, unit='m')
+    step = sc.scalar(1, unit='m')
+    with pytest.raises(sc.UnitError):
+        sc.arange('x', start, stop, step, unit='kg')
+    with pytest.raises(sc.UnitError):
+        sc.arange('x', start, stop, unit='kg')
+    with pytest.raises(sc.UnitError):
+        sc.arange('x', stop, unit='kg')
+
+
+def test_arange_with_variables_mixed_types_not_allowed():
+    start = sc.scalar(1, unit='m')
+    stop = 4
+    step = sc.scalar(1, unit='m')
+    unit = 'm'
+    with pytest.raises(TypeError):
+        sc.arange('x', start, stop, step)  # type: ignore
+    with pytest.raises(TypeError):
+        sc.arange('x', start, stop, step, unit=unit)  # type: ignore
+
+
+def test_arange_with_variables_requires_scalar():
+    with pytest.raises(sc.DimensionError):
+        sc.arange('x', sc.array(dims=['x'], values=[1, 2]))
+    with pytest.raises(sc.DimensionError):
+        sc.arange('x', sc.scalar(1), sc.array(dims=['x'], values=[1, 2]))
+
+
+def test_arange_with_variables_does_not_allow_variances():
+    start = sc.scalar(1)
+    stop = sc.scalar(4)
+    step = sc.scalar(1)
+    with pytest.raises(sc.VariancesError):
+        sc.arange('x', start, stop, sc.scalar(1.0, variance=0.1))
+    with pytest.raises(sc.VariancesError):
+        sc.arange('x', start, sc.scalar(4.0, variance=0.1), step)
+    with pytest.raises(sc.VariancesError):
+        sc.arange('x', sc.scalar(1.0, variance=0.1), stop, step)
+
+
+def test_arange_with_variables_mixed_dtype():
+    assert sc.identical(sc.arange('x', sc.scalar(1), sc.scalar(4.0), sc.scalar(1)),
+                        sc.array(dims=['x'], values=[1.0, 2.0, 3.0], dtype='float64'))
+    assert sc.identical(
+        sc.arange('x', sc.scalar(1), sc.scalar(4.0), sc.scalar(1), dtype='int64'),
+        sc.array(dims=['x'], values=[1, 2, 3], dtype='int64'))
 
 
 def test_zeros_sizes():

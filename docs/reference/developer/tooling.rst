@@ -24,7 +24,7 @@ Static Analysis and Formatters
 - ``clang-format`` 10.0
 - ``cmake-format`` 0.6.9
 - ``flake8``
-- ``yapf`` 0.30.0
+- ``yapf`` 0.32.0
 
 ``clang-format`` may be installed via the LLVM repositories.
 
@@ -35,4 +35,4 @@ Static Analysis and Formatters
   pip install \
     cmake-format==0.6.9 \
     flake8 \
-    yapf==0.30.0
+    yapf==0.32.0
