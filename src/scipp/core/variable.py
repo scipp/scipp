@@ -457,7 +457,7 @@ def array(*,
     variances: numpy.typing.ArrayLike
         Initial variances, must be same shape and size as values.
     unit:
-        Unit of contents
+        Unit of contents.
     dtype: scipp.typing.DTypeLike
         Type of underlying data. By default, inferred from `values` argument.
 
@@ -569,7 +569,7 @@ def linspace(dim: str,
         If True, `step` is the last returned value.
         Otherwise, it is not included.
     unit:
-        Unit of contents
+        Unit of contents.
     dtype: scipp.typing.DTypeLike
         Type of underlying data. By default, inferred from `value` argument.
 
