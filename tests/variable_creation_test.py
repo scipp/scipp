@@ -575,11 +575,11 @@ def test_arange_with_variables_does_not_allow_variances():
     stop = sc.scalar(4)
     step = sc.scalar(1)
     with pytest.raises(sc.VariancesError):
-        sc.arange('x', start, stop, sc.scalar(1.0, 0.1))
+        sc.arange('x', start, stop, sc.scalar(1.0, variance=0.1))
     with pytest.raises(sc.VariancesError):
-        sc.arange('x', start, sc.scalar(4.0, 0.1), step)
+        sc.arange('x', start, sc.scalar(4.0, variance=0.1), step)
     with pytest.raises(sc.VariancesError):
-        sc.arange('x', sc.scalar(1.0, 0.1), stop, step)
+        sc.arange('x', sc.scalar(1.0, variance=0.1), stop, step)
 
 
 def test_arange_with_variables_mixed_dtype():
