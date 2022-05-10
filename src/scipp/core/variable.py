@@ -21,6 +21,7 @@ NumberOrVar = TypeVar('NumberOrVar', Union[int, float], Variable)
 
 
 def scalar(value: Any,
+           *,
            variance: Any = None,
            unit: Union[Unit, str, None] = default_unit,
            dtype: Optional[DTypeLike] = None) -> Variable:
@@ -78,7 +79,7 @@ def scalar(value: Any,
                          dtype=dtype)
 
 
-def index(value: Any, dtype: Optional[DTypeLike] = None) -> Variable:
+def index(value: Any, *, dtype: Optional[DTypeLike] = None) -> Variable:
     """Constructs a zero dimensional :class:`Variable` representing an index.
 
     This is equivalent to calling :py:func:`scipp.scalar` with unit=None.
@@ -364,8 +365,8 @@ def matrices(*,
     return linear_transforms(dims=dims, unit=unit, values=values)
 
 
-def vector(*,
-           value: Union[_np.ndarray, list],
+def vector(value: Union[_np.ndarray, list],
+           *,
            unit: Union[Unit, str, None] = default_unit) -> Variable:
     """Constructs a zero dimensional :class:`Variable` holding a single length-3
     vector.
