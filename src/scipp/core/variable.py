@@ -365,8 +365,8 @@ def matrices(*,
     return linear_transforms(dims=dims, unit=unit, values=values)
 
 
-def vector(*,
-           value: Union[_np.ndarray, list],
+def vector(value: Union[_np.ndarray, list],
+           *,
            unit: Union[Unit, str, None] = default_unit) -> Variable:
     """Constructs a zero dimensional :class:`Variable` holding a single length-3
     vector.
