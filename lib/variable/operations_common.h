@@ -22,14 +22,8 @@ SCIPP_VARIABLE_EXPORT void max_impl(Variable &out, const Variable &var);
 SCIPP_VARIABLE_EXPORT void min_impl(Variable &out, const Variable &var);
 SCIPP_VARIABLE_EXPORT Variable mean_impl(const Variable &var, const Dim dim,
                                          const Variable &masks_sum);
-SCIPP_VARIABLE_EXPORT Variable &mean_impl(const Variable &var, const Dim dim,
-                                          const Variable &masks_sum,
-                                          Variable &out);
 SCIPP_VARIABLE_EXPORT Variable nanmean_impl(const Variable &var, const Dim dim,
                                             const Variable &masks_sum);
-SCIPP_VARIABLE_EXPORT Variable &nanmean_impl(const Variable &var, const Dim dim,
-                                             const Variable &masks_sum,
-                                             Variable &out);
 
 template <class T> T normalize_impl(const T &numerator, T denominator) {
   // Numerator may be an int or a Eigen::Vector3d => use double
