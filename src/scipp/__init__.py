@@ -86,6 +86,10 @@ from . import _binding
 _binding.bind_get()
 _binding.bind_pop()
 _binding.bind_conversion_to_builtin(Variable)
+# Assign method binding for both all containers
+for _cls in (Variable, DataArray, Dataset):
+    _binding.bind_functions_as_methods(_cls, globals(), ('sum', 'nansum'))
+del _cls
 # Assign method binding for both Variable and DataArray
 for _cls in (Variable, DataArray):
     _binding.bind_functions_as_methods(
