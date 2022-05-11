@@ -43,10 +43,10 @@ Variable make_accumulant(const Variable &var, const Dim dim,
 
 } // namespace
 
-void sum_impl(Variable &summed, const Variable &var) {
+void sum_into(Variable &summed, const Variable &var) {
   if (summed.dtype() == dtype<float>) {
     auto accum = astype(summed, dtype<double>);
-    sum_impl(accum, var);
+    sum_into(accum, var);
     copy(astype(accum, dtype<float>), summed);
   } else {
     accumulate_in_place(summed, var, element::add_equals, "sum");
@@ -92,7 +92,7 @@ Variable &sum_with_dim_inplace_impl(Op op, const Variable &var, const Dim dim,
 }
 
 Variable sum(const Variable &var, const Dim dim) {
-  return sum_with_dim_impl(sum_impl, var, dim);
+  return sum_with_dim_impl(sum_into, var, dim);
 }
 
 Variable nansum(const Variable &var, const Dim dim) {
@@ -100,7 +100,7 @@ Variable nansum(const Variable &var, const Dim dim) {
 }
 
 Variable &sum(const Variable &var, const Dim dim, Variable &out) {
-  return sum_with_dim_inplace_impl(sum_impl, var, dim, out);
+  return sum_with_dim_inplace_impl(sum_into, var, dim, out);
 }
 
 Variable &nansum(const Variable &var, const Dim dim, Variable &out) {
