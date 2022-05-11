@@ -20,4 +20,3 @@ Developer Documentation
    developer/tooling
    developer/transform
    developer/variable_implementation
-   developer/new-plotting-examples
