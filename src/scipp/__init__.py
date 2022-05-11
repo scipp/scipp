@@ -88,14 +88,14 @@ _binding.bind_pop()
 _binding.bind_conversion_to_builtin(Variable)
 # Assign method binding for both all containers
 for _cls in (Variable, DataArray, Dataset):
-    _binding.bind_functions_as_methods(_cls, globals(), ('sum', 'nansum'))
+    _binding.bind_functions_as_methods(_cls, globals(),
+                                       ('sum', 'nansum', 'mean', 'nanmean'))
 del _cls
 # Assign method binding for both Variable and DataArray
 for _cls in (Variable, DataArray):
     _binding.bind_functions_as_methods(
-        _cls, globals(),
-        ('broadcast', 'flatten', 'fold', 'squeeze', 'transpose', 'all', 'any', 'mean',
-         'sum', 'nanmean', 'nansum', 'floor', 'ceil', 'round'))
+        _cls, globals(), ('broadcast', 'flatten', 'fold', 'squeeze', 'transpose', 'all',
+                          'any', 'floor', 'ceil', 'round'))
     _binding.bind_function_as_method(cls=_cls, name='to', func=to, abbreviate_doc=False)
 del _cls
 del to
