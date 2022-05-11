@@ -11,8 +11,11 @@
 
 namespace scipp::variable {
 
+/// Sum elements of `var` and add to `summed` along dims
+/// present in `var` but not in `summed`.
+SCIPP_VARIABLE_EXPORT void sum_into(Variable &summed, const Variable &var);
+
 // Helpers for in-place reductions and reductions with groupby.
-SCIPP_VARIABLE_EXPORT void sum_impl(Variable &summed, const Variable &var);
 SCIPP_VARIABLE_EXPORT void all_impl(Variable &out, const Variable &var);
 SCIPP_VARIABLE_EXPORT void any_impl(Variable &out, const Variable &var);
 SCIPP_VARIABLE_EXPORT void max_impl(Variable &out, const Variable &var);

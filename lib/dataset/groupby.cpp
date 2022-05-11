@@ -166,7 +166,7 @@ template <class T> T GroupBy<T>::concat(const Dim reductionDim) const {
 
 /// Reduce each group using `sum` and return combined data.
 template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {
-  return reduce(sum_impl, reductionDim, FillValue::ZeroNotBool);
+  return reduce(sum_into, reductionDim, FillValue::ZeroNotBool);
 }
 
 /// Reduce each group using `all` and return combined data.
