@@ -58,5 +58,6 @@ Typing
    :template: scipp-class-template.rst
    :recursive:
 
-   typing.VariableLike
+   typing.DTypeLike
    typing.MetaDataMap
+   typing.VariableLike

@@ -16,7 +16,9 @@ using namespace scipp;
 namespace py = pybind11;
 
 void init_units(py::module &m) {
-  py::class_<DefaultUnit>(m, "DefaultUnit");
+  py::class_<DefaultUnit>(m, "DefaultUnit")
+      .def("__repr__",
+           [](const DefaultUnit &) { return "<automatically deduced unit>"; });
   py::class_<units::Unit>(m, "Unit", "A physical unit.")
       .def(py::init<const std::string &>())
       .def("__repr__", [](const units::Unit &u) { return u.name(); })
@@ -31,7 +33,8 @@ void init_units(py::module &m) {
       .def("__pow__", [](const units::Unit &self,
                          const int64_t power) { return pow(self, power); })
       .def(py::self == py::self)
-      .def(py::self != py::self);
+      .def(py::self != py::self)
+      .def(hash(py::self));
 
   m.def("abs", [](const units::Unit &u) { return abs(u); });
   m.def("pow", [](const units::Unit &u, const int64_t power) {

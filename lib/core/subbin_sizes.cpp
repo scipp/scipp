@@ -18,9 +18,6 @@ SubbinSizes::SubbinSizes(const scipp::index offset, container_type &&sizes)
     throw std::logic_error("Bad offset in class SubbinSizes.");
 }
 
-SubbinSizes::SubbinSizes(const scipp::index value)
-    : m_offset(0), m_sizes({value}) {}
-
 void SubbinSizes::operator=(const scipp::index value) {
   for (auto &size : m_sizes)
     size = value;

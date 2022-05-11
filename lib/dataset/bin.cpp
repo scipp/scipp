@@ -121,7 +121,7 @@ auto bin(const Variable &data, const Variable &indices,
   // untouched (no rebin).
   std::vector<std::pair<Dim, scipp::index>> strategy;
   for (const auto dim : data.dims())
-    if (dims.contains(dim) && dims[dim] > 0)
+    if (dims.contains(dim))
       strategy.emplace_back(dim, data.dims()[dim]);
   // To avoid excessive memory consumption in intermediate results for
   // `output_bin_sizes` (in the loop below, computing sums and cumsums) we need

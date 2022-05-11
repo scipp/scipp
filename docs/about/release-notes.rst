@@ -18,6 +18,7 @@ Breaking changes
 ~~~~~~~~~~~~~~~~
 
 * Changed :meth:`scipp.Variable.dims` and :meth:`scipp.Variable.shape` and corresponding properties in `DataArray` and `Dataset` to return tuples `2543 <https://github.com/scipp/scipp/pull/2543>`_.
+* :func:`scipp.scalar` and :func:`scipp.index` now require keyword arguments for all but the ``value`` argument and :func:`scipp.vector` can take ``value`` positionally `2585 <https://github.com/scipp/scipp/pull/2585>`_.
 
 Bugfixes
 ~~~~~~~~
@@ -25,6 +26,7 @@ Bugfixes
 * Fix :func:`scipp.isclose` and :func:`scipp.allclose` to support arguments without a unit `#2528 <https://github.com/scipp/scipp/pull/2528>`_.
 * :func:`scipp.to_unit` avoids a rounding problem when converting datetimes. This previously led to errors, e.g., of about 300 nanoseconds when converting a current (2020s) datetime64 from seconds to nanoseconds `#2533 <https://github.com/scipp/scipp/pull/2533>`_.
 * Fix handling of keyword arguments in :func:`scipp.optimize.curve_fit`. They were previously checked for conflicts but otherwise ignored `#2545 <https://github.com/scipp/scipp/pull/2545>`_.
+* Fix a segmentation fault in :func:`scipp.bin` when grouping by a variable with 0 elements `#2590 <https://github.com/scipp/scipp/pull/2590>`_.
 
 Documentation
 ~~~~~~~~~~~~~
