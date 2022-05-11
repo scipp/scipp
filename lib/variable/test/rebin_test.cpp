@@ -72,7 +72,7 @@ TEST(RebinTest, outer_increasing_1_inner) {
   };
   const auto oldY = varY(0, 1, 2, 3, 4);
   constexpr auto var1x1 = [](const double value) {
-    return makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{1}, Values{value},
+    return makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{1, 1}, Values{value},
                                 units::counts);
   };
   // full range
@@ -149,7 +149,7 @@ TEST(RebinTest, outer_decreasing_1_inner) {
   };
   const auto oldY = varY(4, 3, 2, 1, 0);
   constexpr auto var1x1 = [](const double value) {
-    return makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{1}, Values{value},
+    return makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{1, 1}, Values{value},
                                 units::counts);
   };
   // full range
