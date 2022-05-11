@@ -1,12 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
-# @author Neil Vaytet
 
-import numpy as np
 import scipp as sc
 from scipp.plt import Plot, Model, Figure, widgets, Node
-from ..factory import make_dense_data_array, make_dense_dataset, make_binned_data_array
+from ..factory import make_dense_data_array, make_dense_dataset
 import matplotlib.pyplot as plt
 import matplotlib
 import ipywidgets as ipw
