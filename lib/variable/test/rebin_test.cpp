@@ -63,6 +63,9 @@ TEST(RebinTest, outer) {
   }
 }
 
+// Code in this test uses a different branch in rebin compared to
+// outer_increasing_2_inner because rebin uses an optimization
+// for stride[rebin_dim] == 1.
 TEST(RebinTest, outer_increasing_1_inner) {
   const auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{4, 1},
                                         Values{1, 2, 3, 4}, units::counts);
