@@ -116,12 +116,6 @@ Variable nanmean(const Variable &var, const Dim dim) {
   return nanmean_impl(var, dim, sum(isfinite(var), dim));
 }
 
-template <class Op>
-void reduce_impl(Variable &out, const Variable &var, Op op,
-                 const std::string_view name) {
-  accumulate_in_place(out, var, op, name);
-}
-
 /// Reduction for idempotent operations such that op(a,a) = a.
 ///
 /// The requirement for idempotency comes from the way the reduction output is
@@ -132,7 +126,7 @@ template <class Op>
 Variable reduce_idempotent(const Variable &var, const Dim dim, Op op,
                            const FillValue &init, const std::string_view name) {
   auto out = make_accumulant(var, dim, init);
-  reduce_impl(out, var, op, name);
+  accumulate_in_place(out, var, op, name);
   return out;
 }
 
