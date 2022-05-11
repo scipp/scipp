@@ -32,6 +32,7 @@ void init_generated_bins(py::module &);
 void init_generated_comparison(py::module &);
 void init_generated_logical(py::module &);
 void init_generated_math(py::module &);
+void init_generated_reduction(py::module &);
 void init_generated_trigonometry(py::module &);
 void init_generated_util(py::module &);
 void init_generated_special_values(py::module &);
@@ -67,6 +68,7 @@ void init_core(py::module &m) {
   init_generated_comparison(core);
   init_generated_logical(core);
   init_generated_math(core);
+  init_generated_reduction(core);
   init_generated_trigonometry(core);
   init_generated_util(core);
   init_generated_special_values(core);

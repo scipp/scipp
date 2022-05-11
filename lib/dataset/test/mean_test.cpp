@@ -4,6 +4,7 @@
 
 #include "scipp/common/overloaded.h"
 #include "scipp/dataset/reduction.h"
+#include "scipp/dataset/sum.h"
 
 #include "fix_typed_test_suite_warnings.h"
 #include "test_nans.h"

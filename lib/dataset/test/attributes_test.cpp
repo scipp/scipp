@@ -6,9 +6,8 @@
 #include "scipp/dataset/rebin.h"
 #include "scipp/dataset/reduction.h"
 #include "scipp/dataset/shape.h"
+#include "scipp/dataset/sum.h"
 #include "scipp/variable/arithmetic.h"
-
-#include "dataset_test_common.h"
 
 using namespace scipp;
 using namespace scipp::dataset;

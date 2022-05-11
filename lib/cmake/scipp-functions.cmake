@@ -86,3 +86,7 @@ scipp_function("unary" bins bin_sizes SKIP_VARIABLE BASE_INCLUDE dataset/bins.h)
 scipp_function("unary" bins bins_sum SKIP_VARIABLE BASE_INCLUDE dataset/bins.h)
 scipp_function("unary" bins bins_mean SKIP_VARIABLE BASE_INCLUDE dataset/bins.h)
 setup_scipp_category(bins)
+
+scipp_function("reduction" reduction sum SKIP_VARIABLE)
+scipp_function("reduction" reduction nansum SKIP_VARIABLE)
+setup_scipp_category(reduction)

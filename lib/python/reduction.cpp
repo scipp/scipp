@@ -33,27 +33,6 @@ template <class T> void bind_nanmean(py::module &m) {
       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>());
 }
 
-template <class T> void bind_sum(py::module &m) {
-  m.def(
-      "sum", [](const T &x) { return sum(x); }, py::arg("x"),
-      py::call_guard<py::gil_scoped_release>());
-  m.def(
-      "sum",
-      [](const T &x, const std::string &dim) { return sum(x, Dim{dim}); },
-      py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>());
-}
-
-template <class T> void bind_nansum(py::module &m) {
-  m.def(
-      "nansum", [](const T &x) { return nansum(x); }, py::arg("x"),
-      py::call_guard<py::gil_scoped_release>());
-
-  m.def(
-      "nansum",
-      [](const T &x, const std::string &dim) { return nansum(x, Dim{dim}); },
-      py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>());
-}
-
 template <class T> void bind_min(py::module &m) {
   m.def(
       "min", [](const T &x) { return min(x); }, py::arg("x"),
@@ -122,14 +101,6 @@ void init_reduction(py::module &m) {
   bind_nanmean<Variable>(m);
   bind_nanmean<DataArray>(m);
   bind_nanmean<Dataset>(m);
-
-  bind_sum<Variable>(m);
-  bind_sum<DataArray>(m);
-  bind_sum<Dataset>(m);
-
-  bind_nansum<Variable>(m);
-  bind_nansum<DataArray>(m);
-  bind_nansum<Dataset>(m);
 
   bind_min<Variable>(m);
   bind_max<Variable>(m);

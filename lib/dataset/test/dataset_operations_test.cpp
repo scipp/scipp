@@ -5,7 +5,9 @@
 
 #include "dataset_test_common.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/nansum.h"
 #include "scipp/dataset/reduction.h"
+#include "scipp/dataset/sum.h"
 #include "test_macros.h"
 
 using namespace scipp;

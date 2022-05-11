@@ -7,7 +7,7 @@
 #include "test_macros.h"
 
 #include "scipp/dataset/bins.h"
-#include "scipp/dataset/reduction.h"
+#include "scipp/dataset/sum.h"
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/reduction.h"
 
