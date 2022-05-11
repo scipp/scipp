@@ -11,7 +11,6 @@
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/astype.h"
 #include "scipp/variable/creation.h"
-#include "scipp/variable/math.h"
 #include "scipp/variable/special_values.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
@@ -137,26 +136,14 @@ Variable reduce_idempotent(const Variable &var, const Dim dim, Op op,
   return out;
 }
 
-void any_impl(Variable &out, const Variable &var) {
-  reduce_impl(out, var, core::element::logical_or_equals, "any");
-}
-
 Variable any(const Variable &var, const Dim dim) {
   return reduce_idempotent(var, dim, core::element::logical_or_equals,
                            FillValue::False, "any");
 }
 
-void all_impl(Variable &out, const Variable &var) {
-  reduce_impl(out, var, core::element::logical_and_equals, "all");
-}
-
 Variable all(const Variable &var, const Dim dim) {
   return reduce_idempotent(var, dim, core::element::logical_and_equals,
                            FillValue::True, "all");
-}
-
-void max_impl(Variable &out, const Variable &var) {
-  reduce_impl(out, var, core::element::max_equals, "max");
 }
 
 /// Return the maximum along given dimension.
@@ -175,10 +162,6 @@ Variable max(const Variable &var, const Dim dim) {
 Variable nanmax(const Variable &var, const Dim dim) {
   return reduce_idempotent(var, dim, core::element::nanmax_equals,
                            FillValue::Lowest, "nanmax");
-}
-
-void min_impl(Variable &out, const Variable &var) {
-  reduce_impl(out, var, core::element::min_equals, "min");
 }
 
 /// Return the minimum along given dimension.

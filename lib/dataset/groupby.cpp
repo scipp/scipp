@@ -7,10 +7,13 @@
 #include "scipp/common/numeric.h"
 
 #include "scipp/core/bucket.h"
+#include "scipp/core/element/comparison.h"
+#include "scipp/core/element/logical.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/parallel.h"
 #include "scipp/core/tag_util.h"
 
+#include "scipp/variable/accumulate.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
@@ -171,22 +174,40 @@ template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {
 
 /// Reduce each group using `all` and return combined data.
 template <class T> T GroupBy<T>::all(const Dim reductionDim) const {
-  return reduce(all_impl, reductionDim, FillValue::True);
+  return reduce(
+      [](Variable &out, const Variable &var) {
+        accumulate_in_place(out, var, core::element::logical_and_equals,
+                            "groupby.all");
+      },
+      reductionDim, FillValue::True);
 }
 
 /// Reduce each group using `any` and return combined data.
 template <class T> T GroupBy<T>::any(const Dim reductionDim) const {
-  return reduce(any_impl, reductionDim, FillValue::False);
+  return reduce(
+      [](Variable &out, const Variable &var) {
+        accumulate_in_place(out, var, core::element::logical_or_equals,
+                            "groupby.any");
+      },
+      reductionDim, FillValue::False);
 }
 
 /// Reduce each group using `max` and return combined data.
 template <class T> T GroupBy<T>::max(const Dim reductionDim) const {
-  return reduce(max_impl, reductionDim, FillValue::Lowest);
+  return reduce(
+      [](Variable &out, const Variable &var) {
+        accumulate_in_place(out, var, core::element::max_equals, "groupby.max");
+      },
+      reductionDim, FillValue::Lowest);
 }
 
 /// Reduce each group using `min` and return combined data.
 template <class T> T GroupBy<T>::min(const Dim reductionDim) const {
-  return reduce(min_impl, reductionDim, FillValue::Max);
+  return reduce(
+      [](Variable &out, const Variable &var) {
+        accumulate_in_place(out, var, core::element::min_equals, "groupby.min");
+      },
+      reductionDim, FillValue::Max);
 }
 
 /// Combine groups without changes, effectively sorting data.
