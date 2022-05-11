@@ -120,6 +120,32 @@ TEST(BinGroupTest, 1d) {
             expected.slice({Dim::Row, 4}));
 }
 
+TEST(BinGroupTest, 1d_zero_groups) {
+  const Dimensions dims(Dim::Row, 3);
+  const auto data = makeVariable<double>(dims, Values{1, 2, 3});
+  const auto label = makeVariable<int64_t>(dims, Values{11, 22, 33});
+  const auto table = DataArray(data, {{Dim("label"), label}});
+  Variable groups = makeVariable<int64_t>(Dims{Dim("label")}, Shape{0});
+  const auto binned = bin(table, {}, {groups});
+  EXPECT_EQ(binned.dims(), Dimensions({{Dim("label"), 0}}));
+  EXPECT_EQ(binned.coords()[Dim("label")], groups);
+}
+
+TEST(BinGroupTest, 1d_regroup_to_zero_groups) {
+  const Dimensions dims(Dim::Row, 3);
+  const auto data = makeVariable<double>(dims, Values{1, 2, 3});
+  const auto label = makeVariable<int64_t>(dims, Values{11, 22, 33});
+  const auto table = DataArray(data, {{Dim("label"), label}});
+  Variable groups2 =
+      makeVariable<int64_t>(Dims{Dim("label")}, Shape{2}, Values{11, 22});
+  Variable groups0 = makeVariable<int64_t>(Dims{Dim("label")}, Shape{0});
+  const auto binned2 = bin(table, {}, {groups2});
+  const auto binned = bin(binned2, {}, {groups0});
+  EXPECT_EQ(binned.dims(), Dimensions({{Dim("label"), 0}}));
+  EXPECT_EQ(binned.coords()[Dim("label")], groups0);
+  EXPECT_EQ(binned, bin(table, {}, {groups0}));
+}
+
 class BinTest : public ::testing::TestWithParam<DataArray> {
 protected:
   Variable groups = makeVariable<int64_t>(Dims{Dim("group")}, Shape{5},

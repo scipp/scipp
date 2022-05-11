@@ -9,6 +9,7 @@
 
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
+#include "scipp/common/initialization.h"
 
 namespace scipp::core {
 
@@ -17,7 +18,6 @@ class SCIPP_CORE_EXPORT SubbinSizes {
 public:
   using container_type = std::vector<scipp::index>;
   SubbinSizes() = default;
-  SubbinSizes(const scipp::index value);
   SubbinSizes(const scipp::index offset, container_type &&sizes);
   const auto &offset() const noexcept { return m_offset; }
   const auto &sizes() const noexcept { return m_sizes; }
@@ -45,3 +45,12 @@ private:
                                                       const SubbinSizes &b);
 
 } // namespace scipp::core
+
+namespace scipp {
+// This is used by `sum` to initialize the output. By default we want a length-0
+// size vector.
+template <> struct zero_init<core::SubbinSizes> {
+  static core::SubbinSizes value() { return core::SubbinSizes(); }
+};
+
+} // namespace scipp

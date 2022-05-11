@@ -27,6 +27,11 @@ TEST_F(SubbinSizesTest, assign_value) {
   EXPECT_EQ(x, SubbinSizes(2, {4, 4, 4}));
 }
 
+TEST_F(SubbinSizesTest, plus_equals_empty) {
+  SubbinSizes x(0, {});
+  EXPECT_EQ(x += SubbinSizes({0, {}}), SubbinSizes(0, {}));
+}
+
 TEST_F(SubbinSizesTest, plus_equals) {
   SubbinSizes x(4, {1, 2, 3});
   EXPECT_EQ(x += SubbinSizes({5, {4, 5, 6}}), SubbinSizes(4, {1, 6, 8, 6}));
