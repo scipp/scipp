@@ -3,8 +3,8 @@
 #include <gtest/gtest.h>
 
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/mean.h"
 #include "scipp/dataset/rebin.h"
-#include "scipp/dataset/reduction.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/dataset/sum.h"
 #include "scipp/variable/arithmetic.h"

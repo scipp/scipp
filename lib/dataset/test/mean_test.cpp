@@ -3,7 +3,8 @@
 #include <gtest/gtest.h>
 
 #include "scipp/common/overloaded.h"
-#include "scipp/dataset/reduction.h"
+#include "scipp/dataset/mean.h"
+#include "scipp/dataset/nanmean.h"
 #include "scipp/dataset/sum.h"
 
 #include "fix_typed_test_suite_warnings.h"

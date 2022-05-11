@@ -89,4 +89,6 @@ setup_scipp_category(bins)
 
 scipp_function("reduction" reduction sum SKIP_VARIABLE)
 scipp_function("reduction" reduction nansum SKIP_VARIABLE)
+scipp_function("reduction" reduction mean SKIP_VARIABLE SKIP_DATASET)
+scipp_function("reduction" reduction nanmean SKIP_VARIABLE SKIP_DATASET)
 setup_scipp_category(reduction)

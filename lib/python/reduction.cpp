@@ -4,34 +4,12 @@
 /// @author Simon Heybrock
 #include "pybind11.h"
 
-#include "scipp/dataset/reduction.h"
 #include "scipp/variable/reduction.h"
 
 using namespace scipp;
 using namespace scipp::variable;
-using namespace scipp::dataset;
 
 namespace py = pybind11;
-
-template <class T> void bind_mean(py::module &m) {
-  m.def(
-      "mean", [](const T &x) { return mean(x); }, py::arg("x"),
-      py::call_guard<py::gil_scoped_release>());
-  m.def(
-      "mean",
-      [](const T &x, const std::string &dim) { return mean(x, Dim{dim}); },
-      py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>());
-}
-
-template <class T> void bind_nanmean(py::module &m) {
-  m.def(
-      "nanmean", [](const T &x) { return nanmean(x); }, py::arg("x"),
-      py::call_guard<py::gil_scoped_release>());
-  m.def(
-      "nanmean",
-      [](const T &x, const std::string &dim) { return nanmean(x, Dim{dim}); },
-      py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>());
-}
 
 template <class T> void bind_min(py::module &m) {
   m.def(
@@ -94,14 +72,6 @@ template <class T> void bind_any(py::module &m) {
 }
 
 void init_reduction(py::module &m) {
-  bind_mean<Variable>(m);
-  bind_mean<DataArray>(m);
-  bind_mean<Dataset>(m);
-
-  bind_nanmean<Variable>(m);
-  bind_nanmean<DataArray>(m);
-  bind_nanmean<Dataset>(m);
-
   bind_min<Variable>(m);
   bind_max<Variable>(m);
   bind_nanmin<Variable>(m);

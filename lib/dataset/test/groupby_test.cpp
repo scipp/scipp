@@ -6,7 +6,7 @@
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/groupby.h"
-#include "scipp/dataset/reduction.h"
+#include "scipp/dataset/mean.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/dataset/sum.h"
 #include "scipp/variable/arithmetic.h"

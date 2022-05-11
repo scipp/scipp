@@ -28,7 +28,7 @@
 #include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/histogram.h"
-#include "scipp/dataset/reduction.h"
+#include "scipp/dataset/mean.h"
 #include "scipp/dataset/shape.h"
 
 #include "../variable/operations_common.h"
