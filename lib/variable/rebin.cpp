@@ -3,12 +3,12 @@
 /// @file
 /// @author Simon Heybrock, Igor Gudich
 #include "scipp/core/element/rebin.h"
+#include "operations_common.h"
 #include "scipp/core/parallel.h"
 #include "scipp/units/except.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/astype.h"
 #include "scipp/variable/rebin.h"
-#include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/transform_subspan.h"
 #include "scipp/variable/util.h"
@@ -52,7 +52,7 @@ void rebin_non_inner(const Dim dim, const Variable &oldT, Variable &newT,
     begin = std::max(scipp::index(0), begin - 1);
     add_from_bin(slice, xn_low, xn_high, begin);
     if (begin + 1 < end - 1)
-      sum(oldT.slice({dim, begin + 1, end - 1}), dim, slice);
+      sum_into(slice, oldT.slice({dim, begin + 1, end - 1}));
     if (begin != end - 1 && end < oldSize + 1)
       add_from_bin(slice, xn_low, xn_high, end - 1);
   };

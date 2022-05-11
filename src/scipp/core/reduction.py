@@ -10,10 +10,7 @@ from ._cpp_wrapper_util import call_func as _call_cpp_func
 from ..typing import VariableLikeType
 
 
-def mean(x: VariableLikeType,
-         dim: Optional[str] = None,
-         *,
-         out: Optional[VariableLikeType] = None) -> VariableLikeType:
+def mean(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
     """Arithmetic mean of elements in the input.
 
     If the input has variances, the variances stored in the output are based on
@@ -32,8 +29,6 @@ def mean(x: VariableLikeType,
     dim:
         Dimension along which to calculate the mean. If not
         given, the mean over all dimensions is calculated.
-    out:
-        Optional output buffer.
 
     Returns
     -------
@@ -46,15 +41,12 @@ def mean(x: VariableLikeType,
         Ignore NaN's when calculating the mean.
     """
     if dim is None:
-        return _call_cpp_func(_cpp.mean, x, out=out)
+        return _call_cpp_func(_cpp.mean, x)
     else:
-        return _call_cpp_func(_cpp.mean, x, dim=dim, out=out)
+        return _call_cpp_func(_cpp.mean, x, dim=dim)
 
 
-def nanmean(x: VariableLikeType,
-            dim: Optional[str] = None,
-            *,
-            out: Optional[VariableLikeType] = None) -> VariableLikeType:
+def nanmean(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
     """Arithmetic mean of elements in the input ignoring NaN's.
 
     If the input has variances, the variances stored in the output are based on
@@ -73,8 +65,6 @@ def nanmean(x: VariableLikeType,
     dim:
         Dimension along which to calculate the mean. If not
         given, the nanmean over all dimensions is calculated.
-    out:
-        Optional output buffer.
 
     Returns
     -------
@@ -87,15 +77,12 @@ def nanmean(x: VariableLikeType,
         Compute the mean without special handling of NaN.
     """
     if dim is None:
-        return _call_cpp_func(_cpp.nanmean, x, out=out)
+        return _call_cpp_func(_cpp.nanmean, x)
     else:
-        return _call_cpp_func(_cpp.nanmean, x, dim=dim, out=out)
+        return _call_cpp_func(_cpp.nanmean, x, dim=dim)
 
 
-def sum(x: VariableLikeType,
-        dim: Optional[str] = None,
-        *,
-        out: Optional[VariableLikeType] = None) -> VariableLikeType:
+def sum(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
     """Sum of elements in the input.
 
     If the input data is in single precision (dtype='float32') this internally uses
@@ -111,8 +98,6 @@ def sum(x: VariableLikeType,
     dim:
         Optional dimension along which to calculate the sum. If not
         given, the sum over all dimensions is calculated.
-    out:
-        Optional output buffer.
 
     Returns
     -------
@@ -125,15 +110,12 @@ def sum(x: VariableLikeType,
         Ignore NaN's when calculating the sum.
     """
     if dim is None:
-        return _call_cpp_func(_cpp.sum, x, out=out)
+        return _call_cpp_func(_cpp.sum, x)
     else:
-        return _call_cpp_func(_cpp.sum, x, dim=dim, out=out)
+        return _call_cpp_func(_cpp.sum, x, dim=dim)
 
 
-def nansum(x: VariableLikeType,
-           dim: Optional[str] = None,
-           *,
-           out: Optional[VariableLikeType] = None) -> VariableLikeType:
+def nansum(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
     """Sum of elements in the input ignoring NaN's.
 
     See :py:func:`scipp.sum` on how rounding errors for float32 inputs are handled.
@@ -145,8 +127,6 @@ def nansum(x: VariableLikeType,
     dim:
         Optional dimension along which to calculate the sum. If not
         given, the sum over all dimensions is calculated.
-    out:
-        Optional output buffer.
 
     Returns
     -------
@@ -159,15 +139,12 @@ def nansum(x: VariableLikeType,
        Compute the sum without special handling of NaN.
     """
     if dim is None:
-        return _call_cpp_func(_cpp.nansum, x, out=out)
+        return _call_cpp_func(_cpp.nansum, x)
     else:
-        return _call_cpp_func(_cpp.nansum, x, dim=dim, out=out)
+        return _call_cpp_func(_cpp.nansum, x, dim=dim)
 
 
-def min(x: _cpp.Variable,
-        dim: Optional[str] = None,
-        *,
-        out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
+def min(x: _cpp.Variable, dim: Optional[str] = None) -> _cpp.Variable:
     """Minimum of elements in the input.
 
     Parameters
@@ -177,8 +154,6 @@ def min(x: _cpp.Variable,
     dim:
         Optional dimension along which to calculate the min. If not
         given, the min over all dimensions is calculated.
-    out:
-        Optional output buffer.
 
     Returns
     -------
@@ -195,15 +170,12 @@ def min(x: _cpp.Variable,
         Same as max but ignoring NaN's.
     """
     if dim is None:
-        return _call_cpp_func(_cpp.min, x, out=out)
+        return _call_cpp_func(_cpp.min, x)
     else:
-        return _call_cpp_func(_cpp.min, x, dim=dim, out=out)
+        return _call_cpp_func(_cpp.min, x, dim=dim)
 
 
-def max(x: _cpp.Variable,
-        dim: Optional[str] = None,
-        *,
-        out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
+def max(x: _cpp.Variable, dim: Optional[str] = None) -> _cpp.Variable:
     """Maximum of elements in the input.
 
     Parameters
@@ -213,8 +185,6 @@ def max(x: _cpp.Variable,
     dim:
         Optional dimension along which to calculate the max. If not
         given, the max over all dimensions is calculated.
-    out:
-        Optional output buffer.
 
     Returns
     -------
@@ -231,15 +201,12 @@ def max(x: _cpp.Variable,
         Same as max but ignoring NaN's.
     """
     if dim is None:
-        return _call_cpp_func(_cpp.max, x, out=out)
+        return _call_cpp_func(_cpp.max, x)
     else:
-        return _call_cpp_func(_cpp.max, x, dim=dim, out=out)
+        return _call_cpp_func(_cpp.max, x, dim=dim)
 
 
-def nanmin(x: _cpp.Variable,
-           dim: Optional[str] = None,
-           *,
-           out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
+def nanmin(x: _cpp.Variable, dim: Optional[str] = None) -> _cpp.Variable:
     """Minimum of elements in the input ignoring NaN's.
 
     Parameters
@@ -249,8 +216,6 @@ def nanmin(x: _cpp.Variable,
     dim:
         Optional dimension along which to calculate the min. If not
         given, the min over all dimensions is calculated.
-    out:
-        Optional output buffer.
 
     Returns
     -------
@@ -267,15 +232,12 @@ def nanmin(x: _cpp.Variable,
         Same as max but ignoring NaN's.
     """
     if dim is None:
-        return _call_cpp_func(_cpp.nanmin, x, out=out)
+        return _call_cpp_func(_cpp.nanmin, x)
     else:
-        return _call_cpp_func(_cpp.nanmin, x, dim=dim, out=out)
+        return _call_cpp_func(_cpp.nanmin, x, dim=dim)
 
 
-def nanmax(x: _cpp.Variable,
-           dim: Optional[str] = None,
-           *,
-           out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
+def nanmax(x: _cpp.Variable, dim: Optional[str] = None) -> _cpp.Variable:
     """Maximum of elements in the input ignoring NaN's.
 
     Parameters
@@ -285,8 +247,6 @@ def nanmax(x: _cpp.Variable,
     dim:
         Optional dimension along which to calculate the max. If not
         given, the max over all dimensions is calculated.
-    out:
-        Optional output buffer.
 
     Returns
     -------
@@ -303,15 +263,12 @@ def nanmax(x: _cpp.Variable,
         Same as min but ignoring NaN's.
     """
     if dim is None:
-        return _call_cpp_func(_cpp.nanmax, x, out=out)
+        return _call_cpp_func(_cpp.nanmax, x)
     else:
-        return _call_cpp_func(_cpp.nanmax, x, dim=dim, out=out)
+        return _call_cpp_func(_cpp.nanmax, x, dim=dim)
 
 
-def all(x: _cpp.Variable,
-        dim: Optional[str] = None,
-        *,
-        out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
+def all(x: _cpp.Variable, dim: Optional[str] = None) -> _cpp.Variable:
     """Logical AND over input values.
 
     Parameters
@@ -321,8 +278,6 @@ def all(x: _cpp.Variable,
     dim:
         Optional dimension along which to calculate the AND. If not
         given, the AND over all dimensions is calculated.
-    out:
-        Optional output buffer.
 
     Returns
     -------
@@ -336,15 +291,12 @@ def all(x: _cpp.Variable,
         Logical OR.
     """
     if dim is None:
-        return _call_cpp_func(_cpp.all, x, out=out)
+        return _call_cpp_func(_cpp.all, x)
     else:
-        return _call_cpp_func(_cpp.all, x, dim=dim, out=out)
+        return _call_cpp_func(_cpp.all, x, dim=dim)
 
 
-def any(x: _cpp.Variable,
-        dim: Optional[str] = None,
-        *,
-        out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
+def any(x: _cpp.Variable, dim: Optional[str] = None) -> _cpp.Variable:
     """Logical OR over input values.
 
     Parameters
@@ -354,8 +306,6 @@ def any(x: _cpp.Variable,
     dim:
         Optional dimension along which to calculate the OR. If not
         given, the OR over all dimensions is calculated.
-    out:
-        Optional output buffer.
 
     Returns
     -------
@@ -369,6 +319,6 @@ def any(x: _cpp.Variable,
         Logical AND.
     """
     if dim is None:
-        return _call_cpp_func(_cpp.any, x, out=out)
+        return _call_cpp_func(_cpp.any, x)
     else:
-        return _call_cpp_func(_cpp.any, x, dim=dim, out=out)
+        return _call_cpp_func(_cpp.any, x, dim=dim)

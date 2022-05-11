@@ -24,16 +24,6 @@ Variable sum(const Variable &var, const Dim dim, const Masks &masks) {
   return sum(var, dim);
 }
 
-Variable &sum(const Variable &var, const Dim dim, const Masks &masks,
-              // cppcheck-suppress constParameter  # intentional out param
-              Variable &out) {
-  if (const auto mask_union = irreducible_mask(masks, dim);
-      mask_union.is_valid()) {
-    return sum(where(mask_union, zero_like(var), var), dim, out);
-  }
-  return sum(var, dim, out);
-}
-
 Variable nansum(const Variable &var, const Dim dim, const Masks &masks) {
   if (const auto mask_union = irreducible_mask(masks, dim);
       mask_union.is_valid()) {

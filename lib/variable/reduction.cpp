@@ -24,9 +24,6 @@ namespace scipp::variable {
 
 namespace {
 
-// Workaround VS C7526 (undefined inline variable) with dtype<> in template.
-bool is_dtype_bool(const Variable &var) { return var.dtype() == dtype<bool>; }
-
 Variable make_accumulant(const Variable &var, const Dim dim,
                          const FillValue &init) {
   if (variableFactory().has_masks(var))
@@ -72,39 +69,12 @@ Variable sum_with_dim_impl(Op op, const Variable &var, const Dim dim) {
   return summed;
 }
 
-template <typename Op>
-Variable &sum_with_dim_inplace_impl(Op op, const Variable &var, const Dim dim,
-                                    Variable &out) {
-  if (is_dtype_bool(var) && is_dtype_bool(out))
-    throw except::TypeError("In-place sum of dtype=bool cannot be stored in an "
-                            "output variable with dtype=bool.");
-
-  auto dims = var.dims();
-  dims.erase(dim);
-  if (dims != out.dims())
-    throw except::DimensionError(
-        "Output argument dimensions must be equal to input dimensions without "
-        "the summing dimension.");
-
-  out.setUnit(var.unit());
-  op(out, var);
-  return out;
-}
-
 Variable sum(const Variable &var, const Dim dim) {
   return sum_with_dim_impl(sum_into, var, dim);
 }
 
 Variable nansum(const Variable &var, const Dim dim) {
   return sum_with_dim_impl(nansum_impl, var, dim);
-}
-
-Variable &sum(const Variable &var, const Dim dim, Variable &out) {
-  return sum_with_dim_inplace_impl(sum_into, var, dim, out);
-}
-
-Variable &nansum(const Variable &var, const Dim dim, Variable &out) {
-  return sum_with_dim_inplace_impl(nansum_impl, var, dim, out);
 }
 
 Variable mean_impl(const Variable &var, const Dim dim, const Variable &count) {
@@ -114,26 +84,6 @@ Variable mean_impl(const Variable &var, const Dim dim, const Variable &count) {
 Variable nanmean_impl(const Variable &var, const Dim dim,
                       const Variable &count) {
   return normalize_impl(nansum(var, dim), count);
-}
-
-Variable &mean_impl(const Variable &var, const Dim dim, const Variable &count,
-                    Variable &out) {
-  if (is_int(out.dtype()))
-    throw except::TypeError(
-        "Cannot calculate mean in-place when output dtype is integer");
-  sum(var, dim, out);
-  normalize_inplace_impl(out, count);
-  return out;
-}
-
-Variable &nanmean_impl(const Variable &var, const Dim dim,
-                       const Variable &count, Variable &out) {
-  if (is_int(out.dtype()))
-    throw except::TypeError(
-        "Cannot calculate nanmean in-place when output dtype is integer");
-  nansum(var, dim, out);
-  normalize_inplace_impl(out, count);
-  return out;
 }
 
 namespace {
@@ -158,10 +108,6 @@ Variable mean(const Variable &var, const Dim dim) {
   return mean_impl(var, dim, count(var, dim));
 }
 
-Variable &mean(const Variable &var, const Dim dim, Variable &out) {
-  return mean_impl(var, dim, count(var, dim), out);
-}
-
 /// Return the mean along all dimensions. Ignoring NaN values.
 Variable nanmean(const Variable &var) {
   return normalize_impl(nansum(var), sum(isfinite(var)));
@@ -169,10 +115,6 @@ Variable nanmean(const Variable &var) {
 
 Variable nanmean(const Variable &var, const Dim dim) {
   return nanmean_impl(var, dim, sum(isfinite(var), dim));
-}
-
-Variable &nanmean(const Variable &var, const Dim dim, Variable &out) {
-  return nanmean_impl(var, dim, sum(isfinite(var), dim), out);
 }
 
 template <class Op>
