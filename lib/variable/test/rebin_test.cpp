@@ -120,27 +120,27 @@ TEST(RebinTest, outer_increasing_2_inner) {
   // full range
   EXPECT_EQ(rebin(var, Dim::Y, oldY, oldY), var);
   // aligned old/bew edges
-  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0, 4)), var1x1(10));
-  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0, 2)), var1x1(3));
-  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(1, 3)), var1x1(5));
-  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(2, 4)), var1x1(7));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0, 4)), var1x2(10));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0, 2)), var1x2(3));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(1, 3)), var1x2(5));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(2, 4)), var1x2(7));
   // crossing 0 bin bounds
-  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0.1, 0.3)), var1x1((0.3 - 0.1) * 1));
-  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(1.1, 1.3)), var1x1((1.3 - 1.1) * 2));
-  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(3.1, 3.3)), var1x1((3.3 - 3.1) * 4));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0.1, 0.3)), var1x2((0.3 - 0.1) * 1));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(1.1, 1.3)), var1x2((1.3 - 1.1) * 2));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(3.1, 3.3)), var1x2((3.3 - 3.1) * 4));
   // crossing 1 bin bound
-  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0.1, 2.0)), var1x1(0.9 * 1 + 2));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0.1, 2.0)), var1x2(0.9 * 1 + 2));
   EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0.1, 1.3)),
-            var1x1((1.0 - 0.1) * 1 + (1.3 - 1.0) * 2));
+            var1x2((1.0 - 0.1) * 1 + (1.3 - 1.0) * 2));
   EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(1.1, 2.3)),
-            var1x1((2.0 - 1.1) * 2 + (2.3 - 2.0) * 3));
+            var1x2((2.0 - 1.1) * 2 + (2.3 - 2.0) * 3));
   EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(2.1, 3.3)),
-            var1x1((3.0 - 2.1) * 3 + (3.3 - 3.0) * 4));
+            var1x2((3.0 - 2.1) * 3 + (3.3 - 3.0) * 4));
   // crossing 2 bin bounds
   EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0.1, 2.3)),
-            var1x1((1.0 - 0.1) * 1 + 2 + (2.3 - 2.0) * 3));
+            var1x2((1.0 - 0.1) * 1 + 2 + (2.3 - 2.0) * 3));
   EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(1.1, 3.3)),
-            var1x1((2.0 - 1.1) * 2 + 3 + (3.3 - 3.0) * 4));
+            var1x2((2.0 - 1.1) * 2 + 3 + (3.3 - 3.0) * 4));
 }
 
 TEST(RebinTest, outer_decreasing_1_inner) {
@@ -197,27 +197,27 @@ TEST(RebinTest, outer_decreasing_2_inner) {
   // full range
   EXPECT_EQ(rebin(var, Dim::Y, oldY, oldY), var);
   // aligned old/bew edges
-  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(4, 0)), var1x1(10));
-  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(2, 0)), var1x1(3));
-  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(3, 1)), var1x1(5));
-  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(4, 2)), var1x1(7));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(4, 0)), var1x2(10));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(2, 0)), var1x2(3));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(3, 1)), var1x2(5));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(4, 2)), var1x2(7));
   // crossing 0 bin bounds
-  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0.3, 0.1)), var1x1((0.3 - 0.1) * 1));
-  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(1.3, 1.1)), var1x1((1.3 - 1.1) * 2));
-  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(3.3, 3.1)), var1x1((3.3 - 3.1) * 4));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0.3, 0.1)), var1x2((0.3 - 0.1) * 1));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(1.3, 1.1)), var1x2((1.3 - 1.1) * 2));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(3.3, 3.1)), var1x2((3.3 - 3.1) * 4));
   // crossing 1 bin bound
-  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(2.0, 0.1)), var1x1(0.9 * 1 + 2));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(2.0, 0.1)), var1x2(0.9 * 1 + 2));
   EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(1.3, 0.1)),
-            var1x1((1.0 - 0.1) * 1 + (1.3 - 1.0) * 2));
+            var1x2((1.0 - 0.1) * 1 + (1.3 - 1.0) * 2));
   EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(2.3, 1.1)),
-            var1x1((2.0 - 1.1) * 2 + (2.3 - 2.0) * 3));
+            var1x2((2.0 - 1.1) * 2 + (2.3 - 2.0) * 3));
   EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(3.3, 2.1)),
-            var1x1((3.0 - 2.1) * 3 + (3.3 - 3.0) * 4));
+            var1x2((3.0 - 2.1) * 3 + (3.3 - 3.0) * 4));
   // crossing 2 bin bounds
   EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(2.3, 0.1)),
-            var1x1((1.0 - 0.1) * 1 + 2 + (2.3 - 2.0) * 3));
+            var1x2((1.0 - 0.1) * 1 + 2 + (2.3 - 2.0) * 3));
   EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(3.3, 1.1)),
-            var1x1((2.0 - 1.1) * 2 + 3 + (3.3 - 3.0) * 4));
+            var1x2((2.0 - 1.1) * 2 + 3 + (3.3 - 3.0) * 4));
 }
 
 class RebinBool1DTest : public ::testing::Test {
