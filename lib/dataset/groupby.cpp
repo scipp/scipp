@@ -174,40 +174,22 @@ template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {
 
 /// Reduce each group using `all` and return combined data.
 template <class T> T GroupBy<T>::all(const Dim reductionDim) const {
-  return reduce(
-      [](Variable &out, const Variable &var) {
-        accumulate_in_place(out, var, core::element::logical_and_equals,
-                            "groupby.all");
-      },
-      reductionDim, FillValue::True);
+  return reduce(variable::all_into, reductionDim, FillValue::True);
 }
 
 /// Reduce each group using `any` and return combined data.
 template <class T> T GroupBy<T>::any(const Dim reductionDim) const {
-  return reduce(
-      [](Variable &out, const Variable &var) {
-        accumulate_in_place(out, var, core::element::logical_or_equals,
-                            "groupby.any");
-      },
-      reductionDim, FillValue::False);
+  return reduce(variable::any_into, reductionDim, FillValue::False);
 }
 
 /// Reduce each group using `max` and return combined data.
 template <class T> T GroupBy<T>::max(const Dim reductionDim) const {
-  return reduce(
-      [](Variable &out, const Variable &var) {
-        accumulate_in_place(out, var, core::element::max_equals, "groupby.max");
-      },
-      reductionDim, FillValue::Lowest);
+  return reduce(variable::max_into, reductionDim, FillValue::Lowest);
 }
 
 /// Reduce each group using `min` and return combined data.
 template <class T> T GroupBy<T>::min(const Dim reductionDim) const {
-  return reduce(
-      [](Variable &out, const Variable &var) {
-        accumulate_in_place(out, var, core::element::min_equals, "groupby.min");
-      },
-      reductionDim, FillValue::Max);
+  return reduce(variable::min_into, reductionDim, FillValue::Max);
 }
 
 /// Combine groups without changes, effectively sorting data.
