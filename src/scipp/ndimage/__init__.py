@@ -14,7 +14,7 @@ from ..core import CoordError, DimensionError
 from ..core import empty_like, islinspace, ones
 
 
-def ndfilter(func: Callable) -> Callable:
+def _ndfilter(func: Callable) -> Callable:
 
     @wraps(func)
     def function(x: Union[Variable, DataArray], **kwargs) -> Union[Variable, DataArray]:
@@ -50,7 +50,7 @@ def _positional_index(x: Union[Variable, DataArray], index, name=None):
     return [_delta_to_positional(x, dim, index[dim]) for dim in x.dims]
 
 
-@ndfilter
+@_ndfilter
 def gaussian_filter(x: Union[Variable, DataArray],
                     /,
                     *,
@@ -103,11 +103,22 @@ def _make_footprint_filter(name):
 
     footprint_filter.__name__ = name
     footprint_filter.__doc__ = f'Forwards to scipy.ndimage.{name}'
-    return ndfilter(footprint_filter)
+    return _ndfilter(footprint_filter)
 
 
-median_filter = _make_footprint_filter('median_filter')
+generic_filter = _make_footprint_filter('generic_filter')
 maximum_filter = _make_footprint_filter('maximum_filter')
+median_filter = _make_footprint_filter('median_filter')
 minimum_filter = _make_footprint_filter('minimum_filter')
+percentile_filter = _make_footprint_filter('percentile_filter')
+rank_filter = _make_footprint_filter('rank_filter')
 
-__all__ = ['gaussian_filter', 'median_filter', 'maximum_filter', 'minimum_filter']
+__all__ = [
+    'gaussian_filter',
+    'generic_filter',
+    'maximum_filter',
+    'median_filter',
+    'minimum_filter',
+    'percentile_filter',
+    'rank_filter',
+]
