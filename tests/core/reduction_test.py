@@ -100,3 +100,89 @@ def test_nanmean_single_dim(container):
                         container(sc.array(dims=['xx'], values=[2., 4.5], unit='m')))
     assert sc.identical(var.nanmean('yy'),
                         container(sc.array(dims=['xx'], values=[2., 4.5], unit='m')))
+
+
+def test_max(container):
+    x = container(sc.array(dims=['xx', 'yy'], values=[[1, 2, 3], [4, 5, 6]], unit='m'))
+    assert sc.identical(sc.max(x), container(sc.scalar(6, unit='m')))
+    assert sc.identical(x.max(), container(sc.scalar(6, unit='m')))
+
+
+def test_max_single_dim(container):
+    var = container(sc.array(dims=['xx', 'yy'], values=[[1, 2, 3], [4, 5, 6]],
+                             unit='m'))
+
+    assert sc.identical(sc.max(var, 'xx'),
+                        container(sc.array(dims=['yy'], values=[4, 5, 6], unit='m')))
+    assert sc.identical(var.max('xx'),
+                        container(sc.array(dims=['yy'], values=[4, 5, 6], unit='m')))
+
+    assert sc.identical(sc.max(var, 'yy'),
+                        container(sc.array(dims=['xx'], values=[3, 6], unit='m')))
+    assert sc.identical(var.max('yy'),
+                        container(sc.array(dims=['xx'], values=[3, 6], unit='m')))
+
+
+def test_nanmax(container):
+    x = container(
+        sc.array(dims=['xx', 'yy'], values=[[1, np.nan, 3], [4, 5, np.nan]], unit='m'))
+    assert sc.identical(sc.nanmax(x), container(sc.scalar(5., unit='m')))
+    assert sc.identical(x.nanmax(), container(sc.scalar(5., unit='m')))
+
+
+def test_nanmax_single_dim(container):
+    var = container(
+        sc.array(dims=['xx', 'yy'], values=[[1, np.nan, 3], [4, 5, np.nan]], unit='m'))
+
+    assert sc.identical(sc.nanmax(var, 'xx'),
+                        container(sc.array(dims=['yy'], values=[4., 5, 3], unit='m')))
+    assert sc.identical(var.nanmax('xx'),
+                        container(sc.array(dims=['yy'], values=[4., 5, 3], unit='m')))
+
+    assert sc.identical(sc.nanmax(var, 'yy'),
+                        container(sc.array(dims=['xx'], values=[3., 5], unit='m')))
+    assert sc.identical(var.nanmax('yy'),
+                        container(sc.array(dims=['xx'], values=[3., 5], unit='m')))
+
+
+def test_min(container):
+    x = container(sc.array(dims=['xx', 'yy'], values=[[1, 2, 3], [4, 5, 6]], unit='m'))
+    assert sc.identical(sc.min(x), container(sc.scalar(1, unit='m')))
+    assert sc.identical(x.min(), container(sc.scalar(1, unit='m')))
+
+
+def test_min_single_dim(container):
+    var = container(sc.array(dims=['xx', 'yy'], values=[[1, 2, 3], [4, 5, 6]],
+                             unit='m'))
+
+    assert sc.identical(sc.min(var, 'xx'),
+                        container(sc.array(dims=['yy'], values=[1, 2, 3], unit='m')))
+    assert sc.identical(var.min('xx'),
+                        container(sc.array(dims=['yy'], values=[1, 2, 3], unit='m')))
+
+    assert sc.identical(sc.min(var, 'yy'),
+                        container(sc.array(dims=['xx'], values=[1, 4], unit='m')))
+    assert sc.identical(var.min('yy'),
+                        container(sc.array(dims=['xx'], values=[1, 4], unit='m')))
+
+
+def test_nanmin(container):
+    x = container(
+        sc.array(dims=['xx', 'yy'], values=[[1, np.nan, 3], [4, 5, np.nan]], unit='m'))
+    assert sc.identical(sc.nanmin(x), container(sc.scalar(1., unit='m')))
+    assert sc.identical(x.nanmin(), container(sc.scalar(1., unit='m')))
+
+
+def test_nanmin_single_dim(container):
+    var = container(
+        sc.array(dims=['xx', 'yy'], values=[[1, np.nan, 3], [4, 5, np.nan]], unit='m'))
+
+    assert sc.identical(sc.nanmin(var, 'xx'),
+                        container(sc.array(dims=['yy'], values=[1., 5, 3], unit='m')))
+    assert sc.identical(var.nanmin('xx'),
+                        container(sc.array(dims=['yy'], values=[1., 5, 3], unit='m')))
+
+    assert sc.identical(sc.nanmin(var, 'yy'),
+                        container(sc.array(dims=['xx'], values=[1., 4], unit='m')))
+    assert sc.identical(var.nanmin('yy'),
+                        container(sc.array(dims=['xx'], values=[1., 4], unit='m')))

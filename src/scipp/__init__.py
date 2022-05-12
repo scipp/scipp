@@ -86,10 +86,11 @@ from . import _binding
 _binding.bind_get()
 _binding.bind_pop()
 _binding.bind_conversion_to_builtin(Variable)
-# Assign method binding for both all containers
+# Assign method binding for all containers
 for _cls in (Variable, DataArray, Dataset):
-    _binding.bind_functions_as_methods(_cls, globals(),
-                                       ('sum', 'nansum', 'mean', 'nanmean'))
+    _binding.bind_functions_as_methods(
+        _cls, globals(),
+        ('sum', 'nansum', 'mean', 'nanmean', 'max', 'min', 'nanmax', 'nanmin'))
 del _cls
 # Assign method binding for both Variable and DataArray
 for _cls in (Variable, DataArray):
@@ -100,8 +101,7 @@ for _cls in (Variable, DataArray):
 del _cls
 del to
 # Assign method binding for JUST Variable
-_binding.bind_functions_as_methods(Variable, globals(),
-                                   ('cumsum', 'max', 'min', 'nanmax', 'nanmin'))
+_binding.bind_functions_as_methods(Variable, globals(), ('cumsum', ))
 # Assign method binding for JUST Dataset
 _binding.bind_functions_as_methods(Dataset, globals(), ('squeeze', ))
 for _cls in (DataArray, Dataset):

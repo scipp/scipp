@@ -37,6 +37,7 @@ add_executable(
   masks_test.cpp
   mean_test.cpp
   merge_test.cpp
+  minmax_test.cpp
   rebin_test.cpp
   self_assignment_test.cpp
   set_slice_test.cpp
