@@ -30,6 +30,8 @@ def ndfilter(func: Callable) -> Callable:
 
 
 def _delta_to_positional(x: Union[Variable, DataArray], dim, index):
+    if isinstance(index, int):
+        return index
     coord = x.coords[dim]
     if not islinspace(coord, dim).value:
         raise CoordError(
@@ -39,14 +41,13 @@ def _delta_to_positional(x: Union[Variable, DataArray], dim, index):
     return (len(coord) - 1) * (index.to(unit=coord.unit) / (coord[-1] - coord[0])).value
 
 
-def _positional_index(x: Union[Variable, DataArray], index, name):
-    if isinstance(index, int):
-        return index
+def _positional_index(x: Union[Variable, DataArray], index, name=None):
     if isinstance(index, Variable):
         return [_delta_to_positional(x, dim, index) for dim in x.dims]
     if set(index) != set(x.dims):
         raise ValueError(f"Data has dims={x.dims} but input argument '{name}' provides "
-                         f"values only for {tuple(index)}")
+                         f"values for {tuple(index)}")
+    return [_delta_to_positional(x, dim, index[dim]) for dim in x.dims]
 
 
 @ndfilter
