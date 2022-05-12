@@ -79,20 +79,30 @@ def _make_footprint(x: Union[Variable, DataArray], size, footprint) -> Variable:
     return footprint
 
 
-@ndfilter
-def median_filter(
-        x: Union[Variable, DataArray],
-        /,
-        *,
-        size=None,
-        footprint=None,
-        # TODO origin
-        **kwargs) -> Union[Variable, DataArray]:
-    from scipy.ndimage import median_filter
-    footprint = _make_footprint(x, size=size, footprint=footprint)
-    out = empty_like(x)
-    median_filter(x.values, footprint=footprint.values, output=out.values, **kwargs)
-    return out
+def _make_footprint_filter(name):
+
+    def footprint_filter(
+            x: Union[Variable, DataArray],
+            /,
+            *,
+            size=None,
+            footprint=None,
+            # TODO origin
+            **kwargs) -> Union[Variable, DataArray]:
+        import scipy.ndimage
+        footprint = _make_footprint(x, size=size, footprint=footprint)
+        out = empty_like(x)
+        scipy_filter = getattr(scipy.ndimage, name)
+        scipy_filter(x.values, footprint=footprint.values, output=out.values, **kwargs)
+        return out
+
+    footprint_filter.__name__ = name
+    footprint_filter.__doc__ = f'Forwards to scipy.ndimage.{name}'
+    return ndfilter(footprint_filter)
 
 
-__all__ = ['gaussian_filter', 'median_filter']
+median_filter = _make_footprint_filter('median_filter')
+maximum_filter = _make_footprint_filter('maximum_filter')
+minimum_filter = _make_footprint_filter('minimum_filter')
+
+__all__ = ['gaussian_filter', 'median_filter', 'maximum_filter', 'minimum_filter']
