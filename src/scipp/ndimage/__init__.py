@@ -65,14 +65,7 @@ def gaussian_filter(x: Union[Variable, DataArray],
     return out
 
 
-@ndfilter
-def median_filter(x: Union[Variable, DataArray],
-                  /,
-                  *,
-                  size=None,
-                  footprint=None,
-                  **kwargs) -> Union[Variable, DataArray]:
-    from scipy.ndimage import median_filter
+def _make_footprint(x: Union[Variable, DataArray], size, footprint) -> Variable:
     if footprint is None:
         size = _positional_index(x, size, name='size')
         size = [int(s) for s in size]
@@ -83,6 +76,20 @@ def median_filter(x: Union[Variable, DataArray],
         if set(footprint.dims) != set(x.dims):
             raise DimensionError(
                 f"Dimensions {footprint.dims} must match data dimensions {x.dim}")
+    return footprint
+
+
+@ndfilter
+def median_filter(
+        x: Union[Variable, DataArray],
+        /,
+        *,
+        size=None,
+        footprint=None,
+        # TODO origin
+        **kwargs) -> Union[Variable, DataArray]:
+    from scipy.ndimage import median_filter
+    footprint = _make_footprint(x, size=size, footprint=footprint)
     out = empty_like(x)
     median_filter(x.values, footprint=footprint.values, output=out.values, **kwargs)
     return out
