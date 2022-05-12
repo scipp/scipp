@@ -11,9 +11,7 @@ def assert_export(f, *args, **kwargs):
     """
     try:
         f(*args, **kwargs)
-    except TypeError as ex:
-        if 'incompatible function arguments' in ex.args[0]:
-            raise ex
-        pass
+    except TypeError:
+        raise
     except:  # noqa: E722
         pass
