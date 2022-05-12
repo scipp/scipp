@@ -59,7 +59,7 @@ def scalar(value: Any,
       <scipp.Variable> ()    float64  [dimensionless]  [3.14]
 
       >>> sc.scalar('a string')
-      <scipp.Variable> ()     string           [None]  ["a string"]
+      <scipp.Variable> ()     string           <no unit>  ["a string"]
 
     Or specifying a unit and dtype:
 
@@ -70,7 +70,7 @@ def scalar(value: Any,
     object in a scalar variable and *not* create an array variable:
 
       >>> sc.scalar([1, 2, 3])
-      <scipp.Variable> ()   PyObject           [None]  [[1, 2, 3]]
+      <scipp.Variable> ()   PyObject           <no unit>  [[1, 2, 3]]
     """
     return _cpp.Variable(dims=(),
                          values=value,
@@ -105,7 +105,7 @@ def index(value: Any, *, dtype: Optional[DTypeLike] = None) -> Variable:
     --------
 
       >>> sc.index(123)
-      <scipp.Variable> ()      int64           [None]  [123]
+      <scipp.Variable> ()      int64           <no unit>  [123]
     """
     return scalar(value=value, dtype=dtype, unit=None)
 
