@@ -35,6 +35,54 @@ def test_sum_single_dim(container):
                         container(sc.array(dims=['xx'], values=[6, 15], unit='m')))
 
 
+def test_sum_dataset_with_coords():
+    d = sc.Dataset(data={
+        'a':
+        sc.Variable(dims=['x', 'y'], values=np.arange(6, dtype=np.int64).reshape(2, 3)),
+        'b':
+        sc.Variable(dims=['y'], values=np.arange(3, dtype=np.int64))
+    },
+                   coords={
+                       'x':
+                       sc.Variable(dims=['x'], values=np.arange(2, dtype=np.int64)),
+                       'y':
+                       sc.Variable(dims=['y'], values=np.arange(3, dtype=np.int64)),
+                       'l1':
+                       sc.Variable(dims=['x', 'y'],
+                                   values=np.arange(6, dtype=np.int64).reshape(2, 3)),
+                       'l2':
+                       sc.Variable(dims=['x'], values=np.arange(2, dtype=np.int64))
+                   })
+    d_ref = sc.Dataset(data={
+        'a':
+        sc.Variable(dims=['x'], values=np.array([3, 12], dtype=np.int64)),
+        'b':
+        sc.scalar(3)
+    },
+                       coords={
+                           'x':
+                           sc.Variable(dims=['x'], values=np.arange(2, dtype=np.int64)),
+                           'l2':
+                           sc.Variable(dims=['x'], values=np.arange(2, dtype=np.int64))
+                       })
+
+    assert sc.identical(sc.sum(d, 'y'), d_ref)
+
+
+def test_sum_masked():
+    d = sc.Dataset(data={
+        'a':
+        sc.Variable(dims=['x'], values=np.array([1, 5, 4, 5, 1], dtype=np.int64))
+    })
+    d['a'].masks['m1'] = sc.Variable(dims=['x'],
+                                     values=np.array([False, True, False, True, False]))
+
+    d_ref = sc.Dataset(data={'a': sc.scalar(np.int64(6))})
+
+    result = sc.sum(d, 'x')['a']
+    assert sc.identical(result, d_ref['a'])
+
+
 def test_nansum(container):
     x = container(
         sc.array(dims=['xx', 'yy'], values=[[1, np.nan, 3], [4, 5, np.nan]], unit='m'))
@@ -55,6 +103,22 @@ def test_nansum_single_dim(container):
                         container(sc.array(dims=['xx'], values=[4., 9], unit='m')))
     assert sc.identical(var.nansum('yy'),
                         container(sc.array(dims=['xx'], values=[4., 9], unit='m')))
+
+
+def test_nansum_masked():
+    d = sc.Dataset(
+        data={
+            'a':
+            sc.Variable(dims=['x'],
+                        values=np.array([1, 5, np.nan, np.nan, 1], dtype=np.float64))
+        })
+    d['a'].masks['m1'] = sc.Variable(dims=['x'],
+                                     values=np.array([False, True, False, True, False]))
+
+    d_ref = sc.Dataset(data={'a': sc.scalar(np.float64(2))})
+
+    result = sc.nansum(d, 'x')['a']
+    assert sc.identical(result, d_ref['a'])
 
 
 def test_mean(container):
@@ -78,6 +142,43 @@ def test_mean_single_dim(container):
                         container(sc.array(dims=['xx'], values=[2., 5], unit='m')))
     assert sc.identical(var.mean('yy'),
                         container(sc.array(dims=['xx'], values=[2., 5], unit='m')))
+
+
+def test_mean_dataset_with_coords():
+    d = sc.Dataset(data={
+        'a':
+        sc.Variable(dims=['x', 'y'], values=np.arange(6, dtype=np.int64).reshape(2, 3)),
+        'b':
+        sc.Variable(dims=['y'], values=np.arange(3, dtype=np.int64))
+    },
+                   coords={
+                       'x':
+                       sc.Variable(dims=['x'], values=np.arange(2, dtype=np.int64)),
+                       'y':
+                       sc.Variable(dims=['y'], values=np.arange(3, dtype=np.int64)),
+                       'l1':
+                       sc.Variable(dims=['x', 'y'],
+                                   values=np.arange(6, dtype=np.int64).reshape(2, 3)),
+                       'l2':
+                       sc.Variable(dims=['x'], values=np.arange(2, dtype=np.int64))
+                   })
+
+    assert (sc.mean(d, 'y')['a'].values == [1.0, 4.0]).all()
+    assert sc.mean(d, 'y')['b'].value == 1.0
+
+
+def test_mean_masked():
+    d = sc.Dataset(
+        data={
+            'a':
+            sc.Variable(
+                dims=['x'], values=np.array([1, 5, 4, 5, 1]), dtype=sc.DType.float64)
+        })
+    d['a'].masks['m1'] = sc.Variable(dims=['x'],
+                                     values=np.array([False, True, False, True, False]))
+    d_ref = sc.Dataset(data={'a': sc.scalar(2.0)})
+    assert sc.identical(sc.mean(d, 'x')['a'], d_ref['a'])
+    assert sc.identical(sc.nanmean(d, 'x')['a'], d_ref['a'])
 
 
 def test_nanmean(container):
