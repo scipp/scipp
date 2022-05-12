@@ -102,11 +102,10 @@ class Graph:
             for child in self._children_of(name):
                 depth_first_stack.append(child.name)
 
-    def add_view(self, key, view):
-        self[key].add_view(view)
-        view.add_graph_node(self[key])
-        # if isinstance(view, WidgetView):
-        view.add_notification(partial(self.notify_from_dependents, name=key))
+    def add_view(self, node, view):
+        node.add_view(view)
+        view.add_graph_node(node)
+        view.add_notification(partial(self.notify_from_dependents, name=node.name))
 
     @property
     def root(self) -> Node:
