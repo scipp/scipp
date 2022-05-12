@@ -81,19 +81,24 @@ def _make_footprint(x: Union[Variable, DataArray], size, footprint) -> Variable:
 
 def _make_footprint_filter(name):
 
-    def footprint_filter(
-            x: Union[Variable, DataArray],
-            /,
-            *,
-            size=None,
-            footprint=None,
-            # TODO origin
-            **kwargs) -> Union[Variable, DataArray]:
+    def footprint_filter(x: Union[Variable, DataArray],
+                         /,
+                         *,
+                         size=None,
+                         footprint=None,
+                         origin=0,
+                         **kwargs) -> Union[Variable, DataArray]:
         import scipy.ndimage
         footprint = _make_footprint(x, size=size, footprint=footprint)
+        origin = _positional_index(x, origin, name='origin')
+        origin = [int(s) for s in origin]
         out = empty_like(x)
         scipy_filter = getattr(scipy.ndimage, name)
-        scipy_filter(x.values, footprint=footprint.values, output=out.values, **kwargs)
+        scipy_filter(x.values,
+                     footprint=footprint.values,
+                     origin=origin,
+                     output=out.values,
+                     **kwargs)
         return out
 
     footprint_filter.__name__ = name
