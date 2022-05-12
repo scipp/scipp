@@ -19,9 +19,8 @@ template <class... Extra>
 constexpr auto special_value_args =
     arg_list<int32_t, int64_t, double, float, Extra...>;
 
-// WARNING: When adding support for new spatial types (other other types
-// containing floating-point elements) you must specialize numeric::isnan and
-// friends.
+// WARNING: When adding support for new spatial types (or other types containing
+// floating-point elements) you must specialize numeric::isnan and friends.
 constexpr auto isnan =
     overloaded{special_value_args<Eigen::Vector3d>,
                [](const auto x) {
