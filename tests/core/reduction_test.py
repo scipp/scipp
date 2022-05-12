@@ -186,3 +186,49 @@ def test_nanmin_single_dim(container):
                         container(sc.array(dims=['xx'], values=[1., 4], unit='m')))
     assert sc.identical(var.nanmin('yy'),
                         container(sc.array(dims=['xx'], values=[1., 4], unit='m')))
+
+
+def test_all(container):
+    x = container(
+        sc.array(dims=['xx', 'yy'], values=[[True, False, False], [True, True, False]]))
+
+    assert sc.identical(sc.all(x), container(sc.scalar(False)))
+    assert sc.identical(x.all(), container(sc.scalar(False)))
+
+
+def test_all_single_dim(container):
+    x = container(
+        sc.array(dims=['xx', 'yy'], values=[[True, False, False], [True, True, False]]))
+
+    assert sc.identical(sc.all(x, 'xx'),
+                        container(sc.array(dims=['yy'], values=[True, False, False])))
+    assert sc.identical(x.all('xx'),
+                        container(sc.array(dims=['yy'], values=[True, False, False])))
+
+    assert sc.identical(sc.all(x, 'yy'),
+                        container(sc.array(dims=['xx'], values=[False, False])))
+    assert sc.identical(x.all('yy'),
+                        container(sc.array(dims=['xx'], values=[False, False])))
+
+
+def test_any(container):
+    x = container(
+        sc.array(dims=['xx', 'yy'], values=[[True, False, False], [True, True, False]]))
+
+    assert sc.identical(sc.any(x), container(sc.scalar(True)))
+    assert sc.identical(x.any(), container(sc.scalar(True)))
+
+
+def test_any_single_dim(container):
+    x = container(
+        sc.array(dims=['xx', 'yy'], values=[[True, False, False], [True, True, False]]))
+
+    assert sc.identical(sc.any(x, 'xx'),
+                        container(sc.array(dims=['yy'], values=[True, True, False])))
+    assert sc.identical(x.any('xx'),
+                        container(sc.array(dims=['yy'], values=[True, True, False])))
+
+    assert sc.identical(sc.any(x, 'yy'),
+                        container(sc.array(dims=['xx'], values=[True, True])))
+    assert sc.identical(x.any('yy'),
+                        container(sc.array(dims=['xx'], values=[True, True])))

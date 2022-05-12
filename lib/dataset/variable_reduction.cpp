@@ -63,6 +63,16 @@ Variable nanmin(const Variable &var, const Dim dim, const Masks &masks) {
                      [](auto &&... args) { return nanmin(args...); });
 }
 
+Variable all(const Variable &var, const Dim dim, const Masks &masks) {
+  return reduce_impl(var, dim, masks, FillValue::True,
+                     [](auto &&... args) { return all(args...); });
+}
+
+Variable any(const Variable &var, const Dim dim, const Masks &masks) {
+  return reduce_impl(var, dim, masks, FillValue::False,
+                     [](auto &&... args) { return any(args...); });
+}
+
 Variable mean(const Variable &var, const Dim dim, const Masks &masks) {
   if (const auto mask_union = irreducible_mask(masks, dim);
       mask_union.is_valid()) {
