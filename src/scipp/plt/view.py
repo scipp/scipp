@@ -7,11 +7,11 @@ from abc import ABC, abstractmethod
 class View(ABC):
 
     def __init__(self):
-        self._model_nodes = {}
+        self._graph_nodes = {}
         self._notifications = []
 
-    def add_model_node(self, node):
-        self._model_nodes.setdefault(node.parent_name, {})[node.name] = node
+    def add_graph_node(self, node):
+        self._graph_nodes.setdefault(node.graph_name, {})[node.name] = node
 
     def add_notification(self, notification):
         self._notifications.append(notification)
@@ -20,7 +20,7 @@ class View(ABC):
     def notify_view(self, _):
         return
 
-    def notify_models(self):
+    def notify_graphs(self):
         for notification in self._notifications:
             notification()
 

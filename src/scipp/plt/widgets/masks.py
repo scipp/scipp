@@ -92,8 +92,8 @@ class MaskWidget:
         self._callback()
 
 
-def hide_masks(model: DataArray, masks: MetaDataMap) -> DataArray:
-    out = model.copy(deep=False)
+def hide_masks(data_array: DataArray, masks: MetaDataMap) -> DataArray:
+    out = data_array.copy(deep=False)
     for name, value in masks.items():
         if not value:
             del out.masks[name]

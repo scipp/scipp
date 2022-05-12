@@ -9,7 +9,7 @@ class Node:
 
     def __init__(self, func, name=None, views=None):
         self.name = name
-        self.parent_name = None
+        self.graph_name = None
         self.dependency = None
         self.func = func
         self.views = list(views or [])
@@ -18,7 +18,7 @@ class Node:
         for view in self.views:
             view.notify_view({
                 "node_name": self.name,
-                "parent_name": self.parent_name,
+                "graph_name": self.graph_name,
                 "message": message
             })
 
@@ -40,19 +40,20 @@ class Node:
         self.views.append(view)
 
 
-class Model:
+class Graph:
 
     def __init__(self, da):
         self._name = da.name
         self._nodes = {}
-        self["root"] = Node(name='root', func=lambda: da)
+        root_node = Node(func=lambda: da)
+        self[""] = root_node
 
     def __getitem__(self, name: str) -> Node:
         return self._nodes[name]
 
     def __setitem__(self, name: str, node: Node):
         self._nodes[name] = node
-        node.parent_name = self._name
+        node.graph_name = self._name
         node.name = name
 
     def items(self) -> Iterable[Tuple[str, Node]]:
@@ -103,7 +104,7 @@ class Model:
 
     def add_view(self, key, view):
         self[key].add_view(view)
-        view.add_model_node(self[key])
+        view.add_graph_node(self[key])
         # if isinstance(view, WidgetView):
         view.add_notification(partial(self.notify_from_dependents, name=key))
 

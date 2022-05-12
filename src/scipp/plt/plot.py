@@ -5,14 +5,14 @@
 class Plot:
 
     def __init__(self):
-        self._models = {}
+        self._graphs = {}
 
-    def add_model(self, key, model):
-        self._models[key] = model
+    def add_graph(self, key, graph):
+        self._graphs[key] = graph
 
     def render(self):
-        for model in self._models.values():
-            model.notify_from_dependents(model.root.name)
+        for graph in self._graphs.values():
+            graph.notify_from_dependents(graph.root.name)
 
     def _ipython_display_(self):
         """
@@ -26,6 +26,6 @@ class Plot:
         """
         import ipywidgets as ipw
         views = []
-        for model in self._models.values():
-            views += model.get_all_views()
+        for graph in self._graphs.values():
+            views += graph.get_all_views()
         return ipw.VBox([view._to_widget() for view in set(views)])

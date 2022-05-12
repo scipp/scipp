@@ -15,7 +15,7 @@ class SliceWidget:
     buttons to modify the currently displayed axes.
     """
 
-    def __init__(self, array, dims: list):
+    def __init__(self, data_array, dims: list):
 
         self._controls = {}
         self._callback = None
@@ -30,7 +30,7 @@ class SliceWidget:
             slider = ipw.IntSlider(step=1,
                                    description=dim,
                                    min=0,
-                                   max=array.sizes[dim],
+                                   max=data_array.sizes[dim],
                                    continuous_update=True,
                                    readout=True,
                                    layout={"width": "400px"})
@@ -79,13 +79,13 @@ class SliceWidget:
                     new_coords[dim].unit)
 
 
-def slice_dims(model: DataArray, slices: dict) -> DataArray:
+def slice_dims(data_array: DataArray, slices: dict) -> DataArray:
     """
     Slice the data along dimension sliders that are not disabled for all
     entries in the dict of data arrays, and return a dict of 1d value
     arrays for data values, variances, and masks.
     """
-    out = model
+    out = data_array
     for dim, sl in slices.items():
         out = out[dim, sl]
     return out
@@ -97,7 +97,7 @@ class SliceView(WidgetView):
         super().__init__(widgets={"slices": SliceWidget(*args, **kwargs)})
 
     def notify(self, message):
-        name = message["node_name"]
-        parent = message["parent_name"]
-        new_values = self._model_nodes[parent][name].request_data()
+        node_name = message["node_name"]
+        graph_name = message["graph_name"]
+        new_values = self._graph_nodes[graph_name][node_name].request_data()
         self._widgets["slices"].update(new_values.meta)

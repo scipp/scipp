@@ -24,13 +24,13 @@ class WidgetView(View):
         node.func = partial(self._base_func, **self.values)
 
     def _update_and_notify(self, _):
-        nodes = next(iter(self._model_nodes.values()))
+        nodes = next(iter(self._graph_nodes.values()))
         for node in nodes.values():
             self._update_node_func(node)
-        self.notify_models()
+        self.notify_graphs()
 
-    def add_model_node(self, node):
-        super().add_model_node(node)
+    def add_graph_node(self, node):
+        super().add_graph_node(node)
         self._base_func = node.func
         self._update_node_func(node)
 

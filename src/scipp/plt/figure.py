@@ -225,10 +225,10 @@ class Figure(View):
         self._fig.savefig(filename, bbox_inches="tight")
 
     def notify_view(self, message):
-        name = message["node_name"]
-        parent = message["parent_name"]
-        new_values = self._model_nodes[parent][name].request_data()
-        self.update(new_values=new_values, key=f"{parent}:{name}")
+        node_name = message["node_name"]
+        graph_name = message["graph_name"]
+        new_values = self._graph_nodes[graph_name][node_name].request_data()
+        self.update(new_values=new_values, key=f"{graph_name}:{node_name}")
 
     def update(self, new_values: DataArray, key: str):
         """
