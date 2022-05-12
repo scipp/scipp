@@ -9,5 +9,5 @@ def test_cumsum():
     var = 1 * sc.units.m
     assert_export(sc.cumsum, a=var)
     assert_export(sc.cumsum, a=var, dim='x')
-    assert_export(sc.cumsum, a=var, inclusive=False)
-    assert_export(sc.cumsum, a=var, dim='x', inclusive=False)
+    assert_export(sc.cumsum, a=var, mode='inclusive')
+    assert_export(sc.cumsum, a=var, dim='x', mode='inclusive')

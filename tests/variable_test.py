@@ -272,7 +272,7 @@ def test_mean():
 
 def test_mean_in_place():
     var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.mean, sc.Variable(dims=(), values=0.0), 'x', var)
+    assert_export(sc.mean, sc.Variable(dims=(), values=0.0), 'x', out=var)
 
 
 def test_values_variances():
@@ -537,7 +537,7 @@ def test_comparison():
 
 def test_sort():
     var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.sort, x=var, dim='x', order='ascending')
+    assert_export(sc.sort, x=var, key='x', order='ascending')
     assert_export(sc.issorted, x=var, dim='x', order='ascending')
     assert_export(sc.allsorted, x=var, dim='x', order='ascending')
 
