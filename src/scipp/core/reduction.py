@@ -143,12 +143,12 @@ def nansum(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
         return _cpp.nansum(x, dim=dim)
 
 
-def min(x: _cpp.Variable, dim: Optional[str] = None) -> _cpp.Variable:
+def min(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
     """Minimum of elements in the input.
 
     Parameters
     ----------
-    x:
+    x: scipp.typing.VariableLike
         Input data.
     dim:
         Optional dimension along which to calculate the min. If not
@@ -174,12 +174,12 @@ def min(x: _cpp.Variable, dim: Optional[str] = None) -> _cpp.Variable:
         return _cpp.min(x, dim=dim)
 
 
-def max(x: _cpp.Variable, dim: Optional[str] = None) -> _cpp.Variable:
+def max(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
     """Maximum of elements in the input.
 
     Parameters
     ----------
-    x:
+    x: scipp.typing.VariableLike
         Input data.
     dim:
         Optional dimension along which to calculate the max. If not
@@ -205,12 +205,12 @@ def max(x: _cpp.Variable, dim: Optional[str] = None) -> _cpp.Variable:
         return _cpp.max(x, dim=dim)
 
 
-def nanmin(x: _cpp.Variable, dim: Optional[str] = None) -> _cpp.Variable:
+def nanmin(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
     """Minimum of elements in the input ignoring NaN's.
 
     Parameters
     ----------
-    x:
+    x: scipp.typing.VariableLike
         Input data.
     dim:
         Optional dimension along which to calculate the min. If not
@@ -236,12 +236,12 @@ def nanmin(x: _cpp.Variable, dim: Optional[str] = None) -> _cpp.Variable:
         return _cpp.nanmin(x, dim=dim)
 
 
-def nanmax(x: _cpp.Variable, dim: Optional[str] = None) -> _cpp.Variable:
+def nanmax(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
     """Maximum of elements in the input ignoring NaN's.
 
     Parameters
     ----------
-    x:
+    x: scipp.typing.VariableLike
         Input data.
     dim:
         Optional dimension along which to calculate the max. If not
@@ -267,12 +267,12 @@ def nanmax(x: _cpp.Variable, dim: Optional[str] = None) -> _cpp.Variable:
         return _cpp.nanmax(x, dim=dim)
 
 
-def all(x: _cpp.Variable, dim: Optional[str] = None) -> _cpp.Variable:
+def all(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
     """Logical AND over input values.
 
     Parameters
     ----------
-    x:
+    x: scipp.typing.VariableLike
         Input data.
     dim:
         Optional dimension along which to calculate the AND. If not
@@ -295,12 +295,12 @@ def all(x: _cpp.Variable, dim: Optional[str] = None) -> _cpp.Variable:
         return _cpp.all(x, dim=dim)
 
 
-def any(x: _cpp.Variable, dim: Optional[str] = None) -> _cpp.Variable:
+def any(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
     """Logical OR over input values.
 
     Parameters
     ----------
-    x:
+    x: scipp.typing.VariableLike
         Input data.
     dim:
         Optional dimension along which to calculate the OR. If not
