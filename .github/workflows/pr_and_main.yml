@@ -55,7 +55,7 @@ jobs:
         uses: mamba-org/provision-with-micromamba@main
         with:
           environment-file: .buildconfig/${{ matrix.os }}.yml
-          cache-env: false
+          cache-env: true
           extra-specs: python=${{ matrix.python-version }}
 
       - name: ccache
