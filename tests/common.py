@@ -6,12 +6,7 @@ def assert_export(f, *args, **kwargs):
     """
     Checks that a function is exported via pybind11 and is callable with
     specified arguments.
-    Ignores any exceptions that the function may raise due to being passed
-    garbage inputs.
+
+    CONSIDER FOR REMOVAL because it does nothing but call f.
     """
-    try:
-        f(*args, **kwargs)
-    except TypeError:
-        raise
-    except:  # noqa: E722
-        pass
+    f(*args, **kwargs)
