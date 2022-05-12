@@ -58,9 +58,9 @@ def gaussian_filter(x: Union[Variable, DataArray],
                     order=0,
                     **kwargs) -> Union[Variable, DataArray]:
     from scipy.ndimage import gaussian_filter
-    out = empty_like(x)
     sigma = _positional_index(x, sigma, name='sigma')
     order = order if isinstance(order, int) else [order[dim] for dim in x.dims]
+    out = empty_like(x)
     gaussian_filter(x.values, sigma=sigma, order=order, output=out.values, **kwargs)
     return out
 
@@ -73,10 +73,9 @@ def median_filter(x: Union[Variable, DataArray],
                   footprint=None,
                   **kwargs) -> Union[Variable, DataArray]:
     from scipy.ndimage import median_filter
-    out = empty_like(x)
     if footprint is None:
-        if isinstance(size, int):
-            size = [size] * x.ndim
+        size = _positional_index(x, size, name='size')
+        size = [int(s) for s in size]
         footprint = ones(dims=x.dims, shape=size, dtype='bool')
     else:
         if size is not None:
@@ -84,6 +83,7 @@ def median_filter(x: Union[Variable, DataArray],
         if set(footprint.dims) != set(x.dims):
             raise DimensionError(
                 f"Dimensions {footprint.dims} must match data dimensions {x.dim}")
+    out = empty_like(x)
     median_filter(x.values, footprint=footprint.values, output=out.values, **kwargs)
     return out
 
