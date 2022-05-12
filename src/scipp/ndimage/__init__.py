@@ -42,7 +42,7 @@ def _delta_to_positional(x: Union[Variable, DataArray], dim, index):
 
 
 def _positional_index(x: Union[Variable, DataArray], index, name=None):
-    if isinstance(index, Variable):
+    if isinstance(index, (int, Variable)):
         return [_delta_to_positional(x, dim, index) for dim in x.dims]
     if set(index) != set(x.dims):
         raise ValueError(f"Data has dims={x.dims} but input argument '{name}' provides "
