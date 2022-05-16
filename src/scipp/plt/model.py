@@ -3,40 +3,83 @@
 
 from typing import Tuple, Iterable
 from functools import partial
+import uuid
 
 
 class Node:
-    def __init__(self, func, name=None, views=None):
-        self.name = name
-        self.graph_name = None
-        self.dependency = None
+    # def __init__(self, func, name=None, parents=None, views=None):
+    #     self.name = name
+    def __init__(self, func, parents=None, views=None):
+        self.id = str(uuid.uuid1())
+        # self.graph_name = None
+        self.children = []
         self.func = func
+        self.parents = {}
         self.views = list(views or [])
-
-    def notify_views(self, message):
-        for view in self.views:
-            view.notify_view({
-                "node_name": self.name,
-                "graph_name": self.graph_name,
-                "message": message
-            })
+        if parents is not None:
+            for key, parent in parents.items():
+                parent.add_child(self)
+                self.parents[key] = parent
 
     def request_data(self):
-        pipeline = []
-        node = self
-        while node.dependency is not None:
-            pipeline.append(node.func)
-            node = node.dependency
-        else:
-            pipeline.append(node.func)
-        pipeline = pipeline[::-1]
-        data = pipeline[0]()
-        for step in pipeline[1:]:
-            data = step(data)
-        return data
+        inputs = {key: parent.request_data() for key, parent in self.parents.items()}
+        return self.func(**inputs)
+
+    def add_child(self, child):
+        self.children.append(child)
 
     def add_view(self, view):
         self.views.append(view)
+        view.add_graph_node(self)
+
+    def notify_children(self, message):
+        print(f"Node {self.id}: {message}")
+        self.notify_views(message)
+        for child in self.children:
+            child.notify_children(message)
+
+    def notify_views(self, message):
+        for view in self.views:
+            print("View ", str(view))
+            view.notify_view({
+                "node_id": self.id,
+                # "graph_name": self.graph_name,
+                "message": message
+            })
+
+
+# class Node:
+#     def __init__(self, func, name=None, views=None):
+#         self.name = name
+#         self.graph_name = None
+#         self.dependency = None
+#         self.func = func
+#         self.views = list(views or [])
+
+#     def notify_views(self, message):
+#         for view in self.views:
+#             view.notify_view({
+#                 "node_name": self.name,
+#                 "graph_name": self.graph_name,
+#                 "message": message
+#             })
+
+#     def request_data(self):
+#         pipeline = []
+#         node = self
+#         while node.dependency is not None:
+#             pipeline.append(node.func)
+#             node = node.dependency
+#         else:
+#             pipeline.append(node.func)
+#         pipeline = pipeline[::-1]
+#         data = pipeline[0]()
+#         for step in pipeline[1:]:
+#             data = step(data)
+#         return data
+
+#     def add_view(self, view):
+#         self.views.append(view)
 
 
 class Model:

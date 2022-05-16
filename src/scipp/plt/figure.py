@@ -16,7 +16,6 @@ from typing import Any, Tuple
 
 
 class SideBar:
-
     def __init__(self, children=None):
         self._children = children if children is not None else []
 
@@ -28,7 +27,6 @@ class SideBar:
 
 
 class Figure(View):
-
     def __init__(self,
                  ax: Any = None,
                  figsize: Tuple[float, ...] = None,
@@ -225,10 +223,11 @@ class Figure(View):
         self._fig.savefig(filename, bbox_inches="tight")
 
     def notify_view(self, message):
-        node_name = message["node_name"]
-        graph_name = message["graph_name"]
-        new_values = self._graph_nodes[graph_name][node_name].request_data()
-        self.update(new_values=new_values, key=f"{graph_name}:{node_name}")
+        node_id = message["node_id"]
+        # graph_name = message["graph_name"]
+        # new_values = self._graph_nodes[graph_name][node_name].request_data()
+        new_values = self._graph_nodes[node_id].request_data()
+        self.update(new_values=new_values, key=node_id)
 
     def update(self, new_values: DataArray, key: str):
         """
@@ -263,3 +262,8 @@ class Figure(View):
             self._children[key].update(new_values=new_values)
 
         self.draw()
+
+    def render(self):
+        for node in self._graph_nodes.values():
+            new_values = node.request_data()
+            self.update(new_values=new_values, key=node.id)

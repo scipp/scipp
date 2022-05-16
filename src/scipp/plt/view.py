@@ -5,13 +5,13 @@ from abc import ABC, abstractmethod
 
 
 class View(ABC):
-
     def __init__(self):
         self._graph_nodes = {}
         self._notifications = []
 
     def add_graph_node(self, node):
-        self._graph_nodes.setdefault(node.graph_name, {})[node.name] = node
+        # self._graph_nodes.setdefault(node.graph_name, {})[node.name] = node
+        self._graph_nodes[node.id] = node
 
     def add_notification(self, notification):
         self._notifications.append(notification)
@@ -24,8 +24,13 @@ class View(ABC):
         for notification in self._notifications:
             notification()
 
+    @abstractmethod
+    def render(self):
+        return
+
     def _ipython_display_(self):
         """
         IPython display representation for Jupyter notebooks.
         """
+        self.render()
         return self._to_widget()._ipython_display_()
