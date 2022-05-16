@@ -15,9 +15,13 @@ def container(request):
 
 
 def test_sum(container):
-    x = container(sc.array(dims=['xx', 'yy'], values=[[1, 2, 3], [4, 5, 6]], unit='m'))
-    assert sc.identical(sc.sum(x), container(sc.scalar(21, unit='m')))
-    assert sc.identical(x.sum(), container(sc.scalar(21, unit='m')))
+    x = container(
+        sc.array(dims=['xx', 'yy'],
+                 values=[[1, 2, 3], [4, 5, 6]],
+                 unit='m',
+                 dtype='int64'))
+    assert sc.identical(sc.sum(x), container(sc.scalar(21, unit='m', dtype='int64')))
+    assert sc.identical(x.sum(), container(sc.scalar(21, unit='m', dtype='int64')))
 
 
 def test_sum_single_dim(container):
@@ -204,9 +208,13 @@ def test_nanmean_single_dim(container):
 
 
 def test_max(container):
-    x = container(sc.array(dims=['xx', 'yy'], values=[[1, 2, 3], [4, 5, 6]], unit='m'))
-    assert sc.identical(sc.max(x), container(sc.scalar(6, unit='m')))
-    assert sc.identical(x.max(), container(sc.scalar(6, unit='m')))
+    x = container(
+        sc.array(dims=['xx', 'yy'],
+                 values=[[1, 2, 3], [4, 5, 6]],
+                 unit='m',
+                 dtype='int64'))
+    assert sc.identical(sc.max(x), container(sc.scalar(6, unit='m', dtype='int64')))
+    assert sc.identical(x.max(), container(sc.scalar(6, unit='m', dtype='int64')))
 
 
 def test_max_single_dim(container):
@@ -247,9 +255,13 @@ def test_nanmax_single_dim(container):
 
 
 def test_min(container):
-    x = container(sc.array(dims=['xx', 'yy'], values=[[1, 2, 3], [4, 5, 6]], unit='m'))
-    assert sc.identical(sc.min(x), container(sc.scalar(1, unit='m')))
-    assert sc.identical(x.min(), container(sc.scalar(1, unit='m')))
+    x = container(
+        sc.array(dims=['xx', 'yy'],
+                 values=[[1, 2, 3], [4, 5, 6]],
+                 unit='m',
+                 dtype='int64'))
+    assert sc.identical(sc.min(x), container(sc.scalar(1, unit='m', dtype='int64')))
+    assert sc.identical(x.min(), container(sc.scalar(1, unit='m', dtype='int64')))
 
 
 def test_min_single_dim(container):
