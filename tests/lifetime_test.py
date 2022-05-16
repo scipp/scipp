@@ -160,11 +160,3 @@ def test_lifetime_atan2_out_arg():
     var = 1.0 * sc.units.one
     var = sc.atan2(y=var, x=var, out=var)
     var *= 1.0  # var would be an invalid view is keep_alive not correct
-
-
-@pytest.mark.parametrize("func", [sc.mean, sc.sum])
-def test_lifetime_reduction_out_arg(func):
-    var = sc.Variable(dims=['x'], values=[1, 2, 3])
-    out = 0.0 * sc.units.one
-    out = func(var, dim='x', out=out)
-    out *= 1.0  # out would be an invalid view is keep_alive not correct

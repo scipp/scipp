@@ -266,37 +266,9 @@ def test_concat():
                    sc.Variable(dims=(), values=0.0)], 'x')
 
 
-def test_mean():
-    assert_export(sc.mean, sc.Variable(dims=(), values=0.0), 'x')
-
-
-def test_mean_in_place():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.mean, sc.Variable(dims=(), values=0.0), 'x', var)
-
-
 def test_values_variances():
     assert_export(sc.values, sc.Variable(dims=(), values=0.0))
     assert_export(sc.variances, sc.Variable(dims=(), values=0.0))
-
-
-def test_sum():
-    var = sc.Variable(dims=['x', 'y'],
-                      values=np.array([[0.1, 0.3], [0.2, 0.6]]),
-                      unit=sc.units.m)
-    expected = sc.Variable(dims=['x'], values=np.array([0.4, 0.8]), unit=sc.units.m)
-    assert sc.identical(sc.sum(var, 'y'), expected)
-
-
-def test_sum_in_place():
-    var = sc.Variable(dims=['x', 'y'],
-                      values=np.array([[0.1, 0.3], [0.2, 0.6]]),
-                      unit=sc.units.m)
-    out_var = sc.Variable(dims=['x'], values=np.array([0.0, 0.0]), unit=sc.units.m)
-    expected = sc.Variable(dims=['x'], values=np.array([0.4, 0.8]), unit=sc.units.m)
-    out_view = sc.sum(var, 'y', out=out_var)
-    assert sc.identical(out_var, expected)
-    assert sc.identical(out_view, expected)
 
 
 def test_variance_acess():

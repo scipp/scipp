@@ -11,7 +11,6 @@
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/astype.h"
 #include "scipp/variable/creation.h"
-#include "scipp/variable/math.h"
 #include "scipp/variable/special_values.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
@@ -23,9 +22,6 @@ using namespace scipp::core;
 namespace scipp::variable {
 
 namespace {
-
-// Workaround VS C7526 (undefined inline variable) with dtype<> in template.
-bool is_dtype_bool(const Variable &var) { return var.dtype() == dtype<bool>; }
 
 Variable make_accumulant(const Variable &var, const Dim dim,
                          const FillValue &init) {
@@ -42,16 +38,6 @@ Variable make_accumulant(const Variable &var, const Dim dim,
 }
 
 } // namespace
-
-void sum_impl(Variable &summed, const Variable &var) {
-  if (summed.dtype() == dtype<float>) {
-    auto accum = astype(summed, dtype<double>);
-    sum_impl(accum, var);
-    copy(astype(accum, dtype<float>), summed);
-  } else {
-    accumulate_in_place(summed, var, element::add_equals, "sum");
-  }
-}
 
 void nansum_impl(Variable &summed, const Variable &var) {
   if (summed.dtype() == dtype<float>) {
@@ -72,39 +58,12 @@ Variable sum_with_dim_impl(Op op, const Variable &var, const Dim dim) {
   return summed;
 }
 
-template <typename Op>
-Variable &sum_with_dim_inplace_impl(Op op, const Variable &var, const Dim dim,
-                                    Variable &out) {
-  if (is_dtype_bool(var) && is_dtype_bool(out))
-    throw except::TypeError("In-place sum of dtype=bool cannot be stored in an "
-                            "output variable with dtype=bool.");
-
-  auto dims = var.dims();
-  dims.erase(dim);
-  if (dims != out.dims())
-    throw except::DimensionError(
-        "Output argument dimensions must be equal to input dimensions without "
-        "the summing dimension.");
-
-  out.setUnit(var.unit());
-  op(out, var);
-  return out;
-}
-
 Variable sum(const Variable &var, const Dim dim) {
-  return sum_with_dim_impl(sum_impl, var, dim);
+  return sum_with_dim_impl(sum_into, var, dim);
 }
 
 Variable nansum(const Variable &var, const Dim dim) {
   return sum_with_dim_impl(nansum_impl, var, dim);
-}
-
-Variable &sum(const Variable &var, const Dim dim, Variable &out) {
-  return sum_with_dim_inplace_impl(sum_impl, var, dim, out);
-}
-
-Variable &nansum(const Variable &var, const Dim dim, Variable &out) {
-  return sum_with_dim_inplace_impl(nansum_impl, var, dim, out);
 }
 
 Variable mean_impl(const Variable &var, const Dim dim, const Variable &count) {
@@ -114,26 +73,6 @@ Variable mean_impl(const Variable &var, const Dim dim, const Variable &count) {
 Variable nanmean_impl(const Variable &var, const Dim dim,
                       const Variable &count) {
   return normalize_impl(nansum(var, dim), count);
-}
-
-Variable &mean_impl(const Variable &var, const Dim dim, const Variable &count,
-                    Variable &out) {
-  if (is_int(out.dtype()))
-    throw except::TypeError(
-        "Cannot calculate mean in-place when output dtype is integer");
-  sum(var, dim, out);
-  normalize_inplace_impl(out, count);
-  return out;
-}
-
-Variable &nanmean_impl(const Variable &var, const Dim dim,
-                       const Variable &count, Variable &out) {
-  if (is_int(out.dtype()))
-    throw except::TypeError(
-        "Cannot calculate nanmean in-place when output dtype is integer");
-  nansum(var, dim, out);
-  normalize_inplace_impl(out, count);
-  return out;
 }
 
 namespace {
@@ -158,10 +97,6 @@ Variable mean(const Variable &var, const Dim dim) {
   return mean_impl(var, dim, count(var, dim));
 }
 
-Variable &mean(const Variable &var, const Dim dim, Variable &out) {
-  return mean_impl(var, dim, count(var, dim), out);
-}
-
 /// Return the mean along all dimensions. Ignoring NaN values.
 Variable nanmean(const Variable &var) {
   return normalize_impl(nansum(var), sum(isfinite(var)));
@@ -169,16 +104,6 @@ Variable nanmean(const Variable &var) {
 
 Variable nanmean(const Variable &var, const Dim dim) {
   return nanmean_impl(var, dim, sum(isfinite(var), dim));
-}
-
-Variable &nanmean(const Variable &var, const Dim dim, Variable &out) {
-  return nanmean_impl(var, dim, sum(isfinite(var), dim), out);
-}
-
-template <class Op>
-void reduce_impl(Variable &out, const Variable &var, Op op,
-                 const std::string_view name) {
-  accumulate_in_place(out, var, op, name);
 }
 
 /// Reduction for idempotent operations such that op(a,a) = a.
@@ -191,12 +116,8 @@ template <class Op>
 Variable reduce_idempotent(const Variable &var, const Dim dim, Op op,
                            const FillValue &init, const std::string_view name) {
   auto out = make_accumulant(var, dim, init);
-  reduce_impl(out, var, op, name);
+  accumulate_in_place(out, var, op, name);
   return out;
-}
-
-void any_impl(Variable &out, const Variable &var) {
-  reduce_impl(out, var, core::element::logical_or_equals, "any");
 }
 
 Variable any(const Variable &var, const Dim dim) {
@@ -204,17 +125,9 @@ Variable any(const Variable &var, const Dim dim) {
                            FillValue::False, "any");
 }
 
-void all_impl(Variable &out, const Variable &var) {
-  reduce_impl(out, var, core::element::logical_and_equals, "all");
-}
-
 Variable all(const Variable &var, const Dim dim) {
   return reduce_idempotent(var, dim, core::element::logical_and_equals,
                            FillValue::True, "all");
-}
-
-void max_impl(Variable &out, const Variable &var) {
-  reduce_impl(out, var, core::element::max_equals, "max");
 }
 
 /// Return the maximum along given dimension.
@@ -233,10 +146,6 @@ Variable max(const Variable &var, const Dim dim) {
 Variable nanmax(const Variable &var, const Dim dim) {
   return reduce_idempotent(var, dim, core::element::nanmax_equals,
                            FillValue::Lowest, "nanmax");
-}
-
-void min_impl(Variable &out, const Variable &var) {
-  reduce_impl(out, var, core::element::min_equals, "min");
 }
 
 /// Return the minimum along given dimension.
@@ -295,6 +204,32 @@ Variable all(const Variable &var) {
 /// Return the logical OR along all dimensions.
 Variable any(const Variable &var) {
   return reduce_all_dims(var, [](auto &&... _) { return any(_...); });
+}
+
+void sum_into(Variable &accum, const Variable &var) {
+  if (accum.dtype() == dtype<float>) {
+    auto x = astype(accum, dtype<double>);
+    sum_into(x, var);
+    copy(astype(x, dtype<float>), accum);
+  } else {
+    accumulate_in_place(accum, var, element::add_equals, "sum");
+  }
+}
+
+void all_into(Variable &accum, const Variable &var) {
+  accumulate_in_place(accum, var, core::element::logical_and_equals, "all");
+}
+
+void any_into(Variable &accum, const Variable &var) {
+  accumulate_in_place(accum, var, core::element::logical_or_equals, "any");
+}
+
+void max_into(Variable &accum, const Variable &var) {
+  accumulate_in_place(accum, var, core::element::max_equals, "max");
+}
+
+void min_into(Variable &accum, const Variable &var) {
+  accumulate_in_place(accum, var, core::element::min_equals, "min");
 }
 
 } // namespace scipp::variable

@@ -23,15 +23,6 @@ template <class T> void bind_mean(py::module &m) {
       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>());
 }
 
-template <class T> void bind_mean_out(py::module &m) {
-  m.def(
-      "mean",
-      [](const T &x, const std::string &dim, T &out) {
-        return mean(x, Dim{dim}, out);
-      },
-      py::arg("x"), py::arg("dim"), py::kw_only(), py::arg("out"),
-      py::call_guard<py::gil_scoped_release>());
-}
 template <class T> void bind_nanmean(py::module &m) {
   m.def(
       "nanmean", [](const T &x) { return nanmean(x); }, py::arg("x"),
@@ -40,16 +31,6 @@ template <class T> void bind_nanmean(py::module &m) {
       "nanmean",
       [](const T &x, const std::string &dim) { return nanmean(x, Dim{dim}); },
       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>());
-}
-
-template <class T> void bind_nanmean_out(py::module &m) {
-  m.def(
-      "nanmean",
-      [](const T &x, const std::string &dim, T &out) {
-        return mean(x, Dim{dim}, out);
-      },
-      py::arg("x"), py::arg("dim"), py::kw_only(), py::arg("out"),
-      py::call_guard<py::gil_scoped_release>());
 }
 
 template <class T> void bind_sum(py::module &m) {
@@ -62,16 +43,6 @@ template <class T> void bind_sum(py::module &m) {
       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>());
 }
 
-template <class T> void bind_sum_out(py::module &m) {
-  m.def(
-      "sum",
-      [](const T &x, const std::string &dim, T &out) {
-        return sum(x, Dim{dim}, out);
-      },
-      py::arg("x"), py::arg("dim"), py::kw_only(), py::arg("out"),
-      py::call_guard<py::gil_scoped_release>());
-}
-
 template <class T> void bind_nansum(py::module &m) {
   m.def(
       "nansum", [](const T &x) { return nansum(x); }, py::arg("x"),
@@ -81,16 +52,6 @@ template <class T> void bind_nansum(py::module &m) {
       "nansum",
       [](const T &x, const std::string &dim) { return nansum(x, Dim{dim}); },
       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>());
-}
-
-template <class T> void bind_nansum_out(py::module &m) {
-  m.def(
-      "nansum",
-      [](const T &x, const std::string &dim, T &out) {
-        return nansum(x, Dim{dim}, out);
-      },
-      py::arg("x"), py::arg("dim"), py::kw_only(), py::arg("out"),
-      py::call_guard<py::gil_scoped_release>());
 }
 
 template <class T> void bind_min(py::module &m) {
@@ -157,22 +118,18 @@ void init_reduction(py::module &m) {
   bind_mean<Variable>(m);
   bind_mean<DataArray>(m);
   bind_mean<Dataset>(m);
-  bind_mean_out<Variable>(m);
 
   bind_nanmean<Variable>(m);
   bind_nanmean<DataArray>(m);
   bind_nanmean<Dataset>(m);
-  bind_nanmean_out<Variable>(m);
 
   bind_sum<Variable>(m);
   bind_sum<DataArray>(m);
   bind_sum<Dataset>(m);
-  bind_sum_out<Variable>(m);
 
   bind_nansum<Variable>(m);
   bind_nansum<DataArray>(m);
   bind_nansum<Dataset>(m);
-  bind_nansum_out<Variable>(m);
 
   bind_min<Variable>(m);
   bind_max<Variable>(m);
