@@ -9,6 +9,8 @@ This subpackage provides wrappers for a subset of functions from
 from functools import wraps
 from typing import Callable, Union
 
+import scipy.ndimage
+
 from ..core import Variable, DataArray
 from ..core import CoordError, DimensionError
 from ..core import empty_like, islinspace, ones
@@ -57,11 +59,14 @@ def gaussian_filter(x: Union[Variable, DataArray],
                     sigma,
                     order=0,
                     **kwargs) -> Union[Variable, DataArray]:
-    from scipy.ndimage import gaussian_filter
     sigma = _positional_index(x, sigma, name='sigma')
     order = order if isinstance(order, int) else [order[dim] for dim in x.dims]
     out = empty_like(x)
-    gaussian_filter(x.values, sigma=sigma, order=order, output=out.values, **kwargs)
+    scipy.ndimage.gaussian_filter(x.values,
+                                  sigma=sigma,
+                                  order=order,
+                                  output=out.values,
+                                  **kwargs)
     return out
 
 
@@ -88,7 +93,6 @@ def _make_footprint_filter(name):
                          footprint=None,
                          origin=0,
                          **kwargs) -> Union[Variable, DataArray]:
-        import scipy.ndimage
         footprint = _make_footprint(x, size=size, footprint=footprint)
         origin = _positional_index(x, origin, name='origin')
         origin = [int(s) for s in origin]
