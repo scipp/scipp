@@ -92,7 +92,7 @@ def _make_footprint(x: Union[Variable, DataArray], size, footprint) -> Variable:
     return footprint
 
 
-def _make_footprint_filter(name, extra_args=''):
+def _make_footprint_filter(name, example=True, extra_args=''):
 
     def footprint_filter(x: Union[Variable, DataArray],
                          /,
@@ -118,7 +118,7 @@ def _make_footprint_filter(name, extra_args=''):
     footprint_filter.__name__ = name
     if extra_args:
         extra_args = f', {extra_args}'
-    footprint_filter.__doc__ = f"""
+    doc = f"""
     Calculate a multidimensional {name.replace('_', ' ')}.
 
     This is a wrapper around :py:func:`scipy.ndimage.{name}`. See there for full
@@ -154,23 +154,34 @@ def _make_footprint_filter(name, extra_args=''):
     origin:
         Integer or scalar variable or mapping from dimension labels to integers or
         scalar variables. Controls the placement of the filter on the input array.
-
+    """
+    if example:
+        doc += f"""
     Examples
     --------
 
       >>> from scipp.ndimage import {name}
       >>> da = sc.data.data_xy()
+
+    Given size as integer:
+
       >>> filtered = {name}(da, size=4{extra_args})
+
+    Given size based on input coordinate values:
+
+      >>> filtered = {name}(da, size=sc.scalar(1.2, unit='mm'){extra_args})
     """
+    footprint_filter.__doc__ = doc
     return _ndfilter(footprint_filter)
 
 
-generic_filter = _make_footprint_filter('generic_filter')
+generic_filter = _make_footprint_filter('generic_filter', example=False)
 maximum_filter = _make_footprint_filter('maximum_filter')
 median_filter = _make_footprint_filter('median_filter')
 minimum_filter = _make_footprint_filter('minimum_filter')
-percentile_filter = _make_footprint_filter('percentile_filter')
-rank_filter = _make_footprint_filter('rank_filter', 'rank=3')
+percentile_filter = _make_footprint_filter('percentile_filter',
+                                           extra_args='percentile=80')
+rank_filter = _make_footprint_filter('rank_filter', extra_args='rank=3')
 
 __all__ = [
     'gaussian_filter',
