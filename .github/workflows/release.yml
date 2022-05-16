@@ -28,6 +28,8 @@ jobs:
           submodules: true
           fetch-depth: 0  # history required so cmake can determine version
 
+      - uses: ilammy/msvc-dev-cmd@v1  # Required to set up MSVC dev environment for Ninja builds.
+
       - uses: conda-incubator/setup-miniconda@v2
       - run: conda install --channel conda-forge --yes boa
       - run: conda mambabuild --channel conda-forge --variant-config-files=conda/variants/${{ matrix.variant.target }}.yaml --python=${{ matrix.python-version }} --no-anaconda-upload --override-channels --output-folder conda/package conda
