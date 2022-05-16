@@ -92,7 +92,7 @@ def _make_footprint(x: Union[Variable, DataArray], size, footprint) -> Variable:
     return footprint
 
 
-def _make_footprint_filter(name):
+def _make_footprint_filter(name, extra_args=''):
 
     def footprint_filter(x: Union[Variable, DataArray],
                          /,
@@ -116,6 +116,8 @@ def _make_footprint_filter(name):
         return out
 
     footprint_filter.__name__ = name
+    if extra_args:
+        extra_args = f', {extra_args}'
     footprint_filter.__doc__ = f"""
     Calculate a multidimensional {name.replace('_', ' ')}.
 
@@ -158,7 +160,7 @@ def _make_footprint_filter(name):
 
       >>> from scipp.ndimage import {name}
       >>> da = sc.data.data_xy()
-      >>> filtered = {name}(da,size=4)
+      >>> filtered = {name}(da, size=4{extra_args})
     """
     return _ndfilter(footprint_filter)
 
@@ -168,7 +170,7 @@ maximum_filter = _make_footprint_filter('maximum_filter')
 median_filter = _make_footprint_filter('median_filter')
 minimum_filter = _make_footprint_filter('minimum_filter')
 percentile_filter = _make_footprint_filter('percentile_filter')
-rank_filter = _make_footprint_filter('rank_filter')
+rank_filter = _make_footprint_filter('rank_filter', 'rank=3')
 
 __all__ = [
     'gaussian_filter',
