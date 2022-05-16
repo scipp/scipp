@@ -54,7 +54,7 @@ jobs:
       - name: Setup conda environment
         uses: mamba-org/provision-with-micromamba@main
         with:
-          micromamba-version: 0.23.0
+          micromamba-version: 0.23.2
           environment-file: .buildconfig/${{ matrix.os }}.yml
           cache-env: true
           extra-specs: python=${{ matrix.python-version }}
