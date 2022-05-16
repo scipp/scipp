@@ -83,6 +83,7 @@ class Node:
 
 
 class Model:
+
     def __init__(self, da):
         self._name = da.name
         self._nodes = {}

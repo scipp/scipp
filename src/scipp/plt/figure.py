@@ -16,6 +16,7 @@ from typing import Any, Tuple
 
 
 class SideBar:
+
     def __init__(self, children=None):
         self._children = children if children is not None else []
 
@@ -27,6 +28,7 @@ class SideBar:
 
 
 class Figure(View):
+
     def __init__(self,
                  ax: Any = None,
                  figsize: Tuple[float, ...] = None,

@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 
 
 class View(ABC):
+
     def __init__(self):
         self._graph_nodes = {}
         self._notifications = []
