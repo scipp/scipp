@@ -7,18 +7,69 @@ import pytest
 import scipp as sc
 
 
-def make_data_array():
+def data_array_components():
     v = sc.array(dims=['x'], values=[10, 20], unit='m')
     c = sc.array(dims=['x'], values=[1, 2], unit='s')
     a = sc.array(dims=['x'], values=[100, 200])
     m = sc.array(dims=['x'], values=[True, False])
+    return v, c, a, m
+
+
+@pytest.fixture(params=(lambda k, v: {
+    k: v
+}, lambda k, v: {
+    k: v
+}.items(), lambda k, v: sc.DataArray(v, coords={
+    k: v
+}).coords),
+                ids=['dict', 'iterator', 'Coords'])
+def coords_arg_wrapper(request):
+    return request.param
+
+
+@pytest.fixture(params=(lambda k, v: {
+    k: v
+}, lambda k, v: {
+    k: v
+}.items(), lambda k, v: sc.DataArray(v, attrs={
+    k: v
+}).attrs),
+                ids=['dict', 'iterator', 'Coords'])
+def attrs_arg_wrapper(request):
+    return request.param
+
+
+@pytest.fixture(params=(lambda k, v: {
+    k: v
+}, lambda k, v: {
+    k: v
+}.items(), lambda k, v: sc.DataArray(v, masks={
+    k: v
+}).masks),
+                ids=['dict', 'iterator', 'Coords'])
+def masks_arg_wrapper(request):
+    return request.param
+
+
+@pytest.fixture
+def data_array_and_components(coords_arg_wrapper, attrs_arg_wrapper, masks_arg_wrapper):
+    v, c, a, m = data_array_components()
+    da = sc.DataArray(v,
+                      coords=coords_arg_wrapper('x', c),
+                      attrs=attrs_arg_wrapper('a', a),
+                      masks=masks_arg_wrapper('m', m))
+    return da, v, c, a, m
+
+
+def make_data_array():
+    v, c, a, m = data_array_components()
     da = sc.DataArray(v, coords={'x': c}, attrs={'a': a}, masks={'m': m})
     return da, v, c, a, m
 
 
-def test_own_darr_set():
+def test_own_darr_set(data_array_and_components):
     # Data and metadata are shared
-    da, v, c, a, m = make_data_array()
+    da, v, c, a, m = data_array_and_components
     da['x', 0] = -10
     da.data['x', 1] = -20
     da.coords['x']['x', 0] = -1
@@ -174,6 +225,34 @@ def test_own_darr_copy():
     assert sc.identical(da_deepcopy, make_data_array()[0])
     assert sc.identical(da_methcopy, modified)
     assert sc.identical(da_methdeepcopy, make_data_array()[0])
+
+
+@pytest.mark.parametrize('data_array_wrapper', (lambda k, v: {
+    k: v
+}, lambda k, v: {
+    k: v
+}.items(), lambda k, v: sc.Dataset({k: v})),
+                         ids=['dict', 'iterator', 'Dataset'])
+def test_own_dset_init(data_array_wrapper):
+    da, *_ = make_data_array()
+    dset = sc.Dataset(data_array_wrapper('da1', da))
+
+    dset['da1']['x', 0] = -10
+    dset['da1'].attrs['a']['x', 0] = -100
+    dset['da1'].masks['m']['x', 0] = False
+    da['x', 1] = -20
+    da.coords['x']['x', 1] = -2
+    da.attrs['a']['x', 1] = -200
+    da.masks['m']['x', 1] = True
+    dset['da1'].unit = 'kg'
+
+    expected = sc.DataArray(
+        sc.array(dims=['x'], values=[-10, -20], unit='kg'),
+        coords={'x': sc.array(dims=['x'], values=[1, -2], unit='s')},
+        attrs={'a': sc.array(dims=['x'], values=[-100, -200])},
+        masks={'m': sc.array(dims=['x'], values=[False, True])})
+    assert sc.identical(dset, sc.Dataset(data={'da1': expected}))
+    assert sc.identical(da, expected)
 
 
 def test_own_dset_set_access_through_dataarray():
