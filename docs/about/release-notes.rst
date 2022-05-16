@@ -14,6 +14,8 @@ Features
 * Reduced time of initial import of scipp by delaying imports of optional dependencies `#2535 <https://github.com/scipp/scipp/pull/2535>`_.
 * Added an ``update`` method to :class:`Coords`, :class:`Attrs`, :class:`Masks`, and :class:`Dataset`  `#2558 <https://github.com/scipp/scipp/pull/2558>`_.
 * Support ``dtype=vector3`` in :func:`scipp.isinf` and :func:`scipp.isfinite` `#2593 <https://github.com/scipp/scipp/pull/2593>`_.
+* Added support for passing any dict-like objects or iterables of tuples as ``coords``, ``attrs``, and ``masks`` arguments to initializers of :class:`scipp.DataArray` and :class:`scipp.Dataset` `#2603 <https://github.com/scipp/scipp/pull/2603>`_.
+* Added support for passing any dict-like objects or iterables of tuples as the ``data`` argument to the initializer of :class:`scipp.Dataset` `#2603 <https://github.com/scipp/scipp/pull/2603>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
