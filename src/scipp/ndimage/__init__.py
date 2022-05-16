@@ -31,25 +31,27 @@ def _ndfilter(func: Callable) -> Callable:
     return function
 
 
-def _delta_to_positional(x: Union[Variable, DataArray], dim, index):
-    if isinstance(index, int):
-        return index
+def _delta_to_positional(x: Union[Variable, DataArray], dim, index, dtype):
+    if not isinstance(index, Variable):
+        return dtype(index)
     coord = x.coords[dim]
     if not islinspace(coord, dim).value:
         raise CoordError(
             f"Data points not regularly spaced along {dim}. To ignore this, "
-            "provide a plain value (int or float) instead of a scalar variable. "
-            "Note that this will correspond to plain positional indices/offsets.")
-    return (len(coord) - 1) * (index.to(unit=coord.unit) / (coord[-1] - coord[0])).value
+            f"provide a plain value (convertible to {dtype.__name__}) instead of a "
+            "scalar variable. Note that this will correspond to plain positional "
+            "indices/offsets.")
+    pos = (len(coord) - 1) * (index.to(unit=coord.unit) / (coord[-1] - coord[0])).value
+    return dtype(pos)
 
 
-def _positional_index(x: Union[Variable, DataArray], index, name=None):
-    if isinstance(index, (int, Variable)):
-        return [_delta_to_positional(x, dim, index) for dim in x.dims]
+def _positional_index(x: Union[Variable, DataArray], index, name=None, dtype=int):
+    if not hasattr(index, '__iter__'):
+        return [_delta_to_positional(x, dim, index, dtype=dtype) for dim in x.dims]
     if set(index) != set(x.dims):
         raise ValueError(f"Data has dims={x.dims} but input argument '{name}' provides "
                          f"values for {tuple(index)}")
-    return [_delta_to_positional(x, dim, index[dim]) for dim in x.dims]
+    return [_delta_to_positional(x, dim, index[dim], dtype=dtype) for dim in x.dims]
 
 
 @_ndfilter
@@ -59,7 +61,7 @@ def gaussian_filter(x: Union[Variable, DataArray],
                     sigma,
                     order=0,
                     **kwargs) -> Union[Variable, DataArray]:
-    sigma = _positional_index(x, sigma, name='sigma')
+    sigma = _positional_index(x, sigma, name='sigma', dtype=float)
     order = order if isinstance(order, int) else [order[dim] for dim in x.dims]
     out = empty_like(x)
     scipy.ndimage.gaussian_filter(x.values,
