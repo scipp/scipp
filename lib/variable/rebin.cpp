@@ -51,7 +51,7 @@ void rebin_non_inner(const Dim dim, const Variable &oldT, Variable &newT,
     begin = std::max(scipp::index(0), begin - 1);
     add_from_bin(slice, xn_low, xn_high, begin);
     if (begin + 1 < end - 1)
-      sum(oldT.slice({dim, begin + 1, end - 1}), dim, slice);
+      sum_into(slice, oldT.slice({dim, begin + 1, end - 1}));
     if (begin != end - 1 && end < oldSize + 1)
       add_from_bin(slice, xn_low, xn_high, end - 1);
   };

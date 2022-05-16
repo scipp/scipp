@@ -38,27 +38,6 @@ TEST_F(SumTest, sum_with_empty_dim) {
             makeVariable<double>(Dims{Dim::X}, Shape{0}, units::m, Values{}));
 }
 
-TEST_F(SumTest, sum_in_place) {
-  auto out = makeVariable<double>(Dims{Dim::Y}, Shape{2});
-  auto &view = sum(var, Dim::X, out);
-  EXPECT_EQ(out, makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m,
-                                      Values{3.0, 7.0}));
-  EXPECT_EQ(&view, &out);
-}
-
-TEST_F(SumTest, sum_in_place_bool) {
-  auto out = makeVariable<int64_t>(Dims{Dim::Y}, Shape{2});
-  auto &view = sum(var_bool, Dim::X, out);
-  EXPECT_EQ(out, makeVariable<int64_t>(Dims{Dim::Y}, Shape{2}, units::m,
-                                       Values{1, 2}));
-  EXPECT_EQ(&view, &out);
-}
-
-TEST_F(SumTest, sum_in_place_bool_incorrect_out_type) {
-  auto out = makeVariable<bool>(Dims{Dim::Y}, Shape{2});
-  EXPECT_THROW(sum(var_bool, Dim::X, out), except::TypeError);
-}
-
 TEST(VectorReduceTest, sum_vector) {
   const auto vector_var = makeVariable<Eigen::Vector3d>(
       Dims{Dim::X}, Shape{2}, units::m,
