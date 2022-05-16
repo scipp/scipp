@@ -112,29 +112,29 @@ def test_floor():
 
 
 def test_sin():
-    assert_export(sc.sin, sc.Variable(dims=(), values=0.0))
+    assert_export(sc.sin, sc.Variable(dims=(), values=0.0, unit='rad'))
 
 
 def test_sin_out():
-    var = sc.Variable(dims=(), values=0.0)
+    var = sc.Variable(dims=(), values=0.0, unit='rad')
     assert_export(sc.sin, var, out=var)
 
 
 def test_cos():
-    assert_export(sc.cos, sc.Variable(dims=(), values=0.0))
+    assert_export(sc.cos, sc.Variable(dims=(), values=0.0, unit='rad'))
 
 
 def test_cos_out():
-    var = sc.Variable(dims=(), values=0.0)
+    var = sc.Variable(dims=(), values=0.0, unit='rad')
     assert_export(sc.cos, var, out=var)
 
 
 def test_tan():
-    assert_export(sc.tan, sc.Variable(dims=(), values=0.0))
+    assert_export(sc.tan, sc.Variable(dims=(), values=0.0, unit='rad'))
 
 
 def test_tan_out():
-    var = sc.Variable(dims=(), values=0.0)
+    var = sc.Variable(dims=(), values=0.0, unit='rad')
     assert_export(sc.tan, var, out=var)
 
 
