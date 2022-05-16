@@ -2,7 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 import scipp as sc
-from scipp.plt import Plot, Graph, Figure, widgets, Node
+from scipp.plt import Plot, Model, Figure, widgets, Node
 from ..factory import make_dense_data_array, make_dense_dataset
 import matplotlib.pyplot as plt
 import matplotlib
@@ -13,7 +13,7 @@ matplotlib.use('Agg')
 
 def test_plot_single_1d_line():
     da = make_dense_data_array(ndim=1)
-    m = Graph(da)
+    m = Model(da)
     fig = Figure()
     m.add_view(m.end, fig)
     p = Plot()
@@ -23,8 +23,8 @@ def test_plot_single_1d_line():
 
 def test_plot_two_1d_lines():
     ds = make_dense_dataset(ndim=1)
-    m_a = Graph(ds['a'])
-    m_b = Graph(ds['b'])
+    m_a = Model(ds['a'])
+    m_b = Model(ds['b'])
     fig = Figure()
     m_a.add_view(m_a.end, fig)
     m_b.add_view(m_b.end, fig)
@@ -36,7 +36,7 @@ def test_plot_two_1d_lines():
 
 def test_plot_2d_image():
     da = make_dense_data_array(ndim=2)
-    m = Graph(da)
+    m = Model(da)
     fig = Figure()
     m.add_view(m.end, fig)
     p = Plot()
@@ -46,7 +46,7 @@ def test_plot_2d_image():
 
 def test_plot_2d_image_smoothing_slider():
     da = make_dense_data_array(ndim=2)
-    m = Graph(da)
+    m = Model(da)
     from scipy.ndimage import gaussian_filter
 
     def smooth(da, sigma):
@@ -77,7 +77,7 @@ def test_plot_2d_image_with_masks():
     masks_node = Node(func=widgets.hide_masks)
     masks_widget = widgets.MaskWidget(masks=da.masks)
     masks_view = widgets.WidgetView(widgets={"masks": masks_widget})
-    m = Graph(da)
+    m = Model(da)
     m.add("hiding_masks", masks_node, after=m.end.name)
     f = Figure()
     m.add_view(masks_node, f)
@@ -93,8 +93,8 @@ def test_plot_two_1d_lines_with_masks():
     ds['a'].masks['m1'] = ds['a'].coords['xx'] > sc.scalar(40.0, unit='m')
     ds['a'].masks['m2'] = ds['a'].data < ds['b'].data
     ds['b'].masks['m1'] = ds['b'].coords['xx'] < sc.scalar(5.0, unit='m')
-    m_a = Graph(ds['a'])
-    m_b = Graph(ds['b'])
+    m_a = Model(ds['a'])
+    m_b = Model(ds['b'])
 
     a_masks_node = Node(func=widgets.hide_masks)
     a_masks_widget = widgets.MaskWidget(masks=ds['a'].masks)
@@ -125,7 +125,7 @@ def test_plot_node_sum_data_along_y():
     def squash(da):
         return da.sum('yy')
 
-    m = Graph(da)
+    m = Model(da)
     squash_node = Node(func=squash)
     m.add("sum_y", squash_node, after=m.end.name)
     f1d = Figure()
@@ -141,7 +141,7 @@ def test_plot_slice_3d_cube():
     da = make_dense_data_array(ndim=3)
     slice_node = Node(func=widgets.slice_dims)
     slice_slider = widgets.SliceView(da, dims=['zz'])
-    m = Graph(da)
+    m = Model(da)
     m.add("slice_dims", slice_node, after=m.end.name)
     f = Figure()
     m.add_view(slice_node, f)
@@ -161,7 +161,7 @@ def test_plot_3d_image_slicer_with_connected_side_histograms():
     da = make_dense_data_array(ndim=3)
     slice_node = Node(func=widgets.slice_dims)
     slice_slider = widgets.SliceView(da, dims=['zz'])
-    m = Graph(da)
+    m = Model(da)
     m.add("slice_dims", slice_node, after=m.end.name)
     f = Figure(ax=ax1, cbar=False)
     m.add_view(slice_node, f)

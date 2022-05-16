@@ -8,6 +8,6 @@ import matplotlib.pyplot as plt
 plt.ioff()
 
 from .plot import Plot
-from .graph import Node, Graph
+from .model import Node, Model
 from .figure import Figure
 from . import widgets

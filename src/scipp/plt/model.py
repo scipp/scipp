@@ -6,7 +6,6 @@ from functools import partial
 
 
 class Node:
-
     def __init__(self, func, name=None, views=None):
         self.name = name
         self.graph_name = None
@@ -40,8 +39,7 @@ class Node:
         self.views.append(view)
 
 
-class Graph:
-
+class Model:
     def __init__(self, da):
         self._name = da.name
         self._nodes = {}
@@ -123,17 +121,18 @@ class Graph:
             raise RuntimeError(f'No unique end node: {ends}')
         return ends[0]
 
-    def show(self, size=None):
+    def show(self, size=None, hide_views=False):
         dot = _make_graphviz_digraph(strict=True)
         dot.attr('node', shape='box', height='0.1')
         dot.attr(size=size)
         for name, node in self.items():
             if node.dependency is not None:
                 dot.edge(node.dependency.name, name)
-            for view in node.views:
-                key = str(view)
-                dot.node(key, shape='ellipse', style='filled', color='lightgrey')
-                dot.edge(name, key)
+            if not hide_views:
+                for view in node.views:
+                    key = str(view)
+                    dot.node(key, shape='ellipse', style='filled', color='lightgrey')
+                    dot.edge(name, key)
 
         return dot
 
