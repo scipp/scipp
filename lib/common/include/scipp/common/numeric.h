@@ -98,21 +98,26 @@ constexpr auto pow(const B base, const E exponent) noexcept {
   }
 }
 
-template <class T> bool isnan([[maybe_unused]] T x) {
+template <class T> bool isnan([[maybe_unused]] const T &x) {
+  // This is not completely failsafe, e.g., std::complex<float> would not be
+  // caught, but it should help to avoid the most common issues.
+  static_assert(sizeof(T) <= 8, "Likely missing specialization of isnan");
   if constexpr (std::is_floating_point_v<std::decay_t<T>>)
     return std::isnan(x);
   else
     return false;
 }
 
-template <class T> bool isinf([[maybe_unused]] T x) {
+template <class T> bool isinf([[maybe_unused]] const T &x) {
+  static_assert(sizeof(T) <= 8, "Likely missing specialization of isinf");
   if constexpr (std::is_floating_point_v<std::decay_t<T>>)
     return std::isinf(x);
   else
     return false;
 }
 
-template <class T> bool isfinite([[maybe_unused]] T x) {
+template <class T> bool isfinite([[maybe_unused]] const T &x) {
+  static_assert(sizeof(T) <= 8, "Likely missing specialization of isfinite");
   if constexpr (std::is_floating_point_v<std::decay_t<T>>)
     return std::isfinite(x);
   else
