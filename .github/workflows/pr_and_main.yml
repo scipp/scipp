@@ -30,8 +30,8 @@ jobs:
 
   build_and_test:
     needs: formatting
-    name: build and test ${{ matrix.os }}, py${{ matrix.python-version }}
-    runs-on: ${{ matrix.os }}
+    name: build and test ${{ matrix.variant.os }}, py${{ matrix.python-version }}
+    runs-on: ${{ matrix.variant.os }}
     defaults:
       run:
         shell: bash -l {0}  # required for conda env
@@ -40,15 +40,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-20.04", "macos-10.15", "windows-2019"]
+        variant:
+        - {os: ubuntu-20.04, cmake-preset: ci-linux}
+        - {os: macos-10.15, cmake-preset: ci-macos}
+        - {os: windows-2019, cmake-preset: ci-windows}
         python-version: ["3.8"]
-        include:
-        - os: ubuntu-20.04
-          cmake-preset: ci-linux
-        - os: macos-10.15
-          cmake-preset: ci-macos
-        - os: windows-2019
-          cmake-preset: ci-windows
 
     steps:
       - uses: actions/checkout@v3
@@ -62,14 +58,14 @@ jobs:
         uses: mamba-org/provision-with-micromamba@main
         with:
           micromamba-version: 0.23.2
-          environment-file: .buildconfig/${{ matrix.cmake-preset }}.yml
+          environment-file: .buildconfig/${{ matrix.variant.cmake-preset }}.yml
           cache-env: true
           extra-specs: python=${{ matrix.python-version }}
 
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.2
         with:
-          key: ${{ matrix.os }}
+          key: ${{ matrix.variant.os }}
 
       - name: Cache conan setup
         id: conan-cache-key
@@ -80,19 +76,19 @@ jobs:
         uses: actions/cache@v1
         with:
           path: ${{ steps.conan-cache-key.outputs.path }}
-          key: conan-${{ matrix.os }}-${{ steps.conan-cache-key.outputs.key }}
+          key: conan-${{ matrix.variant.os }}-${{ steps.conan-cache-key.outputs.key }}
 
-      - run: cmake --preset ${{ matrix.cmake-preset }}
+      - run: cmake --preset ${{ matrix.variant.cmake-preset }}
       - run: cmake --build --preset build
       - run: ctest --preset test
 
       - run: tox -e test
 
       - run: tox -e docs
-        if: ${{ contains(matrix.os, 'ubuntu') }}
+        if: ${{ contains(matrix.variant.os, 'ubuntu') }}
 
       - uses: actions/upload-artifact@v2
-        if: ${{ contains(matrix.os, 'ubuntu') }}
+        if: ${{ contains(matrix.variant.os, 'ubuntu') }}
         with:
           name: DocumentationHTML
           path: html/
