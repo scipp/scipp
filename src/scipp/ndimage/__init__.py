@@ -7,12 +7,12 @@ This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.ndimage`.
 """
 from functools import wraps
-from typing import Callable, Union
+from typing import Callable, Dict, Union
 
 import scipy.ndimage
 
 from ..core import Variable, DataArray
-from ..core import CoordError, DimensionError
+from ..core import CoordError, DimensionError, VariancesError
 from ..core import empty_like, islinspace, ones
 
 
@@ -23,7 +23,8 @@ def _ndfilter(func: Callable) -> Callable:
         if 'output' in kwargs:
             raise TypeError("The 'output' argument is not supported")
         if x.variances is not None:
-            raise ValueError("Filter cannot be applied to input array with variances.")
+            raise VariancesError(
+                "Filter cannot be applied to input array with variances.")
         if getattr(x, 'masks', None):
             raise ValueError("Filter cannot be applied to input array with masks.")
         return func(x, **kwargs)
@@ -61,6 +62,11 @@ def gaussian_filter(x: Union[Variable, DataArray],
                     sigma,
                     order=0,
                     **kwargs) -> Union[Variable, DataArray]:
+    """
+    Multidimensional Gaussian filter.
+
+    This is a wrapper around :py:func:`scipy.ndimage.gaussian_filter`.
+    """
     sigma = _positional_index(x, sigma, name='sigma', dtype=float)
     order = order if isinstance(order, int) else [order[dim] for dim in x.dims]
     out = empty_like(x)
@@ -91,9 +97,11 @@ def _make_footprint_filter(name):
     def footprint_filter(x: Union[Variable, DataArray],
                          /,
                          *,
-                         size=None,
-                         footprint=None,
-                         origin=0,
+                         size: Union[int, Variable, Dict[str, Union[int,
+                                                                    Variable]]] = None,
+                         footprint: Variable = None,
+                         origin: Union[int, Variable, Dict[str, Union[int,
+                                                                      Variable]]] = 0,
                          **kwargs) -> Union[Variable, DataArray]:
         footprint = _make_footprint(x, size=size, footprint=footprint)
         origin = _positional_index(x, origin, name='origin')
@@ -108,7 +116,50 @@ def _make_footprint_filter(name):
         return out
 
     footprint_filter.__name__ = name
-    footprint_filter.__doc__ = f'Forwards to scipy.ndimage.{name}'
+    footprint_filter.__doc__ = f"""
+    Calculate a multidimensional {name.replace('_', ' ')}.
+
+    This is a wrapper around :py:func:`scipy.ndimage.{name}`. See there for full
+    argument description. There are two key differences:
+
+    - This wrapper uses explicit dimension labels in the ``size``, ``footprint``, and
+      ``origin`` arguments. For example, instead of ``size=[4, 6]`` use
+      ``size={{'time':4, 'space':6}}`` (with appropriate dimension labels for the data).
+    - Coordinate values can be used (and should be preferred) for ``size`` and
+      ``origin``. For example, instead of ``size=[4, 6]`` use
+      ``size={{'time':sc.scalar(5.0, unit='ms'), 'space':sc.scalar(1.2, unit='mm')}}``.
+      In this case it is required that the corresponding coordinates exist and form a
+      "linspace", i.e., are evenly spaced.
+
+    Warning
+    -------
+    When ``size`` is an integer or an mapping to integers or when ``footprint`` is
+    given, coordinate values are ignored. That is, the filter is applied even if the
+    data points are not evenly spaced. The resulting filtered data may thus have no
+    meaningful interpretation.
+
+    Parameters
+    ----------
+    x:
+        Input variable or data array.
+    size:
+        Integer or scalar variable or mapping from dimension labels to integers or
+        scalar variables. Defines the footprint (see below).
+    footprint:
+        Variable with same dimension labels (but different shape) as the input data.
+        The boolean values specify (implicitly) a shape, but also which of the elements
+        within this shape will get passed to the filter function.
+    origin:
+        Integer or scalar variable or mapping from dimension labels to integers or
+        scalar variables. Controls the placement of the filter on the input array.
+
+    Examples
+    --------
+
+      >>> from scipp.ndimage import {name}
+      >>> da = sc.data.data_xy()
+      >>> filtered = {name}(da,size=4)
+    """
     return _ndfilter(footprint_filter)
 
 
