@@ -19,7 +19,7 @@ def _ndfilter(func: Callable) -> Callable:
     @wraps(func)
     def function(x: Union[Variable, DataArray], **kwargs) -> Union[Variable, DataArray]:
         if 'output' in kwargs:
-            raise ValueError("The 'output' argument is not supported")
+            raise TypeError("The 'output' argument is not supported")
         if x.variances is not None:
             raise ValueError("Filter cannot be applied to input array with variances.")
         if getattr(x, 'masks', None):
