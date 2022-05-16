@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   formatting:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
       - uses: actions/checkout@v3
@@ -40,8 +40,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        os: ["ubuntu-20.04", "macos-10.15", "windows-2019"]
         python-version: ["3.8"]
+        include:
+        - os: ubuntu-20.04
+          cmake-preset: ci-linux
+        - os: macos-10.15
+          cmake-preset: ci-macos
+        - os: windows-2019
+          cmake-preset: ci-windows
 
     steps:
       - uses: actions/checkout@v3
@@ -55,7 +62,7 @@ jobs:
         uses: mamba-org/provision-with-micromamba@main
         with:
           micromamba-version: 0.23.2
-          environment-file: .buildconfig/${{ matrix.os }}.yml
+          environment-file: .buildconfig/${{ matrix.cmake-preset }}.yml
           cache-env: true
           extra-specs: python=${{ matrix.python-version }}
 
@@ -75,7 +82,7 @@ jobs:
           path: ${{ steps.conan-cache-key.outputs.path }}
           key: conan-${{ matrix.os }}-${{ steps.conan-cache-key.outputs.key }}
 
-      - run: cmake --preset ci-${{ matrix.os }}
+      - run: cmake --preset ${{ matrix.cmake-preset }}
       - run: cmake --build --preset build
       - run: ctest --preset test
 

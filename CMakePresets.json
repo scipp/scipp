@@ -19,7 +19,7 @@
       }
     },
     {
-      "name": "ci-ubuntu-latest",
+      "name": "ci-linux",
       "inherits": "base",
       "description": "Linux options for CI build (PR and Main)",
       "cacheVariables": {
@@ -27,7 +27,7 @@
       }
     },
     {
-      "name": "ci-macos-latest",
+      "name": "ci-macos",
       "inherits": "base",
       "description": "MacOS options for CI build (PR and Main)",
       "cacheVariables": {
@@ -35,7 +35,7 @@
       }
     },
     {
-      "name": "ci-windows-latest",
+      "name": "ci-windows",
       "inherits": "base",
       "description": "Windows options for CI build (PR and Main)",
       "generator": "Ninja"
