@@ -2,6 +2,7 @@
 // Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "scipp/core/eigen.h"
 #include "scipp/core/element/special_values.h"
 #include "scipp/core/value_and_variance.h"
 #include "scipp/units/unit.h"
@@ -311,4 +312,54 @@ TYPED_TEST(ElementNegativeInfToNumTest, value_and_variance_out) {
   const ValueAndVariance<T> replacement(1, 1);
   targetted_replacement_out_arg_test(element::negative_inf_to_num_out_arg, out,
                                      replaceable, nonreplaceable, replacement);
+}
+
+TEST(ElementSpecialValueVector3dTest, isnan_true_if_one_element_is_nan) {
+  Eigen::Vector3d v(1.0, 2.0, std::numeric_limits<double>::quiet_NaN());
+  EXPECT_TRUE(element::isnan(v));
+}
+
+TEST(ElementSpecialValueVector3dTest, isnan_false_if_no_element_is_nan) {
+  Eigen::Vector3d v(1.0, 2.0, 3.0);
+  EXPECT_FALSE(element::isnan(v));
+}
+
+TEST(ElementSpecialValueVector3dTest, isfinite_false_if_one_element_is_nan) {
+  Eigen::Vector3d v(1.0, 2.0, std::numeric_limits<double>::quiet_NaN());
+  EXPECT_FALSE(element::isfinite(v));
+}
+
+TEST(ElementSpecialValueVector3dTest, isfinite_true_if_no_element_is_nan) {
+  Eigen::Vector3d v(1.0, 2.0, 3.0);
+  EXPECT_TRUE(element::isfinite(v));
+}
+
+TEST(ElementSpecialValueVector3dTest, isinf_false_if_one_element_is_nan) {
+  Eigen::Vector3d v(1.0, 2.0, std::numeric_limits<double>::quiet_NaN());
+  EXPECT_FALSE(element::isinf(v));
+}
+
+TEST(ElementSpecialValueVector3dTest, isnan_false_if_one_element_is_inf) {
+  Eigen::Vector3d v(1.0, 2.0, std::numeric_limits<double>::infinity());
+  EXPECT_FALSE(element::isnan(v));
+}
+
+TEST(ElementSpecialValueVector3dTest, isfinite_false_if_one_element_is_inf) {
+  Eigen::Vector3d v(1.0, 2.0, std::numeric_limits<double>::infinity());
+  EXPECT_FALSE(element::isfinite(v));
+}
+
+TEST(ElementSpecialValueVector3dTest, isfinite_true_if_no_element_is_inf) {
+  Eigen::Vector3d v(1.0, 2.0, 3.0);
+  EXPECT_TRUE(element::isfinite(v));
+}
+
+TEST(ElementSpecialValueVector3dTest, isinf_true_if_one_element_is_inf) {
+  Eigen::Vector3d v(1.0, 2.0, std::numeric_limits<double>::infinity());
+  EXPECT_TRUE(element::isinf(v));
+}
+
+TEST(ElementSpecialValueVector3dTest, isinf_false_if_no_element_is_inf) {
+  Eigen::Vector3d v(1.0, 2.0, 3.0);
+  EXPECT_FALSE(element::isinf(v));
 }

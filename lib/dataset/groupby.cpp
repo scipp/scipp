@@ -4,8 +4,6 @@
 /// @author Simon Heybrock
 #include <numeric>
 
-#include "scipp/common/numeric.h"
-
 #include "scipp/core/bucket.h"
 #include "scipp/core/element/comparison.h"
 #include "scipp/core/element/logical.h"
@@ -258,15 +256,18 @@ template <class T> struct NanSensitiveLess {
   // https://en.cppreference.com/w/cpp/named_req/Compare, as it is used as
   // the comparator for keys in a map.
   bool operator()(const T &a, const T &b) const {
-    if (scipp::numeric::isnan(b)) {
-      return !scipp::numeric::isnan(a);
-    }
+    if constexpr (std::is_floating_point_v<T>)
+      if (std::isnan(b))
+        return !std::isnan(a);
     return a < b;
   }
 };
 
 template <class T> bool nan_sensitive_equal(const T &a, const T &b) {
-  return a == b || (scipp::numeric::isnan(a) && scipp::numeric::isnan(b));
+  if constexpr (std::is_floating_point_v<T>)
+    return a == b || (std::isnan(a) && std::isnan(b));
+  else
+    return a == b;
 }
 } // namespace
 
