@@ -152,6 +152,7 @@ template <class T, class Func> DataArray transform(const T &a, Func func) {
                                const Masks &masks);
 [[nodiscard]] Variable sum(const Variable &var, const Dim dim,
                            const Masks &masks);
+[[nodiscard]] Variable nansum(const Variable &var, const Masks &masks);
 [[nodiscard]] Variable nansum(const Variable &var, const Dim dim,
                               const Masks &masks);
 [[nodiscard]] Variable max(const Variable &var, const Dim dim,

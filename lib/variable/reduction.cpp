@@ -39,16 +39,6 @@ Variable make_accumulant(const Variable &var, const Dim dim,
 
 } // namespace
 
-void sum_into(Variable &summed, const Variable &var) {
-  if (summed.dtype() == dtype<float>) {
-    auto accum = astype(summed, dtype<double>);
-    sum_into(accum, var);
-    copy(astype(accum, dtype<float>), summed);
-  } else {
-    accumulate_in_place(summed, var, element::add_equals, "sum");
-  }
-}
-
 void nansum_impl(Variable &summed, const Variable &var) {
   if (summed.dtype() == dtype<float>) {
     auto accum = astype(summed, dtype<double>);
@@ -214,6 +204,32 @@ Variable all(const Variable &var) {
 /// Return the logical OR along all dimensions.
 Variable any(const Variable &var) {
   return reduce_all_dims(var, [](auto &&... _) { return any(_...); });
+}
+
+void sum_into(Variable &accum, const Variable &var) {
+  if (accum.dtype() == dtype<float>) {
+    auto x = astype(accum, dtype<double>);
+    sum_into(x, var);
+    copy(astype(x, dtype<float>), accum);
+  } else {
+    accumulate_in_place(accum, var, element::add_equals, "sum");
+  }
+}
+
+void all_into(Variable &accum, const Variable &var) {
+  accumulate_in_place(accum, var, core::element::logical_and_equals, "all");
+}
+
+void any_into(Variable &accum, const Variable &var) {
+  accumulate_in_place(accum, var, core::element::logical_or_equals, "any");
+}
+
+void max_into(Variable &accum, const Variable &var) {
+  accumulate_in_place(accum, var, core::element::max_equals, "max");
+}
+
+void min_into(Variable &accum, const Variable &var) {
+  accumulate_in_place(accum, var, core::element::min_equals, "min");
 }
 
 } // namespace scipp::variable

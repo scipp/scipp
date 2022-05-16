@@ -23,7 +23,6 @@ void rebin_non_inner(const Dim dim, const Variable &oldT, Variable &newT,
   if (oldCoord.ndim() != 1 || newCoord.ndim() != 1)
     throw std::invalid_argument(
         "Internal error in rebin, this should be unreachable.");
-  constexpr Less less;
   const auto oldSize = oldT.dims()[dim];
   const auto newSize = newT.dims()[dim];
 
@@ -35,8 +34,8 @@ void rebin_non_inner(const Dim dim, const Variable &oldT, Variable &newT,
     auto xo_low = xold[iold];
     auto xo_high = xold[iold + 1];
     // delta is the overlap of the bins on the x axis
-    const auto delta = std::abs(std::min<double>(xn_high, xo_high, less) -
-                                std::max<double>(xn_low, xo_low, less));
+    const auto delta = std::abs(std::min<double>(xn_high, xo_high, Less{}) -
+                                std::max<double>(xn_low, xo_low, Less{}));
     const auto owidth = std::abs(xo_high - xo_low);
     slice += oldT.slice({dim, iold}) *
              ((delta / owidth) * (slice.unit() / oldT.unit()));
@@ -44,9 +43,9 @@ void rebin_non_inner(const Dim dim, const Variable &oldT, Variable &newT,
   auto accumulate_bin = [&](auto &&slice, const auto xn_low,
                             const auto xn_high) {
     scipp::index begin =
-        std::upper_bound(xold, xold + oldSize + 1, xn_low, less) - xold;
+        std::upper_bound(xold, xold + oldSize + 1, xn_low, Less{}) - xold;
     scipp::index end =
-        std::upper_bound(xold, xold + oldSize + 1, xn_high, less) - xold;
+        std::upper_bound(xold, xold + oldSize + 1, xn_high, Less{}) - xold;
     if (begin == oldSize + 1 || end == 0)
       return;
     begin = std::max(scipp::index(0), begin - 1);
