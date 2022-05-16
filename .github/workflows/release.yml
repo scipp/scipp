@@ -17,8 +17,8 @@ jobs:
       matrix:
         variant:
           - {os: ubuntu-20.04, target: linux_64}
-          - {os: macos-10.15, target: osx_64}
-          - {os: macos-10.15, target: osx_arm64}
+          - {os: macos-11, target: osx_64}
+          - {os: macos-11, target: osx_arm64}
           - {os: windows-2019, target: win_64}
         python-version: ["3.8", "3.9"]
 
