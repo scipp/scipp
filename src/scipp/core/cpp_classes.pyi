@@ -725,7 +725,7 @@ class Dataset():
     def __imul__(self, arg0: float) -> object: ...
     @typing.overload
     def __imul__(self, arg0: int) -> object: ...
-    def __init__(self, data: typing.Dict[str, typing.Union[Variable, DataArray]] = {}, coords: typing.Union[typing.Mapping[str, Variable], typing.Iterable[typing.Tuple[str, Variable]]] = {}) -> None: 
+    def __init__(self, data: typing.Union[typing.Mapping[str, typing.Union[Variable, DataArray]], typing.Iterable[typing.Tuple[str, typing.Union[Variable, DataArray]]]] = {}, coords: typing.Union[typing.Mapping[str, Variable], typing.Iterable[typing.Tuple[str, Variable]]] = {}) -> None: 
         """
         Dataset initializer.
 

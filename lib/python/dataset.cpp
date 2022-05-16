@@ -187,24 +187,22 @@ Returned by :py:func:`DataArray.masks`)");
   Dict of data arrays with aligned dimensions.)");
   options.disable_function_signatures();
   dataset.def(
-      py::init([](const std::map<std::string, std::variant<Variable, DataArray>>
-                      &data,
-                  const py::object &coords) {
+      py::init([](const py::object &data, const py::object &coords) {
         Dataset d;
-        for (auto &&[name, item] : data) {
-          auto visitor = [&d, n = name](auto &object) {
-            d.setData(std::string(n), std::move(object));
-          };
-          std::visit(visitor, item);
+        for (auto &&[name, item] : py::dict(data)) {
+          if (py::isinstance<DataArray>(item)) {
+            d.setData(name.cast<std::string>(), item.cast<DataArray &>());
+          } else {
+            d.setData(name.cast<std::string>(), item.cast<Variable &>());
+          }
         }
         for (auto &&[dim, coord] : py::dict(coords))
           d.setCoord(Dim{dim.cast<std::string>()}, coord.cast<Variable &>());
         return d;
       }),
-      py::arg("data") =
-          std::map<std::string, std::variant<Variable, DataArray>>{},
-      py::kw_only(), py::arg("coords") = std::map<std::string, Variable>{},
-      R"doc(__init__(self, data: Dict[str, Union[Variable, DataArray]] = {}, coords: Union[typing.Mapping[str, Variable], Iterable[Tuple[str, Variable]]] = {}) -> None
+      py::arg("data") = py::dict(), py::kw_only(),
+      py::arg("coords") = std::map<std::string, Variable>{},
+      R"doc(__init__(self, data: Union[typing.Mapping[str, Union[Variable, DataArray]], Iterable[Tuple[str, Union[Variable, DataArray]]]] = {}, coords: Union[typing.Mapping[str, Variable], Iterable[Tuple[str, Variable]]] = {}) -> None
 
       Dataset initializer.
 

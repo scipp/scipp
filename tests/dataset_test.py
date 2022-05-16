@@ -46,6 +46,26 @@ def test_init_dict_of_dataarray_and_variable():
         sc.DataArray(sc.arange('y', 10, unit='m'), coords={'y': sc.arange('y', 10)}))
 
 
+def test_init_data_from_dataset():
+    d1 = sc.Dataset({
+        'a':
+        sc.arange('x', 5),
+        'b':
+        sc.DataArray(sc.arange('y', 10, unit='m'), coords={'y': sc.arange('y', 10)})
+    })
+    d2 = sc.Dataset(d1)
+    assert sc.identical(d2['a'], sc.DataArray(sc.arange('x', 5)))
+    assert sc.identical(
+        d2['b'],
+        sc.DataArray(sc.arange('y', 10, unit='m'), coords={'y': sc.arange('y', 10)}))
+
+
+def test_init_iterator_of_tuples():
+    d = sc.Dataset({'a': sc.arange('x', 5), 'b': sc.arange('y', 10, unit='m')}.items())
+    assert sc.identical(d['a'], sc.DataArray(sc.arange('x', 5)))
+    assert sc.identical(d['b'], sc.DataArray(sc.arange('y', 10, unit='m')))
+
+
 def test_init_extra_coords_from_dict():
     d = sc.Dataset({
         'a': sc.arange('x', 5),
