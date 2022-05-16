@@ -92,24 +92,17 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Setup Mambaforge and dev env
-        uses: conda-incubator/setup-miniconda@v2
+        uses: mamba-org/provision-with-micromamba@main
         with:
-          miniforge-version: latest
-          miniforge-variant: Mambaforge
-          python-version: "3.8"
-          environment-file: .buildconfig/ubuntu-latest.yml
-          activate-environment: ubuntu-latest
-          auto-activate-base: false
+          micromamba-version: 0.23.2
+          environment-file: .buildconfig/ci-linux.yml
+          cache-env: true
+          extra-specs: python=3.8
       - uses: actions/download-artifact@v2
         with:
           name: conda-package-ubuntu-latest-py3.8
       - run: mamba install linux-64/scipp-*.tar.bz2
-      - name: Run Sphinx
-        run: |
-          python -m sphinx -j2 -v -b html -d doctrees docs html
-          python -m sphinx -j2 -v -b doctest -d doctrees docs html
-          python -m sphinx -j2 -v -b linkcheck -d doctrees docs html
-          find html -type f -name "*.ipynb" -not -path "html/_sources/*" -delete
+      - run: tox -e docs
       - uses: actions/upload-artifact@v2
         with:
           name: html
