@@ -814,6 +814,7 @@ def datetime(value: Union[str, int, _np.datetime64],
             raise ValueError('Parsing timezone aware datetimes is not supported')
     return scalar(value, unit=unit, dtype=_cpp.DType.datetime64)
 
+
 def datetimes(*,
               dims,
               values: ArrayLike,
