@@ -18,7 +18,7 @@ namespace scipp::dataset {
 namespace {
 // Uses variable::special like but constructs only a scalar
 // instead of a full-sized array.
-Variable mask_fill(const Variable &prototype, const FillValue fill) {
+Variable scalar_special_like(const Variable &prototype, const FillValue fill) {
   return special_like(zero_like(prototype), fill);
 }
 
@@ -27,7 +27,7 @@ Variable reduce_impl(const Variable &var, const Dim dim, const Masks &masks,
                      const FillValue fill, const Op &op) {
   if (const auto mask_union = irreducible_mask(masks, dim);
       mask_union.is_valid()) {
-    return op(where(mask_union, mask_fill(var, fill), var), dim);
+    return op(where(mask_union, scalar_special_like(var, fill), var), dim);
   }
   return op(var, dim);
 }
