@@ -76,7 +76,7 @@ def test_raises_TypeError_if_size_is_not_integral(filter_func):
     with pytest.raises(TypeError):
         filter_func(da, size=1.5)
     with pytest.raises(TypeError):
-        filter_func(da, size=[2.5, 3.5])
+        filter_func(da, size={'x': 2.5, 'y': 3.5})
 
 
 def test_raises_TypeError_if_origin_is_not_integral(filter_func):
