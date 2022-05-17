@@ -14,6 +14,7 @@ Features
 * Reduced time of initial import of scipp by delaying imports of optional dependencies `#2535 <https://github.com/scipp/scipp/pull/2535>`_.
 * Added an ``update`` method to :class:`Coords`, :class:`Attrs`, :class:`Masks`, and :class:`Dataset`  `#2558 <https://github.com/scipp/scipp/pull/2558>`_.
 * Support ``dtype=vector3`` in :func:`scipp.isinf` and :func:`scipp.isfinite` `#2593 <https://github.com/scipp/scipp/pull/2593>`_.
+* Added support for ``DataArray`` and ``Dataset`` in reduction operations (e.g. :func:`scipp.max`) `#2600 <https://github.com/scipp/scipp/pull/2600>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~

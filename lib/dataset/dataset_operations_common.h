@@ -150,12 +150,23 @@ template <class T, class Func> DataArray transform(const T &a, Func func) {
                             const Masks &masks);
 [[nodiscard]] Variable nanmean(const Variable &var, const Dim dim,
                                const Masks &masks);
-[[nodiscard]] Variable sum(const Variable &var, const Masks &masks);
 [[nodiscard]] Variable sum(const Variable &var, const Dim dim,
                            const Masks &masks);
 [[nodiscard]] Variable nansum(const Variable &var, const Masks &masks);
 [[nodiscard]] Variable nansum(const Variable &var, const Dim dim,
                               const Masks &masks);
+[[nodiscard]] Variable max(const Variable &var, const Dim dim,
+                           const Masks &masks);
+[[nodiscard]] Variable nanmax(const Variable &var, const Dim dim,
+                              const Masks &masks);
+[[nodiscard]] Variable min(const Variable &var, const Dim dim,
+                           const Masks &masks);
+[[nodiscard]] Variable nanmin(const Variable &var, const Dim dim,
+                              const Masks &masks);
+[[nodiscard]] Variable all(const Variable &var, const Dim dim,
+                           const Masks &masks);
+[[nodiscard]] Variable any(const Variable &var, const Dim dim,
+                           const Masks &masks);
 
 [[nodiscard]] Variable masked_data(const DataArray &array, const Dim dim);
 

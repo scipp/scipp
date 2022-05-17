@@ -86,18 +86,22 @@ from . import _binding
 _binding.bind_get()
 _binding.bind_pop()
 _binding.bind_conversion_to_builtin(Variable)
+# Assign method binding for all containers
+for _cls in (Variable, DataArray, Dataset):
+    _binding.bind_functions_as_methods(_cls, globals(),
+                                       ('sum', 'nansum', 'mean', 'nanmean', 'max',
+                                        'min', 'nanmax', 'nanmin', 'all', 'any'))
+del _cls
 # Assign method binding for both Variable and DataArray
 for _cls in (Variable, DataArray):
-    _binding.bind_functions_as_methods(
-        _cls, globals(),
-        ('broadcast', 'flatten', 'fold', 'squeeze', 'transpose', 'all', 'any', 'mean',
-         'sum', 'nanmean', 'nansum', 'floor', 'ceil', 'round'))
+    _binding.bind_functions_as_methods(_cls, globals(),
+                                       ('broadcast', 'flatten', 'fold', 'squeeze',
+                                        'transpose', 'floor', 'ceil', 'round'))
     _binding.bind_function_as_method(cls=_cls, name='to', func=to, abbreviate_doc=False)
 del _cls
 del to
 # Assign method binding for JUST Variable
-_binding.bind_functions_as_methods(Variable, globals(),
-                                   ('cumsum', 'max', 'min', 'nanmax', 'nanmin'))
+_binding.bind_functions_as_methods(Variable, globals(), ('cumsum', ))
 # Assign method binding for JUST Dataset
 _binding.bind_functions_as_methods(Dataset, globals(), ('squeeze', ))
 for _cls in (DataArray, Dataset):
