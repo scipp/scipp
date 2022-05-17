@@ -83,7 +83,7 @@
       "name": "package-win-64",
       "inherits": "package",
       "description": "Windows options for package build",
-      "generator": "Ninja"
+      "generator": "Visual Studio 16 2019"
     },
     {
       "name": "coverage",
