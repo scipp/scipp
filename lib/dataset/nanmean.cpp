@@ -12,8 +12,6 @@
 #include "../variable/operations_common.h"
 #include "dataset_operations_common.h"
 
-using scipp::variable::reduce_all_dims;
-
 namespace scipp::dataset {
 
 DataArray nanmean(const DataArray &a, const Dim dim) {
