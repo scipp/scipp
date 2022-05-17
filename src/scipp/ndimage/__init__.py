@@ -65,7 +65,57 @@ def gaussian_filter(x: Union[Variable, DataArray],
     """
     Multidimensional Gaussian filter.
 
-    This is a wrapper around :py:func:`scipy.ndimage.gaussian_filter`.
+    This is a wrapper around :py:func:`scipy.ndimage.gaussian_filter`. See there for
+    full argument description. There are two key differences:
+
+    - This wrapper uses explicit dimension labels in the ``sigma`` and ``order``
+      arguments. For example, instead of ``sigma=[4, 6]`` use
+      ``sigma={{'time':4, 'space':6}}``
+      (with appropriate dimension labels for the data).
+    - Coordinate values can be used (and should be preferred) for ``sigma``. For
+      example, instead of ``sigma=[4, 6]`` use
+      ``sigma={{'time':sc.scalar(5.0, unit='ms'), 'space':sc.scalar(1.2, unit='mm')}}``.
+      In this case it is required that the corresponding coordinates exist and form a
+      "linspace", i.e., are evenly spaced.
+
+    Warning
+    -------
+    When ``sigma`` is an integer or an mapping to integers coordinate values are
+    ignored. That is, the filter is applied even if the data points are not evenly
+    spaced. The resulting filtered data may thus have no meaningful interpretation.
+
+    Parameters
+    ----------
+    x:
+        Input variable or data array.
+    sigma:
+        Standard deviation for Gaussian kernel. The standard deviations of the Gaussian
+        filter are given as a mapping from dimension labels to numbers, or as a single
+        number, in which case it is equal for all axes.
+    order:
+        The order of the filter along each dimension, given as mapping from dimension
+        labels to integers, or as a single integer. An order of 0 corresponds to
+        convolution with a Gaussian kernel. A positive order corresponds to convolution
+        with that derivative of a Gaussian.
+
+    Examples
+    --------
+
+      >>> from scipp.ndimage import gaussian_filter
+      >>> da = sc.data.data_xy()
+
+    With sigma as integer:
+
+      >>> filtered = gaussian_filter(da, sigma=4)
+
+    With sigma based on input coordinate values:
+
+      >>> filtered = gaussian_filter(da, sigma=sc.scalar(1.2, unit='mm'))
+
+    With different sigma for different dimensions:
+
+      >>> filtered = gaussian_filter(da, sigma={'x':sc.scalar(1.2, unit='mm'), \
+                                                'y':sc.scalar(3.3, unit='mm')})
     """
     sigma = _positional_index(x, sigma, name='sigma', dtype=float)
     order = order if isinstance(order, int) else [order[dim] for dim in x.dims]
@@ -163,13 +213,18 @@ def _make_footprint_filter(name, example=True, extra_args=''):
       >>> from scipp.ndimage import {name}
       >>> da = sc.data.data_xy()
 
-    Given size as integer:
+    With size as integer:
 
       >>> filtered = {name}(da, size=4{extra_args})
 
-    Given size based on input coordinate values:
+    With size based on input coordinate values:
 
       >>> filtered = {name}(da, size=sc.scalar(1.2, unit='mm'){extra_args})
+
+    With different size for different dimensions:
+
+      >>> filtered = {name}(da, size={{'x':sc.scalar(1.2, unit='mm'), \
+                                       'y':sc.scalar(3.3, unit='mm')}}{extra_args})
     """
     footprint_filter.__doc__ = doc
     return _ndfilter(footprint_filter)
