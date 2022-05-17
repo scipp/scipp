@@ -267,8 +267,8 @@ def test_concat():
 
 
 def test_values_variances():
-    assert_export(sc.values, sc.Variable(dims=(), values=0.0))
-    assert_export(sc.variances, sc.Variable(dims=(), values=0.0))
+    assert_export(sc.values, sc.Variable(dims=(), values=0.0, variances=0.0))
+    assert_export(sc.variances, sc.Variable(dims=(), values=0.0, variances=0.0))
 
 
 def test_variance_acess():
@@ -501,10 +501,10 @@ def test_comparison():
 
 
 def test_sort():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.sort, x=var, dim='x', order='ascending')
-    assert_export(sc.issorted, x=var, dim='x', order='ascending')
-    assert_export(sc.allsorted, x=var, dim='x', order='ascending')
+    var = sc.arange('xx', 10.0)
+    assert_export(sc.sort, x=var, key='xx', order='ascending')
+    assert_export(sc.issorted, x=var, dim='xx', order='ascending')
+    assert_export(sc.allsorted, x=var, dim='xx', order='ascending')
 
 
 @pytest.mark.parametrize('dtype', ['float64', 'float32', 'int64', 'int32'])

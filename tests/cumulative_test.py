@@ -6,8 +6,8 @@ from .common import assert_export
 
 
 def test_cumsum():
-    var = 1 * sc.units.m
+    var = sc.arange('xx', 10, unit='m')
     assert_export(sc.cumsum, a=var)
-    assert_export(sc.cumsum, a=var, dim='x')
-    assert_export(sc.cumsum, a=var, inclusive=False)
-    assert_export(sc.cumsum, a=var, dim='x', inclusive=False)
+    assert_export(sc.cumsum, a=var, dim='xx')
+    assert_export(sc.cumsum, a=var, mode='exclusive')
+    assert_export(sc.cumsum, a=var, dim='xx', mode='exclusive')
