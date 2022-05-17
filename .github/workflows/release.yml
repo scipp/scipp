@@ -100,7 +100,7 @@ jobs:
           extra-specs: python=3.8
       - uses: actions/download-artifact@v2
         with:
-          name: conda-package-ubuntu-latest-py3.8
+          name: conda-package-ubuntu-20.04-py3.8
       - run: mamba install linux-64/scipp-*.tar.bz2
       - run: tox -e docs
       - uses: actions/upload-artifact@v2
