@@ -70,11 +70,11 @@ def gaussian_filter(x: Union[Variable, DataArray],
 
     - This wrapper uses explicit dimension labels in the ``sigma`` and ``order``
       arguments. For example, instead of ``sigma=[4, 6]`` use
-      ``sigma={{'time':4, 'space':6}}``
+      ``sigma={'time':4, 'space':6}``
       (with appropriate dimension labels for the data).
     - Coordinate values can be used (and should be preferred) for ``sigma``. For
       example, instead of ``sigma=[4, 6]`` use
-      ``sigma={{'time':sc.scalar(5.0, unit='ms'), 'space':sc.scalar(1.2, unit='mm')}}``.
+      ``sigma={'time':sc.scalar(5.0, unit='ms'), 'space':sc.scalar(1.2, unit='mm')}``.
       In this case it is required that the corresponding coordinates exist and form a
       "linspace", i.e., are evenly spaced.
 
