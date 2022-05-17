@@ -808,7 +808,10 @@ def datetime(value: Union[str, int, _np.datetime64],
       <scipp.Variable> ()  datetime64              [s]  [2021-01-10T14:16:15]
     """
     if isinstance(value, str):
-        return scalar(_np.datetime64(value), unit=unit)
+        try:
+            return scalar(_np.datetime64(value), unit=unit)
+        except DeprecationWarning as e:
+            raise ValueError('Parsing timezone aware datetimes is not supported')
     return scalar(value, unit=unit, dtype=_cpp.DType.datetime64)
 
 
@@ -850,8 +853,11 @@ def datetimes(*,
         np_unit_str = ''
     else:
         np_unit_str = f'[{_cpp.to_numpy_time_string(unit)}]'
-    return array(dims=dims,
-                 values=_np.asarray(values, dtype=f'datetime64{np_unit_str}'))
+    try:
+        return array(dims=dims,
+                     values=_np.asarray(values, dtype=f'datetime64{np_unit_str}'))
+    except DeprecationWarning as e:
+        raise ValueError('Parsing timezone aware datetimes is not supported')
 
 
 def epoch(*, unit: Union[Unit, str]) -> Variable:
