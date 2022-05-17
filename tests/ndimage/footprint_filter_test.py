@@ -87,6 +87,30 @@ def test_raises_TypeError_if_origin_is_not_integral(filter_func):
         filter_func(da, size=3, origin={'x': 1.5, 'y': 0.5})
 
 
+def test_raises_KeyError_if_size_has_missing_labels(filter_func):
+    da = make_histogram2d()
+    with pytest.raises(KeyError):
+        filter_func(da, size={'x': 4})
+
+
+def test_raises_KeyError_if_size_has_extra_labels(filter_func):
+    da = make_histogram2d()
+    with pytest.raises(KeyError):
+        filter_func(da, size={'x': 4, 'y': 4, 'z': 4})
+
+
+def test_raises_KeyError_if_origin_has_missing_labels(filter_func):
+    da = make_histogram2d()
+    with pytest.raises(KeyError):
+        filter_func(da, size=4, origin={'x': -1})
+
+
+def test_raises_KeyError_if_origin_has_extra_labels(filter_func):
+    da = make_histogram2d()
+    with pytest.raises(KeyError):
+        filter_func(da, size=4, origin={'x': -1, 'y': -1, 'z': -1})
+
+
 def test_raises_CoordError_with_label_based_size_or_origin_if_coord_not_linspace(
         filter_func):
     da = make_histogram2d()

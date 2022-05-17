@@ -46,12 +46,16 @@ def _delta_to_positional(x: Union[Variable, DataArray], dim, index, dtype):
     return dtype(pos)
 
 
+def _require_matching_dims(index, x, name):
+    if set(index) != set(x.dims):
+        raise KeyError(f"Data has dims={x.dims} but input argument '{name}' provides "
+                       f"values for {tuple(index)}")
+
+
 def _positional_index(x: Union[Variable, DataArray], index, name=None, dtype=int):
     if not isinstance(index, dict):
         return [_delta_to_positional(x, dim, index, dtype=dtype) for dim in x.dims]
-    if set(index) != set(x.dims):
-        raise ValueError(f"Data has dims={x.dims} but input argument '{name}' provides "
-                         f"values for {tuple(index)}")
+    _require_matching_dims(index, x, name)
     return [_delta_to_positional(x, dim, index[dim], dtype=dtype) for dim in x.dims]
 
 
@@ -123,7 +127,9 @@ def gaussian_filter(x: Union[Variable, DataArray],
                                                 'y':sc.scalar(3.3, unit='mm')})
     """
     sigma = _positional_index(x, sigma, name='sigma', dtype=float)
-    order = order if isinstance(order, int) else [order[dim] for dim in x.dims]
+    if isinstance(order, dict):
+        _require_matching_dims(order, x, 'order')
+        order = [order[dim] for dim in x.dims]
     out = empty_like(x)
     scipy.ndimage.gaussian_filter(x.values,
                                   sigma=sigma,

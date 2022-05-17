@@ -48,6 +48,30 @@ def test_raises_TypeError_if_sigma_given_as_array_like():
         gaussian_filter(da, sigma=[1.5, 2.5])
 
 
+def test_raises_KeyError_if_sigma_has_missing_labels():
+    da = make_histogram2d()
+    with pytest.raises(KeyError):
+        gaussian_filter(da, sigma={'x': 1.5})
+
+
+def test_raises_KeyError_if_sigma_has_extra_labels():
+    da = make_histogram2d()
+    with pytest.raises(KeyError):
+        gaussian_filter(da, sigma={'x': 1.5, 'y': 1.5, 'z': 1.5})
+
+
+def test_raises_KeyError_if_order_has_missing_labels():
+    da = make_histogram2d()
+    with pytest.raises(KeyError):
+        gaussian_filter(da, sigma=4, order={'x': 0})
+
+
+def test_raises_KeyError_if_order_has_extra_labels():
+    da = make_histogram2d()
+    with pytest.raises(KeyError):
+        gaussian_filter(da, sigma=4, order={'x': 0, 'y': 0, 'z': 0})
+
+
 def test_raises_CoordError_with_label_based_sigma_if_coord_is_not_linspace():
     da = make_histogram2d()
     da.coords['x'][-1] *= 1.1
