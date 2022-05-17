@@ -7,7 +7,7 @@ This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.ndimage`.
 """
 from functools import wraps
-from typing import Callable, Dict, Union
+from typing import Callable, Dict, Optional, Union
 
 import scipy.ndimage
 
@@ -80,7 +80,7 @@ def gaussian_filter(x: Union[Variable, DataArray],
 
     Warning
     -------
-    When ``sigma`` is an integer or an mapping to integers coordinate values are
+    If ``sigma`` is an integer or a mapping to integers then coordinate values are
     ignored. That is, the filter is applied even if the data points are not evenly
     spaced. The resulting filtered data may thus have no meaningful interpretation.
 
@@ -90,13 +90,18 @@ def gaussian_filter(x: Union[Variable, DataArray],
         Input variable or data array.
     sigma:
         Standard deviation for Gaussian kernel. The standard deviations of the Gaussian
-        filter are given as a mapping from dimension labels to numbers, or as a single
-        number, in which case it is equal for all axes.
+        filter are given as a mapping from dimension labels to numbers or scalar
+        variables, or as a single number or scalar variable, in which case it is equal
+        for all axes.
     order:
         The order of the filter along each dimension, given as mapping from dimension
         labels to integers, or as a single integer. An order of 0 corresponds to
         convolution with a Gaussian kernel. A positive order corresponds to convolution
         with that derivative of a Gaussian.
+
+    Returns:
+    :
+        Filtered variable or data array
 
     Examples
     --------
@@ -146,11 +151,11 @@ def _make_footprint_filter(name, example=True, extra_args=''):
     def footprint_filter(x: Union[Variable, DataArray],
                          /,
                          *,
-                         size: Union[int, Variable, Dict[str, Union[int,
-                                                                    Variable]]] = None,
-                         footprint: Variable = None,
-                         origin: Union[int, Variable, Dict[str, Union[int,
-                                                                      Variable]]] = 0,
+                         size: Optional[Union[int, Variable,
+                                              Dict[str, Union[int, Variable]]]] = None,
+                         footprint: Optional[Variable] = None,
+                         origin: Optional[Union[int, Variable,
+                                                Dict[str, Union[int, Variable]]]] = 0,
                          **kwargs) -> Union[Variable, DataArray]:
         footprint = _make_footprint(x, size=size, footprint=footprint)
         origin = _positional_index(x, origin, name='origin')
@@ -183,7 +188,7 @@ def _make_footprint_filter(name, example=True, extra_args=''):
 
     Warning
     -------
-    When ``size`` is an integer or an mapping to integers or when ``footprint`` is
+    When ``size`` is an integer or a mapping to integers or when ``footprint`` is
     given, coordinate values are ignored. That is, the filter is applied even if the
     data points are not evenly spaced. The resulting filtered data may thus have no
     meaningful interpretation.
@@ -202,6 +207,10 @@ def _make_footprint_filter(name, example=True, extra_args=''):
     origin:
         Integer or scalar variable or mapping from dimension labels to integers or
         scalar variables. Controls the placement of the filter on the input array.
+
+    Returns:
+    :
+        Filtered variable or data array
     """
     if example:
         doc += f"""
