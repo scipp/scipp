@@ -27,16 +27,16 @@ DataArray @NAME@(const DataArray &a, const Dim dim) {
 }
 
 Dataset @NAME@(const Dataset &a) {
-  // Currently not supporting sum/mean of dataset if one or more items do not
-  // depend on the input dimension. The definition is ambiguous (return
-  // unchanged, vs. compute sum of broadcast) so it is better to avoid this for
-  // now.
   return apply_to_items(a, [](auto &&... args) {
     return @NAME@(std::forward<decltype(args)>(args)...);
   });
 }
 
 Dataset @NAME@(const Dataset &a, const Dim dim) {
+  // Currently not supporting sum/mean of dataset if one or more items do not
+  // depend on the input dimension. The definition is ambiguous (return
+  // unchanged, vs. compute sum of broadcast) so it is better to avoid this for
+  // now.
   return apply_to_items(
       a,
       [](auto &&... args) {
