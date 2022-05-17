@@ -84,7 +84,7 @@ def test_raises_TypeError_if_origin_is_not_integral(filter_func):
     with pytest.raises(TypeError):
         filter_func(da, size=3, origin=1.5)
     with pytest.raises(TypeError):
-        filter_func(da, size=3, origin=[1.5, 0.5])
+        filter_func(da, size=3, origin={'x': 1.5, 'y': 0.5})
 
 
 def test_raises_CoordError_with_label_based_size_or_origin_if_coord_not_linspace(
