@@ -34,7 +34,7 @@ def _ndfilter(func: Callable) -> Callable:
 
 def _delta_to_positional(x: Union[Variable, DataArray], dim, index, dtype):
     if not isinstance(index, Variable):
-        return dtype(index)
+        return index
     coord = x.coords[dim]
     if not islinspace(coord, dim).value:
         raise CoordError(
@@ -131,7 +131,6 @@ def gaussian_filter(x: Union[Variable, DataArray],
 def _make_footprint(x: Union[Variable, DataArray], size, footprint) -> Variable:
     if footprint is None:
         size = _positional_index(x, size, name='size')
-        size = [int(s) for s in size]
         footprint = ones(dims=x.dims, shape=size, dtype='bool')
     else:
         if size is not None:
@@ -155,7 +154,6 @@ def _make_footprint_filter(name, example=True, extra_args=''):
                          **kwargs) -> Union[Variable, DataArray]:
         footprint = _make_footprint(x, size=size, footprint=footprint)
         origin = _positional_index(x, origin, name='origin')
-        origin = [int(s) for s in origin]
         out = empty_like(x)
         scipy_filter = getattr(scipy.ndimage, name)
         scipy_filter(x.values,

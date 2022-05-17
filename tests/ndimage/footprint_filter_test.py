@@ -116,7 +116,7 @@ def test_input_with_non_linspace_coord_accepted_if_size_is_positional(
 def test_input_with_missing_coord_accepted_if_size_is_positional(simple_filter_func):
     da = make_histogram2d()
     del da.coords['x']
-    simple_filter_func(da, size=3.4)
+    simple_filter_func(da, size=3)
 
 
 def test_size_accepts_mixed_label_based_and_positional_param(simple_filter_func):
