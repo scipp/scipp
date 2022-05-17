@@ -21,6 +21,8 @@ Breaking changes
 * Changed :meth:`scipp.Variable.dims` and :meth:`scipp.Variable.shape` and corresponding properties in `DataArray` and `Dataset` to return tuples `2543 <https://github.com/scipp/scipp/pull/2543>`_.
 * :func:`scipp.scalar` and :func:`scipp.index` now require keyword arguments for all but the ``value`` argument and :func:`scipp.vector` can take ``value`` positionally `2585 <https://github.com/scipp/scipp/pull/2585>`_.
 * Removed ``out`` argument from reduction operations (e.g. :func:`scipp.sum`) `2591 <https://github.com/scipp/scipp/pull/2591>`_.
+* :func:`scipp.datetime` and :func:`scipp.datetunes` now raise an error if a datetime string with timezone information is provided.
+  Previously this was a ``DeprecationWarning`` from NumPy `2604 <https://github.com/scipp/scipp/pull/2604>`_.
 
 Bugfixes
 ~~~~~~~~
