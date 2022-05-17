@@ -2,7 +2,6 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from functools import lru_cache
-import numpy as np
 
 from ..core import array, bin, linspace, ones
 from ..core import DataArray
@@ -95,7 +94,9 @@ def binned_xy(nevent: int, nx: int, ny: int) -> DataArray:
 
 
 def data_xy() -> DataArray:
-    da = DataArray(array(dims=['x', 'y'], values=np.random.rand(100, 100)))
+    from numpy.random import default_rng
+    rng = default_rng(seed=1234)
+    da = DataArray(array(dims=['x', 'y'], values=rng.random((100, 100))))
     da.coords['x'] = linspace('x', 0.0, 1.0, num=100, unit='mm')
     da.coords['y'] = linspace('y', 0.0, 5.0, num=100, unit='mm')
     return da
