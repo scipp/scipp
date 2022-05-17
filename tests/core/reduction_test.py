@@ -41,45 +41,38 @@ def test_sum_single_dim(container):
 
 def test_sum_dataset_with_coords():
     d = sc.Dataset(data={
-        'a':
-        sc.Variable(dims=['x', 'y'], values=np.arange(6, dtype=np.int64).reshape(2, 3)),
-        'b':
-        sc.Variable(dims=['y'], values=np.arange(3, dtype=np.int64))
+        'a': sc.arange('a', 6, dtype='int64').fold('a', {
+            'x': 2,
+            'y': 3
+        }),
+        'b': sc.arange('y', 3, dtype='int64'),
     },
                    coords={
-                       'x':
-                       sc.Variable(dims=['x'], values=np.arange(2, dtype=np.int64)),
-                       'y':
-                       sc.Variable(dims=['y'], values=np.arange(3, dtype=np.int64)),
-                       'l1':
-                       sc.Variable(dims=['x', 'y'],
-                                   values=np.arange(6, dtype=np.int64).reshape(2, 3)),
-                       'l2':
-                       sc.Variable(dims=['x'], values=np.arange(2, dtype=np.int64))
+                       'x': sc.arange('x', 2, dtype='int64'),
+                       'y': sc.arange('y', 3, dtype='int64'),
+                       'l1': sc.arange('a', 6,
+                                       dtype='int64').fold('a', {
+                                           'x': 2,
+                                           'y': 3
+                                       }),
+                       'l2': sc.arange('x', 2, dtype='int64'),
                    })
     d_ref = sc.Dataset(data={
-        'a':
-        sc.Variable(dims=['x'], values=np.array([3, 12], dtype=np.int64)),
-        'b':
-        sc.scalar(3)
+        'a': sc.array(dims=['x'], values=[3, 12], dtype='int64'),
+        'b': sc.scalar(3)
     },
                        coords={
-                           'x':
-                           sc.Variable(dims=['x'], values=np.arange(2, dtype=np.int64)),
-                           'l2':
-                           sc.Variable(dims=['x'], values=np.arange(2, dtype=np.int64))
+                           'x': sc.arange('x', 2, dtype='int64'),
+                           'l2': sc.arange('x', 2, dtype='int64'),
                        })
 
     assert sc.identical(sc.sum(d, 'y'), d_ref)
 
 
 def test_sum_masked():
-    d = sc.Dataset(data={
-        'a':
-        sc.Variable(dims=['x'], values=np.array([1, 5, 4, 5, 1], dtype=np.int64))
-    })
-    d['a'].masks['m1'] = sc.Variable(dims=['x'],
-                                     values=np.array([False, True, False, True, False]))
+    d = sc.Dataset(
+        data={'a': sc.array(dims=['x'], values=[1, 5, 4, 5, 1], dtype='int64')})
+    d['a'].masks['m1'] = sc.array(dims=['x'], values=[False, True, False, True, False])
 
     d_ref = sc.Dataset(data={'a': sc.scalar(np.int64(6))})
 
