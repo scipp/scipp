@@ -91,3 +91,12 @@ def binned_xy(nevent: int, nx: int, ny: int) -> DataArray:
     x = linspace(dim='x', unit='m', start=0.0, stop=1.0, num=nx + 1)
     y = linspace(dim='y', unit='m', start=0.0, stop=1.0, num=ny + 1)
     return bin(table, edges=[x, y])
+
+
+def data_xy() -> DataArray:
+    from numpy.random import default_rng
+    rng = default_rng(seed=1234)
+    da = DataArray(array(dims=['x', 'y'], values=rng.random((100, 100))))
+    da.coords['x'] = linspace('x', 0.0, 1.0, num=100, unit='mm')
+    da.coords['y'] = linspace('y', 0.0, 5.0, num=100, unit='mm')
+    return da

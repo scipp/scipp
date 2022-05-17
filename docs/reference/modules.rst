@@ -14,6 +14,7 @@ Core Functionality
    constants
    integrate
    interpolate
+   ndimage
    optimize
    signal
    spatial
