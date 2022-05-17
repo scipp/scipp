@@ -103,7 +103,8 @@ def gaussian_filter(x: Union[Variable, DataArray],
         convolution with a Gaussian kernel. A positive order corresponds to convolution
         with that derivative of a Gaussian.
 
-    Returns:
+    Returns
+    -------
     :
         Filtered variable or data array
 
@@ -214,7 +215,8 @@ def _make_footprint_filter(name, example=True, extra_args=''):
         Integer or scalar variable or mapping from dimension labels to integers or
         scalar variables. Controls the placement of the filter on the input array.
 
-    Returns:
+    Returns
+    -------
     :
         Filtered variable or data array
     """
