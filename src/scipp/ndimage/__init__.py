@@ -14,6 +14,7 @@ import scipy.ndimage
 from ..core import Variable, DataArray
 from ..core import CoordError, DimensionError, VariancesError
 from ..core import empty_like, islinspace, ones
+from ..typing import VariableLike, VariableLikeType
 
 
 def _ndfilter(func: Callable) -> Callable:
@@ -60,12 +61,13 @@ def _positional_index(x: Union[Variable, DataArray], index, name=None, dtype=int
 
 
 @_ndfilter
-def gaussian_filter(x: Union[Variable, DataArray],
+def gaussian_filter(x: VariableLikeType,
                     /,
                     *,
-                    sigma,
-                    order=0,
-                    **kwargs) -> Union[Variable, DataArray]:
+                    sigma: Union[int, float, Variable, Dict[str, Union[int, float,
+                                                                       Variable]]],
+                    order: Optional[Union[int, Dict[str, int]]] = 0,
+                    **kwargs) -> VariableLikeType:
     """
     Multidimensional Gaussian filter.
 
@@ -90,7 +92,7 @@ def gaussian_filter(x: Union[Variable, DataArray],
 
     Parameters
     ----------
-    x:
+    x: scipp.typing.VariableLike
         Input variable or data array.
     sigma:
         Standard deviation for Gaussian kernel. The standard deviations of the Gaussian
@@ -105,7 +107,7 @@ def gaussian_filter(x: Union[Variable, DataArray],
 
     Returns
     -------
-    :
+    : scipp.typing.VariableLike
         Filtered variable or data array
 
     Examples
@@ -155,7 +157,7 @@ def _make_footprint(x: Union[Variable, DataArray], size, footprint) -> Variable:
 
 def _make_footprint_filter(name, example=True, extra_args=''):
 
-    def footprint_filter(x: Union[Variable, DataArray],
+    def footprint_filter(x: VariableLike,
                          /,
                          *,
                          size: Optional[Union[int, Variable,
@@ -163,7 +165,7 @@ def _make_footprint_filter(name, example=True, extra_args=''):
                          footprint: Optional[Variable] = None,
                          origin: Optional[Union[int, Variable,
                                                 Dict[str, Union[int, Variable]]]] = 0,
-                         **kwargs) -> Union[Variable, DataArray]:
+                         **kwargs) -> VariableLike:
         footprint = _make_footprint(x, size=size, footprint=footprint)
         origin = _positional_index(x, origin, name='origin')
         out = empty_like(x)
@@ -202,7 +204,7 @@ def _make_footprint_filter(name, example=True, extra_args=''):
 
     Parameters
     ----------
-    x:
+    x: scipp.typing.VariableLike
         Input variable or data array.
     size:
         Integer or scalar variable or mapping from dimension labels to integers or
@@ -217,7 +219,7 @@ def _make_footprint_filter(name, example=True, extra_args=''):
 
     Returns
     -------
-    :
+    : scipp.typing.VariableLike
         Filtered variable or data array
     """
     if example:
