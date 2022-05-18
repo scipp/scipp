@@ -32,15 +32,14 @@ jobs:
           python-version: 3.8
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -r requirements/ci.txt
-      - run: tox -e docs scipp
-      - uses: actions/upload-artifact@v2
-        with:
-          name: html
-          path: html/
+        #- run: tox -e docs scipp
+        #- uses: actions/upload-artifact@v2
+        #  with:
+        #    name: html
+        #    path: html/
 
-      - name: Deploy to release docs
+      - uses: JamesIves/github-pages-deploy-action@v4.3.3
         if: inputs.publish
-        uses: JamesIves/github-pages-deploy-action@v4.3.3
         with:
           repository-name: scipp/scipp.github.io
           branch: master
