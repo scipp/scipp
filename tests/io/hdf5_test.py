@@ -255,7 +255,8 @@ def test_dataset_with_many_coords():
         # here. 1.1 implies that there is no such full duplication.
         assert size1 * 1.1 > size2
         # Empirically determined extra size. This is likely brittle. We want to
-        # somehow ensure that no column is stored more than once.
+        # somehow ensure that no column is stored more than once. This does not
+        # depend on the number of rows.
         extra = 75000
         assert size1 < (len(ds1.coords) + 1) * rows * 8 + extra
 
