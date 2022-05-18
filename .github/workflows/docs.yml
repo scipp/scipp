@@ -12,7 +12,8 @@ on:
         default: false
         type: boolean
       publish-folder:
-        required: true
+        default: ''
+        required: false
         type: string
     secrets:
       GH_PAGES_DEPLOY_KEY:
@@ -35,11 +36,10 @@ jobs:
         #- run: tox -e docs scipp
         #- uses: actions/upload-artifact@v2
         #  with:
-        #    name: html
         #    path: html/
 
       - uses: JamesIves/github-pages-deploy-action@v4.3.3
-        if: inputs.publish
+        if: ${{ inputs.publish }}
         with:
           repository-name: scipp/scipp.github.io
           branch: master
