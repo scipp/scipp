@@ -337,13 +337,6 @@ def test_set_variance_convert_dtype():
     assert sc.identical(var, expected)
 
 
-def test_sum_mean():
-    var = sc.Variable(dims=['x'], values=np.arange(5, dtype=np.int64))
-    assert sc.identical(sc.sum(var, 'x'), sc.scalar(10))
-    var = sc.Variable(dims=['x'], values=np.arange(6, dtype=np.int64))
-    assert sc.identical(sc.mean(var, 'x'), sc.scalar(2.5))
-
-
 def test_rename_dims():
     values = np.arange(6).reshape(2, 3)
     xy = sc.Variable(dims=['x', 'y'], values=values)

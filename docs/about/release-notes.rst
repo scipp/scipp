@@ -16,6 +16,7 @@ Features
 * Support ``dtype=vector3`` in :func:`scipp.isinf` and :func:`scipp.isfinite` `#2593 <https://github.com/scipp/scipp/pull/2593>`_.
 * Added support for passing any dict-like objects or iterables of tuples as ``coords``, ``attrs``, and ``masks`` arguments to initializers of :class:`scipp.DataArray` and :class:`scipp.Dataset` `#2603 <https://github.com/scipp/scipp/pull/2603>`_.
 * Added support for passing any dict-like objects or iterables of tuples as the ``data`` argument to the initializer of :class:`scipp.Dataset` `#2603 <https://github.com/scipp/scipp/pull/2603>`_.
+* Added support for ``DataArray`` and ``Dataset`` in reduction operations (e.g. :func:`scipp.max`) `#2600 <https://github.com/scipp/scipp/pull/2600>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
@@ -23,6 +24,8 @@ Breaking changes
 * Changed :meth:`scipp.Variable.dims` and :meth:`scipp.Variable.shape` and corresponding properties in `DataArray` and `Dataset` to return tuples `2543 <https://github.com/scipp/scipp/pull/2543>`_.
 * :func:`scipp.scalar` and :func:`scipp.index` now require keyword arguments for all but the ``value`` argument and :func:`scipp.vector` can take ``value`` positionally `2585 <https://github.com/scipp/scipp/pull/2585>`_.
 * Removed ``out`` argument from reduction operations (e.g. :func:`scipp.sum`) `2591 <https://github.com/scipp/scipp/pull/2591>`_.
+* :func:`scipp.datetime` and :func:`scipp.datetimes` now raise an error if a datetime string with timezone information is provided.
+  Previously this was a ``DeprecationWarning`` from NumPy `2604 <https://github.com/scipp/scipp/pull/2604>`_.
 
 Bugfixes
 ~~~~~~~~
@@ -40,6 +43,7 @@ Documentation
 ~~~~~~~~~~~~~
 
 * Added new tutorial: *RHESSI Solar Flares* `2536 <https://github.com/scipp/scipp/pull/2536>`_.
+* Added new tutorial: *From tabular data to binned data* `2580 <https://github.com/scipp/scipp/pull/2580>`_.
 * Added documentation of our docstring format `2546 <https://github.com/scipp/scipp/pull/2546>`_.
 
 Deprecations

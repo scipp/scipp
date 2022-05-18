@@ -34,9 +34,11 @@ add_executable(
   generated_test.cpp
   groupby_test.cpp
   histogram_test.cpp
+  logical_reduction_test.cpp
   masks_test.cpp
   mean_test.cpp
   merge_test.cpp
+  minmax_test.cpp
   rebin_test.cpp
   self_assignment_test.cpp
   set_slice_test.cpp

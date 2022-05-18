@@ -1,0 +1,48 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+/// @file
+/// @author Jan-Lukas Wynen
+
+#include "scipp/variable/reduction.h"
+#include "scipp/dataset/@OPNAME@.h"
+
+#include "../../variable/operations_common.h"
+#include "dataset_operations_common.h"
+
+namespace scipp::dataset {
+
+DataArray @NAME@(const DataArray &a) {
+  return variable::reduce_all_dims(a, [](auto &&... args) {
+    return @NAME@(std::forward<decltype(args)>(args)...);
+  });
+}
+
+DataArray @NAME@(const DataArray &a, const Dim dim) {
+  return apply_to_data_and_drop_dim(
+      a,
+      [](auto &&... args) {
+        return @NAME@(std::forward<decltype(args)>(args)...);
+      },
+      dim, a.masks());
+}
+
+Dataset @NAME@(const Dataset &a) {
+  return apply_to_items(a, [](auto &&... args) {
+    return @NAME@(std::forward<decltype(args)>(args)...);
+  });
+}
+
+Dataset @NAME@(const Dataset &a, const Dim dim) {
+  // Currently not supporting sum/mean of dataset if one or more items do not
+  // depend on the input dimension. The definition is ambiguous (return
+  // unchanged, vs. compute sum of broadcast) so it is better to avoid this for
+  // now.
+  return apply_to_items(
+      a,
+      [](auto &&... args) {
+        return @NAME@(std::forward<decltype(args)>(args)...);
+      },
+      dim);
+}
+
+} // namespace scipp::dataset

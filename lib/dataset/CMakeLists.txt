@@ -18,8 +18,9 @@ set(INC_FILES
     include/scipp/dataset/map_view_forward.h
     include/scipp/dataset/map_view.h
     include/scipp/dataset/math.h
+    include/scipp/dataset/mean.h
+    include/scipp/dataset/nanmean.h
     include/scipp/dataset/rebin.h
-    include/scipp/dataset/reduction.h
     include/scipp/dataset/special_values.h
     include/scipp/dataset/util.h
     include/scipp/dataset/slice.h
@@ -43,9 +44,10 @@ set(SRC_FILES
     groupby.cpp
     histogram.cpp
     map_view.cpp
+    mean.cpp
+    nanmean.cpp
     operations.cpp
     rebin.cpp
-    reduction.cpp
     util.cpp
     shape.cpp
     slice.cpp
