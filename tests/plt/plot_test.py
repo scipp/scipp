@@ -2,9 +2,8 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 import scipp as sc
-from scipp.plt import Plot, Model, Figure, widgets, Node
+from scipp.plt import Plot, Figure, widgets, Node
 from ..factory import make_dense_data_array, make_dense_dataset
-import matplotlib.pyplot as plt
 import matplotlib
 import ipywidgets as ipw
 
@@ -13,60 +12,62 @@ matplotlib.use('Agg')
 
 def test_plot_single_1d_line():
     da = make_dense_data_array(ndim=1)
-    m = Model(da)
+    data_node = Node(func=lambda: da)
     fig = Figure()
-    m.add_view(m.end, fig)
-    p = Plot()
-    p.add_graph("da", m)
-    p.render()
+    data_node.add_view(fig)
+    fig.render()
 
 
 def test_plot_two_1d_lines():
     ds = make_dense_dataset(ndim=1)
-    m_a = Model(ds['a'])
-    m_b = Model(ds['b'])
+    node_a = Node(func=lambda: ds['a'])
+    node_b = Node(func=lambda: ds['b'])
     fig = Figure()
-    m_a.add_view(m_a.end, fig)
-    m_b.add_view(m_b.end, fig)
-    p = Plot()
-    p.add_graph("a", m_a)
-    p.add_graph("b", m_b)
-    p.render()
+    node_a.add_view(fig)
+    node_b.add_view(fig)
+    fig.render()
+
+
+def test_plot_difference_of_two_1d_lines():
+    ds = make_dense_dataset(ndim=1)
+    node_a = Node(func=lambda: ds['a'])
+    node_b = Node(func=lambda: ds['b'])
+    node_c = Node(func=lambda a, b: a - b, parents={"a": node_a, "b": node_b})
+    fig = Figure()
+    node_a.add_view(fig)
+    node_b.add_view(fig)
+    node_c.add_view(fig)
+    fig.render()
 
 
 def test_plot_2d_image():
     da = make_dense_data_array(ndim=2)
-    m = Model(da)
+    data_node = Node(func=lambda: da)
     fig = Figure()
-    m.add_view(m.end, fig)
-    p = Plot()
-    p.add_graph("da", m)
-    p.render()
+    data_node.add_view(fig)
+    fig.render()
 
 
 def test_plot_2d_image_smoothing_slider():
     da = make_dense_data_array(ndim=2)
-    m = Model(da)
+    data_node = Node(func=lambda: da)
+    sl = ipw.IntSlider(min=1, max=10)
+    sigma_node = Node(lambda: sl.value)
+    sl.observe(sigma_node.notify_children, names="value")
+
     from scipy.ndimage import gaussian_filter
 
     def smooth(da, sigma):
         out = da.copy()
-        smoothed = sc.array(dims=da.dims,
-                            values=gaussian_filter(da.values, sigma=sigma),
-                            unit=da.unit)
-        out.data = smoothed
+        out.values = gaussian_filter(da.values, sigma=sigma)
         return out
 
-    sl = ipw.IntSlider(min=1, max=10)
-    smooth_node = Node(func=smooth)
-    smooth_view = widgets.WidgetView(widgets={"sigma": sl})
-    m.add("smooth", smooth_node, after=m.end.name)
-    f = Figure()
-    m.add_view(smooth_node, f)
-    m.add_view(smooth_node, smooth_view)
-    p = Plot()
-    p.add_graph("da", m)
-    p.render()
+    smooth_node = Node(func=smooth, parents={"da": data_node, "sigma": sigma_node})
+
+    fig = Figure()
+    smooth_node.add_view(fig)
+    Plot([fig, sl])
+    fig.render()
     sl.value = 5
 
 
@@ -74,18 +75,20 @@ def test_plot_2d_image_with_masks():
     da = make_dense_data_array(ndim=2)
     da.masks['m1'] = da.data < sc.scalar(0.0, unit='counts')
     da.masks['m2'] = da.coords['xx'] > sc.scalar(30., unit='m')
-    masks_node = Node(func=widgets.hide_masks)
-    masks_widget = widgets.MaskWidget(masks=da.masks)
-    masks_view = widgets.WidgetView(widgets={"masks": masks_widget})
-    m = Model(da)
-    m.add("hiding_masks", masks_node, after=m.end.name)
-    f = Figure()
-    m.add_view(masks_node, f)
-    m.add_view(masks_node, masks_view)
-    p = Plot()
-    p.add_graph("da", m)
-    p.render()
-    masks_widget._all_masks_button.value = False
+    data_node = Node(func=lambda: da)
+    widget = widgets.MaskWidget(da.masks)
+    widget_node = Node(lambda: widget.value)
+    widget.observe(widget_node.notify_children, names="value")
+    masks_node = Node(func=widgets.hide_masks,
+                      parents={
+                          "data_array": data_node,
+                          "masks": widget_node
+                      })
+    fig = Figure()
+    masks_node.add_view(fig)
+    Plot([fig, widget])
+    fig.render()
+    widget._all_masks_button.value = False
 
 
 def test_plot_two_1d_lines_with_masks():
@@ -93,97 +96,98 @@ def test_plot_two_1d_lines_with_masks():
     ds['a'].masks['m1'] = ds['a'].coords['xx'] > sc.scalar(40.0, unit='m')
     ds['a'].masks['m2'] = ds['a'].data < ds['b'].data
     ds['b'].masks['m1'] = ds['b'].coords['xx'] < sc.scalar(5.0, unit='m')
-    m_a = Model(ds['a'])
-    m_b = Model(ds['b'])
 
-    a_masks_node = Node(func=widgets.hide_masks)
-    a_masks_widget = widgets.MaskWidget(masks=ds['a'].masks)
-    a_masks_view = widgets.WidgetView(widgets={"masks": a_masks_widget})
-    b_masks_node = Node(func=widgets.hide_masks)
-    b_masks_widget = widgets.MaskWidget(masks=ds['b'].masks)
-    b_masks_view = widgets.WidgetView(widgets={"masks": b_masks_widget})
+    node_a = Node(func=lambda: ds['a'])
+    node_b = Node(func=lambda: ds['b'])
+    widget_a = widgets.MaskWidget(ds['a'].masks)
+    widget_b = widgets.MaskWidget(ds['b'].masks)
+    widget_node_a = Node(lambda: widget_a.value)
+    widget_node_b = Node(lambda: widget_b.value)
 
-    m_a.add("hiding_masks_for_a", a_masks_node, after=m_a.end.name)
-    m_b.add("hiding_masks_for_b", b_masks_node, after=m_b.end.name)
-    m_a.add_view(a_masks_node, a_masks_view)
-    m_b.add_view(b_masks_node, b_masks_view)
+    node_masks_a = Node(func=widgets.hide_masks,
+                        parents={
+                            "data_array": node_a,
+                            "masks": widget_node_a
+                        })
+    node_masks_b = Node(func=widgets.hide_masks,
+                        parents={
+                            "data_array": node_b,
+                            "masks": widget_node_b
+                        })
+
+    widget_a.observe(node_masks_a.notify_children, names="value")
+    widget_b.observe(node_masks_b.notify_children, names="value")
 
     fig = Figure()
-    m_a.add_view(a_masks_node, fig)
-    m_b.add_view(b_masks_node, fig)
-    p = Plot()
-    p.add_graph("a", m_a)
-    p.add_graph("b", m_b)
-    p.render()
-    a_masks_widget._all_masks_button.value = False
-    b_masks_widget._all_masks_button.value = False
+    node_masks_a.add_view(fig)
+    node_masks_b.add_view(fig)
+
+    Plot([fig, [widget_a, widget_b]])
+    fig.render()
+    widget_a._all_masks_button.value = False
+    widget_b._all_masks_button.value = False
 
 
 def test_plot_node_sum_data_along_y():
     da = make_dense_data_array(ndim=2)
-
-    def squash(da):
-        return da.sum('yy')
-
-    m = Model(da)
-    squash_node = Node(func=squash)
-    m.add("sum_y", squash_node, after=m.end.name)
-    f1d = Figure()
-    f2d = Figure()
-    m.add_view(m.root, f2d)
-    m.add_view(squash_node, f1d)
-    p = Plot()
-    p.add_graph("da", m)
-    p.render()
+    data_node = Node(func=lambda: da)
+    sumy_node = Node(lambda x: x.sum('yy'), parents={"x": data_node})
+    fig1 = Figure()
+    fig2 = Figure()
+    data_node.add_view(fig1)
+    sumy_node.add_view(fig2)
+    Plot([[fig1, fig2]])
+    fig1.render()
+    fig2.render()
 
 
 def test_plot_slice_3d_cube():
     da = make_dense_data_array(ndim=3)
-    slice_node = Node(func=widgets.slice_dims)
-    slice_slider = widgets.SliceView(da, dims=['zz'])
-    m = Model(da)
-    m.add("slice_dims", slice_node, after=m.end.name)
-    f = Figure()
-    m.add_view(slice_node, f)
-    m.add_view(slice_node, slice_slider)
-    p = Plot()
-    p.add_graph("da", m)
-    p.render()
-    slice_slider._widgets["slices"]._controls["zz"]["slider"].value = 10
+
+    data_node = Node(func=lambda: da)
+    sl = widgets.SliceWidget(da, ['zz'])
+    input_node = Node(lambda: sl.value)
+    sl.observe(input_node.notify_children, names="value")
+    slice_node = Node(func=widgets.slice_dims,
+                      parents={
+                          "data_array": data_node,
+                          "slices": input_node
+                      })
+    slice_node.add_view(sl)
+    fig = Figure()
+    slice_node.add_view(fig)
+    Plot([fig, sl])
+    fig.render()
+    sl._controls["zz"]["slider"].value = 10
 
 
 def test_plot_3d_image_slicer_with_connected_side_histograms():
-    fig = plt.figure(figsize=(10, 5))
-    ax1 = fig.add_axes([0.05, 0.05, 0.5, 0.65])
-    ax2 = fig.add_axes([0.05, 0.7, 0.5, 0.25])
-    ax3 = fig.add_axes([0.55, 0.7, 0.45, 0.25])
-
     da = make_dense_data_array(ndim=3)
-    slice_node = Node(func=widgets.slice_dims)
-    slice_slider = widgets.SliceView(da, dims=['zz'])
-    m = Model(da)
-    m.add("slice_dims", slice_node, after=m.end.name)
-    f = Figure(ax=ax1, cbar=False)
-    m.add_view(slice_node, f)
-    m.add_view(slice_node, slice_slider)
+    data_node = Node(func=lambda: da)
 
-    def sumx(da):
-        return da.sum('xx')
+    sl = widgets.SliceWidget(da, ['zz'])
+    input_node = Node(lambda: sl.value)
+    sl.observe(input_node.notify_children, names="value")
 
-    histx_node = Node(func=sumx)
-    m.add("histx", histx_node, after="slice_dims")
-    hx = Figure(ax=ax2)
-    m.add_view(histx_node, hx)
+    slice_node = Node(func=widgets.slice_dims,
+                      parents={
+                          "data_array": data_node,
+                          "slices": input_node
+                      })
 
-    def sumy(da):
-        return da.sum('yy')
+    f = Figure()
+    slice_node.add_view(f)
 
-    histy_node = Node(func=sumy)
-    m.add("histy", histy_node, after="slice_dims")
-    hy = Figure(ax=ax3)
-    m.add_view(histy_node, hy)
+    histx_node = Node(func=lambda da: da.sum('xx'), parents={"da": slice_node})
+    hx = Figure()
+    histx_node.add_view(hx)
 
-    p = Plot()
-    p.add_graph("da", m)
-    p.render()
-    slice_slider._widgets["slices"]._controls["zz"]["slider"].value = 10
+    histy_node = Node(func=lambda da: da.sum('yy'), parents={"da": slice_node})
+    hy = Figure()
+    histy_node.add_view(hy)
+
+    Plot([[hx, hy], f, sl])
+    f.render()
+    hx.render()
+    hy.render()
+    sl._controls["zz"]["slider"].value = 10

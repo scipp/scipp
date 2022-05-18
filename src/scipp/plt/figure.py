@@ -124,6 +124,7 @@ class Figure(View):
         If not, convert the plot to a png image and place inside an ipywidgets
         Image container.
         """
+        self.render()
         canvas = self._fig.canvas if (self.is_widget()
                                       and not self._closed) else self._to_image()
 

@@ -2,30 +2,29 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 
+def _maybe_to_widget(view):
+    return view._to_widget() if hasattr(view, "_to_widget") else view
+
+
 class Plot:
 
-    def __init__(self):
-        self._graphs = {}
-
-    def add_graph(self, key, graph):
-        self._graphs[key] = graph
-
-    def render(self):
-        for graph in self._graphs.values():
-            graph.notify_from_dependents(graph.root.name)
+    def __init__(self, views):
+        self.views = views
 
     def _ipython_display_(self):
         """
         IPython display representation for Jupyter notebooks.
         """
-        self.render()
         return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
         """
         """
         import ipywidgets as ipw
-        views = []
-        for graph in self._graphs.values():
-            views += graph.get_all_views()
-        return ipw.VBox([view._to_widget() for view in set(views)])
+        out = []
+        for view in self.views:
+            if isinstance(view, (list, tuple)):
+                out.append(ipw.HBox([_maybe_to_widget(v) for v in view]))
+            else:
+                out.append(_maybe_to_widget(view))
+        return ipw.VBox(out)

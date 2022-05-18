@@ -3,19 +3,21 @@
 
 from ... import DataArray
 from ...utils import value_to_string
-from .widget import WidgetView
+# from .widget import WidgetView
+from ..view import View
 
 import ipywidgets as ipw
 from typing import Callable
 
 
-class SliceWidget:
+class SliceWidget(View):
     """
     Widgets containing a slider for each of the input's dimensions, as well as
     buttons to modify the currently displayed axes.
     """
 
     def __init__(self, data_array, dims: list):
+        super().__init__()
 
         self._controls = {}
         self._callback = None
@@ -78,6 +80,13 @@ class SliceWidget:
                 c["value"].value = value_to_string(new_coords[dim].values) + str(
                     new_coords[dim].unit)
 
+    def notify_view(self, message):
+        node_id = message["node_id"]
+        # node_name = message["node_name"]
+        # graph_name = message["graph_name"]
+        new_values = self._graph_nodes[node_id].request_data()
+        self.update(new_values.meta)
+
 
 def slice_dims(data_array: DataArray, slices: dict) -> DataArray:
     """
@@ -91,13 +100,13 @@ def slice_dims(data_array: DataArray, slices: dict) -> DataArray:
     return out
 
 
-class SliceView(WidgetView):
+# class SliceView(WidgetView):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(widgets={"slices": SliceWidget(*args, **kwargs)})
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(widgets={"slices": SliceWidget(*args, **kwargs)})
 
-    def notify(self, message):
-        node_name = message["node_name"]
-        graph_name = message["graph_name"]
-        new_values = self._graph_nodes[graph_name][node_name].request_data()
-        self._widgets["slices"].update(new_values.meta)
+#     def notify(self, message):
+#         node_name = message["node_name"]
+#         graph_name = message["graph_name"]
+#         new_values = self._graph_nodes[graph_name][node_name].request_data()
+#         self._widgets["slices"].update(new_values.meta)
