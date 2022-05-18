@@ -70,6 +70,14 @@ Variable bins_min(const Variable &data) {
   return reduce_bins(data, variable::min_into, FillValue::Max);
 }
 
+Variable bins_all(const Variable &data) {
+  return reduce_bins(data, variable::all_into, FillValue::True);
+}
+
+Variable bins_any(const Variable &data) {
+  return reduce_bins(data, variable::any_into, FillValue::False);
+}
+
 Variable bins_mean(const Variable &data) {
   if (data.dtype() == dtype<bucket<DataArray>>) {
     const auto &&[indices, dim, buffer] = data.constituents<DataArray>();

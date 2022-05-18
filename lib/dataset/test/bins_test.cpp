@@ -224,6 +224,16 @@ TEST_F(DataArrayBoolBinsTest, min) {
                                               Values{false, false, true}));
 }
 
+TEST_F(DataArrayBoolBinsTest, all) {
+  EXPECT_EQ(bins_all(var), makeVariable<bool>(Dimensions{Dim::Y, 3},
+                                              Values{false, false, true}));
+}
+
+TEST_F(DataArrayBoolBinsTest, any) {
+  EXPECT_EQ(bins_any(var), makeVariable<bool>(Dimensions{Dim::Y, 3},
+                                              Values{true, false, true}));
+}
+
 class DataArrayBinsMapTest : public ::testing::Test {
 protected:
   Dimensions dims{Dim::Y, 2};

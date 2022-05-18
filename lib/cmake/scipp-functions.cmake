@@ -83,10 +83,12 @@ scipp_function("inplace" logical operator^= OP logical_xor_equals SKIP_PYTHON)
 setup_scipp_category(logical)
 
 scipp_function("unary" bins bin_sizes SKIP_VARIABLE BASE_INCLUDE variable/bins.h)
+scipp_function("unary" bins bins_mean SKIP_VARIABLE BASE_INCLUDE dataset/bins_reduction.h)
 scipp_function("unary" bins bins_sum SKIP_VARIABLE BASE_INCLUDE dataset/bins_reduction.h)
 scipp_function("unary" bins bins_max SKIP_VARIABLE BASE_INCLUDE dataset/bins_reduction.h)
 scipp_function("unary" bins bins_min SKIP_VARIABLE BASE_INCLUDE dataset/bins_reduction.h)
-scipp_function("unary" bins bins_mean SKIP_VARIABLE BASE_INCLUDE dataset/bins_reduction.h)
+scipp_function("unary" bins bins_all SKIP_VARIABLE BASE_INCLUDE dataset/bins_reduction.h)
+scipp_function("unary" bins bins_any SKIP_VARIABLE BASE_INCLUDE dataset/bins_reduction.h)
 setup_scipp_category(bins)
 
 scipp_function("reduction" reduction sum SKIP_VARIABLE)
