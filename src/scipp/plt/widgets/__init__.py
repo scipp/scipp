@@ -5,4 +5,3 @@
 
 from .masks import MaskWidget, hide_masks
 from .slice import SliceWidget, slice_dims
-from .widget import WidgetView

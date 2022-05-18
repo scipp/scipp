@@ -3,7 +3,6 @@
 
 from ... import DataArray
 from ...utils import value_to_string
-# from .widget import WidgetView
 from ..view import View
 
 import ipywidgets as ipw
@@ -20,7 +19,6 @@ class SliceWidget(View):
         super().__init__()
 
         self._controls = {}
-        self._callback = None
         # The container list to hold all widgets
         self.container = []
         # dim_buttons: buttons to control which dimension the slider controls
@@ -82,8 +80,6 @@ class SliceWidget(View):
 
     def notify_view(self, message):
         node_id = message["node_id"]
-        # node_name = message["node_name"]
-        # graph_name = message["graph_name"]
         new_values = self._graph_nodes[node_id].request_data()
         self.update(new_values.meta)
 
@@ -98,15 +94,3 @@ def slice_dims(data_array: DataArray, slices: dict) -> DataArray:
     for dim, sl in slices.items():
         out = out[dim, sl]
     return out
-
-
-# class SliceView(WidgetView):
-
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(widgets={"slices": SliceWidget(*args, **kwargs)})
-
-#     def notify(self, message):
-#         node_name = message["node_name"]
-#         graph_name = message["graph_name"]
-#         new_values = self._graph_nodes[graph_name][node_name].request_data()
-#         self._widgets["slices"].update(new_values.meta)
