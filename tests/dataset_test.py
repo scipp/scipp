@@ -8,6 +8,119 @@ import pytest
 import scipp as sc
 
 
+def test_init_default():
+    d = sc.Dataset()
+    assert len(d) == 0
+    assert len(d.coords) == 0
+
+
+def test_init_dict_of_variables():
+    d = sc.Dataset({'a': sc.arange('x', 5), 'b': sc.arange('y', 10, unit='m')})
+    assert sc.identical(d['a'], sc.DataArray(sc.arange('x', 5)))
+    assert sc.identical(d['b'], sc.DataArray(sc.arange('y', 10, unit='m')))
+
+
+def test_init_dict_of_dataarrays():
+    d = sc.Dataset({
+        'a':
+        sc.DataArray(sc.arange('x', 5)),
+        'b':
+        sc.DataArray(sc.arange('y', 10, unit='m'), coords={'y': sc.arange('y', 10)})
+    })
+    assert sc.identical(d['a'], sc.DataArray(sc.arange('x', 5)))
+    assert sc.identical(
+        d['b'],
+        sc.DataArray(sc.arange('y', 10, unit='m'), coords={'y': sc.arange('y', 10)}))
+
+
+def test_init_dict_of_dataarray_and_variable():
+    d = sc.Dataset({
+        'a':
+        sc.arange('x', 5),
+        'b':
+        sc.DataArray(sc.arange('y', 10, unit='m'), coords={'y': sc.arange('y', 10)})
+    })
+    assert sc.identical(d['a'], sc.DataArray(sc.arange('x', 5)))
+    assert sc.identical(
+        d['b'],
+        sc.DataArray(sc.arange('y', 10, unit='m'), coords={'y': sc.arange('y', 10)}))
+
+
+def test_init_data_from_dataset():
+    d1 = sc.Dataset({
+        'a':
+        sc.arange('x', 5),
+        'b':
+        sc.DataArray(sc.arange('y', 10, unit='m'), coords={'y': sc.arange('y', 10)})
+    })
+    d2 = sc.Dataset(d1)
+    assert sc.identical(d2['a'], sc.DataArray(sc.arange('x', 5)))
+    assert sc.identical(
+        d2['b'],
+        sc.DataArray(sc.arange('y', 10, unit='m'), coords={'y': sc.arange('y', 10)}))
+
+
+def test_init_iterator_of_tuples():
+    d = sc.Dataset({'a': sc.arange('x', 5), 'b': sc.arange('y', 10, unit='m')}.items())
+    assert sc.identical(d['a'], sc.DataArray(sc.arange('x', 5)))
+    assert sc.identical(d['b'], sc.DataArray(sc.arange('y', 10, unit='m')))
+
+
+def test_init_extra_coords_from_dict():
+    d = sc.Dataset({
+        'a': sc.arange('x', 5),
+        'b': sc.arange('y', 10, unit='m')
+    },
+                   coords={
+                       'x': sc.arange('x', 5),
+                       'y': sc.arange('y', 11)
+                   })
+    assert sc.identical(
+        d['a'], sc.DataArray(sc.arange('x', 5), coords={'x': sc.arange('x', 5)}))
+    assert sc.identical(
+        d['b'],
+        sc.DataArray(sc.arange('y', 10, unit='m'), coords={'y': sc.arange('y', 11)}))
+
+
+def test_init_extra_coords_from_coords_object():
+    da = sc.DataArray(sc.arange('x', 5),
+                      coords={
+                          'x': sc.arange('x', 5),
+                          'z': sc.scalar('zz')
+                      })
+    d = sc.Dataset({
+        'a': sc.arange('x', 5),
+        'b': sc.arange('y', 10, unit='m')
+    },
+                   coords=da.coords)
+    assert sc.identical(
+        d['a'],
+        sc.DataArray(sc.arange('x', 5),
+                     coords={
+                         'x': sc.arange('x', 5),
+                         'z': sc.scalar('zz')
+                     }))
+    assert sc.identical(
+        d['b'], sc.DataArray(sc.arange('y', 10, unit='m'),
+                             coords={'z': sc.scalar('zz')}))
+
+
+def test_init_extra_coords_from_iterator_of_tuples():
+    d = sc.Dataset({
+        'a': sc.arange('x', 5),
+        'b': sc.arange('y', 10, unit='m')
+    },
+                   coords={
+                       'x': sc.arange('x', 5),
+                       'y': sc.arange('y', 11)
+                   }.items())
+    assert sc.identical(
+        d['a'], sc.DataArray(sc.arange('x', 5), coords={'x': sc.arange('x', 5)}))
+    assert sc.identical(
+        d['b'],
+        sc.DataArray(sc.arange('y', 10, unit='m'), coords={'y': sc.arange('y', 11)}))
+
+
 def test_shape():
     a = sc.scalar(1)
     d = sc.Dataset(data={'a': a})
