@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   formatting:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
       - uses: actions/checkout@v3
@@ -30,8 +30,8 @@ jobs:
 
   build_and_test:
     needs: formatting
-    name: build and test ${{ matrix.os }}, py${{ matrix.python-version }}
-    runs-on: ${{ matrix.os }}
+    name: build and test ${{ matrix.variant.os }}, py${{ matrix.python-version }}
+    runs-on: ${{ matrix.variant.os }}
     defaults:
       run:
         shell: bash -l {0}  # required for conda env
@@ -40,7 +40,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        variant:
+        - {os: ubuntu-20.04, cmake-preset: ci-linux}
+        - {os: macos-11, cmake-preset: ci-macos}
+        - {os: windows-2019, cmake-preset: ci-windows}
         python-version: ["3.8"]
 
     steps:
@@ -55,14 +58,14 @@ jobs:
         uses: mamba-org/provision-with-micromamba@main
         with:
           micromamba-version: 0.23.0
-          environment-file: .buildconfig/${{ matrix.os }}.yml
+          environment-file: .buildconfig/${{ matrix.variant.cmake-preset }}.yml
           cache-env: true
           extra-specs: python=${{ matrix.python-version }}
 
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.2
         with:
-          key: ${{ matrix.os }}
+          key: ${{ matrix.variant.os }}
 
       - name: Cache conan setup
         id: conan-cache-key
@@ -73,23 +76,23 @@ jobs:
         uses: actions/cache@v1
         with:
           path: ${{ steps.conan-cache-key.outputs.path }}
-          key: conan-${{ matrix.os }}-${{ steps.conan-cache-key.outputs.key }}
+          key: conan-${{ matrix.variant.os }}-${{ steps.conan-cache-key.outputs.key }}
 
-      - run: cmake --preset ci-${{ matrix.os }}
+      - run: cmake --preset ${{ matrix.variant.cmake-preset }}
       - run: cmake --build --preset build
       - run: ctest --preset test
 
       - run: tox -e test
 
       - run: tox -e docs
-        if: ${{ contains(matrix.os, 'ubuntu') }}
+        if: ${{ contains(matrix.variant.os, 'ubuntu') }}
 
       - run: tox -e linkcheck
         # Linkcheck can be flaky. Avoid randomly breaking PR builds by running only on `main`
         if: ${{ contains(matrix.os, 'ubuntu') && github.ref == 'refs/heads/main' }}
 
       - uses: actions/upload-artifact@v2
-        if: ${{ contains(matrix.os, 'ubuntu') }}
+        if: ${{ contains(matrix.variant.os, 'ubuntu') }}
         with:
           name: DocumentationHTML
           path: html/
