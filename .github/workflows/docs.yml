@@ -38,26 +38,14 @@ jobs:
           name: html
           path: html/
 
-  upload_docs:
-    name: Deploy docs
-    needs: [docs]
-    runs-on: ubuntu-20.04
-    if: github.event_name == 'release' && github.event.action == 'published'
-    strategy:
-      max-parallel: 1  # Avoid potential race condition when pushing to github pages repo
-      matrix:
-        docs-folder: ['latest', 'release']
-
-    steps:
-      - uses: actions/checkout@v2  # Need to checkout repo so github-pages-deploy-action works
-      - uses: actions/download-artifact@v2
       - name: Deploy to release docs
+        if: inputs.publish
         uses: JamesIves/github-pages-deploy-action@v4.3.3
         with:
           repository-name: scipp/scipp.github.io
           branch: master
           folder: html
-          target-folder: ${{ matrix.docs-folder == 'latest' && format('release/{0}', github.ref_name) || '' }}
+          target-folder: ${{ inputs.publish-folder }}
           single-commit: true
           clean-exclude: release
           ssh-key: ${{ secrets.GH_PAGES_DEPLOY_KEY }}
