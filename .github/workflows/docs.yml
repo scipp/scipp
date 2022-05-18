@@ -1,6 +1,7 @@
 name: Docs
 
 on:
+  pull_request:  # TODO remove
   workflow_dispatch:
   workflow_call:
     inputs:
