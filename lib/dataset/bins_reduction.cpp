@@ -6,6 +6,7 @@
 
 #include "scipp/core/dtype.h"
 #include "scipp/variable/bins.h"
+#include "scipp/variable/creation.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
@@ -17,30 +18,34 @@
 namespace scipp::variable {
 
 namespace {
-Variable applyMask(const DataArray &buffer, const Variable &indices,
-                   const Dim dim, const Variable &mask) {
+Variable apply_mask(const DataArray &buffer, const Variable &indices,
+                    const Dim dim, const Variable &mask) {
   return make_bins(
       indices, dim,
       where(mask, Variable(buffer.data(), Dimensions{}), buffer.data()));
 }
 
-Variable dense_zeros_like(const Variable &prototype, const DType type) {
+Variable dense_zeros_like(const Variable &prototype,
+                          const FillValue fill_value) {
+  const auto type = variable::variableFactory().elem_dtype(prototype);
   const auto unit = variable::variableFactory().elem_unit(prototype);
+  Variable scalar_prototype;
   if (variable::variableFactory().has_variances(prototype))
-    return {type, prototype.dims(), unit, Values{}, Variances{}};
+    scalar_prototype = {type, prototype.dims(), unit, Values{}, Variances{}};
   else
-    return {type, prototype.dims(), unit, Values{}};
+    scalar_prototype = {type, prototype.dims(), unit, Values{}};
+  return special_like(scalar_prototype.broadcast(prototype.dims()), fill_value);
 }
 
 Variable reduce_bins(const Variable &data,
                      void (&op)(Variable &, const Variable &),
-                     const DType type) {
-  auto reduced = dense_zeros_like(data, type);
+                     const FillValue fill_value) {
+  auto reduced = dense_zeros_like(data, fill_value);
   if (data.dtype() == dtype<bucket<DataArray>>) {
     const auto &&[indices, dim, buffer] = data.constituents<DataArray>();
     if (const auto mask_union = irreducible_mask(buffer.masks(), dim);
         mask_union.is_valid()) {
-      op(reduced, applyMask(buffer, indices, dim, mask_union));
+      op(reduced, apply_mask(buffer, indices, dim, mask_union));
     } else {
       op(reduced, data);
     }
@@ -54,9 +59,15 @@ Variable reduce_bins(const Variable &data,
 Variable bins_sum(const Variable &data) {
   auto type = variable::variableFactory().elem_dtype(data);
   type = type == dtype<bool> ? dtype<int64_t> : type;
-  return reduce_bins(data, variable::sum_into, type);
-  //  return reduce_bins(data, [](Variable &accum, const Variable &d)
-  //  {variable::sum_into(accum, d);}, type);
+  return reduce_bins(data, variable::sum_into, FillValue::ZeroNotBool);
+}
+
+Variable bins_max(const Variable &data) {
+  return reduce_bins(data, variable::max_into, FillValue::Lowest);
+}
+
+Variable bins_min(const Variable &data) {
+  return reduce_bins(data, variable::min_into, FillValue::Max);
 }
 
 Variable bins_mean(const Variable &data) {

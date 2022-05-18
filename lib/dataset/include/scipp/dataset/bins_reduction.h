@@ -13,5 +13,7 @@
 // DataArray.
 namespace scipp::variable {
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable bins_sum(const Variable &data);
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable bins_max(const Variable &data);
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable bins_min(const Variable &data);
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable bins_mean(const Variable &data);
 } // namespace scipp::variable

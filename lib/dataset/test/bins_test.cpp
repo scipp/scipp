@@ -176,10 +176,6 @@ TEST_F(DataArrayBinsTest, histogram_existing_dim) {
                 {{Dim::Y, bin_edges}}));
 }
 
-TEST_F(DataArrayBinsTest, sum) {
-  EXPECT_EQ(bins_sum(var), makeVariable<double>(indices.dims(), Values{3, 7}));
-}
-
 TEST_F(DataArrayBinsTest, operations_on_empty) {
   const Variable empty_indices = makeVariable<scipp::index_pair>(
       Dimensions{{Dim::Y, 0}, {Dim::Z, 0}}, Values{});
@@ -188,6 +184,18 @@ TEST_F(DataArrayBinsTest, operations_on_empty) {
   EXPECT_EQ(abs(binned), binned);
   EXPECT_EQ(binned, binned * binned);
   EXPECT_EQ(binned, binned * (2 * units::one));
+}
+
+TEST_F(DataArrayBinsTest, sum) {
+  EXPECT_EQ(bins_sum(var), makeVariable<double>(indices.dims(), Values{3, 7}));
+}
+
+TEST_F(DataArrayBinsTest, max) {
+  EXPECT_EQ(bins_max(var), makeVariable<double>(indices.dims(), Values{2, 4}));
+}
+
+TEST_F(DataArrayBinsTest, min) {
+  EXPECT_EQ(bins_min(var), makeVariable<double>(indices.dims(), Values{1, 3}));
 }
 
 class DataArrayBinsMapTest : public ::testing::Test {
