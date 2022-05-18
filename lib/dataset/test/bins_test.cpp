@@ -5,6 +5,7 @@
 #include "test_macros.h"
 
 #include "scipp/dataset/bins.h"
+#include "scipp/dataset/bins_reduction.h"
 #include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
@@ -12,7 +13,6 @@
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/math.h"
-#include "scipp/variable/operations.h"
 #include "scipp/variable/variable_factory.h"
 
 using namespace scipp;

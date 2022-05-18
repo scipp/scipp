@@ -4,18 +4,15 @@
 /// @author Simon Heybrock
 #include <algorithm>
 
-#include "scipp/common/overloaded.h"
 #include "scipp/core/bucket.h"
 #include "scipp/core/element/event_operations.h"
 #include "scipp/core/element/histogram.h"
 #include "scipp/core/except.h"
-#include "scipp/core/histogram.h"
 
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/cumulative.h"
 #include "scipp/variable/reduction.h"
-#include "scipp/variable/shape.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/transform_subspan.h"
@@ -23,13 +20,10 @@
 #include "scipp/variable/variable.h"
 #include "scipp/variable/variable_factory.h"
 
-#include "scipp/dataset/bin.h"
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/histogram.h"
-#include "scipp/dataset/mean.h"
-#include "scipp/dataset/shape.h"
 
 #include "../variable/operations_common.h"
 #include "bin_common.h"
@@ -339,57 +333,3 @@ void scale(DataArray &array, const DataArray &histogram, Dim dim) {
   }
 }
 } // namespace scipp::dataset::buckets
-
-namespace scipp::variable {
-
-namespace {
-Variable applyMask(const DataArray &buffer, const Variable &indices,
-                   const Dim dim, const Variable &mask) {
-  return make_bins(
-      indices, dim,
-      where(mask, Variable(buffer.data(), Dimensions{}), buffer.data()));
-}
-
-} // namespace
-
-Variable bins_sum(const Variable &data) {
-  auto type = variable::variableFactory().elem_dtype(data);
-  type = type == dtype<bool> ? dtype<int64_t> : type;
-  const auto unit = variable::variableFactory().elem_unit(data);
-  Variable summed;
-  if (variable::variableFactory().has_variances(data))
-    summed = Variable(type, data.dims(), unit, Values{}, Variances{});
-  else
-    summed = Variable(type, data.dims(), unit, Values{});
-
-  if (data.dtype() == dtype<bucket<DataArray>>) {
-    const auto &&[indices, dim, buffer] = data.constituents<DataArray>();
-    if (const auto mask_union = irreducible_mask(buffer.masks(), dim);
-        mask_union.is_valid()) {
-      variable::sum_into(summed, applyMask(buffer, indices, dim, mask_union));
-    } else {
-      variable::sum_into(summed, data);
-    }
-  } else {
-    variable::sum_into(summed, data);
-  }
-
-  return summed;
-}
-
-Variable bins_mean(const Variable &data) {
-  if (data.dtype() == dtype<bucket<DataArray>>) {
-    const auto &&[indices, dim, buffer] = data.constituents<DataArray>();
-    if (const auto mask_union = irreducible_mask(buffer.masks(), dim);
-        mask_union.is_valid()) {
-      // Trick to get the sizes of bins if masks are present - bin the masks
-      // using the same dimension & indices as the data, and then sum the
-      // inverse of the mask to get the number of unmasked entries.
-      return normalize_impl(bins_sum(data), bins_sum(make_bins_no_validate(
-                                                indices, dim, ~mask_union)));
-    }
-  }
-  return normalize_impl(bins_sum(data), bin_sizes(data));
-}
-
-} // namespace scipp::variable
