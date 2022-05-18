@@ -26,6 +26,8 @@ import doctest
 
 import os
 
+import scipp as sc
+
 html_show_sourcelink = True
 
 # -- General configuration ------------------------------------------------
@@ -60,7 +62,7 @@ autodoc_type_aliases = {
 
 rst_epilog = f"""
 .. |SCIPP_RELEASE_MONTH| replace:: {os.popen("git show -s --format=%cd --date=format:'%B %Y'").read()}
-.. |SCIPP_VERSION| replace:: {os.popen("git describe --tags --abbrev=0").read()}
+.. |SCIPP_VERSION| replace:: {sc.__version__}
 """  # noqa: E501
 
 intersphinx_mapping = {

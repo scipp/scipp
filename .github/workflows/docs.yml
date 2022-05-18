@@ -5,6 +5,9 @@ on:
   workflow_dispatch:
   workflow_call:
     inputs:
+      branch:
+        default: 'main'
+        type: string
       publish:
         default: false
         type: boolean
@@ -22,6 +25,8 @@ jobs:
     steps:
       - run: sudo apt install --yes graphviz pandoc
       - uses: actions/checkout@v2
+        with:
+          ref: ${{ inputs.branch }}
       - uses: actions/setup-python@v3
         with:
           python-version: 3.8
