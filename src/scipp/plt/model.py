@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from typing import Tuple, Iterable
-from functools import partial
 import uuid
 
 
@@ -37,6 +35,15 @@ def _add_graph_edges(dot, node, inventory, hide_views):
             dot.edge(name, key)
 
 
+def show_graph(node, size=None, hide_views=False):
+    dot = _make_graphviz_digraph(strict=True)
+    dot.attr('node', shape='box', height='0.1')
+    dot.attr(size=size)
+    inventory = []
+    _add_graph_edges(dot, node, inventory, hide_views)
+    return dot
+
+
 class Node:
 
     def __init__(self, func, parents=None, views=None):
@@ -69,11 +76,3 @@ class Node:
     def notify_views(self, message):
         for view in self.views:
             view.notify_view({"node_id": self.id, "message": message})
-
-    def show_graph(self, size=None, hide_views=False):
-        dot = _make_graphviz_digraph(strict=True)
-        dot.attr('node', shape='box', height='0.1')
-        dot.attr(size=size)
-        inventory = []
-        _add_graph_edges(dot, self, inventory, hide_views)
-        return dot
