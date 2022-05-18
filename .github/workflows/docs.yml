@@ -1,0 +1,57 @@
+name: Docs
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      publish:
+        default: false
+        type: boolean
+      publish-folder:
+        required: true
+        type: string
+    secrets:
+      GH_PAGES_DEPLOY_KEY:
+        required: true
+
+jobs:
+  docs:
+    name: Build documentation
+    runs-on: ubuntu-20.04
+    steps:
+      - run: sudo apt install --yes graphviz pandoc
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v3
+        with:
+          python-version: 3.8
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r requirements/ci.txt
+      - run: tox -e docs scipp
+      - uses: actions/upload-artifact@v2
+        with:
+          name: html
+          path: html/
+
+  upload_docs:
+    name: Deploy docs
+    needs: [docs]
+    runs-on: ubuntu-20.04
+    if: github.event_name == 'release' && github.event.action == 'published'
+    strategy:
+      max-parallel: 1  # Avoid potential race condition when pushing to github pages repo
+      matrix:
+        docs-folder: ['latest', 'release']
+
+    steps:
+      - uses: actions/checkout@v2  # Need to checkout repo so github-pages-deploy-action works
+      - uses: actions/download-artifact@v2
+      - name: Deploy to release docs
+        uses: JamesIves/github-pages-deploy-action@v4.3.3
+        with:
+          repository-name: scipp/scipp.github.io
+          branch: master
+          folder: html
+          target-folder: ${{ matrix.docs-folder == 'latest' && format('release/{0}', github.ref_name) || '' }}
+          single-commit: true
+          clean-exclude: release
+          ssh-key: ${{ secrets.GH_PAGES_DEPLOY_KEY }}
