@@ -4,5 +4,5 @@
 # flake8: noqa: F401
 
 from .masks import MaskWidget, hide_masks
-from .slice import SliceView, slice_dims
+from .slice import SliceWidget, slice_dims
 from .widget import WidgetView
