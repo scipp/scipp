@@ -6,6 +6,7 @@
 
 #include "scipp/core/dtype.h"
 #include "scipp/variable/bins.h"
+#include "scipp/variable/reduction.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
 

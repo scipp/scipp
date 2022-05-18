@@ -3,12 +3,12 @@
 /// @file
 /// @author Simon Heybrock, Igor Gudich
 #include "scipp/core/element/rebin.h"
-#include "operations_common.h"
 #include "scipp/core/parallel.h"
 #include "scipp/units/except.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/astype.h"
 #include "scipp/variable/rebin.h"
+#include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/transform_subspan.h"
 #include "scipp/variable/util.h"
