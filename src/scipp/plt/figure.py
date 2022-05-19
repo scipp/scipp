@@ -125,7 +125,10 @@ class Figure(View):
         If not, convert the plot to a png image and place inside an ipywidgets
         Image container.
         """
-        self.render()
+        for node in self._graph_nodes.values():
+            new_values = node.request_data()
+            self.update(new_values=new_values, key=node.id)
+
         canvas = self._fig.canvas if (self.is_widget()
                                       and not self._closed) else self._to_image()
 
@@ -264,8 +267,3 @@ class Figure(View):
             self._children[key].update(new_values=new_values)
 
         self.draw()
-
-    def render(self):
-        for node in self._graph_nodes.values():
-            new_values = node.request_data()
-            self.update(new_values=new_values, key=node.id)
