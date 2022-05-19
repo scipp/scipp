@@ -23,7 +23,7 @@ def _add_graph_edges(dot, node, inventory, hide_views):
         if key not in inventory:
             dot.edge(name, key)
             _add_graph_edges(dot, child, inventory, hide_views)
-    for parent in node.parents.values():
+    for parent in node.parents + list(node.kwparents.values()):
         key = str(parent.func)
         if key not in inventory:
             dot.edge(key, name)
@@ -70,7 +70,6 @@ class Node:
 
     def add_view(self, view):
         self.views.append(view)
-        # view.add_graph_node(self)
 
     def notify_children(self, message):
         self.notify_views(message)

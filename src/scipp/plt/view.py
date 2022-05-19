@@ -12,9 +12,6 @@ class View(ABC):
             self._graph_nodes[node.id] = node
             node.add_view(self)
 
-    # def add_graph_node(self, node):
-    #     self._graph_nodes[node.id] = node
-
     @abstractmethod
     def notify_view(self, _):
         return

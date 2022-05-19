@@ -228,7 +228,6 @@ class Figure(View):
 
     def notify_view(self, message):
         node_id = message["node_id"]
-        # print(message)
         new_values = self._graph_nodes[node_id].request_data()
         self.update(new_values=new_values, key=node_id)
 
