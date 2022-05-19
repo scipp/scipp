@@ -37,33 +37,68 @@ Variable make_accumulant(const Variable &var, const Dim dim,
   return special_like(prototype, init);
 }
 
+/// Note that masking is not supported here since it would make creation
+/// of a sensible starting value difficult. So masks must be applied
+/// before calling reduce_idempotent.
+Variable apply_reduction(const Variable &var, const Dim dim,
+                         void (&op)(Variable &, const Variable &),
+                         const FillValue &init) {
+  auto out = make_accumulant(var, dim, init);
+  op(out, var);
+  return out;
+}
 } // namespace
 
-void nansum_impl(Variable &summed, const Variable &var) {
-  if (summed.dtype() == dtype<float>) {
-    auto accum = astype(summed, dtype<double>);
-    nansum_impl(accum, var);
-    copy(astype(accum, dtype<float>), summed);
-  } else {
-    accumulate_in_place(summed, var, element::nan_add_equals, "nansum");
-  }
-}
-
-template <typename Op>
-Variable sum_with_dim_impl(Op op, const Variable &var, const Dim dim) {
-  // Bool DType is a bit special in that it cannot contain its sum.
-  // Instead the sum is stored in a int64_t Variable
-  auto summed = make_accumulant(var, dim, FillValue::ZeroNotBool);
-  op(summed, var);
-  return summed;
-}
-
 Variable sum(const Variable &var, const Dim dim) {
-  return sum_with_dim_impl(sum_into, var, dim);
+  // Bool DType is a bit special in that it cannot contain its sum.
+  // Instead, the sum is stored in an int64_t Variable
+  return apply_reduction(var, dim, sum_into, FillValue::ZeroNotBool);
 }
 
 Variable nansum(const Variable &var, const Dim dim) {
-  return sum_with_dim_impl(nansum_impl, var, dim);
+  // Bool DType is a bit special in that it cannot contain its sum.
+  // Instead, the sum is stored in an int64_t Variable
+  return apply_reduction(var, dim, nansum_into, FillValue::ZeroNotBool);
+}
+
+Variable any(const Variable &var, const Dim dim) {
+  return apply_reduction(var, dim, any_into, FillValue::False);
+}
+
+Variable all(const Variable &var, const Dim dim) {
+  return apply_reduction(var, dim, all_into, FillValue::True);
+}
+
+/// Return the maximum along given dimension.
+///
+/// Variances are not considered when determining the maximum. If present, the
+/// variance of the maximum element is returned.
+Variable max(const Variable &var, const Dim dim) {
+  return apply_reduction(var, dim, max_into, FillValue::Lowest);
+}
+
+/// Return the maximum along given dimension ignoring NaN values.
+///
+/// Variances are not considered when determining the maximum. If present, the
+/// variance of the maximum element is returned.
+Variable nanmax(const Variable &var, const Dim dim) {
+  return apply_reduction(var, dim, nanmax_into, FillValue::Lowest);
+}
+
+/// Return the minimum along given dimension.
+///
+/// Variances are not considered when determining the minimum. If present, the
+/// variance of the minimum element is returned.
+Variable min(const Variable &var, const Dim dim) {
+  return apply_reduction(var, dim, min_into, FillValue::Max);
+}
+
+/// Return the minimum along given dimension ignorning NaN values.
+///
+/// Variances are not considered when determining the minimum. If present, the
+/// variance of the minimum element is returned.
+Variable nanmin(const Variable &var, const Dim dim) {
+  return apply_reduction(var, dim, nanmin_into, FillValue::Max);
 }
 
 Variable mean_impl(const Variable &var, const Dim dim, const Variable &count) {
@@ -88,82 +123,12 @@ template <class... Dim> Variable count(const Variable &var, Dim &&... dim) {
 }
 } // namespace
 
-/// Return the mean along all dimensions.
-Variable mean(const Variable &var) {
-  return normalize_impl(sum(var), count(var));
-}
-
 Variable mean(const Variable &var, const Dim dim) {
   return mean_impl(var, dim, count(var, dim));
 }
 
-/// Return the mean along all dimensions. Ignoring NaN values.
-Variable nanmean(const Variable &var) {
-  return normalize_impl(nansum(var), sum(isfinite(var)));
-}
-
 Variable nanmean(const Variable &var, const Dim dim) {
   return nanmean_impl(var, dim, sum(isfinite(var), dim));
-}
-
-/// Reduction for idempotent operations such that op(a,a) = a.
-///
-/// The requirement for idempotency comes from the way the reduction output is
-/// initialized. It is fulfilled for operations like `or`, `and`, `min`, and
-/// `max`. Note that masking is not supported here since it would make creation
-/// of a sensible starting value difficult.
-template <class Op>
-Variable reduce_idempotent(const Variable &var, const Dim dim, Op op,
-                           const FillValue &init, const std::string_view name) {
-  auto out = make_accumulant(var, dim, init);
-  accumulate_in_place(out, var, op, name);
-  return out;
-}
-
-Variable any(const Variable &var, const Dim dim) {
-  return reduce_idempotent(var, dim, core::element::logical_or_equals,
-                           FillValue::False, "any");
-}
-
-Variable all(const Variable &var, const Dim dim) {
-  return reduce_idempotent(var, dim, core::element::logical_and_equals,
-                           FillValue::True, "all");
-}
-
-/// Return the maximum along given dimension.
-///
-/// Variances are not considered when determining the maximum. If present, the
-/// variance of the maximum element is returned.
-Variable max(const Variable &var, const Dim dim) {
-  return reduce_idempotent(var, dim, core::element::max_equals,
-                           FillValue::Lowest, "max");
-}
-
-/// Return the maximum along given dimension ignoring NaN values.
-///
-/// Variances are not considered when determining the maximum. If present, the
-/// variance of the maximum element is returned.
-Variable nanmax(const Variable &var, const Dim dim) {
-  return reduce_idempotent(var, dim, core::element::nanmax_equals,
-                           FillValue::Lowest, "nanmax");
-}
-
-/// Return the minimum along given dimension.
-///
-/// Variances are not considered when determining the minimum. If present, the
-/// variance of the minimum element is returned.
-Variable min(const Variable &var, const Dim dim) {
-  return reduce_idempotent(var, dim, core::element::min_equals, FillValue::Max,
-                           "min");
-}
-
-/// Return the minimum along given dimension ignorning NaN values.
-///
-/// Variances are not considered when determining the minimum. If present, the
-/// variance of the minimum element is returned.
-Variable nanmin(const Variable &var, const Dim dim) {
-  return reduce_idempotent(var, dim, core::element::nanmin_equals,
-                           FillValue::Max, "nanmin");
 }
 
 /// Return the sum along all dimensions.
@@ -206,6 +171,16 @@ Variable any(const Variable &var) {
   return reduce_all_dims(var, [](auto &&... _) { return any(_...); });
 }
 
+/// Return the mean along all dimensions.
+Variable mean(const Variable &var) {
+  return normalize_impl(sum(var), count(var));
+}
+
+/// Return the mean along all dimensions. Ignoring NaN values.
+Variable nanmean(const Variable &var) {
+  return normalize_impl(nansum(var), sum(isfinite(var)));
+}
+
 void sum_into(Variable &accum, const Variable &var) {
   if (accum.dtype() == dtype<float>) {
     auto x = astype(accum, dtype<double>);
@@ -213,6 +188,16 @@ void sum_into(Variable &accum, const Variable &var) {
     copy(astype(x, dtype<float>), accum);
   } else {
     accumulate_in_place(accum, var, element::add_equals, "sum");
+  }
+}
+
+void nansum_into(Variable &summed, const Variable &var) {
+  if (summed.dtype() == dtype<float>) {
+    auto accum = astype(summed, dtype<double>);
+    nansum_into(accum, var);
+    copy(astype(accum, dtype<float>), summed);
+  } else {
+    accumulate_in_place(summed, var, element::nan_add_equals, "nansum");
   }
 }
 
@@ -228,8 +213,16 @@ void max_into(Variable &accum, const Variable &var) {
   accumulate_in_place(accum, var, core::element::max_equals, "max");
 }
 
+void nanmax_into(Variable &accum, const Variable &var) {
+  accumulate_in_place(accum, var, core::element::nanmax_equals, "max");
+}
+
 void min_into(Variable &accum, const Variable &var) {
   accumulate_in_place(accum, var, core::element::min_equals, "min");
+}
+
+void nanmin_into(Variable &accum, const Variable &var) {
+  accumulate_in_place(accum, var, core::element::nanmin_equals, "min");
 }
 
 } // namespace scipp::variable

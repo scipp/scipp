@@ -49,9 +49,12 @@ namespace scipp::variable {
 // These reductions accumulate their results in their first argument
 // without erasing its current contents.
 SCIPP_VARIABLE_EXPORT void sum_into(Variable &accum, const Variable &var);
+SCIPP_VARIABLE_EXPORT void nansum_into(Variable &accum, const Variable &var);
 SCIPP_VARIABLE_EXPORT void all_into(Variable &accum, const Variable &var);
 SCIPP_VARIABLE_EXPORT void any_into(Variable &accum, const Variable &var);
 SCIPP_VARIABLE_EXPORT void max_into(Variable &accum, const Variable &var);
+SCIPP_VARIABLE_EXPORT void nanmax_into(Variable &accum, const Variable &var);
 SCIPP_VARIABLE_EXPORT void min_into(Variable &accum, const Variable &var);
+SCIPP_VARIABLE_EXPORT void nanmin_into(Variable &accum, const Variable &var);
 
 } // namespace scipp::variable
