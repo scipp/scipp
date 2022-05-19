@@ -230,6 +230,7 @@ Variable make_reduction_accumulant(const Variable &data,
 }
 
 void reduce_into(Variable &accum, const Variable &var,
+                 // cppcheck-suppress constParameter
                  void (&op)(Variable &, const Variable &)) {
   op(accum, variableFactory().apply_event_masks(var));
 }
