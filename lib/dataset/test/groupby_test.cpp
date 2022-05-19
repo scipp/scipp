@@ -228,6 +228,99 @@ TEST_F(GroupbyTest, by_attr) {
   EXPECT_EQ(grouped_coord, grouped_attr);
 }
 
+struct GroupbyReductionTest : public ::testing::Test {
+  GroupbyReductionTest() {
+    d.setData("a", makeVariable<double>(Dimensions{{Dim::Z, 2}, {Dim::X, 3}},
+                                        units::m, Values{1, 2, 3, 1, 2, 3}));
+    d.setData("b", makeVariable<double>(Dimensions{Dim::X, 3}, units::s,
+                                        Values{0.1, 0.2, 0.3}));
+    d.setData("c", makeVariable<double>(Dimensions{{Dim::Z, 2}, {Dim::X, 3}},
+                                        units::s, Values{1, 2, 3, 4, 5, 6}));
+    d["a"].attrs().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
+    d.setCoord(Dim("labels1"), makeVariable<double>(Dimensions{Dim::X, 3},
+                                                    units::m, Values{1, 2, 3}));
+    d.setCoord(Dim("labels2"), makeVariable<double>(Dimensions{Dim::X, 3},
+                                                    units::m, Values{1, 1, 3}));
+  }
+
+  Dataset d;
+};
+
+TEST_F(GroupbyReductionTest, sum_size_1_groups) {
+  const Dim dim("labels1");
+  Dataset expected = d;
+  expected.rename(Dim::X, dim);
+  expected.coords().erase(Dim("labels2"));
+  EXPECT_EQ(groupby(d, dim).sum(Dim::X), expected);
+}
+
+TEST_F(GroupbyReductionTest, sum_groups_with_multiple_elements) {
+  const Dim dim("labels2");
+  Dataset expected;
+  expected.setData("a", makeVariable<double>(Dims{Dim::Z, dim}, Shape{2, 2},
+                                             units::m, Values{3, 3, 3, 3}));
+  expected.setData("b", makeVariable<double>(Dims{dim}, Shape{2}, units::s,
+                                             Values{0.1 + 0.2, 0.3}));
+  expected.setData("c", makeVariable<double>(Dims{Dim::Z, dim}, Shape{2, 2},
+                                             units::s, Values{3, 3, 9, 6}));
+  expected["a"].attrs().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
+  expected.setCoord(
+      dim, makeVariable<double>(Dims{dim}, units::m, Shape{2}, Values{1, 3}));
+  EXPECT_EQ(groupby(d, dim).sum(Dim::X), expected);
+}
+
+TEST_F(GroupbyReductionTest, max_size_1_groups) {
+  const Dim dim("labels1");
+  Dataset expected = d;
+  expected.rename(Dim::X, dim);
+  expected.coords().erase(Dim("labels2"));
+  EXPECT_EQ(groupby(d, dim).max(Dim::X), expected);
+}
+
+TEST_F(GroupbyReductionTest, max_groups_with_multiple_elements) {
+  const Dim dim("labels2");
+  Dataset expected;
+  expected.setData("a", makeVariable<double>(Dims{Dim::Z, dim}, Shape{2, 2},
+                                             units::m, Values{2, 3, 2, 3}));
+  expected.setData("b", makeVariable<double>(Dims{dim}, Shape{2}, units::s,
+                                             Values{0.2, 0.3}));
+  expected.setData("c", makeVariable<double>(Dims{Dim::Z, dim}, Shape{2, 2},
+                                             units::s, Values{2, 3, 5, 6}));
+  expected["a"].attrs().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
+  expected.setCoord(
+      dim, makeVariable<double>(Dims{dim}, units::m, Shape{2}, Values{1, 3}));
+  EXPECT_EQ(groupby(d, dim).max(Dim::X), expected);
+}
+
+struct GroupbyReductionMultipleSubgroupsTest : public ::testing::Test {
+  GroupbyReductionMultipleSubgroupsTest()
+      : da{makeVariable<double>(Dimensions{{Dim::Z, 2}, {Dim::X, 4}}, units::m,
+                                Values{1, 2, 3, 4, 5, 6, 7, 8}),
+           {{Dim("labels"),
+             makeVariable<double>(Dimensions{Dim::X, 4}, units::m,
+                                  Values{1, 1, 3, 1})}}} {}
+
+  DataArray da;
+};
+
+TEST_F(GroupbyReductionMultipleSubgroupsTest, sum) {
+  const Dim dim("labels");
+  DataArray expected{makeVariable<double>(Dimensions{{Dim::Z, 2}, {dim, 2}},
+                                          units::m, Values{7, 3, 19, 7}),
+                     {{dim, makeVariable<double>(Dimensions{dim, 2}, units::m,
+                                                 Values{1, 3})}}};
+  EXPECT_EQ(groupby(da, dim).sum(Dim::X), expected);
+}
+
+TEST_F(GroupbyReductionMultipleSubgroupsTest, max) {
+  const Dim dim("labels");
+  DataArray expected{makeVariable<double>(Dimensions{{Dim::Z, 2}, {dim, 2}},
+                                          units::m, Values{4, 3, 8, 7}),
+                     {{dim, makeVariable<double>(Dimensions{dim, 2}, units::m,
+                                                 Values{1, 3})}}};
+  EXPECT_EQ(groupby(da, dim).max(Dim::X), expected);
+}
+
 struct GroupbyMaskedTest : public GroupbyTest {
   GroupbyMaskedTest() : GroupbyTest() {
     for (const auto &item : {"a", "b", "c"})
