@@ -66,8 +66,16 @@ Variable bins_max(const Variable &data) {
   return reduce_bins(data, variable::max_into, FillValue::Lowest);
 }
 
+Variable bins_nanmax(const Variable &data) {
+  return reduce_bins(data, variable::nanmax_into, FillValue::Lowest);
+}
+
 Variable bins_min(const Variable &data) {
   return reduce_bins(data, variable::min_into, FillValue::Max);
+}
+
+Variable bins_nanmin(const Variable &data) {
+  return reduce_bins(data, variable::nanmin_into, FillValue::Max);
 }
 
 Variable bins_all(const Variable &data) {

@@ -14,7 +14,9 @@
 namespace scipp::variable {
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable bins_sum(const Variable &data);
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable bins_max(const Variable &data);
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable bins_nanmax(const Variable &data);
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable bins_min(const Variable &data);
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable bins_nanmin(const Variable &data);
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable bins_all(const Variable &data);
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable bins_any(const Variable &data);
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable bins_mean(const Variable &data);

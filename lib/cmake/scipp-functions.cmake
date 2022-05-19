@@ -95,7 +95,13 @@ scipp_function(
   "unary" bins bins_max SKIP_VARIABLE BASE_INCLUDE dataset/bins_reduction.h
 )
 scipp_function(
+  "unary" bins bins_nanmax SKIP_VARIABLE BASE_INCLUDE dataset/bins_reduction.h
+)
+scipp_function(
   "unary" bins bins_min SKIP_VARIABLE BASE_INCLUDE dataset/bins_reduction.h
+)
+scipp_function(
+  "unary" bins bins_nanmin SKIP_VARIABLE BASE_INCLUDE dataset/bins_reduction.h
 )
 scipp_function(
   "unary" bins bins_all SKIP_VARIABLE BASE_INCLUDE dataset/bins_reduction.h
