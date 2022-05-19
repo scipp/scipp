@@ -220,55 +220,57 @@ TEST(ToUnitTest, does_not_throws_if_both_are_none) {
 }
 
 TEST(ToUnitTest, large_to_small_rounding_error_float) {
-  const auto var = makeVariable<float>(units::Unit("m"), Values{1});
-  EXPECT_EQ(to_unit(var, units::Unit("nm")),
+  const auto one_m = makeVariable<float>(units::Unit("m"), Values{1});
+  EXPECT_EQ(to_unit(one_m, units::Unit("nm")),
             makeVariable<float>(units::Unit("nm"), Values{1e9}));
-  EXPECT_EQ(to_unit(var, units::Unit("pm")),
+  EXPECT_EQ(to_unit(one_m, units::Unit("pm")),
             makeVariable<float>(units::Unit("pm"), Values{1e12}));
-  EXPECT_EQ(to_unit(var, units::Unit("fm")),
+  EXPECT_EQ(to_unit(one_m, units::Unit("fm")),
             makeVariable<float>(units::Unit("fm"), Values{1e15}));
-  EXPECT_EQ(to_unit(var, units::Unit("am")),
+  EXPECT_EQ(to_unit(one_m, units::Unit("am")),
             makeVariable<float>(units::Unit("am"), Values{1e18}));
 }
 
 TEST(ToUnitTest, large_to_small_rounding_error_double) {
-  const auto var = makeVariable<double>(units::Unit("m"), Values{1});
-  EXPECT_EQ(to_unit(var, units::Unit("nm")),
+  const auto one_m = makeVariable<double>(units::Unit("m"), Values{1});
+  EXPECT_EQ(to_unit(one_m, units::Unit("nm")),
             makeVariable<double>(units::Unit("nm"), Values{1e9}));
-  EXPECT_EQ(to_unit(var, units::Unit("pm")),
+  EXPECT_EQ(to_unit(one_m, units::Unit("pm")),
             makeVariable<double>(units::Unit("pm"), Values{1e12}));
-  EXPECT_EQ(to_unit(var, units::Unit("fm")),
+  EXPECT_EQ(to_unit(one_m, units::Unit("fm")),
             makeVariable<double>(units::Unit("fm"), Values{1e15}));
-  EXPECT_EQ(to_unit(var, units::Unit("am")),
+  EXPECT_EQ(to_unit(one_m, units::Unit("am")),
             makeVariable<double>(units::Unit("am"), Values{1e18}));
 }
 
 TEST(ToUnitTest, small_to_large_rounding_error_float) {
+  const auto one_m = makeVariable<float>(units::Unit("m"), Values{1});
   EXPECT_EQ(to_unit(makeVariable<float>(units::Unit("nm"), Values{1e9}),
                     units::Unit("m")),
-            makeVariable<float>(units::Unit("m"), Values{1}));
+            one_m);
   EXPECT_EQ(to_unit(makeVariable<float>(units::Unit("pm"), Values{1e12}),
                     units::Unit("m")),
-            makeVariable<float>(units::Unit("m"), Values{1}));
+            one_m);
   EXPECT_EQ(to_unit(makeVariable<float>(units::Unit("fm"), Values{1e15}),
                     units::Unit("m")),
-            makeVariable<float>(units::Unit("m"), Values{1}));
+            one_m);
   EXPECT_EQ(to_unit(makeVariable<float>(units::Unit("am"), Values{1e18}),
                     units::Unit("m")),
-            makeVariable<float>(units::Unit("m"), Values{1}));
+            one_m);
 }
 
 TEST(ToUnitTest, small_to_large_rounding_error_double) {
+  const auto one_m = makeVariable<double>(units::Unit("m"), Values{1});
   EXPECT_EQ(to_unit(makeVariable<double>(units::Unit("nm"), Values{1e9}),
                     units::Unit("m")),
-            makeVariable<double>(units::Unit("m"), Values{1}));
+            one_m);
   EXPECT_EQ(to_unit(makeVariable<double>(units::Unit("pm"), Values{1e12}),
                     units::Unit("m")),
-            makeVariable<double>(units::Unit("m"), Values{1}));
+            one_m);
   EXPECT_EQ(to_unit(makeVariable<double>(units::Unit("fm"), Values{1e15}),
                     units::Unit("m")),
-            makeVariable<double>(units::Unit("m"), Values{1}));
+            one_m);
   EXPECT_EQ(to_unit(makeVariable<double>(units::Unit("am"), Values{1e18}),
                     units::Unit("m")),
-            makeVariable<double>(units::Unit("m"), Values{1}));
+            one_m);
 }
