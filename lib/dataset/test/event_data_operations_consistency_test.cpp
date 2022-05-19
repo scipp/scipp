@@ -4,7 +4,8 @@
 
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/histogram.h"
-#include "scipp/dataset/reduction.h"
+#include "scipp/dataset/mean.h"
+#include "scipp/dataset/sum.h"
 
 using namespace scipp;
 using namespace scipp::dataset;

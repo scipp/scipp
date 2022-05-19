@@ -3,7 +3,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # ~~~
 function(scipp_function template category function_name)
-  set(options SKIP_VARIABLE SKIP_PYTHON OUT)
+  set(options SKIP_VARIABLE SKIP_DATASET SKIP_PYTHON OUT)
   set(oneValueArgs OP PREPROCESS_VARIABLE BASE_INCLUDE)
   cmake_parse_arguments(
     PARSE_ARGV 3 SCIPP_FUNCTION "${options}" "${oneValueArgs}" ""
@@ -56,7 +56,9 @@ function(scipp_function template category function_name)
   if(NOT SCIPP_FUNCTION_SKIP_VARIABLE)
     configure_in_module("variable" ${OPNAME})
   endif()
-  configure_in_module("dataset" ${OPNAME})
+  if(NOT SCIPP_FUNCTION_SKIP_DATASET)
+    configure_in_module("dataset" ${OPNAME})
+  endif()
   if(NOT SCIPP_FUNCTION_SKIP_PYTHON)
     configure_file(templates/python_${template}.cpp.in python/${src})
     set(python_SRC_FILES

@@ -4,13 +4,14 @@
 /// @author Simon Heybrock
 #include <numeric>
 
-#include "scipp/common/numeric.h"
-
 #include "scipp/core/bucket.h"
+#include "scipp/core/element/comparison.h"
+#include "scipp/core/element/logical.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/parallel.h"
 #include "scipp/core/tag_util.h"
 
+#include "scipp/variable/accumulate.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
@@ -166,27 +167,27 @@ template <class T> T GroupBy<T>::concat(const Dim reductionDim) const {
 
 /// Reduce each group using `sum` and return combined data.
 template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {
-  return reduce(sum_impl, reductionDim, FillValue::ZeroNotBool);
+  return reduce(sum_into, reductionDim, FillValue::ZeroNotBool);
 }
 
 /// Reduce each group using `all` and return combined data.
 template <class T> T GroupBy<T>::all(const Dim reductionDim) const {
-  return reduce(all_impl, reductionDim, FillValue::True);
+  return reduce(variable::all_into, reductionDim, FillValue::True);
 }
 
 /// Reduce each group using `any` and return combined data.
 template <class T> T GroupBy<T>::any(const Dim reductionDim) const {
-  return reduce(any_impl, reductionDim, FillValue::False);
+  return reduce(variable::any_into, reductionDim, FillValue::False);
 }
 
 /// Reduce each group using `max` and return combined data.
 template <class T> T GroupBy<T>::max(const Dim reductionDim) const {
-  return reduce(max_impl, reductionDim, FillValue::Lowest);
+  return reduce(variable::max_into, reductionDim, FillValue::Lowest);
 }
 
 /// Reduce each group using `min` and return combined data.
 template <class T> T GroupBy<T>::min(const Dim reductionDim) const {
-  return reduce(min_impl, reductionDim, FillValue::Max);
+  return reduce(variable::min_into, reductionDim, FillValue::Max);
 }
 
 /// Combine groups without changes, effectively sorting data.
@@ -255,15 +256,18 @@ template <class T> struct NanSensitiveLess {
   // https://en.cppreference.com/w/cpp/named_req/Compare, as it is used as
   // the comparator for keys in a map.
   bool operator()(const T &a, const T &b) const {
-    if (scipp::numeric::isnan(b)) {
-      return !scipp::numeric::isnan(a);
-    }
+    if constexpr (std::is_floating_point_v<T>)
+      if (std::isnan(b))
+        return !std::isnan(a);
     return a < b;
   }
 };
 
 template <class T> bool nan_sensitive_equal(const T &a, const T &b) {
-  return a == b || (scipp::numeric::isnan(a) && scipp::numeric::isnan(b));
+  if constexpr (std::is_floating_point_v<T>)
+    return a == b || (std::isnan(a) && std::isnan(b));
+  else
+    return a == b;
 }
 } // namespace
 

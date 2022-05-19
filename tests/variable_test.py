@@ -266,37 +266,9 @@ def test_concat():
                    sc.Variable(dims=(), values=0.0)], 'x')
 
 
-def test_mean():
-    assert_export(sc.mean, sc.Variable(dims=(), values=0.0), 'x')
-
-
-def test_mean_in_place():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.mean, sc.Variable(dims=(), values=0.0), 'x', var)
-
-
 def test_values_variances():
-    assert_export(sc.values, sc.Variable(dims=(), values=0.0))
-    assert_export(sc.variances, sc.Variable(dims=(), values=0.0))
-
-
-def test_sum():
-    var = sc.Variable(dims=['x', 'y'],
-                      values=np.array([[0.1, 0.3], [0.2, 0.6]]),
-                      unit=sc.units.m)
-    expected = sc.Variable(dims=['x'], values=np.array([0.4, 0.8]), unit=sc.units.m)
-    assert sc.identical(sc.sum(var, 'y'), expected)
-
-
-def test_sum_in_place():
-    var = sc.Variable(dims=['x', 'y'],
-                      values=np.array([[0.1, 0.3], [0.2, 0.6]]),
-                      unit=sc.units.m)
-    out_var = sc.Variable(dims=['x'], values=np.array([0.0, 0.0]), unit=sc.units.m)
-    expected = sc.Variable(dims=['x'], values=np.array([0.4, 0.8]), unit=sc.units.m)
-    out_view = sc.sum(var, 'y', out=out_var)
-    assert sc.identical(out_var, expected)
-    assert sc.identical(out_view, expected)
+    assert_export(sc.values, sc.Variable(dims=(), values=0.0, variances=0.0))
+    assert_export(sc.variances, sc.Variable(dims=(), values=0.0, variances=0.0))
 
 
 def test_variance_acess():
@@ -363,13 +335,6 @@ def test_set_variance_convert_dtype():
 
     assert var.variances is not None
     assert sc.identical(var, expected)
-
-
-def test_sum_mean():
-    var = sc.Variable(dims=['x'], values=np.arange(5, dtype=np.int64))
-    assert sc.identical(sc.sum(var, 'x'), sc.scalar(10))
-    var = sc.Variable(dims=['x'], values=np.arange(6, dtype=np.int64))
-    assert sc.identical(sc.mean(var, 'x'), sc.scalar(2.5))
 
 
 def test_rename_dims():
@@ -536,10 +501,10 @@ def test_comparison():
 
 
 def test_sort():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.sort, x=var, dim='x', order='ascending')
-    assert_export(sc.issorted, x=var, dim='x', order='ascending')
-    assert_export(sc.allsorted, x=var, dim='x', order='ascending')
+    var = sc.arange('xx', 10.0)
+    assert_export(sc.sort, x=var, key='xx', order='ascending')
+    assert_export(sc.issorted, x=var, dim='xx', order='ascending')
+    assert_export(sc.allsorted, x=var, dim='xx', order='ascending')
 
 
 @pytest.mark.parametrize('dtype', ['float64', 'float32', 'int64', 'int32'])

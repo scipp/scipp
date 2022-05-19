@@ -13,12 +13,20 @@ Features
 * Added support for converting scalars to builtin objects via :func:`int` and :func:`float` `#2529 <https://github.com/scipp/scipp/pull/2529>`_.
 * Reduced time of initial import of scipp by delaying imports of optional dependencies `#2535 <https://github.com/scipp/scipp/pull/2535>`_.
 * Added an ``update`` method to :class:`Coords`, :class:`Attrs`, :class:`Masks`, and :class:`Dataset`  `#2558 <https://github.com/scipp/scipp/pull/2558>`_.
+* Support ``dtype=vector3`` in :func:`scipp.isinf` and :func:`scipp.isfinite` `#2593 <https://github.com/scipp/scipp/pull/2593>`_.
+* Added support for passing any dict-like objects or iterables of tuples as ``coords``, ``attrs``, and ``masks`` arguments to initializers of :class:`scipp.DataArray` and :class:`scipp.Dataset` `#2603 <https://github.com/scipp/scipp/pull/2603>`_.
+* Added support for passing any dict-like objects or iterables of tuples as the ``data`` argument to the initializer of :class:`scipp.Dataset` `#2603 <https://github.com/scipp/scipp/pull/2603>`_.
+* Added support for ``DataArray`` and ``Dataset`` in reduction operations (e.g. :func:`scipp.max`) `#2600 <https://github.com/scipp/scipp/pull/2600>`_.
+* Reduce effect of rounding errors when converting units `#2607 <https://github.com/scipp/scipp/pull/2607>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
 * Changed :meth:`scipp.Variable.dims` and :meth:`scipp.Variable.shape` and corresponding properties in `DataArray` and `Dataset` to return tuples `2543 <https://github.com/scipp/scipp/pull/2543>`_.
 * :func:`scipp.scalar` and :func:`scipp.index` now require keyword arguments for all but the ``value`` argument and :func:`scipp.vector` can take ``value`` positionally `2585 <https://github.com/scipp/scipp/pull/2585>`_.
+* Removed ``out`` argument from reduction operations (e.g. :func:`scipp.sum`) `2591 <https://github.com/scipp/scipp/pull/2591>`_.
+* :func:`scipp.datetime` and :func:`scipp.datetimes` now raise an error if a datetime string with timezone information is provided.
+  Previously this was a ``DeprecationWarning`` from NumPy `2604 <https://github.com/scipp/scipp/pull/2604>`_.
 
 Bugfixes
 ~~~~~~~~
@@ -27,11 +35,16 @@ Bugfixes
 * :func:`scipp.to_unit` avoids a rounding problem when converting datetimes. This previously led to errors, e.g., of about 300 nanoseconds when converting a current (2020s) datetime64 from seconds to nanoseconds `#2533 <https://github.com/scipp/scipp/pull/2533>`_.
 * Fix handling of keyword arguments in :func:`scipp.optimize.curve_fit`. They were previously checked for conflicts but otherwise ignored `#2545 <https://github.com/scipp/scipp/pull/2545>`_.
 * Fix a segmentation fault in :func:`scipp.bin` when grouping by a variable with 0 elements `#2590 <https://github.com/scipp/scipp/pull/2590>`_.
+* Fix :func:`scipp.nanmean` for ``dtype=vector3``.
+  Previously this did not ignore NaN elements as it should.
+  :func:`scipp.isnan` is affected by the same fix.
+  Previously it always returned ``False`` for ``dtype=vector3`` `#2593 <https://github.com/scipp/scipp/pull/2593>`_.
 
 Documentation
 ~~~~~~~~~~~~~
 
 * Added new tutorial: *RHESSI Solar Flares* `2536 <https://github.com/scipp/scipp/pull/2536>`_.
+* Added new tutorial: *From tabular data to binned data* `2580 <https://github.com/scipp/scipp/pull/2580>`_.
 * Added documentation of our docstring format `2546 <https://github.com/scipp/scipp/pull/2546>`_.
 
 Deprecations

@@ -617,6 +617,18 @@ def test_empty_sizes():
         sc.empty(dims=dims, shape=shape, sizes=dict(zip(dims, shape)))
 
 
+@pytest.mark.parametrize('timezone', ['Z', '-05:00', '+02'])
+def test_datetime_raises_given_string_with_timezone(timezone):
+    with pytest.raises(ValueError):
+        sc.datetime(f'2152-11-25T13:13:46{timezone}')
+
+
+@pytest.mark.parametrize('timezone', ['Z', '-05:00', '+02'])
+def test_datetimes_raises_given_string_with_timezone(timezone):
+    with pytest.raises(ValueError):
+        sc.datetimes(dims=['time'], values=[f'2152-11-25T13:13:46{timezone}'], unit='s')
+
+
 def test_datetime():
     assert sc.identical(sc.datetime('1970', unit='Y'),
                         sc.scalar(np.datetime64('1970', 'Y')))

@@ -16,10 +16,10 @@ jobs:
     strategy:
       matrix:
         variant:
-          - {os: ubuntu-latest, target: linux_64}
-          - {os: macos-latest, target: osx_64}
-          - {os: macos-latest, target: osx_arm64}
-          - {os: windows-latest, target: win_64}
+          - {os: ubuntu-20.04, target: linux_64}
+          - {os: macos-11, target: osx_64}
+          - {os: macos-11, target: osx_arm64}
+          - {os: windows-2019, target: win_64}
         python-version: ["3.8", "3.9"]
 
     steps:
@@ -29,8 +29,8 @@ jobs:
           fetch-depth: 0  # history required so cmake can determine version
 
       - uses: conda-incubator/setup-miniconda@v2
-      - run: conda install --channel conda-forge --yes boa
-      - run: conda mambabuild --channel conda-forge --variant-config-files=conda/variants/${{ matrix.variant.target }}.yaml --python=${{ matrix.python-version }} --no-anaconda-upload --override-channels --output-folder conda/package conda
+      - run: conda install --channel conda-forge --yes conda-build
+      - run: conda build --channel conda-forge --variant-config-files=conda/variants/${{ matrix.variant.target }}.yaml --python=${{ matrix.python-version }} --no-anaconda-upload --override-channels --output-folder conda/package conda
 
       - uses: actions/upload-artifact@v2
         with:
@@ -39,7 +39,7 @@ jobs:
 
   build_sdist:
     name: Build SDist
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
       with:
@@ -63,7 +63,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-20.04, macos-11, windows-2019]
 
     steps:
     - uses: actions/checkout@v2
@@ -88,28 +88,21 @@ jobs:
   docs:
     name: Build documentation
     needs: build_conda
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - name: Setup Mambaforge and dev env
-        uses: conda-incubator/setup-miniconda@v2
+        uses: mamba-org/provision-with-micromamba@main
         with:
-          miniforge-version: latest
-          miniforge-variant: Mambaforge
-          python-version: "3.8"
-          environment-file: .buildconfig/ubuntu-latest.yml
-          activate-environment: ubuntu-latest
-          auto-activate-base: false
+          micromamba-version: 0.23.0
+          environment-file: .buildconfig/ci-linux.yml
+          cache-env: true
+          extra-specs: python=3.8
       - uses: actions/download-artifact@v2
         with:
-          name: conda-package-ubuntu-latest-py3.8
-      - run: mamba install linux-64/scipp-*.tar.bz2
-      - name: Run Sphinx
-        run: |
-          python -m sphinx -j2 -v -b html -d doctrees docs html
-          python -m sphinx -j2 -v -b doctest -d doctrees docs html
-          python -m sphinx -j2 -v -b linkcheck -d doctrees docs html
-          find html -type f -name "*.ipynb" -not -path "html/_sources/*" -delete
+          name: conda-package-ubuntu-20.04-py3.8
+      - run: conda install linux-64/scipp-*.tar.bz2
+      - run: tox --sitepackages -e docs
       - uses: actions/upload-artifact@v2
         with:
           name: html
@@ -118,7 +111,7 @@ jobs:
   upload_packages:
     name: Deploy packages
     needs: [docs, build_sdist, build_wheels]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: github.event_name == 'release' && github.event.action == 'published'
 
     steps:
@@ -136,7 +129,7 @@ jobs:
   upload_docs:
     name: Deploy docs
     needs: [upload_packages]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: github.event_name == 'release' && github.event.action == 'published'
     strategy:
       max-parallel: 1  # Avoid potential race condition when pushing to github pages repo

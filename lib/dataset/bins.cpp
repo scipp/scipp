@@ -28,7 +28,7 @@
 #include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/histogram.h"
-#include "scipp/dataset/reduction.h"
+#include "scipp/dataset/mean.h"
 #include "scipp/dataset/shape.h"
 
 #include "../variable/operations_common.h"
@@ -366,12 +366,12 @@ Variable bins_sum(const Variable &data) {
     const auto &&[indices, dim, buffer] = data.constituents<DataArray>();
     if (const auto mask_union = irreducible_mask(buffer.masks(), dim);
         mask_union.is_valid()) {
-      variable::sum_impl(summed, applyMask(buffer, indices, dim, mask_union));
+      variable::sum_into(summed, applyMask(buffer, indices, dim, mask_union));
     } else {
-      variable::sum_impl(summed, data);
+      variable::sum_into(summed, data);
     }
   } else {
-    variable::sum_impl(summed, data);
+    variable::sum_into(summed, data);
   }
 
   return summed;

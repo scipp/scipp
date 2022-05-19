@@ -5,10 +5,9 @@
 
 #include <numeric>
 
-#include "common.h"
-
 #include "scipp/dataset/dataset.h"
-#include "scipp/dataset/reduction.h"
+#include "scipp/dataset/mean.h"
+#include "scipp/dataset/sum.h"
 
 using namespace scipp;
 using namespace scipp::core;

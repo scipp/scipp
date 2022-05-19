@@ -80,7 +80,10 @@ std::string format_variable(const Variable &variable,
   if (!datasetSizes)
     s << to_string(variable.dims()) << colSep;
   s << std::setw(9) << to_string(variable.dtype());
-  s << colSep << std::setw(15) << '[' + variable.unit().name() + ']';
+  if (variable.unit() == units::none)
+    s << colSep << std::setw(15) << "<no unit>";
+  else
+    s << colSep << std::setw(15) << '[' + variable.unit().name() + ']';
   if (datasetSizes)
     s << colSep << make_dims_labels(variable, datasetSizes);
   s << colSep;

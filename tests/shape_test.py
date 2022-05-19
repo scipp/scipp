@@ -55,10 +55,10 @@ def test_concat():
 def test_fold():
     x = sc.array(dims=['x'], values=np.arange(6.0))
     da = sc.DataArray(x)
-    assert_export(sc.fold, x=x, sizes={'x': 2, 'y': 3})
-    assert_export(sc.fold, x=x, dims=['x', 'y'], shape=[2, 3])
-    assert_export(sc.fold, x=da, sizes={'x': 2, 'y': 3})
-    assert_export(sc.fold, x=da, dims=['x', 'y'], shape=[2, 3])
+    assert_export(sc.fold, x=x, dim='x', sizes={'x': 2, 'y': 3})
+    assert_export(sc.fold, x=x, dim='x', dims=['x', 'y'], shape=[2, 3])
+    assert_export(sc.fold, x=da, dim='x', sizes={'x': 2, 'y': 3})
+    assert_export(sc.fold, x=da, dim='x', dims=['x', 'y'], shape=[2, 3])
 
 
 def test_fold_size_minus_1_variable():
@@ -119,10 +119,10 @@ def test_fold_raises_non_divisible():
 def test_flatten():
     x = sc.array(dims=['x', 'y'], values=np.arange(6.0).reshape(2, 3))
     da = sc.DataArray(x)
-    assert_export(sc.flatten, x=x, dims=['x', 'y'], dim='z')
-    assert_export(sc.flatten, x=x, dim='z')
-    assert_export(sc.flatten, x=da, dims=['x', 'y'], dim='z')
-    assert_export(sc.flatten, x=da, dim='z')
+    assert_export(sc.flatten, x=x, dims=['x', 'y'], to='z')
+    assert_export(sc.flatten, x=x, to='z')
+    assert_export(sc.flatten, x=da, dims=['x', 'y'], to='z')
+    assert_export(sc.flatten, x=da, to='z')
 
 
 def test_squeeze():

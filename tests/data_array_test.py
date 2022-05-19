@@ -83,6 +83,53 @@ def test_init_from_variable_views():
     assert sc.identical(a, c)
 
 
+@pytest.mark.parametrize('coords_wrapper', (dict, lambda d: d), ids=['dict', 'Coords'])
+@pytest.mark.parametrize('attrs_wrapper', (dict, lambda d: d), ids=['dict', 'Attrs'])
+@pytest.mark.parametrize('masks_wrapper', (dict, lambda d: d), ids=['dict', 'Masks'])
+def test_init_from_existing_metadata(coords_wrapper, attrs_wrapper, masks_wrapper):
+    da1 = sc.DataArray(
+        sc.arange('x', 4),
+        coords={
+            'x': sc.arange('x', 5, unit='m'),
+            'y': sc.scalar(12.34)
+        },
+        attrs={
+            'a': sc.arange('x', 4, unit='s'),
+            'b': sc.scalar('attr-b')
+        },
+        masks={'m': sc.array(dims=['x'], values=[False, True, True, False, False])})
+    da2 = sc.DataArray(-sc.arange('x', 4),
+                       coords=coords_wrapper(da1.coords),
+                       attrs=attrs_wrapper(da1.attrs),
+                       masks=masks_wrapper(da1.masks))
+    assert set(da2.coords.keys()) == {'x', 'y'}
+    assert sc.identical(da2.coords['x'], da1.coords['x'])
+    assert sc.identical(da2.coords['y'], da1.coords['y'])
+    assert set(da2.attrs.keys()) == {'a', 'b'}
+    assert sc.identical(da2.attrs['a'], da1.attrs['a'])
+    assert sc.identical(da2.attrs['b'], da1.attrs['b'])
+    assert set(da2.masks.keys()) == {'m'}
+    assert sc.identical(da2.masks['m'], da1.masks['m'])
+
+
+def test_init_from_iterable_of_tuples():
+    da = sc.DataArray(
+        sc.arange('x', 4),
+        coords=[('x', sc.arange('x', 5, unit='m')), ('y', sc.scalar(12.34))],
+        attrs=(('a', sc.arange('x', 4, unit='s')), ('b', sc.scalar('attr-b'))),
+        masks={'m': sc.array(dims=['x'], values=[False, True, True, False,
+                                                 False])}.items())
+    assert set(da.coords.keys()) == {'x', 'y'}
+    assert sc.identical(da.coords['x'], sc.arange('x', 5, unit='m'))
+    assert sc.identical(da.coords['y'], sc.scalar(12.34))
+    assert set(da.attrs.keys()) == {'a', 'b'}
+    assert sc.identical(da.attrs['a'], sc.arange('x', 4, unit='s'))
+    assert sc.identical(da.attrs['b'], sc.scalar('attr-b'))
+    assert set(da.masks.keys()) == {'m'}
+    assert sc.identical(da.masks['m'],
+                        sc.array(dims=['x'], values=[False, True, True, False, False]))
+
+
 @pytest.mark.parametrize("make", [lambda x: x, sc.DataArray])
 def test_builtin_len(make):
     var = sc.empty(dims=['x', 'y'], shape=[3, 2])

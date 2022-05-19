@@ -116,25 +116,6 @@ TYPED_TEST(NansumTest, nansum_with_dim) {
   }
 }
 
-TYPED_TEST(NansumTest, nansum_with_dim_out) {
-  auto x = makeVariable<TypeParam>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
-                                   Values{1.0, 2.0, 3.0, 4.0});
-  if constexpr (std::is_floating_point_v<TypeParam>) {
-    x.template values<TypeParam>()[2] = TypeParam(NAN);
-    auto out = makeVariable<TypeParam>(Dims{Dim::Y}, Shape{2});
-    const auto expected =
-        makeVariable<TypeParam>(Dims{Dim::Y}, Shape{2}, Values{1, 6});
-    nansum(x, Dim::X, out);
-    EXPECT_EQ(out, expected);
-  } else {
-    auto out = makeVariable<TypeParam>(Dims{Dim::Y}, Shape{2});
-    const auto expected =
-        makeVariable<TypeParam>(Dims{Dim::Y}, Shape{2}, Values{4, 6});
-    nansum(x, Dim::X, out);
-    EXPECT_EQ(out, expected);
-  }
-}
-
 class ReduceBinnedTest : public ::testing::Test {
 protected:
   Variable indices =

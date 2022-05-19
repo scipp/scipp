@@ -21,6 +21,7 @@ using namespace scipp::dataset;
 
 namespace py = pybind11;
 
+namespace {
 template <class T, class... Ignored>
 void bind_dataset_coord_properties(py::class_<T, Ignored...> &c) {
   // TODO does this comment still apply?
@@ -107,14 +108,14 @@ template <class T> void bind_rebin(py::module &m) {
       py::call_guard<py::gil_scoped_release>());
 }
 
-template <class Value> auto to_cpp_dim_map(const py::dict &dict) {
-  std::unordered_map<Dim, Value> out;
+template <class Key, class Value> auto to_cpp_map(const py::dict &dict) {
+  std::unordered_map<Key, Value> out;
   for (const auto &[key, val] : dict) {
-    const Dim dim{key.template cast<std::string>()};
-    out.emplace(dim, val.template cast<Value &>());
+    out.emplace(key.template cast<std::string>(), val.template cast<Value &>());
   }
   return out;
 }
+} // namespace
 
 void init_dataset(py::module &m) {
   static_cast<void>(py::class_<Slice>(m, "Slice"));
@@ -143,17 +144,17 @@ Returned by :py:func:`DataArray.masks`)");
   py::options options;
   options.disable_function_signatures();
   dataArray.def(
-      py::init([](const Variable &data, const py::dict &coords,
-                  std::unordered_map<std::string, Variable> masks,
-                  const py::dict &attrs, const std::string &name) {
-        return DataArray{data, to_cpp_dim_map<Variable>(coords),
-                         std::move(masks), to_cpp_dim_map<Variable>(attrs),
-                         name};
+      py::init([](const Variable &data, const py::object &coords,
+                  const py::object &masks, const py::object &attrs,
+                  const std::string &name) {
+        return DataArray{data, to_cpp_map<Dim, Variable>(coords),
+                         to_cpp_map<std::string, Variable>(masks),
+                         to_cpp_map<Dim, Variable>(attrs), name};
       }),
       py::arg("data"), py::kw_only(), py::arg("coords") = py::dict(),
-      py::arg("masks") = std::unordered_map<std::string, Variable>{},
-      py::arg("attrs") = py::dict(), py::arg("name") = std::string{},
-      R"doc(__init__(self, data: Variable, coords: Dict[str, Variable] = {}, masks: Dict[str, Variable] = {}, attrs: Dict[str, Variable] = {}, name: str = '') -> None
+      py::arg("masks") = py::dict(), py::arg("attrs") = py::dict(),
+      py::arg("name") = std::string{},
+      R"doc(__init__(self, data: Variable, coords: Union[typing.Mapping[str, Variable], Iterable[Tuple[str, Variable]]] = {}, masks: Union[typing.Mapping[str, Variable], Iterable[Tuple[str, Variable]]] = {}, attrs: Union[typing.Mapping[str, Variable], Iterable[Tuple[str, Variable]]] = {}, name: str = '') -> None
 
           DataArray initializer.
 
@@ -168,7 +169,7 @@ Returned by :py:func:`DataArray.masks`)");
           attrs:
               Attributes referenced by dimension.
           name:
-              Name of DataArray.
+              Name of the data array.
           )doc");
   options.enable_function_signatures();
   dataArray
@@ -186,24 +187,22 @@ Returned by :py:func:`DataArray.masks`)");
   Dict of data arrays with aligned dimensions.)");
   options.disable_function_signatures();
   dataset.def(
-      py::init([](const std::map<std::string, std::variant<Variable, DataArray>>
-                      &data,
-                  const std::map<std::string, Variable> &coords) {
+      py::init([](const py::object &data, const py::object &coords) {
         Dataset d;
-        for (auto &&[name, item] : data) {
-          auto visitor = [&d, n = name](auto &object) {
-            d.setData(std::string(n), std::move(object));
-          };
-          std::visit(visitor, item);
+        for (auto &&[name, item] : py::dict(data)) {
+          if (py::isinstance<DataArray>(item)) {
+            d.setData(name.cast<std::string>(), item.cast<DataArray &>());
+          } else {
+            d.setData(name.cast<std::string>(), item.cast<Variable &>());
+          }
         }
-        for (auto &&[dim, coord] : coords)
-          d.setCoord(Dim{dim}, coord);
+        for (auto &&[dim, coord] : py::dict(coords))
+          d.setCoord(Dim{dim.cast<std::string>()}, coord.cast<Variable &>());
         return d;
       }),
-      py::arg("data") =
-          std::map<std::string, std::variant<Variable, DataArray>>{},
-      py::kw_only(), py::arg("coords") = std::map<std::string, Variable>{},
-      R"doc(__init__(self, data: Dict[str, Union[Variable, DataArray]] = {}, coords: Dict[str, Variable] = {}) -> None
+      py::arg("data") = py::dict(), py::kw_only(),
+      py::arg("coords") = std::map<std::string, Variable>{},
+      R"doc(__init__(self, data: Union[typing.Mapping[str, Union[Variable, DataArray]], Iterable[Tuple[str, Union[Variable, DataArray]]]] = {}, coords: Union[typing.Mapping[str, Variable], Iterable[Tuple[str, Variable]]] = {}) -> None
 
       Dataset initializer.
 
