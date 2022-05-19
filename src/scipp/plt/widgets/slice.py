@@ -32,8 +32,8 @@ class SliceView(View):
         self.update(new_values.meta)
 
     def render(self):
-        for node in self._graph_nodes.values():
-            new_values = node.request_data()
+        for n in self._graph_nodes.values():
+            new_values = n.request_data()
             self.update(new_coords=new_values.meta)
 
 
@@ -69,12 +69,7 @@ class SliceWidget:
                                              layout={"width": "20px"})
             ipw.jslink((continuous_update, 'value'), (slider, 'continuous_update'))
 
-            slider_readout = ipw.Label()
-
-            self._controls[dim] = {
-                'continuous': continuous_update,
-                'slider': slider,
-            }
+            self._controls[dim] = {'continuous': continuous_update, 'slider': slider}
 
         for index, dim in enumerate(self._slider_dims):
             row = list(self._controls[dim].values())
