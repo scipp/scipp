@@ -136,6 +136,7 @@ def test_plot_slice_3d_cube():
     sl.observe(input_node.notify_children, names="value")
 
     slice_node = widgets.slice_dims(a, input_node)
+    sl.make_view(slice_node)
 
     fig = Figure(slice_node)
     Plot([fig, sl])
@@ -151,6 +152,7 @@ def test_plot_3d_image_slicer_with_connected_side_histograms():
     sl.observe(input_node.notify_children, names="value")
 
     sliced = widgets.slice_dims(a, input_node)
+    sl.make_view(sliced)
     fig = Figure(sliced)
 
     @node
