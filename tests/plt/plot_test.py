@@ -80,15 +80,7 @@ def test_plot_2d_image_with_masks():
     w = Node(lambda: widget.value)
     widget.observe(w.notify_children, names="value")
 
-    @node
-    def hide_masks(data_array, masks):
-        out = data_array.copy(deep=False)
-        for name, value in masks.items():
-            if not value:
-                del out.masks[name]
-        return out
-
-    masks_node = hide_masks(a, w)
+    masks_node = widgets.hide_masks(a, w)
     fig = Figure(masks_node)
     Plot([fig, widget])
     fig.render()
@@ -111,16 +103,8 @@ def test_plot_two_1d_lines_with_masks():
     widget_a.observe(w_a.notify_children, names="value")
     widget_b.observe(w_b.notify_children, names="value")
 
-    @node
-    def hide_masks(data_array, masks):
-        out = data_array.copy(deep=False)
-        for name, value in masks.items():
-            if not value:
-                del out.masks[name]
-        return out
-
-    node_masks_a = hide_masks(a, w_a)
-    node_masks_b = hide_masks(b, w_b)
+    node_masks_a = widgets.hide_masks(a, w_a)
+    node_masks_b = widgets.hide_masks(b, w_b)
     fig = Figure(node_masks_a, node_masks_b)
     Plot([fig, [widget_a, widget_b]])
     fig.render()
@@ -129,7 +113,7 @@ def test_plot_two_1d_lines_with_masks():
 
 
 def test_plot_node_sum_data_along_y():
-    da = make_dense_data_array(ndim=2)
+    da = make_dense_data_array(ndim=2, binedges=True)
     a = Node(da)
 
     @node
@@ -151,14 +135,7 @@ def test_plot_slice_3d_cube():
     input_node = Node(lambda: sl.value)
     sl.observe(input_node.notify_children, names="value")
 
-    @node
-    def slice_dims(da, slices):
-        out = da
-        for dim, sl in slices.items():
-            out = out[dim, sl]
-        return out
-
-    slice_node = slice_dims(a, input_node)
+    slice_node = widgets.slice_dims(a, input_node)
 
     fig = Figure(slice_node)
     Plot([fig, sl])
@@ -173,14 +150,7 @@ def test_plot_3d_image_slicer_with_connected_side_histograms():
     input_node = Node(lambda: sl.value)
     sl.observe(input_node.notify_children, names="value")
 
-    @node
-    def slice_dims(da, slices):
-        out = da
-        for dim, sl in slices.items():
-            out = out[dim, sl]
-        return out
-
-    sliced = slice_dims(a, input_node)
+    sliced = widgets.slice_dims(a, input_node)
     fig = Figure(sliced)
 
     @node

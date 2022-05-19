@@ -4,6 +4,7 @@
 from ... import DataArray
 from ...utils import value_to_string
 from ..view import View
+from ..model import node
 
 import ipywidgets as ipw
 from typing import Callable
@@ -16,9 +17,7 @@ class SliceView(View):
         self._labels = {dim: ipw.Label() for dim in dims}
 
     def _to_widget(self) -> ipw.Widget:
-        for node in self._graph_nodes.values():
-            new_values = node.request_data()
-            self.update(new_coords=new_values.meta)
+        self.render()
         return ipw.VBox(list(self._labels.values()))
 
     def update(self, new_coords):
@@ -31,6 +30,11 @@ class SliceView(View):
         node_id = message["node_id"]
         new_values = self._graph_nodes[node_id].request_data()
         self.update(new_values.meta)
+
+    def render(self):
+        for node in self._graph_nodes.values():
+            new_values = node.request_data()
+            self.update(new_coords=new_values.meta)
 
 
 class SliceWidget:
@@ -103,6 +107,7 @@ class SliceWidget:
         self.view = SliceView(self._slider_dims, *nodes)
 
 
+@node
 def slice_dims(data_array: DataArray, slices: dict) -> DataArray:
     """
     Slice the data along dimension sliders that are not disabled for all

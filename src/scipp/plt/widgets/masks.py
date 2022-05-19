@@ -3,6 +3,7 @@
 
 from ... import DataArray
 from ...typing import MetaDataMap
+from ..model import node
 
 from functools import partial
 from html import escape
@@ -92,6 +93,7 @@ class MaskWidget:
         self._callback()
 
 
+@node
 def hide_masks(data_array: DataArray, masks: MetaDataMap) -> DataArray:
     out = data_array.copy(deep=False)
     for name, value in masks.items():
