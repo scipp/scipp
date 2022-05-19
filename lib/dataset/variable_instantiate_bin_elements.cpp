@@ -19,6 +19,15 @@ INSTANTIATE_BIN_ARRAY_VARIABLE(DataArrayView, DataArray)
 
 namespace scipp::dataset {
 
+namespace {
+Variable apply_mask(const DataArray &buffer, const Variable &indices,
+                    const Dim dim, const Variable &mask) {
+  return make_bins(
+      indices, dim,
+      where(mask, Variable(buffer.data(), Dimensions{}), buffer.data()));
+}
+} // namespace
+
 class BinVariableMakerDataArray : public variable::BinVariableMaker<DataArray> {
 private:
   Variable call_make_bins(const Variable &parent, const Variable &indices,
@@ -43,6 +52,17 @@ private:
     return buffer(var).data();
   }
   Variable data(Variable &var) const override { return buffer(var).data(); }
+
+  [[nodiscard]] Variable apply_event_masks(const Variable &var) const override {
+    if (var.dtype() == dtype<bucket<dataset::DataArray>>) {
+      const auto &&[indices, dim, buffer] = var.constituents<DataArray>();
+      if (const auto mask_union = irreducible_mask(buffer.masks(), dim);
+          mask_union.is_valid()) {
+        return apply_mask(buffer, indices, dim, mask_union);
+      }
+    }
+    return var;
+  }
 };
 
 /// This is currently a dummy implemented just to make `is_bins` work.
@@ -70,6 +90,10 @@ class BinVariableMakerDataset
   }
   bool has_variances(const Variable &) const override {
     throw std::runtime_error("undefined");
+  }
+  [[nodiscard]] Variable apply_event_masks(const Variable &) const override {
+    throw except::NotImplementedError(
+        "Event masks for bins containing datasets are not supported.");
   }
 };
 

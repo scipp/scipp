@@ -42,6 +42,9 @@ public:
   virtual Variable empty_like(const Variable &prototype,
                               const std::optional<Dimensions> &shape,
                               const Variable &sizes) const = 0;
+  [[nodiscard]] virtual Variable apply_event_masks(const Variable &var) const {
+    return var;
+  }
 };
 
 SCIPP_VARIABLE_EXPORT bool is_bins(const Variable &var);
@@ -100,6 +103,7 @@ public:
   Variable empty_like(const Variable &prototype,
                       const std::optional<Dimensions> &shape,
                       const Variable &sizes = {});
+  [[nodiscard]] virtual Variable apply_event_masks(const Variable &var) const;
 
 private:
   std::map<DType, std::unique_ptr<AbstractVariableMaker>> m_makers;
