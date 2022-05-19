@@ -28,11 +28,6 @@ namespace {
 Variable apply_reduction(const Variable &var, const Dim dim,
                          void (&op)(Variable &, const Variable &),
                          const FillValue &init) {
-  if (variableFactory().has_masks(var))
-    throw except::NotImplementedError(
-        "Reduction operations for binned data with "
-        "event masks not supported yet.");
-
   auto dims = var.dims();
   dims.erase(dim);
   auto reduced = make_reduction_accumulant(var, dims, init);
@@ -109,6 +104,10 @@ template <class... Dim> Variable count(const Variable &var, Dim &&... dim) {
       return var.dims().volume() * units::none;
     else
       return ((var.dims()[dim] * units::none) * ...);
+  }
+  if (const auto masked = variableFactory().apply_event_masks(var);
+      !masked.is_same(var)) {
+    throw except::NotImplementedError("mean does not support event masks");
   }
   const auto [begin, end] = unzip(var.bin_indices());
   return sum(end - begin, dim...);

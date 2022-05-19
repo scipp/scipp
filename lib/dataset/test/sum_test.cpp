@@ -113,17 +113,24 @@ protected:
   Variable indices = makeVariable<index_pair>(
       Dims{Dim::Y}, Shape{3},
       Values{std::pair{0, 2}, std::pair{2, 2}, std::pair{2, 5}});
-  Variable data =
-      makeVariable<double>(Dims{Dim::X}, Shape{5}, units::m,
-                           Values{1, 2, 3, 4, 5}, Variances{1, 2, 3, 4, 5});
+  Variable data = makeVariable<double>(Dims{Dim::X}, Shape{5}, units::m,
+                                       Values{1, 2, 3, 4, 5});
   DataArray buffer = DataArray(data);
   Variable binned = make_bins(indices, Dim::X, buffer);
 };
 
-TEST_F(ReduceBinnedTest, masked) {
-  buffer.masks().set("mask", less(data, data));
+TEST_F(ReduceBinnedTest, sum_masked) {
+  buffer.masks().set(
+      "mask", makeVariable<bool>(Dims{Dim::X}, Shape{5},
+                                 Values{true, true, false, true, false}));
   binned = make_bins(indices, Dim::X, buffer);
-  // Event masks not supported yet in reduction ops.
-  EXPECT_THROW_DISCARD(sum(binned), except::NotImplementedError);
+  EXPECT_EQ(sum(binned), makeVariable<double>(Dims{}, units::m, Values{3 + 5}));
+}
+
+TEST_F(ReduceBinnedTest, mean_masked) {
+  buffer.masks().set(
+      "mask", makeVariable<bool>(Dims{Dim::X}, Shape{5},
+                                 Values{true, true, false, true, false}));
+  binned = make_bins(indices, Dim::X, buffer);
   EXPECT_THROW_DISCARD(mean(binned), except::NotImplementedError);
 }
