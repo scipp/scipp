@@ -30,6 +30,7 @@ class SideBar:
 class Figure(View):
 
     def __init__(self,
+                 *nodes,
                  ax: Any = None,
                  figsize: Tuple[float, ...] = None,
                  title: str = "",
@@ -41,7 +42,7 @@ class Figure(View):
                  vmax=None,
                  **kwargs):
 
-        super().__init__()
+        super().__init__(*nodes)
 
         self._fig = None
         self._closed = False
@@ -227,6 +228,7 @@ class Figure(View):
 
     def notify_view(self, message):
         node_id = message["node_id"]
+        # print(message)
         new_values = self._graph_nodes[node_id].request_data()
         self.update(new_values=new_values, key=node_id)
 

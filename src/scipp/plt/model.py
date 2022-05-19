@@ -46,27 +46,31 @@ def show_graph(node, size=None, hide_views=False):
 
 class Node:
 
-    def __init__(self, func, parents=None, views=None):
+    def __init__(self, func, *parents, **kwparents):
         self.id = str(uuid.uuid1())
         self.children = []
-        self.func = func
-        self.parents = {}
-        self.views = list(views or [])
-        if parents is not None:
-            for key, parent in parents.items():
-                parent.add_child(self)
-                self.parents[key] = parent
+        self.views = []
+        self.func = func if callable(func) else lambda: func
+        self.parents = []
+        for parent in parents:
+            parent.add_child(self)
+            self.parents.append(parent)
+        self.kwparents = {}
+        for key, parent in kwparents.items():
+            parent.add_child(self)
+            self.kwparents[key] = parent
 
     def request_data(self):
-        inputs = {key: parent.request_data() for key, parent in self.parents.items()}
-        return self.func(**inputs)
+        args = (parent.request_data() for parent in self.parents)
+        kwargs = {key: parent.request_data() for key, parent in self.kwparents.items()}
+        return self.func(*args, **kwargs)
 
     def add_child(self, child):
         self.children.append(child)
 
     def add_view(self, view):
         self.views.append(view)
-        view.add_graph_node(self)
+        # view.add_graph_node(self)
 
     def notify_children(self, message):
         self.notify_views(message)
@@ -76,3 +80,11 @@ class Node:
     def notify_views(self, message):
         for view in self.views:
             view.notify_view({"node_id": self.id, "message": message})
+
+
+def node(func, *args, **kwargs):
+
+    def make_node(*args, **kwargs):
+        return Node(func, *args, **kwargs)
+
+    return make_node

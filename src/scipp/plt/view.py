@@ -6,11 +6,14 @@ from abc import ABC, abstractmethod
 
 class View(ABC):
 
-    def __init__(self):
+    def __init__(self, *nodes):
         self._graph_nodes = {}
+        for node in nodes:
+            self._graph_nodes[node.id] = node
+            node.add_view(self)
 
-    def add_graph_node(self, node):
-        self._graph_nodes[node.id] = node
+    # def add_graph_node(self, node):
+    #     self._graph_nodes[node.id] = node
 
     @abstractmethod
     def notify_view(self, _):
