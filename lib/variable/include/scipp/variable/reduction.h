@@ -5,10 +5,10 @@
 #pragma once
 
 #include "scipp-variable_export.h"
+#include "scipp/core/flags.h"
 #include "scipp/variable/variable.h"
 
 namespace scipp::variable {
-
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable mean(const Variable &var);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable mean(const Variable &var,
                                                   const Dim dim);
@@ -57,4 +57,10 @@ SCIPP_VARIABLE_EXPORT void nanmax_into(Variable &accum, const Variable &var);
 SCIPP_VARIABLE_EXPORT void min_into(Variable &accum, const Variable &var);
 SCIPP_VARIABLE_EXPORT void nanmin_into(Variable &accum, const Variable &var);
 
+SCIPP_VARIABLE_EXPORT Variable make_reduction_accumulant(
+    const Variable &data, const Dimensions &target_dims, const FillValue &init);
+
+SCIPP_VARIABLE_EXPORT void reduce_into(Variable &accum, const Variable &var,
+                                       void (&op)(Variable &,
+                                                  const Variable &));
 } // namespace scipp::variable

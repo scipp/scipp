@@ -4,12 +4,9 @@
 /// @author Jan-Lukas Wynen
 #include "scipp/dataset/bins_reduction.h"
 
-#include "scipp/core/dtype.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/creation.h"
 #include "scipp/variable/reduction.h"
-#include "scipp/variable/util.h"
-#include "scipp/variable/variable_factory.h"
 
 #include "../variable/operations_common.h"
 #include "scipp/dataset/data_array.h"
@@ -18,47 +15,16 @@
 namespace scipp::variable {
 
 namespace {
-Variable apply_mask(const DataArray &buffer, const Variable &indices,
-                    const Dim dim, const Variable &mask) {
-  return make_bins(
-      indices, dim,
-      where(mask, Variable(buffer.data(), Dimensions{}), buffer.data()));
-}
-
-Variable dense_zeros_like(const Variable &prototype,
-                          const FillValue fill_value) {
-  const auto type = variable::variableFactory().elem_dtype(prototype);
-  const auto unit = variable::variableFactory().elem_unit(prototype);
-  Variable scalar_prototype;
-  if (variable::variableFactory().has_variances(prototype))
-    scalar_prototype = {type, prototype.dims(), unit, Values{}, Variances{}};
-  else
-    scalar_prototype = {type, prototype.dims(), unit, Values{}};
-  return special_like(scalar_prototype.broadcast(prototype.dims()), fill_value);
-}
-
 Variable reduce_bins(const Variable &data,
                      void (&op)(Variable &, const Variable &),
-                     const FillValue fill_value) {
-  auto reduced = dense_zeros_like(data, fill_value);
-  if (data.dtype() == dtype<bucket<DataArray>>) {
-    const auto &&[indices, dim, buffer] = data.constituents<DataArray>();
-    if (const auto mask_union = irreducible_mask(buffer.masks(), dim);
-        mask_union.is_valid()) {
-      op(reduced, apply_mask(buffer, indices, dim, mask_union));
-    } else {
-      op(reduced, data);
-    }
-  } else {
-    op(reduced, data);
-  }
+                     const FillValue init) {
+  auto reduced = make_reduction_accumulant(data, data.dims(), init);
+  reduce_into(reduced, data, op);
   return reduced;
 }
 } // namespace
 
 Variable bins_sum(const Variable &data) {
-  auto type = variable::variableFactory().elem_dtype(data);
-  type = type == dtype<bool> ? dtype<int64_t> : type;
   return reduce_bins(data, variable::sum_into, FillValue::ZeroNotBool);
 }
 

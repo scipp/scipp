@@ -22,30 +22,22 @@ using namespace scipp::core;
 namespace scipp::variable {
 
 namespace {
-
-Variable make_accumulant(const Variable &var, const Dim dim,
-                         const FillValue &init) {
-  if (variableFactory().has_masks(var))
-    throw except::NotImplementedError(
-        "Reduction operations for binned data with "
-        "event masks not supported yet.");
-  auto dims = var.dims();
-  dims.erase(dim);
-  auto prototype = empty(dims, variableFactory().elem_unit(var),
-                         variableFactory().elem_dtype(var),
-                         variableFactory().has_variances(var));
-  return special_like(prototype, init);
-}
-
 /// Note that masking is not supported here since it would make creation
 /// of a sensible starting value difficult. So masks must be applied
 /// before calling reduce_idempotent.
 Variable apply_reduction(const Variable &var, const Dim dim,
                          void (&op)(Variable &, const Variable &),
                          const FillValue &init) {
-  auto out = make_accumulant(var, dim, init);
-  op(out, var);
-  return out;
+  if (variableFactory().has_masks(var))
+    throw except::NotImplementedError(
+        "Reduction operations for binned data with "
+        "event masks not supported yet.");
+
+  auto dims = var.dims();
+  dims.erase(dim);
+  auto reduced = make_reduction_accumulant(var, dims, init);
+  reduce_into(reduced, var, op);
+  return reduced;
 }
 } // namespace
 
@@ -225,4 +217,21 @@ void nanmin_into(Variable &accum, const Variable &var) {
   accumulate_in_place(accum, var, core::element::nanmin_equals, "min");
 }
 
+/// Make a variable `accum` to pass to `sum_into(accum, data)`, etc.
+/// The variable is based on `data` and has the given dims.
+/// If `data` is binned, `accum` is dense with the elem dtype of `data`.
+Variable make_reduction_accumulant(const Variable &data,
+                                   const Dimensions &target_dims,
+                                   const FillValue &init) {
+  const auto type = variableFactory().elem_dtype(data);
+  const auto unit = variableFactory().elem_unit(data);
+  const auto has_variances = variableFactory().has_variances(data);
+  const auto scalar_prototype = empty(Dimensions{}, unit, type, has_variances);
+  return special_like(scalar_prototype.broadcast(target_dims), init);
+}
+
+void reduce_into(Variable &accum, const Variable &var,
+                 void (&op)(Variable &, const Variable &)) {
+  op(accum, variableFactory().apply_event_masks(var));
+}
 } // namespace scipp::variable
