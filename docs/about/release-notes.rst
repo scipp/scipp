@@ -19,7 +19,6 @@ Features
 * Added support for ``DataArray`` and ``Dataset`` in more reduction operations (e.g. :func:`scipp.max`) `#2600 <https://github.com/scipp/scipp/pull/2600>`_.
 * Added support for masks in reductions of binned data except in :func:`scipp.mean` `#2608 <https://github.com/scipp/scipp/pull/2608>`_.
 * Added more reduction operations to the ``.bins`` property (e.g. :func:`scipp.Bins.max`) `#2608 <https://github.com/scipp/scipp/pull/2608>`_.
-* Added support for ``DataArray`` and ``Dataset`` in reduction operations (e.g. :func:`scipp.max`) `#2600 <https://github.com/scipp/scipp/pull/2600>`_.
 * Reduce effect of rounding errors when converting units `#2607 <https://github.com/scipp/scipp/pull/2607>`_.
 
 Breaking changes
