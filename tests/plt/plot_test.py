@@ -51,8 +51,7 @@ def test_plot_2d_image_smoothing_slider():
     a = Node(da)
 
     sl = ipw.IntSlider(min=1, max=10)
-    sigma_node = Node(lambda: sl.value)
-    sl.observe(sigma_node.notify_children, names="value")
+    sigma_node = widgets.WidgetNode(sl)
 
     from scipy.ndimage import gaussian_filter
 
@@ -77,8 +76,7 @@ def test_plot_2d_image_with_masks():
     a = Node(da)
 
     widget = widgets.MaskWidget(da.masks)
-    w = Node(lambda: widget.value)
-    widget.observe(w.notify_children, names="value")
+    w = widgets.WidgetNode(widget)
 
     masks_node = widgets.hide_masks(a, w)
     fig = Figure(masks_node)
@@ -98,10 +96,8 @@ def test_plot_two_1d_lines_with_masks():
 
     widget_a = widgets.MaskWidget(ds['a'].masks)
     widget_b = widgets.MaskWidget(ds['b'].masks)
-    w_a = Node(lambda: widget_a.value)
-    w_b = Node(lambda: widget_b.value)
-    widget_a.observe(w_a.notify_children, names="value")
-    widget_b.observe(w_b.notify_children, names="value")
+    w_a = widgets.WidgetNode(widget_a)
+    w_b = widgets.WidgetNode(widget_b)
 
     node_masks_a = widgets.hide_masks(a, w_a)
     node_masks_b = widgets.hide_masks(b, w_b)
@@ -132,8 +128,7 @@ def test_plot_slice_3d_cube():
     da = make_dense_data_array(ndim=3)
     a = Node(da)
     sl = widgets.SliceWidget(da, ['zz'])
-    input_node = Node(lambda: sl.value)
-    sl.observe(input_node.notify_children, names="value")
+    input_node = widgets.WidgetNode(sl)
 
     slice_node = widgets.slice_dims(a, input_node)
     sl.make_view(slice_node)
@@ -148,8 +143,7 @@ def test_plot_3d_image_slicer_with_connected_side_histograms():
     da = make_dense_data_array(ndim=3)
     a = Node(da)
     sl = widgets.SliceWidget(da, ['zz'])
-    input_node = Node(lambda: sl.value)
-    sl.observe(input_node.notify_children, names="value")
+    input_node = widgets.WidgetNode(sl)
 
     sliced = widgets.slice_dims(a, input_node)
     sl.make_view(sliced)

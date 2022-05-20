@@ -6,6 +6,6 @@ from ..model import Node
 
 class WidgetNode(Node):
 
-    def __init__(self, widget, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, widget):
+        super().__init__(func=lambda: widget.value)
         widget.observe(self.notify_children, names="value")
