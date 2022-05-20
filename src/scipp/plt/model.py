@@ -1,19 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
+from ..utils.graph import make_graphviz_digraph
 from functools import partial
 import uuid
-
-
-def _make_graphviz_digraph(*args, **kwargs):
-    try:
-        from graphviz import Digraph
-    except ImportError:
-        raise RuntimeError(
-            "Failed to import `graphviz`. "
-            "Use `pip install graphviz` (requires installed `graphviz` executable) or "
-            "`conda install -c conda-forge python-graphviz`.")
-    return Digraph(*args, **kwargs)
 
 
 def _add_graph_edges(dot, node, inventory, hide_views):
@@ -37,7 +27,7 @@ def _add_graph_edges(dot, node, inventory, hide_views):
 
 
 def show_graph(node, size=None, hide_views=False):
-    dot = _make_graphviz_digraph(strict=True)
+    dot = make_graphviz_digraph(strict=True)
     dot.attr('node', shape='box', height='0.1')
     dot.attr(size=size)
     inventory = []
