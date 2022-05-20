@@ -8,7 +8,6 @@ set(INC_FILES
     include/scipp/dataset/astype.h
     include/scipp/dataset/bin.h
     include/scipp/dataset/bins.h
-    include/scipp/dataset/bins_reduction.h
     include/scipp/dataset/choose.h
     include/scipp/dataset/counts.h
     include/scipp/dataset/dataset.h
@@ -38,7 +37,6 @@ set(SRC_FILES
     bin.cpp
     bin_detail.cpp
     bins.cpp
-    bins_reduction.cpp
     counts.cpp
     data_array.cpp
     dataset.cpp

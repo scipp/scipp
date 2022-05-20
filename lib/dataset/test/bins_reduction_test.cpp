@@ -59,11 +59,11 @@ protected:
   Dimensions dims{Dim::Y, 4};
   Variable indices = makeVariable<scipp::index_pair>(
       dims, Values{std::pair{0, 2}, std::pair{2, 2}, std::pair{2, 3},
-                   std::pair{4, 6}});
+                   std::pair{3, 5}});
   Variable data = makeVariable<double>(
-      Dims{Dim::X}, Shape{6},
+      Dims{Dim::X}, Shape{5},
       Values{1.0, std::numeric_limits<double>::quiet_NaN(),
-             std::numeric_limits<double>::quiet_NaN(), 4.0, 5.0, 6.0});
+             std::numeric_limits<double>::quiet_NaN(), 4.0, 5.0});
   DataArray buffer = DataArray(data, {{Dim::X, data + data}});
   Variable binned_var = make_bins(indices, Dim::X, copy(buffer));
   DataArray binned_da{binned_var};
@@ -71,7 +71,7 @@ protected:
 
 TEST_F(DataArrayBinsNaNReductionTest, nansum) {
   EXPECT_EQ(bins_nansum(binned_da), DataArray(makeVariable<double>(
-                                        indices.dims(), Values{1, 0, 0, 11})));
+                                        indices.dims(), Values{1, 0, 0, 9})));
 }
 
 TEST_F(DataArrayBinsNaNReductionTest, nanmax) {
@@ -79,7 +79,7 @@ TEST_F(DataArrayBinsNaNReductionTest, nanmax) {
       bins_nanmax(binned_da),
       DataArray(makeVariable<double>(
           indices.dims(), Values{1.0, std::numeric_limits<double>::lowest(),
-                                 std::numeric_limits<double>::lowest(), 6.0})));
+                                 std::numeric_limits<double>::lowest(), 5.0})));
 }
 
 TEST_F(DataArrayBinsNaNReductionTest, nanmin) {
@@ -87,7 +87,17 @@ TEST_F(DataArrayBinsNaNReductionTest, nanmin) {
       bins_nanmin(binned_da),
       DataArray(makeVariable<double>(
           indices.dims(), Values{1.0, std::numeric_limits<double>::max(),
-                                 std::numeric_limits<double>::max(), 5.0})));
+                                 std::numeric_limits<double>::max(), 4.0})));
+}
+
+TEST_F(DataArrayBinsNaNReductionTest, nanmean) {
+  const auto res = bins_nanmean(binned_da);
+  EXPECT_EQ(res.slice({Dim::Y, 0}),
+            DataArray(makeVariable<double>(Dims{}, Values{1.0})));
+  EXPECT_TRUE(isnan(res.slice({Dim::Y, 1})).data().value<bool>());
+  EXPECT_TRUE(isnan(res.slice({Dim::Y, 2})).data().value<bool>());
+  EXPECT_EQ(res.slice({Dim::Y, 3}),
+            DataArray(makeVariable<double>(Dims{}, Values{4.5})));
 }
 
 class DataArrayBoolBinsReductionTest : public ::testing::Test {

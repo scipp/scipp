@@ -89,6 +89,9 @@ scipp_function(
   "unary" bins bins_mean SKIP_VARIABLE BASE_INCLUDE variable/reduction.h
 )
 scipp_function(
+  "unary" bins bins_nanmean SKIP_VARIABLE BASE_INCLUDE variable/reduction.h
+)
+scipp_function(
   "unary" bins bins_sum SKIP_VARIABLE BASE_INCLUDE variable/reduction.h
 )
 scipp_function(
