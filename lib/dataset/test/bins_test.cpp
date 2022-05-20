@@ -186,54 +186,6 @@ TEST_F(DataArrayBinsTest, operations_on_empty) {
   EXPECT_EQ(binned, binned * (2 * units::one));
 }
 
-TEST_F(DataArrayBinsTest, sum) {
-  EXPECT_EQ(bins_sum(var), makeVariable<double>(indices.dims(), Values{3, 7}));
-}
-
-TEST_F(DataArrayBinsTest, max) {
-  EXPECT_EQ(bins_max(var), makeVariable<double>(indices.dims(), Values{2, 4}));
-}
-
-TEST_F(DataArrayBinsTest, min) {
-  EXPECT_EQ(bins_min(var), makeVariable<double>(indices.dims(), Values{1, 3}));
-}
-
-class DataArrayBoolBinsTest : public ::testing::Test {
-protected:
-  Dimensions dims{Dim::Y, 3};
-  Variable indices = makeVariable<scipp::index_pair>(
-      dims, Values{std::pair{0, 2}, std::pair{2, 4}, std::pair{4, 6}});
-  Variable data = makeVariable<bool>(
-      Dims{Dim::X}, Shape{6}, Values{true, false, false, false, true, true});
-  DataArray buffer = DataArray(data);
-  Variable var = make_bins(indices, Dim::X, copy(buffer));
-};
-
-TEST_F(DataArrayBoolBinsTest, sum) {
-  EXPECT_EQ(bins_sum(var), makeVariable<int64_t>(Dimensions{Dim::Y, 3},
-                                                 Values{1, 0, 2}, units::none));
-}
-
-TEST_F(DataArrayBoolBinsTest, max) {
-  EXPECT_EQ(bins_max(var), makeVariable<bool>(Dimensions{Dim::Y, 3},
-                                              Values{true, false, true}));
-}
-
-TEST_F(DataArrayBoolBinsTest, min) {
-  EXPECT_EQ(bins_min(var), makeVariable<bool>(Dimensions{Dim::Y, 3},
-                                              Values{false, false, true}));
-}
-
-TEST_F(DataArrayBoolBinsTest, all) {
-  EXPECT_EQ(bins_all(var), makeVariable<bool>(Dimensions{Dim::Y, 3},
-                                              Values{false, false, true}));
-}
-
-TEST_F(DataArrayBoolBinsTest, any) {
-  EXPECT_EQ(bins_any(var), makeVariable<bool>(Dimensions{Dim::Y, 3},
-                                              Values{true, false, true}));
-}
-
 class DataArrayBinsMapTest : public ::testing::Test {
 protected:
   Dimensions dims{Dim::Y, 2};
