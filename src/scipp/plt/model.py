@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
+from functools import partial
 import uuid
 
 
@@ -50,7 +51,7 @@ class Node:
         self.id = str(uuid.uuid1())
         self.children = []
         self.views = []
-        self.func = func  # if callable(func) else lambda: func
+        self.func = func
         self.parents = []
         for parent in parents:
             parent.add_child(self)
@@ -82,9 +83,10 @@ class Node:
 
 
 def node(func, *args, **kwargs):
+    partialized = partial(func, *args, **kwargs)
 
     def make_node(*args, **kwargs):
-        return Node(func, *args, **kwargs)
+        return Node(partialized, *args, **kwargs)
 
     return make_node
 
