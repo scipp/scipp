@@ -20,7 +20,7 @@ class SliceView(View):
         self.render()
         return ipw.VBox(list(self._labels.values()))
 
-    def update(self, new_coords):
+    def _update(self, new_coords):
         for dim, lab in self._labels.items():
             if dim in new_coords:
                 lab.value = value_to_string(new_coords[dim].values) + str(
@@ -29,12 +29,12 @@ class SliceView(View):
     def notify_view(self, message):
         node_id = message["node_id"]
         new_values = self._graph_nodes[node_id].request_data()
-        self.update(new_values.meta)
+        self._update(new_values.meta)
 
     def render(self):
         for n in self._graph_nodes.values():
             new_values = n.request_data()
-            self.update(new_coords=new_values.meta)
+            self._update(new_coords=new_values.meta)
 
 
 class SliceWidget:
