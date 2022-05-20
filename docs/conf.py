@@ -48,6 +48,7 @@ extensions = [
     'sphinx_copybutton',
     'IPython.sphinxext.ipython_directive',
     'IPython.sphinxext.ipython_console_highlighting',
+    'matplotlib.sphinxext.plot_directive',
     'nbsphinx',
 ]
 
@@ -221,6 +222,14 @@ texinfo_documents = [
 nbsphinx_execute_arguments = [
     "--Session.metadata=scipp_docs_build=True",
 ]
+
+# -- Options for matplotlib in docstrings ---------------------------------
+
+plot_include_source = True
+plot_html_show_source_link = False
+plot_pre_code = '''import scipp as sc'''
+plot_formats = ['png']
+plot_html_show_formats = False
 
 # -- Options for doctest --------------------------------------------------
 
