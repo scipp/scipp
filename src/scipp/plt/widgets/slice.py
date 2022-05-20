@@ -45,14 +45,9 @@ class SliceWidget:
 
     def __init__(self, data_array, dims: list):
 
-        self._controls = {}
-        # The container list to hold all widgets
-        self.container = []
-        # dim_buttons: buttons to control which dimension the slider controls
-        self.dim_buttons = {}
-
+        self._container = []
         self._slider_dims = dims
-
+        self.controls = {}
         self.view = None
 
         for dim in dims:
@@ -69,11 +64,11 @@ class SliceWidget:
                                              layout={"width": "20px"})
             ipw.jslink((continuous_update, 'value'), (slider, 'continuous_update'))
 
-            self._controls[dim] = {'continuous': continuous_update, 'slider': slider}
+            self.controls[dim] = {'continuous': continuous_update, 'slider': slider}
 
         for index, dim in enumerate(self._slider_dims):
-            row = list(self._controls[dim].values())
-            self.container.append(ipw.HBox(row))
+            row = list(self.controls[dim].values())
+            self._container.append(ipw.HBox(row))
 
     def _ipython_display_(self):
         """
@@ -85,18 +80,18 @@ class SliceWidget:
         """
         Gather all widgets in a single container box.
         """
-        out = ipw.VBox(self.container)
+        out = ipw.VBox(self._container)
         if self.view is not None:
             out = ipw.HBox([out, self.view._to_widget()])
         return out
 
     def observe(self, callback: Callable, **kwargs):
-        for dim in self._controls:
-            self._controls[dim]['slider'].observe(callback, **kwargs)
+        for dim in self.controls:
+            self.controls[dim]['slider'].observe(callback, **kwargs)
 
     @property
     def value(self) -> dict:
-        return {dim: self._controls[dim]['slider'].value for dim in self._slider_dims}
+        return {dim: self.controls[dim]['slider'].value for dim in self._slider_dims}
 
     def make_view(self, *nodes):
         self.view = SliceView(self._slider_dims, *nodes)

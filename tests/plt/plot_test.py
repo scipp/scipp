@@ -2,7 +2,8 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 import scipp as sc
-from scipp.plt import Plot, Figure, widgets, Node, node
+from scipp.plt import Plot, Figure, widgets, input_node, node
+from scipp.plt.widgets import widget_node
 from ..factory import make_dense_data_array, make_dense_dataset
 import matplotlib
 import ipywidgets as ipw
@@ -10,25 +11,34 @@ import ipywidgets as ipw
 matplotlib.use('Agg')
 
 
+@node
+def hide_masks(data_array, masks):
+    out = data_array.copy(deep=False)
+    for name, value in masks.items():
+        if name in out.masks and (not value):
+            del out.masks[name]
+    return out
+
+
 def test_plot_single_1d_line():
     da = make_dense_data_array(ndim=1)
-    n = Node(da)
+    n = input_node(da)
     fig = Figure(n)
     fig.render()
 
 
 def test_plot_two_1d_lines():
     ds = make_dense_dataset(ndim=1)
-    a = Node(ds['a'])
-    b = Node(ds['b'])
+    a = input_node(ds['a'])
+    b = input_node(ds['b'])
     fig = Figure(a, b)
     fig.render()
 
 
 def test_plot_difference_of_two_1d_lines():
     ds = make_dense_dataset(ndim=1)
-    a = Node(ds['a'])
-    b = Node(ds['b'])
+    a = input_node(ds['a'])
+    b = input_node(ds['b'])
 
     @node
     def diff(x, y):
@@ -41,17 +51,17 @@ def test_plot_difference_of_two_1d_lines():
 
 def test_plot_2d_image():
     da = make_dense_data_array(ndim=2)
-    a = Node(da)
+    a = input_node(da)
     fig = Figure(a)
     fig.render()
 
 
 def test_plot_2d_image_smoothing_slider():
     da = make_dense_data_array(ndim=2)
-    a = Node(da)
+    a = input_node(da)
 
     sl = ipw.IntSlider(min=1, max=10)
-    sigma_node = widgets.WidgetNode(sl)
+    sigma_node = widget_node(sl)
 
     from scipp.ndimage import gaussian_filter
     smooth_node = node(gaussian_filter)(a, sigma=sigma_node)
@@ -67,16 +77,16 @@ def test_plot_2d_image_with_masks():
     da.masks['m1'] = da.data < sc.scalar(0.0, unit='counts')
     da.masks['m2'] = da.coords['xx'] > sc.scalar(30., unit='m')
 
-    a = Node(da)
+    a = input_node(da)
 
-    widget = widgets.MaskWidget(da.masks)
-    w = widgets.WidgetNode(widget)
+    widget = widgets.Checkboxes(da.masks.keys())
+    w = widget_node(widget)
 
-    masks_node = widgets.hide_masks(a, w)
+    masks_node = hide_masks(a, w)
     fig = Figure(masks_node)
     Plot([fig, widget])
     fig.render()
-    widget._all_masks_button.value = False
+    widget.toggle_all_button.value = False
 
 
 def test_plot_two_1d_lines_with_masks():
@@ -85,32 +95,26 @@ def test_plot_two_1d_lines_with_masks():
     ds['a'].masks['m2'] = ds['a'].data < ds['b'].data
     ds['b'].masks['m1'] = ds['b'].coords['xx'] < sc.scalar(5.0, unit='m')
 
-    a = Node(ds['a'])
-    b = Node(ds['b'])
+    a = input_node(ds['a'])
+    b = input_node(ds['b'])
 
-    widget_a = widgets.MaskWidget(ds['a'].masks)
-    widget_b = widgets.MaskWidget(ds['b'].masks)
-    w_a = widgets.WidgetNode(widget_a)
-    w_b = widgets.WidgetNode(widget_b)
+    widget = widgets.Checkboxes(list(ds['a'].masks.keys()) + list(ds['b'].masks.keys()))
+    w = widget_node(widget)
 
-    node_masks_a = widgets.hide_masks(a, w_a)
-    node_masks_b = widgets.hide_masks(b, w_b)
+    node_masks_a = hide_masks(a, w)
+    node_masks_b = hide_masks(b, w)
     fig = Figure(node_masks_a, node_masks_b)
-    Plot([fig, [widget_a, widget_b]])
+    Plot([fig, widget])
     fig.render()
-    widget_a._all_masks_button.value = False
-    widget_b._all_masks_button.value = False
+    widget.toggle_all_button.value = False
 
 
 def test_plot_node_sum_data_along_y():
     da = make_dense_data_array(ndim=2, binedges=True)
-    a = Node(da)
+    a = input_node(da)
 
-    @node
-    def sumy(da):
-        return da.sum('yy')
+    s = node(sc.sum, dim='yy')(a)
 
-    s = sumy(a)
     fig1 = Figure(a)
     fig2 = Figure(s)
     Plot([[fig1, fig2]])
@@ -120,43 +124,36 @@ def test_plot_node_sum_data_along_y():
 
 def test_plot_slice_3d_cube():
     da = make_dense_data_array(ndim=3)
-    a = Node(da)
+    a = input_node(da)
     sl = widgets.SliceWidget(da, ['zz'])
-    input_node = widgets.WidgetNode(sl)
+    w = widget_node(sl)
 
-    slice_node = widgets.slice_dims(a, input_node)
+    slice_node = widgets.slice_dims(a, w)
     sl.make_view(slice_node)
 
     fig = Figure(slice_node)
     Plot([fig, sl])
     fig.render()
-    sl._controls["zz"]["slider"].value = 10
+    sl.controls["zz"]["slider"].value = 10
 
 
 def test_plot_3d_image_slicer_with_connected_side_histograms():
     da = make_dense_data_array(ndim=3)
-    a = Node(da)
+    a = input_node(da)
     sl = widgets.SliceWidget(da, ['zz'])
-    input_node = widgets.WidgetNode(sl)
+    w = widget_node(sl)
 
-    sliced = widgets.slice_dims(a, input_node)
+    sliced = widgets.slice_dims(a, w)
     sl.make_view(sliced)
     fig = Figure(sliced)
 
-    @node
-    def sumx(da):
-        return da.sum('xx')
+    histx = node(sc.sum, dim='xx')(sliced)
+    histy = node(sc.sum, dim='yy')(sliced)
 
-    @node
-    def sumy(da):
-        return da.sum('yy')
-
-    histx = sumx(sliced)
     fx = Figure(histx)
-    histy = sumy(sliced)
     fy = Figure(histy)
     Plot([[fx, fy], fig, sl])
     fig.render()
     fx.render()
     fy.render()
-    sl._controls["zz"]["slider"].value = 10
+    sl.controls["zz"]["slider"].value = 10

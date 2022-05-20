@@ -20,29 +20,24 @@ class Checkboxes:
 
         self._callback = None
 
-        self._checkboxes = {}
+        self.checkboxes = {}
         self._lock = False
 
         for key in entries:
-            self._checkboxes[key] = ipw.Checkbox(value=True,
-                                                 description=f"{escape(key)}",
-                                                 indent=False,
-                                                 layout={"width": "initial"})
+            self.checkboxes[key] = ipw.Checkbox(value=True,
+                                                description=f"{escape(key)}",
+                                                indent=False,
+                                                layout={"width": "initial"})
 
-        if len(self._checkboxes):
+        if len(self.checkboxes):
             self._description = ipw.Label(value=description)
 
             # Add a master button to control all masks in one go
-            self._toggle_all_button = ipw.ToggleButton(value=True,
-                                                       description="De-select all",
-                                                       disabled=False,
-                                                       button_style="",
-                                                       layout={"width": "100px"})
-
-            self._box_layout = ipw.Layout(display='flex',
-                                          flex_flow='row wrap',
-                                          align_items='stretch',
-                                          width='70%')
+            self.toggle_all_button = ipw.ToggleButton(value=True,
+                                                      description="De-select all",
+                                                      disabled=False,
+                                                      button_style="",
+                                                      layout={"width": "100px"})
 
     def _ipython_display_(self):
         """
@@ -55,26 +50,25 @@ class Checkboxes:
         Gather all widgets in a single container box.
         """
         out = ipw.HBox()
-        if len(self._checkboxes):
+        if len(self.checkboxes):
             out.children = [
-                self._description, self._toggle_all_button,
-                ipw.Box(children=list(self._checkboxes.values()),
-                        layout=self._box_layout)
+                self._description, self.toggle_all_button,
+                ipw.HBox(list(self.checkboxes.values()))
             ]
         return out
 
     def observe(self, callback: Callable, **kwargs):
-        for chbx in self._checkboxes.values():
+        for chbx in self.checkboxes.values():
             chbx.observe(self._toggle, **kwargs)
-        if len(self._checkboxes):
-            self._toggle_all_button.observe(self._toggle_all, **kwargs)
+        if len(self.checkboxes):
+            self.toggle_all_button.observe(self._toggle_all, **kwargs)
         self._callback = partial(callback, None)
 
     @property
     def value(self) -> dict:
         """
         """
-        return {key: chbx.value for key, chbx in self._checkboxes.items()}
+        return {key: chbx.value for key, chbx in self.checkboxes.items()}
 
     def _toggle(self, _):
         if self._lock:
@@ -86,18 +80,9 @@ class Checkboxes:
         A main button to hide or show all masks at once.
         """
         self._lock = True
-        for key in self._checkboxes:
-            self._checkboxes[key].value = change["new"]
+        for key in self.checkboxes:
+            self.checkboxes[key].value = change["new"]
         change["owner"].description = ("De-select all"
                                        if change["new"] else "Select all")
         self._lock = False
         self._callback()
-
-
-@node
-def hide_masks(data_array: DataArray, masks: MetaDataMap) -> DataArray:
-    out = data_array.copy(deep=False)
-    for name, value in masks.items():
-        if not value:
-            del out.masks[name]
-    return out

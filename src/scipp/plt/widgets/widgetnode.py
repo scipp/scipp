@@ -4,8 +4,7 @@
 from ..model import Node
 
 
-class WidgetNode(Node):
-
-    def __init__(self, widget):
-        super().__init__(func=lambda: widget.value)
-        widget.observe(self.notify_children, names="value")
+def widget_node(widget):
+    n = Node(func=lambda: widget.value)
+    widget.observe(n.notify_children, names="value")
+    return n

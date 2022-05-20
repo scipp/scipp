@@ -6,4 +6,4 @@
 # from .masks import MaskWidget, hide_masks
 from .checkboxes import Checkboxes
 from .slice import SliceWidget, slice_dims
-from .widgetnode import WidgetNode
+from .widgetnode import widget_node
