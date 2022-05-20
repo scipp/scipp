@@ -50,7 +50,7 @@ class Node:
         self.id = str(uuid.uuid1())
         self.children = []
         self.views = []
-        self.func = func if callable(func) else lambda: func
+        self.func = func  # if callable(func) else lambda: func
         self.parents = []
         for parent in parents:
             parent.add_child(self)
@@ -87,3 +87,7 @@ def node(func, *args, **kwargs):
         return Node(func, *args, **kwargs)
 
     return make_node
+
+
+def input_node(obj):
+    return Node(lambda: obj)

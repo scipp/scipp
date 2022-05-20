@@ -53,15 +53,9 @@ def test_plot_2d_image_smoothing_slider():
     sl = ipw.IntSlider(min=1, max=10)
     sigma_node = widgets.WidgetNode(sl)
 
-    from scipy.ndimage import gaussian_filter
+    from scipp.ndimage import gaussian_filter
+    smooth_node = node(gaussian_filter)(a, sigma=sigma_node)
 
-    @node
-    def smooth(da, sigma):
-        out = da.copy()
-        out.values = gaussian_filter(da.values, sigma=sigma)
-        return out
-
-    smooth_node = smooth(a, sigma=sigma_node)
     fig = Figure(smooth_node)
     Plot([fig, sl])
     fig.render()

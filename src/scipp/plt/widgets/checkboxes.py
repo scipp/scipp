@@ -11,32 +11,33 @@ import ipywidgets as ipw
 from typing import Callable
 
 
-class MaskWidget:
+class Checkboxes:
     """
-    Widget providing buttons to hide/show masks.
+    Widget providing a list of checkboxes, along with a button to toggle them all.
     """
 
-    def __init__(self, masks: MetaDataMap, name: str = ''):
+    def __init__(self, entries: list, description=""):
 
         self._callback = None
 
         self._checkboxes = {}
         self._lock = False
-        for key, mask in masks.items():
+
+        for key in entries:
             self._checkboxes[key] = ipw.Checkbox(value=True,
                                                  description=f"{escape(key)}",
                                                  indent=False,
                                                  layout={"width": "initial"})
 
         if len(self._checkboxes):
-            self._label = ipw.Label(value=f"Masks: {name}")
+            self._description = ipw.Label(value=description)
 
             # Add a master button to control all masks in one go
-            self._all_masks_button = ipw.ToggleButton(value=True,
-                                                      description="Hide all",
-                                                      disabled=False,
-                                                      button_style="",
-                                                      layout={"width": "initial"})
+            self._toggle_all_button = ipw.ToggleButton(value=True,
+                                                       description="De-select all",
+                                                       disabled=False,
+                                                       button_style="",
+                                                       layout={"width": "100px"})
 
             self._box_layout = ipw.Layout(display='flex',
                                           flex_flow='row wrap',
@@ -56,7 +57,7 @@ class MaskWidget:
         out = ipw.HBox()
         if len(self._checkboxes):
             out.children = [
-                self._label, self._all_masks_button,
+                self._description, self._toggle_all_button,
                 ipw.Box(children=list(self._checkboxes.values()),
                         layout=self._box_layout)
             ]
@@ -64,9 +65,9 @@ class MaskWidget:
 
     def observe(self, callback: Callable, **kwargs):
         for chbx in self._checkboxes.values():
-            chbx.observe(self._toggle_mask, **kwargs)
+            chbx.observe(self._toggle, **kwargs)
         if len(self._checkboxes):
-            self._all_masks_button.observe(self._toggle_all_masks, **kwargs)
+            self._toggle_all_button.observe(self._toggle_all, **kwargs)
         self._callback = partial(callback, None)
 
     @property
@@ -75,20 +76,20 @@ class MaskWidget:
         """
         return {key: chbx.value for key, chbx in self._checkboxes.items()}
 
-    def _toggle_mask(self, _):
+    def _toggle(self, _):
         if self._lock:
             return
         self._callback()
 
-    def _toggle_all_masks(self, change: dict):
+    def _toggle_all(self, change: dict):
         """
         A main button to hide or show all masks at once.
         """
         self._lock = True
         for key in self._checkboxes:
             self._checkboxes[key].value = change["new"]
-        change["owner"].description = "Hide all" if change["new"] else \
-            "Show all"
+        change["owner"].description = ("De-select all"
+                                       if change["new"] else "Select all")
         self._lock = False
         self._callback()
 
