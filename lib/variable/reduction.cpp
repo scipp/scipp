@@ -22,35 +22,60 @@ using namespace scipp::core;
 namespace scipp::variable {
 
 namespace {
-Variable apply_reduction(const Variable &var, const Dim dim,
-                         void (&op)(Variable &, const Variable &),
-                         const FillValue &init) {
+/// Make a variable `accum` to pass to `sum_into(accum, data)`, etc.
+/// The variable is based on `data` and has the given dims.
+/// If `data` is binned, `accum` is dense with the elem dtype of `data`.
+Variable make_reduction_accumulant(const Variable &data,
+                                   const Dimensions &target_dims,
+                                   const FillValue init) {
+  const auto type = variableFactory().elem_dtype(data);
+  const auto unit = variableFactory().elem_unit(data);
+  const auto has_variances = variableFactory().has_variances(data);
+  const auto scalar_prototype = empty(Dimensions{}, unit, type, has_variances);
+  return special_like(scalar_prototype.broadcast(target_dims), init);
+}
+
+Variable reduce_to_dims(const Variable &var, const Dimensions &target_dims,
+                        void (&op)(Variable &, const Variable &),
+                        const FillValue init) {
+  auto accum = make_reduction_accumulant(var, target_dims, init);
+  op(accum, variableFactory().apply_event_masks(var));
+  return accum;
+}
+
+Variable reduce_dim(const Variable &var, const Dim dim,
+                    void (&op)(Variable &, const Variable &),
+                    const FillValue init) {
   auto dims = var.dims();
   dims.erase(dim);
-  auto reduced = make_reduction_accumulant(var, dims, init);
-  reduce_into(reduced, var, op);
-  return reduced;
+  return reduce_to_dims(var, dims, op, init);
+}
+
+Variable reduce_bins(const Variable &data,
+                     void (&op)(Variable &, const Variable &),
+                     const FillValue init) {
+  return reduce_to_dims(data, data.dims(), op, init);
 }
 } // namespace
 
 Variable sum(const Variable &var, const Dim dim) {
   // Bool DType is a bit special in that it cannot contain its sum.
   // Instead, the sum is stored in an int64_t Variable
-  return apply_reduction(var, dim, sum_into, FillValue::ZeroNotBool);
+  return reduce_dim(var, dim, sum_into, FillValue::ZeroNotBool);
 }
 
 Variable nansum(const Variable &var, const Dim dim) {
   // Bool DType is a bit special in that it cannot contain its sum.
   // Instead, the sum is stored in an int64_t Variable
-  return apply_reduction(var, dim, nansum_into, FillValue::ZeroNotBool);
+  return reduce_dim(var, dim, nansum_into, FillValue::ZeroNotBool);
 }
 
 Variable any(const Variable &var, const Dim dim) {
-  return apply_reduction(var, dim, any_into, FillValue::False);
+  return reduce_dim(var, dim, any_into, FillValue::False);
 }
 
 Variable all(const Variable &var, const Dim dim) {
-  return apply_reduction(var, dim, all_into, FillValue::True);
+  return reduce_dim(var, dim, all_into, FillValue::True);
 }
 
 /// Return the maximum along given dimension.
@@ -58,7 +83,7 @@ Variable all(const Variable &var, const Dim dim) {
 /// Variances are not considered when determining the maximum. If present, the
 /// variance of the maximum element is returned.
 Variable max(const Variable &var, const Dim dim) {
-  return apply_reduction(var, dim, max_into, FillValue::Lowest);
+  return reduce_dim(var, dim, max_into, FillValue::Lowest);
 }
 
 /// Return the maximum along given dimension ignoring NaN values.
@@ -66,7 +91,7 @@ Variable max(const Variable &var, const Dim dim) {
 /// Variances are not considered when determining the maximum. If present, the
 /// variance of the maximum element is returned.
 Variable nanmax(const Variable &var, const Dim dim) {
-  return apply_reduction(var, dim, nanmax_into, FillValue::Lowest);
+  return reduce_dim(var, dim, nanmax_into, FillValue::Lowest);
 }
 
 /// Return the minimum along given dimension.
@@ -74,7 +99,7 @@ Variable nanmax(const Variable &var, const Dim dim) {
 /// Variances are not considered when determining the minimum. If present, the
 /// variance of the minimum element is returned.
 Variable min(const Variable &var, const Dim dim) {
-  return apply_reduction(var, dim, min_into, FillValue::Max);
+  return reduce_dim(var, dim, min_into, FillValue::Max);
 }
 
 /// Return the minimum along given dimension ignorning NaN values.
@@ -82,7 +107,7 @@ Variable min(const Variable &var, const Dim dim) {
 /// Variances are not considered when determining the minimum. If present, the
 /// variance of the minimum element is returned.
 Variable nanmin(const Variable &var, const Dim dim) {
-  return apply_reduction(var, dim, nanmin_into, FillValue::Max);
+  return reduce_dim(var, dim, nanmin_into, FillValue::Max);
 }
 
 Variable mean_impl(const Variable &var, const Dim dim, const Variable &count) {
@@ -169,16 +194,6 @@ Variable nanmean(const Variable &var) {
   return normalize_impl(nansum(var), sum(isfinite(var)));
 }
 
-namespace {
-Variable reduce_bins(const Variable &data,
-                     void (&op)(Variable &, const Variable &),
-                     const FillValue init) {
-  auto reduced = make_reduction_accumulant(data, data.dims(), init);
-  reduce_into(reduced, data, op);
-  return reduced;
-}
-} // namespace
-
 /// Return the sum of all events per bin.
 Variable bins_sum(const Variable &data) {
   return reduce_bins(data, variable::sum_into, FillValue::ZeroNotBool);
@@ -261,24 +276,5 @@ void min_into(Variable &accum, const Variable &var) {
 
 void nanmin_into(Variable &accum, const Variable &var) {
   accumulate_in_place(accum, var, core::element::nanmin_equals, "min");
-}
-
-/// Make a variable `accum` to pass to `sum_into(accum, data)`, etc.
-/// The variable is based on `data` and has the given dims.
-/// If `data` is binned, `accum` is dense with the elem dtype of `data`.
-Variable make_reduction_accumulant(const Variable &data,
-                                   const Dimensions &target_dims,
-                                   const FillValue &init) {
-  const auto type = variableFactory().elem_dtype(data);
-  const auto unit = variableFactory().elem_unit(data);
-  const auto has_variances = variableFactory().has_variances(data);
-  const auto scalar_prototype = empty(Dimensions{}, unit, type, has_variances);
-  return special_like(scalar_prototype.broadcast(target_dims), init);
-}
-
-void reduce_into(Variable &accum, const Variable &var,
-                 // cppcheck-suppress constParameter
-                 void (&op)(Variable &, const Variable &)) {
-  op(accum, variableFactory().apply_event_masks(var));
 }
 } // namespace scipp::variable

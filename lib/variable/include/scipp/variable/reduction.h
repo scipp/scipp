@@ -67,11 +67,4 @@ SCIPP_VARIABLE_EXPORT void max_into(Variable &accum, const Variable &var);
 SCIPP_VARIABLE_EXPORT void nanmax_into(Variable &accum, const Variable &var);
 SCIPP_VARIABLE_EXPORT void min_into(Variable &accum, const Variable &var);
 SCIPP_VARIABLE_EXPORT void nanmin_into(Variable &accum, const Variable &var);
-
-SCIPP_VARIABLE_EXPORT Variable make_reduction_accumulant(
-    const Variable &data, const Dimensions &target_dims, const FillValue &init);
-
-SCIPP_VARIABLE_EXPORT void reduce_into(Variable &accum, const Variable &var,
-                                       void (&op)(Variable &,
-                                                  const Variable &));
 } // namespace scipp::variable
