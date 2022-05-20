@@ -5,7 +5,6 @@
 #include "scipp/dataset/bins_reduction.h"
 
 #include "scipp/variable/bins.h"
-#include "scipp/variable/creation.h"
 #include "scipp/variable/reduction.h"
 
 #include "../variable/operations_common.h"
@@ -13,44 +12,6 @@
 #include "scipp/dataset/dataset.h"
 
 namespace scipp::variable {
-
-namespace {
-Variable reduce_bins(const Variable &data,
-                     void (&op)(Variable &, const Variable &),
-                     const FillValue init) {
-  auto reduced = make_reduction_accumulant(data, data.dims(), init);
-  reduce_into(reduced, data, op);
-  return reduced;
-}
-} // namespace
-
-Variable bins_sum(const Variable &data) {
-  return reduce_bins(data, variable::sum_into, FillValue::ZeroNotBool);
-}
-
-Variable bins_max(const Variable &data) {
-  return reduce_bins(data, variable::max_into, FillValue::Lowest);
-}
-
-Variable bins_nanmax(const Variable &data) {
-  return reduce_bins(data, variable::nanmax_into, FillValue::Lowest);
-}
-
-Variable bins_min(const Variable &data) {
-  return reduce_bins(data, variable::min_into, FillValue::Max);
-}
-
-Variable bins_nanmin(const Variable &data) {
-  return reduce_bins(data, variable::nanmin_into, FillValue::Max);
-}
-
-Variable bins_all(const Variable &data) {
-  return reduce_bins(data, variable::all_into, FillValue::True);
-}
-
-Variable bins_any(const Variable &data) {
-  return reduce_bins(data, variable::any_into, FillValue::False);
-}
 
 Variable bins_mean(const Variable &data) {
   if (data.dtype() == dtype<bucket<DataArray>>) {

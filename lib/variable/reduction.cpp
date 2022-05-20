@@ -169,6 +169,51 @@ Variable nanmean(const Variable &var) {
   return normalize_impl(nansum(var), sum(isfinite(var)));
 }
 
+namespace {
+Variable reduce_bins(const Variable &data,
+                     void (&op)(Variable &, const Variable &),
+                     const FillValue init) {
+  auto reduced = make_reduction_accumulant(data, data.dims(), init);
+  reduce_into(reduced, data, op);
+  return reduced;
+}
+} // namespace
+
+/// Return the sum of all events per bin.
+Variable bins_sum(const Variable &data) {
+  return reduce_bins(data, variable::sum_into, FillValue::ZeroNotBool);
+}
+
+/// Return the maximum of all events per bin.
+Variable bins_max(const Variable &data) {
+  return reduce_bins(data, variable::max_into, FillValue::Lowest);
+}
+
+/// Return the maximum of all events per bin. Ignoring NaN values.
+Variable bins_nanmax(const Variable &data) {
+  return reduce_bins(data, variable::nanmax_into, FillValue::Lowest);
+}
+
+/// Return the minimum of all events per bin.
+Variable bins_min(const Variable &data) {
+  return reduce_bins(data, variable::min_into, FillValue::Max);
+}
+
+/// Return the minimum of all events per bin. Ignoring NaN values.
+Variable bins_nanmin(const Variable &data) {
+  return reduce_bins(data, variable::nanmin_into, FillValue::Max);
+}
+
+/// Return the logical AND of all events per bin.
+Variable bins_all(const Variable &data) {
+  return reduce_bins(data, variable::all_into, FillValue::True);
+}
+
+/// Return the logical OR of all events per bin.
+Variable bins_any(const Variable &data) {
+  return reduce_bins(data, variable::any_into, FillValue::False);
+}
+
 void sum_into(Variable &accum, const Variable &var) {
   if (accum.dtype() == dtype<float>) {
     auto x = astype(accum, dtype<double>);

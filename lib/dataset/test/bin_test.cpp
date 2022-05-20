@@ -6,7 +6,6 @@
 
 #include "scipp/dataset/bin.h"
 #include "scipp/dataset/bins.h"
-#include "scipp/dataset/bins_reduction.h"
 #include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/histogram.h"
 #include "scipp/dataset/string.h"

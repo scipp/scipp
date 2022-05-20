@@ -46,6 +46,16 @@ namespace scipp::variable {
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable nanmean(const Variable &var,
                                                      const Dim dim);
 
+// Reductions of all events within a bin.
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable bins_sum(const Variable &data);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable bins_max(const Variable &data);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable bins_nanmax(const Variable &data);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable bins_min(const Variable &data);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable bins_nanmin(const Variable &data);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable bins_all(const Variable &data);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable bins_any(const Variable &data);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable bins_mean(const Variable &data);
+
 // These reductions accumulate their results in their first argument
 // without erasing its current contents.
 SCIPP_VARIABLE_EXPORT void sum_into(Variable &accum, const Variable &var);
