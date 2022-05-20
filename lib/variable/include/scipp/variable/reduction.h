@@ -48,6 +48,7 @@ namespace scipp::variable {
 
 // Reductions of all events within a bin.
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable bins_sum(const Variable &data);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable bins_nansum(const Variable &data);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable bins_max(const Variable &data);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable bins_nanmax(const Variable &data);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable bins_min(const Variable &data);

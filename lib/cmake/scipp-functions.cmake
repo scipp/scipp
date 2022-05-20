@@ -92,6 +92,9 @@ scipp_function(
   "unary" bins bins_sum SKIP_VARIABLE BASE_INCLUDE variable/reduction.h
 )
 scipp_function(
+  "unary" bins bins_nansum SKIP_VARIABLE BASE_INCLUDE variable/reduction.h
+)
+scipp_function(
   "unary" bins bins_max SKIP_VARIABLE BASE_INCLUDE variable/reduction.h
 )
 scipp_function(

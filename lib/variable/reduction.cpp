@@ -184,6 +184,11 @@ Variable bins_sum(const Variable &data) {
   return reduce_bins(data, variable::sum_into, FillValue::ZeroNotBool);
 }
 
+/// Return the sum of all events per bin. Ignoring NaN values.
+Variable bins_nansum(const Variable &data) {
+  return reduce_bins(data, variable::nansum_into, FillValue::ZeroNotBool);
+}
+
 /// Return the maximum of all events per bin.
 Variable bins_max(const Variable &data) {
   return reduce_bins(data, variable::max_into, FillValue::Lowest);
