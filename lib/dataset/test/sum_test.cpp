@@ -4,11 +4,8 @@
 #include <limits>
 #include <vector>
 
-#include "test_macros.h"
-
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/sum.h"
-#include "scipp/variable/comparison.h"
 #include "scipp/variable/reduction.h"
 
 using namespace scipp;
@@ -132,5 +129,6 @@ TEST_F(ReduceBinnedTest, mean_masked) {
       "mask", makeVariable<bool>(Dims{Dim::X}, Shape{5},
                                  Values{true, true, false, true, false}));
   binned = make_bins(indices, Dim::X, buffer);
-  EXPECT_THROW_DISCARD(mean(binned), except::NotImplementedError);
+  EXPECT_EQ(mean(binned),
+            makeVariable<double>(Dims{}, units::m, Values{(3.0 + 5.0) / 2}));
 }

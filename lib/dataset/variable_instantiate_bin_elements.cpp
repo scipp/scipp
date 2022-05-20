@@ -55,14 +55,21 @@ private:
 
   [[nodiscard]] Variable
   apply_event_masks(const Variable &var, const FillValue fill) const override {
-    if (var.dtype() == dtype<bucket<dataset::DataArray>>) {
+    if (const auto mask_union = irreducible_event_mask(var);
+        mask_union.is_valid()) {
       const auto &&[indices, dim, buffer] = var.constituents<DataArray>();
-      if (const auto mask_union = irreducible_mask(buffer.masks(), dim);
-          mask_union.is_valid()) {
-        return apply_mask(buffer, indices, dim, mask_union, fill);
-      }
+      return apply_mask(buffer, indices, dim, mask_union, fill);
     }
     return var;
+  }
+
+  [[nodiscard]] Variable
+  irreducible_event_mask(const Variable &var) const override {
+    if (var.dtype() == dtype<bucket<DataArray>>) {
+      const auto &&[indices, dim, buffer] = var.constituents<DataArray>();
+      return irreducible_mask(buffer.masks(), dim);
+    }
+    return Variable{};
   }
 };
 
@@ -94,6 +101,11 @@ class BinVariableMakerDataset
   }
   [[nodiscard]] Variable apply_event_masks(const Variable &,
                                            const FillValue) const override {
+    throw except::NotImplementedError(
+        "Event masks for bins containing datasets are not supported.");
+  }
+  [[nodiscard]] Variable
+  irreducible_event_mask(const Variable &) const override {
     throw except::NotImplementedError(
         "Event masks for bins containing datasets are not supported.");
   }

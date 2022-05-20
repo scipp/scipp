@@ -10,6 +10,7 @@
 #include "scipp/variable/accumulate.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/astype.h"
+#include "scipp/variable/bins.h"
 #include "scipp/variable/creation.h"
 #include "scipp/variable/special_values.h"
 #include "scipp/variable/util.h"
@@ -127,10 +128,13 @@ template <class... Dim> Variable count(const Variable &var, Dim &&... dim) {
     else
       return ((var.dims()[dim] * units::none) * ...);
   }
-  if (const auto masked =
-          variableFactory().apply_event_masks(var, FillValue::Default);
-      !masked.is_same(var)) {
-    throw except::NotImplementedError("mean does not support event masks");
+  if (const auto mask = variableFactory().irreducible_event_mask(var);
+      mask.is_valid()) {
+    // Trick to get the sizes of bins if masks are present - bin the masks
+    // using the same dimension & indices as the data, and then sum the
+    // inverse of the mask to get the number of unmasked entries.
+    return sum(make_bins_no_validate(var.bin_indices(),
+                                     variableFactory().elem_dim(var), ~mask));
   }
   const auto [begin, end] = unzip(var.bin_indices());
   return sum(end - begin, dim...);

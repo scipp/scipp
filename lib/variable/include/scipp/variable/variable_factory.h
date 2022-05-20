@@ -48,6 +48,11 @@ public:
                                                    const FillValue) const {
     return var;
   }
+
+  [[nodiscard]] virtual Variable irreducible_event_mask([
+      [maybe_unused]] const Variable &var) const {
+    return Variable{};
+  }
 };
 
 SCIPP_VARIABLE_EXPORT bool is_bins(const Variable &var);
@@ -106,8 +111,9 @@ public:
   Variable empty_like(const Variable &prototype,
                       const std::optional<Dimensions> &shape,
                       const Variable &sizes = {});
-  [[nodiscard]] virtual Variable apply_event_masks(const Variable &var,
-                                                   const FillValue fill) const;
+  [[nodiscard]] Variable apply_event_masks(const Variable &var,
+                                           const FillValue fill) const;
+  [[nodiscard]] Variable irreducible_event_mask(const Variable &var) const;
 
 private:
   std::map<DType, std::unique_ptr<AbstractVariableMaker>> m_makers;

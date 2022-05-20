@@ -81,6 +81,10 @@ Variable VariableFactory::apply_event_masks(const Variable &var,
   return m_makers.at(var.dtype())->apply_event_masks(var, fill);
 }
 
+Variable VariableFactory::irreducible_event_mask(const Variable &var) const {
+  return m_makers.at(var.dtype())->irreducible_event_mask(var);
+}
+
 VariableFactory &variableFactory() {
   static VariableFactory factory;
   return factory;
