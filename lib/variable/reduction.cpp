@@ -22,9 +22,6 @@ using namespace scipp::core;
 namespace scipp::variable {
 
 namespace {
-/// Note that masking is not supported here since it would make creation
-/// of a sensible starting value difficult. So masks must be applied
-/// before calling reduce_idempotent.
 Variable apply_reduction(const Variable &var, const Dim dim,
                          void (&op)(Variable &, const Variable &),
                          const FillValue &init) {
