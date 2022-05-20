@@ -36,7 +36,7 @@ Variable make_reduction_accumulant(const Variable &data,
 }
 
 Variable reduce_to_dims(const Variable &var, const Dimensions &target_dims,
-                        void (&op)(Variable &, const Variable &),
+                        void (*const op)(Variable &, const Variable &),
                         const FillValue init) {
   auto accum = make_reduction_accumulant(var, target_dims, init);
   op(accum, variableFactory().apply_event_masks(var, init));
@@ -44,7 +44,7 @@ Variable reduce_to_dims(const Variable &var, const Dimensions &target_dims,
 }
 
 Variable reduce_dim(const Variable &var, const Dim dim,
-                    void (&op)(Variable &, const Variable &),
+                    void (*const op)(Variable &, const Variable &),
                     const FillValue init) {
   auto dims = var.dims();
   dims.erase(dim);
@@ -52,7 +52,7 @@ Variable reduce_dim(const Variable &var, const Dim dim,
 }
 
 Variable reduce_bins(const Variable &data,
-                     void (&op)(Variable &, const Variable &),
+                     void (*const op)(Variable &, const Variable &),
                      const FillValue init) {
   return reduce_to_dims(data, data.dims(), op, init);
 }
