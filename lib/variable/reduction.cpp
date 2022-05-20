@@ -39,7 +39,7 @@ Variable reduce_to_dims(const Variable &var, const Dimensions &target_dims,
                         void (&op)(Variable &, const Variable &),
                         const FillValue init) {
   auto accum = make_reduction_accumulant(var, target_dims, init);
-  op(accum, variableFactory().apply_event_masks(var));
+  op(accum, variableFactory().apply_event_masks(var, init));
   return accum;
 }
 
@@ -127,7 +127,8 @@ template <class... Dim> Variable count(const Variable &var, Dim &&... dim) {
     else
       return ((var.dims()[dim] * units::none) * ...);
   }
-  if (const auto masked = variableFactory().apply_event_masks(var);
+  if (const auto masked =
+          variableFactory().apply_event_masks(var, FillValue::Default);
       !masked.is_same(var)) {
     throw except::NotImplementedError("mean does not support event masks");
   }

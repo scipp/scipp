@@ -6,6 +6,8 @@
 
 #include <functional>
 
+#include "scipp/core/flags.h"
+
 #include "scipp/variable/variable.h"
 
 namespace scipp::variable {
@@ -42,7 +44,8 @@ public:
   virtual Variable empty_like(const Variable &prototype,
                               const std::optional<Dimensions> &shape,
                               const Variable &sizes) const = 0;
-  [[nodiscard]] virtual Variable apply_event_masks(const Variable &var) const {
+  [[nodiscard]] virtual Variable apply_event_masks(const Variable &var,
+                                                   const FillValue) const {
     return var;
   }
 };
@@ -103,7 +106,8 @@ public:
   Variable empty_like(const Variable &prototype,
                       const std::optional<Dimensions> &shape,
                       const Variable &sizes = {});
-  [[nodiscard]] virtual Variable apply_event_masks(const Variable &var) const;
+  [[nodiscard]] virtual Variable apply_event_masks(const Variable &var,
+                                                   const FillValue fill) const;
 
 private:
   std::map<DType, std::unique_ptr<AbstractVariableMaker>> m_makers;

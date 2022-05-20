@@ -76,8 +76,9 @@ Variable VariableFactory::empty_like(const Variable &prototype,
   return m_makers.at(prototype.dtype())->empty_like(prototype, shape, sizes);
 }
 
-Variable VariableFactory::apply_event_masks(const Variable &var) const {
-  return m_makers.at(var.dtype())->apply_event_masks(var);
+Variable VariableFactory::apply_event_masks(const Variable &var,
+                                            const FillValue fill) const {
+  return m_makers.at(var.dtype())->apply_event_masks(var, fill);
 }
 
 VariableFactory &variableFactory() {

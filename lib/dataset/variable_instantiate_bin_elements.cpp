@@ -4,7 +4,6 @@
 /// @author Simon Heybrock
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
-#include "scipp/dataset/shape.h"
 #include "scipp/dataset/string.h"
 #include "scipp/variable/bin_array_variable.tcc"
 #include "scipp/variable/bins.h"
@@ -21,10 +20,11 @@ namespace scipp::dataset {
 
 namespace {
 Variable apply_mask(const DataArray &buffer, const Variable &indices,
-                    const Dim dim, const Variable &mask) {
+                    const Dim dim, const Variable &mask, const FillValue fill) {
   return make_bins(
       indices, dim,
-      where(mask, Variable(buffer.data(), Dimensions{}), buffer.data()));
+      where(mask, special_like(Variable(buffer.data(), Dimensions{}), fill),
+            buffer.data()));
 }
 } // namespace
 
@@ -53,12 +53,13 @@ private:
   }
   Variable data(Variable &var) const override { return buffer(var).data(); }
 
-  [[nodiscard]] Variable apply_event_masks(const Variable &var) const override {
+  [[nodiscard]] Variable
+  apply_event_masks(const Variable &var, const FillValue fill) const override {
     if (var.dtype() == dtype<bucket<dataset::DataArray>>) {
       const auto &&[indices, dim, buffer] = var.constituents<DataArray>();
       if (const auto mask_union = irreducible_mask(buffer.masks(), dim);
           mask_union.is_valid()) {
-        return apply_mask(buffer, indices, dim, mask_union);
+        return apply_mask(buffer, indices, dim, mask_union, fill);
       }
     }
     return var;
@@ -91,7 +92,8 @@ class BinVariableMakerDataset
   bool has_variances(const Variable &) const override {
     throw std::runtime_error("undefined");
   }
-  [[nodiscard]] Variable apply_event_masks(const Variable &) const override {
+  [[nodiscard]] Variable apply_event_masks(const Variable &,
+                                           const FillValue) const override {
     throw except::NotImplementedError(
         "Event masks for bins containing datasets are not supported.");
   }
