@@ -48,10 +48,12 @@ def show_graph(node, size=None, hide_views=False):
 class Node:
 
     def __init__(self, func, *parents, **kwparents):
+        if not callable(func):
+            raise ValueError("A node can only be created using a callable func.")
+        self.func = func
         self.id = str(uuid.uuid1())
         self.children = []
         self.views = []
-        self.func = func
         self.parents = []
         for parent in parents:
             parent.add_child(self)
