@@ -2,6 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from ..utils.graph import make_graphviz_digraph
+from itertools import chain
 from functools import partial
 import uuid
 
@@ -44,14 +45,10 @@ class Node:
         self.id = str(uuid.uuid1())
         self.children = []
         self.views = []
-        self.parents = []
-        for parent in parents:
+        self.parents = list(parents)
+        self.kwparents = dict(kwparents)
+        for parent in chain(self.parents, self.kwparents.values()):
             parent.add_child(self)
-            self.parents.append(parent)
-        self.kwparents = {}
-        for key, parent in kwparents.items():
-            parent.add_child(self)
-            self.kwparents[key] = parent
 
     def request_data(self):
         args = (parent.request_data() for parent in self.parents)
