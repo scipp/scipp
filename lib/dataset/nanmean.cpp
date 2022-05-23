@@ -38,10 +38,12 @@ Dataset nanmean(const Dataset &d, const Dim dim) {
 Dataset nanmean(const Dataset &d) {
   return apply_to_items(d, [](auto &&... _) { return nanmean(_...); });
 }
+} // namespace scipp::dataset
 
+namespace scipp::variable {
 namespace {
 Variable bin_sizes_without_mask_and_nan(const Variable &data) {
-  const auto finite = isfinite(bins_view<DataArray>(data).data());
+  const auto finite = isfinite(dataset::bins_view<DataArray>(data).data());
   if (const auto mask_union =
           variable::variableFactory().irreducible_event_mask(data);
       mask_union.is_valid()) {
@@ -60,4 +62,4 @@ Variable bins_nanmean(const Variable &data) {
                         bin_sizes_without_mask_and_nan(data));
 }
 
-} // namespace scipp::dataset
+} // namespace scipp::variable
