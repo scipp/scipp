@@ -4,8 +4,8 @@
 /// @author Jan-Lukas Wynen
 #include "pybind11.h"
 
-#include "scipp/dataset/nanmean.h"
 #include "scipp/dataset/bins_nanmean.h"
+#include "scipp/dataset/nanmean.h"
 #include "scipp/variable/reduction.h"
 
 using namespace scipp;
