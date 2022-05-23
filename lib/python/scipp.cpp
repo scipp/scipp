@@ -20,7 +20,6 @@ void init_groupby(py::module &);
 void init_geometry(py::module &);
 void init_histogram(py::module &);
 void init_operations(py::module &);
-void init_reduction(py::module &);
 void init_shape(py::module &);
 void init_trigonometry(py::module &);
 void init_unary(py::module &);
@@ -55,7 +54,6 @@ void init_core(py::module &m) {
   init_groupby(core);
   init_comparison(core);
   init_operations(core);
-  init_reduction(core);
   init_shape(core);
   init_geometry(core);
   init_histogram(core);

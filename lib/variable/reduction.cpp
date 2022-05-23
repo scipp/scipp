@@ -268,6 +268,11 @@ Variable bins_mean(const Variable &data) {
   return normalize_impl(bins_sum(data), bin_sizes_without_mask(data));
 }
 
+/// Return the mean of all events per bin. Ignoring NaN values.
+Variable bins_nanmean(const Variable &data) {
+  return normalize_impl(bins_nansum(data), bins_sum(isfinite(data)));
+}
+
 void sum_into(Variable &accum, const Variable &var) {
   if (accum.dtype() == dtype<float>) {
     auto x = astype(accum, dtype<double>);

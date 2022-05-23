@@ -25,7 +25,6 @@ python_add_library(
   histogram.cpp
   numpy.cpp
   operations.cpp
-  reduction.cpp
   py_object.cpp
   scipp.cpp
   trigonometry.cpp

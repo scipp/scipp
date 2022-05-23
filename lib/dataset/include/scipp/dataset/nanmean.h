@@ -19,10 +19,3 @@ SCIPP_DATASET_EXPORT Dataset nanmean(const Dataset &d, const Dim dim);
 SCIPP_DATASET_EXPORT Dataset nanmean(const Dataset &d);
 
 } // namespace scipp::dataset
-
-// This function is defined in scipp::variable for ADL and because the other
-// bins_* reductions are in libvariable. But the implementation of
-// bins_nanmean requires components of libdataset.
-namespace scipp::variable {
-SCIPP_DATASET_EXPORT Variable bins_nanmean(const Variable &data);
-}
