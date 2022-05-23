@@ -8,22 +8,27 @@ import uuid
 
 
 def _add_graph_edges(dot, node, inventory, hide_views):
-    name = str(node.func)
+    name = node.id
     inventory.append(name)
+    dot.node(name, label=node.label)
     for child in node.children:
-        key = str(child.func)
+        key = child.id
         if key not in inventory:
             dot.edge(name, key)
             _add_graph_edges(dot, child, inventory, hide_views)
     for parent in node.parents + list(node.kwparents.values()):
-        key = str(parent.func)
+        key = parent.id
         if key not in inventory:
             dot.edge(key, name)
             _add_graph_edges(dot, parent, inventory, hide_views)
     if not hide_views:
         for view in node.views:
-            key = str(view)
-            dot.node(key, shape='ellipse', style='filled', color='lightgrey')
+            key = view.id
+            dot.node(key,
+                     label=view.__class__.__name__,
+                     shape='ellipse',
+                     style='filled',
+                     color='lightgrey')
             dot.edge(name, key)
 
 
@@ -37,12 +42,12 @@ def show_graph(node, size=None, hide_views=False):
 
 
 class Node:
-
     def __init__(self, func, *parents, **kwparents):
         if not callable(func):
             raise ValueError("A node can only be created using a callable func.")
         self.func = func
         self.id = str(uuid.uuid1())
+        self.label = f"Node: {func}"
         self.children = []
         self.views = []
         self.parents = list(parents)
@@ -75,10 +80,18 @@ def node(func, *args, **kwargs):
     partialized = partial(func, *args, **kwargs)
 
     def make_node(*args, **kwargs):
-        return Node(partialized, *args, **kwargs)
+        out = Node(partialized, *args, **kwargs)
+        out.label = f"Node: {out.func.func.__name__}"
+        if out.func.args:
+            out.label += f", {out.func.args}"
+        if out.func.keywords:
+            out.label += f", {out.func.keywords}"
+        return out
 
     return make_node
 
 
 def input_node(obj):
-    return Node(lambda: obj)
+    out = Node(lambda: obj)
+    out.label = f"Input Node: {obj.__class__.__name__}"
+    return out
