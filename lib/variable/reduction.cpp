@@ -134,7 +134,8 @@ template <class... Dim> Variable count(const Variable &var, Dim &&... dim) {
     // using the same dimension & indices as the data, and then sum the
     // inverse of the mask to get the number of unmasked entries.
     return sum(make_bins_no_validate(var.bin_indices(),
-                                     variableFactory().elem_dim(var), ~mask));
+                                     variableFactory().elem_dim(var), ~mask),
+               dim...);
   }
   const auto [begin, end] = unzip(var.bin_indices());
   return sum(end - begin, dim...);
