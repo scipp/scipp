@@ -18,4 +18,6 @@ SCIPP_DATASET_EXPORT DataArray nanmean(const DataArray &a);
 SCIPP_DATASET_EXPORT Dataset nanmean(const Dataset &d, const Dim dim);
 SCIPP_DATASET_EXPORT Dataset nanmean(const Dataset &d);
 
+SCIPP_DATASET_EXPORT Variable bins_nanmean(const Variable &data);
+
 } // namespace scipp::dataset

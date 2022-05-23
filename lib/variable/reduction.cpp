@@ -240,33 +240,19 @@ Variable bins_any(const Variable &data) {
 }
 
 namespace {
-Variable
-unmasked_bins_sizes(const Variable &data,
-                    Variable (*const masked_reduction)(const Variable &),
-                    Variable (*const unmasked_reduction)(const Variable &)) {
+Variable bin_sizes_without_mask(const Variable &data) {
   if (const auto mask_union = variableFactory().irreducible_event_mask(data);
       mask_union.is_valid()) {
-    return masked_reduction(make_bins_no_validate(
+    return bins_sum(make_bins_no_validate(
         data.bin_indices(), variableFactory().elem_dim(data), ~mask_union));
   }
-  return unmasked_reduction(data);
+  return bin_sizes(data);
 }
 } // namespace
 
 /// Return the mean of all events per bin.
 Variable bins_mean(const Variable &data) {
-  return normalize_impl(bins_sum(data),
-                        unmasked_bins_sizes(data, bins_sum, bin_sizes));
-}
-
-/// Return the mean of all events per bin. Ignoring NaN values.
-Variable bins_nanmean(const Variable &data) {
-  const auto unmasked_reduction = [](const Variable &v) {
-    return bins_sum(isfinite(v));
-  };
-  return normalize_impl(
-      bins_nansum(data),
-      unmasked_bins_sizes(data, bins_nansum, unmasked_reduction));
+  return normalize_impl(bins_sum(data), bin_sizes_without_mask(data));
 }
 
 void sum_into(Variable &accum, const Variable &var) {

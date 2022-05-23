@@ -56,7 +56,6 @@ namespace scipp::variable {
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable bins_all(const Variable &data);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable bins_any(const Variable &data);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable bins_mean(const Variable &data);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable bins_nanmean(const Variable &data);
 
 // These reductions accumulate their results in their first argument
 // without erasing its current contents.

@@ -184,3 +184,49 @@ TEST_F(DataArrayBinsMaskedReductionTest, mean) {
   EXPECT_TRUE(isnan(res.slice({Dim::Y, 1})).data().value<bool>());
   EXPECT_TRUE(isnan(res.slice({Dim::Y, 2})).data().value<bool>());
 }
+
+class DataArrayBinsMaskedNaNReductionTest : public ::testing::Test {
+protected:
+  Dimensions dims{Dim::Y, 3};
+  Variable indices = makeVariable<scipp::index_pair>(
+      dims, Values{std::pair{0, 2}, std::pair{2, 3}, std::pair{3, 7}});
+  Variable data = makeVariable<double>(
+      Dims{Dim::X}, Shape{7},
+      Values{std::numeric_limits<double>::quiet_NaN(), 2.0,
+             std::numeric_limits<double>::quiet_NaN(), 4.0, 5.0,
+             std::numeric_limits<double>::quiet_NaN(), 7.0});
+  Variable mask =
+      makeVariable<bool>(Dims{Dim::X}, Shape{7},
+                         Values{true, false, false, true, false, false, false});
+  DataArray buffer = DataArray(data, {{Dim::X, data + data}}, {{"m", mask}});
+  Variable binned_var = make_bins(indices, Dim::X, copy(buffer));
+  DataArray binned_da{binned_var};
+};
+
+TEST_F(DataArrayBinsMaskedNaNReductionTest, nansum) {
+  EXPECT_EQ(bins_nansum(binned_da),
+            DataArray(makeVariable<double>(indices.dims(), Values{2, 0, 12})));
+}
+
+TEST_F(DataArrayBinsMaskedNaNReductionTest, nanmax) {
+  EXPECT_EQ(bins_nanmax(binned_da),
+            DataArray(makeVariable<double>(
+                indices.dims(),
+                Values{2.0, std::numeric_limits<double>::lowest(), 7.0})));
+}
+
+TEST_F(DataArrayBinsMaskedNaNReductionTest, nanmin) {
+  EXPECT_EQ(bins_nanmin(binned_da),
+            DataArray(makeVariable<double>(
+                indices.dims(),
+                Values{2.0, std::numeric_limits<double>::max(), 5.0})));
+}
+
+TEST_F(DataArrayBinsMaskedNaNReductionTest, nanmean) {
+  const auto res = bins_nanmean(binned_da);
+  EXPECT_EQ(res.slice({Dim::Y, 0}),
+            DataArray(makeVariable<double>(Dims{}, Values{2})));
+  EXPECT_TRUE(isnan(res.slice({Dim::Y, 1})).data().value<bool>());
+  EXPECT_EQ(res.slice({Dim::Y, 2}),
+            DataArray(makeVariable<double>(Dims{}, Values{6})));
+}
