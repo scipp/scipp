@@ -65,11 +65,8 @@ private:
 
   [[nodiscard]] Variable
   irreducible_event_mask(const Variable &var) const override {
-    if (var.dtype() == dtype<bucket<DataArray>>) {
-      const auto &&[indices, dim, buffer] = var.constituents<DataArray>();
-      return irreducible_mask(buffer.masks(), dim);
-    }
-    return Variable{};
+    const auto &&[indices, dim, buffer] = var.constituents<DataArray>();
+    return irreducible_mask(buffer.masks(), dim);
   }
 };
 
