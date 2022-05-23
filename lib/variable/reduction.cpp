@@ -121,6 +121,18 @@ Variable nanmean_impl(const Variable &var, const Dim dim,
 }
 
 namespace {
+Variable binned_irreducible_mask(const Variable &data) {
+  if (const auto mask_union = variableFactory().irreducible_event_mask(data);
+      mask_union.is_valid()) {
+    // Trick to get the sizes of bins if masks are present - bin the masks
+    // using the same dimension & indices as the data, and then sum the
+    // inverse of the mask to get the number of unmasked entries.
+    return make_bins_no_validate(data.bin_indices(),
+                                 variableFactory().elem_dim(data), ~mask_union);
+  }
+  return {};
+}
+
 template <class... Dim> Variable count(const Variable &var, Dim &&... dim) {
   if (!is_bins(var)) {
     if constexpr (sizeof...(dim) == 0)
@@ -128,14 +140,9 @@ template <class... Dim> Variable count(const Variable &var, Dim &&... dim) {
     else
       return ((var.dims()[dim] * units::none) * ...);
   }
-  if (const auto mask = variableFactory().irreducible_event_mask(var);
-      mask.is_valid()) {
-    // Trick to get the sizes of bins if masks are present - bin the masks
-    // using the same dimension & indices as the data, and then sum the
-    // inverse of the mask to get the number of unmasked entries.
-    return sum(make_bins_no_validate(var.bin_indices(),
-                                     variableFactory().elem_dim(var), ~mask),
-               dim...);
+  if (const auto binned_mask = binned_irreducible_mask(var);
+      binned_mask.is_valid()) {
+    return sum(binned_mask, dim...);
   }
   const auto [begin, end] = unzip(var.bin_indices());
   return sum(end - begin, dim...);
@@ -242,10 +249,9 @@ Variable bins_any(const Variable &data) {
 
 namespace {
 Variable bin_sizes_without_mask(const Variable &data) {
-  if (const auto mask_union = variableFactory().irreducible_event_mask(data);
-      mask_union.is_valid()) {
-    return bins_sum(make_bins_no_validate(
-        data.bin_indices(), variableFactory().elem_dim(data), ~mask_union));
+  if (const auto binned_mask = binned_irreducible_mask(data);
+      binned_mask.is_valid()) {
+    return bins_sum(binned_mask);
   }
   return bin_sizes(data);
 }
