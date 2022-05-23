@@ -40,7 +40,13 @@ Variable reduce_to_dims(const Variable &var, const Dimensions &target_dims,
                         void (*const op)(Variable &, const Variable &),
                         const FillValue init) {
   auto accum = make_reduction_accumulant(var, target_dims, init);
-  op(accum, variableFactory().apply_event_masks(var, init));
+  // FillValue::ZeroNotBool is not allowed here because it produces a different
+  // dtype from var (if var has dtype bool). ZeroNotBool and Default are
+  // semantically equivalent apart from the dtype change. So it can be
+  // substituted here.
+  op(accum,
+     variableFactory().apply_event_masks(
+         var, (init == FillValue::ZeroNotBool) ? FillValue::Default : init));
   return accum;
 }
 

@@ -129,6 +129,16 @@ TEST_F(ReduceBinnedTest, sum_masked) {
   EXPECT_EQ(sum(binned), makeVariable<double>(Dims{}, units::m, Values{3 + 5}));
 }
 
+TEST_F(ReduceBinnedTest, sum_masked_bool) {
+  buffer.masks().set(
+      "mask", makeVariable<bool>(Dims{Dim::Event}, Shape{5},
+                                 Values{true, true, false, true, false}));
+  buffer.setData(makeVariable<bool>(Dims{Dim::Event}, Shape{5},
+                                    Values{false, true, true, false, true}));
+  binned = make_bins(indices, Dim::Event, buffer);
+  EXPECT_EQ(sum(binned), makeVariable<int64_t>(Dims{}, units::none, Values{2}));
+}
+
 TEST_F(ReduceBinnedTest, mean) {
   EXPECT_EQ(mean(binned),
             makeVariable<double>(Dims{}, units::m, Values{(15.0) / 5}));
