@@ -5,6 +5,7 @@
 #pragma once
 
 #include "scipp-variable_export.h"
+#include "scipp/core/flags.h"
 #include "scipp/variable/variable.h"
 
 namespace scipp::variable {

@@ -23,23 +23,10 @@ using namespace scipp::core;
 namespace scipp::variable {
 
 namespace {
-/// Make a variable `accum` to pass to `sum_into(accum, data)`, etc.
-/// The variable is based on `data` and has the given dims.
-/// If `data` is binned, `accum` is dense with the elem dtype of `data`.
-Variable make_reduction_accumulant(const Variable &data,
-                                   const Dimensions &target_dims,
-                                   const FillValue init) {
-  const auto type = variableFactory().elem_dtype(data);
-  const auto unit = variableFactory().elem_unit(data);
-  const auto has_variances = variableFactory().has_variances(data);
-  const auto scalar_prototype = empty(Dimensions{}, unit, type, has_variances);
-  return special_like(scalar_prototype.broadcast(target_dims), init);
-}
-
 Variable reduce_to_dims(const Variable &var, const Dimensions &target_dims,
                         void (*const op)(Variable &, const Variable &),
                         const FillValue init) {
-  auto accum = make_reduction_accumulant(var, target_dims, init);
+  auto accum = dense_special_like(var, target_dims, init);
   // FillValue::ZeroNotBool is not allowed here because it produces a different
   // dtype from var (if var has dtype bool). ZeroNotBool and Default are
   // semantically equivalent apart from the dtype change. So it can be
