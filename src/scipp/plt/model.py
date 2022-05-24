@@ -2,6 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from ..utils.graph import make_graphviz_digraph
+from html import escape
 from itertools import chain
 from functools import partial
 import uuid
@@ -10,7 +11,7 @@ import uuid
 def _add_graph_edges(dot, node, inventory, hide_views):
     name = node.id
     inventory.append(name)
-    dot.node(name, label=node.label)
+    dot.node(name, label=escape(str(node.func)))
     for child in node.children:
         key = child.id
         if key not in inventory:
@@ -42,13 +43,11 @@ def show_graph(node, size=None, hide_views=False):
 
 
 class Node:
-
     def __init__(self, func, *parents, **kwparents):
         if not callable(func):
             raise ValueError("A node can only be created using a callable func.")
         self.func = func
         self.id = str(uuid.uuid1())
-        self.label = f"Node: {func}"
         self.children = []
         self.views = []
         self.parents = list(parents)
@@ -81,18 +80,10 @@ def node(func, *args, **kwargs):
     partialized = partial(func, *args, **kwargs)
 
     def make_node(*args, **kwargs):
-        out = Node(partialized, *args, **kwargs)
-        out.label = f"Node: {out.func.func.__name__}"
-        if out.func.args:
-            out.label += f", {out.func.args}"
-        if out.func.keywords:
-            out.label += f", {out.func.keywords}"
-        return out
+        return Node(partialized, *args, **kwargs)
 
     return make_node
 
 
 def input_node(obj):
-    out = Node(lambda: obj)
-    out.label = f"Input Node: {obj.__class__.__name__}"
-    return out
+    return Node(lambda: obj)
