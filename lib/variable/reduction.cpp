@@ -127,7 +127,7 @@ Variable nanmean_impl(const Variable &var, const Dim dim,
 }
 
 namespace {
-Variable binned_irreducible_mask(const Variable &data) {
+Variable unmasked_events(const Variable &data) {
   if (const auto mask_union = variableFactory().irreducible_event_mask(data);
       mask_union.is_valid()) {
     // Trick to get the sizes of bins if masks are present - bin the masks
@@ -146,12 +146,18 @@ template <class... Dim> Variable count(const Variable &var, Dim &&... dim) {
     else
       return ((var.dims()[dim] * units::none) * ...);
   }
-  if (const auto binned_mask = binned_irreducible_mask(var);
-      binned_mask.is_valid()) {
-    return sum(binned_mask, dim...);
+  if (const auto unmasked = unmasked_events(var); unmasked.is_valid()) {
+    return sum(unmasked, dim...);
   }
   const auto [begin, end] = unzip(var.bin_indices());
   return sum(end - begin, dim...);
+}
+
+Variable bins_count(const Variable &data) {
+  if (const auto unmasked = unmasked_events(data); unmasked.is_valid()) {
+    return bins_sum(unmasked);
+  }
+  return bin_sizes(data);
 }
 } // namespace
 
@@ -253,19 +259,9 @@ Variable bins_any(const Variable &data) {
   return reduce_bins(data, variable::any_into, FillValue::False);
 }
 
-namespace {
-Variable bin_sizes_without_mask(const Variable &data) {
-  if (const auto binned_mask = binned_irreducible_mask(data);
-      binned_mask.is_valid()) {
-    return bins_sum(binned_mask);
-  }
-  return bin_sizes(data);
-}
-} // namespace
-
 /// Return the mean of all events per bin.
 Variable bins_mean(const Variable &data) {
-  return normalize_impl(bins_sum(data), bin_sizes_without_mask(data));
+  return normalize_impl(bins_sum(data), bins_count(data));
 }
 
 /// Return the mean of all events per bin. Ignoring NaN values.
