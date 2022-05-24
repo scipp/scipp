@@ -272,7 +272,7 @@ template <class T> bool nan_sensitive_equal(const T &a, const T &b) {
 } // namespace
 
 template <class T> struct MakeGroups {
-  static auto apply(const Variable &key, const Dim targetDim) {
+  static GroupByGrouping apply(const Variable &key, const Dim targetDim) {
     expect::is_key(key);
     const auto &values = key.values<T>();
 
@@ -301,12 +301,12 @@ template <class T> struct MakeGroups {
     }
     auto keys_ = makeVariable<T>(Dimensions{dims}, Values(std::move(keys)));
     keys_.setUnit(key.unit());
-    return GroupByGrouping{dim, std::move(keys_), std::move(groups)};
+    return {dim, std::move(keys_), std::move(groups)};
   }
 };
 
 template <class T> struct MakeBinGroups {
-  static auto apply(const Variable &key, const Variable &bins) {
+  static GroupByGrouping apply(const Variable &key, const Variable &bins) {
     expect::is_key(key);
     if (bins.dims().ndim() != 1)
       throw except::DimensionError("Group-by bins must be 1-dimensional");
@@ -332,7 +332,7 @@ template <class T> struct MakeBinGroups {
         groups[std::distance(edges.begin(), left)].emplace_back(dim, begin, i);
       }
     }
-    return GroupByGrouping{dim, bins, std::move(groups)};
+    return {dim, bins, std::move(groups)};
   }
 };
 
