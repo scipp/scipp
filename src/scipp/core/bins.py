@@ -130,7 +130,7 @@ class Bins:
         return _call_cpp_func(_cpp.bins_constituents, self._data())
 
     def sum(self) -> Union[_cpp.Variable, _cpp.DataArray]:
-        """Sum of each bin.
+        """Sum of events in each bin.
 
         Returns
         -------
@@ -140,12 +140,27 @@ class Bins:
         See Also
         --------
         scipp.sum:
-            For summing non-bin data.
+            For summing non-bin data or summing bins.
         """
         return _call_cpp_func(_cpp.bins_sum, self._obj)
 
+    def nansum(self) -> Union[_cpp.Variable, _cpp.DataArray]:
+        """Sum of events in each bin ignoring NaN's.
+
+        Returns
+        -------
+        :
+            The sum of each of the input bins without NaN's.
+
+        See Also
+        --------
+        scipp.nansum:
+            For summing non-bin data or summing bins.
+        """
+        return _call_cpp_func(_cpp.bins_nansum, self._obj)
+
     def mean(self) -> Union[_cpp.Variable, _cpp.DataArray]:
-        """Arithmetic mean of each bin.
+        """Arithmetic mean of events in each bin.
 
         Returns
         -------
@@ -155,9 +170,114 @@ class Bins:
         See Also
         --------
         scipp.mean:
-            For calculating the mean of non-bin data.
+            For calculating the mean of non-bin data or across bins.
         """
         return _call_cpp_func(_cpp.bins_mean, self._obj)
+
+    def nanmean(self) -> Union[_cpp.Variable, _cpp.DataArray]:
+        """Arithmetic mean of events in each bin ignoring NaN's.
+
+        Returns
+        -------
+        :
+            The mean of each of the input bins without NaN's.
+
+        See Also
+        --------
+        scipp.nanmean:
+            For calculating the mean of non-bin data or across bins.
+        """
+        return _call_cpp_func(_cpp.bins_nanmean, self._obj)
+
+    def max(self) -> Union[_cpp.Variable, _cpp.DataArray]:
+        """Maximum of events in each bin.
+
+        Returns
+        -------
+        :
+            The maximum of each of the input bins.
+
+        See Also
+        --------
+        scipp.max:
+            For calculating the maximum of non-bin data or across bins.
+        """
+        return _call_cpp_func(_cpp.bins_max, self._obj)
+
+    def nanmax(self) -> Union[_cpp.Variable, _cpp.DataArray]:
+        """Maximum of events in each bin ignoring NaN's.
+
+        Returns
+        -------
+        :
+            The maximum of each of the input bins without NaN's.
+
+        See Also
+        --------
+        scipp.nanmax:
+            For calculating the maximum of non-bin data or across bins.
+        """
+        return _call_cpp_func(_cpp.bins_nanmax, self._obj)
+
+    def min(self) -> Union[_cpp.Variable, _cpp.DataArray]:
+        """Minimum of events in each bin.
+
+        Returns
+        -------
+        :
+            The minimum of each of the input bins.
+
+        See Also
+        --------
+        scipp.min:
+            For calculating the minimum of non-bin data or across bins.
+        """
+        return _call_cpp_func(_cpp.bins_min, self._obj)
+
+    def nanmin(self) -> Union[_cpp.Variable, _cpp.DataArray]:
+        """Minimum of events in each bin ignoring NaN's.
+
+        Returns
+        -------
+        :
+            The minimum of each of the input bins without NaN's.
+
+        See Also
+        --------
+        scipp.nanmin:
+            For calculating the minimum of non-bin data or across bins.
+        """
+        return _call_cpp_func(_cpp.bins_nanmin, self._obj)
+
+    def all(self) -> Union[_cpp.Variable, _cpp.DataArray]:
+        """Logical AND of events in each bin ignoring NaN's.
+
+        Returns
+        -------
+        :
+            The AND of each of the input bins without NaN's.
+
+        See Also
+        --------
+        scipp.all:
+            For performing an AND of non-bin data or across bins.
+        """
+        return _call_cpp_func(_cpp.bins_all, self._obj)
+
+    def any(self) -> Union[_cpp.Variable, _cpp.DataArray]:
+        """Logical OR of events in each bin ignoring NaN's.
+
+        Returns
+        -------
+        :
+            The OR of each of the input bins without NaN's.
+
+        See Also
+        --------
+        scipp.all:
+            For performing an OR of non-bin data or across bins.
+        """
+        return _call_cpp_func(_cpp.bins_any, self._obj)
 
     def size(self) -> Union[_cpp.Variable, _cpp.DataArray]:
         """Number of events or elements in a bin.

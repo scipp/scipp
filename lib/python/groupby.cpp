@@ -27,6 +27,17 @@ template <class T> Docstring docstring_groupby(const std::string &op) {
              "Dim");
 }
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+#define BIND_GROUPBY_OP(CLS, NAME)                                             \
+  CLS.def(                                                                     \
+      TOSTRING(NAME),                                                          \
+      [](const GroupBy<T> &self, const std::string &dim) {                     \
+        return self.NAME(Dim{dim});                                            \
+      },                                                                       \
+      py::arg("dim"), py::call_guard<py::gil_scoped_release>(),                \
+      docstring_groupby<T>(TOSTRING(NAME)).c_str());
+
 template <class T> void bind_groupby(py::module &m, const std::string &name) {
   m.def(
       "groupby",
@@ -51,61 +62,16 @@ template <class T> void bind_groupby(py::module &m, const std::string &name) {
   py::class_<GroupBy<T>> groupBy(m, name.c_str(), R"(
     GroupBy object implementing split-apply-combine mechanism.)");
 
-  groupBy.def(
-      "mean",
-      [](const GroupBy<T> &self, const std::string &dim) {
-        return self.mean(Dim{dim});
-      },
-      py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-      docstring_groupby<T>("mean").c_str());
-
-  groupBy.def(
-      "sum",
-      [](const GroupBy<T> &self, const std::string &dim) {
-        return self.sum(Dim{dim});
-      },
-      py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-      docstring_groupby<T>("sum").c_str());
-
-  groupBy.def(
-      "all",
-      [](const GroupBy<T> &self, const std::string &dim) {
-        return self.all(Dim{dim});
-      },
-      py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-      docstring_groupby<T>("all").c_str());
-
-  groupBy.def(
-      "any",
-      [](const GroupBy<T> &self, const std::string &dim) {
-        return self.any(Dim{dim});
-      },
-      py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-      docstring_groupby<T>("any").c_str());
-
-  groupBy.def(
-      "min",
-      [](const GroupBy<T> &self, const std::string &dim) {
-        return self.min(Dim{dim});
-      },
-      py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-      docstring_groupby<T>("min").c_str());
-
-  groupBy.def(
-      "max",
-      [](const GroupBy<T> &self, const std::string &dim) {
-        return self.max(Dim{dim});
-      },
-      py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-      docstring_groupby<T>("max").c_str());
-
-  groupBy.def(
-      "concat",
-      [](const GroupBy<T> &self, const std::string &dim) {
-        return self.concat(Dim{dim});
-      },
-      py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-      docstring_groupby<T>("concat").c_str());
+  BIND_GROUPBY_OP(groupBy, mean);
+  BIND_GROUPBY_OP(groupBy, sum);
+  BIND_GROUPBY_OP(groupBy, nansum);
+  BIND_GROUPBY_OP(groupBy, all);
+  BIND_GROUPBY_OP(groupBy, any);
+  BIND_GROUPBY_OP(groupBy, min);
+  BIND_GROUPBY_OP(groupBy, nanmin);
+  BIND_GROUPBY_OP(groupBy, max);
+  BIND_GROUPBY_OP(groupBy, nanmax);
+  BIND_GROUPBY_OP(groupBy, concat);
 
   groupBy.def(
       "copy",

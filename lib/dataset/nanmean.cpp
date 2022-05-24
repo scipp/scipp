@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/dataset/nanmean.h"
+
 #include "scipp/dataset/astype.h"
 #include "scipp/dataset/math.h" // needed by operations_common.h
 #include "scipp/dataset/nansum.h"
@@ -31,5 +32,4 @@ Dataset nanmean(const Dataset &d, const Dim dim) {
 Dataset nanmean(const Dataset &d) {
   return apply_to_items(d, [](auto &&... _) { return nanmean(_...); });
 }
-
 } // namespace scipp::dataset

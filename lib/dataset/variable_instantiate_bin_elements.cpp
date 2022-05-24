@@ -4,7 +4,6 @@
 /// @author Simon Heybrock
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
-#include "scipp/dataset/shape.h"
 #include "scipp/dataset/string.h"
 #include "scipp/variable/bin_array_variable.tcc"
 #include "scipp/variable/bins.h"
@@ -18,6 +17,16 @@ INSTANTIATE_BIN_ARRAY_VARIABLE(DataArrayView, DataArray)
 } // namespace scipp::variable
 
 namespace scipp::dataset {
+
+namespace {
+Variable apply_mask(const DataArray &buffer, const Variable &indices,
+                    const Dim dim, const Variable &mask, const FillValue fill) {
+  return make_bins(
+      indices, dim,
+      where(mask, special_like(Variable(buffer.data(), Dimensions{}), fill),
+            buffer.data()));
+}
+} // namespace
 
 class BinVariableMakerDataArray : public variable::BinVariableMaker<DataArray> {
 private:
@@ -43,6 +52,22 @@ private:
     return buffer(var).data();
   }
   Variable data(Variable &var) const override { return buffer(var).data(); }
+
+  [[nodiscard]] Variable
+  apply_event_masks(const Variable &var, const FillValue fill) const override {
+    if (const auto mask_union = irreducible_event_mask(var);
+        mask_union.is_valid()) {
+      const auto &&[indices, dim, buffer] = var.constituents<DataArray>();
+      return apply_mask(buffer, indices, dim, mask_union, fill);
+    }
+    return var;
+  }
+
+  [[nodiscard]] Variable
+  irreducible_event_mask(const Variable &var) const override {
+    const auto &&[indices, dim, buffer] = var.constituents<DataArray>();
+    return irreducible_mask(buffer.masks(), dim);
+  }
 };
 
 /// This is currently a dummy implemented just to make `is_bins` work.
@@ -70,6 +95,16 @@ class BinVariableMakerDataset
   }
   bool has_variances(const Variable &) const override {
     throw std::runtime_error("undefined");
+  }
+  [[nodiscard]] Variable apply_event_masks(const Variable &,
+                                           const FillValue) const override {
+    throw except::NotImplementedError(
+        "Event masks for bins containing datasets are not supported.");
+  }
+  [[nodiscard]] Variable
+  irreducible_event_mask(const Variable &) const override {
+    throw except::NotImplementedError(
+        "Event masks for bins containing datasets are not supported.");
   }
 };
 

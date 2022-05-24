@@ -53,10 +53,13 @@ public:
   T concat(const Dim reductionDim) const;
   T mean(const Dim reductionDim) const;
   T sum(const Dim reductionDim) const;
+  T nansum(const Dim reductionDim) const;
   T all(const Dim reductionDim) const;
   T any(const Dim reductionDim) const;
   T max(const Dim reductionDim) const;
+  T nanmax(const Dim reductionDim) const;
   T min(const Dim reductionDim) const;
+  T nanmin(const Dim reductionDim) const;
   T copy(const SortOrder order) const;
 
 private:
