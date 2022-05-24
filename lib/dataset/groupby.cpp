@@ -197,7 +197,7 @@ template <class T> T GroupBy<T>::nanmax(const Dim reductionDim) const {
 
 /// Reduce each group using `min` and return combined data.
 template <class T> T GroupBy<T>::min(const Dim reductionDim) const {
-  return reduce(variable::nanmin_into, reductionDim, FillValue::Max);
+  return reduce(variable::min_into, reductionDim, FillValue::Max);
 }
 
 /// Reduce each group using `nanmin` and return combined data.
