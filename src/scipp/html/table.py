@@ -5,10 +5,15 @@ import numpy as np
 from typing import Any, List, Optional
 from .. import DataArray, Dataset, Variable
 from ..typing import MetaDataMap, VariableLike
+from .. import DType
 
 
 def _string_in_cell(v: Variable) -> str:
 
+    if v.bins is not None:
+        return f'<td>len={v.value.shape}</td>'
+    if v.dtype in (DType.vector3, DType.string):
+        return f'<td>{v.value}</td>'
     if v.variances is None:
         return f'<td>{round(v.value, 3)}</td>'
     err = np.sqrt(v.variance)
@@ -54,6 +59,8 @@ def table(obj: VariableLike, max_rows: Optional[int] = 20):
     max_rows:
         Optional, maximum number of rows to display.
     """
+    if obj.ndim != 1:
+        raise ValueError("Table can only be generated for one-dimensional objects.")
 
     out = '<table><tr>'
     attrs = {}
@@ -77,8 +84,9 @@ def table(obj: VariableLike, max_rows: Optional[int] = 20):
     for group in _make_groups(obj, attrs):
         for name, var in group.items():
             out += f'<th>{name}'
-            if var.unit is not None:
-                out += ' [𝟙]' if var.unit == 'dimensionless' else f' [{var.unit}]'
+            unit = var.bins.unit if var.bins is not None else var.unit
+            if unit is not None:
+                out += ' [𝟙]' if unit == 'dimensionless' else f' [{unit}]'
             out == '</th>'
             ncols += 1
 
