@@ -1,26 +1,32 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from ..utils import value_to_string
-from .. import DataArray, Dataset
+import numpy as np
+from typing import Any, List, Optional
+from .. import DataArray, Dataset, Variable
+from ..typing import MetaDataMap, VariableLike
 
 
-def _string_in_cell(v):
-    out = f'<td>{value_to_string(v.value)}'
-    if v.variance is not None:
-        out += f'&plusmn;{value_to_string(v.variance)}'
-    out += '</td>'
-    return out
+def _string_in_cell(v: Variable) -> str:
+
+    if v.variances is None:
+        return f'<td>{round(v.value, 3)}</td>'
+    err = np.sqrt(v.variance)
+    prec = -int(np.floor(np.log10(err)))
+    v_str = round(v.value, prec)
+    e_str = round(err, prec)
+    return f'<td>{v_str}&plusmn;{e_str}</td>'
 
 
-def _make_groups(obj, attrs):
+def _make_groups(obj: Dataset, attrs: MetaDataMap) -> List[Any]:
+
     out = [obj.coords, obj]
     if attrs:
         out.append(obj[list(obj.keys())[0]].attrs)
     return out
 
 
-def _make_row(obj, attrs, ind=0):
+def _make_row(obj: Dataset, attrs: MetaDataMap) -> str:
 
     out = ''
     for group in _make_groups(obj, attrs=attrs):
@@ -29,14 +35,25 @@ def _make_row(obj, attrs, ind=0):
     return out
 
 
-def _empty_strings_or_values(group):
+def _empty_strings_or_values(group: MetaDataMap) -> List[str]:
+
     return [
         _string_in_cell(var[-1]) if group.is_edges(key) else '<td></td>'
         for key, var in group.items()
     ]
 
 
-def table(obj, max_rows=20):
+def table(obj: VariableLike, max_rows: Optional[int] = 20):
+    """Creates a html table from the contents of a :class:`Dataset`, :class:`DataArray`,
+    or :class:`Variable`.
+
+    Parameters
+    ----------
+    obj:
+        Input object.
+    max_rows:
+        Optional, maximum number of rows to display.
+    """
 
     out = '<table><tr>'
     attrs = {}
@@ -44,23 +61,28 @@ def table(obj, max_rows=20):
     if isinstance(obj, DataArray):
         attrs = obj.attrs
         obj = Dataset({obj.name: obj})
+    if isinstance(obj, Variable):
+        obj = Dataset(data={"": obj})
 
+    # Create first table row with group headers
     if obj.coords:
         out += f'<th colspan="{len(obj.coords)}">Coordinates</th>'
-
     out += f'<th colspan="{len(obj.keys())}">Data</th>'
-
     if attrs:
         out += f'<th colspan="{len(attrs)}">Attributes</th>'
-
     out += '</tr>'
 
+    # Create second table row with column names
     ncols = 0
     for group in _make_groups(obj, attrs):
-        for name in group:
-            out += f'<th>{name}</th>'
+        for name, var in group.items():
+            out += f'<th>{name}'
+            if var.unit is not None:
+                out += ' [𝟙]' if var.unit == 'dimensionless' else f' [{var.unit}]'
+            out == '</th>'
             ncols += 1
 
+    # Limit the number of rows to be printed
     size = obj.shape[0]
     if size > max_rows:
         half = int(max_rows / 2)
@@ -68,6 +90,7 @@ def table(obj, max_rows=20):
     else:
         inds = range(size)
 
+    # Generate html rows
     for i in inds:
         if i is None:
             out += '<tr>' + ('<td>...</td>' * ncols) + '</tr>'
