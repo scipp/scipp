@@ -42,12 +42,12 @@ std::string make_dims_labels(const Variable &variable,
 }
 
 template <class T> struct ValuesToString {
-  static auto apply(const Variable &var) {
+  static std::string apply(const Variable &var) {
     return core::array_to_string(var.template values<T>(), var.unit());
   }
 };
 template <class T> struct VariancesToString {
-  static auto apply(const Variable &var) {
+  static std::string apply(const Variable &var) {
     if constexpr (core::canHaveVariances<T>())
       return core::array_to_string(var.template variances<T>());
     else
