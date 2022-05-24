@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from ..typing import VariableLike
 from ..core import Variable
+from .table import table
 
 
 def make_html(container: VariableLike) -> str:
