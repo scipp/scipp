@@ -111,6 +111,8 @@ public:
   Variable empty_like(const Variable &prototype,
                       const std::optional<Dimensions> &shape,
                       const Variable &sizes = {});
+  /// Return a binned variable where masked elements are replaced by fill.
+  /// Coords and attrs of the input are not propagated to the output.
   [[nodiscard]] Variable apply_event_masks(const Variable &var,
                                            const FillValue fill) const;
   [[nodiscard]] Variable irreducible_event_mask(const Variable &var) const;
