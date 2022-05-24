@@ -63,13 +63,13 @@ void bind_structured_creation(py::module &m, const std::string &name) {
 }
 
 template <class T> struct GetElements {
-  static auto apply(Variable &var, const std::string &key) {
+  static Variable apply(Variable &var, const std::string &key) {
     return var.elements<T>(key);
   }
 };
 
 template <class T> struct SetElements {
-  static auto apply(Variable &var, const std::string &key,
+  static void apply(Variable &var, const std::string &key,
                     const Variable &elems) {
     copy(elems, var.elements<T>(key));
   }
