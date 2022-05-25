@@ -32,7 +32,6 @@ protected:
 };
 
 TEST_F(BucketModelTest, construct) {
-  Model model(indices.data_handle(), Dim::X, buffer);
   // No validation
   EXPECT_NO_THROW(Model(indices.data_handle(), Dim::Y, buffer));
   // make_bins validates

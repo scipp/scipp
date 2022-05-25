@@ -167,7 +167,12 @@ template <class T> T GroupBy<T>::concat(const Dim reductionDim) const {
 
 /// Reduce each group using `sum` and return combined data.
 template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {
-  return reduce(sum_into, reductionDim, FillValue::ZeroNotBool);
+  return reduce(variable::sum_into, reductionDim, FillValue::ZeroNotBool);
+}
+
+/// Reduce each group using `nansum` and return combined data.
+template <class T> T GroupBy<T>::nansum(const Dim reductionDim) const {
+  return reduce(variable::nansum_into, reductionDim, FillValue::ZeroNotBool);
 }
 
 /// Reduce each group using `all` and return combined data.
@@ -185,9 +190,19 @@ template <class T> T GroupBy<T>::max(const Dim reductionDim) const {
   return reduce(variable::max_into, reductionDim, FillValue::Lowest);
 }
 
+/// Reduce each group using `nanmax` and return combined data.
+template <class T> T GroupBy<T>::nanmax(const Dim reductionDim) const {
+  return reduce(variable::nanmax_into, reductionDim, FillValue::Lowest);
+}
+
 /// Reduce each group using `min` and return combined data.
 template <class T> T GroupBy<T>::min(const Dim reductionDim) const {
   return reduce(variable::min_into, reductionDim, FillValue::Max);
+}
+
+/// Reduce each group using `nanmin` and return combined data.
+template <class T> T GroupBy<T>::nanmin(const Dim reductionDim) const {
+  return reduce(variable::nanmin_into, reductionDim, FillValue::Max);
 }
 
 /// Combine groups without changes, effectively sorting data.
@@ -272,7 +287,7 @@ template <class T> bool nan_sensitive_equal(const T &a, const T &b) {
 } // namespace
 
 template <class T> struct MakeGroups {
-  static auto apply(const Variable &key, const Dim targetDim) {
+  static GroupByGrouping apply(const Variable &key, const Dim targetDim) {
     expect::is_key(key);
     const auto &values = key.values<T>();
 
@@ -301,12 +316,12 @@ template <class T> struct MakeGroups {
     }
     auto keys_ = makeVariable<T>(Dimensions{dims}, Values(std::move(keys)));
     keys_.setUnit(key.unit());
-    return GroupByGrouping{dim, std::move(keys_), std::move(groups)};
+    return {dim, std::move(keys_), std::move(groups)};
   }
 };
 
 template <class T> struct MakeBinGroups {
-  static auto apply(const Variable &key, const Variable &bins) {
+  static GroupByGrouping apply(const Variable &key, const Variable &bins) {
     expect::is_key(key);
     if (bins.dims().ndim() != 1)
       throw except::DimensionError("Group-by bins must be 1-dimensional");
@@ -332,7 +347,7 @@ template <class T> struct MakeBinGroups {
         groups[std::distance(edges.begin(), left)].emplace_back(dim, begin, i);
       }
     }
-    return GroupByGrouping{dim, bins, std::move(groups)};
+    return {dim, bins, std::move(groups)};
   }
 };
 

@@ -213,6 +213,7 @@ TEST(DimensionsTest, intersection) {
   EXPECT_EQ(intersection(xy, xyz), xy);
   EXPECT_EQ(intersection(yz, xyz), yz);
   EXPECT_EQ(intersection(yx, xzy), yx);
+  EXPECT_EQ(intersection(yz, zxy), yz);
   EXPECT_EQ(intersection(x, y), Dimensions{});
 }
 

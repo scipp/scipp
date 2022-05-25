@@ -4,12 +4,11 @@
 #include <limits>
 #include <vector>
 
-#include "test_macros.h"
-
 #include "scipp/dataset/bins.h"
+#include "scipp/dataset/mean.h"
 #include "scipp/dataset/sum.h"
-#include "scipp/variable/comparison.h"
 #include "scipp/variable/reduction.h"
+#include "scipp/variable/special_values.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
@@ -113,17 +112,193 @@ protected:
   Variable indices = makeVariable<index_pair>(
       Dims{Dim::Y}, Shape{3},
       Values{std::pair{0, 2}, std::pair{2, 2}, std::pair{2, 5}});
-  Variable data =
-      makeVariable<double>(Dims{Dim::X}, Shape{5}, units::m,
-                           Values{1, 2, 3, 4, 5}, Variances{1, 2, 3, 4, 5});
+  Variable data = makeVariable<double>(Dims{Dim::Event}, Shape{5}, units::m,
+                                       Values{1, 2, 3, 4, 5});
   DataArray buffer = DataArray(data);
-  Variable binned = make_bins(indices, Dim::X, buffer);
+  Variable binned = make_bins(indices, Dim::Event, buffer);
 };
 
-TEST_F(ReduceBinnedTest, masked) {
-  buffer.masks().set("mask", less(data, data));
-  binned = make_bins(indices, Dim::X, buffer);
-  // Event masks not supported yet in reduction ops.
-  EXPECT_THROW_DISCARD(sum(binned), except::NotImplementedError);
-  EXPECT_THROW_DISCARD(mean(binned), except::NotImplementedError);
+TEST_F(ReduceBinnedTest, sum) {
+  EXPECT_EQ(sum(binned), makeVariable<double>(Dims{}, units::m, Values{15}));
+}
+
+TEST_F(ReduceBinnedTest, sum_masked_events) {
+  buffer.masks().set(
+      "mask", makeVariable<bool>(Dims{Dim::Event}, Shape{5},
+                                 Values{true, true, false, true, false}));
+  binned = make_bins(indices, Dim::Event, buffer);
+  EXPECT_EQ(sum(binned), makeVariable<double>(Dims{}, units::m, Values{3 + 5}));
+}
+
+TEST_F(ReduceBinnedTest, sum_masked_events_bool) {
+  buffer.masks().set(
+      "mask", makeVariable<bool>(Dims{Dim::Event}, Shape{5},
+                                 Values{true, true, false, true, false}));
+  buffer.setData(makeVariable<bool>(Dims{Dim::Event}, Shape{5},
+                                    Values{false, true, true, false, true}));
+  binned = make_bins(indices, Dim::Event, buffer);
+  EXPECT_EQ(sum(binned), makeVariable<int64_t>(Dims{}, units::none, Values{2}));
+}
+
+TEST_F(ReduceBinnedTest, mean) {
+  EXPECT_EQ(mean(binned),
+            makeVariable<double>(Dims{}, units::m, Values{(15.0) / 5}));
+}
+
+TEST_F(ReduceBinnedTest, mean_masked_events) {
+  buffer.masks().set(
+      "mask", makeVariable<bool>(Dims{Dim::Event}, Shape{5},
+                                 Values{true, true, false, true, false}));
+  binned = make_bins(indices, Dim::Event, buffer);
+  EXPECT_EQ(mean(binned),
+            makeVariable<double>(Dims{}, units::m, Values{(3.0 + 5.0) / 2}));
+}
+
+class ReduceMaskedBinnedTest : public ::testing::Test {
+protected:
+  Variable indices = makeVariable<index_pair>(
+      Dims{Dim::Y}, Shape{3},
+      Values{std::pair{0, 2}, std::pair{2, 2}, std::pair{2, 5}});
+  Variable data = makeVariable<double>(Dims{Dim::Event}, Shape{5}, units::m,
+                                       Values{1, 2, 3, 4, 5});
+  DataArray buffer = DataArray(data);
+  Variable binned_var = make_bins(indices, Dim::Event, buffer);
+  DataArray binned =
+      DataArray(binned_var, {},
+                {{"mask", makeVariable<bool>(Dims{Dim::Y}, Shape{3},
+                                             Values{true, false, false})}});
+};
+
+TEST_F(ReduceMaskedBinnedTest, sum) {
+  EXPECT_EQ(sum(binned),
+            DataArray(makeVariable<double>(Dims{}, units::m, Values{12})));
+}
+
+TEST_F(ReduceMaskedBinnedTest, sum_masked_events) {
+  buffer.masks().set(
+      "mask", makeVariable<bool>(Dims{Dim::Event}, Shape{5},
+                                 Values{true, false, false, false, true}));
+  binned = DataArray(make_bins(indices, Dim::Event, buffer), {},
+                     {{"mask", binned.masks()["mask"]}});
+  EXPECT_EQ(sum(binned),
+            DataArray(makeVariable<double>(Dims{}, units::m, Values{7})));
+}
+
+TEST_F(ReduceMaskedBinnedTest, mean) {
+  EXPECT_EQ(mean(binned),
+            DataArray(makeVariable<double>(Dims{}, units::m, Values{4})));
+}
+
+TEST_F(ReduceMaskedBinnedTest, mean_masked_events) {
+  buffer.masks().set(
+      "mask", makeVariable<bool>(Dims{Dim::Event}, Shape{5},
+                                 Values{true, false, false, false, true}));
+  binned = DataArray(make_bins(indices, Dim::Event, buffer), {},
+                     {{"mask", binned.masks()["mask"]}});
+  EXPECT_EQ(mean(binned),
+            DataArray(makeVariable<double>(Dims{}, units::m, Values{3.5})));
+}
+
+class Reduce2dBinnedTest : public ::testing::Test {
+protected:
+  Variable indices =
+      makeVariable<index_pair>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                               Values{std::pair{0, 2}, std::pair{2, 2},
+                                      std::pair{2, 5}, std::pair{5, 7}});
+  Variable data = makeVariable<double>(Dims{Dim::Event}, Shape{7}, units::m,
+                                       Values{1, 2, 3, 4, 5, 6, 7});
+  DataArray buffer = DataArray(data);
+  Variable binned = make_bins(indices, Dim::Event, buffer);
+};
+
+TEST_F(Reduce2dBinnedTest, sum_all_dims) {
+  EXPECT_EQ(sum(binned), makeVariable<double>(Dims{}, units::m, Values{28}));
+}
+
+TEST_F(Reduce2dBinnedTest, sum_inner_dim) {
+  EXPECT_EQ(sum(binned, Dim::X), makeVariable<double>(Dims{Dim::Y}, Shape{2},
+                                                      units::m, Values{3, 25}));
+}
+
+TEST_F(Reduce2dBinnedTest, sum_outer_dim) {
+  EXPECT_EQ(
+      sum(binned, Dim::Y),
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{15, 13}));
+}
+
+TEST_F(Reduce2dBinnedTest, sum_masked_all_dims) {
+  buffer.masks().set(
+      "mask",
+      makeVariable<bool>(Dims{Dim::Event}, Shape{7},
+                         Values{true, false, false, false, true, true, true}));
+  binned = make_bins(indices, Dim::Event, buffer);
+  EXPECT_EQ(sum(binned), makeVariable<double>(Dims{}, units::m, Values{9}));
+}
+
+TEST_F(Reduce2dBinnedTest, sum_masked_inner_dims) {
+  buffer.masks().set(
+      "mask",
+      makeVariable<bool>(Dims{Dim::Event}, Shape{7},
+                         Values{true, false, false, false, true, true, true}));
+  binned = make_bins(indices, Dim::Event, buffer);
+  EXPECT_EQ(sum(binned, Dim::X), makeVariable<double>(Dims{Dim::Y}, Shape{2},
+                                                      units::m, Values{2, 7}));
+}
+
+TEST_F(Reduce2dBinnedTest, sum_masked_outer_dims) {
+  buffer.masks().set(
+      "mask",
+      makeVariable<bool>(Dims{Dim::Event}, Shape{7},
+                         Values{true, false, false, false, true, true, true}));
+  binned = make_bins(indices, Dim::Event, buffer);
+  EXPECT_EQ(sum(binned, Dim::Y), makeVariable<double>(Dims{Dim::X}, Shape{2},
+                                                      units::m, Values{9, 0}));
+}
+
+TEST_F(Reduce2dBinnedTest, mean_all_dims) {
+  EXPECT_EQ(mean(binned),
+            makeVariable<double>(Dims{}, units::m, Values{28.0 / 7}));
+}
+
+TEST_F(Reduce2dBinnedTest, mean_inner_dim) {
+  EXPECT_EQ(mean(binned, Dim::X),
+            makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m,
+                                 Values{3.0 / 2, 25.0 / 5}));
+}
+
+TEST_F(Reduce2dBinnedTest, mean_outer_dim) {
+  EXPECT_EQ(mean(binned, Dim::Y),
+            makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m,
+                                 Values{15.0 / 5, 13.0 / 2}));
+}
+
+TEST_F(Reduce2dBinnedTest, mean_masked_all_dims) {
+  buffer.masks().set(
+      "mask",
+      makeVariable<bool>(Dims{Dim::Event}, Shape{7},
+                         Values{true, false, false, false, true, true, true}));
+  binned = make_bins(indices, Dim::Event, buffer);
+  EXPECT_EQ(mean(binned),
+            makeVariable<double>(Dims{}, units::m, Values{9.0 / 3}));
+}
+
+TEST_F(Reduce2dBinnedTest, mean_masked_inner_dims) {
+  buffer.masks().set(
+      "mask",
+      makeVariable<bool>(Dims{Dim::Event}, Shape{7},
+                         Values{true, false, false, false, true, true, true}));
+  binned = make_bins(indices, Dim::Event, buffer);
+  EXPECT_EQ(mean(binned, Dim::X),
+            makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m,
+                                 Values{2.0 / 1, 7.0 / 2}));
+}
+
+TEST_F(Reduce2dBinnedTest, mean_masked_outer_dims) {
+  buffer.masks().set(
+      "mask",
+      makeVariable<bool>(Dims{Dim::Event}, Shape{7},
+                         Values{true, false, false, false, true, true, true}));
+  binned = make_bins(indices, Dim::Event, buffer);
+  EXPECT_EQ(mean(binned, Dim::Y).slice({Dim::X, 0}).value<double>(), 9.0 / 3);
+  EXPECT_TRUE(isnan(mean(binned, Dim::Y).slice({Dim::X, 1})).value<bool>());
 }

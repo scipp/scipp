@@ -122,7 +122,6 @@ TEST(ElementArrayViewTest, broadcast_inner) {
 }
 
 TEST(ElementArrayViewTest, broadcast_outer) {
-  Dimensions dims{Dim::X, 2};
   Dimensions target({Dim::Y, Dim::X}, {3, 2});
   EXPECT_TRUE(
       equals(ElementArrayView(range(2).data(), 0, target, Strides{0, 1}),
@@ -421,7 +420,6 @@ void expect_contiguous(const Dimensions &dims, const Strides &strides,
 }
 
 TEST(ElementArrayViewTest, requireContiguous) {
-  Dimensions parent({{Dim::Z, 2}, {Dim::Y, 3}, {Dim::X, 4}});
   expect_contiguous({Dim::X, 0}, {1}, true);
   expect_contiguous({Dim::X, 1}, {1}, true);
   expect_contiguous({Dim::X, 2}, {1}, true);

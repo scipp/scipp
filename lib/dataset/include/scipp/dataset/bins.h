@@ -64,11 +64,3 @@ SCIPP_DATASET_EXPORT void scale(DataArray &data, const DataArray &histogram,
                                 Dim dim = Dim::Invalid);
 
 } // namespace scipp::dataset::buckets
-
-// These functions are placed in scipp::variable for ADL but cannot be easily
-// moved into that compilation module since the implementation requires
-// DataArray.
-namespace scipp::variable {
-[[nodiscard]] SCIPP_DATASET_EXPORT Variable bins_sum(const Variable &data);
-[[nodiscard]] SCIPP_DATASET_EXPORT Variable bins_mean(const Variable &data);
-} // namespace scipp::variable
