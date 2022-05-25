@@ -113,21 +113,33 @@ def gaussian_filter(x: VariableLikeType,
     Examples
     --------
 
+    .. plot:: :context:
+
       >>> from scipp.ndimage import gaussian_filter
       >>> da = sc.data.data_xy()
+      >>> da.plot()
 
     With sigma as integer:
 
+    .. plot:: :context: close-figs
+
       >>> filtered = gaussian_filter(da, sigma=4)
+      >>> filtered.plot()
 
     With sigma based on input coordinate values:
 
-      >>> filtered = gaussian_filter(da, sigma=sc.scalar(1.2, unit='mm'))
+    .. plot:: :context: close-figs
+
+      >>> filtered = gaussian_filter(da, sigma=sc.scalar(0.1, unit='mm'))
+      >>> filtered.plot()
 
     With different sigma for different dimensions:
 
-      >>> filtered = gaussian_filter(da, sigma={'x':sc.scalar(1.2, unit='mm'), \
-                                                'y':sc.scalar(3.3, unit='mm')})
+    .. plot:: :context: close-figs
+
+      >>> filtered = gaussian_filter(da, sigma={'x':sc.scalar(0.01, unit='mm'),
+      ...                                       'y':sc.scalar(1.0, unit='mm')})
+      >>> filtered.plot()
     """
     sigma = _positional_index(x, sigma, name='sigma', dtype=float)
     if isinstance(order, dict):
