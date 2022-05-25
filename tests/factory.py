@@ -25,7 +25,10 @@ def make_variable(ndim=1,
     if dims is None:
         dims = dim_list[:ndim][::-1]
 
-    a = 10.0 * np.sin(np.arange(np.prod(shapes), dtype=np.float64).reshape(*shapes))
+    axes = [np.arange(shape, dtype=np.float64) for shape in shapes]
+    pos = np.meshgrid(*axes, indexing='ij')
+    radius = np.linalg.norm(np.array(pos), axis=0)
+    a = np.sin(radius / 5.0)
 
     var = sc.array(dims=dims, values=a, unit=unit, dtype=dtype)
     if with_variance:

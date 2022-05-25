@@ -340,19 +340,19 @@ def test_plot_1d_with_grid():
 def test_plot_redraw():
     da = make_dense_data_array(ndim=1)
     p = sc.plot(da)
-    assert p.view.figure._lines[''].data.get_ydata()[2] == 10.0 * np.sin(2.0)
+    before = p.view.figure._lines[''].data.get_ydata().copy()
     da *= 5.0
     p.redraw()
-    assert p.view.figure._lines[''].data.get_ydata()[2] == 50.0 * np.sin(2.0)
+    assert np.allclose(p.view.figure._lines[''].data.get_ydata(), 5.0 * before)
 
 
 def test_plot_redraw_int64():
     da = make_dense_data_array(ndim=1, dtype=sc.DType.int64)
     p = sc.plot(da)
-    assert p.view.figure._lines[''].data.get_ydata()[2] == int(10.0 * np.sin(2.0))
+    before = p.view.figure._lines[''].data.get_ydata().copy()
     da *= 5
     p.redraw()
-    assert p.view.figure._lines[''].data.get_ydata()[2] == int(50.0 * np.sin(2.0))
+    assert np.allclose(p.view.figure._lines[''].data.get_ydata(), 5.0 * before)
 
 
 def test_scale_arg_subplots_independent_dims():
