@@ -8,6 +8,8 @@ from ..typing import MetaDataMap, VariableLike
 from .. import DType
 
 CENTER = 'style="text-align: center;"'
+WITH_BORDER = 'style="border-left:1px solid #a9a9a9;"'
+CENTER_BORDER = 'style="text-align: center; border-left:1px solid #a9a9a9;"'
 
 
 def _string_in_cell(v: Variable) -> str:
@@ -16,7 +18,7 @@ def _string_in_cell(v: Variable) -> str:
         return f'len={v.value.shape}'
     if v.dtype in (DType.vector3, DType.string):
         return str(v.value)
-    if v.variances is None:
+    if (v.variance is None) or (v.variance == 0):
         return str(round(v.value, 3))
     err = np.sqrt(v.variance)
     prec = -int(np.floor(np.log10(err)))
@@ -56,14 +58,27 @@ def _var_name_with_unit(name, var):
     return out
 
 
-def _make_variable_column(name, var, indices):
+def _add_td_tags(cell_list, border=False):
+    td = WITH_BORDER if border else ""
+    td = f'<td {td}>'
+    # print(td)
+    return [f'{td}{cell}</td>' for cell in cell_list]
+
+
+def _make_variable_column(name, var, indices, need_bin_edge, is_bin_edge, border=False):
     out = [_var_name_with_unit(name, var)]
     for i in indices:
         if i is None:
             out.append('...')
         else:
             out.append(_string_in_cell(var[i]))
-    return out
+    if need_bin_edge:
+        if is_bin_edge:
+            out.append(_string_in_cell(var[-1]))
+        else:
+            out.append('')
+    # print(out)
+    return _add_td_tags(out, border=border)
 
 
 # def _make_coords_table(coords, indices):
@@ -71,7 +86,7 @@ def _make_variable_column(name, var, indices):
 #     return [_make_variable_column(name, var, indices) for name, var in coords]
 
 
-def _make_data_array_table(da, indices):
+def _make_data_array_table(da, indices, bin_edges):
     # out = []
     # for i in indices:
     #     if i is None:
@@ -79,18 +94,58 @@ def _make_data_array_table(da, indices):
     #     else:
     #         out.append(_string_in_cell(var[i]))
     # return out
-    out = []
-    for group in ({'': da.data}, da.masks, da.attrs):
-        out += [
-            _make_variable_column(name, var, indices)
-            for name, var in sorted(group.items())
-        ]
-    # if da.coords:
-    #     out += [_make_variable_column(name, var, indices) for name, var in da.coords]
-    # if da.masks:
-    #     out += [_make_variable_column(name, var, indices) for name, var in da.masks]
-    # if da.coords:
-    #     out += [_make_variable_column(name, var, indices) for name, var in da.coords]
+    # out = []
+    # for maybe_bin_edge, group in zip((False, {
+    #         '': da.data
+    # }), (False, da.masks), (True, da.attrs)):
+
+    out = [
+        _make_variable_column(name='',
+                              var=da.data,
+                              indices=indices,
+                              need_bin_edge=bin_edges,
+                              is_bin_edge=False,
+                              border=True)
+    ]
+
+    for name, var in sorted(da.masks.items()):
+        out.append(
+            _make_variable_column(name=name,
+                                  var=var,
+                                  indices=indices,
+                                  need_bin_edge=bin_edges,
+                                  is_bin_edge=False,
+                                  border=False))
+
+    for name, var in sorted(da.attrs.items()):
+        out.append(
+            _make_variable_column(name=name,
+                                  var=var,
+                                  indices=indices,
+                                  need_bin_edge=bin_edges,
+                                  is_bin_edge=da.attrs.is_edges(name),
+                                  border=False))
+
+    # print(out)
+
+    # for maybe_bin_edge, group in zip((False, False, True), ({
+    #         '': da.data
+    # }, da.masks, da.attrs)):
+    #     out += [
+    #         _make_variable_column(
+    #             name=name,
+    #             var=var,
+    #             indices=indices,
+    #             need_bin_edge=bin_edges,
+    #             is_bin_edge=group.is_edges(name) if maybe_bin_edge else False)
+    #         for name, var in sorted(group.items())
+    #     ]
+    # # if da.coords:
+    # #     out += [_make_variable_column(name, var, indices) for name, var in da.coords]
+    # # if da.masks:
+    # #     out += [_make_variable_column(name, var, indices) for name, var in da.masks]
+    # # if da.coords:
+    # #     out += [_make_variable_column(name, var, indices) for name, var in da.coords]
     return out
 
 
@@ -110,7 +165,7 @@ def _make_sections_header(ds):
     if ds.coords:
         out += f'<th {CENTER} colspan="{len(ds.coords)}">Coordinates</th>'
     for _, da in sorted(ds.items()):
-        out += f'<th {CENTER}>Data</th>'
+        out += f'<th {CENTER_BORDER}>Data</th>'
         if da.masks:
             out += f'<th {CENTER} colspan="{len(da.masks)}">Masks</th>'
         if da.attrs:
@@ -128,11 +183,24 @@ def _to_html_table(header, body):
     out = '<table>' + header
     ncols = len(body)
     nrows = len(body[0])
+    # print("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
     for i in range(nrows):
-        out += '<tr><td>' + '</td><td>'.join([body[j][i]
-                                              for j in range(ncols)]) + '</td></tr>'
+        # print('<tr>' + ''.join([body[j][i] for j in range(ncols)]) + '</tr>')
+        # print(body[j][i])
+        out += '<tr>' + ''.join([body[j][i] for j in range(ncols)]) + '</tr>'
     out += '</table>'
     return out
+
+
+def _find_bin_edges(ds):
+    for key in ds.coords:
+        if ds.coords.is_edges(key):
+            return True
+    for da in ds.values():
+        for key in da.attrs:
+            if da.attrs.is_edges(key):
+                return True
+    return False
 
 
 def _to_dataset(obj):
@@ -163,19 +231,28 @@ def table(obj: VariableLike, max_rows: Optional[int] = 20):
     #     for name, var in obj.items()
     # ]
 
+    bin_edges = _find_bin_edges(obj)
+    # print("bin_edges", bin_edges)
+
     header = _make_sections_header(obj)
     if len(obj) > 1:
         header = _make_entries_header(obj) + header
+    # print("=======================")
+    # print(header)
     # body = _make_data_array_table(obj, indices=inds)
 
     # First attach coords
     body = [
-        _make_variable_column(name=name, var=var, indices=inds)
+        _make_variable_column(name=name,
+                              var=var,
+                              indices=inds,
+                              need_bin_edge=bin_edges,
+                              is_bin_edge=obj.coords.is_edges(name))
         for name, var in sorted(obj.coords.items())
     ]
 
     for _, da in sorted(obj.items()):
-        body += _make_data_array_table(da, indices=inds)
+        body += _make_data_array_table(da=da, indices=inds, bin_edges=bin_edges)
     html = _to_html_table(header=header, body=body)
     from IPython.display import display, HTML
     display(HTML(html))
