@@ -38,12 +38,19 @@ html_show_sourcelink = True
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'sphinx.ext.doctest',
-    'sphinx.ext.intersphinx', 'sphinx.ext.mathjax', 'sphinx.ext.napoleon',
-    'sphinx_autodoc_typehints', 'sphinx_copybutton',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.doctest',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.mathjax',
+    'sphinx.ext.napoleon',
+    'sphinx_autodoc_typehints',
+    'sphinx_copybutton',
     'IPython.sphinxext.ipython_directive',
     'IPython.sphinxext.ipython_console_highlighting',
-    'matplotlib.sphinxext.plot_directive', 'nbsphinx', 'scipp.sphinxext'
+    'matplotlib.sphinxext.plot_directive',
+    'nbsphinx',
+    'scipp.sphinxext',
 ]
 
 autodoc_type_aliases = {

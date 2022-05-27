@@ -65,3 +65,4 @@ def add_plot_directives(app, what, name, obj, options, lines: List[str]):
 
 def setup(app):
     app.connect('autodoc-process-docstring', add_plot_directives)
+    return {'version': 1, 'parallel_read_safe': True}
