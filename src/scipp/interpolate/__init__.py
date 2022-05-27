@@ -103,28 +103,38 @@ def interp1d(da: DataArray,
 
     Examples:
 
-      >>> x = sc.geomspace(dim='x', start=0.1, stop=0.4, num=4, unit='rad')
+    .. plot:: :context: close-figs
+
+      >>> x = sc.linspace(dim='x', start=0.1, stop=1.4, num=4, unit='rad')
       >>> da = sc.DataArray(sc.sin(x), coords={'x': x})
 
       >>> from scipp.interpolate import interp1d
       >>> f = interp1d(da, 'x')
 
-      >>> xnew = sc.linspace(dim='x', start=0.1, stop=0.4, num=5, unit='rad')
+      >>> xnew = sc.linspace(dim='x', start=0.1, stop=1.4, num=12, unit='rad')
       >>> f(xnew)  # use interpolation function returned by `interp1d`
       <scipp.DataArray>
-      Dimensions: Sizes[x:5, ]
+      Dimensions: Sizes[x:12, ]
       Coordinates:
-        x                         float64            [rad]  (x)  [0.1, 0.175, ..., 0.325, 0.4]
+        x                         float64            [rad]  (x)  [0.1, 0.218182, ..., 1.28182, 1.4]
       Data:
-                                  float64  [dimensionless]  (x)  [0.0998334, 0.173987, ..., 0.318433, 0.389418]
+                                  float64  [dimensionless]  (x)  [0.0998334, 0.211262, ..., 0.941144, 0.98545]
 
       >>> f(xnew, midpoints=True)
       <scipp.DataArray>
-      Dimensions: Sizes[x:4, ]
+      Dimensions: Sizes[x:11, ]
       Coordinates:
-        x                         float64            [rad]  (x [bin-edge])  [0.1, 0.175, ..., 0.325, 0.4]
+        x                         float64            [rad]  (x [bin-edge])  [0.1, 0.218182, ..., 1.28182, 1.4]
       Data:
-                                  float64  [dimensionless]  (x)  [0.137015, 0.210685, 0.282941, 0.353926]
+                                  float64  [dimensionless]  (x)  [0.155548, 0.266977, ..., 0.918992, 0.963297]
+
+    .. plot:: :context: close-figs
+
+      sc.plot({'original':da,
+               'interp1d':f(xnew),
+               'interp1d-midpoints':f(xnew, midpoints=True)})
+
+
     """  # noqa #501
     import scipy.interpolate as inter
 
