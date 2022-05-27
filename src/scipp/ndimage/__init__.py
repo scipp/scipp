@@ -256,17 +256,17 @@ def _make_footprint_filter(name, example=True, extra_args=''):
 
     .. plot:: :context: close-figs
 
-      filtered = {name}(da, size=sc.scalar(1.2, unit='mm'){extra_args})
+      filtered = {name}(da, size=sc.scalar(0.2, unit='mm'){extra_args})
       filtered.plot()
 
     With different size for different dimensions:
 
     .. plot:: :context: close-figs
 
-      filtered = {name}(da, size={{'x':sc.scalar(1.2, unit='mm'),
-                                   'y':sc.scalar(3.3, unit='mm')}}{extra_args})
+      filtered = {name}(da, size={{'x':sc.scalar(0.2, unit='mm'),
+                            {' ' * len(name)}'y':sc.scalar(1.1, unit='mm')}}{extra_args})
       filtered.plot()
-    """
+    """  # noqa: E501
     footprint_filter.__doc__ = doc
     return _ndfilter(footprint_filter)
 
