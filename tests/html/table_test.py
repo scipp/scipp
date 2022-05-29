@@ -66,7 +66,7 @@ def test_table_binned_data_array(variances, masks):
 @pytest.mark.parametrize("dtype", [sc.DType.float64, sc.DType.int64])
 @pytest.mark.parametrize("unit", ['dimensionless', 'counts', 's'])
 def test_table_dataset(with_all, dtype, unit):
-    da = make_dense_dataset(ndim=1,
+    ds = make_dense_dataset(ndim=1,
                             with_variance=maybe_variances(with_all, dtype),
                             binedges=with_all,
                             labels=with_all,
@@ -74,11 +74,19 @@ def test_table_dataset(with_all, dtype, unit):
                             masks=with_all,
                             dtype=dtype,
                             unit=unit)
-    sc.table(da)
-    sc.table(da['xx', 1:10])
+    sc.table(ds)
+    sc.table(ds['xx', 1:10])
 
 
-def test_table_dataset():
-    da = make_dense_dataset(ndim=2)
+def test_table_raises_with_2d_dataset():
+    ds = make_dense_dataset(ndim=2)
     with pytest.raises(ValueError):
-        sc.table(da)
+        sc.table(ds)
+
+
+def test_table_dataset_with_0d_elements():
+    ds = make_dense_dataset(ndim=1, attrs=True, masks=True)
+    ds.coords['scalar_coord'] = sc.scalar(44.)
+    ds['scalar_data'] = sc.scalar(111.)
+    ds['a'].masks['0d_mask'] = sc.scalar(True)
+    sc.table(ds)

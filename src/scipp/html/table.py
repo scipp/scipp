@@ -41,6 +41,10 @@ def _add_td_tags(cell_list, border=False):
     return [f'{td}{cell}</td>' for cell in cell_list]
 
 
+def _meta_length(meta):
+    return len([True for var in meta.values() if var.dims])
+
+
 def _make_variable_column(name, var, indices, need_bin_edge, is_bin_edge, border=False):
     out = [_var_name_with_unit(name, var)]
     for i in indices:
@@ -134,6 +138,23 @@ def _find_bin_edges(ds):
     return False
 
 
+def _strip_scalars_and_broadcast_masks(ds):
+    out = Dataset()
+    for key, da in ds.items():
+        if da.ndim == 1:
+            out[key] = DataArray(
+                data=da.data,
+                coords={key: var
+                        for key, var in da.coords.items() if var.ndim == 1},
+                attrs={key: var
+                       for key, var in da.attrs.items() if var.ndim == 1},
+                masks={
+                    key: var.broadcast(sizes=da.sizes)
+                    for key, var in da.masks.items()
+                })
+    return out
+
+
 def _to_dataset(obj):
     if isinstance(obj, DataArray):
         return Dataset({obj.name: obj})
@@ -147,6 +168,11 @@ def _to_dataset(obj):
 def table(obj: VariableLike, max_rows: Optional[int] = 20):
 
     obj = _to_dataset(obj)
+
+    if obj.ndim != 1:
+        raise ValueError("Table can only be generated for one-dimensional objects.")
+
+    obj = _strip_scalars_and_broadcast_masks(obj)
 
     # Limit the number of rows to be printed
     size = obj.shape[0]
@@ -175,7 +201,7 @@ def table(obj: VariableLike, max_rows: Optional[int] = 20):
     # Rest of the table from DataArrays
     for _, da in sorted(obj.items()):
         body += _make_data_array_table(da=da, indices=inds, bin_edges=bin_edges)
-    html = _to_html_table(header=header, body=body)
 
+    html = _to_html_table(header=header, body=body)
     from IPython.display import display, HTML
     display(HTML(html))
