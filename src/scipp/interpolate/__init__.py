@@ -11,7 +11,7 @@ from ..core import empty, epoch, Variable, DataArray, DimensionError, UnitError
 from ..core import DType, irreducible_mask
 from ..compat.wrapping import wrap1d
 
-from typing import Any, Callable, Union
+from typing import Any, Callable, Literal, Union
 import uuid
 
 import numpy as np
@@ -50,7 +50,9 @@ def _drop_masked(da, dim):
 def interp1d(da: DataArray,
              dim: str,
              *,
-             kind: Union[str, int] = 'linear',
+             kind: Union[int,
+                         Literal['linear', 'nearest', 'nearest-up', 'zero', 'slinear',
+                                 'quadratic', 'cubic', 'previous', 'next']] = 'linear',
              fill_value: Any = np.nan,
              **kwargs) -> Callable:
     """Interpolate a 1-D function.
@@ -87,21 +89,35 @@ def interp1d(da: DataArray,
     Parameters not described above are forwarded to scipy.interpolate.interp1d. The
     most relevant ones are (see :py:class:`scipy.interpolate.interp1d` for details):
 
-    :param da: Input data. Defines both dependent and independent variables for interpolation.
-    :param dim: Dimension of the interpolation.
-    :param kind: Specifies the kind of interpolation as a string or as an integer
-                 specifying the order of the spline interpolator to use. The string
-                 has to be one of 'linear', 'nearest', 'nearest-up', 'zero', 'slinear',
-                 'quadratic', 'cubic', 'previous', or 'next'. 'zero', 'slinear',
-                 'quadratic' and 'cubic' refer to a spline interpolation of zeroth,
-                 first, second or third order; 'previous' and 'next' simply return the
-                 previous or next value of the point; 'nearest-up' and 'nearest' differ
-                 when interpolating half-integers (e.g. 0.5, 1.5) in that 'nearest-up'
-                 rounds up and 'nearest' rounds down. Default is 'linear'.
-    :param fill_value: Set to 'extrapolate' to allow for extrapolation of points
-                       outside the range.
+    Parameters
+    ----------
+    da:
+        Input data. Defines both dependent and independent variables for interpolation.
+    dim:
+        Dimension of the interpolation.
+    kind:
+    
+        - **integer**: order of the spline interpolator
+        - **string**:
+        
+          - 'zero', 'slinear', 'quadratic', 'cubic': 
+            spline interpolation of zeroth, first, second or third order
+          - 'previous' and 'next': 
+            simply return the previous or next value of the point
+          - 'nearest-up' and 'nearest'
+            differ when interpolating half-integers (e.g. 0.5, 1.5) in that
+            'nearest-up' rounds up and 'nearest' rounds down   
+    fill_value:
+        Set to 'extrapolate' to allow for extrapolation of points
+        outside the range.
+        
+    Returns
+    -------
+    :
+        A callable ``f(x)`` that returns interpolated values of ``da`` at ``x``.
 
-    Examples:
+    Examples
+    --------
 
     .. plot:: :context: close-figs
 
