@@ -171,7 +171,25 @@ def _to_dataset(obj: Union[VariableLike, dict]) -> Dataset:
 
 
 def table(obj: Union[VariableLike, dict], max_rows: Optional[int] = 20):
+    """Create a html table from the contents of the supplied object.
 
+    Possible inputs are:
+     - Variable
+     - DataArray
+     - Dataset
+     - dict of Variable
+     - dict of DataArray
+
+    Inputs must be one-dimensional. Zero-dimensional data members, attributes and
+    coordinates are stripped. Zero-dimensional masks are broadcast.
+
+    Parameters
+    ----------
+    obj:
+        Input to be turned into a html table.
+    max_rows:
+        Maximum number of rows to display.
+    """
     obj = _to_dataset(obj)
 
     if obj.ndim != 1:
