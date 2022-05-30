@@ -47,7 +47,7 @@ Variable subspan_view(Var &var, const Dim dim, const Variable &indices) {
 }
 
 template <class... Ts, class... Args>
-auto invoke_subspan_view(const DType dtype, Args &&... args) {
+auto invoke_subspan_view(const DType dtype, Args &&...args) {
   Variable ret;
   if (!((scipp::dtype<Ts> == dtype
              ? (ret = subspan_view<Ts>(std::forward<Args>(args)...), true)
@@ -58,7 +58,7 @@ auto invoke_subspan_view(const DType dtype, Args &&... args) {
 }
 
 template <class Var, class... Args>
-Variable subspan_view_impl(Var &var, const Dim dim, Args &&... args) {
+Variable subspan_view_impl(Var &var, const Dim dim, Args &&...args) {
   if (var.stride(dim) != 1)
     throw except::DimensionError(
         "View over subspan can only be created for contiguous "

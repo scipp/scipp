@@ -17,7 +17,7 @@ namespace detail {
 inline auto get_nested_dims() { return Dimensions(); }
 
 template <class T, class... Ts>
-auto get_nested_dims(const T &param, const Ts &... params) {
+auto get_nested_dims(const T &param, const Ts &...params) {
   const auto &bin_param = param.bucketParams();
   return bin_param ? bin_param.dims : get_nested_dims(params...);
 }
@@ -28,7 +28,7 @@ public:
   /// Determine from arguments if binned.
   template <class... Params>
   explicit MultiIndex(const ElementArrayViewParams &param,
-                      const Params &... params)
+                      const Params &...params)
       : MultiIndex{
             (!param.bucketParams() && (!params.bucketParams() && ...))
                 ? MultiIndex(param.dims(), param.strides(), params.strides()...)
@@ -40,7 +40,7 @@ public:
   /// Construct without bins.
   template <class... StridesArgs>
   explicit MultiIndex(const Dimensions &iter_dims,
-                      const StridesArgs &... strides);
+                      const StridesArgs &...strides);
 
 private:
   /// Use to disambiguate between constructors.
@@ -49,7 +49,7 @@ private:
   /// Construct with bins.
   template <class... Params>
   explicit MultiIndex(binned_tag, const Dimensions &inner_dims,
-                      const Dimensions &bin_dims, const Params &... params);
+                      const Dimensions &bin_dims, const Params &...params);
 
 public:
   void increment_outer() noexcept {

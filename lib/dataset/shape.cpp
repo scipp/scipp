@@ -155,13 +155,13 @@ Dataset concat(const scipp::span<const Dataset> dss, const Dim dim) {
 DataArray resize(const DataArray &a, const Dim dim, const scipp::index size,
                  const FillValue fill) {
   return apply_to_data_and_drop_dim(
-      a, [](auto &&... _) { return resize(_...); }, dim, size, fill);
+      a, [](auto &&..._) { return resize(_...); }, dim, size, fill);
 }
 
 Dataset resize(const Dataset &d, const Dim dim, const scipp::index size,
                const FillValue fill) {
   return apply_to_items(
-      d, [](auto &&... _) { return resize(_...); }, dim, size, fill);
+      d, [](auto &&..._) { return resize(_...); }, dim, size, fill);
 }
 
 DataArray resize(const DataArray &a, const Dim dim, const DataArray &shape) {
@@ -298,7 +298,7 @@ DataArray transpose(const DataArray &a, const scipp::span<const Dim> dims) {
 
 Dataset transpose(const Dataset &d, const scipp::span<const Dim> dims) {
   return apply_to_items(
-      d, [](auto &&... _) { return transpose(_...); }, dims);
+      d, [](auto &&..._) { return transpose(_...); }, dims);
 }
 
 namespace {

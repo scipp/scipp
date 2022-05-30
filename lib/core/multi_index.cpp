@@ -41,7 +41,7 @@ template <class Param> void validate_bin_indices(const Param &) {}
 /// Check that corresponding bins have matching sizes.
 template <class Param0, class Param1, class... Params>
 void validate_bin_indices(const Param0 &param0, const Param1 &param1,
-                          const Params &... params) {
+                          const Params &...params) {
   if (param0.bucketParams() && param1.bucketParams())
     validate_bin_indices_impl(param0, param1);
   if (param0.bucketParams())
@@ -53,7 +53,7 @@ void validate_bin_indices(const Param0 &param0, const Param1 &param1,
 inline auto get_slice_dim() { return Dim::Invalid; }
 
 template <class T, class... Ts>
-auto get_slice_dim(const T &param, const Ts &... params) {
+auto get_slice_dim(const T &param, const Ts &...params) {
   return param ? param.dim : get_slice_dim(params...);
 }
 
@@ -73,7 +73,7 @@ template <size_t... I, class... StridesArgs>
 bool can_be_flattened(
     const scipp::index dim, const scipp::index size, std::index_sequence<I...>,
     std::array<scipp::index, sizeof...(I)> &strides_for_contiguous,
-    const StridesArgs &... strides) {
+    const StridesArgs &...strides) {
   const bool res =
       ((value_or_default(strides, dim) == strides_for_contiguous[I] &&
         value_or_default(strides, dim) != 0) &&
@@ -93,7 +93,7 @@ flatten_dims(const scipp::span<std::array<scipp::index, sizeof...(StridesArgs)>>
                  &out_strides,
              const scipp::span<scipp::index> &out_shape, const Dimensions &dims,
              const scipp::index non_flattenable_dim,
-             const StridesArgs &... strides) {
+             const StridesArgs &...strides) {
   constexpr scipp::index N = sizeof...(StridesArgs);
   std::array strides_array{std::ref(strides)...};
   std::array<scipp::index, N> strides_for_contiguous{};
@@ -124,7 +124,7 @@ flatten_dims(const scipp::span<std::array<scipp::index, sizeof...(StridesArgs)>>
 template <scipp::index N>
 template <class... StridesArgs>
 MultiIndex<N>::MultiIndex(const Dimensions &iter_dims,
-                          const StridesArgs &... strides)
+                          const StridesArgs &...strides)
     : m_ndim{flatten_dims(make_span(m_stride, 0), make_span(m_shape, 0),
                           iter_dims, 0, strides...)},
       m_inner_ndim{m_ndim} {}
@@ -132,7 +132,7 @@ MultiIndex<N>::MultiIndex(const Dimensions &iter_dims,
 template <scipp::index N>
 template <class... Params>
 MultiIndex<N>::MultiIndex(binned_tag, const Dimensions &inner_dims,
-                          const Dimensions &bin_dims, const Params &... params)
+                          const Dimensions &bin_dims, const Params &...params)
     : m_bin{BinIterator(params.bucketParams(), bin_dims.volume())...} {
   validate_bin_indices(params...);
 

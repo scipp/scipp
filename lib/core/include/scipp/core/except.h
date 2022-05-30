@@ -30,7 +30,7 @@ struct SCIPP_CORE_EXPORT TypeError : public Error<core::DType> {
   explicit TypeError(const std::string &msg);
 
   template <class... Vars>
-  explicit TypeError(const std::string &msg, Vars &&... vars)
+  explicit TypeError(const std::string &msg, Vars &&...vars)
       : TypeError{msg + (('\'' + pretty_dtype(vars) + "', ") + ...)} {}
 };
 
@@ -113,7 +113,7 @@ void equals(const A &a, const B &b, std::string optional_message = "") {
 }
 
 template <class T, class... Ts>
-void sizeMatches(const T &range, const Ts &... other) {
+void sizeMatches(const T &range, const Ts &...other) {
   if (((scipp::size(range) != scipp::size(other)) || ...))
     throw except::SizeError("Expected matching sizes.");
 }

@@ -17,14 +17,13 @@ namespace scipp::units {
 namespace {
 std::string map_unit_string(const std::string &unit) {
   // custom dimensionless name
-  return unit == "dimensionless"
-             ? ""
-             // Use Gregorian months and years by default.
-             : unit == "y" || unit == "Y" || unit == "year"
-                   ? "a_g"
-                   // Overwrite M to mean month instead of molarity for numpy
-                   // interop.
-                   : unit == "M" || unit == "month" ? "mog" : unit;
+  return unit == "dimensionless" ? ""
+         // Use Gregorian months and years by default.
+         : unit == "y" || unit == "Y" || unit == "year" ? "a_g"
+         // Overwrite M to mean month instead of molarity for numpy
+         // interop.
+         : unit == "M" || unit == "month" ? "mog"
+                                          : unit;
 }
 } // namespace
 

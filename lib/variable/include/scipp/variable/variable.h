@@ -54,7 +54,7 @@ public:
   /// This is equivalent to `makeVariable`, except that the dtype is passed at
   /// runtime as first argument instead of a template argument. `makeVariable`
   /// should be prefered where possible, since it generates less code.
-  template <class... Ts> Variable(const DType &type, Ts &&... args);
+  template <class... Ts> Variable(const DType &type, Ts &&...args);
 
   Variable(const Variable &other) = default;
   Variable(Variable &&other) noexcept = default;
@@ -151,7 +151,7 @@ private:
   friend SCIPP_VARIABLE_EXPORT std::ostream &operator<<(std::ostream &,
                                                         const Variable &);
   template <class... Ts, class... Args>
-  static Variable construct(const DType &type, Args &&... args);
+  static Variable construct(const DType &type, Args &&...args);
   template <class T, class... Index>
   Variable elements_impl(Index... index) const;
 
@@ -186,14 +186,14 @@ private:
 ///    Variable which contains both Values and Variances given length
 ///    uninitialized is:
 ///        makeVariable<T>(Dims{Dim::X}, Shape{5}, Values{}, Variances{});
-template <class T, class... Ts> Variable makeVariable(Ts &&... ts) {
+template <class T, class... Ts> Variable makeVariable(Ts &&...ts) {
   detail::ArgParser<T> parser;
   (parser.parse(std::forward<Ts>(ts)), ...);
   return std::make_from_tuple<Variable>(std::move(parser.args));
 }
 
 template <class... Ts, class... Args>
-Variable Variable::construct(const DType &type, Args &&... args) {
+Variable Variable::construct(const DType &type, Args &&...args) {
   std::array vars{core::dtype<Ts> == type
                       ? makeVariable<Ts>(std::forward<Args>(args)...)
                       : Variable()...};
@@ -205,7 +205,7 @@ Variable Variable::construct(const DType &type, Args &&... args) {
 }
 
 template <class... Ts>
-Variable::Variable(const DType &type, Ts &&... args)
+Variable::Variable(const DType &type, Ts &&...args)
     : Variable{construct<double, float, int64_t, int32_t, bool, std::string,
                          scipp::core::time_point>(type,
                                                   std::forward<Ts>(args)...)} {}

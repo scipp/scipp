@@ -17,7 +17,7 @@ namespace scipp::dataset {
 
 DataArray nanmean(const DataArray &a, const Dim dim) {
   return apply_to_data_and_drop_dim(
-      a, [](auto &&... _) { return nanmean(_...); }, dim, a.masks());
+      a, [](auto &&..._) { return nanmean(_...); }, dim, a.masks());
 }
 
 DataArray nanmean(const DataArray &a) {
@@ -26,10 +26,10 @@ DataArray nanmean(const DataArray &a) {
 
 Dataset nanmean(const Dataset &d, const Dim dim) {
   return apply_to_items(
-      d, [](auto &&... _) { return nanmean(_...); }, dim);
+      d, [](auto &&..._) { return nanmean(_...); }, dim);
 }
 
 Dataset nanmean(const Dataset &d) {
-  return apply_to_items(d, [](auto &&... _) { return nanmean(_...); });
+  return apply_to_items(d, [](auto &&..._) { return nanmean(_...); });
 }
 } // namespace scipp::dataset
