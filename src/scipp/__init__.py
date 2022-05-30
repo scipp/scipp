@@ -35,7 +35,6 @@ from . import geometry
 from ._scipp.core import as_const, choose
 # Import python functions
 from .show import show, make_svg
-from .table import table as oldtable
 
 from .html import to_html, make_html, table
 
