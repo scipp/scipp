@@ -130,11 +130,9 @@ def interp1d(da: DataArray,
 
     .. plot:: :context: close-figs
 
-      sc.plot({'original':da,
-               'interp1d':f(xnew),
-               'interp1d-midpoints':f(xnew, midpoints=True)})
-
-
+      >>> sc.plot({'original':da,
+      ...          'interp1d':f(xnew),
+      ...          'interp1d-midpoints':f(xnew, midpoints=True)})
     """  # noqa #501
     import scipy.interpolate as inter
 

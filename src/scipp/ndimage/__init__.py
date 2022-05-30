@@ -115,31 +115,31 @@ def gaussian_filter(x: VariableLikeType,
 
     .. plot:: :context: close-figs
 
-      from scipp.ndimage import gaussian_filter
-      da = sc.data.data_xy()
-      da.plot()
+      >>> from scipp.ndimage import gaussian_filter
+      >>> da = sc.data.data_xy()
+      >>> da.plot()
 
     With sigma as integer:
 
     .. plot:: :context: close-figs
 
-      filtered = gaussian_filter(da, sigma=4)
-      filtered.plot()
+      >>> filtered = gaussian_filter(da, sigma=4)
+      >>> filtered.plot()
 
     With sigma based on input coordinate values:
 
     .. plot:: :context: close-figs
 
-      filtered = gaussian_filter(da, sigma=sc.scalar(0.1, unit='mm'))
-      filtered.plot()
+      >>> filtered = gaussian_filter(da, sigma=sc.scalar(0.1, unit='mm'))
+      >>> filtered.plot()
 
     With different sigma for different dimensions:
 
     .. plot:: :context: close-figs
 
-      filtered = gaussian_filter(da, sigma={'x':sc.scalar(0.01, unit='mm'),
-                                            'y':sc.scalar(1.0, unit='mm')})
-      filtered.plot()
+      >>> filtered = gaussian_filter(da, sigma={'x':sc.scalar(0.01, unit='mm'),
+      ...                                       'y':sc.scalar(1.0, unit='mm')})
+      >>> filtered.plot()
     """
     sigma = _positional_index(x, sigma, name='sigma', dtype=float)
     if isinstance(order, dict):
@@ -241,31 +241,31 @@ def _make_footprint_filter(name, example=True, extra_args=''):
 
     .. plot:: :context: close-figs
 
-      from scipp.ndimage import {name}
-      da = sc.data.data_xy()
-      da.plot()
+      >>> from scipp.ndimage import {name}
+      >>> da = sc.data.data_xy()
+      >>> da.plot()
 
     With size as integer:
 
     .. plot:: :context: close-figs
 
-      filtered = {name}(da, size=4{extra_args})
-      filtered.plot()
+      >>> filtered = {name}(da, size=4{extra_args})
+      >>> filtered.plot()
 
     With size based on input coordinate values:
 
     .. plot:: :context: close-figs
 
-      filtered = {name}(da, size=sc.scalar(0.2, unit='mm'){extra_args})
-      filtered.plot()
+      >>> filtered = {name}(da, size=sc.scalar(0.2, unit='mm'){extra_args})
+      >>> filtered.plot()
 
     With different size for different dimensions:
 
     .. plot:: :context: close-figs
 
-      filtered = {name}(da, size={{'x':sc.scalar(0.2, unit='mm'),
-                            {' ' * len(name)}'y':sc.scalar(1.1, unit='mm')}}{extra_args})
-      filtered.plot()
+      >>> filtered = {name}(da, size={{'x':sc.scalar(0.2, unit='mm'),
+      ...                       {' ' * len(name)}'y':sc.scalar(1.1, unit='mm')}}{extra_args})
+      >>> filtered.plot()
     """  # noqa: E501
     footprint_filter.__doc__ = doc
     return _ndfilter(footprint_filter)
