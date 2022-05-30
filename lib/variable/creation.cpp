@@ -44,6 +44,8 @@ Variable empty_like(const Variable &prototype,
   return variableFactory().empty_like(prototype, shape, sizes);
 }
 
+/// Create a variable with the same parameters as `prototype` with
+/// values filled according to `fill`.
 Variable special_like(const Variable &prototype, const FillValue &fill) {
   const char *name = "special_like";
   if (fill == FillValue::Default)
@@ -60,6 +62,20 @@ Variable special_like(const Variable &prototype, const FillValue &fill) {
     return transform(prototype, core::element::numeric_limits_lowest_like,
                      name);
   throw std::runtime_error("Unsupported fill value.");
+}
+
+/// Create a variable with the same parameters as `prototype` with the given
+/// dimensions and values filled according to `fill`.
+/// If `prototype` is binned, `accum` is dense
+/// with the elem dtype of `prototype`.
+Variable dense_special_like(const Variable &prototype,
+                            const Dimensions &target_dims,
+                            const FillValue &fill) {
+  const auto type = variableFactory().elem_dtype(prototype);
+  const auto unit = variableFactory().elem_unit(prototype);
+  const auto has_variances = variableFactory().has_variances(prototype);
+  const auto scalar_prototype = empty(Dimensions{}, unit, type, has_variances);
+  return special_like(scalar_prototype.broadcast(target_dims), fill);
 }
 
 /// Create scalar variable containing 0 with same parameters as prototype.

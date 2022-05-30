@@ -28,7 +28,8 @@ class Mesh:
                  masks_cmap: str = "gray",
                  norm: str = "linear",
                  vmin=None,
-                 vmax=None):
+                 vmax=None,
+                 cbar=True):
 
         self._ax = ax
         self._data = data
@@ -49,7 +50,7 @@ class Mesh:
         self._norm_func = None
 
         self._mesh = None
-        self._cbar = None
+        self._cbar = cbar
         self._aspect = aspect if aspect is not None else config['plot']['aspect']
 
         self._extend = "neither"
@@ -68,24 +69,26 @@ class Mesh:
                                          self._data.data.values,
                                          cmap=self._cmap,
                                          shading='auto')
-        self._cbar = plt.colorbar(self._mesh,
-                                  ax=self._ax,
-                                  cax=self._cax,
-                                  extend=self._extend,
-                                  label=name_with_unit(var=self._data.data, name=""))
+        if self._cbar:
+            self._cbar = plt.colorbar(self._mesh,
+                                      ax=self._ax,
+                                      cax=self._cax,
+                                      extend=self._extend,
+                                      label=name_with_unit(var=self._data.data,
+                                                           name=""))
 
-        # Add event that toggles the norm of the colorbar when clicked on
-        # TODO: change this to a double-click event once this is supported in jupyterlab
-        # see https://github.com/matplotlib/ipympl/pull/446
-        self._cbar.ax.set_picker(5)
-        self._ax.figure.canvas.mpl_connect('pick_event', self.toggle_norm)
+            # Add event that toggles the norm of the colorbar when clicked on
+            # TODO: change this to a double-click event once this is supported in
+            # jupyterlab, see https://github.com/matplotlib/ipympl/pull/446
+            self._cbar.ax.set_picker(5)
+            self._ax.figure.canvas.mpl_connect('pick_event', self.toggle_norm)
 
-        if self._cax is None:
-            self._cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
-        # When we transpose, we remove the mesh and make a new one calling _make_mesh().
-        # To ensure this doesn't add a new colorbar every time we hit transpose, we save
-        # and re-use the colorbar axis.
-        self._cax = self._cbar.ax
+            if self._cax is None:
+                self._cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
+            # When we transpose, remove the mesh and make a new one with _make_mesh().
+            # To ensure this does not add a new colorbar every time we hit transpose,
+            # we save and re-use the colorbar axis.
+            self._cax = self._cbar.ax
         self._mesh.set_array(None)
         self._set_norm()
         self._set_mesh_colors()

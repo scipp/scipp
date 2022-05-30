@@ -1,4 +1,4 @@
-clang-format==10.0.1.1
+clang-format
 cmake-format
 flake8
 nbstripout

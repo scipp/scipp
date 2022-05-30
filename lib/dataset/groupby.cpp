@@ -161,13 +161,18 @@ template <class T> T GroupBy<T>::concat(const Dim reductionDim) const {
   if constexpr (std::is_same_v<T, DataArray>) {
     return conc(m_data);
   } else {
-    return apply_to_items(m_data, [&](auto &&... _) { return conc(_...); });
+    return apply_to_items(m_data, [&](auto &&..._) { return conc(_...); });
   }
 }
 
 /// Reduce each group using `sum` and return combined data.
 template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {
-  return reduce(sum_into, reductionDim, FillValue::ZeroNotBool);
+  return reduce(variable::sum_into, reductionDim, FillValue::ZeroNotBool);
+}
+
+/// Reduce each group using `nansum` and return combined data.
+template <class T> T GroupBy<T>::nansum(const Dim reductionDim) const {
+  return reduce(variable::nansum_into, reductionDim, FillValue::ZeroNotBool);
 }
 
 /// Reduce each group using `all` and return combined data.
@@ -185,9 +190,19 @@ template <class T> T GroupBy<T>::max(const Dim reductionDim) const {
   return reduce(variable::max_into, reductionDim, FillValue::Lowest);
 }
 
+/// Reduce each group using `nanmax` and return combined data.
+template <class T> T GroupBy<T>::nanmax(const Dim reductionDim) const {
+  return reduce(variable::nanmax_into, reductionDim, FillValue::Lowest);
+}
+
 /// Reduce each group using `min` and return combined data.
 template <class T> T GroupBy<T>::min(const Dim reductionDim) const {
   return reduce(variable::min_into, reductionDim, FillValue::Max);
+}
+
+/// Reduce each group using `nanmin` and return combined data.
+template <class T> T GroupBy<T>::nanmin(const Dim reductionDim) const {
+  return reduce(variable::nanmin_into, reductionDim, FillValue::Max);
 }
 
 /// Combine groups without changes, effectively sorting data.

@@ -87,9 +87,9 @@ common_unit<scipp::core::time_point>(const pybind11::object &values,
 }
 
 std::string to_numpy_time_string(const scipp::units::Unit unit) {
-  return unit == units::us
-             ? std::string("us")
-             : unit == units::Unit("min") ? std::string("m") : to_string(unit);
+  return unit == units::us            ? std::string("us")
+         : unit == units::Unit("min") ? std::string("m")
+                                      : to_string(unit);
 }
 
 scipp::units::Unit unit_or_default(const ProtoUnit &unit, const DType type) {

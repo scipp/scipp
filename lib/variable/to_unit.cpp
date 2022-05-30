@@ -51,7 +51,7 @@ Variable to_unit(const Variable &var, const units::Unit &unit,
   }
   Variable scalevar;
   // Need to make sure that errors due to machine precision actually affect
-  // decimal places, otherwise the apporhac based on std::round will do nothing.
+  // decimal places, otherwise the approach based on std::round will do nothing.
   const auto base_scale = scale > 1e6 ? scale * 1e-6 : scale;
   if (const auto iscale = std::round(base_scale);
       (std::abs(base_scale - iscale) < 1e-12 * std::abs(base_scale)))

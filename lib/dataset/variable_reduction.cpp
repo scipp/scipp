@@ -16,18 +16,14 @@
 namespace scipp::dataset {
 
 namespace {
-// Uses variable::special like but constructs only a scalar
-// instead of a full-sized array.
-Variable scalar_special_like(const Variable &prototype, const FillValue fill) {
-  return special_like(zero_like(prototype), fill);
-}
-
 template <class Op>
 Variable reduce_impl(const Variable &var, const Dim dim, const Masks &masks,
                      const FillValue fill, const Op &op) {
   if (const auto mask_union = irreducible_mask(masks, dim);
       mask_union.is_valid()) {
-    return op(where(mask_union, scalar_special_like(var, fill), var), dim);
+    return op(
+        where(mask_union, dense_special_like(var, Dimensions{}, fill), var),
+        dim);
   }
   return op(var, dim);
 }
@@ -35,42 +31,42 @@ Variable reduce_impl(const Variable &var, const Dim dim, const Masks &masks,
 
 Variable sum(const Variable &var, const Dim dim, const Masks &masks) {
   return reduce_impl(var, dim, masks, FillValue::Default,
-                     [](auto &&... args) { return sum(args...); });
+                     [](auto &&...args) { return sum(args...); });
 }
 
 Variable nansum(const Variable &var, const Dim dim, const Masks &masks) {
   return reduce_impl(var, dim, masks, FillValue::Default,
-                     [](auto &&... args) { return nansum(args...); });
+                     [](auto &&...args) { return nansum(args...); });
 }
 
 Variable max(const Variable &var, const Dim dim, const Masks &masks) {
   return reduce_impl(var, dim, masks, FillValue::Lowest,
-                     [](auto &&... args) { return max(args...); });
+                     [](auto &&...args) { return max(args...); });
 }
 
 Variable nanmax(const Variable &var, const Dim dim, const Masks &masks) {
   return reduce_impl(var, dim, masks, FillValue::Lowest,
-                     [](auto &&... args) { return nanmax(args...); });
+                     [](auto &&...args) { return nanmax(args...); });
 }
 
 Variable min(const Variable &var, const Dim dim, const Masks &masks) {
   return reduce_impl(var, dim, masks, FillValue::Max,
-                     [](auto &&... args) { return min(args...); });
+                     [](auto &&...args) { return min(args...); });
 }
 
 Variable nanmin(const Variable &var, const Dim dim, const Masks &masks) {
   return reduce_impl(var, dim, masks, FillValue::Max,
-                     [](auto &&... args) { return nanmin(args...); });
+                     [](auto &&...args) { return nanmin(args...); });
 }
 
 Variable all(const Variable &var, const Dim dim, const Masks &masks) {
   return reduce_impl(var, dim, masks, FillValue::True,
-                     [](auto &&... args) { return all(args...); });
+                     [](auto &&...args) { return all(args...); });
 }
 
 Variable any(const Variable &var, const Dim dim, const Masks &masks) {
   return reduce_impl(var, dim, masks, FillValue::False,
-                     [](auto &&... args) { return any(args...); });
+                     [](auto &&...args) { return any(args...); });
 }
 
 Variable mean(const Variable &var, const Dim dim, const Masks &masks) {

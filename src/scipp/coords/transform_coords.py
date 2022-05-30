@@ -113,7 +113,7 @@ def show_graph(graph: GraphDict, size: str = None, simplified: bool = False):
         See the
         `documentation <https://graphviz.readthedocs.io/en/stable/api.html#graphviz.Digraph>`_
         for details.
-        
+
     Raises
     ------
     RuntimeError

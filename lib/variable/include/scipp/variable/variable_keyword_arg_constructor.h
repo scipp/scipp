@@ -21,7 +21,7 @@ namespace detail {
 template <class U> struct vector {
   std::vector<U> data;
   template <class... Args>
-  vector(Args &&... args) : data(std::forward<Args>(args)...) {}
+  vector(Args &&...args) : data(std::forward<Args>(args)...) {}
   template <class A, class B> // avoid use of vector(size, value)
   vector(A &&a, B &&b) : data(std::initializer_list<U>{a, b}) {}
   template <class T>
@@ -30,7 +30,7 @@ template <class U> struct vector {
 
 template <template <class...> class Derived, class... Args> struct arg_tuple {
   std::tuple<std::decay_t<Args>...> tuple;
-  arg_tuple(Args &&... args) : tuple(std::forward<Args>(args)...) {}
+  arg_tuple(Args &&...args) : tuple(std::forward<Args>(args)...) {}
 };
 } // namespace detail
 
@@ -52,11 +52,11 @@ struct Variances : public detail::arg_tuple<Variances, Args...> {
       : detail::arg_tuple<Variances, Args...>(std::move(init)) {}
 };
 
-template <class... Args> Values(Args &&... args) -> Values<Args...>;
+template <class... Args> Values(Args &&...args) -> Values<Args...>;
 template <class T>
 Values(std::initializer_list<T>) -> Values<std::initializer_list<T>>;
 
-template <class... Args> Variances(Args &&... args) -> Variances<Args...>;
+template <class... Args> Variances(Args &&...args) -> Variances<Args...>;
 template <class T>
 Variances(std::initializer_list<T>) -> Variances<std::initializer_list<T>>;
 

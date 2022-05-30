@@ -11,6 +11,7 @@ add_executable(
   binned_arithmetic_test.cpp
   binned_creation_test.cpp
   bins_test.cpp
+  bins_reduction_test.cpp
   bins_view_test.cpp
   bin_test.cpp
   choose_test.cpp

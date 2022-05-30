@@ -6,6 +6,8 @@
 
 #include <functional>
 
+#include "scipp/core/flags.h"
+
 #include "scipp/variable/variable.h"
 
 namespace scipp::variable {
@@ -42,6 +44,15 @@ public:
   virtual Variable empty_like(const Variable &prototype,
                               const std::optional<Dimensions> &shape,
                               const Variable &sizes) const = 0;
+  [[nodiscard]] virtual Variable apply_event_masks(const Variable &var,
+                                                   const FillValue) const {
+    return var;
+  }
+
+  [[nodiscard]] virtual Variable
+  irreducible_event_mask([[maybe_unused]] const Variable &var) const {
+    return Variable{};
+  }
 };
 
 SCIPP_VARIABLE_EXPORT bool is_bins(const Variable &var);
@@ -67,7 +78,7 @@ public:
   template <class... Parents>
   Variable create(const DType elem_dtype, const Dimensions &dims,
                   const units::Unit &unit, const bool with_variances,
-                  const Parents &... parents) const {
+                  const Parents &...parents) const {
     const auto parents_ = parent_list{parents...};
     const auto key = bin_dtype(parents_);
     return m_makers.at(key == dtype<void> ? elem_dtype : key)
@@ -100,6 +111,11 @@ public:
   Variable empty_like(const Variable &prototype,
                       const std::optional<Dimensions> &shape,
                       const Variable &sizes = {});
+  /// Return a binned variable where masked elements are replaced by fill.
+  /// Coords and attrs of the input are not propagated to the output.
+  [[nodiscard]] Variable apply_event_masks(const Variable &var,
+                                           const FillValue fill) const;
+  [[nodiscard]] Variable irreducible_event_mask(const Variable &var) const;
 
 private:
   std::map<DType, std::unique_ptr<AbstractVariableMaker>> m_makers;

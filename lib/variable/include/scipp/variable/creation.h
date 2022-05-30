@@ -28,6 +28,9 @@ empty_like(const Variable &prototype,
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 special_like(const Variable &prototype, const FillValue &fill);
 
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable dense_special_like(
+    const Variable &prototype, const Dimensions &dims, const FillValue &fill);
+
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 zero_like(const Variable &prototype);
 

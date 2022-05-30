@@ -36,23 +36,23 @@ template <class T, class Var> auto variable_access(Var &var) {
 namespace visit_detail {
 
 template <template <class...> class Tuple, class... T, class... V>
-static bool holds_alternatives(Tuple<T...> &&, const V &... v) noexcept {
+static bool holds_alternatives(Tuple<T...> &&, const V &...v) noexcept {
   return ((dtype<T> == variableFactory().elem_dtype(v)) && ...);
 }
 
 template <template <class...> class Tuple, class... T, class... V>
-static auto get_args(Tuple<T...> &&, V &&... v) noexcept {
+static auto get_args(Tuple<T...> &&, V &&...v) noexcept {
   return std::tuple(variable_access<T>(v)...);
 }
 
 template <class... Tuple, class F, class... V>
-decltype(auto) invoke(F &&f, V &&... v) {
+decltype(auto) invoke(F &&f, V &&...v) {
   // Determine return type from call based on first set of allowed inputs, this
   // should give either Variable or void.
-  using Ret = decltype(
-      std::apply(std::forward<F>(f),
-                 get_args(std::tuple_element_t<0, std::tuple<Tuple...>>{},
-                          std::forward<V>(v)...)));
+  using Ret = decltype(std::apply(
+      std::forward<F>(f),
+      get_args(std::tuple_element_t<0, std::tuple<Tuple...>>{},
+               std::forward<V>(v)...)));
 
   if constexpr (!std::is_same_v<void, Ret>) {
     Ret ret;
@@ -95,7 +95,7 @@ using maybe_duplicate =
 /// Does not generate code for all possible combinations of alternatives,
 /// instead the tuples Ts provide a list of type combinations to try.
 template <class... Ts> struct visit {
-  template <class F, class... V> static decltype(auto) apply(F &&f, V &&... v) {
+  template <class F, class... V> static decltype(auto) apply(F &&f, V &&...v) {
     using namespace visit_detail;
     // For a single input or if same type required for all inputs, Ts is not a
     // tuple. In that case we wrap it and expand it to the correct sizeof...(V).

@@ -30,7 +30,7 @@ template <class Op> void parallel_for(const blocked_range &range, Op &&op) {
   op(range);
 }
 
-template <class... Args> void parallel_sort(Args &&... args) {
+template <class... Args> void parallel_sort(Args &&...args) {
   std::sort(std::forward<Args>(args)...);
 }
 

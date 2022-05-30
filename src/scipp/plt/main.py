@@ -110,4 +110,4 @@ def plot(scipp_obj: Union[VariableLike, ArrayLike, Dict[str, Union[VariableLike,
     else:
         inventory.update(_input_to_data_array(scipp_obj, all_keys=inventory.keys()))
 
-    return Plot(models=inventory, filters=filters, **kwargs)
+    return Plot(data_arrays=inventory, filters=filters, **kwargs)

@@ -12,7 +12,7 @@
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/math.h"
-#include "scipp/variable/operations.h"
+#include "scipp/variable/reduction.h"
 #include "scipp/variable/variable_factory.h"
 
 using namespace scipp;
@@ -174,10 +174,6 @@ TEST_F(DataArrayBinsTest, histogram_existing_dim) {
       DataArray(makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::counts,
                                      Values{0, 1, 2}, Variances{0, 1, 2}),
                 {{Dim::Y, bin_edges}}));
-}
-
-TEST_F(DataArrayBinsTest, sum) {
-  EXPECT_EQ(bins_sum(var), makeVariable<double>(indices.dims(), Values{3, 7}));
 }
 
 TEST_F(DataArrayBinsTest, operations_on_empty) {

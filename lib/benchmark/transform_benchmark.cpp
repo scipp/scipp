@@ -57,7 +57,7 @@ static void BM_transform_in_place(benchmark::State &state) {
   run<true>(
       state,
       // cppcheck-suppress constParameter  # state must be mutable in for loop.
-      [](auto &state_, auto &&... args) {
+      [](auto &state_, auto &&...args) {
         for ([[maybe_unused]] auto _ : state_) {
           transform_in_place<Types>(args..., "");
         }
@@ -142,7 +142,7 @@ BENCHMARK(BM_transform_in_place_transposed)
 static void BM_transform(benchmark::State &state) {
   run<false>(
       state,
-      [](auto &state_, auto &&... args) {
+      [](auto &state_, auto &&...args) {
         for ([[maybe_unused]] auto _ : state_) {
           auto out = transform<Types>(args..., "");
           state_.PauseTiming();

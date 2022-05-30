@@ -9,6 +9,7 @@ from typing import Callable, Dict, Iterable, List, Set, Tuple, Union
 
 from ..core import DataArray
 from .rule import ComputeRule, FetchRule, RenameRule, Rule
+from ..utils.graph import make_graphviz_digraph
 
 GraphDict = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
 
@@ -77,7 +78,7 @@ class Graph:
                            "and no rule has been provided to compute it.") from None
 
     def show(self, size=None, simplified=False):
-        dot = _make_graphviz_digraph(strict=True)
+        dot = make_graphviz_digraph(strict=True)
         dot.attr('node', shape='box', height='0.1')
         dot.attr(size=size)
         for output, rule in self._rules.items():
@@ -126,12 +127,3 @@ def _convert_to_rule_graph(graph: GraphDict) -> Dict[str, Rule]:
 
 def _is_in_meta_data(name: str, da: DataArray) -> bool:
     return name in da.meta or (da.bins is not None and name in da.bins.meta)
-
-
-def _make_graphviz_digraph(*args, **kwargs):
-    try:
-        from graphviz import Digraph
-    except ImportError:
-        raise RuntimeError('Failed to import `graphviz`, please install `graphviz` if '
-                           'using `pip`, or `python-graphviz` if using `conda`.')
-    return Digraph(*args, **kwargs)

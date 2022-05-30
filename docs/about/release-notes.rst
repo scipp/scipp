@@ -3,8 +3,8 @@
 Release Notes
 =============
 
-v0.14.0 (unreleased)
---------------------
+v0.14.0 (May 2022)
+------------------
 
 Features
 ~~~~~~~~
@@ -16,7 +16,9 @@ Features
 * Support ``dtype=vector3`` in :func:`scipp.isinf` and :func:`scipp.isfinite` `#2593 <https://github.com/scipp/scipp/pull/2593>`_.
 * Added support for passing any dict-like objects or iterables of tuples as ``coords``, ``attrs``, and ``masks`` arguments to initializers of :class:`scipp.DataArray` and :class:`scipp.Dataset` `#2603 <https://github.com/scipp/scipp/pull/2603>`_.
 * Added support for passing any dict-like objects or iterables of tuples as the ``data`` argument to the initializer of :class:`scipp.Dataset` `#2603 <https://github.com/scipp/scipp/pull/2603>`_.
-* Added support for ``DataArray`` and ``Dataset`` in reduction operations (e.g. :func:`scipp.max`) `#2600 <https://github.com/scipp/scipp/pull/2600>`_.
+* Added support for ``DataArray`` and ``Dataset`` in more reduction operations (e.g. :func:`scipp.max`) `#2600 <https://github.com/scipp/scipp/pull/2600>`_.
+* Added support for masks in reductions of binned data `#2608 <https://github.com/scipp/scipp/pull/2608>`_.
+* Added more reduction operations to the ``.bins`` property (e.g. :func:`scipp.Bins.max`) `#2608 <https://github.com/scipp/scipp/pull/2608>`_.
 * Reduce effect of rounding errors when converting units `#2607 <https://github.com/scipp/scipp/pull/2607>`_.
 
 Breaking changes

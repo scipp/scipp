@@ -15,7 +15,7 @@ namespace scipp::dataset {
 
 DataArray mean(const DataArray &a, const Dim dim) {
   return apply_to_data_and_drop_dim(
-      a, [](auto &&... _) { return mean(_...); }, dim, a.masks());
+      a, [](auto &&..._) { return mean(_...); }, dim, a.masks());
 }
 
 DataArray mean(const DataArray &a) {
@@ -24,11 +24,11 @@ DataArray mean(const DataArray &a) {
 
 Dataset mean(const Dataset &d, const Dim dim) {
   return apply_to_items(
-      d, [](auto &&... _) { return mean(_...); }, dim);
+      d, [](auto &&..._) { return mean(_...); }, dim);
 }
 
 Dataset mean(const Dataset &d) {
-  return apply_to_items(d, [](auto &&... _) { return mean(_...); });
+  return apply_to_items(d, [](auto &&..._) { return mean(_...); });
 }
 
 } // namespace scipp::dataset
