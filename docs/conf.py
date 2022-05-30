@@ -234,9 +234,21 @@ plot_html_show_formats = False
 
 # -- Options for doctest --------------------------------------------------
 
+# sc.plot returns a Figure object and doctest compares that against the
+# output written in the docstring. But we only want to show an image of the
+# figure, not its `repr`. So we wrap sc.plot such that it returns nothing.
 doctest_global_setup = '''
 import numpy as np
 import scipp as sc
+
+orig_plot = sc.plot
+def plot_without_return(*args, **kwargs):
+    orig_plot(*args, **kwargs)
+
+sc.plot = plot_without_return
+sc.Variable.plot = plot_without_return
+sc.DataArray.plot = plot_without_return
+sc.Dataset.plot = plot_without_return
 '''
 
 # Using normalize whitespace because many __str__ functions in scipp produce
