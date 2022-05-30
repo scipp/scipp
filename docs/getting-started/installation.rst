@@ -58,12 +58,6 @@ To add scipp to an existing conda environment:
 
    conda install -c conda-forge -c scipp scipp
 
-For a more up-to-date version, the `scipp/label/dev` channel can be used instead:
-
-.. code-block:: sh
-
-   conda install -c conda-forge -c scipp/label/dev scipp
-
 .. note::
    Installing ``scipp`` on Windows requires ``Microsoft Visual Studio 2019 C++ Runtime`` (and versions above) installed.
    Visit https://support.microsoft.com/en-us/topic/the-latest-supported-visual-c-downloads-2647da03-1eea-4433-9aff-95f26a218cc0 for the up to date version of the library.
