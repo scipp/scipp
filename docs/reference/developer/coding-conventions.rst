@@ -136,3 +136,12 @@ For example
         """Returns the number of dimensions."""
 
 But note that the argument types are not shown in the rendered documentation!
+
+Plots in docstrings
+^^^^^^^^^^^^^^^^^^^
+
+Code blocks in docstrings can produce plots.
+This works either via placing
+`matplotlib.sphinxext.plot_directive <https://matplotlib.org/stable/api/sphinxext_plot_directive_api.html>`_
+explicitly or by automatically placing those directives via :mod:`scipp.sphinxext.autoplot`.
+See the module documentation for more information.

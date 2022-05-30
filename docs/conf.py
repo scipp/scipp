@@ -50,7 +50,7 @@ extensions = [
     'IPython.sphinxext.ipython_console_highlighting',
     'matplotlib.sphinxext.plot_directive',
     'nbsphinx',
-    'scipp.sphinxext',
+    'scipp.sphinxext.autoplot',
 ]
 
 autodoc_type_aliases = {
