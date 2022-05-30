@@ -2,9 +2,9 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 import numpy as np
-from typing import Any, List, Optional
+from typing import List, Optional, Union
 from .. import DataArray, Dataset, Variable
-from ..typing import MetaDataMap, VariableLike
+from ..typing import VariableLike
 from .. import DType
 
 CENTER = 'style="text-align: center;"'
@@ -26,7 +26,7 @@ def _string_in_cell(v: Variable) -> str:
     return f'{v_str}&plusmn;{e_str}'
 
 
-def _var_name_with_unit(name, var):
+def _var_name_with_unit(name: str, var: Variable) -> str:
     out = f'<span style="font-weight: bold;">{name}</span>'
     unit = var.bins.unit if var.bins is not None else var.unit
     if unit is not None:
@@ -34,17 +34,18 @@ def _var_name_with_unit(name, var):
     return out
 
 
-def _add_td_tags(cell_list, border=False):
+def _add_td_tags(cell_list: List[str], border: Optional[bool] = False) -> List[str]:
     td = WITH_BORDER if border else ""
     td = f'<td {td}>'
     return [f'{td}{cell}</td>' for cell in cell_list]
 
 
-def _meta_length(meta):
-    return len([True for var in meta.values() if var.dims])
-
-
-def _make_variable_column(name, var, indices, need_bin_edge, is_bin_edge, border=False):
+def _make_variable_column(name: str,
+                          var: Variable,
+                          indices: list,
+                          need_bin_edge: bool,
+                          is_bin_edge,
+                          border: Optional[bool] = False) -> List[str]:
     out = [_var_name_with_unit(name, var)]
     for i in indices:
         if i is None:
@@ -59,7 +60,7 @@ def _make_variable_column(name, var, indices, need_bin_edge, is_bin_edge, border
     return _add_td_tags(out, border=border)
 
 
-def _make_data_array_table(da, indices, bin_edges):
+def _make_data_array_table(da: DataArray, indices: list, bin_edges: bool) -> List[list]:
 
     out = [
         _make_variable_column(name='',
@@ -91,7 +92,7 @@ def _make_data_array_table(da, indices, bin_edges):
     return out
 
 
-def _make_entries_header(ds):
+def _make_entries_header(ds: Dataset) -> str:
     out = '<tr>'
     if ds.coords:
         out += f'<th colspan="{len(ds.coords)}"></th>'
@@ -102,7 +103,7 @@ def _make_entries_header(ds):
     return out
 
 
-def _make_sections_header(ds):
+def _make_sections_header(ds: Dataset) -> str:
     out = '<tr>'
     if ds.coords:
         out += f'<th {CENTER} colspan="{len(ds.coords)}">Coordinates</th>'
@@ -116,7 +117,7 @@ def _make_sections_header(ds):
     return out
 
 
-def _to_html_table(header, body):
+def _to_html_table(header: str, body: List[list]) -> str:
     out = '<table>' + header
     ncols = len(body)
     nrows = len(body[0])
@@ -126,7 +127,7 @@ def _to_html_table(header, body):
     return out
 
 
-def _find_bin_edges(ds):
+def _find_bin_edges(ds: Dataset) -> bool:
     for key in ds.coords:
         if ds.coords.is_edges(key):
             return True
@@ -137,7 +138,7 @@ def _find_bin_edges(ds):
     return False
 
 
-def _strip_scalars_and_broadcast_masks(ds):
+def _strip_scalars_and_broadcast_masks(ds: Dataset) -> Dataset:
     out = Dataset()
     for key, da in ds.items():
         if da.ndim == 1:
@@ -159,7 +160,7 @@ def _strip_scalars_and_broadcast_masks(ds):
     return out
 
 
-def _to_dataset(obj):
+def _to_dataset(obj: Union[VariableLike, dict]) -> Dataset:
     if isinstance(obj, DataArray):
         return Dataset({obj.name: obj})
     if isinstance(obj, Variable):
@@ -169,7 +170,7 @@ def _to_dataset(obj):
     return obj
 
 
-def table(obj: VariableLike, max_rows: Optional[int] = 20):
+def table(obj: Union[VariableLike, dict], max_rows: Optional[int] = 20):
 
     obj = _to_dataset(obj)
 
