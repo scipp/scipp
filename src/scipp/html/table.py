@@ -13,7 +13,6 @@ CENTER_BORDER = 'style="text-align: center; border-left:1px solid #a9a9a9;"'
 
 
 def _string_in_cell(v: Variable) -> str:
-
     if v.bins is not None:
         return f'len={v.value.shape}'
     if v.dtype in (DType.vector3, DType.string):
@@ -142,16 +141,21 @@ def _strip_scalars_and_broadcast_masks(ds):
     out = Dataset()
     for key, da in ds.items():
         if da.ndim == 1:
-            out[key] = DataArray(
-                data=da.data,
-                coords={key: var
-                        for key, var in da.coords.items() if var.ndim == 1},
-                attrs={key: var
-                       for key, var in da.attrs.items() if var.ndim == 1},
-                masks={
-                    key: var.broadcast(sizes=da.sizes)
-                    for key, var in da.masks.items()
-                })
+            out[key] = DataArray(data=da.data,
+                                 coords={
+                                     key: var
+                                     for key, var in da.coords.items()
+                                     if var.dims == da.data.dims
+                                 },
+                                 attrs={
+                                     key: var
+                                     for key, var in da.attrs.items()
+                                     if var.dims == da.data.dims
+                                 },
+                                 masks={
+                                     key: var.broadcast(sizes=da.sizes)
+                                     for key, var in da.masks.items()
+                                 })
     return out
 
 

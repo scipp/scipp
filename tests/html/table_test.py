@@ -90,3 +90,8 @@ def test_table_dataset_with_0d_elements():
     ds['scalar_data'] = sc.scalar(111.)
     ds['a'].masks['0d_mask'] = sc.scalar(True)
     sc.table(ds)
+
+
+def test_table_dataset_with_0d_bin_edge_attributes():
+    ds = make_dense_dataset(ndim=2, attrs=True, masks=True, binedges=True)
+    sc.table(ds['yy', 0])
