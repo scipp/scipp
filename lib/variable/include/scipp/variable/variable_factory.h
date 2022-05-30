@@ -49,8 +49,8 @@ public:
     return var;
   }
 
-  [[nodiscard]] virtual Variable irreducible_event_mask([
-      [maybe_unused]] const Variable &var) const {
+  [[nodiscard]] virtual Variable
+  irreducible_event_mask([[maybe_unused]] const Variable &var) const {
     return Variable{};
   }
 };
@@ -78,7 +78,7 @@ public:
   template <class... Parents>
   Variable create(const DType elem_dtype, const Dimensions &dims,
                   const units::Unit &unit, const bool with_variances,
-                  const Parents &... parents) const {
+                  const Parents &...parents) const {
     const auto parents_ = parent_list{parents...};
     const auto key = bin_dtype(parents_);
     return m_makers.at(key == dtype<void> ? elem_dtype : key)

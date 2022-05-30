@@ -14,4 +14,4 @@
   typedef ::testing::internal::GenerateTypeList<Types>::type                   \
       GTEST_TYPE_PARAMS_(CaseName);                                            \
   typedef ::testing::internal::NameGeneratorSelector<>::type                   \
-      GTEST_NAME_GENERATOR_(CaseName)
+  GTEST_NAME_GENERATOR_(CaseName)

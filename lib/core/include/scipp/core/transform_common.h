@@ -29,8 +29,8 @@ template <class... Ts> struct pair_product {
 };
 
 template <class... Ts>
-using pair_product_t = decltype(
-    std::tuple_cat(typename pair_product<Ts...>::template type<Ts>{}...));
+using pair_product_t = decltype(std::tuple_cat(
+    typename pair_product<Ts...>::template type<Ts>{}...));
 
 using arithmetic_type_pairs = pair_product_t<float, double, int32_t, int64_t>;
 using arithmetic_type_pairs_with_bool =
@@ -59,7 +59,7 @@ static constexpr auto dimensionless_unit_check_return =
 
 template <typename Op> struct assign_unary : Op {
   template <typename Out, typename... In>
-  void operator()(Out &out, In &&... in) {
+  void operator()(Out &out, In &&...in) {
     out = Op::operator()(std::forward<In>(in)...);
   }
 };

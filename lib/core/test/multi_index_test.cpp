@@ -15,7 +15,7 @@ protected:
   template <scipp::index N, class... Indices>
   void check_increment(MultiIndex<N> i,
                        const std::vector<scipp::index> &expected0,
-                       const Indices &... expected) const {
+                       const Indices &...expected) const {
     const auto end = i.end();
     for (scipp::index n = 0; n < scipp::size(expected0); ++n) {
       SCOPED_TRACE(n);
@@ -29,7 +29,7 @@ protected:
   template <scipp::index N, class... Indices>
   void check_set_index(MultiIndex<N> i, const scipp::index bin_volume,
                        const std::vector<scipp::index> &expected0,
-                       const Indices &... expected) const {
+                       const Indices &...expected) const {
     if (!i.has_bins()) {
       for (scipp::index n = 0; n < scipp::size(expected0); ++n) {
         i.set_index(n);
@@ -61,7 +61,7 @@ protected:
   template <scipp::index N, class... Indices>
   void check_impl(MultiIndex<N> i, const scipp::index bin_volume,
                   const std::vector<scipp::index> &expected0,
-                  const Indices &... expected) const {
+                  const Indices &...expected) const {
     if (scipp::size(expected0) > 0) {
       ASSERT_NE(i.begin(), i.end());
     } else {

@@ -137,12 +137,12 @@ void increment(std::array<scipp::index, N> &indices,
 
 template <class Op, class Indices, class... Args, size_t... I>
 static constexpr auto call_impl(Op &&op, const Indices &indices,
-                                std::index_sequence<I...>, Args &&... args) {
+                                std::index_sequence<I...>, Args &&...args) {
   return op(value_maybe_variance(args, indices[I + 1])...);
 }
 template <class Op, class Indices, class Out, class... Args>
 static constexpr void call(Op &&op, const Indices &indices, Out &&out,
-                           Args &&... args) {
+                           Args &&...args) {
   const auto i = indices.front();
   auto &&out_ = value_maybe_variance(out, i);
   out_ = call_impl(std::forward<Op>(op), indices,
@@ -157,7 +157,7 @@ static constexpr void call(Op &&op, const Indices &indices, Out &&out,
 template <class Op, class Indices, class Arg, class... Args, size_t... I>
 static constexpr void call_in_place_impl(Op &&op, const Indices &indices,
                                          std::index_sequence<I...>, Arg &&arg,
-                                         Args &&... args) {
+                                         Args &&...args) {
   static_assert(std::is_same_v<decltype(op(arg, value_maybe_variance(
                                                     args, indices[I + 1])...)),
                                void>);
@@ -165,7 +165,7 @@ static constexpr void call_in_place_impl(Op &&op, const Indices &indices,
 }
 template <class Op, class Indices, class Arg, class... Args>
 static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
-                                    Args &&... args) {
+                                    Args &&...args) {
   const auto i = indices.front();
   // For dense data we conditionally create ValueAndVariance, which performs an
   // element copy, so the result may have to be updated after the call to `op`.
@@ -184,7 +184,7 @@ template <bool in_place, class Op, class... Operands, scipp::index... Strides>
 static void inner_loop(Op &&op,
                        std::array<scipp::index, sizeof...(Operands)> indices,
                        std::integer_sequence<scipp::index, Strides...>,
-                       const scipp::index n, Operands &&... operands) {
+                       const scipp::index n, Operands &&...operands) {
   static_assert(sizeof...(Operands) == sizeof...(Strides));
 
   for (scipp::index i = 0; i < n; ++i) {
@@ -202,7 +202,7 @@ template <bool in_place, class Op, class... Operands>
 static void inner_loop(Op &&op,
                        std::array<scipp::index, sizeof...(Operands)> indices,
                        const scipp::span<const scipp::index> strides,
-                       const scipp::index n, Operands &&... operands) {
+                       const scipp::index n, Operands &&...operands) {
   for (scipp::index i = 0; i < n; ++i) {
     if constexpr (in_place) {
       detail::call_in_place(op, indices, std::forward<Operands>(operands)...);
@@ -217,7 +217,7 @@ template <bool in_place, size_t I = 0, class Op, class... Operands>
 static void dispatch_inner_loop(
     Op &&op, const std::array<scipp::index, sizeof...(Operands)> &indices,
     const scipp::span<const scipp::index> inner_strides, const scipp::index n,
-    Operands &&... operands) {
+    Operands &&...operands) {
   constexpr auto N_Operands = sizeof...(Operands);
   if constexpr (I ==
                 detail::stride_special_cases<N_Operands, in_place>.size()) {
@@ -239,7 +239,7 @@ static void dispatch_inner_loop(
 }
 
 template <class Op, class Out, class... Ts>
-static void transform_elements(Op op, Out &&out, Ts &&... other) {
+static void transform_elements(Op op, Out &&out, Ts &&...other) {
   const auto begin =
       core::MultiIndex(array_params(out), array_params(other)...);
 
@@ -290,7 +290,7 @@ template <class Op, class Out, class Tuple>
 static void do_transform(Op op, Out &&out, Tuple &&processed) {
   auto out_val = out.values();
   std::apply(
-      [&op, &out, &out_val](auto &&... args) {
+      [&op, &out, &out_val](auto &&...args) {
         if constexpr (check_all_or_none_variances<Op, decltype(args)...>) {
           throw except::VariancesError(
               "Expected either all or none of inputs to have variances.");
@@ -314,7 +314,7 @@ static void do_transform(Op op, Out &&out, Tuple &&processed) {
 /// without variances.
 template <class Op, class Out, class Tuple, class Arg, class... Args>
 static void do_transform(Op op, Out &&out, Tuple &&processed, const Arg &arg,
-                         const Args &... args) {
+                         const Args &...args) {
   auto vals = arg.values();
   if (arg.has_variances()) {
     if constexpr (std::is_base_of_v<
@@ -371,7 +371,7 @@ template <class T> as_view(T &data, const Dimensions &dims) -> as_view<T>;
 
 template <class Op> struct Transform {
   Op op;
-  template <class... Ts> Variable operator()(Ts &&... handles) const {
+  template <class... Ts> Variable operator()(Ts &&...handles) const {
     const auto dims = merge(handles.dims()...);
     using Out = decltype(maybe_eval(op(handles.values()[0]...)));
     const bool variances =
@@ -397,7 +397,7 @@ struct tuple_cat<C<Ts1...>, C<Ts2...>, Ts3...>
 
 template <class Op> struct wrap_eigen : Op {
   const Op &base_op() const noexcept { return *this; }
-  template <class... Ts> constexpr auto operator()(Ts &&... args) const {
+  template <class... Ts> constexpr auto operator()(Ts &&...args) const {
     if constexpr ((core::has_eval_v<std::decay_t<Ts>> || ...))
       // WARNING! The explicit specification of the template arguments of
       // operator() is EXTREMELY IMPORTANT. It ensures that Eigen types are
@@ -438,7 +438,7 @@ constexpr auto overlaps = [](const auto &a, const auto &b) {
 /// exception guarantee.
 template <bool dry_run> struct in_place {
   template <class Op, class T, class... Ts>
-  static void transform_in_place_impl(Op op, T &&arg, Ts &&... other) {
+  static void transform_in_place_impl(Op op, T &&arg, Ts &&...other) {
     using namespace detail;
     const auto begin =
         core::MultiIndex(array_params(arg), array_params(other)...);
@@ -486,7 +486,7 @@ template <bool dry_run> struct in_place {
   static void do_transform_in_place(Op op, Tuple &&processed) {
     using namespace detail;
     std::apply(
-        [&op](auto &&arg, auto &&... args) {
+        [&op](auto &&arg, auto &&...args) {
           if constexpr (check_all_or_none_variances<Op, decltype(arg),
                                                     decltype(args)...>) {
             throw except::VariancesError(
@@ -520,7 +520,7 @@ template <bool dry_run> struct in_place {
   /// and without variances.
   template <class Op, class Tuple, class Arg, class... Args>
   static void do_transform_in_place(Op op, Tuple &&processed, Arg &arg,
-                                    const Args &... args) {
+                                    const Args &...args) {
     using namespace detail;
     auto vals = arg.values();
     if (arg.has_variances()) {
@@ -562,7 +562,7 @@ template <bool dry_run> struct in_place {
   template <class Op> struct TransformInPlace {
     Op op;
     template <class T, class... Ts>
-    void operator()(T &&out, Ts &&... handles) const {
+    void operator()(T &&out, Ts &&...handles) const {
       using namespace detail;
       // If there is an overlap between lhs and rhs we copy the rhs before
       // applying the operation.
@@ -589,7 +589,7 @@ template <bool dry_run> struct in_place {
   template <class... Ts, class Op, class Var, class... Other>
   static void transform_data(const std::tuple<Ts...> &, Op op,
                              const std::string_view name, Var &&var,
-                             Other &&... other) {
+                             Other &&...other) {
     using namespace detail;
     try {
       visit<Ts...>::apply(makeTransformInPlace(op), var, other...);
@@ -601,7 +601,7 @@ template <bool dry_run> struct in_place {
   }
   template <class... Ts, class Op, class Var, class... Other>
   static void transform(Op op, const std::string_view name, Var &&var,
-                        const Other &... other) {
+                        const Other &...other) {
     using namespace detail;
     (scipp::expect::includes(var.dims(), other.dims()), ...);
     auto unit = variableFactory().elem_unit(var);
@@ -673,7 +673,7 @@ void transform_in_place(Var &&var, const Variable &other, Op op,
 namespace detail {
 template <class... Ts, class Op, class... Vars>
 Variable transform(std::tuple<Ts...> &&, Op op, const std::string_view name,
-                   const Vars &... vars) {
+                   const Vars &...vars) {
   using namespace detail;
   try {
     return visit<Ts...>::apply(Transform{wrap_eigen{op}}, vars...);

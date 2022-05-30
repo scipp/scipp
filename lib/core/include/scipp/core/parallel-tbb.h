@@ -26,11 +26,11 @@ inline auto blocked_range(const scipp::index begin, const scipp::index end,
                       : grainsize);
 }
 
-template <class... Args> void parallel_for(Args &&... args) {
+template <class... Args> void parallel_for(Args &&...args) {
   tbb::parallel_for(std::forward<Args>(args)...);
 }
 
-template <class... Args> void parallel_sort(Args &&... args) {
+template <class... Args> void parallel_sort(Args &&...args) {
   tbb::parallel_sort(std::forward<Args>(args)...);
 }
 

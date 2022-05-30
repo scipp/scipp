@@ -161,7 +161,7 @@ template <class T> T GroupBy<T>::concat(const Dim reductionDim) const {
   if constexpr (std::is_same_v<T, DataArray>) {
     return conc(m_data);
   } else {
-    return apply_to_items(m_data, [&](auto &&... _) { return conc(_...); });
+    return apply_to_items(m_data, [&](auto &&..._) { return conc(_...); });
   }
 }
 
