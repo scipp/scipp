@@ -13,7 +13,7 @@ namespace detail {
 template <class... Ts, class Op, class Var, class... Other>
 static void do_accumulate(const std::tuple<Ts...> &types, Op op,
                           const std::string_view &name, Var &&var,
-                          const Other &... other) {
+                          const Other &...other) {
   // Bail out (no threading) if:
   // - `other` is implicitly broadcast
   // - `other` are small, to avoid overhead (important for groupby), limit set
@@ -34,7 +34,7 @@ static void do_accumulate(const std::tuple<Ts...> &types, Op op,
     // further tuning.
     const bool avoid_false_sharing = out.dims().volume() < 128;
     auto tmp = avoid_false_sharing ? copy(out) : out;
-    [&](const auto &... args) { // force slices to const, avoid readonly issues
+    [&](const auto &...args) { // force slices to const, avoid readonly issues
       in_place<false>::transform_data(types, op, name, tmp, args...);
     }(other.slice(slice)...);
     if (avoid_false_sharing)
@@ -110,7 +110,7 @@ static void do_accumulate(const std::tuple<Ts...> &types, Op op,
 template <class... Ts, class Op, class Var, class... Other>
 static void accumulate(const std::tuple<Ts...> &types, Op op,
                        const std::string_view name, Var &&var,
-                       Other &&... other) {
+                       Other &&...other) {
   // `other` not const, threading for cumulative ops not possible
   if constexpr ((!std::is_const_v<std::remove_reference_t<Other>> || ...))
     return in_place<false>::transform_data(types, op, name, var, other...);

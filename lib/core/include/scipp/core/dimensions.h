@@ -81,8 +81,7 @@ public:
                                                  const Dimensions &b);
 
 template <class... Ts>
-Dimensions merge(const Dimensions &a, const Dimensions &b,
-                 const Ts &... other) {
+Dimensions merge(const Dimensions &a, const Dimensions &b, const Ts &...other) {
   return merge(merge(a, b), other...);
 }
 

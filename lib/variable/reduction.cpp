@@ -126,7 +126,7 @@ Variable unmasked_events(const Variable &data) {
   return {};
 }
 
-template <class... Dim> Variable count(const Variable &var, Dim &&... dim) {
+template <class... Dim> Variable count(const Variable &var, Dim &&...dim) {
   if (!is_bins(var)) {
     if constexpr (sizeof...(dim) == 0)
       return var.dims().volume() * units::none;
@@ -158,42 +158,42 @@ Variable nanmean(const Variable &var, const Dim dim) {
 
 /// Return the sum along all dimensions.
 Variable sum(const Variable &var) {
-  return reduce_all_dims(var, [](auto &&... _) { return sum(_...); });
+  return reduce_all_dims(var, [](auto &&..._) { return sum(_...); });
 }
 
 /// Return the sum along all dimensions, nans treated as zero.
 Variable nansum(const Variable &var) {
-  return reduce_all_dims(var, [](auto &&... _) { return nansum(_...); });
+  return reduce_all_dims(var, [](auto &&..._) { return nansum(_...); });
 }
 
 /// Return the maximum along all dimensions.
 Variable max(const Variable &var) {
-  return reduce_all_dims(var, [](auto &&... _) { return max(_...); });
+  return reduce_all_dims(var, [](auto &&..._) { return max(_...); });
 }
 
 /// Return the maximum along all dimensions ignorning NaN values.
 Variable nanmax(const Variable &var) {
-  return reduce_all_dims(var, [](auto &&... _) { return nanmax(_...); });
+  return reduce_all_dims(var, [](auto &&..._) { return nanmax(_...); });
 }
 
 /// Return the minimum along all dimensions.
 Variable min(const Variable &var) {
-  return reduce_all_dims(var, [](auto &&... _) { return min(_...); });
+  return reduce_all_dims(var, [](auto &&..._) { return min(_...); });
 }
 
 /// Return the minimum along all dimensions ignoring NaN values.
 Variable nanmin(const Variable &var) {
-  return reduce_all_dims(var, [](auto &&... _) { return nanmin(_...); });
+  return reduce_all_dims(var, [](auto &&..._) { return nanmin(_...); });
 }
 
 /// Return the logical AND along all dimensions.
 Variable all(const Variable &var) {
-  return reduce_all_dims(var, [](auto &&... _) { return all(_...); });
+  return reduce_all_dims(var, [](auto &&..._) { return all(_...); });
 }
 
 /// Return the logical OR along all dimensions.
 Variable any(const Variable &var) {
-  return reduce_all_dims(var, [](auto &&... _) { return any(_...); });
+  return reduce_all_dims(var, [](auto &&..._) { return any(_...); });
 }
 
 /// Return the mean along all dimensions.

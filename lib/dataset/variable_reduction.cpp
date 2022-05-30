@@ -31,42 +31,42 @@ Variable reduce_impl(const Variable &var, const Dim dim, const Masks &masks,
 
 Variable sum(const Variable &var, const Dim dim, const Masks &masks) {
   return reduce_impl(var, dim, masks, FillValue::Default,
-                     [](auto &&... args) { return sum(args...); });
+                     [](auto &&...args) { return sum(args...); });
 }
 
 Variable nansum(const Variable &var, const Dim dim, const Masks &masks) {
   return reduce_impl(var, dim, masks, FillValue::Default,
-                     [](auto &&... args) { return nansum(args...); });
+                     [](auto &&...args) { return nansum(args...); });
 }
 
 Variable max(const Variable &var, const Dim dim, const Masks &masks) {
   return reduce_impl(var, dim, masks, FillValue::Lowest,
-                     [](auto &&... args) { return max(args...); });
+                     [](auto &&...args) { return max(args...); });
 }
 
 Variable nanmax(const Variable &var, const Dim dim, const Masks &masks) {
   return reduce_impl(var, dim, masks, FillValue::Lowest,
-                     [](auto &&... args) { return nanmax(args...); });
+                     [](auto &&...args) { return nanmax(args...); });
 }
 
 Variable min(const Variable &var, const Dim dim, const Masks &masks) {
   return reduce_impl(var, dim, masks, FillValue::Max,
-                     [](auto &&... args) { return min(args...); });
+                     [](auto &&...args) { return min(args...); });
 }
 
 Variable nanmin(const Variable &var, const Dim dim, const Masks &masks) {
   return reduce_impl(var, dim, masks, FillValue::Max,
-                     [](auto &&... args) { return nanmin(args...); });
+                     [](auto &&...args) { return nanmin(args...); });
 }
 
 Variable all(const Variable &var, const Dim dim, const Masks &masks) {
   return reduce_impl(var, dim, masks, FillValue::True,
-                     [](auto &&... args) { return all(args...); });
+                     [](auto &&...args) { return all(args...); });
 }
 
 Variable any(const Variable &var, const Dim dim, const Masks &masks) {
   return reduce_impl(var, dim, masks, FillValue::False,
-                     [](auto &&... args) { return any(args...); });
+                     [](auto &&...args) { return any(args...); });
 }
 
 Variable mean(const Variable &var, const Dim dim, const Masks &masks) {

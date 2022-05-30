@@ -122,7 +122,7 @@ public:
     return detail::deallocate_aligned_memory(p);
   }
 
-  template <class U, class... Args> void construct(U *p, Args &&... args) {
+  template <class U, class... Args> void construct(U *p, Args &&...args) {
     ::new (reinterpret_cast<void *>(p)) U(std::forward<Args>(args)...);
   }
 
@@ -174,7 +174,7 @@ public:
     return detail::deallocate_aligned_memory(p);
   }
 
-  template <class U, class... Args> void construct(U *p, Args &&... args) {
+  template <class U, class... Args> void construct(U *p, Args &&...args) {
     ::new (reinterpret_cast<void *>(p)) U(std::forward<Args>(args)...);
   }
 

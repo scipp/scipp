@@ -56,7 +56,7 @@ template <class T> struct VariancesToString {
 };
 
 template <template <class> class Callable, class... Args>
-auto apply(const DType dtype, Args &&... args) {
+auto apply(const DType dtype, Args &&...args) {
   // Note that formatting via registry ignores the Callable, but custom types
   // should typically not have variances, so Callable should always be
   // `ValuesToString` in this case.

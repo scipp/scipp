@@ -23,7 +23,7 @@ Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
 
 DataArray rebin(const DataArray &a, const Dim dim, const Variable &coord) {
   auto rebinned = apply_to_data_and_drop_dim(
-      a, [](auto &&... _) { return rebin(_...); }, dim, a.coords()[dim], coord,
+      a, [](auto &&..._) { return rebin(_...); }, dim, a.coords()[dim], coord,
       a.masks());
   rebinned.coords().set(dim, coord);
   return rebinned;
@@ -31,7 +31,7 @@ DataArray rebin(const DataArray &a, const Dim dim, const Variable &coord) {
 
 Dataset rebin(const Dataset &d, const Dim dim, const Variable &coord) {
   return apply_to_items(
-      d, [](auto &&... _) { return rebin(_...); }, dim, coord);
+      d, [](auto &&..._) { return rebin(_...); }, dim, coord);
 }
 
 } // namespace scipp::dataset

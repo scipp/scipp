@@ -65,9 +65,9 @@ constexpr auto multiply_equals =
 constexpr auto divide_equals =
     overloaded{div_inplace_types, [](auto &&a, const auto &b) { a /= b; }};
 
-using arithmetic_and_matrix_type_pairs = decltype(
-    std::tuple_cat(std::declval<arithmetic_type_pairs>(),
-                   std::tuple<std::tuple<Eigen::Vector3d, Eigen::Vector3d>>()));
+using arithmetic_and_matrix_type_pairs = decltype(std::tuple_cat(
+    std::declval<arithmetic_type_pairs>(),
+    std::tuple<std::tuple<Eigen::Vector3d, Eigen::Vector3d>>()));
 
 struct add_types_t {
   constexpr void operator()() const noexcept;
@@ -80,11 +80,11 @@ struct add_types_t {
 
 struct subtract_types_t {
   constexpr void operator()() const noexcept;
-  using types = decltype(
-      std::tuple_cat(std::declval<arithmetic_and_matrix_type_pairs>(),
-                     std::tuple<std::tuple<time_point, int64_t>,
-                                std::tuple<time_point, int32_t>,
-                                std::tuple<time_point, time_point>>{}));
+  using types = decltype(std::tuple_cat(
+      std::declval<arithmetic_and_matrix_type_pairs>(),
+      std::tuple<std::tuple<time_point, int64_t>,
+                 std::tuple<time_point, int32_t>,
+                 std::tuple<time_point, time_point>>{}));
 };
 
 struct multiplies_types_t {
@@ -122,12 +122,12 @@ struct apply_spatial_transformation_t {
 
 struct true_divide_types_t {
   constexpr void operator()() const noexcept;
-  using types = decltype(
-      std::tuple_cat(std::declval<arithmetic_type_pairs>(),
-                     std::tuple<std::tuple<Eigen::Vector3d, double>>(),
-                     std::tuple<std::tuple<Eigen::Vector3d, float>>(),
-                     std::tuple<std::tuple<Eigen::Vector3d, int64_t>>(),
-                     std::tuple<std::tuple<Eigen::Vector3d, int32_t>>()));
+  using types = decltype(std::tuple_cat(
+      std::declval<arithmetic_type_pairs>(),
+      std::tuple<std::tuple<Eigen::Vector3d, double>>(),
+      std::tuple<std::tuple<Eigen::Vector3d, float>>(),
+      std::tuple<std::tuple<Eigen::Vector3d, int64_t>>(),
+      std::tuple<std::tuple<Eigen::Vector3d, int32_t>>()));
 };
 
 struct floor_divide_types_t {

@@ -20,7 +20,7 @@ using testdata::make_table;
 
 template <class Coords> class DataArrayBinTest : public ::testing::Test {
 protected:
-  template <size_t I, class... Vals> auto make_coord(Dim dim, Vals &&... vals) {
+  template <size_t I, class... Vals> auto make_coord(Dim dim, Vals &&...vals) {
     using Coord = std::tuple_element_t<I, Coords>;
     return makeVariable<Coord>(Dims{dim}, Shape{sizeof...(vals)},
                                Values{static_cast<Coord>(vals)...});

@@ -11,7 +11,7 @@
 
 namespace scipp::python {
 /// Format a string from all arguments.
-template <class... Args> std::string format(Args &&... args) {
+template <class... Args> std::string format(Args &&...args) {
   std::ostringstream oss;
   (oss << ... << std::forward<Args>(args));
   return oss.str();

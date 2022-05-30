@@ -156,7 +156,7 @@ DataArray strip_edges_along(const DataArray &da, const Dim dim) {
 
 Dataset strip_edges_along(const Dataset &ds, const Dim dim) {
   auto out = apply_to_items(
-      ds, [](auto &&... args) { return strip_edges_along(args...); }, dim);
+      ds, [](auto &&...args) { return strip_edges_along(args...); }, dim);
   for (const auto &[name, var] : ds.coords())
     if (!core::is_edges(ds.sizes(), var.dims(), dim))
       out.setCoord(name, var);

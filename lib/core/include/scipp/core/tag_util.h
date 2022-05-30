@@ -13,7 +13,7 @@ namespace scipp::core {
 
 template <template <class> class Callable, class... Ts, class... Args>
 static auto callDType(const std::tuple<Ts...> &, const DType dtype,
-                      Args &&... args) {
+                      Args &&...args) {
   std::array funcs{Callable<Ts>::apply...};
   std::array<DType, sizeof...(Ts)> dtypes{scipp::core::dtype<Ts>...};
   for (size_t i = 0; i < dtypes.size(); ++i)
@@ -26,7 +26,7 @@ static auto callDType(const std::tuple<Ts...> &, const DType dtype,
 /// runtime dtype given by `dtype`.
 template <class... Ts> struct CallDType {
   template <template <class> class Callable, class... Args>
-  static auto apply(const DType dtype, Args &&... args) {
+  static auto apply(const DType dtype, Args &&...args) {
     return callDType<Callable>(std::tuple<Ts...>{}, dtype,
                                std::forward<Args>(args)...);
   }
