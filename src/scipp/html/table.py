@@ -2,14 +2,14 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 import numpy as np
-from typing import List, Optional, Union
+from typing import List, Union, Dict
 from .. import DataArray, Dataset, Variable
 from ..typing import VariableLike
 from .. import DType
 
-CENTER = 'style="text-align: center;"'
-WITH_BORDER = 'style="border-left:1px solid #a9a9a9;"'
-CENTER_BORDER = 'style="text-align: center; border-left:1px solid #a9a9a9;"'
+CENTER = 'text-align: center;'
+LEFT_BORDER = 'border-left:1px solid #a9a9a9;'
+BOTTOM_BORDER = 'border-bottom:2px solid #a9a9a9;'
 
 
 def _string_in_cell(v: Variable) -> str:
@@ -34,9 +34,9 @@ def _var_name_with_unit(name: str, var: Variable) -> str:
     return out
 
 
-def _add_td_tags(cell_list: List[str], border: Optional[bool] = False) -> List[str]:
-    td = WITH_BORDER if border else ""
-    td = f'<td {td}>'
+def _add_td_tags(cell_list: List[str], border: str = '') -> List[str]:
+    td = f' style="{border}"' if border else ''
+    td = f'<td{td}>'
     return [f'{td}{cell}</td>' for cell in cell_list]
 
 
@@ -45,22 +45,27 @@ def _make_variable_column(name: str,
                           indices: list,
                           need_bin_edge: bool,
                           is_bin_edge,
-                          border: Optional[bool] = False) -> List[str]:
-    out = [_var_name_with_unit(name, var)]
+                          border: str = '') -> List[str]:
+    head = [_var_name_with_unit(name, var)]
+    rows = []
     for i in indices:
         if i is None:
-            out.append('...')
+            rows.append('...')
         else:
-            out.append(_string_in_cell(var[i]))
+            rows.append(_string_in_cell(var[i]))
     if need_bin_edge:
         if is_bin_edge:
-            out.append(_string_in_cell(var[-1]))
+            rows.append(_string_in_cell(var[-1]))
         else:
-            out.append('')
-    return _add_td_tags(out, border=border)
+            rows.append('')
+    return _add_td_tags(head, border=border + BOTTOM_BORDER) + _add_td_tags(
+        rows, border=border)
 
 
-def _make_data_array_table(da: DataArray, indices: list, bin_edges: bool) -> List[list]:
+def _make_data_array_table(da: DataArray,
+                           indices: list,
+                           bin_edges: bool,
+                           no_left_border: bool = False) -> List[list]:
 
     out = [
         _make_variable_column(name='',
@@ -68,7 +73,7 @@ def _make_data_array_table(da: DataArray, indices: list, bin_edges: bool) -> Lis
                               indices=indices,
                               need_bin_edge=bin_edges,
                               is_bin_edge=False,
-                              border=True)
+                              border='' if no_left_border else LEFT_BORDER)
     ]
 
     for name, var in sorted(da.masks.items()):
@@ -77,8 +82,7 @@ def _make_data_array_table(da: DataArray, indices: list, bin_edges: bool) -> Lis
                                   var=var,
                                   indices=indices,
                                   need_bin_edge=bin_edges,
-                                  is_bin_edge=False,
-                                  border=False))
+                                  is_bin_edge=False))
 
     for name, var in sorted(da.attrs.items()):
         out.append(
@@ -86,8 +90,7 @@ def _make_data_array_table(da: DataArray, indices: list, bin_edges: bool) -> Lis
                                   var=var,
                                   indices=indices,
                                   need_bin_edge=bin_edges,
-                                  is_bin_edge=da.attrs.is_edges(name),
-                                  border=False))
+                                  is_bin_edge=da.attrs.is_edges(name)))
 
     return out
 
@@ -98,7 +101,7 @@ def _make_entries_header(ds: Dataset) -> str:
         out += f'<th colspan="{len(ds.coords)}"></th>'
     for name, da in sorted(ds.items()):
         ncols = 1 + len(da.masks) + len(da.attrs)
-        out += f'<th {CENTER} colspan="{ncols}">{name}</th>'
+        out += f'<th style="{CENTER}" colspan="{ncols}">{name}</th>'
     out += '</tr>'
     return out
 
@@ -106,13 +109,14 @@ def _make_entries_header(ds: Dataset) -> str:
 def _make_sections_header(ds: Dataset) -> str:
     out = '<tr>'
     if ds.coords:
-        out += f'<th {CENTER} colspan="{len(ds.coords)}">Coordinates</th>'
-    for _, da in sorted(ds.items()):
-        out += f'<th {CENTER_BORDER}>Data</th>'
+        out += f'<th style="{CENTER}" colspan="{len(ds.coords)}">Coordinates</th>'
+    for i, (_, da) in enumerate(sorted(ds.items())):
+        border = '' if (i == 0) and (not ds.coords) else LEFT_BORDER
+        out += f'<th style="{CENTER + border}">Data</th>'
         if da.masks:
-            out += f'<th {CENTER} colspan="{len(da.masks)}">Masks</th>'
+            out += f'<th style="{CENTER}" colspan="{len(da.masks)}">Masks</th>'
         if da.attrs:
-            out += f'<th {CENTER} colspan="{len(da.attrs)}">Attributes</th>'
+            out += f'<th style="{CENTER}" colspan="{len(da.attrs)}">Attributes</th>'
     out += '</tr>'
     return out
 
@@ -170,7 +174,7 @@ def _to_dataset(obj: Union[VariableLike, dict]) -> Dataset:
     return obj
 
 
-def table(obj: Union[VariableLike, dict], max_rows: Optional[int] = 20):
+def table(obj: Dict[str, Union[Variable, DataArray]], max_rows: int = 20):
     """Create a html table from the contents of the supplied object.
 
     Possible inputs are:
@@ -222,9 +226,12 @@ def table(obj: Union[VariableLike, dict], max_rows: Optional[int] = 20):
     ]
 
     # Rest of the table from DataArrays
-    for _, da in sorted(obj.items()):
-        body += _make_data_array_table(da=da, indices=inds, bin_edges=bin_edges)
+    for i, (_, da) in enumerate(sorted(obj.items())):
+        body += _make_data_array_table(da=da,
+                                       indices=inds,
+                                       bin_edges=bin_edges,
+                                       no_left_border=(i == 0) and (not obj.coords))
 
     html = _to_html_table(header=header, body=body)
-    from IPython.display import display, HTML
-    display(HTML(html))
+    from IPython.display import HTML
+    return HTML(html)
