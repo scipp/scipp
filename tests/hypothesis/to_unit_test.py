@@ -11,10 +11,10 @@ import scipp as sc
 @given(st.floats(min_value=1e-300, max_value=1e300))
 def test_to_unit_value_1(x):
     unit = sc.Unit(f'{x:.12E}')
-    var = sc.scalar(1.23 * x, unit='')
+    var = sc.scalar(x, unit='')
     result = sc.to_unit(var, unit)
     assert result.unit == unit
-    assert pytest.approx(result.value, 1e-14) == 1.23
+    assert pytest.approx(result.value, 1e-14) == 1.0
 
 
 @given(st.floats(min_value=1e-300, max_value=1e300))
