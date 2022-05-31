@@ -30,3 +30,12 @@ Utilities
 
    configuration
    logging
+
+Sphinx
+------
+
+.. autosummary::
+   :toctree: ../generated/modules
+   :template: scipp-sphinxext-template.rst
+
+   sphinxext.autoplot

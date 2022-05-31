@@ -107,6 +107,8 @@ def sosfiltfilt(obj: Union[Variable, DataArray], dim: str, *, sos: SOS,
 
     Examples:
 
+    .. plot:: :context: close-figs
+
       >>> from scipp.signal import butter, sosfiltfilt
       >>> x = sc.linspace(dim='x', start=1.1, stop=4.0, num=1000, unit='m')
       >>> y = sc.sin(x * sc.scalar(1.0, unit='rad/m'))
@@ -114,6 +116,7 @@ def sosfiltfilt(obj: Union[Variable, DataArray], dim: str, *, sos: SOS,
       >>> da = sc.DataArray(data=y, coords={'x': x})
       >>> sos = butter(da.coords['x'], N=4, Wn=20 / x.unit)
       >>> out = sosfiltfilt(da, 'x', sos=sos)
+      >>> sc.plot({'input':da, 'sosfiltfilt':out})
 
     Instead of calling sosfiltfilt the more convenient filtfilt method of
     :py:class:`scipp.signal.SOS` can be used:
