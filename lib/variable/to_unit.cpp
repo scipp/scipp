@@ -54,13 +54,15 @@ Variable to_unit(const Variable &var, const units::Unit &unit,
   // decimal places, otherwise the approach based on std::round will do nothing.
   const auto base_scale = scale > 1e6 ? scale * 1e-6 : scale;
   if (const auto iscale = std::round(base_scale);
-      (std::abs(base_scale - iscale) < 1e-12 * std::abs(base_scale)))
-    scalevar = int64_t{scale > 1e6 ? 1000000 : 1} *
-               static_cast<int64_t>(iscale) * unit;
-  else
+      (std::abs(base_scale - iscale) < 1e-12 * std::abs(base_scale))) {
+    if (var.dtype() == dtype<int64_t> || var.dtype() == dtype<core::time_point>)
+      scalevar = int64_t{scale > 1e6 ? 1000000 : 1} *
+                 static_cast<int64_t>(iscale) * unit;
+    else
+      scalevar = (scale > 1e6 ? 1000000 : 1) * iscale * unit;
+  } else {
     scalevar = scale * unit;
-  if (var.dtype() != dtype<int64_t> && var.dtype() != dtype<core::time_point>)
-    scalevar = astype(scalevar, dtype<double>);
+  }
   return variable::transform(var, scalevar, core::element::to_unit, "to_unit");
 }
 
