@@ -48,7 +48,9 @@ extensions = [
     'sphinx_copybutton',
     'IPython.sphinxext.ipython_directive',
     'IPython.sphinxext.ipython_console_highlighting',
+    'matplotlib.sphinxext.plot_directive',
     'nbsphinx',
+    'scipp.sphinxext.autoplot',
 ]
 
 autodoc_type_aliases = {
@@ -222,11 +224,33 @@ nbsphinx_execute_arguments = [
     "--Session.metadata=scipp_docs_build=True",
 ]
 
+# -- Options for matplotlib in docstrings ---------------------------------
+
+plot_include_source = True
+plot_formats = ['png']
+plot_html_show_formats = False
+plot_html_show_source_link = False
+plot_pre_code = '''import scipp as sc'''
+
 # -- Options for doctest --------------------------------------------------
 
+# sc.plot returns a Figure object and doctest compares that against the
+# output written in the docstring. But we only want to show an image of the
+# figure, not its `repr`.
+# In addition, there is no need to make plots in doctest as the documentation
+# build already tests if those plots can be made.
+# So we simply disable plots in doctests.
 doctest_global_setup = '''
 import numpy as np
 import scipp as sc
+
+def do_not_plot(*args, **kwargs):
+    pass
+
+sc.plot = do_not_plot
+sc.Variable.plot = do_not_plot
+sc.DataArray.plot = do_not_plot
+sc.Dataset.plot = do_not_plot
 '''
 
 # Using normalize whitespace because many __str__ functions in scipp produce
