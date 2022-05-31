@@ -5,8 +5,9 @@
 
 from __future__ import annotations
 
-import warnings
+from contextlib import contextmanager
 from typing import Any, Iterable, Optional, Sequence, TypeVar, Union
+import warnings
 
 import numpy as _np
 from numpy.typing import ArrayLike
@@ -774,6 +775,19 @@ def arange(dim: str,
     return array(dims=[dim], values=_np.arange(**range_args), unit=unit, dtype=dtype)
 
 
+@contextmanager
+def _timezone_warning_as_error():
+    with warnings.catch_warnings():
+        warnings.filterwarnings('error',
+                                category=DeprecationWarning,
+                                message='parsing timezone')
+        try:
+            yield
+        except DeprecationWarning:
+            raise ValueError(
+                'Parsing timezone aware datetimes is not supported') from None
+
+
 def datetime(value: Union[str, int, _np.datetime64],
              *,
              unit: Optional[Union[Unit, str, None]] = default_unit) -> Variable:
@@ -808,10 +822,8 @@ def datetime(value: Union[str, int, _np.datetime64],
       <scipp.Variable> ()  datetime64              [s]  [2021-01-10T14:16:15]
     """
     if isinstance(value, str):
-        try:
+        with _timezone_warning_as_error():
             return scalar(_np.datetime64(value), unit=unit)
-        except DeprecationWarning as e:
-            raise ValueError('Parsing timezone aware datetimes is not supported')
     return scalar(value, unit=unit, dtype=_cpp.DType.datetime64)
 
 
@@ -853,11 +865,9 @@ def datetimes(*,
         np_unit_str = ''
     else:
         np_unit_str = f'[{_cpp.to_numpy_time_string(unit)}]'
-    try:
+    with _timezone_warning_as_error():
         return array(dims=dims,
                      values=_np.asarray(values, dtype=f'datetime64{np_unit_str}'))
-    except DeprecationWarning as e:
-        raise ValueError('Parsing timezone aware datetimes is not supported')
 
 
 def epoch(*, unit: Union[Unit, str]) -> Variable:
