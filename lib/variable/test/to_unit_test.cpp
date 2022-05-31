@@ -274,3 +274,11 @@ TEST(ToUnitTest, small_to_large_rounding_error_double) {
                     units::Unit("m")),
             one_m);
 }
+
+TEST(ToUnitTest, small_number_to_small_unit) {
+  const auto area = units::angstrom * units::angstrom;
+  const auto small = makeVariable<double>(units::Unit("m**2"), Values{1e-20});
+  const auto result = to_unit(small, area);
+  EXPECT_EQ(result.unit(), area);
+  EXPECT_DOUBLE_EQ(result.value<double>(), 1.0);
+}
