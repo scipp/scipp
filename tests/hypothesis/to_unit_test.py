@@ -1,11 +1,15 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
-# @author Jan-Lukas Wynen
+# @author Simon Heybrock
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
 import scipp as sc
+
+# to_unit has non-trivial logic to reduce the effect of rounding errors. The following
+# test attempt to cover a wide range of potential unit scales in conversion to detect
+# potential bugs.
 
 
 @given(st.floats(min_value=1e-300, max_value=1e300))
