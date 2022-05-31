@@ -282,3 +282,11 @@ TEST(ToUnitTest, small_number_to_small_unit) {
   EXPECT_EQ(result.unit(), area);
   EXPECT_DOUBLE_EQ(result.value<double>(), 1.0);
 }
+
+TEST(ToUnitTest, small_number_to_small_unit_non_power_of_10) {
+  const auto area = units::Unit("1.45e-21");
+  const auto small = makeVariable<double>(units::one, Values{1.45e-21});
+  const auto result = to_unit(small, area);
+  EXPECT_EQ(result.unit(), area);
+  EXPECT_DOUBLE_EQ(result.value<double>(), 1.0);
+}
