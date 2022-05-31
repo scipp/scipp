@@ -6,18 +6,9 @@
 from .._scipp import _debug_
 if _debug_:
     import warnings
-
-    def _custom_formatwarning(msg, *args, **kwargs):
-        return str(msg) + '\n'
-
-    _old_formatwarning = warnings.formatwarning
-    warnings.formatwarning = _custom_formatwarning
     warnings.warn(
         'You are running a "Debug" build of scipp. For optimal performance use a "Release" build.'
     )
-    warnings.formatwarning = _old_formatwarning
-    del _custom_formatwarning
-    del _old_formatwarning
 
 from .._scipp import __version__
 from .cpp_classes import Coords, DataArray, Dataset, DType, GroupByDataArray,\
