@@ -28,7 +28,6 @@ requirements:
     - {{ compiler('cxx') }}
     - cross-python_{{ target_platform }}  # [build_platform != target_platform]
     - cmake
-    - conan>=1.45.0
     - cppcheck [linux64]
     - git
     - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
@@ -54,7 +53,6 @@ test:
   requires:
     - {{ compiler('cxx') }}
     - cmake
-    - conan>=1.45.0
     - h5py
     - hypothesis
     - ipympl
