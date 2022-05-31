@@ -15,7 +15,7 @@ BOTTOM_BORDER = 'border-bottom:2px solid #a9a9a9;'
 def _string_in_cell(v: Variable) -> str:
     if v.bins is not None:
         return f'len={v.value.shape}'
-    if v.dtype in (DType.vector3, DType.string):
+    if v.dtype in (DType.vector3, DType.string, DType.bool):
         return str(v.value)
     if (v.variance is None) or (v.variance == 0):
         return str(round(v.value, 3))
