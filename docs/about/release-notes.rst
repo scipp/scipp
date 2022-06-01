@@ -12,6 +12,7 @@ Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
+* :func:`scipp.optimize.curve_fit` now raises ``ValueError`` if the input variance contains a 0 `#2620 <https://github.com/scipp/scipp/pull/2620>`_.
 * Replaced the widget-based :func:`scipp.table` viewer with a simpler pure-HTML table `#2613 <https://github.com/scipp/scipp/pull/2613>`_.
 
 Bugfixes
