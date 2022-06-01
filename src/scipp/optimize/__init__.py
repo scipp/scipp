@@ -41,8 +41,8 @@ def _get_sigma(da):
     if not sigma.all():
         raise ValueError(
             'There is a 0 in the input variances. This would break the optimizer. '
-            'Assign a meaningful variance if possible '
-            'or consider removing those points before calling curve_fit.')
+            'Mask the offending elements, remove them, or assign a meaningful '
+            'variance if possible before calling curve_fit.')
     return sigma
 
 
