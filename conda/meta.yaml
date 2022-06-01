@@ -39,10 +39,11 @@ requirements:
     - tbb-devel=2020.2.*
   run:
     - confuse
+    - graphlib-backport # for python < 3.9
     - numpy
+    - python
     - pyyaml
     - tbb=2020.2.*
-    - graphlib-backport # for python < 3.9
 
 # Only the cmake-package-test works when cross compiling.
 # But it is not very important at the moment and
