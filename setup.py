@@ -54,7 +54,6 @@ setup(name='scipp',
       python_requires='>=3.8',
       install_requires=['confuse', 'graphlib-backport', 'numpy>=1.20'],
       extras_require={
-          "test": ["pytest", "matplotlib", "xarray", "pandas", "pythreejs"],
           'all': ['h5py', 'scipy>=1.7.0', 'graphviz', 'hypothesis', 'pooch'],
           'interactive': [
               'ipympl', 'ipython', 'ipywidgets', 'matplotlib', 'jupyterlab',
