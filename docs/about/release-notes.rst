@@ -3,6 +3,36 @@
 Release Notes
 =============
 
+v0.15.0 (Unreleased)
+--------------------
+
+Features
+~~~~~~~~
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+* Replaced the widget-based :func:`scipp.table` viewer with a simpler pure-HTML table `#2613 <https://github.com/scipp/scipp/pull/2613>`_.
+
+Bugfixes
+~~~~~~~~
+
+Documentation
+~~~~~~~~~~~~~
+
+Deprecations
+~~~~~~~~~~~~
+
+Stability, Maintainability, and Testing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Contributors
+~~~~~~~~~~~~
+
+Simon Heybrock :sup:`a`\ ,
+Neil Vaytet :sup:`a`\ ,
+and Jan-Lukas Wynen :sup:`a`
+
 v0.14.0 (May 2022)
 ------------------
 
