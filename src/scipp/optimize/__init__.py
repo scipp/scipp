@@ -33,6 +33,19 @@ def _wrap_func(f, p_names, p_units):
     return func
 
 
+def _get_sigma(da):
+    if da.variances is None:
+        return None
+
+    sigma = stddevs(da).values
+    if not sigma.all():
+        raise ValueError(
+            'There is a 0 in the input variances. This would break the optimizer. '
+            'Mask the offending elements, remove them, or assign a meaningful '
+            'variance if possible before calling curve_fit.')
+    return sigma
+
+
 def _covariance_with_units(p_names, pcov_values, units):
     pcov = {}
     for i, row in enumerate(pcov_values):
@@ -194,7 +207,6 @@ def curve_fit(
         raise BinEdgeError("Cannot fit data array with bin-edge coordinate.")
     import scipy.optimize as opt
     da = _drop_masked(da, da.dim)
-    sigma = stddevs(da).values if da.variances is not None else None
     params = _make_defaults(f, p0)
     p_units = [
         p.unit if isinstance(p, Variable) else default_unit for p in params.values()
@@ -203,7 +215,7 @@ def curve_fit(
     popt, pcov = opt.curve_fit(f=_wrap_func(f, params.keys(), p_units),
                                xdata=da.coords[da.dim],
                                ydata=da.values,
-                               sigma=sigma,
+                               sigma=_get_sigma(da),
                                p0=p0,
                                bounds=_parse_bounds(bounds, params),
                                **kwargs)

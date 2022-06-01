@@ -64,6 +64,23 @@ def test_should_raise_TypeError_when_sigma_given_as_param():
         curve_fit(func, array1d(), sigma=np.arange(4))
 
 
+def test_should_raise_ValueError_when_sigma_contains_zeros():
+    da = array1d(size=50)
+    da.variances = np.random.default_rng().normal(0.0, 0.1, size=50)
+    da['xx', 21].variance = 0.0
+    with pytest.raises(ValueError):
+        curve_fit(func, da)
+
+
+def test_does_not_raise_when_sigma_contains_zeros_that_is_masked():
+    da = array1d(size=50)
+    da.variances = np.random.default_rng().normal(0.0, 0.1, size=50)
+    da.masks['m'] = sc.full(value=False, sizes=da.sizes)
+    da['xx', 21].variance = 0.0
+    da.masks['m']['xx', 21] = True
+    curve_fit(func, da)
+
+
 def test_should_raise_KeyError_when_data_array_has_no_coord():
     da = array1d()
     del da.coords[da.dim]

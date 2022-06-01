@@ -3,6 +3,14 @@
 Release Notes
 =============
 
+v0.15.0 (unreleased)
+--------------------
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+* :func:`scipp.optimize.curve_fit` now raises ``ValueError`` if the input variance contains a 0 `#2620 <https://github.com/scipp/scipp/pull/2620>`_.
+
 v0.14.0 (May 2022)
 ------------------
 
