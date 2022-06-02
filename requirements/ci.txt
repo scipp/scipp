@@ -7,7 +7,7 @@
 #
 distlib==0.3.4
     # via virtualenv
-filelock==3.6.0
+filelock==3.7.1
     # via
     #   tox
     #   virtualenv
@@ -19,7 +19,7 @@ pluggy==1.0.0
     # via tox
 py==1.11.0
     # via tox
-pyparsing==3.0.8
+pyparsing==3.0.9
     # via packaging
 six==1.16.0
     # via
