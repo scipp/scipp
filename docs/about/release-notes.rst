@@ -3,13 +3,36 @@
 Release Notes
 =============
 
-v0.15.0 (unreleased)
+v0.15.0 (Unreleased)
 --------------------
+
+Features
+~~~~~~~~
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
 * :func:`scipp.optimize.curve_fit` now raises ``ValueError`` if the input variance contains a 0 `#2620 <https://github.com/scipp/scipp/pull/2620>`_.
+* Replaced the widget-based :func:`scipp.table` viewer with a simpler pure-HTML table `#2613 <https://github.com/scipp/scipp/pull/2613>`_.
+
+Bugfixes
+~~~~~~~~
+
+Documentation
+~~~~~~~~~~~~~
+
+Deprecations
+~~~~~~~~~~~~
+
+Stability, Maintainability, and Testing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Contributors
+~~~~~~~~~~~~
+
+Simon Heybrock :sup:`a`\ ,
+Neil Vaytet :sup:`a`\ ,
+and Jan-Lukas Wynen :sup:`a`
 
 v0.14.0 (May 2022)
 ------------------
@@ -37,6 +60,7 @@ Breaking changes
 * Removed ``out`` argument from reduction operations (e.g. :func:`scipp.sum`) `2591 <https://github.com/scipp/scipp/pull/2591>`_.
 * :func:`scipp.datetime` and :func:`scipp.datetimes` now raise an error if a datetime string with timezone information is provided.
   Previously this was a ``DeprecationWarning`` from NumPy `2604 <https://github.com/scipp/scipp/pull/2604>`_.
+* Replaced the widget-based :func:`scipp.table` viewer with a simpler pure-HTML table `#2613 <https://github.com/scipp/scipp/pull/2613>`_.
 
 Bugfixes
 ~~~~~~~~

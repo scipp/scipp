@@ -35,9 +35,8 @@ from . import geometry
 from ._scipp.core import as_const, choose
 # Import python functions
 from .show import show, make_svg
-from .table import table
 
-from .html import to_html, make_html
+from .html import to_html, make_html, table
 
 setattr(Variable, '_repr_html_', make_html)
 setattr(DataArray, '_repr_html_', make_html)
