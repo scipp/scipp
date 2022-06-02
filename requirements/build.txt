@@ -5,9 +5,9 @@
 #
 #    pip-compile-multi
 #
-bottle==0.12.19
+bottle==0.12.21
     # via conan
-certifi==2021.10.8
+certifi==2022.5.18.1
     # via requests
 charset-normalizer==2.0.12
     # via requests
@@ -15,7 +15,7 @@ cmake==3.22.4
     # via -r requirements/build.in
 colorama==0.4.4
     # via conan
-conan==1.47.0
+conan==1.48.1
     # via -r requirements/build.in
 distro==1.6.0
     # via conan

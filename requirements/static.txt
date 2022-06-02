@@ -19,13 +19,13 @@ flake8==4.0.1
     # via -r requirements/static.in
 importlib-resources==5.7.1
     # via jsonschema
-jsonschema==4.4.0
+jsonschema==4.6.0
     # via nbformat
 jupyter-core==4.10.0
     # via nbformat
 mccabe==0.6.1
     # via flake8
-nbformat==5.3.0
+nbformat==5.4.0
     # via nbstripout
 nbstripout==0.5.0
     # via -r requirements/static.in
@@ -39,7 +39,7 @@ six==1.16.0
     # via cmakelang
 toml==0.10.2
     # via -r requirements/static.in
-traitlets==5.1.1
+traitlets==5.2.2.post1
     # via
     #   jupyter-core
     #   nbformat
