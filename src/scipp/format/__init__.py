@@ -1,1 +1,3 @@
-from .formatter import formatter
+# flake8: noqa
+
+from .formatter import format_variable
