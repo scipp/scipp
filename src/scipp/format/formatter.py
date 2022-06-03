@@ -1,6 +1,3 @@
-from numpy import ndarray
-
-
 def format_variable(data, spec):
     """
     String formats the Variable according to the provided specification.
@@ -27,53 +24,65 @@ def format_variable(data, spec):
     var = data.variances if data.shape else array((data.variance, ))
     unt = "" if data.unit == Unit('dimensionless') else f" {data.unit}"
 
-    if compact and not (var is None or any([x is None for x in var])):
-        from numpy import sqrt
-        return f"{_format_to(*_round_to(val, sqrt(var)))}{unt}"
-    elif compact:
-        return f"{', '.join([f'{v}' for v in val])}{unt}"
+    if compact:
+        # Iterate over array values to handle no- and infinite-precision cases
+        if var is None:
+            formatted = [_format(v) for v in val]
+        else:
+            formatted = [_format(*_round(v, e)) for v, e in zip(val, var)]
+        return f"{', '.join(formatted)}{unt}"
+        # return f"{_format(val, var)}{unt}"
 
     # punt (for now)
     return data.__repr__()
 
 
-def _round_to(values: ndarray, errors: ndarray):
-    from numpy import floor, log10, round, power, any
+def _round(value, variance):
+    from numpy import floor, log10, round, power, sqrt
+    # Treat 'infinite' precision the same as no variance
+    if variance is None or variance == 0:
+        return value, None, None
+
+    # The uncertainty is the square root of the variance
+    error = sqrt(variance)
+
     # Determine how many digits before (+) or after (-) the decimal place
-    # the error(s) allow for one-digit uncertainty of precision
-    precision = floor(log10(errors))
+    # the error allows for one-digit uncertainty of precision
+    precision = floor(log10(error))
 
     # By convention, if the first digit of the error rounds to 1
     # add an extra digit of precision, so there are two-digits of uncertainty
-    precision[round(errors * power(10., -precision)) == 1] -= 1
+    if round(error * power(10., -precision)) == 1:
+        precision -= 1
 
     # Build powers of ten to enable rounding to the specified precision
     negative_power = power(10., -precision)
     positive_power = power(10., precision)
 
-    # Round the error(s), keeping the shifted value(s) for the compact string
-    errors = round(errors * negative_power).astype('int')
-    # Round the value(s), shifting back after rounding
-    values = round(values * negative_power) * positive_power
+    # Round the error, keeping the shifted value for the compact string
+    error = int(round(error * negative_power))
+    # Round the value, shifting back after rounding
+    value = round(value * negative_power) * positive_power
 
     # If the precision is greater than that of 0.1
-    greater = precision > -1
-    if any(greater):
-        # pad the error(s) to have the right number of trailing zeros
-        errors[greater] *= positive_power[greater].astype('int')
+    if precision > -1:
+        # pad the error to have the right number of trailing zeros
+        error *= int(positive_power)
 
-    return values, errors, precision
+    return value, error, precision
 
 
-def _format_to(values: ndarray, errors: ndarray, precision: ndarray):
-    # positive precisions should have no decimals, accomplished by '0.0f'
-    formats = [f'0.{max(0, int(-p)):d}f' for p in precision]
+def _format(value, error=None, precision=None):
+    # Build the appropriate format string:
+    # No variance (or infinite precision) values take no formatting string
+    # Positive precision implies no decimals, with format '0.0f'
+    format = '' if precision is None else f'0.{max(0, int(-precision)):d}f'
 
-    # format the values to the required precision
-    formatted = ["{v:{s}}".format(v=v, s=s) for v, s in zip(values, formats)]
+    # Format the value using the generated format string
+    formatted = "{v:{s}}".format(v=value, s=format)
 
-    # and add on the formatted uncertainties
-    formatted = [f'{v}({e})' for v, e in zip(formatted, errors)]
+    # Append the error if there is non-infinite-precision variance
+    if error is not None:
+        formatted = f'{formatted}({error})'
 
-    # concatenate multiple values
-    return ', '.join(formatted)
+    return formatted

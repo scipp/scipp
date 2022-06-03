@@ -10,12 +10,12 @@ def scalar_string(value, error, unit):
     return f"{scalar:c}"
 
 
-def vector_string(value, error, unit):
+def array_string(value, error, unit):
     if error is None:
-        vector = sc.array(values=value, unit=unit, dims=['x'])
+        array = sc.array(values=value, unit=unit, dims=['x'])
     else:
-        vector = sc.array(values=value, variances=error**2, unit=unit, dims=['x'])
-    return f"{vector:c}"
+        array = sc.array(values=value, variances=error**2, unit=unit, dims=['x'])
+    return f"{array:c}"
 
 
 def test_scalar_variables():
@@ -31,18 +31,24 @@ def test_scalar_variables():
       # default rounding rules for half:
       (234.567, 1.25, 'km', '234.6(12) km'),  # even + 0.5 -> even
       (234.567, 1.35, 'km', '234.6(14) km'),  # odd + 0.5 -> even (odd + 1)
+      # zero variance should be treated like None
+      # ideally we want to use integer value and variance to avoid fragility
+      # in the output of, e.g., str(100.), but scipp does not allow dtype=int64
+      # with a specified variance
+      (100., 0., 'C', '100.0 C'),
     ]
     for value, error, unit, expected in scalar_variables:
         assert scalar_string(value, error, unit) == expected
 
 
-def test_vector_variables():
+def test_array_variables():
     from numpy import array
-    vector_variables = [
+    array_variables = [
       (array([100, 20, 3]), None, 's', '100, 20, 3 s'),
       (array([100., 20.]), array([1., 2.]), 'm', '100.0(10), 20(2) m'),
       (array([9000., 800., 70., 6.]), array([100., 20., 3., 0.4]), '1',
-       '9000(100), 800(20), 70(3), 6.0(4)')
+       '9000(100), 800(20), 70(3), 6.0(4)'),
+      (array([1., 2., 3.]), array([0., 1., 0.2]), 'C', '1.0, 2.0(10), 3.0(2) C')
     ]
-    for value, error, unit, expected in vector_variables:
-        assert vector_string(value, error, unit) == expected
+    for value, error, unit, expected in array_variables:
+        assert array_string(value, error, unit) == expected
