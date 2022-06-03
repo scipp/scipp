@@ -2,12 +2,15 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 import numpy
+import pytest
 import xarray
 import scipp as sc
-from scipp.compat import from_xarray
+from scipp.compat import from_xarray, to_xarray
+from ..factory import (make_dense_data_array, make_dense_dataset,
+                       make_binned_data_array)
 
 
-def test_empty_attrs_dataarray():
+def test_from_xarray_empty_attrs_dataarray():
     xr_da = xarray.DataArray(data=numpy.zeros((1, )), dims={"x"}, attrs={})
 
     sc_da = from_xarray(xr_da)
@@ -20,7 +23,7 @@ def test_empty_attrs_dataarray():
     assert len(sc_da.masks) == 0
 
 
-def test_attrs_dataarray():
+def test_from_xarray_attrs_dataarray():
     xr_da = xarray.DataArray(data=numpy.zeros((1, )),
                              dims=["x"],
                              attrs={
@@ -36,7 +39,7 @@ def test_attrs_dataarray():
     assert sc_da.attrs["attrib_str"].values == "test-string"
 
 
-def test_named_dataarray():
+def test_from_xarray_named_dataarray():
     xr_da = xarray.DataArray(data=numpy.zeros((1, )),
                              dims={"x"},
                              name="my-test-dataarray")
@@ -46,7 +49,7 @@ def test_named_dataarray():
     assert sc_da.name == "my-test-dataarray"
 
 
-def test_1d_1_element_dataarray():
+def test_from_xarray_1d_1_element_dataarray():
     xr_da = xarray.DataArray(data=numpy.zeros((1, )), dims=["x"], attrs={})
 
     sc_da = from_xarray(xr_da)
@@ -54,7 +57,7 @@ def test_1d_1_element_dataarray():
     assert sc.identical(sc_da, sc.DataArray(data=sc.zeros(dims=["x"], shape=(1, ))))
 
 
-def test_1d_100_element_dataarray():
+def test_from_xarray_1d_100_element_dataarray():
     xr_da = xarray.DataArray(data=numpy.zeros((100, )), dims=["x"], attrs={})
 
     sc_da = from_xarray(xr_da)
@@ -62,7 +65,7 @@ def test_1d_100_element_dataarray():
     assert sc.identical(sc_da, sc.DataArray(data=sc.zeros(dims=["x"], shape=(100, ))))
 
 
-def test_2d_100x100_element_dataarray():
+def test_from_xarray_2d_100x100_element_dataarray():
     xr_da = xarray.DataArray(data=numpy.zeros((100, 100)), dims=["x", "y"], attrs={})
 
     sc_da = from_xarray(xr_da)
@@ -71,7 +74,7 @@ def test_2d_100x100_element_dataarray():
                         sc.DataArray(data=sc.zeros(dims=["x", "y"], shape=(100, 100))))
 
 
-def test_empty_dataset():
+def test_from_xarray_empty_dataset():
     xr_ds = xarray.Dataset(data_vars={})
 
     sc_ds = from_xarray(xr_ds)
@@ -79,7 +82,7 @@ def test_empty_dataset():
     assert sc.identical(sc_ds, sc.Dataset(data={}))
 
 
-def test_dataset_with_data():
+def test_from_xarray_dataset_with_data():
     xr_ds = xarray.Dataset(
         data_vars={
             "array1": xarray.DataArray(data=numpy.zeros((100, )), dims=["x"], attrs={}),
@@ -97,7 +100,7 @@ def test_dataset_with_data():
     assert sc.identical(sc_ds, reference_ds)
 
 
-def test_dataset_with_units():
+def test_from_xarray_dataset_with_units():
     xr_ds = xarray.Dataset(
         data_vars={
             "array1":
@@ -121,7 +124,7 @@ def test_dataset_with_units():
     assert sc.identical(sc_ds, reference_ds)
 
 
-def test_dataset_with_non_indexed_coords():
+def test_from_xarray_dataset_with_non_indexed_coords():
     xr_ds = xarray.Dataset(
         data_vars={
             "array1":
@@ -156,3 +159,55 @@ def test_dataset_with_non_indexed_coords():
                               })
 
     assert sc.identical(sc_ds, reference_ds)
+
+
+def test_to_xarray_dataarray():
+
+    sc_da = make_dense_data_array(ndim=2)
+    xr_da = to_xarray(sc_da)
+    assert xr_da.dims == sc_da.dims
+    assert xr_da.shape == sc_da.shape
+    assert all(x in xr_da.coords for x in ["xx", "yy"])
+    assert xr_da.attrs['units'] == 'counts'
+    assert numpy.array_equal(xr_da.values, sc_da.values)
+
+
+def test_to_xarray_dataarray_variances_dropped():
+
+    sc_da = make_dense_data_array(ndim=2, with_variance=True)
+    xr_da = to_xarray(sc_da)
+    assert xr_da.dims == sc_da.dims
+    assert xr_da.shape == sc_da.shape
+    assert all(x in xr_da.coords for x in ["xx", "yy"])
+    assert xr_da.attrs['units'] == 'counts'
+    assert numpy.array_equal(xr_da.values, sc_da.values)
+
+
+def test_to_xarray_dataarray_fails_on_bin_edges():
+
+    sc_da = make_dense_data_array(ndim=2, binedges=True)
+    with pytest.raises(ValueError):
+        _ = to_xarray(sc_da)
+
+
+def test_to_xarray_dataarray_fails_on_binned_data():
+
+    sc_da = make_binned_data_array(ndim=2)
+    with pytest.raises(ValueError):
+        _ = to_xarray(sc_da)
+
+
+def test_dataarray_round_trip():
+
+    sc_da = make_dense_data_array(ndim=2)
+    assert sc.identical(sc_da, from_xarray(to_xarray(sc_da)))
+
+
+def test_to_xarray_dataset():
+
+    sc_ds = make_dense_dataset(ndim=2)
+    xr_ds = to_xarray(sc_ds)
+    assert all(x in xr_ds.coords for x in ["xx", "yy"])
+    assert all(x in xr_ds for x in ["a", "b"])
+    assert all(xr_ds[x].dims == sc_ds[x].dims for x in ["a", "b"])
+    assert all(xr_ds[x].shape == sc_ds[x].shape for x in ["a", "b"])
