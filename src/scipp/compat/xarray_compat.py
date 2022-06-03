@@ -30,7 +30,8 @@ def from_xarray(obj: Union[xr.DataArray, xr.Dataset]) -> VariableLike:
 
     See Also
     --------
-    scipp.compat.from_xarray_dataarray, scipp.compat.from_xarray_dataset
+    scipp.compat.from_xarray_dataarray, scipp.compat.from_xarray_dataset,
+    scipp.compat.to_xarray
     """
     import xarray as xr
 
@@ -42,9 +43,44 @@ def from_xarray(obj: Union[xr.DataArray, xr.Dataset]) -> VariableLike:
         raise ValueError(f"from_xarray: cannot convert type '{type(obj)}'")
 
 
-def _var_from_xarray(xr_obj: Union[xr.Coordinate, xr.DataArray]):
+def to_xarray(obj: VariableLike) -> Union[xr.DataArray, xr.Dataset]:
+    """Convenience method to convert a scipp object into the corresponding
+    xarray object.
+
+    Parameters
+    ----------
+    obj:
+        The scipp object to convert; must be either a DataArray
+        or Dataset object.
+
+    Returns
+    -------
+    :
+        The converted xarray object.
+
+    See Also
+    --------
+    scipp.compat.from_xarray
+    """
+
+    if isinstance(obj, DataArray):
+        return to_xarray_dataarray(obj)
+    elif isinstance(obj, Dataset):
+        return to_xarray_dataset(obj)
+    else:
+        raise ValueError(f"to_xarray: cannot convert type '{type(obj)}'")
+
+
+def _var_from_xarray(xr_obj: Union[xr.Coordinate, xr.DataArray]) -> Variable:
     unit = xr_obj.attrs.get('units', '')
     return Variable(dims=xr_obj.dims, values=xr_obj.values, unit=Unit(unit))
+
+
+def _var_to_xarray(var: Variable) -> dict:
+    out = {'dims': var.dims, 'values': var.values}
+    if var.unit is not None:
+        out['unit'] = str(var.unit)
+    return out
 
 
 def from_xarray_dataarray(da: xr.DataArray) -> DataArray:
@@ -77,6 +113,42 @@ def from_xarray_dataarray(da: xr.DataArray) -> DataArray:
                      coords=coords,
                      attrs=attrs,
                      name=da.name or "")
+
+
+def to_xarray_dataarray(da: DataArray) -> xr.DataArray:
+    """Converts an xarray.DataArray object to a scipp.DataArray object.
+
+    Parameters
+    ----------
+    da:
+        An xarray.DataArray object to be converted.
+
+    Returns
+    -------
+    :
+        The converted scipp DataArray object.
+
+    See Also
+    --------
+    scipp.compat.from_xarray, scipp.compat.from_xarray_dataset
+    """
+
+    import xarray as xr
+    data = _var_to_xarray(da.data)
+    coords = {key: _var_to_xarray(coord) for key, coord in da.coords.items()}
+
+    out = xr.DataArray(data=data['values'],
+                       dims=data['dims'],
+                       coords={key: coord['values']
+                               for key, coord in coords.items()})
+    if 'unit' in data:
+        out.attrs['units'] = data['unit']
+
+    for key, coord in coords.items():
+        if 'unit' in coord:
+            out.coords[key].attrs['units'] = coord['unit']
+
+    return out
 
 
 def from_xarray_dataset(ds: xr.Dataset) -> Dataset:
