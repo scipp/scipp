@@ -1,6 +1,10 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+
 from __future__ import annotations
 
 from typing import Union, TYPE_CHECKING
+from warnings import warn
 
 from ..core import Dataset, DataArray, Unit, Variable
 from ..core import scalar
@@ -77,9 +81,13 @@ def _var_from_xarray(xr_obj: Union[xr.Coordinate, xr.DataArray]) -> Variable:
 
 
 def _var_to_xarray(var: Variable) -> dict:
+    if var.bins is not None:
+        raise ValueError("Xarray does not support binned data.")
     out = {'dims': var.dims, 'values': var.values}
     if var.unit is not None:
         out['unit'] = str(var.unit)
+    if var.variances is not None:
+        warn("Variances of data were stripped when converting to Xarray.")
     return out
 
 
@@ -116,26 +124,30 @@ def from_xarray_dataarray(da: xr.DataArray) -> DataArray:
 
 
 def to_xarray_dataarray(da: DataArray) -> xr.DataArray:
-    """Converts an xarray.DataArray object to a scipp.DataArray object.
+    """Converts a scipp.DataArray object to an xarray.DataArray object.
 
     Parameters
     ----------
     da:
-        An xarray.DataArray object to be converted.
+        A DataArray object to be converted.
 
     Returns
     -------
     :
-        The converted scipp DataArray object.
+        The converted xarray.DataArray object.
 
     See Also
     --------
-    scipp.compat.from_xarray, scipp.compat.from_xarray_dataset
+    scipp.compat.to_xarray_dataarray, scipp.compat.from_xarray_dataset
     """
 
     import xarray as xr
     data = _var_to_xarray(da.data)
-    coords = {key: _var_to_xarray(coord) for key, coord in da.coords.items()}
+    coords = {}
+    for key, coord in da.coords.items():
+        if da.coords.is_binedge(key):
+            raise ValueError("Xarray does not support coordinates with bin edges.")
+        coords[key] = _var_to_xarray(coord)
 
     out = xr.DataArray(data=data['values'],
                        dims=data['dims'],
@@ -162,7 +174,7 @@ def from_xarray_dataset(ds: xr.Dataset) -> Dataset:
     Returns
     -------
     :
-        The converted scipp dataset object.
+        The converted scipp.Dataset object.
 
     See Also
     --------
@@ -170,3 +182,24 @@ def from_xarray_dataset(ds: xr.Dataset) -> Dataset:
     """
     sc_data = {k: from_xarray(v) for k, v in ds.items()}
     return Dataset(data=sc_data)
+
+
+def to_xarray_dataset(ds: Dataset) -> xr.Dataset:
+    """Converts a scipp.Dataset object to an xarray.Dataset object.
+
+    Parameters
+    ----------
+    ds:
+        A Dataset object to be converted.
+
+    Returns
+    -------
+    :
+        The converted xarray.Dataset object.
+
+    See Also
+    --------
+    scipp.compat.from_xarray_dataset, scipp.compat.to_xarray_dataarray
+    """
+    import xarray as xr
+    return xr.Dataset({k: to_xarray_dataarray(v) for k, v in ds.items()})

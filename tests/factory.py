@@ -120,8 +120,7 @@ def make_dense_dataset(entries=None, **kwargs):
         entries = ['a', 'b']
     ds = sc.Dataset()
     for entry in entries:
-        ds[entry] = make_dense_data_array(**kwargs)
-        ds[entry] *= int(10.0 * np.random.rand())
+        ds[entry] = (10.0 * np.random.rand()) * make_dense_data_array(**kwargs)
     return ds
 
 
