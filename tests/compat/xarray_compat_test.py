@@ -51,6 +51,35 @@ def test_from_xarray_attrs_dataarray():
     assert sc_da.attrs["attrib_str"].values == "test-string"
 
 
+def test_from_xarray_raises_when_attrs_shadowing():
+    xr_da = xr.DataArray(data=np.zeros(10), dims=["x"], coords={"x": np.arange(10)})
+    xr_da.coords['aux'] = xr.Variable(dims=['x'], data=np.arange(10.))
+    xr_da.attrs['aux'] = 'this is an attribute'
+    with pytest.raises(ValueError):
+        _ = from_xarray(xr_da)
+
+
+def test_from_xarray_converts_names_to_strings_in_dataarray():
+    a = xr.Variable(dims=['y', 'x'], data=np.arange(12.).reshape(4, 3))
+    x = xr.Variable(dims=['x'], data=np.arange(3.))
+    y = xr.Variable(dims=['y'], data=np.arange(4.))
+    xr_da = xr.DataArray(a,
+                         coords={
+                             'x': x,
+                             0: y
+                         },
+                         attrs={
+                             1: 6.54321,
+                             2: "test-string",
+                         })
+
+    sc_da = from_xarray(xr_da)
+
+    assert np.array_equal(sc_da.attrs["0"].values, np.arange(4.))
+    assert sc_da.attrs["1"].values == 6.54321
+    assert sc_da.attrs["2"].values == "test-string"
+
+
 def test_from_xarray_named_dataarray():
     xr_da = xr.DataArray(data=np.zeros((1, )), dims={"x"}, name="my-test-dataarray")
 
@@ -201,6 +230,14 @@ def test_from_xarray_dataset_with_extra_coord():
                               })
 
     assert sc.identical(sc_ds, reference_ds)
+
+
+def test_from_xarray_dataset_with_attrs_warns():
+    xr_ds = xr.Dataset(attrs={'a': 1, 'b': 2})
+    with pytest.warns(UserWarning):
+        sc_ds = from_xarray(xr_ds)
+    assert len(sc_ds) == 0
+    assert len(sc_ds.coords) == 0
 
 
 def test_to_xarray_variable():

@@ -17,6 +17,10 @@ if TYPE_CHECKING:
 def from_xarray(obj: Union[xr.Variable, xr.DataArray, xr.Dataset]) -> VariableLike:
     """Convert an xarray object to the corresponding scipp object.
 
+    Warning
+    -------
+    In the case of a Dataset, global attributes are dropped.
+
     Parameters
     ----------
     obj:
@@ -100,18 +104,26 @@ def _from_xarray_dataarray(da: xr.DataArray) -> DataArray:
     """Converts an xarray.DataArray object to a scipp.DataArray object.
     """
     coords = {}
-    attrs = {attr: scalar(da.attrs[attr]) for attr in da.attrs if attr != "units"}
+    attrs = {
+        # Attr keys can have any type in xarray, so we convert to string
+        f"{name}": scalar(attr)
+        for name, attr in da.attrs.items() if name != "units"
+    }
 
     for name, coord in da.coords.items():
+        key = f"{name}"
         if name in da.indexes:
-            coords[name] = _from_xarray_variable(coord)
+            coords[key] = _from_xarray_variable(coord)
         else:
-            attrs[f"{name}"] = _from_xarray_variable(coord)
+            if key in attrs:
+                raise ValueError("Non-indexed coord would erase an existing attribute "
+                                 "with the same name.")
+            attrs[key] = _from_xarray_variable(coord)
 
     return DataArray(data=_from_xarray_variable(da),
                      coords=coords,
                      attrs=attrs,
-                     name=da.name or "")
+                     name=getattr(da, "name", None) or "")
 
 
 def _to_xarray_dataarray(da: DataArray) -> xr.DataArray:
@@ -133,7 +145,13 @@ def _to_xarray_dataarray(da: DataArray) -> xr.DataArray:
 def _from_xarray_dataset(ds: xr.Dataset) -> Dataset:
     """Converts an xarray.Dataset object to a scipp.Dataset object.
     """
+    if ds.attrs:
+        warn("Input data contains some attributes which have been dropped during the "
+             "conversion.")
     sc_data = {k: _from_xarray_dataarray(v) for k, v in ds.items()}
+    # The non-indexed coordinates of items also show up as global coordinates in an
+    # Xarray dataset, so we make sure we exclude those when we add the remaining coords,
+    # after creating the dataset from the individual data arrays.
     coords_in_data_arrays = []
     for item in ds.values():
         coords_in_data_arrays += list(item.coords.keys())
@@ -148,7 +166,8 @@ def _to_xarray_dataset(ds: Dataset) -> xr.Dataset:
     """Converts a scipp.Dataset object to an xarray.Dataset object.
     """
     import xarray as xr
-    out = xr.Dataset({k: _to_xarray_dataarray(v) for k, v in ds.items()})
-    for key in set(ds.coords.keys()) - set(out.coords.keys()):
-        out.coords[key] = _to_xarray_variable(ds.coords[key])
-    return out
+    return xr.Dataset(
+        data_vars={k: _to_xarray_variable(v.data)
+                   for k, v in ds.items()},
+        coords={c: _to_xarray_variable(coord)
+                for c, coord in ds.coords.items()})
