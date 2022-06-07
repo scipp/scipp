@@ -204,7 +204,6 @@ def test_from_xarray_dataset_with_extra_coord():
 
 
 def test_to_xarray_variable():
-
     sc_var = make_variable(ndim=2, unit='m')
     xr_var = to_xarray(sc_var)
     assert xr_var.sizes == {"yy": 50, "xx": 40}
@@ -213,7 +212,6 @@ def test_to_xarray_variable():
 
 
 def test_to_xarray_variable_variances_dropped():
-
     sc_var = make_variable(ndim=2, unit='m', with_variance=True)
     with pytest.warns(UserWarning):
         xr_var = to_xarray(sc_var)
@@ -223,7 +221,6 @@ def test_to_xarray_variable_variances_dropped():
 
 
 def test_to_xarray_dataarray():
-
     sc_da = make_dense_data_array(ndim=2)
     xr_da = to_xarray(sc_da)
     assert xr_da.dims == sc_da.dims
@@ -234,7 +231,6 @@ def test_to_xarray_dataarray():
 
 
 def test_to_xarray_dataarray_2d_coord():
-
     sc_da = make_dense_data_array(ndim=2)
     sc_da.coords['a2dcoord'] = sc.fold(sc.arange('_', float(np.prod(sc_da.shape))),
                                        dim='_',
@@ -244,7 +240,6 @@ def test_to_xarray_dataarray_2d_coord():
 
 
 def test_to_xarray_dataarray_with_attrs():
-
     sc_da = make_dense_data_array(ndim=2, attrs=True)
     xr_da = to_xarray(sc_da)
     assert "attr" in xr_da.coords
@@ -252,21 +247,18 @@ def test_to_xarray_dataarray_with_attrs():
 
 
 def test_to_xarray_dataarray_fails_on_bin_edges():
-
     sc_da = make_dense_data_array(ndim=2, binedges=True)
     with pytest.raises(ValueError):
         _ = to_xarray(sc_da)
 
 
 def test_to_xarray_dataarray_fails_on_binned_data():
-
     sc_da = make_binned_data_array(ndim=2)
     with pytest.raises(ValueError):
         _ = to_xarray(sc_da)
 
 
 def test_to_xarray_dataarray_masks_dropped():
-
     sc_da = make_dense_data_array(ndim=2, masks=True)
     with pytest.warns(UserWarning):
         xr_da = to_xarray(sc_da)
@@ -278,13 +270,11 @@ def test_to_xarray_dataarray_masks_dropped():
 
 
 def test_dataarray_round_trip():
-
     sc_da = make_dense_data_array(ndim=2)
     assert sc.identical(sc_da, from_xarray(to_xarray(sc_da)))
 
 
 def test_to_xarray_dataset():
-
     sc_ds = make_dense_dataset(ndim=2)
     xr_ds = to_xarray(sc_ds)
     assert all(x in xr_ds.coords for x in ["xx", "yy"])
@@ -294,7 +284,6 @@ def test_to_xarray_dataset():
 
 
 def test_to_xarray_dataset_with_extra_coord():
-
     a = sc.Dataset(coords={"extra_coord": sc.arange("extra_dim", 10.)})
     b = make_dense_dataset(ndim=2)
     sc_ds = sc.merge(a, b)
