@@ -32,7 +32,6 @@ def from_xarray(obj: Union[xr.DataArray, xr.Dataset]) -> VariableLike:
     scipp.compat.to_xarray
     """
     import xarray as xr
-
     if isinstance(obj, xr.DataArray):
         return _from_xarray_dataarray(obj)
     elif isinstance(obj, xr.Dataset):
@@ -43,6 +42,10 @@ def from_xarray(obj: Union[xr.DataArray, xr.Dataset]) -> VariableLike:
 
 def to_xarray(obj: VariableLike) -> Union[xr.DataArray, xr.Dataset]:
     """Convert a scipp DataArray or Dataset to the corresponding xarray object.
+
+    Warning
+    -------
+    Any masks and variances in the input will be stripped during the conversion.
 
     Parameters
     ----------
@@ -68,19 +71,23 @@ def to_xarray(obj: VariableLike) -> Union[xr.DataArray, xr.Dataset]:
 
 
 def _var_from_xarray(xr_obj: Union[xr.Coordinate, xr.DataArray]) -> Variable:
+    """Converts an xarray Coordinate or the data in a DataArray to a scipp.Variable.
+    """
     unit = xr_obj.attrs.get('units', '')
     return Variable(dims=xr_obj.dims, values=xr_obj.values, unit=Unit(unit))
 
 
-def _var_to_xarray(var: Variable) -> dict:
+def _var_to_xarray(var: Variable) -> xr.Variable:
+    """Converts a scipp.Variable to a dict containing dims, values and unit for storing
+    in either an xarray Coordinate or DataArray.
+    """
+    import xarray as xr
     if var.bins is not None:
         raise ValueError("Xarray does not support binned data.")
-    out = {'dims': var.dims, 'values': var.values}
-    if var.unit is not None:
-        out['unit'] = str(var.unit)
     if var.variances is not None:
-        warn("Variances of data were stripped when converting to Xarray.")
-    return out
+        warn("Variances of variable were stripped when converting to Xarray.")
+    attrs = {'units': str(var.unit)} if var.unit is not None else None
+    return xr.Variable(dims=var.dims, data=var.values, attrs=attrs)
 
 
 def _from_xarray_dataarray(da: xr.DataArray) -> DataArray:
@@ -108,22 +115,12 @@ def _to_xarray_dataarray(da: DataArray) -> xr.DataArray:
     data = _var_to_xarray(da.data)
     coords = {}
     for key, coord in da.coords.items():
-        if da.coords.is_edges(key):
-            raise ValueError("Xarray does not support coordinates with bin edges.")
+        for dim in coord.dims:
+            if da.coords.is_edges(key, dim=dim):
+                raise ValueError("Xarray does not support coordinates with bin edges.")
         coords[key] = _var_to_xarray(coord)
 
-    out = xr.DataArray(data=data['values'],
-                       dims=data['dims'],
-                       coords={key: coord['values']
-                               for key, coord in coords.items()})
-    if 'unit' in data:
-        out.attrs['units'] = data['unit']
-
-    for key, coord in coords.items():
-        if 'unit' in coord:
-            out.coords[key].attrs['units'] = coord['unit']
-
-    return out
+    return xr.DataArray(data, coords={key: coord for key, coord in coords.items()})
 
 
 def _from_xarray_dataset(ds: xr.Dataset) -> Dataset:

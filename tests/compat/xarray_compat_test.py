@@ -183,6 +183,16 @@ def test_to_xarray_dataarray_variances_dropped():
     assert numpy.array_equal(xr_da.values, sc_da.values)
 
 
+def test_to_xarray_dataarray_2d_coord():
+
+    sc_da = make_dense_data_array(ndim=2)
+    sc_da.coords['a2dcoord'] = sc.fold(sc.arange('_', float(np.prod(sc_da.shape))),
+                                       dim='_',
+                                       sizes=sc_da.sizes)
+    xr_da = to_xarray(sc_da)
+    assert xr_da.coords['a2dcoord'].dims == ("xx", "yy")
+
+
 def test_to_xarray_dataarray_fails_on_bin_edges():
 
     sc_da = make_dense_data_array(ndim=2, binedges=True)
