@@ -6,7 +6,7 @@ from __future__ import annotations
 from typing import Union, TYPE_CHECKING
 from warnings import warn
 
-from ..core import Dataset, DataArray, Unit, Variable, scalar, merge
+from ..core import Dataset, DataArray, Unit, Variable, scalar
 from ..typing import VariableLike
 from ..units import default_unit
 
