@@ -223,6 +223,14 @@ def test_to_xarray_dataarray_2d_coord():
     assert xr_da.coords['a2dcoord'].dims == ("yy", "xx")
 
 
+def test_to_xarray_dataarray_with_attrs():
+
+    sc_da = make_dense_data_array(ndim=2, attrs=True)
+    xr_da = to_xarray(sc_da)
+    assert "attr" in xr_da.coords
+    assert "attr" not in xr_da.indexes
+
+
 def test_to_xarray_dataarray_fails_on_bin_edges():
 
     sc_da = make_dense_data_array(ndim=2, binedges=True)

@@ -116,9 +116,9 @@ def _to_xarray_dataarray(da: DataArray) -> xr.DataArray:
     import xarray as xr
     data = _var_to_xarray(da.data)
     coords = {}
-    for key, coord in da.coords.items():
+    for key, coord in {**da.coords, **da.attrs}.items():
         for dim in coord.dims:
-            if da.coords.is_edges(key, dim=dim):
+            if da.meta.is_edges(key, dim=dim):
                 raise ValueError("Xarray does not support coordinates with bin edges.")
         coords[key] = _var_to_xarray(coord)
 
