@@ -6,8 +6,7 @@ from __future__ import annotations
 from typing import Union, TYPE_CHECKING
 from warnings import warn
 
-from ..core import Dataset, DataArray, Unit, Variable
-from ..core import scalar
+from ..core import Dataset, DataArray, Unit, Variable, scalar, merge
 from ..typing import VariableLike
 from ..units import default_unit
 
@@ -74,8 +73,10 @@ def to_xarray(obj: VariableLike) -> Union[xr.DataArray, xr.Dataset]:
 def _var_from_xarray(xr_obj: Union[xr.Coordinate, xr.DataArray]) -> Variable:
     """Converts an xarray Coordinate or the data in a DataArray to a scipp.Variable.
     """
-    unit = xr_obj.attrs.get('units', default_unit)
-    return Variable(dims=xr_obj.dims, values=xr_obj.values, unit=Unit(unit))
+    unit = xr_obj.attrs.get('units', None)
+    return Variable(dims=xr_obj.dims,
+                    values=xr_obj.values,
+                    unit=Unit(unit) if unit is not None else default_unit)
 
 
 def _var_to_xarray(var: Variable) -> xr.Variable:
@@ -128,11 +129,21 @@ def _from_xarray_dataset(ds: xr.Dataset) -> Dataset:
     """Converts an xarray.Dataset object to a scipp.Dataset object.
     """
     sc_data = {k: _from_xarray_dataarray(v) for k, v in ds.items()}
-    return Dataset(data=sc_data)
+    coords_in_data_arrays = []
+    for item in ds.values():
+        coords_in_data_arrays += list(item.coords.keys())
+    return Dataset(data=sc_data,
+                   coords={
+                       key: _var_from_xarray(ds.coords[key])
+                       for key in (set(ds.coords.keys()) - set(coords_in_data_arrays))
+                   })
 
 
 def _to_xarray_dataset(ds: Dataset) -> xr.Dataset:
     """Converts a scipp.Dataset object to an xarray.Dataset object.
     """
     import xarray as xr
-    return xr.Dataset({k: to_xarray_dataarray(v) for k, v in ds.items()})
+    out = xr.Dataset({k: _to_xarray_dataarray(v) for k, v in ds.items()})
+    for key in set(ds.coords.keys()) - set(out.coords.keys()):
+        out.coords[key] = _var_to_xarray(ds.coords[key])
+    return out
