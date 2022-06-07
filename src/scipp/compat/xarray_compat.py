@@ -121,15 +121,13 @@ def _to_xarray_dataarray(da: DataArray) -> xr.DataArray:
     if da.masks:
         warn("Some masks were found in the DataArray. "
              "These have been removed when converting to Xarray.")
-    data = _to_xarray_variable(da.data)
-    coords = {}
+    out = xr.DataArray(_to_xarray_variable(da.data))
     for key, coord in {**da.coords, **da.attrs}.items():
         for dim in coord.dims:
             if da.meta.is_edges(key, dim=dim):
                 raise ValueError("Xarray does not support coordinates with bin edges.")
-        coords[key] = _to_xarray_variable(coord)
-
-    return xr.DataArray(data, coords={key: coord for key, coord in coords.items()})
+        out.coords[key] = _to_xarray_variable(coord)
+    return out
 
 
 def _from_xarray_dataset(ds: xr.Dataset) -> Dataset:
