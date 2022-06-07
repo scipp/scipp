@@ -14,8 +14,8 @@ if TYPE_CHECKING:
     import xarray as xr
 
 
-def from_xarray(obj: Union[xr.DataArray, xr.Dataset]) -> VariableLike:
-    """Convert an xarray DataArray or Dataset to the corresponding scipp object.
+def from_xarray(obj: Union[xr.Variable, xr.DataArray, xr.Dataset]) -> VariableLike:
+    """Convert an xarray object to the corresponding scipp object.
 
     Parameters
     ----------
@@ -32,7 +32,9 @@ def from_xarray(obj: Union[xr.DataArray, xr.Dataset]) -> VariableLike:
     scipp.compat.to_xarray
     """
     import xarray as xr
-    if isinstance(obj, xr.DataArray):
+    if isinstance(obj, xr.Variable):
+        return _from_xarray_variable(obj)
+    elif isinstance(obj, xr.DataArray):
         return _from_xarray_dataarray(obj)
     elif isinstance(obj, xr.Dataset):
         return _from_xarray_dataset(obj)
@@ -40,8 +42,8 @@ def from_xarray(obj: Union[xr.DataArray, xr.Dataset]) -> VariableLike:
         raise ValueError(f"from_xarray: cannot convert type '{type(obj)}'")
 
 
-def to_xarray(obj: VariableLike) -> Union[xr.DataArray, xr.Dataset]:
-    """Convert a scipp DataArray or Dataset to the corresponding xarray object.
+def to_xarray(obj: VariableLike) -> Union[xr.Variable, xr.DataArray, xr.Dataset]:
+    """Convert a scipp object to the corresponding xarray object.
 
     Warning
     -------
@@ -62,7 +64,9 @@ def to_xarray(obj: VariableLike) -> Union[xr.DataArray, xr.Dataset]:
     scipp.compat.from_xarray
     """
 
-    if isinstance(obj, DataArray):
+    if isinstance(obj, Variable):
+        return _to_xarray_variable(obj)
+    elif isinstance(obj, DataArray):
         return _to_xarray_dataarray(obj)
     elif isinstance(obj, Dataset):
         return _to_xarray_dataset(obj)
@@ -70,7 +74,7 @@ def to_xarray(obj: VariableLike) -> Union[xr.DataArray, xr.Dataset]:
         raise ValueError(f"to_xarray: cannot convert type '{type(obj)}'")
 
 
-def _var_from_xarray(xr_obj: Union[xr.Coordinate, xr.DataArray]) -> Variable:
+def _from_xarray_variable(xr_obj: Union[xr.Coordinate, xr.DataArray]) -> Variable:
     """Converts an xarray Coordinate or the data in a DataArray to a scipp.Variable.
     """
     unit = xr_obj.attrs.get('units', None)
@@ -79,7 +83,7 @@ def _var_from_xarray(xr_obj: Union[xr.Coordinate, xr.DataArray]) -> Variable:
                     unit=Unit(unit) if unit is not None else default_unit)
 
 
-def _var_to_xarray(var: Variable) -> xr.Variable:
+def _to_xarray_variable(var: Variable) -> xr.Variable:
     """Converts a scipp.Variable to a dict containing dims, values and unit for storing
     in either an xarray Coordinate or DataArray.
     """
@@ -100,11 +104,11 @@ def _from_xarray_dataarray(da: xr.DataArray) -> DataArray:
 
     for name, coord in da.coords.items():
         if name in da.indexes:
-            coords[name] = _var_from_xarray(coord)
+            coords[name] = _from_xarray_variable(coord)
         else:
-            attrs[f"{name}"] = _var_from_xarray(coord)
+            attrs[f"{name}"] = _from_xarray_variable(coord)
 
-    return DataArray(data=_var_from_xarray(da),
+    return DataArray(data=_from_xarray_variable(da),
                      coords=coords,
                      attrs=attrs,
                      name=da.name or "")
@@ -114,13 +118,13 @@ def _to_xarray_dataarray(da: DataArray) -> xr.DataArray:
     """Converts a scipp.DataArray object to an xarray.DataArray object.
     """
     import xarray as xr
-    data = _var_to_xarray(da.data)
+    data = _to_xarray_variable(da.data)
     coords = {}
     for key, coord in {**da.coords, **da.attrs}.items():
         for dim in coord.dims:
             if da.meta.is_edges(key, dim=dim):
                 raise ValueError("Xarray does not support coordinates with bin edges.")
-        coords[key] = _var_to_xarray(coord)
+        coords[key] = _to_xarray_variable(coord)
 
     return xr.DataArray(data, coords={key: coord for key, coord in coords.items()})
 
@@ -134,7 +138,7 @@ def _from_xarray_dataset(ds: xr.Dataset) -> Dataset:
         coords_in_data_arrays += list(item.coords.keys())
     return Dataset(data=sc_data,
                    coords={
-                       key: _var_from_xarray(ds.coords[key])
+                       key: _from_xarray_variable(ds.coords[key])
                        for key in (set(ds.coords.keys()) - set(coords_in_data_arrays))
                    })
 
@@ -145,5 +149,5 @@ def _to_xarray_dataset(ds: Dataset) -> xr.Dataset:
     import xarray as xr
     out = xr.Dataset({k: _to_xarray_dataarray(v) for k, v in ds.items()})
     for key in set(ds.coords.keys()) - set(out.coords.keys()):
-        out.coords[key] = _var_to_xarray(ds.coords[key])
+        out.coords[key] = _to_xarray_variable(ds.coords[key])
     return out

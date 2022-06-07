@@ -7,7 +7,19 @@ import xarray as xr
 import scipp as sc
 from scipp.compat import from_xarray, to_xarray
 from ..factory import (make_dense_data_array, make_dense_dataset,
-                       make_binned_data_array)
+                       make_binned_data_array, make_variable)
+
+
+def test_from_xarray_variable():
+    xr_var = xr.Variable(dims=("y", "x"),
+                         data=np.arange(12.).reshape(4, 3),
+                         attrs={"units": "m"})
+    sc_var = from_xarray(xr_var)
+
+    assert sc_var.sizes == {"x": 3, "y": 4}
+    assert sc_var.unit == "m"
+    assert np.array_equal(sc_var.values, xr_var.values)
+    assert sc_var.variances is None
 
 
 def test_from_xarray_empty_attrs_dataarray():
@@ -189,6 +201,16 @@ def test_from_xarray_dataset_with_extra_coord():
                               })
 
     assert sc.identical(sc_ds, reference_ds)
+
+
+def test_to_xarray_variable():
+
+    sc_var = make_variable(ndim=2, unit='m')
+    xr_var = to_xarray(sc_var)
+
+    assert xr_var.sizes == {"yy": 50, "xx": 40}
+    assert xr_var.attrs["units"] == "m"
+    assert np.array_equal(xr_var.values, sc_var.values)
 
 
 def test_to_xarray_dataarray():
