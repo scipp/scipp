@@ -9,6 +9,7 @@ from warnings import warn
 from ..core import Dataset, DataArray, Unit, Variable
 from ..core import scalar
 from ..typing import VariableLike
+from ..units import default_unit
 
 if TYPE_CHECKING:
     import xarray as xr
@@ -73,7 +74,7 @@ def to_xarray(obj: VariableLike) -> Union[xr.DataArray, xr.Dataset]:
 def _var_from_xarray(xr_obj: Union[xr.Coordinate, xr.DataArray]) -> Variable:
     """Converts an xarray Coordinate or the data in a DataArray to a scipp.Variable.
     """
-    unit = xr_obj.attrs.get('units', '')
+    unit = xr_obj.attrs.get('units', default_unit)
     return Variable(dims=xr_obj.dims, values=xr_obj.values, unit=Unit(unit))
 
 
