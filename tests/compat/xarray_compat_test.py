@@ -207,7 +207,16 @@ def test_to_xarray_variable():
 
     sc_var = make_variable(ndim=2, unit='m')
     xr_var = to_xarray(sc_var)
+    assert xr_var.sizes == {"yy": 50, "xx": 40}
+    assert xr_var.attrs["units"] == "m"
+    assert np.array_equal(xr_var.values, sc_var.values)
 
+
+def test_to_xarray_variable_variances_dropped():
+
+    sc_var = make_variable(ndim=2, unit='m', with_variance=True)
+    with pytest.warns(UserWarning):
+        xr_var = to_xarray(sc_var)
     assert xr_var.sizes == {"yy": 50, "xx": 40}
     assert xr_var.attrs["units"] == "m"
     assert np.array_equal(xr_var.values, sc_var.values)
@@ -222,17 +231,6 @@ def test_to_xarray_dataarray():
     assert all(x in xr_da.coords for x in ["xx", "yy"])
     assert xr_da.attrs['units'] == 'counts'
     assert np.array_equal(xr_da.values, sc_da.values)
-
-
-# def test_to_xarray_dataarray_variances_dropped():
-
-#     sc_da = make_dense_data_array(ndim=2, with_variance=True)
-#     xr_da = to_xarray(sc_da)
-#     assert xr_da.dims == sc_da.dims
-#     assert xr_da.shape == sc_da.shape
-#     assert all(x in xr_da.coords for x in ["xx", "yy"])
-#     assert xr_da.attrs['units'] == 'counts'
-#     assert np.array_equal(xr_da.values, sc_da.values)
 
 
 def test_to_xarray_dataarray_2d_coord():
@@ -265,6 +263,18 @@ def test_to_xarray_dataarray_fails_on_binned_data():
     sc_da = make_binned_data_array(ndim=2)
     with pytest.raises(ValueError):
         _ = to_xarray(sc_da)
+
+
+def test_to_xarray_dataarray_masks_dropped():
+
+    sc_da = make_dense_data_array(ndim=2, masks=True)
+    with pytest.warns(UserWarning):
+        xr_da = to_xarray(sc_da)
+    assert xr_da.dims == sc_da.dims
+    assert xr_da.shape == sc_da.shape
+    assert all(x in xr_da.coords for x in ["xx", "yy"])
+    assert xr_da.attrs['units'] == 'counts'
+    assert np.array_equal(xr_da.values, sc_da.values)
 
 
 def test_dataarray_round_trip():

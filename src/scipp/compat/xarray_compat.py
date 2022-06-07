@@ -118,6 +118,9 @@ def _to_xarray_dataarray(da: DataArray) -> xr.DataArray:
     """Converts a scipp.DataArray object to an xarray.DataArray object.
     """
     import xarray as xr
+    if da.masks:
+        warn("Some masks were found in the DataArray. "
+             "These have been removed when converting to Xarray.")
     data = _to_xarray_variable(da.data)
     coords = {}
     for key, coord in {**da.coords, **da.attrs}.items():
