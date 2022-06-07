@@ -402,3 +402,73 @@ def test_bins_like():
     with pytest.raises(sc.DimensionError):
         dense = dense.rename_dims({'x': 'y'})
         sc.bins_like(binned, dense),
+
+
+def test_histogram_table_define_edges_from_bin_count():
+    da = sc.data.table_xyz(100)
+    histogrammed = sc.histogram(da, y=4)
+    edges = histogrammed.coords['y']
+    assert len(edges) == 5
+    assert edges.min().value == da.coords['y'].min().value
+    assert edges.max().value > da.coords['y'].max().value
+    assert edges.max().value == np.nextafter(da.coords['y'].max().value, np.inf)
+
+
+def test_histogram_binned_define_edges_from_bin_count():
+    da = sc.data.binned_x(100, 10)
+    histogrammed = sc.histogram(da, y=4)
+    edges = histogrammed.coords['y']
+    assert len(edges) == 5
+    assert edges.min().value == da.bins.coords['y'].min().value
+    assert edges.max().value > da.bins.coords['y'].max().value
+    assert edges.max().value == np.nextafter(da.bins.coords['y'].max().value, np.inf)
+
+
+def test_histogram_table_define_edges_from_bin_size():
+    da = sc.data.table_xyz(100)
+    histogrammed = sc.histogram(da, y=sc.scalar(100, unit='mm'))
+    edges = histogrammed.coords['y']
+    assert len(edges) == 11
+    assert edges.min().value == da.coords['y'].min().value
+    assert edges.max().value > da.coords['y'].max().value
+
+
+def test_histogram_binned_define_edges_from_bin_size():
+    da = sc.data.binned_x(100, 10)
+    histogrammed = sc.histogram(da, y=sc.scalar(100, unit='mm'))
+    edges = histogrammed.coords['y']
+    assert len(edges) == 11
+    assert edges.min().value == da.bins.coords['y'].min().value
+    assert edges.max().value > da.bins.coords['y'].max().value
+
+
+def test_histogram_table_custom_edges():
+    da = sc.data.table_xyz(100)
+    y = sc.linspace('y', 0.2, 0.6, num=3, unit='m')
+    histogrammed = sc.histogram(da, y=y)
+    assert sc.identical(histogrammed.coords['y'], y)
+
+
+def test_histogram_binned_custom_edges():
+    da = sc.data.binned_x(100, 10)
+    y = sc.linspace('y', 0.2, 0.6, num=3, unit='m')
+    histogrammed = sc.histogram(da, y=y)
+    assert sc.identical(histogrammed.coords['y'], y)
+
+
+def test_histogram_x_and_edges_arg_are_position_only_and_are_ok_as_keyword_args():
+    da = sc.data.table_xyz(100)
+    da.coords['edges'] = da.coords['x']
+    sc.histogram(da, x=4)
+    sc.histogram(da, edges=4)
+
+
+def test_histogram_raises_if_edges_specified_positional_and_as_kwarg():
+    da = sc.data.table_xyz(100)
+    with pytest.raises(TypeError):
+        sc.histogram(da, {'y': 4}, y=4)
+
+
+def test_histogram_edges_from_positional_arg():
+    da = sc.data.table_xyz(100)
+    assert sc.identical(sc.histogram(da, {'y': 4}), sc.histogram(da, y=4))
