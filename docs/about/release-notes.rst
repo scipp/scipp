@@ -9,6 +9,8 @@ v0.15.0 (Unreleased)
 Features
 ~~~~~~~~
 
+* Added conversion from Scipp objects to Xarray objects (previously only converting from Xarray to Scipp was available) `#2624 <https://github.com/scipp/scipp/pull/2624>`_.
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
