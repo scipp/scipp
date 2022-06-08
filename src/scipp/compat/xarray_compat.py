@@ -16,10 +16,9 @@ if TYPE_CHECKING:
 
 def from_xarray(obj: Union[xr.Variable, xr.DataArray, xr.Dataset]) -> VariableLike:
     """Convert an xarray object to the corresponding scipp object.
-
-    Warning
-    -------
-    In the case of a Dataset, global attributes are dropped.
+    Attributes named `"units"` are used to set the units of the Variables.
+    All other DataArray attributes are kept, but attributes of Variables, Coordinates
+    and Datasets are dropped.
 
     Parameters
     ----------
@@ -52,6 +51,7 @@ def to_xarray(obj: VariableLike) -> Union[xr.Variable, xr.DataArray, xr.Dataset]
     Warning
     -------
     Any masks and variances in the input will be stripped during the conversion.
+    Binned data is not supported.
 
     Parameters
     ----------
