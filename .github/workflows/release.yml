@@ -20,7 +20,7 @@ jobs:
           - {os: macos-11, target: osx_64}
           - {os: macos-11, target: osx_arm64}
           - {os: windows-2019, target: win_64}
-        python-version: ["3.8", "3.9"]
+        python-version: ["3.8", "3.9", "3.10"]
 
     steps:
       - uses: actions/checkout@v2
