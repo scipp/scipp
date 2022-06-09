@@ -79,6 +79,16 @@ def _hist(x: Union[_cpp.DataArray, _cpp.Dataset],
         return histogram(bin(x, edges=[edges[:-1]]), bins=edges[-1])
 
 
+def _nanhist(x: Union[_cpp.DataArray, _cpp.Dataset],
+             arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
+             /,
+             **kwargs) -> Union[_cpp.DataArray, _cpp.Dataset]:
+    edges = _make_edges(x, arg_dict, kwargs)
+    if len(edges) == 0:
+        return x.bins.nansum()
+    return bin(x, edges=edges).bins.nansum()
+
+
 def _bin(x: Union[_cpp.DataArray, _cpp.Dataset],
          arg_dict: Dict[str, Union[int, Variable]] = None,
          /,
