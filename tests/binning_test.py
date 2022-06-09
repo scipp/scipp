@@ -6,7 +6,23 @@ import scipp as sc
 import numpy as np
 
 
-def test_histogram_table_define_edges_from_bin_count():
+def test_many_combinations():
+    table = sc.data.table_xyz(100)
+    table.coords['label'] = (table.coords['x'] * 10).to(dtype='int64')
+    table.group('label').hist(x=5, y=3)
+    table.group('label').hist(x=5)
+    table.group('label').hist()
+    table.hist(x=5, y=3)
+    table.hist(x=5)
+    table.bin(x=5).hist()
+    table.bin(x=5).hist(x=7)
+    table.bin(x=5).hist(y=7)
+    table.bin(x=5).hist(x=3, y=7)
+    table.bin(x=5).group('label').hist()
+    table.bin(x=5).group('label').hist(y=5)
+
+
+def test_hist_table_define_edges_from_bin_count():
     da = sc.data.table_xyz(100)
     histogrammed = da.hist(y=4)
     edges = histogrammed.coords['y']
@@ -16,7 +32,7 @@ def test_histogram_table_define_edges_from_bin_count():
     assert edges.max().value == np.nextafter(da.coords['y'].max().value, np.inf)
 
 
-def test_histogram_binned_define_edges_from_bin_count():
+def test_hist_binned_define_edges_from_bin_count():
     da = sc.data.binned_x(100, 10)
     histogrammed = da.hist(y=4)
     edges = histogrammed.coords['y']
@@ -26,7 +42,7 @@ def test_histogram_binned_define_edges_from_bin_count():
     assert edges.max().value == np.nextafter(da.bins.coords['y'].max().value, np.inf)
 
 
-def test_histogram_binned_no_additional_edges():
+def test_hist_binned_no_additional_edges():
     da = sc.data.binned_x(100, 10)
     assert sc.identical(da.hist(), da.bins.sum())
 
