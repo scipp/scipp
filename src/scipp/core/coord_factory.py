@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-from functools import wraps
-from typing import Callable, Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from .._scipp import core as _cpp
 from .variable import array, Variable, linspace, arange
@@ -39,28 +38,12 @@ def _parse_coords_arg(x, name, arg):
     return coord
 
 
-def make_edges_func_1d(name: str, func: Callable) -> Callable:
-
-    @wraps(func)
-    def function(x: Union[_cpp.DataArray, _cpp.Dataset],
-                 edges: Dict[str, Union[int, Variable]] = None,
-                 /,
-                 **kwargs) -> Union[_cpp.DataArray, _cpp.Dataset]:
-        if edges is not None:
-            kwargs = dict(**edges, **kwargs)
-        if len(kwargs) != 1:
-            raise ValueError("Currently only 1-D histogramming is supported.")
-        name, arg = next(iter(kwargs.items()))
-        return func(x, bins=_parse_coords_arg(x, name, arg))
-
-    return function
-
-
 def _make_edges(x: Union[_cpp.DataArray,
                          _cpp.Dataset], arg_dict: Dict[str, Union[int, Variable]],
                 kwargs: Dict[str, Union[int, Variable]]) -> List[Variable]:
     # TODO this merging approach does not make much sense, because the user does not
     # have control over order. Accept either one or the other.
+    # TODO Could go with kwargs only, user can use **{'name with space':5}
     if arg_dict is not None:
         kwargs = dict(**arg_dict, **kwargs)
     return [_parse_coords_arg(x, name, arg) for name, arg in kwargs.items()]
