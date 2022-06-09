@@ -117,6 +117,10 @@ setattr(Variable, 'plot', plot)
 setattr(DataArray, 'plot', plot)
 setattr(Dataset, 'plot', plot)
 
-from .core.coord_factory import hist
-setattr(DataArray, 'hist', hist)
-del hist
+from .core.coord_factory import _bin, _group, _hist
+setattr(DataArray, 'bin', _bin)
+setattr(DataArray, 'group', _group)
+setattr(DataArray, 'hist', _hist)
+del _bin
+del _group
+del _hist

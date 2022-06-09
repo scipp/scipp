@@ -424,6 +424,11 @@ def test_histogram_binned_define_edges_from_bin_count():
     assert edges.max().value == np.nextafter(da.bins.coords['y'].max().value, np.inf)
 
 
+def test_histogram_binned_no_additional_edges():
+    da = sc.data.binned_x(100, 10)
+    assert sc.identical(da.hist(), da.bins.sum())
+
+
 def test_histogram_table_define_edges_from_bin_size():
     da = sc.data.table_xyz(100)
     histogrammed = da.hist(y=sc.scalar(100, unit='mm'))
