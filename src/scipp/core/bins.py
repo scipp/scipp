@@ -4,7 +4,6 @@
 from typing import Dict, Optional, Sequence, Union
 
 from .._scipp import core as _cpp
-from .coord_factory import make_edges_func_1d
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from ..typing import VariableLike, MetaDataMap
 from .domains import merge_equal_adjacent
@@ -379,7 +378,23 @@ def _groupby_bins(obj):
     return GroupbyBins(obj)
 
 
-histogram = make_edges_func_1d('histogram', _cpp.histogram)
+def histogram(x: Union[_cpp.DataArray, _cpp.Dataset], *,
+              bins: _cpp.Variable) -> Union[_cpp.DataArray, _cpp.Dataset]:
+    """Create dense data by histogramming data along all dimension given by
+    edges.
+
+    Returns
+    -------
+    :
+        DataArray / Dataset with values equal to the sum
+        of values in each given bin.
+
+    See Also
+    --------
+    scipp.bin:
+        For binning data.
+    """
+    return _call_cpp_func(_cpp.histogram, x, bins)
 
 
 def bin(x: _cpp.DataArray,

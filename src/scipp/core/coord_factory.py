@@ -6,6 +6,7 @@ from typing import Callable, Dict, Union
 
 from .._scipp import core as _cpp
 from .variable import Variable, linspace, arange
+from .bins import bin, histogram
 
 
 def _get_coord(x, name):
@@ -50,3 +51,18 @@ def make_edges_func_1d(name: str, func: Callable) -> Callable:
         return func(x, bins=_parse_coords_arg(x, name, arg))
 
     return function
+
+
+def hist(x: Union[_cpp.DataArray, _cpp.Dataset],
+         arg_dict: Dict[str, Union[int, Variable]] = None,
+         /,
+         **kwargs) -> Union[_cpp.DataArray, _cpp.Dataset]:
+    if arg_dict is not None:
+        kwargs = dict(**arg_dict, **kwargs)
+    edges = [_parse_coords_arg(x, name, arg) for name, arg in kwargs.items()]
+    if len(edges) == 0:
+        return x.bins.sum()
+    if len(edges) == 1:
+        return histogram(x, bins=edges[0])
+    else:
+        return histogram(bin(x, edges=[edges[:-1]]), bins=edges[-1])
