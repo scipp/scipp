@@ -57,9 +57,10 @@ def _hist(x: Union[_cpp.DataArray, _cpp.Dataset],
     if len(edges) == 0:
         return x.bins.sum()
     if len(edges) == 1:
+        # TODO Note that this may swap dims, is that ok?
         return histogram(x, bins=edges[0])
     else:
-        return histogram(bin(x, edges=[edges[:-1]]), bins=edges[-1])
+        return histogram(bin(x, edges=edges[:-1]), bins=edges[-1])
 
 
 def _nanhist(x: Union[_cpp.DataArray, _cpp.Dataset],
