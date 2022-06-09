@@ -88,7 +88,7 @@ def _make_groups(x, arg):
     # TODO Check that it is not bin-edges?
     # TODO Very inefficient concat and np.unique
     if coord is None:
-        return _make_groups(x.flatten(to='dummy').bins.concat('dummy').value, arg)
+        return _make_groups(x.data.flatten(to='dummy').bins.concat('dummy').value, arg)
     return array(dims=[arg], values=np.unique(coord.values), unit=coord.unit)
 
 
