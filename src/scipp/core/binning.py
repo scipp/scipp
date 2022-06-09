@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Union
 from .._scipp import core as _cpp
 from .variable import array, Variable, linspace, arange
 from .bins import bin, histogram
+from .operations import rebin
 
 
 def _get_coord(x, name):
@@ -46,14 +47,14 @@ def _make_edges(x: Union[_cpp.DataArray,
     # TODO Could go with kwargs only, user can use **{'name with space':5}
     if arg_dict is not None:
         kwargs = dict(**arg_dict, **kwargs)
-    return [_parse_coords_arg(x, name, arg) for name, arg in kwargs.items()]
+    return {name: _parse_coords_arg(x, name, arg) for name, arg in kwargs.items()}
 
 
 def _hist(x: Union[_cpp.DataArray, _cpp.Dataset],
           arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
           /,
           **kwargs) -> Union[_cpp.DataArray, _cpp.Dataset]:
-    edges = _make_edges(x, arg_dict, kwargs)
+    edges = list(_make_edges(x, arg_dict, kwargs).values())
     if len(edges) == 0:
         return x.bins.sum()
     if len(edges) == 1:
@@ -67,7 +68,7 @@ def _nanhist(x: Union[_cpp.DataArray, _cpp.Dataset],
              arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
              /,
              **kwargs) -> Union[_cpp.DataArray, _cpp.Dataset]:
-    edges = _make_edges(x, arg_dict, kwargs)
+    edges = list(_make_edges(x, arg_dict, kwargs).values())
     if len(edges) == 0:
         return x.bins.nansum()
     return bin(x, edges=edges).bins.nansum()
@@ -77,8 +78,19 @@ def _bin(x: Union[_cpp.DataArray, _cpp.Dataset],
          arg_dict: Dict[str, Union[int, Variable]] = None,
          /,
          **kwargs) -> Union[_cpp.DataArray, _cpp.Dataset]:
-    edges = _make_edges(x, arg_dict, kwargs)
+    edges = list(_make_edges(x, arg_dict, kwargs).values())
     return bin(x, edges=edges)
+
+
+def _rebin(x: Union[_cpp.DataArray, _cpp.Dataset],
+           arg_dict: Dict[str, Union[int, Variable]] = None,
+           /,
+           **kwargs) -> Union[_cpp.DataArray, _cpp.Dataset]:
+    edges = _make_edges(x, arg_dict, kwargs)
+    out = x
+    for dim, edge in edges.items():
+        out = rebin(out, dim, edge)
+    return out
 
 
 def _make_groups(x, arg):
