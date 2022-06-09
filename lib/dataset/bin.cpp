@@ -2,6 +2,7 @@
 // Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <iostream>
 #include <numeric>
 #include <set>
 
@@ -141,27 +142,35 @@ auto bin(const Variable &data, const Variable &indices,
       offsets, cumsum_exclusive_subbin_sizes(output_bin_sizes));
   Variable filtered_input_bin_size = sum_subbin_sizes(output_bin_sizes);
   auto end = cumsum(filtered_input_bin_size);
+  // std::cout << filtered_input_bin_size << ' ' << builder.offsets() << ' '
+  //           << builder.nbin() << '\n';
   const auto total_size =
       end.dims().volume() > 0 ? end.values<scipp::index>().as_span().back() : 0;
+  // std::cout << end << ' ' << data.dims() << '\n';
   end = broadcast(end, data.dims()); // required for some cases of rebinning
   const auto filtered_input_bin_ranges =
       zip(end - filtered_input_bin_size, end);
 
   // Perform actual binning step for data, all coords, all masks, ...
-  auto out_buffer =
-      dataset::transform(bins_view<T>(data), [&](const auto &var) {
-        if (!is_bins(var))
-          return copy(var);
-        const auto &[input_indices, buffer_dim, in_buffer] =
-            var.template constituents<Variable>();
-        static_cast<void>(input_indices);
-        auto out = resize_default_init(in_buffer, buffer_dim, total_size);
-        auto out_subspans =
-            subspan_view(out, buffer_dim, filtered_input_bin_ranges);
-        map_to_bins(out_subspans, as_subspan_view(var), offsets,
-                    as_subspan_view(indices));
-        return out;
-      });
+  auto bins_view_data = bins_view<T>(data);
+  auto out_buffer = dataset::transform(bins_view_data, [&](const auto &var) {
+    if (!is_bins(var))
+      return copy(var);
+    const auto &[input_indices, buffer_dim, in_buffer] =
+        var.template constituents<Variable>();
+    static_cast<void>(input_indices);
+    auto out = resize_default_init(in_buffer, buffer_dim, total_size);
+    // const auto scale =
+    //     in_buffer.dims().volume() / in_buffer.dims()[buffer_dim];
+    // auto out_subspans =
+    //     subspan_view(out, buffer_dim, filtered_input_bin_ranges);
+    auto out_bins =
+        make_bins_no_validate(filtered_input_bin_ranges, buffer_dim, out);
+    auto out_subspans = as_subspan_view(out_bins);
+    map_to_bins(out_subspans, as_subspan_view(var), offsets,
+                as_subspan_view(indices));
+    return out;
+  });
 
   // Up until here the output was viewed with same bin index ranges as input.
   // Now switch to desired final bin indices.
@@ -169,11 +178,19 @@ auto bin(const Variable &data, const Variable &indices,
   auto bin_sizes = makeVariable<scipp::index>(
       output_dims, units::none,
       Values(flatten_subbin_sizes(output_bin_sizes, dims.volume())));
-  return std::tuple{std::move(out_buffer), std::move(bin_sizes)};
+  // std::cout << "final " << bins_view_data.dim() << ' ' << output_dims << ' '
+  //           << bin_sizes << ' ' << out_buffer << '\n';
+  return std::tuple{bins_view_data.dim(), std::move(out_buffer),
+                    std::move(bin_sizes)};
+}
+
+bool contains_none(const Dimensions &ref, const Dimensions &dims) {
+  return std::none_of(dims.begin(), dims.end(),
+                      [&](auto &&dim) { return ref.contains(dim); });
 }
 
 template <class T, class Meta> auto extract_unbinned(T &array, Meta meta) {
-  const auto dim = array.dims().inner();
+  const auto dims = array.dims();
   using Key = typename std::decay_t<decltype(meta(array))>::key_type;
   std::vector<Key> to_extract;
   std::unordered_map<Key, Variable> extracted;
@@ -181,7 +198,7 @@ template <class T, class Meta> auto extract_unbinned(T &array, Meta meta) {
   // WARNING: Do not use `view` while extracting, `extract` invalidates it!
   std::copy_if(
       view.keys_begin(), view.keys_end(), std::back_inserter(to_extract),
-      [&](const auto &key) { return !view[key].dims().contains(dim); });
+      [&](const auto &key) { return contains_none(view[key].dims(), dims); });
   std::transform(to_extract.begin(), to_extract.end(),
                  std::inserter(extracted, extracted.end()),
                  [&](const auto &key) {
@@ -199,19 +216,18 @@ template <class T, class Meta> auto extract_unbinned(T &array, Meta meta) {
 ///   step.
 /// - If rebinning, existing meta data along unchanged dimensions is preserved.
 template <class Coords, class Masks, class Attrs>
-DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
+DataArray add_metadata(std::tuple<Dim, DataArray, Variable> &&proto,
                        const Coords &coords, const Masks &masks,
                        const Attrs &attrs, const std::vector<Variable> &edges,
                        const std::vector<Variable> &groups,
                        const std::vector<Dim> &erase) {
-  auto &[buffer, bin_sizes] = proto;
+  auto &[buffer_dim, buffer, bin_sizes] = proto;
   bin_sizes = squeeze(bin_sizes, erase);
   const auto end = cumsum(bin_sizes);
-  const auto buffer_dim = buffer.dims().inner();
   std::set<Dim> dims(erase.begin(), erase.end());
   const auto rebinned = [&](const auto &var) {
     for (const auto &dim : var.dims().labels())
-      if (dims.count(dim) || var.dims().contains(buffer_dim))
+      if (dims.count(dim) || !contains_none(var.dims(), buffer.dims()))
         return true;
     return false;
   };
@@ -413,6 +429,7 @@ auto axis_actions(const Variable &data, const Coords &coords,
   // one, even if the grouping/binning along this dimension is unchanged.
   bool rebin = false;
   const auto dims = data.dims();
+  // std::cout << "axis_actions data.dims = " << dims << '\n';
   for (const auto dim : dims.labels()) {
     if (edges_dims.contains(dim) || groups_dims.contains(dim))
       rebin = true;
@@ -446,10 +463,12 @@ public:
     // right now bin<> cannot handle this and requires target bin indices for
     // every bin element.
     const auto &[begin_end, dim, buffer] = var.constituents<T>();
+    // std::cout << begin_end << dim << buffer << std::endl;
+    const Dimensions buffer_dims{dim, buffer.dims()[dim]};
     m_target_bins_buffer =
-        (dims.volume() > std::numeric_limits<int32_t>::max())
-            ? makeVariable<int64_t>(buffer.dims(), units::none)
-            : makeVariable<int32_t>(buffer.dims(), units::none);
+        (buffer_dims.volume() > std::numeric_limits<int32_t>::max())
+            ? makeVariable<int64_t>(buffer_dims, units::none)
+            : makeVariable<int32_t>(buffer_dims, units::none);
     m_target_bins = make_bins_no_validate(begin_end, dim, m_target_bins_buffer);
   }
   auto &operator*() noexcept { return m_target_bins; }
@@ -471,10 +490,10 @@ template <class T> Variable concat_bins(const Variable &var, const Dim dim) {
   TargetBins<T> target_bins(var, builder.dims());
 
   builder.build(*target_bins, std::map<Dim, Variable>{});
-  auto [buffer, bin_sizes] = bin<DataArray>(var, *target_bins, builder);
+  auto [buffer_dim, buffer, bin_sizes] =
+      bin<DataArray>(var, *target_bins, builder);
   bin_sizes = squeeze(bin_sizes, scipp::span{&dim, 1});
   const auto end = cumsum(bin_sizes);
-  const auto buffer_dim = buffer.dims().inner();
   return make_bins(zip(end - bin_sizes, end), buffer_dim, std::move(buffer));
 }
 template Variable concat_bins<Variable>(const Variable &, const Dim);
@@ -520,13 +539,14 @@ namespace {
 void validate_bin_args(const DataArray &array,
                        const std::vector<Variable> &edges,
                        const std::vector<Variable> &groups) {
-  if ((is_bins(array) &&
-       std::get<2>(array.data().constituents<DataArray>()).dims().ndim() > 1) ||
-      (!is_bins(array) && array.dims().ndim() > 1)) {
-    throw except::BinnedDataError(
-        "Binning is only implemented for 1-dimensional data. Consider using "
-        "groupby, it might be able to do what you need.");
-  }
+  // if ((is_bins(array) &&
+  //      std::get<2>(array.data().constituents<DataArray>()).dims().ndim() > 1)
+  //      ||
+  //     (!is_bins(array) && array.dims().ndim() > 1)) {
+  //   throw except::BinnedDataError(
+  //       "Binning is only implemented for 1-dimensional data. Consider using "
+  //       "groupby, it might be able to do what you need.");
+  // }
   if (edges.empty() && groups.empty())
     throw std::invalid_argument(
         "Arguments 'edges' and 'groups' of scipp.bin are "
@@ -569,25 +589,27 @@ DataArray bin(const DataArray &array, const std::vector<Variable> &edges,
     return bin(data, coords, masks, attrs, edges, groups, erase);
   } else {
     // Pretend existing binning along outermost binning dim to enable threading
-    const auto dim = data.dims().inner();
+    const auto binning_dim = groups.empty() ? edges.front().dims().inner()
+                                            : groups.front().dims().inner();
+    const auto dim = meta[binning_dim].dims().inner();
     const auto size = std::max(scipp::index(1), data.dims()[dim]);
     // TODO automatic setup with reasonable bin count
     const auto stride = std::max(scipp::index(1), size / 24);
-    auto begin = make_range(0, size, stride,
-                            groups.empty() ? edges.front().dims().inner()
-                                           : groups.front().dims().inner());
+    auto begin = make_range(0, size, stride, binning_dim);
     auto end = begin + stride * units::none;
     end.values<scipp::index>().as_span().back() = data.dims()[dim];
     const auto indices = zip(begin, end);
     const auto tmp = make_bins_no_validate(indices, dim, array);
+    const Dimensions buffer_dims{dim, data.dims()[dim]};
     auto target_bins_buffer =
-        (data.dims().volume() > std::numeric_limits<int32_t>::max())
-            ? makeVariable<int64_t>(data.dims(), units::none)
-            : makeVariable<int32_t>(data.dims(), units::none);
-    auto builder = axis_actions(data, meta, edges, groups, erase);
+        (buffer_dims.volume() > std::numeric_limits<int32_t>::max())
+            ? makeVariable<int64_t>(buffer_dims, units::none)
+            : makeVariable<int32_t>(buffer_dims, units::none);
+    auto builder = axis_actions(target_bins_buffer, meta, edges, groups, erase);
     builder.build(target_bins_buffer, meta);
     const auto target_bins =
         make_bins_no_validate(indices, dim, target_bins_buffer);
+    // std::cout << indices << dim << target_bins_buffer << tmp << std::endl;
     return add_metadata(bin<DataArray>(drop_grouped_event_coords(tmp, groups),
                                        target_bins, builder),
                         coords, masks, attrs, builder.edges(), builder.groups(),

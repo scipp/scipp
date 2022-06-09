@@ -9,6 +9,7 @@
 #include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/histogram.h"
 #include "scipp/dataset/string.h"
+#include "scipp/dataset/sum.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/reduction.h"
@@ -575,19 +576,20 @@ TEST_P(BinTest, error_if_erase_binning_and_try_rebin_along_same_dimension) {
 }
 
 TEST(BinTest, twod_not_supported) {
-  const Dimensions dims({{Dim::X, 2}, {Dim::Y, 2}});
-  const auto data = makeVariable<double>(dims, Values{0, 1, 2, 3});
+  const Dimensions dims({{Dim::X, 2}, {Dim::Y, 3}});
+  const auto data = makeVariable<double>(dims, Values{0, 1, 2, 3, 4, 5});
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0.1, 0.2});
-  const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.1, 1.2});
-  const DataArray table(data, {{Dim::X, x}, {Dim::Y, y}});
+  const auto y =
+      makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1.1, 1.2, 1.3});
+  const DataArray da(data, {{Dim::X, x}, {Dim::Y, y}});
 
   const auto edges_x =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 2});
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{0, 1, 2});
   const auto edges_y =
       makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2});
 
-  EXPECT_THROW(bin(table, {edges_x}), except::BinnedDataError);
-  EXPECT_THROW(bin(table, {edges_y}), except::BinnedDataError);
+  EXPECT_EQ(bins_sum(bin(da, {edges_x})), sum(da, Dim::X));
+  // EXPECT_THROW(bin(da, {edges_y}), except::BinnedDataError);
 }
 
 TEST_P(BinTest, new_dim_existing_coord) {

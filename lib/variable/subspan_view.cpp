@@ -17,11 +17,11 @@ namespace {
 template <class T>
 auto make_subspans(T *base, const Variable &indices,
                    const scipp::index stride) {
-  if (stride != 1)
-    throw std::logic_error(
-        "span only supports stride=1, this should be "
-        "unreachable due to an earlier check, may want to generalize this "
-        "later to support in particular stride=0 for broadcasted buffers");
+  // if (stride != 1)
+  //   throw std::logic_error(
+  //       "span only supports stride=1, this should be "
+  //       "unreachable due to an earlier check, may want to generalize this "
+  //       "later to support in particular stride=0 for broadcasted buffers");
   return variable::transform<scipp::index_pair>(
       indices,
       overloaded{core::transform_flags::expect_no_variance_arg<0>,
@@ -59,10 +59,10 @@ auto invoke_subspan_view(const DType dtype, Args &&...args) {
 
 template <class Var, class... Args>
 Variable subspan_view_impl(Var &var, const Dim dim, Args &&...args) {
-  if (var.stride(dim) != 1)
-    throw except::DimensionError(
-        "View over subspan can only be created for contiguous "
-        "range of data.");
+  // if (var.stride(dim) != 1)
+  //   throw except::DimensionError(
+  //       "View over subspan can only be created for contiguous "
+  //       "range of data.");
   return invoke_subspan_view<double, float, int64_t, int32_t, bool,
                              core::time_point, std::string, Eigen::Vector3d>(
       var.dtype(), var, dim, args...);
