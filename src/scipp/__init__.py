@@ -118,6 +118,7 @@ setattr(DataArray, 'plot', plot)
 setattr(Dataset, 'plot', plot)
 
 from .core.binning import _bin, _group, _hist, _nanhist
+
 setattr(DataArray, 'bin', _bin)
 setattr(DataArray, 'group', _group)
 setattr(DataArray, 'hist', _hist)
