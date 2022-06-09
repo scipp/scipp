@@ -4,11 +4,11 @@
 from typing import Dict, Optional, Sequence, Union
 
 from .._scipp import core as _cpp
+from .coord_factory import make_edges_func_1d
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from ..typing import VariableLike, MetaDataMap
 from .domains import merge_equal_adjacent
 from .operations import islinspace
-from .variable import Variable, linspace, arange
 
 
 class Lookup:
@@ -379,57 +379,7 @@ def _groupby_bins(obj):
     return GroupbyBins(obj)
 
 
-def _get_coord(x, name):
-    event_coord = x.bins.meta.get(name) if x.bins is not None else None
-    return x.meta.get(name, event_coord)
-
-
-def _upper_bound(x):
-    import numpy as np
-    bound = x.max()
-    bound.value = np.nextafter(bound.value, np.inf)
-    return bound
-
-
-def _parse_coords_arg(x, name, arg):
-    coord = _get_coord(x, name)
-    if isinstance(arg, int):
-        coord = linspace(name, coord.min(), _upper_bound(coord), num=arg + 1)
-    elif isinstance(arg, Variable):
-        if arg.ndim == 0:
-            start = coord.min()
-            step = arg.to(dtype=start.dtype, unit=start.unit)
-            stop = _upper_bound(coord) + step
-            coord = arange(name, start, stop, step=step)
-        else:
-            coord = arg
-    return coord
-
-
-def histogram(x: Union[_cpp.DataArray, _cpp.Dataset],
-              edges: Dict[str, Union[int, Variable]] = None,
-              /,
-              **kwargs) -> Union[_cpp.DataArray, _cpp.Dataset]:
-    """Create dense data by histogramming data along all dimension given by
-    edges.
-
-    Returns
-    -------
-    :
-        DataArray / Dataset with values equal to the sum
-        of values in each given bin.
-
-    See Also
-    --------
-    scipp.bin:
-        For binning data.
-    """
-    if edges is not None:
-        kwargs = dict(**edges, **kwargs)
-    if len(kwargs) != 1:
-        raise ValueError("Currently only 1-D histogramming is supported.")
-    name, arg = next(iter(kwargs.items()))
-    return _cpp.histogram(x, bins=_parse_coords_arg(x, name, arg))
+histogram = make_edges_func_1d('histogram', _cpp.histogram)
 
 
 def bin(x: _cpp.DataArray,
