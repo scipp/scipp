@@ -163,3 +163,19 @@ def test_group_after_bin_considers_event_value():
     table.coords['label'] = (table.coords['x'] * 10).to(dtype='int64')
     da = table.bin(label=2).group('label')
     assert da.sizes == {'label': 10}
+
+
+def test_bin_by_two_coords_depending_on_same_dim():
+    table = sc.data.table_xyz(100)
+    da = table.bin(x=10, y=12)
+    assert da.dims == ('x', 'y')
+
+
+def test_bin_by_2d_erases_2_input_dims():
+    table = sc.data.table_xyz(100)
+    table.coords['xy'] = table.coords['x'] + table.coords['y']
+    da = table.bin(x=10, y=12)
+    # Note: These are bin edges, but `bin` still works
+    da.coords['xy'] = da.coords['x'][1:] + da.coords['y']
+    xy = da.bin(xy=20)
+    assert xy.dims == ('xy', )

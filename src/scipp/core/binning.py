@@ -82,13 +82,12 @@ def _nanhist(x: Union[_cpp.DataArray, _cpp.Dataset],
 
 
 def _find_replaced_dims(x, dims):
-    erase = []
+    erase = set()
     for dim in dims:
         if (coord := x.meta.get(dim)) is not None:
-            if coord.ndim == 1 and coord.dim in x.dims:
-                if coord.dim != dim:
-                    erase.append(coord.dim)
-    return erase
+            if set(coord.dims).issubset(x.dims):
+                erase = erase.union(set(coord.dims) - set([dim]))
+    return list(erase)
 
 
 def _bin(x: Union[_cpp.DataArray, _cpp.Dataset],
