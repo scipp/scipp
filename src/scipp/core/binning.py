@@ -74,12 +74,24 @@ def _nanhist(x: Union[_cpp.DataArray, _cpp.Dataset],
     return bin(x, edges=edges).bins.nansum()
 
 
+def _find_replaced_dims(x, dims):
+    erase = []
+    for dim in dims:
+        if (coord := x.meta.get(dim)) is not None:
+            if coord.ndim == 1 and coord.dim in x.dims:
+                erase.append(coord.dim)
+    return erase
+
+
 def _bin(x: Union[_cpp.DataArray, _cpp.Dataset],
          arg_dict: Dict[str, Union[int, Variable]] = None,
          /,
          **kwargs) -> Union[_cpp.DataArray, _cpp.Dataset]:
-    edges = list(_make_edges(x, arg_dict, kwargs).values())
-    return bin(x, edges=edges)
+    edges = _make_edges(x, arg_dict, kwargs)
+    # TODO We know that doing this in one step can be very slow. Detect this and use
+    # bins.concat instead.
+    erase = _find_replaced_dims(x, edges)
+    return bin(x, edges=list(edges.values()), erase=erase)
 
 
 def _rebin(x: Union[_cpp.DataArray, _cpp.Dataset],
@@ -108,4 +120,5 @@ def _make_groups(x, arg):
 def _group(x: Union[_cpp.DataArray, _cpp.Dataset], /,
            *args) -> Union[_cpp.DataArray, _cpp.Dataset]:
     groups = [_make_groups(x, name) for name in args]
-    return bin(x, groups=groups)
+    erase = _find_replaced_dims(x, args)
+    return bin(x, groups=groups, erase=erase)

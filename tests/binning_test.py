@@ -16,6 +16,8 @@ def test_many_combinations():
     table.hist(x=5)
     table.hist(x=5).rebin(x=3)
     table.hist(x=5, y=3).rebin(x=3, y=2)
+    table.bin(x=5).bin(x=6).bin(y=6)
+    table.bin(x=5).bin(y=6, x=7)
     table.bin(x=5).hist()
     table.bin(x=5).hist(x=7)
     table.bin(x=5).hist(y=7)
