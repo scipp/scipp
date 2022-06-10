@@ -165,6 +165,17 @@ def test_group_after_bin_considers_event_value():
     assert da.sizes == {'label': 10}
 
 
+def test_bin_erases_dims_automatically_if_labels_for_same_dim():
+    table = sc.data.table_xyz(100)
+    table.coords['x2'] = table.coords['x'] * 2
+    da = table.bin(x=10)
+    assert da.bin(x2=100).dims == ('x', 'x2')
+    # With a bin-coord for x2 we can deduce that the new binning is by different
+    # 'labels' for the same data dimension.
+    da.coords['x2'] = da.coords['x'] * 2
+    assert da.bin(x2=100).dims == ('x2', )
+
+
 def test_bin_by_two_coords_depending_on_same_dim():
     table = sc.data.table_xyz(100)
     da = table.bin(x=10, y=12)
@@ -177,5 +188,14 @@ def test_bin_by_2d_erases_2_input_dims():
     da = table.bin(x=10, y=12)
     # Note: These are bin edges, but `bin` still works
     da.coords['xy'] = da.coords['x'][1:] + da.coords['y']
-    xy = da.bin(xy=20)
-    assert xy.dims == ('xy', )
+    assert da.bin(xy=20).dims == ('xy', )
+
+
+def test_bin_by_2d_dimension_coord_does_not_erase_extra_dim():
+    table = sc.data.table_xyz(100)
+    table.coords['xy'] = table.coords['x'] + table.coords['y']
+    da = table.bin(x=10, y=12)
+    da.coords['xy'] = da.coords['x'][1:] + da.coords['y']
+    da = da.rename_dims({'y': 'xy'})
+    # The call to `bin` here "aligns" all bins, so we generally do not want ot erase.
+    assert da.bin(xy=20).dims == ('x', 'xy')

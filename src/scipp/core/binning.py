@@ -49,9 +49,6 @@ def _parse_coords_arg(x, name, arg):
 def _make_edges(x: Union[_cpp.DataArray,
                          _cpp.Dataset], arg_dict: Dict[str, Union[int, Variable]],
                 kwargs: Dict[str, Union[int, Variable]]) -> List[Variable]:
-    # TODO this merging approach does not make much sense, because the user does not
-    # have control over order. Accept either one or the other.
-    # TODO Could go with kwargs only, user can use **{'name with space':5}
     if arg_dict is not None:
         kwargs = dict(**arg_dict, **kwargs)
     return {name: _parse_coords_arg(x, name, arg) for name, arg in kwargs.items()}
@@ -82,11 +79,13 @@ def _nanhist(x: Union[_cpp.DataArray, _cpp.Dataset],
 
 
 def _find_replaced_dims(x, dims):
+    if x.bins is None:
+        return []
     erase = set()
     for dim in dims:
         if (coord := x.meta.get(dim)) is not None:
-            if set(coord.dims).issubset(x.dims):
-                erase = erase.union(set(coord.dims) - set([dim]))
+            if dim not in coord.dims:
+                erase = erase.union(coord.dims)
     return list(erase)
 
 
@@ -118,7 +117,6 @@ def _make_groups(x, arg):
     if coord is None:
         coord = x.meta.get(arg)
     _require_coord(arg, coord)
-    # TODO Check that it is not bin-edges?
     # TODO Very inefficient np.unique
     if coord.bins is not None:
         coord = coord.copy().bins.constituents['data']
