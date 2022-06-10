@@ -107,9 +107,9 @@ def _make_groups(x, arg):
         return arg
     coord = _get_coord(x, arg)
     # TODO Check that it is not bin-edges?
-    # TODO Very inefficient concat and np.unique
+    # TODO Very inefficient np.unique
     if coord.bins is not None:
-        return _make_groups(x.data.flatten(to='dummy').bins.concat('dummy').value, arg)
+        coord = coord.copy().bins.constituents['data']
     return array(dims=[arg], values=np.unique(coord.values), unit=coord.unit)
 
 
