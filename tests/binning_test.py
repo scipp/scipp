@@ -6,6 +6,19 @@ import scipp as sc
 import numpy as np
 
 
+@pytest.mark.parametrize('op', ['bin', 'hist', 'nanhist', 'rebin'])
+def test_raises_CoordError_if_coord_not_found(op):
+    table = sc.data.table_xyz(100)
+    with pytest.raises(sc.CoordError):
+        getattr(table, op)(abc=5)
+
+
+def test_group_raises_CoordError_if_coord_not_found():
+    table = sc.data.table_xyz(100)
+    with pytest.raises(sc.CoordError):
+        table.group('abc')
+
+
 def test_many_combinations():
     table = sc.data.table_xyz(100)
     table.coords['label'] = (table.coords['x'] * 10).to(dtype='int64')

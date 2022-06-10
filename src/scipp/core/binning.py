@@ -11,7 +11,10 @@ from .operations import rebin
 
 def _get_coord(x, name):
     event_coord = x.bins.meta.get(name) if x.bins is not None else None
-    return x.meta.get(name, event_coord)
+    coord = x.meta.get(name, event_coord)
+    if coord is None:
+        raise _cpp.CoordError(f"Coordinate '{name}' not found.")
+    return coord
 
 
 def _upper_bound(x):
@@ -22,21 +25,15 @@ def _upper_bound(x):
 
 
 def _parse_coords_arg(x, name, arg):
+    if isinstance(arg, Variable) and name in arg.dims:
+        return arg
     coord = _get_coord(x, name)
     if isinstance(arg, int):
-        coord = linspace(name, coord.min(), _upper_bound(coord), num=arg + 1)
-    elif isinstance(arg, Variable):
-        if arg.ndim == 0:
-            start = coord.min()
-            step = arg.to(dtype=start.dtype, unit=start.unit)
-            stop = _upper_bound(coord) + step
-            coord = arange(name, start, stop, step=step)
-        else:
-            # TODO check name in arg.dims
-            # TODO handle 2D coords, name must be used, but current implementation
-            # has no support for this
-            coord = arg
-    return coord
+        return linspace(name, coord.min(), _upper_bound(coord), num=arg + 1)
+    start = coord.min()
+    step = arg.to(dtype=start.dtype, unit=start.unit)
+    stop = _upper_bound(coord) + step
+    return arange(name, start, stop, step=step)
 
 
 def _make_edges(x: Union[_cpp.DataArray,
@@ -108,10 +105,10 @@ def _make_groups(x, arg):
     import numpy as np
     if isinstance(arg, Variable):
         return arg
-    coord = x.meta.get(arg)
+    coord = _get_coord(x, arg)
     # TODO Check that it is not bin-edges?
     # TODO Very inefficient concat and np.unique
-    if coord is None:
+    if coord.bins is not None:
         return _make_groups(x.data.flatten(to='dummy').bins.concat('dummy').value, arg)
     return array(dims=[arg], values=np.unique(coord.values), unit=coord.unit)
 
