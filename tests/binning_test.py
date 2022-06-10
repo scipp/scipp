@@ -112,3 +112,53 @@ def test_hist_raises_if_edges_specified_positional_and_as_kwarg():
 def test_hist_edges_from_positional_arg():
     da = sc.data.table_xyz(100)
     assert sc.identical(da.hist({'y': 4}), da.hist(y=4))
+
+
+@pytest.mark.parametrize('dtype', ['int32', 'int64'])
+def test_bin_integer_coord_by_int(dtype):
+    table = sc.data.table_xyz(100)
+    table.coords['label'] = (table.coords['x'] * 10).to(dtype=dtype)
+    coord = table.bin(label=2).coords['label']
+    expected = sc.array(dims=['label'], unit='m', dtype=dtype, values=[0, 5, 10])
+    assert sc.identical(coord, expected)
+
+
+@pytest.mark.parametrize('dtype', ['int32', 'int64'])
+def test_bin_integer_coord_by_stepsize(dtype):
+    table = sc.data.table_xyz(100)
+    table.coords['label'] = (table.coords['x'] * 10).to(dtype=dtype)
+    coord = table.bin(label=sc.scalar(5, unit='m')).coords['label']
+    expected = sc.array(dims=['label'], unit='m', dtype=dtype, values=[0, 5, 10])
+    assert sc.identical(coord, expected)
+
+
+@pytest.mark.parametrize('dtype', ['int32', 'int64'])
+def test_bin_integer_coord_by_stepsize_in_different_unit(dtype):
+    table = sc.data.table_xyz(100)
+    table.coords['label'] = (table.coords['x'] * 10).to(dtype=dtype)
+    coord = table.bin(label=sc.scalar(500, unit='cm')).coords['label']
+    expected = sc.array(dims=['label'], unit='m', dtype=dtype, values=[0, 5, 10])
+    assert sc.identical(coord, expected)
+
+
+@pytest.mark.parametrize('dtype', ['int32', 'int64'])
+def test_bin_integer_coord_by_float_stepsize(dtype):
+    table = sc.data.table_xyz(100)
+    table.coords['label'] = (table.coords['x'] * 10).to(dtype=dtype)
+    coord = table.bin(label=sc.scalar(3.3, unit='m')).coords['label']
+    expected = sc.array(dims=['label'], unit='m', dtype=dtype, values=[0, 3, 6, 9, 12])
+    assert sc.identical(coord, expected)
+
+
+@pytest.mark.parametrize('dtype', ['int32', 'int64'])
+def test_bin_integer_coord_by_fractional_stepsize_raises(dtype):
+    table = sc.data.table_xyz(100)
+    table.coords['label'] = (table.coords['x'] * 10).to(dtype=dtype)
+    with pytest.raises(ZeroDivisionError):
+        table.bin(label=sc.scalar(0.5, unit='m')).coords['label']
+
+
+def test_group_after_bin():
+    table = sc.data.table_xyz(100)
+    table.coords['label'] = (table.coords['x'] * 10).to(dtype='int64')
+    table.bin(label=2).group('label')

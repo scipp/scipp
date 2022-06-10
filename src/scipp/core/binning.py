@@ -20,7 +20,10 @@ def _get_coord(x, name):
 def _upper_bound(x):
     import numpy as np
     bound = x.max()
-    bound.value = np.nextafter(bound.value, np.inf)
+    if bound.dtype in ('int32', 'int64'):
+        bound.value += 1
+    else:
+        bound.value = np.nextafter(bound.value, np.inf)
     return bound
 
 
@@ -29,11 +32,13 @@ def _parse_coords_arg(x, name, arg):
         return arg
     coord = _get_coord(x, name)
     if isinstance(arg, int):
-        return linspace(name, coord.min(), _upper_bound(coord), num=arg + 1)
+        return linspace(name, coord.min(), _upper_bound(coord),
+                        num=arg + 1).to(dtype=coord.dtype, copy=False)
     start = coord.min()
     step = arg.to(dtype=start.dtype, unit=start.unit)
     stop = _upper_bound(coord) + step
-    return arange(name, start, stop, step=step)
+    # See #2639, need explicit dtype currently
+    return arange(name, start, stop, step=step, dtype=start.dtype)
 
 
 def _make_edges(x: Union[_cpp.DataArray,
