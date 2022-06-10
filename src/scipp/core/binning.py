@@ -88,8 +88,6 @@ def _bin(x: Union[_cpp.DataArray, _cpp.Dataset],
          /,
          **kwargs) -> Union[_cpp.DataArray, _cpp.Dataset]:
     edges = _make_edges(x, arg_dict, kwargs)
-    # TODO We know that doing this in one step can be very slow. Detect this and use
-    # bins.concat instead.
     erase = _find_replaced_dims(x, edges)
     return bin(x, edges=list(edges.values()), erase=erase)
 
