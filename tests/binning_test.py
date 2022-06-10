@@ -44,6 +44,7 @@ def test_hist_table_define_edges_from_bin_count():
     histogrammed = da.hist(y=4)
     edges = histogrammed.coords['y']
     assert len(edges) == 5
+    assert histogrammed.sizes['y'] == 4
     assert edges.min().value == da.coords['y'].min().value
     assert edges.max().value > da.coords['y'].max().value
     assert edges.max().value == np.nextafter(da.coords['y'].max().value, np.inf)
@@ -54,6 +55,7 @@ def test_hist_binned_define_edges_from_bin_count():
     histogrammed = da.hist(y=4)
     edges = histogrammed.coords['y']
     assert len(edges) == 5
+    assert histogrammed.sizes['y'] == 4
     assert edges.min().value == da.bins.coords['y'].min().value
     assert edges.max().value > da.bins.coords['y'].max().value
     assert edges.max().value == np.nextafter(da.bins.coords['y'].max().value, np.inf)
@@ -69,6 +71,7 @@ def test_hist_table_define_edges_from_bin_size():
     histogrammed = da.hist(y=sc.scalar(100, unit='mm'))
     edges = histogrammed.coords['y']
     assert len(edges) == 11
+    assert histogrammed.sizes['y'] == 10
     assert edges.min().value == da.coords['y'].min().value
     assert edges.max().value > da.coords['y'].max().value
 
@@ -78,6 +81,7 @@ def test_hist_binned_define_edges_from_bin_size():
     histogrammed = da.hist(y=sc.scalar(100, unit='mm'))
     edges = histogrammed.coords['y']
     assert len(edges) == 11
+    assert histogrammed.sizes['y'] == 10
     assert edges.min().value == da.bins.coords['y'].min().value
     assert edges.max().value > da.bins.coords['y'].max().value
 

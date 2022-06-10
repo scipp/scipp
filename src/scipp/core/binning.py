@@ -117,9 +117,9 @@ def _make_groups(x, arg):
     if coord is None:
         coord = x.meta.get(arg)
     _require_coord(arg, coord)
-    # TODO Very inefficient np.unique
     if coord.bins is not None:
         coord = coord.copy().bins.constituents['data']
+    # TODO Very inefficient np.unique
     return array(dims=[arg], values=np.unique(coord.values), unit=coord.unit)
 
 
