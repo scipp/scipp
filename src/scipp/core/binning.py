@@ -53,7 +53,7 @@ def _make_edges(x: Union[_cpp.DataArray,
 def _hist(x: Union[_cpp.DataArray, _cpp.Dataset],
           arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
           /,
-          **kwargs) -> Union[_cpp.DataArray, _cpp.Dataset]:
+          **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
     edges = list(_make_edges(x, arg_dict, kwargs).values())
     if len(edges) == 0:
         return x.bins.sum()
@@ -67,7 +67,7 @@ def _hist(x: Union[_cpp.DataArray, _cpp.Dataset],
 def _nanhist(x: Union[_cpp.DataArray, _cpp.Dataset],
              arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
              /,
-             **kwargs) -> Union[_cpp.DataArray, _cpp.Dataset]:
+             **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
     edges = list(_make_edges(x, arg_dict, kwargs).values())
     if len(edges) == 0:
         return x.bins.nansum()
@@ -79,14 +79,15 @@ def _find_replaced_dims(x, dims):
     for dim in dims:
         if (coord := x.meta.get(dim)) is not None:
             if coord.ndim == 1 and coord.dim in x.dims:
-                erase.append(coord.dim)
+                if coord.dim != dim:
+                    erase.append(coord.dim)
     return erase
 
 
 def _bin(x: Union[_cpp.DataArray, _cpp.Dataset],
          arg_dict: Dict[str, Union[int, Variable]] = None,
          /,
-         **kwargs) -> Union[_cpp.DataArray, _cpp.Dataset]:
+         **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
     edges = _make_edges(x, arg_dict, kwargs)
     erase = _find_replaced_dims(x, edges)
     return bin(x, edges=list(edges.values()), erase=erase)
@@ -95,7 +96,7 @@ def _bin(x: Union[_cpp.DataArray, _cpp.Dataset],
 def _rebin(x: Union[_cpp.DataArray, _cpp.Dataset],
            arg_dict: Dict[str, Union[int, Variable]] = None,
            /,
-           **kwargs) -> Union[_cpp.DataArray, _cpp.Dataset]:
+           **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
     edges = _make_edges(x, arg_dict, kwargs)
     out = x
     for dim, edge in edges.items():
@@ -116,7 +117,7 @@ def _make_groups(x, arg):
 
 
 def _group(x: Union[_cpp.DataArray, _cpp.Dataset], /,
-           *args) -> Union[_cpp.DataArray, _cpp.Dataset]:
+           *args: Union[str, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
     groups = [_make_groups(x, name) for name in args]
     erase = _find_replaced_dims(x, args)
     return bin(x, groups=groups, erase=erase)
