@@ -9,11 +9,15 @@ from .bins import bin, histogram
 from .operations import rebin
 
 
+def _require_coord(name, coord):
+    if coord is None:
+        raise _cpp.CoordError(f"Coordinate '{name}' not found.")
+
+
 def _get_coord(x, name):
     event_coord = x.bins.meta.get(name) if x.bins is not None else None
     coord = x.meta.get(name, event_coord)
-    if coord is None:
-        raise _cpp.CoordError(f"Coordinate '{name}' not found.")
+    _require_coord(name, coord)
     return coord
 
 
@@ -111,7 +115,10 @@ def _make_groups(x, arg):
     import numpy as np
     if isinstance(arg, Variable):
         return arg
-    coord = _get_coord(x, arg)
+    coord = x.bins.meta.get(arg) if x.bins is not None else None
+    if coord is None:
+        coord = x.meta.get(arg)
+    _require_coord(arg, coord)
     # TODO Check that it is not bin-edges?
     # TODO Very inefficient np.unique
     if coord.bins is not None:

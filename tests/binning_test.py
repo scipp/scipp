@@ -158,7 +158,8 @@ def test_bin_integer_coord_by_fractional_stepsize_raises(dtype):
         table.bin(label=sc.scalar(0.5, unit='m')).coords['label']
 
 
-def test_group_after_bin():
+def test_group_after_bin_considers_event_value():
     table = sc.data.table_xyz(100)
     table.coords['label'] = (table.coords['x'] * 10).to(dtype='int64')
-    table.bin(label=2).group('label')
+    da = table.bin(label=2).group('label')
+    assert da.sizes == {'label': 10}
