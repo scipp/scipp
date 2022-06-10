@@ -32,8 +32,9 @@ def _parse_coords_arg(x, name, arg):
         return arg
     coord = _get_coord(x, name)
     if isinstance(arg, int):
-        return linspace(name, coord.min(), _upper_bound(coord),
-                        num=arg + 1).to(dtype=coord.dtype, copy=False)
+        start = coord.min()
+        return linspace(name, start, _upper_bound(coord),
+                        num=arg + 1).to(dtype=start.dtype, copy=False)
     start = coord.min()
     step = arg.to(dtype=start.dtype, unit=start.unit)
     stop = _upper_bound(coord) + step
