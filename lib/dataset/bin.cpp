@@ -148,20 +148,24 @@ auto bin(const Variable &data, const Variable &indices,
       zip(end - filtered_input_bin_size, end);
 
   // Perform actual binning step for data, all coords, all masks, ...
-  auto out_buffer =
-      dataset::transform(bins_view<T>(data), [&](const auto &var) {
-        if (!is_bins(var))
-          return copy(var);
-        const auto &[input_indices, buffer_dim, in_buffer] =
-            var.template constituents<Variable>();
-        static_cast<void>(input_indices);
-        auto out = resize_default_init(in_buffer, buffer_dim, total_size);
-        auto out_subspans =
-            subspan_view(out, buffer_dim, filtered_input_bin_ranges);
-        map_to_bins(out_subspans, as_subspan_view(var), offsets,
-                    as_subspan_view(indices));
-        return out;
-      });
+  const auto do_bin = [&](const auto &var) {
+    if (!is_bins(var))
+      return copy(var);
+    const auto &[input_indices, buffer_dim, in_buffer] =
+        var.template constituents<Variable>();
+    static_cast<void>(input_indices);
+    auto out = resize_default_init(in_buffer, buffer_dim, total_size);
+    auto out_subspans =
+        subspan_view(out, buffer_dim, filtered_input_bin_ranges);
+    map_to_bins(out_subspans, as_subspan_view(var), offsets,
+                as_subspan_view(indices));
+    return out;
+  };
+  T out_buffer;
+  if constexpr (std::is_same_v<T, Variable>)
+    out_buffer = do_bin(data);
+  else
+    out_buffer = dataset::transform(bins_view<T>(data), do_bin);
 
   // Up until here the output was viewed with same bin index ranges as input.
   // Now switch to desired final bin indices.
@@ -471,7 +475,7 @@ template <class T> Variable concat_bins(const Variable &var, const Dim dim) {
   TargetBins<T> target_bins(var, builder.dims());
 
   builder.build(*target_bins, std::map<Dim, Variable>{});
-  auto [buffer, bin_sizes] = bin<DataArray>(var, *target_bins, builder);
+  auto [buffer, bin_sizes] = bin<T>(var, *target_bins, builder);
   bin_sizes = squeeze(bin_sizes, scipp::span{&dim, 1});
   const auto end = cumsum(bin_sizes);
   const auto buffer_dim = buffer.dims().inner();

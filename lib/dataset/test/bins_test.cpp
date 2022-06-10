@@ -29,11 +29,19 @@ protected:
   Variable var = make_bins(indices, Dim::X, copy(buffer));
 };
 
-TEST_F(DataArrayBinsTest, concatenate_dim_1d) {
+TEST_F(DataArrayBinsTest, concatenate_dim_1d_data_array_buffer) {
   Variable expected_indices =
       makeVariable<scipp::index_pair>(Values{std::pair{0, 4}});
   Variable expected = make_bins(expected_indices, Dim::X, buffer);
   EXPECT_EQ(buckets::concatenate(var, Dim::Y), expected);
+}
+
+TEST_F(DataArrayBinsTest, concatenate_dim_1d_variable_buffer) {
+  Variable expected_indices =
+      makeVariable<scipp::index_pair>(Values{std::pair{0, 4}});
+  Variable expected = make_bins(expected_indices, Dim::X, data);
+  EXPECT_EQ(buckets::concatenate(bins_view<DataArray>(var).data(), Dim::Y),
+            expected);
 }
 
 TEST_F(DataArrayBinsTest, concatenate_dim_1d_masked) {
