@@ -36,6 +36,9 @@ def plot(obj: Union[DataArray, Dataset, Dict[str, DataArray]]) -> Figure:
     return Figure(*nodes)
 
 
-setattr(Variable, 'plot', plot)
-setattr(DataArray, 'plot', plot)
-setattr(Dataset, 'plot', plot)
+import scipp as sc
+
+sc.plot = plot
+Variable.plot = plot
+DataArray.plot = plot
+Dataset.plot = plot
