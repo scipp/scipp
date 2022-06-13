@@ -55,8 +55,16 @@ for _cls in (Variable, DataArray, Dataset):
     setattr(_cls, '__array_ufunc__', None)
 del _cls
 
+from .binning import bin, group, hist, nanhist, rebin
+
+setattr(DataArray, 'bin', bin)
+setattr(DataArray, 'group', group)
+setattr(DataArray, 'hist', hist)
+setattr(DataArray, 'nanhist', nanhist)
+setattr(DataArray, 'rebin', rebin)
+
 from .arithmetic import add, divide, floor_divide, mod, multiply, negative, subtract
-from .bins import lookup, histogram, bin, bins, bins_like
+from .bins import lookup, histogram, make_binned, bins, bins_like
 from .comparison import less, greater, less_equal, greater_equal, equal, not_equal, identical, isclose, allclose
 from .counts import counts_to_density, density_to_counts
 from .cumulative import cumsum
@@ -64,7 +72,7 @@ from .dataset import irreducible_mask, merge
 from .groupby import groupby
 from .logical import logical_not, logical_and, logical_or, logical_xor
 from .math import abs, cross, dot, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10, round, floor, ceil, erf, erfc, midpoints
-from .operations import islinspace, issorted, allsorted, sort, values, variances, stddevs, rebin, where, to
+from .operations import islinspace, issorted, allsorted, sort, values, variances, stddevs, where, to
 from .reduction import mean, nanmean, sum, nansum, min, max, nanmin, nanmax, all, any
 from .shape import broadcast, concat, fold, flatten, squeeze, transpose
 from .trigonometry import sin, cos, tan, asin, acos, atan, atan2

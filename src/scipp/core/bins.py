@@ -397,11 +397,11 @@ def histogram(x: Union[_cpp.DataArray, _cpp.Dataset], *,
     return _call_cpp_func(_cpp.histogram, x, bins)
 
 
-def bin(x: _cpp.DataArray,
-        *,
-        edges: Optional[Sequence[_cpp.Variable]] = None,
-        groups: Optional[Sequence[_cpp.Variable]] = None,
-        erase: Optional[Sequence[_cpp.Variable]] = None) -> _cpp.DataArray:
+def make_binned(x: _cpp.DataArray,
+                *,
+                edges: Optional[Sequence[_cpp.Variable]] = None,
+                groups: Optional[Sequence[_cpp.Variable]] = None,
+                erase: Optional[Sequence[_cpp.Variable]] = None) -> _cpp.DataArray:
     """Create binned data by binning input along all dimensions given by edges.
 
     This does not histogram the data, each output bin will contain a "list" of

@@ -5,8 +5,8 @@ from typing import Dict, List, Optional, Union
 
 from .._scipp import core as _cpp
 from .variable import array, Variable, linspace, arange
-from .bins import bin, histogram
-from .operations import rebin
+from .bins import make_binned, histogram
+from .operations import _rebin
 
 
 def _require_coord(name, coord):
@@ -65,10 +65,10 @@ def _find_replaced_dims(x, dims):
     return [dim for dim in erase if dim not in dims]
 
 
-def _hist(x: Union[_cpp.DataArray, _cpp.Dataset],
-          arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
-          /,
-          **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
+def hist(x: Union[_cpp.DataArray, _cpp.Dataset],
+         arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
+         /,
+         **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
     """Compute a histogram.
 
     When histogramming a dimension with an existing dimension-coord, the binning for
@@ -133,40 +133,40 @@ def _hist(x: Union[_cpp.DataArray, _cpp.Dataset],
         out = histogram(x, bins=list(edges.values())[0])
     else:
         edges = list(edges.values())
-        out = histogram(bin(x, edges=edges[:-1], erase=erase), bins=edges[-1])
+        out = histogram(make_binned(x, edges=edges[:-1], erase=erase), bins=edges[-1])
     for dim in erase:
         if dim in out.dims:
             out = out.sum(dim)
     return out
 
 
-def _nanhist(x: Union[_cpp.DataArray, _cpp.Dataset],
-             arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
-             /,
-             **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
+def nanhist(x: Union[_cpp.DataArray, _cpp.Dataset],
+            arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
+            /,
+            **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
     edges = _make_edges(x, arg_dict, kwargs)
     if len(edges) > 0:
         x = x.bin(edges)
     return x.bins.nansum()
 
 
-def _bin(x: Union[_cpp.DataArray, _cpp.Dataset],
-         arg_dict: Dict[str, Union[int, Variable]] = None,
-         /,
-         **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
+def bin(x: Union[_cpp.DataArray, _cpp.Dataset],
+        arg_dict: Dict[str, Union[int, Variable]] = None,
+        /,
+        **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
     edges = _make_edges(x, arg_dict, kwargs)
     erase = _find_replaced_dims(x, edges)
-    return bin(x, edges=list(edges.values()), erase=erase)
+    return make_binned(x, edges=list(edges.values()), erase=erase)
 
 
-def _rebin(x: Union[_cpp.DataArray, _cpp.Dataset],
-           arg_dict: Dict[str, Union[int, Variable]] = None,
-           /,
-           **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
+def rebin(x: Union[_cpp.DataArray, _cpp.Dataset],
+          arg_dict: Dict[str, Union[int, Variable]] = None,
+          /,
+          **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
     edges = _make_edges(x, arg_dict, kwargs)
     out = x
     for dim, edge in edges.items():
-        out = rebin(out, dim, edge)
+        out = _rebin(out, dim, edge)
     return out
 
 
@@ -184,8 +184,8 @@ def _make_groups(x, arg):
     return array(dims=[arg], values=np.unique(coord.values), unit=coord.unit)
 
 
-def _group(x: Union[_cpp.DataArray, _cpp.Dataset], /,
-           *args: Union[str, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
+def group(x: Union[_cpp.DataArray, _cpp.Dataset], /,
+          *args: Union[str, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
     groups = [_make_groups(x, name) for name in args]
     erase = _find_replaced_dims(x, [g.dim for g in groups])
-    return bin(x, groups=groups, erase=erase)
+    return make_binned(x, groups=groups, erase=erase)

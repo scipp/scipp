@@ -193,8 +193,8 @@ def stddevs(x: VariableLikeType) -> VariableLikeType:
     return _call_cpp_func(_cpp.stddevs, x)
 
 
-def rebin(x: _ContainerWithCoords, dim: str,
-          bins: _cpp.Variable) -> _ContainerWithCoords:
+def _rebin(x: _ContainerWithCoords, dim: str,
+           bins: _cpp.Variable) -> _ContainerWithCoords:
     """Rebin a dimension of a data array or dataset.
 
     The coordinate of the input for the given dimension `dim` must contain bin edges.
