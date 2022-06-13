@@ -76,7 +76,7 @@ def _hist(x: Union[_cpp.DataArray, _cpp.Dataset],
     --------
 
     Histogram a table by one of its coord columns, specifying (1) number of bins, (2)
-    bin width, (3) actual binning:
+    bin width, or (3) actual binning:
 
       >>> table = sc.data.table_xyz(100)
       >>> da = table.hist(x=2)
