@@ -423,6 +423,15 @@ def test_not_keep_aliases_dense(a, b, keep_inputs, keep_intermediate):
     assert 'c' not in da.meta
     assert 'd' in da.coords
 
+    # Requesting input as target preserves it.
+    da = original.transform_coords(['d', 'c'],
+                                   graph=graph,
+                                   keep_aliases=False,
+                                   keep_inputs=keep_inputs,
+                                   keep_intermediate=keep_intermediate)
+    assert 'c' in da.coords
+    assert 'd' in da.coords
+
 
 @pytest.mark.parametrize('keep_inputs', (True, False))
 @pytest.mark.parametrize('keep_intermediate', (True, False))
@@ -453,6 +462,17 @@ def test_not_keep_aliases_binned(binned_in_a_b, keep_inputs, keep_intermediate):
     assert 'd' in da.coords
     assert 'd' in da.bins.coords
 
+    # Requesting input as target preserves it.
+    da = binned_in_a_b.transform_coords(['d', 'c'],
+                                        graph=graph,
+                                        keep_aliases=False,
+                                        keep_inputs=keep_inputs,
+                                        keep_intermediate=keep_intermediate)
+    assert 'c' in da.coords
+    assert 'c' in da.bins.coords
+    assert 'd' in da.coords
+    assert 'd' in da.bins.coords
+
 
 @pytest.mark.parametrize('keep_aliases', (True, False))
 @pytest.mark.parametrize('keep_intermediate', (True, False))
@@ -479,6 +499,15 @@ def test_not_keep_inputs_dense(a, b, keep_aliases, keep_intermediate):
                                    keep_inputs=False,
                                    keep_intermediate=keep_intermediate)
     assert 'a' not in da.meta
+    assert 'b' not in da.meta
+
+    # Requesting input as target preserves it.
+    da = original.transform_coords(['c', 'a'],
+                                   graph=graph,
+                                   keep_aliases=keep_aliases,
+                                   keep_inputs=False,
+                                   keep_intermediate=keep_intermediate)
+    assert 'a' in da.coords
     assert 'b' not in da.meta
 
 
@@ -511,6 +540,17 @@ def test_not_keep_inputs_binned(binned_in_a_b, keep_aliases, keep_intermediate):
     assert 'b' not in da.meta
     assert 'b' not in da.bins.meta
 
+    # Requesting input as target preserves it.
+    da = binned_in_a_b.transform_coords(['c', 'a'],
+                                        graph=graph,
+                                        keep_aliases=keep_aliases,
+                                        keep_inputs=False,
+                                        keep_intermediate=keep_intermediate)
+    assert 'a' in da.coords
+    assert 'a' in da.bins.coords
+    assert 'b' not in da.meta
+    assert 'b' not in da.bins.meta
+
 
 @pytest.mark.parametrize('keep_aliases', (True, False))
 @pytest.mark.parametrize('keep_inputs', (True, False))
@@ -537,6 +577,14 @@ def test_not_keep_intermediate_dense(a, b, keep_aliases, keep_inputs):
                                    keep_intermediate=False)
     assert 'ab' not in da.meta
 
+    # Requesting intermediate as target preserves it.
+    da = original.transform_coords(['c', 'ab'],
+                                   graph=graph,
+                                   keep_aliases=keep_aliases,
+                                   keep_inputs=keep_inputs,
+                                   keep_intermediate=False)
+    assert 'ab' in da.coords
+
 
 @pytest.mark.parametrize('keep_aliases', (True, False))
 @pytest.mark.parametrize('keep_inputs', (True, False))
@@ -562,6 +610,15 @@ def test_not_keep_intermediate_binned(binned_in_a_b, keep_aliases, keep_inputs):
                                         keep_intermediate=False)
     assert 'ab' not in da.meta
     assert 'ab' not in da.bins.meta
+
+    # Requesting intermediate as target preserves it.
+    da = binned_in_a_b.transform_coords(['c', 'ab'],
+                                        graph=graph,
+                                        keep_aliases=keep_aliases,
+                                        keep_inputs=keep_inputs,
+                                        keep_intermediate=False)
+    assert 'ab' in da.coords
+    assert 'ab' in da.bins.coords
 
 
 def test_inplace(c):

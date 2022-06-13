@@ -20,6 +20,8 @@ Breaking changes
 Bugfixes
 ~~~~~~~~
 
+* Fix bug where coordinates in were dropped by :func:`scipp.transform_coords` with ``keep_*=False`` even through they were specified as ``targets`` `#2642 <https://github.com/scipp/scipp/pull/2642>`_.
+
 Documentation
 ~~~~~~~~~~~~~
 

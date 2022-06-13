@@ -22,6 +22,9 @@ class CoordTable:
         self._coords = {}
         self._total_usages = _apply_keep_options(_count_usages(rules), rules, targets,
                                                  options)
+        # Preserve all targets regardless of keep_* options.
+        for name in targets:
+            self._total_usages[name] = -1
 
     def add(self, name: str, coord: Coord):
         self._coords[name] = dataclasses.replace(coord, usages=self.total_usages(name))
