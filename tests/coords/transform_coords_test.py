@@ -379,11 +379,7 @@ def binned_in_a_b(request):
                                        values=np.random.rand(10),
                                        unit='m')
                           })
-    binned = sc.bin(events,
-                    edges=[
-                        sc.linspace('a', 0, 1, 3, unit='m'),
-                        sc.linspace('b', 0, 1, 3, unit='m')
-                    ])
+    binned = events.bin(a=2, b=2)
     # use non-bin-edge coord
     binned.coords['b'] = sc.arange('b', 2, unit='m')
 
@@ -643,28 +639,6 @@ def test_dataset(a):
     assert sc.identical(transformed.coords['b'], a.rename_dims({'a': 'b'}))
 
 
-def make_binned():
-    N = 50
-    data = sc.DataArray(data=sc.ones(dims=['event'], unit=sc.units.counts, shape=[N]),
-                        coords={
-                            'x':
-                            sc.array(dims=['event'],
-                                     unit=sc.units.m,
-                                     values=np.random.rand(N)),
-                            'y':
-                            sc.array(dims=['event'],
-                                     unit=sc.units.m,
-                                     values=np.random.rand(N))
-                        })
-    xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
-    ybins = sc.Variable(dims=['y'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
-    binned = sc.bin(data, edges=[xbins, ybins])
-    del binned.bins.coords['y']
-    del binned.coords['y']
-    binned.coords['y'] = sc.arange(dim='y', start=0, stop=2)
-    return binned
-
-
 def test_binned_does_not_modify_inputs(binned_in_a_b):
     _ = binned_in_a_b.transform_coords(['b2'], graph={'b2': 'b'})
     assert 'b' in binned_in_a_b.coords
@@ -768,6 +742,28 @@ def test_binned_without_event_coord_computes_correct_results(binned_in_a_b):
 
     # `a*b` is indeed the product of `a` and `b`
     assert sc.identical(converted.coords['a*b'], renamed.meta['a'] * renamed.meta['b'])
+
+
+def make_binned():
+    N = 50
+    data = sc.DataArray(data=sc.ones(dims=['event'], unit=sc.units.counts, shape=[N]),
+                        coords={
+                            'x':
+                            sc.array(dims=['event'],
+                                     unit=sc.units.m,
+                                     values=np.random.rand(N)),
+                            'y':
+                            sc.array(dims=['event'],
+                                     unit=sc.units.m,
+                                     values=np.random.rand(N))
+                        })
+    xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
+    ybins = sc.Variable(dims=['y'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
+    binned = data.bin(x=xbins, y=ybins)
+    del binned.bins.coords['y']
+    del binned.coords['y']
+    binned.coords['y'] = sc.arange(dim='y', start=0, stop=2)
+    return binned
 
 
 def test_binned_request_existing_consumed():
