@@ -215,7 +215,70 @@ def date_month_day_table_grouped_by_date():
     table.coords['date'] = sc.array(dims=['row'], values=rng.integers(365, size=size))
     table.coords['month'] = table.coords['date'] // 30
     table.coords['day'] = table.coords['date'] % 30
-    return table.group('date')
+    # Using bin instead of group to preserve the original `date` coord in the buffer,
+    # as needed by some tests.
+    da = table.bin(date=365)
+    da.coords['date'] = da.coords['date'][:-1].copy()
+    return da
+
+
+# In the following we test the automatic erasure of dimensions. It should be consistent
+# across the different operations, bin, group, and hist.
+
+# 1. bin
+
+
+def test_bin_without_coord_keeps_dim():
+    da = date_month_day_table_grouped_by_date()
+    # Binning is by event-coord
+    assert da.bin(month=12).dims == ('date', 'month')
+
+
+def test_bin_with_1d_dimcoord_keeps_dim():
+    da = date_month_day_table_grouped_by_date()
+    assert da.bin(date=4).dims == ('date', )
+
+
+def test_bin_with_2d_dimcoord_keeps_dims():
+    da = date_month_day_table_grouped_by_date()
+    da.coords['month'] = da.coords['date'] // 30
+    da.coords['day'] = da.coords['date'] % 30
+    da2d = da.group('month', 'day')
+    da2d.coords['date'] = da2d.coords['day'] + 30 * da2d.coords['month']
+    da2d = da2d.rename_dims({'month': 'date'})
+    assert da2d.bin(date=4).dims == ('date', 'day')
+
+
+def test_bin_with_nondimcoord_removes_dim():
+    da = date_month_day_table_grouped_by_date()
+    da.coords['month'] = da.coords['date'] // 30
+    assert da.bin(month=12).dims == ('month', )
+
+
+def test_bin_with_multiple_nondimcoords_removes_dim():
+    da = date_month_day_table_grouped_by_date()
+    da.coords['month'] = da.coords['date'] // 30
+    da.coords['day'] = da.coords['date'] % 30
+    assert da.bin(month=12, day=30).dims == ('month', 'day')
+
+
+def test_bin_with_dimcoord_and_nondimcoord_keeps_dim():
+    da = date_month_day_table_grouped_by_date()
+    da.coords['month'] = da.coords['date'] // 30
+    # 'date' exists, so new coord is inner dim
+    assert da.bin(month=12, date=4).dims == ('date', 'month')
+
+
+def test_bin_with_nondimcoord_removes_multiple_input_dims():
+    da = date_month_day_table_grouped_by_date()
+    da.coords['month'] = da.coords['date'] // 30
+    da.coords['day'] = da.coords['date'] % 30
+    da2d = da.group('month', 'day')
+    da2d.coords['date'] = da2d.coords['day'] + 30 * da2d.coords['month']
+    assert da2d.bin(date=4).dims == ('date', )
+
+
+# 2. group
 
 
 def test_group_without_coord_keeps_dim():
@@ -226,7 +289,7 @@ def test_group_without_coord_keeps_dim():
 
 def test_group_with_1d_dimcoord_keeps_dim():
     da = date_month_day_table_grouped_by_date()
-    assert da.group(da.coords['date'][:3]).dims == ('date', )
+    assert da.group(sc.array(dims=['date'], values=[1, 3, 5])).dims == ('date', )
 
 
 def test_group_with_2d_dimcoord_keeps_dims():
@@ -266,3 +329,58 @@ def test_group_with_nondimcoord_removes_multiple_input_dims():
     da2d = da.group('month', 'day')
     da2d.coords['date'] = da2d.coords['day'] + 30 * da2d.coords['month']
     assert da2d.group('date').dims == ('date', )
+
+
+# 3. hist
+
+
+def test_hist_without_coord_keeps_dim():
+    da = date_month_day_table_grouped_by_date()
+    # Histogramming is by event-coord
+    assert da.hist(month=12).dims == ('date', 'month')
+
+
+def test_hist_with_1d_dimcoord_keeps_dim():
+    da = date_month_day_table_grouped_by_date()
+    assert da.hist(date=4).dims == ('date', )
+
+
+def test_hist_with_2d_dimcoord_keeps_dims():
+    da = date_month_day_table_grouped_by_date()
+    da.coords['month'] = da.coords['date'] // 30
+    da.coords['day'] = da.coords['date'] % 30
+    da2d = da.group('month', 'day')
+    da2d.coords['date'] = da2d.coords['day'] + 30 * da2d.coords['month']
+    da2d = da2d.rename_dims({'month': 'date'})
+    # Note current slightly inconsistent behavior by `histogram`: The histogrammed dim
+    # alsways turns into the inner dimension.
+    assert da2d.hist(date=4).dims == ('day', 'date')
+
+
+def test_hist_with_nondimcoord_removes_dim():
+    da = date_month_day_table_grouped_by_date()
+    da.coords['month'] = da.coords['date'] // 30
+    assert da.hist(month=12).dims == ('month', )
+
+
+def test_hist_with_multiple_nondimcoords_removes_dim():
+    da = date_month_day_table_grouped_by_date()
+    da.coords['month'] = da.coords['date'] // 30
+    da.coords['day'] = da.coords['date'] % 30
+    assert da.hist(month=12, day=30).dims == ('month', 'day')
+
+
+def test_hist_with_dimcoord_and_nondimcoord_keeps_dim():
+    da = date_month_day_table_grouped_by_date()
+    da.coords['month'] = da.coords['date'] // 30
+    # 'date' exists, so new coord is inner dim
+    assert da.hist(month=12, date=4).dims == ('date', 'month')
+
+
+def test_hist_with_nondimcoord_removes_multiple_input_dims():
+    da = date_month_day_table_grouped_by_date()
+    da.coords['month'] = da.coords['date'] // 30
+    da.coords['day'] = da.coords['date'] % 30
+    da2d = da.group('month', 'day')
+    da2d.coords['date'] = da2d.coords['day'] + 30 * da2d.coords['month']
+    assert da2d.hist(date=4).dims == ('date', )
