@@ -71,12 +71,22 @@ def _hist(x: Union[_cpp.DataArray, _cpp.Dataset],
           **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
     """Compute a histogram.
 
+    When histogramming a dimension with an existing dimension-coord, the binning for
+    the dimension is modified, i.e., the input and the output will have the same
+    dimension labels.
+
+    When histogramming by non-dimension-coords, the output will have new dimensions
+    given by the names of these coordinates. These new dimensions replace the
+    dimensions the input coordinates depend on.
+
     Parameters
     ----------
     x:
         Input data.
     arg_dict:
         Dictionary mapping dimension labels to binning parameters.
+    **kwargs:
+        Mapping of dimension label to correspoding binning parameters.
 
     Returns
     -------
