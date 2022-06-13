@@ -58,6 +58,51 @@ def _hist(x: Union[_cpp.DataArray, _cpp.Dataset],
           arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
           /,
           **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
+    """Compute a histogram.
+
+    Parameters
+    ----------
+    x:
+        Input data.
+    arg_dict:
+        Dictionary mapping dimension labels to binning parameters.
+
+    Returns
+    -------
+    :
+        Histogrammed data.
+
+    Examples
+    --------
+
+    Histogram a table by one of its coord columns, specifying (1) number of bins, (2)
+    bin width, (3) actual binning:
+
+      >>> table = sc.data.table_xyz(100)
+      >>> da = table.hist(x=2)
+      >>> da = table.hist(x=sc.scalar(0.2, unit='m'))
+      >>> da = table.hist(x=sc.linspace('x', 0.2, 0.8, num=10, unit='m'))
+
+    Histogram a table by two of its coord columns:
+
+      >>> table = sc.data.table_xyz(100)
+      >>> da = table.hist(x=4, y=6)
+
+    Histogram binned data, using existing bins:
+
+      >>> binned = sc.data.binned_x(nevent=100, nbin=10)
+      >>> da = binned.hist()
+
+    Histogram binned data, using new bins along existing dimension:
+
+      >>> binned = sc.data.binned_x(nevent=100, nbin=10)
+      >>> da = binned.hist(x=20)
+
+    Histogram binned data along an additional dimension:
+
+      >>> binned = sc.data.binned_x(nevent=100, nbin=10)
+      >>> da = binned.hist(y=5)
+    """
     edges = list(_make_edges(x, arg_dict, kwargs).values())
     if len(edges) == 0:
         return x.bins.sum()
@@ -86,7 +131,7 @@ def _find_replaced_dims(x, dims):
         if (coord := x.meta.get(dim)) is not None:
             if dim not in coord.dims:
                 erase = erase.union(coord.dims)
-    return list(erase)
+    return [dim for dim in erase if dim not in dims]
 
 
 def _bin(x: Union[_cpp.DataArray, _cpp.Dataset],
@@ -126,5 +171,5 @@ def _make_groups(x, arg):
 def _group(x: Union[_cpp.DataArray, _cpp.Dataset], /,
            *args: Union[str, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
     groups = [_make_groups(x, name) for name in args]
-    erase = _find_replaced_dims(x, args)
+    erase = _find_replaced_dims(x, [g.dim for g in groups])
     return bin(x, groups=groups, erase=erase)

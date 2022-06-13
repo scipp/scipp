@@ -4,6 +4,7 @@
 import pytest
 import scipp as sc
 import numpy as np
+from numpy.random import default_rng
 
 
 @pytest.mark.parametrize('op', ['bin', 'hist', 'nanhist', 'rebin'])
@@ -203,3 +204,65 @@ def test_bin_by_2d_dimension_coord_does_not_erase_extra_dim():
     da = da.rename_dims({'y': 'xy'})
     # The call to `bin` here "aligns" all bins, so we generally do not want ot erase.
     assert da.bin(xy=20).dims == ('x', 'xy')
+
+
+rng = default_rng(seed=1234)
+
+
+def date_month_day_table_grouped_by_date():
+    size = 100
+    table = sc.DataArray(sc.ones(dims=['row'], shape=[size]))
+    table.coords['date'] = sc.array(dims=['row'], values=rng.integers(365, size=size))
+    table.coords['month'] = table.coords['date'] // 30
+    table.coords['day'] = table.coords['date'] % 30
+    return table.group('date')
+
+
+def test_group_without_coord_keeps_dim():
+    da = date_month_day_table_grouped_by_date()
+    # Grouping is by event-coord
+    assert da.group('month').dims == ('date', 'month')
+
+
+def test_group_with_1d_dimcoord_keeps_dim():
+    da = date_month_day_table_grouped_by_date()
+    assert da.group(da.coords['date'][:3]).dims == ('date', )
+
+
+def test_group_with_2d_dimcoord_keeps_dims():
+    da = date_month_day_table_grouped_by_date()
+    da.coords['month'] = da.coords['date'] // 30
+    da.coords['day'] = da.coords['date'] % 30
+    da2d = da.group('month', 'day')
+    da2d.coords['date'] = da2d.coords['day'] + 30 * da2d.coords['month']
+    da2d = da2d.rename_dims({'month': 'date'})
+    assert da2d.group('date').dims == ('date', 'day')
+
+
+def test_group_with_nondimcoord_removes_dim():
+    da = date_month_day_table_grouped_by_date()
+    da.coords['month'] = da.coords['date'] // 30
+    assert da.group('month').dims == ('month', )
+
+
+def test_group_with_multiple_nondimcoords_removes_dim():
+    da = date_month_day_table_grouped_by_date()
+    da.coords['month'] = da.coords['date'] // 30
+    da.coords['day'] = da.coords['date'] % 30
+    assert da.group('month', 'day').dims == ('month', 'day')
+
+
+def test_group_with_dimcoord_and_nondimcoord_keeps_dim():
+    da = date_month_day_table_grouped_by_date()
+    da.coords['month'] = da.coords['date'] // 30
+    # 'date' exists, so new coord is inner dim
+    assert da.group('month', 'date').dims == ('date', 'month')
+
+
+def test_group_with_nondimcoord_removes_multiple_input_dims():
+    da = date_month_day_table_grouped_by_date()
+    da.coords['month'] = da.coords['date'] // 30
+    da.coords['day'] = da.coords['date'] % 30
+    da2d = da.group('month', 'day')
+    da2d.coords['date'] = da2d.coords['day'] + 30 * da2d.coords['month']
+    assert da2d.group('date').dims == ('date', )
