@@ -71,7 +71,7 @@ jobs:
         submodules: true
         fetch-depth: 0  # history required so cmake can determine version
 
-    - uses: pypa/cibuildwheel@2.6.0
+    - uses: pypa/cibuildwheel@2.6.1
       env:
         MACOSX_DEPLOYMENT_TARGET: "10.15"
 
