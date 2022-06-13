@@ -54,6 +54,17 @@ def _make_edges(x: Union[_cpp.DataArray,
     return {name: _parse_coords_arg(x, name, arg) for name, arg in kwargs.items()}
 
 
+def _find_replaced_dims(x, dims):
+    if x.bins is None:
+        return []
+    erase = set()
+    for dim in dims:
+        if (coord := x.meta.get(dim)) is not None:
+            if dim not in coord.dims:
+                erase = erase.union(coord.dims)
+    return [dim for dim in erase if dim not in dims]
+
+
 def _hist(x: Union[_cpp.DataArray, _cpp.Dataset],
           arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
           /,
@@ -103,35 +114,30 @@ def _hist(x: Union[_cpp.DataArray, _cpp.Dataset],
       >>> binned = sc.data.binned_x(nevent=100, nbin=10)
       >>> da = binned.hist(y=5)
     """
-    edges = list(_make_edges(x, arg_dict, kwargs).values())
+    edges = _make_edges(x, arg_dict, kwargs)
+    erase = _find_replaced_dims(x, edges)
     if len(edges) == 0:
         return x.bins.sum()
     if len(edges) == 1:
         # TODO Note that this may swap dims, is that ok?
-        return histogram(x, bins=edges[0])
+        out = histogram(x, bins=list(edges.values())[0])
     else:
-        return histogram(bin(x, edges=edges[:-1]), bins=edges[-1])
+        edges = list(edges.values())
+        out = histogram(bin(x, edges=edges[:-1], erase=erase), bins=edges[-1])
+    for dim in erase:
+        if dim in out.dims:
+            out = out.sum(dim)
+    return out
 
 
 def _nanhist(x: Union[_cpp.DataArray, _cpp.Dataset],
              arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
              /,
              **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
-    edges = list(_make_edges(x, arg_dict, kwargs).values())
-    if len(edges) == 0:
-        return x.bins.nansum()
-    return bin(x, edges=edges).bins.nansum()
-
-
-def _find_replaced_dims(x, dims):
-    if x.bins is None:
-        return []
-    erase = set()
-    for dim in dims:
-        if (coord := x.meta.get(dim)) is not None:
-            if dim not in coord.dims:
-                erase = erase.union(coord.dims)
-    return [dim for dim in erase if dim not in dims]
+    edges = _make_edges(x, arg_dict, kwargs)
+    if len(edges) > 0:
+        x = x.bin(edges)
+    return x.bins.nansum()
 
 
 def _bin(x: Union[_cpp.DataArray, _cpp.Dataset],
