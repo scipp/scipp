@@ -28,6 +28,8 @@ def plot(obj: Union[DataArray, Dataset, Dict[str, DataArray]]) -> Figure:
     :
         A figure.
     """
+    if isinstance(obj, Variable):
+        raise TypeError("Plotting Variable is not currently supported.")
     if isinstance(obj, DataArray):
         return Figure(input_node(obj))
     nodes = [input_node(v) for v in obj.values()]
