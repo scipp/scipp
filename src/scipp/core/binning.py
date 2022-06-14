@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+import warnings
 from typing import Dict, List, Optional, Union, Sequence
 
 from .._scipp import core as _cpp
@@ -220,6 +221,15 @@ def bin(x: Union[_cpp.DataArray, _cpp.Dataset],
         arg_dict: Dict[str, Union[int, Variable]] = None,
         /,
         **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
+    if arg_dict is None:
+        for name, item in kwargs.items():
+            if name in ('edges', 'groups', 'erase') and isinstance(item, list):
+                warnings.warn(
+                    "The 'edges', 'groups', and 'erase' keyword arguments "
+                    "are deprecated. Use, e.g., 'sc.bin(da, x=x_edges)' or "
+                    "'sc.group(da, groups)'. See the documentation for details.",
+                    DeprecationWarning)
+                return make_binned(x, **kwargs)
     edges = _make_edges(x, arg_dict, kwargs)
     erase = _find_replaced_dims(x, edges)
     return make_binned(x, edges=list(edges.values()), erase=erase)
@@ -227,8 +237,17 @@ def bin(x: Union[_cpp.DataArray, _cpp.Dataset],
 
 def rebin(x: Union[_cpp.DataArray, _cpp.Dataset],
           arg_dict: Dict[str, Union[int, Variable]] = None,
+          deprecated=None,
           /,
           **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
+    if isinstance(arg_dict, str):
+        if deprecated is not None or 'bins' in kwargs:
+            warnings.warn(
+                "The 'bins' keyword argument and positional syntax for setting bin "
+                "edges is deprecated. Use, e.g., 'sc.rebin(da, x=x_edges)'. See the "
+                "documentation for details.", DeprecationWarning)
+            bins = {'bins': deprecated, **kwargs}
+            return _rebin(x, arg_dict, **bins)
     edges = _make_edges(x, arg_dict, kwargs)
     out = x
     for dim, edge in edges.items():
@@ -255,3 +274,10 @@ def group(x: Union[_cpp.DataArray, _cpp.Dataset], /,
     groups = [_make_groups(x, name) for name in args]
     erase = _find_replaced_dims(x, [g.dim for g in groups])
     return make_binned(x, groups=groups, erase=erase)
+
+
+def histogram(x: Union[_cpp.DataArray, _cpp.Dataset], *,
+              bins: _cpp.Variable) -> Union[_cpp.DataArray, _cpp.Dataset]:
+    """Deprecated. See :py:func:`scipp.hist`."""
+    warnings.warn("'histogram' is deprecated. Use 'hist' instead.", DeprecationWarning)
+    return make_histogrammed(x, bins=bins)

@@ -118,3 +118,5 @@ from .plotting import plot
 setattr(Variable, 'plot', plot)
 setattr(DataArray, 'plot', plot)
 setattr(Dataset, 'plot', plot)
+
+from .core.binning import histogram

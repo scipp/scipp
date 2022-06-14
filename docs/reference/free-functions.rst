@@ -14,12 +14,14 @@ General
    bins_like
    choose
    collapse
-   histogram
+   group
+   hist
    logical_not
    logical_and
    logical_or
    logical_xor
    lookup
+   nanhist
    merge
    midpoints
    rebin
