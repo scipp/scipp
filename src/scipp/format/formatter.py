@@ -31,7 +31,6 @@ def format_variable(data, spec):
         else:
             formatted = [_format(*_round(v, e)) for v, e in zip(val, var)]
         return f"{', '.join(formatted)}{unt}"
-        # return f"{_format(val, var)}{unt}"
 
     # punt (for now)
     return data.__repr__()
