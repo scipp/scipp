@@ -1,12 +1,77 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Sequence
 
 from .._scipp import core as _cpp
 from .variable import array, Variable, linspace, arange
-from .bins import make_binned, histogram
 from .operations import _rebin
+
+
+def make_histogrammed(x: Union[_cpp.DataArray, _cpp.Dataset], *,
+                      bins: _cpp.Variable) -> Union[_cpp.DataArray, _cpp.Dataset]:
+    """Create dense data by histogramming data along all dimension given by
+    edges.
+
+    Returns
+    -------
+    :
+        DataArray / Dataset with values equal to the sum
+        of values in each given bin.
+
+    See Also
+    --------
+    scipp.bin:
+        For binning data.
+    """
+    return _cpp.histogram(x, bins)
+
+
+def make_binned(x: _cpp.DataArray,
+                *,
+                edges: Optional[Sequence[_cpp.Variable]] = None,
+                groups: Optional[Sequence[_cpp.Variable]] = None,
+                erase: Optional[Sequence[_cpp.Variable]] = None) -> _cpp.DataArray:
+    """Create binned data by binning input along all dimensions given by edges.
+
+    This does not histogram the data, each output bin will contain a "list" of
+    input values.
+
+    At least one argument of ``edges`` and ``groups`` is required.
+
+    If the input is binned and certain bins are masked then changing the binning
+    will apply the masks, i.e., masked bins are treated as empty.
+
+    Parameters
+    ----------
+    x:
+        Input data.
+    edges:
+        Bin edges, one per dimension to bin in.
+    groups:
+        Keys to group input by one per dimension to group in.
+    erase:
+        Dimension labels to remove from output.
+
+    Returns
+    -------
+    :
+        Binned ``x``.
+
+    See Also
+    --------
+    scipp.histogram:
+        For histogramming data.
+    scipp.bins:
+        For creating binned data based on explicitly given index ranges.
+    """
+    if erase is None:
+        erase = []
+    if groups is None:
+        groups = []
+    if edges is None:
+        edges = []
+    return _cpp.bin(x, edges, groups, erase)
 
 
 def _require_coord(name, coord):
@@ -130,10 +195,11 @@ def hist(x: Union[_cpp.DataArray, _cpp.Dataset],
         return x.bins.sum()
     if len(edges) == 1:
         # TODO Note that this may swap dims, is that ok?
-        out = histogram(x, bins=list(edges.values())[0])
+        out = make_histogrammed(x, bins=list(edges.values())[0])
     else:
         edges = list(edges.values())
-        out = histogram(make_binned(x, edges=edges[:-1], erase=erase), bins=edges[-1])
+        out = make_histogrammed(make_binned(x, edges=edges[:-1], erase=erase),
+                                bins=edges[-1])
     for dim in erase:
         if dim in out.dims:
             out = out.sum(dim)

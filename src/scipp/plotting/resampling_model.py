@@ -5,9 +5,10 @@
 from enum import Enum
 
 from .. import units
-from ..core import bin as bin_
+from ..core.binning import make_binned
+from ..core.binning import make_histogrammed
 from ..core import broadcast
-from ..core import linspace, rebin, get_slice_params, concat, histogram
+from ..core import linspace, get_slice_params, concat
 from ..core import DataArray, DimensionError, DType
 from .tools import to_bin_edges
 
@@ -19,7 +20,7 @@ class ResamplingMode(Enum):
 
 def _resample(array, mode: ResamplingMode, dim, edges):
     if mode == ResamplingMode.sum:
-        return rebin(array, dim, edges)
+        return array.rebin({dim: edges})
     if array.dtype == DType.float64:
         array = array.copy()
     else:
@@ -36,7 +37,7 @@ def _resample(array, mode: ResamplingMode, dim, edges):
     array.data *= width
     unit = array.unit
     array.unit = units.counts
-    array = rebin(array, dim, edges)
+    array = array.rebin({dim: edges})
     width = edges[dim, 1:] - edges[dim, :-1]
     width.unit = units.one
     array /= width
@@ -279,18 +280,18 @@ class ResamplingBinnedModel(ResamplingModel):
             # Must specify bounds for final dim despite handling by `histogram`
             # below: If coord is ragged binning would throw otherwise.
             bounds = concat([edges[dim, 0], edges[dim, -1]], dim)
-            binned = bin_(
+            binned = make_binned(
                 array,
                 edges=[bounds if i == index else e for i, e in enumerate(self.edges)])
             # TODO Use histogramming with "mean" mode once implemented
             if self.mode == ResamplingMode.mean:
-                return bin_(binned, edges=[edges]).bins.mean()
+                return make_binned(binned, edges=[edges]).bins.mean()
             else:
-                return histogram(binned, bins=edges)
+                return make_histogrammed(binned, bins=edges)
         elif self.mode == ResamplingMode.mean:
-            return bin_(array, edges=self.edges).bins.mean()
+            return make_binned(array, edges=self.edges).bins.mean()
         else:
-            return bin_(array, edges=self.edges).bins.sum()
+            return make_binned(array, edges=self.edges).bins.sum()
 
 
 def _with_edges(array):

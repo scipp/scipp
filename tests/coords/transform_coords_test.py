@@ -701,7 +701,7 @@ def test_binned_computes_correct_results(binned_in_a_b):
 def test_binned_slice_computes_correct_results(slice_):
     events = sc.DataArray(sc.ones(dims=['event'], shape=[10]),
                           coords={'x': sc.arange('event', 10.0)})
-    da = sc.bin(events, edges=[sc.arange('x', 0.0, 10.0, 2.0)])
+    da = sc.bin(events, x=sc.arange('x', 0.0, 10.0, 2.0))
     sliced = da['x', slice_]
 
     assert sc.identical(

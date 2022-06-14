@@ -435,3 +435,8 @@ def test_nanhist_with_nondimcoord_removes_multiple_input_dims():
     da2d = da.group('month', 'day')
     da2d.coords['date'] = da2d.coords['day'] + 30 * da2d.coords['month']
     assert da2d.nanhist(date=4).dims == ('date', )
+
+
+def test_binning_low_level_functions_exist():
+    sc.binning.make_binned
+    sc.binning.make_histogrammed

@@ -60,11 +60,13 @@ from .binning import bin, group, hist, nanhist, rebin
 setattr(DataArray, 'bin', bin)
 setattr(DataArray, 'group', group)
 setattr(DataArray, 'hist', hist)
+setattr(Dataset, 'hist', hist)
 setattr(DataArray, 'nanhist', nanhist)
 setattr(DataArray, 'rebin', rebin)
+setattr(Dataset, 'rebin', rebin)
 
 from .arithmetic import add, divide, floor_divide, mod, multiply, negative, subtract
-from .bins import lookup, histogram, make_binned, bins, bins_like
+from .bins import lookup, bins, bins_like
 from .comparison import less, greater, less_equal, greater_equal, equal, not_equal, identical, isclose, allclose
 from .counts import counts_to_density, density_to_counts
 from .cumulative import cumsum
