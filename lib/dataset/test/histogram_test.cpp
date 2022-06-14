@@ -2,6 +2,8 @@
 // Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 #include "dataset_test_common.h"
 #include "test_macros.h"
+
+#include <cmath>
 #include <gtest/gtest-matchers.h>
 #include <gtest/gtest.h>
 
@@ -372,4 +374,27 @@ TEST_F(Histogram2DTest, noncontiguous_slice) {
   // 1d histogram but along Dim::Y which has stride 4 since based on slice
   const auto slice = da.slice({Dim::X, 0});
   EXPECT_EQ(histogram(slice, edges), histogram(copy(slice), edges));
+}
+
+TEST(HistogramLinspaceTest, event_mapped_to_correct_bin) {
+  const auto val10 = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 0});
+  const auto val01 = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 1});
+  for (auto step = 1.23546e-6; step < 1e4; step *= 1.004354345) {
+    const auto edges = makeVariable<double>(
+        Dims{Dim::X}, Shape{3}, Values{1.0 * step, 2.0 * step, 3.0 * step});
+    const auto mid = edges.values<double>()[1];
+    for (const auto pos :
+         {mid, std::nextafter(mid, 0.0), std::nextafter(mid, 1e30)}) {
+      const Dimensions dims(Dim::Row, 1);
+      const auto data = makeVariable<double>(dims, Values{1.0});
+      const auto x = makeVariable<double>(dims, Values{pos});
+      const DataArray da(data, {{Dim::X, x}});
+      const auto hist = histogram(da, edges);
+      if (pos < mid) {
+        EXPECT_EQ(hist.data(), val10) << step << pos;
+      } else {
+        EXPECT_EQ(hist.data(), val01) << step << pos;
+      }
+    }
+  }
 }
