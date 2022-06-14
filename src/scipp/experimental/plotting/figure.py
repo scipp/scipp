@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .. import config, DataArray
+from ... import config, DataArray
 from .tools import fig_to_pngbytes
 from .toolbar import Toolbar
 from .mesh import Mesh
 from .line import Line
-from ..utils import name_with_unit
+from ...utils import name_with_unit
 from .view import View
 
 import ipywidgets as ipw

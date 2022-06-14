@@ -12,10 +12,11 @@ from .plot import Plot
 from .model import Node, show_graph, node, input_node
 from .figure import Figure
 from . import widgets
-from .. import Variable, DataArray, Dataset
+from ... import Variable, DataArray, Dataset, arange
+from ...typing import VariableLike
 
 
-def plot(obj: Union[DataArray, Dataset, Dict[str, DataArray]]) -> Figure:
+def plot(obj: Union[VariableLike, Dict[str, VariableLike]]) -> Figure:
     """Plot a Scipp object.
 
     Parameters
@@ -29,16 +30,19 @@ def plot(obj: Union[DataArray, Dataset, Dict[str, DataArray]]) -> Figure:
         A figure.
     """
     if isinstance(obj, Variable):
-        raise TypeError("Plotting Variable is not currently supported.")
+        obj = DataArray(
+            data=obj,
+            coords={dim: arange(dim, size)
+                    for dim, size in obj.sizes.items()})
     if isinstance(obj, DataArray):
         return Figure(input_node(obj))
     nodes = [input_node(v) for v in obj.values()]
     return Figure(*nodes)
 
 
-import scipp as sc
+# import scipp as sc
 
-sc.plot = plot
+# sc.plot = plot
 Variable.plot = plot
 DataArray.plot = plot
 Dataset.plot = plot
