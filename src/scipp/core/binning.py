@@ -6,7 +6,6 @@ from typing import Dict, List, Optional, Union, Sequence
 
 from .._scipp import core as _cpp
 from .variable import array, Variable, linspace, arange
-from .operations import _rebin
 
 
 def make_histogrammed(x: Union[_cpp.DataArray, _cpp.Dataset], *,
@@ -39,7 +38,8 @@ def make_binned(x: _cpp.DataArray,
                 edges: Optional[Sequence[_cpp.Variable]] = None,
                 groups: Optional[Sequence[_cpp.Variable]] = None,
                 erase: Optional[Sequence[_cpp.Variable]] = None) -> _cpp.DataArray:
-    """Create binned data by binning input along all dimensions given by edges.
+    """Create binned data by binning input along all dimensions given by edges or
+    groups.
 
     Usually :py:func:`scipp.bin` or :py:func:`scipp.group` should be preferred,
     unless the more precise control over which dimensions should be erase is required,
@@ -151,6 +151,14 @@ def hist(x: Union[_cpp.DataArray, _cpp.Dataset],
          **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
     """Compute a histogram.
 
+    Bin edges can be specified in three ways: (1) When an integer is provided,
+    a 'linspace' with this requested number of bins is created, based on the min
+    and max of the corresponding coordinate. (2) A scalar scipp variable (a value
+    with a unit) is interpreted as a target bin with, and an 'arange' covering the
+    min and max of the corresponding coordinate is create. (3) A custom coordinate,
+    given as a scipp variable with compatible unit. Typically this should have a single
+    dimension matching the target dimension.
+
     When histogramming a dimension with an existing dimension-coord, the binning for
     the dimension is modified, i.e., the input and the output will have the same
     dimension labels.
@@ -172,6 +180,14 @@ def hist(x: Union[_cpp.DataArray, _cpp.Dataset],
     -------
     :
         Histogrammed data.
+
+    See Also
+    --------
+    scipp.bin:
+        Creating binned data by binning instead of summing all contributions.
+    scipp.binning.make_histogrammed:
+        Lower level function for histogramming that does not automatically
+        replace/erase dimensions.
 
     Examples
     --------
@@ -225,6 +241,11 @@ def nanhist(x: Union[_cpp.DataArray, _cpp.Dataset],
             arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
             /,
             **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
+    """Compute a histogram, skipping NaN values.
+
+    Like :py:func:`scipp.hist`, but NaN values are skipped. See there for details and
+    examples.
+    """
     edges = _make_edges(x, arg_dict, kwargs)
     if len(edges) > 0:
         x = x.bin(edges)
@@ -235,6 +256,74 @@ def bin(x: Union[_cpp.DataArray, _cpp.Dataset],
         arg_dict: Dict[str, Union[int, Variable]] = None,
         /,
         **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
+    """Create binned data by binning input along all dimensions given by edges.
+
+    Bin edges can be specified in three ways: (1) When an integer is provided,
+    a 'linspace' with this requested number of bins is created, based on the min
+    and max of the corresponding coordinate. (2) A scalar scipp variable (a value
+    with a unit) is interpreted as a target bin with, and an 'arange' covering the
+    min and max of the corresponding coordinate is create. (3) A custom coordinate,
+    given as a scipp variable with compatible unit. Typically this should have a single
+    dimension matching the target dimension.
+
+    When binning a dimension with an existing dimension-coord, the binning for
+    the dimension is modified, i.e., the input and the output will have the same
+    dimension labels.
+
+    When binning by non-dimension-coords, the output will have new dimensions
+    given by the names of these coordinates. These new dimensions replace the
+    dimensions the input coordinates depend on.
+
+    Parameters
+    ----------
+    x:
+        Input data.
+    arg_dict:
+        Dictionary mapping dimension labels to binning parameters.
+    **kwargs:
+        Mapping of dimension label to correspoding binning parameters.
+
+    Returns
+    -------
+    :
+        Binned data.
+
+    See Also
+    --------
+    scipp.hist:
+        For histogramming data.
+    scipp.group:
+        Creating binned data by grouping, instead of binning based on edges.
+    scipp.binning.make_binned:
+        Lower level function that can bin and group, and does not automatically
+        replace/erase dimensions.
+
+    Examples
+    --------
+
+    Bin a table by one of its coord columns, specifying (1) number of bins, (2)
+    bin width, or (3) actual binning:
+
+      >>> table = sc.data.table_xyz(100)
+      >>> da = table.bin(x=2)
+      >>> da = table.bin(x=sc.scalar(0.2, unit='m'))
+      >>> da = table.bin(x=sc.linspace('x', 0.2, 0.8, num=10, unit='m'))
+
+    Bin a table by two of its coord columns:
+
+      >>> table = sc.data.table_xyz(100)
+      >>> da = table.bin(x=4, y=6)
+
+    Bin binned data, using new bins along existing dimension:
+
+      >>> binned = sc.data.binned_x(nevent=100, nbin=10)
+      >>> da = binned.bin(x=20)
+
+    Bin binned data along an additional dimension:
+
+      >>> binned = sc.data.binned_x(nevent=100, nbin=10)
+      >>> da = binned.bin(y=5)
+    """
     if arg_dict is None:
         for name, item in kwargs.items():
             if name in ('edges', 'groups', 'erase') and isinstance(item, list):
@@ -254,6 +343,50 @@ def rebin(x: Union[_cpp.DataArray, _cpp.Dataset],
           deprecated=None,
           /,
           **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
+    """Rebin a data array or dataset.
+
+    The coordinate of the input for the dimension to be rebinned must contain bin edges,
+    i.e., the data must be histogrammed.
+
+    If the input has masks that contain the dimension being rebinned then those
+    masks are applied to the data before rebinning. That is, masked values are treated
+    as zero.
+
+    Parameters
+    ----------
+    x:
+        Data to rebin.
+    arg_dict:
+        Dictionary mapping dimension labels to binning parameters.
+    **kwargs:
+        Mapping of dimension label to correspoding binning parameters.
+
+    Returns
+    -------
+    :
+        Data rebinned according to the new bin edges.
+
+    See Also
+    --------
+    scipp.bin:
+        For changing the binning of binned (as opposed to dense, histogrammed) data.
+
+    Examples
+    --------
+
+    Rebin a data array along one of its dimensions, specifying (1) number of bins, (2)
+    bin width, or (3) actual binning:
+
+      >>> da = sc.data.table_xyz(100).hist(x=100, y=100)
+      >>> rebinned = da.rebin(x=2)
+      >>> rebinned = da.rebin(x=sc.scalar(0.2, unit='m'))
+      >>> rebinned = da.rebin(x=sc.linspace('x', 0.2, 0.8, num=10, unit='m'))
+
+    Rebin a data array along two of its dimensions:
+
+      >>> da = sc.data.table_xyz(100).hist(x=100, y=100)
+      >>> rebinned = da.rebin(x=4, y=6)
+    """
     if isinstance(arg_dict, str):
         if deprecated is not None or 'bins' in kwargs:
             warnings.warn(
@@ -261,11 +394,11 @@ def rebin(x: Union[_cpp.DataArray, _cpp.Dataset],
                 "edges is deprecated. Use, e.g., 'sc.rebin(da, x=x_edges)'. See the "
                 "documentation for details.", DeprecationWarning)
             bins = {'bins': deprecated, **kwargs}
-            return _rebin(x, arg_dict, **bins)
+            return _cpp.rebin(x, arg_dict, **bins)
     edges = _make_edges(x, arg_dict, kwargs)
     out = x
     for dim, edge in edges.items():
-        out = _rebin(out, dim, edge)
+        out = _cpp.rebin(out, dim, edge)
     return out
 
 
@@ -285,6 +418,70 @@ def _make_groups(x, arg):
 
 def group(x: Union[_cpp.DataArray, _cpp.Dataset], /,
           *args: Union[str, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
+    """Create binned data by grouping input by one or more coordinates.
+
+    Grouping can be specified in two ways: (1) When a string is provided the unique
+    values of the corresponding coordinate are used as groups. (2) When a scipp variable
+    is provided then the variable's values are used as groups.
+
+    Note that option (1) may be very slow if the input is very large.
+
+    When grouping a dimension with an existing dimension-coord, the binning for
+    the dimension is modified, i.e., the input and the output will have the same
+    dimension labels.
+
+    When grouping by non-dimension-coords, the output will have new dimensions
+    given by the names of these coordinates. These new dimensions replace the
+    dimensions the input coordinates depend on.
+
+    Parameters
+    ----------
+    x:
+        Input data.
+    *args:
+        Dimension labels or grouping variables.
+
+    Returns
+    -------
+    :
+        Binned data.
+
+    See Also
+    --------
+    scipp.bin:
+        Creating binned data by binning based on edges, instead of grouping.
+    scipp.binning.make_binned:
+        Lower level function that can bin and group, and does not automatically
+        replace/erase dimensions.
+
+    Examples
+    --------
+
+    Group a table by one of its coord columns, specifying (1) a coord name or (2)
+    an actual grouping:
+
+      >>> table = sc.data.table_xyz(100)
+      >>> table.coords['label'] = (table.coords['x'] * 10).to(dtype='int64')
+      >>> da = table.group('label')
+      >>> groups = sc.array(dims=['label'], values=[1, 3, 5], unit='m')
+      >>> da = table.group(groups)
+
+    Group a table by two of its coord columns:
+
+      >>> table = sc.data.table_xyz(100)
+      >>> table.coords['a'] = (table.coords['x'] * 10).to(dtype='int64')
+      >>> table.coords['b'] = (table.coords['y'] * 10).to(dtype='int64')
+      >>> da = table.group('a', 'b')
+      >>> groups = sc.array(dims=['a'], values=[1, 3, 5], unit='m')
+      >>> da = table.group(groups, 'b')
+
+    Group binned data along an additional dimension:
+
+      >>> table = sc.data.table_xyz(100)
+      >>> table.coords['a'] = (table.coords['y'] * 10).to(dtype='int64')
+      >>> binned = table.bin(x=10)
+      >>> da = binned.group('a')
+    """
     groups = [_make_groups(x, name) for name in args]
     erase = _find_replaced_dims(x, [g.dim for g in groups])
     return make_binned(x, groups=groups, erase=erase)

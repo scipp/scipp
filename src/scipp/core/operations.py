@@ -193,38 +193,6 @@ def stddevs(x: VariableLikeType) -> VariableLikeType:
     return _call_cpp_func(_cpp.stddevs, x)
 
 
-def _rebin(x: _ContainerWithCoords, dim: str,
-           bins: _cpp.Variable) -> _ContainerWithCoords:
-    """Rebin a dimension of a data array or dataset.
-
-    The coordinate of the input for the given dimension `dim` must contain bin edges.
-
-    If the input has masks that contain the dimension being rebinned then those
-    masks are applied to the data before rebinning. That is, masked values are treated
-    as zero.
-
-    Parameters
-    ----------
-    x: scipp.DataArray or scipp.Dataset
-        Data to rebin.
-    dim:
-        Dimension to rebin over.
-    bins:
-        New bin edges.
-
-    Returns
-    -------
-    : Same type as x
-        Data rebinned according to the new bin edges.
-
-    Raises
-    ------
-    scipp.CoordError
-        If the existing coordinate is not a bin-edge coordinate.
-    """
-    return _call_cpp_func(_cpp.rebin, x, dim, bins)
-
-
 def where(condition: _cpp.Variable, x: _cpp.Variable,
           y: _cpp.Variable) -> _cpp.Variable:
     """Return elements chosen from x or y depending on condition.
