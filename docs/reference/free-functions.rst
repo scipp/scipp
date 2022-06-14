@@ -204,8 +204,7 @@ Compatibility
    from_dict
    compat.from_pandas
    compat.from_xarray
-   compat.from_xarray_dataarray
-   compat.from_xarray_dataset
+   compat.to_xarray
 
 
 Logging

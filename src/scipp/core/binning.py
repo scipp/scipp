@@ -11,8 +11,12 @@ from .operations import _rebin
 
 def make_histogrammed(x: Union[_cpp.DataArray, _cpp.Dataset], *,
                       bins: _cpp.Variable) -> Union[_cpp.DataArray, _cpp.Dataset]:
-    """Create dense data by histogramming data along all dimension given by
-    edges.
+    """Create dense data by histogramming data into given bins.
+
+    If the input is binned data then existing binning dimensions are preserved.
+    Histogramming along an existing binned dimension will replace this binning.
+
+    Usually :py:func:`scipp.hist` should be preferred.
 
     Returns
     -------
@@ -22,6 +26,8 @@ def make_histogrammed(x: Union[_cpp.DataArray, _cpp.Dataset], *,
 
     See Also
     --------
+    scipp.hist:
+        Recommended interface for histogramming data.
     scipp.bin:
         For binning data.
     """
@@ -34,6 +40,10 @@ def make_binned(x: _cpp.DataArray,
                 groups: Optional[Sequence[_cpp.Variable]] = None,
                 erase: Optional[Sequence[_cpp.Variable]] = None) -> _cpp.DataArray:
     """Create binned data by binning input along all dimensions given by edges.
+
+    Usually :py:func:`scipp.bin` or :py:func:`scipp.group` should be preferred,
+    unless the more precise control over which dimensions should be erase is required,
+    or unless grouping and binning at the same time is required.
 
     This does not histogram the data, each output bin will contain a "list" of
     input values.
@@ -61,8 +71,12 @@ def make_binned(x: _cpp.DataArray,
 
     See Also
     --------
-    scipp.histogram:
+    scipp.hist:
         For histogramming data.
+    scipp.bin:
+        Recommended interface for binning data.
+    scipp.group:
+        Recommended interface for grouping data.
     scipp.bins:
         For creating binned data based on explicitly given index ranges.
     """

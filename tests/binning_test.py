@@ -289,7 +289,8 @@ def test_group_without_coord_keeps_dim():
 
 def test_group_with_1d_dimcoord_keeps_dim():
     da = date_month_day_table_grouped_by_date()
-    assert da.group(sc.array(dims=['date'], values=[1, 3, 5])).dims == ('date', )
+    assert da.group(sc.array(dims=['date'], values=[1, 3, 5],
+                             dtype='int64')).dims == ('date', )
 
 
 def test_group_with_2d_dimcoord_keeps_dims():
