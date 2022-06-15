@@ -81,7 +81,7 @@ def concat(x: Sequence[VariableLikeType], dim: str) -> VariableLikeType:
     Parameters
     ----------
     x: scipp.typing.VariableLike
-        Sequence of input variables, data arraus, or datasets.
+        Sequence of input variables, data arrays, or datasets.
     dim:
         Dimension along which to concatenate.
 
