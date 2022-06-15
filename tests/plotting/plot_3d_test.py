@@ -11,6 +11,7 @@ import matplotlib
 import pytest
 
 matplotlib.use('Agg')
+sc.plotting.select_backend('stable')
 
 
 def _with_fake_pos(*args, **kwargs):
