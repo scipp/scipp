@@ -129,10 +129,16 @@ bool BinArrayModel<T>::equals_nan(const Variable &a, const Variable &b) const {
 
 template <class T>
 void BinArrayModel<T>::copy(const Variable &src, Variable &dest) const {
-  const auto &[indices0, dim0, buffer0] = src.constituents<T>();
-  auto &&[indices1, dim1, buffer1] = dest.constituents<T>();
-  static_cast<void>(dim1);
-  copy_slices(buffer0, buffer1, dim0, indices0, indices1);
+  if constexpr (std::is_same_v<T, Variable>) {
+    transform_in_place<double, float, int64_t, int32_t, bool, std::string,
+                       core::time_point>(
+        dest, src, [](auto &a, const auto &b) { a = b; }, "copy");
+  } else {
+    const auto &[indices0, dim0, buffer0] = src.constituents<T>();
+    auto &&[indices1, dim1, buffer1] = dest.constituents<T>();
+    static_cast<void>(dim1);
+    copy_slices(buffer0, buffer1, dim0, indices0, indices1);
+  }
 }
 
 template <class T>

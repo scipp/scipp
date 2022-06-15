@@ -23,42 +23,11 @@ Variable bin_sizes(const Variable &var) {
   return makeVariable<scipp::index>(var.dims(), units::none);
 }
 
-namespace {
-template <class T>
-using copy_spans_args = std::tuple<scipp::span<T>, scipp::span<const T>>;
-constexpr auto copy_spans = overloaded{
-    core::element::arg_list<copy_spans_args<double>, copy_spans_args<float>,
-                            copy_spans_args<int64_t>, copy_spans_args<int32_t>,
-                            copy_spans_args<bool>, copy_spans_args<std::string>,
-                            copy_spans_args<core::time_point>>,
-    core::transform_flags::expect_all_or_none_have_variance,
-    [](units::Unit &a, const units::Unit &b) { a = b; },
-    [](auto &dst, const auto &src) {
-      if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(dst)>>) {
-        std::copy(src.value.begin(), src.value.end(), dst.value.begin());
-        std::copy(src.variance.begin(), src.variance.end(),
-                  dst.variance.begin());
-      } else {
-        std::copy(src.begin(), src.end(), dst.begin());
-      }
-    }};
-} // namespace
-
 void copy_slices(const Variable &src, Variable dst, const Dim dim,
                  const Variable &srcIndices, const Variable &dstIndices) {
-  const auto [begin0, end0] = unzip(srcIndices);
-  const auto [begin1, end1] = unzip(dstIndices);
-  const auto sizes0 = end0 - begin0;
-  const auto sizes1 = end1 - begin1;
-  core::expect::equals(src.unit(), dst.unit());
-  // May broadcast `src` but not `dst` since that would result in
-  // multiple/conflicting writes to same bucket.
-  expect::includes(sizes1.dims(), sizes0.dims());
-  core::expect::equals(all(equal(sizes0, sizes1)),
-                       makeVariable<bool>(Values{true}));
-  transform_in_place(subspan_view(dst, dim, dstIndices),
-                     subspan_view(src, dim, srcIndices), copy_spans,
-                     "copy_slices");
+  auto src_ = make_bins_no_validate(srcIndices, dim, src);
+  auto dst_ = make_bins_no_validate(dstIndices, dim, dst);
+  copy(src_, dst_);
 }
 
 Variable resize_default_init(const Variable &var, const Dim dim,
