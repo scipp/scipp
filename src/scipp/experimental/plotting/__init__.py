@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-# flake8: noqa
+# flake8: noqa E402, F401
 
 import matplotlib.pyplot as plt
 
@@ -38,11 +38,3 @@ def plot(obj: Union[VariableLike, Dict[str, VariableLike]]) -> Figure:
         return Figure(input_node(obj))
     nodes = [input_node(v) for v in obj.values()]
     return Figure(*nodes)
-
-
-# import scipp as sc
-
-# sc.plot = plot
-Variable.plot = plot
-DataArray.plot = plot
-Dataset.plot = plot

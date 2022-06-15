@@ -8,6 +8,8 @@ import warnings
 from .plot import plot as _plot
 from ..utils import running_in_jupyter
 
+backend = 'stable'
+
 
 @lru_cache
 def initialize():
@@ -58,7 +60,7 @@ def initialize():
     return is_doc_build
 
 
-def plot(*args, **kwargs):
+def plot_stable(*args, **kwargs):
     """
     Plot a Scipp object.
 
@@ -210,3 +212,20 @@ def plot(*args, **kwargs):
         plt.ion()
 
     return output
+
+
+def select_backend(new_backend):
+    global backend
+    backend = new_backend
+
+
+def plot(*args, **kwargs):
+    global backend
+    if backend == 'stable':
+        return plot_stable(*args, **kwargs)
+    elif backend == 'experimental':
+        from ..experimental.plotting import plot as plot_experimental
+        return plot_experimental(*args, **kwargs)
+    else:
+        raise ValueError(f"Unknown plotting backend {backend}. "
+                         "Possible choices are 'stable' and 'experimental'.")
