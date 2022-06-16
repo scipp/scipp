@@ -149,8 +149,6 @@ MultiIndex<N>::MultiIndex(binned_tag, const Dimensions &inner_dims,
                                        bin_dims, 0, params.strides()...);
 
   // NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
-  m_bin_stride = inner_dims.offset(slice_dim);
-  // NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
   m_nested_dim_index = m_inner_ndim - inner_dims.index(slice_dim) - 1;
 
   for (scipp::index data = 0; data < N; ++data) {

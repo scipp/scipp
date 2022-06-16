@@ -239,14 +239,19 @@ class VariableBinnedStructuredTest : public ::testing::Test {
 protected:
   Dimensions dims{Dim::Y, 2};
   Variable indices = makeVariable<scipp::index_pair>(
-      dims, Values{std::pair{0, 1}, std::pair{1, 2}});
-  Variable buffer = variable::make_vectors(Dimensions(Dim::X, 2), units::m,
-                                           {1, 2, 3, 4, 5, 6});
+      dims, Values{std::pair{0, 1}, std::pair{1, 3}});
+  Variable buffer = variable::make_vectors(Dimensions(Dim::X, 3), units::m,
+                                           {1, 2, 3, 4, 5, 6, 7, 8, 9});
   Variable var = make_bins(indices, Dim::X, buffer);
 };
 
 TEST_F(VariableBinnedStructuredTest, copy_vector) { ASSERT_EQ(copy(var), var); }
 
 TEST_F(VariableBinnedStructuredTest, copy_vector_field) {
-  copy(var.elements<Eigen::Vector3d>("x"));
+  const auto &elem = var.elements<Eigen::Vector3d>("x");
+  ASSERT_EQ(copy(elem), elem);
+  const auto expected = make_bins(
+      indices, Dim::X,
+      makeVariable<double>(Dimensions(Dim::X, 3), units::m, Values{1, 4, 7}));
+  ASSERT_EQ(copy(elem), expected);
 }
