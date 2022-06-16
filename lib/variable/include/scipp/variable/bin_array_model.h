@@ -7,6 +7,7 @@
 
 #include "scipp/core/bucket_array_view.h"
 #include "scipp/core/dimensions.h"
+#include "scipp/core/eigen.h"
 #include "scipp/core/except.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/cumulative.h"
@@ -131,7 +132,8 @@ template <class T>
 void BinArrayModel<T>::copy(const Variable &src, Variable &dest) const {
   if constexpr (std::is_same_v<T, Variable>) {
     transform_in_place<double, float, int64_t, int32_t, bool, std::string,
-                       core::time_point>(
+                       core::time_point, Eigen::Vector3d, Eigen::Matrix3d,
+                       Eigen::Affine3d, core::Translation, core::Quaternion>(
         dest, src, [](auto &a, const auto &b) { a = b; }, "copy");
   } else {
     const auto &[indices0, dim0, buffer0] = src.constituents<T>();
