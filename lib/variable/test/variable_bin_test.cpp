@@ -2,9 +2,11 @@
 // Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "scipp/core/eigen.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/shape.h"
+#include "scipp/variable/structures.h"
 
 using namespace scipp;
 
@@ -231,4 +233,20 @@ TEST_F(VariableBinsTest, setSlice) {
       indices, Dim::X,
       makeVariable<double>(buffer.dims(), Values{1.1, 1.1, 1.1, 1.1}));
   EXPECT_EQ(var, expected);
+}
+
+class VariableBinnedStructuredTest : public ::testing::Test {
+protected:
+  Dimensions dims{Dim::Y, 2};
+  Variable indices = makeVariable<scipp::index_pair>(
+      dims, Values{std::pair{0, 1}, std::pair{1, 2}});
+  Variable buffer = variable::make_vectors(Dimensions(Dim::X, 2), units::m,
+                                           {1, 2, 3, 4, 5, 6});
+  Variable var = make_bins(indices, Dim::X, buffer);
+};
+
+TEST_F(VariableBinnedStructuredTest, copy_vector) { ASSERT_EQ(copy(var), var); }
+
+TEST_F(VariableBinnedStructuredTest, copy_vector_field) {
+  copy(var.elements<Eigen::Vector3d>("x"));
 }
