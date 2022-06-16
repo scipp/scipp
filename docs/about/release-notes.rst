@@ -21,9 +21,9 @@ Bugfixes
 ~~~~~~~~
 
 * Fix bug where coordinates in were dropped by :func:`scipp.transform_coords` with ``keep_*=False`` even through they were specified as ``targets`` `#2642 <https://github.com/scipp/scipp/pull/2642>`_.
-* Fix segmentation fault in :func:`scipp.bin` when binning in 2 or more dimensions withs certain coordinate values `#2644 <https://github.com/scipp/scipp/pull/2644>`_.
+* Fix segmentation fault in :func:`scipp.bin` when binning in 2 or more dimensions with certain coordinate values `#2644 <https://github.com/scipp/scipp/pull/2644>`_.
 * Fix issue with events close to upper or lower bin bounds getting dropped by :func:`scipp.bin` and :func:`scipp.histogram` when binning with edges that form a "linspace" `#2644 <https://github.com/scipp/scipp/pull/2644>`_.
-* Fix minor issue with events close bin bounds getting assign to wrong bin by :func:`scipp.bin` and :func:`scipp.histogram` when binning with edges that form a "linspace" `#2644 <https://github.com/scipp/scipp/pull/2644>`_.
+* Fix minor issue with events close to bin bounds getting assigned to the wrong bin by :func:`scipp.bin` and :func:`scipp.histogram` when binning with edges that form a "linspace" `#2644 <https://github.com/scipp/scipp/pull/2644>`_.
 
 Documentation
 ~~~~~~~~~~~~~
