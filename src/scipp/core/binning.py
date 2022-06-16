@@ -155,7 +155,7 @@ def hist(x: Union[_cpp.DataArray, _cpp.Dataset],
     a 'linspace' with this requested number of bins is created, based on the min
     and max of the corresponding coordinate. (2) A scalar scipp variable (a value
     with a unit) is interpreted as a target bin with, and an 'arange' covering the
-    min and max of the corresponding coordinate is create. (3) A custom coordinate,
+    min and max of the corresponding coordinate is created. (3) A custom coordinate,
     given as a scipp variable with compatible unit. Typically this should have a single
     dimension matching the target dimension.
 
@@ -174,7 +174,7 @@ def hist(x: Union[_cpp.DataArray, _cpp.Dataset],
     arg_dict:
         Dictionary mapping dimension labels to binning parameters.
     **kwargs:
-        Mapping of dimension label to correspoding binning parameters.
+        Mapping of dimension label to corresponding binning parameters.
 
     Returns
     -------
@@ -262,7 +262,7 @@ def bin(x: Union[_cpp.DataArray, _cpp.Dataset],
     a 'linspace' with this requested number of bins is created, based on the min
     and max of the corresponding coordinate. (2) A scalar scipp variable (a value
     with a unit) is interpreted as a target bin with, and an 'arange' covering the
-    min and max of the corresponding coordinate is create. (3) A custom coordinate,
+    min and max of the corresponding coordinate is created. (3) A custom coordinate,
     given as a scipp variable with compatible unit. Typically this should have a single
     dimension matching the target dimension.
 
@@ -281,7 +281,7 @@ def bin(x: Union[_cpp.DataArray, _cpp.Dataset],
     arg_dict:
         Dictionary mapping dimension labels to binning parameters.
     **kwargs:
-        Mapping of dimension label to correspoding binning parameters.
+        Mapping of dimension label to corresponding binning parameters.
 
     Returns
     -------
@@ -359,7 +359,7 @@ def rebin(x: Union[_cpp.DataArray, _cpp.Dataset],
     arg_dict:
         Dictionary mapping dimension labels to binning parameters.
     **kwargs:
-        Mapping of dimension label to correspoding binning parameters.
+        Mapping of dimension label to corresponding binning parameters.
 
     Returns
     -------
