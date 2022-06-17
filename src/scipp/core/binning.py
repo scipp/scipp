@@ -9,13 +9,21 @@ from .variable import array, Variable, linspace, arange
 
 
 def make_histogrammed(x: Union[_cpp.DataArray, _cpp.Dataset], *,
-                      bins: _cpp.Variable) -> Union[_cpp.DataArray, _cpp.Dataset]:
+                      edges: _cpp.Variable) -> Union[_cpp.DataArray, _cpp.Dataset]:
     """Create dense data by histogramming data into given bins.
 
     If the input is binned data then existing binning dimensions are preserved.
     Histogramming along an existing binned dimension will replace this binning.
 
     Usually :py:func:`scipp.hist` should be preferred.
+
+    Parameters
+    ----------
+    x:
+        Input data.
+    edges:
+        Bin edges. If these have more than one dimension, binning occurs along
+        the inner dimension.
 
     Returns
     -------
@@ -30,7 +38,7 @@ def make_histogrammed(x: Union[_cpp.DataArray, _cpp.Dataset], *,
     scipp.bin:
         For binning data.
     """
-    return _cpp.histogram(x, bins)
+    return _cpp.histogram(x, edges)
 
 
 def make_binned(x: _cpp.DataArray,
@@ -42,7 +50,7 @@ def make_binned(x: _cpp.DataArray,
     groups.
 
     Usually :py:func:`scipp.bin` or :py:func:`scipp.group` should be preferred,
-    unless the more precise control over which dimensions should be erase is required,
+    unless the more precise control over which dimensions should be erased is required,
     or unless grouping and binning at the same time is required.
 
     This does not histogram the data, each output bin will contain a "list" of
@@ -237,11 +245,11 @@ def hist(x: Union[_cpp.DataArray, _cpp.Dataset],
         return x.bins.sum()
     if len(edges) == 1:
         # TODO Note that this may swap dims, is that ok?
-        out = make_histogrammed(x, bins=list(edges.values())[0])
+        out = make_histogrammed(x, edges=list(edges.values())[0])
     else:
         edges = list(edges.values())
         out = make_histogrammed(make_binned(x, edges=edges[:-1], erase=erase),
-                                bins=edges[-1])
+                                edges=edges[-1])
     for dim in erase:
         if dim in out.dims:
             out = out.sum(dim)
@@ -525,4 +533,4 @@ def histogram(x: Union[_cpp.DataArray, _cpp.Dataset], *,
               bins: _cpp.Variable) -> Union[_cpp.DataArray, _cpp.Dataset]:
     """Deprecated. See :py:func:`scipp.hist`."""
     warnings.warn("'histogram' is deprecated. Use 'hist' instead.", UserWarning)
-    return make_histogrammed(x, bins=bins)
+    return make_histogrammed(x, edges=bins)
