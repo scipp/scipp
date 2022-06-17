@@ -240,12 +240,14 @@ protected:
   Dimensions dims{Dim::Y, 2};
   Variable indices = makeVariable<scipp::index_pair>(
       dims, Values{std::pair{0, 1}, std::pair{1, 3}});
+};
+
+TEST_F(VariableBinnedStructuredTest, copy_vector) {
   Variable buffer = variable::make_vectors(Dimensions(Dim::X, 3), units::m,
                                            {1, 2, 3, 4, 5, 6, 7, 8, 9});
   Variable var = make_bins(indices, Dim::X, buffer);
-};
-
-TEST_F(VariableBinnedStructuredTest, copy_vector) { ASSERT_EQ(copy(var), var); }
+  ASSERT_EQ(copy(var), var);
+}
 
 TEST_F(VariableBinnedStructuredTest, copy_translation) {
   auto translations = variable::make_translations(
@@ -262,6 +264,9 @@ TEST_F(VariableBinnedStructuredTest, copy_rotations) {
 }
 
 TEST_F(VariableBinnedStructuredTest, copy_vector_field) {
+  Variable buffer = variable::make_vectors(Dimensions(Dim::X, 3), units::m,
+                                           {1, 2, 3, 4, 5, 6, 7, 8, 9});
+  Variable var = make_bins(indices, Dim::X, buffer);
   const auto &elem = var.elements<Eigen::Vector3d>("x");
   ASSERT_EQ(copy(elem), elem);
   const auto expected = make_bins(
