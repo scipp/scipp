@@ -447,14 +447,15 @@ def test_nanhist_with_nondimcoord_removes_multiple_input_dims():
 
 
 def test_binning_low_level_functions_exist():
-    sc.binning.make_binned
-    sc.binning.make_histogrammed
+    from scipp import binning
+    binning.make_binned
+    binning.make_histogrammed
 
 
 def test_histogram_deprecated_name():
     da = sc.data.table_xyz(100)
     x = sc.linspace('x', 0, 1, num=10, unit='m')
-    with pytest.deprecated_call():
+    with pytest.warns(UserWarning):
         result = sc.histogram(da, bins=x)
     assert sc.identical(result, da.hist(x=x))
 
@@ -462,7 +463,7 @@ def test_histogram_deprecated_name():
 def test_bin_deprecated_arguments():
     da = sc.data.table_xyz(100)
     x = sc.linspace('x', 0, 1, num=10, unit='m')
-    with pytest.deprecated_call():
+    with pytest.warns(UserWarning):
         result = sc.bin(da, edges=[x])
     assert sc.identical(result, da.bin(x=x))
 
@@ -470,7 +471,7 @@ def test_bin_deprecated_arguments():
 def test_rebin_deprecated_keyword_arguments():
     da = sc.data.table_xyz(100).hist(x=100)
     x = sc.linspace('x', 0, 1, num=10, unit='m')
-    with pytest.deprecated_call():
+    with pytest.warns(UserWarning):
         result = sc.rebin(da, 'x', bins=x)
     assert sc.identical(result, da.rebin(x=x))
 
@@ -478,6 +479,6 @@ def test_rebin_deprecated_keyword_arguments():
 def test_rebin_deprecated_positional_arguments():
     da = sc.data.table_xyz(100).hist(x=100)
     x = sc.linspace('x', 0, 1, num=10, unit='m')
-    with pytest.deprecated_call():
+    with pytest.warns(UserWarning):
         result = sc.rebin(da, 'x', x)
     assert sc.identical(result, da.rebin(x=x))

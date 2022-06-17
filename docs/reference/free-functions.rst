@@ -215,13 +215,3 @@ Logging
 
    get_logger
    display_logs
-
-
-Binning
-~~~~~~~
-
-.. autosummary::
-   :toctree: ../generated/functions
-
-   binning.make_histogrammed
-   binning.make_binned

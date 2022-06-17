@@ -352,7 +352,7 @@ def bin(x: Union[_cpp.DataArray, _cpp.Dataset],
                     "The 'edges', 'groups', and 'erase' keyword arguments "
                     "are deprecated. Use, e.g., 'sc.bin(da, x=x_edges)' or "
                     "'sc.group(da, groups)'. See the documentation for details.",
-                    DeprecationWarning)
+                    UserWarning)
                 return make_binned(x, **kwargs)
     edges = _make_edges(x, arg_dict, kwargs)
     erase = _find_replaced_dims(x, edges)
@@ -419,7 +419,7 @@ def rebin(x: Union[_cpp.DataArray, _cpp.Dataset],
             warnings.warn(
                 "The 'bins' keyword argument and positional syntax for setting bin "
                 "edges is deprecated. Use, e.g., 'sc.rebin(da, x=x_edges)'. See the "
-                "documentation for details.", DeprecationWarning)
+                "documentation for details.", UserWarning)
             bins = {'bins': deprecated, **kwargs}
             return _cpp.rebin(x, arg_dict, **bins)
     edges = _make_edges(x, arg_dict, kwargs)
@@ -524,5 +524,5 @@ def group(x: Union[_cpp.DataArray, _cpp.Dataset], /,
 def histogram(x: Union[_cpp.DataArray, _cpp.Dataset], *,
               bins: _cpp.Variable) -> Union[_cpp.DataArray, _cpp.Dataset]:
     """Deprecated. See :py:func:`scipp.hist`."""
-    warnings.warn("'histogram' is deprecated. Use 'hist' instead.", DeprecationWarning)
+    warnings.warn("'histogram' is deprecated. Use 'hist' instead.", UserWarning)
     return make_histogrammed(x, bins=bins)
