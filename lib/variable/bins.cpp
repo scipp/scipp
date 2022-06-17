@@ -16,6 +16,10 @@
 
 namespace scipp::variable {
 
+/// Used internally by BinArrayModel to implement copying.
+///
+/// This is using transform, so only data (no coords, etc.) is copied, but we
+/// only use this for buffers of type Variable.
 void copy_data(const Variable &src, Variable &dst) {
   transform_in_place<double, float, int64_t, int32_t, bool, std::string,
                      core::time_point, Eigen::Vector3d, Eigen::Matrix3d,
