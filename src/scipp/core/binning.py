@@ -196,29 +196,38 @@ def hist(x: Union[_cpp.DataArray, _cpp.Dataset],
     bin width, or (3) actual binning:
 
       >>> table = sc.data.table_xyz(100)
-      >>> da = table.hist(x=2)
-      >>> da = table.hist(x=sc.scalar(0.2, unit='m'))
-      >>> da = table.hist(x=sc.linspace('x', 0.2, 0.8, num=10, unit='m'))
+      >>> table.hist(x=2).sizes
+      {'x': 2}
+
+      >>> table.hist(x=sc.scalar(0.2, unit='m')).sizes
+      {'x': 5}
+
+      >>> table.hist(x=sc.linspace('x', 0.2, 0.8, num=10, unit='m')).sizes
+      {'x': 9}
 
     Histogram a table by two of its coord columns:
 
       >>> table = sc.data.table_xyz(100)
-      >>> da = table.hist(x=4, y=6)
+      >>> table.hist(x=4, y=6).sizes
+      {'x': 4, 'y': 6}
 
     Histogram binned data, using existing bins:
 
       >>> binned = sc.data.binned_x(nevent=100, nbin=10)
-      >>> da = binned.hist()
+      >>> binned.hist().sizes
+      {'x': 10}
 
     Histogram binned data, using new bins along existing dimension:
 
       >>> binned = sc.data.binned_x(nevent=100, nbin=10)
-      >>> da = binned.hist(x=20)
+      >>> binned.hist(x=20).sizes
+      {'x': 20}
 
     Histogram binned data along an additional dimension:
 
       >>> binned = sc.data.binned_x(nevent=100, nbin=10)
-      >>> da = binned.hist(y=5)
+      >>> binned.hist(y=5).sizes
+      {'x': 10, 'y': 5}
     """
     edges = _make_edges(x, arg_dict, kwargs)
     erase = _find_replaced_dims(x, edges)
@@ -309,24 +318,32 @@ def bin(x: Union[_cpp.DataArray, _cpp.Dataset],
     bin width, or (3) actual binning:
 
       >>> table = sc.data.table_xyz(100)
-      >>> da = table.bin(x=2)
-      >>> da = table.bin(x=sc.scalar(0.2, unit='m'))
-      >>> da = table.bin(x=sc.linspace('x', 0.2, 0.8, num=10, unit='m'))
+      >>> table.bin(x=2).sizes
+      {'x': 2}
+
+      >>> table.bin(x=sc.scalar(0.2, unit='m')).sizes
+      {'x': 5}
+
+      >>> table.bin(x=sc.linspace('x', 0.2, 0.8, num=10, unit='m')).sizes
+      {'x': 9}
 
     Bin a table by two of its coord columns:
 
       >>> table = sc.data.table_xyz(100)
-      >>> da = table.bin(x=4, y=6)
+      >>> table.bin(x=4, y=6).sizes
+      {'x': 4, 'y': 6}
 
     Bin binned data, using new bins along existing dimension:
 
       >>> binned = sc.data.binned_x(nevent=100, nbin=10)
-      >>> da = binned.bin(x=20)
+      >>> binned.bin(x=20).sizes
+      {'x': 20}
 
     Bin binned data along an additional dimension:
 
       >>> binned = sc.data.binned_x(nevent=100, nbin=10)
-      >>> da = binned.bin(y=5)
+      >>> binned.bin(y=5).sizes
+      {'x': 10, 'y': 5}
     """
     if arg_dict is None:
         for name, item in kwargs.items():
@@ -382,14 +399,20 @@ def rebin(x: Union[_cpp.DataArray, _cpp.Dataset],
     bin width, or (3) actual binning:
 
       >>> da = sc.data.table_xyz(100).hist(x=100, y=100)
-      >>> rebinned = da.rebin(x=2)
-      >>> rebinned = da.rebin(x=sc.scalar(0.2, unit='m'))
-      >>> rebinned = da.rebin(x=sc.linspace('x', 0.2, 0.8, num=10, unit='m'))
+      >>> da.rebin(x=2).sizes
+      {'x': 2, 'y': 100}
+
+      >>> da.rebin(x=sc.scalar(0.2, unit='m')).sizes
+      {'x': 5, 'y': 100}
+
+      >>> da.rebin(x=sc.linspace('x', 0.2, 0.8, num=10, unit='m')).sizes
+      {'x': 9, 'y': 100}
 
     Rebin a data array along two of its dimensions:
 
       >>> da = sc.data.table_xyz(100).hist(x=100, y=100)
-      >>> rebinned = da.rebin(x=4, y=6)
+      >>> da.rebin(x=4, y=6).sizes
+      {'x': 4, 'y': 6}
     """
     if isinstance(arg_dict, str):
         if deprecated is not None or 'bins' in kwargs:
@@ -466,25 +489,32 @@ def group(x: Union[_cpp.DataArray, _cpp.Dataset], /,
 
       >>> table = sc.data.table_xyz(100)
       >>> table.coords['label'] = (table.coords['x'] * 10).to(dtype='int64')
-      >>> da = table.group('label')
+      >>> table.group('label').sizes
+      {'label': 10}
+
       >>> groups = sc.array(dims=['label'], values=[1, 3, 5], unit='m')
-      >>> da = table.group(groups)
+      >>> table.group(groups).sizes
+      {'label': 3}
 
     Group a table by two of its coord columns:
 
       >>> table = sc.data.table_xyz(100)
       >>> table.coords['a'] = (table.coords['x'] * 10).to(dtype='int64')
       >>> table.coords['b'] = (table.coords['y'] * 10).to(dtype='int64')
-      >>> da = table.group('a', 'b')
+      >>> table.group('a', 'b').sizes
+      {'a': 10, 'b': 10}
+
       >>> groups = sc.array(dims=['a'], values=[1, 3, 5], unit='m')
-      >>> da = table.group(groups, 'b')
+      >>> table.group(groups, 'b').sizes
+      {'a': 3, 'b': 10}
 
     Group binned data along an additional dimension:
 
       >>> table = sc.data.table_xyz(100)
       >>> table.coords['a'] = (table.coords['y'] * 10).to(dtype='int64')
       >>> binned = table.bin(x=10)
-      >>> da = binned.group('a')
+      >>> binned.group('a').sizes
+      {'x': 10, 'a': 10}
     """
     groups = [_make_groups(x, name) for name in args]
     erase = _find_replaced_dims(x, [g.dim for g in groups])
