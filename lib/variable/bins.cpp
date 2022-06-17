@@ -21,6 +21,8 @@ namespace scipp::variable {
 /// This is using transform, so only data (no coords, etc.) is copied, but we
 /// only use this for buffers of type Variable.
 void copy_data(const Variable &src, Variable &dst) {
+  assert(src.dtype() == dtype<bucket<Variable>>);
+  assert(dst.dtype() == dtype<bucket<Variable>>);
   transform_in_place<double, float, int64_t, int32_t, bool, std::string,
                      core::time_point, Eigen::Vector3d, Eigen::Matrix3d,
                      Eigen::Affine3d, core::Translation, core::Quaternion>(
