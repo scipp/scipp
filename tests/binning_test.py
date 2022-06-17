@@ -23,21 +23,25 @@ def test_group_raises_CoordError_if_coord_not_found():
 def test_many_combinations():
     table = sc.data.table_xyz(100)
     table.coords['label'] = (table.coords['x'] * 10).to(dtype='int64')
-    table.group('label').hist(x=5, y=3)
-    table.group('label').hist(x=5)
-    table.group('label').hist()
-    table.hist(x=5, y=3)
-    table.hist(x=5)
-    table.hist(x=5).rebin(x=3)
-    table.hist(x=5, y=3).rebin(x=3, y=2)
-    table.bin(x=5).bin(x=6).bin(y=6)
-    table.bin(x=5).bin(y=6, x=7)
-    table.bin(x=5).hist()
-    table.bin(x=5).hist(x=7)
-    table.bin(x=5).hist(y=7)
-    table.bin(x=5).hist(x=3, y=7)
-    table.bin(x=5).group('label').hist()
-    table.bin(x=5).group('label').hist(y=5)
+    assert table.group('label').hist(x=5, y=3).sizes == {'label': 10, 'x': 5, 'y': 3}
+    assert table.group('label').hist(x=5).sizes == {'label': 10, 'x': 5}
+    assert table.group('label').hist().sizes == {'label': 10}
+    assert table.hist(x=5, y=3).sizes == {'x': 5, 'y': 3}
+    assert table.hist(x=5).sizes == {'x': 5}
+    assert table.hist(x=5).rebin(x=3).sizes == {'x': 3}
+    assert table.hist(x=5, y=3).rebin(x=3, y=2).sizes == {'x': 3, 'y': 2}
+    assert table.bin(x=5).bin(x=6).bin(y=6).sizes == {'x': 6, 'y': 6}
+    assert table.bin(x=5).bin(y=6, x=7).sizes == {'x': 7, 'y': 6}
+    assert table.bin(x=5).hist().sizes == {'x': 5}
+    assert table.bin(x=5).hist(x=7).sizes == {'x': 7}
+    assert table.bin(x=5).hist(y=7).sizes == {'x': 5, 'y': 7}
+    assert table.bin(x=5).hist(x=3, y=7).sizes == {'x': 3, 'y': 7}
+    assert table.bin(x=5).group('label').hist().sizes == {'x': 5, 'label': 10}
+    assert table.bin(x=5).group('label').hist(y=5).sizes == {
+        'x': 5,
+        'label': 10,
+        'y': 5
+    }
 
 
 def test_hist_table_define_edges_from_bin_count():

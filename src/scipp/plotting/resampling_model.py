@@ -287,7 +287,7 @@ class ResamplingBinnedModel(ResamplingModel):
             if self.mode == ResamplingMode.mean:
                 return make_binned(binned, edges=[edges]).bins.mean()
             else:
-                return make_histogrammed(binned, bins=edges)
+                return make_histogrammed(binned, edges=edges)
         elif self.mode == ResamplingMode.mean:
             return make_binned(array, edges=self.edges).bins.mean()
         else:

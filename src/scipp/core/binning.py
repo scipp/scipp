@@ -203,9 +203,19 @@ def hist(x: Union[_cpp.DataArray, _cpp.Dataset],
     Histogram a table by one of its coord columns, specifying (1) number of bins, (2)
     bin width, or (3) actual binning:
 
-      >>> table = sc.data.table_xyz(100)
-      >>> table.hist(x=2).sizes
-      {'x': 2}
+      >>> from numpy.random import default_rng
+      >>> rng = default_rng(seed=1234)
+      >>> x = sc.array(dims=['row'], unit='m', values=rng.random(100))
+      >>> y = sc.array(dims=['row'], unit='m', values=rng.random(100))
+      >>> data = sc.ones(dims=['row'], unit='K', shape=[100])
+      >>> table = sc.DataArray(data=data, coords={'x': x, 'y': y})
+      >>> table.hist(x=2)
+      <scipp.DataArray>
+      Dimensions: Sizes[x:2, ]
+      Coordinates:
+        x                         float64              [m]  (x [bin-edge])  [0.00313229, 0.497696, 0.992259]
+      Data:
+                                  float64              [K]  (x)  [53, 47]
 
       >>> table.hist(x=sc.scalar(0.2, unit='m')).sizes
       {'x': 5}
@@ -236,7 +246,7 @@ def hist(x: Union[_cpp.DataArray, _cpp.Dataset],
       >>> binned = sc.data.binned_x(nevent=100, nbin=10)
       >>> binned.hist(y=5).sizes
       {'x': 10, 'y': 5}
-    """
+    """  # noqa #501
     edges = _make_edges(x, arg_dict, kwargs)
     erase = _find_replaced_dims(x, edges)
     if len(edges) == 0:
@@ -264,6 +274,20 @@ def nanhist(x: Union[_cpp.DataArray, _cpp.Dataset],
 
     Like :py:func:`scipp.hist`, but NaN values are skipped. See there for details and
     examples.
+
+    Parameters
+    ----------
+    x:
+        Input data.
+    arg_dict:
+        Dictionary mapping dimension labels to binning parameters.
+    **kwargs:
+        Mapping of dimension label to corresponding binning parameters.
+
+    Returns
+    -------
+    :
+        Histogrammed data.
     """
     edges = _make_edges(x, arg_dict, kwargs)
     if len(edges) > 0:
@@ -399,6 +423,8 @@ def rebin(x: Union[_cpp.DataArray, _cpp.Dataset],
     --------
     scipp.bin:
         For changing the binning of binned (as opposed to dense, histogrammed) data.
+    scipp.hist:
+        For histogramming data.
 
     Examples
     --------
