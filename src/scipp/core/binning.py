@@ -225,25 +225,24 @@ def hist(x: Union[_cpp.DataArray, _cpp.Dataset],
 
     Histogram a table by two of its coord columns:
 
-      >>> table = sc.data.table_xyz(100)
       >>> table.hist(x=4, y=6).sizes
       {'x': 4, 'y': 6}
 
     Histogram binned data, using existing bins:
 
-      >>> binned = sc.data.binned_x(nevent=100, nbin=10)
+      >>> binned = table.bin(x=10)
       >>> binned.hist().sizes
       {'x': 10}
 
     Histogram binned data, using new bins along existing dimension:
 
-      >>> binned = sc.data.binned_x(nevent=100, nbin=10)
+      >>> binned = table.bin(x=10)
       >>> binned.hist(x=20).sizes
       {'x': 20}
 
     Histogram binned data along an additional dimension:
 
-      >>> binned = sc.data.binned_x(nevent=100, nbin=10)
+      >>> binned = table.bin(x=10)
       >>> binned.hist(y=5).sizes
       {'x': 10, 'y': 5}
     """  # noqa #501
@@ -349,7 +348,12 @@ def bin(x: Union[_cpp.DataArray, _cpp.Dataset],
     Bin a table by one of its coord columns, specifying (1) number of bins, (2)
     bin width, or (3) actual binning:
 
-      >>> table = sc.data.table_xyz(100)
+      >>> from numpy.random import default_rng
+      >>> rng = default_rng(seed=1234)
+      >>> x = sc.array(dims=['row'], unit='m', values=rng.random(100))
+      >>> y = sc.array(dims=['row'], unit='m', values=rng.random(100))
+      >>> data = sc.ones(dims=['row'], unit='K', shape=[100])
+      >>> table = sc.DataArray(data=data, coords={'x': x, 'y': y})
       >>> table.bin(x=2).sizes
       {'x': 2}
 
@@ -361,19 +365,18 @@ def bin(x: Union[_cpp.DataArray, _cpp.Dataset],
 
     Bin a table by two of its coord columns:
 
-      >>> table = sc.data.table_xyz(100)
       >>> table.bin(x=4, y=6).sizes
       {'x': 4, 'y': 6}
 
     Bin binned data, using new bins along existing dimension:
 
-      >>> binned = sc.data.binned_x(nevent=100, nbin=10)
+      >>> binned = table.bin(x=10)
       >>> binned.bin(x=20).sizes
       {'x': 20}
 
     Bin binned data along an additional dimension:
 
-      >>> binned = sc.data.binned_x(nevent=100, nbin=10)
+      >>> binned = table.bin(x=10)
       >>> binned.bin(y=5).sizes
       {'x': 10, 'y': 5}
     """
@@ -432,7 +435,13 @@ def rebin(x: Union[_cpp.DataArray, _cpp.Dataset],
     Rebin a data array along one of its dimensions, specifying (1) number of bins, (2)
     bin width, or (3) actual binning:
 
-      >>> da = sc.data.table_xyz(100).hist(x=100, y=100)
+      >>> from numpy.random import default_rng
+      >>> rng = default_rng(seed=1234)
+      >>> x = sc.array(dims=['row'], unit='m', values=rng.random(100))
+      >>> y = sc.array(dims=['row'], unit='m', values=rng.random(100))
+      >>> data = sc.ones(dims=['row'], unit='K', shape=[100])
+      >>> table = sc.DataArray(data=data, coords={'x': x, 'y': y})
+      >>> da = table.hist(x=100, y=100)
       >>> da.rebin(x=2).sizes
       {'x': 2, 'y': 100}
 
@@ -444,7 +453,7 @@ def rebin(x: Union[_cpp.DataArray, _cpp.Dataset],
 
     Rebin a data array along two of its dimensions:
 
-      >>> da = sc.data.table_xyz(100).hist(x=100, y=100)
+      >>> da = table.hist(x=100, y=100)
       >>> da.rebin(x=4, y=6).sizes
       {'x': 4, 'y': 6}
     """
@@ -521,7 +530,12 @@ def group(x: Union[_cpp.DataArray, _cpp.Dataset], /,
     Group a table by one of its coord columns, specifying (1) a coord name or (2)
     an actual grouping:
 
-      >>> table = sc.data.table_xyz(100)
+      >>> from numpy.random import default_rng
+      >>> rng = default_rng(seed=1234)
+      >>> x = sc.array(dims=['row'], unit='m', values=rng.random(100))
+      >>> y = sc.array(dims=['row'], unit='m', values=rng.random(100))
+      >>> data = sc.ones(dims=['row'], unit='K', shape=[100])
+      >>> table = sc.DataArray(data=data, coords={'x': x, 'y': y})
       >>> table.coords['label'] = (table.coords['x'] * 10).to(dtype='int64')
       >>> table.group('label').sizes
       {'label': 10}
@@ -532,7 +546,6 @@ def group(x: Union[_cpp.DataArray, _cpp.Dataset], /,
 
     Group a table by two of its coord columns:
 
-      >>> table = sc.data.table_xyz(100)
       >>> table.coords['a'] = (table.coords['x'] * 10).to(dtype='int64')
       >>> table.coords['b'] = (table.coords['y'] * 10).to(dtype='int64')
       >>> table.group('a', 'b').sizes
@@ -544,7 +557,6 @@ def group(x: Union[_cpp.DataArray, _cpp.Dataset], /,
 
     Group binned data along an additional dimension:
 
-      >>> table = sc.data.table_xyz(100)
       >>> table.coords['a'] = (table.coords['y'] * 10).to(dtype='int64')
       >>> binned = table.bin(x=10)
       >>> binned.group('a').sizes
