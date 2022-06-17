@@ -247,6 +247,20 @@ protected:
 
 TEST_F(VariableBinnedStructuredTest, copy_vector) { ASSERT_EQ(copy(var), var); }
 
+TEST_F(VariableBinnedStructuredTest, copy_translation) {
+  auto translations = variable::make_translations(
+      Dimensions(Dim::X, 3), units::m, {1, 2, 3, 4, 5, 6, 7, 8, 9});
+  auto binned = make_bins(indices, Dim::X, translations);
+  ASSERT_EQ(copy(binned), binned);
+}
+
+TEST_F(VariableBinnedStructuredTest, copy_rotations) {
+  auto rotations = variable::make_rotations(
+      Dimensions(Dim::X, 3), units::m, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+  auto binned = make_bins(indices, Dim::X, rotations);
+  ASSERT_EQ(copy(binned), binned);
+}
+
 TEST_F(VariableBinnedStructuredTest, copy_vector_field) {
   const auto &elem = var.elements<Eigen::Vector3d>("x");
   ASSERT_EQ(copy(elem), elem);

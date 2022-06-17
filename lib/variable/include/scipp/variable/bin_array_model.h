@@ -10,6 +10,7 @@
 #include "scipp/core/eigen.h"
 #include "scipp/core/except.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/bins.h"
 #include "scipp/variable/cumulative.h"
 #include "scipp/variable/element_array_model.h"
 #include "scipp/variable/except.h"
@@ -131,10 +132,7 @@ bool BinArrayModel<T>::equals_nan(const Variable &a, const Variable &b) const {
 template <class T>
 void BinArrayModel<T>::copy(const Variable &src, Variable &dest) const {
   if constexpr (std::is_same_v<T, Variable>) {
-    transform_in_place<double, float, int64_t, int32_t, bool, std::string,
-                       core::time_point, Eigen::Vector3d, Eigen::Matrix3d,
-                       Eigen::Affine3d, core::Translation, core::Quaternion>(
-        dest, src, [](auto &a, const auto &b) { a = b; }, "copy");
+    copy_data(src, dest);
   } else {
     const auto &[indices0, dim0, buffer0] = src.constituents<T>();
     auto &&[indices1, dim1, buffer1] = dest.constituents<T>();

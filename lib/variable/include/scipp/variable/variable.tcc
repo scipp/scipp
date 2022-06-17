@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include "scipp/core/array_to_string.h"
 #include "scipp/core/dimensions.h"
+#include "scipp/core/eigen.h"
 #include "scipp/core/element_array_view.h"
 #include "scipp/core/except.h"
 #include "scipp/core/has_eval.h"
@@ -55,6 +56,7 @@ auto make_model(const units::Unit unit, const Dimensions &dimensions,
                 element_array<T> values,
                 std::optional<element_array<T>> variances) {
   if constexpr (std::is_same_v<model_t<T>, ElementArrayModel<T>>) {
+    static_assert(!std::is_same_v<T, Eigen::Vector3d>);
     return std::make_unique<model_t<T>>(
         dimensions.volume(), unit, std::move(values), std::move(variances));
   } else {

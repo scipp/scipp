@@ -2,6 +2,7 @@
 // Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/core/eigen.h"
 #include "scipp/core/element/arg_list.h"
 
 #include "scipp/variable/bins.h"
@@ -14,6 +15,13 @@
 #include "operations_common.h"
 
 namespace scipp::variable {
+
+void copy_data(const Variable &src, Variable &dst) {
+  transform_in_place<double, float, int64_t, int32_t, bool, std::string,
+                     core::time_point, Eigen::Vector3d, Eigen::Matrix3d,
+                     Eigen::Affine3d, core::Translation, core::Quaternion>(
+      dst, src, [](auto &a, const auto &b) { a = b; }, "copy");
+}
 
 Variable bin_sizes(const Variable &var) {
   if (is_bins(var)) {
