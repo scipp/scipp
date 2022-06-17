@@ -223,6 +223,8 @@ def hist(x: Union[_cpp.DataArray, _cpp.Dataset],
     edges = _make_edges(x, arg_dict, kwargs)
     erase = _find_replaced_dims(x, edges)
     if len(edges) == 0:
+        if x.bins is None:
+            raise TypeError("Data is not binned so bin edges must be provided.")
         return x.bins.sum()
     if len(edges) == 1:
         # TODO Note that this may swap dims, is that ok?
@@ -249,6 +251,8 @@ def nanhist(x: Union[_cpp.DataArray, _cpp.Dataset],
     edges = _make_edges(x, arg_dict, kwargs)
     if len(edges) > 0:
         x = x.bin(edges)
+    if x.bins is None:
+        raise TypeError("Data is not binned so bin edges must be provided.")
     return x.bins.nansum()
 
 

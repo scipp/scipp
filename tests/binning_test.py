@@ -206,6 +206,14 @@ def test_bin_by_2d_dimension_coord_does_not_erase_extra_dim():
     assert da.bin(xy=20).dims == ('x', 'xy')
 
 
+def test_hist_on_dense_data_without_edges_raisesTypeError():
+    table = sc.data.table_xyz(10)
+    with pytest.raises(TypeError):
+        table.hist()
+    with pytest.raises(TypeError):
+        table.nanhist()
+
+
 rng = default_rng(seed=1234)
 
 
