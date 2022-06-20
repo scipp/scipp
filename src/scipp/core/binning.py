@@ -5,7 +5,8 @@ import warnings
 from typing import Dict, List, Optional, Union, Sequence
 
 from .._scipp import core as _cpp
-from .variable import array, Variable, linspace, arange
+from .variable import array, Variable, linspace, arange, epoch
+from .math import round as round_
 
 
 def make_histogrammed(x: Union[_cpp.DataArray, _cpp.Dataset], *,
@@ -112,7 +113,7 @@ def _get_coord(x, name):
 def _upper_bound(x):
     import numpy as np
     bound = x.max()
-    if bound.dtype in ('int32', 'int64'):
+    if bound.dtype in ('int32', 'int64', 'datetime64'):
         bound.value += 1
     else:
         bound.value = np.nextafter(bound.value, np.inf)
@@ -125,6 +126,11 @@ def _parse_coords_arg(x, name, arg):
     coord = _get_coord(x, name)
     if isinstance(arg, int):
         start = coord.min()
+        if start.dtype == _cpp.DType.datetime64:
+            base = epoch(unit=start.unit)
+            return base + round_(
+                linspace(name, start - base, _upper_bound(coord) - base,
+                         num=arg + 1)).to(dtype='int64')
         return linspace(name, start, _upper_bound(coord),
                         num=arg + 1).to(dtype=start.dtype, copy=False)
     start = coord.min()

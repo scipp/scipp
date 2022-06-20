@@ -66,6 +66,18 @@ def test_hist_binned_define_edges_from_bin_count():
     assert edges.max().value == np.nextafter(da.bins.coords['y'].max().value, np.inf)
 
 
+def test_hist_binned_define_datetime_edges_from_bin_count():
+    size = 100
+    table = sc.data.table_xyz(size)
+    table.coords['time'] = sc.epoch(unit='s') + sc.arange(table.dim, 0, 100, unit='s')
+    histogrammed = table.hist(time=4)
+    edges = histogrammed.coords['time']
+    assert len(edges) == 5
+    assert histogrammed.sizes['time'] == 4
+    assert edges.min().value == table.coords['time'].min().value
+    assert edges.max().value > table.coords['time'].max().value
+
+
 def test_hist_binned_no_additional_edges():
     da = sc.data.binned_x(100, 10)
     assert sc.identical(da.hist(), da.bins.sum())
