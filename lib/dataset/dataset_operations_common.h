@@ -125,10 +125,16 @@ Dataset apply_to_items(const Dataset &d, Func func, Args &&...args) {
 
 /// Return a copy of map-like objects such as Coords with `func` applied to each
 /// item.
+///
+/// If `func` return an invalid object it will not be inserted into the output
+/// map. This can be used to drop/filter items.
 template <class T, class Func> auto transform_map(const T &map, Func func) {
   std::unordered_map<typename T::key_type, typename T::mapped_type> out;
-  for (const auto &[key, item] : map)
-    out.emplace(key, func(item));
+  for (const auto &[key, item] : map) {
+    auto transformed = func(item);
+    if (transformed.is_valid())
+      out.emplace(key, transformed);
+  }
   return out;
 }
 
