@@ -231,8 +231,7 @@ Variable flatten_bin_edge(const Variable &var,
   const auto back_flat = flatten(back, back.dims().labels(), to_dim);
   if (front_flat.slice({to_dim, 1, front.dims().volume()}) !=
       back_flat.slice({to_dim, 0, back.dims().volume() - 1}))
-    throw except::BinEdgeError(
-        "Flatten: the bin edges cannot be joined together.");
+    return {};
 
   // Make the bulk slice of the coord, leaving out the last bin edge
   const auto bulk =

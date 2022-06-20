@@ -190,26 +190,24 @@ TEST(ReshapeTest, flatten_binedges_1d) {
   EXPECT_EQ(flat, expected);
 }
 
-TEST(ReshapeTest, flatten_binedges_x_fails) {
+TEST(ReshapeTest, flatten_drops_unjoinable_outer_binedges) {
   const auto var = fold(arange(Dim::X, 24), Dim::X, {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 7) + 0.1 * units::one);
   a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
 
-  // Throws because x coord has mismatching bin edges.
-  EXPECT_THROW_DISCARD(flatten(a, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z),
-                       except::BinEdgeError);
+  const auto flat = flatten(a, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z);
+  EXPECT_FALSE(flat.coords().contains(Dim::X));
 }
 
-TEST(ReshapeTest, flatten_binedges_y_fails) {
+TEST(ReshapeTest, flatten_drops_unjoinable_inner_binedges) {
   const auto var = fold(arange(Dim::X, 24), Dim::X, {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
   a.coords().set(Dim::Y, arange(Dim::Y, 5) + 0.2 * units::one);
 
-  // Throws because y coord has mismatching bin edges.
-  EXPECT_THROW_DISCARD(flatten(a, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z),
-                       except::BinEdgeError);
+  const auto flat = flatten(a, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z);
+  EXPECT_FALSE(flat.coords().contains(Dim::Y));
 }
 
 TEST(ReshapeTest, round_trip_binedges) {
