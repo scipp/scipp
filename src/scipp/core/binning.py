@@ -488,8 +488,21 @@ def _make_groups(x, arg):
     _require_coord(arg, coord)
     if coord.bins is not None:
         coord = coord.copy().bins.constituents['data']
+    if coord.dtype in (_cpp.DType.int32, _cpp.DType.int64):
+        min_ = coord.min().value
+        max_ = coord.max().value
+        values = coord.values
+        pivot = len(values) // 100
+        unique = np.unique(values[:pivot])
+        if unique.min() != min_ or unique.max() != max_:
+            pivot = len(values) // 10
+            unique = np.unique(values[:pivot])
+        if unique.min() != min_ or unique.max() != max_:
+            unique = np.unique(values)
+    else:
+        unique = np.unique(coord.values)
     # TODO Very inefficient np.unique
-    return array(dims=[arg], values=np.unique(coord.values), unit=coord.unit)
+    return array(dims=[arg], values=unique, unit=coord.unit)
 
 
 def group(x: Union[_cpp.DataArray, _cpp.Dataset], /,
