@@ -3,7 +3,9 @@ requires = [
   "setuptools>=42",
   "wheel",
   "cmake>=3.21",
-  "conan@git+https://github.com/gabyx/conan.git@feature/improve-cmakedeps-find-package",
+  #"conan@git+https://github.com/gabyx/conan.git@feature/improve-cmakedeps-find-package",
+  #"conan@git+https://github.com/conan-io/conan.git@develop2",
+  "conan>=2.0.0.dev0",
   "markupsafe>=1.1.1,<2.1.0",  # see https://github.com/pallets/markupsafe/issues/284
   "ninja",
   "scikit-build==0.13.1",

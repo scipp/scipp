@@ -13,6 +13,10 @@ set(CMAKE_MODULE_PATH
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/sanitizers-cmake/cmake"
 )
 
+# Without this we get an error about a missing default profile
+execute_process(
+  COMMAND conan profile detect COMMAND_ECHO STDOUT
+)
 execute_process(
   COMMAND conan export .
   WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/.conan-recipes/llnl-units"
@@ -21,18 +25,11 @@ execute_process(
 
 # Conan dependencies
 if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake")
-  message(
-    STATUS
-      "Downloading conan.cmake from https://github.com/conan-io/cmake-conan"
-  )
+  message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
   file(
-    DOWNLOAD
-    "https://raw.githubusercontent.com/conan-io/cmake-conan/0.17.0/conan.cmake"
+    DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/0.18.1/conan.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake"
-    EXPECTED_HASH
-      SHA256=3bef79da16c2e031dc429e1dac87a08b9226418b300ce004cc125a82687baeef
-    TLS_VERIFY ON
-  )
+    TLS_VERIFY ON)
 endif()
 
 include(${CMAKE_CURRENT_BINARY_DIR}/conan.cmake)
@@ -57,17 +54,20 @@ conan_cmake_configure(
   boost/1.76.0
   eigen/3.3.9
   gtest/1.11.0
-  LLNL-Units/0.5.0.1
+  llnl-units/0.5.0.1
   pybind11/2.6.2
   ${CONAN_ONETBB}
   OPTIONS
+  # Currently we get this error, is cmake-conan not compatible with conan-2.0?
+  #    ERROR: Error while parsing [options] in conanfile
+  #    Options should be specified as 'pkg:option=value'
   benchmark:shared=False
   boost:header_only=True
   gtest:shared=False
-  LLNL-Units:shared=False
-  LLNL-Units:fPIC=True
-  LLNL-Units:base_type=uint64_t
-  LLNL-Units:namespace=llnl::units
+  llnl-units:shared=False
+  llnl-units:fPIC=True
+  llnl-units:base_type=uint64_t
+  llnl-units:namespace=llnl::units
   GENERATORS
   cmake_find_package_multi
   ${CONAN_DEPLOY}

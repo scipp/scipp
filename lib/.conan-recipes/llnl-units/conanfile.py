@@ -1,4 +1,4 @@
-from conans import ConanFile, CMake, tools
+from conan import ConanFile, tools
 import os
 
 CMAKE_PROJECT_STR = """project(
@@ -9,7 +9,7 @@ CMAKE_PROJECT_STR = """project(
 
 
 class UnitsConan(ConanFile):
-    name = "LLNL-Units"
+    name = "llnl-units"
     # Version past patch is ours, increment when moving branch/commit forward
     version = "0.5.0.1"
     license = "BSD-3"
@@ -50,7 +50,7 @@ include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()""")
 
     def build(self):
-        cmake = CMake(self)
+        cmake = tools.CMake(self)
         units_namespace = self.options.get_safe("namespace")
         cmake.definitions["UNITS_ENABLE_TESTS"] = "OFF"
         cmake.definitions["UNITS_BASE_TYPE"] = self.options.base_type
