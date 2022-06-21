@@ -186,6 +186,15 @@ def test_group_after_bin_considers_event_value():
     assert da.sizes == {'label': 10}
 
 
+def test_group_by_2d():
+    table = sc.data.table_xyz(100)
+    table.coords['label'] = (table.coords['x'] * 10).to(dtype='int64')
+    da = table.bin(y=333).group('label')
+    da.coords['label'] = (sc.arange('y', 0, 333) * da.coords['label']) % 23
+    grouped = da.group('label')
+    assert grouped.sizes == {'y': 333, 'label': 23}
+
+
 def test_bin_erases_dims_automatically_if_labels_for_same_dim():
     table = sc.data.table_xyz(100)
     table.coords['x2'] = table.coords['x'] * 2
