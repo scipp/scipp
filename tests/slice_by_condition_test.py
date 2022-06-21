@@ -6,10 +6,10 @@ import pytest
 import scipp as sc
 
 
-def make_var() -> sc.Variable:
+def make_var(xx=4) -> sc.Variable:
     return sc.arange('dummy', 12, dtype='int64').fold(dim='dummy',
                                                       sizes={
-                                                          'xx': 4,
+                                                          'xx': xx,
                                                           'yy': 3
                                                       })
 
@@ -81,6 +81,41 @@ def test_non_boolean_condition_raises_DTypeError():
     var = make_var()
     with pytest.raises(sc.DTypeError):
         condition = (var < 3).to(dtype='int32')
+        var[condition]
+
+
+def test_all_false_condition_with_wrong_dims_raises_DimensionError():
+    var = make_var()
+    condition = sc.array(dims=['not-in-var'], values=[False, False, False])
+    with pytest.raises(sc.DimensionError):
+        var[condition]
+
+
+def test_all_true_condition_with_wrong_dims_raises_DimensionError():
+    var = make_var()
+    condition = sc.array(dims=['not-in-var'], values=[True, True, True])
+    with pytest.raises(sc.DimensionError):
+        var[condition]
+
+
+def test_all_false_condition_with_wrong_shape_raises_DimensionError():
+    var = make_var(xx=4)
+    condition = sc.array(dims=['xx'], values=[False, False, False])
+    with pytest.raises(sc.DimensionError):
+        var[condition]
+
+
+def test_all_true_condition_with_wrong_shape_raises_DimensionError():
+    var = make_var(xx=4)
+    condition = sc.array(dims=['xx'], values=[True, True, True])
+    with pytest.raises(sc.DimensionError):
+        var[condition]
+
+
+def test_condition_with_wrong_shape_raises_DimensionError():
+    var = make_var(xx=4)
+    condition = sc.array(dims=['xx'], values=[False, True, False])
+    with pytest.raises(sc.DimensionError):
         var[condition]
 
 
