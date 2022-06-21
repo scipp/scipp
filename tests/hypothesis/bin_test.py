@@ -24,5 +24,5 @@ def test_bin_2d_linspace_bounds(a, b):
     upper.value = np.nextafter(upper.value, np.inf)
     x_edges = sc.linspace('x', x.min(), upper, num=3)
     y_edges = sc.linspace('y', x.min(), upper, num=3)
-    binned = sc.bin(table, edges=[x_edges, y_edges])
+    binned = table.bin(x=x_edges, y=y_edges)
     assert binned.sum().value == 2

@@ -22,5 +22,5 @@ def test_histogram_linspace_bounds(a, b):
     upper = x.max()
     upper.value = np.nextafter(upper.value, np.inf)
     edges = sc.linspace('x', x.min(), upper, num=3)
-    hist = sc.histogram(table, bins=edges)
+    hist = table.hist(x=edges)
     assert hist.sum().value == 2
