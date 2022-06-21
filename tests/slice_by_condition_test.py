@@ -98,6 +98,13 @@ def test_all_true_condition_with_wrong_dims_raises_DimensionError():
         var[condition]
 
 
+def test_condition_with_wrong_dims_raises_DimensionError():
+    var = make_var()
+    condition = sc.array(dims=['not-in-var'], values=[True, False, True])
+    with pytest.raises(sc.DimensionError):
+        var[condition]
+
+
 def test_all_false_condition_with_wrong_shape_raises_DimensionError():
     var = make_var(xx=4)
     condition = sc.array(dims=['xx'], values=[False, False, False])
