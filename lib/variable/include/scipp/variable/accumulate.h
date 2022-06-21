@@ -6,6 +6,7 @@
 
 #include "scipp/variable/shape.h"
 #include "scipp/variable/transform.h"
+#include "scipp/variable/variable_factory.h"
 
 namespace scipp::variable {
 
@@ -19,7 +20,8 @@ static void do_accumulate(const std::tuple<Ts...> &types, Op op,
   // - `other` are small, to avoid overhead (important for groupby), limit set
   //   by tuning BM_groupby_large_table
   // - reduction to scalar with more than 1 `other`
-  constexpr scipp::index small_input = 16384;
+  const bool binned_input = (is_bins(other) || ...);
+  const scipp::index small_input = binned_input ? 2 : 16384;
   if ((!other.dims().includes(var.dims()) || ...) ||
       ((other.dims().volume() < small_input) && ...) ||
       (sizeof...(other) != 1 && var.dims().ndim() == 0))
