@@ -494,10 +494,10 @@ def _make_groups(x, arg):
         values = coord.values
         pivot = len(values) // 100
         unique = np.unique(values[:pivot])
-        if unique.min() != min_ or unique.max() != max_:
+        if len(unique) != max_ - min_ + 1:
             pivot = len(values) // 10
             unique = np.unique(values[:pivot])
-        if unique.min() != min_ or unique.max() != max_:
+        if len(unique) != max_ - min_ + 1:
             unique = np.unique(values)
     else:
         unique = np.unique(coord.values)
