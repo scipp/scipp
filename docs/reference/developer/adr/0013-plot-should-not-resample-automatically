@@ -19,7 +19,7 @@ There were three main drivers/motivations for this:
 
 In the past we have therefore taken it as a given that resampling is a non-optional requirement.
 However, we have since then experienced a multitude of problems with this, ranging from simple bugs to complex and hard to maintain code.
-More importantly, the resulting plots are unpredictable and not a faithful to the actual data.
+More importantly, the resulting plots are unpredictable and not faithful to the actual data.
 Concrete problems are:
 
 - Infinite zoom with event data is not useful and led to considerations on a different (more complicated) mechanism.
@@ -27,12 +27,12 @@ Concrete problems are:
 - Picking values for the profile view has unpredictable and misleading values depending on zoom level.
   This has been improved in the recent refactor by growing the bounds of the selection to the underlying data bins, but the solution is incomplete since it does not resolve the problem when multiple data bins contribute to a display pixel.
 - Complex code related to resampling throughout the plotting code.
-  While the actual resampling bit is encapsulated in `ResamplingModel` there is a significant number of complications ranging from custom handling of bounds on zoom event to handling of coord/axis tic labels.
+  While the actual resampling bit is encapsulated in ``ResamplingModel`` there is a significant number of complications ranging from custom handling of bounds on zoom event to handling of coord/axis tic labels.
 - Misleading display of data values on zoom, displaying values on display pixel rather than data pixel.
 - Complicated handling of datetimes that also affects resampling.
 - Scientifically any plot generated with resampling is not usable, e.g., for publications.
 
-Releated topics
+Related topics
 ---------------
 
 The resampling behavior is part of a wider effort for a simpler and more flexible plotting code.
@@ -58,7 +58,7 @@ Negative:
 
 - Breaking change to current behavior will temporarily affect users.
 - User has to be more explicit, in particular when plotting binned data.
-  A new and convenient API for this us under development.
+  A new and convenient API for this is under development.
 - Plots with very long dimensions cannot be created directly.
   The user needs to resample themselves.
   We see this requirement mainly as an artifact from users used to old software and its inflexibilities, as well as applications from times when neutron scattering instruments had very few pixels.
