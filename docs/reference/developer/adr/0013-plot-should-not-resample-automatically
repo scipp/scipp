@@ -30,6 +30,7 @@ Concrete problems are:
   While the actual resampling bit is encapsulated in ``ResamplingModel`` there is a significant number of complications ranging from custom handling of bounds on zoom event to handling of coord/axis tic labels.
 - Misleading display of data values on zoom, displaying values on display pixel rather than data pixel.
 - Complicated handling of datetimes that also affects resampling.
+- Glitches and extremely small bin values from barely overlapping data and display pixels lead the unreadable plots with extremely large color scales.
 - Scientifically any plot generated with resampling is not usable, e.g., for publications.
 
 Related topics
