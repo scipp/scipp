@@ -2,9 +2,11 @@
 // Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "scipp/core/eigen.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/shape.h"
+#include "scipp/variable/structures.h"
 
 using namespace scipp;
 
@@ -231,4 +233,44 @@ TEST_F(VariableBinsTest, setSlice) {
       indices, Dim::X,
       makeVariable<double>(buffer.dims(), Values{1.1, 1.1, 1.1, 1.1}));
   EXPECT_EQ(var, expected);
+}
+
+class VariableBinnedStructuredTest : public ::testing::Test {
+protected:
+  Dimensions dims{Dim::Y, 2};
+  Variable indices = makeVariable<scipp::index_pair>(
+      dims, Values{std::pair{0, 1}, std::pair{1, 3}});
+};
+
+TEST_F(VariableBinnedStructuredTest, copy_vector) {
+  Variable buffer = variable::make_vectors(Dimensions(Dim::X, 3), units::m,
+                                           {1, 2, 3, 4, 5, 6, 7, 8, 9});
+  Variable var = make_bins(indices, Dim::X, buffer);
+  ASSERT_EQ(copy(var), var);
+}
+
+TEST_F(VariableBinnedStructuredTest, copy_translation) {
+  auto translations = variable::make_translations(
+      Dimensions(Dim::X, 3), units::m, {1, 2, 3, 4, 5, 6, 7, 8, 9});
+  auto binned = make_bins(indices, Dim::X, translations);
+  ASSERT_EQ(copy(binned), binned);
+}
+
+TEST_F(VariableBinnedStructuredTest, copy_rotations) {
+  auto rotations = variable::make_rotations(
+      Dimensions(Dim::X, 3), units::m, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+  auto binned = make_bins(indices, Dim::X, rotations);
+  ASSERT_EQ(copy(binned), binned);
+}
+
+TEST_F(VariableBinnedStructuredTest, copy_vector_field) {
+  Variable buffer = variable::make_vectors(Dimensions(Dim::X, 3), units::m,
+                                           {1, 2, 3, 4, 5, 6, 7, 8, 9});
+  Variable var = make_bins(indices, Dim::X, buffer);
+  const auto &elem = var.elements<Eigen::Vector3d>("x");
+  ASSERT_EQ(copy(elem), elem);
+  const auto expected = make_bins(
+      indices, Dim::X,
+      makeVariable<double>(Dimensions(Dim::X, 3), units::m, Values{1, 4, 7}));
+  ASSERT_EQ(copy(elem), expected);
 }

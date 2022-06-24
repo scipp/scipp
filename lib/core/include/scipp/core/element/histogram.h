@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <algorithm>
 #include <numeric>
 
 #include "scipp/common/numeric.h"
@@ -61,9 +62,17 @@ static constexpr auto histogram = overloaded{
         const auto [offset, nbin, scale] = core::linear_edge_params(edges);
         for (scipp::index i = 0; i < scipp::size(events); ++i) {
           const auto x = events[i];
-          const double bin = (x - offset) * scale;
-          if (bin >= 0.0 && bin < nbin)
-            iadd(data, static_cast<scipp::index>(bin), weights, i);
+          scipp::index bin = (x - offset) * scale;
+          bin = std::clamp(bin, scipp::index(0), scipp::index(nbin - 1));
+          if (x < edges[bin]) {
+            if (bin != 0 && x >= edges[bin - 1])
+              iadd(data, bin - 1, weights, i);
+          } else if (x >= edges[bin + 1]) {
+            if (bin != nbin - 1)
+              iadd(data, bin + 1, weights, i);
+          } else {
+            iadd(data, bin, weights, i);
+          }
         }
       } else {
         core::expect::histogram::sorted_edges(edges);

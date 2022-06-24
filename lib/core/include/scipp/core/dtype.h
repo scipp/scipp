@@ -95,8 +95,7 @@ inline constexpr DType dtype<std::unordered_map<core::time_point, int32_t>>{
 // scipp::variable types start at 1000
 // scipp::dataset types start at 2000
 // scipp::python types start at 3000
-// Eigen types start at 4000
-// Spatial transform types start at 5000
+// Spatial transform (Eigen) types start at 4000
 // User types should start at 10000
 
 SCIPP_CORE_EXPORT bool is_int(DType tp);
@@ -104,7 +103,6 @@ SCIPP_CORE_EXPORT bool is_float(DType tp);
 SCIPP_CORE_EXPORT bool is_fundamental(DType tp);
 SCIPP_CORE_EXPORT bool is_total_orderable(DType tp);
 SCIPP_CORE_EXPORT bool is_span(DType tp);
-SCIPP_CORE_EXPORT bool is_structured(DType tp);
 
 template <class T> constexpr bool canHaveVariances() noexcept {
   using U = std::remove_const_t<T>;

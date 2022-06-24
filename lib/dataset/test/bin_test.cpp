@@ -602,3 +602,72 @@ TEST_P(BinTest, new_dim_existing_coord) {
   da.coords().set(Dim::Y, edges);
   EXPECT_EQ(bin(da, {edges_y}), expected);
 }
+
+TEST(BinLinspaceTest, event_mapped_to_correct_bin) {
+  const auto val10 = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 0});
+  const auto val01 = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 1});
+  const Dimensions dims(Dim::Row, 1);
+  const auto data = makeVariable<double>(dims, Values{1.0});
+  for (auto step = 1.23546e-6; step < 1e4; step *= 1.08354345) {
+    const auto edges = makeVariable<double>(
+        Dims{Dim::X}, Shape{3}, Values{1.0 * step, 2.0 * step, 3.0 * step});
+    const auto mid = edges.values<double>()[1];
+    for (const auto pos :
+         {mid, std::nextafter(mid, 0.0), std::nextafter(mid, 1e30)}) {
+      const auto x = makeVariable<double>(dims, Values{pos});
+      const DataArray da(data, {{Dim::X, x}});
+      const auto hist = bins_sum(bin(da, {edges}));
+      if (pos < mid) {
+        EXPECT_EQ(hist.data(), val10) << step << pos;
+      } else {
+        EXPECT_EQ(hist.data(), val01) << step << pos;
+      }
+    }
+  }
+}
+
+TEST(BinLinspaceTest, event_mapped_to_correct_bin_at_begin) {
+  const auto val00 = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 0});
+  const auto val10 = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 0});
+  const Dimensions dims(Dim::Row, 1);
+  const auto data = makeVariable<double>(dims, Values{1.0});
+  for (auto step = 1.23546e-6; step < 1e4; step *= 1.08354345) {
+    const auto edges = makeVariable<double>(
+        Dims{Dim::X}, Shape{3}, Values{1.0 * step, 2.0 * step, 3.0 * step});
+    const auto begin = edges.values<double>()[0];
+    for (const auto pos :
+         {begin, std::nextafter(begin, 0.0), std::nextafter(begin, 1e30)}) {
+      const auto x = makeVariable<double>(dims, Values{pos});
+      const DataArray da(data, {{Dim::X, x}});
+      const auto hist = bins_sum(bin(da, {edges}));
+      if (pos < begin) {
+        EXPECT_EQ(hist.data(), val00) << step << pos;
+      } else {
+        EXPECT_EQ(hist.data(), val10) << step << pos;
+      }
+    }
+  }
+}
+
+TEST(BinLinspaceTest, event_mapped_to_correct_bin_at_end) {
+  const auto val00 = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 0});
+  const auto val01 = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 1});
+  const Dimensions dims(Dim::Row, 1);
+  const auto data = makeVariable<double>(dims, Values{1.0});
+  for (auto step = 1.23546e-6; step < 1e4; step *= 1.08354345) {
+    const auto edges = makeVariable<double>(
+        Dims{Dim::X}, Shape{3}, Values{1.0 * step, 2.0 * step, 3.0 * step});
+    const auto end = edges.values<double>()[2];
+    for (const auto pos :
+         {end, std::nextafter(end, 0.0), std::nextafter(end, 1e30)}) {
+      const auto x = makeVariable<double>(dims, Values{pos});
+      const DataArray da(data, {{Dim::X, x}});
+      const auto hist = bins_sum(bin(da, {edges}));
+      if (pos < end) {
+        EXPECT_EQ(hist.data(), val01) << step << pos;
+      } else {
+        EXPECT_EQ(hist.data(), val00) << step << pos;
+      }
+    }
+  }
+}

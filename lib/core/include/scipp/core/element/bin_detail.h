@@ -17,6 +17,7 @@ using bin_range_arg =
 
 static constexpr auto bin_range_common = overloaded{
     arg_list<bin_range_arg<double, double>, bin_range_arg<int64_t, double>,
+             bin_range_arg<int64_t, int64_t>, bin_range_arg<int32_t, int32_t>,
              bin_range_arg<int32_t, double>,
              bin_range_arg<time_point, time_point>>,
     transform_flags::expect_no_variance_arg<2>};

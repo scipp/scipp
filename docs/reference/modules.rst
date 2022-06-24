@@ -11,6 +11,7 @@ Core Functionality
    :template: scipp-module-template.rst
    :recursive:
 
+   binning
    constants
    integrate
    interpolate

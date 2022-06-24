@@ -58,9 +58,23 @@ static constexpr auto update_indices_by_binning_linspace =
                    return;
                  const auto [offset, nbin, scale] =
                      core::linear_edge_params(edges);
-                 const double bin = (x - offset) * scale;
-                 index *= scipp::size(edges) - 1;
-                 index = (bin < 0.0 || bin >= nbin) ? -1 : (index + bin);
+                 using Index = std::decay_t<decltype(index)>;
+                 Index bin = (x - offset) * scale;
+                 bin = std::clamp(bin, Index(0), Index(nbin - 1));
+                 index *= nbin;
+                 if (x < edges[bin]) {
+                   if (bin != 0 && x >= edges[bin - 1])
+                     index += bin - 1;
+                   else
+                     index = -1;
+                 } else if (x >= edges[bin + 1]) {
+                   if (bin != nbin - 1)
+                     index += bin + 1;
+                   else
+                     index = -1;
+                 } else {
+                   index += bin;
+                 }
                }};
 
 static constexpr auto update_indices_by_binning_sorted_edges =

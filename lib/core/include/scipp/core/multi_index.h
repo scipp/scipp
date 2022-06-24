@@ -265,12 +265,11 @@ private:
       m_data_index[data] = flat_index(data, 0, m_ndim);
     } else if (!at_end()) {
       // All bins are guaranteed to have the same size.
-      // Use common m_shape and m_nested_stride for all.
       if (m_bin[data].m_indices != nullptr) {
         const auto [begin, end] =
             m_bin[data].m_indices[m_bin[data].m_bin_index];
         m_shape[m_nested_dim_index] = end - begin;
-        m_data_index[data] = m_bin_stride * begin;
+        m_data_index[data] = m_stride[m_nested_dim_index][data] * begin;
       } else {
         // m_indices can be nullptr if there are bins, but they are empty.
         m_shape[m_nested_dim_index] = 0;
@@ -347,8 +346,6 @@ private:
   /// Number of dense dimensions, i.e. same as m_ndim when not binned,
   /// else number of dims in bins.
   scipp::index m_inner_ndim{0};
-  /// Stride from one bin to the next.
-  scipp::index m_bin_stride = {};
   /// Index of dim referred to by bin indices to distinguish, e.g., 2D bins
   /// slicing along first or second dim.
   /// -1 if not binned.

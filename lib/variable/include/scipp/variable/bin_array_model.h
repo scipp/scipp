@@ -7,8 +7,10 @@
 
 #include "scipp/core/bucket_array_view.h"
 #include "scipp/core/dimensions.h"
+#include "scipp/core/eigen.h"
 #include "scipp/core/except.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/bins.h"
 #include "scipp/variable/cumulative.h"
 #include "scipp/variable/element_array_model.h"
 #include "scipp/variable/except.h"
@@ -129,10 +131,14 @@ bool BinArrayModel<T>::equals_nan(const Variable &a, const Variable &b) const {
 
 template <class T>
 void BinArrayModel<T>::copy(const Variable &src, Variable &dest) const {
-  const auto &[indices0, dim0, buffer0] = src.constituents<T>();
-  auto &&[indices1, dim1, buffer1] = dest.constituents<T>();
-  static_cast<void>(dim1);
-  copy_slices(buffer0, buffer1, dim0, indices0, indices1);
+  if constexpr (std::is_same_v<T, Variable>) {
+    copy_data(src, dest);
+  } else {
+    const auto &[indices0, dim0, buffer0] = src.constituents<T>();
+    auto &&[indices1, dim1, buffer1] = dest.constituents<T>();
+    static_cast<void>(dim1);
+    copy_slices(buffer0, buffer1, dim0, indices0, indices1);
+  }
 }
 
 template <class T>

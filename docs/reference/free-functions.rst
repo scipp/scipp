@@ -14,12 +14,14 @@ General
    bins_like
    choose
    collapse
-   histogram
+   group
+   hist
    logical_not
    logical_and
    logical_or
    logical_xor
    lookup
+   nanhist
    merge
    midpoints
    rebin
@@ -202,8 +204,7 @@ Compatibility
    from_dict
    compat.from_pandas
    compat.from_xarray
-   compat.from_xarray_dataarray
-   compat.from_xarray_dataset
+   compat.to_xarray
 
 
 Logging
