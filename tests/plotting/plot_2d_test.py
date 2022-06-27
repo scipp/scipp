@@ -12,6 +12,7 @@ from ..factory import make_dense_data_array, make_dense_dataset, \
 import matplotlib
 
 matplotlib.use('Agg')
+sc.plotting.select_backend('stable')
 
 
 def test_plot_2d():
