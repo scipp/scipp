@@ -1,10 +1,13 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+
 name: windows-latest
 channels:
   - conda-forge
 dependencies:
-  - cmake
-  - conan>=1.45.0
-  - ninja
+  - cmake=3.23.2
+  - conan=1.48.1
+  - ninja=1.11.0
   - tbb=2020.2.*
   - tbb-devel=2020.2.*
-  - tox
+  - tox=3.25.0
