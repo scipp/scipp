@@ -5,10 +5,6 @@
 
 import scipp as sc
 import pytest
-import matplotlib
-
-matplotlib.use('Agg')
-sc.plotting.select_backend('stable')
 
 
 def test_plot_0d_variable():

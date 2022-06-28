@@ -5,11 +5,7 @@ import scipp as sc
 from scipp.experimental.plotting import Plot, Figure, widgets, input_node, node
 from scipp.experimental.plotting.widgets import widget_node
 from ...factory import make_dense_data_array, make_dense_dataset
-import matplotlib
 import ipywidgets as ipw
-
-matplotlib.use('Agg')
-sc.plotting.select_backend('experimental')
 
 
 @node

@@ -10,7 +10,7 @@ import scipp as sc
 @pytest.fixture(autouse=True)
 def select_plotting_backend():
     matplotlib.use('Agg')
-    sc.plotting.select_backend('stable')
+    sc.plotting.select_backend('experimental')
 
 
 @pytest.fixture(autouse=True)

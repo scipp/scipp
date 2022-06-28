@@ -9,10 +9,6 @@ import numpy as np
 import scipp as sc
 from ..factory import make_dense_data_array, make_dense_dataset, \
                       make_binned_data_array
-import matplotlib
-
-matplotlib.use('Agg')
-sc.plotting.select_backend('stable')
 
 
 def test_plot_2d():
