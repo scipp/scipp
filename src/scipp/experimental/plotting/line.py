@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .. import DataArray, log10, stddevs
+from ... import DataArray, log10, stddevs
 from .tools import get_line_param
 from .limits import find_limits, fix_empty_range
 

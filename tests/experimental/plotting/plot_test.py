@@ -2,13 +2,10 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 import scipp as sc
-from scipp.plt import Plot, Figure, widgets, input_node, node
-from scipp.plt.widgets import widget_node
-from ..factory import make_dense_data_array, make_dense_dataset
-import matplotlib
+from scipp.experimental.plotting import Plot, Figure, widgets, input_node, node
+from scipp.experimental.plotting.widgets import widget_node
+from ...factory import make_dense_data_array, make_dense_dataset
 import ipywidgets as ipw
-
-matplotlib.use('Agg')
 
 
 @node
@@ -157,3 +154,14 @@ def test_plot_3d_image_slicer_with_connected_side_histograms():
     fx.render()
     fy.render()
     sl.controls["zz"]["slider"].value = 10
+
+
+def test_plot_wrapper():
+    sc.plot(make_dense_data_array(ndim=1))
+    da = make_dense_data_array(ndim=2)
+    sc.plot(da)
+    da.plot()
+    sc.plot(da.data)
+    ds = make_dense_dataset(ndim=1)
+    sc.plot(ds)
+    sc.plot({'a': ds['a'], 'b': ds['b']})
