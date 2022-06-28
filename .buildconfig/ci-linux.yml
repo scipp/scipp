@@ -1,14 +1,17 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+
 name: ubuntu-latest
 channels:
   - conda-forge
 dependencies:
-  - cmake
-  - conan>=1.45.0
-  - cppcheck
+  - cmake=3.23.2
+  - conan=1.48.1
+  - cppcheck=2.6.2
   - graphviz=3.0.0
-  - gxx_linux-64 11.1.*
-  - ninja
-  - pandoc
+  - gxx_linux-64=11.1.*
+  - ninja=1.11.0
+  - pandoc=2.18
   - tbb=2020.2.*
   - tbb-devel=2020.2.*
-  - tox
+  - tox=3.25.0
