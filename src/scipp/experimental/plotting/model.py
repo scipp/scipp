@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from ..utils.graph import make_graphviz_digraph
+from ...utils.graph import make_graphviz_digraph
 from html import escape
 from itertools import chain
 from functools import partial

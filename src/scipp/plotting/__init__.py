@@ -8,6 +8,8 @@ import warnings
 from .plot import plot as _plot
 from ..utils import running_in_jupyter
 
+_backend = 'stable'
+
 
 @lru_cache
 def initialize():
@@ -58,16 +60,19 @@ def initialize():
     return is_doc_build
 
 
-def plot(*args, **kwargs):
+def plot_stable(*args, **kwargs):
     """
     Plot a Scipp object.
 
     Possible inputs are:
-    - Variable
-    - DataArray
-    - Dataset
-    - dict of Variables
-    - dict of DataArrays
+      - Variable
+      - Dataset
+      - DataArray
+      - numpy ndarray
+      - dict of Variables
+      - dict of DataArrays
+      - dict of numpy ndarrays
+      - dict that can be converted to a Scipp object via `from_dict`
 
     For more details, see
     https://scipp.github.io/visualization/plotting-overview.html
@@ -210,3 +215,34 @@ def plot(*args, **kwargs):
         plt.ion()
 
     return output
+
+
+def raise_bad_backend(backend: str):
+    raise ValueError(f"Unknown plotting backend {backend}. "
+                     "Possible choices are 'stable' and 'experimental'.")
+
+
+def plot(*args, **kwargs):
+    global _backend
+    if _backend == 'stable':
+        return plot_stable(*args, **kwargs)
+    elif _backend == 'experimental':
+        from ..experimental.plotting import plot as plot_experimental
+        return plot_experimental(*args, **kwargs)
+    else:
+        raise_bad_backend(_backend)
+
+
+def select_backend(new_backend: str):
+    global _backend
+    if new_backend == 'stable':
+        plot.__doc__ = plot_stable.__doc__
+    elif new_backend == 'experimental':
+        from ..experimental.plotting import plot as plot_experimental
+        plot.__doc__ = plot_experimental.__doc__
+    else:
+        raise_bad_backend(new_backend)
+    _backend = new_backend
+
+
+select_backend(_backend)

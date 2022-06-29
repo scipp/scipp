@@ -6,11 +6,7 @@
 import numpy as np
 import scipp as sc
 from ..factory import make_dense_data_array, make_binned_data_array
-import matplotlib
-
 import pytest
-
-matplotlib.use('Agg')
 
 
 def _with_fake_pos(*args, **kwargs):
