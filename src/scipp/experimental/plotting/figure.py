@@ -11,7 +11,6 @@ from .view import View
 
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
-import numpy as np
 from typing import Any, Tuple
 
 
