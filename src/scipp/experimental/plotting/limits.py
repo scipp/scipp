@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from ... import scalar, Variable
+from ... import scalar, Variable, log10
 from ... import abs as abs_
+from ... import DType
 
 import numpy as np
 from typing import Tuple
@@ -19,9 +20,7 @@ def find_limits(x: Variable, scale: str = "linear") -> Tuple[Variable, ...]:
     else:
         finite_min = np.amin(finite_vals)
     finite_max = np.amax(finite_vals)
-
-    return (scalar(finite_min, unit=x.unit,
-                   dtype='float64'), scalar(finite_max, unit=x.unit, dtype='float64'))
+    return (scalar(finite_min, unit=x.unit), scalar(finite_max, unit=x.unit))
 
 
 def fix_empty_range(lims: Tuple[Variable, ...],
@@ -29,12 +28,25 @@ def fix_empty_range(lims: Tuple[Variable, ...],
     """
     Range correction in case xmin == xmax
     """
-    dx = scalar(0.0, unit=lims[0].unit)
-    if lims[0].value == lims[1].value:
-        if replacement is not None:
-            dx = 0.5 * replacement
-        elif lims[0].value == 0.0:
-            dx = scalar(0.5, unit=lims[0].unit)
-        else:
-            dx = 0.5 * abs_(lims[0])
+    if lims[0].value != lims[1].value:
+        return lims
+    if replacement is not None:
+        dx = 0.5 * replacement
+    elif lims[0].value == 0.0:
+        dx = scalar(0.5, unit=lims[0].unit)
+    else:
+        dx = 0.5 * abs_(lims[0])
     return [lims[0] - dx, lims[1] + dx]
+
+
+def delta(low, high, dx, scale):
+    """
+    Compute fractional delta from low and high value, using linear or log scaling.
+    """
+    if scale == "log":
+        out = 10**(dx * log10(high / low))
+    else:
+        out = dx * (high - low)
+    if low.dtype == DType.datetime64:
+        out = scalar(np.int64(out.value), unit=out.unit)
+    return out
