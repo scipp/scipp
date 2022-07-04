@@ -23,7 +23,7 @@ def transform_coords(x: Union[DataArray, Dataset],
                      keep_intermediate: bool = True,
                      keep_inputs: bool = True,
                      quiet: bool = False,
-                     **kwargs: Dict[str, Callable]) -> Union[DataArray, Dataset]:
+                     **kwargs: Callable) -> Union[DataArray, Dataset]:
     """Compute new coords based on transformations of input coords.
 
     See the section in the user guide on
