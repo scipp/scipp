@@ -28,9 +28,9 @@ Concrete problems are:
   This has been improved in the recent refactor by growing the bounds of the selection to the underlying data bins, but the solution is incomplete since it does not resolve the problem when multiple data bins contribute to a display pixel.
 - Complex code related to resampling throughout the plotting code.
   While the actual resampling bit is encapsulated in ``ResamplingModel`` there is a significant number of complications ranging from custom handling of bounds on zoom event to handling of coord/axis tic labels.
-- Misleading display of data values on zoom, displaying values on display pixel rather than data pixel.
+- Misleading display of data values, which are integrated over display pixel rather than data pixel (as a consequence, the values change with zoom level).
 - Complicated handling of datetimes that also affects resampling.
-- Glitches and extremely small bin values from barely overlapping data and display pixels lead the unreadable plots with extremely large color scales.
+- Glitches and extremely small bin values from barely overlapping data and display pixels lead to unreadable plots with extremely large color scales.
 - Scientifically any plot generated with resampling is not usable, e.g., for publications.
 
 Related topics
