@@ -3,10 +3,7 @@
 # @file
 # @author Neil Vaytet
 
-from functools import lru_cache
-import warnings
 from .plot import plot as _plot
-from ..utils import running_in_jupyter
 
 _backend = 'stable'
 
