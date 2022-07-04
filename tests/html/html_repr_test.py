@@ -96,6 +96,16 @@ def test_html_repr_binned_data_array(ndim, variances, masks):
     sc.make_html(da['xx', 1:10])
 
 
+def test_html_repr_binned_scalar_data_array():
+    da = make_binned_data_array(ndim=1)
+    sc.make_html(da['xx', 1])
+
+
+def test_html_repr_binned_scalar_data_array_variable_buffer():
+    da = make_binned_data_array(ndim=1)
+    sc.make_html(da['xx', 1].bins.data)
+
+
 @pytest.mark.parametrize("ndim", [1, 2, 3, 4])
 @pytest.mark.parametrize("with_all", [True, False])
 @pytest.mark.parametrize("dtype", [sc.DType.float64, sc.DType.int64])
