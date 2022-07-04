@@ -3,7 +3,7 @@
 # @author Simon Heybrock, Jan-Lukas Wynen
 
 from fractions import Fraction
-from typing import Dict, Iterable, List, Mapping, Set, Union
+from typing import Callable, Dict, Iterable, List, Mapping, Optional, Set, Union
 
 from ..core import DataArray, Dataset, DimensionError, VariableError, bins
 from ..logging import get_logger
@@ -14,14 +14,16 @@ from .rule import ComputeRule, FetchRule, RenameRule, Rule, rule_output_names
 
 
 def transform_coords(x: Union[DataArray, Dataset],
-                     targets: Union[str, Iterable[str]],
-                     graph: GraphDict,
+                     targets: Optional[Union[str, Iterable[str], GraphDict]] = None,
+                     /,
+                     graph: Optional[GraphDict] = None,
                      *,
                      rename_dims: bool = True,
                      keep_aliases: bool = True,
                      keep_intermediate: bool = True,
                      keep_inputs: bool = True,
-                     quiet: bool = False) -> Union[DataArray, Dataset]:
+                     quiet: bool = False,
+                     **kwargs: Dict[str, Callable]) -> Union[DataArray, Dataset]:
     """Compute new coords based on transformations of input coords.
 
     See the section in the user guide on
@@ -33,7 +35,8 @@ def transform_coords(x: Union[DataArray, Dataset],
     x:
         Input object with coords.
     targets:
-        Name or list of names of desired output coords.
+        Name or list of names of desired output coords, or transformation graph
+        (see the ``graph`` argument).
     graph:
         A graph defining how new coords can be computed from existing
         coords. This may be done in multiple steps.
@@ -64,6 +67,10 @@ def transform_coords(x: Union[DataArray, Dataset],
     quiet:
         If True, no log output is produced. Otherwise, ``transform_coords``
         produces a log of its actions.
+    **kwargs:
+        Mapping of coords to callables. If ``targets`` is not given then this also
+        defines the desired output coordinates. The callables are combined with the
+        graph, if provided.
 
     Returns
     -------
@@ -75,17 +82,30 @@ def transform_coords(x: Union[DataArray, Dataset],
                       keep_intermediate=keep_intermediate,
                       keep_inputs=keep_inputs,
                       quiet=quiet)
-    targets = {targets} if isinstance(targets, str) else set(targets)
-    if isinstance(x, DataArray):
-        return _transform_data_array(x,
-                                     targets=targets,
-                                     graph=Graph(graph),
-                                     options=options)
+    if targets is None:
+        targets = []
+    if graph is None:
+        graph = {}
+
+    if isinstance(targets, dict):
+        if graph:
+            raise ValueError(
+                "Got multiple transformation graphs, must provide only one.")
+        graph = targets
+        targets = set(targets)
     else:
-        return _transform_dataset(x,
-                                  targets=targets,
-                                  graph=Graph(graph),
-                                  options=options)
+        targets = {targets} if isinstance(targets, str) else set(targets)
+
+    if not set(kwargs).isdisjoint(graph):
+        raise ValueError(f"Duplicate graph nodes in transformation graph {list(graph)} "
+                         f"and keyword arguments {list(kwargs)}.")
+
+    if not targets:
+        targets = set(kwargs)
+    graph.update(kwargs)
+
+    _transform = _transform_dataset if isinstance(x, Dataset) else _transform_data_array
+    return _transform(x, targets=targets, graph=Graph(graph), options=options)
 
 
 def show_graph(graph: GraphDict, size: str = None, simplified: bool = False):
