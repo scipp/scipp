@@ -22,13 +22,16 @@ However, we have since then experienced a multitude of problems with this, rangi
 More importantly, the resulting plots are unpredictable and not faithful to the actual data.
 Concrete problems are:
 
-- Infinite zoom with event data is not useful and led to considerations on a different (more complicated) mechanism.
+- Infinite zoom with event data is not useful and led to considerations on a different (more complicated) mechanism, such as stopping the resampling at a specific level or providing additional user-control over the resampling steps.
 - Log-scale plots should use log bins to be truly useful, but is appears to be non-trivial to implement.
 - Picking values for the profile view has unpredictable and misleading values depending on zoom level.
   This has been improved in the recent refactor by growing the bounds of the selection to the underlying data bins, but the solution is incomplete since it does not resolve the problem when multiple data bins contribute to a display pixel.
 - Complex code related to resampling throughout the plotting code.
   While the actual resampling bit is encapsulated in ``ResamplingModel`` there is a significant number of complications ranging from custom handling of bounds on zoom event to handling of coord/axis tic labels.
 - Misleading display of data values, which are integrated over display pixel rather than data pixel (as a consequence, the values change with zoom level).
+- Resampling may be done using a "sum" or "mean" mode.
+  In many cases this can be determined from the physical unit of the data, and the implementation "guessed" the correct mode on this.
+  This is however not foolproof and the bevavior was visible to the user only in GUI element, i.e., not in static or saved figures.
 - Complicated handling of datetimes that also affects resampling.
 - Glitches and extremely small bin values from barely overlapping data and display pixels lead to unreadable plots with extremely large color scales.
 - Scientifically any plot generated with resampling is not usable, e.g., for publications.
