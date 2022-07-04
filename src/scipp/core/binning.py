@@ -488,8 +488,21 @@ def _make_groups(x, arg):
     _require_coord(arg, coord)
     if coord.bins is not None:
         coord = coord.copy().bins.constituents['data']
-    # TODO Very inefficient np.unique
-    return array(dims=[arg], values=np.unique(coord.values), unit=coord.unit)
+    # We are currently using np.unique to find all unique groups. This can be very slow
+    # for large inputs. In many cases groups are in a bounded range of integers and we
+    # can sometimes bypass a full call to np.unique by checking a sub-range first
+    if coord.dtype in (_cpp.DType.int32, _cpp.DType.int64):
+        min_ = coord.min().value
+        max_ = coord.max().value
+        values = coord.values
+        unique = values[0:0]
+        for pivot in [1000, 100, 10, 1]:
+            if len(unique) == max_ - min_ + 1:
+                break
+            unique = np.unique(values[:len(values) // pivot])
+    else:
+        unique = np.unique(coord.values)
+    return array(dims=[arg], values=unique, unit=coord.unit)
 
 
 def group(x: Union[_cpp.DataArray, _cpp.Dataset], /,
