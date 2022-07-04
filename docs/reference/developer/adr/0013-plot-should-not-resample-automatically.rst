@@ -31,7 +31,7 @@ Concrete problems are:
 - Misleading display of data values, which are integrated over display pixel rather than data pixel (as a consequence, the values change with zoom level).
 - Resampling may be done using a "sum" or "mean" mode.
   In many cases this can be determined from the physical unit of the data, and the implementation "guessed" the correct mode on this.
-  This is however not foolproof and the bevavior was visible to the user only in GUI element, i.e., not in static or saved figures.
+  This is however not foolproof and the behavior was visible to the user only in GUI elements, i.e., not in static or saved figures.
 - Complicated handling of datetimes that also affects resampling.
 - Glitches and extremely small bin values from barely overlapping data and display pixels lead to unreadable plots with extremely large color scales.
 - Scientifically any plot generated with resampling is not usable, e.g., for publications.
