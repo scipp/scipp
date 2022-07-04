@@ -92,10 +92,10 @@ class PlotFigure:
         Image container.
         """
         if self.is_widget():
-            return ipw.HBox([
-                self.toolbar._to_widget(),
-                self._to_image() if self.closed else self.fig.canvas
-            ])
+            out = [self.fig.canvas]
+            if self.toolbar is not None:
+                out = [self.toolbar._to_widget()] + out
+            return ipw.HBox(out)
         else:
             return self._to_image()
 
@@ -113,7 +113,7 @@ class PlotFigure:
         """
         Set the closed flag to True to output static images.
         """
-        self.closed = True
+        plt.close(self.fig)
 
     def show(self):
         """
