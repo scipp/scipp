@@ -35,8 +35,7 @@ def transform_coords(x: Union[DataArray, Dataset],
     x:
         Input object with coords.
     targets:
-        Name or list of names of desired output coords, or transformation graph
-        (see the ``graph`` argument).
+        Name or list of names of desired output coords.
     graph:
         A graph defining how new coords can be computed from existing
         coords. This may be done in multiple steps.
@@ -68,9 +67,9 @@ def transform_coords(x: Union[DataArray, Dataset],
         If True, no log output is produced. Otherwise, ``transform_coords``
         produces a log of its actions.
     **kwargs:
-        Mapping of coords to callables. If ``targets`` is not given then this also
-        defines the desired output coordinates. The callables are combined with the
-        graph, if provided.
+        Mapping of coords to callables. This can be used as an alternate and brief
+        way of specifying targets and graph. If provided, neither ``targets`` nor
+        ``graph`` may be given.
 
     Returns
     -------
