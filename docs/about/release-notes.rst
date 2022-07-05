@@ -13,6 +13,7 @@ Features
 * Overhauled and streamlined usability of functions related to binning, grouping, and histogramming with additional features such as automatic bin edges and histogramming ignoring NaN values.
   See :func:`scipp.bin`, :func:`scipp.group`, :func:`scipp.hist`, :func:`scipp.nanhist`, and :func:`scipp.rebin` `#2633 <https://github.com/scipp/scipp/pull/2633>`_.
 * Added support for histogramming and binning variables, in addition to existing support for data arrays `#2678 <https://github.com/scipp/scipp/pull/2678>`_.
+* Added keyword argument syntax to :func:`scipp.transform_coords` for more concise user experience in simple single-step transformations `#2670 <https://github.com/scipp/scipp/pull/2670>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
