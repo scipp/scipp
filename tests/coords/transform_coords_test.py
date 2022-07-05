@@ -992,7 +992,7 @@ def test_raises_when_keyword_syntax_combined_with_graph():
 
 def test_raises_when_keyword_syntax_clashes_with_graph_argument():
     da = sc.data.table_xyz(nrow=10)
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         da.transform_coords('x', graph=lambda x: x)
 
 
@@ -1001,5 +1001,5 @@ def test_raises_when_keyword_syntax_clashes_with_graph_argument():
     ['rename_dims', 'keep_aliases', 'keep_intermediate', 'keep_inputs', 'quiet'])
 def test_raises_when_keyword_syntax_clashes_with_options(option):
     da = sc.data.table_xyz(nrow=10)
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         da.transform_coords(**{option: lambda x: x})

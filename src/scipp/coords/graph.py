@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import collections
 from graphlib import TopologicalSorter
 from typing import Callable, Dict, Iterable, List, Set, Tuple, Union
 
@@ -17,8 +18,8 @@ GraphDict = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
 class Graph:
 
     def __init__(self, graph: Union[GraphDict, Dict[str, Rule]]):
-        if not isinstance(graph, dict):
-            raise ValueError("'graph' must be a dict")
+        if not isinstance(graph, collections.abc.Mapping):
+            raise TypeError("'graph' must be a dict")
         if not graph:
             self._rules = {}
         elif isinstance(next(iter(graph.values())), Rule):

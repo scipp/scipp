@@ -84,8 +84,8 @@ def transform_coords(x: Union[DataArray, Dataset],
                       quiet=quiet)
     for field in fields(options):
         if not isinstance(getattr(options, field.name), bool):
-            raise ValueError(
-                f"'{field.name}' is a keyword reserved for options. "
+            raise TypeError(
+                f"'{field.name}' is a reserved for keyword argument. "
                 "Use explicit targets and graph arguments to create an output "
                 "coordinate of this name.")
 
