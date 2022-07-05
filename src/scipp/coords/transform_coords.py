@@ -2,6 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock, Jan-Lukas Wynen
 
+from dataclasses import fields
 from fractions import Fraction
 from typing import Callable, Dict, Iterable, List, Mapping, Optional, Set, Union
 
@@ -81,6 +82,13 @@ def transform_coords(x: Union[DataArray, Dataset],
                       keep_intermediate=keep_intermediate,
                       keep_inputs=keep_inputs,
                       quiet=quiet)
+    for field in fields(options):
+        if not isinstance(getattr(options, field.name), bool):
+            raise ValueError(
+                f"'{field.name}' is a keyword reserved for options. "
+                "Use explicit targets and graph arguments to create an output "
+                "coordinate of this name.")
+
     if kwargs:
         if targets is not None or graph is not None:
             raise ValueError(
