@@ -76,6 +76,38 @@ def transform_coords(x: Union[DataArray, Dataset],
     -------
     :
         New object with desired coords. Existing data and meta-data is shallow-copied.
+
+    Examples
+    --------
+
+    Transform input coordinates ``x`` and ``y`` to a new output coordinate ``xy``:
+
+      >>> da = sc.data.table_xyz(nrow=10)
+      >>> transformed = da.transform_coords(xy=lambda x, y: x + y)
+
+    Equivalent full syntax based on a target name and a graph:
+
+      >>> da = sc.data.table_xyz(nrow=10)
+      >>> transformed = da.transform_coords('xy', graph={'xy': lambda x, y: x + y})
+
+    Multiple new coordinates can be computed at once. Here ``z2`` is setup as an alias
+    of ``z`:
+
+      >>> da = sc.data.table_xyz(nrow=10)
+      >>> transformed = da.transform_coords(xy=lambda x, y: x + y, z2='z')
+
+    This is equivalent to
+
+      >>> da = sc.data.table_xyz(nrow=10)
+      >>> graph = {'xy': lambda x, y: x + y, 'z2':'z'}
+      >>> transformed = da.transform_coords(['xy', 'z2'], graph=graph)
+
+    Multi-step transformations that do not keep intermediate results as coordinates can
+    be performed with a graph containing nodes that depend on outputs of other nodes:
+
+      >>> da = sc.data.table_xyz(nrow=10)
+      >>> graph = {'xy': lambda x, y: x + y, 'xyz': lambda xy, z: xy + z}
+      >>> transformed = da.transform_coords('xyz', graph=graph)
     """
     options = Options(rename_dims=rename_dims,
                       keep_aliases=keep_aliases,
