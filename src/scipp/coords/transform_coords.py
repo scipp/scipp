@@ -14,7 +14,7 @@ from .rule import ComputeRule, FetchRule, RenameRule, Rule, rule_output_names
 
 
 def transform_coords(x: Union[DataArray, Dataset],
-                     targets: Optional[Union[str, Iterable[str], GraphDict]] = None,
+                     targets: Optional[Union[str, Iterable[str]]] = None,
                      /,
                      graph: Optional[GraphDict] = None,
                      *,
@@ -82,27 +82,17 @@ def transform_coords(x: Union[DataArray, Dataset],
                       keep_intermediate=keep_intermediate,
                       keep_inputs=keep_inputs,
                       quiet=quiet)
-    if targets is None:
-        targets = []
-    if graph is None:
-        graph = {}
-
-    if isinstance(targets, dict):
-        if graph:
+    if kwargs:
+        if targets is not None or graph is not None:
             raise ValueError(
-                "Got multiple transformation graphs, must provide only one.")
-        graph = targets
-        targets = set(targets)
+                "Explicit targets or graph not allowed since keyword arguments "
+                f"{kwargs} define targets and graph.")
+
+    if targets is None:
+        targets = set(kwargs)
+        graph = kwargs
     else:
         targets = {targets} if isinstance(targets, str) else set(targets)
-
-    if not set(kwargs).isdisjoint(graph):
-        raise ValueError(f"Duplicate graph nodes in transformation graph {list(graph)} "
-                         f"and keyword arguments {list(kwargs)}.")
-
-    if not targets:
-        targets = set(kwargs)
-    graph.update(kwargs)
 
     _transform = _transform_dataset if isinstance(x, Dataset) else _transform_data_array
     return _transform(x, targets=targets, graph=Graph(graph), options=options)
