@@ -9,7 +9,7 @@ from .variable import array, Variable, linspace, arange, epoch, scalar
 from .math import round as round_
 
 
-def make_histogrammed(x: Union[_cpp.DataArray, _cpp.Dataset], *,
+def make_histogrammed(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset], *,
                       edges: _cpp.Variable) -> Union[_cpp.DataArray, _cpp.Dataset]:
     """Create dense data by histogramming data into given bins.
 
@@ -45,7 +45,7 @@ def make_histogrammed(x: Union[_cpp.DataArray, _cpp.Dataset], *,
     return _cpp.histogram(x, edges)
 
 
-def make_binned(x: _cpp.DataArray,
+def make_binned(x: Union[_cpp.Variable, _cpp.DataArray],
                 *,
                 edges: Optional[Sequence[_cpp.Variable]] = None,
                 groups: Optional[Sequence[_cpp.Variable]] = None,
@@ -152,7 +152,7 @@ def _parse_coords_arg(x, name, arg):
     return arange(name, start, stop, step=step, dtype=start.dtype)
 
 
-def _make_edges(x: Union[_cpp.DataArray,
+def _make_edges(x: Union[_cpp.Variable, _cpp.DataArray,
                          _cpp.Dataset], arg_dict: Dict[str, Union[int, Variable]],
                 kwargs: Dict[str, Union[int, Variable]]) -> List[Variable]:
     if arg_dict is not None:
@@ -171,7 +171,7 @@ def _find_replaced_dims(x, dims):
     return [dim for dim in erase if dim not in dims]
 
 
-def hist(x: Union[_cpp.DataArray, _cpp.Dataset],
+def hist(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset],
          arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
          /,
          **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
@@ -286,7 +286,7 @@ def hist(x: Union[_cpp.DataArray, _cpp.Dataset],
     return out
 
 
-def nanhist(x: Union[_cpp.DataArray, _cpp.Dataset],
+def nanhist(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset],
             arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
             /,
             **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
@@ -317,7 +317,7 @@ def nanhist(x: Union[_cpp.DataArray, _cpp.Dataset],
     return x.bins.nansum()
 
 
-def bin(x: Union[_cpp.DataArray, _cpp.Dataset],
+def bin(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset],
         arg_dict: Dict[str, Union[int, Variable]] = None,
         /,
         **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
