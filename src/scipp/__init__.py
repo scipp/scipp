@@ -107,6 +107,8 @@ _binding.bind_functions_as_methods(Dataset, globals(), ('squeeze', ))
 for _cls in (DataArray, Dataset):
     _binding.bind_functions_as_methods(_cls, globals(), ('groupby', 'transform_coords'))
 del _cls
+_binding.bind_functions_as_methods(Variable, globals(),
+                                   ('bin', 'hist', 'nanhist'))
 _binding.bind_functions_as_methods(DataArray, globals(),
                                    ('bin', 'group', 'hist', 'nanhist', 'rebin'))
 _binding.bind_functions_as_methods(Dataset, globals(), ('hist', 'rebin'))

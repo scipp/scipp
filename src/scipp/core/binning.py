@@ -5,7 +5,7 @@ import warnings
 from typing import Dict, List, Optional, Union, Sequence
 
 from .._scipp import core as _cpp
-from .variable import array, Variable, linspace, arange, epoch
+from .variable import array, Variable, linspace, arange, epoch, scalar
 from .math import round as round_
 
 
@@ -39,6 +39,9 @@ def make_histogrammed(x: Union[_cpp.DataArray, _cpp.Dataset], *,
     scipp.bin:
         For binning data.
     """
+    if isinstance(x, Variable):
+        data = scalar(1.0, unit='counts').broadcast(sizes=x.sizes)
+        x = _cpp.DataArray(data, coords={edges.dim: x})
     return _cpp.histogram(x, edges)
 
 
@@ -95,6 +98,13 @@ def make_binned(x: _cpp.DataArray,
         groups = []
     if edges is None:
         edges = []
+    if isinstance(x, Variable):
+        coords = edges + groups
+        if len(coords) != 1:
+            raise ValueError("Edges for exactly one dimension must be specified when "
+                             "binning or histogramming a variable.")
+        data = scalar(1.0, unit='counts').broadcast(sizes=x.sizes).copy()
+        x = _cpp.DataArray(data, coords={coords[0].dim: x})
     return _cpp.bin(x, edges, groups, erase)
 
 
@@ -104,6 +114,8 @@ def _require_coord(name, coord):
 
 
 def _get_coord(x, name):
+    if isinstance(x, Variable):
+        return x
     event_coord = x.bins.meta.get(name) if x.bins is not None else None
     coord = x.meta.get(name, event_coord)
     _require_coord(name, coord)
@@ -254,6 +266,9 @@ def hist(x: Union[_cpp.DataArray, _cpp.Dataset],
     """  # noqa #501
     edges = _make_edges(x, arg_dict, kwargs)
     erase = _find_replaced_dims(x, edges)
+    if isinstance(x, Variable) and len(edges) != 1:
+        raise ValueError("Edges for exactly one dimension must be specified when "
+                         "binning or histogramming a variable.")
     if len(edges) == 0:
         if x.bins is None:
             raise TypeError("Data is not binned so bin edges must be provided.")
