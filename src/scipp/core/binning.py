@@ -99,7 +99,7 @@ def make_binned(x: Union[_cpp.Variable, _cpp.DataArray],
     if edges is None:
         edges = []
     if isinstance(x, Variable):
-        coords = [*edges , *groups]
+        coords = [*edges, *groups]
         if len(coords) != 1:
             raise ValueError("Edges for exactly one dimension must be specified when "
                              "binning or histogramming a variable.")
