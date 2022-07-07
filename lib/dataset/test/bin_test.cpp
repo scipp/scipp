@@ -671,3 +671,10 @@ TEST(BinLinspaceTest, event_mapped_to_correct_bin_at_end) {
     }
   }
 }
+
+TEST(BinLinspaceTest, many_events_many_bins) {
+  auto da = make_table(9000000);
+  da.setSlice(Slice{}, makeVariable<double>(Values{1.0}, Variances{1.0}));
+  const auto x = linspace(0.0 * units::one, 1.0 * units::one, Dim::X, 70000);
+  EXPECT_EQ(sum(bin(da, {x}).data()), sum(da.data()));
+}
