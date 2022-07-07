@@ -71,7 +71,8 @@ protected:
 
 INSTANTIATE_TEST_SUITE_P(NEventNBin, ElementMapToBinsChunkedTest,
                          testing::Combine(testing::Values(9000, 1033),
-                                          testing::Values(70000, 17)));
+                                          testing::Values(70000, 7000,
+                                                          128 * 128, 17)));
 
 TEST_P(ElementMapToBinsChunkedTest, direct_equivalent_to_chunkwise) {
   check_direct_equivalent_to_chunkwise<1>();
