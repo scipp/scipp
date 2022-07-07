@@ -11,6 +11,7 @@
 
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bins.h"
+#include "scipp/variable/creation.h"
 #include "scipp/variable/cumulative.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/subspan_view.h"
@@ -289,6 +290,7 @@ Variable histogram(const Variable &data, const Variable &binEdges) {
 }
 
 Variable map(const DataArray &function, const Variable &x, Dim dim) {
+  const auto fill = zero_like(function.data());
   if (dim == Dim::Invalid)
     dim = edge_dimension(function);
   const auto &edges = function.meta()[dim];
@@ -298,12 +300,12 @@ Variable map(const DataArray &function, const Variable &x, Dim dim) {
   const auto data = masked_data(function, dim);
   const auto weights = subspan_view(data, dim);
   if (all(islinspace(edges, dim)).value<bool>()) {
-    return variable::transform(x, subspan_view(edges, dim), weights,
+    return variable::transform(x, subspan_view(edges, dim), weights, fill,
                                core::element::event::map_linspace, "map");
   } else {
     if (!allsorted(edges, dim))
       throw except::BinEdgeError("Bin edges of histogram must be sorted.");
-    return variable::transform(x, subspan_view(edges, dim), weights,
+    return variable::transform(x, subspan_view(edges, dim), weights, fill,
                                core::element::event::map_sorted_edges, "map");
   }
 }
