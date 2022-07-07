@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include <algorithm>
+#include <limits>
 
 #include "scipp/core/bucket.h"
 #include "scipp/core/element/event_operations.h"
@@ -289,8 +290,20 @@ Variable histogram(const Variable &data, const Variable &binEdges) {
     return hist;
 }
 
-Variable map(const DataArray &function, const Variable &x, Dim dim) {
-  const auto fill = zero_like(function.data());
+Variable map(const DataArray &function, const Variable &x, Dim dim,
+             const std::optional<Variable> &fill_value) {
+  Variable fill = fill_value.value_or(zero_like(function.data()));
+  if (fill_value) {
+    if (fill.dtype() != function.dtype())
+      throw except::TypeError(
+          "The fill_value (dtype=" + to_string(fill.dtype()) +
+          ") must have the same dtype as the function values (dtype=" +
+          to_string(function.dtype()) + ").");
+  } else if (fill.dtype() == dtype<double>) {
+    fill.value<double>() = std::numeric_limits<double>::quiet_NaN();
+  } else if (fill.dtype() == dtype<float>) {
+    fill.value<float>() = std::numeric_limits<float>::quiet_NaN();
+  }
   if (dim == Dim::Invalid)
     dim = edge_dimension(function);
   const auto &edges = function.meta()[dim];

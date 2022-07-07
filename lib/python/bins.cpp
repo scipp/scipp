@@ -187,8 +187,9 @@ void init_buckets(py::module &m) {
       py::call_guard<py::gil_scoped_release>());
   buckets.def(
       "map",
-      [](const DataArray &function, const Variable &x, const std::string &dim) {
-        return dataset::buckets::map(function, x, Dim{dim});
+      [](const DataArray &function, const Variable &x, const std::string &dim,
+         const std::optional<Variable> &fill_value) {
+        return dataset::buckets::map(function, x, Dim{dim}, fill_value);
       },
       py::call_guard<py::gil_scoped_release>());
   buckets.def(

@@ -56,9 +56,9 @@ SCIPP_DATASET_EXPORT void append(DataArray &a, const DataArray &b);
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable histogram(const Variable &data,
                                                       const Variable &binEdges);
 
-[[nodiscard]] SCIPP_DATASET_EXPORT Variable map(const DataArray &function,
-                                                const Variable &x,
-                                                Dim hist_dim);
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable
+map(const DataArray &function, const Variable &x, Dim dim,
+    const std::optional<Variable> &fill_value = std::nullopt);
 
 SCIPP_DATASET_EXPORT void scale(DataArray &data, const DataArray &histogram,
                                 Dim dim = Dim::Invalid);

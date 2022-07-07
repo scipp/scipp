@@ -1,18 +1,22 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-from typing import Dict, Optional, Union
+from typing import Dict, Literal, Optional, Union
 
 from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from ..typing import VariableLike, MetaDataMap
 from .domains import merge_equal_adjacent
 from .operations import islinspace
+from .math import midpoints
 
 
 class Lookup:
 
-    def __init__(self, func: _cpp.DataArray, dim: str):
+    def __init__(self,
+                 func: _cpp.DataArray,
+                 dim: str,
+                 fill_value: Optional[_cpp.Variable] = None):
         if func.ndim == 1 and func.dtype in [
                 _cpp.DType.bool, _cpp.DType.int32, _cpp.DType.int64
         ] and not islinspace(func.coords[dim], dim).value:
@@ -20,12 +24,21 @@ class Lookup:
             func = merge_equal_adjacent(func)
         self.func = func
         self.dim = dim
+        self.fill_value = fill_value
+
+    def __call__(self, var):
+        return _cpp.buckets.map(self.func, var, self.dim, self.fill_value)
 
     def __getitem__(self, var):
-        return _cpp.buckets.map(self.func, var, self.dim)
+        return self.__call__(var)
 
 
-def lookup(func: _cpp.DataArray, dim: str):
+def lookup(func: _cpp.DataArray,
+           /,
+           dim: Optional[str] = None,
+           *,
+           mode: Optional[Literal['previous', 'nearest']] = None,
+           fill_value: Optional[_cpp.Variable] = None):
     """Create a "lookup table" from a histogram (data array with bin-edge coord).
 
     The lookup table can be used to map, e.g., time-stamps to corresponding values
@@ -34,9 +47,13 @@ def lookup(func: _cpp.DataArray, dim: str):
     Parameters
     ----------
     func:
-        Histogram defining the lookup table.
+        Histogram or data defining the lookup table.
     dim:
         Dimension along which the lookup occurs.
+    fill_value:
+        Value to use for points outside the range of the histogram or data. If set to
+        None (the default) this will use NaN for floating point types and 0 for
+        integral types. Must have the same dtype as the function values.
 
     Examples
     --------
@@ -47,6 +64,14 @@ def lookup(func: _cpp.DataArray, dim: str):
       >>> sc.lookup(hist, 'x')[sc.array(dims=['event'], values=[0.1,0.4,0.1,0.6,0.9])]
       <scipp.Variable> (event: 5)      int64  [dimensionless]  [3, 2, ..., 2, 1]
     """
+    if dim is None:
+        dim = func.dim
+    if func.meta.is_edges(dim):
+        if mode is not None:
+            raise ValueError("Input is a histogram, 'mode' must not be set.")
+        return Lookup(func, dim, fill_value)
+    # Make dummy histogram, based on `mode`
+    midpoints()
     return Lookup(func, dim)
 
 
