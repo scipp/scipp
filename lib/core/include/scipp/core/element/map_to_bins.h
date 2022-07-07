@@ -63,6 +63,7 @@ auto map_to_bins_chunkwise = [](auto &binned, auto &bins, const auto &data,
       if (i_bin < 0)
         continue;
       const uint16_t j = i_bin % chunksize;
+      static_assert(std::numeric_limits<decltype(j)>::max() >= chunksize - 1);
       const auto i_chunk = i_bin / chunksize;
       auto &[vals, ind] = chunks[i_chunk];
       if constexpr (is_ValueAndVariance_v<T>) {
