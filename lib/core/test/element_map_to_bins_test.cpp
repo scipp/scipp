@@ -24,8 +24,9 @@ auto random_shuffled(const unsigned int seed, const scipp::index nevent,
 
 class ElementMapToBinsTest : public ::testing::Test {
 protected:
-  ElementMapToBinsTest()
-      : binned(nevent), bin_indices(random_shuffled(seed, nevent, nbin)),
+  ElementMapToBinsTest(scipp::index nevent_ = 1033, scipp::index nbin_ = 17)
+      : nevent(nevent_), nbin(nbin_), binned(nevent),
+        bin_indices(random_shuffled(seed, nevent, nbin)),
         data(bin_indices.begin(), bin_indices.end()) {
     scipp::index current = 0;
     for (scipp::index i = 0; i < nbin; ++i) {
@@ -34,12 +35,28 @@ protected:
     }
   }
   unsigned int seed = std::random_device()();
-  const scipp::index nevent = 1033;
-  const scipp::index nbin = 17;
+  const scipp::index nevent;
+  const scipp::index nbin;
   std::vector<double> binned;
   std::vector<scipp::index> bins;
   std::vector<scipp::index> bin_indices;
   std::vector<double> data;
+};
+
+TEST_F(ElementMapToBinsTest, data_matching_index_equivalent_to_sort) {
+  map_to_bins_direct(binned, bins, data, bin_indices);
+  std::sort(data.begin(), data.end());
+  EXPECT_EQ(binned, data) << seed;
+}
+
+class ElementMapToBinsChunkedTest
+    : public ElementMapToBinsTest,
+      public ::testing::WithParamInterface<
+          std::tuple<scipp::index, scipp::index>> {
+protected:
+  ElementMapToBinsChunkedTest()
+      : ElementMapToBinsTest(std::get<0>(GetParam()), std::get<1>(GetParam())) {
+  }
 
   template <int N> void check_direct_equivalent_to_chunkwise() {
     auto binned1 = binned;
@@ -52,17 +69,18 @@ protected:
   }
 };
 
-TEST_F(ElementMapToBinsTest, data_matching_index_equivalent_to_sort) {
-  map_to_bins_direct(binned, bins, data, bin_indices);
-  std::sort(data.begin(), data.end());
-  EXPECT_EQ(binned, data) << seed;
-}
+INSTANTIATE_TEST_SUITE_P(NEventNBin, ElementMapToBinsChunkedTest,
+                         testing::Combine(testing::Values(9000, 1033),
+                                          testing::Values(70000, 17)));
 
-TEST_F(ElementMapToBinsTest, direct_equivalent_to_chunkwise) {
+TEST_P(ElementMapToBinsChunkedTest, direct_equivalent_to_chunkwise) {
   check_direct_equivalent_to_chunkwise<1>();
   check_direct_equivalent_to_chunkwise<2>();
   check_direct_equivalent_to_chunkwise<4>();
   check_direct_equivalent_to_chunkwise<16>();
   check_direct_equivalent_to_chunkwise<64>();
   check_direct_equivalent_to_chunkwise<256>();
+  check_direct_equivalent_to_chunkwise<512>();
+  check_direct_equivalent_to_chunkwise<1024>();
+  check_direct_equivalent_to_chunkwise<2048>();
 }

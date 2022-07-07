@@ -62,7 +62,7 @@ auto map_to_bins_chunkwise = [](auto &binned, auto &bins, const auto &data,
       const auto i_bin = bin_indices[i];
       if (i_bin < 0)
         continue;
-      const uint8_t j = i_bin % chunksize;
+      const uint16_t j = i_bin % chunksize;
       const auto i_chunk = i_bin / chunksize;
       auto &[vals, ind] = chunks[i_chunk];
       if constexpr (is_ValueAndVariance_v<T>) {
