@@ -248,14 +248,14 @@ TEST_F(DataArrayBinsMapTest, fail_no_bin_edges) {
                        except::BinEdgeError);
 }
 
-TEST_F(DataArrayBinsMapTest, map_masked) {
+TEST_F(DataArrayBinsMapTest, map_masked_values_replaced_by_fill_value) {
   const auto &coord = bins_view<DataArray>(buckets).meta()[Dim::Z];
   histogram.masks().set(
       "mask", makeVariable<bool>(histogram.dims(), Values{false, true, false}));
   const auto fill_value = makeVariable<double>(units::K, Values{1234});
   const auto out = buckets::map(histogram, coord, Dim::Z, fill_value);
   const auto expected_scale = makeVariable<double>(
-      Dims{Dim::X}, Shape{4}, units::K, Values{0, 4, 4, 1234});
+      Dims{Dim::X}, Shape{4}, units::K, Values{1234, 4, 4, 1234});
   EXPECT_EQ(out, make_bins(indices, Dim::X, expected_scale));
 }
 

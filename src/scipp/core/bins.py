@@ -34,7 +34,6 @@ class Lookup:
 
 
 def lookup(func: _cpp.DataArray,
-           /,
            dim: Optional[str] = None,
            *,
            mode: Optional[Literal['previous', 'nearest']] = None,
@@ -51,9 +50,10 @@ def lookup(func: _cpp.DataArray,
     dim:
         Dimension along which the lookup occurs.
     fill_value:
-        Value to use for points outside the range of the histogram or data. If set to
-        None (the default) this will use NaN for floating point types and 0 for
-        integral types. Must have the same dtype and unit as the function values.
+        Value to use for points outside the range of the function as well as points in
+        masked regions of the function. If set to None (the default) this will use NaN
+        for floating point types and 0 for integral types. Must have the same dtype and
+        unit as the function values.
 
     Examples
     --------
