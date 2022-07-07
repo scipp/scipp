@@ -21,6 +21,7 @@ Breaking changes
 * :func:`scipp.optimize.curve_fit` now raises ``ValueError`` if the input variance contains a 0 `#2620 <https://github.com/scipp/scipp/pull/2620>`_.
 * Replaced the widget-based :func:`scipp.table` viewer with a simpler pure-HTML table `#2613 <https://github.com/scipp/scipp/pull/2613>`_.
 * :func:`scipp.flatten` now drops mismatching bin edge coordinates instead of raising a ``BinEdgeError`` `#2652 <https://github.com/scipp/scipp/pull/2652>`_.
+* The ``targets`` argument of :func:`scipp.transform_coords` is not position-only `#2670 <https://github.com/scipp/scipp/pull/2670>`_.
 
 Bugfixes
 ~~~~~~~~
