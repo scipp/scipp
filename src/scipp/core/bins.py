@@ -53,7 +53,7 @@ def lookup(func: _cpp.DataArray,
     fill_value:
         Value to use for points outside the range of the histogram or data. If set to
         None (the default) this will use NaN for floating point types and 0 for
-        integral types. Must have the same dtype as the function values.
+        integral types. Must have the same dtype and unit as the function values.
 
     Examples
     --------
