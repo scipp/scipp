@@ -675,7 +675,6 @@ TEST(BinLinspaceTest, event_mapped_to_correct_bin_at_end) {
 }
 
 TEST(BinLinspaceTest, many_events_many_bins) {
-  // 9M, 70k
   Random rand(0.0, 1.0);
   rand.seed(0);
   const Dimensions dims(Dim::Row, 9000000);
