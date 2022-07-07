@@ -30,6 +30,7 @@ Bugfixes
 * Fix minor issue with events close to bin bounds getting assigned to the wrong bin by :func:`scipp.bin` and :func:`scipp.histogram` when binning with edges that form a "linspace" `#2644 <https://github.com/scipp/scipp/pull/2644>`_.
 * Fix issues with copying binned structured data or fields of binned structured data `#2650 <https://github.com/scipp/scipp/pull/2650>`_.
 * Fix various missing dimension and/or shape checks when slicing with a condition variable `#2657 <https://github.com/scipp/scipp/pull/2657>`_.
+* Fix serious bug in :func:`scipp.bin` that was introduced in scipp-0.12.0. This corrupts data when binning into more than 65536 at a time `#2680 <https://github.com/scipp/scipp/pull/2680>`_.
 
 Documentation
 ~~~~~~~~~~~~~
