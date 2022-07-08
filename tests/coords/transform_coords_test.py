@@ -1019,8 +1019,9 @@ def test_works_with_partial():
 def test_works_with_class_defining___call__():
 
     class A:
+
         def __call__(self, x):
-            return x*x
+            return x * x
 
     da = sc.data.table_xyz(nrow=10)
     assert 'xx' in da.transform_coords(xx=A()).coords
