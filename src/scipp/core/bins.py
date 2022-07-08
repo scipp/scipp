@@ -24,7 +24,7 @@ class Lookup:
         ]:
             # Significant speedup if `func` is large but mostly constant.
             if op == _cpp.buckets.map:
-                if not islinspace(func.coords[dim], dim).value:
+                if not func.masks and not islinspace(func.coords[dim], dim).value:
                     func = merge_equal_adjacent(func)
             else:
                 # In this case the C++ implementation currently used no linspace

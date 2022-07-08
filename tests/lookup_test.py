@@ -6,8 +6,15 @@ import numpy as np
 import scipp as sc
 
 
+@pytest.mark.parametrize('mode', ['nearest', 'previous'])
+def test_raises_with_histogram_if_mode_set(mode):
+    da = sc.DataArray(sc.arange('x', 4), coords={'x': sc.arange('x', 5)})
+    with pytest.raises(ValueError):
+        sc.lookup(da, mode=mode)
+
+
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
-def test_getitem(dtype):
+def test_histogram(dtype):
     x_lin = sc.linspace(dim='xx', start=0, stop=1, num=4)
     x = x_lin.copy()
     x.values[0] -= 0.01
@@ -17,16 +24,29 @@ def test_getitem(dtype):
     var = sc.array(dims=['event'], values=[0.1, 0.4, 0.1, 0.6, 0.9, 0.2])
     lut = sc.lookup(hist, 'xx')
     expected = sc.array(dims=['event'], values=[0, 1, 0, 1, 0, 0], dtype=dtype)
-    assert sc.identical(lut[var], expected)
+    assert sc.identical(lut(var), expected)
     lut = sc.lookup(hist_lin, 'xx')
-    assert sc.identical(lut[var], expected)
+    assert sc.identical(lut(var), expected)
 
 
-@pytest.mark.parametrize('mode', ['nearest', 'previous'])
-def test_raises_with_histogram_if_mode_set(mode):
-    da = sc.DataArray(sc.arange('x', 4), coords={'x': sc.arange('x', 5)})
-    with pytest.raises(ValueError):
-        sc.lookup(da, mode=mode)
+@pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
+def test_values_in_masked_bins_replaced_by_fill_value(dtype):
+    x_lin = sc.linspace(dim='xx', start=0, stop=1, num=4)
+    x = x_lin.copy()
+    x.values[0] -= 0.01
+    data = sc.array(dims=['xx'], values=[0, 1, 0], dtype=dtype)
+    hist_lin = sc.DataArray(data=data, coords={'xx': x_lin})
+    hist = sc.DataArray(data=data, coords={'xx': x})
+    mask = sc.array(dims=['xx'], values=[False, False, True])
+    hist_lin.masks['mask'] = mask
+    hist.masks['mask'] = mask
+    var = sc.array(dims=['event'], values=[0.1, 0.4, 0.1, 0.6, 0.9, 0.2])
+    fill = sc.scalar(666, dtype=dtype)
+    lut = sc.lookup(hist, fill_value=fill)
+    expected = sc.array(dims=['event'], values=[0, 1, 0, 1, 666, 0], dtype=dtype)
+    assert sc.identical(lut(var), expected)
+    lut = sc.lookup(hist_lin, fill_value=fill)
+    assert sc.identical(lut(var), expected)
 
 
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
@@ -57,7 +77,7 @@ def outofbounds(dtype):
 
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
 @pytest.mark.parametrize("mode", ['nearest', 'previous'])
-def test_no_value(mode, dtype):
+def test_function_with_no_value_gives_fill_value(mode, dtype):
     x = sc.array(dims=['xx'], values=[])
     data = sc.array(dims=['xx'], values=[], dtype=dtype)
     da = sc.DataArray(data=data, coords={'xx': x})
