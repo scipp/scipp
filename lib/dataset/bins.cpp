@@ -59,6 +59,23 @@ constexpr auto expect_matching_keys = [](const auto &a, const auto &b) {
                              to_string(b));
 };
 
+auto make_fill(const DataArray &function,
+               const std::optional<Variable> &fill_value) {
+  Variable fill = fill_value.value_or(zero_like(function.data()));
+  if (fill_value) {
+    if (fill.dtype() != function.dtype())
+      throw except::TypeError(
+          "The fill_value (dtype=" + to_string(fill.dtype()) +
+          ") must have the same dtype as the function values (dtype=" +
+          to_string(function.dtype()) + ").");
+  } else if (fill.dtype() == dtype<double>) {
+    fill.value<double>() = std::numeric_limits<double>::quiet_NaN();
+  } else if (fill.dtype() == dtype<float>) {
+    fill.value<float>() = std::numeric_limits<float>::quiet_NaN();
+  }
+  return fill;
+}
+
 } // namespace
 
 void copy_slices(const DataArray &src, DataArray dst, const Dim dim,
@@ -178,6 +195,22 @@ bool is_bins(const Dataset &dataset) {
                      [](const auto &item) { return is_bins(item); });
 }
 
+Variable lookup_previous(const DataArray &function, const Variable &x, Dim dim,
+                         const std::optional<Variable> &fill_value) {
+  const auto fill = make_fill(function, fill_value);
+  const auto &coord = function.meta()[dim];
+  const auto data = masked_data(function, dim, fill);
+  const auto weights = subspan_view(data, dim);
+  if (!allsorted(coord, dim))
+    throw except::DataArrayError(
+        "Coordinate of lookup function must be sorted.");
+  // Note that we could do a linspace optimization similar to buckets::map here.
+  // Add this if we have real world application that would benefit.
+  return variable::transform(x, subspan_view(coord, dim), weights, fill,
+                             core::element::event::lookup_previous,
+                             "lookup_previous");
+}
+
 } // namespace scipp::dataset
 
 namespace scipp::dataset::buckets {
@@ -292,18 +325,7 @@ Variable histogram(const Variable &data, const Variable &binEdges) {
 
 Variable map(const DataArray &function, const Variable &x, Dim dim,
              const std::optional<Variable> &fill_value) {
-  Variable fill = fill_value.value_or(zero_like(function.data()));
-  if (fill_value) {
-    if (fill.dtype() != function.dtype())
-      throw except::TypeError(
-          "The fill_value (dtype=" + to_string(fill.dtype()) +
-          ") must have the same dtype as the function values (dtype=" +
-          to_string(function.dtype()) + ").");
-  } else if (fill.dtype() == dtype<double>) {
-    fill.value<double>() = std::numeric_limits<double>::quiet_NaN();
-  } else if (fill.dtype() == dtype<float>) {
-    fill.value<float>() = std::numeric_limits<float>::quiet_NaN();
-  }
+  const auto fill = make_fill(function, fill_value);
   if (dim == Dim::Invalid)
     dim = edge_dimension(function);
   const auto &edges = function.meta()[dim];

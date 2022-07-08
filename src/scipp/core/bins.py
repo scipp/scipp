@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-from typing import Dict, Literal, Optional, Union
+from typing import Callable, Dict, Literal, Optional, Union
 
 from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
@@ -9,25 +9,29 @@ from ..typing import VariableLike, MetaDataMap
 from .domains import merge_equal_adjacent
 from .operations import islinspace
 from .math import midpoints
+from .shape import concat
 
 
 class Lookup:
 
     def __init__(self,
+                 op: Callable,
                  func: _cpp.DataArray,
                  dim: str,
                  fill_value: Optional[_cpp.Variable] = None):
+        # TODO is this merge correct when not edges?
         if func.ndim == 1 and func.dtype in [
                 _cpp.DType.bool, _cpp.DType.int32, _cpp.DType.int64
         ] and not islinspace(func.coords[dim], dim).value:
             # Significant speedup if `func` is large but mostly constant.
             func = merge_equal_adjacent(func)
+        self.op = op
         self.func = func
         self.dim = dim
         self.fill_value = fill_value
 
     def __call__(self, var):
-        return _cpp.buckets.map(self.func, var, self.dim, self.fill_value)
+        return self.op(self.func, var, self.dim, self.fill_value)
 
     def __getitem__(self, var):
         return self.__call__(var)
@@ -49,6 +53,9 @@ def lookup(func: _cpp.DataArray,
         Histogram or data defining the lookup table.
     dim:
         Dimension along which the lookup occurs.
+    mode:
+        Mode used for looking up function values. Must be ``None`` when ``func`` is a
+        histogram. Otherwise this defaults to 'nearest'.
     fill_value:
         Value to use for points outside the range of the function as well as points in
         masked regions of the function. If set to None (the default) this will use NaN
@@ -63,16 +70,23 @@ def lookup(func: _cpp.DataArray,
       >>> hist = sc.DataArray(data=vals, coords={'x': x})
       >>> sc.lookup(hist, 'x')[sc.array(dims=['event'], values=[0.1,0.4,0.1,0.6,0.9])]
       <scipp.Variable> (event: 5)      int64  [dimensionless]  [3, 2, ..., 2, 1]
-    """
+        """
     if dim is None:
         dim = func.dim
     if func.meta.is_edges(dim):
         if mode is not None:
             raise ValueError("Input is a histogram, 'mode' must not be set.")
-        return Lookup(func, dim, fill_value)
-    # Make dummy histogram, based on `mode`
-    midpoints()
-    return Lookup(func, dim)
+        return Lookup(_cpp.buckets.map, func, dim, fill_value)
+    if mode is None:
+        mode = 'nearest'
+    elif mode not in ['previous', 'nearest']:
+        raise ValueError(f"Mode most be one of ['previous', 'nearest'], got '{mode}'")
+    if mode == 'nearest':
+        coord = midpoints(func.meta[dim])
+        lowest = coord[0:0].max()  # trick to get lowest representable value
+        func = func.copy(deep=False)
+        func.coords[dim] = concat([lowest, coord], dim)
+    return Lookup(_cpp.lookup_previous, func, dim, fill_value)
 
 
 class Bins:

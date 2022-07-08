@@ -103,6 +103,14 @@ constexpr auto map_sorted_edges =
                             : get(weights, --it - edges.begin());
                }};
 
+constexpr auto lookup_previous =
+    overloaded{map, [](const auto &point, const auto &x, const auto &weights,
+                       const auto &fill) {
+                 auto it = std::upper_bound(x.begin(), x.end(), point);
+                 using T = std::decay_t<decltype(get(weights, 0))>;
+                 return it == x.begin() ? fill : get(weights, --it - x.begin());
+               }};
+
 namespace map_and_mul_detail {
 template <class Data, class Coord, class Edge, class Weight>
 using args =

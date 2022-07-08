@@ -148,6 +148,14 @@ void init_buckets(py::module &m) {
                             to_string(dt));
   });
 
+  m.def(
+      "lookup_previous",
+      [](const DataArray &function, const Variable &x, const std::string &dim,
+         const std::optional<Variable> &fill_value) {
+        return dataset::lookup_previous(function, x, Dim{dim}, fill_value);
+      },
+      py::call_guard<py::gil_scoped_release>());
+
   auto buckets = m.def_submodule("buckets");
   buckets.def(
       "concatenate",
