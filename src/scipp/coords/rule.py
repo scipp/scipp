@@ -118,7 +118,10 @@ class ComputeRule(Rule):
         self._arg_names = _arg_names(func)
 
     def __call__(self, coords: _CoordProvider) -> Dict[str, Coord]:
-        inputs = {name: coords.consume(name) for name in self._arg_names}
+        inputs = {
+            name: coords.consume(coord)
+            for coord, name in self._arg_names.items()
+        }
         outputs = None
         if any(coord.has_event for coord in inputs.values()):
             outputs = self._compute_with_events(inputs)
@@ -174,15 +177,18 @@ class ComputeRule(Rule):
 
     @property
     def dependencies(self) -> Tuple[str]:
-        return self._arg_names
+        return tuple(self._arg_names)
 
     @property
     def func_name(self) -> str:
         return self._func.__name__
 
     def __str__(self):
-        return f'Compute {self._format_out_names()} = {self._func.__name__}' \
-               f'({", ".join(self._arg_names)})'
+        # Class instances defining __call__ as well as objects created with
+        # functools.partial may/do not define __name__.
+        name = getattr(self._func, '__name__', repr(self._func))
+        return f'Compute {self._format_out_names()} = {name}' \
+               f'({", ".join(self.dependencies)})'
 
 
 def rules_of_type(rules: List[Rule], rule_type: type) -> Iterable[Rule]:
@@ -194,9 +200,12 @@ def rule_output_names(rules: List[Rule], rule_type: type) -> Iterable[str]:
         yield from rule.out_names
 
 
-def _arg_names(func) -> Tuple[str]:
+def _arg_names(func) -> Dict[str, str]:
     spec = inspect.getfullargspec(func)
     if spec.varargs is not None or spec.varkw is not None:
         raise ValueError('Function with variable arguments not allowed in '
                          f'conversion graph: `{func.__name__}`.')
-    return tuple(spec.args + spec.kwonlyargs)
+    args = spec.args if inspect.isfunction(func) else spec.args[1:]
+    names = tuple(args + spec.kwonlyargs)
+    coords = getattr(func, 'input_coords', names)
+    return {coord: name for coord, name in zip(coords, names)}

@@ -48,7 +48,10 @@ def transform_coords(x: Union[DataArray, Dataset],
           If :class:`str`, this is a synonym for renaming a coord.
           If a callable, it must either return a single variable or a dict of
           variables. The argument names of callables must be coords
-          in ``x`` or be computable by other nodes in ``graph``.
+          in ``x`` or be computable by other nodes in ``graph``. The coord names
+          can be overridden by the callable by providing a ``input_coords``
+          property, returning a list of coord names in the same order as the
+          function arguments.
     rename_dims:
         Rename dimensions if the corresponding dimension coords
         are used as inputs and there is a single output coord

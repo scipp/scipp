@@ -29,6 +29,7 @@ class Lookup:
         self.func = func
         self.dim = dim
         self.fill_value = fill_value
+        self.input_coords = [dim]
 
     def __call__(self, var):
         return self.op(self.func, var, self.dim, self.fill_value)
