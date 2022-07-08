@@ -2,6 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import pytest
+import numpy as np
 import scipp as sc
 
 
@@ -45,4 +46,34 @@ def test_nearest(dtype):
     da = sc.DataArray(data=data, coords={'xx': x})
     var = sc.array(dims=['event'], values=[0.1, 0.4, 0.1, 0.6, 0.9, 1.1, 0.2])
     expected = sc.array(dims=['event'], values=[0, 0, 0, 0, 2, 2, 1], dtype=dtype)
+    assert sc.identical(sc.lookup(da, mode='nearest')(var), expected)
+
+
+def outofbounds(dtype):
+    if dtype in ['float32', 'float64']:
+        return np.NaN
+    return 0
+
+
+@pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
+def test_previous_single_value(dtype):
+    x = sc.array(dims=['xx'], values=[0.5])
+    data = sc.array(dims=['xx'], values=[11], dtype=dtype)
+    da = sc.DataArray(data=data, coords={'xx': x})
+    var = sc.array(dims=['event'], values=[0.1, 0.5, 0.6])
+    expected = sc.array(dims=['event'],
+                        values=[outofbounds(dtype), 11, 11],
+                        dtype=dtype)
+    assert sc.identical(sc.lookup(da, mode='previous')(var), expected, equal_nan=True)
+
+
+@pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
+def test_nearest_single_value(dtype):
+    x = sc.array(dims=['xx'], values=[0.5])
+    data = sc.array(dims=['xx'], values=[11], dtype=dtype)
+    da = sc.DataArray(data=data, coords={'xx': x})
+    var = sc.array(dims=['event'], values=[0.1, 0.5, 0.6])
+    expected = sc.array(dims=['event'],
+                        values=[11, 11, 11],
+                        dtype=dtype)
     assert sc.identical(sc.lookup(da, mode='nearest')(var), expected)

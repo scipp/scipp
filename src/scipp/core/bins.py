@@ -89,10 +89,11 @@ def lookup(func: _cpp.DataArray,
     elif mode not in ['previous', 'nearest']:
         raise ValueError(f"Mode most be one of ['previous', 'nearest'], got '{mode}'")
     if mode == 'nearest':
-        coord = midpoints(func.meta[dim])
-        lowest = coord[0:0].max()  # trick to get lowest representable value
+        coord = func.meta[dim]
+        lowest = coord[dim, 0:0].max()  # trick to get lowest representable value
+        parts = [lowest] if coord.sizes[dim] < 2 else [lowest, midpoints(coord, dim)]
         func = func.copy(deep=False)
-        func.coords[dim] = concat([lowest, coord], dim)
+        func.coords[dim] = concat(parts, dim)
     return Lookup(_cpp.lookup_previous, func, dim, fill_value)
 
 
