@@ -1024,3 +1024,14 @@ def test_works_with_class_defining___call__():
 
     da = sc.data.table_xyz(nrow=10)
     assert 'xx' in da.transform_coords(xx=A()).coords
+
+
+def test_input_coords_can_be_defined_via_property():
+
+    def f(a, b):
+        return a - b
+
+    f.inputs = ['x', 'y']
+    da = sc.data.table_xyz(nrow=10)
+    assert sc.identical(da.transform_coords(diff=f),
+                        da.transform_coords(diff=lambda x, y: f(x, y)))

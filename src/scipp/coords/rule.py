@@ -213,5 +213,5 @@ def _arg_names(func) -> Dict[str, str]:
         # functions, but nevertheless do not have 'self'.
         args = spec.args[1:]
     names = tuple(args + spec.kwonlyargs)
-    coords = getattr(func, 'input_coords', names)
+    coords = getattr(func, 'inputs', names)
     return {coord: name for coord, name in zip(coords, names)}
