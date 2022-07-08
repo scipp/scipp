@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+import functools
 import pytest
 import numpy as np
 import scipp as sc
@@ -1003,3 +1004,23 @@ def test_raises_when_keyword_syntax_clashes_with_options(option):
     da = sc.data.table_xyz(nrow=10)
     with pytest.raises(TypeError):
         da.transform_coords(**{option: lambda x: x})
+
+
+def test_works_with_partial():
+
+    def f(a, x):
+        return a * x
+
+    g = functools.partial(f, sc.scalar(5))
+    da = sc.data.table_xyz(nrow=10)
+    assert 'ax' in da.transform_coords(ax=g).coords
+
+
+def test_works_with_class_defining___call__():
+
+    class A:
+        def __call__(self, x):
+            return x*x
+
+    da = sc.data.table_xyz(nrow=10)
+    assert 'xx' in da.transform_coords(xx=A()).coords

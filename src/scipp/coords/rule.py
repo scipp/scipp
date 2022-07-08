@@ -7,6 +7,7 @@ They provide a common interface for renaming and computing new coordinates.
 """
 
 from __future__ import annotations
+from functools import partial
 
 from abc import ABC, abstractmethod
 from copy import copy
@@ -205,7 +206,12 @@ def _arg_names(func) -> Dict[str, str]:
     if spec.varargs is not None or spec.varkw is not None:
         raise ValueError('Function with variable arguments not allowed in '
                          f'conversion graph: `{func.__name__}`.')
-    args = spec.args if inspect.isfunction(func) else spec.args[1:]
+    if inspect.isfunction(func) or func.__class__ == partial:
+        args = spec.args
+    else:
+        # Strip off the 'self'. Objects returned by functools.partial are not
+        # functions, but nevertheless do not have 'self'.
+        args = spec.args[1:]
     names = tuple(args + spec.kwonlyargs)
     coords = getattr(func, 'input_coords', names)
     return {coord: name for coord, name in zip(coords, names)}
