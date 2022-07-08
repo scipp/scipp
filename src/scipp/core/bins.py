@@ -19,7 +19,7 @@ class Lookup:
                  func: _cpp.DataArray,
                  dim: str,
                  fill_value: Optional[_cpp.Variable] = None):
-        if func.ndim == 1 and func.dtype in [
+        if func.ndim == 1 and len(func) > 0 and func.dtype in [
                 _cpp.DType.bool, _cpp.DType.int32, _cpp.DType.int64
         ]:
             # Significant speedup if `func` is large but mostly constant.
@@ -88,7 +88,7 @@ def lookup(func: _cpp.DataArray,
         mode = 'nearest'
     elif mode not in ['previous', 'nearest']:
         raise ValueError(f"Mode most be one of ['previous', 'nearest'], got '{mode}'")
-    if mode == 'nearest':
+    if mode == 'nearest' and func.sizes[dim] != 0:
         coord = func.meta[dim]
         lowest = coord[dim, 0:0].max()  # trick to get lowest representable value
         parts = [lowest] if coord.sizes[dim] < 2 else [lowest, midpoints(coord, dim)]

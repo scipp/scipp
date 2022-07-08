@@ -56,6 +56,18 @@ def outofbounds(dtype):
 
 
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
+@pytest.mark.parametrize("mode", ['nearest', 'previous'])
+def test_no_value(mode, dtype):
+    x = sc.array(dims=['xx'], values=[])
+    data = sc.array(dims=['xx'], values=[], dtype=dtype)
+    da = sc.DataArray(data=data, coords={'xx': x})
+    var = sc.array(dims=['event'], values=[0.1, 0.5, 0.6])
+    bad = outofbounds(dtype)
+    expected = sc.array(dims=['event'], values=[bad, bad, bad], dtype=dtype)
+    assert sc.identical(sc.lookup(da, mode=mode)(var), expected, equal_nan=True)
+
+
+@pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
 def test_previous_single_value(dtype):
     x = sc.array(dims=['xx'], values=[0.5])
     data = sc.array(dims=['xx'], values=[11], dtype=dtype)
@@ -73,7 +85,5 @@ def test_nearest_single_value(dtype):
     data = sc.array(dims=['xx'], values=[11], dtype=dtype)
     da = sc.DataArray(data=data, coords={'xx': x})
     var = sc.array(dims=['event'], values=[0.1, 0.5, 0.6])
-    expected = sc.array(dims=['event'],
-                        values=[11, 11, 11],
-                        dtype=dtype)
+    expected = sc.array(dims=['event'], values=[11, 11, 11], dtype=dtype)
     assert sc.identical(sc.lookup(da, mode='nearest')(var), expected)
