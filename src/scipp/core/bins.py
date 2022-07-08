@@ -19,12 +19,12 @@ class Lookup:
                  func: _cpp.DataArray,
                  dim: str,
                  fill_value: Optional[_cpp.Variable] = None):
-        if func.ndim == 1 and len(func) > 0 and func.dtype in [
+        if not func.masks and func.ndim == 1 and len(func) > 0 and func.dtype in [
                 _cpp.DType.bool, _cpp.DType.int32, _cpp.DType.int64
         ]:
             # Significant speedup if `func` is large but mostly constant.
             if op == _cpp.buckets.map:
-                if not func.masks and not islinspace(func.coords[dim], dim).value:
+                if not islinspace(func.coords[dim], dim).value:
                     func = merge_equal_adjacent(func)
             else:
                 # In this case the C++ implementation currently used no linspace
