@@ -10,6 +10,7 @@
 using namespace scipp;
 using namespace scipp::core;
 
+using element::event::lookup_previous;
 using element::event::map_linspace;
 using element::event::map_sorted_edges;
 
@@ -102,4 +103,36 @@ TYPED_TEST(ElementEventMapTest, variances_variable_bin_width) {
             ValueAndVariance<float>(66, 0));
   EXPECT_EQ(map_sorted_edges(TypeParam{5}, edges, weights, fill),
             ValueAndVariance<float>(66, 0));
+}
+
+class ElementLookupPreviousTest : public ::testing::Test {
+protected:
+  std::vector<double> x{0, 2, 4};
+  std::vector<double> weights{11, 22, 33};
+  double fill = 66;
+};
+
+TEST_F(ElementLookupPreviousTest, below_gives_fill_value) {
+  fill = 66;
+  EXPECT_EQ(lookup_previous(-0.1, x, weights, fill), 66);
+}
+
+TEST_F(ElementLookupPreviousTest, at_lowest_gives_lowest) {
+  EXPECT_EQ(lookup_previous(0, x, weights, fill), 11);
+}
+
+TEST_F(ElementLookupPreviousTest, below_second_gives_lowest) {
+  EXPECT_EQ(lookup_previous(1, x, weights, fill), 11);
+}
+
+TEST_F(ElementLookupPreviousTest, at_second_gives_second) {
+  EXPECT_EQ(lookup_previous(2, x, weights, fill), 22);
+}
+
+TEST_F(ElementLookupPreviousTest, below_third_gives_second) {
+  EXPECT_EQ(lookup_previous(3, x, weights, fill), 22);
+}
+
+TEST_F(ElementLookupPreviousTest, large_value_gives_last) {
+  EXPECT_EQ(lookup_previous(123456789, x, weights, fill), 33);
 }
