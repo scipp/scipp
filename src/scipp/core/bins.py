@@ -19,17 +19,23 @@ class Lookup:
                  func: _cpp.DataArray,
                  dim: str,
                  fill_value: Optional[_cpp.Variable] = None):
-        # TODO is this merge correct when not edges?
         if func.ndim == 1 and func.dtype in [
                 _cpp.DType.bool, _cpp.DType.int32, _cpp.DType.int64
-        ] and not islinspace(func.coords[dim], dim).value:
+        ]:
             # Significant speedup if `func` is large but mostly constant.
-            func = merge_equal_adjacent(func)
+            if op == _cpp.buckets.map:
+                if not islinspace(func.coords[dim], dim).value:
+                    func = merge_equal_adjacent(func)
+            else:
+                # In this case the C++ implementation currently used no linspace
+                # optimization, so the extra check is skipped.
+                transition = func.data[:-1] != func.data[1:]
+                func = concat([func[0], func[1:][transition]], dim)
         self.op = op
         self.func = func
         self.dim = dim
         self.fill_value = fill_value
-        self.input_coords = [dim]
+        self.inputs = (dim, )  # for transform_coords
 
     def __call__(self, var):
         return self.op(self.func, var, self.dim, self.fill_value)
