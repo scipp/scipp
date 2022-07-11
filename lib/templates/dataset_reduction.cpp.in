@@ -4,6 +4,7 @@
 /// @author Jan-Lukas Wynen
 
 #include "scipp/variable/reduction.h"
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/@OPNAME@.h"
 
 #include "../../variable/operations_common.h"
