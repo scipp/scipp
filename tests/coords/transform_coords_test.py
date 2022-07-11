@@ -1032,7 +1032,7 @@ def test_input_coords_can_be_defined_via_property():
     def f(a, b):
         return a - b
 
-    f.inputs = ['x', 'y']
+    f.__transform_coords_input_keys__ = ['x', 'y']
     da = sc.data.table_xyz(nrow=10)
     assert sc.identical(da.transform_coords(diff=f),
                         da.transform_coords(diff=lambda x, y: f(x, y)))

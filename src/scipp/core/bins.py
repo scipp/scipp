@@ -35,7 +35,7 @@ class Lookup:
         self.func = func
         self.dim = dim
         self.fill_value = fill_value
-        self.inputs = (dim, )  # for transform_coords
+        self.__transform_coords_input_keys__ = (dim, )  # for transform_coords
 
     def __call__(self, var):
         return self.op(self.func, var, self.dim, self.fill_value)
