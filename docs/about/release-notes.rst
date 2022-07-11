@@ -16,6 +16,7 @@ Features
 * Added keyword argument syntax to :func:`scipp.transform_coords` for more concise user experience in simple single-step transformations `#2670 <https://github.com/scipp/scipp/pull/2670>`_.
 * Generalized :func:`scipp.lookup` to also support non-histogram functions for value lookup, with supported modes "previous" and "nearest".
   Also adding support for custom fill values `#2681 <https://github.com/scipp/scipp/pull/2681>`_.
+* Added possibility to pass keyword arguments to ``rename_dims``, matching the signature of ``rename`` `#2689 <https://github.com/scipp/scipp/pull/2689>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
