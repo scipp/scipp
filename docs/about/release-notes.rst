@@ -24,7 +24,7 @@ Breaking changes
 * Replaced the widget-based :func:`scipp.table` viewer with a simpler pure-HTML table `#2613 <https://github.com/scipp/scipp/pull/2613>`_.
 * :func:`scipp.flatten` now drops mismatching bin edge coordinates instead of raising a ``BinEdgeError`` `#2652 <https://github.com/scipp/scipp/pull/2652>`_.
 * The ``targets`` argument of :func:`scipp.transform_coords` is not position-only `#2670 <https://github.com/scipp/scipp/pull/2670>`_.
-* :func:`scipp.lookup` now used NaN as fill value for floating-point valued functions (for points out of bounds or masked points).
+* :func:`scipp.lookup` now uses NaN as fill value for floating-point valued functions (for points out of bounds or masked points).
    Integral-valued functions are unchanged (using 0 as before).
    See also new argument for custom fill values `#2681 <https://github.com/scipp/scipp/pull/2681>`_.
 

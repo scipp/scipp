@@ -214,4 +214,4 @@ def _arg_names(func) -> Dict[str, str]:
         args = spec.args[1:]
     names = tuple(args + spec.kwonlyargs)
     coords = getattr(func, 'inputs', names)
-    return {coord: name for coord, name in zip(coords, names)}
+    return dict(zip(coords, names))

@@ -41,7 +41,7 @@ class Lookup:
         return self.op(self.func, var, self.dim, self.fill_value)
 
     def __getitem__(self, var):
-        return self.__call__(var)
+        return self(var)
 
 
 def lookup(func: _cpp.DataArray,
@@ -57,7 +57,7 @@ def lookup(func: _cpp.DataArray,
     Parameters
     ----------
     func:
-        Histogram or data defining the lookup table.
+        Data array defining the lookup table.
     dim:
         Dimension along which the lookup occurs.
     mode:
@@ -77,7 +77,7 @@ def lookup(func: _cpp.DataArray,
       >>> hist = sc.DataArray(data=vals, coords={'x': x})
       >>> sc.lookup(hist, 'x')[sc.array(dims=['event'], values=[0.1,0.4,0.1,0.6,0.9])]
       <scipp.Variable> (event: 5)      int64  [dimensionless]  [3, 2, ..., 2, 1]
-        """
+    """
     if dim is None:
         dim = func.dim
     if func.meta.is_edges(dim):
