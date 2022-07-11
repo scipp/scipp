@@ -37,12 +37,7 @@ Variable make_bins_impl(Variable indices, const Dim dim, T &&buffer);
 
 template <class T, class Op> auto reduce_all_dims(const T &obj, const Op &op) {
   if (obj.dims().empty()) {
-    bool bins = false;
-    if constexpr (std::is_same_v<T, Variable>)
-      bins = is_bins(obj);
-    else
-      bins = is_bins(obj.data());
-    if (bins)
+    if (is_bins(obj))
       return op(obj, Dim::Invalid);
     else
       return copy(obj);
