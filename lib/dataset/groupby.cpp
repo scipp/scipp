@@ -458,7 +458,7 @@ template <class T> T extract_impl(const T &obj, const Variable &condition) {
     throw except::DimensionError(
         "Condition dimensions " + to_string(condition.dims()) +
         " must be be included in the dimensions of the sliced object " +
-        to_string(condition.dims()) + '.');
+        to_string(obj.dims()) + '.');
   if (all(condition).value<bool>())
     return copy(obj);
   if (!any(condition).value<bool>())

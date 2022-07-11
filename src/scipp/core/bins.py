@@ -1,31 +1,54 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-from typing import Dict, Optional, Union
+from typing import Callable, Dict, Literal, Optional, Union
 
 from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from ..typing import VariableLike, MetaDataMap
 from .domains import merge_equal_adjacent
 from .operations import islinspace
+from .math import midpoints
+from .shape import concat
 
 
 class Lookup:
 
-    def __init__(self, func: _cpp.DataArray, dim: str):
-        if func.ndim == 1 and func.dtype in [
+    def __init__(self,
+                 op: Callable,
+                 func: _cpp.DataArray,
+                 dim: str,
+                 fill_value: Optional[_cpp.Variable] = None):
+        if not func.masks and func.ndim == 1 and len(func) > 0 and func.dtype in [
                 _cpp.DType.bool, _cpp.DType.int32, _cpp.DType.int64
-        ] and not islinspace(func.coords[dim], dim).value:
+        ]:
             # Significant speedup if `func` is large but mostly constant.
-            func = merge_equal_adjacent(func)
+            if op == _cpp.buckets.map:
+                if not islinspace(func.coords[dim], dim).value:
+                    func = merge_equal_adjacent(func)
+            else:
+                # In this case the C++ implementation currently used no linspace
+                # optimization, so the extra check is skipped.
+                transition = func.data[:-1] != func.data[1:]
+                func = concat([func[0], func[1:][transition]], dim)
+        self.op = op
         self.func = func
         self.dim = dim
+        self.fill_value = fill_value
+        self.__transform_coords_input_keys__ = (dim, )  # for transform_coords
+
+    def __call__(self, var):
+        return self.op(self.func, var, self.dim, self.fill_value)
 
     def __getitem__(self, var):
-        return _cpp.buckets.map(self.func, var, self.dim)
+        return self(var)
 
 
-def lookup(func: _cpp.DataArray, dim: str):
+def lookup(func: _cpp.DataArray,
+           dim: Optional[str] = None,
+           *,
+           mode: Optional[Literal['previous', 'nearest']] = None,
+           fill_value: Optional[_cpp.Variable] = None):
     """Create a "lookup table" from a histogram (data array with bin-edge coord).
 
     The lookup table can be used to map, e.g., time-stamps to corresponding values
@@ -34,9 +57,17 @@ def lookup(func: _cpp.DataArray, dim: str):
     Parameters
     ----------
     func:
-        Histogram defining the lookup table.
+        Data array defining the lookup table.
     dim:
         Dimension along which the lookup occurs.
+    mode:
+        Mode used for looking up function values. Must be ``None`` when ``func`` is a
+        histogram. Otherwise this defaults to 'nearest'.
+    fill_value:
+        Value to use for points outside the range of the function as well as points in
+        masked regions of the function. If set to None (the default) this will use NaN
+        for floating point types and 0 for integral types. Must have the same dtype and
+        unit as the function values.
 
     Examples
     --------
@@ -47,7 +78,23 @@ def lookup(func: _cpp.DataArray, dim: str):
       >>> sc.lookup(hist, 'x')[sc.array(dims=['event'], values=[0.1,0.4,0.1,0.6,0.9])]
       <scipp.Variable> (event: 5)      int64  [dimensionless]  [3, 2, ..., 2, 1]
     """
-    return Lookup(func, dim)
+    if dim is None:
+        dim = func.dim
+    if func.meta.is_edges(dim):
+        if mode is not None:
+            raise ValueError("Input is a histogram, 'mode' must not be set.")
+        return Lookup(_cpp.buckets.map, func, dim, fill_value)
+    if mode is None:
+        mode = 'nearest'
+    elif mode not in ['previous', 'nearest']:
+        raise ValueError(f"Mode most be one of ['previous', 'nearest'], got '{mode}'")
+    if mode == 'nearest' and func.sizes[dim] != 0:
+        coord = func.meta[dim]
+        lowest = coord[dim, 0:0].max()  # trick to get lowest representable value
+        parts = [lowest] if coord.sizes[dim] < 2 else [lowest, midpoints(coord, dim)]
+        func = func.copy(deep=False)
+        func.coords[dim] = concat(parts, dim)
+    return Lookup(_cpp.lookup_previous, func, dim, fill_value)
 
 
 class Bins:
