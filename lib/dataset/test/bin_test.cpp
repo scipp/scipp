@@ -8,6 +8,7 @@
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/histogram.h"
+#include "scipp/dataset/shape.h"
 #include "scipp/dataset/string.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/comparison.h"
@@ -670,4 +671,16 @@ TEST(BinLinspaceTest, event_mapped_to_correct_bin_at_end) {
       }
     }
   }
+}
+
+TEST(BinTest, rebin_2d_squeezed_to_1d) {
+  const auto table = make_table(10);
+  const auto x =
+      makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{-2, -1, 0, 1, 2});
+  const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{-2, 2});
+  const auto y2 =
+      makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{-2, 1, 2});
+  const auto da = squeeze(bin(table, {x, y}), std::nullopt);
+  EXPECT_EQ(bin(da, {y}), bin(table, {x, y}));
+  EXPECT_EQ(bin(da, {y2}), bin(table, {x, y2}));
 }
