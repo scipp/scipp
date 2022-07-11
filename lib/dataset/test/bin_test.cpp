@@ -283,6 +283,15 @@ TEST_P(BinTest, 2d) {
   EXPECT_EQ(xy, x_then_y);
 }
 
+TEST_P(BinTest, bin_1d_length_1_along_new_dim) {
+  const auto table = GetParam();
+  const auto edges = edges_x.slice({Dim::X, 0, 2});
+  const auto x = bin(table, {edges});
+  const auto x_then_y = bin(x, {edges_y});
+  const auto xy = bin(table, {edges, edges_y});
+  EXPECT_EQ(xy, x_then_y);
+}
+
 TEST_P(BinTest, 2d_drop_out_of_range_linspace) {
   const auto edges_x_drop = edges_x.slice({Dim::X, 1, 4});
   const auto edges_y_drop = edges_y.slice({Dim::Y, 1, 4});
@@ -490,6 +499,7 @@ TEST_P(BinTest, rebin_various_edges_1d) {
   // since in general it is hard to come up with the expected result.
   using units::one;
   std::vector<Variable> edges;
+  edges.emplace_back(linspace(-2.0 * one, 1.2 * one, Dim::X, 2));
   edges.emplace_back(linspace(-2.0 * one, 1.2 * one, Dim::X, 4));
   edges.emplace_back(linspace(-2.0 * one, 1.2 * one, Dim::X, 72));
   edges.emplace_back(linspace(-1.23 * one, 1.2 * one, Dim::X, 45));
