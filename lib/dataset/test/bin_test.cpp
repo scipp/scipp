@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "dataset_test_common.h"
+#include "random.h"
 
 #include "scipp/dataset/bin.h"
 #include "scipp/dataset/bins.h"
@@ -11,6 +12,7 @@
 #include "scipp/dataset/string.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/comparison.h"
+#include "scipp/variable/creation.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/util.h"
 
@@ -670,4 +672,16 @@ TEST(BinLinspaceTest, event_mapped_to_correct_bin_at_end) {
       }
     }
   }
+}
+
+TEST(BinLinspaceTest, many_events_many_bins) {
+  Random rand(0.0, 1.0);
+  rand.seed(0);
+  const Dimensions dims(Dim::Row, 9000000);
+  const auto data = variable::ones(dims, units::one, dtype<double>);
+  const auto x = makeVariable<double>(dims, Values(rand(dims.volume())));
+  auto da = DataArray(data, {{Dim::X, x}});
+  const auto edges =
+      linspace(0.0 * units::one, 1.0 * units::one, Dim::X, 70000);
+  EXPECT_EQ(sum(bin(da, {edges}).data()), sum(da.data()));
 }
