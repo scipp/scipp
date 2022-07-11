@@ -41,7 +41,8 @@ Variable reduce_dim(const Variable &var, const Dim dim,
                     void (*const op)(Variable &, const Variable &),
                     const FillValue init) {
   auto dims = var.dims();
-  dims.erase(dim);
+  if (dim != Dim::Invalid)
+    dims.erase(dim);
   return reduce_to_dims(var, dims, op, init);
 }
 
