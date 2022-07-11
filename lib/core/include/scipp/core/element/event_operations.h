@@ -89,7 +89,6 @@ constexpr auto map_linspace =
                        const auto &weights, const auto &fill) {
                  const auto [offset, nbin, factor] = linear_edge_params(edges);
                  const auto bin = (coord - offset) * factor;
-                 using T = std::decay_t<decltype(get(weights, 0))>;
                  return (bin < 0.0 || bin >= nbin) ? fill : get(weights, bin);
                }};
 
@@ -97,7 +96,6 @@ constexpr auto map_sorted_edges =
     overloaded{map, [](const auto &coord, const auto &edges,
                        const auto &weights, const auto &fill) {
                  auto it = std::upper_bound(edges.begin(), edges.end(), coord);
-                 using T = std::decay_t<decltype(get(weights, 0))>;
                  return (it == edges.end() || it == edges.begin())
                             ? fill
                             : get(weights, --it - edges.begin());
@@ -107,7 +105,6 @@ constexpr auto lookup_previous =
     overloaded{map, [](const auto &point, const auto &x, const auto &weights,
                        const auto &fill) {
                  auto it = std::upper_bound(x.begin(), x.end(), point);
-                 using T = std::decay_t<decltype(get(weights, 0))>;
                  return it == x.begin() ? fill : get(weights, --it - x.begin());
                }};
 
