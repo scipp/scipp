@@ -110,10 +110,10 @@ Dataset copy(const Dataset &dataset, Dataset &&out,
 /// fill_value. If not provided, values are replaced by zero.
 Variable masked_data(const DataArray &array, const Dim dim,
                      const std::optional<Variable> &fill_value) {
-  const auto fill = fill_value.value_or(zero_like(array.data()));
   const auto mask = irreducible_mask(array.masks(), dim);
   if (mask.is_valid()) {
     const auto &data = array.data();
+    const auto fill = fill_value.value_or(zero_like(array.data()));
     return where(mask, fill, data);
   } else
     return array.data();
