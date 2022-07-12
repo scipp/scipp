@@ -14,7 +14,7 @@ def _combine_dims(dims_dict: Optional[Dict[str, str]],
     if set(dims_dict).intersection(names):
         raise ValueError(
             'The names passed in the dict and as keyword arguments must be distinct.'
-            f'Got dims_dict={dims_dict} and kwargs={names}')
+            f'Got {dims_dict} and {names}')
     return {**dims_dict, **names}
 
 
