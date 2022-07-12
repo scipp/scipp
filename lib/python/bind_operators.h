@@ -28,7 +28,13 @@ template <class T, class... Ignored>
 void bind_common_operators(pybind11::class_<T, Ignored...> &c) {
   c.def("__abs__", [](const T &self) { return abs(self); });
   c.def("__repr__", [](const T &self) { return to_string(self); });
-  c.def("__bool__", [](const T &) {
+  c.def("__bool__", [](const T &self) {
+    if constexpr (std::is_same_v<T, scipp::Variable>) {
+      if (self.unit() != scipp::units::none)
+        throw scipp::except::UnitError(
+            "The thruth value of a variable with unit is undefined.");
+      return self.template value<bool>() == true;
+    }
     throw std::runtime_error("The truth value of a variable, data array, or "
                              "dataset is ambiguous. Use any() or all().");
   });
