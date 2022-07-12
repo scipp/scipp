@@ -44,6 +44,8 @@ Bugfixes
 Documentation
 ~~~~~~~~~~~~~
 
+* Added new tutorial: *Getting Started* `2692 <https://github.com/scipp/scipp/pull/2692>`_.
+
 Deprecations
 ~~~~~~~~~~~~
 
