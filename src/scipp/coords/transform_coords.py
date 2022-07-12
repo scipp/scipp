@@ -93,7 +93,7 @@ def transform_coords(x: Union[DataArray, Dataset],
       >>> transformed = da.transform_coords('xy', graph={'xy': lambda x, y: x + y})
 
     Multiple new coordinates can be computed at once. Here ``z2`` is setup as an alias
-    of ``z`:
+    of ``z``:
 
       >>> da = sc.data.table_xyz(nrow=10)
       >>> transformed = da.transform_coords(xy=lambda x, y: x + y, z2='z')
