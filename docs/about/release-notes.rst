@@ -17,6 +17,8 @@ Features
 * Generalized :func:`scipp.lookup` to also support non-histogram functions for value lookup, with supported modes "previous" and "nearest".
   Also adding support for custom fill values `#2681 <https://github.com/scipp/scipp/pull/2681>`_.
 * Added possibility to pass keyword arguments to ``rename_dims``, matching the signature of ``rename`` `#2689 <https://github.com/scipp/scipp/pull/2689>`_.
+* Python's builtin conversion to "bool" using ``__bool__`` is now supported for 0-D boolean variables.
+  This makes the results of comparison usable with ``assert`` or ``if`` `#2695 <https://github.com/scipp/scipp/pull/2695>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
