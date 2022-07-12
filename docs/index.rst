@@ -132,6 +132,7 @@ Documentation
    :caption: Tutorials
    :maxdepth: 3
 
+   tutorials/getting-started
    tutorials/from-tabular-data-to-binned-data
    tutorials/solar_flares
 
