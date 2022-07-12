@@ -32,7 +32,7 @@ void bind_common_operators(pybind11::class_<T, Ignored...> &c) {
     if constexpr (std::is_same_v<T, scipp::Variable>) {
       if (self.unit() != scipp::units::none)
         throw scipp::except::UnitError(
-            "The thruth value of a variable with unit is undefined.");
+            "The truth value of a variable with unit is undefined.");
       return self.template value<bool>() == true;
     }
     throw std::runtime_error("The truth value of a variable, data array, or "
