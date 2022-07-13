@@ -6,3 +6,11 @@
 
 # flake8: noqa
 from ..core.binning import make_binned, make_histogrammed
+
+
+# This makes Sphinx display these functions in the docs.
+make_binned.__module__ = 'scipp.binning'
+make_histogrammed.__module__ = 'scipp.binning'
+
+
+__all__ = ['make_binned', 'make_histogrammed']
