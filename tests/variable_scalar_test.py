@@ -60,7 +60,7 @@ def test_scalar_Variable_conversion_to_builtin_int_with_variance():
         int(var)
 
 
-def test_scalar_Variable_conversion_to_builtin_int_fails_with_array():
+def test_conversion_to_builtin_int_fails_with_array():
     var = sc.array(dims=['x'], values=[1])
     with pytest.raises(sc.DimensionError):
         int(var)
@@ -89,7 +89,45 @@ def test_scalar_Variable_conversion_to_builtin_float_with_variance():
         float(var)
 
 
-def test_scalar_Variable_conversion_to_builtin_float_fails_with_array():
+def test_conversion_to_builtin_float_fails_with_array():
     var = sc.array(dims=['x'], values=[1.0])
     with pytest.raises(sc.DimensionError):
         float(var)
+
+
+def test_scalar_Variable_conversion_to_builtin_bool_True():
+    assert sc.scalar(True)
+
+
+def test_scalar_Variable_conversion_to_builtin_bool_False():
+    assert not sc.scalar(False)
+
+
+def test_scalar_Variable_conversion_to_builtin_bool_bad_dtype():
+    var = sc.scalar(value=1.0, unit=None)
+    with pytest.raises(TypeError):
+        bool(var)
+
+
+def test_scalar_Variable_conversion_to_builtin_bool_bad_unit_dimensionless():
+    var = sc.scalar(True, unit='')
+    with pytest.raises(sc.UnitError):
+        bool(var)
+
+
+def test_scalar_Variable_conversion_to_builtin_bool_bad_unit():
+    var = sc.scalar(True, unit='m')
+    with pytest.raises(sc.UnitError):
+        bool(var)
+
+
+def test_conversion_to_builtin_bool_fails_with_array():
+    var = sc.array(dims=['x'], values=[True, False])
+    with pytest.raises(sc.DimensionError):
+        bool(var)
+
+
+def test_conversion_to_builtin_bool_fails_with_size_1_array():
+    var = sc.array(dims=['x'], values=[True])
+    with pytest.raises(sc.DimensionError):
+        bool(var)
