@@ -239,11 +239,12 @@ class Figure(View):
         if key not in self._children:
             self._new_artist = True
             if new_values.ndim == 1:
-                self._children[key] = Line(ax=self._ax,
-                                           data=new_values,
-                                           number=len(self._children),
-                                           **self._kwargs)
-                self._legend = True
+                line = Line(ax=self._ax,
+                            data=new_values,
+                            number=len(self._children),
+                            **self._kwargs)
+                self._children[key] = line
+                self._legend = bool(line.label)
                 self._dims["x"] = new_values.dim
                 if self._ylabel is None:
                     self._ylabel = name_with_unit(var=new_values.data, name="")
