@@ -108,7 +108,7 @@ class Figure(View):
         if grid:
             self._ax.grid()
 
-        self._legend = False
+        self._legend = 0
         self._new_artist = False
 
     def is_widget(self) -> bool:
@@ -178,7 +178,7 @@ class Figure(View):
         if self._new_artist:
             self._ax.set_xlabel(self._xlabel)
             self._ax.set_ylabel(self._ylabel)
-            if self._legend:
+            if self._legend > 0:
                 self._ax.legend()
             self._new_artist = False
         self._draw_canvas()
@@ -244,7 +244,7 @@ class Figure(View):
                             number=len(self._children),
                             **self._kwargs)
                 self._children[key] = line
-                self._legend = bool(line.label)
+                self._legend += bool(line.label)
                 self._dims["x"] = new_values.dim
                 if self._ylabel is None:
                     self._ylabel = name_with_unit(var=new_values.data, name="")
