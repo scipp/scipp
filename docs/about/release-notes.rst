@@ -9,6 +9,8 @@ v0.15.0 (Unreleased)
 Features
 ~~~~~~~~
 
+* Added option for a more compact string format of variables `#2625 <https://github.com/scipp/scipp/pull/2625>`_.
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
