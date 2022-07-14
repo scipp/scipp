@@ -33,12 +33,6 @@ bool is_span(DType tp) {
   return is_span_impl<double, float, int64_t, int32_t, bool, time_point>(tp);
 }
 
-bool is_structured(DType tp) {
-  return tp == dtype<Eigen::Vector3d> || tp == dtype<Eigen::Matrix3d> ||
-         tp == dtype<scipp::core::Quaternion> || tp == dtype<Eigen::Affine3d> ||
-         tp == dtype<scipp::core::Translation>;
-}
-
 std::ostream &operator<<(std::ostream &os, const DType &dtype) {
   return os << to_string(dtype);
 }

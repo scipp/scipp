@@ -3,8 +3,8 @@
 # @author Neil Vaytet
 
 from .. import config, units
-from ..core import concat, values, scalar, histogram, full_like
-from ..core import DType, Variable, DataArray
+from ..core import concat, values, scalar, full_like, geomspace
+from ..core import DType, DataArray
 from ..core import abs as abs_
 import numpy as np
 from copy import copy
@@ -117,10 +117,9 @@ def find_log_limits(x):
     volume = np.product(x.shape)
     pixel = flatten(values(x.astype(DType.float64)), to='pixel')
     weights = ones(dims=['pixel'], shape=[volume], unit='counts')
-    hist = histogram(DataArray(data=weights, coords={'order': pixel}),
-                     bins=Variable(dims=['order'],
-                                   values=np.geomspace(1e-30, 1e30, num=61),
-                                   unit=x.unit))
+    hist = DataArray(data=weights, coords={
+        'order': pixel
+    }).hist(order=geomspace('order', 1e-30, 1e30, num=61, unit=x.unit))
     # Find the first and the last non-zero bins
     inds = np.nonzero((hist.data > scalar(0.0, unit=units.counts)).values)
     ar = np.arange(hist.data.shape[0])[inds]

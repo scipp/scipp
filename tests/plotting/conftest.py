@@ -1,5 +1,17 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+
+import matplotlib
 import matplotlib.pyplot as plt
 import pytest
+import scipp as sc
+
+
+@pytest.fixture(autouse=True)
+def select_plotting_backend():
+    matplotlib.rcdefaults()
+    matplotlib.use('Agg')
+    sc.plotting.select_backend('stable')
 
 
 @pytest.fixture(autouse=True)

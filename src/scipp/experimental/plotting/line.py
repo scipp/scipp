@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .. import DataArray, log10, stddevs
+from ... import DataArray, log10, stddevs
 from .tools import get_line_param
 from .limits import find_limits, fix_empty_range
 
@@ -35,6 +35,7 @@ class Line:
         self._errorbars = errorbars
         self._dim = None
         self._unit = None
+        self.label = None
 
         self._mask_color = mask_color if mask_color is not None else 'k'
 
@@ -57,7 +58,7 @@ class Line:
         }
 
     def _make_line(self, data, errorbars, params):
-        label = data["name"]
+        self.label = data["name"]
         has_mask = data["mask"] is not None
         mask_data_key = "mask" if has_mask else "values"
 
@@ -65,7 +66,7 @@ class Line:
             self._line = self._ax.step(
                 data["values"]["x"],
                 data["values"]["y"],
-                label=label,
+                label=self.label,
                 zorder=10,
                 **{key: params[key]
                    for key in ["color", "linewidth"]})[0]
@@ -79,7 +80,7 @@ class Line:
         else:
             self._line = self._ax.plot(data["values"]["x"],
                                        data["values"]["y"],
-                                       label=label,
+                                       label=self.label,
                                        zorder=10,
                                        **params)[0]
             self._mask = self._ax.plot(data["values"]["x"],

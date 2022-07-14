@@ -853,7 +853,7 @@ def test_rebin():
                                   unit=sc.units.counts)
     dataset.coords['x'] = sc.Variable(dims=['x'], values=np.arange(11.0))
     new_coord = sc.Variable(dims=['x'], values=np.arange(0.0, 11, 2))
-    dataset = sc.rebin(dataset, 'x', new_coord)
+    dataset = dataset.rebin(x=new_coord)
     np.testing.assert_array_equal(dataset['data'].values, np.array(5 * [2]))
     np.testing.assert_array_equal(dataset.coords['x'].values, np.arange(0, 11, 2))
 

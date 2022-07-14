@@ -7,6 +7,7 @@
 #include <Eigen/Geometry>
 
 #include "scipp/common/numeric.h"
+#include "scipp/core/bucket.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/spatial_transforms.h"
 
@@ -17,6 +18,12 @@ template <> inline constexpr DType dtype<Eigen::Vector3d>{4000};
 template <>
 inline constexpr DType dtype<scipp::span<const Eigen::Vector3d>>{4100};
 template <> inline constexpr DType dtype<scipp::span<Eigen::Vector3d>>{4200};
+
+constexpr bool is_structured(DType tp) {
+  return tp == dtype<Eigen::Vector3d> || tp == dtype<Eigen::Matrix3d> ||
+         tp == dtype<scipp::core::Quaternion> || tp == dtype<Eigen::Affine3d> ||
+         tp == dtype<scipp::core::Translation> || tp == dtype<index_pair>;
+}
 
 } // namespace scipp::core
 

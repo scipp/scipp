@@ -4,6 +4,6 @@
 # @author Jan-Lukas Wynen
 
 from .pandas_compat import from_pandas
-from .xarray_compat import from_xarray, from_xarray_dataarray, from_xarray_dataset
+from .xarray_compat import from_xarray, to_xarray
 
-__all__ = ['from_pandas', 'from_xarray', 'from_xarray_dataarray', 'from_xarray_dataset']
+__all__ = ['from_pandas', 'from_xarray', 'to_xarray']

@@ -3,7 +3,7 @@
 # @author Simon Heybrock
 from functools import lru_cache
 
-from ..core import array, bin, linspace, ones
+from ..core import array, linspace, ones
 from ..core import DataArray
 
 _version = '1'
@@ -78,19 +78,14 @@ def binned_x(nevent: int, nbin: int) -> DataArray:
     """
     Return data array binned along 1 dimension.
     """
-    table = table_xyz(nevent)
-    x = linspace(dim='x', unit='m', start=0.0, stop=1.0, num=nbin + 1)
-    return bin(table, edges=[x])
+    return table_xyz(nevent).bin(x=nbin)
 
 
 def binned_xy(nevent: int, nx: int, ny: int) -> DataArray:
     """
     Return data array binned along 2 dimensions.
     """
-    table = table_xyz(nevent)
-    x = linspace(dim='x', unit='m', start=0.0, stop=1.0, num=nx + 1)
-    y = linspace(dim='y', unit='m', start=0.0, stop=1.0, num=ny + 1)
-    return bin(table, edges=[x, y])
+    return table_xyz(nevent).bin(x=nx, y=ny)
 
 
 def data_xy() -> DataArray:

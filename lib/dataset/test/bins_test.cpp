@@ -29,11 +29,19 @@ protected:
   Variable var = make_bins(indices, Dim::X, copy(buffer));
 };
 
-TEST_F(DataArrayBinsTest, concatenate_dim_1d) {
+TEST_F(DataArrayBinsTest, concatenate_dim_1d_data_array_buffer) {
   Variable expected_indices =
       makeVariable<scipp::index_pair>(Values{std::pair{0, 4}});
   Variable expected = make_bins(expected_indices, Dim::X, buffer);
   EXPECT_EQ(buckets::concatenate(var, Dim::Y), expected);
+}
+
+TEST_F(DataArrayBinsTest, concatenate_dim_1d_variable_buffer) {
+  Variable expected_indices =
+      makeVariable<scipp::index_pair>(Values{std::pair{0, 4}});
+  Variable expected = make_bins(expected_indices, Dim::X, data);
+  EXPECT_EQ(buckets::concatenate(bins_view<DataArray>(var).data(), Dim::Y),
+            expected);
 }
 
 TEST_F(DataArrayBinsTest, concatenate_dim_1d_masked) {
@@ -207,13 +215,14 @@ protected:
 
 TEST_F(DataArrayBinsMapTest, map) {
   const auto &coord = bins_view<DataArray>(buckets).meta()[Dim::Z];
-  const auto out = buckets::map(histogram, coord, Dim::Z);
+  auto fill_value = makeVariable<double>(units::K, Values{1234});
+  const auto out = buckets::map(histogram, coord, Dim::Z, fill_value);
   // event coords 1,2,3,4
   // histogram:
   // | 1 | 2 | 4 |
   // 0   1   2   4
   const auto expected_scale = makeVariable<double>(
-      Dims{Dim::X}, Shape{4}, units::K, Values{2, 4, 4, 0});
+      Dims{Dim::X}, Shape{4}, units::K, Values{2, 4, 4, 1234});
   EXPECT_EQ(out, make_bins(indices, Dim::X, expected_scale));
 
   // Mapping result can be used to scale
@@ -223,9 +232,11 @@ TEST_F(DataArrayBinsMapTest, map) {
 
   // Mapping and scaling also works for slices
   histogram.setUnit(units::one); // cannot change unit of slice
+  fill_value.setUnit(units::one);
   auto partial = buckets;
   for (auto s : {Slice(Dim::Y, 0), Slice(Dim::Y, 1)})
-    partial.slice(s) *= buckets::map(histogram, coord.slice(s), Dim::Z);
+    partial.slice(s) *=
+        buckets::map(histogram, coord.slice(s), Dim::Z, fill_value);
   variable::variableFactory().set_elem_unit(partial, units::K);
   EXPECT_EQ(partial, expected);
 }
@@ -237,13 +248,14 @@ TEST_F(DataArrayBinsMapTest, fail_no_bin_edges) {
                        except::BinEdgeError);
 }
 
-TEST_F(DataArrayBinsMapTest, map_masked) {
+TEST_F(DataArrayBinsMapTest, map_masked_values_replaced_by_fill_value) {
   const auto &coord = bins_view<DataArray>(buckets).meta()[Dim::Z];
   histogram.masks().set(
       "mask", makeVariable<bool>(histogram.dims(), Values{false, true, false}));
-  const auto out = buckets::map(histogram, coord, Dim::Z);
+  const auto fill_value = makeVariable<double>(units::K, Values{1234});
+  const auto out = buckets::map(histogram, coord, Dim::Z, fill_value);
   const auto expected_scale = makeVariable<double>(
-      Dims{Dim::X}, Shape{4}, units::K, Values{0, 4, 4, 0});
+      Dims{Dim::X}, Shape{4}, units::K, Values{1234, 4, 4, 1234});
   EXPECT_EQ(out, make_bins(indices, Dim::X, expected_scale));
 }
 

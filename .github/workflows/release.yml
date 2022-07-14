@@ -71,7 +71,7 @@ jobs:
         submodules: true
         fetch-depth: 0  # history required so cmake can determine version
 
-    - uses: pypa/cibuildwheel@2.6.0
+    - uses: pypa/cibuildwheel@v2.8.0
       env:
         MACOSX_DEPLOYMENT_TARGET: "10.15"
 
@@ -140,7 +140,7 @@ jobs:
       - uses: actions/checkout@v2  # Need to checkout repo so github-pages-deploy-action works
       - uses: actions/download-artifact@v2
       - name: Deploy to release docs
-        uses: JamesIves/github-pages-deploy-action@v4.3.3
+        uses: JamesIves/github-pages-deploy-action@v4.3.4
         with:
           repository-name: scipp/scipp.github.io
           branch: master

@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include <algorithm>
+#include <limits>
 
 #include "scipp/core/bucket.h"
 #include "scipp/core/element/event_operations.h"
@@ -11,6 +12,7 @@
 
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bins.h"
+#include "scipp/variable/creation.h"
 #include "scipp/variable/cumulative.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/subspan_view.h"
@@ -56,6 +58,23 @@ constexpr auto expect_matching_keys = [](const auto &a, const auto &b) {
     throw std::runtime_error("Mismatching keys in\n" + to_string(a) + " and\n" +
                              to_string(b));
 };
+
+auto make_fill(const DataArray &function,
+               const std::optional<Variable> &fill_value) {
+  Variable fill = fill_value.value_or(zero_like(function.data()));
+  if (fill_value) {
+    if (fill.dtype() != function.dtype())
+      throw except::TypeError(
+          "The fill_value (dtype=" + to_string(fill.dtype()) +
+          ") must have the same dtype as the function values (dtype=" +
+          to_string(function.dtype()) + ").");
+  } else if (fill.dtype() == dtype<double>) {
+    fill.value<double>() = std::numeric_limits<double>::quiet_NaN();
+  } else if (fill.dtype() == dtype<float>) {
+    fill.value<float>() = std::numeric_limits<float>::quiet_NaN();
+  }
+  return fill;
+}
 
 } // namespace
 
@@ -176,6 +195,22 @@ bool is_bins(const Dataset &dataset) {
                      [](const auto &item) { return is_bins(item); });
 }
 
+Variable lookup_previous(const DataArray &function, const Variable &x, Dim dim,
+                         const std::optional<Variable> &fill_value) {
+  const auto fill = make_fill(function, fill_value);
+  const auto &coord = function.meta()[dim];
+  const auto data = masked_data(function, dim, fill);
+  const auto weights = subspan_view(data, dim);
+  if (!allsorted(coord, dim))
+    throw except::DataArrayError(
+        "Coordinate of lookup function must be sorted.");
+  // Note that we could do a linspace optimization similar to buckets::map here.
+  // Add this if we have real world application that would benefit.
+  return variable::transform(x, subspan_view(coord, dim), weights, fill,
+                             core::element::event::lookup_previous,
+                             "lookup_previous");
+}
+
 } // namespace scipp::dataset
 
 namespace scipp::dataset::buckets {
@@ -288,22 +323,24 @@ Variable histogram(const Variable &data, const Variable &binEdges) {
     return hist;
 }
 
-Variable map(const DataArray &function, const Variable &x, Dim dim) {
+Variable map(const DataArray &function, const Variable &x, Dim dim,
+             const std::optional<Variable> &fill_value) {
+  const auto fill = make_fill(function, fill_value);
   if (dim == Dim::Invalid)
     dim = edge_dimension(function);
   const auto &edges = function.meta()[dim];
   if (!is_edges(function.dims(), edges.dims(), dim))
     throw except::BinEdgeError(
         "Function used as lookup table in map operation must be a histogram");
-  const auto data = masked_data(function, dim);
+  const auto data = masked_data(function, dim, fill);
   const auto weights = subspan_view(data, dim);
   if (all(islinspace(edges, dim)).value<bool>()) {
-    return variable::transform(x, subspan_view(edges, dim), weights,
+    return variable::transform(x, subspan_view(edges, dim), weights, fill,
                                core::element::event::map_linspace, "map");
   } else {
     if (!allsorted(edges, dim))
       throw except::BinEdgeError("Bin edges of histogram must be sorted.");
-    return variable::transform(x, subspan_view(edges, dim), weights,
+    return variable::transform(x, subspan_view(edges, dim), weights, fill,
                                core::element::event::map_sorted_edges, "map");
   }
 }

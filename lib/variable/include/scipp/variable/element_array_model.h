@@ -3,16 +3,18 @@
 /// @file
 /// @author Simon Heybrock
 #pragma once
+#include <optional>
+
 #include "scipp/common/initialization.h"
 #include "scipp/common/numeric.h"
 #include "scipp/core/dimensions.h"
+#include "scipp/core/eigen.h"
 #include "scipp/core/element_array_view.h"
 #include "scipp/core/except.h"
 #include "scipp/units/unit.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable_concept.h"
-#include <optional>
 
 namespace scipp::variable {
 
@@ -58,6 +60,7 @@ bool equals_nan_impl(const T1 &view1, const T2 &view2) {
 /// Implementation of VariableConcept that holds an array with element type T.
 template <class T> class ElementArrayModel : public VariableConcept {
 public:
+  static_assert(!core::is_structured(core::template dtype<T>));
   using value_type = T;
 
   ElementArrayModel(const scipp::index size, const units::Unit &unit,

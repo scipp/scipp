@@ -125,10 +125,16 @@ Dataset apply_to_items(const Dataset &d, Func func, Args &&...args) {
 
 /// Return a copy of map-like objects such as Coords with `func` applied to each
 /// item.
+///
+/// If `func` returns an invalid object it will not be inserted into the output
+/// map. This can be used to drop/filter items.
 template <class T, class Func> auto transform_map(const T &map, Func func) {
   std::unordered_map<typename T::key_type, typename T::mapped_type> out;
-  for (const auto &[key, item] : map)
-    out.emplace(key, func(item));
+  for (const auto &[key, item] : map) {
+    auto transformed = func(item);
+    if (transformed.is_valid())
+      out.emplace(key, std::move(transformed));
+  }
   return out;
 }
 
@@ -168,6 +174,8 @@ template <class T, class Func> DataArray transform(const T &a, Func func) {
 [[nodiscard]] Variable any(const Variable &var, const Dim dim,
                            const Masks &masks);
 
-[[nodiscard]] Variable masked_data(const DataArray &array, const Dim dim);
+[[nodiscard]] Variable
+masked_data(const DataArray &array, const Dim dim,
+            const std::optional<Variable> &fill_value = std::nullopt);
 
 } // namespace scipp::dataset

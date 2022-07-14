@@ -81,7 +81,7 @@ def concat(x: Sequence[VariableLikeType], dim: str) -> VariableLikeType:
     Parameters
     ----------
     x: scipp.typing.VariableLike
-        Sequence of input variables, data arraus, or datasets.
+        Sequence of input variables, data arrays, or datasets.
     dim:
         Dimension along which to concatenate.
 
@@ -222,6 +222,9 @@ def flatten(x: VariableLikeType,
             to: Optional[str] = None) -> VariableLikeType:
     """Flatten multiple dimensions into a single dimension.
 
+    If the input has a bin-edge coordinate that cannot be joined together it will not
+    be included in the output.
+
     Parameters
     ----------
     x: scipp.typing.VariableLike
@@ -243,8 +246,6 @@ def flatten(x: VariableLikeType,
         If the input does not have a contiguous memory layout,
         i.e. flattening would require moving data around.
         This can be resolved by (deep-)copying the input.
-    scipp.BinEdgeError
-        If the bin edge coordinates cannot be stitched back together.
 
     Examples
     --------

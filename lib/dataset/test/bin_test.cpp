@@ -3,14 +3,17 @@
 #include <gtest/gtest.h>
 
 #include "dataset_test_common.h"
+#include "random.h"
 
 #include "scipp/dataset/bin.h"
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/histogram.h"
+#include "scipp/dataset/shape.h"
 #include "scipp/dataset/string.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/comparison.h"
+#include "scipp/variable/creation.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/util.h"
 
@@ -282,6 +285,15 @@ TEST_P(BinTest, 2d) {
   EXPECT_EQ(xy, x_then_y);
 }
 
+TEST_P(BinTest, bin_1d_length_1_along_new_dim) {
+  const auto table = GetParam();
+  const auto edges = edges_x.slice({Dim::X, 0, 2});
+  const auto x = bin(table, {edges});
+  const auto x_then_y = bin(x, {edges_y});
+  const auto xy = bin(table, {edges, edges_y});
+  EXPECT_EQ(xy, x_then_y);
+}
+
 TEST_P(BinTest, 2d_drop_out_of_range_linspace) {
   const auto edges_x_drop = edges_x.slice({Dim::X, 1, 4});
   const auto edges_y_drop = edges_y.slice({Dim::Y, 1, 4});
@@ -489,6 +501,7 @@ TEST_P(BinTest, rebin_various_edges_1d) {
   // since in general it is hard to come up with the expected result.
   using units::one;
   std::vector<Variable> edges;
+  edges.emplace_back(linspace(-2.0 * one, 1.2 * one, Dim::X, 2));
   edges.emplace_back(linspace(-2.0 * one, 1.2 * one, Dim::X, 4));
   edges.emplace_back(linspace(-2.0 * one, 1.2 * one, Dim::X, 72));
   edges.emplace_back(linspace(-1.23 * one, 1.2 * one, Dim::X, 45));
@@ -601,4 +614,97 @@ TEST_P(BinTest, new_dim_existing_coord) {
   edges.rename(Dim::Y, Dim::X);
   da.coords().set(Dim::Y, edges);
   EXPECT_EQ(bin(da, {edges_y}), expected);
+}
+
+TEST(BinLinspaceTest, event_mapped_to_correct_bin) {
+  const auto val10 = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 0});
+  const auto val01 = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 1});
+  const Dimensions dims(Dim::Row, 1);
+  const auto data = makeVariable<double>(dims, Values{1.0});
+  for (auto step = 1.23546e-6; step < 1e4; step *= 1.08354345) {
+    const auto edges = makeVariable<double>(
+        Dims{Dim::X}, Shape{3}, Values{1.0 * step, 2.0 * step, 3.0 * step});
+    const auto mid = edges.values<double>()[1];
+    for (const auto pos :
+         {mid, std::nextafter(mid, 0.0), std::nextafter(mid, 1e30)}) {
+      const auto x = makeVariable<double>(dims, Values{pos});
+      const DataArray da(data, {{Dim::X, x}});
+      const auto hist = bins_sum(bin(da, {edges}));
+      if (pos < mid) {
+        EXPECT_EQ(hist.data(), val10) << step << pos;
+      } else {
+        EXPECT_EQ(hist.data(), val01) << step << pos;
+      }
+    }
+  }
+}
+
+TEST(BinLinspaceTest, event_mapped_to_correct_bin_at_begin) {
+  const auto val00 = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 0});
+  const auto val10 = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 0});
+  const Dimensions dims(Dim::Row, 1);
+  const auto data = makeVariable<double>(dims, Values{1.0});
+  for (auto step = 1.23546e-6; step < 1e4; step *= 1.08354345) {
+    const auto edges = makeVariable<double>(
+        Dims{Dim::X}, Shape{3}, Values{1.0 * step, 2.0 * step, 3.0 * step});
+    const auto begin = edges.values<double>()[0];
+    for (const auto pos :
+         {begin, std::nextafter(begin, 0.0), std::nextafter(begin, 1e30)}) {
+      const auto x = makeVariable<double>(dims, Values{pos});
+      const DataArray da(data, {{Dim::X, x}});
+      const auto hist = bins_sum(bin(da, {edges}));
+      if (pos < begin) {
+        EXPECT_EQ(hist.data(), val00) << step << pos;
+      } else {
+        EXPECT_EQ(hist.data(), val10) << step << pos;
+      }
+    }
+  }
+}
+
+TEST(BinLinspaceTest, event_mapped_to_correct_bin_at_end) {
+  const auto val00 = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 0});
+  const auto val01 = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 1});
+  const Dimensions dims(Dim::Row, 1);
+  const auto data = makeVariable<double>(dims, Values{1.0});
+  for (auto step = 1.23546e-6; step < 1e4; step *= 1.08354345) {
+    const auto edges = makeVariable<double>(
+        Dims{Dim::X}, Shape{3}, Values{1.0 * step, 2.0 * step, 3.0 * step});
+    const auto end = edges.values<double>()[2];
+    for (const auto pos :
+         {end, std::nextafter(end, 0.0), std::nextafter(end, 1e30)}) {
+      const auto x = makeVariable<double>(dims, Values{pos});
+      const DataArray da(data, {{Dim::X, x}});
+      const auto hist = bins_sum(bin(da, {edges}));
+      if (pos < end) {
+        EXPECT_EQ(hist.data(), val01) << step << pos;
+      } else {
+        EXPECT_EQ(hist.data(), val00) << step << pos;
+      }
+    }
+  }
+}
+
+TEST(BinTest, rebin_2d_squeezed_to_1d) {
+  const auto table = make_table(10);
+  const auto x =
+      makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{-2, -1, 0, 1, 2});
+  const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{-2, 2});
+  const auto y2 =
+      makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{-2, 1, 2});
+  const auto da = squeeze(bin(table, {x, y}), std::nullopt);
+  EXPECT_EQ(bin(da, {y}), bin(table, {x, y}));
+  EXPECT_EQ(bin(da, {y2}), bin(table, {x, y2}));
+}
+
+TEST(BinLinspaceTest, many_events_many_bins) {
+  Random rand(0.0, 1.0);
+  rand.seed(0);
+  const Dimensions dims(Dim::Row, 9000000);
+  const auto data = variable::ones(dims, units::one, dtype<double>);
+  const auto x = makeVariable<double>(dims, Values(rand(dims.volume())));
+  auto da = DataArray(data, {{Dim::X, x}});
+  const auto edges =
+      linspace(0.0 * units::one, 1.0 * units::one, Dim::X, 70000);
+  EXPECT_EQ(sum(bin(da, {edges}).data()), sum(da.data()));
 }

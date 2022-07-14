@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+import functools
 import pytest
 import numpy as np
 import scipp as sc
@@ -379,11 +380,7 @@ def binned_in_a_b(request):
                                        values=np.random.rand(10),
                                        unit='m')
                           })
-    binned = sc.bin(events,
-                    edges=[
-                        sc.linspace('a', 0, 1, 3, unit='m'),
-                        sc.linspace('b', 0, 1, 3, unit='m')
-                    ])
+    binned = events.bin(a=2, b=2)
     # use non-bin-edge coord
     binned.coords['b'] = sc.arange('b', 2, unit='m')
 
@@ -423,6 +420,15 @@ def test_not_keep_aliases_dense(a, b, keep_inputs, keep_intermediate):
     assert 'c' not in da.meta
     assert 'd' in da.coords
 
+    # Requesting input as target preserves it.
+    da = original.transform_coords(['d', 'c'],
+                                   graph=graph,
+                                   keep_aliases=False,
+                                   keep_inputs=keep_inputs,
+                                   keep_intermediate=keep_intermediate)
+    assert 'c' in da.coords
+    assert 'd' in da.coords
+
 
 @pytest.mark.parametrize('keep_inputs', (True, False))
 @pytest.mark.parametrize('keep_intermediate', (True, False))
@@ -453,6 +459,17 @@ def test_not_keep_aliases_binned(binned_in_a_b, keep_inputs, keep_intermediate):
     assert 'd' in da.coords
     assert 'd' in da.bins.coords
 
+    # Requesting input as target preserves it.
+    da = binned_in_a_b.transform_coords(['d', 'c'],
+                                        graph=graph,
+                                        keep_aliases=False,
+                                        keep_inputs=keep_inputs,
+                                        keep_intermediate=keep_intermediate)
+    assert 'c' in da.coords
+    assert 'c' in da.bins.coords
+    assert 'd' in da.coords
+    assert 'd' in da.bins.coords
+
 
 @pytest.mark.parametrize('keep_aliases', (True, False))
 @pytest.mark.parametrize('keep_intermediate', (True, False))
@@ -479,6 +496,15 @@ def test_not_keep_inputs_dense(a, b, keep_aliases, keep_intermediate):
                                    keep_inputs=False,
                                    keep_intermediate=keep_intermediate)
     assert 'a' not in da.meta
+    assert 'b' not in da.meta
+
+    # Requesting input as target preserves it.
+    da = original.transform_coords(['c', 'a'],
+                                   graph=graph,
+                                   keep_aliases=keep_aliases,
+                                   keep_inputs=False,
+                                   keep_intermediate=keep_intermediate)
+    assert 'a' in da.coords
     assert 'b' not in da.meta
 
 
@@ -511,6 +537,17 @@ def test_not_keep_inputs_binned(binned_in_a_b, keep_aliases, keep_intermediate):
     assert 'b' not in da.meta
     assert 'b' not in da.bins.meta
 
+    # Requesting input as target preserves it.
+    da = binned_in_a_b.transform_coords(['c', 'a'],
+                                        graph=graph,
+                                        keep_aliases=keep_aliases,
+                                        keep_inputs=False,
+                                        keep_intermediate=keep_intermediate)
+    assert 'a' in da.coords
+    assert 'a' in da.bins.coords
+    assert 'b' not in da.meta
+    assert 'b' not in da.bins.meta
+
 
 @pytest.mark.parametrize('keep_aliases', (True, False))
 @pytest.mark.parametrize('keep_inputs', (True, False))
@@ -536,6 +573,14 @@ def test_not_keep_intermediate_dense(a, b, keep_aliases, keep_inputs):
                                    keep_inputs=keep_inputs,
                                    keep_intermediate=False)
     assert 'ab' not in da.meta
+
+    # Requesting intermediate as target preserves it.
+    da = original.transform_coords(['c', 'ab'],
+                                   graph=graph,
+                                   keep_aliases=keep_aliases,
+                                   keep_inputs=keep_inputs,
+                                   keep_intermediate=False)
+    assert 'ab' in da.coords
 
 
 @pytest.mark.parametrize('keep_aliases', (True, False))
@@ -563,6 +608,15 @@ def test_not_keep_intermediate_binned(binned_in_a_b, keep_aliases, keep_inputs):
     assert 'ab' not in da.meta
     assert 'ab' not in da.bins.meta
 
+    # Requesting intermediate as target preserves it.
+    da = binned_in_a_b.transform_coords(['c', 'ab'],
+                                        graph=graph,
+                                        keep_aliases=keep_aliases,
+                                        keep_inputs=keep_inputs,
+                                        keep_intermediate=False)
+    assert 'ab' in da.coords
+    assert 'ab' in da.bins.coords
+
 
 def test_inplace(c):
     original = sc.DataArray(data=1 * c, coords={'a': 2 * c, 'b': 3 * c})
@@ -584,28 +638,6 @@ def test_dataset(a):
     transformed = ds.transform_coords('b', graph={'b': 'a'})
     assert sc.identical(transformed['item1'].attrs['a'], a.rename_dims({'a': 'b'}))
     assert sc.identical(transformed.coords['b'], a.rename_dims({'a': 'b'}))
-
-
-def make_binned():
-    N = 50
-    data = sc.DataArray(data=sc.ones(dims=['event'], unit=sc.units.counts, shape=[N]),
-                        coords={
-                            'x':
-                            sc.array(dims=['event'],
-                                     unit=sc.units.m,
-                                     values=np.random.rand(N)),
-                            'y':
-                            sc.array(dims=['event'],
-                                     unit=sc.units.m,
-                                     values=np.random.rand(N))
-                        })
-    xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
-    ybins = sc.Variable(dims=['y'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
-    binned = sc.bin(data, edges=[xbins, ybins])
-    del binned.bins.coords['y']
-    del binned.coords['y']
-    binned.coords['y'] = sc.arange(dim='y', start=0, stop=2)
-    return binned
 
 
 def test_binned_does_not_modify_inputs(binned_in_a_b):
@@ -670,7 +702,7 @@ def test_binned_computes_correct_results(binned_in_a_b):
 def test_binned_slice_computes_correct_results(slice_):
     events = sc.DataArray(sc.ones(dims=['event'], shape=[10]),
                           coords={'x': sc.arange('event', 10.0)})
-    da = sc.bin(events, edges=[sc.arange('x', 0.0, 10.0, 2.0)])
+    da = sc.bin(events, x=sc.arange('x', 0.0, 10.0, 2.0))
     sliced = da['x', slice_]
 
     assert sc.identical(
@@ -711,6 +743,28 @@ def test_binned_without_event_coord_computes_correct_results(binned_in_a_b):
 
     # `a*b` is indeed the product of `a` and `b`
     assert sc.identical(converted.coords['a*b'], renamed.meta['a'] * renamed.meta['b'])
+
+
+def make_binned():
+    N = 50
+    data = sc.DataArray(data=sc.ones(dims=['event'], unit=sc.units.counts, shape=[N]),
+                        coords={
+                            'x':
+                            sc.array(dims=['event'],
+                                     unit=sc.units.m,
+                                     values=np.random.rand(N)),
+                            'y':
+                            sc.array(dims=['event'],
+                                     unit=sc.units.m,
+                                     values=np.random.rand(N))
+                        })
+    xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
+    ybins = sc.Variable(dims=['y'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
+    binned = data.bin(x=xbins, y=ybins)
+    del binned.bins.coords['y']
+    del binned.coords['y']
+    binned.coords['y'] = sc.arange(dim='y', start=0, stop=2)
+    return binned
 
 
 def test_binned_request_existing_consumed():
@@ -898,3 +952,87 @@ def test_prioritize_coords_attrs_conflict(a):
 
     with pytest.raises(sc.DataArrayError):
         original.transform_coords(['b'], graph={'b': 'a'})
+
+
+def test_keyword_syntax_equivalent_to_explicit_syntax():
+    da = sc.data.table_xyz(nrow=10)
+
+    def a(x):
+        return x + x
+
+    def b(x, y):
+        return x + y
+
+    assert sc.identical(da.transform_coords(a=a), da.transform_coords('a', {'a': a}))
+    graph = {'a': a, 'b': b}
+    assert sc.identical(da.transform_coords(a=a, b=b),
+                        da.transform_coords(['a', 'b'], graph=graph))
+
+
+def test_keyword_syntax_without_entries_returns_unchanged():
+    da = sc.data.table_xyz(nrow=10)
+    assert sc.identical(da.transform_coords(), da)
+
+
+def test_keyword_syntax_without_entries_and_graph_returns_unchanged():
+    da = sc.data.table_xyz(nrow=10)
+    assert sc.identical(da.transform_coords(graph={'b': 'y'}), da)
+
+
+def test_raises_when_keyword_syntax_combined_with_targets():
+    da = sc.data.table_xyz(nrow=10)
+    with pytest.raises(ValueError):
+        da.transform_coords('a', a=lambda x: x)
+
+
+def test_raises_when_keyword_syntax_combined_with_graph():
+    da = sc.data.table_xyz(nrow=10)
+    with pytest.raises(ValueError):
+        da.transform_coords(a=lambda x: x, graph={'b': 'y'})
+
+
+def test_raises_when_keyword_syntax_clashes_with_graph_argument():
+    da = sc.data.table_xyz(nrow=10)
+    with pytest.raises(TypeError):
+        da.transform_coords('x', graph=lambda x: x)
+
+
+@pytest.mark.parametrize(
+    'option',
+    ['rename_dims', 'keep_aliases', 'keep_intermediate', 'keep_inputs', 'quiet'])
+def test_raises_when_keyword_syntax_clashes_with_options(option):
+    da = sc.data.table_xyz(nrow=10)
+    with pytest.raises(TypeError):
+        da.transform_coords(**{option: lambda x: x})
+
+
+def test_works_with_partial():
+
+    def f(a, x):
+        return a * x
+
+    g = functools.partial(f, sc.scalar(5))
+    da = sc.data.table_xyz(nrow=10)
+    assert 'ax' in da.transform_coords(ax=g).coords
+
+
+def test_works_with_class_defining___call__():
+
+    class A:
+
+        def __call__(self, x):
+            return x * x
+
+    da = sc.data.table_xyz(nrow=10)
+    assert 'xx' in da.transform_coords(xx=A()).coords
+
+
+def test_input_coords_can_be_defined_via_property():
+
+    def f(a, b):
+        return a - b
+
+    f.__transform_coords_input_keys__ = ['x', 'y']
+    da = sc.data.table_xyz(nrow=10)
+    assert sc.identical(da.transform_coords(diff=f),
+                        da.transform_coords(diff=lambda x, y: f(x, y)))

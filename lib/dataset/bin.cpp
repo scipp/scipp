@@ -148,20 +148,24 @@ auto bin(const Variable &data, const Variable &indices,
       zip(end - filtered_input_bin_size, end);
 
   // Perform actual binning step for data, all coords, all masks, ...
-  auto out_buffer =
-      dataset::transform(bins_view<T>(data), [&](const auto &var) {
-        if (!is_bins(var))
-          return copy(var);
-        const auto &[input_indices, buffer_dim, in_buffer] =
-            var.template constituents<Variable>();
-        static_cast<void>(input_indices);
-        auto out = resize_default_init(in_buffer, buffer_dim, total_size);
-        auto out_subspans =
-            subspan_view(out, buffer_dim, filtered_input_bin_ranges);
-        map_to_bins(out_subspans, as_subspan_view(var), offsets,
-                    as_subspan_view(indices));
-        return out;
-      });
+  const auto do_bin = [&](const auto &var) {
+    if (!is_bins(var))
+      return copy(var);
+    const auto &[input_indices, buffer_dim, in_buffer] =
+        var.template constituents<Variable>();
+    static_cast<void>(input_indices);
+    auto out = resize_default_init(in_buffer, buffer_dim, total_size);
+    auto out_subspans =
+        subspan_view(out, buffer_dim, filtered_input_bin_ranges);
+    map_to_bins(out_subspans, as_subspan_view(var), offsets,
+                as_subspan_view(indices));
+    return out;
+  };
+  T out_buffer;
+  if constexpr (std::is_same_v<T, Variable>)
+    out_buffer = do_bin(data);
+  else
+    out_buffer = dataset::transform(bins_view<T>(data), do_bin);
 
   // Up until here the output was viewed with same bin index ranges as input.
   // Now switch to desired final bin indices.
@@ -290,11 +294,17 @@ public:
             allsorted(bin_coords.at(dim), dim)) {
           const auto &bin_coord = bin_coords.at(dim);
           const bool histogram =
-              bin_coord.dims()[dim] == indices.dims()[dim] + 1;
-          const auto begin =
+              bin_coord.dims()[dim] ==
+              (indices.dims().contains(dim) ? indices.dims()[dim] : 1) + 1;
+          auto begin =
               begin_edge(histogram ? left_edge(bin_coord) : bin_coord, key);
-          const auto end = histogram ? end_edge(right_edge(bin_coord), key)
-                                     : begin + 2 * units::none;
+          auto end = histogram ? end_edge(right_edge(bin_coord), key)
+                               : begin + 2 * units::none;
+          // When we have bin edges (of length 2) for a dimension that is not
+          // a dimension of the input it needs to be squeezed to avoid problems
+          // in various places later on.
+          begin = squeeze(begin, std::nullopt);
+          end = squeeze(end, std::nullopt);
           const auto indices_ = zip(begin, end);
           const auto inner_volume = dims().volume() / dims()[dim] * units::none;
           // Number of non-zero entries (per "row" above)
@@ -471,7 +481,7 @@ template <class T> Variable concat_bins(const Variable &var, const Dim dim) {
   TargetBins<T> target_bins(var, builder.dims());
 
   builder.build(*target_bins, std::map<Dim, Variable>{});
-  auto [buffer, bin_sizes] = bin<DataArray>(var, *target_bins, builder);
+  auto [buffer, bin_sizes] = bin<T>(var, *target_bins, builder);
   bin_sizes = squeeze(bin_sizes, scipp::span{&dim, 1});
   const auto end = cumsum(bin_sizes);
   const auto buffer_dim = buffer.dims().inner();

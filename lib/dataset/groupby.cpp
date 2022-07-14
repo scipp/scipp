@@ -451,6 +451,14 @@ template <class T> T extract_impl(const T &obj, const Variable &condition) {
         "Cannot extract elements based on condition with non-boolean dtype. If "
         "you intended to select a range based on a label you must specify the "
         "dimension.");
+  if (condition.dims().ndim() != 1)
+    throw except::DimensionError("Condition must by 1-D, but got " +
+                                 to_string(condition.dims()) + '.');
+  if (!obj.dims().includes(condition.dims()))
+    throw except::DimensionError(
+        "Condition dimensions " + to_string(condition.dims()) +
+        " must be be included in the dimensions of the sliced object " +
+        to_string(obj.dims()) + '.');
   if (all(condition).value<bool>())
     return copy(obj);
   if (!any(condition).value<bool>())
