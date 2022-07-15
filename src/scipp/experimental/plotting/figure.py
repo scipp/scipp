@@ -236,6 +236,8 @@ class Figure(View):
         """
         Update image array with new values.
         """
+        if new_values.ndim > 2:
+            raise ValueError("Figure can only be used to plot 1-D and 2-D data.")
         if key not in self._children:
             self._new_artist = True
             if new_values.ndim == 1:
