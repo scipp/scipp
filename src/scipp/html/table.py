@@ -175,7 +175,7 @@ def _to_dataset(obj: Union[VariableLike, dict]) -> Dataset:
 
 
 def table(obj: Dict[str, Union[Variable, DataArray]], max_rows: int = 20):
-    """Create a html table from the contents of the supplied object.
+    """Create an HTML table from the contents of the supplied object.
 
     Possible inputs are:
      - Variable

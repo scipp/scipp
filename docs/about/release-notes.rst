@@ -10,6 +10,7 @@ Features
 ~~~~~~~~
 
 * Added conversion from Scipp objects to Xarray objects (previously only converting from Xarray to Scipp was available) `#2624 <https://github.com/scipp/scipp/pull/2624>`_.
+* Added option for a more compact string format of variables `#2625 <https://github.com/scipp/scipp/pull/2625>`_.
 * Overhauled and streamlined usability of functions related to binning, grouping, and histogramming with additional features such as automatic bin edges and histogramming ignoring NaN values.
   See :func:`scipp.bin`, :func:`scipp.group`, :func:`scipp.hist`, :func:`scipp.nanhist`, and :func:`scipp.rebin` `#2633 <https://github.com/scipp/scipp/pull/2633>`_.
 * Added support for histogramming and binning variables, in addition to existing support for data arrays `#2678 <https://github.com/scipp/scipp/pull/2678>`_.

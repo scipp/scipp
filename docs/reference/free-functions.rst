@@ -187,11 +187,13 @@ Visualization
 .. autosummary::
    :toctree: ../generated/functions
 
+   make_html
+   make_svg
+   plot
    show
    show_graph
    table
    to_html
-   plot
 
 
 Compatibility

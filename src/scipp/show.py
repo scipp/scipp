@@ -463,7 +463,7 @@ class DatasetDrawer:
 
 def make_svg(container: VariableLike, content_only: Optional[bool] = False) -> str:
     """
-    Return a svg representation of a variable or dataset.
+    Return an SVG representation of a variable, data array, or dataset.
     """
     if isinstance(container, sc.Variable):
         draw = VariableDrawer(container)
@@ -474,7 +474,11 @@ def make_svg(container: VariableLike, content_only: Optional[bool] = False) -> s
 
 def show(container: VariableLike):
     """
-    Show a graphical representation of a variable or dataset.
+    Show a graphical representation of a variable, data array, or dataset.
+
+    See 'SVG representation' in
+    `Representations and Tables <../../visualization/representations-and-tables.rst>`_
+    for details.
     """
     from IPython.core.display import display, HTML
     display(HTML(make_svg(container)))
