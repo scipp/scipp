@@ -15,6 +15,7 @@ def _get_releases(repo: str, organization: str = 'scipp') -> List[Version]:
 
 
 class VersionInfo:
+
     def __init__(self, repo: str, organization: str = 'scipp'):
         self._releases = _get_releases(repo=repo, organization=organization)
 

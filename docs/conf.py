@@ -19,7 +19,6 @@ project = u'scipp'
 copyright = u'2022 Scipp contributors'
 author = u'Scipp contributors'
 
-
 version_info = VersionInfo(repo=project)
 long_version = scipp.__version__
 outdated = not version_info.is_latest(long_version)
@@ -56,11 +55,7 @@ def add_buttons(
         entries = releases[1:]
     lines = [{"type": "link", "text": latest, "url": f"{base}"}]
     for r in entries:
-        lines.append({
-            "type": "link",
-            "text": f"{r}",
-            "url": f"{base}/release/{r}"
-        })
+        lines.append({"type": "link", "text": f"{r}", "url": f"{base}/release/{r}"})
     header_buttons.append({
         "type": "group",
         "buttons": lines,
@@ -70,7 +65,6 @@ def add_buttons(
 
 
 sphinx_book_theme.add_launch_buttons = add_buttons
-
 
 html_show_sourcelink = True
 
