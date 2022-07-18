@@ -177,13 +177,15 @@ def hist(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset],
          **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
     """Compute a histogram.
 
-    Bin edges can be specified in three ways: (1) When an integer is provided,
-    a 'linspace' with this requested number of bins is created, based on the min
-    and max of the corresponding coordinate. (2) A scalar scipp variable (a value
-    with a unit) is interpreted as a target bin with, and an 'arange' covering the
-    min and max of the corresponding coordinate is created. (3) A custom coordinate,
-    given as a scipp variable with compatible unit. Typically this should have a single
-    dimension matching the target dimension.
+    Bin edges can be specified in three ways:
+     
+    1. When an integer is provided, a 'linspace' with this requested number of
+       bins is created, based on the min and max of the corresponding coordinate.
+    2. A scalar scipp variable (a value with a unit) is interpreted as a target
+       bin width, and an 'arange' covering the min and max of the corresponding
+       coordinate is created.
+    3. A custom coordinate, given as a scipp variable with compatible unit.
+       Typically this should have a single dimension matching the target dimension.
 
     When histogramming a dimension with an existing dimension-coord, the binning for
     the dimension is modified, i.e., the input and the output will have the same
@@ -323,13 +325,15 @@ def bin(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset],
         **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
     """Create binned data by binning input along all dimensions given by edges.
 
-    Bin edges can be specified in three ways: (1) When an integer is provided,
-    a 'linspace' with this requested number of bins is created, based on the min
-    and max of the corresponding coordinate. (2) A scalar scipp variable (a value
-    with a unit) is interpreted as a target bin with, and an 'arange' covering the
-    min and max of the corresponding coordinate is created. (3) A custom coordinate,
-    given as a scipp variable with compatible unit. Typically this should have a single
-    dimension matching the target dimension.
+    Bin edges can be specified in three ways:
+
+    1. When an integer is provided, a 'linspace' with this requested number of
+       bins is created, based on the min and max of the corresponding coordinate.
+    2. A scalar scipp variable (a value with a unit) is interpreted as a target
+       bin width, and an 'arange' covering the min and max of the corresponding
+       coordinate is created.
+    3. A custom coordinate, given as a scipp variable with compatible unit.
+       Typically, this should have a single dimension matching the target dimension.
 
     When binning a dimension with an existing dimension-coord, the binning for
     the dimension is modified, i.e., the input and the output will have the same

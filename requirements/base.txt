@@ -5,11 +5,11 @@
 #
 #    pip-compile-multi
 #
-confuse==1.7.0
+confuse==2.0.0
     # via -r requirements/base.in
 graphlib-backport==1.0.3
     # via -r requirements/base.in
-numpy==1.22.4
+numpy==1.23.1
     # via -r requirements/base.in
 pyyaml==6.0
     # via confuse

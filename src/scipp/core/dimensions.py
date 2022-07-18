@@ -27,7 +27,7 @@ def _rename_dims(self: VariableLikeType,
     The renaming can be defined:
 
     - using a dict mapping the old to new names, e.g.
-     ``rename_dims({'x': 'a', 'y': 'b'})``
+      ``rename_dims({'x': 'a', 'y': 'b'})``
     - using keyword arguments, e.g. ``rename_dims(x='a', y='b')``
 
     In both cases, x is renamed to a and y to b.
