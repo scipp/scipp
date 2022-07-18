@@ -7,15 +7,15 @@
 #
 bottle==0.12.21
     # via conan
-certifi==2022.5.18.1
+certifi==2022.6.15
     # via requests
-charset-normalizer==2.0.12
+charset-normalizer==2.1.0
     # via requests
-cmake==3.22.4
+cmake==3.22.5
     # via -r requirements/build.in
-colorama==0.4.4
+colorama==0.4.5
     # via conan
-conan==1.49.0
+conan==1.50.0
     # via -r requirements/build.in
 distro==1.6.0
     # via conan
@@ -41,9 +41,9 @@ pyjwt==2.4.0
     # via conan
 python-dateutil==2.8.2
     # via conan
-pyyaml==5.4.1
+pyyaml==6.0
     # via conan
-requests==2.27.1
+requests==2.28.1
     # via conan
 six==1.16.0
     # via
@@ -51,7 +51,7 @@ six==1.16.0
     #   python-dateutil
 tqdm==4.64.0
     # via conan
-urllib3==1.26.9
+urllib3==1.26.10
     # via
     #   conan
     #   requests
