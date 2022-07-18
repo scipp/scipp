@@ -174,6 +174,8 @@ template <class T, class Func> DataArray transform(const T &a, Func func) {
 [[nodiscard]] Variable any(const Variable &var, const Dim dim,
                            const Masks &masks);
 
-[[nodiscard]] Variable masked_data(const DataArray &array, const Dim dim);
+[[nodiscard]] Variable
+masked_data(const DataArray &array, const Dim dim,
+            const std::optional<Variable> &fill_value = std::nullopt);
 
 } // namespace scipp::dataset

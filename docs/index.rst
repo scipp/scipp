@@ -132,9 +132,7 @@ Documentation
    :caption: Tutorials
    :maxdepth: 3
 
-   tutorials/introduction
    tutorials/from-tabular-data-to-binned-data
-   tutorials/multi-d-datasets
    tutorials/solar_flares
 
 .. toctree::

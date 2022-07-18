@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+import functools
 import pytest
 import numpy as np
 import scipp as sc
@@ -951,3 +952,87 @@ def test_prioritize_coords_attrs_conflict(a):
 
     with pytest.raises(sc.DataArrayError):
         original.transform_coords(['b'], graph={'b': 'a'})
+
+
+def test_keyword_syntax_equivalent_to_explicit_syntax():
+    da = sc.data.table_xyz(nrow=10)
+
+    def a(x):
+        return x + x
+
+    def b(x, y):
+        return x + y
+
+    assert sc.identical(da.transform_coords(a=a), da.transform_coords('a', {'a': a}))
+    graph = {'a': a, 'b': b}
+    assert sc.identical(da.transform_coords(a=a, b=b),
+                        da.transform_coords(['a', 'b'], graph=graph))
+
+
+def test_keyword_syntax_without_entries_returns_unchanged():
+    da = sc.data.table_xyz(nrow=10)
+    assert sc.identical(da.transform_coords(), da)
+
+
+def test_keyword_syntax_without_entries_and_graph_returns_unchanged():
+    da = sc.data.table_xyz(nrow=10)
+    assert sc.identical(da.transform_coords(graph={'b': 'y'}), da)
+
+
+def test_raises_when_keyword_syntax_combined_with_targets():
+    da = sc.data.table_xyz(nrow=10)
+    with pytest.raises(ValueError):
+        da.transform_coords('a', a=lambda x: x)
+
+
+def test_raises_when_keyword_syntax_combined_with_graph():
+    da = sc.data.table_xyz(nrow=10)
+    with pytest.raises(ValueError):
+        da.transform_coords(a=lambda x: x, graph={'b': 'y'})
+
+
+def test_raises_when_keyword_syntax_clashes_with_graph_argument():
+    da = sc.data.table_xyz(nrow=10)
+    with pytest.raises(TypeError):
+        da.transform_coords('x', graph=lambda x: x)
+
+
+@pytest.mark.parametrize(
+    'option',
+    ['rename_dims', 'keep_aliases', 'keep_intermediate', 'keep_inputs', 'quiet'])
+def test_raises_when_keyword_syntax_clashes_with_options(option):
+    da = sc.data.table_xyz(nrow=10)
+    with pytest.raises(TypeError):
+        da.transform_coords(**{option: lambda x: x})
+
+
+def test_works_with_partial():
+
+    def f(a, x):
+        return a * x
+
+    g = functools.partial(f, sc.scalar(5))
+    da = sc.data.table_xyz(nrow=10)
+    assert 'ax' in da.transform_coords(ax=g).coords
+
+
+def test_works_with_class_defining___call__():
+
+    class A:
+
+        def __call__(self, x):
+            return x * x
+
+    da = sc.data.table_xyz(nrow=10)
+    assert 'xx' in da.transform_coords(xx=A()).coords
+
+
+def test_input_coords_can_be_defined_via_property():
+
+    def f(a, b):
+        return a - b
+
+    f.__transform_coords_input_keys__ = ['x', 'y']
+    da = sc.data.table_xyz(nrow=10)
+    assert sc.identical(da.transform_coords(diff=f),
+                        da.transform_coords(diff=lambda x, y: f(x, y)))

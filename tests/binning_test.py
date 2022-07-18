@@ -507,3 +507,31 @@ def test_rebin_deprecated_positional_arguments():
     with pytest.warns(UserWarning):
         result = sc.rebin(da, 'x', x)
     assert sc.identical(result, da.rebin(x=x))
+
+
+@pytest.mark.parametrize('op', ['bin', 'hist', 'nanhist'])
+def test_raises_ValueError_given_variable_and_multiple_edges(op):
+    var = sc.array(dims=['row'], values=[1, 2, 3])
+    with pytest.raises(ValueError):
+        getattr(var, op)(x=2, y=2)
+
+
+def test_variable_hist_equivalent_to_hist_of_data_array_with_counts():
+    data = sc.ones(dims=['row'], shape=[4], unit='counts')
+    coord = sc.array(dims=['row'], values=[2, 2, 1, 3])
+    da = sc.DataArray(data, coords={'x': coord})
+    assert sc.identical(coord.hist(x=3), da.hist(x=3))
+
+
+def test_variable_nanhist_equivalent_to_nanhist_of_data_array_with_counts():
+    data = sc.ones(dims=['row'], shape=[4], unit='counts')
+    coord = sc.array(dims=['row'], values=[2, 2, 1, 3])
+    da = sc.DataArray(data, coords={'x': coord})
+    assert sc.identical(coord.nanhist(x=3), da.nanhist(x=3))
+
+
+def test_variable_bin_equivalent_to_bin_of_data_array_with_counts():
+    data = sc.ones(dims=['row'], shape=[4], unit='counts')
+    coord = sc.array(dims=['row'], values=[2, 2, 1, 3])
+    da = sc.DataArray(data, coords={'x': coord})
+    assert sc.identical(coord.bin(x=3), da.bin(x=3))

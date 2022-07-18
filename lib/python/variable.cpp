@@ -89,9 +89,7 @@ Array of values with dimension labels and a unit, optionally including an array
 of variances.)");
 
   bind_init(variable);
-  variable
-      .def("rename_dims", &rename_dims<Variable>, py::arg("dims_dict"),
-           py::pos_only(), "Rename dimensions.")
+  variable.def("_rename_dims", &rename_dims<Variable>)
       .def_property_readonly("dtype", &Variable::dtype)
       .def("__sizeof__",
            [](const Variable &self) {

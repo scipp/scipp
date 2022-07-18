@@ -134,6 +134,14 @@ TEST_F(ReduceBinnedTest, all_dims) {
   EXPECT_EQ(min(binned), min(binned));
 }
 
+TEST_F(ReduceBinnedTest, all_dims_of_0d) {
+  const auto binned0d = make_bins(
+      makeVariable<index_pair>(Values{std::pair{0, 6}}), Dim::X, buffer);
+  EXPECT_EQ(sum(binned0d), sum(buffer));
+  EXPECT_EQ(max(binned0d), max(buffer));
+  EXPECT_EQ(min(binned0d), min(binned));
+}
+
 TEST_F(ReduceBinnedTest, one_dim) {
   EXPECT_EQ(sum(binned, Dim::Y),
             makeVariable<double>(Dims{Dim::Z}, Shape{2}, units::m,

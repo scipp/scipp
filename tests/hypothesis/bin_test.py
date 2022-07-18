@@ -28,7 +28,7 @@ def test_bin_2d_linspace_bounds(a, b):
     assert binned.sum().value == 2
 
 
-@settings(max_examples=1000)
+@settings(max_examples=1000, deadline=1000)
 @given(st.integers(min_value=0, max_value=5555), st.integers(min_value=0,
                                                              max_value=1234),
        st.integers(min_value=0, max_value=1234))
