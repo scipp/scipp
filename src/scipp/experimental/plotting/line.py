@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from ... import DataArray, log10, stddevs
+from ... import DataArray, stddevs
 from .tools import get_line_param
-from .limits import find_limits, fix_empty_range
+from .limits import find_limits, fix_empty_range, delta
 
 from functools import reduce
 import numpy as np
@@ -174,21 +174,19 @@ class Line:
         ymin, ymax = fix_empty_range(find_limits(self._data.data, scale=yscale))
 
         # Add padding
+        deltax = delta(xmin, xmax, 0.03, xscale)
         if xscale == "log":
-            delta = 10**(0.03 * log10(xmax / xmin))
-            xmin /= delta
-            xmax *= delta
+            xmin = xmin / deltax
+            xmax = xmax * deltax
         else:
-            delta = 0.03 * (xmax - xmin)
-            xmin -= delta
-            xmax += delta
+            xmin = xmin - deltax
+            xmax = xmax + deltax
+        deltay = delta(ymin, ymax, 0.03, yscale)
         if yscale == "log":
-            delta = 10**(0.03 * log10(ymax / ymin))
-            ymin /= delta
-            ymax *= delta
+            ymin = ymin / deltay
+            ymax = ymax * deltay
         else:
-            delta = 0.03 * (ymax - ymin)
-            ymin -= delta
-            ymax += delta
+            ymin = ymin - deltay
+            ymax = ymax + deltay
 
         return xmin, xmax, ymin, ymax
