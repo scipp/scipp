@@ -3,8 +3,8 @@
 Release Notes
 =============
 
-v0.15.0 (Unreleased)
---------------------
+v0.15.0 (July 2022)
+-------------------
 
 Features
 ~~~~~~~~
@@ -47,6 +47,8 @@ Bugfixes
 
 Documentation
 ~~~~~~~~~~~~~
+
+* Remove two ancient tutorials.
 
 Deprecations
 ~~~~~~~~~~~~

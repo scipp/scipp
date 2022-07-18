@@ -56,7 +56,6 @@ and `ess <https://scipp.github.io/ess>`_ for dealing with the specifics of neutr
 News
 ----
 
-- [May 2022] We are hiring a Python developer located in Copenhagen, Denmark. See [Scientific software developer for large international research infrastructure(https://europeanspallationsource.se/careers/vacancies) (needs Javascript enabled).
 - [|SCIPP_RELEASE_MONTH|] scipp-|SCIPP_VERSION| `has been released <about/release-notes.rst>`_.
   Check out the `What's new <about/whats-new.rst>`_ notebook for an overview of recent highlights and major changes.
 - We now provide ``pip`` packages of ``scipp``, in addition to ``conda`` packages.
