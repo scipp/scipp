@@ -7,25 +7,25 @@
 #
 attrs==21.4.0
     # via jsonschema
-clang-format==14.0.3
+clang-format==14.0.6
     # via -r requirements/static.in
 cmake-format==0.6.13
     # via -r requirements/static.in
 cmakelang==0.6.13
     # via cmake-format
-fastjsonschema==2.15.3
+fastjsonschema==2.16.1
     # via nbformat
 flake8==4.0.1
     # via -r requirements/static.in
-importlib-resources==5.7.1
+importlib-resources==5.8.0
     # via jsonschema
-jsonschema==4.4.0
+jsonschema==4.7.2
     # via nbformat
-jupyter-core==4.10.0
+jupyter-core==4.11.1
     # via nbformat
 mccabe==0.6.1
     # via flake8
-nbformat==5.3.0
+nbformat==5.4.0
     # via nbstripout
 nbstripout==0.5.0
     # via -r requirements/static.in
@@ -39,11 +39,11 @@ six==1.16.0
     # via cmakelang
 toml==0.10.2
     # via -r requirements/static.in
-traitlets==5.1.1
+traitlets==5.3.0
     # via
     #   jupyter-core
     #   nbformat
 yapf==0.32.0
     # via -r requirements/static.in
-zipp==3.8.0
+zipp==3.8.1
     # via importlib-resources
