@@ -30,9 +30,8 @@ jobs:
     steps:
       - run: sudo apt install --yes graphviz pandoc
       - uses: actions/checkout@v3
-        # TODO uncomment after patch release
-        #with:
-        #  ref: ${{ inputs.version }}
+        with:
+          ref: ${{ inputs.version }}
       - uses: actions/setup-python@v3
         with:
           python-version: 3.8
