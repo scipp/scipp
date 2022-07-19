@@ -95,13 +95,25 @@ TEST(SizeOf, variable_of_vector3) {
             sizeof(Eigen::Vector3d) + object_size);
 }
 
+namespace {
+auto short_string_size([[maybe_unused]] const std::string &str) {
+#ifdef _MSC_VER
+  // MSVC does not use short string optimization.
+  return sizeof(std::string) + str.size();
+#else
+  return sizeof(std::string);
+#endif
+}
+} // namespace
+
 TEST(SizeOf, variable_of_short_string) {
   const auto object_size =
       sizeof(Variable) + sizeof(variable::ElementArrayModel<std::string>);
 
+  const std::string str = "short";
   const auto var =
-      makeVariable<std::string>(Shape{1}, Dims{Dim::X}, Values{"short"});
-  const auto expected_size = sizeof(std::string) + object_size;
+      makeVariable<std::string>(Shape{1}, Dims{Dim::X}, Values{str});
+  const auto expected_size = short_string_size(str) + object_size;
   EXPECT_EQ(size_of(var, SizeofTag::ViewOnly), expected_size);
   EXPECT_EQ(size_of(var, SizeofTag::Underlying), expected_size);
 }
@@ -126,8 +138,8 @@ TEST(SizeOf, variable_of_three_strings) {
   const std::string str0 = "A rather long string that is hopefully on the heap";
   const std::string str1;
   const std::string str2 = "short";
-  const auto expected_size =
-      3 * sizeof(std::string) + str0.size() + object_size;
+  const auto expected_size = 2 * sizeof(std::string) + str0.size() +
+                             short_string_size(str2) + object_size;
   const auto var = makeVariable<std::string>(Shape{3}, Dims{Dim::X},
                                              Values{str0, str1, str2});
   EXPECT_EQ(size_of(var, SizeofTag::ViewOnly), expected_size);
@@ -144,19 +156,18 @@ TEST(SizeOf, variable_of_three_strings_slice) {
   const auto full = makeVariable<std::string>(Shape{3}, Dims{Dim::X},
                                               Values{str0, str1, str2});
   const auto var1 = full.slice({Dim::X, 0, 2});
+  const auto full_size = 2 * sizeof(std::string) + str0.size() +
+                         short_string_size(str2) + object_size;
   EXPECT_EQ(size_of(var1, SizeofTag::ViewOnly),
             2 * sizeof(std::string) + str0.size() + object_size);
-  EXPECT_EQ(size_of(var1, SizeofTag::Underlying),
-            3 * sizeof(std::string) + str0.size() + object_size);
+  EXPECT_EQ(size_of(var1, SizeofTag::Underlying), full_size);
   const auto var2 = full.slice({Dim::X, 1, 3});
   EXPECT_EQ(size_of(var2, SizeofTag::ViewOnly),
-            2 * sizeof(std::string) + object_size);
-  EXPECT_EQ(size_of(var2, SizeofTag::Underlying),
-            3 * sizeof(std::string) + str0.size() + object_size);
+            sizeof(std::string) + short_string_size(str2) + object_size);
+  EXPECT_EQ(size_of(var2, SizeofTag::Underlying), full_size);
   const auto var3 = full.slice({Dim::X, 1, 1});
   EXPECT_EQ(size_of(var3, SizeofTag::ViewOnly), object_size);
-  EXPECT_EQ(size_of(var3, SizeofTag::Underlying),
-            3 * sizeof(std::string) + str0.size() + object_size);
+  EXPECT_EQ(size_of(var3, SizeofTag::Underlying), full_size);
 }
 
 TEST(SizeOf, variable_of_variable) {
