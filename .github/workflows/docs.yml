@@ -52,7 +52,7 @@ jobs:
         if: ${{ inputs.publish }}
         with:
           repository-name: scipp/scipp.github.io
-          branch: maser
+          branch: master
           folder: html
           target-folder: ${{ env.target }}
           single-commit: true
