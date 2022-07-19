@@ -4,12 +4,9 @@
 
 #include "scipp/core/eigen.h"
 #include "scipp/dataset/bins.h"
-#include "scipp/dataset/dataset.h"
 #include "scipp/dataset/util.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bins.h"
-#include "scipp/variable/reduction.h"
-#include "scipp/variable/util.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
@@ -60,6 +57,56 @@ TEST(SizeOf, size_in_memory_for_non_trivial_dtype) {
   auto var = makeVariable<Eigen::Vector3d>(Shape{1, 1}, Dims{Dim::X, Dim::Y});
   EXPECT_EQ(size_of(var, SizeofTag::ViewOnly), sizeof(Eigen::Vector3d));
   EXPECT_EQ(size_of(var, SizeofTag::Underlying), sizeof(Eigen::Vector3d));
+}
+
+TEST(SizeOf, short_string) {
+  const auto var =
+      makeVariable<std::string>(Shape{1}, Dims{Dim::X}, Values{"short"});
+  const auto expected_size = sizeof(std::string);
+  EXPECT_EQ(size_of(var, SizeofTag::ViewOnly), expected_size);
+  EXPECT_EQ(size_of(var, SizeofTag::Underlying), expected_size);
+}
+
+TEST(SizeOf, long_string) {
+  const std::string str = "A rather long string that is hopefully on the heap";
+  ASSERT_GT(str.size(), sizeof(std::string));
+  const auto expected_size = sizeof(std::string) + str.size();
+  const auto var =
+      makeVariable<std::string>(Shape{1}, Dims{Dim::X}, Values{str});
+  EXPECT_EQ(size_of(var, SizeofTag::ViewOnly), expected_size);
+  EXPECT_EQ(size_of(var, SizeofTag::Underlying), expected_size);
+}
+
+TEST(SizeOf, three_strings) {
+  const std::string str0 = "A rather long string that is hopefully on the heap";
+  const std::string str1;
+  const std::string str2 = "short";
+  const auto expected_size = 3 * sizeof(std::string) + str0.size();
+  const auto var = makeVariable<std::string>(Shape{3}, Dims{Dim::X},
+                                             Values{str0, str1, str2});
+  EXPECT_EQ(size_of(var, SizeofTag::ViewOnly), expected_size);
+  EXPECT_EQ(size_of(var, SizeofTag::Underlying), expected_size);
+}
+
+TEST(SizeOf, three_strings_slice) {
+  const std::string str0 = "A rather long string that is hopefully on the heap";
+  const std::string str1;
+  const std::string str2 = "short";
+  const auto full = makeVariable<std::string>(Shape{3}, Dims{Dim::X},
+                                              Values{str0, str1, str2});
+  const auto var1 = full.slice({Dim::X, 0, 2});
+  EXPECT_EQ(size_of(var1, SizeofTag::ViewOnly),
+            2 * sizeof(std::string) + str0.size());
+  EXPECT_EQ(size_of(var1, SizeofTag::Underlying),
+            3 * sizeof(std::string) + str0.size());
+  const auto var2 = full.slice({Dim::X, 1, 3});
+  EXPECT_EQ(size_of(var2, SizeofTag::ViewOnly), 2 * sizeof(std::string));
+  EXPECT_EQ(size_of(var2, SizeofTag::Underlying),
+            3 * sizeof(std::string) + str0.size());
+  const auto var3 = full.slice({Dim::X, 1, 1});
+  EXPECT_EQ(size_of(var3, SizeofTag::ViewOnly), 0);
+  EXPECT_EQ(size_of(var3, SizeofTag::Underlying),
+            3 * sizeof(std::string) + str0.size());
 }
 
 TEST(SizeOf, size_in_memory_sliced_variables) {

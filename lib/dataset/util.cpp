@@ -2,16 +2,37 @@
 // Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Matthew Andrew
+
 #include "scipp/dataset/util.h"
-#include "scipp/variable/arithmetic.h"
+#include "scipp/common/overloaded.h"
+#include "scipp/core/element/arg_list.h"
+#include "scipp/variable/accumulate.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/util.h"
+#include "scipp/variable/variable.h"
 #include "scipp/variable/variable_concept.h"
 
 using namespace scipp::variable;
 namespace scipp {
 
 namespace {
+constexpr auto size_of_kernel = overloaded{
+    core::element::arg_list<std::tuple<scipp::index, std::string>>,
+    [](auto &out, const std::string &str) {
+      if (const auto str_address =
+              reinterpret_cast<const char *>(std::addressof(str));
+          str.data() > str_address &&
+          str.data() + str.size() < str_address + sizeof(std::string)) {
+        // Small string optimization: The characters are located
+        // in the string's internal buffer.
+        out += sizeof(std::string);
+      } else {
+        // A long string: The characters are in a separate
+        // array on the heap.
+        out += sizeof(std::string) + str.size();
+      }
+    }};
+
 template <class T>
 scipp::index size_of_bins(const Variable &view, const SizeofTag tag) {
   const auto &[indices, dim, buffer] = view.constituents<T>();
@@ -35,6 +56,17 @@ scipp::index size_of(const Variable &view, const SizeofTag tag) {
   }
   if (view.dtype() == dtype<bucket<Dataset>>) {
     return size_of_bins<Dataset>(view, tag);
+  }
+  if (view.dtype() == dtype<std::string>) {
+    auto size = makeVariable<scipp::index>(Shape{}, Values{0});
+    if (tag == SizeofTag::Underlying) {
+      const Variable full(core::Dimensions{Dim::X, view.data().size()},
+                          view.data_handle());
+      accumulate_in_place(size, full, size_of_kernel, "size_of");
+    } else {
+      accumulate_in_place(size, view, size_of_kernel, "size_of");
+    }
+    return size.value<scipp::index>();
   }
 
   const auto value_size = view.data().dtype_size();
