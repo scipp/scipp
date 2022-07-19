@@ -33,6 +33,18 @@ constexpr auto size_of_kernel = overloaded{
       }
     }};
 
+struct SizeOfContainerKernel {
+  using types = std::tuple<std::tuple<scipp::index, Variable>,
+                           std::tuple<scipp::index, DataArray>,
+                           std::tuple<scipp::index, Dataset>>;
+
+  SizeofTag tag;
+
+  template <class T> void operator()(scipp::index &out, const T &x) const {
+    out += size_of(x, tag);
+  }
+};
+
 template <class T>
 scipp::index size_of_bins(const Variable &view, const SizeofTag tag) {
   const auto &[indices, dim, buffer] = view.constituents<T>();
@@ -44,6 +56,20 @@ scipp::index size_of_bins(const Variable &view, const SizeofTag tag) {
     scale = sizes == 0 ? 0.0 : sizes / static_cast<double>(buffer.dims()[dim]);
   }
   return size_of(indices, tag) + size_of(buffer, tag) * scale;
+}
+
+template <class Op>
+auto accumulate_size_of(const Variable &view, const SizeofTag tag,
+                        const Op &op) {
+  auto size = makeVariable<scipp::index>(Shape{}, Values{0});
+  if (tag == SizeofTag::Underlying) {
+    const Variable full(core::Dimensions{Dim::X, view.data().size()},
+                        view.data_handle());
+    accumulate_in_place(size, full, op, "size_of");
+  } else {
+    accumulate_in_place(size, view, op, "size_of");
+  }
+  return size.value<scipp::index>();
 }
 } // namespace
 
@@ -58,15 +84,11 @@ scipp::index size_of(const Variable &view, const SizeofTag tag) {
     return size_of_bins<Dataset>(view, tag);
   }
   if (view.dtype() == dtype<std::string>) {
-    auto size = makeVariable<scipp::index>(Shape{}, Values{0});
-    if (tag == SizeofTag::Underlying) {
-      const Variable full(core::Dimensions{Dim::X, view.data().size()},
-                          view.data_handle());
-      accumulate_in_place(size, full, size_of_kernel, "size_of");
-    } else {
-      accumulate_in_place(size, view, size_of_kernel, "size_of");
-    }
-    return size.value<scipp::index>();
+    return accumulate_size_of(view, tag, size_of_kernel);
+  }
+  if (view.dtype() == dtype<Variable> || view.dtype() == dtype<DataArray> ||
+      view.dtype() == dtype<Dataset>) {
+    return accumulate_size_of(view, tag, SizeOfContainerKernel{tag});
   }
 
   const auto value_size = view.data().dtype_size();

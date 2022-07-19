@@ -53,13 +53,13 @@ TEST(SizeOf, variable) {
             sizeof(double) * 4);
 }
 
-TEST(SizeOf, size_in_memory_for_non_trivial_dtype) {
+TEST(SizeOf, variable_of_vector3) {
   auto var = makeVariable<Eigen::Vector3d>(Shape{1, 1}, Dims{Dim::X, Dim::Y});
   EXPECT_EQ(size_of(var, SizeofTag::ViewOnly), sizeof(Eigen::Vector3d));
   EXPECT_EQ(size_of(var, SizeofTag::Underlying), sizeof(Eigen::Vector3d));
 }
 
-TEST(SizeOf, short_string) {
+TEST(SizeOf, variable_of_short_string) {
   const auto var =
       makeVariable<std::string>(Shape{1}, Dims{Dim::X}, Values{"short"});
   const auto expected_size = sizeof(std::string);
@@ -67,7 +67,7 @@ TEST(SizeOf, short_string) {
   EXPECT_EQ(size_of(var, SizeofTag::Underlying), expected_size);
 }
 
-TEST(SizeOf, long_string) {
+TEST(SizeOf, variable_of_long_string) {
   const std::string str = "A rather long string that is hopefully on the heap";
   ASSERT_GT(str.size(), sizeof(std::string));
   const auto expected_size = sizeof(std::string) + str.size();
@@ -77,7 +77,7 @@ TEST(SizeOf, long_string) {
   EXPECT_EQ(size_of(var, SizeofTag::Underlying), expected_size);
 }
 
-TEST(SizeOf, three_strings) {
+TEST(SizeOf, variable_of_three_strings) {
   const std::string str0 = "A rather long string that is hopefully on the heap";
   const std::string str1;
   const std::string str2 = "short";
@@ -88,7 +88,7 @@ TEST(SizeOf, three_strings) {
   EXPECT_EQ(size_of(var, SizeofTag::Underlying), expected_size);
 }
 
-TEST(SizeOf, three_strings_slice) {
+TEST(SizeOf, variable_of_three_strings_slice) {
   const std::string str0 = "A rather long string that is hopefully on the heap";
   const std::string str1;
   const std::string str2 = "short";
@@ -109,7 +109,59 @@ TEST(SizeOf, three_strings_slice) {
             3 * sizeof(std::string) + str0.size());
 }
 
-TEST(SizeOf, size_in_memory_sliced_variables) {
+TEST(SizeOf, variable_of_variable) {
+  const auto inner =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+  const auto outer = makeVariable<Variable>(Shape{}, Values{inner});
+  EXPECT_EQ(size_of(outer, SizeofTag::ViewOnly),
+            size_of(inner, SizeofTag::ViewOnly));
+  EXPECT_EQ(size_of(outer, SizeofTag::Underlying),
+            size_of(inner, SizeofTag::Underlying));
+}
+
+TEST(SizeOf, slice_of_variable_of_variables) {
+  const auto inner1 =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+  const auto inner2 =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{4, 5});
+  const auto outer =
+      makeVariable<Variable>(Dims{Dim::Y}, Shape{2}, Values{inner1, inner2});
+  const auto sliced = outer.slice({Dim::Y, 1, 2});
+  EXPECT_EQ(size_of(sliced, SizeofTag::ViewOnly),
+            size_of(inner2, SizeofTag::ViewOnly));
+  EXPECT_EQ(size_of(sliced, SizeofTag::Underlying),
+            size_of(outer, SizeofTag::Underlying));
+}
+
+TEST(SizeOf, variable_of_sliced_variables) {
+  const auto inner1 =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+  const auto sliced_inner1 = inner1.slice({Dim::X, 0, 2});
+  const auto inner2 =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{4, 5});
+  const auto outer = makeVariable<Variable>(Dims{Dim::Y}, Shape{2},
+                                            Values{sliced_inner1, inner2});
+  EXPECT_EQ(size_of(outer, SizeofTag::ViewOnly),
+            size_of(sliced_inner1, SizeofTag::ViewOnly) +
+                size_of(inner2, SizeofTag::ViewOnly));
+  EXPECT_EQ(size_of(outer, SizeofTag::Underlying),
+            size_of(inner1, SizeofTag::Underlying) +
+                size_of(inner2, SizeofTag::Underlying));
+}
+
+TEST(SizeOf, variable_of_data_array) {
+  const auto data = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 1});
+  const auto coord =
+      makeVariable<int64_t>(Dims{Dim::X}, Shape{3}, Values{0, 1, 2});
+  const DataArray da(data, {{Dim::X, coord}});
+  const auto outer = makeVariable<DataArray>(Shape{}, Values{da});
+  EXPECT_EQ(size_of(outer, SizeofTag::ViewOnly),
+            size_of(da, SizeofTag::ViewOnly));
+  EXPECT_EQ(size_of(outer, SizeofTag::Underlying),
+            size_of(da, SizeofTag::Underlying));
+}
+
+TEST(SizeOf, sliced_variable) {
   auto var = makeVariable<double>(Shape{4}, Dims{Dim::X});
   auto sliced_view = var.slice(Slice(Dim::X, 0, 2));
   EXPECT_EQ(size_of(sliced_view, SizeofTag::ViewOnly), 2 * sizeof(double));
