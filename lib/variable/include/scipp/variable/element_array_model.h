@@ -109,6 +109,7 @@ public:
   }
 
   scipp::index dtype_size() const override { return sizeof(T); }
+  scipp::index object_size() const override { return sizeof(*this); }
   const VariableConceptHandle &bin_indices() const override {
     throw except::TypeError("This data type does not have bin indices.");
   }

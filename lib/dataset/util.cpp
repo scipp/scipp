@@ -6,6 +6,7 @@
 #include "scipp/dataset/util.h"
 #include "scipp/common/overloaded.h"
 #include "scipp/core/element/arg_list.h"
+#include "scipp/dataset/map_view_forward.h"
 #include "scipp/variable/accumulate.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/util.h"
@@ -71,9 +72,8 @@ auto accumulate_size_of(const Variable &view, const SizeofTag tag,
   }
   return size.value<scipp::index>();
 }
-} // namespace
 
-scipp::index size_of(const Variable &view, const SizeofTag tag) {
+scipp::index size_of_elements(const Variable &view, const SizeofTag tag) {
   if (view.dtype() == dtype<bucket<Variable>>) {
     return size_of_bins<Variable>(view, tag);
   }
@@ -97,13 +97,24 @@ scipp::index size_of(const Variable &view, const SizeofTag tag) {
       tag == SizeofTag::Underlying ? view.data().size() : view.dims().volume();
   return data_size * value_size * variance_scale;
 }
+} // namespace
+
+scipp::index size_of(const Variable &view, const SizeofTag tag) {
+  const auto object_size =
+      static_cast<scipp::index>(sizeof(Variable)) + view.data().object_size();
+  return size_of_elements(view, tag) + object_size;
+}
 
 /// Return the size in memory of a DataArray object. The aligned coord is
 /// optional because for a DataArray owned by a dataset aligned coords are
 /// assumed to be owned by the dataset as they can apply to multiple arrays.
 scipp::index size_of(const DataArray &dataarray, const SizeofTag tag,
                      bool include_aligned_coords) {
-  scipp::index size = 0;
+  // Underestimating the size of Coords, etc, because they may
+  // have dynamically allocated memory.
+  scipp::index size = static_cast<scipp::index>(
+      sizeof(DataArray) + sizeof(dataset::Coords) + sizeof(dataset::Attrs) +
+      sizeof(dataset::Masks));
   size += size_of(dataarray.data(), tag);
   for (const auto &coord : dataarray.attrs()) {
     size += size_of(coord.second, tag);
@@ -120,7 +131,7 @@ scipp::index size_of(const DataArray &dataarray, const SizeofTag tag,
 }
 
 scipp::index size_of(const Dataset &dataset, const SizeofTag tag) {
-  scipp::index size = 0;
+  scipp::index size = static_cast<scipp::index>(sizeof(Dataset));
   for (const auto &data : dataset) {
     size += size_of(data, tag, false);
   }
