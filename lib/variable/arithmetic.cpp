@@ -23,16 +23,21 @@ auto make_factor(const Variable &prototype, const double value) {
   return astype(makeVariable<double>(Values{value}, unit), prototype.dtype());
 }
 
+/// True if a and b are correlated, currently only if referencing same.
+bool correlated(const Variable &a, const Variable &b) {
+  return a.has_variances() && b.has_variances() && a.is_same(b);
+}
+
 } // namespace
 
 Variable operator+(const Variable &a, const Variable &b) {
-  if (a.is_same(b))
+  if (correlated(a, b))
     return a * make_factor(a, 2.0);
   return transform(a, b, core::element::add, "add");
 }
 
 Variable operator-(const Variable &a, const Variable &b) {
-  if (a.is_same(b))
+  if (correlated(a, b))
     return a * make_factor(a, 0.0);
   return transform(a, b, core::element::subtract, "subtract");
 }
@@ -44,7 +49,7 @@ Variable operator*(const Variable &a, const Variable &b) {
     return transform(a, b, core::element::apply_spatial_transformation,
                      std::string_view("apply_spatial_transformation"));
   } else {
-    if (a.is_same(b))
+    if (correlated(a, b))
       return pow(a, make_factor(a, 2.0));
     return transform(a, b, core::element::multiply,
                      std::string_view("multiply"));
@@ -52,7 +57,7 @@ Variable operator*(const Variable &a, const Variable &b) {
 }
 
 Variable operator/(const Variable &a, const Variable &b) {
-  if (a.is_same(b))
+  if (correlated(a, b))
     return pow(a, make_factor(a, 0.0));
   return transform(a, b, core::element::divide, "divide");
 }
@@ -78,7 +83,7 @@ Variable &operator/=(Variable &a, const Variable &b) {
 }
 
 Variable operator+=(Variable &&a, const Variable &b) {
-  if (a.is_same(b))
+  if (correlated(a, b))
     return a *= make_factor(a, 2.0);
   transform_in_place(a, b, core::element::add_equals,
                      std::string_view("add_equals"));
@@ -86,7 +91,7 @@ Variable operator+=(Variable &&a, const Variable &b) {
 }
 
 Variable operator-=(Variable &&a, const Variable &b) {
-  if (a.is_same(b))
+  if (correlated(a, b))
     return a *= make_factor(a, 0.0);
   transform_in_place(a, b, core::element::subtract_equals,
                      std::string_view("subtract_equals"));
@@ -94,7 +99,7 @@ Variable operator-=(Variable &&a, const Variable &b) {
 }
 
 Variable operator*=(Variable &&a, const Variable &b) {
-  if (a.is_same(b))
+  if (correlated(a, b))
     return pow(a, make_factor(a, 2.0), a);
   transform_in_place(a, b, core::element::multiply_equals,
                      std::string_view("multiply_equals"));
@@ -102,7 +107,7 @@ Variable operator*=(Variable &&a, const Variable &b) {
 }
 
 Variable operator/=(Variable &&a, const Variable &b) {
-  if (a.is_same(b))
+  if (correlated(a, b))
     return pow(a, make_factor(a, 0.0), a);
   transform_in_place(a, b, core::element::divide_equals,
                      std::string_view("divide_equals"));
