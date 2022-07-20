@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+#include <limits>
 #include <tuple>
 
 #include <gtest/gtest.h>
 
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bins.h"
+#include "scipp/variable/comparison.h"
 #include "scipp/variable/pow.h"
 
 using namespace scipp;
@@ -55,6 +57,19 @@ TEST(ArithmeticTest, x_minus_x_with_variances_equals_0_x) {
   const auto x = makeVariable<double>(Values{2.0}, Variances{4.0});
   const auto zero = makeVariable<double>(Values{0.0});
   EXPECT_EQ(x - x, zero * x);
+}
+
+TEST(ArithmeticTest, x_minus_x_inf_with_variances_equals_nan) {
+  const auto x = makeVariable<double>(
+      Values{std::numeric_limits<double>::infinity()}, Variances{4.0});
+  EXPECT_TRUE(
+      isclose(
+          x - x,
+          makeVariable<double>(Values{std::numeric_limits<double>::quiet_NaN()},
+                               Variances{0.0}),
+          makeVariable<double>(Values{1.0}), makeVariable<double>(Values{0.0}),
+          variable::NanComparisons::Equal)
+          .value<bool>());
 }
 
 TEST(ArithmeticTest, x_minus_equals_x_with_variances_equals_0_x) {
