@@ -38,6 +38,11 @@ def test_table_variable_vector():
     sc.table(sc.vectors(dims=['x'], values=np.arange(30.).reshape(10, 3)))
 
 
+def test_table_variable_datetime():
+    col = sc.epoch(unit='s') + sc.arange('time', 4, unit='s')
+    sc.table(col)
+
+
 @pytest.mark.parametrize("with_all", [True, False])
 @pytest.mark.parametrize("dtype", [sc.DType.float64, sc.DType.int64])
 @pytest.mark.parametrize("unit", ['dimensionless', 'counts', 's'])
