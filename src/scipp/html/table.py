@@ -17,10 +17,13 @@ def _string_in_cell(v: Variable) -> str:
         return f'len={v.value.shape}'
     if v.dtype not in (DType.float32, DType.float64):
         return str(v.value)
-    if (v.variance is None) or (v.variance == 0):
+    if (v.variance is None):
         return str(round(v.value, 3))
     err = np.sqrt(v.variance)
-    prec = -int(np.floor(np.log10(err)))
+    if err == 0.0:
+        prec = 3
+    else:
+        prec = -int(np.floor(np.log10(err)))
     v_str = round(v.value, prec)
     e_str = round(err, prec)
     return f'{v_str}&plusmn;{e_str}'

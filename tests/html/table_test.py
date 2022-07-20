@@ -30,6 +30,11 @@ def test_table_variable(variances, dtype, unit):
     sc.table(var['xx', 1:10])
 
 
+def test_column_with_zero_variance():
+    col = sc.zeros(dims=['row'], shape=(4,), with_variances=True)
+    sc.table(col)
+
+
 def test_table_variable_strings():
     sc.table(sc.array(dims=['x'], values=list(map(chr, range(97, 123)))))
 
