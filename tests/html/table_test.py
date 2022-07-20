@@ -31,7 +31,7 @@ def test_table_variable(variances, dtype, unit):
 
 
 def test_column_with_zero_variance():
-    col = sc.zeros(dims=['row'], shape=(4,), with_variances=True)
+    col = sc.zeros(dims=['row'], shape=(4, ), with_variances=True)
     sc.table(col)
 
 
