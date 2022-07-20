@@ -3,8 +3,7 @@
 Release Notes
 =============
 
-v0.16.0 (unreleased)
---------------------
+v0.16.0 (Unreleased)
 
 Features
 ~~~~~~~~
@@ -16,6 +15,13 @@ Bugfixes
 ~~~~~~~~
 
 * Binary arithmetic operations such as ``x + x`` of ``x * x``, i.e., with both operands the same, now handle correlations correctly and result in the correct variances in the output `#2709 <https://github.com/scipp/scipp/pull/2709>`_.
+* Made ``__sizeof__`` and related functions more accurate `#2705 <https://github.com/scipp/scipp/pull/2705>`_.
+
+Documentation
+~~~~~~~~~~~~~
+
+Deprecations
+~~~~~~~~~~~~
 
 Contributors
 ~~~~~~~~~~~~
