@@ -75,10 +75,8 @@ that are not answered by these documentation pages.
 This space can be used to both search through problems already met/solved in the community
 and open new discussions if none of the existing ones provide a satisfactory answer.
 
-Documentation
-=============
-
 .. toctree::
+   :hidden:
    :caption: Getting Started
    :maxdepth: 3
 
@@ -88,6 +86,7 @@ Documentation
    getting-started/faq
 
 .. toctree::
+   :hidden:
    :caption: User Guide
    :maxdepth: 3
 
@@ -103,6 +102,7 @@ Documentation
    user-guide/tips-tricks-and-anti-patterns
 
 .. toctree::
+   :hidden:
    :caption: Visualization
    :maxdepth: 3
 
@@ -111,6 +111,7 @@ Documentation
    visualization/plotting-in-depth
 
 .. toctree::
+   :hidden:
    :caption: Reference
    :maxdepth: 3
 
@@ -128,6 +129,7 @@ Documentation
    reference/developer-documentation
 
 .. toctree::
+   :hidden:
    :caption: Tutorials
    :maxdepth: 3
 
@@ -135,6 +137,7 @@ Documentation
    tutorials/solar_flares
 
 .. toctree::
+   :hidden:
    :caption: About
    :maxdepth: 3
 
