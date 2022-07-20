@@ -25,7 +25,7 @@ TEST(ArithmeticTest, x_plus_equals_x_with_variances_equals_2_x) {
   auto x = makeVariable<double>(Values{2.0}, Variances{4.0});
   const auto two = makeVariable<double>(Values{2.0});
   const auto expected = two * x;
-  x += x;
+  EXPECT_EQ(x += x, expected);
   EXPECT_EQ(x, expected);
 }
 
@@ -39,7 +39,7 @@ TEST(ArithmeticTest, x_minus_equals_x_with_variances_equals_0_x) {
   auto x = makeVariable<double>(Values{2.0}, Variances{4.0});
   const auto zero = makeVariable<double>(Values{0.0});
   const auto expected = zero * x;
-  x -= x;
+  EXPECT_EQ(x -= x, expected);
   EXPECT_EQ(x, expected);
 }
 
@@ -53,7 +53,7 @@ TEST(ArithmeticTest, x_times_equals_x_with_variances_equals_x_squared) {
   auto x = makeVariable<double>(Values{2.0}, Variances{4.0});
   const auto two = makeVariable<double>(Values{2.0});
   const auto expected = pow(x, two);
-  x *= x;
+  EXPECT_EQ(x *= x, expected);
   EXPECT_EQ(x, expected);
 }
 
@@ -68,6 +68,6 @@ TEST(ArithmeticTest,
   auto x = makeVariable<double>(Values{2.0}, Variances{4.0});
   const auto zero = makeVariable<double>(Values{0.0});
   const auto expected = pow(x, zero);
-  x /= x;
+  EXPECT_EQ(x /= x, expected);
   EXPECT_EQ(x, expected);
 }
