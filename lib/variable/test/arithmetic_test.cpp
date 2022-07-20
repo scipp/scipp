@@ -54,7 +54,7 @@ TEST(ArithmeticTest, x_times_equals_x_with_variances_equals_x_squared) {
   const auto two = makeVariable<double>(Values{2.0});
   const auto expected = pow(x, two);
   x *= x;
-  EXPECT_EQ(x * x, expected);
+  EXPECT_EQ(x, expected);
 }
 
 TEST(ArithmeticTest, x_divide_x_with_variances_equals_x_to_the_power_of_zero) {

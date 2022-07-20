@@ -111,7 +111,7 @@ Variable pow(const Variable &base, const Variable &exponent) {
 Variable &pow(const Variable &base, const Variable &exponent, Variable &out) {
   const auto target_dims = merge(base.dims(), exponent.dims());
   core::expect::equals(target_dims, out.dims());
-  out = astype(base.broadcast(target_dims), out.dtype(), CopyPolicy::Always);
+  copy(astype(base, out.dtype(), CopyPolicy::TryAvoid), out);
   pow_handle_dtype(out, exponent, true);
   return out;
 }

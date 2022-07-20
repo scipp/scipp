@@ -57,4 +57,56 @@ Variable operator/(const Variable &a, const Variable &b) {
   return transform(a, b, core::element::divide, "divide");
 }
 
+Variable &operator+=(Variable &a, const Variable &b) {
+  operator+=(Variable(a), b);
+  return a;
+}
+
+Variable &operator-=(Variable &a, const Variable &b) {
+  operator-=(Variable(a), b);
+  return a;
+}
+
+Variable &operator*=(Variable &a, const Variable &b) {
+  operator*=(Variable(a), b);
+  return a;
+}
+
+Variable &operator/=(Variable &a, const Variable &b) {
+  operator/=(Variable(a), b);
+  return a;
+}
+
+Variable operator+=(Variable &&a, const Variable &b) {
+  if (a.is_same(b))
+    return a *= make_factor(a, 2.0);
+  transform_in_place(a, b, core::element::add_equals,
+                     std::string_view("add_equals"));
+  return std::move(a);
+}
+
+Variable operator-=(Variable &&a, const Variable &b) {
+  if (a.is_same(b))
+    return a *= make_factor(a, 0.0);
+  transform_in_place(a, b, core::element::subtract_equals,
+                     std::string_view("subtract_equals"));
+  return std::move(a);
+}
+
+Variable operator*=(Variable &&a, const Variable &b) {
+  if (a.is_same(b))
+    return pow(a, make_factor(a, 2.0), a);
+  transform_in_place(a, b, core::element::multiply_equals,
+                     std::string_view("multiply_equals"));
+  return std::move(a);
+}
+
+Variable operator/=(Variable &&a, const Variable &b) {
+  if (a.is_same(b))
+    return pow(a, make_factor(a, 0.0), a);
+  transform_in_place(a, b, core::element::divide_equals,
+                     std::string_view("divide_equals"));
+  return std::move(a);
+}
+
 } // namespace scipp::variable
