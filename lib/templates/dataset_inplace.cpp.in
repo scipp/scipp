@@ -2,8 +2,8 @@
 // Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/@BASE_INCLUDE@"
 #include "scipp/dataset/@OPNAME@.h"
-#include "scipp/variable/@OPNAME@.h"
 
 #include "dataset_operations_common.h"
 
