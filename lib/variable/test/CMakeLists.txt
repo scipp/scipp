@@ -7,6 +7,7 @@ add_dependencies(all-tests ${TARGET_NAME})
 add_executable(
   ${TARGET_NAME}
   accumulate_test.cpp
+  arithmetic_test.cpp
   astype_test.cpp
   bin_array_model_test.cpp
   bin_util_test.cpp
