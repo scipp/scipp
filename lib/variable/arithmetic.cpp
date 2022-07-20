@@ -8,6 +8,7 @@
 #include "scipp/variable/astype.h"
 #include "scipp/variable/pow.h"
 #include "scipp/variable/transform.h"
+#include "scipp/variable/variable_factory.h"
 
 namespace scipp::variable {
 
@@ -19,13 +20,17 @@ bool is_transform_with_translation(const Variable &var) {
 }
 
 auto make_factor(const Variable &prototype, const double value) {
-  const auto unit = prototype.unit() == units::none ? units::none : units::one;
-  return astype(makeVariable<double>(Values{value}, unit), prototype.dtype());
+  const auto unit = variableFactory().elem_unit(prototype) == units::none
+                        ? units::none
+                        : units::one;
+  return astype(makeVariable<double>(Values{value}, unit),
+                variableFactory().elem_dtype(prototype));
 }
 
 /// True if a and b are correlated, currently only if referencing same.
 bool correlated(const Variable &a, const Variable &b) {
-  return a.has_variances() && b.has_variances() && a.is_same(b);
+  return variableFactory().has_variances(a) &&
+         variableFactory().has_variances(b) && a.is_same(b);
 }
 
 } // namespace

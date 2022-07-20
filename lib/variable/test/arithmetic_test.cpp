@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/bins.h"
 #include "scipp/variable/pow.h"
 
 using namespace scipp;
@@ -70,4 +71,13 @@ TEST(ArithmeticTest,
   const auto expected = pow(x, zero);
   EXPECT_EQ(x /= x, expected);
   EXPECT_EQ(x, expected);
+}
+
+TEST(ArithmeticTest, binned_x_plus_x_with_variances_equals_2_x) {
+  const auto indices = makeVariable<scipp::index_pair>(Values{std::pair{0, 1}});
+  const auto buffer = makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{2.0},
+                                           Variances{4.0}, units::m);
+  const auto x = make_bins(indices, Dim::X, buffer);
+  const auto two = makeVariable<double>(Values{2.0});
+  EXPECT_EQ(x + x, two * x);
 }
