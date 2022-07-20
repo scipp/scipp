@@ -22,6 +22,19 @@ TEST(ArithmeticTest, x_plus_x_with_variances_and_no_unit_equals_2_x) {
   EXPECT_EQ(x + x, two * x);
 }
 
+TEST(ArithmeticTest,
+     x_plus_shallow_copy_of_x_with_variances_handles_correlations) {
+  const auto x = makeVariable<double>(Values{2.0}, Variances{4.0}, units::m);
+  EXPECT_EQ(x + Variable(x), x + x);
+}
+
+TEST(ArithmeticTest,
+     x_plus_copy_of_x_with_variances_does_not_handle_correlations) {
+  const auto x = makeVariable<double>(Values{2.0}, Variances{4.0}, units::m);
+  // x and copy(x) are NOT detected as correlated
+  EXPECT_NE(x + copy(x), x + x);
+}
+
 TEST(ArithmeticTest, x_plus_equals_x_with_variances_equals_2_x) {
   auto x = makeVariable<double>(Values{2.0}, Variances{4.0});
   const auto two = makeVariable<double>(Values{2.0});
