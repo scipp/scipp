@@ -38,6 +38,12 @@ def test_table_variable_vector():
     sc.table(sc.vectors(dims=['x'], values=np.arange(30.).reshape(10, 3)))
 
 
+def test_table_variable_linear_transform():
+    col = sc.spatial.linear_transforms(dims=['x'],
+                                       values=np.arange(90.).reshape(10, 3, 3))
+    sc.table(col)
+
+
 def test_table_variable_datetime():
     col = sc.epoch(unit='s') + sc.arange('time', 4, unit='s')
     sc.table(col)
