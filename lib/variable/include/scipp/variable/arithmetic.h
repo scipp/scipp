@@ -6,8 +6,30 @@
 
 #include "scipp-variable_export.h"
 #include "scipp/variable/generated_arithmetic.h"
-#include "scipp/variable/multiply.h"
 #include "scipp/variable/variable.h"
+
+namespace scipp::variable {
+
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable operator+(const Variable &a,
+                                                       const Variable &b);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable operator-(const Variable &a,
+                                                       const Variable &b);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable operator*(const Variable &a,
+                                                       const Variable &b);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable operator/(const Variable &a,
+                                                       const Variable &b);
+
+SCIPP_VARIABLE_EXPORT Variable &operator+=(Variable &a, const Variable &b);
+SCIPP_VARIABLE_EXPORT Variable &operator-=(Variable &a, const Variable &b);
+SCIPP_VARIABLE_EXPORT Variable &operator*=(Variable &a, const Variable &b);
+SCIPP_VARIABLE_EXPORT Variable &operator/=(Variable &a, const Variable &b);
+
+SCIPP_VARIABLE_EXPORT Variable operator+=(Variable &&a, const Variable &b);
+SCIPP_VARIABLE_EXPORT Variable operator-=(Variable &&a, const Variable &b);
+SCIPP_VARIABLE_EXPORT Variable operator*=(Variable &&a, const Variable &b);
+SCIPP_VARIABLE_EXPORT Variable operator/=(Variable &&a, const Variable &b);
+
+} // namespace scipp::variable
 
 namespace scipp::units {
 template <typename T>
