@@ -35,6 +35,14 @@ TEST(ArithmeticTest,
   EXPECT_NE(x + copy(x), x + x);
 }
 
+TEST(ArithmeticTest, slice_of_x_plus_slice_of_x_handles_correlations) {
+  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2.0, 3.0},
+                                      Variances{4.0, 3.0}, units::m);
+  const auto two = makeVariable<double>(Values{2.0});
+  EXPECT_EQ(x.slice({Dim::X, 0}) + x.slice({Dim::X, 0}),
+            two * x.slice({Dim::X, 0}));
+}
+
 TEST(ArithmeticTest, x_plus_equals_x_with_variances_equals_2_x) {
   auto x = makeVariable<double>(Values{2.0}, Variances{4.0});
   const auto two = makeVariable<double>(Values{2.0});
