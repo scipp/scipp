@@ -18,15 +18,13 @@ def _string_in_cell(v: Variable) -> str:
     if v.dtype not in (DType.float32, DType.float64):
         return str(v.value)
     if (v.variance is None):
-        return str(round(v.value, 3))
+        return f'{v.value:.3f}'
     err = np.sqrt(v.variance)
     if err == 0.0:
         prec = 3
     else:
-        prec = -int(np.floor(np.log10(err)))
-    v_str = round(v.value, prec)
-    e_str = round(err, prec)
-    return f'{v_str}&plusmn;{e_str}'
+        prec = max(3, -int(np.floor(np.log10(err))))
+    return f'{v.value:.{prec}f}&plusmn;{err:.{prec}f}'
 
 
 def _var_name_with_unit(name: str, var: Variable) -> str:
