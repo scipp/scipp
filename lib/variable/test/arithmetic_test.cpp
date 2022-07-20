@@ -10,8 +10,14 @@
 using namespace scipp;
 
 TEST(ArithmeticTest, x_plus_x_with_variances_equals_2_x) {
-  const auto x = makeVariable<double>(Values{2.0}, Variances{4.0});
+  const auto x = makeVariable<double>(Values{2.0}, Variances{4.0}, units::m);
   const auto two = makeVariable<double>(Values{2.0});
+  EXPECT_EQ(x + x, two * x);
+}
+
+TEST(ArithmeticTest, x_plus_x_with_variances_and_no_unit_equals_2_x) {
+  const auto x = makeVariable<double>(Values{2.0}, Variances{4.0}, units::none);
+  const auto two = makeVariable<double>(Values{2.0}, units::none);
   EXPECT_EQ(x + x, two * x);
 }
 
