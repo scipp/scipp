@@ -14,11 +14,12 @@ Steps
    We typically keep information on the "What's New" page for approximately two to four past releases.
    The concrete duration is decided case-by-case, based on the relevance of a particular topic, e.g., how critical it is that users do not miss the change, and based on the frequency of releases.
 
-2. Run ``tools/release/prepare-release.py`` *after* inserting new entries to the version number and link target arrays.
-   This creates a new entry in the version select menu and a new section with subsections in the release notes.
+2. Update ``docs/about/release-notes.rst`` to mention the release month.
 
 3. Commit and merge the changes on GitHub.
 
 4. Create a release in GitHub.
    This triggers workflows to create conda packages and wheels.
    They are automatically uploaded to conda-forge and PyPI, respectively.
+   This will also publish the new documentation.
+   If the major or minor release have been incremented this will furthermore rebuild the docs of the previous major or minor release with a banner indicating that the release is outdated.
