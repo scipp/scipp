@@ -60,16 +60,92 @@ scipp_binary(comparison not_equal)
 setup_scipp_category(comparison)
 
 scipp_function("unary" arithmetic operator- OP negative)
-scipp_function("binary" arithmetic operator+ OP add SKIP_VARIABLE BASE_INCLUDE variable/arithmetic.h)
-scipp_function("binary" arithmetic operator- OP subtract SKIP_VARIABLE BASE_INCLUDE variable/arithmetic.h)
-scipp_function("binary" arithmetic operator* OP multiply SKIP_VARIABLE BASE_INCLUDE variable/arithmetic.h)
-scipp_function("binary" arithmetic operator/ OP divide SKIP_VARIABLE BASE_INCLUDE variable/arithmetic.h)
+scipp_function(
+  "binary"
+  arithmetic
+  operator+
+  OP
+  add
+  SKIP_VARIABLE
+  BASE_INCLUDE
+  variable/arithmetic.h
+)
+scipp_function(
+  "binary"
+  arithmetic
+  operator-
+  OP
+  subtract
+  SKIP_VARIABLE
+  BASE_INCLUDE
+  variable/arithmetic.h
+)
+scipp_function(
+  "binary"
+  arithmetic
+  operator*
+  OP
+  multiply
+  SKIP_VARIABLE
+  BASE_INCLUDE
+  variable/arithmetic.h
+)
+scipp_function(
+  "binary"
+  arithmetic
+  operator/
+  OP
+  divide
+  SKIP_VARIABLE
+  BASE_INCLUDE
+  variable/arithmetic.h
+)
 scipp_function("binary" arithmetic floor_divide)
 scipp_function("binary" arithmetic operator% OP mod)
-scipp_function("inplace" arithmetic operator+= OP add_equals SKIP_VARIABLE BASE_INCLUDE variable/arithmetic.h SKIP_PYTHON)
-scipp_function("inplace" arithmetic operator-= OP subtract_equals SKIP_VARIABLE BASE_INCLUDE variable/arithmetic.h SKIP_PYTHON)
-scipp_function("inplace" arithmetic operator*= OP multiply_equals SKIP_VARIABLE BASE_INCLUDE variable/arithmetic.h SKIP_PYTHON)
-scipp_function("inplace" arithmetic operator/= OP divide_equals SKIP_VARIABLE BASE_INCLUDE variable/arithmetic.h SKIP_PYTHON)
+scipp_function(
+  "inplace"
+  arithmetic
+  operator+=
+  OP
+  add_equals
+  SKIP_VARIABLE
+  BASE_INCLUDE
+  variable/arithmetic.h
+  SKIP_PYTHON
+)
+scipp_function(
+  "inplace"
+  arithmetic
+  operator-=
+  OP
+  subtract_equals
+  SKIP_VARIABLE
+  BASE_INCLUDE
+  variable/arithmetic.h
+  SKIP_PYTHON
+)
+scipp_function(
+  "inplace"
+  arithmetic
+  operator*=
+  OP
+  multiply_equals
+  SKIP_VARIABLE
+  BASE_INCLUDE
+  variable/arithmetic.h
+  SKIP_PYTHON
+)
+scipp_function(
+  "inplace"
+  arithmetic
+  operator/=
+  OP
+  divide_equals
+  SKIP_VARIABLE
+  BASE_INCLUDE
+  variable/arithmetic.h
+  SKIP_PYTHON
+)
 scipp_function("inplace" arithmetic operator%= OP mod_equals SKIP_PYTHON)
 setup_scipp_category(arithmetic)
 
