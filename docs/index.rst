@@ -81,7 +81,7 @@ Depending on your area of application you may be most interested in `Binned Data
 The combination of these features is what sets Scipp apart from other Python libraries.
 Make sure to also checkout `Representations and Tables <visualization/representations-and-tables.rst>`_ and `Plotting Overview <visualization/plotting-overview.rst>`_ for an overview of Scipp's powerful visualization features.
 
-The **Reference** documentation section provides a detailed listing of all functions and class of Scipp, as well as some more technical documentation.
+The **Reference** documentation section provides a detailed listing of all functions and classes of Scipp, as well as some more technical documentation.
 If you are looking for something in particular, use the **Search the docs** function in the left navigation panel.
 
 Where can I get help?
