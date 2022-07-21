@@ -61,7 +61,7 @@ News
 - Is your data stored in NeXus files?
   Checkout our new project `scippnexus <https://scipp.github.io/scippnexus>`_, a h5py-like utility for conveniently loading NeXus classes into Scipp data structures.
 - We now provide ``pip`` packages of ``scipp``, in addition to ``conda`` packages.
-  See `installation <getting-started/installation.rst#Pip>`_ for details.
+  See `Installation <getting-started/installation.rst#Pip>`_ for details.
 - Scipp changed from GPLv3 to the more permissive BSD-3 license which fits better into the Python eco system.
 - Looking for ``scipp.neutron``?
   This submodule has been moved into its own package, `scippneutron <https://scipp.github.io/scippneutron>`_.
