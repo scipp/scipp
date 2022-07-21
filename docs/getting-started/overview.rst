@@ -1,7 +1,7 @@
 .. _overview:
 
-Overview
-========
+What is Scipp?
+==============
 
 The data array concept
 ----------------------
