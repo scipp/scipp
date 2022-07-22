@@ -15,26 +15,49 @@
 #include "scipp/core/except.h"
 
 namespace scipp::core::dict_detail {
-template <class It1, class It2> struct ValueType {
+template <class It1, class It2, class F> struct ValueType {
+  using type = std::add_rvalue_reference_t<
+      std::invoke_result_t<F, typename ValueType<It1, It2, void>::type>>;
+};
+
+template <class It1, class It2> struct ValueType<It1, It2, void> {
   using type = std::add_rvalue_reference_t<
       std::pair<const typename It1::value_type,
                 std::add_lvalue_reference_t<typename It2::value_type>>>;
 };
 
-template <class It1> struct ValueType<It1, void> {
+template <class It1> struct ValueType<It1, void, void> {
   using type = std::add_lvalue_reference_t<typename It1::value_type>;
 };
 
-template <class Container, class It1, class It2, size_t... IteratorIndices>
-class Iterator {
+template <class F> class TransformHolder {
+public:
+  template <class T>
+  explicit TransformHolder(T &&func) : m_func(std::forward<T>(func)) {}
+
+  template <class T> decltype(auto) call_transform(T &&x) const {
+    return m_func(std::forward<T>(x));
+  }
+
+private:
+  mutable std::decay_t<F> m_func;
+};
+
+template <> class TransformHolder<void> {};
+
+template <class Container, class It1, class It2, class F,
+          size_t... IteratorIndices>
+class Iterator : private TransformHolder<F> {
   static_assert(sizeof...(IteratorIndices) > 0 &&
                 sizeof...(IteratorIndices) < 3);
 
 public:
   using difference_type = std::ptrdiff_t;
-  using value_type = typename ValueType<It1, It2>::type;
+  using value_type = typename ValueType<It1, It2, F>::type;
   using pointer = std::add_pointer_t<std::remove_reference_t<value_type>>;
   using reference = std::add_lvalue_reference_t<value_type>;
+
+  static constexpr bool has_transform = !std::is_same_v<F, void>;
 
   template <class T>
   Iterator(std::reference_wrapper<Container> container, T &&it1)
@@ -47,6 +70,14 @@ public:
         m_container(container),
         m_end_address(container.get().data() + container.get().size()) {}
 
+  template <class T, class U, class S>
+  Iterator(std::reference_wrapper<Container> container, T &&it1, U &&it2,
+           S &&func)
+      : TransformHolder<F>(std::forward<S>(func)),
+        m_iterators{std::forward<T>(it1), std::forward<U>(it2)},
+        m_container(container),
+        m_end_address(container.get().data() + container.get().size()) {}
+
   Iterator(const Iterator &other) = default;
   Iterator(Iterator &&other) noexcept = default;
   Iterator &operator=(const Iterator &other) = default;
@@ -54,21 +85,19 @@ public:
   ~Iterator() noexcept = default;
 
   decltype(auto) operator*() const {
-    expect_container_unchanged();
-    if constexpr (sizeof...(IteratorIndices) == 1) {
-      return *std::get<0>(m_iterators);
+    if constexpr (has_transform) {
+      return TransformHolder<F>::call_transform(dereference());
     } else {
-      return std::make_pair(std::ref(*std::get<0>(m_iterators)),
-                            std::ref(*std::get<1>(m_iterators)));
+      return dereference();
     }
   }
 
   decltype(auto) operator->() const {
-    expect_container_unchanged();
     if constexpr (sizeof...(IteratorIndices) == 1) {
+      expect_container_unchanged();
       return std::get<0>(m_iterators);
     } else {
-      return TemporaryPair(std::move(**this));
+      return TemporaryItem(**this);
     }
   }
 
@@ -78,14 +107,24 @@ public:
     return *this;
   }
 
-  bool operator==(const Iterator &other) const noexcept {
+  template <class T>
+  bool operator==(const Iterator<Container, It1, It2, T, IteratorIndices...>
+                      &other) const noexcept {
     expect_container_unchanged();
     // Assuming m_iterators are always in sync.
     return std::get<0>(m_iterators) == std::get<0>(other.m_iterators);
   }
 
-  bool operator!=(const Iterator &other) const noexcept {
+  template <class T>
+  bool operator!=(const Iterator<Container, It1, It2, T, IteratorIndices...>
+                      &other) const noexcept {
     return !(*this == other);
+  }
+
+  friend void swap(Iterator &a, Iterator &b) {
+    swap(a.m_iterators, b.m_iterators);
+    swap(a.m_container, b.m_container);
+    std::swap(a.m_end_address, b.m_end_address);
   }
 
 private:
@@ -103,41 +142,60 @@ private:
     }
   }
 
-  friend void swap(Iterator &a, Iterator &b) {
-    swap(a.m_iterators, b.m_iterators);
-    swap(a.m_container, b.m_container);
-    std::swap(a.m_end_address, b.m_end_address);
+  decltype(auto) dereference() const {
+    expect_container_unchanged();
+    if constexpr (sizeof...(IteratorIndices) == 1) {
+      return *std::get<0>(m_iterators);
+    } else {
+      return std::make_pair(std::ref(*std::get<0>(m_iterators)),
+                            std::ref(*std::get<1>(m_iterators)));
+    }
   }
 
   // operator-> needs to return a pointer or something that has operator->
-  // But we cannot take the address of the temporary pair.
+  // But we cannot take the address of the temporary pair or transform result.
   // So store it in this wrapper to make it accessible via its address.
-  class TemporaryPair {
+  class TemporaryItem {
   public:
-    explicit TemporaryPair(value_type &&p) : m_pair(std::move(p)) {}
-    auto *operator->() { return &m_pair; }
+    explicit TemporaryItem(value_type &&item) : m_item(std::move(item)) {}
+    auto *operator->() { return &m_item; }
 
   private:
-    std::remove_reference_t<value_type> m_pair;
+    std::remove_reference_t<value_type> m_item;
   };
+
+  template <class T>
+  friend class Iterator<Container, It1, It2, F, IteratorIndices...>;
 };
 
-template <class Container, class It1, class It2 = void> struct IteratorType {
-  using type = Iterator<Container, It1, It2, 0, 1>;
+template <class Container, class It1, class It2, class F>
+Iterator(Container, It1 &&, It2 &&, F &&)
+    -> Iterator<std::decay_t<Container>, std::decay_t<It1>, std::decay_t<It2>,
+                std::decay_t<F>>;
+
+template <class Container, class It1, class It2 = void, class F = void>
+struct IteratorType {
+  using type = Iterator<Container, It1, It2, F, 0, 1>;
+};
+
+template <class Container, class It1, class It2>
+struct IteratorType<Container, It1, It2, void> {
+  using type = Iterator<Container, It1, It2, void, 0, 1>;
 };
 
 template <class Container, class It1>
-struct IteratorType<Container, It1, void> {
-  using type = Iterator<Container, It1, void, 0>;
+struct IteratorType<Container, It1, void, void> {
+  using type = Iterator<Container, It1, void, void, 0>;
 };
 } // namespace scipp::core::dict_detail
 
 namespace std {
-template <class Container, class It1, class It2, size_t... IteratorIndices>
-struct iterator_traits<scipp::core::dict_detail::Iterator<Container, It1, It2,
-                                                          IteratorIndices...>> {
+template <class Container, class It1, class It2, class F,
+          size_t... IteratorIndices>
+struct iterator_traits<scipp::core::dict_detail::Iterator<
+    Container, It1, It2, F, IteratorIndices...>> {
 private:
-  using I = scipp::core::dict_detail::Iterator<Container, It1, It2,
+  using I = scipp::core::dict_detail::Iterator<Container, It1, It2, F,
                                                IteratorIndices...>;
 
 public:
@@ -177,6 +235,10 @@ public:
       typename dict_detail::IteratorType<const Keys,
                                          typename Keys::const_iterator,
                                          typename Values::const_iterator>::type;
+  template <class F>
+  using transform_iterator =
+      typename dict_detail::IteratorType<Keys, typename Keys::const_iterator,
+                                         typename Values::iterator, F>::type;
 
   // moving and destroying not thread safe
   // and only safe on LHS off assignment, not RHS
@@ -306,6 +368,11 @@ public:
 
   [[nodiscard]] auto end() const noexcept {
     return const_iterator(m_keys, m_keys.cend(), m_values.begin());
+  }
+
+  template <class F> [[nodiscard]] auto begin_transform(F &&func) noexcept {
+    return transform_iterator<std::decay_t<F>>(
+        m_keys, m_keys.cbegin(), m_values.begin(), std::forward<F>(func));
   }
 
 private:

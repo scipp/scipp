@@ -364,3 +364,24 @@ TEST(Dict, insertion_order_is_Preserved) {
       {Dim::Y, 144}, {Dim::Time, -182}, {Dim::Energy, 3441}, {Dim::Event, 123}};
   EXPECT_EQ(result, expected);
 }
+
+TEST(Dict, iterator_with_transform) {
+  DimDict dict;
+  dict.insert_or_assign(Dim::X, 7476);
+  dict.insert_or_assign(Dim::Event, -31);
+  dict.insert_or_assign(Dim::Position, 0);
+
+  auto it = dict.begin_transform([](const auto &x) {
+    return std::pair{x.first, 2 * x.second};
+  });
+  EXPECT_EQ(it->first, Dim::X);
+  EXPECT_EQ(it->second, 2 * 7476);
+  ++it;
+  EXPECT_EQ(it->first, Dim::Event);
+  EXPECT_EQ(it->second, -2 * 31);
+  ++it;
+  EXPECT_EQ(it->first, Dim::Position);
+  EXPECT_EQ(it->second, 0);
+  ++it;
+  EXPECT_EQ(it, dict.end());
+}
