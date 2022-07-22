@@ -16,44 +16,72 @@
 
 namespace scipp::core {
 namespace dict_detail {
-template <class Container, class It> class KeyValueIterator {
-public:
-  KeyValueIterator(std::reference_wrapper<Container> container, It it)
-      : m_it(it), m_container(container),
-        m_initial_size(container.get().size()),
-        m_initial_address(container.get().data()) {}
+template <class Container, class It1, class It2, size_t... IteratorIndices>
+class Iterator {
+  static_assert(sizeof...(IteratorIndices) > 0 &&
+                sizeof...(IteratorIndices) < 3);
 
-  KeyValueIterator &operator++() {
+public:
+  template <class T>
+  explicit Iterator(std::reference_wrapper<Container> container, T &&it1)
+      : m_iterators{std::forward<T>(it1)}, m_container(container),
+        m_end_address(container.get().data() + container.get().size()) {}
+
+  template <class T, class U>
+  explicit Iterator(std::reference_wrapper<Container> container, T &&it1,
+                    U &&it2)
+      : m_iterators{std::forward<T>(it1), std::forward<U>(it2)},
+        m_container(container),
+        m_end_address(container.get().data() + container.get().size()) {}
+
+  decltype(auto) operator*() const {
     expect_container_unchanged();
-    ++m_it;
+    if constexpr (sizeof...(IteratorIndices) == 1) {
+      return *std::get<0>(m_iterators);
+    } else {
+      return std::make_pair(std::ref(*std::get<0>(m_iterators)),
+                            std::ref(*std::get<1>(m_iterators)));
+    }
+  }
+
+  Iterator &operator++() {
+    expect_container_unchanged();
+    (++std::get<IteratorIndices>(m_iterators), ...);
     return *this;
   }
 
-  auto &operator*() const {
-    expect_container_unchanged();
-    return *m_it;
+  bool operator==(const Iterator &other) const noexcept {
+    // Assuming m_iterators are always in sync.
+    return std::get<0>(m_iterators) == std::get<0>(other.m_iterators);
   }
 
-  bool operator==(const KeyValueIterator &other) const noexcept {
-    return m_it == other.m_it;
-  }
-
-  bool operator!=(const KeyValueIterator &other) const noexcept {
+  bool operator!=(const Iterator &other) const noexcept {
     return !(*this == other);
   }
 
 private:
-  It m_it;
+  using IteratorStorage =
+      std::tuple<typename std::tuple_element<IteratorIndices,
+                                             std::tuple<It1, It2>>::type...>;
+
+  IteratorStorage m_iterators;
   std::reference_wrapper<Container> m_container;
-  size_t m_initial_size;
-  const void *m_initial_address;
+  const void *m_end_address;
 
   void expect_container_unchanged() const {
-    if (m_container.get().size() != m_initial_size ||
-        m_container.get().data() != m_initial_address) {
+    if (m_container.get().data() + m_container.get().size() != m_end_address) {
       throw std::runtime_error("dictionary changed size during iteration");
     }
   }
+};
+
+template <class Container, class It1, class It2 = void> struct IteratorType {
+  using type = Iterator<Container, It1, It2, 0, 1>;
+};
+
+template <class Container, class It1>
+struct IteratorType<Container, It1, void> {
+  using type = Iterator<Container, It1, void, 0>;
 };
 } // namespace dict_detail
 
@@ -64,15 +92,22 @@ template <class Key, class Value> class SCIPP_CORE_EXPORT Dict {
 public:
   using key_type = Key;
   using mapped_type = Value;
-  using key_iterator =
-      dict_detail::KeyValueIterator<Keys, typename Keys::iterator>;
   using value_iterator =
-      dict_detail::KeyValueIterator<Values, typename Values::iterator>;
+      typename dict_detail::IteratorType<Values,
+                                         typename Values::iterator>::type;
+  using iterator =
+      typename dict_detail::IteratorType<Keys, typename Keys::const_iterator,
+                                         typename Values::iterator>::type;
   using const_key_iterator =
-      dict_detail::KeyValueIterator<const Keys, typename Keys::const_iterator>;
+      typename dict_detail::IteratorType<const Keys,
+                                         typename Keys::const_iterator>::type;
   using const_value_iterator =
-      dict_detail::KeyValueIterator<const Values,
-                                    typename Values::const_iterator>;
+      typename dict_detail::IteratorType<const Values,
+                                         typename Values::const_iterator>::type;
+  using const_iterator =
+      typename dict_detail::IteratorType<const Keys,
+                                         typename Keys::const_iterator,
+                                         typename Values::const_iterator>::type;
 
   // moving and destroying not thread safe
   // and only safe on LHS off assignment, not RHS
@@ -107,7 +142,6 @@ public:
     return find(key) != -1;
   }
 
-  // TODO return value
   template <class V> void insert_or_assign(const key_type &key, V &&value) {
     std::unique_lock lock_{m_mutex};
     if (const auto idx = find(key); idx == -1) {
@@ -128,20 +162,44 @@ public:
     return m_values[expect_find(key)];
   }
 
-  [[nodiscard]] key_iterator keys_begin() noexcept {
-    return {m_keys, m_keys.begin()};
+  [[nodiscard]] auto keys_begin() const noexcept {
+    return const_key_iterator(m_keys, m_keys.cbegin());
   }
 
-  [[nodiscard]] key_iterator keys_end() noexcept {
-    return {m_keys, m_keys.end()};
+  [[nodiscard]] auto keys_end() const noexcept {
+    return const_key_iterator(m_keys, m_keys.cend());
   }
 
-  [[nodiscard]] const_key_iterator keys_begin() const noexcept {
-    return {m_keys, m_keys.begin()};
+  [[nodiscard]] auto values_begin() noexcept {
+    return value_iterator(m_values, m_values.begin());
   }
 
-  [[nodiscard]] const_key_iterator keys_end() const noexcept {
-    return {m_keys, m_keys.end()};
+  [[nodiscard]] auto values_end() noexcept {
+    return value_iterator(m_values, m_values.end());
+  }
+
+  [[nodiscard]] auto values_begin() const noexcept {
+    return const_value_iterator(m_values, m_values.begin());
+  }
+
+  [[nodiscard]] auto values_end() const noexcept {
+    return const_value_iterator(m_values, m_values.end());
+  }
+
+  [[nodiscard]] auto begin() noexcept {
+    return iterator(m_keys, m_keys.cbegin(), m_values.begin());
+  }
+
+  [[nodiscard]] auto end() noexcept {
+    return iterator(m_keys, m_keys.cend(), m_values.end());
+  }
+
+  [[nodiscard]] auto begin() const noexcept {
+    return const_iterator(m_keys, m_keys.cbegin(), m_values.begin());
+  }
+
+  [[nodiscard]] auto end() const noexcept {
+    return const_iterator(m_keys, m_keys.cend(), m_values.begin());
   }
 
 private:
@@ -150,11 +208,11 @@ private:
   mutable std::shared_mutex m_mutex;
 
   scipp::index find(const Key &key) const noexcept {
-    const auto it = std::find(begin(m_keys), end(m_keys), key);
-    if (it == end(m_keys)) {
+    const auto it = std::find(m_keys.begin(), m_keys.end(), key);
+    if (it == m_keys.end()) {
       return -1;
     }
-    return std::distance(begin(m_keys), it);
+    return std::distance(m_keys.begin(), it);
   }
 
   scipp::index expect_find(const Key &key) const {

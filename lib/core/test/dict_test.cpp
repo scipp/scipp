@@ -76,17 +76,10 @@ TEST(Dict, key_iterator_produces_correct_keys) {
   EXPECT_EQ(it, dict.keys_end());
 }
 
-TEST(Dict, const_key_iterator_produces_correct_keys) {
+TEST(Dict, key_iterator_cannot_change_keys) {
   DimDict dict;
-  dict.insert_or_assign(Dim::Time, 61892);
-  dict.insert_or_assign(Dim::Event, 619);
-  const DimDict const_dict(dict);
-  auto it = const_dict.keys_begin();
-  EXPECT_EQ(*it, Dim::Time);
-  ++it;
-  EXPECT_EQ(*it, Dim::Event);
-  ++it;
-  EXPECT_EQ(it, const_dict.keys_end());
+  EXPECT_TRUE(
+      std::is_const_v<std::remove_reference_t<decltype(*dict.keys_begin())>>);
 }
 
 TEST(Dict, key_iterator_throws_if_capacity_changed) {
@@ -117,4 +110,76 @@ TEST(Dict, key_iterator_throws_if_element_inserted_in_same_memory) {
   dict.insert_or_assign(Dim::Y, 13);
   EXPECT_THROW_DISCARD(*it, std::runtime_error);
   EXPECT_THROW_DISCARD(++it, std::runtime_error);
+}
+
+TEST(Dict, value_iterator_produces_correct_values) {
+  DimDict dict;
+  dict.insert_or_assign(Dim::Time, 61892);
+  dict.insert_or_assign(Dim::Event, 619);
+  auto it = dict.values_begin();
+  EXPECT_EQ(*it, 61892);
+  ++it;
+  EXPECT_EQ(*it, 619);
+  ++it;
+  EXPECT_EQ(it, dict.values_end());
+}
+
+TEST(Dict, const_value_iterator_produces_correct_values) {
+  DimDict dict;
+  dict.insert_or_assign(Dim::Time, 4561);
+  dict.insert_or_assign(Dim::Event, 76);
+  const DimDict const_dict(dict);
+  auto it = const_dict.values_begin();
+  EXPECT_EQ(*it, 4561);
+  ++it;
+  EXPECT_EQ(*it, 76);
+  ++it;
+  EXPECT_EQ(it, const_dict.values_end());
+}
+
+TEST(Dict, value_iterator_can_change_values) {
+  DimDict dict;
+  dict.insert_or_assign(Dim::Y, -816);
+  dict.insert_or_assign(Dim::Z, -41);
+  auto it = dict.values_begin();
+  *it = 923;
+  *(++it) = -5289;
+  EXPECT_EQ(dict[Dim::Y], 923);
+  EXPECT_EQ(dict[Dim::Z], -5289);
+}
+
+TEST(Dict, iterator_of_empty_dict_is_end) {
+  DimDict dict;
+  EXPECT_EQ(dict.begin(), dict.end());
+}
+
+TEST(Dict, iterator_produces_correct_keys_and_values) {
+  DimDict dict;
+  dict.insert_or_assign(Dim::Time, 61892);
+  dict.insert_or_assign(Dim::Event, 619);
+  auto it = dict.begin();
+  EXPECT_EQ((*it).first, Dim::Time);
+  EXPECT_EQ((*it).second, 61892);
+  ++it;
+  EXPECT_EQ((*it).first, Dim::Event);
+  EXPECT_EQ((*it).second, 619);
+  ++it;
+  EXPECT_EQ(it, dict.end());
+}
+
+TEST(Dict, iterator_can_change_values) {
+  DimDict dict;
+  dict.insert_or_assign(Dim::Position, -51);
+  dict.insert_or_assign(Dim::Row, 827);
+  auto it = dict.begin();
+  (*it).second = 991;
+  (*(++it)).second = -9761;
+  EXPECT_EQ(dict[Dim::Position], 991);
+  EXPECT_EQ(dict[Dim::Row], -9761);
+}
+
+TEST(Dict, iterator_cannot_change_keys) {
+  DimDict dict;
+  EXPECT_TRUE(std::is_const_v<
+              std::remove_reference_t<decltype(*dict.begin())::first_type>>);
 }
