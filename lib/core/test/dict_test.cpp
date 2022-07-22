@@ -338,3 +338,29 @@ TEST(Dict, find) {
   EXPECT_EQ(dict.find(Dim::X), dict.begin());
   EXPECT_EQ(dict.find(Dim::Z), dict.end());
 }
+
+TEST(Dict, insertion_order_is_Preserved) {
+  DimDict dict;
+  dict.insert_or_assign(Dim::Time, 168);
+  dict.insert_or_assign(Dim::Y, 144);
+  dict.insert_or_assign(Dim::Z, 31);
+  dict.erase(Dim::Time);
+  dict.insert_or_assign(Dim::Time, -182);
+  dict.insert_or_assign(Dim::Row, 25);
+  dict.insert_or_assign(Dim::X, -22);
+  dict.erase(Dim::X);
+  dict.erase(Dim::Row);
+  dict.insert_or_assign(Dim::Energy, 3441);
+  dict.insert_or_assign(Dim::Event, 123);
+  dict.erase(Dim::Z);
+
+  std::vector<std::pair<Dim, int>> result;
+  std::transform(dict.begin(), dict.end(), std::back_inserter(result),
+                 [](const auto &p) {
+                   return std::pair{p.first, p.second};
+                 });
+
+  std::vector<std::pair<Dim, int>> expected{
+      {Dim::Y, 144}, {Dim::Time, -182}, {Dim::Energy, 3441}, {Dim::Event, 123}};
+  EXPECT_EQ(result, expected);
+}
