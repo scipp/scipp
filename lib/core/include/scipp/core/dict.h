@@ -16,23 +16,42 @@
 
 namespace scipp::core {
 namespace dict_detail {
+template <class It1, class It2> struct ValueType {
+  using type = std::pair<const typename It1::value_type,
+                         std::add_lvalue_reference_t<typename It2::value_type>>;
+};
+
+template <class It1> struct ValueType<It1, void> {
+  using type = std::add_lvalue_reference_t<typename It1::value_type>;
+};
+
 template <class Container, class It1, class It2, size_t... IteratorIndices>
 class Iterator {
   static_assert(sizeof...(IteratorIndices) > 0 &&
                 sizeof...(IteratorIndices) < 3);
 
 public:
+  using difference_type = std::ptrdiff_t;
+  using value_type = typename ValueType<It1, It2>::type;
+  using pointer = std::add_pointer_t<std::remove_reference_t<value_type>>;
+  using reference = std::add_lvalue_reference_t<value_type>;
+
   template <class T>
-  explicit Iterator(std::reference_wrapper<Container> container, T &&it1)
+  Iterator(std::reference_wrapper<Container> container, T &&it1)
       : m_iterators{std::forward<T>(it1)}, m_container(container),
         m_end_address(container.get().data() + container.get().size()) {}
 
   template <class T, class U>
-  explicit Iterator(std::reference_wrapper<Container> container, T &&it1,
-                    U &&it2)
+  Iterator(std::reference_wrapper<Container> container, T &&it1, U &&it2)
       : m_iterators{std::forward<T>(it1), std::forward<U>(it2)},
         m_container(container),
         m_end_address(container.get().data() + container.get().size()) {}
+
+  Iterator(const Iterator &other) = default;
+  Iterator(Iterator &&other) noexcept = default;
+  Iterator &operator=(const Iterator &other) = default;
+  Iterator &operator=(Iterator &&other) noexcept = default;
+  ~Iterator() noexcept = default;
 
   decltype(auto) operator*() const {
     expect_container_unchanged();
@@ -73,6 +92,12 @@ private:
       throw std::runtime_error("dictionary changed size during iteration");
     }
   }
+
+  friend void swap(Iterator &a, Iterator &b) {
+    swap(a.m_iterators, b.m_iterators);
+    swap(a.m_container, b.m_container);
+    std::swap(a.m_end_address, b.m_end_address);
+  }
 };
 
 template <class Container, class It1, class It2 = void> struct IteratorType {
@@ -84,7 +109,31 @@ struct IteratorType<Container, It1, void> {
   using type = Iterator<Container, It1, void, 0>;
 };
 } // namespace dict_detail
+} // namespace scipp::core
 
+namespace std {
+template <class Container, class It1, class It2, size_t... IteratorIndices>
+struct iterator_traits<scipp::core::dict_detail::Iterator<Container, It1, It2,
+                                                          IteratorIndices...>> {
+private:
+  using I = scipp::core::dict_detail::Iterator<Container, It1, It2,
+                                               IteratorIndices...>;
+
+public:
+  using difference_type = typename I::difference_type;
+  using value_type = typename I::value_type;
+  using pointer = typename I::pointer;
+  using reference = typename I::reference;
+
+  // It is a forward iterator for most use cases.
+  // But it misses
+  //  - post-increment: it++ and *it++  (easy, but not needed right now)
+  //  - arrow: it->  (difficult because of temporary pair)
+  using iterator_category = std::forward_iterator_tag;
+};
+} // namespace std
+
+namespace scipp::core {
 template <class Key, class Value> class SCIPP_CORE_EXPORT Dict {
   using Keys = std::vector<Key>;
   using Values = std::vector<Value>;
