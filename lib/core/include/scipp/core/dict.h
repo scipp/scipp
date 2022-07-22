@@ -14,11 +14,11 @@
 #include "scipp-core_export.h"
 #include "scipp/core/except.h"
 
-namespace scipp::core {
-namespace dict_detail {
+namespace scipp::core::dict_detail {
 template <class It1, class It2> struct ValueType {
-  using type = std::pair<const typename It1::value_type,
-                         std::add_lvalue_reference_t<typename It2::value_type>>;
+  using type = std::add_rvalue_reference_t<
+      std::pair<const typename It1::value_type,
+                std::add_lvalue_reference_t<typename It2::value_type>>>;
 };
 
 template <class It1> struct ValueType<It1, void> {
@@ -63,6 +63,15 @@ public:
     }
   }
 
+  decltype(auto) operator->() const {
+    expect_container_unchanged();
+    if constexpr (sizeof...(IteratorIndices) == 1) {
+      return std::get<0>(m_iterators);
+    } else {
+      return TemporaryPair(std::move(**this));
+    }
+  }
+
   Iterator &operator++() {
     expect_container_unchanged();
     (++std::get<IteratorIndices>(m_iterators), ...);
@@ -70,6 +79,7 @@ public:
   }
 
   bool operator==(const Iterator &other) const noexcept {
+    expect_container_unchanged();
     // Assuming m_iterators are always in sync.
     return std::get<0>(m_iterators) == std::get<0>(other.m_iterators);
   }
@@ -98,6 +108,18 @@ private:
     swap(a.m_container, b.m_container);
     std::swap(a.m_end_address, b.m_end_address);
   }
+
+  // operator-> needs to return a pointer or something that has operator->
+  // But we cannot take the address of the temporary pair.
+  // So store it in this wrapper to make it accessible via its address.
+  class TemporaryPair {
+  public:
+    explicit TemporaryPair(value_type &&p) : m_pair(std::move(p)) {}
+    auto *operator->() { return &m_pair; }
+
+  private:
+    std::remove_reference_t<value_type> m_pair;
+  };
 };
 
 template <class Container, class It1, class It2 = void> struct IteratorType {
@@ -108,8 +130,7 @@ template <class Container, class It1>
 struct IteratorType<Container, It1, void> {
   using type = Iterator<Container, It1, void, 0>;
 };
-} // namespace dict_detail
-} // namespace scipp::core
+} // namespace scipp::core::dict_detail
 
 namespace std {
 template <class Container, class It1, class It2, size_t... IteratorIndices>
@@ -126,9 +147,8 @@ public:
   using reference = typename I::reference;
 
   // It is a forward iterator for most use cases.
-  // But it misses
-  //  - post-increment: it++ and *it++  (easy, but not needed right now)
-  //  - arrow: it->  (difficult because of temporary pair)
+  // But it misses post-increment:
+  //   it++ and *it++  (easy, but not needed right now)
   using iterator_category = std::forward_iterator_tag;
 };
 } // namespace std
@@ -188,27 +208,64 @@ public:
 
   [[nodiscard]] bool contains(const Key &key) const noexcept {
     std::shared_lock lock_{m_mutex};
-    return find(key) != -1;
+    return find_key(key) != m_keys.end();
   }
 
   template <class V> void insert_or_assign(const key_type &key, V &&value) {
     std::unique_lock lock_{m_mutex};
-    if (const auto idx = find(key); idx == -1) {
+    if (const auto key_it = find_key(key); key_it == m_keys.end()) {
       m_keys.push_back(key);
       m_values.emplace_back(std::forward<V>(value));
     } else {
-      m_values[idx] = std::forward<V>(value);
+      m_values[index_of(key_it)] = std::forward<V>(value);
     }
+  }
+
+  void erase(const key_type &key) {
+    std::unique_lock lock_{m_mutex};
+    const auto key_it = expect_find_key(key);
+    m_keys.erase(key_it);
+    m_values.erase(std::next(m_values.begin(), index_of(key_it)));
+  }
+
+  mapped_type extract(const key_type &key) {
+    std::unique_lock lock_{m_mutex};
+    const auto key_it = expect_find_key(key);
+    m_keys.erase(key_it);
+    const auto value_it = std::next(m_values.begin(), index_of(key_it));
+    mapped_type value = std::move(*value_it);
+    m_values.erase(value_it);
+    return value;
   }
 
   [[nodiscard]] const mapped_type &operator[](const key_type &key) const {
     std::shared_lock lock_{m_mutex};
-    return m_values[expect_find(key)];
+    return m_values[expect_find_index(key)];
   }
 
   [[nodiscard]] mapped_type &operator[](const key_type &key) {
     std::shared_lock lock_{m_mutex};
-    return m_values[expect_find(key)];
+    return m_values[expect_find_index(key)];
+  }
+
+  [[nodiscard]] const_iterator find(const key_type &key) const {
+    std::shared_lock lock_{m_mutex};
+    if (const auto key_it = find_key(key); key_it == m_keys.end()) {
+      return end();
+    } else {
+      return const_iterator(m_keys, key_it,
+                            std::next(m_values.begin(), index_of(key_it)));
+    }
+  }
+
+  [[nodiscard]] iterator find(const key_type &key) {
+    std::shared_lock lock_{m_mutex};
+    if (const auto key_it = find_key(key); key_it == m_keys.end()) {
+      return end();
+    } else {
+      return iterator(m_keys, key_it,
+                      std::next(m_values.begin(), index_of(key_it)));
+    }
   }
 
   [[nodiscard]] auto keys_begin() const noexcept {
@@ -256,20 +313,24 @@ private:
   Values m_values;
   mutable std::shared_mutex m_mutex;
 
-  scipp::index find(const Key &key) const noexcept {
-    const auto it = std::find(m_keys.begin(), m_keys.end(), key);
-    if (it == m_keys.end()) {
-      return -1;
-    }
-    return std::distance(m_keys.begin(), it);
+  auto find_key(const Key &key) const noexcept {
+    return std::find(m_keys.begin(), m_keys.end(), key);
   }
 
-  scipp::index expect_find(const Key &key) const {
-    if (const auto idx = find(key); idx != -1) {
-      return idx;
+  auto expect_find_key(const Key &key) const {
+    if (const auto key_it = find_key(key); key_it != m_keys.end()) {
+      return key_it;
     }
     using std::to_string;
     throw except::NotFoundError(to_string(key));
+  }
+
+  auto index_of(const typename Keys::const_iterator &it) const noexcept {
+    return std::distance(m_keys.begin(), it);
+  }
+
+  scipp::index expect_find_index(const Key &key) const {
+    return index_of(expect_find_key(key));
   }
 };
 } // namespace scipp::core
