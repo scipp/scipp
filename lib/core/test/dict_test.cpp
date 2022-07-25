@@ -365,13 +365,34 @@ TEST(Dict, insertion_order_is_Preserved) {
   EXPECT_EQ(result, expected);
 }
 
-TEST(Dict, iterator_with_transform) {
+TEST(Dict, iterator_with_transform_via_deref) {
   DimDict dict;
   dict.insert_or_assign(Dim::X, 7476);
   dict.insert_or_assign(Dim::Event, -31);
   dict.insert_or_assign(Dim::Position, 0);
 
-  auto it = dict.begin_transform([](const auto &x) {
+  auto it = dict.begin().transform([](const auto &x) {
+    return std::pair{x.first, 2 * x.second};
+  });
+  EXPECT_EQ((*it).first, Dim::X);
+  EXPECT_EQ((*it).second, 2 * 7476);
+  ++it;
+  EXPECT_EQ((*it).first, Dim::Event);
+  EXPECT_EQ((*it).second, -2 * 31);
+  ++it;
+  EXPECT_EQ((*it).first, Dim::Position);
+  EXPECT_EQ((*it).second, 0);
+  ++it;
+  EXPECT_EQ(it, dict.end());
+}
+
+TEST(Dict, iterator_with_transform_via_arrow) {
+  DimDict dict;
+  dict.insert_or_assign(Dim::X, 7476);
+  dict.insert_or_assign(Dim::Event, -31);
+  dict.insert_or_assign(Dim::Position, 0);
+
+  auto it = dict.begin().transform([](const auto &x) {
     return std::pair{x.first, 2 * x.second};
   });
   EXPECT_EQ(it->first, Dim::X);
@@ -384,4 +405,83 @@ TEST(Dict, iterator_with_transform) {
   EXPECT_EQ(it->second, 0);
   ++it;
   EXPECT_EQ(it, dict.end());
+}
+
+TEST(Dict, iterator_with_transform_lvalue_iterator) {
+  DimDict dict;
+  dict.insert_or_assign(Dim::X, 7476);
+  dict.insert_or_assign(Dim::Event, -31);
+  dict.insert_or_assign(Dim::Position, 0);
+
+  auto base_it = dict.begin();
+  auto it = base_it.transform([](const auto &x) {
+    return std::pair{x.first, 2 * x.second};
+  });
+  EXPECT_EQ(it->first, Dim::X);
+  EXPECT_EQ(it->second, 2 * 7476);
+  ++it;
+  EXPECT_EQ(it->first, Dim::Event);
+  EXPECT_EQ(it->second, -2 * 31);
+  ++it;
+  EXPECT_EQ(it->first, Dim::Position);
+  EXPECT_EQ(it->second, 0);
+  ++it;
+  EXPECT_EQ(it, dict.end());
+
+  EXPECT_NE(base_it, dict.end());
+  EXPECT_EQ(base_it->first, Dim::X);
+  EXPECT_EQ(base_it->second, 7476);
+}
+
+TEST(Dict, iterator_with_transform_struct) {
+  DimDict dict;
+  dict.insert_or_assign(Dim::Energy, -823);
+  dict.insert_or_assign(Dim::Row, 14);
+
+  struct F {
+    double operator()(std::pair<const Dim, int> x) const {
+      return x.second / 2.0;
+    }
+  };
+
+  auto it = dict.begin().transform(F{});
+  EXPECT_EQ(*it, -823 / 2.0);
+  ++it;
+  EXPECT_EQ(*it, 14 / 2.0);
+  ++it;
+  EXPECT_EQ(it, dict.end());
+}
+
+TEST(Dict, iterator_with_transform_struct_stateful) {
+  DimDict dict;
+  dict.insert_or_assign(Dim::Event, 112233);
+  dict.insert_or_assign(Dim::Z, 9933);
+
+  struct F {
+    int divisor;
+    int operator()(std::pair<const Dim, int> x) {
+      divisor += 2;
+      return x.second / divisor;
+    }
+  };
+
+  auto it = dict.begin().transform(F{2});
+  EXPECT_EQ(*it, 112233 / 4);
+  ++it;
+  EXPECT_EQ(*it, 9933 / 6);
+  ++it;
+  EXPECT_EQ(it, dict.end());
+}
+
+TEST(Dict, iterator_with_transform_end_with_transform) {
+  DimDict dict;
+  dict.insert_or_assign(Dim::Time, 72);
+  dict.insert_or_assign(Dim::Y, 41);
+
+  const auto f = [](const auto &x) { return x; };
+
+  auto it = dict.values_begin().transform(f);
+  ++it;
+  ++it;
+  EXPECT_EQ(it, dict.values_end().transform(f));
 }
