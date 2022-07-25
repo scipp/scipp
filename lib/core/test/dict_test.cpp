@@ -71,40 +71,28 @@ TEST(Dict, erase_invalid_key_throws) {
 }
 
 TEST(Dict, item_is_not_accessible_after_erase_front) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::Time, 6148);
-  dict.insert_or_assign(Dim::Y, -471);
-  dict.insert_or_assign(Dim::Event, 4761);
+  DimDict dict{{Dim::Time, 6148}, {Dim::Y, -471}, {Dim::Event, 4761}};
   dict.erase(Dim::Time);
   EXPECT_FALSE(dict.contains(Dim::Time));
   EXPECT_THROW_DISCARD(dict[Dim::Time], scipp::except::NotFoundError);
 }
 
 TEST(Dict, item_is_not_accessible_after_erase_middle) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::X, 817);
-  dict.insert_or_assign(Dim::Row, -9982);
-  dict.insert_or_assign(Dim::Time, 7176);
+  DimDict dict{{Dim::X, 817}, {Dim::Row, -9982}, {Dim::Time, 7176}};
   dict.erase(Dim::Row);
   EXPECT_FALSE(dict.contains(Dim::Row));
   EXPECT_THROW_DISCARD(dict[Dim::Row], scipp::except::NotFoundError);
 }
 
 TEST(Dict, item_is_not_accessible_after_erase_back) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::Event, -773616);
-  dict.insert_or_assign(Dim::Position, 41);
-  dict.insert_or_assign(Dim::Group, -311);
+  DimDict dict{{Dim::Event, -773616}, {Dim::Position, 41}, {Dim::Group, -311}};
   dict.erase(Dim::Group);
   EXPECT_FALSE(dict.contains(Dim::Group));
   EXPECT_THROW_DISCARD(dict[Dim::Group], scipp::except::NotFoundError);
 }
 
 TEST(Dict, item_is_not_accessible_after_erase_multiple) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::Z, -2);
-  dict.insert_or_assign(Dim::Time, 16);
-  dict.insert_or_assign(Dim::Energy, 41);
+  DimDict dict{{Dim::Z, -2}, {Dim::Time, 16}, {Dim::Energy, 41}};
   dict.erase(Dim::Time);
   dict.erase(Dim::Z);
   EXPECT_FALSE(dict.contains(Dim::Time));
@@ -114,10 +102,7 @@ TEST(Dict, item_is_not_accessible_after_erase_multiple) {
 }
 
 TEST(Dict, key_iterator_does_not_produce_erased_element) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::Energy, 111);
-  dict.insert_or_assign(Dim::Z, -2623);
-  dict.insert_or_assign(Dim::Row, 61);
+  DimDict dict{{Dim::Energy, 111}, {Dim::Z, -2623}, {Dim::Row, 61}};
   dict.erase(Dim::Energy);
   auto it = dict.keys_begin();
   EXPECT_EQ(*it, Dim::Z);
@@ -126,10 +111,7 @@ TEST(Dict, key_iterator_does_not_produce_erased_element) {
 }
 
 TEST(Dict, erasing_all_elements_yieldds_empty_dict) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::Y, -5151);
-  dict.insert_or_assign(Dim::Time, -2);
-  dict.insert_or_assign(Dim::Event, 991);
+  DimDict dict{{Dim::Y, -5151}, {Dim::Time, -2}, {Dim::Event, 991}};
   dict.erase(Dim::Time);
   dict.erase(Dim::Event);
   dict.erase(Dim::Y);
@@ -137,28 +119,25 @@ TEST(Dict, erasing_all_elements_yieldds_empty_dict) {
 }
 
 TEST(Dict, extract_throws_if_element_does_not_exist) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::Row, 999);
-  dict.insert_or_assign(Dim::X, 888);
-  dict.insert_or_assign(Dim::Time, 777);
+  DimDict dict{{Dim::Row, 999}, {Dim::X, 888}, {Dim::Time, 777}};
   EXPECT_THROW_DISCARD(dict.extract(Dim::Y), scipp::except::NotFoundError);
 }
 
 TEST(Dict, extract_returns_element) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::X, 999);
-  dict.insert_or_assign(Dim::Y, 888);
-  dict.insert_or_assign(Dim::Z, 777);
+  DimDict dict{{Dim::X, 999}, {Dim::Y, 888}, {Dim::Z, 777}};
   EXPECT_EQ(dict.extract(Dim::Y), 888);
 }
 
 TEST(Dict, extract_erases_element) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::Row, 666);
-  dict.insert_or_assign(Dim::Time, 555);
-  dict.insert_or_assign(Dim::Energy, 444);
+  DimDict dict{{Dim::Row, 666}, {Dim::Time, 555}, {Dim::Energy, 444}};
   static_cast<void>(dict.extract(Dim::Time));
   EXPECT_FALSE(dict.contains(Dim::Time));
+}
+
+TEST(Dict, clear_removes_all_elements) {
+  DimDict dict{{Dim::Y, 92}, {Dim::Event, 84870}, {Dim::Position, -41}};
+  dict.clear();
+  EXPECT_TRUE(dict.empty());
 }
 
 TEST(Dict, key_iterator_of_empty_dict_is_end) {
@@ -167,9 +146,7 @@ TEST(Dict, key_iterator_of_empty_dict_is_end) {
 }
 
 TEST(Dict, key_iterator_produces_correct_keys) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::Time, 61892);
-  dict.insert_or_assign(Dim::Event, 619);
+  DimDict dict{{Dim::Time, 61892}, {Dim::Event, 619}};
   auto it = dict.keys_begin();
   EXPECT_EQ(*it, Dim::Time);
   ++it;
@@ -179,9 +156,7 @@ TEST(Dict, key_iterator_produces_correct_keys) {
 }
 
 TEST(Dict, key_iterator_can_access_key_via_arrow) {
-  Dict<std::string, int> dict;
-  dict.insert_or_assign("gak", 7419);
-  dict.insert_or_assign("9ana", -919);
+  Dict<std::string, int> dict{{"gak", 7419}, {"9ana", -919}};
   auto it = dict.keys_begin();
   EXPECT_EQ(it->size(), 3);
   EXPECT_EQ((++it)->size(), 4);
@@ -224,9 +199,7 @@ TEST(Dict, key_iterator_throws_if_element_inserted_in_same_memory) {
 }
 
 TEST(Dict, key_iterator_throws_if_element_erased) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::Y, -4122);
-  dict.insert_or_assign(Dim::Row, 5619);
+  DimDict dict{{Dim::Y, -4122}, {Dim::Row, 5619}};
   auto it = dict.keys_begin();
   dict.erase(Dim::Row);
   EXPECT_THROW_DISCARD(*it, std::runtime_error);
@@ -234,9 +207,7 @@ TEST(Dict, key_iterator_throws_if_element_erased) {
 }
 
 TEST(Dict, value_iterator_produces_correct_values) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::Time, 61892);
-  dict.insert_or_assign(Dim::Event, 619);
+  DimDict dict{{Dim::Time, 61892}, {Dim::Event, 619}};
   auto it = dict.values_begin();
   EXPECT_EQ(*it, 61892);
   ++it;
@@ -246,9 +217,7 @@ TEST(Dict, value_iterator_produces_correct_values) {
 }
 
 TEST(Dict, const_value_iterator_produces_correct_values) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::Time, 4561);
-  dict.insert_or_assign(Dim::Event, 76);
+  DimDict dict{{Dim::Time, 4561}, {Dim::Event, 76}};
   const DimDict const_dict(dict);
   auto it = const_dict.values_begin();
   EXPECT_EQ(*it, 4561);
@@ -259,9 +228,7 @@ TEST(Dict, const_value_iterator_produces_correct_values) {
 }
 
 TEST(Dict, value_iterator_can_change_values) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::Y, -816);
-  dict.insert_or_assign(Dim::Z, -41);
+  DimDict dict{{Dim::Y, -816}, {Dim::Z, -41}};
   auto it = dict.values_begin();
   *it = 923;
   *(++it) = -5289;
@@ -275,9 +242,7 @@ TEST(Dict, iterator_of_empty_dict_is_end) {
 }
 
 TEST(Dict, iterator_produces_correct_keys_and_values) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::Time, 61892);
-  dict.insert_or_assign(Dim::Event, 619);
+  DimDict dict{{Dim::Time, 61892}, {Dim::Event, 619}};
   auto it = dict.begin();
   EXPECT_EQ((*it).first, Dim::Time);
   EXPECT_EQ((*it).second, 61892);
@@ -289,9 +254,7 @@ TEST(Dict, iterator_produces_correct_keys_and_values) {
 }
 
 TEST(Dict, iterator_produces_correct_keys_and_values_via_arrow) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::Time, 61892);
-  dict.insert_or_assign(Dim::Event, 619);
+  DimDict dict{{Dim::Time, 61892}, {Dim::Event, 619}};
   auto it = dict.begin();
   EXPECT_EQ(it->first, Dim::Time);
   EXPECT_EQ(it->second, 61892);
@@ -303,9 +266,7 @@ TEST(Dict, iterator_produces_correct_keys_and_values_via_arrow) {
 }
 
 TEST(Dict, iterator_can_change_values) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::Position, -51);
-  dict.insert_or_assign(Dim::Row, 827);
+  DimDict dict{{Dim::Position, -51}, {Dim::Row, 827}};
   auto it = dict.begin();
   (*it).second = 991;
   (*(++it)).second = -9761;
@@ -314,9 +275,7 @@ TEST(Dict, iterator_can_change_values) {
 }
 
 TEST(Dict, iterator_can_change_values_via_arrow) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::Position, -51);
-  dict.insert_or_assign(Dim::Row, 827);
+  DimDict dict{{Dim::Position, -51}, {Dim::Row, 827}};
   auto it = dict.begin();
   it->second = 991;
   (++it)->second = -9761;
@@ -331,9 +290,7 @@ TEST(Dict, iterator_cannot_change_keys) {
 }
 
 TEST(Dict, find) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::X, 7901);
-  dict.insert_or_assign(Dim::Y, 515);
+  DimDict dict{{Dim::X, 7901}, {Dim::Y, 515}};
   EXPECT_EQ(dict.find(Dim::Y), ++dict.begin());
   EXPECT_EQ(dict.find(Dim::X), dict.begin());
   EXPECT_EQ(dict.find(Dim::Z), dict.end());
@@ -366,10 +323,7 @@ TEST(Dict, insertion_order_is_Preserved) {
 }
 
 TEST(Dict, iterator_with_transform_via_deref) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::X, 7476);
-  dict.insert_or_assign(Dim::Event, -31);
-  dict.insert_or_assign(Dim::Position, 0);
+  DimDict dict{{Dim::X, 7476}, {Dim::Event, -31}, {Dim::Position, 0}};
 
   auto it = dict.begin().transform([](const auto &x) {
     return std::pair{x.first, 2 * x.second};
@@ -387,10 +341,7 @@ TEST(Dict, iterator_with_transform_via_deref) {
 }
 
 TEST(Dict, iterator_with_transform_via_arrow) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::X, 7476);
-  dict.insert_or_assign(Dim::Event, -31);
-  dict.insert_or_assign(Dim::Position, 0);
+  DimDict dict{{Dim::X, 7476}, {Dim::Event, -31}, {Dim::Position, 0}};
 
   auto it = dict.begin().transform([](const auto &x) {
     return std::pair{x.first, 2 * x.second};
@@ -408,10 +359,7 @@ TEST(Dict, iterator_with_transform_via_arrow) {
 }
 
 TEST(Dict, iterator_with_transform_lvalue_iterator) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::X, 7476);
-  dict.insert_or_assign(Dim::Event, -31);
-  dict.insert_or_assign(Dim::Position, 0);
+  DimDict dict{{Dim::X, 7476}, {Dim::Event, -31}, {Dim::Position, 0}};
 
   auto base_it = dict.begin();
   auto it = base_it.transform([](const auto &x) {
@@ -434,9 +382,7 @@ TEST(Dict, iterator_with_transform_lvalue_iterator) {
 }
 
 TEST(Dict, iterator_with_transform_struct) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::Energy, -823);
-  dict.insert_or_assign(Dim::Row, 14);
+  DimDict dict{{Dim::Energy, -823}, {Dim::Row, 14}};
 
   struct F {
     double operator()(std::pair<const Dim, int> x) const {
@@ -453,9 +399,7 @@ TEST(Dict, iterator_with_transform_struct) {
 }
 
 TEST(Dict, iterator_with_transform_struct_stateful) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::Event, 112233);
-  dict.insert_or_assign(Dim::Z, 9933);
+  DimDict dict{{Dim::Event, 112233}, {Dim::Z, 9933}};
 
   struct F {
     int divisor;
@@ -474,9 +418,7 @@ TEST(Dict, iterator_with_transform_struct_stateful) {
 }
 
 TEST(Dict, iterator_with_transform_end_with_transform) {
-  DimDict dict;
-  dict.insert_or_assign(Dim::Time, 72);
-  dict.insert_or_assign(Dim::Y, 41);
+  DimDict dict{{Dim::Time, 72}, {Dim::Y, 41}};
 
   const auto f = [](const auto &x) { return x; };
 

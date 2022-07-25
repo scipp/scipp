@@ -226,6 +226,7 @@ template <class Key, class Value> class SCIPP_CORE_EXPORT Dict {
 public:
   using key_type = Key;
   using mapped_type = Value;
+  using value_type = std::pair<const Key, Value>;
   using value_iterator =
       typename dict_detail::IteratorType<Values,
                                          typename Values::iterator>::type;
@@ -243,8 +244,15 @@ public:
                                          typename Keys::const_iterator,
                                          typename Values::const_iterator>::type;
 
+  Dict(std::initializer_list<std::pair<const Key, Value>> items) {
+    reserve(items.size());
+    for (const auto &[key, value] : items) {
+      insert_or_assign(key, value);
+    }
+  }
+
   // moving and destroying not thread safe
-  // and only safe on LHS off assignment, not RHS
+  // and only safe on LHS of assignment, not RHS
   Dict() = default;
   ~Dict() noexcept = default;
   Dict(const Dict &other)
@@ -303,6 +311,12 @@ public:
     return value;
   }
 
+  void clear() {
+    std::unique_lock lock_{m_mutex};
+    m_keys.clear();
+    m_values.clear();
+  }
+
   [[nodiscard]] const mapped_type &operator[](const key_type &key) const {
     std::shared_lock lock_{m_mutex};
     return m_values[expect_find_index(key)];
@@ -312,6 +326,12 @@ public:
     std::shared_lock lock_{m_mutex};
     return m_values[expect_find_index(key)];
   }
+
+  [[nodiscard]] const mapped_type &at(const key_type &key) const {
+    return (*this)[key];
+  }
+
+  [[nodiscard]] mapped_type &at(const key_type &key) { return (*this)[key]; }
 
   [[nodiscard]] const_iterator find(const key_type &key) const {
     std::shared_lock lock_{m_mutex};
@@ -386,6 +406,7 @@ private:
     if (const auto key_it = find_key(key); key_it != m_keys.end()) {
       return key_it;
     }
+    using scipp::core::to_string;
     using std::to_string;
     throw except::NotFoundError(to_string(key));
   }
