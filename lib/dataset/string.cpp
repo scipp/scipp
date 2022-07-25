@@ -111,7 +111,7 @@ std::string to_string(const Dataset &dataset) {
 
 namespace {
 template <class Key, class Value>
-std::string dict_to_string(const Dict<Key, Value> &view) {
+std::string dict_to_string(const AlignedDict<Key, Value> &view) {
   std::stringstream ss;
   ss << "<scipp.Dict>\n";
   for (const auto &[key, item] : view) {

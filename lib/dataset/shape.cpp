@@ -76,7 +76,7 @@ template <class Maps> auto concat_maps(const Maps &maps, const Dim dim) {
   if (maps.empty())
     throw std::invalid_argument("Cannot concat empty list.");
   using T = typename Maps::value_type;
-  std::unordered_map<typename T::key_type, typename T::mapped_type> out;
+  core::Dict<typename T::key_type, typename T::mapped_type> out;
   const auto &a = maps.front();
   for (const auto &[key, a_] : a) {
     auto vars = map(maps, [&key = key](auto &&map) { return map[key]; });
@@ -85,9 +85,9 @@ template <class Maps> auto concat_maps(const Maps &maps, const Dim dim) {
         throw except::BinEdgeError(
             "Either all or none of the inputs must have bin edge coordinates.");
       } else if (!all_is_edges(maps, key, dim)) {
-        out.emplace(key, concat(vars, dim));
+        out.insert_or_assign(key, concat(vars, dim));
       } else {
-        out.emplace(key, join_edges(vars, dim));
+        out.insert_or_assign(key, join_edges(vars, dim));
       }
     } else {
       // 1D coord is kept only if all inputs have matching 1D coords.
@@ -96,12 +96,13 @@ template <class Maps> auto concat_maps(const Maps &maps, const Dim dim) {
           })) {
         // Mismatching 1D coords must be broadcast to ensure new coord shape
         // matches new data shape.
-        out.emplace(key, concat(broadcast_along_dim(maps, key, dim), dim));
+        out.insert_or_assign(key,
+                             concat(broadcast_along_dim(maps, key, dim), dim));
       } else {
         if constexpr (std::is_same_v<T, Masks>)
-          out.emplace(key, copy(a_));
+          out.insert_or_assign(key, copy(a_));
         else
-          out.emplace(key, a_);
+          out.insert_or_assign(key, a_);
       }
     }
   }

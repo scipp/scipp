@@ -37,7 +37,7 @@ void check_nested_in_assign(const T &lhs, const Variable &rhs) {
 }
 
 template <class T, class Key, class Value>
-void check_nested_in_assign(const T &lhs, const Dict<Key, Value> &rhs) {
+void check_nested_in_assign(const T &lhs, const AlignedDict<Key, Value> &rhs) {
   for (const auto &[_, var] : rhs) {
     check_nested_in_assign(lhs, var);
   }

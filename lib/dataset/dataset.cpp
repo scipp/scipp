@@ -62,7 +62,7 @@ const Coords &Dataset::meta() const noexcept { return coords(); }
 Coords &Dataset::meta() noexcept { return coords(); }
 
 bool Dataset::contains(const std::string &name) const noexcept {
-  return m_data.count(name) == 1;
+  return m_data.contains(name);
 }
 
 /// Removes a data item from the Dataset
@@ -132,10 +132,11 @@ void Dataset::setData(const std::string &name, Variable data,
   setSizes(data.dims());
   const auto replace = contains(name);
   if (replace && attrPolicy == AttrPolicy::Keep)
-    m_data[name] = DataArray(data, {}, m_data[name].masks().items(),
-                             m_data[name].attrs().items(), name);
+    m_data.insert_or_assign(name,
+                            DataArray(data, {}, m_data[name].masks().items(),
+                                      m_data[name].attrs().items(), name));
   else
-    m_data[name] = DataArray(data);
+    m_data.insert_or_assign(name, DataArray(data));
   if (replace)
     rebuildDims();
 }
@@ -180,7 +181,7 @@ Dataset Dataset::slice(const Slice &s) const {
   out.m_data = slice_map(m_coords.sizes(), m_data, s);
   auto [coords, attrs] = m_coords.slice_coords(s);
   out.m_coords = std::move(coords);
-  for (auto &item : out.m_data) {
+  for (auto &&item : out.m_data) {
     Attrs item_attrs(out.m_coords.sizes(), {});
     for (const auto &[dim, coord] : attrs)
       if (m_coords.item_applies_to(dim, m_data.at(item.first).dims()))
@@ -197,7 +198,7 @@ Dataset &Dataset::setSlice(const Slice &s, const Dataset &data) {
   for (const auto &[name, item] : m_data)
     item.validateSlice(s, data.m_data.at(name));
   // Only if all items checked for dry-run does modification go-ahead
-  for (auto &[name, item] : m_data)
+  for (auto &&[name, item] : m_data)
     item.setSlice(s, data.m_data.at(name));
   return *this;
 }
@@ -208,8 +209,8 @@ Dataset &Dataset::setSlice(const Slice &s, const DataArray &data) {
   for (const auto &item : m_data)
     item.second.validateSlice(s, data);
   // Only if all items checked for dry-run does modification go-ahead
-  for (auto &item : m_data)
-    item.second.setSlice(s, data);
+  for (auto &&[_, val] : m_data)
+    val.setSlice(s, data);
   return *this;
 }
 
@@ -224,9 +225,9 @@ void Dataset::rename(const Dim from, const Dim to) {
   if ((from != to) && m_coords.sizes().contains(to))
     throw except::DimensionError("Duplicate dimension.");
   m_coords.rename(from, to);
-  for (auto &item : m_data)
-    if (item.second.dims().contains(from))
-      item.second.rename(from, to);
+  for (auto &&[_, val] : m_data)
+    if (val.dims().contains(from))
+      val.rename(from, to);
 }
 
 /// Return true if the datasets have identical content.
@@ -271,11 +272,10 @@ typename Masks::holder_type union_or(const Masks &currentMasks,
                                      const Masks &otherMasks) {
   typename Masks::holder_type out;
   for (const auto &[key, item] : currentMasks)
-    out.emplace(key, copy(item));
+    out.insert_or_assign(key, copy(item));
   for (const auto &[key, item] : otherMasks) {
-    const auto it = currentMasks.find(key);
-    if (it == currentMasks.end())
-      out.emplace(key, copy(item));
+    if (!currentMasks.contains(key))
+      out.insert_or_assign(key, copy(item));
     else if (out[key].dims().includes(item.dims()))
       out[key] |= item;
     else

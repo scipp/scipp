@@ -4,9 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <boost/container/small_vector.hpp>
-#include <boost/iterator/transform_iterator.hpp>
-
+#include "scipp/core/dict.h"
 #include "scipp/core/sizes.h"
 #include "scipp/core/slice.h"
 #include "scipp/dataset/map_view_forward.h"
@@ -16,33 +14,13 @@
 #include "scipp/variable/variable.h"
 
 namespace scipp::dataset {
-
-namespace detail {
-struct make_key_value {
-  template <class T> auto operator()(T &&view) const {
-    using View =
-        std::conditional_t<std::is_rvalue_reference_v<T>, std::decay_t<T>, T>;
-    return std::pair<std::string, View>(view.name(), std::forward<T>(view));
-  }
-};
-
-struct make_key {
-  template <class T> auto operator()(T &&view) const { return view.first; }
-};
-
-struct make_value {
-  template <class T> auto operator()(T &&view) const { return view.second; }
-};
-
-} // namespace detail
-
-template <class T>
-auto slice_map(const Sizes &sizes, const T &map, const Slice &params) {
-  T out;
+template <class Mapping>
+auto slice_map(const Sizes &sizes, const Mapping &map, const Slice &params) {
+  Mapping out;
   for (const auto &[key, value] : map) {
     if (value.dims().contains(params.dim())) {
       if (value.dims()[params.dim()] == sizes[params.dim()]) {
-        out[key] = value.slice(params);
+        out.insert_or_assign(key, value.slice(params));
       } else { // bin edge
         if (params.stride() != 1)
           throw except::SliceError(
@@ -52,38 +30,40 @@ auto slice_map(const Sizes &sizes, const T &map, const Slice &params) {
         const auto end = params.end() == -1               ? params.begin() + 2
                          : params.begin() == params.end() ? params.end()
                                                           : params.end() + 1;
-        out[key] = value.slice(Slice{params.dim(), params.begin(), end});
+        out.insert_or_assign(
+            key, value.slice(Slice{params.dim(), params.begin(), end}));
       }
     } else if (params == Slice{}) {
-      out[key] = value;
+      out.insert_or_assign(key, value);
     } else {
-      out[key] = value.as_const();
+      out.insert_or_assign(key, value.as_const());
     }
   }
   return out;
 }
 
 /// Common functionality for other const-view classes.
-template <class Key, class Value> class Dict {
+template <class Key, class Value> class AlignedDict {
 public:
   using key_type = Key;
   using mapped_type = Value;
-  using holder_type = std::unordered_map<key_type, mapped_type>;
+  using holder_type = core::Dict<key_type, mapped_type>;
 
-  Dict() = default;
-  Dict(const Sizes &sizes,
-       std::initializer_list<std::pair<const Key, Value>> items,
-       const bool readonly = false);
-  Dict(const Sizes &sizes, holder_type items, const bool readonly = false);
-  Dict(const Dict &other);
-  Dict(Dict &&other) noexcept;
-  Dict &operator=(const Dict &other);
-  Dict &operator=(Dict &&other) noexcept;
+  AlignedDict() = default;
+  AlignedDict(const Sizes &sizes,
+              std::initializer_list<std::pair<const Key, Value>> items,
+              bool readonly = false);
+  AlignedDict(Sizes sizes, holder_type items, bool readonly = false);
+  AlignedDict(const AlignedDict &other);
+  AlignedDict(AlignedDict &&other) noexcept;
+  AlignedDict &operator=(const AlignedDict &other);
+  AlignedDict &operator=(AlignedDict &&other) noexcept;
 
   /// Return the number of coordinates in the view.
   [[nodiscard]] index size() const noexcept { return scipp::size(m_items); }
   /// Return true if there are 0 coordinates in the view.
-  [[nodiscard]] bool empty() const noexcept { return size() == 0; }
+  [[nodiscard]] bool empty() const noexcept { return m_items.empty(); }
+  void reserve(const index new_capacity) { m_items.reserve(new_capacity); }
 
   bool contains(const Key &k) const;
   scipp::index count(const Key &k) const;
@@ -115,28 +95,20 @@ public:
 
   auto keys_begin() const && = delete;
   /// Return const iterator to the beginning of all keys.
-  auto keys_begin() const &noexcept {
-    return boost::make_transform_iterator(begin(), detail::make_key{});
-  }
+  auto keys_begin() const &noexcept { return m_items.keys_begin(); }
   auto keys_end() const && = delete;
   /// Return const iterator to the end of all keys.
-  auto keys_end() const &noexcept {
-    return boost::make_transform_iterator(end(), detail::make_key{});
-  }
+  auto keys_end() const &noexcept { return m_items.keys_end(); }
 
   auto values_begin() const && = delete;
   /// Return const iterator to the beginning of all values.
-  auto values_begin() const &noexcept {
-    return boost::make_transform_iterator(begin(), detail::make_value{});
-  }
+  auto values_begin() const &noexcept { return m_items.values_begin(); }
   auto values_end() const && = delete;
   /// Return const iterator to the end of all values.
-  auto values_end() const &noexcept {
-    return boost::make_transform_iterator(end(), detail::make_value{});
-  }
+  auto values_end() const &noexcept { return m_items.values_end(); }
 
-  bool operator==(const Dict &other) const;
-  bool operator!=(const Dict &other) const;
+  bool operator==(const AlignedDict &other) const;
+  bool operator!=(const AlignedDict &other) const;
 
   [[nodiscard]] const Sizes &sizes() const noexcept { return m_sizes; }
   [[nodiscard]] const auto &items() const noexcept { return m_items; }
@@ -148,21 +120,21 @@ public:
   mapped_type extract(const key_type &key);
   mapped_type extract(const key_type &key, const mapped_type &default_value);
 
-  Dict slice(const Slice &params) const;
-  std::tuple<Dict, Dict> slice_coords(const Slice &params) const;
-  void validateSlice(const Slice &s, const Dict &dict) const;
-  [[maybe_unused]] Dict &setSlice(const Slice &s, const Dict &dict);
+  AlignedDict slice(const Slice &params) const;
+  std::tuple<AlignedDict, AlignedDict> slice_coords(const Slice &params) const;
+  void validateSlice(const Slice &s, const AlignedDict &dict) const;
+  [[maybe_unused]] AlignedDict &setSlice(const Slice &s,
+                                         const AlignedDict &dict);
 
-  void rename(const Dim from, const Dim to);
+  void rename(Dim from, Dim to);
 
   void set_readonly() noexcept;
   [[nodiscard]] bool is_readonly() const noexcept;
-  [[nodiscard]] Dict as_const() const;
-  [[nodiscard]] Dict merge_from(const Dict &other) const;
+  [[nodiscard]] AlignedDict as_const() const;
+  [[nodiscard]] AlignedDict merge_from(const AlignedDict &other) const;
 
   bool item_applies_to(const Key &key, const Dimensions &dims) const;
-  bool is_edges(const Key &key,
-                const std::optional<Dim> dim = std::nullopt) const;
+  bool is_edges(const Key &key, std::optional<Dim> dim = std::nullopt) const;
 
 protected:
   Sizes m_sizes;
@@ -185,7 +157,19 @@ template <class Masks>
 }
 
 template <class Key, class Value>
-bool equals_nan(const Dict<Key, Value> &a, const Dict<Key, Value> &b);
+bool equals_nan(const AlignedDict<Key, Value> &a,
+                const AlignedDict<Key, Value> &b);
+
+template <class Key, class Value>
+core::Dict<Key, Value> union_(const AlignedDict<Key, Value> &a,
+                              const AlignedDict<Key, Value> &b,
+                              std::string_view opname);
+
+/// Return intersection of dicts, i.e., all items with matching names that
+/// have matching content.
+template <class Key, class Value>
+core::Dict<Key, Value> intersection(const AlignedDict<Key, Value> &a,
+                                    const AlignedDict<Key, Value> &b);
 
 constexpr auto get_data = [](auto &&a) -> decltype(auto) { return a.data(); };
 constexpr auto get_sizes = [](auto &&a) -> decltype(auto) { return a.sizes(); };

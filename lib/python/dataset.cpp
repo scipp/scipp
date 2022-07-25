@@ -107,10 +107,11 @@ template <class T> void bind_rebin(py::module &m) {
       py::call_guard<py::gil_scoped_release>());
 }
 
-template <class Key, class Value> auto to_cpp_map(const py::dict &dict) {
-  std::unordered_map<Key, Value> out;
+template <class Key, class Value> auto to_cpp_dict(const py::dict &dict) {
+  core::Dict<Key, Value> out;
   for (const auto &[key, val] : dict) {
-    out.emplace(key.template cast<std::string>(), val.template cast<Value &>());
+    out.insert_or_assign(Key{key.template cast<std::string>()},
+                         val.template cast<Value &>());
   }
   return out;
 }
@@ -146,9 +147,9 @@ Returned by :py:func:`DataArray.masks`)");
       py::init([](const Variable &data, const py::object &coords,
                   const py::object &masks, const py::object &attrs,
                   const std::string &name) {
-        return DataArray{data, to_cpp_map<Dim, Variable>(coords),
-                         to_cpp_map<std::string, Variable>(masks),
-                         to_cpp_map<Dim, Variable>(attrs), name};
+        return DataArray{data, to_cpp_dict<Dim, Variable>(coords),
+                         to_cpp_dict<std::string, Variable>(masks),
+                         to_cpp_dict<Dim, Variable>(attrs), name};
       }),
       py::arg("data"), py::kw_only(), py::arg("coords") = py::dict(),
       py::arg("masks") = py::dict(), py::arg("attrs") = py::dict(),

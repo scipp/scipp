@@ -180,17 +180,14 @@ template <class T, class Meta> auto extract_unbinned(T &array, Meta meta) {
   const auto dim = array.dims().inner();
   using Key = typename std::decay_t<decltype(meta(array))>::key_type;
   std::vector<Key> to_extract;
-  std::unordered_map<Key, Variable> extracted;
   const auto view = meta(array);
   // WARNING: Do not use `view` while extracting, `extract` invalidates it!
   std::copy_if(
       view.keys_begin(), view.keys_end(), std::back_inserter(to_extract),
       [&](const auto &key) { return !view[key].dims().contains(dim); });
-  std::transform(to_extract.begin(), to_extract.end(),
-                 std::inserter(extracted, extracted.end()),
-                 [&](const auto &key) {
-                   return std::pair(key, meta(array).extract(key));
-                 });
+  core::Dict<Key, Variable> extracted;
+  for (const auto &key : to_extract)
+    extracted.insert_or_assign(key, meta(array).extract(key));
   return extracted;
 }
 
@@ -223,19 +220,19 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
   for (const auto &c : {edges, groups})
     for (const auto &coord : c) {
       dims.emplace(coord.dims().inner());
-      out_coords[coord.dims().inner()] = copy(coord);
+      out_coords.insert_or_assign(coord.dims().inner(), copy(coord));
     }
   for (const auto &[dim_, coord] : coords)
-    if (!rebinned(coord) && !out_coords.count(dim_))
-      out_coords[dim_] = copy(coord);
+    if (!rebinned(coord) && !out_coords.contains(dim_))
+      out_coords.insert_or_assign(dim_, copy(coord));
   auto out_masks = extract_unbinned(buffer, get_masks);
   for (const auto &[name, mask] : masks)
     if (!rebinned(mask))
-      out_masks[name] = copy(mask);
+      out_masks.insert_or_assign(name, copy(mask));
   auto out_attrs = extract_unbinned(buffer, get_attrs);
   for (const auto &[dim_, coord] : attrs)
-    if (!rebinned(coord) && !out_coords.count(dim_))
-      out_attrs[dim_] = copy(coord);
+    if (!rebinned(coord) && !out_coords.contains(dim_))
+      out_attrs.insert_or_assign(dim_, copy(coord));
   return DataArray{
       make_bins(zip(end - bin_sizes, end), buffer_dim, std::move(buffer)),
       std::move(out_coords), std::move(out_masks), std::move(out_attrs)};
