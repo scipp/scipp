@@ -5,8 +5,6 @@
 #pragma once
 
 #include <functional>
-#include <iosfwd>
-#include <map>
 #include <string>
 
 #include "scipp/dataset/data_array.h"

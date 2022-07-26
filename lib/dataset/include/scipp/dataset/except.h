@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <stdexcept>
 #include <string>
-#include <unordered_map>
 
 #include "scipp-dataset_export.h"
 #include "scipp/core/except.h"

@@ -4,11 +4,8 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <unordered_map>
-
-#include "scipp/dataset/dataset.h"
-#include "scipp/dataset/except.h"
-#include "scipp/variable/arithmetic.h"
+#include "scipp-dataset_export.h"
+#include "scipp/variable/variable.h"
 
 namespace scipp::dataset::bin_detail {
 
