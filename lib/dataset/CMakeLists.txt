@@ -31,7 +31,6 @@ set(INC_FILES
 )
 
 set(SRC_FILES
-    ${dataset_SRC_FILES}
     arithmetic.cpp
     astype.cpp
     bin.cpp
@@ -57,6 +56,7 @@ set(SRC_FILES
     variable_instantiate_bin_elements.cpp
     variable_instantiate_dataset.cpp
     variable_reduction.cpp
+    ${dataset_SRC_FILES}
 )
 
 set(LINK_TYPE "STATIC")
