@@ -64,12 +64,8 @@ template <class T> class str_keys_view {
 public:
   str_keys_view(T &obj) : m_obj(&obj) {}
   auto size() const noexcept { return m_obj->size(); }
-  auto begin() const {
-    return boost::make_transform_iterator(m_obj->keys_begin(), dim_to_str);
-  }
-  auto end() const {
-    return boost::make_transform_iterator(m_obj->keys_end(), dim_to_str);
-  }
+  auto begin() const { return m_obj->keys_begin().transform(dim_to_str); }
+  auto end() const { return m_obj->keys_end().transform(dim_to_str); }
 
 private:
   T *m_obj;
@@ -85,12 +81,8 @@ template <class T> class str_items_view {
 public:
   str_items_view(T &obj) : m_obj(&obj) {}
   auto size() const noexcept { return m_obj->size(); }
-  auto begin() const {
-    return boost::make_transform_iterator(m_obj->items_begin(), item_to_str);
-  }
-  auto end() const {
-    return boost::make_transform_iterator(m_obj->items_end(), item_to_str);
-  }
+  auto begin() const { return m_obj->items_begin().transform(item_to_str); }
+  auto end() const { return m_obj->items_end().transform(item_to_str); }
 
 private:
   T *m_obj;

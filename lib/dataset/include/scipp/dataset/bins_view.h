@@ -4,8 +4,6 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <boost/iterator/transform_iterator.hpp>
-
 #include "scipp/dataset/dataset.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/except.h"
@@ -68,10 +66,10 @@ public:
     mapView().set(key, this->check_and_get_buf(var));
   }
   auto begin() const noexcept {
-    return boost::make_transform_iterator(mapView().begin(), make_item{this});
+    return mapView().begin().transform(make_item{this});
   }
   auto end() const noexcept {
-    return boost::make_transform_iterator(mapView().end(), make_item{this});
+    return mapView().end().transform(make_item{this});
   }
   bool contains(const key_type &key) const noexcept {
     return mapView().contains(key);
