@@ -31,7 +31,7 @@ class Iterator;
 template <class BaseIterator, class Func> class TransformIterator;
 
 template <class Container, class It1, class It2, size_t... IteratorIndices>
-class Iterator {
+class SCIPP_CORE_EXPORT Iterator {
   static_assert(sizeof...(IteratorIndices) > 0 &&
                 sizeof...(IteratorIndices) < 3);
 
@@ -150,7 +150,7 @@ struct IteratorType<Container, It1, void> {
 };
 
 template <class BaseIterator, class Func>
-class TransformIterator : public BaseIterator {
+class SCIPP_CORE_EXPORT TransformIterator : public BaseIterator {
 public:
   using difference_type = std::ptrdiff_t;
   using value_type =
