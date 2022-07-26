@@ -49,10 +49,10 @@ public:
   Dataset(Dataset &&other) = default;
   explicit Dataset(const DataArray &data);
 
-  template <class DataMap = const std::map<std::string, DataArray> &,
-            class CoordMap = std::unordered_map<Dim, Variable>>
+  template <class DataMap = core::Dict<std::string, DataArray>,
+            class CoordMap = core::Dict<Dim, Variable>>
   explicit Dataset(DataMap data,
-                   CoordMap coords = std::unordered_map<Dim, Variable>{}) {
+                   CoordMap coords = core::Dict<Dim, Variable>{}) {
     if constexpr (std::is_base_of_v<Dataset, std::decay_t<DataMap>>)
       for (auto &&item : data)
         setData(item.name(), item);

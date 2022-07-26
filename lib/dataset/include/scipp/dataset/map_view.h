@@ -15,7 +15,7 @@
 
 namespace scipp::dataset {
 template <class Mapping>
-auto slice_map(const Sizes &sizes, const Mapping &map, const Slice &params) {
+Mapping slice_map(const Sizes &sizes, const Mapping &map, const Slice &params) {
   Mapping out;
   for (const auto &[key, value] : map) {
     if (value.dims().contains(params.dim())) {

@@ -177,8 +177,7 @@ void Dataset::setData(const std::string &name, const DataArray &data) {
 
 /// Return slice of the dataset along given dimension with given extents.
 Dataset Dataset::slice(const Slice &s) const {
-  Dataset out;
-  out.m_data = slice_map(m_coords.sizes(), m_data, s);
+  Dataset out(slice_map(m_coords.sizes(), m_data, s));
   auto [coords, attrs] = m_coords.slice_coords(s);
   out.m_coords = std::move(coords);
   for (auto &&item : out.m_data) {

@@ -257,14 +257,27 @@ public:
   ~Dict() noexcept = default;
   Dict(const Dict &other)
       : m_keys(other.m_keys), m_values(other.m_values), m_mutex() {}
-  Dict(Dict &&other) noexcept = default;
+  Dict(Dict &&other) noexcept
+      : m_keys(std::move(other.m_keys)), m_values(std::move(other.m_values)),
+        m_mutex() {}
   Dict &operator=(const Dict &other) {
     std::unique_lock lock_self_{m_mutex};
     m_keys = other.m_keys;
     m_values = other.m_values;
     return *this;
   }
-  Dict &operator=(Dict &&other) noexcept = default;
+  Dict &operator=(Dict &&other) noexcept {
+    std::unique_lock lock_self_{m_mutex, std::defer_lock};
+    try {
+      lock_self_.lock();
+    } catch (const std::system_error &) {
+      // This allows us to make this function noexcept.
+      std::terminate();
+    }
+    m_keys = std::move(other.m_keys);
+    m_values = std::move(other.m_values);
+    return *this;
+  }
 
   /// Return the number of elements.
   [[nodiscard]] index size() const noexcept { return scipp::size(m_keys); }
