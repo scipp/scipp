@@ -16,13 +16,20 @@
 
 namespace scipp::core::dict_detail {
 template <class It1, class It2> struct ValueType {
-  using type = std::add_rvalue_reference_t<
-      std::pair<const typename It1::value_type,
-                std::add_lvalue_reference_t<typename It2::value_type>>>;
+  using type = std::pair<typename It1::value_type, typename It2::value_type>;
 };
 
 template <class It1> struct ValueType<It1, void> {
-  using type = std::add_lvalue_reference_t<typename It1::value_type>;
+  using type = typename It1::value_type;
+};
+
+template <class It1, class It2> struct ReferenceType {
+  using type = std::add_rvalue_reference_t<
+      std::pair<typename It1::reference, typename It2::reference>>;
+};
+
+template <class It1> struct ReferenceType<It1, void> {
+  using type = typename It1::reference;
 };
 
 template <class Container, class It1, class It2, size_t... IteratorIndices>
@@ -39,7 +46,7 @@ public:
   using difference_type = std::ptrdiff_t;
   using value_type = typename ValueType<It1, It2>::type;
   using pointer = std::add_pointer_t<std::remove_reference_t<value_type>>;
-  using reference = std::add_lvalue_reference_t<value_type>;
+  using reference = typename ReferenceType<It1, It2>::type;
 
   template <class T>
   Iterator(std::reference_wrapper<Container> container, T &&it1)
@@ -63,7 +70,7 @@ public:
     if constexpr (sizeof...(IteratorIndices) == 1) {
       return *std::get<0>(m_iterators);
     } else {
-      return std::make_pair(std::ref(*std::get<0>(m_iterators)),
+      return std::make_pair(std::cref(*std::get<0>(m_iterators)),
                             std::ref(*std::get<1>(m_iterators)));
     }
   }
@@ -73,7 +80,7 @@ public:
       expect_container_unchanged();
       return std::get<0>(m_iterators);
     } else {
-      return TemporaryItem(**this);
+      return TemporaryItem<reference>(**this);
     }
   }
 
@@ -121,8 +128,6 @@ protected:
   private:
     std::decay_t<T> m_item;
   };
-
-  template <class T> TemporaryItem(T &&) -> TemporaryItem<std::decay_t<T>>;
 
 private:
   using IteratorStorage =
