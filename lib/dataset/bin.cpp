@@ -176,18 +176,17 @@ auto bin(const Variable &data, const Variable &indices,
   return std::tuple{std::move(out_buffer), std::move(bin_sizes)};
 }
 
-template <class T, class Meta> auto extract_unbinned(T &array, Meta meta) {
+template <class T, class Mapping>
+auto extract_unbinned(T &array, Mapping &map) {
   const auto dim = array.dims().inner();
-  using Key = typename std::decay_t<decltype(meta(array))>::key_type;
+  using Key = typename Mapping::key_type;
   std::vector<Key> to_extract;
-  const auto view = meta(array);
-  // WARNING: Do not use `view` while extracting, `extract` invalidates it!
-  std::copy_if(
-      view.keys_begin(), view.keys_end(), std::back_inserter(to_extract),
-      [&](const auto &key) { return !view[key].dims().contains(dim); });
+  // WARNING: Do not use `map` while extracting, `extract` invalidates it!
+  std::copy_if(map.keys_begin(), map.keys_end(), std::back_inserter(to_extract),
+               [&](const auto &key) { return !map[key].dims().contains(dim); });
   core::Dict<Key, Variable> extracted;
   for (const auto &key : to_extract)
-    extracted.insert_or_assign(key, meta(array).extract(key));
+    extracted.insert_or_assign(key, map.extract(key));
   return extracted;
 }
 
@@ -216,7 +215,7 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
         return true;
     return false;
   };
-  auto out_coords = extract_unbinned(buffer, get_coords);
+  auto out_coords = extract_unbinned(buffer, buffer.coords());
   for (const auto &c : {edges, groups})
     for (const auto &coord : c) {
       dims.emplace(coord.dims().inner());
@@ -225,11 +224,11 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
   for (const auto &[dim_, coord] : coords)
     if (!rebinned(coord) && !out_coords.contains(dim_))
       out_coords.insert_or_assign(dim_, copy(coord));
-  auto out_masks = extract_unbinned(buffer, get_masks);
+  auto out_masks = extract_unbinned(buffer, buffer.masks());
   for (const auto &[name, mask] : masks)
     if (!rebinned(mask))
       out_masks.insert_or_assign(name, copy(mask));
-  auto out_attrs = extract_unbinned(buffer, get_attrs);
+  auto out_attrs = extract_unbinned(buffer, buffer.attrs());
   for (const auto &[dim_, coord] : attrs)
     if (!rebinned(coord) && !out_coords.contains(dim_))
       out_attrs.insert_or_assign(dim_, copy(coord));
