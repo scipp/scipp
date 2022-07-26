@@ -83,15 +83,15 @@ public:
     return *this;
   }
 
-  bool operator==(const Iterator<Container, It1, It2, IteratorIndices...>
-                      &other) const noexcept {
+  bool operator==(
+      const Iterator<Container, It1, It2, IteratorIndices...> &other) const {
     expect_container_unchanged();
     // Assuming m_iterators are always in sync.
     return std::get<0>(m_iterators) == std::get<0>(other.m_iterators);
   }
 
-  bool operator!=(const Iterator<Container, It1, It2, IteratorIndices...>
-                      &other) const noexcept {
+  bool operator!=(
+      const Iterator<Container, It1, It2, IteratorIndices...> &other) const {
     return !(*this == other);
   }
 
