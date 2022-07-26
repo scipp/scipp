@@ -10,16 +10,6 @@
 #include "scipp/variable/arithmetic.h"
 
 namespace scipp::dataset {
-
-/// Return a copy of dict-like objects as a core::Dict.
-// TODO remove?
-template <class T> auto copy_map(const T &map) {
-  core::Dict<typename T::key_type, typename T::mapped_type> out;
-  for (const auto &[key, item] : map)
-    out.insert_or_assign(key, copy(item));
-  return out;
-}
-
 template <bool ApplyToData, class Func, class... Args>
 DataArray apply_or_copy_dim_impl(const DataArray &da, Func func, const Dim dim,
                                  Args &&...args) {

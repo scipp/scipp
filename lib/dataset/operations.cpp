@@ -36,6 +36,14 @@ Dataset merge(const Dataset &a, const Dataset &b) {
   return Dataset(union_(a, b), union_(a.coords(), b.coords(), "merge"));
 }
 
+/// Return a copy of dict-like objects as a core::Dict.
+template <class Mapping> auto copy_map(const Mapping &map) {
+  core::Dict<typename Mapping::key_type, typename Mapping::mapped_type> out;
+  for (const auto &[key, item] : map)
+    out.insert_or_assign(key, copy(item));
+  return out;
+}
+
 Coords copy(const Coords &coords) { return {coords.sizes(), copy_map(coords)}; }
 Masks copy(const Masks &masks) { return {masks.sizes(), copy_map(masks)}; }
 
