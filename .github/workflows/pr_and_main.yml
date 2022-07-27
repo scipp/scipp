@@ -85,7 +85,7 @@ jobs:
 
       - run: tox -e linkcheck
         # Linkcheck can be flaky. Avoid randomly breaking PR builds by running only on `main`
-        if: ${{ contains(matrix.os, 'ubuntu') && github.ref == 'refs/heads/main' }}
+        if: ${{ contains(matrix.variant.os, 'ubuntu') && github.ref == 'refs/heads/main' }}
 
       - uses: actions/upload-artifact@v2
         if: ${{ contains(matrix.variant.os, 'ubuntu') }}
@@ -95,16 +95,16 @@ jobs:
 
       - uses: actions/checkout@v3
         #TODO revert condition
-        if: ${{ contains(matrix.os, 'ubuntu') && github.ref != 'refs/heads/main' }}
+        if: ${{ contains(matrix.variant.os, 'ubuntu') && github.ref != 'refs/heads/main' }}
         with:
           repository: scipp/scipp-benchmarks
           path: .asv
 
       - run: tox -e asv
-        if: ${{ contains(matrix.os, 'ubuntu') && github.ref != 'refs/heads/main' }}
+        if: ${{ contains(matrix.variant.os, 'ubuntu') && github.ref != 'refs/heads/main' }}
 
       - name: Deploy benchmark results
-        if: ${{ contains(matrix.os, 'ubuntu') && github.ref != 'refs/heads/main' }}
+        if: ${{ contains(matrix.variant.os, 'ubuntu') && github.ref != 'refs/heads/main' }}
         uses: JamesIves/github-pages-deploy-action@4.1.5
         with:
           repository-name: scipp/scipp-benchmarks
