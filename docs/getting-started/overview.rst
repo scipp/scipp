@@ -16,7 +16,7 @@ Scipp aims to achieve its ambition in multiple ways:
 
 - A concise and intuitive "language" (programming interface) allows the user to clearly express their intent, and makes this intent apparent to future readers of the code.
   For example, *named dimensions* remove the need for cryptic axis indices or explicit array transposition and broadcasting.
-- Coordinate arrays associated with and array of data ensure that no incompatible data is combined and allow for direct creation of meaning plots with labelled axis tick marks.
+- Coordinate arrays associated with an array of data ensure that no incompatible data is combined and allow for direct creation of meaningful plots with labelled axes.
 - Physical units associated with all arrays as well as their coordinate arrays eliminate a whole set of potential errors.
   This includes the risk of combining data with different units (such as adding "meters" and "seconds") or unit scales (such as adding "meters" and "millimeters").
 - Features targeting `Jupyter <https://jupyter.org/>`_, such as rich HTML visualizations of data, give the user the tools to understand their data at every step and share their work with collaborators.
