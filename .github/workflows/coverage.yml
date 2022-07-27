@@ -46,17 +46,6 @@ jobs:
         with:
           key: coverage
 
-      - name: Cache conan setup
-        id: conan-cache-key
-        run: |
-          echo "::set-output name=key::$(/bin/date -u "+%Y%m%d")"
-          echo "::set-output name=path::$(conan config home)"
-      - name: Cache conan
-        uses: actions/cache@v1
-        with:
-          path: ${{ steps.conan-cache-key.outputs.path }}
-          key: conan-ubuntu-20.04-${{ steps.conan-cache-key.outputs.key }}
-
       - name: C++ coverage
         run: |
           mkdir coverage_html
