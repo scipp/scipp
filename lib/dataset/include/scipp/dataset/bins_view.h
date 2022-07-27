@@ -108,7 +108,7 @@ public:
 /// The returned objects are variables referencing data in `var`. They do not
 /// own or share ownership of any data.
 template <class T> auto bins_view(Variable var) {
-  return bins_view_detail::Bins<T>(var);
+  return bins_view_detail::Bins<T>(std::move(var));
 }
 
 } // namespace scipp::dataset
