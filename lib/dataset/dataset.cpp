@@ -132,11 +132,11 @@ void Dataset::setData(const std::string &name, Variable data,
   setSizes(data.dims());
   const auto replace = contains(name);
   if (replace && attrPolicy == AttrPolicy::Keep)
-    m_data.insert_or_assign(name,
-                            DataArray(data, {}, m_data[name].masks().items(),
-                                      m_data[name].attrs().items(), name));
+    m_data.insert_or_assign(
+        name, DataArray(std::move(data), {}, m_data[name].masks().items(),
+                        m_data[name].attrs().items(), name));
   else
-    m_data.insert_or_assign(name, DataArray(data));
+    m_data.insert_or_assign(name, DataArray(std::move(data)));
   if (replace)
     rebuildDims();
 }
@@ -147,32 +147,27 @@ void Dataset::setData(const std::string &name, Variable data,
 /// dataset. Throws if there are existing but mismatching coords, masks, or
 /// attributes. Throws if the provided data brings the dataset into an
 /// inconsistent state (mismatching dimensions).
-void Dataset::setData(const std::string &name, const DataArray &data) {
+void Dataset::setData(const std::string &name, DataArray data) {
   // Return early on self assign to avoid exceptions from Python inplace ops
   if (const auto it = find(name); it != end()) {
     if (it->data().is_same(data.data()) && it->masks() == data.masks() &&
         it->attrs() == data.attrs() && it->coords() == data.coords())
       return;
   }
-  expect_writable(*this);
   for (auto &&[dim, coord] : data.coords())
     if (const auto it = m_coords.find(dim); it != m_coords.end())
       expect::matching_coord(dim, coord, it->second, "set coord");
-  setSizes(data.dims());
+
+  setData(name, data.data());
+  auto &item = m_data[name];
   for (auto &&[dim, coord] : data.coords())
     if (const auto it = m_coords.find(dim); it == m_coords.end())
       setCoord(dim, std::move(coord));
-
-  setData(name, std::move(data.data()));
-  auto &item = m_data[name];
-
-  for (auto &&[dim, attr] : data.attrs())
-    // Attrs might be shadowed by a coord, but this cannot be prevented in
-    // general, so instead of failing here we proceed (and may fail later if
-    // meta() is called).
-    item.attrs().set(dim, std::move(attr));
-  for (auto &&[nm, mask] : data.masks())
-    item.masks().set(nm, std::move(mask));
+  // Attrs might be shadowed by a coord, but this cannot be prevented in
+  // general, so instead of failing here we proceed (and may fail later if
+  // meta() is called).
+  item.attrs() = std::move(data.attrs());
+  item.masks() = std::move(data.masks());
 }
 
 /// Return slice of the dataset along given dimension with given extents.
