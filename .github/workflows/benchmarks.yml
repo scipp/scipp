@@ -1,0 +1,55 @@
+name: C++ and Python coverage
+
+on: 
+  schedule:
+    - cron: '0 0 * * 0'
+  pull_request: #TODO remove
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash -l {0}  # required for conda env
+
+jobs:
+  coverage:
+    runs-on: ubuntu-20.04
+    steps:
+      # TODO use downloaded artifact?
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+          fetch-depth: 0  # history required so cmake can determine version
+
+      - name: Setup conda environment
+        uses: mamba-org/provision-with-micromamba@main
+        with:
+          micromamba-version: 0.23.0
+          environment-file: .buildconfig/ci-linux.yml
+          cache-env: true
+          extra-specs: python="3.8"
+
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2.2
+        with:
+          key: coverage
+
+      - name: Build
+        run: |
+          cmake --preset base -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON -DFULL_BUILD=OFF
+          cmake --build --preset build
+
+      - uses: actions/checkout@v3
+        with:
+          repository: scipp/scipp-benchmarks
+        path: .asv
+
+      - run: tox -e asv
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@4.1.5
+        with:
+          repository-name: scipp/scipp-benchmarks
+          branch: test
+          folder: .asv
+          single-commit: true
+          ssh-key: ${{ secrets.BENCHMARKS_DEPLOY_KEY }}
