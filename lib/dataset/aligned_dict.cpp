@@ -389,6 +389,4 @@ template SCIPP_DATASET_EXPORT typename Coords::holder_type
 union_(const Coords &, const Coords &, std::string_view opname);
 template SCIPP_DATASET_EXPORT typename Coords::holder_type
 intersection(const Coords &, const Coords &);
-// template SCIPP_DATASET_EXPORT typename Masks::holder_type intersection(const
-// Masks &, const Masks &);
 } // namespace scipp::dataset
