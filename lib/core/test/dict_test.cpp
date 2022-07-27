@@ -26,6 +26,18 @@ TEST(Dict, reserve_increases_capacity) {
   EXPECT_EQ(dict.capacity(), 4);
 }
 
+TEST(Dict, inserting_elements_sets_size_and_capacity) {
+  DimDict dict{{Dim::Time, 4}};
+  EXPECT_EQ(dict.size(), 1);
+  EXPECT_GE(dict.capacity(), 1);
+  dict.insert_or_assign(Dim::Event, -4);
+  EXPECT_EQ(dict.size(), 2);
+  EXPECT_GE(dict.capacity(), 2);
+  dict.insert_or_assign(Dim::X, 13);
+  EXPECT_EQ(dict.size(), 3);
+  EXPECT_GE(dict.capacity(), 3);
+}
+
 TEST(Dict, can_insert_and_get_element) {
   DimDict dict;
   dict.insert_or_assign(Dim::Time, 78461);
@@ -55,6 +67,11 @@ TEST(Dict, can_modify_existing_element) {
 }
 
 TEST(Dict, access_operator_throws_if_key_does_not_exist) {
+  DimDict dict{{Dim::X, 123}};
+  EXPECT_THROW_DISCARD(dict[Dim::Y], scipp::except::NotFoundError);
+}
+
+TEST(Dict, access_operator_throws_if_dict_is_empty) {
   DimDict dict;
   EXPECT_THROW_DISCARD(dict[Dim::Y], scipp::except::NotFoundError);
 }
@@ -118,6 +135,16 @@ TEST(Dict, erasing_all_elements_yieldds_empty_dict) {
   EXPECT_TRUE(dict.empty());
 }
 
+TEST(Dict, erasing_reduces_size) {
+  DimDict dict{{Dim::Z, 724}, {Dim::X, 551}, {Dim::Y, -4591}, {Dim::Row, 1}};
+  dict.erase(Dim::X);
+  EXPECT_EQ(dict.size(), 3);
+  dict.erase(Dim::Row);
+  EXPECT_EQ(dict.size(), 2);
+  dict.erase(Dim::Z);
+  EXPECT_EQ(dict.size(), 1);
+}
+
 TEST(Dict, extract_throws_if_element_does_not_exist) {
   DimDict dict{{Dim::Row, 999}, {Dim::X, 888}, {Dim::Time, 777}};
   EXPECT_THROW_DISCARD(dict.extract(Dim::Y), scipp::except::NotFoundError);
@@ -176,6 +203,7 @@ TEST(Dict, key_iterator_throws_if_capacity_changed) {
   dict.reserve(16);
   EXPECT_THROW_DISCARD(*it, std::runtime_error);
   EXPECT_THROW_DISCARD(++it, std::runtime_error);
+  EXPECT_THROW_DISCARD(it == dict.keys_end(), std::runtime_error);
 }
 
 TEST(Dict, key_iterator_throws_if_element_inserted_with_realloc) {
@@ -186,6 +214,7 @@ TEST(Dict, key_iterator_throws_if_element_inserted_with_realloc) {
   dict.insert_or_assign(Dim::Y, 13);
   EXPECT_THROW_DISCARD(*it, std::runtime_error);
   EXPECT_THROW_DISCARD(++it, std::runtime_error);
+  EXPECT_THROW_DISCARD(it == dict.keys_end(), std::runtime_error);
 }
 
 TEST(Dict, key_iterator_throws_if_element_inserted_in_same_memory) {
@@ -196,14 +225,72 @@ TEST(Dict, key_iterator_throws_if_element_inserted_in_same_memory) {
   dict.insert_or_assign(Dim::Y, 13);
   EXPECT_THROW_DISCARD(*it, std::runtime_error);
   EXPECT_THROW_DISCARD(++it, std::runtime_error);
+  EXPECT_THROW_DISCARD(it == dict.keys_end(), std::runtime_error);
 }
 
-TEST(Dict, key_iterator_throws_if_element_erased) {
-  DimDict dict{{Dim::Y, -4122}, {Dim::Row, 5619}};
+TEST(Dict, key_iterator_throws_if_element_erased_front) {
+  DimDict dict{{Dim::Y, -4122}, {Dim::Row, 5619}, {Dim::Event, 829}};
+  auto it = dict.keys_begin();
+  dict.erase(Dim::Y);
+  EXPECT_THROW_DISCARD(*it, std::runtime_error);
+  EXPECT_THROW_DISCARD(++it, std::runtime_error);
+  EXPECT_THROW_DISCARD(it == dict.keys_end(), std::runtime_error);
+}
+
+TEST(Dict, key_iterator_throws_if_element_erased_middle) {
+  DimDict dict{{Dim::Y, -4122}, {Dim::Row, 5619}, {Dim::Event, 829}};
   auto it = dict.keys_begin();
   dict.erase(Dim::Row);
   EXPECT_THROW_DISCARD(*it, std::runtime_error);
   EXPECT_THROW_DISCARD(++it, std::runtime_error);
+  EXPECT_THROW_DISCARD(it == dict.keys_end(), std::runtime_error);
+}
+
+TEST(Dict, key_iterator_throws_if_element_erased_back) {
+  DimDict dict{{Dim::Y, -4122}, {Dim::Row, 5619}, {Dim::Event, 829}};
+  auto it = dict.keys_begin();
+  dict.erase(Dim::Event);
+  EXPECT_THROW_DISCARD(*it, std::runtime_error);
+  EXPECT_THROW_DISCARD(++it, std::runtime_error);
+  EXPECT_THROW_DISCARD(it == dict.keys_end(), std::runtime_error);
+}
+
+TEST(Dict, key_iterator_throws_if_element_erased_front_after_increment) {
+  DimDict dict{{Dim::Y, -4122}, {Dim::Row, 5619}, {Dim::Event, 829}};
+  auto it = dict.keys_begin();
+  ++it;
+  dict.erase(Dim::Y);
+  EXPECT_THROW_DISCARD(*it, std::runtime_error);
+  EXPECT_THROW_DISCARD(++it, std::runtime_error);
+  EXPECT_THROW_DISCARD(it == dict.keys_end(), std::runtime_error);
+}
+
+TEST(Dict, key_iterator_throws_if_element_erased_middle_after_increment) {
+  DimDict dict{{Dim::Y, -4122}, {Dim::Row, 5619}, {Dim::Event, 829}};
+  auto it = dict.keys_begin();
+  ++it;
+  dict.erase(Dim::Row);
+  EXPECT_THROW_DISCARD(*it, std::runtime_error);
+  EXPECT_THROW_DISCARD(++it, std::runtime_error);
+  EXPECT_THROW_DISCARD(it == dict.keys_end(), std::runtime_error);
+}
+
+TEST(Dict, key_iterator_throws_if_element_erased_back_after_increment) {
+  DimDict dict{{Dim::Y, -4122}, {Dim::Row, 5619}, {Dim::Event, 829}};
+  auto it = dict.keys_begin();
+  ++it;
+  dict.erase(Dim::Event);
+  EXPECT_THROW_DISCARD(*it, std::runtime_error);
+  EXPECT_THROW_DISCARD(++it, std::runtime_error);
+  EXPECT_THROW_DISCARD(it == dict.keys_end(), std::runtime_error);
+}
+
+TEST(Dict, key_iterator_does_not_throw_if_created_after_modification) {
+  DimDict dict{{Dim::Event, 94196}};
+  dict.insert_or_assign(Dim::X, -8164);
+  EXPECT_EQ(dict.begin()->second, 94196);
+  dict.erase(Dim::Event);
+  EXPECT_EQ(dict.begin()->second, -8164);
 }
 
 TEST(Dict, value_iterator_produces_correct_values) {
@@ -218,6 +305,7 @@ TEST(Dict, value_iterator_produces_correct_values) {
 
 TEST(Dict, const_value_iterator_produces_correct_values) {
   DimDict dict{{Dim::Time, 4561}, {Dim::Event, 76}};
+  // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
   const DimDict const_dict(dict);
   auto it = const_dict.values_begin();
   EXPECT_EQ(*it, 4561);
@@ -268,8 +356,8 @@ TEST(Dict, iterator_produces_correct_keys_and_values_via_arrow) {
 TEST(Dict, iterator_can_change_values) {
   DimDict dict{{Dim::Position, -51}, {Dim::Row, 827}};
   auto it = dict.begin();
-  (*it).second = 991;
-  (*(++it)).second = -9761;
+  (*it).second = 991;       // cppcheck-suppress unreadVariable
+  (*(++it)).second = -9761; // cppcheck-suppress unreadVariable
   EXPECT_EQ(dict[Dim::Position], 991);
   EXPECT_EQ(dict[Dim::Row], -9761);
 }
@@ -277,8 +365,8 @@ TEST(Dict, iterator_can_change_values) {
 TEST(Dict, iterator_can_change_values_via_arrow) {
   DimDict dict{{Dim::Position, -51}, {Dim::Row, 827}};
   auto it = dict.begin();
-  it->second = 991;
-  (++it)->second = -9761;
+  it->second = 991;       // cppcheck-suppress unreadVariable
+  (++it)->second = -9761; // cppcheck-suppress unreadVariable
   EXPECT_EQ(dict[Dim::Position], 991);
   EXPECT_EQ(dict[Dim::Row], -9761);
 }
@@ -287,6 +375,38 @@ TEST(Dict, iterator_cannot_change_keys) {
   DimDict dict;
   EXPECT_TRUE(std::is_const_v<
               std::remove_reference_t<decltype(*dict.begin())::first_type>>);
+}
+
+TEST(Dict, iterator_arrow_throws_if_element_inserted) {
+  DimDict dict{{Dim::Energy, -491}};
+  auto it = dict.begin();
+  dict.insert_or_assign(Dim::Group, 891);
+  EXPECT_THROW_DISCARD(it->second, std::runtime_error);
+}
+
+TEST(Dict, iterator_produces_modified_elements) {
+  DimDict dict{{Dim::X, 817}, {Dim::Time, -41790}};
+  auto it = dict.begin();
+  dict[Dim::X] = -111;
+  EXPECT_EQ(it->second, -111);
+  EXPECT_EQ((++it)->second, -41790);
+}
+
+TEST(Dict, iterator_equality) {
+  DimDict dict{{Dim::Event, -8823}, {Dim::X, 7552}};
+  EXPECT_EQ(dict.begin(), dict.begin());
+  EXPECT_EQ(++dict.begin(), ++dict.begin());
+  EXPECT_NE(++dict.begin(), dict.begin());
+  EXPECT_NE(dict.begin(), dict.end());
+}
+
+TEST(Dict, iterator_swap) {
+  DimDict dict{{Dim::Z, -125}, {Dim::Row, 68}};
+  auto it1 = dict.begin();
+  auto it2 = ++dict.begin();
+  swap(it1, it2);
+  EXPECT_EQ(it1, ++dict.begin());
+  EXPECT_EQ(it2, dict.begin());
 }
 
 TEST(Dict, find) {
@@ -322,7 +442,7 @@ TEST(Dict, insertion_order_is_Preserved) {
   EXPECT_EQ(result, expected);
 }
 
-TEST(Dict, iterator_with_transform_via_deref) {
+TEST(Dict, transform_iterator_via_deref) {
   DimDict dict{{Dim::X, 7476}, {Dim::Event, -31}, {Dim::Position, 0}};
 
   auto it = dict.begin().transform([](const auto &x) {
@@ -340,7 +460,7 @@ TEST(Dict, iterator_with_transform_via_deref) {
   EXPECT_EQ(it, dict.end());
 }
 
-TEST(Dict, iterator_with_transform_via_arrow) {
+TEST(Dict, transform_iterator_via_arrow) {
   DimDict dict{{Dim::X, 7476}, {Dim::Event, -31}, {Dim::Position, 0}};
 
   auto it = dict.begin().transform([](const auto &x) {
@@ -358,7 +478,7 @@ TEST(Dict, iterator_with_transform_via_arrow) {
   EXPECT_EQ(it, dict.end());
 }
 
-TEST(Dict, iterator_with_transform_lvalue_iterator) {
+TEST(Dict, transform_iterator_lvalue_iterator) {
   DimDict dict{{Dim::X, 7476}, {Dim::Event, -31}, {Dim::Position, 0}};
 
   auto base_it = dict.begin();
@@ -381,7 +501,7 @@ TEST(Dict, iterator_with_transform_lvalue_iterator) {
   EXPECT_EQ(base_it->second, 7476);
 }
 
-TEST(Dict, iterator_with_transform_struct) {
+TEST(Dict, transform_iterator_struct) {
   DimDict dict{{Dim::Energy, -823}, {Dim::Row, 14}};
 
   struct F {
@@ -398,7 +518,7 @@ TEST(Dict, iterator_with_transform_struct) {
   EXPECT_EQ(it, dict.end());
 }
 
-TEST(Dict, iterator_with_transform_struct_stateful) {
+TEST(Dict, transform_iterator_struct_stateful) {
   DimDict dict{{Dim::Event, 112233}, {Dim::Z, 9933}};
 
   struct F {
@@ -417,7 +537,7 @@ TEST(Dict, iterator_with_transform_struct_stateful) {
   EXPECT_EQ(it, dict.end());
 }
 
-TEST(Dict, iterator_with_transform_end_with_transform) {
+TEST(Dict, transform_iterator_compare_with_end_with_transform) {
   DimDict dict{{Dim::Time, 72}, {Dim::Y, 41}};
 
   const auto f = [](const auto &x) { return x; };
@@ -426,4 +546,12 @@ TEST(Dict, iterator_with_transform_end_with_transform) {
   ++it;
   ++it;
   EXPECT_EQ(it, dict.values_end().transform(f));
+}
+
+TEST(Dict, transform_iterator_throws_if_element_added) {
+  DimDict dict{{Dim::Y, 13560}, {Dim::Event, 6104}};
+  auto it = dict.begin().transform([](const auto &x) { return x; });
+  dict.insert_or_assign(Dim::Time, 1095);
+  EXPECT_THROW_DISCARD(++it, std::runtime_error);
+  EXPECT_THROW_DISCARD(*it, std::runtime_error);
 }
