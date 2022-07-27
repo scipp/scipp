@@ -27,51 +27,53 @@ jobs:
           sudo update-alternatives --set g++ "/usr/bin/g++-11"
           sudo update-alternatives --set gcov "/usr/bin/gcov-11"
 
-      - name: Setup env variables
-        run: |
-          REPO=${GITHUB_REPOSITORY#*/}
-          echo "REPO=${REPO%-coverage}" >> $GITHUB_ENV
-          echo "PYTHONPATH=$(pwd)/repo/install" >> $GITHUB_ENV
-
       - name: Checkout repo
         uses: actions/checkout@v3
         with:
-          repository: 'scipp/${{ env.REPO }}'
-          path: repo
           submodules: true
           fetch-depth: 0  # history required so cmake can determine version
 
-      - name: Setup conda env file
-        run: |
-          # Disable TBB for much faster compilation.
-          cat repo/.buildconfig/ci-linux.yml | grep -v 'gxx\|tbb' > env.yml
+      - name: Disable TBB for much faster compilation.
+        run: cat .buildconfig/ci-linux.yml | grep -v 'gxx\|tbb' > env.yml
 
-      - name: Setup Mambaforge and dev env
-        uses: conda-incubator/setup-miniconda@v2.1.1
+      - name: Setup conda environment
+        uses: mamba-org/provision-with-micromamba@main
         with:
-          miniforge-version: latest
-          miniforge-variant: Mambaforge
+          micromamba-version: 0.23.0
           environment-file: env.yml
-          activate-environment: ${{ env.REPO }}-developer
-          auto-activate-base: false
+          cache-env: true
+          extra-specs: python="3.8"
+
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2.2
+        with:
+          key: coverage
+
+      - name: Cache conan setup
+        id: conan-cache-key
+        run: |
+          echo "::set-output name=key::$(/bin/date -u "+%Y%m%d")"
+          echo "::set-output name=path::$(conan config home)"
+      - name: Cache conan
+        uses: actions/cache@v1
+        with:
+          path: ${{ steps.conan-cache-key.outputs.path }}
+          key: conan-coverage-${{ steps.conan-cache-key.outputs.key }}
 
       - name: C++ coverage
         run: |
           mkdir coverage_html
-          cd repo
           cmake --preset coverage
           cmake --build --preset coverage
-          mv build/coverage ../coverage_html/cpp
+          mv build/coverage coverage_html/cpp
 
       - name: Python coverage
         run: |
-          cd repo
           tox -e coverage
-          rm -f ../coverage_html/python/.gitignore
+          rm -f coverage_html/python/.gitignore
 
       - name: Setup HTML
-        run: |
-          mv html/index.html coverage_html/
+        run: mv tools/scipp-coverage-index.html coverage_html/index.html
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@4.1.5
