@@ -15,8 +15,6 @@ jobs:
         shell: bash -l {0}  # required for conda env
 
     steps:
-      - uses: actions/checkout@v3
-
       - name: Install dependencies
         run: |
           # We use g++ from system instead of from conda, since we need to ensure that
@@ -27,8 +25,7 @@ jobs:
           sudo update-alternatives --set g++ "/usr/bin/g++-11"
           sudo update-alternatives --set gcov "/usr/bin/gcov-11"
 
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
         with:
           submodules: true
           fetch-depth: 0  # history required so cmake can determine version
@@ -58,7 +55,7 @@ jobs:
         uses: actions/cache@v1
         with:
           path: ${{ steps.conan-cache-key.outputs.path }}
-          key: conan-coverage-${{ steps.conan-cache-key.outputs.key }}
+          key: conan-ubuntu-20.04-${{ steps.conan-cache-key.outputs.key }}
 
       - name: C++ coverage
         run: |
