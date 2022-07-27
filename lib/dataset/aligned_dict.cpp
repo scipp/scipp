@@ -359,7 +359,7 @@ core::Dict<Key, Value> union_(const AlignedDict<Key, Value> &a,
   core::Dict<Key, Value> out;
   out.reserve(out.size() + b.size());
   for (const auto &[key, val] : a)
-    out.template insert_or_assign(key, val);
+    out.insert_or_assign(key, val);
   for (const auto &[key, val] : b) {
     if (const auto it = a.find(key); it != a.end()) {
       expect::matching_coord(it->first, it->second, val, opname);
