@@ -1,11 +1,9 @@
-name: code coverage
+name: C++ and Python coverage
 
 on: 
   push:
     branches:
       - main
-  pull_request:
-  
 
 jobs:
   coverage:
@@ -57,7 +55,6 @@ jobs:
         run: |
           tox -e coverage
           rm -f coverage_html/python/.gitignore
-          ls -R
 
       - name: Setup HTML
         run: mv tools/scipp-coverage-index.html coverage_html/index.html
