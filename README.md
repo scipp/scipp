@@ -1,3 +1,5 @@
+dummy for reproducing https://github.com/scipp/scipp/issues/2627
+
 [![PyPI badge](http://img.shields.io/pypi/v/scipp.svg)](https://pypi.python.org/pypi/scipp)
 [![Anaconda-Server Badge](https://anaconda.org/scipp/scipp/badges/installer/conda.svg)](https://conda.anaconda.org/scipp/label/dev)
 [![License: BSD 3-Clause](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)
