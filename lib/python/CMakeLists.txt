@@ -8,7 +8,6 @@
 python_add_library(
   _scipp
   MODULE
-  ${python_SRC_FILES}
   bind_units.cpp
   bins.cpp
   choose.cpp
@@ -35,6 +34,7 @@ python_add_library(
   variable_instantiate_py_object.cpp
   element_array_view.cpp
   shape.cpp
+  ${python_SRC_FILES}
 )
 
 target_include_directories(
