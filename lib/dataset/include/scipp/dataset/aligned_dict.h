@@ -7,7 +7,7 @@
 #include "scipp/core/dict.h"
 #include "scipp/core/sizes.h"
 #include "scipp/core/slice.h"
-#include "scipp/dataset/map_view_forward.h"
+#include "scipp/dataset/aligned_dict_forward.h"
 #include "scipp/units/dim.h"
 #include "scipp/units/unit.h"
 #include "scipp/variable/logical.h"

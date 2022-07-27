@@ -4,7 +4,7 @@
 /// @author Simon Heybrock
 
 #include "scipp/dataset/dataset.h"
-#include "scipp/dataset/map_view.h"
+#include "scipp/dataset/aligned_dict.h"
 #include "scipp/dataset/math.h"
 #include "scipp/dataset/rebin.h"
 

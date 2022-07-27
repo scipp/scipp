@@ -5,8 +5,8 @@
 #include <algorithm>
 #include <utility>
 
+#include "scipp/dataset/aligned_dict.h"
 #include "scipp/dataset/except.h"
-#include "scipp/dataset/map_view.h"
 
 namespace scipp::dataset {
 

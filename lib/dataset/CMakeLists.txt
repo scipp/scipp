@@ -5,6 +5,8 @@
 set(TARGET_NAME "scipp-dataset")
 set(INC_FILES
     ${dataset_INC_FILES}
+    include/scipp/dataset/aligned_dict_forward.h
+    include/scipp/dataset/aligned_dict.h
     include/scipp/dataset/astype.h
     include/scipp/dataset/bin.h
     include/scipp/dataset/bins.h
@@ -15,8 +17,6 @@ set(INC_FILES
     include/scipp/dataset/except.h
     include/scipp/dataset/groupby.h
     include/scipp/dataset/histogram.h
-    include/scipp/dataset/map_view_forward.h
-    include/scipp/dataset/map_view.h
     include/scipp/dataset/math.h
     include/scipp/dataset/mean.h
     include/scipp/dataset/nanmean.h
@@ -31,6 +31,7 @@ set(INC_FILES
 )
 
 set(SRC_FILES
+    aligned_dict.cpp
     arithmetic.cpp
     astype.cpp
     bin.cpp
@@ -42,7 +43,6 @@ set(SRC_FILES
     except.cpp
     groupby.cpp
     histogram.cpp
-    map_view.cpp
     mean.cpp
     nanmean.cpp
     operations.cpp
