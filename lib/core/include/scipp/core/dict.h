@@ -5,8 +5,6 @@
 #pragma once
 
 #include <functional>
-#include <mutex>
-#include <shared_mutex>
 #include <vector>
 
 #include "scipp/common/index.h"
@@ -256,33 +254,17 @@ public:
     }
   }
 
-  // moving and destroying not thread safe
-  // and only safe on LHS of assignment, not RHS
   Dict() = default;
   ~Dict() noexcept = default;
-  Dict(const Dict &other)
-      : m_keys(other.m_keys), m_values(other.m_values), m_mutex() {}
+  Dict(const Dict &other) : m_keys(other.m_keys), m_values(other.m_values) {}
   Dict(Dict &&other) noexcept
-      : m_keys(std::move(other.m_keys)), m_values(std::move(other.m_values)),
-        m_mutex() {}
+      : m_keys(std::move(other.m_keys)), m_values(std::move(other.m_values)) {}
   Dict &operator=(const Dict &other) {
-    std::unique_lock lock_self_{m_mutex};
     m_keys = other.m_keys;
     m_values = other.m_values;
     return *this;
   }
-  Dict &operator=(Dict &&other) noexcept {
-    std::unique_lock lock_self_{m_mutex, std::defer_lock};
-    try {
-      lock_self_.lock();
-    } catch (const std::system_error &) {
-      // This allows us to make this function noexcept.
-      std::terminate();
-    }
-    m_keys = std::move(other.m_keys);
-    m_values = std::move(other.m_values);
-    return *this;
-  }
+  Dict &operator=(Dict &&other) noexcept = default;
 
   /// Return the number of elements.
   [[nodiscard]] index size() const noexcept { return scipp::size(m_keys); }
@@ -292,18 +274,15 @@ public:
   [[nodiscard]] index capacity() const noexcept { return m_keys.capacity(); }
 
   void reserve(const index new_capacity) {
-    std::unique_lock lock_{m_mutex};
     m_keys.reserve(new_capacity);
     m_values.reserve(new_capacity);
   }
 
   [[nodiscard]] bool contains(const Key &key) const noexcept {
-    std::shared_lock lock_{m_mutex};
     return find_key(key) != m_keys.end();
   }
 
   template <class V> void insert_or_assign(const key_type &key, V &&value) {
-    std::unique_lock lock_{m_mutex};
     if (const auto key_it = find_key(key); key_it == m_keys.end()) {
       m_keys.push_back(key);
       m_values.emplace_back(std::forward<V>(value));
@@ -313,14 +292,12 @@ public:
   }
 
   void erase(const key_type &key) {
-    std::unique_lock lock_{m_mutex};
     const auto key_it = expect_find_key(key);
     m_keys.erase(key_it);
     m_values.erase(std::next(m_values.begin(), index_of(key_it)));
   }
 
   mapped_type extract(const key_type &key) {
-    std::unique_lock lock_{m_mutex};
     const auto key_it = expect_find_key(key);
     m_keys.erase(key_it);
     const auto value_it = std::next(m_values.begin(), index_of(key_it));
@@ -330,18 +307,15 @@ public:
   }
 
   void clear() {
-    std::unique_lock lock_{m_mutex};
     m_keys.clear();
     m_values.clear();
   }
 
   [[nodiscard]] const mapped_type &operator[](const key_type &key) const {
-    std::shared_lock lock_{m_mutex};
     return m_values[expect_find_index(key)];
   }
 
   [[nodiscard]] mapped_type &operator[](const key_type &key) {
-    std::shared_lock lock_{m_mutex};
     return m_values[expect_find_index(key)];
   }
 
@@ -352,7 +326,6 @@ public:
   [[nodiscard]] mapped_type &at(const key_type &key) { return (*this)[key]; }
 
   [[nodiscard]] const_iterator find(const key_type &key) const {
-    std::shared_lock lock_{m_mutex};
     if (const auto key_it = find_key(key); key_it == m_keys.end()) {
       return end();
     } else {
@@ -362,7 +335,6 @@ public:
   }
 
   [[nodiscard]] iterator find(const key_type &key) {
-    std::shared_lock lock_{m_mutex};
     if (const auto key_it = find_key(key); key_it == m_keys.end()) {
       return end();
     } else {
@@ -414,7 +386,6 @@ public:
 private:
   Keys m_keys;
   Values m_values;
-  mutable std::shared_mutex m_mutex;
 
   auto find_key(const Key &key) const noexcept {
     return std::find(m_keys.begin(), m_keys.end(), key);
