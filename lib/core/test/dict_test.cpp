@@ -387,7 +387,7 @@ TEST(Dict, iterator_arrow_throws_if_element_inserted) {
 TEST(Dict, iterator_produces_modified_elements) {
   DimDict dict{{Dim::X, 817}, {Dim::Time, -41790}};
   auto it = dict.begin();
-  dict[Dim::X] = -111;
+  dict[Dim::X] = -111; // cppcheck-suppress unreadVariable
   EXPECT_EQ(it->second, -111);
   EXPECT_EQ((++it)->second, -41790);
 }
