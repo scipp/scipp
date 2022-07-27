@@ -9,7 +9,6 @@
 
 #include "scipp/common/index.h"
 
-#include "scipp-core_export.h"
 #include "scipp/core/except.h"
 
 namespace scipp::core::dict_detail {
@@ -36,7 +35,7 @@ class Iterator;
 template <class BaseIterator, class Func> class TransformIterator;
 
 template <class Container, class It1, class It2, size_t... IteratorIndices>
-class SCIPP_CORE_EXPORT Iterator {
+class Iterator {
   static_assert(sizeof...(IteratorIndices) > 0 &&
                 sizeof...(IteratorIndices) < 3);
 
@@ -153,7 +152,7 @@ struct IteratorType<Container, It1, void> {
 };
 
 template <class BaseIterator, class Func>
-class SCIPP_CORE_EXPORT TransformIterator : public BaseIterator {
+class TransformIterator : public BaseIterator {
 public:
   using difference_type = std::ptrdiff_t;
   using value_type =
@@ -222,7 +221,7 @@ public:
 } // namespace std
 
 namespace scipp::core {
-template <class Key, class Value> class SCIPP_CORE_EXPORT Dict {
+template <class Key, class Value> class Dict {
   using Keys = std::vector<Key>;
   using Values = std::vector<Value>;
 
