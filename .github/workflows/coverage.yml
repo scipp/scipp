@@ -10,12 +10,14 @@ on:
 jobs:
   coverage:
     runs-on: ubuntu-20.04
+    defaults:
+      run:
+        shell: bash -l {0}  # required for conda env
 
     steps:
       - uses: actions/checkout@v3
 
       - name: Install dependencies
-        shell: bash -l {0}
         run: |
           # We use g++ from system instead of from conda, since we need to ensure that
           # a matching gcov is used. Otherwise coverage results are incomplete/broken.
@@ -54,7 +56,6 @@ jobs:
           auto-activate-base: false
 
       - name: C++ coverage
-        shell: bash -l {0}
         run: |
           mkdir coverage_html
           cd repo
@@ -63,14 +64,12 @@ jobs:
           mv build/coverage ../coverage_html/cpp
 
       - name: Python coverage
-        shell: bash -l {0}
         run: |
           cd repo
           tox -e coverage
           rm -f ../coverage_html/python/.gitignore
 
       - name: Setup HTML
-        shell: bash -l {0}
         run: |
           mv html/index.html coverage_html/
 
