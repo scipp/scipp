@@ -1,0 +1,84 @@
+name: code coverage
+
+on: 
+  push:
+    branches:
+      - main
+  pull_request:
+  
+
+jobs:
+  coverage:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        shell: bash -l {0}
+        run: |
+          # We use g++ from system instead of from conda, since we need to ensure that
+          # a matching gcov is used. Otherwise coverage results are incomplete/broken.
+          sudo apt install --yes lcov g++-11
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 100
+          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-11 100
+          sudo update-alternatives --set g++ "/usr/bin/g++-11"
+          sudo update-alternatives --set gcov "/usr/bin/gcov-11"
+
+      - name: Setup env variables
+        run: |
+          REPO=${GITHUB_REPOSITORY#*/}
+          echo "REPO=${REPO%-coverage}" >> $GITHUB_ENV
+          echo "PYTHONPATH=$(pwd)/repo/install" >> $GITHUB_ENV
+
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          repository: 'scipp/${{ env.REPO }}'
+          path: repo
+          submodules: true
+          fetch-depth: 0  # history required so cmake can determine version
+
+      - name: Setup conda env file
+        run: |
+          # Disable TBB for much faster compilation.
+          cat repo/.buildconfig/ci-linux.yml | grep -v 'gxx\|tbb' > env.yml
+
+      - name: Setup Mambaforge and dev env
+        uses: conda-incubator/setup-miniconda@v2.1.1
+        with:
+          miniforge-version: latest
+          miniforge-variant: Mambaforge
+          environment-file: env.yml
+          activate-environment: ${{ env.REPO }}-developer
+          auto-activate-base: false
+
+      - name: C++ coverage
+        shell: bash -l {0}
+        run: |
+          mkdir coverage_html
+          cd repo
+          cmake --preset coverage
+          cmake --build --preset coverage
+          mv build/coverage ../coverage_html/cpp
+
+      - name: Python coverage
+        shell: bash -l {0}
+        run: |
+          cd repo
+          tox -e coverage
+          rm -f ../coverage_html/python/.gitignore
+
+      - name: Setup HTML
+        shell: bash -l {0}
+        run: |
+          mv html/index.html coverage_html/
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@4.1.5
+        with:
+          repository-name: scipp/scipp-coverage
+          branch: gh-pages
+          folder: coverage_html
+          single-commit: true
+          ssh-key: ${{ secrets.COVERAGE_DEPLOY_KEY }}
