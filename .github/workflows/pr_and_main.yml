@@ -98,7 +98,7 @@ jobs:
         if: ${{ contains(matrix.variant.os, 'ubuntu') && github.ref != 'refs/heads/main' }}
         with:
           repository: scipp/scipp-benchmarks
-          path: .asv
+          path: scipp-benchmarks
 
       - run: tox -e asv
         if: ${{ contains(matrix.variant.os, 'ubuntu') && github.ref != 'refs/heads/main' }}
@@ -109,6 +109,6 @@ jobs:
         with:
           repository-name: scipp/scipp-benchmarks
           branch: main
-          folder: .asv
+          folder: scipp-benchmarks
           single-commit: true
           ssh-key: ${{ secrets.BENCHMARKS_DEPLOY_KEY }}
