@@ -35,8 +35,6 @@ jobs:
     defaults:
       run:
         shell: bash -l {0}  # required for conda env
-    env:
-      PYTHONPATH: ${{ github.workspace }}/install
     strategy:
       fail-fast: false
       matrix:
