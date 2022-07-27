@@ -92,3 +92,23 @@ jobs:
         with:
           name: DocumentationHTML
           path: html/
+
+      - uses: actions/checkout@v3
+        #TODO revert condition
+        if: ${{ contains(matrix.os, 'ubuntu') && github.ref != 'refs/heads/main' }}
+        with:
+          repository: scipp/scipp-benchmarks
+          path: .asv
+
+      - run: tox -e asv
+        if: ${{ contains(matrix.os, 'ubuntu') && github.ref != 'refs/heads/main' }}
+
+      - name: Deploy benchmark results
+        if: ${{ contains(matrix.os, 'ubuntu') && github.ref != 'refs/heads/main' }}
+        uses: JamesIves/github-pages-deploy-action@4.1.5
+        with:
+          repository-name: scipp/scipp-benchmarks
+          branch: test
+          folder: .asv
+          single-commit: true
+          ssh-key: ${{ secrets.BENCHMARKS_DEPLOY_KEY }}

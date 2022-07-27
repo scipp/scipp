@@ -1,4 +1,4 @@
-name: C++ and Python coverage
+name: ASV benchmarks
 
 on: 
   schedule:
