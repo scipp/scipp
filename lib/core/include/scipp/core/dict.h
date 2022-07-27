@@ -255,14 +255,9 @@ public:
 
   Dict() = default;
   ~Dict() noexcept = default;
-  Dict(const Dict &other) : m_keys(other.m_keys), m_values(other.m_values) {}
-  Dict(Dict &&other) noexcept
-      : m_keys(std::move(other.m_keys)), m_values(std::move(other.m_values)) {}
-  Dict &operator=(const Dict &other) {
-    m_keys = other.m_keys;
-    m_values = other.m_values;
-    return *this;
-  }
+  Dict(const Dict &other) = default;
+  Dict(Dict &&other) noexcept = default;
+  Dict &operator=(const Dict &other) = default;
   Dict &operator=(Dict &&other) noexcept = default;
 
   /// Return the number of elements.
