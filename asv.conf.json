@@ -12,6 +12,9 @@
   // The URL or local path of the source code repository for the
   // project being benchmarked
   "repo": ".",
+  "branches": [
+    "main"
+  ],
 
   // The tool to use to create environments.  May be "conda",
   // "virtualenv" or other value depending on the plugins in use.

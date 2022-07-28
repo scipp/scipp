@@ -253,6 +253,7 @@ if(COVERAGE)
       "/usr/*"
       "/*conan/data*"
       "/*miniconda*"
+      "/*micromamba*"
   )
   setup_target_for_coverage_lcov(
     NAME
