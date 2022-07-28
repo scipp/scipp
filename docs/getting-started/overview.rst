@@ -4,24 +4,49 @@ What is Scipp?
 ==============
 
 Scipp is the result of a long evolution of packages for scientific computing in Python.
-`NumPy <https://numpy.org/>`_, the fundamental package for scientific computing in Python providing a multidimensional array object, sits at the core of this evolution.
-On top of this libraries such as `SciPy <https://scipy.org/>`_, `Pandas <https://pandas.pydata.org/>`, and `Xarray <https://docs.xarray.dev>`_ provide more advanced functionality and user convenience.
+`NumPy <https://numpy.org/>`_, the fundamental package for scientific computing in Python providing a multi-dimensional array object, sits at the core of this evolution.
+On top of this, libraries such as `SciPy <https://scipy.org/>`_, `Pandas <https://pandas.pydata.org/>`_, and `Xarray <https://docs.xarray.dev>`_ provide more advanced functionality and user convenience.
 
-Scipp's central ambition is to make scientific computing **safe** and **intuitive**.
-Safety, i.e., correctness of scientific results, is crucial given the rapidly growing complexity of scientific data and data analysis.
+Scipp's central ambition is to make scientific data analysis **safer** and **intuitive**.
+Safety, i.e., avoidance, detection, and prevention of mistakes, is crucial given the rapidly growing complexity of scientific data and data analysis.
 At the same time it has to be ensured that scientific results are reproducible.
-Open data alone is not sufficient if it is analysed using "black-box"-like applications that do not let the user, referee, or other scientists re-run the analysis or inspect and understand each processing step.
+For reproducible results, open data must be complemented by open and non-cryptic analysis scripts.
+This enables the user, the referee, or other scientists to re-run the analysis or to inspect and understand each processing step.
 
 Scipp aims to achieve its ambition in multiple ways:
 
-- A concise and intuitive "language" (programming interface) allows the user to clearly express their intent, and makes this intent apparent to future readers of the code.
+- A concise and intuitive "language" (programming interface) allows the user to clearly express their intent and makes this intent apparent to future readers of the code.
   For example, *named dimensions* remove the need for cryptic axis indices or explicit array transposition and broadcasting.
-- Coordinate arrays associated with an array of data ensure that no incompatible data is combined and allow for direct creation of meaningful plots with labelled axes.
+- Coordinate arrays associated with an array of data ensure that no incompatible data is combined and allow for direct creation of meaningful plots with labeled axes.
 - Physical units associated with all arrays as well as their coordinate arrays eliminate a whole set of potential errors.
   This includes the risk of combining data with different units (such as adding "meters" and "seconds") or unit scales (such as adding "meters" and "millimeters").
+- *Binned data* provides an efficient and powerful multi-dimensional view of tabular data.
+  This unifies the flexibility of working with such record-based data with the same concise, intuitive, and safe interface that Scipp provides for dense arrays.
 - Features targeting `Jupyter <https://jupyter.org/>`_, such as rich HTML visualizations of data, give the user the tools to understand their data at every step and share their work with collaborators.
 
-Scipp's core is written in C++ with multi-threading enabled by default, providing good out-of-the-box performance for many applications.
+Scipp comes multi-threading enabled by default, providing good out-of-the-box performance for many applications.
+
+
+What Scipp is not
+-----------------
+
+Scipp is not intended for simulations or HPC applications which often require highly specialized and performant code.
+Scipp also does not target machine learning applications.
+
+
+Comparison with other software
+------------------------------
+
+- `Pandas <https://pandas.pydata.org/>` is a mature and extremely powerful package if you are mainly working with tabular 1-D data.
+  Compared with Scipp it lacks support for multi-dimensional labeled data, binned data, and physical units.
+- `Xarray <https://docs.xarray.dev>`_ supports multi-dimensional labeled data similar to Scipp, but is considerably more mature.
+  Compared with Scipp it lacks support for binned data and physical units.
+  Experimental support for physical units using `Pint <https://pint.readthedocs.io>`_ is available with `pint-xarray <https://pint-xarray.readthedocs.io>`_.
+  Xarray comes with `Dask <https://www.dask.org/>`_ support for highly scalable parallel computing.
+- `Awkward Array <https://awkward-array.readthedocs.io>`_ is a powerful package for nested, variable-sized data.
+  Its support for records is similar to Scipp's binned data.
+  Compared with Scipp it lacks support for multi-dimensional labeled data and physical units.
+  It may be combined with Xarray (and Pint) to achieve this, but support for multi-dimensional binning operations may be lacking.
 
 
 The data array concept
