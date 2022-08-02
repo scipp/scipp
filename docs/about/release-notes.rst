@@ -36,9 +36,12 @@ Release Notes
 
 
 v0.16.0 (Unreleased)
+--------------------
 
 Features
 ~~~~~~~~
+
+* :meth:`scipp.Bins.concat` no supports concatenation of all dims, with ``da.bins.concat()`` `#2726 <https://github.com/scipp/scipp/pull/2726>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~

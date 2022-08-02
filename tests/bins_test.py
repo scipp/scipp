@@ -386,3 +386,12 @@ def test_bins_like():
     with pytest.raises(sc.DimensionError):
         dense = dense.rename_dims({'x': 'y'})
         sc.bins_like(binned, dense),
+
+
+def test_bins_concat():
+    table = sc.data.table_xyz(nrow=100)
+    table.data = sc.arange('row', 100, dtype='float64')
+    da = table.bin(x=4, y=5)
+    assert sc.identical(da.bins.concat('x').hist(), table.hist(y=5))
+    assert sc.identical(da.bins.concat('y').hist(), table.hist(x=4))
+    assert sc.identical(da.bins.concat().hist(), table.sum())
