@@ -487,7 +487,7 @@ def test_arange_datetime_from_np_datetime64():
     expected = sc.datetimes(
         dims=['t'],
         values=['2022-08-02T11:18', '2022-08-02T11:33', '2022-08-02T11:48'],
-        unit='m')
+        unit='min')
     assert sc.identical(var, expected)
 
 
