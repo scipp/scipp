@@ -92,6 +92,17 @@ std::string to_numpy_time_string(const scipp::units::Unit unit) {
                                       : to_string(unit);
 }
 
+std::string to_numpy_time_string(const ProtoUnit &unit) {
+  return std::visit(
+      overloaded{
+          [](const scipp::units::Unit &u) { return to_numpy_time_string(u); },
+          [](const std::string &u) {
+            return to_numpy_time_string(scipp::units::Unit(u));
+          },
+          [](const auto &) { return std::string(); }},
+      unit);
+}
+
 scipp::units::Unit unit_or_default(const ProtoUnit &unit, const DType type) {
   return std::visit(
       overloaded{[type](DefaultUnit) {
@@ -100,7 +111,7 @@ scipp::units::Unit unit_or_default(const ProtoUnit &unit, const DType type) {
                          "Default unit requested but dtype unknown.");
                    return variable::default_unit_for(type);
                  },
-                 [](py::none) { return units::none; },
+                 [](const py::none &) { return units::none; },
                  [](const std::string &u) { return units::Unit(u); },
                  [](const units::Unit &u) { return u; }},
       unit);
