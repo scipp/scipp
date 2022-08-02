@@ -2,6 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import warnings
+from numbers import Integral
 from typing import Dict, List, Optional, Union, Sequence
 
 from .._scipp import core as _cpp
@@ -136,7 +137,7 @@ def _parse_coords_arg(x, name, arg):
     if isinstance(arg, Variable) and name in arg.dims:
         return arg
     coord = _get_coord(x, name)
-    if isinstance(arg, int):
+    if isinstance(arg, Integral):
         start = coord.min()
         if start.dtype == _cpp.DType.datetime64:
             base = epoch(unit=start.unit)
