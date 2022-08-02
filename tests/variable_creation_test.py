@@ -475,6 +475,39 @@ def test_arange():
     assert sc.identical(var, expected)
 
 
+def test_arange_datetime_from_int():
+    var = sc.arange('t', 14, 65, 21, unit='s', dtype='datetime64')
+    expected = sc.datetimes(dims=['t'], values=[14, 35, 56], unit='s')
+    assert sc.identical(var, expected)
+
+
+def test_arange_datetime_from_np_datetime64():
+    var = sc.arange('t',
+                    np.datetime64('2022-08-02T11:18'),
+                    np.datetime64('2022-08-02T11:52'),
+                    15)
+    expected = sc.datetimes(dims=['t'],
+                            values=['2022-08-02T11:18',
+                                    '2022-08-02T11:33',
+                                    '2022-08-02T11:48'],
+                            unit='m')
+    assert sc.identical(var, expected)
+
+
+def test_arange_datetime_from_str():
+    var = sc.arange('t',
+                    '2022-08-02T06:42:45',
+                    '2022-08-02T06:43:33',
+                    16,
+                    dtype='datetime64')
+    expected = sc.datetimes(dims=['t'],
+                            values=['2022-08-02T06:42:45',
+                                    '2022-08-02T06:43:01',
+                                    '2022-08-02T06:43:17'],
+                            unit='s')
+    assert sc.identical(var, expected)
+
+
 @pytest.mark.parametrize('unit', ('one', sc.units.default_unit))
 def test_arange_with_variables(unit):
     start = sc.scalar(1)
@@ -643,8 +676,8 @@ def test_datetime():
 
     assert sc.identical(sc.datetime(626, unit='s'),
                         sc.scalar(626, dtype='datetime64', unit='s'))
-    assert sc.identical(sc.datetime(2**10, unit='ns'),
-                        sc.scalar(2**10, dtype='datetime64', unit='ns'))
+    assert sc.identical(sc.datetime(2 ** 10, unit='ns'),
+                        sc.scalar(2 ** 10, dtype='datetime64', unit='ns'))
     assert sc.identical(sc.datetime(-94716, unit='min'),
                         sc.scalar(-94716, dtype='datetime64', unit='min'))
 
@@ -683,12 +716,12 @@ def test_datetimes():
                  unit='us'))
 
     assert sc.identical(
-        sc.datetimes(dims=['t'], values=[0, 123, 2**10], unit='s'),
-        sc.array(dims=['t'], values=np.array([0, 123, 2**10], dtype='datetime64[s]')))
+        sc.datetimes(dims=['t'], values=[0, 123, 2 ** 10], unit='s'),
+        sc.array(dims=['t'], values=np.array([0, 123, 2 ** 10], dtype='datetime64[s]')))
     assert sc.identical(
-        sc.datetimes(dims=['t'], values=[-723, 2**13, -3**5], unit='min'),
+        sc.datetimes(dims=['t'], values=[-723, 2 ** 13, -3 ** 5], unit='min'),
         sc.array(dims=['t'],
-                 values=np.array([-723, 2**13, -3**5], dtype='datetime64[m]')))
+                 values=np.array([-723, 2 ** 13, -3 ** 5], dtype='datetime64[m]')))
 
 
 def test_datetime_epoch():
