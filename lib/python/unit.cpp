@@ -27,8 +27,8 @@ get_time_unit(const std::optional<scipp::units::Unit> value_unit,
               const std::optional<scipp::units::Unit> dtype_unit,
               const units::Unit sc_unit) {
   if (!temporal_or_dimensionless(sc_unit)) {
-    throw std::invalid_argument("Invalid unit for dtype=datetime64: " +
-                                to_string(sc_unit));
+    throw except::UnitError("Invalid unit for dtype=datetime64: " +
+                            to_string(sc_unit));
   }
   if (dtype_unit.value_or(units::one) != units::one &&
       (sc_unit != units::one && *dtype_unit != sc_unit)) {
@@ -70,8 +70,8 @@ std::tuple<scipp::units::Unit, scipp::units::Unit>
 common_unit<scipp::core::time_point>(const pybind11::object &values,
                                      const scipp::units::Unit unit) {
   if (!temporal_or_dimensionless(unit)) {
-    throw std::invalid_argument("Invalid unit for dtype=datetime64: " +
-                                to_string(unit));
+    throw except::UnitError("Invalid unit for dtype=datetime64: " +
+                            to_string(unit));
   }
 
   if (values.is_none() || !has_datetime_dtype(values)) {

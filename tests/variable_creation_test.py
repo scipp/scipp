@@ -711,6 +711,12 @@ def test_datetimes_raises_if_given_unit_m():
                      unit='m')
 
 
+def test_datetime_raises_if_given_unit_m():
+    # This one is special because in NumPy, 'm' means minute.
+    with pytest.raises(sc.UnitError):
+        sc.datetime('2022-08-02T11:18', unit='m')
+
+
 def test_datetime_epoch():
     assert sc.identical(sc.epoch(unit='s'),
                         sc.scalar(np.datetime64('1970-01-01T00:00:00', 's')))
