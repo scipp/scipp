@@ -130,7 +130,12 @@ def plot(scipp_obj,
         ndims = len(var.dims)
         if (ndims > 0) and (np.sum(var.shape) > 0):
             if ndims == 1 or projection == "1d" or projection == "1D":
+                dim = var.dims[0]
                 key = f"{var.dims}.{var.unit}"
+                if "labels" in kwargs:
+                    key = f"{key}.{var.meta[kwargs['labels'][dim]].unit}"
+                elif dim in var.meta:
+                    key = f"{key}.{var.meta[dim].unit}"
                 line_count += 1
             else:
                 key = name
