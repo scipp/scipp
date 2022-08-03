@@ -871,10 +871,7 @@ def datetimes(*,
       >>> sc.datetimes(dims=['t'], values=[0, 1610288175], unit='s')
       <scipp.Variable> (t: 2)  datetime64              [s]  [1970-01-01T00:00:00, 2021-01-10T14:16:15]
     """
-    if unit is None or unit is default_unit:
-        np_unit_str = ''
-    else:
-        np_unit_str = f'[{_cpp.to_numpy_time_string(unit)}]'
+    np_unit_str = f'[{u}]' if (u := _cpp.to_numpy_time_string(unit)) else ''
     with _timezone_warning_as_error():
         return array(dims=dims,
                      values=_np.asarray(values, dtype=f'datetime64{np_unit_str}'))
