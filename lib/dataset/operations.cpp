@@ -106,12 +106,15 @@ Dataset copy(const Dataset &dataset, Dataset &&out,
 
 /// Return data of data array, applying masks along dim if applicable.
 ///
-/// Only in the latter case a copy is returned.
-Variable masked_data(const DataArray &array, const Dim dim) {
+/// Only in the latter case a copy is returned. Masked values are replaced by
+/// fill_value. If not provided, values are replaced by zero.
+Variable masked_data(const DataArray &array, const Dim dim,
+                     const std::optional<Variable> &fill_value) {
   const auto mask = irreducible_mask(array.masks(), dim);
   if (mask.is_valid()) {
     const auto &data = array.data();
-    return where(mask, zero_like(data), data);
+    const auto fill = fill_value.value_or(zero_like(array.data()));
+    return where(mask, fill, data);
   } else
     return array.data();
 }

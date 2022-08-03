@@ -8,8 +8,7 @@ import scipp as sc
 def test_bool_raises():
     # Truth values of arrays are undefined
     var = sc.scalar(True)
-    with pytest.raises(RuntimeError):
-        var and var
+    # For Variable __bool__ is (conditionally) supported. See detailed tests there.
     da = sc.DataArray(var)
     with pytest.raises(RuntimeError):
         da and da

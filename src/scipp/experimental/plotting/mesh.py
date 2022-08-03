@@ -142,6 +142,8 @@ class Mesh:
         self._set_clim()
 
     def toggle_norm(self, event):
+        if event.artist is not self._cbar.ax:
+            return
         self._norm_flag = "log" if self._norm_flag == "linear" else "linear"
         self._vmin = np.inf
         self._vmax = np.NINF

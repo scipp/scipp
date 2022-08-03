@@ -294,11 +294,17 @@ public:
             allsorted(bin_coords.at(dim), dim)) {
           const auto &bin_coord = bin_coords.at(dim);
           const bool histogram =
-              bin_coord.dims()[dim] == indices.dims()[dim] + 1;
-          const auto begin =
+              bin_coord.dims()[dim] ==
+              (indices.dims().contains(dim) ? indices.dims()[dim] : 1) + 1;
+          auto begin =
               begin_edge(histogram ? left_edge(bin_coord) : bin_coord, key);
-          const auto end = histogram ? end_edge(right_edge(bin_coord), key)
-                                     : begin + 2 * units::none;
+          auto end = histogram ? end_edge(right_edge(bin_coord), key)
+                               : begin + 2 * units::none;
+          // When we have bin edges (of length 2) for a dimension that is not
+          // a dimension of the input it needs to be squeezed to avoid problems
+          // in various places later on.
+          begin = squeeze(begin, std::nullopt);
+          end = squeeze(end, std::nullopt);
           const auto indices_ = zip(begin, end);
           const auto inner_volume = dims().volume() / dims()[dim] * units::none;
           // Number of non-zero entries (per "row" above)

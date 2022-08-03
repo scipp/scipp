@@ -253,6 +253,7 @@ if(COVERAGE)
       "/usr/*"
       "/*conan/data*"
       "/*miniconda*"
+      "/*micromamba*"
   )
   setup_target_for_coverage_lcov(
     NAME
@@ -261,7 +262,7 @@ if(COVERAGE)
     sh
     "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/run-tests.sh"
     "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-    "${CMAKE_SOURCE_DIR}/tests"
+    "${CMAKE_SOURCE_DIR}"
     DEPENDENCIES
     install-scipp
     all-tests

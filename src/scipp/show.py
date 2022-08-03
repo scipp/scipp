@@ -379,7 +379,7 @@ class DatasetDrawer:
         else:
             # Render highest-dimension items last so coords are optically
             # aligned
-            for name, data in self._dataset.items():
+            for name, data in sorted(self._dataset.items()):
                 item = DrawerItem(name, data, config['colors']['data'])
                 # Using only x and 0d areas for 1-D dataset
                 if len(dims) == 1 or data.dims != dims:
@@ -403,7 +403,7 @@ class DatasetDrawer:
         else:
             categories = zip(['coords'], [ds.coords])
         for what, items in categories:
-            for name, var in items.items():
+            for name, var in sorted(items.items()):
                 item = DrawerItem(name, var, config['colors'][what])
                 if len(var.dims) == 0:
                     area_0d.append(item)
@@ -463,7 +463,7 @@ class DatasetDrawer:
 
 def make_svg(container: VariableLike, content_only: Optional[bool] = False) -> str:
     """
-    Return a svg representation of a variable or dataset.
+    Return an SVG representation of a variable, data array, or dataset.
     """
     if isinstance(container, sc.Variable):
         draw = VariableDrawer(container)
@@ -474,7 +474,11 @@ def make_svg(container: VariableLike, content_only: Optional[bool] = False) -> s
 
 def show(container: VariableLike):
     """
-    Show a graphical representation of a variable or dataset.
+    Show a graphical representation of a variable, data array, or dataset.
+
+    See 'SVG representation' in
+    `Representations and Tables <../../visualization/representations-and-tables.rst>`_
+    for details.
     """
     from IPython.core.display import display, HTML
     display(HTML(make_svg(container)))

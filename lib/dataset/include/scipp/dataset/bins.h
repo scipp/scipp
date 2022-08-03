@@ -36,6 +36,10 @@ make_bins_no_validate(Variable indices, const Dim dim, Dataset buffer);
 [[nodiscard]] SCIPP_DATASET_EXPORT bool is_bins(const DataArray &array);
 [[nodiscard]] SCIPP_DATASET_EXPORT bool is_bins(const Dataset &dataset);
 
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable
+lookup_previous(const DataArray &function, const Variable &x, Dim dim,
+                const std::optional<Variable> &fill_value = std::nullopt);
+
 } // namespace scipp::dataset
 
 namespace scipp::dataset::buckets {
@@ -56,9 +60,9 @@ SCIPP_DATASET_EXPORT void append(DataArray &a, const DataArray &b);
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable histogram(const Variable &data,
                                                       const Variable &binEdges);
 
-[[nodiscard]] SCIPP_DATASET_EXPORT Variable map(const DataArray &function,
-                                                const Variable &x,
-                                                Dim hist_dim);
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable
+map(const DataArray &function, const Variable &x, Dim dim,
+    const std::optional<Variable> &fill_value = std::nullopt);
 
 SCIPP_DATASET_EXPORT void scale(DataArray &data, const DataArray &histogram,
                                 Dim dim = Dim::Invalid);

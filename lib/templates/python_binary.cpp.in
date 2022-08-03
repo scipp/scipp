@@ -4,8 +4,8 @@
 /// @author Simon Heybrock
 #include "pybind11.h"
 
+#include "scipp/@BASE_INCLUDE@"
 #include "scipp/dataset/@OPNAME@.h"
-#include "scipp/variable/@OPNAME@.h"
 
 using namespace scipp;
 

@@ -3,15 +3,87 @@
 Release Notes
 =============
 
-v0.15.0 (Unreleased)
+
+.. Template, copy this to create a new section after a release:
+
+   v0.xy.0 (Unreleased)
+   --------------------
+
+   Features
+   ~~~~~~~~
+
+   Breaking changes
+   ~~~~~~~~~~~~~~~~
+
+   Bugfixes
+   ~~~~~~~~
+
+   Documentation
+   ~~~~~~~~~~~~~
+
+   Deprecations
+   ~~~~~~~~~~~~
+
+   Stability, Maintainability, and Testing
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Contributors
+   ~~~~~~~~~~~~
+
+   Simon Heybrock :sup:`a`\ ,
+   Neil Vaytet :sup:`a`\ ,
+   and Jan-Lukas Wynen :sup:`a`
+
+
+v0.16.0 (Unreleased)
 --------------------
 
 Features
 ~~~~~~~~
 
+* :meth:`scipp.Bins.concat` now supports concatenation of all dims, with ``da.bins.concat()`` `#2726 <https://github.com/scipp/scipp/pull/2726>`_.
+* Added support for calling :func:`scipp.arange` with strings to create datetime ranges `#2729 <https://github.com/scipp/scipp/pull/2729>`_.
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+Bugfixes
+~~~~~~~~
+
+* Binary arithmetic operations such as ``x + x`` of ``x * x``, i.e., with both operands the same, now handle correlations correctly and result in the correct variances in the output `#2709 <https://github.com/scipp/scipp/pull/2709>`_.
+* Made ``__sizeof__`` and related functions more accurate `#2705 <https://github.com/scipp/scipp/pull/2705>`_.
+* 1-D entries with identical dimensions but different coordinate units are no longer plotted on the same axes `#2728 <https://github.com/scipp/scipp/pull/2728>`_.
+
+Documentation
+~~~~~~~~~~~~~
+
+Deprecations
+~~~~~~~~~~~~
+
+Contributors
+~~~~~~~~~~~~
+
+Simon Heybrock :sup:`a`\ ,
+Neil Vaytet :sup:`a`\ ,
+and Jan-Lukas Wynen :sup:`a`
+
+v0.15.0 (July 2022)
+-------------------
+
+Features
+~~~~~~~~
+
 * Added conversion from Scipp objects to Xarray objects (previously only converting from Xarray to Scipp was available) `#2624 <https://github.com/scipp/scipp/pull/2624>`_.
+* Added option for a more compact string format of variables `#2625 <https://github.com/scipp/scipp/pull/2625>`_.
 * Overhauled and streamlined usability of functions related to binning, grouping, and histogramming with additional features such as automatic bin edges and histogramming ignoring NaN values.
   See :func:`scipp.bin`, :func:`scipp.group`, :func:`scipp.hist`, :func:`scipp.nanhist`, and :func:`scipp.rebin` `#2633 <https://github.com/scipp/scipp/pull/2633>`_.
+* Added support for histogramming and binning variables, in addition to existing support for data arrays `#2678 <https://github.com/scipp/scipp/pull/2678>`_.
+* Added keyword argument syntax to :func:`scipp.transform_coords` for more concise user experience in simple single-step transformations `#2670 <https://github.com/scipp/scipp/pull/2670>`_.
+* Generalized :func:`scipp.lookup` to also support non-histogram functions for value lookup, with supported modes "previous" and "nearest".
+  Also adding support for custom fill values `#2681 <https://github.com/scipp/scipp/pull/2681>`_.
+* Added possibility to pass keyword arguments to ``rename_dims``, matching the signature of ``rename`` `#2689 <https://github.com/scipp/scipp/pull/2689>`_.
+* Python's builtin conversion to "bool" using ``__bool__`` is now supported for 0-D boolean variables.
+  This makes the results of comparison usable with ``assert`` or ``if`` `#2695 <https://github.com/scipp/scipp/pull/2695>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
@@ -19,6 +91,10 @@ Breaking changes
 * :func:`scipp.optimize.curve_fit` now raises ``ValueError`` if the input variance contains a 0 `#2620 <https://github.com/scipp/scipp/pull/2620>`_.
 * Replaced the widget-based :func:`scipp.table` viewer with a simpler pure-HTML table `#2613 <https://github.com/scipp/scipp/pull/2613>`_.
 * :func:`scipp.flatten` now drops mismatching bin edge coordinates instead of raising a ``BinEdgeError`` `#2652 <https://github.com/scipp/scipp/pull/2652>`_.
+* The ``targets`` argument of :func:`scipp.transform_coords` is not position-only `#2670 <https://github.com/scipp/scipp/pull/2670>`_.
+* :func:`scipp.lookup` now uses NaN as fill value for floating-point valued functions (for points out of bounds or masked points).
+   Integral-valued functions are unchanged (using 0 as before).
+   See also new argument for custom fill values `#2681 <https://github.com/scipp/scipp/pull/2681>`_.
 
 Bugfixes
 ~~~~~~~~
@@ -29,9 +105,14 @@ Bugfixes
 * Fix minor issue with events close to bin bounds getting assigned to the wrong bin by :func:`scipp.bin` and :func:`scipp.histogram` when binning with edges that form a "linspace" `#2644 <https://github.com/scipp/scipp/pull/2644>`_.
 * Fix issues with copying binned structured data or fields of binned structured data `#2650 <https://github.com/scipp/scipp/pull/2650>`_.
 * Fix various missing dimension and/or shape checks when slicing with a condition variable `#2657 <https://github.com/scipp/scipp/pull/2657>`_.
+* Fix serious bug in :func:`scipp.bin` that was introduced in scipp-0.12.0. This corrupts data when binning into more than 65536 at a time `#2680 <https://github.com/scipp/scipp/pull/2680>`_.
+* Fix issue in :func:`scipp.lookup`, which led to ignored masks in case of integral function values with non-linspace coordinates `#2681 <https://github.com/scipp/scipp/pull/2681>`_.
+* Fix reduction operations of 0-D binned data, which previously returned the input unchanged `#2685 <https://github.com/scipp/scipp/pull/2685>`_.
 
 Documentation
 ~~~~~~~~~~~~~
+
+* Remove two ancient tutorials.
 
 Deprecations
 ~~~~~~~~~~~~
@@ -46,6 +127,7 @@ Contributors
 ~~~~~~~~~~~~
 
 Simon Heybrock :sup:`a`\ ,
+Gregory Tucker :sup:`a`\ ,
 Neil Vaytet :sup:`a`\ ,
 and Jan-Lukas Wynen :sup:`a`
 

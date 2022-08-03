@@ -66,5 +66,6 @@ void init_units(py::module &m) {
 
   units.attr("default_unit") = DefaultUnit{};
 
-  m.def("to_numpy_time_string", to_numpy_time_string);
+  m.def("to_numpy_time_string",
+        py::overload_cast<const ProtoUnit &>(to_numpy_time_string));
 }

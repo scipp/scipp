@@ -13,6 +13,7 @@ template class SCIPP_CORE_EXPORT MultiIndex<1>;
 template class SCIPP_CORE_EXPORT MultiIndex<2>;
 template class SCIPP_CORE_EXPORT MultiIndex<3>;
 template class SCIPP_CORE_EXPORT MultiIndex<4>;
+template class SCIPP_CORE_EXPORT MultiIndex<5>;
 
 namespace {
 void validate_bin_indices_impl(const ElementArrayViewParams &param0,
@@ -169,6 +170,9 @@ template SCIPP_CORE_EXPORT MultiIndex<3>::MultiIndex(const Dimensions &,
 template SCIPP_CORE_EXPORT
 MultiIndex<4>::MultiIndex(const Dimensions &, const Strides &, const Strides &,
                           const Strides &, const Strides &);
+template SCIPP_CORE_EXPORT
+MultiIndex<5>::MultiIndex(const Dimensions &, const Strides &, const Strides &,
+                          const Strides &, const Strides &, const Strides &);
 
 template SCIPP_CORE_EXPORT
 MultiIndex<1>::MultiIndex(binned_tag, const Dimensions &, const Dimensions &,
@@ -186,5 +190,10 @@ template SCIPP_CORE_EXPORT MultiIndex<4>::MultiIndex(
     binned_tag, const Dimensions &, const Dimensions &,
     const ElementArrayViewParams &, const ElementArrayViewParams &,
     const ElementArrayViewParams &, const ElementArrayViewParams &);
+template SCIPP_CORE_EXPORT MultiIndex<5>::MultiIndex(
+    binned_tag, const Dimensions &, const Dimensions &,
+    const ElementArrayViewParams &, const ElementArrayViewParams &,
+    const ElementArrayViewParams &, const ElementArrayViewParams &,
+    const ElementArrayViewParams &);
 
 } // namespace scipp::core

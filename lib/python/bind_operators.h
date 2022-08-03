@@ -10,6 +10,7 @@
 #include "scipp/dataset/generated_logical.h"
 #include "scipp/dataset/generated_math.h"
 #include "scipp/dataset/to_unit.h"
+#include "scipp/dataset/util.h"
 #include "scipp/units/except.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/astype.h"
@@ -28,7 +29,13 @@ template <class T, class... Ignored>
 void bind_common_operators(pybind11::class_<T, Ignored...> &c) {
   c.def("__abs__", [](const T &self) { return abs(self); });
   c.def("__repr__", [](const T &self) { return to_string(self); });
-  c.def("__bool__", [](const T &) {
+  c.def("__bool__", [](const T &self) {
+    if constexpr (std::is_same_v<T, scipp::Variable>) {
+      if (self.unit() != scipp::units::none)
+        throw scipp::except::UnitError(
+            "The truth value of a variable with unit is undefined.");
+      return self.template value<bool>() == true;
+    }
     throw std::runtime_error("The truth value of a variable, data array, or "
                              "dataset is ambiguous. Use any() or all().");
   });
@@ -46,9 +53,39 @@ void bind_common_operators(pybind11::class_<T, Ignored...> &c) {
       "__copy__", [](const T &self) { return self; },
       py::call_guard<py::gil_scoped_release>(), "Return a (shallow) copy.");
   c.def(
-      "__deepcopy__",
-      [](const T &self, const py::dict &) { return copy(self); },
-      py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
+       "__deepcopy__",
+       [](const T &self, const py::dict &) { return copy(self); },
+       py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
+      .def(
+          "__sizeof__",
+          [](const T &self) {
+            return size_of(self, scipp::SizeofTag::ViewOnly);
+          },
+          R"doc(Return the size of the object in bytes.
+
+The size includes the object itself and all arrays contained in it.
+But arrays may be counted multiple times if components share buffers,
+e.g. multiple coordinates referencing the same memory.
+Conversely, the size may be underestimated. Especially, but not only,
+with dtype=PyObject.
+
+This function only includes memory of the current slice. Use
+``underlying_size`` to get the full memory size of the underlying structure.)doc")
+      .def(
+          "underlying_size",
+          [](const T &self) {
+            return size_of(self, scipp::SizeofTag::Underlying);
+          },
+          R"doc(Return the size of the object in bytes.
+
+The size includes the object itself and all arrays contained in it.
+But arrays may be counted multiple times if components share buffers,
+e.g. multiple coordinates referencing the same memory.
+Conversely, the size may be underestimated. Especially, but not only,
+with dtype=PyObject.
+
+This function includes all memory of the underlying buffers. Use
+``__sizeof__`` to get the size of the current slice only.)doc");
 }
 
 template <class T, class... Ignored>

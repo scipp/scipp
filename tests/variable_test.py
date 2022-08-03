@@ -346,6 +346,24 @@ def test_rename_dims():
     assert sc.identical(xy, original)
 
 
+def test_rename_dims_kwargs():
+    values = np.arange(6).reshape(2, 3)
+    xy = sc.Variable(dims=['x', 'y'], values=values)
+    original = xy.copy()
+    zy = sc.Variable(dims=['z', 'y'], values=values)
+    zw = sc.Variable(dims=['z', 'w'], values=values)
+    assert sc.identical(xy.rename_dims(x='z'), zy)
+    assert sc.identical(xy.rename_dims({'y': 'w'}, x='z'), zw)
+    assert sc.identical(xy, original)
+
+
+def test_rename_dims_dict_and_kwargs_must_be_distinct():
+    values = np.arange(6).reshape(2, 3)
+    xy = sc.Variable(dims=['x', 'y'], values=values)
+    with pytest.raises(ValueError):
+        xy.rename_dims({'x': 'w'}, x='z')
+
+
 def test_rename():
     values = np.arange(6).reshape(2, 3)
     xy = sc.Variable(dims=['x', 'y'], values=values)
@@ -358,8 +376,19 @@ def test_rename():
 def test_rename_kwargs():
     values = np.arange(6).reshape(2, 3)
     xy = sc.Variable(dims=['x', 'y'], values=values)
+    original = xy.copy()
     zy = sc.Variable(dims=['z', 'y'], values=values)
+    zw = sc.Variable(dims=['z', 'w'], values=values)
     assert sc.identical(xy.rename(x='z'), zy)
+    assert sc.identical(xy.rename({'y': 'w'}, x='z'), zw)
+    assert sc.identical(xy, original)
+
+
+def test_rename_dict_and_kwargs_must_be_distinct():
+    values = np.arange(6).reshape(2, 3)
+    xy = sc.Variable(dims=['x', 'y'], values=values)
+    with pytest.raises(ValueError):
+        xy.rename({'x': 'w'}, x='z')
 
 
 def test_rename_self_and_dims_dict_are_position_only():

@@ -2,8 +2,9 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock, Jan-Lukas Wynen
 
+from dataclasses import fields
 from fractions import Fraction
-from typing import Dict, Iterable, List, Mapping, Set, Union
+from typing import Callable, Dict, Iterable, List, Mapping, Optional, Set, Union
 
 from ..core import DataArray, Dataset, DimensionError, VariableError, bins
 from ..logging import get_logger
@@ -14,14 +15,16 @@ from .rule import ComputeRule, FetchRule, RenameRule, Rule, rule_output_names
 
 
 def transform_coords(x: Union[DataArray, Dataset],
-                     targets: Union[str, Iterable[str]],
-                     graph: GraphDict,
+                     targets: Optional[Union[str, Iterable[str]]] = None,
+                     /,
+                     graph: Optional[GraphDict] = None,
                      *,
                      rename_dims: bool = True,
                      keep_aliases: bool = True,
                      keep_intermediate: bool = True,
                      keep_inputs: bool = True,
-                     quiet: bool = False) -> Union[DataArray, Dataset]:
+                     quiet: bool = False,
+                     **kwargs: Callable) -> Union[DataArray, Dataset]:
     """Compute new coords based on transformations of input coords.
 
     See the section in the user guide on
@@ -44,8 +47,10 @@ def transform_coords(x: Union[DataArray, Dataset],
         - Dict values are :class:`str` or a callable (function).
           If :class:`str`, this is a synonym for renaming a coord.
           If a callable, it must either return a single variable or a dict of
-          variables. The argument names of callables must be coords
-          in ``x`` or be computable by other nodes in ``graph``.
+          variables. The argument names of callables must be coords in ``x`` or be
+          computable by other nodes in ``graph``. The coord names can be overridden by
+          the callable by providing a ``__transform_coords_input_keys__`` property,
+          returning a list of coord names in the same order as the function arguments.
     rename_dims:
         Rename dimensions if the corresponding dimension coords
         are used as inputs and there is a single output coord
@@ -64,28 +69,74 @@ def transform_coords(x: Union[DataArray, Dataset],
     quiet:
         If True, no log output is produced. Otherwise, ``transform_coords``
         produces a log of its actions.
+    **kwargs:
+        Mapping of coords to callables. This can be used as an alternate and brief
+        way of specifying targets and graph. If provided, neither ``targets`` nor
+        ``graph`` may be given.
 
     Returns
     -------
     :
         New object with desired coords. Existing data and meta-data is shallow-copied.
+
+    Examples
+    --------
+
+    Transform input coordinates ``x`` and ``y`` to a new output coordinate ``xy``:
+
+      >>> da = sc.data.table_xyz(nrow=10)
+      >>> transformed = da.transform_coords(xy=lambda x, y: x + y)
+
+    Equivalent full syntax based on a target name and a graph:
+
+      >>> da = sc.data.table_xyz(nrow=10)
+      >>> transformed = da.transform_coords('xy', graph={'xy': lambda x, y: x + y})
+
+    Multiple new coordinates can be computed at once. Here ``z2`` is setup as an alias
+    of ``z``:
+
+      >>> da = sc.data.table_xyz(nrow=10)
+      >>> transformed = da.transform_coords(xy=lambda x, y: x + y, z2='z')
+
+    This is equivalent to
+
+      >>> da = sc.data.table_xyz(nrow=10)
+      >>> graph = {'xy': lambda x, y: x + y, 'z2':'z'}
+      >>> transformed = da.transform_coords(['xy', 'z2'], graph=graph)
+
+    Multi-step transformations that do not keep intermediate results as coordinates can
+    be performed with a graph containing nodes that depend on outputs of other nodes:
+
+      >>> da = sc.data.table_xyz(nrow=10)
+      >>> graph = {'xy': lambda x, y: x + y, 'xyz': lambda xy, z: xy + z}
+      >>> transformed = da.transform_coords('xyz', graph=graph)
     """
     options = Options(rename_dims=rename_dims,
                       keep_aliases=keep_aliases,
                       keep_intermediate=keep_intermediate,
                       keep_inputs=keep_inputs,
                       quiet=quiet)
-    targets = {targets} if isinstance(targets, str) else set(targets)
-    if isinstance(x, DataArray):
-        return _transform_data_array(x,
-                                     targets=targets,
-                                     graph=Graph(graph),
-                                     options=options)
+    for field in fields(options):
+        if not isinstance(getattr(options, field.name), bool):
+            raise TypeError(
+                f"'{field.name}' is a reserved for keyword argument. "
+                "Use explicit targets and graph arguments to create an output "
+                "coordinate of this name.")
+
+    if kwargs:
+        if targets is not None or graph is not None:
+            raise ValueError(
+                "Explicit targets or graph not allowed since keyword arguments "
+                f"{kwargs} define targets and graph.")
+
+    if targets is None:
+        targets = set(kwargs)
+        graph = kwargs
     else:
-        return _transform_dataset(x,
-                                  targets=targets,
-                                  graph=Graph(graph),
-                                  options=options)
+        targets = {targets} if isinstance(targets, str) else set(targets)
+
+    _transform = _transform_dataset if isinstance(x, Dataset) else _transform_data_array
+    return _transform(x, targets=targets, graph=Graph(graph), options=options)
 
 
 def show_graph(graph: GraphDict, size: str = None, simplified: bool = False):

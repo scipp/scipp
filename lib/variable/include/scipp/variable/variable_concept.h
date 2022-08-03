@@ -56,6 +56,7 @@ public:
   virtual void copy(const Variable &src, Variable &&dest) const = 0;
   virtual void assign(const VariableConcept &other) = 0;
   virtual scipp::index dtype_size() const = 0;
+  virtual scipp::index object_size() const = 0;
 
   virtual const VariableConceptHandle &bin_indices() const = 0;
 

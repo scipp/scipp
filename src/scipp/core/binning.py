@@ -2,14 +2,15 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import warnings
+from numbers import Integral
 from typing import Dict, List, Optional, Union, Sequence
 
 from .._scipp import core as _cpp
-from .variable import array, Variable, linspace, arange, epoch
+from .variable import array, Variable, linspace, arange, epoch, scalar
 from .math import round as round_
 
 
-def make_histogrammed(x: Union[_cpp.DataArray, _cpp.Dataset], *,
+def make_histogrammed(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset], *,
                       edges: _cpp.Variable) -> Union[_cpp.DataArray, _cpp.Dataset]:
     """Create dense data by histogramming data into given bins.
 
@@ -39,10 +40,13 @@ def make_histogrammed(x: Union[_cpp.DataArray, _cpp.Dataset], *,
     scipp.bin:
         For binning data.
     """
+    if isinstance(x, Variable):
+        data = scalar(1.0, unit='counts').broadcast(sizes=x.sizes)
+        x = _cpp.DataArray(data, coords={edges.dim: x})
     return _cpp.histogram(x, edges)
 
 
-def make_binned(x: _cpp.DataArray,
+def make_binned(x: Union[_cpp.Variable, _cpp.DataArray],
                 *,
                 edges: Optional[Sequence[_cpp.Variable]] = None,
                 groups: Optional[Sequence[_cpp.Variable]] = None,
@@ -95,6 +99,13 @@ def make_binned(x: _cpp.DataArray,
         groups = []
     if edges is None:
         edges = []
+    if isinstance(x, Variable):
+        coords = [*edges, *groups]
+        if len(coords) != 1:
+            raise ValueError("Edges for exactly one dimension must be specified when "
+                             "binning or histogramming a variable.")
+        data = scalar(1.0, unit='counts').broadcast(sizes=x.sizes).copy()
+        x = _cpp.DataArray(data, coords={coords[0].dim: x})
     return _cpp.bin(x, edges, groups, erase)
 
 
@@ -104,6 +115,8 @@ def _require_coord(name, coord):
 
 
 def _get_coord(x, name):
+    if isinstance(x, Variable):
+        return x
     event_coord = x.bins.meta.get(name) if x.bins is not None else None
     coord = x.meta.get(name, event_coord)
     _require_coord(name, coord)
@@ -124,7 +137,7 @@ def _parse_coords_arg(x, name, arg):
     if isinstance(arg, Variable) and name in arg.dims:
         return arg
     coord = _get_coord(x, name)
-    if isinstance(arg, int):
+    if isinstance(arg, Integral):
         start = coord.min()
         if start.dtype == _cpp.DType.datetime64:
             base = epoch(unit=start.unit)
@@ -140,7 +153,7 @@ def _parse_coords_arg(x, name, arg):
     return arange(name, start, stop, step=step, dtype=start.dtype)
 
 
-def _make_edges(x: Union[_cpp.DataArray,
+def _make_edges(x: Union[_cpp.Variable, _cpp.DataArray,
                          _cpp.Dataset], arg_dict: Dict[str, Union[int, Variable]],
                 kwargs: Dict[str, Union[int, Variable]]) -> List[Variable]:
     if arg_dict is not None:
@@ -159,19 +172,21 @@ def _find_replaced_dims(x, dims):
     return [dim for dim in erase if dim not in dims]
 
 
-def hist(x: Union[_cpp.DataArray, _cpp.Dataset],
+def hist(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset],
          arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
          /,
          **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
     """Compute a histogram.
 
-    Bin edges can be specified in three ways: (1) When an integer is provided,
-    a 'linspace' with this requested number of bins is created, based on the min
-    and max of the corresponding coordinate. (2) A scalar scipp variable (a value
-    with a unit) is interpreted as a target bin with, and an 'arange' covering the
-    min and max of the corresponding coordinate is created. (3) A custom coordinate,
-    given as a scipp variable with compatible unit. Typically this should have a single
-    dimension matching the target dimension.
+    Bin edges can be specified in three ways:
+     
+    1. When an integer is provided, a 'linspace' with this requested number of
+       bins is created, based on the min and max of the corresponding coordinate.
+    2. A scalar scipp variable (a value with a unit) is interpreted as a target
+       bin width, and an 'arange' covering the min and max of the corresponding
+       coordinate is created.
+    3. A custom coordinate, given as a scipp variable with compatible unit.
+       Typically this should have a single dimension matching the target dimension.
 
     When histogramming a dimension with an existing dimension-coord, the binning for
     the dimension is modified, i.e., the input and the output will have the same
@@ -254,6 +269,9 @@ def hist(x: Union[_cpp.DataArray, _cpp.Dataset],
     """  # noqa #501
     edges = _make_edges(x, arg_dict, kwargs)
     erase = _find_replaced_dims(x, edges)
+    if isinstance(x, Variable) and len(edges) != 1:
+        raise ValueError("Edges for exactly one dimension must be specified when "
+                         "binning or histogramming a variable.")
     if len(edges) == 0:
         if x.bins is None:
             raise TypeError("Data is not binned so bin edges must be provided.")
@@ -271,7 +289,7 @@ def hist(x: Union[_cpp.DataArray, _cpp.Dataset],
     return out
 
 
-def nanhist(x: Union[_cpp.DataArray, _cpp.Dataset],
+def nanhist(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset],
             arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
             /,
             **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
@@ -302,19 +320,21 @@ def nanhist(x: Union[_cpp.DataArray, _cpp.Dataset],
     return x.bins.nansum()
 
 
-def bin(x: Union[_cpp.DataArray, _cpp.Dataset],
+def bin(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset],
         arg_dict: Dict[str, Union[int, Variable]] = None,
         /,
         **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
     """Create binned data by binning input along all dimensions given by edges.
 
-    Bin edges can be specified in three ways: (1) When an integer is provided,
-    a 'linspace' with this requested number of bins is created, based on the min
-    and max of the corresponding coordinate. (2) A scalar scipp variable (a value
-    with a unit) is interpreted as a target bin with, and an 'arange' covering the
-    min and max of the corresponding coordinate is created. (3) A custom coordinate,
-    given as a scipp variable with compatible unit. Typically this should have a single
-    dimension matching the target dimension.
+    Bin edges can be specified in three ways:
+
+    1. When an integer is provided, a 'linspace' with this requested number of
+       bins is created, based on the min and max of the corresponding coordinate.
+    2. A scalar scipp variable (a value with a unit) is interpreted as a target
+       bin width, and an 'arange' covering the min and max of the corresponding
+       coordinate is created.
+    3. A custom coordinate, given as a scipp variable with compatible unit.
+       Typically, this should have a single dimension matching the target dimension.
 
     When binning a dimension with an existing dimension-coord, the binning for
     the dimension is modified, i.e., the input and the output will have the same

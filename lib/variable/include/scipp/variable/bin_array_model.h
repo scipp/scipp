@@ -102,6 +102,7 @@ public:
   [[nodiscard]] scipp::index dtype_size() const override {
     return sizeof(scipp::index_pair);
   }
+  scipp::index object_size() const override { return sizeof(*this); }
 
   void setVariances(const Variable &) override {
     except::throw_cannot_have_variances(core::dtype<core::bin<T>>);

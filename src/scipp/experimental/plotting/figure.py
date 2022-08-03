@@ -11,7 +11,6 @@ from .view import View
 
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
-import numpy as np
 from typing import Any, Tuple
 
 
@@ -108,7 +107,7 @@ class Figure(View):
         if grid:
             self._ax.grid()
 
-        self._legend = False
+        self._legend = 0
         self._new_artist = False
 
     def is_widget(self) -> bool:
@@ -148,10 +147,10 @@ class Figure(View):
                          height=height * dpi)
 
     def _autoscale(self):
-        global_xmin = np.inf
-        global_xmax = np.NINF
-        global_ymin = np.inf
-        global_ymax = np.NINF
+        global_xmin = None
+        global_xmax = None
+        global_ymin = None
+        global_ymax = None
         xscale = self._ax.get_xscale()
         yscale = self._ax.get_yscale()
         for key, child in self._children.items():
@@ -161,13 +160,13 @@ class Figure(View):
                     ymin = self._user_vmin
                 if self._user_vmax is not None:
                     ymax = self._user_vmax
-            if xmin.value < global_xmin:
+            if global_xmin is None or xmin.value < global_xmin:
                 global_xmin = xmin.value
-            if xmax.value > global_xmax:
+            if global_xmax is None or xmax.value > global_xmax:
                 global_xmax = xmax.value
-            if ymin.value < global_ymin:
+            if global_ymin is None or ymin.value < global_ymin:
                 global_ymin = ymin.value
-            if ymax.value > global_ymax:
+            if global_ymax is None or ymax.value > global_ymax:
                 global_ymax = ymax.value
         self._ax.set_xlim(global_xmin, global_xmax)
         self._ax.set_ylim(global_ymin, global_ymax)
@@ -178,7 +177,7 @@ class Figure(View):
         if self._new_artist:
             self._ax.set_xlabel(self._xlabel)
             self._ax.set_ylabel(self._ylabel)
-            if self._legend:
+            if self._legend > 0:
                 self._ax.legend()
             self._new_artist = False
         self._draw_canvas()
@@ -236,14 +235,17 @@ class Figure(View):
         """
         Update image array with new values.
         """
+        if new_values.ndim > 2:
+            raise ValueError("Figure can only be used to plot 1-D and 2-D data.")
         if key not in self._children:
             self._new_artist = True
             if new_values.ndim == 1:
-                self._children[key] = Line(ax=self._ax,
-                                           data=new_values,
-                                           number=len(self._children),
-                                           **self._kwargs)
-                self._legend = True
+                line = Line(ax=self._ax,
+                            data=new_values,
+                            number=len(self._children),
+                            **self._kwargs)
+                self._children[key] = line
+                self._legend += bool(line.label)
                 self._dims["x"] = new_values.dim
                 if self._ylabel is None:
                     self._ylabel = name_with_unit(var=new_values.data, name="")
