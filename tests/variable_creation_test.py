@@ -504,6 +504,16 @@ def test_arange_datetime_from_str():
     assert sc.identical(var, expected)
 
 
+def test_arange_datetime_from_scipp_datetime():
+    var = sc.arange('t', sc.datetime('2013-04-25T14:09:11'),
+                    sc.datetime('2013-04-25T14:11:23'), sc.scalar(62, unit='s'))
+    expected = sc.datetimes(
+        dims=['t'],
+        values=['2013-04-25T14:09:11', '2013-04-25T14:10:13', '2013-04-25T14:11:15'],
+        unit='s')
+    assert sc.identical(var, expected)
+
+
 @pytest.mark.parametrize('unit', ('one', sc.units.default_unit))
 def test_arange_with_variables(unit):
     start = sc.scalar(1)
