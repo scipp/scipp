@@ -475,6 +475,45 @@ def test_arange():
     assert sc.identical(var, expected)
 
 
+def test_arange_datetime_from_int():
+    var = sc.arange('t', 14, 65, 21, unit='s', dtype='datetime64')
+    expected = sc.datetimes(dims=['t'], values=[14, 35, 56], unit='s')
+    assert sc.identical(var, expected)
+
+
+def test_arange_datetime_from_np_datetime64():
+    var = sc.arange('t', np.datetime64('2022-08-02T11:18'),
+                    np.datetime64('2022-08-02T11:52'), 15)
+    expected = sc.datetimes(
+        dims=['t'],
+        values=['2022-08-02T11:18', '2022-08-02T11:33', '2022-08-02T11:48'],
+        unit='min')
+    assert sc.identical(var, expected)
+
+
+def test_arange_datetime_from_str():
+    var = sc.arange('t',
+                    '2022-08-02T06:42:45',
+                    '2022-08-02T06:43:33',
+                    16,
+                    dtype='datetime64')
+    expected = sc.datetimes(
+        dims=['t'],
+        values=['2022-08-02T06:42:45', '2022-08-02T06:43:01', '2022-08-02T06:43:17'],
+        unit='s')
+    assert sc.identical(var, expected)
+
+
+def test_arange_datetime_from_scipp_datetime():
+    var = sc.arange('t', sc.datetime('2013-04-25T14:09:11'),
+                    sc.datetime('2013-04-25T14:11:23'), sc.scalar(62, unit='s'))
+    expected = sc.datetimes(
+        dims=['t'],
+        values=['2013-04-25T14:09:11', '2013-04-25T14:10:13', '2013-04-25T14:11:15'],
+        unit='s')
+    assert sc.identical(var, expected)
+
+
 @pytest.mark.parametrize('unit', ('one', sc.units.default_unit))
 def test_arange_with_variables(unit):
     start = sc.scalar(1)

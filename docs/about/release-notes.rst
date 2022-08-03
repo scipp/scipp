@@ -41,7 +41,8 @@ v0.16.0 (Unreleased)
 Features
 ~~~~~~~~
 
-* :meth:`scipp.Bins.concat` no supports concatenation of all dims, with ``da.bins.concat()`` `#2726 <https://github.com/scipp/scipp/pull/2726>`_.
+* :meth:`scipp.Bins.concat` now supports concatenation of all dims, with ``da.bins.concat()`` `#2726 <https://github.com/scipp/scipp/pull/2726>`_.
+* Added support for calling :func:`scipp.arange` with strings to create datetime ranges `#2729 <https://github.com/scipp/scipp/pull/2729>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
