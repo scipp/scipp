@@ -15,6 +15,31 @@ If you cannot find an answer, simply start a new discussion there.
 General
 -------
 
+Scipp is using more and more memory / the Jupyter kernel crashes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You may be a victim of IPython's (and thus Jupyter's) `Output caching system <https://ipython.readthedocs.io/en/stable/interactive/reference.html?highlight=previous#output-caching-system>`_.
+For example, IPython will hold on to a reference of any variable (Scipp or other) written at the end of a cell (named or unnamed).
+``print(Out)`` can be used to show the cached outputs.
+Since we frequently use and recommend to use Jupyter's feature to display rich HTML output (provided by an object's ``_repr_html_`` method), many large objects may end up in this cache.
+Note that deleting your own reference (such as using ``del my_array``) will *not* free the memory, since the IPython output cache holds another reference.
+
+There are two solutions (as described in the IPython `Output caching system <https://ipython.readthedocs.io/en/stable/interactive/reference.html?highlight=previous#output-caching-system>`_ documentation):
+
+1. Free the cache manually, on demand, for example:
+
+   .. code::
+
+      %reset out
+
+2. Decrease the cache size or disable it completely by editing your ``ipython_kernel_config.py`` and setting:
+
+   .. code::
+
+      c.InteractiveShell.cache_size = 0
+
+   See `Python configuration files <https://ipython.readthedocs.io/en/stable/config/intro.html#python-configuration-files>`_ and `InteractiveShell.cache_size <https://ipython.readthedocs.io/en/stable/config/options/kernel.html#configtrait-InteractiveShell.cache_size>`_ in the IPython documentation for details.
+
 Why is xarray not enough?
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
