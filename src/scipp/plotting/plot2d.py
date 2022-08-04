@@ -7,6 +7,7 @@ from .model2d import PlotModel2d
 from .view2d import PlotView2d
 from .figure2d import PlotFigure2d
 from .controller2d import PlotController2d
+from .tools import is_static
 
 
 def plot2d(scipp_obj_dict, **kwargs):
@@ -45,6 +46,10 @@ def plot2d(scipp_obj_dict, **kwargs):
         out['vmin'] = params["values"]["vmin"]
         out['vmax'] = params["values"]["vmax"]
         if len(dims) > 2:
+            if is_static():
+                raise RuntimeError("Plotting slices of data with more than two "
+                                   "dimensions requires the interactive matplotlib "
+                                   "backend. Enable with `%matplotlib widget`.")
             params['extend_cmap'] = 'both'
             out['profile_figure'] = make_profile(ax=pax,
                                                  mask_color=params['masks']['color'])

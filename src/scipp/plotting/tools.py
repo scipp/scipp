@@ -7,6 +7,7 @@ from ..core import concat, values, scalar, full_like, geomspace
 from ..core import DType, DataArray
 from ..core import abs as abs_
 import numpy as np
+from matplotlib.pyplot import get_backend
 from copy import copy
 import io
 
@@ -207,3 +208,7 @@ def to_dict(meta):
     Convert a coords, meta, attrs or masks object to a python dict.
     """
     return {name: var for name, var in meta.items()}
+
+
+def is_static():
+    return get_backend().lower().endswith('inline')

@@ -4,6 +4,7 @@
 # @author Neil Vaytet
 
 from .plot import plot as _plot
+from .tools import is_static
 
 _backend = 'stable'
 
@@ -149,7 +150,7 @@ def plot_stable(*args, **kwargs):
 
     output = _plot(*args, **kwargs)
 
-    if (output is not None) and plt.get_backend().lower().endswith('inline'):
+    if (output is not None) and is_static():
         output.hide_widgets()
 
     # Turn auto figure display back on if needed.
