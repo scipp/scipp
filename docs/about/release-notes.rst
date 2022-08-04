@@ -47,6 +47,8 @@ Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
+* The plots are no longer interactive by default, standard Matplotlib rules now apply (the inline static backend is the default). Use ``%matplotlib widget`` for interactive plots `#2671 <https://github.com/scipp/scipp/pull/2671>`_.
+
 Bugfixes
 ~~~~~~~~
 
