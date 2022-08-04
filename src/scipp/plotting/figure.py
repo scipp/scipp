@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .. import config
-from .tools import fig_to_pngbytes
+from .tools import fig_to_pngbytes, is_sphinx_build
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -91,7 +91,7 @@ class PlotFigure:
         If not, convert the plot to a png image and place inside an ipywidgets
         Image container.
         """
-        if self.is_widget():
+        if self.is_widget() and (not is_sphinx_build()):
             out = [self.fig.canvas]
             if self.toolbar is not None:
                 out = [self.toolbar._to_widget()] + out

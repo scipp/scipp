@@ -245,6 +245,12 @@ texinfo_documents = [
      'One line description of project.', 'Miscellaneous'),
 ]
 
+# -- Options for Matplotlib in notebooks ----------------------------------
+
+nbsphinx_execute_arguments = [
+    "--Session.metadata=scipp_sphinx_build=True",
+]
+
 # -- Options for matplotlib in docstrings ---------------------------------
 
 plot_include_source = True
