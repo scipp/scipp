@@ -9,7 +9,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/scipp-targets.cmake")
 check_required_components(scipp-targets)
 
 include(CMakeFindDependencyMacro)
-find_dependency(Boost 1.67)
+find_dependency(Boost 1.69)
 find_dependency(Eigen3)
 find_dependency(LLNL-Units)
 find_dependency(TBB)

@@ -36,9 +36,13 @@ Release Notes
 
 
 v0.16.0 (Unreleased)
+--------------------
 
 Features
 ~~~~~~~~
+
+* :meth:`scipp.Bins.concat` now supports concatenation of all dims, with ``da.bins.concat()`` `#2726 <https://github.com/scipp/scipp/pull/2726>`_.
+* Added support for calling :func:`scipp.arange` with strings to create datetime ranges `#2729 <https://github.com/scipp/scipp/pull/2729>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
@@ -48,6 +52,7 @@ Bugfixes
 
 * Binary arithmetic operations such as ``x + x`` of ``x * x``, i.e., with both operands the same, now handle correlations correctly and result in the correct variances in the output `#2709 <https://github.com/scipp/scipp/pull/2709>`_.
 * Made ``__sizeof__`` and related functions more accurate `#2705 <https://github.com/scipp/scipp/pull/2705>`_.
+* 1-D entries with identical dimensions but different coordinate units are no longer plotted on the same axes `#2728 <https://github.com/scipp/scipp/pull/2728>`_.
 
 Documentation
 ~~~~~~~~~~~~~

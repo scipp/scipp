@@ -720,8 +720,8 @@ def logspace(dim: str,
 
 
 def arange(dim: str,
-           start: Union[NumberOrVar, _np.datetime64],
-           stop: Optional[Union[NumberOrVar, _np.datetime64]] = None,
+           start: Union[NumberOrVar, _np.datetime64, str],
+           stop: Optional[Union[NumberOrVar, _np.datetime64, str]] = None,
            step: Optional[NumberOrVar] = None,
            *,
            unit: Union[Unit, str, None] = default_unit,
@@ -760,6 +760,8 @@ def arange(dim: str,
     Examples
     --------
 
+      >>> sc.arange('x', 4)
+      <scipp.Variable> (x: 4)      int64  [dimensionless]  [0, 1, 2, 3]
       >>> sc.arange('x', 1, 5)
       <scipp.Variable> (x: 4)      int64  [dimensionless]  [1, 2, 3, 4]
       >>> sc.arange('x', 1, 5, 0.5)
@@ -767,11 +769,19 @@ def arange(dim: str,
 
       >>> sc.arange('x', 1, 5, unit='m')
       <scipp.Variable> (x: 4)      int64              [m]  [1, 2, 3, 4]
+
+    Datetimes are also supported:
+
+      >>> sc.arange('t', '2000-01-01T01:00:00', '2000-01-01T01:01:30', 30, dtype='datetime64')
+      <scipp.Variable> (t: 3)  datetime64              [s]  [2000-01-01T01:00:00, 2000-01-01T01:00:30, 2000-01-01T01:01:00]
     """
     range_args, unit = _normalize_range_args(unit=unit,
                                              start=start,
                                              stop=stop,
                                              step=step)
+    if dtype == 'datetime64' and isinstance(range_args['start'], str):
+        range_args['start'] = _np.datetime64(range_args['start'])
+        range_args['stop'] = _np.datetime64(range_args['stop'])
     return array(dims=[dim], values=_np.arange(**range_args), unit=unit, dtype=dtype)
 
 
@@ -861,10 +871,7 @@ def datetimes(*,
       >>> sc.datetimes(dims=['t'], values=[0, 1610288175], unit='s')
       <scipp.Variable> (t: 2)  datetime64              [s]  [1970-01-01T00:00:00, 2021-01-10T14:16:15]
     """
-    if unit is None or unit is default_unit:
-        np_unit_str = ''
-    else:
-        np_unit_str = f'[{_cpp.to_numpy_time_string(unit)}]'
+    np_unit_str = f'[{u}]' if (u := _cpp.to_numpy_time_string(unit)) else ''
     with _timezone_warning_as_error():
         return array(dims=dims,
                      values=_np.asarray(values, dtype=f'datetime64{np_unit_str}'))
