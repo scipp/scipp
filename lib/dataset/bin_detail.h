@@ -4,16 +4,38 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <unordered_map>
-
-#include "scipp/dataset/dataset.h"
-#include "scipp/dataset/except.h"
-#include "scipp/variable/arithmetic.h"
+#include "scipp-dataset_export.h"
+#include "scipp/variable/subspan_view.h"
 
 namespace scipp::dataset::bin_detail {
+
+template <class T> Variable as_subspan_view(T &&binned) {
+  auto &&[indices, dim, buffer] = binned.template constituents<Variable>();
+  if constexpr (std::is_const_v<std::remove_reference_t<T>>)
+    return subspan_view(std::as_const(buffer), dim, indices);
+  else
+    return subspan_view(buffer, dim, indices);
+}
 
 SCIPP_DATASET_EXPORT void map_to_bins(Variable &out, const Variable &var,
                                       const Variable &offsets,
                                       const Variable &indices);
+
+SCIPP_DATASET_EXPORT Variable make_range(const scipp::index begin,
+                                         const scipp::index end,
+                                         const scipp::index stride,
+                                         const Dim dim);
+
+SCIPP_DATASET_EXPORT
+void update_indices_by_binning(Variable &indices, const Variable &key,
+                               const Variable &edges, const bool linspace);
+SCIPP_DATASET_EXPORT void update_indices_by_grouping(Variable &indices,
+                                                     const Variable &key,
+                                                     const Variable &groups);
+SCIPP_DATASET_EXPORT void update_indices_from_existing(Variable &indices,
+                                                       const Dim dim);
+SCIPP_DATASET_EXPORT Variable bin_sizes(const Variable &sub_bin,
+                                        const Variable &offset,
+                                        const Variable &nbin);
 
 } // namespace scipp::dataset::bin_detail
