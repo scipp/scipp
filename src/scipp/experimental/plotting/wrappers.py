@@ -15,10 +15,10 @@ def _to_data_array(obj):
         dims = [f"axis-{i}" for i in range(len(out.shape))]
         out = Variable(dims=dims, values=out)
     if isinstance(out, Variable):
-        out = sc.DataArray(
+        out = DataArray(
             data=out,
             coords={dim: arange(dim, size)
-                    for dim, size in obj.sizes.items()})
+                    for dim, size in out.sizes.items()})
     for dim, size in out.sizes.items():
         if dim not in out.meta:
             out.coords[dim] = arange(dim, size)
@@ -40,7 +40,7 @@ def plot(obj: Union[VariableLike, Dict[str, VariableLike]]) -> Figure:
     """
     if isinstance(obj, (dict, Dataset)):
         to_plot = {key: _to_data_array(item) for key, item in obj.items()}
-        nodes = [input_node(v) for v in obj.values()]
+        nodes = [input_node(v) for v in to_plot.values()]
         return Figure(*nodes)
     else:
         return Figure(input_node(_to_data_array(obj)))
