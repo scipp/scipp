@@ -145,16 +145,11 @@ class PlotToolbar:
         """
         Connect callbacks to button clicks.
         """
-        print('CONTROLLER is', controller)
         for key in self.members:
             if hasattr(controller, key):
-                if key == 'rescale_to_data':
-                    print('rescale_to_data: from controller')
                 self.members[key].on_click(getattr(controller, key))
             elif self.members[key] is not None:
                 if not isinstance(self.members[key], ipw.ToggleButton):
-                    if key == 'rescale_to_data':
-                        print('rescale_to_data: from toolbar')
                     self.members[key].on_click(getattr(self, key))
         for dim, button in self._log_axis.items():
             button.observe(getattr(controller, 'toggle_dim_scale')(dim), 'value')

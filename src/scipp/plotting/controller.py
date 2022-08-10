@@ -83,7 +83,6 @@ class PlotController:
         have been created.
         """
         if self.profile is not None:
-            print('self.profile is not None')
             self.profile.connect()
 
         self.widgets.connect(controller=self)
@@ -119,9 +118,7 @@ class PlotController:
         plots) to the minimum and maximum value inside the currently displayed
         data slice.
         """
-        print('controller: rescale_to_data', button)
         vmin, vmax = self.find_vmin_vmax(button=button)
-        print('controller: vmin, vmax', vmin, vmax)
         self.view.rescale_to_data(vmin, vmax)
         if self.panel is not None:
             self.panel.rescale_to_data(vmin=vmin,
