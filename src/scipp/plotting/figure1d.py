@@ -335,10 +335,7 @@ class PlotFigure1d(PlotFigure):
                 line.set_visible(value)
         self.draw()
 
-
-#    def rescale_to_data(self, vmin=None, vmax=None):
-
-    def rescale_to_data(self, vmin, vmax):
+    def rescale_to_data(self, vmin=None, vmax=None):
         """
         Rescale y axis to the contents of the plot.
         """
