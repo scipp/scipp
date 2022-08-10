@@ -46,9 +46,11 @@ def plot2d(scipp_obj_dict, **kwargs):
         out['vmax'] = params["values"]["vmax"]
         if len(dims) > 2:
             params['extend_cmap'] = 'both'
+            print('MAKING PROFILE')
             out['profile_figure'] = make_profile(ax=pax,
                                                  mask_color=params['masks']['color'])
 
+        print('MAKING FIGURE')
         out['figure'] = PlotFigure2d(ax=ax,
                                      cax=cax,
                                      figsize=figsize,
