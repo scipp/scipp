@@ -53,6 +53,7 @@ Bugfixes
 * Binary arithmetic operations such as ``x + x`` of ``x * x``, i.e., with both operands the same, now handle correlations correctly and result in the correct variances in the output `#2709 <https://github.com/scipp/scipp/pull/2709>`_.
 * Made ``__sizeof__`` and related functions more accurate `#2705 <https://github.com/scipp/scipp/pull/2705>`_.
 * 1-D entries with identical dimensions but different coordinate units are no longer plotted on the same axes `#2728 <https://github.com/scipp/scipp/pull/2728>`_.
+* Fixed broken profile plot on 3-D data `#2746 <https://github.com/scipp/scipp/pull/2746>`_.
 
 Documentation
 ~~~~~~~~~~~~~
