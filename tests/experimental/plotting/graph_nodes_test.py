@@ -155,32 +155,3 @@ def test_plot_3d_image_slicer_with_connected_side_histograms():
     fx.render()
     fy.render()
     sl.controls["zz"]["slider"].value = 10
-
-
-def test_plot_wrapper_data_array():
-    sc.plot(make_dense_data_array(ndim=1))
-    da = make_dense_data_array(ndim=2)
-    sc.plot(da)
-    da.plot()
-
-
-def test_plot_wrapper_data_array_missing_coords():
-    sc.data.table_xyz(100).plot()
-
-
-def test_plot_wrapper_variable():
-    sc.plot(sc.arange('x', 50.))
-
-
-def test_plot_wrapper_dataset():
-    ds = make_dense_dataset(ndim=1)
-    sc.plot(ds)
-
-
-def test_plot_wrapper_dict_of_data_arrays():
-    ds = make_dense_dataset(ndim=1)
-    sc.plot({'a': ds['a'], 'b': ds['b']})
-
-
-def test_plot_wrapper_ndarray():
-    sc.plot(np.arange(50.))

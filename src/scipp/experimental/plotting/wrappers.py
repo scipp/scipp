@@ -31,7 +31,14 @@ def plot(obj: Union[VariableLike, Dict[str, VariableLike]]) -> Figure:
     Parameters
     ----------
     obj:
-        The object to be plotted.
+        The object to be plotted. Possible inputs are:
+        - Variable
+        - Dataset
+        - DataArray
+        - numpy ndarray
+        - dict of Variables
+        - dict of DataArrays
+        - dict of numpy ndarrays
 
     Returns
     -------
