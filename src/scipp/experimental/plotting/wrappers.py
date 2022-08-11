@@ -15,10 +15,7 @@ def _to_data_array(obj):
         dims = [f"axis-{i}" for i in range(len(out.shape))]
         out = Variable(dims=dims, values=out)
     if isinstance(out, Variable):
-        out = DataArray(
-            data=out,
-            coords={dim: arange(dim, size)
-                    for dim, size in out.sizes.items()})
+        out = DataArray(data=out)
     for dim, size in out.sizes.items():
         if dim not in out.meta:
             out.coords[dim] = arange(dim, size)
