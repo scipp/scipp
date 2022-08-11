@@ -85,9 +85,9 @@ def test_setitem_with_stride_2_sets_every_other_element():
 def test_setitem_data_array_value_based_slice():
     da = sc.data.table_xyz(10)
     var = sc.scalar(44., unit='K')
-    da['x', da.coords['x'][0]] = var  # Assign a single variable
+    da['x', da.coords['x'][0]] = var
     assert sc.identical(da[0].data, var)
-    da['x', da.coords['x'][0]] = da['x', da.coords['x'][1]]  # Assign data array slice
+    da['x', da.coords['x'][0]] = da['x', da.coords['x'][1]]
     assert sc.identical(da[0].data, da[1].data)
 
 
