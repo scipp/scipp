@@ -80,3 +80,19 @@ def test_setitem_with_stride_2_sets_every_other_element():
     var = sc.array(dims=['x'], values=[1, 2, 3, 4, 5, 6])
     var['x', 1:5:2] = sc.array(dims=['x'], values=[11, 22])
     assert sc.identical(var, sc.array(dims=['x'], values=[1, 11, 3, 22, 5, 6]))
+
+
+def test_setitem_data_array_value_based_slice():
+    da = sc.data.table_xyz(10)
+    var = sc.scalar(44., unit='K')
+    da['x', da.coords['x'][0]] = var  # Assign a single variable
+    assert sc.identical(da[0].data, var)
+    da['x', da.coords['x'][0]] = da['x', da.coords['x'][1]]  # Assign data array slice
+    assert sc.identical(da[0].data, da[1].data)
+
+
+def test_setitem_dataset_value_based_slice():
+    ds = sc.Dataset({'a': sc.data.table_xyz(10), 'b': sc.data.table_xyz(10) * 1.123})
+    ds['x', ds.coords['x'][0]] = ds['x', ds.coords['x'][1]]
+    assert sc.identical(ds['a'][0].data, ds['a'][1].data)
+    assert sc.identical(ds['b'][0].data, ds['b'][1].data)
