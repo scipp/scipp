@@ -17,14 +17,14 @@ def hide_masks(data_array, masks):
     return out
 
 
-def test_plot_single_1d_line():
+def test_single_1d_line():
     da = make_dense_data_array(ndim=1)
     n = input_node(da)
     fig = Figure(n)
     fig.render()
 
 
-def test_plot_two_1d_lines():
+def test_two_1d_lines():
     ds = make_dense_dataset(ndim=1)
     a = input_node(ds['a'])
     b = input_node(ds['b'])
@@ -32,7 +32,7 @@ def test_plot_two_1d_lines():
     fig.render()
 
 
-def test_plot_difference_of_two_1d_lines():
+def test_difference_of_two_1d_lines():
     ds = make_dense_dataset(ndim=1)
     a = input_node(ds['a'])
     b = input_node(ds['b'])
@@ -46,14 +46,14 @@ def test_plot_difference_of_two_1d_lines():
     fig.render()
 
 
-def test_plot_2d_image():
+def test_2d_image():
     da = make_dense_data_array(ndim=2)
     a = input_node(da)
     fig = Figure(a)
     fig.render()
 
 
-def test_plot_2d_image_smoothing_slider():
+def test_2d_image_smoothing_slider():
     da = make_dense_data_array(ndim=2)
     a = input_node(da)
 
@@ -69,7 +69,7 @@ def test_plot_2d_image_smoothing_slider():
     sl.value = 5
 
 
-def test_plot_2d_image_with_masks():
+def test_2d_image_with_masks():
     da = make_dense_data_array(ndim=2)
     da.masks['m1'] = da.data < sc.scalar(0.0, unit='counts')
     da.masks['m2'] = da.coords['xx'] > sc.scalar(30., unit='m')
@@ -86,7 +86,7 @@ def test_plot_2d_image_with_masks():
     widget.toggle_all_button.value = False
 
 
-def test_plot_two_1d_lines_with_masks():
+def test_two_1d_lines_with_masks():
     ds = make_dense_dataset()
     ds['a'].masks['m1'] = ds['a'].coords['xx'] > sc.scalar(40.0, unit='m')
     ds['a'].masks['m2'] = ds['a'].data < ds['b'].data
@@ -106,7 +106,7 @@ def test_plot_two_1d_lines_with_masks():
     widget.toggle_all_button.value = False
 
 
-def test_plot_node_sum_data_along_y():
+def test_node_sum_data_along_y():
     da = make_dense_data_array(ndim=2, binedges=True)
     a = input_node(da)
 
@@ -119,7 +119,7 @@ def test_plot_node_sum_data_along_y():
     fig2.render()
 
 
-def test_plot_slice_3d_cube():
+def test_slice_3d_cube():
     da = make_dense_data_array(ndim=3)
     a = input_node(da)
     sl = widgets.SliceWidget(da, ['zz'])
@@ -134,7 +134,7 @@ def test_plot_slice_3d_cube():
     sl.controls["zz"]["slider"].value = 10
 
 
-def test_plot_3d_image_slicer_with_connected_side_histograms():
+def test_3d_image_slicer_with_connected_side_histograms():
     da = make_dense_data_array(ndim=3)
     a = input_node(da)
     sl = widgets.SliceWidget(da, ['zz'])
@@ -154,14 +154,3 @@ def test_plot_3d_image_slicer_with_connected_side_histograms():
     fx.render()
     fy.render()
     sl.controls["zz"]["slider"].value = 10
-
-
-def test_plot_wrapper():
-    sc.plot(make_dense_data_array(ndim=1))
-    da = make_dense_data_array(ndim=2)
-    sc.plot(da)
-    da.plot()
-    sc.plot(da.data)
-    ds = make_dense_dataset(ndim=1)
-    sc.plot(ds)
-    sc.plot({'a': ds['a'], 'b': ds['b']})
