@@ -131,7 +131,6 @@ class PlotProfile(PlotFigure1d):
         """
         Rescale y axis to the contents of the plot.
         """
-        self.ax.autoscale(True)
         self.ax.relim()
         self.ax.autoscale_view()
         self.draw()
