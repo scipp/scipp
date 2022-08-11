@@ -54,6 +54,7 @@ Bugfixes
 * Made ``__sizeof__`` and related functions more accurate `#2705 <https://github.com/scipp/scipp/pull/2705>`_.
 * 1-D entries with identical dimensions but different coordinate units are no longer plotted on the same axes `#2728 <https://github.com/scipp/scipp/pull/2728>`_.
 * Data arrays with missing coords can now be plotted using the experimental plotting `#2748 <https://github.com/scipp/scipp/pull/2748>`_.
+* Fix a bug in the argument detection when using setitem in combination with value-based slicing `#2750 <https://github.com/scipp/scipp/pull/2750>`_.
 
 Documentation
 ~~~~~~~~~~~~~
