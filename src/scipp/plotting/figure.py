@@ -92,10 +92,7 @@ class PlotFigure:
         Image container.
         """
         if self.is_widget() and (not is_sphinx_build()):
-            out = [self.fig.canvas]
-            if self.toolbar is not None:
-                out = [self.toolbar._to_widget()] + out
-            return ipw.HBox(out)
+            return ipw.HBox([self.toolbar._to_widget(), self.fig.canvas])
         else:
             return self._to_image()
 
