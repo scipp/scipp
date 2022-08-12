@@ -19,7 +19,7 @@ void init_units(py::module &m) {
   py::class_<DefaultUnit>(m, "DefaultUnit")
       .def("__repr__",
            [](const DefaultUnit &) { return "<automatically deduced unit>"; });
-  py::class_<units::Unit>(m, "Unit", "A physical unit.")
+  py::class_<units::Unit>(m, "Unit", "A physical unit.", py::dynamic_attr())
       .def(py::init<const std::string &>())
       .def("__repr__", [](const units::Unit &u) { return u.name(); })
       .def_property_readonly("name", &units::Unit::name,

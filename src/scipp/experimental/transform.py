@@ -19,28 +19,27 @@ from numba import types as nbtypes
 from numba.extending import overload
 
 from .._scipp.core import Unit
-from .. import _math as sc_math
-from .. import _trigonometry as sc_trigonometry
+from .. import core
 
 
 def kernel_unit_rmul(self, other):
     if isinstance(other, Unit):
-        return self.__regular_rmul(other)
+        return self.__regular_rmul__(other)
     return self
 
 
 def kernel_unit_rtruediv(self, other):
     if isinstance(other, Unit):
-        return self.__regular_rtruediv(other)
+        return self.__regular_rtruediv__(other)
     return self
 
 
 def process_unit(unit):
-    unit = copy(unit)
-    setattr(unit, '__regular_rmul', unit.__rmul)
-    setattr(unit, '__rmul', MethodType(kernel_unit_rmul, unit))
-    setattr(unit, '__regular_rtruediv', unit.__rtruediv)
-    setattr(unit, '__rtruediv', MethodType(kernel_unit_rtruediv, unit))
+    unit = Unit(str(unit))
+    unit.__regular_rmul__ = unit.__rmul__
+    unit.__rmul__ = MethodType(kernel_unit_rmul, unit)
+    unit.__regular_rtruediv__ = unit.__rtruediv__
+    unit.__rtruediv__ = MethodType(kernel_unit_rtruediv, unit)
     return unit
 
 
@@ -100,5 +99,5 @@ def make_numba_overloads(func_tuples):
 
 # TODO This is just an example,
 #      apart from sqrt, the scipp functions do not support units.
-make_numba_overloads([(sc_math.sqrt, math.sqrt), (sc_math.abs, abs),
-                      (sc_trigonometry.sin, math.sin)])
+make_numba_overloads([(core.sqrt, math.sqrt), (core.abs, abs),
+                      (core.sin, math.sin)])
