@@ -155,11 +155,13 @@ template <class T> struct slicer {
   }
 
   template <class Other>
-  static void set_by_value(T &self, const std::tuple<Dim, Variable> &value,
+  static void set_by_value(T &self,
+                           const std::tuple<std::string, Variable> &value,
                            const Other &data) {
     auto &[dim, val] = value;
-    self.setSlice(std::make_from_tuple<Slice>(get_slice_params(self, dim, val)),
-                  data);
+    self.setSlice(
+        std::make_from_tuple<Slice>(get_slice_params(self, Dim(dim), val)),
+        data);
   }
 
   // Manually dispatch based on the object we are assigning from in order to

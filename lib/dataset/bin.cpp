@@ -5,10 +5,6 @@
 #include <numeric>
 #include <set>
 
-#include "scipp/core/element/bin.h"
-#include "scipp/core/element/cumulative.h"
-
-#include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bin_detail.h"
 #include "scipp/variable/bin_util.h"
 #include "scipp/variable/bins.h"
@@ -16,8 +12,7 @@
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/subspan_view.h"
-#include "scipp/variable/transform.h"
-#include "scipp/variable/util.h"
+#include "scipp/variable/variable_factory.h"
 
 #include "scipp/dataset/bin.h"
 #include "scipp/dataset/bins.h"
@@ -35,78 +30,6 @@ namespace scipp::dataset {
 
 namespace {
 
-template <class T> Variable as_subspan_view(T &&binned) {
-  auto &&[indices, dim, buffer] = binned.template constituents<Variable>();
-  if constexpr (std::is_const_v<std::remove_reference_t<T>>)
-    return subspan_view(std::as_const(buffer), dim, indices);
-  else
-    return subspan_view(buffer, dim, indices);
-}
-
-auto make_range(const scipp::index begin, const scipp::index end,
-                const scipp::index stride, const Dim dim) {
-  return cumsum(broadcast(stride * units::none, {dim, (end - begin) / stride}),
-                dim, CumSumMode::Exclusive);
-}
-
-void update_indices_by_binning(Variable &indices, const Variable &key,
-                               const Variable &edges, const bool linspace) {
-  const auto dim = edges.dims().inner();
-  if (!indices.dims().includes(key.dims()))
-    throw except::BinEdgeError(
-        "Requested binning in dimension '" + to_string(dim) +
-        "' but input contains a bin-edge coordinate with no corresponding "
-        "event-coordinate. Provide an event coordinate or convert the "
-        "bin-edge coordinate to a non-edge coordinate.");
-  const auto &edge_view =
-      is_bins(edges) ? as_subspan_view(edges) : subspan_view(edges, dim);
-  if (linspace) {
-    variable::transform_in_place(
-        indices, key, edge_view,
-        core::element::update_indices_by_binning_linspace,
-        "scipp.bin.update_indices_by_binning_linspace");
-  } else {
-    variable::transform_in_place(
-        indices, key, edge_view,
-        core::element::update_indices_by_binning_sorted_edges,
-        "scipp.bin.update_indices_by_binning_sorted_edges");
-  }
-}
-
-template <class Index>
-Variable groups_to_map(const Variable &var, const Dim dim) {
-  return variable::transform(subspan_view(var, dim),
-                             core::element::groups_to_map<Index>,
-                             "scipp.bin.groups_to_map");
-}
-
-void update_indices_by_grouping(Variable &indices, const Variable &key,
-                                const Variable &groups) {
-  const auto dim = groups.dims().inner();
-  const auto map = (indices.dtype() == dtype<int64_t>)
-                       ? groups_to_map<int64_t>(groups, dim)
-                       : groups_to_map<int32_t>(groups, dim);
-  variable::transform_in_place(indices, key, map,
-                               core::element::update_indices_by_grouping,
-                               "scipp.bin.update_indices_by_grouping");
-}
-
-void update_indices_from_existing(Variable &indices, const Dim dim) {
-  const scipp::index nbin = indices.dims()[dim];
-  const auto index = make_range(0, nbin, 1, dim);
-  variable::transform_in_place(indices, index, nbin * units::none,
-                               core::element::update_indices_from_existing,
-                               "scipp.bin.update_indices_from_existing");
-}
-
-/// `sub_bin` is a binned variable with sub-bin indices: new bins within bins
-Variable bin_sizes(const Variable &sub_bin, const Variable &offset,
-                   const Variable &nbin) {
-  return variable::transform(
-      as_subspan_view(sub_bin), offset, nbin, core::element::count_indices,
-      "scipp.bin.bin_sizes"); // transform bins, not bin element
-}
-
 template <class T, class Builder>
 auto bin(const Variable &data, const Variable &indices,
          const Builder &builder) {
@@ -114,7 +37,8 @@ auto bin(const Variable &data, const Variable &indices,
   // Setup offsets within output bins, for every input bin. If rebinning occurs
   // along a dimension each output bin sees contributions from all input bins
   // along that dim.
-  auto output_bin_sizes = bin_sizes(indices, builder.offsets(), builder.nbin());
+  auto output_bin_sizes =
+      bin_detail::bin_sizes(indices, builder.offsets(), builder.nbin());
   auto offsets = copy(output_bin_sizes);
   fill_zeros(offsets);
   // Not using cumsum along *all* dims, since some outer dims may be left
