@@ -8,6 +8,7 @@ from .panel1d import PlotPanel1d
 from .view1d import PlotView1d
 from .figure1d import PlotFigure1d
 from .controller1d import PlotController1d
+from .tools import is_static
 
 
 def plot1d(scipp_obj_dict, **kwargs):
@@ -52,6 +53,10 @@ def plot1d(scipp_obj_dict, **kwargs):
         out['vmin'] = params["values"]["vmin"]
         out['vmax'] = params["values"]["vmax"]
         if len(dims) > 1:
+            if is_static():
+                raise RuntimeError("Plotting slices of data with more than one "
+                                   "dimensions requires the interactive matplotlib "
+                                   "backend. Enable with `%matplotlib widget`.")
             out['profile_figure'] = make_profile(ax=pax,
                                                  mask_color=params['masks']['color'])
             # An additional panel view with widgets to save/remove lines

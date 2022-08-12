@@ -4,7 +4,7 @@
 
 from .. import config, units
 from .formatters import make_formatter
-from .tools import parse_params
+from .tools import parse_params, is_sphinx_build
 from ..core import DimensionError
 from .model1d import PlotModel1d
 from .widgets import PlotWidgets
@@ -308,7 +308,7 @@ class Plot:
         """
         import ipywidgets as ipw
         widget_list = [self.view._to_widget()]
-        if self.profile is not None:
+        if self.profile is not None and (not is_sphinx_build()):
             widget_list.append(self.profile._to_widget())
         if self.show_widgets:
             widget_list.append(self.widgets._to_widget())
@@ -321,7 +321,7 @@ class Plot:
         """
         Hide widgets for 1d and 2d (matplotlib) figures
         """
-        self.show_widgets = False if self.view_ndims < 3 else True
+        self.show_widgets = False if self.view_ndims != 0 else True
 
     def close(self):
         """

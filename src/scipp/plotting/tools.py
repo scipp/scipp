@@ -3,10 +3,12 @@
 # @author Neil Vaytet
 
 from .. import config, units
+from ..utils import running_in_jupyter
 from ..core import concat, values, scalar, full_like, geomspace
 from ..core import DType, DataArray
 from ..core import abs as abs_
 import numpy as np
+from matplotlib.pyplot import get_backend
 from copy import copy
 import io
 
@@ -207,3 +209,25 @@ def to_dict(meta):
     Convert a coords, meta, attrs or masks object to a python dict.
     """
     return {name: var for name, var in meta.items()}
+
+
+def is_static():
+    """
+    Returns `True` if the `inline` matplotlib backend is curently in use.
+    """
+    return get_backend().lower().endswith('inline')
+
+
+def is_sphinx_build():
+    """
+    Returns `True` if we are running inside a sphinx documentation build.
+    """
+    if not running_in_jupyter():
+        return False
+    from IPython import get_ipython
+    ipy = get_ipython()
+    cfg = ipy.config
+    meta = cfg["Session"]["metadata"]
+    if hasattr(meta, "to_dict"):
+        meta = meta.to_dict()
+    return meta.get("scipp_sphinx_build", False)
