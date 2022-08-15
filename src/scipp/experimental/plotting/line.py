@@ -52,10 +52,21 @@ class Line:
         self._make_line(data=self._make_data(), errorbars=errorbars, params=params)
 
     def _make_line_params(self, number, **kwargs):
-        return {
-            key: get_line_param(key, number) if arg is None else arg
-            for key, arg in kwargs.items()
-        }
+        params = {}
+        for key, arg in kwargs.items():
+            if isinstance(arg, dict):
+                if data.name in arg:
+                    params[key] = arg[data.name]
+            else:
+                params[key] = arg
+            if params[key] is None:
+                params[key] = get_line_param(key, number)
+        return params
+
+        # return {
+        #     key: get_line_param(key, number) if arg is None else arg
+        #     for key, arg in kwargs.items()
+        # }
 
     def _make_line(self, data, errorbars, params):
         self.label = data["name"]

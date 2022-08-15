@@ -1,15 +1,35 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from typing import Union, Dict
-from .model import input_node
-from .figure import Figure
-from ... import Variable, DataArray, Dataset, arange
-from ...typing import VariableLike
-import numpy as np
+
+def _parse_line_args(**kwargs):
+    line_args = {}
+    if 'color' in kwargs:
+        line_args['color'] = kwargs['color']
+    if 'linewidth' in kwargs:
+        line_args['linewidth'] = kwargs['linewidth']
+    if 'linestyle' in kwargs:
+        line_args['linestyle'] = kwargs['linestyle']
+    if 'marker' in kwargs:
+        line_args['marker'] = kwargs['marker']
+    return line_args
 
 
-def _to_data_array(obj):
+def _parse_mesh_args(**kwargs):
+    mesh_args = {}
+    if 'aspect' in kwargs:
+        mesh_args['aspect'] = kwargs['aspect']
+    if 'cmap' in kwargs:
+        mesh_args['cmap'] = kwargs['cmap']
+    if 'cbar' in kwargs:
+        mesh_args['cbar'] = kwargs['cbar']
+    return mesh_args
+
+
+def parse_args(**kwargs):
+
+    return {'line': _parse_line_args(**kwargs), 'mesh': _parse_mesh_args(**kwargs)}
+
     out = obj
     if isinstance(out, np.ndarray):
         dims = [f"axis-{i}" for i in range(len(out.shape))]

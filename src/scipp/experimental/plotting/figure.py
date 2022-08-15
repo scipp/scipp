@@ -28,18 +28,20 @@ class SideBar:
 
 class Figure(View):
 
-    def __init__(self,
-                 *nodes,
-                 ax: Any = None,
-                 figsize: Tuple[float, ...] = None,
-                 title: str = "",
-                 xlabel: str = None,
-                 ylabel: str = None,
-                 grid: bool = False,
-                 bounding_box: Tuple[float, ...] = None,
-                 vmin=None,
-                 vmax=None,
-                 **kwargs):
+    def __init__(
+            self,
+            *nodes,
+            ax: Any = None,
+            figsize: Tuple[float, ...] = None,
+            title: str = "",
+            # xlabel: str = None,
+            # ylabel: str = None,
+            grid: bool = False,
+            bounding_box: Tuple[float, ...] = None,
+            vmin=None,
+            vmax=None,
+            norm='linear',
+            **kwargs):
 
         super().__init__(*nodes)
 
@@ -48,10 +50,11 @@ class Figure(View):
         self._title = title
         self._ax = ax
         self._bounding_box = bounding_box
-        self._xlabel = xlabel
-        self._ylabel = ylabel
+        # self._xlabel = xlabel
+        # self._ylabel = ylabel
         self._user_vmin = vmin
         self._user_vmax = vmax
+        self._norm = norm
         self._kwargs = kwargs
         self._dims = {}
 
@@ -175,8 +178,8 @@ class Figure(View):
         """
         """
         if self._new_artist:
-            self._ax.set_xlabel(self._xlabel)
-            self._ax.set_ylabel(self._ylabel)
+            # self._ax.set_xlabel(self._xlabel)
+            # self._ax.set_ylabel(self._ylabel)
             if self._legend > 0:
                 self._ax.legend()
             self._new_artist = False
@@ -247,21 +250,24 @@ class Figure(View):
                 self._children[key] = line
                 self._legend += bool(line.label)
                 self._dims["x"] = new_values.dim
-                if self._ylabel is None:
-                    self._ylabel = name_with_unit(var=new_values.data, name="")
+                # if self._ylabel is None:
+                self._ax.set_ylabel(name_with_unit(var=new_values.data, name=""))
+                self._ax.set_yscale(self._norm)
 
             elif new_values.ndim == 2:
                 self._children[key] = Mesh(ax=self._ax,
                                            data=new_values,
                                            vmin=self._user_vmin,
                                            vmax=self._user_vmax,
+                                           norm=self._norm,
                                            **self._kwargs)
                 self._dims.update({"x": new_values.dims[1], "y": new_values.dims[0]})
+                self._ax.set_ylabel(
+                    name_with_unit(var=new_values.meta[self._dims["y"]]))
 
-            if self._xlabel is None:
-                self._xlabel = name_with_unit(var=new_values.meta[self._dims["x"]])
-            if self._ylabel is None and ("y" in self._dims):
-                self._ylabel = name_with_unit(var=new_values.meta[self._dims["y"]])
+            self._ax.set_xlabel(name_with_unit(var=new_values.meta[self._dims["x"]]))
+            # if self._ylabel is None and ("y" in self._dims):
+            #     self._ylabel = name_with_unit(var=new_values.meta[self._dims["y"]])
 
         else:
             self._children[key].update(new_values=new_values)
