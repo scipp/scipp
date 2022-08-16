@@ -100,32 +100,6 @@ Data copy_impl(const Slices &slices, const Data &data, const Dim slice_dim,
     return copy_ranges_from_buffer(indices, slice_dim, data)
         .template bin_buffer<Data>();
   }
-
-  /*
-  scipp::index size = 0;
-  for (const auto &slice : slices)
-    size += slice.end() - slice.begin();
-  auto out = dataset::copy(data.slice({slice_dim, 0, size}), attrPolicy);
-  scipp::index current = 0;
-  auto out_slices = slices;
-  for (auto &slice : out_slices) {
-    const auto thickness = slice.end() - slice.begin();
-    slice = Slice(slice.dim(), current, current + thickness);
-    current += thickness;
-  }
-  const auto copy_slice = [&](const auto &range) {
-    for (scipp::index i = range.begin(); i != range.end(); ++i) {
-      const auto &slice = slices[i];
-      const auto &out_slice = out_slices[i];
-      scipp::dataset::copy(
-          strip_if_broadcast_along(data.slice(slice), slice_dim),
-          out.slice(out_slice), attrPolicy);
-    }
-  };
-  core::parallel::parallel_for(core::parallel::blocked_range(0, slices.size()),
-                               copy_slice);
-  return out;
-  */
 }
 
 } // namespace
