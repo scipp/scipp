@@ -49,6 +49,20 @@ auto copy_ranges_from_buffer(const Variable &indices, const Dim dim,
   return out_bins;
 }
 
+Variable copy_ranges_from_bins_buffer(const Variable &indices,
+                                      const Variable &data) {
+  if (data.dtype() == dtype<bucket<Variable>>) {
+    const auto &[i, dim, buf] = data.constituents<Variable>();
+    return copy_ranges_from_buffer(indices, dim, buf);
+  } else if (data.dtype() == dtype<bucket<DataArray>>) {
+    const auto &[i, dim, buf] = data.constituents<DataArray>();
+    return copy_ranges_from_buffer(indices, dim, buf);
+  } else {
+    const auto &[i, dim, buf] = data.constituents<Dataset>();
+    return copy_ranges_from_buffer(indices, dim, buf);
+  }
+}
+
 template <class Slices, class Data>
 Data copy_impl(const Slices &slices, const Data &data, const Dim slice_dim,
                const AttrPolicy attrPolicy = AttrPolicy::Keep) {
@@ -68,16 +82,12 @@ Data copy_impl(const Slices &slices, const Data &data, const Dim slice_dim,
     // indices into the underlying buffer to be copied. This then replaces the
     // data to obtain the final result.
     if constexpr (std::is_same_v<Data, DataArray>) {
-      const auto &[i, dim, buf] =
-          data.data().template constituents<DataArray>();
-      out.setData(copy_ranges_from_buffer(out.data(), dim, buf));
+      out.setData(copy_ranges_from_bins_buffer(out.data(), data.data()));
     } else {
-      for (const auto &item : dense)
+      for (const auto &item : data)
         if (is_bins(item)) {
-          const auto &[i, dim, buf] =
-              item.data().template constituents<DataArray>();
-          out.setData(item.name(),
-                      copy_ranges_from_buffer(item.data(), dim, buf));
+          out.setData(item.name(), copy_ranges_from_bins_buffer(
+                                       out[item.name()].data(), item.data()));
         }
     }
     return out;
