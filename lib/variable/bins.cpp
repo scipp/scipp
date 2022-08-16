@@ -24,8 +24,9 @@ void copy_data(const Variable &src, Variable &dst) {
   assert(src.dtype() == dtype<bucket<Variable>>);
   assert(dst.dtype() == dtype<bucket<Variable>>);
   transform_in_place<double, float, int64_t, int32_t, bool, std::string,
-                     core::time_point, Eigen::Vector3d, Eigen::Matrix3d,
-                     Eigen::Affine3d, core::Translation, core::Quaternion>(
+                     core::time_point, scipp::index_pair, Eigen::Vector3d,
+                     Eigen::Matrix3d, Eigen::Affine3d, core::Translation,
+                     core::Quaternion>(
       dst, src, [](auto &a, const auto &b) { a = b; }, "copy");
 }
 

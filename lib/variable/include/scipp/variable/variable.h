@@ -207,8 +207,8 @@ Variable Variable::construct(const DType &type, Args &&...args) {
 template <class... Ts>
 Variable::Variable(const DType &type, Ts &&...args)
     : Variable{construct<double, float, int64_t, int32_t, bool, std::string,
-                         scipp::core::time_point>(type,
-                                                  std::forward<Ts>(args)...)} {}
+                         scipp::core::time_point, scipp::index_pair>(
+          type, std::forward<Ts>(args)...)} {}
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable copy(const Variable &var);
 [[maybe_unused]] SCIPP_VARIABLE_EXPORT Variable &copy(const Variable &var,
