@@ -5,6 +5,7 @@
 #pragma once
 
 #include "scipp/dataset/dataset.h"
+#include <sstream>
 
 /// Helper to provide equivalent of the `items()` method of a Python dict.
 template <class T> class items_view {
@@ -49,6 +50,12 @@ public:
   auto size() const noexcept { return m_obj->size(); }
   auto begin() const { return m_obj->keys_begin(); }
   auto end() const { return m_obj->keys_end(); }
+  auto tostring() const noexcept {
+    std::ostringstream oss;
+    for (auto it = this->begin(); it != this->end(); ++it)
+      oss << *it.name << ',';
+    return oss.str();
+  }
 
 private:
   T *m_obj;
@@ -69,6 +76,13 @@ public:
   }
   auto end() const {
     return boost::make_transform_iterator(m_obj->keys_end(), dim_to_str);
+  }
+  auto tostring() const noexcept {
+    std::ostringstream oss;
+    oss << "keys: [";
+    for (auto it = this->begin(); it != this->end(); ++it)
+      oss << *it << ',';
+    return oss.str();
   }
 
 private:

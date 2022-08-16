@@ -55,3 +55,8 @@ def to_html(container: VariableLike):
     """
     from IPython.display import display, HTML
     display(HTML(make_html(container)))
+
+
+def coords_to_html(coords):
+    from .formatting_html import coords_repr
+    return coords_repr(coords)

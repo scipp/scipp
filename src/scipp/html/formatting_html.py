@@ -454,6 +454,13 @@ def _obj_repr(header_components, sections):
             "</div>")
 
 
+def _mapping_size(mapping):
+    size = mapping.__sizeof__()
+    for var in mapping.values():
+        size += var.__sizeof__()
+    return f"({human_readable_size(size)})"
+
+
 def _format_size(obj):
     view_size = obj.__sizeof__()
     underlying_size = obj.underlying_size()
@@ -495,6 +502,32 @@ def variable_repr(var):
 
     sections = [variable_section(var)]
 
+    return _obj_repr(header_components, sections)
+
+
+def coords_repr(mapping):
+    obj_type = "scipp.{}".format(type(mapping).__name__)
+
+    header_components = [
+        f"<div class='sc-obj-type'>{escape(obj_type)} {_mapping_size(mapping)}</div>"
+    ]
+
+    # sections = [dim_section(ds)]
+
+    # if len(ds.coords) > 0:
+    #     sections.append(coord_section(mapping))
+
+    # sections.append(data_section(ds if isinstance(ds, sc.Dataset) else {'': ds}))
+
+    # if not isinstance(ds, sc.Dataset):
+    #     if len(ds.masks) > 0:
+    #         sections.append(mask_section(ds.masks, ds))
+    #     if len(ds.attrs) > 0:
+    #         sections.append(attr_section(ds.attrs, ds))
+
+    sections = [variable_section(var) for var in mapping.values()]
+
+    # return _obj_repr(header_components, [coord_section(mapping)])
     return _obj_repr(header_components, sections)
 
 

@@ -28,6 +28,22 @@ void bind_helper_view(py::module &m, const std::string &name) {
   py::class_<View<T>>(m, (name + suffix).c_str())
       .def(py::init([](T &obj) { return View{obj}; }))
       .def("__len__", &View<T>::size)
+      // .def("__repr__", [](const View<T> &self) { return "SOME VIEW"; })
+      .def(
+          "__iter__",
+          [](const View<T> &self) {
+            return py::make_iterator(self.begin(), self.end(),
+                                     py::return_value_policy::move);
+          },
+          py::return_value_policy::move, py::keep_alive<0, 1>());
+}
+
+template <template <class> class View, class T>
+void bind_keys_view(py::module &m, const std::string &name) {
+  py::class_<View<T>>(m, (name + "_keys_view").c_str())
+      .def(py::init([](T &obj) { return View{obj}; }))
+      .def("__len__", &View<T>::size)
+      .def("__repr__", [](const View<T> &self) { return self.tostring(); })
       .def(
           "__iter__",
           [](const View<T> &self) {

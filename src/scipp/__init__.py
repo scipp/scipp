@@ -36,7 +36,7 @@ from ._scipp.core import as_const, choose
 # Import python functions
 from .show import show, make_svg
 
-from .html import to_html, make_html, table
+from .html import to_html, make_html, coords_to_html, table
 
 setattr(Variable, '_repr_html_', make_html)
 setattr(DataArray, '_repr_html_', make_html)
@@ -85,6 +85,8 @@ from .reduction import reduce
 
 # Mainly imported for docs
 from .core import Bins, Coords, GroupByDataset, GroupByDataArray, Masks
+
+setattr(Coords, '_repr_html_', coords_to_html)
 
 from . import _binding
 
