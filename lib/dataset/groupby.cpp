@@ -34,9 +34,9 @@ namespace scipp::dataset {
 namespace {
 
 template <class Buffer>
-auto copy_ranges_from_buffer(const Variable &indices, const Dim dim,
-                             const Buffer &buffer) {
-  return copy(make_bins_no_validate(indices, dim, buffer);
+Variable copy_ranges_from_buffer(const Variable &indices, const Dim dim,
+                                 const Buffer &buffer) {
+  return copy(make_bins_no_validate(indices, dim, buffer));
 }
 
 Variable copy_ranges_from_bins_buffer(const Variable &indices,
