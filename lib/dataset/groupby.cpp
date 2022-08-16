@@ -36,17 +36,7 @@ namespace {
 template <class Buffer>
 auto copy_ranges_from_buffer(const Variable &indices, const Dim dim,
                              const Buffer &buffer) {
-  const auto in_bins = make_bins_no_validate(indices, dim, buffer);
-  const auto &[begin, end] = unzip(indices);
-  const auto sizes = end - begin;
-  const auto out_end = cumsum(sizes);
-  const auto out_begin = out_end - sizes;
-  const auto out_indices = zip(out_begin, out_end);
-  auto out = resize_default_init(buffer, dim,
-                                 sum(sizes).template value<scipp::index>());
-  auto out_bins = make_bins_no_validate(out_indices, dim, out);
-  copy(in_bins, out_bins);
-  return out_bins;
+  return copy(make_bins_no_validate(indices, dim, buffer);
 }
 
 Variable copy_ranges_from_bins_buffer(const Variable &indices,
