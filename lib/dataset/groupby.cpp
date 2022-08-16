@@ -12,6 +12,7 @@
 #include "scipp/core/tag_util.h"
 
 #include "scipp/variable/accumulate.h"
+#include "scipp/variable/cumulative.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
@@ -35,6 +36,25 @@ namespace {
 template <class Slices, class Data>
 auto copy_impl(const Slices &slices, const Data &data, const Dim slice_dim,
                const AttrPolicy attrPolicy = AttrPolicy::Keep) {
+  auto indices = makeVariable<scipp::index_pair>(Dims{slice_dim},
+                                                 Shape{scipp::size(slices)});
+  auto indices_values = indices.values<scipp::index_pair>();
+  for (scipp::index i = 0; i < scipp::size(slices); ++i)
+    indices_values[i] = {slices[i].begin(), slices[i].end()};
+  const auto in_bins = make_bins_no_validate(indices, slice_dim, data);
+  const auto &[begin, end] = unzip(indices);
+  const auto sizes = end - begin;
+  const auto out_end = cumsum(sizes);
+  const auto out_begin = out_end - sizes;
+  const auto out_indices = zip(out_begin, out_end);
+  auto out =
+      resize_default_init(data, slice_dim, sum(sizes).value<scipp::index>());
+
+  auto out_bins = make_bins_no_validate(out_indices, slice_dim, out);
+  copy(in_bins, out_bins);
+  return out;
+
+  /*
   scipp::index size = 0;
   for (const auto &slice : slices)
     size += slice.end() - slice.begin();
@@ -58,6 +78,7 @@ auto copy_impl(const Slices &slices, const Data &data, const Dim slice_dim,
   core::parallel::parallel_for(core::parallel::blocked_range(0, slices.size()),
                                copy_slice);
   return out;
+  */
 }
 
 } // namespace
