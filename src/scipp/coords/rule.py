@@ -41,7 +41,7 @@ class Rule(ABC):
         self.out_names = out_names
 
     @abstractmethod
-    def __call__(self, coords: _CoordProvider) -> Dict[str, Variable]:
+    def __call__(self, coords: _CoordProvider) -> Dict[str, Coord]:
         """Evaluate the rule."""
 
     @property
