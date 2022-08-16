@@ -299,12 +299,14 @@ template <class T> struct NanSensitiveLess {
   }
 };
 
-template <class T> bool nan_sensitive_equal(const T &a, const T &b) {
-  if constexpr (std::is_floating_point_v<T>)
-    return a == b || (std::isnan(a) && std::isnan(b));
-  else
-    return a == b;
-}
+template <class T> struct nan_sensitive_equal {
+  bool operator()(const T &a, const T &b) const {
+    if constexpr (std::is_floating_point_v<T>)
+      return a == b || (std::isnan(a) && std::isnan(b));
+    else
+      return a == b;
+  }
+};
 } // namespace
 
 template <class T> struct MakeGroups {
@@ -313,7 +315,9 @@ template <class T> struct MakeGroups {
     const auto &values = key.values<T>();
 
     const auto dim = key.dim();
-    std::map<T, GroupByGrouping::group, NanSensitiveLess<T>> indices;
+    std::unordered_map<T, GroupByGrouping::group, std::hash<T>,
+                       nan_sensitive_equal<T>>
+        indices;
     const auto end = values.end();
     scipp::index i = 0;
     for (auto it = values.begin(); it != end;) {
@@ -321,20 +325,22 @@ template <class T> struct MakeGroups {
       // handling in follow-up "apply" steps.
       const auto begin = i;
       const auto &group_value = *it;
-      while (it != end && nan_sensitive_equal(*it, group_value)) {
+      while (it != end && nan_sensitive_equal<T>()(*it, group_value)) {
         ++it;
         ++i;
       }
       indices[group_value].emplace_back(dim, begin, i);
     }
 
-    const Dimensions dims{targetDim, scipp::size(indices)};
     std::vector<T> keys;
+    for (auto &item : indices)
+      keys.emplace_back(item.first);
+    std::sort(keys.begin(), keys.end(), NanSensitiveLess<T>());
     std::vector<GroupByGrouping::group> groups;
-    for (auto &item : indices) {
-      keys.emplace_back(std::move(item.first));
-      groups.emplace_back(std::move(item.second));
-    }
+    for (const auto &k : keys)
+      groups.emplace_back(std::move(indices.at(k)));
+
+    const Dimensions dims{targetDim, scipp::size(indices)};
     auto keys_ = makeVariable<T>(Dimensions{dims}, Values(std::move(keys)));
     keys_.setUnit(key.unit());
     return {dim, std::move(keys_), std::move(groups)};
