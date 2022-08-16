@@ -56,40 +56,38 @@ Variable copy_ranges_from_bins_buffer(const Variable &indices,
 template <class Slices, class Data>
 Data copy_impl(const Slices &slices, const Data &data, const Dim slice_dim,
                const AttrPolicy attrPolicy = AttrPolicy::Keep) {
-  if (is_bins(data)) {
-    // 1. Operate on equivalent array of indices (including all meta data) to
-    // obtain output data of correct shape with proper meta data.
-    auto dense = Data(data);
-    if constexpr (std::is_same_v<Data, DataArray>) {
+  auto indices = makeVariable<scipp::index_pair>(Dims{slice_dim},
+                                                 Shape{scipp::size(slices)});
+  auto indices_values = indices.values<scipp::index_pair>();
+  for (scipp::index i = 0; i < scipp::size(slices); ++i)
+    indices_values[i] = {slices[i].begin(), slices[i].end()};
+  // 1. Operate on equivalent array of indices (including all meta data) to
+  // obtain output data of correct shape with proper meta data.
+  auto dense = Data(data);
+  if constexpr (std::is_same_v<Data, DataArray>) {
+    if (is_bins(data))
       dense.setData(dense.data().bin_indices());
-    } else {
-      for (const auto &item : dense)
-        if (is_bins(item))
-          dense.setData(item.name(), item.data().bin_indices());
-    }
-    auto out = copy_impl(slices, dense, slice_dim, attrPolicy);
-    // 2. The data of the DataArray or Dataset obtained in step 1. give the
-    // indices into the underlying buffer to be copied. This then replaces the
-    // data to obtain the final result.
-    if constexpr (std::is_same_v<Data, DataArray>) {
-      out.setData(copy_ranges_from_bins_buffer(out.data(), data.data()));
-    } else {
-      for (const auto &item : data)
-        if (is_bins(item)) {
-          out.setData(item.name(), copy_ranges_from_bins_buffer(
-                                       out[item.name()].data(), item.data()));
-        }
-    }
-    return out;
   } else {
-    auto indices = makeVariable<scipp::index_pair>(Dims{slice_dim},
-                                                   Shape{scipp::size(slices)});
-    auto indices_values = indices.values<scipp::index_pair>();
-    for (scipp::index i = 0; i < scipp::size(slices); ++i)
-      indices_values[i] = {slices[i].begin(), slices[i].end()};
-    return copy_ranges_from_buffer(indices, slice_dim, data)
-        .template bin_buffer<Data>();
+    for (const auto &item : dense)
+      if (is_bins(item))
+        dense.setData(item.name(), item.data().bin_indices());
   }
+  auto out = copy_ranges_from_buffer(indices, slice_dim, dense)
+                 .template bin_buffer<Data>();
+  // 2. The data of the DataArray or Dataset obtained in step 1. give the
+  // indices into the underlying buffer to be copied. This then replaces the
+  // data to obtain the final result.
+  if constexpr (std::is_same_v<Data, DataArray>) {
+    if (is_bins(data))
+      out.setData(copy_ranges_from_bins_buffer(out.data(), data.data()));
+  } else {
+    for (const auto &item : data)
+      if (is_bins(item)) {
+        out.setData(item.name(), copy_ranges_from_bins_buffer(
+                                     out[item.name()].data(), item.data()));
+      }
+  }
+  return out;
 }
 
 } // namespace
