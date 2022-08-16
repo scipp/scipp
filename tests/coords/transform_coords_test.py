@@ -650,42 +650,46 @@ def test_dataset_coord_and_attr_clash_matching_value(a):
 
 def test_dataset_coord_and_attr_clash_mismatching_value(a):
     da1 = sc.DataArray(data=a.copy(), coords={'a': a.copy()})
-    da2 = sc.DataArray(data=a.copy(), attrs={'a': a+1})
+    da2 = sc.DataArray(data=a.copy(), attrs={'a': a + 1})
     ds = sc.Dataset({'item1': da1, 'item2': da2})
     with pytest.raises(sc.DataArrayError):
         ds.transform_coords('b', graph={'b': 'a'})
 
 
 def test_dataset_missing_attr_in_one_item_without_rule_to_make_it(a):
-    da1 = sc.DataArray(data=a.copy(), coords={'a': a.copy()}, attrs={'aa': a+1})
+    da1 = sc.DataArray(data=a.copy(), coords={'a': a.copy()}, attrs={'aa': a + 1})
     da2 = sc.DataArray(data=a.copy(), coords={'a': a.copy()})
     ds = sc.Dataset({'item1': da1, 'item2': da2})
     with pytest.raises(KeyError):
-        ds.transform_coords('b', graph={'b': lambda a, aa: a+aa})
+        ds.transform_coords('b', graph={'b': lambda a, aa: a + aa})
 
 
 def test_dataset_missing_attr_in_one_item_with_rule_to_make_it(a):
-    da1 = sc.DataArray(data=a.copy(), coords={'a': a.copy()}, attrs={'aa': a+1})
+    da1 = sc.DataArray(data=a.copy(), coords={'a': a.copy()}, attrs={'aa': a + 1})
     da2 = sc.DataArray(data=a.copy(), coords={'a': a.copy()})
     ds = sc.Dataset({'item1': da1, 'item2': da2})
     with pytest.raises(sc.DatasetError):
-        ds.transform_coords('b', graph={'b': lambda a, aa: a+aa, 'aa': lambda a: a+2})
+        ds.transform_coords('b',
+                            graph={
+                                'b': lambda a, aa: a + aa,
+                                'aa': lambda a: a + 2
+                            })
 
 
 def test_dataset_missing_coord_in_one_item_without_rule_to_make_it(a, b):
-    da1 = sc.DataArray(data=a+b, coords={'a': a.copy(), 'b': b.copy()})
+    da1 = sc.DataArray(data=a + b, coords={'a': a.copy(), 'b': b.copy()})
     da2 = sc.DataArray(data=a.copy(), coords={'a': a.copy()})
     ds = sc.Dataset({'item1': da1, 'item2': da2})
     with pytest.raises(KeyError):
-        ds.transform_coords('c', graph={'c': lambda a, b: a+b})
+        ds.transform_coords('c', graph={'c': lambda a, b: a + b})
 
 
 def test_dataset_missing_coord_in_one_item_with_rule_to_make_it(a, b):
-    da1 = sc.DataArray(data=a+b, coords={'a': a.copy(), 'b': b.copy()})
+    da1 = sc.DataArray(data=a + b, coords={'a': a.copy(), 'b': b.copy()})
     da2 = sc.DataArray(data=a.copy(), coords={'a': a.copy()})
     ds = sc.Dataset({'item1': da1, 'item2': da2})
     with pytest.raises(sc.DatasetError):
-        ds.transform_coords('c', graph={'c': lambda a, b: a+b, 'b': 'a'})
+        ds.transform_coords('c', graph={'c': lambda a, b: a + b, 'b': 'a'})
 
 
 def test_dataset_without_data(a):

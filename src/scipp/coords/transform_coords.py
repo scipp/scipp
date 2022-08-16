@@ -214,11 +214,15 @@ def _transform_dataset(original: Dataset, targets: Set[str], graph: Graph, *,
 
     # Cannot keep attributes in output anyway.
     # So make sure they are removed as early as possible.
-    options = dataclasses.replace(options, keep_inputs=False,
-                                  keep_aliases=False, keep_intermediate=False)
+    options = dataclasses.replace(options,
+                                  keep_inputs=False,
+                                  keep_aliases=False,
+                                  keep_intermediate=False)
     dummy = DataArray(empty(sizes=original.sizes), coords=original.coords)
-    transformed = _transform_data_array(dummy, targets=targets,
-                                        graph=graph, options=options)
+    transformed = _transform_data_array(dummy,
+                                        targets=targets,
+                                        graph=graph,
+                                        options=options)
     return Dataset(coords=transformed.coords)
 
 
