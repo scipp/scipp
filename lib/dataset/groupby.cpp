@@ -61,7 +61,7 @@ Data copy_impl(const Slices &slices, const Data &data, const Dim slice_dim,
   auto indices_values = indices.values<scipp::index_pair>();
   for (scipp::index i = 0; i < scipp::size(slices); ++i)
     indices_values[i] = {slices[i].begin(), slices[i].end()};
-  // 1. Operate on equivalent array of indices (including all meta data) to
+  // 1. Operate on dense data, or equivalent array of indices (if binned) to
   // obtain output data of correct shape with proper meta data.
   auto dense = Data(data);
   if constexpr (std::is_same_v<Data, DataArray>) {
@@ -74,9 +74,10 @@ Data copy_impl(const Slices &slices, const Data &data, const Dim slice_dim,
   }
   auto out = copy_ranges_from_buffer(indices, slice_dim, dense)
                  .template bin_buffer<Data>();
-  // 2. The data of the DataArray or Dataset obtained in step 1. give the
-  // indices into the underlying buffer to be copied. This then replaces the
-  // data to obtain the final result.
+  // 2. If we have binned data then the data of the DataArray or Dataset
+  // obtained in step 1. give the indices into the underlying buffer to be
+  // copied. This then replaces the data to obtain the final result. Does
+  // nothing if dense data.
   if constexpr (std::is_same_v<Data, DataArray>) {
     if (is_bins(data))
       out.setData(copy_ranges_from_bins_buffer(out.data(), data.data()));
