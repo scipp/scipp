@@ -216,11 +216,20 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name,
           "items", [](T &self) { return str_items_view(self); },
           py::return_value_policy::move, py::keep_alive<0, 1>(),
           R"(view on self's items)")
-      .def("_ipython_key_completions_", [](const T &self) {
+      .def("_ipython_key_completions_",
+           [](const T &self) {
+             py::list out;
+             const auto end = self.keys_end();
+             for (auto it = self.keys_begin(); it != end; ++it) {
+               out.append(it->name());
+             }
+             return out;
+           })
+      .def("__repr__", [](const T &self) {
         py::list out;
-        const auto end = self.keys_end();
-        for (auto it = self.keys_begin(); it != end; ++it) {
-          out.append(it->name());
+        const auto end = self.items_end();
+        for (auto it = self.items_begin(); it != end; ++it) {
+          out.append(it->first.name() + " " + to_string(it->second));
         }
         return out;
       });

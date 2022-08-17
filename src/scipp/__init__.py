@@ -86,7 +86,7 @@ from .reduction import reduce
 # Mainly imported for docs
 from .core import Bins, Coords, GroupByDataset, GroupByDataArray, Masks
 
-setattr(Coords, '_repr_html_', coords_to_html)
+# setattr(Coords, '_repr_html_', coords_to_html)
 
 from . import _binding
 
