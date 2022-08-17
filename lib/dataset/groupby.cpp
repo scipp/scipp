@@ -33,6 +33,24 @@ namespace scipp::dataset {
 
 namespace {
 
+/// Transform data of data array or dataset, coord, masks, and and attrs are
+/// shallow-copied.
+///
+/// Beware of the mask-copy behavior, which is not suitable for data returned to
+/// the user.
+template <class T, class Func, class... Ts>
+T transform_data(const T &obj, Func func, const Ts &...other) {
+  T out(obj);
+  if constexpr (std::is_same_v<T, DataArray>) {
+    out.setData(func(obj.data(), other.data()...));
+  } else {
+    for (const auto &item : obj)
+      out.setData(item.name(), func(item.data(), other[item.name()].data()...),
+                  AttrPolicy::Keep);
+  }
+  return out;
+}
+
 template <class Buffer>
 Variable copy_ranges_from_buffer(const Variable &indices, const Dim dim,
                                  const Buffer &buffer) {
@@ -53,6 +71,16 @@ Variable copy_ranges_from_bins_buffer(const Variable &indices,
   }
 }
 
+Variable dense_or_bin_indices(const Variable &var) {
+  return is_bins(var) ? var.bin_indices() : var;
+}
+
+Variable dense_or_copy_bin_elements(const Variable &dense_or_indices,
+                                    const Variable &data) {
+  return is_bins(data) ? copy_ranges_from_bins_buffer(dense_or_indices, data)
+                       : dense_or_indices;
+}
+
 template <class Slices, class Data>
 Data copy_impl(const Slices &slices, const Data &data, const Dim slice_dim,
                const AttrPolicy attrPolicy = AttrPolicy::Keep) {
@@ -63,32 +91,14 @@ Data copy_impl(const Slices &slices, const Data &data, const Dim slice_dim,
     indices_values[i] = {slices[i].begin(), slices[i].end()};
   // 1. Operate on dense data, or equivalent array of indices (if binned) to
   // obtain output data of correct shape with proper meta data.
-  auto dense = Data(data);
-  if constexpr (std::is_same_v<Data, DataArray>) {
-    if (is_bins(data))
-      dense.setData(dense.data().bin_indices());
-  } else {
-    for (const auto &item : dense)
-      if (is_bins(item))
-        dense.setData(item.name(), item.data().bin_indices());
-  }
+  auto dense = transform_data(data, dense_or_bin_indices);
   auto out = copy_ranges_from_buffer(indices, slice_dim, dense)
                  .template bin_buffer<Data>();
   // 2. If we have binned data then the data of the DataArray or Dataset
   // obtained in step 1. give the indices into the underlying buffer to be
   // copied. This then replaces the data to obtain the final result. Does
   // nothing if dense data.
-  if constexpr (std::is_same_v<Data, DataArray>) {
-    if (is_bins(data))
-      out.setData(copy_ranges_from_bins_buffer(out.data(), data.data()));
-  } else {
-    for (const auto &item : data)
-      if (is_bins(item)) {
-        out.setData(item.name(), copy_ranges_from_bins_buffer(
-                                     out[item.name()].data(), item.data()));
-      }
-  }
-  return out;
+  return transform_data(out, dense_or_copy_bin_elements, data);
 }
 
 } // namespace
