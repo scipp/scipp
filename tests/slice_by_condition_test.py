@@ -41,16 +41,25 @@ def make_dataset() -> sc.Dataset:
     return ds
 
 
+def make_binned_dataset() -> sc.Dataset:
+    ds = sc.Dataset()
+    ds['xy'] = make_array().data
+    ds['binned'] = make_binned_array()
+    ds['binned-variable'] = make_binned_array_variable_buffer()
+    return ds
+
+
 @pytest.fixture(params=[
     make_var(),
     make_array(),
     make_dataset(),
     make_binned_array(),
-    make_binned_array_variable_buffer()
+    make_binned_array_variable_buffer(),
+    make_binned_dataset()
 ],
                 ids=[
                     'Variable', 'DataArray', 'Dataset', 'binned-DataArray',
-                    'binned-DataArray-buffer-Variable'
+                    'binned-DataArray-buffer-Variable', 'binned-dataset'
                 ])
 def sliceable(request):
     return request.param
