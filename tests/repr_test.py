@@ -11,31 +11,33 @@ import pytest
 def test_dat_array_mapping_repr(mapping):
     da = sc.data.table_xyz(10)
     da.attrs['a'] = da.coords['x']
-    da.masks['m'] = da.coords['x'] > sc.scalar(0.5, 'm')
+    da.masks['m'] = da.coords['x'] > sc.scalar(0.5, unit='m')
     repr(getattr(da, mapping))
     repr(getattr(da, mapping).keys())
     repr(getattr(da, mapping).values())
     repr(getattr(da, mapping).items())
 
+
 @pytest.mark.parametrize("mapping", ["coords", "attrs", "meta", "masks"])
-def test_data_array_empty mapping_repr(mapping):
+def test_data_array_empty_mapping_repr(mapping):
     da = sc.DataArray(data=sc.arange('x', 10))
     repr(getattr(da, mapping))
     repr(getattr(da, mapping).keys())
     repr(getattr(da, mapping).values())
     repr(getattr(da, mapping).items())
 
-def test_dataset mapping_repr(mapping):
-    ds = sc.Dataset({'a': sc.data.table_xyz(10),
-                 'b': sc.data.table_xyz(10).data})
-    repr(getattr(ds.coords))
-    repr(getattr(ds.coords.keys()))
-    repr(getattr(ds.coords.values()))
-    repr(getattr(ds.coords.items()))
 
-def test_dataset empty_mapping_repr(mapping):
+def test_dataset_mapping_repr():
+    ds = sc.Dataset({'a': sc.data.table_xyz(10), 'b': sc.data.table_xyz(10).data})
+    repr(ds.coords)
+    repr(ds.coords.keys())
+    repr(ds.coords.values())
+    repr(ds.coords.items())
+
+
+def test_dataset_empty_mapping_repr():
     ds = sc.Dataset()
-    repr(getattr(ds.coords)
-    repr(getattr(ds.coords.keys())
-    repr(getattr(ds.coords.values())
-    repr(getattr(ds.coords.items())
+    repr(ds.coords)
+    repr(ds.coords.keys())
+    repr(ds.coords.values())
+    repr(ds.coords.items())
