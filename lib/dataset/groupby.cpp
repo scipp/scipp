@@ -353,10 +353,13 @@ template <class T> struct MakeGroups {
     }
 
     std::vector<T> keys;
+    std::vector<GroupByGrouping::group> groups;
+    keys.reserve(scipp::size(indices));
+    groups.reserve(scipp::size(indices));
     for (auto &item : indices)
       keys.emplace_back(item.first);
-    std::sort(keys.begin(), keys.end(), NanSensitiveLess<T>());
-    std::vector<GroupByGrouping::group> groups;
+    core::parallel::parallel_sort(keys.begin(), keys.end(),
+                                  NanSensitiveLess<T>());
     for (const auto &k : keys)
       groups.emplace_back(std::move(indices.at(k)));
 
