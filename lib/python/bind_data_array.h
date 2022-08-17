@@ -226,10 +226,10 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name,
              return out;
            })
       .def("__repr__", [](const T &self) {
-        py::list out;
+        std::string out;
         const auto end = self.items_end();
         for (auto it = self.items_begin(); it != end; ++it) {
-          out.append(it->first.name() + " " + to_string(it->second));
+          out += it->first.name() + " " + to_string(it->second) + "\n";
         }
         return out;
       });
