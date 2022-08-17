@@ -772,7 +772,7 @@ def arange(dim: str,
 
     Datetimes are also supported:
 
-      >>> sc.arange('t', '2000-01-01T01:00:00', '2000-01-01T01:01:30', 30, dtype='datetime64')
+      >>> sc.arange('t', '2000-01-01T01:00:00', '2000-01-01T01:01:30', 30 * sc.Unit('s'), dtype='datetime64')
       <scipp.Variable> (t: 3)  datetime64              [s]  [2000-01-01T01:00:00, 2000-01-01T01:00:30, 2000-01-01T01:01:00]
     """
     if dtype == 'datetime64' and isinstance(start, str):
