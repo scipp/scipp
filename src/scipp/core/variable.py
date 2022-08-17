@@ -775,13 +775,13 @@ def arange(dim: str,
       >>> sc.arange('t', '2000-01-01T01:00:00', '2000-01-01T01:01:30', 30, dtype='datetime64')
       <scipp.Variable> (t: 3)  datetime64              [s]  [2000-01-01T01:00:00, 2000-01-01T01:00:30, 2000-01-01T01:01:00]
     """
+    if dtype == 'datetime64' and isinstance(start, str):
+        start = datetime(start)
+        stop = stop if stop is None else datetime(stop)
     range_args, unit = _normalize_range_args(unit=unit,
                                              start=start,
                                              stop=stop,
                                              step=step)
-    if dtype == 'datetime64' and isinstance(range_args['start'], str):
-        range_args['start'] = _np.datetime64(range_args['start'])
-        range_args['stop'] = _np.datetime64(range_args['stop'])
     return array(dims=[dim], values=_np.arange(**range_args), unit=unit, dtype=dtype)
 
 
