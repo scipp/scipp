@@ -58,6 +58,7 @@ Bugfixes
 * Data arrays with missing coords can now be plotted using the experimental plotting `#2748 <https://github.com/scipp/scipp/pull/2748>`_.
 * Fix a bug in the argument detection when using setitem in combination with value-based slicing `#2750 <https://github.com/scipp/scipp/pull/2750>`_.
 * Fixed broken profile plot on 3-D data `#2746 <https://github.com/scipp/scipp/pull/2746>`_.
+* Fixed broken boolean-indexing and sort operations on arrays that contain binned data `#2759 <https://github.com/scipp/scipp/pull/2759>`_.
 
 Documentation
 ~~~~~~~~~~~~~
