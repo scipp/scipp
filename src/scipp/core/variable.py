@@ -782,6 +782,15 @@ def arange(dim: str,
                                              start=start,
                                              stop=stop,
                                              step=step)
+    args = [x for x in [start, stop, step] if x is not None]
+    types = [
+        x.values.dtype if isinstance(x, _cpp.Variable) else _np.asarray(x).dtype
+        for x in args
+    ]
+    if dtype is None:
+        candidates = set(types)
+        if len(candidates) == 1:
+            dtype = next(iter(candidates))
     return array(dims=[dim], values=_np.arange(**range_args), unit=unit, dtype=dtype)
 
 

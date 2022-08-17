@@ -647,6 +647,27 @@ def test_arange_with_variables_mixed_dtype():
         sc.array(dims=['x'], values=[1, 2, 3], dtype='int64'))
 
 
+def test_arange_with_int32_creates_int32_array():
+    assert sc.identical(sc.arange('x', np.int32(2)),
+                        sc.array(dims=['x'], values=[0, 1], dtype='int32'))
+    assert sc.identical(sc.arange('x', np.int32(2), np.int32(4)),
+                        sc.array(dims=['x'], values=[2, 3], dtype='int32'))
+    assert sc.identical(sc.arange('x', np.int32(2), np.int32(4), np.int32(2)),
+                        sc.array(dims=['x'], values=[2], dtype='int32'))
+
+
+def test_arange_with_int32_variables_creates_int32_array():
+    assert sc.identical(sc.arange('x', sc.scalar(2, dtype='int32')),
+                        sc.array(dims=['x'], values=[0, 1], dtype='int32'))
+    assert sc.identical(
+        sc.arange('x', sc.scalar(2, dtype='int32'), sc.scalar(4, dtype='int32')),
+        sc.array(dims=['x'], values=[2, 3], dtype='int32'))
+    assert sc.identical(
+        sc.arange('x', sc.scalar(2, dtype='int32'), sc.scalar(4, dtype='int32'),
+                  sc.scalar(2, dtype='int32')),
+        sc.array(dims=['x'], values=[2], dtype='int32'))
+
+
 def test_zeros_sizes():
     dims = ['x', 'y', 'z']
     shape = [2, 3, 4]
