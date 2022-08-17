@@ -28,22 +28,8 @@ void bind_helper_view(py::module &m, const std::string &name) {
   py::class_<View<T>>(m, (name + suffix).c_str())
       .def(py::init([](T &obj) { return View{obj}; }))
       .def("__len__", &View<T>::size)
-      // .def("__repr__", [](const View<T> &self) { return "SOME VIEW"; })
-      .def(
-          "__iter__",
-          [](const View<T> &self) {
-            return py::make_iterator(self.begin(), self.end(),
-                                     py::return_value_policy::move);
-          },
-          py::return_value_policy::move, py::keep_alive<0, 1>());
-}
-
-template <template <class> class View, class T>
-void bind_keys_view(py::module &m, const std::string &name) {
-  py::class_<View<T>>(m, (name + "_keys_view").c_str())
-      .def(py::init([](T &obj) { return View{obj}; }))
-      .def("__len__", &View<T>::size)
       .def("__repr__", [](const View<T> &self) { return self.tostring(); })
+      .def("__str__", [](const View<T> &self) { return self.tostring(); })
       .def(
           "__iter__",
           [](const View<T> &self) {
@@ -157,6 +143,16 @@ void bind_is_edges(py::class_<T, Ignored...> &view) {
       R"(Return True if the given key contains bin-edges in the given dim.)");
 }
 
+template <class View>
+const std::string view_to_string(View &v, const std::string &name) {
+  std::string out = name + ":\n";
+  const auto end = v.items_end();
+  for (auto it = v.items_begin(); it != end; ++it) {
+    out += Dim(it->first).name() + ": " + to_string(it->second) + "\n";
+  }
+  return out;
+}
+
 template <class T>
 void bind_mutable_view(py::module &m, const std::string &name,
                        const std::string &docs) {
@@ -181,14 +177,19 @@ void bind_mutable_view(py::module &m, const std::string &name,
           "items", [](T &self) { return items_view(self); },
           py::return_value_policy::move, py::keep_alive<0, 1>(),
           R"(view on self's items)")
-      .def("_ipython_key_completions_", [](const T &self) {
-        py::list out;
-        const auto end = self.keys_end();
-        for (auto it = self.keys_begin(); it != end; ++it) {
-          out.append(*it);
-        }
-        return out;
-      });
+      .def("_ipython_key_completions_",
+           [](const T &self) {
+             py::list out;
+             const auto end = self.keys_end();
+             for (auto it = self.keys_begin(); it != end; ++it) {
+               out.append(*it);
+             }
+             return out;
+           })
+      .def("__repr__",
+           [name](const T &self) { return view_to_string(self, name); })
+      .def("__str__",
+           [name](const T &self) { return view_to_string(self, name); });
 }
 
 template <class T>
@@ -225,14 +226,10 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name,
              }
              return out;
            })
-      .def("__repr__", [](const T &self) {
-        std::string out;
-        const auto end = self.items_end();
-        for (auto it = self.items_begin(); it != end; ++it) {
-          out += it->first.name() + " " + to_string(it->second) + "\n";
-        }
-        return out;
-      });
+      .def("__repr__",
+           [name](const T &self) { return view_to_string(self, name); })
+      .def("__str__",
+           [name](const T &self) { return view_to_string(self, name); });
 }
 
 template <class T, class... Ignored>

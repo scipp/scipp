@@ -5,7 +5,6 @@
 #pragma once
 
 #include "scipp/dataset/dataset.h"
-#include <sstream>
 
 /// Helper to provide equivalent of the `items()` method of a Python dict.
 template <class T> class items_view {
@@ -14,6 +13,17 @@ public:
   auto size() const noexcept { return m_obj->size(); }
   auto begin() const { return m_obj->items_begin(); }
   auto end() const { return m_obj->items_end(); }
+  auto tostring() const {
+    std::string out = "Items:";
+    if (this->size() == 0)
+      return out;
+    auto it = this->begin();
+    out += "\n" + it->first + ": " + to_string(it->second);
+    ++it;
+    for (; it != this->end(); ++it)
+      out += "\n" + it->first + ": " + to_string(it->second);
+    return out;
+  }
 
 private:
   T *m_obj;
@@ -37,6 +47,17 @@ public:
     else
       return m_obj->values_end();
   }
+  auto tostring() const {
+    std::string out = "Values:";
+    if (this->size() == 0)
+      return out;
+    auto it = this->begin();
+    out += "\n" + to_string(*it);
+    ++it;
+    for (; it != this->end(); ++it)
+      out += "\n" + to_string(*it);
+    return out;
+  }
 
 private:
   T *m_obj;
@@ -50,11 +71,17 @@ public:
   auto size() const noexcept { return m_obj->size(); }
   auto begin() const { return m_obj->keys_begin(); }
   auto end() const { return m_obj->keys_end(); }
-  auto tostring() const noexcept {
-    std::ostringstream oss;
-    for (auto it = this->begin(); it != this->end(); ++it)
-      oss << *it.name << ',';
-    return oss.str();
+  auto tostring() const {
+    std::string out = "Keys: [";
+    if (this->size() > 0) {
+      auto it = this->begin();
+      out += *it;
+      ++it;
+      for (; it != this->end(); ++it)
+        out += "," + *it;
+    }
+    out += "]";
+    return out;
   }
 
 private:
@@ -77,12 +104,17 @@ public:
   auto end() const {
     return boost::make_transform_iterator(m_obj->keys_end(), dim_to_str);
   }
-  auto tostring() const noexcept {
-    std::ostringstream oss;
-    oss << "keys: [";
-    for (auto it = this->begin(); it != this->end(); ++it)
-      oss << *it << ',';
-    return oss.str();
+  auto tostring() const {
+    std::string out = "Keys: [";
+    if (this->size() > 0) {
+      auto it = this->begin();
+      out += *it;
+      ++it;
+      for (; it != this->end(); ++it)
+        out += "," + *it;
+    }
+    out += "]";
+    return out;
   }
 
 private:
@@ -104,6 +136,17 @@ public:
   }
   auto end() const {
     return boost::make_transform_iterator(m_obj->items_end(), item_to_str);
+  }
+  auto tostring() const {
+    std::string out = "Items:";
+    if (this->size() == 0)
+      return out;
+    auto it = this->begin();
+    out += "\n" + it->first + ": " + to_string(it->second);
+    ++it;
+    for (; it != this->end(); ++it)
+      out += "\n" + it->first + ": " + to_string(it->second);
+    return out;
   }
 
 private:

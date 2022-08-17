@@ -123,8 +123,7 @@ void init_dataset(py::module &m) {
   bind_helper_view<str_items_view, Coords>(m, "Coords");
   bind_helper_view<items_view, Masks>(m, "Masks");
   bind_helper_view<keys_view, Dataset>(m, "Dataset");
-  // bind_helper_view<str_keys_view, Coords>(m, "Coords");
-  bind_keys_view<str_keys_view, Coords>(m, "Coords");
+  bind_helper_view<str_keys_view, Coords>(m, "Coords");
   bind_helper_view<keys_view, Masks>(m, "Masks");
   bind_helper_view<values_view, Dataset>(m, "Dataset");
   bind_helper_view<values_view, Coords>(m, "Coords");
