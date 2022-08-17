@@ -82,8 +82,7 @@ Variable dense_or_copy_bin_elements(const Variable &dense_or_indices,
 }
 
 template <class Slices, class Data>
-Data copy_impl(const Slices &slices, const Data &data, const Dim slice_dim,
-               const AttrPolicy attrPolicy = AttrPolicy::Keep) {
+Data copy_impl(const Slices &slices, const Data &data, const Dim slice_dim) {
   auto indices = makeVariable<scipp::index_pair>(Dims{slice_dim},
                                                  Shape{scipp::size(slices)});
   auto indices_values = indices.values<scipp::index_pair>();
@@ -104,12 +103,10 @@ Data copy_impl(const Slices &slices, const Data &data, const Dim slice_dim,
 } // namespace
 
 /// Extract given group as a new data array or dataset
-template <class T>
-T GroupBy<T>::copy(const scipp::index group,
-                   const AttrPolicy attrPolicy) const {
+template <class T> T GroupBy<T>::copy(const scipp::index group) const {
   return copy_impl(groups().at(group),
                    strip_edges_along(m_data, m_grouping.sliceDim()),
-                   m_grouping.sliceDim(), attrPolicy);
+                   m_grouping.sliceDim());
 }
 
 namespace {
