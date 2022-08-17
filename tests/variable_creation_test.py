@@ -491,11 +491,29 @@ def test_arange_datetime_from_np_datetime64():
     assert sc.identical(var, expected)
 
 
+def test_arange_datetime_from_str_raises_if_step_has_no_unit():
+    with pytest.raises(TypeError):
+        sc.arange('t',
+                  '2022-08-02T06:42:45',
+                  '2022-08-02T06:43:33',
+                  16,
+                  dtype='datetime64')
+
+
+def test_arange_datetime_from_str_raises_given_string_with_timezone():
+    with pytest.raises(ValueError):
+        sc.arange('t',
+                  '2022-08-02T06:42:45Z',
+                  '2022-08-02T06:43:33Z',
+                  16 * sc.Unit('s'),
+                  dtype='datetime64')
+
+
 def test_arange_datetime_from_str():
     var = sc.arange('t',
                     '2022-08-02T06:42:45',
                     '2022-08-02T06:43:33',
-                    16,
+                    16 * sc.Unit('s'),
                     dtype='datetime64')
     expected = sc.datetimes(
         dims=['t'],
