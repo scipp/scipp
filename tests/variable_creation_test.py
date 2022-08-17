@@ -537,12 +537,15 @@ def test_arange_with_variables(unit):
     start = sc.scalar(1)
     stop = sc.scalar(4)
     step = sc.scalar(1)
-    assert sc.identical(sc.arange('x', start, stop, step, unit=unit),
-                        sc.array(dims=['x'], values=[1, 2, 3], unit='one'))
-    assert sc.identical(sc.arange('x', start, stop, unit=unit),
-                        sc.array(dims=['x'], values=[1, 2, 3], unit='one'))
-    assert sc.identical(sc.arange('x', stop, unit=unit),
-                        sc.array(dims=['x'], values=[0, 1, 2, 3], unit='one'))
+    assert sc.identical(
+        sc.arange('x', start, stop, step, unit=unit),
+        sc.array(dims=['x'], values=[1, 2, 3], unit='one', dtype='int64'))
+    assert sc.identical(
+        sc.arange('x', start, stop, unit=unit),
+        sc.array(dims=['x'], values=[1, 2, 3], unit='one', dtype='int64'))
+    assert sc.identical(
+        sc.arange('x', stop, unit=unit),
+        sc.array(dims=['x'], values=[0, 1, 2, 3], unit='one', dtype='int64'))
 
 
 def test_arange_with_variables_uses_units_of_args():
@@ -576,25 +579,30 @@ def test_arange_with_variables_set_unit():
     step = sc.scalar(1, unit='m')
     unit = 'm'
     assert sc.identical(sc.arange('x', start, stop, step, unit=unit),
-                        sc.array(dims=['x'], values=[1, 2, 3], unit='m'))
+                        sc.array(dims=['x'], values=[1, 2, 3], unit='m', dtype='int64'))
     assert sc.identical(sc.arange('x', start, stop, unit=unit),
-                        sc.array(dims=['x'], values=[1, 2, 3], unit='m'))
+                        sc.array(dims=['x'], values=[1, 2, 3], unit='m', dtype='int64'))
 
-    assert sc.identical(sc.arange('x', start, stop, step, unit='mm'),
-                        sc.array(dims=['x'], values=[1000, 2000, 3000], unit='mm'))
-    assert sc.identical(sc.arange('x', start, stop, unit='cm'),
-                        sc.array(dims=['x'], values=np.arange(100, 400, 1), unit='cm'))
+    assert sc.identical(
+        sc.arange('x', start, stop, step, unit='mm'),
+        sc.array(dims=['x'], values=[1000, 2000, 3000], unit='mm', dtype='int64'))
+    assert sc.identical(
+        sc.arange('x', start, stop, unit='cm'),
+        sc.array(dims=['x'], values=np.arange(100, 400, 1), unit='cm', dtype='int64'))
 
     assert sc.identical(
         sc.arange('x', start, stop, sc.scalar(500, unit='mm'), unit='mm'),
-        sc.array(dims=['x'], values=[1000, 1500, 2000, 2500, 3000, 3500], unit='mm'))
+        sc.array(dims=['x'],
+                 values=[1000, 1500, 2000, 2500, 3000, 3500],
+                 unit='mm',
+                 dtype='int64'))
     assert sc.identical(
         sc.arange('x', start, stop, sc.scalar(500.0, unit='mm'), unit='m'),
         sc.array(dims=['x'], values=[1, 1.5, 2, 2.5, 3, 3.5], unit='m'))
     # All args are integers -> truncates step.
     assert sc.identical(
         sc.arange('x', start, stop, sc.scalar(500, unit='mm'), unit='m'),
-        sc.array(dims=['x'], values=[1, 2, 3], unit='m'))
+        sc.array(dims=['x'], values=[1, 2, 3], unit='m', dtype='int64'))
 
 
 def test_arange_with_variables_set_unit_must_be_convertible():
