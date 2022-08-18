@@ -118,19 +118,13 @@ def _get_coord(x, name):
     if isinstance(x, Variable):
         return x
     if isinstance(x, _cpp.Dataset):
-        # Coords in the dataset are aligned, so it is enough to return the first one
-        coord = None
+        cmin = None
+        cmax = None
         for da in x.values():
-            if name in da.meta:
-                coord = _get_coord(da, name)
-                break
-        # cmin = None
-        # cmax = None
-        # for da in x.values():
-        #     c = _get_coord(da, name)
-        #     cmin = c.min() if cmin is None else min(cmin, c.min())
-        #     cmax = c.max() if cmax is None else max(cmin, c.max())
-        # coord = _cpp.concat([cmin, cmax], dim='dummy')
+            c = _get_coord(da, name)
+            cmin = c.min() if cmin is None else min(cmin, c.min())
+            cmax = c.max() if cmax is None else max(cmin, c.max())
+        coord = _cpp.concat([cmin, cmax], dim='dummy')
     else:
         event_coord = x.bins.meta.get(name) if x.bins is not None else None
         coord = x.meta.get(name, event_coord)
