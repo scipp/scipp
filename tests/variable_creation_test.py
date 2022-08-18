@@ -678,6 +678,23 @@ def test_arange_with_uniform_scipp_arg_dtype_creates_array_with_same_dtype(dtype
         sc.array(dims=['x'], values=[2], dtype=dtype))
 
 
+@pytest.mark.parametrize(('dtype', 'larger'),
+                         ((np.int32, np.int64), (np.float32, np.float64),
+                          (np.int32, np.float64), (np.int64, np.float64)))
+def test_arange_with_non_uniform_arg_dtype_creates_array_with_larger_dtype(
+        dtype, larger):
+    assert sc.identical(sc.arange('x', dtype(2), larger(4)),
+                        sc.array(dims=['x'], values=[2, 3], dtype=larger))
+    assert sc.identical(sc.arange('x', larger(2), dtype(4)),
+                        sc.array(dims=['x'], values=[2, 3], dtype=larger))
+    assert sc.identical(sc.arange('x', larger(2), dtype(4), dtype(2)),
+                        sc.array(dims=['x'], values=[2], dtype=larger))
+    assert sc.identical(sc.arange('x', dtype(2), larger(4), dtype(2)),
+                        sc.array(dims=['x'], values=[2], dtype=larger))
+    assert sc.identical(sc.arange('x', dtype(2), dtype(4), larger(2)),
+                        sc.array(dims=['x'], values=[2], dtype=larger))
+
+
 def test_zeros_sizes():
     dims = ['x', 'y', 'z']
     shape = [2, 3, 4]
