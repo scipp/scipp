@@ -4,10 +4,10 @@ Releasing Scipp
 Purpose
 -------
 
-This document describes steps to be taken to prepare and make a new scipp release
+This document describes steps to be taken to prepare and make a new scipp release, or perform related changes
 
-Steps
------
+Release steps
+-------------
 
 1. Update ``docs/about/whats-new.ipynb`` as required to describe highlights and key changes of the release.
    When doing this, also consider removing information about past releases.
@@ -23,3 +23,11 @@ Steps
    They are automatically uploaded to conda-forge and PyPI, respectively.
    This will also publish the new documentation.
    If the major or minor release have been incremented this will furthermore rebuild the docs of the previous major or minor release with a banner indicating that the release is outdated.
+
+Updating the logo
+-----------------
+
+- Export the logo with text from the SVG as PNG (place it in ``docs/_static/``).
+- Export the logo (without text) from the SVG as PNG.
+- Create the favicon using ``convert icon-2022.png -define icon:auto-resize="128,96,64,48,32,16" favicon.ico``
+- Update ``docs/conf.py`` if filenames have changed.

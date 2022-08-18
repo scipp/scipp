@@ -239,6 +239,18 @@ def test_hist_on_dense_data_without_edges_raisesTypeError():
         table.nanhist()
 
 
+def test_hist_on_dataset_with_binned_data():
+    da = sc.data.table_xyz(100)
+    db = sc.data.table_xyz(150)
+    db.coords['y'].values[0] = -5.0
+    edges = sc.linspace(dim='x', start=0.5, stop=1.0, num=21, unit='m')
+    a = da.bin(x=edges)
+    b = db.bin(x=edges)
+    ds = sc.Dataset({'a': a, 'b': b})
+    res = ds.hist(y=50)
+    assert res.coords['y'][0] == sc.scalar(-5.0, unit='m')
+
+
 rng = default_rng(seed=1234)
 
 
