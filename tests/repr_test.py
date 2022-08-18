@@ -4,11 +4,9 @@
 import scipp as sc
 import pytest
 
-# TODO: For now, we are just checking that creating the repr does not throw.
-
 
 @pytest.mark.parametrize("mapping", ["coords", "attrs", "meta", "masks"])
-def test_dat_array_mapping_repr(mapping):
+def test_data_array_mapping_repr_does_not_raise(mapping):
     da = sc.data.table_xyz(10)
     da.attrs['a'] = da.coords['x']
     da.masks['m'] = da.coords['x'] > sc.scalar(0.5, unit='m')
@@ -19,7 +17,7 @@ def test_dat_array_mapping_repr(mapping):
 
 
 @pytest.mark.parametrize("mapping", ["coords", "attrs", "meta", "masks"])
-def test_data_array_empty_mapping_repr(mapping):
+def test_data_array_empty_mapping_repr_does_not_raise(mapping):
     da = sc.DataArray(data=sc.arange('x', 10))
     repr(getattr(da, mapping))
     repr(getattr(da, mapping).keys())
@@ -27,7 +25,7 @@ def test_data_array_empty_mapping_repr(mapping):
     repr(getattr(da, mapping).items())
 
 
-def test_dataset_mapping_repr():
+def test_dataset_mapping_repr_does_not_raise():
     ds = sc.Dataset({'a': sc.data.table_xyz(10), 'b': sc.data.table_xyz(10).data})
     repr(ds.coords)
     repr(ds.coords.keys())
@@ -35,7 +33,7 @@ def test_dataset_mapping_repr():
     repr(ds.coords.items())
 
 
-def test_dataset_empty_mapping_repr():
+def test_dataset_empty_mapping_repr_does_not_raise():
     ds = sc.Dataset()
     repr(ds.coords)
     repr(ds.coords.keys())
