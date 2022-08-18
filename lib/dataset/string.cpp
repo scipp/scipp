@@ -115,7 +115,7 @@ std::string dict_to_string(const Dict<Key, Value> &view) {
   std::stringstream ss;
   ss << "<scipp.Dict>\n";
   for (const auto &[key, item] : view) {
-    ss << "  " << key << ":" << to_string(item);
+    ss << "  " << key << ":" << to_string(item) << "\n";
   }
   return ss.str();
 }

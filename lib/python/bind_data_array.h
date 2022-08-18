@@ -186,10 +186,12 @@ void bind_mutable_view(py::module &m, const std::string &name,
              }
              return out;
            })
-      .def("__repr__",
-           [name](const T &self) { return view_to_string(self, name); })
-      .def("__str__",
-           [name](const T &self) { return view_to_string(self, name); });
+      .def("__repr__", [name](const T &self) { return to_string(self); })
+      .def("__str__", [name](const T &self) { return to_string(self); });
+  // .def("__repr__",
+  //      [name](const T &self) { return view_to_string(self, name); })
+  // .def("__str__",
+  //      [name](const T &self) { return view_to_string(self, name); });
 }
 
 template <class T>
@@ -226,10 +228,12 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name,
              }
              return out;
            })
-      .def("__repr__",
-           [name](const T &self) { return view_to_string(self, name); })
-      .def("__str__",
-           [name](const T &self) { return view_to_string(self, name); });
+      .def("__repr__", [name](const T &self) { return to_string(self); })
+      .def("__str__", [name](const T &self) { return to_string(self); });
+  // .def("__repr__",
+  //      [name](const T &self) { return view_to_string(self, name); })
+  // .def("__str__",
+  //      [name](const T &self) { return view_to_string(self, name); });
 }
 
 template <class T, class... Ignored>

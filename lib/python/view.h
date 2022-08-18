@@ -71,18 +71,19 @@ public:
   auto size() const noexcept { return m_obj->size(); }
   auto begin() const { return m_obj->keys_begin(); }
   auto end() const { return m_obj->keys_end(); }
-  auto tostring() const {
-    std::string out = "Keys: [";
-    if (this->size() > 0) {
-      auto it = this->begin();
-      out += *it;
-      ++it;
-      for (; it != this->end(); ++it)
-        out += "," + *it;
-    }
-    out += "]";
-    return out;
-  }
+  auto tostring() const { return dict_keys_to_string(m_obj); }
+
+  //   std::string out = "Keys: [";
+  //   if (this->size() > 0) {
+  //     auto it = this->begin();
+  //     out += *it;
+  //     ++it;
+  //     for (; it != this->end(); ++it)
+  //       out += "," + *it;
+  //   }
+  //   out += "]";
+  //   return out;
+  // }
 
 private:
   T *m_obj;
@@ -104,18 +105,19 @@ public:
   auto end() const {
     return boost::make_transform_iterator(m_obj->keys_end(), dim_to_str);
   }
-  auto tostring() const {
-    std::string out = "Keys: [";
-    if (this->size() > 0) {
-      auto it = this->begin();
-      out += *it;
-      ++it;
-      for (; it != this->end(); ++it)
-        out += "," + *it;
-    }
-    out += "]";
-    return out;
-  }
+  auto tostring() const { return dict_keys_to_string(m_obj); }
+  // auto tostring() const {
+  //   std::string out = "Keys: [";
+  //   if (this->size() > 0) {
+  //     auto it = this->begin();
+  //     out += *it;
+  //     ++it;
+  //     for (; it != this->end(); ++it)
+  //       out += "," + *it;
+  //   }
+  //   out += "]";
+  //   return out;
+  // }
 
 private:
   T *m_obj;
