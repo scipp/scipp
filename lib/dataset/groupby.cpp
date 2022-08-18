@@ -81,6 +81,20 @@ Variable dense_or_copy_bin_elements(const Variable &dense_or_indices,
                        : dense_or_indices;
 }
 
+template <class Data>
+Data extract_ranges(const Variable &indices, const Data &data, const Dim dim) {
+  // 1. Operate on dense data, or equivalent array of indices (if binned) to
+  // obtain output data of correct shape with proper meta data.
+  auto dense = transform_data(data, dense_or_bin_indices);
+  auto out =
+      copy_ranges_from_buffer(indices, dim, dense).template bin_buffer<Data>();
+  // 2. If we have binned data then the data of the DataArray or Dataset
+  // obtained in step 1. give the indices into the underlying buffer to be
+  // copied. This then replaces the data to obtain the final result. Does
+  // nothing if dense data.
+  return transform_data(out, dense_or_copy_bin_elements, data);
+}
+
 template <class Slices, class Data>
 Data copy_impl(const Slices &slices, const Data &data, const Dim slice_dim) {
   auto indices = makeVariable<scipp::index_pair>(Dims{slice_dim},
@@ -88,16 +102,7 @@ Data copy_impl(const Slices &slices, const Data &data, const Dim slice_dim) {
   const auto &indices_values = indices.values<scipp::index_pair>();
   for (scipp::index i = 0; i < scipp::size(slices); ++i)
     indices_values[i] = {slices[i].begin(), slices[i].end()};
-  // 1. Operate on dense data, or equivalent array of indices (if binned) to
-  // obtain output data of correct shape with proper meta data.
-  auto dense = transform_data(data, dense_or_bin_indices);
-  auto out = copy_ranges_from_buffer(indices, slice_dim, dense)
-                 .template bin_buffer<Data>();
-  // 2. If we have binned data then the data of the DataArray or Dataset
-  // obtained in step 1. give the indices into the underlying buffer to be
-  // copied. This then replaces the data to obtain the final result. Does
-  // nothing if dense data.
-  return transform_data(out, dense_or_copy_bin_elements, data);
+  return extract_ranges(indices, data, slice_dim);
 }
 
 } // namespace
@@ -513,7 +518,21 @@ template <class T> T extract_impl(const T &obj, const Variable &condition) {
     return copy(obj);
   if (!any(condition).value<bool>())
     return copy(obj.slice({condition.dim(), 0, 0}));
-  return call_groupby(obj, condition, condition.dim()).copy(1);
+
+  auto values = condition.values<bool>().as_span();
+  std::vector<scipp::index_pair> indices;
+  for (scipp::index i = 0; i < scipp::size(values); ++i) {
+    if (i > 0 && values[i - 1] == values[i])
+      continue;    // not an edge
+    if (values[i]) // rising edge
+      indices.emplace_back(i, scipp::size(values));
+    else // falling edge
+      indices.back().second = i;
+  }
+  return extract_ranges(
+      makeVariable<scipp::index_pair>(Dims{condition.dim()},
+                                      Shape{indices.size()}, Values(indices)),
+      strip_edges_along(obj, condition.dim()), condition.dim());
 }
 } // namespace
 
