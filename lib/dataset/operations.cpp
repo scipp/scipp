@@ -143,27 +143,4 @@ Dataset strip_if_broadcast_along(const Dataset &d, const Dim dim) {
   return stripped;
 }
 
-DataArray strip_edges_along(const DataArray &da, const Dim dim) {
-  auto out = da;
-  for (const auto &[name, var] : da.coords())
-    if (core::is_edges(da.dims(), var.dims(), dim))
-      out.coords().erase(name);
-  for (const auto &[name, var] : da.masks())
-    if (core::is_edges(da.dims(), var.dims(), dim))
-      out.masks().erase(name);
-  for (const auto &[name, var] : da.attrs())
-    if (core::is_edges(da.dims(), var.dims(), dim))
-      out.attrs().erase(name);
-  return out;
-}
-
-Dataset strip_edges_along(const Dataset &ds, const Dim dim) {
-  auto out = apply_to_items(
-      ds, [](auto &&...args) { return strip_edges_along(args...); }, dim);
-  for (const auto &[name, var] : ds.coords())
-    if (!core::is_edges(ds.sizes(), var.dims(), dim))
-      out.setCoord(name, var);
-  return out;
-}
-
 } // namespace scipp::dataset

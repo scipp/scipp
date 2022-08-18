@@ -13,6 +13,7 @@
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/dataset/slice.h"
+#include "scipp/dataset/util.h"
 #include "scipp/variable/slice.h"
 #include "scipp/variable/variable.h"
 
@@ -219,13 +220,6 @@ void expect_positional_index(const py::slice &py_slice) {
   }
 }
 
-template <class T, class Op>
-void strip_edges(T &out, const T &base, Op op, const Dim dim) {
-  for (const auto &[name, var] : op(base))
-    if (core::is_edges(out.dims(), var.dims(), dim))
-      op(out).erase(name);
-}
-
 template <class T>
 T slice_by_list(const T &obj,
                 const std::tuple<Dim, std::vector<scipp::index>> &index) {
@@ -239,18 +233,11 @@ T slice_by_list(const T &obj,
   };
 
   const auto &[dim, indices] = index;
-  auto copy = obj;
-  if constexpr (std::is_same_v<T, DataArray>) {
-    strip_edges(copy, obj, get_coords, dim);
-    strip_edges(copy, obj, get_masks, dim);
-    strip_edges(copy, obj, get_attrs, dim);
-  } else if constexpr (std::is_same_v<T, Dataset>) {
-    strip_edges(copy, obj, get_coords, dim);
-    for (auto da : copy) {
-      strip_edges(da, obj[da.name()], get_masks, dim);
-      strip_edges(da, obj[da.name()], get_attrs, dim);
-    }
-  }
+  T copy;
+  if constexpr (std::is_same_v<T, Variable>)
+    copy = obj;
+  else
+    copy = strip_edges_along(obj, dim);
   std::vector<T> slices;
   slices.reserve(indices.size());
   const auto size = copy.dims()[dim];

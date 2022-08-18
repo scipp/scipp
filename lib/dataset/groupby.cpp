@@ -22,6 +22,7 @@
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/shape.h"
+#include "scipp/dataset/util.h"
 
 #include "../variable/operations_common.h"
 #include "bin_common.h"
