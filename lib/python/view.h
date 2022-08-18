@@ -13,17 +13,7 @@ public:
   auto size() const noexcept { return m_obj->size(); }
   auto begin() const { return m_obj->items_begin(); }
   auto end() const { return m_obj->items_end(); }
-  auto tostring() const {
-    std::string out = "Items:";
-    if (this->size() == 0)
-      return out;
-    auto it = this->begin();
-    out += "\n" + it->first + ": " + to_string(it->second);
-    ++it;
-    for (; it != this->end(); ++it)
-      out += "\n" + it->first + ": " + to_string(it->second);
-    return out;
-  }
+  auto tostring() const { return to_string(*m_obj); }
 
 private:
   T *m_obj;
@@ -71,19 +61,7 @@ public:
   auto size() const noexcept { return m_obj->size(); }
   auto begin() const { return m_obj->keys_begin(); }
   auto end() const { return m_obj->keys_end(); }
-  auto tostring() const { return dict_keys_to_string(m_obj); }
-
-  //   std::string out = "Keys: [";
-  //   if (this->size() > 0) {
-  //     auto it = this->begin();
-  //     out += *it;
-  //     ++it;
-  //     for (; it != this->end(); ++it)
-  //       out += "," + *it;
-  //   }
-  //   out += "]";
-  //   return out;
-  // }
+  auto tostring() const { return dict_keys_to_string(*m_obj); }
 
 private:
   T *m_obj;
@@ -105,19 +83,7 @@ public:
   auto end() const {
     return boost::make_transform_iterator(m_obj->keys_end(), dim_to_str);
   }
-  auto tostring() const { return dict_keys_to_string(m_obj); }
-  // auto tostring() const {
-  //   std::string out = "Keys: [";
-  //   if (this->size() > 0) {
-  //     auto it = this->begin();
-  //     out += *it;
-  //     ++it;
-  //     for (; it != this->end(); ++it)
-  //       out += "," + *it;
-  //   }
-  //   out += "]";
-  //   return out;
-  // }
+  auto tostring() const { return dict_keys_to_string(*m_obj); }
 
 private:
   T *m_obj;
@@ -139,17 +105,7 @@ public:
   auto end() const {
     return boost::make_transform_iterator(m_obj->items_end(), item_to_str);
   }
-  auto tostring() const {
-    std::string out = "Items:";
-    if (this->size() == 0)
-      return out;
-    auto it = this->begin();
-    out += "\n" + it->first + ": " + to_string(it->second);
-    ++it;
-    for (; it != this->end(); ++it)
-      out += "\n" + it->first + ": " + to_string(it->second);
-    return out;
-  }
+  auto tostring() const { return to_string(*m_obj); }
 
 private:
   T *m_obj;
