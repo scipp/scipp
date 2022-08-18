@@ -33,7 +33,7 @@ namespace scipp::dataset {
 
 namespace {
 
-/// Transform data of data array or dataset, coord, masks, and and attrs are
+/// Transform data of data array or dataset, coord, masks, and attrs are
 /// shallow-copied.
 ///
 /// Beware of the mask-copy behavior, which is not suitable for data returned to
