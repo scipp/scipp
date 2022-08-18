@@ -117,8 +117,17 @@ def _require_coord(name, coord):
 def _get_coord(x, name):
     if isinstance(x, Variable):
         return x
-    event_coord = x.bins.meta.get(name) if x.bins is not None else None
-    coord = x.meta.get(name, event_coord)
+    if isinstance(x, _cpp.Dataset):
+        cmin = None
+        cmax = None
+        for da in x.values():
+            c = _get_coord(da, name)
+            cmin = c.min() if cmin is None else min(cmin, c.min())
+            cmax = c.max() if cmax is None else max(cmin, c.max())
+        coord = _cpp.concat([cmin, cmax], dim='dummy')
+    else:
+        event_coord = x.bins.meta.get(name) if x.bins is not None else None
+        coord = x.meta.get(name, event_coord)
     _require_coord(name, coord)
     return coord
 
@@ -179,7 +188,7 @@ def hist(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset],
     """Compute a histogram.
 
     Bin edges can be specified in three ways:
-     
+
     1. When an integer is provided, a 'linspace' with this requested number of
        bins is created, based on the min and max of the corresponding coordinate.
     2. A scalar scipp variable (a value with a unit) is interpreted as a target
