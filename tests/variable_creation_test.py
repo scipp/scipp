@@ -655,25 +655,27 @@ def test_arange_with_variables_mixed_dtype():
         sc.array(dims=['x'], values=[1, 2, 3], dtype='int64'))
 
 
-def test_arange_with_int32_creates_int32_array():
-    assert sc.identical(sc.arange('x', np.int32(2)),
-                        sc.array(dims=['x'], values=[0, 1], dtype='int32'))
-    assert sc.identical(sc.arange('x', np.int32(2), np.int32(4)),
-                        sc.array(dims=['x'], values=[2, 3], dtype='int32'))
-    assert sc.identical(sc.arange('x', np.int32(2), np.int32(4), np.int32(2)),
-                        sc.array(dims=['x'], values=[2], dtype='int32'))
+@pytest.mark.parametrize('dtype', (np.int32, np.int64, np.float32, np.float64))
+def test_arange_with_uniform_numpy_arg_dtype_creates_array_with_same_dtype(dtype):
+    assert sc.identical(sc.arange('x', dtype(2)),
+                        sc.array(dims=['x'], values=[0, 1], dtype=dtype))
+    assert sc.identical(sc.arange('x', dtype(2), dtype(4)),
+                        sc.array(dims=['x'], values=[2, 3], dtype=dtype))
+    assert sc.identical(sc.arange('x', dtype(2), dtype(4), dtype(2)),
+                        sc.array(dims=['x'], values=[2], dtype=dtype))
 
 
-def test_arange_with_int32_variables_creates_int32_array():
-    assert sc.identical(sc.arange('x', sc.scalar(2, dtype='int32')),
-                        sc.array(dims=['x'], values=[0, 1], dtype='int32'))
+@pytest.mark.parametrize('dtype', (np.int32, np.int64, np.float32, np.float64))
+def test_arange_with_uniform_scipp_arg_dtype_creates_array_with_same_dtype(dtype):
+    assert sc.identical(sc.arange('x', sc.scalar(2, dtype=dtype)),
+                        sc.array(dims=['x'], values=[0, 1], dtype=dtype))
     assert sc.identical(
-        sc.arange('x', sc.scalar(2, dtype='int32'), sc.scalar(4, dtype='int32')),
-        sc.array(dims=['x'], values=[2, 3], dtype='int32'))
+        sc.arange('x', sc.scalar(2, dtype=dtype), sc.scalar(4, dtype=dtype)),
+        sc.array(dims=['x'], values=[2, 3], dtype=dtype))
     assert sc.identical(
-        sc.arange('x', sc.scalar(2, dtype='int32'), sc.scalar(4, dtype='int32'),
-                  sc.scalar(2, dtype='int32')),
-        sc.array(dims=['x'], values=[2], dtype='int32'))
+        sc.arange('x', sc.scalar(2, dtype=dtype), sc.scalar(4, dtype=dtype),
+                  sc.scalar(2, dtype=dtype)),
+        sc.array(dims=['x'], values=[2], dtype=dtype))
 
 
 def test_zeros_sizes():
