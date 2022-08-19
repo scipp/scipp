@@ -85,7 +85,7 @@ template <class Slices, class Data>
 Data copy_impl(const Slices &slices, const Data &data, const Dim slice_dim) {
   auto indices = makeVariable<scipp::index_pair>(Dims{slice_dim},
                                                  Shape{scipp::size(slices)});
-  auto indices_values = indices.values<scipp::index_pair>();
+  const auto &indices_values = indices.values<scipp::index_pair>();
   for (scipp::index i = 0; i < scipp::size(slices); ++i)
     indices_values[i] = {slices[i].begin(), slices[i].end()};
   // 1. Operate on dense data, or equivalent array of indices (if binned) to
@@ -358,7 +358,9 @@ template <class T> struct MakeGroups {
     core::parallel::parallel_sort(keys.begin(), keys.end(),
                                   NanSensitiveLess<T>());
     for (const auto &k : keys)
-      groups.emplace_back(std::move(indices.at(k)));
+      groups.emplace_back(std::move(indices.at(
+          k))); // cppcheck-suppress containerOutOfBounds  # false positive,
+                // fixed in https://github.com/danmar/cppcheck/pull/4230
 
     const Dimensions dims{targetDim, scipp::size(indices)};
     auto keys_ = makeVariable<T>(Dimensions{dims}, Values(std::move(keys)));
