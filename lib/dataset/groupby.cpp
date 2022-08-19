@@ -18,7 +18,6 @@
 #include "scipp/variable/variable_factory.h"
 
 #include "scipp/dataset/bins.h"
-#include "scipp/dataset/choose.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/shape.h"
@@ -547,36 +546,5 @@ Dataset extract(const Dataset &ds, const Variable &condition) {
 
 template class GroupBy<DataArray>;
 template class GroupBy<Dataset>;
-
-constexpr auto slice_by_value = [](const auto &x, const Dim dim,
-                                   const auto &key) {
-  const auto size = x.dims()[dim];
-  const auto &coord = x.meta()[dim];
-  for (scipp::index i = 0; i < size; ++i)
-    if (coord.slice({dim, i}) == key)
-      return x.slice({dim, i});
-  throw std::runtime_error("Given key not found in coord.");
-};
-
-/// Similar to numpy.choose, but choose based on *values* in `key`.
-///
-/// Chooses slices of `choices` along `dim`, based on values of dimension-coord
-/// for `dim`.
-DataArray choose(const Variable &key, const DataArray &choices, const Dim dim) {
-  const auto grouping = call_groupby(key, key, dim);
-  const Dim target_dim = key.dims().inner();
-  auto out = resize(choices, dim, key.dims()[target_dim]);
-  out.rename(dim, target_dim);
-  out.coords().set(dim, key); // not target_dim
-  for (scipp::index group = 0; group < grouping.size(); ++group) {
-    const auto value = grouping.key().slice({dim, group});
-    const auto &choice = slice_by_value(choices, dim, value);
-    for (const auto &slice : grouping.groups()[group]) {
-      auto out_ = out.slice(slice);
-      copy(broadcast(choice.data(), out_.dims()), out_.data());
-    }
-  }
-  return out;
-}
 
 } // namespace scipp::dataset
