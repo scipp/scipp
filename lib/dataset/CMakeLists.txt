@@ -12,6 +12,7 @@ set(INC_FILES
     include/scipp/dataset/dataset.h
     include/scipp/dataset/dataset_util.h
     include/scipp/dataset/except.h
+    include/scipp/dataset/extract.h
     include/scipp/dataset/groupby.h
     include/scipp/dataset/histogram.h
     include/scipp/dataset/map_view_forward.h
@@ -40,6 +41,7 @@ set(SRC_FILES
     data_array.cpp
     dataset.cpp
     except.cpp
+    extract.cpp
     groupby.cpp
     histogram.cpp
     map_view.cpp

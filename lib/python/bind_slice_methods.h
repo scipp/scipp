@@ -10,7 +10,7 @@
 #include "scipp/core/slice.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/dataset/dataset.h"
-#include "scipp/dataset/groupby.h"
+#include "scipp/dataset/extract.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/dataset/slice.h"
 #include "scipp/dataset/util.h"
@@ -238,15 +238,17 @@ T slice_by_list(const T &obj,
     copy = obj;
   else
     copy = strip_edges_along(obj, dim);
-  std::vector<T> slices;
-  slices.reserve(indices.size());
+  std::vector<scipp::index_pair> ranges;
+  ranges.reserve(indices.size());
   const auto size = copy.dims()[dim];
   for (const auto &pos : indices) {
     const auto [start, stop] = make_slice(pos, size);
-    slices.emplace_back(copy.slice({dim, static_cast<scipp::index>(start),
-                                    static_cast<scipp::index>(stop)}));
+    ranges.emplace_back(static_cast<scipp::index>(start),
+                        static_cast<scipp::index>(stop));
   }
-  return concat(slices, dim);
+  return extract_ranges(makeVariable<scipp::index_pair>(
+                            Dims{dim}, Shape{ranges.size()}, Values(ranges)),
+                        copy, dim);
 }
 } // namespace
 
