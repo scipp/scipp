@@ -89,8 +89,11 @@ class Graph:
                 dot.edge(rule.dependencies[0], output, style='dashed')
             elif isinstance(rule, ComputeRule):
                 if not simplified:
-                    name = f'{rule.func_name}(...)'
-                    dot.node(name, shape='ellipse', style='filled', color='lightgrey')
+                    # Get a unique name for every node,
+                    # works because str contains address of func.
+                    name = str(rule)
+                    label = f'{rule.func_name}(...)'
+                    dot.node(name, label=label, shape='ellipse', style='filled', color='lightgrey')
                     dot.edge(name, output)
                 else:
                     name = output
