@@ -32,7 +32,7 @@ from .core import BinEdgeError, BinnedDataError, CoordError, \
 from . import units
 from . import geometry
 # Import functions
-from ._scipp.core import as_const, choose
+from ._scipp.core import as_const
 # Import python functions
 from .show import show, make_svg
 
