@@ -357,10 +357,11 @@ template <class T> struct MakeGroups {
       keys.emplace_back(item.first);
     core::parallel::parallel_sort(keys.begin(), keys.end(),
                                   NanSensitiveLess<T>());
-    for (const auto &k : keys)
-      groups.emplace_back(std::move(indices.at(
-          k))); // cppcheck-suppress containerOutOfBounds  # false positive,
-                // fixed in https://github.com/danmar/cppcheck/pull/4230
+    for (const auto &k : keys) {
+      // false positive, fixed in https://github.com/danmar/cppcheck/pull/4230
+      // cppcheck-suppress containerOutOfBounds
+      groups.emplace_back(std::move(indices.at(k)));
+    }
 
     const Dimensions dims{targetDim, scipp::size(indices)};
     auto keys_ = makeVariable<T>(Dimensions{dims}, Values(std::move(keys)));
