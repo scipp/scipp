@@ -4,29 +4,12 @@
 /// @author Simon Heybrock
 #include <numeric>
 
-#include "scipp/core/bucket.h"
-#include "scipp/core/element/comparison.h"
-#include "scipp/core/element/logical.h"
-#include "scipp/core/histogram.h"
-#include "scipp/core/parallel.h"
-#include "scipp/core/tag_util.h"
-
-#include "scipp/variable/accumulate.h"
-#include "scipp/variable/cumulative.h"
-#include "scipp/variable/operations.h"
-#include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
 
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/extract.h"
-#include "scipp/dataset/groupby.h"
-#include "scipp/dataset/shape.h"
 #include "scipp/dataset/util.h"
-
-#include "../variable/operations_common.h"
-#include "bin_common.h"
-#include "dataset_operations_common.h"
 
 namespace scipp {
 
@@ -117,10 +100,6 @@ template <class T> T extract_impl(const T &obj, const Variable &condition) {
         "Condition dimensions " + to_string(condition.dims()) +
         " must be be included in the dimensions of the sliced object " +
         to_string(obj.dims()) + '.');
-  if (all(condition).value<bool>())
-    return copy(obj);
-  if (!any(condition).value<bool>())
-    return copy(obj.slice({condition.dim(), 0, 0}));
 
   auto values = condition.values<bool>().as_span();
   std::vector<scipp::index_pair> indices;
@@ -129,7 +108,7 @@ template <class T> T extract_impl(const T &obj, const Variable &condition) {
       continue;    // not an edge
     if (values[i]) // rising edge
       indices.emplace_back(i, scipp::size(values));
-    else // falling edge
+    else if (i != 0) // falling edge
       indices.back().second = i;
   }
   return extract_ranges(makeVariable<scipp::index_pair>(Dims{condition.dim()},
@@ -140,7 +119,7 @@ template <class T> T extract_impl(const T &obj, const Variable &condition) {
 } // namespace
 
 Variable extract(const Variable &var, const Variable &condition) {
-  return extract(DataArray(var), condition).data();
+  return extract_impl(var, condition);
 }
 
 DataArray extract(const DataArray &da, const Variable &condition) {
