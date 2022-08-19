@@ -791,7 +791,14 @@ def arange(dim: str,
         candidates = set(types)
         if len(candidates) == 1:
             dtype = next(iter(candidates))
-    return array(dims=[dim], values=_np.arange(**range_args), unit=unit, dtype=dtype)
+    if dtype is not None and dtype != str('datetime64'):
+        numpy_dtype = str(dtype)
+    else:
+        numpy_dtype = None
+    return array(dims=[dim],
+                 values=_np.arange(**range_args, dtype=numpy_dtype),
+                 unit=unit,
+                 dtype=dtype)
 
 
 @contextmanager
