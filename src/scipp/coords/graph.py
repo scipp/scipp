@@ -93,7 +93,11 @@ class Graph:
                     # works because str contains address of func.
                     name = str(rule)
                     label = f'{rule.func_name}(...)'
-                    dot.node(name, label=label, shape='plain', style='filled', color='lightgrey')
+                    dot.node(name,
+                             label=label,
+                             shape='plain',
+                             style='filled',
+                             color='lightgrey')
                     dot.edge(name, output)
                 else:
                     name = output
