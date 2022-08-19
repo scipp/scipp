@@ -12,6 +12,7 @@
 #include "scipp/core/tag_util.h"
 
 #include "scipp/variable/accumulate.h"
+#include "scipp/variable/cumulative.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
@@ -32,43 +33,80 @@ namespace scipp::dataset {
 
 namespace {
 
-template <class Slices, class Data>
-auto copy_impl(const Slices &slices, const Data &data, const Dim slice_dim,
-               const AttrPolicy attrPolicy = AttrPolicy::Keep) {
-  scipp::index size = 0;
-  for (const auto &slice : slices)
-    size += slice.end() - slice.begin();
-  auto out = dataset::copy(data.slice({slice_dim, 0, size}), attrPolicy);
-  scipp::index current = 0;
-  auto out_slices = slices;
-  for (auto &slice : out_slices) {
-    const auto thickness = slice.end() - slice.begin();
-    slice = Slice(slice.dim(), current, current + thickness);
-    current += thickness;
+/// Transform data of data array or dataset, coord, masks, and attrs are
+/// shallow-copied.
+///
+/// Beware of the mask-copy behavior, which is not suitable for data returned to
+/// the user.
+template <class T, class Func, class... Ts>
+T transform_data(const T &obj, Func func, const Ts &...other) {
+  T out(obj);
+  if constexpr (std::is_same_v<T, DataArray>) {
+    out.setData(func(obj.data(), other.data()...));
+  } else {
+    for (const auto &item : obj)
+      out.setData(item.name(), func(item.data(), other[item.name()].data()...),
+                  AttrPolicy::Keep);
   }
-  const auto copy_slice = [&](const auto &range) {
-    for (scipp::index i = range.begin(); i != range.end(); ++i) {
-      const auto &slice = slices[i];
-      const auto &out_slice = out_slices[i];
-      scipp::dataset::copy(
-          strip_if_broadcast_along(data.slice(slice), slice_dim),
-          out.slice(out_slice), attrPolicy);
-    }
-  };
-  core::parallel::parallel_for(core::parallel::blocked_range(0, slices.size()),
-                               copy_slice);
   return out;
+}
+
+template <class Buffer>
+Variable copy_ranges_from_buffer(const Variable &indices, const Dim dim,
+                                 const Buffer &buffer) {
+  return copy(make_bins_no_validate(indices, dim, buffer));
+}
+
+Variable copy_ranges_from_bins_buffer(const Variable &indices,
+                                      const Variable &data) {
+  if (data.dtype() == dtype<bucket<Variable>>) {
+    const auto &[i, dim, buf] = data.constituents<Variable>();
+    return copy_ranges_from_buffer(indices, dim, buf);
+  } else if (data.dtype() == dtype<bucket<DataArray>>) {
+    const auto &[i, dim, buf] = data.constituents<DataArray>();
+    return copy_ranges_from_buffer(indices, dim, buf);
+  } else {
+    const auto &[i, dim, buf] = data.constituents<Dataset>();
+    return copy_ranges_from_buffer(indices, dim, buf);
+  }
+}
+
+Variable dense_or_bin_indices(const Variable &var) {
+  return is_bins(var) ? var.bin_indices() : var;
+}
+
+Variable dense_or_copy_bin_elements(const Variable &dense_or_indices,
+                                    const Variable &data) {
+  return is_bins(data) ? copy_ranges_from_bins_buffer(dense_or_indices, data)
+                       : dense_or_indices;
+}
+
+template <class Slices, class Data>
+Data copy_impl(const Slices &slices, const Data &data, const Dim slice_dim) {
+  auto indices = makeVariable<scipp::index_pair>(Dims{slice_dim},
+                                                 Shape{scipp::size(slices)});
+  const auto &indices_values = indices.values<scipp::index_pair>();
+  for (scipp::index i = 0; i < scipp::size(slices); ++i)
+    indices_values[i] = {slices[i].begin(), slices[i].end()};
+  // 1. Operate on dense data, or equivalent array of indices (if binned) to
+  // obtain output data of correct shape with proper meta data.
+  auto dense = transform_data(data, dense_or_bin_indices);
+  auto out = copy_ranges_from_buffer(indices, slice_dim, dense)
+                 .template bin_buffer<Data>();
+  // 2. If we have binned data then the data of the DataArray or Dataset
+  // obtained in step 1. give the indices into the underlying buffer to be
+  // copied. This then replaces the data to obtain the final result. Does
+  // nothing if dense data.
+  return transform_data(out, dense_or_copy_bin_elements, data);
 }
 
 } // namespace
 
 /// Extract given group as a new data array or dataset
-template <class T>
-T GroupBy<T>::copy(const scipp::index group,
-                   const AttrPolicy attrPolicy) const {
+template <class T> T GroupBy<T>::copy(const scipp::index group) const {
   return copy_impl(groups().at(group),
                    strip_edges_along(m_data, m_grouping.sliceDim()),
-                   m_grouping.sliceDim(), attrPolicy);
+                   m_grouping.sliceDim());
 }
 
 namespace {
@@ -278,12 +316,14 @@ template <class T> struct NanSensitiveLess {
   }
 };
 
-template <class T> bool nan_sensitive_equal(const T &a, const T &b) {
-  if constexpr (std::is_floating_point_v<T>)
-    return a == b || (std::isnan(a) && std::isnan(b));
-  else
-    return a == b;
-}
+template <class T> struct nan_sensitive_equal {
+  bool operator()(const T &a, const T &b) const {
+    if constexpr (std::is_floating_point_v<T>)
+      return a == b || (std::isnan(a) && std::isnan(b));
+    else
+      return a == b;
+  }
+};
 } // namespace
 
 template <class T> struct MakeGroups {
@@ -292,7 +332,9 @@ template <class T> struct MakeGroups {
     const auto &values = key.values<T>();
 
     const auto dim = key.dim();
-    std::map<T, GroupByGrouping::group, NanSensitiveLess<T>> indices;
+    std::unordered_map<T, GroupByGrouping::group, std::hash<T>,
+                       nan_sensitive_equal<T>>
+        indices;
     const auto end = values.end();
     scipp::index i = 0;
     for (auto it = values.begin(); it != end;) {
@@ -300,20 +342,28 @@ template <class T> struct MakeGroups {
       // handling in follow-up "apply" steps.
       const auto begin = i;
       const auto &group_value = *it;
-      while (it != end && nan_sensitive_equal(*it, group_value)) {
+      while (it != end && nan_sensitive_equal<T>()(*it, group_value)) {
         ++it;
         ++i;
       }
       indices[group_value].emplace_back(dim, begin, i);
     }
 
-    const Dimensions dims{targetDim, scipp::size(indices)};
     std::vector<T> keys;
     std::vector<GroupByGrouping::group> groups;
-    for (auto &item : indices) {
-      keys.emplace_back(std::move(item.first));
-      groups.emplace_back(std::move(item.second));
+    keys.reserve(scipp::size(indices));
+    groups.reserve(scipp::size(indices));
+    for (auto &item : indices)
+      keys.emplace_back(item.first);
+    core::parallel::parallel_sort(keys.begin(), keys.end(),
+                                  NanSensitiveLess<T>());
+    for (const auto &k : keys) {
+      // false positive, fixed in https://github.com/danmar/cppcheck/pull/4230
+      // cppcheck-suppress containerOutOfBounds
+      groups.emplace_back(std::move(indices.at(k)));
     }
+
+    const Dimensions dims{targetDim, scipp::size(indices)};
     auto keys_ = makeVariable<T>(Dimensions{dims}, Values(std::move(keys)));
     keys_.setUnit(key.unit());
     return {dim, std::move(keys_), std::move(groups)};
