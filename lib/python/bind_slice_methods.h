@@ -233,14 +233,9 @@ T slice_by_list(const T &obj,
   };
 
   const auto &[dim, indices] = index;
-  T copy;
-  if constexpr (std::is_same_v<T, Variable>)
-    copy = obj;
-  else
-    copy = strip_edges_along(obj, dim);
   std::vector<scipp::index_pair> ranges;
   ranges.reserve(indices.size());
-  const auto size = copy.dims()[dim];
+  const auto size = obj.dims()[dim];
   for (const auto &pos : indices) {
     const auto [start, stop] = make_slice(pos, size);
     ranges.emplace_back(static_cast<scipp::index>(start),
@@ -248,7 +243,7 @@ T slice_by_list(const T &obj,
   }
   return extract_ranges(makeVariable<scipp::index_pair>(
                             Dims{dim}, Shape{ranges.size()}, Values(ranges)),
-                        copy, dim);
+                        obj, dim);
 }
 } // namespace
 

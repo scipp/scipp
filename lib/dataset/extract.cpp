@@ -83,18 +83,23 @@ Variable dense_or_copy_bin_elements(const Variable &dense_or_indices,
 }
 } // namespace
 
-template <class Data>
-Data extract_ranges(const Variable &indices, const Data &data, const Dim dim) {
+template <class T>
+T extract_ranges(const Variable &indices, const T &data, const Dim dim) {
+  T no_edges;
+  if constexpr (std::is_same_v<T, Variable>)
+    no_edges = data;
+  else
+    no_edges = strip_edges_along(data, dim);
   // 1. Operate on dense data, or equivalent array of indices (if binned) to
   // obtain output data of correct shape with proper meta data.
-  auto dense = transform_data(data, dense_or_bin_indices);
+  auto dense = transform_data(no_edges, dense_or_bin_indices);
   auto out =
-      copy_ranges_from_buffer(indices, dim, dense).template bin_buffer<Data>();
+      copy_ranges_from_buffer(indices, dim, dense).template bin_buffer<T>();
   // 2. If we have binned data then the data of the DataArray or Dataset
   // obtained in step 1. give the indices into the underlying buffer to be
   // copied. This then replaces the data to obtain the final result. Does
   // nothing if dense data.
-  return transform_data(out, dense_or_copy_bin_elements, data);
+  return transform_data(out, dense_or_copy_bin_elements, no_edges);
 }
 
 namespace {
@@ -127,10 +132,10 @@ template <class T> T extract_impl(const T &obj, const Variable &condition) {
     else // falling edge
       indices.back().second = i;
   }
-  return extract_ranges(
-      makeVariable<scipp::index_pair>(Dims{condition.dim()},
-                                      Shape{indices.size()}, Values(indices)),
-      strip_edges_along(obj, condition.dim()), condition.dim());
+  return extract_ranges(makeVariable<scipp::index_pair>(Dims{condition.dim()},
+                                                        Shape{indices.size()},
+                                                        Values(indices)),
+                        obj, condition.dim());
 }
 } // namespace
 

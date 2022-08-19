@@ -48,9 +48,7 @@ Data copy_impl(const Slices &slices, const Data &data, const Dim slice_dim) {
 
 /// Extract given group as a new data array or dataset
 template <class T> T GroupBy<T>::copy(const scipp::index group) const {
-  return copy_impl(groups().at(group),
-                   strip_edges_along(m_data, m_grouping.sliceDim()),
-                   m_grouping.sliceDim());
+  return copy_impl(groups().at(group), m_data, m_grouping.sliceDim());
 }
 
 namespace {
