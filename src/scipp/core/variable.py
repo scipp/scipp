@@ -830,6 +830,11 @@ def datetime(value: Union[str, int, _np.datetime64],
       <scipp.Variable> ()  datetime64             [ns]  [2021-01-10T14:16:15.000000000]
       >>> sc.datetime(1610288175, unit='s')
       <scipp.Variable> ()  datetime64              [s]  [2021-01-10T14:16:15]
+
+    Get the current time:
+    (result not shown because it depends on when the docs page was built)
+
+      >>> now = sc.datetime('now', unit='s')
     """
     if isinstance(value, str):
         with _timezone_warning_as_error():
