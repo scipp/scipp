@@ -5,6 +5,7 @@ from typing import Dict, Optional
 
 from .._scipp.core import Variable, DataArray, Dataset, CoordError
 from ..typing import VariableLikeType
+from .bins import bins
 from .dataset import merge
 
 
@@ -122,6 +123,8 @@ def _rename_data_array(da: DataArray,
     """
     renaming_dict = _combine_dims(dims_dict, names)
     out = da.rename_dims(renaming_dict)
+    if out.bins is not None:
+        out.data = bins(**out.bins.constituents)
     for old, new in renaming_dict.items():
         if new in out.meta:
             raise CoordError(
