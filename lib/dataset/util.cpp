@@ -6,7 +6,7 @@
 #include "scipp/dataset/util.h"
 #include "scipp/common/overloaded.h"
 #include "scipp/core/element/arg_list.h"
-#include "scipp/dataset/aligned_dict_forward.h"
+#include "scipp/dataset/sized_dict_forward.h"
 #include "scipp/variable/accumulate.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/util.h"

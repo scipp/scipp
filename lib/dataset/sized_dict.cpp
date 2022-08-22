@@ -5,8 +5,8 @@
 #include <algorithm>
 #include <utility>
 
-#include "scipp/dataset/aligned_dict.h"
 #include "scipp/dataset/except.h"
+#include "scipp/dataset/sized_dict.h"
 
 namespace scipp::dataset {
 
@@ -19,14 +19,14 @@ template <class T> void expect_writable(const T &dict) {
 } // namespace
 
 template <class Key, class Value>
-AlignedDict<Key, Value>::AlignedDict(
+SizedDict<Key, Value>::SizedDict(
     const Sizes &sizes,
     std::initializer_list<std::pair<const Key, Value>> items,
     const bool readonly)
-    : AlignedDict(sizes, holder_type(items), readonly) {}
+    : SizedDict(sizes, holder_type(items), readonly) {}
 
 template <class Key, class Value>
-AlignedDict<Key, Value>::AlignedDict(Sizes sizes, holder_type items,
+SizedDict<Key, Value>::SizedDict(Sizes sizes, holder_type items,
                                      const bool readonly)
     : m_sizes(std::move(sizes)) {
   for (auto &&[key, value] : items)
@@ -36,24 +36,24 @@ AlignedDict<Key, Value>::AlignedDict(Sizes sizes, holder_type items,
 }
 
 template <class Key, class Value>
-AlignedDict<Key, Value>::AlignedDict(const AlignedDict &other)
-    : AlignedDict(other.m_sizes, other.m_items, false) {}
+SizedDict<Key, Value>::SizedDict(const SizedDict &other)
+    : SizedDict(other.m_sizes, other.m_items, false) {}
 
 template <class Key, class Value>
-AlignedDict<Key, Value>::AlignedDict(AlignedDict &&other) noexcept
-    : AlignedDict(std::move(other.m_sizes), std::move(other.m_items),
+SizedDict<Key, Value>::SizedDict(SizedDict &&other) noexcept
+    : SizedDict(std::move(other.m_sizes), std::move(other.m_items),
                   other.m_readonly) {}
 
 template <class Key, class Value>
-AlignedDict<Key, Value> &
-AlignedDict<Key, Value>::operator=(const AlignedDict &other) = default;
+SizedDict<Key, Value> &
+SizedDict<Key, Value>::operator=(const SizedDict &other) = default;
 
 template <class Key, class Value>
-AlignedDict<Key, Value> &
-AlignedDict<Key, Value>::operator=(AlignedDict &&other) noexcept = default;
+SizedDict<Key, Value> &
+SizedDict<Key, Value>::operator=(SizedDict &&other) noexcept = default;
 
 template <class Key, class Value>
-bool AlignedDict<Key, Value>::operator==(const AlignedDict &other) const {
+bool SizedDict<Key, Value>::operator==(const SizedDict &other) const {
   if (size() != other.size())
     return false;
   return std::all_of(this->begin(), this->end(), [&other](const auto &item) {
@@ -63,8 +63,8 @@ bool AlignedDict<Key, Value>::operator==(const AlignedDict &other) const {
 }
 
 template <class Key, class Value>
-bool equals_nan(const AlignedDict<Key, Value> &a,
-                const AlignedDict<Key, Value> &b) {
+bool equals_nan(const SizedDict<Key, Value> &a,
+                const SizedDict<Key, Value> &b) {
   if (a.size() != b.size())
     return false;
   return std::all_of(a.begin(), a.end(), [&b](const auto &item) {
@@ -74,44 +74,44 @@ bool equals_nan(const AlignedDict<Key, Value> &a,
 }
 
 template <class Key, class Value>
-bool AlignedDict<Key, Value>::operator!=(const AlignedDict &other) const {
+bool SizedDict<Key, Value>::operator!=(const SizedDict &other) const {
   return !operator==(other);
 }
 
 /// Returns whether a given key is present in the view.
 template <class Key, class Value>
-bool AlignedDict<Key, Value>::contains(const Key &k) const {
+bool SizedDict<Key, Value>::contains(const Key &k) const {
   return m_items.contains(k);
 }
 
 /// Returns 1 or 0, depending on whether key is present in the view or not.
 template <class Key, class Value>
-scipp::index AlignedDict<Key, Value>::count(const Key &k) const {
+scipp::index SizedDict<Key, Value>::count(const Key &k) const {
   return static_cast<scipp::index>(contains(k));
 }
 
 /// Const reference to the coordinate for given dimension.
 template <class Key, class Value>
-const Value &AlignedDict<Key, Value>::operator[](const Key &key) const {
+const Value &SizedDict<Key, Value>::operator[](const Key &key) const {
   return at(key);
 }
 
 /// Const reference to the coordinate for given dimension.
 template <class Key, class Value>
-const Value &AlignedDict<Key, Value>::at(const Key &key) const {
+const Value &SizedDict<Key, Value>::at(const Key &key) const {
   scipp::expect::contains(*this, key);
   return m_items[key];
 }
 
 /// The coordinate for given dimension.
 template <class Key, class Value>
-Value AlignedDict<Key, Value>::operator[](const Key &key) {
+Value SizedDict<Key, Value>::operator[](const Key &key) {
   return std::as_const(*this).at(key);
 }
 
 /// The coordinate for given dimension.
 template <class Key, class Value>
-Value AlignedDict<Key, Value>::at(const Key &key) {
+Value SizedDict<Key, Value>::at(const Key &key) {
   return std::as_const(*this).at(key);
 }
 
@@ -126,7 +126,7 @@ Value AlignedDict<Key, Value>::at(const Key &key) {
 /// - Else, for dimension coords (key matching a dimension), return the key.
 /// - Else, return Dim::Invalid.
 template <class Key, class Value>
-Dim AlignedDict<Key, Value>::dim_of(const Key &key) const {
+Dim SizedDict<Key, Value>::dim_of(const Key &key) const {
   const auto &var = at(key);
   if (var.dims().ndim() == 0)
     return Dim::Invalid;
@@ -143,12 +143,12 @@ Dim AlignedDict<Key, Value>::dim_of(const Key &key) const {
 }
 
 template <class Key, class Value>
-void AlignedDict<Key, Value>::setSizes(const Sizes &sizes) {
+void SizedDict<Key, Value>::setSizes(const Sizes &sizes) {
   scipp::expect::includes(sizes, m_sizes);
   m_sizes = sizes;
 }
 
-template <class Key, class Value> void AlignedDict<Key, Value>::rebuildSizes() {
+template <class Key, class Value> void SizedDict<Key, Value>::rebuildSizes() {
   Sizes new_sizes = m_sizes;
   for (const auto &dim : m_sizes) {
     bool erase = true;
@@ -178,7 +178,7 @@ void expect_valid_coord_dims(const Key &key, const Dimensions &coord_dims,
 } // namespace
 
 template <class Key, class Value>
-void AlignedDict<Key, Value>::set(const key_type &key, mapped_type coord) {
+void SizedDict<Key, Value>::set(const key_type &key, mapped_type coord) {
   if (contains(key) && at(key).is_same(coord))
     return;
   expect_writable(*this);
@@ -199,20 +199,20 @@ void AlignedDict<Key, Value>::set(const key_type &key, mapped_type coord) {
 }
 
 template <class Key, class Value>
-void AlignedDict<Key, Value>::erase(const key_type &key) {
+void SizedDict<Key, Value>::erase(const key_type &key) {
   expect_writable(*this);
   scipp::expect::contains(*this, key);
   m_items.erase(key);
 }
 
 template <class Key, class Value>
-Value AlignedDict<Key, Value>::extract(const key_type &key) {
+Value SizedDict<Key, Value>::extract(const key_type &key) {
   expect_writable(*this);
   return m_items.extract(key);
 }
 
 template <class Key, class Value>
-Value AlignedDict<Key, Value>::extract(const key_type &key,
+Value SizedDict<Key, Value>::extract(const key_type &key,
                                        const mapped_type &default_value) {
   if (contains(key)) {
     return extract(key);
@@ -221,8 +221,7 @@ Value AlignedDict<Key, Value>::extract(const key_type &key,
 }
 
 template <class Key, class Value>
-AlignedDict<Key, Value>
-AlignedDict<Key, Value>::slice(const Slice &params) const {
+SizedDict<Key, Value> SizedDict<Key, Value>::slice(const Slice &params) const {
   const bool readonly = true;
   return {m_sizes.slice(params), slice_map(m_sizes, m_items, params), readonly};
 }
@@ -239,11 +238,11 @@ constexpr auto unaligned_by_dim_slice = [](const auto &coords, const auto &key,
 }
 
 template <class Key, class Value>
-std::tuple<AlignedDict<Key, Value>, AlignedDict<Key, Value>>
-AlignedDict<Key, Value>::slice_coords(const Slice &params) const {
+std::tuple<SizedDict<Key, Value>, SizedDict<Key, Value>>
+SizedDict<Key, Value>::slice_coords(const Slice &params) const {
   auto coords = slice(params);
   coords.m_readonly = false;
-  AlignedDict<Key, Value> attrs(coords.sizes(), {});
+  SizedDict<Key, Value> attrs(coords.sizes(), {});
   for (const auto &[key, var] : *this)
     if (unaligned_by_dim_slice(*this, key, var, params))
       attrs.set(key, coords.extract(key));
@@ -252,8 +251,8 @@ AlignedDict<Key, Value>::slice_coords(const Slice &params) const {
 }
 
 template <class Key, class Value>
-void AlignedDict<Key, Value>::validateSlice(const Slice &s,
-                                            const AlignedDict &dict) const {
+void SizedDict<Key, Value>::validateSlice(const Slice &s,
+                                            const SizedDict &dict) const {
   using core::to_string;
   using units::to_string;
   for (const auto &[key, item] : dict) {
@@ -274,8 +273,7 @@ void AlignedDict<Key, Value>::validateSlice(const Slice &s,
 }
 
 template <class Key, class Value>
-AlignedDict<Key, Value> &
-AlignedDict<Key, Value>::setSlice(const Slice &s, const AlignedDict &dict) {
+SizedDict<Key, Value> &SizedDict<Key, Value>::setSlice(const Slice &s, const SizedDict &dict) {
   validateSlice(s, dict);
   for (const auto &[key, item] : dict) {
     const auto it = find(key);
@@ -287,7 +285,7 @@ AlignedDict<Key, Value>::setSlice(const Slice &s, const AlignedDict &dict) {
 }
 
 template <class Key, class Value>
-void AlignedDict<Key, Value>::rename(const Dim from, const Dim to) {
+void SizedDict<Key, Value>::rename(const Dim from, const Dim to) {
   m_sizes.replace_key(from, to);
   for (auto it = m_items.values_begin(); it != m_items.values_end(); ++it)
     if ((*it).dims().contains(from))
@@ -296,18 +294,18 @@ void AlignedDict<Key, Value>::rename(const Dim from, const Dim to) {
 
 /// Mark the dict as readonly. Does not imply that items are readonly.
 template <class Key, class Value>
-void AlignedDict<Key, Value>::set_readonly() noexcept {
+void SizedDict<Key, Value>::set_readonly() noexcept {
   m_readonly = true;
 }
 
 /// Return true if the dict is readonly. Does not imply that items are readonly.
 template <class Key, class Value>
-bool AlignedDict<Key, Value>::is_readonly() const noexcept {
+bool SizedDict<Key, Value>::is_readonly() const noexcept {
   return m_readonly;
 }
 
 template <class Key, class Value>
-AlignedDict<Key, Value> AlignedDict<Key, Value>::as_const() const {
+SizedDict<Key, Value> SizedDict<Key, Value>::as_const() const {
   holder_type items;
   items.reserve(m_items.size());
   for (const auto &[key, val] : m_items)
@@ -317,8 +315,8 @@ AlignedDict<Key, Value> AlignedDict<Key, Value>::as_const() const {
 }
 
 template <class Key, class Value>
-AlignedDict<Key, Value>
-AlignedDict<Key, Value>::merge_from(const AlignedDict &other) const {
+SizedDict<Key, Value>
+SizedDict<Key, Value>::merge_from(const SizedDict &other) const {
   using core::to_string;
   using units::to_string;
   auto out(*this);
@@ -337,7 +335,7 @@ AlignedDict<Key, Value>::merge_from(const AlignedDict &other) const {
 }
 
 template <class Key, class Value>
-bool AlignedDict<Key, Value>::item_applies_to(const Key &key,
+bool SizedDict<Key, Value>::item_applies_to(const Key &key,
                                               const Dimensions &dims) const {
   const auto &val = m_items[key];
   return std::all_of(val.dims().begin(), val.dims().end(),
@@ -345,7 +343,7 @@ bool AlignedDict<Key, Value>::item_applies_to(const Key &key,
 }
 
 template <class Key, class Value>
-bool AlignedDict<Key, Value>::is_edges(const Key &key,
+bool SizedDict<Key, Value>::is_edges(const Key &key,
                                        const std::optional<Dim> dim) const {
   const auto &val = this->at(key);
   return core::is_edges(m_sizes, val.dims(),
@@ -353,8 +351,8 @@ bool AlignedDict<Key, Value>::is_edges(const Key &key,
 }
 
 template <class Key, class Value>
-core::Dict<Key, Value> union_(const AlignedDict<Key, Value> &a,
-                              const AlignedDict<Key, Value> &b,
+core::Dict<Key, Value> union_(const SizedDict<Key, Value> &a,
+                              const SizedDict<Key, Value> &b,
                               std::string_view opname) {
   core::Dict<Key, Value> out;
   out.reserve(out.size() + b.size());
@@ -370,8 +368,8 @@ core::Dict<Key, Value> union_(const AlignedDict<Key, Value> &a,
 }
 
 template <class Key, class Value>
-core::Dict<Key, Value> intersection(const AlignedDict<Key, Value> &a,
-                                    const AlignedDict<Key, Value> &b) {
+core::Dict<Key, Value> intersection(const SizedDict<Key, Value> &a,
+                                    const SizedDict<Key, Value> &b) {
   core::Dict<Key, Value> out;
   for (const auto &[key, item] : a)
     if (const auto it = b.find(key);
@@ -380,8 +378,8 @@ core::Dict<Key, Value> intersection(const AlignedDict<Key, Value> &a,
   return out;
 }
 
-template class SCIPP_DATASET_EXPORT AlignedDict<Dim, Variable>;
-template class SCIPP_DATASET_EXPORT AlignedDict<std::string, Variable>;
+template class SCIPP_DATASET_EXPORT SizedDict<Dim, Variable>;
+template class SCIPP_DATASET_EXPORT SizedDict<std::string, Variable>;
 template SCIPP_DATASET_EXPORT bool equals_nan(const Coords &a, const Coords &b);
 template SCIPP_DATASET_EXPORT bool equals_nan(const Masks &a, const Masks &b);
 template SCIPP_DATASET_EXPORT typename Coords::holder_type

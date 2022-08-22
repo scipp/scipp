@@ -7,7 +7,7 @@
 #include <string>
 #include <string_view>
 
-#include "scipp/dataset/aligned_dict.h"
+#include "scipp/dataset/sized_dict.h"
 #include "scipp/variable/variable.h"
 
 namespace scipp::dataset {

@@ -7,7 +7,7 @@
 #include "scipp/core/dict.h"
 #include "scipp/core/sizes.h"
 #include "scipp/core/slice.h"
-#include "scipp/dataset/aligned_dict_forward.h"
+#include "scipp/dataset/sized_dict_forward.h"
 #include "scipp/units/dim.h"
 #include "scipp/units/unit.h"
 #include "scipp/variable/logical.h"
@@ -42,22 +42,26 @@ Mapping slice_map(const Sizes &sizes, const Mapping &map, const Slice &params) {
   return out;
 }
 
-/// Common functionality for other const-view classes.
-template <class Key, class Value> class AlignedDict {
+/// Dict with fixed dimensions.
+///
+/// Values must have dimensions and those dimensions must be a subset
+/// of the sizes stored in SizedDict. This is used, e.g., to ensure
+/// that coords are valid for a data array.
+template <class Key, class Value> class SizedDict {
 public:
   using key_type = Key;
   using mapped_type = Value;
   using holder_type = core::Dict<key_type, mapped_type>;
 
-  AlignedDict() = default;
-  AlignedDict(const Sizes &sizes,
+  SizedDict() = default;
+  SizedDict(const Sizes &sizes,
               std::initializer_list<std::pair<const Key, Value>> items,
               bool readonly = false);
-  AlignedDict(Sizes sizes, holder_type items, bool readonly = false);
-  AlignedDict(const AlignedDict &other);
-  AlignedDict(AlignedDict &&other) noexcept;
-  AlignedDict &operator=(const AlignedDict &other);
-  AlignedDict &operator=(AlignedDict &&other) noexcept;
+  SizedDict(Sizes sizes, holder_type items, bool readonly = false);
+  SizedDict(const SizedDict &other);
+  SizedDict(SizedDict &&other) noexcept;
+  SizedDict &operator=(const SizedDict &other);
+  SizedDict &operator=(SizedDict &&other) noexcept;
 
   /// Return the number of coordinates in the view.
   [[nodiscard]] index size() const noexcept { return scipp::size(m_items); }
@@ -107,8 +111,8 @@ public:
   /// Return const iterator to the end of all values.
   auto values_end() const &noexcept { return m_items.values_end(); }
 
-  bool operator==(const AlignedDict &other) const;
-  bool operator!=(const AlignedDict &other) const;
+  bool operator==(const SizedDict &other) const;
+  bool operator!=(const SizedDict &other) const;
 
   [[nodiscard]] const Sizes &sizes() const noexcept { return m_sizes; }
   [[nodiscard]] const auto &items() const noexcept { return m_items; }
@@ -120,18 +124,18 @@ public:
   mapped_type extract(const key_type &key);
   mapped_type extract(const key_type &key, const mapped_type &default_value);
 
-  AlignedDict slice(const Slice &params) const;
-  std::tuple<AlignedDict, AlignedDict> slice_coords(const Slice &params) const;
-  void validateSlice(const Slice &s, const AlignedDict &dict) const;
-  [[maybe_unused]] AlignedDict &setSlice(const Slice &s,
-                                         const AlignedDict &dict);
+  SizedDict slice(const Slice &params) const;
+  std::tuple<SizedDict, SizedDict> slice_coords(const Slice &params) const;
+  void validateSlice(const Slice &s, const SizedDict &dict) const;
+  [[maybe_unused]] SizedDict &setSlice(const Slice &s,
+                                         const SizedDict &dict);
 
   void rename(Dim from, Dim to);
 
   void set_readonly() noexcept;
   [[nodiscard]] bool is_readonly() const noexcept;
-  [[nodiscard]] AlignedDict as_const() const;
-  [[nodiscard]] AlignedDict merge_from(const AlignedDict &other) const;
+  [[nodiscard]] SizedDict as_const() const;
+  [[nodiscard]] SizedDict merge_from(const SizedDict &other) const;
 
   bool item_applies_to(const Key &key, const Dimensions &dims) const;
   bool is_edges(const Key &key, std::optional<Dim> dim = std::nullopt) const;
@@ -157,19 +161,19 @@ template <class Masks>
 }
 
 template <class Key, class Value>
-bool equals_nan(const AlignedDict<Key, Value> &a,
-                const AlignedDict<Key, Value> &b);
+bool equals_nan(const SizedDict<Key, Value> &a,
+                const SizedDict<Key, Value> &b);
 
 template <class Key, class Value>
-core::Dict<Key, Value> union_(const AlignedDict<Key, Value> &a,
-                              const AlignedDict<Key, Value> &b,
+core::Dict<Key, Value> union_(const SizedDict<Key, Value> &a,
+                              const SizedDict<Key, Value> &b,
                               std::string_view opname);
 
 /// Return intersection of dicts, i.e., all items with matching names that
 /// have matching content.
 template <class Key, class Value>
-core::Dict<Key, Value> intersection(const AlignedDict<Key, Value> &a,
-                                    const AlignedDict<Key, Value> &b);
+core::Dict<Key, Value> intersection(const SizedDict<Key, Value> &a,
+                                    const SizedDict<Key, Value> &b);
 
 constexpr auto get_data = [](auto &&a) -> decltype(auto) { return a.data(); };
 constexpr auto get_sizes = [](auto &&a) -> decltype(auto) { return a.sizes(); };

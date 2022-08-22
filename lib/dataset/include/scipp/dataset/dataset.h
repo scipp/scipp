@@ -7,8 +7,8 @@
 #include <functional>
 #include <string>
 
-#include "scipp/dataset/aligned_dict.h"
 #include "scipp/dataset/data_array.h"
+#include "scipp/dataset/sized_dict.h"
 #include "scipp/variable/variable.h"
 
 namespace scipp::dataset {

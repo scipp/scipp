@@ -52,7 +52,7 @@ struct SCIPP_DATASET_EXPORT CoordMismatchError : public DatasetError {
 
 namespace scipp::expect {
 template <class Key, class Value>
-void contains(const scipp::dataset::AlignedDict<Key, Value> &a, const Key &b) {
+void contains(const scipp::dataset::SizedDict<Key, Value> &a, const Key &b) {
   using core::to_string;
   if (!a.contains(b))
     throw except::NotFoundError("Expected '" + to_string(b) + "' in " +

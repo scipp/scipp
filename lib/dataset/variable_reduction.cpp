@@ -4,7 +4,7 @@
 /// @author Simon Heybrock
 
 #include "../variable/operations_common.h"
-#include "scipp/dataset/aligned_dict.h"
+#include "scipp/dataset/sized_dict.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/creation.h"
 #include "scipp/variable/reduction.h"

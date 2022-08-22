@@ -13,14 +13,14 @@ class Variable;
 
 namespace scipp::dataset {
 
-template <class Key, class Value> class AlignedDict;
+template <class Key, class Value> class SizedDict;
 
 /// Dict of coordinates of DataArray and Dataset.
-using Coords = AlignedDict<Dim, variable::Variable>;
+using Coords = SizedDict<Dim, variable::Variable>;
 /// Dict of masks of DataArray and Dataset.
-using Masks = AlignedDict<std::string, variable::Variable>;
+using Masks = SizedDict<std::string, variable::Variable>;
 /// Dict of attributes of DataArray and Dataset.
-using Attrs = AlignedDict<Dim, variable::Variable>;
+using Attrs = SizedDict<Dim, variable::Variable>;
 
 [[nodiscard]] SCIPP_DATASET_EXPORT Coords copy(const Coords &coords);
 [[nodiscard]] SCIPP_DATASET_EXPORT Masks copy(const Masks &masks);

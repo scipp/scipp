@@ -4,9 +4,9 @@
 /// @author Simon Heybrock
 
 #include "scipp/dataset/dataset.h"
-#include "scipp/dataset/aligned_dict.h"
 #include "scipp/dataset/math.h"
 #include "scipp/dataset/rebin.h"
+#include "scipp/dataset/sized_dict.h"
 
 #include "bind_data_access.h"
 #include "bind_data_array.h"
