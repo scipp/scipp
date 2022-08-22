@@ -772,11 +772,19 @@ def arange(dim: str,
            *,
            unit: Union[Unit, str, None] = default_unit,
            dtype: Optional[DTypeLike] = None) -> Variable:
-    """Constructs a :class:`Variable` with evenly spaced values within a given
-    interval.
+    """Creates a :class:`Variable` with evenly spaced values within a given interval.
 
-    Values are generated within the half-open interval [start, stop)
-    (in other words, the interval including start but excluding stop).
+    Values are generated within the half-open interval [start, stop).
+    In other words, the interval including start but excluding stop.
+
+    ``start``, ``stop``, and ``step`` may be given as plain values or as 0-D variables.
+    In the latter case this then implies the unit (the units of all arguments must be
+    identical), but a different unit-scale can still be requested with the ``unit``
+    argument.
+
+    When all the types or dtypes of the input arguments are the same, the output will
+    also have this dtype. This is different to :func:`numpy.arange` which will always
+    produce 64-bit (int64 or float64) outputs.
 
     Warning
     -------
@@ -826,6 +834,9 @@ def arange(dim: str,
 
       >>> sc.arange('t', '2000-01-01T01:00:00', '2000-01-01T01:01:30', 30 * sc.Unit('s'), dtype='datetime64')
       <scipp.Variable> (t: 3)  datetime64              [s]  [2000-01-01T01:00:00, 2000-01-01T01:00:30, 2000-01-01T01:01:00]
+
+    Note that in this case the datetime ``start`` and ``stop`` strings implicitly
+    define the unit. The ``step`` must have the same unit.
     """
     if dtype == 'datetime64' and isinstance(start, str):
         start = datetime(start)
@@ -834,7 +845,23 @@ def arange(dim: str,
                                              start=start,
                                              stop=stop,
                                              step=step)
-    return array(dims=[dim], values=_np.arange(**range_args), unit=unit, dtype=dtype)
+    args = [x for x in [start, stop, step] if x is not None]
+    types = [
+        x.values.dtype if isinstance(x, _cpp.Variable) else _np.asarray(x).dtype
+        for x in args
+    ]
+    if dtype is None:
+        candidates = set(types)
+        if len(candidates) == 1:
+            dtype = next(iter(candidates))
+    if dtype is not None and dtype != str('datetime64'):
+        numpy_dtype = str(dtype) if isinstance(dtype, DType) else dtype
+    else:
+        numpy_dtype = None
+    return array(dims=[dim],
+                 values=_np.arange(**range_args, dtype=numpy_dtype),
+                 unit=unit,
+                 dtype=dtype)
 
 
 @contextmanager
