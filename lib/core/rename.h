@@ -14,8 +14,9 @@ namespace scipp::core {
 
 namespace detail {
 template <class T>
-T rename_dims(const T &obj, const std::vector<std::pair<Dim, Dim>> &names,
-              const bool fail_on_unknown) {
+[[nodiscard]] T rename_dims(const T &obj,
+                            const std::vector<std::pair<Dim, Dim>> &names,
+                            const bool fail_on_unknown) {
   auto out(obj);
   for (const auto &[from, to] : names)
     if (out.contains(from))
