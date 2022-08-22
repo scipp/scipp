@@ -84,3 +84,25 @@ def test_rename_fails_when_coord_with_same_name_already_exists():
     da.attrs['y'] = da.coords.pop('y')
     with pytest.raises(sc.CoordError):
         da.rename({'y': 'aux'})
+
+
+def test_rename_renames_bin_coords_and_attrs():
+    table = sc.data.table_xyz(10)
+    table.attrs['y'] = table.coords.pop('y')
+    da = table.bin(x=2, y=2)
+    renamed = da.rename(x='x2', y='y2')
+    assert 'x' not in renamed.bins.coords
+    assert 'y' not in renamed.bins.attrs
+    assert 'x2' in renamed.bins.coords
+    assert 'y2' in renamed.bins.attrs
+
+
+def test_rename_renames_bin_coords_and_attrs_even_if_no_corresponding_outer():
+    table = sc.data.table_xyz(10)
+    table.attrs['z'] = table.coords.pop('z')
+    da = table.bin(x=2)
+    renamed = da.rename(y='y2', z='z2')
+    assert 'y' not in renamed.bins.coords
+    assert 'y2' in renamed.bins.coords
+    assert 'z' not in renamed.bins.attrs
+    assert 'z2' in renamed.bins.attrs
