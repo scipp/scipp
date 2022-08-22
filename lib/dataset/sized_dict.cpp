@@ -100,7 +100,7 @@ const Value &SizedDict<Key, Value>::operator[](const Key &key) const {
 template <class Key, class Value>
 const Value &SizedDict<Key, Value>::at(const Key &key) const {
   scipp::expect::contains(*this, key);
-  return m_items[key];
+  return m_items.at(key);
 }
 
 /// The coordinate for given dimension.
