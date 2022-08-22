@@ -24,9 +24,11 @@ template <class T> struct IndicesForSorting {
     std::vector<std::pair<T, scipp::index>> key_index;
     key_index.reserve(size);
 
-    scipp::index i = 0;
-    for (const auto &value : key.values<T>())
-      key_index.emplace_back(value, i++);
+    {
+      scipp::index i = 0;
+      for (const auto &value : key.values<T>())
+        key_index.emplace_back(value, i++);
+    }
 
     if (order == SortOrder::Ascending)
       std::sort(key_index.begin(), key_index.end(),
