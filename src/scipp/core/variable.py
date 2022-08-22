@@ -802,7 +802,7 @@ def arange(dim: str,
         if len(candidates) == 1:
             dtype = next(iter(candidates))
     if dtype is not None and dtype != str('datetime64'):
-        numpy_dtype = str(dtype)
+        numpy_dtype = str(dtype) if isinstance(dtype, DType) else dtype
     else:
         numpy_dtype = None
     return array(dims=[dim],
