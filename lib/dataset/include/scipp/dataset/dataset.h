@@ -159,7 +159,8 @@ public:
   [[maybe_unused]] Dataset &setSlice(const Slice &s, const DataArray &array);
   [[maybe_unused]] Dataset &setSlice(const Slice &s, const Variable &var);
 
-  void rename(const Dim from, const Dim to);
+  [[nodiscard]] Dataset
+  rename_dims(const std::vector<std::pair<Dim, Dim>> &names) const;
 
   bool operator==(const Dataset &other) const;
   bool operator!=(const Dataset &other) const;

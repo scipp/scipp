@@ -130,7 +130,8 @@ public:
   [[maybe_unused]] SizedDict &setSlice(const Slice &s,
                                          const SizedDict &dict);
 
-  void rename(Dim from, Dim to);
+  [[nodiscard]] SizedDict rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
+                                 const bool fail_on_unknown = true) const;
 
   void set_readonly() noexcept;
   [[nodiscard]] bool is_readonly() const noexcept;

@@ -2,6 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from typing import Callable, Dict, Literal, Optional, Union
+import uuid
 
 from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
@@ -355,7 +356,8 @@ class Bins:
         """
         if dim is not None:
             return _call_cpp_func(_cpp.buckets.concatenate, self._obj, dim)
-        raise RuntimeError("Reduction along all dims not supported yet.")
+        dim = uuid.uuid4().hex
+        return self._obj.flatten(to=dim).bins.concat(dim)
 
     def concatenate(
             self,

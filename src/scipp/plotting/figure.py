@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .. import config
-from .tools import fig_to_pngbytes
+from .tools import fig_to_pngbytes, is_sphinx_build
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -91,11 +91,8 @@ class PlotFigure:
         If not, convert the plot to a png image and place inside an ipywidgets
         Image container.
         """
-        if self.is_widget():
-            return ipw.HBox([
-                self.toolbar._to_widget(),
-                self._to_image() if self.closed else self.fig.canvas
-            ])
+        if self.is_widget() and (not is_sphinx_build()):
+            return ipw.HBox([self.toolbar._to_widget(), self.fig.canvas])
         else:
             return self._to_image()
 
@@ -113,7 +110,7 @@ class PlotFigure:
         """
         Set the closed flag to True to output static images.
         """
-        self.closed = True
+        plt.close(self.fig)
 
     def show(self):
         """

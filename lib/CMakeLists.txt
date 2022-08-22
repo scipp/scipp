@@ -54,7 +54,7 @@ endif()
 conan_cmake_configure(
   REQUIRES
   benchmark/1.6.1
-  boost/1.76.0
+  boost/1.79.0
   eigen/3.3.9
   gtest/1.11.0
   LLNL-Units/0.5.0.1
@@ -253,6 +253,7 @@ if(COVERAGE)
       "/usr/*"
       "/*conan/data*"
       "/*miniconda*"
+      "/*micromamba*"
   )
   setup_target_for_coverage_lcov(
     NAME
@@ -261,7 +262,7 @@ if(COVERAGE)
     sh
     "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/run-tests.sh"
     "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-    "${CMAKE_SOURCE_DIR}/tests"
+    "${CMAKE_SOURCE_DIR}"
     DEPENDENCIES
     install-scipp
     all-tests

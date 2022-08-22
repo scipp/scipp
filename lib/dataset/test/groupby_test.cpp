@@ -248,8 +248,7 @@ struct GroupbyReductionTest : public ::testing::Test {
 
 TEST_F(GroupbyReductionTest, sum_size_1_groups) {
   const Dim dim("labels1");
-  Dataset expected = d;
-  expected.rename(Dim::X, dim);
+  auto expected = copy(d).rename_dims({{Dim::X, dim}});
   expected.coords().erase(Dim("labels2"));
   EXPECT_EQ(groupby(d, dim).sum(Dim::X), expected);
 }
@@ -271,8 +270,7 @@ TEST_F(GroupbyReductionTest, sum_groups_with_multiple_elements) {
 
 TEST_F(GroupbyReductionTest, max_size_1_groups) {
   const Dim dim("labels1");
-  Dataset expected = d;
-  expected.rename(Dim::X, dim);
+  auto expected = copy(d).rename_dims({{Dim::X, dim}});
   expected.coords().erase(Dim("labels2"));
   EXPECT_EQ(groupby(d, dim).max(Dim::X), expected);
 }
@@ -783,8 +781,7 @@ struct GroupbyLogicalTest : public ::testing::Test {
 };
 
 TEST_F(GroupbyLogicalTest, no_reduction) {
-  Dataset expected = copy(d);
-  expected.rename(Dim::X, Dim("labels1"));
+  auto expected = copy(d).rename_dims({{Dim::X, Dim("labels1")}});
   expected.setCoord(Dim("labels1"), expected.coords()[Dim("labels1")]);
   expected.coords().erase(Dim("labels2"));
   EXPECT_EQ(groupby(d, Dim("labels1")).all(Dim::X), expected);
@@ -862,8 +859,7 @@ struct GroupbyMinMaxTest : public ::testing::Test {
 };
 
 TEST_F(GroupbyMinMaxTest, no_reduction) {
-  Dataset expected = copy(d);
-  expected.rename(Dim::X, Dim("labels1"));
+  auto expected = copy(d).rename_dims({{Dim::X, Dim("labels1")}});
   expected.setCoord(Dim("labels1"), expected.coords()[Dim("labels1")]);
   expected.coords().erase(Dim("labels2"));
   EXPECT_EQ(groupby(d, Dim("labels1")).min(Dim::X), expected);

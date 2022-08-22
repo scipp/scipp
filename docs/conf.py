@@ -205,7 +205,7 @@ if outdated:
         "style='color:white;text-decoration:underline;'"
         ">latest</a> version. ⚠️")
 
-html_logo = "_static/logo-large-v4.png"
+html_logo = "_static/logo-2022.png"
 html_favicon = "_static/favicon.ico"
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -248,7 +248,7 @@ texinfo_documents = [
 # -- Options for Matplotlib in notebooks ----------------------------------
 
 nbsphinx_execute_arguments = [
-    "--Session.metadata=scipp_docs_build=True",
+    "--Session.metadata=scipp_sphinx_build=True",
 ]
 
 # -- Options for matplotlib in docstrings ---------------------------------

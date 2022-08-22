@@ -215,13 +215,12 @@ Dataset &Dataset::setSlice(const Slice &s, const Variable &data) {
 }
 
 /// Rename dimension `from` to `to`.
-void Dataset::rename(const Dim from, const Dim to) {
-  if ((from != to) && m_coords.sizes().contains(to))
-    throw except::DimensionError("Duplicate dimension.");
-  m_coords.rename(from, to);
-  for (auto &&[_, val] : m_data)
-    if (val.dims().contains(from))
-      val.rename(from, to);
+Dataset
+Dataset::rename_dims(const std::vector<std::pair<Dim, Dim>> &names) const {
+  Dataset out({}, m_coords.rename_dims(names));
+  for (const auto &[name, da] : m_data)
+    out.setData(name, da.rename_dims(names, false));
+  return out;
 }
 
 /// Return true if the datasets have identical content.

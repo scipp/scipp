@@ -1,12 +1,58 @@
 .. _overview:
 
-Overview
-========
+What is Scipp?
+==============
+
+Scipp is the result of a long evolution of packages for scientific computing in Python.
+`NumPy <https://numpy.org/>`_, the fundamental package for scientific computing in Python providing a multi-dimensional array object, sits at the core of this evolution.
+On top of this, libraries such as `SciPy <https://scipy.org/>`_, `Pandas <https://pandas.pydata.org/>`_, and `Xarray <https://docs.xarray.dev>`_ provide more advanced functionality and user convenience.
+
+Scipp's central ambition is to make scientific data analysis **safer** and **intuitive**.
+Safety, i.e., avoidance, detection, and prevention of mistakes, is crucial given the rapidly growing complexity of scientific data and data analysis.
+At the same time it has to be ensured that scientific results are reproducible.
+For reproducible results, open data must be complemented by open and non-cryptic analysis scripts.
+This enables the user, the referee, or other scientists to re-run the analysis or to inspect and understand each processing step.
+
+Scipp aims to achieve its ambition in multiple ways:
+
+- A concise and intuitive "language" (programming interface) allows the user to clearly express their intent and makes this intent apparent to future readers of the code.
+  For example, *named dimensions* remove the need for cryptic axis indices or explicit array transposition and broadcasting.
+- Coordinate arrays associated with an array of data ensure that no incompatible data is combined and allow for direct creation of meaningful plots with labeled axes.
+- Physical units associated with all arrays as well as their coordinate arrays eliminate a whole set of potential errors.
+  This includes the risk of combining data with different units (such as adding "meters" and "seconds") or unit scales (such as adding "meters" and "millimeters").
+- *Binned data* provides an efficient and powerful multi-dimensional view of tabular data.
+  This unifies the flexibility of working with such record-based data with the same concise, intuitive, and safe interface that Scipp provides for dense arrays.
+- Features targeting `Jupyter <https://jupyter.org/>`_, such as rich HTML visualizations of data, give the user the tools to understand their data at every step and share their work with collaborators.
+
+Scipp comes multi-threading enabled by default, providing good out-of-the-box performance for many applications.
+
+
+What Scipp is not
+-----------------
+
+Scipp is not intended for simulations or HPC applications which often require highly specialized and performant code.
+Scipp also does not target machine learning applications.
+
+
+Comparison with other software
+------------------------------
+
+- `Pandas <https://pandas.pydata.org/>` is a mature and extremely powerful package if you are mainly working with tabular 1-D data.
+  Compared with Scipp it lacks support for multi-dimensional labeled data, binned data, and physical units.
+- `Xarray <https://docs.xarray.dev>`_ supports multi-dimensional labeled data similar to Scipp, but is considerably more mature.
+  Compared with Scipp it lacks support for binned data and physical units.
+  Experimental support for physical units using `Pint <https://pint.readthedocs.io>`_ is available with `pint-xarray <https://pint-xarray.readthedocs.io>`_.
+  Xarray comes with `Dask <https://www.dask.org/>`_ support for highly scalable parallel computing.
+- `Awkward Array <https://awkward-array.readthedocs.io>`_ is a powerful package for nested, variable-sized data.
+  Its support for records is similar to Scipp's binned data.
+  Compared with Scipp it lacks support for multi-dimensional labeled data and physical units.
+  It may be combined with Xarray (and Pint) to achieve this, but support for multi-dimensional binning operations may be lacking.
+
 
 The data array concept
 ----------------------
 
-The core data structure of scipp is :py:class:`scipp.DataArray`.
+The core data structure of Scipp is :py:class:`scipp.DataArray`.
 A data array is essentially a multi-dimensional array with associated dicts of coordinates, masks, and attributes.
 For a more detailed explanation we refer to the `documentation of DataArray <../user-guide/data-structures.rst#DataArray>`_.
 
@@ -24,27 +70,12 @@ A dataset is essentially a dict-like container of data arrays with common associ
 Physical units
 --------------
 
-Data in a data array as well as coordinates are associated with a physical unit.
-The unit is accessed using the ``unit`` property.
+Data in a data array as well as its coordinates are associated with physical units.
 All operations take the unit into account:
 
 - Operations fail if the units of coordinates do not match.
 - Operations such as addition fail if the units of the data items do not match.
-- Operations such as multiplication produce an output dataset with a new unit for each data item, e.g., :math:`m^{2}` results from multiplication of two data items with unit :math:`m`.
-
-
-Variances and propagation of uncertainties
-------------------------------------------
-
-Data in a data array as well as coordinates support optional variances in addition to their values.
-The variances are accessed using the ``variances`` property and have the same shape and dtype as the ``values`` array.
-All operations take the variances into account:
-
-- Operations fail if the variances of coordinates are not identical, element by element.
-  For the future, we are considering supporting inexact matching based on variances of coordinates but currently this is not implemented.
-- Operations such as addition or multiplication propagate the errors to the output.
-  An overview of the method can be found in `Wikipedia: Propagation of uncertainty <https://en.wikipedia.org/wiki/Propagation_of_uncertainty>`_.
-  The implemented mechanism assumes uncorrelated data.
+- Operations such as multiplication produce an output with a new unit, e.g., :math:`m^{2}` results from multiplication of two inputs with unit :math:`m`.
 
 
 Scattered data (event data)
@@ -76,3 +107,20 @@ Bin-edge coordinates are handled naturally by operations with datasets.
 Most operations on individual data elements are unaffected.
 Other operations such as ``concat`` take the edges into account and ensure that the resulting concatenated edge coordinate is well-defined.
 There are also a number of operations specific to data with bin-edges, such as ``rebin``.
+
+
+Variances and propagation of uncertainties
+------------------------------------------
+
+Scipp provides basic features for propagation of uncertainties through operations.
+Scipp has no way of tracking correlations so this feature has its limitations and may be effectively useless for certain applications.
+
+Data in a data array support optional variances in addition to their values.
+The variances are accessed using the ``variances`` property and have the same shape and dtype as the ``values`` array.
+All operations take the variances into account:
+
+- Operations fail if the variances of coordinates are not identical, element by element.
+  For the future, we are considering supporting inexact matching based on variances of coordinates but currently this is not implemented.
+- Operations such as addition or multiplication propagate the errors to the output.
+  An overview of the method can be found in `Wikipedia: Propagation of uncertainty <https://en.wikipedia.org/wiki/Propagation_of_uncertainty>`_.
+  The implemented mechanism assumes uncorrelated data.

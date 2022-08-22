@@ -2,6 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 import numpy as np
 import scipp as sc
+from scipp.binning import make_binned
 
 
 class Bin2dRebinLongDim:
@@ -15,20 +16,20 @@ class Bin2dRebinLongDim:
     def setup(self, nbin):
         binned = sc.data.binned_x(nevent=2 * nbin, nbin=nbin)
         y = sc.linspace(dim='y', start=0, stop=1, num=2, unit='m')
-        self.da = sc.bin(binned, edges=[y])
+        self.da = make_binned(binned, edges=[y])
         self.da_transposed = self.da.transpose().copy()
 
     def time_outer(self, nbin):
         x = sc.linspace(dim='x', start=0, stop=1, num=nbin - 1, unit='m')
-        sc.bin(self.da, edges=[x])
+        make_binned(self.da, edges=[x])
 
     def time_outer_transposed(self, nbin):
         x = sc.linspace(dim='x', start=0, stop=1, num=nbin - 1, unit='m')
-        sc.bin(self.da.transpose(), edges=[x])
+        make_binned(self.da.transpose(), edges=[x])
 
     def time_outer_transposed_copied(self, nbin):
         x = sc.linspace(dim='x', start=0, stop=1, num=nbin - 1, unit='m')
-        sc.bin(self.da_transposed, edges=[x])
+        make_binned(self.da_transposed, edges=[x])
 
 
 class Bin1d:
@@ -44,4 +45,4 @@ class Bin1d:
         self.x = sc.linspace(dim='x', start=0, stop=1, num=nbin + 1, unit='m')
 
     def time_bin_table(self, nbin):
-        sc.bin(self.table, edges=[self.x])
+        make_binned(self.table, edges=[self.x])

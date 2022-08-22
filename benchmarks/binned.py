@@ -2,6 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 import numpy as np
 import scipp as sc
+from scipp.binning import make_binned
 
 
 class Binned1d:
@@ -42,7 +43,7 @@ class Binned2dConcat:
         nx = 100000
         binned = sc.data.binned_x(nevent=2 * nx, nbin=nx)
         y = sc.linspace(dim='y', start=0, stop=1, num=nbin + 1, unit='m')
-        self.da = sc.bin(binned, edges=[y])
+        self.da = make_binned(binned, edges=[y])
 
     def time_bins_concat(self, nbin):
         self.da.bins.concat('x')
@@ -59,7 +60,7 @@ class Binned2dConcatInner:
     def setup(self, nbin):
         binned = sc.data.binned_x(nevent=2 * nbin, nbin=nbin)
         y = sc.linspace(dim='y', start=0, stop=1, num=2, unit='m')
-        self.da = sc.bin(binned, edges=[y])
+        self.da = make_binned(binned, edges=[y])
 
     def time_bins_concat_long_outer(self, nbin):
         self.da.bins.concat('y')

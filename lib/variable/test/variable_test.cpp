@@ -672,7 +672,7 @@ TEST(VariableView, slice_copy_from_variable) {
                         Variances{0, 0, 0, 0, 33, 34, 0, 43, 44}));
 }
 
-TEST(VariableTest, rename) {
+TEST(VariableTest, rename_dims) {
   auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
                                   Values{1, 2, 3, 4, 5, 6},
                                   Variances{7, 8, 9, 10, 11, 12});
@@ -680,18 +680,11 @@ TEST(VariableTest, rename) {
                                              Values{1, 2, 3, 4, 5, 6},
                                              Variances{7, 8, 9, 10, 11, 12});
 
-  Variable view(var);
-  view.rename(Dim::Y, Dim::Z);
+  const auto view = var.rename_dims({{Dim::Y, Dim::Z}});
   ASSERT_EQ(view, expected);
   ASSERT_EQ(view.slice({Dim::X, 1}), expected.slice({Dim::X, 1}));
   ASSERT_EQ(view.slice({Dim::Z, 1}), expected.slice({Dim::Z, 1}));
   ASSERT_NE(var, expected);
-
-  var.rename(Dim::Y, Dim::Z);
-  ASSERT_EQ(view, expected);
-  ASSERT_EQ(view.slice({Dim::X, 1}), expected.slice({Dim::X, 1}));
-  ASSERT_EQ(view.slice({Dim::Z, 1}), expected.slice({Dim::Z, 1}));
-  ASSERT_EQ(var, expected);
 }
 
 TEST(VariableTest, create_with_variance) {
@@ -728,8 +721,7 @@ template <typename Var> void test_set_variances(Var &var) {
   var.setVariances(v);
   ASSERT_TRUE(equals(var.template variances<double>(), {2.0, 4.0, 6.0}));
 
-  Variable bad_dims = copy(v);
-  bad_dims.rename(Dim::X, Dim::Y);
+  const auto bad_dims = v.rename_dims({{Dim::X, Dim::Y}});
   EXPECT_THROW(var.setVariances(bad_dims), except::DimensionError);
 
   Variable bad_unit = copy(v);

@@ -185,8 +185,7 @@ TEST(ReshapeTest, fold_y_binedges_y) {
 TEST(ReshapeTest, flatten_binedges_1d) {
   DataArray a(arange(Dim::X, 4), {{Dim::Z, arange(Dim::X, 5)}});
   const auto flat = flatten(a, std::vector<Dim>{Dim::X}, Dim::Y);
-  auto expected = copy(a);
-  expected.rename(Dim::X, Dim::Y);
+  const auto expected = a.rename_dims({{Dim::X, Dim::Y}});
   EXPECT_EQ(flat, expected);
 }
 
