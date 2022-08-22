@@ -21,24 +21,27 @@ template <class T> struct IndicesForSorting {
   static Variable apply(const Variable &key, const SortOrder order) {
     const auto size = key.dims()[key.dim()];
     const auto values = key.values<T>();
-    std::vector<std::pair<T, scipp::index>> pairs;
-    pairs.reserve(size);
+    std::vector<std::pair<T, scipp::index>> key_index;
+    key_index.reserve(size);
+
     scipp::index i = 0;
     for (const auto &value : key.values<T>())
-      pairs.emplace_back(value, i++);
+      key_index.emplace_back(value, i++);
 
     if (order == SortOrder::Ascending)
-      std::sort(pairs.begin(), pairs.end(), [](const auto &a, const auto &b) {
-        return nan_sensitive_less(a.first, b.first);
-      });
+      std::sort(key_index.begin(), key_index.end(),
+                [](const auto &a, const auto &b) {
+                  return nan_sensitive_less(a.first, b.first);
+                });
     else
-      std::sort(pairs.begin(), pairs.end(), [](const auto &a, const auto &b) {
-        return nan_sensitive_less(b.first, a.first);
-      });
+      std::sort(key_index.begin(), key_index.end(),
+                [](const auto &a, const auto &b) {
+                  return nan_sensitive_less(b.first, a.first);
+                });
 
     auto indices =
         makeVariable<scipp::index_pair>(Dims{key.dim()}, Shape{size});
-    std::transform(pairs.begin(), pairs.end(),
+    std::transform(key_index.begin(), key_index.end(),
                    indices.values<scipp::index_pair>().as_span().begin(),
                    [](const auto &item) {
                      return std::pair{item.second, item.second + 1};
