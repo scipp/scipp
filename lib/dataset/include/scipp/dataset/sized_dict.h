@@ -67,6 +67,8 @@ public:
   [[nodiscard]] index size() const noexcept { return scipp::size(m_items); }
   /// Return true if there are 0 coordinates in the view.
   [[nodiscard]] bool empty() const noexcept { return m_items.empty(); }
+  /// Return the number of elements that space is currently allocated for.
+  [[nodiscard]] index capacity() const noexcept { return m_items.capacity(); }
   void reserve(const index new_capacity) { m_items.reserve(new_capacity); }
 
   bool contains(const Key &k) const;

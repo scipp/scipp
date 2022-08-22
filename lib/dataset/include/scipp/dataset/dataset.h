@@ -74,6 +74,8 @@ public:
   index size() const noexcept { return scipp::size(m_data); }
   /// Return true if there are 0 data items in the dataset.
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
+  /// Return the number of elements that space is currently allocated for.
+  [[nodiscard]] index capacity() const noexcept { return m_data.capacity(); }
 
   void clear();
 

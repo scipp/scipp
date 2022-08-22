@@ -129,7 +129,7 @@ constexpr auto where = overloaded{
     },
     [](const units::Unit &condition, const units::Unit &x,
        const units::Unit &y) {
-      expect::equals(condition, units::none);
+      expect::equals(units::none,condition);
       expect::equals(x, y);
       return x;
     }};
