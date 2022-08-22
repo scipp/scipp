@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/dataset/sort.h"
+#include "scipp/core/parallel.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/dataset/extract.h"
 
@@ -31,15 +32,15 @@ template <class T> struct IndicesForSorting {
     }
 
     if (order == SortOrder::Ascending)
-      std::sort(key_index.begin(), key_index.end(),
-                [](const auto &a, const auto &b) {
-                  return nan_sensitive_less(a.first, b.first);
-                });
+      core::parallel::parallel_sort(
+          key_index.begin(), key_index.end(), [](const auto &a, const auto &b) {
+            return nan_sensitive_less(a.first, b.first);
+          });
     else
-      std::sort(key_index.begin(), key_index.end(),
-                [](const auto &a, const auto &b) {
-                  return nan_sensitive_less(b.first, a.first);
-                });
+      core::parallel::parallel_sort(
+          key_index.begin(), key_index.end(), [](const auto &a, const auto &b) {
+            return nan_sensitive_less(b.first, a.first);
+          });
 
     auto indices =
         makeVariable<scipp::index_pair>(Dims{key.dim()}, Shape{size});
