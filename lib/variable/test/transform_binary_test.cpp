@@ -402,11 +402,11 @@ protected:
   static Variable make_dense_bin_dims() {
     auto var = make_dense_variable<double>(std::get<1>(GetParam()),
                                            std::get<3>(GetParam()), 2.1, 3.2);
-    var.rename(Dim::X, Dim{"i0"});
+    var = var.rename_dims({{Dim::X, Dim{"i0"}}});
     if (var.dims().ndim() > 1)
-      var.rename(Dim::Y, Dim{"i1"});
+      var = var.rename_dims({{Dim::Y, Dim{"i1"}}});
     if (var.dims().ndim() > 2)
-      var.rename(Dim::Z, Dim{"i2"});
+      var = var.rename_dims({{Dim::Z, Dim{"i2"}}});
     return var;
   }
 };
@@ -495,11 +495,11 @@ protected:
     auto var = make_dense_variable<double>(
         Shape(std::vector(bin_shape.begin(), bin_shape.end())),
         std::get<bool>(GetParam()), 2.3, 4.02);
-    var.rename(Dim::X, Dim{"i0"});
+    var = var.rename_dims({{Dim::X, Dim{"i0"}}});
     if (var.dims().ndim() > 1)
-      var.rename(Dim::Y, Dim{"i1"});
+      var = var.rename_dims({{Dim::Y, Dim{"i1"}}});
     if (var.dims().ndim() > 2)
-      var.rename(Dim::Z, Dim{"i2"});
+      var = var.rename_dims({{Dim::Z, Dim{"i2"}}});
     return var;
   }
 };

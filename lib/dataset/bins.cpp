@@ -310,7 +310,7 @@ Variable histogram(const Variable &data, const Variable &binEdges) {
   // `hist_dim`.
   const Dim dummy = Dim::InternalHistogram;
   if (indices.dims().contains(hist_dim))
-    indices.rename(hist_dim, dummy);
+    indices = indices.rename_dims({{hist_dim, dummy}});
   const auto masked = masked_data(buffer, dim);
   auto hist = variable::transform_subspan(
       buffer.dtype(), hist_dim, binEdges.dims()[hist_dim] - 1,

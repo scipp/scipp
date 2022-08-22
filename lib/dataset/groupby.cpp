@@ -82,7 +82,7 @@ T GroupBy<T>::makeReductionOutput(const Dim reductionDim,
   } else {
     out = resize_array(m_data, reductionDim, size(), fill);
   }
-  out.rename(reductionDim, dim());
+  out = out.rename_dims({{reductionDim, dim()}});
   out.coords().set(dim(), key());
   return out;
 }
