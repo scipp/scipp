@@ -38,11 +38,11 @@ template <class T> struct IndicesForSorting {
 
     auto indices =
         makeVariable<scipp::index_pair>(Dims{key.dim()}, Shape{size});
-    scipp::index j = 0;
-    for (auto &index : indices.values<scipp::index_pair>().as_span()) {
-      const auto start = pairs[j++].second;
-      index = {start, start + 1};
-    }
+    std::transform(pairs.begin(), pairs.end(),
+                   indices.values<scipp::index_pair>().as_span().begin(),
+                   [](const auto &item) {
+                     return std::pair{item.second, item.second + 1};
+                   });
     return indices;
   }
 };
