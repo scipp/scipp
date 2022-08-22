@@ -130,6 +130,10 @@ def _rename_data_array(da: DataArray,
         for meta in (out.coords, out.attrs):
             if old in meta:
                 meta[new] = meta.pop(old)
+        if out.bins is not None:
+            for meta in (out.bins.coords, out.bins.attrs):
+                if old in meta:
+                    meta[new] = meta.pop(old)
     return out
 
 
