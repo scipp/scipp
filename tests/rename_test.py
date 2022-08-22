@@ -97,6 +97,15 @@ def test_rename_renames_bin_coords_and_attrs():
     assert 'y2' in renamed.bins.attrs
 
 
+def test_rename_of_bin_coords_and_attrs_does_not_affect_input():
+    table = sc.data.table_xyz(10)
+    table.attrs['y'] = table.coords.pop('y')
+    da = table.bin(x=2, y=2)
+    _ = da.rename(x='x2', y='y2')
+    assert 'x' in da.bins.coords
+    assert 'y' in da.bins.attrs
+
+
 def test_rename_renames_bin_coords_and_attrs_even_if_no_corresponding_outer():
     table = sc.data.table_xyz(10)
     table.attrs['z'] = table.coords.pop('z')
