@@ -891,7 +891,6 @@ def datetime(value: Union[str, int, _np.datetime64],
       <scipp.Variable> ()  datetime64              [s]  [2021-01-10T14:16:15]
 
     Get the current time:
-    (result not shown because it depends on when the docs page was built)
 
       >>> now = sc.datetime('now', unit='s')
     """
