@@ -242,6 +242,8 @@ public:
   Dict(std::initializer_list<std::pair<const Key, Value>> items) {
     reserve(items.size());
     for (const auto &[key, value] : items) {
+      if (contains(key))
+        throw std::invalid_argument("duplicate key in initializer");
       insert_or_assign(key, value);
     }
   }
