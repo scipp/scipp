@@ -276,9 +276,7 @@ public:
   }
 
   void erase(const key_type &key) {
-    const auto key_it = expect_find_key(key);
-    m_keys.erase(key_it);
-    m_values.erase(std::next(m_values.begin(), index_of(key_it)));
+    static_cast<void>(extract(key));
   }
 
   mapped_type extract(const key_type &key) {
