@@ -8,8 +8,9 @@
 
 template <class T>
 T rename_dims(T &self, const std::map<std::string, std::string> &name_dict) {
-  auto out(self);
+  std::vector<std::pair<Dim, Dim>> names;
+  names.reserve(name_dict.size());
   for (const auto &[from, to] : name_dict)
-    out.rename(Dim{from}, Dim{to});
-  return out;
+    names.emplace_back(Dim{from}, Dim{to});
+  return self.rename_dims(names);
 }
