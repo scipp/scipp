@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <numeric>
@@ -122,7 +123,7 @@ TEST(MutableCoordsViewTest, item_write) {
   ASSERT_EQ(coords[Dim::Y], y_reference);
 }
 
-TEST(DictTest, set_bin_edges) {
+TEST(SizedDictTest, set_bin_edges) {
   const auto x2y3 = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3});
   const auto x2y4 = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 4});
   const auto x3y3 = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 3});
@@ -143,4 +144,21 @@ TEST(DictTest, set_bin_edges) {
   ASSERT_THROW(da.coords().set(Dim::X, x3_extra), except::DimensionError);
   ASSERT_THROW(da.coords().set(Dim::X, transpose(x3_extra)),
                except::DimensionError);
+}
+
+TEST(SizedDictTest, rename_dims) {
+  const auto a = makeVariable<int>(Dims{Dim{"a"}}, Shape{2}, Values{1, 2});
+  const auto b = makeVariable<int>(Dims{Dim{"b"}}, Shape{2}, Values{3, 4});
+  const auto c = makeVariable<int>(Dims{Dim{"c"}}, Shape{2}, Values{5, 6});
+  const DataArray da(a + b + c, {{Dim("a"), a}, {Dim("b"), b}, {Dim("c"), c}});
+  const auto &coords = da.coords();
+  const auto renamed = coords.rename_dims({{Dim("b"), Dim("r")}});
+  const auto r = b.rename_dims({{Dim("b"), Dim("r")}});
+  const Coords expected(renamed.sizes(),
+                        {{Dim("a"), a}, {Dim("b"), r}, {Dim("c"), c}});
+  for (auto it1 = renamed.begin(), it2 = expected.begin(); it1 != renamed.end();
+       ++it1, ++it2) {
+    ASSERT_NE(it2, expected.end());
+    EXPECT_EQ(*it1, *it2);
+  }
 }
