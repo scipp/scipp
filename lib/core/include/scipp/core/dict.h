@@ -2,6 +2,12 @@
 // Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Jan-Lukas Wynen
+///
+/// Dict is a container similar to Python's dict. It differs from
+/// std::map and std::unordered_map in that it stores elements in the
+/// order of insertion. In addition, its iterators throw an exception
+/// if the dict has changed size during iteration. This matches Python's
+/// behavior and avoids segfaults when misusing the dict.
 #pragma once
 
 #include <functional>
@@ -34,6 +40,10 @@ class Iterator;
 
 template <class BaseIterator, class Func> class TransformIterator;
 
+// This iterator is mostly standard library conform. But it violates the
+// requirement that *it must return a reference to value_type.
+// This is required because the keys must be returned as const refs but
+// stored in the dict as non-const.
 template <class Container, class It1, class It2, size_t... IteratorIndices>
 class Iterator {
   static_assert(sizeof...(IteratorIndices) > 0 &&
