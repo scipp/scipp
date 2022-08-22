@@ -778,7 +778,9 @@ def arange(dim: str,
     In other words, the interval including start but excluding stop.
 
     ``start``, ``stop``, and ``step`` may be given as plain values or as 0-D variables.
-    In the latter case this then implies the unit.
+    In the latter case this then implies the unit (the units of all arguments must be
+    identical), but a different unit-scale can still be requested with the ``unit``
+    argument.
 
     When all the types or dtypes of the input arguments are the same, the output will
     also have this dtype. This is different to :func:`numpy.arange` which will always
