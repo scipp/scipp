@@ -200,9 +200,7 @@ void SizedDict<Key, Value>::set(const key_type &key, mapped_type coord) {
 
 template <class Key, class Value>
 void SizedDict<Key, Value>::erase(const key_type &key) {
-  expect_writable(*this);
-  scipp::expect::contains(*this, key);
-  m_items.erase(key);
+  static_cast<void>(extract(key));
 }
 
 template <class Key, class Value>

@@ -11,6 +11,8 @@
 #pragma once
 
 #include <functional>
+#include <sstream>
+#include <string_view>
 #include <vector>
 
 #include "scipp/common/index.h"
@@ -285,9 +287,7 @@ public:
     }
   }
 
-  void erase(const key_type &key) {
-    static_cast<void>(extract(key));
-  }
+  void erase(const key_type &key) { static_cast<void>(extract(key)); }
 
   mapped_type extract(const key_type &key) {
     const auto key_it = expect_find_key(key);
@@ -389,7 +389,8 @@ private:
     }
     using scipp::core::to_string;
     using std::to_string;
-    throw except::NotFoundError(to_string(key));
+    throw except::NotFoundError("Expected " + dict_keys_to_string(*this) +
+                                " to contain " + to_string(key) + ".");
   }
 
   auto index_of(const typename Keys::const_iterator &it) const noexcept {
@@ -400,4 +401,23 @@ private:
     return index_of(expect_find_key(key));
   }
 };
+
+template <class Mapping>
+std::string dict_keys_to_string(const Mapping &dict,
+                                const std::string_view dict_name = "Dict") {
+  std::ostringstream ss;
+  ss << "<" << dict_name << " {";
+  bool first = true;
+  const auto end = dict.keys_end();
+  for (auto it = dict.keys_begin(); it != end; ++it) {
+    if (!first) {
+      ss << ", ";
+    } else {
+      first = false;
+    }
+    ss << *it;
+  }
+  ss << "}>";
+  return ss.str();
+}
 } // namespace scipp::core
