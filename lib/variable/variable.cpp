@@ -267,8 +267,13 @@ Variable Variable::transpose(const scipp::span<const Dim> order) const {
   return transposed;
 }
 
-void Variable::rename(const Dim from, const Dim to) {
-  m_dims.replace_key(from, to);
+Variable
+Variable::rename_dims(const std::vector<std::pair<Dim, Dim>> &names) const {
+  auto out(*this);
+  // names is a vector for predictable order
+  for (const auto &[from, to] : names)
+    out.m_dims.replace_key(from, to);
+  return out;
 }
 
 bool Variable::is_valid() const noexcept { return m_object.operator bool(); }
