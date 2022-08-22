@@ -7,7 +7,6 @@
 namespace py = pybind11;
 
 void init_buckets(py::module &);
-void init_choose(py::module &);
 void init_comparison(py::module &);
 void init_counts(py::module &);
 void init_creation(py::module &);
@@ -46,7 +45,6 @@ void init_core(py::module &m) {
   init_variable(core);
   init_dataset(core);
 
-  init_choose(core);
   init_counts(core);
   init_creation(core);
   init_cumulative(core);

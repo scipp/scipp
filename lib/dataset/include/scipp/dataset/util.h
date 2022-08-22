@@ -21,3 +21,12 @@ SCIPP_DATASET_EXPORT scipp::index size_of(const DataArray &dataarray,
 SCIPP_DATASET_EXPORT scipp::index size_of(const Dataset &dataset,
                                           SizeofTag tag);
 } // namespace scipp
+
+namespace scipp::dataset {
+
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
+strip_edges_along(const DataArray &da, const Dim dim);
+[[nodiscard]] SCIPP_DATASET_EXPORT Dataset strip_edges_along(const Dataset &ds,
+                                                             const Dim dim);
+
+} // namespace scipp::dataset
