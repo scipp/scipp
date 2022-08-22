@@ -285,8 +285,14 @@ Dict<Key, Value>::rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
                               const bool fail_on_unknown) const {
   auto out(*this);
   out.m_sizes = out.m_sizes.rename_dims(names, fail_on_unknown);
-  for (auto &item : out.m_items)
+  for (auto &item : out.m_items) {
+    for (const auto &rename : names)
+      if (!m_sizes.contains(rename.second) &&
+          item.second.dims().contains(rename.second))
+        throw except::DimensionError("Duplicate dimension " +
+                                     units::to_string(rename.second) + ".");
     item.second = item.second.rename_dims(names, false);
+  }
   return out;
 }
 

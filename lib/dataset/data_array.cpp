@@ -187,7 +187,7 @@ DataArray DataArray::rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
                                  const bool fail_on_unknown) const {
   for (const auto &[from, to] : names)
     if ((from != to) && dims().contains(to))
-      throw except::DimensionError("Duplicate dimension.");
+      throw except::DimensionError("Duplicate dimension" + to_string(to) + ".");
   return DataArray(m_data->rename_dims(names, fail_on_unknown),
                    m_coords->rename_dims(names, false),
                    m_masks->rename_dims(names, false),
