@@ -286,6 +286,12 @@ Dict<Key, Value>::rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
   auto out(*this);
   out.m_sizes = out.m_sizes.rename_dims(names, fail_on_unknown);
   for (auto &item : out.m_items) {
+    // DataArray coords/attrs support the special case of length-2 items with a
+    // dim that is not contained in the data array dims. This occurs, e.g., when
+    // slicing along a dim that has a bin edge coord. We must prevent renaming
+    // to such dims. This is the reason for calling with `names` that may
+    // contain unknown dims (and the `fail_on_unknown` arg). Otherwise the
+    // caller would need to perform this check.
     for (const auto &rename : names)
       if (!m_sizes.contains(rename.second) &&
           item.second.dims().contains(rename.second))
