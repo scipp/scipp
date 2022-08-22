@@ -103,8 +103,7 @@ TEST_F(DataArrayBinsTest, concatenate) {
 }
 
 TEST_F(DataArrayBinsTest, concatenate_with_broadcast) {
-  auto var2 = copy(var);
-  var2.rename(Dim::Y, Dim::Z);
+  auto var2 = copy(var).rename_dims({{Dim::Y, Dim::Z}});
   var2 *= 3.0 * units::one;
   const auto result = buckets::concatenate(var, var2);
   Variable out_indices = makeVariable<scipp::index_pair>(
@@ -366,8 +365,7 @@ TEST_F(DataArrayBinsScaleTest, events_times_histogram_without_variances) {
 TEST_F(DataArrayBinsScaleTest,
        events_times_histogram_fail_too_many_bucketed_dims) {
   auto x = make_histogram();
-  auto z(x);
-  z.rename(Dim::X, Dim::Z);
+  auto z = x.rename_dims({{Dim::X, Dim::Z}});
   z.coords().set(Dim::Z, z.coords().extract(Dim::X));
   auto zx = z * x;
   auto events = make_events();

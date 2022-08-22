@@ -61,6 +61,8 @@ Bugfixes
 * Fixed broken boolean-indexing and sort operations on arrays that contain binned data `#2759 <https://github.com/scipp/scipp/pull/2759>`_.
 * ``transform_coords`` now works with datasets with only coordinates but no data `#2755 <https://github.com/scipp/scipp/pull/2755>`_.
 * Fixed a bug when using :func:`scipp.hist` on a Dataset that contains binned data `#2764 <https://github.com/scipp/scipp/pull/2764>`_.
+* Fixed the ``rename`` methods to also rename bin coords and attrs of binned data `#2774 <https://github.com/scipp/scipp/pull/2774>`_.
+* Fixed the ``rename_dims`` methods which failed to check for conflicting bin-edge coords of length 2 failling outside the object's dimensions `#2775 <https://github.com/scipp/scipp/pull/2775>`_.
 
 Documentation
 ~~~~~~~~~~~~~
