@@ -19,7 +19,6 @@
 
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/except.h"
-#include "scipp/dataset/extract.h"
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/dataset/util.h"
@@ -31,25 +30,6 @@
 using namespace scipp::variable;
 
 namespace scipp::dataset {
-
-namespace {
-
-template <class Slices, class Data>
-Data copy_impl(const Slices &slices, const Data &data, const Dim slice_dim) {
-  auto indices = makeVariable<scipp::index_pair>(Dims{slice_dim},
-                                                 Shape{scipp::size(slices)});
-  const auto &indices_values = indices.values<scipp::index_pair>();
-  for (scipp::index i = 0; i < scipp::size(slices); ++i)
-    indices_values[i] = {slices[i].begin(), slices[i].end()};
-  return extract_ranges(indices, data, slice_dim);
-}
-
-} // namespace
-
-/// Extract given group as a new data array or dataset
-template <class T> T GroupBy<T>::copy(const scipp::index group) const {
-  return copy_impl(groups().at(group), m_data, m_grouping.sliceDim());
-}
 
 namespace {
 auto resize_array(const DataArray &da, const Dim reductionDim,
@@ -183,18 +163,6 @@ template <class T> T GroupBy<T>::min(const Dim reductionDim) const {
 /// Reduce each group using `nanmin` and return combined data.
 template <class T> T GroupBy<T>::nanmin(const Dim reductionDim) const {
   return reduce(variable::nanmin_into, reductionDim, FillValue::Max);
-}
-
-/// Combine groups without changes, effectively sorting data.
-template <class T> T GroupBy<T>::copy(const SortOrder order) const {
-  std::vector<Slice> flat;
-  if (order == SortOrder::Ascending)
-    for (const auto &slices : groups())
-      flat.insert(flat.end(), slices.begin(), slices.end());
-  else
-    for (auto it = groups().rbegin(); it != groups().rend(); ++it)
-      flat.insert(flat.end(), it->begin(), it->end());
-  return copy_impl(flat, m_data, m_grouping.sliceDim());
 }
 
 /// Apply mean to groups and return combined data.

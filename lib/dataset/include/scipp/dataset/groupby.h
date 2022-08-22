@@ -7,7 +7,6 @@
 #include <boost/container/small_vector.hpp>
 #include <vector>
 
-#include "scipp/core/flags.h"
 #include "scipp/variable/creation.h"
 #include <scipp/dataset/dataset.h>
 
@@ -47,7 +46,6 @@ public:
   const std::vector<GroupByGrouping::group> &groups() const noexcept {
     return m_grouping.groups();
   }
-  T copy(const scipp::index group) const;
 
   T concat(const Dim reductionDim) const;
   T mean(const Dim reductionDim) const;
@@ -59,7 +57,6 @@ public:
   T nanmax(const Dim reductionDim) const;
   T min(const Dim reductionDim) const;
   T nanmin(const Dim reductionDim) const;
-  T copy(const SortOrder order) const;
 
 private:
   T makeReductionOutput(const Dim reductionDim, const FillValue fill) const;

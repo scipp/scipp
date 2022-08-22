@@ -48,6 +48,7 @@ Breaking changes
 ~~~~~~~~~~~~~~~~
 
 * The plots are no longer interactive by default, standard Matplotlib rules now apply (the inline static backend is the default). Use ``%matplotlib widget`` for interactive plots `#2671 <https://github.com/scipp/scipp/pull/2671>`_.
+* The ``copy`` method of groupby has been removed. Use advanced indexing instead `#2676 <https://github.com/scipp/scipp/pull/2676>`_.
 
 Bugfixes
 ~~~~~~~~
@@ -69,6 +70,12 @@ Documentation
 
 Deprecations
 ~~~~~~~~~~~~
+
+Performance
+~~~~~~~~~~~
+
+- Advanced indexing is now much faster.
+- Sorting is now much faster.
 
 Contributors
 ~~~~~~~~~~~~
