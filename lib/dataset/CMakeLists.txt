@@ -8,11 +8,11 @@ set(INC_FILES
     include/scipp/dataset/astype.h
     include/scipp/dataset/bin.h
     include/scipp/dataset/bins.h
-    include/scipp/dataset/choose.h
     include/scipp/dataset/counts.h
     include/scipp/dataset/dataset.h
     include/scipp/dataset/dataset_util.h
     include/scipp/dataset/except.h
+    include/scipp/dataset/extract.h
     include/scipp/dataset/groupby.h
     include/scipp/dataset/histogram.h
     include/scipp/dataset/math.h
@@ -40,6 +40,7 @@ set(SRC_FILES
     data_array.cpp
     dataset.cpp
     except.cpp
+    extract.cpp
     groupby.cpp
     histogram.cpp
     mean.cpp

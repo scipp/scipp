@@ -211,10 +211,6 @@ def where(condition: _cpp.Variable, x: _cpp.Variable,
     :
         Variable with elements from x where condition is True
         and elements from y elsewhere.
-
-    See Also
-    --------
-    scipp.choose
     """
     return _call_cpp_func(_cpp.where, condition, x, y)
 

@@ -10,7 +10,6 @@ python_add_library(
   MODULE
   bind_units.cpp
   bins.cpp
-  choose.cpp
   comparison.cpp
   counts.cpp
   variable_creation.cpp

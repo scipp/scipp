@@ -18,10 +18,10 @@
 #include "scipp/variable/variable_factory.h"
 
 #include "scipp/dataset/bins.h"
-#include "scipp/dataset/choose.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/shape.h"
+#include "scipp/dataset/util.h"
 
 #include "../variable/operations_common.h"
 #include "bin_common.h"
@@ -30,84 +30,6 @@
 using namespace scipp::variable;
 
 namespace scipp::dataset {
-
-namespace {
-
-/// Transform data of data array or dataset, coord, masks, and attrs are
-/// shallow-copied.
-///
-/// Beware of the mask-copy behavior, which is not suitable for data returned to
-/// the user.
-template <class T, class Func, class... Ts>
-T transform_data(const T &obj, Func func, const Ts &...other) {
-  T out(obj);
-  if constexpr (std::is_same_v<T, DataArray>) {
-    out.setData(func(obj.data(), other.data()...));
-  } else {
-    for (const auto &item : obj)
-      out.setData(item.name(), func(item.data(), other[item.name()].data()...),
-                  AttrPolicy::Keep);
-  }
-  return out;
-}
-
-template <class Buffer>
-Variable copy_ranges_from_buffer(const Variable &indices, const Dim dim,
-                                 const Buffer &buffer) {
-  return copy(make_bins_no_validate(indices, dim, buffer));
-}
-
-Variable copy_ranges_from_bins_buffer(const Variable &indices,
-                                      const Variable &data) {
-  if (data.dtype() == dtype<bucket<Variable>>) {
-    const auto &[i, dim, buf] = data.constituents<Variable>();
-    return copy_ranges_from_buffer(indices, dim, buf);
-  } else if (data.dtype() == dtype<bucket<DataArray>>) {
-    const auto &[i, dim, buf] = data.constituents<DataArray>();
-    return copy_ranges_from_buffer(indices, dim, buf);
-  } else {
-    const auto &[i, dim, buf] = data.constituents<Dataset>();
-    return copy_ranges_from_buffer(indices, dim, buf);
-  }
-}
-
-Variable dense_or_bin_indices(const Variable &var) {
-  return is_bins(var) ? var.bin_indices() : var;
-}
-
-Variable dense_or_copy_bin_elements(const Variable &dense_or_indices,
-                                    const Variable &data) {
-  return is_bins(data) ? copy_ranges_from_bins_buffer(dense_or_indices, data)
-                       : dense_or_indices;
-}
-
-template <class Slices, class Data>
-Data copy_impl(const Slices &slices, const Data &data, const Dim slice_dim) {
-  auto indices = makeVariable<scipp::index_pair>(Dims{slice_dim},
-                                                 Shape{scipp::size(slices)});
-  const auto &indices_values = indices.values<scipp::index_pair>();
-  for (scipp::index i = 0; i < scipp::size(slices); ++i)
-    indices_values[i] = {slices[i].begin(), slices[i].end()};
-  // 1. Operate on dense data, or equivalent array of indices (if binned) to
-  // obtain output data of correct shape with proper meta data.
-  auto dense = transform_data(data, dense_or_bin_indices);
-  auto out = copy_ranges_from_buffer(indices, slice_dim, dense)
-                 .template bin_buffer<Data>();
-  // 2. If we have binned data then the data of the DataArray or Dataset
-  // obtained in step 1. give the indices into the underlying buffer to be
-  // copied. This then replaces the data to obtain the final result. Does
-  // nothing if dense data.
-  return transform_data(out, dense_or_copy_bin_elements, data);
-}
-
-} // namespace
-
-/// Extract given group as a new data array or dataset
-template <class T> T GroupBy<T>::copy(const scipp::index group) const {
-  return copy_impl(groups().at(group),
-                   strip_edges_along(m_data, m_grouping.sliceDim()),
-                   m_grouping.sliceDim());
-}
 
 namespace {
 auto resize_array(const DataArray &da, const Dim reductionDim,
@@ -241,18 +163,6 @@ template <class T> T GroupBy<T>::min(const Dim reductionDim) const {
 /// Reduce each group using `nanmin` and return combined data.
 template <class T> T GroupBy<T>::nanmin(const Dim reductionDim) const {
   return reduce(variable::nanmin_into, reductionDim, FillValue::Max);
-}
-
-/// Combine groups without changes, effectively sorting data.
-template <class T> T GroupBy<T>::copy(const SortOrder order) const {
-  std::vector<Slice> flat;
-  if (order == SortOrder::Ascending)
-    for (const auto &slices : groups())
-      flat.insert(flat.end(), slices.begin(), slices.end());
-  else
-    for (auto it = groups().rbegin(); it != groups().rend(); ++it)
-      flat.insert(flat.end(), it->begin(), it->end());
-  return copy_impl(flat, m_data, m_grouping.sliceDim());
 }
 
 /// Apply mean to groups and return combined data.
@@ -490,73 +400,7 @@ GroupBy<Dataset> groupby(const Dataset &dataset, const Variable &key,
   throw except::DimensionError("Size of Group-by key is incorrect.");
 }
 
-Variable extract(const Variable &var, const Variable &condition) {
-  return extract(DataArray(var), condition).data();
-}
-
-namespace {
-template <class T> T extract_impl(const T &obj, const Variable &condition) {
-  if (condition.dtype() != dtype<bool>)
-    throw except::TypeError(
-        "Cannot extract elements based on condition with non-boolean dtype. If "
-        "you intended to select a range based on a label you must specify the "
-        "dimension.");
-  if (condition.dims().ndim() != 1)
-    throw except::DimensionError("Condition must by 1-D, but got " +
-                                 to_string(condition.dims()) + '.');
-  if (!obj.dims().includes(condition.dims()))
-    throw except::DimensionError(
-        "Condition dimensions " + to_string(condition.dims()) +
-        " must be be included in the dimensions of the sliced object " +
-        to_string(obj.dims()) + '.');
-  if (all(condition).value<bool>())
-    return copy(obj);
-  if (!any(condition).value<bool>())
-    return copy(obj.slice({condition.dim(), 0, 0}));
-  return call_groupby(obj, condition, condition.dim()).copy(1);
-}
-} // namespace
-
-DataArray extract(const DataArray &da, const Variable &condition) {
-  return extract_impl(da, condition);
-}
-
-Dataset extract(const Dataset &ds, const Variable &condition) {
-  return extract_impl(ds, condition);
-}
-
 template class GroupBy<DataArray>;
 template class GroupBy<Dataset>;
-
-constexpr auto slice_by_value = [](const auto &x, const Dim dim,
-                                   const auto &key) {
-  const auto size = x.dims()[dim];
-  const auto &coord = x.meta()[dim];
-  for (scipp::index i = 0; i < size; ++i)
-    if (coord.slice({dim, i}) == key)
-      return x.slice({dim, i});
-  throw std::runtime_error("Given key not found in coord.");
-};
-
-/// Similar to numpy.choose, but choose based on *values* in `key`.
-///
-/// Chooses slices of `choices` along `dim`, based on values of dimension-coord
-/// for `dim`.
-DataArray choose(const Variable &key, const DataArray &choices, const Dim dim) {
-  const auto grouping = call_groupby(key, key, dim);
-  const Dim target_dim = key.dims().inner();
-  auto out = resize(choices, dim, key.dims()[target_dim]);
-  out = out.rename_dims({{dim, target_dim}});
-  out.coords().set(dim, key); // not target_dim
-  for (scipp::index group = 0; group < grouping.size(); ++group) {
-    const auto value = grouping.key().slice({dim, group});
-    const auto &choice = slice_by_value(choices, dim, value);
-    for (const auto &slice : grouping.groups()[group]) {
-      auto out_ = out.slice(slice);
-      copy(broadcast(choice.data(), out_.dims()), out_.data());
-    }
-  }
-  return out;
-}
 
 } // namespace scipp::dataset
