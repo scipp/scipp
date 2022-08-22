@@ -85,7 +85,9 @@ public:
   /// Return typed view for data variances.
   template <class T> auto variances() { return m_data->variances<T>(); }
 
-  void rename(Dim from, Dim to);
+  [[nodiscard]] DataArray
+  rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
+              const bool fail_on_unknown = true) const;
 
   void setData(const Variable &data);
 

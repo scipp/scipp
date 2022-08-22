@@ -73,6 +73,10 @@ public:
   // TODO Better names required.
   void add(const Dim label, const scipp::index size);
   void addInner(const Dim label, const scipp::index size);
+
+  [[nodiscard]] Dimensions
+  rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
+              const bool fail_on_unknown = true) const;
 };
 
 [[nodiscard]] SCIPP_CORE_EXPORT Dimensions merge(const Dimensions &a);

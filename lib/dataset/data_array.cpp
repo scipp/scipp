@@ -183,13 +183,12 @@ DataArray DataArray::view_with_coords(const Coords &coords,
   return out;
 }
 
-void DataArray::rename(const Dim from, const Dim to) {
-  if ((from != to) && dims().contains(to))
-    throw except::DimensionError("Duplicate dimension.");
-  m_data->rename(from, to);
-  m_coords->rename(from, to);
-  m_masks->rename(from, to);
-  m_attrs->rename(from, to);
+DataArray DataArray::rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
+                                 const bool fail_on_unknown) const {
+  return DataArray(m_data->rename_dims(names, fail_on_unknown),
+                   m_coords->rename_dims(names, false),
+                   m_masks->rename_dims(names, false),
+                   m_attrs->rename_dims(names, false));
 }
 
 DataArray DataArray::as_const() const {
