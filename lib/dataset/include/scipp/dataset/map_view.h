@@ -153,7 +153,8 @@ public:
   void validateSlice(const Slice &s, const Dict &dict) const;
   [[maybe_unused]] Dict &setSlice(const Slice &s, const Dict &dict);
 
-  void rename(const Dim from, const Dim to);
+  [[nodiscard]] Dict rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
+                                 const bool fail_on_unknown = true) const;
 
   void set_readonly() noexcept;
   [[nodiscard]] bool is_readonly() const noexcept;

@@ -109,7 +109,8 @@ public:
   template <class T> Variable elements(const std::string &key) const;
 
   [[nodiscard]] Variable
-  rename_dims(const std::vector<std::pair<Dim, Dim>> &names) const;
+  rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
+              const bool fail_on_unknown = true) const;
 
   bool operator==(const Variable &other) const;
   bool operator!=(const Variable &other) const;

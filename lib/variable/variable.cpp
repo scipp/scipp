@@ -267,12 +267,15 @@ Variable Variable::transpose(const scipp::span<const Dim> order) const {
   return transposed;
 }
 
-Variable
-Variable::rename_dims(const std::vector<std::pair<Dim, Dim>> &names) const {
+/// Return new variable with renamed dimensions.
+///
+/// The `fail_on_unknown` option is used internally for implementing rename_dims
+/// in DataArray and related classes.
+Variable Variable::rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
+                               const bool fail_on_unknown) const {
   auto out(*this);
   // names is a vector for predictable order
-  for (const auto &[from, to] : names)
-    out.m_dims.replace_key(from, to);
+  out.m_dims = out.m_dims.rename_dims(names, fail_on_unknown);
   return out;
 }
 

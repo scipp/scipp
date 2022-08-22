@@ -140,7 +140,7 @@ T GroupBy<T>::makeReductionOutput(const Dim reductionDim,
   } else {
     out = resize_array(m_data, reductionDim, size(), fill);
   }
-  out.rename(reductionDim, dim());
+  out = out.rename_dims({{reductionDim, dim()}});
   out.coords().set(dim(), key());
   return out;
 }
@@ -546,7 +546,7 @@ DataArray choose(const Variable &key, const DataArray &choices, const Dim dim) {
   const auto grouping = call_groupby(key, key, dim);
   const Dim target_dim = key.dims().inner();
   auto out = resize(choices, dim, key.dims()[target_dim]);
-  out.rename(dim, target_dim);
+  out = out.rename_dims({{dim, target_dim}});
   out.coords().set(dim, key); // not target_dim
   for (scipp::index group = 0; group < grouping.size(); ++group) {
     const auto value = grouping.key().slice({dim, group});

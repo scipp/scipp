@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include <algorithm>
 
+#include "rename.h"
 #include "scipp/core/except.h"
 #include "scipp/core/sizes.h"
 
@@ -163,6 +164,11 @@ Sizes Sizes::slice(const Slice &params) const {
   } else
     sliced.erase(params.dim());
   return sliced;
+}
+
+Sizes Sizes::rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
+                         const bool fail_on_unknown) const {
+  return detail::rename_dims(*this, names, fail_on_unknown);
 }
 
 namespace {
