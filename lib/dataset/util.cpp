@@ -20,11 +20,13 @@ using namespace scipp::variable;
 namespace scipp {
 
 namespace {
-scipp::index size_of_elements(const Variable &view, SizeofTag tag,
-                              const std::optional<std::pair<Dim, double>> &scale_in_dim);
+scipp::index
+size_of_elements(const Variable &view, SizeofTag tag,
+                 const std::optional<std::pair<Dim, double>> &scale_in_dim);
 
-scipp::index size_of_impl(const Variable &var, const SizeofTag tag,
-                          const std::optional<std::pair<Dim, double>> &scale_in_dim) {
+scipp::index
+size_of_impl(const Variable &var, const SizeofTag tag,
+             const std::optional<std::pair<Dim, double>> &scale_in_dim) {
   const auto object_size =
       static_cast<scipp::index>(sizeof(Variable)) + var.data().object_size();
   return size_of_elements(var, tag, scale_in_dim) + object_size;
@@ -33,9 +35,10 @@ scipp::index size_of_impl(const Variable &var, const SizeofTag tag,
 /// Return the size in memory of a DataArray object. The aligned coord is
 /// optional because for a DataArray owned by a dataset aligned coords are
 /// assumed to be owned by the dataset as they can apply to multiple arrays.
-scipp::index size_of_impl(const DataArray &da, const SizeofTag tag,
-                          const std::optional<std::pair<Dim, double>> &scale_in_dim,
-                          bool include_aligned_coords = true) {
+scipp::index
+size_of_impl(const DataArray &da, const SizeofTag tag,
+             const std::optional<std::pair<Dim, double>> &scale_in_dim,
+             bool include_aligned_coords = true) {
   auto size = static_cast<scipp::index>(
       sizeof(DataArray) + sizeof(dataset::Coords) + sizeof(dataset::Attrs) +
       sizeof(dataset::Masks) + da.coords().capacity() + da.attrs().capacity() +
@@ -55,8 +58,9 @@ scipp::index size_of_impl(const DataArray &da, const SizeofTag tag,
   return size;
 }
 
-scipp::index size_of_impl(const Dataset &ds, const SizeofTag tag,
-                          const std::optional<std::pair<Dim, double>> &scale_in_dim) {
+scipp::index
+size_of_impl(const Dataset &ds, const SizeofTag tag,
+             const std::optional<std::pair<Dim, double>> &scale_in_dim) {
   auto size = static_cast<scipp::index>(sizeof(Dataset) + ds.capacity());
   for (const auto &data : ds) {
     size += size_of_impl(data, tag, scale_in_dim, false);
@@ -108,9 +112,12 @@ scipp::index size_of_bins(const Variable &view, const SizeofTag tag) {
         sizes == 0 ? 0.0 : sizes / static_cast<double>(buffer.dims()[dim]);
     scale_in_dim.first = dim;
   }
-  const auto indices_volume =
-      tag == SizeofTag::Underlying ? indices.data().size() : indices.dims().volume();
-  return indices_volume * sizeof(scipp::index_pair) + sizeof(variable::StructureArrayModel<scipp::index_pair, scipp::index>)+
+  const auto indices_volume = tag == SizeofTag::Underlying
+                                  ? indices.data().size()
+                                  : indices.dims().volume();
+  return indices_volume * sizeof(scipp::index_pair) +
+         sizeof(
+             variable::StructureArrayModel<scipp::index_pair, scipp::index>) +
          size_of_impl(buffer, tag, scale_in_dim);
 }
 
@@ -128,8 +135,9 @@ auto accumulate_size_of(const Variable &view, const SizeofTag tag,
   return size.value<scipp::index>();
 }
 
-scipp::index size_of_elements(const Variable &view, const SizeofTag tag,
-                              const std::optional<std::pair<Dim, double>> &scale_in_dim) {
+scipp::index
+size_of_elements(const Variable &view, const SizeofTag tag,
+                 const std::optional<std::pair<Dim, double>> &scale_in_dim) {
   if (view.dtype() == dtype<bucket<Variable>>) {
     return size_of_bins<Variable>(view, tag);
   }
@@ -151,7 +159,10 @@ scipp::index size_of_elements(const Variable &view, const SizeofTag tag,
   const auto variance_scale = view.has_variances() ? 2 : 1;
   const auto data_size =
       tag == SizeofTag::Underlying ? view.data().size() : view.dims().volume();
-  const auto extra_scale = scale_in_dim.has_value() && view.dims().contains(scale_in_dim->first) ? scale_in_dim->second : 1.0;
+  const auto extra_scale =
+      scale_in_dim.has_value() && view.dims().contains(scale_in_dim->first)
+          ? scale_in_dim->second
+          : 1.0;
   return static_cast<scipp::index>(
       static_cast<double>(data_size * value_size * variance_scale) *
       extra_scale);
@@ -163,7 +174,7 @@ scipp::index size_of(const Variable &var, const SizeofTag tag) {
 }
 scipp::index size_of(const DataArray &da, const SizeofTag tag,
                      const bool include_aligned_coords) {
-  return size_of_impl(da, tag,std::nullopt, include_aligned_coords);
+  return size_of_impl(da, tag, std::nullopt, include_aligned_coords);
 }
 scipp::index size_of(const Dataset &ds, const SizeofTag tag) {
   return size_of_impl(ds, tag, std::nullopt);

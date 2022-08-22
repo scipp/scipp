@@ -30,7 +30,7 @@ private:
 
 void expect_valid_bin_indices(const Variable &indices, const Dim dim,
                               const Sizes &buffer_sizes) {
-  core::expect::equals(units::none,indices.unit());
+  core::expect::equals(units::none, indices.unit());
   auto var = copy(indices);
   const auto vals = var.values<scipp::index_pair>().as_span();
   std::sort(vals.begin(), vals.end());

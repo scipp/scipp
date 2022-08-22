@@ -55,8 +55,8 @@ public:
 
   SizedDict() = default;
   SizedDict(const Sizes &sizes,
-              std::initializer_list<std::pair<const Key, Value>> items,
-              bool readonly = false);
+            std::initializer_list<std::pair<const Key, Value>> items,
+            bool readonly = false);
   SizedDict(Sizes sizes, holder_type items, bool readonly = false);
   SizedDict(const SizedDict &other);
   SizedDict(SizedDict &&other) noexcept;
@@ -129,11 +129,11 @@ public:
   SizedDict slice(const Slice &params) const;
   std::tuple<SizedDict, SizedDict> slice_coords(const Slice &params) const;
   void validateSlice(const Slice &s, const SizedDict &dict) const;
-  [[maybe_unused]] SizedDict &setSlice(const Slice &s,
-                                         const SizedDict &dict);
+  [[maybe_unused]] SizedDict &setSlice(const Slice &s, const SizedDict &dict);
 
-  [[nodiscard]] SizedDict rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
-                                 const bool fail_on_unknown = true) const;
+  [[nodiscard]] SizedDict
+  rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
+              const bool fail_on_unknown = true) const;
 
   void set_readonly() noexcept;
   [[nodiscard]] bool is_readonly() const noexcept;
@@ -164,8 +164,7 @@ template <class Masks>
 }
 
 template <class Key, class Value>
-bool equals_nan(const SizedDict<Key, Value> &a,
-                const SizedDict<Key, Value> &b);
+bool equals_nan(const SizedDict<Key, Value> &a, const SizedDict<Key, Value> &b);
 
 template <class Key, class Value>
 core::Dict<Key, Value> union_(const SizedDict<Key, Value> &a,

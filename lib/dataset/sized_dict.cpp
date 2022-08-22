@@ -27,7 +27,7 @@ SizedDict<Key, Value>::SizedDict(
 
 template <class Key, class Value>
 SizedDict<Key, Value>::SizedDict(Sizes sizes, holder_type items,
-                                     const bool readonly)
+                                 const bool readonly)
     : m_sizes(std::move(sizes)) {
   for (auto &&[key, value] : items)
     set(key, std::move(value));
@@ -42,7 +42,7 @@ SizedDict<Key, Value>::SizedDict(const SizedDict &other)
 template <class Key, class Value>
 SizedDict<Key, Value>::SizedDict(SizedDict &&other) noexcept
     : SizedDict(std::move(other.m_sizes), std::move(other.m_items),
-                  other.m_readonly) {}
+                other.m_readonly) {}
 
 template <class Key, class Value>
 SizedDict<Key, Value> &
@@ -211,7 +211,7 @@ Value SizedDict<Key, Value>::extract(const key_type &key) {
 
 template <class Key, class Value>
 Value SizedDict<Key, Value>::extract(const key_type &key,
-                                       const mapped_type &default_value) {
+                                     const mapped_type &default_value) {
   if (contains(key)) {
     return extract(key);
   }
@@ -250,7 +250,7 @@ SizedDict<Key, Value>::slice_coords(const Slice &params) const {
 
 template <class Key, class Value>
 void SizedDict<Key, Value>::validateSlice(const Slice &s,
-                                            const SizedDict &dict) const {
+                                          const SizedDict &dict) const {
   using core::to_string;
   using units::to_string;
   for (const auto &[key, item] : dict) {
@@ -271,7 +271,8 @@ void SizedDict<Key, Value>::validateSlice(const Slice &s,
 }
 
 template <class Key, class Value>
-SizedDict<Key, Value> &SizedDict<Key, Value>::setSlice(const Slice &s, const SizedDict &dict) {
+SizedDict<Key, Value> &SizedDict<Key, Value>::setSlice(const Slice &s,
+                                                       const SizedDict &dict) {
   validateSlice(s, dict);
   for (const auto &[key, item] : dict) {
     const auto it = find(key);
@@ -283,9 +284,9 @@ SizedDict<Key, Value> &SizedDict<Key, Value>::setSlice(const Slice &s, const Siz
 }
 
 template <class Key, class Value>
-SizedDict<Key, Value>
-SizedDict<Key, Value>::rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
-                              const bool fail_on_unknown) const {
+SizedDict<Key, Value> SizedDict<Key, Value>::rename_dims(
+    const std::vector<std::pair<Dim, Dim>> &names,
+    const bool fail_on_unknown) const {
   auto out(*this);
   out.m_sizes = out.m_sizes.rename_dims(names, fail_on_unknown);
   for (auto &&item : out.m_items) {
@@ -349,7 +350,7 @@ SizedDict<Key, Value>::merge_from(const SizedDict &other) const {
 
 template <class Key, class Value>
 bool SizedDict<Key, Value>::item_applies_to(const Key &key,
-                                              const Dimensions &dims) const {
+                                            const Dimensions &dims) const {
   const auto &val = m_items.at(key);
   return std::all_of(val.dims().begin(), val.dims().end(),
                      [&dims](const Dim dim) { return dims.contains(dim); });
@@ -357,7 +358,7 @@ bool SizedDict<Key, Value>::item_applies_to(const Key &key,
 
 template <class Key, class Value>
 bool SizedDict<Key, Value>::is_edges(const Key &key,
-                                       const std::optional<Dim> dim) const {
+                                     const std::optional<Dim> dim) const {
   const auto &val = this->at(key);
   return core::is_edges(m_sizes, val.dims(),
                         dim.has_value() ? *dim : val.dim());

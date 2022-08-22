@@ -160,8 +160,8 @@ static constexpr auto count_indices = overloaded{
         std::tuple<scipp::span<const int32_t>, scipp::index, scipp::index>>,
     [](const units::Unit &indices, const auto &offset, const auto &nbin) {
       expect::equals(units::none, indices);
-      expect::equals( units::none,offset);
-      expect::equals(units::none,nbin);
+      expect::equals(units::none, offset);
+      expect::equals(units::none, nbin);
       return units::none;
     },
     [](const auto &indices, const auto offset, const auto nbin) {

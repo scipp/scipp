@@ -15,11 +15,9 @@ namespace scipp {
 enum SizeofTag { Underlying, ViewOnly };
 
 SCIPP_DATASET_EXPORT scipp::index size_of(const Variable &var, SizeofTag tag);
-SCIPP_DATASET_EXPORT scipp::index size_of(const DataArray &da,
-                                          SizeofTag tag,
+SCIPP_DATASET_EXPORT scipp::index size_of(const DataArray &da, SizeofTag tag,
                                           bool include_aligned_coords = true);
-SCIPP_DATASET_EXPORT scipp::index size_of(const Dataset &ds,
-                                          SizeofTag tag);
+SCIPP_DATASET_EXPORT scipp::index size_of(const Dataset &ds, SizeofTag tag);
 } // namespace scipp
 
 namespace scipp::dataset {
