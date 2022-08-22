@@ -518,25 +518,6 @@ TEST(Dict, transform_iterator_struct) {
   EXPECT_EQ(it, dict.end());
 }
 
-TEST(Dict, transform_iterator_struct_stateful) {
-  DimDict dict{{Dim::Event, 112233}, {Dim::Z, 9933}};
-
-  struct F {
-    int divisor;
-    int operator()(std::pair<const Dim, int> x) {
-      divisor += 2;
-      return x.second / divisor;
-    }
-  };
-
-  auto it = dict.begin().transform(F{2});
-  EXPECT_EQ(*it, 112233 / 4);
-  ++it;
-  EXPECT_EQ(*it, 9933 / 6);
-  ++it;
-  EXPECT_EQ(it, dict.end());
-}
-
 TEST(Dict, transform_iterator_compare_with_end_with_transform) {
   DimDict dict{{Dim::Time, 72}, {Dim::Y, 41}};
 

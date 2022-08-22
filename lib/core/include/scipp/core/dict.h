@@ -173,8 +173,7 @@ public:
   }
 
 private:
-  // mutable to support stateful function objects that change their state.
-  mutable std::decay_t<Func> m_func;
+  std::decay_t<Func> m_func;
 };
 
 template <class I, class F>
