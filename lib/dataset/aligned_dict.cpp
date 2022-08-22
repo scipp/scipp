@@ -373,7 +373,6 @@ template <class Key, class Value>
 core::Dict<Key, Value> intersection(const AlignedDict<Key, Value> &a,
                                     const AlignedDict<Key, Value> &b) {
   core::Dict<Key, Value> out;
-  out.reserve(a.size());
   for (const auto &[key, item] : a)
     if (const auto it = b.find(key);
         it != b.end() && equals_nan(it->second, item))
