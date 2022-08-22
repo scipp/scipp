@@ -335,7 +335,7 @@ SizedDict<Key, Value>::merge_from(const SizedDict &other) const {
 template <class Key, class Value>
 bool SizedDict<Key, Value>::item_applies_to(const Key &key,
                                               const Dimensions &dims) const {
-  const auto &val = m_items[key];
+  const auto &val = m_items.at(key);
   return std::all_of(val.dims().begin(), val.dims().end(),
                      [&dims](const Dim dim) { return dims.contains(dim); });
 }
