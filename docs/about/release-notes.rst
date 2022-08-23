@@ -35,8 +35,8 @@ Release Notes
    and Jan-Lukas Wynen :sup:`a`
 
 
-v0.16.0 (Unreleased)
---------------------
+v0.16.0 (August 2022)
+---------------------
 
 Features
 ~~~~~~~~
@@ -48,6 +48,7 @@ Breaking changes
 ~~~~~~~~~~~~~~~~
 
 * The plots are no longer interactive by default, standard Matplotlib rules now apply (the inline static backend is the default). Use ``%matplotlib widget`` for interactive plots `#2671 <https://github.com/scipp/scipp/pull/2671>`_.
+* The ``copy`` method of groupby has been removed. Use advanced indexing instead `#2676 <https://github.com/scipp/scipp/pull/2676>`_.
 
 Bugfixes
 ~~~~~~~~
@@ -58,14 +59,17 @@ Bugfixes
 * Data arrays with missing coords can now be plotted using the experimental plotting `#2748 <https://github.com/scipp/scipp/pull/2748>`_.
 * Fix a bug in the argument detection when using setitem in combination with value-based slicing `#2750 <https://github.com/scipp/scipp/pull/2750>`_.
 * Fixed broken profile plot on 3-D data `#2746 <https://github.com/scipp/scipp/pull/2746>`_.
+* Fixed broken boolean-indexing and sort operations on arrays that contain binned data `#2759 <https://github.com/scipp/scipp/pull/2759>`_.
 * ``transform_coords`` now works with datasets with only coordinates but no data `#2755 <https://github.com/scipp/scipp/pull/2755>`_.
 * Fixed a bug when using :func:`scipp.hist` on a Dataset that contains binned data `#2764 <https://github.com/scipp/scipp/pull/2764>`_.
+* Fixed the ``rename`` methods to also rename bin coords and attrs of binned data `#2774 <https://github.com/scipp/scipp/pull/2774>`_.
+* Fixed the ``rename_dims`` methods which failed to check for conflicting bin-edge coords of length 2 failling outside the object's dimensions `#2775 <https://github.com/scipp/scipp/pull/2775>`_.
 
-Documentation
-~~~~~~~~~~~~~
+Performance
+~~~~~~~~~~~
 
-Deprecations
-~~~~~~~~~~~~
+- Advanced indexing is now much faster.
+- Sorting is now much faster.
 
 Contributors
 ~~~~~~~~~~~~

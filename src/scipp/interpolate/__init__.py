@@ -12,7 +12,6 @@ from ..core import DType, irreducible_mask
 from ..compat.wrapping import wrap1d
 
 from typing import Any, Callable, Literal, Union
-import uuid
 
 import numpy as np
 
@@ -34,15 +33,8 @@ def _midpoints(var, dim):
 
 
 def _drop_masked(da, dim):
-    mask = irreducible_mask(da.masks, dim)
-    if mask is not None:
-        da = da.copy(deep=False)
-        name = uuid.uuid4().hex
-        da.coords[name] = mask
-        da = da.groupby(name).copy(0)
-        for name in list(da.masks):
-            if dim in da.masks[name].dims:
-                del da.masks[name]
+    if (mask := irreducible_mask(da.masks, dim)) is not None:
+        return da[~mask]
     return da
 
 

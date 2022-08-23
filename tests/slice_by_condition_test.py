@@ -21,6 +21,19 @@ def make_array() -> sc.DataArray:
     return da
 
 
+def make_binned_array() -> sc.DataArray:
+    da = sc.data.table_xyz(100).bin(x=4, y=3).rename(x='xx', y='yy')
+    da.coords['xx'] = da.coords['xx'][:-1]
+    da.coords['yy'] = da.coords['yy'][:-1]
+    return da
+
+
+def make_binned_array_variable_buffer() -> sc.DataArray:
+    da = make_binned_array()
+    da.data = da.bins.data
+    return da
+
+
 def make_dataset() -> sc.Dataset:
     ds = sc.Dataset()
     ds['xy'] = make_array()
@@ -28,9 +41,26 @@ def make_dataset() -> sc.Dataset:
     return ds
 
 
-@pytest.fixture(params=[make_var(), make_array(),
-                        make_dataset()],
-                ids=['Variable', 'DataArray', 'Dataset'])
+def make_binned_dataset() -> sc.Dataset:
+    ds = sc.Dataset()
+    ds['xy'] = make_array().data
+    ds['binned'] = make_binned_array()
+    ds['binned-variable'] = make_binned_array_variable_buffer()
+    return ds
+
+
+@pytest.fixture(params=[
+    make_var(),
+    make_array(),
+    make_dataset(),
+    make_binned_array(),
+    make_binned_array_variable_buffer(),
+    make_binned_dataset()
+],
+                ids=[
+                    'Variable', 'DataArray', 'Dataset', 'binned-DataArray',
+                    'binned-DataArray-buffer-Variable', 'binned-dataset'
+                ])
 def sliceable(request):
     return request.param
 
