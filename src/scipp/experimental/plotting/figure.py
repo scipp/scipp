@@ -38,19 +38,18 @@ class Figure(View):
             # xlabel: str = None,
             # ylabel: str = None,
             grid: bool = False,
-            bounding_box: Tuple[float, ...] = None,
             vmin=None,
             vmax=None,
             norm='linear',
+            aspect='auto',
             **kwargs):
 
         super().__init__(*nodes)
 
         self._fig = None
         self._closed = False
-        self._title = title
+        # self._title = title
         self._ax = ax
-        self._bounding_box = bounding_box
         # self._xlabel = xlabel
         # self._ylabel = ylabel
         self._user_vmin = vmin
@@ -59,29 +58,7 @@ class Figure(View):
         self._kwargs = kwargs
         self._dims = {}
 
-        self.toolbar = Toolbar()
-        self.toolbar.add_button(name="home_view",
-                                callback=self.home_view,
-                                icon="home",
-                                tooltip="Autoscale view")
-        self.toolbar.add_togglebutton(name="pan_view",
-                                      callback=self.pan_view,
-                                      icon="arrows",
-                                      tooltip="Pan")
-        self.toolbar.add_togglebutton(name="zoom_view",
-                                      callback=self.zoom_view,
-                                      icon="search-plus",
-                                      tooltip="Zoom")
-        self.toolbar.add_togglebutton(name='toggle_xaxis_scale',
-                                      callback=self.toggle_xaxis_scale,
-                                      description="logx")
-        self.toolbar.add_togglebutton(name="toggle_yaxis_scale",
-                                      callback=self.toggle_yaxis_scale,
-                                      description="logy")
-        self.toolbar.add_button(name="save_view",
-                                callback=self.save_view,
-                                icon="save",
-                                tooltip="Save")
+        self.toolbar = self._make_toolbar()
 
         self.left_bar = SideBar([self.toolbar])
         self.right_bar = SideBar()
@@ -95,20 +72,44 @@ class Figure(View):
             if figsize is None:
                 figsize = (cfg['width'] / cfg['dpi'], cfg['height'] / cfg['dpi'])
             self._fig, self._ax = plt.subplots(1, 1, figsize=figsize, dpi=cfg['dpi'])
-            if self._bounding_box is None:
-                self._bounding_box = cfg['bounding_box']
-            self._fig.tight_layout(rect=self._bounding_box)
+            self._fig.tight_layout()
             if self.is_widget():
                 self._fig.canvas.toolbar_visible = False
         else:
             self._fig = self._ax.get_figure()
 
-        self._ax.set_title(self._title)
-        if grid:
-            self._ax.grid()
+        self._ax.set_title(title)
+        self._ax.set_aspect(aspect)
+        self._ax.grid(grid)
 
         self._legend = 0
         self._new_artist = False
+
+    def _make_toolbar(self):
+        toolbar = Toolbar()
+        toolbar.add_button(name="home_view",
+                           callback=self.home_view,
+                           icon="home",
+                           tooltip="Autoscale view")
+        toolbar.add_togglebutton(name="pan_view",
+                                 callback=self.pan_view,
+                                 icon="arrows",
+                                 tooltip="Pan")
+        toolbar.add_togglebutton(name="zoom_view",
+                                 callback=self.zoom_view,
+                                 icon="search-plus",
+                                 tooltip="Zoom")
+        toolbar.add_togglebutton(name='toggle_xaxis_scale',
+                                 callback=self.toggle_xaxis_scale,
+                                 description="logx")
+        toolbar.add_togglebutton(name="toggle_yaxis_scale",
+                                 callback=self.toggle_yaxis_scale,
+                                 description="logy")
+        toolbar.add_button(name="save_view",
+                           callback=self.save_view,
+                           icon="save",
+                           tooltip="Save")
+        return toolbar
 
     def is_widget(self) -> bool:
         """
@@ -242,7 +243,8 @@ class Figure(View):
                 self._dims["x"] = new_values.dim
                 # if self._ylabel is None:
                 self._ax.set_ylabel(name_with_unit(var=new_values.data, name=""))
-                self._ax.set_yscale(self._norm)
+                self.toolbar.members['toggle_yaxis_scale'].value = self._norm == 'log'
+                # self._ax.set_yscale(self._norm)
 
             elif new_values.ndim == 2:
                 self._children[key] = Mesh(ax=self._ax,
@@ -269,3 +271,5 @@ class Figure(View):
         for node in self._graph_nodes.values():
             new_values = node.request_data()
             self._update(new_values=new_values, key=node.id)
+        self._autoscale()
+        self._draw_canvas()

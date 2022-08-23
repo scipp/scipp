@@ -39,7 +39,7 @@ def parse_mesh_args(kwargs, name):
     # if 'cbar' in kwargs:
     #     mesh_args['cbar'] = kwargs['cbar']
     # return mesh_args
-    mesh_args = ('aspect', 'cmap', 'cbar')
+    mesh_args = ('cmap', 'cbar')
     # return {key: value for key, value in kwargs.items() if key in mesh_args}
     return _extract_args_from_list(mesh_args, kwargs, name)
 

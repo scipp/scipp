@@ -129,7 +129,7 @@ class Mesh:
         """
         Update image array with new values.
         """
-        self._data = new_values.transpose([self._dims['y'], self._dims['x']])
+        self._data = new_values  # .transpose([self._dims['y'], self._dims['x']])
         self._rescale_colormap()
         self._set_clim()
         self._set_mesh_colors()
