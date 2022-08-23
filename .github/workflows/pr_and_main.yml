@@ -93,14 +93,20 @@ jobs:
           name: DocumentationHTML
           path: html/
 
+      # TODO revert ref condition
       - uses: actions/checkout@v3
-        if: ${{ contains(matrix.variant.os, 'ubuntu') && github.ref == 'refs/heads/main' }}
+        if: ${{ contains(matrix.variant.os, 'ubuntu') && github.ref != 'refs/heads/main' }}
         with:
           repository: scipp/scipp-benchmarks
           path: scipp-benchmarks
 
       - run: tox -e asv
-        if: ${{ contains(matrix.variant.os, 'ubuntu') && github.ref == 'refs/heads/main' }}
+        if: ${{ contains(matrix.variant.os, 'ubuntu') && github.ref != 'refs/heads/main' }}
+
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        if: ${{ contains(matrix.variant.os, 'ubuntu') && github.ref != 'refs/heads/main' }}
+        with:
+          repository: scipp-benchmarks
 
       # - name: Deploy benchmark results
       #   if: ${{ contains(matrix.variant.os, 'ubuntu') && github.ref == 'refs/heads/main' }}
