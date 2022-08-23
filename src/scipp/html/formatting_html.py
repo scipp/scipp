@@ -77,7 +77,7 @@ def _get_events(var, variances, ellipsis_after, summary=False):
     dims = var.bins.constituents['data'].dims
     bin_dim = dict(zip(dims, range(len(dims))))[dim]
     s = []
-    if not isinstance(var.values, sc.DataArray):
+    if not isinstance(var.values, (sc.Variable, sc.DataArray, sc.Dataset)):
         size = len(var.values)
         i = 0
 

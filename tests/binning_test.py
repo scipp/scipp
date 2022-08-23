@@ -186,6 +186,15 @@ def test_group_after_bin_considers_event_value():
     assert da.sizes == {'label': 10}
 
 
+def test_group_by_2d():
+    table = sc.data.table_xyz(100)
+    table.coords['label'] = (table.coords['x'] * 10).to(dtype='int64')
+    da = table.bin(y=333).group('label')
+    da.coords['label'] = (sc.arange('y', 0, 333) * da.coords['label']) % 23
+    grouped = da.group('label')
+    assert grouped.sizes == {'y': 333, 'label': 23}
+
+
 def test_bin_erases_dims_automatically_if_labels_for_same_dim():
     table = sc.data.table_xyz(100)
     table.coords['x2'] = table.coords['x'] * 2
@@ -228,6 +237,18 @@ def test_hist_on_dense_data_without_edges_raisesTypeError():
         table.hist()
     with pytest.raises(TypeError):
         table.nanhist()
+
+
+def test_hist_on_dataset_with_binned_data():
+    da = sc.data.table_xyz(100)
+    db = sc.data.table_xyz(150)
+    db.coords['y'].values[0] = -5.0
+    edges = sc.linspace(dim='x', start=0.5, stop=1.0, num=21, unit='m')
+    a = da.bin(x=edges)
+    b = db.bin(x=edges)
+    ds = sc.Dataset({'a': a, 'b': b})
+    res = ds.hist(y=50)
+    assert res.coords['y'][0] == sc.scalar(-5.0, unit='m')
 
 
 rng = default_rng(seed=1234)
@@ -498,3 +519,31 @@ def test_rebin_deprecated_positional_arguments():
     with pytest.warns(UserWarning):
         result = sc.rebin(da, 'x', x)
     assert sc.identical(result, da.rebin(x=x))
+
+
+@pytest.mark.parametrize('op', ['bin', 'hist', 'nanhist'])
+def test_raises_ValueError_given_variable_and_multiple_edges(op):
+    var = sc.array(dims=['row'], values=[1, 2, 3])
+    with pytest.raises(ValueError):
+        getattr(var, op)(x=2, y=2)
+
+
+def test_variable_hist_equivalent_to_hist_of_data_array_with_counts():
+    data = sc.ones(dims=['row'], shape=[4], unit='counts')
+    coord = sc.array(dims=['row'], values=[2, 2, 1, 3])
+    da = sc.DataArray(data, coords={'x': coord})
+    assert sc.identical(coord.hist(x=3), da.hist(x=3))
+
+
+def test_variable_nanhist_equivalent_to_nanhist_of_data_array_with_counts():
+    data = sc.ones(dims=['row'], shape=[4], unit='counts')
+    coord = sc.array(dims=['row'], values=[2, 2, 1, 3])
+    da = sc.DataArray(data, coords={'x': coord})
+    assert sc.identical(coord.nanhist(x=3), da.nanhist(x=3))
+
+
+def test_variable_bin_equivalent_to_bin_of_data_array_with_counts():
+    data = sc.ones(dims=['row'], shape=[4], unit='counts')
+    coord = sc.array(dims=['row'], values=[2, 2, 1, 3])
+    da = sc.DataArray(data, coords={'x': coord})
+    assert sc.identical(coord.bin(x=3), da.bin(x=3))

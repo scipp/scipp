@@ -3,71 +3,25 @@
 # @file
 # @author Neil Vaytet
 
-from functools import lru_cache
-import warnings
 from .plot import plot as _plot
-from ..utils import running_in_jupyter
+from .tools import is_static
+
+_backend = 'stable'
 
 
-@lru_cache
-def initialize():
-    is_doc_build = False
-    try:
-        import matplotlib as mpl
-    except ImportError:
-        return is_doc_build
-
-    # If we are running inside a notebook, then make plot interactive by default.
-    if running_in_jupyter():
-        from IPython import get_ipython
-        ipy = get_ipython()
-
-        # Check if a docs build is requested in the metadata. If so,
-        # use the default Qt/inline backend.
-        cfg = ipy.config
-        meta = cfg["Session"]["metadata"]
-        if hasattr(meta, "to_dict"):
-            meta = meta.to_dict()
-        if "scipp_docs_build" in meta:
-            is_doc_build = meta["scipp_docs_build"]
-
-        try:
-            # Attempt to use ipympl backend
-            from ipympl.backend_nbagg import Canvas
-            mpl.use('module://ipympl.backend_nbagg')
-            # Hide the figure header:
-            # see https://github.com/matplotlib/ipympl/issues/229
-            Canvas.header_visible.default_value = False
-        except ImportError:
-            warnings.warn("The ipympl backend, which is required for "
-                          "interactive plots in Jupyter, was not found. "
-                          "Falling back to a static backend. Use "
-                          "conda install -c conda-forge ipympl to install ipympl.")
-
-    # Note: due to some strange behavior when importing matplotlib and pyplot in
-    # different order, we need to import pyplot after switching to the ipympl
-    # backend (see https://github.com/matplotlib/matplotlib/issues/19032).
-    import matplotlib.pyplot as plt
-    if is_doc_build:
-        plt.rcParams.update({
-            "figure.max_open_warning": 0,
-            "interactive": False,
-            "figure.figsize": [6.4, 4.8],
-            "figure.dpi": 96
-        })
-    return is_doc_build
-
-
-def plot(*args, **kwargs):
+def plot_stable(*args, **kwargs):
     """
     Plot a Scipp object.
 
     Possible inputs are:
-    - Variable
-    - DataArray
-    - Dataset
-    - dict of Variables
-    - dict of DataArrays
+      - Variable
+      - Dataset
+      - DataArray
+      - numpy ndarray
+      - dict of Variables
+      - dict of DataArrays
+      - dict of numpy ndarrays
+      - dict that can be converted to a Scipp object via `from_dict`
 
     For more details, see
     https://scipp.github.io/visualization/plotting-overview.html
@@ -185,7 +139,6 @@ def plot(*args, **kwargs):
     :type vmax: float, optional
 
     """
-    is_doc_build = initialize()
     import matplotlib.pyplot as plt
 
     # Switch auto figure display off for better control over when figures are
@@ -197,16 +150,42 @@ def plot(*args, **kwargs):
 
     output = _plot(*args, **kwargs)
 
-    if output is not None:
-        # Hide all widgets if this is the inline backend
-        if plt.get_backend().lower().endswith('inline'):
-            output.hide_widgets()
-        # Turn mpl figure into image if doc build
-        if is_doc_build:
-            output.close()
+    if (output is not None) and is_static():
+        output.hide_widgets()
 
     # Turn auto figure display back on if needed.
     if interactive_on:
         plt.ion()
 
     return output
+
+
+def raise_bad_backend(backend: str):
+    raise ValueError(f"Unknown plotting backend {backend}. "
+                     "Possible choices are 'stable' and 'experimental'.")
+
+
+def plot(*args, **kwargs):
+    global _backend
+    if _backend == 'stable':
+        return plot_stable(*args, **kwargs)
+    elif _backend == 'experimental':
+        from ..experimental.plotting import plot as plot_experimental
+        return plot_experimental(*args, **kwargs)
+    else:
+        raise_bad_backend(_backend)
+
+
+def select_backend(new_backend: str):
+    global _backend
+    if new_backend == 'stable':
+        plot.__doc__ = plot_stable.__doc__
+    elif new_backend == 'experimental':
+        from ..experimental.plotting import plot as plot_experimental
+        plot.__doc__ = plot_experimental.__doc__
+    else:
+        raise_bad_backend(new_backend)
+    _backend = new_backend
+
+
+select_backend(_backend)

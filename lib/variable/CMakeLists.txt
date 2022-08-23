@@ -14,7 +14,6 @@ set(INC_FILES
     include/scipp/variable/logical.h
     include/scipp/variable/math.h
     include/scipp/variable/misc_operations.h
-    include/scipp/variable/multiply.h
     include/scipp/variable/operations.h
     include/scipp/variable/rebin.h
     include/scipp/variable/reduction.h
@@ -39,6 +38,7 @@ set(INC_FILES
 
 set(SRC_FILES
     ${variable_SRC_FILES}
+    arithmetic.cpp
     astype.cpp
     bins.cpp
     bin_array_variable.cpp
@@ -49,7 +49,6 @@ set(SRC_FILES
     cumulative.cpp
     except.cpp
     math.cpp
-    multiply.cpp
     pow.cpp
     operations.cpp
     rebin.cpp

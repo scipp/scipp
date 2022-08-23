@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <numeric>
 
+#include "rename.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
 #include "scipp/core/sizes.h"
@@ -54,6 +55,12 @@ Dim Dimensions::inner() const noexcept {
   if (empty())
     return Dim::Invalid;
   return labels().back();
+}
+
+Dimensions
+Dimensions::rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
+                        const bool fail_on_unknown) const {
+  return detail::rename_dims(*this, names, fail_on_unknown);
 }
 
 Dimensions merge(const Dimensions &a) { return a; }

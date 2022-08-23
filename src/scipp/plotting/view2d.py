@@ -133,8 +133,8 @@ class PlotView2d(PlotView):
         Reset all scatter markers when a profile is reset.
         """
         if self._marks_scatter is not None:
+            self.figure.ax.collections.remove(self._marks_scatter)
             self._marks_scatter = None
-            self.figure.ax.collections = []
             self.figure.draw()
 
     def _do_handle_pick(self, event):

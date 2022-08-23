@@ -32,7 +32,7 @@ from .core import BinEdgeError, BinnedDataError, CoordError, \
 from . import units
 from . import geometry
 # Import functions
-from ._scipp.core import as_const, choose
+from ._scipp.core import as_const
 # Import python functions
 from .show import show, make_svg
 
@@ -48,6 +48,11 @@ setattr(Variable, 'to_hdf5', _to_hdf5)
 setattr(DataArray, 'to_hdf5', _to_hdf5)
 setattr(Dataset, 'to_hdf5', _to_hdf5)
 del _to_hdf5
+
+from .format import format_variable as _format_variable
+
+setattr(Variable, '__format__', _format_variable)
+del _format_variable
 
 from .extend_units import *
 from .object_list import _repr_html_
@@ -107,6 +112,7 @@ _binding.bind_functions_as_methods(Dataset, globals(), ('squeeze', ))
 for _cls in (DataArray, Dataset):
     _binding.bind_functions_as_methods(_cls, globals(), ('groupby', 'transform_coords'))
 del _cls
+_binding.bind_functions_as_methods(Variable, globals(), ('bin', 'hist', 'nanhist'))
 _binding.bind_functions_as_methods(DataArray, globals(),
                                    ('bin', 'group', 'hist', 'nanhist', 'rebin'))
 _binding.bind_functions_as_methods(Dataset, globals(), ('hist', 'rebin'))

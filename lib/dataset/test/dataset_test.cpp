@@ -532,26 +532,55 @@ protected:
 };
 
 TEST_F(DatasetRenameTest, fail_duplicate_dim) {
-  ASSERT_THROW(d.rename(Dim::X, Dim::Y), except::DimensionError);
+  ASSERT_THROW(d.rename_dims({{Dim::X, Dim::Y}}), except::DimensionError);
   ASSERT_EQ(d, original);
+}
+
+TEST_F(DatasetRenameTest, fail_duplicate_in_edge_dim_of_coord) {
+  auto ds = copy(d);
+  const Dim dim{"edge"};
+  ds.setCoord(dim, makeVariable<double>(Dims{dim}, Shape{2}));
+  ASSERT_THROW(ds.rename_dims({{Dim::X, dim}}), except::DimensionError);
+}
+
+TEST_F(DatasetRenameTest, fail_duplicate_in_edge_dim_of_item_attr) {
+  auto ds = copy(d);
+  const Dim dim{"edge"};
+  ds["data_xy"].attrs().set(dim, makeVariable<double>(Dims{dim}, Shape{2}));
+  ASSERT_THROW(ds.rename_dims({{Dim::X, dim}}), except::DimensionError);
+}
+
+TEST_F(DatasetRenameTest, fail_duplicate_in_edge_dim_in_data_array_coord) {
+  auto da = copy(d["data_xy"]);
+  const Dim dim{"edge"};
+  da.coords().set(dim, makeVariable<double>(Dims{dim}, Shape{2}));
+  ASSERT_THROW(da.rename_dims({{Dim::X, dim}}), except::DimensionError);
+}
+
+TEST_F(DatasetRenameTest, fail_duplicate_in_edge_dim_in_data_array_attr) {
+  auto da = copy(d["data_xy"]);
+  const Dim dim{"edge"};
+  da.attrs().set(dim, makeVariable<double>(Dims{dim}, Shape{2}));
+  ASSERT_THROW(da.rename_dims({{Dim::X, dim}}), except::DimensionError);
 }
 
 TEST_F(DatasetRenameTest, existing) {
-  ASSERT_NO_THROW(d.rename(Dim::X, Dim::X));
+  auto out = d.rename_dims({{Dim::X, Dim::X}});
   ASSERT_EQ(d, original);
+  ASSERT_EQ(out, original);
 }
 
 TEST_F(DatasetRenameTest, back_and_forth) {
-  d.rename(Dim::X, Dim::Row);
-  EXPECT_NE(d, original);
-  d.rename(Dim::Row, Dim::X);
+  auto tmp = d.rename_dims({{Dim::X, Dim::Row}});
+  EXPECT_NE(tmp, original);
+  d = tmp.rename_dims({{Dim::Row, Dim::X}});
   EXPECT_EQ(d, original);
 }
 
-TEST_F(DatasetRenameTest, rename) {
-  d.rename(Dim::X, Dim::Row);
+TEST_F(DatasetRenameTest, rename_dims) {
+  auto renamed = d.rename_dims({{Dim::X, Dim::Row}});
   DatasetFactory3D factory(4, 5, 6, Dim::Row);
   factory.seed(0);
-  d.coords().set(Dim::Row, d.coords().extract(Dim::X));
-  EXPECT_EQ(d, factory.make());
+  renamed.coords().set(Dim::Row, renamed.coords().extract(Dim::X));
+  EXPECT_EQ(renamed, factory.make());
 }

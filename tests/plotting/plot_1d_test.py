@@ -6,9 +6,6 @@
 import numpy as np
 import scipp as sc
 from ..factory import make_dense_data_array, make_dense_dataset, make_binned_data_array
-import matplotlib
-
-matplotlib.use('Agg')
 
 # TODO: For now we are just checking that the plot does not throw any errors.
 # In the future it would be nice to check the output by either comparing
@@ -78,6 +75,16 @@ def test_plot_1d_two_separate_entries():
 def test_plot_1d_two_entries_on_same_plot():
     ds = make_dense_dataset(ndim=1)
     sc.plot(ds)
+
+
+def test_plot_1d_two_entries_different_coord_units_on_different_plots():
+    a = make_dense_data_array(ndim=1)
+    b = make_dense_data_array(ndim=1)
+    b.coords['xx'].unit = 'mm'
+    p1 = sc.plot({'a': a, 'b': b})
+    assert len(p1) == 2
+    p2 = sc.plot({'a': a, 'b': b}, labels={'xx': 'xx'})
+    assert len(p2) == 2
 
 
 def test_plot_1d_two_entries_hide_variances():
@@ -276,8 +283,8 @@ def test_plot_access_ax_and_fig_two_entries():
     d = make_dense_dataset(ndim=1)
     d['b'].unit = 'kg'
     out = sc.plot(d)
-    out["('xx',).counts"].ax.set_xlabel("MyXlabel")
-    out["('xx',).counts"].fig.set_dpi(120.)
+    out["('xx',).counts.m"].ax.set_xlabel("MyXlabel")
+    out["('xx',).counts.m"].fig.set_dpi(120.)
     out.close()
 
 

@@ -126,3 +126,11 @@ class PlotProfile(PlotFigure1d):
         """
         self.ax.set_yscale("log" if owner.value else "linear")
         self.draw()
+
+    def rescale_to_data(self, button=None):
+        """
+        Rescale y axis to the contents of the plot.
+        """
+        self.ax.relim()
+        self.ax.autoscale_view()
+        self.draw()

@@ -140,6 +140,11 @@ def zeros(*,
     with_variances:
         If True includes variances initialized to 0.
 
+    Returns
+    -------
+    :
+        A variable filled with 0's.
+
     See Also
     --------
     scipp.array, scipp.empty, scipp.ones, scipp.scalar, scipp.zeros_like
@@ -192,6 +197,11 @@ def ones(*,
         Type of underlying data.
     with_variances:
         If True includes variances initialized to 1.
+
+    Returns
+    -------
+    :
+        A variable filled with 1's.
 
     See Also
     --------
@@ -252,6 +262,11 @@ def empty(*,
     with_variances:
         If True includes uninitialized variances.
 
+    Returns
+    -------
+    :
+        A variable with uninitialized elements.
+
     See Also
     --------
     scipp.array, scipp.empty_like, scipp.ones, scipp.scalar, scipp.zeros
@@ -299,6 +314,11 @@ def full(*,
         Unit of contents.
     dtype: scipp.typing.DTypeLike
         Type of underlying data.
+
+    Returns
+    -------
+    :
+        A variable filled with given value.
 
     See Also
     --------
@@ -382,7 +402,7 @@ def vector(value: Union[_np.ndarray, list],
     Returns
     -------
     :
-        A scalar (zero-dimensional) Variable.
+        A scalar (zero-dimensional) variable of a vector.
 
     See Also
     --------
@@ -416,6 +436,11 @@ def vectors(*,
     unit:
         Unit of contents.
 
+    Returns
+    -------
+    :
+        A variable of vectors with given values.
+
     See Also
     --------
     scipp.vector
@@ -446,8 +471,9 @@ def array(*,
           unit: Union[Unit, str, None] = default_unit,
           dtype: Optional[DTypeLike] = None) -> Variable:
     """Constructs a :class:`Variable` with given dimensions, containing given
-    values and optional variances. Dimension and value shape must match.
+    values and optional variances.
 
+    Dimension and value shape must match.
     Only keyword arguments accepted.
 
     Parameters
@@ -462,6 +488,11 @@ def array(*,
         Unit of contents.
     dtype: scipp.typing.DTypeLike
         Type of underlying data. By default, inferred from `values` argument.
+
+    Returns
+    -------
+    :
+        A variable with the given values.
 
     See Also
     --------
@@ -575,6 +606,11 @@ def linspace(dim: str,
     dtype: scipp.typing.DTypeLike
         Type of underlying data. By default, inferred from `value` argument.
 
+    Returns
+    -------
+    :
+        A variable of evenly spaced values.
+
     See Also
     --------
     scipp.arange, scipp.geomspace, scipp.logspace
@@ -629,6 +665,11 @@ def geomspace(dim: str,
         Unit of contents.
     dtype: scipp.typing.DTypeLike
         Type of underlying data. By default, inferred from `value` argument.
+
+    Returns
+    -------
+    :
+        A variable of evenly spaced values on a logscale.
 
     See Also
     --------
@@ -686,6 +727,11 @@ def logspace(dim: str,
     dtype: scipp.typing.DTypeLike
         Type of underlying data. By default, inferred from `value` argument.
 
+    Returns
+    -------
+    :
+        A variable of evenly spaced values on a logscale.
+
     See Also
     --------
     scipp.arange, scipp.geomspace, scipp.linspace
@@ -720,16 +766,25 @@ def logspace(dim: str,
 
 
 def arange(dim: str,
-           start: Union[NumberOrVar, _np.datetime64],
-           stop: Optional[Union[NumberOrVar, _np.datetime64]] = None,
+           start: Union[NumberOrVar, _np.datetime64, str],
+           stop: Optional[Union[NumberOrVar, _np.datetime64, str]] = None,
            step: Optional[NumberOrVar] = None,
            *,
            unit: Union[Unit, str, None] = default_unit,
            dtype: Optional[DTypeLike] = None) -> Variable:
-    """Constructs a :class:`Variable` with evenly spaced values within a given
-    interval.
-    Values are generated within the half-open interval [start, stop)
-    (in other words, the interval including start but excluding stop).
+    """Creates a :class:`Variable` with evenly spaced values within a given interval.
+
+    Values are generated within the half-open interval [start, stop).
+    In other words, the interval including start but excluding stop.
+
+    ``start``, ``stop``, and ``step`` may be given as plain values or as 0-D variables.
+    In the latter case this then implies the unit (the units of all arguments must be
+    identical), but a different unit-scale can still be requested with the ``unit``
+    argument.
+
+    When all the types or dtypes of the input arguments are the same, the output will
+    also have this dtype. This is different to :func:`numpy.arange` which will always
+    produce 64-bit (int64 or float64) outputs.
 
     Warning
     -------
@@ -753,6 +808,11 @@ def arange(dim: str,
     dtype: scipp.typing.DTypeLike
         Type of underlying data. By default, inferred from `value` argument.
 
+    Returns
+    -------
+    :
+        A variable of evenly spaced values.
+
     See Also
     --------
     scipp.geomspace, scipp.linspace, scipp.logspace
@@ -760,6 +820,8 @@ def arange(dim: str,
     Examples
     --------
 
+      >>> sc.arange('x', 4)
+      <scipp.Variable> (x: 4)      int64  [dimensionless]  [0, 1, 2, 3]
       >>> sc.arange('x', 1, 5)
       <scipp.Variable> (x: 4)      int64  [dimensionless]  [1, 2, 3, 4]
       >>> sc.arange('x', 1, 5, 0.5)
@@ -767,12 +829,39 @@ def arange(dim: str,
 
       >>> sc.arange('x', 1, 5, unit='m')
       <scipp.Variable> (x: 4)      int64              [m]  [1, 2, 3, 4]
+
+    Datetimes are also supported:
+
+      >>> sc.arange('t', '2000-01-01T01:00:00', '2000-01-01T01:01:30', 30 * sc.Unit('s'), dtype='datetime64')
+      <scipp.Variable> (t: 3)  datetime64              [s]  [2000-01-01T01:00:00, 2000-01-01T01:00:30, 2000-01-01T01:01:00]
+
+    Note that in this case the datetime ``start`` and ``stop`` strings implicitly
+    define the unit. The ``step`` must have the same unit.
     """
+    if dtype == 'datetime64' and isinstance(start, str):
+        start = datetime(start)
+        stop = stop if stop is None else datetime(stop)
     range_args, unit = _normalize_range_args(unit=unit,
                                              start=start,
                                              stop=stop,
                                              step=step)
-    return array(dims=[dim], values=_np.arange(**range_args), unit=unit, dtype=dtype)
+    args = [x for x in [start, stop, step] if x is not None]
+    types = [
+        x.values.dtype if isinstance(x, _cpp.Variable) else _np.asarray(x).dtype
+        for x in args
+    ]
+    if dtype is None:
+        candidates = set(types)
+        if len(candidates) == 1:
+            dtype = next(iter(candidates))
+    if dtype is not None and dtype != str('datetime64'):
+        numpy_dtype = str(dtype) if isinstance(dtype, DType) else dtype
+    else:
+        numpy_dtype = None
+    return array(dims=[dim],
+                 values=_np.arange(**range_args, dtype=numpy_dtype),
+                 unit=unit,
+                 dtype=dtype)
 
 
 @contextmanager
@@ -796,13 +885,20 @@ def datetime(value: Union[str, int, _np.datetime64],
     Parameters
     ----------
     value:
-     - `str`: Interpret the string according to the ISO 8601 date time format.
-     - `int`: Number of time units (see argument ``unit``) since scipp's epoch
-              (see :py:func:`scipp.epoch`).
-     - `np.datetime64`: Construct equivalent datetime of scipp.
+
+      - `str`: Interpret the string according to the ISO 8601 date time format.
+      - `int`: Number of time units (see argument ``unit``)
+        since scipp's epoch (see :py:func:`scipp.epoch`).
+      - `np.datetime64`: Construct equivalent datetime of scipp.
+
     unit: Unit of the resulting datetime.
                  Can be deduced if ``value`` is a str or np.datetime64 but
                  is required if it is an int.
+
+    Returns
+    -------
+    :
+        A scalar variable containing a datetime.
 
     See Also
     --------
@@ -820,6 +916,10 @@ def datetime(value: Union[str, int, _np.datetime64],
       <scipp.Variable> ()  datetime64             [ns]  [2021-01-10T14:16:15.000000000]
       >>> sc.datetime(1610288175, unit='s')
       <scipp.Variable> ()  datetime64              [s]  [2021-01-10T14:16:15]
+
+    Get the current time:
+
+      >>> now = sc.datetime('now', unit='s')
     """
     if isinstance(value, str):
         with _timezone_warning_as_error():
@@ -844,6 +944,11 @@ def datetimes(*,
         Unit for the resulting Variable.
         Can be deduced if ``values`` contains strings or np.datetime64's.
 
+    Returns
+    -------
+    :
+        An array variable containing a datetime.
+
     See Also
     --------
     scipp.datetime:
@@ -854,17 +959,16 @@ def datetimes(*,
     Examples
     --------
 
-      >>> sc.datetimes(dims=['t'], values=['2021-01-10T01:23:45', '2021-01-11T01:23:45'])
+      >>> sc.datetimes(dims=['t'], values=['2021-01-10T01:23:45',
+      ...                                  '2021-01-11T01:23:45'])
       <scipp.Variable> (t: 2)  datetime64              [s]  [2021-01-10T01:23:45, 2021-01-11T01:23:45]
-      >>> sc.datetimes(dims=['t'], values=['2021-01-10T01:23:45', '2021-01-11T01:23:45'], unit='h')
+      >>> sc.datetimes(dims=['t'], values=['2021-01-10T01:23:45',
+      ...                                  '2021-01-11T01:23:45'], unit='h')
       <scipp.Variable> (t: 2)  datetime64              [h]  [2021-01-10T01:00:00, 2021-01-11T01:00:00]
       >>> sc.datetimes(dims=['t'], values=[0, 1610288175], unit='s')
       <scipp.Variable> (t: 2)  datetime64              [s]  [1970-01-01T00:00:00, 2021-01-10T14:16:15]
     """
-    if unit is None or unit is default_unit:
-        np_unit_str = ''
-    else:
-        np_unit_str = f'[{_cpp.to_numpy_time_string(unit)}]'
+    np_unit_str = f'[{u}]' if (u := _cpp.to_numpy_time_string(unit)) else ''
     with _timezone_warning_as_error():
         return array(dims=dims,
                      values=_np.asarray(values, dtype=f'datetime64{np_unit_str}'))
@@ -880,6 +984,11 @@ def epoch(*, unit: Union[Unit, str]) -> Variable:
     ----------
     unit:
         Unit of the resulting Variable.
+
+    Returns
+    -------
+    :
+        A scalar variable containing the datetime of the epoch.
 
     See Also
     --------

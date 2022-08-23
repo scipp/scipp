@@ -280,11 +280,26 @@ Dict<Key, Value> &Dict<Key, Value>::setSlice(const Slice &s, const Dict &dict) {
 }
 
 template <class Key, class Value>
-void Dict<Key, Value>::rename(const Dim from, const Dim to) {
-  m_sizes.replace_key(from, to);
-  for (auto &item : m_items)
-    if (item.second.dims().contains(from))
-      item.second.rename(from, to);
+Dict<Key, Value>
+Dict<Key, Value>::rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
+                              const bool fail_on_unknown) const {
+  auto out(*this);
+  out.m_sizes = out.m_sizes.rename_dims(names, fail_on_unknown);
+  for (auto &item : out.m_items) {
+    // DataArray coords/attrs support the special case of length-2 items with a
+    // dim that is not contained in the data array dims. This occurs, e.g., when
+    // slicing along a dim that has a bin edge coord. We must prevent renaming
+    // to such dims. This is the reason for calling with `names` that may
+    // contain unknown dims (and the `fail_on_unknown` arg). Otherwise the
+    // caller would need to perform this check.
+    for (const auto &rename : names)
+      if (!m_sizes.contains(rename.second) &&
+          item.second.dims().contains(rename.second))
+        throw except::DimensionError("Duplicate dimension " +
+                                     units::to_string(rename.second) + ".");
+    item.second = item.second.rename_dims(names, false);
+  }
+  return out;
 }
 
 /// Mark the dict as readonly. Does not imply that items are readonly.

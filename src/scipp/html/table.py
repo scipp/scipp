@@ -15,15 +15,16 @@ BOTTOM_BORDER = 'border-bottom:2px solid #a9a9a9;'
 def _string_in_cell(v: Variable) -> str:
     if v.bins is not None:
         return f'len={v.value.shape}'
-    if v.dtype in (DType.vector3, DType.string, DType.bool):
+    if v.dtype not in (DType.float32, DType.float64):
         return str(v.value)
-    if (v.variance is None) or (v.variance == 0):
-        return str(round(v.value, 3))
+    if (v.variance is None):
+        return f'{v.value:.3f}'
     err = np.sqrt(v.variance)
-    prec = -int(np.floor(np.log10(err)))
-    v_str = round(v.value, prec)
-    e_str = round(err, prec)
-    return f'{v_str}&plusmn;{e_str}'
+    if err == 0.0:
+        prec = 3
+    else:
+        prec = max(3, -int(np.floor(np.log10(err))))
+    return f'{v.value:.{prec}f}&plusmn;{err:.{prec}f}'
 
 
 def _var_name_with_unit(name: str, var: Variable) -> str:
@@ -175,7 +176,7 @@ def _to_dataset(obj: Union[VariableLike, dict]) -> Dataset:
 
 
 def table(obj: Dict[str, Union[Variable, DataArray]], max_rows: int = 20):
-    """Create a html table from the contents of the supplied object.
+    """Create an HTML table from the contents of the supplied object.
 
     Possible inputs are:
      - Variable

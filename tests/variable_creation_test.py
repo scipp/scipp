@@ -475,17 +475,77 @@ def test_arange():
     assert sc.identical(var, expected)
 
 
+def test_arange_datetime_from_int():
+    var = sc.arange('t', 14, 65, 21, unit='s', dtype='datetime64')
+    expected = sc.datetimes(dims=['t'], values=[14, 35, 56], unit='s')
+    assert sc.identical(var, expected)
+
+
+def test_arange_datetime_from_np_datetime64():
+    var = sc.arange('t', np.datetime64('2022-08-02T11:18'),
+                    np.datetime64('2022-08-02T11:52'), 15)
+    expected = sc.datetimes(
+        dims=['t'],
+        values=['2022-08-02T11:18', '2022-08-02T11:33', '2022-08-02T11:48'],
+        unit='min')
+    assert sc.identical(var, expected)
+
+
+def test_arange_datetime_from_str_raises_if_step_has_no_unit():
+    with pytest.raises(TypeError):
+        sc.arange('t',
+                  '2022-08-02T06:42:45',
+                  '2022-08-02T06:43:33',
+                  16,
+                  dtype='datetime64')
+
+
+def test_arange_datetime_from_str_raises_given_string_with_timezone():
+    with pytest.raises(ValueError):
+        sc.arange('t',
+                  '2022-08-02T06:42:45Z',
+                  '2022-08-02T06:43:33Z',
+                  16 * sc.Unit('s'),
+                  dtype='datetime64')
+
+
+def test_arange_datetime_from_str():
+    var = sc.arange('t',
+                    '2022-08-02T06:42:45',
+                    '2022-08-02T06:43:33',
+                    16 * sc.Unit('s'),
+                    dtype='datetime64')
+    expected = sc.datetimes(
+        dims=['t'],
+        values=['2022-08-02T06:42:45', '2022-08-02T06:43:01', '2022-08-02T06:43:17'],
+        unit='s')
+    assert sc.identical(var, expected)
+
+
+def test_arange_datetime_from_scipp_datetime():
+    var = sc.arange('t', sc.datetime('2013-04-25T14:09:11'),
+                    sc.datetime('2013-04-25T14:11:23'), sc.scalar(62, unit='s'))
+    expected = sc.datetimes(
+        dims=['t'],
+        values=['2013-04-25T14:09:11', '2013-04-25T14:10:13', '2013-04-25T14:11:15'],
+        unit='s')
+    assert sc.identical(var, expected)
+
+
 @pytest.mark.parametrize('unit', ('one', sc.units.default_unit))
 def test_arange_with_variables(unit):
     start = sc.scalar(1)
     stop = sc.scalar(4)
     step = sc.scalar(1)
-    assert sc.identical(sc.arange('x', start, stop, step, unit=unit),
-                        sc.array(dims=['x'], values=[1, 2, 3], unit='one'))
-    assert sc.identical(sc.arange('x', start, stop, unit=unit),
-                        sc.array(dims=['x'], values=[1, 2, 3], unit='one'))
-    assert sc.identical(sc.arange('x', stop, unit=unit),
-                        sc.array(dims=['x'], values=[0, 1, 2, 3], unit='one'))
+    assert sc.identical(
+        sc.arange('x', start, stop, step, unit=unit),
+        sc.array(dims=['x'], values=[1, 2, 3], unit='one', dtype='int64'))
+    assert sc.identical(
+        sc.arange('x', start, stop, unit=unit),
+        sc.array(dims=['x'], values=[1, 2, 3], unit='one', dtype='int64'))
+    assert sc.identical(
+        sc.arange('x', stop, unit=unit),
+        sc.array(dims=['x'], values=[0, 1, 2, 3], unit='one', dtype='int64'))
 
 
 def test_arange_with_variables_uses_units_of_args():
@@ -519,25 +579,30 @@ def test_arange_with_variables_set_unit():
     step = sc.scalar(1, unit='m')
     unit = 'm'
     assert sc.identical(sc.arange('x', start, stop, step, unit=unit),
-                        sc.array(dims=['x'], values=[1, 2, 3], unit='m'))
+                        sc.array(dims=['x'], values=[1, 2, 3], unit='m', dtype='int64'))
     assert sc.identical(sc.arange('x', start, stop, unit=unit),
-                        sc.array(dims=['x'], values=[1, 2, 3], unit='m'))
+                        sc.array(dims=['x'], values=[1, 2, 3], unit='m', dtype='int64'))
 
-    assert sc.identical(sc.arange('x', start, stop, step, unit='mm'),
-                        sc.array(dims=['x'], values=[1000, 2000, 3000], unit='mm'))
-    assert sc.identical(sc.arange('x', start, stop, unit='cm'),
-                        sc.array(dims=['x'], values=np.arange(100, 400, 1), unit='cm'))
+    assert sc.identical(
+        sc.arange('x', start, stop, step, unit='mm'),
+        sc.array(dims=['x'], values=[1000, 2000, 3000], unit='mm', dtype='int64'))
+    assert sc.identical(
+        sc.arange('x', start, stop, unit='cm'),
+        sc.array(dims=['x'], values=np.arange(100, 400, 1), unit='cm', dtype='int64'))
 
     assert sc.identical(
         sc.arange('x', start, stop, sc.scalar(500, unit='mm'), unit='mm'),
-        sc.array(dims=['x'], values=[1000, 1500, 2000, 2500, 3000, 3500], unit='mm'))
+        sc.array(dims=['x'],
+                 values=[1000, 1500, 2000, 2500, 3000, 3500],
+                 unit='mm',
+                 dtype='int64'))
     assert sc.identical(
         sc.arange('x', start, stop, sc.scalar(500.0, unit='mm'), unit='m'),
         sc.array(dims=['x'], values=[1, 1.5, 2, 2.5, 3, 3.5], unit='m'))
     # All args are integers -> truncates step.
     assert sc.identical(
         sc.arange('x', start, stop, sc.scalar(500, unit='mm'), unit='m'),
-        sc.array(dims=['x'], values=[1, 2, 3], unit='m'))
+        sc.array(dims=['x'], values=[1, 2, 3], unit='m', dtype='int64'))
 
 
 def test_arange_with_variables_set_unit_must_be_convertible():
@@ -588,6 +653,46 @@ def test_arange_with_variables_mixed_dtype():
     assert sc.identical(
         sc.arange('x', sc.scalar(1), sc.scalar(4.0), sc.scalar(1), dtype='int64'),
         sc.array(dims=['x'], values=[1, 2, 3], dtype='int64'))
+
+
+@pytest.mark.parametrize('dtype', (np.int32, np.int64, np.float32, np.float64))
+def test_arange_with_uniform_numpy_arg_dtype_creates_array_with_same_dtype(dtype):
+    assert sc.identical(sc.arange('x', dtype(2)),
+                        sc.array(dims=['x'], values=[0, 1], dtype=dtype))
+    assert sc.identical(sc.arange('x', dtype(2), dtype(4)),
+                        sc.array(dims=['x'], values=[2, 3], dtype=dtype))
+    assert sc.identical(sc.arange('x', dtype(2), dtype(4), dtype(2)),
+                        sc.array(dims=['x'], values=[2], dtype=dtype))
+
+
+@pytest.mark.parametrize('dtype', (np.int32, np.int64, np.float32, np.float64))
+def test_arange_with_uniform_scipp_arg_dtype_creates_array_with_same_dtype(dtype):
+    assert sc.identical(sc.arange('x', sc.scalar(2, dtype=dtype)),
+                        sc.array(dims=['x'], values=[0, 1], dtype=dtype))
+    assert sc.identical(
+        sc.arange('x', sc.scalar(2, dtype=dtype), sc.scalar(4, dtype=dtype)),
+        sc.array(dims=['x'], values=[2, 3], dtype=dtype))
+    assert sc.identical(
+        sc.arange('x', sc.scalar(2, dtype=dtype), sc.scalar(4, dtype=dtype),
+                  sc.scalar(2, dtype=dtype)),
+        sc.array(dims=['x'], values=[2], dtype=dtype))
+
+
+@pytest.mark.parametrize(('dtype', 'larger'),
+                         ((np.int32, np.int64), (np.float32, np.float64),
+                          (np.int32, np.float64), (np.int64, np.float64)))
+def test_arange_with_non_uniform_arg_dtype_creates_array_with_larger_dtype(
+        dtype, larger):
+    assert sc.identical(sc.arange('x', dtype(2), larger(4)),
+                        sc.array(dims=['x'], values=[2, 3], dtype=larger))
+    assert sc.identical(sc.arange('x', larger(2), dtype(4)),
+                        sc.array(dims=['x'], values=[2, 3], dtype=larger))
+    assert sc.identical(sc.arange('x', larger(2), dtype(4), dtype(2)),
+                        sc.array(dims=['x'], values=[2], dtype=larger))
+    assert sc.identical(sc.arange('x', dtype(2), larger(4), dtype(2)),
+                        sc.array(dims=['x'], values=[2], dtype=larger))
+    assert sc.identical(sc.arange('x', dtype(2), dtype(4), larger(2)),
+                        sc.array(dims=['x'], values=[2], dtype=larger))
 
 
 def test_zeros_sizes():
@@ -689,6 +794,32 @@ def test_datetimes():
         sc.datetimes(dims=['t'], values=[-723, 2**13, -3**5], unit='min'),
         sc.array(dims=['t'],
                  values=np.array([-723, 2**13, -3**5], dtype='datetime64[m]')))
+
+
+def test_datetimes_raises_if_given_invalid_unit_string():
+    with pytest.raises(sc.UnitError):
+        sc.datetimes(dims=['t'],
+                     values=['2022-08-02T11:18', '2022-08-02T11:33'],
+                     unit='not-a-valid-unit')
+
+
+def test_datetime_raises_if_given_invalid_unit_string():
+    with pytest.raises(sc.UnitError):
+        sc.datetime('2022-08-02T11:18', unit='not-a-valid-unit')
+
+
+def test_datetimes_raises_if_given_unit_m():
+    # This one is special because in NumPy, 'm' means minute.
+    with pytest.raises(sc.UnitError):
+        sc.datetimes(dims=['t'],
+                     values=['2022-08-02T11:18', '2022-08-02T11:33'],
+                     unit='m')
+
+
+def test_datetime_raises_if_given_unit_m():
+    # This one is special because in NumPy, 'm' means minute.
+    with pytest.raises(sc.UnitError):
+        sc.datetime('2022-08-02T11:18', unit='m')
 
 
 def test_datetime_epoch():

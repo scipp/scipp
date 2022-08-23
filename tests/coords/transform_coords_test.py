@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+import functools
 import pytest
 import numpy as np
 import scipp as sc
@@ -631,12 +632,72 @@ def test_inplace(c):
     assert sc.identical(da.attrs['a'], 2 * c + 3 * c)
 
 
-def test_dataset(a):
+def test_dataset_works_with_matching_coord(a):
     da = sc.DataArray(data=a.copy(), coords={'a': a.copy()})
-    ds = sc.Dataset(data={'item1': da.copy(), 'item2': da + da})
+    ds = sc.Dataset({'item1': da.copy(), 'item2': da + da})
     transformed = ds.transform_coords('b', graph={'b': 'a'})
     assert sc.identical(transformed['item1'].attrs['a'], a.rename_dims({'a': 'b'}))
     assert sc.identical(transformed.coords['b'], a.rename_dims({'a': 'b'}))
+
+
+def test_dataset_coord_and_attr_clash_matching_value(a):
+    da1 = sc.DataArray(data=a.copy(), coords={'a': a.copy()})
+    da2 = sc.DataArray(data=a.copy(), attrs={'a': a.copy()})
+    ds = sc.Dataset({'item1': da1, 'item2': da2})
+    with pytest.raises(sc.DataArrayError):
+        ds.transform_coords('b', graph={'b': 'a'})
+
+
+def test_dataset_coord_and_attr_clash_mismatching_value(a):
+    da1 = sc.DataArray(data=a.copy(), coords={'a': a.copy()})
+    da2 = sc.DataArray(data=a.copy(), attrs={'a': a + 1})
+    ds = sc.Dataset({'item1': da1, 'item2': da2})
+    with pytest.raises(sc.DataArrayError):
+        ds.transform_coords('b', graph={'b': 'a'})
+
+
+def test_dataset_missing_attr_in_one_item_without_rule_to_make_it(a):
+    da1 = sc.DataArray(data=a.copy(), coords={'a': a.copy()}, attrs={'aa': a + 1})
+    da2 = sc.DataArray(data=a.copy(), coords={'a': a.copy()})
+    ds = sc.Dataset({'item1': da1, 'item2': da2})
+    with pytest.raises(KeyError):
+        ds.transform_coords('b', graph={'b': lambda a, aa: a + aa})
+
+
+def test_dataset_missing_attr_in_one_item_with_rule_to_make_it(a):
+    da1 = sc.DataArray(data=a.copy(), coords={'a': a.copy()}, attrs={'aa': a + 1})
+    da2 = sc.DataArray(data=a.copy(), coords={'a': a.copy()})
+    ds = sc.Dataset({'item1': da1, 'item2': da2})
+    with pytest.raises(sc.DatasetError):
+        ds.transform_coords('b',
+                            graph={
+                                'b': lambda a, aa: a + aa,
+                                'aa': lambda a: a + 2
+                            })
+
+
+def test_dataset_missing_coord_in_one_item_without_rule_to_make_it(a, b):
+    da1 = sc.DataArray(data=a + b, coords={'a': a.copy(), 'b': b.copy()})
+    da2 = sc.DataArray(data=a.copy(), coords={'a': a.copy()})
+    ds = sc.Dataset({'item1': da1, 'item2': da2})
+    with pytest.raises(KeyError):
+        ds.transform_coords('c', graph={'c': lambda a, b: a + b})
+
+
+def test_dataset_missing_coord_in_one_item_with_rule_to_make_it(a, b):
+    da1 = sc.DataArray(data=a + b, coords={'a': a.copy(), 'b': b.copy()})
+    da2 = sc.DataArray(data=a.copy(), coords={'a': a.copy()})
+    ds = sc.Dataset({'item1': da1, 'item2': da2})
+    with pytest.raises(sc.DatasetError):
+        ds.transform_coords('c', graph={'c': lambda a, b: a + b, 'b': 'a'})
+
+
+def test_dataset_without_data(a):
+    ds = sc.Dataset(coords={'a': a.copy()})
+    transformed = ds.transform_coords('b', graph={'b': 'a'})
+    assert sc.identical(transformed.coords['b'], a.rename(a='b'))
+    assert 'a' not in transformed.coords
+    assert len(transformed) == 0
 
 
 def test_binned_does_not_modify_inputs(binned_in_a_b):
@@ -951,3 +1012,87 @@ def test_prioritize_coords_attrs_conflict(a):
 
     with pytest.raises(sc.DataArrayError):
         original.transform_coords(['b'], graph={'b': 'a'})
+
+
+def test_keyword_syntax_equivalent_to_explicit_syntax():
+    da = sc.data.table_xyz(nrow=10)
+
+    def a(x):
+        return x + x
+
+    def b(x, y):
+        return x + y
+
+    assert sc.identical(da.transform_coords(a=a), da.transform_coords('a', {'a': a}))
+    graph = {'a': a, 'b': b}
+    assert sc.identical(da.transform_coords(a=a, b=b),
+                        da.transform_coords(['a', 'b'], graph=graph))
+
+
+def test_keyword_syntax_without_entries_returns_unchanged():
+    da = sc.data.table_xyz(nrow=10)
+    assert sc.identical(da.transform_coords(), da)
+
+
+def test_keyword_syntax_without_entries_and_graph_returns_unchanged():
+    da = sc.data.table_xyz(nrow=10)
+    assert sc.identical(da.transform_coords(graph={'b': 'y'}), da)
+
+
+def test_raises_when_keyword_syntax_combined_with_targets():
+    da = sc.data.table_xyz(nrow=10)
+    with pytest.raises(ValueError):
+        da.transform_coords('a', a=lambda x: x)
+
+
+def test_raises_when_keyword_syntax_combined_with_graph():
+    da = sc.data.table_xyz(nrow=10)
+    with pytest.raises(ValueError):
+        da.transform_coords(a=lambda x: x, graph={'b': 'y'})
+
+
+def test_raises_when_keyword_syntax_clashes_with_graph_argument():
+    da = sc.data.table_xyz(nrow=10)
+    with pytest.raises(TypeError):
+        da.transform_coords('x', graph=lambda x: x)
+
+
+@pytest.mark.parametrize(
+    'option',
+    ['rename_dims', 'keep_aliases', 'keep_intermediate', 'keep_inputs', 'quiet'])
+def test_raises_when_keyword_syntax_clashes_with_options(option):
+    da = sc.data.table_xyz(nrow=10)
+    with pytest.raises(TypeError):
+        da.transform_coords(**{option: lambda x: x})
+
+
+def test_works_with_partial():
+
+    def f(a, x):
+        return a * x
+
+    g = functools.partial(f, sc.scalar(5))
+    da = sc.data.table_xyz(nrow=10)
+    assert 'ax' in da.transform_coords(ax=g).coords
+
+
+def test_works_with_class_defining___call__():
+
+    class A:
+
+        def __call__(self, x):
+            return x * x
+
+    da = sc.data.table_xyz(nrow=10)
+    assert 'xx' in da.transform_coords(xx=A()).coords
+
+
+def test_input_coords_can_be_defined_via_property():
+
+    def f(a, b):
+        return a - b
+
+    f.__transform_coords_input_keys__ = ['x', 'y']
+    da = sc.data.table_xyz(nrow=10)
+    assert sc.identical(da.transform_coords(diff=f),
+                        da.transform_coords(diff=lambda x, y: f(x, y)))

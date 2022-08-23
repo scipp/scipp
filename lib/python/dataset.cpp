@@ -7,7 +7,6 @@
 #include "scipp/dataset/map_view.h"
 #include "scipp/dataset/math.h"
 #include "scipp/dataset/rebin.h"
-#include "scipp/dataset/util.h"
 
 #include "bind_data_access.h"
 #include "bind_data_array.h"
@@ -172,14 +171,6 @@ Returned by :py:func:`DataArray.masks`)");
               Name of the data array.
           )doc");
   options.enable_function_signatures();
-  dataArray
-      .def("__sizeof__",
-           [](const DataArray &array) {
-             return size_of(array, SizeofTag::ViewOnly, true);
-           })
-      .def("underlying_size", [](const DataArray &self) {
-        return size_of(self, SizeofTag::Underlying);
-      });
 
   bind_data_array(dataArray);
 
@@ -227,14 +218,7 @@ Returned by :py:func:`DataArray.masks`)");
       .def("__delitem__", &Dataset::erase,
            py::call_guard<py::gil_scoped_release>())
       .def("clear", &Dataset::clear,
-           R"(Removes all data, preserving coordinates.)")
-      .def("__sizeof__",
-           [](const Dataset &self) {
-             return size_of(self, SizeofTag::ViewOnly);
-           })
-      .def("underlying_size", [](const Dataset &self) {
-        return size_of(self, SizeofTag::Underlying);
-      });
+           R"(Removes all data, preserving coordinates.)");
 
   bind_dataset_view_methods(dataset);
   bind_dict_update(dataset,
@@ -255,10 +239,8 @@ Returned by :py:func:`DataArray.masks`)");
   bind_binary<DataArray>(dataset);
   bind_binary<Variable>(dataset);
 
-  dataArray.def("rename_dims", &rename_dims<DataArray>, py::arg("dims_dict"),
-                py::pos_only(), "Rename dimensions.");
-  dataset.def("rename_dims", &rename_dims<Dataset>, py::arg("dims_dict"),
-              py::pos_only(), "Rename dimensions.");
+  dataArray.def("_rename_dims", &rename_dims<DataArray>);
+  dataset.def("_rename_dims", &rename_dims<Dataset>);
 
   m.def(
       "merge",

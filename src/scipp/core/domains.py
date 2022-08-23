@@ -26,14 +26,10 @@ def merge_equal_adjacent(da: DataArray) -> DataArray:
     except DimensionError as e:
         raise DimensionError(
             "Cannot merge equal adjacent bins non-1-D data array") from e
+    tmp = DataArray(da.data, coords={dim: da.coords[dim][dim, 1:]})
     condition = empty(dims=da.dims, shape=da.shape, dtype='bool')
-    condition[dim, -1] = False
-    condition[dim, :-1] = da.data[dim, 1:] == da.data[dim, :-1]
-    group = f'{dim}_'
-    tmp = DataArray(da.data, coords={dim: da.coords[dim][dim, 1:], group: condition})
-    # Note the flipped condition: In case we do not merge any bins we may have only a
-    # single group. The flipped condition ensures that we always require group 0.
-    out = tmp.groupby(group).copy(0)
-    del out.coords[group]
+    condition[dim, -1] = True
+    condition[dim, :-1] = da.data[dim, 1:] != da.data[dim, :-1]
+    out = tmp[condition]
     out.coords[dim] = concat([da.coords[dim][dim, 0:1], out.coords[dim]], dim)
     return out

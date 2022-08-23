@@ -148,9 +148,6 @@ template <class T, class Func> DataArray transform(const T &a, Func func) {
                                                  const Dim dim);
 [[nodiscard]] Dataset strip_if_broadcast_along(const Dataset &d, const Dim dim);
 
-[[nodiscard]] DataArray strip_edges_along(const DataArray &da, const Dim dim);
-[[nodiscard]] Dataset strip_edges_along(const Dataset &ds, const Dim dim);
-
 // Helpers for reductions for DataArray and Dataset, which include masks.
 [[nodiscard]] Variable mean(const Variable &var, const Dim dim,
                             const Masks &masks);
@@ -174,6 +171,8 @@ template <class T, class Func> DataArray transform(const T &a, Func func) {
 [[nodiscard]] Variable any(const Variable &var, const Dim dim,
                            const Masks &masks);
 
-[[nodiscard]] Variable masked_data(const DataArray &array, const Dim dim);
+[[nodiscard]] Variable
+masked_data(const DataArray &array, const Dim dim,
+            const std::optional<Variable> &fill_value = std::nullopt);
 
 } // namespace scipp::dataset

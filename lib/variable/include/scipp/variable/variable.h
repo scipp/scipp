@@ -108,7 +108,9 @@ public:
   template <class T> Variable elements() const;
   template <class T> Variable elements(const std::string &key) const;
 
-  void rename(Dim from, Dim to);
+  [[nodiscard]] Variable
+  rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
+              const bool fail_on_unknown = true) const;
 
   bool operator==(const Variable &other) const;
   bool operator!=(const Variable &other) const;
@@ -207,8 +209,8 @@ Variable Variable::construct(const DType &type, Args &&...args) {
 template <class... Ts>
 Variable::Variable(const DType &type, Ts &&...args)
     : Variable{construct<double, float, int64_t, int32_t, bool, std::string,
-                         scipp::core::time_point>(type,
-                                                  std::forward<Ts>(args)...)} {}
+                         scipp::core::time_point, scipp::index_pair>(
+          type, std::forward<Ts>(args)...)} {}
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable copy(const Variable &var);
 [[maybe_unused]] SCIPP_VARIABLE_EXPORT Variable &copy(const Variable &var,

@@ -26,8 +26,8 @@ constexpr auto get = [](const auto &x, const scipp::index i) {
 
 namespace map_detail {
 template <class Coord, class Edge, class Weight>
-using args =
-    std::tuple<Coord, scipp::span<const Edge>, scipp::span<const Weight>>;
+using args = std::tuple<Coord, scipp::span<const Edge>,
+                        scipp::span<const Weight>, Weight>;
 } // namespace map_detail
 
 constexpr auto map = overloaded{
@@ -78,27 +78,35 @@ constexpr auto map = overloaded{
     transform_flags::expect_no_variance_arg<0>,
     transform_flags::expect_no_variance_arg<1>,
     [](const units::Unit &x, const units::Unit &edges,
-       const units::Unit &weights) {
+       const units::Unit &weights, const units::Unit &fill) {
       expect::equals(x, edges);
+      expect::equals(weights, fill);
       return weights;
     }};
 
-constexpr auto map_linspace = overloaded{
-    map, [](const auto &coord, const auto &edges, const auto &weights) {
-      const auto [offset, nbin, factor] = linear_edge_params(edges);
-      const auto bin = (coord - offset) * factor;
-      using T = std::decay_t<decltype(get(weights, 0))>;
-      return (bin < 0.0 || bin >= nbin) ? T{0} : get(weights, bin);
-    }};
+constexpr auto map_linspace =
+    overloaded{map, [](const auto &coord, const auto &edges,
+                       const auto &weights, const auto &fill) {
+                 const auto [offset, nbin, factor] = linear_edge_params(edges);
+                 const auto bin = (coord - offset) * factor;
+                 return (bin < 0.0 || bin >= nbin) ? fill : get(weights, bin);
+               }};
 
-constexpr auto map_sorted_edges = overloaded{
-    map, [](const auto &coord, const auto &edges, const auto &weights) {
-      auto it = std::upper_bound(edges.begin(), edges.end(), coord);
-      using T = std::decay_t<decltype(get(weights, 0))>;
-      return (it == edges.end() || it == edges.begin())
-                 ? T{0}
-                 : get(weights, --it - edges.begin());
-    }};
+constexpr auto map_sorted_edges =
+    overloaded{map, [](const auto &coord, const auto &edges,
+                       const auto &weights, const auto &fill) {
+                 auto it = std::upper_bound(edges.begin(), edges.end(), coord);
+                 return (it == edges.end() || it == edges.begin())
+                            ? fill
+                            : get(weights, --it - edges.begin());
+               }};
+
+constexpr auto lookup_previous =
+    overloaded{map, [](const auto &point, const auto &x, const auto &weights,
+                       const auto &fill) {
+                 auto it = std::upper_bound(x.begin(), x.end(), point);
+                 return it == x.begin() ? fill : get(weights, --it - x.begin());
+               }};
 
 namespace map_and_mul_detail {
 template <class Data, class Coord, class Edge, class Weight>

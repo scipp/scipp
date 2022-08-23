@@ -92,6 +92,9 @@ public:
   [[nodiscard]] auto labels() const &noexcept { return keys(); }
   /// Return the shape of the space defined by *this.
   [[nodiscard]] auto sizes() const &noexcept { return values(); }
+
+  [[nodiscard]] Sizes rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
+                                  const bool fail_on_unknown = true) const;
 };
 
 [[nodiscard]] SCIPP_CORE_EXPORT Sizes
