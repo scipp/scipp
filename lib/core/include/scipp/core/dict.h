@@ -383,8 +383,7 @@ private:
 };
 
 template <class It>
-std::string dict_keys_to_string(It it, It end,
-                                std::string_view dict_name);
+std::string dict_keys_to_string(It it, It end, std::string_view dict_name);
 
 template <class Key, class Value>
 std::string dict_keys_to_string(const Dict<Key, Value> &dict,
