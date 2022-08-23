@@ -245,7 +245,8 @@ class VariableDrawer:
             make_svg(self._variable.bins.constituents['data'], content_only=True))
         return svg
 
-    def draw(self, color, offset=np.zeros(2), title=None):
+    def draw(self, color, offset=None, title=None):
+        offset = np.zeros(2) if offset is None else offset
         svg = '<g>'
         svg += self._draw_info(offset, title)
         items = []
