@@ -20,7 +20,7 @@
 #include "scipp/core/except.h"
 
 namespace scipp::core::dict_detail {
-template <class It1, class It2> struct ValueType {
+template <class It1, class It2 = void> struct ValueType {
   using type = std::pair<typename It1::value_type, typename It2::value_type>;
 };
 
@@ -28,7 +28,7 @@ template <class It1> struct ValueType<It1, void> {
   using type = typename It1::value_type;
 };
 
-template <class It1, class It2> struct ReferenceType {
+template <class It1, class It2 = void> struct ReferenceType {
   using type = std::add_rvalue_reference_t<
       std::pair<typename It1::reference, typename It2::reference>>;
 };
@@ -37,25 +37,20 @@ template <class It1> struct ReferenceType<It1, void> {
   using type = typename It1::reference;
 };
 
-template <class Container, class It1, class It2, size_t... IteratorIndices>
-class Iterator;
-
 template <class BaseIterator, class Func> class TransformIterator;
 
 // This iterator is mostly standard library conform. But it violates the
 // requirement that *it must return a reference to value_type.
 // This is required because the keys must be returned as const refs but
 // stored in the dict as non-const.
-template <class Container, class It1, class It2, size_t... IteratorIndices>
-class Iterator {
-  static_assert(sizeof...(IteratorIndices) > 0 &&
-                sizeof...(IteratorIndices) < 3);
+template <class Container, class... It> class Iterator {
+  static_assert(sizeof...(It) > 0 && sizeof...(It) < 3);
 
 public:
   using difference_type = std::ptrdiff_t;
-  using value_type = typename ValueType<It1, It2>::type;
+  using value_type = typename ValueType<It...>::type;
   using pointer = std::add_pointer_t<std::remove_reference_t<value_type>>;
-  using reference = typename ReferenceType<It1, It2>::type;
+  using reference = typename ReferenceType<It...>::type;
 
   template <class T>
   Iterator(std::reference_wrapper<Container> container, T &&it1)
@@ -70,7 +65,7 @@ public:
 
   decltype(auto) operator*() const {
     expect_container_unchanged();
-    if constexpr (sizeof...(IteratorIndices) == 1) {
+    if constexpr (sizeof...(It) == 1) {
       return *std::get<0>(m_iterators);
     } else {
       return std::make_pair(std::cref(*std::get<0>(m_iterators)),
@@ -79,30 +74,32 @@ public:
   }
 
   decltype(auto) operator->() const {
-    if constexpr (sizeof...(IteratorIndices) == 1) {
+    if constexpr (sizeof...(It) == 1) {
       expect_container_unchanged();
       return std::get<0>(m_iterators);
     } else {
+      // No need to use expect_container_unchanged
+      // because we delegate to operator*
       return TemporaryItem<reference>(**this);
     }
   }
 
   Iterator &operator++() {
     expect_container_unchanged();
-    (++std::get<IteratorIndices>(m_iterators), ...);
+    ++std::get<0>(m_iterators);
+    if constexpr (sizeof...(It) == 2)
+      ++std::get<1>(m_iterators);
     return *this;
   }
 
-  bool operator==(
-      const Iterator<Container, It1, It2, IteratorIndices...> &other) const {
+  bool operator==(const Iterator<Container, It...> &other) const {
     expect_container_unchanged();
     // Assuming m_iterators are always in sync.
     return std::get<0>(m_iterators) == std::get<0>(other.m_iterators);
   }
 
-  bool operator!=(
-      const Iterator<Container, It1, It2, IteratorIndices...> &other) const {
-    return !(*this == other);
+  bool operator!=(const Iterator<Container, It...> &other) const {
+    return !(*this == other); // NOLINT
   }
 
   template <class F> auto transform(F &&func) const & {
@@ -133,9 +130,7 @@ protected:
   };
 
 private:
-  using IteratorStorage =
-      std::tuple<typename std::tuple_element<IteratorIndices,
-                                             std::tuple<It1, It2>>::type...>;
+  using IteratorStorage = std::tuple<It...>;
 
   IteratorStorage m_iterators;
   std::reference_wrapper<Container> m_container;
@@ -146,15 +141,6 @@ private:
       throw std::runtime_error("dictionary changed size during iteration");
     }
   }
-};
-
-template <class Container, class It1, class It2 = void> struct IteratorType {
-  using type = Iterator<Container, It1, It2, 0, 1>;
-};
-
-template <class Container, class It1>
-struct IteratorType<Container, It1, void> {
-  using type = Iterator<Container, It1, void, 0>;
 };
 
 template <class BaseIterator, class Func>
@@ -187,12 +173,10 @@ TransformIterator(I, F) -> TransformIterator<std::decay_t<I>, std::decay_t<F>>;
 } // namespace scipp::core::dict_detail
 
 namespace std {
-template <class Container, class It1, class It2, size_t... IteratorIndices>
-struct iterator_traits<scipp::core::dict_detail::Iterator<Container, It1, It2,
-                                                          IteratorIndices...>> {
+template <class Container, class... It>
+struct iterator_traits<scipp::core::dict_detail::Iterator<Container, It...>> {
 private:
-  using I = scipp::core::dict_detail::Iterator<Container, It1, It2,
-                                               IteratorIndices...>;
+  using I = scipp::core::dict_detail::Iterator<Container, It...>;
 
 public:
   using difference_type = typename I::difference_type;
@@ -235,21 +219,18 @@ public:
   using mapped_type = Value;
   using value_type = std::pair<const Key, Value>;
   using value_iterator =
-      typename dict_detail::IteratorType<Values,
-                                         typename Values::iterator>::type;
+      typename dict_detail::Iterator<Values, typename Values::iterator>;
   using iterator =
-      typename dict_detail::IteratorType<Keys, typename Keys::const_iterator,
-                                         typename Values::iterator>::type;
+      typename dict_detail::Iterator<Keys, typename Keys::const_iterator,
+                                     typename Values::iterator>;
   using const_key_iterator =
-      typename dict_detail::IteratorType<const Keys,
-                                         typename Keys::const_iterator>::type;
+      typename dict_detail::Iterator<const Keys, typename Keys::const_iterator>;
   using const_value_iterator =
-      typename dict_detail::IteratorType<const Values,
-                                         typename Values::const_iterator>::type;
+      typename dict_detail::Iterator<const Values,
+                                     typename Values::const_iterator>;
   using const_iterator =
-      typename dict_detail::IteratorType<const Keys,
-                                         typename Keys::const_iterator,
-                                         typename Values::const_iterator>::type;
+      typename dict_detail::Iterator<const Keys, typename Keys::const_iterator,
+                                     typename Values::const_iterator>;
 
   Dict(std::initializer_list<std::pair<const Key, Value>> items) {
     reserve(items.size());
