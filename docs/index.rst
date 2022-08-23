@@ -69,10 +69,10 @@ News
 Lost? New to Scipp? Start Here!
 -------------------------------
 
-The **Getting Started** section motivates Scipp in `What is Scipp? <getting-started/overview.rst>`_, provides installation instructions in `Installation <getting-started/installation>`_, and gives a brief overview in `Quick start <getting-started/quick-start>`_.
+The **Getting Started** section motivates Scipp in `What is Scipp? <getting-started/overview.rst>`_, provides installation instructions in `Installation <getting-started/installation.rst>`_, and gives a brief overview in `Quick start <getting-started/quick-start.ipynb>`_.
 
 The **User Guide** provides a high-level overview of the most important Scipp concepts and features.
-Read `Data Structures <user-guide/data-structures.html>`_, `Slicing <user-guide/slicing.html>`_, and `Computation <user-guide/computation.html>`_ (in this order) to develop an understanding of the core concepts of Scipp.
+Read `Data Structures <user-guide/data-structures.ipynb>`_, `Slicing <user-guide/slicing.ipynb>`_, and `Computation <user-guide/computation.ipynb>`_ (in this order) to develop an understanding of the core concepts of Scipp.
 
 Further sections of the User Guide are optional and can be studied in arbitrary order.
 Depending on your area of application you may be most interested in `Binned Data <user-guide/binned-data.rst>`_, `Coordinate Transformations <user-guide/coordinate-transformations.rst>`_,
