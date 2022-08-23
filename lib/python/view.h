@@ -13,6 +13,7 @@ public:
   auto size() const noexcept { return m_obj->size(); }
   auto begin() const { return m_obj->items_begin(); }
   auto end() const { return m_obj->items_end(); }
+  auto tostring() const { return to_string(*m_obj); }
 
 private:
   T *m_obj;
@@ -36,6 +37,13 @@ public:
     else
       return m_obj->values_end();
   }
+  auto tostring() const {
+    std::stringstream ss;
+    ss << "<scipp.Dict.values>";
+    for (auto it = this->begin(); it != this->end(); ++it)
+      ss << "\n" << to_string(*it);
+    return ss.str();
+  }
 
 private:
   T *m_obj;
@@ -49,6 +57,7 @@ public:
   auto size() const noexcept { return m_obj->size(); }
   auto begin() const { return m_obj->keys_begin(); }
   auto end() const { return m_obj->keys_end(); }
+  auto tostring() const { return dict_keys_to_string(*m_obj); }
 
 private:
   T *m_obj;
@@ -66,6 +75,7 @@ public:
   auto size() const noexcept { return m_obj->size(); }
   auto begin() const { return m_obj->keys_begin().transform(dim_to_str); }
   auto end() const { return m_obj->keys_end().transform(dim_to_str); }
+  auto tostring() const { return dict_keys_to_string(*m_obj); }
 
 private:
   T *m_obj;
@@ -83,6 +93,7 @@ public:
   auto size() const noexcept { return m_obj->size(); }
   auto begin() const { return m_obj->items_begin().transform(item_to_str); }
   auto end() const { return m_obj->items_end().transform(item_to_str); }
+  auto tostring() const { return to_string(*m_obj); }
 
 private:
   T *m_obj;
