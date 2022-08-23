@@ -272,8 +272,8 @@ public:
 
   mapped_type extract(const key_type &key) {
     const auto key_it = expect_find_key(key);
-    m_keys.erase(key_it);
     const auto value_it = std::next(m_values.begin(), index_of(key_it));
+    m_keys.erase(key_it);
     mapped_type value = std::move(*value_it);
     m_values.erase(value_it);
     return value;
