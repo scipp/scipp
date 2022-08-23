@@ -151,12 +151,6 @@ class Mesh:
         self._set_mesh_colors()
         self._ax.figure.canvas.draw_idle()
 
-    def transpose(self):
-        self._dims['x'], self._dims['y'] = self._dims['y'], self._dims['x']
-        self._data = self._data.transpose([self._dims['y'], self._dims['x']])
-        self._mesh.remove()
-        self._make_mesh()
-
     def get_limits(self, xscale, yscale):
         xmin, xmax = fix_empty_range(
             find_limits(self._data.meta[self._dims['x']], scale=xscale))

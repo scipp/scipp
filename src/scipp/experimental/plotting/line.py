@@ -23,7 +23,6 @@ class Line:
                  linestyle=None,
                  marker=None,
                  linewidth=None,
-                 norm: str = None,
                  mask_color: str = None,
                  errorbars: bool = True):
 

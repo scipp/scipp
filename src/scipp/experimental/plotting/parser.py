@@ -2,69 +2,48 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 
-def _parse_line_args(**kwargs):
-    line_args = {}
-    if 'color' in kwargs:
-        line_args['color'] = kwargs['color']
-    if 'linewidth' in kwargs:
-        line_args['linewidth'] = kwargs['linewidth']
-    if 'linestyle' in kwargs:
-        line_args['linestyle'] = kwargs['linestyle']
-    if 'marker' in kwargs:
-        line_args['marker'] = kwargs['marker']
-    return line_args
-
-
-def _parse_mesh_args(**kwargs):
-    mesh_args = {}
-    if 'aspect' in kwargs:
-        mesh_args['aspect'] = kwargs['aspect']
-    if 'cmap' in kwargs:
-        mesh_args['cmap'] = kwargs['cmap']
-    if 'cbar' in kwargs:
-        mesh_args['cbar'] = kwargs['cbar']
-    return mesh_args
-
-
-def parse_args(**kwargs):
-
-    return {'line': _parse_line_args(**kwargs), 'mesh': _parse_mesh_args(**kwargs)}
-
-    out = obj
-    if isinstance(out, np.ndarray):
-        dims = [f"axis-{i}" for i in range(len(out.shape))]
-        out = Variable(dims=dims, values=out)
-    if isinstance(out, Variable):
-        out = DataArray(data=out)
-    for dim, size in out.sizes.items():
-        if dim not in out.meta:
-            out.coords[dim] = arange(dim, size)
+def _extract_args_from_list(selected, kwargs, name):
+    out = {}
+    for key, value in kwargs.items():
+        if key in selected:
+            if isinstance(value, dict):
+                if name in value:
+                    out[key] = value[name]
+            else:
+                out[key] = value
     return out
 
 
-def plot(obj: Union[VariableLike, Dict[str, VariableLike]], **kwargs) -> Figure:
-    """Plot a Scipp object.
+def parse_line_args(kwargs, name):
+    # line_args = {}
+    # if 'color' in kwargs:
+    #     line_args['color'] = kwargs['color']
+    # if 'linewidth' in kwargs:
+    #     line_args['linewidth'] = kwargs['linewidth']
+    # if 'linestyle' in kwargs:
+    #     line_args['linestyle'] = kwargs['linestyle']
+    # if 'marker' in kwargs:
+    #     line_args['marker'] = kwargs['marker']
+    # return line_args
+    line_args = ('color', 'linewidth', 'linestyle', 'marker', 'mask_color', 'errorbars')
+    # return {key: value for key, value in kwargs.items() if key in line_args}
+    return _extract_args_from_list(line_args, kwargs, name)
 
-    Parameters
-    ----------
-    obj:
-        The object to be plotted. Possible inputs are:
-        - Variable
-        - Dataset
-        - DataArray
-        - numpy ndarray
-        - dict of Variables
-        - dict of DataArrays
-        - dict of numpy ndarrays
 
-    Returns
-    -------
-    :
-        A figure.
-    """
-    if isinstance(obj, (dict, Dataset)):
-        to_plot = {key: _to_data_array(item) for key, item in obj.items()}
-        nodes = [input_node(v) for v in to_plot.values()]
-        return Figure(*nodes, **kwargs)
-    else:
-        return Figure(input_node(_to_data_array(obj)), **kwargs)
+def parse_mesh_args(kwargs, name):
+    # mesh_args = {}
+    # if 'aspect' in kwargs:
+    #     mesh_args['aspect'] = kwargs['aspect']
+    # if 'cmap' in kwargs:
+    #     mesh_args['cmap'] = kwargs['cmap']
+    # if 'cbar' in kwargs:
+    #     mesh_args['cbar'] = kwargs['cbar']
+    # return mesh_args
+    mesh_args = ('aspect', 'cmap', 'cbar')
+    # return {key: value for key, value in kwargs.items() if key in mesh_args}
+    return _extract_args_from_list(mesh_args, kwargs, name)
+
+
+# def parse_args(**kwargs):
+
+#     return {'line': _parse_line_args(**kwargs), 'mesh': _parse_mesh_args(**kwargs)}

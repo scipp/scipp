@@ -6,6 +6,7 @@ from .tools import fig_to_pngbytes
 from .toolbar import Toolbar
 from .mesh import Mesh
 from .line import Line
+from .parser import parse_line_args, parse_mesh_args
 from ...utils import name_with_unit
 from .view import View
 
@@ -77,10 +78,6 @@ class Figure(View):
         self.toolbar.add_togglebutton(name="toggle_yaxis_scale",
                                       callback=self.toggle_yaxis_scale,
                                       description="logy")
-        self.toolbar.add_button(name="transpose",
-                                callback=self.transpose,
-                                icon="retweet",
-                                tooltip="Transpose")
         self.toolbar.add_button(name="save_view",
                                 callback=self.save_view,
                                 icon="save",
@@ -213,13 +210,6 @@ class Figure(View):
         self._autoscale()
         self._draw_canvas()
 
-    def transpose(self, *_):
-        for child in self._children.values():
-            if isinstance(child, Mesh):
-                child.transpose()
-        self._autoscale()
-        self._draw_canvas()
-
     def savefig(self, filename: str = None):
         """
         Save plot to file.
@@ -246,7 +236,7 @@ class Figure(View):
                 line = Line(ax=self._ax,
                             data=new_values,
                             number=len(self._children),
-                            **self._kwargs)
+                            **parse_line_args(self._kwargs, name=new_values.name))
                 self._children[key] = line
                 self._legend += bool(line.label)
                 self._dims["x"] = new_values.dim
@@ -260,7 +250,8 @@ class Figure(View):
                                            vmin=self._user_vmin,
                                            vmax=self._user_vmax,
                                            norm=self._norm,
-                                           **self._kwargs)
+                                           **parse_mesh_args(self._kwargs,
+                                                             name=new_values.name))
                 self._dims.update({"x": new_values.dims[1], "y": new_values.dims[0]})
                 self._ax.set_ylabel(
                     name_with_unit(var=new_values.meta[self._dims["y"]]))
