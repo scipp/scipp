@@ -45,8 +45,8 @@ class PlotPanel1d(PlotPanel):
         # Make a unique id
         self.counter += 1
         line_id = self.counter
-        setattr(but, "id", line_id)
-        setattr(col, "id", line_id)
+        but.id = line_id
+        col.id = line_id
         but.on_click(self.keep_remove_line)
         col.observe(self.update_line_color, names="value")
         self.keep_buttons[line_id] = {

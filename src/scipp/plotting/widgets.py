@@ -141,8 +141,8 @@ class PlotWidgets:
                         description="{}:{}".format(escape(name), escape(key)),
                         indent=False,
                         layout={"width": "initial"})
-                    setattr(self.mask_checkboxes[name][key], "mask_group", name)
-                    setattr(self.mask_checkboxes[name][key], "mask_name", key)
+                    self.mask_checkboxes[name][key].mask_group = name
+                    self.mask_checkboxes[name][key].mask_name = key
 
         if masks_found:
             self.masks_lab = ipw.Label(value="Masks:")
