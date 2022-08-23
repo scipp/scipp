@@ -143,16 +143,6 @@ void bind_is_edges(py::class_<T, Ignored...> &view) {
       R"(Return True if the given key contains bin-edges in the given dim.)");
 }
 
-template <class View>
-const std::string view_to_string(View &v, const std::string &name) {
-  std::string out = name + ":\n";
-  const auto end = v.items_end();
-  for (auto it = v.items_begin(); it != end; ++it) {
-    out += Dim(it->first).name() + ": " + to_string(it->second) + "\n";
-  }
-  return out;
-}
-
 template <class T>
 void bind_mutable_view(py::module &m, const std::string &name,
                        const std::string &docs) {
@@ -188,10 +178,6 @@ void bind_mutable_view(py::module &m, const std::string &name,
            })
       .def("__repr__", [name](const T &self) { return to_string(self); })
       .def("__str__", [name](const T &self) { return to_string(self); });
-  // .def("__repr__",
-  //      [name](const T &self) { return view_to_string(self, name); })
-  // .def("__str__",
-  //      [name](const T &self) { return view_to_string(self, name); });
 }
 
 template <class T>
@@ -230,10 +216,6 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name,
            })
       .def("__repr__", [name](const T &self) { return to_string(self); })
       .def("__str__", [name](const T &self) { return to_string(self); });
-  // .def("__repr__",
-  //      [name](const T &self) { return view_to_string(self, name); })
-  // .def("__str__",
-  //      [name](const T &self) { return view_to_string(self, name); });
 }
 
 template <class T, class... Ignored>

@@ -38,15 +38,11 @@ public:
       return m_obj->values_end();
   }
   auto tostring() const {
-    std::string out = "Values:";
-    if (this->size() == 0)
-      return out;
-    auto it = this->begin();
-    out += "\n" + to_string(*it);
-    ++it;
-    for (; it != this->end(); ++it)
-      out += "\n" + to_string(*it);
-    return out;
+    std::stringstream ss;
+    ss << "<scipp.Dict.values>";
+    for (auto it = this->begin(); it != this->end(); ++it)
+      ss << "\n" << to_string(*it);
+    return ss.str();
   }
 
 private:
