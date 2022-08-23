@@ -83,9 +83,9 @@ jobs:
       - run: tox -e docs
         if: ${{ contains(matrix.variant.os, 'ubuntu') }}
 
-          #- run: tox -e linkcheck
-          #  # Linkcheck can be flaky. Avoid randomly breaking PR builds by running only on `main`
-          #  if: ${{ contains(matrix.variant.os, 'ubuntu') && github.ref == 'refs/heads/main' }}
+      - run: tox -e linkcheck
+        # Linkcheck can be flaky. Avoid randomly breaking PR builds by running only on `main`
+        if: ${{ contains(matrix.variant.os, 'ubuntu') && github.ref == 'refs/heads/main' }}
 
       - uses: actions/upload-artifact@v2
         if: ${{ contains(matrix.variant.os, 'ubuntu') }}
