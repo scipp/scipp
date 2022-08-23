@@ -115,7 +115,7 @@ std::string dict_to_string(const Dict<Key, Value> &view) {
   std::stringstream ss;
   ss << "<scipp.Dict>\n";
   for (const auto &[key, item] : view) {
-    ss << "  " << key << ":" << to_string(item);
+    ss << "  " << key << ": " << to_string(item) << "\n";
   }
   return ss.str();
 }
@@ -146,15 +146,15 @@ std::string dict_keys_to_string_impl(const D &view,
 } // namespace
 
 std::string dict_keys_to_string(const Coords &coords) {
-  return dict_keys_to_string_impl(coords, "scipp.Dict");
+  return dict_keys_to_string_impl(coords, "scipp.Dict.keys");
 }
 
 std::string dict_keys_to_string(const Masks &masks) {
-  return dict_keys_to_string_impl(masks, "scipp.Dict");
+  return dict_keys_to_string_impl(masks, "scipp.Dict.keys");
 }
 
 std::string dict_keys_to_string(const Dataset &dataset) {
-  return dict_keys_to_string_impl(dataset, "scipp.Dataset");
+  return dict_keys_to_string_impl(dataset, "scipp.Dataset.keys");
 }
 
 } // namespace scipp::dataset
