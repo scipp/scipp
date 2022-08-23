@@ -40,6 +40,7 @@ set(INC_FILES
 
 set(SRC_FILES
     dimensions.cpp
+    dict.cpp
     dtype.cpp
     element_array_view.cpp
     except.cpp

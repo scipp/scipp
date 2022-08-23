@@ -7,6 +7,7 @@
 #include <set>
 #include <sstream>
 
+#include "scipp/core/dict.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/string.h"
@@ -125,15 +126,15 @@ std::string to_string(const Coords &coords) { return dict_to_string(coords); }
 std::string to_string(const Masks &masks) { return dict_to_string(masks); }
 
 std::string dict_keys_to_string(const Coords &coords) {
-  return core::dict_keys_to_string(coords, "scipp.Dict");
+  return core::dict_keys_to_string(coords.keys_begin(), coords.keys_end(), "scipp.Dict");
 }
 
 std::string dict_keys_to_string(const Masks &masks) {
-  return core::dict_keys_to_string(masks, "scipp.Dict");
+  return core::dict_keys_to_string(masks.keys_begin(), masks.keys_end(), "scipp.Dict");
 }
 
 std::string dict_keys_to_string(const Dataset &dataset) {
-  return core::dict_keys_to_string(dataset, "scipp.Dataset");
+  return core::dict_keys_to_string(dataset.keys_begin(), dataset.keys_end(), "scipp.Dataset");
 }
 
 } // namespace scipp::dataset

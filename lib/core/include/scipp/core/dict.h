@@ -11,13 +11,14 @@
 #pragma once
 
 #include <functional>
-#include <sstream>
+#include <string>
 #include <string_view>
 #include <vector>
 
 #include "scipp/common/index.h"
 
 #include "scipp/core/except.h"
+#include "scipp/core/string.h"
 
 namespace scipp::core::dict_detail {
 template <class It1, class It2 = void> struct ValueType {
@@ -381,22 +382,13 @@ private:
   }
 };
 
-template <class Mapping>
-std::string dict_keys_to_string(const Mapping &dict,
+template <class It>
+std::string dict_keys_to_string(It it, It end,
+                                std::string_view dict_name);
+
+template <class Key, class Value>
+std::string dict_keys_to_string(const Dict<Key, Value> &dict,
                                 const std::string_view dict_name = "Dict") {
-  std::ostringstream ss;
-  ss << "<" << dict_name << " {";
-  bool first = true;
-  const auto end = dict.keys_end();
-  for (auto it = dict.keys_begin(); it != end; ++it) {
-    if (!first) {
-      ss << ", ";
-    } else {
-      first = false;
-    }
-    ss << *it;
-  }
-  ss << "}>";
-  return ss.str();
+  return dict_keys_to_string(dict.keys_begin(), dict.keys_end(), dict_name);
 }
 } // namespace scipp::core
