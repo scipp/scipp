@@ -27,7 +27,10 @@ Release steps
 Updating the logo
 -----------------
 
-- Save the logo as SVG in ``docs/_static/``.
+- Edit the logo in ``ressources/``
+- Copy the logo into ``docs/_static/``.
+  Convert the font to a path.
+  This ensures that we get the correct font on all machines.
   Make sure the page is resized to match the drawing contents since the SVG is included directly in the documentation HTML.
 - Export the logo *without text* from the SVG as PNG.
 - Create the favicon using ``convert icon.png -define icon:auto-resize="128,96,64,48,32,16" favicon.ico``
