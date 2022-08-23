@@ -15,23 +15,22 @@ set(INC_FILES
     include/scipp/dataset/extract.h
     include/scipp/dataset/groupby.h
     include/scipp/dataset/histogram.h
-    include/scipp/dataset/map_view_forward.h
-    include/scipp/dataset/map_view.h
     include/scipp/dataset/math.h
     include/scipp/dataset/mean.h
     include/scipp/dataset/nanmean.h
     include/scipp/dataset/rebin.h
-    include/scipp/dataset/special_values.h
-    include/scipp/dataset/util.h
-    include/scipp/dataset/slice.h
     include/scipp/dataset/shape.h
+    include/scipp/dataset/special_values.h
+    include/scipp/dataset/sized_dict_forward.h
+    include/scipp/dataset/sized_dict.h
+    include/scipp/dataset/slice.h
     include/scipp/dataset/sort.h
     include/scipp/dataset/string.h
     include/scipp/dataset/to_unit.h
+    include/scipp/dataset/util.h
 )
 
 set(SRC_FILES
-    ${dataset_SRC_FILES}
     arithmetic.cpp
     astype.cpp
     bin.cpp
@@ -44,20 +43,21 @@ set(SRC_FILES
     extract.cpp
     groupby.cpp
     histogram.cpp
-    map_view.cpp
     mean.cpp
     nanmean.cpp
     operations.cpp
     rebin.cpp
-    util.cpp
     shape.cpp
+    sized_dict.cpp
     slice.cpp
     sort.cpp
     string.cpp
     to_unit.cpp
+    util.cpp
     variable_instantiate_bin_elements.cpp
     variable_instantiate_dataset.cpp
     variable_reduction.cpp
+    ${dataset_SRC_FILES}
 )
 
 set(LINK_TYPE "STATIC")

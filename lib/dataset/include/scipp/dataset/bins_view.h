@@ -4,8 +4,6 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <boost/iterator/transform_iterator.hpp>
-
 #include "scipp/dataset/dataset.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/except.h"
@@ -13,16 +11,16 @@
 namespace scipp::dataset {
 
 namespace bins_view_detail {
-template <class T, class View> class BinsCommon {
+template <class T> class BinsCommon {
 public:
-  BinsCommon(const View &var) : m_var(var) {}
+  explicit BinsCommon(const Variable &var) : m_var(var) {}
   auto indices() const { return std::get<0>(get()); }
   auto dim() const { return std::get<1>(get()); }
-  auto &buffer() const { return m_var.template bin_buffer<T>(); }
-  auto &buffer() { return m_var.template bin_buffer<T>(); }
+  auto &buffer() const { return m_var.bin_buffer<T>(); }
+  auto &buffer() { return m_var.bin_buffer<T>(); }
 
 protected:
-  auto make(const View &view) const {
+  auto make(const variable::Variable &view) const {
     return make_bins_no_validate(this->indices(), this->dim(), view);
   }
   auto check_and_get_buf(const Variable &var) const {
@@ -33,12 +31,11 @@ protected:
   }
 
 private:
-  auto get() const { return m_var.template constituents<T>(); }
-  View m_var;
+  auto get() const { return m_var.constituents<T>(); }
+  Variable m_var;
 };
 
-template <class T, class View, class MapGetter>
-class BinsMapView : public BinsCommon<T, View> {
+template <class T, class MapGetter> class BinsMapView : public BinsCommon<T> {
   struct make_item {
     const BinsMapView *view;
     template <class Item> auto operator()(const Item &item) const {
@@ -54,8 +51,8 @@ class BinsMapView : public BinsCommon<T, View> {
 public:
   using key_type = typename MapView::key_type;
   using mapped_type = typename MapView::mapped_type;
-  BinsMapView(const BinsCommon<T, View> base, MapGetter map)
-      : BinsCommon<T, View>(base), m_map(map) {}
+  BinsMapView(const BinsCommon<T> base, MapGetter map)
+      : BinsCommon<T>(base), m_map(map) {}
   scipp::index size() const noexcept { return mapView().size(); }
   auto operator[](const key_type &key) const {
     return this->make(mapView()[key]);
@@ -68,10 +65,10 @@ public:
     mapView().set(key, this->check_and_get_buf(var));
   }
   auto begin() const noexcept {
-    return boost::make_transform_iterator(mapView().begin(), make_item{this});
+    return mapView().begin().transform(make_item{this});
   }
   auto end() const noexcept {
-    return boost::make_transform_iterator(mapView().end(), make_item{this});
+    return mapView().end().transform(make_item{this});
   }
   bool contains(const key_type &key) const noexcept {
     return mapView().contains(key);
@@ -86,9 +83,9 @@ private:
   MapGetter m_map;
 };
 
-template <class T, class View> class Bins : public BinsCommon<T, View> {
+template <class T> class Bins : public BinsCommon<T> {
 public:
-  using BinsCommon<T, View>::BinsCommon;
+  using BinsCommon<T>::BinsCommon;
   auto data() const { return this->make(this->buffer().data()); }
   // TODO how to handle const-ness?
   void setData(const Variable &var) {
@@ -110,8 +107,8 @@ public:
 ///
 /// The returned objects are variables referencing data in `var`. They do not
 /// own or share ownership of any data.
-template <class T, class View> auto bins_view(View var) {
-  return bins_view_detail::Bins<T, View>(var);
+template <class T> auto bins_view(Variable var) {
+  return bins_view_detail::Bins<T>(std::move(var));
 }
 
 } // namespace scipp::dataset
