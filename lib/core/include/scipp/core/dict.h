@@ -333,11 +333,11 @@ public:
   }
 
   [[nodiscard]] auto values_begin() const noexcept {
-    return const_value_iterator(m_values, m_values.begin());
+    return const_value_iterator(m_values, m_values.cbegin());
   }
 
   [[nodiscard]] auto values_end() const noexcept {
-    return const_value_iterator(m_values, m_values.end());
+    return const_value_iterator(m_values, m_values.cend());
   }
 
   [[nodiscard]] auto begin() noexcept {
@@ -349,11 +349,11 @@ public:
   }
 
   [[nodiscard]] auto begin() const noexcept {
-    return const_iterator(m_keys, m_keys.cbegin(), m_values.begin());
+    return const_iterator(m_keys, m_keys.cbegin(), m_values.cbegin());
   }
 
   [[nodiscard]] auto end() const noexcept {
-    return const_iterator(m_keys, m_keys.cend(), m_values.begin());
+    return const_iterator(m_keys, m_keys.cend(), m_values.cbegin());
   }
 
 private:
