@@ -10,7 +10,7 @@ from ..factory import make_dense_data_array, make_dense_dataset, \
     make_binned_data_array, make_scalar, make_variable, make_scalar_array
 
 # TODO:
-# For now,  we are just checking that creating the repr does not throw.
+# For now, we are just checking that creating the repr does not throw.
 
 
 def maybe_variances(variances, dtype):

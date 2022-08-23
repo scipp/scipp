@@ -12,7 +12,6 @@ General
    bin
    bins
    bins_like
-   choose
    collapse
    group
    hist

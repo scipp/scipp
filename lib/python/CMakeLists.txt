@@ -11,7 +11,6 @@ python_add_library(
   ${python_SRC_FILES}
   bind_units.cpp
   bins.cpp
-  choose.cpp
   comparison.cpp
   counts.cpp
   variable_creation.cpp

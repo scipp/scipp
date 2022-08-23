@@ -12,15 +12,16 @@
 #include "scipp/core/tag_util.h"
 
 #include "scipp/variable/accumulate.h"
+#include "scipp/variable/cumulative.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
 
 #include "scipp/dataset/bins.h"
-#include "scipp/dataset/choose.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/shape.h"
+#include "scipp/dataset/util.h"
 
 #include "../variable/operations_common.h"
 #include "bin_common.h"
@@ -29,47 +30,6 @@
 using namespace scipp::variable;
 
 namespace scipp::dataset {
-
-namespace {
-
-template <class Slices, class Data>
-auto copy_impl(const Slices &slices, const Data &data, const Dim slice_dim,
-               const AttrPolicy attrPolicy = AttrPolicy::Keep) {
-  scipp::index size = 0;
-  for (const auto &slice : slices)
-    size += slice.end() - slice.begin();
-  auto out = dataset::copy(data.slice({slice_dim, 0, size}), attrPolicy);
-  scipp::index current = 0;
-  auto out_slices = slices;
-  for (auto &slice : out_slices) {
-    const auto thickness = slice.end() - slice.begin();
-    slice = Slice(slice.dim(), current, current + thickness);
-    current += thickness;
-  }
-  const auto copy_slice = [&](const auto &range) {
-    for (scipp::index i = range.begin(); i != range.end(); ++i) {
-      const auto &slice = slices[i];
-      const auto &out_slice = out_slices[i];
-      scipp::dataset::copy(
-          strip_if_broadcast_along(data.slice(slice), slice_dim),
-          out.slice(out_slice), attrPolicy);
-    }
-  };
-  core::parallel::parallel_for(core::parallel::blocked_range(0, slices.size()),
-                               copy_slice);
-  return out;
-}
-
-} // namespace
-
-/// Extract given group as a new data array or dataset
-template <class T>
-T GroupBy<T>::copy(const scipp::index group,
-                   const AttrPolicy attrPolicy) const {
-  return copy_impl(groups().at(group),
-                   strip_edges_along(m_data, m_grouping.sliceDim()),
-                   m_grouping.sliceDim(), attrPolicy);
-}
 
 namespace {
 auto resize_array(const DataArray &da, const Dim reductionDim,
@@ -102,7 +62,7 @@ T GroupBy<T>::makeReductionOutput(const Dim reductionDim,
   } else {
     out = resize_array(m_data, reductionDim, size(), fill);
   }
-  out.rename(reductionDim, dim());
+  out = out.rename_dims({{reductionDim, dim()}});
   out.coords().set(dim(), key());
   return out;
 }
@@ -205,18 +165,6 @@ template <class T> T GroupBy<T>::nanmin(const Dim reductionDim) const {
   return reduce(variable::nanmin_into, reductionDim, FillValue::Max);
 }
 
-/// Combine groups without changes, effectively sorting data.
-template <class T> T GroupBy<T>::copy(const SortOrder order) const {
-  std::vector<Slice> flat;
-  if (order == SortOrder::Ascending)
-    for (const auto &slices : groups())
-      flat.insert(flat.end(), slices.begin(), slices.end());
-  else
-    for (auto it = groups().rbegin(); it != groups().rend(); ++it)
-      flat.insert(flat.end(), it->begin(), it->end());
-  return copy_impl(flat, m_data, m_grouping.sliceDim());
-}
-
 /// Apply mean to groups and return combined data.
 template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   // 1. Sum into output slices
@@ -278,12 +226,14 @@ template <class T> struct NanSensitiveLess {
   }
 };
 
-template <class T> bool nan_sensitive_equal(const T &a, const T &b) {
-  if constexpr (std::is_floating_point_v<T>)
-    return a == b || (std::isnan(a) && std::isnan(b));
-  else
-    return a == b;
-}
+template <class T> struct nan_sensitive_equal {
+  bool operator()(const T &a, const T &b) const {
+    if constexpr (std::is_floating_point_v<T>)
+      return a == b || (std::isnan(a) && std::isnan(b));
+    else
+      return a == b;
+  }
+};
 } // namespace
 
 template <class T> struct MakeGroups {
@@ -292,7 +242,9 @@ template <class T> struct MakeGroups {
     const auto &values = key.values<T>();
 
     const auto dim = key.dim();
-    std::map<T, GroupByGrouping::group, NanSensitiveLess<T>> indices;
+    std::unordered_map<T, GroupByGrouping::group, std::hash<T>,
+                       nan_sensitive_equal<T>>
+        indices;
     const auto end = values.end();
     scipp::index i = 0;
     for (auto it = values.begin(); it != end;) {
@@ -300,20 +252,28 @@ template <class T> struct MakeGroups {
       // handling in follow-up "apply" steps.
       const auto begin = i;
       const auto &group_value = *it;
-      while (it != end && nan_sensitive_equal(*it, group_value)) {
+      while (it != end && nan_sensitive_equal<T>()(*it, group_value)) {
         ++it;
         ++i;
       }
       indices[group_value].emplace_back(dim, begin, i);
     }
 
-    const Dimensions dims{targetDim, scipp::size(indices)};
     std::vector<T> keys;
     std::vector<GroupByGrouping::group> groups;
-    for (auto &item : indices) {
-      keys.emplace_back(std::move(item.first));
-      groups.emplace_back(std::move(item.second));
+    keys.reserve(scipp::size(indices));
+    groups.reserve(scipp::size(indices));
+    for (auto &item : indices)
+      keys.emplace_back(item.first);
+    core::parallel::parallel_sort(keys.begin(), keys.end(),
+                                  NanSensitiveLess<T>());
+    for (const auto &k : keys) {
+      // false positive, fixed in https://github.com/danmar/cppcheck/pull/4230
+      // cppcheck-suppress containerOutOfBounds
+      groups.emplace_back(std::move(indices.at(k)));
     }
+
+    const Dimensions dims{targetDim, scipp::size(indices)};
     auto keys_ = makeVariable<T>(Dimensions{dims}, Values(std::move(keys)));
     keys_.setUnit(key.unit());
     return {dim, std::move(keys_), std::move(groups)};
@@ -440,73 +400,7 @@ GroupBy<Dataset> groupby(const Dataset &dataset, const Variable &key,
   throw except::DimensionError("Size of Group-by key is incorrect.");
 }
 
-Variable extract(const Variable &var, const Variable &condition) {
-  return extract(DataArray(var), condition).data();
-}
-
-namespace {
-template <class T> T extract_impl(const T &obj, const Variable &condition) {
-  if (condition.dtype() != dtype<bool>)
-    throw except::TypeError(
-        "Cannot extract elements based on condition with non-boolean dtype. If "
-        "you intended to select a range based on a label you must specify the "
-        "dimension.");
-  if (condition.dims().ndim() != 1)
-    throw except::DimensionError("Condition must by 1-D, but got " +
-                                 to_string(condition.dims()) + '.');
-  if (!obj.dims().includes(condition.dims()))
-    throw except::DimensionError(
-        "Condition dimensions " + to_string(condition.dims()) +
-        " must be be included in the dimensions of the sliced object " +
-        to_string(obj.dims()) + '.');
-  if (all(condition).value<bool>())
-    return copy(obj);
-  if (!any(condition).value<bool>())
-    return copy(obj.slice({condition.dim(), 0, 0}));
-  return call_groupby(obj, condition, condition.dim()).copy(1);
-}
-} // namespace
-
-DataArray extract(const DataArray &da, const Variable &condition) {
-  return extract_impl(da, condition);
-}
-
-Dataset extract(const Dataset &ds, const Variable &condition) {
-  return extract_impl(ds, condition);
-}
-
 template class GroupBy<DataArray>;
 template class GroupBy<Dataset>;
-
-constexpr auto slice_by_value = [](const auto &x, const Dim dim,
-                                   const auto &key) {
-  const auto size = x.dims()[dim];
-  const auto &coord = x.meta()[dim];
-  for (scipp::index i = 0; i < size; ++i)
-    if (coord.slice({dim, i}) == key)
-      return x.slice({dim, i});
-  throw std::runtime_error("Given key not found in coord.");
-};
-
-/// Similar to numpy.choose, but choose based on *values* in `key`.
-///
-/// Chooses slices of `choices` along `dim`, based on values of dimension-coord
-/// for `dim`.
-DataArray choose(const Variable &key, const DataArray &choices, const Dim dim) {
-  const auto grouping = call_groupby(key, key, dim);
-  const Dim target_dim = key.dims().inner();
-  auto out = resize(choices, dim, key.dims()[target_dim]);
-  out.rename(dim, target_dim);
-  out.coords().set(dim, key); // not target_dim
-  for (scipp::index group = 0; group < grouping.size(); ++group) {
-    const auto value = grouping.key().slice({dim, group});
-    const auto &choice = slice_by_value(choices, dim, value);
-    for (const auto &slice : grouping.groups()[group]) {
-      auto out_ = out.slice(slice);
-      copy(broadcast(choice.data(), out_.dims()), out_.data());
-    }
-  }
-  return out;
-}
 
 } // namespace scipp::dataset
