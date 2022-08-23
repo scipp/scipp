@@ -281,7 +281,7 @@ class PlotFigure1d(PlotFigure):
         """
         if names is None:
             names = self._lines
-        for name in names:
+        for _ in names:
             lines = []
             for line in self.ax.lines:
                 if line.get_url() != line_id:

@@ -77,7 +77,7 @@ class PlotPanel1d(PlotPanel):
         Update the container of all widgets when a line is kept or removed.
         """
         widget_list = []
-        for key, val in self.keep_buttons.items():
+        for val in self.keep_buttons.values():
             widget_list.append(ipw.HBox(list(val.values())))
         self.container.children = tuple(widget_list)
 
