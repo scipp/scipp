@@ -108,7 +108,7 @@ protected:
     for (const auto &item : dataset)
       if (!d.contains(item.name()))
         d.setData(item.name(), copy(item));
-    return d;
+    return copy(d);
   }
 };
 class Dataset3DTest_slice_y : public Dataset3DTest,

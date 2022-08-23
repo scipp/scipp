@@ -62,7 +62,7 @@ const Coords &Dataset::meta() const noexcept { return coords(); }
 Coords &Dataset::meta() noexcept { return coords(); }
 
 bool Dataset::contains(const std::string &name) const noexcept {
-  return m_data.count(name) == 1;
+  return m_data.contains(name);
 }
 
 /// Removes a data item from the Dataset
@@ -132,10 +132,11 @@ void Dataset::setData(const std::string &name, Variable data,
   setSizes(data.dims());
   const auto replace = contains(name);
   if (replace && attrPolicy == AttrPolicy::Keep)
-    m_data[name] = DataArray(data, {}, m_data[name].masks().items(),
-                             m_data[name].attrs().items(), name);
+    m_data.insert_or_assign(
+        name, DataArray(std::move(data), {}, m_data[name].masks().items(),
+                        m_data[name].attrs().items(), name));
   else
-    m_data[name] = DataArray(data);
+    m_data.insert_or_assign(name, DataArray(std::move(data)));
   if (replace)
     rebuildDims();
 }
@@ -146,41 +147,35 @@ void Dataset::setData(const std::string &name, Variable data,
 /// dataset. Throws if there are existing but mismatching coords, masks, or
 /// attributes. Throws if the provided data brings the dataset into an
 /// inconsistent state (mismatching dimensions).
-void Dataset::setData(const std::string &name, const DataArray &data) {
+void Dataset::setData(const std::string &name, DataArray data) {
   // Return early on self assign to avoid exceptions from Python inplace ops
   if (const auto it = find(name); it != end()) {
     if (it->data().is_same(data.data()) && it->masks() == data.masks() &&
         it->attrs() == data.attrs() && it->coords() == data.coords())
       return;
   }
-  expect_writable(*this);
   for (auto &&[dim, coord] : data.coords())
     if (const auto it = m_coords.find(dim); it != m_coords.end())
       expect::matching_coord(dim, coord, it->second, "set coord");
-  setSizes(data.dims());
+
+  setData(name, data.data());
+  auto &item = m_data[name];
   for (auto &&[dim, coord] : data.coords())
     if (const auto it = m_coords.find(dim); it == m_coords.end())
       setCoord(dim, std::move(coord));
-
-  setData(name, std::move(data.data()));
-  auto &item = m_data[name];
-
-  for (auto &&[dim, attr] : data.attrs())
-    // Attrs might be shadowed by a coord, but this cannot be prevented in
-    // general, so instead of failing here we proceed (and may fail later if
-    // meta() is called).
-    item.attrs().set(dim, std::move(attr));
-  for (auto &&[nm, mask] : data.masks())
-    item.masks().set(nm, std::move(mask));
+  // Attrs might be shadowed by a coord, but this cannot be prevented in
+  // general, so instead of failing here we proceed (and may fail later if
+  // meta() is called).
+  item.attrs() = std::move(data.attrs());
+  item.masks() = std::move(data.masks());
 }
 
 /// Return slice of the dataset along given dimension with given extents.
 Dataset Dataset::slice(const Slice &s) const {
-  Dataset out;
-  out.m_data = slice_map(m_coords.sizes(), m_data, s);
+  Dataset out(slice_map(m_coords.sizes(), m_data, s));
   auto [coords, attrs] = m_coords.slice_coords(s);
   out.m_coords = std::move(coords);
-  for (auto &item : out.m_data) {
+  for (auto &&item : out.m_data) {
     Attrs item_attrs(out.m_coords.sizes(), {});
     for (const auto &[dim, coord] : attrs)
       if (m_coords.item_applies_to(dim, m_data.at(item.first).dims()))
@@ -197,7 +192,7 @@ Dataset &Dataset::setSlice(const Slice &s, const Dataset &data) {
   for (const auto &[name, item] : m_data)
     item.validateSlice(s, data.m_data.at(name));
   // Only if all items checked for dry-run does modification go-ahead
-  for (auto &[name, item] : m_data)
+  for (auto &&[name, item] : m_data)
     item.setSlice(s, data.m_data.at(name));
   return *this;
 }
@@ -208,8 +203,8 @@ Dataset &Dataset::setSlice(const Slice &s, const DataArray &data) {
   for (const auto &item : m_data)
     item.second.validateSlice(s, data);
   // Only if all items checked for dry-run does modification go-ahead
-  for (auto &item : m_data)
-    item.second.setSlice(s, data);
+  for (auto &&[_, val] : m_data)
+    val.setSlice(s, data);
   return *this;
 }
 
@@ -270,11 +265,10 @@ typename Masks::holder_type union_or(const Masks &currentMasks,
                                      const Masks &otherMasks) {
   typename Masks::holder_type out;
   for (const auto &[key, item] : currentMasks)
-    out.emplace(key, copy(item));
+    out.insert_or_assign(key, copy(item));
   for (const auto &[key, item] : otherMasks) {
-    const auto it = currentMasks.find(key);
-    if (it == currentMasks.end())
-      out.emplace(key, copy(item));
+    if (!currentMasks.contains(key))
+      out.insert_or_assign(key, copy(item));
     else if (out[key].dims().includes(item.dims()))
       out[key] |= item;
     else

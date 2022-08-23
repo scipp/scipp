@@ -6,6 +6,7 @@
 
 #include "scipp-dataset_export.h"
 #include "scipp/variable/subspan_view.h"
+#include "scipp/variable/variable.h"
 
 namespace scipp::dataset::bin_detail {
 

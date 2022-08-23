@@ -2,9 +2,9 @@
 // Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/dataset/map_view.h"
 
 #include "../variable/operations_common.h"
+#include "scipp/dataset/sized_dict.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/creation.h"
 #include "scipp/variable/reduction.h"

@@ -4,74 +4,33 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <unordered_map>
-
+#include "scipp/core/dict.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/variable/arithmetic.h"
 
 namespace scipp::dataset {
-
-template <class T1, class T2>
-auto union_(const T1 &a, const T2 &b, const std::string_view opname) {
-  std::unordered_map<typename T1::key_type, typename T1::mapped_type> out;
-
-  for (const auto &[key, item] : a)
-    out.emplace(key, item);
-
-  for (const auto &item : b) {
-    if (const auto it = a.find(item.first); it != a.end()) {
-      expect::matching_coord(it->first, it->second, item.second, opname);
-    } else
-      out.emplace(item.first, item.second);
-  }
-  return out;
-}
-
-/// Return intersection of maps, i.e., all items with matching names that
-/// have matching content.
-template <class Map> auto intersection(const Map &a, const Map &b) {
-  std::unordered_map<typename Map::key_type, Variable> out;
-  for (const auto &[key, item] : a)
-    if (const auto it = b.find(key);
-        it != b.end() && equals_nan(it->second, item))
-      out.emplace(key, item);
-  return out;
-}
-
-/// Return a copy of map-like objects such as CoordView.
-template <class T> auto copy_map(const T &map) {
-  std::unordered_map<typename T::key_type, typename T::mapped_type> out;
-  for (const auto &[key, item] : map)
-    out.emplace(key, copy(item));
-  return out;
-}
-
 template <bool ApplyToData, class Func, class... Args>
-DataArray apply_or_copy_dim_impl(const DataArray &a, Func func, const Dim dim,
+DataArray apply_or_copy_dim_impl(const DataArray &da, Func func, const Dim dim,
                                  Args &&...args) {
-  const auto copy_independent = [&](auto &coords_, const auto &view,
-                                    const bool share) {
-    for (auto &&[d, coord] : view)
-      if (!coord.dims().contains(dim))
-        coords_.emplace(d, share ? coord : copy(coord));
+  const auto copy_independent = [&](const auto &mapping, const bool share) {
+    typename std::decay_t<decltype(mapping)>::holder_type out;
+    for (auto &&[d, var] : mapping)
+      if (!var.dims().contains(dim))
+        out.insert_or_assign(d, share ? var : copy(var));
+    return out;
   };
-  std::unordered_map<Dim, Variable> coords;
-  copy_independent(coords, a.coords(), true);
-
-  std::unordered_map<Dim, Variable> attrs;
-  copy_independent(attrs, a.attrs(), true);
-
-  std::unordered_map<std::string, Variable> masks;
-  copy_independent(masks, a.masks(), false);
+  auto coords = copy_independent(da.coords(), true);
+  auto attrs = copy_independent(da.attrs(), true);
+  auto masks = copy_independent(da.masks(), false);
 
   if constexpr (ApplyToData) {
-    return DataArray(func(a.data(), dim, args...), std::move(coords),
-                     std::move(masks), std::move(attrs), a.name());
+    return DataArray(func(da.data(), dim, args...), std::move(coords),
+                     std::move(masks), std::move(attrs), da.name());
   } else {
-    return DataArray(func(a, dim, std::forward<Args>(args)...),
+    return DataArray(func(da, dim, std::forward<Args>(args)...),
                      std::move(coords), std::move(masks), std::move(attrs),
-                     a.name());
+                     da.name());
   }
 }
 
@@ -128,20 +87,23 @@ Dataset apply_to_items(const Dataset &d, Func func, Args &&...args) {
 ///
 /// If `func` returns an invalid object it will not be inserted into the output
 /// map. This can be used to drop/filter items.
-template <class T, class Func> auto transform_map(const T &map, Func func) {
-  std::unordered_map<typename T::key_type, typename T::mapped_type> out;
+template <class OutMapping, class Mapping, class Func>
+auto transform_map(const Mapping &map, Func func) {
+  OutMapping out;
   for (const auto &[key, item] : map) {
     auto transformed = func(item);
     if (transformed.is_valid())
-      out.emplace(key, std::move(transformed));
+      out.insert_or_assign(key, std::move(transformed));
   }
   return out;
 }
 
 template <class T, class Func> DataArray transform(const T &a, Func func) {
-  return DataArray(func(a.data()), transform_map(a.coords(), func),
-                   transform_map(a.masks(), func),
-                   transform_map(a.attrs(), func), a.name());
+  return DataArray(
+      func(a.data()),
+      transform_map<typename Coords::holder_type>(a.coords(), func),
+      transform_map<typename Masks::holder_type>(a.masks(), func),
+      transform_map<typename Attrs::holder_type>(a.attrs(), func), a.name());
 }
 
 [[nodiscard]] DataArray strip_if_broadcast_along(const DataArray &a,
