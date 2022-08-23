@@ -3,6 +3,8 @@
 
 #include <gtest/gtest.h>
 
+#include <memory>
+
 #include "scipp/core/dict.h"
 #include "scipp/units/dim.h"
 
@@ -11,7 +13,46 @@
 using namespace scipp::core;
 using scipp::Dim;
 
-using DimDict = Dict<Dim, int>;
+// Helper type with non-trivial move semantics to ensure that Dict
+// handles rvalues properly.
+struct Int {
+  std::unique_ptr<int> m_i;
+
+  Int(int i) // NOLINT
+      : m_i(std::make_unique<int>(i)) {}
+
+  Int(const Int &other) noexcept : m_i(std::make_unique<int>(other)) {}
+
+  Int &operator=(const Int &other) {
+    m_i.reset();
+    m_i = std::make_unique<int>(other);
+    return *this;
+  }
+
+  Int(Int &&other) noexcept : m_i(std::exchange(other.m_i, nullptr)) {}
+
+  Int &operator=(Int &&other) noexcept {
+    std::swap(m_i, other.m_i);
+    other.m_i.reset();
+    return *this;
+  }
+
+  bool operator==(int i) const {
+    assert(m_i);
+    return *m_i == i;
+  }
+
+  bool operator!=(int i) const {
+    return !(*this == i); // NOLINT
+  }
+
+  operator int() const { // NOLINT
+    assert(m_i);
+    return *(this->m_i);
+  }
+};
+
+using DimDict = Dict<Dim, Int>;
 
 TEST(Dict, default_constructor_creates_empty) {
   DimDict dict;
