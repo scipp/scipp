@@ -5,7 +5,7 @@ Prerequisites
 ~~~~~~~~~~~~~
 
 All non-optional build dependencies are installed automatically through Conan when running CMake.
-Conan itself can be installed manually but we recommend using the ``scipp-developer.yml`` file
+Conan itself can be installed manually but we recommend using the ``developer.yml`` file
 for installing this and other dependencies in a ``conda`` environment (see below).
 Alternatively you can refer to this file for a full list of dependencies.
 
@@ -20,7 +20,7 @@ If you want something different be sure to modify paths as appropriate.
 
 .. code-block::
 
-  |-- scipp (source code)
+  |-- /home/user/scipp (source code)
   |   |-- build (build directory)
   |   |-- install (Python library installation)
   |   |-- ...
@@ -93,8 +93,7 @@ To use the ``scipp`` Python module:
 
 .. code-block:: bash
 
-  cd ../python
-  PYTHONPATH=$PYTHONPATH:../install python3
+  conda develop /home/user/scipp/install
 
 In Python:
 
@@ -117,11 +116,13 @@ Running the unit tests
 Executables for the unit tests can be found in the build directory as ``build/bin/scipp-XYZ-test``, where ``XYZ`` is the Scipp component under test (e.g. ``core``).
 ``all-tests`` can be used to build all tests at the same time. Note that simply running ``ctest`` also works, but currently it seems to have an issue with gathering templated tests, so calling the test binaries manually is recommended (and much faster).
 
-To run the Python tests, run (in the top-level directory):
+To run the Python tests, run (in the top-level ``/home/user/scipp`` directory):
 
 .. code-block:: bash
 
-  tox -e test
+  conda develop /home/user/scipp/install
+  python -m pytest tests
+
 
 Building Documentation
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -130,11 +131,12 @@ Run
 
 .. code-block:: bash
 
+  tox -e lib
   tox -e docs
 
 
 This will build the HTML documentation and put it in a folder named ``html``.
-If rebuilding the documentation is slow it can be quicker to remove the docs build directory and start a fresh build.
+If rebuilding the documentation is slow, it can be quicker to remove the docs build directory and start a fresh build.
 
 Precommit Hooks
 ~~~~~~~~~~~~~~~
