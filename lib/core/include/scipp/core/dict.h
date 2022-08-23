@@ -52,16 +52,11 @@ public:
   using pointer = std::add_pointer_t<std::remove_reference_t<value_type>>;
   using reference = typename ReferenceType<It...>::type;
 
-  template <class T>
-  Iterator(std::reference_wrapper<Container> container, T &&it1)
-      : m_iterators{std::forward<T>(it1)}, m_container(container),
-        m_end_address(container.get().data() + container.get().size()) {}
-
-  template <class T, class U>
-  Iterator(std::reference_wrapper<Container> container, T &&it1, U &&it2)
-      : m_iterators{std::forward<T>(it1), std::forward<U>(it2)},
-        m_container(container),
-        m_end_address(container.get().data() + container.get().size()) {}
+  template <class... T>
+  explicit Iterator(std::reference_wrapper<Container> container, T &&...it)
+      : m_iterators{std::forward<T>(it)...}, m_container(container),
+        m_base_address(container.get().data()), m_size(container.get().size()) {
+  }
 
   decltype(auto) operator*() const {
     expect_container_unchanged();
@@ -113,7 +108,8 @@ public:
   friend void swap(Iterator &a, Iterator &b) {
     swap(a.m_iterators, b.m_iterators);
     swap(a.m_container, b.m_container);
-    std::swap(a.m_end_address, b.m_end_address);
+    std::swap(a.m_base_address, b.m_base_address);
+    std::swap(a.m_size, b.m_size);
   }
 
 protected:
@@ -134,10 +130,12 @@ private:
 
   IteratorStorage m_iterators;
   std::reference_wrapper<Container> m_container;
-  const void *m_end_address;
+  const void *m_base_address;
+  size_t m_size;
 
   void expect_container_unchanged() const {
-    if (m_container.get().data() + m_container.get().size() != m_end_address) {
+    if (m_container.get().data() != m_base_address ||
+        m_container.get().size() != m_size) {
       throw std::runtime_error("dictionary changed size during iteration");
     }
   }
