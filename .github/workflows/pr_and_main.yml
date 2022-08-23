@@ -102,6 +102,11 @@ jobs:
       - run: tox -e asv
         if: ${{ contains(matrix.variant.os, 'ubuntu') && github.ref == 'refs/heads/main' }}
 
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        if: ${{ contains(matrix.variant.os, 'ubuntu') && github.ref == 'refs/heads/main' }}
+        with:
+          repository: scipp-benchmarks
+
       # - name: Deploy benchmark results
       #   if: ${{ contains(matrix.variant.os, 'ubuntu') && github.ref == 'refs/heads/main' }}
       #   uses: JamesIves/github-pages-deploy-action@4.1.5
