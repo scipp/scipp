@@ -9,7 +9,7 @@ from ...utils import name_with_unit
 
 from functools import reduce
 from matplotlib.colors import Normalize, LogNorm
-import matplotlib.pyplot as plt
+from matplotlib.pyplot import colorbar
 import numpy as np
 from typing import Any
 
@@ -70,12 +70,11 @@ class Mesh:
                                          cmap=self._cmap,
                                          shading='auto')
         if self._cbar:
-            self._cbar = plt.colorbar(self._mesh,
-                                      ax=self._ax,
-                                      cax=self._cax,
-                                      extend=self._extend,
-                                      label=name_with_unit(var=self._data.data,
-                                                           name=""))
+            self._cbar = colorbar(self._mesh,
+                                  ax=self._ax,
+                                  cax=self._cax,
+                                  extend=self._extend,
+                                  label=name_with_unit(var=self._data.data, name=""))
 
             # Add event that toggles the norm of the colorbar when clicked on
             # TODO: change this to a double-click event once this is supported in
@@ -135,7 +134,7 @@ class Mesh:
         self._set_mesh_colors()
 
     def _set_norm(self):
-        func = LogNorm if self._norm_flag == "log" else Normalize
+        func = dict(linear=Normalize, log=LogNorm)[self._norm_flag]
         self._norm_func = func()
         self._rescale_colormap()
         self._mesh.set_norm(self._norm_func)

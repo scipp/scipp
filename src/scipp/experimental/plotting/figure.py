@@ -2,11 +2,11 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from ... import config, DataArray
-from .tools import fig_to_pngbytes
+from .tools import fig_to_pngbytes, parse_kwargs
 from .toolbar import Toolbar
 from .mesh import Mesh
 from .line import Line
-from .parser import parse_line_args, parse_mesh_args
+# from .parser import parse_line_args, parse_mesh_args
 from ...utils import name_with_unit
 from .view import View
 
@@ -15,16 +15,13 @@ import matplotlib.pyplot as plt
 from typing import Any, Tuple
 
 
-class SideBar:
-
-    def __init__(self, children=None):
-        self._children = children if children is not None else []
+class SideBar(list):
 
     def _ipython_display_(self):
         return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
-        return ipw.VBox([child._to_widget() for child in self._children])
+        return ipw.VBox([child._to_widget() for child in self])
 
 
 class Figure(View):
@@ -58,13 +55,6 @@ class Figure(View):
         self._kwargs = kwargs
         self._dims = {}
 
-        self.toolbar = self._make_toolbar()
-
-        self.left_bar = SideBar([self.toolbar])
-        self.right_bar = SideBar()
-        self.bottom_bar = SideBar()
-        self.top_bar = SideBar()
-
         self._children = {}
 
         cfg = config['plot']
@@ -72,15 +62,26 @@ class Figure(View):
             if figsize is None:
                 figsize = (cfg['width'] / cfg['dpi'], cfg['height'] / cfg['dpi'])
             self._fig, self._ax = plt.subplots(1, 1, figsize=figsize, dpi=cfg['dpi'])
-            self._fig.tight_layout()
+            self._fig.tight_layout(pad=1.5)
             if self.is_widget():
                 self._fig.canvas.toolbar_visible = False
+                self._fig.canvas.header_visible = False
+                self._fig.canvas.footer_visible = False
         else:
             self._fig = self._ax.get_figure()
 
         self._ax.set_title(title)
         self._ax.set_aspect(aspect)
         self._ax.grid(grid)
+
+        self.left_bar = SideBar()
+        self.right_bar = SideBar()
+        self.bottom_bar = SideBar()
+        self.top_bar = SideBar()
+
+        self.toolbar = self._make_toolbar()
+        if self.is_widget():
+            self.left_bar.append(self.toolbar)
 
         self._legend = 0
         self._new_artist = False
@@ -237,14 +238,18 @@ class Figure(View):
                 line = Line(ax=self._ax,
                             data=new_values,
                             number=len(self._children),
-                            **parse_line_args(self._kwargs, name=new_values.name))
+                            **parse_kwargs(self._kwargs, name=new_values.name))
                 self._children[key] = line
                 self._legend += bool(line.label)
                 self._dims["x"] = new_values.dim
                 # if self._ylabel is None:
                 self._ax.set_ylabel(name_with_unit(var=new_values.data, name=""))
+                # TODO: this is not great, involves implementation details of the
+                # toolbar. However, setting the yscale of the axis manually would mean
+                # we need to update the value of the 'logy' button depending on the
+                # value of self._norm, and updating that value would trigger a callback
+                # which would draw the axes a second time.
                 self.toolbar.members['toggle_yaxis_scale'].value = self._norm == 'log'
-                # self._ax.set_yscale(self._norm)
 
             elif new_values.ndim == 2:
                 self._children[key] = Mesh(ax=self._ax,
@@ -252,8 +257,10 @@ class Figure(View):
                                            vmin=self._user_vmin,
                                            vmax=self._user_vmax,
                                            norm=self._norm,
-                                           **parse_mesh_args(self._kwargs,
-                                                             name=new_values.name))
+                                           **parse_kwargs(self._kwargs,
+                                                          name=new_values.name))
+                # **parse_mesh_args(self._kwargs,
+                #                   name=new_values.name))
                 self._dims.update({"x": new_values.dims[1], "y": new_values.dims[0]})
                 self._ax.set_ylabel(
                     name_with_unit(var=new_values.meta[self._dims["y"]]))

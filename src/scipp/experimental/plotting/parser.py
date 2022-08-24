@@ -2,6 +2,8 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 
+
+
 def _extract_args_from_list(selected, kwargs, name):
     out = {}
     for key, value in kwargs.items():
@@ -42,6 +44,46 @@ def parse_mesh_args(kwargs, name):
     mesh_args = ('cmap', 'cbar')
     # return {key: value for key, value in kwargs.items() if key in mesh_args}
     return _extract_args_from_list(mesh_args, kwargs, name)
+
+
+def get_line_param(name: str, index: int) -> Any:
+    """
+    Get the default line parameter from the config.
+    If an index is supplied, return the i-th item in the list.
+    """
+    param = config['plot'][name]
+    return param[index % len(param)]
+
+
+def get_cmap(name: str):
+
+    if name is None:
+        name = config['plot']['params']['cmap']
+
+    try:
+        cmap = copy(cm.get_cmap(name))
+    except ValueError:
+        cmap = LinearSegmentedColormap.from_list("tmp", [name, name])
+
+    cmap.set_under(config['plot']['params']["under_color"])
+    cmap.set_over(config['plot']['params']["over_color"])
+    return cmap
+
+def parse_step_kwargs(kwargs):
+
+
+
+def _make_line_params(number, **kwargs):
+    params = {}
+    for key, arg in kwargs.items():
+        if isinstance(arg, dict):
+            if data.name in arg:
+                params[key] = arg[data.name]
+        else:
+            params[key] = arg
+        if params[key] is None:
+            params[key] = get_line_param(key, number)
+    return params
 
 
 # def parse_args(**kwargs):

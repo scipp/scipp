@@ -15,16 +15,18 @@ class Line:
     """
     """
 
-    def __init__(self,
-                 ax,
-                 data,
-                 number=0,
-                 color=None,
-                 linestyle=None,
-                 marker=None,
-                 linewidth=None,
-                 mask_color: str = None,
-                 errorbars: bool = True):
+    def __init__(
+            self,
+            ax,
+            data,
+            number=0,
+            # color=None,
+            # linestyle=None,
+            # marker=None,
+            # linewidth=None,
+            mask_color: str = None,
+            errorbars: bool = True,
+            **kwargs):
 
         self._ax = ax
         self._data = data
@@ -35,6 +37,7 @@ class Line:
         self._dim = None
         self._unit = None
         self.label = None
+        # self._kwargs = kwargs
 
         self._mask_color = mask_color if mask_color is not None else 'k'
 
@@ -42,32 +45,33 @@ class Line:
         self._unit = self._data.unit
         self._coord = self._data.meta[self._dim]
 
-        params = self._make_line_params(number=number,
-                                        color=color,
-                                        linestyle=linestyle,
-                                        marker=marker,
-                                        linewidth=linewidth)
+        # params = self._make_line_params(number=number,
+        #                                 color=color,
+        #                                 linestyle=linestyle,
+        #                                 marker=marker,
+        #                                 linewidth=linewidth)
 
-        self._make_line(data=self._make_data(), errorbars=errorbars, params=params)
+        self._make_line(data=self._make_data(), errorbars=errorbars,
+                        **kwargs)  #, params=params)
 
-    def _make_line_params(self, number, **kwargs):
-        params = {}
-        for key, arg in kwargs.items():
-            if isinstance(arg, dict):
-                if data.name in arg:
-                    params[key] = arg[data.name]
-            else:
-                params[key] = arg
-            if params[key] is None:
-                params[key] = get_line_param(key, number)
-        return params
+    # def _make_line_params(self, number, **kwargs):
+    #     params = {}
+    #     for key, arg in kwargs.items():
+    #         if isinstance(arg, dict):
+    #             if data.name in arg:
+    #                 params[key] = arg[data.name]
+    #         else:
+    #             params[key] = arg
+    #         if params[key] is None:
+    #             params[key] = get_line_param(key, number)
+    #     return params
 
-        # return {
-        #     key: get_line_param(key, number) if arg is None else arg
-        #     for key, arg in kwargs.items()
-        # }
+    #     # return {
+    #     #     key: get_line_param(key, number) if arg is None else arg
+    #     #     for key, arg in kwargs.items()
+    #     # }
 
-    def _make_line(self, data, errorbars, params):
+    def _make_line(self, data, errorbars, **kwargs):  #, params):
         self.label = data["name"]
         has_mask = data["mask"] is not None
         mask_data_key = "mask" if has_mask else "values"
@@ -78,21 +82,26 @@ class Line:
                 data["values"]["y"],
                 label=self.label,
                 zorder=10,
-                **{key: params[key]
-                   for key in ["color", "linewidth"]})[0]
+                **kwargs
+                # **parse_step_kwargs(self._kwargs)
+                # **{key: params[key]
+                #    for key in ["color", "linewidth"]}
+            )[0]
 
-            self._mask = self._ax.step(data["values"]["x"],
-                                       data[mask_data_key]["y"],
-                                       linewidth=params["linewidth"] * 3.0,
-                                       color=self._mask_color,
-                                       zorder=9,
-                                       visible=has_mask)[0]
+            self._mask = self._ax.step(data["values"]["x"], data[mask_data_key]["y"])[0]
+            self._mask.update_from(self._line)
+            self._mask.set_color(self._mask_color)
+            self._mask.set_linewidth(self._mask.get_linewidth() * 3)
+            self._mask.set_zorder(self._mask.get_zorder() - 1)
+            self._mask.set_visible(has_mask)
         else:
             self._line = self._ax.plot(data["values"]["x"],
                                        data["values"]["y"],
                                        label=self.label,
                                        zorder=10,
-                                       **params)[0]
+                                       **kwargs
+                                       # **parse_plot_kwargs(self._kwargs)
+                                       )[0]
             self._mask = self._ax.plot(data["values"]["x"],
                                        data[mask_data_key]["y"],
                                        zorder=11,
@@ -100,7 +109,7 @@ class Line:
                                        mfc="None",
                                        mew=3.0,
                                        linestyle="none",
-                                       marker=params["marker"],
+                                       marker=self._line.get_marker(),
                                        visible=has_mask)[0]
 
         # Add error bars
@@ -108,7 +117,7 @@ class Line:
             self._error = self._ax.errorbar(data["variances"]["x"],
                                             data["variances"]["y"],
                                             yerr=data["variances"]["e"],
-                                            color=params["color"],
+                                            color=self._line.get_color(),
                                             zorder=10,
                                             fmt="none")
 

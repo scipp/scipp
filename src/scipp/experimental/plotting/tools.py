@@ -46,3 +46,14 @@ def fig_to_pngbytes(fig: Any):
     plt.close(fig)
     buf.seek(0)
     return buf.getvalue()
+
+
+def parse_kwargs(kwargs, name):
+    out = {}
+    for key, value in kwargs.items():
+        if isinstance(value, dict):
+            if name in value:
+                out[key] = value[name]
+        else:
+            out[key] = value
+    return out
