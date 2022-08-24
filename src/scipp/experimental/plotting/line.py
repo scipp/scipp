@@ -57,19 +57,22 @@ class Line:
             if key in kwargs:
                 kwargs[alias] = kwargs.pop(key)
 
-        default_style = {
-            'linestyle': 'none',
-            'linewidth': 1.5,
-            'marker': list(Line2D.markers.keys())[number + 2],
-            'color': f'C{number}'
-        }
+        # default_style = {
+        #     'linestyle': 'none',
+        #     'linewidth': 1.5,
+        #     'marker': list(Line2D.markers.keys())[number + 2],
+        #     'color': f'C{number}'
+        # }
 
         self._make_line(data=self._make_data(),
+                        number=number,
                         errorbars=errorbars,
-                        **{
-                            **default_style,
-                            **kwargs
-                        })  #, params=params)
+                        **kwargs)
+
+        # **{
+        #     **default_style,
+        #     **kwargs
+        # })  #, params=params)
 
     # def _make_line_params(self, number, **kwargs):
     #     params = {}
@@ -88,10 +91,22 @@ class Line:
     #     #     for key, arg in kwargs.items()
     #     # }
 
-    def _make_line(self, data, errorbars, **kwargs):  #, params):
+    def _make_line(self, data, errorbars, number, **kwargs):  #, params):
         self.label = data["name"]
         has_mask = data["mask"] is not None
         mask_data_key = "mask" if has_mask else "values"
+
+        default_step_style = {
+            'linestyle': 'solid',
+            'linewidth': 1.5,
+            'color': f'C{number}'
+        }
+        default_plot_style = {
+            'linestyle': 'none',
+            'linewidth': 1.5,
+            'marker': list(Line2D.markers.keys())[number + 2],
+            'color': f'C{number}'
+        }
 
         if data["hist"]:
             self._line = self._ax.step(
@@ -99,7 +114,10 @@ class Line:
                 data["values"]["y"],
                 label=self.label,
                 zorder=10,
-                **kwargs
+                **{
+                    **default_step_style,
+                    **kwargs
+                }
                 # **parse_step_kwargs(self._kwargs)
                 # **{key: params[key]
                 #    for key in ["color", "linewidth"]}
@@ -116,7 +134,10 @@ class Line:
                                        data["values"]["y"],
                                        label=self.label,
                                        zorder=10,
-                                       **kwargs
+                                       **{
+                                           **default_plot_style,
+                                           **kwargs
+                                       }
                                        # **parse_plot_kwargs(self._kwargs)
                                        )[0]
             self._mask = self._ax.plot(data["values"]["x"],
