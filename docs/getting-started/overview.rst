@@ -37,7 +37,7 @@ Scipp also does not target machine learning applications.
 Comparison with other software
 ------------------------------
 
-- `Pandas <https://pandas.pydata.org/>` is a mature and extremely powerful package if you are mainly working with tabular 1-D data.
+- `Pandas <https://pandas.pydata.org/>`_ is a mature and extremely powerful package if you are mainly working with tabular 1-D data.
   Compared with Scipp it lacks support for multi-dimensional labeled data, binned data, and physical units.
 - `Xarray <https://docs.xarray.dev>`_ supports multi-dimensional labeled data similar to Scipp, but is considerably more mature.
   Compared with Scipp it lacks support for binned data and physical units.
