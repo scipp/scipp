@@ -13,7 +13,7 @@ Places that define dependencies
 
 - GitHub workflows define ``runs-on``, i.e., VM image versions.
   We are not using the ``*-latest`` images but instead rely on specific ones such as ``ubuntu-20.04`` or ``winddows-2019``.
-  Unfortunately GitHub appears to make changes even to the non-latest images, e.g., we once experiences build breaks from a compiler update in the ``windows-2019`` images.
+  Unfortunately GitHub appears to make changes even to the non-latest images, e.g., we once experienced build breaks from a compiler update in the ``windows-2019`` images.
   In other words, the VM image "versions" are not truly frozen.
 - Actions for GitHub workflows are frozen to specific versions.
   Dependabot is configured to update these regularely.
