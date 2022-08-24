@@ -37,4 +37,4 @@ Places that define dependencies
   These need to be updated manually.
 - `conda/meta.yaml <https://github.com/scipp/scipp/blob/main/conda/meta.yaml>`_ defines conda package build and runtime dependencies.
   These are currently not frozen explicitly.
-  The goal is to move to the global conda-forge pin once the move to ``numpy-1.20``. See `#2571 <https://github.com/scipp/scipp/issues/2571>`_.
+  The goal is to move to the global conda-forge pin once they move to ``numpy-1.20``. See `#2571 <https://github.com/scipp/scipp/issues/2571>`_.
