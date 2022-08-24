@@ -94,15 +94,15 @@ class PyBind11Conan(ConanFile):
             self.cpp_info.components["headers"].includedirs = [
                 os.path.join("include", "pybind11")
             ]
-            #self.cpp_info.components["headers"].requires = ["main"]
-            #self.cpp_info.components["embed"].requires = ["main"]
-            #self.cpp_info.components["module"].requires = ["main"]
-            #self.cpp_info.components["python_link_helper"].requires = ["main"]
-            #self.cpp_info.components["windows_extras"].requires = ["main"]
-            #self.cpp_info.components["lto"].requires = ["main"]
-            #self.cpp_info.components["thin_lto"].requires = ["main"]
-            #self.cpp_info.components["opt_size"].requires = ["main"]
-            #self.cpp_info.components["python2_no_register"].requires = ["main"]
+            self.cpp_info.components["headers"]
+            self.cpp_info.components["embed"]
+            self.cpp_info.components["module"]
+            self.cpp_info.components["python_link_helper"]
+            self.cpp_info.components["windows_extras"]
+            self.cpp_info.components["lto"]
+            self.cpp_info.components["thin_lto"]
+            self.cpp_info.components["opt_size"]
+            self.cpp_info.components["python2_no_register"]
         else:
             self.cpp_info.includedirs.append(
                 os.path.join(self.package_folder, "include", "pybind11"))
