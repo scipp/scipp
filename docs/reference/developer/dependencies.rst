@@ -32,9 +32,9 @@ Places that define dependencies
   Known problem:
   We have not frozen the *recipe* versions.
   New recipe versions can be incompatible with older conan versions, such as the one we have frozen.
-  We are therefore considering freezing these as well, see `CMakeLists.txt <https://github.com/scipp/scipp/issues/2770>`_.
+  We are therefore considering freezing these as well, see `#2770 <https://github.com/scipp/scipp/issues/2770>`_.
 - C++ conda build dependencies used in CI (non-release) builds are defined in `.buildconfig/ <https://github.com/scipp/scipp/tree/main/.buildconfig>`_ in files such as ``ci-linux.yml``.
   These need to be updated manually.
 - `conda/meta.yaml <https://github.com/scipp/scipp/blob/main/conda/meta.yaml>`_ defines conda package build and runtime dependencies.
   These are currently not frozen explicitly.
-  The goal is to move to the global conda-forge pin once the move to ``numpy-1.20``. See `CMakeLists.txt <https://github.com/scipp/scipp/issues/2571>`_.
+  The goal is to move to the global conda-forge pin once the move to ``numpy-1.20``. See `#2571 <https://github.com/scipp/scipp/issues/2571>`_.
