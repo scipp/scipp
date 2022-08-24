@@ -36,5 +36,8 @@ Places that define dependencies
 - C++ conda build dependencies used in CI (non-release) builds are defined in `.buildconfig/ <https://github.com/scipp/scipp/tree/main/.buildconfig>`_ in files such as ``ci-linux.yml``.
   These need to be updated manually.
 - `conda/meta.yaml <https://github.com/scipp/scipp/blob/main/conda/meta.yaml>`_ defines conda package build and runtime dependencies.
+  Files in `conda/variants/ <https://github.com/scipp/scipp/tree/main/conda/variants>`_ complement this and set specific versions.
   These are currently not frozen explicitly.
   The goal is to move to the global conda-forge pin once they move to ``numpy-1.20``. See `#2571 <https://github.com/scipp/scipp/issues/2571>`_.
+- Environment files in `docs/environments/ <https://github.com/scipp/scipp/tree/main/docs/environments>`_ list optional requirements.
+  These enviroments are not used for builds but for users.
