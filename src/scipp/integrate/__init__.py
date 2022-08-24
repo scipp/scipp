@@ -25,7 +25,8 @@ def _integrate(func: Callable, da: DataArray, dim: str, **kwargs) -> DataArray:
 
 @wrap1d()
 def trapezoid(da: DataArray, dim: str, **kwargs) -> DataArray:
-    """Integrate data array along the given dimension with the composite trapezoidal rule.
+    """Integrate data array along the given dimension with
+    the composite trapezoidal rule.
 
     This is a wrapper around :py:func:`scipy.integrate.trapezoid`.
 

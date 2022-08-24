@@ -147,7 +147,8 @@ def interp1d(da: DataArray,
     da = _drop_masked(da, dim)
 
     def func(xnew: Variable, *, midpoints=False) -> DataArray:
-        """Compute interpolation function defined by ``interp1d`` at interpolation points.
+        """Compute interpolation function defined by ``interp1d``
+        at interpolation points.
 
         :param xnew: Interpolation points.
         :param midpoints: Interpolate at midpoints of given points. The result will be

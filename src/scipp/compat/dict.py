@@ -13,7 +13,8 @@ from collections import defaultdict
 
 
 def to_dict(scipp_obj: VariableLike) -> dict:
-    """Convert a scipp object (Variable, DataArray or Dataset) to a Python :class:`dict`.
+    """Convert a scipp object (Variable, DataArray or Dataset)
+    to a Python :class:`dict`.
 
     Parameters
     ----------
