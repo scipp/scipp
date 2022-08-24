@@ -4,16 +4,15 @@ import os
 CMAKE_PROJECT_STR = """project(
     UNITS
     LANGUAGES CXX
-    VERSION 0.5.0
+    VERSION 0.6.0
 )"""
 
 
 class UnitsConan(ConanFile):
     name = "LLNL-Units"
-    # Version past patch is ours, increment when moving branch/commit forward
-    version = "0.5.0.1"
+    version = "0.6.0"
     license = "BSD-3"
-    url = "https://github.com/scipp/conan-llnl-units"
+    url = "https://github.com/llnl/units"
     homepage = "https://units.readthedocs.io"
     description = ("A run-time C++ library for working with units "
                    "of measurement and conversions between them "
@@ -39,7 +38,7 @@ class UnitsConan(ConanFile):
     def source(self):
         git = tools.Git("units")
         git.clone("https://github.com/SimonHeybrock/units.git")
-        git.checkout('9fc2d62')
+        git.checkout('c3dab73')  # this is LLNL/units@v0.6.0 with a namespace fix
 
         cmake_project_str = (CMAKE_PROJECT_STR.replace("\n", os.linesep)
                              if self.settings.os == "Windows" else CMAKE_PROJECT_STR)
