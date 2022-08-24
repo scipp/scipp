@@ -94,7 +94,7 @@ class PyBind11Conan(ConanFile):
             self.cpp_info.components["headers"].includedirs = [
                 os.path.join("include", "pybind11")
             ]
-            self.cpp_info.components["headers"]
+            self.cpp_info.components["headers"].requires = ["main"]
             self.cpp_info.components["embed"]
             self.cpp_info.components["module"]
             self.cpp_info.components["python_link_helper"]
