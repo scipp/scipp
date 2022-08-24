@@ -7,6 +7,7 @@ add_dependencies(all-tests ${TARGET_NAME})
 add_executable(
   ${TARGET_NAME}
   array_to_string_test.cpp
+  dict_test.cpp
   dimensions_test.cpp
   eigen_test.cpp
   element_array_test.cpp

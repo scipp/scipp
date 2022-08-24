@@ -5,15 +5,10 @@
 #pragma once
 
 #include <functional>
-#include <iosfwd>
-#include <map>
 #include <string>
-#include <unordered_map>
-
-#include <boost/iterator/transform_iterator.hpp>
 
 #include "scipp/dataset/data_array.h"
-#include "scipp/dataset/map_view.h"
+#include "scipp/dataset/sized_dict.h"
 #include "scipp/variable/variable.h"
 
 namespace scipp::dataset {
@@ -21,15 +16,23 @@ namespace scipp::dataset {
 namespace detail {
 
 /// Helper for creating iterators of Dataset.
-template <class D> struct make_item {
-  D *dataset;
-  template <class T> auto operator()(T &item) const {
+template <class D> struct with_coords {
+  const D *dataset;
+  template <class T> auto operator()(T &&item) const {
     return item.second.view_with_coords(dataset->coords(), item.first,
                                         dataset->is_readonly());
   }
 };
-template <class D> make_item(D *) -> make_item<D>;
+template <class D> with_coords(const D *) -> with_coords<D>;
 
+template <class D> struct item_with_coords {
+  const D *dataset;
+  template <class T> auto operator()(T &&item) const {
+    return std::pair{item.first, with_coords{dataset}(item)};
+  }
+};
+
+template <class D> item_with_coords(const D *) -> item_with_coords<D>;
 } // namespace detail
 
 /// Collection of data arrays.
@@ -44,10 +47,10 @@ public:
   Dataset(Dataset &&other) = default;
   explicit Dataset(const DataArray &data);
 
-  template <class DataMap = const std::map<std::string, DataArray> &,
-            class CoordMap = std::unordered_map<Dim, Variable>>
+  template <class DataMap = core::Dict<std::string, DataArray>,
+            class CoordMap = core::Dict<Dim, Variable>>
   explicit Dataset(DataMap data,
-                   CoordMap coords = std::unordered_map<Dim, Variable>{}) {
+                   CoordMap coords = core::Dict<Dim, Variable>{}) {
     if constexpr (std::is_base_of_v<Dataset, std::decay_t<DataMap>>)
       for (auto &&item : data)
         setData(item.name(), item);
@@ -71,6 +74,8 @@ public:
   index size() const noexcept { return scipp::size(m_data); }
   /// Return true if there are 0 data items in the dataset.
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
+  /// Return the number of elements that space is currently allocated for.
+  [[nodiscard]] index capacity() const noexcept { return m_data.capacity(); }
 
   void clear();
 
@@ -88,12 +93,10 @@ public:
   auto find() const && = delete;
   auto find() && = delete;
   auto find(const std::string &name) &noexcept {
-    return boost::make_transform_iterator(m_data.find(name),
-                                          detail::make_item{this});
+    return m_data.find(name).transform(detail::with_coords{this});
   }
   auto find(const std::string &name) const &noexcept {
-    return boost::make_transform_iterator(m_data.find(name),
-                                          detail::make_item{this});
+    return m_data.find(name).transform(detail::with_coords{this});
   }
 
   DataArray operator[](const std::string &name) const;
@@ -102,68 +105,56 @@ public:
   auto begin() && = delete;
   /// Return const iterator to the beginning of all data items.
   auto begin() const &noexcept {
-    return boost::make_transform_iterator(m_data.begin(),
-                                          detail::make_item{this});
+    return m_data.begin().transform(detail::with_coords{this});
   }
   /// Return iterator to the beginning of all data items.
   auto begin() &noexcept {
-    return boost::make_transform_iterator(m_data.begin(),
-                                          detail::make_item{this});
+    return m_data.begin().transform(detail::with_coords{this});
   }
   auto end() const && = delete;
   auto end() && = delete;
   /// Return const iterator to the end of all data items.
   auto end() const &noexcept {
-    return boost::make_transform_iterator(m_data.end(),
-                                          detail::make_item{this});
+    return m_data.end().transform(detail::with_coords{this});
   }
 
   /// Return iterator to the end of all data items.
   auto end() &noexcept {
-    return boost::make_transform_iterator(m_data.end(),
-                                          detail::make_item{this});
+    return m_data.end().transform(detail::with_coords{this});
   }
 
   auto items_begin() const && = delete;
   auto items_begin() && = delete;
   auto items_begin() const &noexcept {
-    return boost::make_transform_iterator(begin(), detail::make_key_value{});
+    return m_data.begin().transform(detail::item_with_coords{this});
   }
   auto items_begin() &noexcept {
-    return boost::make_transform_iterator(begin(), detail::make_key_value{});
+    return m_data.begin().transform(detail::item_with_coords{this});
   }
   auto items_end() const && = delete;
   auto items_end() && = delete;
   auto items_end() const &noexcept {
-    return boost::make_transform_iterator(end(), detail::make_key_value{});
+    return m_data.end().transform(detail::item_with_coords{this});
   }
 
   auto items_end() &noexcept {
-    return boost::make_transform_iterator(end(), detail::make_key_value{});
+    return m_data.end().transform(detail::item_with_coords{this});
   }
 
   auto keys_begin() const && = delete;
   auto keys_begin() && = delete;
-  auto keys_begin() const &noexcept {
-    return boost::make_transform_iterator(m_data.begin(), detail::make_key{});
-  }
-  auto keys_begin() &noexcept {
-    return boost::make_transform_iterator(m_data.begin(), detail::make_key{});
-  }
+  auto keys_begin() const &noexcept { return m_data.keys_begin(); }
+  auto keys_begin() &noexcept { return m_data.keys_begin(); }
   auto keys_end() const && = delete;
   auto keys_end() && = delete;
-  auto keys_end() const &noexcept {
-    return boost::make_transform_iterator(m_data.end(), detail::make_key{});
-  }
+  auto keys_end() const &noexcept { return m_data.keys_end(); }
 
-  auto keys_end() &noexcept {
-    return boost::make_transform_iterator(m_data.end(), detail::make_key{});
-  }
+  auto keys_end() &noexcept { return m_data.keys_end(); }
 
   void setCoord(const Dim dim, Variable coord);
   void setData(const std::string &name, Variable data,
                const AttrPolicy attrPolicy = AttrPolicy::Drop);
-  void setData(const std::string &name, const DataArray &data);
+  void setData(const std::string &name, DataArray data);
 
   Dataset slice(const Slice &s) const;
   [[maybe_unused]] Dataset &setSlice(const Slice &s, const Dataset &dataset);
@@ -204,7 +195,7 @@ private:
   void rebuildDims();
 
   Coords m_coords; // aligned coords
-  std::unordered_map<std::string, DataArray> m_data;
+  core::Dict<std::string, DataArray> m_data;
   bool m_readonly{false};
 };
 
@@ -260,8 +251,8 @@ SCIPP_DATASET_EXPORT Dataset operator/(const Variable &lhs, const Dataset &rhs);
 /// If any of the masks repeat they are OR'ed.
 /// The result is stored in a new map
 SCIPP_DATASET_EXPORT
-std::unordered_map<typename Masks::key_type, typename Masks::mapped_type>
-union_or(const Masks &currentMasks, const Masks &otherMasks);
+typename Masks::holder_type union_or(const Masks &currentMasks,
+                                     const Masks &otherMasks);
 
 /// Union the masks of the two proxies.
 /// If any of the masks repeat they are OR'ed.

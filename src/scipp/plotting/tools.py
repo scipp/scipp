@@ -8,7 +8,6 @@ from ..core import concat, values, scalar, full_like, geomspace
 from ..core import DType, DataArray
 from ..core import abs as abs_
 import numpy as np
-from matplotlib.pyplot import get_backend
 from copy import copy
 import io
 
@@ -215,6 +214,7 @@ def is_static():
     """
     Returns `True` if the `inline` matplotlib backend is curently in use.
     """
+    from matplotlib.pyplot import get_backend
     return get_backend().lower().endswith('inline')
 
 

@@ -173,9 +173,10 @@ DataArray DataArray::view_with_coords(const Coords &coords,
   typename Coords::holder_type selected;
   for (const auto &[dim, coord] : coords)
     if (coords.item_applies_to(dim, dims()))
-      selected[dim] = coord.as_const();
+      selected.insert_or_assign(dim, coord.as_const());
   const bool readonly_coords = true;
-  out.m_coords = std::make_shared<Coords>(sizes, selected, readonly_coords);
+  out.m_coords =
+      std::make_shared<Coords>(sizes, std::move(selected), readonly_coords);
   out.m_masks = m_masks; // share masks
   out.m_attrs = m_attrs; // share attrs
   out.m_name = name;

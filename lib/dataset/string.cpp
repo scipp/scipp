@@ -7,6 +7,7 @@
 #include <set>
 #include <sstream>
 
+#include "scipp/core/dict.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/string.h"
@@ -111,7 +112,7 @@ std::string to_string(const Dataset &dataset) {
 
 namespace {
 template <class Key, class Value>
-std::string dict_to_string(const Dict<Key, Value> &view) {
+std::string dict_to_string(const SizedDict<Key, Value> &view) {
   std::stringstream ss;
   ss << "<scipp.Dict>\n";
   for (const auto &[key, item] : view) {
@@ -124,37 +125,19 @@ std::string dict_to_string(const Dict<Key, Value> &view) {
 std::string to_string(const Coords &coords) { return dict_to_string(coords); }
 std::string to_string(const Masks &masks) { return dict_to_string(masks); }
 
-namespace {
-template <class D>
-std::string dict_keys_to_string_impl(const D &view,
-                                     const std::string_view dict_name) {
-  std::stringstream ss;
-  ss << "<" << dict_name << " {";
-  bool first = true;
-  const auto end = view.keys_end();
-  for (auto it = view.keys_begin(); it != end; ++it) {
-    if (!first) {
-      ss << ", ";
-    } else {
-      first = false;
-    }
-    ss << *it;
-  }
-  ss << "}>";
-  return ss.str();
-}
-} // namespace
-
 std::string dict_keys_to_string(const Coords &coords) {
-  return dict_keys_to_string_impl(coords, "scipp.Dict.keys");
+  return core::dict_keys_to_string(coords.keys_begin(), coords.keys_end(),
+                                   "scipp.Dict.keys");
 }
 
 std::string dict_keys_to_string(const Masks &masks) {
-  return dict_keys_to_string_impl(masks, "scipp.Dict.keys");
+  return core::dict_keys_to_string(masks.keys_begin(), masks.keys_end(),
+                                   "scipp.Dict.keys");
 }
 
 std::string dict_keys_to_string(const Dataset &dataset) {
-  return dict_keys_to_string_impl(dataset, "scipp.Dataset.keys");
+  return core::dict_keys_to_string(dataset.keys_begin(), dataset.keys_end(),
+                                   "scipp.Dataset.keys");
 }
 
 } // namespace scipp::dataset

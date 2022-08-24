@@ -5,6 +5,7 @@
 set(TARGET_NAME "scipp-core")
 set(INC_FILES
     include/scipp/core/aligned_allocator.h
+    include/scipp/core/dict.h
     include/scipp/core/dimensions.h
     include/scipp/core/dtype.h
     include/scipp/core/element_array.h
@@ -39,6 +40,7 @@ set(INC_FILES
 
 set(SRC_FILES
     dimensions.cpp
+    dict.cpp
     dtype.cpp
     element_array_view.cpp
     except.cpp

@@ -156,7 +156,7 @@ static void BM_transform(benchmark::State &state) {
 static void BM_transform_view(benchmark::State &state) {
   run<false>(
       state,
-      [](auto &state_, auto &a, auto &b, auto &op) {
+      [](auto &state_, auto &a, auto &b, const auto &op) {
         Variable a_view(a);
         const Variable b_view(b);
         for ([[maybe_unused]] auto _ : state_) {
@@ -172,7 +172,7 @@ static void BM_transform_view(benchmark::State &state) {
 static void BM_transform_slice(benchmark::State &state) {
   run<false>(
       state,
-      [](auto &state_, auto &a, auto &b, auto &op) {
+      [](auto &state_, auto &a, auto &b, const auto &op) {
         // Strictly speaking our counters are off by 1% since we
         // exclude 1 out of 100 X elements here.
         auto a_slice = a.slice({Dim::X, 0, 99});

@@ -3,7 +3,7 @@ requires = [
   "setuptools>=42",
   "wheel",
   "cmake>=3.21",
-  "conan@git+https://github.com/gabyx/conan.git@feature/improve-cmakedeps-find-package",
+  "conan==1.51.3",
   "markupsafe>=1.1.1,<2.1.0",  # see https://github.com/pallets/markupsafe/issues/284
   "ninja",
   "scikit-build==0.13.1",
@@ -13,10 +13,10 @@ build-backend = "setuptools.build_meta"
 [tool.cibuildwheel]
 archs = ["auto64"]
 test-extras = ["test", "all"]
-test-command = "pytest {project}/tests"
+test-command = "pytest --ignore {project}/tests/plotting --ignore {project}/tests/hypothesis/ --ignore {project}/tests/experimental/ {project}/tests"
 # PyPy builds fail with an error about ninja, probably https://github.com/pypa/setuptools/issues/2912
 # tbb-devel not available for musllinux
-skip = ["pp*", "*musllinux*"]
+skip = ["pp*", "*musllinux*", "cp311*"]
 build-verbosity = 1
 
 [tool.cibuildwheel.macos]

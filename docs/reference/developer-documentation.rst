@@ -5,7 +5,6 @@ Developer Documentation
    :maxdepth: 2
 
    developer/getting-started
-   developer/api
    developer/architecture-decision-records
    developer/coding-conventions
    developer/concepts
