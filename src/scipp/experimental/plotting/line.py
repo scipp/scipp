@@ -9,6 +9,7 @@ from functools import reduce
 import numpy as np
 from numpy.typing import ArrayLike
 from typing import Tuple
+from matplotlib.lines import Line2D
 
 
 class Line:
@@ -51,8 +52,24 @@ class Line:
         #                                 marker=marker,
         #                                 linewidth=linewidth)
 
-        self._make_line(data=self._make_data(), errorbars=errorbars,
-                        **kwargs)  #, params=params)
+        aliases = {'ls': 'linestyle', 'lw': 'linewidth', 'c': 'color'}
+        for key, alias in aliases.items():
+            if key in kwargs:
+                kwargs[alias] = kwargs.pop(key)
+
+        default_style = {
+            'linestyle': 'none',
+            'linewidth': 1.5,
+            'marker': list(Line2D.markers.keys())[number + 2],
+            'color': f'C{number}'
+        }
+
+        self._make_line(data=self._make_data(),
+                        errorbars=errorbars,
+                        **{
+                            **default_style,
+                            **kwargs
+                        })  #, params=params)
 
     # def _make_line_params(self, number, **kwargs):
     #     params = {}
