@@ -78,6 +78,7 @@ jobs:
       - run: cmake --build --preset build
       - run: ctest --preset test
 
+      - run: tox -e import-minimal
       - run: tox -e test
 
       - run: tox -e docs
