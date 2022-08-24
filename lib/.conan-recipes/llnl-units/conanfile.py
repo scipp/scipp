@@ -37,8 +37,8 @@ class UnitsConan(ConanFile):
 
     def source(self):
         git = tools.Git("units")
-        git.clone("https://github.com/LLNL/units.git")
-        git.checkout('v0.6.0')
+        git.clone("https://github.com/SimonHeybrock/units.git")
+        git.checkout('c3dab73')  # this is LLNL/units@v0.6.0 with a namespace fix
 
         cmake_project_str = (CMAKE_PROJECT_STR.replace("\n", os.linesep)
                              if self.settings.os == "Windows" else CMAKE_PROJECT_STR)
