@@ -101,10 +101,11 @@ class Line:
             'linewidth': 1.5,
             'color': f'C{number}'
         }
+        markers = list(Line2D.markers.keys())
         default_plot_style = {
             'linestyle': 'none',
             'linewidth': 1.5,
-            'marker': list(Line2D.markers.keys())[number + 2],
+            'marker': markers[(number + 2) % len(markers)],
             'color': f'C{number}'
         }
 

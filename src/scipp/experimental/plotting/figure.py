@@ -39,6 +39,7 @@ class Figure(View):
             vmax=None,
             norm='linear',
             aspect='auto',
+            scale=None,
             **kwargs):
 
         super().__init__(*nodes)
@@ -52,6 +53,7 @@ class Figure(View):
         self._user_vmin = vmin
         self._user_vmax = vmax
         self._norm = norm
+        self._scale = {} if scale is None else scale
         self._kwargs = kwargs
         self._dims = {}
 
@@ -241,7 +243,7 @@ class Figure(View):
                             **parse_kwargs(self._kwargs, name=new_values.name))
                 self._children[key] = line
                 self._legend += bool(line.label)
-                self._dims["x"] = new_values.dim
+                self._dims['x'] = new_values.dim
                 # if self._ylabel is None:
                 self._ax.set_ylabel(name_with_unit(var=new_values.data, name=""))
                 # TODO: this is not great, involves implementation details of the
@@ -262,12 +264,19 @@ class Figure(View):
                 # **parse_mesh_args(self._kwargs,
                 #                   name=new_values.name))
                 self._dims.update({"x": new_values.dims[1], "y": new_values.dims[0]})
+                # horizontal_dim = new_values.dims[1]
+                if new_values.dims[0] in self._scale:
+                    self.toolbar.members['toggle_yaxis_scale'].value = self._scale[
+                        self._dims['y']] == 'log'
                 self._ax.set_ylabel(
-                    name_with_unit(var=new_values.meta[self._dims["y"]]))
+                    name_with_unit(var=new_values.meta[new_values.dims[0]]))
 
-            self._ax.set_xlabel(name_with_unit(var=new_values.meta[self._dims["x"]]))
+            self._ax.set_xlabel(name_with_unit(var=new_values.meta[new_values.dims[1]]))
             # if self._ylabel is None and ("y" in self._dims):
             #     self._ylabel = name_with_unit(var=new_values.meta[self._dims["y"]])
+            if self._dims['x'] in self._scale:
+                self.toolbar.members['toggle_xaxis_scale'].value = self._scale[
+                    self._dims['x']] == 'log'
 
         else:
             self._children[key].update(new_values=new_values)

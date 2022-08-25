@@ -23,7 +23,6 @@ class Mesh:
                  ax,
                  data,
                  cax: Any = None,
-                 aspect: str = None,
                  cmap: str = None,
                  masks_cmap: str = "gray",
                  norm: str = "linear",
@@ -51,7 +50,6 @@ class Mesh:
 
         self._mesh = None
         self._cbar = cbar
-        self._aspect = aspect if aspect is not None else config['plot']['aspect']
 
         self._extend = "neither"
         if (vmin is not None) and (vmax is not None):
