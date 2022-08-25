@@ -11,15 +11,6 @@ from typing import Any
 from io import BytesIO
 
 
-def get_line_param(name: str, index: int) -> Any:
-    """
-    Get the default line parameter from the config.
-    If an index is supplied, return the i-th item in the list.
-    """
-    param = config['plot'][name]
-    return param[index % len(param)]
-
-
 def get_cmap(name: str):
 
     if name is None:

@@ -2,7 +2,6 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from ... import DataArray, stddevs
-from .tools import get_line_param
 from .limits import find_limits, fix_empty_range, delta
 
 from functools import reduce
@@ -16,18 +15,13 @@ class Line:
     """
     """
 
-    def __init__(
-            self,
-            ax,
-            data,
-            number=0,
-            # color=None,
-            # linestyle=None,
-            # marker=None,
-            # linewidth=None,
-            mask_color: str = None,
-            errorbars: bool = True,
-            **kwargs):
+    def __init__(self,
+                 ax,
+                 data,
+                 number=0,
+                 mask_color: str = None,
+                 errorbars: bool = True,
+                 **kwargs):
 
         self._ax = ax
         self._data = data
@@ -38,7 +32,6 @@ class Line:
         self._dim = None
         self._unit = None
         self.label = None
-        # self._kwargs = kwargs
 
         self._mask_color = mask_color if mask_color is not None else 'k'
 
@@ -46,52 +39,17 @@ class Line:
         self._unit = self._data.unit
         self._coord = self._data.meta[self._dim]
 
-        # params = self._make_line_params(number=number,
-        #                                 color=color,
-        #                                 linestyle=linestyle,
-        #                                 marker=marker,
-        #                                 linewidth=linewidth)
-
         aliases = {'ls': 'linestyle', 'lw': 'linewidth', 'c': 'color'}
         for key, alias in aliases.items():
             if key in kwargs:
                 kwargs[alias] = kwargs.pop(key)
-
-        # default_style = {
-        #     'linestyle': 'none',
-        #     'linewidth': 1.5,
-        #     'marker': list(Line2D.markers.keys())[number + 2],
-        #     'color': f'C{number}'
-        # }
 
         self._make_line(data=self._make_data(),
                         number=number,
                         errorbars=errorbars,
                         **kwargs)
 
-        # **{
-        #     **default_style,
-        #     **kwargs
-        # })  #, params=params)
-
-    # def _make_line_params(self, number, **kwargs):
-    #     params = {}
-    #     for key, arg in kwargs.items():
-    #         if isinstance(arg, dict):
-    #             if data.name in arg:
-    #                 params[key] = arg[data.name]
-    #         else:
-    #             params[key] = arg
-    #         if params[key] is None:
-    #             params[key] = get_line_param(key, number)
-    #     return params
-
-    #     # return {
-    #     #     key: get_line_param(key, number) if arg is None else arg
-    #     #     for key, arg in kwargs.items()
-    #     # }
-
-    def _make_line(self, data, errorbars, number, **kwargs):  #, params):
+    def _make_line(self, data, errorbars, number, **kwargs):
         self.label = data["name"]
         has_mask = data["mask"] is not None
         mask_data_key = "mask" if has_mask else "values"
@@ -110,19 +68,14 @@ class Line:
         }
 
         if data["hist"]:
-            self._line = self._ax.step(
-                data["values"]["x"],
-                data["values"]["y"],
-                label=self.label,
-                zorder=10,
-                **{
-                    **default_step_style,
-                    **kwargs
-                }
-                # **parse_step_kwargs(self._kwargs)
-                # **{key: params[key]
-                #    for key in ["color", "linewidth"]}
-            )[0]
+            self._line = self._ax.step(data["values"]["x"],
+                                       data["values"]["y"],
+                                       label=self.label,
+                                       zorder=10,
+                                       **{
+                                           **default_step_style,
+                                           **kwargs
+                                       })[0]
 
             self._mask = self._ax.step(data["values"]["x"], data[mask_data_key]["y"])[0]
             self._mask.update_from(self._line)
@@ -138,9 +91,7 @@ class Line:
                                        **{
                                            **default_plot_style,
                                            **kwargs
-                                       }
-                                       # **parse_plot_kwargs(self._kwargs)
-                                       )[0]
+                                       })[0]
             self._mask = self._ax.plot(data["values"]["x"],
                                        data[mask_data_key]["y"],
                                        zorder=11,

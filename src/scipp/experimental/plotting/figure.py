@@ -6,7 +6,6 @@ from .tools import fig_to_pngbytes, parse_kwargs
 from .toolbar import Toolbar
 from .mesh import Mesh
 from .line import Line
-# from .parser import parse_line_args, parse_mesh_args
 from ...utils import name_with_unit
 from .view import View
 
@@ -26,30 +25,24 @@ class SideBar(list):
 
 class Figure(View):
 
-    def __init__(
-            self,
-            *nodes,
-            ax: Any = None,
-            figsize: Tuple[float, ...] = None,
-            title: str = "",
-            # xlabel: str = None,
-            # ylabel: str = None,
-            grid: bool = False,
-            vmin=None,
-            vmax=None,
-            norm='linear',
-            aspect='auto',
-            scale=None,
-            **kwargs):
+    def __init__(self,
+                 *nodes,
+                 ax: Any = None,
+                 figsize: Tuple[float, ...] = None,
+                 title: str = "",
+                 grid: bool = False,
+                 vmin=None,
+                 vmax=None,
+                 norm='linear',
+                 aspect='auto',
+                 scale=None,
+                 **kwargs):
 
         super().__init__(*nodes)
 
         self._fig = None
         self._closed = False
-        # self._title = title
         self._ax = ax
-        # self._xlabel = xlabel
-        # self._ylabel = ylabel
         self._user_vmin = vmin
         self._user_vmax = vmax
         self._norm = norm
@@ -64,7 +57,7 @@ class Figure(View):
             if figsize is None:
                 figsize = (cfg['width'] / cfg['dpi'], cfg['height'] / cfg['dpi'])
             self._fig, self._ax = plt.subplots(1, 1, figsize=figsize, dpi=cfg['dpi'])
-            self._fig.tight_layout(pad=1.5)
+            self._fig.tight_layout(rect=[0.05, 0.02, 1.0, 1.0])
             if self.is_widget():
                 self._fig.canvas.toolbar_visible = False
                 self._fig.canvas.header_visible = False
@@ -179,8 +172,6 @@ class Figure(View):
         """
         """
         if self._new_artist:
-            # self._ax.set_xlabel(self._xlabel)
-            # self._ax.set_ylabel(self._ylabel)
             if self._legend > 0:
                 self._ax.legend()
             self._new_artist = False
@@ -244,7 +235,6 @@ class Figure(View):
                 self._children[key] = line
                 self._legend += bool(line.label)
                 self._dims['x'] = new_values.dim
-                # if self._ylabel is None:
                 self._ax.set_ylabel(name_with_unit(var=new_values.data, name=""))
                 # TODO: this is not great, involves implementation details of the
                 # toolbar. However, setting the yscale of the axis manually would mean
@@ -261,19 +251,14 @@ class Figure(View):
                                            norm=self._norm,
                                            **parse_kwargs(self._kwargs,
                                                           name=new_values.name))
-                # **parse_mesh_args(self._kwargs,
-                #                   name=new_values.name))
                 self._dims.update({"x": new_values.dims[1], "y": new_values.dims[0]})
-                # horizontal_dim = new_values.dims[1]
                 if new_values.dims[0] in self._scale:
                     self.toolbar.members['toggle_yaxis_scale'].value = self._scale[
                         self._dims['y']] == 'log'
                 self._ax.set_ylabel(
-                    name_with_unit(var=new_values.meta[new_values.dims[0]]))
+                    name_with_unit(var=new_values.meta[self._dims['y']]))
 
-            self._ax.set_xlabel(name_with_unit(var=new_values.meta[new_values.dims[1]]))
-            # if self._ylabel is None and ("y" in self._dims):
-            #     self._ylabel = name_with_unit(var=new_values.meta[self._dims["y"]])
+            self._ax.set_xlabel(name_with_unit(var=new_values.meta[self._dims['x']]))
             if self._dims['x'] in self._scale:
                 self.toolbar.members['toggle_xaxis_scale'].value = self._scale[
                     self._dims['x']] == 'log'
