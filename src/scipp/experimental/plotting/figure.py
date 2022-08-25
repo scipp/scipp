@@ -153,7 +153,7 @@ class Figure(View):
         global_ymax = None
         xscale = self._ax.get_xscale()
         yscale = self._ax.get_yscale()
-        for key, child in self._children.items():
+        for child in self._children.values():
             xmin, xmax, ymin, ymax = child.get_limits(xscale=xscale, yscale=yscale)
             if isinstance(child, Line):
                 if self._user_vmin is not None:

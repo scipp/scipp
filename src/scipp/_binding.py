@@ -27,7 +27,7 @@ def bind_get():
         method = _convert_to_method(name='get', func=_get, abbreviate_doc=False)
         method.__doc__ = "Get the value associated with the " \
                          "provided key or the default value."
-        setattr(cls, 'get', method)
+        cls.get = method
 
 
 def _expect_dimensionless_or_unitless(x):
@@ -53,8 +53,8 @@ def _float_dunder(self) -> float:
 
 
 def bind_conversion_to_builtin(cls):
-    setattr(cls, '__int__', _convert_to_method(name='__int__', func=_int_dunder))
-    setattr(cls, '__float__', _convert_to_method(name='__float__', func=_float_dunder))
+    cls.__int__ = _convert_to_method(name='__int__', func=_int_dunder)
+    cls.__float__ = _convert_to_method(name='__float__', func=_float_dunder)
 
 
 class _NoDefaultType:

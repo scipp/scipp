@@ -13,9 +13,9 @@ def __rtruediv(self, value):
 # add magic python methods to Unit class
 # it is done here (on python side) because
 # there is no proper way to do this in pybind11
-setattr(_Unit, '__rtruediv__', __rtruediv)
-setattr(_Unit, '__rmul__', __rmul)
+_Unit.__rtruediv__ = __rtruediv
+_Unit.__rmul__ = __rmul
 
 # forbid numpy to apply ufuncs to unit
 # wrong behavior in scalar * unit otherwise
-setattr(_Unit, "__array_ufunc__", None)
+_Unit.__array_ufunc__ = None

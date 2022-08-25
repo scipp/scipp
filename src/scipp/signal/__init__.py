@@ -69,7 +69,7 @@ def butter(coord: Variable, *, N: int, Wn: Variable, **kwargs) -> SOS:
     except UnitError:
         raise UnitError(
             f"Critical frequency unit '{Wn.unit}' incompatible with sampling unit "
-            f"'{one / coord.unit}'")
+            f"'{one / coord.unit}'") from None
     import scipy.signal
     return SOS(coord=coord.copy(),
                sos=scipy.signal.butter(N=N, Wn=Wn.values, fs=fs, output='sos',

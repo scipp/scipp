@@ -45,8 +45,8 @@ class PlotPanel1d(PlotPanel):
         # Make a unique id
         self.counter += 1
         line_id = self.counter
-        setattr(but, "id", line_id)
-        setattr(col, "id", line_id)
+        but.id = line_id
+        col.id = line_id
         but.on_click(self.keep_remove_line)
         col.observe(self.update_line_color, names="value")
         self.keep_buttons[line_id] = {
@@ -77,7 +77,7 @@ class PlotPanel1d(PlotPanel):
         Update the container of all widgets when a line is kept or removed.
         """
         widget_list = []
-        for key, val in self.keep_buttons.items():
+        for val in self.keep_buttons.values():
             widget_list.append(ipw.HBox(list(val.values())))
         self.container.children = tuple(widget_list)
 
