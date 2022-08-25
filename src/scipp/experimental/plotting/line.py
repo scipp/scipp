@@ -31,7 +31,7 @@ class Line:
         self._errorbars = errorbars
         self._dim = None
         self._unit = None
-        self.label = None
+        self.label = data["name"]
 
         self._mask_color = mask_color if mask_color is not None else 'k'
 
@@ -50,7 +50,6 @@ class Line:
                         **kwargs)
 
     def _make_line(self, data, errorbars, number, **kwargs):
-        self.label = data["name"]
         has_mask = data["mask"] is not None
         mask_data_key = "mask" if has_mask else "values"
 

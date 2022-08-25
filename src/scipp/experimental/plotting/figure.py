@@ -61,7 +61,6 @@ class Figure(View):
             if self.is_widget():
                 self._fig.canvas.toolbar_visible = False
                 self._fig.canvas.header_visible = False
-                self._fig.canvas.footer_visible = False
         else:
             self._fig = self._ax.get_figure()
 
