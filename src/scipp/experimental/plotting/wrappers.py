@@ -36,6 +36,33 @@ def plot(obj: Union[VariableLike, Dict[str, VariableLike]], **kwargs) -> Figure:
         - dict of Variables
         - dict of DataArrays
         - dict of numpy ndarrays
+    aspect:
+        Aspect ratio for the axes. Default is `'auto'`.
+    cbar:
+        Show colorbar in 2d plots if `True`. Default is `True`.
+    errorbars:
+        Show errorbars in 1d plots if `True`. Default is `True`.
+    grid:
+        Show grid if `True`. Default is `False`.
+    mask_color:
+        Color of masks in 1d plots.
+    norm:
+        Set to 'log' for a logarithmic y-axis (1d plots) or logarithmic colorscale
+        (2d plots). Default is 'linear'.
+    scale:
+        Change axis scaling between `log` and `linear`. For example, specify
+        `scale={'tof': 'log'}` if you want log-scale for the `tof` dimension.
+    title:
+        The figure title.
+    vmin:
+        Lower bound for data to be displayed (y-axis for 1d plots, colorscale for
+        2d plots). Default is `None`.
+    vmax:
+        Upper bound for data to be displayed (y-axis for 1d plots, colorscale for
+        2d plots). Default is `None`.
+    **kwargs:
+        All other kwargs are directly forwarded to the underlying plotting library
+        (Matplotlib).
 
     Returns
     -------
