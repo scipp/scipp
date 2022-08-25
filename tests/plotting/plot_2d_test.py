@@ -208,7 +208,7 @@ def test_plot_string_and_vector_axis_labels_2d():
     N = 10
     M = 5
     vecs = []
-    for i in range(N):
+    for _ in range(N):
         vecs.append(np.random.random(3))
     da = sc.DataArray(data=sc.Variable(dims=['yy', 'xx'],
                                        values=np.random.random([M, N]),

@@ -66,7 +66,7 @@ class SliceWidget:
 
             self.controls[dim] = {'continuous': continuous_update, 'slider': slider}
 
-        for index, dim in enumerate(self._slider_dims):
+        for dim in self._slider_dims:
             row = list(self.controls[dim].values())
             self._container.append(ipw.HBox(row))
 

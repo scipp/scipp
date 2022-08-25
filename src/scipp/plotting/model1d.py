@@ -17,7 +17,7 @@ class PlotModel1d(PlotModel):
     def __init__(self, *args, resolution=None, **kwargs):
         super().__init__(*args, **kwargs)
         self._resolution = resolution
-        for name, array in self.data_arrays.items():
+        for array in self.data_arrays.values():
             if array.bins is not None and self._resolution is None:
                 self._resolution = 200
             self.dims = array.dims[-1:]

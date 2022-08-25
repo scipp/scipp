@@ -76,7 +76,7 @@ class ScatterPointModel:
         return self._positions.unit
 
     @property
-    @lru_cache(maxsize=None)
+    @lru_cache(maxsize=None)  # noqa: B019
     def limits(self):
         """
         Extents of the box that contains all the positions.
@@ -89,28 +89,28 @@ class ScatterPointModel:
         return extents
 
     @property
-    @lru_cache(maxsize=None)
+    @lru_cache(maxsize=None)  # noqa: B019
     def center(self):
         return np.array([0.5 * np.sum(self.limits[dim]) for dim in self.dims])
 
     @property
-    @lru_cache(maxsize=None)
+    @lru_cache(maxsize=None)  # noqa: B019
     def box_size(self):
         return np.array(
             [self.limits[dim][1] - self.limits[dim][0] for dim in self.dims])
 
     @property
-    @lru_cache(maxsize=None)
+    @lru_cache(maxsize=None)  # noqa: B019
     def components(self):
         return self._components
 
-    @lru_cache(maxsize=None)
+    @lru_cache(maxsize=None)  # noqa: B019
     def planar_radius(self, axis):
         return _planar_norm(
             *[comp for dim, comp in self.components.items() if dim is not axis])
 
     @property
-    @lru_cache(maxsize=None)
+    @lru_cache(maxsize=None)  # noqa: B019
     def radius(self):
         return norm(self._positions)
 

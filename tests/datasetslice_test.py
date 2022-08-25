@@ -69,7 +69,7 @@ class TestDatasetSlice:
         arr1 = np.arange(N * M).reshape(N, M).astype(np.float64) + 1
         d1['a'] = sc.Variable(dims=['x', 'y'], values=arr1)
         d1 = d1['x', 1:2]
-        d1['a'].data.values.tolist() == [[5.0, 6.0, 7.0, 8.0]]
+        assert d1['a'].data.values.tolist() == [[5.0, 6.0, 7.0, 8.0]]
 
     def test_set_dataarrayview_slice_items(self):
         d = self._d.copy()

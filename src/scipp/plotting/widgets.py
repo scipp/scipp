@@ -141,8 +141,8 @@ class PlotWidgets:
                         description="{}:{}".format(escape(name), escape(key)),
                         indent=False,
                         layout={"width": "initial"})
-                    setattr(self.mask_checkboxes[name][key], "mask_group", name)
-                    setattr(self.mask_checkboxes[name][key], "mask_name", key)
+                    self.mask_checkboxes[name][key].mask_group = name
+                    self.mask_checkboxes[name][key].mask_name = key
 
         if masks_found:
             self.masks_lab = ipw.Label(value="Masks:")
@@ -334,20 +334,20 @@ class PlotWidgets:
         """
         Update the slider readout with new slider bounds.
         """
+
+        def format(val, d):
+            form = self._formatters[d]['linear']
+            if form is None:
+                return value_to_string(val)
+            # pos=None causes datetime formatter to return full string
+            # rather than attempting to set a separate label and returning
+            # offset
+            return form(val, pos=None)
+
         for dim in self._slider_dims:
-
-            def format(val):
-                form = self._formatters[dim]['linear']
-                if form is None:
-                    return value_to_string(val)
-                # pos=None causes datetime formatter to return full string
-                # rather than attempting to set a separate label and returning
-                # offset
-                return form(val, pos=None)
-
             if bounds[dim].values.ndim == 0:
-                bound = f'{format(bounds[dim].value)}'
+                bound = f'{format(bounds[dim].value, dim)}'
             else:
                 low, high = bounds[dim].values
-                bound = f'[{format(low)} {format(high)}]'
+                bound = f'[{format(low, dim)} {format(high, dim)}]'
             self._controls[dim]['value'].value = bound

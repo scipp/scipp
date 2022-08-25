@@ -49,7 +49,7 @@ def plot3d(scipp_obj_dict, *, positions, **kwargs):
                 except UnitError:
                     raise UnitError(
                         f"Unit  '{v.unit}' of camera['{k}'] not convertible "
-                        f"to unit of scatter point positions '{pos.unit}'.")
+                        f"to unit of scatter point positions '{pos.unit}'.") from None
             camera = {k: tuple(v.value) for k, v in camera.items()}
         out = {
             'view_ndims': 0,
