@@ -88,7 +88,7 @@ class PlotPanel3d(PlotPanel):
         # Note additional spaces required in cylindrical names because
         # options must be unique.
         self.cut_surface_buttons = ipw.ToggleButtons(
-            options=dict(
+            options=list(
                 zip(['X ', 'Y ', 'Z ', 'R ', ' X ', ' Y ', ' Z ', ''],
                     range(len(self.options)))),
             value=None,
