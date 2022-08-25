@@ -31,7 +31,7 @@ class Line:
         self._errorbars = errorbars
         self._dim = None
         self._unit = None
-        self.label = data["name"]
+        self.label = data.name
 
         self._mask_color = mask_color if mask_color is not None else 'k'
 
@@ -132,7 +132,6 @@ class Line:
 
     def _make_data(self) -> dict:
         data = {"values": {}, "variances": {}, "mask": None}
-        data['name'] = self._data.name
         data["values"]["x"] = self._data.meta[self._dim].values
         data["values"]["y"] = self._data.values
         if self._data.variances is not None:
