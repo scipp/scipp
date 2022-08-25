@@ -25,9 +25,7 @@ entrypoints==0.4
     # via jupyter-client
 executing==0.10.0
     # via stack-data
-fastjsonschema==2.16.1
-    # via nbformat
-fonttools==4.34.4
+fonttools==4.37.1
     # via matplotlib
 graphviz==0.20.1
     # via -r requirements/extra.in
@@ -35,9 +33,7 @@ h5py==3.7.0
     # via -r requirements/extra.in
 idna==3.3
     # via requests
-importlib-resources==5.9.0
-    # via jsonschema
-ipydatawidgets==4.3.1.post1
+ipydatawidgets==4.3.2
     # via pythreejs
 ipykernel==6.15.1
     # via ipywidgets
@@ -130,14 +126,8 @@ requests==2.28.1
 scipy==1.9.0
     # via -r requirements/extra.in
 six==1.16.0
-    # via
-    #   asttokens
-    #   bleach
-    #   ipydatawidgets
-    #   python-dateutil
-soupsieve==2.3.2.post1
-    # via beautifulsoup4
-stack-data==0.3.0
+    # via python-dateutil
+stack-data==0.4.0
     # via ipython
 tornado==6.2
     # via
