@@ -3,19 +3,23 @@ repos:
     rev: 4.0.1
     hooks:
       - id: flake8
+        types: ["python"]
   - repo: https://github.com/pre-commit/mirrors-yapf
     rev: v0.32.0
     hooks:
       - id: yapf
         args: ["-i", "-r"]
-        files: "python"
+        types: ["python"]
+        additional_dependencies: ["toml"]
   - repo: https://github.com/pre-commit/mirrors-clang-format
     rev: v14.0.3
     hooks:
       - id: clang-format
+        types: ["c++"]
   - repo: https://github.com/kynan/nbstripout
     rev: 0.5.0
     hooks:
       - id: nbstripout
+        types: ["jupyter"]
         args: ["--drop-empty-cells",
                "--extra-keys 'metadata.language_info.version cell.metadata.jp-MarkdownHeadingCollapsed cell.metadata.pycharm'"]
