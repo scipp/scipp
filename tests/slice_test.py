@@ -96,3 +96,29 @@ def test_setitem_dataset_value_based_slice():
     ds['x', ds.coords['x'][0]] = ds['x', ds.coords['x'][1]]
     assert sc.identical(ds['a'][0].data, ds['a'][1].data)
     assert sc.identical(ds['b'][0].data, ds['b'][1].data)
+
+
+def test_dataset_slice_range_then_get_item():
+    a = sc.arange('xx', 5)
+    ds = sc.Dataset(        {'a': a},
+        coords={'xx': sc.arange('xx', 0, 10, 2)})
+    assert sc.identical(ds['xx', 1:-1]['a'].data, a['xx', 1:-1])
+    assert sc.identical(ds['xx', 1:]['a'].data, a['xx', 1:])
+    assert sc.identical(ds['xx', :-1]['a'].data, a['xx', :-1])
+    assert sc.identical(ds['xx', :]['a'].data, a['xx', :])
+
+
+def test_dataset_slice_single_index_then_get_item():
+    a = sc.arange('xx', 5)
+    ds = sc.Dataset(        {'a': a},
+        coords={'xx': sc.arange('xx', 0, 10, 2)})
+    assert sc.identical(ds['xx', -2]['a'].data, a['xx', -2])
+
+
+def test_dataset_set_slice_range():
+    ds = sc.Dataset(        {'a': sc.arange('xx', 5), 'b': sc.arange('xx', 5, 10)},
+        coords={'xx': sc.arange('xx', 0, 10, 2)})
+    aa = sc.array(dims=['xx'], values=[-7, -4])
+    ds['xx', 2:4] = aa
+    assert sc.identical(ds['a'].data, sc.array(dims=['xx'], values=[0, 1, -7, -4, 4]))
+    assert sc.identical(ds['b'].data, sc.array(dims=['xx'], values=[5, 6, -7, -4, 9]))
