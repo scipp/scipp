@@ -25,7 +25,7 @@ entrypoints==0.4
     # via jupyter-client
 executing==0.10.0
     # via stack-data
-fonttools==4.37.0
+fonttools==4.37.1
     # via matplotlib
 graphviz==0.20.1
     # via -r requirements/extra.in
@@ -33,7 +33,7 @@ h5py==3.7.0
     # via -r requirements/extra.in
 idna==3.3
     # via requests
-ipydatawidgets==4.3.1.post1
+ipydatawidgets==4.3.2
     # via pythreejs
 ipykernel==6.15.1
     # via ipywidgets
@@ -113,7 +113,7 @@ python-dateutil==2.8.2
     #   jupyter-client
     #   matplotlib
     #   pandas
-pythreejs==2.3.0
+pythreejs==2.4.0
     # via -r requirements/extra.in
 pytz==2022.2.1
     # via pandas
@@ -126,9 +126,7 @@ requests==2.28.1
 scipy==1.9.0
     # via -r requirements/extra.in
 six==1.16.0
-    # via
-    #   ipydatawidgets
-    #   python-dateutil
+    # via python-dateutil
 stack-data==0.4.0
     # via ipython
 tornado==6.2
