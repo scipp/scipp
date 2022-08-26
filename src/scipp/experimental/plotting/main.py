@@ -103,7 +103,7 @@ def plot(scipp_obj: Union[VariableLike, ArrayLike, Dict[str, Union[VariableLike,
         try:
             inventory.update(
                 _input_to_data_array(from_dict(scipp_obj), all_keys=inventory.keys()))
-        except:  # noqa: E722
+        except Exception:  # noqa
             for key, item in scipp_obj.items():
                 inventory.update(
                     _input_to_data_array(item, all_keys=inventory.keys(), key=key))

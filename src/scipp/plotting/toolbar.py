@@ -124,7 +124,7 @@ class PlotToolbar:
         """
         button = ipw.Button(**self._parse_button_args(**kwargs))
         set_button_color(button)
-        setattr(button, "value", value)
+        button.value = value
         self.toggle_button_color(owner=button, value=value)
         # Add a local observer to change the color of the button according to
         # its value.
@@ -152,7 +152,7 @@ class PlotToolbar:
                 if not isinstance(self.members[key], ipw.ToggleButton):
                     self.members[key].on_click(getattr(self, key))
         for dim, button in self._log_axis.items():
-            button.observe(getattr(controller, 'toggle_dim_scale')(dim), 'value')
+            button.observe(controller.toggle_dim_scale(dim), 'value')
         self._resampling_mode.observe(self.toggle_resampling_mode, 'value')
         if hasattr(controller, 'toggle_resampling_mode'):
             self._resampling_mode.observe(controller.toggle_resampling_mode, 'value')

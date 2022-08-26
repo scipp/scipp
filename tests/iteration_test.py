@@ -80,6 +80,6 @@ def test_dataset_coords_items():
     d = make_coords_xyz()
     assert len(d.coords.items()) == 3
     found = set()
-    for dim, value in d.coords.items():
+    for dim in d.coords:
         found.add(str(dim))
     assert found == set(['x', 'y', 'z'])

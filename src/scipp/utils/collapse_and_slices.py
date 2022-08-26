@@ -48,7 +48,7 @@ def _to_slices(scipp_obj, slice_dims, slice_shape, volume):
                             (volume, len(slice_dims), 2))
 
     # Extract each entry from the slice_list
-    for i, line in enumerate(slice_list):
+    for line in slice_list:
         vslice = scipp_obj
         key = ""
         for s in line:
