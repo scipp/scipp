@@ -5,22 +5,24 @@
 import pytest
 import scipp as sc
 import numpy as np
-from ..common import assert_export
 
 
-def _check_comparison_ops_on(obj):
-    assert_export(obj.__eq__)
-    assert_export(obj.__ne__)
-    assert_export(obj.__lt__)
-    assert_export(obj.__gt__)
-    assert_export(obj.__ge__)
-    assert_export(obj.__le__)
+def test_comparison_operators():
+    assert not sc.scalar(5) < sc.scalar(3)
+    assert not sc.scalar(5) <= sc.scalar(3)
+    assert sc.scalar(5) > sc.scalar(3)
+    assert sc.scalar(5) >= sc.scalar(3)
+    assert not sc.scalar(5) == sc.scalar(3)
+    assert sc.scalar(5) != sc.scalar(3)
 
 
-def test_comparison_op_exports_for_variable():
-    var = sc.Variable(dims=['x'], values=np.array([1, 2, 3]))
-    _check_comparison_ops_on(var)
-    _check_comparison_ops_on(var['x', :])
+def test_comparison_functions():
+    assert sc.less(sc.scalar(1), sc.scalar(2))
+    assert sc.less_equal(sc.scalar(1), sc.scalar(2))
+    assert not sc.greater(sc.scalar(1), sc.scalar(2))
+    assert not sc.greater_equal(sc.scalar(1), sc.scalar(2))
+    assert not sc.equal(sc.scalar(1), sc.scalar(2))
+    assert sc.not_equal(sc.scalar(1), sc.scalar(2))
 
 
 def test_isclose():
@@ -81,13 +83,15 @@ def test_allclose_no_unit():
     assert sc.allclose(a, a)
 
 
-def test_identical():
-    var = sc.Variable(dims=['x'], values=np.array([1]))
-    assert_export(sc.identical, var, var)
-    assert_export(sc.identical, var['x', :], var['x', :])
-
-    ds = sc.Dataset(data={'a': var})
-    assert_export(sc.identical, ds['x', :], ds['x', :])
+@pytest.mark.parametrize('t',
+                         (lambda x: x, sc.DataArray, lambda x: sc.Dataset({'a': x})))
+def test_identical(t):
+    assert sc.identical(t(sc.scalar(1.23)), t(sc.scalar(1.23)))
+    assert not sc.identical(t(sc.scalar(1.23)), t(sc.scalar(1.23, unit='m')))
+    assert not sc.identical(t(sc.scalar(1.23)), t(sc.scalar(5.2)))
+    assert not sc.identical(t(sc.scalar(1.23)), t(sc.array(dims=['x'], values=[1.23])))
+    assert sc.identical(t(sc.array(dims=['x'], values=[1.23], unit='m')),
+                        t(sc.array(dims=['x'], values=[1.23], unit='m')))
 
 
 @pytest.fixture
