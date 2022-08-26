@@ -68,7 +68,6 @@ setup(name='scipp',
           ],
       },
       classifiers=[
-          'Development Status :: 3 - Alpha',
           'Intended Audience :: Science/Research',
           'License :: OSI Approved :: BSD License',
           'Natural Language :: English',
