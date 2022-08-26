@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 from .. import core
+from .displayable import Displayable
 import numpy as np
 
 
@@ -21,7 +22,7 @@ def _slice_params(array, dim, loc):
         return int(np.argmin(np.abs(coord.values - loc)))
 
 
-class PlotView:
+class PlotView(Displayable):
     """
     Base class for a plot view.
     It holds a `figure`, which can be either a Matplotlib based figure (1d and
@@ -59,12 +60,6 @@ class PlotView:
         """
         self._dims = None  # flag for axis change
         self._scale = scale
-
-    def _ipython_display_(self):
-        """
-        IPython display representation for Jupyter notebooks.
-        """
-        return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
         """

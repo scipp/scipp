@@ -2,6 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from ... import config, DataArray
+from .displayable import Displayable
 from .tools import fig_to_pngbytes
 from .toolbar import Toolbar
 from .mesh import Mesh
@@ -14,10 +15,7 @@ import matplotlib.pyplot as plt
 from typing import Any, Tuple
 
 
-class SideBar(list):
-
-    def _ipython_display_(self):
-        return self._to_widget()._ipython_display_()
+class SideBar(list, Displayable):
 
     def _to_widget(self):
         return ipw.VBox([child._to_widget() for child in self])

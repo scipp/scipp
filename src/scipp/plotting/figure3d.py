@@ -2,6 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 from .. import config
+from .displayable import Displayable
 from .toolbar import PlotToolbar3d
 from .tools import fig_to_pngbytes
 from ..utils import value_to_string
@@ -15,7 +16,7 @@ import pythreejs as p3
 from copy import copy
 
 
-class PlotFigure3d:
+class PlotFigure3d(Displayable):
     """
     Class for 3 dimensional plots.
 
@@ -95,12 +96,6 @@ class PlotFigure3d:
 
     def initialize_toolbar(self, **kwargs):
         self.toolbar.initialize(**kwargs)
-
-    def _ipython_display_(self):
-        """
-        IPython display representation for Jupyter notebooks.
-        """
-        return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
         """

@@ -3,6 +3,7 @@
 
 import ipywidgets as ipw
 from typing import Callable
+from .displayable import Displayable
 
 
 class ToggleButtons(ipw.ToggleButtons):
@@ -21,7 +22,7 @@ class ToggleButtons(ipw.ToggleButtons):
         self._current_value = self.value
 
 
-class Toolbar:
+class Toolbar(Displayable):
     """
     Custom toolbar with additional buttons for controlling log scales and
     normalization, and with back/forward buttons removed.
@@ -32,12 +33,6 @@ class Toolbar:
         self.controller = None
         self.container = ipw.VBox()
         self.members = {}
-
-    def _ipython_display_(self):
-        """
-        IPython display representation for Jupyter notebooks.
-        """
-        return self._to_widget()._ipython_display_()
 
     def _to_widget(self) -> ipw.Widget:
         """
