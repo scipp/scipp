@@ -27,7 +27,8 @@ class Mesh:
                  norm: str = "linear",
                  vmin=None,
                  vmax=None,
-                 cbar=True):
+                 cbar=True,
+                 **kwargs):
 
         self._ax = ax
         self._data = data
@@ -58,14 +59,15 @@ class Mesh:
         elif vmax is not None:
             self._extend = "max"
 
-        self._make_mesh()
+        self._make_mesh(**kwargs)
 
-    def _make_mesh(self):
+    def _make_mesh(self, shading='auto', **kwargs):
         self._mesh = self._ax.pcolormesh(self._data.meta[self._dims['x']].values,
                                          self._data.meta[self._dims['y']].values,
                                          self._data.data.values,
                                          cmap=self._cmap,
-                                         shading='auto')
+                                         shading=shading,
+                                         **kwargs)
         if self._cbar:
             self._cbar = colorbar(self._mesh,
                                   ax=self._ax,

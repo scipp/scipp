@@ -11,29 +11,37 @@ from typing import Tuple
 from matplotlib.lines import Line2D
 
 
+def _parse_dicts_in_kwargs(kwargs, name):
+    out = {}
+    for key, value in kwargs.items():
+        if isinstance(value, dict):
+            if name in value:
+                out[key] = value[name]
+        else:
+            out[key] = value
+    return out
+
+
 class Line:
     """
     """
 
-    def __init__(self,
-                 ax,
-                 data,
-                 number=0,
-                 mask_color: str = None,
-                 errorbars: bool = True,
-                 **kwargs):
+    def __init__(self, ax, data, number=0, **kwargs):
 
         self._ax = ax
         self._data = data
+
+        args = _parse_dicts_in_kwargs(self._kwargs, name=data.name)
+
         self._line = None
         self._mask = None
         self._error = None
-        self._errorbars = errorbars
+        # self._errorbars = errorbars
         self._dim = None
         self._unit = None
         self.label = data.name
 
-        self._mask_color = mask_color if mask_color is not None else 'k'
+        # self._mask_color = mask_color if mask_color is not None else 'k'
 
         self._dim = self._data.dim
         self._unit = self._data.unit
@@ -41,15 +49,12 @@ class Line:
 
         aliases = {'ls': 'linestyle', 'lw': 'linewidth', 'c': 'color'}
         for key, alias in aliases.items():
-            if key in kwargs:
-                kwargs[alias] = kwargs.pop(key)
+            if key in args:
+                args[alias] = kwargs.pop(key)
 
-        self._make_line(data=self._make_data(),
-                        number=number,
-                        errorbars=errorbars,
-                        **kwargs)
+        self._make_line(data=self._make_data(), number=number, **args)
 
-    def _make_line(self, data, errorbars, number, **kwargs):
+    def _make_line(self, data, number, errorbars=None, mask_color=None, **kwargs):
         has_mask = data["mask"] is not None
         mask_data_key = "mask" if has_mask else "values"
 
@@ -78,7 +83,7 @@ class Line:
 
             self._mask = self._ax.step(data["values"]["x"], data[mask_data_key]["y"])[0]
             self._mask.update_from(self._line)
-            self._mask.set_color(self._mask_color)
+            self._mask.set_color(mask_color)
             self._mask.set_linewidth(self._mask.get_linewidth() * 3)
             self._mask.set_zorder(self._mask.get_zorder() - 1)
             self._mask.set_visible(has_mask)
@@ -94,7 +99,7 @@ class Line:
             self._mask = self._ax.plot(data["values"]["x"],
                                        data[mask_data_key]["y"],
                                        zorder=11,
-                                       mec=self._mask_color,
+                                       mec=mask_color,
                                        mfc="None",
                                        mew=3.0,
                                        linestyle="none",

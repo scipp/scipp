@@ -2,7 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from ... import config, DataArray
-from .tools import fig_to_pngbytes, parse_kwargs
+from .tools import fig_to_pngbytes
 from .toolbar import Toolbar
 from .mesh import Mesh
 from .line import Line
@@ -36,6 +36,9 @@ class Figure(View):
                  norm='linear',
                  aspect='auto',
                  scale=None,
+                 cbar=True,
+                 errorbars=True,
+                 mask_color='black',
                  **kwargs):
 
         super().__init__(*nodes)
@@ -47,9 +50,11 @@ class Figure(View):
         self._user_vmax = vmax
         self._norm = norm
         self._scale = {} if scale is None else scale
+        self._cbar = cbar
+        self._errorbars = errorbars
+        self._mask_color = mask_color
         self._kwargs = kwargs
         self._dims = {}
-
         self._children = {}
 
         cfg = config['plot']
@@ -230,7 +235,13 @@ class Figure(View):
                 line = Line(ax=self._ax,
                             data=new_values,
                             number=len(self._children),
-                            **parse_kwargs(self._kwargs, name=new_values.name))
+                            **{
+                                **{
+                                    'errorbars': self._errorbars,
+                                    'mask_color': self._mask_color
+                                },
+                                **kwargs
+                            })
                 self._children[key] = line
                 self._legend += bool(line.label)
                 self._dims['x'] = new_values.dim
@@ -248,8 +259,12 @@ class Figure(View):
                                            vmin=self._user_vmin,
                                            vmax=self._user_vmax,
                                            norm=self._norm,
-                                           **parse_kwargs(self._kwargs,
-                                                          name=new_values.name))
+                                           **{
+                                               **{
+                                                   'cbar': self._cbar,
+                                               },
+                                               **kwargs
+                                           })
                 self._dims.update({"x": new_values.dims[1], "y": new_values.dims[0]})
                 if new_values.dims[0] in self._scale:
                     self.toolbar.members['toggle_yaxis_scale'].value = self._scale[
