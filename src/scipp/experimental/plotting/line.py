@@ -160,7 +160,7 @@ class Line:
         else:
             self._mask.set_visible(False)
 
-        if self._errorbars and ("e" in new_values["variances"]):
+        if (self._error is not None) and ("e" in new_values["variances"]):
             coll = self._error.get_children()[0]
             coll.set_segments(
                 self._change_segments_y(new_values["variances"]["x"],
