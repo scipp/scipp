@@ -3,13 +3,14 @@
 # @author Neil Vaytet
 
 from .. import config
-from .tools import fig_to_pngbytes, is_sphinx_build, widgets_have_mimebundle
+from .displayable import Displayable
+from .tools import fig_to_pngbytes, is_sphinx_build
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
 
-class PlotFigure:
+class PlotFigure(Displayable):
     """
     Base class for 1d and 2d figures, that holds matplotlib axes.
     """
@@ -78,21 +79,6 @@ class PlotFigure:
         directory where the script or notebook is running.
         """
         self.fig.savefig(filename, bbox_inches="tight")
-
-    if widgets_have_mimebundle():
-
-        def _repr_mimebundle_(self, include=None, exclude=None):
-            """
-            Mimebundle display representation for jupyter notebooks.
-            """
-            return self._to_widget()._repr_mimebundle_(include=include, exclude=exclude)
-    else:
-
-        def _ipython_display_(self):
-            """
-            IPython display representation for Jupyter notebooks.
-            """
-            return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
         """

@@ -5,8 +5,8 @@
 import ipywidgets as ipw
 
 from .. import config
+from .displayable import Displayable
 from .resampling_model import ResamplingMode
-from .tools import widgets_have_mimebundle
 
 
 def set_button_color(button, selected=False):
@@ -27,7 +27,7 @@ def _make_toggle_button(**kwargs):
     return button
 
 
-class PlotToolbar:
+class PlotToolbar(Displayable):
     """
     Custom toolbar with additional buttons for controlling log scales and
     normalization, and with back/forward buttons removed.
@@ -90,21 +90,6 @@ class PlotToolbar:
             self._log_axis[dim].description = f'log{ax}'
             self.members[f'toggle_{ax}axis_scale'] = self._log_axis[dim]
         self._update_container()
-
-    if widgets_have_mimebundle():
-
-        def _repr_mimebundle_(self, include=None, exclude=None):
-            """
-            Mimebundle display representation for jupyter notebooks.
-            """
-            return self._to_widget()._repr_mimebundle_(include=include, exclude=exclude)
-    else:
-
-        def _ipython_display_(self):
-            """
-            IPython display representation for Jupyter notebooks.
-            """
-            return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
         """

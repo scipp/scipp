@@ -231,12 +231,3 @@ def is_sphinx_build():
     if hasattr(meta, "to_dict"):
         meta = meta.to_dict()
     return meta.get("scipp_sphinx_build", False)
-
-
-def widgets_have_mimebundle():
-    """
-    Check whether ipywidgets have `_repr_mimebundle_` (version >= 8) or only
-    `_ipython_display_` (version < 8).
-    """
-    from ipywidgets import Widget
-    return hasattr(Widget, '_repr_mimebundle_')
