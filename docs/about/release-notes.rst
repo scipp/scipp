@@ -35,6 +35,15 @@ Release Notes
    and Jan-Lukas Wynen :sup:`a`
 
 
+v0.16.2 (August 2022)
+---------------------
+
+Bugfixes
+~~~~~~~~
+
+* Fix for ``pythreejs-2.4.0``.
+* Fix ipython display for ``ipywidgets>=8``
+
 v0.16.0 (August 2022)
 ---------------------
 

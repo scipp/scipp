@@ -38,7 +38,7 @@ jobs:
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -r requirements/ci.txt
       - run: |
-          sleep 30  # PyPI upload have a small delay until visible, avoid workflow fails in release builds
+          sleep 60  # PyPI upload have a small delay until visible, avoid workflow fails in release builds
           tox --skip-pkg-install -e docs scipp==${VERSION}
           echo "target=$(python docs/version.py --repo=scipp --version=${VERSION} --action=get-target)" >> $GITHUB_ENV
         if: ${{ inputs.publish }}
