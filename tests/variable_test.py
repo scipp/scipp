@@ -9,8 +9,6 @@ import pytest
 
 import scipp as sc
 
-from .common import assert_export
-
 
 def make_variables():
     data = np.arange(1, 4, dtype=float)
@@ -261,14 +259,13 @@ def test_dims():
 
 
 def test_concat():
-    assert_export(sc.concat,
-                  [sc.Variable(dims=(), values=0.0),
-                   sc.Variable(dims=(), values=0.0)], 'x')
+    assert sc.identical(sc.concat([sc.scalar(1), sc.scalar(2)], 'a'),
+                        sc.array(dims=['a'], values=[1, 2]))
 
 
 def test_values_variances():
-    assert_export(sc.values, sc.Variable(dims=(), values=0.0, variances=0.0))
-    assert_export(sc.variances, sc.Variable(dims=(), values=0.0, variances=0.0))
+    assert sc.identical(sc.values(sc.scalar(1.2, variance=3.4)), sc.scalar(1.2))
+    assert sc.identical(sc.variances(sc.scalar(1.2, variance=3.4)), sc.scalar(3.4))
 
 
 def test_variance_acess():
@@ -515,25 +512,27 @@ def test_nan_to_num_out_with_multiple_special_replacements():
 
 
 def test_position():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.geometry.position, x=var, y=var, z=var)
-
-
-def test_comparison():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.less, x=var, y=var)
-    assert_export(sc.greater, x=var, y=var)
-    assert_export(sc.greater_equal, x=var, y=var)
-    assert_export(sc.less_equal, x=var, y=var)
-    assert_export(sc.equal, x=var, y=var)
-    assert_export(sc.not_equal, x=var, y=var)
+    assert sc.identical(
+        sc.geometry.position(x=sc.scalar(1.0), y=sc.scalar(2.0), z=sc.scalar(3.0)),
+        sc.vector([1, 2, 3]))
 
 
 def test_sort():
-    var = sc.arange('xx', 10.0)
-    assert_export(sc.sort, x=var, key='xx', order='ascending')
-    assert_export(sc.issorted, x=var, dim='xx', order='ascending')
-    assert_export(sc.allsorted, x=var, dim='xx', order='ascending')
+    var = sc.array(dims=['s'], values=[3, 5, 1])
+    assert sc.identical(sc.sort(var, key='s', order='ascending'),
+                        sc.array(dims=['s'], values=[1, 3, 5]))
+    assert sc.identical(sc.sort(var, key='s', order='descending'),
+                        sc.array(dims=['s'], values=[5, 3, 1]))
+
+
+def test_issorted():
+    assert sc.issorted(sc.arange('i', 4), dim='i', order='ascending')
+    assert not sc.issorted(sc.arange('i', 4), dim='i', order='descending')
+
+
+def test_allsorted():
+    assert sc.allsorted(sc.arange('i', 4), dim='i', order='ascending')
+    assert not sc.allsorted(sc.arange('i', 4), dim='i', order='descending')
 
 
 @pytest.mark.parametrize('dtype', ['float64', 'float32', 'int64', 'int32'])
