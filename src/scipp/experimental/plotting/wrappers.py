@@ -83,9 +83,24 @@ def plot(obj: Union[VariableLike, Dict[str, VariableLike]],
     :
         A figure.
     """
+    all_args = {
+        **{
+            'aspect': aspect,
+            'cbar': cbar,
+            'errorbars': errorbars,
+            'grid': grid,
+            'mask_color': mask_color,
+            'norm': norm,
+            'scale': scale,
+            'title': title,
+            'vmin': vmin,
+            'vmax': vmax
+        },
+        **kwargs
+    }
     if isinstance(obj, (dict, Dataset)):
         to_plot = {key: _to_data_array(item) for key, item in obj.items()}
         nodes = [input_node(v) for v in to_plot.values()]
-        return Figure(*nodes, **kwargs)
+        return Figure(*nodes, **all_args)
     else:
-        return Figure(input_node(_to_data_array(obj)), **kwargs)
+        return Figure(input_node(_to_data_array(obj)), **all_args)
