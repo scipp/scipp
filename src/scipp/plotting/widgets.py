@@ -4,9 +4,10 @@
 from functools import partial
 from html import escape
 from ..utils import value_to_string
+from .displayable import Displayable
 
 
-class PlotWidgets:
+class PlotWidgets(Displayable):
     """
     Widgets containing a slider for each of the input's dimensions, as well as
     buttons to modify the currently displayed axes.
@@ -109,12 +110,6 @@ class PlotWidgets:
 
         self._add_masks_controls(masks)
         self.initialize(sizes=sizes)
-
-    def _ipython_display_(self):
-        """
-        IPython display representation for Jupyter notebooks.
-        """
-        return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
         """

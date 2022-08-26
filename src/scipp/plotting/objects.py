@@ -3,6 +3,7 @@
 # @author Neil Vaytet
 
 from .. import config, units
+from .displayable import Displayable
 from .formatters import make_formatter
 from .tools import parse_params, is_sphinx_build
 from ..core import DimensionError
@@ -88,7 +89,7 @@ def make_profile(ax, mask_color):
                        })
 
 
-class PlotDict():
+class PlotDict(Displayable):
     """
     The Plot object is used as output for the plot command.
     It is a small wrapper around python dict, with an `_ipython_display_`
@@ -115,12 +116,6 @@ class PlotDict():
 
     def items(self):
         return self._items.items()
-
-    def _ipython_display_(self):
-        """
-        IPython display representation for Jupyter notebooks.
-        """
-        return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
         """
@@ -176,7 +171,7 @@ def _guess_resampling_mode(array):
     return ResamplingMode.mean
 
 
-class Plot:
+class Plot(Displayable):
     """
     Base class for plot objects. It uses the Model-View-Controller pattern to
     separate displayed figures and user-interaction via widgets from the
@@ -295,12 +290,6 @@ class Plot:
                                      profile=self.profile)
         self._tool_button_states['resampling_mode'] = self.model.mode
         self._render()
-
-    def _ipython_display_(self):
-        """
-        IPython display representation for Jupyter notebooks.
-        """
-        return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
         """

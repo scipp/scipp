@@ -3,9 +3,10 @@
 
 from abc import ABC, abstractmethod
 import uuid
+from .displayable import Displayable
 
 
-class View(ABC):
+class View(ABC, Displayable):
 
     def __init__(self, *nodes):
         self.id = str(uuid.uuid1())
@@ -18,8 +19,6 @@ class View(ABC):
     def notify_view(self, _):
         return
 
-    def _ipython_display_(self):
-        """
-        IPython display representation for Jupyter notebooks.
-        """
-        return self._to_widget()._ipython_display_()
+    @abstractmethod
+    def _to_widget(self):
+        return

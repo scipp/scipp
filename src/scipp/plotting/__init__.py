@@ -3,7 +3,6 @@
 # @file
 # @author Neil Vaytet
 
-from .plot import plot as _plot
 from .tools import is_static
 
 _backend = 'stable'
@@ -140,6 +139,7 @@ def plot_stable(*args, **kwargs):
 
     """
     import matplotlib.pyplot as plt
+    from .plot import plot as _plot
 
     # Switch auto figure display off for better control over when figures are
     # displayed.

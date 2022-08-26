@@ -1,21 +1,17 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
+from .displayable import Displayable
+
 
 def _maybe_to_widget(view):
     return view._to_widget() if hasattr(view, "_to_widget") else view
 
 
-class Plot:
+class Plot(Displayable):
 
     def __init__(self, views):
         self.views = views
-
-    def _ipython_display_(self):
-        """
-        IPython display representation for Jupyter notebooks.
-        """
-        return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
         """

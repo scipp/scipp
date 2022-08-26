@@ -3,9 +3,10 @@
 # @author Neil Vaytet
 
 import ipywidgets as ipw
+from .displayable import Displayable
 
 
-class PlotPanel:
+class PlotPanel(Displayable):
     """
     Base class for providing additional widgets on top of the base dimension
     sliders and mask display control.
@@ -14,12 +15,6 @@ class PlotPanel:
     def __init__(self):
         self.container = ipw.VBox()
         self.controller = None
-
-    def _ipython_display_(self):
-        """
-        IPython display representation for Jupyter notebooks.
-        """
-        return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
         """
