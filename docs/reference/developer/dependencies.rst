@@ -24,7 +24,7 @@ Places that define dependencies
 - `setup.py <https://github.com/scipp/scipp/blob/main/setup.py>`_ defines runtime requirements and "extras" for the ``pip`` package.
 - All Python dependencies for static analysis, tests, documentation, and more are defined in ``requirements/*.in``.
   ``pip-compile-multi`` is used to generate the corresponding ``requirements/*.txt`` files.
-  This should be run regularly, e.g., after a release.
+  This should be run regularly, e.g., before a release.
   Create a PR with the results and *verify the changes*.
   This must include manual verification that the documentation is ok (download the artifact and inspect locally), since we have several Sphinx-related dependencies that have previously led to silently "broken" documentation pages.
 - C++ library dependencies are installed using ``conan``.
