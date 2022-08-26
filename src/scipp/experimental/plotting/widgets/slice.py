@@ -5,6 +5,7 @@ from .... import DataArray
 from ....utils import value_to_string
 from ..view import View
 from ..model import node
+from ..displayable import Displayable
 
 import ipywidgets as ipw
 from typing import Callable
@@ -37,7 +38,7 @@ class SliceView(View):
             self._update(new_coords=new_values.meta)
 
 
-class SliceWidget:
+class SliceWidget(Displayable):
     """
     Widgets containing a slider for each of the input's dimensions, as well as
     buttons to modify the currently displayed axes.
@@ -69,12 +70,6 @@ class SliceWidget:
         for dim in self._slider_dims:
             row = list(self.controls[dim].values())
             self._container.append(ipw.HBox(row))
-
-    def _ipython_display_(self):
-        """
-        IPython display representation for Jupyter notebooks.
-        """
-        return self._to_widget()._ipython_display_()
 
     def _to_widget(self) -> ipw.Widget:
         """

@@ -5,9 +5,10 @@ from functools import partial
 from html import escape
 import ipywidgets as ipw
 from typing import Callable
+from ..displayable import Displayable
 
 
-class Checkboxes:
+class Checkboxes(Displayable):
     """
     Widget providing a list of checkboxes, along with a button to toggle them all.
     """
@@ -34,12 +35,6 @@ class Checkboxes:
                                                       disabled=False,
                                                       button_style="",
                                                       layout={"width": "100px"})
-
-    def _ipython_display_(self):
-        """
-        IPython display representation for Jupyter notebooks.
-        """
-        return self._to_widget()._ipython_display_()
 
     def _to_widget(self) -> ipw.Widget:
         """
