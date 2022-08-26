@@ -72,8 +72,11 @@ def plot(obj: Union[VariableLike, Dict[str, VariableLike]],
         Upper bound for data to be displayed (y-axis for 1d plots, colorscale for
         2d plots).
     **kwargs:
-        All other kwargs are directly forwarded to the underlying plotting library
-        (Matplotlib).
+        All other kwargs are directly forwarded to Matplotlib, the underlying plotting
+        library. The underlying functions called are the following:
+        - 1d data with a non bin-edge coordinate: `plot`
+        - 1d data with a bin-edge coordinate: `step`
+        - 2d data: `pcolormesh`
 
     Returns
     -------
