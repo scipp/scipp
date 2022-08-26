@@ -259,8 +259,8 @@ def test_dims():
 
 
 def test_concat():
-    assert sc.identical(sc.concat([sc.scalar(1), sc.scalar(2)], 'a'),
-                        sc.array(dims=['a'], values=[1, 2]))
+    assert sc.identical(sc.concat([sc.scalar(1.0), sc.scalar(2.0)], 'a'),
+                        sc.array(dims=['a'], values=[1.0, 2.0]))
 
 
 def test_values_variances():
