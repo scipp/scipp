@@ -22,7 +22,18 @@ def _to_data_array(obj):
     return out
 
 
-def plot(obj: Union[VariableLike, Dict[str, VariableLike]], **kwargs) -> Figure:
+def plot(obj: Union[VariableLike, Dict[str, VariableLike]],
+         aspect: str = 'auto',
+         cbar: bool = True,
+         errorbars: bool = True,
+         grid: bool = False,
+         mask_color: str = 'black',
+         norm: str = 'linear',
+         scale: Dict[str, str] = None,
+         title: str = "",
+         vmin: Variable = None,
+         vmax: Variable = None,
+         **kwargs) -> Figure:
     """Plot a Scipp object.
 
     Parameters
@@ -37,18 +48,18 @@ def plot(obj: Union[VariableLike, Dict[str, VariableLike]], **kwargs) -> Figure:
         - dict of DataArrays
         - dict of numpy ndarrays
     aspect:
-        Aspect ratio for the axes. Default is `'auto'`.
+        Aspect ratio for the axes.
     cbar:
-        Show colorbar in 2d plots if `True`. Default is `True`.
+        Show colorbar in 2d plots if `True`.
     errorbars:
-        Show errorbars in 1d plots if `True`. Default is `True`.
+        Show errorbars in 1d plots if `True`.
     grid:
-        Show grid if `True`. Default is `False`.
+        Show grid if `True`.
     mask_color:
         Color of masks in 1d plots.
     norm:
         Set to 'log' for a logarithmic y-axis (1d plots) or logarithmic colorscale
-        (2d plots). Default is 'linear'.
+        (2d plots).
     scale:
         Change axis scaling between `log` and `linear`. For example, specify
         `scale={'tof': 'log'}` if you want log-scale for the `tof` dimension.
@@ -56,10 +67,10 @@ def plot(obj: Union[VariableLike, Dict[str, VariableLike]], **kwargs) -> Figure:
         The figure title.
     vmin:
         Lower bound for data to be displayed (y-axis for 1d plots, colorscale for
-        2d plots). Default is `None`.
+        2d plots).
     vmax:
         Upper bound for data to be displayed (y-axis for 1d plots, colorscale for
-        2d plots). Default is `None`.
+        2d plots).
     **kwargs:
         All other kwargs are directly forwarded to the underlying plotting library
         (Matplotlib).
