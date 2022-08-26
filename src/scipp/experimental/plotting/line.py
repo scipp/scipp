@@ -31,17 +31,14 @@ class Line:
         self._ax = ax
         self._data = data
 
-        args = _parse_dicts_in_kwargs(self._kwargs, name=data.name)
+        args = _parse_dicts_in_kwargs(kwargs, name=data.name)
 
         self._line = None
         self._mask = None
         self._error = None
-        # self._errorbars = errorbars
         self._dim = None
         self._unit = None
         self.label = data.name
-
-        # self._mask_color = mask_color if mask_color is not None else 'k'
 
         self._dim = self._data.dim
         self._unit = self._data.unit
@@ -50,11 +47,11 @@ class Line:
         aliases = {'ls': 'linestyle', 'lw': 'linewidth', 'c': 'color'}
         for key, alias in aliases.items():
             if key in args:
-                args[alias] = kwargs.pop(key)
+                args[alias] = args.pop(key)
 
         self._make_line(data=self._make_data(), number=number, **args)
 
-    def _make_line(self, data, number, errorbars=None, mask_color=None, **kwargs):
+    def _make_line(self, data, number, errorbars=True, mask_color='black', **kwargs):
         has_mask = data["mask"] is not None
         mask_data_key = "mask" if has_mask else "values"
 

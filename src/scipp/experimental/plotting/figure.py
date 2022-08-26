@@ -238,7 +238,7 @@ class Figure(View):
                                     'errorbars': self._errorbars,
                                     'mask_color': self._mask_color
                                 },
-                                **kwargs
+                                **self._kwargs
                             })
                 self._children[key] = line
                 self._legend += bool(line.label)
@@ -261,7 +261,7 @@ class Figure(View):
                                                **{
                                                    'cbar': self._cbar,
                                                },
-                                               **kwargs
+                                               **self._kwargs
                                            })
                 self._dims.update({"x": new_values.dims[1], "y": new_values.dims[0]})
                 if new_values.dims[0] in self._scale:
