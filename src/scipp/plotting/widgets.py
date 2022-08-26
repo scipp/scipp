@@ -4,6 +4,7 @@
 from functools import partial
 from html import escape
 from ..utils import value_to_string
+from .tools import widgets_have_mimebundle
 
 
 class PlotWidgets:
@@ -110,11 +111,20 @@ class PlotWidgets:
         self._add_masks_controls(masks)
         self.initialize(sizes=sizes)
 
-    def _ipython_display_(self):
-        """
-        IPython display representation for Jupyter notebooks.
-        """
-        return self._to_widget()._ipython_display_()
+    if widgets_have_mimebundle():
+
+        def _repr_mimebundle_(self, include=None, exclude=None):
+            """
+            Mimebundle display representation for jupyter notebooks.
+            """
+            return self._to_widget()._repr_mimebundle_(include=include, exclude=exclude)
+    else:
+
+        def _ipython_display_(self):
+            """
+            IPython display representation for Jupyter notebooks.
+            """
+            return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
         """

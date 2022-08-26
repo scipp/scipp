@@ -4,7 +4,7 @@
 
 from .. import config, units
 from .formatters import make_formatter
-from .tools import parse_params, is_sphinx_build
+from .tools import parse_params, is_sphinx_build, widgets_have_mimebundle
 from ..core import DimensionError
 from .model1d import PlotModel1d
 from .widgets import PlotWidgets
@@ -116,11 +116,20 @@ class PlotDict():
     def items(self):
         return self._items.items()
 
-    def _ipython_display_(self):
-        """
-        IPython display representation for Jupyter notebooks.
-        """
-        return self._to_widget()._ipython_display_()
+    if widgets_have_mimebundle():
+
+        def _repr_mimebundle_(self, include=None, exclude=None):
+            """
+            Mimebundle display representation for jupyter notebooks.
+            """
+            return self._to_widget()._repr_mimebundle_(include=include, exclude=exclude)
+    else:
+
+        def _ipython_display_(self):
+            """
+            IPython display representation for Jupyter notebooks.
+            """
+            return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
         """
@@ -296,11 +305,20 @@ class Plot:
         self._tool_button_states['resampling_mode'] = self.model.mode
         self._render()
 
-    def _ipython_display_(self):
-        """
-        IPython display representation for Jupyter notebooks.
-        """
-        return self._to_widget()._ipython_display_()
+    if widgets_have_mimebundle():
+
+        def _repr_mimebundle_(self, include=None, exclude=None):
+            """
+            Mimebundle display representation for jupyter notebooks.
+            """
+            return self._to_widget()._repr_mimebundle_(include=include, exclude=exclude)
+    else:
+
+        def _ipython_display_(self):
+            """
+            IPython display representation for Jupyter notebooks.
+            """
+            return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
         """

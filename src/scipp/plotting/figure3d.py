@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 from .. import config
 from .toolbar import PlotToolbar3d
-from .tools import fig_to_pngbytes
+from .tools import fig_to_pngbytes, widgets_have_mimebundle
 from ..utils import value_to_string
 import numpy as np
 import ipywidgets as ipw
@@ -96,11 +96,20 @@ class PlotFigure3d:
     def initialize_toolbar(self, **kwargs):
         self.toolbar.initialize(**kwargs)
 
-    def _ipython_display_(self):
-        """
-        IPython display representation for Jupyter notebooks.
-        """
-        return self._to_widget()._ipython_display_()
+    if widgets_have_mimebundle():
+
+        def _repr_mimebundle_(self, include=None, exclude=None):
+            """
+            Mimebundle display representation for jupyter notebooks.
+            """
+            return self._to_widget()._repr_mimebundle_(include=include, exclude=exclude)
+    else:
+
+        def _ipython_display_(self):
+            """
+            IPython display representation for Jupyter notebooks.
+            """
+            return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
         """

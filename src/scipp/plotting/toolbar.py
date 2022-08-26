@@ -6,6 +6,7 @@ import ipywidgets as ipw
 
 from .. import config
 from .resampling_model import ResamplingMode
+from .tools import widgets_have_mimebundle
 
 
 def set_button_color(button, selected=False):
@@ -90,11 +91,20 @@ class PlotToolbar:
             self.members[f'toggle_{ax}axis_scale'] = self._log_axis[dim]
         self._update_container()
 
-    def _ipython_display_(self):
-        """
-        IPython display representation for Jupyter notebooks.
-        """
-        return self._to_widget()._ipython_display_()
+    if widgets_have_mimebundle():
+
+        def _repr_mimebundle_(self, include=None, exclude=None):
+            """
+            Mimebundle display representation for jupyter notebooks.
+            """
+            return self._to_widget()._repr_mimebundle_(include=include, exclude=exclude)
+    else:
+
+        def _ipython_display_(self):
+            """
+            IPython display representation for Jupyter notebooks.
+            """
+            return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
         """

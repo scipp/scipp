@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .. import config
-from .tools import fig_to_pngbytes, is_sphinx_build
+from .tools import fig_to_pngbytes, is_sphinx_build, widgets_have_mimebundle
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -43,6 +43,7 @@ class PlotFigure:
             if self.is_widget():
                 self.toolbar = toolbar(mpl_toolbar=self.fig.canvas.toolbar)
                 self.fig.canvas.toolbar_visible = False
+                self.fig.canvas.header_visible = False
         else:
             self.own_axes = False
             self.fig = self.ax.get_figure()
@@ -78,11 +79,20 @@ class PlotFigure:
         """
         self.fig.savefig(filename, bbox_inches="tight")
 
-    def _ipython_display_(self):
-        """
-        IPython display representation for Jupyter notebooks.
-        """
-        return self._to_widget()._ipython_display_()
+    if widgets_have_mimebundle():
+
+        def _repr_mimebundle_(self, include=None, exclude=None):
+            """
+            Mimebundle display representation for jupyter notebooks.
+            """
+            return self._to_widget()._repr_mimebundle_(include=include, exclude=exclude)
+    else:
+
+        def _ipython_display_(self):
+            """
+            IPython display representation for Jupyter notebooks.
+            """
+            return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
         """
