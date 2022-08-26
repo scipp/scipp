@@ -5,7 +5,7 @@ from .displayable import Displayable
 
 
 def _maybe_to_widget(view):
-    return view._to_widget() if hasattr(view, "_to_widget") else view
+    return view.to_widget() if hasattr(view, "to_widget") else view
 
 
 class Plot(Displayable):
@@ -13,7 +13,7 @@ class Plot(Displayable):
     def __init__(self, views):
         self.views = views
 
-    def _to_widget(self):
+    def to_widget(self):
         """
         """
         import ipywidgets as ipw

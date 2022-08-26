@@ -17,8 +17,8 @@ from typing import Any, Tuple
 
 class SideBar(list, Displayable):
 
-    def _to_widget(self):
-        return ipw.VBox([child._to_widget() for child in self])
+    def to_widget(self):
+        return ipw.VBox([child.to_widget() for child in self])
 
 
 class Figure(View):
@@ -116,7 +116,7 @@ class Figure(View):
         """
         return hasattr(self._fig.canvas, "on_widget_constructed")
 
-    def _to_widget(self) -> ipw.Widget:
+    def to_widget(self) -> ipw.Widget:
         """
         Convert the Matplotlib figure to a widget. If the ipympl (widget)
         backend is in use, return the custom toolbar and the figure canvas.
@@ -129,10 +129,10 @@ class Figure(View):
                                       and not self._closed) else self._to_image()
 
         return ipw.VBox([
-            self.top_bar._to_widget(),
-            ipw.HBox([self.left_bar._to_widget(), canvas,
-                      self.right_bar._to_widget()]),
-            self.bottom_bar._to_widget()
+            self.top_bar.to_widget(),
+            ipw.HBox([self.left_bar.to_widget(), canvas,
+                      self.right_bar.to_widget()]),
+            self.bottom_bar.to_widget()
         ])
 
     def _to_image(self) -> ipw.Image:

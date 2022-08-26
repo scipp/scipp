@@ -34,7 +34,7 @@ class Toolbar(Displayable):
         self.container = ipw.VBox()
         self.members = {}
 
-    def _to_widget(self) -> ipw.Widget:
+    def to_widget(self) -> ipw.Widget:
         """
         Return the VBox container
         """

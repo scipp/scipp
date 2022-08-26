@@ -36,7 +36,7 @@ class Checkboxes(Displayable):
                                                       button_style="",
                                                       layout={"width": "100px"})
 
-    def _to_widget(self) -> ipw.Widget:
+    def to_widget(self) -> ipw.Widget:
         """
         Gather all widgets in a single container box.
         """

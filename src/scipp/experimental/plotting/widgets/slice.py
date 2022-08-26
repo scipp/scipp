@@ -17,7 +17,7 @@ class SliceView(View):
         super().__init__(*nodes)
         self._labels = {dim: ipw.Label() for dim in dims}
 
-    def _to_widget(self) -> ipw.Widget:
+    def to_widget(self) -> ipw.Widget:
         self.render()
         return ipw.VBox(list(self._labels.values()))
 
@@ -71,13 +71,13 @@ class SliceWidget(Displayable):
             row = list(self.controls[dim].values())
             self._container.append(ipw.HBox(row))
 
-    def _to_widget(self) -> ipw.Widget:
+    def to_widget(self) -> ipw.Widget:
         """
         Gather all widgets in a single container box.
         """
         out = ipw.VBox(self._container)
         if self.view is not None:
-            out = ipw.HBox([out, self.view._to_widget()])
+            out = ipw.HBox([out, self.view.to_widget()])
         return out
 
     def observe(self, callback: Callable, **kwargs):
