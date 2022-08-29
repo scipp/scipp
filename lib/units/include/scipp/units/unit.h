@@ -86,6 +86,9 @@ constexpr Unit meV{llnl::units::precise::milli *
 constexpr Unit c{
     {llnl::units::precise::m / llnl::units::precise::s, 299792458}};
 
+SCIPP_UNITS_EXPORT Unit addUserDefinedUnit(std::string, Unit);
+SCIPP_UNITS_EXPORT void clearUserDefinedUnits();
+
 } // namespace scipp::units
 
 namespace std {

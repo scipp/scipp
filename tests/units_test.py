@@ -50,3 +50,21 @@ def test_explicit_default_unit_for_string_gives_none():
 def test_default_unit_for_string_is_none():
     var = sc.scalar('abcdef')
     assert var.unit is None
+
+
+def test_user_defined_units():
+    # Test from LLNL units test_unit_string.cpp
+    from scipp import Unit
+    from scipp.units import addUserDefinedUnit, clearUserDefinedUnits
+    clucks = addUserDefinedUnit('clucks', '19.3 m*A')
+    assert Unit('clucks/A') == Unit('19.3 m')
+    assert repr(clucks) == 'clucks'
+    assert repr((1 / clucks).unit) == '1/clucks'
+    assert repr(clucks**2) == 'clucks^2'
+    assert repr(clucks * Unit('kg')) == 'clucks*kg'
+    assert repr(Unit('kg') / clucks**2) == 'kg/clucks^2'
+    speed = addUserDefinedUnit('speed', 'm/s')
+    assert repr(speed) == 'speed'
+    assert repr(speed * Unit('s')) == 'm'
+    clearUserDefinedUnits()
+    assert repr(speed) == 'm/s'

@@ -69,4 +69,7 @@ void init_units(py::module &m) {
 
   m.def("to_numpy_time_string",
         py::overload_cast<const ProtoUnit &>(to_numpy_time_string));
+
+  units.def("addUserDefinedUnit", &scipp::units::addUserDefinedUnit);
+  units.def("clearUserDefinedUnits", &scipp::units::clearUserDefinedUnits);
 }

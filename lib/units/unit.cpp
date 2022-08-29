@@ -184,4 +184,11 @@ Unit atan2(const Unit &y, const Unit &x) {
       " b " + y.name() + ".");
 }
 
+Unit addUserDefinedUnit(std::string name, Unit u) {
+  llnl::units::addUserDefinedUnit(name, u.underlying());
+  return Unit(llnl::units::unit_from_string(name));
+}
+
+void clearUserDefinedUnits() { return llnl::units::clearUserDefinedUnits(); }
+
 } // namespace scipp::units

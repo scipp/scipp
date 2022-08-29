@@ -34,7 +34,19 @@ Special:
 from .._scipp.core.units import (angstrom, counts, default_unit, deg, dimensionless, kg,
                                  K, meV, m, one, rad, s, us, ns, mm)
 
+from .._scipp.core.units import clearUserDefinedUnits
+from .._scipp.core import Unit as _Unit
+from typing import Union
+
+
+def addUserDefinedUnit(name: str, unit: Union[str, _Unit]) -> _Unit:
+    from .._scipp.core.units import addUserDefinedUnit as implementation
+    if isinstance(unit, str):
+        unit = _Unit(unit)
+    return implementation(name, unit)
+
+
 __all__ = [
     'angstrom', 'counts', 'default_unit', 'deg', 'dimensionless', 'kg', 'K', 'meV', 'm',
-    'one', 'rad', 's', 'us', 'ns', 'mm'
+    'one', 'rad', 's', 'us', 'ns', 'mm', 'addUserDefinedUnit', 'clearUserDefinedUnits'
 ]
