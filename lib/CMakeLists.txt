@@ -206,14 +206,14 @@ set(EXPORT_NAME ${PROJECT_NAME}-targets)
 if(DYNAMIC_LIB)
   install(
     EXPORT ${EXPORT_NAME}
-    DESTINATION "lib/cmake/scipp"
-    NAMESPACE scipp::
+    DESTINATION lib/cmake/${PROJECT_NAME}
+    NAMESPACE ${PROJECT_NAME}::
   )
   include(CMakePackageConfigHelpers)
   configure_package_config_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}-config.cmake.in
     "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
-    INSTALL_DESTINATION lib/cmake/scipp
+    INSTALL_DESTINATION lib/cmake/${PROJECT_NAME}
   )
   write_basic_package_version_file(
     "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
@@ -225,10 +225,10 @@ if(DYNAMIC_LIB)
     FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
           "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
           "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}-conan.cmake"
-    DESTINATION lib/cmake/scipp
+    DESTINATION lib/cmake/${PROJECT_NAME}
   )
   install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cmake/.conan-recipes"
-          DESTINATION lib/cmake/scipp
+    DESTINATION lib/cmake/${PROJECT_NAME}
   )
 endif(DYNAMIC_LIB)
 
