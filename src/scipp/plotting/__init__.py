@@ -139,7 +139,7 @@ def plot_stable(*args, **kwargs):
 
     """
     import matplotlib.pyplot as plt
-    from .plot import plot as _plot
+    from .wrapper import plot as _plot
 
     # Switch auto figure display off for better control over when figures are
     # displayed.
