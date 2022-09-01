@@ -2,7 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Jan-Lukas Wynen
 """
-Convert RHESSI's xray flare event list to a scipp HDF5 file.
+Convert RHESSI's xray flare event list to a Scipp HDF5 file.
 
 Downloads the event list if necessary.
 Output is written to ./data/hessi_flares.h5

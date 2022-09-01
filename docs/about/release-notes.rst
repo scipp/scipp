@@ -208,7 +208,7 @@ Features
 
 * Added argument `max_rows` to :func:`scipp.table` `#2526 <https://github.com/scipp/scipp/pull/2526>`_.
 * Added support for converting scalars to builtin objects via :func:`int` and :func:`float` `#2529 <https://github.com/scipp/scipp/pull/2529>`_.
-* Reduced time of initial import of scipp by delaying imports of optional dependencies `#2535 <https://github.com/scipp/scipp/pull/2535>`_.
+* Reduced time of initial import of Scipp by delaying imports of optional dependencies `#2535 <https://github.com/scipp/scipp/pull/2535>`_.
 * Added an ``update`` method to :class:`Coords`, :class:`Attrs`, :class:`Masks`, and :class:`Dataset`  `#2558 <https://github.com/scipp/scipp/pull/2558>`_.
 * Support ``dtype=vector3`` in :func:`scipp.isinf` and :func:`scipp.isfinite` `#2593 <https://github.com/scipp/scipp/pull/2593>`_.
 * Added support for passing any dict-like objects or iterables of tuples as ``coords``, ``attrs``, and ``masks`` arguments to initializers of :class:`scipp.DataArray` and :class:`scipp.Dataset` `#2603 <https://github.com/scipp/scipp/pull/2603>`_.
@@ -281,7 +281,7 @@ Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
-* Changed format of scipp native HDF5 files to allow for UTF-8 characters in coord names; migration script: ``tools/migration/scipp-0.13-hdf5-files.py`` `#2463 <https://github.com/scipp/scipp/pull/2463>`_.
+* Changed format of Scipp native HDF5 files to allow for UTF-8 characters in coord names; migration script: ``tools/migration/scipp-0.13-hdf5-files.py`` `#2463 <https://github.com/scipp/scipp/pull/2463>`_.
 
 Bugfixes
 ~~~~~~~~
@@ -403,7 +403,7 @@ Bugfixes
 Deprecations
 ~~~~~~~~~~~~
 
-* ``sc.matrix`` and ``sc.matrices`` have been deprecated in favour of :py:func:`scipp.spatial.linear_transform` and :py:func:`scipp.spatial.linear_transforms`, and will be removed in a future release of scipp.
+* ``sc.matrix`` and ``sc.matrices`` have been deprecated in favour of :py:func:`scipp.spatial.linear_transform` and :py:func:`scipp.spatial.linear_transforms`, and will be removed in a future release of Scipp.
 * The previously deprecated ``concatenate`` and ``groupby(..).concatenate`` have been removed. Use :py:func:`scipp.concat` and :py:func:`scipp.GroupByDataArray.concat` instead.
 
 Contributors
@@ -522,7 +522,7 @@ Features
 * Variables can now be constructed directly from multi dimensional lists and tuples `#1977 <https://github.com/scipp/scipp/pull/1977>`_.
 * Plotting 1-D event data is now supported `#2018 <https://github.com/scipp/scipp/pull/2018>`_.
 * Add ``transform_coords`` for (multi-step) transformations based on existing coords, with support of event coords `#2058 <https://github.com/scipp/scipp/pull/2058>`_.
-* Add ``from_pandas`` and ``from_xarray`` for conversion of pandas dataframes, xarray data arrays and dataset to scipp objects `#2054 <https://github.com/scipp/scipp/pull/2054>`_.
+* Add ``from_pandas`` and ``from_xarray`` for conversion of pandas dataframes, xarray data arrays and dataset to Scipp objects `#2054 <https://github.com/scipp/scipp/pull/2054>`_.
 * Added ``full`` and ``full_like`` variable creation functions `#2069 <https://github.com/scipp/scipp/pull/2069>`_.
 * ``islinspace`` can now take multi-dimensional variables as long as you pass the dimension to be checked `#2094 <https://github.com/scipp/scipp/pull/2094>`_.
 * Added a power function and support for the ``**`` operator `#2083 <https://github.com/scipp/scipp/pull/2083>`_.
@@ -533,14 +533,14 @@ Features
 * The ``fields`` property of structured variables (vector and matrix dtypes) can now be iterated and provides dict-like access `#2116 <https://github.com/scipp/scipp/pull/2116>`_.
 * Add ``where`` function.
 * Unary operations such as ``sin`` are now available for datasets as well `#2112 <https://github.com/scipp/scipp/pull/2112>`_.
-* Add rounding functions ``floor``, ``ceil``, and ``round`` that performs similarly to numpy equivelants `#2147 <https://github.com/scipp/scipp/pull/2147>`_.
+* Add rounding functions ``floor``, ``ceil``, and ``round`` that performs similarly to NumPy equivalents `#2147 <https://github.com/scipp/scipp/pull/2147>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
 .. include:: <isonum.txt>
 
-* Changed names of arithmetic functions to match numpy's names: ``plus`` |rarr| :func:`scipp.add`, ``minus`` |rarr| :func:`scipp.subtract`, ``times`` |rarr| :func:`scipp.multiply` `#1999 <https://github.com/scipp/scipp/pull/1999>`_.
+* Changed names of arithmetic functions to match NumPy's names: ``plus`` |rarr| :func:`scipp.add`, ``minus`` |rarr| :func:`scipp.subtract`, ``times`` |rarr| :func:`scipp.multiply` `#1999 <https://github.com/scipp/scipp/pull/1999>`_.
 * Changed Variable init method, all arguments are keyword-only, special overloads which default-initialize data were removed `#1994 <https://github.com/scipp/scipp/pull/1994>`_.
 * The ``axes`` keyword arg of ``plot`` has been removed.
   Use ``labels`` to define labels and ``transpose`` to transpose instead `#2018 <https://github.com/scipp/scipp/pull/2018>`_.
@@ -607,9 +607,9 @@ Features
 * Several improvements for work with (3-D position) vectors and (3-D rotation) matrices `#1905 <https://github.com/scipp/scipp/pull/1905>`_:
 
   * Add creation functions ``vector``, ``vectors``, ``matrix``, ``matrices``.
-  * Direct creation and initialization of 2-D (or higher) arrays of matrices and vectors is now possible from numpy arrays.
-  * Fix extremely slow initialization of array of vectors or matrices from numpy arrays.
-  * The ``values`` property now returns a numpy array with ``ndim+1`` (vectors) or ``ndim+2``` (matrices) axes, with the inner 1 (vectors) or 2 (matrices) axes corresponding o the vector or matrix axes.
+  * Direct creation and initialization of 2-D (or higher) arrays of matrices and vectors is now possible from NumPy arrays.
+  * Fix extremely slow initialization of array of vectors or matrices from NumPy arrays.
+  * The ``values`` property now returns a NumPy array with ``ndim+1`` (vectors) or ``ndim+2``` (matrices) axes, with the inner 1 (vectors) or 2 (matrices) axes corresponding o the vector or matrix axes.
   * Vector or matrix element can now be accessed and modified directly using the new ``fields`` property of ``Variable``.
     The ``fields`` property provides properties ``x``, ``y``, ``z`` (for variables containing vectors) or ``xx``, ``xy``, ..., ``zz`` (for matrices) that can be read as well as set.
 
@@ -663,19 +663,19 @@ Features
 * ``sum`` and ``mean`` implemented for Variables of type ``vector_3_float64``.
 * Add ``fold`` and ``flatten`` which allow to reshape dimensions of a Variable or DataArray `#1676 <https://github.com/scipp/scipp/pull/1676>`_.
 * It is now possible to reshape a Variable also with ``sc.reshape(var, sizes={'x': 2, 'y': 3})``, in addition to ``sc.reshape(var, dims=['x', 'y'], shape=(2, 3))``.
-* Add ``ones`` and ``empty`` creation functions, similar to what is known from numpy `#1732 <https://github.com/scipp/scipp/pull/1732>`_.
+* Add ``ones`` and ``empty`` creation functions, similar to what is known from NumPy `#1732 <https://github.com/scipp/scipp/pull/1732>`_.
 * ``scipp.neutron`` has been removed and is replaced by `scippneutron <https://scipp.github.io/scippneutron>`_
 * ``scipp.neutron`` (now ``scippneutron``)
 
   * Support unit conversion to energy transfer, for inelastic TOF experiments `#1635 <https://github.com/scipp/scipp/pull/1635>`_.
   * Support loading/converting Mantid ``WorkspaceGroup``, this will produce a ``dict`` of data arrays `#1654 <https://github.com/scipp/scipp/pull/1654>`_.
   * Fixes to support loading/converting ``McStasNexus`` files `#1659 <https://github.com/scipp/scipp/pull/1659>`_.
-* ``isclose`` added (``is_approx`` removed). Fuzzy data comparison ``isclose`` is an analogue to numpy's ``isclose``
+* ``isclose`` added (``is_approx`` removed). Fuzzy data comparison ``isclose`` is an analogue to NumPy's ``isclose``
 * ``stddevs`` added `#1762 <https://github.com/scipp/scipp/pull/1762>`_.
 
 * Support for datetime
 
-  * ``sc.dtype.datetime64`` with copy-less casting between numpy and scipp where possible. `#1639 <https://github.com/scipp/scipp/pull/1639>`_
+  * ``sc.dtype.datetime64`` with copy-less casting between NumPy and Scipp where possible. `#1639 <https://github.com/scipp/scipp/pull/1639>`_
   * Binning with datetime edges `#1739 <https://github.com/scipp/scipp/pull/1739>`_
 
 Breaking changes
@@ -716,13 +716,13 @@ Features
 * Plotting of event data (binned data) with dynamic resampling with "infinite zoom" functionality.
 * Value-based slicing support.
 * Possibility to plot Scipp objects using ``my_data_array.plot()`` in addition to the classical ``plot()`` free function.
-* Support for saving and loading scipp data structures to HDF5.
+* Support for saving and loading Scipp data structures to HDF5.
 * More functions such as ``nanmean`` for better handling of special values such as ``INF`` and ``NaN``.
 * TBB (multi-threading) support for MacOS.
 * ``scipp.neutron``
 
   * Improved instrument view, e.g., with buttons to align camera with an axis.
-  * Experiment logs (previously using Mantid's ``Run``) are now represented as native scipp objects, e.g., as scalar attributes holding a data array representing a time-series such as a temperature log.
+  * Experiment logs (previously using Mantid's ``Run``) are now represented as native Scipp objects, e.g., as scalar attributes holding a data array representing a time-series such as a temperature log.
   * Support conversion of ``mantid.MaskWorkspace``.
 
 Breaking changes
@@ -772,7 +772,7 @@ Features
 * ``all`` and ``any`` can work over all dimensions as well as explicitly provided dimension argument
 * It is now possible to convert between Scipp objects and Python dictionaries using ``to_dict`` and ``from_dict``.
 * New functions ``collapse`` and ``slices`` can be use to split one or more dimensions of a DataArray to a dict of DataArrays.
-* You can now inspect the global object list of via the ``repr`` for scipp showing Datasets, DataArrays and Variables
+* You can now inspect the global object list of via the ``repr`` for Scipp showing Datasets, DataArrays and Variables
 * Internal cleanup and documentation additions.
 
 Noteable bug fixes

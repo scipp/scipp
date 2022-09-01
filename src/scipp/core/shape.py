@@ -24,7 +24,7 @@ def broadcast(
     If the input is a DataArray, coordinates and attributes are shallow-copied
     and masks are deep-copied.
 
-    Note that scipp operations broadcast automatically, so using this function
+    Note that Scipp operations broadcast automatically, so using this function
     directly is rarely required.
 
     One and only one of these sets of arguments must be given:

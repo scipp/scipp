@@ -1,7 +1,7 @@
 Tooling
 =======
 
-This is a list of the tooling (i.e. compilers, static analysis, etc.) that are used in scipp and their corresponding versions.
+This is a list of the tooling (i.e. compilers, static analysis, etc.) that are used in Scipp and their corresponding versions.
 
 Misc
 ~~~~

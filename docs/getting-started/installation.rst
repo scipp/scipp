@@ -8,14 +8,14 @@ Scipp requires Python 3.8 or above.
 Conda
 -----
 
-The easiest way to install ``scipp`` is using `conda <https://docs.conda.io>`_.
+The easiest way to install Scipp is using `conda <https://docs.conda.io>`_.
 Packages from `Anaconda Cloud <https://conda.anaconda.org/scipp>`_ are available for Linux, macOS, and Windows.
 It is recommended to create an environment rather than installing individual packages.
 
 With the provided environment file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. Download :download:`scipp.yml <../environments/scipp.yml>` for the latest stable release version of scipp.
+1. Download :download:`scipp.yml <../environments/scipp.yml>` for the latest stable release version of Scipp.
 2. In a terminal run:
 
    .. code-block:: sh
@@ -30,9 +30,9 @@ With the provided environment file
    Above, replace ``scipp.yml`` with the path to the download location you used to download the environment.
    Open the link printed by Jupyter in a browser if it does not open automatically.
 
-If you are new to scipp, continue reading with `Quick Start <quick-start.rst>`_ and `Data Structures <../user-guide/data-structures.rst>`_.
+If you are new to Scipp, continue reading with `Quick Start <quick-start.rst>`_ and `Data Structures <../user-guide/data-structures.rst>`_.
 
-If you have previously installed scipp with conda we nevertheless recommend creating a fresh environment rather than trying to ``conda update``.
+If you have previously installed Scipp with conda we nevertheless recommend creating a fresh environment rather than trying to ``conda update``.
 You may want to remove your old environment first, e.g.,
 
 .. code-block:: sh
@@ -46,27 +46,27 @@ The ``conda activate`` ensures that you are in your ``base`` environment.
 Without the provided environment file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To create a new conda environment with scipp:
+To create a new conda environment with Scipp:
 
 .. code-block:: sh
 
    conda create -n env_with_scipp -c conda-forge -c scipp scipp
 
-To add scipp to an existing conda environment:
+To add Scipp to an existing conda environment:
 
 .. code-block:: sh
 
    conda install -c conda-forge -c scipp scipp
 
 .. note::
-   Installing ``scipp`` on Windows requires ``Microsoft Visual Studio 2019 C++ Runtime`` (and versions above) installed.
+   Installing Scipp on Windows requires ``Microsoft Visual Studio 2019 C++ Runtime`` (and versions above) installed.
    Visit https://support.microsoft.com/en-us/topic/the-latest-supported-visual-c-downloads-2647da03-1eea-4433-9aff-95f26a218cc0 for the up to date version of the library.
 
-After installation the module ``scipp`` can be imported in Python.
+After installation the module, Scipp can be imported in Python.
 Note that only the bare essential dependencies are installed.
 If you wish to use plotting functionality you will also need to install ``matplotlib`` and ``ipywidgets``.
 
-To update or remove ``scipp`` use `conda update <https://docs.conda.io/projects/conda/en/latest/commands/update.html>`_ and `conda remove <https://docs.conda.io/projects/conda/en/latest/commands/remove.html>`_.
+To update or remove Scipp use `conda update <https://docs.conda.io/projects/conda/en/latest/commands/update.html>`_ and `conda remove <https://docs.conda.io/projects/conda/en/latest/commands/remove.html>`_.
 
 Pip
 ---

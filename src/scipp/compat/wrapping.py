@@ -33,7 +33,7 @@ def wrap1d(is_partial=False, accept_masks=False, keep_coords=False):
       libraries typically cannot handle variances.
     - Coordinates, masks, and attributes that act as "observers", i.e., do not depend
       on the dimension of the function application, are added to the output data array.
-      Masks are deep-copied as per the usual requirement in scipp.
+      Masks are deep-copied as per the usual requirement in Scipp.
 
     Parameters
     ----------

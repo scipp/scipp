@@ -27,10 +27,10 @@ Docstrings
 ~~~~~~~~~~
 
 The exception to this are Python docstrings, for which we use the
-`numpy docstring format <https://www.sphinx-doc.org/en/master/usage/extensions/example_numpy.html>`_.
+`NumPy docstring format <https://www.sphinx-doc.org/en/master/usage/extensions/example_numpy.html>`_.
 We use a tool to automatically insert type hints into the docstrings.
-Our format, therefore, deviates from the default numpy example given by the link above.
-The example below shows how docstrings should be laid out in scipp including spacing and punctuation.
+Our format, therefore, deviates from the default NumPy example given by the link above.
+The example below shows how docstrings should be laid out in Scipp including spacing and punctuation.
 
 .. code-block:: python
 
