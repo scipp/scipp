@@ -280,7 +280,7 @@ class Figure(View):
                 })
                 if new_values.dims[0] in self._scale:
                     self.toolbar.members['toggle_yaxis_scale'].value = self._scale[
-                        self._dims['y']]['dim'] == 'log'
+                        self._dims['y']['dim']] == 'log'
                 self._ax.set_ylabel(
                     name_with_unit(var=new_values.meta[self._dims['y']['dim']]))
 
