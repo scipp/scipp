@@ -28,7 +28,7 @@ Places that define dependencies
   Create a PR with the results and *verify the changes*.
   This must include manual verification that the documentation is ok (download the artifact and inspect locally), since we have several Sphinx-related dependencies that have previously led to silently "broken" documentation pages.
 - C++ library dependencies are installed using ``conan``.
-  Versions are pinned in `lib/CMakeLists.txt <https://github.com/scipp/scipp/blob/main/lib/CMakeLists.txt>`_ in the ``conan_cmake_configure`` call.
+  Versions are pinned in `lib/cmake/scipp-conan.cmake <https://github.com/scipp/scipp/blob/main/lib/cmake/scipp-conan.cmake>`_ in the ``conan_cmake_configure`` call.
   Known problem:
   We have not frozen the *recipe* versions.
   New recipe versions can be incompatible with older conan versions, such as the one we have frozen.
