@@ -37,6 +37,7 @@ class Figure(View):
                  cbar=True,
                  errorbars=True,
                  mask_color='black',
+                 crop=None,
                  **kwargs):
 
         super().__init__(*nodes)
@@ -48,6 +49,7 @@ class Figure(View):
         self._user_vmax = vmax
         self._norm = norm
         self._scale = {} if scale is None else scale
+        self._crop = {} if crop is None else crop
         self._cbar = cbar
         self._errorbars = errorbars
         self._mask_color = mask_color
@@ -242,7 +244,10 @@ class Figure(View):
                             })
                 self._children[key] = line
                 self._legend += bool(line.label)
-                self._dims['x'] = new_values.dim
+                self._dims['x'] = {
+                    'dim': new_values.dim,
+                    'unit': new_values.meta[new_values.dim].unit
+                }
                 self._ax.set_ylabel(name_with_unit(var=new_values.data, name=""))
                 # TODO: this is not great, involves implementation details of the
                 # toolbar. However, setting the yscale of the axis manually would mean
@@ -263,17 +268,27 @@ class Figure(View):
                                                },
                                                **self._kwargs
                                            })
-                self._dims.update({"x": new_values.dims[1], "y": new_values.dims[0]})
+                self._dims.update({
+                    "x": {
+                        'dim': new_values.dims[1],
+                        'unit': new_values.meta[new_values.dims[1]].unit
+                    },
+                    "y": {
+                        'dim': new_values.dims[0],
+                        'unit': new_values.meta[new_values.dims[0]].unit
+                    }
+                })
                 if new_values.dims[0] in self._scale:
                     self.toolbar.members['toggle_yaxis_scale'].value = self._scale[
-                        self._dims['y']] == 'log'
+                        self._dims['y']]['dim'] == 'log'
                 self._ax.set_ylabel(
-                    name_with_unit(var=new_values.meta[self._dims['y']]))
+                    name_with_unit(var=new_values.meta[self._dims['y']['dim']]))
 
-            self._ax.set_xlabel(name_with_unit(var=new_values.meta[self._dims['x']]))
-            if self._dims['x'] in self._scale:
+            self._ax.set_xlabel(
+                name_with_unit(var=new_values.meta[self._dims['x']['dim']]))
+            if self._dims['x']['dim'] in self._scale:
                 self.toolbar.members['toggle_xaxis_scale'].value = self._scale[
-                    self._dims['x']] == 'log'
+                    self._dims['x']['dim']] == 'log'
 
         else:
             self._children[key].update(new_values=new_values)
@@ -285,4 +300,11 @@ class Figure(View):
             new_values = node.request_data()
             self._update(new_values=new_values, key=node.id)
         self._autoscale()
+        for dim, lims in self._crop.items():
+            for xy in self._dims:
+                if dim == self._dims[xy]['dim']:
+                    getattr(self._ax, f'set_{xy}lim')(*[
+                        lims[m].to(unit=self._dims[xy]['unit']).value
+                        for m in ('min', 'max') if m in lims
+                    ])
         self._draw_canvas()
