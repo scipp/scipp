@@ -182,6 +182,10 @@ class Line:
             find_limits(self._data.meta[self._dim], scale=xscale))
         ymin, ymax = fix_empty_range(find_limits(self._data.data, scale=yscale))
 
+        for lim in (xmin, xmax, ymin, ymax):
+            if lim.unit is None:
+                lim.unit = ''
+
         # Add padding
         deltax = delta(xmin, xmax, 0.03, xscale)
         if xscale == "log":

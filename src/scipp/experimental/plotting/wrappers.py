@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from typing import Union, Dict
+from typing import Union, Dict, Literal
 from .model import input_node
 from .figure import Figure
 from ... import Variable, DataArray, Dataset, arange
@@ -20,18 +20,18 @@ def _to_data_array(obj):
     out = out.copy(deep=False)
     for dim, size in out.sizes.items():
         if dim not in out.meta:
-            out.coords[dim] = arange(dim, size)
+            out.coords[dim] = arange(dim, size, unit=None)
     return out
 
 
 def plot(obj: Union[VariableLike, Dict[str, VariableLike]],
-         aspect: str = 'auto',
+         aspect: Literal['auto', 'equal'] = 'auto',
          cbar: bool = True,
          crop: Dict[str, Dict[str, Variable]] = None,
          errorbars: bool = True,
          grid: bool = False,
          mask_color: str = 'black',
-         norm: str = 'linear',
+         norm: Literal['linear', 'log'] = 'linear',
          scale: Dict[str, str] = None,
          title: str = "",
          vmin: Variable = None,

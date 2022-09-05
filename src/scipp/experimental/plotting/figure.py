@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from ... import config, DataArray
+from ... import config, DataArray, to_unit
 from .displayable import Displayable
-from .tools import fig_to_pngbytes
+from .tools import fig_to_pngbytes, number_to_variable
 from .toolbar import Toolbar
 from .mesh import Mesh
 from .line import Line
@@ -84,6 +84,8 @@ class Figure(View):
         self._legend = 0
         self._new_artist = False
 
+        self.render()
+
     def _make_toolbar(self):
         toolbar = Toolbar()
         toolbar.add_button(name="home_view",
@@ -124,7 +126,7 @@ class Figure(View):
         If not, convert the plot to a png image and place inside an ipywidgets
         Image container.
         """
-        self.render()
+        # self.render()
 
         canvas = self._fig.canvas if self.is_widget() else self._to_image()
 
@@ -293,16 +295,20 @@ class Figure(View):
 
         self.draw()
 
+    def crop(self, **kwargs):
+        for dim, lims in kwargs.items():
+            for xy in self._dims:
+                if dim == self._dims[xy]['dim']:
+                    getattr(self._ax, f'set_{xy}lim')(*[
+                        to_unit(number_to_variable(lims[m]),
+                                unit=self._dims[xy]['unit']).value
+                        for m in ('min', 'max') if m in lims
+                    ])
+
     def render(self):
         for node in self._graph_nodes.values():
             new_values = node.request_data()
             self._update(new_values=new_values, key=node.id)
         self._autoscale()
-        for dim, lims in self._crop.items():
-            for xy in self._dims:
-                if dim == self._dims[xy]['dim']:
-                    getattr(self._ax, f'set_{xy}lim')(*[
-                        lims[m].to(unit=self._dims[xy]['unit']).value
-                        for m in ('min', 'max') if m in lims
-                    ])
+        self.crop(**self._crop)
         self._draw_canvas()

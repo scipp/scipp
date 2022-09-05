@@ -54,3 +54,10 @@ def to_bin_edges(x, dim):
         left = center[dim, 0:1] - (x[dim, 1] - x[dim, 0])
         right = center[dim, -1] + (x[dim, -1] - x[dim, -2])
         return concat([left, center, right], dim)
+
+
+def number_to_variable(x):
+    """
+    Convert the input int or float to a variable.
+    """
+    return scalar(x, unit=None) if isinstance(x, (int, float)) else x
