@@ -7,6 +7,7 @@ from .figure import Figure
 from ... import Variable, DataArray, Dataset, arange
 from ...typing import VariableLike
 import numpy as np
+import inspect
 
 
 def _to_data_array(obj):
@@ -90,20 +91,10 @@ def plot(obj: Union[VariableLike, Dict[str, VariableLike]],
     :
         A figure.
     """
+    _, _, _, listed_args = inspect.getargvalues(inspect.currentframe())
     all_args = {
-        **{
-            'aspect': aspect,
-            'cbar': cbar,
-            'crop': crop,
-            'errorbars': errorbars,
-            'grid': grid,
-            'mask_color': mask_color,
-            'norm': norm,
-            'scale': scale,
-            'title': title,
-            'vmin': vmin,
-            'vmax': vmax
-        },
+        **{k: v
+           for k, v in listed_args.items() if k not in ('obj', 'kwargs')},
         **kwargs
     }
     if isinstance(obj, (dict, Dataset)):
