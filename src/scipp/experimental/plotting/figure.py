@@ -255,6 +255,7 @@ class Figure(View):
                                            vmin=self._user_vmin,
                                            vmax=self._user_vmax,
                                            norm=self._norm,
+                                           crop=self._crop,
                                            **{
                                                **{
                                                    'cbar': self._cbar,
