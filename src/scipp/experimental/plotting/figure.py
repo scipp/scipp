@@ -43,7 +43,6 @@ class Figure(View):
         super().__init__(*nodes)
 
         self._fig = None
-        self._closed = False
         self._ax = ax
         self._user_vmin = vmin
         self._user_vmax = vmax
@@ -127,8 +126,7 @@ class Figure(View):
         """
         self.render()
 
-        canvas = self._fig.canvas if (self.is_widget()
-                                      and not self._closed) else self._to_image()
+        canvas = self._fig.canvas if self.is_widget() else self._to_image()
 
         return ipw.VBox([
             self.top_bar.to_widget(),

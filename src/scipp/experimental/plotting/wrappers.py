@@ -25,6 +25,7 @@ def _to_data_array(obj):
 def plot(obj: Union[VariableLike, Dict[str, VariableLike]],
          aspect: str = 'auto',
          cbar: bool = True,
+         crop: Dict[str, Dict[str, Variable]] = None,
          errorbars: bool = True,
          grid: bool = False,
          mask_color: str = 'black',
@@ -51,6 +52,11 @@ def plot(obj: Union[VariableLike, Dict[str, VariableLike]],
         Aspect ratio for the axes.
     cbar:
         Show colorbar in 2d plots if `True`.
+    crop:
+        Set the axis limits. Limits should be given as a dict with one entry per
+        dimension to be cropped. Each entry should be a nested dict containing scalar
+        values for `'min'` and/or `'max'`. Example:
+        `da.plot(crop={'time': {'min': 2 * sc.Unit('s'), 'max': 40 * sc.Unit('s')}})`
     errorbars:
         Show errorbars in 1d plots if `True`.
     grid:
