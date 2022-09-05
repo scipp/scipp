@@ -173,21 +173,12 @@ class Figure(View):
         self._ax.set_ylim(global_ymin, global_ymax)
 
     def draw(self):
-        """
-        """
-        if self._new_artist:
-            if self._legend > 0:
-                self._ax.legend()
-            self._new_artist = False
-        self._draw_canvas()
-
-    def _draw_canvas(self):
         self._fig.canvas.draw_idle()
 
     def home_view(self, *_):
         self._autoscale()
         self.crop(**self._crop)
-        self._draw_canvas()
+        self.draw()
 
     def pan_view(self, *_):
         self._fig.canvas.toolbar.pan()
@@ -202,13 +193,13 @@ class Figure(View):
         swap_scales = {"linear": "log", "log": "linear"}
         self._ax.set_xscale(swap_scales[self._ax.get_xscale()])
         self._autoscale()
-        self._draw_canvas()
+        self.draw()
 
     def toggle_yaxis_scale(self, *_):
         swap_scales = {"linear": "log", "log": "linear"}
         self._ax.set_yscale(swap_scales[self._ax.get_yscale()])
         self._autoscale()
-        self._draw_canvas()
+        self.draw()
 
     def savefig(self, filename: str = None):
         """
@@ -244,7 +235,8 @@ class Figure(View):
                                 **self._kwargs
                             })
                 self._children[key] = line
-                self._legend += bool(line.label)
+                if line.label:
+                    self._ax.legend()
                 self._dims['x'] = {
                     'dim': new_values.dim,
                     'unit': new_values.meta[new_values.dim].unit
@@ -312,4 +304,4 @@ class Figure(View):
             self._update(new_values=new_values, key=node.id)
         self._autoscale()
         self.crop(**self._crop)
-        self._draw_canvas()
+        self.draw()
