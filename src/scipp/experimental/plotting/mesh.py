@@ -13,15 +13,6 @@ import numpy as np
 from typing import Any
 
 
-def _make_cropped(da, crop):
-    out = da
-    for dim, sl in crop.items():
-        smin = sl.get('min', out.meta[dim].min(dim=dim))
-        smax = sl.get('max', out.meta[dim].max(dim=dim))
-        out = out[dim, smin:smax]
-    return out
-
-
 class Mesh:
     """
     Class for 2 dimensional plots.
@@ -43,7 +34,6 @@ class Mesh:
         self._ax = ax
         self._data = data
         self._crop = crop if crop is not None else {}
-        self._cropped = _make_cropped(data, crop=self._crop)
         self._dims = {'x': self._data.dims[1], 'y': self._data.dims[0]}
 
         self._xlabel = None
@@ -106,15 +96,15 @@ class Mesh:
     def _rescale_colormap(self):
         """
         """
-        vmin, vmax = fix_empty_range(
-            find_limits(self._cropped.data, scale=self._norm_flag))
+        vmin, vmax = fix_empty_range(find_limits(self._data.data,
+                                                 scale=self._norm_flag))
         if self._user_vmin is not None:
-            assert self._user_vmin.unit == self._cropped.unit
+            assert self._user_vmin.unit == self._data.unit
             self._vmin = self._user_vmin.value
         elif vmin.value < self._vmin:
             self._vmin = vmin.value
         if self._user_vmax is not None:
-            assert self._user_vmax.unit == self._cropped.unit
+            assert self._user_vmax.unit == self._data.unit
             self._vmax = self._user_vmax.value
         elif vmax.value > self._vmax:
             self._vmax = vmax.value
@@ -140,7 +130,6 @@ class Mesh:
         Update image array with new values.
         """
         self._data = new_values
-        self._cropped = _make_cropped(new_values, crop=self._crop)
         self._rescale_colormap()
         self._set_clim()
         self._set_mesh_colors()
@@ -164,7 +153,7 @@ class Mesh:
 
     def get_limits(self, xscale, yscale):
         xmin, xmax = fix_empty_range(
-            find_limits(self._cropped.meta[self._dims['x']], scale=xscale))
+            find_limits(self._data.meta[self._dims['x']], scale=xscale))
         ymin, ymax = fix_empty_range(
-            find_limits(self._cropped.meta[self._dims['y']], scale=yscale))
+            find_limits(self._data.meta[self._dims['y']], scale=yscale))
         return xmin, xmax, ymin, ymax

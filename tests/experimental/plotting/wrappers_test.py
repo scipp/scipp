@@ -43,3 +43,15 @@ def test_plot_dict_of_variables():
 def test_plot_dict_of_data_arrays():
     ds = make_dense_dataset(ndim=1)
     sc.plot({'a': ds['a'], 'b': ds['b']})
+
+
+def test_plot_data_array_2d_with_one_missing_coord_and_binedges():
+    da = sc.data.table_xyz(100).bin(x=10, y=12).bins.mean()
+    del da.coords['x']
+    da.plot()
+
+
+def test_plot_coord_with_no_unit():
+    da = sc.data.table_xyz(100).bin(x=10).bins.mean()
+    da.coords['x'].unit = None
+    da.plot()

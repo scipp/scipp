@@ -4,7 +4,7 @@
 from typing import Union, Dict, Literal
 from .model import input_node
 from .figure import Figure
-from ... import Variable, DataArray, Dataset, arange
+from ... import Variable, DataArray, Dataset, arange, to_unit
 from ...typing import VariableLike
 import numpy as np
 import inspect
@@ -24,13 +24,21 @@ def _to_data_array(obj):
     return out
 
 
+def _convert_if_not_none(x, unit):
+    if x is not None:
+        return to_unit(x, unit=unit)
+    return x
+
+
 def _preprocess(obj, crop):
     out = _to_data_array(obj)
     crop = {} if crop is None else crop
     for dim, sl in crop.items():
-        start = out[dim, :sl.get('min')].sizes[dim]
-        width = out[dim, sl.get('min'):sl.get('max')].sizes[dim]
-        out = out[dim, start:start + width + 1]
+        smin = _convert_if_not_none(sl.get('min'), unit=out.meta[dim].unit)
+        smax = _convert_if_not_none(sl.get('max'), unit=out.meta[dim].unit)
+        start = max(out[dim, :smin].sizes[dim] - 1, 0)
+        width = out[dim, smin:smax].sizes[dim]
+        out = out[dim, start:start + width + 2]
     return out
 
 
