@@ -108,8 +108,7 @@ def plot(obj: Union[VariableLike, Dict[str, VariableLike]],
         **kwargs
     }
     if isinstance(obj, (dict, Dataset)):
-        to_plot = {key: _preprocess(item, crop=crop) for key, item in obj.items()}
-        nodes = [input_node(v) for v in to_plot.values()]
+        nodes = [input_node(_preprocess(item, crop=crop)) for item in obj.values()]
         return Figure(*nodes, **all_args)
     else:
         return Figure(input_node(_preprocess(obj, crop=crop)), **all_args)
