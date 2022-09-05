@@ -10,12 +10,13 @@ import numpy as np
 
 
 def _to_data_array(obj):
-    out = obj.copy(deep=False)
+    out = obj
     if isinstance(out, np.ndarray):
         dims = [f"axis-{i}" for i in range(len(out.shape))]
         out = Variable(dims=dims, values=out)
     if isinstance(out, Variable):
         out = DataArray(data=out)
+    out = out.copy(deep=False)
     for dim, size in out.sizes.items():
         if dim not in out.meta:
             out.coords[dim] = arange(dim, size)
@@ -93,6 +94,7 @@ def plot(obj: Union[VariableLike, Dict[str, VariableLike]],
         **{
             'aspect': aspect,
             'cbar': cbar,
+            'crop': crop,
             'errorbars': errorbars,
             'grid': grid,
             'mask_color': mask_color,

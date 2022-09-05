@@ -22,7 +22,9 @@ def test_plot_data_array():
 
 
 def test_plot_data_array_missing_coords():
-    sc.data.table_xyz(100).plot().to_widget()
+    da = sc.data.table_xyz(100)
+    da.plot().to_widget()
+    assert 'row' not in da.coords
 
 
 def test_plot_dataset():
