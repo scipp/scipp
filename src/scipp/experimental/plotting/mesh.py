@@ -3,7 +3,7 @@
 
 from ... import broadcast, DataArray
 from .limits import find_limits, fix_empty_range
-from .tools import get_cmap
+from .tools import get_cmap, to_bin_edges
 from ...utils import name_with_unit
 
 from functools import reduce
@@ -62,8 +62,14 @@ class Mesh:
         self._make_mesh(**kwargs)
 
     def _make_mesh(self, shading='auto', **kwargs):
-        self._mesh = self._ax.pcolormesh(self._data.meta[self._dims['x']].values,
-                                         self._data.meta[self._dims['y']].values,
+        x = self._data.meta[self._dims['x']]
+        if not self._data.meta.is_edges(self._dims['x']):
+            x = to_bin_edges(x, dim=self._dims['x'])
+        y = self._data.meta[self._dims['y']]
+        if not self._data.meta.is_edges(self._dims['y']):
+            y = to_bin_edges(y, dim=self._dims['y'])
+        self._mesh = self._ax.pcolormesh(x.values,
+                                         y.values,
                                          self._data.data.values,
                                          cmap=self._cmap,
                                          shading=shading,

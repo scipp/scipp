@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from ... import config
+from ... import config, scalar, concat, midpoints
 
 from copy import copy
 from matplotlib.colors import LinearSegmentedColormap
@@ -37,3 +37,20 @@ def fig_to_pngbytes(fig: Any):
     plt.close(fig)
     buf.seek(0)
     return buf.getvalue()
+
+
+def to_bin_edges(x, dim):
+    """
+    Convert array centers to edges
+    """
+    idim = x.dims.index(dim)
+    if x.shape[idim] < 2:
+        one = scalar(1.0, unit=x.unit)
+        return concat([x[dim, 0:1] - one, x[dim, 0:1] + one], dim)
+    else:
+        center = midpoints(x, dim=dim)
+        # Note: use range of 0:1 to keep dimension dim in the slice to avoid
+        # switching round dimension order in concatenate step.
+        left = center[dim, 0:1] - (x[dim, 1] - x[dim, 0])
+        right = center[dim, -1] + (x[dim, -1] - x[dim, -2])
+        return concat([left, center, right], dim)
