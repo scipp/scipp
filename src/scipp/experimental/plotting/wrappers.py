@@ -10,7 +10,7 @@ import numpy as np
 
 
 def _to_data_array(obj):
-    out = obj
+    out = obj.copy(deep=False)
     if isinstance(out, np.ndarray):
         dims = [f"axis-{i}" for i in range(len(out.shape))]
         out = Variable(dims=dims, values=out)
