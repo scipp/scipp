@@ -45,8 +45,8 @@ def to_bin_edges(x, dim):
     """
     idim = x.dims.index(dim)
     if x.shape[idim] < 2:
-        one = scalar(1.0, unit=x.unit)
-        return concat([x[dim, 0:1] - one, x[dim, 0:1] + one], dim)
+        half = scalar(0.5, unit=x.unit)
+        return concat([x[dim, 0:1] - half, x[dim, 0:1] + half], dim)
     else:
         center = midpoints(x, dim=dim)
         # Note: use range of 0:1 to keep dimension dim in the slice to avoid

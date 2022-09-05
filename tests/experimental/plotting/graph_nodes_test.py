@@ -20,14 +20,14 @@ def hide_masks(data_array, masks):
 def test_single_1d_line():
     da = make_dense_data_array(ndim=1)
     n = input_node(da)
-    fig = Figure(n)
+    _ = Figure(n)
 
 
 def test_two_1d_lines():
     ds = make_dense_dataset(ndim=1)
     a = input_node(ds['a'])
     b = input_node(ds['b'])
-    fig = Figure(a, b)
+    _ = Figure(a, b)
 
 
 def test_difference_of_two_1d_lines():
@@ -40,13 +40,13 @@ def test_difference_of_two_1d_lines():
         return x - y
 
     c = diff(a, b)
-    fig = Figure(a, b, c)
+    _ = Figure(a, b, c)
 
 
 def test_2d_image():
     da = make_dense_data_array(ndim=2)
     a = input_node(da)
-    fig = Figure(a)
+    _ = Figure(a)
 
 
 def test_2d_image_smoothing_slider():

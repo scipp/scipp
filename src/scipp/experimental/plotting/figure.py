@@ -186,6 +186,7 @@ class Figure(View):
 
     def home_view(self, *_):
         self._autoscale()
+        self.crop(**self._crop)
         self._draw_canvas()
 
     def pan_view(self, *_):
