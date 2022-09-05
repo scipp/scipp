@@ -21,7 +21,6 @@ def test_single_1d_line():
     da = make_dense_data_array(ndim=1)
     n = input_node(da)
     fig = Figure(n)
-    fig.render()
 
 
 def test_two_1d_lines():
@@ -29,7 +28,6 @@ def test_two_1d_lines():
     a = input_node(ds['a'])
     b = input_node(ds['b'])
     fig = Figure(a, b)
-    fig.render()
 
 
 def test_difference_of_two_1d_lines():
@@ -43,14 +41,12 @@ def test_difference_of_two_1d_lines():
 
     c = diff(a, b)
     fig = Figure(a, b, c)
-    fig.render()
 
 
 def test_2d_image():
     da = make_dense_data_array(ndim=2)
     a = input_node(da)
     fig = Figure(a)
-    fig.render()
 
 
 def test_2d_image_smoothing_slider():
@@ -65,7 +61,6 @@ def test_2d_image_smoothing_slider():
 
     fig = Figure(smooth_node)
     Plot([fig, sl])
-    fig.render()
     sl.value = 5
 
 
@@ -82,7 +77,6 @@ def test_2d_image_with_masks():
     masks_node = hide_masks(a, w)
     fig = Figure(masks_node)
     Plot([fig, widget])
-    fig.render()
     widget.toggle_all_button.value = False
 
 
@@ -102,7 +96,6 @@ def test_two_1d_lines_with_masks():
     node_masks_b = hide_masks(b, w)
     fig = Figure(node_masks_a, node_masks_b)
     Plot([fig, widget])
-    fig.render()
     widget.toggle_all_button.value = False
 
 
@@ -115,8 +108,6 @@ def test_node_sum_data_along_y():
     fig1 = Figure(a)
     fig2 = Figure(s)
     Plot([[fig1, fig2]])
-    fig1.render()
-    fig2.render()
 
 
 def test_slice_3d_cube():
@@ -130,7 +121,6 @@ def test_slice_3d_cube():
 
     fig = Figure(slice_node)
     Plot([fig, sl])
-    fig.render()
     sl.controls["zz"]["slider"].value = 10
 
 
@@ -150,7 +140,4 @@ def test_3d_image_slicer_with_connected_side_histograms():
     fx = Figure(histx)
     fy = Figure(histy)
     Plot([[fx, fy], fig, sl])
-    fig.render()
-    fx.render()
-    fy.render()
     sl.controls["zz"]["slider"].value = 10
