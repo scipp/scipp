@@ -86,13 +86,7 @@ class Mesh:
             # jupyterlab, see https://github.com/matplotlib/ipympl/pull/446
             self._cbar.ax.set_picker(5)
             self._ax.figure.canvas.mpl_connect('pick_event', self.toggle_norm)
-
-            if self._cax is None:
-                self._cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
-            # When we transpose, remove the mesh and make a new one with _make_mesh().
-            # To ensure this does not add a new colorbar every time we hit transpose,
-            # we save and re-use the colorbar axis.
-            self._cax = self._cbar.ax
+            self._cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
         self._mesh.set_array(None)
         self._set_norm()
         self._set_mesh_colors()

@@ -27,7 +27,7 @@ class Figure(View):
                  *nodes,
                  ax: Any = None,
                  figsize: Tuple[float, ...] = None,
-                 title: str = "",
+                 title: str = None,
                  grid: bool = False,
                  vmin=None,
                  vmax=None,
@@ -50,6 +50,7 @@ class Figure(View):
         self._scale = {} if scale is None else scale
         self._crop = {} if crop is None else crop
         self._cbar = cbar
+        self._title = title
         self._errorbars = errorbars
         self._mask_color = mask_color
         self._kwargs = kwargs
@@ -68,7 +69,6 @@ class Figure(View):
         else:
             self._fig = self._ax.get_figure()
 
-        self._ax.set_title(title)
         self._ax.set_aspect(aspect)
         self._ax.grid(grid)
 
@@ -215,7 +215,7 @@ class Figure(View):
         new_values = self._graph_nodes[node_id].request_data()
         self._update(new_values=new_values, key=node_id)
 
-    def _update(self, new_values: DataArray, key: str):
+    def _update(self, new_values: DataArray, key: str, draw: bool = True):
         """
         Update image array with new values.
         """
@@ -276,6 +276,8 @@ class Figure(View):
                         self._dims['y']['dim']] == 'log'
                 self._ax.set_ylabel(
                     name_with_unit(var=new_values.meta[self._dims['y']['dim']]))
+                if self._title is None:
+                    self._ax.set_title(new_values.name)
 
             self._ax.set_xlabel(
                 name_with_unit(var=new_values.meta[self._dims['x']['dim']]))
@@ -286,7 +288,8 @@ class Figure(View):
         else:
             self._children[key].update(new_values=new_values)
 
-        self.draw()
+        if draw:
+            self.draw()
 
     def crop(self, **kwargs):
         for dim, lims in kwargs.items():
@@ -301,7 +304,7 @@ class Figure(View):
     def render(self):
         for node in self._graph_nodes.values():
             new_values = node.request_data()
-            self._update(new_values=new_values, key=node.id)
+            self._update(new_values=new_values, key=node.id, draw=False)
         self._autoscale()
         self.crop(**self._crop)
         self.draw()

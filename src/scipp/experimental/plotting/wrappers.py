@@ -33,7 +33,7 @@ def plot(obj: Union[VariableLike, Dict[str, VariableLike]],
          mask_color: str = 'black',
          norm: Literal['linear', 'log'] = 'linear',
          scale: Dict[str, str] = None,
-         title: str = "",
+         title: str = None,
          vmin: Variable = None,
          vmax: Variable = None,
          **kwargs) -> Figure:
