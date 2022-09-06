@@ -4,14 +4,12 @@
 import matplotlib
 import matplotlib.pyplot as plt
 import pytest
-import scipp as sc
 
 
 @pytest.fixture(autouse=True)
-def select_plotting_backend():
+def reset_mpl_defaults():
     matplotlib.rcdefaults()
     matplotlib.use('Agg')
-    sc.plotting.select_backend('stable')
 
 
 @pytest.fixture(autouse=True)
