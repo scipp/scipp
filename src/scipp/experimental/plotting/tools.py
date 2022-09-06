@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from ... import config
+from ... import config, scalar, concat, midpoints
 
 from copy import copy
 from matplotlib.colors import LinearSegmentedColormap
@@ -9,15 +9,6 @@ from matplotlib import cm
 import matplotlib.pyplot as plt
 from typing import Any
 from io import BytesIO
-
-
-def get_line_param(name: str, index: int) -> Any:
-    """
-    Get the default line parameter from the config.
-    If an index is supplied, return the i-th item in the list.
-    """
-    param = config['plot'][name]
-    return param[index % len(param)]
 
 
 def get_cmap(name: str):
@@ -46,3 +37,27 @@ def fig_to_pngbytes(fig: Any):
     plt.close(fig)
     buf.seek(0)
     return buf.getvalue()
+
+
+def to_bin_edges(x, dim):
+    """
+    Convert array centers to edges
+    """
+    idim = x.dims.index(dim)
+    if x.shape[idim] < 2:
+        half = scalar(0.5, unit=x.unit)
+        return concat([x[dim, 0:1] - half, x[dim, 0:1] + half], dim)
+    else:
+        center = midpoints(x, dim=dim)
+        # Note: use range of 0:1 to keep dimension dim in the slice to avoid
+        # switching round dimension order in concatenate step.
+        left = center[dim, 0:1] - (x[dim, 1] - x[dim, 0])
+        right = center[dim, -1] + (x[dim, -1] - x[dim, -2])
+        return concat([left, center, right], dim)
+
+
+def number_to_variable(x):
+    """
+    Convert the input int or float to a variable.
+    """
+    return scalar(x, unit=None) if isinstance(x, (int, float)) else x

@@ -12,11 +12,11 @@ class Displayable:
             """
             Mimebundle display representation for jupyter notebooks.
             """
-            return self._to_widget()._repr_mimebundle_(include=include, exclude=exclude)
+            return self.to_widget()._repr_mimebundle_(include=include, exclude=exclude)
     else:
 
         def _ipython_display_(self):
             """
             IPython display representation for Jupyter notebooks.
             """
-            return self._to_widget()._ipython_display_()
+            return self.to_widget()._ipython_display_()

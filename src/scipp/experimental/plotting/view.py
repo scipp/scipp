@@ -20,5 +20,5 @@ class View(ABC, Displayable):
         return
 
     @abstractmethod
-    def _to_widget(self):
+    def to_widget(self):
         return

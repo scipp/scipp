@@ -1,15 +1,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from ... import config
 from ... import broadcast, DataArray
 from .limits import find_limits, fix_empty_range
-from .tools import get_cmap
+from .tools import get_cmap, to_bin_edges
 from ...utils import name_with_unit
 
 from functools import reduce
 from matplotlib.colors import Normalize, LogNorm
-import matplotlib.pyplot as plt
+from matplotlib.pyplot import colorbar
 import numpy as np
 from typing import Any
 
@@ -23,16 +22,18 @@ class Mesh:
                  ax,
                  data,
                  cax: Any = None,
-                 aspect: str = None,
                  cmap: str = None,
                  masks_cmap: str = "gray",
                  norm: str = "linear",
                  vmin=None,
                  vmax=None,
-                 cbar=True):
+                 cbar=True,
+                 crop=None,
+                 **kwargs):
 
         self._ax = ax
         self._data = data
+        self._crop = crop if crop is not None else {}
         self._dims = {'x': self._data.dims[1], 'y': self._data.dims[0]}
 
         self._xlabel = None
@@ -51,7 +52,6 @@ class Mesh:
 
         self._mesh = None
         self._cbar = cbar
-        self._aspect = aspect if aspect is not None else config['plot']['aspect']
 
         self._extend = "neither"
         if (vmin is not None) and (vmax is not None):
@@ -61,34 +61,34 @@ class Mesh:
         elif vmax is not None:
             self._extend = "max"
 
-        self._make_mesh()
+        self._make_mesh(**kwargs)
 
-    def _make_mesh(self):
-        self._mesh = self._ax.pcolormesh(self._data.meta[self._dims['x']].values,
-                                         self._data.meta[self._dims['y']].values,
+    def _make_mesh(self, shading='auto', **kwargs):
+        x = self._data.meta[self._dims['x']]
+        if not self._data.meta.is_edges(self._dims['x']):
+            x = to_bin_edges(x, dim=self._dims['x'])
+        y = self._data.meta[self._dims['y']]
+        if not self._data.meta.is_edges(self._dims['y']):
+            y = to_bin_edges(y, dim=self._dims['y'])
+        self._mesh = self._ax.pcolormesh(x.values,
+                                         y.values,
                                          self._data.data.values,
                                          cmap=self._cmap,
-                                         shading='auto')
+                                         shading=shading,
+                                         **kwargs)
         if self._cbar:
-            self._cbar = plt.colorbar(self._mesh,
-                                      ax=self._ax,
-                                      cax=self._cax,
-                                      extend=self._extend,
-                                      label=name_with_unit(var=self._data.data,
-                                                           name=""))
+            self._cbar = colorbar(self._mesh,
+                                  ax=self._ax,
+                                  cax=self._cax,
+                                  extend=self._extend,
+                                  label=name_with_unit(var=self._data.data, name=""))
 
             # Add event that toggles the norm of the colorbar when clicked on
             # TODO: change this to a double-click event once this is supported in
             # jupyterlab, see https://github.com/matplotlib/ipympl/pull/446
             self._cbar.ax.set_picker(5)
             self._ax.figure.canvas.mpl_connect('pick_event', self.toggle_norm)
-
-            if self._cax is None:
-                self._cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
-            # When we transpose, remove the mesh and make a new one with _make_mesh().
-            # To ensure this does not add a new colorbar every time we hit transpose,
-            # we save and re-use the colorbar axis.
-            self._cax = self._cbar.ax
+            self._cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
         self._mesh.set_array(None)
         self._set_norm()
         self._set_mesh_colors()
@@ -129,13 +129,13 @@ class Mesh:
         """
         Update image array with new values.
         """
-        self._data = new_values.transpose([self._dims['y'], self._dims['x']])
+        self._data = new_values
         self._rescale_colormap()
         self._set_clim()
         self._set_mesh_colors()
 
     def _set_norm(self):
-        func = LogNorm if self._norm_flag == "log" else Normalize
+        func = dict(linear=Normalize, log=LogNorm)[self._norm_flag]
         self._norm_func = func()
         self._rescale_colormap()
         self._mesh.set_norm(self._norm_func)
@@ -150,12 +150,6 @@ class Mesh:
         self._set_norm()
         self._set_mesh_colors()
         self._ax.figure.canvas.draw_idle()
-
-    def transpose(self):
-        self._dims['x'], self._dims['y'] = self._dims['y'], self._dims['x']
-        self._data = self._data.transpose([self._dims['y'], self._dims['x']])
-        self._mesh.remove()
-        self._make_mesh()
 
     def get_limits(self, xscale, yscale):
         xmin, xmax = fix_empty_range(
