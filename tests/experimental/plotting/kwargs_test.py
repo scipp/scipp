@@ -94,6 +94,17 @@ def test_kwarg_crop_1d_min_conversion():
     assert p._ax.get_xlim()[0] == 2
 
 
+def test_kwarg_crop_1d_with_no_unit():
+    da = make_dense_data_array(ndim=1)
+    del da.coords['xx']
+    p = da.plot(crop={'xx': {'min': scalar(20, unit=None)}})
+    assert p._ax.get_xlim()[0] == 20
+    p = da.plot(crop={'xx': {'min': 20}})
+    assert p._ax.get_xlim()[0] == 20
+    p = da.plot(crop={'xx': {'min': 20.5}})
+    assert p._ax.get_xlim()[0] == 20.5
+
+
 def test_kwarg_crop_2d():
     da = make_dense_data_array(ndim=2)
     p = da.plot(

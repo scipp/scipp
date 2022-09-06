@@ -4,6 +4,7 @@
 from typing import Union, Dict, Literal
 from .model import input_node
 from .figure import Figure
+from .tools import number_to_variable
 from ... import Variable, DataArray, Dataset, arange, to_unit
 from ...typing import VariableLike
 import numpy as np
@@ -26,7 +27,7 @@ def _to_data_array(obj):
 
 def _convert_if_not_none(x, unit):
     if x is not None:
-        return to_unit(x, unit=unit)
+        return to_unit(number_to_variable(x), unit=unit)
     return x
 
 
@@ -34,6 +35,11 @@ def _preprocess(obj, crop):
     out = _to_data_array(obj)
     crop = {} if crop is None else crop
     for dim, sl in crop.items():
+        # If we plainly slice using label values, we can miss the first and last points
+        # that lie just outside the selected range, but whose pixels are still visible
+        # on the figure (this mostly arises in the case of a 2d image with no bin-edge
+        # coord). Therefore, we convert the value-based range to slicing indices, and
+        # then extend the lower and upper bounds by 1.
         smin = _convert_if_not_none(sl.get('min'), unit=out.meta[dim].unit)
         smax = _convert_if_not_none(sl.get('max'), unit=out.meta[dim].unit)
         start = max(out[dim, :smin].sizes[dim] - 1, 0)
