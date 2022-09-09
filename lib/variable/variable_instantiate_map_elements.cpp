@@ -22,14 +22,14 @@ INSTANTIATE_ELEMENT_ARRAY_VARIABLE(unordered_map_float_to_int64_t,
 INSTANTIATE_ELEMENT_ARRAY_VARIABLE(unordered_map_float_to_int32_t,
                                    std::unordered_map<float, int32_t>)
 
-INSTANTIATE_ELEMENT_ARRAY_VARIABLE(unordered_map_float64_to_int64_t,
+INSTANTIATE_ELEMENT_ARRAY_VARIABLE(unordered_map_int64_to_int64_t,
                                    std::unordered_map<int64_t, int64_t>)
-INSTANTIATE_ELEMENT_ARRAY_VARIABLE(unordered_map_float64_to_int32_t,
+INSTANTIATE_ELEMENT_ARRAY_VARIABLE(unordered_map_int64_to_int32_t,
                                    std::unordered_map<int64_t, int32_t>)
 
-INSTANTIATE_ELEMENT_ARRAY_VARIABLE(unordered_map_float32_to_int64_t,
+INSTANTIATE_ELEMENT_ARRAY_VARIABLE(unordered_map_int32_to_int64_t,
                                    std::unordered_map<int32_t, int64_t>)
-INSTANTIATE_ELEMENT_ARRAY_VARIABLE(unordered_map_float32_to_int32_t,
+INSTANTIATE_ELEMENT_ARRAY_VARIABLE(unordered_map_int32_to_int32_t,
                                    std::unordered_map<int32_t, int32_t>)
 
 INSTANTIATE_ELEMENT_ARRAY_VARIABLE(unordered_map_bool_to_int64_t,
