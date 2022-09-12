@@ -125,7 +125,7 @@ A lot of this has been (and still is) happening since 2018/2019, i.e., some of t
   It is currently undergoing a rewrite, moving a lot of code to Python for a 2.0 release.
   It supports data structures similar to Scipp's *binned data* (possible limitations: not in-place, not multi-threaded except for the experimental [dask-awkward](https://github.com/ContinuumIO/dask-awkward)).
   There is an ongoing discussion for an [Awkward array backend](https://github.com/pydata/xarray/issues/4285) in Xarray, again based on what is possible thanks to `__array_function__` and the work going into duck array wrapping.
-- Xarray is pursuing [flexible indexes](https://docs.xarray.dev/en/stable/roadmap.html#flexible-indexes) (see also the [Explicit Indexes project board](https://github.com/pydata/xarray/projects/1).
+- Xarray is pursuing [flexible indexes](https://docs.xarray.dev/en/stable/roadmap.html#flexible-indexes) (see also the [Explicit Indexes project board](https://github.com/pydata/xarray/projects/1)).
   This may serve (among other purposes) Scipp's distinction between `coords` (aligned coordinates) and `attrs` (unaligned coordinates, not to be confused with Xarray `attrs`).
   Better support for custom indexes may also be relevant for features such as bin edges.
   See also the item on Pandas `IntervalIndex` in the next section.
@@ -136,7 +136,7 @@ Aside from the developments in the outside world, which would support some of ou
 
 - We do not foresee Scipp being used as a C++ library.
   Even if some internals are implemented in C++, other projects and communities have proven that interfaces between libraries and application via Python are feasible.
-- Our team's expertise has evolved, gaining more Python experience at background knowledge across the board.
+- Our team's expertise has evolved, gaining more Python experience and background knowledge across the board.
   We have the opportunity to strengthen this further with the upcoming recruitments.
 - Possibly less emphasis on the prevailing (in the neutron scattering data reduction world) method of propagation of uncertainties.
   New approaches may need to be explored, and more rigid C++ libraries and data structures may make this more challenging.
