@@ -42,6 +42,10 @@ Some aspects have evolved significantly.
 For example, the support for ragged data is simpler and more natural than the initial design in 2019.
 The physical unit system is based on an external C++ library, `LLNL/units`.
 
+On the C++ side, almost all high-level code for `DataArray` and `Dataset` is implemented with the type-agnostic `Variable`.
+Lower level operations are mostly generated from a simple kernel, with a call to a generic `transform` function template.
+That is, a lot of the C++ code could be expressed in a very similar manner using Scipp's Python interface.
+
 Interoperability with the Python world is ensured by exposing arrays using the buffer protocol.
 That is, Python libraries (including NumPy) that expect NumPy arrays can operate on these buffers.
 
@@ -57,6 +61,8 @@ It should be highlighted that all this is pure Python:
 - ESS-specific workflows (`scipp/ess`).
 
 ## Downsides
+
+### General
 
 - Non-neutron facilities such as synchrotron facilities or free-electron laser facilities produce considerably more data than neutron-scattering facilities.
   While we always received positive comments, the lack of Dask support seems to be one of the major obstacles for potential adoption.
@@ -79,6 +85,20 @@ As such, while an improvement over many aspects of Mantid, at a long time scale 
 - Users and developers require specific training (albeit less than for Mantid).
 - Risk of reaching a tipping point, at which a "big rewrite" is undertaken.
 
+### Unresolved problems and other subtleties
+
+There are a few unresolved issues in Scipp that are worth considering.
+Some of these are quite specific and this subsection can safely be skipped.
+
+- [#2813](https://github.com/scipp/scipp/issues/2813) can prevent garbage collection in rare cases.
+  While likely not common in practice, this hints at potential much wider issues if we chose to change `scipp.Variable` to support owning NumPy buffers.
+- [#2675](https://github.com/scipp/scipp/issues/2675) is the latest instance of periodically resurfacing considerations and discussions about "attributes" in Scipp.
+  Scipp's attributes are essentially "unaligned coordinate", cause some subtleties in `scipp.Dataset`, and adding Xarray- or NeXus-style `attr` dictionaries causes a name clash.
+- Hard-coded set of dtype combinations for all operation can causes surprises annoyance in practice.
+- Our mask handling is actually slow in some cases since masks or applied by making a copy before, e.g., a `sum` or `mean` operation.
+  Despite multi-threading we are thus barely faster single-threaded than `numpy.ma`.
+  This is easy to resolve, but may serve as an example of extra work due to bespoke solutions.
+
 ## Outside world
 
 A brief review of the "outside world" reveals that the high-level Scipp requirements or being pursued by other projects as well.
@@ -98,10 +118,26 @@ A lot of this has been (and still is) happening since 2018/2019, i.e., some of t
     This goes beyond anything we have planned for Scipp, but tree like structures are encountered repeatedly, i.e., in neutron data reduction workflows, but have so far always been address by crude flattening of the structures, or be used of nested Python dicts.
 - [Awkward array](https://github.com/scikit-hep/awkward) is a library for nested, variable-sized data.
   It was first released in 2018, reaching version 1.0 in December 2020.
-  It is currently undergoing a rewrite, moving a lot of code to Python.
+  It is currently undergoing a rewrite, moving a lot of code to Python for a 2.0 release.
   It supports data structures similar to Scipp's *binned data* (possible limitations: not in-place, not multi-threaded except for the experimental [dask-awkward](https://github.com/ContinuumIO/dask-awkward)).
   The is an ongoing discussion for an [Awkward array backend](https://github.com/pydata/xarray/issues/4285) in Xarray, again based on what is possible thanks to `__array_function__` and the work going into duck array wrapping.
-- TODO Xarray flexible indices development
+- Xarray is pursuing [flexible indexes](https://docs.xarray.dev/en/stable/roadmap.html#flexible-indexes) (see also the [Explicit Indexes project board](https://github.com/pydata/xarray/projects/1).
+  This may serve (among other purposes) Scipp's distinction between `coords` (aligned coordinates) and `attrs` (unaligned coordinates, not to be confused with Xarray `attrs`).
+  Better support for custom indexes may also be relevant for features such as bin edges.
+  See also the item on Pandas `IntervalIndex` in the next section.
+
+## Requirements revisited
+
+Aside from the developments in the outside world, which would support some of our high-level requirements, some of the high-level requirements from 2018/2019 have evolved:
+
+- We do not foresee Scipp being used as a C++ library.
+  Even if some internals are implemented in C++, other projects and communities have proven that interfaces between libraries and application via Python are feasible.
+- Our team's expertise has evolved, gaining more Python experience at background knowledge across the board.
+  We have the opportunity to strengthen this further with the upcoming recruitments.
+- Possibly less emphasis on the prevailing (in the neutron scattering data reduction world) method of propagation of uncertainties.
+  New approaches may need to be explored, and more rigid C++ libraries and data structures may make this more challenging.
+- Develop something with wider support and adoption, within the neutron scattering community but also beyond.
+  While this may sound odd as a requirement, it should be seen in the context of "requiring" a software solution that is maintainable on long time scales (more than 10 years) and comes with the ability to change things.
 
 ## Hypothetical future of Scipp
 
@@ -119,7 +155,7 @@ We would need the following:
   The Python `uncertainties` packages provides this, but it is likely not useable since it tracks correlations and is not computationally feasible for our purposed.
   We would thus need to provide a simpler duck-array package.
   There are two relevant notes here:
-  - Early on in the Scipp development we argued that uncertainty propagation based on NumPy array math may be 10x slower (for inplace `multiply` or `divide` operations) and we therefore need to implement this in C++.
+  - Early on in the Scipp development we argued that uncertainty propagation based on NumPy array math may be 10x slower (for in-place `multiply` or `divide` operations) and we therefore need to implement this in C++.
     This may still be partially true, but this is a statement about the implementation of the *operation*, not the *data structure*.
     That is, we could still provide a Python-only duck array for this.
   - Multiplication and division operations with uncertainties and broadcast that commonly arose in neutron-scattering data reduction will be remove due to the unhandled introduction of correlations.
@@ -134,8 +170,10 @@ We would need the following:
   This seems to be a simple case where we could provide a "multi mask" duck array handling the mask dict, forwarding, e.g., to `numpy.ma` for operations.
 - Scipp's binned data could be represented as a duck array wrapping `awkward.array`.
   As more parties are interested in Xarray support there may be common interest in a joint development (inside or on top of `awkward`).
+  Binned data is frequently used with a content buffer given by a `DataArray` or `Dataset`.
+  Awkward supports custom records and provides a mechanism for customizing behavior of operations, but it is not clear if this is sufficient, i.e., it is not clear if an Awkward-based solution is actually feasible.
 
-All of the above are essentially independent of each other.
+All of the above are essentially independent of each other, with exception of the binned-data support.
 That is, each of the items above may be supported as a standalone Python package.
 Most of these may be carried by a large community, i.e., this part of Scipp's scope is no longer tied to Scipp itself.
 The duck arrays could internally use `numpy`, but would equally well work with `dask.array`.
@@ -153,35 +191,4 @@ Aside from this "stack" of duck arrays, the remaining Scipp scope comprises:
   One option could be the existing Scipp framework for operations on `scipp.Variable`, adopted to work on any NumPy-like buffer.
   This could be another duck-array, wrapping an underlying array implementation but providing multi-threaded operations (if implemented, otherwise fallback to calling underlying array operation).
   Using Dask may be a better solution with much more community support.
-  As binning heavily relies on multi-threading for performance we would need to investigate whether that can leverage dask.
-
-
-
-
-# Unsorted notes (ignore)
-
-
-- DataArray/Dataset code code be written in Python... (almost) everything expressed via `transform` already
-
-- wrapping numpy array to avoid copies (not serious issue NOW)... but may not work due to reference loops?
-
-- uncertainty propagation less relevant... will disably typical costly cases anyway, and even if not, we can still keep `transform`?
-- masks: more difficult to handle in ops... but could use numpy.ma? ... actually scipp is quite slow here since it currently makes a copy to apply the mask in reduction ops, this faster than numpy.ma thanks to multi threading, but much less speedup than without mask
-  could use dask.array?
-- awkard array for binned data, overlay with ucstom API? what about threading and in-place ops?
-- interfacing C++:
-  - Mantid no longer relevant, or can use Python
-  - special inelastic data structures... can't be more complicated than what Awkward does?
-
-- more code written in Python already now. Continue that (transform_coords, ...)
-
-- Even if we switched to xarray, dask, awkward it is not implied that we have less work.
-  Making an integration of these technologies is challenging and required continuous work.
-  Would benefit from upstream improvements however.
-
-- May be easier to hire Python devs?
-
-- open issues related to attrs
-
-- understand if xarray coords with/without index can support our needs with coords/attrs
-- think more about pandas
+  As binning heavily relies on multi-threading for performance we would need to investigate whether that can leverage Dask.
