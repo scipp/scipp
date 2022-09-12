@@ -8,7 +8,7 @@ The purpose of this document is an updated look at the decision to implement Sci
 
 ### Origins
 
-Scipp was born out of a design proposal and prototype for a possible replacement of Mantid's workspaces, a hierarchy a classes for storing all kinds of data.
+Scipp was born out of a design proposal and prototype for a possible replacement of Mantid's workspaces, a hierarchy of classes for storing all kinds of data.
 The design started in January 2018, resulting in the "Workspace 2.0" proposal towards the end of 2018.
 With hesitant feedback from neutron-scattering facilities other than ESS, 2019 marked a shift in focus to develop the prototype into the stand-alone Scipp library.
 At the time, the goal was to use this in combination *with* Mantid but not *in* Mantid.
@@ -19,11 +19,11 @@ This was in the context of a projected ESS hot-commissioning date some time in 2
 The high-level requirements in 2019 could be summarized as follows:
 
 1. C++ core with Python bindings.
-  This originates from a combination of aspects:
-  - We considered it likely that we would eventually interface with Mantid on the C++ side to ensure maximum performance.
-  - We knew that multi-threading is crucial.
-  - Most (maybe 80% to 90%) of our team's expertise was in C++.
-    While there was basic Python knowledge throughout the team, we lacked experience in developing Python libraries and, most importantly, background knowledge in the Python ecosystem.
+   This originates from a combination of aspects:
+   - We considered it likely that we would eventually interface with Mantid (or other applications) on the C++ side to ensure maximum performance.
+   - We knew that multi-threading is crucial.
+   - Most (maybe 80% to 90%) of our team's expertise was in C++.
+     While there was basic Python knowledge throughout the team, we lacked experience in developing Python libraries and, most importantly, background knowledge in the Python ecosystem.
 2. Support for labeled dimensions.
 3. Support for physical units.
 4. Support for propagation of uncertainties.
@@ -39,15 +39,15 @@ At the time we mostly envisioned use through Python scripts or specialized GUIs.
 Scipp implements all the requirements listed above.
 Essentially all operations are multi-threaded using TBB.
 Some aspects have evolved significantly.
-For example, the support for ragged data is simpler and more natural than the initial design in 2019.
-The physical unit system is based on an external C++ library, `LLNL/units`.
+For example, the support for ragged data (binned data) is simpler and more natural than the initial design in 2019.
+The physical unit system is based on an external C++ library, [LLNL/units](https://github.com/LLNL/units).
 
 On the C++ side, almost all high-level code for `DataArray` and `Dataset` is implemented with the type-agnostic `Variable`.
 Lower level operations are mostly generated from a simple kernel, with a call to a generic `transform` function template.
-That is, a lot of the C++ code could be expressed in a very similar manner using Scipp's Python interface.
+That is, a lot of Scipp's C++ code looks quite similar to what one would write based Scipp's Python API.
 
 Interoperability with the Python world is ensured by exposing arrays using the buffer protocol.
-That is, Python libraries (including NumPy) that expect NumPy arrays can operate on these buffers.
+That is, Python functions that expect NumPy arrays can operate on these buffers.
 
 A lot of additional functionality has been implemented as well.
 It should be highlighted that all this is pure Python:
@@ -64,6 +64,9 @@ It should be highlighted that all this is pure Python:
 
 ### General
 
+At the time of writing (2022) Scipp seems to work really well, performance appears to be adequate, and we receive positive feedback from multiple parties.
+Nevertheless, there are a number of problems and downsides, some of which we outline in the following.
+
 - Non-neutron facilities such as synchrotron facilities or free-electron laser facilities produce considerably more data than neutron-scattering facilities.
   While we always received positive comments, the lack of Dask support seems to be one of the major obstacles for potential adoption.
 - Lazy loading is a feature we get asked about repeatedly (even though it is unclear how relevant this is for neutron-scattering data itself).
@@ -77,7 +80,8 @@ It should be highlighted that all this is pure Python:
 - We are not using and leveraging developments in the scientific Python ecosystem.
 - We are not contributing to the scientific Python ecosystem, even though many of the things we work on are not neutron-scattering specific and are being pursued by other projects.
 
-In summary, Scipp may turn out to become a permanent in-house project (with hypothetical but possible adoption in a couple of neutron-scattering facilities in the future).
+In the bigger picture, the final to items above may be the most crucial ones.
+Scipp risks to turn out as a permanent in-house project (with hypothetical but possible adoption in a couple of neutron-scattering facilities in the future).
 As such, while an improvement over many aspects of Mantid, at a long time scale it might suffer a similar fate:
 
 - Tightly scoped support and adoption (both in-house) while the outside world moves on.
@@ -101,17 +105,17 @@ Some of these are quite specific and this subsection can safely be skipped.
 
 ## Outside world
 
-A brief review of the "outside world" reveals that the high-level Scipp requirements or being pursued by other projects as well.
+A brief review of the "outside world" reveals that the high-level Scipp requirements are being pursued by other projects as well.
 A lot of this has been (and still is) happening since 2018/2019, i.e., some of this is parallel development and was not available as such during the infancy of the Scipp project.
 
 - The [Python array API standard](https://data-apis.org/array-api/latest/) saw its first (non-draft) release in December 2021.
   This *standardize[s] functionality that exists in most/all array libraries and either is commonly used or is needed for consistency/completeness*.
   The goal is to address the fragmentation between libraries such as NumPy, Tensorflow, PyTorch, Dask, JAX, CuPy, MXNet, Xarray, and others.
 - NEP18 added `__array_function__` (in addition to the previous `__array_ufunc__`), experimental in numpy-1.16 (Jan 2019), default in numpy-1.17 (July 2019).
-- Based on `__array_function__`, Xarray could work on better [Pint](https://github.com/hgrecco/pint) support, resulting also in the experimental [pint-xarray](https://github.com/xarray-contrib/pint-xarray is experimental).
+- Based on `__array_function__`, Xarray could work on better [Pint](https://github.com/hgrecco/pint) support, resulting also in the experimental [pint-xarray](https://github.com/xarray-contrib/pint-xarray).
 - The above is part of the wider "duck array wrapping" effort, see the [ongoing Xarray project](https://github.com/pydata/xarray/projects/2) and the [Duck array compatibility meeintg](https://github.com/pydata/xarray#5648).
 - The [Xarray roadmap](https://docs.xarray.dev/en/stable/roadmap.html):
-  - [Extracting xarray.Variable into a standalone package](https://docs.xarray.dev/en/stable/roadmap.html#labeled-array-without-coordinates) is a relevant development.
+  - [Extracting xarray.Variable into a standalone package](https://docs.xarray.dev/en/stable/roadmap.html#labeled-array-without-coordinates) is a highly relevant development.
     It would allow for use of this component without the much larger Xarray (and Pandas) dependency.
     More details can be found in the related [proposal from September 2021](https://zenodo.org/record/5484176).
   - `xarray.DataTree` on the roadmap is relevant for us, e.g., for representing data from NeXus files.
@@ -120,7 +124,7 @@ A lot of this has been (and still is) happening since 2018/2019, i.e., some of t
   It was first released in 2018, reaching version 1.0 in December 2020.
   It is currently undergoing a rewrite, moving a lot of code to Python for a 2.0 release.
   It supports data structures similar to Scipp's *binned data* (possible limitations: not in-place, not multi-threaded except for the experimental [dask-awkward](https://github.com/ContinuumIO/dask-awkward)).
-  The is an ongoing discussion for an [Awkward array backend](https://github.com/pydata/xarray/issues/4285) in Xarray, again based on what is possible thanks to `__array_function__` and the work going into duck array wrapping.
+  There is an ongoing discussion for an [Awkward array backend](https://github.com/pydata/xarray/issues/4285) in Xarray, again based on what is possible thanks to `__array_function__` and the work going into duck array wrapping.
 - Xarray is pursuing [flexible indexes](https://docs.xarray.dev/en/stable/roadmap.html#flexible-indexes) (see also the [Explicit Indexes project board](https://github.com/pydata/xarray/projects/1).
   This may serve (among other purposes) Scipp's distinction between `coords` (aligned coordinates) and `attrs` (unaligned coordinates, not to be confused with Xarray `attrs`).
   Better support for custom indexes may also be relevant for features such as bin edges.
@@ -141,9 +145,9 @@ Aside from the developments in the outside world, which would support some of ou
 
 ## Hypothetical future of Scipp
 
-Given the developments outlines above, we may consider if and how it might be possible to replace Scipp or parts of it using other Python libraries, and determine which piece, if any, are still missing or lacking.
+Given the developments outlined above, we may consider if and how it might be possible to replace Scipp or parts of Scipp using other Python libraries, and determine which piece, if any, are still missing or lacking.
 
-The central feature we would need to rely on NumPy's duck array and `__array_ufunc__` and `__array_function__` protocols.
+The central feature we would need to rely on NumPy's duck array and the `__array_ufunc__` and `__array_function__` protocols.
 In the following we will refer to this simply as *duck array*.
 We would need the following:
 
@@ -152,16 +156,17 @@ We would need the following:
 - Duck array with physical units.
   `Pint` appears to provide this by now.
 - Duck array with uncertainties.
-  The Python `uncertainties` packages provides this, but it is likely not useable since it tracks correlations and is not computationally feasible for our purposed.
-  We would thus need to provide a simpler duck-array package.
+  The Python `uncertainties` packages provides this, but it is likely not useable since it tracks correlations and is not computationally feasible for our purposes.
+  We would thus need to provide a simpler duck-array error-propagation package.
+  Early on in the Scipp development we argued that uncertainty propagation based on NumPy array math may be 10x slower (for in-place `multiply` or `divide` operations) and we therefore need to implement this in C++.
   There are two relevant notes here:
-  - Early on in the Scipp development we argued that uncertainty propagation based on NumPy array math may be 10x slower (for in-place `multiply` or `divide` operations) and we therefore need to implement this in C++.
-    This may still be partially true, but this is a statement about the implementation of the *operation*, not the *data structure*.
+  - This may still be partially true, but this is a statement about the implementation of the *operation*, not the *data structure*.
     That is, we could still provide a Python-only duck array for this.
-  - Multiplication and division operations with uncertainties and broadcast that commonly arose in neutron-scattering data reduction will be remove due to the unhandled introduction of correlations.
+  - Multiplication and division operations with uncertainties and broadcast that commonly arose in neutron-scattering data reduction will be removed from Scipp due to the unhandled introduction of correlations.
+    The most performanc relevant aspect may thus vanish.
     See upcoming publication.
 - Bin-edge coordinates are not supported in Xarray.
-  However, Pandas' `IntervalIndex` and `Interval`, first introduced in pandas-0.20 (May 2017) and modified through 2019 partially cover our needs for bin-edges.
+  However, Pandas' `IntervalIndex` and `Interval`, first introduced in pandas-0.20 (May 2017) and modified through 2019, partially cover our needs for bin-edges.
   It does not support math operations, i.e., is not directly suitable for coordinate transformations.
   This requires more investigation.
   One possibility may be a bin-edge duck array, optionally wrapping `IndervalIndex`.
@@ -183,9 +188,9 @@ Aside from this "stack" of duck arrays, the remaining Scipp scope comprises:
 - Binning, grouping, histogramming, and resampling operations.
   These would need to be provided as a library that can operate on "arbitrary" duck arrays.
 - `scipp.DataArray` and `scipp.Dataset`.
-  One option would be to simple use Xarray.
+  One option would be to simply use Xarray.
   API differences could either be rolled out to our codebase, or wrappers would be provided.
-  A second option would be a Python-only implementation, built on the stack of duck arrays outlined above.
+  A second option would be a Python-only `scipp.DataArray` reimplementation, built on the stack of duck arrays outlined above.
 - Multi-threading is crucial for the single-node performance in neutron scattering data reduction workflows.
   NumPy does not multi-thread BLAS vector-vector operations so other solutions would need to be investigated.
   One option could be the existing Scipp framework for operations on `scipp.Variable`, adopted to work on any NumPy-like buffer.
