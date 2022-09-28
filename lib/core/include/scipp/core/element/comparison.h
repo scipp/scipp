@@ -100,10 +100,16 @@ constexpr auto greater_equal =
 
 constexpr auto equal = overloaded{
     equality,
-    [](const auto &x, const auto &y) { return x == y; },
+    [](const auto &x, const auto &y) {
+      using numeric::operator==;
+      return x == y;
+    },
 };
 constexpr auto not_equal =
-    overloaded{equality, [](const auto &x, const auto &y) { return x != y; }};
+    overloaded{equality, [](const auto &x, const auto &y) {
+                 using numeric::operator!=;
+                 return x != y;
+               }};
 
 constexpr auto max_equals =
     overloaded{arg_list<double, float, int64_t, int32_t, bool, time_point>,

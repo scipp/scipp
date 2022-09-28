@@ -31,6 +31,8 @@ public:
            m_quat.y() == other.m_quat.y() && m_quat.z() == other.m_quat.z();
   }
 
+  bool operator!=(const Quaternion &other) const { return !operator==(other); }
+
   double &operator()(const int i) {
     if (i == 0) {
       return m_quat.x();
@@ -59,6 +61,10 @@ public:
 
   bool operator==(const Translation &other) const {
     return m_vec == other.m_vec;
+  }
+
+  bool operator!=(const Translation &other) const {
+    return m_vec != other.m_vec;
   }
 
   double &operator()(const int i) { return m_vec(i); }

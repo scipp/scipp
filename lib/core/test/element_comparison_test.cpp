@@ -228,3 +228,21 @@ TEST(ComparisonTest, min_equals) {
   check_inplace(min_equals, core::time_point(23), core::time_point(13),
                 core::time_point(13));
 }
+
+TEST(ElementSpatialEqualTest, quaternion) {
+  core::Quaternion x;
+  EXPECT_TRUE(equal(x, x));
+  EXPECT_FALSE(not_equal(x, x));
+}
+
+TEST(ElementSpatialEqualTest, translation) {
+  core::Translation x;
+  EXPECT_TRUE(equal(x, x));
+  EXPECT_FALSE(not_equal(x, x));
+}
+
+TEST(ElementSpatialEqualTest, affine) {
+  Eigen::Affine3d x(Eigen::Translation<double, 3>(Eigen::Vector3d(1, 2, 3)));
+  EXPECT_TRUE(equal(x, x));
+  EXPECT_FALSE(not_equal(x, x));
+}

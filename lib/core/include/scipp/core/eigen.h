@@ -41,4 +41,14 @@ template <> inline bool isinf<Eigen::Vector3d>(const Eigen::Vector3d &x) {
   return !isfinite(x) && !isnan(x);
 }
 
+[[nodiscard]] inline bool operator==(const Eigen::Affine3d &a,
+                                     const Eigen::Affine3d &b) {
+  return a.matrix() == b.matrix();
+}
+
+[[nodiscard]] inline bool operator!=(const Eigen::Affine3d &a,
+                                     const Eigen::Affine3d &b) {
+  return a.matrix() != b.matrix();
+}
+
 } // namespace scipp::numeric
