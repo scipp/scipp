@@ -40,13 +40,11 @@ if(SKBUILD OR CONAN_TBB)
   set(CONAN_RUNTIME_DEPENDENCIES "tbb")
 endif()
 
-
 if(BENCHMARK)
   set(CONAN_BENCHMARK benchmark/1.6.1)
 else()
   set(CONAN_BENCHMARK "")
 endif()
-
 
 conan_cmake_configure(
   REQUIRES
