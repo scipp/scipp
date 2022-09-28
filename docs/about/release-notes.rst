@@ -42,6 +42,7 @@ Bugfixes
 ~~~~~~~~
 
 * Fix missing support for comparison for spatial dtypes such as ``affine_transform3`` `#2821 <https://github.com/scipp/scipp/pull/2821>`_.
+* Fix :func:`scipp.spatial.rotations` to support creation of quaternion arrays with more than 1 dimension `#2822 <https://github.com/scipp/scipp/pull/2822>`_.
 
 v0.16.2 (August 2022)
 ---------------------
