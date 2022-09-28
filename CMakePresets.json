@@ -15,7 +15,8 @@
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
         "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
-        "FULL_BUILD": "ON"
+        "FULL_BUILD": "ON",
+        "BENCHMARK": "ON"
       }
     },
     {
@@ -53,7 +54,8 @@
       "description": "Package build base options",
       "cacheVariables": {
         "CMAKE_INSTALL_PREFIX": "$env{PREFIX}",
-        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON"
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON",
+        "BENCHMARK": "OFF"
       }
     },
     {

@@ -13,6 +13,8 @@ set(CMAKE_MODULE_PATH
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/sanitizers-cmake/cmake"
 )
 
+option(BENCHMARK "Enable benchmarks" OFF)
+
 include(scipp-conan)
 
 # Currently, scikit-build does not support FindPython.
@@ -91,7 +93,8 @@ execute_process(
   COMMAND git describe --tag
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
   RESULT_VARIABLE HAVE_GIT_VERSION_INFO
-  OUTPUT_VARIABLE GIT_VERSION_INFO OUTPUT_STRIP_TRAILING_WHITESPACE
+  OUTPUT_VARIABLE GIT_VERSION_INFO
+  OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 if(${HAVE_GIT_VERSION_INFO} EQUAL 0)
   message(STATUS "Got version from Git: ${GIT_VERSION_INFO}")
@@ -228,7 +231,7 @@ if(DYNAMIC_LIB)
     DESTINATION lib/cmake/${PROJECT_NAME}
   )
   install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cmake/.conan-recipes"
-    DESTINATION lib/cmake/${PROJECT_NAME}
+          DESTINATION lib/cmake/${PROJECT_NAME}
   )
 endif(DYNAMIC_LIB)
 
@@ -241,10 +244,12 @@ option(FULL_BUILD
 )
 
 add_subdirectory(common)
-if(FULL_BUILD)
-  add_subdirectory(benchmark)
-else()
-  add_subdirectory(benchmark EXCLUDE_FROM_ALL)
+if(BENCHMARK)
+  if(FULL_BUILD)
+    add_subdirectory(benchmark)
+  else()
+    add_subdirectory(benchmark EXCLUDE_FROM_ALL)
+  endif()
 endif()
 add_subdirectory(units)
 add_subdirectory(core)
