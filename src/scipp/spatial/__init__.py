@@ -90,11 +90,11 @@ def rotations(*, dims: Sequence[str], values: Union[_np.ndarray, list]):
     :param values: a numpy array of numpy arrays corresponding to the quaternion
         coefficients (w, x*i, y*j, z*k)
     """
-    for val in values:
-        if hasattr(val, "__len__") and len(val) != 4:
-            raise ValueError("Inputs must be Quaternions to create a rotation. If you"
-                             "want to pass a rotation matrix, use "
-                             "sc.linear_transforms instead.")
+    values = np.asarray(values)
+    if values.shape[-1] != 4:
+        raise ValueError("Inputs must be Quaternions to create a rotation, i.e., have "
+                         "4 components. If you want to pass a rotation matrix, use "
+                         "sc.linear_transforms instead.")
     return _core_cpp.rotations(dims=dims, values=values)
 
 

@@ -65,6 +65,20 @@ def test_from_quaternions():
         sc.vectors(dims=["x"], values=[[1, -2, -3], [-4, 5, -6]], unit=sc.units.m))
 
 
+def test_from_quaternions_2d():
+    quat1 = [1, 0, 0, 0]
+    quat2 = [0, 1, 0, 0]
+
+    transforms = rotations(dims=["y", "x"], values=[[quat1, quat2]])
+    vectors = sc.vectors(dims=["x"], values=[[1, 2, 3], [4, 5, 6]], unit=sc.units.m)
+
+    assert sc.allclose(
+        transforms * vectors,
+        sc.vectors(dims=["y", "x"],
+                   values=[[[1, -2, -3], [-4, 5, -6]]],
+                   unit=sc.units.m))
+
+
 def test_rotation_default_unit_is_dimensionless():
     var = rotation(value=np.ones(shape=(4, )))
     assert var.unit == sc.units.one
