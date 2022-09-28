@@ -64,7 +64,9 @@ struct equality_types_t {
   constexpr void operator()() const noexcept;
   using types = decltype(std::tuple_cat(
       comparison_types_t::types{}, std::tuple<std::string>{},
-      std::tuple<Eigen::Vector3d>{}, std::tuple<Eigen::Matrix3d>{}));
+      std::tuple<Eigen::Vector3d>{}, std::tuple<Eigen::Matrix3d>{},
+      std::tuple<Eigen::Affine3d>{}, std::tuple<Quaternion>{},
+      std::tuple<Translation>{}));
 };
 
 constexpr auto comparison =

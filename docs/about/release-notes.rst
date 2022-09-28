@@ -35,6 +35,14 @@ Release Notes
    and Jan-Lukas Wynen :sup:`a`
 
 
+v0.16.4 (September 2022)
+------------------------
+
+Bugfixes
+~~~~~~~~
+
+* Fix missing support for comparison for spatial dtypes such as ``affine_transform3`` `#2821 <https://github.com/scipp/scipp/pull/2821>`_.
+
 v0.16.2 (August 2022)
 ---------------------
 
