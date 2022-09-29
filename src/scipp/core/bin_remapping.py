@@ -11,30 +11,28 @@ import time
 
 def concat_bins(da, dim):
     start = time.time()
-    out_dims = {d: s for d, s in da.sizes.items() if d != dim}
     # TODO masks
 
-    sizes = da.bins.size().data
+    sizes = da.data.bins.size()
     print(time.time() - start)
     # subbin sizes
     # cumsum performed with the remove dim as innermost, such that we map all merged
     # bins into the same output bin
-    sizes_sort_out = sizes.transpose(list(out_dims) + [dim])
-    out_end = cumsum(sizes_sort_out)
-    out_begin = out_end - sizes_sort_out
+    out_dims = [d for d in da.dims if d != dim]
+    out_end = cumsum(sizes.transpose(out_dims + [dim])).transpose(da.dims)
+    out_begin = out_end - sizes
     print(time.time() - start)
     out = _cpp._bins_no_validate(
         data=empty_like(da.bins.constituents['data']),
         dim=da.bins.constituents['dim'],
-        begin=out_begin.transpose(da.dims),
-        end=out_end.transpose(da.dims),
+        begin=out_begin,
+        end=out_end,
     )
     print(time.time() - start)
 
     out[...] = da.data
     print(time.time() - start)
 
-    # TODO would drop empty bins, give groups explicitly!
     out_sizes = sizes.sum(dim)
     out_end = cumsum(out_sizes)
     out_begin = out_end - out_sizes
