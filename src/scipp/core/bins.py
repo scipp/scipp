@@ -11,6 +11,7 @@ from .domains import merge_equal_adjacent
 from .operations import islinspace
 from .math import midpoints
 from .shape import concat
+from .bin_remapping import concat_bins
 
 
 class Lookup:
@@ -358,6 +359,10 @@ class Bins:
             return _call_cpp_func(_cpp.buckets.concatenate, self._obj, dim)
         dim = uuid.uuid4().hex
         return self._obj.flatten(to=dim).bins.concat(dim)
+
+    def concat2(self, dim: Optional[str] = None) -> Union[_cpp.Variable, _cpp.DataArray]:
+        return concat_bins(self._obj, dim)
+
 
     def concatenate(
             self,
