@@ -360,9 +360,9 @@ class Bins:
         dim = uuid.uuid4().hex
         return self._obj.flatten(to=dim).bins.concat(dim)
 
-    def concat2(self, dim: Optional[str] = None) -> Union[_cpp.Variable, _cpp.DataArray]:
+    def concat2(self,
+                dim: Optional[str] = None) -> Union[_cpp.Variable, _cpp.DataArray]:
         return concat_bins(self._obj, dim)
-
 
     def concatenate(
             self,
