@@ -50,7 +50,7 @@ def parse_params(params=None, defaults=None, globs=None, array=None):
     Construct the colorbar settings using default and input values
     """
     from matplotlib.colors import Normalize, LogNorm, LinearSegmentedColormap
-    from matplotlib import cm
+    import matplotlib
 
     parsed = dict(config['plot']['params'])
     if defaults is not None:
@@ -85,7 +85,7 @@ def parse_params(params=None, defaults=None, globs=None, array=None):
         parsed["cmap"] = LinearSegmentedColormap.from_list(
             "tmp", [parsed["color"], parsed["color"]])
     else:
-        parsed["cmap"] = copy(cm.get_cmap(parsed["cmap"]))
+        parsed["cmap"] = copy(matplotlib.colormaps[parsed["cmap"]])
 
     if parsed["under_color"] is None:
         parsed["cmap"].set_under(parsed["cmap"](0.0))
