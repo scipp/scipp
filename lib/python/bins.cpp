@@ -26,7 +26,7 @@ namespace {
 template <class T>
 auto call_make_bins(const std::optional<Variable> &begin_arg,
                     const std::optional<Variable> &end_arg, const Dim dim,
-                    T &&data) {
+                    T &&data, const bool validate = true) {
   Variable indices;
   if (begin_arg.has_value()) {
     const auto &begin = *begin_arg;
@@ -52,7 +52,11 @@ auto call_make_bins(const std::optional<Variable> &begin_arg,
   } else {
     throw std::runtime_error("`end` given but not `begin`");
   }
-  return make_bins(std::move(indices), dim, std::forward<T>(data));
+  if (validate)
+    return make_bins(std::move(indices), dim, std::forward<T>(data));
+  else
+    return make_bins_no_validate(std::move(indices), dim,
+                                 std::forward<T>(data));
 }
 
 template <class T> void bind_bins(pybind11::module &m) {
@@ -66,6 +70,15 @@ template <class T> void bind_bins(pybind11::module &m) {
       py::arg("begin") = py::none(), py::arg("end") = py::none(),
       py::arg("dim"), py::arg("data")); // do not release GIL since using
                                         // implicit conversions in functor
+  m.def(
+      "_bins_no_validate",
+      [](const Variable &begin, const Variable &end, const std::string &dim,
+         const T &data) {
+        return call_make_bins(begin, end, Dim{dim}, T(data), false);
+      },
+      py::arg("begin"), py::arg("end"), py::arg("dim"),
+      py::arg("data")); // do not release GIL since using
+                        // implicit conversions in functor
 }
 
 template <class T> py::dict bins_constituents(const Variable &var) {
