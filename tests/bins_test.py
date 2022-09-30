@@ -397,6 +397,13 @@ def test_bins_concat():
     assert sc.identical(da.bins.concat().hist(), table.sum())
 
 
+def test_bins_concat_variable():
+    table = sc.data.table_xyz(nrow=100)
+    table.data = sc.arange('row', 100, dtype='float64')
+    da = table.bin(x=4, y=5)
+    assert sc.identical(da.data.bins.concat('x'), da.bins.concat('x').data)
+
+
 def test_bins_concat_along_outer_length_1_dim_equivalent_to_squeeze():
     table = sc.data.table_xyz(nrow=100)
     da = table.bin(x=1, y=5, z=7)

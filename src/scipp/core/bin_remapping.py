@@ -7,6 +7,7 @@ from .cpp_classes import DataArray, Variable, Dataset
 from .like import empty_like
 from .cumulative import cumsum
 from .dataset import irreducible_mask
+from ..typing import VariableLikeType
 
 
 def _reduced(obj: Dict[str, Variable], dim: str) -> Dict[str, Variable]:
@@ -66,31 +67,38 @@ def hide_masked_and_reduce_meta(da: DataArray, dim: str):
                      attrs=reduced_attrs(da, dim))
 
 
-def concat_bins(da, dim):
-    da = hide_masked_and_reduce_meta(da, dim)
-    sizes = da.data.bins.size()
+def _concat_bins_variable(var: Variable, dim: str) -> Variable:
+    sizes = var.bins.size()
     # subbin sizes
     # cumsum performed with the remove dim as innermost, such that we map all merged
     # bins into the same output bin
-    out_dims = [d for d in da.dims if d != dim]
-    out_end = cumsum(sizes.transpose(out_dims + [dim])).transpose(da.dims)
+    out_dims = [d for d in var.dims if d != dim]
+    out_end = cumsum(sizes.transpose(out_dims + [dim])).transpose(var.dims)
     out_begin = out_end - sizes
     out = _cpp._bins_no_validate(
-        data=copy_for_overwrite(da.bins.constituents['data']),
-        dim=da.bins.constituents['dim'],
+        data=copy_for_overwrite(var.bins.constituents['data']),
+        dim=var.bins.constituents['dim'],
         begin=out_begin,
         end=out_end,
     )
 
-    out[...] = da.data
+    out[...] = var
 
     out_sizes = sizes.sum(dim)
     out_end = cumsum(out_sizes)
     out_begin = out_end - out_sizes
-    out = _cpp._bins_no_validate(
+    return _cpp._bins_no_validate(
         data=out.bins.constituents['data'],
         dim=out.bins.constituents['dim'],
         begin=out_begin,
         end=out_end,
     )
-    return DataArray(out, coords=da.coords, masks=da.masks, attrs=da.attrs)
+
+
+def concat_bins(obj: VariableLikeType, dim: str) -> VariableLikeType:
+    if isinstance(obj, Variable):
+        return _concat_bins_variable(obj, dim)
+    else:
+        da = hide_masked_and_reduce_meta(obj, dim)
+        data = _concat_bins_variable(da.data, dim)
+        return DataArray(data, coords=da.coords, masks=da.masks, attrs=da.attrs)
