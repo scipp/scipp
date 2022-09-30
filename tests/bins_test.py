@@ -433,3 +433,11 @@ def test_bins_concat_preserves_unrelated_mask():
     da.masks['masky'] = sc.zeros(dims=['y'], shape=[13], dtype=bool)
     result = da.bins.concat('x')
     assert 'masky' in result.masks
+
+
+def test_bins_concat_applies_irreducible_masks():
+    table = sc.data.table_xyz(nrow=10)
+    da = table.bin(x=5, y=13)
+    da.masks['maskx'] = sc.array(dims=['x'], values=[False, False, False, False, True])
+    print(da.bins.concat('x'), da['x', :4].bins.concat('x'))
+    assert sc.identical(da.bins.concat('x'), da['x', :4].bins.concat('x'))

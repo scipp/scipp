@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-from typing import Dict
+from typing import Dict, Union
 from .._scipp import core as _cpp
-from .cpp_classes import DataArray, Variable
+from .cpp_classes import DataArray, Variable, Dataset
 from .like import empty_like
 from .cumulative import cumsum
+from .dataset import irreducible_mask
 
 import time
 
@@ -26,10 +27,34 @@ def reduced_masks(da: DataArray, dim: str) -> Dict[str, Variable]:
     return _reduced(da.masks, dim)
 
 
+def _copy_dict_for_overwrite(mapping: Dict[str, Variable]):
+    return {name: copy_for_overwrite(var) for name, var in mapping.items()}
+
+
+def copy_for_overwrite(obj: Union[Variable, DataArray, Dataset]):
+    """
+    Copy a Scipp object for overwriting.
+
+    Unlike :py:func:`scipp.empty_like` this does not preserve (and share) coord,
+    mask, and attr values. Instead, those values are not initialized, just like the
+    data values.
+    """
+    if isinstance(obj, Variable):
+        return empty_like(obj)
+    if isinstance(obj, DataArray):
+        return DataArray(copy_for_overwrite(obj.data),
+                         coords=_copy_dict_for_overwrite(obj.coords),
+                         masks=_copy_dict_for_overwrite(obj.masks),
+                         attrs=_copy_dict_for_overwrite(obj.attrs))
+
+
 def concat_bins(da, dim):
     start = time.time()
     # TODO masks
 
+    mask = irreducible_mask(da.masks, dim)
+    if mask is not None:
+        da = da[~mask].transpose(da.dims)
     sizes = da.data.bins.size()
     print(time.time() - start)
     # subbin sizes
@@ -40,7 +65,7 @@ def concat_bins(da, dim):
     out_begin = out_end - sizes
     print(time.time() - start)
     out = _cpp._bins_no_validate(
-        data=empty_like(da.bins.constituents['data']),
+        data=copy_for_overwrite(da.bins.constituents['data']),
         dim=da.bins.constituents['dim'],
         begin=out_begin,
         end=out_end,
