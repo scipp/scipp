@@ -8,8 +8,6 @@ from .like import empty_like
 from .cumulative import cumsum
 from .dataset import irreducible_mask
 
-import time
-
 
 def _reduced(obj: Dict[str, Variable], dim: str) -> Dict[str, Variable]:
     return {name: var for name, var in obj.items() if dim not in var.dims}
@@ -69,29 +67,22 @@ def hide_masked_and_reduce_meta(da: DataArray, dim: str):
 
 
 def concat_bins(da, dim):
-    start = time.time()
-    # TODO masks
-
     da = hide_masked_and_reduce_meta(da, dim)
     sizes = da.data.bins.size()
-    print(time.time() - start)
     # subbin sizes
     # cumsum performed with the remove dim as innermost, such that we map all merged
     # bins into the same output bin
     out_dims = [d for d in da.dims if d != dim]
     out_end = cumsum(sizes.transpose(out_dims + [dim])).transpose(da.dims)
     out_begin = out_end - sizes
-    print(time.time() - start)
     out = _cpp._bins_no_validate(
         data=copy_for_overwrite(da.bins.constituents['data']),
         dim=da.bins.constituents['dim'],
         begin=out_begin,
         end=out_end,
     )
-    print(time.time() - start)
 
     out[...] = da.data
-    print(time.time() - start)
 
     out_sizes = sizes.sum(dim)
     out_end = cumsum(out_sizes)
@@ -102,5 +93,4 @@ def concat_bins(da, dim):
         begin=out_begin,
         end=out_end,
     )
-    print(time.time() - start)
     return DataArray(out, coords=da.coords, masks=da.masks, attrs=da.attrs)
