@@ -92,7 +92,7 @@ def _concat_bins_variable(var: Variable, dim: str) -> Variable:
     # Copy all bin contents, performing the actual reordering with the content buffer.
     out[...] = var
 
-    # Setup output indices. This will have the "merged" bins, referening the new
+    # Setup output indices. This will have the "merged" bins, referencing the new
     # contigous layout in the content buffer.
     out_sizes = sizes.sum(dim)
     out_end = cumsum(out_sizes)
