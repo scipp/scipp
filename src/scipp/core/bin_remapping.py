@@ -24,7 +24,7 @@ def reduced_attrs(da: DataArray, dim: str) -> Dict[str, Variable]:
 
 
 def reduced_masks(da: DataArray, dim: str) -> Dict[str, Variable]:
-    return _reduced(da.masks, dim)
+    return {name: mask.copy() for name, mask in _reduced(da.masks, dim).items()}
 
 
 def _copy_dict_for_overwrite(mapping: Dict[str, Variable]):
@@ -48,13 +48,31 @@ def copy_for_overwrite(obj: Union[Variable, DataArray, Dataset]):
                          attrs=_copy_dict_for_overwrite(obj.attrs))
 
 
+def hide_masked_and_reduce_meta(da: DataArray, dim: str):
+    if (mask := irreducible_mask(da.masks, dim)) is not None:
+        # Avoid using boolean indexing since it would result in (partial) content
+        # buffer copy. Instead index just begin/end and reuse content buffer.
+        comps = da.bins.constituents
+        select = ~mask
+        data = _cpp._bins_no_validate(
+            data=comps['data'],
+            dim=comps['dim'],
+            begin=comps['begin'][select],
+            end=comps['end'][select],
+        )
+    else:
+        data = da.data
+    return DataArray(data,
+                     coords=reduced_coords(da, dim),
+                     masks=reduced_masks(da, dim),
+                     attrs=reduced_attrs(da, dim))
+
+
 def concat_bins(da, dim):
     start = time.time()
     # TODO masks
 
-    mask = irreducible_mask(da.masks, dim)
-    if mask is not None:
-        da = da[~mask].transpose(da.dims)
+    da = hide_masked_and_reduce_meta(da, dim)
     sizes = da.data.bins.size()
     print(time.time() - start)
     # subbin sizes
@@ -85,7 +103,4 @@ def concat_bins(da, dim):
         end=out_end,
     )
     print(time.time() - start)
-    return DataArray(out,
-                     coords=reduced_coords(da, dim),
-                     masks=reduced_masks(da, dim),
-                     attrs=reduced_attrs(da, dim))
+    return DataArray(out, coords=da.coords, masks=da.masks, attrs=da.attrs)
