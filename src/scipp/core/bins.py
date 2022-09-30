@@ -356,13 +356,9 @@ class Bins:
             All bins along `dim` concatenated into a single bin.
         """
         if dim is not None:
-            return _call_cpp_func(_cpp.buckets.concatenate, self._obj, dim)
+            return concat_bins(self._obj, dim)
         dim = uuid.uuid4().hex
         return self._obj.flatten(to=dim).bins.concat(dim)
-
-    def concat2(self,
-                dim: Optional[str] = None) -> Union[_cpp.Variable, _cpp.DataArray]:
-        return concat_bins(self._obj, dim)
 
     def concatenate(
             self,

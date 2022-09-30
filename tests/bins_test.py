@@ -395,3 +395,33 @@ def test_bins_concat():
     assert sc.identical(da.bins.concat('x').hist(), table.hist(y=5))
     assert sc.identical(da.bins.concat('y').hist(), table.hist(x=4))
     assert sc.identical(da.bins.concat().hist(), table.sum())
+
+
+def test_bins_concat_along_outer_length_1_dim_equivalent_to_squeeze():
+    table = sc.data.table_xyz(nrow=100)
+    da = table.bin(x=1, y=5, z=7)
+    expected = da.squeeze()
+    del expected.attrs['x']
+    assert sc.identical(da.bins.concat('x'), expected)
+
+
+def test_bins_concat_along_middle_length_1_dim_equivalent_to_squeeze():
+    table = sc.data.table_xyz(nrow=100)
+    da = table.bin(x=5, y=1, z=7)
+    expected = da.squeeze()
+    del expected.attrs['y']
+    assert sc.identical(da.bins.concat('y'), expected)
+
+
+def test_bins_concat_along_inner_length_1_dim_equivalent_to_squeeze():
+    table = sc.data.table_xyz(nrow=100)
+    da = table.bin(x=5, y=7, z=1)
+    expected = da.squeeze()
+    del expected.attrs['z']
+    assert sc.identical(da.bins.concat('z'), expected)
+
+
+def test_bins_concat_gives_same_result_on_transposed():
+    table = sc.data.table_xyz(nrow=100)
+    da = table.bin(x=5, y=13)
+    assert sc.identical(da.bins.concat('x'), da.transpose().bins.concat('x'))
