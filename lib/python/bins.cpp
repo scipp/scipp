@@ -184,18 +184,6 @@ void init_buckets(py::module &m) {
       },
       py::call_guard<py::gil_scoped_release>());
   buckets.def(
-      "concatenate",
-      [](const Variable &var, const std::string &dim) {
-        return dataset::buckets::concatenate(var, Dim{dim});
-      },
-      py::call_guard<py::gil_scoped_release>());
-  buckets.def(
-      "concatenate",
-      [](const DataArray &array, const std::string &dim) {
-        return dataset::buckets::concatenate(array, Dim{dim});
-      },
-      py::call_guard<py::gil_scoped_release>());
-  buckets.def(
       "append",
       [](Variable &a, const Variable &b) {
         return dataset::buckets::append(a, b);
