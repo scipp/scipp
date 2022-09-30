@@ -425,3 +425,11 @@ def test_bins_concat_gives_same_result_on_transposed():
     table = sc.data.table_xyz(nrow=100)
     da = table.bin(x=5, y=13)
     assert sc.identical(da.bins.concat('x'), da.transpose().bins.concat('x'))
+
+
+def test_bins_concat_preserves_unrelated_mask():
+    table = sc.data.table_xyz(nrow=100)
+    da = table.bin(x=5, y=13)
+    da.masks['masky'] = sc.zeros(dims=['y'], shape=[13], dtype=bool)
+    result = da.bins.concat('x')
+    assert 'masky' in result.masks

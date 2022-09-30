@@ -1,12 +1,29 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+from typing import Dict
 from .._scipp import core as _cpp
-from .cpp_classes import DataArray
+from .cpp_classes import DataArray, Variable
 from .like import empty_like
 from .cumulative import cumsum
 
 import time
+
+
+def _reduced(obj: Dict[str, Variable], dim: str) -> Dict[str, Variable]:
+    return {name: var for name, var in obj.items() if dim not in var.dims}
+
+
+def reduced_coords(da: DataArray, dim: str) -> Dict[str, Variable]:
+    return _reduced(da.coords, dim)
+
+
+def reduced_attrs(da: DataArray, dim: str) -> Dict[str, Variable]:
+    return _reduced(da.attrs, dim)
+
+
+def reduced_masks(da: DataArray, dim: str) -> Dict[str, Variable]:
+    return _reduced(da.masks, dim)
 
 
 def concat_bins(da, dim):
@@ -44,7 +61,6 @@ def concat_bins(da, dim):
     )
     print(time.time() - start)
     return DataArray(out,
-                     coords={
-                         name: coord
-                         for name, coord in da.coords.items() if dim not in coord.dims
-                     })
+                     coords=reduced_coords(da, dim),
+                     masks=reduced_masks(da, dim),
+                     attrs=reduced_attrs(da, dim))
