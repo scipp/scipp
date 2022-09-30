@@ -404,6 +404,24 @@ def test_bins_concat_variable():
     assert sc.identical(da.data.bins.concat('x'), da.bins.concat('x').data)
 
 
+def test_bins_concat_content_variable():
+    table = sc.data.table_xyz(nrow=100)
+    table.data = sc.arange('row', 100, dtype='float64')
+    da = table.bin(x=4, y=5)
+    assert sc.identical(da.bins.data.bins.concat('x'), da.bins.concat('x').bins.data)
+
+
+@pytest.mark.skip(reason="Need fix in Variable::setSlice")
+def test_bins_concat_content_dataset():
+    table = sc.data.table_xyz(nrow=100)
+    table.data = sc.arange('row', 100, dtype='float64')
+    da = table.bin(x=4, y=5)
+    constituents = table.bin(x=4, y=5).bins.constituents
+    constituents['data'] = sc.Dataset({'a': table, 'b': table + table})
+    binned = sc.bins(**constituents)
+    assert sc.identical(binned.bins.concat('x').bins['a'], da.bins.concat('x'))
+
+
 def test_bins_concat_along_outer_length_1_dim_equivalent_to_squeeze():
     table = sc.data.table_xyz(nrow=100)
     da = table.bin(x=1, y=5, z=7)
