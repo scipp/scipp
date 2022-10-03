@@ -395,3 +395,73 @@ def test_bins_concat():
     assert sc.identical(da.bins.concat('x').hist(), table.hist(y=5))
     assert sc.identical(da.bins.concat('y').hist(), table.hist(x=4))
     assert sc.identical(da.bins.concat().hist(), table.sum())
+
+
+def test_bins_concat_variable():
+    table = sc.data.table_xyz(nrow=100)
+    table.data = sc.arange('row', 100, dtype='float64')
+    da = table.bin(x=4, y=5)
+    assert sc.identical(da.data.bins.concat('x'), da.bins.concat('x').data)
+
+
+def test_bins_concat_content_variable():
+    table = sc.data.table_xyz(nrow=100)
+    table.data = sc.arange('row', 100, dtype='float64')
+    da = table.bin(x=4, y=5)
+    assert sc.identical(da.bins.data.bins.concat('x'), da.bins.concat('x').bins.data)
+
+
+@pytest.mark.skip(reason="Need fix in Variable::setSlice")
+def test_bins_concat_content_dataset():
+    table = sc.data.table_xyz(nrow=100)
+    table.data = sc.arange('row', 100, dtype='float64')
+    da = table.bin(x=4, y=5)
+    constituents = table.bin(x=4, y=5).bins.constituents
+    constituents['data'] = sc.Dataset({'a': table, 'b': table + table})
+    binned = sc.bins(**constituents)
+    assert sc.identical(binned.bins.concat('x').bins['a'], da.bins.concat('x'))
+
+
+def test_bins_concat_along_outer_length_1_dim_equivalent_to_squeeze():
+    table = sc.data.table_xyz(nrow=100)
+    da = table.bin(x=1, y=5, z=7)
+    expected = da.squeeze()
+    del expected.attrs['x']
+    assert sc.identical(da.bins.concat('x'), expected)
+
+
+def test_bins_concat_along_middle_length_1_dim_equivalent_to_squeeze():
+    table = sc.data.table_xyz(nrow=100)
+    da = table.bin(x=5, y=1, z=7)
+    expected = da.squeeze()
+    del expected.attrs['y']
+    assert sc.identical(da.bins.concat('y'), expected)
+
+
+def test_bins_concat_along_inner_length_1_dim_equivalent_to_squeeze():
+    table = sc.data.table_xyz(nrow=100)
+    da = table.bin(x=5, y=7, z=1)
+    expected = da.squeeze()
+    del expected.attrs['z']
+    assert sc.identical(da.bins.concat('z'), expected)
+
+
+def test_bins_concat_gives_same_result_on_transposed():
+    table = sc.data.table_xyz(nrow=100)
+    da = table.bin(x=5, y=13)
+    assert sc.identical(da.bins.concat('x'), da.transpose().bins.concat('x'))
+
+
+def test_bins_concat_preserves_unrelated_mask():
+    table = sc.data.table_xyz(nrow=100)
+    da = table.bin(x=5, y=13)
+    da.masks['masky'] = sc.zeros(dims=['y'], shape=[13], dtype=bool)
+    result = da.bins.concat('x')
+    assert 'masky' in result.masks
+
+
+def test_bins_concat_applies_irreducible_masks():
+    table = sc.data.table_xyz(nrow=10)
+    da = table.bin(x=5, y=13)
+    da.masks['maskx'] = sc.array(dims=['x'], values=[False, False, False, False, True])
+    assert sc.identical(da.bins.concat('x'), da['x', :4].bins.concat('x'))

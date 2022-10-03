@@ -35,6 +35,37 @@ Release Notes
    and Jan-Lukas Wynen :sup:`a`
 
 
+v0.17.0 (Unreleased)
+--------------------
+
+Features
+~~~~~~~~
+
+* Much faster ``obj.bins.concat`` operations in presence of many bins `#2825 <https://github.com/scipp/scipp/pull/2825>`_.
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+Bugfixes
+~~~~~~~~
+
+Documentation
+~~~~~~~~~~~~~
+
+Deprecations
+~~~~~~~~~~~~
+
+Stability, Maintainability, and Testing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Contributors
+~~~~~~~~~~~~
+
+Simon Heybrock :sup:`a`\ ,
+Neil Vaytet :sup:`a`\ ,
+and Jan-Lukas Wynen :sup:`a`
+
+
 v0.16.4 (September 2022)
 ------------------------
 

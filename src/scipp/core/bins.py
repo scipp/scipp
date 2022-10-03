@@ -11,6 +11,7 @@ from .domains import merge_equal_adjacent
 from .operations import islinspace
 from .math import midpoints
 from .shape import concat
+from .bin_remapping import concat_bins
 
 
 class Lookup:
@@ -355,7 +356,7 @@ class Bins:
             All bins along `dim` concatenated into a single bin.
         """
         if dim is not None:
-            return _call_cpp_func(_cpp.buckets.concatenate, self._obj, dim)
+            return concat_bins(self._obj, dim)
         dim = uuid.uuid4().hex
         return self._obj.flatten(to=dim).bins.concat(dim)
 
