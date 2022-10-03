@@ -492,7 +492,4 @@ def test_bin_2d_without_event_coord():
     from scipp.core.bin_remapping import _combine_bins_by_binning_variable
     result = _combine_bins_by_binning_variable(da.data, param, edges)
     expected = da.groupby('param', bins=edges).bins.concat('x')
-    print(result)
-    print(expected.data)
-    print(expected.data.bins.size())
     assert sc.identical(result, expected.data.transpose(result.dims))

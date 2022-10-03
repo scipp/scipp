@@ -122,11 +122,10 @@ def _combine_bins_by_binning_variable(var: Variable, param: Variable,
     index_range = arange(dim, len(param), unit=None)
     input_bin = DataArray(index_range, coords={edges.dim: param})
     sizes.coords['input_bin'] = index_range
-    sizes.coords[edges.dim] = param
 
-    unchanged_dims = [d for d in var.dims if d != dim]
     # To merge bins we need to ensure their content is placed in adjacent memory.
     # We thus move the grouping/binning dim to innermost.
+    unchanged_dims = [d for d in var.dims if d != dim]
     sizes = sizes.transpose(unchanged_dims + [dim])
 
     # Setup shuffle indices for reordering input sizes such that we can use cumsum for
@@ -144,9 +143,6 @@ def _combine_bins_by_binning_variable(var: Variable, param: Variable,
     out_end = cumsum(sizes_sort_out.data)[dim, reverse_shuffle]
     out_begin = out_end - sizes.data
     out_sizes = sizes.groupby(param, bins=edges).sum(dim).data
-    print(f'{out_begin=}')
-    print(f'{out_end=}')
-    print(f'{out_sizes=}')
     return _remap_bins(var, out_begin, out_end, out_sizes)
 
 
