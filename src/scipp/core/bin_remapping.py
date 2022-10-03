@@ -3,14 +3,16 @@
 # @author Simon Heybrock
 import uuid
 from typing import Dict, List
+from math import prod
 from .._scipp import core as _cpp
 from .cpp_classes import DataArray, Variable, Dataset
 from .like import empty_like
 from .cumulative import cumsum
 from .dataset import irreducible_mask
 from ..typing import VariableLikeType
-from .variable import arange
+from .variable import arange, full
 from .operations import sort
+from .comparison import identical
 
 
 def _reduced(obj: Dict[str, Variable], dim: str) -> Dict[str, Variable]:
@@ -116,6 +118,57 @@ def _concat_bins_variable(var: Variable, dim: str) -> Variable:
     return _remap_bins(var, out_begin, out_end, out_sizes)
 
 
+def _project(var: Variable, dim: str):
+    while var.dims != (dim, ):
+        outer = var.dims[0]
+        min_ = var.min(outer)
+        max_ = var.max(outer)
+        assert identical(min_, max_)
+        var = min_
+    return var
+
+
+def func(var: Variable, param, edges):
+    """Given a number of input coords and output coords, map indices and sizes."""
+    coords = {edges.dim: param}
+    # TODO generalize
+    changed_dims = [param.dim]
+    unchanged_dims = [d for d in var.dims if d not in changed_dims]
+    sizes = DataArray(var.bins.size(), coords=coords)
+    input_bin = uuid.uuid4().hex
+    changed_shape = [var.sizes[dim] for dim in changed_dims]
+    unchanged_shape = [var.sizes[dim] for dim in unchanged_dims]
+    changed_volume = prod(changed_shape)
+    # Move modified dims to innermost to ensure data is writen in contiguous memory.
+    sizes = sizes.transpose(unchanged_dims + changed_dims)
+    index_range = arange(input_bin, changed_volume, unit=None)
+    # Flatten modified subspace for next steps
+    flat_sizes = sizes.flatten(dims=changed_dims, to=input_bin)
+    flat_sizes.coords[input_bin] = index_range
+
+    # Sizes and begin/end indices of changed subspace
+    subspace_sizes = full(dims=unchanged_dims,
+                          shape=unchanged_shape,
+                          value=changed_volume)
+    subspace_end = cumsum(subspace_sizes)
+    subspace_begin = subspace_end - subspace_sizes
+    tmp = _cpp._bins_no_validate(data=flat_sizes.flatten(to='dummy'),
+                                 dim='dummy',
+                                 begin=subspace_begin,
+                                 end=subspace_end)
+    # tmp = make_binned(DataArray(tmp), edges=edges, groups=groups, erase=changed_dims)
+    tmp = DataArray(tmp).bin({edges.dim: edges})
+
+    # can we just reshape this? order should be regular?
+    end = cumsum(tmp.bins.concat().value).fold(dim='dummy', sizes=flat_sizes.sizes)
+    end.coords[input_bin] = _project(end.coords[input_bin], input_bin)
+    out_end = sort(end, input_bin).fold(dim=input_bin,
+                                        dims=changed_dims,
+                                        shape=changed_shape).data
+    out_begin = out_end - sizes.data
+    return {'begin': out_begin, 'end': out_end, 'sizes': tmp.data.bins.sum()}
+
+
 def _flatten_param_dims(var: Variable, param: Variable):
     dim = uuid.uuid4().hex
     dims = [d for d in var.dims if d in param.dims]
@@ -124,33 +177,8 @@ def _flatten_param_dims(var: Variable, param: Variable):
 
 def _combine_bins_by_binning_variable(var: Variable, param: Variable,
                                       edges: Variable) -> Variable:
-    dim = param.dim
-    sizes = DataArray(var.bins.size())
-    index_range = arange(dim, len(param), unit=None)
-    input_bin = DataArray(index_range, coords={edges.dim: param})
-    sizes.coords['input_bin'] = index_range
-
-    # To merge bins we need to ensure their content is placed in adjacent memory.
-    # We thus move the grouping/binning dim to innermost.
-    unchanged_dims = [d for d in var.dims if d != dim]
-    sizes = sizes.transpose(unchanged_dims + [dim])
-
-    # Setup shuffle indices for reordering input sizes such that we can use cumsum for
-    # computing output bin sizes and offsets.
-    # We bin only the indices and not the sizes since the latter might not be 1-D
-    grouped_input_bin = input_bin.bin({edges.dim: edges})
-    shuffle = grouped_input_bin.bins.concat(edges.dim).value.values
-    sizes_sort_out = sizes[dim, shuffle]
-
-    # Indices for reverting shuffle
-    reverse_shuffle = DataArray(index_range,
-                                coords={'order': sizes_sort_out.coords['input_bin']})
-    reverse_shuffle = sort(reverse_shuffle, 'order').values
-
-    out_end = cumsum(sizes_sort_out.data)[dim, reverse_shuffle]
-    out_begin = out_end - sizes.data
-    out_sizes = sizes.groupby(param, bins=edges).sum(dim).data
-    return _remap_bins(var, out_begin, out_end, out_sizes)
+    params = func(var, param, edges)
+    return _remap_bins(var, **params)
 
 
 def remap_bins_by_binning(da: DataArray, edges: List[Variable]) -> DataArray:

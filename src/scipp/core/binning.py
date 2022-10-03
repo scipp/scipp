@@ -118,7 +118,7 @@ def _can_remap_bins_by_binning(x, edges, groups, erase):
     if len(groups) != 0:
         return False
     if len(edges) != 1:
-        return False  # Not implemented currently
+        return False  # Not implemented currently, but possible
     dims = []
     for edge in edges:
         if edge.ndim != 1:
