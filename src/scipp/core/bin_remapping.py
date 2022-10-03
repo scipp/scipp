@@ -8,6 +8,8 @@ from .like import empty_like
 from .cumulative import cumsum
 from .dataset import irreducible_mask
 from ..typing import VariableLikeType
+from .variable import arange
+from .operations import sort
 
 
 def _reduced(obj: Dict[str, Variable], dim: str) -> Dict[str, Variable]:
@@ -93,11 +95,60 @@ def _concat_bins_variable(var: Variable, dim: str) -> Variable:
     out[...] = var
 
     # Setup output indices. This will have the "merged" bins, referencing the new
-    # contigous layout in the content buffer.
+    # contiguous layout in the content buffer.
     out_sizes = sizes.sum(dim)
     out_end = cumsum(out_sizes)
     out_begin = out_end - out_sizes
     return _cpp._bins_no_validate(
+        data=out.bins.constituents['data'],
+        dim=out.bins.constituents['dim'],
+        begin=out_begin,
+        end=out_end,
+    )
+
+
+def _combine_bins_by_binning_variable(var: Variable, param: Variable,
+                                      edges: Variable) -> Variable:
+    sizes = DataArray(var.bins.size())
+
+    index_range = arange(param.dim, len(param), unit=None)
+    input_bin = DataArray(index_range, coords={edges.dim: param})
+
+    sizes.coords['input_bin'] = index_range
+
+    # We bin only the indices and not the sizes since the latter might not be 1-D
+
+    # Setup shuffle indices for reordering input sizes such that we can use cumsum for
+    # computing output bin sizes and offsets.
+    grouped_input_bin = input_bin.bin({edges.dim: edges})
+    shuffle = grouped_input_bin.bins.concat(edges.dim).value.values
+    sizes_sort_out = sizes[param.dim, shuffle]
+
+    # Indices for reverting shuffle
+    reverse_shuffle = DataArray(index_range,
+                                coords={'order': sizes_sort_out.coords['input_bin']})
+    reverse_shuffle = sort(reverse_shuffle, 'order').values
+
+    out_end = cumsum(sizes_sort_out.data)[param.dim, reverse_shuffle]
+    out_begin = out_end - sizes.data
+    out = _cpp.bins(
+        data=copy_for_overwrite(var.bins.constituents['data']),
+        dim=var.bins.constituents['dim'],
+        begin=out_begin,
+        end=out_end,
+    )
+
+    # Copy all bin contents, performing the actual reordering with the content buffer.
+    out[...] = var
+
+    sizes.coords['param'] = param
+    out_sizes = sizes.groupby('param', bins=edges).sum(param.dim).data
+
+    # Setup output indices. This will have the "merged" bins, referencing the new
+    # contiguous layout in the content buffer.
+    out_end = cumsum(out_sizes)
+    out_begin = out_end - out_sizes
+    return _cpp.bins(
         data=out.bins.constituents['data'],
         dim=out.bins.constituents['dim'],
         begin=out_begin,

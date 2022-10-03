@@ -5,6 +5,7 @@ import pytest
 import scipp as sc
 import numpy as np
 from math import isnan
+from numpy.random import default_rng
 
 
 def test_dense_data_properties_are_none():
@@ -465,3 +466,17 @@ def test_bins_concat_applies_irreducible_masks():
     da = table.bin(x=5, y=13)
     da.masks['maskx'] = sc.array(dims=['x'], values=[False, False, False, False, True])
     assert sc.identical(da.bins.concat('x'), da['x', :4].bins.concat('x'))
+
+
+def test_bin_without_event_coord():
+    table = sc.data.table_xyz(nrow=1000)
+    da = table.bin(x=100)
+    rng = default_rng(seed=1234)
+    param = sc.array(dims=da.dim, values=rng.random(da.shape))
+    da.coords['param'] = param
+    edges = sc.linspace('param', 0.0, 1.0, num=13)
+    from scipp.core.bin_remapping import _combine_bins_by_binning_variable
+    result = _combine_bins_by_binning_variable(da.data, param, edges)
+    expected = da.groupby('param', bins=edges).bins.concat(da.dim)
+    print(result, expected.data)
+    assert sc.identical(result, expected.data)
