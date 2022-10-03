@@ -8,6 +8,7 @@ from typing import Dict, List, Optional, Union, Sequence
 from .._scipp import core as _cpp
 from .variable import array, Variable, linspace, arange, epoch, scalar
 from .math import round as round_
+from .bin_remapping import remap_bins_by_binning
 
 
 def make_histogrammed(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset], *,
@@ -106,7 +107,26 @@ def make_binned(x: Union[_cpp.Variable, _cpp.DataArray],
                              "binning or histogramming a variable.")
         data = scalar(1.0, unit='counts').broadcast(sizes=x.sizes).copy()
         x = _cpp.DataArray(data, coords={coords[0].dim: x})
+    if _can_remap_bins_by_binning(x, edges, groups, erase):
+        return remap_bins_by_binning(x, edges)
     return _cpp.bin(x, edges, groups, erase)
+
+
+def _can_remap_bins_by_binning(x, edges, groups, erase):
+    if x.bins is None:
+        return False
+    if len(groups) != 0:
+        return False
+    if len(edges) != 1:
+        return False  # Not implemented currently
+    dims = []
+    for edge in edges:
+        if edge.ndim != 1:
+            return False
+        if edge.dim in x.bins.meta:
+            return False
+        dims += x.meta[edge.dim].dims
+    return set(dims) == set(erase) and len(dims) == len(erase)
 
 
 def _require_coord(name, coord):

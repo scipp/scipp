@@ -2,7 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import uuid
-from typing import Dict
+from typing import Dict, List
 from .._scipp import core as _cpp
 from .cpp_classes import DataArray, Variable, Dataset
 from .like import empty_like
@@ -124,7 +124,6 @@ def _flatten_param_dims(var: Variable, param: Variable):
 
 def _combine_bins_by_binning_variable(var: Variable, param: Variable,
                                       edges: Variable) -> Variable:
-    var, param = _flatten_param_dims(var, param)
     dim = param.dim
     sizes = DataArray(var.bins.size())
     index_range = arange(dim, len(param), unit=None)
@@ -152,6 +151,18 @@ def _combine_bins_by_binning_variable(var: Variable, param: Variable,
     out_begin = out_end - sizes.data
     out_sizes = sizes.groupby(param, bins=edges).sum(dim).data
     return _remap_bins(var, out_begin, out_end, out_sizes)
+
+
+def remap_bins_by_binning(da: DataArray, edges: List[Variable]) -> DataArray:
+    assert len(edges) == 1
+    edges = next(iter(edges))
+    param = da.coords[edges.dim]
+    da, param = _flatten_param_dims(da, param)
+    da = hide_masked_and_reduce_meta(da, param.dim)
+    data = _combine_bins_by_binning_variable(da.data, param, edges)
+    out = DataArray(data, coords=da.coords, masks=da.masks, attrs=da.attrs)
+    out.coords[edges.dim] = edges
+    return out
 
 
 def concat_bins(obj: VariableLikeType, dim: str) -> VariableLikeType:
