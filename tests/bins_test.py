@@ -481,7 +481,7 @@ def test_bin_1d_without_event_coord():
     assert sc.identical(result, expected.data)
 
 
-def test_bin_2d_without_event_coord():
+def test_bin_outer_of_2d_without_event_coord():
     table = sc.data.table_xyz(nrow=100)
     table.data = sc.arange('row', 100, dtype='float64')
     da = table.bin(x=7, y=3)
@@ -493,3 +493,19 @@ def test_bin_2d_without_event_coord():
     result = _combine_bins_by_binning_variable(da.data, param, edges)
     expected = da.groupby('param', bins=edges).bins.concat('x')
     assert sc.identical(result, expected.data.transpose(result.dims))
+
+
+def test_bin_outer_and_inner_of_2d_without_event_coord():
+    table = sc.data.table_xyz(nrow=100)
+    table.data = sc.arange('row', 100, dtype='float64')
+    da = table.bin(x=7, y=3)
+    rng = default_rng(seed=1234)
+    param = sc.array(dims=['x', 'y'], values=rng.random(da.shape))
+    da.coords['param'] = param
+    edges = sc.linspace('param', 0.0, 1.0, num=5)
+    from scipp.core.bin_remapping import _combine_bins_by_binning_variable
+    result_xy = _combine_bins_by_binning_variable(da.data, param, edges)
+    result_yx = _combine_bins_by_binning_variable(da.data, param.transpose(), edges)
+    assert sc.identical(result_xy, result_yx)
+    expected = da.flatten(to='dummy').groupby('param', bins=edges).bins.concat('dummy')
+    assert sc.identical(result_xy, expected.data.transpose(result_xy.dims))

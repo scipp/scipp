@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+import uuid
 from typing import Dict
 from .._scipp import core as _cpp
 from .cpp_classes import DataArray, Variable, Dataset
@@ -115,8 +116,15 @@ def _concat_bins_variable(var: Variable, dim: str) -> Variable:
     return _remap_bins(var, out_begin, out_end, out_sizes)
 
 
+def _flatten_param_dims(var: Variable, param: Variable):
+    dim = uuid.uuid4().hex
+    dims = [d for d in var.dims if d in param.dims]
+    return var.flatten(dims=dims, to=dim), param.transpose(dims).flatten(to=dim)
+
+
 def _combine_bins_by_binning_variable(var: Variable, param: Variable,
                                       edges: Variable) -> Variable:
+    var, param = _flatten_param_dims(var, param)
     dim = param.dim
     sizes = DataArray(var.bins.size())
     index_range = arange(dim, len(param), unit=None)
