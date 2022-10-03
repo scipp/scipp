@@ -2,22 +2,9 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from typing import Any
-from .._scipp import core as _cpp
 from .variable import ones, zeros, empty, full
 from ..typing import VariableLikeType
-
-
-def _to_variable_or_data_array(var, new_values):
-    if isinstance(var, _cpp.DataArray):
-        return _cpp.DataArray(data=new_values,
-                              coords={c: coord
-                                      for c, coord in var.coords.items()},
-                              attrs={a: attr
-                                     for a, attr in var.attrs.items()},
-                              masks={m: mask.copy()
-                                     for m, mask in var.masks.items()})
-    else:
-        return new_values
+from .concepts import rewrap_output_data
 
 
 def zeros_like(obj: VariableLikeType, /) -> VariableLikeType:
@@ -54,7 +41,7 @@ def zeros_like(obj: VariableLikeType, /) -> VariableLikeType:
                        unit=obj.unit,
                        dtype=obj.dtype,
                        with_variances=obj.variances is not None)
-    return _to_variable_or_data_array(obj, new_values)
+    return rewrap_output_data(obj, new_values)
 
 
 def ones_like(obj: VariableLikeType, /) -> VariableLikeType:
@@ -91,7 +78,7 @@ def ones_like(obj: VariableLikeType, /) -> VariableLikeType:
                       unit=obj.unit,
                       dtype=obj.dtype,
                       with_variances=obj.variances is not None)
-    return _to_variable_or_data_array(obj, new_values)
+    return rewrap_output_data(obj, new_values)
 
 
 def empty_like(obj: VariableLikeType, /) -> VariableLikeType:
@@ -132,7 +119,7 @@ def empty_like(obj: VariableLikeType, /) -> VariableLikeType:
                        unit=obj.unit,
                        dtype=obj.dtype,
                        with_variances=obj.variances is not None)
-    return _to_variable_or_data_array(obj, new_values)
+    return rewrap_output_data(obj, new_values)
 
 
 def full_like(obj: VariableLikeType,
@@ -178,4 +165,4 @@ def full_like(obj: VariableLikeType,
                       dtype=obj.dtype,
                       value=value,
                       variance=variance)
-    return _to_variable_or_data_array(obj, new_values)
+    return rewrap_output_data(obj, new_values)
