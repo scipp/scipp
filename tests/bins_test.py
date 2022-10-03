@@ -484,10 +484,7 @@ def test_bin_1d_without_event_coord():
 def test_bin_2d_without_event_coord():
     table = sc.data.table_xyz(nrow=100)
     table.data = sc.arange('row', 100, dtype='float64')
-    del table.coords['z']
     da = table.bin(x=7, y=3)
-    del da.bins.coords['x']
-    del da.bins.coords['y']
     rng = default_rng(seed=1234)
     param = sc.array(dims='x', values=rng.random(da.sizes['x']))
     da.coords['param'] = param
