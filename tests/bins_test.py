@@ -478,5 +478,4 @@ def test_bin_without_event_coord():
     from scipp.core.bin_remapping import _combine_bins_by_binning_variable
     result = _combine_bins_by_binning_variable(da.data, param, edges)
     expected = da.groupby('param', bins=edges).bins.concat(da.dim)
-    print(result, expected.data)
     assert sc.identical(result, expected.data)

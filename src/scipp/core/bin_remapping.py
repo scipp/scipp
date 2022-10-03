@@ -86,6 +86,22 @@ def _replace_bin_sizes(var: Variable, sizes: Variable) -> Variable:
     )
 
 
+def _remap_bins(var: Variable, begin, end, sizes) -> Variable:
+    out = _cpp._bins_no_validate(
+        data=copy_for_overwrite(var.bins.constituents['data']),
+        dim=var.bins.constituents['dim'],
+        begin=begin,
+        end=end,
+    )
+
+    # Copy all bin contents, performing the actual reordering with the content buffer.
+    out[...] = var
+
+    # Setup output indices. This will have the "merged" bins, referencing the new
+    # contiguous layout in the content buffer.
+    return _replace_bin_sizes(out, sizes)
+
+
 def _concat_bins_variable(var: Variable, dim: str) -> Variable:
     # We want to write data from all bins along dim to a contiguous chunk in the
     # content buffer. This will then allow us to create new, larger bins covering the
@@ -95,20 +111,8 @@ def _concat_bins_variable(var: Variable, dim: str) -> Variable:
     out_dims = [d for d in var.dims if d != dim]
     out_end = cumsum(sizes.transpose(out_dims + [dim])).transpose(var.dims)
     out_begin = out_end - sizes
-    out = _cpp._bins_no_validate(
-        data=copy_for_overwrite(var.bins.constituents['data']),
-        dim=var.bins.constituents['dim'],
-        begin=out_begin,
-        end=out_end,
-    )
-
-    # Copy all bin contents, performing the actual reordering with the content buffer.
-    out[...] = var
-
-    # Setup output indices. This will have the "merged" bins, referencing the new
-    # contiguous layout in the content buffer.
     out_sizes = sizes.sum(dim)
-    return _replace_bin_sizes(out, out_sizes)
+    return _remap_bins(var, out_begin, out_end, out_sizes)
 
 
 def _combine_bins_by_binning_variable(var: Variable, param: Variable,
@@ -135,20 +139,8 @@ def _combine_bins_by_binning_variable(var: Variable, param: Variable,
 
     out_end = cumsum(sizes_sort_out.data)[param.dim, reverse_shuffle]
     out_begin = out_end - sizes.data
-    out = _cpp.bins(
-        data=copy_for_overwrite(var.bins.constituents['data']),
-        dim=var.bins.constituents['dim'],
-        begin=out_begin,
-        end=out_end,
-    )
-
-    # Copy all bin contents, performing the actual reordering with the content buffer.
-    out[...] = var
-
-    # Setup output indices. This will have the "merged" bins, referencing the new
-    # contiguous layout in the content buffer.
     out_sizes = sizes.groupby(param, bins=edges).sum(param.dim).data
-    return _replace_bin_sizes(out, out_sizes)
+    return _remap_bins(var, out_begin, out_end, out_sizes)
 
 
 def concat_bins(obj: VariableLikeType, dim: str) -> VariableLikeType:
