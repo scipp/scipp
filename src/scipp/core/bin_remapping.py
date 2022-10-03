@@ -142,7 +142,8 @@ def func(var: Variable, param, edges):
     # Move modified dims to innermost to ensure data is writen in contiguous memory.
     sizes = sizes.transpose(unchanged_dims + changed_dims)
     index_range = arange(input_bin, changed_volume, unit=None)
-    # Flatten modified subspace for next steps
+    # Flatten modified subspace for next steps. This is mainly necessary so we can
+    # `sort` later to reshuffle back to input bin order.
     flat_sizes = sizes.flatten(dims=changed_dims, to=input_bin)
     flat_sizes.coords[input_bin] = index_range
 
@@ -152,15 +153,19 @@ def func(var: Variable, param, edges):
                           value=changed_volume)
     subspace_end = cumsum(subspace_sizes)
     subspace_begin = subspace_end - subspace_sizes
-    tmp = _cpp._bins_no_validate(data=flat_sizes.flatten(to='dummy'),
-                                 dim='dummy',
+    content_dim = uuid.uuid4().hex
+    tmp = _cpp._bins_no_validate(data=flat_sizes.flatten(to=content_dim),
+                                 dim=content_dim,
                                  begin=subspace_begin,
                                  end=subspace_end)
     # tmp = make_binned(DataArray(tmp), edges=edges, groups=groups, erase=changed_dims)
     tmp = DataArray(tmp).bin({edges.dim: edges})
 
-    # can we just reshape this? order should be regular?
-    end = cumsum(tmp.bins.concat().value).fold(dim='dummy', sizes=flat_sizes.sizes)
+    # As we started with a regular array of data we know that the result of merging the
+    # bin contents is also regular, i.e., we can `fold` and then `sort`.
+    end = cumsum(tmp.bins.concat().value).fold(dim=content_dim, sizes=flat_sizes.sizes)
+    # This should be the same in every bin. Unfortunately the above process duplicates
+    # it, so we have to project back to 1-D so `sort` works.
     end.coords[input_bin] = _project(end.coords[input_bin], input_bin)
     out_end = sort(end, input_bin).fold(dim=input_bin,
                                         dims=changed_dims,
