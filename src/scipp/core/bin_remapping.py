@@ -75,6 +75,17 @@ def hide_masked_and_reduce_meta(da: DataArray, dim: str) -> DataArray:
                      attrs=reduced_attrs(da, dim))
 
 
+def _replace_bin_sizes(var: Variable, sizes: Variable) -> Variable:
+    out_end = cumsum(sizes)
+    out_begin = out_end - sizes
+    return _cpp._bins_no_validate(
+        data=var.bins.constituents['data'],
+        dim=var.bins.constituents['dim'],
+        begin=out_begin,
+        end=out_end,
+    )
+
+
 def _concat_bins_variable(var: Variable, dim: str) -> Variable:
     # We want to write data from all bins along dim to a contiguous chunk in the
     # content buffer. This will then allow us to create new, larger bins covering the
@@ -97,14 +108,7 @@ def _concat_bins_variable(var: Variable, dim: str) -> Variable:
     # Setup output indices. This will have the "merged" bins, referencing the new
     # contiguous layout in the content buffer.
     out_sizes = sizes.sum(dim)
-    out_end = cumsum(out_sizes)
-    out_begin = out_end - out_sizes
-    return _cpp._bins_no_validate(
-        data=out.bins.constituents['data'],
-        dim=out.bins.constituents['dim'],
-        begin=out_begin,
-        end=out_end,
-    )
+    return _replace_bin_sizes(out, out_sizes)
 
 
 def _combine_bins_by_binning_variable(var: Variable, param: Variable,
@@ -141,19 +145,10 @@ def _combine_bins_by_binning_variable(var: Variable, param: Variable,
     # Copy all bin contents, performing the actual reordering with the content buffer.
     out[...] = var
 
-    sizes.coords['param'] = param
-    out_sizes = sizes.groupby('param', bins=edges).sum(param.dim).data
-
     # Setup output indices. This will have the "merged" bins, referencing the new
     # contiguous layout in the content buffer.
-    out_end = cumsum(out_sizes)
-    out_begin = out_end - out_sizes
-    return _cpp.bins(
-        data=out.bins.constituents['data'],
-        dim=out.bins.constituents['dim'],
-        begin=out_begin,
-        end=out_end,
-    )
+    out_sizes = sizes.groupby(param, bins=edges).sum(param.dim).data
+    return _replace_bin_sizes(out, out_sizes)
 
 
 def concat_bins(obj: VariableLikeType, dim: str) -> VariableLikeType:
