@@ -468,14 +468,32 @@ def test_bins_concat_applies_irreducible_masks():
     assert sc.identical(da.bins.concat('x'), da['x', :4].bins.concat('x'))
 
 
-def test_bin_without_event_coord():
+def test_bin_1d_without_event_coord():
     table = sc.data.table_xyz(nrow=1000)
     da = table.bin(x=100)
     rng = default_rng(seed=1234)
-    param = sc.array(dims=da.dim, values=rng.random(da.shape))
+    param = sc.array(dims='x', values=rng.random(da.sizes['x']))
     da.coords['param'] = param
     edges = sc.linspace('param', 0.0, 1.0, num=13)
     from scipp.core.bin_remapping import _combine_bins_by_binning_variable
     result = _combine_bins_by_binning_variable(da.data, param, edges)
-    expected = da.groupby('param', bins=edges).bins.concat(da.dim)
+    expected = da.groupby('param', bins=edges).bins.concat('x')
     assert sc.identical(result, expected.data)
+
+
+def test_bin_2d_without_event_coord():
+    table = sc.data.table_xyz(nrow=10)
+    table.data = sc.arange('row', 10, dtype='float64')
+    del table.coords['z']
+    da = table.bin(x=3, y=2)
+    rng = default_rng(seed=1234)
+    param = sc.array(dims='x', values=rng.random(da.sizes['x']))
+    da.coords['param'] = param
+    edges = sc.linspace('param', 0.0, 1.0, num=3)
+    from scipp.core.bin_remapping import _combine_bins_by_binning_variable
+    result = _combine_bins_by_binning_variable(da.data, param, edges)
+    expected = da.groupby('param', bins=edges).bins.concat('x')
+    print(result)
+    print(expected.data)
+    print(expected.data.bins.size())
+    assert sc.identical(result, expected.data.transpose(result.dims))
