@@ -129,25 +129,20 @@ def _combine_bins_by_binning_variable(var: Variable, param: Variable,
     meta_sizes = full(dims=unchanged_dims,
                       shape=[var.sizes[dim] for dim in unchanged_dims],
                       value=var.sizes[dim])
-    print(f'{meta_sizes=}')
     meta_end = cumsum(meta_sizes)
     meta_begin = meta_end - meta_sizes
     tmp = _cpp._bins_no_validate(data=sizes2.flatten(to='dummy'),
                                  dim='dummy',
                                  begin=meta_begin,
                                  end=meta_end)
-    print(tmp)
-    out_dims = [d if d != dim else edges.dim for d in var.dims]
     # TODO This is some duplicate work, as all target indices are the same
-    tmp = DataArray(tmp).bin({edges.dim: edges}).transpose(out_dims)
-    print(tmp.bins.sum())
+    tmp = DataArray(tmp).bin({edges.dim: edges})
 
     # Setup shuffle indices for reordering input sizes such that we can use cumsum for
     # computing output bin sizes and offsets.
     # We bin only the indices and not the sizes since the latter might not be 1-D
     grouped_input_bin = input_bin.bin({edges.dim: edges})
     shuffle = grouped_input_bin.bins.concat(edges.dim).value.values
-    print(f'{shuffle=}')
     sizes_sort_out = sizes2[param.dim, shuffle]
 
     # Indices for reverting shuffle
@@ -158,11 +153,8 @@ def _combine_bins_by_binning_variable(var: Variable, param: Variable,
     out_end = cumsum(sizes_sort_out.data)[param.dim, reverse_shuffle]
     out_begin = out_end - sizes2.data
     out_sizes = tmp.data.bins.sum()
-    print(f'{param=}')
-    print(f'{var.bins.size().values=}')
-    print(f'{out_begin.values=}')
-    print(f'{out_end.values=}')
-    print(f'{(out_end-out_begin).values=}')
+    print(f'{out_begin=}')
+    print(f'{out_end=}')
     print(f'{out_sizes=}')
     return _remap_bins(var, out_begin, out_end, out_sizes)
 

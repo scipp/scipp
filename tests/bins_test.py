@@ -482,14 +482,16 @@ def test_bin_1d_without_event_coord():
 
 
 def test_bin_2d_without_event_coord():
-    table = sc.data.table_xyz(nrow=10)
-    table.data = sc.arange('row', 10, dtype='float64')
+    table = sc.data.table_xyz(nrow=100)
+    table.data = sc.arange('row', 100, dtype='float64')
     del table.coords['z']
-    da = table.bin(x=3, y=2)
+    da = table.bin(x=7, y=3)
+    del da.bins.coords['x']
+    del da.bins.coords['y']
     rng = default_rng(seed=1234)
     param = sc.array(dims='x', values=rng.random(da.sizes['x']))
     da.coords['param'] = param
-    edges = sc.linspace('param', 0.0, 1.0, num=3)
+    edges = sc.linspace('param', 0.0, 1.0, num=5)
     from scipp.core.bin_remapping import _combine_bins_by_binning_variable
     result = _combine_bins_by_binning_variable(da.data, param, edges)
     expected = da.groupby('param', bins=edges).bins.concat('x')
