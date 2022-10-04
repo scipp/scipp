@@ -149,13 +149,13 @@ def _setup_combine_bins_params(var: Variable, coords: Dict[str, Variable],
 
     # Preserve subspace dim order of input data, instead of the one given by `erase`
     changed_dims = [dim for dim in var.dims if dim in erase]
-    unchanged_dims = [d for d in var.dims if d not in changed_dims]
+    unchanged_dims = [dim for dim in var.dims if dim not in changed_dims]
     sizes = DataArray(var.bins.size(), coords=coords)
     input_bin = uuid.uuid4().hex
     changed_shape = [var.sizes[dim] for dim in changed_dims]
     unchanged_shape = [var.sizes[dim] for dim in unchanged_dims]
     changed_volume = prod(changed_shape)
-    # Move modified dims to innermost to ensure data is writen in contiguous memory.
+    # Move modified dims to innermost to ensure data is written in contiguous memory.
     sizes = sizes.transpose(unchanged_dims + changed_dims)
     # Flatten modified subspace for next steps. This is mainly necessary so we can
     # `sort` later to reshuffle back to input bin order, using the added `input_bin`
