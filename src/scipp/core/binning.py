@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Union, Sequence
 from .._scipp import core as _cpp
 from .variable import array, Variable, linspace, arange, epoch, scalar
 from .math import round as round_
-from .bin_remapping import remap_bins
+from .bin_remapping import combine_bins
 
 
 def make_histogrammed(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset], *,
@@ -107,12 +107,12 @@ def make_binned(x: Union[_cpp.Variable, _cpp.DataArray],
                              "binning or histogramming a variable.")
         data = scalar(1.0, unit='counts').broadcast(sizes=x.sizes).copy()
         x = _cpp.DataArray(data, coords={coords[0].dim: x})
-    if _can_remap_bins_by_binning(x, edges, groups, erase):
-        return remap_bins(x, edges=edges, groups=groups, erase=erase)
+    if _can_combine_bins_by_binning(x, edges, groups, erase):
+        return combine_bins(x, edges=edges, groups=groups, erase=erase)
     return _cpp.bin(x, edges, groups, erase)
 
 
-def _can_remap_bins_by_binning(x, edges, groups, erase):
+def _can_combine_bins_by_binning(x, edges, groups, erase):
     if x.bins is None:
         return False
     dims = []

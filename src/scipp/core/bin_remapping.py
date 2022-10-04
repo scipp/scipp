@@ -93,7 +93,7 @@ def _replace_bin_sizes(var: Variable, sizes: Variable) -> Variable:
     )
 
 
-def _remap_bins(var: Variable, begin, end, sizes) -> Variable:
+def _combine_bins(var: Variable, begin, end, sizes) -> Variable:
     out = _cpp._bins_no_validate(
         data=copy_for_overwrite(var.bins.constituents['data']),
         dim=var.bins.constituents['dim'],
@@ -119,7 +119,7 @@ def _concat_bins_variable(var: Variable, dim: str) -> Variable:
     out_end = cumsum(sizes.transpose(out_dims + [dim])).transpose(var.dims)
     out_begin = out_end - sizes
     out_sizes = sizes.sum(dim)
-    return _remap_bins(var, out_begin, out_end, out_sizes)
+    return _combine_bins(var, out_begin, out_end, out_sizes)
 
 
 def _project(var: Variable, dim: str):
@@ -132,18 +132,46 @@ def _project(var: Variable, dim: str):
     return var
 
 
-def func(var: Variable, coords, edges, groups, erase):
-    """Given a number of input coords and output coords, map indices and sizes."""
+def _setup_combine_bins_params(var: Variable, coords: Dict[str, Variable],
+                               edges: List[Variable], groups: List[Variable],
+                               erase: List[str]) -> Dict[str, Variable]:
     from .binning import make_binned
+    # Overview
+    # --------
+    # The purpose of this code is to combine existing bins, but in a more general
+    # manner than `concat`, which combines all bins along a dimension. Here we operate
+    # more like `groupby`, which combines selected subset and creates a new output dim.
+    #
+    # Approach
+    # --------
+    # The dimensions of the input variable define an input space. The changed (erased)
+    # dims define a subspace within that. For example, the input may have
+    # dims=(x,y,z,t) and we combine bins in dims=(x,z), leaving y and t untouched.
+    # The (x,z) subspace will be transformed into a new subspace with different
+    # dimension labels and/or dimensionality. In this function we compute begin/end
+    # offsets and final bin sizes that will be used by `_combine_bins` for reordering
+    # data and seting up the output.
+    # The algorithm steps are as follows:
+    #
+    # 1. The required parameters can be computed from the sizes of the input bins. We
+    #    compute those and subsequently operate on the sizes.
+    # 2. Move the changed subspace to innermost dims. This is ensures that 6.b yields
+    #    offsets that result in correct data order.
+    # 3. Flatten the changed subspace. The makes step 7. work.
+    # 4. Setup pretend binning spanning the subspace. The result has only the dims of
+    #    The unchanged subspace.
+    # 5. Use `make_binned` to perform the "combine" step, yielding input bin sizes
+    #    grouped by output bin.
+    # 6. The result of 5.) provides two things:
+    #    a. The bins.sum() yields output bin sizes.
+    #    b. cumsum over the extracted buffer yields the input bin offset within the
+    #       output content buffer.
+    # 7. The result of 6.b is converted back to the input order, undoing the binning.
+
     # Preserve subspace dim order of input data, instead of using that given by `erase`
     changed_dims = [dim for dim in var.dims if dim in erase]
     unchanged_dims = [d for d in var.dims if d not in changed_dims]
-    sizes = DataArray(var.bins.size(),
-                      coords={
-                          d: coord
-                          for d, coord in coords.items()
-                          if set(coord.dims).issubset(changed_dims)
-                      })
+    sizes = DataArray(var.bins.size(), coords=coords)
     input_bin = uuid.uuid4().hex
     changed_shape = [var.sizes[dim] for dim in changed_dims]
     unchanged_shape = [var.sizes[dim] for dim in unchanged_dims]
@@ -182,12 +210,19 @@ def func(var: Variable, coords, edges, groups, erase):
     return {'begin': out_begin, 'end': out_end, 'sizes': tmp.data.bins.sum()}
 
 
-def remap_bins(da: DataArray, edges: List[Variable], groups: List[Variable],
-               erase: List[str]) -> DataArray:
-    coords = da.coords
+def combine_bins(da: DataArray, edges: List[Variable], groups: List[Variable],
+                 erase: List[str]) -> DataArray:
+    coords = {
+        d: coord
+        for d, coord in da.coords.items() if set(coord.dims).issubset(erase)
+    }
     da = hide_masked_and_reduce_meta(da, erase)
-    params = func(da.data, coords=coords, edges=edges, groups=groups, erase=erase)
-    data = _remap_bins(da.data, **params)
+    params = _setup_combine_bins_params(da.data,
+                                        coords=coords,
+                                        edges=edges,
+                                        groups=groups,
+                                        erase=erase)
+    data = _combine_bins(da.data, **params)
     out = DataArray(data, coords=da.coords, masks=da.masks, attrs=da.attrs)
     for edge in edges:
         out.coords[edge.dim] = edge
