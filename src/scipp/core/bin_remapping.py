@@ -128,13 +128,15 @@ def _project(var: Variable, dim: str):
     return var
 
 
-def func(var: Variable, param, edges):
+def func(var: Variable, coords, edges, groups, erase):
     """Given a number of input coords and output coords, map indices and sizes."""
-    coords = {edges.dim: param}
-    # TODO generalize
-    changed_dims = [param.dim]
+    from .binning import make_binned
+    changed_dims = erase
     unchanged_dims = [d for d in var.dims if d not in changed_dims]
-    sizes = DataArray(var.bins.size(), coords=coords)
+    sizes = DataArray(
+        var.bins.size(),
+        coords={d: coord
+                for d, coord in coords.items() if coord.dim in changed_dims})
     input_bin = uuid.uuid4().hex
     changed_shape = [var.sizes[dim] for dim in changed_dims]
     unchanged_shape = [var.sizes[dim] for dim in unchanged_dims]
@@ -158,8 +160,7 @@ def func(var: Variable, param, edges):
                                  dim=content_dim,
                                  begin=subspace_begin,
                                  end=subspace_end)
-    # tmp = make_binned(DataArray(tmp), edges=edges, groups=groups, erase=changed_dims)
-    tmp = DataArray(tmp).bin({edges.dim: edges})
+    tmp = make_binned(DataArray(tmp), edges=edges, groups=groups, erase=changed_dims)
 
     # As we started with a regular array of data we know that the result of merging the
     # bin contents is also regular, i.e., we can `fold` and then `sort`.
@@ -182,7 +183,8 @@ def _flatten_param_dims(var: Variable, param: Variable):
 
 def _combine_bins_by_binning_variable(var: Variable, param: Variable,
                                       edges: Variable) -> Variable:
-    params = func(var, param, edges)
+    coords = {edges.dim: param}
+    params = func(var, coords=coords, edges=[edges], groups=[], erase=[param.dim])
     return _remap_bins(var, **params)
 
 

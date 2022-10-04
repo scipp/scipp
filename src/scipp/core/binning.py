@@ -125,6 +125,8 @@ def _can_remap_bins_by_binning(x, edges, groups, erase):
             return False
         if edge.dim in x.bins.meta:
             return False
+        if edge.dim not in x.meta:
+            return False
         dims += x.meta[edge.dim].dims
     return set(dims) == set(erase) and len(dims) == len(erase)
 
