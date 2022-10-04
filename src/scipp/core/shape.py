@@ -10,6 +10,7 @@ from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from ._sizes import _parse_dims_shape_sizes
 from ..typing import VariableLikeType
+from .concepts import transform_data
 
 
 def broadcast(
@@ -48,19 +49,11 @@ def broadcast(
         New Variable or DataArray with requested dimension labels and shape.
     """
     sizes = _parse_dims_shape_sizes(dims=dims, shape=shape, sizes=sizes)
-    if isinstance(x, _cpp.Variable):
+
+    def _broadcast(x):
         return _call_cpp_func(_cpp.broadcast, x, sizes["dims"], sizes["shape"])
-    elif isinstance(x, _cpp.DataArray):
-        return _cpp.DataArray(data=_call_cpp_func(_cpp.broadcast, x.data, sizes["dims"],
-                                                  sizes["shape"]),
-                              coords={c: coord
-                                      for c, coord in x.coords.items()},
-                              attrs={a: attr
-                                     for a, attr in x.attrs.items()},
-                              masks={m: mask.copy()
-                                     for m, mask in x.masks.items()})
-    else:
-        raise TypeError("Broadcast only supports Variable and DataArray as inputs.")
+
+    return transform_data(x, _broadcast)
 
 
 def concat(x: Sequence[VariableLikeType], dim: str) -> VariableLikeType:

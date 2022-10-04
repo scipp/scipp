@@ -24,4 +24,5 @@ def transform_data(obj: VariableLikeType, func: Callable) -> VariableLikeType:
         return func(obj)
     if isinstance(obj, DataArray):
         return rewrap_output_data(obj, func(obj.data))
-    # TODO Dataset
+    else:
+        raise TypeError(f"{func} only supports Variable and DataArray as inputs.")
