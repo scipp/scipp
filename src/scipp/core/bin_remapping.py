@@ -5,14 +5,14 @@ import uuid
 from typing import Dict, List
 from math import prod
 from .._scipp import core as _cpp
-from .cpp_classes import DataArray, Variable, Dataset
-from .like import empty_like
+from .cpp_classes import DataArray, Variable
 from .cumulative import cumsum
 from .dataset import irreducible_mask
 from ..typing import VariableLikeType
 from .variable import arange, full
 from .operations import sort
 from .comparison import identical
+from .concepts import copy_for_overwrite
 
 
 def _reduced(obj: Dict[str, Variable], dim: str) -> Dict[str, Variable]:
@@ -29,33 +29,6 @@ def reduced_attrs(da: DataArray, dim: str) -> Dict[str, Variable]:
 
 def reduced_masks(da: DataArray, dim: str) -> Dict[str, Variable]:
     return {name: mask.copy() for name, mask in _reduced(da.masks, dim).items()}
-
-
-def _copy_dict_for_overwrite(mapping: Dict[str, Variable]) -> Dict[str, Variable]:
-    return {name: copy_for_overwrite(var) for name, var in mapping.items()}
-
-
-def copy_for_overwrite(obj: VariableLikeType) -> VariableLikeType:
-    """
-    Copy a Scipp object for overwriting.
-
-    Unlike :py:func:`scipp.empty_like` this does not preserve (and share) coord,
-    mask, and attr values. Instead, those values are not initialized, just like the
-    data values.
-    """
-    if isinstance(obj, Variable):
-        return empty_like(obj)
-    if isinstance(obj, DataArray):
-        return DataArray(copy_for_overwrite(obj.data),
-                         coords=_copy_dict_for_overwrite(obj.coords),
-                         masks=_copy_dict_for_overwrite(obj.masks),
-                         attrs=_copy_dict_for_overwrite(obj.attrs))
-    ds = Dataset(coords=_copy_dict_for_overwrite(obj.coords))
-    for name, da in obj.items():
-        ds[name] = DataArray(copy_for_overwrite(da.data),
-                             masks=_copy_dict_for_overwrite(da.masks),
-                             attrs=_copy_dict_for_overwrite(da.attrs))
-    return ds
 
 
 def hide_masked_and_reduce_meta(da: DataArray, dims: List[str]) -> DataArray:
