@@ -58,7 +58,11 @@ def copy_for_overwrite(obj: VariableLikeType) -> VariableLikeType:
     return ds
 
 
-def hide_masked_and_reduce_meta(da: DataArray, dim: str) -> DataArray:
+def hide_masked_and_reduce_meta(da: DataArray, dims: List[str]) -> DataArray:
+    if len(dims) == 0:
+        return da
+    da = hide_masked_and_reduce_meta(da, dims[1:])
+    dim = dims[0]
     if (mask := irreducible_mask(da.masks, dim)) is not None:
         # Avoid using boolean indexing since it would result in (partial) content
         # buffer copy. Instead index just begin/end and reuse content buffer.
@@ -131,12 +135,15 @@ def _project(var: Variable, dim: str):
 def func(var: Variable, coords, edges, groups, erase):
     """Given a number of input coords and output coords, map indices and sizes."""
     from .binning import make_binned
-    changed_dims = erase
+    # Preserve subspace dim order of input data, instead of using that given by `erase`
+    changed_dims = [dim for dim in var.dims if dim in erase]
     unchanged_dims = [d for d in var.dims if d not in changed_dims]
-    sizes = DataArray(
-        var.bins.size(),
-        coords={d: coord
-                for d, coord in coords.items() if coord.dim in changed_dims})
+    sizes = DataArray(var.bins.size(),
+                      coords={
+                          d: coord
+                          for d, coord in coords.items()
+                          if set(coord.dims).issubset(changed_dims)
+                      })
     input_bin = uuid.uuid4().hex
     changed_shape = [var.sizes[dim] for dim in changed_dims]
     unchanged_shape = [var.sizes[dim] for dim in unchanged_dims]
@@ -175,16 +182,10 @@ def func(var: Variable, coords, edges, groups, erase):
     return {'begin': out_begin, 'end': out_end, 'sizes': tmp.data.bins.sum()}
 
 
-def _flatten_param_dims(var: Variable, param: Variable):
-    dim = uuid.uuid4().hex
-    dims = [d for d in var.dims if d in param.dims]
-    return var.flatten(dims=dims, to=dim), param.transpose(dims).flatten(to=dim)
-
-
 def _combine_bins_by_binning_variable(var: Variable, param: Variable,
                                       edges: Variable) -> Variable:
     coords = {edges.dim: param}
-    params = func(var, coords=coords, edges=[edges], groups=[], erase=[param.dim])
+    params = func(var, coords=coords, edges=[edges], groups=[], erase=list(param.dims))
     return _remap_bins(var, **params)
 
 
@@ -192,8 +193,7 @@ def remap_bins_by_binning(da: DataArray, edges: List[Variable]) -> DataArray:
     assert len(edges) == 1
     edges = next(iter(edges))
     param = da.coords[edges.dim]
-    da, param = _flatten_param_dims(da, param)
-    da = hide_masked_and_reduce_meta(da, param.dim)
+    da = hide_masked_and_reduce_meta(da, param.dims)
     data = _combine_bins_by_binning_variable(da.data, param, edges)
     out = DataArray(data, coords=da.coords, masks=da.masks, attrs=da.attrs)
     out.coords[edges.dim] = edges
@@ -204,6 +204,6 @@ def concat_bins(obj: VariableLikeType, dim: str) -> VariableLikeType:
     if isinstance(obj, Variable):
         return _concat_bins_variable(obj, dim)
     else:
-        da = hide_masked_and_reduce_meta(obj, dim)
+        da = hide_masked_and_reduce_meta(obj, [dim])
         data = _concat_bins_variable(da.data, dim)
         return DataArray(data, coords=da.coords, masks=da.masks, attrs=da.attrs)
