@@ -13,22 +13,7 @@ from .variable import arange, full, index
 from .operations import sort, where
 from .comparison import identical
 from .util import copy_for_overwrite
-
-
-def _reduced(obj: Dict[str, Variable], dim: str) -> Dict[str, Variable]:
-    return {name: var for name, var in obj.items() if dim not in var.dims}
-
-
-def reduced_coords(da: DataArray, dim: str) -> Dict[str, Variable]:
-    return _reduced(da.coords, dim)
-
-
-def reduced_attrs(da: DataArray, dim: str) -> Dict[str, Variable]:
-    return _reduced(da.attrs, dim)
-
-
-def reduced_masks(da: DataArray, dim: str) -> Dict[str, Variable]:
-    return {name: mask.copy() for name, mask in _reduced(da.masks, dim).items()}
+from .concepts import reduced_coords, reduced_attrs, reduced_masks
 
 
 def hide_masked_and_reduce_meta(da: DataArray, dims: List[str]) -> DataArray:
