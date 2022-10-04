@@ -127,7 +127,7 @@ def _can_combine_bins_by_binning(x, edges, groups, erase):
             if coord.dim not in x.meta:
                 return False
             dims += x.meta[coord.dim].dims
-    return set(dims) == set(erase) and len(dims) == len(erase)
+    return set(dims) <= set(erase) and len(dims) <= len(erase)
 
 
 def _require_coord(name, coord):

@@ -586,3 +586,20 @@ def test_group_many_to_many_with_extra_outer_dim_uses_optimized_codepath():
     # The old "standard" implementation uses a massive amount of memory, crashing even
     # with 256 GByte of RAM.
     assert da.group('xcoarse', 'ycoarse').dims == ('z', 'xcoarse', 'ycoarse')
+
+
+def test_group_many_and_erase():
+    from scipp import binning
+    binning.make_binned
+    size = 512
+    table = sc.data.table_xyz(int(1e3))
+    da = table.bin(z=3, x=size, y=size)
+    xcoarse = sc.arange('x', size) // 2
+    ycoarse = sc.arange('y', size) // 2
+    da.coords['xcoarse'] = xcoarse
+    da.coords['ycoarse'] = ycoarse
+    result = binning.make_binned(da,
+                                 edges=[],
+                                 groups=[sc.arange('xcoarse', size // 2)],
+                                 erase=['x', 'y'])
+    assert result.dims == ('z', 'xcoarse')
