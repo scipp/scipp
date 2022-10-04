@@ -109,12 +109,12 @@ def make_binned(x: Union[_cpp.Variable, _cpp.DataArray],
                              "binning or histogramming a variable.")
         data = scalar(1.0, unit='counts').broadcast(sizes=x.sizes).copy()
         x = _cpp.DataArray(data, coords={coords[0].dim: x})
-    if _can_combine_bins_by_binning(x, edges, groups, erase):
+    if _can_operate_on_bins(x, edges, groups, erase):
         return combine_bins(x, edges=edges, groups=groups, erase=erase)
     return _cpp.bin(x, edges, groups, erase)
 
 
-def _can_combine_bins_by_binning(x, edges, groups, erase):
+def _can_operate_on_bins(x, edges, groups, erase) -> bool:
     if x.bins is None:
         return False
     dims = []
