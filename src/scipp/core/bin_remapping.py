@@ -109,17 +109,16 @@ def _combine_bins(var: Variable, begin, end, sizes) -> Variable:
     return _replace_bin_sizes(out, sizes)
 
 
-def _concat_bins_variable(var: Variable, dim: str) -> Variable:
+def _setup_concat_bins_params(var: Variable, dim: str) -> Variable:
     # We want to write data from all bins along dim to a contiguous chunk in the
     # content buffer. This will then allow us to create new, larger bins covering the
     # respective input bins. We use `cumsum` after moving `dim` to the innermost dim.
     # This will allow us to setup offsets for the new contiguous layout.
     sizes = var.bins.size()
     out_dims = [d for d in var.dims if d != dim]
-    out_end = cumsum(sizes.transpose(out_dims + [dim])).transpose(var.dims)
-    out_begin = out_end - sizes
-    out_sizes = sizes.sum(dim)
-    return _combine_bins(var, out_begin, out_end, out_sizes)
+    end = cumsum(sizes.transpose(out_dims + [dim])).transpose(var.dims)
+    begin = end - sizes
+    return {'begin': begin, 'end': end, 'sizes': sizes.sum(dim)}
 
 
 def _project(var: Variable, dim: str):
@@ -214,11 +213,14 @@ def combine_bins(da: DataArray, edges: List[Variable], groups: List[Variable],
         for d, coord in da.coords.items() if set(coord.dims).issubset(erase)
     }
     da = hide_masked_and_reduce_meta(da, erase)
-    params = _setup_combine_bins_params(da.data,
-                                        coords=coords,
-                                        edges=edges,
-                                        groups=groups,
-                                        erase=erase)
+    if len(edges) == 0 and len(groups) == 0 and len(erase) == 1:
+        params = _setup_concat_bins_params(da.data, erase[0])
+    else:
+        params = _setup_combine_bins_params(da.data,
+                                            coords=coords,
+                                            edges=edges,
+                                            groups=groups,
+                                            erase=erase)
     data = _combine_bins(da.data, **params)
     out = DataArray(data, coords=da.coords, masks=da.masks, attrs=da.attrs)
     for edge in edges:
@@ -229,9 +231,6 @@ def combine_bins(da: DataArray, edges: List[Variable], groups: List[Variable],
 
 
 def concat_bins(obj: VariableLikeType, dim: str) -> VariableLikeType:
-    if isinstance(obj, Variable):
-        return _concat_bins_variable(obj, dim)
-    else:
-        da = hide_masked_and_reduce_meta(obj, [dim])
-        data = _concat_bins_variable(da.data, dim)
-        return DataArray(data, coords=da.coords, masks=da.masks, attrs=da.attrs)
+    da = obj if isinstance(obj, DataArray) else DataArray(obj)
+    out = combine_bins(da, edges=[], groups=[], erase=[dim])
+    return out if isinstance(obj, DataArray) else out.data
