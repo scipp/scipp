@@ -12,7 +12,7 @@ from ..typing import VariableLikeType
 from .variable import arange, full
 from .operations import sort
 from .comparison import identical
-from .concepts import copy_for_overwrite
+from .util import copy_for_overwrite
 
 
 def _reduced(obj: Dict[str, Variable], dim: str) -> Dict[str, Variable]:
