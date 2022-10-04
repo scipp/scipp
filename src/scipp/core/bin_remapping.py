@@ -9,8 +9,8 @@ from .cpp_classes import DataArray, Variable
 from .cumulative import cumsum
 from .dataset import irreducible_mask
 from ..typing import VariableLikeType
-from .variable import arange, full
-from .operations import sort
+from .variable import arange, full, index
+from .operations import sort, where
 from .comparison import identical
 from .util import copy_for_overwrite
 
@@ -40,13 +40,15 @@ def hide_masked_and_reduce_meta(da: DataArray, dims: List[str]) -> DataArray:
         # Avoid using boolean indexing since it would result in (partial) content
         # buffer copy. Instead index just begin/end and reuse content buffer.
         comps = da.bins.constituents
-        select = ~mask
-        data = _cpp._bins_no_validate(
-            data=comps['data'],
-            dim=comps['dim'],
-            begin=comps['begin'][select],
-            end=comps['end'][select],
-        )
+        if mask.ndim == 1:
+            select = ~mask
+            comps['begin'] = comps['begin'][select]
+            comps['end'] = comps['end'][select]
+        else:
+            zero = index(0, dtype='int64')
+            comps['begin'] = where(mask, zero, comps['begin'])
+            comps['end'] = where(mask, zero, comps['end'])
+        data = _cpp._bins_no_validate(**comps)
     else:
         data = da.data
     return DataArray(data,
