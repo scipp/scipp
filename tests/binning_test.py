@@ -598,8 +598,9 @@ def test_group_many_and_erase():
     ycoarse = sc.arange('y', size) // 2
     da.coords['xcoarse'] = xcoarse
     da.coords['ycoarse'] = ycoarse
-    result = binning.make_binned(da,
-                                 edges=[],
-                                 groups=[sc.arange('xcoarse', size // 2)],
-                                 erase=['x', 'y'])
+    result = binning.make_binned(
+        da,
+        edges=[],
+        groups=[sc.arange('xcoarse', size // 2, dtype=xcoarse.dtype)],
+        erase=['x', 'y'])
     assert result.dims == ('z', 'xcoarse')
