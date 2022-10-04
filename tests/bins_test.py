@@ -476,7 +476,7 @@ def test_bin_1d_without_event_coord():
     da.coords['param'] = param
     edges = sc.linspace('param', 0.0, 1.0, num=13)
     from scipp.core.bin_remapping import remap_bins_by_binning
-    result = remap_bins_by_binning(da, [edges])
+    result = remap_bins_by_binning(da, [edges], [], ['x'])
     expected = da.groupby('param', bins=edges).bins.concat('x')
     assert sc.identical(result, expected)
 
@@ -490,7 +490,7 @@ def test_bin_outer_of_2d_without_event_coord():
     da.coords['param'] = param
     edges = sc.linspace('param', 0.0, 1.0, num=5)
     from scipp.core.bin_remapping import remap_bins_by_binning
-    result = remap_bins_by_binning(da, [edges])
+    result = remap_bins_by_binning(da, [edges], [], ['x'])
     expected = da.groupby('param', bins=edges).bins.concat('x')
     assert sc.identical(result, expected.transpose(result.dims))
 
@@ -504,9 +504,9 @@ def test_bin_combined_outer_and_inner_of_2d_without_event_coord():
     edges = sc.linspace('param', 0.0, 1.0, num=5)
     from scipp.core.bin_remapping import remap_bins_by_binning
     da.coords['param'] = param
-    result_xy = remap_bins_by_binning(da, [edges])
+    result_xy = remap_bins_by_binning(da, [edges], [], ['x', 'y'])
     da.coords['param'] = param.transpose()
-    result_yx = remap_bins_by_binning(da, [edges])
+    result_yx = remap_bins_by_binning(da, [edges], [], ['x', 'y'])
     assert sc.identical(result_xy, result_yx)
     expected = da.flatten(to='dummy').groupby('param', bins=edges).bins.concat('dummy')
     assert sc.identical(result_xy, expected.transpose(result_xy.dims))
@@ -524,7 +524,7 @@ def test_bin_outer_and_inner_of_2d_without_event_coord():
     from scipp.core.bin_remapping import remap_bins_by_binning
     da.coords['xnew'] = x
     da.coords['ynew'] = y
-    result = remap_bins_by_binning(da, [xnew, ynew])
+    result = remap_bins_by_binning(da, [xnew, ynew], [], ['x', 'y'])
     expected = da.groupby('ynew', bins=ynew).bins.concat('y') \
                  .groupby('xnew', bins=xnew).bins.concat('x')
     assert sc.identical(result, expected)

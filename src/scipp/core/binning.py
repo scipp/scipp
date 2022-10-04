@@ -108,7 +108,7 @@ def make_binned(x: Union[_cpp.Variable, _cpp.DataArray],
         data = scalar(1.0, unit='counts').broadcast(sizes=x.sizes).copy()
         x = _cpp.DataArray(data, coords={coords[0].dim: x})
     if _can_remap_bins_by_binning(x, edges, groups, erase):
-        return remap_bins_by_binning(x, edges)
+        return remap_bins_by_binning(x, edges=edges, groups=groups, erase=erase)
     return _cpp.bin(x, edges, groups, erase)
 
 

@@ -182,20 +182,17 @@ def func(var: Variable, coords, edges, groups, erase):
     return {'begin': out_begin, 'end': out_end, 'sizes': tmp.data.bins.sum()}
 
 
-def remap_bins_by_binning(da: DataArray, edges: List[Variable]) -> DataArray:
-    erase = []
-    for x in edges:
-        dim = x.dim
-        for d in da.meta[dim].dims:
-            if d not in erase:
-                erase.append(d)
+def remap_bins_by_binning(da: DataArray, edges: List[Variable], groups: List[Variable],
+                          erase: List[str]) -> DataArray:
     coords = da.coords
     da = hide_masked_and_reduce_meta(da, erase)
-    params = func(da.data, coords=coords, edges=edges, groups=[], erase=erase)
+    params = func(da.data, coords=coords, edges=edges, groups=groups, erase=erase)
     data = _remap_bins(da.data, **params)
     out = DataArray(data, coords=da.coords, masks=da.masks, attrs=da.attrs)
     for edge in edges:
         out.coords[edge.dim] = edge
+    for group in groups:
+        out.coords[group.dim] = group
     return out
 
 
