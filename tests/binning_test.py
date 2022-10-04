@@ -604,3 +604,12 @@ def test_group_many_and_erase():
         groups=[sc.arange('xcoarse', size // 2, dtype=xcoarse.dtype)],
         erase=['x', 'y'])
     assert result.dims == ('z', 'xcoarse')
+
+
+def test_erase_multiple():
+    from scipp import binning
+    binning.make_binned
+    table = sc.data.table_xyz(int(1e3))
+    da = table.bin(x=13, y=7)
+    result = binning.make_binned(da, edges=[], groups=[], erase=['x', 'y'])
+    assert sc.identical(result.value, da.bins.constituents['data'])

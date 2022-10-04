@@ -82,17 +82,23 @@ def _combine_bins(var: Variable, begin, end, sizes) -> Variable:
     return _replace_bin_sizes(out, sizes)
 
 
-def _setup_concat_bins_params(var: Variable, dim: str) -> Variable:
+def _sum(var: Variable, dims: List[str]) -> Variable:
+    for dim in dims:
+        var = var.sum(dim)
+    return var
+
+
+def _setup_concat_bins_params(var: Variable, dims: List[str]) -> Variable:
     # We want to write data from all bins along dim to a contiguous chunk in the
     # content buffer. This will then allow us to create new, larger bins covering the
     # respective input bins. We use `cumsum` after moving `dim` to the innermost dim.
     # This will allow us to setup offsets for the new contiguous layout.
-    changed_dims = [dim]
-    unchanged_dims = [d for d in var.dims if d != dim]
+    changed_dims = dims
+    unchanged_dims = [d for d in var.dims if d not in changed_dims]
     sizes = var.bins.size()
     end = cumsum(sizes.transpose(unchanged_dims + changed_dims)).transpose(var.dims)
     begin = end - sizes
-    return {'begin': begin, 'end': end, 'sizes': sizes.sum(dim)}
+    return {'begin': begin, 'end': end, 'sizes': _sum(sizes, dims)}
 
 
 def _project(var: Variable, dim: str):
@@ -166,7 +172,7 @@ def _setup_combine_bins_params(var: Variable, coords: Dict[str, Variable],
                                  dim=content_dim,
                                  begin=sub_begin,
                                  end=sub_end)
-    tmp = make_binned(tmp, edges=edges, groups=groups, erase=changed_dims)
+    tmp = make_binned(tmp, edges=edges, groups=groups)
 
     # As we started with a regular array of data we know that the result of merging the
     # bin contents is also regular, i.e., we can `fold` and then `sort`.
@@ -187,8 +193,8 @@ def combine_bins(da: DataArray, edges: List[Variable], groups: List[Variable],
         for d, coord in da.coords.items() if set(coord.dims).issubset(erase)
     }
     da = hide_masked_and_reduce_meta(da, erase)
-    if len(edges) == 0 and len(groups) == 0 and len(erase) == 1:
-        params = _setup_concat_bins_params(da.data, erase[0])
+    if len(edges) == 0 and len(groups) == 0:
+        params = _setup_concat_bins_params(da.data, erase)
     else:
         params = _setup_combine_bins_params(da.data,
                                             coords=coords,
