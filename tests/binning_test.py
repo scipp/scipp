@@ -547,3 +547,42 @@ def test_variable_bin_equivalent_to_bin_of_data_array_with_counts():
     coord = sc.array(dims=['row'], values=[2, 2, 1, 3])
     da = sc.DataArray(data, coords={'x': coord})
     assert sc.identical(coord.bin(x=3), da.bin(x=3))
+
+
+def test_group_many_to_many_uses_optimized_codepath():
+    size = 512
+    table = sc.data.table_xyz(int(1e3))
+    da = table.bin(x=size, y=size)
+    xcoarse = sc.arange('x', size) // 2
+    ycoarse = sc.arange('y', size) // 2
+    da.coords['xcoarse'] = xcoarse
+    da.coords['ycoarse'] = ycoarse
+    # The old "standard" implementation uses a massive amount of memory, crashing even
+    # with 256 GByte of RAM.
+    assert da.group('xcoarse', 'ycoarse').dims == ('xcoarse', 'ycoarse')
+
+
+def test_group_many_to_many_with_extra_inner_dim_uses_optimized_codepath():
+    size = 512
+    table = sc.data.table_xyz(int(1e3))
+    da = table.bin(x=size, y=size, z=3)
+    xcoarse = sc.arange('x', size) // 2
+    ycoarse = sc.arange('y', size) // 2
+    da.coords['xcoarse'] = xcoarse
+    da.coords['ycoarse'] = ycoarse
+    # The old "standard" implementation uses a massive amount of memory, crashing even
+    # with 256 GByte of RAM.
+    assert da.group('xcoarse', 'ycoarse').dims == ('z', 'xcoarse', 'ycoarse')
+
+
+def test_group_many_to_many_with_extra_outer_dim_uses_optimized_codepath():
+    size = 512
+    table = sc.data.table_xyz(int(1e3))
+    da = table.bin(z=3, x=size, y=size)
+    xcoarse = sc.arange('x', size) // 2
+    ycoarse = sc.arange('y', size) // 2
+    da.coords['xcoarse'] = xcoarse
+    da.coords['ycoarse'] = ycoarse
+    # The old "standard" implementation uses a massive amount of memory, crashing even
+    # with 256 GByte of RAM.
+    assert da.group('xcoarse', 'ycoarse').dims == ('z', 'xcoarse', 'ycoarse')

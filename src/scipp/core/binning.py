@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Union, Sequence
 from .._scipp import core as _cpp
 from .variable import array, Variable, linspace, arange, epoch, scalar
 from .math import round as round_
-from .bin_remapping import remap_bins_by_binning
+from .bin_remapping import remap_bins
 
 
 def make_histogrammed(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset], *,
@@ -108,26 +108,23 @@ def make_binned(x: Union[_cpp.Variable, _cpp.DataArray],
         data = scalar(1.0, unit='counts').broadcast(sizes=x.sizes).copy()
         x = _cpp.DataArray(data, coords={coords[0].dim: x})
     if _can_remap_bins_by_binning(x, edges, groups, erase):
-        return remap_bins_by_binning(x, edges=edges, groups=groups, erase=erase)
+        return remap_bins(x, edges=edges, groups=groups, erase=erase)
     return _cpp.bin(x, edges, groups, erase)
 
 
 def _can_remap_bins_by_binning(x, edges, groups, erase):
     if x.bins is None:
         return False
-    if len(groups) != 0:
-        return False
-    if len(edges) != 1:
-        return False  # Not implemented currently, but possible
     dims = []
-    for edge in edges:
-        if edge.ndim != 1:
-            return False
-        if edge.dim in x.bins.meta:
-            return False
-        if edge.dim not in x.meta:
-            return False
-        dims += x.meta[edge.dim].dims
+    for coords in [edges, groups]:
+        for coord in coords:
+            if coord.ndim != 1:
+                return False
+            if coord.dim in x.bins.meta:
+                return False
+            if coord.dim not in x.meta:
+                return False
+            dims += x.meta[coord.dim].dims
     return set(dims) == set(erase) and len(dims) == len(erase)
 
 

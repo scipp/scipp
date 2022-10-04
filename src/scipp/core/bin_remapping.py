@@ -182,8 +182,8 @@ def func(var: Variable, coords, edges, groups, erase):
     return {'begin': out_begin, 'end': out_end, 'sizes': tmp.data.bins.sum()}
 
 
-def remap_bins_by_binning(da: DataArray, edges: List[Variable], groups: List[Variable],
-                          erase: List[str]) -> DataArray:
+def remap_bins(da: DataArray, edges: List[Variable], groups: List[Variable],
+               erase: List[str]) -> DataArray:
     coords = da.coords
     da = hide_masked_and_reduce_meta(da, erase)
     params = func(da.data, coords=coords, edges=edges, groups=groups, erase=erase)
