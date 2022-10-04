@@ -100,7 +100,9 @@ def make_binned(x: Union[_cpp.Variable, _cpp.DataArray],
         groups = []
     if edges is None:
         edges = []
-    if isinstance(x, Variable):
+    if isinstance(x, Variable) and x.bins is not None:
+        x = _cpp.DataArray(x)
+    elif isinstance(x, Variable):
         coords = [*edges, *groups]
         if len(coords) != 1:
             raise ValueError("Edges for exactly one dimension must be specified when "

@@ -178,24 +178,22 @@ def _setup_combine_bins_params(var: Variable, coords: Dict[str, Variable],
     changed_volume = prod(changed_shape)
     # Move modified dims to innermost to ensure data is writen in contiguous memory.
     sizes = sizes.transpose(unchanged_dims + changed_dims)
-    index_range = arange(input_bin, changed_volume, unit=None)
     # Flatten modified subspace for next steps. This is mainly necessary so we can
-    # `sort` later to reshuffle back to input bin order.
+    # `sort` later to reshuffle back to input bin order, using the added `input_bin`
+    # coord:
     flat_sizes = sizes.flatten(dims=changed_dims, to=input_bin)
-    flat_sizes.coords[input_bin] = index_range
+    flat_sizes.coords[input_bin] = arange(input_bin, changed_volume, unit=None)
 
     # Sizes and begin/end indices of changed subspace
-    subspace_sizes = full(dims=unchanged_dims,
-                          shape=unchanged_shape,
-                          value=changed_volume)
-    subspace_end = cumsum(subspace_sizes)
-    subspace_begin = subspace_end - subspace_sizes
+    sub_sizes = full(dims=unchanged_dims, shape=unchanged_shape, value=changed_volume)
+    sub_end = cumsum(sub_sizes)
+    sub_begin = sub_end - sub_sizes
     content_dim = uuid.uuid4().hex
     tmp = _cpp._bins_no_validate(data=flat_sizes.flatten(to=content_dim),
                                  dim=content_dim,
-                                 begin=subspace_begin,
-                                 end=subspace_end)
-    tmp = make_binned(DataArray(tmp), edges=edges, groups=groups, erase=changed_dims)
+                                 begin=sub_begin,
+                                 end=sub_end)
+    tmp = make_binned(tmp, edges=edges, groups=groups, erase=changed_dims)
 
     # As we started with a regular array of data we know that the result of merging the
     # bin contents is also regular, i.e., we can `fold` and then `sort`.
@@ -203,11 +201,10 @@ def _setup_combine_bins_params(var: Variable, coords: Dict[str, Variable],
     # This should be the same in every bin. Unfortunately the above process duplicates
     # it, so we have to project back to 1-D so `sort` works.
     end.coords[input_bin] = _project(end.coords[input_bin], input_bin)
-    out_end = sort(end, input_bin).fold(dim=input_bin,
-                                        dims=changed_dims,
-                                        shape=changed_shape).data
-    out_begin = out_end - sizes.data
-    return {'begin': out_begin, 'end': out_end, 'sizes': tmp.data.bins.sum()}
+    end = sort(end, input_bin).data
+    end = end.fold(dim=input_bin, dims=changed_dims, shape=changed_shape)
+    begin = end - sizes.data
+    return {'begin': begin, 'end': end, 'sizes': tmp.data.bins.sum()}
 
 
 def combine_bins(da: DataArray, edges: List[Variable], groups: List[Variable],
