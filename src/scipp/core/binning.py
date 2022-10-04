@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+import itertools
 import warnings
 from numbers import Integral
 from typing import Dict, List, Optional, Union, Sequence
@@ -118,15 +119,14 @@ def _can_operate_on_bins(x, edges, groups, erase) -> bool:
     if x.bins is None:
         return False
     dims = []
-    for coords in [edges, groups]:
-        for coord in coords:
-            if coord.ndim != 1:
-                return False
-            if coord.dim in x.bins.meta:
-                return False
-            if coord.dim not in x.meta:
-                return False
-            dims += x.meta[coord.dim].dims
+    for coord in itertools.chain(edges, groups):
+        if coord.ndim != 1:
+            return False
+        if coord.dim in x.bins.meta:
+            return False
+        if coord.dim not in x.meta:
+            return False
+        dims += x.meta[coord.dim].dims
     return set(dims) <= set(erase) and len(dims) <= len(erase)
 
 

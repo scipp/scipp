@@ -87,9 +87,10 @@ def _setup_concat_bins_params(var: Variable, dim: str) -> Variable:
     # content buffer. This will then allow us to create new, larger bins covering the
     # respective input bins. We use `cumsum` after moving `dim` to the innermost dim.
     # This will allow us to setup offsets for the new contiguous layout.
+    changed_dims = [dim]
+    unchanged_dims = [d for d in var.dims if d != dim]
     sizes = var.bins.size()
-    out_dims = [d for d in var.dims if d != dim]
-    end = cumsum(sizes.transpose(out_dims + [dim])).transpose(var.dims)
+    end = cumsum(sizes.transpose(unchanged_dims + changed_dims)).transpose(var.dims)
     begin = end - sizes
     return {'begin': begin, 'end': end, 'sizes': sizes.sum(dim)}
 
@@ -140,7 +141,7 @@ def _setup_combine_bins_params(var: Variable, coords: Dict[str, Variable],
     #       output content buffer.
     # 7. The result of 6.b is converted back to the input order, undoing the binning.
 
-    # Preserve subspace dim order of input data, instead of using that given by `erase`
+    # Preserve subspace dim order of input data, instead of the one given by `erase`
     changed_dims = [dim for dim in var.dims if dim in erase]
     unchanged_dims = [d for d in var.dims if d not in changed_dims]
     sizes = DataArray(var.bins.size(), coords=coords)

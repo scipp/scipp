@@ -19,7 +19,7 @@ def cumsum(a: VariableLikeType,
 
     Parameters
     ----------
-    a:
+    a: scipp.typing.VariableLike
         Input data.
     dim:
         Optional dimension along which to calculate the sum. If not
@@ -30,7 +30,7 @@ def cumsum(a: VariableLikeType,
 
     Returns
     -------
-    :
+    : Same type as input
         The cumulative sum of the input values.
     """
 
