@@ -3,6 +3,7 @@
 # @author Simon Heybrock
 from typing import Callable, Dict, Literal, Optional, Union, Tuple
 import uuid
+import warnings
 
 from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
@@ -432,6 +433,9 @@ class GroupbyBins:
         self._obj = obj
 
     def concat(self, dim):
+        warnings.warn(
+            "groupby(...).bins.concat(dim) deprecated. `group` or `bin` instead",
+            UserWarning)
         return self._obj.concat(dim)
 
 

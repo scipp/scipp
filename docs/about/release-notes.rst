@@ -59,6 +59,8 @@ Documentation
 Deprecations
 ~~~~~~~~~~~~
 
+- The ``concat`` action of :py:func:`scipp.groupby` is deprecated. Use :py:func:`scipp.group` and :py:func:`scipp.bin` instead `#2827 <https://github.com/scipp/scipp/pull/2827>`_.
+
 Stability, Maintainability, and Testing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
