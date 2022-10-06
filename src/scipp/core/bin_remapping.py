@@ -42,14 +42,11 @@ def hide_masked_and_reduce_meta(da: DataArray, dims: List[str]) -> DataArray:
 
 
 def _replace_bin_sizes(var: Variable, sizes: Variable) -> Variable:
-    out_end = cumsum(sizes)
-    out_begin = out_end - sizes
-    return _cpp._bins_no_validate(
-        data=var.bins.constituents['data'],
-        dim=var.bins.constituents['dim'],
-        begin=out_begin,
-        end=out_end,
-    )
+    end = cumsum(sizes)
+    begin = end - sizes
+    data = var if var.bins is None else var.bins.constituents['data']
+    dim = var.dim if var.bins is None else var.bins.constituents['dim']
+    return _cpp._bins_no_validate(data=data, dim=dim, begin=begin, end=end)
 
 
 def _sum(var: Variable, dims: List[str]) -> Variable:
@@ -122,10 +119,8 @@ def _combine_bins(var: Variable, coords: Dict[str, Variable], edges: List[Variab
     # Sizes and begin/end indices of changed subspace
     sub_sizes = index(changed_volume).broadcast(dims=unchanged_dims,
                                                 shape=unchanged_shape)
-    end = cumsum(sub_sizes)
-    begin = end - sub_sizes
     params = params.flatten(to=uuid.uuid4().hex)
-    params = _cpp._bins_no_validate(data=params, dim=params.dim, begin=begin, end=end)
+    params = _replace_bin_sizes(params, sub_sizes)
     params = make_binned(params, edges=edges, groups=groups)
 
     source = _cpp._bins_no_validate(
