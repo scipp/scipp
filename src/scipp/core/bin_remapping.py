@@ -41,7 +41,7 @@ def hide_masked_and_reduce_meta(da: DataArray, dims: List[str]) -> DataArray:
                      attrs=reduced_attrs(da, dim))
 
 
-def _replace_bin_sizes(var: Variable, sizes: Variable) -> Variable:
+def _with_bin_sizes(var: Variable, sizes: Variable) -> Variable:
     end = cumsum(sizes)
     begin = end - sizes
     data = var if var.bins is None else var.bins.constituents['data']
@@ -56,16 +56,20 @@ def _sum(var: Variable, dims: List[str]) -> Variable:
 
 
 def _concat_bins(var: Variable, dims: List[str]) -> Variable:
-    # TODO update comment
-    # We want to write data from all bins along dim to a contiguous chunk in the
-    # content buffer. This will then allow us to create new, larger bins covering the
-    # respective input bins. We use `cumsum` after moving `dim` to the innermost dim.
-    # This will allow us to setup offsets for the new contiguous layout.
+    # To concat bins, two things need to happen:
+    # 1. Data needs to be written to a contiguous chunk.
+    # 2. New bin begin/end indices need to be setup.
+    # If the dims to concatenate are the *inner* dims a call to `copy()` performs 1.
+    # Otherwise, we first transpose and then `copy()`.
+    # For step 2. we simply sum the (transposed) input bin sizes over the concat dims,
+    # which `_with_bin_sizes` can use to compute new begin/end indices.
     changed_dims = dims
     unchanged_dims = [d for d in var.dims if d not in changed_dims]
+    # TODO It would be possible to support a copy=False parameter, to skip the copy if
+    # the copy would not result in an moving or reordering.
     out = var.transpose(unchanged_dims + changed_dims).copy()
     sizes = _sum(out.bins.size(), dims)
-    return _replace_bin_sizes(out, sizes)
+    return _with_bin_sizes(out, sizes)
 
 
 def _combine_bins(var: Variable, coords: Dict[str, Variable], edges: List[Variable],
@@ -79,29 +83,10 @@ def _combine_bins(var: Variable, coords: Dict[str, Variable], edges: List[Variab
     #
     # Approach
     # --------
-    # The dimensions of the input variable define an input space. The changed (erased)
-    # dims define a subspace within that. For example, the input may have
-    # dims=(x,y,z,t) and we combine bins in dims=(x,z), leaving y and t untouched.
-    # The (x,z) subspace will be transformed into a new subspace with different
-    # dimension labels and/or dimensionality. In this function we compute begin/end
-    # offsets and final bin sizes that will be used by `_combine_bins` for reordering
-    # data and seting up the output.
-    # The algorithm steps are as follows:
-    #
-    # 1. The required parameters can be computed from the sizes of the input bins. We
-    #    compute those and subsequently operate on the sizes.
-    # 2. Move the changed subspace to innermost dims. This is ensures that 6.b yields
-    #    offsets that result in correct data order.
-    # 3. Flatten the changed subspace. The makes step 7. work.
-    # 4. Setup pretend binning spanning the subspace. The result has only the dims of
-    #    The unchanged subspace.
-    # 5. Use `make_binned` to perform the "combine" step, yielding input bin sizes
-    #    grouped by output bin.
-    # 6. The result of 5.) provides two things:
-    #    a. The bins.sum() yields output bin sizes.
-    #    b. cumsum over the extracted buffer yields the input bin offset within the
-    #       output content buffer.
-    # 7. The result of 6.b is converted back to the input order, undoing the binning.
+    # The algorithm works concetually similar to `_concat_bins`, but with an additional
+    # step, calling `make_binned` for grouping within the erased dims. For the final
+    # output binning, instead of summing the input bin sizes over all erased dims, we
+    # sum only within the groups created by `make_binned`.
 
     # Preserve subspace dim order of input data, instead of the one given by `erase`
     changed_dims = [dim for dim in var.dims if dim in erase]
@@ -120,16 +105,19 @@ def _combine_bins(var: Variable, coords: Dict[str, Variable], edges: List[Variab
     sub_sizes = index(changed_volume).broadcast(dims=unchanged_dims,
                                                 shape=unchanged_shape)
     params = params.flatten(to=uuid.uuid4().hex)
-    params = _replace_bin_sizes(params, sub_sizes)
+    params = _with_bin_sizes(params, sub_sizes)
+    # Apply desired binning/grouping to sizes and begin/end
     params = make_binned(params, edges=edges, groups=groups)
 
+    # Setup view of source content with desired target bin order
     source = _cpp._bins_no_validate(
         data=var.bins.constituents['data'],
         dim=var.bins.constituents['dim'],
         begin=params.bins.constituents['data'].attrs['begin'],
         end=params.bins.constituents['data'].attrs['end'],
     )
-    return _replace_bin_sizes(source.copy(), sizes=params.data.bins.sum())
+    # Call `copy()` to reorder data and `_with_bin_sizes` to put in place new indices.
+    return _with_bin_sizes(source.copy(), sizes=params.data.bins.sum())
 
 
 def combine_bins(da: DataArray, edges: List[Variable], groups: List[Variable],
