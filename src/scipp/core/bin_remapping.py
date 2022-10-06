@@ -9,10 +9,8 @@ from .cpp_classes import DataArray, Variable
 from .cumulative import cumsum
 from .dataset import irreducible_mask
 from ..typing import VariableLikeType
-from .variable import arange, full, index
-from .operations import sort, where
-from .comparison import identical
-from .util import copy_for_overwrite
+from .variable import index
+from .operations import where
 from .concepts import reduced_coords, reduced_attrs, reduced_masks
 
 
@@ -36,6 +34,7 @@ def hide_masked_and_reduce_meta(da: DataArray, dims: List[str]) -> DataArray:
         data = _cpp._bins_no_validate(**comps)
     else:
         data = da.data
+    # TODO avoid "reducing" (and copying) recursively
     return DataArray(data,
                      coords=reduced_coords(da, dim),
                      masks=reduced_masks(da, dim),
@@ -53,22 +52,6 @@ def _replace_bin_sizes(var: Variable, sizes: Variable) -> Variable:
     )
 
 
-def _combine_bins(var: Variable, begin, end, sizes) -> Variable:
-    out = _cpp._bins_no_validate(
-        data=copy_for_overwrite(var.bins.constituents['data']),
-        dim=var.bins.constituents['dim'],
-        begin=begin,
-        end=end,
-    )
-
-    # Copy all bin contents, performing the actual reordering with the content buffer.
-    out[...] = var
-
-    # Setup output indices. This will have the "merged" bins, referencing the new
-    # contiguous layout in the content buffer.
-    return _replace_bin_sizes(out, sizes)
-
-
 def _sum(var: Variable, dims: List[str]) -> Variable:
     for dim in dims:
         var = var.sum(dim)
@@ -76,6 +59,7 @@ def _sum(var: Variable, dims: List[str]) -> Variable:
 
 
 def _concat_bins(var: Variable, dims: List[str]) -> Variable:
+    # TODO update comment
     # We want to write data from all bins along dim to a contiguous chunk in the
     # content buffer. This will then allow us to create new, larger bins covering the
     # respective input bins. We use `cumsum` after moving `dim` to the innermost dim.
@@ -87,19 +71,8 @@ def _concat_bins(var: Variable, dims: List[str]) -> Variable:
     return _replace_bin_sizes(out, sizes)
 
 
-def _project(var: Variable, dim: str):
-    while var.dims != (dim, ):
-        outer = var.dims[0]
-        min_ = var.min(outer)
-        max_ = var.max(outer)
-        assert identical(min_, max_)
-        var = min_
-    return var
-
-
-def _setup_combine_bins_params(var: Variable, coords: Dict[str, Variable],
-                               edges: List[Variable], groups: List[Variable],
-                               erase: List[str]) -> Dict[str, Variable]:
+def _combine_bins(var: Variable, coords: Dict[str, Variable], edges: List[Variable],
+                  groups: List[Variable], erase: List[str]) -> Dict[str, Variable]:
     from .binning import make_binned
     # Overview
     # --------
@@ -136,40 +109,32 @@ def _setup_combine_bins_params(var: Variable, coords: Dict[str, Variable],
     # Preserve subspace dim order of input data, instead of the one given by `erase`
     changed_dims = [dim for dim in var.dims if dim in erase]
     unchanged_dims = [dim for dim in var.dims if dim not in changed_dims]
-    sizes = DataArray(var.bins.size(), coords=coords)
-    input_bin = uuid.uuid4().hex
     changed_shape = [var.sizes[dim] for dim in changed_dims]
     unchanged_shape = [var.sizes[dim] for dim in unchanged_dims]
     changed_volume = prod(changed_shape)
+
     # Move modified dims to innermost to ensure data is written in contiguous memory.
-    sizes = sizes.transpose(unchanged_dims + changed_dims)
-    # Flatten modified subspace for next steps. This is mainly necessary so we can
-    # `sort` later to reshuffle back to input bin order, using the added `input_bin`
-    # coord:
-    flat_sizes = sizes.flatten(dims=changed_dims, to=input_bin)
-    flat_sizes.coords[input_bin] = arange(input_bin, changed_volume, unit=None)
+    var = var.transpose(unchanged_dims + changed_dims)
+    params = DataArray(var.bins.size(), coords=coords)
+    params.attrs['begin'] = var.bins.constituents['begin'].copy()
+    params.attrs['end'] = var.bins.constituents['end'].copy()
 
     # Sizes and begin/end indices of changed subspace
-    sub_sizes = full(dims=unchanged_dims, shape=unchanged_shape, value=changed_volume)
-    sub_end = cumsum(sub_sizes)
-    sub_begin = sub_end - sub_sizes
-    content_dim = uuid.uuid4().hex
-    tmp = _cpp._bins_no_validate(data=flat_sizes.flatten(to=content_dim),
-                                 dim=content_dim,
-                                 begin=sub_begin,
-                                 end=sub_end)
-    tmp = make_binned(tmp, edges=edges, groups=groups)
+    sub_sizes = index(changed_volume).broadcast(dims=unchanged_dims,
+                                                shape=unchanged_shape)
+    end = cumsum(sub_sizes)
+    begin = end - sub_sizes
+    params = params.flatten(to=uuid.uuid4().hex)
+    params = _cpp._bins_no_validate(data=params, dim=params.dim, begin=begin, end=end)
+    params = make_binned(params, edges=edges, groups=groups)
 
-    # As we started with a regular array of data we know that the result of merging the
-    # bin contents is also regular, i.e., we can `fold` and then `sort`.
-    end = cumsum(tmp.bins.concat().value).fold(dim=content_dim, sizes=flat_sizes.sizes)
-    # This should be the same in every bin. Unfortunately the above process duplicates
-    # it, so we have to project back to 1-D so `sort` works.
-    end.coords[input_bin] = _project(end.coords[input_bin], input_bin)
-    end = sort(end, input_bin).data
-    end = end.fold(dim=input_bin, dims=changed_dims, shape=changed_shape)
-    begin = end - sizes.data
-    return {'begin': begin, 'end': end, 'sizes': tmp.data.bins.sum()}
+    source = _cpp._bins_no_validate(
+        data=var.bins.constituents['data'],
+        dim=var.bins.constituents['dim'],
+        begin=params.bins.constituents['data'].attrs['begin'],
+        end=params.bins.constituents['data'].attrs['end'],
+    )
+    return _replace_bin_sizes(source.copy(), sizes=params.data.bins.sum())
 
 
 def combine_bins(da: DataArray, edges: List[Variable], groups: List[Variable],
@@ -182,12 +147,11 @@ def combine_bins(da: DataArray, edges: List[Variable], groups: List[Variable],
     if len(edges) == 0 and len(groups) == 0:
         data = _concat_bins(da.data, erase)
     else:
-        params = _setup_combine_bins_params(da.data,
-                                            coords=coords,
-                                            edges=edges,
-                                            groups=groups,
-                                            erase=erase)
-        data = _combine_bins(da.data, **params)
+        data = _combine_bins(da.data,
+                             coords=coords,
+                             edges=edges,
+                             groups=groups,
+                             erase=erase)
     out = DataArray(data, coords=da.coords, masks=da.masks, attrs=da.attrs)
     for edge in edges:
         out.coords[edge.dim] = edge
