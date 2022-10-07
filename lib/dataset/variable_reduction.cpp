@@ -21,7 +21,8 @@ template <class Op>
 Variable reduce_impl(const Variable &var, const Dim dim, const Masks &masks,
                      const FillValue fill, const Op &op) {
   if (auto mask_union = irreducible_mask(masks, dim); mask_union.is_valid()) {
-    mask_union = transpose(mask_union, var.dims().labels());
+    mask_union = transpose(
+        mask_union, intersection(var.dims(), mask_union.dims()).labels());
     return op(
         where(mask_union, dense_special_like(var, Dimensions{}, fill), var),
         dim);

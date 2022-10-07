@@ -20,7 +20,7 @@ Variable hide_masked(const Variable &data, const Masks &masks,
   for (const auto dim : dims) {
     auto mask = irreducible_mask(masks, dim);
     if (mask.is_valid()) {
-      mask = transpose(mask, data.dims().labels());
+      mask = transpose(mask, intersection(data.dims(), mask.dims()).labels());
       indices = where(mask, empty_range, indices);
     }
   }
