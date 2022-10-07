@@ -5,6 +5,7 @@
 #pragma once
 
 #include "scipp/dataset/bins.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/util.h"
 
 namespace scipp::dataset {
@@ -17,9 +18,11 @@ Variable hide_masked(const Variable &data, const Masks &masks,
   const auto &[begin_end, buffer_dim, buffer] = data.constituents<DataArray>();
   auto indices = begin_end;
   for (const auto dim : dims) {
-    const auto mask = irreducible_mask(masks, dim);
-    if (mask.is_valid())
+    auto mask = irreducible_mask(masks, dim);
+    if (mask.is_valid()) {
+      mask = transpose(mask, data.dims().labels());
       indices = where(mask, empty_range, indices);
+    }
   }
   return make_bins_no_validate(indices, buffer_dim, buffer);
 }

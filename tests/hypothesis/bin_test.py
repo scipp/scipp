@@ -63,7 +63,9 @@ def test_bins_concat_masking(nevent, mask):
                 if dim not in dims:
                     m = m[dim, 0]
             da.masks["".join(dims)] = m
-    for n in range(1, mask.ndim + 1):
-        for dims in itertools.permutations(mask.dims, n):
+    for n in range(1, da.ndim + 1):
+        for dims in itertools.permutations(da.dims, n):
             assert sc.identical(da.bins.concat(dims).hist(), da.hist().sum(dims))
+            assert sc.identical(da.transpose().bins.concat(dims).hist(),
+                                da.transpose().hist().sum(dims))
     assert sc.identical(da.bins.concat(None).hist(), da.hist().sum(None))
