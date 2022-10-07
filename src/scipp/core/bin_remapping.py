@@ -111,18 +111,16 @@ def _combine_bins(var: Variable, coords: Dict[str, Variable], edges: List[Variab
 
 def combine_bins(da: DataArray, edges: List[Variable], groups: List[Variable],
                  dim: Dims) -> DataArray:
-    data = hide_masked(da, dim)
+    masked = hide_masked(da, dim)
     if len(edges) == 0 and len(groups) == 0:
-        data = _concat_bins(data, dim=dim)
+        data = _concat_bins(masked, dim=dim)
     else:
         names = [coord.dim for coord in itertools.chain(edges, groups)]
         coords = {name: da.meta[name] for name in names}
-        data = _combine_bins(data, coords=coords, edges=edges, groups=groups, dim=dim)
+        data = _combine_bins(masked, coords=coords, edges=edges, groups=groups, dim=dim)
     out = rewrap_reduced_data(da, data, dim=dim)
-    for edge in edges:
-        out.coords[edge.dim] = edge
-    for group in groups:
-        out.coords[group.dim] = group
+    for coord in itertools.chain(edges, groups):
+        out.coords[coord.dim] = coord
     return out
 
 
