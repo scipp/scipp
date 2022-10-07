@@ -27,6 +27,14 @@ def rewrap_output_data(prototype: VariableLikeType, data) -> VariableLikeType:
         return data
 
 
+def rewrap_reduced_data(prototype: VariableLikeType, data,
+                        dim: Dims) -> VariableLikeType:
+    return DataArray(data,
+                     coords=reduced_coords(prototype, dim),
+                     masks=reduced_masks(prototype, dim),
+                     attrs=reduced_attrs(prototype, dim))
+
+
 def transform_data(obj: VariableLikeType, func: Callable) -> VariableLikeType:
     if isinstance(obj, Variable):
         return func(obj)

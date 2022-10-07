@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+import itertools
 import uuid
 from typing import Dict, List
 from math import prod
@@ -10,11 +11,10 @@ from .cumulative import cumsum
 from ..typing import Dims, VariableLikeType
 from .variable import index
 from .operations import where
-from .concepts import (concrete_dims, reduced_coords, reduced_attrs, reduced_masks,
-                       irreducible_mask)
+from .concepts import (concrete_dims, rewrap_reduced_data, irreducible_mask)
 
 
-def hide_masked_and_reduce_meta(da: DataArray, dim: Dims) -> DataArray:
+def hide_masked(da: DataArray, dim: Dims) -> DataArray:
     if (mask := irreducible_mask(da, dim)) is not None:
         # Avoid using boolean indexing since it would result in (partial) content
         # buffer copy. Instead index just begin/end and reuse content buffer.
@@ -25,13 +25,9 @@ def hide_masked_and_reduce_meta(da: DataArray, dim: Dims) -> DataArray:
             comps['end'] = comps['end'][select]
         else:
             comps['end'] = where(mask, comps['begin'], comps['end'])
-        data = _cpp._bins_no_validate(**comps)
+        return _cpp._bins_no_validate(**comps)
     else:
-        data = da.data
-    return DataArray(data,
-                     coords=reduced_coords(da, dim),
-                     masks=reduced_masks(da, dim),
-                     attrs=reduced_attrs(da, dim))
+        return da.data
 
 
 def _with_bin_sizes(var: Variable, sizes: Variable) -> Variable:
@@ -48,7 +44,7 @@ def _sum(var: Variable, dims: List[str]) -> Variable:
     return var
 
 
-def _concat_bins(var: Variable, dims: List[str]) -> Variable:
+def _concat_bins(var: Variable, dim: List[str]) -> Variable:
     # To concat bins, two things need to happen:
     # 1. Data needs to be written to a contiguous chunk.
     # 2. New bin begin/end indices need to be setup.
@@ -56,17 +52,17 @@ def _concat_bins(var: Variable, dims: List[str]) -> Variable:
     # Otherwise, we first transpose and then `copy()`.
     # For step 2. we simply sum the (transposed) input bin sizes over the concat dims,
     # which `_with_bin_sizes` can use to compute new begin/end indices.
-    changed_dims = dims
+    changed_dims = list(concrete_dims(var, dim))
     unchanged_dims = [d for d in var.dims if d not in changed_dims]
     # TODO It would be possible to support a copy=False parameter, to skip the copy if
     # the copy would not result in any moving or reordering.
     out = var.transpose(unchanged_dims + changed_dims).copy()
-    sizes = _sum(out.bins.size(), dims)
+    sizes = _sum(out.bins.size(), changed_dims)
     return _with_bin_sizes(out, sizes)
 
 
 def _combine_bins(var: Variable, coords: Dict[str, Variable], edges: List[Variable],
-                  groups: List[Variable], erase: List[str]) -> Dict[str, Variable]:
+                  groups: List[Variable], dim: Dims) -> Dict[str, Variable]:
     from .binning import make_binned
     # Overview
     # --------
@@ -81,11 +77,11 @@ def _combine_bins(var: Variable, coords: Dict[str, Variable], edges: List[Variab
     # output binning, instead of summing the input bin sizes over all erased dims, we
     # sum only within the groups created by `make_binned`.
 
-    # Preserve subspace dim order of input data, instead of the one given by `erase`
-    changed_dims = [dim for dim in var.dims if dim in erase]
-    unchanged_dims = [dim for dim in var.dims if dim not in changed_dims]
-    changed_shape = [var.sizes[dim] for dim in changed_dims]
-    unchanged_shape = [var.sizes[dim] for dim in unchanged_dims]
+    # Preserve subspace dim order of input data, instead of the one given by `dim`
+    changed_dims = [d for d in var.dims if d in concrete_dims(var, dim)]
+    unchanged_dims = [d for d in var.dims if d not in changed_dims]
+    changed_shape = [var.sizes[d] for d in changed_dims]
+    unchanged_shape = [var.sizes[d] for d in unchanged_dims]
     changed_volume = prod(changed_shape)
 
     # Move modified dims to innermost to ensure data is written in contiguous memory.
@@ -114,18 +110,15 @@ def _combine_bins(var: Variable, coords: Dict[str, Variable], edges: List[Variab
 
 
 def combine_bins(da: DataArray, edges: List[Variable], groups: List[Variable],
-                 erase: List[str]) -> DataArray:
-    coords = {d: var for d, var in da.meta.items() if set(var.dims).issubset(erase)}
-    da = hide_masked_and_reduce_meta(da, erase)
+                 dim: Dims) -> DataArray:
+    data = hide_masked(da, dim)
     if len(edges) == 0 and len(groups) == 0:
-        data = _concat_bins(da.data, erase)
+        data = _concat_bins(data, dim=dim)
     else:
-        data = _combine_bins(da.data,
-                             coords=coords,
-                             edges=edges,
-                             groups=groups,
-                             erase=erase)
-    out = DataArray(data, coords=da.coords, masks=da.masks, attrs=da.attrs)
+        names = [coord.dim for coord in itertools.chain(edges, groups)]
+        coords = {name: da.meta[name] for name in names}
+        data = _combine_bins(data, coords=coords, edges=edges, groups=groups, dim=dim)
+    out = rewrap_reduced_data(da, data, dim=dim)
     for edge in edges:
         out.coords[edge.dim] = edge
     for group in groups:
@@ -134,7 +127,6 @@ def combine_bins(da: DataArray, edges: List[Variable], groups: List[Variable],
 
 
 def concat_bins(obj: VariableLikeType, dim: Dims = None) -> VariableLikeType:
-    erase = list(concrete_dims(obj, dim))
     da = obj if isinstance(obj, DataArray) else DataArray(obj)
-    out = combine_bins(da, edges=[], groups=[], erase=erase)
+    out = combine_bins(da, edges=[], groups=[], dim=dim)
     return out if isinstance(obj, DataArray) else out.data

@@ -111,7 +111,7 @@ def make_binned(x: Union[_cpp.Variable, _cpp.DataArray],
         data = scalar(1.0, unit='counts').broadcast(sizes=x.sizes).copy()
         x = _cpp.DataArray(data, coords={coords[0].dim: x})
     if _can_operate_on_bins(x, edges, groups, erase):
-        return combine_bins(x, edges=edges, groups=groups, erase=erase)
+        return combine_bins(x, edges=edges, groups=groups, dim=erase)
     return _cpp.bin(x, edges, groups, erase)
 
 
