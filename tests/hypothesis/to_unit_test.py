@@ -14,7 +14,7 @@ import scipp as sc
 _max_examples = 1000
 
 
-@settings(max_examples=_max_examples)
+@settings(max_examples=_max_examples, deadline=None)
 def _to_unit_value_one(x):
     unit = sc.Unit(f'{x:.14E}')
     var = sc.scalar(x, unit='')
@@ -35,7 +35,7 @@ test_to_unit_value_one_3 = given(st.floats(min_value=1e-300,
                                            max_value=1e300))(_to_unit_value_one)
 
 
-@settings(max_examples=_max_examples)
+@settings(max_examples=_max_examples, deadline=None)
 def _to_unit_small_value(x):
     unit = sc.Unit(f'{x:.14E}')
     var = sc.scalar(1.2345e-6 * x, unit='')
@@ -52,7 +52,7 @@ test_to_unit_small_value_3 = given(st.floats(min_value=1e-300,
                                              max_value=1e300))(_to_unit_small_value)
 
 
-@settings(max_examples=_max_examples)
+@settings(max_examples=_max_examples, deadline=None)
 def _to_unit_large_value(x):
     unit = sc.Unit(f'{x:.14E}')
     var = sc.scalar(1.2345e6 * x, unit='')
