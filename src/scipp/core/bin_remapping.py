@@ -38,12 +38,6 @@ def _with_bin_sizes(var: Variable, sizes: Variable) -> Variable:
     return _cpp._bins_no_validate(data=data, dim=dim, begin=begin, end=end)
 
 
-def _sum(var: Variable, dims: List[str]) -> Variable:
-    for dim in dims:
-        var = var.sum(dim)
-    return var
-
-
 def _concat_bins(var: Variable, dim: List[str]) -> Variable:
     # To concat bins, two things need to happen:
     # 1. Data needs to be written to a contiguous chunk.
@@ -57,7 +51,7 @@ def _concat_bins(var: Variable, dim: List[str]) -> Variable:
     # TODO It would be possible to support a copy=False parameter, to skip the copy if
     # the copy would not result in any moving or reordering.
     out = var.transpose(unchanged_dims + changed_dims).copy()
-    sizes = _sum(out.bins.size(), changed_dims)
+    sizes = out.bins.size().sum(changed_dims)
     return _with_bin_sizes(out, sizes)
 
 
