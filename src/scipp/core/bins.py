@@ -2,12 +2,11 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from typing import Callable, Dict, Literal, Optional, Union, Tuple
-import uuid
 import warnings
 
 from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from ..typing import VariableLike, MetaDataMap
+from ..typing import Dims, VariableLike, MetaDataMap
 from .domains import merge_equal_adjacent
 from .operations import islinspace
 from .math import midpoints
@@ -366,7 +365,7 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bin_sizes, self._obj)
 
-    def concat(self, dim: Optional[str] = None) -> Union[_cpp.Variable, _cpp.DataArray]:
+    def concat(self, dim: Dims = None) -> Union[_cpp.Variable, _cpp.DataArray]:
         """Concatenate bins element-wise by concatenating bin contents along
         their internal bin dimension.
 
@@ -383,10 +382,7 @@ class Bins:
         :
             All bins along `dim` concatenated into a single bin.
         """
-        if dim is not None:
-            return concat_bins(self._obj, dim)
-        dim = uuid.uuid4().hex
-        return self._obj.flatten(to=dim).bins.concat(dim)
+        return concat_bins(self._obj, dim)
 
     def concatenate(
             self,

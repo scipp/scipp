@@ -10,7 +10,8 @@ from .cumulative import cumsum
 from ..typing import Dims, VariableLikeType
 from .variable import index
 from .operations import where
-from .concepts import reduced_coords, reduced_attrs, reduced_masks, irreducible_mask
+from .concepts import (concrete_dims, reduced_coords, reduced_attrs, reduced_masks,
+                       irreducible_mask)
 
 
 def hide_masked_and_reduce_meta(da: DataArray, dim: Dims) -> DataArray:
@@ -134,7 +135,8 @@ def combine_bins(da: DataArray, edges: List[Variable], groups: List[Variable],
     return out
 
 
-def concat_bins(obj: VariableLikeType, dim: str) -> VariableLikeType:
+def concat_bins(obj: VariableLikeType, dim: Dims = None) -> VariableLikeType:
+    erase = list(concrete_dims(obj, dim))
     da = obj if isinstance(obj, DataArray) else DataArray(obj)
-    out = combine_bins(da, edges=[], groups=[], erase=[dim])
+    out = combine_bins(da, edges=[], groups=[], erase=erase)
     return out if isinstance(obj, DataArray) else out.data
