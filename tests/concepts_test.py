@@ -57,6 +57,19 @@ def test_irreducible_mask_does_not_include_0d_mask():
     assert concepts.irreducible_mask(da, None) is None
 
 
+def test_irreducible_mask_returns_mask_with_dim_order_matching_data():
+    da = sc.DataArray(sc.empty(dims=('xx', 'yy'), shape=(2, 3)))
+    da.masks['x'] = sc.ones(dims=['yy', 'xx'], shape=(3, 2), dtype=bool)
+    assert concepts.irreducible_mask(da, 'yy').dims == ('xx', 'yy')
+
+
+def test_irreducible_mask_returns_multiple_masks_with_dim_order_matching_data():
+    da = sc.DataArray(sc.empty(dims=('xx', 'yy'), shape=(2, 3)))
+    da.masks['m1'] = sc.ones(dims=['yy', 'xx'], shape=(3, 2), dtype=bool)
+    da.masks['m2'] = sc.ones(dims=['yy', 'xx'], shape=(3, 2), dtype=bool)
+    assert concepts.irreducible_mask(da, 'yy').dims == ('xx', 'yy')
+
+
 def test_reduced_masks_copies_preserved_masks():
     da = sc.DataArray(sc.empty(dims=('xx', 'yy'), shape=(2, 3)))
     da.masks['x'] = sc.array(dims=['xx'], values=[False, True])

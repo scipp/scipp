@@ -77,6 +77,10 @@ def irreducible_mask(da: DataArray, dim: Dims) -> Union[None, Variable]:
     irreducible = [mask for mask in da.masks.values() if not dims.isdisjoint(mask.dims)]
     if len(irreducible) == 0:
         return None
+
+    def _transposed_like_data(x):
+        return x.transpose([dim for dim in da.dims if dim in x.dims])
+
     if len(irreducible) == 1:
-        return irreducible[0].copy()
-    return reduce(logical_or, irreducible)
+        return _transposed_like_data(irreducible[0]).copy()
+    return _transposed_like_data(reduce(logical_or, irreducible))
