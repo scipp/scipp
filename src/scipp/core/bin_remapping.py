@@ -72,11 +72,11 @@ def _combine_bins(var: Variable, coords: Dict[str, Variable], edges: List[Variab
     # --------
     # The purpose of this code is to combine existing bins, but in a more general
     # manner than `concat`, which combines all bins along a dimension. Here we operate
-    # more like `groupby`, which combines selected subset and creates a new output dim.
+    # more like `groupby`, which combines selected subsets and creates a new output dim.
     #
     # Approach
     # --------
-    # The algorithm works concetually similar to `_concat_bins`, but with an additional
+    # The algorithm works conceptually similar to `_concat_bins`, but with an additional
     # step, calling `make_binned` for grouping within the erased dims. For the final
     # output binning, instead of summing the input bin sizes over all erased dims, we
     # sum only within the groups created by `make_binned`.
