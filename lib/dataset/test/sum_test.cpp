@@ -76,6 +76,28 @@ TEST(SumTest, masked_data_array_two_masks) {
   EXPECT_FALSE(sum(a, Dim::Y).masks().contains("y"));
 }
 
+TEST(SumTest, mask_dim_order_does_not_overrule_data_dim_order) {
+  Variable var =
+      makeVariable<double>(Dims{Dim::X, Dim::Y, Dim::Z}, Shape{1, 1, 1});
+  DataArray da(var);
+  da.masks().set("mask", makeVariable<bool>(Dims{Dim::Y, Dim::X, Dim::Z},
+                                            Shape{1, 1, 1}, Values{true}));
+  EXPECT_EQ(sum(da, Dim::Z).dims(), da.slice({Dim::Z, 0}).dims());
+}
+
+TEST(SumTest, mask_order_does_not_overrule_data_dim_order) {
+  Variable var =
+      makeVariable<double>(Dims{Dim::X, Dim::Y, Dim::Z}, Shape{1, 1, 1});
+  DataArray da(var);
+  // Would pass with just one mask
+  da.masks().set("yz", makeVariable<bool>(Dims{Dim::Y, Dim::Z}, Shape{1, 1},
+                                          Values{true}));
+  // Mask dict keeps insertion order, masks merged in order "Y then X"
+  da.masks().set("xy", makeVariable<bool>(Dims{Dim::X, Dim::Z}, Shape{1, 1},
+                                          Values{true}));
+  EXPECT_EQ(sum(da, Dim::Z).dims(), da.slice({Dim::Z, 0}).dims());
+}
+
 class Sum2dCoordTest : public ::testing::Test {
 protected:
   Variable var{makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
