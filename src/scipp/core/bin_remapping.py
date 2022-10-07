@@ -7,19 +7,14 @@ from math import prod
 from .._scipp import core as _cpp
 from .cpp_classes import DataArray, Variable
 from .cumulative import cumsum
-from .dataset import irreducible_mask
-from ..typing import VariableLikeType
+from ..typing import Dims, VariableLikeType
 from .variable import index
 from .operations import where
-from .concepts import reduced_coords, reduced_attrs, reduced_masks
+from .concepts import reduced_coords, reduced_attrs, reduced_masks, irreducible_mask
 
 
-def hide_masked_and_reduce_meta(da: DataArray, dims: List[str]) -> DataArray:
-    if len(dims) == 0:
-        return da
-    da = hide_masked_and_reduce_meta(da, dims[1:])
-    dim = dims[0]
-    if (mask := irreducible_mask(da.masks, dim)) is not None:
+def hide_masked_and_reduce_meta(da: DataArray, dim: Dims) -> DataArray:
+    if (mask := irreducible_mask(da, dim)) is not None:
         # Avoid using boolean indexing since it would result in (partial) content
         # buffer copy. Instead index just begin/end and reuse content buffer.
         comps = da.bins.constituents
@@ -34,7 +29,6 @@ def hide_masked_and_reduce_meta(da: DataArray, dims: List[str]) -> DataArray:
         data = _cpp._bins_no_validate(**comps)
     else:
         data = da.data
-    # TODO avoid "reducing" (and copying) recursively
     return DataArray(data,
                      coords=reduced_coords(da, dim),
                      masks=reduced_masks(da, dim),

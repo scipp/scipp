@@ -626,3 +626,17 @@ def test_erase_2d_mask():
     result = binning.make_binned(da, edges=[], groups=[], erase=['x', 'y'])
     assert not sc.identical(result.sum(), table.sum())
     assert sc.identical(result.sum(), da.sum())
+
+
+def test_erase_multiple_masks():
+    from scipp import binning
+    binning.make_binned
+    table = sc.data.table_xyz(100)
+    table.data = sc.arange('row', 100)
+    da = table.bin(x=2, y=2)
+    da.masks['xy'] = sc.zeros(dims=da.dims, shape=da.shape, dtype=bool)
+    da.masks['xy'].values[1, 1] = True
+    da.masks['x'] = sc.array(dims=['x'], values=[False, True])
+    result = binning.make_binned(da, edges=[], groups=[], erase=['x', 'y'])
+    assert not sc.identical(result.sum(), table.sum())
+    assert sc.identical(result.sum(), da.sum())
