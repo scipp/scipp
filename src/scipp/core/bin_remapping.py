@@ -122,10 +122,7 @@ def _combine_bins(var: Variable, coords: Dict[str, Variable], edges: List[Variab
 
 def combine_bins(da: DataArray, edges: List[Variable], groups: List[Variable],
                  erase: List[str]) -> DataArray:
-    coords = {
-        d: coord
-        for d, coord in da.coords.items() if set(coord.dims).issubset(erase)
-    }
+    coords = {d: var for d, var in da.meta.items() if set(var.dims).issubset(erase)}
     da = hide_masked_and_reduce_meta(da, erase)
     if len(edges) == 0 and len(groups) == 0:
         data = _concat_bins(da.data, erase)
