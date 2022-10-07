@@ -51,7 +51,7 @@ Dims = _std_typing.Union[None, str, _std_typing.Sequence[str]]
 Describes dimensions to operate on.
 
 Can be a string (for a single dimension) or a sequence of strings (multiple dimensions).
-A value of ``None`` indicated "all dimensions."
+A value of ``None`` indicates "all dimensions."
 """
 
 VariableLike = _std_typing.Union[Variable, DataArray, Dataset]

@@ -61,7 +61,7 @@ def _concat_bins(var: Variable, dims: List[str]) -> Variable:
     changed_dims = dims
     unchanged_dims = [d for d in var.dims if d not in changed_dims]
     # TODO It would be possible to support a copy=False parameter, to skip the copy if
-    # the copy would not result in an moving or reordering.
+    # the copy would not result in any moving or reordering.
     out = var.transpose(unchanged_dims + changed_dims).copy()
     sizes = _sum(out.bins.size(), dims)
     return _with_bin_sizes(out, sizes)
