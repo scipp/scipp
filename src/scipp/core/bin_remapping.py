@@ -24,9 +24,7 @@ def hide_masked_and_reduce_meta(da: DataArray, dim: Dims) -> DataArray:
             comps['begin'] = comps['begin'][select]
             comps['end'] = comps['end'][select]
         else:
-            zero = index(0, dtype='int64')
-            comps['begin'] = where(mask, zero, comps['begin'])
-            comps['end'] = where(mask, zero, comps['end'])
+            comps['end'] = where(mask, comps['begin'], comps['end'])
         data = _cpp._bins_no_validate(**comps)
     else:
         data = da.data

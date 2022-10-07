@@ -8,15 +8,21 @@ from ..typing import Dims, VariableLikeType
 from .logical import logical_or
 
 
+def _copied(obj: Dict[str, Variable]) -> Dict[str, Variable]:
+    return {name: var.copy() for name, var in obj.items()}
+
+
+def _reduced(obj: Dict[str, Variable], dims: List[str]) -> Dict[str, Variable]:
+    dims = set(dims)
+    return {name: var for name, var in obj.items() if dims.isdisjoint(var.dims)}
+
+
 def rewrap_output_data(prototype: VariableLikeType, data) -> VariableLikeType:
     if isinstance(prototype, DataArray):
         return DataArray(data=data,
-                         coords={c: coord
-                                 for c, coord in prototype.coords.items()},
-                         attrs={a: attr
-                                for a, attr in prototype.attrs.items()},
-                         masks={m: mask.copy()
-                                for m, mask in prototype.masks.items()})
+                         coords=prototype.coords,
+                         attrs=prototype.attrs,
+                         masks=_copied(prototype.masks))
     else:
         return data
 
@@ -40,11 +46,6 @@ def concrete_dims(obj: VariableLikeType, dim: Dims) -> Tuple[str]:
     return (dim, ) if isinstance(dim, str) else tuple(dim)
 
 
-def _reduced(obj: Dict[str, Variable], dims: List[str]) -> Dict[str, Variable]:
-    dims = set(dims)
-    return {name: var for name, var in obj.items() if dims.isdisjoint(var.dims)}
-
-
 def reduced_coords(da: DataArray, dim: Dims) -> Dict[str, Variable]:
     return _reduced(da.coords, concrete_dims(da, dim))
 
@@ -54,10 +55,7 @@ def reduced_attrs(da: DataArray, dim: Dims) -> Dict[str, Variable]:
 
 
 def reduced_masks(da: DataArray, dim: Dims) -> Dict[str, Variable]:
-    return {
-        name: mask.copy()
-        for name, mask in _reduced(da.masks, concrete_dims(da, dim)).items()
-    }
+    return _copied(_reduced(da.masks, concrete_dims(da, dim)))
 
 
 def irreducible_mask(da: DataArray, dim: Dims) -> Union[None, Variable]:
