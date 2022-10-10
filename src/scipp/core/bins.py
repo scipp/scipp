@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-from typing import Callable, Dict, Literal, Optional, Union
+from typing import Callable, Dict, Literal, Optional, Union, Tuple
 import uuid
 
 from .._scipp import core as _cpp
@@ -133,7 +133,7 @@ class Bins:
         _cpp.buckets.scale(self._obj, _cpp.reciprocal(lut.func), lut.dim)
         return self
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Tuple[str, Union[_cpp.Variable, slice]]):
         dim, index = key
         if isinstance(index, _cpp.Variable):
             if index.ndim == 0:
