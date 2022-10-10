@@ -19,7 +19,7 @@ def hide_masked(da: DataArray, dim: Dims) -> DataArray:
         # Avoid using boolean indexing since it would result in (partial) content
         # buffer copy. Instead index just begin/end and reuse content buffer.
         comps = da.bins.constituents
-        # The the mask is 1-D we can drop entire "rows" or "columns". This can
+        # If the mask is 1-D we can drop entire "rows" or "columns". This can
         # drastically reduce the number of bins to handle in some cases for better
         # performance. For 2-D or higher masks we fall back to making bins "empty" by
         # setting end=begin.
