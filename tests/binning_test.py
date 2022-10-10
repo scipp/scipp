@@ -2,6 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import pytest
+import itertools
 import scipp as sc
 import numpy as np
 from numpy.random import default_rng
@@ -653,3 +654,66 @@ def test_erase_multiple_masks():
     result = binning.make_binned(da, edges=[], groups=[], erase=['x', 'y'])
     assert not sc.identical(result.sum(), table.sum())
     assert sc.identical(result.sum(), da.sum())
+
+
+def _make_base_array():
+    nx = 7
+    ny = 3
+    nz = 13
+    sizes = {'x': nx, 'y': ny, 'z': nz}
+    nrow = 10000
+    table = sc.data.table_xyz(nrow)
+    table.data = sc.array(dims=['row'], values=rng.integers(1000000, size=nrow))
+    da = table.bin(sizes)
+    da.coords['x1'] = sc.arange('x', nx) // 2
+    da.coords['x2'] = sc.array(dims=['x'], values=rng.integers(nx // 3, size=nx))
+    da.coords['y1'] = sc.arange('y', ny) // 2
+    da.coords['y2'] = sc.array(dims=['y'], values=rng.integers(ny // 3, size=ny))
+    da.coords['z1'] = sc.arange('z', nz) // 2
+    da.coords['z2'] = sc.array(dims=['z'], values=rng.integers(nz // 3, size=nz))
+    return da
+
+
+_base_array = _make_base_array()
+
+
+def data_array_3d_with_outer_coords(names):
+    da = _base_array.copy(deep=False)
+    for coord in ['x1', 'x2', 'y1', 'y2', 'z1', 'z2']:
+        if coord not in names:
+            del da.coords[coord]
+    return da
+
+
+def to_table(da, coord_names):
+    da = da.copy()
+    for name in coord_names:
+        da.bins.coords[name] = sc.bins_like(da, da.coords[name])
+    return da.bins.constituents['data']
+
+
+def cases(x, maxlen):
+    out = []
+    for i in range(1, maxlen + 1):
+        for comb in itertools.combinations(x, i):
+            out += list(itertools.permutations(comb))
+    return out
+
+
+group = cases(['x1', 'x2', 'y1', 'y2', 'z1', 'z2'], maxlen=4)
+
+
+@pytest.mark.parametrize('group', group, ids=['-'.join(g) for g in group])
+def test_make_binned_optimized_path_yields_equivalent_results(group):
+    da = data_array_3d_with_outer_coords(group)
+
+    result = da.group(*group)
+
+    # Compare to directly grouping from table (or binned along unrelated dims). This
+    # operates in the underlying events instead of bins.
+    expected = to_table(da, group)
+    sizes = {dim: size for dim, size in result.sizes.items() if dim in da.sizes}
+    if sizes:
+        expected = expected.bin(sizes)
+    expected = expected.group(*group).hist()
+    assert sc.identical(result.hist(), expected)
