@@ -139,13 +139,26 @@ class Bins:
             if index.ndim == 0:
                 return self._obj.group(concat([index], dim)).squeeze(dim)
         elif isinstance(index, slice):
+            from .binning import _upper_bound
+            if index.step is not None:
+                raise ValueError("Label-based indexing with step (stride) is not "
+                                 f"supported. Got '{key}'")
             start = index.start
             stop = index.stop
-            step = index.step
-            assert step is None  # TODO raise
-            # TODO support start=None and stop=None
+            if start is None:
+                start = self._obj.bins.meta[dim].min()
+            if stop is None:
+                stop = _upper_bound(self._obj.bins.meta[dim].max())
+            if not (isinstance(start, _cpp.Variable)
+                    and isinstance(stop, _cpp.Variable)):
+                raise ValueError(
+                    "Bins can only by sliced using label-based indexing. Expected "
+                    f"start and stop to be scipp.Variable, got '{start}' and '{stop}'.")
             return self._obj.bin({dim: concat([start, stop], dim)}).squeeze(dim)
-        # TODO raise
+        raise ValueError(
+            f"Unsupported key '{key}'. Expected a dimension label and "
+            "a 0-D variable or a dimension label and a slice object with start "
+            "and stop given by a 0-D variable.")
 
     @property
     def coords(self) -> MetaDataMap:
