@@ -83,7 +83,10 @@ def _combine_bins(var: Variable, coords: Dict[str, Variable], edges: List[Variab
     unchanged_shape = [var.sizes[d] for d in unchanged_dims]
     changed_volume = prod(changed_shape)
 
-    # Move modified dims to innermost to ensure data is written in contiguous memory.
+    # Move modified dims to innermost. Below this enables us to keep other dims
+    # (listed in unchanged_dims) untouched by creating pseudo bins that wrap the entire
+    # changed subspaces. make_binned below will thus only operate within each pseudo
+    # bins, without mixing contents from different unchanged bins.
     var = var.transpose(unchanged_dims + changed_dims)
     params = DataArray(var.bins.size(), coords=coords)
     params.attrs['begin'] = var.bins.constituents['begin'].copy()
@@ -93,8 +96,10 @@ def _combine_bins(var: Variable, coords: Dict[str, Variable], edges: List[Variab
     sub_sizes = index(changed_volume).broadcast(dims=unchanged_dims,
                                                 shape=unchanged_shape)
     params = params.flatten(to=uuid.uuid4().hex)
+    # Setup pseudo binning for unchanged subspace. All further reordering (for grouping
+    # and binning) will then occur *within* those pseudo bins (by splitting them).
     params = _with_bin_sizes(params, sub_sizes)
-    # Apply desired binning/grouping to sizes and begin/end
+    # Apply desired binning/grouping to sizes and begin/end, splitting the pseudo bins.
     params = make_binned(params, edges=edges, groups=groups)
 
     # Setup view of source content with desired target bin order
