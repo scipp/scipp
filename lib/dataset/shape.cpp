@@ -4,13 +4,13 @@
 /// @author Simon Heybrock
 #include <algorithm>
 
+#include "scipp/core/except.h"
 #include "scipp/variable/creation.h"
 #include "scipp/variable/shape.h"
 
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/shape.h"
 
-#include "../variable/operations_common.h"
 #include "dataset_operations_common.h"
 
 using namespace scipp::variable;
@@ -272,20 +272,39 @@ DataArray fold(const DataArray &a, const Dim from_dim,
   });
 }
 
+namespace {
+void expect_dimension_subset(const core::Dimensions &full_set,
+                             const scipp::span<const Dim> &subset) {
+  for (const auto &dim : subset) {
+    if (!full_set.contains(dim)) {
+      throw except::DimensionError{"Expected dimension " + to_string(dim) +
+                                   "to be in " + to_string(full_set)};
+    }
+  }
+}
+} // namespace
+
 /// Flatten multiple dimensions into a single dimension:
 /// ['y', 'z'] -> ['x']
 DataArray flatten(const DataArray &a, const scipp::span<const Dim> &from_labels,
                   const Dim to_dim) {
+  if (from_labels.empty())
+    return DataArray(flatten(a.data(), from_labels, to_dim), a.coords(),
+                     a.masks(), a.attrs());
+  expect_dimension_subset(a.dims(), from_labels);
   return dataset::transform(a, [&](const auto &in) {
-    const auto var =
+    auto var =
         (&in == &a.data()) ? in : maybe_broadcast(in, from_labels, a.dims());
     const auto bin_edge_dim =
         bin_edge_in_from_labels(in, a.dims(), from_labels);
     if (bin_edge_dim != Dim::Invalid) {
       return flatten_bin_edge(var, from_labels, to_dim, bin_edge_dim);
     } else if (var.dims().contains(from_labels.front())) {
+      // maybe_broadcast ensures that all variables contain
+      // all dims in from_labels, se only need to check the first.
       return flatten(var, from_labels, to_dim);
     } else {
+      // This only happens for metadata.
       return var;
     }
   });

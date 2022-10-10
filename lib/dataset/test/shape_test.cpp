@@ -105,9 +105,12 @@ TEST(ReshapeTest, flatten) {
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
   a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
+  a.coords().set(Dim{"xy"}, 0.3 * units::one + var);
+  a.coords().set(Dim{"yx"}, copy(transpose(0.4 * units::one + var,
+                                           std::vector{Dim{"y"}, Dim{"x"}})));
 
-  const auto rshp = arange(Dim::Z, 24);
-  DataArray expected(rshp);
+  const auto expected_data = arange(Dim::Z, 24);
+  DataArray expected(expected_data);
   expected.coords().set(
       Dim::X,
       makeVariable<double>(Dims{Dim::Z}, Shape{24},
@@ -120,8 +123,39 @@ TEST(ReshapeTest, flatten) {
                            Values{0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2,
                                   0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2,
                                   0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2}));
+  expected.coords().set(Dim{"xy"}, 0.3 * units::one + expected_data);
+  expected.coords().set(Dim{"yx"}, 0.4 * units::one + expected_data);
 
   EXPECT_EQ(flatten(a, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z), expected);
+}
+
+TEST(ReshapeTest, flatten_single_dim) {
+  const auto var = fold(arange(Dim::X, 24), Dim::X, {{Dim::X, 6}, {Dim::Y, 4}});
+  DataArray a(var);
+  a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
+  a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
+  a.coords().set(Dim{"xy"}, 0.3 * units::one + var);
+  a.coords().set(Dim{"yx"}, copy(transpose(0.4 * units::one + var,
+                                           std::vector<Dim>{Dim::Y, Dim::X})));
+
+  EXPECT_EQ(flatten(a, std::vector<Dim>{Dim::X}, Dim::Z),
+            a.rename_dims(std::vector{std::pair{Dim{"x"}, Dim{"z"}}}));
+  EXPECT_EQ(flatten(a, std::vector<Dim>{Dim::Y}, Dim::Z),
+            a.rename_dims(std::vector{std::pair{Dim{"y"}, Dim{"z"}}}));
+}
+
+TEST(ReshapeTest, flatten_dim_not_in_input) {
+  const auto var = fold(arange(Dim::X, 24), Dim::X, {{Dim::X, 6}, {Dim::Y, 4}});
+  DataArray a(var);
+  a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
+  a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
+
+  EXPECT_THROW_DISCARD(flatten(a, std::vector<Dim>{Dim::Time}, Dim::Z),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(flatten(a, std::vector<Dim>{Dim::X, Dim::Time}, Dim::Z),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(flatten(a, std::vector<Dim>{Dim::Time, Dim::X}, Dim::Z),
+                       except::DimensionError);
 }
 
 TEST(ReshapeTest, flatten_bad_dim_order) {
@@ -134,6 +168,31 @@ TEST(ReshapeTest, flatten_bad_dim_order) {
       flatten(a, std::vector<Dim>{Dim::Y, Dim::X}, Dim::Z),
       except::DimensionError,
       "Can only flatten a contiguous set of dimensions in the correct order");
+}
+
+TEST(ReshapeTest, flatten_empty_from_arg) {
+  const auto var = fold(arange(Dim::X, 24), Dim::X, {{Dim::X, 6}, {Dim::Y, 4}});
+  DataArray a(var);
+  a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
+  a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
+
+  DataArray expected(
+      broadcast(var, Dimensions{{Dim::X, Dim::Y, Dim::Z}, {6, 4, 1}}));
+  expected.coords().set(Dim::X, a.coords()[Dim::X]);
+  expected.coords().set(Dim::Y, a.coords()[Dim::Y]);
+
+  EXPECT_EQ(flatten(a, std::vector<Dim>{}, Dim::Z), expected);
+}
+
+TEST(ReshapeTest, flatten_scalar) {
+  const auto var = makeVariable<double>(Dims{}, Shape{}, Values{2.0});
+  DataArray a(var);
+  a.coords().set(Dim::X, 0.1 * units::one + var);
+
+  DataArray expected(makeVariable<double>(Dims{Dim::Z}, Shape{1}, Values{2.0}));
+  expected.coords().set(Dim::X, a.coords()[Dim::X]);
+
+  EXPECT_EQ(flatten(a, std::vector<Dim>{}, Dim::Z), expected);
 }
 
 TEST(ReshapeTest, round_trip) {
