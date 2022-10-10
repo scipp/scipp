@@ -133,6 +133,20 @@ class Bins:
         _cpp.buckets.scale(self._obj, _cpp.reciprocal(lut.func), lut.dim)
         return self
 
+    def __getitem__(self, key):
+        dim, index = key
+        if isinstance(index, _cpp.Variable):
+            if index.ndim == 0:
+                return self._obj.group(concat([index], dim)).squeeze(dim)
+        elif isinstance(index, slice):
+            start = index.start
+            stop = index.stop
+            step = index.step
+            assert step is None  # TODO raise
+            # TODO support start=None and stop=None
+            return self._obj.bin({dim: concat([start, stop], dim)}).squeeze(dim)
+        # TODO raise
+
     @property
     def coords(self) -> MetaDataMap:
         """Coords of the bins"""
