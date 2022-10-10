@@ -663,6 +663,12 @@ TEST_F(SqueezeTest, data_array_3d_all) {
             squeeze(a, std::vector<Dim>{Dim::X, Dim::Y}));
 }
 
+TEST_F(SqueezeTest, data_array_3d_no_dims) {
+  const auto dims = std::vector<Dim>{};
+  const auto squeezed = squeeze(a, dims);
+  EXPECT_EQ(squeezed, a);
+}
+
 TEST_F(SqueezeTest, data_array_3d_wrong_length_throws) {
   EXPECT_THROW_DISCARD(squeeze(a, std::vector<Dim>{Dim::Z}),
                        except::DimensionError);
@@ -726,6 +732,12 @@ TEST_F(SqueezeDatasetTest, dataset_3d_all) {
   EXPECT_EQ(squeezed["a"], squeeze(a, dims));
   EXPECT_EQ(squeezed["b"], squeeze(b, std::vector<Dim>({Dim::Y})));
   EXPECT_EQ(squeezed["c"], squeeze(c, std::vector<Dim>({Dim::X})));
+}
+
+TEST_F(SqueezeDatasetTest, dataset_3d_no_dims) {
+  const std::vector<Dim> dims{};
+  const auto squeezed = squeeze(dset, dims);
+  EXPECT_EQ(squeezed, dset);
 }
 
 TEST_F(SqueezeDatasetTest, dataset_output_is_not_readonly) {
