@@ -588,6 +588,19 @@ def test_group_many_to_many_with_extra_outer_dim_uses_optimized_codepath():
     assert da.group('xcoarse', 'ycoarse').dims == ('z', 'xcoarse', 'ycoarse')
 
 
+def test_group_many_to_many_by_two_coords_along_same_dim_uses_optimized_codepath():
+    size = 512
+    table = sc.data.table_xyz(int(1e3))
+    da = table.bin(x=size * size)
+    x1 = sc.arange('x', size * size) // size
+    x2 = sc.arange('x', size * size) % size
+    da.coords['x1'] = x1
+    da.coords['x2'] = x2
+    # The old "standard" implementation uses a massive amount of memory, crashing even
+    # with 256 GByte of RAM.
+    assert da.group('x1', 'x2').dims == ('x1', 'x2')
+
+
 def test_group_many_and_erase():
     from scipp import binning
     binning.make_binned
