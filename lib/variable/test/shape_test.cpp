@@ -222,6 +222,14 @@ TEST(ShapeTest, flatten_non_contiguous) {
       "Can only flatten a contiguous set of dimensions in the correct order");
 }
 
+TEST(ShapeTest, flatten_0d) {
+  const auto var = makeVariable<double>(Values{1});
+  const auto expected = makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{1});
+  const auto flat = flatten(var, std::vector<Dim>{}, Dim::X);
+  EXPECT_EQ(flat, expected);
+  EXPECT_EQ(flat.strides()[0], 1);
+}
+
 TEST(ShapeTest, round_trip) {
   const auto var = cumsum(
       variable::ones({{Dim::X, 6}, {Dim::Y, 4}}, units::m, dtype<double>));

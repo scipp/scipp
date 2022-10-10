@@ -137,7 +137,7 @@ class Bins:
         dim, index = key
         if isinstance(index, _cpp.Variable):
             if index.ndim == 0:
-                return self._obj.group(concat([index], dim)).squeeze(dim)
+                return self._obj.group(index.flatten(to=dim)).squeeze(dim)
         elif isinstance(index, slice):
             from .binning import _upper_bound
             if index.step is not None:
