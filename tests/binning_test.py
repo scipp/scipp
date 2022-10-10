@@ -700,20 +700,37 @@ def cases(x, maxlen):
     return out
 
 
-group = cases(['x1', 'x2', 'y1', 'y2', 'z1', 'z2'], maxlen=4)
+params = cases(['x1', 'x2', 'y1', 'y2', 'z1', 'z2'], maxlen=4)
 
 
-@pytest.mark.parametrize('group', group, ids=['-'.join(g) for g in group])
-def test_make_binned_optimized_path_yields_equivalent_results(group):
-    da = data_array_3d_with_outer_coords(group)
+@pytest.mark.parametrize('params', params, ids=['-'.join(g) for g in params])
+def test_make_binned_via_group_optimized_path_yields_equivalent_results(params):
+    da = data_array_3d_with_outer_coords(params)
 
-    result = da.group(*group)
+    result = da.group(*params)
 
     # Compare to directly grouping from table (or binned along unrelated dims). This
     # operates in the underlying events instead of bins.
-    expected = to_table(da, group)
+    expected = to_table(da, params)
     sizes = {dim: size for dim, size in result.sizes.items() if dim in da.sizes}
     if sizes:
         expected = expected.bin(sizes)
-    expected = expected.group(*group).hist()
+    expected = expected.group(*params).hist()
+    assert sc.identical(result.hist(), expected)
+
+
+@pytest.mark.parametrize('params', params, ids=['-'.join(g) for g in params])
+def test_make_binned_via_bin_optimized_path_yields_equivalent_results(params):
+    da = data_array_3d_with_outer_coords(params)
+
+    binning = {param: rng.integers(low=1, high=5) for param in params}
+    result = da.bin(binning)
+
+    # Compare to directly binning from table (or binned along unrelated dims). This
+    # operates in the underlying events instead of bins.
+    expected = to_table(da, params)
+    sizes = {dim: size for dim, size in result.sizes.items() if dim in da.sizes}
+    if sizes:
+        expected = expected.bin(sizes)
+    expected = expected.bin(binning).hist()
     assert sc.identical(result.hist(), expected)
