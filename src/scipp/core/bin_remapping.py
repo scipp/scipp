@@ -19,6 +19,10 @@ def hide_masked(da: DataArray, dim: Dims) -> DataArray:
         # Avoid using boolean indexing since it would result in (partial) content
         # buffer copy. Instead index just begin/end and reuse content buffer.
         comps = da.bins.constituents
+        # The the mask is 1-D we can drop entire "rows" or "columns". This can
+        # drastically reduce the number of bins to handle in some cases for better
+        # performance. For 2-D or higher masks we fall back to making bins "empty" by
+        # setting end=begin.
         if mask.ndim == 1:
             select = ~mask
             comps['begin'] = comps['begin'][select]
@@ -72,7 +76,8 @@ def _combine_bins(var: Variable, coords: Dict[str, Variable], edges: List[Variab
     # sum only within the groups created by `make_binned`.
 
     # Preserve subspace dim order of input data, instead of the one given by `dim`
-    changed_dims = [d for d in var.dims if d in concrete_dims(var, dim)]
+    concrete_dims_ = concrete_dims(var, dim)
+    changed_dims = [d for d in var.dims if d in concrete_dims_]
     unchanged_dims = [d for d in var.dims if d not in changed_dims]
     changed_shape = [var.sizes[d] for d in changed_dims]
     unchanged_shape = [var.sizes[d] for d in unchanged_dims]
@@ -99,7 +104,12 @@ def _combine_bins(var: Variable, coords: Dict[str, Variable], edges: List[Variab
         begin=params.bins.constituents['data'].attrs['begin'],
         end=params.bins.constituents['data'].attrs['end'],
     )
-    # Call `copy()` to reorder data and `_with_bin_sizes` to put in place new indices.
+    # Call `copy()` to reorder data. This is based on the underlying behavior of `copy`
+    # for binned data: It computes a new contiguous and ordered mapping of bin contents
+    # to the content buffer. The main purpose of that mechanism is to deal, e.g., with
+    # copies of slices, but here we can leverage the same mechanism.
+    # Then we call `_with_bin_sizes` to put in place new indices, "merging" the
+    # reordered input bins to desired output bins.
     return _with_bin_sizes(source.copy(), sizes=params.data.bins.sum())
 
 
