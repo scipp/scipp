@@ -301,7 +301,7 @@ DataArray flatten(const DataArray &a, const scipp::span<const Dim> &from_labels,
       return flatten_bin_edge(var, from_labels, to_dim, bin_edge_dim);
     } else if (var.dims().contains(from_labels.front())) {
       // maybe_broadcast ensures that all variables contain
-      // all dims in from_labels, se only need to check the first.
+      // all dims in from_labels, so only need to check from_labels.front().
       return flatten(var, from_labels, to_dim);
     } else {
       // This only happens for metadata.
