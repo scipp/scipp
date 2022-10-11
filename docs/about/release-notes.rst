@@ -41,6 +41,7 @@ v0.17.0 (Unreleased)
 Features
 ~~~~~~~~
 
+* :class:`scipp.Bins` now supports `__getitem__`, providing a shorthand for extracting events based on a coord value or value interval. This is equivalent functionality to label-based indexing for dense data but considers the coordinates of the underlying bin content `#2831 <https://github.com/scipp/scipp/pull/2831>`_.
 * Much faster ``obj.bins.concat`` operations in presence of many bins `#2825 <https://github.com/scipp/scipp/pull/2825>`_.
 
 Breaking changes

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-from typing import Callable, Dict, Literal, Optional, Union
+from typing import Callable, Dict, Literal, Optional, Union, Tuple
 import uuid
 
 from .._scipp import core as _cpp
@@ -132,6 +132,33 @@ class Bins:
     def __itruediv__(self, lut: lookup):
         _cpp.buckets.scale(self._obj, _cpp.reciprocal(lut.func), lut.dim)
         return self
+
+    def __getitem__(self, key: Tuple[str, Union[_cpp.Variable, slice]]):
+        dim, index = key
+        if isinstance(index, _cpp.Variable):
+            if index.ndim == 0:
+                return self._obj.group(index.flatten(to=dim)).squeeze(dim)
+        elif isinstance(index, slice):
+            from .binning import _upper_bound
+            if index.step is not None:
+                raise ValueError("Label-based indexing with step (stride) is not "
+                                 f"supported. Got '{key}'")
+            start = index.start
+            stop = index.stop
+            if start is None:
+                start = self._obj.bins.meta[dim].min()
+            if stop is None:
+                stop = _upper_bound(self._obj.bins.meta[dim].max())
+            if not (isinstance(start, _cpp.Variable)
+                    and isinstance(stop, _cpp.Variable)):
+                raise ValueError(
+                    "Bins can only by sliced using label-based indexing. Expected "
+                    f"start and stop to be scipp.Variable, got '{start}' and '{stop}'.")
+            return self._obj.bin({dim: concat([start, stop], dim)}).squeeze(dim)
+        raise ValueError(
+            f"Unsupported key '{key}'. Expected a dimension label and "
+            "a 0-D variable or a dimension label and a slice object with start "
+            "and stop given by a 0-D variable.")
 
     @property
     def coords(self) -> MetaDataMap:

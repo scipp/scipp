@@ -101,8 +101,12 @@ Variable fold(const Variable &view, const Dim from_dim,
 
 Variable flatten(const Variable &view,
                  const scipp::span<const Dim> &from_labels, const Dim to_dim) {
-  if (from_labels.empty())
-    return broadcast(view, merge(view.dims(), Dimensions(to_dim, 1)));
+  if (from_labels.empty()) {
+    auto out(view);
+    out.unchecked_dims().addInner(to_dim, 1);
+    out.unchecked_strides().push_back(1);
+    return out;
+  }
   const auto &labels = view.dims().labels();
   auto it = std::search(labels.begin(), labels.end(), from_labels.begin(),
                         from_labels.end());
