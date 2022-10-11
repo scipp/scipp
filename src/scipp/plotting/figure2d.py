@@ -105,8 +105,8 @@ class PlotFigure2d(PlotFigure):
         self.draw()
 
     def opacify_colorbar(self):
-        self.cbar.set_alpha(1.0)
-        self.cbar.draw_all()
+        # From comment in https://stackoverflow.com/a/4480124/13086629
+        self.cbar.solids.set(alpha=1)
 
     def toggle_mask(self, *args, **kwargs):
         """
