@@ -46,6 +46,7 @@ Features
 * When mapping between many input and output bins:
   Avoid huge memory use and slow performance in use of :py:func:`scipp.bin` and :py:func:`scipp.group` when only entire bins are combined (rather than splitting bins based on bin content coordinates).
   This avoids a number of cases where Python kernel used to crash since Scipp ran out of memory `#2827 <https://github.com/scipp/scipp/pull/2827>`_.
+* :py:func:`scipp.sum` now also accepts a sequence of dimension labels `#2827 <https://github.com/scipp/scipp/pull/2827>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
