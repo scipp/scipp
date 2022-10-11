@@ -430,7 +430,7 @@ class GroupbyBins:
 
     def concat(self, dim):
         warnings.warn(
-            "groupby(...).bins.concat(dim) deprecated. `group` or `bin` instead",
+            "groupby(...).bins.concat(dim) is deprecated. Use `group` or `bin` instead",
             UserWarning)
         return self._obj.concat(dim)
 
