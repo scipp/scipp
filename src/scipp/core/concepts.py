@@ -2,17 +2,17 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from functools import reduce
-from typing import Callable, Dict, List, Tuple, Union
+from typing import Callable, Dict, List, Mapping, Tuple, Union
 from .cpp_classes import DataArray, Variable
 from ..typing import Dims, VariableLikeType
 from .logical import logical_or
 
 
-def _copied(obj: Dict[str, Variable]) -> Dict[str, Variable]:
+def _copied(obj: Mapping[str, Variable]) -> Dict[str, Variable]:
     return {name: var.copy() for name, var in obj.items()}
 
 
-def _reduced(obj: Dict[str, Variable], dims: List[str]) -> Dict[str, Variable]:
+def _reduced(obj: Mapping[str, Variable], dims: List[str]) -> Dict[str, Variable]:
     dims = set(dims)
     return {name: var for name, var in obj.items() if dims.isdisjoint(var.dims)}
 
