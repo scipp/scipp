@@ -5,6 +5,7 @@ import pytest
 import scipp as sc
 import numpy as np
 from math import isnan
+from numpy.random import default_rng
 
 
 def test_dense_data_properties_are_none():
@@ -465,3 +466,88 @@ def test_bins_concat_applies_irreducible_masks():
     da = table.bin(x=5, y=13)
     da.masks['maskx'] = sc.array(dims=['x'], values=[False, False, False, False, True])
     assert sc.identical(da.bins.concat('x'), da['x', :4].bins.concat('x'))
+
+
+def test_bin_1d_by_coord_without_event_coord():
+    table = sc.data.table_xyz(nrow=1000)
+    da = table.bin(x=100)
+    rng = default_rng(seed=1234)
+    param = sc.array(dims='x', values=rng.random(da.sizes['x']))
+    da.coords['param'] = param
+    edges = sc.linspace('param', 0.0, 1.0, num=13)
+    from scipp.core.bin_remapping import combine_bins
+    result = combine_bins(da, [edges], [], ['x'])
+    # Setup flat table with param for computing expected result
+    da.bins.coords['param'] = sc.bins_like(da, param)
+    table = da.bins.constituents['data']
+    assert sc.identical(result.hist(), table.hist(param=edges))
+
+
+def test_bin_1d_by_attr_without_event_coord():
+    table = sc.data.table_xyz(nrow=1000)
+    da = table.bin(x=100)
+    rng = default_rng(seed=1234)
+    param = sc.array(dims='x', values=rng.random(da.sizes['x']))
+    da.attrs['param'] = param
+    edges = sc.linspace('param', 0.0, 1.0, num=13)
+    from scipp.core.bin_remapping import combine_bins
+    result = combine_bins(da, [edges], [], ['x'])
+    # Setup flat table with param for computing expected result
+    da.bins.coords['param'] = sc.bins_like(da, param)
+    table = da.bins.constituents['data']
+    assert sc.identical(result.hist(), table.hist(param=edges))
+
+
+def test_bin_outer_of_2d_without_event_coord():
+    table = sc.data.table_xyz(nrow=1000)
+    table.data = sc.arange('row', 1000, dtype='float64')
+    da = table.bin(x=7, y=3)
+    rng = default_rng(seed=1234)
+    param = sc.array(dims='x', values=rng.random(da.sizes['x']))
+    da.coords['param'] = param
+    edges = sc.linspace('param', 0.0, 1.0, num=5)
+    from scipp.core.bin_remapping import combine_bins
+    result = combine_bins(da, [edges], [], ['x'])
+    # Setup flat table with param for computing expected result
+    da.bins.coords['param'] = sc.bins_like(da, param)
+    table = da.bins.constituents['data']
+    assert sc.identical(result.hist(), table.hist(y=3, param=edges))
+
+
+def test_bin_combined_outer_and_inner_of_2d_without_event_coord():
+    table = sc.data.table_xyz(nrow=1000)
+    table.data = sc.arange('row', 1000, dtype='float64')
+    da = table.bin(x=7, y=3)
+    rng = default_rng(seed=1234)
+    param = sc.array(dims=['x', 'y'], values=rng.random(da.shape))
+    edges = sc.linspace('param', 0.0, 1.0, num=5)
+    from scipp.core.bin_remapping import combine_bins
+    da.coords['param'] = param
+    result_xy = combine_bins(da, [edges], [], ['x', 'y'])
+    da.coords['param'] = param.transpose()
+    result_yx = combine_bins(da, [edges], [], ['x', 'y'])
+    assert sc.identical(result_xy, result_yx)
+    # Setup flat table with param for computing expected result
+    da.bins.coords['param'] = sc.bins_like(da, param)
+    table = da.bins.constituents['data']
+    assert sc.identical(result_xy.hist(), table.hist(param=edges))
+
+
+def test_bin_outer_and_inner_of_2d_without_event_coord():
+    table = sc.data.table_xyz(nrow=1000)
+    table.data = sc.arange('row', 1000, dtype='float64')
+    da = table.bin(x=7, y=3)
+    rng = default_rng(seed=1234)
+    x = sc.array(dims=['x'], values=rng.random(da.sizes['x']))
+    y = sc.array(dims=['y'], values=rng.random(da.sizes['y']))
+    xnew = sc.linspace('xnew', 0.0, 1.0, num=5)
+    ynew = sc.linspace('ynew', 0.0, 1.0, num=4)
+    from scipp.core.bin_remapping import combine_bins
+    da.coords['xnew'] = x
+    da.coords['ynew'] = y
+    result = combine_bins(da, [xnew, ynew], [], ['x', 'y'])
+    # Setup flat table with param for computing expected result
+    da.bins.coords['xnew'] = sc.bins_like(da, x)
+    da.bins.coords['ynew'] = sc.bins_like(da, y)
+    table = da.bins.constituents['data']
+    assert sc.identical(result.hist(), table.hist(xnew=xnew, ynew=ynew))

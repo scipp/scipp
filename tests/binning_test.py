@@ -2,6 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import pytest
+import itertools
 import scipp as sc
 import numpy as np
 from numpy.random import default_rng
@@ -547,3 +548,189 @@ def test_variable_bin_equivalent_to_bin_of_data_array_with_counts():
     coord = sc.array(dims=['row'], values=[2, 2, 1, 3])
     da = sc.DataArray(data, coords={'x': coord})
     assert sc.identical(coord.bin(x=3), da.bin(x=3))
+
+
+def test_group_many_to_many_uses_optimized_codepath():
+    size = 512
+    table = sc.data.table_xyz(int(1e3))
+    da = table.bin(x=size, y=size)
+    xcoarse = sc.arange('x', size) // 2
+    ycoarse = sc.arange('y', size) // 2
+    da.coords['xcoarse'] = xcoarse
+    da.coords['ycoarse'] = ycoarse
+    # The old "standard" implementation uses a massive amount of memory, crashing even
+    # with 256 GByte of RAM.
+    assert da.group('xcoarse', 'ycoarse').dims == ('xcoarse', 'ycoarse')
+
+
+def test_group_many_to_many_with_extra_inner_dim_uses_optimized_codepath():
+    size = 512
+    table = sc.data.table_xyz(int(1e3))
+    da = table.bin(x=size, y=size, z=3)
+    xcoarse = sc.arange('x', size) // 2
+    ycoarse = sc.arange('y', size) // 2
+    da.coords['xcoarse'] = xcoarse
+    da.coords['ycoarse'] = ycoarse
+    # The old "standard" implementation uses a massive amount of memory, crashing even
+    # with 256 GByte of RAM.
+    assert da.group('xcoarse', 'ycoarse').dims == ('z', 'xcoarse', 'ycoarse')
+
+
+def test_group_many_to_many_with_extra_outer_dim_uses_optimized_codepath():
+    size = 512
+    table = sc.data.table_xyz(int(1e3))
+    da = table.bin(z=3, x=size, y=size)
+    xcoarse = sc.arange('x', size) // 2
+    ycoarse = sc.arange('y', size) // 2
+    da.coords['xcoarse'] = xcoarse
+    da.coords['ycoarse'] = ycoarse
+    # The old "standard" implementation uses a massive amount of memory, crashing even
+    # with 256 GByte of RAM.
+    assert da.group('xcoarse', 'ycoarse').dims == ('z', 'xcoarse', 'ycoarse')
+
+
+def test_group_many_to_many_by_two_coords_along_same_dim_uses_optimized_codepath():
+    size = 512
+    table = sc.data.table_xyz(int(1e3))
+    da = table.bin(x=size * size)
+    x1 = sc.arange('x', size * size) // size
+    x2 = sc.arange('x', size * size) % size
+    da.coords['x1'] = x1
+    da.coords['x2'] = x2
+    # The old "standard" implementation uses a massive amount of memory, crashing even
+    # with 256 GByte of RAM.
+    assert da.group('x1', 'x2').dims == ('x1', 'x2')
+
+
+def test_group_many_and_erase():
+    from scipp import binning
+    binning.make_binned
+    size = 512
+    table = sc.data.table_xyz(int(1e3))
+    da = table.bin(z=3, x=size, y=size)
+    xcoarse = sc.arange('x', size) // 2
+    ycoarse = sc.arange('y', size) // 2
+    da.coords['xcoarse'] = xcoarse
+    da.coords['ycoarse'] = ycoarse
+    result = binning.make_binned(
+        da,
+        edges=[],
+        groups=[sc.arange('xcoarse', size // 2, dtype=xcoarse.dtype)],
+        erase=['x', 'y'])
+    assert result.dims == ('z', 'xcoarse')
+
+
+def test_erase_multiple():
+    from scipp import binning
+    binning.make_binned
+    table = sc.data.table_xyz(int(1e3))
+    da = table.bin(x=13, y=7)
+    result = binning.make_binned(da, edges=[], groups=[], erase=['x', 'y'])
+    assert sc.identical(result.value, da.bins.constituents['data'])
+
+
+def test_erase_2d_mask():
+    from scipp import binning
+    binning.make_binned
+    table = sc.data.table_xyz(100)
+    table.data = sc.arange('row', 100)
+    da = table.bin(x=2, y=2)
+    da.masks['mask'] = sc.zeros(dims=da.dims, shape=da.shape, dtype=bool)
+    da.masks['mask'].values[1, 1] = True
+    result = binning.make_binned(da, edges=[], groups=[], erase=['x', 'y'])
+    assert not sc.identical(result.sum(), table.sum())
+    assert sc.identical(result.sum(), da.sum())
+
+
+def test_erase_multiple_masks():
+    from scipp import binning
+    binning.make_binned
+    table = sc.data.table_xyz(100)
+    table.data = sc.arange('row', 100)
+    da = table.bin(x=2, y=2)
+    da.masks['xy'] = sc.zeros(dims=da.dims, shape=da.shape, dtype=bool)
+    da.masks['xy'].values[1, 1] = True
+    da.masks['x'] = sc.array(dims=['x'], values=[False, True])
+    result = binning.make_binned(da, edges=[], groups=[], erase=['x', 'y'])
+    assert not sc.identical(result.sum(), table.sum())
+    assert sc.identical(result.sum(), da.sum())
+
+
+def _make_base_array():
+    nx = 7
+    ny = 3
+    nz = 13
+    sizes = {'x': nx, 'y': ny, 'z': nz}
+    nrow = 10000
+    table = sc.data.table_xyz(nrow)
+    table.data = sc.array(dims=['row'], values=rng.integers(1000000, size=nrow))
+    da = table.bin(sizes)
+    da.coords['x1'] = sc.arange('x', nx) // 2
+    da.coords['x2'] = sc.array(dims=['x'], values=rng.integers(nx // 3, size=nx))
+    da.coords['y1'] = sc.arange('y', ny) // 2
+    da.coords['y2'] = sc.array(dims=['y'], values=rng.integers(ny // 3, size=ny))
+    da.coords['z1'] = sc.arange('z', nz) // 2
+    da.coords['z2'] = sc.array(dims=['z'], values=rng.integers(nz // 3, size=nz))
+    return da
+
+
+_base_array = _make_base_array()
+
+
+def data_array_3d_with_outer_coords(names):
+    da = _base_array.copy(deep=False)
+    for coord in ['x1', 'x2', 'y1', 'y2', 'z1', 'z2']:
+        if coord not in names:
+            del da.coords[coord]
+    return da
+
+
+def to_table(da, coord_names):
+    da = da.copy()
+    for name in coord_names:
+        da.bins.coords[name] = sc.bins_like(da, da.coords[name])
+    return da.bins.constituents['data']
+
+
+def cases(x, maxlen):
+    out = []
+    for i in range(1, maxlen + 1):
+        for comb in itertools.combinations(x, i):
+            out += list(itertools.permutations(comb))
+    return out
+
+
+params = cases(['x1', 'x2', 'y1', 'y2', 'z1', 'z2'], maxlen=4)
+
+
+@pytest.mark.parametrize('params', params, ids=['-'.join(g) for g in params])
+def test_make_binned_via_group_optimized_path_yields_equivalent_results(params):
+    da = data_array_3d_with_outer_coords(params)
+
+    result = da.group(*params)
+
+    # Compare to directly grouping from table (or binned along unrelated dims). This
+    # operates in the underlying events instead of bins.
+    expected = to_table(da, params)
+    sizes = {dim: size for dim, size in result.sizes.items() if dim in da.sizes}
+    if sizes:
+        expected = expected.bin(sizes)
+    expected = expected.group(*params).hist()
+    assert sc.identical(result.hist(), expected)
+
+
+@pytest.mark.parametrize('params', params, ids=['-'.join(g) for g in params])
+def test_make_binned_via_bin_optimized_path_yields_equivalent_results(params):
+    da = data_array_3d_with_outer_coords(params)
+
+    binning = {param: rng.integers(low=1, high=5) for param in params}
+    result = da.bin(binning)
+
+    # Compare to directly binning from table (or binned along unrelated dims). This
+    # operates in the underlying events instead of bins.
+    expected = to_table(da, params)
+    sizes = {dim: size for dim, size in result.sizes.items() if dim in da.sizes}
+    if sizes:
+        expected = expected.bin(sizes)
+    expected = expected.bin(binning).hist()
+    assert sc.identical(result.hist(), expected)

@@ -6,7 +6,7 @@ from __future__ import annotations
 from typing import Optional
 
 from .._scipp import core as _cpp
-from ..typing import VariableLikeType
+from ..typing import Dims, VariableLikeType
 
 
 def mean(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
@@ -81,7 +81,7 @@ def nanmean(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
         return _cpp.nanmean(x, dim=dim)
 
 
-def sum(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
+def sum(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     """Sum of elements in the input.
 
     If the input data is in single precision (dtype='float32') this internally uses
@@ -110,8 +110,11 @@ def sum(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
     """
     if dim is None:
         return _cpp.sum(x)
-    else:
+    elif isinstance(dim, str):
         return _cpp.sum(x, dim=dim)
+    for d in dim:
+        x = _cpp.sum(x, d)
+    return x
 
 
 def nansum(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:

@@ -8,6 +8,7 @@
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/creation.h"
 #include "scipp/variable/reduction.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/special_values.h"
 #include "scipp/variable/util.h"
 
@@ -19,8 +20,9 @@ namespace {
 template <class Op>
 Variable reduce_impl(const Variable &var, const Dim dim, const Masks &masks,
                      const FillValue fill, const Op &op) {
-  if (const auto mask_union = irreducible_mask(masks, dim);
-      mask_union.is_valid()) {
+  if (auto mask_union = irreducible_mask(masks, dim); mask_union.is_valid()) {
+    mask_union = transpose(
+        mask_union, intersection(var.dims(), mask_union.dims()).labels());
     return op(
         where(mask_union, dense_special_like(var, Dimensions{}, fill), var),
         dim);

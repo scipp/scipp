@@ -43,6 +43,10 @@ Features
 
 * :class:`scipp.Bins` now supports `__getitem__`, providing a shorthand for extracting events based on a coord value or value interval. This is equivalent functionality to label-based indexing for dense data but considers the coordinates of the underlying bin content `#2831 <https://github.com/scipp/scipp/pull/2831>`_.
 * Much faster ``obj.bins.concat`` operations in presence of many bins `#2825 <https://github.com/scipp/scipp/pull/2825>`_.
+* When mapping between many input and output bins:
+  Avoid huge memory use and slow performance in use of :py:func:`scipp.bin` and :py:func:`scipp.group` when only entire bins are combined (rather than splitting bins based on bin content coordinates).
+  This avoids a number of cases where Python kernel used to crash since Scipp ran out of memory `#2827 <https://github.com/scipp/scipp/pull/2827>`_.
+* :py:func:`scipp.sum` now also accepts a sequence of dimension labels `#2827 <https://github.com/scipp/scipp/pull/2827>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
@@ -55,6 +59,8 @@ Documentation
 
 Deprecations
 ~~~~~~~~~~~~
+
+- The ``concat`` action of :py:func:`scipp.groupby` is deprecated. Use :py:func:`scipp.group` and :py:func:`scipp.bin` instead `#2827 <https://github.com/scipp/scipp/pull/2827>`_.
 
 Stability, Maintainability, and Testing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

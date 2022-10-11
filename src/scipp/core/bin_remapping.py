@@ -1,114 +1,139 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-from typing import Dict
+import itertools
+import uuid
+from typing import Dict, List
+from math import prod
 from .._scipp import core as _cpp
-from .cpp_classes import DataArray, Variable, Dataset
-from .like import empty_like
+from .cpp_classes import DataArray, Variable
 from .cumulative import cumsum
-from .dataset import irreducible_mask
-from ..typing import VariableLikeType
+from ..typing import Dims, VariableLikeType
+from .variable import index
+from .operations import where
+from .concepts import (concrete_dims, rewrap_reduced_data, irreducible_mask)
 
 
-def _reduced(obj: Dict[str, Variable], dim: str) -> Dict[str, Variable]:
-    return {name: var for name, var in obj.items() if dim not in var.dims}
-
-
-def reduced_coords(da: DataArray, dim: str) -> Dict[str, Variable]:
-    return _reduced(da.coords, dim)
-
-
-def reduced_attrs(da: DataArray, dim: str) -> Dict[str, Variable]:
-    return _reduced(da.attrs, dim)
-
-
-def reduced_masks(da: DataArray, dim: str) -> Dict[str, Variable]:
-    return {name: mask.copy() for name, mask in _reduced(da.masks, dim).items()}
-
-
-def _copy_dict_for_overwrite(mapping: Dict[str, Variable]) -> Dict[str, Variable]:
-    return {name: copy_for_overwrite(var) for name, var in mapping.items()}
-
-
-def copy_for_overwrite(obj: VariableLikeType) -> VariableLikeType:
-    """
-    Copy a Scipp object for overwriting.
-
-    Unlike :py:func:`scipp.empty_like` this does not preserve (and share) coord,
-    mask, and attr values. Instead, those values are not initialized, just like the
-    data values.
-    """
-    if isinstance(obj, Variable):
-        return empty_like(obj)
-    if isinstance(obj, DataArray):
-        return DataArray(copy_for_overwrite(obj.data),
-                         coords=_copy_dict_for_overwrite(obj.coords),
-                         masks=_copy_dict_for_overwrite(obj.masks),
-                         attrs=_copy_dict_for_overwrite(obj.attrs))
-    ds = Dataset(coords=_copy_dict_for_overwrite(obj.coords))
-    for name, da in obj.items():
-        ds[name] = DataArray(copy_for_overwrite(da.data),
-                             masks=_copy_dict_for_overwrite(da.masks),
-                             attrs=_copy_dict_for_overwrite(da.attrs))
-    return ds
-
-
-def hide_masked_and_reduce_meta(da: DataArray, dim: str) -> DataArray:
-    if (mask := irreducible_mask(da.masks, dim)) is not None:
+def hide_masked(da: DataArray, dim: Dims) -> DataArray:
+    if (mask := irreducible_mask(da, dim)) is not None:
         # Avoid using boolean indexing since it would result in (partial) content
         # buffer copy. Instead index just begin/end and reuse content buffer.
         comps = da.bins.constituents
-        select = ~mask
-        data = _cpp._bins_no_validate(
-            data=comps['data'],
-            dim=comps['dim'],
-            begin=comps['begin'][select],
-            end=comps['end'][select],
-        )
+        # If the mask is 1-D we can drop entire "rows" or "columns". This can
+        # drastically reduce the number of bins to handle in some cases for better
+        # performance. For 2-D or higher masks we fall back to making bins "empty" by
+        # setting end=begin.
+        if mask.ndim == 1:
+            select = ~mask
+            comps['begin'] = comps['begin'][select]
+            comps['end'] = comps['end'][select]
+        else:
+            comps['end'] = where(mask, comps['begin'], comps['end'])
+        return _cpp._bins_no_validate(**comps)
     else:
-        data = da.data
-    return DataArray(data,
-                     coords=reduced_coords(da, dim),
-                     masks=reduced_masks(da, dim),
-                     attrs=reduced_attrs(da, dim))
+        return da.data
 
 
-def _concat_bins_variable(var: Variable, dim: str) -> Variable:
-    # We want to write data from all bins along dim to a contiguous chunk in the
-    # content buffer. This will then allow us to create new, larger bins covering the
-    # respective input bins. We use `cumsum` after moving `dim` to the innermost dim.
-    # This will allow us to setup offsets for the new contiguous layout.
-    sizes = var.bins.size()
-    out_dims = [d for d in var.dims if d != dim]
-    out_end = cumsum(sizes.transpose(out_dims + [dim])).transpose(var.dims)
-    out_begin = out_end - sizes
-    out = _cpp._bins_no_validate(
-        data=copy_for_overwrite(var.bins.constituents['data']),
+def _with_bin_sizes(var: Variable, sizes: Variable) -> Variable:
+    end = cumsum(sizes)
+    begin = end - sizes
+    data = var if var.bins is None else var.bins.constituents['data']
+    dim = var.dim if var.bins is None else var.bins.constituents['dim']
+    return _cpp._bins_no_validate(data=data, dim=dim, begin=begin, end=end)
+
+
+def _concat_bins(var: Variable, dim: List[str]) -> Variable:
+    # To concat bins, two things need to happen:
+    # 1. Data needs to be written to a contiguous chunk.
+    # 2. New bin begin/end indices need to be setup.
+    # If the dims to concatenate are the *inner* dims a call to `copy()` performs 1.
+    # Otherwise, we first transpose and then `copy()`.
+    # For step 2. we simply sum the (transposed) input bin sizes over the concat dims,
+    # which `_with_bin_sizes` can use to compute new begin/end indices.
+    changed_dims = list(concrete_dims(var, dim))
+    unchanged_dims = [d for d in var.dims if d not in changed_dims]
+    # TODO It would be possible to support a copy=False parameter, to skip the copy if
+    # the copy would not result in any moving or reordering.
+    out = var.transpose(unchanged_dims + changed_dims).copy()
+    sizes = out.bins.size().sum(changed_dims)
+    return _with_bin_sizes(out, sizes)
+
+
+def _combine_bins(var: Variable, coords: Dict[str, Variable], edges: List[Variable],
+                  groups: List[Variable], dim: Dims) -> Dict[str, Variable]:
+    from .binning import make_binned
+    # Overview
+    # --------
+    # The purpose of this code is to combine existing bins, but in a more general
+    # manner than `concat`, which combines all bins along a dimension. Here we operate
+    # more like `groupby`, which combines selected subsets and creates a new output dim.
+    #
+    # Approach
+    # --------
+    # The algorithm works conceptually similar to `_concat_bins`, but with an additional
+    # step, calling `make_binned` for grouping within the erased dims. For the final
+    # output binning, instead of summing the input bin sizes over all erased dims, we
+    # sum only within the groups created by `make_binned`.
+
+    # Preserve subspace dim order of input data, instead of the one given by `dim`
+    concrete_dims_ = concrete_dims(var, dim)
+    changed_dims = [d for d in var.dims if d in concrete_dims_]
+    unchanged_dims = [d for d in var.dims if d not in changed_dims]
+    changed_shape = [var.sizes[d] for d in changed_dims]
+    unchanged_shape = [var.sizes[d] for d in unchanged_dims]
+    changed_volume = prod(changed_shape)
+
+    # Move modified dims to innermost. Below this enables us to keep other dims
+    # (listed in unchanged_dims) untouched by creating pseudo bins that wrap the entire
+    # changed subspaces. make_binned below will thus only operate within each pseudo
+    # bins, without mixing contents from different unchanged bins.
+    var = var.transpose(unchanged_dims + changed_dims)
+    params = DataArray(var.bins.size(), coords=coords)
+    params.attrs['begin'] = var.bins.constituents['begin'].copy()
+    params.attrs['end'] = var.bins.constituents['end'].copy()
+
+    # Sizes and begin/end indices of changed subspace
+    sub_sizes = index(changed_volume).broadcast(dims=unchanged_dims,
+                                                shape=unchanged_shape)
+    params = params.flatten(to=uuid.uuid4().hex)
+    # Setup pseudo binning for unchanged subspace. All further reordering (for grouping
+    # and binning) will then occur *within* those pseudo bins (by splitting them).
+    params = _with_bin_sizes(params, sub_sizes)
+    # Apply desired binning/grouping to sizes and begin/end, splitting the pseudo bins.
+    params = make_binned(params, edges=edges, groups=groups)
+
+    # Setup view of source content with desired target bin order
+    source = _cpp._bins_no_validate(
+        data=var.bins.constituents['data'],
         dim=var.bins.constituents['dim'],
-        begin=out_begin,
-        end=out_end,
+        begin=params.bins.constituents['data'].attrs['begin'],
+        end=params.bins.constituents['data'].attrs['end'],
     )
-
-    # Copy all bin contents, performing the actual reordering with the content buffer.
-    out[...] = var
-
-    # Setup output indices. This will have the "merged" bins, referencing the new
-    # contigous layout in the content buffer.
-    out_sizes = sizes.sum(dim)
-    out_end = cumsum(out_sizes)
-    out_begin = out_end - out_sizes
-    return _cpp._bins_no_validate(
-        data=out.bins.constituents['data'],
-        dim=out.bins.constituents['dim'],
-        begin=out_begin,
-        end=out_end,
-    )
+    # Call `copy()` to reorder data. This is based on the underlying behavior of `copy`
+    # for binned data: It computes a new contiguous and ordered mapping of bin contents
+    # to the content buffer. The main purpose of that mechanism is to deal, e.g., with
+    # copies of slices, but here we can leverage the same mechanism.
+    # Then we call `_with_bin_sizes` to put in place new indices, "merging" the
+    # reordered input bins to desired output bins.
+    return _with_bin_sizes(source.copy(), sizes=params.data.bins.sum())
 
 
-def concat_bins(obj: VariableLikeType, dim: str) -> VariableLikeType:
-    if isinstance(obj, Variable):
-        return _concat_bins_variable(obj, dim)
+def combine_bins(da: DataArray, edges: List[Variable], groups: List[Variable],
+                 dim: Dims) -> DataArray:
+    masked = hide_masked(da, dim)
+    if len(edges) == 0 and len(groups) == 0:
+        data = _concat_bins(masked, dim=dim)
     else:
-        da = hide_masked_and_reduce_meta(obj, dim)
-        data = _concat_bins_variable(da.data, dim)
-        return DataArray(data, coords=da.coords, masks=da.masks, attrs=da.attrs)
+        names = [coord.dim for coord in itertools.chain(edges, groups)]
+        coords = {name: da.meta[name] for name in names}
+        data = _combine_bins(masked, coords=coords, edges=edges, groups=groups, dim=dim)
+    out = rewrap_reduced_data(da, data, dim=dim)
+    for coord in itertools.chain(edges, groups):
+        out.coords[coord.dim] = coord
+    return out
+
+
+def concat_bins(obj: VariableLikeType, dim: Dims = None) -> VariableLikeType:
+    da = obj if isinstance(obj, DataArray) else DataArray(obj)
+    out = combine_bins(da, edges=[], groups=[], dim=dim)
+    return out if isinstance(obj, DataArray) else out.data

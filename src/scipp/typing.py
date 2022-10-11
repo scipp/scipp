@@ -46,6 +46,14 @@ def has_numeric_type(obj: _std_typing.Any) -> bool:
     return (not has_vector_type(obj)) and (not has_string_type(obj))
 
 
+Dims = _std_typing.Union[None, str, _std_typing.Sequence[str]]
+"""
+Describes dimensions to operate on.
+
+Can be a string (for a single dimension) or a sequence of strings (multiple dimensions).
+A value of ``None`` indicates "all dimensions."
+"""
+
 VariableLike = _std_typing.Union[Variable, DataArray, Dataset]
 """Any object that behaves like a :class:`scipp.Variable`.
 

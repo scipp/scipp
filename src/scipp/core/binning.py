@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+import itertools
 import warnings
 from numbers import Integral
 from typing import Dict, List, Optional, Union, Sequence
@@ -8,6 +9,7 @@ from typing import Dict, List, Optional, Union, Sequence
 from .._scipp import core as _cpp
 from .variable import array, Variable, linspace, arange, epoch, scalar
 from .math import round as round_
+from .bin_remapping import combine_bins
 
 
 def make_histogrammed(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset], *,
@@ -99,14 +101,33 @@ def make_binned(x: Union[_cpp.Variable, _cpp.DataArray],
         groups = []
     if edges is None:
         edges = []
-    if isinstance(x, Variable):
+    if isinstance(x, Variable) and x.bins is not None:
+        x = _cpp.DataArray(x)
+    elif isinstance(x, Variable):
         coords = [*edges, *groups]
         if len(coords) != 1:
             raise ValueError("Edges for exactly one dimension must be specified when "
                              "binning or histogramming a variable.")
         data = scalar(1.0, unit='counts').broadcast(sizes=x.sizes).copy()
         x = _cpp.DataArray(data, coords={coords[0].dim: x})
+    if _can_operate_on_bins(x, edges, groups, erase):
+        return combine_bins(x, edges=edges, groups=groups, dim=erase)
     return _cpp.bin(x, edges, groups, erase)
+
+
+def _can_operate_on_bins(x, edges, groups, erase) -> bool:
+    if x.bins is None:
+        return False
+    dims = []
+    for coord in itertools.chain(edges, groups):
+        if coord.ndim != 1:
+            return False
+        if coord.dim in x.bins.meta:
+            return False
+        if coord.dim not in x.meta:
+            return False
+        dims += x.meta[coord.dim].dims
+    return set(dims) <= set(erase)
 
 
 def _require_coord(name, coord):
