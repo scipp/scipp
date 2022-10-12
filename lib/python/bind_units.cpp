@@ -29,10 +29,13 @@ py::dict to_dict(const units::Unit &unit) {
   dict["currency"] = base_units.currency();
   dict["count"] = base_units.count();
   dict["radian"] = base_units.radian();
-  dict["per_unit"] = base_units.is_per_unit();
-  dict["i_flag"] = base_units.has_i_flag();
-  dict["e_flag"] = base_units.has_e_flag();
-  dict["equation"] = base_units.is_equation();
+  // Returning ints instead of bools because
+  // - The constructor of unit_data takes unsigned int as arguments.
+  // - h5py saves bools as enum types which waste disk space.
+  dict["per_unit"] = static_cast<unsigned int>(base_units.is_per_unit());
+  dict["i_flag"] = static_cast<unsigned int>(base_units.has_i_flag());
+  dict["e_flag"] = static_cast<unsigned int>(base_units.has_e_flag());
+  dict["equation"] = static_cast<unsigned int>(base_units.is_equation());
 
   // We loose some type information. commodity is uint32
   // but the dict contains a signed int.
