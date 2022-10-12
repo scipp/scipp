@@ -70,7 +70,7 @@ def test_default_unit_for_string_is_none():
     assert var.unit is None
 
 
-@pytest.mark.parametrize('u', (sc.Unit('m'), sc.Unit('count / s'),
+@pytest.mark.parametrize('u', (sc.Unit('one'), sc.Unit('m'), sc.Unit('count / s'),
                                sc.Unit('12.3 * m/A*kg^2/rad^3'), sc.Unit('CXUN[573]')))
 def test_dict_roundtrip(u):
     assert sc.Unit.from_dict(u.to_dict()).is_exactly_the_same(u)

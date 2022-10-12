@@ -14,36 +14,54 @@ namespace py = pybind11;
 
 constexpr int UNIT_DICT_VERSION = 1;
 
+namespace {
+
+template <class Target = void, class T>
+void store(py::dict &dict, const char *const name, T val) {
+  if (val != 0) {
+    dict[name] = static_cast<
+        std::conditional_t<std::is_same_v<Target, void>, T, Target>>(val);
+  }
+}
+
 py::dict to_dict(const units::Unit &unit) {
   py::dict dict;
   dict["__version__"] = UNIT_DICT_VERSION;
 
   const auto &base_units = unit.underlying().base_units();
-  dict["meter"] = base_units.meter();
-  dict["kilogram"] = base_units.kg();
-  dict["second"] = base_units.second();
-  dict["ampere"] = base_units.ampere();
-  dict["kelvin"] = base_units.kelvin();
-  dict["mole"] = base_units.mole();
-  dict["candela"] = base_units.candela();
-  dict["currency"] = base_units.currency();
-  dict["count"] = base_units.count();
-  dict["radian"] = base_units.radian();
+  store(dict, "meter", base_units.meter());
+  store(dict, "kilogram", base_units.kg());
+  store(dict, "second", base_units.second());
+  store(dict, "ampere", base_units.ampere());
+  store(dict, "kelvin", base_units.kelvin());
+  store(dict, "mole", base_units.mole());
+  store(dict, "candela", base_units.candela());
+  store(dict, "currency", base_units.currency());
+  store(dict, "count", base_units.count());
+  store(dict, "radian", base_units.radian());
   // Returning ints instead of bools because
   // - The constructor of unit_data takes unsigned int as arguments.
   // - h5py saves bools as enum types which waste disk space.
-  dict["per_unit"] = static_cast<unsigned int>(base_units.is_per_unit());
-  dict["i_flag"] = static_cast<unsigned int>(base_units.has_i_flag());
-  dict["e_flag"] = static_cast<unsigned int>(base_units.has_e_flag());
-  dict["equation"] = static_cast<unsigned int>(base_units.is_equation());
+  store<unsigned int>(dict, "per_unit", base_units.is_per_unit());
+  store<unsigned int>(dict, "i_flag", base_units.has_i_flag());
+  store<unsigned int>(dict, "e_flag", base_units.has_e_flag());
+  store<unsigned int>(dict, "equation", base_units.is_equation());
 
   // We loose some type information. commodity is uint32
   // but the dict contains a signed int.
   // This should not matter because Python's int is larger than 32 bit.
-  dict["commodity"] = unit.underlying().commodity();
+  store(dict, "commodity", unit.underlying().commodity());
+
   dict["multiplier"] = unit.underlying().multiplier();
 
   return dict;
+}
+
+template <class T> T get(const py::dict &dict, const char *const name) {
+  if (dict.contains(name)) {
+    return dict[name].cast<T>();
+  }
+  return T{};
 }
 
 units::Unit from_dict(const py::dict &dict) {
@@ -57,24 +75,26 @@ units::Unit from_dict(const py::dict &dict) {
 
   return units::Unit(llnl::units::precise_unit(
       llnl::units::detail::unit_data{
-          dict["meter"].cast<int>(),
-          dict["kilogram"].cast<int>(),
-          dict["second"].cast<int>(),
-          dict["ampere"].cast<int>(),
-          dict["kelvin"].cast<int>(),
-          dict["mole"].cast<int>(),
-          dict["candela"].cast<int>(),
-          dict["currency"].cast<int>(),
-          dict["count"].cast<int>(),
-          dict["radian"].cast<int>(),
-          dict["per_unit"].cast<unsigned int>(),
-          dict["i_flag"].cast<unsigned int>(),
-          dict["e_flag"].cast<unsigned int>(),
-          dict["equation"].cast<unsigned int>(),
+          get<int>(dict, "meter"),
+          get<int>(dict, "kilogram"),
+          get<int>(dict, "second"),
+          get<int>(dict, "ampere"),
+          get<int>(dict, "kelvin"),
+          get<int>(dict, "mole"),
+          get<int>(dict, "candela"),
+          get<int>(dict, "currency"),
+          get<int>(dict, "count"),
+          get<int>(dict, "radian"),
+          get<unsigned int>(dict, "per_unit"),
+          get<unsigned int>(dict, "i_flag"),
+          get<unsigned int>(dict, "e_flag"),
+          get<unsigned int>(dict, "equation"),
       },
-      dict["commodity"].cast<std::uint32_t>(),
+      get<std::uint32_t>(dict, "commodity"),
       dict["multiplier"].cast<double>()));
 }
+
+} // namespace
 
 void init_units(py::module &m) {
   py::class_<DefaultUnit>(m, "DefaultUnit")
