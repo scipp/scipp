@@ -68,6 +68,8 @@ SCIPP_UNITS_EXPORT Unit floor(const Unit &a);
 SCIPP_UNITS_EXPORT Unit ceil(const Unit &a);
 SCIPP_UNITS_EXPORT Unit rint(const Unit &a);
 
+SCIPP_UNITS_EXPORT bool identical(const Unit &a, const Unit &b);
+
 constexpr Unit none{};
 constexpr Unit dimensionless{llnl::units::precise::one};
 constexpr Unit one{llnl::units::precise::one}; /// alias for dimensionless

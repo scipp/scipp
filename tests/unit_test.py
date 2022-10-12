@@ -2,6 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
+from scipp._scipp.core import units_identical as units_identical  # noqa
 import scipp as sc
 import pytest
 
@@ -73,4 +74,4 @@ def test_default_unit_for_string_is_none():
 @pytest.mark.parametrize('u', (sc.Unit('one'), sc.Unit('m'), sc.Unit('count / s'),
                                sc.Unit('12.3 * m/A*kg^2/rad^3'), sc.Unit('CXUN[573]')))
 def test_dict_roundtrip(u):
-    assert sc.Unit.from_dict(u.to_dict()).is_exactly_the_same(u)
+    assert units_identical(sc.Unit.from_dict(u.to_dict()), u)

@@ -66,11 +66,6 @@ bool Unit::operator==(const Unit &other) const {
 
 bool Unit::operator!=(const Unit &other) const { return !(*this == other); }
 
-bool Unit::is_exactly_the_same(const Unit &other) const {
-  return has_value() && other.has_value() &&
-         underlying().is_exactly_the_same(other.underlying());
-}
-
 Unit &Unit::operator+=(const Unit &other) { return *this = *this + other; }
 
 Unit &Unit::operator-=(const Unit &other) { return *this = *this - other; }
@@ -188,6 +183,11 @@ Unit atan2(const Unit &y, const Unit &x) {
   throw except::UnitError(
       "atan2 function requires matching units for input, got a " + x.name() +
       " b " + y.name() + ".");
+}
+
+bool identical(const Unit &a, const Unit &b) {
+  return a.has_value() && b.has_value() &&
+         a.underlying().is_exactly_the_same(b.underlying());
 }
 
 } // namespace scipp::units

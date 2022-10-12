@@ -116,15 +116,6 @@ void init_units(py::module &m) {
       .def("__abs__", [](const units::Unit &self) { return abs(self); })
       .def(py::self == py::self)
       .def(py::self != py::self)
-      .def(
-          "is_exactly_the_same",
-          [](const units::Unit &self, const units::Unit &other) {
-            return self.is_exactly_the_same(other);
-          },
-          "Check if two units are numerically identical.\n\n"
-          "The regular equality operator allows for small differences "
-          "in the unit's floating point multiplier. ``is_exactly_the_same`` "
-          "checks for exact identity.")
       .def(hash(py::self))
       .def("to_dict", to_dict,
            "Serialize a unit to a dict.\n\nThis function is meant to be used "
@@ -170,5 +161,14 @@ void init_units(py::module &m) {
   units.attr("default_unit") = DefaultUnit{};
 
   m.def("to_numpy_time_string",
-        py::overload_cast<const ProtoUnit &>(to_numpy_time_string));
+        py::overload_cast<const ProtoUnit &>(to_numpy_time_string))
+      .def(
+          "units_identical",
+          [](const units::Unit &a, const units::Unit &b) {
+            return identical(a, b);
+          },
+          "Check if two units are numerically identical.\n\n"
+          "The regular equality operator allows for small differences "
+          "in the unit's floating point multiplier. ``is_exactly_the_same`` "
+          "checks for exact identity.");
 }
