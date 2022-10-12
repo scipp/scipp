@@ -36,6 +36,7 @@ public:
 
   bool operator==(const Unit &other) const;
   bool operator!=(const Unit &other) const;
+  bool is_exactly_the_same(const Unit &other) const;
 
   Unit &operator+=(const Unit &other);
   Unit &operator-=(const Unit &other);

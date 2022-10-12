@@ -63,7 +63,13 @@ bool Unit::has_same_base(const Unit &other) const {
 bool Unit::operator==(const Unit &other) const {
   return m_unit == other.m_unit;
 }
+
 bool Unit::operator!=(const Unit &other) const { return !(*this == other); }
+
+bool Unit::is_exactly_the_same(const Unit &other) const {
+  return has_value() && other.has_value() &&
+         underlying().is_exactly_the_same(other.underlying());
+}
 
 Unit &Unit::operator+=(const Unit &other) { return *this = *this + other; }
 
