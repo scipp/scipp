@@ -19,4 +19,4 @@ for name in list(tmp.attrs):
 tmp.bins.coords['time'] = tmp.bins.coords.pop('pulse_time')
 tmp.attrs['proton_charge'].value = tmp.attrs['proton_charge'].value.rename(
     pulse_time='time')
-tmp.to_hdf5('scipp-filtering-docs-data.h5')
+tmp.to_hdf5('VULCAN_221040_processed.h5')
