@@ -5,10 +5,7 @@
 #include "scipp/core/dtype.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/units/unit.h"
-#include "scipp/variable/variable.h"
 
-#include "dtype.h"
-#include "numpy.h"
 #include "pybind11.h"
 #include "unit.h"
 
@@ -37,6 +34,9 @@ py::dict to_dict(const units::Unit &unit) {
   dict["e_flag"] = base_units.has_e_flag();
   dict["equation"] = base_units.is_equation();
 
+  // We loose some type information. commodity is uint32
+  // but the dict contains a signed int.
+  // This should not matter because Python's int is larger than 32 bit.
   dict["commodity"] = unit.underlying().commodity();
   dict["multiplier"] = unit.underlying().multiplier();
 

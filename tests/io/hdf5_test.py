@@ -233,10 +233,10 @@ def test_dataset_item_can_be_read_as_data_array():
 
 def test_dataset_with_many_coords():
     rows = 10000
-    a = sc.ones(dims=['row'], shape=[rows], dtype='float64')
-    b = sc.ones(dims=['row'], shape=[rows], dtype='float64')
+    a = sc.ones(dims=['row'], shape=[rows], dtype='float64', unit=None)
+    b = sc.ones(dims=['row'], shape=[rows], dtype='float64', unit=None)
     coords = {
-        k: sc.ones(dims=['row'], shape=[rows], dtype='float64')
+        k: sc.ones(dims=['row'], shape=[rows], dtype='float64', unit=None)
         for k in 'abcdefghijklmnopqrstuvwxyz'
     }
     ds1 = sc.Dataset(coords=coords)

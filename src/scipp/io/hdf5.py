@@ -9,6 +9,7 @@ from typing import Union
 
 from ..logging import get_logger
 from ..typing import VariableLike
+from ..core.cpp_classes import Unit
 
 
 def _dtype_lut():
@@ -176,6 +177,17 @@ def _data_handler_lut():
     return handler
 
 
+def _write_unit_attr(dset, unit):
+    unit_dict = unit.to_dict()
+    dtype = [(key, type(val)) for key, val in unit_dict.items()]
+    dset.attrs.create('unit', tuple(unit_dict.values()), shape=(), dtype=dtype)
+
+
+def _read_unit_attr(ds):
+    u = ds.attrs['unit']
+    return Unit.from_dict({name: u[name] for name in u.dtype.names})
+
+
 class VariableIO:
     _dtypes = _dtype_lut()
     _data_handlers = _data_handler_lut()
@@ -202,7 +214,7 @@ class VariableIO:
         dset.attrs['shape'] = var.shape
         dset.attrs['dtype'] = str(var.dtype)
         if var.unit is not None:
-            dset.attrs['unit'] = str(var.unit)
+            _write_unit_attr(dset, var.unit)
         return group
 
     @classmethod
@@ -214,7 +226,7 @@ class VariableIO:
         contents = {key: values.attrs[key] for key in ['dims', 'shape']}
         contents['dtype'] = cls._dtypes[values.attrs['dtype']]
         if 'unit' in values.attrs:
-            contents['unit'] = sc.Unit(values.attrs['unit'])
+            contents['unit'] = _read_unit_attr(values)
         else:
             contents['unit'] = None  # essential, otherwise default unit is used
         contents['with_variances'] = 'variances' in group
