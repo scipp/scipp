@@ -134,6 +134,13 @@ class Bins:
         return self
 
     def __getitem__(self, key: Tuple[str, Union[_cpp.Variable, slice]]):
+        """
+        Extract events from bins based on labels or label ranges and return a copy.
+
+        This is similar to regular label-based indexing, but considers the event-coords,
+        i.e., the coord values of individual bin entries. Unlike normal label-based
+        indexing this returns a copy, as a subset of events is extracted.
+        """
         dim, index = key
         if isinstance(index, _cpp.Variable):
             if index.ndim == 0:
