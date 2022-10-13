@@ -484,6 +484,30 @@ def test_nanhist_with_nondimcoord_removes_multiple_input_dims():
     assert da2d.nanhist(date=4).dims == ('date', )
 
 
+def test_bin_along_existing_bin_edge_dims_keeps_bounds():
+    binned = sc.data.table_xyz(100).bin(x=4)
+    xold = binned.coords['x']
+    xnew = binned.bin(x=5).coords['x']
+    assert sc.identical(xnew[0], xold[0])
+    assert sc.identical(xnew[-1], xold[-1])
+
+
+def test_hist_along_existing_bin_edge_dims_keeps_bounds():
+    binned = sc.data.table_xyz(100).bin(x=4)
+    xold = binned.coords['x']
+    xnew = binned.hist(x=5).coords['x']
+    assert sc.identical(xnew[0], xold[0])
+    assert sc.identical(xnew[-1], xold[-1])
+
+
+def test_rebin_along_existing_bin_edge_dims_keeps_bounds():
+    hist = sc.data.table_xyz(100).hist(x=4)
+    xold = hist.coords['x']
+    xnew = hist.rebin(x=5).coords['x']
+    assert sc.identical(xnew[0], xold[0])
+    assert sc.identical(xnew[-1], xold[-1])
+
+
 def test_binning_low_level_functions_exist():
     from scipp import binning
     binning.make_binned

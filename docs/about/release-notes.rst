@@ -54,6 +54,8 @@ Breaking changes
 Bugfixes
 ~~~~~~~~
 
+* Fix an issue in the setup of automatic bin edges when giving a bin count to :py:func:`scipp.bin`, :py:func:`scipp.hist`, and :py:func:`scipp.rebin`. This lead to a miniscule shift in the resulting edges, which is irrelevant in most cases `#2838 <https://github.com/scipp/scipp/pull/2838>`_.
+
 Documentation
 ~~~~~~~~~~~~~
 
