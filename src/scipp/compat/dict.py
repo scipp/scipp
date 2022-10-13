@@ -13,7 +13,7 @@ from collections import defaultdict
 
 
 def to_dict(scipp_obj: VariableLike) -> dict:
-    """Convert a scipp object (Variable, DataArray or Dataset)
+    """Convert a Scipp object (Variable, DataArray or Dataset)
     to a Python :class:`dict`.
 
     Parameters
@@ -25,7 +25,7 @@ def to_dict(scipp_obj: VariableLike) -> dict:
     -------
     :
         A dict containing all the information necessary to fully define
-        the supplied scipp object.
+        the supplied Scipp object.
 
     See Also
     --------
@@ -47,12 +47,12 @@ def to_dict(scipp_obj: VariableLike) -> dict:
 
 
 def _vec_parser(x, shp):
-    """Parse vector_3_float to 2D numpy array."""
+    """Parse vector_3_float to 2D NumPy array."""
     return np.array(x)
 
 
 def _variable_to_dict(v):
-    """Convert a scipp Variable to a python dict."""
+    """Convert a Scipp Variable to a python dict."""
     out = {
         "dims": _dims_to_strings(v.dims),
         "shape": v.shape,
@@ -82,7 +82,7 @@ def _variable_to_dict(v):
 
 
 def _data_array_to_dict(da):
-    """Convert a scipp DataArray to a python dict."""
+    """Convert a Scipp DataArray to a python dict."""
     out = {"coords": {}, "masks": {}, "attrs": {}}
     for key in out.keys():
         for name, item in getattr(da, key).items():
@@ -99,7 +99,7 @@ def _dims_to_strings(dims):
 
 
 def from_dict(dict_obj: dict) -> VariableLike:
-    """Convert a python dict to a scipp Variable, DataArray or Dataset.
+    """Convert a Python dict to a Scipp Variable, DataArray or Dataset.
 
     If the input keys contain both `'coords'` and `'data'`, then a DataArray is
     returned.
@@ -115,7 +115,7 @@ def from_dict(dict_obj: dict) -> VariableLike:
     Returns
     -------
     :
-        A scipp Variable, DataArray or Dataset.
+        A Scipp Variable, DataArray or Dataset.
 
     See Also
     --------
@@ -138,7 +138,7 @@ def from_dict(dict_obj: dict) -> VariableLike:
 
 
 def _dict_to_variable(d):
-    """Convert a python dict to a scipp Variable."""
+    """Convert a Python dict to a Scipp Variable."""
     d = dict(d)
     # The Variable constructor does not accept both `shape` and `values`. If
     # `values` is present, remove `shape` from the list.
@@ -170,7 +170,7 @@ def _dict_to_variable(d):
 
 
 def _dict_to_data_array(d):
-    """Convert a python dict to a scipp DataArray."""
+    """Convert a Python dict to a Scipp DataArray."""
     d = dict(d)
     if "data" not in d:
         raise KeyError("To create a DataArray, the supplied dict must contain "

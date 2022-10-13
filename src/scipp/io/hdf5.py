@@ -153,7 +153,7 @@ def _write_scipp_header(group, what):
 def _check_scipp_header(group, what):
     if 'scipp-version' not in group.attrs:
         raise RuntimeError(
-            "This does not look like an HDF5 file/group written by scipp.")
+            "This does not look like an HDF5 file/group written by Scipp.")
     if group.attrs['scipp-type'] != what:
         raise RuntimeError(
             f"Attempt to read {what}, found {group.attrs['scipp-type']}.")

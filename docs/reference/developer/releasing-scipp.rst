@@ -4,7 +4,7 @@ Releasing Scipp
 Purpose
 -------
 
-This document describes steps to be taken to prepare and make a new scipp release, or perform related changes
+This document describes steps to be taken to prepare and make a new Scipp release, or perform related changes
 
 Release steps
 -------------

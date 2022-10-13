@@ -8,9 +8,9 @@ ADR 0010: Acknowledge stability and maintainability tasks
 Context
 -------
 
-Over the past couple of years scipp development was repeatedly prioritizing "getting things to work" and "adding new features".
+Over the past couple of years Scipp development was repeatedly prioritizing "getting things to work" and "adding new features".
 This was justified since we had to prove to stakeholders that we will be able to support all the required features.
-While we have always made sure that there are unit tests for any added feature and that code is reviewed, we nevertheless feel that there is significant room to improve, in particular since scipp is intended to grow into an essential building block with a long life span.
+While we have always made sure that there are unit tests for any added feature and that code is reviewed, we nevertheless feel that there is significant room to improve, in particular since Scipp is intended to grow into an essential building block with a long life span.
 
 Independent of the above situation we also acknowledge that it is generally more satisfying to work on new features, fixing bugs, or improving performance.
 If a developer implements such improvements they tend to get a "thumbs up" or "thanks" from the reviewer, but at the end of the month it may nevertheless feel less satisfying than having a number of new features added to the release notes.
@@ -36,7 +36,7 @@ Positive:
 ~~~~~~~~~
 
 - May lead to higher developer satisfaction and motivation to pick up non-functional development tasks.
-- May aid in communicating to users that scipp tries to take stability and maintainability seriously.
+- May aid in communicating to users that Scipp tries to take stability and maintainability seriously.
 
 Negative:
 ~~~~~~~~~

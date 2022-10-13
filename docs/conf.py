@@ -280,7 +280,7 @@ sc.DataArray.plot = do_not_plot
 sc.Dataset.plot = do_not_plot
 '''
 
-# Using normalize whitespace because many __str__ functions in scipp produce
+# Using normalize whitespace because many __str__ functions in Scipp produce
 # extraneous empty lines and it would look strange to include them in the docs.
 doctest_default_flags = doctest.ELLIPSIS | doctest.IGNORE_EXCEPTION_DETAIL | \
                         doctest.DONT_ACCEPT_TRUE_FOR_1 | \

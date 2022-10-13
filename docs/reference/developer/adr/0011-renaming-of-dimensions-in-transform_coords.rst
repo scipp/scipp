@@ -9,7 +9,7 @@ Context
 -------
 
 :py:func:`scipp.transform_coords` computes new coordinates from other coordinates and attributes.
-This is often used to express conversions of dimension-coordinates to a single output such as ``datetime`` to ``local_time`` in the user guide or ``tof`` to ``wavelength`` in scippneutron.
+This is often used to express conversions of dimension-coordinates to a single output such as ``datetime`` to ``local_time`` in the user guide or ``tof`` to ``wavelength`` in Scippneutron.
 As those represent changes of coordinate systems, it makes sense to change the names of dimensions as well.
 
 Since :py:func:`scipp.transform_coords` is a general purpose function, it cannot make assumptions about the meaning of coordinates.
@@ -48,7 +48,7 @@ When we finally concatenate the transformed slices, ``c`` has dimensions ``[a,x,
 Existing Implementation (v0.8 - v0.10)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The implementation in scipp versions 0.8 - 0.10 (before this ADR) takes only a single node and its direct children into account when determining if a dimension can be renamed through the edges between those nodes.
+The implementation in Scipp versions 0.8 - 0.10 (before this ADR) takes only a single node and its direct children into account when determining if a dimension can be renamed through the edges between those nodes.
 This approach is quite simple and works well for many cases.
 But it has some shortcomings.
 

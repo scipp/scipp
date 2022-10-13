@@ -70,7 +70,7 @@ Plotting
 How can I set axis limits when creating a plot?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This can be achieved indirectly with scipp's `generic slicing functionality <../user-guide/slicing.rst>`_ and `label-based indexing <../user-guide/slicing.ipynb#Label-based-indexing>`_ in particular.
+This can be achieved indirectly with Scipp's `generic slicing functionality <../user-guide/slicing.rst>`_ and `label-based indexing <../user-guide/slicing.ipynb#Label-based-indexing>`_ in particular.
 Example:
 
 .. code-block:: python
@@ -84,10 +84,10 @@ Example:
 Installation
 ------------
 
-I can't import scipp!
+I can't import Scipp!
 ~~~~~~~~~~~~~~~~~~~~~
 
-On Windows, after installing ``scipp`` using ``conda``, attempting to ``import scipp`` may sometimes fail with
+On Windows, after installing Scipp using ``conda``, attempting to ``import scipp`` may sometimes fail with
 
 .. code-block:: python
 

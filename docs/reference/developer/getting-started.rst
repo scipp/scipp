@@ -148,7 +148,7 @@ If you wish, you can install precommit hooks for flake8 and yapf. In the source 
   pre-commit install
   pre-commit run --all-files
 
-Using scipp as a C++ library
+Using Scipp as a C++ library
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Using Scipp as a C++ library is not recommened at this point as the API (and ABI) is not stable and documentation is sparse.
@@ -160,14 +160,14 @@ In your ``CMakeLists.txt``:
   find_package(Scipp 0.11 REQUIRED) # replace with required version
   target_link_libraries(mytarget PUBLIC scipp::dataset)
 
-If scipp was install using ``conda``, ``cmake`` should find it automatically.
-If you build and installed scipp from source use, e.g.,:
+If Scipp was install using ``conda``, ``cmake`` should find it automatically.
+If you build and installed Scipp from source use, e.g.,:
 
 .. code-block:: bash
 
   cmake -DCMAKE_PREFIX_PATH=<your_scipp_install_dir>
 
-where ``<your_scipp_install_dir>`` should point to the ``CMAKE_INSTALL_PREFIX`` that was used when building ``scipp``.
+where ``<your_scipp_install_dir>`` should point to the ``CMAKE_INSTALL_PREFIX`` that was used when building Scipp.
 Alternative set the ``Scipp_DIR`` or ``CMAKE_PREFIX_PATH`` (environment) variables to this path.
 
 Generating coverage reports

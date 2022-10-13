@@ -350,7 +350,7 @@ def matrix(*,
     matrix.
 
 
-    :param value: Initial value, a list or 1-D numpy array.
+    :param value: Initial value, a list or 1-D NumPy array.
     :param unit: Optional, unit. Default=dimensionless
     :returns: A scalar (zero-dimensional) Variable.
 
@@ -888,8 +888,8 @@ def datetime(value: Union[str, int, _np.datetime64],
 
       - `str`: Interpret the string according to the ISO 8601 date time format.
       - `int`: Number of time units (see argument ``unit``)
-        since scipp's epoch (see :py:func:`scipp.epoch`).
-      - `np.datetime64`: Construct equivalent datetime of scipp.
+        since Scipp's epoch (see :py:func:`scipp.epoch`).
+      - `np.datetime64`: Construct equivalent datetime of Scipp.
 
     unit: Unit of the resulting datetime.
                  Can be deduced if ``value`` is a str or np.datetime64 but
@@ -976,9 +976,9 @@ def datetimes(*,
 
 def epoch(*, unit: Union[Unit, str]) -> Variable:
     """Constructs a zero dimensional :class:`Variable` with a dtype of
-    datetime64 that contains scipp's epoch.
+    datetime64 that contains Scipp's epoch.
 
-    Currently, the epoch of datetimes in scipp is the Unix epoch 1970-01-01T00:00:00.
+    Currently, the epoch of datetimes in Scipp is the Unix epoch 1970-01-01T00:00:00.
 
     Parameters
     ----------

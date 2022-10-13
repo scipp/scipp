@@ -14,7 +14,7 @@ Those operations apply "irreducible" masks, i.e., masks that depend on the opera
 
 Historically the motivation for this was likely the behavior in Mantid, which also preserves such masks (called bin-masks in Mantid).
 The main argument for this approach is that for normalization purposes it is often crucial to be able to distinguish true (measured) zero values from zeros that result from applying a mask.
-The difference is that Mantid turns such masks into fractional masks, whereas scipp kept masks as boolean.
+The difference is that Mantid turns such masks into fractional masks, whereas Scipp kept masks as boolean.
 
 The consequence of this behavior is that masks *grow* when ``rebin`` is called. If any bin adjacent to a masked bin has "wanted" nonzero values (and an output bin includes both the masked and the unmasked bin) the result is that the "wanted" values get masked.
 

@@ -16,13 +16,13 @@ def _get_pooch():
         import pooch
     except ImportError as err:
         raise ImportError('''pooch is not installed.
-It is required to use scipp's bundled data files.
+It is required to use Scipp's bundled data files.
 
 Please install pooch either using conda:
   conda install pooch
 or using pip:
   python -m pip install pooch
-or install all optional components of scipp:
+or install all optional components of Scipp:
   python -m pip install scipp[all]
 ''') from err
 
@@ -41,7 +41,7 @@ or install all optional components of scipp:
 
 def get_path(name: str) -> str:
     """
-    Return the path to a data file bundled with scipp.
+    Return the path to a data file bundled with Scipp.
 
     This function only works with example data and cannot handle
     paths to custom files.
@@ -52,7 +52,7 @@ def get_path(name: str) -> str:
 def rhessi_flares() -> str:
     """
     Return the path to the list of solar flares recorded by RHESSI
-    in scipp's HDF5 format.
+    in Scipp's HDF5 format.
 
     The original is
     https://hesperia.gsfc.nasa.gov/rhessi3/data-access/rhessi-data/flare-list/index.html
