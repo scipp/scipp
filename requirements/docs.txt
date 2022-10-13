@@ -72,14 +72,12 @@ pandocfilters==1.5.0
     # via nbconvert
 pkgutil-resolve-name==1.3.10
     # via jsonschema
-plopp==0.2.1
+plopp==0.2.2
     # via -r requirements/docs.in
 pydata-sphinx-theme==0.8.1
     # via sphinx-book-theme
 pyrsistent==0.18.1
     # via jsonschema
-scipp==0.16.4
-    # via plopp
 snowballstemmer==2.2.0
     # via sphinx
 soupsieve==2.3.2.post1
