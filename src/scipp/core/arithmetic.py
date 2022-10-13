@@ -135,7 +135,7 @@ def mod(dividend: VariableLike, divisor: VariableLike) -> VariableLike:
 
         dividend % divisor
 
-    In scipp, the remainder is defined to complement
+    In Scipp, the remainder is defined to complement
     :py:func:`scipp.floor_divide` meaning that::
 
         a == floor(a / b) * b + a % b

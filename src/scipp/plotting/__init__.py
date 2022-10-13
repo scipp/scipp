@@ -14,10 +14,10 @@ def plot(*args, **kwargs):
       - Variable
       - Dataset
       - DataArray
-      - numpy ndarray
+      - NumPy ndarray
       - dict of Variables
       - dict of DataArrays
-      - dict of numpy ndarrays
+      - dict of NumPy ndarrays
       - dict that can be converted to a Scipp object via `from_dict`
 
     For more details, see

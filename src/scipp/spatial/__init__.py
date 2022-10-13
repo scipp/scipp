@@ -21,7 +21,7 @@ def translation(*,
     Creates a translation transformation from a single provided 3-vector.
 
     :param unit: The unit of the translation
-    :param value: A list or numpy array of 3 items
+    :param value: A list or NumPy array of 3 items
     """
     return _core_cpp.translations(dims=[], unit=unit, values=value)
 
@@ -35,7 +35,7 @@ def translations(*,
 
     :param dims: The dimensions of the created variable
     :param unit: The unit of the translation
-    :param value: A list or numpy array of 3-vectors
+    :param value: A list or NumPy array of 3-vectors
     """
     return _core_cpp.translations(dims=dims, unit=unit, values=values)
 
@@ -44,7 +44,7 @@ def scaling_from_vector(*, value: Union[_np.ndarray, list]):
     """
     Creates a scaling transformation from a provided 3-vector.
 
-    :param value: a list or numpy array of 3 values, corresponding to scaling
+    :param value: a list or NumPy array of 3 values, corresponding to scaling
         coefficients in the x, y and z directions respectively.
     """
     return linear_transforms(dims=[], values=_np.diag(value))
@@ -55,7 +55,7 @@ def scalings_from_vectors(*, dims: Sequence[str], values: Union[_np.ndarray, lis
     Creates scaling transformations from corresponding to the provided 3-vectors.
 
     :param dims: the dimensions of the variable
-    :param values: a list or numpy array of 3-vectors, each corresponding to scaling
+    :param values: a list or NumPy array of 3-vectors, each corresponding to scaling
         coefficients in the x, y and z directions respectively.
     """
     identity = linear_transform(value=np.identity(3))
@@ -74,7 +74,7 @@ def rotation(*, value: Union[_np.ndarray, list]):
     The quaternion coefficients are provided in scalar-last order (x, y, z, w), where
     x, y, z and w form the quaternion w + xi + yj + zk.
 
-    :param value: a numpy array or list with length 4, corresponding to the quaternion
+    :param value: a NumPy array or list with length 4, corresponding to the quaternion
         coefficients (x*i, y*j, z*k, w)
     """
     return _core_cpp.rotations(dims=[], values=value)
@@ -87,7 +87,7 @@ def rotations(*, dims: Sequence[str], values: Union[_np.ndarray, list]):
     The quaternion coefficients are provided in scalar-last order (x, y, z, w), where
     x, y, z and w form the quaternion w + xi + yj + zk.
 
-    :param values: a numpy array of numpy arrays corresponding to the quaternion
+    :param values: a NumPy array of NumPy arrays corresponding to the quaternion
         coefficients (w, x*i, y*j, z*k)
     """
     values = np.asarray(values)
@@ -183,7 +183,7 @@ def linear_transform(*,
 
     :seealso: :py:func:`scipp.matrices`
 
-    :param value: Initial value, a list or 1-D numpy array.
+    :param value: Initial value, a list or 1-D NumPy array.
     :param unit: Optional, unit. Default=dimensionless
     :returns: A scalar (zero-dimensional) Variable.
     :rtype: Variable

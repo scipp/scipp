@@ -61,7 +61,7 @@ Scipp labels dimensions and their associated coordinates with labels such as ``'
 Operations between data arrays "align" data items based on their names, dimension labels, and coordinate values.
 That is, if names or coordinates do not match, operations fail.
 Missing dimensions in the operands are automatically `broadcast <https://numpy.org/doc/stable/user/basics.broadcasting.html>`_.
-In general scipp does not support automatic re-alignment of data.
+In general Scipp does not support automatic re-alignment of data.
 
 Data arrays with aligned coordinates can be combined into datasets.
 A dataset is essentially a dict-like container of data arrays with common associated coordinates.
@@ -85,7 +85,7 @@ Scipp supports event data in form of arrays of variable-length tables.
 Conceptually, we distinguish *dense* and *binned* data.
 
 - Dense data is the common case of a regular, e.g., 2-D, grid of data points.
-- Binned (event) data (as supported by scipp) is semi-regular data, i.e., a N-D array/grid of variable-length tables.
+- Binned (event) data (as supported by Scipp) is semi-regular data, i.e., a N-D array/grid of variable-length tables.
   That is, only the internal "dimension" of the tables (event lists) are irregular.
 
 The target application of this is measuring random *events* in an array of detector pixels.

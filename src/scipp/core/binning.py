@@ -213,10 +213,10 @@ def hist(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset],
 
     1. When an integer is provided, a 'linspace' with this requested number of
        bins is created, based on the min and max of the corresponding coordinate.
-    2. A scalar scipp variable (a value with a unit) is interpreted as a target
+    2. A scalar Scipp variable (a value with a unit) is interpreted as a target
        bin width, and an 'arange' covering the min and max of the corresponding
        coordinate is created.
-    3. A custom coordinate, given as a scipp variable with compatible unit.
+    3. A custom coordinate, given as a Scipp variable with compatible unit.
        Typically this should have a single dimension matching the target dimension.
 
     When histogramming a dimension with an existing dimension-coord, the binning for
@@ -361,10 +361,10 @@ def bin(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset],
 
     1. When an integer is provided, a 'linspace' with this requested number of
        bins is created, based on the min and max of the corresponding coordinate.
-    2. A scalar scipp variable (a value with a unit) is interpreted as a target
+    2. A scalar Scipp variable (a value with a unit) is interpreted as a target
        bin width, and an 'arange' covering the min and max of the corresponding
        coordinate is created.
-    3. A custom coordinate, given as a scipp variable with compatible unit.
+    3. A custom coordinate, given as a Scipp variable with compatible unit.
        Typically, this should have a single dimension matching the target dimension.
 
     When binning a dimension with an existing dimension-coord, the binning for
@@ -561,7 +561,7 @@ def group(x: Union[_cpp.DataArray, _cpp.Dataset], /,
     """Create binned data by grouping input by one or more coordinates.
 
     Grouping can be specified in two ways: (1) When a string is provided the unique
-    values of the corresponding coordinate are used as groups. (2) When a scipp variable
+    values of the corresponding coordinate are used as groups. (2) When a Scipp variable
     is provided then the variable's values are used as groups.
 
     Note that option (1) may be very slow if the input is very large.

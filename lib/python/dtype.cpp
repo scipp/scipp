@@ -50,7 +50,7 @@ constexpr bool operator==(const scipp::index a, const DTypeSize b) {
 
 void init_dtype(py::module &m) {
   py::class_<DType> PyDType(m, "DType", R"(
-Representation of a data type of a Variable in scipp.
+Representation of a data type of a Variable in Scipp.
 See https://scipp.github.io/reference/dtype.html for details.
 
 The data types ``VariableView``, ``DataArrayView``, and ``DatasetView`` are used for

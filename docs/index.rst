@@ -34,7 +34,7 @@ scipp - Multi-dimensional data arrays with labeled dimensions
    :width: 32%
    :target: user-guide/slicing.html
 
-**scipp** is heavily inspired by `xarray <https://xarray.pydata.org>`_.
+Scipp is heavily inspired by `xarray <https://xarray.pydata.org>`_.
 It enriches raw NumPy-like multi-dimensional arrays of data by adding named dimensions and associated coordinates.
 Multiple arrays can be combined into datasets.
 While for many applications xarray is certainly more suitable (and definitely much more matured) than Scipp, there is a number of features missing in other situations.

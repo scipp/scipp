@@ -7,7 +7,7 @@ from .._scipp import _debug_
 if _debug_:
     import warnings
     warnings.warn(
-        'You are running a "Debug" build of scipp. For optimal performance use a "Release" build.'
+        'You are running a "Debug" build of Scipp. For optimal performance use a "Release" build.'
     )
 
 from .._scipp import __version__

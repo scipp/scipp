@@ -6,7 +6,7 @@ from typing import List, Dict, Tuple, Union
 
 
 def serialize(var: Union[Variable, DataArray, Dataset]) -> Tuple[Dict, List[bytes]]:
-    """Serialize scipp object."""
+    """Serialize Scipp object."""
     from io import BytesIO
     from .io.hdf5 import HDF5IO
     import h5py
@@ -20,7 +20,7 @@ def serialize(var: Union[Variable, DataArray, Dataset]) -> Tuple[Dict, List[byte
 
 def deserialize(header: Dict,
                 frames: List[bytes]) -> Union[Variable, DataArray, Dataset]:
-    """Deserialize scipp object."""
+    """Deserialize Scipp object."""
     from io import BytesIO
     from .io.hdf5 import HDF5IO
     import h5py

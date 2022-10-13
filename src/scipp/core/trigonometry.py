@@ -162,6 +162,6 @@ def atan2(*,
         Documentation of all edge cases.
         Note that domain errors are *not* propagated to Python.
     numpy.arctan2:
-        The equivalent in numpy with additional explanations.
+        The equivalent in NumPy with additional explanations.
     """
     return _call_cpp_func(_cpp.atan2, y=y, x=x, out=out)
