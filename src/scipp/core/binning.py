@@ -153,7 +153,7 @@ def _get_coord(x, name):
     return coord
 
 
-def _upper_bound(x):
+def _upper_bound(x: Variable) -> Variable:
     import numpy as np
     bound = x.max()
     if bound.dtype in ('int32', 'int64', 'datetime64'):
@@ -163,24 +163,25 @@ def _upper_bound(x):
     return bound
 
 
-def _parse_coords_arg(x, name, arg):
+def _parse_coords_arg(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset], name: str,
+                      arg: Union[int, _cpp.Variable]) -> _cpp.Variable:
     if isinstance(arg, Variable) and name in arg.dims:
         return arg
     coord = _get_coord(x, name)
+    start = coord.min()
+    if not isinstance(x, Variable) and (name in x.meta) and x.meta.is_edges(name, name):
+        stop = coord.max()  # existing bin-edges, do not extend
+    else:
+        stop = _upper_bound(coord)
     if isinstance(arg, Integral):
-        start = coord.min()
         if start.dtype == _cpp.DType.datetime64:
             base = epoch(unit=start.unit)
-            return base + round_(
-                linspace(name, start - base, _upper_bound(coord) - base,
-                         num=arg + 1)).to(dtype='int64')
-        return linspace(name, start, _upper_bound(coord),
-                        num=arg + 1).to(dtype=start.dtype, copy=False)
-    start = coord.min()
+            return base + round_(linspace(name, start - base, stop - base,
+                                          num=arg + 1)).to(dtype='int64')
+        return linspace(name, start, stop, num=arg + 1).to(dtype=start.dtype,
+                                                           copy=False)
     step = arg.to(dtype=start.dtype, unit=start.unit)
-    stop = _upper_bound(coord) + step
-    # See #2639, need explicit dtype currently
-    return arange(name, start, stop, step=step, dtype=start.dtype)
+    return arange(name, start, stop + step, step=step)
 
 
 def _make_edges(x: Union[_cpp.Variable, _cpp.DataArray,
