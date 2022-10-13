@@ -163,7 +163,8 @@ def _upper_bound(x: Variable) -> Variable:
     return bound
 
 
-def _parse_coords_arg(x, name, arg):
+def _parse_coords_arg(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset], name: str,
+                      arg: Union[int, _cpp.Variable]) -> _cpp.Variable:
     if isinstance(arg, Variable) and name in arg.dims:
         return arg
     coord = _get_coord(x, name)
