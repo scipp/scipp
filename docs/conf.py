@@ -301,7 +301,3 @@ linkcheck_ignore = [
     # Many links for PRs from our release notes. Slow and unlikely to cause issues.
     'https://github.com/scipp/scipp/pull/[0-9]+',
 ]
-
-with open(scipp.config.config_path(), 'w') as config_file:
-    config_file.write('plot:\n')
-    config_file.write('  use_plopp: true\n')
