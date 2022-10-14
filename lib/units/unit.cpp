@@ -25,12 +25,29 @@ std::string map_unit_string(const std::string &unit) {
          : unit == "M" || unit == "month" ? "mog"
                                           : unit;
 }
+
+inline constexpr auto count_eq_type = llnl::units::precise::custom::eq_type(
+    llnl::units::precise::count.base_units());
+inline constexpr auto radian_eq_type = llnl::units::precise::custom::eq_type(
+    llnl::units::precise::radian.base_units());
+
+bool is_special_unit(const llnl::units::precise_unit &unit) {
+  using namespace llnl::units::precise::custom;
+  const auto &base = unit.base_units();
+
+  // count and radian are flagged as equation units, so we need to catch those
+  // early.
+  const auto eq = eq_type(base);
+  if (eq == count_eq_type || eq == radian_eq_type)
+    return false;
+  return eq != 0 || is_custom_unit(base) || is_custom_count_unit(base);
+}
 } // namespace
 
 Unit::Unit(const std::string &unit)
     : Unit(llnl::units::unit_from_string(map_unit_string(unit),
                                          llnl::units::strict_si)) {
-  if (!is_valid(m_unit.value()))
+  if (const auto &u = m_unit.value(); is_special_unit(u) || !is_valid(u))
     throw except::UnitError("Failed to convert string `" + unit +
                             "` to valid unit.");
 }
