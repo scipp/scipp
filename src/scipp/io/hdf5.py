@@ -7,6 +7,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Union
 
+import numpy as np
+
 from ..logging import get_logger
 from ..typing import VariableLike
 from ..core.cpp_classes import Unit
@@ -28,7 +30,6 @@ def _dtype_lut():
 
 
 def _as_hdf5_type(a):
-    import numpy as np
     if np.issubdtype(a.dtype, np.datetime64):
         return a.view(np.int64)
     return a
@@ -177,17 +178,29 @@ def _data_handler_lut():
     return handler
 
 
-def _write_unit_attr(dset, unit):
+def _serialize_unit(unit):
     unit_dict = unit.to_dict()
-    dtype = [(key, type(val)) for key, val in unit_dict.items()]
-    dset.attrs.create('unit', tuple(unit_dict.values()), shape=(), dtype=dtype)
+    dtype = [('__version__', int), ('multiplier', float)]
+    vals = [unit_dict['__version__'], unit_dict['multiplier']]
+    if 'powers' in unit_dict:
+        dtype.append(('powers', [(name, int) for name in unit_dict['powers']]))
+        vals.append(tuple(val for val in unit_dict['powers'].values()))
+    return np.array(tuple(vals), dtype=dtype)
 
 
 def _read_unit_attr(ds):
     u = ds.attrs['unit']
     if isinstance(u, str):
         return Unit(u)  # legacy encoding as a string
-    return Unit.from_dict({name: u[name] for name in u.dtype.names})
+
+    # u is a structured numpy array
+    unit_dict = {'__version__': u['__version__'], 'multiplier': u['multiplier']}
+    if 'powers' in u.dtype.names:
+        unit_dict['powers'] = {
+            name: u['powers'][name]
+            for name in u['powers'].dtype.names
+        }
+    return Unit.from_dict(unit_dict)
 
 
 class VariableIO:
@@ -216,7 +229,7 @@ class VariableIO:
         dset.attrs['shape'] = var.shape
         dset.attrs['dtype'] = str(var.dtype)
         if var.unit is not None:
-            _write_unit_attr(dset, var.unit)
+            dset.attrs['unit'] = _serialize_unit(var.unit)
         return group
 
     @classmethod

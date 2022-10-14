@@ -41,20 +41,22 @@ py::dict to_dict(const units::Unit &unit) {
 
   py::dict dict;
   dict["__version__"] = UNIT_DICT_VERSION;
-
-  const auto &&base_units = unit.underlying().base_units();
-  store(dict, "meter", base_units.meter());
-  store(dict, "kilogram", base_units.kg());
-  store(dict, "second", base_units.second());
-  store(dict, "ampere", base_units.ampere());
-  store(dict, "kelvin", base_units.kelvin());
-  store(dict, "mole", base_units.mole());
-  store(dict, "candela", base_units.candela());
-  store(dict, "currency", base_units.currency());
-  store(dict, "count", base_units.count());
-  store(dict, "radian", base_units.radian());
-
   dict["multiplier"] = unit.underlying().multiplier();
+
+  py::dict powers;
+  const auto &&base_units = unit.underlying().base_units();
+  store(powers, "meter", base_units.meter());
+  store(powers, "kilogram", base_units.kg());
+  store(powers, "second", base_units.second());
+  store(powers, "ampere", base_units.ampere());
+  store(powers, "kelvin", base_units.kelvin());
+  store(powers, "mole", base_units.mole());
+  store(powers, "candela", base_units.candela());
+  store(powers, "currency", base_units.currency());
+  store(powers, "count", base_units.count());
+  store(powers, "radian", base_units.radian());
+  if (!powers.empty())
+    dict["powers"] = powers;
 
   return dict;
 }
@@ -75,12 +77,13 @@ units::Unit from_dict(const py::dict &dict) {
         std::to_string(UNIT_DICT_VERSION));
   }
 
+  const py::dict powers = dict.contains("powers") ? dict["powers"] : py::dict();
   return units::Unit(llnl::units::precise_unit(
       llnl::units::detail::unit_data{
-          get(dict, "meter"), get(dict, "kilogram"), get(dict, "second"),
-          get(dict, "ampere"), get(dict, "kelvin"), get(dict, "mole"),
-          get(dict, "candela"), get(dict, "currency"), get(dict, "count"),
-          get(dict, "radian"), 0, 0, 0, 0},
+          get(powers, "meter"), get(powers, "kilogram"), get(powers, "second"),
+          get(powers, "ampere"), get(powers, "kelvin"), get(powers, "mole"),
+          get(powers, "candela"), get(powers, "currency"), get(powers, "count"),
+          get(powers, "radian"), 0, 0, 0, 0},
       dict["multiplier"].cast<double>()));
 }
 
