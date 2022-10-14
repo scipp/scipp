@@ -51,6 +51,8 @@ Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
+* Changed how units are stored in HDF5 files. Old files can still be loaded but new files cannot be loaded by an old scipp `#2836 <https://github.com/scipp/scipp/pull/2836>`_.
+
 Bugfixes
 ~~~~~~~~
 
