@@ -185,6 +185,8 @@ def _write_unit_attr(dset, unit):
 
 def _read_unit_attr(ds):
     u = ds.attrs['unit']
+    if isinstance(u, str):
+        return Unit(u)  # legacy encoding as a string
     return Unit.from_dict({name: u[name] for name in u.dtype.names})
 
 

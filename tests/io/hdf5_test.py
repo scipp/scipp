@@ -4,7 +4,6 @@
 # @author Simon Heybrock
 from scipp.io.hdf5 import collection_element_name
 import scipp as sc
-import scipp.spatial
 import numpy as np
 import tempfile
 import h5py
@@ -152,6 +151,18 @@ def test_variable_binned_dataset():
     d = sc.Dataset(data={'a': array_1d, 'b': array_1d})
     binned = sc.bins(dim='x', data=d)
     check_roundtrip(binned)
+
+
+def test_variable_legacy_str_unit():
+    var = x.copy()
+    var.unit = 'm/s*kg^2'
+    with tempfile.TemporaryDirectory() as path:
+        name = f'{path}/test.hdf5'
+        var.to_hdf5(filename=name)
+        with h5py.File(name, 'a') as f:
+            f['values'].attrs['unit'] = str(var.unit)
+        loaded = sc.io.open_hdf5(filename=name)
+    assert sc.identical(loaded, var)
 
 
 def test_data_array_1d_no_coords():
