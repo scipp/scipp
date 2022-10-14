@@ -72,6 +72,6 @@ def test_default_unit_for_string_is_none():
 
 
 @pytest.mark.parametrize('u', (sc.Unit('one'), sc.Unit('m'), sc.Unit('count / s'),
-                               sc.Unit('12.3 * m/A*kg^2/rad^3'), sc.Unit('CXUN[573]')))
+                               sc.Unit('12.3 * m/A*kg^2/rad^3')))
 def test_dict_roundtrip(u):
     assert units_identical(sc.Unit.from_dict(u.to_dict()), u)

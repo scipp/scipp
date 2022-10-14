@@ -16,19 +16,33 @@ constexpr int UNIT_DICT_VERSION = 1;
 
 namespace {
 
-template <class Target = void, class T>
-void store(py::dict &dict, const char *const name, T val) {
+// We only support units where we are confident that we can encode them using
+// a different unit library, in order to ensure that we can switch
+// implementations in the future if necessary.
+void assert_support_for_serialization(const units::Unit &unit) {
+  const auto &&base_units = unit.underlying().base_units();
+  if (base_units.is_per_unit() || base_units.has_i_flag() ||
+      base_units.has_e_flag() || base_units.is_equation() ||
+      unit.underlying().commodity() != 0) {
+    throw std::invalid_argument(
+        "Unit cannot be converted to dict: '" + to_string(unit) +
+        "' Only units expressed in terms of regular base units are supported.");
+  }
+}
+
+void store(py::dict &dict, const char *const name, int val) {
   if (val != 0) {
-    dict[name] = static_cast<
-        std::conditional_t<std::is_same_v<Target, void>, T, Target>>(val);
+    dict[name] = val;
   }
 }
 
 py::dict to_dict(const units::Unit &unit) {
+  assert_support_for_serialization(unit);
+
   py::dict dict;
   dict["__version__"] = UNIT_DICT_VERSION;
 
-  const auto &base_units = unit.underlying().base_units();
+  const auto &&base_units = unit.underlying().base_units();
   store(dict, "meter", base_units.meter());
   store(dict, "kilogram", base_units.kg());
   store(dict, "second", base_units.second());
@@ -39,29 +53,17 @@ py::dict to_dict(const units::Unit &unit) {
   store(dict, "currency", base_units.currency());
   store(dict, "count", base_units.count());
   store(dict, "radian", base_units.radian());
-  // Returning ints instead of bools because
-  // - The constructor of unit_data takes unsigned int as arguments.
-  // - h5py saves bools as enum types which waste disk space.
-  store<unsigned int>(dict, "per_unit", base_units.is_per_unit());
-  store<unsigned int>(dict, "i_flag", base_units.has_i_flag());
-  store<unsigned int>(dict, "e_flag", base_units.has_e_flag());
-  store<unsigned int>(dict, "equation", base_units.is_equation());
-
-  // We loose some type information. commodity is uint32
-  // but the dict contains a signed int.
-  // This should not matter because Python's int is larger than 32 bit.
-  store(dict, "commodity", unit.underlying().commodity());
 
   dict["multiplier"] = unit.underlying().multiplier();
 
   return dict;
 }
 
-template <class T> T get(const py::dict &dict, const char *const name) {
+int get(const py::dict &dict, const char *const name) {
   if (dict.contains(name)) {
-    return dict[name].cast<T>();
+    return dict[name].cast<int>();
   }
-  return T{};
+  return 0;
 }
 
 units::Unit from_dict(const py::dict &dict) {
@@ -75,22 +77,10 @@ units::Unit from_dict(const py::dict &dict) {
 
   return units::Unit(llnl::units::precise_unit(
       llnl::units::detail::unit_data{
-          get<int>(dict, "meter"),
-          get<int>(dict, "kilogram"),
-          get<int>(dict, "second"),
-          get<int>(dict, "ampere"),
-          get<int>(dict, "kelvin"),
-          get<int>(dict, "mole"),
-          get<int>(dict, "candela"),
-          get<int>(dict, "currency"),
-          get<int>(dict, "count"),
-          get<int>(dict, "radian"),
-          get<unsigned int>(dict, "per_unit"),
-          get<unsigned int>(dict, "i_flag"),
-          get<unsigned int>(dict, "e_flag"),
-          get<unsigned int>(dict, "equation"),
-      },
-      get<std::uint32_t>(dict, "commodity"),
+          get(dict, "meter"), get(dict, "kilogram"), get(dict, "second"),
+          get(dict, "ampere"), get(dict, "kelvin"), get(dict, "mole"),
+          get(dict, "candela"), get(dict, "currency"), get(dict, "count"),
+          get(dict, "radian"), 0, 0, 0, 0},
       dict["multiplier"].cast<double>()));
 }
 
