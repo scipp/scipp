@@ -4,7 +4,6 @@
 # @author Simon Heybrock
 from scipp.io.hdf5 import collection_element_name
 import scipp as sc
-import scipp.spatial
 import numpy as np
 import tempfile
 import h5py
@@ -154,6 +153,18 @@ def test_variable_binned_dataset():
     check_roundtrip(binned)
 
 
+def test_variable_legacy_str_unit():
+    var = x.copy()
+    var.unit = 'm/s*kg^2'
+    with tempfile.TemporaryDirectory() as path:
+        name = f'{path}/test.hdf5'
+        var.to_hdf5(filename=name)
+        with h5py.File(name, 'a') as f:
+            f['values'].attrs['unit'] = str(var.unit)
+        loaded = sc.io.open_hdf5(filename=name)
+    assert sc.identical(loaded, var)
+
+
 def test_data_array_1d_no_coords():
     a = sc.DataArray(data=x)
     check_roundtrip(a)
@@ -233,10 +244,10 @@ def test_dataset_item_can_be_read_as_data_array():
 
 def test_dataset_with_many_coords():
     rows = 10000
-    a = sc.ones(dims=['row'], shape=[rows], dtype='float64')
-    b = sc.ones(dims=['row'], shape=[rows], dtype='float64')
+    a = sc.ones(dims=['row'], shape=[rows], dtype='float64', unit=None)
+    b = sc.ones(dims=['row'], shape=[rows], dtype='float64', unit=None)
     coords = {
-        k: sc.ones(dims=['row'], shape=[rows], dtype='float64')
+        k: sc.ones(dims=['row'], shape=[rows], dtype='float64', unit=None)
         for k in 'abcdefghijklmnopqrstuvwxyz'
     }
     ds1 = sc.Dataset(coords=coords)

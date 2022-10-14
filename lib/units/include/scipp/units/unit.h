@@ -36,6 +36,7 @@ public:
 
   bool operator==(const Unit &other) const;
   bool operator!=(const Unit &other) const;
+  bool is_exactly_the_same(const Unit &other) const;
 
   Unit &operator+=(const Unit &other);
   Unit &operator-=(const Unit &other);
@@ -66,6 +67,8 @@ SCIPP_UNITS_EXPORT Unit atan2(const Unit &y, const Unit &x);
 SCIPP_UNITS_EXPORT Unit floor(const Unit &a);
 SCIPP_UNITS_EXPORT Unit ceil(const Unit &a);
 SCIPP_UNITS_EXPORT Unit rint(const Unit &a);
+
+SCIPP_UNITS_EXPORT bool identical(const Unit &a, const Unit &b);
 
 constexpr Unit none{};
 constexpr Unit dimensionless{llnl::units::precise::one};
