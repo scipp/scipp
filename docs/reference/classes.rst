@@ -55,7 +55,7 @@ Typing
 
 .. autosummary::
    :toctree: ../generated/classes
-   :template: scipp-class-template.rst
+   :template: scipp-type-template.rst
    :recursive:
 
    typing.DTypeLike
