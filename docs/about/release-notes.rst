@@ -52,6 +52,7 @@ Breaking changes
 ~~~~~~~~~~~~~~~~
 
 * Changed how units are stored in HDF5 files. Old files can still be loaded but new files cannot be loaded by an old scipp `#2836 <https://github.com/scipp/scipp/pull/2836>`_.
+* Removed support for custom units as implemented by LLNL/Units. They were only usable because of an oversight `#2843 <https://github.com/scipp/scipp/pull/2843>`_.
 
 Bugfixes
 ~~~~~~~~
