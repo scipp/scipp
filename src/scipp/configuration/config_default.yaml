@@ -29,6 +29,7 @@ table_max_size: 50
 
 # Default style of plots produced by scipp.
 plot:
+  use_plopp: False
   # Aspect ratio for images.
   # - 'equal' conserves the aspect ratio of the image.
   # - 'auto' stretches the image to the size of the figure.

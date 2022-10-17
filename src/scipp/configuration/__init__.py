@@ -35,6 +35,7 @@ class Config:
     _TEMPLATE = {
         'colors': confuse.MappingValues(str),
         'plot': {
+            'use_plopp': bool,
             'aspect': confuse.OneOf((confuse.Number(), str)),
             'color': confuse.Sequence(str),
             'dpi': int,

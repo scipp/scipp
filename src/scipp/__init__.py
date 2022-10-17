@@ -128,3 +128,7 @@ setattr(DataArray, 'plot', plot)
 setattr(Dataset, 'plot', plot)
 
 from .core.binning import histogram
+
+if config['plot']['use_plopp']:
+    import plopp
+    plopp.patch_scipp()
