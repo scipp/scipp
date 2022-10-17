@@ -40,7 +40,8 @@ bool is_special_unit(const llnl::units::precise_unit &unit) {
   const auto eq = eq_type(base);
   if (eq == count_eq_type || eq == radian_eq_type)
     return false;
-  return eq != 0 || is_custom_unit(base) || is_custom_count_unit(base);
+  return eq != 0 || is_custom_unit(base) || is_custom_count_unit(base) ||
+         unit.commodity() != 0;
 }
 } // namespace
 

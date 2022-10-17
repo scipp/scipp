@@ -33,9 +33,9 @@ TEST(UnitTest, construct_bad_string) {
 
 TEST(UnitTest, custom_unit_strings_get_rejected) {
   // Custom (counting) units and equation units are rejected.
-  for (const auto &str :
-       {"CXUN[0]", "CXUN[51]", "CXUN{1023]", "CXCUN[0]", "CXCUN[15]",
-        "decibels", "ln(x)", "EQXUN[1]", "EQXUN[23]"}) {
+  for (const auto &str : {"CXUN[0]", "CXUN[51]", "CXUN[1023]", "CXCUN[0]",
+                          "CXCUN[15]", "decibels", "ln(x)", "EQXUN[1]",
+                          "EQXUN[23]", "{corn}", "{CXCOMM[105]}"}) {
     EXPECT_THROW_DISCARD(Unit(str), except::UnitError);
   }
 }
