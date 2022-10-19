@@ -6,10 +6,7 @@
 #    pip-compile-multi
 #
 -r test.txt
-coverage[toml]==6.4.4
+coverage[toml]==6.5.0
     # via pytest-cov
-pytest-cov==3.0.0
+pytest-cov==4.0.0
     # via -r requirements/coverage.in
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools
