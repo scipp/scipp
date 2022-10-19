@@ -129,6 +129,8 @@ A lot of this has been (and still is) happening since 2018/2019, i.e., some of t
   This may serve (among other purposes) Scipp's distinction between `coords` (aligned coordinates) and `attrs` (unaligned coordinates, not to be confused with Xarray `attrs`).
   Better support for custom indexes may also be relevant for features such as bin edges.
   See also the item on Pandas `IntervalIndex` in the next section.
+- [NEP41]( https://numpy.org/neps/nep-0041-improved-dtype-support.html) aims for generalizing the NumPY dtype system, allowing for, e.g., handling physical units as part of the dtype.
+  This is a long way from complete but highlights the direction the ecosystem is moving in.
 
 ## Requirements revisited
 
