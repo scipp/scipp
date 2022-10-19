@@ -3,10 +3,10 @@
 Frequently Asked Questions
 ==========================
 
-Specific help with using scipp
+Specific help with using Scipp
 ------------------------------
 
-For help on specific issues with using **scipp**, you should first visit the
+For help on specific issues with using Scipp, you should first visit the
 `discussions <https://github.com/scipp/scipp/discussions>`_
 page to see if the problem you are facing has already been met/solved in the community.
 
@@ -40,10 +40,22 @@ There are two solutions (as described in the IPython `Output caching system <htt
 
    See `Python configuration files <https://ipython.readthedocs.io/en/stable/config/intro.html#python-configuration-files>`_ and `InteractiveShell.cache_size <https://ipython.readthedocs.io/en/stable/config/options/kernel.html#configtrait-InteractiveShell.cache_size>`_ in the IPython documentation for details.
 
-Why is xarray not enough?
+Where does Scipp's behavior differ from Xarray's behavior?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Similar to Pandas, Xarray uses *indexes* for automatically aligning data in operations based on their coordinates.
+  Binary operations in Xarray may thus return the result for the intersection of the input coordinates, i.e., those with matching coordinate values.
+  This leads to a number of cases with surprising behavior and can also be expensive when unintentional reordering of large data occurs.
+  Scipp takes a much simpler approach by simply comparing the arrays of coordinate values, raising an error if there is a mismatch.
+  Reordering is not supported.
+- Scipp's attributes behave similar to Xarray's non-index coordinates.
+  A minor difference is that Scipp handles a missing attribute as a mismatch an will thus drop the attribute.
+  Thus in Scipp we ensure ``(a + b) + c == a + (b + c)``, which is not the case in Xarray (when considering non-index coordinates).
+
+Why is Xarray not enough?
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For our application (handling of neutron-scattering data, which is so far mostly done using `Mantid <https://mantidproject.org>`_), xarray is currently missing a number of features:
+For our application (handling of neutron-scattering data, which is so far mostly done using `Mantid <https://mantidproject.org>`_), Xarray is currently missing a number of features:
 
 - Handling of physical units.
 - Propagation of uncertainties.
@@ -53,16 +65,16 @@ For our application (handling of neutron-scattering data, which is so far mostly
   This type of data arises in time-resolved detection of neutrons in pixelated detectors.
 - Written in C++ for performance opportunities, in particular also when interfacing with our extensive existing C++ codebase.
 
-Why are you not just contributing to xarray?
+Why are you not just contributing to Xarray?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is a valid criticism and at times we still feel uncertain about this choice.
 The decision was made in the context of a larger project which needed to come to a conclusion within a couple of years, including all the items listed in the previous FAQ entry.
-Essentially we felt that the list of additional requirements on top of what xarray provides was too long.
+Essentially we felt that the list of additional requirements on top of what Xarray provides was too long.
 Effecting/contributing such fundamental changes to an existing framework is a long process and likely not obtained within the given time frame.
-Furthermore, some of the requirements are unlikely to be obtainable within xarray.
+Furthermore, some of the requirements are unlikely to be obtainable within Xarray.
 
-We should note that at least some of our additional requirements, in particular physical units, are being pursued also by the xarray developers.
+We should note that at least some of our additional requirements, in particular physical units, are being pursued also by the Xarray developers.
 
 Plotting
 --------
