@@ -12,7 +12,13 @@ def working_dir(request, monkeypatch):
     monkeypatch.chdir(request.fspath.dirname)
 
 
-def test_loads_local(working_dir):
+@pytest.fixture
+def clean_config():
     sc.config.get.cache_clear()
+    yield
+    sc.config.get.cache_clear()
+
+
+def test_loads_local(working_dir, clean_config):
     assert sc.config['table_max_size'] == 1
     assert sc.config['colors']['attrs'] == '#123456'
