@@ -51,6 +51,54 @@ def test_series_with_named_axis():
     assert sc.identical(sc_ds, reference_da)
 
 
+def test_series_with_named_axis_non_str():
+    pd_df = pandas.Series(data=[1, 2, 3])
+    pd_df.rename_axis(987, inplace=True)
+
+    sc_ds = from_pandas(pd_df)
+
+    reference_da = _make_reference_da("987", [0, 1, 2], [1, 2, 3])
+
+    assert sc.identical(sc_ds, reference_da)
+
+
+def test_series_with_named_series():
+    pd_df = pandas.Series(data=[1, 2, 3])
+    pd_df.name = "the name"
+
+    sc_ds = from_pandas(pd_df)
+
+    reference_da = _make_reference_da("row", [0, 1, 2], [1, 2, 3])
+    reference_da.name = "the name"
+
+    assert sc.identical(sc_ds, reference_da)
+
+
+def test_series_with_named_series_no_str():
+    pd_df = pandas.Series(data=[1, 2, 3])
+    pd_df.name = 8461
+
+    sc_ds = from_pandas(pd_df)
+
+    reference_da = _make_reference_da("row", [0, 1, 2], [1, 2, 3])
+    reference_da.name = "8461"
+
+    assert sc.identical(sc_ds, reference_da)
+
+
+def test_series_with_named_series_and_named_axis():
+    pd_df = pandas.Series(data=[1, 2, 3])
+    pd_df.rename_axis("axis-name", inplace=True)
+    pd_df.name = "series-name"
+
+    sc_ds = from_pandas(pd_df)
+
+    reference_da = _make_reference_da("axis-name", [0, 1, 2], [1, 2, 3])
+    reference_da.name = "series-name"
+
+    assert sc.identical(sc_ds, reference_da)
+
+
 def test_1d_dataframe():
     pd_df = pandas.DataFrame(data=[1, 2, 3])
 
