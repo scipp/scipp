@@ -6,8 +6,10 @@ from scipp.io.hdf5 import collection_element_name
 import scipp as sc
 import numpy as np
 import tempfile
-import h5py
 import os
+import pytest
+
+h5py = pytest.importorskip('h5py')
 
 
 def roundtrip(obj):
