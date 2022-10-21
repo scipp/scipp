@@ -4,8 +4,16 @@
 # @author Jan-Lukas Wynen
 
 from functools import lru_cache
-import importlib.resources as pkg_resources
+import importlib.resources
 from string import Template
+
+
+def _read_text(filename):
+    if hasattr(importlib.resources, 'files'):
+        # Use new API added in Python 3.9
+        return importlib.resources.files('scipp.html').joinpath(filename).read_text()
+    # Old API, deprecated as of Python 3.11
+    return importlib.resources.read_text('scipp.html', filename)
 
 
 def _format_style(template: str) -> str:
@@ -35,8 +43,7 @@ def load_style_sheet() -> str:
     Load the bundled CSS style and return it as a string.
     The string is cached upon first call.
     """
-    return _preprocess_style(pkg_resources.read_text('scipp.html',
-                                                     'style.css.template'))
+    return _preprocess_style(_read_text('style.css.template'))
 
 
 def load_style() -> str:
@@ -52,4 +59,4 @@ def load_icons() -> str:
     Load the bundled icons and return them as an HTML string.
     The string is cached upon first call.
     """
-    return pkg_resources.read_text('scipp.html', 'icons-svg-inline.html')
+    return _read_text('icons-svg-inline.html')
