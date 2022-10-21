@@ -164,4 +164,11 @@ void init_units(py::module &m) {
           "The regular equality operator allows for small differences "
           "in the unit's floating point multiplier. ``is_exactly_the_same`` "
           "checks for exact identity.");
+
+  units
+      .def("add_unit_alias", scipp::units::add_unit_alias, py::kw_only(),
+           py::arg("name"), py::arg("unit"))
+      .def("remove_unit_alias", scipp::units::remove_unit_alias,
+           py::arg("name"))
+      .def("clear_unit_aliases", scipp::units::clear_unit_aliases);
 }

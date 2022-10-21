@@ -5,6 +5,7 @@
 /// @author Neil Vaytet
 #include <regex>
 #include <stdexcept>
+#include <unordered_map>
 
 #include <units/units.hpp>
 #include <units/units_util.hpp>
@@ -166,10 +167,10 @@ Unit sqrt(const Unit &a) {
 Unit pow(const Unit &a, const int64_t power) {
   if (a == none)
     return a;
-  if (llnl::units::pow_overflows(a.underlying(), power))
+  if (llnl::units::pow_overflows(a.underlying(), static_cast<int>(power)))
     throw except::UnitError("Unsupported unit as result of pow: pow(" +
                             a.name() + ", " + std::to_string(power) + ").");
-  return Unit{a.underlying().pow(power)};
+  return Unit{a.underlying().pow(static_cast<int>(power))};
 }
 
 Unit trigonometric(const Unit &a) {
@@ -206,6 +207,28 @@ Unit atan2(const Unit &y, const Unit &x) {
 bool identical(const Unit &a, const Unit &b) {
   return a.has_value() && b.has_value() &&
          a.underlying().is_exactly_the_same(b.underlying());
+}
+
+static std::unordered_map<std::string, Unit> user_defined_units;
+
+void add_unit_alias(const std::string &name, const Unit &unit) {
+  llnl::units::addUserDefinedUnit(name, unit.underlying());
+  user_defined_units.emplace(name, unit);
+}
+
+void remove_unit_alias(const std::string &name) {
+  if (user_defined_units.count(name)) {
+    user_defined_units.erase(name);
+    llnl::units::clearUserDefinedUnits();
+    for (auto &&[n, u] : user_defined_units) {
+      llnl::units::addUserDefinedUnit(n, u.underlying());
+    }
+  }
+}
+
+void clear_unit_aliases() {
+  llnl::units::clearUserDefinedUnits();
+  user_defined_units.clear();
 }
 
 } // namespace scipp::units
