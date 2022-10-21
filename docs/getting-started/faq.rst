@@ -49,8 +49,8 @@ Where does Scipp's behavior differ from Xarray's behavior?
   Scipp takes a much simpler approach by simply comparing the arrays of coordinate values, raising an error if there is a mismatch.
   Reordering is not supported.
 - Scipp's attributes behave similar to Xarray's non-index coordinates.
-  A minor difference is that Scipp handles a missing attribute as a mismatch an will thus drop the attribute.
-  Thus in Scipp we ensure ``(a + b) + c == a + (b + c)``, which is not the case in Xarray (when considering non-index coordinates).
+  A minor difference is that Scipp handles a missing attribute as a mismatch and will thus drop the attribute.
+  Scipp thus ensures ``(a + b) + c == a + (b + c)``, which is not the case in Xarray (when considering non-index coordinates).
 
 Why is Xarray not enough?
 ~~~~~~~~~~~~~~~~~~~~~~~~~
