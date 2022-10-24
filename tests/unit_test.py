@@ -2,6 +2,8 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
+import copy
+
 from scipp._scipp.core import units_identical as units_identical  # noqa
 import scipp as sc
 import pytest
@@ -79,13 +81,14 @@ def test_dict_roundtrip(u):
 
 @pytest.fixture
 def clean_unit_aliases():
-    sc.units.clear_unit_aliases()
+    sc.units.aliases.clear()
     yield
-    sc.units.clear_unit_aliases()
+    sc.units.aliases.clear()
 
 
-def test_unit_alias_overrides_to_string(clean_unit_aliases):
-    sc.units.add_unit_alias(name='clucks', unit='19.3 m*A')
+@pytest.mark.parametrize('unit_type', (str, sc.Unit))
+def test_unit_alias_overrides_to_string(unit_type, clean_unit_aliases):
+    sc.units.aliases['clucks'] = unit_type('19.3 m*A')
     clucks = sc.Unit('19.3 m*A')
     assert str(clucks) == 'clucks'
     assert str(sc.Unit('one') / clucks) == '1/clucks'
@@ -94,30 +97,42 @@ def test_unit_alias_overrides_to_string(clean_unit_aliases):
 
 
 def test_can_add_multiple_aliases(clean_unit_aliases):
-    sc.units.add_unit_alias(name='clucks', unit='19.3 m*A')
-    sc.units.add_unit_alias(name='dogyear', unit='4492800s')
+    sc.units.aliases['clucks'] = '19.3 m*A'
+    sc.units.aliases['dogyear'] = '4492800s'
     assert str(sc.Unit('4492800s')) == 'dogyear'
     assert str(sc.Unit('19.3 m*A')) == 'clucks'
 
 
 def test_unit_alias_enables_conversion_from_string(clean_unit_aliases):
-    sc.units.add_unit_alias(name='speed', unit='m/s')
+    sc.units.aliases['speed'] = 'm/s'
     assert sc.Unit('speed') == sc.Unit('m/s')
     assert sc.Unit('1/speed') == sc.Unit('s/m')
     assert sc.Unit('speed/K') == sc.Unit('m/s/K')
 
 
-def test_can_remove_unit_alias(clean_unit_aliases):
-    sc.units.add_unit_alias(name='clucks', unit='19.3 m*A')
-    sc.units.add_unit_alias(name='dogyear', unit='4492800s')
+def test_can_override_alias(clean_unit_aliases):
+    sc.units.aliases['speed'] = 'm/s'
+    sc.units.aliases['speed'] = 'km/s'
+    assert sc.Unit('speed') == 'km/s'
 
-    sc.units.remove_unit_alias(name='dogyear')
+
+def test_defining_conflicting_alias_raises(clean_unit_aliases):
+    sc.units.aliases['speed'] = 'm/s'
+    with pytest.raises(ValueError):
+        sc.units.aliases['fastness'] = 'm/s'
+
+
+def test_can_remove_unit_alias(clean_unit_aliases):
+    sc.units.aliases['clucks'] = '19.3 m*A'
+    sc.units.aliases['dogyear'] = '4492800s'
+
+    del sc.units.aliases['dogyear']
     assert str(sc.Unit('19.3 m*A')) == 'clucks'
     assert 'dogyear' not in str(sc.Unit('4492800s'))
     with pytest.raises(sc.UnitError):
         sc.Unit('dogyear')
 
-    sc.units.remove_unit_alias(name='clucks')
+    del sc.units.aliases['clucks']
     assert 'clucks' not in str(sc.Unit('19.3 m*A'))
     assert 'dogyear' not in str(sc.Unit('4492800s'))
     with pytest.raises(sc.UnitError):
@@ -127,10 +142,10 @@ def test_can_remove_unit_alias(clean_unit_aliases):
 
 
 def test_clear_unit_alias(clean_unit_aliases):
-    sc.units.add_unit_alias(name='speed', unit='m/s')
-    sc.units.add_unit_alias(name='chubby', unit='100kg')
+    sc.units.aliases['speed'] = 'm/s'
+    sc.units.aliases['chubby'] = '100kg'
 
-    sc.units.clear_unit_aliases()
+    sc.units.aliases.clear()
     assert 'speed' not in str(sc.Unit('m/s'))
     assert 'chubby' not in str(sc.Unit('100kg'))
     with pytest.raises(sc.UnitError):
@@ -139,16 +154,13 @@ def test_clear_unit_alias(clean_unit_aliases):
         sc.Unit('chubby')
 
 
-def test_removing_undefined_alias_does_nothing(clean_unit_aliases):
-    sc.units.add_unit_alias(name='chubby', unit='100kg')
-
-    sc.units.remove_unit_alias(name='clucks')
-    assert str(sc.Unit('100kg')) == 'chubby'
-    assert sc.Unit('chubby') == sc.Unit('100kg')
+def test_removing_undefined_alias_raises(clean_unit_aliases):
+    with pytest.raises(KeyError):
+        del sc.units.aliases['clucks']
 
 
 def test_unit_aliases_context_manager(clean_unit_aliases):
-    with sc.units.unit_aliases(clucks='19.3 m*A', speed='m/s'):
+    with sc.units.aliases.temporary(clucks='19.3 m*A', speed='m/s'):
         assert str(sc.Unit('19.3 m*A')) == 'clucks'
         assert str(sc.Unit('m/s')) == 'speed'
     assert 'clucks' not in str(sc.Unit('19.3 m*A'))
@@ -156,9 +168,58 @@ def test_unit_aliases_context_manager(clean_unit_aliases):
 
 
 def test_unit_aliases_context_manager_preserves_prior_alias(clean_unit_aliases):
-    sc.units.add_unit_alias(name='dogyear', unit='4492800s')
-    with sc.units.unit_aliases(clucks='19.3 m*A'):
+    sc.units.aliases['dogyear'] = '4492800s'
+    with sc.units.aliases.temporary(clucks='19.3 m*A'):
         assert str(sc.Unit('19.3 m*A')) == 'clucks'
         assert str(sc.Unit('4492800s')) == 'dogyear'
     assert 'clucks' not in str(sc.Unit('19.3 m*A'))
     assert str(sc.Unit('4492800s')) == 'dogyear'
+
+
+def test_unit_aliases_context_manager_overrides_prior_alias(clean_unit_aliases):
+    sc.units.aliases['speed'] = 'm/s'
+    with sc.units.aliases.temporary(speed='km/s'):
+        assert sc.Unit('speed') == 'km/s'
+    assert sc.Unit('speed') == 'm/s'
+
+
+def test_unit_aliases_context_manager_preserves_inner_alias(clean_unit_aliases):
+    with sc.units.aliases.temporary(speed='m/s'):
+        sc.units.aliases['dogyear'] = '4492800s'
+        assert sc.Unit('speed') == 'm/s'
+    assert str(sc.Unit('4492800s')) == 'dogyear'
+
+
+def test_unit_aliases_context_manager_always_restores_prior_alias(clean_unit_aliases):
+    sc.units.aliases['speed'] = 'm/s'
+    with sc.units.aliases.temporary(speed='km/s'):
+        sc.units.aliases['speed'] = 'um/s'
+    assert sc.Unit('speed') == 'm/s'  # inner alias removed
+
+
+def test_unit_aliases_context_manager_without_args(clean_unit_aliases):
+    sc.units.aliases['clucks'] = '19.3 m*A'
+    with sc.units.aliases.temporary():
+        assert str(sc.Unit('19.3 m*A')) == 'clucks'
+    assert str(sc.Unit('19.3 m*A')) == 'clucks'
+
+
+def test_unit_aliases_iterate_over_aliases(clean_unit_aliases):
+    sc.units.aliases['clucks'] = '19.3 m*A'
+    sc.units.aliases['dogyear'] = '4492800s'
+    assert sorted(sc.units.aliases) == ['clucks', 'dogyear']
+    assert sorted(sc.units.aliases.keys()) == ['clucks', 'dogyear']
+    assert sorted(sc.units.aliases.values(),
+                  key=lambda u: repr(u)) == [sc.Unit('19.3 m*A'),
+                                             sc.Unit('4492800s')]
+    assert sorted(sc.units.aliases.items()) == [('clucks', sc.Unit('19.3 m*A')),
+                                                ('dogyear', sc.Unit('4492800s'))]
+
+
+def test_aliases_is_a_singleton():
+    with pytest.raises(RuntimeError):
+        _ = sc.units.UnitAliases()
+    with pytest.raises(TypeError):
+        copy.copy(sc.units.aliases)
+    with pytest.raises(TypeError):
+        copy.deepcopy(sc.units.aliases)
