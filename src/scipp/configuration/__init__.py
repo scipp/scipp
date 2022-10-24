@@ -63,10 +63,6 @@ class Config:
 
     def __init__(self):
         self._cfg = confuse.LazyConfig('scipp', __name__)
-        self._cfg.set(
-            confuse.YamlSource('./scipp.config.yaml',
-                               optional=True,
-                               loader=self._cfg.loader))
 
     def config_dir(self) -> Path:
         """
@@ -84,9 +80,7 @@ class Config:
         """
         return Path(self._cfg.user_config_path())
 
-    @lru_cache()  # noqa: B019
-    def get(self) -> dict:
-        """Return parameters as a dict."""
+    def _read(self):
         try:
             self._cfg.read(user=True, defaults=True)
         except PermissionError:
@@ -96,6 +90,16 @@ class Config:
             # Fall back to the default configuration shipped as part of the
             # source code in this case.
             self._cfg.read(user=False, defaults=True)
+        # Add source after _cfg.read to override 'user' and 'defaults'
+        self._cfg.set(
+            confuse.YamlSource('./scipp.config.yaml',
+                               optional=True,
+                               loader=self._cfg.loader))
+
+    @lru_cache()  # noqa: B019
+    def get(self) -> dict:
+        """Return parameters as a dict."""
+        self._read()
         return self._cfg.get(self._TEMPLATE)
 
     def __getitem__(self, name: str):

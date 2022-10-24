@@ -11,10 +11,12 @@ asttokens==2.0.8
     # via stack-data
 backcall==0.2.0
     # via ipython
-certifi==2022.6.15
+certifi==2022.9.24
     # via requests
 charset-normalizer==2.1.1
     # via requests
+contourpy==1.0.5
+    # via matplotlib
 cycler==0.11.0
     # via matplotlib
 debugpy==1.6.3
@@ -23,50 +25,51 @@ decorator==5.1.1
     # via ipython
 entrypoints==0.4
     # via jupyter-client
-executing==0.10.0
+executing==1.1.1
     # via stack-data
-fonttools==4.37.1
+fonttools==4.37.4
     # via matplotlib
 graphviz==0.20.1
     # via -r requirements/extra.in
 h5py==3.7.0
     # via -r requirements/extra.in
-idna==3.3
+idna==3.4
     # via requests
 ipydatawidgets==4.3.2
     # via pythreejs
-ipykernel==6.15.1
+ipykernel==6.16.0
     # via ipywidgets
-ipython==8.4.0
+ipython==8.5.0
     # via
     #   ipykernel
     #   ipywidgets
-ipywidgets==8.0.1
+ipywidgets==8.0.2
     # via
     #   ipydatawidgets
     #   pythreejs
 jedi==0.18.1
     # via ipython
-jupyter-client==7.3.4
+jupyter-client==7.4.2
     # via ipykernel
 jupyter-core==4.11.1
     # via jupyter-client
-jupyterlab-widgets==3.0.2
+jupyterlab-widgets==3.0.3
     # via ipywidgets
 kiwisolver==1.4.4
     # via matplotlib
-matplotlib==3.5.3
+matplotlib==3.6.1
     # via -r requirements/extra.in
 matplotlib-inline==0.1.6
     # via
     #   ipykernel
     #   ipython
-nest-asyncio==1.5.5
+nest-asyncio==1.5.6
     # via
     #   ipykernel
     #   jupyter-client
-numpy==1.23.2
+numpy==1.23.4
     # via
+    #   contourpy
     #   h5py
     #   ipydatawidgets
     #   matplotlib
@@ -80,7 +83,7 @@ packaging==21.3
     #   matplotlib
     #   pooch
     #   xarray
-pandas==1.4.3
+pandas==1.5.0
     # via
     #   -r requirements/extra.in
     #   xarray
@@ -94,9 +97,9 @@ pillow==9.2.0
     # via matplotlib
 pooch==1.6.0
     # via -r requirements/extra.in
-prompt-toolkit==3.0.30
+prompt-toolkit==3.0.31
     # via ipython
-psutil==5.9.1
+psutil==5.9.3
     # via ipykernel
 ptyprocess==0.7.0
     # via pexpect
@@ -113,33 +116,34 @@ python-dateutil==2.8.2
     #   jupyter-client
     #   matplotlib
     #   pandas
-pythreejs==2.4.0
+pythreejs==2.4.1
     # via -r requirements/extra.in
-pytz==2022.2.1
+pytz==2022.5
     # via pandas
-pyzmq==23.2.1
+pyzmq==24.0.1
     # via
     #   ipykernel
     #   jupyter-client
 requests==2.28.1
     # via pooch
-scipy==1.9.0
+scipy==1.9.2
     # via -r requirements/extra.in
 six==1.16.0
     # via python-dateutil
-stack-data==0.4.0
+stack-data==0.5.1
     # via ipython
 tornado==6.2
     # via
     #   ipykernel
     #   jupyter-client
-traitlets==5.3.0
+traitlets==5.5.0
     # via
     #   ipykernel
     #   ipython
     #   ipywidgets
     #   jupyter-client
     #   matplotlib-inline
+    #   pythreejs
     #   traittypes
 traittypes==0.2.1
     # via ipydatawidgets
@@ -147,10 +151,7 @@ urllib3==1.26.12
     # via requests
 wcwidth==0.2.5
     # via prompt-toolkit
-widgetsnbextension==4.0.2
+widgetsnbextension==4.0.3
     # via ipywidgets
-xarray==2022.6.0
+xarray==2022.10.0
     # via -r requirements/extra.in
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools
