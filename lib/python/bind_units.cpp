@@ -2,6 +2,8 @@
 // Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <sstream>
+
 #include "scipp/core/dtype.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/units/unit.h"
@@ -19,13 +21,13 @@ namespace {
 // We only support units where we are confident that we can encode them using
 // a different unit library, in order to ensure that we can switch
 // implementations in the future if necessary.
-void assert_support_for_serialization(const units::Unit &unit) {
+void assert_simple_unit(const units::Unit &unit) {
   const auto &&base_units = unit.underlying().base_units();
   if (base_units.is_per_unit() || base_units.has_i_flag() ||
       base_units.has_e_flag() || base_units.is_equation() ||
       unit.underlying().commodity() != 0) {
     throw std::invalid_argument(
-        "Unit cannot be converted to dict: '" + to_string(unit) +
+        "Bad unit: '" + to_string(unit) +
         "' Only units expressed in terms of regular base units are supported.");
   }
 }
@@ -37,7 +39,7 @@ void store(py::dict &dict, const char *const name, int val) {
 }
 
 py::dict to_dict(const units::Unit &unit) {
-  assert_support_for_serialization(unit);
+  assert_simple_unit(unit);
 
   py::dict dict;
   dict["__version__"] = UNIT_DICT_VERSION;
@@ -87,6 +89,32 @@ units::Unit from_dict(const py::dict &dict) {
       dict["multiplier"].cast<double>()));
 }
 
+void format_base(std::ostringstream &oss, const std::string_view base,
+                 const int power) {
+  if (power != 0)
+    oss << "*" << base << "**" << power;
+}
+
+std::string repr(const units::Unit &unit) {
+  assert_simple_unit(unit);
+
+  std::ostringstream oss;
+  oss << unit.underlying().multiplier();
+
+  const auto &&base_units = unit.underlying().base_units();
+  format_base(oss, "m", base_units.meter());
+  format_base(oss, "kg", base_units.kg());
+  format_base(oss, "s", base_units.second());
+  format_base(oss, "A", base_units.ampere());
+  format_base(oss, "K", base_units.kelvin());
+  format_base(oss, "mol", base_units.mole());
+  format_base(oss, "cd", base_units.candela());
+  format_base(oss, "$", base_units.currency());
+  format_base(oss, "count", base_units.count());
+  format_base(oss, "rad", base_units.radian());
+  return oss.str();
+}
+
 } // namespace
 
 void init_units(py::module &m) {
@@ -95,7 +123,8 @@ void init_units(py::module &m) {
            [](const DefaultUnit &) { return "<automatically deduced unit>"; });
   py::class_<units::Unit>(m, "Unit", "A physical unit.")
       .def(py::init<const std::string &>())
-      .def("__repr__", [](const units::Unit &u) { return u.name(); })
+      .def("__str__", [](const units::Unit &u) { return u.name(); })
+      .def("__repr__", [](const units::Unit &u) { return repr(u); })
       .def_property_readonly("name", &units::Unit::name,
                              "A read-only string describing the "
                              "type of unit.")
