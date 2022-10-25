@@ -297,7 +297,7 @@ def summarize_variable(name,
     if var.unit is None:
         unit = ''
     else:
-        unit = '𝟙' if var.unit == sc.units.dimensionless else repr(var.unit)
+        unit = '𝟙' if var.unit == sc.units.dimensionless else str(var.unit)
 
     disabled, attrs_ul = _make_inline_attributes(var, has_attrs, embedded_in)
 
