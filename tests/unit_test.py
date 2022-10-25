@@ -45,7 +45,7 @@ def test_constructor_raises_with_bad_input():
     with pytest.raises(sc.UnitError):
         sc.Unit('abcdef')  # does not parse
     with pytest.raises(TypeError):
-        sc.Unit(5)  # neither str nor Unit
+        sc.Unit(5)  # type: ignore # neither str nor Unit
 
 
 def test_unit_str_format():
@@ -59,11 +59,17 @@ def test_angstrom_str_format(u):
 
 
 def test_unit_repr():
-    assert repr(sc.Unit('dimensionless')) == '1'
-    assert repr(sc.Unit('m')) == '1*m**1'
-    assert repr(sc.Unit('uK/rad')) == '1e-06*K**1*rad**-1'
-    assert repr(sc.Unit('m^2/s^3')) == '1*m**2*s**-3'
-    assert repr(sc.Unit('1.234*kg')) == '1.234*kg**1'
+    assert repr(sc.Unit('dimensionless')) == 'Unit(1)'
+    assert repr(sc.Unit('m')) == 'Unit(1*m**1)'
+    assert repr(sc.Unit('uK/rad')) == 'Unit(1e-06*K**1*rad**-1)'
+    assert repr(sc.Unit('m^2/s^3')) == 'Unit(1*m**2*s**-3)'
+    assert repr(sc.Unit('1.234*kg')) == 'Unit(1.234*kg**1)'
+
+
+@pytest.mark.parametrize('u',
+                         ('m', 'kg', 's', 'A', 'cd', 'K', 'mol', 'count', '$', 'rad'))
+def test_unit_repr_uses_all_bases(u):
+    assert repr(sc.Unit(u)) == f'Unit(1*{u}**1)'
 
 
 def test_unit_property_from_str():
@@ -106,8 +112,8 @@ def test_unit_alias_overrides_str_formatting(unit_type):
 
 def test_unit_alias_does_not_affect_repr():
     sc.units.aliases['clucks'] = '19.3 m*A'
-    assert repr(sc.Unit('19.3 m*A')) == '19.3*m**1*A**1'
-    assert repr(sc.Unit('clucks')) == '19.3*m**1*A**1'
+    assert repr(sc.Unit('19.3 m*A')) == 'Unit(19.3*m**1*A**1)'
+    assert repr(sc.Unit('clucks')) == 'Unit(19.3*m**1*A**1)'
 
 
 def test_can_add_multiple_aliases():

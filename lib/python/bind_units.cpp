@@ -36,12 +36,6 @@ void assert_simple_unit_for_dict(const units::Unit &unit) {
   }
 }
 
-void store(py::dict &dict, const char *const name, int val) {
-  if (val != 0) {
-    dict[name] = val;
-  }
-}
-
 py::dict to_dict(const units::Unit &unit) {
   assert_simple_unit_for_dict(unit);
 
@@ -50,17 +44,12 @@ py::dict to_dict(const units::Unit &unit) {
   dict["multiplier"] = unit.underlying().multiplier();
 
   py::dict powers;
-  const auto &&base_units = unit.underlying().base_units();
-  store(powers, "meter", base_units.meter());
-  store(powers, "kilogram", base_units.kg());
-  store(powers, "second", base_units.second());
-  store(powers, "ampere", base_units.ampere());
-  store(powers, "kelvin", base_units.kelvin());
-  store(powers, "mole", base_units.mole());
-  store(powers, "candela", base_units.candela());
-  store(powers, "currency", base_units.currency());
-  store(powers, "count", base_units.count());
-  store(powers, "radian", base_units.radian());
+  unit.map_over_bases(
+      [&powers](const char *const base, const auto power) mutable {
+        if (power != 0) {
+          powers[base] = power;
+        }
+      });
   if (!powers.empty())
     dict["powers"] = powers;
 
@@ -86,17 +75,11 @@ units::Unit from_dict(const py::dict &dict) {
   const py::dict powers = dict.contains("powers") ? dict["powers"] : py::dict();
   return units::Unit(llnl::units::precise_unit(
       llnl::units::detail::unit_data{
-          get(powers, "meter"), get(powers, "kilogram"), get(powers, "second"),
-          get(powers, "ampere"), get(powers, "kelvin"), get(powers, "mole"),
-          get(powers, "candela"), get(powers, "currency"), get(powers, "count"),
-          get(powers, "radian"), 0, 0, 0, 0},
+          get(powers, "m"), get(powers, "kg"), get(powers, "s"),
+          get(powers, "A"), get(powers, "K"), get(powers, "mol"),
+          get(powers, "cd"), get(powers, "$"), get(powers, "counts"),
+          get(powers, "rad"), 0, 0, 0, 0},
       dict["multiplier"].cast<double>()));
-}
-
-void format_base(std::ostringstream &oss, const std::string_view base,
-                 const int power) {
-  if (power != 0)
-    oss << "*" << base << "**" << power;
 }
 
 std::string repr(const units::Unit &unit) {
@@ -105,19 +88,12 @@ std::string repr(const units::Unit &unit) {
   }
 
   std::ostringstream oss;
-  oss << unit.underlying().multiplier();
-
-  const auto &&base_units = unit.underlying().base_units();
-  format_base(oss, "m", base_units.meter());
-  format_base(oss, "kg", base_units.kg());
-  format_base(oss, "s", base_units.second());
-  format_base(oss, "A", base_units.ampere());
-  format_base(oss, "K", base_units.kelvin());
-  format_base(oss, "mol", base_units.mole());
-  format_base(oss, "cd", base_units.candela());
-  format_base(oss, "$", base_units.currency());
-  format_base(oss, "count", base_units.count());
-  format_base(oss, "rad", base_units.radian());
+  oss << "Unit(" << unit.underlying().multiplier();
+  unit.map_over_bases([&oss](const char *const base, const auto power) mutable {
+    if (power != 0)
+      oss << "*" << base << "**" << power;
+  });
+  oss << ')';
   return oss.str();
 }
 
