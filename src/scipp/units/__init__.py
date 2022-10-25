@@ -82,7 +82,7 @@ class UnitAliases:
         _clear_unit_aliases()
 
     @contextmanager
-    def temporary(self, **kwargs: Union[str, Unit]):
+    def scoped(self, **kwargs: Union[str, Unit]):
         """Contextmanager to define temporary aliases.
 
         Defines new aliases based on ``kwargs`` for the duration of the context.
@@ -90,7 +90,7 @@ class UnitAliases:
 
         It is possible to define additional aliases in the context.
         They are not removed when the context manager exits unless they override
-        temporary aliases. (See examples.)
+        scoped aliases. (See examples.)
 
         Warning
         -------
@@ -107,7 +107,7 @@ class UnitAliases:
         --------
         Define temporary aliases:
 
-          >>> with sc.units.aliases.temporary(speed='m/s'):
+          >>> with sc.units.aliases.scoped(speed='m/s'):
           ...     str(sc.Unit('m/s'))
           'speed'
 
@@ -115,7 +115,7 @@ class UnitAliases:
 
           >>> sc.units.aliases.clear()
           >>> sc.units.aliases['dogyear'] = '4492800s'
-          >>> with sc.units.aliases.temporary(speed='m/s'):
+          >>> with sc.units.aliases.scoped(speed='m/s'):
           ...     str(sc.Unit('4492800s'))
           'dogyear'
 
@@ -123,7 +123,7 @@ class UnitAliases:
 
           >>> sc.units.aliases.clear()
           >>> sc.units.aliases['speed'] = 'km/s'
-          >>> with sc.units.aliases.temporary(speed='m/s'):
+          >>> with sc.units.aliases.scoped(speed='m/s'):
           ...     sc.Unit('speed') == 'm/s'
           True
           >>> sc.Unit('speed') == 'km/s'
@@ -134,7 +134,7 @@ class UnitAliases:
 
           >>> sc.units.aliases.clear()
           >>> sc.units.aliases['speed'] = 'km/s'
-          >>> with sc.units.aliases.temporary(speed='m/s'):
+          >>> with sc.units.aliases.scoped(speed='m/s'):
           ...     sc.units.aliases['speed'] = 'mm/s'
           ...     sc.units.aliases['dogyear'] = '4492800s'
           >>> str(sc.Unit('4492800s'))

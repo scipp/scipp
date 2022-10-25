@@ -180,7 +180,7 @@ def test_removing_undefined_alias_raises():
 
 
 def test_unit_aliases_context_manager():
-    with sc.units.aliases.temporary(clucks='19.3 m*A', speed='m/s'):
+    with sc.units.aliases.scoped(clucks='19.3 m*A', speed='m/s'):
         assert str(sc.Unit('19.3 m*A')) == 'clucks'
         assert str(sc.Unit('m/s')) == 'speed'
     assert 'clucks' not in str(sc.Unit('19.3 m*A'))
@@ -189,7 +189,7 @@ def test_unit_aliases_context_manager():
 
 def test_unit_aliases_context_manager_preserves_prior_alias():
     sc.units.aliases['dogyear'] = '4492800s'
-    with sc.units.aliases.temporary(clucks='19.3 m*A'):
+    with sc.units.aliases.scoped(clucks='19.3 m*A'):
         assert str(sc.Unit('19.3 m*A')) == 'clucks'
         assert str(sc.Unit('4492800s')) == 'dogyear'
     assert 'clucks' not in str(sc.Unit('19.3 m*A'))
@@ -198,13 +198,13 @@ def test_unit_aliases_context_manager_preserves_prior_alias():
 
 def test_unit_aliases_context_manager_overrides_prior_alias():
     sc.units.aliases['speed'] = 'm/s'
-    with sc.units.aliases.temporary(speed='km/s'):
+    with sc.units.aliases.scoped(speed='km/s'):
         assert sc.Unit('speed') == 'km/s'
     assert sc.Unit('speed') == 'm/s'
 
 
 def test_unit_aliases_context_manager_preserves_inner_alias():
-    with sc.units.aliases.temporary(speed='m/s'):
+    with sc.units.aliases.scoped(speed='m/s'):
         sc.units.aliases['dogyear'] = '4492800s'
         assert sc.Unit('speed') == 'm/s'
     assert str(sc.Unit('4492800s')) == 'dogyear'
@@ -212,14 +212,14 @@ def test_unit_aliases_context_manager_preserves_inner_alias():
 
 def test_unit_aliases_context_manager_always_restores_prior_alias():
     sc.units.aliases['speed'] = 'm/s'
-    with sc.units.aliases.temporary(speed='km/s'):
+    with sc.units.aliases.scoped(speed='km/s'):
         sc.units.aliases['speed'] = 'um/s'
     assert sc.Unit('speed') == 'm/s'  # inner alias removed
 
 
 def test_unit_aliases_context_manager_without_args():
     sc.units.aliases['clucks'] = '19.3 m*A'
-    with sc.units.aliases.temporary():
+    with sc.units.aliases.scoped():
         assert str(sc.Unit('19.3 m*A')) == 'clucks'
     assert str(sc.Unit('19.3 m*A')) == 'clucks'
 
