@@ -18,16 +18,20 @@ constexpr int UNIT_DICT_VERSION = 1;
 
 namespace {
 
+bool is_simple_unit(const units::Unit &unit) {
+  const auto &&base_units = unit.underlying().base_units();
+  return !base_units.is_per_unit() && !base_units.has_i_flag() &&
+         !base_units.has_e_flag() && !base_units.is_equation() &&
+         unit.underlying().commodity() == 0;
+}
+
 // We only support units where we are confident that we can encode them using
 // a different unit library, in order to ensure that we can switch
 // implementations in the future if necessary.
-void assert_simple_unit(const units::Unit &unit) {
-  const auto &&base_units = unit.underlying().base_units();
-  if (base_units.is_per_unit() || base_units.has_i_flag() ||
-      base_units.has_e_flag() || base_units.is_equation() ||
-      unit.underlying().commodity() != 0) {
+void assert_simple_unit_for_dict(const units::Unit &unit) {
+  if (!is_simple_unit(unit)) {
     throw std::invalid_argument(
-        "Bad unit: '" + to_string(unit) +
+        "Unit cannot be converted to dict: '" + to_string(unit) +
         "' Only units expressed in terms of regular base units are supported.");
   }
 }
@@ -39,7 +43,7 @@ void store(py::dict &dict, const char *const name, int val) {
 }
 
 py::dict to_dict(const units::Unit &unit) {
-  assert_simple_unit(unit);
+  assert_simple_unit_for_dict(unit);
 
   py::dict dict;
   dict["__version__"] = UNIT_DICT_VERSION;
@@ -96,7 +100,9 @@ void format_base(std::ostringstream &oss, const std::string_view base,
 }
 
 std::string repr(const units::Unit &unit) {
-  assert_simple_unit(unit);
+  if (!is_simple_unit(unit)) {
+    return "<unsupported unit: " + to_string(unit) + '>';
+  }
 
   std::ostringstream oss;
   oss << unit.underlying().multiplier();
