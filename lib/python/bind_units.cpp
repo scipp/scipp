@@ -197,7 +197,7 @@ void init_units(py::module &m) {
           },
           "Check if two units are numerically identical.\n\n"
           "The regular equality operator allows for small differences "
-          "in the unit's floating point multiplier. ``is_exactly_the_same`` "
+          "in the unit's floating point multiplier. ``units_identical`` "
           "checks for exact identity.")
       .def("add_unit_alias", scipp::units::add_unit_alias, py::kw_only(),
            py::arg("name"), py::arg("unit"))
