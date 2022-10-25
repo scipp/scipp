@@ -186,6 +186,6 @@ void init_units(py::module &m) {
           "in the unit's floating point multiplier. ``units_identical`` "
           "checks for exact identity.")
       .def("add_unit_alias", scipp::units::add_unit_alias, py::kw_only(),
-           py::arg("name"), py::arg("unit"))
+           py::arg("name"), py::arg("multiplier"), py::arg("unit"))
       .def("clear_unit_aliases", scipp::units::clear_unit_aliases);
 }

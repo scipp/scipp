@@ -38,7 +38,7 @@ from .._scipp.core.units import (angstrom, counts, default_unit, deg, dimensionl
 
 from .._scipp.core import (add_unit_alias as _add_unit_alias, clear_unit_aliases as
                            _clear_unit_aliases)
-from ..core.cpp_classes import Unit
+from ..core.cpp_classes import Unit, Variable
 
 
 class UnitAliases:
@@ -61,20 +61,26 @@ class UnitAliases:
             raise RuntimeError("There can be only one instance of _Aliases")
         self._aliases: Dict[str, Unit] = {}
 
-    def __setitem__(self, alias: str, unit: Union[str, Unit]):
+    def __setitem__(self, alias: str, unit: Union[str, Unit, Variable]):
         """Define a new unit alias."""
-        unit = unit if isinstance(unit, Unit) else Unit(unit)
+        multiplier, unit = _unit_and_multiplier(unit)
         if unit in self.values():
             raise ValueError(f"There already is an alias for unit '{unit!r}'")
-        self._aliases[alias] = unit
-        _add_unit_alias(name=alias, unit=unit)
+        self._aliases[alias] = _add_unit_alias(name=alias,
+                                               multiplier=multiplier,
+                                               unit=unit)
 
     def __delitem__(self, alias: str):
         """Remove an existing alias."""
-        del self._aliases[alias]
-        _clear_unit_aliases()
-        for name, unit in self._aliases.items():
-            _add_unit_alias(name=name, unit=unit)
+        self._del_aliases(alias)
+
+    def _del_aliases(self, *names: str):
+        old_aliases = dict(self._aliases)
+        for name in names:
+            del old_aliases[name]
+        self.clear()
+        for name, unit in old_aliases.items():
+            self[name] = unit
 
     def clear(self):
         """Remove all aliases."""
@@ -149,8 +155,7 @@ class UnitAliases:
         for name, unit in kwargs.items():
             self[name] = unit
         yield
-        for name in kwargs:
-            del self[name]
+        self._del_aliases(*kwargs)
         for name, unit in overridden.items():
             self[name] = unit
 
@@ -177,6 +182,14 @@ class UnitAliases:
 
     def __deepcopy__(self):
         raise TypeError("UnitAliases is a singleton and must not be copied")
+
+
+def _unit_and_multiplier(x: Union[str, Unit, Variable]) -> Tuple[float, Unit]:
+    if isinstance(x, Unit):
+        return 1.0, x
+    if isinstance(x, str):
+        return 1.0, Unit(x)
+    return x.value, x.unit
 
 
 aliases = UnitAliases()

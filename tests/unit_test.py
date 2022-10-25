@@ -67,7 +67,7 @@ def test_unit_repr():
 
 
 @pytest.mark.parametrize('u',
-                         ('m', 'kg', 's', 'A', 'cd', 'K', 'mol', 'count', '$', 'rad'))
+                         ('m', 'kg', 's', 'A', 'cd', 'K', 'mol', 'counts', '$', 'rad'))
 def test_unit_repr_uses_all_bases(u):
     assert repr(sc.Unit(u)) == f'Unit(1*{u}**1)'
 
@@ -108,6 +108,16 @@ def test_unit_alias_overrides_str_formatting(unit_type):
     assert str(sc.Unit('one') / clucks) == '1/clucks'
     assert str(clucks**2) == 'clucks^2'
     assert str(clucks * sc.Unit('kg')) == 'clucks*kg'
+
+
+def test_unit_alias_from_variable():
+    sc.units.aliases['clucks'] = sc.scalar(19.3, unit='m*A')
+    assert sc.Unit('clucks') == sc.Unit('19.3 m*A')
+
+
+def test_unit_alias_from_variable_requires_scalar():
+    with pytest.raises(sc.DimensionError):
+        sc.units.aliases['nonsense'] = sc.array(dims=['x'], values=[1.0, 2.0], unit='m')
 
 
 def test_unit_alias_does_not_affect_repr():
