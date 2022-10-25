@@ -2,6 +2,9 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 import scipp as sc
 from scipp.serialization import serialize, deserialize
+import pytest
+
+_ = pytest.importorskip('h5py')
 
 
 def test_serialize_roundtrip():

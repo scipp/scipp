@@ -7,6 +7,11 @@ execute_process(
   WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/.conan-recipes/llnl-units"
                     COMMAND_ECHO STDOUT
 )
+execute_process(
+  COMMAND conan export . 2.10.0@
+  WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/.conan-recipes/pybind11"
+                    COMMAND_ECHO STDOUT
+)
 
 # Conan dependencies
 if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake")
@@ -53,7 +58,7 @@ conan_cmake_configure(
   eigen/3.3.9
   gtest/1.11.0
   LLNL-Units/0.6.0
-  pybind11/2.6.2
+  pybind11/2.10.0
   ${CONAN_ONETBB}
   OPTIONS
   benchmark:shared=False
