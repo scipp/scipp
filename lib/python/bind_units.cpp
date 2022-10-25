@@ -97,6 +97,15 @@ std::string repr(const units::Unit &unit) {
   return oss.str();
 }
 
+std::string repr_html(const units::Unit &unit) {
+  // Regular string output is in a div with data-mime-type="text/plain"
+  // But html output is in a div with data-mime-type="text/html"
+  // Jupyter applies different padding to those, so hack the inner pre element
+  // to match the padding of text/plain.
+  return "<pre style=\"margin-bottom:0; padding-top:var(--jp-code-padding)\">" +
+         unit.name() + "</pre>";
+}
+
 } // namespace
 
 void init_units(py::module &m) {
@@ -106,7 +115,8 @@ void init_units(py::module &m) {
   py::class_<units::Unit>(m, "Unit", "A physical unit.")
       .def(py::init<const std::string &>())
       .def("__str__", [](const units::Unit &u) { return u.name(); })
-      .def("__repr__", [](const units::Unit &u) { return repr(u); })
+      .def("__repr__", repr)
+      .def("_repr_html_", repr_html)
       .def_property_readonly("name", &units::Unit::name,
                              "A read-only string describing the "
                              "type of unit.")
