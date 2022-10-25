@@ -6,7 +6,7 @@ channels:
   - conda-forge
 dependencies:
   - cmake=3.23.2
-  - conan=1.51.3
+  - conan=1.53.0
   - ninja=1.11.0
   - tbb=2020.2.*
   - tbb-devel=2020.2.*
