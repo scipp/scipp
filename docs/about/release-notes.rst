@@ -35,8 +35,8 @@ Release Notes
    and Jan-Lukas Wynen :sup:`a`
 
 
-v0.17.0 (Unreleased)
---------------------
+v0.17.0 (October 2022)
+----------------------
 
 Features
 ~~~~~~~~
