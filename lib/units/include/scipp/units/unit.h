@@ -36,13 +36,26 @@ public:
 
   bool operator==(const Unit &other) const;
   bool operator!=(const Unit &other) const;
-  bool is_exactly_the_same(const Unit &other) const;
 
   Unit &operator+=(const Unit &other);
   Unit &operator-=(const Unit &other);
   Unit &operator*=(const Unit &other);
   Unit &operator/=(const Unit &other);
   Unit &operator%=(const Unit &other);
+
+  template <class F> void map_over_bases(F &&f) const {
+    const auto base_units = underlying().base_units();
+    f("m", base_units.meter());
+    f("kg", base_units.kg());
+    f("s", base_units.second());
+    f("A", base_units.ampere());
+    f("K", base_units.kelvin());
+    f("mol", base_units.mole());
+    f("cd", base_units.candela());
+    f("$", base_units.currency());
+    f("counts", base_units.count());
+    f("rad", base_units.radian());
+  }
 
 private:
   std::optional<llnl::units::precise_unit> m_unit;
@@ -69,6 +82,10 @@ SCIPP_UNITS_EXPORT Unit ceil(const Unit &a);
 SCIPP_UNITS_EXPORT Unit rint(const Unit &a);
 
 SCIPP_UNITS_EXPORT bool identical(const Unit &a, const Unit &b);
+
+SCIPP_UNITS_EXPORT void add_unit_alias(const std::string &name,
+                                       const Unit &unit);
+SCIPP_UNITS_EXPORT void clear_unit_aliases();
 
 constexpr Unit none{};
 constexpr Unit dimensionless{llnl::units::precise::one};

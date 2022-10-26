@@ -166,10 +166,10 @@ Unit sqrt(const Unit &a) {
 Unit pow(const Unit &a, const int64_t power) {
   if (a == none)
     return a;
-  if (llnl::units::pow_overflows(a.underlying(), power))
+  if (llnl::units::pow_overflows(a.underlying(), static_cast<int>(power)))
     throw except::UnitError("Unsupported unit as result of pow: pow(" +
                             a.name() + ", " + std::to_string(power) + ").");
-  return Unit{a.underlying().pow(power)};
+  return Unit{a.underlying().pow(static_cast<int>(power))};
 }
 
 Unit trigonometric(const Unit &a) {
@@ -207,5 +207,11 @@ bool identical(const Unit &a, const Unit &b) {
   return a.has_value() && b.has_value() &&
          a.underlying().is_exactly_the_same(b.underlying());
 }
+
+void add_unit_alias(const std::string &name, const Unit &unit) {
+  llnl::units::addUserDefinedUnit(name, unit.underlying());
+}
+
+void clear_unit_aliases() { llnl::units::clearUserDefinedUnits(); }
 
 } // namespace scipp::units

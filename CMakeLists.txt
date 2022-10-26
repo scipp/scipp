@@ -3,6 +3,9 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # ~~~
 cmake_minimum_required(VERSION 3.21)
+
+cmake_policy(SET CMP0091 NEW)
+
 execute_process(
   COMMAND git describe --tags --abbrev=0
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"

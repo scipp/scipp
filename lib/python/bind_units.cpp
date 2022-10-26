@@ -2,6 +2,8 @@
 // Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <sstream>
+
 #include "scipp/core/dtype.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/units/unit.h"
@@ -16,45 +18,38 @@ constexpr int UNIT_DICT_VERSION = 1;
 
 namespace {
 
+bool is_simple_unit(const units::Unit &unit) {
+  const auto &&base_units = unit.underlying().base_units();
+  return !base_units.is_per_unit() && !base_units.has_i_flag() &&
+         !base_units.has_e_flag() && !base_units.is_equation() &&
+         unit.underlying().commodity() == 0;
+}
+
 // We only support units where we are confident that we can encode them using
 // a different unit library, in order to ensure that we can switch
 // implementations in the future if necessary.
-void assert_support_for_serialization(const units::Unit &unit) {
-  const auto &&base_units = unit.underlying().base_units();
-  if (base_units.is_per_unit() || base_units.has_i_flag() ||
-      base_units.has_e_flag() || base_units.is_equation() ||
-      unit.underlying().commodity() != 0) {
+void assert_simple_unit_for_dict(const units::Unit &unit) {
+  if (!is_simple_unit(unit)) {
     throw std::invalid_argument(
         "Unit cannot be converted to dict: '" + to_string(unit) +
         "' Only units expressed in terms of regular base units are supported.");
   }
 }
 
-void store(py::dict &dict, const char *const name, int val) {
-  if (val != 0) {
-    dict[name] = val;
-  }
-}
-
 py::dict to_dict(const units::Unit &unit) {
-  assert_support_for_serialization(unit);
+  assert_simple_unit_for_dict(unit);
 
   py::dict dict;
   dict["__version__"] = UNIT_DICT_VERSION;
   dict["multiplier"] = unit.underlying().multiplier();
 
   py::dict powers;
-  const auto &&base_units = unit.underlying().base_units();
-  store(powers, "meter", base_units.meter());
-  store(powers, "kilogram", base_units.kg());
-  store(powers, "second", base_units.second());
-  store(powers, "ampere", base_units.ampere());
-  store(powers, "kelvin", base_units.kelvin());
-  store(powers, "mole", base_units.mole());
-  store(powers, "candela", base_units.candela());
-  store(powers, "currency", base_units.currency());
-  store(powers, "count", base_units.count());
-  store(powers, "radian", base_units.radian());
+  unit.map_over_bases(
+      [&powers](const char *const base, const auto power) mutable {
+        if (power != 0) {
+          powers[base] = power;
+        }
+      });
   if (!powers.empty())
     dict["powers"] = powers;
 
@@ -80,11 +75,35 @@ units::Unit from_dict(const py::dict &dict) {
   const py::dict powers = dict.contains("powers") ? dict["powers"] : py::dict();
   return units::Unit(llnl::units::precise_unit(
       llnl::units::detail::unit_data{
-          get(powers, "meter"), get(powers, "kilogram"), get(powers, "second"),
-          get(powers, "ampere"), get(powers, "kelvin"), get(powers, "mole"),
-          get(powers, "candela"), get(powers, "currency"), get(powers, "count"),
-          get(powers, "radian"), 0, 0, 0, 0},
+          get(powers, "m"), get(powers, "kg"), get(powers, "s"),
+          get(powers, "A"), get(powers, "K"), get(powers, "mol"),
+          get(powers, "cd"), get(powers, "$"), get(powers, "counts"),
+          get(powers, "rad"), 0, 0, 0, 0},
       dict["multiplier"].cast<double>()));
+}
+
+std::string repr(const units::Unit &unit) {
+  if (!is_simple_unit(unit)) {
+    return "<unsupported unit: " + to_string(unit) + '>';
+  }
+
+  std::ostringstream oss;
+  oss << "Unit(" << unit.underlying().multiplier();
+  unit.map_over_bases([&oss](const char *const base, const auto power) mutable {
+    if (power != 0)
+      oss << "*" << base << "**" << power;
+  });
+  oss << ')';
+  return oss.str();
+}
+
+std::string repr_html(const units::Unit &unit) {
+  // Regular string output is in a div with data-mime-type="text/plain"
+  // But html output is in a div with data-mime-type="text/html"
+  // Jupyter applies different padding to those, so hack the inner pre element
+  // to match the padding of text/plain.
+  return "<pre style=\"margin-bottom:0; padding-top:var(--jp-code-padding)\">" +
+         unit.name() + "</pre>";
 }
 
 } // namespace
@@ -95,7 +114,9 @@ void init_units(py::module &m) {
            [](const DefaultUnit &) { return "<automatically deduced unit>"; });
   py::class_<units::Unit>(m, "Unit", "A physical unit.")
       .def(py::init<const std::string &>())
-      .def("__repr__", [](const units::Unit &u) { return u.name(); })
+      .def("__str__", [](const units::Unit &u) { return u.name(); })
+      .def("__repr__", repr)
+      .def("_repr_html_", repr_html)
       .def_property_readonly("name", &units::Unit::name,
                              "A read-only string describing the "
                              "type of unit.")
@@ -162,6 +183,9 @@ void init_units(py::module &m) {
           },
           "Check if two units are numerically identical.\n\n"
           "The regular equality operator allows for small differences "
-          "in the unit's floating point multiplier. ``is_exactly_the_same`` "
-          "checks for exact identity.");
+          "in the unit's floating point multiplier. ``units_identical`` "
+          "checks for exact identity.")
+      .def("add_unit_alias", scipp::units::add_unit_alias, py::kw_only(),
+           py::arg("name"), py::arg("unit"))
+      .def("clear_unit_aliases", scipp::units::clear_unit_aliases);
 }

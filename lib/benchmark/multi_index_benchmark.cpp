@@ -2,6 +2,8 @@
 // Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <iostream>
+
 #include <benchmark/benchmark.h>
 
 #include "scipp/core/multi_index.h"
@@ -28,7 +30,7 @@ static void BM_MultiIndex(benchmark::State &state) {
       index.increment();
     }
   }
-  printf("%ld\n", result);
+  std::cout << result << '\n';
   state.SetItemsProcessed(state.iterations() * count);
 }
 BENCHMARK(BM_MultiIndex);
