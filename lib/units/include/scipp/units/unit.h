@@ -83,8 +83,8 @@ SCIPP_UNITS_EXPORT Unit rint(const Unit &a);
 
 SCIPP_UNITS_EXPORT bool identical(const Unit &a, const Unit &b);
 
-SCIPP_UNITS_EXPORT Unit add_unit_alias(const std::string &name,
-                                       double multiplier, const Unit &unit);
+SCIPP_UNITS_EXPORT void add_unit_alias(const std::string &name,
+                                       const Unit &unit);
 SCIPP_UNITS_EXPORT void clear_unit_aliases();
 
 constexpr Unit none{};

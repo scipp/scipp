@@ -208,11 +208,8 @@ bool identical(const Unit &a, const Unit &b) {
          a.underlying().is_exactly_the_same(b.underlying());
 }
 
-Unit add_unit_alias(const std::string &name, const double multiplier,
-                    const Unit &unit) {
-  llnl::units::precise_unit u(multiplier, unit.underlying());
-  llnl::units::addUserDefinedUnit(name, u);
-  return Unit(u);
+void add_unit_alias(const std::string &name, const Unit &unit) {
+  llnl::units::addUserDefinedUnit(name, unit.underlying());
 }
 
 void clear_unit_aliases() { llnl::units::clearUserDefinedUnits(); }

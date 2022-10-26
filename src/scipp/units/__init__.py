@@ -38,7 +38,7 @@ from .._scipp.core.units import (angstrom, counts, default_unit, deg, dimensionl
 
 from .._scipp.core import (add_unit_alias as _add_unit_alias, clear_unit_aliases as
                            _clear_unit_aliases)
-from ..core.cpp_classes import Unit, Variable
+from ..core.cpp_classes import Unit, Variable, VariancesError
 
 
 class UnitAliases:
@@ -58,17 +58,16 @@ class UnitAliases:
 
     def __init__(self):
         if any(map(lambda x: isinstance(x, UnitAliases), globals().values())):
-            raise RuntimeError("There can be only one instance of _Aliases")
+            raise RuntimeError('There can be only one instance of _Aliases')
         self._aliases: Dict[str, Unit] = {}
 
     def __setitem__(self, alias: str, unit: Union[str, Unit, Variable]):
         """Define a new unit alias."""
-        multiplier, unit = _unit_and_multiplier(unit)
+        unit = _build_unit(unit)
         if unit in self.values():
             raise ValueError(f"There already is an alias for unit '{unit!r}'")
-        self._aliases[alias] = _add_unit_alias(name=alias,
-                                               multiplier=multiplier,
-                                               unit=unit)
+        _add_unit_alias(name=alias, unit=unit)
+        self._aliases[alias] = unit
 
     def __delitem__(self, alias: str):
         """Remove an existing alias."""
@@ -178,18 +177,22 @@ class UnitAliases:
     # Making copies would allow _Alias's internal map and
     # LLNL/Unit's global map to get out of sync.
     def __copy__(self):
-        raise TypeError("UnitAliases is a singleton and must not be copied")
+        raise TypeError('UnitAliases is a singleton and must not be copied')
 
     def __deepcopy__(self):
-        raise TypeError("UnitAliases is a singleton and must not be copied")
+        raise TypeError('UnitAliases is a singleton and must not be copied')
 
 
-def _unit_and_multiplier(x: Union[str, Unit, Variable]) -> Tuple[float, Unit]:
+def _build_unit(x: Union[str, Unit, Variable]) -> Unit:
     if isinstance(x, Unit):
-        return 1.0, x
+        return x
     if isinstance(x, str):
-        return 1.0, Unit(x)
-    return x.value, x.unit
+        return Unit(x)
+    if x.variance is not None:
+        raise VariancesError('Cannot define a unit with a variance')
+    # Convert to float first to make sure the variable only contains a
+    # multiplier and not a string that would be multiplied to the unit.
+    return Unit(str(float(x.value))) * x.unit
 
 
 aliases = UnitAliases()

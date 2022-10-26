@@ -115,6 +115,11 @@ def test_unit_alias_from_variable():
     assert sc.Unit('clucks') == sc.Unit('19.3 m*A')
 
 
+def test_unit_alias_from_variable_cannot_have_variance():
+    with pytest.raises(sc.VariancesError):
+        sc.units.aliases['clucks'] = sc.scalar(19.3, variance=0.1, unit='m*A')
+
+
 def test_unit_alias_from_variable_requires_scalar():
     with pytest.raises(sc.DimensionError):
         sc.units.aliases['nonsense'] = sc.array(dims=['x'], values=[1.0, 2.0], unit='m')
@@ -150,6 +155,10 @@ def test_defining_conflicting_alias_raises():
     sc.units.aliases['speed'] = 'm/s'
     with pytest.raises(ValueError):
         sc.units.aliases['fastness'] = 'm/s'
+    with pytest.raises(ValueError):
+        sc.units.aliases['fastness'] = '100*cm/s'
+    with pytest.raises(ValueError):
+        sc.units.aliases['fastness'] = sc.scalar(1000, unit='mm/s')
 
 
 def test_can_remove_unit_alias():
