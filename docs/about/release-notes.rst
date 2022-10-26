@@ -76,6 +76,7 @@ Contributors
 ~~~~~~~~~~~~
 
 Simon Heybrock :sup:`a`\ ,
+Gregory Tucker :sup:`a`\ ,
 Neil Vaytet :sup:`a`\ ,
 and Jan-Lukas Wynen :sup:`a`
 
