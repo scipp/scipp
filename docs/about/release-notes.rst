@@ -48,6 +48,7 @@ Features
   This avoids a number of cases where Python kernel used to crash since Scipp ran out of memory `#2827 <https://github.com/scipp/scipp/pull/2827>`_.
 * :py:func:`scipp.sum` now also accepts a sequence of dimension labels `#2827 <https://github.com/scipp/scipp/pull/2827>`_.
 * Added aliases for units to customize string formatting and support user defined units `#2855 <https://github.com/scipp/scipp/pull/2855>`_.
+* Add ``pip`` (PyPI) packages for Python 3.11.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
