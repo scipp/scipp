@@ -35,9 +35,9 @@ six==1.16.0
     # via tox
 tomli==2.0.1
     # via tox
-tox==3.26.0
+tox==3.27.0
     # via -r requirements/ci.in
 urllib3==1.26.12
     # via requests
-virtualenv==20.16.5
+virtualenv==20.16.6
     # via tox
