@@ -58,6 +58,8 @@ News
 
 - [|SCIPP_RELEASE_MONTH|] scipp-|SCIPP_VERSION| `has been released <about/release-notes.rst>`_.
   Check out the `What's new <about/whats-new.rst>`_ notebook for an overview of recent highlights and major changes.
+- Scipp switched to "Calendar Versioning".
+  See `Version numbers and deprecation policy <about/about.rst#Version-numbers-and-deprecation-policy>`_ for details.
 - Is your data stored in NeXus files?
   Checkout our new project `scippnexus <https://scipp.github.io/scippnexus>`_, a h5py-like utility for conveniently loading NeXus classes into Scipp data structures.
 - We now provide ``pip`` packages of ``scipp``, in addition to ``conda`` packages.
