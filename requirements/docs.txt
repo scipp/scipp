@@ -57,7 +57,7 @@ mistune==2.0.4
     # via nbconvert
 nbclient==0.7.0
     # via nbconvert
-nbconvert==7.2.2
+nbconvert==7.2.3
     # via nbsphinx
 nbformat==5.7.0
     # via
