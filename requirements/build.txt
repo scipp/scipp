@@ -13,7 +13,7 @@ charset-normalizer==2.1.1
     # via requests
 cmake==3.24.1.1
     # via -r requirements/build.in
-colorama==0.4.5
+colorama==0.4.6
     # via conan
 conan==1.53.0
     # via -r requirements/build.in
@@ -37,7 +37,7 @@ pluginbase==1.0.1
     # via conan
 pygments==2.13.0
     # via conan
-pyjwt==2.5.0
+pyjwt==2.6.0
     # via conan
 python-dateutil==2.8.2
     # via conan
