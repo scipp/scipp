@@ -17,7 +17,7 @@ In contrast to semantic versioning, which may give a vague indirect hint about w
 - The length of the deprecation period will depend on the importance of the feature and on the user impact.
 
   - For major features this period might be 6 to 12 months, and we strive to include this in the deprecation announcement and in the deprecation warnings.
-  - For minor features the period may be shorter will generally not be announced explicitly.
+  - For minor features the period may be shorter and will generally not be announced explicitly.
 
 - In some cases bugfixes can imply breaking changes.
   Scipp will generally not follow a deprecation process in these cases.
