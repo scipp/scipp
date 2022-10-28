@@ -34,6 +34,7 @@ def add_buttons(
     base = "https://scipp.github.io"
     l1 = []
     l1.append({"type": "link", "text": "scipp", "url": f"{base}"})
+    l1.append({"type": "link", "text": "plopp", "url": f"{base}/plopp"})
     l1.append({"type": "link", "text": "scippnexus", "url": f"{base}/scippnexus"})
     l1.append({"type": "link", "text": "scippneutron", "url": f"{base}/scippneutron"})
     l1.append({"type": "link", "text": "ess", "url": f"{base}/ess"})
