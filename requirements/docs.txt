@@ -57,7 +57,7 @@ mistune==2.0.4
     # via nbconvert
 nbclient==0.7.0
     # via nbconvert
-nbconvert==7.2.1
+nbconvert==7.2.3
     # via nbsphinx
 nbformat==5.7.0
     # via
@@ -70,7 +70,7 @@ pandocfilters==1.5.0
     # via nbconvert
 pkgutil-resolve-name==1.3.10
     # via jsonschema
-plopp==0.2.2
+plopp==0.3.2
     # via -r requirements/docs.in
 pydata-sphinx-theme==0.8.1
     # via sphinx-book-theme
@@ -112,7 +112,7 @@ webencodings==0.5.1
     # via
     #   bleach
     #   tinycss2
-zipp==3.9.0
+zipp==3.10.0
     # via
     #   importlib-metadata
     #   importlib-resources
