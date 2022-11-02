@@ -1,5 +1,5 @@
-scipp - Multi-dimensional data arrays with labeled dimensions
-=============================================================
+Scipp -- Multi-dimensional data arrays with labeled dimensions
+==============================================================
 
 .. raw:: html
 
@@ -7,32 +7,16 @@ scipp - Multi-dimensional data arrays with labeled dimensions
       A Python library enabling a modern and intuitive way of working with scientific data in Jupyter notebooks
    </span>
 
-|data-structures| |plotting| |masking|
-|binning| |slicing| |scipp-neutron|
+|repr-html| |filtering| |show-svg|
 
-.. |data-structures| image:: _static/title-repr-html.png
+.. |repr-html| image:: _static/title-repr-html.png
    :width: 32%
-   :target: user-guide/data-structures.html
 
-.. |binning| image:: _static/title-binning.png
+.. |filtering| image:: _static/title-filtering-1d-plot.svg
    :width: 32%
-   :target: user-guide/binned-data/binned-data.html
 
-.. |masking| image:: _static/title-masking.png
+.. |show-svg| image:: _static/title-show-svg.png
    :width: 32%
-   :target: user-guide/masking.html
-
-.. |plotting| image:: _static/title-plotting.png
-   :width: 32%
-   :target: visualization/plotting-overview.html
-
-.. |scipp-neutron| image:: _static/title-instrument-view.png
-   :width: 32%
-   :target: https://scipp.github.io/scippneutron
-
-.. |slicing| image:: _static/title-show.png
-   :width: 32%
-   :target: user-guide/slicing.html
 
 Scipp is heavily inspired by `xarray <https://xarray.pydata.org>`_.
 It enriches raw NumPy-like multi-dimensional arrays of data by adding named dimensions and associated coordinates.
