@@ -10,7 +10,7 @@ Context
 
 Scipp is currently using semantic versioning.
 As we have not made a "1.0" release yet, i.e., we have 0-based version numbers, the concrete implementation of semantic versioning is actually unclear.
-A very thorough analysis and explanation of the shortcomings of semantic versioning can be found in `Semantic Versioning Will Not Save You <https://hynek.me/articles/semver-will-not-save-you/`_ and `Should You Use Upper Bound Version Constraints? <https://iscinumpy.dev/post/bound-version-constraints/>`_.
+A very thorough analysis and explanation of the shortcomings of semantic versioning can be found in `Semantic Versioning Will Not Save You <https://hynek.me/articles/semver-will-not-save-you/>`_ and `Should You Use Upper Bound Version Constraints? <https://iscinumpy.dev/post/bound-version-constraints/>`_.
 We will not repeat the arguments here, but it is essential to read these references for understanding the decision.
 
 An alternative that seems be gaining popularity is `Calendar Versioning <https://calver.org/>`_.
@@ -35,4 +35,5 @@ Positive:
 Negative:
 ~~~~~~~~~
 
-- Future major version numbers that Scipp would have had can no longer be used to guess whether major breaking changes occured.
+- Future major version numbers that Scipp would have had can no longer be used to guess whether major breaking changes occurred.
+- Reversing the decision will be difficult, as it would lead to odd major version numbers that look like years but are not.
