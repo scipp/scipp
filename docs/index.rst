@@ -7,16 +7,16 @@ Scipp -- Multi-dimensional data arrays with labeled dimensions
       A Python library enabling a modern and intuitive way of working with scientific data in Jupyter notebooks
    </span>
 
-|repr-html| |show-svg| |filtering|
+|repr-html| |filtering| |show-svg|
 
-.. |repr-html| image:: _static/title-repr-html.svg
-   :width: 38%
+.. |repr-html| image:: _static/title-repr-html.png
+   :width: 32%
 
 .. |filtering| image:: _static/title-filtering-1d-plot.svg
    :width: 32%
 
-.. |show-svg| image:: _static/title-show-svg.svg
-   :width: 26%
+.. |show-svg| image:: _static/title-show-svg.png
+   :width: 32%
 
 Scipp is heavily inspired by `xarray <https://xarray.pydata.org>`_.
 It enriches raw NumPy-like multi-dimensional arrays of data by adding named dimensions and associated coordinates.
