@@ -9,15 +9,16 @@ Context
 -------
 
 Scipp is currently using semantic versioning (SemVer).
-As we have not made a "1.0" release yet, i.e., we have 0-based version numbers, the concrete implementation of semantic versioning is actually unclear.
-A very thorough analysis and explanation of the shortcomings of semantic versioning can be found in `Semantic Versioning Will Not Save You <https://hynek.me/articles/semver-will-not-save-you/>`_ and `Should You Use Upper Bound Version Constraints? <https://iscinumpy.dev/post/bound-version-constraints/>`_.
+As we have not made a "1.0" release yet, i.e., we have 0-based version numbers, the concrete implementation of SemVer is actually unclear.
+A very thorough analysis and explanation of the shortcomings of SemVer can be found in `Semantic Versioning Will Not Save You <https://hynek.me/articles/semver-will-not-save-you/>`_ and `Should You Use Upper Bound Version Constraints? <https://iscinumpy.dev/post/bound-version-constraints/>`_.
 We will not repeat the arguments here, but it is essential to read these references for understanding the decision.
 While the above references do not argue *against* SemVer, they highlight a variety of shortcomings and show that the perceived benefits of SemVer frequently do not work out in practice.
 
 An alternative that seems be gaining popularity is `Calendar Versioning <https://calver.org/>`_ (CalVer).
 `Designing a version <https://sedimental.org/designing_a_version.html>`_ provides further insights and considerations.
 
-As we frequently encounter the need to make patch-releases and *do* see the value in keeping a micro or patch part in the version number.
+We frequently encounter the need to make patch-releases and therefore we *do* see the value in keeping a micro or patch part in the version number.
+This is not in contradiction to CalVer since, e.g., year/month information can be combined with a patch number to form a version number.
 
 Regarding the major and minor version numbers, we have two observations:
 
@@ -41,7 +42,7 @@ However, reluctance to increase the major version (similar to the reluctance to 
 Decision
 --------
 
-- Switch to calendar versioning in the YYYY-0M-MICRO numbering scheme.
+- Switch to CalVer in the YYYY-0M-MICRO numbering scheme.
 - Adopt and document an explicit deprecation strategy.
 
 Consequences
@@ -50,7 +51,7 @@ Consequences
 Positive:
 ~~~~~~~~~
 
-- Avoids the problems with calendar versioning described in detail in the linked articles, mainly by forcing us to use a clearer deprecation policy.
+- Avoids the problems with SemVer described in detail in the linked articles, mainly by forcing us to use a clearer deprecation policy.
 - Users (including downstream libraries) can see immediately see how old the version they are using is.
 - Avoid tempting users to pin to, e.g., major versions.
 
