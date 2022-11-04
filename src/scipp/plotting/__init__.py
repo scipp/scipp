@@ -160,7 +160,7 @@ def legacy_plot(*args, **kwargs):
 
 
 def plot(*args, **kwargs):
-    if config['use_plopp']:
+    if config.get('use_plopp'):
         import plopp
         return plopp.plot(*args, **kwargs)
     else:
