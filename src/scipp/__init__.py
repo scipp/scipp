@@ -121,14 +121,10 @@ del _binding
 from . import data
 from . import spatial
 
+from .core.binning import histogram
+
 from .plotting import plot
 
 setattr(Variable, 'plot', plot)
 setattr(DataArray, 'plot', plot)
 setattr(Dataset, 'plot', plot)
-
-from .core.binning import histogram
-
-if config['plot']['use_plopp']:
-    import plopp
-    plopp.patch_scipp()
