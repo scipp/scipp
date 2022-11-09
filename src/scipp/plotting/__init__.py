@@ -3,10 +3,11 @@
 # @file
 # @author Neil Vaytet
 
+from .. import config
 from .tools import is_static
 
 
-def plot(*args, **kwargs):
+def legacy_plot(*args, **kwargs):
     """
     Plot a Scipp object.
 
@@ -156,3 +157,11 @@ def plot(*args, **kwargs):
         plt.ion()
 
     return output
+
+
+def plot(*args, **kwargs):
+    if config['plot'].get('use_plopp'):
+        import plopp
+        return plopp.plot(*args, **kwargs)
+    else:
+        return legacy_plot(*args, **kwargs)
