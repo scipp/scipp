@@ -64,6 +64,8 @@ class UnitAliases:
     def __setitem__(self, alias: str, unit: Union[str, Unit, Variable]):
         """Define a new unit alias."""
         unit = _build_unit(unit)
+        if self._aliases.get(alias) == unit:
+            return
         if unit in self.values():
             raise ValueError(f"There already is an alias for unit '{unit!r}'")
         _add_unit_alias(name=alias, unit=unit)
