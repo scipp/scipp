@@ -158,14 +158,26 @@ def test_can_override_alias():
     assert sc.Unit('speed') == 'km/s'
 
 
+def test_can_redefine_same_alias():
+    sc.units.aliases['speed'] = 'm/s'
+    sc.units.aliases['speed'] = 'm/s'
+    assert sc.Unit('speed') == 'm/s'
+    sc.units.aliases['angstrom'] = 'angstrom'
+    sc.units.aliases['angstrom'] = 'angstrom'
+    assert sc.Unit('angstrom') == '10**-10 m'
+
+
 def test_defining_conflicting_alias_raises():
     sc.units.aliases['speed'] = 'm/s'
+    sc.units.aliases['zoomy'] = 'm/ms'
     with pytest.raises(ValueError):
         sc.units.aliases['fastness'] = 'm/s'
     with pytest.raises(ValueError):
         sc.units.aliases['fastness'] = '100*cm/s'
     with pytest.raises(ValueError):
         sc.units.aliases['fastness'] = sc.scalar(1000, unit='mm/s')
+    with pytest.raises(ValueError):
+        sc.units.aliases['zoomy'] = 'm/s'
     assert 'fastness' not in sc.units.aliases
 
 
