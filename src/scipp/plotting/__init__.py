@@ -140,8 +140,8 @@ def legacy_plot(*args, **kwargs):
 
     """
     warnings.warn(
-        "The old plotting backend is deprecated and will be removed in the "
-        "first release in or after August 2023. See "
+        "You are using Scipp's deprecated plotting backend. "
+        "This will be removed in the in Scipp v23.08.0 (August 2023) or after. See "
         "https://scipp.github.io/visualization/plotting-overview.html#Migrating-to-the-New-Backend "  # noqa
         "for details and a migration guide.",
         VisibleDeprecationWarning)
