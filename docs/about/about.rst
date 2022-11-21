@@ -7,7 +7,7 @@ Version numbers and deprecation policy
 --------------------------------------
 
 Scipp uses `Calendar Versioning <https://calver.org/>`_.
-The version number scheme is YYYY.0M.MICRO such as 2022.11.0 or 2023.02.0.
+The version number scheme is YY.0M.MICRO such as 22.11.0 or 23.02.0.
 The final number is not the day but the micro (or patch) version and indicates "bugfix" releases without breaking or feature changes.
 
 In contrast to semantic versioning, which may give a vague indirect hint about when breaking changes may occur, Scipp adopts the following explicit deprecation policy:

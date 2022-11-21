@@ -11,10 +11,10 @@ from typing import Callable, Dict, Optional, Union
 
 import scipy.ndimage
 
-from ..core import Variable, DataArray
-from ..core import CoordError, DimensionError, VariancesError
-from ..core import empty_like, islinspace, ones
-from ..typing import VariableLike, VariableLikeType
+from ...core import Variable, DataArray
+from ...core import CoordError, DimensionError, VariancesError
+from ...core import empty_like, islinspace, ones
+from ...typing import VariableLike, VariableLikeType
 
 
 def _ndfilter(func: Callable) -> Callable:
@@ -115,7 +115,7 @@ def gaussian_filter(x: VariableLikeType,
 
     .. plot:: :context: close-figs
 
-      >>> from scipp.ndimage import gaussian_filter
+      >>> from scipp.scipy.ndimage import gaussian_filter
       >>> da = sc.data.data_xy()
       >>> da.plot()
 
@@ -241,7 +241,7 @@ def _make_footprint_filter(name, example=True, extra_args=''):
 
     .. plot:: :context: close-figs
 
-      >>> from scipp.ndimage import {name}
+      >>> from scipp.scipy.ndimage import {name}
       >>> da = sc.data.data_xy()
       >>> da.plot()
 

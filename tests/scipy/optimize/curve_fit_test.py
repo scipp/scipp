@@ -2,7 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 import numpy as np
 import scipp as sc
-from scipp.optimize import curve_fit
+from scipp.scipy.optimize import curve_fit
 
 import pytest
 from functools import partial
