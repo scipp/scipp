@@ -7,6 +7,7 @@ from numbers import Integral
 from typing import Dict, List, Optional, Union, Sequence
 
 from .._scipp import core as _cpp
+from .util import VisibleDeprecationWarning
 from .variable import array, Variable, linspace, arange, epoch, scalar
 from .math import round as round_
 from .bin_remapping import combine_bins
@@ -641,4 +642,6 @@ def histogram(x: Union[_cpp.DataArray, _cpp.Dataset], *,
               bins: _cpp.Variable) -> Union[_cpp.DataArray, _cpp.Dataset]:
     """Deprecated. See :py:func:`scipp.hist`."""
     warnings.warn("'histogram' is deprecated. Use 'hist' instead.", UserWarning)
+    warnings.warn("'histogram' is deprecated. Use 'hist' instead.",
+                  VisibleDeprecationWarning)
     return make_histogrammed(x, edges=bins)

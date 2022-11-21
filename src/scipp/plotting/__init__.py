@@ -2,8 +2,10 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
+import warnings
 
 from .. import config
+from ..core.util import VisibleDeprecationWarning
 from .tools import is_static
 
 
@@ -137,6 +139,13 @@ def legacy_plot(*args, **kwargs):
     :type vmax: float, optional
 
     """
+    warnings.warn(
+        "You are using Scipp's deprecated plotting backend. "
+        "This will be removed in Scipp v23.08.0 (August 2023) or after. See "
+        "https://scipp.github.io/visualization/plotting-overview.html#Migrating-to-the-New-Backend "  # noqa
+        "for details and a migration guide.",
+        VisibleDeprecationWarning)
+
     import matplotlib.pyplot as plt
     from .wrapper import plot as _plot
 

@@ -32,3 +32,14 @@ def copy_for_overwrite(obj: VariableLikeType) -> VariableLikeType:
                              masks=_copy_dict_for_overwrite(da.masks),
                              attrs=_copy_dict_for_overwrite(da.attrs))
     return ds
+
+
+class VisibleDeprecationWarning(UserWarning):
+    """Visible deprecation warning.
+
+    By default, Python and in particular Jupyter will not show deprecation
+    warnings, so this class can be used when a very visible warning is helpful.
+    """
+
+
+VisibleDeprecationWarning.__module__ = 'scipp'
