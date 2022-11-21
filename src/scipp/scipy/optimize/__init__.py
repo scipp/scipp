@@ -177,7 +177,7 @@ def curve_fit(
       >>> y.values += 0.01 * np.random.default_rng().normal(size=50)
       >>> da = sc.DataArray(y, coords={'x': x})
 
-      >>> from scipp.optimize import curve_fit
+      >>> from scipp.scipy.optimize import curve_fit
       >>> popt, _ = curve_fit(func, da, p0 = {'b': 1.0 / sc.Unit('m')})
       >>> sc.round(sc.values(popt['a']))
       <scipp.Variable> ()    float64            [dimensionless]  [5]

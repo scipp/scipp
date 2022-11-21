@@ -48,8 +48,8 @@ def butter(coord: Variable, *, N: int, Wn: Variable, **kwargs) -> SOS:
     Design an Nth-order digital or analog Butterworth filter and return the filter
     coefficients.
 
-    This is intended for use with :py:func:`scipp.signal.sosfiltfilt`. See there for
-    an example.
+    This is intended for use with :py:func:`scipp.scipy.signal.sosfiltfilt`. See there
+    for an example.
 
     This is a wrapper around :py:func:`scipy.signal.butter`. See there for a
     complete description of parameters. The differences are:
@@ -61,7 +61,7 @@ def butter(coord: Variable, *, N: int, Wn: Variable, **kwargs) -> SOS:
       unit.
     - Only 'sos' output is supported.
 
-    :seealso: :py:func:`scipp.signal.sosfiltfilt`
+    :seealso: :py:func:`scipp.scipy.signal.sosfiltfilt`
     """
     fs = _frequency(coord).value
     try:
@@ -81,7 +81,8 @@ def _sosfiltfilt(da: DataArray, dim: str, *, sos: SOS, **kwargs) -> DataArray:
     if not identical(da.coords[dim], sos.coord):
         raise CoordError(f"Coord\n{da.coords[dim]}\nof filter dimension '{dim}' does "
                          f"not match coord\n{sos.coord}\nused for creating the "
-                         "second-order sections representation by scipp.signal.butter.")
+                         "second-order sections representation by "
+                         "scipp.scipy.signal.butter.")
     import scipy.signal
     data = array(dims=da.dims,
                  unit=da.unit,
@@ -109,7 +110,7 @@ def sosfiltfilt(obj: Union[Variable, DataArray], dim: str, *, sos: SOS,
 
     .. plot:: :context: close-figs
 
-      >>> from scipp.signal import butter, sosfiltfilt
+      >>> from scipp.scipy.signal import butter, sosfiltfilt
       >>> x = sc.linspace(dim='x', start=1.1, stop=4.0, num=1000, unit='m')
       >>> y = sc.sin(x * sc.scalar(1.0, unit='rad/m'))
       >>> y += sc.sin(x * sc.scalar(400.0, unit='rad/m'))
@@ -119,7 +120,7 @@ def sosfiltfilt(obj: Union[Variable, DataArray], dim: str, *, sos: SOS,
       >>> sc.plot({'input':da, 'sosfiltfilt':out})
 
     Instead of calling sosfiltfilt the more convenient filtfilt method of
-    :py:class:`scipp.signal.SOS` can be used:
+    :py:class:`scipp.scipy.signal.SOS` can be used:
 
       >>> out = butter(da.coords['x'], N=4, Wn=20 / x.unit).filtfilt(da, 'x')
     """

@@ -34,7 +34,7 @@ def trapezoid(da: DataArray, dim: str, **kwargs) -> DataArray:
 
       >>> x = sc.geomspace(dim='x', start=0.1, stop=0.4, num=4, unit='m')
       >>> da = sc.DataArray(x*x, coords={'x': x})
-      >>> from scipp.integrate import trapezoid
+      >>> from scipp.scipy.integrate import trapezoid
       >>> trapezoid(da, 'x')
       <scipp.DataArray>
       Dimensions: Sizes[]
@@ -55,7 +55,7 @@ def simpson(da: DataArray, dim: str, **kwargs) -> DataArray:
 
       >>> x = sc.geomspace(dim='x', start=0.1, stop=0.4, num=4, unit='m')
       >>> da = sc.DataArray(x*x, coords={'x': x})
-      >>> from scipp.integrate import simpson
+      >>> from scipp.scipy.integrate import simpson
       >>> simpson(da, 'x')
       <scipp.DataArray>
       Dimensions: Sizes[]
