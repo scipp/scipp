@@ -7,8 +7,8 @@ This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.integrate`.
 """
 
-from ..core import array, DataArray
-from ..compat.wrapping import wrap1d
+from ...core import array, DataArray
+from ...compat.wrapping import wrap1d
 
 from typing import Callable
 

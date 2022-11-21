@@ -10,10 +10,10 @@ from dataclasses import dataclass
 from numpy import ndarray
 from typing import Union
 
-from ..core import array, identical, islinspace, to_unit, DataArray, Variable
-from ..core import UnitError, CoordError
-from ..units import one
-from ..compat.wrapping import wrap1d
+from ...core import array, identical, islinspace, to_unit, DataArray, Variable
+from ...core import UnitError, CoordError
+from ...units import one
+from ...compat.wrapping import wrap1d
 
 
 @dataclass

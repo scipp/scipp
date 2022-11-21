@@ -7,9 +7,9 @@ This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.optimize`.
 """
 
-from ..core import scalar, stddevs, Variable, DataArray
-from ..core import BinEdgeError
-from ..units import default_unit, dimensionless
+from ...core import scalar, stddevs, Variable, DataArray
+from ...core import BinEdgeError
+from ...units import default_unit, dimensionless
 from ..interpolate import _drop_masked
 
 import numpy as np

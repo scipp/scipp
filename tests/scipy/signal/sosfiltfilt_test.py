@@ -2,7 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 import numpy as np
 import scipp as sc
-from scipp.signal import butter, sosfiltfilt
+from scipp.scipy.signal import butter, sosfiltfilt
 
 import pytest
 

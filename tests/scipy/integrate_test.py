@@ -2,7 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 import numpy as np
 import scipp as sc
-from scipp.integrate import trapezoid, simpson
+from scipp.scipy.integrate import trapezoid, simpson
 
 import pytest
 

@@ -3,8 +3,8 @@
 import numpy as np
 import scipp as sc
 import scipy.ndimage
-from scipp.ndimage import (generic_filter, maximum_filter, median_filter,
-                           minimum_filter, percentile_filter, rank_filter)
+from scipp.scipy.ndimage import (generic_filter, maximum_filter, median_filter,
+                                 minimum_filter, percentile_filter, rank_filter)
 import pytest
 
 filters = (generic_filter, maximum_filter, median_filter, minimum_filter,

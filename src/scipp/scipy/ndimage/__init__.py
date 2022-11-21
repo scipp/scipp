@@ -11,10 +11,10 @@ from typing import Callable, Dict, Optional, Union
 
 import scipy.ndimage
 
-from ..core import Variable, DataArray
-from ..core import CoordError, DimensionError, VariancesError
-from ..core import empty_like, islinspace, ones
-from ..typing import VariableLike, VariableLikeType
+from ...core import Variable, DataArray
+from ...core import CoordError, DimensionError, VariancesError
+from ...core import empty_like, islinspace, ones
+from ...typing import VariableLike, VariableLikeType
 
 
 def _ndfilter(func: Callable) -> Callable:
