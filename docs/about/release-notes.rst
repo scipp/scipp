@@ -35,6 +35,36 @@ Release Notes
    and Jan-Lukas Wynen :sup:`a`
 
 
+v0.xy.0 (Unreleased)
+--------------------
+
+Features
+~~~~~~~~
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+* The SciPy wrappers ``integrate``, ``interpolate``, ``ndimage``, ``optimize``, and ``signal`` were moved into the :py:module:`scipp.scipy` submodule `#2881 <https://github.com/scipp/scipp/pull/2881>`_.
+
+Bugfixes
+~~~~~~~~
+
+Documentation
+~~~~~~~~~~~~~
+
+Deprecations
+~~~~~~~~~~~~
+
+Stability, Maintainability, and Testing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Contributors
+~~~~~~~~~~~~
+
+Simon Heybrock :sup:`a`\ ,
+Neil Vaytet :sup:`a`\ ,
+and Jan-Lukas Wynen :sup:`a`
+
 v0.17.0 (October 2022)
 ----------------------
 
