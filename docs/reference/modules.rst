@@ -13,13 +13,18 @@ Core Functionality
 
    binning
    constants
-   integrate
-   interpolate
-   ndimage
-   optimize
-   signal
    spatial
    units
+
+Wrappers
+--------
+
+.. autosummary::
+   :toctree: ../generated/modules/scipy
+   :template: scipp-module-template.rst
+   :recursive:
+
+   scipy
 
 Utilities
 ---------

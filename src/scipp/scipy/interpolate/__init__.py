@@ -7,9 +7,9 @@ This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.interpolate`.
 """
 
-from ..core import empty, epoch, Variable, DataArray, DimensionError, UnitError
-from ..core import DType, irreducible_mask
-from ..compat.wrapping import wrap1d
+from ...core import empty, epoch, Variable, DataArray, DimensionError, UnitError
+from ...core import DType, irreducible_mask
+from ...compat.wrapping import wrap1d
 
 from typing import Any, Callable, Literal, Union
 
@@ -116,7 +116,7 @@ def interp1d(da: DataArray,
       >>> x = sc.linspace(dim='x', start=0.1, stop=1.4, num=4, unit='rad')
       >>> da = sc.DataArray(sc.sin(x), coords={'x': x})
 
-      >>> from scipp.interpolate import interp1d
+      >>> from scipp.scipy.interpolate import interp1d
       >>> f = interp1d(da, 'x')
 
       >>> xnew = sc.linspace(dim='x', start=0.1, stop=1.4, num=12, unit='rad')

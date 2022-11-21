@@ -3,7 +3,7 @@
 import numpy as np
 import scipp as sc
 import scipy.ndimage
-from scipp.ndimage import gaussian_filter
+from scipp.scipy.ndimage import gaussian_filter
 
 import pytest
 

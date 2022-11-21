@@ -3,7 +3,7 @@
 import numpy as np
 import scipp as sc
 import scipy.interpolate as theirs
-from scipp.interpolate import interp1d
+from scipp.scipy.interpolate import interp1d
 
 import pytest
 
