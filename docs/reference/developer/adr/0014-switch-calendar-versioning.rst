@@ -42,7 +42,7 @@ However, reluctance to increase the major version (similar to the reluctance to 
 Decision
 --------
 
-- Switch to CalVer in the YYYY-0M-MICRO numbering scheme.
+- Switch to CalVer in the YY-0M-MICRO numbering scheme.
 - Adopt and document an explicit deprecation strategy.
 
 Consequences
