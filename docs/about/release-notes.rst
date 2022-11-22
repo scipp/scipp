@@ -44,7 +44,7 @@ Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
-* The SciPy wrappers ``integrate``, ``interpolate``, ``ndimage``, ``optimize``, and ``signal`` were moved into the :py:module:`scipp.scipy` submodule `#2881 <https://github.com/scipp/scipp/pull/2881>`_.
+* The SciPy wrappers ``integrate``, ``interpolate``, ``ndimage``, ``optimize``, and ``signal`` were moved into the :py:mod:`scipp.scipy` submodule `#2881 <https://github.com/scipp/scipp/pull/2881>`_.
 
 Bugfixes
 ~~~~~~~~

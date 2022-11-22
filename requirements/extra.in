@@ -1,6 +1,7 @@
 graphviz
 h5py
 matplotlib
+numba
 pandas
 pooch
 pythreejs

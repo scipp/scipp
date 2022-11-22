@@ -11,12 +11,12 @@ certifi==2022.9.24
     # via requests
 charset-normalizer==2.1.1
     # via requests
-cmake==3.24.1.1
-    # via -r requirements/build.in
+cmake==3.25.0
+    # via -r build.in
 colorama==0.4.6
     # via conan
-conan==1.53.0
-    # via -r requirements/build.in
+conan==1.54.0
+    # via -r build.in
 distro==1.7.0
     # via conan
 fasteners==0.18
@@ -27,8 +27,8 @@ jinja2==3.1.2
     # via conan
 markupsafe==2.1.1
     # via jinja2
-ninja==1.10.2.4
-    # via -r requirements/build.in
+ninja==1.11.1
+    # via -r build.in
 node-semver==0.6.1
     # via conan
 patch-ng==1.17.4

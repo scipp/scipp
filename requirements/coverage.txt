@@ -9,4 +9,7 @@
 coverage[toml]==6.5.0
     # via pytest-cov
 pytest-cov==4.0.0
-    # via -r requirements/coverage.in
+    # via -r coverage.in
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools

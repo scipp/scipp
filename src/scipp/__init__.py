@@ -120,6 +120,7 @@ del _binding
 
 from . import data
 from . import spatial
+from .operations import elementwise_transform
 
 from .core.binning import histogram
 

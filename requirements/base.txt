@@ -6,10 +6,10 @@
 #    pip-compile-multi
 #
 confuse==2.0.0
-    # via -r requirements/base.in
+    # via -r base.in
 graphlib-backport==1.0.3
-    # via -r requirements/base.in
-numpy==1.23.4
-    # via -r requirements/base.in
+    # via -r base.in
+numpy==1.23.5
+    # via -r base.in
 pyyaml==6.0
     # via confuse
