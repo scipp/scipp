@@ -27,12 +27,26 @@ def transform(func: Callable,
     the variable contents. Only variables with dtype=float64 are supported. Variances
     are not supported.
 
-    :param func: Function to compute an output element from input element values.
-    :param unit_func: Function to compute the output unit. If ``None``, ``func`` wil be
-        used.
-    :param dtype: Must be 'float64'.
-    :param auto_convert_dtypes: Set to ``True`` to automatically convert all inputs to
-        ``dtype``.
+    Parameters
+    ----------
+    func:
+        Function to compute an output element from input element values.
+    unit_func:
+        Function to compute the output unit. If ``None``, ``func`` wil be used.
+    dtype:
+        Must be 'float64'.
+    auto_convert_dtypes:
+        Set to ``True`` to automatically convert all inputs to ``dtype``.
+
+    Returns
+    -------
+    :
+        A callable that applies ``func`` to the elements of the variables passed to it.
+
+    Examples
+    --------
+
+      >>> from scipp.transformations import transform
     """
     if dtype != 'float64':
         raise RuntimeError('Only float64 arguments supported at this point')
