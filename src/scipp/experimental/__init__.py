@@ -3,5 +3,4 @@
 
 # flake8: noqa
 
-from .plotting import plot
 from .transform import transform_kernel, transform

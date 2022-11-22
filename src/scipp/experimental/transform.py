@@ -51,20 +51,20 @@ def transform_kernel(dtype='float64'):
     import numba
     from inspect import signature
 
-    def decorator(function):
+    def decorator(function, unit_kernel=None):
         narg = len(signature(function).parameters)
         cfunc = numba.cfunc(dtype + '(' + ','.join([dtype] * narg) + ')')(function)
 
         def unit_func(*args):
             return function(*(process_unit(unit) for unit in args))
 
-        cfunc.unit_func = unit_func
+        cfunc.unit_func = unit_func if unit_kernel is None else unit_kernel
         return cfunc
 
     return decorator
 
 
-def transform(kernel, *args):
+def transform(kernel, *args, unit_kernel=None):
     """Transform one or more variables using a custom kernel.
 
     Only variables with dtype=float64 are supported.
@@ -75,13 +75,14 @@ def transform(kernel, *args):
     """
     from .._scipp.core import experimental_transform
     if not hasattr(kernel, 'address'):
-        kernel = transform_kernel()(kernel)
+        kernel = transform_kernel()(kernel, unit_kernel=unit_kernel)
     return experimental_transform(kernel, *args)
 
 
 # need extra function so that resolver is a new function for each wrapped func
 # if inlined in make_numba_overloads, the repeated defs overwrite each other
 def make_numba_overload(sc_func, impl):
+
     @overload(sc_func, inline='always')
     def resolver(x):
         if isinstance(x, nbtypes.Float):
@@ -99,5 +100,4 @@ def make_numba_overloads(func_tuples):
 
 # TODO This is just an example,
 #      apart from sqrt, the scipp functions do not support units.
-make_numba_overloads([(core.sqrt, math.sqrt), (core.abs, abs),
-                      (core.sin, math.sin)])
+make_numba_overloads([(core.sqrt, math.sqrt), (core.abs, abs), (core.sin, math.sin)])
