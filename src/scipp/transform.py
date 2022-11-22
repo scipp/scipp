@@ -11,7 +11,8 @@ from ._scipp.core import experimental_transform
 def _as_numba_cfunc(function, unit_func=None):
     dtype = 'double'
     narg = len(signature(function).parameters)
-    cfunc = numba.cfunc(dtype + '(' + ','.join([dtype] * narg) + ')')(function)
+    cfunc = numba.cfunc(dtype + '(' + ','.join([dtype] * narg) + ')',
+                        cache=True)(function)
     cfunc.unit_func = function if unit_func is None else unit_func
     return cfunc
 
