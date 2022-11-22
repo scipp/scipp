@@ -16,7 +16,9 @@
 
 namespace scipp::variable {
 
-template <class T> struct model { using type = ElementArrayModel<T>; };
+template <class T> struct model {
+  using type = ElementArrayModel<T>;
+};
 template <class T> using model_t = typename model<T>::type;
 
 namespace {

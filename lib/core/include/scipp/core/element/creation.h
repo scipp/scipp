@@ -34,8 +34,12 @@ template <class T, T Value>
 constexpr auto values_like =
     overloaded{special_like, [](const auto &) { return Value; }};
 
-template <class T> struct underlying { using type = T; };
-template <class T> struct underlying<ValueAndVariance<T>> { using type = T; };
+template <class T> struct underlying {
+  using type = T;
+};
+template <class T> struct underlying<ValueAndVariance<T>> {
+  using type = T;
+};
 template <> struct underlying<time_point> {
   using type = decltype(std::declval<time_point>().time_since_epoch());
 };
