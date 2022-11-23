@@ -4,96 +4,37 @@
 /// @author Simon Heybrock
 #include "pybind11.h"
 
-#include "scipp/dataset/dataset.h"
-#include "scipp/dataset/sort.h"
-#include "scipp/variable/math.h"
-#include "scipp/variable/operations.h"
-#include "scipp/variable/slice.h"
-#include "scipp/variable/sort.h"
 #include "scipp/variable/transform.h"
-#include "scipp/variable/util.h"
 
 using namespace scipp;
 
 namespace py = pybind11;
 
-void bind_transform(py::module &m) {
-  m.def("transform", [](py::object const &kernel, const Variable &a) {
+template <class T, class... Ts> void bind_transform(py::module &m) {
+  m.def("transform", [](py::object const &kernel,
+                        const std::conditional_t<true, Variable, Ts> &...vars) {
     auto fptr_address = kernel.attr("address").cast<intptr_t>();
-    auto fptr = reinterpret_cast<double (*)(double)>(fptr_address);
+    auto fptr = reinterpret_cast<T (*)(Ts...)>(fptr_address);
     auto name = kernel.attr("name").cast<std::string>();
-    return variable::transform<double>(
-        a,
-        overloaded{core::transform_flags::expect_no_variance_arg<0>,
-                   [&kernel](const units::Unit &x) {
-                     py::gil_scoped_acquire acquire;
-                     return py::cast<units::Unit>(kernel.attr("unit_func")(x));
-                   },
-                   [fptr](const auto &x) { return fptr(x); }},
-        name);
-  });
-
-  m.def("transform", [](py::object const &kernel, const Variable &a,
-                        const Variable &b) {
-    auto fptr_address = kernel.attr("address").cast<intptr_t>();
-    auto fptr = reinterpret_cast<double (*)(double, double)>(fptr_address);
-    auto name = kernel.attr("name").cast<std::string>();
-    return variable::transform<double>(
-        a, b,
-        overloaded{core::transform_flags::expect_no_variance_arg<0>,
-                   core::transform_flags::expect_no_variance_arg<1>,
-                   [&kernel](const units::Unit &x, const units::Unit &y) {
-                     py::gil_scoped_acquire acquire;
-                     return py::cast<units::Unit>(
-                         kernel.attr("unit_func")(x, y));
-                   },
-                   [fptr](const auto &x, const auto &y) { return fptr(x, y); }},
-        name);
-  });
-
-  m.def("transform", [](py::object const &kernel, const Variable &a,
-                        const Variable &b, const Variable &c) {
-    auto fptr_address = kernel.attr("address").cast<intptr_t>();
-    auto fptr =
-        reinterpret_cast<double (*)(double, double, double)>(fptr_address);
-    auto name = kernel.attr("name").cast<std::string>();
-    return variable::transform<double>(
-        a, b, c,
-        overloaded{core::transform_flags::expect_no_variance_arg<0>,
-                   core::transform_flags::expect_no_variance_arg<1>,
-                   core::transform_flags::expect_no_variance_arg<2>,
-                   [&kernel](const units::Unit &x, const units::Unit &y,
-                             const units::Unit &z) {
-                     py::gil_scoped_acquire acquire;
-                     return py::cast<units::Unit>(
-                         kernel.attr("unit_func")(x, y, z));
-                   },
-                   [fptr](const auto &...args) { return fptr(args...); }},
-        name);
-  });
-
-  m.def("transform", [](py::object const &kernel, const Variable &a,
-                        const Variable &b, const Variable &c,
-                        const Variable &d) {
-    auto fptr_address = kernel.attr("address").cast<intptr_t>();
-    auto fptr = reinterpret_cast<double (*)(double, double, double, double)>(
-        fptr_address);
-    auto name = kernel.attr("name").cast<std::string>();
-    return variable::transform<double>(
-        a, b, c, d,
+    return variable::transform<std::tuple<Ts...>>(
+        vars...,
         overloaded{core::transform_flags::expect_no_variance_arg<0>,
                    core::transform_flags::expect_no_variance_arg<1>,
                    core::transform_flags::expect_no_variance_arg<2>,
                    core::transform_flags::expect_no_variance_arg<3>,
-                   [&kernel](const units::Unit &x, const units::Unit &y,
-                             const units::Unit &z, const units::Unit &w) {
+                   [&kernel](const units::Unit &u, const auto &...us) {
                      py::gil_scoped_acquire acquire;
                      return py::cast<units::Unit>(
-                         kernel.attr("unit_func")(x, y, z, w));
+                         kernel.attr("unit_func")(u, us...));
                    },
                    [fptr](const auto &...args) { return fptr(args...); }},
         name);
   });
 }
 
-void init_transform(py::module &m) { bind_transform(m); }
+void init_transform(py::module &m) {
+  bind_transform<double, double>(m);
+  bind_transform<double, double, double>(m);
+  bind_transform<double, double, double, double>(m);
+  bind_transform<double, double, double, double, double>(m);
+}
