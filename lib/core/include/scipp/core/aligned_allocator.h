@@ -23,7 +23,7 @@ namespace detail {
 void *allocate_aligned_memory(size_t align, size_t size);
 void deallocate_aligned_memory(void *ptr) noexcept;
 
-//#define USE_POOL
+// #define USE_POOL
 
 template <typename T> constexpr bool is_power_of_two(T v) {
   return v && ((v & (v - 1)) == 0);
