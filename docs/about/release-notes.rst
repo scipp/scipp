@@ -41,6 +41,8 @@ v0.xy.0 (Unreleased)
 Features
 ~~~~~~~~
 
+* Add :py:func:`scipp.elemwise_func` for defining custom transformations of input variables based on a Python function compiled via ``numba.cfunc`` `#2886 <https://github.com/scipp/scipp/pull/2886>`_.
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
 

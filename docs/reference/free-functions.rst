@@ -13,7 +13,7 @@ General
    bins
    bins_like
    collapse
-   elementwise_transform
+   elemwise_func
    group
    hist
    logical_not
