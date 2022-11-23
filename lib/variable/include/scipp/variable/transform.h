@@ -107,7 +107,8 @@ inline constexpr auto stride_special_cases<4, false> =
 
 template <>
 inline constexpr auto stride_special_cases<5, false> =
-    std::array<std::array<scipp::index, 5>, 1>{{{1, 0, 0, 1, 0}}};
+    std::array<std::array<scipp::index, 5>, 1>{
+        {{1, 1, 1, 1, 1}, {1, 1, 1, 1, 0}, {1, 1, 1, 0, 0}, {1, 1, 0, 0, 0}}};
 
 template <size_t I, size_t N_Operands, bool in_place, size_t... Is>
 auto stride_sequence_impl(std::index_sequence<Is...>) -> std::integer_sequence<
