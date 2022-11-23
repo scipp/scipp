@@ -36,10 +36,8 @@ def elementwise_transform(func: Callable,
         Function to compute an output element from input element values.
     unit_func:
         Function to compute the output unit. If ``None``, ``func`` wil be used.
-    dtype:
-        Must be 'float64'.
     auto_convert_dtypes:
-        Set to ``True`` to automatically convert all inputs to ``dtype``.
+        Set to ``True`` to automatically convert all inputs to float64.
 
     Returns
     -------
@@ -66,10 +64,6 @@ def elementwise_transform(func: Callable,
     Note that ``fmadd(x, y, z)`` would have the same effect in this case, but requires
     a potentially large intermediate allocation for the result of "a * b".
     """
-    if dtype != 'float64':
-        raise RuntimeError('Only float64 arguments supported at this point')
-    else:
-        dtype = 'double'
     func = _as_numba_cfunc(func, unit_func=unit_func)
 
     def transform_custom(*args: Variable) -> Variable:
