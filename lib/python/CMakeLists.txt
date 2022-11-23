@@ -25,6 +25,7 @@ python_add_library(
   operations.cpp
   py_object.cpp
   scipp.cpp
+  transform.cpp
   trigonometry.cpp
   unary.cpp
   unit.cpp

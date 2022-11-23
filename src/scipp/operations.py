@@ -4,7 +4,7 @@
 from typing import Callable, Optional
 from inspect import signature
 from .core import Variable
-from ._scipp.core import experimental_transform
+from ._scipp.core import transform as cpp_transform
 
 
 def _as_numba_cfunc(function, unit_func=None):
@@ -16,10 +16,10 @@ def _as_numba_cfunc(function, unit_func=None):
     return cfunc
 
 
-def elementwise_transform(func: Callable,
-                          unit_func: Optional[Callable] = None,
-                          dtype: str = 'float64',
-                          auto_convert_dtypes: bool = False) -> Callable:
+def elemwise_func(func: Callable,
+                  unit_func: Optional[Callable] = None,
+                  dtype: str = 'float64',
+                  auto_convert_dtypes: bool = False) -> Callable:
     """
     Create a function for transforming input variables based on element-wise operation.
 
@@ -52,7 +52,7 @@ def elementwise_transform(func: Callable,
       >>> def fmadd(a, b, c):
       ...     return a * b + c
 
-      >>> func = sc.elementwise_transform(fmadd)
+      >>> func = sc.elemwise_func(fmadd)
 
       >>> x = sc.linspace('x', 0.0, 1.0, num=4, unit='m')
       >>> y = x - 0.2 * x
@@ -69,6 +69,6 @@ def elementwise_transform(func: Callable,
     def transform_custom(*args: Variable) -> Variable:
         if auto_convert_dtypes:
             args = [arg.to(dtype='float64', copy=False) for arg in args]
-        return experimental_transform(func, *args)
+        return cpp_transform(func, *args)
 
     return transform_custom
