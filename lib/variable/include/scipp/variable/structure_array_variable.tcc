@@ -65,7 +65,9 @@ template <class T, class Elem> T *StructureArrayModel<T, Elem>::get_values() {
 }
 
 template <class T> struct arg_type;
-template <class T, class U> struct arg_type<T(U)> { using type = U; };
+template <class T, class U> struct arg_type<T(U)> {
+  using type = U;
+};
 
 /// Instantiate Variable for structure dtype with element access.
 #define INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(name, T, Elem)                    \
