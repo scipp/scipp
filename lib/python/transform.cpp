@@ -21,6 +21,7 @@ void bind_transform(py::module &m) {
   m.def("transform", [](py::object const &kernel, const Variable &a) {
     auto fptr_address = kernel.attr("address").cast<intptr_t>();
     auto fptr = reinterpret_cast<double (*)(double)>(fptr_address);
+    auto name = kernel.attr("name").cast<std::string>();
     return variable::transform<double>(
         a,
         overloaded{core::transform_flags::expect_no_variance_arg<0>,
@@ -29,13 +30,14 @@ void bind_transform(py::module &m) {
                      return py::cast<units::Unit>(kernel.attr("unit_func")(x));
                    },
                    [fptr](const auto &x) { return fptr(x); }},
-        "custom");
+        name);
   });
 
   m.def("transform", [](py::object const &kernel, const Variable &a,
                         const Variable &b) {
     auto fptr_address = kernel.attr("address").cast<intptr_t>();
     auto fptr = reinterpret_cast<double (*)(double, double)>(fptr_address);
+    auto name = kernel.attr("name").cast<std::string>();
     return variable::transform<double>(
         a, b,
         overloaded{core::transform_flags::expect_no_variance_arg<0>,
@@ -46,7 +48,7 @@ void bind_transform(py::module &m) {
                          kernel.attr("unit_func")(x, y));
                    },
                    [fptr](const auto &x, const auto &y) { return fptr(x, y); }},
-        "custom");
+        name);
   });
 
   m.def("transform", [](py::object const &kernel, const Variable &a,
@@ -54,6 +56,7 @@ void bind_transform(py::module &m) {
     auto fptr_address = kernel.attr("address").cast<intptr_t>();
     auto fptr =
         reinterpret_cast<double (*)(double, double, double)>(fptr_address);
+    auto name = kernel.attr("name").cast<std::string>();
     return variable::transform<double>(
         a, b, c,
         overloaded{core::transform_flags::expect_no_variance_arg<0>,
@@ -66,7 +69,7 @@ void bind_transform(py::module &m) {
                          kernel.attr("unit_func")(x, y, z));
                    },
                    [fptr](const auto &...args) { return fptr(args...); }},
-        "custom");
+        name);
   });
 
   m.def("transform", [](py::object const &kernel, const Variable &a,
@@ -75,6 +78,7 @@ void bind_transform(py::module &m) {
     auto fptr_address = kernel.attr("address").cast<intptr_t>();
     auto fptr = reinterpret_cast<double (*)(double, double, double, double)>(
         fptr_address);
+    auto name = kernel.attr("name").cast<std::string>();
     return variable::transform<double>(
         a, b, c, d,
         overloaded{core::transform_flags::expect_no_variance_arg<0>,
@@ -88,7 +92,7 @@ void bind_transform(py::module &m) {
                          kernel.attr("unit_func")(x, y, z, w));
                    },
                    [fptr](const auto &...args) { return fptr(args...); }},
-        "custom");
+        name);
   });
 }
 
