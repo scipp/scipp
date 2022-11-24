@@ -33,3 +33,6 @@ sortedcontainers==2.4.0
     # via hypothesis
 tomli==2.0.1
     # via pytest
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools

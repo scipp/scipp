@@ -9,3 +9,6 @@
 -r extra.txt
 asv==0.5.1
     # via -r asv.in
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools

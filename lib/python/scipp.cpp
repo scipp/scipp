@@ -24,6 +24,7 @@ void init_trigonometry(py::module &);
 void init_unary(py::module &);
 void init_units(py::module &);
 void init_variable(py::module &);
+void init_transform(py::module &);
 
 void init_generated_arithmetic(py::module &);
 void init_generated_bins(py::module &);
@@ -58,6 +59,7 @@ void init_core(py::module &m) {
   init_trigonometry(core);
   init_unary(core);
   init_element_array_view(core);
+  init_transform(core);
 
   init_generated_arithmetic(core);
   init_generated_bins(core);

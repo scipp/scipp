@@ -25,7 +25,7 @@ flake8-bugbear==22.10.27
     # via -r static.in
 importlib-resources==5.10.0
     # via jsonschema
-jsonschema==4.17.0
+jsonschema==4.17.1
     # via nbformat
 jupyter-core==5.0.0
     # via nbformat

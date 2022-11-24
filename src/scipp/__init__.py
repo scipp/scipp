@@ -120,6 +120,7 @@ del _binding
 
 from . import data
 from . import spatial
+from .operations import elemwise_func
 
 from .core.binning import histogram
 
