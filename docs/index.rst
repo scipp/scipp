@@ -18,41 +18,36 @@ Scipp -- Multi-dimensional data arrays with labeled dimensions
 .. |show-svg| image:: _static/title-show-svg.png
    :width: 32%
 
-Scipp is heavily inspired by `xarray <https://xarray.pydata.org>`_.
+Scipp is heavily inspired by `Xarray <https://xarray.pydata.org>`_.
 It enriches raw NumPy-like multi-dimensional arrays of data by adding named dimensions and associated coordinates.
 Multiple arrays can be combined into datasets.
-While for many applications xarray is certainly more suitable (and definitely much more matured) than Scipp, there is a number of features missing in other situations.
+While for many applications Xarray is more suitable and matured than Scipp, there is a number of features missing in other situations.
 If your use case requires one or several of the items on the following list, using Scipp may be worth considering:
 
 - **Physical units** are stored with each data or coord array and are handled in arithmetic operations.
-- **Propagation of uncertainties**.
-- Support for **histograms**, i.e., **bin-edge axes**, which are by 1 longer than the data extent.
-- Support for scattered data and **non-destructive binning**.
-  This includes first and foremost **event data**, a particular form of sparse data with arrays of random-length lists, with very small list entries.
+- **Histograms**, i.e., **bin-edge axes**, which are by 1 longer than the data extent.
+- Support for non-regular or scattered data and **non-destructive binning**.
 - Support for **masks stored with data**.
+- **Propagation of uncertainties**.
 - Internals written in C++ for better performance (for certain applications), in combination with Python bindings.
 
 Generic functionality of Scipp is provided in the **scipp** Python package.
 In addition, more specific functionality is made available in other packages.
-Examples for this are `scippnexus <https://scipp.github.io/scippnexus>`_ for loading NeXus files, `scippneutron <https://scipp.github.io/scippneutron>`_ for handling data from neutron-scattering experiments,
-and `ess <https://scipp.github.io/ess>`_ for dealing with the specifics of neutron instruments at ESS.
+Examples for this are `Plopp <https://scipp.github.io/plopp>`_ for data visualization, `ScippNexus <https://scipp.github.io/scippnexus>`_ for loading NeXus files, and `ScippNeutron <https://scipp.github.io/scippneutron>`_ for handling data from neutron-scattering experiments.
 
 News
 ----
 
 - [|SCIPP_RELEASE_MONTH|] scipp-|SCIPP_VERSION| `has been released <about/release-notes.rst>`_.
   Check out the `What's new <about/whats-new.rst>`_ notebook for an overview of recent highlights and major changes.
-- Scipp is migrating to use `Plopp <https://scipp.github.io/plopp>`_ instead of a built-in plotting solution.
+- [November 2022] Scipp is migrating to use `Plopp <https://scipp.github.io/plopp>`_ instead of a built-in plotting solution.
   See `Migrating to the new backend <visualization/plotting-overview.rst#Migrating-to-the-new-backend>`_ for details.
-- Scipp switched to "Calendar Versioning".
+- [November 2022] Scipp switched to "Calendar Versioning".
   See `Version numbers and deprecation policy <about/about.rst#Version-numbers-and-deprecation-policy>`_ for details.
 - Is your data stored in NeXus files?
-  Checkout our new project `scippnexus <https://scipp.github.io/scippnexus>`_, a h5py-like utility for conveniently loading NeXus classes into Scipp data structures.
+  Checkout our new project `ScippNexus <https://scipp.github.io/scippnexus>`_, a h5py-like utility for conveniently loading NeXus classes into Scipp data structures.
 - We now provide ``pip`` packages of ``scipp``, in addition to ``conda`` packages.
   See `Installation <getting-started/installation.rst#Pip>`_ for details.
-- Scipp changed from GPLv3 to the more permissive BSD-3 license which fits better into the Python eco system.
-- Looking for ``scipp.neutron``?
-  This submodule has been moved into its own package, `scippneutron <https://scipp.github.io/scippneutron>`_.
 
 Lost? New to Scipp? Start Here!
 -------------------------------
