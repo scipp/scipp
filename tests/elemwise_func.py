@@ -73,3 +73,12 @@ def test_auto_convert_dtype_handles_dtype_mismatch():
     c = 4.0 * sc.Unit('m*s')
     f = sc.elemwise_func(fmadd, auto_convert_dtypes=True)
     assert sc.identical(f(a, b, c.to(dtype='int64')), a * b + c)
+
+
+def test_usable_as_decorator():
+
+    @sc.elemwise_func(unit_func=lambda u: u)
+    def add1(a):
+        return a + 1
+
+    assert sc.identical(add1(sc.scalar(1.0)), sc.scalar(2.0))

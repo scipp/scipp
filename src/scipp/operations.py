@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+import functools
 from typing import Callable, Optional
 from inspect import signature
 from .core import Variable
@@ -17,7 +18,8 @@ def _as_numba_cfunc(function, unit_func=None):
     return cfunc
 
 
-def elemwise_func(func: Callable,
+def elemwise_func(func: Optional[Callable] = None,
+                  *,
                   unit_func: Optional[Callable] = None,
                   dtype: str = 'float64',
                   auto_convert_dtypes: bool = False) -> Callable:
@@ -65,11 +67,18 @@ def elemwise_func(func: Callable,
     Note that ``fmadd(x, y, z)`` would have the same effect in this case, but requires
     a potentially large intermediate allocation for the result of "a * b".
     """
-    func = _as_numba_cfunc(func, unit_func=unit_func)
 
-    def transform_custom(*args: Variable) -> Variable:
-        if auto_convert_dtypes:
-            args = [arg.to(dtype='float64', copy=False) for arg in args]
-        return cpp_transform(func, *args)
+    def decorator(f):
+        f = _as_numba_cfunc(f, unit_func=unit_func)
 
-    return transform_custom
+        @functools.wraps(f)
+        def transform_custom(*args: Variable) -> Variable:
+            if auto_convert_dtypes:
+                args = [arg.to(dtype='float64', copy=False) for arg in args]
+            return cpp_transform(f, *args)
+
+        return transform_custom
+
+    if func is None:
+        return decorator
+    return decorator(func)
