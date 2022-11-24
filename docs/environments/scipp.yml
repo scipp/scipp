@@ -2,7 +2,6 @@ name: scipp
 
 channels:
   - conda-forge
-  - scipp
 
 dependencies:
   - h5py
@@ -15,6 +14,7 @@ dependencies:
   - matplotlib-base
   - nodejs
   - pythreejs
-  - scipp
+  - scipp::scipp
   - scipy
+  - scipp::plopp
   - python-graphviz
