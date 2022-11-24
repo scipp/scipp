@@ -69,13 +69,13 @@ def elemwise_func(func: Optional[Callable] = None,
     """
 
     def decorator(f):
-        f = _as_numba_cfunc(f, unit_func=unit_func)
+        cfunc = _as_numba_cfunc(f, unit_func=unit_func)
 
         @functools.wraps(f)
         def transform_custom(*args: Variable) -> Variable:
             if auto_convert_dtypes:
                 args = [arg.to(dtype='float64', copy=False) for arg in args]
-            return cpp_transform(f, *args)
+            return cpp_transform(cfunc, *args)
 
         return transform_custom
 
