@@ -35,8 +35,8 @@ Release Notes
    and Jan-Lukas Wynen :sup:`a`
 
 
-v0.xy.0 (Unreleased)
---------------------
+v22.11.0 (November 2022)
+------------------------
 
 Features
 ~~~~~~~~
