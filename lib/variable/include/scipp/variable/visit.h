@@ -27,6 +27,7 @@ template <class T, class Var> struct VariableAccess {
   auto values() const { return variableFactory().values<T>(*m_var); }
   auto variances() const { return variableFactory().variances<T>(*m_var); }
   bool has_variances() const { return variableFactory().has_variances(*m_var); }
+  bool is_bins() const { return variableFactory().is_bins(*m_var); }
   Variable clone() const { return copy(*m_var); }
   Var *m_var{nullptr};
 };

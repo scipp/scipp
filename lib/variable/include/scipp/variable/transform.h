@@ -402,6 +402,11 @@ template <class Op> struct Transform {
       throw except::VariancesError(
           "Cannot broadcast object with variances as this would introduce "
           "unhandled correlations.");
+    if ((handles.is_bins() || ...))
+      if (((handles.has_variances() && !handles.is_bins()) || ...))
+        throw except::VariancesError(
+            "Cannot broadcast object with variances as this would introduce "
+            "unhandled correlations.");
 
     using Out = decltype(maybe_eval(op(handles.values()[0]...)));
     const bool variances =
@@ -644,6 +649,11 @@ template <bool dry_run> struct in_place {
         throw except::VariancesError(
             "Cannot broadcast object with variances as this would introduce "
             "unhandled correlations.");
+      if (is_bins(var) || (is_bins(other) || ...))
+        if (((other.has_variances() && !is_bins(other)) || ...))
+          throw except::VariancesError(
+              "Cannot broadcast object with variances as this would introduce "
+              "unhandled correlations.");
     }
 
     auto unit = variableFactory().elem_unit(var);
