@@ -424,7 +424,9 @@ template <class Op> Transform(Op) -> Transform<Op>;
 
 // std::tuple_cat does not work correctly on with clang-7. Issue with
 // Eigen::Vector3d.
-template <typename T, typename...> struct tuple_cat { using type = T; };
+template <typename T, typename...> struct tuple_cat {
+  using type = T;
+};
 template <template <typename...> class C, typename... Ts1, typename... Ts2,
           typename... Ts3>
 struct tuple_cat<C<Ts1...>, C<Ts2...>, Ts3...>
