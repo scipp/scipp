@@ -379,10 +379,30 @@ template <class T> struct as_view {
 };
 template <class T> as_view(T &data, const Dimensions &dims) -> as_view<T>;
 
+template <class T>
+bool bad_variance_broadcast(const Dimensions &dims, const T &var) {
+  if (!var.has_variances())
+    return false;
+  // implicit broadcast
+  if (dims.ndim() > var.dims().ndim())
+    return true;
+  // explicit broadcast
+  return std::any_of(var.strides().begin(), var.strides().end(),
+                     [](scipp::index s) { return s == 0; });
+}
+
 template <class Op> struct Transform {
   Op op;
   template <class... Ts> Variable operator()(Ts &&...handles) const {
     const auto dims = merge(handles.dims()...);
+
+    if ((bad_variance_broadcast(dims, handles) || ...))
+      // TODO Should we introduce a specific exception type for this purpose?
+      // TODO More detailed error message with links.
+      throw except::VariancesError(
+          "Cannot broadcast object with variances as this would introduce "
+          "unhandled correlations.");
+
     using Out = decltype(maybe_eval(op(handles.values()[0]...)));
     const bool variances =
         !std::is_base_of_v<core::transform_flags::no_out_variance_t, Op> &&
@@ -399,9 +419,7 @@ template <class Op> Transform(Op) -> Transform<Op>;
 
 // std::tuple_cat does not work correctly on with clang-7. Issue with
 // Eigen::Vector3d.
-template <typename T, typename...> struct tuple_cat {
-  using type = T;
-};
+template <typename T, typename...> struct tuple_cat { using type = T; };
 template <template <typename...> class C, typename... Ts1, typename... Ts2,
           typename... Ts3>
 struct tuple_cat<C<Ts1...>, C<Ts2...>, Ts3...>
@@ -616,6 +634,18 @@ template <bool dry_run> struct in_place {
                         const Other &...other) {
     using namespace detail;
     (scipp::expect::includes(var.dims(), other.dims()), ...);
+
+    if constexpr (!std::is_base_of_v<
+                      core::transform_flags::force_variance_broadcast_t, Op>) {
+      if (const auto dims = merge(var.dims(), other.dims()...);
+          (bad_variance_broadcast(dims, other) || ...))
+        // TODO Should we introduce a specific exception type for this purpose?
+        // TODO More detailed error message with links.
+        throw except::VariancesError(
+            "Cannot broadcast object with variances as this would introduce "
+            "unhandled correlations.");
+    }
+
     auto unit = variableFactory().elem_unit(var);
     op(unit, variableFactory().elem_unit(other)...);
     // Stop early in bad cases of changing units (if `var` is a slice):

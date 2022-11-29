@@ -16,7 +16,7 @@ def test_op_with_implicit_variance_broadcast_to_bins_raises():
     var = sc.ones(dims=['x'], shape=[4], with_variances=True)
     da = sc.data.binned_x(100, 4)
     with pytest.raises(sc.VariancesError):
-        da + var
+        da * var
 
 
 def test_op_with_explicit_variance_broadcast_raises():

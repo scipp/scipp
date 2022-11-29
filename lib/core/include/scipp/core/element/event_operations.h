@@ -127,6 +127,9 @@ constexpr auto map_and_mul = overloaded{
         map_and_mul_detail::args<float, time_point, time_point, float>>,
     transform_flags::expect_no_variance_arg<1>,
     transform_flags::expect_no_variance_arg<2>,
+    transform_flags::expect_no_variance_arg<3>, // caught in transform anyway,
+                                                // but adding this should save
+                                                // binary size and compile time
     [](units::Unit &data, const units::Unit &x, const units::Unit &edges,
        const units::Unit &weights) {
       expect::equals(x, edges);

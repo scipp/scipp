@@ -23,6 +23,7 @@ template <class T, class Var> struct VariableAccess {
   VariableAccess(Var &var) : m_var(&var) {}
   using value_type = T;
   Dimensions dims() const { return m_var->dims(); }
+  auto strides() const { return m_var->strides(); }
   auto values() const { return variableFactory().values<T>(*m_var); }
   auto variances() const { return variableFactory().variances<T>(*m_var); }
   bool has_variances() const { return variableFactory().has_variances(*m_var); }

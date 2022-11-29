@@ -16,9 +16,7 @@ namespace scipp::core {
 template <class... Ts> struct pair_self {
   using type = std::tuple<std::tuple<Ts, Ts>...>;
 };
-template <class... Ts> struct pair_custom {
-  using type = std::tuple<Ts...>;
-};
+template <class... Ts> struct pair_custom { using type = std::tuple<Ts...>; };
 template <class... Ts> struct pair_ {
   template <class RHS> using type = std::tuple<std::tuple<Ts, RHS>...>;
 };
@@ -117,6 +115,12 @@ constexpr auto expect_in_variance_if_out_variance =
 struct expect_all_or_none_have_variance_t : Flag {};
 constexpr auto expect_all_or_none_have_variance =
     expect_all_or_none_have_variance_t{};
+
+struct force_variance_broadcast_t : Flag {};
+/// Add this to overloaded operator to indicate to skip the check for variance
+/// broacast. This is used to implement "copy", which we want to work on
+/// explicitly broadcasted inputs, even in the presence of variances.
+constexpr auto force_variance_broadcast = force_variance_broadcast_t{};
 
 } // namespace
 } // namespace transform_flags
