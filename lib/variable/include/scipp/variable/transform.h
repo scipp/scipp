@@ -396,17 +396,20 @@ template <class Op> struct Transform {
   template <class... Ts> Variable operator()(Ts &&...handles) const {
     const auto dims = merge(handles.dims()...);
 
-    if ((bad_variance_broadcast(dims, handles) || ...))
-      // TODO Should we introduce a specific exception type for this purpose?
-      // TODO More detailed error message with links.
-      throw except::VariancesError(
-          "Cannot broadcast object with variances as this would introduce "
-          "unhandled correlations.");
-    if ((handles.is_bins() || ...))
-      if (((handles.has_variances() && !handles.is_bins()) || ...))
+    if constexpr (!std::is_base_of_v<
+                      core::transform_flags::force_variance_broadcast_t, Op>) {
+      if ((bad_variance_broadcast(dims, handles) || ...))
+        // TODO Should we introduce a specific exception type for this purpose?
+        // TODO More detailed error message with links.
         throw except::VariancesError(
             "Cannot broadcast object with variances as this would introduce "
             "unhandled correlations.");
+      if ((handles.is_bins() || ...))
+        if (((handles.has_variances() && !handles.is_bins()) || ...))
+          throw except::VariancesError(
+              "Cannot broadcast object with variances as this would introduce "
+              "unhandled correlations.");
+    }
 
     using Out = decltype(maybe_eval(op(handles.values()[0]...)));
     const bool variances =
