@@ -35,3 +35,24 @@ Updating the logo
 - Export the logo *without text* from the SVG as PNG.
 - Create the favicon using ``convert icon.png -define icon:auto-resize="128,96,64,48,32,16" favicon.ico``
 - Update ``docs/conf.py`` if filenames have changed.
+
+Updating an expired Anaconda token
+----------------------------------
+
+Tokens for uploading conda packages to the `Anaconda website <https://anaconda.org/scipp>`_ have a limited lifetime.
+When a token expires, a new one has to be created and added to the Github `Scipp organisation <https://github.com/scipp>`_, following these steps:
+
+- Go to https://anaconda.org/scipp/settings/access (requires admin access privileges)
+- Give the token a name (e.g. ``github-actions-2022``)
+- Select ``Strength=Strong``
+- Scope: select ``Allow read access to the API site`` and ``Allow write access to the API site``
+- Choose an expiry date (the token will be valid for 1 year by default)
+- Click ``Create``
+- Copy the token hash displayed on the webpage
+- Go to Scipp's `Github organisation <https://github.com/scipp>`_
+- Go to ``Settings > Security > Secrets > Actions``
+- Delete the old (expired) ``ANACONDATOKEN``
+- Click the ``New organization secret`` button
+- Name it ``ANACONDATOKEN`` and paste the token hash in the ``Value`` field
+- Select the repositories that should have access to the token: namely ``scipp``, ``scippneutron``, ``scippnexus``, ``ess``, ``plopp``
+- Click ``Add secret``

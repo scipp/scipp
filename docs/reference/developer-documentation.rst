@@ -11,7 +11,6 @@ Developer Documentation
    developer/constructing_variables
    developer/customizing
    developer/dependencies
-   developer/deployment
    developer/multi_dimensional_indexing
    developer/notebook-style-guide
    developer/releasing-scipp
