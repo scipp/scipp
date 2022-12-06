@@ -41,7 +41,7 @@ News
 - [|SCIPP_RELEASE_MONTH|] scipp-|SCIPP_VERSION| `has been released <about/release-notes.rst>`_.
   Check out the `What's new <about/whats-new.rst>`_ notebook for an overview of recent highlights and major changes.
 - [November 2022] Scipp is migrating to use `Plopp <https://scipp.github.io/plopp>`_ instead of a built-in plotting solution.
-  See `Migrating to the new backend <visualization/plotting-overview.rst#Migrating-to-the-new-backend>`_ for details.
+  See `Migrating to the new backend <visualization/plotting-overview.ipynb#Migrating-to-the-new-backend>`_ for details.
 - [November 2022] Scipp switched to "Calendar Versioning".
   See `Version numbers and deprecation policy <about/about.rst#Version-numbers-and-deprecation-policy>`_ for details.
 - Is your data stored in NeXus files?
