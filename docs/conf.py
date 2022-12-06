@@ -301,4 +301,5 @@ linkcheck_ignore = [
     'user-guide/slicing.html',
     # Many links for PRs from our release notes. Slow and unlikely to cause issues.
     'https://github.com/scipp/scipp/pull/[0-9]+',
+    'https://hesperia.gsfc.nasa.gov/rhessi3+',
 ]
