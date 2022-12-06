@@ -296,4 +296,8 @@ linkcheck_ignore = [
     'https://github.com/scipp/scipp/pull/[0-9]+',
     # NASA mission website for solar flares data is down
     'https://hesperia.gsfc.nasa.gov/rhessi3+',
+    # Flaky Kitware repo link
+    'https://apt.kitware.com+',
+    # Flaky pooch fatiando website
+    'https://www.fatiando.org/pooch+',
 ]
