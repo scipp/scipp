@@ -292,14 +292,8 @@ doctest_default_flags = doctest.ELLIPSIS | doctest.IGNORE_EXCEPTION_DETAIL | \
 linkcheck_ignore = [
     # Specific lines in Github blobs cannot be found by linkcheck.
     r'https?://github\.com/.*?/blob/[a-f0-9]+/.+?#',
-    # Links with images on index page have to point to html files
-    # which linkcheck cannot find.
-    'user-guide/data-structures.html',
-    'user-guide/binned-data/binned-data.html',
-    'user-guide/masking.html',
-    'visualization/plotting-overview.html',
-    'user-guide/slicing.html',
     # Many links for PRs from our release notes. Slow and unlikely to cause issues.
     'https://github.com/scipp/scipp/pull/[0-9]+',
+    # NASA mission website for solar flares data is down
     'https://hesperia.gsfc.nasa.gov/rhessi3+',
 ]
