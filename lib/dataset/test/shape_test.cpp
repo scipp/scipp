@@ -184,7 +184,7 @@ TEST(ReshapeTest, flatten_empty_from_arg) {
   EXPECT_EQ(flatten(a, std::vector<Dim>{}, Dim::Z), expected);
 }
 
-TEST(ReshapeTest, flatten_scalar) {
+TEST(ReshapeTest, flatten_scalar_no_dims) {
   const auto var = makeVariable<double>(Dims{}, Shape{}, Values{2.0});
   DataArray a(var);
   a.coords().set(Dim::X, 0.1 * units::one + var);
@@ -193,6 +193,17 @@ TEST(ReshapeTest, flatten_scalar) {
   expected.coords().set(Dim::X, a.coords()[Dim::X]);
 
   EXPECT_EQ(flatten(a, std::vector<Dim>{}, Dim::Z), expected);
+}
+
+TEST(ReshapeTest, flatten_scalar_all_dims) {
+  const auto var = makeVariable<double>(Dims{}, Shape{}, Values{2.0});
+  DataArray a(var);
+  a.coords().set(Dim::X, 0.1 * units::one + var);
+
+  DataArray expected(makeVariable<double>(Dims{Dim::Z}, Shape{1}, Values{2.0}));
+  expected.coords().set(Dim::X, 0.1 * units::one + expected.data());
+
+  EXPECT_EQ(flatten(a, std::nullopt, Dim::Z), expected);
 }
 
 TEST(ReshapeTest, round_trip) {

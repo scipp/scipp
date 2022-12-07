@@ -292,8 +292,6 @@ def flatten(x: VariableLikeType,
         # makes more sense for the dims that we want to flatten to come first
         # in the argument list.
         raise ValueError("The final flattened dimension is required.")
-    if dims is None:
-        dims = x.dims
     return _call_cpp_func(_cpp.flatten, x, dims, to)
 
 

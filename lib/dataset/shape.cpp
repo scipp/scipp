@@ -286,23 +286,24 @@ void expect_dimension_subset(const core::Dimensions &full_set,
 
 /// Flatten multiple dimensions into a single dimension:
 /// ['y', 'z'] -> ['x']
-DataArray flatten(const DataArray &a, const scipp::span<const Dim> &from_labels,
+DataArray flatten(const DataArray &a,
+                  const std::optional<scipp::span<const Dim>> &from_labels,
                   const Dim to_dim) {
-  if (from_labels.empty())
-    return DataArray(flatten(a.data(), from_labels, to_dim), a.coords(),
-                     a.masks(), a.attrs());
-  expect_dimension_subset(a.dims(), from_labels);
+  const auto &labels = from_labels.value_or(a.dims().labels());
+  const bool all_dims = !from_labels.has_value();
+  if (!all_dims && labels.empty())
+    return DataArray(flatten(a.data(), labels, to_dim), a.coords(), a.masks(),
+                     a.attrs());
+  expect_dimension_subset(a.dims(), labels);
   return dataset::transform(a, [&](const auto &in) {
-    auto var =
-        (&in == &a.data()) ? in : maybe_broadcast(in, from_labels, a.dims());
-    const auto bin_edge_dim =
-        bin_edge_in_from_labels(in, a.dims(), from_labels);
+    auto var = (&in == &a.data()) ? in : maybe_broadcast(in, labels, a.dims());
+    const auto bin_edge_dim = bin_edge_in_from_labels(in, a.dims(), labels);
     if (bin_edge_dim != Dim::Invalid) {
-      return flatten_bin_edge(var, from_labels, to_dim, bin_edge_dim);
-    } else if (var.dims().contains(from_labels.front())) {
+      return flatten_bin_edge(var, labels, to_dim, bin_edge_dim);
+    } else if (all_dims || var.dims().contains(labels.front())) {
       // maybe_broadcast ensures that all variables contain
-      // all dims in from_labels, so only need to check from_labels.front().
-      return flatten(var, from_labels, to_dim);
+      // all dims in labels, so only need to check labels.front().
+      return flatten(var, labels, to_dim);
     } else {
       // This only happens for metadata.
       return var;
