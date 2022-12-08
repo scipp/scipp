@@ -144,6 +144,16 @@ TEST(ReshapeTest, flatten_single_dim) {
             a.rename_dims(std::vector{std::pair{Dim{"y"}, Dim{"z"}}}));
 }
 
+TEST(ReshapeTest, flatten_all_dims) {
+  const auto var = fold(arange(Dim::X, 24), Dim::X, {{Dim::X, 6}, {Dim::Y, 4}});
+  DataArray a(var);
+  a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
+  a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
+  a.coords().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
+
+  const auto flat = flatten(a, std::nullopt, Dim::Z);
+}
+
 TEST(ReshapeTest, flatten_dim_not_in_input) {
   const auto var = fold(arange(Dim::X, 24), Dim::X, {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);

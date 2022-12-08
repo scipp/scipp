@@ -290,8 +290,7 @@ DataArray flatten(const DataArray &a,
                   const std::optional<scipp::span<const Dim>> &from_labels,
                   const Dim to_dim) {
   const auto &labels = from_labels.value_or(a.dims().labels());
-  const bool all_dims = !from_labels.has_value();
-  if (!all_dims && labels.empty())
+  if (from_labels.has_value() && labels.empty())
     return DataArray(flatten(a.data(), labels, to_dim), a.coords(), a.masks(),
                      a.attrs());
   expect_dimension_subset(a.dims(), labels);
@@ -300,7 +299,7 @@ DataArray flatten(const DataArray &a,
     const auto bin_edge_dim = bin_edge_in_from_labels(in, a.dims(), labels);
     if (bin_edge_dim != Dim::Invalid) {
       return flatten_bin_edge(var, labels, to_dim, bin_edge_dim);
-    } else if (all_dims || var.dims().contains(labels.front())) {
+    } else if (a.dims().empty() || var.dims().contains(labels.front())) {
       // maybe_broadcast ensures that all variables contain
       // all dims in labels, so only need to check labels.front().
       return flatten(var, labels, to_dim);
