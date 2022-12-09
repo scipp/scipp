@@ -152,6 +152,11 @@ TEST(ReshapeTest, flatten_all_dims) {
   a.coords().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
 
   const auto flat = flatten(a, std::nullopt, Dim::Z);
+  EXPECT_EQ(flat.data(),
+            flatten(var, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z));
+  EXPECT_EQ(flat.coords()[Dim::X].dims(), flat.data().dims());
+  EXPECT_EQ(flat.coords()[Dim::Y].dims(), flat.data().dims());
+  EXPECT_EQ(flat.coords()[Dim("scalar")], a.coords()[Dim("scalar")]);
 }
 
 TEST(ReshapeTest, flatten_dim_not_in_input) {
