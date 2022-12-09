@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #pragma once
+#include <optional>
 
 #include "scipp/core/flags.h"
 #include "scipp/dataset/dataset.h"
@@ -31,9 +32,9 @@ resize(const Dataset &d, const Dim dim, const scipp::index size,
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray fold(const DataArray &a,
                                                   const Dim from_dim,
                                                   const Dimensions &to_dims);
-[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
-flatten(const DataArray &a, const scipp::span<const Dim> &from_labels,
-        const Dim to_dim);
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray flatten(
+    const DataArray &a,
+    const std::optional<scipp::span<const Dim>> &from_labels, const Dim to_dim);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
 transpose(const DataArray &a, scipp::span<const Dim> dims = {});

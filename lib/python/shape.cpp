@@ -51,9 +51,19 @@ template <class T> void bind_fold(pybind11::module &mod) {
 template <class T> void bind_flatten(pybind11::module &mod) {
   mod.def(
       "flatten",
-      [](const T &self, const std::vector<std::string> &dims,
+      [](const T &self, const std::optional<std::vector<std::string>> &dims,
          const std::string &to) {
-        return flatten(self, to_dim_type(dims), Dim{to});
+        if (dims.has_value())
+          return flatten(self, to_dim_type(*dims), Dim{to});
+        // If no dims are given then we flatten all dims. For variables we just
+        // provide a list of all labels. DataArrays are different, as the
+        // behavior in the degenerate case of a 0-D 'self' must distinguish
+        // between flattening "zero dims" and "all dims". The latter is
+        // specified using std::nullopt.
+        if constexpr (std::is_same_v<T, Variable>)
+          return flatten(self, self.dims().labels(), Dim{to});
+        else
+          return flatten(self, std::nullopt, Dim{to});
       },
       py::arg("x"), py::arg("dims"), py::arg("to"),
       py::call_guard<py::gil_scoped_release>());

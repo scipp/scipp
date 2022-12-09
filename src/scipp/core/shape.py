@@ -218,6 +218,11 @@ def flatten(x: VariableLikeType,
     If the input has a bin-edge coordinate that cannot be joined together it will not
     be included in the output.
 
+    If the input is a DataArray then coords, masks, and attrs that contain at least one
+    of the flattened dimensions will also be flattened. This implies that when
+    flattening all dims, i.e., when ``dims=None``, all coords, masks, and attrs that
+    share *some or all* dimensions with the data will be flattened.
+
     Parameters
     ----------
     x: scipp.typing.VariableLike
@@ -225,6 +230,8 @@ def flatten(x: VariableLikeType,
     dims:
         A list of dim labels that will be flattened.
         If ``None``, all dimensions will be flattened.
+        If the list is empty, this will effectively add a new inner dimension of length
+        1 to the data (meta data such as coords and masks are not touched in this case).
     to:
         A single dim label for the resulting flattened dim.
 
@@ -292,8 +299,6 @@ def flatten(x: VariableLikeType,
         # makes more sense for the dims that we want to flatten to come first
         # in the argument list.
         raise ValueError("The final flattened dimension is required.")
-    if dims is None:
-        dims = x.dims
     return _call_cpp_func(_cpp.flatten, x, dims, to)
 
 
