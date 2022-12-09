@@ -7,19 +7,21 @@
 #
 appdirs==1.4.4
     # via pooch
-asttokens==2.1.0
+asttokens==2.2.1
     # via stack-data
 backcall==0.2.0
     # via ipython
-certifi==2022.9.24
+certifi==2022.12.7
     # via requests
 charset-normalizer==2.1.1
     # via requests
+comm==0.1.2
+    # via ipykernel
 contourpy==1.0.6
     # via matplotlib
 cycler==0.11.0
     # via matplotlib
-debugpy==1.6.3
+debugpy==1.6.4
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -35,27 +37,27 @@ h5py==3.7.0
     # via -r extra.in
 idna==3.4
     # via requests
-importlib-metadata==5.0.0
+importlib-metadata==5.1.0
     # via numba
 ipydatawidgets==4.3.2
     # via pythreejs
-ipykernel==6.17.1
+ipykernel==6.19.2
     # via ipywidgets
-ipython==8.6.0
+ipython==8.7.0
     # via
     #   ipykernel
     #   ipywidgets
-ipywidgets==8.0.2
+ipywidgets==8.0.3
     # via
     #   ipydatawidgets
     #   pythreejs
 jedi==0.18.2
     # via ipython
-jupyter-client==7.4.7
+jupyter-client==7.4.8
     # via ipykernel
-jupyter-core==5.0.0
+jupyter-core==5.1.0
     # via jupyter-client
-jupyterlab-widgets==3.0.3
+jupyterlab-widgets==3.0.4
     # via ipywidgets
 kiwisolver==1.4.4
     # via matplotlib
@@ -84,7 +86,7 @@ numpy==1.23.5
     #   pythreejs
     #   scipy
     #   xarray
-packaging==21.3
+packaging==22.0
     # via
     #   ipykernel
     #   matplotlib
@@ -102,11 +104,11 @@ pickleshare==0.7.5
     # via ipython
 pillow==9.3.0
     # via matplotlib
-platformdirs==2.5.4
+platformdirs==2.6.0
     # via jupyter-core
 pooch==1.6.0
     # via -r extra.in
-prompt-toolkit==3.0.33
+prompt-toolkit==3.0.36
     # via ipython
 psutil==5.9.4
     # via ipykernel
@@ -117,9 +119,7 @@ pure-eval==0.2.2
 pygments==2.13.0
     # via ipython
 pyparsing==3.0.9
-    # via
-    #   matplotlib
-    #   packaging
+    # via matplotlib
 python-dateutil==2.8.2
     # via
     #   jupyter-client
@@ -141,14 +141,15 @@ six==1.16.0
     # via
     #   asttokens
     #   python-dateutil
-stack-data==0.6.1
+stack-data==0.6.2
     # via ipython
 tornado==6.2
     # via
     #   ipykernel
     #   jupyter-client
-traitlets==5.5.0
+traitlets==5.7.0
     # via
+    #   comm
     #   ipykernel
     #   ipython
     #   ipywidgets
@@ -159,15 +160,15 @@ traitlets==5.5.0
     #   traittypes
 traittypes==0.2.1
     # via ipydatawidgets
-urllib3==1.26.12
+urllib3==1.26.13
     # via requests
 wcwidth==0.2.5
     # via prompt-toolkit
-widgetsnbextension==4.0.3
+widgetsnbextension==4.0.4
     # via ipywidgets
-xarray==2022.11.0
+xarray==2022.12.0
     # via -r extra.in
-zipp==3.10.0
+zipp==3.11.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
