@@ -1,6 +1,6 @@
 import sys
 from typing import List
-from packaging.version import parse, Version
+from packaging.version import parse, Version, InvalidVersion
 import requests
 import argparse
 
