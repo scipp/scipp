@@ -7,7 +7,7 @@
 #
 bottle==0.12.23
     # via conan
-certifi==2022.9.24
+certifi==2022.12.7
     # via requests
 charset-normalizer==2.1.1
     # via requests
@@ -15,7 +15,7 @@ cmake==3.25.0
     # via -r build.in
 colorama==0.4.6
     # via conan
-conan==1.54.0
+conan==1.55.0
     # via -r build.in
 distro==1.7.0
     # via conan
@@ -51,7 +51,7 @@ six==1.16.0
     #   python-dateutil
 tqdm==4.64.1
     # via conan
-urllib3==1.26.12
+urllib3==1.26.13
     # via
     #   conan
     #   requests
