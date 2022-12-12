@@ -1,6 +1,6 @@
 import sys
 from typing import List
-from packaging.version import parse, Version, LegacyVersion
+from packaging.version import parse, Version
 import requests
 import argparse
 
@@ -22,10 +22,6 @@ class VersionInfo:
     def _to_version(self, version) -> Version:
         if isinstance(version, str):
             version = parse(version)
-            # When not building for a tagged release we may get, e.g., 'main'.
-            # Pretend this means the current latest release.
-            if isinstance(version, LegacyVersion):
-                return self._releases[0]
         return version
 
     def minor_releases(self, first: str = '0.1') -> List[str]:
