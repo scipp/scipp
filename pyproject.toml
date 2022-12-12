@@ -39,6 +39,7 @@ filterwarnings = [
   # Plotting related warnings.
   "ignore:You are using Scipp's deprecated plotting backend:scipp.VisibleDeprecationWarning",
   'ignore:Attempt to set non-positive :UserWarning',
+  'ignore:Widget._active_widgets is deprecated. :DeprecationWarning',
   'ignore:Attempting to set identical low and high ylims makes transformation singular; automatically expanding.:UserWarning',
   # TODO Plotting related deprecation warnings which should be addressed!
   'ignore:NONE is deprecated and will be removed in Pillow 10 \(2023-07-01\). Use Resampling.NEAREST or Dither.NONE instead.:DeprecationWarning',
