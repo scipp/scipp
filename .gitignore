@@ -1,5 +1,8 @@
 *.sw?
 compile_commands.json
+dist
+doctrees
+html
 
 build/
 install/
@@ -15,3 +18,4 @@ CMakeSettings.json
 .hypothesis
 .pytest_cache
 .mypy_cache
+src/scipp.egg-info
