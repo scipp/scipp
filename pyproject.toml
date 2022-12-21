@@ -23,6 +23,10 @@ build-verbosity = 1
 [tool.cibuildwheel.macos]
 archs = ["x86_64", "arm64"]
 
+[tool.bandit]
+# Excluding tests because bandit doesn't like `assert`.
+exclude_dirs = ["docs/conf.py", "tests", "install"]
+
 [tool.pytest.ini_options]
 addopts = "-ra -v"
 filterwarnings = [
