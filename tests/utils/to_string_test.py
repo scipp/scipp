@@ -4,6 +4,7 @@
 # @author Neil Vaytet
 
 import numpy as np
+
 import scipp as sc
 import scipp.utils as su
 

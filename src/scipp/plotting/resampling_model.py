@@ -5,11 +5,9 @@
 from enum import Enum
 
 from .. import units
-from ..core.binning import make_binned
-from ..core.binning import make_histogrammed
-from ..core import broadcast
-from ..core import linspace, get_slice_params, concat
-from ..core import DataArray, DimensionError, DType
+from ..core import DataArray, DimensionError, DType, broadcast, concat, \
+    get_slice_params, linspace  # NOQA
+from ..core.binning import make_binned, make_histogrammed
 from .tools import to_bin_edges
 
 

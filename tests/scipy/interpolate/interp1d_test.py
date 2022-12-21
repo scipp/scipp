@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 import numpy as np
-import scipp as sc
-import scipy.interpolate as theirs
-from scipp.scipy.interpolate import interp1d
-
 import pytest
+import scipy.interpolate as theirs
+
+import scipp as sc
+from scipp.scipy.interpolate import interp1d
 
 
 def make_array():

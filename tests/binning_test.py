@@ -1,11 +1,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-import pytest
 import itertools
-import scipp as sc
+
 import numpy as np
+import pytest
 from numpy.random import default_rng
+
+import scipp as sc
 
 
 @pytest.mark.parametrize('op', ['bin', 'hist', 'nanhist', 'rebin'])

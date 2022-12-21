@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+import numpy as np
 from hypothesis import given
 from hypothesis import strategies as st
 
 import scipp as sc
-import numpy as np
 
 float_args = dict(min_value=-1e300,
                   max_value=1e300,

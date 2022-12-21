@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+import numpy as np
+
 from .. import core
 from .displayable import Displayable
-import numpy as np
 
 
 def _slice_params(array, dim, loc):

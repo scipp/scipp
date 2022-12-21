@@ -7,13 +7,13 @@ This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.interpolate`.
 """
 
-from ...core import empty, epoch, Variable, DataArray, DimensionError, UnitError
-from ...core import DType, irreducible_mask
-from ...compat.wrapping import wrap1d
-
 from typing import Any, Callable, Literal, Union
 
 import numpy as np
+
+from ...compat.wrapping import wrap1d
+from ...core import DataArray, DimensionError, DType, UnitError, Variable, empty, \
+    epoch, irreducible_mask  # NOQA
 
 
 def _as_interpolation_type(x):

@@ -3,13 +3,13 @@
 # @author Neil Vaytet
 
 from .. import config, units
+from ..core import DimensionError
 from .displayable import Displayable
 from .formatters import make_formatter
-from .tools import parse_params, is_sphinx_build
-from ..core import DimensionError
 from .model1d import PlotModel1d
-from .widgets import PlotWidgets
 from .resampling_model import ResamplingMode
+from .tools import is_sphinx_build, parse_params
+from .widgets import PlotWidgets
 
 
 def make_params(*, cmap=None, norm=None, vmin=None, vmax=None, masks=None, color=None):

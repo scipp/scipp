@@ -2,14 +2,16 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .._scipp import core as sc
+import itertools
+
+import numpy as np
+
 from .. import typing
+from .._scipp import core as sc
 from ..compat.dict import from_dict
 from .dispatch import dispatch
 from .objects import PlotDict
 from .tools import get_line_param
-import numpy as np
-import itertools
 
 
 def _ndarray_to_variable(ndarray):

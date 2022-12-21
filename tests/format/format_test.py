@@ -1,5 +1,6 @@
-import scipp as sc
 import numpy as np
+
+import scipp as sc
 
 
 def scalar_string(value, error, unit):

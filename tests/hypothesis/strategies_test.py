@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Jan-Lukas Wynen
-from hypothesis.errors import InvalidArgument
+import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
-import pytest
+from hypothesis.errors import InvalidArgument
 
-from scipp.testing import strategies as scst
 import scipp as sc
+from scipp.testing import strategies as scst
 
 N_EXAMPLES = 10
 

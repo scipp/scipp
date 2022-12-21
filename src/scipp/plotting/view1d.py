@@ -4,9 +4,9 @@
 from matplotlib.lines import Line2D
 
 from .. import units
-from .view import PlotView
+from ..core import Variable, ones
 from .tools import vars_to_err
-from ..core import ones, Variable
+from .view import PlotView
 
 
 def _make_label(array):

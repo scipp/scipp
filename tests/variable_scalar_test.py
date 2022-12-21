@@ -3,6 +3,7 @@
 # @file
 # @author Simon Heybrock
 import pytest
+
 import scipp as sc
 
 

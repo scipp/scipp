@@ -7,9 +7,10 @@ Changes are:
 
 * Names of coords, attrs, masks, and dataset items are encoded via attributes.
 """
-import h5py
 import sys
 from shutil import copyfile
+
+import h5py
 
 
 # NOTE copied from scipp.io.hdf5 at Git ref a74103329

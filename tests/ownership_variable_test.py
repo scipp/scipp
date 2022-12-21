@@ -4,6 +4,7 @@
 from copy import copy, deepcopy
 
 import numpy as np
+
 import scipp as sc
 
 

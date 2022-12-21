@@ -3,8 +3,9 @@
 # @author Jan-Lukas Wynen
 import numpy as np
 import pytest
-import scipp as sc
 import scipy
+
+import scipp as sc
 
 
 @pytest.mark.parametrize('funcs',

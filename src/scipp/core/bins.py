@@ -1,17 +1,17 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-from typing import Callable, Dict, Literal, Optional, Union, Tuple
 import warnings
+from typing import Callable, Dict, Literal, Optional, Tuple, Union
 
 from .._scipp import core as _cpp
+from ..typing import Dims, MetaDataMap, VariableLike
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from ..typing import Dims, VariableLike, MetaDataMap
-from .domains import merge_equal_adjacent
-from .operations import islinspace
-from .math import midpoints
-from .shape import concat
 from .bin_remapping import concat_bins
+from .domains import merge_equal_adjacent
+from .math import midpoints
+from .operations import islinspace
+from .shape import concat
 
 
 class Lookup:

@@ -2,14 +2,16 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+import math
+import warnings
+
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.colors import LogNorm, Normalize
+
 from .. import config
 from .figure import PlotFigure
 from .toolbar import PlotToolbar2d
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.colors import Normalize, LogNorm
-import math
-import warnings
 
 
 class PlotFigure2d(PlotFigure):

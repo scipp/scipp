@@ -3,13 +3,14 @@
 # @author Matthew Andrew
 # flake8: noqa: E501
 
-import numpy as np
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
+import numpy as np
+
 from .._scipp import core as _cpp
+from ..typing import VariableLikeType
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from ._sizes import _parse_dims_shape_sizes
-from ..typing import VariableLikeType
 from .concepts import transform_data
 
 

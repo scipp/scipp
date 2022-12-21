@@ -11,9 +11,8 @@ from typing import Callable, Dict, Optional, Union
 
 import scipy.ndimage
 
-from ...core import Variable, DataArray
-from ...core import CoordError, DimensionError, VariancesError
-from ...core import empty_like, islinspace, ones
+from ...core import CoordError, DataArray, DimensionError, Variable, VariancesError, \
+    empty_like, islinspace, ones  # NOQA
 from ...typing import VariableLike, VariableLikeType
 
 

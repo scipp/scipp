@@ -2,10 +2,11 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import functools
-from typing import Callable, Optional
 from inspect import signature
-from .core import Variable
+from typing import Callable, Optional
+
 from ._scipp.core import transform as cpp_transform
+from .core import Variable
 
 
 def _as_numba_cfunc(function, unit_func=None):

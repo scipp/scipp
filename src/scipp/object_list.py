@@ -7,6 +7,7 @@ from .html import make_html
 
 def _repr_html_():
     import inspect
+
     # Is there a better way to get the scope? The `7` is hard-coded for the
     # current IPython stack when calling _repr_html_ so this is bound to break.
     scope = inspect.stack()[7][0].f_globals
@@ -22,5 +23,5 @@ def _repr_html_():
             out += f"<details style=\"padding-left:2em\"><summary>"\
                    f"{name}</summary>{html}</details>"
         out += "</details>"
-    from IPython.core.display import display, HTML
+    from IPython.core.display import HTML, display
     display(HTML(out))

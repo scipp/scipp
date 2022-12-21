@@ -2,9 +2,10 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
-import pytest
-import scipp as sc
 import numpy as np
+import pytest
+
+import scipp as sc
 
 
 def test_comparison_operators():

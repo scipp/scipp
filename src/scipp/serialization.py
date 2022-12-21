@@ -1,15 +1,18 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-from .core import Variable, DataArray, Dataset
-from typing import List, Dict, Tuple, Union
+from typing import Dict, List, Tuple, Union
+
+from .core import DataArray, Dataset, Variable
 
 
 def serialize(var: Union[Variable, DataArray, Dataset]) -> Tuple[Dict, List[bytes]]:
     """Serialize Scipp object."""
     from io import BytesIO
-    from .io.hdf5 import HDF5IO
+
     import h5py
+
+    from .io.hdf5 import HDF5IO
     header = {}
     buf = BytesIO()
     with h5py.File(buf, "w") as f:
@@ -22,8 +25,10 @@ def deserialize(header: Dict,
                 frames: List[bytes]) -> Union[Variable, DataArray, Dataset]:
     """Deserialize Scipp object."""
     from io import BytesIO
-    from .io.hdf5 import HDF5IO
+
     import h5py
+
+    from .io.hdf5 import HDF5IO
     return HDF5IO.read(h5py.File(BytesIO(frames[0]), "r"))
 
 

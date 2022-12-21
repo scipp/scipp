@@ -2,12 +2,13 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .. import config
-from .displayable import Displayable
-from .tools import fig_to_pngbytes, is_sphinx_build
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+
+from .. import config
+from .displayable import Displayable
+from .tools import fig_to_pngbytes, is_sphinx_build
 
 
 class PlotFigure(Displayable):

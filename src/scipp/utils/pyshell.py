@@ -11,8 +11,8 @@ def running_in_jupyter() -> bool:
     but also Jupyter console and qtconsole.
     """
     try:
-        from IPython import get_ipython
         import ipykernel.zmqshell
+        from IPython import get_ipython
     except ImportError:
         # Cannot be Jupyter if IPython is not installed.
         return False

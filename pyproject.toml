@@ -34,6 +34,8 @@ skip = "./.git,./install,./build,./cmake-build*,./lib/cmake/sanitizers-cmake,./.
 [tool.isort]
 skip_gitignore = true
 line_length = 88
+multi_line_output = 2  # for compatibility with yapf
+skip_glob = ["src/scipp/__init__.py", "src/scipp/core/__init__.py"]
 
 [tool.pytest.ini_options]
 minversion = "7.0"

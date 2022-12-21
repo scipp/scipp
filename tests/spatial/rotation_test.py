@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
-import numpy as np
-from scipp.spatial import (rotation, rotations_from_rotvecs, rotations,
-                           rotation_as_rotvec)
 from math import pi
-import scipp as sc
 
+import numpy as np
 import pytest
+
+import scipp as sc
+from scipp.spatial import rotations_from_rotvecs  # NOQA
+from scipp.spatial import rotation, rotation_as_rotvec, rotations
 
 
 def test_from_rotvec_bad_unit():

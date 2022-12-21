@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
-import scipp as sc
-import scipy.constants as theirs
-import scipp.constants as ours
-
 import pytest
+import scipy.constants as theirs
+
+import scipp as sc
+import scipp.constants as ours
 
 
 @pytest.mark.parametrize("name", dir(ours))

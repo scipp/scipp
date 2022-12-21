@@ -1,11 +1,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .. import typing
-from ..utils import name_with_unit, value_to_string
-from ..core import arange, to_unit, Unit
 import enum
+
 import numpy as np
+
+from .. import typing
+from ..core import Unit, arange, to_unit
+from ..utils import name_with_unit, value_to_string
 
 
 class LabelFormatter:

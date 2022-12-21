@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
-from .view1d import PlotView1d
 from .resampling_model import ResamplingMode
+from .view1d import PlotView1d
 
 
 class MarkerModel:

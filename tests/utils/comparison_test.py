@@ -1,7 +1,8 @@
 import numpy as np
+import pytest
+
 import scipp as sc
 import scipp.utils as su
-import pytest
 
 
 def test_wont_match_when_meta_size_unequal():

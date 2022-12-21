@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 import numpy as np
-import scipp as sc
-import scipy.ndimage
-from scipp.scipy.ndimage import (generic_filter, maximum_filter, median_filter,
-                                 minimum_filter, percentile_filter, rank_filter)
 import pytest
+import scipy.ndimage
+
+import scipp as sc
+from scipp.scipy.ndimage import generic_filter, maximum_filter, median_filter, \
+    minimum_filter, percentile_filter, rank_filter  # NOQA
 
 filters = (generic_filter, maximum_filter, median_filter, minimum_filter,
            percentile_filter, rank_filter)

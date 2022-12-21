@@ -2,12 +2,13 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import itertools
+
+import numpy as np
 from hypothesis import given, settings
 from hypothesis import strategies as st
-from scipp.testing import strategies as scst
 
 import scipp as sc
-import numpy as np
+from scipp.testing import strategies as scst
 
 float_args = dict(min_value=-1e300,
                   max_value=1e300,

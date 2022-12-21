@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+import pytest
+
 import scipp as sc
 from scipp.core.domains import merge_equal_adjacent
-import pytest
 
 x = sc.arange(dim='x', start=0, stop=10)
 

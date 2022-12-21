@@ -3,7 +3,7 @@
 # @author Simon Heybrock
 from typing import Dict, Optional
 
-from .._scipp.core import Variable, DataArray, Dataset, CoordError
+from .._scipp.core import CoordError, DataArray, Dataset, Variable
 from ..typing import VariableLikeType
 from .bins import bins
 from .dataset import merge

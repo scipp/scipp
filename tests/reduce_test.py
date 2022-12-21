@@ -3,6 +3,7 @@
 # @author Simon Heybrock
 
 import numpy as np
+
 import scipp as sc
 
 dim = 'yy'

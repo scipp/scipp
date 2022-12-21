@@ -7,8 +7,8 @@ operations are consistent with Python.
 It takes the output file as its only command line argument.
 """
 
-from itertools import product
 import sys
+from itertools import product
 
 import numpy as np
 

@@ -2,9 +2,10 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .controller import PlotController
-from ..units import one
 import numpy as np
+
+from ..units import one
+from .controller import PlotController
 
 
 class PlotController1d(PlotController):

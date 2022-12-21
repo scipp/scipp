@@ -4,18 +4,20 @@
 # @author Simon Heybrock
 
 from __future__ import annotations
+
 from pathlib import Path
 from typing import Union
 
 import numpy as np
 
+from ..core.cpp_classes import Unit
 from ..logging import get_logger
 from ..typing import VariableLike
-from ..core.cpp_classes import Unit
 
 
 def _dtype_lut():
     from .._scipp.core import DType as d
+
     # For types understood by numpy we do not actually need this special
     # handling, but will do as we add support for other types such as
     # variable-length strings.

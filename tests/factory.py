@@ -3,6 +3,7 @@
 # @file
 # @author Neil Vaytet
 import numpy as np
+
 import scipp as sc
 
 dim_list = ['xx', 'yy', 'zz', 'time', 'temperature']

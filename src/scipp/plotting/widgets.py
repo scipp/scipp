@@ -3,6 +3,7 @@
 # @author Neil Vaytet
 from functools import partial
 from html import escape
+
 from ..utils import value_to_string
 from .displayable import Displayable
 

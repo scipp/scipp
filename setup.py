@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-from skbuild import setup
 from setuptools import find_packages
+from skbuild import setup
 
 
 def get_version():

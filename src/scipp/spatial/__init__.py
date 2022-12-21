@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
-from typing import Union, Sequence
+from typing import Sequence, Union
+
 import numpy as _np
 import numpy as np
 
+from .. import Unit, UnitError, Variable, units, vectors
 from .._scipp import core as _core_cpp
-from .. import units, Unit, UnitError, Variable, vectors
 
 
 def _to_eigen_layout(a):

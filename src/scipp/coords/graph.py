@@ -9,8 +9,8 @@ from graphlib import TopologicalSorter
 from typing import Callable, Dict, Iterable, List, Set, Tuple, Union
 
 from ..core import DataArray
-from .rule import ComputeRule, FetchRule, RenameRule, Rule
 from ..utils.graph import make_graphviz_digraph
+from .rule import ComputeRule, FetchRule, RenameRule, Rule
 
 GraphDict = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
 

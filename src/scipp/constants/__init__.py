@@ -58,7 +58,8 @@ The database is accessed using :py:func:`scipp.constants.physical_constants`.
    https://physics.nist.gov/cuu/Constants/
 """
 import math as _math
-from .. import as_const, scalar, Variable
+
+from .. import Variable, as_const, scalar
 
 
 def physical_constants(key: str, with_variance: bool = False) -> Variable:

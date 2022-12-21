@@ -7,15 +7,15 @@ This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.optimize`.
 """
 
-from ...core import scalar, stddevs, Variable, DataArray
-from ...core import BinEdgeError
-from ...units import default_unit, dimensionless
-from ..interpolate import _drop_masked
-
-import numpy as np
+from inspect import getfullargspec
 from numbers import Real
 from typing import Callable, Dict, Optional, Tuple, Union
-from inspect import getfullargspec
+
+import numpy as np
+
+from ...core import BinEdgeError, DataArray, Variable, scalar, stddevs
+from ...units import default_unit, dimensionless
+from ..interpolate import _drop_masked
 
 
 def _as_scalar(obj, unit):

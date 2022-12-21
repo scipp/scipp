@@ -4,8 +4,8 @@
 from __future__ import annotations
 
 from .._scipp import core as _cpp
-from ._cpp_wrapper_util import call_func as _call_cpp_func
 from ..typing import VariableLike
+from ._cpp_wrapper_util import call_func as _call_cpp_func
 
 
 def logical_not(x: VariableLike) -> VariableLike:

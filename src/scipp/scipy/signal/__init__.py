@@ -7,13 +7,14 @@ This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.signal`.
 """
 from dataclasses import dataclass
-from numpy import ndarray
 from typing import Union
 
-from ...core import array, identical, islinspace, to_unit, DataArray, Variable
-from ...core import UnitError, CoordError
-from ...units import one
+from numpy import ndarray
+
 from ...compat.wrapping import wrap1d
+from ...core import CoordError, DataArray, UnitError, Variable, array, identical, \
+    islinspace, to_unit  # NOQA
+from ...units import one
 
 
 @dataclass

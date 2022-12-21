@@ -4,10 +4,12 @@
 import numpy as np
 import pytest
 import xarray as xr
+
 import scipp as sc
 from scipp.compat import from_xarray, to_xarray
-from ..factory import (make_dense_data_array, make_dense_dataset,
-                       make_binned_data_array, make_variable)
+
+from ..factory import make_binned_data_array, make_dense_data_array, \
+    make_dense_dataset, make_variable  # NOQA
 
 
 def test_from_xarray_variable():

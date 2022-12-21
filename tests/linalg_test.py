@@ -4,8 +4,9 @@
 # @author Neil Vaytet
 
 import numpy as np
-import scipp as sc
 import pytest
+
+import scipp as sc
 
 
 def test_variable_0D_vector3_from_list():

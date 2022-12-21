@@ -2,12 +2,13 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Matthew Andrew
 from __future__ import annotations
+
 from typing import Any, Literal, Optional, TypeVar, Union
 
 from .._scipp import core as _cpp
+from ..typing import VariableLikeType
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from .unary import to_unit
-from ..typing import VariableLikeType
 
 _ContainerWithCoords = TypeVar('_ContainerWithCoords', _cpp.DataArray, _cpp.Dataset)
 

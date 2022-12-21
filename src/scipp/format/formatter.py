@@ -13,8 +13,9 @@ def format_variable(data, spec):
     -------
     The formatted string
     """
-    from ..core.cpp_classes import Unit
     from numpy import array
+
+    from ..core.cpp_classes import Unit
     dtype = str(data.dtype)
     if not any([x in dtype for x in ('float', 'int')]) or spec is None or len(spec) < 1:
         return data.__repr__()
@@ -37,7 +38,8 @@ def format_variable(data, spec):
 
 
 def _round(value, variance):
-    from numpy import floor, log10, round, power, sqrt
+    from numpy import floor, log10, power, round, sqrt
+
     # Treat 'infinite' precision the same as no variance
     if variance is None or variance == 0:
         return value, None, None

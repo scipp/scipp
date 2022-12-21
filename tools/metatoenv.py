@@ -7,10 +7,10 @@
 # repositories in the Scipp organisation.
 ##################################################################################
 
-import os
 import argparse
-from functools import reduce
+import os
 import platform as _platform
+from functools import reduce
 
 parser = argparse.ArgumentParser(
     description='Generate a conda environment file from a conda recipe meta.yaml file')

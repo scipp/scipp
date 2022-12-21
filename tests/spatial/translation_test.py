@@ -1,6 +1,7 @@
 import numpy as np
-from scipp.spatial import translation, translations
+
 import scipp as sc
+from scipp.spatial import translation, translations
 
 
 def test_translation():

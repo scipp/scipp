@@ -5,7 +5,9 @@
 
 import numpy as np
 import pytest
+
 import scipp as sc
+
 from ..factory import make_dense_data_array, make_dense_dataset
 
 # TODO: For now we are just checking that the plot does not throw any errors.

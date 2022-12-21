@@ -2,10 +2,10 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 
-from ..core import DataArray, BinEdgeError, DimensionError, VariancesError
-
 from functools import wraps
 from typing import Callable, Union
+
+from ..core import BinEdgeError, DataArray, DimensionError, VariancesError
 
 
 def _validated_masks(da, dim):
