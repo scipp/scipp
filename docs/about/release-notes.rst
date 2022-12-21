@@ -79,7 +79,7 @@ v0.17.0 (October 2022)
 Features
 ~~~~~~~~
 
-* :class:`scipp.Bins` now supports `__getitem__`, providing a shorthand for extracting events based on a coord value or value interval. This is equivalent functionality to label-based indexing for dense data but considers the coordinates of the underlying bin content `#2831 <https://github.com/scipp/scipp/pull/2831>`_.
+* :class:`scipp.Bins` now supports ``__getitem__``, providing a shorthand for extracting events based on a coord value or value interval. This is equivalent functionality to label-based indexing for dense data but considers the coordinates of the underlying bin content `#2831 <https://github.com/scipp/scipp/pull/2831>`_.
 * Much faster ``obj.bins.concat`` operations in presence of many bins `#2825 <https://github.com/scipp/scipp/pull/2825>`_.
 * When mapping between many input and output bins:
   Avoid huge memory use and slow performance in use of :py:func:`scipp.bin` and :py:func:`scipp.group` when only entire bins are combined (rather than splitting bins based on bin content coordinates).
@@ -254,7 +254,7 @@ v0.14.0 (May 2022)
 Features
 ~~~~~~~~
 
-* Added argument `max_rows` to :func:`scipp.table` `#2526 <https://github.com/scipp/scipp/pull/2526>`_.
+* Added argument ``max_rows`` to :func:`scipp.table` `#2526 <https://github.com/scipp/scipp/pull/2526>`_.
 * Added support for converting scalars to builtin objects via :func:`int` and :func:`float` `#2529 <https://github.com/scipp/scipp/pull/2529>`_.
 * Reduced time of initial import of Scipp by delaying imports of optional dependencies `#2535 <https://github.com/scipp/scipp/pull/2535>`_.
 * Added an ``update`` method to :class:`Coords`, :class:`Attrs`, :class:`Masks`, and :class:`Dataset`  `#2558 <https://github.com/scipp/scipp/pull/2558>`_.
@@ -269,7 +269,7 @@ Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
-* Changed :meth:`scipp.Variable.dims` and :meth:`scipp.Variable.shape` and corresponding properties in `DataArray` and `Dataset` to return tuples `2543 <https://github.com/scipp/scipp/pull/2543>`_.
+* Changed :meth:`scipp.Variable.dims` and :meth:`scipp.Variable.shape` and corresponding properties in ``DataArray`` and ``Dataset`` to return tuples `2543 <https://github.com/scipp/scipp/pull/2543>`_.
 * :func:`scipp.scalar` and :func:`scipp.index` now require keyword arguments for all but the ``value`` argument and :func:`scipp.vector` can take ``value`` positionally `2585 <https://github.com/scipp/scipp/pull/2585>`_.
 * Removed ``out`` argument from reduction operations (e.g. :func:`scipp.sum`) `2591 <https://github.com/scipp/scipp/pull/2591>`_.
 * :func:`scipp.datetime` and :func:`scipp.datetimes` now raise an error if a datetime string with timezone information is provided.

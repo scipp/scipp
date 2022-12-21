@@ -49,7 +49,7 @@ If you are running on Windows, you need to use a visual studio developer command
 
   "C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvars64.bat"
 
-If you wish to build using the Visual Studio CMake generators instead, there is a `windows-msbuild` CMake preset for this purpose.
+If you wish to build using the Visual Studio CMake generators instead, there is a ``windows-msbuild`` CMake preset for this purpose.
 
 To build a debug version of the library:
 
