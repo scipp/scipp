@@ -23,8 +23,8 @@ We therefore restrict what can go into Scipp as follows:
 
 * *Scippneutron* shall contain only generic neutron-specific functionality.
   Facility-specific or instrument-specific functionality must not be added.
-  Examples of generic functionality that is permitted are 
-  
+  Examples of generic functionality that is permitted are
+
   * Unit conversions, which could be generic for all time-of-flight neutron sources.
   * Published research such as absorption corrections.
 

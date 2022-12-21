@@ -88,21 +88,21 @@ def interp1d(da: DataArray,
     dim:
         Dimension of the interpolation.
     kind:
-    
+
         - **integer**: order of the spline interpolator
         - **string**:
-        
-          - 'zero', 'slinear', 'quadratic', 'cubic': 
+
+          - 'zero', 'slinear', 'quadratic', 'cubic':
             spline interpolation of zeroth, first, second or third order
-          - 'previous' and 'next': 
+          - 'previous' and 'next':
             simply return the previous or next value of the point
           - 'nearest-up' and 'nearest'
             differ when interpolating half-integers (e.g. 0.5, 1.5) in that
-            'nearest-up' rounds up and 'nearest' rounds down   
+            'nearest-up' rounds up and 'nearest' rounds down
     fill_value:
         Set to 'extrapolate' to allow for extrapolation of points
         outside the range.
-        
+
     Returns
     -------
     :

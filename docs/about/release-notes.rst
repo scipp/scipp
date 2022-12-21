@@ -679,7 +679,7 @@ Breaking changes
 Contributors
 ~~~~~~~~~~~~
 
-Owen Arnold :sup:`b, c`\, 
+Owen Arnold :sup:`b, c`\,
 Simon Heybrock :sup:`a`\,
 Matthew D. Jones :sup:`b, c`\,
 Neil Vaytet :sup:`a`\,

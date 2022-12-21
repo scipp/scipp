@@ -51,7 +51,7 @@ This call to ``transform`` will add the two variables (or variable views) ``a`` 
         a, b, [](const auto &a_, const auto &b_) { return a_ + b_; });
 
 
-Example 2 
+Example 2
 ~~~~~~~~~
 
 This call to ``transform_in_place`` accepts two variables (or variable views) ``a`` and ``b``.

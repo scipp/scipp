@@ -11,6 +11,7 @@ repos:
       - id: detect-private-key
       - id: trailing-whitespace
         args: [ --markdown-linebreak-ext=md ]
+        exclude: '\.svg'
   - repo: https://github.com/pycqa/flake8
     rev: 4.0.1
     hooks:

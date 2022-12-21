@@ -1,6 +1,6 @@
 name: C++ and Python coverage
 
-on: 
+on:
   schedule:
     - cron: '0 0 * * 0'
   workflow_dispatch:
