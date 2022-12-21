@@ -8,9 +8,7 @@
 
 namespace scipp::ranges {
 
-template <class T> struct reverse_view {
-  T &obj;
-};
+template <class T> struct reverse_view { T &obj; };
 template <class T> auto begin(reverse_view<T> w) { return std::rbegin(w.obj); }
 template <class T> auto end(reverse_view<T> w) { return std::rend(w.obj); }
 

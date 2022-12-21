@@ -16,9 +16,7 @@ namespace scipp::core {
 template <class... Ts> struct pair_self {
   using type = std::tuple<std::tuple<Ts, Ts>...>;
 };
-template <class... Ts> struct pair_custom {
-  using type = std::tuple<Ts...>;
-};
+template <class... Ts> struct pair_custom { using type = std::tuple<Ts...>; };
 template <class... Ts> struct pair_ {
   template <class RHS> using type = std::tuple<std::tuple<Ts, RHS>...>;
 };
