@@ -1,9 +1,26 @@
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.3.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-json
+      - id: check-toml
+      - id: check-yaml
+      - id: detect-private-key
+      - id: trailing-whitespace
+        args: [ --markdown-linebreak-ext=md ]
   - repo: https://github.com/pycqa/flake8
     rev: 4.0.1
     hooks:
       - id: flake8
         types: ["python"]
+        additional_dependencies: ["flake8-bugbear==22.10.27"]
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.7.4
+    hooks:
+      - id: bandit
+        additional_dependencies: ["bandit[toml]"]
+        args: ["-c", "pyproject.toml"]
   - repo: https://github.com/pre-commit/mirrors-yapf
     rev: v0.32.0
     hooks:
@@ -23,3 +40,18 @@ repos:
         types: ["jupyter"]
         args: ["--drop-empty-cells",
                "--extra-keys 'metadata.language_info.version cell.metadata.jp-MarkdownHeadingCollapsed cell.metadata.pycharm'"]
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.2
+    hooks:
+      - id: codespell
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.9.0
+    hooks:
+      - id: python-check-blanket-noqa
+      - id: python-no-eval
+      - id: python-no-log-warn
+      - id: python-use-type-annotations
+      - id: rst-backticks
+      - id: rst-directive-colons
+      - id: rst-inline-touching-normal
+      - id: text-unicode-replacement-char
