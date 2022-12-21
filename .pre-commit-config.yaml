@@ -4,8 +4,10 @@ repos:
     hooks:
       - id: check-added-large-files
       - id: check-json
+        exclude: asv.conf.json
       - id: check-toml
       - id: check-yaml
+        exclude: conda/meta.yaml
       - id: detect-private-key
       - id: trailing-whitespace
         args: [ --markdown-linebreak-ext=md ]
