@@ -38,7 +38,7 @@ def elemwise_func(func: Optional[Callable] = None,
     func:
         Function to compute an output element from input element values.
     unit_func:
-        Function to compute the output unit. If ``None``, ``func`` wil be used.
+        Function to compute the output unit. If ``None``, ``func`` will be used.
     auto_convert_dtypes:
         Set to ``True`` to automatically convert all inputs to float64.
 

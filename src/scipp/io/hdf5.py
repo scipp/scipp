@@ -75,7 +75,7 @@ class BinDataIO:
         buffer_len = bins['data'].sizes[bins['dim']]
         # Crude mechanism to avoid writing large buffers, e.g., from
         # overallocation or when writing a slice of a larger variable. The
-        # copy causes some overhead, but so would the (much mor complicated)
+        # copy causes some overhead, but so would the (much more complicated)
         # solution to extract contents bin-by-bin. This approach will likely
         # need to be revisited in the future.
         if buffer_len > 1.5 * data.bins.size().sum().value:

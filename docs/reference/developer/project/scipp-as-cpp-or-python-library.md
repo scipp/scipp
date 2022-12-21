@@ -158,14 +158,14 @@ We would need the following:
 - Duck array with physical units.
   `Pint` appears to provide this by now.
 - Duck array with uncertainties.
-  The Python `uncertainties` packages provides this, but it is likely not useable since it tracks correlations and is not computationally feasible for our purposes.
+  The Python `uncertainties` packages provides this, but it is likely not usable since it tracks correlations and is not computationally feasible for our purposes.
   We would thus need to provide a simpler duck-array error-propagation package.
   Early on in the Scipp development we argued that uncertainty propagation based on NumPy array math may be 10x slower (for in-place `multiply` or `divide` operations) and we therefore need to implement this in C++.
   There are two relevant notes here:
   - This may still be partially true, but this is a statement about the implementation of the *operation*, not the *data structure*.
     That is, we could still provide a Python-only duck array for this.
   - Multiplication and division operations with uncertainties and broadcast that commonly arose in neutron-scattering data reduction will be removed from Scipp due to the unhandled introduction of correlations.
-    The most performanc relevant aspect may thus vanish.
+    The most performance relevant aspect may thus vanish.
     See upcoming publication.
 - Bin-edge coordinates are not supported in Xarray.
   However, Pandas' `IntervalIndex` and `Interval`, first introduced in pandas-0.20 (May 2017) and modified through 2019, partially cover our needs for bin-edges.

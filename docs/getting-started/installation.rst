@@ -85,7 +85,7 @@ To install components for additional submodules, use the ``all`` extras of the m
    pip install scipp[all]
 
 This will install everything that is needed, with the exception of plotting libraries for interactive use in Jupyter.
-These are avaiable in the ``interactive`` extra.
+These are available in the ``interactive`` extra.
 We recommend combining this with ``all``:
 
 .. code-block:: sh

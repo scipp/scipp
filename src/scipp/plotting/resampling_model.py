@@ -107,7 +107,7 @@ class ResamplingModel():
         dense data in the case of masks of binned data. The called to _with_edges
         below is done during setup of ResamplingDenseModel but not
         ResamplingBinnedModel. A proper solution would likely include support for
-        non-edge inputs in `rebin`, or rather a function with similar constraits
+        non-edge inputs in `rebin`, or rather a function with similar constraints
         such as `bin`, but for dense data.
         """
         data = var

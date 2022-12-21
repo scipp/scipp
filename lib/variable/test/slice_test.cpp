@@ -47,7 +47,7 @@ TEST(VariableSliceTest, stride_3_gives_every_third) {
 TEST(VariableSliceTest, negative_stride_throws) {
   // Currently class Slice cannot be created with negative stride. This is a
   // sanity check since Variable::slice needs modifications if class Slice
-  // started to suppor this. See DISABLED tests below.
+  // started to support this. See DISABLED tests below.
   const auto var = make_range();
   ASSERT_ANY_THROW(var.slice({Dim::X, 0, 10, -1}));
 }

@@ -228,7 +228,7 @@ def test_bin_by_2d_dimension_coord_does_not_erase_extra_dim():
     da = table.bin(x=10, y=12)
     da.coords['xy'] = da.coords['x'][1:] + da.coords['y']
     da = da.rename_dims({'y': 'xy'})
-    # The call to `bin` here "aligns" all bins, so we generally do not want ot erase.
+    # The call to `bin` here "aligns" all bins, so we generally do not want to erase.
     assert da.bin(xy=20).dims == ('x', 'xy')
 
 

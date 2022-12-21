@@ -62,7 +62,7 @@ transform_subspan_impl(const DType type, const Dim dim, const scipp::index size,
 /// 3. The tuple of supported type combinations must include the type of the out
 ///    argument as the first type in the inner tuples. The output type must be
 ///    passed at runtime as the first argument. `transform_subspan` DOES NOT
-///    INITIALIZE the output array, i.e., `Op` must take care of initializating
+///    INITIALIZE the output array, i.e., `Op` must take care of initializing
 ///    the respective subspans. This is done for improved performance, avoiding
 ///    streaming/writing to memory twice. Optionally, initialization can be
 ///    requested by passing an operator inheriting

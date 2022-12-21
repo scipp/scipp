@@ -223,7 +223,7 @@ def to_dict(meta):
 
 def is_static():
     """
-    Returns `True` if the `inline` matplotlib backend is curently in use.
+    Returns `True` if the `inline` matplotlib backend is currently in use.
     """
     from matplotlib.pyplot import get_backend
     return get_backend().lower().endswith('inline')

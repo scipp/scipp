@@ -255,7 +255,7 @@ TEST(UnitFormatTest, roundtrip_string) {
 }
 
 TEST(UnitFormatTest, roundtrip_unit) {
-  // Some formattings use special characters, e.g., for micro and Angstrom, but
+  // Some strings use special characters, e.g., for micro and Angstrom, but
   // some are actually formatted badly right now, but at least roundtrip works.
   for (const auto &s : {"us", "angstrom", "counts/us", "Y", "M", "D"}) {
     const auto unit = units::Unit(s);

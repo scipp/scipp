@@ -43,7 +43,7 @@ To build and install the library:
   mkdir install
   cd build
 
-If you are running on Windows, you need to use a visual studio developer command prompt for the following steps. This can be opened manually from the start menu, or programatically by calling the appropriate vcvars script, for example:
+If you are running on Windows, you need to use a visual studio developer command prompt for the following steps. This can be opened manually from the start menu, or programmatically by calling the appropriate vcvars script, for example:
 
 .. code-block:: bash
 
@@ -151,7 +151,7 @@ If you wish, you can install precommit hooks for flake8 and yapf. In the source 
 Using Scipp as a C++ library
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Using Scipp as a C++ library is not recommened at this point as the API (and ABI) is not stable and documentation is sparse.
+Using Scipp as a C++ library is not recommended at this point as the API (and ABI) is not stable and documentation is sparse.
 Nonetheless, it can be used as a ``cmake`` package as follows.
 In your ``CMakeLists.txt``:
 

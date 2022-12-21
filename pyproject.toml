@@ -27,6 +27,10 @@ archs = ["x86_64", "arm64"]
 # Excluding tests because bandit doesn't like `assert`.
 exclude_dirs = ["docs/conf.py", "tests", "install", "conda/cmake-package-test", "tools", "setup.py"]
 
+[tool.codespell]
+ignore-words-list = "elemt"
+skip = "./.git,./install,./build,./cmake-build*,./lib/cmake/sanitizers-cmake,./.tox,*/*_cache,*/.virtual_documents,*/.ipynb_checkpoints,*.pdf,*.svg"
+
 [tool.pytest.ini_options]
 addopts = "-ra -v"
 filterwarnings = [

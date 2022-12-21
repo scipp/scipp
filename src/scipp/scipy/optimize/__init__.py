@@ -122,7 +122,7 @@ def curve_fit(
       over the underlying scipy function by ensuring units are consistent.
     - The fit function f must only take a single positional argument, x. All other
       arguments mapping to fit parameters must be keyword-only arguments.
-    - The inital guess in p0 must be provided as a dict, mapping from fit-function
+    - The initial guess in p0 must be provided as a dict, mapping from fit-function
       parameter names to initial guesses.
     - The parameter bounds must also be provided as a dict, like p0.
     - The fit parameters may be scalar scipp variables. In that case an initial guess

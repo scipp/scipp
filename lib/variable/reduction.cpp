@@ -97,7 +97,7 @@ Variable min(const Variable &var, const Dim dim) {
   return reduce_dim(var, dim, min_into, FillValue::Max);
 }
 
-/// Return the minimum along given dimension ignorning NaN values.
+/// Return the minimum along given dimension ignoring NaN values.
 ///
 /// Variances are not considered when determining the minimum. If present, the
 /// variance of the minimum element is returned.
@@ -172,7 +172,7 @@ Variable max(const Variable &var) {
   return reduce_all_dims(var, [](auto &&..._) { return max(_...); });
 }
 
-/// Return the maximum along all dimensions ignorning NaN values.
+/// Return the maximum along all dimensions ignoring NaN values.
 Variable nanmax(const Variable &var) {
   return reduce_all_dims(var, [](auto &&..._) { return nanmax(_...); });
 }

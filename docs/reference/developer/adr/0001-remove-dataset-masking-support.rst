@@ -41,7 +41,7 @@ Negative:
 - It is no longer possible to simply mask elements of all items in a dataset with a single mask.
   The simplest example would be masking a row in a table.
   Instead we would need to mask each row in each column.
-- Certain workflows, such as an existing SANS workflow need to be slighty adapted.
+- Certain workflows, such as an existing SANS workflow need to be slightly adapted.
   Previously this had made use of the mask of the detector data to also effect masking of the norm terms.
   Instead we need to add this masks for both data and norm separately.
   This is not a large problem and might even make the code more understandable.

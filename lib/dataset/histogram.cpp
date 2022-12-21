@@ -105,7 +105,7 @@ std::set<Dim> edge_dimensions(const DataArray &a) {
 
 /// Return the Dim of the given data array that has an "bin edge" coordinate.
 ///
-/// Throws if there is not excactly one such dimension.
+/// Throws if there is not exactly one such dimension.
 Dim edge_dimension(const DataArray &a) {
   const auto &dims = edge_dimensions(a);
   if (dims.size() != 1)

@@ -126,7 +126,7 @@ class UnitAliases:
           ...     str(sc.Unit('4492800s'))
           'dogyear'
 
-        Previous aliases can be overriden and are restored after the context:
+        Previous aliases can be overridden and are restored after the context:
 
           >>> sc.units.aliases.clear()
           >>> sc.units.aliases['speed'] = 'km/s'

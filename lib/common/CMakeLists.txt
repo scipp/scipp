@@ -6,7 +6,7 @@ set(TARGET_NAME "scipp-common")
 set(INC_FILES
     include/scipp/common/index.h include/scipp/common/index_composition.h
     include/scipp/common/overloaded.h include/scipp/common/reduction.h
-    iinclude/scipp/common/initialization.h
+    include/scipp/common/initialization.h
 )
 
 add_library(${TARGET_NAME} INTERFACE)

@@ -644,7 +644,7 @@ TEST(VariableView, slice_copy_from_variable) {
       makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                            Values{11, 12, 21, 22}, Variances{33, 34, 43, 44});
 
-  // We might want to mimick Python's __setitem__, but operator= would (and
+  // We might want to mimic Python's __setitem__, but operator= would (and
   // should!?) assign the view contents, not the data.
   const Dimensions dims({{Dim::Y, 3}, {Dim::X, 3}});
   auto target = makeVariable<double>(Dimensions{dims}, Values{}, Variances{});
