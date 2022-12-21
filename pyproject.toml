@@ -32,7 +32,14 @@ ignore-words-list = "elemt"
 skip = "./.git,./install,./build,./cmake-build*,./lib/cmake/sanitizers-cmake,./.tox,*/*_cache,*/.virtual_documents,*/.ipynb_checkpoints,*.pdf,*.svg"
 
 [tool.pytest.ini_options]
-addopts = "-ra -v"
+minversion = "7.0"
+testpaths = "tests"
+addopts = """
+--strict-config
+--strict-markers
+-ra
+-v
+"""
 filterwarnings = [
   'error',
   'ignore:You are running a "Debug" build of scipp:',
@@ -57,4 +64,3 @@ filterwarnings = [
   'ignore:Keyword `traits` is deprecated in traitlets 5.0, use `per_key_traits` instead:DeprecationWarning',
   'ignore:Support for mapping types has been deprecated and will be dropped in a future release.:DeprecationWarning',
 ]
-testpaths = "tests"
