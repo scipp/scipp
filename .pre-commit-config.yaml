@@ -53,6 +53,7 @@ repos:
     rev: v1.9.0
     hooks:
       - id: python-no-eval
+        exclude: "object_list.py"
       - id: python-no-log-warn
       - id: python-use-type-annotations
       - id: rst-backticks
