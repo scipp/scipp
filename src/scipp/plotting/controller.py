@@ -279,7 +279,8 @@ class PlotController:
             visible = False
             self.widgets.clear_profile_button()
         else:
-            assert len(dims) == 1  # TODO support 2d profiles
+            if len(dims) != 1:
+                raise NotImplementedError("Profile view only supports 1-dimensional data")
             if owner.button_style == "info":
                 owner.button_style = ""
                 visible = False

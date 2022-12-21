@@ -455,7 +455,8 @@ def _bins(obj):
 
 def _set_bins(obj, bins: Bins):
     # Should only be used by __iadd__ and friends
-    assert obj is bins._obj
+    if obj is not bins._obj:
+        raise ValueError("Cannot set bins with a new object")
 
 
 def _groupby_bins(obj):
