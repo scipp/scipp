@@ -4,7 +4,7 @@ from conans import CMake, ConanFile, tools
 
 CMAKE_PROJECT_STR = """project(
     UNITS
-    LANGUAGES CXX
+    LANGUAGES C CXX
     VERSION 0.7.0
 )"""
 
