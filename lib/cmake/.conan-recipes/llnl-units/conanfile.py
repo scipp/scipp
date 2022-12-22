@@ -4,14 +4,14 @@ from conans import CMake, ConanFile, tools
 
 CMAKE_PROJECT_STR = """project(
     UNITS
-    LANGUAGES CXX
-    VERSION 0.6.0
+    LANGUAGES C CXX
+    VERSION 0.7.0
 )"""
 
 
 class UnitsConan(ConanFile):
     name = "LLNL-Units"
-    version = "0.6.0"
+    version = "0.7.0"
     license = "BSD-3"
     url = "https://github.com/llnl/units"
     homepage = "https://units.readthedocs.io"
@@ -38,8 +38,8 @@ class UnitsConan(ConanFile):
 
     def source(self):
         git = tools.Git("units")
-        git.clone("https://github.com/SimonHeybrock/units.git")
-        git.checkout('c3dab73')  # this is LLNL/units@v0.6.0 with a namespace fix
+        git.clone("https://github.com/LLNL/units.git")
+        git.checkout("v" + self.version)
 
         cmake_project_str = (CMAKE_PROJECT_STR.replace("\n", os.linesep)
                              if self.settings.os == "Windows" else CMAKE_PROJECT_STR)
