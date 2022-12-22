@@ -2,9 +2,10 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from typing import Any
-from .variable import ones, zeros, empty, full
+
 from ..typing import VariableLikeType
 from .concepts import rewrap_output_data
+from .variable import empty, full, ones, zeros
 
 
 def zeros_like(obj: VariableLikeType, /) -> VariableLikeType:

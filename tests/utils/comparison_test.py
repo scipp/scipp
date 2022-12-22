@@ -1,7 +1,8 @@
 import numpy as np
+import pytest
+
 import scipp as sc
 import scipp.utils as su
-import pytest
 
 
 def test_wont_match_when_meta_size_unequal():
@@ -9,7 +10,7 @@ def test_wont_match_when_meta_size_unequal():
     a = sc.DataArray(data=point, attrs={'x': point})
     b = sc.DataArray(data=point)
     assert not su.isnear(a, b, rtol=0 * sc.units.one, atol=1.0 * sc.units.one)
-    # ingore attributes, should give the same result
+    # ignore attributes, should give the same result
     assert su.isnear(a,
                      b,
                      rtol=0 * sc.units.one,

@@ -1,4 +1,5 @@
 import pandas
+
 import scipp as sc
 from scipp.compat import from_pandas
 

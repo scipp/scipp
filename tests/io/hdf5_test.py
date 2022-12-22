@@ -2,12 +2,14 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
-from scipp.io.hdf5 import collection_element_name
-import scipp as sc
-import numpy as np
-import tempfile
 import os
+import tempfile
+
+import numpy as np
 import pytest
+
+import scipp as sc
+from scipp.io.hdf5 import collection_element_name
 
 h5py = pytest.importorskip('h5py')
 

@@ -153,7 +153,7 @@ if(CMAKE_CXX_CPPCHECK)
   )
 endif()
 
-# This is currently causing to many warnings, reenable when appropriate.
+# This is currently causing to many warnings, re-enable when appropriate.
 # add_compile_options ( -Wconversion )
 
 # permissive- : Std compliant parsing, warnings (W3) set by CMake defaults

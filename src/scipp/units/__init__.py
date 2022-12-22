@@ -33,11 +33,10 @@ Special:
 from contextlib import contextmanager
 from typing import Dict, Iterable, Tuple, Union
 
-from .._scipp.core.units import (angstrom, counts, default_unit, deg, dimensionless, kg,
-                                 K, meV, m, one, rad, s, us, ns, mm)
-
-from .._scipp.core import (add_unit_alias as _add_unit_alias, clear_unit_aliases as
-                           _clear_unit_aliases)
+from .._scipp.core import add_unit_alias as _add_unit_alias
+from .._scipp.core import clear_unit_aliases as _clear_unit_aliases
+from .._scipp.core.units import K, angstrom, counts, default_unit, deg, dimensionless, \
+    kg, m, meV, mm, ns, one, rad, s, us  # NOQA
 from ..core.cpp_classes import Unit, Variable, VariancesError
 
 
@@ -126,7 +125,7 @@ class UnitAliases:
           ...     str(sc.Unit('4492800s'))
           'dogyear'
 
-        Previous aliases can be overriden and are restored after the context:
+        Previous aliases can be overridden and are restored after the context:
 
           >>> sc.units.aliases.clear()
           >>> sc.units.aliases['speed'] = 'km/s'

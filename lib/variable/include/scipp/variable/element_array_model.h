@@ -24,7 +24,7 @@ template <class T> inline constexpr bool is_span_v = is_span<T>::value;
 
 template <class T1, class T2>
 bool equals_impl(const T1 &view1, const T2 &view2) {
-  // TODO Use optimizations in case of contigous views (instead of slower
+  // TODO Use optimizations in case of contiguous views (instead of slower
   // ElementArrayView iteration). Add multi threading?
   if constexpr (is_span_v<typename T1::value_type>)
     return std::equal(
@@ -45,7 +45,7 @@ template <class T> bool equals_nan(const T &a, const T &b) {
 
 template <class T1, class T2>
 bool equals_nan_impl(const T1 &view1, const T2 &view2) {
-  // TODO Use optimizations in case of contigous views (instead of slower
+  // TODO Use optimizations in case of contiguous views (instead of slower
   // ElementArrayView iteration). Add multi threading?
   if constexpr (is_span_v<typename T1::value_type>)
     return std::equal(

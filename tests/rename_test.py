@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-import scipp as sc
 import pytest
+
+import scipp as sc
 
 
 def make_dataarray(dim1, dim2) -> sc.DataArray:

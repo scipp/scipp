@@ -3,9 +3,9 @@
 # @file
 # @author Jan-Lukas Wynen
 
+import numpy as np
 import pytest
 
-import numpy as np
 import scipp as sc
 
 

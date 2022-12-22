@@ -2,10 +2,11 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .panel import PlotPanel
-from ..utils import make_random_color
-from .view1d import _make_label
 import ipywidgets as ipw
+
+from ..utils import make_random_color
+from .panel import PlotPanel
+from .view1d import _make_label
 
 
 class PlotPanel1d(PlotPanel):

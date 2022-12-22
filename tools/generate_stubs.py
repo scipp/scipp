@@ -10,11 +10,11 @@ https://github.com/sizmailov/pybind11-stubgen
 
 import argparse
 import ast
-from contextlib import contextmanager
 import inspect
 import os
 import re
 import subprocess
+from contextlib import contextmanager
 from tempfile import TemporaryDirectory
 
 import scipp as sc

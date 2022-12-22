@@ -1,4 +1,5 @@
 import pytest
+
 import scipp as sc
 
 # Our config API does not expose a way to ignore user configuration files.

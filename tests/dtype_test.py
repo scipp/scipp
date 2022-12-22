@@ -2,9 +2,9 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
+import numpy as np
 import pytest
 
-import numpy as np
 import scipp as sc
 
 

@@ -2,14 +2,16 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .. import config, units
-from ..utils import running_in_jupyter
-from ..core import concat, values, scalar, full_like, geomspace
-from ..core import DType, DataArray
-from ..core import abs as abs_
-import numpy as np
-from copy import copy
 import io
+from copy import copy
+
+import numpy as np
+
+from .. import config, units
+from ..core import DataArray, DType
+from ..core import abs as abs_
+from ..core import concat, full_like, geomspace, scalar, values
+from ..utils import running_in_jupyter
 
 
 def get_line_param(name, index):
@@ -61,7 +63,7 @@ def parse_params(params=None, defaults=None, globs=None, array=None):
     """
     Construct the colorbar settings using default and input values
     """
-    from matplotlib.colors import Normalize, LogNorm, LinearSegmentedColormap
+    from matplotlib.colors import LinearSegmentedColormap, LogNorm, Normalize
 
     parsed = dict(config['plot']['params'])
     if defaults is not None:
@@ -223,7 +225,7 @@ def to_dict(meta):
 
 def is_static():
     """
-    Returns `True` if the `inline` matplotlib backend is curently in use.
+    Returns `True` if the `inline` matplotlib backend is currently in use.
     """
     from matplotlib.pyplot import get_backend
     return get_backend().lower().endswith('inline')

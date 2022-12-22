@@ -7,9 +7,10 @@ Changes are:
 
 * Unit of values of `begin` and `end` indices for binned data removed
 """
-import h5py
 import sys
 from shutil import copyfile
+
+import h5py
 
 
 def migrate_object(name, obj):

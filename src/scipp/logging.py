@@ -7,16 +7,16 @@ Utilities for managing Scipp's logger and log widget.
 See the https://scipp.github.io/reference/logging.html for an overview.
 """
 
-from copy import copy
-from dataclasses import dataclass
 import html
 import logging
 import time
+from copy import copy
+from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple
 
 from .core import DataArray, Dataset, Variable
-from .html.resources import load_style
 from .html import make_html
+from .html.resources import load_style
 from .utils import running_in_jupyter
 
 

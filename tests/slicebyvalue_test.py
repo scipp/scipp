@@ -2,9 +2,10 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Matthew Andrew
-import scipp as sc
 import numpy as np
 import pytest
+
+import scipp as sc
 
 
 class TestSliceByValue:

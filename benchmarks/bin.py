@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 import numpy as np
+
 import scipp as sc
 from scipp.binning import make_binned
 

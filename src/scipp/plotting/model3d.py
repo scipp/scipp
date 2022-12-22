@@ -2,10 +2,12 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 from functools import lru_cache
-from ..core import flatten, sqrt, norm
+
+import numpy as np
+
+from ..core import flatten, norm, sqrt
 from .model1d import PlotModel1d
 from .resampling_model import ResamplingMode
-import numpy as np
 
 
 def _planar_norm(a, b):

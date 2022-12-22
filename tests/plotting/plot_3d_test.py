@@ -4,9 +4,11 @@
 # @author Neil Vaytet
 
 import numpy as np
-import scipp as sc
-from ..factory import make_dense_data_array, make_binned_data_array
 import pytest
+
+import scipp as sc
+
+from ..factory import make_binned_data_array, make_dense_data_array
 
 
 def _with_fake_pos(*args, **kwargs):

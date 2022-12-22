@@ -1,8 +1,9 @@
+import argparse
 import sys
 from typing import List, Union
-from packaging.version import parse, Version, InvalidVersion
+
 import requests
-import argparse
+from packaging.version import InvalidVersion, Version, parse
 
 
 def _get_releases(repo: str, organization: str = 'scipp') -> List[Version]:

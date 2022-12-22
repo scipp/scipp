@@ -53,7 +53,7 @@ public:
   ///
   /// This is equivalent to `makeVariable`, except that the dtype is passed at
   /// runtime as first argument instead of a template argument. `makeVariable`
-  /// should be prefered where possible, since it generates less code.
+  /// should be preferred where possible, since it generates less code.
   template <class... Ts> Variable(const DType &type, Ts &&...args);
 
   Variable(const Variable &other) = default;

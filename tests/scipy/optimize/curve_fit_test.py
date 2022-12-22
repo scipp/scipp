@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+from functools import partial
+
 import numpy as np
+import pytest
+
 import scipp as sc
 from scipp.scipy.optimize import curve_fit
-
-import pytest
-from functools import partial
 
 
 def func(x, *, a, b):

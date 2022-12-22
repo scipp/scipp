@@ -2,13 +2,14 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 from functools import partial
+
+from ..core import UnitError, to_unit
+from .controller3d import PlotController3d
+from .figure3d import PlotFigure3d
+from .model3d import ScatterPointModel
 from .objects import make_params, make_plot
 from .panel3d import PlotPanel3d
 from .view3d import PlotView3d
-from .figure3d import PlotFigure3d
-from .controller3d import PlotController3d
-from .model3d import ScatterPointModel
-from ..core import UnitError, to_unit
 
 
 def plot3d(scipp_obj_dict, *, positions, **kwargs):

@@ -3,8 +3,9 @@
 # @file
 # @author Owen Arnold
 
-import scipp as sc
 import pytest
+
+import scipp as sc
 
 
 def test_plot_0d_variable():

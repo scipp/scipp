@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
-import scipp as sc
-from scipp.serialization import serialize, deserialize
 import pytest
+
+import scipp as sc
+from scipp.serialization import deserialize, serialize
 
 _ = pytest.importorskip('h5py')
 

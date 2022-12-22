@@ -7,13 +7,13 @@ This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.interpolate`.
 """
 
-from ...core import empty, epoch, Variable, DataArray, DimensionError, UnitError
-from ...core import DType, irreducible_mask
-from ...compat.wrapping import wrap1d
-
 from typing import Any, Callable, Literal, Union
 
 import numpy as np
+
+from ...compat.wrapping import wrap1d
+from ...core import DataArray, DimensionError, DType, UnitError, Variable, empty, \
+    epoch, irreducible_mask  # NOQA
 
 
 def _as_interpolation_type(x):
@@ -88,21 +88,21 @@ def interp1d(da: DataArray,
     dim:
         Dimension of the interpolation.
     kind:
-    
+
         - **integer**: order of the spline interpolator
         - **string**:
-        
-          - 'zero', 'slinear', 'quadratic', 'cubic': 
+
+          - 'zero', 'slinear', 'quadratic', 'cubic':
             spline interpolation of zeroth, first, second or third order
-          - 'previous' and 'next': 
+          - 'previous' and 'next':
             simply return the previous or next value of the point
           - 'nearest-up' and 'nearest'
             differ when interpolating half-integers (e.g. 0.5, 1.5) in that
-            'nearest-up' rounds up and 'nearest' rounds down   
+            'nearest-up' rounds up and 'nearest' rounds down
     fill_value:
         Set to 'extrapolate' to allow for extrapolation of points
         outside the range.
-        
+
     Returns
     -------
     :

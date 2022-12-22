@@ -98,11 +98,11 @@ Comparison operators compare element-wise and *ignore variances*.
    less_equal
    not_equal
 
-`inf` and `nan` handling
-~~~~~~~~~~~~~~~~~~~~~~~~
+``inf`` and ``nan`` handling
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Special-value (`inf` and `nan`) checks.
-`inf` and `nan` in the *variances is ignored*.
+Special-value (``inf`` and ``nan``) checks.
+``inf`` and ``nan`` in the *variances is ignored*.
 
 .. autosummary::
    :toctree: ../generated/functions

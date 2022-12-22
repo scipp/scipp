@@ -2,10 +2,11 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import functools
-from typing import Callable, Optional
 from inspect import signature
-from .core import Variable
+from typing import Callable, Optional
+
 from ._scipp.core import transform as cpp_transform
+from .core import Variable
 
 
 def _as_numba_cfunc(function, unit_func=None):
@@ -38,7 +39,7 @@ def elemwise_func(func: Optional[Callable] = None,
     func:
         Function to compute an output element from input element values.
     unit_func:
-        Function to compute the output unit. If ``None``, ``func`` wil be used.
+        Function to compute the output unit. If ``None``, ``func`` will be used.
     auto_convert_dtypes:
         Set to ``True`` to automatically convert all inputs to float64.
 

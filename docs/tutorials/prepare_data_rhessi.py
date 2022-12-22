@@ -9,13 +9,15 @@ Output is written to ./data/hessi_flares.h5
 """
 
 from __future__ import annotations
+
+import re
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
-import re
 from typing import Dict, Union
 
 import numpy as np
 import pooch
+
 import scipp as sc
 
 DATA_DIR = Path(__file__).parent / "data"

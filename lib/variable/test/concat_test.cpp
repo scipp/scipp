@@ -37,7 +37,7 @@ TEST_F(ConcatTest, dimension_mismatch) {
   const auto xz = base.rename_dims({{Dim::Y, Dim::Z}});
   EXPECT_THROW_DISCARD(concat(std::vector{xz, base}, Dim::X),
                        except::DimensionError);
-  // Missing label in first arg can (right now) not lead to braodcast
+  // Missing label in first arg can (right now) not lead to broadcast
   EXPECT_THROW_DISCARD(
       concat(std::vector{base.slice({Dim::Y, 0}), base}, Dim::Z),
       except::DimensionError);

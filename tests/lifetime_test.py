@@ -1,11 +1,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-import numpy as np
-import scipp as sc
-import pytest
 """This file contains tests specific to pybind11 lifetime issues, in particular
 py::return_value_policy and py::keep_alive."""
+
+import numpy as np
+import pytest
+
+import scipp as sc
 
 
 def test_lifetime_values_of_py_array_t_item():

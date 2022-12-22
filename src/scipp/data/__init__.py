@@ -3,8 +3,7 @@
 # @author Simon Heybrock
 from functools import lru_cache
 
-from ..core import array, linspace, ones
-from ..core import DataArray
+from ..core import DataArray, array, linspace, ones
 from ..io import open_hdf5
 
 _version = '1'

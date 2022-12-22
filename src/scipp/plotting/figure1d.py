@@ -2,12 +2,14 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+import copy as cp
+import warnings
+
+import numpy as np
+
 from .figure import PlotFigure
 from .toolbar import PlotToolbar1d
 from .tools import get_line_param
-import numpy as np
-import copy as cp
-import warnings
 
 
 class PlotFigure1d(PlotFigure):

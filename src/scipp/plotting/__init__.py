@@ -148,6 +148,7 @@ def legacy_plot(*args, **kwargs):
         VisibleDeprecationWarning)
 
     import matplotlib.pyplot as plt
+
     from .wrapper import plot as _plot
 
     # Switch auto figure display off for better control over when figures are

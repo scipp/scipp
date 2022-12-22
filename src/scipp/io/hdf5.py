@@ -4,18 +4,20 @@
 # @author Simon Heybrock
 
 from __future__ import annotations
+
 from pathlib import Path
 from typing import Union
 
 import numpy as np
 
+from ..core.cpp_classes import Unit
 from ..logging import get_logger
 from ..typing import VariableLike
-from ..core.cpp_classes import Unit
 
 
 def _dtype_lut():
     from .._scipp.core import DType as d
+
     # For types understood by numpy we do not actually need this special
     # handling, but will do as we add support for other types such as
     # variable-length strings.
@@ -75,7 +77,7 @@ class BinDataIO:
         buffer_len = bins['data'].sizes[bins['dim']]
         # Crude mechanism to avoid writing large buffers, e.g., from
         # overallocation or when writing a slice of a larger variable. The
-        # copy causes some overhead, but so would the (much mor complicated)
+        # copy causes some overhead, but so would the (much more complicated)
         # solution to extract contents bin-by-bin. This approach will likely
         # need to be revisited in the future.
         if buffer_len > 1.5 * data.bins.size().sum().value:

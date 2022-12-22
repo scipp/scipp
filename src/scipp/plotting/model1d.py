@@ -2,11 +2,11 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .model import PlotModel, DataArrayDict
-from .tools import find_limits
-from .resampling_model import resampling_model
 from .._scipp import core as sc
 from ..core import concat
+from .model import DataArrayDict, PlotModel
+from .resampling_model import resampling_model
+from .tools import find_limits
 
 
 class PlotModel1d(PlotModel):

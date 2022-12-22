@@ -2,13 +2,13 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .objects import make_params, make_profile, make_plot
-from .model1d import PlotModel1d
-from .panel1d import PlotPanel1d
-from .view1d import PlotView1d
-from .figure1d import PlotFigure1d
 from .controller1d import PlotController1d
+from .figure1d import PlotFigure1d
+from .model1d import PlotModel1d
+from .objects import make_params, make_plot, make_profile
+from .panel1d import PlotPanel1d
 from .tools import is_static
+from .view1d import PlotView1d
 
 
 def plot1d(scipp_obj_dict, **kwargs):

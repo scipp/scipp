@@ -4,13 +4,13 @@
 import itertools
 import warnings
 from numbers import Integral
-from typing import Dict, List, Optional, Union, Sequence
+from typing import Dict, List, Optional, Sequence, Union
 
 from .._scipp import core as _cpp
-from .util import VisibleDeprecationWarning
-from .variable import array, Variable, linspace, arange, epoch, scalar
-from .math import round as round_
 from .bin_remapping import combine_bins
+from .math import round as round_
+from .util import VisibleDeprecationWarning
+from .variable import Variable, arange, array, epoch, linspace, scalar
 
 
 def make_histogrammed(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset], *,

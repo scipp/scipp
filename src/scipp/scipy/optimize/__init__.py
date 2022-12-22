@@ -7,15 +7,15 @@ This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.optimize`.
 """
 
-from ...core import scalar, stddevs, Variable, DataArray
-from ...core import BinEdgeError
-from ...units import default_unit, dimensionless
-from ..interpolate import _drop_masked
-
-import numpy as np
+from inspect import getfullargspec
 from numbers import Real
 from typing import Callable, Dict, Optional, Tuple, Union
-from inspect import getfullargspec
+
+import numpy as np
+
+from ...core import BinEdgeError, DataArray, Variable, scalar, stddevs
+from ...units import default_unit, dimensionless
+from ..interpolate import _drop_masked
 
 
 def _as_scalar(obj, unit):
@@ -122,7 +122,7 @@ def curve_fit(
       over the underlying scipy function by ensuring units are consistent.
     - The fit function f must only take a single positional argument, x. All other
       arguments mapping to fit parameters must be keyword-only arguments.
-    - The inital guess in p0 must be provided as a dict, mapping from fit-function
+    - The initial guess in p0 must be provided as a dict, mapping from fit-function
       parameter names to initial guesses.
     - The parameter bounds must also be provided as a dict, like p0.
     - The fit parameters may be scalar scipp variables. In that case an initial guess

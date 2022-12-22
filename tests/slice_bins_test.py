@@ -2,6 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import pytest
+
 import scipp as sc
 
 

@@ -5,8 +5,8 @@
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from scipp.testing import strategies as scst
 import scipp as sc
+from scipp.testing import strategies as scst
 
 # Tests have an increased deadline because the default was not enough for our MacOS CI.
 # hypothesis failed the tests because of it but subsequent invocations during

@@ -8,12 +8,12 @@ Search strategies for hypothesis to generate inputs for tests.
 from functools import partial
 from typing import Dict, Optional, Sequence, Union
 
-from hypothesis.errors import InvalidArgument
 from hypothesis import strategies as st
+from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as npst
 
-from ..core import variable as creation
 from ..core import DataArray, DType, Unit
+from ..core import variable as creation
 
 
 def dims() -> st.SearchStrategy:

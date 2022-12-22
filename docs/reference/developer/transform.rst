@@ -51,7 +51,7 @@ This call to ``transform`` will add the two variables (or variable views) ``a`` 
         a, b, [](const auto &a_, const auto &b_) { return a_ + b_; });
 
 
-Example 2 
+Example 2
 ~~~~~~~~~
 
 This call to ``transform_in_place`` accepts two variables (or variable views) ``a`` and ``b``.
@@ -85,8 +85,8 @@ Recommended usage
   // (b) float and int64_t,
   // (c) int32_t and double, and
   // (d) double and double.
-  // Note the special last argument to `arg_list`, which could be written also as
-  // `std::tuple<double, double>`: If all arguments are the same it suffices to list
+  // Note the special last argument to ``arg_list``, which could be written also as
+  // ``std::tuple<double, double>``: If all arguments are the same it suffices to list
   // it directly instead of providing a tuple.
   // More type tuples can be listed as required.
   overloaded{arg_list<std::tuple<double, bool>,

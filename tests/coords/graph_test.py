@@ -2,9 +2,9 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Jan-Lukas Wynen
 
+import scipp as sc
 import scipp.coords.graph as scgraph
 from scipp.coords.rule import ComputeRule, FetchRule, RenameRule
-import scipp as sc
 
 
 def graph_0():

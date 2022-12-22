@@ -1,5 +1,5 @@
-from scipp.spatial import scaling_from_vector, scalings_from_vectors
 import scipp as sc
+from scipp.spatial import scaling_from_vector, scalings_from_vectors
 
 
 def test_from_scaling_vector():

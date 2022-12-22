@@ -1,7 +1,8 @@
 # This uses the VULCAN_221040 file, obtained from Jonathan Taylor (SNS). We got
 # (oral) permission to use this file since it is from a course, i.e., not a user's data.
-import scipp as sc
 import scippneutron as scn
+
+import scipp as sc
 
 da = sc.io.open_hdf5('/home/simon/mantid/instruments/VULCAN/VULCAN_221040.h5')
 dspacing = scn.convert(da, 'tof', 'dspacing', scatter=True).squeeze()

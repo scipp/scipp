@@ -19,3 +19,4 @@ CMakeSettings.json
 .pytest_cache
 .mypy_cache
 src/scipp.egg-info
+.tox

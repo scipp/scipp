@@ -1,19 +1,21 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
+from copy import copy
+
+import ipywidgets as ipw
+import matplotlib.pyplot as plt
+import numpy as np
+import pythreejs as p3
+from matplotlib import cm, ticker
+from matplotlib.colorbar import ColorbarBase
+from matplotlib.colors import LogNorm, Normalize
+
 from .. import config
+from ..utils import value_to_string
 from .displayable import Displayable
 from .toolbar import PlotToolbar3d
 from .tools import fig_to_pngbytes
-from ..utils import value_to_string
-import numpy as np
-import ipywidgets as ipw
-from matplotlib import cm, ticker
-import matplotlib.pyplot as plt
-from matplotlib.colors import Normalize, LogNorm
-from matplotlib.colorbar import ColorbarBase
-import pythreejs as p3
-from copy import copy
 
 
 class PlotFigure3d(Displayable):

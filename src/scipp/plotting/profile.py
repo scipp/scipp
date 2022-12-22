@@ -2,8 +2,9 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .figure1d import PlotFigure1d
 import numpy as np
+
+from .figure1d import PlotFigure1d
 
 
 class PlotProfile(PlotFigure1d):

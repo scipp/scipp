@@ -2,10 +2,11 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .view import PlotView
-from ..core import zeros, scalar
 import numpy as np
 from matplotlib.collections import PathCollection
+
+from ..core import scalar, zeros
+from .view import PlotView
 
 
 class PlotView2d(PlotView):

@@ -4,12 +4,13 @@
 
 from __future__ import annotations
 
-from ..core import vector, vectors, matrix, matrices
-from ..core import DType, Variable, DataArray, Dataset
-from ..typing import VariableLike
+from collections import defaultdict
 
 import numpy as np
-from collections import defaultdict
+
+from ..core import vectors  # NOQA
+from ..core import DataArray, Dataset, DType, Variable, matrices, matrix, vector
+from ..typing import VariableLike
 
 
 def to_dict(scipp_obj: VariableLike) -> dict:

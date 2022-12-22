@@ -3,6 +3,7 @@
 # @author Neil Vaytet
 
 import ipywidgets as ipw
+
 from .displayable import Displayable
 
 

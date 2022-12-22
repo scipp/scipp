@@ -2,16 +2,17 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from __future__ import annotations
+
 from html import escape
 from typing import Optional
 
 import numpy as np
 
-from ._scipp import core as sc
 from . import config
-from .utils import hex_to_rgb, rgb_to_hex
-from .typing import VariableLike
+from ._scipp import core as sc
 from .html.resources import load_style
+from .typing import VariableLike
+from .utils import hex_to_rgb, rgb_to_hex
 
 # Unit is `em`. This particular value is chosen to avoid a horizontal scroll
 # bar with the readthedocs theme.
@@ -481,5 +482,5 @@ def show(container: VariableLike):
     `Representations and Tables <../../visualization/representations-and-tables.rst>`_
     for details.
     """
-    from IPython.core.display import display, HTML
+    from IPython.core.display import HTML, display
     display(HTML(make_svg(container)))

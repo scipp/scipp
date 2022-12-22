@@ -1,14 +1,13 @@
 import doctest
-
-import scipp
-
 import os
 import sys
-
 from typing import Any, Dict, Optional
+
+import sphinx_book_theme
 from docutils.nodes import document
 from sphinx.application import Sphinx
-import sphinx_book_theme
+
+import scipp
 
 sys.path.insert(0, os.path.abspath('.'))
 

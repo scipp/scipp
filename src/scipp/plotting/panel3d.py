@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
-from .panel import PlotPanel
 import ipywidgets as ipw
+
 from .._scipp import core as sc
+from .panel import PlotPanel
 
 
 class PlotPanel3d(PlotPanel):

@@ -8,9 +8,10 @@ Changes are:
 * Rename dtype vector_3_float64 to vector3
 * Rename dtype matrix_3_float64 to linear_transform3
 """
-import h5py
 import sys
 from shutil import copyfile
+
+import h5py
 
 
 def migrate_object(name, obj):

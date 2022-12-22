@@ -2,8 +2,9 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
-import scipp as sc
 import numpy as np
+
+import scipp as sc
 
 
 def test_all():

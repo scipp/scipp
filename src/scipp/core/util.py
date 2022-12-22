@@ -2,8 +2,9 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from typing import Dict
-from .cpp_classes import DataArray, Variable, Dataset
+
 from ..typing import VariableLikeType
+from .cpp_classes import DataArray, Dataset, Variable
 from .like import empty_like
 
 

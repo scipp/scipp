@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 import numpy as np
+import pytest
+
 import scipp as sc
 from scipp.scipy.signal import butter
-
-import pytest
 
 
 @pytest.mark.parametrize("coord", [

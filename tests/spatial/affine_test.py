@@ -1,8 +1,8 @@
-import pytest
 import numpy as np
+import pytest
 
-from scipp.spatial import affine_transform, affine_transforms
 import scipp as sc
+from scipp.spatial import affine_transform, affine_transforms
 
 
 def test_from_affine_matrix():

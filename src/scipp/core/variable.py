@@ -5,18 +5,18 @@
 
 from __future__ import annotations
 
+import warnings
 from contextlib import contextmanager
 from typing import Any, Iterable, Optional, Sequence, TypeVar, Union
-import warnings
 
 import numpy as _np
 from numpy.typing import ArrayLike
 
 from .._scipp import core as _cpp
-from .cpp_classes import DType, Unit, Variable
+from ..typing import DTypeLike
 from ..units import default_unit
 from ._sizes import _parse_dims_shape_sizes
-from ..typing import DTypeLike
+from .cpp_classes import DType, Unit, Variable
 
 NumberOrVar = TypeVar('NumberOrVar', Union[int, float], Variable)
 

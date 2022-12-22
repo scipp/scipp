@@ -2,11 +2,10 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .tools import find_limits, to_dict, to_bin_centers
 from .. import typing
-from ..core import DataArray
-from ..core import arange, bins
+from ..core import DataArray, arange, bins
 from .resampling_model import ResamplingMode
+from .tools import find_limits, to_bin_centers, to_dict
 
 
 class DataArrayDict(dict):

@@ -7,12 +7,11 @@ They provide a common interface for renaming and computing new coordinates.
 """
 
 from __future__ import annotations
-from functools import partial
 
+import inspect
 from abc import ABC, abstractmethod
 from copy import copy
-import inspect
-
+from functools import partial
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Tuple
 
 from ..core import Variable

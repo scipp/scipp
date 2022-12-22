@@ -88,7 +88,7 @@ The order of sections is fixed as shown in the example.
 
 * **Short description** (*required*) A single sentence describing the purpose of the function / class.
 * **Long description** (*optional*) One or more paragraphs of detailed explanations.
-  Can include additional sections like `Warning` or `Hint`.
+  Can include additional sections like ``Warning`` or ``Hint``.
 * **Parameters** (*required for functions*) List of all function arguments including their name but not their type.
   Listing arguments like this can seem ridiculous if the explanation is as devoid of content as in the example.
   But it is still required in order for sphinx to show the types.

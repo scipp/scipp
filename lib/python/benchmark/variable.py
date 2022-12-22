@@ -2,9 +2,11 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 import time
+
+import numpy as np
+
 import scipp as sc
 from scipp import Dim
-import numpy as np
 
 
 def assign_from_numpy_1d(size):

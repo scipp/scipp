@@ -5,15 +5,15 @@ Benchmark compilation in various different configurations.
 See section 'CONFIGURATION' below for setup.
 """
 
+import re
+import subprocess
+import sys
 from dataclasses import dataclass, field
 from datetime import timedelta
 from itertools import chain, groupby
 from pathlib import Path
-import re
-import subprocess
-from typing import Dict, List
 from tempfile import TemporaryDirectory
-import sys
+from typing import Dict, List
 
 
 @dataclass

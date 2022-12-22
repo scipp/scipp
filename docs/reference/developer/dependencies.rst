@@ -40,4 +40,4 @@ Places that define dependencies
   These are currently not frozen explicitly.
   The goal is to move to the global conda-forge pin once they move to ``numpy-1.20``. See `#2571 <https://github.com/scipp/scipp/issues/2571>`_.
 - Environment files in `docs/environments/ <https://github.com/scipp/scipp/tree/main/docs/environments>`_ list optional requirements.
-  These enviroments are not used for builds but for users.
+  These environments are not used for builds but for users.

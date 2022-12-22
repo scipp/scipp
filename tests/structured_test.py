@@ -4,6 +4,7 @@
 # @author Neil Vaytet
 
 import numpy as np
+
 import scipp as sc
 
 var = sc.vector(value=np.array([1, 2, 3]), unit=sc.units.m)

@@ -3,8 +3,9 @@
 # @author Simon Heybrock
 from functools import reduce
 from typing import Callable, Dict, List, Mapping, Tuple, Union
-from .cpp_classes import DataArray, Variable
+
 from ..typing import Dims, VariableLikeType
+from .cpp_classes import DataArray, Variable
 from .logical import logical_or
 
 

@@ -23,8 +23,29 @@ build-verbosity = 1
 [tool.cibuildwheel.macos]
 archs = ["x86_64", "arm64"]
 
+[tool.bandit]
+# Excluding tests because bandit doesn't like `assert`.
+exclude_dirs = ["docs/conf.py", "tests", "install", "conda/cmake-package-test", "tools", "setup.py"]
+
+[tool.codespell]
+ignore-words-list = "elemt"
+skip = "./.git,./install,./build,./cmake-build*,./lib/cmake/sanitizers-cmake,./.tox,*/*_cache,*/.virtual_documents,*/.ipynb_checkpoints,*.pdf,*.svg"
+
+[tool.isort]
+skip_gitignore = true
+line_length = 88
+multi_line_output = 2  # for compatibility with yapf
+skip_glob = ["src/scipp/__init__.py", "src/scipp/core/__init__.py"]
+
 [tool.pytest.ini_options]
-addopts = "-ra -v"
+minversion = "7.0"
+testpaths = "tests"
+addopts = """
+--strict-config
+--strict-markers
+-ra
+-v
+"""
 filterwarnings = [
   'error',
   'ignore:You are running a "Debug" build of scipp:',
@@ -49,4 +70,3 @@ filterwarnings = [
   'ignore:Keyword `traits` is deprecated in traitlets 5.0, use `per_key_traits` instead:DeprecationWarning',
   'ignore:Support for mapping types has been deprecated and will be dropped in a future release.:DeprecationWarning',
 ]
-testpaths = "tests"

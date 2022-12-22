@@ -3,15 +3,16 @@
 # @author Simon Heybrock
 import itertools
 import uuid
-from typing import Dict, List
 from math import prod
+from typing import Dict, List
+
 from .._scipp import core as _cpp
+from ..typing import Dims, VariableLikeType
+from .concepts import concrete_dims, irreducible_mask, rewrap_reduced_data
 from .cpp_classes import DataArray, Variable
 from .cumulative import cumsum
-from ..typing import Dims, VariableLikeType
-from .variable import index
 from .operations import where
-from .concepts import (concrete_dims, rewrap_reduced_data, irreducible_mask)
+from .variable import index
 
 
 def hide_masked(da: DataArray, dim: Dims) -> DataArray:
@@ -62,6 +63,7 @@ def _concat_bins(var: Variable, dim: List[str]) -> Variable:
 def _combine_bins(var: Variable, coords: Dict[str, Variable], edges: List[Variable],
                   groups: List[Variable], dim: Dims) -> Dict[str, Variable]:
     from .binning import make_binned
+
     # Overview
     # --------
     # The purpose of this code is to combine existing bins, but in a more general
@@ -74,7 +76,6 @@ def _combine_bins(var: Variable, coords: Dict[str, Variable], edges: List[Variab
     # step, calling `make_binned` for grouping within the erased dims. For the final
     # output binning, instead of summing the input bin sizes over all erased dims, we
     # sum only within the groups created by `make_binned`.
-
     # Preserve subspace dim order of input data, instead of the one given by `dim`
     concrete_dims_ = concrete_dims(var, dim)
     changed_dims = [d for d in var.dims if d in concrete_dims_]

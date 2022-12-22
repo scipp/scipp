@@ -3,8 +3,9 @@
 # @author Simon Heybrock
 import uuid
 from typing import Iterable, List
-from .typing import VariableLike
+
 from .core import concat, reduction
+from .typing import VariableLike
 
 
 class BinsReducer:

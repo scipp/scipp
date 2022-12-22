@@ -3,9 +3,9 @@
 
 from __future__ import annotations
 
-from typing import Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
-from .._scipp.core import Dataset, DataArray, Variable
+from .._scipp.core import DataArray, Dataset, Variable
 from ..typing import VariableLike
 
 if TYPE_CHECKING:

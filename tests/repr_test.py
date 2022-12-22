@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-import scipp as sc
 import pytest
+
+import scipp as sc
 
 
 @pytest.mark.parametrize("mapping", ["coords", "attrs", "meta", "masks"])

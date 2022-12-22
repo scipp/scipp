@@ -643,7 +643,7 @@ void transform_in_place(Var &&var, Op op, const std::string_view name) {
 /// Transform the data elements of a variable in-place.
 ///
 /// This overload is equivalent to std::transform with two input ranges and an
-/// output range identical to the secound input range, but avoids potentially
+/// output range identical to the second input range, but avoids potentially
 /// costly element copies.
 template <class... TypePairs, class Var, class Op>
 void transform_in_place(Var &&var, const Variable &other, Op op,

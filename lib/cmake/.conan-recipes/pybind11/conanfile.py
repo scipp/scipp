@@ -1,11 +1,12 @@
 # flake8: noqa
-from conans import ConanFile, CMake
-from conan.errors import ConanInvalidConfiguration
-from conan.tools.layout import basic_layout
-from conan.tools.files import get, copy, replace_in_file
-from conan.tools.scm import Version
-import os
 import functools
+import os
+
+from conan.errors import ConanInvalidConfiguration
+from conan.tools.files import copy, get, replace_in_file
+from conan.tools.layout import basic_layout
+from conan.tools.scm import Version
+from conans import CMake, ConanFile
 
 required_conan_version = ">=1.33.0"
 
@@ -56,7 +57,7 @@ class PyBind11Conan(ConanFile):
                 os.unlink(
                     os.path.join(self.package_folder, "lib", "cmake", "pybind11",
                                  filename))
-            except:
+            except RuntimeError:
                 pass
         if Version(self.version) >= "2.6.0":
             replace_in_file(

@@ -4,6 +4,7 @@
 from copy import copy, deepcopy
 
 import pytest
+
 import scipp as sc
 
 

@@ -4,9 +4,10 @@
 # @author Simon Heybrock
 import copy
 
-from scipp._scipp.core import units_identical as units_identical  # noqa
-import scipp as sc
 import pytest
+
+import scipp as sc
+from scipp._scipp.core import units_identical as units_identical  # noqa
 
 
 @pytest.fixture(autouse=True)

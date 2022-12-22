@@ -3,9 +3,7 @@
 
 # flake8: noqa: F401
 
-from .._scipp.core import Coords, DataArray, Dataset, DType, GroupByDataArray, \
-    GroupByDataset, Masks, Unit, Variable
-
-from .._scipp.core import BinEdgeError, BinnedDataError, CoordError, \
-    DataArrayError, DatasetError, DimensionError, \
-    DTypeError, UnitError, VariableError, VariancesError
+from .._scipp.core import BinEdgeError, BinnedDataError, CoordError, Coords, \
+    DataArray, DataArrayError, Dataset, DatasetError, DimensionError, DType, \
+    DTypeError, GroupByDataArray, GroupByDataset, Masks, Unit, UnitError, Variable, \
+    VariableError, VariancesError  # NOQA
