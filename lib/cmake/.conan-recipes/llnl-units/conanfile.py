@@ -38,8 +38,8 @@ class UnitsConan(ConanFile):
 
     def source(self):
         git = tools.Git("units")
-        git.clone("https://github.com/LLNL/units.git",
-                  args=["--branch", "v" + self.version])
+        git.clone("https://github.com/LLNL/units.git")
+        git.checkout("v" + self.version)
 
         cmake_project_str = (CMAKE_PROJECT_STR.replace("\n", os.linesep)
                              if self.settings.os == "Windows" else CMAKE_PROJECT_STR)
