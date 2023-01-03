@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 //
 // The test in this file ensure that comparison operators for Dataset and
 // DatasetConstView are correct. More complex tests should build on the
