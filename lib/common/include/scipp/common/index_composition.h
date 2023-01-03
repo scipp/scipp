@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Jan-Lukas Wynen
 #pragma once

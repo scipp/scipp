@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 """This file contains tests specific to pybind11 lifetime issues, in particular
 py::return_value_policy and py::keep_alive."""
