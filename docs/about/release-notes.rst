@@ -35,6 +35,14 @@ Release Notes
    and Jan-Lukas Wynen :sup:`a`
 
 
+v22.11.1 (January 2023)
+-----------------------
+
+Bugfixes
+~~~~~~~~
+
+* Fix a bug in :py:func:`scipp.hist` and :py:func:`scipp.bin`, leading to assignment of records with very large coord values outside the bin boundaries to a bin `#2923 <https://github.com/scipp/scipp/pull/2923>`_.
+
 v22.11.0 (November 2022)
 ------------------------
 
