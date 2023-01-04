@@ -790,3 +790,26 @@ def test_hist_linspace_handles_large_negative_values_correctly():
     table.coords['x'].values[0] = -1e20
     da = table.hist(x=sc.linspace('x', 0.0, 1.0, 3, unit='m', dtype='float64'))
     assert da.sum().value == 9
+
+
+def test_group_with_explicit_lower_precision_drops_rows_outside_domain():
+    table = sc.data.table_xyz(100)
+    table.coords['label'] = (table.coords['x'] * 10).to(dtype='int64')
+    table.coords['label'].values[0] = 0
+    da = table.group(sc.arange('label', 5, unit='m', dtype='int32'))
+    size0 = da.bins.size()['label', 0].value
+    size = da.bins.size().sum().value
+    table.coords['label'].values[0] = np.iinfo(np.int32).max + 100
+    da = table.group(sc.arange('label', 5, unit='m', dtype='int32'))
+    assert da.bins.size()['label', 0].value == size0 - 1
+    assert da.bins.size().sum().value == size - 1
+
+
+def test_bin_with_explicit_lower_precision_drops_rows_outside_domain():
+    table = sc.data.table_xyz(100)
+    x = sc.linspace('x', 0.0, 1.0, 3, unit='m', dtype='float32')
+    da = table.bin(x=x)
+    size = da.bins.size().sum().value
+    table.coords['x'].values[0] = 2.0 * np.finfo(np.float32).max
+    da = table.bin(x=x)
+    assert da.bins.size().sum().value == size - 1
