@@ -774,3 +774,19 @@ def test_bin_linspace_handles_large_negative_values_correctly():
     table.coords['x'].values[0] = -1e16
     da = table.bin(x=sc.linspace('x', 0.0, 1.0, 3, unit='m', dtype='float64'))
     assert da.bins.size().sum().value == 9
+
+
+def test_hist_linspace_handles_large_positive_values_correctly():
+    table = sc.data.table_xyz(10)
+    table.values[...] = 1.0
+    table.coords['x'].values[0] = 1e20
+    da = table.hist(x=sc.linspace('x', 0.0, 1.0, 3, unit='m', dtype='float64'))
+    assert da.sum().value == 9
+
+
+def test_hist_linspace_handles_large_negative_values_correctly():
+    table = sc.data.table_xyz(10)
+    table.values[...] = 1.0
+    table.coords['x'].values[0] = -1e20
+    da = table.hist(x=sc.linspace('x', 0.0, 1.0, 3, unit='m', dtype='float64'))
+    assert da.sum().value == 9

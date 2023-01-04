@@ -65,14 +65,17 @@ static constexpr auto histogram = overloaded{
         const auto [offset, nbin, scale] = core::linear_edge_params(edges);
         for (scipp::index i = 0; i < scipp::size(events); ++i) {
           const auto x = events[i];
+          // Explicitly check for x outside edges here as otherwise we
+          // may run into an integer overflow when converting the "bin"
+          // computation result to `Index`.
+          if (x < edges.front() || x >= edges.back())
+            continue;
           scipp::index bin = (x - offset) * scale;
           bin = std::clamp(bin, scipp::index(0), scipp::index(nbin - 1));
           if (x < edges[bin]) {
-            if (bin != 0 && x >= edges[bin - 1])
-              iadd(data, bin - 1, weights, i);
+            iadd(data, bin - 1, weights, i);
           } else if (x >= edges[bin + 1]) {
-            if (bin != nbin - 1)
-              iadd(data, bin + 1, weights, i);
+            iadd(data, bin + 1, weights, i);
           } else {
             iadd(data, bin, weights, i);
           }
