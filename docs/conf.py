@@ -15,7 +15,7 @@ from version import VersionInfo  # noqa: E402
 
 # General information about the project.
 project = u'scipp'
-copyright = u'2022 Scipp contributors'
+copyright = u'2023 Scipp contributors'
 author = u'Scipp contributors'
 
 version_info = VersionInfo(repo=project)
