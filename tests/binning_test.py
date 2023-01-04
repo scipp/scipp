@@ -760,3 +760,17 @@ def test_make_binned_via_bin_optimized_path_yields_equivalent_results(params):
         expected = expected.bin(sizes)
     expected = expected.bin(binning).hist()
     assert sc.identical(result.hist(), expected)
+
+
+def test_bin_linspace_handles_large_positive_values_correctly():
+    table = sc.data.table_xyz(10)
+    table.coords['x'].values[0] = 1e16
+    da = table.bin(x=sc.linspace('x', 0.0, 1.0, 3, unit='m', dtype='float64'))
+    assert da.bins.size().sum().value == 9
+
+
+def test_bin_linspace_handles_large_negative_values_correctly():
+    table = sc.data.table_xyz(10)
+    table.coords['x'].values[0] = -1e16
+    da = table.bin(x=sc.linspace('x', 0.0, 1.0, 3, unit='m', dtype='float64'))
+    assert da.bins.size().sum().value == 9

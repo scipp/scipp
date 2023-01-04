@@ -56,6 +56,13 @@ static constexpr auto update_indices_by_binning_linspace =
                [](auto &index, const auto &x, const auto &edges) {
                  if (index == -1)
                    return;
+                 // Explicitly check for x outside edges here as otherwise we
+                 // may run into an integer overflow when converting the "bin"
+                 // computation result to `Index`.
+                 if (x < edges.front() || x >= edges.back()) {
+                   index = -1;
+                   return;
+                 }
                  const auto [offset, nbin, scale] =
                      core::linear_edge_params(edges);
                  using Index = std::decay_t<decltype(index)>;
@@ -63,15 +70,9 @@ static constexpr auto update_indices_by_binning_linspace =
                  bin = std::clamp(bin, Index(0), Index(nbin - 1));
                  index *= nbin;
                  if (x < edges[bin]) {
-                   if (bin != 0 && x >= edges[bin - 1])
-                     index += bin - 1;
-                   else
-                     index = -1;
+                   index += bin - 1;
                  } else if (x >= edges[bin + 1]) {
-                   if (bin != nbin - 1)
-                     index += bin + 1;
-                   else
-                     index = -1;
+                   index += bin + 1;
                  } else {
                    index += bin;
                  }
