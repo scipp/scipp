@@ -46,6 +46,7 @@ static constexpr auto histogram = overloaded{
         histogram_detail::args<float, int32_t, float, int32_t>,
         histogram_detail::args<double, double, double, double>,
         histogram_detail::args<double, float, double, double>,
+        histogram_detail::args<double, double, double, float>,
         histogram_detail::args<double, float, double, float>,
         histogram_detail::args<double, double, float, double>,
         histogram_detail::args<double, int64_t, double, int64_t>,
@@ -62,20 +63,12 @@ static constexpr auto histogram = overloaded{
       // Special implementation for linear bins. Gives a 1x to 20x speedup
       // for few and many events per histogram, respectively.
       if (scipp::numeric::islinspace(edges)) {
-        const auto [offset, nbin, scale] = core::linear_edge_params(edges);
+        const auto params = core::linear_edge_params(edges);
         for (scipp::index i = 0; i < scipp::size(events); ++i) {
           const auto x = events[i];
-          scipp::index bin = (x - offset) * scale;
-          bin = std::clamp(bin, scipp::index(0), scipp::index(nbin - 1));
-          if (x < edges[bin]) {
-            if (bin != 0 && x >= edges[bin - 1])
-              iadd(data, bin - 1, weights, i);
-          } else if (x >= edges[bin + 1]) {
-            if (bin != nbin - 1)
-              iadd(data, bin + 1, weights, i);
-          } else {
+          if (const auto bin = get_bin<scipp::index>(x, edges, params);
+              bin >= 0)
             iadd(data, bin, weights, i);
-          }
         }
       } else {
         core::expect::histogram::sorted_edges(edges);
