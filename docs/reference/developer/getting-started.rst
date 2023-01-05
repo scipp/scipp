@@ -101,6 +101,25 @@ In Python:
 
   import scipp as sc
 
+As an alternative to ``conda develop``, some developers may prefer using ``pip`` to make an editable install.
+Scipp uses ``scikit-build``, which currently does not fully support this.
+Therefore, we need to call ``cmake`` manually in this case and install into the Python source directory:
+
+.. code-block:: bash
+
+  cmake --preset base -DCONAN_TBB=ON -DCMAKE_INSTALL_PREFIX=src/
+  cmake --build --preset build
+  pip install -e .
+
+Above we used some of the ``cmake`` presets, but you may also call ``cmake`` without those for more control of the options.
+The crucial part if that the install must be performed into ``src/``.
+You can now use the editable install as usual, i.e., changes to Python files of Scipp are directly visibly when importing Scipp, without need for a new install.
+When making changes to the C++ side of Scipp, you will need to re-run the ``install`` target using ``cmake``, e.g.,
+
+.. code-block:: bash
+
+  cmake --build --preset build
+
 Additional build options
 ------------------------
 
