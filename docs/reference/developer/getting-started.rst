@@ -101,8 +101,8 @@ In Python:
 
   import scipp as sc
 
-As an alternative to ``conda develop``, some developers may prefer using ``pip`` to make an editable install.
-Scipp uses ``scikit-build``, which currently does not fully support this.
+Instead of ``conda develop``, some developers may prefer using ``pip`` to make an editable install.
+Scipp uses ``scikit-build``, which currently does not fully support this directly.
 Therefore, we need to call ``cmake`` manually in this case and install into the Python source directory:
 
 .. code-block:: bash
