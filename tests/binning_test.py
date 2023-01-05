@@ -764,15 +764,19 @@ def test_make_binned_via_bin_optimized_path_yields_equivalent_results(params):
 
 def test_bin_linspace_handles_large_positive_values_correctly():
     table = sc.data.table_xyz(10)
-    table.coords['x'].values[0] = 1e16
-    da = table.bin(x=sc.linspace('x', 0.0, 1.0, 3, unit='m', dtype='float64'))
+    table.coords['x'].values[0] = 1e20
+    x = sc.linspace('x', 0.0, 1.0, 3, unit='m', dtype='float64')
+    da = table.bin(x=x)
+    assert sc.identical(da, table[1:].bin(x=x))
     assert da.bins.size().sum().value == 9
 
 
 def test_bin_linspace_handles_large_negative_values_correctly():
     table = sc.data.table_xyz(10)
-    table.coords['x'].values[0] = -1e16
-    da = table.bin(x=sc.linspace('x', 0.0, 1.0, 3, unit='m', dtype='float64'))
+    table.coords['x'].values[0] = -1e20
+    x = sc.linspace('x', 0.0, 1.0, 3, unit='m', dtype='float64')
+    da = table.bin(x=x)
+    assert sc.identical(da, table[1:].bin(x=x))
     assert da.bins.size().sum().value == 9
 
 
@@ -780,7 +784,9 @@ def test_hist_linspace_handles_large_positive_values_correctly():
     table = sc.data.table_xyz(10)
     table.values[...] = 1.0
     table.coords['x'].values[0] = 1e20
-    da = table.hist(x=sc.linspace('x', 0.0, 1.0, 3, unit='m', dtype='float64'))
+    x = sc.linspace('x', 0.0, 1.0, 3, unit='m', dtype='float64')
+    da = table.hist(x=x)
+    assert sc.identical(da, table[1:].hist(x=x))
     assert da.sum().value == 9
 
 
@@ -788,7 +794,9 @@ def test_hist_linspace_handles_large_negative_values_correctly():
     table = sc.data.table_xyz(10)
     table.values[...] = 1.0
     table.coords['x'].values[0] = -1e20
-    da = table.hist(x=sc.linspace('x', 0.0, 1.0, 3, unit='m', dtype='float64'))
+    x = sc.linspace('x', 0.0, 1.0, 3, unit='m', dtype='float64')
+    da = table.hist(x=x)
+    assert sc.identical(da, table[1:].hist(x=x))
     assert da.sum().value == 9
 
 
@@ -801,6 +809,8 @@ def test_group_with_explicit_lower_precision_drops_rows_outside_domain():
     size = da.bins.size().sum().value
     table.coords['label'].values[0] = np.iinfo(np.int32).max + 100
     da = table.group(sc.arange('label', 5, unit='m', dtype='int32'))
+    reference = table[1:].group(sc.arange('label', 5, unit='m', dtype='int32'))
+    assert sc.identical(da, reference)
     assert da.bins.size()['label', 0].value == size0 - 1
     assert da.bins.size().sum().value == size - 1
 
@@ -812,4 +822,6 @@ def test_bin_with_explicit_lower_precision_drops_rows_outside_domain():
     size = da.bins.size().sum().value
     table.coords['x'].values[0] = 2.0 * np.finfo(np.float32).max
     da = table.bin(x=x)
+    reference = table[1:].bin(x=x)
+    assert sc.identical(da, reference)
     assert da.bins.size().sum().value == size - 1
