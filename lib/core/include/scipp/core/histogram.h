@@ -27,4 +27,22 @@ template <class T> void sorted_edges(const T &edges) {
 }
 } // namespace expect::histogram
 
+template <class Index, class T, class Edges, class Params>
+Index get_bin(const T &x, const Edges &edges, const Params &params) {
+  // Explicitly check for x outside edges here as otherwise we may run into an
+  // integer overflow when converting the "bin" computation result to `Index`.
+  if (x < edges.front() || x >= edges.back())
+    return -1;
+  const auto [offset, nbin, scale] = params;
+  Index bin = (x - offset) * scale;
+  bin = std::clamp(bin, Index(0), Index(nbin - 1));
+  if (x < edges[bin]) {
+    return bin - 1;
+  } else if (x >= edges[bin + 1]) {
+    return bin + 1;
+  } else {
+    return bin;
+  }
+}
+
 } // namespace scipp::core

@@ -53,32 +53,20 @@ static constexpr auto update_indices_by_binning = overloaded{
     transform_flags::expect_no_variance_arg<2>};
 
 // Special faster implementation for linear bins.
-static constexpr auto update_indices_by_binning_linspace =
-    overloaded{update_indices_by_binning,
-               [](auto &index, const auto &x, const auto &edges) {
-                 if (index == -1)
-                   return;
-                 // Explicitly check for x outside edges here as otherwise we
-                 // may run into an integer overflow when converting the "bin"
-                 // computation result to `Index`.
-                 if (x < edges.front() || x >= edges.back()) {
-                   index = -1;
-                   return;
-                 }
-                 const auto [offset, nbin, scale] =
-                     core::linear_edge_params(edges);
-                 using Index = std::decay_t<decltype(index)>;
-                 Index bin = (x - offset) * scale;
-                 bin = std::clamp(bin, Index(0), Index(nbin - 1));
-                 index *= nbin;
-                 if (x < edges[bin]) {
-                   index += bin - 1;
-                 } else if (x >= edges[bin + 1]) {
-                   index += bin + 1;
-                 } else {
-                   index += bin;
-                 }
-               }};
+static constexpr auto update_indices_by_binning_linspace = overloaded{
+    update_indices_by_binning,
+    [](auto &index, const auto &x, const auto &edges) {
+      if (index == -1)
+        return;
+      using Index = std::decay_t<decltype(index)>;
+      const auto params = core::linear_edge_params(edges);
+      if (const auto bin = get_bin<Index>(x, edges, params); bin < 0) {
+        index = -1;
+      } else {
+        index *= std::get<1>(params); // nbin
+        index += bin;
+      }
+    }};
 
 static constexpr auto update_indices_by_binning_sorted_edges =
     overloaded{update_indices_by_binning,
