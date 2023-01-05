@@ -354,7 +354,7 @@ def test_create_1d_dtype_object(values_type):
         assert v['x', 0].value == values[0]
         assert v['x', 1].value == values[1]
 
-    values = values_type([{1, 2}, (3, 4)])
+    values = values_type([{1, 2}, {3, 4}])
     var = sc.Variable(dims=['x'], values=values)
     check(var)
     var = sc.Variable(dims=['x'], values=values, dtype=sc.DType.PyObject)
