@@ -331,22 +331,7 @@ def test_create_1d_values_and_variances_array_like(values_type, variances_type):
     np.testing.assert_array_equal(var.variances, variances)
 
 
-# The constructors in this test trigger deprecation warnings in numpy:
-#
-# Creating an ndarray from ragged nested sequences (which is a list-or-tuple
-# of lists-or-tuples-or ndarrays with different lengths or shapes)
-# is deprecated. If you meant to do this, you must specify 'dtype=object'
-# when creating the ndarray.
-#
-# This is because the array-variable constructor uses py::array(values).
-# Unfortunately, py::array_t<py::object> is not implemented.
-# This test will fail when numpy changes the current behavior.
-# Until then, we are fine.
-#
-# Users can avoid the issue by using numpy.ndarray for the 'values'.
-@pytest.mark.parametrize('values_type',
-                         (tuple, list, lambda x: np.array(x, dtype=object)))
-def test_create_1d_dtype_object(values_type):
+def test_create_1d_dtype_object():
 
     def check(v):
         assert v.dtype == sc.DType.PyObject
@@ -354,7 +339,7 @@ def test_create_1d_dtype_object(values_type):
         assert v['x', 0].value == values[0]
         assert v['x', 1].value == values[1]
 
-    values = values_type([{1, 2}, {3, 4}])
+    values = np.array([{1, 2}, (3, 4)], dtype=object)
     var = sc.Variable(dims=['x'], values=values)
     check(var)
     var = sc.Variable(dims=['x'], values=values, dtype=sc.DType.PyObject)
