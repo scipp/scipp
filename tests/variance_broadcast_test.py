@@ -2,6 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import pytest
+
 import scipp as sc
 
 
@@ -10,6 +11,19 @@ def test_op_with_implicit_variance_broadcast_raises():
     scalar = sc.scalar(1.0, variance=0.1)
     with pytest.raises(sc.VariancesError):
         var + scalar
+
+
+def test_op_with_length_zero_dim_and_matching_shape_works():
+    # This leads to a stride of 0, which might lead the implementation to assume a
+    # broadcast is happening.
+    var = sc.ones(dims=['x', 'y'], shape=(1, 0), with_variances=True)
+    var + var
+
+
+def test_op_with_length_zero_dim_and_mismatching_shape_fails():
+    var = sc.ones(dims=['x', 'y'], shape=(1, 0), with_variances=True)
+    with pytest.raises(sc.VariancesError):
+        var + var['x', 0]
 
 
 def test_inplace_op_with_implicit_variance_broadcast_raises():

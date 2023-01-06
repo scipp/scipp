@@ -386,6 +386,9 @@ bool bad_variance_broadcast(const Dimensions &dims, const T &var) {
   // implicit broadcast
   if (dims.ndim() > var.dims().ndim())
     return true;
+  // there may be a stride==0 when an inner dim has length==0
+  if (dims.volume() == 0)
+    return false;
   // explicit broadcast
   return std::any_of(var.strides().begin(), var.strides().end(),
                      [](scipp::index s) { return s == 0; });
@@ -399,7 +402,6 @@ template <class Op> struct Transform {
     if constexpr (!std::is_base_of_v<
                       core::transform_flags::force_variance_broadcast_t, Op>) {
       if ((bad_variance_broadcast(dims, handles) || ...))
-        // TODO Should we introduce a specific exception type for this purpose?
         // TODO More detailed error message with links.
         throw except::VariancesError(
             "Cannot broadcast object with variances as this would introduce "
@@ -649,7 +651,6 @@ template <bool dry_run> struct in_place {
                       core::transform_flags::force_variance_broadcast_t, Op>) {
       if (const auto dims = merge(var.dims(), other.dims()...);
           (bad_variance_broadcast(dims, other) || ...))
-        // TODO Should we introduce a specific exception type for this purpose?
         // TODO More detailed error message with links.
         throw except::VariancesError(
             "Cannot broadcast object with variances as this would introduce "
