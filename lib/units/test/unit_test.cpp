@@ -34,8 +34,7 @@ TEST(UnitTest, construct_bad_string) {
 TEST(UnitTest, custom_unit_strings_get_rejected) {
   // Custom (counting) units and equation units are rejected.
   for (const auto &str : {"CXUN[0]", "CXUN[51]", "CXUN[1023]", "CXCUN[0]",
-                          "CXCUN[15]", "decibels", "ln(x)", "EQXUN[1]",
-                          "EQXUN[23]", "{corn}", "{CXCOMM[105]}"}) {
+                          "CXCUN[15]", "{corn}", "{CXCOMM[105]}"}) {
     EXPECT_THROW_DISCARD(Unit(str), except::UnitError);
   }
 }
@@ -245,9 +244,9 @@ TEST(UnitParseTest, singular_plural) {
 }
 
 TEST(UnitFormatTest, roundtrip_string) {
-  for (const auto &s :
-       {"m", "m/s", "meV", "pAh", "mAh", "ns", "counts", "counts^2",
-        "counts/meV", "1/counts", "counts/m", "rad", "$", "Y", "M", "D"}) {
+  for (const auto &s : {"m", "m/s", "meV", "pAh", "mAh", "ns", "counts",
+                        "counts^2", "counts/meV", "1/counts", "counts/m", "rad",
+                        "$", "Y", "M", "D", "EQXUN[1]", "EQXUN[23]"}) {
     const auto unit = units::Unit(s);
     EXPECT_EQ(to_string(unit), s);
     EXPECT_EQ(units::Unit(to_string(unit)), unit);
@@ -257,7 +256,8 @@ TEST(UnitFormatTest, roundtrip_string) {
 TEST(UnitFormatTest, roundtrip_unit) {
   // Some strings use special characters, e.g., for micro and Angstrom, but
   // some are actually formatted badly right now, but at least roundtrip works.
-  for (const auto &s : {"us", "angstrom", "counts/us", "Y", "M", "D"}) {
+  for (const auto &s : {"us", "angstrom", "counts/us", "Y", "M", "D",
+                        "decibels", "a.u.", "arb.unit", "Sv"}) {
     const auto unit = units::Unit(s);
     EXPECT_EQ(units::Unit(to_string(unit)), unit);
   }

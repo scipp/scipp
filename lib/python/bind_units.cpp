@@ -4,7 +4,6 @@
 /// @author Simon Heybrock
 #include <sstream>
 
-#include "scipp/core/dtype.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/units/unit.h"
 
@@ -18,30 +17,33 @@ constexpr int UNIT_DICT_VERSION = 1;
 
 namespace {
 
-bool is_simple_unit(const units::Unit &unit) {
-  const auto &&base_units = unit.underlying().base_units();
-  return !base_units.is_per_unit() && !base_units.has_i_flag() &&
-         !base_units.has_e_flag() && !base_units.is_equation() &&
-         unit.underlying().commodity() == 0;
+bool is_supported_unit(const units::Unit &unit) {
+  return unit.underlying().commodity() == 0;
 }
 
 // We only support units where we are confident that we can encode them using
 // a different unit library, in order to ensure that we can switch
 // implementations in the future if necessary.
-void assert_simple_unit_for_dict(const units::Unit &unit) {
-  if (!is_simple_unit(unit)) {
-    throw std::invalid_argument(
-        "Unit cannot be converted to dict: '" + to_string(unit) +
-        "' Only units expressed in terms of regular base units are supported.");
+void assert_supported_unit_for_dict(const units::Unit &unit) {
+  if (!is_supported_unit(unit)) {
+    throw std::invalid_argument("Unit cannot be converted to dict: '" +
+                                to_string(unit) +
+                                "' Commodities are not supported.");
   }
 }
 
 py::dict to_dict(const units::Unit &unit) {
-  assert_simple_unit_for_dict(unit);
+  assert_supported_unit_for_dict(unit);
 
   py::dict dict;
   dict["__version__"] = UNIT_DICT_VERSION;
   dict["multiplier"] = unit.underlying().multiplier();
+
+  unit.map_over_flags([&dict](const char *const name, const auto flag) mutable {
+    if (flag) {
+      dict[name] = true;
+    }
+  });
 
   py::dict powers;
   unit.map_over_bases(
@@ -56,11 +58,11 @@ py::dict to_dict(const units::Unit &unit) {
   return dict;
 }
 
-int get(const py::dict &dict, const char *const name) {
+template <class T = int> T get(const py::dict &dict, const char *const name) {
   if (dict.contains(name)) {
-    return dict[name].cast<int>();
+    return dict[name].cast<T>();
   }
-  return 0;
+  return T{};
 }
 
 units::Unit from_dict(const py::dict &dict) {
@@ -78,12 +80,14 @@ units::Unit from_dict(const py::dict &dict) {
           get(powers, "m"), get(powers, "kg"), get(powers, "s"),
           get(powers, "A"), get(powers, "K"), get(powers, "mol"),
           get(powers, "cd"), get(powers, "$"), get(powers, "counts"),
-          get(powers, "rad"), 0, 0, 0, 0},
+          get(powers, "rad"), get<bool>(dict, "per_unit"),
+          get<bool>(dict, "i_flag"), get<bool>(dict, "e_flag"),
+          get<bool>(dict, "equation")},
       dict["multiplier"].cast<double>()));
 }
 
 std::string repr(const units::Unit &unit) {
-  if (!is_simple_unit(unit)) {
+  if (!is_supported_unit(unit)) {
     return "<unsupported unit: " + to_string(unit) + '>';
   }
 
