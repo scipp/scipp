@@ -107,6 +107,10 @@ std::string repr(const units::Unit &unit) {
     if (power != 0)
       oss << "*" << base << "**" << power;
   });
+  unit.map_over_flags([&oss](const char *const name, const auto flag) mutable {
+    if (flag)
+      oss << ", " << name << "=True";
+  });
   oss << ')';
   return oss.str();
 }
