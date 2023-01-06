@@ -553,3 +553,32 @@ def test_bin_outer_and_inner_of_2d_without_event_coord():
     da.bins.coords['ynew'] = sc.bins_like(da, y)
     table = da.bins.constituents['data']
     assert sc.identical(result.hist(), table.hist(xnew=xnew, ynew=ynew))
+
+def test_bins_slicing_open_start_proper_stop_given():
+    table = sc.data.table_xyz(nrow=100)
+    da = table.bin(x=7)
+    proper_stop = da.bins.meta['x'].min()+0.001*sc.Unit('m')
+    expected_start = da.bins.meta['x'].min()
+    assert sc.identical(da.bins['x', :proper_stop].meta['x'][0], expected_start)
+
+def test_bins_slicing_open_stop_proper_start_given():
+    import numpy as np
+    table = sc.data.table_xyz(nrow=100)
+    da = table.bin(x=7)
+    proper_start = da.bins.meta['x'].max()-0.001*sc.Unit('m')
+    expected_stop = np.nextafter(da.bins.meta['x'].max().value, np.inf)*sc.Unit('m')
+    assert sc.identical(da.bins['x', proper_start:].meta['x'][1], expected_stop)
+
+def test_bins_slicing_open_start_too_small_stop_given():
+    table = sc.data.table_xyz(nrow=100)
+    da = table.bin(x=7)
+    too_small_stop = da.bins.meta['x'].min()-0.001*sc.Unit('m')
+    expected_start = too_small_stop
+    assert sc.identical(da.bins['x', :too_small_stop].meta['x'][0], expected_start)
+
+def test_bins_slicing_open_stop_too_big_stop_given():
+    table = sc.data.table_xyz(nrow=100)
+    da = table.bin(x=7)
+    too_big_start = da.bins.meta['x'].max()+0.001*sc.Unit('m')
+    expected_stop = too_big_start
+    assert sc.identical(da.bins['x', too_big_start:].meta['x'][1], expected_stop)
