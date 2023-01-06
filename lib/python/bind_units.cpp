@@ -102,11 +102,28 @@ std::string repr(const units::Unit &unit) {
   }
 
   std::ostringstream oss;
-  oss << "Unit(" << unit.underlying().multiplier();
-  unit.map_over_bases([&oss](const char *const base, const auto power) mutable {
-    if (power != 0)
-      oss << "*" << base << "**" << power;
-  });
+  oss << "Unit(";
+
+  bool first = true;
+  if (const auto mult = unit.underlying().multiplier(); mult != 1.0) {
+    oss << mult;
+    first = false;
+  }
+
+  unit.map_over_bases(
+      [&oss, &first](const char *const base, const auto power) mutable {
+        if (power != 0) {
+          if (!first) {
+            oss << "*";
+          } else {
+            first = false;
+          }
+          oss << base << "**" << power;
+        }
+      });
+  if (first)
+    oss << "1"; // multiplier == 1 and all powers == 0
+
   unit.map_over_flags([&oss](const char *const name, const auto flag) mutable {
     if (flag)
       oss << ", " << name << "=True";
