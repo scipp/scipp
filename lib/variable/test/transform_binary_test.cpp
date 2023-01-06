@@ -132,6 +132,10 @@ protected:
   }
 };
 
+// Subset of tests involving broadcast, where the broadcast operand should not
+// have variances.
+class TransformBinaryDenseBroadcastTest : public TransformBinaryDenseTest {};
+
 INSTANTIATE_TEST_SUITE_P(Array, TransformBinaryDenseTest,
                          ::testing::Combine(::testing::ValuesIn(shapes()),
                                             ::testing::Bool()));
@@ -140,13 +144,21 @@ INSTANTIATE_TEST_SUITE_P(Scalar, TransformBinaryDenseTest,
                          ::testing::Combine(::testing::Values(Shape{0}),
                                             ::testing::Bool()));
 
+INSTANTIATE_TEST_SUITE_P(Array, TransformBinaryDenseBroadcastTest,
+                         ::testing::Combine(::testing::ValuesIn(shapes()),
+                                            ::testing::Values(false)));
+
+INSTANTIATE_TEST_SUITE_P(Scalar, TransformBinaryDenseBroadcastTest,
+                         ::testing::Combine(::testing::Values(Shape{0}),
+                                            ::testing::Values(false)));
+
 TEST_P(TransformBinaryDenseTest, matching_shapes) {
   auto a = copy(input1);
   auto b = copy(input2);
   check_transform_combinations(a, b);
 }
 
-TEST_P(TransformBinaryDenseTest, scalar_and_array) {
+TEST_P(TransformBinaryDenseBroadcastTest, scalar_and_array) {
   auto a = copy(input1);
   auto s = std::get<bool>(GetParam())
                ? makeVariable<double>(Values{2.1}, Variances{1.3})
@@ -166,7 +178,7 @@ TEST_P(TransformBinaryDenseTest, slices) {
   }
 }
 
-TEST_P(TransformBinaryDenseTest, broadcast) {
+TEST_P(TransformBinaryDenseBroadcastTest, broadcast) {
   for (const auto &dims : dim_combinations) {
     auto sliced_ = slice_to_scalar(input2, dims);
     if (!sliced_)
@@ -411,6 +423,11 @@ protected:
   }
 };
 
+// Subset of tests involving broadcast, where the broadcast operand should not
+// have variances.
+class TransformBinaryRegularBinsBroadcastTest
+    : public TransformBinaryRegularBinsTest {};
+
 INSTANTIATE_TEST_SUITE_P(OneD, TransformBinaryRegularBinsTest,
                          ::testing::Combine(::testing::ValuesIn(shapes(1)),
                                             ::testing::ValuesIn(shapes()),
@@ -432,6 +449,27 @@ INSTANTIATE_TEST_SUITE_P(ThreeD, TransformBinaryRegularBinsTest,
                                                              scipp::index{3}),
                                             ::testing::Bool()));
 
+INSTANTIATE_TEST_SUITE_P(OneD, TransformBinaryRegularBinsBroadcastTest,
+                         ::testing::Combine(::testing::ValuesIn(shapes(1)),
+                                            ::testing::ValuesIn(shapes()),
+                                            ::testing::Range(scipp::index{0},
+                                                             scipp::index{1}),
+                                            ::testing::Values(false)));
+
+INSTANTIATE_TEST_SUITE_P(TwoD, TransformBinaryRegularBinsBroadcastTest,
+                         ::testing::Combine(::testing::ValuesIn(shapes(2)),
+                                            ::testing::ValuesIn(shapes()),
+                                            ::testing::Range(scipp::index{0},
+                                                             scipp::index{2}),
+                                            ::testing::Values(false)));
+
+INSTANTIATE_TEST_SUITE_P(ThreeD, TransformBinaryRegularBinsBroadcastTest,
+                         ::testing::Combine(::testing::ValuesIn(shapes(3)),
+                                            ::testing::ValuesIn(shapes()),
+                                            ::testing::Range(scipp::index{0},
+                                                             scipp::index{3}),
+                                            ::testing::Values(false)));
+
 TEST_P(TransformBinaryRegularBinsTest, binned_with_binned) {
   const auto ab = transform<double>(binned1, binned2, op, name);
   EXPECT_EQ(ab, compute_on_buffer(binned1, binned2));
@@ -440,7 +478,7 @@ TEST_P(TransformBinaryRegularBinsTest, binned_with_binned) {
   EXPECT_EQ(binned1, ab);
 }
 
-TEST_P(TransformBinaryRegularBinsTest, binned_with_binned_broadcast) {
+TEST_P(TransformBinaryRegularBinsBroadcastTest, binned_with_binned_broadcast) {
   for (const auto &dims : dim_combinations) {
     auto sliced_ = slice_to_scalar(binned2, dims);
     if (!sliced_)
@@ -461,7 +499,7 @@ TEST_P(TransformBinaryRegularBinsTest, binned_with_binned_broadcast) {
   }
 }
 
-TEST_P(TransformBinaryRegularBinsTest, binned_with_dense) {
+TEST_P(TransformBinaryRegularBinsBroadcastTest, binned_with_dense) {
   check_binned_with_dense(binned1, make_dense_bin_dims(),
                           std::get<2>(GetParam()), op, op_in_place);
 }
@@ -504,6 +542,11 @@ protected:
   }
 };
 
+// Subset of tests involving broadcast, where the broadcast operand should not
+// have variances.
+class TransformBinaryIrregularBinsBroadcastTest
+    : public TransformBinaryIrregularBinsTest {};
+
 INSTANTIATE_TEST_SUITE_P(
     OneDIndices, TransformBinaryIrregularBinsTest,
     ::testing::Combine(::testing::ValuesIn(irregular_bin_indices_1d()),
@@ -514,6 +557,16 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Combine(::testing::ValuesIn(irregular_bin_indices_2d()),
                        ::testing::Bool()));
 
+INSTANTIATE_TEST_SUITE_P(
+    OneDIndices, TransformBinaryIrregularBinsBroadcastTest,
+    ::testing::Combine(::testing::ValuesIn(irregular_bin_indices_1d()),
+                       ::testing::Values(false)));
+
+INSTANTIATE_TEST_SUITE_P(
+    TwoDIndices, TransformBinaryIrregularBinsBroadcastTest,
+    ::testing::Combine(::testing::ValuesIn(irregular_bin_indices_2d()),
+                       ::testing::Values(false)));
+
 TEST_P(TransformBinaryIrregularBinsTest, binned_with_binned) {
   const auto ab = transform<double>(binned1, binned2, op, name);
   EXPECT_EQ(ab, compute_on_buffer(binned1, binned2));
@@ -522,7 +575,7 @@ TEST_P(TransformBinaryIrregularBinsTest, binned_with_binned) {
   EXPECT_EQ(binned1, ab);
 }
 
-TEST_P(TransformBinaryIrregularBinsTest, binned_with_dense) {
+TEST_P(TransformBinaryIrregularBinsBroadcastTest, binned_with_dense) {
   check_binned_with_dense(binned1, make_dense_bin_dims(), 0, op, op_in_place);
 }
 
