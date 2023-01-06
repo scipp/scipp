@@ -51,9 +51,6 @@ filterwarnings = [
   'ignore:You are running a "Debug" build of scipp:',
   'ignore:sc.matrix\(\) has been deprecated:DeprecationWarning',
   'ignore:sc.matrices\(\) has been deprecated:DeprecationWarning',
-  # Explained in variable_init_test.py. TODO Address this!
-  'ignore:Creating an ndarray from ragged nested sequences:DeprecationWarning',
-  'ignore:Creating an ndarray from ragged nested sequences:numpy.VisibleDeprecationWarning',
   # Comes from pytest_asyncio and is not our fault.
   "ignore:The 'asyncio_mode' default value will change to 'strict' in future:DeprecationWarning",
   'ignore::scipy.optimize._optimize.OptimizeWarning',
