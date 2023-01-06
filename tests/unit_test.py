@@ -61,11 +61,11 @@ def test_angstrom_str_format(u):
 
 def test_unit_repr():
     assert repr(sc.Unit('dimensionless')) == 'Unit(1)'
-    assert repr(sc.Unit('m')) == 'Unit(m**1)'
-    assert repr(sc.Unit('uK/rad')) == 'Unit(1e-06*K**1*rad**-1)'
+    assert repr(sc.Unit('m')) == 'Unit(m)'
+    assert repr(sc.Unit('uK/rad')) == 'Unit(1e-06*K*rad**-1)'
     assert repr(sc.Unit('m^2/s^3')) == 'Unit(m**2*s**-3)'
-    assert repr(sc.Unit('1.234*kg')) == 'Unit(1.234*kg**1)'
-    assert repr(sc.Unit('degC')) == 'Unit(K**1, e_flag=True)'
+    assert repr(sc.Unit('1.234*kg')) == 'Unit(1.234*kg)'
+    assert repr(sc.Unit('degC')) == 'Unit(K, e_flag=True)'
     assert repr(
         sc.Unit('decibels')) == 'Unit(1, i_flag=True, e_flag=True, equation=True)'
 
@@ -73,7 +73,8 @@ def test_unit_repr():
 @pytest.mark.parametrize('u',
                          ('m', 'kg', 's', 'A', 'cd', 'K', 'mol', 'counts', '$', 'rad'))
 def test_unit_repr_uses_all_bases(u):
-    assert repr(sc.Unit(u)) == f'Unit({u}**1)'
+    assert repr(sc.Unit(u)) == f'Unit({u})'
+    assert repr(sc.Unit(u)**2) == f'Unit({u}**2)'
 
 
 def test_unit_property_from_str():
@@ -133,8 +134,8 @@ def test_unit_alias_from_variable_requires_scalar():
 
 def test_unit_alias_does_not_affect_repr():
     sc.units.aliases['clucks'] = '19.3 m*A'
-    assert repr(sc.Unit('19.3 m*A')) == 'Unit(19.3*m**1*A**1)'
-    assert repr(sc.Unit('clucks')) == 'Unit(19.3*m**1*A**1)'
+    assert repr(sc.Unit('19.3 m*A')) == 'Unit(19.3*m*A)'
+    assert repr(sc.Unit('clucks')) == 'Unit(19.3*m*A)'
 
 
 def test_can_add_multiple_aliases():

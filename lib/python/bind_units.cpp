@@ -118,7 +118,9 @@ std::string repr(const units::Unit &unit) {
           } else {
             first = false;
           }
-          oss << base << "**" << power;
+          oss << base;
+          if (power != 1)
+            oss << "**" << power;
         }
       });
   if (first)
