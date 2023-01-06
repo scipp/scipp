@@ -13,7 +13,8 @@
 using namespace scipp;
 namespace py = pybind11;
 
-constexpr int UNIT_DICT_VERSION = 1;
+constexpr int UNIT_DICT_VERSION = 2;
+constexpr std::array SUPPORTED_UNIT_DICT_VERSIONS = {1, 2};
 
 namespace {
 
@@ -65,14 +66,23 @@ template <class T = int> T get(const py::dict &dict, const char *const name) {
   return T{};
 }
 
-units::Unit from_dict(const py::dict &dict) {
+void assert_dict_version_supported(const py::dict &dict) {
   if (const auto ver = dict["__version__"].cast<int>();
-      ver != UNIT_DICT_VERSION) {
-    throw std::invalid_argument(
-        "Unit dict has version " + std::to_string(ver) +
-        " but the current installation of scipp only supports version " +
-        std::to_string(UNIT_DICT_VERSION));
+      std::find(SUPPORTED_UNIT_DICT_VERSIONS.cbegin(),
+                SUPPORTED_UNIT_DICT_VERSIONS.cend(),
+                ver) == SUPPORTED_UNIT_DICT_VERSIONS.cend()) {
+    std::ostringstream oss;
+    oss << "Unit dict has version " << std::to_string(ver)
+        << " but the current installation of scipp only supports versions [";
+    for (const auto v : SUPPORTED_UNIT_DICT_VERSIONS)
+      oss << v << ", ";
+    oss << "]";
+    throw std::invalid_argument(oss.str());
   }
+}
+
+units::Unit from_dict(const py::dict &dict) {
+  assert_dict_version_supported(dict);
 
   const py::dict powers = dict.contains("powers") ? dict["powers"] : py::dict();
   return units::Unit(llnl::units::precise_unit(
