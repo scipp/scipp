@@ -20,3 +20,8 @@ CMakeSettings.json
 .mypy_cache
 src/scipp.egg-info
 .tox
+
+# Files from editable installs
+src/include/
+src/lib/
+src/scipp/_scipp.cpython*

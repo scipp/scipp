@@ -101,6 +101,36 @@ In Python:
 
   import scipp as sc
 
+Some developers may prefer an "editable" install, i.e., with changes to Python files in the ``src`` directly becoming visible without reinstalling.
+This is commonly done via ``pip install -e .``.
+However, Scipp uses ``scikit-build``, which currently does not fully support this directly.
+Therefore, we need to call ``cmake`` manually in this case and install into the Python source directory, or create symlinks.
+We have configured ``tox`` for this purpose:
+
+.. code-block:: bash
+
+  cmake --preset base -DCONAN_TBB=ON
+  cmake --build --preset build
+  tox -e editable
+  conda develop src
+
+Here ``conda develop src`` can also be replaced by ``pip install -e .``.
+Above we used some of the ``cmake`` presets, but you may also call ``cmake`` without those for more control of the options.
+We can also use tox instead of the first two lines:
+
+.. code-block:: bash
+
+  tox -e lib
+  tox -e editable
+  conda develop src
+
+You can now use the editable install as usual, i.e., changes to Python files of Scipp are directly visible when importing Scipp, without the need for a new install.
+When making changes to the C++ side of Scipp, you will need to re-run the ``install`` target using ``cmake``, e.g.,
+
+.. code-block:: bash
+
+  cmake --build --preset build
+
 Additional build options
 ------------------------
 
