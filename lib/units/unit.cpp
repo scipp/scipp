@@ -30,7 +30,9 @@ bool is_special_unit(const llnl::units::precise_unit &unit) {
   using namespace llnl::units::precise::custom;
   const auto &base = unit.base_units();
 
-  return is_custom_unit(base) || is_custom_count_unit(base) ||
+  // Allowing custom_count_unit_number == 1 because that is 'arbitrary unit'
+  return is_custom_unit(base) ||
+         (is_custom_count_unit(base) && custom_count_unit_number(base) != 1) ||
          unit.commodity() != 0;
 }
 } // namespace

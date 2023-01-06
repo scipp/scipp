@@ -98,8 +98,9 @@ def test_default_unit_for_string_is_none():
     assert var.unit is None
 
 
-@pytest.mark.parametrize('u_str', ('one', 'm', 'count / s', '12.3 * m/A*kg^2/rad^3',
-                                   'count', 'decibels', 'EQXUN[1]', "arb.unit", "Sv"))
+@pytest.mark.parametrize(
+    'u_str', ('one', 'm', 'count / s', '12.3 * m/A*kg^2/rad^3', 'count', 'decibels',
+              'CXCUN[1]', 'arbitraryunit', 'EQXUN[1]', 'Sv', 'degC'))
 def test_dict_roundtrip(u_str):
     u = sc.Unit(u_str)
     assert units_identical(sc.Unit.from_dict(u.to_dict()), u)
