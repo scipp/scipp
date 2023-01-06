@@ -124,7 +124,7 @@ We can also use tox instead of the first two lines:
   tox -e editable
   conda develop src
 
-You can now use the editable install as usual, i.e., changes to Python files of Scipp are directly visibly when importing Scipp, without need for a new install.
+You can now use the editable install as usual, i.e., changes to Python files of Scipp are directly visible when importing Scipp, without the need for a new install.
 When making changes to the C++ side of Scipp, you will need to re-run the ``install`` target using ``cmake``, e.g.,
 
 .. code-block:: bash
