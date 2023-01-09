@@ -31,21 +31,20 @@ static auto make_histogram() {
   auto edges = makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 3}},
                                     units::us, Values{0, 2, 4, 1, 3, 5});
   auto data = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                   Values{2.0, 3.0, 2.0, 3.0},
-                                   Variances{0.3, 0.4, 0.3, 0.4});
+                                   Values{2.0, 3.0, 2.0, 3.0});
 
   return DataArray(data, {{Dim::X, edges}});
 }
 
 TEST(EventsDataOperationsConsistencyTest, multiply) {
-  // Apart from uncertainties, the order of operations does not matter. We can
-  // either first multiply and then histogram, or first histogram and then
-  // multiply.
+  // Apart from uncertainties (which cannot be handled by buckets::scale, since
+  // it would broadcast), the order of operations does not matter. We can either
+  // first multiply and then histogram, or first histogram and then multiply.
   const auto events = make_events_array_default_weights();
   auto edges = makeVariable<double>(Dimensions{Dim::X, 4}, units::us,
                                     Values{1, 2, 3, 4});
-  auto data = makeVariable<double>(Dimensions{Dim::X, 3}, Values{2.0, 3.0, 4.0},
-                                   Variances{0.3, 0.4, 0.5});
+  auto data =
+      makeVariable<double>(Dimensions{Dim::X, 3}, Values{2.0, 3.0, 4.0});
 
   auto hist = DataArray(data, {{Dim::X, edges}});
   auto scaled = copy(events);
@@ -53,7 +52,7 @@ TEST(EventsDataOperationsConsistencyTest, multiply) {
   auto ab = histogram(scaled, edges);
   auto ba = histogram(events, edges) * hist;
 
-  // Case 1: 1 event per bin => uncertainties are the same
+  // Case 1: 1 event per bin
   EXPECT_EQ(ab, ba);
 
   hist = make_histogram();
@@ -63,10 +62,7 @@ TEST(EventsDataOperationsConsistencyTest, multiply) {
   ab = histogram(scaled, edges);
   ba = histogram(events, edges) * hist;
 
-  // Case 2: Multiple events per bin => uncertainties differ, remove before
-  // comparison.
-  ab.data().setVariances(Variable());
-  ba.data().setVariances(Variable());
+  // Case 2: Multiple events per bin
   EXPECT_EQ(ab, ba);
 }
 
@@ -82,8 +78,7 @@ TEST(EventsDataOperationsConsistencyTest, concatenate_multiply_sum) {
   const auto events = make_events_array_default_weights();
   auto edges =
       makeVariable<double>(Dimensions{Dim::X, 3}, units::us, Values{1, 3, 5});
-  auto data = makeVariable<double>(Dimensions{Dim::X, 2}, Values{2.0, 3.0},
-                                   Variances{0.3, 0.4});
+  auto data = makeVariable<double>(Dimensions{Dim::X, 2}, Values{2.0, 3.0});
   auto hist = DataArray(data, {{Dim::X, edges}});
 
   auto m = copy(events);
@@ -100,21 +95,9 @@ TEST(EventsDataOperationsConsistencyTest, concatenate_multiply_sum) {
   auto shm = sum(histogram(m, edges), Dim::Y);
   auto smh = sum(hist * histogram(events, edges), Dim::Y);
 
-  // Same variances among "histogram after multiply" group
   EXPECT_EQ(hcm, hmc);
-  EXPECT_EQ(hcm, shm);
-
-  // Same variances among "multiply after histogram" group
-  EXPECT_EQ(mhc, msh);
-  // ... except that summing last also leads to smaller variances
-  EXPECT_NE(mhc, smh);
-
-  // Cross-group: Uncertainties differ due to multiple events per bin, remove.
-  hcm.data().setVariances(Variable());
-  mhc.data().setVariances(Variable());
-  msh.data().setVariances(Variable());
-  smh.data().setVariances(Variable());
   EXPECT_EQ(hcm, mhc);
   EXPECT_EQ(hcm, msh);
+  EXPECT_EQ(hcm, shm);
   EXPECT_EQ(hcm, smh);
 }
