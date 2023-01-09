@@ -101,7 +101,6 @@ and open new discussions if none of the existing ones provide a satisfactory ans
    user-guide/groupby
    user-guide/coordinate-transformations
    user-guide/reading-and-writing-files
-   user-guide/how_to
    user-guide/tips-tricks-and-anti-patterns
 
 .. toctree::
