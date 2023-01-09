@@ -243,4 +243,32 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
   c.def_property_readonly(
       "masks", [](T &self) -> decltype(auto) { return self.masks(); },
       R"(Dict of masks.)");
+  c.def("drop_coords",
+        [](T &self, const py::args &coord_names) -> decltype(auto) {
+          std::vector<scipp::Dim> coord_names_c;
+          std::transform(coord_names.begin(), coord_names.end(),
+                         std::back_inserter(coord_names_c),
+                         [](const auto &name) {
+                           return scipp::Dim{name.template cast<std::string>()};
+                         });
+          return self.drop_coords(coord_names_c);
+        });
+  c.def(
+      "drop_masks", [](T &self, const py::args &mask_names) -> decltype(auto) {
+        std::vector<std::string> mask_names_c;
+        std::transform(mask_names.begin(), mask_names.end(),
+                       std::back_inserter(mask_names_c), [](const auto &name) {
+                         return name.template cast<std::string>();
+                       });
+        return self.drop_masks(mask_names_c);
+      });
+  c.def(
+      "drop_attrs", [](T &self, const py::args &attr_names) -> decltype(auto) {
+        std::vector<scipp::Dim> attr_names_c;
+        std::transform(attr_names.begin(), attr_names.end(),
+                       std::back_inserter(attr_names_c), [](const auto &name) {
+                         return scipp::Dim{name.template cast<std::string>()};
+                       });
+        return self.drop_attrs(attr_names_c);
+      });
 }

@@ -184,6 +184,29 @@ DataArray DataArray::view_with_coords(const Coords &coords,
   return out;
 }
 
+DataArray
+DataArray::drop_coords(const scipp::span<const Dim> coord_names) const {
+  DataArray result = *this;
+  for (const auto &name : coord_names)
+    result.coords().erase(name);
+  return result;
+}
+
+DataArray
+DataArray::drop_masks(const scipp::span<const std::string> mask_names) const {
+  DataArray result = *this;
+  for (const auto &name : mask_names)
+    result.masks().erase(name);
+  return result;
+}
+
+DataArray DataArray::drop_attrs(const scipp::span<const Dim> attr_names) const {
+  DataArray result = *this;
+  for (const auto &name : attr_names)
+    result.attrs().erase(name);
+  return result;
+}
+
 DataArray DataArray::rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
                                  const bool fail_on_unknown) const {
   return DataArray(m_data->rename_dims(names, fail_on_unknown),

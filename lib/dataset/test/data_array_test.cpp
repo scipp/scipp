@@ -238,3 +238,42 @@ TEST_F(DataArrayTest, is_edges_invalid_coord_name_throws_NotFoundError) {
   ASSERT_THROW_DISCARD(da.coords().is_edges(Dim{"invalid name"}),
                        except::NotFoundError);
 }
+
+TEST_F(DataArrayTest, drop_coords) {
+  const DataArray da{data,
+                     {{Dim{"dim0"}, coord}, {Dim{"dim1"}, coord}},
+                     {{"mask0", mask}, {"mask1", mask}},
+                     {{Dim{"attr0"}, attr}, {Dim{"attr1"}, attr}}};
+  auto new_da = da.drop_coords(std::vector{Dim{"dim0"}});
+  const DataArray expected_da{data,
+                              {{Dim{"dim1"}, coord}},
+                              {{"mask0", mask}, {"mask1", mask}},
+                              {{Dim{"attr0"}, attr}, {Dim{"attr1"}, attr}}};
+  ASSERT_EQ(new_da, expected_da);
+}
+
+TEST_F(DataArrayTest, drop_masks) {
+  const DataArray da{data,
+                     {{Dim{"dim0"}, coord}, {Dim{"dim1"}, coord}},
+                     {{"mask0", mask}, {"mask1", mask}},
+                     {{Dim{"attr0"}, attr}, {Dim{"attr1"}, attr}}};
+  auto new_da = da.drop_masks({{"mask0"}});
+  const DataArray expected_da{data,
+                              {{Dim{"dim0"}, coord}, {Dim{"dim1"}, coord}},
+                              {{"mask1", mask}},
+                              {{Dim{"attr0"}, attr}, {Dim{"attr1"}, attr}}};
+  ASSERT_EQ(new_da, expected_da);
+}
+
+TEST_F(DataArrayTest, drop_attrs) {
+  const DataArray da{data,
+                     {{Dim{"dim0"}, coord}, {Dim{"dim1"}, coord}},
+                     {{"mask0", mask}, {"mask1", mask}},
+                     {{Dim{"attr0"}, attr}, {Dim{"attr1"}, attr}}};
+  auto new_da = da.drop_attrs(std::vector{Dim{"attr0"}});
+  const DataArray expected_da{data,
+                              {{Dim{"dim0"}, coord}, {Dim{"dim1"}, coord}},
+                              {{"mask0", mask}, {"mask1", mask}},
+                              {{Dim{"attr1"}, attr}}};
+  ASSERT_EQ(new_da, expected_da);
+}
