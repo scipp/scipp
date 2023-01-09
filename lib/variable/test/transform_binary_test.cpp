@@ -285,13 +285,13 @@ TEST_F(TransformBinaryTest, in_place_self_overlap_without_variance_2d) {
 TEST_F(TransformBinaryTest, in_place_self_overlap_with_variance) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2},
                                 Variances{1.0, 2.0});
-  Variable slice_copy(a.slice({Dim::X, 1}));
-  auto reference = a * slice_copy;
+  auto reference = a * copy(broadcast(a.slice({Dim::X, 1}), a.dims()));
   // With self-overlap the implementation needs to make a copy of the rhs. This
   // is a regression test: An initial implementation was unintentionally
   // dropping the variances when making that copy.
-  transform_in_place<pair_self_t<double>>(a, a.slice({Dim::X, 1}), op_in_place,
-                                          name);
+  transform_in_place<pair_self_t<double>>(
+      a, a.slice({Dim::X, 1}),
+      overloaded{op_in_place, transform_flags::force_variance_broadcast}, name);
   ASSERT_EQ(a, reference);
 }
 

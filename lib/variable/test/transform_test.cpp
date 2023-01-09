@@ -85,8 +85,7 @@ TEST(TransformTest, mixed_precision_in_place) {
 }
 
 TEST(TransformTest, combined_uncertainty_propagation) {
-  auto a =
-      makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{2.0}, Variances{0.1});
+  auto a = makeVariable<double>(Values{2.0}, Variances{0.1});
   auto a_2_step = copy(a);
   const auto b = makeVariable<double>(Values{3.0}, Variances{0.2});
 
