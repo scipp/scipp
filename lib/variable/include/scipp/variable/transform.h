@@ -394,6 +394,16 @@ bool bad_variance_broadcast(const Dimensions &dims, const T &var) {
                      [](scipp::index s) { return s == 0; });
 }
 
+template <class... Vars>
+[[noreturn]] void throw_variances_broadcast_error(Vars &&...vars) {
+  throw except::VariancesError(
+      "Cannot broadcast object with variances as this would introduce "
+      "unhandled correlations. Inputs dimensions were:\n" +
+      ((to_string(vars.dims()) +
+        " variances=" + (vars.has_variances() ? "True" : "False") + '\n') +
+       ...));
+}
+
 template <class Op> struct Transform {
   Op op;
   template <class... Ts> Variable operator()(Ts &&...handles) const {
@@ -402,15 +412,10 @@ template <class Op> struct Transform {
     if constexpr (!std::is_base_of_v<
                       core::transform_flags::force_variance_broadcast_t, Op>) {
       if ((bad_variance_broadcast(dims, handles) || ...))
-        // TODO More detailed error message with links.
-        throw except::VariancesError(
-            "Cannot broadcast object with variances as this would introduce "
-            "unhandled correlations.");
+        throw_variances_broadcast_error(handles...);
       if ((handles.is_bins() || ...))
         if (((handles.has_variances() && !handles.is_bins()) || ...))
-          throw except::VariancesError(
-              "Cannot broadcast object with variances as this would introduce "
-              "unhandled correlations.");
+          throw_variances_broadcast_error(handles...);
     }
 
     using Out = decltype(maybe_eval(op(handles.values()[0]...)));
@@ -651,15 +656,10 @@ template <bool dry_run> struct in_place {
                       core::transform_flags::force_variance_broadcast_t, Op>) {
       if (const auto dims = merge(var.dims(), other.dims()...);
           (bad_variance_broadcast(dims, other) || ...))
-        // TODO More detailed error message with links.
-        throw except::VariancesError(
-            "Cannot broadcast object with variances as this would introduce "
-            "unhandled correlations.");
+        throw_variances_broadcast_error(var, other...);
       if (is_bins(var) || (is_bins(other) || ...))
         if (((other.has_variances() && !is_bins(other)) || ...))
-          throw except::VariancesError(
-              "Cannot broadcast object with variances as this would introduce "
-              "unhandled correlations.");
+          throw_variances_broadcast_error(var, other...);
     }
 
     auto unit = variableFactory().elem_unit(var);
