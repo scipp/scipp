@@ -7,6 +7,9 @@ html
 build/
 install/
 cmake-build-*
+_skbuild/
+tools/build-sanitizer/
+tools/install-sanitizer/
 .clangd/
 .idea/
 .vscode/
