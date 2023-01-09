@@ -162,6 +162,15 @@ TEST_F(DataArrayBinsMaskedReductionTest, sum) {
             DataArray(makeVariable<double>(indices.dims(), Values{2, 0, 0})));
 }
 
+TEST_F(DataArrayBinsMaskedReductionTest, sum_with_variances) {
+  buffer.data().setVariances(buffer.data());
+  auto da = DataArray(make_bins(indices, Dim::X, copy(buffer)));
+  ASSERT_TRUE(buffer.has_variances());
+  EXPECT_EQ(bins_sum(da),
+            DataArray(makeVariable<double>(indices.dims(), Values{2, 0, 0},
+                                           Variances{2, 0, 0})));
+}
+
 TEST_F(DataArrayBinsMaskedReductionTest, max) {
   EXPECT_EQ(
       bins_max(binned_da),
