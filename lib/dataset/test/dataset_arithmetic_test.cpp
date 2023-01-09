@@ -10,6 +10,7 @@
 #include "scipp/dataset/except.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bins.h"
+#include "scipp/variable/util.h"
 
 #include "dataset_test_common.h"
 #include "test_macros.h"
@@ -21,6 +22,13 @@ using namespace scipp::dataset;
 DatasetFactory3D datasetFactory() {
   static DatasetFactory3D factory;
   return factory;
+}
+
+template <class T> auto make_no_variances(T &&factory) {
+  auto ds = factory.make();
+  for (auto &&x : ds)
+    x.data().setVariances({});
+  return ds;
 }
 
 template <class Op>
@@ -107,6 +115,10 @@ TYPED_TEST(DataArrayViewBinaryEqualsOpTest, other_data_unchanged) {
     const auto original_a = copy(dataset_a);
     auto target = dataset_a["data_zyx"];
 
+    if (item.has_variances() && target.dims() != item.dims()) {
+      ASSERT_THROW(TestFixture::op(target, item), except::VariancesError);
+      continue;
+    }
     ASSERT_NO_THROW(TestFixture::op(target, item));
 
     for (const auto &data : dataset_a) {
@@ -127,6 +139,12 @@ TYPED_TEST(DataArrayViewBinaryEqualsOpTest, lhs_with_variance) {
     auto data_array = copy(target);
 
     auto reference = copy(target.data());
+
+    if (item.has_variances() && target.dims() != item.dims()) {
+      ASSERT_THROW(TestFixture::op(target, item), except::VariancesError);
+      continue;
+    }
+
     TestFixture::op(reference, item.data());
 
     ASSERT_NO_THROW(target = TestFixture::op(target, item));
@@ -169,7 +187,15 @@ TYPED_TEST(DataArrayViewBinaryEqualsOpTest, slice_lhs_with_variance) {
 
     for (const Dim dim : dims.labels()) {
       auto reference = copy(target.data());
-      TestFixture::op(reference, item.data().slice({dim, 2}));
+
+      auto slice = copy(item.slice({dim, 2}));
+      if (item.has_variances()) {
+        ASSERT_THROW(TestFixture::op(target, slice.data()),
+                     except::VariancesError);
+        slice.setData(values(slice.data()));
+      }
+
+      TestFixture::op(reference, slice.data());
 
       // Fails if any *other* multi-dimensional coord also depends on the
       // slicing dimension, since it will have mismatching values. Note that
@@ -181,10 +207,10 @@ TYPED_TEST(DataArrayViewBinaryEqualsOpTest, slice_lhs_with_variance) {
             return coords.dim_of(coord.first) == dim ||
                    !coord.second.dims().contains(dim);
           })) {
-        ASSERT_NO_THROW(TestFixture::op(target, item.slice({dim, 2})));
+        ASSERT_NO_THROW(TestFixture::op(target, slice));
         EXPECT_EQ(target.data(), reference);
       } else {
-        ASSERT_ANY_THROW(TestFixture::op(target, item.slice({dim, 2})));
+        ASSERT_ANY_THROW(TestFixture::op(target, slice));
       }
     }
   }
@@ -193,8 +219,8 @@ TYPED_TEST(DataArrayViewBinaryEqualsOpTest, slice_lhs_with_variance) {
 // DataArrayViewBinaryEqualsOpTest ensures correctness of operations between
 // DataArrayView with itself, so we can rely on that for building the reference.
 TYPED_TEST(DatasetBinaryEqualsOpTest, return_value) {
-  auto a = datasetFactory().make();
-  auto b = datasetFactory().make();
+  auto a = make_no_variances(datasetFactory());
+  auto b = make_no_variances(datasetFactory());
 
   ASSERT_TRUE(
       (std::is_same_v<decltype(TestFixture::op(a, b["data_scalar"].data())),
@@ -314,7 +340,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset_with_extra_items) {
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetView_self_overlap) {
-  auto dataset = datasetFactory().make();
+  auto dataset = make_no_variances(datasetFactory());
   const auto slice = dataset.slice({Dim::Z, 3});
   auto reference(dataset);
 
@@ -486,7 +512,7 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest,
 }
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DatasetView_self_overlap) {
-  auto dataset = datasetFactory().make();
+  auto dataset = make_no_variances(datasetFactory());
   for (const auto &name : {"values_x", "data_x", "data_xy", "data_scalar"})
     dataset.erase(name);
   const auto slice = dataset.slice({Dim::Z, 3});
@@ -502,7 +528,7 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DatasetView_self_overlap) {
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest,
            rhs_DatasetView_self_overlap_undetectable) {
-  auto dataset = datasetFactory().make();
+  auto dataset = make_no_variances(datasetFactory());
   for (const auto &name : {"values_x", "data_x", "data_xy", "data_scalar"})
     dataset.erase(name);
   const auto slice = dataset.slice({Dim::Z, 3});
