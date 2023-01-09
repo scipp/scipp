@@ -46,6 +46,9 @@ Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 * The HDF5 format changed to accommodate more units, old files can still be loaded but new ones cannot be loaded with an old version of Scipp `#2931 <https://github.com/scipp/scipp/pull/2931>`_.
+* Implicit and explicit broadcasting of operands with variances in operations was disabled.
+  This introduces correlations that Scipp cannot handle and would therefore silently underestimate uncertainties.
+  Instead a :py:class:`scipp.VariancesError` is raised now `#2895 <https://github.com/scipp/scipp/pull/2895>`_.
 
 Bugfixes
 ~~~~~~~~
