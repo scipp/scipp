@@ -156,11 +156,19 @@ class Bins:
                 start = self._obj.bins.meta[dim].min()
             if stop is None:
                 stop = _upper_bound(self._obj.bins.meta[dim].max())
+
             if not (isinstance(start, _cpp.Variable)
                     and isinstance(stop, _cpp.Variable)):
                 raise ValueError(
                     "Bins can only by sliced using label-based indexing. Expected "
                     f"start and stop to be scipp.Variable, got '{start}' and '{stop}'.")
+
+            if start > stop:
+                if index.start is None:
+                    start = stop
+                elif index.stop is None:
+                    stop = start
+
             return self._obj.bin({dim: concat([start, stop], dim)}).squeeze(dim)
         raise ValueError(
             f"Unsupported key '{key}'. Expected a dimension label and "

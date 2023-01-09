@@ -1,24 +1,30 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+
 import argparse
 import sys
-from typing import List, Union
+from typing import List
 
-import requests
+import git
 from packaging.version import InvalidVersion, Version, parse
 
 
-def _get_releases(repo: str, organization: str = 'scipp') -> List[Version]:
+def _get_releases() -> List[Version]:
     """Return reversed sorted list of release tag names."""
-    r = requests.get(f'https://api.github.com/repos/{organization}/{repo}/releases')
-    if r.status_code != 200:
-        return []
-    data = r.json()
-    return sorted([parse(e['tag_name']) for e in data if not e['draft']], reverse=True)
+    tags = git.Repo('..').tags
+    versions = []
+    for t in tags:
+        try:
+            versions.append(parse(t.name))
+        except InvalidVersion:
+            pass
+    return sorted(versions, reverse=True)
 
 
 class VersionInfo:
 
-    def __init__(self, repo: str, organization: str = 'scipp'):
-        self._releases = _get_releases(repo=repo, organization=organization)
+    def __init__(self):
+        self._releases = _get_releases()
 
     def _to_version(self, version) -> Version:
         if isinstance(version, str):
@@ -33,7 +39,7 @@ class VersionInfo:
     def minor_releases(self, first: str = '0.1') -> List[str]:
         """Return set of minor releases in the form '1.2'.
 
-        `first` gives the first release to be included. By default, '0.0' releases are
+        `first` gives the first release to be included. By default '0.0' releases are
         not included.
         """
         first = parse(first)
@@ -41,35 +47,29 @@ class VersionInfo:
         releases = sorted(set((r.major, r.minor) for r in releases), reverse=True)
         return [f'{major}.{minor}' for major, minor in releases]
 
-    def is_latest(self, version: Union[str, Version]) -> bool:
+    def is_latest(self, version: str) -> bool:
         """Return True if `version` has the same or larger major and minor as the
         latest release.
         """
         version = self._to_version(version)
-        try:
-            latest = self._releases[0]
-        except IndexError:
-            return True
+        latest = self._releases[0]
         return (latest.major, latest.minor) <= (version.major, version.minor)
 
     def is_new(self, version: str) -> bool:
         """Return True if `version` is a new major or minor release."""
         version = self._to_version(version)
         releases = [r for r in self._releases if r != version]
-        try:
-            latest = releases[0]
-        except IndexError:
-            return True
+        latest = releases[0]
         return (latest.major, latest.minor) < (version.major, version.minor)
 
-    def target(self, version: Union[str, Version]) -> str:
+    def target(self, version: str) -> str:
         version = self._to_version(version)
         if self.is_latest(version):
             return ''
         else:
             return f'release/{version.major}.{version.minor}'
 
-    def replaced(self, version: str) -> Version:
+    def replaced(self, version: str) -> str:
         version = self._to_version(version)
         # If we release 1.2 we want to find 1.1
         for release in self._releases:

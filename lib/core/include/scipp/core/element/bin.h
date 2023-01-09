@@ -40,6 +40,8 @@ static constexpr auto update_indices_by_binning = overloaded{
                       update_indices_by_binning_arg<int32_t, int32_t, double>,
                       update_indices_by_binning_arg<int64_t, float, double>,
                       update_indices_by_binning_arg<int32_t, float, double>,
+                      update_indices_by_binning_arg<int64_t, double, float>,
+                      update_indices_by_binning_arg<int32_t, double, float>,
                       update_indices_by_binning_arg<int64_t, int32_t, int64_t>,
                       update_indices_by_binning_arg<int32_t, int32_t, int64_t>>,
     [](units::Unit &indices, const units::Unit &coord,
@@ -51,31 +53,20 @@ static constexpr auto update_indices_by_binning = overloaded{
     transform_flags::expect_no_variance_arg<2>};
 
 // Special faster implementation for linear bins.
-static constexpr auto update_indices_by_binning_linspace =
-    overloaded{update_indices_by_binning,
-               [](auto &index, const auto &x, const auto &edges) {
-                 if (index == -1)
-                   return;
-                 const auto [offset, nbin, scale] =
-                     core::linear_edge_params(edges);
-                 using Index = std::decay_t<decltype(index)>;
-                 Index bin = (x - offset) * scale;
-                 bin = std::clamp(bin, Index(0), Index(nbin - 1));
-                 index *= nbin;
-                 if (x < edges[bin]) {
-                   if (bin != 0 && x >= edges[bin - 1])
-                     index += bin - 1;
-                   else
-                     index = -1;
-                 } else if (x >= edges[bin + 1]) {
-                   if (bin != nbin - 1)
-                     index += bin + 1;
-                   else
-                     index = -1;
-                 } else {
-                   index += bin;
-                 }
-               }};
+static constexpr auto update_indices_by_binning_linspace = overloaded{
+    update_indices_by_binning,
+    [](auto &index, const auto &x, const auto &edges) {
+      if (index == -1)
+        return;
+      using Index = std::decay_t<decltype(index)>;
+      const auto params = core::linear_edge_params(edges);
+      if (const auto bin = get_bin<Index>(x, edges, params); bin < 0) {
+        index = -1;
+      } else {
+        index *= std::get<1>(params); // nbin
+        index += bin;
+      }
+    }};
 
 static constexpr auto update_indices_by_binning_sorted_edges =
     overloaded{update_indices_by_binning,
@@ -111,9 +102,9 @@ static constexpr auto groups_to_map = overloaded{
       return index;
     }};
 
-template <class Index, class T>
+template <class Index, class Coord, class Edges = Coord>
 using update_indices_by_grouping_arg =
-    std::tuple<Index, T, std::unordered_map<T, Index>>;
+    std::tuple<Index, Coord, std::unordered_map<Edges, Index>>;
 
 static constexpr auto update_indices_by_grouping = overloaded{
     element::arg_list<update_indices_by_grouping_arg<int64_t, double>,
@@ -122,6 +113,12 @@ static constexpr auto update_indices_by_grouping = overloaded{
                       update_indices_by_grouping_arg<int32_t, float>,
                       update_indices_by_grouping_arg<int64_t, int64_t>,
                       update_indices_by_grouping_arg<int32_t, int64_t>,
+                      // Given int32 target groups, select from int64. Note that
+                      // we do not support the reverse for now, since the
+                      // `groups.find(x)` below would then have to cast to a
+                      // lower precision, i.e., we would need special handling.
+                      update_indices_by_grouping_arg<int64_t, int64_t, int32_t>,
+                      update_indices_by_grouping_arg<int32_t, int64_t, int32_t>,
                       update_indices_by_grouping_arg<int64_t, int32_t>,
                       update_indices_by_grouping_arg<int32_t, int32_t>,
                       update_indices_by_grouping_arg<int64_t, bool>,

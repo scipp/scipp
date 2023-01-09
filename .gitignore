@@ -26,3 +26,8 @@ src/scipp.egg-info
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+# Files from editable installs
+src/include/
+src/lib/
+src/scipp/_scipp.cpython*

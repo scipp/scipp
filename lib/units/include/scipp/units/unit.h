@@ -57,6 +57,14 @@ public:
     f("rad", base_units.radian());
   }
 
+  template <class F> void map_over_flags(F &&f) const {
+    const auto base_units = underlying().base_units();
+    f("per_unit", base_units.is_per_unit());
+    f("i_flag", base_units.has_i_flag());
+    f("e_flag", base_units.has_e_flag());
+    f("equation", base_units.is_equation());
+  }
+
 private:
   std::optional<llnl::units::precise_unit> m_unit;
 };
