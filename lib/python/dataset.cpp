@@ -22,6 +22,20 @@ namespace py = pybind11;
 
 namespace {
 template <class T, class... Ignored>
+void bind_dataset_properties(py::class_<T, Ignored...> &c) {
+  c.def("drop_coords",
+        [](T &self, const py::args &coord_names) -> decltype(auto) {
+          std::vector<scipp::Dim> coord_names_c;
+          std::transform(coord_names.begin(), coord_names.end(),
+                         std::back_inserter(coord_names_c),
+                         [](const auto &name) {
+                           return scipp::Dim{name.template cast<std::string>()};
+                         });
+          return self.drop_coords(coord_names_c);
+        });
+}
+
+template <class T, class... Ignored>
 void bind_dataset_coord_properties(py::class_<T, Ignored...> &c) {
   // TODO does this comment still apply?
   // For some reason the return value policy and/or keep-alive policy do not
@@ -227,6 +241,7 @@ Returned by :py:func:`DataArray.masks`)");
                       const DataArray &value) { self.setData(key, value); });
 
   bind_dataset_coord_properties(dataset);
+  bind_dataset_properties(dataset);
 
   bind_slice_methods(dataset);
 
