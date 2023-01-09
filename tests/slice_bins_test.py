@@ -59,16 +59,21 @@ def test_slice_bins_by_open_range_includes_everything():
     assert result.bins.size().sum().value == 100
 
 
-def test_slice_bins_by_half_open_int_range_splits_without_duplication():
+def test_slice_bins_by_half_open_float_range_splits_without_duplication():
     table = sc.data.table_xyz(100)
     da = table.bin(x=10)
     split = sc.scalar(0.4, unit='m')
     left = da.bins['z', :split]
     right = da.bins['z', split:]
     assert left.bins.size().sum().value + right.bins.size().sum().value == 100
+    assert sc.identical(left.meta['z'], sc.concat([da.bins.meta['z'].min(), split],
+                                                  'z'))
+    import numpy as np
+    expected_stop = np.nextafter(da.bins.meta['z'].max().value, np.inf) * sc.Unit('m')
+    assert sc.identical(right.meta['z'], sc.concat([split, expected_stop], 'z'))
 
 
-def test_slice_bins_by_half_open_float_range_splits_without_duplication():
+def test_slice_bins_by_half_open_int_range_splits_without_duplication():
     table = sc.data.table_xyz(100)
     table.coords['param'] = sc.arange(dim='row', start=0, stop=100, unit='s') // 10
     da = table.bin(x=10)
@@ -76,6 +81,10 @@ def test_slice_bins_by_half_open_float_range_splits_without_duplication():
     left = da.bins['param', :split]
     right = da.bins['param', split:]
     assert left.bins.size().sum().value + right.bins.size().sum().value == 100
+    assert sc.identical(left.meta['param'],
+                        sc.concat([da.bins.meta['param'].min(), split], 'param'))
+    expected_stop = da.bins.meta['param'].max() + 1 * sc.Unit('s')
+    assert sc.identical(right.meta['param'], sc.concat([split, expected_stop], 'param'))
 
 
 def test_slice_bins_with_step_raises():
@@ -93,3 +102,22 @@ def test_slice_bins_with_int_index_raises():
         da.bins['z', 1:4]
     with pytest.raises(ValueError):
         da.bins['z', 1]
+
+
+def test_bins_slicing_open_start_too_small_stop_given():
+    table = sc.data.table_xyz(nrow=100)
+    da = table.bin(x=7)
+    too_small_stop = da.bins.meta['x'].min() - 0.001 * sc.Unit('m')
+    left = da.bins['x', :too_small_stop]
+    assert left.bins.size().sum().value == 0
+    assert sc.identical(left.meta['x'], sc.concat([too_small_stop, too_small_stop],
+                                                  'x'))
+
+
+def test_bins_slicing_open_stop_too_big_stop_given():
+    table = sc.data.table_xyz(nrow=100)
+    da = table.bin(x=7)
+    too_big_start = da.bins.meta['x'].max() + 0.001 * sc.Unit('m')
+    right = da.bins['x', too_big_start:]
+    assert right.bins.size().sum().value == 0
+    assert sc.identical(right.meta['x'], sc.concat([too_big_start, too_big_start], 'x'))
