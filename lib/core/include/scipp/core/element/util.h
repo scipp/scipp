@@ -128,6 +128,7 @@ constexpr auto where = overloaded{
         std::tuple<bool, int64_t, int64_t>, std::tuple<bool, int32_t, int32_t>,
         std::tuple<bool, bool, bool>, std::tuple<bool, time_point, time_point>,
         std::tuple<bool, scipp::index_pair, scipp::index_pair>>,
+    transform_flags::force_variance_broadcast,
     [](const auto &condition, const auto &x, const auto &y) {
       return condition ? x : y;
     },
