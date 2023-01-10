@@ -32,7 +32,8 @@ Release Notes
 
    Simon Heybrock :sup:`a`\ ,
    Neil Vaytet :sup:`a`\ ,
-   and Jan-Lukas Wynen :sup:`a`
+   Jan-Lukas Wynen :sup:`a`\ ,
+   and Sunyoung Yoo :sup:`a`
 
 
 v23.xy.0 (January 2023)
@@ -72,7 +73,8 @@ Contributors
 
 Simon Heybrock :sup:`a`\ ,
 Neil Vaytet :sup:`a`\ ,
-and Jan-Lukas Wynen :sup:`a`
+Jan-Lukas Wynen :sup:`a`\ ,
+and Sunyoung Yoo :sup:`a`
 
 v22.11.0 (November 2022)
 ------------------------
