@@ -108,17 +108,13 @@ TYPED_TEST_SUITE(DatasetBinaryEqualsOpTest, BinaryEquals);
 TYPED_TEST_SUITE(DatasetViewBinaryEqualsOpTest, BinaryEquals);
 
 TYPED_TEST(DataArrayViewBinaryEqualsOpTest, other_data_unchanged) {
-  const auto dataset_b = datasetFactory().make();
+  const auto dataset_b = make_no_variances(datasetFactory());
 
   for (const auto &item : dataset_b) {
     auto dataset_a = datasetFactory().make();
     const auto original_a = copy(dataset_a);
     auto target = dataset_a["data_zyx"];
 
-    if (item.has_variances() && target.dims() != item.dims()) {
-      ASSERT_THROW(TestFixture::op(target, item), except::VariancesError);
-      continue;
-    }
     ASSERT_NO_THROW(TestFixture::op(target, item));
 
     for (const auto &data : dataset_a) {
