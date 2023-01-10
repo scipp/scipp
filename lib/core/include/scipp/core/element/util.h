@@ -31,37 +31,41 @@ void zero(const core::ValueAndVariance<scipp::span<T>> &data) {
   zero(data.variance);
 }
 
-constexpr auto values =
+constexpr auto values = overloaded{
+    transform_flags::no_out_variance, transform_flags::force_variance_broadcast,
+    core::element::arg_list<double, float>, [](const auto &x) {
+      if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
+        return x.value;
+      else
+        return x;
+    }};
+
+constexpr auto variances =
     overloaded{transform_flags::no_out_variance,
-               core::element::arg_list<double, float>, [](const auto &x) {
+               core::element::arg_list<double, float>,
+               transform_flags::expect_variance_arg<0>,
+               transform_flags::force_variance_broadcast,
+               [](const auto &x) {
                  if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
-                   return x.value;
+                   return x.variance;
                  else
-                   return x;
-               }};
+                   return x; // unreachable but required for instantiation
+               },
+               [](const units::Unit &u) { return u * u; }};
 
-constexpr auto variances = overloaded{
-    transform_flags::no_out_variance, core::element::arg_list<double, float>,
-    transform_flags::expect_variance_arg<0>,
-    [](const auto &x) {
-      if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
-        return x.variance;
-      else
-        return x; // unreachable but required for instantiation
-    },
-    [](const units::Unit &u) { return u * u; }};
-
-constexpr auto stddevs = overloaded{
-    transform_flags::no_out_variance, core::element::arg_list<double, float>,
-    transform_flags::expect_variance_arg<0>,
-    [](const auto &x) {
-      using std::sqrt;
-      if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
-        return sqrt(x.variance);
-      else
-        return sqrt(x); // unreachable but required for instantiation
-    },
-    [](const units::Unit &u) { return u; }};
+constexpr auto stddevs =
+    overloaded{transform_flags::no_out_variance,
+               core::element::arg_list<double, float>,
+               transform_flags::expect_variance_arg<0>,
+               transform_flags::force_variance_broadcast,
+               [](const auto &x) {
+                 using std::sqrt;
+                 if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
+                   return sqrt(x.variance);
+                 else
+                   return sqrt(x); // unreachable but required for instantiation
+               },
+               [](const units::Unit &u) { return u; }};
 
 constexpr auto issorted_common = overloaded{
     core::element::arg_list<
@@ -124,6 +128,7 @@ constexpr auto where = overloaded{
         std::tuple<bool, int64_t, int64_t>, std::tuple<bool, int32_t, int32_t>,
         std::tuple<bool, bool, bool>, std::tuple<bool, time_point, time_point>,
         std::tuple<bool, scipp::index_pair, scipp::index_pair>>,
+    transform_flags::force_variance_broadcast,
     [](const auto &condition, const auto &x, const auto &y) {
       return condition ? x : y;
     },

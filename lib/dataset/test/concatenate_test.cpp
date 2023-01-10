@@ -330,9 +330,9 @@ TEST_F(ConcatTest, single_new_dim) {
 }
 
 TEST_F(ConcatTest, multiple) {
-  EXPECT_EQ(concat(std::vector{da2, da2, da2}, Dim::Z),
-            da2 * variable::ones({{Dim::Z, Dim::X, Dim::Y}, {3, 2, 2}},
-                                 units::one, dtype<double>));
+  const auto expected =
+      concat(std::vector{concat(std::vector{da2, da2}, Dim::Z), da2}, Dim::Z);
+  EXPECT_EQ(concat(std::vector{da2, da2, da2}, Dim::Z), expected);
   auto a = da2;
   auto b = da2 + da2;
   auto c = da2 + da2 + da2;
