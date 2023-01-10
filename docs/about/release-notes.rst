@@ -52,6 +52,8 @@ Bugfixes
 
 * Fix a bug in :py:func:`scipp.hist` and :py:func:`scipp.bin`, leading to assignment of records with very large coord values outside the bin boundaries to a bin `#2923 <https://github.com/scipp/scipp/pull/2923>`_.
 * Fix a bug in open end slicing of bins, in case the given right/left end is smaller/bigger than the min/max value of the slicing target, it uses the given end instead of min/max for the open end `#2933 <https://github.com/scipp/scipp/pull/2933>`_.
+* Fix issue with events close to upper or lower bin bounds getting dropped by :func:`scipp.lookup` with edges that form a "linspace" `#2942 <https://github.com/scipp/scipp/pull/2942>`_.
+* Fix minor issue with events close to bin bounds getting assigned to the wrong bin by :func:`scipp.lookup` with edges that form a "linspace" `#2942 <https://github.com/scipp/scipp/pull/2942>`_.
 
 Documentation
 ~~~~~~~~~~~~~
