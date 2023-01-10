@@ -380,56 +380,51 @@ def test_zeros_like_deep_copy_masks():
     assert sc.identical(b.masks['m'][0], sc.scalar(True))
 
 
-def make_drop_example_dataarray(coord_to_be_dropped: str = None,
-                                mask_to_be_dropped: str = None,
-                                attr_to_be_dropped: str = None):
-    data = sc.array(dims=['x', 'y'], values=np.random.rand(4, 3))
-
+def test_drop_coords():
+    data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
     coord0 = sc.linspace('x', start=0.2, stop=1.61, num=4)
     coord1 = sc.linspace('y', start=1, stop=4, num=3)
-    coords = {'coord0': coord0, 'coord1': coord1}
-    dropped_coords = coords.copy()
-    if coord_to_be_dropped is not None:
-        del dropped_coords[coord_to_be_dropped]
+    coord2 = sc.linspace('z', start=-0.1, stop=0.1, num=5)
+    da = sc.DataArray(data,
+                      coords={
+                          'coord0': coord0,
+                          'coord1': coord1,
+                          'coord2': coord2
+                      })
 
-    mask0 = sc.array(dims=['x'], values=[False, True, True, False], unit='')
-    mask1 = sc.array(dims=['y'], values=[1, 2, 4])
-    masks = {'mask0': mask0, 'mask1': mask1}
-    dropped_masks = masks.copy()
-    if mask_to_be_dropped is not None:
-        del dropped_masks[mask_to_be_dropped]
-
-    attr0 = sc.scalar('attribute 0')
-    attr1 = sc.linspace('x', start=0.2, stop=1.61, num=4)
-    attrs = {'attr0': attr0, 'attr1': attr1}
-    dropped_attrs = attrs.copy()
-    if attr_to_be_dropped is not None:
-        del dropped_attrs[attr_to_be_dropped]
-
-    original_da = sc.DataArray(data, coords=coords, attrs=attrs, masks=masks)
-    expected_da = sc.DataArray(data,
-                               coords=dropped_coords,
-                               masks=dropped_masks,
-                               attrs=dropped_attrs)
-    return original_da, expected_da
-
-
-def test_drop_coords():
-    coord_to_be_dropped = 'coord0'
-    original_da, expected_da = make_drop_example_dataarray(
-        coord_to_be_dropped=coord_to_be_dropped)
-    assert sc.identical(original_da.drop_coords(coord_to_be_dropped), expected_da)
+    assert 'coord0' not in da.drop_coords('coord0').coords
+    assert 'coord1' in da.drop_coords('coord0').coords
+    assert 'coord2' in da.drop_coords('coord0').coords
+    assert 'coord0' not in da.drop_coords('coord0', 'coord1').coords
+    assert 'coord1' not in da.drop_coords('coord0', 'coord1').coords
+    assert 'coord2' in da.drop_coords('coord0', 'coord1').coords
 
 
 def test_drop_masks():
-    mask_to_be_dropped = 'mask0'
-    original_da, expected_da = make_drop_example_dataarray(
-        mask_to_be_dropped=mask_to_be_dropped)
-    assert sc.identical(original_da.drop_masks(mask_to_be_dropped), expected_da)
+    data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
+    mask0 = sc.array(dims=['x'], values=[False, True, True, False])
+    mask1 = sc.array(dims=['y'], values=[1, 2, 4])
+    mask2 = sc.array(dims=['z'], values=[False, False, True, True, True])
+    da = sc.DataArray(data, masks={'mask0': mask0, 'mask1': mask1, 'mask2': mask2})
+
+    assert 'mask0' not in da.drop_masks('mask0').masks
+    assert 'mask1' in da.drop_masks('mask0').masks
+    assert 'mask2' in da.drop_masks('mask0').masks
+    assert 'mask0' not in da.drop_masks('mask0', 'mask1').masks
+    assert 'mask1' not in da.drop_masks('mask0', 'mask1').masks
+    assert 'mask2' in da.drop_masks('mask0', 'mask1').masks
 
 
 def test_drop_attrs():
-    attr_to_be_dropped = 'attr0'
-    original_da, expected_da = make_drop_example_dataarray(
-        attr_to_be_dropped=attr_to_be_dropped)
-    assert sc.identical(original_da.drop_attrs(attr_to_be_dropped), expected_da)
+    data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
+    attr0 = sc.scalar('attribute_0')
+    attr1 = sc.linspace('y', start=0.2, stop=1.61, num=4)
+    attr2 = sc.linspace('z', start=-10, stop=10, num=5)
+    da = sc.DataArray(data, attrs={'attr0': attr0, 'attr1': attr1, 'attr2': attr2})
+
+    assert 'attr0' not in da.drop_attrs('attr0').attrs
+    assert 'attr1' in da.drop_attrs('attr0').attrs
+    assert 'attr2' in da.drop_attrs('attr0').attrs
+    assert 'attr0' not in da.drop_attrs('attr0', 'attr1').attrs
+    assert 'attr1' not in da.drop_attrs('attr0', 'attr1').attrs
+    assert 'attr2' in da.drop_attrs('attr0', 'attr1').attrs
