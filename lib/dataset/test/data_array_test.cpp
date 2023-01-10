@@ -239,11 +239,18 @@ TEST_F(DataArrayTest, is_edges_invalid_coord_name_throws_NotFoundError) {
                        except::NotFoundError);
 }
 
+DataArray make_drop_example_data_arrays() {
+  Variable data = makeVariable<double>(Values{1});
+  Variable coord = makeVariable<double>(Values{2});
+  Variable mask = makeVariable<bool>(Values{false});
+  Variable attr = makeVariable<double>(Values{3});
+  return DataArray(data, {{Dim{"dim0"}, coord}, {Dim{"dim1"}, coord}},
+                   {{"mask0", mask}, {"mask1", mask}},
+                   {{Dim{"attr0"}, attr}, {Dim{"attr1"}, attr}});
+}
+
 TEST_F(DataArrayTest, drop_coords) {
-  const DataArray da{data,
-                     {{Dim{"dim0"}, coord}, {Dim{"dim1"}, coord}},
-                     {{"mask0", mask}, {"mask1", mask}},
-                     {{Dim{"attr0"}, attr}, {Dim{"attr1"}, attr}}};
+  const DataArray da = make_drop_example_data_arrays();
   auto new_da = da.drop_coords(std::vector{Dim{"dim0"}});
   const DataArray expected_da{data,
                               {{Dim{"dim1"}, coord}},
@@ -253,10 +260,7 @@ TEST_F(DataArrayTest, drop_coords) {
 }
 
 TEST_F(DataArrayTest, drop_masks) {
-  const DataArray da{data,
-                     {{Dim{"dim0"}, coord}, {Dim{"dim1"}, coord}},
-                     {{"mask0", mask}, {"mask1", mask}},
-                     {{Dim{"attr0"}, attr}, {Dim{"attr1"}, attr}}};
+  const DataArray da = make_drop_example_data_arrays();
   auto new_da = da.drop_masks({{"mask0"}});
   const DataArray expected_da{data,
                               {{Dim{"dim0"}, coord}, {Dim{"dim1"}, coord}},
@@ -266,10 +270,7 @@ TEST_F(DataArrayTest, drop_masks) {
 }
 
 TEST_F(DataArrayTest, drop_attrs) {
-  const DataArray da{data,
-                     {{Dim{"dim0"}, coord}, {Dim{"dim1"}, coord}},
-                     {{"mask0", mask}, {"mask1", mask}},
-                     {{Dim{"attr0"}, attr}, {Dim{"attr1"}, attr}}};
+  const DataArray da = make_drop_example_data_arrays();
   auto new_da = da.drop_attrs(std::vector{Dim{"attr0"}});
   const DataArray expected_da{data,
                               {{Dim{"dim0"}, coord}, {Dim{"dim1"}, coord}},
