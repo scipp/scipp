@@ -398,7 +398,7 @@ template <class... Vars>
 [[noreturn]] void throw_variances_broadcast_error(Vars &&...vars) {
   throw except::VariancesError(
       "Cannot broadcast object with variances as this would introduce "
-      "unhandled correlations. Inputs dimensions were:\n" +
+      "unhandled correlations. Input dimensions were:\n" +
       ((to_string(vars.dims()) +
         " variances=" + (vars.has_variances() ? "True" : "False") + '\n') +
        ...));
