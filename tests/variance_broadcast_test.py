@@ -116,3 +116,22 @@ def test_can_extract_variances_of_broadcast_with_variances():
 def test_can_extract_stddevs_of_broadcast_with_variances():
     var = sc.scalar(1.0, variance=4.0).broadcast(sizes={'x': 4})
     assert sc.identical(sc.stddevs(var), sc.full(dims=['x'], shape=[4], value=2.0))
+
+
+def test_scale_binned_via_lookup_with_variances_raises():
+    table = sc.data.table_xyz(100)
+    da = table.bin(x=2)
+    hist = table.hist(x=7)
+    hist.variances = hist.values
+    func = sc.lookup(func=hist, dim='x')
+    with pytest.raises(sc.VariancesError):
+        da.bins /= func
+
+
+def test_lookup_with_variances_raises():
+    table = sc.data.table_xyz(100)
+    hist = table.hist(x=7)
+    hist.variances = hist.values
+    func = sc.lookup(func=hist, dim='x')
+    with pytest.raises(sc.VariancesError):
+        func(table.coords['x'])
