@@ -9,7 +9,6 @@ install/
 cmake-build-*
 .clangd/
 .idea/
-.vscode/
 *.ipynb_checkpoints
 __pycache__/
 CMakeSettings.json
@@ -20,6 +19,13 @@ CMakeSettings.json
 .mypy_cache
 src/scipp.egg-info
 .tox
+
+### VisualStudioCode ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 
 # Files from editable installs
 src/include/
