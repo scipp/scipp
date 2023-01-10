@@ -16,9 +16,9 @@ In neutron-scattering applications normalization terms typically have lower dime
 This leads to unhandled correlations in the normalized result.
 The effect is that uncertainties of normalization terms are strongly suppressed and effectively ignored.
 However, the user is not aware of this as the mechanism that Scipp provides seems to promise correct handling.
-This can lead to erroneous attribution of statistical significance in final results that scientist may publish.
+This can lead to erroneous attribution of statistical significance in final results that scientists may publish.
 
-We have considering issuing a warning instead of raising an exception.
+We have considered issuing a warning instead of raising an exception.
 However, past experience shows that warnings tend to get ignored.
 Given the severity of the issue we thus do not consider this a solution.
 
