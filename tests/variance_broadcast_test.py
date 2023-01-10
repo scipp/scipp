@@ -13,6 +13,13 @@ def test_op_with_implicit_variance_broadcast_raises():
         var + scalar
 
 
+def test_op_with_two_implicit_variance_broadcasts_raises():
+    v1 = sc.ones(sizes={'x': 5}, with_variances=True)
+    v2 = sc.ones(sizes={'y': 4}, with_variances=True)
+    with pytest.raises(sc.VariancesError):
+        v1 * v2
+
+
 def test_op_with_length_zero_dim_and_matching_shape_works():
     # This leads to a stride of 0, which might lead the implementation to assume a
     # broadcast is happening.
