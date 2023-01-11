@@ -392,12 +392,13 @@ def test_drop_coords():
                           'coord2': coord2
                       })
 
+    assert 'coord0' not in da.drop_coords(['coord0']).coords
     assert 'coord0' not in da.drop_coords('coord0').coords
     assert 'coord1' in da.drop_coords('coord0').coords
     assert 'coord2' in da.drop_coords('coord0').coords
-    assert 'coord0' not in da.drop_coords('coord0', 'coord1').coords
-    assert 'coord1' not in da.drop_coords('coord0', 'coord1').coords
-    assert 'coord2' in da.drop_coords('coord0', 'coord1').coords
+    assert 'coord0' not in da.drop_coords(['coord0', 'coord1']).coords
+    assert 'coord1' not in da.drop_coords(['coord0', 'coord1']).coords
+    assert 'coord2' in da.drop_coords(['coord0', 'coord1']).coords
 
 
 def test_drop_masks():
