@@ -76,7 +76,7 @@ class DataGroup(MutableMapping):
             dim, index = name
         if _is_positional_index(index) and self.sizes[dim] is None:
             raise DimensionError(
-                f"Positional indexing dim {dim} not possible as the length is not "
+                f"Positional indexing dim '{dim}' not possible as the length is not "
                 "unique.")
         return DataGroup({
             key: var[dim, index] if dim in _item_dims(var) else var
