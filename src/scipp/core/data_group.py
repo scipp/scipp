@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import functools
+import numbers
 import operator
 from collections.abc import MutableMapping
 from typing import Any, Callable, Iterable, overload
@@ -25,11 +26,15 @@ def _summarize(item):
 
 
 def _is_positional_index(key) -> bool:
-    if isinstance(key, int):
+
+    def is_int(x):
+        return isinstance(x, numbers.Integral)
+
+    if is_int(key):
         return True
     if isinstance(key, slice):
-        if isinstance(key.start, int) or isinstance(key.stop, int) or isinstance(
-                key.step, int):
+
+        if is_int(key.start) or is_int(key.stop) or is_int(key.step):
             return True
         if key.start is None and key.stop is None:
             return True
