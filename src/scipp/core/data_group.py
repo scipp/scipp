@@ -9,7 +9,7 @@ from collections.abc import MutableMapping
 from typing import Any, Callable, Iterable, overload
 
 from ..typing import ScippIndex
-from .cpp_classes import DataArray, Dataset, Variable
+from .cpp_classes import DataArray, Dataset, DimensionError, Variable
 
 
 def _item_dims(item):
@@ -64,9 +64,18 @@ class DataGroup(MutableMapping):
             return self._items[name]
         if name == ():
             return DataGroup({key: var[()] for key, var in self.items()})
-        dim, index = name
+        if _is_positional_index(name):
+            if self.ndim != 1:
+                raise DimensionError(
+                    "Slicing with implicit dimension label is only possible "
+                    f"for 1-D objects. Got {self.sizes} with ndim={self.ndim}. Provide "
+                    "an explicit dimension label, e.g., var['x', 0] instead of var[0].")
+            dim = self.dims[0]
+            index = name
+        else:
+            dim, index = name
         if _is_positional_index(index) and self.sizes[dim] is None:
-            raise ValueError(
+            raise DimensionError(
                 f"Positional indexing dim {dim} not possible as the length is not "
                 "unique.")
         return DataGroup({

@@ -136,12 +136,42 @@ def test_getitem_positional_indexing():
     assert sc.identical(dg['x', 2], sc.DataGroup({'a': sc.scalar(2)}))
 
 
+def test_getitem_positional_indexing_leaves_scalar_items_untouched():
+    dg = sc.DataGroup({'x': sc.arange('x', 4), 's': sc.scalar(2)})
+    assert sc.identical(dg['x', 2]['s'], dg['s'])
+
+
+def test_getitem_positional_indexing_leaves_independent_items_untouched():
+    dg = sc.DataGroup({'x': sc.arange('x', 4), 'y': sc.arange('y', 2)})
+    assert sc.identical(dg['x', 2]['y'], dg['y'])
+
+
+def test_getitem_positional_indexing_without_dim_label_works_for_1d():
+    dg = sc.DataGroup({'a': sc.arange('x', 4)})
+    assert sc.identical(dg[2], sc.DataGroup({'a': sc.scalar(2)}))
+
+
+def test_getitem_positional_indexing_without_dim_label_raises_unless_1d():
+    dg0d = sc.DataGroup({'a': sc.scalar(4)})
+    with pytest.raises(sc.DimensionError):
+        dg0d[0]
+    dg2d = sc.DataGroup({'a': sc.ones(dims=('x', 'y'), shape=(1, 2))})
+    with pytest.raises(sc.DimensionError):
+        dg2d[0]
+
+
 def test_getitem_positional_indexing_raises_when_length_is_not_unique():
     dg = sc.DataGroup({'a': sc.arange('x', 4), 'b': sc.arange('x', 5)})
-    with pytest.raises(ValueError):
+    with pytest.raises(sc.DimensionError):
         dg['x', 2]
-    with pytest.raises(ValueError):
+    with pytest.raises(sc.DimensionError):
         dg['x', 2:3]
+
+
+def test_getitem_positional_indexing_treats_numpy_arrays_as_scalars():
+    dg = sc.DataGroup({'a': sc.arange('x', 4), 'b': np.arange(4)})
+    assert np.array_equal(dg[1]['b'], dg['b'])
+    assert np.array_equal(dg['x', 1]['b'], dg['b'])
 
 
 def test_getitem_label_indexing_based_works_when_length_is_not_unique():
