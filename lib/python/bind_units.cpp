@@ -102,11 +102,30 @@ std::string repr(const units::Unit &unit) {
   }
 
   std::ostringstream oss;
-  oss << "Unit(" << unit.underlying().multiplier();
-  unit.map_over_bases([&oss](const char *const base, const auto power) mutable {
-    if (power != 0)
-      oss << "*" << base << "**" << power;
-  });
+  oss << "Unit(";
+
+  bool first = true;
+  if (const auto mult = unit.underlying().multiplier(); mult != 1.0) {
+    oss << mult;
+    first = false;
+  }
+
+  unit.map_over_bases(
+      [&oss, &first](const char *const base, const auto power) mutable {
+        if (power != 0) {
+          if (!first) {
+            oss << "*";
+          } else {
+            first = false;
+          }
+          oss << base;
+          if (power != 1)
+            oss << "**" << power;
+        }
+      });
+  if (first)
+    oss << "1"; // multiplier == 1 and all powers == 0
+
   unit.map_over_flags([&oss](const char *const name, const auto flag) mutable {
     if (flag)
       oss << ", " << name << "=True";
@@ -124,6 +143,11 @@ std::string repr_html(const units::Unit &unit) {
          unit.name() + "</pre>";
 }
 
+void repr_pretty(const units::Unit &unit, py::object &p,
+                 [[maybe_unused]] const bool cycle) {
+  p.attr("text")(unit.name());
+}
+
 } // namespace
 
 void init_units(py::module &m) {
@@ -135,6 +159,7 @@ void init_units(py::module &m) {
       .def("__str__", [](const units::Unit &u) { return u.name(); })
       .def("__repr__", repr)
       .def("_repr_html_", repr_html)
+      .def("_repr_pretty_", repr_pretty)
       .def_property_readonly("name", &units::Unit::name,
                              "A read-only string describing the "
                              "type of unit.")

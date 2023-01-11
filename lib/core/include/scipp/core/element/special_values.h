@@ -73,6 +73,7 @@ constexpr auto isneginf =
 
 constexpr auto replace_special = overloaded{
     arg_list<double, float>, transform_flags::expect_all_or_none_have_variance,
+    transform_flags::force_variance_broadcast,
     [](const units::Unit &x, const units::Unit &repl) {
       expect::equals(x, repl);
       return x;
@@ -80,6 +81,7 @@ constexpr auto replace_special = overloaded{
 
 constexpr auto replace_special_out_arg = overloaded{
     arg_list<double, float>, transform_flags::expect_all_or_none_have_variance,
+    transform_flags::force_variance_broadcast,
     [](units::Unit &a, const units::Unit &b, const units::Unit &repl) {
       expect::equals(b, repl);
       a = b;

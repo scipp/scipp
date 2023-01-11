@@ -379,10 +379,45 @@ template <class T> struct as_view {
 };
 template <class T> as_view(T &data, const Dimensions &dims) -> as_view<T>;
 
+template <class T>
+bool bad_variance_broadcast(const Dimensions &dims, const T &var) {
+  if (!var.has_variances())
+    return false;
+  // implicit broadcast
+  if (dims.ndim() > var.dims().ndim())
+    return true;
+  // there may be a stride==0 when an inner dim has length==0
+  if (dims.volume() == 0)
+    return false;
+  // explicit broadcast
+  return std::any_of(var.strides().begin(), var.strides().end(),
+                     [](scipp::index s) { return s == 0; });
+}
+
+template <class... Vars>
+[[noreturn]] void throw_variances_broadcast_error(Vars &&...vars) {
+  throw except::VariancesError(
+      "Cannot broadcast object with variances as this would introduce "
+      "unhandled correlations. Input dimensions were:\n" +
+      ((to_string(vars.dims()) +
+        " variances=" + (vars.has_variances() ? "True" : "False") + '\n') +
+       ...));
+}
+
 template <class Op> struct Transform {
   Op op;
   template <class... Ts> Variable operator()(Ts &&...handles) const {
     const auto dims = merge(handles.dims()...);
+
+    if constexpr (!std::is_base_of_v<
+                      core::transform_flags::force_variance_broadcast_t, Op>) {
+      if ((bad_variance_broadcast(dims, handles) || ...))
+        throw_variances_broadcast_error(handles...);
+      if ((handles.is_bins() || ...))
+        if (((handles.has_variances() && !handles.is_bins()) || ...))
+          throw_variances_broadcast_error(handles...);
+    }
+
     using Out = decltype(maybe_eval(op(handles.values()[0]...)));
     const bool variances =
         !std::is_base_of_v<core::transform_flags::no_out_variance_t, Op> &&
@@ -616,6 +651,17 @@ template <bool dry_run> struct in_place {
                         const Other &...other) {
     using namespace detail;
     (scipp::expect::includes(var.dims(), other.dims()), ...);
+
+    if constexpr (!std::is_base_of_v<
+                      core::transform_flags::force_variance_broadcast_t, Op>) {
+      if (const auto dims = merge(var.dims(), other.dims()...);
+          (bad_variance_broadcast(dims, other) || ...))
+        throw_variances_broadcast_error(var, other...);
+      if (is_bins(var) || (is_bins(other) || ...))
+        if (((other.has_variances() && !is_bins(other)) || ...))
+          throw_variances_broadcast_error(var, other...);
+    }
+
     auto unit = variableFactory().elem_unit(var);
     op(unit, variableFactory().elem_unit(other)...);
     // Stop early in bad cases of changing units (if `var` is a slice):

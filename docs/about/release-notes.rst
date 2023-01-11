@@ -32,7 +32,8 @@ Release Notes
 
    Simon Heybrock :sup:`a`\ ,
    Neil Vaytet :sup:`a`\ ,
-   and Jan-Lukas Wynen :sup:`a`
+   Jan-Lukas Wynen :sup:`a`\ ,
+   and Sunyoung Yoo :sup:`a`
 
 
 v23.xy.0 (January 2023)
@@ -48,12 +49,17 @@ Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 * The HDF5 format changed to accommodate more units, old files can still be loaded but new ones cannot be loaded with an old version of Scipp `#2931 <https://github.com/scipp/scipp/pull/2931>`_.
+* Implicit and explicit broadcasting of operands with variances in operations was disabled.
+  This introduces correlations that Scipp cannot handle and would therefore silently underestimate uncertainties.
+  Instead a :py:class:`scipp.VariancesError` is raised now `#2895 <https://github.com/scipp/scipp/pull/2895>`_.
 
 Bugfixes
 ~~~~~~~~
 
 * Fix a bug in :py:func:`scipp.hist` and :py:func:`scipp.bin`, leading to assignment of records with very large coord values outside the bin boundaries to a bin `#2923 <https://github.com/scipp/scipp/pull/2923>`_.
 * Fix a bug in open end slicing of bins, in case the given right/left end is smaller/bigger than the min/max value of the slicing target, it uses the given end instead of min/max for the open end `#2933 <https://github.com/scipp/scipp/pull/2933>`_.
+* Fix issue with events close to upper or lower bin bounds getting dropped by :func:`scipp.lookup` with edges that form a "linspace" `#2942 <https://github.com/scipp/scipp/pull/2942>`_.
+* Fix minor issue with events close to bin bounds getting assigned to the wrong bin by :func:`scipp.lookup` with edges that form a "linspace" `#2942 <https://github.com/scipp/scipp/pull/2942>`_.
 
 Documentation
 ~~~~~~~~~~~~~
@@ -69,7 +75,8 @@ Contributors
 
 Simon Heybrock :sup:`a`\ ,
 Neil Vaytet :sup:`a`\ ,
-and Jan-Lukas Wynen :sup:`a`
+Jan-Lukas Wynen :sup:`a`\ ,
+and Sunyoung Yoo :sup:`a`
 
 v22.11.0 (November 2022)
 ------------------------

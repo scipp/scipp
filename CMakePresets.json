@@ -13,6 +13,7 @@
       "generator": "Ninja",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
         "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
         "FULL_BUILD": "ON",

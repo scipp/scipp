@@ -85,8 +85,7 @@ TEST(TransformTest, mixed_precision_in_place) {
 }
 
 TEST(TransformTest, combined_uncertainty_propagation) {
-  auto a =
-      makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{2.0}, Variances{0.1});
+  auto a = makeVariable<double>(Values{2.0}, Variances{0.1});
   auto a_2_step = copy(a);
   const auto b = makeVariable<double>(Values{3.0}, Variances{0.2});
 
@@ -107,8 +106,7 @@ TEST(TransformTest, combined_uncertainty_propagation) {
 
 // It is possible to use transform with functors that call non-built-in
 // functions. To do so we have to define that function for the ValueAndVariance
-// helper. If this turns out to be a useful feature we should move
-// ValueAndVariance out of the `detail` namespace and document the mechanism.
+// helper.
 constexpr auto user_op(const double) { return 123.0; }
 constexpr auto user_op(const ValueAndVariance<double>) {
   return ValueAndVariance<double>{123.0, 456.0};
