@@ -55,6 +55,7 @@ class DataGroup(MutableMapping):
         self._items = dict(items) if items is not None else {}
 
     def __len__(self) -> int:
+        """Return the number of items in the data group."""
         return len(self._items)
 
     def __iter__(self):
@@ -69,6 +70,19 @@ class DataGroup(MutableMapping):
         ...
 
     def __getitem__(self, name):
+        """Return item of given name or index all items.
+
+        When ``name`` is a string, return the items of the given name. Otherwise, this
+        returns a new DataGroup, with items created by indexing the items in this
+        DataGroup. This may perform, e.g., Scipp's positional indexing or label-based
+        indexing on items that are scipp.Variable or scipp.DataArray.
+
+        Positional indexing is only possible when the shape of all items is consistent
+        for the indexed dimension.
+
+        Label-based indexing is only possible when all items have a coordinate for the
+        indexed dimension.
+        """
         if isinstance(name, str):
             return self._items[name]
         if isinstance(name, tuple) and name == ():
@@ -101,13 +115,16 @@ class DataGroup(MutableMapping):
         ...
 
     def __setitem__(self, name, value):
+        """Set self[key] to value."""
         self._items[name] = value
 
     def __delitem__(self, name: str):
+        """Delete self[key]."""
         del self._items[name]
 
     @property
     def dims(self):
+        """Union of dims of all items. Non-Scipp items are handled as dims=()."""
         dims = ()
         for var in self.values():
             # Preserve insertion order
@@ -118,10 +135,12 @@ class DataGroup(MutableMapping):
 
     @property
     def ndim(self):
+        """Number of dimensions, i.e., len(self.dims)."""
         return len(self.dims)
 
     @property
     def shape(self):
+        """Union of shape of all items. Non-Scipp items are handled as shape=()."""
 
         def dim_size(dim):
             sizes = {var.sizes[dim] for var in self.values() if dim in _item_dims(var)}
@@ -133,6 +152,7 @@ class DataGroup(MutableMapping):
 
     @property
     def sizes(self):
+        """Dict combining dims and shape, i.e., mapping dim labels to their size."""
         return dict(zip(self.dims, self.shape))
 
     def _make_html(self):
