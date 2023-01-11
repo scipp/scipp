@@ -9,6 +9,7 @@ import numpy as np
 
 from .._scipp import core as _cpp
 from ..typing import VariableLikeType
+from . import data_group
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from ._sizes import _parse_dims_shape_sizes
 from .concepts import transform_data
@@ -115,6 +116,8 @@ def concat(x: Sequence[VariableLikeType], dim: str) -> VariableLikeType:
       >>> z.values
       array([  0,   1,   2,   0, 100, 200])
     """
+    if x and isinstance(x[0], data_group.DataGroup):
+        return data_group._apply_to_items(concat, x, dim)
     return _call_cpp_func(_cpp.concat, x, dim)
 
 
