@@ -76,11 +76,7 @@ class DataGroup(MutableMapping):
     def shape(self):
 
         def dim_size(dim):
-            sizes = []
-            for var in self.values():
-                if dim in _item_dims(var):
-                    sizes.append(var.sizes[dim])
-            sizes = set(sizes)
+            sizes = {var.sizes[dim] for var in self.values() if dim in _item_dims(var)}
             if len(sizes) == 1:
                 return next(iter(sizes))
             return None
