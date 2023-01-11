@@ -28,7 +28,11 @@ def _is_positional_index(key) -> bool:
     if isinstance(key, int):
         return True
     if isinstance(key, slice):
-        return isinstance(key.start, int)
+        if isinstance(key.start, int) or isinstance(key.stop, int) or isinstance(
+                key.step, int):
+            return True
+        if key.start is None and key.stop is None:
+            return True
     return False
 
 
