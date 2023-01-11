@@ -36,7 +36,7 @@ def _is_positional_index(key) -> bool:
 
         if is_int(key.start) or is_int(key.stop) or is_int(key.step):
             return True
-        if key.start is None and key.stop is None:
+        if key.start is None and key.stop is None and key.step is None:
             return True
     return False
 

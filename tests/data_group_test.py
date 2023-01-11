@@ -168,6 +168,8 @@ def test_getitem_positional_indexing_without_dim_label_raises_unless_1d():
         dg2d[:]
     with pytest.raises(sc.DimensionError):
         dg2d[::2]
+    with pytest.raises(sc.DimensionError):
+        dg2d[::]
 
 
 def test_getitem_positional_indexing_raises_when_length_is_not_unique():
