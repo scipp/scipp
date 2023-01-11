@@ -8,9 +8,11 @@
 #include <sstream>
 
 #include "scipp/core/dict.h"
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/string.h"
+#include "scipp/variable/util.h"
 
 namespace scipp::dataset {
 
@@ -43,10 +45,41 @@ std::string format_variable(const std::string &key, const Variable &variable,
   return s.str();
 }
 
+std::string format_binned_data(const Variable &variable) {
+  std::stringstream s;
+  const std::string colSep("  ");
+  s << tab << std::left << std::setw(24) << "<binned>" << colSep;
+  s << std::setw(24) << to_string(variable.dtype()) << colSep;
+  s << to_string(variable.dims(), true) << colSep;
+  const auto lengths = bin_sizes(variable).values<scipp::index>();
+  const auto size = scipp::size(lengths);
+  // for (scipp::index i = 0; i < 4; ++i)
+  //   s << "[len=" << lengths[i];
+  // return s.str();
+  if (size == 0) {
+    s << "[]";
+    return s.str();
+  }
+  s << "[len=" << lengths[0];
+  for (scipp::index i = 1; i < size; ++i) {
+    constexpr scipp::index n = 2;
+    if (i == n && size > 2 * n) {
+      s << ", ...";
+      i = size - n;
+    }
+    s << ", len=" << lengths[i];
+  }
+  s << "]";
+  return s.str();
+}
+
 template <class Key>
 auto format_data_view(const Key &name, const DataArray &data,
                       const Sizes &datasetSizes, const std::string &shift,
                       const bool inline_meta) {
+  if (is_bins(data)) {
+    return format_binned_data(data.data());
+  }
   std::stringstream s;
   s << shift << format_variable(name, data.data(), datasetSizes);
 
