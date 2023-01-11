@@ -939,7 +939,7 @@ def test_drop_coords():
     coord2 = sc.linspace('z', start=-12, stop=0, num=5)
     data0 = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
     data1 = sc.array(dims=['x'], values=np.random.rand(4))
-    da = sc.Dataset(data={
+    ds = sc.Dataset(data={
         'data0': data0,
         'data1': data1
     },
@@ -949,15 +949,15 @@ def test_drop_coords():
                         'coord2': coord2
                     })
 
-    assert 'coord0' not in da.drop_coords('coord0').coords
-    assert 'coord1' in da.drop_coords('coord0').coords
-    assert 'coord2' in da.drop_coords('coord0').coords
-    assert 'coord0' not in da.drop_coords('coord0')['data0'].coords
-    assert 'coord0' not in da.drop_coords('coord0')['data1'].coords
-    assert 'coord1' in da.drop_coords('coord0')['data0'].coords
-    assert 'coord0' in da.drop_coords(['coord1', 'coord2']).coords
-    assert 'coord1' not in da.drop_coords(['coord1', 'coord2']).coords
-    assert 'coord2' not in da.drop_coords(['coord1', 'coord2']).coords
+    assert 'coord0' not in ds.drop_coords('coord0').coords
+    assert 'coord1' in ds.drop_coords('coord0').coords
+    assert 'coord2' in ds.drop_coords('coord0').coords
+    assert 'coord0' not in ds.drop_coords('coord0')['data0'].coords
+    assert 'coord0' not in ds.drop_coords('coord0')['data1'].coords
+    assert 'coord1' in ds.drop_coords('coord0')['data0'].coords
+    assert 'coord0' in ds.drop_coords(['coord1', 'coord2']).coords
+    assert 'coord1' not in ds.drop_coords(['coord1', 'coord2']).coords
+    assert 'coord2' not in ds.drop_coords(['coord1', 'coord2']).coords
     expected_da = sc.Dataset(data={
         'data0': data0,
         'data1': data1
@@ -966,4 +966,4 @@ def test_drop_coords():
                                  'coord0': coord0,
                                  'coord2': coord2
                              })
-    assert sc.identical(da.drop_coords('coord1'), expected_da)
+    assert sc.identical(ds.drop_coords('coord1'), expected_da)
