@@ -29,10 +29,7 @@ class DataGroup(MutableMapping):
     """
 
     def __init__(self, items=None):
-        self._items = {}
-        if items is not None:
-            for name, item in items.items():
-                self[name] = item
+        self._items = dict(items) if items is not None else {}
 
     def __len__(self) -> int:
         return len(self._items)
