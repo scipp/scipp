@@ -131,6 +131,19 @@ def test_numpy_arrays_are_not_considered_for_shape():
     assert sc.DataGroup({'a': np.arange(4)}).shape == ()
 
 
+def test_getitem_positional_indexing():
+    dg = sc.DataGroup({'a': sc.arange('x', 4)})
+    assert sc.identical(dg['x', 2], sc.DataGroup({'a': sc.scalar(2)}))
+
+
+def test_getitem_positional_indexing_raises_when_length_is_not_unique():
+    dg = sc.DataGroup({'a': sc.arange('x', 4), 'b': sc.arange('x', 5)})
+    with pytest.raises(ValueError):
+        dg['x', 2]
+    with pytest.raises(ValueError):
+        dg['x', 2:3]
+
+
 def test_add():
     x = sc.arange('x', 4, unit='m')
     dg1 = sc.DataGroup({'a': x})

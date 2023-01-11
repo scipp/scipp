@@ -23,6 +23,14 @@ def _summarize(item):
     return str(item)
 
 
+def _is_positional_index(key) -> bool:
+    if isinstance(key, int):
+        return True
+    if isinstance(key, slice):
+        return isinstance(key.start, int)
+    return False
+
+
 class DataGroup(MutableMapping):
     """
     A group of data. Has dims and shape, but no coords.
@@ -43,7 +51,7 @@ class DataGroup(MutableMapping):
         if name == ():
             return DataGroup({key: var[()] for key, var in self.items()})
         dim, index = name
-        if isinstance(index, int) and self.sizes[dim] is None:
+        if _is_positional_index(index) and self.sizes[dim] is None:
             raise ValueError(
                 f"Positional indexing dim {dim} not possible as the length is not "
                 "unique.")
@@ -173,8 +181,12 @@ class DataGroup(MutableMapping):
         return plopp.plot(self, *args, **kwargs)
 
 
-def _data_group_binary(func: Callable, dg1: DataGroup, dg2: DataGroup) -> DataGroup:
-    return DataGroup({key: func(dg1[key], dg2[key]) for key in dg1.keys() & dg2.keys()})
+def _data_group_binary(func: Callable, dg1: DataGroup, dg2: DataGroup, *args,
+                       **kwargs) -> DataGroup:
+    return DataGroup({
+        key: func(dg1[key], dg2[key], *args, **kwargs)
+        for key in dg1.keys() & dg2.keys()
+    })
 
 
 def _apply_to_items(func: Callable, dgs: Iterable[DataGroup], *args,

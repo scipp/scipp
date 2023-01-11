@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from .._scipp import core as _cpp
 from ..typing import VariableLike
+from . import data_group
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from .variable import scalar
 
@@ -165,6 +166,12 @@ def identical(x: VariableLike,
         True if x and y have identical values, variances, dtypes, units,
         dims, shapes, coords, and masks. Else False.
     """
+    if isinstance(x, data_group.DataGroup):
+        if x.keys() != y.keys():
+            return False
+        results = data_group._data_group_binary(identical, x, y, equal_nan=equal_nan)
+        return all(results.values())
+
     return _call_cpp_func(_cpp.identical, x, y, equal_nan=equal_nan)
 
 
