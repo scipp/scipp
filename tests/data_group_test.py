@@ -22,6 +22,12 @@ def test_create_from_dict_works_with_mixed_types_and_non_scipp_objects():
     assert tuple(dg.keys()) == ('a', 'b', 'c', 'd')
 
 
+def test_init_raises_when_keys_are_not_strings():
+    d = {1: 0}
+    with pytest.raises(ValueError):
+        sc.DataGroup(d)
+
+
 def test_len():
     assert len(sc.DataGroup()) == 0
     assert len(sc.DataGroup({'a': 0})) == 1
