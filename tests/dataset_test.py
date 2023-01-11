@@ -955,7 +955,7 @@ def test_drop_coords():
     assert 'coord0' in ds.drop_coords(['coord1', 'coord2']).coords
     assert 'coord1' not in ds.drop_coords(['coord1', 'coord2']).coords
     assert 'coord2' not in ds.drop_coords(['coord1', 'coord2']).coords
-    expected_da = sc.Dataset(data={
+    expected_ds = sc.Dataset(data={
         'data0': data0,
         'data1': data1
     },
@@ -963,4 +963,4 @@ def test_drop_coords():
                                  'coord0': coord0,
                                  'coord2': coord2
                              })
-    assert sc.identical(ds.drop_coords('coord1'), expected_da)
+    assert sc.identical(ds.drop_coords('coord1'), expected_ds)
