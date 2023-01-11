@@ -18,7 +18,7 @@ def array1d(*, a=1.2, b=1.3, noise_scale=0.1, size=50):
     y = func(x, a=a, b=b)
     rng = np.random.default_rng()
     # Noise is random but avoiding unbounded values to avoid flaky tests
-    y.values += noise_scale * np.clip(rng.normal(size=size), -2.0, 2.0)
+    y.values += noise_scale * np.clip(rng.normal(size=size), -1.5, 1.5)
     return sc.DataArray(y, coords={'xx': x})
 
 
