@@ -39,19 +39,19 @@ def test_iter_nonempty():
         next(it)
 
 
-def test_getitem():
+def test_getitem_str_key():
     dg = sc.DataGroup({'a': sc.scalar(1), 'b': sc.scalar(2)})
     assert sc.identical(dg['a'], sc.scalar(1))
     assert sc.identical(dg['b'], sc.scalar(2))
 
 
-def test_setitem_adds_new():
+def test_setitem_str_key_adds_new():
     dg = sc.DataGroup()
     dg['a'] = sc.scalar(1)
     assert 'a' in dg
 
 
-def test_setitem_replace():
+def test_setitem_str_key_replace():
     dg = sc.DataGroup({'a': sc.scalar(1)})
     dg['a'] = sc.scalar(2)
     assert sc.identical(dg['a'], sc.scalar(2))
@@ -67,6 +67,68 @@ def test_delitem_raises_KeyError_when_not_found():
     dg = sc.DataGroup({'a': sc.scalar(1)})
     with pytest.raises(KeyError):
         del dg['b']
+
+
+def test_dims_with_scipp_objects_combines_dims_in_insertion_order():
+    assert sc.DataGroup({'a': sc.scalar(1)}).dims == ()
+    assert sc.DataGroup({'a': sc.ones(dims=('x', ), shape=(2, ))}).dims == ('x', )
+    assert sc.DataGroup({
+        'a': sc.ones(dims=('x', ), shape=(2, )),
+        'b': sc.ones(dims=('y', ), shape=(2, ))
+    }).dims == ('x', 'y')
+    assert sc.DataGroup({
+        'b': sc.ones(dims=('y', ), shape=(2, )),
+        'a': sc.ones(dims=('x', ), shape=(2, ))
+    }).dims == ('y', 'x')
+    # In this case there would be a better order, but in general there is not, so at
+    # leasr for now the implementation makes no attempt for this.
+    assert sc.DataGroup({
+        'a': sc.ones(dims=('x', 'z'), shape=(2, 2)),
+        'b': sc.ones(dims=('y', 'z'), shape=(2, 2))
+    }).dims == ('x', 'z', 'y')
+
+
+def test_ndim():
+    assert sc.DataGroup({'a': sc.scalar(1)}).ndim == 0
+    assert sc.DataGroup({'a': sc.ones(dims=('x', ), shape=(1, ))}).ndim == 1
+    assert sc.DataGroup({'a': sc.ones(dims=('x', 'y'), shape=(1, 1))}).ndim == 2
+    assert sc.DataGroup({
+        'a': sc.ones(dims=('x', ), shape=(2, )),
+        'b': sc.ones(dims=('y', ), shape=(2, ))
+    }).ndim == 2
+
+
+def test_non_scipp_objects_are_considered_to_have_0_dims():
+    assert sc.DataGroup({'a': np.arange(4)}).dims == ()
+    assert sc.DataGroup({'a': np.arange(4)}).ndim == 0
+
+
+def test_shape_and_sizes():
+    dg = sc.DataGroup({
+        'a': sc.ones(dims=('x', 'z'), shape=(2, 4)),
+        'b': sc.ones(dims=('y', 'z'), shape=(3, 4))
+    })
+    assert dg.shape == (2, 4, 3)
+    assert dg.sizes == {'x': 2, 'z': 4, 'y': 3}
+
+
+def test_inconsistent_shapes_are_reported_as_None():
+    dg = sc.DataGroup({'x1': sc.arange('x', 4)})
+    assert dg.shape == (4, )
+    dg['x2'] = sc.arange('x', 5)
+    assert dg.shape == (None, )
+    dg['y1'] = sc.arange('y', 5)
+    assert dg.shape == (None, 5)
+    dg['y2'] = sc.arange('y', 6)
+    assert dg.shape == (None, None)
+    del dg['x1']
+    assert dg.shape == (5, None)
+    del dg['y1']
+    assert dg.shape == (5, 6)
+
+
+def test_numpy_arrays_are_not_considered_for_shape():
+    assert sc.DataGroup({'a': np.arange(4)}).shape == ()
 
 
 def test_add():
