@@ -144,6 +144,15 @@ def test_getitem_positional_indexing_raises_when_length_is_not_unique():
         dg['x', 2:3]
 
 
+def test_getitem_label_indexing_based_works_when_length_is_not_unique():
+    da1 = sc.DataArray(sc.arange('x', 4), coords={'x': sc.linspace('x', 0.0, 1.0, 4)})
+    da2 = sc.DataArray(sc.arange('x', 5), coords={'x': sc.linspace('x', 0.0, 1.0, 5)})
+    dg = sc.DataGroup({'a': da1, 'b': da2})
+    result = dg['x', :sc.scalar(0.5)]
+    assert sc.identical(result['a'], da1['x', :sc.scalar(0.5)])
+    assert sc.identical(result['b'], da2['x', :sc.scalar(0.5)])
+
+
 def test_add():
     x = sc.arange('x', 4, unit='m')
     dg1 = sc.DataGroup({'a': x})

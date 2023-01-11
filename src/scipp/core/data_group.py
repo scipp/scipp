@@ -34,7 +34,12 @@ def _is_positional_index(key) -> bool:
 
 class DataGroup(MutableMapping):
     """
-    A group of data. Has dims and shape, but no coords.
+    A dict-like group of data. Additionally provides dims and shape properties.
+
+    DataGroup acts like a Python dict but additionally supports Scipp functionality
+    such as positional- and label-based indexing and Scipp operations by mapping them
+    to the values in the dict. This may happen recursively to support tree-like data
+    structures.
     """
 
     def __init__(self, items=None, /):
