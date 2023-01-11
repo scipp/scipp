@@ -59,7 +59,7 @@ def test_getitem_str_key():
 def test_setitem_str_key_adds_new():
     dg = sc.DataGroup()
     dg['a'] = sc.scalar(1)
-    assert 'a' in dg
+    assert sc.identical(dg['a'], sc.scalar(1))
 
 
 def test_setitem_str_key_replace():
