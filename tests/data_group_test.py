@@ -6,6 +6,11 @@ import pytest
 import scipp as sc
 
 
+def test_create_from_kwargs():
+    dg = sc.DataGroup(a=4, b=6)
+    assert tuple(dg.keys()) == ('a', 'b')
+
+
 def test_create_from_dict_works_with_mixed_types_and_non_scipp_objects():
     items = {
         'a': 1,

@@ -51,8 +51,8 @@ class DataGroup(MutableMapping):
     structures.
     """
 
-    def __init__(self, items=None, /):
-        self._items = dict(items) if items is not None else {}
+    def __init__(self, /, *args, **kwargs):
+        self._items = dict(*args, **kwargs)
 
     def __len__(self) -> int:
         """Return the number of items in the data group."""
