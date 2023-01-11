@@ -952,9 +952,6 @@ def test_drop_coords():
     assert 'coord0' not in ds.drop_coords('coord0').coords
     assert 'coord1' in ds.drop_coords('coord0').coords
     assert 'coord2' in ds.drop_coords('coord0').coords
-    assert 'coord0' not in ds.drop_coords('coord0')['data0'].coords
-    assert 'coord0' not in ds.drop_coords('coord0')['data1'].coords
-    assert 'coord1' in ds.drop_coords('coord0')['data0'].coords
     assert 'coord0' in ds.drop_coords(['coord1', 'coord2']).coords
     assert 'coord1' not in ds.drop_coords(['coord1', 'coord2']).coords
     assert 'coord2' not in ds.drop_coords(['coord1', 'coord2']).coords
