@@ -28,7 +28,7 @@ class DataGroup(MutableMapping):
     A group of data. Has dims and shape, but no coords.
     """
 
-    def __init__(self, items=None):
+    def __init__(self, items=None, /):
         self._items = dict(items) if items is not None else {}
 
     def __len__(self) -> int:

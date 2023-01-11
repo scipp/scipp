@@ -1,6 +1,72 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+import numpy as np
+import pytest
+
 import scipp as sc
+
+
+def test_create_from_dict_works_with_mixed_types_and_non_scipp_objects():
+    items = {
+        'a': 1,
+        'b': sc.scalar(2),
+        'c': sc.DataArray(sc.scalar(3)),
+        'd': np.arange(4)
+    }
+    dg = sc.DataGroup(items)
+    assert tuple(dg.keys()) == ('a', 'b', 'c', 'd')
+
+
+def test_len():
+    assert len(sc.DataGroup()) == 0
+    assert len(sc.DataGroup({'a': 0})) == 1
+    assert len(sc.DataGroup({'a': 0, 'b': 1})) == 2
+
+
+def test_iter_empty():
+    dg = sc.DataGroup()
+    it = iter(dg)
+    with pytest.raises(StopIteration):
+        next(it)
+
+
+def test_iter_nonempty():
+    dg = sc.DataGroup({'a': sc.scalar(1), 'b': sc.scalar(2)})
+    it = iter(dg)
+    assert next(it) == 'a'
+    assert next(it) == 'b'
+    with pytest.raises(StopIteration):
+        next(it)
+
+
+def test_getitem():
+    dg = sc.DataGroup({'a': sc.scalar(1), 'b': sc.scalar(2)})
+    assert sc.identical(dg['a'], sc.scalar(1))
+    assert sc.identical(dg['b'], sc.scalar(2))
+
+
+def test_setitem_adds_new():
+    dg = sc.DataGroup()
+    dg['a'] = sc.scalar(1)
+    assert 'a' in dg
+
+
+def test_setitem_replace():
+    dg = sc.DataGroup({'a': sc.scalar(1)})
+    dg['a'] = sc.scalar(2)
+    assert sc.identical(dg['a'], sc.scalar(2))
+
+
+def test_delitem_removes_item():
+    dg = sc.DataGroup({'a': sc.scalar(1)})
+    del dg['a']
+    assert 'a' not in dg
+
+
+def test_delitem_raises_KeyError_when_not_found():
+    dg = sc.DataGroup({'a': sc.scalar(1)})
+    with pytest.raises(KeyError):
+        del dg['b']
 
 
 def test_add():
