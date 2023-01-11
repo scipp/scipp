@@ -238,3 +238,80 @@ TEST_F(DataArrayTest, is_edges_invalid_coord_name_throws_NotFoundError) {
   ASSERT_THROW_DISCARD(da.coords().is_edges(Dim{"invalid name"}),
                        except::NotFoundError);
 }
+
+DataArray make_drop_example_data_arrays() {
+  Variable data = makeVariable<double>(Values{1});
+  Variable coord = makeVariable<double>(Values{2});
+  Variable mask = makeVariable<bool>(Values{false});
+  Variable attr = makeVariable<double>(Values{3});
+  return DataArray(
+      data, {{Dim{"dim0"}, coord}, {Dim{"dim1"}, coord}, {Dim{"dim2"}, coord}},
+      {{"mask0", mask}, {"mask1", mask}, {"mask2", mask}},
+      {{Dim{"attr0"}, attr}, {Dim{"attr1"}, attr}, {Dim{"attr2"}, attr}});
+}
+
+TEST_F(DataArrayTest, drop_single_coord) {
+  const DataArray da = make_drop_example_data_arrays();
+  auto new_da = da.drop_coords(std::vector{Dim{"dim0"}});
+  const DataArray expected_da{
+      data,
+      {{Dim{"dim1"}, coord}, {Dim{"dim2"}, coord}},
+      {{"mask0", mask}, {"mask1", mask}, {"mask2", mask}},
+      {{Dim{"attr0"}, attr}, {Dim{"attr1"}, attr}, {Dim{"attr2"}, attr}}};
+  ASSERT_EQ(new_da, expected_da);
+}
+
+TEST_F(DataArrayTest, drop_multiple_coords) {
+  const DataArray da = make_drop_example_data_arrays();
+  auto new_da = da.drop_coords(std::vector{Dim{"dim1"}, Dim{"dim2"}});
+  const DataArray expected_da{
+      data,
+      {{Dim{"dim0"}, coord}},
+      {{"mask0", mask}, {"mask1", mask}, {"mask2", mask}},
+      {{Dim{"attr0"}, attr}, {Dim{"attr1"}, attr}, {Dim{"attr2"}, attr}}};
+  ASSERT_EQ(new_da, expected_da);
+}
+
+TEST_F(DataArrayTest, drop_single_mask) {
+  const DataArray da = make_drop_example_data_arrays();
+  auto new_da = da.drop_masks({{"mask0"}});
+  const DataArray expected_da{
+      data,
+      {{Dim{"dim0"}, coord}, {Dim{"dim1"}, coord}, {Dim{"dim2"}, coord}},
+      {{"mask1", mask}, {"mask2", mask}},
+      {{Dim{"attr0"}, attr}, {Dim{"attr1"}, attr}, {Dim{"attr2"}, attr}}};
+  ASSERT_EQ(new_da, expected_da);
+}
+
+TEST_F(DataArrayTest, drop_multiple_mask) {
+  const DataArray da = make_drop_example_data_arrays();
+  auto new_da = da.drop_masks({{"mask2", "mask1"}});
+  const DataArray expected_da{
+      data,
+      {{Dim{"dim0"}, coord}, {Dim{"dim1"}, coord}, {Dim{"dim2"}, coord}},
+      {{"mask0", mask}},
+      {{Dim{"attr0"}, attr}, {Dim{"attr1"}, attr}, {Dim{"attr2"}, attr}}};
+  ASSERT_EQ(new_da, expected_da);
+}
+
+TEST_F(DataArrayTest, drop_single_attrs) {
+  const DataArray da = make_drop_example_data_arrays();
+  auto new_da = da.drop_attrs(std::vector{Dim{"attr0"}});
+  const DataArray expected_da{
+      data,
+      {{Dim{"dim0"}, coord}, {Dim{"dim1"}, coord}, {Dim{"dim2"}, coord}},
+      {{"mask0", mask}, {"mask1", mask}, {"mask2", mask}},
+      {{Dim{"attr1"}, attr}, {Dim{"attr2"}, attr}}};
+  ASSERT_EQ(new_da, expected_da);
+}
+
+TEST_F(DataArrayTest, drop_multiple_attrs) {
+  const DataArray da = make_drop_example_data_arrays();
+  auto new_da = da.drop_attrs(std::vector{Dim{"attr1"}, Dim{"attr2"}});
+  const DataArray expected_da{
+      data,
+      {{Dim{"dim0"}, coord}, {Dim{"dim1"}, coord}, {Dim{"dim2"}, coord}},
+      {{"mask0", mask}, {"mask1", mask}, {"mask2", mask}},
+      {{Dim{"attr0"}, attr}}};
+  ASSERT_EQ(new_da, expected_da);
+}
