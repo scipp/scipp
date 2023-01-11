@@ -74,7 +74,7 @@ class DataGroup(MutableMapping):
     def __getitem__(self, name):
         """Return item of given name or index all items.
 
-        When ``name`` is a string, return the items of the given name. Otherwise, this
+        When ``name`` is a string, return the item of the given name. Otherwise, this
         returns a new DataGroup, with items created by indexing the items in this
         DataGroup. This may perform, e.g., Scipp's positional indexing or label-based
         indexing on items that are scipp.Variable or scipp.DataArray.
