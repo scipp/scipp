@@ -71,7 +71,7 @@ class DataGroup(MutableMapping):
     def __getitem__(self, name):
         if isinstance(name, str):
             return self._items[name]
-        if name == ():
+        if isinstance(name, tuple) and name == ():
             return DataGroup({key: var[()] for key, var in self.items()})
         if _is_positional_index(name):
             if self.ndim != 1:

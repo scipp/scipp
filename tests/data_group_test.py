@@ -159,6 +159,8 @@ def test_getitem_positional_indexing_without_dim_label_raises_unless_1d():
     with pytest.raises(sc.DimensionError):
         dg2d[0]
     with pytest.raises(sc.DimensionError):
+        dg2d[np.int32(0)]
+    with pytest.raises(sc.DimensionError):
         dg2d[:0]
     with pytest.raises(sc.DimensionError):
         dg2d[1:]
