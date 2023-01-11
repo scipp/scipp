@@ -6,8 +6,9 @@ from __future__ import annotations
 import functools
 import operator
 from collections.abc import MutableMapping
-from typing import Callable, Iterable
+from typing import Any, Callable, Iterable, overload
 
+from ..typing import ScippIndex
 from .cpp_classes import DataArray, Dataset, Variable
 
 
@@ -45,6 +46,14 @@ class DataGroup(MutableMapping):
     def __iter__(self):
         yield from self._items
 
+    @overload
+    def __getitem__(self, name: str) -> Any:
+        ...
+
+    @overload
+    def __getitem__(self, name: ScippIndex) -> DataGroup:
+        ...
+
     def __getitem__(self, name):
         if isinstance(name, str):
             return self._items[name]
@@ -59,6 +68,14 @@ class DataGroup(MutableMapping):
             key: var[dim, index] if dim in _item_dims(var) else var
             for key, var in self.items()
         })
+
+    @overload
+    def __setitem__(self, name: str, value: Any):
+        ...
+
+    @overload
+    def __setitem__(self, name: ScippIndex, value: DataGroup):
+        ...
 
     def __setitem__(self, name, value):
         self._items[name] = value
