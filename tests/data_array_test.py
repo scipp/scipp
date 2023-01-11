@@ -410,10 +410,10 @@ def test_drop_masks():
 
     assert 'mask0' not in da.drop_masks('mask0').masks
     assert 'mask1' in da.drop_masks('mask0').masks
-    assert 'mask2' in da.drop_masks('mask0').masks
-    assert 'mask0' not in da.drop_masks('mask0', 'mask1').masks
-    assert 'mask1' not in da.drop_masks('mask0', 'mask1').masks
-    assert 'mask2' in da.drop_masks('mask0', 'mask1').masks
+    assert 'mask2' in da.drop_masks(['mask0']).masks
+    assert 'mask0' not in da.drop_masks(['mask0', 'mask1']).masks
+    assert 'mask1' not in da.drop_masks(['mask0', 'mask1']).masks
+    assert 'mask2' in da.drop_masks(['mask0', 'mask1']).masks
 
 
 def test_drop_attrs():
@@ -425,7 +425,7 @@ def test_drop_attrs():
 
     assert 'attr0' not in da.drop_attrs('attr0').attrs
     assert 'attr1' in da.drop_attrs('attr0').attrs
-    assert 'attr2' in da.drop_attrs('attr0').attrs
-    assert 'attr0' not in da.drop_attrs('attr0', 'attr1').attrs
-    assert 'attr1' not in da.drop_attrs('attr0', 'attr1').attrs
-    assert 'attr2' in da.drop_attrs('attr0', 'attr1').attrs
+    assert 'attr2' in da.drop_attrs(['attr0']).attrs
+    assert 'attr0' not in da.drop_attrs(['attr0', 'attr1']).attrs
+    assert 'attr1' not in da.drop_attrs(['attr0', 'attr1']).attrs
+    assert 'attr2' in da.drop_attrs(['attr0', 'attr1']).attrs

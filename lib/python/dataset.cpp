@@ -24,13 +24,17 @@ namespace {
 template <class T, class... Ignored>
 void bind_dataset_properties(py::class_<T, Ignored...> &c) {
   c.def("drop_coords",
-        [](T &self, const py::args &coord_names) -> decltype(auto) {
+        [](T &self, const std::string &coord_name) -> decltype(auto) {
+          std::vector<scipp::Dim> coord_names_c = {scipp::Dim{coord_name}};
+          return self.drop_coords(coord_names_c);
+        });
+  c.def("drop_coords",
+        [](T &self,
+           const std::vector<std::string> &coord_names) -> decltype(auto) {
           std::vector<scipp::Dim> coord_names_c;
           std::transform(coord_names.begin(), coord_names.end(),
                          std::back_inserter(coord_names_c),
-                         [](const auto &name) {
-                           return scipp::Dim{name.template cast<std::string>()};
-                         });
+                         [](const auto &name) { return scipp::Dim{name}; });
           return self.drop_coords(coord_names_c);
         });
 }
