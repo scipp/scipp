@@ -20,6 +20,7 @@ from .cpp_classes import BinEdgeError, BinnedDataError, CoordError, \
 
 from .._scipp.core import get_slice_params
 
+from .data_group import DataGroup
 from .dimensions import _rename_dims, _rename_variable, _rename_data_array, _rename_dataset
 
 for cls in (Variable, DataArray, Dataset):
