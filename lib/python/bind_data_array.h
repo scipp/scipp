@@ -243,38 +243,33 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
   c.def_property_readonly(
       "masks", [](T &self) -> decltype(auto) { return self.masks(); },
       R"(Dict of masks.)");
+  c.def("drop_coords", [](T &self, const std::string &coord_name) {
+    std::vector<scipp::Dim> coord_names_c = {scipp::Dim{coord_name}};
+    return self.drop_coords(coord_names_c);
+  });
   c.def("drop_coords",
-        [](T &self, const std::string &coord_name) -> decltype(auto) {
-          std::vector<scipp::Dim> coord_names_c = {scipp::Dim{coord_name}};
-          return self.drop_coords(coord_names_c);
-        });
-  c.def("drop_coords",
-        [](T &self,
-           const std::vector<std::string> &coord_names) -> decltype(auto) {
+        [](T &self, const std::vector<std::string> &coord_names) {
           std::vector<scipp::Dim> coord_names_c;
           std::transform(coord_names.begin(), coord_names.end(),
                          std::back_inserter(coord_names_c),
                          [](const auto &name) { return scipp::Dim{name}; });
           return self.drop_coords(coord_names_c);
         });
-  c.def("drop_masks",
-        [](T &self, const std::string &mask_name) -> decltype(auto) {
-          return self.drop_masks(std::vector({mask_name}));
-        });
-  c.def("drop_masks",
-        [](T &self, std::vector<std::string> &mask_names) -> decltype(auto) {
-          return self.drop_masks(mask_names);
-        });
-  c.def("drop_attrs", [](T &self, std::string &attr_name) -> decltype(auto) {
+  c.def("drop_masks", [](T &self, const std::string &mask_name) {
+    return self.drop_masks(std::vector({mask_name}));
+  });
+  c.def("drop_masks", [](T &self, std::vector<std::string> &mask_names) {
+    return self.drop_masks(mask_names);
+  });
+  c.def("drop_attrs", [](T &self, std::string &attr_name) {
     std::vector<scipp::Dim> attr_names_c = {scipp::Dim{attr_name}};
     return self.drop_attrs(attr_names_c);
   });
-  c.def("drop_attrs",
-        [](T &self, std::vector<std::string> &attr_names) -> decltype(auto) {
-          std::vector<scipp::Dim> attr_names_c;
-          std::transform(attr_names.begin(), attr_names.end(),
-                         std::back_inserter(attr_names_c),
-                         [](const auto &name) { return scipp::Dim{name}; });
-          return self.drop_attrs(attr_names_c);
-        });
+  c.def("drop_attrs", [](T &self, std::vector<std::string> &attr_names) {
+    std::vector<scipp::Dim> attr_names_c;
+    std::transform(attr_names.begin(), attr_names.end(),
+                   std::back_inserter(attr_names_c),
+                   [](const auto &name) { return scipp::Dim{name}; });
+    return self.drop_attrs(attr_names_c);
+  });
 }
