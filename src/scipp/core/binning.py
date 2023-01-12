@@ -540,10 +540,13 @@ def _make_groups(x, arg):
     _require_coord(arg, coord)
     if coord.bins is not None:
         coord = coord.copy().bins.constituents['data']
+
+    if coord.values.size == 0:
+        unique = coord.values[0:0]
     # We are currently using np.unique to find all unique groups. This can be very slow
-    # for large inputs. In many cases groups are in a bounded range of integers and we
+    # for large inputs. In many cases groups are in a bounded range of integers, and we
     # can sometimes bypass a full call to np.unique by checking a sub-range first
-    if coord.dtype in (_cpp.DType.int32, _cpp.DType.int64):
+    elif coord.dtype in (_cpp.DType.int32, _cpp.DType.int64):
         min_ = coord.min().value
         max_ = coord.max().value
         values = coord.values
