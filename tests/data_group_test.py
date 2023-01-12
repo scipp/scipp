@@ -8,6 +8,7 @@ import scipp as sc
 
 def test_create_from_kwargs():
     dg = sc.DataGroup(a=4, b=6)
+
     assert tuple(dg.keys()) == ('a', 'b')
 
 
@@ -292,3 +293,12 @@ def test_elemwise_unary_raises_with_out_arg():
     out = sc.DataGroup()
     with pytest.raises(ValueError):
         sc.sin(dg, out=out)
+
+
+def test_identical_raises_TypeError_when_comparing_to_Dataset():
+    dg = sc.DataGroup(a=sc.scalar(1))
+    ds = sc.Dataset({"a": sc.scalar(1)})
+    with pytest.raises(TypeError):
+        sc.identical(dg, ds)
+    with pytest.raises(TypeError):
+        sc.identical(ds, dg)
