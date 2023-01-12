@@ -143,8 +143,8 @@ def test_numpy_arrays_are_not_considered_for_shape():
 
 
 def test_getitem_positional_indexing():
-    dg = sc.DataGroup({'a': sc.arange('x', 4)})
-    assert sc.identical(dg['x', 2], sc.DataGroup({'a': sc.scalar(2, dtype='int64')}))
+    dg = sc.DataGroup({'a': sc.arange('x', 4, dtype='int64')})
+    assert sc.identical(dg['x', 2], sc.DataGroup({'a': sc.scalar(2)}))
 
 
 def test_getitem_positional_indexing_leaves_scalar_items_untouched():
@@ -158,8 +158,8 @@ def test_getitem_positional_indexing_leaves_independent_items_untouched():
 
 
 def test_getitem_positional_indexing_without_dim_label_works_for_1d():
-    dg = sc.DataGroup({'a': sc.arange('x', 4)})
-    assert sc.identical(dg[2], sc.DataGroup({'a': sc.scalar(2, dtype='int64')}))
+    dg = sc.DataGroup({'a': sc.arange('x', 4, dtype='int64')})
+    assert sc.identical(dg[2], sc.DataGroup({'a': sc.scalar(2)}))
 
 
 def test_getitem_positional_indexing_without_dim_label_raises_unless_1d():
