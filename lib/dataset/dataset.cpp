@@ -309,16 +309,16 @@ void union_or_in_place(Masks &masks, const Masks &otherMasks) {
   for (const auto &[key, item] : otherMasks) {
     const auto it = masks.find(key);
     if (it == masks.end()) {
+      masks.set(key, copy(item));
+    } else if (!it->second.is_readonly()) {
       if (item.dtype() != core::dtype<bool>) {
         std::string optional_message = " This operation is not supported for "
                                        "non-boolean masks with same names.";
         except::throw_mismatch_error(core::dtype<bool>, item.dtype(),
                                      optional_message);
       } else {
-        masks.set(key, copy(item));
+        it->second |= item;
       }
-    } else if (!it->second.is_readonly()) {
-      it->second |= item;
     }
   }
 }
