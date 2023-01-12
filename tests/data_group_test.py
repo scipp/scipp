@@ -8,6 +8,7 @@ import scipp as sc
 
 def test_create_from_kwargs():
     dg = sc.DataGroup(a=4, b=6)
+
     assert tuple(dg.keys()) == ('a', 'b')
 
 
@@ -92,7 +93,7 @@ def test_dims_with_scipp_objects_combines_dims_in_insertion_order():
         'a': sc.ones(dims=('x', ), shape=(2, ))
     }).dims == ('y', 'x')
     # In this case there would be a better order, but in general there is not, so at
-    # leasr for now the implementation makes no attempt for this.
+    # least for now the implementation makes no attempt at this.
     assert sc.DataGroup({
         'a': sc.ones(dims=('x', 'z'), shape=(2, 2)),
         'b': sc.ones(dims=('y', 'z'), shape=(2, 2))
@@ -254,3 +255,50 @@ def test_groupby():
     result = dg.groupby('x').sum('row')
     assert sc.identical(result['a'], table[:60].groupby('x').sum('row'))
     assert sc.identical(result['b'], table[60:].groupby('x').sum('row'))
+
+
+def test_elemwise_unary():
+    dg = sc.DataGroup(a=sc.linspace('x', 0.0, 1.0, num=4, unit='rad'))
+    result = sc.sin(dg)
+    assert isinstance(result, sc.DataGroup)
+    assert sc.identical(result['a'], sc.sin(dg['a']))
+
+
+def test_elemwise_binary():
+    dg1 = sc.DataGroup(a=sc.linspace('x', 0.0, 1.0, num=4, unit='rad'))
+    dg2 = sc.DataGroup(a=sc.linspace('x', 0.0, 2.0, num=4, unit='rad'))
+    result = sc.add(dg1, dg2)
+    assert isinstance(result, sc.DataGroup)
+    assert sc.identical(result['a'], sc.add(dg1['a'], dg2['a']))
+
+
+def test_elemwise_binary_return_intersection_of_keys():
+    dg1 = sc.DataGroup(a=sc.scalar(1), b=sc.scalar(2))
+    dg2 = sc.DataGroup(a=sc.scalar(3), c=sc.scalar(4))
+    result = sc.add(dg1, dg2)
+    assert set(result.keys()) == {'a'}
+    assert sc.identical(result['a'], sc.add(dg1['a'], dg2['a']))
+
+
+def test_elemwise_with_kwargs():
+    dg1 = sc.DataGroup(a=sc.linspace('x', 0.0, 1.0, num=4))
+    dg2 = sc.DataGroup(a=sc.linspace('x', 0.0, 1.0, num=4))
+    result = sc.atan2(y=dg1, x=dg2)
+    assert isinstance(result, sc.DataGroup)
+    assert sc.identical(result['a'], sc.atan2(y=dg1['a'], x=dg2['a']))
+
+
+def test_elemwise_unary_raises_with_out_arg():
+    dg = sc.DataGroup(a=sc.linspace('x', 0.0, 1.0, num=4, unit='rad'))
+    out = sc.DataGroup()
+    with pytest.raises(ValueError):
+        sc.sin(dg, out=out)
+
+
+def test_identical_raises_TypeError_when_comparing_to_Dataset():
+    dg = sc.DataGroup(a=sc.scalar(1))
+    ds = sc.Dataset({"a": sc.scalar(1)})
+    with pytest.raises(TypeError):
+        sc.identical(dg, ds)
+    with pytest.raises(TypeError):
+        sc.identical(ds, dg)

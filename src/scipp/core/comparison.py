@@ -167,6 +167,8 @@ def identical(x: VariableLike,
         dims, shapes, coords, and masks. Else False.
     """
     if isinstance(x, data_group.DataGroup):
+        if not isinstance(y, data_group.DataGroup):
+            raise TypeError("Both or neither of the arguments must be a DataGroup")
         if x.keys() != y.keys():
             return False
         results = data_group._data_group_binary(identical, x, y, equal_nan=equal_nan)
