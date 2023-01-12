@@ -29,10 +29,9 @@ std::string to_string(const Dimensions &dims) {
   if (dims.empty())
     return "()";
   std::string s = "(";
-  for (int32_t i = 0; i < scipp::size(dims.shape()); ++i) {
+  for (int32_t i = 0; i < scipp::size(dims.shape()); ++i)
     s += to_string(dims.labels()[i]) + ": " + std::to_string(dims.shape()[i]) +
          ", ";
-  }
   s.resize(s.size() - 2);
   s += ")";
   return s;
