@@ -254,3 +254,25 @@ def test_groupby():
     result = dg.groupby('x').sum('row')
     assert sc.identical(result['a'], table[:60].groupby('x').sum('row'))
     assert sc.identical(result['b'], table[60:].groupby('x').sum('row'))
+
+
+def test_elemwise():
+    dg = sc.DataGroup(a=sc.linspace('x', 0.0, 1.0, num=4, unit='rad'))
+    result = sc.sin(dg)
+    assert isinstance(result, sc.DataGroup)
+    assert sc.identical(result['a'], sc.sin(dg['a']))
+
+
+def test_elemwise_with_kwargs():
+    dg1 = sc.DataGroup(a=sc.linspace('x', 0.0, 1.0, num=4))
+    dg2 = sc.DataGroup(a=sc.linspace('x', 0.0, 1.0, num=4))
+    result = sc.atan2(y=dg1, x=dg2)
+    assert isinstance(result, sc.DataGroup)
+    assert sc.identical(result['a'], sc.atan2(y=dg1['a'], x=dg2['a']))
+
+
+def test_elemwise_unary_raises_with_out_arg():
+    dg = sc.DataGroup(a=sc.linspace('x', 0.0, 1.0, num=4, unit='rad'))
+    out = sc.DataGroup()
+    with pytest.raises(ValueError):
+        sc.sin(dg, out=out)

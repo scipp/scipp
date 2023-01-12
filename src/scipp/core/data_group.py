@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import functools
+import itertools
 import numbers
 import operator
 from collections.abc import MutableMapping
@@ -244,6 +245,22 @@ def _data_group_binary(func: Callable, dg1: DataGroup, dg2: DataGroup, *args,
     return DataGroup({
         key: func(dg1[key], dg2[key], *args, **kwargs)
         for key in dg1.keys() & dg2.keys()
+    })
+
+
+def data_group_nary(func: Callable, *args, **kwargs) -> DataGroup:
+    dgs = filter(lambda x: isinstance(x, DataGroup),
+                 itertools.chain(args, kwargs.values()))
+    keys = functools.reduce(operator.and_, [dg.keys() for dg in dgs])
+
+    def elem(x, key):
+        return x[key] if isinstance(x, DataGroup) else x
+
+    return DataGroup({
+        key: func(*[elem(x, key) for x in args],
+                  **{name: elem(x, key)
+                     for name, x in kwargs.items()})
+        for key in keys
     })
 
 
