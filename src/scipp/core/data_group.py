@@ -11,6 +11,7 @@ import operator
 from collections.abc import MutableMapping
 from typing import Any, Callable, Iterable, Union, overload
 
+from .. import _binding
 from ..typing import ScippIndex
 from .cpp_classes import DataArray, Dataset, DimensionError, Variable
 
@@ -186,107 +187,6 @@ class DataGroup(MutableMapping):
         r += ')'
         return r
 
-    def __eq__(self, other: Union[DataGroup, DataArray, Variable,
-                                  numbers.Real]) -> DataGroup:
-        return data_group_nary(operator.eq, self, other)
-
-    def __ne__(self, other: Union[DataGroup, DataArray, Variable,
-                                  numbers.Real]) -> DataGroup:
-        return data_group_nary(operator.ne, self, other)
-
-    def __gt__(self, other: Union[DataGroup, DataArray, Variable,
-                                  numbers.Real]) -> DataGroup:
-        return data_group_nary(operator.gt, self, other)
-
-    def __ge__(self, other: Union[DataGroup, DataArray, Variable,
-                                  numbers.Real]) -> DataGroup:
-        return data_group_nary(operator.ge, self, other)
-
-    def __lt__(self, other: Union[DataGroup, DataArray, Variable,
-                                  numbers.Real]) -> DataGroup:
-        return data_group_nary(operator.lt, self, other)
-
-    def __le__(self, other: Union[DataGroup, DataArray, Variable,
-                                  numbers.Real]) -> DataGroup:
-        return data_group_nary(operator.le, self, other)
-
-    def __add__(
-            self, other: Union[DataGroup, DataArray, Variable,
-                               numbers.Real]) -> DataGroup:
-        return data_group_nary(operator.add, self, other)
-
-    def __sub__(
-            self, other: Union[DataGroup, DataArray, Variable,
-                               numbers.Real]) -> DataGroup:
-        return data_group_nary(operator.sub, self, other)
-
-    def __mul__(
-            self, other: Union[DataGroup, DataArray, Variable,
-                               numbers.Real]) -> DataGroup:
-        return data_group_nary(operator.mul, self, other)
-
-    def __truediv__(
-            self, other: Union[DataGroup, DataArray, Variable,
-                               numbers.Real]) -> DataGroup:
-        return data_group_nary(operator.truediv, self, other)
-
-    def __floordiv__(
-            self, other: Union[DataGroup, DataArray, Variable,
-                               numbers.Real]) -> DataGroup:
-        return data_group_nary(operator.floordiv, self, other)
-
-    def __mod__(
-            self, other: Union[DataGroup, DataArray, Variable,
-                               numbers.Real]) -> DataGroup:
-        return data_group_nary(operator.mod, self, other)
-
-    def __pow__(
-            self, other: Union[DataGroup, DataArray, Variable,
-                               numbers.Real]) -> DataGroup:
-        return data_group_nary(operator.pow, self, other)
-
-    def __radd__(self, other: Union[DataArray, Variable, numbers.Real]) -> DataGroup:
-        return data_group_nary(operator.add, other, self)
-
-    def __rsub__(self, other: Union[DataArray, Variable, numbers.Real]) -> DataGroup:
-        return data_group_nary(operator.sub, other, self)
-
-    def __rmul__(self, other: Union[DataArray, Variable, numbers.Real]) -> DataGroup:
-        return data_group_nary(operator.mul, other, self)
-
-    def __rtruediv__(self, other: Union[DataArray, Variable,
-                                        numbers.Real]) -> DataGroup:
-        return data_group_nary(operator.truediv, other, self)
-
-    def __rfloordiv__(self, other: Union[DataArray, Variable,
-                                         numbers.Real]) -> DataGroup:
-        return data_group_nary(operator.floordiv, other, self)
-
-    def __rmod__(self, other: Union[DataArray, Variable, numbers.Real]) -> DataGroup:
-        return data_group_nary(operator.mod, other, self)
-
-    def __rpow__(self, other: Union[DataArray, Variable, numbers.Real]) -> DataGroup:
-        return data_group_nary(operator.pow, other, self)
-
-    def __iadd__(self, other: Union[DataArray, Variable, numbers.Real]) -> DataGroup:
-        return _data_group_inplace('__iadd__', self, other)
-
-    def __isub__(self, other: Union[DataArray, Variable, numbers.Real]) -> DataGroup:
-        return _data_group_inplace('__isub__', self, other)
-
-    def __imul__(self, other: Union[DataArray, Variable, numbers.Real]) -> DataGroup:
-        return _data_group_inplace('__imul__', self, other)
-
-    def __itruediv__(self, other: Union[DataArray, Variable,
-                                        numbers.Real]) -> DataGroup:
-        return _data_group_inplace('__itruediv__', self, other)
-
-    def __imod__(self, other: Union[DataArray, Variable, numbers.Real]) -> DataGroup:
-        return _data_group_inplace('__imod__', self, other)
-
-    def __ipow__(self, other: Union[DataArray, Variable, numbers.Real]) -> DataGroup:
-        return _data_group_inplace('__ipow__', self, other)
-
     def _call_method(self, func: Callable) -> DataGroup:
         """Call method on all values and return new DataGroup containing the results."""
         return DataGroup({key: func(value) for key, value in self.items()})
@@ -384,3 +284,49 @@ def _apply_to_items(func: Callable, dgs: Iterable[DataGroup], *args,
     return DataGroup(
         {key: func([dg[key] for dg in dgs], *args, **kwargs)
          for key in keys})
+
+
+def _make_binary_op(name: str):
+
+    def impl(self, other: Union[DataGroup, DataArray, Variable,
+                                numbers.Real]) -> DataGroup:
+        return data_group_nary(getattr(operator, name), self, other)
+
+    return impl
+
+
+for _name in ('eq', 'ne', 'gt', 'ge', 'lt', 'le', 'add', 'sub', 'mul', 'truediv',
+              'floordiv', 'mod', 'pow'):
+    _binding.bind_function_as_method(cls=DataGroup,
+                                     name=f'__{_name}__',
+                                     func=_make_binary_op(_name))
+
+
+def _make_reverse_binary_op(name: str):
+
+    def impl(self, other: Union[DataGroup, DataArray, Variable,
+                                numbers.Real]) -> DataGroup:
+        return data_group_nary(getattr(operator, name), other, self)
+
+    return impl
+
+
+for _name in ('add', 'sub', 'mul', 'truediv', 'floordiv', 'mod', 'pow'):
+    _binding.bind_function_as_method(cls=DataGroup,
+                                     name=f'__r{_name}__',
+                                     func=_make_reverse_binary_op(_name))
+
+
+def _make_inplace_binary_op(name: str):
+
+    def impl(self, other: Union[DataGroup, DataArray, Variable,
+                                numbers.Real]) -> DataGroup:
+        return _data_group_inplace(f'__i{name}__', self, other)
+
+    return impl
+
+
+for _name in ('add', 'sub', 'mul', 'truediv', 'mod', 'pow'):
+    _binding.bind_function_as_method(cls=DataGroup,
+                                     name=f'__i{_name}__',
+                                     func=_make_inplace_binary_op(_name))
