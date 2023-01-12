@@ -93,7 +93,7 @@ def test_dims_with_scipp_objects_combines_dims_in_insertion_order():
         'a': sc.ones(dims=('x', ), shape=(2, ))
     }).dims == ('y', 'x')
     # In this case there would be a better order, but in general there is not, so at
-    # leasr for now the implementation makes no attempt for this.
+    # least for now the implementation makes no attempt at this.
     assert sc.DataGroup({
         'a': sc.ones(dims=('x', 'z'), shape=(2, 2)),
         'b': sc.ones(dims=('y', 'z'), shape=(2, 2))
