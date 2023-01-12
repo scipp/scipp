@@ -112,10 +112,6 @@ class DataGroup(MutableMapping):
     def __setitem__(self, name: str, value: Any):
         ...
 
-    @overload
-    def __setitem__(self, name: ScippIndex, value: DataGroup):
-        ...
-
     def __setitem__(self, name, value):
         """Set self[key] to value."""
         self._items[name] = value
