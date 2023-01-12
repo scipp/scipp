@@ -119,15 +119,15 @@ def test_0D_scalar_string():
 
 def test_1D_scalar_access_fail():
     var = sc.empty(dims=['x'], shape=(1, ))
-    with pytest.raises(RuntimeError):
+    with pytest.raises(sc.DimensionError):
         assert var.value == 0.0
-    with pytest.raises(RuntimeError):
+    with pytest.raises(sc.DimensionError):
         var.value = 1.2
 
 
 def test_1D_access_shape_mismatch_fail():
     var = sc.empty(dims=['x'], shape=(2, ))
-    with pytest.raises(RuntimeError):
+    with pytest.raises(sc.DimensionError):
         var.values = 1.2
 
 
@@ -295,9 +295,9 @@ def test_0d_variance_access():
 
 def test_1D_scalar_variance_access_fail():
     v = sc.array(dims=['yy'], values=[0.0, -5.2], variances=[0.1, 2.2])
-    with pytest.raises(RuntimeError):
+    with pytest.raises(sc.DimensionError):
         assert v.variance == 0.0
-    with pytest.raises(RuntimeError):
+    with pytest.raises(sc.DimensionError):
         v.variance = 1.2
 
 
