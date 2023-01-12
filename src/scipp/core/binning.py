@@ -69,6 +69,16 @@ def make_binned(x: Union[_cpp.Variable, _cpp.DataArray],
     If the input is binned and certain bins are masked then changing the binning
     will apply the masks, i.e., masked bins are treated as empty.
 
+    Warning
+    -------
+
+    When there is existing binning or grouping, the algorithm assumes that coordinates
+    of the binned data are correct, i.e., compatible with the corresponding
+    coordinate values in the individual bins. If this is not the case then the behavior
+    if UNSPECIFIED. That is, the algorithm may or may not ignore the existing
+    coordinates. If you encounter such as case, remove the conflicting coordinate,
+    e.g., using :py:func:`scipp.DataArray.drop_coords`.
+
     Parameters
     ----------
     x:
@@ -376,6 +386,16 @@ def bin(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset],
     given by the names of these coordinates. These new dimensions replace the
     dimensions the input coordinates depend on.
 
+    Warning
+    -------
+
+    When there is existing binning or grouping, the algorithm assumes that coordinates
+    of the binned data are correct, i.e., compatible with the corresponding
+    coordinate values in the individual bins. If this is not the case then the behavior
+    if UNSPECIFIED. That is, the algorithm may or may not ignore the existing
+    coordinates. If you encounter such as case, remove the conflicting coordinate,
+    e.g., using :py:func:`scipp.DataArray.drop_coords`.
+
     Parameters
     ----------
     x:
@@ -577,6 +597,16 @@ def group(x: Union[_cpp.DataArray, _cpp.Dataset], /,
     When grouping by non-dimension-coords, the output will have new dimensions
     given by the names of these coordinates. These new dimensions replace the
     dimensions the input coordinates depend on.
+
+    Warning
+    -------
+
+    When there is existing binning or grouping, the algorithm assumes that coordinates
+    of the binned data are correct, i.e., compatible with the corresponding
+    coordinate values in the individual bins. If this is not the case then the behavior
+    if UNSPECIFIED. That is, the algorithm may or may not ignore the existing
+    coordinates. If you encounter such as case, remove the conflicting coordinate,
+    e.g., using :py:func:`scipp.DataArray.drop_coords`.
 
     Parameters
     ----------
