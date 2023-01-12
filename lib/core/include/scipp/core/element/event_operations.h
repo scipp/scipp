@@ -87,9 +87,9 @@ constexpr auto map = overloaded{
 constexpr auto map_linspace =
     overloaded{map, [](const auto &coord, const auto &edges,
                        const auto &weights, const auto &fill) {
-                 const auto [offset, nbin, factor] = linear_edge_params(edges);
-                 const auto bin = (coord - offset) * factor;
-                 return (bin < 0.0 || bin >= nbin) ? fill : get(weights, bin);
+                 const auto params = linear_edge_params(edges);
+                 const auto bin = get_bin<scipp::index>(coord, edges, params);
+                 return bin < 0 ? fill : get(weights, bin);
                }};
 
 constexpr auto map_sorted_edges =
@@ -127,27 +127,29 @@ constexpr auto map_and_mul = overloaded{
         map_and_mul_detail::args<float, time_point, time_point, float>>,
     transform_flags::expect_no_variance_arg<1>,
     transform_flags::expect_no_variance_arg<2>,
+    transform_flags::expect_no_variance_arg<3>, // caught in transform anyway,
+                                                // but adding this should save
+                                                // binary size and compile time
     [](units::Unit &data, const units::Unit &x, const units::Unit &edges,
        const units::Unit &weights) {
       expect::equals(x, edges);
       data *= weights;
     }};
 
-constexpr auto map_and_mul_linspace =
-    overloaded{map_and_mul, [](auto &data, const auto coord, const auto &edges,
-                               const auto &weights) {
-                 const auto [offset, nbin, factor] = linear_edge_params(edges);
-                 const auto bin = (coord - offset) * factor;
-                 if (bin < 0.0 || bin >= nbin)
-                   data *= 0.0;
-                 else
-                   data *= get(weights, bin);
-               }};
+constexpr auto map_and_mul_linspace = overloaded{
+    map_and_mul,
+    [](auto &data, const auto x, const auto &edges, const auto &weights) {
+      const auto params = linear_edge_params(edges);
+      if (const auto bin = get_bin<scipp::index>(x, edges, params); bin < 0)
+        data *= 0.0;
+      else
+        data *= get(weights, bin);
+    }};
 
 constexpr auto map_and_mul_sorted_edges =
-    overloaded{map_and_mul, [](auto &data, const auto coord, const auto &edges,
+    overloaded{map_and_mul, [](auto &data, const auto x, const auto &edges,
                                const auto &weights) {
-                 auto it = std::upper_bound(edges.begin(), edges.end(), coord);
+                 auto it = std::upper_bound(edges.begin(), edges.end(), x);
                  if (it == edges.end() || it == edges.begin())
                    data *= 0.0;
                  else

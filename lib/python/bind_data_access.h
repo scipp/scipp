@@ -303,6 +303,11 @@ public:
   }
 
 private:
+  static auto numpy_attr(const char *const name) {
+    static const auto np = py::module_::import("numpy");
+    return np.attr(name);
+  }
+
   template <class Scalar, class View>
   static auto make_scalar(Scalar &&scalar, py::object parent,
                           const View &view) {
@@ -314,10 +319,17 @@ private:
       return scalar.to_pybind();
     } else if constexpr (std::is_same_v<std::decay_t<Scalar>,
                                         core::time_point>) {
-      static const auto np_datetime64 =
-          py::module::import("numpy").attr("datetime64");
+      const auto np_datetime64 = numpy_attr("datetime64");
       return np_datetime64(scalar.time_since_epoch(),
                            to_numpy_time_string(view.unit()));
+    } else if constexpr (std::is_same_v<std::decay_t<Scalar>, int32_t>) {
+      return numpy_attr("int32")(scalar);
+    } else if constexpr (std::is_same_v<std::decay_t<Scalar>, int64_t>) {
+      return numpy_attr("int64")(scalar);
+    } else if constexpr (std::is_same_v<std::decay_t<Scalar>, float>) {
+      return numpy_attr("float32")(scalar);
+    } else if constexpr (std::is_same_v<std::decay_t<Scalar>, double>) {
+      return numpy_attr("float64")(scalar);
     } else if constexpr (!std::is_reference_v<Scalar>) {
       // Views such as slices of data arrays for binned data are
       // returned by value and require separate handling to avoid the
@@ -328,7 +340,7 @@ private:
       // Returning reference to element in variable. Return-policy
       // reference_internal keeps alive `parent`. Note that an attempt to
       // pass `keep_alive` as a call policy to `def_property` failed,
-      // resulting in exception from pybind11, so we have handle it by
+      // resulting in exception from pybind11, so we have to handle it by
       // hand here.
       return py::cast(scalar, py::return_value_policy::reference_internal,
                       std::move(parent));

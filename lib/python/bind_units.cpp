@@ -4,7 +4,6 @@
 /// @author Simon Heybrock
 #include <sstream>
 
-#include "scipp/core/dtype.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/units/unit.h"
 
@@ -14,34 +13,38 @@
 using namespace scipp;
 namespace py = pybind11;
 
-constexpr int UNIT_DICT_VERSION = 1;
+constexpr int UNIT_DICT_VERSION = 2;
+constexpr std::array SUPPORTED_UNIT_DICT_VERSIONS = {1, 2};
 
 namespace {
 
-bool is_simple_unit(const units::Unit &unit) {
-  const auto &&base_units = unit.underlying().base_units();
-  return !base_units.is_per_unit() && !base_units.has_i_flag() &&
-         !base_units.has_e_flag() && !base_units.is_equation() &&
-         unit.underlying().commodity() == 0;
+bool is_supported_unit(const units::Unit &unit) {
+  return unit.underlying().commodity() == 0;
 }
 
 // We only support units where we are confident that we can encode them using
 // a different unit library, in order to ensure that we can switch
 // implementations in the future if necessary.
-void assert_simple_unit_for_dict(const units::Unit &unit) {
-  if (!is_simple_unit(unit)) {
-    throw std::invalid_argument(
-        "Unit cannot be converted to dict: '" + to_string(unit) +
-        "' Only units expressed in terms of regular base units are supported.");
+void assert_supported_unit_for_dict(const units::Unit &unit) {
+  if (!is_supported_unit(unit)) {
+    throw std::invalid_argument("Unit cannot be converted to dict: '" +
+                                to_string(unit) +
+                                "' Commodities are not supported.");
   }
 }
 
 py::dict to_dict(const units::Unit &unit) {
-  assert_simple_unit_for_dict(unit);
+  assert_supported_unit_for_dict(unit);
 
   py::dict dict;
   dict["__version__"] = UNIT_DICT_VERSION;
   dict["multiplier"] = unit.underlying().multiplier();
+
+  unit.map_over_flags([&dict](const char *const name, const auto flag) mutable {
+    if (flag) {
+      dict[name] = true;
+    }
+  });
 
   py::dict powers;
   unit.map_over_bases(
@@ -56,21 +59,30 @@ py::dict to_dict(const units::Unit &unit) {
   return dict;
 }
 
-int get(const py::dict &dict, const char *const name) {
+template <class T = int> T get(const py::dict &dict, const char *const name) {
   if (dict.contains(name)) {
-    return dict[name].cast<int>();
+    return dict[name].cast<T>();
   }
-  return 0;
+  return T{};
+}
+
+void assert_dict_version_supported(const py::dict &dict) {
+  if (const auto ver = dict["__version__"].cast<int>();
+      std::find(SUPPORTED_UNIT_DICT_VERSIONS.cbegin(),
+                SUPPORTED_UNIT_DICT_VERSIONS.cend(),
+                ver) == SUPPORTED_UNIT_DICT_VERSIONS.cend()) {
+    std::ostringstream oss;
+    oss << "Unit dict has version " << std::to_string(ver)
+        << " but the current installation of scipp only supports versions [";
+    for (const auto v : SUPPORTED_UNIT_DICT_VERSIONS)
+      oss << v << ", ";
+    oss << "]";
+    throw std::invalid_argument(oss.str());
+  }
 }
 
 units::Unit from_dict(const py::dict &dict) {
-  if (const auto ver = dict["__version__"].cast<int>();
-      ver != UNIT_DICT_VERSION) {
-    throw std::invalid_argument(
-        "Unit dict has version " + std::to_string(ver) +
-        " but the current installation of scipp only supports version " +
-        std::to_string(UNIT_DICT_VERSION));
-  }
+  assert_dict_version_supported(dict);
 
   const py::dict powers = dict.contains("powers") ? dict["powers"] : py::dict();
   return units::Unit(llnl::units::precise_unit(
@@ -78,20 +90,45 @@ units::Unit from_dict(const py::dict &dict) {
           get(powers, "m"), get(powers, "kg"), get(powers, "s"),
           get(powers, "A"), get(powers, "K"), get(powers, "mol"),
           get(powers, "cd"), get(powers, "$"), get(powers, "counts"),
-          get(powers, "rad"), 0, 0, 0, 0},
+          get(powers, "rad"), get<bool>(dict, "per_unit"),
+          get<bool>(dict, "i_flag"), get<bool>(dict, "e_flag"),
+          get<bool>(dict, "equation")},
       dict["multiplier"].cast<double>()));
 }
 
 std::string repr(const units::Unit &unit) {
-  if (!is_simple_unit(unit)) {
+  if (!is_supported_unit(unit)) {
     return "<unsupported unit: " + to_string(unit) + '>';
   }
 
   std::ostringstream oss;
-  oss << "Unit(" << unit.underlying().multiplier();
-  unit.map_over_bases([&oss](const char *const base, const auto power) mutable {
-    if (power != 0)
-      oss << "*" << base << "**" << power;
+  oss << "Unit(";
+
+  bool first = true;
+  if (const auto mult = unit.underlying().multiplier(); mult != 1.0) {
+    oss << mult;
+    first = false;
+  }
+
+  unit.map_over_bases(
+      [&oss, &first](const char *const base, const auto power) mutable {
+        if (power != 0) {
+          if (!first) {
+            oss << "*";
+          } else {
+            first = false;
+          }
+          oss << base;
+          if (power != 1)
+            oss << "**" << power;
+        }
+      });
+  if (first)
+    oss << "1"; // multiplier == 1 and all powers == 0
+
+  unit.map_over_flags([&oss](const char *const name, const auto flag) mutable {
+    if (flag)
+      oss << ", " << name << "=True";
   });
   oss << ')';
   return oss.str();
@@ -106,6 +143,11 @@ std::string repr_html(const units::Unit &unit) {
          unit.name() + "</pre>";
 }
 
+void repr_pretty(const units::Unit &unit, py::object &p,
+                 [[maybe_unused]] const bool cycle) {
+  p.attr("text")(unit.name());
+}
+
 } // namespace
 
 void init_units(py::module &m) {
@@ -117,6 +159,7 @@ void init_units(py::module &m) {
       .def("__str__", [](const units::Unit &u) { return u.name(); })
       .def("__repr__", repr)
       .def("_repr_html_", repr_html)
+      .def("_repr_pretty_", repr_pretty)
       .def_property_readonly("name", &units::Unit::name,
                              "A read-only string describing the "
                              "type of unit.")

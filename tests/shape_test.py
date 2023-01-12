@@ -52,6 +52,14 @@ def test_concat():
                         sc.array(dims=['x'], values=[1.0, 2.0, 3.0]))
 
 
+def test_concat_data_group():
+    var = sc.scalar(1.0)
+    dg = sc.DataGroup({'a': var})
+    result = sc.concat([dg, dg + dg], 'x')
+    assert isinstance(result, sc.DataGroup)
+    assert sc.identical(result['a'], sc.array(dims=['x'], values=[1.0, 2.0]))
+
+
 def test_fold_variable():
     var = sc.arange('f', 6)
     assert sc.identical(sc.fold(var, dim='f', sizes={

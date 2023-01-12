@@ -7,9 +7,11 @@ html
 build/
 install/
 cmake-build-*
+_skbuild/
+tools/build-sanitizer/
+tools/install-sanitizer/
 .clangd/
 .idea/
-.vscode/
 *.ipynb_checkpoints
 __pycache__/
 CMakeSettings.json
@@ -20,3 +22,15 @@ CMakeSettings.json
 .mypy_cache
 src/scipp.egg-info
 .tox
+
+### VisualStudioCode ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Files from editable installs
+src/include/
+src/lib/
+src/scipp/_scipp.cpython*

@@ -32,16 +32,54 @@ Release Notes
 
    Simon Heybrock :sup:`a`\ ,
    Neil Vaytet :sup:`a`\ ,
-   and Jan-Lukas Wynen :sup:`a`
+   Jan-Lukas Wynen :sup:`a`\ ,
+   and Sunyoung Yoo :sup:`a`
 
 
-v22.11.1 (January 2023)
+v23.xy.0 (January 2023)
 -----------------------
+
+Features
+~~~~~~~~
+
+* Added support for arbitrary unit, degrees Celsius and other special units `#2931 <https://github.com/scipp/scipp/pull/2931>`_.
+* :class:`scipp.Dataset` now supports ``drop_coords``, which returns :class:`scipp.Dataset` without the given coordinate by names  `#2940 <https://github.com/scipp/scipp/pull/2940>`_.
+* :class:`scipp.DataArray` now supports ``drop_coords``/ ``drop_masks``/ ``drop_attrs``, which returns :class:`scipp.DataArray` without the given coordinates/masks/attributes names by names `#2940 <https://github.com/scipp/scipp/pull/2940>`_.
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+* The HDF5 format changed to accommodate more units, old files can still be loaded but new ones cannot be loaded with an old version of Scipp `#2931 <https://github.com/scipp/scipp/pull/2931>`_.
+* Implicit and explicit broadcasting of operands with variances in operations was disabled.
+  This introduces correlations that Scipp cannot handle and would therefore silently underestimate uncertainties.
+  Instead a :py:class:`scipp.VariancesError` is raised now `#2895 <https://github.com/scipp/scipp/pull/2895>`_.
+* The ``.value`` and ``.variance`` properties now return `numpy scalars <https://numpy.org/doc/stable/reference/arrays.scalars.html>`_ for numeric types.
+  This will not affect the majority of use cases but may break some edge cases, in particular ``isinstance`` checks.
+  `#2962 <https://github.com/scipp/scipp/pull/2962>`_
 
 Bugfixes
 ~~~~~~~~
 
 * Fix a bug in :py:func:`scipp.hist` and :py:func:`scipp.bin`, leading to assignment of records with very large coord values outside the bin boundaries to a bin `#2923 <https://github.com/scipp/scipp/pull/2923>`_.
+* Fix a bug in open end slicing of bins, in case the given right/left end is smaller/bigger than the min/max value of the slicing target, it uses the given end instead of min/max for the open end `#2933 <https://github.com/scipp/scipp/pull/2933>`_.
+* Fix issue with events close to upper or lower bin bounds getting dropped by :func:`scipp.lookup` with edges that form a "linspace" `#2942 <https://github.com/scipp/scipp/pull/2942>`_.
+* Fix minor issue with events close to bin bounds getting assigned to the wrong bin by :func:`scipp.lookup` with edges that form a "linspace" `#2942 <https://github.com/scipp/scipp/pull/2942>`_.
+
+Documentation
+~~~~~~~~~~~~~
+
+Deprecations
+~~~~~~~~~~~~
+
+Stability, Maintainability, and Testing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Contributors
+~~~~~~~~~~~~
+
+Simon Heybrock :sup:`a`\ ,
+Neil Vaytet :sup:`a`\ ,
+Jan-Lukas Wynen :sup:`a`\ ,
+and Sunyoung Yoo :sup:`a`
 
 v22.11.0 (November 2022)
 ------------------------
@@ -49,18 +87,12 @@ v22.11.0 (November 2022)
 Features
 ~~~~~~~~
 
-* Add :py:func:`scipp.elemwise_func` for defining custom transformations of input variables based on a Python function compiled via ``numba.cfunc`` `#2886 <https://github.com/scipp/scipp/pull/2886>`_.
+* Added :py:func:`scipp.elemwise_func` for defining custom transformations of input variables based on a Python function compiled via ``numba.cfunc`` `#2886 <https://github.com/scipp/scipp/pull/2886>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
 * The SciPy wrappers ``integrate``, ``interpolate``, ``ndimage``, ``optimize``, and ``signal`` were moved into the :py:mod:`scipp.scipy` submodule `#2881 <https://github.com/scipp/scipp/pull/2881>`_.
-
-Bugfixes
-~~~~~~~~
-
-Documentation
-~~~~~~~~~~~~~
 
 Deprecations
 ~~~~~~~~~~~~
@@ -70,9 +102,6 @@ Deprecations
   Scipp v23.03.0 (March 2023) and all later versions will use Plopp by default.
   The built-in plotting solution is deprecated and will be removed (at the earliest) in Scipp v23.08.0 (August 2023) without further warning.
   See `Migrating to the new backend <../visualization/plotting-overview.ipynb#Migrating-to-the-new-backend>`_ for details.
-
-Stability, Maintainability, and Testing
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Contributors
 ~~~~~~~~~~~~

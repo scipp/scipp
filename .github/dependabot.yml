@@ -8,3 +8,10 @@ updates:
       # Optional: Official actions have moving tags like v1;
       # if you use those, you don't need updates.
       - dependency-name: "actions/*"
+  - package-ecosystem: "pip"
+    directory: "/requirements"
+    schedule:
+      interval: "daily"
+    allow:
+      - dependency-name: "plopp"
+        dependency-type: "direct"

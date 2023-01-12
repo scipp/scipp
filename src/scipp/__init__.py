@@ -23,7 +23,7 @@ from .configuration import config
 
 from .core import __version__
 # Import classes
-from .core import Variable, DataArray, Dataset, DType, Unit
+from .core import Variable, DataArray, DataGroup, Dataset, DType, Unit
 # Import errors
 from .core import BinEdgeError, BinnedDataError, CoordError, \
                          DataArrayError, DatasetError, DimensionError, \
