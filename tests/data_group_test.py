@@ -256,11 +256,27 @@ def test_groupby():
     assert sc.identical(result['b'], table[60:].groupby('x').sum('row'))
 
 
-def test_elemwise():
+def test_elemwise_unary():
     dg = sc.DataGroup(a=sc.linspace('x', 0.0, 1.0, num=4, unit='rad'))
     result = sc.sin(dg)
     assert isinstance(result, sc.DataGroup)
     assert sc.identical(result['a'], sc.sin(dg['a']))
+
+
+def test_elemwise_binary():
+    dg1 = sc.DataGroup(a=sc.linspace('x', 0.0, 1.0, num=4, unit='rad'))
+    dg2 = sc.DataGroup(a=sc.linspace('x', 0.0, 2.0, num=4, unit='rad'))
+    result = sc.add(dg1, dg2)
+    assert isinstance(result, sc.DataGroup)
+    assert sc.identical(result['a'], sc.add(dg1['a'], dg2['a']))
+
+
+def test_elemwise_binary_return_intersection_of_keys():
+    dg1 = sc.DataGroup(a=sc.scalar(1), b=sc.scalar(2))
+    dg2 = sc.DataGroup(a=sc.scalar(3), c=sc.scalar(4))
+    result = sc.add(dg1, dg2)
+    assert set(result.keys()) == {'a'}
+    assert sc.identical(result['a'], sc.add(dg1['a'], dg2['a']))
 
 
 def test_elemwise_with_kwargs():
