@@ -25,15 +25,13 @@ std::ostream &operator<<(std::ostream &os, const scipp::index_pair &index) {
   return os << to_string(index);
 }
 
-std::string to_string(const Dimensions &dims, const bool labels_only) {
+std::string to_string(const Dimensions &dims) {
   if (dims.empty())
     return "()";
   std::string s = "(";
   for (int32_t i = 0; i < scipp::size(dims.shape()); ++i) {
-    s += to_string(dims.labels()[i]);
-    if (!labels_only)
-      s += ": " + std::to_string(dims.shape()[i]);
-    s += ", ";
+    s += to_string(dims.labels()[i]) + ": " + std::to_string(dims.shape()[i]) +
+         ", ";
   }
   s.resize(s.size() - 2);
   s += ")";

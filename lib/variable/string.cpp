@@ -10,8 +10,10 @@
 #include "scipp/core/eigen.h"
 #include "scipp/core/string.h"
 #include "scipp/core/tag_util.h"
+#include "scipp/variable/bins.h"
 #include "scipp/variable/string.h"
 #include "scipp/variable/variable.h"
+#include "scipp/variable/variable_factory.h"
 
 namespace scipp::variable {
 
@@ -69,6 +71,31 @@ auto apply(const DType dtype, Args &&...args) {
                  scipp::core::Quaternion, scipp::core::Translation>{},
       dtype, std::forward<Args>(args)...);
 }
+
+/// Formats the contents of a binned variable as a short summary instead of
+/// using the full printout for the variable values.
+std::string format_binned_values(const Variable &variable) {
+  std::stringstream s;
+  const auto bin_sizes_ = bin_sizes(variable);
+  const auto &lengths = bin_sizes_.values<scipp::index>();
+  const auto size = scipp::size(lengths);
+  if (size == 0) {
+    s << "[]";
+    return s.str();
+  }
+  s << "[len=" << lengths[0];
+  for (scipp::index i = 1; i < size; ++i) {
+    constexpr scipp::index n = 2;
+    if (i == n && size > 2 * n) {
+      s << ", ...";
+      i = size - n;
+    }
+    s << ", len=" << lengths[i];
+  }
+  s << "]";
+  return s.str();
+}
+
 } // namespace
 
 std::string format_variable(const Variable &variable,
@@ -80,16 +107,22 @@ std::string format_variable(const Variable &variable,
   if (!datasetSizes)
     s << to_string(variable.dims()) << colSep;
   s << std::setw(9) << to_string(variable.dtype());
-  if (variable.unit() == units::none)
+  if (is_bins(variable))
+    s << colSep << std::setw(15) << "<binned data>";
+  else if (variable.unit() == units::none)
     s << colSep << std::setw(15) << "<no unit>";
   else
     s << colSep << std::setw(15) << '[' + variable.unit().name() + ']';
   if (datasetSizes)
     s << colSep << make_dims_labels(variable, datasetSizes);
   s << colSep;
-  s << apply<ValuesToString>(variable.dtype(), variable);
-  if (variable.has_variances())
-    s << colSep << apply<VariancesToString>(variable.dtype(), variable);
+  if (is_bins(variable))
+    s << format_binned_values(variable);
+  else {
+    s << apply<ValuesToString>(variable.dtype(), variable);
+    if (variable.has_variances())
+      s << colSep << apply<VariancesToString>(variable.dtype(), variable);
+  }
   return s.str();
 }
 
