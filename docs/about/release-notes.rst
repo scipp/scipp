@@ -70,6 +70,8 @@ Deprecations
 Stability, Maintainability, and Testing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+* Added type check of masks during binary operations of :py:class:`scipp.DataArray` to provide easier error messages.
+
 Contributors
 ~~~~~~~~~~~~
 
