@@ -102,6 +102,14 @@ def test_0D_scalar_access():
     assert var.values == 1.2
 
 
+@pytest.mark.parametrize('dtypes', (('int32', np.int32), ('int64', np.int64),
+                                    ('float32', np.float32), ('float64', np.float64),
+                                    ('bool', np.bool_), ('datetime64', np.datetime64)))
+def test_0d_scalar_access_dtype(dtypes):
+    dtype, expected = dtypes
+    assert isinstance(sc.scalar(7, unit='s', dtype=dtype).value, expected)
+
+
 def test_0D_scalar_string():
     var = sc.scalar('a')
     assert var.value == 'a'
@@ -129,6 +137,11 @@ def test_1D_access():
     assert var.values.shape == (2, )
     var.values[1] = 1.2
     assert var.values[1] == 1.2
+
+
+@pytest.mark.parametrize('dtype', ('int32', 'int64', 'float32', 'float64'))
+def test_1d_access_dtype(dtype):
+    assert sc.array(dims=['xx'], values=[-9], dtype=dtype).values.dtype == dtype
 
 
 def test_1D_set_from_list():
@@ -268,10 +281,46 @@ def test_values_variances():
     assert sc.identical(sc.variances(sc.scalar(1.2, variance=3.4)), sc.scalar(3.4))
 
 
-def test_variance_acess():
-    v = sc.Variable(dims=(), values=0.0)
+def test_0d_variance_access_no_variance():
+    v = sc.scalar(0.0)
     assert v.variance is None
     assert v.variances is None
+
+
+def test_0d_variance_access():
+    v = sc.scalar(0.0, variance=0.2)
+    assert v.variance == 0.2
+    assert v.variances == 0.2
+
+
+def test_1D_scalar_variance_access_fail():
+    v = sc.array(dims=['yy'], values=[0.0, -5.2], variances=[0.1, 2.2])
+    with pytest.raises(RuntimeError):
+        assert v.variance == 0.0
+    with pytest.raises(RuntimeError):
+        v.variance = 1.2
+
+
+def test_1d_variance_access_no_variance():
+    v = sc.array(dims=['yy'], values=[0.0])
+    assert v.variances is None
+
+
+def test_1d_variance_access():
+    v = sc.array(dims=['yy'], values=[0.0, -5.2], variances=[0.1, 2.2])
+    np.testing.assert_array_equal(v.variances, [0.1, 2.2])
+
+
+@pytest.mark.parametrize('dtypes', (('float32', np.float32), ('float64', np.float64)))
+def test_0d_scalar_variance_access_dtype(dtypes):
+    dtype, expected = dtypes
+    assert isinstance(sc.scalar(4.1, variance=4.9, dtype=dtype).variance, expected)
+
+
+@pytest.mark.parametrize('dtype', ('float32', 'float64'))
+def test_1d_variance_access_dtype(dtype):
+    assert sc.array(dims=['xx'], values=[2.13], variances=[0.4],
+                    dtype=dtype).variances.dtype == dtype
 
 
 def test_set_variance():
