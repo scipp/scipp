@@ -104,7 +104,7 @@ def test_0D_scalar_access():
 
 @pytest.mark.parametrize('dtypes', (('int32', np.int32), ('int64', np.int64),
                                     ('float32', np.float32), ('float64', np.float64),
-                                    ('bool', np.bool_), ('datetime64', np.datetime64)))
+                                    ('datetime64', np.datetime64), ('bool', bool)))
 def test_0d_scalar_access_dtype(dtypes):
     dtype, expected = dtypes
     assert isinstance(sc.scalar(7, unit='s', dtype=dtype).value, expected)

@@ -330,8 +330,6 @@ private:
       return numpy_attr("float32")(scalar);
     } else if constexpr (std::is_same_v<std::decay_t<Scalar>, double>) {
       return numpy_attr("float64")(scalar);
-    } else if constexpr (std::is_same_v<std::decay_t<Scalar>, bool>) {
-      return numpy_attr("bool_")(scalar);
     } else if constexpr (!std::is_reference_v<Scalar>) {
       // Views such as slices of data arrays for binned data are
       // returned by value and require separate handling to avoid the
