@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/array_to_string.h"
+#include "scipp/core/bucket.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/eigen.h"
 #include "scipp/core/element_array_view.h"
@@ -122,8 +123,27 @@ template <class T> ElementArrayView<T> Variable::variances() {
       const;                                                                   \
   template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> Variable::values();
 
+// template <class T> std::string Formatter<T>::format(const Variable &var)
+// const {
+//   return array_to_string(var.template values<T>()) + "IN TCC FILE";
+// }
+
 template <class T> std::string Formatter<T>::format(const Variable &var) const {
-  return array_to_string(var.template values<T>());
+  // const auto &buffer = var.bin_buffer<typename T::buffer_type>();
+  // const auto &buffer = var.buffer();
+  const auto buffer = var.bin_buffer<T>();
+  std::stringstream s;
+  s << "(";
+  for (const auto &[key, v] : buffer.coords()) {
+    s << key;
+    if (v.unit() == units::none)
+      s << "<no unit>";
+    else
+      s << '[' + v.unit().name() + ']';
+    s << ", ";
+  }
+  s << ")";
+  return s.str();
 }
 
 /// Insert classes into formatting registry. The objects themselves do nothing,

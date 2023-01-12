@@ -14,6 +14,7 @@ from .._scipp import core as sc
 from ..core import stddevs
 from ..utils import value_to_string
 from .resources import load_icons, load_style
+from .table import _make_table
 
 BIN_EDGE_LABEL = "[bin-edge]"
 STDDEV_PREFIX = "σ = "
@@ -21,11 +22,11 @@ VARIANCES_SYMBOL = "σ²"
 SPARSE_PREFIX = "len={}"
 
 
-def _format_array(data, size, ellipsis_after, do_elide=True):
+def _format_array(data, size, ellipsis_after):
     i = 0
     s = []
     while i < size:
-        if do_elide and i == ellipsis_after and size > 2 * ellipsis_after + 1:
+        if i == ellipsis_after and size > 2 * ellipsis_after + 1:
             s.append("...")
             i = size - ellipsis_after
         elem = data[i]
@@ -63,16 +64,16 @@ def _format_non_events(var, has_variances):
     return _make_row(s)
 
 
-def _repr_item(s, bin_dim, item, ellipsis_after, do_elide, summary):
+def _repr_item(bin_dim, item):
     shape = item.shape[bin_dim]
-    if summary:
-        s.append(SPARSE_PREFIX.format(shape))
-    else:
-        s.append('events({})'.format(
-            _format_array(item, shape, ellipsis_after, do_elide)))
+    # if summary:
+    return SPARSE_PREFIX.format(shape)
+    # else:
+    #     s.append('events({})'.format(
+    #         _format_array(item, shape, ellipsis_after, do_elide)))
 
 
-def _get_events(var, variances, ellipsis_after, summary=False):
+def _get_events(var, variances, ellipsis_after, as_table=False):
     dim = var.bins.constituents['dim']
     dims = var.bins.constituents['data'].dims
     bin_dim = dict(zip(dims, range(len(dims))))[dim]
@@ -81,31 +82,35 @@ def _get_events(var, variances, ellipsis_after, summary=False):
         size = len(var.values)
         i = 0
 
-        do_ellide = summary or size > 1000 or sum([
-            len(retrieve(var, variances=variances)[i]) for i in range(min(size, 1000))
-        ]) > 1000
+        # do_ellide = summary or size > 1000 or sum([
+        #     len(retrieve(var, variances=variances)[i]) for i in range(min(size, 1000))
+        # ]) > 1000
 
         data = retrieve(var, variances=variances)
         while i < size:
-            if i == ellipsis_after and do_ellide \
-                    and size > 2 * ellipsis_after + 1:
+            if i == ellipsis_after and size > 2 * ellipsis_after + 1:
                 s.append("...")
                 i = size - ellipsis_after
             item = data[i]
-            _repr_item(s, bin_dim, item, ellipsis_after, do_ellide, summary)
+            if as_table:
+                s.append(_make_table(item, max_rows=6))
+            else:
+                s.append(_repr_item(bin_dim, item))
             i += 1
     else:
-        _repr_item(s,
-                   bin_dim,
-                   var.value,
-                   ellipsis_after,
-                   do_elide=False,
-                   summary=summary)
+        s.append(
+            _repr_item(
+                bin_dim,
+                var.value,
+                #    ellipsis_after,
+                #    do_elide=False,
+                #    summary=summary
+            ))
     return s
 
 
 def _format_events(var, has_variances):
-    s = _get_events(var, has_variances, ellipsis_after=2, summary=True)
+    s = _get_events(var, has_variances, ellipsis_after=2)
     return _make_row(f'binned data [{", ".join([row for row in s])}]')
 
 
@@ -137,14 +142,20 @@ def _short_data_repr_html_non_events(var, variances=False):
 
 
 def _short_data_repr_html_events(var, variances=False):
-    return "binned data([" + ",\n       ".join(
-        _get_events(var, variances, ellipsis_after=3)) + "])"
+    # return "binned data([" + ",\n       ".join(
+    #     _get_events(var, variances, ellipsis_after=3)) + "])"
+    out = _get_events(var, variances, ellipsis_after=2, as_table=True)
+    # print('_short_data_repr_html_events', out)
+    return out
 
 
 def short_data_repr_html(var, variances=False):
     """Format "data" for DataArray and Variable."""
-    data_repr = _short_data_repr_html_non_events(var, variances)
-    return escape(data_repr)
+    if var.bins is not None:
+        return _short_data_repr_html_events(var)
+    else:
+        return escape(_short_data_repr_html_non_events(var, variances))
+    # return escape(data_repr)
 
 
 def format_dims(dims, sizes, coords):
@@ -302,7 +313,11 @@ def summarize_variable(name,
     disabled, attrs_ul = _make_inline_attributes(var, has_attrs, embedded_in)
 
     preview = inline_variable_repr(var)
-    data_repr = f"Values:<br>{short_data_repr_html(var)}"
+    # print('summarize_variable')
+    data_repr = short_data_repr_html(var)
+    # print('data_repr', data_repr)
+    if var.bins is None:
+        data_repr = "Values:<br>" + data_repr
     variances_preview = None
     if var.variances is not None:
         variances_preview = inline_variable_repr(var, has_variances=True)
