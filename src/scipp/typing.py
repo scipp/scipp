@@ -87,3 +87,16 @@ This includes
   - :class:`type` objects like :class:`int` and :class:`float`
   - names of dtypes as strings like ``'int32'`` and ``'float64'``
 """  # noqa: E501
+
+if _std_typing.TYPE_CHECKING:
+    from enum import Enum
+
+    class ellipsis(Enum):
+        Ellipsis = "..."
+else:
+    ellipsis = type(Ellipsis)
+
+ScippIndex = _std_typing.Union[ellipsis, int, tuple, slice,
+                               _std_typing.Tuple[str,
+                                                 _std_typing.Union[int, slice,
+                                                                   Variable]], Variable]
