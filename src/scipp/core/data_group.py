@@ -245,6 +245,33 @@ class DataGroup(MutableMapping):
                                numbers.Real]) -> DataGroup:
         return data_group_nary(operator.pow, self, other)
 
+    def __radd__(self, other: Union[DataArray, Variable, numbers.Real]) -> DataGroup:
+        return data_group_nary(operator.add, other, self)
+
+    def __rsub__(self, other: Union[DataArray, Variable, numbers.Real]) -> DataGroup:
+        return data_group_nary(operator.sub, other, self)
+
+    def __rmul__(self, other: Union[DataArray, Variable, numbers.Real]) -> DataGroup:
+        return data_group_nary(operator.mul, other, self)
+
+    def __rtruediv__(self, other: Union[DataArray, Variable,
+                                        numbers.Real]) -> DataGroup:
+        return data_group_nary(operator.truediv, other, self)
+
+    def __rfloordiv__(self, other: Union[DataArray, Variable,
+                                         numbers.Real]) -> DataGroup:
+        return data_group_nary(operator.floordiv, other, self)
+
+    def __rmod__(self, other: Union[DataArray, Variable, numbers.Real]) -> DataGroup:
+        return data_group_nary(operator.mod, other, self)
+
+    def __rpow__(self, other: Union[DataArray, Variable, numbers.Real]) -> DataGroup:
+        return data_group_nary(operator.pow, other, self)
+
+    def _call_method(self, func: Callable) -> DataGroup:
+        """Call method on all values and return new DataGroup containing the results."""
+        return DataGroup({key: func(value) for key, value in self.items()})
+
     @property
     def bins(self):
         # TODO Returning a regular DataGroup here may be wrong, since the `bins`
