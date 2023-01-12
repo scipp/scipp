@@ -277,10 +277,16 @@ typename Masks::holder_type union_or(const Masks &currentMasks,
   for (const auto &[key, item] : otherMasks) {
     if (!currentMasks.contains(key))
       out.insert_or_assign(key, copy(item));
-    else if (out[key].dims().includes(item.dims()))
+    else if (item.dtype() != core::dtype<bool>) {
+      std::string optional_message = " This operation is not supported for "
+                                     "non-boolean masks with same names.";
+      except::throw_mismatch_error(core::dtype<bool>, item.dtype(),
+                                   optional_message);
+    } else if (out[key].dims().includes(item.dims())) {
       out[key] |= item;
-    else
+    } else {
       out[key] = out[key] | item;
+    }
   }
   return out;
 }
@@ -303,7 +309,14 @@ void union_or_in_place(Masks &masks, const Masks &otherMasks) {
   for (const auto &[key, item] : otherMasks) {
     const auto it = masks.find(key);
     if (it == masks.end()) {
-      masks.set(key, copy(item));
+      if (item.dtype() != core::dtype<bool>) {
+        std::string optional_message = " This operation is not supported for "
+                                       "non-boolean masks with same names.";
+        except::throw_mismatch_error(core::dtype<bool>, item.dtype(),
+                                     optional_message);
+      } else {
+        masks.set(key, copy(item));
+      }
     } else if (!it->second.is_readonly()) {
       it->second |= item;
     }
