@@ -30,6 +30,7 @@ void copy_data(const Variable &src, Variable &dst) {
       dst, src, [](auto &a, const auto &b) { a = b; }, "copy");
 }
 
+/// Computes the size of each bin, i.e. the number of elements inside each bin.
 Variable bin_sizes(const Variable &var) {
   if (is_bins(var)) {
     const auto [begin, end] = unzip(var.bin_indices());

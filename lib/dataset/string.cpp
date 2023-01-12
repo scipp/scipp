@@ -51,11 +51,9 @@ std::string format_binned_data(const Variable &variable) {
   s << tab << std::left << std::setw(24) << "<binned>" << colSep;
   s << std::setw(24) << to_string(variable.dtype()) << colSep;
   s << to_string(variable.dims(), true) << colSep;
-  const auto lengths = bin_sizes(variable).values<scipp::index>();
+  const auto bin_sizes_ = bin_sizes(variable);
+  const auto &lengths = bin_sizes_.values<scipp::index>();
   const auto size = scipp::size(lengths);
-  // for (scipp::index i = 0; i < 4; ++i)
-  //   s << "[len=" << lengths[i];
-  // return s.str();
   if (size == 0) {
     s << "[]";
     return s.str();
