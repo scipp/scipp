@@ -52,6 +52,9 @@ Breaking changes
 * Implicit and explicit broadcasting of operands with variances in operations was disabled.
   This introduces correlations that Scipp cannot handle and would therefore silently underestimate uncertainties.
   Instead a :py:class:`scipp.VariancesError` is raised now `#2895 <https://github.com/scipp/scipp/pull/2895>`_.
+* The ``.value`` and ``.variance`` properties now return `numpy scalars <https://numpy.org/doc/stable/reference/arrays.scalars.html>`_ for numeric types.
+  This will not affect the majority of use cases but may break some edge cases, in particular ``isinstance`` checks.
+  `#2962 <https://github.com/scipp/scipp/pull/2962>`_
 
 Bugfixes
 ~~~~~~~~

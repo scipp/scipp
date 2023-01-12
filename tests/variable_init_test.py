@@ -187,6 +187,15 @@ def test_create_scalar_dtypes():
         assert sc.scalar(val, dtype=dtype, unit=unit).dtype == expected
 
 
+@pytest.mark.parametrize("val_and_dtype",
+                         ((np.int32(2), 'int32'), (np.int64(42), 'int64'),
+                          (np.float32(5.4), 'float32'), (np.float64(9.9), 'float64'),
+                          (np.bool_(True), 'bool')))
+def test_create_scalar_numpy_type(val_and_dtype):
+    val, dtype = val_and_dtype
+    assert sc.scalar(val).dtype == dtype
+
+
 @pytest.mark.parametrize("dtype", (None, sc.DType.Variable))
 def test_create_scalar_dtype_Variable(dtype):
     elem = sc.Variable(dims=['x'], values=np.arange(4.0))

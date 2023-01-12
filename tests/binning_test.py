@@ -178,8 +178,8 @@ def test_bin_integer_coord_by_float_stepsize(dtype):
 def test_bin_integer_coord_by_fractional_stepsize_raises(dtype):
     table = sc.data.table_xyz(100)
     table.coords['label'] = (table.coords['x'] * 10).to(dtype=dtype)
-    with pytest.raises(ZeroDivisionError):
-        table.bin(label=sc.scalar(0.5, unit='m')).coords['label']
+    with pytest.raises(RuntimeWarning, match='divide by zero'):
+        table.bin(label=sc.scalar(0.5, unit='m'))
 
 
 def test_group_after_bin_considers_event_value():
