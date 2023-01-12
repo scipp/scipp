@@ -9,7 +9,7 @@ import itertools
 import numbers
 import operator
 from collections.abc import MutableMapping
-from typing import Any, Callable, Iterable, overload
+from typing import Any, Callable, Iterable, Union, overload
 
 from ..typing import ScippIndex
 from .cpp_classes import DataArray, Dataset, DimensionError, Variable
@@ -186,14 +186,64 @@ class DataGroup(MutableMapping):
         r += ')'
         return r
 
-    def __eq__(self, other):
-        return _data_group_binary(operator.eq, self, other)
+    def __eq__(self, other: Union[DataGroup, DataArray, Variable,
+                                  numbers.Real]) -> DataGroup:
+        return data_group_nary(operator.eq, self, other)
 
-    def __add__(self, other):
-        return _data_group_binary(operator.add, self, other)
+    def __ne__(self, other: Union[DataGroup, DataArray, Variable,
+                                  numbers.Real]) -> DataGroup:
+        return data_group_nary(operator.ne, self, other)
 
-    def __mul__(self, other):
-        return _data_group_binary(operator.mul, self, other)
+    def __gt__(self, other: Union[DataGroup, DataArray, Variable,
+                                  numbers.Real]) -> DataGroup:
+        return data_group_nary(operator.gt, self, other)
+
+    def __ge__(self, other: Union[DataGroup, DataArray, Variable,
+                                  numbers.Real]) -> DataGroup:
+        return data_group_nary(operator.ge, self, other)
+
+    def __lt__(self, other: Union[DataGroup, DataArray, Variable,
+                                  numbers.Real]) -> DataGroup:
+        return data_group_nary(operator.lt, self, other)
+
+    def __le__(self, other: Union[DataGroup, DataArray, Variable,
+                                  numbers.Real]) -> DataGroup:
+        return data_group_nary(operator.le, self, other)
+
+    def __add__(
+            self, other: Union[DataGroup, DataArray, Variable,
+                               numbers.Real]) -> DataGroup:
+        return data_group_nary(operator.add, self, other)
+
+    def __sub__(
+            self, other: Union[DataGroup, DataArray, Variable,
+                               numbers.Real]) -> DataGroup:
+        return data_group_nary(operator.sub, self, other)
+
+    def __mul__(
+            self, other: Union[DataGroup, DataArray, Variable,
+                               numbers.Real]) -> DataGroup:
+        return data_group_nary(operator.mul, self, other)
+
+    def __truediv__(
+            self, other: Union[DataGroup, DataArray, Variable,
+                               numbers.Real]) -> DataGroup:
+        return data_group_nary(operator.truediv, self, other)
+
+    def __floordiv__(
+            self, other: Union[DataGroup, DataArray, Variable,
+                               numbers.Real]) -> DataGroup:
+        return data_group_nary(operator.floordiv, self, other)
+
+    def __mod__(
+            self, other: Union[DataGroup, DataArray, Variable,
+                               numbers.Real]) -> DataGroup:
+        return data_group_nary(operator.mod, self, other)
+
+    def __pow__(
+            self, other: Union[DataGroup, DataArray, Variable,
+                               numbers.Real]) -> DataGroup:
+        return data_group_nary(operator.pow, self, other)
 
     @property
     def bins(self):

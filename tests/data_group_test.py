@@ -258,24 +258,139 @@ def test_getitem_label_indexing_based_works_when_length_is_not_unique():
     assert sc.identical(result['b'], da2['x', :sc.scalar(0.5)])
 
 
-def test_add():
-    x = sc.arange('x', 4, unit='m')
-    dg1 = sc.DataGroup({'a': x})
-    dg2 = sc.DataGroup({'a': x, 'b': x})
-    result = dg1 + dg2
-    assert 'a' in result
-    assert 'b' not in result
-    assert sc.identical(result['a'], x + x)
+BINARY_OPERATIONS = (
+    lambda a, b: a + b,
+    lambda a, b: a - b,
+    lambda a, b: a * b,
+    lambda a, b: a / b,
+    lambda a, b: a // b,
+    lambda a, b: a % b,
+    lambda a, b: a == b,
+    lambda a, b: a != b,
+    lambda a, b: a > b,
+    lambda a, b: a >= b,
+    lambda a, b: a < b,
+    lambda a, b: a <= b,
+)
+BINARY_OPERATION_NAMES = ('+', '-', '*', '/', '//', '%', '==', '!=', '>', '>=', '<',
+                          '<=')
 
 
-def test_eq():
-    x = sc.arange('x', 4, unit='m')
+@pytest.mark.parametrize('op', BINARY_OPERATIONS, ids=BINARY_OPERATION_NAMES)
+def test_binary_data_group_with_data_group(op):
+    x = sc.arange('x', 1, 5, unit='m')
     dg1 = sc.DataGroup({'a': x})
-    dg2 = sc.DataGroup({'a': x, 'b': x})
-    result = dg1 == dg2
+    dg2 = sc.DataGroup({'a': 2 * x, 'b': x})
+    result = op(dg1, dg2)
     assert 'a' in result
     assert 'b' not in result
-    assert sc.identical(result['a'], x == x)
+    assert sc.identical(result['a'], op(x, 2 * x))
+
+
+# TODO needs inverse operations
+# @pytest.mark.parametrize('op',
+#                          BINARY_OPERATIONS,
+#                          ids=BINARY_OPERATION_NAMES)
+# def test_binary_data_group_with_nested_data_group(op):
+#     x = sc.arange('x', 1, 5, unit='m')
+#     dg1 = sc.DataGroup({'a': x})
+#     inner = sc.DataGroup({'b': 2*x, 'c': -x})
+#     dg2 = sc.DataGroup({'a': inner})
+#     result = op(dg1, dg2)
+#     assert 'a' in result
+#     assert 'b' not in result
+#     assert 'c' not in result
+#     assert sc.identical(result['a'], op(x, inner))
+
+
+@pytest.mark.parametrize('op', BINARY_OPERATIONS, ids=BINARY_OPERATION_NAMES)
+def test_binary_nested_data_group_with_data_group(op):
+    x = sc.arange('x', 1, 5, unit='m')
+    inner = sc.DataGroup({'b': 2 * x, 'c': -x})
+    dg1 = sc.DataGroup({'a': inner})
+    dg2 = sc.DataGroup({'a': x})
+    result = op(dg1, dg2)
+    assert 'a' in result
+    assert 'b' not in result
+    assert 'c' not in result
+    assert sc.identical(result['a'], op(inner, x))
+
+
+@pytest.mark.parametrize('op', BINARY_OPERATIONS, ids=BINARY_OPERATION_NAMES)
+@pytest.mark.parametrize('typ', (int, float))
+def test_arithmetic_data_group_with_builtin(op, typ):
+    x = sc.arange('x', 1, 5)
+    dg = sc.DataGroup({'a': x})
+    other = typ(31)
+    result = op(dg, other)
+    assert 'a' in result
+    assert sc.identical(result['a'], op(x, other))
+
+
+@pytest.mark.parametrize('op', BINARY_OPERATIONS, ids=BINARY_OPERATION_NAMES)
+def test_arithmetic_data_group_with_variable(op):
+    x = sc.arange('x', 1, 5, unit='m')
+    dg = sc.DataGroup({'a': x})
+    other = 2 * x
+    result = op(dg, other)
+    assert 'a' in result
+    assert sc.identical(result['a'], op(x, other))
+
+
+@pytest.mark.parametrize('op', BINARY_OPERATIONS, ids=BINARY_OPERATION_NAMES)
+def test_arithmetic_data_group_with_data_array(op):
+    x = sc.DataArray(sc.arange('x', 1, 5, unit='m'), coords={'x': sc.arange('x', 5)})
+    dg = sc.DataGroup({'a': x})
+    other = 2 * x
+    result = op(dg, other)
+    assert 'a' in result
+    assert sc.identical(result['a'], op(x, other))
+
+
+@pytest.mark.parametrize('op', BINARY_OPERATIONS, ids=BINARY_OPERATION_NAMES)
+def test_arithmetic_data_group_with_data_array_coord_mismatch(op):
+    x = sc.DataArray(sc.arange('x', 1, 5, unit='m'), coords={'x': sc.arange('x', 5)})
+    dg = sc.DataGroup({'a': x.copy()})
+    other = 2 * x
+    other.coords['x'][0] = -1
+    with pytest.raises(sc.DatasetError):
+        op(dg, other)
+
+
+def test_pow_data_group_with_data_group():
+    x = sc.arange('x', 1, 5)
+    dg1 = sc.DataGroup({'a': x})
+    dg2 = sc.DataGroup({'a': 2 * x, 'b': x})
+    result = dg1**dg2
+    assert 'a' in result
+    assert 'b' not in result
+    assert sc.identical(result['a'], x**(2 * x))
+
+
+def test_pow_data_group_with_int():
+    x = sc.arange('x', 1, 5)
+    dg = sc.DataGroup({'a': x})
+    result = dg**3
+    assert sc.identical(result['a'], x**3)
+
+
+def test_pow_data_group_with_variable():
+    x = sc.arange('x', 1, 5)
+    dg = sc.DataGroup({'a': x})
+    other = 2 * x
+    result = dg**other
+    assert 'a' in result
+    assert sc.identical(result['a'], x**other)
+
+
+def test_pow_data_group_with_data_array():
+    x = sc.DataArray(sc.arange('x', 1, 5), coords={'x': sc.arange('x', 5)})
+    dg = sc.DataGroup({'a': x})
+    other = 2 * x
+    result = dg**other
+    assert 'a' in result
+    assert 'b' not in result
+    assert sc.identical(result['a'], x**other)
 
 
 def test_hist():
