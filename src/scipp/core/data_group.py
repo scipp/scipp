@@ -268,6 +268,25 @@ class DataGroup(MutableMapping):
     def __rpow__(self, other: Union[DataArray, Variable, numbers.Real]) -> DataGroup:
         return data_group_nary(operator.pow, other, self)
 
+    def __iadd__(self, other: Union[DataArray, Variable, numbers.Real]) -> DataGroup:
+        return _data_group_inplace('__iadd__', self, other)
+
+    def __isub__(self, other: Union[DataArray, Variable, numbers.Real]) -> DataGroup:
+        return _data_group_inplace('__isub__', self, other)
+
+    def __imul__(self, other: Union[DataArray, Variable, numbers.Real]) -> DataGroup:
+        return _data_group_inplace('__imul__', self, other)
+
+    def __itruediv__(self, other: Union[DataArray, Variable,
+                                        numbers.Real]) -> DataGroup:
+        return _data_group_inplace('__itruediv__', self, other)
+
+    def __imod__(self, other: Union[DataArray, Variable, numbers.Real]) -> DataGroup:
+        return _data_group_inplace('__imod__', self, other)
+
+    def __ipow__(self, other: Union[DataArray, Variable, numbers.Real]) -> DataGroup:
+        return _data_group_inplace('__ipow__', self, other)
+
     def _call_method(self, func: Callable) -> DataGroup:
         """Call method on all values and return new DataGroup containing the results."""
         return DataGroup({key: func(value) for key, value in self.items()})
@@ -326,6 +345,21 @@ def _data_group_binary(func: Callable, dg1: DataGroup, dg2: DataGroup, *args,
         key: func(dg1[key], dg2[key], *args, **kwargs)
         for key in dg1.keys() & dg2.keys()
     })
+
+
+def _data_group_inplace(op: str, dg: DataGroup,
+                        other: Union[DataArray, Variable, numbers.Real]) -> DataGroup:
+    if isinstance(other, DataGroup):
+        if extra_keys := other.keys() - dg.keys():
+            raise ValueError(
+                "Cannot apply inplace operation because the right hand "
+                f"side has keys that are not in the left hand side: {extra_keys}")
+        for key in dg.keys() & other.keys():
+            getattr(dg[key], op)(other[key])
+    else:
+        for key in dg.keys():
+            getattr(dg[key], op)(other)
+    return dg
 
 
 def data_group_nary(func: Callable, *args, **kwargs) -> DataGroup:
