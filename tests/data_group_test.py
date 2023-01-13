@@ -391,6 +391,90 @@ def test_pow_data_group_with_other(other, reverse):
     assert sc.identical(result['a'], op(x, other))
 
 
+@pytest.mark.parametrize(
+    'op', (operator.iadd, operator.isub, operator.imul, operator.imod, operator.ipow))
+def test_inplace_data_group_with_data_group(op):
+    x = sc.arange('x', 1, 5)
+    dg1 = sc.DataGroup({'a': x.copy(), 'b': -3 * x.copy()})
+    dg2 = sc.DataGroup({'a': 2 * x.copy(), 'b': x.copy()})
+    op(dg1, dg2)
+
+    expected_a = x.copy()
+    op(expected_a, 2 * x)
+    expected_b = -3 * x.copy()
+    op(expected_b, x)
+    assert sc.identical(dg1['a'], expected_a)
+    assert sc.identical(dg1['b'], expected_b)
+
+
+# This test needs floats but imod and ipow need ints, so do this one here separately.
+def test_itruediv_data_group_with_data_group():
+    x = sc.arange('x', 1.0, 5.0)
+    dg1 = sc.DataGroup({'a': x.copy(), 'b': -3 * x.copy()})
+    dg2 = sc.DataGroup({'a': 2 * x.copy(), 'b': x.copy()})
+    dg1 /= dg2
+
+    assert sc.identical(dg1['a'], x / (2 * x))
+    assert sc.identical(dg1['b'], -3 * x / x)
+
+
+@pytest.mark.parametrize(
+    'op', (operator.iadd, operator.isub, operator.imul, operator.imod, operator.ipow))
+def test_inplace_data_group_with_data_group_extra_key(op):
+    x = sc.arange('x', 1, 5)
+    dg1 = sc.DataGroup({'a': x.copy()})
+    dg2 = sc.DataGroup({'a': 2 * x.copy(), 'b': -3 * x.copy()})
+    with pytest.raises(ValueError):
+        op(dg1, dg2)
+    with pytest.raises(ValueError):
+        op(dg2, dg1)
+
+
+@pytest.mark.parametrize(
+    'op', (operator.iadd, operator.isub, operator.imul, operator.imod, operator.ipow))
+def test_inplace_data_group_with_builtin(op):
+    x = sc.arange('x', 1, 5)
+    dg1 = sc.DataGroup({'a': x.copy(), 'b': -3 * x.copy()})
+    op(dg1, 2)
+
+    expected_a = x.copy()
+    op(expected_a, 2)
+    expected_b = -3 * x.copy()
+    op(expected_b, 2)
+    assert sc.identical(dg1['a'], expected_a)
+    assert sc.identical(dg1['b'], expected_b)
+
+
+@pytest.mark.parametrize(
+    'op', (operator.iadd, operator.isub, operator.imul, operator.imod, operator.ipow))
+def test_inplace_data_group_with_variable(op):
+    x = sc.arange('x', 1, 5)
+    dg1 = sc.DataGroup({'a': x.copy(), 'b': -3 * x.copy()})
+    op(dg1, x)
+
+    expected_a = x.copy()
+    op(expected_a, x)
+    expected_b = -3 * x.copy()
+    op(expected_b, x)
+    assert sc.identical(dg1['a'], expected_a)
+    assert sc.identical(dg1['b'], expected_b)
+
+
+@pytest.mark.parametrize('op',
+                         (operator.iadd, operator.isub, operator.imul, operator.imod))
+def test_inplace_data_group_with_data_array(op):
+    x = sc.DataArray(sc.arange('x', 1, 5), coords={'x': sc.arange('x', -2, 3)})
+    dg1 = sc.DataGroup({'a': x.copy(), 'b': -3 * x.copy()})
+    op(dg1, x)
+
+    expected_a = x.copy()
+    op(expected_a, x)
+    expected_b = -3 * x.copy()
+    op(expected_b, x)
+    assert sc.identical(dg1['a'], expected_a)
+    assert sc.identical(dg1['b'], expected_b)
+
+
 def test_hist():
     table = sc.data.table_xyz(1000)
     dg = sc.DataGroup()

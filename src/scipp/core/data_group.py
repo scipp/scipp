@@ -250,11 +250,11 @@ def _data_group_binary(func: Callable, dg1: DataGroup, dg2: DataGroup, *args,
 def _data_group_inplace(op: str, dg: DataGroup,
                         other: Union[DataArray, Variable, numbers.Real]) -> DataGroup:
     if isinstance(other, DataGroup):
-        if extra_keys := other.keys() - dg.keys():
+        if other.keys() != dg.keys():
             raise ValueError(
-                "Cannot apply inplace operation because the right hand "
-                f"side has keys that are not in the left hand side: {extra_keys}")
-        for key in dg.keys() & other.keys():
+                "Cannot apply inplace operation between data groups with different "
+                f"keys. Got left: {list(dg.keys())}, right: {list(other.keys())}")
+        for key in dg.keys():
             getattr(dg[key], op)(other[key])
     else:
         for key in dg.keys():
