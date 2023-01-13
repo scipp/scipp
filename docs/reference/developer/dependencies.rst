@@ -41,3 +41,25 @@ Places that define dependencies
   The goal is to move to the global conda-forge pin once they move to ``numpy-1.20``. See `#2571 <https://github.com/scipp/scipp/issues/2571>`_.
 - Environment files in `docs/environments/ <https://github.com/scipp/scipp/tree/main/docs/environments>`_ list optional requirements.
   These environments are not used for builds but for users.
+
+Services / Servers we depend on
+###############################
+
+This list is incomplete, but attempts to aid in better understanding how many things we depend on for making PR (including ``main``) and Release builds.
+
+.. list-table:: Services
+   :header-rows: 1
+   :widths: 40 5 5 60
+
+   * - Service
+     - PR
+     - Release
+     - Comment
+   * - `<https://public.esss.dkii>`_
+     - x
+     - x
+     - ``pooch`` files, accessed during ``docs`` build
+   * - `<http://azure.archive.ubuntu.com>`_
+     - x
+     -
+     - ccache-action gets Ubuntu ``ccache`` from here
