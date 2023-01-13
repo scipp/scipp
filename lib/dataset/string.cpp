@@ -39,7 +39,7 @@ std::string format_variable(const std::string &key, const Variable &variable,
                             const std::optional<Sizes> datasetSizes) {
   std::stringstream s;
   s << tab << std::left << std::setw(24) << key
-    << format_variable(variable, datasetSizes) << '\n';
+    << format_variable(variable, true, datasetSizes) << '\n';
   return s.str();
 }
 
@@ -75,11 +75,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
 
   if (!dataset.coords().empty()) {
     s << shift << "Coordinates:\n";
-    Coords map;
-    if constexpr (std::is_same_v<D, DataArray>)
-      map = dataset.coords();
-    else
-      map = dataset.coords();
+    Coords map = dataset.coords();
     for (const auto &[name, var] : sorted(map))
       s << shift << format_variable(name, var, dims);
   }
@@ -112,17 +108,21 @@ std::string to_string(const Dataset &dataset) {
 
 namespace {
 template <class Key, class Value>
-std::string dict_to_string(const SizedDict<Key, Value> &view) {
+std::string dict_to_string(const SizedDict<Key, Value> &view,
+                           const bool verbose = true) {
   std::stringstream ss;
-  ss << "<scipp.Dict>\n";
+  if (verbose)
+    ss << "<scipp.Dict>\n";
   for (const auto &[key, item] : view) {
-    ss << "  " << key << ": " << to_string(item) << "\n";
+    ss << "  " << key << ": " << format_variable(item, verbose) << "\n";
   }
   return ss.str();
 }
 } // namespace
 
-std::string to_string(const Coords &coords) { return dict_to_string(coords); }
+std::string to_string(const Coords &coords, const bool verbose) {
+  return dict_to_string(coords, verbose);
+}
 std::string to_string(const Masks &masks) { return dict_to_string(masks); }
 
 std::string dict_keys_to_string(const Coords &coords) {

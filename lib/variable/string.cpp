@@ -96,17 +96,61 @@ auto apply(const DType dtype, Args &&...args) {
 //   return s.str();
 // }
 
-std::string format_dense_variable(const Variable &variable,
-                                  const std::optional<Sizes> datasetSizes) {
+// std::string format_variable(const Variable &variable,
+//                                   const std::optional<Sizes> datasetSizes) {
+//   std::stringstream s;
+//   const std::string colSep("  ");
+//   if (!datasetSizes)
+//     s << to_string(variable.dims()) << colSep;
+//   s << std::setw(9) << to_string(variable.dtype());
+//   if (variable.unit() == units::none)
+//     s << colSep << std::setw(15) << "<no unit>";
+//   else
+//     s << colSep << std::setw(15) << '[' + variable.unit().name() + ']';
+//   if (datasetSizes)
+//     s << colSep << make_dims_labels(variable, datasetSizes);
+//   s << colSep;
+//   s << apply<ValuesToString>(variable.dtype(), variable);
+//   if (variable.has_variances())
+//     s << colSep << apply<VariancesToString>(variable.dtype(), variable);
+//   return s.str();
+// }
+
+// std::string format_binned_variable(const Variable &variable) {
+//   std::stringstream s;
+//   const std::string colSep("  ");
+//   s << std::setw(9) << to_string(variable.dtype());
+//   s << colSep << "Coordinates: (";
+//   // const auto &contents = std::get<2>(variable.constituents<DataArray>());
+//   // for (const auto &[key, var] : contents.coords()) {
+//   // s << key;
+//   // if (var.unit() == units::none)
+//   //   s << "<no unit>";
+//   // else
+//   //   s << '[' + var.unit().name() + ']';
+//   // s << ", ";
+//   // }
+//   s << ")";
+//   return s.str();
+// }
+
+} // namespace
+
+std::string format_variable(const Variable &variable, const bool verbose,
+                            const std::optional<Sizes> datasetSizes) {
+  if (!variable.is_valid())
+    return "invalid variable\n";
   std::stringstream s;
   const std::string colSep("  ");
-  if (!datasetSizes)
+  if (!datasetSizes && verbose)
     s << to_string(variable.dims()) << colSep;
   s << std::setw(9) << to_string(variable.dtype());
   if (variable.unit() == units::none)
     s << colSep << std::setw(15) << "<no unit>";
   else
     s << colSep << std::setw(15) << '[' + variable.unit().name() + ']';
+  if (!verbose)
+    return s.str();
   if (datasetSizes)
     s << colSep << make_dims_labels(variable, datasetSizes);
   s << colSep;
@@ -114,36 +158,6 @@ std::string format_dense_variable(const Variable &variable,
   if (variable.has_variances())
     s << colSep << apply<VariancesToString>(variable.dtype(), variable);
   return s.str();
-}
-
-std::string format_binned_variable(const Variable &variable) {
-  std::stringstream s;
-  const std::string colSep("  ");
-  s << std::setw(9) << to_string(variable.dtype());
-  s << colSep << "Coordinates: (";
-  // const auto &contents = std::get<2>(variable.constituents<DataArray>());
-  // for (const auto &[key, var] : contents.coords()) {
-  // s << key;
-  // if (var.unit() == units::none)
-  //   s << "<no unit>";
-  // else
-  //   s << '[' + var.unit().name() + ']';
-  // s << ", ";
-  // }
-  s << ")";
-  return s.str();
-}
-
-} // namespace
-
-std::string format_variable(const Variable &variable,
-                            const std::optional<Sizes> datasetSizes) {
-  if (!variable.is_valid())
-    return "invalid variable\n";
-  // if (is_bins(variable))
-  //   return format_binned_variable(variable);
-  // else
-  return format_dense_variable(variable, datasetSizes);
 }
 
 std::string to_string(const Variable &variable) {

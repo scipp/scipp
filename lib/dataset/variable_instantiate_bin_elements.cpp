@@ -11,6 +11,11 @@
 
 namespace scipp::variable {
 
+template <>
+std::string Formatter<core::bin<DataArray>>::format(const Variable &var) const {
+  return to_string(var.bin_buffer<DataArray>().coords(), false);
+}
+
 INSTANTIATE_BIN_ARRAY_VARIABLE(DatasetView, Dataset)
 INSTANTIATE_BIN_ARRAY_VARIABLE(DataArrayView, DataArray)
 
