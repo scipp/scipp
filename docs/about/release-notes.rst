@@ -42,6 +42,7 @@ v23.xy.0 (January 2023)
 Features
 ~~~~~~~~
 
+* Added new data structure :class:`scipp.DataGroup`, a more flexible version of ``Dataset`` that does not enforce alignment and supports nesting.
 * Added support for arbitrary unit, degrees Celsius and other special units `#2931 <https://github.com/scipp/scipp/pull/2931>`_.
 * :class:`scipp.Dataset` now supports ``drop_coords``, which returns :class:`scipp.Dataset` without the given coordinate by names  `#2940 <https://github.com/scipp/scipp/pull/2940>`_.
 * :class:`scipp.DataArray` now supports ``drop_coords``/ ``drop_masks``/ ``drop_attrs``, which returns :class:`scipp.DataArray` without the given coordinates/masks/attributes names by names `#2940 <https://github.com/scipp/scipp/pull/2940>`_.
