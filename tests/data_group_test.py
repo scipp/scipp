@@ -426,8 +426,10 @@ def test_inplace_data_group_with_data_group_extra_key(op):
     dg2 = sc.DataGroup({'a': 2 * x.copy(), 'b': -3 * x.copy()})
     with pytest.raises(ValueError):
         op(dg1, dg2)
+    assert sc.identical(dg1['a'], x)
     with pytest.raises(ValueError):
         op(dg2, dg1)
+    assert sc.identical(dg1['a'], x)
 
 
 @pytest.mark.parametrize(
