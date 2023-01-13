@@ -278,8 +278,8 @@ typename Masks::holder_type union_or(const Masks &currentMasks,
     if (!currentMasks.contains(key))
       out.insert_or_assign(key, copy(item));
     else if (item.dtype() != core::dtype<bool>) {
-      std::string optional_message = " This operation is not supported for "
-                                     "non-boolean masks with same names.";
+      std::string optional_message =
+          " Cannot combine non-boolean mask '" + key + "' in operation";
       except::throw_mismatch_error(core::dtype<bool>, item.dtype(),
                                    optional_message);
     } else if (out[key].dims().includes(item.dims())) {
@@ -312,8 +312,8 @@ void union_or_in_place(Masks &masks, const Masks &otherMasks) {
       masks.set(key, copy(item));
     } else if (!it->second.is_readonly()) {
       if (item.dtype() != core::dtype<bool>) {
-        std::string optional_message = " This operation is not supported for "
-                                       "non-boolean masks with same names.";
+        std::string optional_message =
+            " Cannot combine non-boolean mask '" + key + "' in operation";
         except::throw_mismatch_error(core::dtype<bool>, item.dtype(),
                                      optional_message);
       } else {
