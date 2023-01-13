@@ -55,7 +55,7 @@ This list is incomplete, but attempts to aid in better understanding how many th
      - PR
      - Release
      - Comment
-   * - `<https://public.esss.dkii>`_
+   * - `<https://public.esss.dk>`_
      - x
      - x
      - ``pooch`` files, accessed during ``docs`` build
