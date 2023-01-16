@@ -1,7 +1,1 @@
-clang-format
-cmake-format
-flake8
-flake8-bugbear
-nbstripout
-toml
-yapf
+pre-commit

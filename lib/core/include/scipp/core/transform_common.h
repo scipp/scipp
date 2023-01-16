@@ -120,7 +120,7 @@ constexpr auto expect_all_or_none_have_variance =
 
 struct force_variance_broadcast_t : Flag {};
 /// Add this to overloaded operator to indicate to skip the check for variance
-/// broacast. This is used to implement "copy", which we want to work on
+/// broadcast. This is used to implement "copy", which we want to work on
 /// explicitly broadcasted inputs, even in the presence of variances.
 constexpr auto force_variance_broadcast = force_variance_broadcast_t{};
 
