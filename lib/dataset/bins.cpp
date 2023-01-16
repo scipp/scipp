@@ -29,6 +29,7 @@
 
 #include "../variable/operations_common.h"
 #include "bin_common.h"
+#include "bin_detail.h"
 #include "dataset_operations_common.h"
 
 namespace scipp::dataset {
@@ -209,6 +210,18 @@ Variable lookup_previous(const DataArray &function, const Variable &x, Dim dim,
   return variable::transform(x, subspan_view(coord, dim), weights, fill,
                              core::element::event::lookup_previous,
                              "lookup_previous");
+}
+
+Variable pretend_bins_for_threading(const DataArray &da, Dim bin_dim) {
+  const auto dim = da.dims().inner();
+  const auto size = std::max(scipp::index(1), da.dims()[dim]);
+  // TODO automatic setup with reasonable bin count
+  const auto stride = std::max(scipp::index(1), size / 24);
+  auto begin = bin_detail::make_range(0, size, stride, bin_dim);
+  auto end = begin + stride * units::none;
+  end.values<scipp::index>().as_span().back() = da.dims()[dim];
+  const auto indices = zip(begin, end);
+  return make_bins_no_validate(indices, dim, da);
 }
 
 } // namespace scipp::dataset
