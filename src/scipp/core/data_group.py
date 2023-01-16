@@ -333,7 +333,7 @@ def _make_inplace_binary_op(name: str):
     return impl
 
 
-for _name in ('add', 'sub', 'mul', 'truediv', 'mod', 'pow'):
+for _name in ('add', 'sub', 'mul', 'truediv', 'floordiv', 'mod', 'pow'):
     _binding.bind_function_as_method(cls=DataGroup,
                                      name=f'__i{_name}__',
                                      func=_make_inplace_binary_op(_name))
