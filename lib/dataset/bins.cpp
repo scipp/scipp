@@ -328,10 +328,13 @@ Variable histogram(const Variable &data, const Variable &binEdges) {
     // intermediate histogrammed result, which leads to performance and memory
     // issues. This is a suboptimal (since it concatenates first) but simple way
     // to avoid the problem.
-    // Note that unless there are additional dimensions, the following nested
-    // call to histogram will currently not use threading.
-    if (indices.dims().volume() * nbin > 100000000) // about 1 GByte
-      return histogram(concatenate(data, hist_dim), binEdges);
+    if (indices.dims().volume() * nbin > 100000000) { // about 1 GByte
+      const auto tmp = concatenate(data, hist_dim);
+      if (tmp.ndim() == 0) // Operate on buffer so we get multi-threading
+        return histogram(tmp.bin_buffer<DataArray>(), binEdges).data();
+      else
+        return histogram(tmp, binEdges);
+    }
     indices = indices.rename_dims({{hist_dim, dummy}});
   }
 
