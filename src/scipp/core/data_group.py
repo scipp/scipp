@@ -322,3 +322,18 @@ for _name in ('add', 'sub', 'mul', 'truediv', 'floordiv', 'mod', 'pow'):
 # it is simpler than for DataGroup because the latter supports more data types.
 # So for now, we went with the simple solution and
 # not support in-place operations at all.
+
+
+def _make_inplace_binary_op(name: str):
+
+    def impl(self, other: Union[DataGroup, DataArray, Variable,
+                                numbers.Real]) -> DataGroup:
+        raise TypeError(f'In-place operation i{name} is not supported by DataGroup.')
+
+    return impl
+
+
+for _name in ('add', 'sub', 'mul', 'truediv', 'mod', 'pow'):
+    _binding.bind_function_as_method(cls=DataGroup,
+                                     name=f'__i{_name}__',
+                                     func=_make_inplace_binary_op(_name))

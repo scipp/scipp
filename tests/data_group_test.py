@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
-import operator
-
 import copy
+import operator
 
 import numpy as np
 import pytest
@@ -391,6 +390,17 @@ def test_pow_data_group_with_other(other, reverse):
     result = op(dg, other)
     assert 'a' in result
     assert sc.identical(result['a'], op(x, other))
+
+
+@pytest.mark.parametrize('op',
+                         (operator.iadd, operator.isub, operator.imul, operator.imod,
+                          operator.itruediv, operator.ifloordiv, operator.ipow))
+def test_inplace_is_disabled(op):
+    x = sc.arange('x', 1, 5, dtype='int64')
+    dg1 = sc.DataGroup({'a': x.copy()})
+    dg2 = sc.DataGroup({'a': x.copy()})
+    with pytest.raises(TypeError):
+        op(dg1, dg2)
 
 
 def test_hist():
