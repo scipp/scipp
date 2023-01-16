@@ -6,6 +6,7 @@
 #include "scipp/core/except.h"
 #include "scipp/dataset/dataset_util.h"
 #include "scipp/dataset/except.h"
+#include "scipp/units/unit.h"
 
 namespace scipp::dataset {
 
@@ -272,53 +273,74 @@ bool Dataset::is_readonly() const noexcept { return m_readonly; }
 typename Masks::holder_type union_or(const Masks &currentMasks,
                                      const Masks &otherMasks) {
   typename Masks::holder_type out;
+  for (const auto &masks : {currentMasks, otherMasks}) {
+    for (const auto &[key, item] : masks) {
+      if (item.dtype() != core::dtype<bool>) {
+        std::string optional_message =
+            " Cannot combine non-boolean mask '" + key + "' in operation";
+        except::throw_mismatch_error(core::dtype<bool>, item.dtype(),
+                                     optional_message);
+      } else if (item.unit() != scipp::units::none) {
+        std::string optional_message =
+            " Cannot combine a unit-specified mask '" + key + "' in operation";
+        except::throw_mismatch_error(scipp::units::none, item.unit(),
+                                     optional_message);
+      }
+    }
+  }
+
   for (const auto &[key, item] : currentMasks)
     out.insert_or_assign(key, copy(item));
   for (const auto &[key, item] : otherMasks) {
     if (!currentMasks.contains(key))
       out.insert_or_assign(key, copy(item));
-    else if (item.dtype() != core::dtype<bool>) {
-      std::string optional_message =
-          " Cannot combine non-boolean mask '" + key + "' in operation";
-      except::throw_mismatch_error(core::dtype<bool>, item.dtype(),
-                                   optional_message);
-    } else if (out[key].dims().includes(item.dims())) {
+    else if (out[key].dims().includes(item.dims()))
       out[key] |= item;
-    } else {
+    else
       out[key] = out[key] | item;
-    }
   }
   return out;
 }
 
-void union_or_in_place(Masks &masks, const Masks &otherMasks) {
+void union_or_in_place(Masks &currentMasks, const Masks &otherMasks) {
   using core::to_string;
   using units::to_string;
+
+  for (const auto &masks : {currentMasks, otherMasks}) {
+    for (const auto &[key, item] : masks) {
+      if (item.dtype() != core::dtype<bool>) {
+        std::string optional_message =
+            " Cannot combine non-boolean mask '" + key + "' in operation";
+        except::throw_mismatch_error(core::dtype<bool>, item.dtype(),
+                                     optional_message);
+      } else if (item.unit() != scipp::units::none) {
+        std::string optional_message =
+            " Cannot combine a unit-specified mask '" + key + "' in operation";
+        except::throw_mismatch_error(scipp::units::none, item.unit(),
+                                     optional_message);
+      }
+    }
+  }
+
   for (const auto &[key, item] : otherMasks) {
-    const auto it = masks.find(key);
-    if (it == masks.end() && masks.is_readonly()) {
+    const auto it = currentMasks.find(key);
+    if (it == currentMasks.end() && currentMasks.is_readonly()) {
       throw except::NotFoundError("Cannot insert new mask '" + to_string(key) +
                                   "' via a slice.");
-    } else if (it != masks.end() && it->second.is_readonly() &&
+    } else if (it != currentMasks.end() && it->second.is_readonly() &&
                it->second != (it->second | item)) {
       throw except::DimensionError("Cannot update mask '" + to_string(key) +
                                    "' via slice since the mask is implicitly "
                                    "broadcast along the slice dimension.");
     }
   }
+
   for (const auto &[key, item] : otherMasks) {
-    const auto it = masks.find(key);
-    if (it == masks.end()) {
-      masks.set(key, copy(item));
+    const auto it = currentMasks.find(key);
+    if (it == currentMasks.end()) {
+      currentMasks.set(key, copy(item));
     } else if (!it->second.is_readonly()) {
-      if (item.dtype() != core::dtype<bool>) {
-        std::string optional_message =
-            " Cannot combine non-boolean mask '" + key + "' in operation";
-        except::throw_mismatch_error(core::dtype<bool>, item.dtype(),
-                                     optional_message);
-      } else {
-        it->second |= item;
-      }
+      it->second |= item;
     }
   }
 }
