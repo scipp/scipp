@@ -148,3 +148,4 @@ and open new discussions if none of the existing ones provide a satisfactory ans
    about/roadmap
    about/contributing
    about/release-notes
+   about/migration-notes
