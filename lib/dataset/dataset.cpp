@@ -6,6 +6,7 @@
 #include "scipp/core/except.h"
 #include "scipp/dataset/dataset_util.h"
 #include "scipp/dataset/except.h"
+#include "scipp/units/unit.h"
 
 namespace scipp::dataset {
 
@@ -272,16 +273,20 @@ bool Dataset::is_readonly() const noexcept { return m_readonly; }
 typename Masks::holder_type union_or(const Masks &currentMasks,
                                      const Masks &otherMasks) {
   typename Masks::holder_type out;
+
   for (const auto &[key, item] : currentMasks)
     out.insert_or_assign(key, copy(item));
   for (const auto &[key, item] : otherMasks) {
-    if (!currentMasks.contains(key))
+    if (!currentMasks.contains(key)) {
       out.insert_or_assign(key, copy(item));
-    else if (item.dtype() != core::dtype<bool>) {
-      std::string optional_message = " This operation is not supported for "
-                                     "non-boolean masks with same names.";
-      except::throw_mismatch_error(core::dtype<bool>, item.dtype(),
-                                   optional_message);
+    } else if (item.dtype() != core::dtype<bool> ||
+               out[key].dtype() != core::dtype<bool>) {
+      throw except::TypeError(" Cannot combine non-boolean mask '" + key +
+                              "' in operation");
+    } else if (item.unit() != scipp::units::none ||
+               out[key].unit() != scipp::units::none) {
+      throw except::UnitError(" Cannot combine a unit-specified mask '" + key +
+                              "' in operation");
     } else if (out[key].dims().includes(item.dims())) {
       out[key] |= item;
     } else {
@@ -291,34 +296,39 @@ typename Masks::holder_type union_or(const Masks &currentMasks,
   return out;
 }
 
-void union_or_in_place(Masks &masks, const Masks &otherMasks) {
+void union_or_in_place(Masks &currentMasks, const Masks &otherMasks) {
   using core::to_string;
   using units::to_string;
+
   for (const auto &[key, item] : otherMasks) {
-    const auto it = masks.find(key);
-    if (it == masks.end() && masks.is_readonly()) {
+    const auto it = currentMasks.find(key);
+    if (it == currentMasks.end() && currentMasks.is_readonly()) {
       throw except::NotFoundError("Cannot insert new mask '" + to_string(key) +
                                   "' via a slice.");
-    } else if (it != masks.end() && it->second.is_readonly() &&
+    } else if (it != currentMasks.end() && it->second.is_readonly() &&
                it->second != (it->second | item)) {
       throw except::DimensionError("Cannot update mask '" + to_string(key) +
                                    "' via slice since the mask is implicitly "
                                    "broadcast along the slice dimension.");
+    } else if (it != currentMasks.end() &&
+               (item.dtype() != core::dtype<bool> ||
+                currentMasks[key].dtype() != core::dtype<bool>)) {
+      throw except::TypeError(" Cannot combine non-boolean mask '" + key +
+                              "' in operation");
+    } else if (it != currentMasks.end() &&
+               (item.unit() != scipp::units::none ||
+                currentMasks[key].unit() != scipp::units::none)) {
+      throw except::UnitError(" Cannot combine a unit-specified mask '" + key +
+                              "' in operation");
     }
   }
+
   for (const auto &[key, item] : otherMasks) {
-    const auto it = masks.find(key);
-    if (it == masks.end()) {
-      masks.set(key, copy(item));
+    const auto it = currentMasks.find(key);
+    if (it == currentMasks.end()) {
+      currentMasks.set(key, copy(item));
     } else if (!it->second.is_readonly()) {
-      if (item.dtype() != core::dtype<bool>) {
-        std::string optional_message = " This operation is not supported for "
-                                       "non-boolean masks with same names.";
-        except::throw_mismatch_error(core::dtype<bool>, item.dtype(),
-                                     optional_message);
-      } else {
-        it->second |= item;
-      }
+      it->second |= item;
     }
   }
 }
