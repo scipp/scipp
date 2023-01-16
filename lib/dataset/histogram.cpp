@@ -11,6 +11,7 @@
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/histogram.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/transform_subspan.h"
 
@@ -66,12 +67,21 @@ DataArray histogram(const DataArray &events, const Variable &binEdges) {
           // out of scope, leading to subtle bugs. Here on the other hand the
           // returned temporary is kept alive until the end of the
           // full-expression.
-          return transform_subspan(
-              events_.dtype(), dim, binEdges_.dims()[dim] - 1,
-              subspan_view(as_contiguous(events_.coords()[dim], event_dim_),
-                           event_dim_),
-              subspan_view(as_contiguous(data, event_dim_), event_dim_),
-              binEdges_, element::histogram, "histogram");
+          const auto cont_data = as_contiguous(data, event_dim_);
+          const auto cont_coord =
+              as_contiguous(events_.coords()[dim], event_dim_);
+          if (data.ndim() == 1) {
+            const DataArray content(cont_data, {{dim, cont_coord}});
+            const auto binned =
+                pretend_bins_for_threading(content, Dim::InternalHistogram);
+            // This sums automatically over Dim::InternalHistogram
+            return buckets::histogram(binned, binEdges_);
+          }
+          return transform_subspan(events_.dtype(), dim,
+                                   binEdges_.dims()[dim] - 1,
+                                   subspan_view(cont_coord, event_dim_),
+                                   subspan_view(cont_data, event_dim_),
+                                   binEdges_, element::histogram, "histogram");
         },
         event_dim, binEdges);
   } else {

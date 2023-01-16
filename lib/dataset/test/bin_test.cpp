@@ -162,19 +162,6 @@ protected:
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{-2, 1, 2});
   Variable edges_y_coarse =
       makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{-2, -1, 2});
-
-  void expect_near(const DataArray &a, const DataArray &b, double rtol = 1e-14,
-                   double atol = 0.0) {
-    const auto tolerance =
-        values(max(bins_sum(a.data())) * (rtol * units::one));
-    EXPECT_TRUE(
-        all(isclose(values(bins_sum(a.data())), values(bins_sum(b.data())),
-                    atol * units::one, tolerance))
-            .value<bool>());
-    EXPECT_EQ(a.masks(), b.masks());
-    EXPECT_EQ(a.coords(), b.coords());
-    EXPECT_EQ(a.attrs(), b.attrs());
-  }
 };
 
 INSTANTIATE_TEST_SUITE_P(InputSize, BinTest,
@@ -449,7 +436,7 @@ TEST_P(BinTest, rebin_masked) {
     EXPECT_NE(bins_sum(bin(binned, {edges_x})), histogram(table, edges_x));
     binned.masks().erase("x-mask");
     EXPECT_EQ(bin(binned, {edges_x}), bin(table, {edges_x}));
-    EXPECT_EQ(bins_sum(bin(binned, {edges_x})), histogram(table, edges_x));
+    expect_near(bins_sum(bin(binned, {edges_x})), histogram(table, edges_x));
   }
 }
 
