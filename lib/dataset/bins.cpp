@@ -322,11 +322,22 @@ Variable histogram(const Variable &data, const Variable &binEdges) {
   // 1-D histogramming provided that the input has multiple bins along
   // `hist_dim`.
   const Dim dummy = Dim::InternalHistogram;
-  if (indices.dims().contains(hist_dim))
+  const auto nbin = binEdges.dims()[hist_dim] - 1;
+  if (indices.dims().contains(hist_dim)) {
+    // With large existing dim matching the new dim, we would create a large
+    // intermediate histogrammed result, which leads to performance and memory
+    // issues. This is a suboptimal (since it concatenates first) but simple way
+    // to avoid the problem.
+    // Note that unless there are additional dimensions, the following nested
+    // call to histogram will currently not use threading.
+    if (indices.dims().volume() * nbin > 100000000) // about 1 GByte
+      return histogram(concatenate(data, hist_dim), binEdges);
     indices = indices.rename_dims({{hist_dim, dummy}});
+  }
+
   const auto masked = masked_data(buffer, dim);
   auto hist = variable::transform_subspan(
-      buffer.dtype(), hist_dim, binEdges.dims()[hist_dim] - 1,
+      buffer.dtype(), hist_dim, nbin,
       subspan_view(buffer.meta()[hist_dim], dim, indices),
       subspan_view(masked, dim, indices), binEdges, element::histogram,
       "histogram");
