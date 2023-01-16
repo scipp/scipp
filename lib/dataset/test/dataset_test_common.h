@@ -84,9 +84,6 @@ auto make_1_values_and_variances(const std::string &name,
 
 Dataset make_1d_masked();
 
-void expect_near(const DataArray &a, const DataArray &b, double rtol = 1e-14,
-                 double atol = 0.0);
-
 namespace scipp::testdata {
 Dataset make_dataset_x();
 DataArray make_table(const scipp::index size);

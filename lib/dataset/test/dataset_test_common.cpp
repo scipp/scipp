@@ -4,9 +4,6 @@
 
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/astype.h"
-#include "scipp/variable/comparison.h"
-#include "scipp/variable/reduction.h"
-#include "scipp/variable/util.h"
 
 #include "dataset_test_common.h"
 
@@ -129,18 +126,6 @@ Dataset make_1d_masked() {
       "masks_x", makeVariable<bool>(Dimensions{Dim::X, 10},
                                     Values(make_bools(10, {false, true}))));
   return ds;
-}
-
-void expect_near(const DataArray &a, const DataArray &b, double rtol,
-                 double atol) {
-  const auto tolerance = values(max(bins_sum(a.data())) * (rtol * units::one));
-  EXPECT_TRUE(
-      all(isclose(values(bins_sum(a.data())), values(bins_sum(b.data())),
-                  atol * units::one, tolerance))
-          .value<bool>());
-  EXPECT_EQ(a.masks(), b.masks());
-  EXPECT_EQ(a.coords(), b.coords());
-  EXPECT_EQ(a.attrs(), b.attrs());
 }
 
 namespace scipp::testdata {

@@ -70,7 +70,7 @@ DataArray histogram(const DataArray &events, const Variable &binEdges) {
           const auto cont_data = as_contiguous(data, event_dim_);
           const auto cont_coord =
               as_contiguous(events_.coords()[dim], event_dim_);
-          if (data.ndim() == 1) {
+          if (data.ndim() == 1 && data.dims().volume() > 100000) {
             const DataArray content(cont_data, {{dim, cont_coord}});
             const auto binned =
                 pretend_bins_for_threading(content, Dim::InternalHistogram);

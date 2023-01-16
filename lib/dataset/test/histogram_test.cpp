@@ -273,9 +273,9 @@ TEST(HistogramTest, dense_vs_binned) {
     const auto edges =
         makeVariable<double>(Dims{Dim::X}, Shape{8},
                              Values{-2.0, -1.5, -1.0, 0.0, 0.5, 1.0, 1.5, 2.0});
-    expect_near(histogram(table, edges), histogram(binned_x, edges));
-    expect_near(histogram(table, edges),
-                histogram(binned_y.slice({Dim::Y, 0}), edges));
+    EXPECT_EQ(histogram(table, edges), histogram(binned_x, edges));
+    EXPECT_EQ(histogram(table, edges),
+              histogram(binned_y.slice({Dim::Y, 0}), edges));
   }
 }
 
