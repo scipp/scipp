@@ -369,7 +369,7 @@ def test_arithmetic_data_group_with_data_array_coord_mismatch(op):
 
 
 def test_pow_data_group_with_data_group():
-    x = sc.arange('x', 1, 5)
+    x = sc.arange('x', 1, 5, dtype='int64')
     dg1 = sc.DataGroup({'a': x})
     dg2 = sc.DataGroup({'a': 2 * x, 'b': x})
     result = dg1**dg2
@@ -378,13 +378,15 @@ def test_pow_data_group_with_data_group():
     assert sc.identical(result['a'], x**(2 * x))
 
 
-@pytest.mark.parametrize('other', (3, sc.arange(
-    'x', 0, 4), sc.DataArray(sc.arange('x', 0, 4), coords={'x': sc.arange('x', 5)})),
+@pytest.mark.parametrize('other',
+                         (3, sc.arange('x', 0, 4, dtype='int64'),
+                          sc.DataArray(sc.arange('x', 0, 4, dtype='int64'),
+                                       coords={'x': sc.arange('x', 5, dtype='int64')})),
                          ids=('int', 'Variable', 'DataArray'))
 @pytest.mark.parametrize('reverse', (False, True))
 def test_pow_data_group_with_other(other, reverse):
     op = reverse_op(lambda a, b: a**b, reverse)
-    x = sc.arange('x', 1, 5)
+    x = sc.arange('x', 1, 5, dtype='int64')
     dg = sc.DataGroup({'a': x})
     result = op(dg, other)
     assert 'a' in result
@@ -394,7 +396,7 @@ def test_pow_data_group_with_other(other, reverse):
 @pytest.mark.parametrize(
     'op', (operator.iadd, operator.isub, operator.imul, operator.imod, operator.ipow))
 def test_inplace_data_group_with_data_group(op):
-    x = sc.arange('x', 1, 5)
+    x = sc.arange('x', 1, 5, dtype='int64')
     dg1 = sc.DataGroup({'a': x.copy(), 'b': -3 * x.copy()})
     dg2 = sc.DataGroup({'a': 2 * x.copy(), 'b': x.copy()})
     op(dg1, dg2)
@@ -421,7 +423,7 @@ def test_itruediv_data_group_with_data_group():
 @pytest.mark.parametrize(
     'op', (operator.iadd, operator.isub, operator.imul, operator.imod, operator.ipow))
 def test_inplace_data_group_with_data_group_extra_key(op):
-    x = sc.arange('x', 1, 5)
+    x = sc.arange('x', 1, 5, dtype='int64')
     dg1 = sc.DataGroup({'a': x.copy()})
     dg2 = sc.DataGroup({'a': 2 * x.copy(), 'b': -3 * x.copy()})
     with pytest.raises(ValueError):
@@ -435,7 +437,7 @@ def test_inplace_data_group_with_data_group_extra_key(op):
 @pytest.mark.parametrize(
     'op', (operator.iadd, operator.isub, operator.imul, operator.imod, operator.ipow))
 def test_inplace_data_group_with_builtin(op):
-    x = sc.arange('x', 1, 5)
+    x = sc.arange('x', 1, 5, dtype='int64')
     dg1 = sc.DataGroup({'a': x.copy(), 'b': -3 * x.copy()})
     op(dg1, 2)
 
@@ -450,7 +452,7 @@ def test_inplace_data_group_with_builtin(op):
 @pytest.mark.parametrize(
     'op', (operator.iadd, operator.isub, operator.imul, operator.imod, operator.ipow))
 def test_inplace_data_group_with_variable(op):
-    x = sc.arange('x', 1, 5)
+    x = sc.arange('x', 1, 5, dtype='int64')
     dg1 = sc.DataGroup({'a': x.copy(), 'b': -3 * x.copy()})
     op(dg1, x)
 
