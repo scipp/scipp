@@ -316,17 +316,9 @@ for _name in ('add', 'sub', 'mul', 'truediv', 'floordiv', 'mod', 'pow'):
                                      name=f'__r{_name}__',
                                      func=_make_reverse_binary_op(_name))
 
-
-def _make_inplace_binary_op(name: str):
-
-    def impl(self, other: Union[DataGroup, DataArray, Variable,
-                                numbers.Real]) -> DataGroup:
-        return _data_group_inplace(f'__i{name}__', self, other)
-
-    return impl
-
-
-for _name in ('add', 'sub', 'mul', 'truediv', 'mod', 'pow'):
-    _binding.bind_function_as_method(cls=DataGroup,
-                                     name=f'__i{_name}__',
-                                     func=_make_inplace_binary_op(_name))
+# There are currently no in-place operations (__iadd__, etc.) because they require
+# a check if the operation would fail before doing it. As otherwise, a failure could
+# leave a partially modified data group behind. Dataset implements such a check, but
+# it is simpler than for DataGroup because the latter supports more data types.
+# So for now, we went with the simple solution and
+# not support in-place operations at all.
