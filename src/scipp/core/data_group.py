@@ -3,6 +3,7 @@
 # @author Simon Heybrock
 from __future__ import annotations
 
+import copy
 import functools
 import itertools
 import numbers
@@ -201,8 +202,9 @@ class DataGroup(MutableMapping):
         # property provides a different set of attrs and methods.
         return self._call_method(operator.attrgetter('bins'))
 
-    def copy(self, *args, **kwargs):
-        return self._call_method(operator.methodcaller('copy', *args, **kwargs))
+    def copy(self, deep: bool = True) -> DataGroup:
+        return copy.deepcopy(self) if deep else copy.copy(self)
+        # return data_group_nary(copy.deepcopy if deep else copy.copy, self)
 
     def bin(self, *args, **kwargs):
         return self._call_method(operator.methodcaller('bin', *args, **kwargs))
