@@ -10,8 +10,21 @@ defaults:
     shell: bash -l {0}  # required for conda env
 
 jobs:
+  check_release:
+    name: Check if package can be released
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v3
+        with:
+          python-version: 3.8
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r requirements/ci.txt
+      - run: tox -e check-release
+
   build_conda:
     name: Package build (${{ matrix.variant.target }}, py${{ matrix.python-version }})
+    needs: check_release
     runs-on: ${{ matrix.variant.os }}
     strategy:
       matrix:
@@ -39,6 +52,7 @@ jobs:
 
   build_sdist:
     name: Build SDist
+    needs: check_release
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
@@ -59,6 +73,7 @@ jobs:
 
   build_wheels:
     name: Wheels on ${{ matrix.os }}
+    needs: check_release
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -113,6 +128,7 @@ jobs:
 
   manage-versions:
     name: Manage Versions
+    needs: check_release
     runs-on: ubuntu-20.04
     outputs:
       version-new: ${{ steps.version.outputs.new }}
