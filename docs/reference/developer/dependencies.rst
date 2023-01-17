@@ -55,6 +55,22 @@ This list is incomplete, but attempts to aid in better understanding how many th
      - PR
      - Release
      - Comment
+   * - `<http://github.com>`_
+     - x
+     - x
+     -
+   * - `<http://conan.io>`_
+     - x
+     - x
+     -
+   * - `<http://pypi.org>`_
+     - x
+     - x
+     -
+   * - `<http://anaconda.org/conda-forge>`_
+     - x
+     - x
+     -
    * - `<https://public.esss.dk>`_
      - x
      - x
