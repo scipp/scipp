@@ -5,6 +5,7 @@
 
 import typing as _std_typing
 
+import numpy as np
 import numpy.typing
 
 from ._scipp import core as sc
@@ -96,7 +97,8 @@ if _std_typing.TYPE_CHECKING:
 else:
     ellipsis = type(Ellipsis)
 
-ScippIndex = _std_typing.Union[ellipsis, int, tuple, slice,
+ScippIndex = _std_typing.Union[ellipsis, int, tuple, slice, list, np.ndarray,
                                _std_typing.Tuple[str,
-                                                 _std_typing.Union[int, slice,
+                                                 _std_typing.Union[int, slice, list,
+                                                                   np.ndarray,
                                                                    Variable]], Variable]
