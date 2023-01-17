@@ -89,14 +89,22 @@ class DataGroup(MutableMapping):
 
         When ``name`` is a string, return the item of the given name. Otherwise, this
         returns a new DataGroup, with items created by indexing the items in this
-        DataGroup. This may perform, e.g., Scipp's positional indexing or label-based
-        indexing on items that are scipp.Variable or scipp.DataArray.
+        DataGroup. This may perform, e.g., Scipp's positional indexing, label-based
+        indexing, or advanced indexing on items that are scipp.Variable or
+        scipp.DataArray.
 
         Positional indexing is only possible when the shape of all items is consistent
         for the indexed dimension.
 
         Label-based indexing is only possible when all items have a coordinate for the
         indexed dimension.
+
+        Advanced indexing comprises integer-array indexing and boolean-variable
+        indexing. Unlike positional indexing, integer-array indexing works even when
+        the item shapes are inconsistent for the indexed dimensions, provided that all
+        items contain the maximal index in the integer array. Boolean-variable indexing
+        is only possible when the shape of all items is compatible with the boolean
+        variable.
         """
         if isinstance(name, str):
             return self._items[name]
