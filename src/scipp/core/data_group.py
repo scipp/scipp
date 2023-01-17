@@ -378,21 +378,6 @@ def _data_group_binary(func: Callable, dg1: DataGroup, dg2: DataGroup, *args,
     })
 
 
-def _data_group_inplace(op: str, dg: DataGroup,
-                        other: Union[DataArray, Variable, numbers.Real]) -> DataGroup:
-    if isinstance(other, DataGroup):
-        if other.keys() != dg.keys():
-            raise ValueError(
-                "Cannot apply inplace operation between data groups with different "
-                f"keys. Got left: {list(dg.keys())}, right: {list(other.keys())}")
-        for key in dg.keys():
-            getattr(dg[key], op)(other[key])
-    else:
-        for key in dg.keys():
-            getattr(dg[key], op)(other)
-    return dg
-
-
 def data_group_nary(func: Callable, *args, **kwargs) -> DataGroup:
     dgs = filter(lambda x: isinstance(x, DataGroup),
                  itertools.chain(args, kwargs.values()))
