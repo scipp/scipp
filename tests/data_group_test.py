@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+import copy
+
 import numpy as np
 import pytest
 
@@ -27,6 +29,55 @@ def test_init_raises_when_keys_are_not_strings():
     d = {1: 0}
     with pytest.raises(ValueError):
         sc.DataGroup(d)
+
+
+@pytest.mark.parametrize(
+    'copy_func', [copy.deepcopy, sc.DataGroup.copy, lambda x: x.copy(deep=True)])
+def test_deepcopy(copy_func):
+    items = {
+        'a': sc.scalar(2),
+        'b': np.arange(4),
+        'c': sc.DataGroup(nested=sc.scalar(1))
+    }
+    dg = sc.DataGroup(items)
+    result = copy_func(dg)
+    result['a'] += 1
+    result['b'] += 1
+    result['c']['nested'] += 1
+    result['c']['new'] = 1
+    result['new'] = 1
+    assert sc.identical(dg['a'], sc.scalar(2))
+    assert sc.identical(result['a'], sc.scalar(3))
+    assert np.array_equal(dg['b'], np.arange(4))
+    assert np.array_equal(result['b'], np.arange(4) + 1)
+    assert sc.identical(dg['c']['nested'], sc.scalar(1))
+    assert sc.identical(result['c']['nested'], sc.scalar(2))
+    assert 'new' not in dg
+    assert 'new' not in dg['c']
+
+
+@pytest.mark.parametrize('copy_func', [copy.copy, lambda x: x.copy(deep=False)])
+def test_copy(copy_func):
+    items = {
+        'a': sc.scalar(2),
+        'b': np.arange(4),
+        'c': sc.DataGroup(nested=sc.scalar(1))
+    }
+    dg = sc.DataGroup(items)
+    result = copy_func(dg)
+    result['a'] += 1
+    result['b'] += 1
+    result['c']['nested'] += 1
+    result['c']['new'] = 1
+    result['new'] = 1
+    assert sc.identical(dg['a'], sc.scalar(3))
+    assert sc.identical(result['a'], sc.scalar(3))
+    assert np.array_equal(dg['b'], np.arange(4) + 1)
+    assert np.array_equal(result['b'], np.arange(4) + 1)
+    assert sc.identical(dg['c']['nested'], sc.scalar(2))
+    assert sc.identical(result['c']['nested'], sc.scalar(2))
+    assert 'new' not in dg
+    assert 'new' in dg['c']
 
 
 def test_len():

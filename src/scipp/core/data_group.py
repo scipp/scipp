@@ -3,6 +3,7 @@
 # @author Simon Heybrock
 from __future__ import annotations
 
+import copy
 import functools
 import itertools
 import numbers
@@ -56,6 +57,9 @@ class DataGroup(MutableMapping):
         self._items = dict(*args, **kwargs)
         if not all([isinstance(k, str) for k in self._items.keys()]):
             raise ValueError("DataGroup keys must be strings.")
+
+    def __copy__(self) -> DataGroup:
+        return DataGroup(copy.copy(self._items))
 
     def __len__(self) -> int:
         """Return the number of items in the data group."""
@@ -191,49 +195,48 @@ class DataGroup(MutableMapping):
     def __mul__(self, other):
         return _data_group_binary(operator.mul, self, other)
 
-    def _call_method(self, func: Callable) -> DataGroup:
-        """Call method on all values and return new DataGroup containing the results."""
-        return DataGroup({key: func(value) for key, value in self.items()})
-
     @property
     def bins(self):
         # TODO Returning a regular DataGroup here may be wrong, since the `bins`
         # property provides a different set of attrs and methods.
-        return self._call_method(operator.attrgetter('bins'))
+        return self.apply(operator.attrgetter('bins'))
 
-    def copy(self, *args, **kwargs):
-        return self._call_method(operator.methodcaller('copy', *args, **kwargs))
+    def apply(self, func: Callable, *args, **kwargs) -> DataGroup:
+        """Call func on all values and return new DataGroup containing the results."""
+        return DataGroup({key: func(v, *args, **kwargs) for key, v in self.items()})
+
+    def copy(self, deep: bool = True) -> DataGroup:
+        return copy.deepcopy(self) if deep else copy.copy(self)
 
     def bin(self, *args, **kwargs):
-        return self._call_method(operator.methodcaller('bin', *args, **kwargs))
+        return self.apply(operator.methodcaller('bin', *args, **kwargs))
 
     def group(self, *args, **kwargs):
-        return self._call_method(operator.methodcaller('group', *args, **kwargs))
+        return self.apply(operator.methodcaller('group', *args, **kwargs))
 
     def groupby(self, *args, **kwargs):
-        return self._call_method(operator.methodcaller('groupby', *args, **kwargs))
+        return self.apply(operator.methodcaller('groupby', *args, **kwargs))
 
     def hist(self, *args, **kwargs):
-        return self._call_method(operator.methodcaller('hist', *args, **kwargs))
+        return self.apply(operator.methodcaller('hist', *args, **kwargs))
 
     def sum(self, *args, **kwargs):
-        return self._call_method(operator.methodcaller('sum', *args, **kwargs))
+        return self.apply(operator.methodcaller('sum', *args, **kwargs))
 
     def mean(self, *args, **kwargs):
-        return self._call_method(operator.methodcaller('mean', *args, **kwargs))
+        return self.apply(operator.methodcaller('mean', *args, **kwargs))
 
     def min(self, *args, **kwargs):
-        return self._call_method(operator.methodcaller('min', *args, **kwargs))
+        return self.apply(operator.methodcaller('min', *args, **kwargs))
 
     def max(self, *args, **kwargs):
-        return self._call_method(operator.methodcaller('max', *args, **kwargs))
+        return self.apply(operator.methodcaller('max', *args, **kwargs))
 
     def transform_coords(self, *args, **kwargs):
-        return self._call_method(
-            operator.methodcaller('transform_coords', *args, **kwargs))
+        return self.apply(operator.methodcaller('transform_coords', *args, **kwargs))
 
     def to(self, *args, **kwargs):
-        return self._call_method(operator.methodcaller('to', *args, **kwargs))
+        return self.apply(operator.methodcaller('to', *args, **kwargs))
 
     def plot(self, *args, **kwargs):
         import plopp
