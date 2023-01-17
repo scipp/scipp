@@ -296,6 +296,18 @@ def test_data_group():
     check_roundtrip(dg)
 
 
+def test_data_group_empty():
+    dg = sc.DataGroup()
+    check_roundtrip(dg)
+
+
+def test_data_group_unsupported_PyObject():
+    dg = sc.DataGroup({'a': x, 'b': sc.scalar([1, 2], dtype=object)})
+    res = roundtrip(dg)
+    assert sc.identical(res['a'], dg['a'])
+    assert 'b' not in res
+
+
 def test_variable_with_zero_length_dimension():
     v = sc.Variable(dims=["x"], values=[])
     check_roundtrip(v)
