@@ -278,7 +278,7 @@ def test_dataset_with_many_coords():
 
 def test_data_group():
     dg = sc.DataGroup({
-        'vector':
+        'variable':
         vector,
         'data_array':
         array_2d,
@@ -306,6 +306,13 @@ def test_data_group_unsupported_PyObject():
     res = roundtrip(dg)
     assert sc.identical(res['a'], dg['a'])
     assert 'b' not in res
+
+
+def test_data_group_unsupported_type():
+    dg = sc.DataGroup({'a': 2, 'b': sc.scalar(3)})
+    res = roundtrip(dg)
+    assert 'a' not in res
+    assert sc.identical(res['b'], dg['b'])
 
 
 def test_variable_with_zero_length_dimension():

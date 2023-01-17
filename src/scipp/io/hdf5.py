@@ -366,7 +366,13 @@ class HDF5IO:
     @classmethod
     def write(cls, group, data, **kwargs):
         name = data.__class__.__name__.replace('View', '')
-        return cls._handlers[name].write(group, data, **kwargs)
+        try:
+            handler = cls._handlers[name]
+        except KeyError:
+            get_logger().warning("Writing type '%s' to HDF5 not implemented, skipping.",
+                                 type(data))
+            return None
+        return handler.write(group, data, **kwargs)
 
     @classmethod
     def read(cls, group, **kwargs):
