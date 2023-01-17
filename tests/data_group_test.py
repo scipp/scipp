@@ -31,7 +31,8 @@ def test_init_raises_when_keys_are_not_strings():
         sc.DataGroup(d)
 
 
-@pytest.mark.parametrize('copy_func', [copy.deepcopy, sc.DataGroup.copy])
+@pytest.mark.parametrize(
+    'copy_func', [copy.deepcopy, sc.DataGroup.copy, lambda x: x.copy(deep=True)])
 def test_deepcopy(copy_func):
     items = {
         'a': sc.scalar(2),
@@ -44,35 +45,39 @@ def test_deepcopy(copy_func):
     result['b'] += 1
     result['c']['nested'] += 1
     result['c']['new'] = 1
+    result['new'] = 1
     assert sc.identical(dg['a'], sc.scalar(2))
     assert sc.identical(result['a'], sc.scalar(3))
     assert np.array_equal(dg['b'], np.arange(4))
     assert np.array_equal(result['b'], np.arange(4) + 1)
     assert sc.identical(dg['c']['nested'], sc.scalar(1))
     assert sc.identical(result['c']['nested'], sc.scalar(2))
+    assert 'new' not in dg
     assert 'new' not in dg['c']
 
 
-def test_copy():
+@pytest.mark.parametrize('copy_func', [copy.copy, lambda x: x.copy(deep=False)])
+def test_copy(copy_func):
     items = {
         'a': sc.scalar(2),
         'b': np.arange(4),
         'c': sc.DataGroup(nested=sc.scalar(1))
     }
     dg = sc.DataGroup(items)
-    result = dg.copy(deep=False)
+    result = copy_func(dg)
     result['a'] += 1
     result['b'] += 1
     result['c']['nested'] += 1
     result['c']['new'] = 1
+    result['new'] = 1
     assert sc.identical(dg['a'], sc.scalar(3))
     assert sc.identical(result['a'], sc.scalar(3))
     assert np.array_equal(dg['b'], np.arange(4) + 1)
     assert np.array_equal(result['b'], np.arange(4) + 1)
     assert sc.identical(dg['c']['nested'], sc.scalar(2))
     assert sc.identical(result['c']['nested'], sc.scalar(2))
-    # Is this what we want? Or should deep=False descend into DataGroup?
-    assert 'new' not in dg['c']
+    assert 'new' not in dg
+    assert 'new' in dg['c']
 
 
 def test_len():

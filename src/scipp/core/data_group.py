@@ -58,6 +58,9 @@ class DataGroup(MutableMapping):
         if not all([isinstance(k, str) for k in self._items.keys()]):
             raise ValueError("DataGroup keys must be strings.")
 
+    def __copy__(self) -> DataGroup:
+        return DataGroup(copy.copy(self._items))
+
     def __len__(self) -> int:
         """Return the number of items in the data group."""
         return len(self._items)
@@ -204,7 +207,6 @@ class DataGroup(MutableMapping):
 
     def copy(self, deep: bool = True) -> DataGroup:
         return copy.deepcopy(self) if deep else copy.copy(self)
-        # return data_group_nary(copy.deepcopy if deep else copy.copy, self)
 
     def bin(self, *args, **kwargs):
         return self.apply(operator.methodcaller('bin', *args, **kwargs))
