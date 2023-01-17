@@ -11,6 +11,8 @@ import operator
 from collections.abc import MutableMapping
 from typing import Any, Callable, Iterable, NoReturn, Union, overload
 
+import numpy as np
+
 from .. import _binding
 from ..typing import ScippIndex
 from .cpp_classes import DataArray, Dataset, DimensionError, Variable
@@ -44,6 +46,10 @@ def _is_positional_index(key) -> bool:
     return False
 
 
+def _is_list_index(key) -> bool:
+    return isinstance(key, (list, np.ndarray))
+
+
 class DataGroup(MutableMapping):
     """
     A dict-like group of data. Additionally provides dims and shape properties.
@@ -52,6 +58,8 @@ class DataGroup(MutableMapping):
     such as positional- and label-based indexing and Scipp operations by mapping them
     to the values in the dict. This may happen recursively to support tree-like data
     structures.
+
+    .. versionadded:: RELEASE_PLACEHOLDER
     """
 
     def __init__(self, /, *args, **kwargs):
@@ -82,20 +90,30 @@ class DataGroup(MutableMapping):
 
         When ``name`` is a string, return the item of the given name. Otherwise, this
         returns a new DataGroup, with items created by indexing the items in this
-        DataGroup. This may perform, e.g., Scipp's positional indexing or label-based
-        indexing on items that are scipp.Variable or scipp.DataArray.
+        DataGroup. This may perform, e.g., Scipp's positional indexing, label-based
+        indexing, or advanced indexing on items that are scipp.Variable or
+        scipp.DataArray.
 
         Positional indexing is only possible when the shape of all items is consistent
         for the indexed dimension.
 
         Label-based indexing is only possible when all items have a coordinate for the
         indexed dimension.
+
+        Advanced indexing comprises integer-array indexing and boolean-variable
+        indexing. Unlike positional indexing, integer-array indexing works even when
+        the item shapes are inconsistent for the indexed dimensions, provided that all
+        items contain the maximal index in the integer array. Boolean-variable indexing
+        is only possible when the shape of all items is compatible with the boolean
+        variable.
         """
         if isinstance(name, str):
             return self._items[name]
         if isinstance(name, tuple) and name == ():
-            return DataGroup({key: var[()] for key, var in self.items()})
-        if _is_positional_index(name):
+            return self.apply(operator.itemgetter(name))
+        if isinstance(name, Variable):  # boolean indexing
+            return self.apply(operator.itemgetter(name))
+        if _is_positional_index(name) or _is_list_index(name):
             if self.ndim != 1:
                 raise DimensionError(
                     "Slicing with implicit dimension label is only possible "

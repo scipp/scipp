@@ -259,6 +259,46 @@ def test_getitem_label_indexing_based_works_when_length_is_not_unique():
     assert sc.identical(result['b'], da2['x', :sc.scalar(0.5)])
 
 
+def test_getitem_boolean_variable_indexing():
+    dg = sc.DataGroup({'a': sc.arange('x', 4), 'b': sc.arange('x', 4)})
+    sel = sc.array(dims=['x'], values=[False, True, False, True])
+    result = dg[sel]
+    assert sc.identical(result['a'], dg['a'][sel])
+    assert sc.identical(result['b'], dg['b'][sel])
+
+
+def test_getitem_boolean_variable_indexing_raises_on_dim_mismatch():
+    dg = sc.DataGroup({'a': sc.arange('x', 4), 'b': sc.arange('x', 5)})
+    sel = sc.array(dims=['x'], values=[False, True, False, True])
+    with pytest.raises(sc.DimensionError):
+        dg[sel]
+
+
+def test_getitem_integer_array_indexing_single_dim_var_length():
+    dg = sc.DataGroup({'a': sc.arange('x', 4), 'b': sc.arange('x', 5)})
+    result = dg[[1, 3]]
+    assert sc.identical(result['a'], dg['a'][[1, 3]])
+    assert sc.identical(result['b'], dg['b'][[1, 3]])
+
+
+def test_getitem_integer_array_indexing_multi_dim_raises_without_dim():
+    dg = sc.DataGroup({'a': sc.arange('x', 4), 'b': sc.arange('y', 5)})
+    with pytest.raises(sc.DimensionError):
+        dg[[1, 3]]
+
+
+def test_getitem_integer_array_indexing_multi_dim():
+    dg = sc.DataGroup({'x': sc.arange('x', 4), 'y': sc.arange('y', 5)})
+    result = dg['x', [1, 3]]
+    assert sc.identical(result['x'], dg['x'][[1, 3]])
+    assert sc.identical(result['y'], dg['y'])
+
+
+def test_getitem_integer_array_indexing_with_numpy_array():
+    dg = sc.DataGroup({'x': sc.arange('x', 4), 'y': sc.arange('y', 5)})
+    assert sc.identical(dg['x', np.array([1, 3])], dg['x', [1, 3]])
+
+
 BINARY_NUMBER_OPERATIONS = (
     lambda a, b: a + b,
     lambda a, b: a - b,
