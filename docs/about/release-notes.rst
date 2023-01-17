@@ -6,8 +6,8 @@ Release Notes
 
 .. Template, copy this to create a new section after a release:
 
-   v0.xy.0 (Unreleased)
-   --------------------
+   NEXT_RELEASE
+   --------
 
    Features
    ~~~~~~~~
@@ -36,8 +36,8 @@ Release Notes
    and Sunyoung Yoo :sup:`a`
 
 
-v23.xy.0 (January 2023)
------------------------
+NEXT_RELEASE
+--------
 
 Features
 ~~~~~~~~

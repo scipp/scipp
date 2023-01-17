@@ -51,6 +51,8 @@ class DataGroup(MutableMapping):
     such as positional- and label-based indexing and Scipp operations by mapping them
     to the values in the dict. This may happen recursively to support tree-like data
     structures.
+
+    .. versionadded:: NEXT_RELEASE
     """
 
     def __init__(self, /, *args, **kwargs):
