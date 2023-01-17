@@ -52,7 +52,7 @@ class DataGroup(MutableMapping):
     to the values in the dict. This may happen recursively to support tree-like data
     structures.
 
-    .. versionadded:: NEXT_RELEASE
+    .. versionadded:: RELEASE_PLACEHOLDER
     """
 
     def __init__(self, /, *args, **kwargs):
