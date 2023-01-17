@@ -199,11 +199,14 @@ class DataGroup(MutableMapping):
         return out
 
     def __repr__(self):
-        r = 'DataGroup(\n'
+        r = f'DataGroup(sizes={self.sizes}, keys=[\n'
         for name, var in self.items():
-            r += f'    {name}: {_summarize(var)}\n'
-        r += ')'
+            r += f'    {name}: {type(var).__name__},\n'
+        r += '])'
         return r
+
+    def __str__(self):
+        return f'DataGroup(sizes={self.sizes}, keys={list(self.keys())})'
 
     @property
     def bins(self):
