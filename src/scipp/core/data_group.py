@@ -187,10 +187,6 @@ class DataGroup(MutableMapping):
         r += ')'
         return r
 
-    def _call_method(self, func: Callable) -> DataGroup:
-        """Call method on all values and return new DataGroup containing the results."""
-        return DataGroup({key: func(value) for key, value in self.items()})
-
     @property
     def bins(self):
         # TODO Returning a regular DataGroup here may be wrong, since the `bins`
@@ -227,6 +223,10 @@ class DataGroup(MutableMapping):
 
     def max(self, *args, **kwargs):
         return self.apply(operator.methodcaller('max', *args, **kwargs))
+
+    def __invert__(self) -> DataGroup:
+        """Return the element-wise ``or`` of items."""
+        return self.apply(operator.invert)
 
     def transform_coords(self, *args, **kwargs):
         return self.apply(operator.methodcaller('transform_coords', *args, **kwargs))
@@ -287,26 +287,29 @@ def _apply_to_items(func: Callable, dgs: Iterable[DataGroup], *args,
 
 
 def _make_binary_op(name: str):
+    op = getattr(operator, name)
 
     def impl(self, other: Union[DataGroup, DataArray, Variable,
                                 numbers.Real]) -> DataGroup:
-        return data_group_nary(getattr(operator, name), self, other)
+        return data_group_nary(op, self, other)
 
     return impl
 
 
 for _name in ('eq', 'ne', 'gt', 'ge', 'lt', 'le', 'add', 'sub', 'mul', 'truediv',
-              'floordiv', 'mod', 'pow'):
+              'floordiv', 'mod', 'pow', 'and', 'or', 'xor'):
+    full_name = f'__{_name}__'
     _binding.bind_function_as_method(cls=DataGroup,
-                                     name=f'__{_name}__',
-                                     func=_make_binary_op(_name))
+                                     name=full_name,
+                                     func=_make_binary_op(full_name))
 
 
 def _make_reverse_binary_op(name: str):
+    op = getattr(operator, name)
 
     def impl(self, other: Union[DataGroup, DataArray, Variable,
                                 numbers.Real]) -> DataGroup:
-        return data_group_nary(getattr(operator, name), other, self)
+        return data_group_nary(op, other, self)
 
     return impl
 
@@ -334,6 +337,9 @@ def _make_inplace_binary_op(name: str):
 
 
 for _name in ('add', 'sub', 'mul', 'truediv', 'floordiv', 'mod', 'pow'):
+    full_name = f'__i{_name}__'
     _binding.bind_function_as_method(cls=DataGroup,
-                                     name=f'__i{_name}__',
-                                     func=_make_inplace_binary_op(_name))
+                                     name=full_name,
+                                     func=_make_inplace_binary_op(full_name))
+
+del _name, full_name
