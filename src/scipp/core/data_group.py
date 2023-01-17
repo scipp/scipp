@@ -11,6 +11,8 @@ import operator
 from collections.abc import MutableMapping
 from typing import Any, Callable, Iterable, overload
 
+import numpy as np
+
 from ..typing import ScippIndex
 from .cpp_classes import DataArray, Dataset, DimensionError, Variable
 
@@ -41,6 +43,10 @@ def _is_positional_index(key) -> bool:
         if key.start is None and key.stop is None and key.step is None:
             return True
     return False
+
+
+def _is_list_index(key) -> bool:
+    return isinstance(key, (list, np.ndarray))
 
 
 class DataGroup(MutableMapping):
@@ -95,8 +101,10 @@ class DataGroup(MutableMapping):
         if isinstance(name, str):
             return self._items[name]
         if isinstance(name, tuple) and name == ():
-            return DataGroup({key: var[()] for key, var in self.items()})
-        if _is_positional_index(name):
+            return self.apply(operator.itemgetter(name))
+        if isinstance(name, Variable):  # boolean indexing
+            return self.apply(operator.itemgetter(name))
+        if _is_positional_index(name) or _is_list_index(name):
             if self.ndim != 1:
                 raise DimensionError(
                     "Slicing with implicit dimension label is only possible "
