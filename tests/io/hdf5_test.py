@@ -23,6 +23,9 @@ def roundtrip(obj):
 
 def check_roundtrip(obj):
     result = roundtrip(obj)
+    print(obj)
+    print('----')
+    print(result)
     assert sc.identical(result, obj)
     return result  # for optional addition tests
 
@@ -274,6 +277,26 @@ def test_dataset_with_many_coords():
         # depend on the number of rows.
         extra = 75000
         assert size1 < (len(ds1.coords) + 1) * rows * 8 + extra
+
+
+def test_data_group():
+    dg = sc.DataGroup({
+        'vector':
+        vector,
+        'data_array':
+        array_2d,
+        'dataset':
+        sc.Dataset({
+            'a': array_1d,
+            'b': array_2d
+        }),
+        'data group':
+        sc.DataGroup({
+            'v.same': vector,
+            'm/copy': matrix.copy()
+        })
+    })
+    check_roundtrip(dg)
 
 
 def test_variable_with_zero_length_dimension():
