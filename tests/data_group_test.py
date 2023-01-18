@@ -582,3 +582,20 @@ def test_dataset_can_be_created_from_datagroup_with_variable_or_dataarray_items(
 def test_fold_flatten():
     dg = sc.DataGroup(a=sc.arange('x', 4), b=sc.arange('x', 6))
     assert sc.identical(dg.fold('x', sizes={'y': 2, 'z': -1}).flatten(to='x'), dg)
+
+
+def test_squeeze():
+    dg = sc.DataGroup(a=sc.ones(dims=['x', 'y'], shape=(4, 1)))
+    assert sc.identical(dg.squeeze(), sc.DataGroup(a=sc.ones(dims=['x'], shape=(4, ))))
+
+
+def test_transpose():
+    dg = sc.DataGroup(a=sc.ones(dims=['x', 'y'], shape=(2, 3)))
+    assert sc.identical(dg.transpose(),
+                        sc.DataGroup(a=sc.ones(dims=['y', 'x'], shape=(3, 2))))
+
+
+def test_broadcast():
+    dg = sc.DataGroup(a=sc.scalar(1))
+    assert sc.identical(dg.broadcast(sizes={'x': 2}),
+                        sc.DataGroup(a=sc.scalar(1).broadcast(sizes={'x': 2})))

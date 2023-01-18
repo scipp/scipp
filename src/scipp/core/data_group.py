@@ -257,6 +257,15 @@ class DataGroup(MutableMapping):
     def flatten(self, *args, **kwargs):
         return self.apply(operator.methodcaller('flatten', *args, **kwargs))
 
+    def broadcast(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('broadcast', *args, **kwargs))
+
+    def transpose(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('transpose', *args, **kwargs))
+
+    def squeeze(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('squeeze', *args, **kwargs))
+
     def plot(self, *args, **kwargs):
         import plopp
         return plopp.plot(self, *args, **kwargs)
