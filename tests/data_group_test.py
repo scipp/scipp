@@ -559,3 +559,50 @@ def test_identical_raises_TypeError_when_comparing_to_Dataset():
         sc.identical(dg, ds)
     with pytest.raises(TypeError):
         sc.identical(ds, dg)
+
+
+def test_construction_from_dataset_creates_dataarray_items():
+    ds = sc.Dataset({'a': sc.scalar(1), 'b': sc.scalar(2)}, coords={'x': sc.scalar(3)})
+    dg = sc.DataGroup(ds)
+    assert len(dg) == 2
+    assert sc.identical(dg['a'], ds['a'])
+    assert sc.identical(dg['b'], ds['b'])
+
+
+def test_dataset_can_be_created_from_datagroup_with_variable_or_dataarray_items():
+    dg = sc.DataGroup(a=sc.DataArray(sc.arange('x', 4),
+                                     coords={'x': sc.linspace('x', 0.0, 1.0, 4)}),
+                      b=sc.arange('x', 4))
+    ds = sc.Dataset(dg)
+    assert len(ds) == 2
+    assert sc.identical(dg['a'], ds['a'])
+    assert sc.identical(dg['b'], ds['b'].data)
+
+
+def test_fold_flatten():
+    dg = sc.DataGroup(a=sc.arange('x', 4), b=sc.arange('x', 6))
+    assert sc.identical(dg.fold('x', sizes={'y': 2, 'z': -1}).flatten(to='x'), dg)
+
+
+def test_squeeze():
+    dg = sc.DataGroup(a=sc.ones(dims=['x', 'y'], shape=(4, 1)))
+    assert sc.identical(dg.squeeze(), sc.DataGroup(a=sc.ones(dims=['x'], shape=(4, ))))
+
+
+def test_transpose():
+    dg = sc.DataGroup(a=sc.ones(dims=['x', 'y'], shape=(2, 3)))
+    assert sc.identical(dg.transpose(),
+                        sc.DataGroup(a=sc.ones(dims=['y', 'x'], shape=(3, 2))))
+
+
+def test_broadcast():
+    dg = sc.DataGroup(a=sc.scalar(1))
+    assert sc.identical(dg.broadcast(sizes={'x': 2}),
+                        sc.DataGroup(a=sc.scalar(1).broadcast(sizes={'x': 2})))
+
+
+def test_methods_work_with_any_value_type_that_supports_it():
+    dg = sc.DataGroup(a=sc.arange('x', 4), b=np.arange(5))
+    result = dg.max()
+    assert sc.identical(result['a'], sc.arange('x', 4).max())
+    assert np.array_equal(result['b'], np.arange(5).max())
