@@ -3,7 +3,6 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/array_to_string.h"
-#include "scipp/core/bucket.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/eigen.h"
 #include "scipp/core/element_array_view.h"

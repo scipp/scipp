@@ -293,9 +293,7 @@ def summarize_variable(name,
     disabled, attrs_ul = _make_inline_attributes(var, has_attrs, embedded_in)
 
     preview = inline_variable_repr(var)
-    # print('summarize_variable')
     data_repr = short_data_repr_html(var)
-    # print('data_repr', data_repr)
     if var.bins is None:
         data_repr = "Values:<br>" + data_repr
     variances_preview = None

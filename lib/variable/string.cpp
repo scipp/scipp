@@ -10,10 +10,8 @@
 #include "scipp/core/eigen.h"
 #include "scipp/core/string.h"
 #include "scipp/core/tag_util.h"
-#include "scipp/variable/bins.h"
 #include "scipp/variable/string.h"
 #include "scipp/variable/variable.h"
-#include "scipp/variable/variable_factory.h"
 
 namespace scipp::variable {
 
