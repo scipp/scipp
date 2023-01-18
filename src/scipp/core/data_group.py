@@ -201,7 +201,7 @@ class DataGroup(MutableMapping):
     def __repr__(self):
         r = f'DataGroup(sizes={self.sizes}, keys=[\n'
         for name, var in self.items():
-            r += f'    {name}: {type(var).__name__},\n'
+            r += f'    {name}: {_summarize(var)[:-1]},\n'
         r += '])'
         return r
 
