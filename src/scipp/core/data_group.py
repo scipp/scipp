@@ -107,6 +107,7 @@ class DataGroup(MutableMapping):
         is only possible when the shape of all items is compatible with the boolean
         variable.
         """
+        from .bins import Bins
         if isinstance(name, str):
             return self._items[name]
         if isinstance(name, tuple) and name == ():
@@ -128,7 +129,8 @@ class DataGroup(MutableMapping):
                 f"Positional indexing dim '{dim}' not possible as the length is not "
                 "unique.")
         return DataGroup({
-            key: var[dim, index] if dim in _item_dims(var) else var
+            key: var[dim, index] if
+            (isinstance(var, Bins) or dim in _item_dims(var)) else var
             for key, var in self.items()
         })
 

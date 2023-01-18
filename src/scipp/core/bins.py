@@ -109,18 +109,6 @@ class Bins:
     def __init__(self, obj):
         self._obj = obj
 
-    @property
-    def dims(self):
-        return self._obj.dims
-
-    @property
-    def shape(self):
-        return self._obj.shape
-
-    @property
-    def sizes(self):
-        return self._obj.sizes
-
     def _data(self):
         try:
             return self._obj.data
