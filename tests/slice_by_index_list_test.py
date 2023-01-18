@@ -112,4 +112,4 @@ def test_2d_list_raises_TypeError():
 def test_out_of_range_index_raises_IndexError(pos):
     var = sc.arange('xx', 4)
     with pytest.raises(IndexError):
-        var['xx', pos]
+        var['xx', [pos]]
