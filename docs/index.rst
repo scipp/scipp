@@ -39,15 +39,13 @@ News
 ----
 
 - [|SCIPP_RELEASE_MONTH|] scipp-|SCIPP_VERSION| `has been released <about/release-notes.rst>`_.
-  Check out the `What's new <about/whats-new.rst>`_ notebook for an overview of recent highlights and major changes.
+- [January 2023] Scipp now comes with a **new data structure**, `DataGroup <user-guide/data-structures/data-structures.ipynb#DataGroup>`_, a ``dict``-like container with Scipp functionality.
 - [November 2022] Scipp is migrating to use `Plopp <https://scipp.github.io/plopp>`_ instead of a built-in plotting solution.
   See `Migrating to the new backend <visualization/plotting-overview.ipynb#Migrating-to-the-new-backend>`_ for details.
 - [November 2022] Scipp switched to "Calendar Versioning".
   See `Version numbers and deprecation policy <about/about.rst#Version-numbers-and-deprecation-policy>`_ for details.
 - Is your data stored in NeXus files?
   Checkout our new project `ScippNexus <https://scipp.github.io/scippnexus>`_, a h5py-like utility for conveniently loading NeXus classes into Scipp data structures.
-- We now provide ``pip`` packages of ``scipp``, in addition to ``conda`` packages.
-  See `Installation <getting-started/installation.rst#Pip>`_ for details.
 
 Lost? New to Scipp? Start Here!
 -------------------------------

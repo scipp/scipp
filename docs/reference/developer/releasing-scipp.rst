@@ -27,7 +27,7 @@ Release steps
 Updating the logo
 -----------------
 
-- Edit the logo in ``ressources/``
+- Edit the logo in ``resources/``
 - Copy the logo into ``docs/_static/``.
   Convert the font to a path.
   This ensures that we get the correct font on all machines.
