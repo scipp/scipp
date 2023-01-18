@@ -559,3 +559,21 @@ def test_identical_raises_TypeError_when_comparing_to_Dataset():
         sc.identical(dg, ds)
     with pytest.raises(TypeError):
         sc.identical(ds, dg)
+
+
+def test_construction_from_dataset_creates_dataarray_items():
+    ds = sc.Dataset({'a': sc.scalar(1), 'b': sc.scalar(2)}, coords={'x': sc.scalar(3)})
+    dg = sc.DataGroup(ds)
+    assert len(dg) == 2
+    assert sc.identical(dg['a'], ds['a'])
+    assert sc.identical(dg['b'], ds['b'])
+
+
+def test_dataset_can_be_created_from_datagroup_with_variable_or_dataarray_items():
+    dg = sc.DataGroup(a=sc.DataArray(sc.arange('x', 4),
+                                     coords={'x': sc.linspace('x', 0.0, 1.0, 4)}),
+                      b=sc.arange('x', 4))
+    ds = sc.Dataset(dg)
+    assert len(ds) == 2
+    assert sc.identical(dg['a'], ds['a'])
+    assert sc.identical(dg['b'], ds['b'].data)
