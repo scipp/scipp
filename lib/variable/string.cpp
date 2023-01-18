@@ -72,85 +72,28 @@ auto apply(const DType dtype, Args &&...args) {
       dtype, std::forward<Args>(args)...);
 }
 
-// /// Formats the contents of a binned variable as a short summary instead of
-// /// using the full printout for the variable values.
-// std::string format_binned_values(const Variable &variable) {
-//   std::stringstream s;
-//   const auto bin_sizes_ = bin_sizes(variable);
-//   const auto &lengths = bin_sizes_.values<scipp::index>();
-//   const auto size = scipp::size(lengths);
-//   if (size == 0) {
-//     s << "[]";
-//     return s.str();
-//   }
-//   s << "[len=" << lengths[0];
-//   for (scipp::index i = 1; i < size; ++i) {
-//     constexpr scipp::index n = 2;
-//     if (i == n && size > 2 * n) {
-//       s << ", ...";
-//       i = size - n;
-//     }
-//     s << ", len=" << lengths[i];
-//   }
-//   s << "]";
-//   return s.str();
-// }
-
-// std::string format_variable(const Variable &variable,
-//                                   const std::optional<Sizes> datasetSizes) {
-//   std::stringstream s;
-//   const std::string colSep("  ");
-//   if (!datasetSizes)
-//     s << to_string(variable.dims()) << colSep;
-//   s << std::setw(9) << to_string(variable.dtype());
-//   if (variable.unit() == units::none)
-//     s << colSep << std::setw(15) << "<no unit>";
-//   else
-//     s << colSep << std::setw(15) << '[' + variable.unit().name() + ']';
-//   if (datasetSizes)
-//     s << colSep << make_dims_labels(variable, datasetSizes);
-//   s << colSep;
-//   s << apply<ValuesToString>(variable.dtype(), variable);
-//   if (variable.has_variances())
-//     s << colSep << apply<VariancesToString>(variable.dtype(), variable);
-//   return s.str();
-// }
-
-// std::string format_binned_variable(const Variable &variable) {
-//   std::stringstream s;
-//   const std::string colSep("  ");
-//   s << std::setw(9) << to_string(variable.dtype());
-//   s << colSep << "Coordinates: (";
-//   // const auto &contents = std::get<2>(variable.constituents<DataArray>());
-//   // for (const auto &[key, var] : contents.coords()) {
-//   // s << key;
-//   // if (var.unit() == units::none)
-//   //   s << "<no unit>";
-//   // else
-//   //   s << '[' + var.unit().name() + ']';
-//   // s << ", ";
-//   // }
-//   s << ")";
-//   return s.str();
-// }
-
 } // namespace
 
-std::string format_variable(const Variable &variable, const bool verbose,
-                            const std::optional<Sizes> datasetSizes) {
-  if (!variable.is_valid())
-    return "invalid variable\n";
+std::string format_variable_header(const Variable &variable) {
   std::stringstream s;
   const std::string colSep("  ");
-  if (!datasetSizes && verbose)
-    s << to_string(variable.dims()) << colSep;
   s << std::setw(9) << to_string(variable.dtype());
   if (variable.unit() == units::none)
     s << colSep << std::setw(15) << "<no unit>";
   else
     s << colSep << std::setw(15) << '[' + variable.unit().name() + ']';
-  if (!verbose)
-    return s.str();
+  return s.str();
+}
+
+std::string format_variable(const Variable &variable,
+                            const std::optional<Sizes> datasetSizes) {
+  if (!variable.is_valid())
+    return "invalid variable\n";
+  std::stringstream s;
+  const std::string colSep("  ");
+  if (!datasetSizes)
+    s << to_string(variable.dims()) << colSep;
+  s << format_variable_header(variable);
   if (datasetSizes)
     s << colSep << make_dims_labels(variable, datasetSizes);
   s << colSep;

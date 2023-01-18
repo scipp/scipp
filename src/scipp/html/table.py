@@ -175,7 +175,26 @@ def _to_dataset(obj: Union[VariableLike, dict]) -> Dataset:
     return obj
 
 
-def _make_table(obj: Dict[str, Union[Variable, DataArray]], max_rows: int = 20) -> str:
+def table(obj: Dict[str, Union[Variable, DataArray]], max_rows: int = 20):
+    """Create an HTML table from the contents of the supplied object.
+
+    Possible inputs are:
+     - Variable
+     - DataArray
+     - Dataset
+     - dict of Variable
+     - dict of DataArray
+
+    Inputs must be one-dimensional. Zero-dimensional data members, attributes and
+    coordinates are stripped. Zero-dimensional masks are broadcast.
+
+    Parameters
+    ----------
+    obj:
+        Input to be turned into a html table.
+    max_rows:
+        Maximum number of rows to display.
+    """
     obj = _to_dataset(obj)
 
     if obj.ndim != 1:
@@ -214,28 +233,6 @@ def _make_table(obj: Dict[str, Union[Variable, DataArray]], max_rows: int = 20) 
                                        bin_edges=bin_edges,
                                        no_left_border=(i == 0) and (not obj.coords))
 
-    return _to_html_table(header=header, body=body)
-
-
-def table(obj: Dict[str, Union[Variable, DataArray]], max_rows: int = 20):
-    """Create an HTML table from the contents of the supplied object.
-
-    Possible inputs are:
-     - Variable
-     - DataArray
-     - Dataset
-     - dict of Variable
-     - dict of DataArray
-
-    Inputs must be one-dimensional. Zero-dimensional data members, attributes and
-    coordinates are stripped. Zero-dimensional masks are broadcast.
-
-    Parameters
-    ----------
-    obj:
-        Input to be turned into a html table.
-    max_rows:
-        Maximum number of rows to display.
-    """
+    html = _to_html_table(header=header, body=body)
     from IPython.display import HTML
-    return HTML(_make_table(obj=obj, max_rows=max_rows))
+    return HTML(html)

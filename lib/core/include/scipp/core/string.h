@@ -34,6 +34,7 @@ SCIPP_CORE_EXPORT std::string to_string(const Dimensions &dims);
 SCIPP_CORE_EXPORT std::string to_string(const Sizes &sizes);
 SCIPP_CORE_EXPORT std::string to_string(const Slice &slice);
 SCIPP_CORE_EXPORT std::string to_string(const scipp::index_pair &index);
+SCIPP_CORE_EXPORT std::string labels_to_string(const Dimensions &dims);
 
 // Format a time point according to ISO 8601 including sub-second precision
 // depending on the unit.

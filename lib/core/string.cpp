@@ -37,6 +37,14 @@ std::string to_string(const Dimensions &dims) {
   return s;
 }
 
+std::string labels_to_string(const Dimensions &dims) {
+  std::string s = "(";
+  for (const auto &dim : dims.labels())
+    s += to_string(dim) + ", ";
+  s += ")";
+  return s;
+}
+
 std::string to_string(const Sizes &sizes) {
   std::string repr("Sizes[");
   for (const auto &dim : sizes)

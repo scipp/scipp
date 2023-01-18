@@ -127,25 +127,6 @@ template <class T> std::string Formatter<T>::format(const Variable &var) const {
   return array_to_string(var.template values<T>());
 }
 
-// template <class T> std::string Formatter<T>::format(const Variable &var)
-// const {
-//   const auto &buffer = var.bin_buffer<typename T::buffer_type>();
-//   // const auto &buffer = var.buffer();
-//   // const auto buffer = var.bin_buffer<T>();
-//   std::stringstream s;
-//   s << "(";
-//   for (const auto &[key, v] : buffer.coords()) {
-//     s << key;
-//     if (v.unit() == units::none)
-//       s << "<no unit>";
-//     else
-//       s << '[' + v.unit().name() + ']';
-//     s << ", ";
-//   }
-//   s << ")";
-//   return s.str();
-// }
-
 /// Insert classes into formatting registry. The objects themselves do nothing,
 /// but the constructor call with comma operator does the insertion. Calling
 /// this is required for formatting all but basic builtin types.

@@ -2,6 +2,8 @@
 // Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <iomanip>
+
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/string.h"
@@ -13,7 +15,23 @@ namespace scipp::variable {
 
 template <>
 std::string Formatter<core::bin<DataArray>>::format(const Variable &var) const {
-  return to_string(var.bin_buffer<DataArray>().coords(), false);
+  const auto &buffer = var.bin_buffer<DataArray>();
+  std::stringstream s;
+  const std::string shift("  ");
+  s << "\n" << shift << "Bins buffer:\n";
+  if (!buffer.coords().empty()) {
+    s << shift << shift << "Coordinates:\n";
+    for (const auto &[key, coord] : buffer.coords()) {
+      s << shift << shift << shift << std::left << std::setw(15) << key;
+      s << shift << format_variable_header(coord) << shift
+        << labels_to_string(coord.dims()) << "\n";
+    }
+  }
+  s << shift << shift << "Data:\n";
+  s << shift << shift << shift << std::setw(15) << "";
+  s << shift << format_variable_header(buffer.data()) << shift
+    << labels_to_string(buffer.data().dims());
+  return s.str();
 }
 
 INSTANTIATE_BIN_ARRAY_VARIABLE(DatasetView, Dataset)
