@@ -577,3 +577,8 @@ def test_dataset_can_be_created_from_datagroup_with_variable_or_dataarray_items(
     assert len(ds) == 2
     assert sc.identical(dg['a'], ds['a'])
     assert sc.identical(dg['b'], ds['b'].data)
+
+
+def test_fold_flatten():
+    dg = sc.DataGroup(a=sc.arange('x', 4), b=sc.arange('x', 6))
+    assert sc.identical(dg.fold('x', sizes={'y': 2, 'z': -1}).flatten(to='x'), dg)

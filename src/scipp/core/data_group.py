@@ -251,6 +251,12 @@ class DataGroup(MutableMapping):
     def to(self, *args, **kwargs):
         return self.apply(operator.methodcaller('to', *args, **kwargs))
 
+    def fold(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('fold', *args, **kwargs))
+
+    def flatten(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('flatten', *args, **kwargs))
+
     def plot(self, *args, **kwargs):
         import plopp
         return plopp.plot(self, *args, **kwargs)
