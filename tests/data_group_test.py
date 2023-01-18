@@ -599,3 +599,10 @@ def test_broadcast():
     dg = sc.DataGroup(a=sc.scalar(1))
     assert sc.identical(dg.broadcast(sizes={'x': 2}),
                         sc.DataGroup(a=sc.scalar(1).broadcast(sizes={'x': 2})))
+
+
+def test_methods_work_with_any_value_type_that_supports_it():
+    dg = sc.DataGroup(a=sc.arange('x', 4), b=np.arange(5))
+    result = dg.max()
+    assert sc.identical(result['a'], sc.arange('x', 4).max())
+    assert np.array_equal(result['b'], np.arange(5).max())
