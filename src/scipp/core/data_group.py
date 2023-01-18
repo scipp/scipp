@@ -221,8 +221,32 @@ class DataGroup(MutableMapping):
     def copy(self, deep: bool = True) -> DataGroup:
         return copy.deepcopy(self) if deep else copy.copy(self)
 
+    def all(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('all', *args, **kwargs))
+
+    def any(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('any', *args, **kwargs))
+
+    def astype(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('astype', *args, **kwargs))
+
     def bin(self, *args, **kwargs):
         return self.apply(operator.methodcaller('bin', *args, **kwargs))
+
+    def broadcast(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('broadcast', *args, **kwargs))
+
+    def ceil(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('ceil', *args, **kwargs))
+
+    def flatten(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('flatten', *args, **kwargs))
+
+    def floor(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('floor', *args, **kwargs))
+
+    def fold(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('fold', *args, **kwargs))
 
     def group(self, *args, **kwargs):
         return self.apply(operator.methodcaller('group', *args, **kwargs))
@@ -233,8 +257,8 @@ class DataGroup(MutableMapping):
     def hist(self, *args, **kwargs):
         return self.apply(operator.methodcaller('hist', *args, **kwargs))
 
-    def sum(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('sum', *args, **kwargs))
+    def max(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('max', *args, **kwargs))
 
     def mean(self, *args, **kwargs):
         return self.apply(operator.methodcaller('mean', *args, **kwargs))
@@ -242,29 +266,47 @@ class DataGroup(MutableMapping):
     def min(self, *args, **kwargs):
         return self.apply(operator.methodcaller('min', *args, **kwargs))
 
-    def max(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('max', *args, **kwargs))
+    def nanhist(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('nanhist', *args, **kwargs))
 
-    def transform_coords(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('transform_coords', *args, **kwargs))
+    def nanmax(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('nanmax', *args, **kwargs))
+
+    def nanmean(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('nanmean', *args, **kwargs))
+
+    def nanmin(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('nanmin', *args, **kwargs))
+
+    def nansum(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('nansum', *args, **kwargs))
+
+    def rebin(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('rebin', *args, **kwargs))
+
+    def rename(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('rename', *args, **kwargs))
+
+    def rename_dims(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('rename_dims', *args, **kwargs))
+
+    def round(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('round', *args, **kwargs))
+
+    def squeeze(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('squeeze', *args, **kwargs))
+
+    def sum(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('sum', *args, **kwargs))
 
     def to(self, *args, **kwargs):
         return self.apply(operator.methodcaller('to', *args, **kwargs))
 
-    def fold(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('fold', *args, **kwargs))
-
-    def flatten(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('flatten', *args, **kwargs))
-
-    def broadcast(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('broadcast', *args, **kwargs))
+    def transform_coords(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('transform_coords', *args, **kwargs))
 
     def transpose(self, *args, **kwargs):
         return self.apply(operator.methodcaller('transpose', *args, **kwargs))
-
-    def squeeze(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('squeeze', *args, **kwargs))
 
     def plot(self, *args, **kwargs):
         import plopp
