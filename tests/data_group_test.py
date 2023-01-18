@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 import copy
+import operator
 
 import numpy as np
 import pytest
@@ -298,24 +299,189 @@ def test_getitem_integer_array_indexing_with_numpy_array():
     assert sc.identical(dg['x', np.array([1, 3])], dg['x', [1, 3]])
 
 
-def test_add():
-    x = sc.arange('x', 4, unit='m')
-    dg1 = sc.DataGroup({'a': x})
-    dg2 = sc.DataGroup({'a': x, 'b': x})
-    result = dg1 + dg2
-    assert 'a' in result
-    assert 'b' not in result
-    assert sc.identical(result['a'], x + x)
+BINARY_NUMBER_OPERATIONS = (
+    lambda a, b: a + b,
+    lambda a, b: a - b,
+    lambda a, b: a * b,
+    lambda a, b: a / b,
+    lambda a, b: a // b,
+    lambda a, b: a % b,
+    lambda a, b: a == b,
+    lambda a, b: a != b,
+    lambda a, b: a > b,
+    lambda a, b: a >= b,
+    lambda a, b: a < b,
+    lambda a, b: a <= b,
+)
+BINARY_NUMBER_OPERATION_NAMES = ('+', '-', '*', '/', '//', '%', '==', '!=', '>', '>=',
+                                 '<', '<=')
 
 
-def test_eq():
-    x = sc.arange('x', 4, unit='m')
+def reverse_op(op, reverse: bool):
+    if not reverse:
+        return op
+    return lambda a, b: op(b, a)
+
+
+@pytest.mark.parametrize('op',
+                         BINARY_NUMBER_OPERATIONS,
+                         ids=BINARY_NUMBER_OPERATION_NAMES)
+def test_binary_data_group_with_data_group(op):
+    x = sc.arange('x', 1, 5, unit='m')
     dg1 = sc.DataGroup({'a': x})
-    dg2 = sc.DataGroup({'a': x, 'b': x})
-    result = dg1 == dg2
+    dg2 = sc.DataGroup({'a': 2 * x, 'b': x})
+    result = op(dg1, dg2)
     assert 'a' in result
     assert 'b' not in result
-    assert sc.identical(result['a'], x == x)
+    assert sc.identical(result['a'], op(x, 2 * x))
+
+
+@pytest.mark.parametrize('op',
+                         BINARY_NUMBER_OPERATIONS,
+                         ids=BINARY_NUMBER_OPERATION_NAMES)
+def test_binary_data_group_with_nested_data_group(op):
+    x = sc.arange('x', 1, 5, unit='m')
+    dg1 = sc.DataGroup({'a': x})
+    inner = sc.DataGroup({'b': 2 * x, 'c': -x})
+    dg2 = sc.DataGroup({'a': inner})
+    result = op(dg1, dg2)
+    assert 'a' in result
+    assert 'b' not in result
+    assert 'c' not in result
+    assert sc.identical(result['a'], op(x, inner))
+
+
+@pytest.mark.parametrize('op',
+                         BINARY_NUMBER_OPERATIONS,
+                         ids=BINARY_NUMBER_OPERATION_NAMES)
+def test_binary_nested_data_group_with_data_group(op):
+    x = sc.arange('x', 1, 5, unit='m')
+    inner = sc.DataGroup({'b': 2 * x, 'c': -x})
+    dg1 = sc.DataGroup({'a': inner})
+    dg2 = sc.DataGroup({'a': x})
+    result = op(dg1, dg2)
+    assert 'a' in result
+    assert 'b' not in result
+    assert 'c' not in result
+    assert sc.identical(result['a'], op(inner, x))
+
+
+@pytest.mark.parametrize('op',
+                         BINARY_NUMBER_OPERATIONS,
+                         ids=BINARY_NUMBER_OPERATION_NAMES)
+@pytest.mark.parametrize('typ', (int, float))
+@pytest.mark.parametrize('reverse', (False, True))
+def test_arithmetic_data_group_with_builtin(op, typ, reverse):
+    op = reverse_op(op, reverse)
+    x = sc.arange('x', 1, 5)
+    dg = sc.DataGroup({'a': x})
+    other = typ(31)
+    result = op(dg, other)
+    assert 'a' in result
+    assert sc.identical(result['a'], op(x, other))
+
+
+@pytest.mark.parametrize('op',
+                         BINARY_NUMBER_OPERATIONS,
+                         ids=BINARY_NUMBER_OPERATION_NAMES)
+@pytest.mark.parametrize('reverse', (False, True))
+def test_arithmetic_data_group_with_variable(op, reverse):
+    op = reverse_op(op, reverse)
+    x = sc.arange('x', 1, 5, unit='m')
+    dg = sc.DataGroup({'a': x})
+    other = 2 * x
+    result = op(dg, other)
+    assert 'a' in result
+    assert sc.identical(result['a'], op(x, other))
+
+
+@pytest.mark.parametrize('op',
+                         BINARY_NUMBER_OPERATIONS,
+                         ids=BINARY_NUMBER_OPERATION_NAMES)
+@pytest.mark.parametrize('reverse', (False, True))
+def test_arithmetic_data_group_with_data_array(op, reverse):
+    op = reverse_op(op, reverse)
+    x = sc.DataArray(sc.arange('x', 1, 5, unit='m'), coords={'x': sc.arange('x', 5)})
+    dg = sc.DataGroup({'a': x})
+    other = 2 * x
+    result = op(dg, other)
+    assert 'a' in result
+    assert sc.identical(result['a'], op(x, other))
+
+
+@pytest.mark.parametrize('op',
+                         BINARY_NUMBER_OPERATIONS,
+                         ids=BINARY_NUMBER_OPERATION_NAMES)
+def test_arithmetic_data_group_with_data_array_coord_mismatch(op):
+    x = sc.DataArray(sc.arange('x', 1, 5, unit='m'), coords={'x': sc.arange('x', 5)})
+    dg = sc.DataGroup({'a': x.copy()})
+    other = 2 * x
+    other.coords['x'][0] = -1
+    with pytest.raises(sc.DatasetError):
+        op(dg, other)
+
+
+def test_pow_data_group_with_data_group():
+    x = sc.arange('x', 1, 5, dtype='int64')
+    dg1 = sc.DataGroup({'a': x})
+    dg2 = sc.DataGroup({'a': 2 * x, 'b': x})
+    result = dg1**dg2
+    assert 'a' in result
+    assert 'b' not in result
+    assert sc.identical(result['a'], x**(2 * x))
+
+
+@pytest.mark.parametrize('other',
+                         (3, sc.arange('x', 0, 4, dtype='int64'),
+                          sc.DataArray(sc.arange('x', 0, 4, dtype='int64'),
+                                       coords={'x': sc.arange('x', 5, dtype='int64')})),
+                         ids=('int', 'Variable', 'DataArray'))
+@pytest.mark.parametrize('reverse', (False, True))
+def test_pow_data_group_with_other(other, reverse):
+    op = reverse_op(lambda a, b: a**b, reverse)
+    x = sc.arange('x', 1, 5, dtype='int64')
+    dg = sc.DataGroup({'a': x})
+    result = op(dg, other)
+    assert 'a' in result
+    assert sc.identical(result['a'], op(x, other))
+
+
+BINARY_LOGIC_OPERATIONS = (
+    lambda a, b: a & b,
+    lambda a, b: a | b,
+    lambda a, b: a ^ b,
+)
+BINARY_LOGIC_OPERATION_NAMES = ('&', '|', '^')
+
+
+@pytest.mark.parametrize('op',
+                         BINARY_LOGIC_OPERATIONS,
+                         ids=BINARY_LOGIC_OPERATION_NAMES)
+def test_logical_data_group_with_data_group(op):
+    x = sc.array(dims=['l'], values=[True, False, False, True])
+    y = sc.array(dims=['l'], values=[True, False, True, False])
+    dg1 = sc.DataGroup({'a': x})
+    dg2 = sc.DataGroup({'a': y})
+    result = op(dg1, dg2)
+    assert sc.identical(result['a'], op(x, y))
+
+
+def test_logical_not():
+    x = sc.array(dims=['l'], values=[True, False, False])
+    dg = sc.DataGroup({'a': x})
+    result = ~dg
+    assert sc.identical(result['a'], ~x)
+
+
+@pytest.mark.parametrize('op',
+                         (operator.iadd, operator.isub, operator.imul, operator.imod,
+                          operator.itruediv, operator.ifloordiv, operator.ipow))
+def test_inplace_is_disabled(op):
+    x = sc.arange('x', 1, 5, dtype='int64')
+    dg1 = sc.DataGroup({'a': x.copy()})
+    dg2 = sc.DataGroup({'a': x.copy()})
+    with pytest.raises(TypeError):
+        op(dg1, dg2)
 
 
 def test_hist():
