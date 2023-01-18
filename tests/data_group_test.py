@@ -606,3 +606,11 @@ def test_methods_work_with_any_value_type_that_supports_it():
     result = dg.max()
     assert sc.identical(result['a'], sc.arange('x', 4).max())
     assert np.array_equal(result['b'], np.arange(5).max())
+
+
+def test_bins_property_indexing():
+    table = sc.data.table_xyz(10)
+    dg = sc.DataGroup(a=table)
+    dg = dg.bin(x=10)
+    result = dg.bins['x', sc.scalar(0.5, unit='m'):]
+    assert sc.identical(result['a'], dg['a'].bins['x', sc.scalar(0.5, unit='m'):])
