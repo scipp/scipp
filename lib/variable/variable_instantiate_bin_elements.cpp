@@ -11,23 +11,9 @@ namespace scipp::variable {
 
 template <>
 std::string Formatter<core::bin<Variable>>::format(const Variable &var) const {
-  const auto &sizes = bin_sizes(var);
-  const auto &lengths = sizes.values<scipp::index>();
-  const auto size = scipp::size(lengths);
-  std::stringstream s;
-  s << "[";
-  for (scipp::index i = 0; i < size; ++i) {
-    if (i > 0)
-      s << ", ";
-    constexpr scipp::index n = 2;
-    if (i == n && size > 2 * n) {
-      s << "..., ";
-      i = size - n;
-    }
-    s << "len=" << lengths[i];
-  }
-  s << "]";
-  return s.str();
+  const auto &buffer = var.bin_buffer<Variable>();
+  return "[binned data: " + labels_to_string(buffer.dims()) + " " +
+         format_variable_compact(buffer) + "]";
 }
 
 INSTANTIATE_BIN_ARRAY_VARIABLE(VariableView, Variable)

@@ -16,22 +16,17 @@ namespace scipp::variable {
 template <>
 std::string Formatter<core::bin<DataArray>>::format(const Variable &var) const {
   const auto &buffer = var.bin_buffer<DataArray>();
-  std::stringstream s;
-  const std::string shift("  ");
-  s << "\n" << shift << "Bins buffer:\n";
+  std::string s("dims=" + labels_to_string(buffer.data().dims()) +
+                ", data=" + format_variable_compact(buffer.data()));
   if (!buffer.coords().empty()) {
-    s << shift << shift << "Coordinates:\n";
+    s += ", coords={";
     for (const auto &[key, coord] : buffer.coords()) {
-      s << shift << shift << shift << std::left << std::setw(15) << key;
-      s << shift << format_variable_header(coord) << shift
-        << labels_to_string(coord.dims()) << "\n";
+      s += "'" + to_string(key) + "':" + format_variable_compact(coord) + ", ";
     }
+    s.resize(s.size() - 2);
+    s += "}";
   }
-  s << shift << shift << "Data:\n";
-  s << shift << shift << shift << std::setw(15) << "";
-  s << shift << format_variable_header(buffer.data()) << shift
-    << labels_to_string(buffer.data().dims());
-  return s.str();
+  return s;
 }
 
 INSTANTIATE_BIN_ARRAY_VARIABLE(DatasetView, Dataset)

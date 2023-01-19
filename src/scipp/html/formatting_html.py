@@ -125,10 +125,24 @@ def _short_data_repr_html_non_events(var, variances=False):
     return repr(retrieve(var, variances))
 
 
+def _compact_var_repr(var):
+    return f'{var.dtype}[{var.unit}]'
+
+
 def _short_data_repr_html_events(var):
-    if isinstance(var, sc.DataArray):
-        return str(var.data)
-    return str(var)
+    underlying = var.values[0]
+    if isinstance(var, sc.Variable):
+        return f'{underlying.dims} {_compact_var_repr(underlying)}'
+    elif isinstance(var, sc.DataArray):
+        out = f'dims={underlying.dims}, data={_compact_var_repr(underlying.data)}'
+        if underlying.coords:
+            out += ', coords={'
+            for key, coord in underlying.coords.items():
+                out += f'\'{key}\':{_compact_var_repr(coord)}, '
+            out = out[:-2] + '}'
+        return out
+    else:
+        return str(var)
 
 
 def short_data_repr_html(var, variances=False):

@@ -72,15 +72,12 @@ auto apply(const DType dtype, Args &&...args) {
 
 } // namespace
 
-std::string format_variable_header(const Variable &variable) {
-  std::stringstream s;
-  const std::string colSep("  ");
-  s << std::setw(9) << to_string(variable.dtype());
+std::string format_variable_compact(const Variable &variable) {
+  const auto s = to_string(variable.dtype());
   if (variable.unit() == units::none)
-    s << colSep << std::setw(15) << "<no unit>";
+    return s + "[]";
   else
-    s << colSep << std::setw(15) << '[' + variable.unit().name() + ']';
-  return s.str();
+    return s + '[' + variable.unit().name() + ']';
 }
 
 std::string format_variable(const Variable &variable,
@@ -91,7 +88,11 @@ std::string format_variable(const Variable &variable,
   const std::string colSep("  ");
   if (!datasetSizes)
     s << to_string(variable.dims()) << colSep;
-  s << format_variable_header(variable);
+  s << std::setw(9) << to_string(variable.dtype());
+  if (variable.unit() == units::none)
+    s << colSep << std::setw(15) << "<no unit>";
+  else
+    s << colSep << std::setw(15) << '[' + variable.unit().name() + ']';
   if (datasetSizes)
     s << colSep << make_dims_labels(variable, datasetSizes);
   s << colSep;

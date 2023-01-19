@@ -25,9 +25,8 @@ to_string(const std::pair<std::string, Variable> &attr);
 SCIPP_VARIABLE_EXPORT std::string
 format_variable(const Variable &variable,
                 std::optional<Sizes> datasetSizes = std::nullopt);
-
 SCIPP_VARIABLE_EXPORT std::string
-format_variable_header(const Variable &variable);
+format_variable_compact(const Variable &variable);
 
 /// Abstract base class for formatters for variables with element types not in
 /// scipp-variable module.

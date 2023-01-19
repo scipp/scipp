@@ -38,9 +38,12 @@ std::string to_string(const Dimensions &dims) {
 }
 
 std::string labels_to_string(const Dimensions &dims) {
+  if (dims.empty())
+    return "()";
   std::string s = "(";
   for (const auto &dim : dims.labels())
     s += to_string(dim) + ", ";
+  s.resize(s.size() - 2);
   s += ")";
   return s;
 }
