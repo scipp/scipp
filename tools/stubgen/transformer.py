@@ -3,7 +3,7 @@
 import ast
 from typing import Optional, Union
 
-from .config import CORE_MODULE_NAME
+from .config import CPP_CORE_MODULE_NAME, PY_CORE_MODULE_NAME
 
 
 def unqualified_cpp_class(node: Union[ast.Attribute, ast.Name]) -> Optional[str]:
@@ -16,40 +16,43 @@ def unqualified_cpp_class(node: Union[ast.Attribute, ast.Name]) -> Optional[str]
         pieces.append(node.attr)
         node = node.value
     pieces.append(node.id)
-    if pieces[1:] != CORE_MODULE_NAME.split('.')[::-1]:
+    if pieces[1:] != CPP_CORE_MODULE_NAME.split('.')[::-1]:
         return None
     return pieces[0]
 
 
-def replace_returns(base: ast.FunctionDef,
-                    returns: Union[ast.Name, ast.Attribute]) -> ast.FunctionDef:
-    return ast.FunctionDef(name=base.name,
-                           args=base.args,
-                           body=base.body,
-                           decorator_list=base.decorator_list,
-                           returns=returns,
-                           type_comment=base.type_comment)
+def unqualified_core_name(node: Union[ast.Attribute, ast.Name]) -> Optional[str]:
+    """Return the unqualified name of a symbol in scipp.core."""
+    pieces = []
+    while isinstance(node, ast.Attribute):
+        pieces.append(node.attr)
+        node = node.value
+    pieces.append(node.id)
+    if pieces[1:] != PY_CORE_MODULE_NAME.split('.')[::-1]:
+        return None
+    return pieces[0]
+
+
+def replace_function(base: ast.FunctionDef, **kwargs) -> ast.FunctionDef:
+    args = dict(name=base.name,
+                args=base.args,
+                body=base.body,
+                decorator_list=base.decorator_list,
+                returns=base.returns,
+                type_comment=base.type_comment)
+    return ast.FunctionDef(**{**args, **kwargs})
 
 
 def add_decorator(base: ast.FunctionDef,
                   decorator: Union[ast.Name, ast.Attribute]) -> ast.FunctionDef:
-    return ast.FunctionDef(name=base.name,
-                           args=base.args,
-                           body=base.body,
-                           decorator_list=[decorator, *base.decorator_list],
-                           returns=base.returns,
-                           type_comment=base.type_comment)
+    return replace_function(base, decorator_list=[decorator, *base.decorator_list])
 
 
 class AddOverloadedDecorator(ast.NodeTransformer):
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
         self.generic_visit(node)
-        return add_decorator(node,
-                             decorator=ast.Attribute(value=ast.Name(id='typing',
-                                                                    ctx=ast.Load()),
-                                                     attr='overloaded',
-                                                     ctx=ast.Load()))
+        return add_decorator(node, decorator=ast.Name(id='overload', ctx=ast.Load()))
 
 
 class FixSelfArgName(ast.NodeTransformer):
@@ -60,6 +63,7 @@ class FixSelfArgName(ast.NodeTransformer):
         keep = dict(kwonlyargs=node.kwonlyargs,
                     vararg=node.vararg,
                     kwarg=node.kwarg,
+                    kw_defaults=node.kw_defaults,
                     defaults=node.defaults)
         if node.posonlyargs and node.posonlyargs[0].arg != 'self':
             return ast.arguments(posonlyargs=[
@@ -68,7 +72,7 @@ class FixSelfArgName(ast.NodeTransformer):
             ],
                                  args=node.args,
                                  **keep)
-        if not node.posonlyargs and node.args[0].arg != 'self':
+        if not node.posonlyargs and node.args and node.args[0].arg != 'self':
             return ast.arguments(args=[
                 ast.arg('self', annotation=None, type_comment=None), *node.args[1:]
             ],
@@ -94,7 +98,42 @@ class ShortenCppClassAnnotation(ast.NodeTransformer):
         self.generic_visit(node)
         if (cls := unqualified_cpp_class(node)) is not None:
             return ast.Name(cls)
+        if (cls := unqualified_core_name(node)) is not None:
+            return ast.Attribute(value=ast.Name(id='core'), attr=cls, ctx=ast.Load())
+        if isinstance(node.value, ast.Name) and node.value.id == '_cpp':
+            return ast.Name(id=node.attr, ctx=ast.Load())
         return node
+
+
+class DropTypingModule(ast.NodeTransformer):
+
+    def visit_Attribute(self, node: ast.Attribute) -> Union[ast.Attribute, ast.Name]:
+        self.generic_visit(node)
+        if isinstance(node.value, ast.Name) and node.value.id == 'typing':
+            return ast.Name(id=node.attr, ctx=ast.Load())
+        return node
+
+
+class DropFunctionBody(ast.NodeTransformer):
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
+        self.generic_visit(node)
+        if node.body and isinstance(node.body[0], ast.Expr) and isinstance(
+                node.body[0].value, ast.Constant):
+            new_body = [ast.Expr(value=ast.Constant(value=node.body[0].value.value))]
+        else:
+            new_body = [ast.Expr(value=ast.Constant(value=Ellipsis))]
+        return replace_function(node, body=new_body)
+
+
+class SetFunctionName(ast.NodeTransformer):
+
+    def __init__(self, name: str) -> None:
+        self.target_name = name
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
+        self.generic_visit(node)
+        return replace_function(node, name=self.target_name)
 
 
 class FixObjectReturnType(ast.NodeTransformer):
@@ -122,34 +161,44 @@ class FixObjectReturnType(ast.NodeTransformer):
         self.generic_visit(node)
         if node.name in self.METHODS and isinstance(
                 node.returns, ast.Name) and node.returns.id == "object":
-            return replace_returns(node, returns=ast.Name(self.cls))
+            return replace_function(node, returns=ast.Name(self.cls))
         return node
 
 
 class ObjectToAny(ast.NodeTransformer):
 
-    def visit_Name(self, node: ast.Name) -> Union[ast.Name, ast.Attribute]:
+    def visit_Name(self, node: ast.Name) -> ast.Name:
         if node.id == 'object':
-            return ast.Attribute(value=ast.Name(id='typing', ctx=ast.Load()),
-                                 attr='Any',
-                                 ctx=ast.Load())
+            return ast.Name(id='Any', ctx=ast.Load())
         return node
 
 
-def fix_method(node: ast.AST, cls_name: str) -> ast.AST:
+class ReplaceNoneType(ast.NodeTransformer):
+
+    def visit_Name(self, node: ast) -> ast.Name:
+        if node.id == 'NoneType':
+            return ast.Name(id='None', ctx=ast.Load())
+        return node
+
+
+def _fix_common(node: ast.AST) -> ast.AST:
     node = FixSelfArgName().visit(node)
     node = DropSelfAnnotation().visit(node)
     node = ShortenCppClassAnnotation().visit(node)
-    node = FixObjectReturnType(cls_name).visit(node)
     node = ObjectToAny().visit(node)
+    node = ReplaceNoneType().visit(node)
+    node = DropTypingModule().visit(node)
+    return node
+
+
+def fix_method(node: ast.AST, cls_name: str) -> ast.AST:
+    node = _fix_common(node)
+    node = FixObjectReturnType(cls_name).visit(node)
     node = ast.fix_missing_locations(node)
     return node
 
 
 def fix_property(node: ast.AST) -> ast.AST:
-    node = FixSelfArgName().visit(node)
-    node = DropSelfAnnotation().visit(node)
-    node = ShortenCppClassAnnotation().visit(node)
-    node = ObjectToAny().visit(node)
+    node = _fix_common(node)
     node = ast.fix_missing_locations(node)
     return node
