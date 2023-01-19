@@ -165,9 +165,10 @@ class DataGroup(MutableMapping):
     @property
     def shape(self):
         """Union of shape of all items. Non-Scipp items are handled as shape=()."""
+        itemsizes = [getattr(x, 'sizes', {}) for x in self.values()]
 
         def dim_size(dim):
-            sizes = {var.sizes[dim] for var in self.values() if dim in _item_dims(var)}
+            sizes = {sizes[dim] for sizes in itemsizes if dim in sizes}
             if len(sizes) == 1:
                 return next(iter(sizes))
             return None
