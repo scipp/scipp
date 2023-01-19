@@ -126,7 +126,9 @@ def _short_data_repr_html_non_events(var, variances=False):
 
 
 def _short_data_repr_html_events(var):
-    return str(var.data)
+    if isinstance(var, sc.DataArray):
+        return str(var.data)
+    return str(var)
 
 
 def short_data_repr_html(var, variances=False):
