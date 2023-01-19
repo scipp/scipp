@@ -9,7 +9,8 @@ import itertools
 import numbers
 import operator
 from collections.abc import MutableMapping
-from typing import Any, Callable, Iterable, NoReturn, Union, overload
+from typing import Any, Callable, Dict, Iterable, NoReturn, Optional, Tuple, Union, \
+    overload
 
 import numpy as np
 
@@ -147,15 +148,9 @@ class DataGroup(MutableMapping):
         del self._items[name]
 
     @property
-    def dims(self):
+    def dims(self) -> Tuple[Optional[str], ...]:
         """Union of dims of all items. Non-Scipp items are handled as dims=()."""
-        dims = ()
-        for var in self.values():
-            # Preserve insertion order
-            for dim in _item_dims(var):
-                if dim not in dims:
-                    dims = dims + (dim, )
-        return dims
+        return tuple(self.sizes)
 
     @property
     def ndim(self):
@@ -163,21 +158,18 @@ class DataGroup(MutableMapping):
         return len(self.dims)
 
     @property
-    def shape(self):
+    def shape(self) -> Tuple[Optional[int], ...]:
         """Union of shape of all items. Non-Scipp items are handled as shape=()."""
-
-        def dim_size(dim):
-            sizes = {var.sizes[dim] for var in self.values() if dim in _item_dims(var)}
-            if len(sizes) == 1:
-                return next(iter(sizes))
-            return None
-
-        return tuple(dim_size(dim) for dim in self.dims)
+        return tuple(self.sizes.values())
 
     @property
-    def sizes(self):
+    def sizes(self) -> Dict[str, Optional[int]]:
         """Dict combining dims and shape, i.e., mapping dim labels to their size."""
-        return dict(zip(self.dims, self.shape))
+        all_sizes = {}
+        for x in self.values():
+            for dim, size in getattr(x, 'sizes', {}).items():
+                all_sizes.setdefault(dim, set()).add(size)
+        return {d: next(iter(s)) if len(s) == 1 else None for d, s in all_sizes.items()}
 
     def _make_html(self):
         out = ''
