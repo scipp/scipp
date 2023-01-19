@@ -69,7 +69,6 @@ auto apply(const DType dtype, Args &&...args) {
                  scipp::core::Quaternion, scipp::core::Translation>{},
       dtype, std::forward<Args>(args)...);
 }
-
 } // namespace
 
 std::string format_variable_compact(const Variable &variable) {
