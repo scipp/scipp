@@ -15,7 +15,7 @@ cmake==3.25.0
     # via -r build.in
 colorama==0.4.6
     # via conan
-conan==1.55.0
+conan==1.57.0
     # via -r build.in
 distro==1.7.0
     # via conan

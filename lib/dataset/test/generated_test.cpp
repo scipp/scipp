@@ -113,3 +113,13 @@ TEST_F(GeneratedBinaryDataArrayTest, attr_intersection) {
   EXPECT_FALSE(out.attrs().contains(Dim("attr1")));
   EXPECT_FALSE(out.attrs().contains(Dim("attr2")));
 }
+
+TEST_F(GeneratedBinaryDataArrayTest, non_bool_masks_with_same_names) {
+  auto data = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0.1, 0.2});
+  auto coord =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1, 2});
+  auto mask = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0.1, 0.1});
+  a = DataArray(data, {{Dim::X, coord}}, {{"mask", mask}});
+  ASSERT_THROW(less(a, a), except::TypeError);
+  ASSERT_THROW(a += a, except::TypeError);
+}

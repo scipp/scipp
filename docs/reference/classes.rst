@@ -12,6 +12,7 @@ Data Structures
    :recursive:
 
    DataArray
+   DataGroup
    Dataset
    DType
    Unit

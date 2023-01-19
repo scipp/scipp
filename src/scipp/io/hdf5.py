@@ -263,8 +263,8 @@ def _write_mapping(parent, mapping, override=None):
         if (g := override.get(name)) is not None:
             parent[var_group_name] = g
         else:
-            g = VariableIO.write(group=parent.create_group(var_group_name),
-                                 var=mapping[name])
+            g = HDF5IO.write(group=parent.create_group(var_group_name),
+                             data=mapping[name])
             if g is None:
                 del parent[var_group_name]
             else:
@@ -289,7 +289,8 @@ class DataArrayIO:
             override = {}
         _write_scipp_header(group, 'DataArray')
         group.attrs['name'] = data.name
-        VariableIO.write(group.create_group('data'), var=data.data)
+        if VariableIO.write(group.create_group('data'), var=data.data) is None:
+            return None
         views = [data.coords, data.masks, data.attrs]
         # Note that we write aligned and unaligned coords into the same group.
         # Distinction is via an attribute, which is more natural than having
@@ -297,6 +298,7 @@ class DataArrayIO:
         for view_name, view in zip(['coords', 'masks', 'attrs'], views):
             subgroup = group.create_group(view_name)
             _write_mapping(subgroup, view, override.get(view_name))
+        return group
 
     @staticmethod
     def read(group, override=None):
@@ -328,6 +330,7 @@ class DatasetIO:
             HDF5IO.write(entries.create_group(collection_element_name(name, i)),
                          da,
                          override={'coords': coords})
+        return group
 
     @staticmethod
     def read(group):
@@ -339,14 +342,37 @@ class DatasetIO:
                                                                       coords}))
 
 
+class DataGroupIO:
+
+    @staticmethod
+    def write(group, data):
+        _write_scipp_header(group, 'DataGroup')
+        entries = group.create_group('entries')
+        _write_mapping(entries, data)
+        return group
+
+    @staticmethod
+    def read(group):
+        _check_scipp_header(group, 'DataGroup')
+        from ..core import DataGroup
+        return DataGroup(_read_mapping(group['entries']))
+
+
 class HDF5IO:
     _handlers = dict(
-        zip(['Variable', 'DataArray', 'Dataset'], [VariableIO, DataArrayIO, DatasetIO]))
+        zip(['Variable', 'DataArray', 'Dataset', 'DataGroup'],
+            [VariableIO, DataArrayIO, DatasetIO, DataGroupIO]))
 
     @classmethod
     def write(cls, group, data, **kwargs):
         name = data.__class__.__name__.replace('View', '')
-        return cls._handlers[name].write(group, data, **kwargs)
+        try:
+            handler = cls._handlers[name]
+        except KeyError:
+            get_logger().warning("Writing type '%s' to HDF5 not implemented, skipping.",
+                                 type(data))
+            return None
+        return handler.write(group, data, **kwargs)
 
     @classmethod
     def read(cls, group, **kwargs):

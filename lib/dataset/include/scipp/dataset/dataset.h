@@ -82,6 +82,12 @@ public:
   const Coords &coords() const noexcept;
   Coords &coords() noexcept;
 
+  Dataset drop_coords(const scipp::span<const Dim> coord_names) const;
+
+  Dataset drop_masks(const scipp::span<const std::string> mask_names) const;
+
+  Dataset drop_attrs(const scipp::span<const Dim> attr_names) const;
+
   const Coords &meta() const noexcept;
   Coords &meta() noexcept;
 

@@ -6,8 +6,8 @@ Release Notes
 
 .. Template, copy this to create a new section after a release:
 
-   v0.xy.0 (Unreleased)
-   --------------------
+   v23.01.0
+   --------
 
    Features
    ~~~~~~~~
@@ -36,13 +36,16 @@ Release Notes
    and Sunyoung Yoo :sup:`a`
 
 
-v23.xy.0 (January 2023)
------------------------
+v23.01.0
+--------
 
 Features
 ~~~~~~~~
 
+* Added new data structure :class:`scipp.DataGroup`, a more flexible version of ``Dataset`` that does not enforce alignment and supports nesting.
 * Added support for arbitrary unit, degrees Celsius and other special units `#2931 <https://github.com/scipp/scipp/pull/2931>`_.
+* :class:`scipp.Dataset` now supports ``drop_coords``, which returns :class:`scipp.Dataset` without the given coordinate by names  `#2940 <https://github.com/scipp/scipp/pull/2940>`_.
+* :class:`scipp.DataArray` now supports ``drop_coords``/ ``drop_masks``/ ``drop_attrs``, which returns :class:`scipp.DataArray` without the given coordinates/masks/attributes names by names `#2940 <https://github.com/scipp/scipp/pull/2940>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
@@ -50,6 +53,9 @@ Breaking changes
 * Implicit and explicit broadcasting of operands with variances in operations was disabled.
   This introduces correlations that Scipp cannot handle and would therefore silently underestimate uncertainties.
   Instead a :py:class:`scipp.VariancesError` is raised now `#2895 <https://github.com/scipp/scipp/pull/2895>`_.
+* The ``.value`` and ``.variance`` properties now return `numpy scalars <https://numpy.org/doc/stable/reference/arrays.scalars.html>`_ for numeric types.
+  This will not affect the majority of use cases but may break some edge cases, in particular ``isinstance`` checks.
+  `#2962 <https://github.com/scipp/scipp/pull/2962>`_
 
 Bugfixes
 ~~~~~~~~
@@ -58,6 +64,8 @@ Bugfixes
 * Fix a bug in open end slicing of bins, in case the given right/left end is smaller/bigger than the min/max value of the slicing target, it uses the given end instead of min/max for the open end `#2933 <https://github.com/scipp/scipp/pull/2933>`_.
 * Fix issue with events close to upper or lower bin bounds getting dropped by :func:`scipp.lookup` with edges that form a "linspace" `#2942 <https://github.com/scipp/scipp/pull/2942>`_.
 * Fix minor issue with events close to bin bounds getting assigned to the wrong bin by :func:`scipp.lookup` with edges that form a "linspace" `#2942 <https://github.com/scipp/scipp/pull/2942>`_.
+* Fix two memory usage and performance issue that affected certain cases of :py:func:`scipp.hist` `#2977 <https://github.com/scipp/scipp/pull/2977>`_.
+* Fix bounds check in integer-array indexing, which previously silently skipped out-of-range indices `#2986 <https://github.com/scipp/scipp/pull/2986>`_.
 
 Documentation
 ~~~~~~~~~~~~~
@@ -67,6 +75,8 @@ Deprecations
 
 Stability, Maintainability, and Testing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Added type check of masks during binary operations of :py:class:`scipp.DataArray` to provide easier error messages.
 
 Contributors
 ~~~~~~~~~~~~

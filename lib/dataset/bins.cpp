@@ -29,6 +29,7 @@
 
 #include "../variable/operations_common.h"
 #include "bin_common.h"
+#include "bin_detail.h"
 #include "dataset_operations_common.h"
 
 namespace scipp::dataset {
@@ -211,6 +212,18 @@ Variable lookup_previous(const DataArray &function, const Variable &x, Dim dim,
                              "lookup_previous");
 }
 
+Variable pretend_bins_for_threading(const DataArray &da, Dim bin_dim) {
+  const auto dim = da.dims().inner();
+  const auto size = std::max(scipp::index(1), da.dims()[dim]);
+  // TODO automatic setup with reasonable bin count
+  const auto stride = std::max(scipp::index(1), size / 24);
+  auto begin = bin_detail::make_range(0, size, stride, bin_dim);
+  auto end = begin + stride * units::none;
+  end.values<scipp::index>().as_span().back() = da.dims()[dim];
+  const auto indices = zip(begin, end);
+  return make_bins_no_validate(indices, dim, da);
+}
+
 } // namespace scipp::dataset
 
 namespace scipp::dataset::buckets {
@@ -309,11 +322,25 @@ Variable histogram(const Variable &data, const Variable &binEdges) {
   // 1-D histogramming provided that the input has multiple bins along
   // `hist_dim`.
   const Dim dummy = Dim::InternalHistogram;
-  if (indices.dims().contains(hist_dim))
+  const auto nbin = binEdges.dims()[hist_dim] - 1;
+  if (indices.dims().contains(hist_dim)) {
+    // With large existing dim matching the new dim, we would create a large
+    // intermediate histogrammed result, which leads to performance and memory
+    // issues. This is a suboptimal (since it concatenates first) but simple way
+    // to avoid the problem.
+    if (indices.dims().volume() * nbin > 100000000) { // about 1 GByte
+      const auto tmp = concatenate(data, hist_dim);
+      if (tmp.ndim() == 0) // Operate on buffer so we get multi-threading
+        return histogram(tmp.bin_buffer<DataArray>(), binEdges).data();
+      else
+        return histogram(tmp, binEdges);
+    }
     indices = indices.rename_dims({{hist_dim, dummy}});
+  }
+
   const auto masked = masked_data(buffer, dim);
   auto hist = variable::transform_subspan(
-      buffer.dtype(), hist_dim, binEdges.dims()[hist_dim] - 1,
+      buffer.dtype(), hist_dim, nbin,
       subspan_view(buffer.meta()[hist_dim], dim, indices),
       subspan_view(masked, dim, indices), binEdges, element::histogram,
       "histogram");

@@ -378,3 +378,54 @@ def test_zeros_like_deep_copy_masks():
     a.masks['m'][0] = False
     assert sc.identical(b.coords['x'][0], c)
     assert sc.identical(b.masks['m'][0], sc.scalar(True))
+
+
+def test_drop_coords():
+    data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
+    coord0 = sc.linspace('x', start=0.2, stop=1.61, num=4)
+    coord1 = sc.linspace('y', start=1, stop=4, num=3)
+    coord2 = sc.linspace('z', start=-0.1, stop=0.1, num=5)
+    da = sc.DataArray(data,
+                      coords={
+                          'coord0': coord0,
+                          'coord1': coord1,
+                          'coord2': coord2
+                      })
+
+    assert 'coord0' not in da.drop_coords(['coord0']).coords
+    assert 'coord0' not in da.drop_coords('coord0').coords
+    assert 'coord1' in da.drop_coords('coord0').coords
+    assert 'coord2' in da.drop_coords('coord0').coords
+    assert 'coord0' not in da.drop_coords(['coord0', 'coord1']).coords
+    assert 'coord1' not in da.drop_coords(['coord0', 'coord1']).coords
+    assert 'coord2' in da.drop_coords(['coord0', 'coord1']).coords
+
+
+def test_drop_masks():
+    data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
+    mask0 = sc.array(dims=['x'], values=[False, True, True, False])
+    mask1 = sc.array(dims=['y'], values=[1, 2, 4])
+    mask2 = sc.array(dims=['z'], values=[False, False, True, True, True])
+    da = sc.DataArray(data, masks={'mask0': mask0, 'mask1': mask1, 'mask2': mask2})
+
+    assert 'mask0' not in da.drop_masks('mask0').masks
+    assert 'mask1' in da.drop_masks('mask0').masks
+    assert 'mask2' in da.drop_masks(['mask0']).masks
+    assert 'mask0' not in da.drop_masks(['mask0', 'mask1']).masks
+    assert 'mask1' not in da.drop_masks(['mask0', 'mask1']).masks
+    assert 'mask2' in da.drop_masks(['mask0', 'mask1']).masks
+
+
+def test_drop_attrs():
+    data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
+    attr0 = sc.scalar('attribute_0')
+    attr1 = sc.linspace('y', start=0.2, stop=1.61, num=4)
+    attr2 = sc.linspace('z', start=-10, stop=10, num=5)
+    da = sc.DataArray(data, attrs={'attr0': attr0, 'attr1': attr1, 'attr2': attr2})
+
+    assert 'attr0' not in da.drop_attrs('attr0').attrs
+    assert 'attr1' in da.drop_attrs('attr0').attrs
+    assert 'attr2' in da.drop_attrs(['attr0']).attrs
+    assert 'attr0' not in da.drop_attrs(['attr0', 'attr1']).attrs
+    assert 'attr1' not in da.drop_attrs(['attr0', 'attr1']).attrs
+    assert 'attr2' in da.drop_attrs(['attr0', 'attr1']).attrs

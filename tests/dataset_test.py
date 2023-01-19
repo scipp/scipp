@@ -931,3 +931,36 @@ def test_is_edges():
     assert not da.attrs.is_edges('attr', 'a')
     assert da.attrs.is_edges('attr', 'b')
     assert not da.masks.is_edges('mask', 'b')
+
+
+def test_drop_coords():
+    coord0 = sc.linspace('x', start=0.2, stop=1.61, num=4)
+    coord1 = sc.linspace('y', start=1, stop=4, num=3)
+    coord2 = sc.linspace('z', start=-12, stop=0, num=5)
+    data0 = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
+    data1 = sc.array(dims=['x'], values=np.random.rand(4))
+    ds = sc.Dataset(data={
+        'data0': data0,
+        'data1': data1
+    },
+                    coords={
+                        'coord0': coord0,
+                        'coord1': coord1,
+                        'coord2': coord2
+                    })
+
+    assert 'coord0' not in ds.drop_coords('coord0').coords
+    assert 'coord1' in ds.drop_coords('coord0').coords
+    assert 'coord2' in ds.drop_coords('coord0').coords
+    assert 'coord0' in ds.drop_coords(['coord1', 'coord2']).coords
+    assert 'coord1' not in ds.drop_coords(['coord1', 'coord2']).coords
+    assert 'coord2' not in ds.drop_coords(['coord1', 'coord2']).coords
+    expected_ds = sc.Dataset(data={
+        'data0': data0,
+        'data1': data1
+    },
+                             coords={
+                                 'coord0': coord0,
+                                 'coord2': coord2
+                             })
+    assert sc.identical(ds.drop_coords('coord1'), expected_ds)

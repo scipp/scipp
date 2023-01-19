@@ -518,6 +518,14 @@ TEST(DatasetTest, self_nesting) {
                        std::invalid_argument);
 }
 
+TEST(DatasetTest, drop_coords) {
+  const auto array = make_data_array_1d();
+  Dataset dset({{"a", array}});
+  Dataset expected_dset({{"a", array.drop_coords(std::vector{Dim{"scalar"}})}});
+  auto new_dset = dset.drop_coords(std::vector{Dim{"scalar"}});
+  ASSERT_EQ(new_dset, expected_dset);
+}
+
 struct DatasetRenameTest : public ::testing::Test {
   DatasetRenameTest() {
     DatasetFactory3D factory(4, 5, 6, Dim::X);

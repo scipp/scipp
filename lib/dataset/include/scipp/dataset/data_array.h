@@ -44,11 +44,17 @@ public:
   // here
   Coords &coords() { return *m_coords; }
 
+  DataArray drop_coords(const scipp::span<const Dim> coord_names) const;
+
   const Masks &masks() const { return *m_masks; }
   Masks &masks() { return *m_masks; }
 
+  DataArray drop_masks(const scipp::span<const std::string> mask_names) const;
+
   const Attrs &attrs() const { return *m_attrs; }
   Attrs &attrs() { return *m_attrs; }
+
+  DataArray drop_attrs(const scipp::span<const Dim> attr_names) const;
 
   Coords meta() const;
 

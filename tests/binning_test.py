@@ -178,8 +178,8 @@ def test_bin_integer_coord_by_float_stepsize(dtype):
 def test_bin_integer_coord_by_fractional_stepsize_raises(dtype):
     table = sc.data.table_xyz(100)
     table.coords['label'] = (table.coords['x'] * 10).to(dtype=dtype)
-    with pytest.raises(ZeroDivisionError):
-        table.bin(label=sc.scalar(0.5, unit='m')).coords['label']
+    with pytest.raises(RuntimeWarning, match='divide by zero'):
+        table.bin(label=sc.scalar(0.5, unit='m'))
 
 
 def test_group_after_bin_considers_event_value():
@@ -825,3 +825,13 @@ def test_bin_with_explicit_lower_precision_drops_rows_outside_domain():
     reference = table[1:].bin(x=x)
     assert sc.identical(da, reference)
     assert da.bins.size().sum().value == size - 1
+
+
+def test_hist_large_input_sections():
+    table = sc.data.table_xyz(1_000_000)
+    table.data = (table.data * 1000).to(dtype='int64').to(dtype='float64')
+    hist1 = table.hist(x=127)
+    edges = hist1.coords['x']
+    for pivot in [0, 17, 3333, 50_000, 123_456, 654_321, 999_999]:
+        hist2 = table[:pivot].hist(x=edges) + table[pivot:].hist(x=edges)
+        assert sc.identical(hist1, hist2)

@@ -40,6 +40,9 @@ make_bins_no_validate(Variable indices, const Dim dim, Dataset buffer);
 lookup_previous(const DataArray &function, const Variable &x, Dim dim,
                 const std::optional<Variable> &fill_value = std::nullopt);
 
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable
+pretend_bins_for_threading(const DataArray &da, Dim bin_dim);
+
 } // namespace scipp::dataset
 
 namespace scipp::dataset::buckets {

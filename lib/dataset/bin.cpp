@@ -499,25 +499,17 @@ DataArray bin(const DataArray &array, const std::vector<Variable> &edges,
     return bin(data, coords, masks, attrs, edges, groups, erase);
   } else {
     // Pretend existing binning along outermost binning dim to enable threading
-    const auto dim = data.dims().inner();
-    const auto size = std::max(scipp::index(1), data.dims()[dim]);
-    // TODO automatic setup with reasonable bin count
-    const auto stride = std::max(scipp::index(1), size / 24);
-    auto begin = make_range(0, size, stride,
-                            groups.empty() ? edges.front().dims().inner()
-                                           : groups.front().dims().inner());
-    auto end = begin + stride * units::none;
-    end.values<scipp::index>().as_span().back() = data.dims()[dim];
-    const auto indices = zip(begin, end);
-    const auto tmp = make_bins_no_validate(indices, dim, array);
+    const auto tmp = pretend_bins_for_threading(
+        array, groups.empty() ? edges.front().dims().inner()
+                              : groups.front().dims().inner());
     auto target_bins_buffer =
         (data.dims().volume() > std::numeric_limits<int32_t>::max())
             ? makeVariable<int64_t>(data.dims(), units::none)
             : makeVariable<int32_t>(data.dims(), units::none);
     auto builder = axis_actions(data, meta, edges, groups, erase);
     builder.build(target_bins_buffer, meta);
-    const auto target_bins =
-        make_bins_no_validate(indices, dim, target_bins_buffer);
+    const auto target_bins = make_bins_no_validate(
+        tmp.bin_indices(), data.dims().inner(), target_bins_buffer);
     return add_metadata(
         setup_and_apply<DataArray>(drop_grouped_event_coords(tmp, groups),
                                    target_bins, builder),
