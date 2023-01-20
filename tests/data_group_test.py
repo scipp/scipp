@@ -614,3 +614,31 @@ def test_bins_property_indexing():
     dg = dg.bin(x=10)
     result = dg.bins['x', sc.scalar(0.5, unit='m'):]
     assert sc.identical(result['a'], dg['a'].bins['x', sc.scalar(0.5, unit='m'):])
+
+
+def test_merge():
+    dg1 = sc.DataGroup(a=sc.arange('x', 6), b='a string')
+    dg2 = sc.DataGroup(c=sc.DataArray(sc.arange('y', 3),
+                                      coords={'y': -sc.arange('y', 3)}),
+                       b='a string')
+    merged = sc.merge(dg1, dg2)
+    assert set(merged.keys()) == {'a', 'b', 'c'}
+    assert sc.identical(merged['a'], dg1['a'])
+    assert sc.identical(merged['c'], dg2['c'])
+    assert merged['b'] == dg1['b']
+
+
+def test_merge_conflict_scipp_object():
+    dg1 = sc.DataGroup(a=sc.arange('x', 6), b='a string')
+    dg2 = sc.DataGroup(a=-sc.arange('x', 6), b='a string')
+    with pytest.raises(sc.DatasetError):
+        sc.merge(dg1, dg2)
+
+
+def test_merge_conflict_python_object():
+    dg1 = sc.DataGroup(a=sc.arange('x', 6), b='a string')
+    dg2 = sc.DataGroup(c=sc.DataArray(sc.arange('y', 3),
+                                      coords={'y': -sc.arange('y', 3)}),
+                       b='another string')
+    with pytest.raises(sc.DatasetError):
+        sc.merge(dg1, dg2)
