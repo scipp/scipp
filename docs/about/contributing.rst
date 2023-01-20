@@ -21,14 +21,24 @@ We therefore restrict what can go into Scipp as follows:
   Neutron-scattering specific must not be added.
   A simple guiding principle is "if it is in NumPy it can go into Scipp".
 
-* *Scippneutron* shall contain only generic neutron-specific functionality.
+* *ScippNeutron* shall contain only generic neutron-specific functionality.
   Facility-specific or instrument-specific functionality must not be added.
   Examples of generic functionality that is permitted are
 
   * Unit conversions, which could be generic for all time-of-flight neutron sources.
   * Published research such as absorption corrections.
 
-  Examples of functionality that shall not be added to Scippneutron are handling of facility-specific file types or data layouts, or instrument-specific correction algorithms.
+  Examples of functionality that shall not be added to ScippNeutron are handling of facility-specific file types or data layouts, or instrument-specific correction algorithms.
+
+Contributing a pull request
+---------------------------
+
+- Before you begin working on an issue, make sure it is assigned to you, to avoid risking duplicate work in case someone else decides to pick up the task at the same time.
+- Make sure you have read the `Getting Started <../reference/developer/getting-started.rst`_ page.
+  In particular using the recommended ``pre-commit`` setup and running tests locally will ensure that the builds will pass for your pull request.
+- When opening a pull request, make sure to reference the issue.
+  If the issue would be resolved by merging the pull request then use one of GitHub's keywords to do so automatically, such as ``Fixes #12345``.
+- For most changes (in particular new features, breaking changes, or bugfixes) make sure to add an item in ``docs/about/release-notes.rst`` and link to the pull request.
 
 Security
 --------
