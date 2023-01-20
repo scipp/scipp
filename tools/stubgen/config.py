@@ -12,6 +12,9 @@ TEMPLATE_FILE = Path(__file__).resolve().parent / 'stub_template.py.template'
 DEFAULT_TARGET = Path(__file__).resolve(
 ).parent.parent.parent / 'src' / 'scipp' / 'core' / 'cpp_classes.pyi'
 
+# Select whether docstrings are included in the stub.
+INCLUDE_DOCS = False
+
 # Comment to place at the top of the generated stub file.
 HEADER = '''############################################
 #               ATTENTION                  #

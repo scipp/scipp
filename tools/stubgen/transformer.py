@@ -191,6 +191,14 @@ class ReplaceNoneType(ast.NodeTransformer):
         return node
 
 
+class RemoveDocstring(ast.NodeTransformer):
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
+        self.generic_visit(node)
+        return replace_function(node,
+                                body=[ast.Expr(value=ast.Constant(value=Ellipsis))])
+
+
 def _fix_common(node: ast.AST) -> ast.AST:
     node = FixSelfArgName().visit(node)
     node = DropSelfAnnotation().visit(node)

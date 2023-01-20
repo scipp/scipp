@@ -4,9 +4,9 @@ import inspect
 from string import Template
 from typing import Iterable, Optional, Type
 
-from .config import HEADER, TEMPLATE_FILE, class_is_excluded
+from .config import HEADER, INCLUDE_DOCS, TEMPLATE_FILE, class_is_excluded
 from .parse import parse_method, parse_property
-from .transformer import fix_method, fix_property
+from .transformer import RemoveDocstring, fix_method, fix_property
 
 
 def _build_method(cls: Type[type], method_name: str) -> [ast.FunctionDef]:
@@ -43,7 +43,7 @@ def _classify(obj: object) -> _Member:
 def _build_class(cls: Type[type]) -> Optional[ast.ClassDef]:
     print(f'Generating class {cls.__name__}')
     body = []
-    if cls.__doc__:
+    if cls.__doc__ and INCLUDE_DOCS:
         body.append(ast.Expr(value=ast.Constant(value=cls.__doc__)))
 
     for member_name, member in inspect.getmembers(cls):
@@ -82,6 +82,10 @@ def format_dunder_all(names):
 
 def generate_stub() -> str:
     classes = [cls for cls in map(_build_class, _cpp_classes()) if cls is not None]
+    if not INCLUDE_DOCS:
+        classes = [
+            ast.fix_missing_locations(RemoveDocstring().visit(cls)) for cls in classes
+        ]
     classes_code = '\n\n'.join(map(ast.unparse, classes))
 
     with TEMPLATE_FILE.open('r') as f:
