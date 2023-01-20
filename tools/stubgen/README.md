@@ -19,7 +19,7 @@ tox -e stubgen
 
 This will build a new stub file by importing and inspecting scipp.
 So you need to make sure that it has built and is importable.
-In tox, this can be achieved by calling `tox -e lib && tox -e editable`.
+In tox, this can be achieved by calling `tox -e lib && tox -e editable && mamba develop src`.
 
 The output is written to the correct place in the source tree by default.
 This can be changed with a command line argument.
