@@ -26,27 +26,3 @@ def irreducible_mask(masks: _cpp.Masks, dim: str) -> Optional[_cpp.Variable]:
         Union of irreducible masks or ``None`` if there is no irreducible mask.
     """
     return _call_cpp_func(_cpp.irreducible_mask, masks, dim)
-
-
-def merge(lhs: _cpp.Dataset, rhs: _cpp.Dataset) -> _cpp.Dataset:
-    """Merge two datasets into one.
-
-    Parameters
-    ----------
-    lhs:
-        First dataset.
-    rhs:
-        Second dataset.
-
-    Returns
-    -------
-    :
-        A new dataset that contains the union of all data items,
-        coords, masks and attributes.
-
-    Raises
-    ------
-    scipp.DatasetError
-        If there are conflicting items with different content.
-    """
-    return _call_cpp_func(_cpp.merge, lhs, rhs)

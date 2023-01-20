@@ -3,17 +3,20 @@
 # @author Matthew Andrew
 from __future__ import annotations
 
-from typing import Any, Literal, Optional, TypeVar, Union
+from typing import Any, Literal, Optional, TypeVar, Union, overload
 
 from .._scipp import core as _cpp
 from ..typing import VariableLikeType
 from ._cpp_wrapper_util import call_func as _call_cpp_func
+from .comparison import identical
+from .cpp_classes import Dataset, DatasetError, Variable
+from .data_group import DataGroup
 from .unary import to_unit
 
 _ContainerWithCoords = TypeVar('_ContainerWithCoords', _cpp.DataArray, _cpp.Dataset)
 
 
-def islinspace(x: _cpp.Variable, dim: str = None) -> _cpp.Variable:
+def islinspace(x: Variable, dim: str = None) -> Variable:
     """Check if the values of a variable are evenly spaced.
 
     Parameters
@@ -35,9 +38,9 @@ def islinspace(x: _cpp.Variable, dim: str = None) -> _cpp.Variable:
         return _call_cpp_func(_cpp.islinspace, x, dim)
 
 
-def issorted(x: _cpp.Variable,
+def issorted(x: Variable,
              dim: str,
-             order: Literal['ascending', 'descending'] = 'ascending') -> _cpp.Variable:
+             order: Literal['ascending', 'descending'] = 'ascending') -> Variable:
     """Check if the values of a variable are sorted.
 
     - If ``order`` is 'ascending',
@@ -68,7 +71,7 @@ def issorted(x: _cpp.Variable,
     return _call_cpp_func(_cpp.issorted, x, dim, order)
 
 
-def allsorted(x: _cpp.Variable,
+def allsorted(x: Variable,
               dim: str,
               order: Literal['ascending', 'descending'] = 'ascending') -> bool:
     """Check if all values of a variable are sorted.
@@ -101,7 +104,7 @@ def allsorted(x: _cpp.Variable,
 
 
 def sort(x: VariableLikeType,
-         key: Union[str, _cpp.Variable],
+         key: Union[str, Variable],
          order: Literal['ascending', 'descending'] = 'ascending') -> VariableLikeType:
     """Sort variable along a dimension by a sort key or dimension label.
 
@@ -194,8 +197,7 @@ def stddevs(x: VariableLikeType) -> VariableLikeType:
     return _call_cpp_func(_cpp.stddevs, x)
 
 
-def where(condition: _cpp.Variable, x: _cpp.Variable,
-          y: _cpp.Variable) -> _cpp.Variable:
+def where(condition: Variable, x: Variable, y: Variable) -> Variable:
     """Return elements chosen from x or y depending on condition.
 
     Parameters
@@ -292,3 +294,61 @@ def to(
         return to_unit(var.astype(dtype, copy=copy), unit=unit, copy=False)
     else:
         return to_unit(var, unit=unit, copy=copy).astype(dtype, copy=False)
+
+
+@overload
+def merge(lhs: Dataset, rhs: Dataset) -> Dataset:
+    ...
+
+
+@overload
+def merge(lhs: DataGroup, rhs: DataGroup) -> DataGroup:
+    ...
+
+
+def merge(lhs, rhs):
+    """Merge two datasets or data groups into one.
+
+    If an item appears in both inputs, it must have an identical value in both.
+
+    Parameters
+    ----------
+    lhs:
+        First dataset or data group.
+    rhs:
+        Second dataset or data group.
+
+    Returns
+    -------
+    :
+        A new object that contains the union of all data items,
+        coords, masks and attributes.
+
+    Raises
+    ------
+    scipp.DatasetError
+        If there are conflicting items with different content.
+    """
+    if isinstance(lhs, Dataset) or isinstance(rhs, Dataset):
+        return _call_cpp_func(_cpp.merge, lhs, rhs)
+    return _merge_data_group(lhs, rhs)
+
+
+def _generic_identical(a: Any, b: Any) -> bool:
+    try:
+        return identical(a, b)
+    except TypeError:
+        from numpy import array_equal
+        try:
+            return array_equal(a, b)
+        except TypeError:
+            return a == b
+
+
+def _merge_data_group(lhs: DataGroup, rhs: DataGroup) -> DataGroup:
+    res = DataGroup(dict(lhs))
+    for k, v in rhs.items():
+        if k in res and not _generic_identical(res[k], v):
+            raise DatasetError(f"Cannot merge data groups. Mismatch in item {k}")
+        res[k] = v
+    return res

@@ -144,10 +144,7 @@ def not_equal(x: VariableLike, y: VariableLike) -> VariableLike:
     return _call_cpp_func(_cpp.not_equal, x, y)
 
 
-def identical(x: VariableLike,
-              y: VariableLike,
-              *,
-              equal_nan: bool = False) -> VariableLike:
+def identical(x: VariableLike, y: VariableLike, *, equal_nan: bool = False) -> bool:
     """Full comparison of x and y.
 
     Parameters
