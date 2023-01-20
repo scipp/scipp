@@ -3,7 +3,7 @@
 import ast
 from typing import Optional, Union
 
-from .config import CPP_CORE_MODULE_NAME, PY_CORE_MODULE_NAME
+from .config import CPP_CORE_MODULE_NAME
 
 
 def unqualified_cpp_class(node: Union[ast.Attribute, ast.Name]) -> Optional[str]:
@@ -17,18 +17,6 @@ def unqualified_cpp_class(node: Union[ast.Attribute, ast.Name]) -> Optional[str]
         node = node.value
     pieces.append(node.id)
     if pieces[1:] != CPP_CORE_MODULE_NAME.split('.')[::-1]:
-        return None
-    return pieces[0]
-
-
-def unqualified_core_name(node: Union[ast.Attribute, ast.Name]) -> Optional[str]:
-    """Return the unqualified name of a symbol in scipp.core."""
-    pieces = []
-    while isinstance(node, ast.Attribute):
-        pieces.append(node.attr)
-        node = node.value
-    pieces.append(node.id)
-    if pieces[1:] != PY_CORE_MODULE_NAME.split('.')[::-1]:
         return None
     return pieces[0]
 
@@ -98,8 +86,6 @@ class ShortenCppClassAnnotation(ast.NodeTransformer):
         self.generic_visit(node)
         if (cls := unqualified_cpp_class(node)) is not None:
             return ast.Name(cls)
-        if (cls := unqualified_core_name(node)) is not None:
-            return ast.Attribute(value=ast.Name(id='core'), attr=cls, ctx=ast.Load())
         if isinstance(node.value, ast.Name) and node.value.id == '_cpp':
             return ast.Name(id=node.attr, ctx=ast.Load())
         return node
@@ -134,6 +120,30 @@ class SetFunctionName(ast.NodeTransformer):
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
         self.generic_visit(node)
         return replace_function(node, name=self.target_name)
+
+
+class FixArgumentFromSupertypes(ast.NodeTransformer):
+
+    def __init__(self) -> None:
+        self._do_replacement = False
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
+
+        if node.name in ('__eq__', '__ne__'):
+            self._do_replacement = True
+            # return replace_function(node, args)
+            # print(node.args.args)
+            # print(node.args.args[1].annotation.id)
+        self.generic_visit(node)
+        self._do_replacement = False
+        return node
+
+    def visit_arg(self, node: ast.arg) -> ast.arg:
+        if self._do_replacement and node.arg != 'self':
+            return ast.arg(arg=node.arg,
+                           annotation=ast.Name('object'),
+                           type_comment=None)
+        return node
 
 
 class FixObjectReturnType(ast.NodeTransformer):
@@ -194,6 +204,7 @@ def _fix_common(node: ast.AST) -> ast.AST:
 def fix_method(node: ast.AST, cls_name: str) -> ast.AST:
     node = _fix_common(node)
     node = FixObjectReturnType(cls_name).visit(node)
+    node = FixArgumentFromSupertypes().visit(node)
     node = ast.fix_missing_locations(node)
     return node
 

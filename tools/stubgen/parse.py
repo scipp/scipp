@@ -4,7 +4,7 @@ import inspect
 import re
 from typing import Any, List, Optional
 
-from .config import CPP_CORE_MODULE_NAME
+from .config import CPP_CORE_MODULE_NAME, squash_overloads
 from .transformer import AddOverloadedDecorator, DropFunctionBody, SetFunctionName, \
     add_decorator
 
@@ -25,9 +25,6 @@ def _fix_cpp_namespace_access(docstring: str) -> str:
                               f"{CPP_CORE_MODULE_NAME}.DataArray").replace(
                                   "scipp::dataset::Dataset",
                                   f"{CPP_CORE_MODULE_NAME}.Dataset"))
-
-
-# TODO scipp::dataset::SizedDict<scipp::units::Dim, scipp::variable::Variable>
 
 
 def _fix_default_arg_repr(docstring: str) -> str:
@@ -95,10 +92,12 @@ def _parse_instancemethod(func: object, name: Optional[str]) -> List[ast.Functio
     node = ast.parse(
         _make_instancemethod_code_for_parse(inspect.getdoc(func), name
                                             or func.__name__))
-    if len(node.body) > 1:
+    body = node.body
+    body = squash_overloads(body)  # type: ignore
+    if len(body) > 1:
         transformer = AddOverloadedDecorator()
-        return [transformer.visit(meth) for meth in node.body]
-    return node.body  # type: ignore
+        return [transformer.visit(meth) for meth in body]
+    return body  # type: ignore
 
 
 def _make_regular_method_code_for_parse(signature: inspect.Signature, name: str,
