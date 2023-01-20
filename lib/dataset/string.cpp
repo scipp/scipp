@@ -112,7 +112,7 @@ std::string dict_to_string(const SizedDict<Key, Value> &view) {
   std::stringstream ss;
   ss << "<scipp.Dict>\n";
   for (const auto &[key, item] : view)
-    ss << "  " << key << ": " << format_variable(item) << "\n";
+    ss << "  " << key << ": " << to_string(item) << "\n";
   return ss.str();
 }
 } // namespace
