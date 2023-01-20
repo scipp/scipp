@@ -16,6 +16,8 @@ dependencies:
   - hypothesis
   - ipympl
   - ipywidgets
+  - jupyterlab
+  - jupyterlab_code_formatter
   - matplotlib-base
   - ninja
   - numba
