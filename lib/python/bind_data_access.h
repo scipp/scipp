@@ -492,7 +492,8 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
   c.def_property(
       "unit",
       [](const T &self) {
-        return self.unit() == units::none ? py::none() : py::cast(self.unit());
+        return self.unit() == units::none ? std::optional<units::Unit>()
+                                          : self.unit();
       },
       [](T &self, const ProtoUnit &unit) {
         self.setUnit(unit_or_default(unit, self.dtype()));
