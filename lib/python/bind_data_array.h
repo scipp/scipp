@@ -26,7 +26,6 @@ void bind_helper_view(py::module &m, const std::string &name) {
       std::is_same_v<View<T>, str_keys_view<T>>)
     suffix = "_keys_view";
   py::class_<View<T>>(m, (name + suffix).c_str())
-      .def(py::init([](T &obj) { return View{obj}; }))
       .def("__len__", &View<T>::size)
       .def("__repr__", [](const View<T> &self) { return self.tostring(); })
       .def("__str__", [](const View<T> &self) { return self.tostring(); })
