@@ -31,8 +31,30 @@ def class_is_excluded(name: str) -> bool:
     return name.startswith('ElementArrayView') or name.startswith('_')
 
 
+def _squash_binary_more_narrow_type(
+        overloads: List[ast.FunctionDef]) -> List[ast.FunctionDef]:
+    # A lot of binary functions have overloads for int and float.
+    # But the former is superseded by the latter because int is more narrow than float.
+    # Drop all int overloads in this case.
+    rhs_types = []
+    for overload in overloads:
+        ann = overload.args.args[1].annotation
+        if isinstance(ann, ast.Name):
+            rhs_types.append(ann.id)
+        else:
+            rhs_types.append(ann)
+
+    if 'int' in rhs_types and 'float' in rhs_types:
+        squashed = list(overloads)
+        del squashed[rhs_types.index('int')]
+        return squashed
+    return overloads
+
+
 def squash_overloads(overloads: List[ast.FunctionDef]) -> List[ast.FunctionDef]:
     """Combine overloads if a stub for only one is required."""
     if overloads[0].name in ('__eq__', '__ne__'):
         return overloads[:1]
+    if len(overloads[0].args.args) == 2:
+        return _squash_binary_more_narrow_type(overloads)
     return overloads
