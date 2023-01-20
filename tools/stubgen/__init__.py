@@ -10,18 +10,6 @@ from .parse import parse_method, parse_property
 from .transformer import RemoveDocstring, fix_method, fix_property
 
 
-def _build_method(cls: Type[type], method_name: str) -> [ast.FunctionDef]:
-    meth = inspect.getattr_static(cls, method_name)
-    return [
-        fix_method(m, cls_name=cls.__name__) for m in parse_method(meth, method_name)
-    ]
-
-
-def _build_property(cls: Type[type], property_name: str) -> [ast.FunctionDef]:
-    prop = inspect.getattr_static(cls, property_name)
-    return [fix_property(p) for p in parse_property(prop, property_name)]
-
-
 def _format_dunder_all(names):
     return '__all__ = [\n    ' + ',\n    '.join('"' + name + '"'
                                                 for name in names) + '\n]'
@@ -38,14 +26,39 @@ def _add_suppression_comments(code: str) -> str:
     return '\n'.join(_add_override(line) for line in code.splitlines())
 
 
+def _build_method(cls: Type[type], method_name: str) -> [ast.FunctionDef]:
+    meth = inspect.getattr_static(cls, method_name)
+    return [
+        fix_method(m, cls_name=cls.__name__) for m in parse_method(meth, method_name)
+    ]
+
+
+def _build_property(cls: Type[type], property_name: str) -> [ast.FunctionDef]:
+    prop = inspect.getattr_static(cls, property_name)
+    return [fix_property(p) for p in parse_property(prop, property_name)]
+
+
+def _build_attr(cls: Type[type], attr_name: str) -> [ast.Expr]:
+    typ: str = ast.parse(type(getattr(cls, attr_name)).__name__).body[0].value.id
+    return [
+        ast.AnnAssign(target=ast.Name(id=attr_name, ctx=ast.Store()),
+                      annotation=ast.Name(id=typ, ctx=ast.Load()),
+                      value=ast.Constant(value=Ellipsis),
+                      simple=1)
+    ]
+
+
 class _Member(enum.Enum):
     function = enum.auto()
     instancemethod = enum.auto()
     prop = enum.auto()
+    attr = enum.auto()
     skip = enum.auto()
 
 
-def _classify(obj: object) -> _Member:
+def _classify(obj: object, member_name: str, cls: Type[type]) -> _Member:
+    if 'pybind11_static_property' in repr(inspect.getattr_static(cls, member_name)):
+        return _Member.attr
     if inspect.isbuiltin(obj):
         return _Member.skip
     if inspect.isdatadescriptor(obj):
@@ -69,11 +82,13 @@ def _build_class(cls: Type[type]) -> Optional[ast.ClassDef]:
         body.append(ast.Expr(value=ast.Constant(value=cls.__doc__)))
 
     for member_name, member in inspect.getmembers(cls):
-        member_class = _classify(member)
+        member_class = _classify(member, member_name, cls)
         if member_class == _Member.skip:
             continue
         if member_class == _Member.prop:
             code = _build_property(cls, member_name)
+        elif member_class == _Member.attr:
+            code = _build_attr(cls, member_name)
         else:
             code = _build_method(cls, member_name)
         body.extend(code)
