@@ -11,20 +11,64 @@
 
 namespace scipp::variable {
 
+namespace {
+
+template <class Key, class Value>
+std::string compact_dict_entry(const Key &key, const Value &var) {
+  std::stringstream s;
+  s << "'" << key << "':" << format_variable_compact(var);
+  return s.str();
+}
+
+template <class Key, class Value>
+std::string
+dict_to_compact_string(const scipp::dataset::SizedDict<Key, Value> &dict,
+                       const std::string description,
+                       const std::string margin) {
+  std::stringstream s;
+  const scipp::index max_length = 88;
+  const auto indent = margin.size() + description.size() + 2;
+  std::string append = "";
+  s << margin << description << "={";
+  bool first_iter = true;
+  auto current_line_length = indent;
+  scipp::index length = 0;
+  for (const auto &[key, var] : dict) {
+    if (current_line_length > max_length) {
+      s << ",\n" << std::string(indent, ' ');
+      current_line_length = indent;
+      first_iter = true;
+    }
+    append = compact_dict_entry(key, var);
+    length = append.size();
+    if (first_iter)
+      first_iter = false;
+    else {
+      s << ", ";
+      length += 2;
+    }
+    s << append;
+    current_line_length += length;
+  }
+  s << "}";
+  return s.str();
+}
+} // namespace
+
 template <>
 std::string Formatter<core::bin<DataArray>>::format(const Variable &var) const {
   const auto &buffer = var.bin_buffer<DataArray>();
-  std::string s("dims=" + labels_to_string(buffer.data().dims()) +
-                ", data=" + format_variable_compact(buffer.data()));
-  if (!buffer.coords().empty()) {
-    s += ", coords={";
-    for (const auto &[key, coord] : buffer.coords()) {
-      s += "'" + to_string(key) + "':" + format_variable_compact(coord) + ", ";
-    }
-    s.resize(s.size() - 2);
-    s += "}";
-  }
-  return s;
+  std::string margin(8, ' ');
+  std::stringstream s;
+  s << "\n" << margin << "dims=" << labels_to_string(buffer.data().dims());
+  s << "\n" << margin << "data=" << format_variable_compact(buffer.data());
+  if (!buffer.coords().empty())
+    s << "\n" << dict_to_compact_string(buffer.coords(), "coords", margin);
+  if (!buffer.masks().empty())
+    s << "\n" << dict_to_compact_string(buffer.masks(), "masks", margin);
+  if (!buffer.attrs().empty())
+    s << "\n" << dict_to_compact_string(buffer.attrs(), "attrs", margin);
+  return s.str();
 }
 
 INSTANTIATE_BIN_ARRAY_VARIABLE(DatasetView, Dataset)

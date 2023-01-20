@@ -9,6 +9,7 @@ import operator
 import uuid
 from functools import partial, reduce
 from html import escape
+import textwrap
 
 from .._scipp import core as sc
 from ..core import stddevs
@@ -129,17 +130,31 @@ def _compact_var_repr(var):
     return f'{var.dtype}[{var.unit}]'
 
 
+def _compact_dict_repr(mapping, initial_indent='', subsequent_indent=''):
+    text = ", ".join(
+        [f'\'{key}\':{_compact_var_repr(coord)}' for key, coord in mapping.items()])
+    return '{' + '\n'.join(
+        textwrap.wrap(text,
+                      width=88,
+                      initial_indent=initial_indent,
+                      subsequent_indent=subsequent_indent)) + '}'
+
+
 def _short_data_repr_html_events(var):
     underlying = var.values[0]
     if isinstance(var, sc.Variable):
-        return f'{underlying.dims} {_compact_var_repr(underlying)}'
+        return f'binned data: {underlying.dims} {_compact_var_repr(underlying)}'
     elif isinstance(var, sc.DataArray):
-        out = f'dims={underlying.dims}, data={_compact_var_repr(underlying.data)}'
+        out = f'dims={underlying.dims}\ndata={_compact_var_repr(underlying.data)}'
         if underlying.coords:
-            out += ', coords={'
-            for key, coord in underlying.coords.items():
-                out += f'\'{key}\':{_compact_var_repr(coord)}, '
-            out = out[:-2] + '}'
+            out += '\ncoords=' + _compact_dict_repr(underlying.coords,
+                                                    subsequent_indent=' ' * 8)
+        if underlying.masks:
+            out += '\nmasks=' + _compact_dict_repr(underlying.masks,
+                                                   subsequent_indent=' ' * 7)
+        if underlying.attrs:
+            out += '\nattrs=' + _compact_dict_repr(underlying.attrs,
+                                                   subsequent_indent=' ' * 7)
         return out
     else:
         return str(var)
