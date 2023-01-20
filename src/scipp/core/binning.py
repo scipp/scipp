@@ -192,6 +192,8 @@ def _parse_coords_arg(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset], nam
         return linspace(name, start, stop, num=arg + 1).to(dtype=start.dtype,
                                                            copy=False)
     step = arg.to(dtype=start.dtype, unit=start.unit)
+    if step.value == 0:
+        raise ValueError("Step size cannot be 0.")
     return arange(name, start, stop + step, step=step)
 
 
