@@ -15,6 +15,9 @@ DEFAULT_TARGET = Path(__file__).resolve(
 # Select whether docstrings are included in the stub.
 INCLUDE_DOCS = False
 
+# Add a comment to disable type checks for ``override`` for these functions.
+DISABLE_TYPE_CHECK_OVERRIDE = ('__eq__', '__ne__')
+
 # Comment to place at the top of the generated stub file.
 HEADER = '''############################################
 #               ATTENTION                  #

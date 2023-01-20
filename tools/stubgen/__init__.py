@@ -4,7 +4,8 @@ import inspect
 from string import Template
 from typing import Iterable, List, Optional, Type
 
-from .config import HEADER, INCLUDE_DOCS, TEMPLATE_FILE, class_is_excluded
+from .config import DISABLE_TYPE_CHECK_OVERRIDE, HEADER, INCLUDE_DOCS, TEMPLATE_FILE, \
+    class_is_excluded
 from .parse import parse_method, parse_property
 from .transformer import RemoveDocstring, fix_method, fix_property
 
@@ -19,6 +20,22 @@ def _build_method(cls: Type[type], method_name: str) -> [ast.FunctionDef]:
 def _build_property(cls: Type[type], property_name: str) -> [ast.FunctionDef]:
     prop = inspect.getattr_static(cls, property_name)
     return [fix_property(p) for p in parse_property(prop, property_name)]
+
+
+def _format_dunder_all(names):
+    return '__all__ = [\n    ' + ',\n    '.join('"' + name + '"'
+                                                for name in names) + '\n]'
+
+
+def _add_suppression_comments(code: str) -> str:
+
+    def _add_override(s: str) -> str:
+        for name in DISABLE_TYPE_CHECK_OVERRIDE:
+            if name in s:
+                return s + '  # type: ignore[override]'
+        return s
+
+    return '\n'.join(_add_override(line) for line in code.splitlines())
 
 
 class _Member(enum.Enum):
@@ -85,18 +102,14 @@ def _cpp_classes() -> Iterable[Type[type]]:
             yield cls
 
 
-def format_dunder_all(names):
-    return '__all__ = [\n    ' + ',\n    '.join('"' + name + '"'
-                                                for name in names) + '\n]'
-
-
 def generate_stub() -> str:
     classes = [cls for cls in map(_build_class, _cpp_classes()) if cls is not None]
     classes_code = '\n\n'.join(map(ast.unparse, classes))
+    classes_code = _add_suppression_comments(classes_code)
 
     with TEMPLATE_FILE.open('r') as f:
         templ = Template(f.read())
 
     return templ.substitute(header=HEADER,
                             classes=classes_code,
-                            dunder_all=format_dunder_all(cls.name for cls in classes))
+                            dunder_all=_format_dunder_all(cls.name for cls in classes))
