@@ -8,6 +8,7 @@ from .._scipp import core as _cpp
 from ..typing import Dims, MetaDataMap, VariableLike
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from .bin_remapping import concat_bins
+from .data_group import DataGroup
 from .domains import merge_equal_adjacent
 from .math import midpoints
 from .operations import islinspace
@@ -514,6 +515,8 @@ def bins(*,
         For creating DataArrays based on binning of coord value
         instead of explicitly given index ranges.
     """
+    if any([isinstance(x, DataGroup) for x in [begin, end, data]]):
+        raise ValueError("`scipp.bins` does not support DataGroup arguments.")
     return _call_cpp_func(_cpp.bins, begin, end, dim, data)
 
 
@@ -536,7 +539,8 @@ def bins_like(x: VariableLike, fill_value: _cpp.Variable) -> _cpp.Variable:
     :
         Variable containing fill value in bins.
     """
-
+    if isinstance(x, DataGroup) or isinstance(fill_value, DataGroup):
+        raise ValueError("`scipp.bins_like` does not support DataGroup arguments.")
     var = x
     if not isinstance(x, _cpp.Variable):
         var = var.data
