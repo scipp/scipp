@@ -74,7 +74,7 @@ auto apply(const DType dtype, Args &&...args) {
 std::string format_variable_compact(const Variable &variable) {
   const auto s = to_string(variable.dtype());
   if (variable.unit() == units::none)
-    return s + "[]";
+    return s;
   else
     return s + '[' + variable.unit().name() + ']';
 }

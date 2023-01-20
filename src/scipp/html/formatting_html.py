@@ -127,7 +127,10 @@ def _short_data_repr_html_non_events(var, variances=False):
 
 
 def _compact_var_repr(var):
-    return f'{var.dtype}[{var.unit}]'
+    repr = f'{var.dtype}'
+    if var.unit is not None:
+        repr += f'[{var.unit}]'
+    return repr
 
 
 def _compact_dict_repr(mapping, initial_indent='', subsequent_indent=''):
