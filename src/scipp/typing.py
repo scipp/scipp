@@ -10,11 +10,7 @@ import numpy.typing
 
 from ._scipp import core as sc
 from .core.cpp_classes import DataArray, Dataset, DType, Variable
-
-if _std_typing.TYPE_CHECKING:
-    # data_group import typing.
-    # So this would create a cycle at runtime.
-    from .core.data_group import DataGroup
+from .core.data_group import DataGroup
 
 
 def is_scalar(obj: _std_typing.Any) -> bool:
@@ -60,12 +56,14 @@ Can be a string (for a single dimension) or a sequence of strings (multiple dime
 A value of ``None`` indicates "all dimensions."
 """
 
-VariableLike = _std_typing.Union[Variable, DataArray, Dataset, 'DataGroup']
+VariableLike = _std_typing.Union[Variable, DataArray, Dataset, DataGroup]
 """Any object that behaves like a :class:`scipp.Variable`.
 
-More concretely, an array with labeled dimensions:
+More concretely, an array with labeled dimensions which supports slicing and
+arithmetic:
 
 - :class:`scipp.DataArray`
+- :class:`scipp.DataGroup`
 - :class:`scipp.Dataset`
 - :class:`scipp.Variable`
 """
@@ -74,7 +72,7 @@ MetaDataMap = _std_typing.MutableMapping[str, Variable]
 """dict-like object mapping dimension labels to Variables."""
 
 VariableLikeType = _std_typing.TypeVar('VariableLikeType', Variable, DataArray, Dataset,
-                                       'DataGroup')
+                                       DataGroup)
 """TypeVar for use in annotations.
 
 Should be hidden in rendered documentation in favor of VariableLike.

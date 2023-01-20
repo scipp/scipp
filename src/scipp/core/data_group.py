@@ -9,14 +9,18 @@ import itertools
 import numbers
 import operator
 from collections.abc import MutableMapping
-from typing import Any, Callable, Dict, Iterable, NoReturn, Optional, Tuple, Union, \
-    overload
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, NoReturn, Optional, \
+    Tuple, Union, overload
 
 import numpy as np
 
 from .. import _binding
-from ..typing import ScippIndex
 from .cpp_classes import DataArray, Dataset, DimensionError, Variable
+
+if TYPE_CHECKING:
+    # typing imports data_group.
+    # So the following import would create a cycle at runtime.
+    from ..typing import ScippIndex
 
 
 def _item_dims(item):
