@@ -131,9 +131,6 @@ class FixArgumentFromSupertypes(ast.NodeTransformer):
 
         if node.name in ('__eq__', '__ne__'):
             self._do_replacement = True
-            # return replace_function(node, args)
-            # print(node.args.args)
-            # print(node.args.args[1].annotation.id)
         self.generic_visit(node)
         self._do_replacement = False
         return node
