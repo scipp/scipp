@@ -28,7 +28,7 @@ Standard setup
   # Setup editable install and run Python tests
   tox -e editable
   conda develop src
-  python -m pytest tests
+  python -m pytest
 
 You should now also be able to run ``python -c 'import scipp as sc'``.
 
@@ -83,7 +83,7 @@ Clone the git repository (either via SSH or HTTPS) from `GitHub <https://github.
 Pre-commit Hooks
 ----------------
 
-We use ``pre-commit`` for our builds.
+We use ``pre-commit`` for static analysis and code formatting.
 Install the pre-commit hooks to avoid committing non-compliant code.
 In the source directory run:
 
@@ -96,7 +96,7 @@ Building Scipp
 --------------
 
 As big parts of Scipp are written in C++, we use CMake for building.
-The assumes you will end up with a directory structure similar to the following.
+This assumes you will end up with a directory structure similar to the following.
 If you want something different be sure to modify paths as appropriate:
 
 .. code-block::
