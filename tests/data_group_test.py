@@ -617,20 +617,29 @@ def test_bins_property_indexing():
 
 
 def test_merge():
-    dg1 = sc.DataGroup(a=sc.arange('x', 6), b='a string')
+    dg1 = sc.DataGroup(a=sc.arange('x', 6), b='a string', d=np.array([1, 2]))
     dg2 = sc.DataGroup(c=sc.DataArray(sc.arange('y', 3),
                                       coords={'y': -sc.arange('y', 3)}),
-                       b='a string')
+                       b='a string',
+                       d=np.array([1, 2]))
     merged = sc.merge(dg1, dg2)
-    assert set(merged.keys()) == {'a', 'b', 'c'}
+    assert set(merged.keys()) == {'a', 'b', 'c', 'd'}
     assert sc.identical(merged['a'], dg1['a'])
     assert sc.identical(merged['c'], dg2['c'])
     assert merged['b'] == dg1['b']
+    np.testing.assert_array_equal(merged['d'], dg1['d'])
 
 
 def test_merge_conflict_scipp_object():
     dg1 = sc.DataGroup(a=sc.arange('x', 6), b='a string')
     dg2 = sc.DataGroup(a=-sc.arange('x', 6), b='a string')
+    with pytest.raises(sc.DatasetError):
+        sc.merge(dg1, dg2)
+
+
+def test_merge_conflict_numpy_array():
+    dg1 = sc.DataGroup(a=sc.arange('x', 6), d=np.array([1, 2]))
+    dg2 = sc.DataGroup(a=sc.arange('x', 6), d=np.array([3, 4, 5]))
     with pytest.raises(sc.DatasetError):
         sc.merge(dg1, dg2)
 

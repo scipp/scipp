@@ -338,7 +338,11 @@ def _generic_identical(a: Any, b: Any) -> bool:
     try:
         return identical(a, b)
     except TypeError:
-        return a == b
+        from numpy import array_equal
+        try:
+            return array_equal(a, b)
+        except TypeError:
+            return a == b
 
 
 def _merge_data_group(lhs: DataGroup, rhs: DataGroup) -> DataGroup:
