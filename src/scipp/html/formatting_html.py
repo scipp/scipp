@@ -143,7 +143,7 @@ def _compact_dict_repr(mapping, initial_indent='', subsequent_indent=''):
 def _short_data_repr_html_events(var):
     underlying = var.values[0]
     if isinstance(var, sc.Variable):
-        return f'binned data: {underlying.dims} {_compact_var_repr(underlying)}'
+        return f'binned data: dims={underlying.dims} {_compact_var_repr(underlying)}'
     elif isinstance(var, sc.DataArray):
         out = f'dims={underlying.dims}\ndata={_compact_var_repr(underlying.data)}'
         if underlying.coords:

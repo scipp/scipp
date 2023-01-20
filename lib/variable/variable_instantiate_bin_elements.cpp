@@ -12,7 +12,7 @@ namespace scipp::variable {
 template <>
 std::string Formatter<core::bin<Variable>>::format(const Variable &var) const {
   const auto &buffer = var.bin_buffer<Variable>();
-  return "[binned data: " + labels_to_string(buffer.dims()) + " " +
+  return "[binned data: dims=" + labels_to_string(buffer.dims()) + " " +
          format_variable_compact(buffer) + "]";
 }
 
