@@ -23,24 +23,22 @@ std::string compact_dict_entry(const Key &key, const Value &var) {
 template <class Key, class Value>
 std::string
 dict_to_compact_string(const scipp::dataset::SizedDict<Key, Value> &dict,
-                       const std::string description,
-                       const std::string margin) {
+                       const std::string &description,
+                       const std::string &margin) {
   std::stringstream s;
   const scipp::index max_length = 88;
   const auto indent = margin.size() + description.size() + 2;
-  std::string append = "";
   s << margin << description << "={";
   bool first_iter = true;
   auto current_line_length = indent;
-  scipp::index length = 0;
   for (const auto &[key, var] : dict) {
     if (current_line_length > max_length) {
       s << ",\n" << std::string(indent, ' ');
       current_line_length = indent;
       first_iter = true;
     }
-    append = compact_dict_entry(key, var);
-    length = append.size();
+    const auto append = compact_dict_entry(key, var);
+    auto length = append.size();
     if (first_iter)
       first_iter = false;
     else {
