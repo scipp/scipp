@@ -2,7 +2,7 @@ import ast
 import enum
 import inspect
 from string import Template
-from typing import Iterable, Optional, Type
+from typing import Iterable, List, Optional, Type
 
 from .config import HEADER, INCLUDE_DOCS, TEMPLATE_FILE, class_is_excluded
 from .parse import parse_method, parse_property
@@ -40,6 +40,11 @@ def _classify(obj: object) -> _Member:
     return _Member.skip
 
 
+def _get_bases(cls: Type[type]) -> List[ast.Name]:
+    base_classes = [base for base in cls.__bases__ if 'pybind11' not in repr(base)]
+    return [ast.Name(id=cls.__name__) for cls in base_classes]
+
+
 def _build_class(cls: Type[type]) -> Optional[ast.ClassDef]:
     print(f'Generating class {cls.__name__}')
     body = []
@@ -57,15 +62,20 @@ def _build_class(cls: Type[type]) -> Optional[ast.ClassDef]:
         body.extend(code)
 
     if not body:
-        return None
+        body.append(ast.Expr(value=ast.Constant(value=Ellipsis)))
 
-    return ast.ClassDef(
+    cls = ast.ClassDef(
         name=cls.__name__,
-        bases=[],
+        bases=_get_bases(cls),
         keywords=[],
         decorator_list=[],
         body=body,
     )
+
+    if not INCLUDE_DOCS:
+        cls = ast.fix_missing_locations(RemoveDocstring().visit(cls))
+
+    return ast.fix_missing_locations(cls)
 
 
 def _cpp_classes() -> Iterable[Type[type]]:
@@ -82,10 +92,6 @@ def format_dunder_all(names):
 
 def generate_stub() -> str:
     classes = [cls for cls in map(_build_class, _cpp_classes()) if cls is not None]
-    if not INCLUDE_DOCS:
-        classes = [
-            ast.fix_missing_locations(RemoveDocstring().visit(cls)) for cls in classes
-        ]
     classes_code = '\n\n'.join(map(ast.unparse, classes))
 
     with TEMPLATE_FILE.open('r') as f:
