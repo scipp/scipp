@@ -1,3 +1,5 @@
+$header
+
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, Iterator, List, Literal, Mapping, \
     Optional, Sequence, Tuple, Union, overload

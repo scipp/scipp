@@ -4,7 +4,7 @@ import inspect
 from string import Template
 from typing import Iterable, Optional, Type
 
-from .config import TEMPLATE_FILE, class_is_excluded
+from .config import HEADER, TEMPLATE_FILE, class_is_excluded
 from .parse import parse_method, parse_property
 from .transformer import fix_method, fix_property
 
@@ -41,8 +41,7 @@ def _classify(obj: object) -> _Member:
 
 
 def _build_class(cls: Type[type]) -> Optional[ast.ClassDef]:
-    # TODO
-    print(cls)
+    print(f'Generating class {cls.__name__}')
     body = []
     if cls.__doc__:
         body.append(ast.Expr(value=ast.Constant(value=cls.__doc__)))
@@ -81,15 +80,13 @@ def format_dunder_all(names):
                                                 for name in names) + '\n]'
 
 
-def generate_stub() -> None:
+def generate_stub() -> str:
     classes = [cls for cls in map(_build_class, _cpp_classes()) if cls is not None]
     classes_code = '\n\n'.join(map(ast.unparse, classes))
 
     with TEMPLATE_FILE.open('r') as f:
         templ = Template(f.read())
 
-    with open('cpp_classes.pyi', 'w') as f:
-        f.write(
-            templ.substitute(classes=classes_code,
-                             dunder_all=format_dunder_all(cls.__name__
-                                                          for cls in _cpp_classes())))
+    return templ.substitute(header=HEADER,
+                            classes=classes_code,
+                            dunder_all=format_dunder_all(cls.name for cls in classes))
