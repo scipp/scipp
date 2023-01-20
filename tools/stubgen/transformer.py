@@ -170,7 +170,7 @@ class FixObjectReturnType(ast.NodeTransformer):
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
         self.generic_visit(node)
         if node.name in self.METHODS and isinstance(
-                node.returns, ast.Name) and node.returns.id == "object":
+                node.returns, ast.Name) and node.returns.id in ('Any', 'object'):
             return replace_function(node, returns=ast.Name(self.cls))
         return node
 
