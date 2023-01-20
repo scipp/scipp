@@ -65,16 +65,20 @@ template <class View> struct SetData {
   };
 };
 
+inline void throw_index_error(const scipp::index i, const scipp::index size) {
+  throw std::out_of_range("The requested index " + std::to_string(i) +
+                          " is out of range. Dimension size is " +
+                          std::to_string(size) + " and the allowed range is [" +
+                          std::to_string(-size) + ":" +
+                          std::to_string(size - 1) + "].");
+}
+
 template <class T>
 auto get_slice(T &self, const std::tuple<Dim, scipp::index> &index) {
   auto [dim, i] = index;
   auto sz = dim_extent(self, dim);
   if (i < -sz || i >= sz) // index is out of range
-    throw std::out_of_range("The requested index " + std::to_string(i) +
-                            " is out of range. Dimension size is " +
-                            std::to_string(sz) + " and the allowed range is [" +
-                            std::to_string(-sz) + ":" + std::to_string(sz - 1) +
-                            "].");
+    throw_index_error(i, sz);
   if (i < 0)
     i = sz + i;
   return Slice(dim, i);
@@ -233,9 +237,16 @@ T slice_by_list(const T &obj,
   };
 
   const auto &[dim, indices] = index;
+  const auto size = obj.dims()[dim];
+  if (!indices.empty()) {
+    const auto [min, max] = std::minmax_element(indices.begin(), indices.end());
+    if (*min < -size || *max >= size) {
+      const auto bad = *min < -size ? *min : *max;
+      throw_index_error(bad, size);
+    }
+  }
   std::vector<scipp::index_pair> ranges;
   ranges.reserve(indices.size());
-  const auto size = obj.dims()[dim];
   for (const auto &pos : indices) {
     const auto [start, stop] = make_slice(pos, size);
     ranges.emplace_back(static_cast<scipp::index>(start),

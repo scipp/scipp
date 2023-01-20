@@ -9,12 +9,18 @@ import itertools
 import numbers
 import operator
 from collections.abc import MutableMapping
-from typing import Any, Callable, Iterable, overload
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, NoReturn, Optional, \
+    Tuple, Union, overload
 
 import numpy as np
 
-from ..typing import ScippIndex
+from .. import _binding
 from .cpp_classes import DataArray, Dataset, DimensionError, Variable
+
+if TYPE_CHECKING:
+    # typing imports data_group.
+    # So the following import would create a cycle at runtime.
+    from ..typing import ScippIndex
 
 
 def _item_dims(item):
@@ -58,7 +64,7 @@ class DataGroup(MutableMapping):
     to the values in the dict. This may happen recursively to support tree-like data
     structures.
 
-    .. versionadded:: RELEASE_PLACEHOLDER
+    .. versionadded:: 23.01.0
     """
 
     def __init__(self, /, *args, **kwargs):
@@ -106,6 +112,7 @@ class DataGroup(MutableMapping):
         is only possible when the shape of all items is compatible with the boolean
         variable.
         """
+        from .bins import Bins
         if isinstance(name, str):
             return self._items[name]
         if isinstance(name, tuple) and name == ():
@@ -127,7 +134,8 @@ class DataGroup(MutableMapping):
                 f"Positional indexing dim '{dim}' not possible as the length is not "
                 "unique.")
         return DataGroup({
-            key: var[dim, index] if dim in _item_dims(var) else var
+            key: var[dim, index] if
+            (isinstance(var, Bins) or dim in _item_dims(var)) else var
             for key, var in self.items()
         })
 
@@ -144,15 +152,9 @@ class DataGroup(MutableMapping):
         del self._items[name]
 
     @property
-    def dims(self):
+    def dims(self) -> Tuple[Optional[str], ...]:
         """Union of dims of all items. Non-Scipp items are handled as dims=()."""
-        dims = ()
-        for var in self.values():
-            # Preserve insertion order
-            for dim in _item_dims(var):
-                if dim not in dims:
-                    dims = dims + (dim, )
-        return dims
+        return tuple(self.sizes)
 
     @property
     def ndim(self):
@@ -160,21 +162,18 @@ class DataGroup(MutableMapping):
         return len(self.dims)
 
     @property
-    def shape(self):
+    def shape(self) -> Tuple[Optional[int], ...]:
         """Union of shape of all items. Non-Scipp items are handled as shape=()."""
-
-        def dim_size(dim):
-            sizes = {var.sizes[dim] for var in self.values() if dim in _item_dims(var)}
-            if len(sizes) == 1:
-                return next(iter(sizes))
-            return None
-
-        return tuple(dim_size(dim) for dim in self.dims)
+        return tuple(self.sizes.values())
 
     @property
-    def sizes(self):
+    def sizes(self) -> Dict[str, Optional[int]]:
         """Dict combining dims and shape, i.e., mapping dim labels to their size."""
-        return dict(zip(self.dims, self.shape))
+        all_sizes = {}
+        for x in self.values():
+            for dim, size in getattr(x, 'sizes', {}).items():
+                all_sizes.setdefault(dim, set()).add(size)
+        return {d: next(iter(s)) if len(s) == 1 else None for d, s in all_sizes.items()}
 
     def _make_html(self):
         out = ''
@@ -185,33 +184,27 @@ class DataGroup(MutableMapping):
                 html = ''
             else:
                 html = str(item)
-            out += f"<details style=\"padding-left:2em\"><summary>"\
+            out += f"<details style=\"padding-left:2em\"><summary>" \
                    f"{name}: {_summarize(item)}</summary>{html}</details>"
         return out
 
     def _repr_html_(self):
         out = ''
-        out += f"<details open=\"open\"><summary>DataGroup"\
+        out += f"<details open=\"open\"><summary>DataGroup" \
                f"({len(self)})</summary>"
         out += self._make_html()
         out += "</details>"
         return out
 
     def __repr__(self):
-        r = 'DataGroup(\n'
+        r = f'DataGroup(sizes={self.sizes}, keys=[\n'
         for name, var in self.items():
-            r += f'    {name}: {_summarize(var)}\n'
-        r += ')'
+            r += f'    {name}: {_summarize(var)[:-1]},\n'
+        r += '])'
         return r
 
-    def __eq__(self, other):
-        return _data_group_binary(operator.eq, self, other)
-
-    def __add__(self, other):
-        return _data_group_binary(operator.add, self, other)
-
-    def __mul__(self, other):
-        return _data_group_binary(operator.mul, self, other)
+    def __str__(self):
+        return f'DataGroup(sizes={self.sizes}, keys={list(self.keys())})'
 
     @property
     def bins(self):
@@ -226,8 +219,32 @@ class DataGroup(MutableMapping):
     def copy(self, deep: bool = True) -> DataGroup:
         return copy.deepcopy(self) if deep else copy.copy(self)
 
+    def all(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('all', *args, **kwargs))
+
+    def any(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('any', *args, **kwargs))
+
+    def astype(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('astype', *args, **kwargs))
+
     def bin(self, *args, **kwargs):
         return self.apply(operator.methodcaller('bin', *args, **kwargs))
+
+    def broadcast(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('broadcast', *args, **kwargs))
+
+    def ceil(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('ceil', *args, **kwargs))
+
+    def flatten(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('flatten', *args, **kwargs))
+
+    def floor(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('floor', *args, **kwargs))
+
+    def fold(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('fold', *args, **kwargs))
 
     def group(self, *args, **kwargs):
         return self.apply(operator.methodcaller('group', *args, **kwargs))
@@ -238,8 +255,8 @@ class DataGroup(MutableMapping):
     def hist(self, *args, **kwargs):
         return self.apply(operator.methodcaller('hist', *args, **kwargs))
 
-    def sum(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('sum', *args, **kwargs))
+    def max(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('max', *args, **kwargs))
 
     def mean(self, *args, **kwargs):
         return self.apply(operator.methodcaller('mean', *args, **kwargs))
@@ -247,18 +264,186 @@ class DataGroup(MutableMapping):
     def min(self, *args, **kwargs):
         return self.apply(operator.methodcaller('min', *args, **kwargs))
 
-    def max(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('max', *args, **kwargs))
+    def nanhist(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('nanhist', *args, **kwargs))
 
-    def transform_coords(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('transform_coords', *args, **kwargs))
+    def nanmax(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('nanmax', *args, **kwargs))
+
+    def nanmean(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('nanmean', *args, **kwargs))
+
+    def nanmin(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('nanmin', *args, **kwargs))
+
+    def nansum(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('nansum', *args, **kwargs))
+
+    def rebin(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('rebin', *args, **kwargs))
+
+    def rename(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('rename', *args, **kwargs))
+
+    def rename_dims(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('rename_dims', *args, **kwargs))
+
+    def round(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('round', *args, **kwargs))
+
+    def squeeze(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('squeeze', *args, **kwargs))
+
+    def sum(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('sum', *args, **kwargs))
 
     def to(self, *args, **kwargs):
         return self.apply(operator.methodcaller('to', *args, **kwargs))
 
+    def transform_coords(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('transform_coords', *args, **kwargs))
+
+    def transpose(self, *args, **kwargs):
+        return self.apply(operator.methodcaller('transpose', *args, **kwargs))
+
     def plot(self, *args, **kwargs):
         import plopp
         return plopp.plot(self, *args, **kwargs)
+
+    def __eq__(self, other: Union[DataGroup, DataArray, Variable,
+                                  numbers.Real]) -> DataGroup:
+        """Item-wise equal."""
+        return data_group_nary(operator.eq, self, other)
+
+    def __ne__(self, other: Union[DataGroup, DataArray, Variable,
+                                  numbers.Real]) -> DataGroup:
+        """Item-wise not-equal."""
+        return data_group_nary(operator.ne, self, other)
+
+    def __gt__(self, other: Union[DataGroup, DataArray, Variable,
+                                  numbers.Real]) -> DataGroup:
+        """Item-wise greater-than."""
+        return data_group_nary(operator.gt, self, other)
+
+    def __ge__(self, other: Union[DataGroup, DataArray, Variable,
+                                  numbers.Real]) -> DataGroup:
+        """Item-wise greater-equal."""
+        return data_group_nary(operator.ge, self, other)
+
+    def __lt__(self, other: Union[DataGroup, DataArray, Variable,
+                                  numbers.Real]) -> DataGroup:
+        """Item-wise less-than."""
+        return data_group_nary(operator.lt, self, other)
+
+    def __le__(self, other: Union[DataGroup, DataArray, Variable,
+                                  numbers.Real]) -> DataGroup:
+        """Item-wise less-equal."""
+        return data_group_nary(operator.le, self, other)
+
+    def __add__(
+            self, other: Union[DataGroup, DataArray, Variable,
+                               numbers.Real]) -> DataGroup:
+        """Apply ``add`` item-by-item."""
+        return data_group_nary(operator.add, self, other)
+
+    def __sub__(
+            self, other: Union[DataGroup, DataArray, Variable,
+                               numbers.Real]) -> DataGroup:
+        """Apply ``sub`` item-by-item."""
+        return data_group_nary(operator.sub, self, other)
+
+    def __mul__(
+            self, other: Union[DataGroup, DataArray, Variable,
+                               numbers.Real]) -> DataGroup:
+        """Apply ``mul`` item-by-item."""
+        return data_group_nary(operator.mul, self, other)
+
+    def __truediv__(
+            self, other: Union[DataGroup, DataArray, Variable,
+                               numbers.Real]) -> DataGroup:
+        """Apply ``truediv`` item-by-item."""
+        return data_group_nary(operator.truediv, self, other)
+
+    def __floordiv__(
+            self, other: Union[DataGroup, DataArray, Variable,
+                               numbers.Real]) -> DataGroup:
+        """Apply ``floordiv`` item-by-item."""
+        return data_group_nary(operator.floordiv, self, other)
+
+    def __mod__(
+            self, other: Union[DataGroup, DataArray, Variable,
+                               numbers.Real]) -> DataGroup:
+        """Apply ``mod`` item-by-item."""
+        return data_group_nary(operator.mod, self, other)
+
+    def __pow__(
+            self, other: Union[DataGroup, DataArray, Variable,
+                               numbers.Real]) -> DataGroup:
+        """Apply ``pow`` item-by-item."""
+        return data_group_nary(operator.pow, self, other)
+
+    def __radd__(
+            self, other: Union[DataGroup, DataArray, Variable,
+                               numbers.Real]) -> DataGroup:
+        """Apply ``add`` item-by-item."""
+        return data_group_nary(operator.add, other, self)
+
+    def __rsub__(
+            self, other: Union[DataGroup, DataArray, Variable,
+                               numbers.Real]) -> DataGroup:
+        """Apply ``sub`` item-by-item."""
+        return data_group_nary(operator.sub, other, self)
+
+    def __rmul__(
+            self, other: Union[DataGroup, DataArray, Variable,
+                               numbers.Real]) -> DataGroup:
+        """Apply ``mul`` item-by-item."""
+        return data_group_nary(operator.mul, other, self)
+
+    def __rtruediv__(
+            self, other: Union[DataGroup, DataArray, Variable,
+                               numbers.Real]) -> DataGroup:
+        """Apply ``truediv`` item-by-item."""
+        return data_group_nary(operator.truediv, other, self)
+
+    def __rfloordiv__(
+            self, other: Union[DataGroup, DataArray, Variable,
+                               numbers.Real]) -> DataGroup:
+        """Apply ``floordiv`` item-by-item."""
+        return data_group_nary(operator.floordiv, other, self)
+
+    def __rmod__(
+            self, other: Union[DataGroup, DataArray, Variable,
+                               numbers.Real]) -> DataGroup:
+        """Apply ``mod`` item-by-item."""
+        return data_group_nary(operator.mod, other, self)
+
+    def __rpow__(
+            self, other: Union[DataGroup, DataArray, Variable,
+                               numbers.Real]) -> DataGroup:
+        """Apply ``pow`` item-by-item."""
+        return data_group_nary(operator.pow, other, self)
+
+    def __and__(
+            self, other: Union[DataGroup, DataArray, Variable,
+                               numbers.Real]) -> DataGroup:
+        """Return the element-wise ``and`` of items."""
+        return data_group_nary(operator.and_, self, other)
+
+    def __or__(self, other: Union[DataGroup, DataArray, Variable,
+                                  numbers.Real]) -> DataGroup:
+        """Return the element-wise ``or`` of items."""
+        return data_group_nary(operator.or_, self, other)
+
+    def __xor__(
+            self, other: Union[DataGroup, DataArray, Variable,
+                               numbers.Real]) -> DataGroup:
+        """Return the element-wise ``xor`` of items."""
+        return data_group_nary(operator.xor, self, other)
+
+    def __invert__(self) -> DataGroup:
+        """Return the element-wise ``or`` of items."""
+        return self.apply(operator.invert)
 
 
 def _data_group_binary(func: Callable, dg1: DataGroup, dg2: DataGroup, *args,
@@ -291,3 +476,30 @@ def _apply_to_items(func: Callable, dgs: Iterable[DataGroup], *args,
     return DataGroup(
         {key: func([dg[key] for dg in dgs], *args, **kwargs)
          for key in keys})
+
+
+# There are currently no in-place operations (__iadd__, etc.) because they require
+# a check if the operation would fail before doing it. As otherwise, a failure could
+# leave a partially modified data group behind. Dataset implements such a check, but
+# it is simpler than for DataGroup because the latter supports more data types.
+# So for now, we went with the simple solution and
+# not support in-place operations at all.
+#
+# Binding these functions dynamically has the added benefit that type checkers think
+# that the operations are not implemented.
+def _make_inplace_binary_op(name: str):
+
+    def impl(self, other: Union[DataGroup, DataArray, Variable,
+                                numbers.Real]) -> NoReturn:
+        raise TypeError(f'In-place operation i{name} is not supported by DataGroup.')
+
+    return impl
+
+
+for _name in ('add', 'sub', 'mul', 'truediv', 'floordiv', 'mod', 'pow'):
+    full_name = f'__i{_name}__'
+    _binding.bind_function_as_method(cls=DataGroup,
+                                     name=full_name,
+                                     func=_make_inplace_binary_op(full_name))
+
+del _name, full_name

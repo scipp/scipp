@@ -6,8 +6,8 @@ Release Notes
 
 .. Template, copy this to create a new section after a release:
 
-   Version RELEASE_PLACEHOLDER
-   ---------------
+   v23.01.0
+   --------
 
    Features
    ~~~~~~~~
@@ -36,8 +36,8 @@ Release Notes
    and Sunyoung Yoo :sup:`a`
 
 
-Version RELEASE_PLACEHOLDER
----------------
+v23.01.0
+--------
 
 Features
 ~~~~~~~~
@@ -65,6 +65,7 @@ Bugfixes
 * Fix issue with events close to upper or lower bin bounds getting dropped by :func:`scipp.lookup` with edges that form a "linspace" `#2942 <https://github.com/scipp/scipp/pull/2942>`_.
 * Fix minor issue with events close to bin bounds getting assigned to the wrong bin by :func:`scipp.lookup` with edges that form a "linspace" `#2942 <https://github.com/scipp/scipp/pull/2942>`_.
 * Fix two memory usage and performance issue that affected certain cases of :py:func:`scipp.hist` `#2977 <https://github.com/scipp/scipp/pull/2977>`_.
+* Fix bounds check in integer-array indexing, which previously silently skipped out-of-range indices `#2986 <https://github.com/scipp/scipp/pull/2986>`_.
 
 Documentation
 ~~~~~~~~~~~~~

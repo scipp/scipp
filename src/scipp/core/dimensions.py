@@ -6,7 +6,7 @@ from typing import Dict, Optional
 from .._scipp.core import CoordError, DataArray, Dataset, Variable
 from ..typing import VariableLikeType
 from .bins import bins
-from .dataset import merge
+from .operations import merge
 
 
 def _combine_dims(dims_dict: Optional[Dict[str, str]],

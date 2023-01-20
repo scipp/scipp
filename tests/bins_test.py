@@ -84,6 +84,15 @@ def test_bins():
     assert sc.identical(var['y', 1].value, data['x', 2:4])
 
 
+def test_bins_raises_when_DataGroup_given():
+    data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
+    begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64, unit=None)
+    end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.DType.int64, unit=None)
+    dg = sc.DataGroup(a=data)
+    with pytest.raises(ValueError):
+        sc.bins(begin=begin, end=end, dim='x', data=dg)
+
+
 def test_bins_of_transpose():
     data = sc.Variable(dims=['row'], values=[1, 2, 3, 4])
     begin = sc.Variable(dims=['x', 'y'],
@@ -389,6 +398,13 @@ def test_bins_like():
     with pytest.raises(sc.DimensionError):
         dense = dense.rename_dims({'x': 'y'})
         sc.bins_like(binned, dense),
+
+
+def test_bins_like_raises_when_given_data_group():
+    binned = sc.data.binned_x(100, 10)
+    dg = sc.DataGroup(a=binned.data)
+    with pytest.raises(ValueError):
+        sc.bins_like(dg, sc.scalar(0.1))
 
 
 def test_bins_concat():
