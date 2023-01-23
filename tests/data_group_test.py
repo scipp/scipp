@@ -651,3 +651,25 @@ def test_merge_conflict_python_object():
                        b='another string')
     with pytest.raises(sc.DatasetError):
         sc.merge(dg1, dg2)
+
+
+@pytest.mark.parametrize('func',
+                         (sc.bin, lambda x, /, *args, **kwargs: x.bin(*args, **kwargs)))
+def test_bin(func):
+    dg = sc.DataGroup({
+        'da':
+        sc.DataArray(10 * sc.arange('x', 5.0), coords={'x': sc.arange('x', 5.0)}),
+        'dg':
+        sc.DataGroup({
+            'inner_da':
+            sc.DataArray(10 * sc.arange('x', 50.0), coords={'x': sc.arange('x', 50.0)})
+        })
+    })
+    edges = {'x': 3}
+    expected = sc.DataGroup({
+        'da':
+        dg['da'].bin(**edges),
+        'dg':
+        sc.DataGroup({'inner_da': dg['dg']['inner_da'].bin(**edges)})
+    })
+    assert sc.identical(func(dg, **edges), expected)

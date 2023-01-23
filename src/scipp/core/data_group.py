@@ -9,8 +9,9 @@ import itertools
 import numbers
 import operator
 from collections.abc import MutableMapping
+from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, NoReturn, Optional, \
-    Tuple, Union, overload
+    Tuple, TypeVar, Union, cast, overload
 
 import numpy as np
 
@@ -476,6 +477,36 @@ def _apply_to_items(func: Callable, dgs: Iterable[DataGroup], *args,
     return DataGroup(
         {key: func([dg[key] for dg in dgs], *args, **kwargs)
          for key in keys})
+
+
+_F = TypeVar('_F', bound=Callable[..., Any])
+
+
+def data_group_overload(func: _F) -> _F:
+    """Add an overload for DataGroup to a function.
+
+    If the first argument of the function is a data group,
+    then the decorated function is mapped over all items.
+    Otherwise, the function is applied directly.
+
+    Parameters
+    ----------
+    func:
+        Function to decorate.
+
+    Returns
+    -------
+    :
+        Decorated function.
+    """
+    # Do not assign '__annotations__' because that causes an error in Sphinx.
+    @wraps(func, assigned=('__module__', '__name__', '__qualname__', '__doc__'))
+    def impl(data, *args, **kwargs):
+        if isinstance(data, DataGroup):
+            return data.apply(lambda x: impl(x, *args, **kwargs))
+        return func(data, *args, **kwargs)
+
+    return cast(_F, impl)
 
 
 # There are currently no in-place operations (__iadd__, etc.) because they require

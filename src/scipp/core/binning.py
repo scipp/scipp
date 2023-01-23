@@ -4,19 +4,29 @@
 import itertools
 import warnings
 from numbers import Integral
-from typing import Dict, List, Optional, Sequence, Union
+from typing import Dict, Optional, Sequence, Union, overload
 
 from .._scipp import core as _cpp
 from .bin_remapping import combine_bins
 from .cpp_classes import CoordError, DataArray, Dataset, DType, Variable
+from .data_group import DataGroup, data_group_overload
 from .math import round as round_
 from .shape import concat
 from .util import VisibleDeprecationWarning
 from .variable import arange, array, epoch, linspace, scalar
 
 
-def make_histogrammed(x: Union[Variable, DataArray, Dataset], *,
-                      edges: Variable) -> Union[DataArray, Dataset]:
+@overload
+def make_histogrammed(x: Union[Variable, DataArray], *, edges: Variable) -> DataArray:
+    ...
+
+
+@overload
+def make_histogrammed(x: Dataset, *, edges: Variable) -> Dataset:
+    ...
+
+
+def make_histogrammed(x, *, edges):
     """Create dense data by histogramming data into given bins.
 
     If the input is binned data, then existing binning dimensions are preserved.
@@ -200,8 +210,8 @@ def _parse_coords_arg(x: Union[Variable, DataArray, Dataset], name: str,
 
 
 def _make_edges(x: Union[Variable, DataArray,
-                         Dataset], arg_dict: Dict[str, Union[int, Variable]],
-                kwargs: Dict[str, Union[int, Variable]]) -> List[Variable]:
+                         Dataset], arg_dict: Optional[Dict[str, Union[int, Variable]]],
+                kwargs: Dict[str, Union[int, Variable]]) -> Dict[str, Variable]:
     if arg_dict is not None:
         kwargs = dict(**arg_dict, **kwargs)
     return {name: _parse_coords_arg(x, name, arg) for name, arg in kwargs.items()}
@@ -218,10 +228,32 @@ def _find_replaced_dims(x, dims):
     return [dim for dim in erase if dim not in dims]
 
 
-def hist(x: Union[Variable, DataArray, Dataset],
+@overload
+def hist(x: Union[Variable, DataArray],
          arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
          /,
-         **kwargs: Union[int, Variable]) -> Union[DataArray, Dataset]:
+         **kwargs: Union[int, Variable]) -> DataArray:
+    ...
+
+
+@overload
+def hist(x: Dataset,
+         arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
+         /,
+         **kwargs: Union[int, Variable]) -> Dataset:
+    ...
+
+
+@overload
+def hist(x: DataGroup,
+         arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
+         /,
+         **kwargs: Union[int, Variable]) -> DataGroup:
+    ...
+
+
+@data_group_overload
+def hist(x, arg_dict=None, /, **kwargs):
     """Compute a histogram.
 
     Bin edges can be specified in three ways:
@@ -335,10 +367,24 @@ def hist(x: Union[Variable, DataArray, Dataset],
     return out
 
 
-def nanhist(x: Union[Variable, DataArray, Dataset],
+@overload
+def nanhist(x: Union[Variable, DataArray],
             arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
             /,
-            **kwargs: Union[int, Variable]) -> Union[DataArray, Dataset]:
+            **kwargs: Union[int, Variable]) -> DataArray:
+    ...
+
+
+@overload
+def nanhist(x: DataGroup,
+            arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
+            /,
+            **kwargs: Union[int, Variable]) -> DataGroup:
+    ...
+
+
+@data_group_overload
+def nanhist(x, arg_dict=None, /, **kwargs):
     """Compute a histogram, skipping NaN values.
 
     Like :py:func:`scipp.hist`, but NaN values are skipped. See there for details and
@@ -366,10 +412,24 @@ def nanhist(x: Union[Variable, DataArray, Dataset],
     return x.bins.nansum()
 
 
-def bin(x: Union[Variable, DataArray, Dataset],
-        arg_dict: Dict[str, Union[int, Variable]] = None,
+@overload
+def bin(x: Union[Variable, DataArray],
+        arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
         /,
-        **kwargs: Union[int, Variable]) -> Union[DataArray, Dataset]:
+        **kwargs: Union[int, Variable]) -> DataArray:
+    ...
+
+
+@overload
+def bin(x: DataGroup,
+        arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
+        /,
+        **kwargs: Union[int, Variable]) -> DataGroup:
+    ...
+
+
+@data_group_overload
+def bin(x, arg_dict=None, /, **kwargs):
     """Create binned data by binning input along all dimensions given by edges.
 
     Bin edges can be specified in three ways:
@@ -476,11 +536,35 @@ def bin(x: Union[Variable, DataArray, Dataset],
     return make_binned(x, edges=list(edges.values()), erase=erase)
 
 
-def rebin(x: Union[DataArray, Dataset],
+@overload
+def rebin(x: DataArray,
           arg_dict: Dict[str, Union[int, Variable]] = None,
           deprecated=None,
           /,
-          **kwargs: Union[int, Variable]) -> Union[DataArray, Dataset]:
+          **kwargs: Union[int, Variable]) -> DataArray:
+    ...
+
+
+@overload
+def rebin(x: Dataset,
+          arg_dict: Dict[str, Union[int, Variable]] = None,
+          deprecated=None,
+          /,
+          **kwargs: Union[int, Variable]) -> Dataset:
+    ...
+
+
+@overload
+def rebin(x: DataGroup,
+          arg_dict: Dict[str, Union[int, Variable]] = None,
+          deprecated=None,
+          /,
+          **kwargs: Union[int, Variable]) -> DataGroup:
+    ...
+
+
+@data_group_overload
+def rebin(x, arg_dict=None, deprecated=None, /, **kwargs):
     """Rebin a data array or dataset.
 
     The coordinate of the input for the dimension to be rebinned must contain bin edges,
@@ -584,8 +668,18 @@ def _make_groups(x, arg):
     return array(dims=[arg], values=unique, unit=coord.unit)
 
 
-def group(x: Union[DataArray, Dataset], /,
-          *args: Union[str, Variable]) -> Union[DataArray, Dataset]:
+@overload
+def group(x: DataArray, /, *args: Union[str, Variable]) -> DataArray:
+    ...
+
+
+@overload
+def group(x: DataGroup, /, *args: Union[str, Variable]) -> DataGroup:
+    ...
+
+
+@data_group_overload
+def group(x, /, *args: Union[str, Variable]):
     """Create binned data by grouping input by one or more coordinates.
 
     Grouping can be specified in two ways: (1) When a string is provided the unique
