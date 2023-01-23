@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 
+from typing import Dict, List, Union
+
 import numpy as np
-from typing import List, Union, Dict
-from .. import DataArray, Dataset, Variable
+
+from .. import DataArray, Dataset, DType, Variable
 from ..typing import VariableLike
-from .. import DType
 
 CENTER = 'text-align: center;'
 LEFT_BORDER = 'border-left:1px solid #a9a9a9;'

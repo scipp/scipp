@@ -6,10 +6,10 @@
 
 import collections
 import operator
+import textwrap
 import uuid
 from functools import partial, reduce
 from html import escape
-import textwrap
 
 from .._scipp import core as sc
 from ..core import stddevs
