@@ -129,6 +129,18 @@ void bind_pop(pybind11::class_<T, Ignored...> &view) {
 }
 
 template <class T, class... Ignored>
+void bind_dict_clear(pybind11::class_<T, Ignored...> &view) {
+  view.def(
+      "clear",
+      [](T &self) {
+        auto keys = keys_view(self);
+        for (const auto &key : keys)
+          self.erase(key);
+      },
+      py::call_guard<py::gil_scoped_release>());
+}
+
+template <class T, class... Ignored>
 void bind_is_edges(py::class_<T, Ignored...> &view) {
   view.def(
       "is_edges",
@@ -151,6 +163,7 @@ void bind_mutable_view(py::module &m, const std::string &name,
   bind_dict_update(view, [](T &self, const std::string &key,
                             const Variable &value) { self.set(key, value); });
   bind_pop(view);
+  bind_dict_clear(view);
   bind_is_edges(view);
   view.def(
           "__iter__",
@@ -188,6 +201,7 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name,
   bind_dict_update(view, [](T &self, const units::Dim &key,
                             const Variable &value) { self.set(key, value); });
   bind_pop(view);
+  bind_dict_clear(view);
   bind_is_edges(view);
   view.def(
           "__iter__",
