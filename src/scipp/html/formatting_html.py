@@ -6,7 +6,6 @@
 
 import collections
 import operator
-import textwrap
 import uuid
 from functools import partial, reduce
 from html import escape
