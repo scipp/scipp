@@ -75,11 +75,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
 
   if (!dataset.coords().empty()) {
     s << shift << "Coordinates:\n";
-    Coords map;
-    if constexpr (std::is_same_v<D, DataArray>)
-      map = dataset.coords();
-    else
-      map = dataset.coords();
+    Coords map = dataset.coords();
     for (const auto &[name, var] : sorted(map))
       s << shift << format_variable(name, var, dims);
   }
@@ -115,9 +111,8 @@ template <class Key, class Value>
 std::string dict_to_string(const SizedDict<Key, Value> &view) {
   std::stringstream ss;
   ss << "<scipp.Dict>\n";
-  for (const auto &[key, item] : view) {
+  for (const auto &[key, item] : view)
     ss << "  " << key << ": " << to_string(item) << "\n";
-  }
   return ss.str();
 }
 } // namespace

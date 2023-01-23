@@ -9,6 +9,13 @@
 
 namespace scipp::variable {
 
+template <>
+std::string Formatter<core::bin<Variable>>::format(const Variable &var) const {
+  const auto &buffer = var.bin_buffer<Variable>();
+  return "[binned data: dims=" + labels_to_string(buffer.dims()) + " " +
+         format_variable_compact(buffer) + "]";
+}
+
 INSTANTIATE_BIN_ARRAY_VARIABLE(VariableView, Variable)
 
 template <class T> class BinVariableMakerVariable : public BinVariableMaker<T> {
@@ -48,6 +55,8 @@ void expect_valid_bin_indices(const Variable &indices, const Dim dim,
     throw except::SliceError(
         "Bin begin index must be less or equal to its end index.");
 }
+
+REGISTER_FORMATTER(bin_Variable, core::bin<Variable>)
 
 namespace {
 auto register_variable_maker_bucket_Variable(

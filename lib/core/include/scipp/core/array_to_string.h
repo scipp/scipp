@@ -67,7 +67,7 @@ std::string array_to_string(const T &arr,
   if (size == 0)
     return "[]";
   std::string s = "[";
-  for (scipp::index i = 0; i < scipp::size(arr); ++i) {
+  for (scipp::index i = 0; i < size; ++i) {
     constexpr scipp::index n = 2;
     if (i == n && size > 2 * n) {
       s += "..., ";

@@ -71,6 +71,14 @@ auto apply(const DType dtype, Args &&...args) {
 }
 } // namespace
 
+std::string format_variable_compact(const Variable &variable) {
+  const auto s = to_string(variable.dtype());
+  if (variable.unit() == units::none)
+    return s;
+  else
+    return s + '[' + variable.unit().name() + ']';
+}
+
 std::string format_variable(const Variable &variable,
                             const std::optional<Sizes> datasetSizes) {
   if (!variable.is_valid())

@@ -3,8 +3,8 @@
 # @file
 # @author Jan-Lukas Wynen
 
-from functools import lru_cache
 import importlib.resources
+from functools import lru_cache
 from string import Template
 
 
@@ -18,6 +18,7 @@ def _read_text(filename):
 
 def _format_style(template: str) -> str:
     from .. import config
+
     # Color patterns in the CSS template use the name in
     # the config file plus a _color suffix.
     return Template(template).substitute(
@@ -28,6 +29,7 @@ def _format_style(template: str) -> str:
 def _preprocess_style(template: str) -> str:
     css = _format_style(template)
     import re
+
     # line breaks are not needed
     css = css.replace('\n', '')
     # remove comments

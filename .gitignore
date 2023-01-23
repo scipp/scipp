@@ -3,6 +3,7 @@ compile_commands.json
 dist
 doctrees
 html
+!src/scipp/html
 
 build/
 install/
