@@ -503,7 +503,7 @@ def data_group_overload(func: _F) -> _F:
     @wraps(func, assigned=('__module__', '__name__', '__qualname__', '__doc__'))
     def impl(data, *args, **kwargs):
         if isinstance(data, DataGroup):
-            return data.apply(lambda x: impl(x, *args, **kwargs))
+            return data.apply(impl, *args, **kwargs)
         return func(data, *args, **kwargs)
 
     return cast(_F, impl)
