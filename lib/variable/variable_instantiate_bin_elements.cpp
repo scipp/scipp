@@ -11,9 +11,13 @@ namespace scipp::variable {
 
 template <>
 std::string Formatter<core::bin<Variable>>::format(const Variable &var) const {
-  const auto &buffer = var.bin_buffer<Variable>();
-  return "[binned data: dims=" + labels_to_string(buffer.dims()) + " " +
-         format_variable_compact(buffer) + "]";
+  const auto &[indices, dim, content] = var.constituents<Variable>();
+  auto str = "binned data: dim='" + to_string(dim) +
+             "', content=Variable(dims=" + to_string(content.dims()) +
+             ", dtype=" + to_string(content.dtype());
+  if (content.unit() != units::none)
+    str += ", unit=" + to_string(content.unit());
+  return str + ')';
 }
 
 INSTANTIATE_BIN_ARRAY_VARIABLE(VariableView, Variable)
