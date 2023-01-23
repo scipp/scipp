@@ -8,16 +8,18 @@ from typing import Dict, List, Optional, Sequence, Union
 
 from .._scipp import core as _cpp
 from .bin_remapping import combine_bins
+from .cpp_classes import CoordError, DataArray, Dataset, DType, Variable
 from .math import round as round_
+from .shape import concat
 from .util import VisibleDeprecationWarning
-from .variable import Variable, arange, array, epoch, linspace, scalar
+from .variable import arange, array, epoch, linspace, scalar
 
 
-def make_histogrammed(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset], *,
-                      edges: _cpp.Variable) -> Union[_cpp.DataArray, _cpp.Dataset]:
+def make_histogrammed(x: Union[Variable, DataArray, Dataset], *,
+                      edges: Variable) -> Union[DataArray, Dataset]:
     """Create dense data by histogramming data into given bins.
 
-    If the input is binned data then existing binning dimensions are preserved.
+    If the input is binned data, then existing binning dimensions are preserved.
     Histogramming along an existing binned dimension will replace this binning.
 
     Usually :py:func:`scipp.hist` should be preferred.
@@ -45,15 +47,15 @@ def make_histogrammed(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset], *,
     """
     if isinstance(x, Variable):
         data = scalar(1.0, unit='counts').broadcast(sizes=x.sizes)
-        x = _cpp.DataArray(data, coords={edges.dim: x})
+        x = DataArray(data, coords={edges.dim: x})
     return _cpp.histogram(x, edges)
 
 
-def make_binned(x: Union[_cpp.Variable, _cpp.DataArray],
+def make_binned(x: Union[Variable, DataArray],
                 *,
-                edges: Optional[Sequence[_cpp.Variable]] = None,
-                groups: Optional[Sequence[_cpp.Variable]] = None,
-                erase: Optional[Sequence[_cpp.Variable]] = None) -> _cpp.DataArray:
+                edges: Optional[Sequence[Variable]] = None,
+                groups: Optional[Sequence[Variable]] = None,
+                erase: Optional[Sequence[Variable]] = None) -> DataArray:
     """Create binned data by binning input along all dimensions given by edges or
     groups.
 
@@ -113,14 +115,14 @@ def make_binned(x: Union[_cpp.Variable, _cpp.DataArray],
     if edges is None:
         edges = []
     if isinstance(x, Variable) and x.bins is not None:
-        x = _cpp.DataArray(x)
+        x = DataArray(x)
     elif isinstance(x, Variable):
         coords = [*edges, *groups]
         if len(coords) != 1:
             raise ValueError("Edges for exactly one dimension must be specified when "
                              "binning or histogramming a variable.")
         data = scalar(1.0, unit='counts').broadcast(sizes=x.sizes).copy()
-        x = _cpp.DataArray(data, coords={coords[0].dim: x})
+        x = DataArray(data, coords={coords[0].dim: x})
     if _can_operate_on_bins(x, edges, groups, erase):
         return combine_bins(x, edges=edges, groups=groups, dim=erase)
     return _cpp.bin(x, edges, groups, erase)
@@ -143,20 +145,20 @@ def _can_operate_on_bins(x, edges, groups, erase) -> bool:
 
 def _require_coord(name, coord):
     if coord is None:
-        raise _cpp.CoordError(f"Coordinate '{name}' not found.")
+        raise CoordError(f"Coordinate '{name}' not found.")
 
 
 def _get_coord(x, name):
     if isinstance(x, Variable):
         return x
-    if isinstance(x, _cpp.Dataset):
+    if isinstance(x, Dataset):
         cmin = None
         cmax = None
         for da in x.values():
             c = _get_coord(da, name)
             cmin = c.min() if cmin is None else min(cmin, c.min())
             cmax = c.max() if cmax is None else max(cmin, c.max())
-        coord = _cpp.concat([cmin, cmax], dim='dummy')
+        coord = concat([cmin, cmax], dim='dummy')
     else:
         event_coord = x.bins.meta.get(name) if x.bins is not None else None
         coord = x.meta.get(name, event_coord)
@@ -174,8 +176,8 @@ def _upper_bound(x: Variable) -> Variable:
     return bound
 
 
-def _parse_coords_arg(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset], name: str,
-                      arg: Union[int, _cpp.Variable]) -> _cpp.Variable:
+def _parse_coords_arg(x: Union[Variable, DataArray, Dataset], name: str,
+                      arg: Union[int, Variable]) -> Variable:
     if isinstance(arg, Variable) and name in arg.dims:
         return arg
     coord = _get_coord(x, name)
@@ -185,7 +187,7 @@ def _parse_coords_arg(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset], nam
     else:
         stop = _upper_bound(coord)
     if isinstance(arg, Integral):
-        if start.dtype == _cpp.DType.datetime64:
+        if start.dtype == DType.datetime64:
             base = epoch(unit=start.unit)
             return base + round_(linspace(name, start - base, stop - base,
                                           num=arg + 1)).to(dtype='int64')
@@ -197,8 +199,8 @@ def _parse_coords_arg(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset], nam
     return arange(name, start, stop + step, step=step)
 
 
-def _make_edges(x: Union[_cpp.Variable, _cpp.DataArray,
-                         _cpp.Dataset], arg_dict: Dict[str, Union[int, Variable]],
+def _make_edges(x: Union[Variable, DataArray,
+                         Dataset], arg_dict: Dict[str, Union[int, Variable]],
                 kwargs: Dict[str, Union[int, Variable]]) -> List[Variable]:
     if arg_dict is not None:
         kwargs = dict(**arg_dict, **kwargs)
@@ -216,10 +218,10 @@ def _find_replaced_dims(x, dims):
     return [dim for dim in erase if dim not in dims]
 
 
-def hist(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset],
+def hist(x: Union[Variable, DataArray, Dataset],
          arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
          /,
-         **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
+         **kwargs: Union[int, Variable]) -> Union[DataArray, Dataset]:
     """Compute a histogram.
 
     Bin edges can be specified in three ways:
@@ -333,10 +335,10 @@ def hist(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset],
     return out
 
 
-def nanhist(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset],
+def nanhist(x: Union[Variable, DataArray, Dataset],
             arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
             /,
-            **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
+            **kwargs: Union[int, Variable]) -> Union[DataArray, Dataset]:
     """Compute a histogram, skipping NaN values.
 
     Like :py:func:`scipp.hist`, but NaN values are skipped. See there for details and
@@ -364,10 +366,10 @@ def nanhist(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset],
     return x.bins.nansum()
 
 
-def bin(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset],
+def bin(x: Union[Variable, DataArray, Dataset],
         arg_dict: Dict[str, Union[int, Variable]] = None,
         /,
-        **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
+        **kwargs: Union[int, Variable]) -> Union[DataArray, Dataset]:
     """Create binned data by binning input along all dimensions given by edges.
 
     Bin edges can be specified in three ways:
@@ -474,11 +476,11 @@ def bin(x: Union[_cpp.Variable, _cpp.DataArray, _cpp.Dataset],
     return make_binned(x, edges=list(edges.values()), erase=erase)
 
 
-def rebin(x: Union[_cpp.DataArray, _cpp.Dataset],
+def rebin(x: Union[DataArray, Dataset],
           arg_dict: Dict[str, Union[int, Variable]] = None,
           deprecated=None,
           /,
-          **kwargs: Union[int, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
+          **kwargs: Union[int, Variable]) -> Union[DataArray, Dataset]:
     """Rebin a data array or dataset.
 
     The coordinate of the input for the dimension to be rebinned must contain bin edges,
@@ -568,7 +570,7 @@ def _make_groups(x, arg):
     # We are currently using np.unique to find all unique groups. This can be very slow
     # for large inputs. In many cases groups are in a bounded range of integers, and we
     # can sometimes bypass a full call to np.unique by checking a sub-range first
-    elif coord.dtype in (_cpp.DType.int32, _cpp.DType.int64):
+    elif coord.dtype in (DType.int32, DType.int64):
         min_ = coord.min().value
         max_ = coord.max().value
         values = coord.values
@@ -582,8 +584,8 @@ def _make_groups(x, arg):
     return array(dims=[arg], values=unique, unit=coord.unit)
 
 
-def group(x: Union[_cpp.DataArray, _cpp.Dataset], /,
-          *args: Union[str, Variable]) -> Union[_cpp.DataArray, _cpp.Dataset]:
+def group(x: Union[DataArray, Dataset], /,
+          *args: Union[str, Variable]) -> Union[DataArray, Dataset]:
     """Create binned data by grouping input by one or more coordinates.
 
     Grouping can be specified in two ways: (1) When a string is provided the unique
@@ -673,8 +675,8 @@ def group(x: Union[_cpp.DataArray, _cpp.Dataset], /,
     return make_binned(x, groups=groups, erase=erase)
 
 
-def histogram(x: Union[_cpp.DataArray, _cpp.Dataset], *,
-              bins: _cpp.Variable) -> Union[_cpp.DataArray, _cpp.Dataset]:
+def histogram(x: Union[DataArray, Dataset], *,
+              bins: Variable) -> Union[DataArray, Dataset]:
     """Deprecated. See :py:func:`scipp.hist`."""
     warnings.warn("'histogram' is deprecated. Use 'hist' instead.", UserWarning)
     warnings.warn("'histogram' is deprecated. Use 'hist' instead.",
