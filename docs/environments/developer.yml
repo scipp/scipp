@@ -1,42 +1,39 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 
-name: scipp-developer
+name: scipp-dev
 
 channels:
   - conda-forge
 
 dependencies:
-  - cmake
+  - cmake>=3.21
   - conan>=1.45.0
+  - conda-build
   - confuse
-  - flake8
   - graphlib-backport # for python < 3.9
   - h5py
   - hypothesis
   - ipympl
   - ipywidgets
-  - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
+  - jupyterlab
+  - jupyterlab_code_formatter
   - matplotlib-base
-  - nbsphinx
   - ninja
+  - numba
   - numpy>=1.21
-  - pre-commit
   - pandas
   - pip
+  - pooch
+  - pre-commit
   - pytest
+  - python=3.8
   - python-graphviz
   - pythreejs
   - pyyaml
+  - scipp::plopp
   - scipy>=1.7.0
-  - sphinx
-  - sphinx-book-theme==0.2  # 0.3 breaks custom launchbuttons
-  - sphinx-copybutton
-  - tbb-devel=2020.2.*
   - tbb=2020.2.*
+  - tbb-devel=2020.2.*
   - tox
   - xarray
-  - yapf
-  - pip:
-    - nb-clean
-    - sphinx-autodoc-typehints>=1.17.0
