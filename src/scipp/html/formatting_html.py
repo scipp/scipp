@@ -128,7 +128,7 @@ def _short_data_repr_html_non_events(var, variances=False):
 def _short_data_repr_html_events(var):
     if isinstance(var, sc.Dataset):
         return str(var)
-    underlying = var.values[0]
+    underlying = var.bins.constituents['data']
     string = str(var.data) if isinstance(var, sc.DataArray) else str(var)
     if isinstance(underlying, sc.DataArray):
         lines = string.splitlines()
