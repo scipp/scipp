@@ -8,6 +8,7 @@ from typing import Optional
 
 from .._scipp import core as _cpp
 from ..typing import Dims, VariableLikeType
+from ._cpp_wrapper_util import call_func as _call_cpp_func
 
 
 def mean(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
@@ -41,9 +42,9 @@ def mean(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
         Ignore NaN's when calculating the mean.
     """
     if dim is None:
-        return _cpp.mean(x)
+        return _call_cpp_func(_cpp.mean, x)
     else:
-        return _cpp.mean(x, dim=dim)
+        return _call_cpp_func(_cpp.mean, x, dim=dim)
 
 
 def nanmean(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
@@ -77,9 +78,9 @@ def nanmean(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
         Compute the mean without special handling of NaN.
     """
     if dim is None:
-        return _cpp.nanmean(x)
+        return _call_cpp_func(_cpp.nanmean, x)
     else:
-        return _cpp.nanmean(x, dim=dim)
+        return _call_cpp_func(_cpp.nanmean, x, dim=dim)
 
 
 def sum(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
@@ -110,11 +111,11 @@ def sum(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
         Ignore NaN's when calculating the sum.
     """
     if dim is None:
-        return _cpp.sum(x)
+        return _call_cpp_func(_cpp.sum, x)
     elif isinstance(dim, str):
-        return _cpp.sum(x, dim=dim)
+        return _call_cpp_func(_cpp.sum, x, dim=dim)
     for d in dim:
-        x = _cpp.sum(x, d)
+        x = _call_cpp_func(_cpp.sum, x, d)
     return x
 
 
@@ -142,9 +143,9 @@ def nansum(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
        Compute the sum without special handling of NaN.
     """
     if dim is None:
-        return _cpp.nansum(x)
+        return _call_cpp_func(_cpp.nansum, x)
     else:
-        return _cpp.nansum(x, dim=dim)
+        return _call_cpp_func(_cpp.nansum, x, dim=dim)
 
 
 def min(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
@@ -173,9 +174,9 @@ def min(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
         Same as max but ignoring NaN's.
     """
     if dim is None:
-        return _cpp.min(x)
+        return _call_cpp_func(_cpp.min, x)
     else:
-        return _cpp.min(x, dim=dim)
+        return _call_cpp_func(_cpp.min, x, dim=dim)
 
 
 def max(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
@@ -204,9 +205,9 @@ def max(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
         Same as max but ignoring NaN's.
     """
     if dim is None:
-        return _cpp.max(x)
+        return _call_cpp_func(_cpp.max, x)
     else:
-        return _cpp.max(x, dim=dim)
+        return _call_cpp_func(_cpp.max, x, dim=dim)
 
 
 def nanmin(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
@@ -235,9 +236,9 @@ def nanmin(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
         Same as max but ignoring NaN's.
     """
     if dim is None:
-        return _cpp.nanmin(x)
+        return _call_cpp_func(_cpp.nanmin, x)
     else:
-        return _cpp.nanmin(x, dim=dim)
+        return _call_cpp_func(_cpp.nanmin, x, dim=dim)
 
 
 def nanmax(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
@@ -266,9 +267,9 @@ def nanmax(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
         Same as min but ignoring NaN's.
     """
     if dim is None:
-        return _cpp.nanmax(x)
+        return _call_cpp_func(_cpp.nanmax, x)
     else:
-        return _cpp.nanmax(x, dim=dim)
+        return _call_cpp_func(_cpp.nanmax, x, dim=dim)
 
 
 def all(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
@@ -294,9 +295,9 @@ def all(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
         Logical OR.
     """
     if dim is None:
-        return _cpp.all(x)
+        return _call_cpp_func(_cpp.all, x)
     else:
-        return _cpp.all(x, dim=dim)
+        return _call_cpp_func(_cpp.all, x, dim=dim)
 
 
 def any(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
@@ -322,6 +323,6 @@ def any(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
         Logical AND.
     """
     if dim is None:
-        return _cpp.any(x)
+        return _call_cpp_func(_cpp.any, x)
     else:
-        return _cpp.any(x, dim=dim)
+        return _call_cpp_func(_cpp.any, x, dim=dim)
