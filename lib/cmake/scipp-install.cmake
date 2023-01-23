@@ -26,18 +26,20 @@ function(scipp_install_component)
       ARCHIVE DESTINATION ${ARCHIVEDIR}
       FRAMEWORK DESTINATION ${ARCHIVEDIR}
     )
-    install(DIRECTORY include/ DESTINATION ${INCLUDEDIR})
-    if(${SCIPP_INSTALL_COMPONENT_INSTALL_GENERATED})
-      install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/
-              DESTINATION ${INCLUDEDIR}
-      )
-    endif()
-    if(NOT ${SCIPP_INSTALL_COMPONENT_NO_EXPORT_HEADER})
-      install(
-        FILES
-          ${CMAKE_CURRENT_BINARY_DIR}/${SCIPP_INSTALL_COMPONENT_TARGET}_export.h
-        DESTINATION ${INCLUDEDIR}
-      )
+    if(NOT SKBUILD)
+      install(DIRECTORY include/ DESTINATION ${INCLUDEDIR})
+      if(${SCIPP_INSTALL_COMPONENT_INSTALL_GENERATED})
+        install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/
+                DESTINATION ${INCLUDEDIR}
+        )
+      endif()
+      if(NOT ${SCIPP_INSTALL_COMPONENT_NO_EXPORT_HEADER})
+        install(
+          FILES
+            ${CMAKE_CURRENT_BINARY_DIR}/${SCIPP_INSTALL_COMPONENT_TARGET}_export.h
+          DESTINATION ${INCLUDEDIR}
+        )
+      endif()
     endif()
   endif(DYNAMIC_LIB)
 endfunction()
