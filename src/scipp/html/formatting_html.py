@@ -126,49 +126,20 @@ def _short_data_repr_html_non_events(var, variances=False):
     return repr(retrieve(var, variances))
 
 
-def _compact_var_repr(var):
-    repr = f'{var.dtype}'
-    if var.unit is not None:
-        repr += f'[{var.unit}]'
-    return repr
-
-
-def _compact_dict_repr(mapping, initial_indent='', subsequent_indent=''):
-    text = ", ".join(
-        [f'\'{key}\':{_compact_var_repr(coord)}' for key, coord in mapping.items()])
-    return '{' + '\n'.join(
-        textwrap.wrap(text,
-                      width=88,
-                      initial_indent=initial_indent,
-                      subsequent_indent=subsequent_indent)) + '}'
-
-
 def _short_data_repr_html_events(var):
-    if isinstance(var, sc.Variable):
+    if isinstance(var, sc.Dataset):
         return str(var)
-    elif isinstance(var, sc.DataArray):
-        lines = str(var.data).splitlines()
+    underlying = var.values[0]
+    string = str(var.data) if isinstance(var, sc.DataArray) else str(var)
+    if isinstance(underlying, sc.DataArray):
+        lines = string.splitlines()
         ind = lines[1].find('dims=')
         return '\n'.join([line[ind:] for line in lines[1:]])
-    # ind = out.find('\n')
-    # return out[ind + 1:]
-    # underlying = var.values[0]
-    # if isinstance(var, sc.Variable):
-    #     return f'binned data: dims={underlying.dims} {_compact_var_repr(underlying)}'
-    # elif isinstance(var, sc.DataArray):
-    #     out = f'dims={underlying.dims}\ndata={_compact_var_repr(underlying.data)}'
-    #     if underlying.coords:
-    #         out += '\ncoords=' + _compact_dict_repr(underlying.coords,
-    #                                                 subsequent_indent=' ' * 8)
-    #     if underlying.masks:
-    #         out += '\nmasks=' + _compact_dict_repr(underlying.masks,
-    #                                                subsequent_indent=' ' * 7)
-    #     if underlying.attrs:
-    #         out += '\nattrs=' + _compact_dict_repr(underlying.attrs,
-    #                                                subsequent_indent=' ' * 7)
-    #     return out
-    # else:
-    #     return str(var)
+    elif isinstance(underlying, sc.Variable):
+        ind = string.find('[binned data: dims=')
+        return string[ind:]
+    else:
+        return string
 
 
 def short_data_repr_html(var, variances=False):
