@@ -244,7 +244,7 @@ Alternatively, use ``ctest``:
 
   ctest --preset test
 
-If only Python core or tests have been updated, there is no need to rebuild or reinstall, provided that you use an editable install (using ``conda develop src`` as described earlier).
+If only Python code or tests have been updated, there is no need to rebuild or reinstall, provided that you use an editable install (using ``conda develop src`` as described earlier).
 
 To run the Python tests, run (in the top-level directory):
 
