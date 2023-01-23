@@ -33,14 +33,17 @@ We therefore restrict what can go into Scipp as follows:
 Contributing a pull request
 ---------------------------
 
-- Before you begin working on an issue, make sure it is assigned to you, to avoid risking duplicate work in case someone else decides to pick up the task at the same time.
-- Make sure you have read the `Getting Started <../reference/developer/getting-started.rst>`_ page.
-  In particular using the recommended ``pre-commit`` setup and running tests locally will ensure that the builds will pass for your pull request.
-- When opening a pull request, make sure to reference the issue.
+Please make sure you have checked the list below before you start:
+
+- Before you begin, make sure the GitHub issue is assigned to you, to avoid duplicate work.
+- Read the `Getting Started <../reference/developer/getting-started.rst>`_ page.
+  Using the recommended ``pre-commit`` setup and running tests locally will ensure that the builds will pass for your pull request.
+- Reference the issue when you open a pull request.
   If the issue would be resolved by merging the pull request then use one of GitHub's keywords to do so automatically, such as ``Fixes #12345``.
-- For most changes (in particular new features, breaking changes, or bugfixes) make sure to add an item in ``docs/about/release-notes.rst`` and link to the pull request.
+- If applicable, make sure to add an item in ``docs/about/release-notes.rst`` and link to the pull request.
+  Do this in particular for new features, breaking changes, or bugfixes.
 
 Security
 --------
 
-Given the low (yet non-zero) chance of an issue in Scipp that affects the security of a larger system, secutity related issues should be raised via GitHub issues in the same way as "normal" bug reports.
+Given the low (yet non-zero) chance of an issue in Scipp that affects the security of a larger system, security related issues should be raised via GitHub issues in the same way as "normal" bug reports.
