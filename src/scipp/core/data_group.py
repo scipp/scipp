@@ -487,7 +487,9 @@ def data_group_overload(func: _F) -> _F:
 
     If the first argument of the function is a data group,
     then the decorated function is mapped over all items.
-    Otherwise, the function is applied directly.
+    It is applied recursively for items that are themselves data groups.
+
+    Otherwise, the original function is applied directly.
 
     Parameters
     ----------
