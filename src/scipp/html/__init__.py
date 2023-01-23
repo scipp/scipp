@@ -5,8 +5,8 @@
 
 from __future__ import annotations
 
-from ..typing import VariableLike
 from ..core import Variable
+from ..typing import VariableLike
 from .table import table  # noqa: F401
 
 
@@ -53,5 +53,5 @@ def to_html(container: VariableLike):
         Create HTML representation without showing it.
         Works outside of notebooks.
     """
-    from IPython.display import display, HTML
+    from IPython.display import HTML, display
     display(HTML(make_html(container)))
