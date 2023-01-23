@@ -26,7 +26,7 @@ dict_to_compact_string(const scipp::dataset::SizedDict<Key, Value> &dict,
                        const std::string &description,
                        const std::string &margin) {
   std::stringstream s;
-  const scipp::index max_length = 120;
+  const scipp::index max_length = 92;
   const auto indent = margin.size() + description.size() + 2;
   s << margin << description << "={";
   bool first_iter = true;
