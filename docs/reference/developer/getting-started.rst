@@ -1,22 +1,103 @@
 Getting Started
 ===============
 
-Prerequisites
-~~~~~~~~~~~~~
+TL;DR
+-----
 
-All non-optional build dependencies are installed automatically through Conan when running CMake.
-Conan itself can be installed manually but we recommend using the ``developer.yml`` file
-for installing this and other dependencies in a ``conda`` environment (see below).
-Alternatively you can refer to this file for a full list of dependencies.
+Standard setup
+~~~~~~~~~~~~~~
 
+.. code-block:: bash
+
+  # Get the code
+  git clone git@github.com:scipp/scipp.git && cd scipp
+  git submodule init
+  git submodule update
+
+  # Setup dev env
+  mamba env create -f docs/environments/developer.yml
+  conda activate scipp-dev
+  pre-commit install
+  pre-commit run --all-files
+
+  # Build, install, and run C++ tests
+  cmake --preset base
+  cmake --build --preset build
+  ctest --preset test
+
+  # Setup editable install and run Python tests
+  tox -e editable
+  conda develop src
+  python -m pytest
+
+You should now also be able to run ``python -c 'import scipp as sc'``.
+
+Common tasks
+~~~~~~~~~~~~
+
+All of the below assume that the standard setup outlined above was performed.
+
+Build the docs:
+
+.. code-block:: bash
+
+   tox -e docs
+
+Update the pip requirements via ``pip-compile-multi``:
+
+.. code-block:: bash
+
+   tox -e deps
+
+Prepare a release (make sure to give the desired release instead):
+
+.. code-block:: bash
+
+   tox -e prepare-release -- 23.01.0
+
+Overview
+--------
+
+We provide a Conda environment file with developer dependencies in our Git repository.
+Other build dependencies are installed automatically through Conan when running CMake.
 See `Tooling <tooling.rst>`_ for compilers and other required tools.
 
-Getting the code, building, and installing
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Getting the code
+----------------
 
-You first need to clone the git repository (either via SSH or HTTPS) from `GitHub <https://github.com/scipp/scipp>`_.
-Note that this assumes you will end up with a directory structure similar to the following.
-If you want something different be sure to modify paths as appropriate.
+Clone the git repository (either via SSH or HTTPS) from `GitHub <https://github.com/scipp/scipp>`_.
+
+.. code-block:: bash
+
+  git clone git@github.com:scipp/scipp.git
+  cd scipp
+
+  # Update Git submodules
+  git submodule init
+  git submodule update
+
+  # Create Conda environment with dependencies and development tools
+  mamba env create -f docs/environments/developer.yml
+  conda activate scipp-dev
+
+Pre-commit Hooks
+----------------
+
+We use ``pre-commit`` for static analysis and code formatting.
+Install the pre-commit hooks to avoid committing non-compliant code.
+In the source directory run:
+
+.. code-block:: bash
+
+  pre-commit install
+  pre-commit run --all-files
+
+Building Scipp
+--------------
+
+As big parts of Scipp are written in C++, we use CMake for building.
+This assumes you will end up with a directory structure similar to the following.
+If you want something different be sure to modify paths as appropriate:
 
 .. code-block::
 
@@ -29,14 +110,6 @@ If you want something different be sure to modify paths as appropriate.
 To build and install the library:
 
 .. code-block:: bash
-
-  # Create Conda environment with dependencies and development tools
-  conda env create -f docs/environments/developer.yml
-  conda activate scipp-developer
-
-  # Update Git submodules
-  git submodule init
-  git submodule update
 
   # Create build and library install directories
   mkdir build
@@ -131,8 +204,9 @@ When making changes to the C++ side of Scipp, you will need to re-run the ``inst
 
   cmake --build --preset build
 
+
 Additional build options
-------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. ``-DDYNAMIC_LIB`` forces the shared libraries building, that also decreases link time.
 2. ``-DTHREADING`` enable or disable multi-threading. ``ON`` by default.
@@ -140,46 +214,61 @@ Additional build options
 4. ``-DCPPCHECK`` toggle run of cppcheck during compilation. ``OFF`` by default.
 5. ``-DCTEST_DISCOVER_TESTS`` toggle discovery of individual tests for better (but much slower) integration with ``ctest``. ``OFF`` by default.
 
+
 Running the unit tests
-~~~~~~~~~~~~~~~~~~~~~~
+----------------------
 
-Executables for the unit tests can be found in the build directory as ``build/bin/scipp-XYZ-test``, where ``XYZ`` is the Scipp component under test (e.g. ``core``).
-``all-tests`` can be used to build all tests at the same time. Note that simply running ``ctest`` also works, but currently it seems to have an issue with gathering templated tests, so calling the test binaries manually is recommended (and much faster).
-
-To run the Python tests, run (in the top-level ``/home/user/scipp`` directory):
+After editing C++ code or tests, make sure to update the build/install:
 
 .. code-block:: bash
 
-  conda develop /home/user/scipp/install
+  cmake --build --preset build
+
+Alternatively, the ``all-tests`` CMake target can be used to build all tests.
+
+There are two ways of running C++ tests.
+Executables for the unit tests can be found in the build directory as ``build/bin/scipp-XYZ-test``, where ``XYZ`` is the Scipp component under test (e.g. ``core``).
+These use ``google-test`` and provide full control over options, e.g., to filter tests:
+
+.. code-block:: bash
+
+   ./build/bin/scipp-common-test
+   ./build/bin/scipp-core-test
+   ./build/bin/scipp-units-test
+   ./build/bin/scipp-variable-test
+   ./build/bin/scipp-dataset-test
+
+Alternatively, use ``ctest``:
+
+.. code-block:: bash
+
+  ctest --preset test
+
+If only Python code or tests have been updated, there is no need to rebuild or reinstall, provided that you use an editable install (using ``conda develop src`` as described earlier).
+
+To run the Python tests, run (in the top-level directory):
+
+.. code-block:: bash
+
   python -m pytest tests
 
 
 Building Documentation
-~~~~~~~~~~~~~~~~~~~~~~
+----------------------
 
 Run
 
 .. code-block:: bash
 
-  tox -e lib
+  tox -e lib  # omit if using cmake, or install is up-to-date
   tox -e docs
 
 
 This will build the HTML documentation and put it in a folder named ``html``.
-If rebuilding the documentation is slow, it can be quicker to remove the docs build directory and start a fresh build.
 
-Precommit Hooks
-~~~~~~~~~~~~~~~
-
-If you wish, you can install precommit hooks for flake8 and yapf. In the source directory run:
-
-.. code-block:: bash
-
-  pre-commit install
-  pre-commit run --all-files
 
 Using Scipp as a C++ library
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------
 
 Using Scipp as a C++ library is not recommended at this point as the API (and ABI) is not stable and documentation is sparse.
 Nonetheless, it can be used as a ``cmake`` package as follows.
@@ -187,7 +276,10 @@ In your ``CMakeLists.txt``:
 
 .. code-block:: cmake
 
-  find_package(Scipp 0.11 REQUIRED) # replace with required version
+  # replace 23.01 with required version
+  find_package(scipp 23.01 REQUIRED COMPONENTS conan-config)
+  find_package(scipp 23.01 REQUIRED)
+
   target_link_libraries(mytarget PUBLIC scipp::dataset)
 
 If Scipp was install using ``conda``, ``cmake`` should find it automatically.
@@ -200,8 +292,9 @@ If you build and installed Scipp from source use, e.g.,:
 where ``<your_scipp_install_dir>`` should point to the ``CMAKE_INSTALL_PREFIX`` that was used when building Scipp.
 Alternative set the ``Scipp_DIR`` or ``CMAKE_PREFIX_PATH`` (environment) variables to this path.
 
+
 Generating coverage reports
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------
 
 - Run ``cmake`` with options ``-DCOVERAGE=On -DCMAKE_BUILD_TYPE=Debug``.
 - Run ``cmake --build . --target coverage`` from your build directory.

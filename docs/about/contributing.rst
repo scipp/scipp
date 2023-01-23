@@ -21,16 +21,29 @@ We therefore restrict what can go into Scipp as follows:
   Neutron-scattering specific must not be added.
   A simple guiding principle is "if it is in NumPy it can go into Scipp".
 
-* *Scippneutron* shall contain only generic neutron-specific functionality.
+* *ScippNeutron* shall contain only generic neutron-specific functionality.
   Facility-specific or instrument-specific functionality must not be added.
   Examples of generic functionality that is permitted are
 
   * Unit conversions, which could be generic for all time-of-flight neutron sources.
   * Published research such as absorption corrections.
 
-  Examples of functionality that shall not be added to Scippneutron are handling of facility-specific file types or data layouts, or instrument-specific correction algorithms.
+  Examples of functionality that shall not be added to ScippNeutron are handling of facility-specific file types or data layouts, or instrument-specific correction algorithms.
+
+Contributing a pull request
+---------------------------
+
+Please make sure you have checked the list below before you start:
+
+- Before you begin, make sure the GitHub issue is assigned to you, to avoid duplicate work.
+- Read the `Getting Started <../reference/developer/getting-started.rst>`_ page.
+  Using the recommended ``pre-commit`` setup and running tests locally will ensure that the builds will pass for your pull request.
+- Reference the issue when you open a pull request.
+  If the issue would be resolved by merging the pull request then use one of GitHub's keywords to do so automatically, such as ``Fixes #12345``.
+- If applicable, make sure to add an item in ``docs/about/release-notes.rst`` and link to the pull request.
+  Do this in particular for new features, breaking changes, or bugfixes.
 
 Security
 --------
 
-Given the low (yet non-zero) chance of an issue in Scipp that affects the security of a larger system, secutity related issues should be raised via GitHub issues in the same way as "normal" bug reports.
+Given the low (yet non-zero) chance of an issue in Scipp that affects the security of a larger system, security related issues should be raised via GitHub issues in the same way as "normal" bug reports.
