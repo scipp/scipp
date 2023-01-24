@@ -43,7 +43,7 @@ def _summarize_atomic_variable(var, name: str, depth: int = 0):
     preview = ''
     parent_obj_str = ''
     objtype_str = type(var).__name__
-    if isinstance(var, Union[Dataset, DataArray, Variable, DataGroup]):
+    if isinstance(var, (Dataset, DataArray, Variable, DataGroup)):
         parent_obj_str = "scipp"
         shape_repr = _make_shape_repr(var)
         if isinstance(var, Dataset):
@@ -58,7 +58,7 @@ def _summarize_atomic_variable(var, name: str, depth: int = 0):
             shape_repr = escape("()")
             parent_obj_str = "numpy"
             preview = f"shape={var.shape}, dtype={var.dtype}"
-        if isinstance(var, Union[str, int, float]):
+        if isinstance(var, (str, int, float)):
             preview = str(var)
 
     html_tpl = load_atomic_tpl()
