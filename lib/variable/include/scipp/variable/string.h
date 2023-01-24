@@ -13,6 +13,14 @@
 
 namespace scipp::variable {
 
+template <class T> std::string format_variable_like(const T &obj) {
+  auto s =
+      "(dims=" + to_string(obj.dims()) + ", dtype=" + to_string(obj.dtype());
+  if (obj.unit() != units::none)
+    s += ", unit=" + to_string(obj.unit());
+  return s + ')';
+}
+
 SCIPP_VARIABLE_EXPORT std::ostream &operator<<(std::ostream &os,
                                                const Variable &variable);
 

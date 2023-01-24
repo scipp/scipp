@@ -9,6 +9,13 @@
 
 namespace scipp::variable {
 
+template <>
+std::string Formatter<DataArray>::format(const Variable &var) const {
+  if (var.dims().volume() == 1)
+    return "DataArray" + format_variable_like(var.value<DataArray>());
+  return "[multiple data arrays]";
+}
+
 INSTANTIATE_ELEMENT_ARRAY_VARIABLE(Dataset, scipp::dataset::Dataset)
 INSTANTIATE_ELEMENT_ARRAY_VARIABLE(DataArray, scipp::dataset::DataArray)
 } // namespace scipp::variable
