@@ -26,7 +26,7 @@ dict_to_compact_string(const scipp::dataset::SizedDict<Key, Value> &dict,
                        const std::string &description,
                        const std::string &margin) {
   std::stringstream s;
-  const scipp::index max_length = 92;
+  const scipp::index max_length = 70;
   const auto indent = margin.size() + description.size() + 2;
   s << margin << description << "={";
   bool first_iter = true;
@@ -55,18 +55,19 @@ dict_to_compact_string(const scipp::dataset::SizedDict<Key, Value> &dict,
 
 template <>
 std::string Formatter<core::bin<DataArray>>::format(const Variable &var) const {
-  const auto &buffer = var.bin_buffer<DataArray>();
-  std::string margin(8, ' ');
+  const auto &[indices, dim, buffer] = var.constituents<DataArray>();
+  std::string margin(10, ' ');
   std::stringstream s;
-  s << "\n" << margin << "dims=" << labels_to_string(buffer.data().dims());
+  s << "binned data: dim='" + to_string(dim) + "', content=DataArray(";
+  s << "\n" << margin << "dims=" << to_string(buffer.dims()) << ',';
   s << "\n" << margin << "data=" << format_variable_compact(buffer.data());
   if (!buffer.coords().empty())
-    s << "\n" << dict_to_compact_string(buffer.coords(), "coords", margin);
+    s << ",\n" << dict_to_compact_string(buffer.coords(), "coords", margin);
   if (!buffer.masks().empty())
-    s << "\n" << dict_to_compact_string(buffer.masks(), "masks", margin);
+    s << ",\n" << dict_to_compact_string(buffer.masks(), "masks", margin);
   if (!buffer.attrs().empty())
-    s << "\n" << dict_to_compact_string(buffer.attrs(), "attrs", margin);
-  return s.str();
+    s << ",\n" << dict_to_compact_string(buffer.attrs(), "attrs", margin);
+  return s.str() + ')';
 }
 
 INSTANTIATE_BIN_ARRAY_VARIABLE(DatasetView, Dataset)
