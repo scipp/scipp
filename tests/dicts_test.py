@@ -257,3 +257,16 @@ def test_copy_deep(make, mapping):
     assert new_mapping['x'].unit == 'm'
     mapview['x'].unit = 's'
     assert new_mapping['x'].unit == 'm'
+
+
+@pytest.mark.parametrize(*PARAMS)
+def test_popitem(make, mapping):
+    var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
+    d = make(var)
+    mapview = getattr(d, mapping)
+    mapview['x'] = sc.scalar(1.0)
+    mapview['y'] = sc.scalar(2.0)
+    assert sc.identical(mapview.popitem(), sc.scalar(2.0))
+    assert list(mapview.keys()) == ['x']
+    assert sc.identical(mapview.popitem(), sc.scalar(1.0))
+    assert len(list(mapview.keys())) == 0
