@@ -133,7 +133,9 @@ void bind_dict_clear(pybind11::class_<T, Ignored...> &view) {
   view.def(
       "clear",
       [](T &self) {
-        auto keys = keys_view(self);
+        std::vector<typename T::key_type> keys;
+        for (const auto &key : keys_view(self))
+          keys.push_back(key);
         for (const auto &key : keys)
           self.erase(key);
       },
