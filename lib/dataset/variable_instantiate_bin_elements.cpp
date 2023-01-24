@@ -56,7 +56,7 @@ dict_to_compact_string(const scipp::dataset::SizedDict<Key, Value> &dict,
 template <>
 std::string Formatter<core::bin<DataArray>>::format(const Variable &var) const {
   const auto &[indices, dim, buffer] = var.constituents<DataArray>();
-  std::string margin(8, ' ');
+  std::string margin(10, ' ');
   std::stringstream s;
   s << "binned data: dim='" + to_string(dim) + "', content=DataArray(";
   s << "\n" << margin << "dims=" << to_string(buffer.dims()) << ',';
