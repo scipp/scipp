@@ -150,6 +150,29 @@ void bind_dict_popitem(pybind11::class_<T, Ignored...> &view) {
 }
 
 template <class T, class... Ignored>
+void bind_dict_copy(pybind11::class_<T, Ignored...> &view) {
+  view.def(
+          "copy",
+          [](const T &self, const bool deep) {
+            return deep ? copy(self) : self;
+          },
+          py::arg("deep") = true, py::call_guard<py::gil_scoped_release>(),
+          R"(
+      Return a (by default deep) copy.
+
+      If `deep=True` (the default), a deep copy is made. Otherwise, a shallow
+      copy is made, and the returned data (and meta data) values are new views
+      of the data and meta data values of this object.)")
+      .def(
+          "__copy__", [](const T &self) { return self; },
+          py::call_guard<py::gil_scoped_release>(), "Return a (shallow) copy.")
+      .def(
+          "__deepcopy__",
+          [](const T &self, const py::dict &) { return copy(self); },
+          py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
+}
+
+template <class T, class... Ignored>
 void bind_is_edges(py::class_<T, Ignored...> &view) {
   view.def(
       "is_edges",
@@ -174,6 +197,7 @@ void bind_mutable_view(py::module &m, const std::string &name,
   bind_pop(view);
   bind_dict_clear(view);
   bind_dict_popitem(view);
+  bind_dict_copy(view);
   bind_is_edges(view);
   view.def(
           "__iter__",
@@ -199,26 +223,7 @@ void bind_mutable_view(py::module &m, const std::string &name,
              return out;
            })
       .def("__repr__", [name](const T &self) { return to_string(self); })
-      .def("__str__", [name](const T &self) { return to_string(self); })
-      .def(
-          "copy",
-          [](const T &self, const bool deep) {
-            return deep ? copy(self) : self;
-          },
-          py::arg("deep") = true, py::call_guard<py::gil_scoped_release>(),
-          R"(
-      Return a (by default deep) copy.
-
-      If `deep=True` (the default), a deep copy is made. Otherwise, a shallow
-      copy is made, and the returned data (and meta data) values are new views
-      of the data and meta data values of this object.)")
-      .def(
-          "__copy__", [](const T &self) { return self; },
-          py::call_guard<py::gil_scoped_release>(), "Return a (shallow) copy.")
-      .def(
-          "__deepcopy__",
-          [](const T &self, const py::dict &) { return copy(self); },
-          py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
+      .def("__str__", [name](const T &self) { return to_string(self); });
 }
 
 template <class T>
@@ -232,6 +237,7 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name,
   bind_pop(view);
   bind_dict_clear(view);
   bind_dict_popitem(view);
+  bind_dict_copy(view);
   bind_is_edges(view);
   view.def(
           "__iter__",
@@ -258,26 +264,7 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name,
              return out;
            })
       .def("__repr__", [name](const T &self) { return to_string(self); })
-      .def("__str__", [name](const T &self) { return to_string(self); })
-      .def(
-          "copy",
-          [](const T &self, const bool deep) {
-            return deep ? copy(self) : self;
-          },
-          py::arg("deep") = true, py::call_guard<py::gil_scoped_release>(),
-          R"(
-      Return a (by default deep) copy.
-
-      If `deep=True` (the default), a deep copy is made. Otherwise, a shallow
-      copy is made, and the returned data (and meta data) values are new views
-      of the data and meta data values of this object.)")
-      .def(
-          "__copy__", [](const T &self) { return self; },
-          py::call_guard<py::gil_scoped_release>(), "Return a (shallow) copy.")
-      .def(
-          "__deepcopy__",
-          [](const T &self, const py::dict &) { return copy(self); },
-          py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
+      .def("__str__", [name](const T &self) { return to_string(self); });
 }
 
 template <class T, class... Ignored>
