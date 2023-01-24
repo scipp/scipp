@@ -14,160 +14,129 @@ def make_dataset(var, **kwargs):
     return sc.Dataset(data={'a': var}, **kwargs)
 
 
-@pytest.mark.parametrize("make", [make_data_array, make_dataset])
-def test_coord_setitem(make):
+PARAMS = [
+    "make,mapping",
+    [(make_data_array, "coords"), (make_data_array, "masks"),
+     (make_data_array, "attrs"), (make_dataset, "coords")]
+]
+
+
+@pytest.mark.parametrize(*PARAMS)
+def test_setitem(make, mapping):
     var = sc.array(dims=['x'], values=np.arange(4))
-    d = make(var, coords={'x': var})
+    d = make(var)
+    mapview = getattr(d, mapping)
+    mapview['x'] = var
     with pytest.raises(RuntimeError):
-        d['x', 2:3].coords['y'] = sc.scalar(1.0)
-    assert 'y' not in d.coords
-    d.coords['y'] = sc.scalar(1.0)
-    assert len(d.coords) == 2
-    assert sc.identical(d.coords['y'], sc.scalar(1.0))
+        getattr(d['x', 2:3], mapping)['y'] = sc.scalar(1.0)
+    assert 'y' not in mapview
+    mapview['y'] = sc.scalar(1.0)
+    assert len(mapview) == 2
+    assert sc.identical(mapview['y'], sc.scalar(1.0))
 
 
-@pytest.mark.parametrize("make", [make_data_array, make_dataset])
-def test_contains_coord(make):
+@pytest.mark.parametrize(*PARAMS)
+def test_contains(make, mapping):
     var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
     d = make(var)
-    assert 'x' not in d.coords
-    d.coords['x'] = sc.scalar(1.0)
-    assert 'x' in d.coords
+    mapview = getattr(d, mapping)
+    assert 'x' not in mapview
+    mapview['x'] = sc.scalar(1.0)
+    assert 'x' in mapview
 
 
-@pytest.mark.parametrize("make", [make_data_array, make_dataset])
-def test_coords_keys(make):
+@pytest.mark.parametrize(*PARAMS)
+def test_keys(make, mapping):
     var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
     d = make(var)
-    d.coords['x'] = sc.scalar(1.0)
-    assert len(d.coords.keys()) == 1
-    assert 'x' in d.coords.keys()
+    mapview = getattr(d, mapping)
+    mapview['x'] = sc.scalar(1.0)
+    assert len(mapview.keys()) == 1
+    assert 'x' in mapview.keys()
 
 
-@pytest.mark.parametrize("make", [make_data_array, make_dataset])
-def test_coords_get(make):
+@pytest.mark.parametrize(*PARAMS)
+def test_get(make, mapping):
     var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
     d = make(var)
-    d.coords['x'] = sc.scalar(1.0)
-    assert sc.identical(d.coords.get('x', sc.scalar(0.0)), d.coords['x'])
-    assert sc.identical(d.coords.get('z', d.coords['x']), d.coords['x'])
-    assert d.coords.get('z', None) is None
-    assert d.coords.get('z') is None
+    mapview = getattr(d, mapping)
+    mapview['x'] = sc.scalar(1.0)
+    assert sc.identical(mapview.get('x', sc.scalar(0.0)), mapview['x'])
+    assert sc.identical(mapview.get('z', mapview['x']), mapview['x'])
+    assert mapview.get('z', None) is None
+    assert mapview.get('z') is None
 
 
-@pytest.mark.parametrize("make", [make_data_array, make_dataset])
-def test_coords_pop(make):
+@pytest.mark.parametrize(*PARAMS)
+def test_pop(make, mapping):
     var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
     d = make(var)
-    d.coords['x'] = sc.scalar(1.0)
-    d.coords['y'] = sc.scalar(2.0)
-    assert sc.identical(d.coords.pop('x'), sc.scalar(1.0))
-    assert list(d.coords.keys()) == ['y']
-    assert sc.identical(d.coords.pop('z', sc.scalar(3.0)), sc.scalar(3.0))
-    assert list(d.coords.keys()) == ['y']
-    assert sc.identical(d.coords.pop('y'), sc.scalar(2.0))
-    assert len(list(d.coords.keys())) == 0
+    mapview = getattr(d, mapping)
+    mapview['x'] = sc.scalar(1.0)
+    mapview['y'] = sc.scalar(2.0)
+    assert sc.identical(mapview.pop('x'), sc.scalar(1.0))
+    assert list(mapview.keys()) == ['y']
+    assert sc.identical(mapview.pop('z', sc.scalar(3.0)), sc.scalar(3.0))
+    assert list(mapview.keys()) == ['y']
+    assert sc.identical(mapview.pop('y'), sc.scalar(2.0))
+    assert len(list(mapview.keys())) == 0
 
 
-def test_attrs_pop():
-    var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
-    d = sc.DataArray(var)
-    d.attrs['x'] = sc.scalar(1.0)
-    d.attrs['y'] = sc.scalar(2.0)
-    assert sc.identical(d.attrs.pop('x'), sc.scalar(1.0))
-    assert list(d.attrs.keys()) == ['y']
-    assert sc.identical(d.attrs.pop('z', sc.scalar(3.0)), sc.scalar(3.0))
-    assert list(d.attrs.keys()) == ['y']
-    assert sc.identical(d.attrs.pop('y'), sc.scalar(2.0))
-    assert len(list(d.attrs.keys())) == 0
-
-
-def test_masks_pop():
-    var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
-    d = sc.DataArray(var)
-    d.masks['x'] = sc.scalar(True)
-    d.masks['y'] = sc.scalar(False)
-    assert sc.identical(d.masks.pop('x'), sc.scalar(True))
-    assert list(d.masks.keys()) == ['y']
-    assert sc.identical(d.masks.pop('z', sc.scalar(3.0)), sc.scalar(3.0))
-    assert list(d.masks.keys()) == ['y']
-    assert sc.identical(d.masks.pop('y'), sc.scalar(False))
-    assert len(list(d.masks.keys())) == 0
-
-
-@pytest.mark.parametrize("make", [make_data_array, make_dataset])
-def test_coords_clear(make):
+@pytest.mark.parametrize(*PARAMS)
+def test_clear(make, mapping):
     var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
     d = make(var)
-    assert len(d.coords) == 0
-    d.coords['x'] = sc.array(dims=['x'], values=3.3 * np.arange(4.), unit='m')
-    d.coords['y'] = sc.array(dims=['x'], values=-51.0 * np.arange(4.), unit='m')
-    assert len(d.coords) == 2
-    d.coords.clear()
-    assert len(d.coords) == 0
+    mapview = getattr(d, mapping)
+    assert len(mapview) == 0
+    mapview['x'] = sc.array(dims=['x'], values=3.3 * np.arange(4.), unit='m')
+    mapview['y'] = sc.array(dims=['x'], values=-51.0 * np.arange(4.), unit='m')
+    assert len(mapview) == 2
+    mapview.clear()
+    assert len(mapview) == 0
 
 
-def test_attrs_clear():
-    var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
-    d = sc.DataArray(var)
-    assert len(d.attrs) == 0
-    d.attrs['x'] = sc.array(dims=['x'], values=3.3 * np.arange(4.), unit='m')
-    d.attrs['y'] = sc.array(dims=['x'], values=-51.0 * np.arange(4.), unit='m')
-    assert len(d.attrs) == 2
-    d.attrs.clear()
-    assert len(d.attrs) == 0
-
-
-def test_masks_clear():
-    var = sc.array(dims=['x'], values=np.arange(2.), unit='m')
-    d = sc.DataArray(var)
-    assert len(d.masks) == 0
-    d.masks['x'] = sc.array(dims=['x'], values=[True, False])
-    d.masks['y'] = sc.array(dims=['x'], values=[False, True])
-    assert len(d.masks) == 2
-    d.masks.clear()
-    assert len(d.masks) == 0
-
-
-@pytest.mark.parametrize("make", [make_data_array, make_dataset])
-def test_coords_update_from_dict_adds_items(make):
+@pytest.mark.parametrize(*PARAMS)
+def test_update_from_dict_adds_items(make, mapping):
     var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
     d = make(var)
-    d.coords['a'] = sc.scalar(1.0)
-    d.coords.update({'b': sc.scalar(2.0)})
-    assert sc.identical(d.coords['a'], sc.scalar(1.0))
-    assert sc.identical(d.coords['b'], sc.scalar(2.0))
+    mapview = getattr(d, mapping)
+    mapview['a'] = sc.scalar(1.0)
+    mapview.update({'b': sc.scalar(2.0)})
+    assert sc.identical(mapview['a'], sc.scalar(1.0))
+    assert sc.identical(mapview['b'], sc.scalar(2.0))
 
 
-@pytest.mark.parametrize("make", [make_data_array, make_dataset])
-def test_coords_update_from_coords_adds_items(make):
+@pytest.mark.parametrize(*PARAMS)
+def test_update_from_mapping_adds_items(make, mapping):
     var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
     d = make(var)
-    d.coords['a'] = sc.scalar(1.0)
-    d.coords['b'] = sc.scalar(2.0)
+    mapview = getattr(d, mapping)
+    mapview['a'] = sc.scalar(1.0)
+    mapview['b'] = sc.scalar(2.0)
     other = sc.Dataset()
     other.coords['b'] = sc.scalar(3.0)
     other.coords['c'] = sc.scalar(4.0)
-    d.coords.update(other.coords)
-    assert sc.identical(d.coords['a'], sc.scalar(1.0))
-    assert sc.identical(d.coords['b'], sc.scalar(3.0))
-    assert sc.identical(d.coords['c'], sc.scalar(4.0))
+    mapview.update(other.coords)
+    assert sc.identical(mapview['a'], sc.scalar(1.0))
+    assert sc.identical(mapview['b'], sc.scalar(3.0))
+    assert sc.identical(mapview['c'], sc.scalar(4.0))
 
 
-@pytest.mark.parametrize("make", [make_data_array, make_dataset])
-def test_coords_update_from_sequence_of_tuples_adds_items(make):
+@pytest.mark.parametrize(*PARAMS)
+def test_update_from_sequence_of_tuples_adds_items(make, mapping):
     var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
     d = make(var)
-    d.coords['a'] = sc.scalar(1.0)
-    d.coords['b'] = sc.scalar(2.0)
-    d.coords.update([('b', sc.scalar(3.0)), ('c', sc.scalar(4.0))])
-    assert sc.identical(d.coords['a'], sc.scalar(1.0))
-    assert sc.identical(d.coords['b'], sc.scalar(3.0))
-    assert sc.identical(d.coords['c'], sc.scalar(4.0))
+    mapview = getattr(d, mapping)
+    mapview['a'] = sc.scalar(1.0)
+    mapview['b'] = sc.scalar(2.0)
+    mapview.update([('b', sc.scalar(3.0)), ('c', sc.scalar(4.0))])
+    assert sc.identical(mapview['a'], sc.scalar(1.0))
+    assert sc.identical(mapview['b'], sc.scalar(3.0))
+    assert sc.identical(mapview['c'], sc.scalar(4.0))
 
 
-@pytest.mark.parametrize("make", [make_data_array, make_dataset])
-def test_coords_update_from_iterable_of_tuples_adds_items(make):
+@pytest.mark.parametrize(*PARAMS)
+def test_update_from_iterable_of_tuples_adds_items(make, mapping):
 
     def extra_items():
         yield 'b', sc.scalar(3.0)
@@ -175,74 +144,116 @@ def test_coords_update_from_iterable_of_tuples_adds_items(make):
 
     var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
     d = make(var)
-    d.coords['a'] = sc.scalar(1.0)
-    d.coords['b'] = sc.scalar(2.0)
-    d.coords.update(extra_items())
-    assert sc.identical(d.coords['a'], sc.scalar(1.0))
-    assert sc.identical(d.coords['b'], sc.scalar(3.0))
-    assert sc.identical(d.coords['c'], sc.scalar(4.0))
+    mapview = getattr(d, mapping)
+    mapview['a'] = sc.scalar(1.0)
+    mapview['b'] = sc.scalar(2.0)
+    mapview.update(extra_items())
+    assert sc.identical(mapview['a'], sc.scalar(1.0))
+    assert sc.identical(mapview['b'], sc.scalar(3.0))
+    assert sc.identical(mapview['c'], sc.scalar(4.0))
 
 
-@pytest.mark.parametrize("make", [make_data_array, make_dataset])
-def test_coords_update_from_kwargs_adds_items(make):
+@pytest.mark.parametrize(*PARAMS)
+def test_update_from_kwargs_adds_items(make, mapping):
     var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
     d = make(var)
-    d.coords['a'] = sc.scalar(1.0)
-    d.coords['b'] = sc.scalar(2.0)
-    d.coords.update(b=sc.scalar(3.0), c=sc.scalar(4.0))
-    assert sc.identical(d.coords['a'], sc.scalar(1.0))
-    assert sc.identical(d.coords['b'], sc.scalar(3.0))
-    assert sc.identical(d.coords['c'], sc.scalar(4.0))
+    mapview = getattr(d, mapping)
+    mapview['a'] = sc.scalar(1.0)
+    mapview['b'] = sc.scalar(2.0)
+    mapview.update(b=sc.scalar(3.0), c=sc.scalar(4.0))
+    assert sc.identical(mapview['a'], sc.scalar(1.0))
+    assert sc.identical(mapview['b'], sc.scalar(3.0))
+    assert sc.identical(mapview['c'], sc.scalar(4.0))
 
 
-@pytest.mark.parametrize("make", [make_data_array, make_dataset])
-def test_coords_update_from_kwargs_overwrites_other_dict(make):
+@pytest.mark.parametrize(*PARAMS)
+def test_update_from_kwargs_overwrites_other_dict(make, mapping):
     var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
     d = make(var)
-    d.coords['a'] = sc.scalar(1.0)
-    d.coords.update({'b': sc.scalar(2.0)}, b=sc.scalar(3.0))
-    assert sc.identical(d.coords['a'], sc.scalar(1.0))
-    assert sc.identical(d.coords['b'], sc.scalar(3.0))
+    mapview = getattr(d, mapping)
+    mapview['a'] = sc.scalar(1.0)
+    mapview.update({'b': sc.scalar(2.0)}, b=sc.scalar(3.0))
+    assert sc.identical(mapview['a'], sc.scalar(1.0))
+    assert sc.identical(mapview['b'], sc.scalar(3.0))
 
 
-@pytest.mark.parametrize("make", [make_data_array, make_dataset])
-def test_coords_update_without_args_does_nothing(make):
+@pytest.mark.parametrize(*PARAMS)
+def test_update_without_args_does_nothing(make, mapping):
     var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
     d = make(var)
-    d.coords['a'] = sc.scalar(1.0)
-    d.coords['b'] = sc.scalar(2.0)
-    d.coords.update()
-    assert sc.identical(d.coords['a'], sc.scalar(1.0))
-    assert sc.identical(d.coords['b'], sc.scalar(2.0))
+    mapview = getattr(d, mapping)
+    mapview['a'] = sc.scalar(1.0)
+    mapview['b'] = sc.scalar(2.0)
+    mapview.update()
+    assert sc.identical(mapview['a'], sc.scalar(1.0))
+    assert sc.identical(mapview['b'], sc.scalar(2.0))
 
 
-@pytest.mark.parametrize("make", [make_data_array, make_dataset])
-def test_coords_view_comparison_operators(make):
+@pytest.mark.parametrize(*PARAMS)
+def test_view_comparison_operators(make, mapping):
     var = sc.array(dims=['x'], values=np.arange(10.), unit='m')
-    d1 = make(var, coords={'x': sc.array(dims=['x'], values=np.arange(10.0))})
-    d2 = make(var, coords={'x': sc.array(dims=['x'], values=np.arange(10.0))})
-    assert d1.coords == d2.coords
+    d1 = make(var)
+    getattr(d1, mapping)['x'] = sc.array(dims=['x'], values=np.arange(10.0))
+    d2 = make(var)
+    getattr(d2, mapping)['x'] = sc.array(dims=['x'], values=np.arange(10.0))
+    assert getattr(d1, mapping) == getattr(d2, mapping)
 
 
-@pytest.mark.parametrize("make", [make_data_array, make_dataset])
-def test_coord_delitem(make):
+@pytest.mark.parametrize(*PARAMS)
+def test_delitem_mapping(make, mapping):
     var = sc.Variable(dims=['x'], values=np.arange(4))
-    d = make(var, coords={'x': var})
+    d = make(var)
+    mapview = getattr(d, mapping)
+    mapview['x'] = var
     dref = d.copy()
-    d.coords['y'] = sc.scalar(1.0)
+    mapview['y'] = sc.scalar(1.0)
     assert not sc.identical(dref, d)
-    del d.coords['y']
+    del mapview['y']
     assert sc.identical(dref, d)
 
 
-@pytest.mark.parametrize("make", [make_data_array, make_dataset])
-def test_coords_delitem(make):
+@pytest.mark.parametrize(*PARAMS)
+def test_delitem_mappings(make, mapping):
     var = sc.Variable(dims=['x'], values=np.arange(4))
-    d = make(var, coords={'x': var})
+    d = make(var)
+    mapview = getattr(d, mapping)
+    mapview['x'] = var
     dref = d.copy()
-    dref.coords['x'] = sc.Variable(dims=['x'], values=np.arange(1, 5))
+    getattr(dref, mapping)['x'] = sc.Variable(dims=['x'], values=np.arange(1, 5))
     assert not sc.identical(d, dref)
-    del dref.coords['x']
+    del getattr(dref, mapping)['x']
     assert not sc.identical(d, dref)
-    dref.coords['x'] = d.coords['x']
+    getattr(dref, mapping)['x'] = mapview['x']
     assert sc.identical(d, dref)
+
+
+@pytest.mark.parametrize(*PARAMS)
+def test_copy_shallow(make, mapping):
+    var = sc.Variable(dims=['x'], values=np.arange(4), unit='m')
+    d = make(var)
+    mapview = getattr(d, mapping)
+    mapview['x'] = var.copy(deep=True)
+    new_mapping = mapview.copy(deep=False)
+    new_mapping['y'] = sc.scalar(3.0)
+    assert 'y' in new_mapping
+    assert 'y' not in mapview
+    assert mapview['x'].unit == 'm'
+    assert new_mapping['x'].unit == 'm'
+    mapview['x'].unit = 's'
+    assert new_mapping['x'].unit == 's'
+
+
+@pytest.mark.parametrize(*PARAMS)
+def test_copy_deep(make, mapping):
+    var = sc.Variable(dims=['x'], values=np.arange(4), unit='m')
+    d = make(var)
+    mapview = getattr(d, mapping)
+    mapview['x'] = var.copy(deep=True)
+    new_mapping = mapview.copy(deep=True)
+    new_mapping['y'] = sc.scalar(3.0)
+    assert 'y' in new_mapping
+    assert 'y' not in mapview
+    assert mapview['x'].unit == 'm'
+    assert new_mapping['x'].unit == 'm'
+    mapview['x'].unit = 's'
+    assert new_mapping['x'].unit == 'm'
