@@ -126,11 +126,8 @@ def _short_data_repr_html_non_events(var, variances=False):
 
 
 def _short_data_repr_html_events(var):
-    if isinstance(var, sc.Dataset):
-        return str(var)
-    underlying = var.bins.constituents['data']
     string = str(var.data) if isinstance(var, sc.DataArray) else str(var)
-    if isinstance(underlying, sc.Dataset):
+    if isinstance(var.bins.constituents['data'], sc.Dataset):
         return string
     start = 'binned data: '
     ind = string.find(start) + len(start)
