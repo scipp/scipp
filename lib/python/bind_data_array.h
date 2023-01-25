@@ -145,7 +145,11 @@ void bind_dict_popitem(pybind11::class_<T, Ignored...> &view) {
     typename T::key_type key;
     for (const auto &k : keys_view(self))
       key = k;
-    return py::cast(self.extract(key));
+    const auto item = py::cast(self.extract(key));
+    if constexpr (std::is_same_v<typename T::key_type, Dim>)
+      return std::tuple{key.name(), item};
+    else
+      return std::tuple{key, item};
   });
 }
 

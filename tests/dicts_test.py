@@ -266,7 +266,11 @@ def test_popitem(make, mapping):
     mapview = getattr(d, mapping)
     mapview['x'] = sc.scalar(1.0)
     mapview['y'] = sc.scalar(2.0)
-    assert sc.identical(mapview.popitem(), sc.scalar(2.0))
+    item = mapview.popitem()
+    assert item[0] == 'y'
+    assert sc.identical(item[1], sc.scalar(2.0))
     assert list(mapview.keys()) == ['x']
-    assert sc.identical(mapview.popitem(), sc.scalar(1.0))
+    item = mapview.popitem()
+    assert item[0] == 'x'
+    assert sc.identical(item[1], sc.scalar(1.0))
     assert len(list(mapview.keys())) == 0
