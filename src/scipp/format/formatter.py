@@ -39,7 +39,9 @@ def _format_unit(data: Variable) -> str:
     return f'[{data.unit}]'
 
 
-def _format_element(elem: Any):
+def _format_element(elem: Any, spec: str):
+    if spec:
+        return f'{elem:{spec}}'
     if isinstance(elem, (int, float)):
         # Replicate behavior of C++ formatter.
         return f'{elem:g}'
@@ -48,25 +50,35 @@ def _format_element(elem: Any):
     return f'{elem}'
 
 
-def _format_array_flat(data, length: int, dtype: DType) -> str:
+def _as_flat_array(data):
+    if isinstance(data, np.ndarray):
+        return data.flat
+    if 'ElementArray' in repr(type(data)):
+        return data
+    return np.array([data])
+
+
+def _format_array_flat(data, length: int, dtype: DType, spec: str) -> str:
     if dtype in (DType.Variable, DType.DataArray, DType.Dataset, DType.VariableView,
-                 DType.DataArrayView, DType.DatasetView, DType.PyObject):
+                 DType.DataArrayView, DType.DatasetView):
         return _format_array_flat_scipp_objects(data)
-    return _format_array_flat_regular(data, length)
+    if dtype == DType.PyObject and 'ElementArray' in repr(type(data)):
+        # We can handle scalars of PyObject but not arrays.
+        return _format_array_flat_scipp_objects(data)
+    data = _as_flat_array(data)
+    return _format_array_flat_regular(data, length, spec=spec)
 
 
 def _format_array_flat_scipp_objects(data) -> str:
+    # Fallback because ElementArrayView does not allow us to
+    # slice and access elements nicely.
     return str(data)
 
 
-def _format_array_flat_regular(data, length: int) -> str:
+def _format_array_flat_regular(data: np.ndarray, length: int, spec: str) -> str:
 
     def _format_all_in(d) -> List[str]:
-        return [_format_element(e) for e in d]
-
-    if isinstance(data, np.ndarray):
-        # ElementArrayView is already flat
-        data = data.flat
+        return [_format_element(e, spec=spec) for e in d]
 
     if len(data) <= length:
         elements = _format_all_in(data)
@@ -78,14 +90,13 @@ def _format_array_flat_regular(data, length: int) -> str:
 
 
 def _format_variable_default(var: Variable, spec: FormatSpec) -> str:
-    if spec.nested:
-        raise NotImplementedError("Nested spec is not implemented")
     dims = _format_sizes(var)
     dtype = str(var.dtype)
     unit = _format_unit(var)
-    values = _format_array_flat(var.values, length=4, dtype=var.dtype)
-    variances = _format_array_flat(var.variances, length=4,
-                                   dtype=var.dtype) if var.variances else ''
+    values = _format_array_flat(var.values, length=4, dtype=var.dtype, spec=spec.nested)
+    variances = _format_array_flat(
+        var.variances, length=4, dtype=var.dtype,
+        spec=spec.nested) if var.variances else ''
 
     return (f'<scipp.Variable> {dims}  {dtype:>9}  {unit:>15}  {values}' +
             ('  ' + variances if variances else ''))
