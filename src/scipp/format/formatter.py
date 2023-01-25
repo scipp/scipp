@@ -2,9 +2,11 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Gregory Tucker, Jan-Lukas Wynen
 
+from typing import Any, List
+
 import numpy as np
 
-from ..core.cpp_classes import Unit, Variable
+from ..core.cpp_classes import DType, Unit, Variable
 from ._parse import FormatSpec, FormatType, parse
 
 
@@ -27,19 +29,74 @@ def format_variable(self, format_spec: str) -> str:
     return _VARIABLE_FORMATTERS[spec.format_type](self, spec)
 
 
+def _format_sizes(data: Variable) -> str:
+    return '(' + ', '.join(f'{dim}: {size}' for dim, size in data.sizes.items()) + ')'
+
+
+def _format_unit(data: Variable) -> str:
+    if data.unit is None:
+        return '<no unit>'
+    return f'[{data.unit}]'
+
+
+def _format_element(elem: Any):
+    if isinstance(elem, (int, float)):
+        # Replicate behavior of C++ formatter.
+        return f'{elem:g}'
+    if isinstance(elem, str):
+        return f'"{elem}"'
+    return f'{elem}'
+
+
+def _format_array_flat(data, length: int, dtype: DType) -> str:
+    if dtype in (DType.Variable, DType.DataArray, DType.Dataset, DType.VariableView,
+                 DType.DataArrayView, DType.DatasetView, DType.PyObject):
+        return _format_array_flat_scipp_objects(data)
+    return _format_array_flat_regular(data, length)
+
+
+def _format_array_flat_scipp_objects(data) -> str:
+    return str(data)
+
+
+def _format_array_flat_regular(data, length: int) -> str:
+
+    def _format_all_in(d) -> List[str]:
+        return [_format_element(e) for e in d]
+
+    if isinstance(data, np.ndarray):
+        # ElementArrayView is already flat
+        data = data.flat
+
+    if len(data) <= length:
+        elements = _format_all_in(data)
+    else:
+        elements = _format_all_in(data[:length // 2])
+        elements.append('...')
+        elements.extend(_format_all_in(data[-length // 2:]))
+    return f'[{", ".join(elements)}]'
+
+
 def _format_variable_default(var: Variable, spec: FormatSpec) -> str:
     if spec.nested:
         raise NotImplementedError("Nested spec is not implemented")
-    return str(var)
+    dims = _format_sizes(var)
+    dtype = str(var.dtype)
+    unit = _format_unit(var)
+    values = _format_array_flat(var.values, length=4, dtype=var.dtype)
+    variances = _format_array_flat(var.variances, length=4,
+                                   dtype=var.dtype) if var.variances else ''
+
+    return (f'<scipp.Variable> {dims}  {dtype:>9}  {unit:>15}  {values}' +
+            ('  ' + variances if variances else ''))
 
 
 def _format_variable_compact(var: Variable, spec: FormatSpec) -> str:
     if spec.nested:
         raise NotImplementedError("Nested spec is not implemented")
 
-    dtype = str(var.dtype)
-    if not any([x in dtype for x in ('float', 'int')]):
-        raise ValueError(f"Compact formatting is not supported for dtype {dtype}")
+    if not _is_numeric(var.dtype):
+        raise ValueError(f"Compact formatting is not supported for dtype {var.dtype}")
 
     values = var.values if var.shape else np.array((var.value, ))
     variances = var.variances if var.shape else np.array((var.variance, ))
@@ -51,6 +108,11 @@ def _format_variable_compact(var: Variable, spec: FormatSpec) -> str:
     else:
         formatted = [_format(*_round(v, e)) for v, e in zip(values, variances)]
     return f"{', '.join(formatted)}{unt}"
+
+
+def _is_numeric(dtype: DType) -> bool:
+    dtype = str(dtype)
+    return any([x in dtype for x in ('float', 'int')])
 
 
 def _round(value, variance):
