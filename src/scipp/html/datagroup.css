@@ -1,15 +1,17 @@
 /* CSS stylesheet for displaying scipp objects in jupyterlab.
-* Original source from
-* https://github.com/jsignell/xarray/blob/1d960933ab252e0f79f7e050e6c9261d55568057/xarray/static/css/style.css
 * scipp.html.formatting_nested_html._load_dg_style will load the dependency, which is
 * `scipp.html.style.css.template` together with this file in spearate style tag with different style id.
 */
 
 .dg-root {
-  white-space: pre;
+  white-space: normal;
   font-size: 14px;
   min-width: 300px;
-  max-width: 800px;
+  max-width: 1200px;
+}
+
+.dg-root * {
+  box-sizing: border-box;
 }
 
 .sc-header > label,
@@ -45,9 +47,10 @@
 .dg-detail-box {
   margin-top: 5px;
   margin-bottom: 5px;
+  column-gap: 0 !important;
   display: grid;
-  grid-template-columns:  auto 64px   128px       128px 75px  32px auto;
-  grid-template-areas:   "name parent object-type shape dtype unit preview";
+  grid-template-columns:  max-content 64px   128px       max-content  max-content max-content max-content;
+  grid-template-areas:   "name        parent object-type shape        dtype       unit        preview";
 }
 
 .dg-detail-list {
@@ -65,7 +68,7 @@
 
 .dg-detail-item-in + .dg-detail-name > label:before {
   display: inline-block;
-  font-size: 11px;
+  font-size: 14px;
   text-align: left;
   content: '►';
 }
@@ -74,19 +77,28 @@
   content: '▼';
 }
 
-.dg-detail-item div {
-  overflow-x: scroll;
+.dg-detail-item div,
+.dg-detail-item span,
+.dg-detail-item label {
+  word-break: break-all;
+  min-width: 5em;
+  max-width: 20em;
+  width: 100%;
 }
 
 .dg-detail-item > div {
   display: contents;
 }
 
+.dg-detail-item > div > div > div {
+  width: 100%;
+}
+
 .dg-detail-item:hover > div > div {
   background-color: var(--sc-background-color2);
 }
 
-.dg-detail-item div > span {
+.dg-detail-item > div span {
   padding-left: 10px;
   padding-right: 10px;
 }
@@ -99,22 +111,29 @@
   display: none;
 }
 
+.dg-detail-item-in {
+  margin: 0;
+}
+
 .dg-detail-item-in:checked ~ .dg-detail-item-subsection {
   display: contents;
 }
 
 .dg-detail-item .dg-detail-name {
   grid-area: "name";
-  min-width: 100px;
-  padding-left: calc(var(--depth)*1.5em);
+  min-width: 5em;
 }
 
-div.dg-detail-name > span {
-  padding-left: 1em;
+.dg-detail-name {
+  padding-left: calc(var(--depth)*2em);
+}
+
+.dg-detail-name > label {
+  padding-left: 8px;
 }
 
 .dg-detail-name > label > span {
-  padding-left: 0.2em;
+  padding-left: 0.1em;
 }
 
 .dg-detail-item .dg-detail-parent {
@@ -133,7 +152,7 @@ div.dg-detail-name > span {
 }
 
 .sc-header .dg-detail-shape {
-  margin-left: 20px;
+  margin-left: 1em;
   text-align: left;
 }
 
@@ -148,7 +167,8 @@ div.dg-detail-name > span {
 }
 
 .dg-detail-item .dg-detail-preview {
-  min-width: 256px;
+  min-width: 15em;
+  max-width: 30em;
   grid-area: "preview";
   text-align: left;
 }
