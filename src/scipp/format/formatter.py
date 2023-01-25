@@ -104,7 +104,7 @@ def _format_variable_default(var: Variable, spec: FormatSpec) -> str:
 
 def _format_variable_compact(var: Variable, spec: FormatSpec) -> str:
     if spec.nested:
-        raise NotImplementedError("Nested spec is not implemented")
+        raise NotImplementedError("Nested specs not supported for compact formatting")
 
     if not _is_numeric(var.dtype):
         raise ValueError(f"Compact formatting is not supported for dtype {var.dtype}")
@@ -115,9 +115,11 @@ def _format_variable_compact(var: Variable, spec: FormatSpec) -> str:
 
     # Iterate over array values to handle no- and infinite-precision cases
     if variances is None:
-        formatted = [_format(v) for v in values]
+        formatted = [_format_element_compact(v) for v in values]
     else:
-        formatted = [_format(*_round(v, e)) for v, e in zip(values, variances)]
+        formatted = [
+            _format_element_compact(*_round(v, e)) for v, e in zip(values, variances)
+        ]
     return f"{', '.join(formatted)}{unt}"
 
 
@@ -162,7 +164,7 @@ def _round(value, variance):
     return value, error, precision
 
 
-def _format(value, error=None, precision=None):
+def _format_element_compact(value, error=None, precision=None):
     # Build the appropriate format string:
     # No variance (or infinite precision) values take no formatting string
     # Positive precision implies no decimals, with format '0.0f'
