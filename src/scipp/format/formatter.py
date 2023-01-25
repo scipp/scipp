@@ -1,40 +1,56 @@
-def format_variable(data, spec):
-    """
-    String formats the Variable according to the provided specification.
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
+# @author Gregory Tucker, Jan-Lukas Wynen
+
+import numpy as np
+
+from ..core.cpp_classes import Unit, Variable
+from ._parse import FormatSpec, FormatType, parse
+
+
+def format_variable(self, format_spec: str) -> str:
+    """String formats the Variable according to the provided specification.
 
     Parameters
     ----------
-    data
-        A scalar or array-like scipp Variable object
-    spec
-        Format specification; only 'c' for Compact error-reporting supported at present
+    format_spec:
+        Format specification;
+        only 'c' for Compact error-reporting supported at present.
 
     Returns
     -------
-    The formatted string
+    :
+        The formatted string.
     """
-    from numpy import array
 
-    from ..core.cpp_classes import Unit
-    dtype = str(data.dtype)
-    if not any([x in dtype for x in ('float', 'int')]) or spec is None or len(spec) < 1:
-        return data.__repr__()
-    compact = spec[-1] == 'c'
+    spec = parse(format_spec, Variable)
+    return _VARIABLE_FORMATTERS[spec.format_type](self, spec)
 
-    val = data.values if data.shape else array((data.value, ))
-    var = data.variances if data.shape else array((data.variance, ))
-    unt = "" if data.unit == Unit('dimensionless') else f" {data.unit}"
 
-    if compact:
-        # Iterate over array values to handle no- and infinite-precision cases
-        if var is None:
-            formatted = [_format(v) for v in val]
-        else:
-            formatted = [_format(*_round(v, e)) for v, e in zip(val, var)]
-        return f"{', '.join(formatted)}{unt}"
+def _format_variable_default(var: Variable, spec: FormatSpec) -> str:
+    if spec.nested:
+        raise NotImplementedError("Nested spec is not implemented")
+    return str(var)
 
-    # punt (for now)
-    return data.__repr__()
+
+def _format_variable_compact(var: Variable, spec: FormatSpec) -> str:
+    if spec.nested:
+        raise NotImplementedError("Nested spec is not implemented")
+
+    dtype = str(var.dtype)
+    if not any([x in dtype for x in ('float', 'int')]):
+        raise ValueError(f"Compact formatting is not supported for dtype {dtype}")
+
+    values = var.values if var.shape else np.array((var.value, ))
+    variances = var.variances if var.shape else np.array((var.variance, ))
+    unt = "" if var.unit == Unit('dimensionless') else f" {var.unit}"
+
+    # Iterate over array values to handle no- and infinite-precision cases
+    if variances is None:
+        formatted = [_format(v) for v in values]
+    else:
+        formatted = [_format(*_round(v, e)) for v, e in zip(values, variances)]
+    return f"{', '.join(formatted)}{unt}"
 
 
 def _round(value, variance):
@@ -51,7 +67,7 @@ def _round(value, variance):
     # the error allows for one-digit uncertainty of precision
     precision = floor(log10(error))
 
-    # By convention, if the first digit of the error rounds to 1
+    # By convention, if the first digit of the error rounds to 1,
     # add an extra digit of precision, so there are two-digits of uncertainty
     if round(error * power(10., -precision)) == 1:
         precision -= 1
@@ -87,3 +103,9 @@ def _format(value, error=None, precision=None):
         formatted = f'{formatted}({error})'
 
     return formatted
+
+
+_VARIABLE_FORMATTERS = {
+    FormatType.default: _format_variable_default,
+    FormatType.compact: _format_variable_compact,
+}

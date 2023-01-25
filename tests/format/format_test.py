@@ -1,6 +1,21 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
+# @author Gregory Tucker, Jan-Lukas Wynen
+
 import numpy as np
+import pytest
 
 import scipp as sc
+
+
+@pytest.mark.parametrize(
+    'var', (sc.scalar(1), sc.scalar(3.1, variance=0.1, unit='m'),
+            sc.array(dims=['x', 't'], values=np.ones(
+                (3, 4)), unit='kg/s'), sc.array(dims=['s'], values=['str', '2'])))
+def test_variable_default(var):
+    assert f'{var}' == str(var)
+    assert f'{var:}' == str(var)
+    assert '{:}'.format(var) == str(var)
 
 
 def scalar_string(value, error, unit):
