@@ -167,8 +167,8 @@
 }
 
 .dg-detail-item .dg-detail-preview {
-  min-width: 15em;
-  max-width: 30em;
   grid-area: "preview";
+  min-width: 15em;
+  max-width: 35em;
   text-align: left;
 }

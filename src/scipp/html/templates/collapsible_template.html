@@ -1,0 +1,38 @@
+<!--
+    Style Sheet Dependencies:
+        - scipp.html style.css.template
+        - scipp.html datagroup_style.css
+-->
+
+<li class='dg-detail-item'>
+    <div>
+        <input class='dg-detail-item-in' id='${summary_section_id}' type='checkbox' ${checkbox_status}>
+        <div class='dg-detail-name' style='--depth: ${depth};'>
+            <label for=${summary_section_id} title='Expand/collapse'>
+                <span>${name}<span>
+            </label>
+        </div>
+        <div class='dg-detail-parent'>
+            <span style='opacity: 0.5;'>${parent}</span>
+        </div>
+        <div class='dg-detail-objtype'>
+            <span>${objtype}</span>
+        </div>
+        <div class='dg-detail-shape'>${shape_repr}</div>
+        <div class='dg-detail-dtype'></div>
+        <div class='dg-detail-unit'></div>
+        <div class='dg-detail-preview'></div>
+        <ul class='dg-detail-item-subsection'>
+            ${subsection}
+            <!--
+                Use <dg_detail_template> here
+                <ul class='dg-detail-list'>
+                    <li class='dg-detail-item'>
+                        ...
+                    </li>
+                    ...
+                </ul>
+            -->
+        </ul>
+    </div>
+</li>

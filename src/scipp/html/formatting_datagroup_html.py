@@ -2,6 +2,7 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 
 import uuid
+from collections import deque
 from html import escape
 from string import Template
 from typing import Union
@@ -15,21 +16,52 @@ from .resources import load_atomic_tpl, load_collapsible_tpl, load_dg_detail_tpl
     load_dg_repr_tpl, load_dg_style
 
 
-def _make_shape_repr(var: Union[Variable, DataArray, Dataset, DataGroup]) -> str:
+def _format_shape(var: Union[Variable, DataArray, Dataset, DataGroup]) -> str:
     """Returns HTML Component that represents the shape of ``var``"""
     shape_list = "".join(f"<li>{escape(str(dim))}: {size}</li>"
                          for dim, size in var.sizes.items())
     return f"<ul class='sc-dim-list'>{shape_list}</ul>"
 
 
-def _make_dataset_summary(ds: Dataset) -> str:
-    """Returns (partial) information of Dataset object items"""
-    key_type_str = [
-        ": ".join([name, type(value).__name__]) for name, value in ds.items()
-    ]
-    if len(key_type_str) > 3:
-        key_type_str = key_type_str[:2] + ["..."] + key_type_str[-1:]
-    return "Dataset{" + ", ".join(key_type_str) + "}"
+def _format_atomic_value(value, maxlen: int = 5) -> str:
+    value_repr = str(value)[:maxlen]
+    if len(value_repr) < len(str(value)):
+        value_repr += "..."
+    return value_repr
+
+
+def _format_dictionary_item(name_item: tuple, maxlen: int = 10) -> str:
+    name, item = name_item
+    name = _format_atomic_value(name, maxlen=maxlen)
+    type_repr = _format_atomic_value(type(item).__name__, maxlen=maxlen)
+    return "(" + ": ".join((name, type_repr)) + ")"
+
+
+def _format_multi_dim_data(var: Union[Variable, DataArray, Dataset, np.ndarray]) -> str:
+    if len(var.shape) == 0 and (not isinstance(var, Dataset)):
+        return _format_atomic_value(var.value, maxlen=30)
+    elif isinstance(var, Dataset):
+        view_iter = iter(var.items())
+        format_item = _format_dictionary_item
+        var_len = len(var)
+    elif isinstance(var, (Variable, DataArray)):
+        view_iter = iter(np.ravel(var.values))
+        format_item = _format_atomic_value
+        var_len = len(var)
+    else:
+        view_iter = iter(np.ravel(var))
+        format_item = _format_atomic_value
+        var_len = var.size
+
+    max_first_items = min(var_len, 2)
+    view_items = [format_item(next(view_iter)) for _ in range(max_first_items)]
+
+    if var_len > max_first_items:
+        if var_len > max_first_items + 1:
+            view_items.append('... ')
+        view_items.append(format_item(deque(view_iter).pop()))
+
+    return ', '.join(view_items)
 
 
 def _summarize_atomic_variable(var, name: str, depth: int = 0) -> str:
@@ -40,22 +72,22 @@ def _summarize_atomic_variable(var, name: str, depth: int = 0) -> str:
     preview = ''
     parent_obj_str = ''
     objtype_str = type(var).__name__
-    if isinstance(var, (Dataset, DataArray, Variable, DataGroup)):
+    if isinstance(var, (Dataset, DataArray, Variable)):
         parent_obj_str = "scipp"
-        shape_repr = _make_shape_repr(var)
-        if isinstance(var, Dataset):
-            preview = _make_dataset_summary(var)
-        else:
+        shape_repr = _format_shape(var)
+        preview = _format_multi_dim_data(var)
+        if not isinstance(var, Dataset):
+            dtype_str = str(var.dtype)
             if var.unit is not None:
                 unit = '𝟙' if var.unit == dimensionless else str(var.unit)
-            dtype_str = str(var.dtype)
-            preview = str(var.value) if len(var.dims) == 0 else ""
     else:
         if isinstance(var, np.ndarray):
             parent_obj_str = "numpy"
-            preview = f"shape={var.shape}, dtype={var.dtype}"
-        if isinstance(var, (str, int, float)):
-            preview = str(var)
+            preview = f"shape={var.shape}, dtype={var.dtype}, values="
+            preview += _format_multi_dim_data(var)
+
+        if hasattr(var, "__str__"):
+            preview = _format_atomic_value(var, maxlen=30)
 
     html_tpl = load_atomic_tpl()
     return Template(html_tpl).substitute(depth=depth,
@@ -71,7 +103,7 @@ def _summarize_atomic_variable(var, name: str, depth: int = 0) -> str:
 def _collapsible_summary(var: DataGroup, name: str, name_spaces: list) -> str:
     parent_type = "scipp"
     objtype = type(var).__name__
-    shape_repr = _make_shape_repr(var)
+    shape_repr = _format_shape(var)
     checkbox_id = escape("summary-" + str(uuid.uuid4()))
     depth = len(name_spaces)
     subsection = _datagroup_detail(var, name_spaces + [name])
@@ -114,5 +146,5 @@ def datagroup_repr(dg: DataGroup) -> str:
                            header_id=header_id,
                            checkbox_status=checkbox_status,
                            obj_type=obj_type,
-                           shape_repr=_make_shape_repr(dg),
+                           shape_repr=_format_shape(dg),
                            details=details)

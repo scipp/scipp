@@ -1,0 +1,30 @@
+<!--
+    Style Sheet Dependencies:
+        - scipp.html style.css.template
+        - scipp.html datagroup_style.css
+-->
+
+<div>
+    ${style_sheet}
+    <div class='sc-root dg-root'>
+        <input class='dg-header-in' id='${header_id}' type='checkbox' ${checkbox_status}>
+        <div class='sc-header'>
+            <label for=${header_id} title='Expand/collapse'>
+                <div class='sc-obj-type'>${obj_type}</div>
+                <div class='dg-detail-shape'>${shape_repr}</div>
+            </label>
+        </div>
+        <div class='dg-detail-box'>
+            ${details}
+            <!--
+                Use <dg_detail_template> here
+                <ul class='dg-detail-list'>
+                    <li class='dg-detail-item'>
+                        ...
+                    </li>
+                    ...
+                </ul>
+            -->
+        </div>
+    </div>
+</div>
