@@ -235,6 +235,20 @@ def test_create_scalar_dtype_Dataset(dtype):
     assert var.dtype == sc.DType.Dataset
 
 
+@pytest.mark.parametrize("dtype",
+                         (1, 2.3, 'string', sc.scalar(0), sc.DataArray(
+                             sc.scalar(1)), sc.Dataset({'a': sc.scalar(3)})))
+def test_create_scalar_with_instance_as_dtype(dtype):
+    with pytest.raises(TypeError):
+        sc.Variable(dims=(), values=dtype, dtype=dtype)
+
+
+@pytest.mark.parametrize("dtype", (str, sc.Variable, sc.DataArray, sc.Dataset))
+def test_create_scalar_value_must_be_convertible_to_dtype(dtype):
+    with pytest.raises(ValueError):
+        sc.Variable(dims=(), values=0, dtype=dtype)
+
+
 @pytest.mark.parametrize('value', (1, 1.2, True))
 @pytest.mark.parametrize('dtype', (np.int32, np.int64, np.float32, np.float64, bool))
 def test_create_scalar_conversion(value, dtype):
