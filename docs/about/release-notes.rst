@@ -6,7 +6,7 @@ Release Notes
 
 .. Template, copy this to create a new section after a release:
 
-   v23.01.0
+   Version RELEASE_PLACEHOLDER
    --------
 
    Features
@@ -34,6 +34,38 @@ Release Notes
    Neil Vaytet :sup:`a`\ ,
    Jan-Lukas Wynen :sup:`a`\ ,
    and Sunyoung Yoo :sup:`a`
+
+
+Version RELEASE_PLACEHOLDER
+--------
+
+Features
+~~~~~~~~
+
+* Added new string-formatting options `#3017 <https://github.com/scipp/scipp/pull/3017>`_.
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+Bugfixes
+~~~~~~~~
+
+Documentation
+~~~~~~~~~~~~~
+
+Deprecations
+~~~~~~~~~~~~
+
+Stability, Maintainability, and Testing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Contributors
+~~~~~~~~~~~~
+
+Simon Heybrock :sup:`a`\ ,
+Neil Vaytet :sup:`a`\ ,
+Jan-Lukas Wynen :sup:`a`\ ,
+and Sunyoung Yoo :sup:`a`
 
 
 v23.01.0
