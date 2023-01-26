@@ -1,0 +1,174 @@
+/* CSS stylesheet for displaying scipp objects in jupyterlab.
+* scipp.html.formatting_nested_html._load_dg_style will load the dependency, which is
+* `scipp.html.style.css.template` together with this file in spearate style tag with different style id.
+*/
+
+.dg-root {
+  white-space: normal;
+  font-size: 14px;
+  min-width: 300px;
+  max-width: 1200px;
+}
+
+.dg-root * {
+  box-sizing: border-box;
+}
+
+.sc-header > label,
+.sc-header > label > div,
+.sc-header > label > div > ul {
+  display: inline;
+  margin-bottom: 0;
+}
+
+.dg-header-in {
+  display: none;
+}
+
+.dg-header-in + .sc-header > label:before {
+  display: inline-block;
+  font-size: 11px;
+  text-align: left;
+  content: '►';
+}
+
+.dg-header-in:checked + .sc-header > label:before {
+  content: '▼';
+}
+
+.dg-header-in ~ .dg-detail-box {
+  display: none;
+}
+
+.dg-header-in:checked ~ .dg-detail-box {
+  display: grid;
+}
+
+.dg-detail-box {
+  margin-top: 5px;
+  margin-bottom: 5px;
+  column-gap: 0 !important;
+  display: grid;
+  grid-template-columns:  max-content 64px   128px       max-content  max-content max-content max-content;
+  grid-template-areas:   "name        parent object-type shape        dtype       unit        preview";
+}
+
+.dg-detail-list {
+  display: contents;
+}
+
+.dg-detail-item {
+  display: contents;
+  list-style-type: none;
+}
+
+.dg-detail-item-in {
+  display: none;
+}
+
+.dg-detail-item-in + .dg-detail-name > label:before {
+  display: inline-block;
+  font-size: 14px;
+  text-align: left;
+  content: '►';
+}
+
+.dg-detail-item-in:checked + .dg-detail-name > label:before {
+  content: '▼';
+}
+
+.dg-detail-item div,
+.dg-detail-item span,
+.dg-detail-item label {
+  word-break: break-all;
+  min-width: 5em;
+  max-width: 20em;
+  width: 100%;
+}
+
+.dg-detail-item > div {
+  display: contents;
+}
+
+.dg-detail-item > div > div > div {
+  width: 100%;
+}
+
+.dg-detail-item:hover > div > div {
+  background-color: var(--sc-background-color2);
+}
+
+.dg-detail-item > div span {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.dg-detail-item > div > div:first-of-type {
+  grid-column-start: 1;
+}
+
+.dg-detail-item-subsection {
+  display: none;
+}
+
+.dg-detail-item-in {
+  margin: 0;
+}
+
+.dg-detail-item-in:checked ~ .dg-detail-item-subsection {
+  display: contents;
+}
+
+.dg-detail-item .dg-detail-name {
+  grid-area: "name";
+  min-width: 5em;
+}
+
+.dg-detail-name {
+  padding-left: calc(var(--depth)*2em);
+}
+
+.dg-detail-name > label {
+  padding-left: 8px;
+}
+
+.dg-detail-name > label > span {
+  padding-left: 0.1em;
+}
+
+.dg-detail-item .dg-detail-parent {
+  grid-area: "parent";
+  text-align: right;
+}
+
+.dg-detail-item .dg-detail-objtype {
+  grid-area: "objtype";
+  text-align: left;
+}
+
+.dg-detail-item .dg-detail-shape {
+  grid-area: "shape";
+  text-align: left;
+}
+
+.sc-header .dg-detail-shape {
+  margin-left: 1em;
+  text-align: left;
+}
+
+.dg-detail-item .dg-detail-dtype {
+  grid-area: "dtype";
+  text-align: left;
+}
+
+.dg-detail-item .dg-detail-unit {
+  grid-area: "unit";
+  text-align: center;
+}
+
+.dg-detail-item .dg-detail-preview {
+  min-width: 15em;
+  max-width: 30em;
+  grid-area: "preview";
+  text-align: left;
+}
