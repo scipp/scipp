@@ -151,6 +151,22 @@ scipp::core::DType scipp_dtype(const py::dtype &type) {
       " int32, int64, string, datetime64, and object");
 }
 
+scipp::core::DType dtype_from_scipp_class(const py::object &type) {
+  // Using the __name__ because we would otherwise have to get a handle
+  // to the Python classes for our C++ classes. And I don't know how
+  // to do that. This approach can break if people (including us) pull
+  // shenanigans with the classes in Python!
+  if (type.attr("__name__").cast<std::string>() == "Variable") {
+    return dtype<Variable>;
+  } else if (type.attr("__name__").cast<std::string>() == "DataArray") {
+    return dtype<DataArray>;
+  } else if (type.attr("__name__").cast<std::string>() == "Dataset") {
+    return dtype<Dataset>;
+  } else {
+    throw std::invalid_argument("Invalid dtype");
+  }
+}
+
 scipp::core::DType scipp_dtype(const py::object &type) {
   // Check None first, then native scipp Dtype, then numpy.dtype
   if (type.is_none())
@@ -158,6 +174,11 @@ scipp::core::DType scipp_dtype(const py::object &type) {
   try {
     return type.cast<DType>();
   } catch (const py::cast_error &) {
+    if (py::isinstance<py::type>(type) &&
+        type.attr("__module__").cast<std::string>() == "scipp._scipp.core") {
+      return dtype_from_scipp_class(type);
+    }
+
     auto np_dtype = py::dtype::from_args(type);
     if (np_dtype.kind() == DTypeKind::RawData) {
       throw std::invalid_argument(

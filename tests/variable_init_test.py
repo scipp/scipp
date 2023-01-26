@@ -196,7 +196,7 @@ def test_create_scalar_numpy_type(val_and_dtype):
     assert sc.scalar(val).dtype == dtype
 
 
-@pytest.mark.parametrize("dtype", (None, sc.DType.Variable))
+@pytest.mark.parametrize("dtype", (None, sc.DType.Variable, sc.Variable))
 def test_create_scalar_dtype_Variable(dtype):
     elem = sc.Variable(dims=['x'], values=np.arange(4.0))
     var = sc.Variable(dims=(), values=elem, dtype=dtype)
@@ -209,7 +209,7 @@ def test_create_scalar_dtype_Variable(dtype):
     assert var.dtype == sc.DType.Variable
 
 
-@pytest.mark.parametrize("dtype", (None, sc.DType.DataArray))
+@pytest.mark.parametrize("dtype", (None, sc.DType.DataArray, sc.DataArray))
 def test_create_scalar_dtype_DataArray(dtype):
     elem = sc.DataArray(data=sc.Variable(dims=['x'], values=np.arange(4.0)))
     var = sc.Variable(dims=(), values=elem, dtype=dtype)
@@ -222,7 +222,7 @@ def test_create_scalar_dtype_DataArray(dtype):
     assert var.dtype == sc.DType.DataArray
 
 
-@pytest.mark.parametrize("dtype", (None, sc.DType.Dataset))
+@pytest.mark.parametrize("dtype", (None, sc.DType.Dataset, sc.Dataset))
 def test_create_scalar_dtype_Dataset(dtype):
     elem = sc.Dataset(data={'a': sc.Variable(dims=['x'], values=np.arange(4.0))})
     var = sc.Variable(dims=(), values=elem, dtype=dtype)
@@ -233,6 +233,20 @@ def test_create_scalar_dtype_Dataset(dtype):
     assert var.unit is None
     var = sc.Variable(dims=(), values=elem['x', 1:3], dtype=dtype)
     assert var.dtype == sc.DType.Dataset
+
+
+@pytest.mark.parametrize("dtype",
+                         (1, 2.3, 'string', sc.scalar(0), sc.DataArray(
+                             sc.scalar(1)), sc.Dataset({'a': sc.scalar(3)})))
+def test_create_scalar_with_instance_as_dtype(dtype):
+    with pytest.raises(TypeError):
+        sc.Variable(dims=(), values=dtype, dtype=dtype)
+
+
+@pytest.mark.parametrize("dtype", (str, sc.Variable, sc.DataArray, sc.Dataset))
+def test_create_scalar_value_must_be_convertible_to_dtype(dtype):
+    with pytest.raises(ValueError):
+        sc.Variable(dims=(), values=0, dtype=dtype)
 
 
 @pytest.mark.parametrize('value', (1, 1.2, True))
