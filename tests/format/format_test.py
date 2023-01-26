@@ -85,3 +85,15 @@ def test_variable_compact_array_with_variance():
                        variances=np.array(errors)**2,
                        unit=unit)
         assert f'{var:c}' == expected
+
+
+def test_variable_compact_raises_for_nested():
+    var = sc.scalar(2)
+    with pytest.raises(ValueError):
+        f'{var:c:f}'
+
+
+def test_variable_compact_only_supports_numeric_dtype():
+    var = sc.scalar('a string')
+    with pytest.raises(ValueError):
+        f'{var:c}'

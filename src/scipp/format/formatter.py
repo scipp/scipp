@@ -104,8 +104,7 @@ def _format_variable_default(var: Variable, spec: FormatSpec) -> str:
 
 def _format_variable_compact(var: Variable, spec: FormatSpec) -> str:
     if spec.nested:
-        raise NotImplementedError("Nested specs not supported for compact formatting")
-
+        raise ValueError("Compact formatting does not support nested format specs")
     if not _is_numeric(var.dtype):
         raise ValueError(f"Compact formatting is not supported for dtype {var.dtype}")
 
