@@ -196,7 +196,7 @@ def test_create_scalar_numpy_type(val_and_dtype):
     assert sc.scalar(val).dtype == dtype
 
 
-@pytest.mark.parametrize("dtype", (None, sc.DType.Variable))
+@pytest.mark.parametrize("dtype", (None, sc.DType.Variable, sc.Variable))
 def test_create_scalar_dtype_Variable(dtype):
     elem = sc.Variable(dims=['x'], values=np.arange(4.0))
     var = sc.Variable(dims=(), values=elem, dtype=dtype)
@@ -209,7 +209,7 @@ def test_create_scalar_dtype_Variable(dtype):
     assert var.dtype == sc.DType.Variable
 
 
-@pytest.mark.parametrize("dtype", (None, sc.DType.DataArray))
+@pytest.mark.parametrize("dtype", (None, sc.DType.DataArray, sc.DataArray))
 def test_create_scalar_dtype_DataArray(dtype):
     elem = sc.DataArray(data=sc.Variable(dims=['x'], values=np.arange(4.0)))
     var = sc.Variable(dims=(), values=elem, dtype=dtype)
@@ -222,7 +222,7 @@ def test_create_scalar_dtype_DataArray(dtype):
     assert var.dtype == sc.DType.DataArray
 
 
-@pytest.mark.parametrize("dtype", (None, sc.DType.Dataset))
+@pytest.mark.parametrize("dtype", (None, sc.DType.Dataset, sc.Dataset))
 def test_create_scalar_dtype_Dataset(dtype):
     elem = sc.Dataset(data={'a': sc.Variable(dims=['x'], values=np.arange(4.0))})
     var = sc.Variable(dims=(), values=elem, dtype=dtype)
