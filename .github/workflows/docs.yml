@@ -10,6 +10,10 @@ on:
         default: ''
         required: false
         type: string
+      branch:
+        default: ${{ github.ref_name }}
+        required: false
+        type: string
   workflow_call:
     inputs:
       publish:
@@ -17,6 +21,10 @@ on:
         type: boolean
       version:
         default: ''
+        required: false
+        type: string
+      branch:
+        default: ${{ github.ref_name }}
         required: false
         type: string
 
@@ -31,7 +39,8 @@ jobs:
       - run: sudo apt install --yes graphviz pandoc
       - uses: actions/checkout@v3
         with:
-          ref: ${{ inputs.version }}
+          ref: ${{ inputs.branch }}
+          fetch-depth: 0  # history required so cmake can determine version
       - uses: actions/setup-python@v3
         with:
           python-version: 3.8
