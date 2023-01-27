@@ -12,8 +12,8 @@ import numpy as np
 from ..core.cpp_classes import DataArray, Dataset, Variable
 from ..core.data_group import DataGroup
 from ..units import dimensionless
-from .resources import load_atomic_tpl, load_collapsible_tpl, load_dg_detail_tpl, \
-    load_dg_repr_tpl, load_dg_style
+from .resources import load_atomic_row_tpl, load_collapsible_row_tpl, \
+    load_dg_detail_list_tpl, load_dg_repr_tpl, load_dg_style
 
 
 def _format_shape(var: Union[Variable, DataArray, Dataset, DataGroup]) -> str:
@@ -89,7 +89,7 @@ def _summarize_atomic_variable(var, name: str, depth: int = 0) -> str:
         if hasattr(var, "__str__"):
             preview = _format_atomic_value(var, maxlen=30)
 
-    html_tpl = load_atomic_tpl()
+    html_tpl = load_atomic_row_tpl()
     return Template(html_tpl).substitute(depth=depth,
                                          name=escape(name),
                                          parent=escape(parent_obj_str),
@@ -107,7 +107,7 @@ def _collapsible_summary(var: DataGroup, name: str, name_spaces: list) -> str:
     checkbox_id = escape("summary-" + str(uuid.uuid4()))
     depth = len(name_spaces)
     subsection = _datagroup_detail(var, name_spaces + [name])
-    html_tpl = load_collapsible_tpl()
+    html_tpl = load_collapsible_row_tpl()
 
     return Template(html_tpl).substitute(name=escape(str(name)),
                                          parent=escape(parent_type),
@@ -131,7 +131,7 @@ def _datagroup_detail(dg: DataGroup, name_spaces: list = None) -> str:
             summary_rows.append(
                 _summarize_atomic_variable(item, name, depth=len(name_spaces)))
 
-    dg_detail_tpl = Template(load_dg_detail_tpl())
+    dg_detail_tpl = Template(load_dg_detail_list_tpl())
     return dg_detail_tpl.substitute(summary_rows=''.join(summary_rows))
 
 

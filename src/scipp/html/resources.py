@@ -105,7 +105,7 @@ def _load_template(name: str) -> str:
     return html_tpl
 
 
-load_collapsible_tpl = partial(_load_template, name="collapsible_template")
-load_atomic_tpl = partial(_load_template, name="atomic_template")
-load_dg_detail_tpl = partial(_load_template, name="dg_detail_template")
-load_dg_repr_tpl = partial(_load_template, name="dg_repr_template")
+load_atomic_row_tpl = partial(_load_template, name="dg_atomic_row")
+load_collapsible_row_tpl = partial(_load_template, name="dg_collapsible_row")
+load_dg_detail_list_tpl = partial(_load_template, name="dg_detail_list")
+load_dg_repr_tpl = partial(_load_template, name="dg_repr")
