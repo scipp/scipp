@@ -53,6 +53,11 @@
   grid-template-areas:   "name        parent object-type shape        dtype       unit        preview";
 }
 
+.dg-detail-box * {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
 .dg-detail-list {
   display: contents;
 }
@@ -147,6 +152,7 @@
 }
 
 .dg-detail-item .dg-detail-shape {
+  max-width: 15em;
   grid-area: "shape";
   text-align: left;
 }
