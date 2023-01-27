@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from ..core import Variable
+from ..core import DataGroup, Variable
 from ..typing import VariableLike
 from .table import table  # noqa: F401
 
@@ -32,9 +32,12 @@ def make_html(container: VariableLike) -> str:
     scipp.to_html:
         Display the HTML representation.
     """
+    from .formatting_datagroup_html import datagroup_repr
     from .formatting_html import dataset_repr, variable_repr
     if isinstance(container, Variable):
         return variable_repr(container)
+    elif isinstance(container, DataGroup):
+        return datagroup_repr(container)
     else:
         return dataset_repr(container)
 

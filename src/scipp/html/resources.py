@@ -11,9 +11,10 @@ from string import Template
 def _read_text(filename):
     if hasattr(importlib.resources, 'files'):
         # Use new API added in Python 3.9
-        return importlib.resources.files('scipp.html').joinpath(filename).read_text()
+        return importlib.resources.files('scipp.html.templates').joinpath(
+            filename).read_text()
     # Old API, deprecated as of Python 3.11
-    return importlib.resources.read_text('scipp.html', filename)
+    return importlib.resources.read_text('scipp.html.templates', filename)
 
 
 def _format_style(template: str) -> str:
@@ -81,19 +82,10 @@ def load_dg_style() -> str:
     return load_style() + style_sheet
 
 
-def _read_template(filename):
-    if hasattr(importlib.resources, 'files'):
-        # Use new API added in Python 3.9
-        return importlib.resources.files('scipp.html.templates').joinpath(
-            filename).read_text()
-    # Old API, deprecated as of Python 3.11
-    return importlib.resources.read_text('scipp.html.templates', filename)
-
-
 @lru_cache(maxsize=4)
 def _load_template(name: str) -> str:
-    """HTML template in scipp/html/templates/"""
-    html_tpl = _read_template(name + '.html')
+    """HTML template in scipp.html.templates"""
+    html_tpl = _read_text(name + '.html')
     import re
 
     # line breaks are not needed
