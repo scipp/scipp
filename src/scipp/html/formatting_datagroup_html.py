@@ -37,7 +37,8 @@ def _format_dictionary_item(name_item: tuple, maxlen: int = 10) -> str:
     return "(" + ": ".join((name, type_repr)) + ")"
 
 
-def _format_multi_dim_data(var: Union[Variable, DataArray, Dataset, np.ndarray]) -> str:
+def _format_multi_dim_data(var: Union[Variable, DataArray, Dataset, np.ndarray],
+                           max_item_number: int = 2) -> str:
     if len(var.shape) == 0 and (not isinstance(var, Dataset)):
         return _format_atomic_value(var.value, maxlen=30)
     elif isinstance(var, Dataset):
@@ -53,11 +54,12 @@ def _format_multi_dim_data(var: Union[Variable, DataArray, Dataset, np.ndarray])
         format_item = _format_atomic_value
         var_len = var.size
 
-    max_first_items = min(var_len, 2)
+    max_item_number = max(2, max_item_number)
+    max_first_items = min(var_len, max_item_number - 1)
     view_items = [format_item(next(view_iter)) for _ in range(max_first_items)]
 
     if var_len > max_first_items:
-        if var_len > max_first_items + 1:
+        if var_len > max_item_number:
             view_items.append('... ')
         view_items.append(format_item(deque(view_iter).pop()))
 
@@ -80,14 +82,13 @@ def _summarize_atomic_variable(var, name: str, depth: int = 0) -> str:
             dtype_str = str(var.dtype)
             if var.unit is not None:
                 unit = '𝟙' if var.unit == dimensionless else str(var.unit)
-    else:
-        if isinstance(var, np.ndarray):
-            parent_obj_str = "numpy"
-            preview = f"shape={var.shape}, dtype={var.dtype}, values="
-            preview += _format_multi_dim_data(var)
+    elif isinstance(var, np.ndarray):
+        parent_obj_str = "numpy"
+        preview = f"shape={var.shape}, dtype={var.dtype}, values="
+        preview += _format_multi_dim_data(var)
 
-        if hasattr(var, "__str__"):
-            preview = _format_atomic_value(var, maxlen=30)
+    elif preview == '' and hasattr(var, "__str__"):
+        preview = _format_atomic_value(var, maxlen=30)
 
     html_tpl = load_atomic_row_tpl()
     return Template(html_tpl).substitute(depth=depth,
