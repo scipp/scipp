@@ -6,7 +6,10 @@ from typing import Any, List
 
 import numpy as np
 
+import scipp
+
 from ..core.cpp_classes import DType, Unit, Variable
+from ..core.data_group import DataGroup
 from ._parse import FormatSpec, FormatType, parse
 
 
@@ -62,9 +65,12 @@ def _format_array_flat(data, *, dtype: DType, length: int, spec: str) -> str:
     if dtype in (DType.Variable, DType.DataArray, DType.Dataset, DType.VariableView,
                  DType.DataArrayView, DType.DatasetView):
         return _format_array_flat_scipp_objects(data)
-    if dtype == DType.PyObject and 'ElementArray' in repr(type(data)):
-        # We can handle scalars of PyObject but not arrays.
-        return _format_array_flat_scipp_objects(data)
+    if dtype == DType.PyObject:
+        if 'ElementArray' in repr(type(data)):
+            # We can handle scalars of PyObject but not arrays.
+            return _format_array_flat_scipp_objects(data)
+        elif isinstance(data, DataGroup):
+            return _format_data_group_element(data)
     data = _as_flat_array(data)
     return _format_array_flat_regular(data, dtype=dtype, length=length, spec=spec)
 
@@ -73,6 +79,10 @@ def _format_array_flat_scipp_objects(data) -> str:
     # Fallback because ElementArrayView does not allow us to
     # slice and access elements nicely.
     return str(data)
+
+
+def _format_data_group_element(data: scipp.DataGroup):
+    return f'[{data}]'
 
 
 def _format_array_flat_regular(data: np.ndarray, *, dtype: DType, length: int,
