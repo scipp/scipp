@@ -161,6 +161,8 @@ class DataGroup(MutableMapping):
         for item in self.values():
             if isinstance(item, Union[DataArray, Dataset, Variable, DataGroup]):
                 total_size += item.underlying_size()
+            elif hasattr(item, 'nbytes'):
+                total_size += item.nbytes
             else:
                 total_size += item.__sizeof__()
 
