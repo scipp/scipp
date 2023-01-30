@@ -39,13 +39,13 @@ def _format_unit(data: Variable) -> str:
     return f'[{data.unit}]'
 
 
-def _format_element(elem: Any, spec: str):
+def _format_element(elem: Any, *, dtype: DType, spec: str):
     if spec:
         return f'{elem:{spec}}'
-    if isinstance(elem, (int, float)):
+    if dtype in (DType.float64, DType.float32):
         # Replicate behavior of C++ formatter.
         return f'{elem:g}'
-    if isinstance(elem, str):
+    if dtype == DType.string:
         return f'"{elem}"'
     return f'{elem}'
 
@@ -58,7 +58,7 @@ def _as_flat_array(data):
     return np.array([data])
 
 
-def _format_array_flat(data, length: int, dtype: DType, spec: str) -> str:
+def _format_array_flat(data, *, dtype: DType, length: int, spec: str) -> str:
     if dtype in (DType.Variable, DType.DataArray, DType.Dataset, DType.VariableView,
                  DType.DataArrayView, DType.DatasetView):
         return _format_array_flat_scipp_objects(data)
@@ -66,7 +66,7 @@ def _format_array_flat(data, length: int, dtype: DType, spec: str) -> str:
         # We can handle scalars of PyObject but not arrays.
         return _format_array_flat_scipp_objects(data)
     data = _as_flat_array(data)
-    return _format_array_flat_regular(data, length, spec=spec)
+    return _format_array_flat_regular(data, dtype=dtype, length=length, spec=spec)
 
 
 def _format_array_flat_scipp_objects(data) -> str:
@@ -75,10 +75,11 @@ def _format_array_flat_scipp_objects(data) -> str:
     return str(data)
 
 
-def _format_array_flat_regular(data: np.ndarray, length: int, spec: str) -> str:
+def _format_array_flat_regular(data: np.ndarray, *, dtype: DType, length: int,
+                               spec: str) -> str:
 
     def _format_all_in(d) -> List[str]:
-        return [_format_element(e, spec=spec) for e in d]
+        return [_format_element(e, dtype=dtype, spec=spec) for e in d]
 
     if len(data) <= length:
         elements = _format_all_in(data)
@@ -93,7 +94,7 @@ def _format_variable_default(var: Variable, spec: FormatSpec) -> str:
     dims = _format_sizes(var)
     dtype = str(var.dtype)
     unit = _format_unit(var)
-    values = _format_array_flat(var.values, length=4, dtype=var.dtype, spec=spec.nested)
+    values = _format_array_flat(var.values, dtype=var.dtype, length=4, spec=spec.nested)
     variances = _format_array_flat(
         var.variances, length=4, dtype=var.dtype,
         spec=spec.nested) if var.variances else ''

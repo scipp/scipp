@@ -8,13 +8,14 @@ import pytest
 import scipp as sc
 
 
-@pytest.mark.parametrize('var',
-                         (sc.scalar(1), sc.scalar(3.1, variance=0.1, unit='m'),
-                          sc.array(dims=['x', 't'], values=np.ones(
-                              (3, 4)), unit='kg/s'), sc.scalar('some string'),
-                          sc.array(dims=['s'], values=['str', '2']),
-                          sc.scalar(6134, dtype='datetime64', unit='s'),
-                          sc.array(dims=['e'], values=[512, 1662], unit='s')))
+@pytest.mark.parametrize(
+    'var',
+    (sc.scalar(1), sc.scalar(-4, dtype='int32'), sc.scalar(
+        3.1, variance=0.1, unit='m'), sc.scalar(2.1, variance=0.1, dtype='float32'),
+     sc.array(dims=['x', 't'], values=np.ones((3, 4)), unit='kg/s'),
+     sc.scalar('some string'), sc.array(dims=['s'], values=['str', '2']),
+     sc.scalar(6134, dtype='datetime64',
+               unit='s'), sc.array(dims=['e'], values=[512, 1662], unit='s')))
 def test_variable_default(var):
     assert f'{var}' == str(var)
     assert f'{var:}' == str(var)
