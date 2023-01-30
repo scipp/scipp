@@ -6,7 +6,7 @@ Release Notes
 
 .. Template, copy this to create a new section after a release:
 
-   Version RELEASE_PLACEHOLDER
+   vRELEASE_PLACEHOLDER
    --------
 
    Features
@@ -36,7 +36,7 @@ Release Notes
    and Sunyoung Yoo :sup:`a`
 
 
-Version RELEASE_PLACEHOLDER
+vRELEASE_PLACEHOLDER
 --------
 
 Features
