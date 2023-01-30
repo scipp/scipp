@@ -1,27 +1,53 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
+# @author Gregory Tucker, Jan-Lukas Wynen
+
 import numpy as np
+import pytest
 
 import scipp as sc
 
 
-def scalar_string(value, error, unit):
-    if error is None:
-        scalar = sc.scalar(value=value, unit=unit)
-    else:
-        scalar = sc.scalar(value=value, variance=error**2, unit=unit)
-    return f"{scalar:c}"
+@pytest.mark.parametrize(
+    'var',
+    (sc.scalar(1), sc.scalar(-4, dtype='int32'), sc.scalar(
+        3.1, variance=0.1, unit='m'), sc.scalar(2.1, variance=0.1, dtype='float32'),
+     sc.array(dims=['x', 't'], values=np.ones((3, 4)), unit='kg/s'),
+     sc.scalar('some string'), sc.array(dims=['s'], values=['str', '2']),
+     sc.scalar(6134, dtype='datetime64',
+               unit='s'), sc.array(dims=['e'], values=[512, 1662], unit='s')))
+def test_variable_default(var):
+    assert f'{var}' == str(var)
+    assert f'{var:}' == str(var)
+    assert f'{var::}' == str(var)
+    assert '{:}'.format(var) == str(var)
 
 
-def array_string(value, error, unit):
-    if error is None:
-        array = sc.array(values=value, unit=unit, dims=['x'])
-    else:
-        array = sc.array(values=value, variances=error**2, unit=unit, dims=['x'])
-    return f"{array:c}"
+def test_variable_default_nested_exponential():
+    var = sc.array(dims=['ys'], values=[1.2345, 654.98], unit='kg')
+    res = f'{var::.2e}'
+    assert f'{1.2345:.2e}' in res
+    assert f'{654.98:.2e}' in res
 
 
-def test_scalar_variables():
+def test_variable_default_forwards_to_nested_scalar():
+
+    class C:
+
+        def __format__(self, format_spec: str) -> str:
+            return f'NESTED-{format_spec}'
+
+    var = sc.scalar(C())
+    assert 'NESTED-abcd#0' in f'{var::abcd#0}'
+
+
+def test_variable_compact_scalar_no_variance():
+    var = sc.scalar(100, unit='s')
+    assert f'{var:c}' == '100 s'
+
+
+def test_variable_compact_scalar_with_variance():
     scalar_variables = [
-        (100, None, 's', '100 s'),
         (100., 1., 'm', '100.0(10) m'),
         (100., 2., '1', '100(2)'),
         (100., 10., 'counts', '100(10) counts'),
@@ -39,17 +65,36 @@ def test_scalar_variables():
         (100., 0., 'C', '100.0 C'),
     ]
     for value, error, unit, expected in scalar_variables:
-        assert scalar_string(value, error, unit) == expected
+        var = sc.scalar(value, variance=error**2, unit=unit)
+        assert f'{var:c}' == expected
 
 
-def test_array_variables():
-    from numpy import array
-    array_variables = [(array([100, 20, 3]), None, 's', '100, 20, 3 s'),
-                       (array([100., 20.]), array([1., 2.]), 'm', '100.0(10), 20(2) m'),
-                       (array([9000., 800., 70., 6.]), array([100., 20., 3., 0.4]), '1',
-                        '9000(100), 800(20), 70(3), 6.0(4)'),
-                       (array([1., 2.,
-                               3.]), array([0., 1.,
-                                            0.2]), 'C', '1.0, 2.0(10), 3.0(2) C')]
-    for value, error, unit, expected in array_variables:
-        assert array_string(value, error, unit) == expected
+def test_variable_compact_array_no_variance():
+    var = sc.array(dims=['fg'], values=[100, 20, 3], unit='s')
+    assert f'{var:c}' == '100, 20, 3 s'
+
+
+def test_variable_compact_array_with_variance():
+    array_variables = [([100., 20.], [1., 2.], 'm', '100.0(10), 20(2) m'),
+                       ([9000., 800., 70.,
+                         6.], [100., 20., 3.,
+                               0.4], '1', '9000(100), 800(20), 70(3), 6.0(4)'),
+                       ([1., 2., 3.], [0., 1., 0.2], 'C', '1.0, 2.0(10), 3.0(2) C')]
+    for values, errors, unit, expected in array_variables:
+        var = sc.array(dims=['ga'],
+                       values=values,
+                       variances=np.array(errors)**2,
+                       unit=unit)
+        assert f'{var:c}' == expected
+
+
+def test_variable_compact_raises_for_nested():
+    var = sc.scalar(2)
+    with pytest.raises(ValueError):
+        f'{var:c:f}'
+
+
+def test_variable_compact_only_supports_numeric_dtype():
+    var = sc.scalar('a string')
+    with pytest.raises(ValueError):
+        f'{var:c}'
