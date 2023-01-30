@@ -4,11 +4,13 @@
 # @author Neil Vaytet
 
 import numpy as np
-import scipp as sc
 import pytest
-from ..factory import make_dense_data_array, make_dense_dataset, \
-    make_dense_datagroup, make_simple_datagroup, \
-    make_binned_data_array, make_scalar, make_variable, make_scalar_array
+
+import scipp as sc
+
+from ..factory import make_binned_data_array, make_dense_data_array, \
+    make_dense_datagroup, make_dense_dataset, make_scalar, make_scalar_array, \
+    make_simple_datagroup, make_variable
 
 # TODO:
 # For now, we are just checking that creating the repr does not throw.
