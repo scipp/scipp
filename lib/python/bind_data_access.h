@@ -519,13 +519,7 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
     c.def_property_readonly(
         "size",
         [](const T &self) {
-          int64_t size = 1;
-          const auto &sizes = self.dims().sizes();
-          const auto ndim = static_cast<size_t>(self.ndim());
-          for (size_t i = 0; i < ndim; ++i) {
-            size *= sizes[i];
-          }
-          return size;
+          return self.dims().volume();
         },
         "Number of elements in the data (read-only).",
         py::return_value_policy::move);
