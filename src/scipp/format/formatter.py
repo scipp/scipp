@@ -53,6 +53,12 @@ def _format_element(elem: Any, *, dtype: DType, spec: str):
     return f'{elem}'
 
 
+def _format_scalar(data: Any, *, dtype: DType, spec: FormatSpec) -> str:
+    if spec.length == 0:
+        return '...'
+    return _format_element(data, dtype=dtype, spec=spec.nested)
+
+
 def _as_flat_array(data):
     if isinstance(data, np.ndarray):
         return data.flat
@@ -119,9 +125,14 @@ def _format_variable_default(var: Variable, spec: FormatSpec) -> str:
     dims = _format_sizes(var)
     dtype = str(var.dtype)
     unit = _format_unit(var)
-    values = _format_array_flat(var.values, dtype=var.dtype, spec=spec)
-    variances = _format_array_flat(var.variances, dtype=var.dtype,
-                                   spec=spec) if var.variances else ''
+    if var.ndim == 0:
+        values = _format_scalar(var.value, dtype=var.dtype, spec=spec)
+        variances = (_format_scalar(var.variance, dtype=var.dtype, spec=spec)
+                     if var.variance is not None else '')
+    else:
+        values = _format_array_flat(var.values, dtype=var.dtype, spec=spec)
+        variances = _format_array_flat(var.variances, dtype=var.dtype,
+                                       spec=spec) if var.variances else ''
 
     return (f'<scipp.Variable> {dims}  {dtype:>9}  {unit:>15}  {values}' +
             ('  ' + variances if variances else ''))

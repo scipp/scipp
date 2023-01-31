@@ -44,10 +44,11 @@ def test_variable_default_length_central(s):
     assert '[]' in f'{var:{s}#6}'
     assert '[]' in f'{var:{s}#0}'
 
-    var = sc.scalar(5)
-    assert '[5]' in f'{var:{s}}'
-    assert '[5]' in f'{var:{s}#2}'
-    assert '[...]' in f'{var:{s}#0}'
+    var = sc.scalar(31354)
+    assert '31354' in f'{var:{s}}'
+    assert '31354' in f'{var:{s}#2}'
+    assert '31354' not in f'{var:{s}#0}'
+    assert '...' in f'{var:{s}#0}'
 
 
 def test_variable_default_length_left():
@@ -70,10 +71,11 @@ def test_variable_default_length_left():
     assert '[]' in f'{var:<#6}'
     assert '[]' in f'{var:<#0}'
 
-    var = sc.scalar(5)
-    assert '[5]' in f'{var:<}'
-    assert '[5]' in f'{var:<#2}'
-    assert '[...]' in f'{var:<#0}'
+    var = sc.scalar(4512)
+    assert '4512' in f'{var:<}'
+    assert '4512' in f'{var:<#2}'
+    assert '4512' not in f'{var:<#0}'
+    assert '...' in f'{var:<#0}'
 
 
 def test_variable_default_length_right():
@@ -96,10 +98,11 @@ def test_variable_default_length_right():
     assert '[]' in f'{var:>#6}'
     assert '[]' in f'{var:>#0}'
 
-    var = sc.scalar(5)
-    assert '[5]' in f'{var:>}'
-    assert '[5]' in f'{var:>#2}'
-    assert '[...]' in f'{var:>#0}'
+    var = sc.scalar(846)
+    assert '846' in f'{var:>}'
+    assert '846' in f'{var:>#2}'
+    assert '846' not in f'{var:>#0}'
+    assert '...' in f'{var:>#0}'
 
 
 def test_variable_default_nested_exponential():

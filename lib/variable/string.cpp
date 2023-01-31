@@ -43,14 +43,19 @@ std::string make_dims_labels(const Variable &variable,
 
 template <class T> struct ValuesToString {
   static std::string apply(const Variable &var) {
+    if (var.ndim() == 0)
+      return core::scalar_array_to_string(var.template values<T>(), var.unit());
     return core::array_to_string(var.template values<T>(), var.unit());
   }
 };
 template <class T> struct VariancesToString {
   static std::string apply(const Variable &var) {
-    if constexpr (core::canHaveVariances<T>())
+    if constexpr (core::canHaveVariances<T>()) {
+      if (var.ndim() == 0)
+        return core::scalar_array_to_string(var.template variances<T>(),
+                                            var.unit());
       return core::array_to_string(var.template variances<T>());
-    else
+    } else
       return std::string{};
   }
 };
