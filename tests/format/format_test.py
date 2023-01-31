@@ -167,6 +167,26 @@ def test_variable_compact_array_with_variance():
         assert f'{var:c}' == expected
 
 
+def test_variable_compact_raises_for_length():
+    var = sc.scalar(2)
+    with pytest.raises(ValueError):
+        f'{var:#3c}'
+    with pytest.raises(ValueError):
+        f'{var:#4c}'
+    with pytest.raises(ValueError):
+        f'{var:#6c}'
+
+
+def test_variable_compact_raises_for_selection():
+    var = sc.scalar(2)
+    with pytest.raises(ValueError):
+        f'{var:<c}'
+    with pytest.raises(ValueError):
+        f'{var:>c}'
+    with pytest.raises(ValueError):
+        f'{var:^c}'
+
+
 def test_variable_compact_raises_for_nested():
     var = sc.scalar(2)
     with pytest.raises(ValueError):
