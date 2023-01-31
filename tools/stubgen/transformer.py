@@ -43,6 +43,19 @@ class AddOverloadedDecorator(ast.NodeTransformer):
         return add_decorator(node, decorator=ast.Name(id='overload', ctx=ast.Load()))
 
 
+class RemoveDecorators(ast.NodeTransformer):
+    """Remove n innermost decorators from a function."""
+
+    def __init__(self, n: int) -> None:
+        self.n = n
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
+        self.generic_visit(node)
+        decorators = node.decorator_list
+        return replace_function(node,
+                                decorator_list=decorators[:len(decorators) - self.n])
+
+
 class FixSelfArgName(ast.NodeTransformer):
     """Ensure that the first argument is called self."""
 
