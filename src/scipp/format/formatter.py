@@ -2,7 +2,7 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Gregory Tucker, Jan-Lukas Wynen
 
-from typing import Any, List
+from typing import Any, List, Tuple
 
 import numpy as np
 
@@ -85,6 +85,15 @@ def _format_data_group_element(data: scipp.DataGroup):
     return f'[{data}]'
 
 
+def _element_ranges(spec: FormatSpec) -> Tuple[slice, slice]:
+    if spec.selection == '^':
+        return slice(None, spec.length // 2), slice(-spec.length // 2, None)
+    if spec.selection == '<':
+        return slice(None, spec.length), slice(0, 0)
+    if spec.selection == '>':
+        return slice(0, 0), slice(-spec.length, None)
+
+
 def _format_array_flat_regular(data: np.ndarray, *, dtype: DType,
                                spec: FormatSpec) -> str:
 
@@ -96,9 +105,13 @@ def _format_array_flat_regular(data: np.ndarray, *, dtype: DType,
     elif spec.length == 0:
         elements = ['...']
     else:
-        elements = _format_all_in(data[:spec.length // 2])
+        left, right = _element_ranges(spec)
+        elements = []
+        if left != slice(0, 0):
+            elements.extend(_format_all_in(data[left]))
         elements.append('...')
-        elements.extend(_format_all_in(data[-spec.length // 2:]))
+        if right != slice(0, 0):
+            elements.extend(_format_all_in(data[right]))
     return f'[{", ".join(elements)}]'
 
 
