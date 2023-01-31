@@ -729,6 +729,10 @@ class DataArray:
         ...
 
     @property
+    def size(self) -> int:
+        ...
+
+    @property
     def sizes(self) -> dict:
         ...
 
@@ -1860,6 +1864,10 @@ class Variable:
 
     @property
     def shape(self) -> tuple:
+        ...
+
+    @property
+    def size(self) -> int:
         ...
 
     @property
