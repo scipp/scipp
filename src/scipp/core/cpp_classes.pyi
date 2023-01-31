@@ -1494,7 +1494,7 @@ class Variable:
     def __floordiv__(self, arg0: float) -> Variable:
         ...
 
-    def __format__(self, spec):
+    def __format__(self, format_spec: str) -> str:
         ...
 
     @overload
