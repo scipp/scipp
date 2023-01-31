@@ -18,10 +18,7 @@ def _dataclass_with_slots(**kwargs):
 
 class FormatType(enum.Enum):
     default = None
-    values = 'v'
-    variances = 'e'
     compact = 'c'
-    summary = 's'
 
 
 @_dataclass_with_slots(frozen=True)
@@ -65,7 +62,7 @@ class FormatSpec:
 
 _FORMAT_PATTERN = re.compile('^(?P<selection>[><^])?'
                              r'(?:#(?P<length>\d+))?'
-                             '(?P<type>[vecs])?'
+                             '(?P<type>[c])?'
                              '(?::(?P<nested>.*))?$')
 
 
