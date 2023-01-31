@@ -335,13 +335,6 @@ def test_size():
     assert a.size == 0
 
 
-def test_nbytes():
-    a = sc.DataArray(data=sc.scalar(value=1))
-    assert a.nbytes == a.underlying_size()
-    a = sc.DataArray(data=sc.Variable(dims=['x', 'z'], values=np.ones((2, 4))))
-    assert a.nbytes == a.underlying_size()
-
-
 def test_to():
     da = sc.DataArray(data=sc.scalar(value=1, dtype="int32", unit="m"))
 

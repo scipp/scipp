@@ -44,7 +44,6 @@ Features
 
 * Added new string-formatting options `#3017 <https://github.com/scipp/scipp/pull/3017>`_.
 * Add ``size`` property to :class:`scipp.Variable` and :class:`scipp.DataArray`.
-* Add ``nbytes`` property to :class:`scipp.Variable`, :class:`scipp.DataArray` and :class:`scipp.DataGroup`.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~

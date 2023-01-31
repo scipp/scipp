@@ -140,15 +140,6 @@ def test_sizes():
     assert d.sizes == {'x': 2, 'y': 3, 'z': 4}
 
 
-def test_nbytes():
-    a = sc.Dataset(data={'a': sc.scalar(value=1)})
-    assert a.nbytes == a.underlying_size()
-    a = sc.empty(dims=['x'], shape=[2])
-    b = sc.empty(dims=['y', 'z'], shape=[3, 4])
-    d = sc.Dataset(data={'a': a, 'b': b})
-    assert d.nbytes == d.underlying_size()
-
-
 def test_create_empty():
     d = sc.Dataset()
     assert len(d) == 0

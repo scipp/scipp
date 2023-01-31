@@ -282,13 +282,6 @@ def test_dims():
     assert a.dims == ('y', 'z')
 
 
-def test_nbytes():
-    a = sc.scalar(1)
-    assert a.nbytes == a.underlying_size()
-    a = sc.empty(dims=['x', 'y'], shape=[3, 2])
-    assert a.nbytes == a.underlying_size()
-
-
 def test_concat():
     assert sc.identical(sc.concat([sc.scalar(1.0), sc.scalar(2.0)], 'a'),
                         sc.array(dims=['a'], values=[1.0, 2.0]))

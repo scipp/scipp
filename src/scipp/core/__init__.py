@@ -30,13 +30,6 @@ setattr(DataArray, 'rename', _rename_data_array)
 setattr(Dataset, 'rename', _rename_dataset)
 del _rename_dims, _rename_variable, _rename_data_array, _rename_dataset, cls
 
-for cls in (Variable, DataArray, Dataset):
-    setattr(
-        cls, 'nbytes',
-        property(cls.underlying_size,
-                 doc="""Total bytes consumed by the elements and the object"""))
-del cls
-
 from .bins import _bins, _set_bins
 
 setattr(Variable, 'bins', property(_bins, _set_bins))
