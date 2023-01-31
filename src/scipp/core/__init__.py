@@ -35,7 +35,7 @@ for cls in (Variable, DataArray, Dataset):
         f"""See :py:func:`scipp.{cls.__name__}.underlying_size` """ + \
         """for more information."""
     setattr(cls, 'nbytes', property(cls.underlying_size, doc=docstr))
-del cls, docstr
+del cls
 
 from .bins import _bins, _set_bins
 
