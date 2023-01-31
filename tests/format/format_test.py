@@ -23,6 +23,32 @@ def test_variable_default(var):
     assert '{:}'.format(var) == str(var)
 
 
+def test_variable_default_length_central():
+    var = sc.arange('x', 10)
+    assert '[0, 1, ..., 8, 9]' in f'{var:}'
+    assert '[0, 1, ..., 8, 9]' in f'{var:#4}'
+    assert '[0, 1, ..., 7, 8, 9]' in f'{var:#5}'
+    assert '[0, 1, 2, ..., 7, 8, 9]' in f'{var:#6}'
+
+    var = sc.arange('x', 4)
+    assert '[0, 1, 2, 3]' in f'{var:}'
+    assert '[0, 1, 2, 3]' in f'{var:#5}'
+    assert '[0, ..., 2, 3]' in f'{var:#3}'
+    assert '[0, ..., 3]' in f'{var:#2}'
+    assert '[..., 3]' in f'{var:#1}'
+    assert '[...]' in f'{var:#0}'
+
+    var = sc.arange('x', 0)
+    assert '[]' in f'{var:}'
+    assert '[]' in f'{var:#6}'
+    assert '[]' in f'{var:#0}'
+
+    var = sc.scalar(5)
+    assert '[5]' in f'{var:}'
+    assert '[5]' in f'{var:#2}'
+    assert '[...]' in f'{var:#0}'
+
+
 def test_variable_default_nested_exponential():
     var = sc.array(dims=['ys'], values=[1.2345, 654.98], unit='kg')
     res = f'{var::.2e}'
