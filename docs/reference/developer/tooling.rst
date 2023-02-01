@@ -33,6 +33,9 @@ Note: Ubuntu users can use the `Kitware Repo <https://apt.kitware.com/>`_ to obt
 First Party
 ^^^^^^^^^^^
 
+There are several development tools in the ``tools`` directory at the top level of the Scipp repository.
+See the readmes in the folder.
+
 Stubgen
 ~~~~~~~
 
