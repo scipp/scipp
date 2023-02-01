@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <any>
 #include <optional>
 #include <string>
 #include <utility>
@@ -100,6 +101,8 @@ public:
     core::expect::ndim_is(dims(), 0);
     return variances<T>()[0];
   }
+  [[nodiscard]] std::any value_cref(const scipp::index i) const;
+  [[nodiscard]] std::any variance_cref(const scipp::index i) const;
 
   [[nodiscard]] Variable slice(Slice params) const;
   void validateSlice(const Slice &s, const Variable &data) const;

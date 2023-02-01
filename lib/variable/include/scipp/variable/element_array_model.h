@@ -108,6 +108,13 @@ public:
     return ElementArrayView(base, m_variances->data());
   }
 
+  [[nodiscard]] std::any value_cref(const scipp::index i) const override {
+    return std::make_any<std::reference_wrapper<const T>>(values()[i]);
+  }
+  [[nodiscard]] std::any variance_cref(const scipp::index i) const override {
+    return std::make_any<std::reference_wrapper<const T>>(variances()[i]);
+  }
+
   scipp::index dtype_size() const override { return sizeof(T); }
   scipp::index object_size() const override { return sizeof(*this); }
   const VariableConceptHandle &bin_indices() const override {
@@ -120,6 +127,15 @@ public:
 
   scipp::span<T> values() {
     return {m_values.data(), m_values.data() + m_values.size()};
+  }
+
+  scipp::span<const T> variances() const {
+    expect_has_variances();
+    return {m_variances->data(), m_variances->data() + m_variances->size()};
+  }
+
+  scipp::span<T> variances() {
+    return {m_variances->data(), m_variances->data() + m_variances->size()};
   }
 
 private:

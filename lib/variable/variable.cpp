@@ -181,6 +181,14 @@ core::ElementArrayViewParams Variable::array_params() const {
   return {m_offset, dims(), m_strides, {}};
 }
 
+std::any Variable::value_cref(const scipp::index i) const {
+  return data().value_cref(i);
+}
+
+std::any Variable::variance_cref(const scipp::index i) const {
+  return data().variance_cref(i);
+}
+
 Variable Variable::slice(const Slice params) const {
   core::expect::validSlice(dims(), params);
   Variable out(*this);
