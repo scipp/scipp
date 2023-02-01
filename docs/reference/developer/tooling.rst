@@ -1,38 +1,31 @@
 Tooling
 =======
 
-This is a list of the tooling (i.e. compilers, static analysis, etc.) that are used in Scipp and their corresponding versions.
+This is a list of first party and third party tools used for developing Scipp.
 
-Misc
-~~~~
-
-- CMake >= 3.16
-- Conda
-
-Note: Ubuntu users can use the `Kitware Repo <https://apt.kitware.com/>`_ to obtain the latest version.
+Third Party
+^^^^^^^^^^^
 
 Compilers
 ~~~~~~~~~
 
-- GCC >= 9
-- XCode >= 12.4
-- MSVC >= 16 (2019)
+All compilers can be installed through conda.
+See ``conda/meta.yaml``.
+
+- GCC [Linux]
+- XCode [macOS]
+- MSVC [Windows]
 
 Static Analysis and Formatters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- ``clang-format`` 10.0
-- ``cmake-format`` 0.6.9
-- ``flake8``
-- ``yapf`` 0.32.0
+We use ``tox`` and ``pre-commit`` to do auto formatting and static analysis.
+See in particular ``pre-commit-config.yaml`` for the list of used tools and versions.
 
-``clang-format`` may be installed via the LLVM repositories.
+Misc
+~~~~
 
-``cmake-format``, ``flake8`` and ``yapf`` may be installed via ``pip``:
+- CMake >= 3.21
+- Conda
 
-.. code-block::
-
-  pip install \
-    cmake-format==0.6.9 \
-    flake8 \
-    yapf==0.32.0
+Note: Ubuntu users can use the `Kitware Repo <https://apt.kitware.com/>`_ to obtain the latest version.
