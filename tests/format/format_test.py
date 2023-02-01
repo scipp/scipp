@@ -105,6 +105,16 @@ def test_variable_default_length_right():
     assert '...' in f'{var:>#0}'
 
 
+def test_variable_default_variances():
+    var = sc.arange('x', 10.0)
+    var.variances = var.values
+    var.values *= -1
+    assert f'{var}' == str(var)
+    # matches array of variances
+    assert '[0, 1, ..., 8, 9]' in f'{var}'
+    assert '[0, 1, 2, 3, 4, ...]' in f'{var:<#5}'
+
+
 def test_variable_default_nested_exponential():
     var = sc.array(dims=['ys'], values=[1.2345, 654.98], unit='kg')
     res = f'{var::.2e}'

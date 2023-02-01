@@ -132,7 +132,7 @@ def _format_variable_default(var: Variable, spec: FormatSpec) -> str:
     else:
         values = _format_array_flat(var.values, dtype=var.dtype, spec=spec)
         variances = _format_array_flat(var.variances, dtype=var.dtype,
-                                       spec=spec) if var.variances else ''
+                                       spec=spec) if var.variances is not None else ''
 
     return (f'<scipp.Variable> {dims}  {dtype:>9}  {unit:>15}  {values}' +
             ('  ' + variances if variances else ''))
