@@ -515,4 +515,10 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
       &as_ElementArrayView::set_variance<T>,
       "The only variance for 0-dimensional data, raising an exception if the "
       "data is not 0-dimensional.");
+  if constexpr (std::is_same_v<T, DataArray> || std::is_same_v<T, Variable>) {
+    c.def_property_readonly(
+        "size", [](const T &self) { return self.dims().volume(); },
+        "Number of elements in the data (read-only).",
+        py::return_value_policy::move);
+  }
 }
