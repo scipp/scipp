@@ -23,6 +23,7 @@
 #include "bind_operators.h"
 #include "bind_slice_methods.h"
 #include "dim.h"
+#include "format.h"
 #include "numpy.h"
 #include "pybind11.h"
 #include "rename.h"
@@ -114,6 +115,8 @@ of variances.)");
   bind_logical<Variable>(variable);
 
   bind_data_properties(variable);
+
+  bind_format_variable(variable);
 
   m.def(
       "islinspace",

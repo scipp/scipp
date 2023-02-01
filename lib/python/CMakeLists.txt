@@ -18,6 +18,7 @@ python_add_library(
   docstring.cpp
   dtype.cpp
   except.cpp
+  format.cpp
   geometry.cpp
   groupby.cpp
   histogram.cpp

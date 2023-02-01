@@ -28,8 +28,7 @@ auto array_slices(const Variable &var, const scipp::index length) {
 
 template <class Getter>
 void insert_array(std::ostringstream &os, const Variable &var,
-                  const Getter &get) {
-  const auto &formatters = core::FormatRegistry::instance();
+                  const Getter &get, const core::FormatSpec &spec) {
   const index length = 4;
   const auto [left, right] = array_slices(var, length);
 
@@ -40,7 +39,7 @@ void insert_array(std::ostringstream &os, const Variable &var,
       first = false;
     else
       os << ", ";
-    os << formatters.format(var.dtype(), get(var, i));
+    os << spec.format_element(var.dtype(), get(var, i));
   }
 
   if (var.dims().volume() > length) {
@@ -50,13 +49,13 @@ void insert_array(std::ostringstream &os, const Variable &var,
   }
 
   for (index i = right.first; i < right.second; ++i) {
-    os << ", " << formatters.format(var.dtype(), get(var, i));
+    os << ", " << spec.format_element(var.dtype(), get(var, i));
   }
 
   os << ']';
 }
 
-std::string format(const Variable &var) {
+std::string format(const Variable &var, const core::FormatSpec &spec) {
   std::ostringstream os;
   os << "<scipp.Variable> ";
   if (!var.is_valid()) {
@@ -69,20 +68,26 @@ std::string format(const Variable &var) {
   os << std::setw(9) << var.dtype();
   insert_unit(os, var.unit());
   os << col_sep;
-  insert_array(os, var, [](const Variable &v, const scipp::index i) {
-    return v.value_cref(i);
-  });
+  insert_array(
+      os, var,
+      [](const Variable &v, const scipp::index i) { return v.value_cref(i); },
+      spec);
   if (var.has_variances()) {
     os << col_sep;
-    insert_array(os, var, [](const Variable &v, const scipp::index i) {
-      return v.variance_cref(i);
-    });
+    insert_array(
+        os, var,
+        [](const Variable &v, const scipp::index i) {
+          return v.variance_cref(i);
+        },
+        spec);
   }
   return os.str();
 }
 
 auto format_variable = core::FormatRegistry::insert<Variable>(
-    [](const Variable &value) { return format(value); });
+    [](const Variable &value, const core::FormatSpec &spec) {
+      return format(value, spec);
+    });
 } // namespace
 
 } // namespace scipp::variable

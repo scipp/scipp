@@ -7,6 +7,8 @@
 #include <sstream>
 #include <string>
 
+#include "scipp/variable/variable.h"
+
 #include "pybind11.h"
 
 namespace scipp::python {
@@ -17,3 +19,6 @@ template <class... Args> std::string format(Args &&...args) {
   return oss.str();
 }
 } // namespace scipp::python
+
+void bind_format_variable(
+    pybind11::class_<scipp::variable::Variable> &variable);
