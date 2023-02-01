@@ -397,6 +397,6 @@ def squeeze(
       Data:
                                     int64  [dimensionless]  (y)  [0, 1, 2]
       Attributes:
-        x                           int64  [dimensionless]  ()  [0]
+        x                           int64  [dimensionless]  ()  0
     """
     return _call_cpp_func(_cpp.squeeze, x, (dim, ) if isinstance(dim, str) else dim)
