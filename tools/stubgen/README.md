@@ -42,7 +42,7 @@ func_name(arg1: type1, arg2: type2) -> return_type
 
 Description
 ```
-For overloaded functions it should be
+For overloaded functions, it should be
 ```
 func_name(*args, **kwargs)
 Overloaded function.
