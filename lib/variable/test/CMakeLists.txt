@@ -46,6 +46,7 @@ add_executable(
   variable_scalar_accessors_test.cpp
   variable_structure_test.cpp
   variable_test.cpp
+  format_test.cpp
 )
 target_link_libraries(
   ${TARGET_NAME} LINK_PRIVATE scipp-variable scipp_test_helpers GTest::GTest

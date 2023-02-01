@@ -34,6 +34,7 @@ set(INC_FILES
     include/scipp/variable/variable_keyword_arg_constructor.h
     include/scipp/variable/variable.tcc
     include/scipp/variable/visit.h
+    include/scipp/variable/format.h
 )
 
 set(SRC_FILES
@@ -70,6 +71,7 @@ set(SRC_FILES
     variable_instantiate_linalg.cpp
     variable_instantiate_map_elements.cpp
     variable_instantiate_view_elements.cpp
+    format.cpp
 )
 
 set(LINK_TYPE "STATIC")

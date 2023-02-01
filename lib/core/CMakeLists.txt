@@ -36,6 +36,7 @@ set(INC_FILES
     include/scipp/core/element/special_values.h
     include/scipp/core/element/trigonometry.h
     include/scipp/core/element/util.h
+    include/scipp/core/format.h
 )
 
 set(SRC_FILES
@@ -51,6 +52,7 @@ set(SRC_FILES
     string.cpp
     subbin_sizes.cpp
     view_index.cpp
+    format.cpp
 )
 
 set(LINK_TYPE "STATIC")
