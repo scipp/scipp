@@ -388,6 +388,10 @@ public:
       return as_ElementArrayViewImpl<const Ts...>::template value<const Var>(
           obj);
     expect_scalar(view.dims(), "value");
+    if (view.dtype() == dtype<scipp::core::Quaternion> ||
+        view.dtype() == dtype<scipp::core::Translation> ||
+        view.dtype() == dtype<Eigen::Affine3d>)
+      return get_py_array_t<get_values, Var>(obj);
     return std::visit(GetScalarVisitor<decltype(view)>{obj, view},
                       get<get_values>(view));
   }
@@ -408,8 +412,13 @@ public:
   // variable is 0-dimensional and thus has only a single item.
   template <class Var> static void set_value(Var &view, const py::object &obj) {
     expect_scalar(view.dims(), "value");
-    std::visit(SetScalarVisitor<decltype(view)>{obj, view},
-               get<get_values>(view));
+    if (is_structured(view.dtype())) {
+      auto elems = structure_elements(view);
+      set_values(elems, obj);
+    } else {
+      std::visit(SetScalarVisitor<decltype(view)>{obj, view},
+                 get<get_values>(view));
+    }
   }
   // Set a scalar variance in a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
