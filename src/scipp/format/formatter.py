@@ -1,40 +1,141 @@
-def format_variable(data, spec):
-    """
-    String formats the Variable according to the provided specification.
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
+# @author Gregory Tucker, Jan-Lukas Wynen
+
+from typing import Any, List
+
+import numpy as np
+
+import scipp
+
+from ..core.cpp_classes import DType, Unit, Variable
+from ..core.data_group import DataGroup
+from ._parse import FormatSpec, FormatType, parse
+
+
+def format_variable(self, format_spec: str) -> str:
+    """String formats the Variable according to the provided specification.
 
     Parameters
     ----------
-    data
-        A scalar or array-like scipp Variable object
-    spec
-        Format specification; only 'c' for Compact error-reporting supported at present
+    format_spec:
+        Format specification;
+        only 'c' for Compact error-reporting supported at present.
 
     Returns
     -------
-    The formatted string
+    :
+        The formatted string.
     """
-    from numpy import array
 
-    from ..core.cpp_classes import Unit
-    dtype = str(data.dtype)
-    if not any([x in dtype for x in ('float', 'int')]) or spec is None or len(spec) < 1:
-        return data.__repr__()
-    compact = spec[-1] == 'c'
+    spec = parse(format_spec, Variable)
+    return _VARIABLE_FORMATTERS[spec.format_type](self, spec)
 
-    val = data.values if data.shape else array((data.value, ))
-    var = data.variances if data.shape else array((data.variance, ))
-    unt = "" if data.unit == Unit('dimensionless') else f" {data.unit}"
 
-    if compact:
-        # Iterate over array values to handle no- and infinite-precision cases
-        if var is None:
-            formatted = [_format(v) for v in val]
-        else:
-            formatted = [_format(*_round(v, e)) for v, e in zip(val, var)]
-        return f"{', '.join(formatted)}{unt}"
+def _format_sizes(data: Variable) -> str:
+    return '(' + ', '.join(f'{dim}: {size}' for dim, size in data.sizes.items()) + ')'
 
-    # punt (for now)
-    return data.__repr__()
+
+def _format_unit(data: Variable) -> str:
+    if data.unit is None:
+        return '<no unit>'
+    return f'[{data.unit}]'
+
+
+def _format_element(elem: Any, *, dtype: DType, spec: str):
+    if spec:
+        return f'{elem:{spec}}'
+    if dtype in (DType.float64, DType.float32):
+        # Replicate behavior of C++ formatter.
+        return f'{elem:g}'
+    if dtype == DType.string:
+        return f'"{elem}"'
+    return f'{elem}'
+
+
+def _as_flat_array(data):
+    if isinstance(data, np.ndarray):
+        return data.flat
+    if 'ElementArray' in repr(type(data)):
+        return data
+    return np.array([data])
+
+
+def _format_array_flat(data, *, dtype: DType, length: int, spec: str) -> str:
+    if dtype in (DType.Variable, DType.DataArray, DType.Dataset, DType.VariableView,
+                 DType.DataArrayView, DType.DatasetView):
+        return _format_array_flat_scipp_objects(data)
+    if dtype == DType.PyObject:
+        if 'ElementArray' in repr(type(data)):
+            # We can handle scalars of PyObject but not arrays.
+            return _format_array_flat_scipp_objects(data)
+        elif isinstance(data, DataGroup):
+            return _format_data_group_element(data)
+    data = _as_flat_array(data)
+    return _format_array_flat_regular(data, dtype=dtype, length=length, spec=spec)
+
+
+def _format_array_flat_scipp_objects(data) -> str:
+    # Fallback because ElementArrayView does not allow us to
+    # slice and access elements nicely.
+    return str(data)
+
+
+def _format_data_group_element(data: scipp.DataGroup):
+    return f'[{data}]'
+
+
+def _format_array_flat_regular(data: np.ndarray, *, dtype: DType, length: int,
+                               spec: str) -> str:
+
+    def _format_all_in(d) -> List[str]:
+        return [_format_element(e, dtype=dtype, spec=spec) for e in d]
+
+    if len(data) <= length:
+        elements = _format_all_in(data)
+    else:
+        elements = _format_all_in(data[:length // 2])
+        elements.append('...')
+        elements.extend(_format_all_in(data[-length // 2:]))
+    return f'[{", ".join(elements)}]'
+
+
+def _format_variable_default(var: Variable, spec: FormatSpec) -> str:
+    dims = _format_sizes(var)
+    dtype = str(var.dtype)
+    unit = _format_unit(var)
+    values = _format_array_flat(var.values, dtype=var.dtype, length=4, spec=spec.nested)
+    variances = _format_array_flat(
+        var.variances, length=4, dtype=var.dtype,
+        spec=spec.nested) if var.variances else ''
+
+    return (f'<scipp.Variable> {dims}  {dtype:>9}  {unit:>15}  {values}' +
+            ('  ' + variances if variances else ''))
+
+
+def _format_variable_compact(var: Variable, spec: FormatSpec) -> str:
+    if spec.nested:
+        raise ValueError("Compact formatting does not support nested format specs")
+    if not _is_numeric(var.dtype):
+        raise ValueError(f"Compact formatting is not supported for dtype {var.dtype}")
+
+    values = var.values if var.shape else np.array((var.value, ))
+    variances = var.variances if var.shape else np.array((var.variance, ))
+    unt = "" if var.unit == Unit('dimensionless') else f" {var.unit}"
+
+    # Iterate over array values to handle no- and infinite-precision cases
+    if variances is None:
+        formatted = [_format_element_compact(v) for v in values]
+    else:
+        formatted = [
+            _format_element_compact(*_round(v, e)) for v, e in zip(values, variances)
+        ]
+    return f"{', '.join(formatted)}{unt}"
+
+
+def _is_numeric(dtype: DType) -> bool:
+    dtype = str(dtype)
+    return any([x in dtype for x in ('float', 'int')])
 
 
 def _round(value, variance):
@@ -51,7 +152,7 @@ def _round(value, variance):
     # the error allows for one-digit uncertainty of precision
     precision = floor(log10(error))
 
-    # By convention, if the first digit of the error rounds to 1
+    # By convention, if the first digit of the error rounds to 1,
     # add an extra digit of precision, so there are two-digits of uncertainty
     if round(error * power(10., -precision)) == 1:
         precision -= 1
@@ -73,7 +174,7 @@ def _round(value, variance):
     return value, error, precision
 
 
-def _format(value, error=None, precision=None):
+def _format_element_compact(value, error=None, precision=None):
     # Build the appropriate format string:
     # No variance (or infinite precision) values take no formatting string
     # Positive precision implies no decimals, with format '0.0f'
@@ -87,3 +188,9 @@ def _format(value, error=None, precision=None):
         formatted = f'{formatted}({error})'
 
     return formatted
+
+
+_VARIABLE_FORMATTERS = {
+    FormatType.default: _format_variable_default,
+    FormatType.compact: _format_variable_compact,
+}

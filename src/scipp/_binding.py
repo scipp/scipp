@@ -108,4 +108,6 @@ def _convert_to_method(*, name, func, abbreviate_doc=True):
                               f'\n\n:seealso: Details in :py:meth:`scipp.{name}`')
         else:
             method.__doc__ = func.__doc__
+    if hasattr(func, '__wrapped__'):
+        method.__wrapped__ = func.__wrapped__
     return method

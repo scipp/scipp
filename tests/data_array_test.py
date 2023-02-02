@@ -334,6 +334,17 @@ def test_sizes():
     assert a.sizes == {'x': 2, 'z': 4}
 
 
+def test_size():
+    a = sc.DataArray(data=sc.scalar(value=1))
+    assert a.size == 1
+    a = sc.DataArray(data=sc.Variable(dims=['x'], values=np.ones(2)))
+    assert a.size == 2
+    a = sc.DataArray(data=sc.Variable(dims=['x', 'z'], values=np.ones((2, 4))))
+    assert a.size == 8
+    a = sc.DataArray(data=sc.Variable(dims=['x', 'z'], values=np.ones((0, 4))))
+    assert a.size == 0
+
+
 def test_to():
     da = sc.DataArray(data=sc.scalar(value=1, dtype="int32", unit="m"))
 

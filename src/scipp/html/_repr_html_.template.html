@@ -1,0 +1,116 @@
+<!--
+    Style Sheet Dependencies:
+        - scipp.html style.css.template
+        - scipp.html datagroup_style.css
+-->
+
+<atomic_template>
+    <li class='dg-detail-item'>
+        <div>
+            <div class='dg-detail-name' style='--depth: ${depth};'>
+                <span>${name}</span>
+            </div>
+            <div class='dg-detail-parent'>
+                <span style='opacity: 0.5;'>${parent}</span>
+            </div>
+            <div class='dg-detail-objtype'>
+                <span>${objtype}</span>
+            </div>
+            <div class='dg-detail-shape'>${shape_repr}</div>
+            <div class='dg-detail-dtype'>
+                <span>${dtype}</span>
+            </div>
+            <div class='dg-detail-unit'>
+                <span>${unit}</span>
+            </div>
+            <div class='dg-detail-preview'>
+                <span class='sc-preview'>${preview}</span>
+            </div>
+        </div>
+    </li>
+</atomic_template>
+
+<collapsible_template>
+    <li class='dg-detail-item'>
+        <div>
+            <input class='dg-detail-item-in' id='${summary_section_id}' type='checkbox' ${checkbox_status}>
+            <div class='dg-detail-name' style='--depth: ${depth};'>
+                <label for=${summary_section_id} title='Expand/collapse'>
+                    <span>${name}<span>
+                </label>
+            </div>
+            <div class='dg-detail-parent'>
+                <span style='opacity: 0.5;'>${parent}</span>
+            </div>
+            <div class='dg-detail-objtype'>
+                <span>${objtype}</span>
+            </div>
+            <div class='dg-detail-shape'>${shape_repr}</div>
+            <div class='dg-detail-dtype'></div>
+            <div class='dg-detail-unit'></div>
+            <div class='dg-detail-preview'></div>
+            <ul class='dg-detail-item-subsection'>
+                ${subsection}
+                <!--
+                    Use <dg_detail_template> here
+                    <ul class='dg-detail-list'>
+                        <li class='dg-detail-item'>
+                            ...
+                        </li>
+                        ...
+                    </ul>
+                -->
+            </ul>
+        </div>
+    </li>
+</collapsible_template>
+
+<dg_detail_template>
+    <ul class='dg-detail-list'>
+        ${summary_rows}
+        <!--
+            A sequence of <atomic_template> or <collapsible_template> here
+            <li class='dg-detail-item'>
+                <div>
+                    <MandatoryProperties>
+                        name/parent_module/object_type/shape/dtype/unit/preview
+                    </MandatoryProperties>
+                    <OptionalProperties>
+                        input(checkbox)/label/subsection
+                    </OptionalProperties>
+                </div>
+            </li>
+            <li class='dg-detail-item'>
+                ...
+            </li>
+            ...
+        -->
+    </ul>
+</dg_detail_template>
+
+<dg_repr_template>
+    <div>
+        ${style_sheet}
+        <div class='sc-root dg-root'>
+            <input class='dg-header-in' id='${header_id}' type='checkbox' ${checkbox_status}>
+            <div class='sc-header'>
+                <label for=${header_id} title='Expand/collapse'>
+                    <div class='sc-obj-type'>${obj_type}</div>
+                    <div class='dg-detail-shape'>${shape_repr}</div>
+                </label>
+            </div>
+            <div class='dg-detail-box'>
+                ${details}
+                <!--
+                    Use <dg_detail_template> here
+                    <ul class='dg-detail-list'>
+                        <li class='dg-detail-item'>
+                            ...
+                        </li>
+                        ...
+                    </ul>
+                -->
+            </div>
+        </div>
+    </div>
+</dg_repr_template>

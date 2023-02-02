@@ -2,10 +2,12 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 
 import numpy as np
-import scipp as sc
 import pytest
-from ..factory import make_dense_data_array, make_dense_dataset, \
-    make_binned_data_array, make_variable
+
+import scipp as sc
+
+from ..factory import make_binned_data_array, make_dense_data_array, \
+    make_dense_dataset, make_variable
 
 # TODO:
 # For now,  we are just checking that creating the repr does not throw.

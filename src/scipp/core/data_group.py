@@ -152,6 +152,20 @@ class DataGroup(MutableMapping):
         """Delete self[key]."""
         del self._items[name]
 
+    def __sizeof__(self) -> int:
+        return self.underlying_size()
+
+    def underlying_size(self) -> int:
+        # TODO Return the underlying size of all items in DataGroup
+        total_size = super.__sizeof__(self)
+        for item in self.values():
+            if isinstance(item, Union[DataArray, Dataset, Variable, DataGroup]):
+                total_size += item.underlying_size()
+            else:
+                total_size += item.__sizeof__()
+
+        return total_size
+
     @property
     def dims(self) -> Tuple[Optional[str], ...]:
         """Union of dims of all items. Non-Scipp items are handled as dims=()."""
@@ -176,26 +190,9 @@ class DataGroup(MutableMapping):
                 all_sizes.setdefault(dim, set()).add(size)
         return {d: next(iter(s)) if len(s) == 1 else None for d, s in all_sizes.items()}
 
-    def _make_html(self):
-        out = ''
-        for name, item in self.items():
-            if isinstance(item, DataGroup):
-                html = item._make_html()
-            elif isinstance(item, (Variable, DataArray, Dataset)):
-                html = ''
-            else:
-                html = str(item)
-            out += f"<details style=\"padding-left:2em\"><summary>" \
-                   f"{name}: {_summarize(item)}</summary>{html}</details>"
-        return out
-
     def _repr_html_(self):
-        out = ''
-        out += f"<details open=\"open\"><summary>DataGroup" \
-               f"({len(self)})</summary>"
-        out += self._make_html()
-        out += "</details>"
-        return out
+        from ..html.formatting_datagroup_html import datagroup_repr
+        return datagroup_repr(self)
 
     def __repr__(self):
         r = f'DataGroup(sizes={self.sizes}, keys=[\n'

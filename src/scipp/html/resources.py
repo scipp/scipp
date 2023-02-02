@@ -4,7 +4,7 @@
 # @author Jan-Lukas Wynen
 
 import importlib.resources
-from functools import lru_cache
+from functools import lru_cache, partial
 from string import Template
 
 
@@ -62,3 +62,56 @@ def load_icons() -> str:
     The string is cached upon first call.
     """
     return _read_text('icons-svg-inline.html')
+
+
+@lru_cache(maxsize=1)
+def load_dg_style() -> str:
+    """
+    Load the bundled CSS style and return it within <style> tags.
+    The string is cached upon first call.
+    Datagroup stylesheet is dependent on ``style.css.template``.
+    Therefore it loads both ``style.css.template`` and ``datagroup.css``.
+    """
+    from .formatting_html import load_style
+    from .resources import _preprocess_style, _read_text
+    style_sheet = '<style id="datagroup-style-sheet">' + \
+                  _preprocess_style(_read_text('datagroup.css')) + \
+                  '</style>'
+
+    return load_style() + style_sheet
+
+
+@lru_cache(maxsize=1)
+def _load_all_templates() -> str:
+    """All HTML Templates for DataGroup formatting."""
+    html_tpl = _read_text('_repr_html_.template.html')
+    import re
+
+    # line breaks are not needed
+    html_tpl = html_tpl.replace('\n', '')
+    # remove comments
+    html_tpl = re.sub(r'<!--(.|\s|\n)*?-->', '', html_tpl)
+    # remove space around special characters
+    html_tpl = re.sub(r'\s*([><])\s*', r'\1', html_tpl)
+    return html_tpl
+
+
+@lru_cache(maxsize=4)
+def _load_template(tag: str) -> str:
+    """Specific HTML Template with the tag name."""
+    html_tpl = _load_all_templates()
+    import re
+
+    # retrieve the target tpl
+    pattern = r'<' + tag + r'>(.|\s|\n)*?</' + tag + r'>'
+    html_tpl = re.search(pattern, html_tpl).group()
+    # remove tpl tag
+    html_tpl = re.sub(r'<' + tag + r'>', '', html_tpl)
+    html_tpl = re.sub(r'</' + tag + r'>', '', html_tpl)
+    return html_tpl
+
+
+load_collapsible_tpl = partial(_load_template, tag="collapsible_template")
+load_atomic_tpl = partial(_load_template, tag="atomic_template")
+load_dg_detail_tpl = partial(_load_template, tag="dg_detail_template")
+load_dg_repr_tpl = partial(_load_template, tag="dg_repr_template")

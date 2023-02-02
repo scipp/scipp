@@ -163,4 +163,5 @@ jobs:
     with:
       publish: true
       version: ${{ needs.manage-versions.outputs.version-replaced }}
+      branch: ${{ needs.manage-versions.outputs.version-replaced }}
     secrets: inherit
