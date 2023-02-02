@@ -51,6 +51,9 @@ Breaking changes
 Bugfixes
 ~~~~~~~~
 
+* Fix access to value of 0-D variable with "spatial transform" dtypes using the ``value`` property.
+  Previously this raised an exception if the dtype was ``affine_transform3``, ``translation3``, or ``rotation3`` `#3033 <https://github.com/scipp/scipp/pull/3033>`_.
+
 Documentation
 ~~~~~~~~~~~~~
 
