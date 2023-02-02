@@ -16,7 +16,7 @@
 #include "scipp/core/string.h"
 
 namespace scipp::core {
-
+// TODO use new formatter
 template <class T>
 std::string
 array_to_string(const T &arr,

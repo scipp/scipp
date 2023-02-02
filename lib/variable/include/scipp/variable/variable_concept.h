@@ -51,15 +51,13 @@ public:
   virtual bool has_variances() const noexcept = 0;
   virtual void setVariances(const Variable &variances) = 0;
 
-  [[nodiscard]] virtual std::any value_cref(scipp::index i) const {
+  [[nodiscard]] virtual std::any value_cref(scipp::index) const {
     // TODO implement in all models
     throw std::invalid_argument("value_cref not implemented");
-    return std::make_any<int>(-1);
   }
-  [[nodiscard]] virtual std::any variance_cref(scipp::index i) const {
+  [[nodiscard]] virtual std::any variance_cref(scipp::index) const {
     // TODO implement in all models
     throw std::invalid_argument("variance_cref not implemented");
-    return std::make_any<int>(-1);
   }
 
   virtual bool equals(const Variable &a, const Variable &b) const = 0;

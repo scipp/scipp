@@ -8,6 +8,9 @@ import pytest
 import scipp as sc
 
 
+# TODO test
+#   vector3, affine_transform3, etc
+#   array with 1 elem
 @pytest.mark.parametrize(
     'var',
     (sc.scalar(1), sc.scalar(-4, dtype='int32'), sc.scalar(

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
+
 #include "format.h"
 
 #include "scipp/core/format.h"
@@ -23,7 +26,7 @@ std::string format_with_python(const T &value, std::string_view format_spec) {
 }
 
 template <class T> void register_py_formatter() {
-  py_formatters().add(dtype<std::decay_t<T>>, [](const std::any &value,
+  py_formatters().set(dtype<std::decay_t<T>>, [](const std::any &value,
                                                  const core::FormatSpec &spec,
                                                  const core::FormatRegistry &) {
     if (!spec.has_spec()) {

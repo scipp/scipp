@@ -11,6 +11,7 @@ set(INC_FILES
     include/scipp/variable/bin_util.h
     include/scipp/variable/comparison.h
     include/scipp/variable/except.h
+    include/scipp/variable/format.h
     include/scipp/variable/logical.h
     include/scipp/variable/math.h
     include/scipp/variable/misc_operations.h
@@ -34,7 +35,6 @@ set(INC_FILES
     include/scipp/variable/variable_keyword_arg_constructor.h
     include/scipp/variable/variable.tcc
     include/scipp/variable/visit.h
-    include/scipp/variable/format.h
 )
 
 set(SRC_FILES
@@ -49,6 +49,7 @@ set(SRC_FILES
     creation.cpp
     cumulative.cpp
     except.cpp
+    format.cpp
     math.cpp
     pow.cpp
     operations.cpp
@@ -71,7 +72,6 @@ set(SRC_FILES
     variable_instantiate_linalg.cpp
     variable_instantiate_map_elements.cpp
     variable_instantiate_view_elements.cpp
-    format.cpp
 )
 
 set(LINK_TYPE "STATIC")
