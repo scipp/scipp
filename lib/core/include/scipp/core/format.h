@@ -10,10 +10,11 @@
 
 namespace scipp::core {
 struct FormatSpec;
+class FormatRegistry;
 
 // The any is expected to contain a std::reference_wrapper<T>
-using FormatImpl =
-    std::function<std::string(const std::any &, const FormatSpec &)>;
+using FormatImpl = std::function<std::string(
+    const std::any &, const FormatSpec &, const FormatRegistry &)>;
 
 class SCIPP_CORE_EXPORT FormatRegistry {
 public:
@@ -24,19 +25,20 @@ public:
                      const FormatSpec &spec) const;
 
   template <class T>
-  static std::string format(const T &value, const FormatSpec &spec) {
-    return FormatRegistry::instance().format(dtype<std::decay_t<T>>,
-                                             std::cref(value), spec);
+  std::string format(const T &value, const FormatSpec &spec) const {
+    return format(dtype<std::decay_t<T>>, std::cref(value), spec);
   }
 
-  template <class T> struct insert {
-    template <class F> explicit insert(F &&formatter) {
-      FormatRegistry::instance().add(dtype<T>, [f = std::forward<F>(formatter)](
-                                                   const std::any &value,
-                                                   const FormatSpec &spec) {
-        return f(std::any_cast<std::reference_wrapper<const T>>(value).get(),
-                 spec);
-      });
+  template <class T> struct insert_global {
+    template <class F> explicit insert_global(F &&formatter) {
+      FormatRegistry::instance().add(
+          dtype<T>, [f = std::forward<F>(formatter)](
+                        const std::any &value, const FormatSpec &spec,
+                        const FormatRegistry &formatters) {
+            return f(
+                std::any_cast<std::reference_wrapper<const T>>(value).get(),
+                spec, formatters);
+          });
     }
   };
 
@@ -45,9 +47,14 @@ private:
 };
 
 struct SCIPP_CORE_EXPORT FormatSpec {
-  std::function<std::string(DType, const std::any &)> element_override;
+  explicit operator bool() const { return !spec.empty(); }
 
-  [[nodiscard]] std::string format_element(DType dtype,
-                                           const std::any &element) const;
+  [[nodiscard]] std::string_view full() const;
+
+  [[nodiscard]] std::string_view current() const;
+
+  [[nodiscard]] FormatSpec nested() const;
+
+  std::string spec;
 };
 } // namespace scipp::core

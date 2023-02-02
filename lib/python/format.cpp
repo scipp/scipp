@@ -1,48 +1,54 @@
 #include "format.h"
 
 #include "scipp/core/format.h"
-#include "scipp/core/tag_util.h"
 
 using namespace scipp;
 using namespace scipp::core;
 using namespace scipp::variable;
 
 namespace py = pybind11;
-#include <iostream>
-namespace {
-template <class T> struct FormatElement {
-  static std::string apply(const std::any &value,
-                           const std::string &nested_spec) {
-    const auto &val =
-        std::any_cast<std::reference_wrapper<const T>>(value).get();
-    [[maybe_unused]] const py::gil_scoped_acquire gil;
-    const py::object builtins = py::module_::import("builtins");
-    const py::object format = builtins.attr("format");
-    return format(val, nested_spec).template cast<std::string>();
-  }
-};
 
-FormatSpec parse_variable_spec(const std::string &format_string) {
-  // TODO proper parsing
-  const auto pos = format_string.rfind(':');
-  if (pos == std::string::npos) {
-    throw std::invalid_argument("Bad format");
-  }
-  auto nested = format_string.substr(pos + 1);
-  return FormatSpec{
-      [nested = std::move(nested)](DType dtype, const std::any &value) {
-        return callDType<FormatElement>(std::tuple<double, int64_t>{}, dtype,
-                                        value, nested);
-      }};
+namespace {
+core::FormatRegistry &py_formatters() {
+  static core::FormatRegistry formatters = core::FormatRegistry::instance();
+  return formatters;
 }
+
+template <class T>
+std::string format_with_python(const T &value, std::string_view format_spec) {
+  const py::gil_scoped_acquire gil;
+  const py::object builtins = py::module_::import("builtins");
+  const py::object format = builtins.attr("format");
+  return format(value, format_spec).template cast<std::string>();
+}
+
+template <class T> void register_py_formatter() {
+  py_formatters().add(dtype<std::decay_t<T>>, [](const std::any &value,
+                                                 const core::FormatSpec &spec,
+                                                 const core::FormatRegistry &) {
+    if (!spec) {
+      // Avoid acquiring the GIL if possible.
+      return core::FormatRegistry::instance().format(dtype<std::decay_t<T>>,
+                                                     value, spec);
+    }
+    return format_with_python(
+        std::any_cast<std::reference_wrapper<const std::decay_t<T>>>(value),
+        spec.full());
+  });
+}
+
+void register_formatters() {
+  register_py_formatter<int64_t>();
+  register_py_formatter<double>();
+}
+
 } // namespace
 
 void bind_format_variable(py::class_<Variable> &variable) {
+  register_formatters();
+
   variable.def(
       "__format__", [](const Variable &self, const std::string &format_string) {
-        if (format_string.empty())
-          return core::FormatRegistry::format(self, core::FormatSpec{});
-        return core::FormatRegistry::format(self,
-                                            parse_variable_spec(format_string));
+        return py_formatters().format(self, core::FormatSpec{format_string});
       });
 }

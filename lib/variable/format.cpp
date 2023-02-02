@@ -28,7 +28,8 @@ auto array_slices(const Variable &var, const scipp::index length) {
 
 template <class Getter>
 void insert_array(std::ostringstream &os, const Variable &var,
-                  const Getter &get, const core::FormatSpec &spec) {
+                  const Getter &get, const core::FormatSpec &spec,
+                  const core::FormatRegistry &formatters) {
   const index length = 4;
   const auto [left, right] = array_slices(var, length);
 
@@ -39,7 +40,7 @@ void insert_array(std::ostringstream &os, const Variable &var,
       first = false;
     else
       os << ", ";
-    os << spec.format_element(var.dtype(), get(var, i));
+    os << formatters.format(var.dtype(), get(var, i), spec);
   }
 
   if (var.dims().volume() > length) {
@@ -49,13 +50,14 @@ void insert_array(std::ostringstream &os, const Variable &var,
   }
 
   for (index i = right.first; i < right.second; ++i) {
-    os << ", " << spec.format_element(var.dtype(), get(var, i));
+    os << ", " << formatters.format(var.dtype(), get(var, i), spec);
   }
 
   os << ']';
 }
 
-std::string format(const Variable &var, const core::FormatSpec &spec) {
+std::string format(const Variable &var, const core::FormatSpec &spec,
+                   const core::FormatRegistry &formatters) {
   std::ostringstream os;
   os << "<scipp.Variable> ";
   if (!var.is_valid()) {
@@ -63,6 +65,7 @@ std::string format(const Variable &var, const core::FormatSpec &spec) {
     return os.str();
   }
 
+  const auto nested_spec = spec.nested();
   static const char *col_sep = "  ";
   os << var.dims() << col_sep;
   os << std::setw(9) << var.dtype();
@@ -71,7 +74,7 @@ std::string format(const Variable &var, const core::FormatSpec &spec) {
   insert_array(
       os, var,
       [](const Variable &v, const scipp::index i) { return v.value_cref(i); },
-      spec);
+      nested_spec, formatters);
   if (var.has_variances()) {
     os << col_sep;
     insert_array(
@@ -79,14 +82,15 @@ std::string format(const Variable &var, const core::FormatSpec &spec) {
         [](const Variable &v, const scipp::index i) {
           return v.variance_cref(i);
         },
-        spec);
+        nested_spec, formatters);
   }
   return os.str();
 }
 
-auto format_variable = core::FormatRegistry::insert<Variable>(
-    [](const Variable &value, const core::FormatSpec &spec) {
-      return format(value, spec);
+auto format_variable = core::FormatRegistry::insert_global<Variable>(
+    [](const Variable &value, const core::FormatSpec &spec,
+       const core::FormatRegistry &registry) {
+      return format(value, spec, registry);
     });
 } // namespace
 
