@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
+
 #include "scipp/core/format.h"
 
 #include "scipp/core/eigen.h"
@@ -5,20 +8,6 @@
 #include "scipp/core/time_point.h"
 
 namespace scipp::core {
-FormatRegistry &FormatRegistry::instance() noexcept {
-  static FormatRegistry formatters;
-  return formatters;
-}
-
-void FormatRegistry::add(const DType dtype, const FormatImpl &formatter) {
-  m_formatters.insert_or_assign(dtype, formatter);
-}
-
-std::string FormatRegistry::format(const DType dtype, const std::any &value,
-                                   const FormatSpec &spec) const {
-  return m_formatters.at(dtype)(value, spec, *this);
-}
-
 namespace {
 std::string::size_type first_colon(const std::string &s) {
   const auto pos = s.find_first_of(':');
@@ -38,6 +27,27 @@ std::string::size_type first_colon(const std::string &s) {
     return {};
   }
   return {spec.substr(start)};
+}
+
+FormatRegistry &FormatRegistry::instance() noexcept {
+  static FormatRegistry formatters;
+  return formatters;
+}
+
+void FormatRegistry::set(const DType dtype, const FormatImpl &formatter) {
+  m_formatters.insert_or_assign(dtype, formatter);
+}
+
+std::string FormatRegistry::format(const DType dtype, const std::any &value,
+                                   const FormatSpec &spec) const {
+  return get(dtype)(value, spec, *this);
+}
+
+const FormatImpl &FormatRegistry::get(const DType dtype) const {
+  if (m_formatters.find(dtype) == m_formatters.end())
+    // Bad error message but many dtypes don't support to_string.
+    throw std::invalid_argument("Cannot value of this type");
+  return m_formatters.at(dtype);
 }
 
 namespace {
@@ -106,16 +116,22 @@ std::string format_matrix3d_impl(const Eigen::Matrix3d &value) {
     });
 
 [[maybe_unused]] auto format_datetime =
-    FormatRegistry::insert_global<scipp::core::time_point>(
-        [](const scipp::core::time_point &value, const FormatSpec &spec,
-           const FormatRegistry &) {
-          if (spec.has_spec())
-            throw std::invalid_argument(
-                "Type does not support format specifier");
-          if (!spec.unit.has_value())
-            throw std::invalid_argument(
-                "Cannot format datetime without a unit");
-          return to_iso_date(value, *spec.unit);
+    FormatRegistry::insert_global<time_point>([](const time_point &value,
+                                                 const FormatSpec &spec,
+                                                 const FormatRegistry &) {
+      if (spec.has_spec())
+        throw std::invalid_argument("Type does not support format specifier");
+      if (!spec.unit.has_value())
+        throw std::invalid_argument("Cannot format datetime without a unit");
+      return to_iso_date(value, *spec.unit);
+    });
+
+[[maybe_unused]] auto format_index_pair =
+    FormatRegistry::insert_global<index_pair>(
+        [](const index_pair &value, const FormatSpec &spec,
+           const FormatRegistry &formatters) {
+          return '(' + formatters.format(value.first, spec) + ", " +
+                 formatters.format(value.second, spec) + ')';
         });
 
 } // namespace

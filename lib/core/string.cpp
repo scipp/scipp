@@ -11,6 +11,7 @@
 
 #include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
+#include "scipp/core/format.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/string.h"
 #include "scipp/core/time_point.h"
@@ -62,8 +63,7 @@ std::string to_string(const Slice &slice) {
 }
 
 std::string to_string(const scipp::index_pair &index) {
-  return '(' + std::to_string(index.first) + ", " +
-         std::to_string(index.second) + ')';
+  return FormatRegistry::instance().format(index);
 }
 
 std::map<DType, std::string> &dtypeNameRegistry() {

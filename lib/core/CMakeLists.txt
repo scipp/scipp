@@ -10,6 +10,7 @@ set(INC_FILES
     include/scipp/core/dtype.h
     include/scipp/core/element_array.h
     include/scipp/core/element_array_view.h
+    include/scipp/core/format.h
     include/scipp/core/histogram.h
     include/scipp/core/memory_pool.h
     include/scipp/core/multi_index.h
@@ -36,7 +37,6 @@ set(INC_FILES
     include/scipp/core/element/special_values.h
     include/scipp/core/element/trigonometry.h
     include/scipp/core/element/util.h
-    include/scipp/core/format.h
 )
 
 set(SRC_FILES
@@ -45,6 +45,7 @@ set(SRC_FILES
     dtype.cpp
     element_array_view.cpp
     except.cpp
+    format.cpp
     multi_index.cpp
     sizes.cpp
     slice.cpp
@@ -52,7 +53,6 @@ set(SRC_FILES
     string.cpp
     subbin_sizes.cpp
     view_index.cpp
-    format.cpp
 )
 
 set(LINK_TYPE "STATIC")

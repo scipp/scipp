@@ -25,6 +25,7 @@ add_executable(
   element_to_unit_test.cpp
   element_trigonometry_test.cpp
   element_util_test.cpp
+  format_test.cpp
   multi_index_test.cpp
   slice_test.cpp
   sizes_test.cpp
