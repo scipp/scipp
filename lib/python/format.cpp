@@ -26,7 +26,7 @@ template <class T> void register_py_formatter() {
   py_formatters().add(dtype<std::decay_t<T>>, [](const std::any &value,
                                                  const core::FormatSpec &spec,
                                                  const core::FormatRegistry &) {
-    if (!spec) {
+    if (!spec.has_spec()) {
       // Avoid acquiring the GIL if possible.
       return core::FormatRegistry::instance().format(dtype<std::decay_t<T>>,
                                                      value, spec);
@@ -39,9 +39,11 @@ template <class T> void register_py_formatter() {
 
 void register_formatters() {
   register_py_formatter<int64_t>();
+  register_py_formatter<int32_t>();
   register_py_formatter<double>();
+  register_py_formatter<float>();
+  register_py_formatter<std::string>();
 }
-
 } // namespace
 
 void bind_format_variable(py::class_<Variable> &variable) {

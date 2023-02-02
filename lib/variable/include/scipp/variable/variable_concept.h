@@ -53,10 +53,12 @@ public:
 
   [[nodiscard]] virtual std::any value_cref(scipp::index i) const {
     // TODO implement in all models
+    throw std::invalid_argument("value_cref not implemented");
     return std::make_any<int>(-1);
   }
   [[nodiscard]] virtual std::any variance_cref(scipp::index i) const {
     // TODO implement in all models
+    throw std::invalid_argument("variance_cref not implemented");
     return std::make_any<int>(-1);
   }
 

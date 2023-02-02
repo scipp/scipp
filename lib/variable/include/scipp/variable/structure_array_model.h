@@ -83,6 +83,13 @@ public:
 
   VariableConceptHandle elements() const { return m_elements; }
 
+  [[nodiscard]] std::any value_cref(const scipp::index i) const override {
+    return std::make_any<std::reference_wrapper<const T>>(values()[i]);
+  }
+  [[nodiscard]] std::any variance_cref(const scipp::index) const override {
+    except::throw_cannot_have_variances(core::dtype<T>);
+  }
+
   scipp::index dtype_size() const override { return sizeof(T); }
   scipp::index object_size() const override {
     return sizeof(*this) + m_elements->object_size();

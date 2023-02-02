@@ -5,6 +5,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "scipp/units/unit.h"
+
 #include "scipp-core_export.h"
 #include "scipp/core/dtype.h"
 
@@ -47,7 +49,7 @@ private:
 };
 
 struct SCIPP_CORE_EXPORT FormatSpec {
-  explicit operator bool() const { return !spec.empty(); }
+  bool has_spec() const noexcept { return !spec.empty(); }
 
   [[nodiscard]] std::string_view full() const;
 
@@ -56,5 +58,6 @@ struct SCIPP_CORE_EXPORT FormatSpec {
   [[nodiscard]] FormatSpec nested() const;
 
   std::string spec;
+  std::optional<units::Unit> unit = std::nullopt;
 };
 } // namespace scipp::core

@@ -16,6 +16,13 @@ void insert_unit(std::ostringstream &os, const units::Unit &unit) {
     os << "  " << std::setw(15) << '[' + unit.name() + ']';
 }
 
+core::FormatSpec make_nested_spec(const core::FormatSpec &spec,
+                                  const Variable &var) {
+  auto nested = spec.nested();
+  nested.unit = var.unit();
+  return nested;
+}
+
 auto array_slices(const Variable &var, const scipp::index length) {
   const auto size = var.dims().volume();
   if (length >= size)
@@ -65,7 +72,7 @@ std::string format(const Variable &var, const core::FormatSpec &spec,
     return os.str();
   }
 
-  const auto nested_spec = spec.nested();
+  const auto nested_spec = make_nested_spec(spec, var);
   static const char *col_sep = "  ";
   os << var.dims() << col_sep;
   os << std::setw(9) << var.dtype();
