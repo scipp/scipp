@@ -262,6 +262,17 @@ def test_sizes():
     assert a.sizes == {'y': 3, 'z': 4}
 
 
+def test_size():
+    a = sc.scalar(1)
+    assert a.size == 1
+    a = sc.empty(dims=['x'], shape=[2])
+    assert a.size == 2
+    a = sc.empty(dims=['x', 'y'], shape=[3, 2])
+    assert a.size == 6
+    a = sc.empty(dims=['x', 'y'], shape=[0, 3])
+    assert a.size == 0
+
+
 def test_dims():
     a = sc.scalar(1)
     assert a.dims == ()

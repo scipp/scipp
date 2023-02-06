@@ -2,11 +2,11 @@
 import ast
 import inspect
 import re
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple
 
 from .config import CPP_CORE_MODULE_NAME, squash_overloads
-from .transformer import AddOverloadedDecorator, DropFunctionBody, SetFunctionName, \
-    add_decorator
+from .transformer import AddOverloadedDecorator, DropFunctionBody, RemoveDecorators, \
+    SetFunctionName, add_decorator
 
 
 def _is_overloaded(docstring: str) -> bool:
@@ -108,10 +108,20 @@ def _make_regular_method_code_for_parse(signature: inspect.Signature, name: str,
     return f'{sig}\n{_make_docstring(docstring)}'
 
 
+def _unwrap(func: Any) -> Tuple[Any, int]:
+    i = 0
+    while hasattr(func, '__wrapped__'):
+        i += 1
+        func = func.__wrapped__
+    return func, i
+
+
 def _parse_regular_method(func: Any, name: Optional[str]) -> List[ast.FunctionDef]:
     """Parse a function defined in Python."""
+    func, n_decorators = _unwrap(func)
     node = ast.parse(inspect.getsource(func))
     node = DropFunctionBody().visit(node)
+    node = RemoveDecorators(n_decorators).visit(node)
     if name is not None:
         node = SetFunctionName(name).visit(node)
     node = ast.fix_missing_locations(node)

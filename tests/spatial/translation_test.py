@@ -30,3 +30,18 @@ def test_translation_default_unit_is_dimensionless():
 def test_translations_default_unit_is_dimensionless():
     var = translations(dims=['x'], values=np.ones(shape=(2, 3)))
     assert var.unit == sc.units.one
+
+
+def test_can_get_value_of_0d_variable():
+    rng = np.random.default_rng()
+    value = rng.random((3, ))
+    var = translation(value=value)
+    assert np.array_equal(var.value, value)
+
+
+def test_can_set_value_of_0d_variable():
+    rng = np.random.default_rng()
+    value = rng.random((3, ))
+    var = translation(value=value)
+    var.value += value
+    assert np.array_equal(var.value, value + value)

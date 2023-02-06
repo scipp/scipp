@@ -579,7 +579,7 @@ class DataArray:
     def attrs(self) -> Coords:
         ...
 
-    def bin(self, arg_dict: Dict[str, Union[int, Variable]]=None, /, **kwargs: Union[int, Variable]) -> Union[DataArray, Dataset]:
+    def bin(self, arg_dict=None, /, **kwargs):
         ...
 
     @property
@@ -656,13 +656,13 @@ class DataArray:
     def fold(self, dim: str, sizes: Optional[Dict[str, int]]=None, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, shape: Optional[Sequence[int]]=None) -> VariableLikeType:
         ...
 
-    def group(self, /, *args: Union[str, Variable]) -> Union[DataArray, Dataset]:
+    def group(self, /, *args: Union[str, Variable]):
         ...
 
     def groupby(self, /, group: Union[Variable, str], *, bins: Optional[Variable]=None) -> Union[GroupByDataArray, GroupByDataset]:
         ...
 
-    def hist(self, arg_dict: Optional[Dict[str, Union[int, Variable]]]=None, /, **kwargs: Union[int, Variable]) -> Union[DataArray, Dataset]:
+    def hist(self, arg_dict=None, /, **kwargs):
         ...
 
     @property
@@ -690,7 +690,7 @@ class DataArray:
     def name(self, arg1: str) -> None:
         ...
 
-    def nanhist(self, arg_dict: Optional[Dict[str, Union[int, Variable]]]=None, /, **kwargs: Union[int, Variable]) -> Union[DataArray, Dataset]:
+    def nanhist(self, arg_dict=None, /, **kwargs):
         ...
 
     def nanmax(self, dim: Optional[str]=None) -> VariableLikeType:
@@ -712,7 +712,7 @@ class DataArray:
     def plot(*args, **kwargs):
         ...
 
-    def rebin(self, arg_dict: Dict[str, Union[int, Variable]]=None, deprecated=None, /, **kwargs: Union[int, Variable]) -> Union[DataArray, Dataset]:
+    def rebin(self, arg_dict=None, deprecated=None, /, **kwargs):
         ...
 
     def rename(self, dims_dict: Dict[str, str]=None, /, **names: str) -> DataArray:
@@ -726,6 +726,10 @@ class DataArray:
 
     @property
     def shape(self) -> tuple:
+        ...
+
+    @property
+    def size(self) -> int:
         ...
 
     @property
@@ -1073,7 +1077,7 @@ class Dataset:
     def groupby(self, /, group: Union[Variable, str], *, bins: Optional[Variable]=None) -> Union[GroupByDataArray, GroupByDataset]:
         ...
 
-    def hist(self, arg_dict: Optional[Dict[str, Union[int, Variable]]]=None, /, **kwargs: Union[int, Variable]) -> Union[DataArray, Dataset]:
+    def hist(self, arg_dict=None, /, **kwargs):
         ...
 
     def items(self) -> Dataset_items_view:
@@ -1117,7 +1121,7 @@ class Dataset:
     def pop(self, key, default=_NoDefault):
         ...
 
-    def rebin(self, arg_dict: Dict[str, Union[int, Variable]]=None, deprecated=None, /, **kwargs: Union[int, Variable]) -> Union[DataArray, Dataset]:
+    def rebin(self, arg_dict=None, deprecated=None, /, **kwargs):
         ...
 
     def rename(self, dims_dict: Dict[str, str]=None, /, **names: str) -> Dataset:
@@ -1494,7 +1498,7 @@ class Variable:
     def __floordiv__(self, arg0: float) -> Variable:
         ...
 
-    def __format__(self, spec):
+    def __format__(self, format_spec: str) -> str:
         ...
 
     @overload
@@ -1767,7 +1771,7 @@ class Variable:
     def astype(self, type: Any, *, copy: bool=True) -> Variable:
         ...
 
-    def bin(self, arg_dict: Dict[str, Union[int, Variable]]=None, /, **kwargs: Union[int, Variable]) -> Union[DataArray, Dataset]:
+    def bin(self, arg_dict=None, /, **kwargs):
         ...
 
     @property
@@ -1815,7 +1819,7 @@ class Variable:
     def fold(self, dim: str, sizes: Optional[Dict[str, int]]=None, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, shape: Optional[Sequence[int]]=None) -> VariableLikeType:
         ...
 
-    def hist(self, arg_dict: Optional[Dict[str, Union[int, Variable]]]=None, /, **kwargs: Union[int, Variable]) -> Union[DataArray, Dataset]:
+    def hist(self, arg_dict=None, /, **kwargs):
         ...
 
     def max(self, dim: Optional[str]=None) -> VariableLikeType:
@@ -1827,7 +1831,7 @@ class Variable:
     def min(self, dim: Optional[str]=None) -> VariableLikeType:
         ...
 
-    def nanhist(self, arg_dict: Optional[Dict[str, Union[int, Variable]]]=None, /, **kwargs: Union[int, Variable]) -> Union[DataArray, Dataset]:
+    def nanhist(self, arg_dict=None, /, **kwargs):
         ...
 
     def nanmax(self, dim: Optional[str]=None) -> VariableLikeType:
@@ -1860,6 +1864,10 @@ class Variable:
 
     @property
     def shape(self) -> tuple:
+        ...
+
+    @property
+    def size(self) -> int:
         ...
 
     @property
