@@ -67,14 +67,21 @@ template <class T> struct insert_plain : FormatRegistry::insert_global<T> {
             plain_formatter<T>(std::forward<F>(f))) {}
 };
 
+/// Like `std::to_string` but with a more concise notation (fewer digits).
+template <class T> std::string to_string_via_sstream(const T &value) {
+  std::ostringstream os;
+  os << value;
+  return os.str();
+}
+
 [[maybe_unused]] auto format_int64 = insert_plain<int64_t>(
-    [](const int64_t &value) { return std::to_string(value); });
+    [](const int64_t &value) { return to_string_via_sstream(value); });
 [[maybe_unused]] auto format_int32 = insert_plain<int32_t>(
-    [](const int32_t &value) { return std::to_string(value); });
+    [](const int32_t &value) { return to_string_via_sstream(value); });
 [[maybe_unused]] auto format_double = insert_plain<double>(
-    [](const double &value) { return std::to_string(value); });
+    [](const double &value) { return to_string_via_sstream(value); });
 [[maybe_unused]] auto format_float = insert_plain<float>(
-    [](const float &value) { return std::to_string(value); });
+    [](const float &value) { return to_string_via_sstream(value); });
 [[maybe_unused]] auto format_bool = insert_plain<bool>(
     [](const bool &value) { return value ? "True" : "False"; });
 [[maybe_unused]] auto format_string = insert_plain<std::string>(

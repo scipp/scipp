@@ -12,12 +12,10 @@
 
 namespace scipp::variable {
 namespace {
-// TODO datasetSlices
-
 VariableFormatSpec parse_spec(const core::FormatSpec &spec) {
   if (!spec.current().empty())
     throw std::runtime_error("parsing not implemented yet");
-  return VariableFormatSpec{true, spec.nested()};
+  return VariableFormatSpec{}.with_nested(spec.nested());
 }
 
 void insert_unit(std::ostringstream &os, const units::Unit &unit) {
@@ -32,6 +30,25 @@ core::FormatSpec make_nested_spec(const VariableFormatSpec &spec,
   auto nested = spec.nested;
   nested.unit = var.unit();
   return nested;
+}
+
+void insert_dims_labels(std::ostringstream &os, const Variable &variable,
+                        const Sizes &container_sizes) {
+  const auto &dims = variable.dims();
+  if (dims.empty()) {
+    os << "()";
+    return;
+  }
+  os << '(';
+  const char *sep = "";
+  for (const auto &dim : dims.labels()) {
+    os << sep << dim;
+    if ((container_sizes.contains(dim) ? container_sizes[dim] : 1) + 1 ==
+        dims[dim])
+      os << " [bin-edge]";
+    sep = ", ";
+  }
+  os << ')';
 }
 
 auto array_slices(const Variable &var, const scipp::index length) {
@@ -87,9 +104,14 @@ std::string format_variable(const Variable &var, const VariableFormatSpec &spec,
 
   const auto nested_spec = make_nested_spec(spec, var);
   static const char *col_sep = "  ";
-  os << var.dims() << col_sep;
+  if (!spec.container_sizes)
+    os << var.dims() << col_sep;
   os << std::setw(9) << var.dtype();
   insert_unit(os, var.unit());
+  if (spec.container_sizes) {
+    os << col_sep;
+    insert_dims_labels(os, var, spec.container_sizes.value());
+  }
   os << col_sep;
   insert_array(
       os, var,

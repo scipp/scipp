@@ -34,7 +34,7 @@ namespace {
 auto format_coord_mismatch_message(const Dim dim, const Variable &a,
                                    const Variable &b,
                                    const std::string_view opname) {
-  const auto spec = variable::VariableFormatSpec{false};
+  const auto spec = variable::VariableFormatSpec{}.with_show_type(false);
   const auto &formatters = core::FormatRegistry::instance();
   std::string message = "Mismatch in coordinate '" + to_string(dim);
   if (!opname.empty())

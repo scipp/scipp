@@ -9,8 +9,8 @@
 
 #include "scipp/core/dict.h"
 #include "scipp/dataset/dataset.h"
-#include "scipp/dataset/except.h"
 #include "scipp/dataset/string.h"
+#include "scipp/variable/format.h"
 
 namespace scipp::dataset {
 
@@ -39,7 +39,11 @@ std::string format_variable(const std::string &key, const Variable &variable,
                             const std::optional<Sizes> datasetSizes) {
   std::stringstream s;
   s << tab << std::left << std::setw(24) << key
-    << format_variable(variable, datasetSizes) << '\n';
+    << format_variable(
+           variable,
+           variable::VariableFormatSpec{}.with_container_sizes(datasetSizes),
+           core::FormatRegistry::instance())
+    << '\n';
   return s.str();
 }
 
