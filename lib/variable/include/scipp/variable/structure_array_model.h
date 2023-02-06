@@ -83,10 +83,14 @@ public:
 
   VariableConceptHandle elements() const { return m_elements; }
 
-  [[nodiscard]] std::any value_cref(const scipp::index i) const override {
-    return std::make_any<std::reference_wrapper<const T>>(values()[i]);
+  [[nodiscard]] std::any
+  value_cref(const scipp::index i,
+             const core::ElementArrayViewParams &params) const override {
+    return std::make_any<std::reference_wrapper<const T>>(values(params)[i]);
   }
-  [[nodiscard]] std::any variance_cref(const scipp::index) const override {
+  [[nodiscard]] std::any
+  variance_cref(const scipp::index,
+                const core::ElementArrayViewParams &) const override {
     except::throw_cannot_have_variances(core::dtype<T>);
   }
 

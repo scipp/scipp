@@ -108,11 +108,15 @@ public:
     return ElementArrayView(base, m_variances->data());
   }
 
-  [[nodiscard]] std::any value_cref(const scipp::index i) const override {
-    return std::make_any<std::reference_wrapper<const T>>(values()[i]);
+  [[nodiscard]] std::any
+  value_cref(const scipp::index i,
+             const core::ElementArrayViewParams &params) const override {
+    return std::make_any<std::reference_wrapper<const T>>(values(params)[i]);
   }
-  [[nodiscard]] std::any variance_cref(const scipp::index i) const override {
-    return std::make_any<std::reference_wrapper<const T>>(variances()[i]);
+  [[nodiscard]] std::any
+  variance_cref(const scipp::index i,
+                const core::ElementArrayViewParams &params) const override {
+    return std::make_any<std::reference_wrapper<const T>>(variances(params)[i]);
   }
 
   scipp::index dtype_size() const override { return sizeof(T); }

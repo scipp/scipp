@@ -26,7 +26,6 @@ struct SCIPP_CORE_EXPORT FormatSpec {
 
 class FormatRegistry;
 
-// The any is expected to contain a std::reference_wrapper<T>
 using FormatImpl = std::function<std::string(
     const std::any &, const FormatSpec &, const FormatRegistry &)>;
 

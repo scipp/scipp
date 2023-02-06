@@ -11,6 +11,7 @@
 #include "scipp/common/index.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
+#include "scipp/core/element_array_view.h"
 #include "scipp/units/unit.h"
 
 namespace scipp::variable {
@@ -51,11 +52,13 @@ public:
   virtual bool has_variances() const noexcept = 0;
   virtual void setVariances(const Variable &variances) = 0;
 
-  [[nodiscard]] virtual std::any value_cref(scipp::index) const {
+  [[nodiscard]] virtual std::any
+  value_cref(scipp::index, const core::ElementArrayViewParams &) const {
     // TODO implement in all models
     throw std::invalid_argument("value_cref not implemented");
   }
-  [[nodiscard]] virtual std::any variance_cref(scipp::index) const {
+  [[nodiscard]] virtual std::any
+  variance_cref(scipp::index, const core::ElementArrayViewParams &) const {
     // TODO implement in all models
     throw std::invalid_argument("variance_cref not implemented");
   }

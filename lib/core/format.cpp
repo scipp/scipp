@@ -46,7 +46,7 @@ std::string FormatRegistry::format(const DType dtype, const std::any &value,
 const FormatImpl &FormatRegistry::get(const DType dtype) const {
   if (m_formatters.find(dtype) == m_formatters.end())
     // Bad error message but many dtypes don't support to_string.
-    throw std::invalid_argument("Cannot value of this type");
+    throw std::invalid_argument("Cannot format value of this type");
   return m_formatters.at(dtype);
 }
 

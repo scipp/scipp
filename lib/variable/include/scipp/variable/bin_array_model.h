@@ -108,6 +108,18 @@ public:
     except::throw_cannot_have_variances(core::dtype<core::bin<T>>);
   }
 
+  [[nodiscard]] std::any
+  value_cref(const scipp::index i,
+             const core::ElementArrayViewParams &params) const override {
+    return std::make_any<const T>(values(params)[i]);
+  }
+
+  [[nodiscard]] std::any
+  variance_cref(const scipp::index,
+                const core::ElementArrayViewParams &) const override {
+    except::throw_cannot_have_variances(core::dtype<T>);
+  }
+
 private:
   ElementArrayView<const scipp::index_pair>
   index_values(const core::ElementArrayViewParams &base) const;
