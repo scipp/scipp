@@ -2,8 +2,11 @@
 // Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/dataset/except.h"
+#include "scipp/core/format.h"
+#include "scipp/variable/format.h"
+
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/except.h"
 
 namespace scipp::except {
 
@@ -31,10 +34,13 @@ namespace {
 auto format_coord_mismatch_message(const Dim dim, const Variable &a,
                                    const Variable &b,
                                    const std::string_view opname) {
+  const auto spec = variable::VariableFormatSpec{false};
+  const auto &formatters = core::FormatRegistry::instance();
   std::string message = "Mismatch in coordinate '" + to_string(dim);
   if (!opname.empty())
     message += "' in operation '" + std::string(opname);
-  message += "':\n" + format_variable(a) + "\nvs\n" + format_variable(b);
+  message += "':\n" + format_variable(a, spec, formatters) + "\nvs\n" +
+             format_variable(b, spec, formatters);
   return message;
 }
 } // namespace
