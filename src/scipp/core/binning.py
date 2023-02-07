@@ -8,7 +8,7 @@ from typing import Dict, Optional, Sequence, Union, overload
 
 from .._scipp import core as _cpp
 from .bin_remapping import combine_bins
-from .cpp_classes import CoordError, DataArray, Dataset, DType, Variable
+from .cpp_classes import BinEdgeError, CoordError, DataArray, Dataset, DType, Variable
 from .data_group import DataGroup, data_group_overload
 from .math import round as round_
 from .shape import concat
@@ -58,6 +58,14 @@ def make_histogrammed(x, *, edges):
     if isinstance(x, Variable):
         data = scalar(1.0, unit='counts').broadcast(sizes=x.sizes)
         x = DataArray(data, coords={edges.dim: x})
+    elif isinstance(x, DataArray) and x.bins is not None:
+        dim = edges.dims[-1]
+        if dim not in x.bins.meta:
+            if x.meta.is_edges(dim):
+                raise BinEdgeError(
+                    "Cannot histogram data with existing bin edges "
+                    "unless event data coordinate for histogramming is available.")
+            return make_histogrammed(x.bins.sum(), edges=edges)
     return _cpp.histogram(x, edges)
 
 
@@ -359,6 +367,13 @@ def hist(x, arg_dict=None, /, **kwargs):
         out = make_histogrammed(x, edges=list(edges.values())[0])
     else:
         edges = list(edges.values())
+        # If histogramming by the final edges needs to use a non-event coord then we
+        # must not erase that dim, since it removes the coord required for histogramming
+        if isinstance(x, DataArray) and x.bins is not None:
+            hist_dim = edges[-1].dims[-1]
+            if hist_dim not in x.bins.meta:
+                hist_coord_dim = x.meta[hist_dim].dims[-1]
+                erase = [e for e in erase if e != hist_coord_dim]
         out = make_histogrammed(make_binned(x, edges=edges[:-1], erase=erase),
                                 edges=edges[-1])
     for dim in erase:
