@@ -3,7 +3,8 @@
 
 import uuid
 from collections import deque
-from html import escape
+from html import escape as html_escape
+from re import escape as re_escape
 from string import Template
 from typing import Union
 
@@ -14,6 +15,16 @@ from ..core.data_group import DataGroup
 from ..units import dimensionless
 from .resources import load_atomic_row_tpl, load_collapsible_row_tpl, \
     load_dg_detail_list_tpl, load_dg_repr_tpl, load_dg_style
+
+
+class mathstr(str):
+    pass
+
+
+def escape(content: Union[str, mathstr]) -> str:
+    if isinstance(content, mathstr):
+        return html_escape(content)
+    return html_escape(content).replace('$', re_escape("$"))
 
 
 def _format_shape(var: Union[Variable, DataArray, Dataset, DataGroup]) -> str:
@@ -98,7 +109,7 @@ def _summarize_atomic_variable(var, name: str, depth: int = 0) -> str:
                                          shape_repr=shape_repr,
                                          dtype=escape(dtype_str),
                                          unit=escape(unit),
-                                         preview=preview)
+                                         preview=escape(preview))
 
 
 def _collapsible_summary(var: DataGroup, name: str, name_spaces: list) -> str:

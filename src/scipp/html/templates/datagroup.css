@@ -178,3 +178,7 @@
   max-width: 35em;
   text-align: left;
 }
+
+.dg-detail-preview .sc-preview span {
+  padding: 0;
+}
