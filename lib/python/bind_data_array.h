@@ -129,6 +129,54 @@ void bind_pop(pybind11::class_<T, Ignored...> &view) {
 }
 
 template <class T, class... Ignored>
+void bind_dict_clear(pybind11::class_<T, Ignored...> &view) {
+  view.def("clear", [](T &self) {
+    std::vector<typename T::key_type> keys;
+    for (const auto &key : keys_view(self))
+      keys.push_back(key);
+    for (const auto &key : keys)
+      self.erase(key);
+  });
+}
+
+template <class T, class... Ignored>
+void bind_dict_popitem(pybind11::class_<T, Ignored...> &view) {
+  view.def("popitem", [](T &self) {
+    typename T::key_type key;
+    for (const auto &k : keys_view(self))
+      key = k;
+    const auto item = py::cast(self.extract(key));
+    if constexpr (std::is_same_v<typename T::key_type, Dim>)
+      return std::tuple{key.name(), item};
+    else
+      return std::tuple{key, item};
+  });
+}
+
+template <class T, class... Ignored>
+void bind_dict_copy(pybind11::class_<T, Ignored...> &view) {
+  view.def(
+          "copy",
+          [](const T &self, const bool deep) {
+            return deep ? copy(self) : self;
+          },
+          py::arg("deep") = true, py::call_guard<py::gil_scoped_release>(),
+          R"(
+      Return a (by default deep) copy.
+
+      If `deep=True` (the default), a deep copy is made. Otherwise, a shallow
+      copy is made, and the returned data (and meta data) values are new views
+      of the data and meta data values of this object.)")
+      .def(
+          "__copy__", [](const T &self) { return self; },
+          py::call_guard<py::gil_scoped_release>(), "Return a (shallow) copy.")
+      .def(
+          "__deepcopy__",
+          [](const T &self, const py::dict &) { return copy(self); },
+          py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
+}
+
+template <class T, class... Ignored>
 void bind_is_edges(py::class_<T, Ignored...> &view) {
   view.def(
       "is_edges",
@@ -151,6 +199,9 @@ void bind_mutable_view(py::module &m, const std::string &name,
   bind_dict_update(view, [](T &self, const std::string &key,
                             const Variable &value) { self.set(key, value); });
   bind_pop(view);
+  bind_dict_clear(view);
+  bind_dict_popitem(view);
+  bind_dict_copy(view);
   bind_is_edges(view);
   view.def(
           "__iter__",
@@ -188,6 +239,9 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name,
   bind_dict_update(view, [](T &self, const units::Dim &key,
                             const Variable &value) { self.set(key, value); });
   bind_pop(view);
+  bind_dict_clear(view);
+  bind_dict_popitem(view);
+  bind_dict_copy(view);
   bind_is_edges(view);
   view.def(
           "__iter__",

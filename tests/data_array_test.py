@@ -144,9 +144,9 @@ def test_builtin_len(make):
 
 def test_coords():
     da = make_dataarray()
-    assert len(dict(da.meta)) == 4
-    assert len(dict(da.coords)) == 3
-    assert len(dict(da.attrs)) == 1
+    assert len(dict(da.meta)) == len(da.meta) == 4
+    assert len(dict(da.coords)) == len(da.coords) == 3
+    assert len(dict(da.attrs)) == len(da.attrs) == 1
     assert 'x' in da.coords
     assert 'y' in da.coords
     assert 'aux' in da.coords
@@ -158,10 +158,20 @@ def test_masks():
     da = make_dataarray()
     mask = sc.Variable(dims=['x'], values=np.array([False, True], dtype=bool))
     da.masks['mask1'] = mask
-    assert len(dict(da.masks)) == 1
+    assert len(dict(da.masks)) == len(da.masks) == 1
     assert 'mask1' in da.masks
     assert sc.identical(da.masks.pop('mask1'), mask)
-    assert (len(dict(da.masks))) == 0
+    assert len(dict(da.masks)) == len(da.masks) == 0
+
+
+def test_masks_delitem():
+    da = make_dataarray()
+    mask = sc.Variable(dims=['x'], values=np.array([False, True], dtype=bool))
+    ref = da.copy()
+    da.masks['masks'] = mask
+    assert not sc.identical(da, ref)
+    del da.masks['masks']
+    assert sc.identical(da, ref)
 
 
 def test_ipython_key_completion():
@@ -440,3 +450,17 @@ def test_drop_attrs():
     assert 'attr0' not in da.drop_attrs(['attr0', 'attr1']).attrs
     assert 'attr1' not in da.drop_attrs(['attr0', 'attr1']).attrs
     assert 'attr2' in da.drop_attrs(['attr0', 'attr1']).attrs
+
+
+def test_attrs_update_from_dict_adds_items():
+    da = sc.DataArray(sc.scalar(0.0), attrs={'a': sc.scalar(1.0)})
+    da.attrs.update({'b': sc.scalar(2.0)})
+    assert sc.identical(da.attrs['a'], sc.scalar(1.0))
+    assert sc.identical(da.attrs['b'], sc.scalar(2.0))
+
+
+def test_masks_update_from_dict_adds_items():
+    da = sc.DataArray(sc.scalar(0.0), masks={'a': sc.scalar(True)})
+    da.masks.update({'b': sc.scalar(False)})
+    assert sc.identical(da.masks['a'], sc.scalar(True))
+    assert sc.identical(da.masks['b'], sc.scalar(False))

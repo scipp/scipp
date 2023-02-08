@@ -138,6 +138,48 @@ def test_hist_edges_from_positional_arg():
     assert sc.identical(da.hist({'y': 4}), da.hist(y=4))
 
 
+def test_hist_without_event_coord_uses_outer_coord():
+    table = sc.data.table_xyz(100)
+    table.data = sc.arange('row', 100.0)
+    da = table.bin(x=10)
+    da.coords['outer'] = sc.arange('x', 10)
+    expected = da.bin(x=2).hist().rename(x='outer')
+    expected.coords['outer'] = sc.array(dims=['outer'], values=[0, 5, 10])
+    assert sc.identical(da.hist(outer=2), expected)
+
+
+def test_hist_2d_without_event_coord_uses_outer_dim_coord():
+    table = sc.data.table_xyz(100)
+    table.data = sc.arange('row', 100.0)
+    da = table.bin(x=10)
+    expected = da.bin(x=2, y=4).hist().rename(x='outer')
+    expected.coords['outer'] = sc.array(dims=['outer'], values=[0, 5, 10])
+    da = da.rename_dims(x='outer')
+    da.coords['outer'] = sc.arange('outer', 10)
+    assert sc.identical(da.hist(outer=2, y=4), expected)
+    assert sc.identical(da.hist(y=4, outer=2), expected.transpose())
+
+
+def test_hist_2d_without_event_coord_uses_outer_non_dim_coord():
+    table = sc.data.table_xyz(100)
+    table.data = sc.arange('row', 100.0)
+    da = table.bin(x=10)
+    expected = da.bin(x=2, y=4).hist().rename(x='outer')
+    expected.coords['outer'] = sc.array(dims=['outer'], values=[0, 5, 10])
+    da.coords['outer'] = sc.arange('x', 10)
+    assert sc.identical(da.hist(outer=2, y=4), expected)
+    assert sc.identical(da.hist(y=4, outer=2), expected.transpose())
+
+
+def test_hist_without_event_coord_raises_with_outer_bin_edge_coord():
+    table = sc.data.table_xyz(100)
+    table.data = sc.arange('row', 100.0)
+    da = table.bin(x=10)
+    da.coords['outer'] = sc.arange('x', 11.0)
+    with pytest.raises(sc.BinEdgeError):
+        da.hist(outer=2)
+
+
 @pytest.mark.parametrize('dtype', ['int32', 'int64'])
 def test_bin_integer_coord_by_int(dtype):
     table = sc.data.table_xyz(100)
