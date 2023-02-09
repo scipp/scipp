@@ -196,6 +196,16 @@
   padding-right: 5px;
 }
 
+/*
+This selector is for avoiding unexpected extra padding
+caused by <span> tag wrapping around the dollar-sign in the Jpyter notebook.
+*/
+.sc-dim-list li span,
+.sc-standalone-var-name > span span,
+.sc-var-name > span span {
+  padding: 0 !important;
+}
+
 .sc-has-index {
   font-weight: bold;
 }
