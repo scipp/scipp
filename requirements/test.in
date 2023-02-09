@@ -3,3 +3,4 @@
 hypothesis
 pytest
 pytest-xdist
+beautifulsoup4
