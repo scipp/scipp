@@ -39,7 +39,7 @@ def trapezoid(da: DataArray, dim: str, **kwargs) -> DataArray:
       <scipp.DataArray>
       Dimensions: Sizes[]
       Data:
-                                  float64            [m^3]  ()  [0.0217094]
+                                  float64            [m^3]  ()  0.0217094
     """
     import scipy.integrate as integ
     return _integrate(integ.trapezoid, da, dim, **kwargs)
@@ -60,7 +60,7 @@ def simpson(da: DataArray, dim: str, **kwargs) -> DataArray:
       <scipp.DataArray>
       Dimensions: Sizes[]
       Data:
-                                  float64            [m^3]  ()  [0.0212871]
+                                  float64            [m^3]  ()  0.0212871
     """
     import scipy.integrate as integ
     return _integrate(integ.simpson, da, dim, **kwargs)

@@ -248,9 +248,9 @@ def test_datetime_operations_mismatch():
 def fmt(time_point, unit):
     np_unit = 'm' if unit == 'min' else unit
     var = sc.scalar(time_point.astype(f'datetime64[{np_unit}]'), unit=unit)
-    match = re.search(r'\[[\dT\-:\.]+]', str(var))
+    match = re.search(r'[\dT\-:\.]+$', str(var))
     assert match
-    return match[0][1:-1]
+    return match[0]
 
 
 def test_datetime_formatting():
