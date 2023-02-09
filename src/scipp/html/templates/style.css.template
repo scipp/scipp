@@ -196,6 +196,10 @@
   padding-right: 5px;
 }
 
+.sc-dim-list > li span {
+  padding: 0 !important;
+}
+
 .sc-has-index {
   font-weight: bold;
 }

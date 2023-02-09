@@ -3,8 +3,6 @@
 
 import uuid
 from collections import deque
-from html import escape as html_escape
-from re import escape as re_escape
 from string import Template
 from typing import Union
 
@@ -13,18 +11,9 @@ import numpy as np
 from ..core.cpp_classes import DataArray, Dataset, Variable
 from ..core.data_group import DataGroup
 from ..units import dimensionless
+from .formatting_html import escape
 from .resources import load_atomic_row_tpl, load_collapsible_row_tpl, \
     load_dg_detail_list_tpl, load_dg_repr_tpl, load_dg_style
-
-
-class mathstr(str):
-    pass
-
-
-def escape(content: Union[str, mathstr]) -> str:
-    if isinstance(content, mathstr):
-        return html_escape(content)
-    return html_escape(content).replace('$', re_escape("$"))
 
 
 def _format_shape(var: Union[Variable, DataArray, Dataset, DataGroup]) -> str:

@@ -8,7 +8,8 @@ import collections
 import operator
 import uuid
 from functools import partial, reduce
-from html import escape
+from html import escape as html_escape
+from re import escape as re_escape
 
 from .._scipp import core as sc
 from ..core import stddevs
@@ -19,6 +20,10 @@ BIN_EDGE_LABEL = "[bin-edge]"
 STDDEV_PREFIX = "σ = "
 VARIANCES_SYMBOL = "σ²"
 SPARSE_PREFIX = "len={}"
+
+
+def escape(content: str) -> str:
+    return html_escape(content).replace('$', re_escape('$'))
 
 
 def _format_array(data, size, ellipsis_after):
