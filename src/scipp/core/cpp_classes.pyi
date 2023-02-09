@@ -62,6 +62,12 @@ class Coords:
     def __contains__(self, arg0: str) -> bool:
         ...
 
+    def __copy__(self) -> Coords:
+        ...
+
+    def __deepcopy__(self, arg0: dict) -> Coords:
+        ...
+
     def __delitem__(self, arg0: str) -> None:
         ...
 
@@ -95,6 +101,12 @@ class Coords:
     def _pop(self, k: str) -> Any:
         ...
 
+    def clear(self) -> None:
+        ...
+
+    def copy(self, deep: bool=True) -> Coords:
+        ...
+
     def get(self, key, default=None):
         ...
 
@@ -108,6 +120,9 @@ class Coords:
         ...
 
     def pop(self, key, default=_NoDefault):
+        ...
+
+    def popitem(self) -> Tuple[str, Any]:
         ...
 
     def update(self, other: Any=None, /, **kwargs) -> None:
@@ -729,6 +744,10 @@ class DataArray:
         ...
 
     @property
+    def size(self) -> int:
+        ...
+
+    @property
     def sizes(self) -> dict:
         ...
 
@@ -1285,6 +1304,12 @@ class Masks:
     def __contains__(self, arg0: str) -> bool:
         ...
 
+    def __copy__(self) -> Masks:
+        ...
+
+    def __deepcopy__(self, arg0: dict) -> Masks:
+        ...
+
     def __delitem__(self, arg0: str) -> None:
         ...
 
@@ -1318,6 +1343,12 @@ class Masks:
     def _pop(self, k: str) -> Any:
         ...
 
+    def clear(self) -> None:
+        ...
+
+    def copy(self, deep: bool=True) -> Masks:
+        ...
+
     def get(self, key, default=None):
         ...
 
@@ -1331,6 +1362,9 @@ class Masks:
         ...
 
     def pop(self, key, default=_NoDefault):
+        ...
+
+    def popitem(self) -> Tuple[str, Any]:
         ...
 
     def update(self, other: Any=None, /, **kwargs) -> None:
@@ -1860,6 +1894,10 @@ class Variable:
 
     @property
     def shape(self) -> tuple:
+        ...
+
+    @property
+    def size(self) -> int:
         ...
 
     @property

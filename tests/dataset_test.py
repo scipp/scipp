@@ -318,140 +318,6 @@ def test_ipython_key_completion():
     assert set(ds._ipython_key_completions_()) == set(ds.keys())
 
 
-def test_coord_setitem():
-    var = sc.Variable(dims=['x'], values=np.arange(4))
-    d = sc.Dataset(data={'a': var}, coords={'x': var})
-    with pytest.raises(RuntimeError):
-        d['x', 2:3].coords['y'] = sc.scalar(1.0)
-    assert 'y' not in d.coords
-    d.coords['y'] = sc.scalar(1.0)
-    assert len(d) == 1
-    assert len(d.coords) == 2
-    assert sc.identical(d.coords['y'], sc.scalar(1.0))
-
-
-def test_contains_coord():
-    d = sc.Dataset()
-    assert 'x' not in d.coords
-    d.coords['x'] = sc.scalar(1.0)
-    assert 'x' in d.coords
-
-
-def test_coords_keys():
-    d = sc.Dataset()
-    d.coords['x'] = sc.scalar(1.0)
-    assert len(d.coords.keys()) == 1
-    assert 'x' in d.coords.keys()
-
-
-def test_coords_get():
-    d = sc.Dataset()
-    d.coords['x'] = sc.scalar(1.0)
-    assert sc.identical(d.coords.get('x', sc.scalar(0.0)), d.coords['x'])
-    assert sc.identical(d.coords.get('z', d.coords['x']), d.coords['x'])
-    assert d.coords.get('z', None) is None
-    assert d.coords.get('z') is None
-
-
-def test_coords_pop():
-    d = sc.Dataset()
-    d.coords['x'] = sc.scalar(1.0)
-    d.coords['y'] = sc.scalar(2.0)
-    assert sc.identical(d.coords.pop('x'), sc.scalar(1.0))
-    assert list(d.coords.keys()) == ['y']
-    assert sc.identical(d.coords.pop('z', sc.scalar(3.0)), sc.scalar(3.0))
-    assert list(d.coords.keys()) == ['y']
-    assert sc.identical(d.coords.pop('y'), sc.scalar(2.0))
-    assert len(list(d.coords.keys())) == 0
-
-
-def test_coords_update_from_dict_adds_items():
-    d = sc.Dataset()
-    d.coords['a'] = sc.scalar(1.0)
-    d.coords.update({'b': sc.scalar(2.0)})
-    assert sc.identical(d.coords['a'], sc.scalar(1.0))
-    assert sc.identical(d.coords['b'], sc.scalar(2.0))
-
-
-def test_coords_update_from_coords_adds_items():
-    d = sc.Dataset()
-    d.coords['a'] = sc.scalar(1.0)
-    d.coords['b'] = sc.scalar(2.0)
-    other = sc.Dataset()
-    other.coords['b'] = sc.scalar(3.0)
-    other.coords['c'] = sc.scalar(4.0)
-    d.coords.update(other.coords)
-    assert sc.identical(d.coords['a'], sc.scalar(1.0))
-    assert sc.identical(d.coords['b'], sc.scalar(3.0))
-    assert sc.identical(d.coords['c'], sc.scalar(4.0))
-
-
-def test_coords_update_from_sequence_of_tuples_adds_items():
-    d = sc.Dataset()
-    d.coords['a'] = sc.scalar(1.0)
-    d.coords['b'] = sc.scalar(2.0)
-    d.coords.update([('b', sc.scalar(3.0)), ('c', sc.scalar(4.0))])
-    assert sc.identical(d.coords['a'], sc.scalar(1.0))
-    assert sc.identical(d.coords['b'], sc.scalar(3.0))
-    assert sc.identical(d.coords['c'], sc.scalar(4.0))
-
-
-def test_coords_update_from_iterable_of_tuples_adds_items():
-
-    def extra_items():
-        yield 'b', sc.scalar(3.0)
-        yield 'c', sc.scalar(4.0)
-
-    d = sc.Dataset()
-    d.coords['a'] = sc.scalar(1.0)
-    d.coords['b'] = sc.scalar(2.0)
-    d.coords.update(extra_items())
-    assert sc.identical(d.coords['a'], sc.scalar(1.0))
-    assert sc.identical(d.coords['b'], sc.scalar(3.0))
-    assert sc.identical(d.coords['c'], sc.scalar(4.0))
-
-
-def test_coords_update_from_kwargs_adds_items():
-    d = sc.Dataset()
-    d.coords['a'] = sc.scalar(1.0)
-    d.coords['b'] = sc.scalar(2.0)
-    d.coords.update(b=sc.scalar(3.0), c=sc.scalar(4.0))
-    assert sc.identical(d.coords['a'], sc.scalar(1.0))
-    assert sc.identical(d.coords['b'], sc.scalar(3.0))
-    assert sc.identical(d.coords['c'], sc.scalar(4.0))
-
-
-def test_coords_update_from_kwargs_overwrites_other_dict():
-    d = sc.Dataset()
-    d.coords['a'] = sc.scalar(1.0)
-    d.coords.update({'b': sc.scalar(2.0)}, b=sc.scalar(3.0))
-    assert sc.identical(d.coords['a'], sc.scalar(1.0))
-    assert sc.identical(d.coords['b'], sc.scalar(3.0))
-
-
-def test_coords_update_without_args_does_nothing():
-    d = sc.Dataset()
-    d.coords['a'] = sc.scalar(1.0)
-    d.coords['b'] = sc.scalar(2.0)
-    d.coords.update()
-    assert sc.identical(d.coords['a'], sc.scalar(1.0))
-    assert sc.identical(d.coords['b'], sc.scalar(2.0))
-
-
-def test_attrs_update_from_dict_adds_items():
-    da = sc.DataArray(sc.scalar(0.0), attrs={'a': sc.scalar(1.0)})
-    da.attrs.update({'b': sc.scalar(2.0)})
-    assert sc.identical(da.attrs['a'], sc.scalar(1.0))
-    assert sc.identical(da.attrs['b'], sc.scalar(2.0))
-
-
-def test_masks_update_from_dict_adds_items():
-    da = sc.DataArray(sc.scalar(0.0), masks={'a': sc.scalar(True)})
-    da.masks.update({'b': sc.scalar(False)})
-    assert sc.identical(da.masks['a'], sc.scalar(True))
-    assert sc.identical(da.masks['b'], sc.scalar(False))
-
-
 def test_slice_item():
     d = sc.Dataset(coords={'x': sc.Variable(dims=['x'], values=np.arange(4, 8))})
     d['a'] = sc.Variable(dims=['x'], values=np.arange(4))
@@ -547,21 +413,6 @@ def test_chained_slicing():
     expected.coords['y'] = sc.Variable(dims=['y'], values=np.arange(11.0))
 
     assert sc.identical(d['x', 1]['z', 5], expected)
-
-
-def test_coords_view_comparison_operators():
-    d = sc.Dataset(data={
-        'a': sc.Variable(dims=['x'], values=np.arange(10.0)),
-        'b': sc.scalar(1.0)
-    },
-                   coords={'x': sc.Variable(dims=['x'], values=np.arange(10.0))})
-
-    d1 = sc.Dataset(data={
-        'a': sc.Variable(dims=['x'], values=np.arange(10.0)),
-        'b': sc.scalar(1.0)
-    },
-                    coords={'x': sc.Variable(dims=['x'], values=np.arange(10.0))})
-    assert d1['a'].coords == d['a'].coords
 
 
 def test_dataset_merge():
@@ -803,38 +654,6 @@ def test_rename_kwargs():
     assert sc.identical(renamed, make_simple_dataset('x', 'z', seed=0))
     renamed = renamed.rename(x='y', z='x')
     assert sc.identical(renamed, make_simple_dataset('y', 'x', seed=0))
-
-
-def test_coord_delitem():
-    var = sc.Variable(dims=['x'], values=np.arange(4))
-    d = sc.Dataset(data={'a': var}, coords={'x': var})
-    dref = d.copy()
-    d.coords['y'] = sc.scalar(1.0)
-    assert dref != d
-    del d.coords['y']
-    assert sc.identical(dref, d)
-
-
-def test_coords_delitem():
-    var = sc.Variable(dims=['x'], values=np.arange(4))
-    d = sc.Dataset(data={'a': var}, coords={'x': var})
-    dref = d.copy()
-    dref.coords['x'] = sc.Variable(dims=['x'], values=np.arange(1, 5))
-    assert not sc.identical(d, dref)
-    del dref.coords['x']
-    assert not sc.identical(d, dref)
-    dref.coords['x'] = d.coords['x']
-    assert sc.identical(d, dref)
-
-
-def test_masks_delitem():
-    var = sc.Variable(dims=['x'], values=np.array([True, True, False]))
-    d = sc.Dataset(data={'a': var}, coords={'x': var})
-    dref = d.copy()
-    d['a'].masks['masks'] = var
-    assert not sc.identical(d, dref)
-    del d['a'].masks['masks']
-    assert sc.identical(d, dref)
 
 
 def test_replace():
