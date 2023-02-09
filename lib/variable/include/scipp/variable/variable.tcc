@@ -123,6 +123,8 @@ template <class T> ElementArrayView<T> Variable::variances() {
   template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> Variable::values();
 
 template <class T> std::string Formatter<T>::format(const Variable &var) const {
+  if (var.ndim() == 0)
+    return core::scalar_array_to_string(var.template values<T>(), var.unit());
   return array_to_string(var.template values<T>());
 }
 

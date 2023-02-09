@@ -65,6 +65,6 @@ def to_unit(x: _cpp.Variable,
 
       >>> var = 1.2 * sc.Unit('m')
       >>> sc.to_unit(var, unit='mm')
-      <scipp.Variable> ()    float64             [mm]  [1200]
+      <scipp.Variable> ()    float64             [mm]  1200
     """
     return _call_cpp_func(_cpp.to_unit, x=x, unit=unit, copy=copy)
