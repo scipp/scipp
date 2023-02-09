@@ -7,7 +7,7 @@ Release Notes
 .. Template, copy this to create a new section after a release:
 
    vRELEASE_PLACEHOLDER
-   --------------------
+   --------
 
    Features
    ~~~~~~~~
@@ -37,7 +37,7 @@ Release Notes
 
 
 vRELEASE_PLACEHOLDER
---------------------
+--------
 
 Features
 ~~~~~~~~
