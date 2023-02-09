@@ -4,6 +4,8 @@
 
 import dataclasses
 import enum
+import re
+from typing import Optional
 
 
 def _dataclass_with_slots(**kwargs):
@@ -15,24 +17,63 @@ def _dataclass_with_slots(**kwargs):
 
 
 class FormatType(enum.Enum):
-    default = enum.auto()
-    compact = enum.auto()
+    default = None
+    compact = 'c'
 
 
 @_dataclass_with_slots(frozen=True)
 class FormatSpec:
     format_type: FormatType
-    nested: str
+    _selection: Optional[str]
+    _length: Optional[int]
+    _nested: Optional[str]
+
+    @property
+    def selection(self) -> str:
+        return '^' if self._selection is None else self._selection
+
+    @property
+    def length(self) -> int:
+        return 4 if self._length is None else int(self._length)
+
+    @property
+    def nested(self) -> str:
+        return '' if self._nested is None else self._nested
+
+    @property
+    def has_selection(self) -> bool:
+        return self._selection is not None
+
+    @property
+    def has_length(self) -> bool:
+        return self._length is not None
+
+    @property
+    def has_nested(self) -> bool:
+        return self._nested is not None
+
+    def __str__(self) -> str:
+        return (
+            self.selection if self.has_selection else '' +
+            f'#{self.length}' if self.has_length else '' +
+            str(self.format_type) if self.format_type != FormatType.default else '' +
+            f':{self.nested}' if self.has_nested else '')
+
+
+_FORMAT_PATTERN = re.compile('^(?P<selection>[><^])?'
+                             r'(?:#(?P<length>\d+))?'
+                             '(?P<type>[c])?'
+                             '(?::(?P<nested>.*))?$')
 
 
 def parse(raw_spec: str, cls: type) -> FormatSpec:
-    pieces = raw_spec.split(':', 1)
-    raw_scipp_spec = pieces[0]
-    nested = pieces[1] if len(pieces) == 2 else ''
+    match = _FORMAT_PATTERN.match(raw_spec)
+    if match is None:
+        raise ValueError(f"Invalid format spec '{raw_spec}' for type '{cls}'")
 
-    if raw_scipp_spec not in ('', 'c'):
-        raise ValueError(f"Unknown format spec '{raw_spec}' for type '{cls}'")
-
-    format_type = FormatType.default if raw_scipp_spec == '' else FormatType.compact
-
-    return FormatSpec(format_type=format_type, nested=nested)
+    return FormatSpec(
+        format_type=FormatType(match['type']),
+        _selection=match['selection'],
+        _length=match['length'],
+        _nested=match['nested'],
+    )

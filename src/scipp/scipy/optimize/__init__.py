@@ -180,9 +180,9 @@ def curve_fit(
       >>> from scipp.scipy.optimize import curve_fit
       >>> popt, _ = curve_fit(func, da, p0 = {'b': 1.0 / sc.Unit('m')})
       >>> sc.round(sc.values(popt['a']))
-      <scipp.Variable> ()    float64            [dimensionless]  [5]
+      <scipp.Variable> ()    float64            [dimensionless]  5
       >>> sc.round(sc.values(popt['b']))
-      <scipp.Variable> ()    float64            [1/m]  [17]
+      <scipp.Variable> ()    float64            [1/m]  17
 
     Fit-function parameters that have a default value do not participate in the fit
     unless an initial guess is provided via the p0 parameters:

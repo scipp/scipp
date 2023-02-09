@@ -42,7 +42,7 @@ vRELEASE_PLACEHOLDER
 Features
 ~~~~~~~~
 
-* Added new string-formatting options `#3017 <https://github.com/scipp/scipp/pull/3017>`_.
+* Added new string-formatting options `#3017 <https://github.com/scipp/scipp/pull/3017>`_, `#3028 <https://github.com/scipp/scipp/pull/3028>`_.
 * Add ``size`` property to :class:`scipp.Variable` and :class:`scipp.DataArray`.
 
 Breaking changes
