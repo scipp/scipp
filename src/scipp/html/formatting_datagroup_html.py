@@ -18,9 +18,8 @@ from .resources import load_atomic_row_tpl, load_collapsible_row_tpl, \
 
 def _format_shape(var: Union[Variable, DataArray, Dataset, DataGroup]) -> str:
     """Returns HTML Component that represents the shape of ``var``"""
-    shape_list = "".join(f"<li>{escape(str(dim))}: {size}</li>"
-                         for dim, size in var.sizes.items())
-    return f"<ul class='sc-dim-list'>{shape_list}</ul>"
+    shape_list = ", ".join(f"{str(dim)}: {size}" for dim, size in var.sizes.items())
+    return f"({shape_list})"
 
 
 def _format_atomic_value(value, maxlen: int = 5) -> str:
@@ -95,7 +94,7 @@ def _summarize_atomic_variable(var, name: str, depth: int = 0) -> str:
                                          name=escape(name),
                                          parent=escape(parent_obj_str),
                                          objtype=escape(objtype_str),
-                                         shape_repr=shape_repr,
+                                         shape_repr=escape(shape_repr),
                                          dtype=escape(dtype_str),
                                          unit=escape(unit),
                                          preview=escape(preview))
@@ -113,7 +112,7 @@ def _collapsible_summary(var: DataGroup, name: str, name_spaces: list) -> str:
     return Template(html_tpl).substitute(name=escape(str(name)),
                                          parent=escape(parent_type),
                                          objtype=escape(objtype),
-                                         shape_repr=shape_repr,
+                                         shape_repr=escape(shape_repr),
                                          summary_section_id=checkbox_id,
                                          depth=depth,
                                          checkbox_status='',
