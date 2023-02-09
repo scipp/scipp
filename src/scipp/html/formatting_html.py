@@ -23,6 +23,11 @@ SPARSE_PREFIX = "len={}"
 
 
 def escape(content: str) -> str:
+    """
+    Escape dollar-sign($) as well as html special characters.
+    Dollar-sign($) without any escape causes unexpected MathJax conversion
+    in the Jupyter notebook.
+    """
     return html_escape(content).replace('$', re_escape('$'))
 
 
