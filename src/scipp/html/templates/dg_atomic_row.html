@@ -1,0 +1,29 @@
+<!--
+    Style Sheet Dependencies:
+        - scipp.html style.css.template
+        - scipp.html datagroup_style.css
+-->
+
+<li class='dg-detail-item'>
+    <div>
+        <div class='dg-detail-name' style='--depth: ${depth};'>
+            <span>${name}</span>
+        </div>
+        <div class='dg-detail-parent'>
+            <span style='opacity: 0.5;'>${parent}</span>
+        </div>
+        <div class='dg-detail-objtype'>
+            <span>${objtype}</span>
+        </div>
+        <div class='dg-detail-shape'>${shape_repr}</div>
+        <div class='dg-detail-dtype'>
+            <span>${dtype}</span>
+        </div>
+        <div class='dg-detail-unit'>
+            <span>${unit}</span>
+        </div>
+        <div class='dg-detail-preview'>
+            <span class='sc-preview'>${preview}</span>
+        </div>
+    </div>
+</li>

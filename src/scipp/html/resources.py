@@ -11,9 +11,10 @@ from string import Template
 def _read_text(filename):
     if hasattr(importlib.resources, 'files'):
         # Use new API added in Python 3.9
-        return importlib.resources.files('scipp.html').joinpath(filename).read_text()
+        return importlib.resources.files('scipp.html.templates').joinpath(
+            filename).read_text()
     # Old API, deprecated as of Python 3.11
-    return importlib.resources.read_text('scipp.html', filename)
+    return importlib.resources.read_text('scipp.html.templates', filename)
 
 
 def _format_style(template: str) -> str:
@@ -81,10 +82,10 @@ def load_dg_style() -> str:
     return load_style() + style_sheet
 
 
-@lru_cache(maxsize=1)
-def _load_all_templates() -> str:
-    """All HTML Templates for DataGroup formatting."""
-    html_tpl = _read_text('_repr_html_.template.html')
+@lru_cache(maxsize=4)
+def _load_template(name: str) -> str:
+    """HTML template in scipp.html.templates"""
+    html_tpl = _read_text(name + '.html')
     import re
 
     # line breaks are not needed
@@ -96,22 +97,7 @@ def _load_all_templates() -> str:
     return html_tpl
 
 
-@lru_cache(maxsize=4)
-def _load_template(tag: str) -> str:
-    """Specific HTML Template with the tag name."""
-    html_tpl = _load_all_templates()
-    import re
-
-    # retrieve the target tpl
-    pattern = r'<' + tag + r'>(.|\s|\n)*?</' + tag + r'>'
-    html_tpl = re.search(pattern, html_tpl).group()
-    # remove tpl tag
-    html_tpl = re.sub(r'<' + tag + r'>', '', html_tpl)
-    html_tpl = re.sub(r'</' + tag + r'>', '', html_tpl)
-    return html_tpl
-
-
-load_collapsible_tpl = partial(_load_template, tag="collapsible_template")
-load_atomic_tpl = partial(_load_template, tag="atomic_template")
-load_dg_detail_tpl = partial(_load_template, tag="dg_detail_template")
-load_dg_repr_tpl = partial(_load_template, tag="dg_repr_template")
+load_atomic_row_tpl = partial(_load_template, name="dg_atomic_row")
+load_collapsible_row_tpl = partial(_load_template, name="dg_collapsible_row")
+load_dg_detail_list_tpl = partial(_load_template, name="dg_detail_list")
+load_dg_repr_tpl = partial(_load_template, name="dg_repr")

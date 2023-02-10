@@ -9,7 +9,8 @@ import pytest
 import scipp as sc
 
 from ..factory import make_binned_data_array, make_dense_data_array, \
-    make_dense_dataset, make_scalar, make_scalar_array, make_variable
+    make_dense_datagroup, make_dense_dataset, make_scalar, make_scalar_array, \
+    make_simple_datagroup, make_variable
 
 # TODO:
 # For now, we are just checking that creating the repr does not throw.
@@ -124,3 +125,30 @@ def test_html_repr_dataset(ndim, with_all, dtype, unit):
                             unit=unit)
     sc.make_html(da)
     sc.make_html(da['xx', 1:10])
+
+
+def test_html_repr_dense_datagroup():
+    with_all = True
+    dtype = sc.DType.float64
+    dg = make_dense_datagroup(maxdepth=2,
+                              ndim=3,
+                              with_variance=maybe_variances(True, dtype),
+                              binedges=with_all,
+                              labels=with_all,
+                              attrs=with_all,
+                              masks=with_all,
+                              ragged=with_all,
+                              dtype=dtype,
+                              unit='dimensionless')
+    sc.make_html(dg)
+
+
+@pytest.mark.parametrize("ndepth", [1, 2, 10])
+def test_html_repr_simple_datagroup(ndepth):
+    dg = make_simple_datagroup(maxdepth=ndepth)
+    dg_repr_html = sc.make_html(dg)
+    from bs4 import BeautifulSoup
+    html_parser = BeautifulSoup(dg_repr_html, "html.parser")
+    assert (type(dg).__name__) in html_parser.find('div', class_='sc-obj-type').text
+    assert bool(html_parser.find('div', class_='dg-root'))
+    assert bool(html_parser.find('div', class_='dg-detail-box'))

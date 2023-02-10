@@ -4,6 +4,7 @@ dist
 doctrees
 html
 !src/scipp/html
+!tests/html/html_repr_test.py
 
 build/
 install/

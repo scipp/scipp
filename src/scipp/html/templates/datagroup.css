@@ -49,8 +49,8 @@
   margin-bottom: 5px;
   column-gap: 0 !important;
   display: grid;
-  grid-template-columns:  max-content 64px   128px       max-content  max-content max-content max-content;
-  grid-template-areas:   "name        parent object-type shape        dtype       unit        preview";
+  grid-template-columns:  max-content max-content max-content max-content max-content max-content max-content;
+  grid-template-areas:   "name        parent      object-type shape       dtype       unit        preview";
 }
 
 .dg-detail-box * {
@@ -86,7 +86,7 @@
 .dg-detail-item span,
 .dg-detail-item label {
   word-break: break-all;
-  min-width: 5em;
+  min-width: 1em;
   max-width: 20em;
   width: 100%;
 }
@@ -173,8 +173,13 @@
 }
 
 .dg-detail-item .dg-detail-preview {
-  min-width: 15em;
-  max-width: 30em;
   grid-area: "preview";
+  min-width: 15em;
+  max-width: 35em;
   text-align: left;
+}
+
+.dg-detail-preview .sc-preview span,
+.dg-detail-shape span {
+  padding: 0 !important;
 }

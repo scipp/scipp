@@ -125,6 +125,49 @@ def make_dense_dataset(entries=None, **kwargs):
     return ds
 
 
+def make_dense_datagroup(child=None, maxdepth=1, cur_depth=1, entries=None, **kwargs):
+    import uuid
+    id_suffix = str(uuid.uuid4())
+    dg = make_simple_datagroup(maxdepth=1)
+    dg['ds-dense-' + id_suffix] = make_dense_dataset(**kwargs)
+    if cur_depth > 1:
+        dg['dg-' + id_suffix] = child
+
+    if max(cur_depth, 1) >= max(maxdepth, 10):
+        return dg
+    else:
+        return make_dense_datagroup(child=dg,
+                                    maxdepth=maxdepth,
+                                    cur_depth=cur_depth + 1,
+                                    entries=entries,
+                                    **kwargs)
+
+
+def make_simple_datagroup(child=None, maxdepth=1, cur_depth=1):
+    import uuid
+    dg = sc.DataGroup()
+    id_suffix = str(uuid.uuid4())
+    dg['var-' + id_suffix] = make_variable(ndim=2, dims=['x', 'y'])
+    dg['ds-' + id_suffix] = sc.Dataset(data={'data0': dg['var-' + id_suffix]})
+    dg['da-' + id_suffix] = sc.DataArray(dg['var-' + id_suffix])
+    dg['dict-' + id_suffix] = {'x': 1.23456, 'y': "flag"}
+    dg['float-' + id_suffix] = 1.23456
+    dg['int-' + id_suffix] = 1
+    dg['list-' + id_suffix] = [num for num in range(5)]
+    dg['np-' + id_suffix] = np.random.sample((3, 2, 10))
+    dg['scalar-' + id_suffix] = make_scalar()
+    dg['str-' + id_suffix] = id_suffix
+    if cur_depth > 1:
+        dg['dg-' + id_suffix] = child
+
+    if max(cur_depth, 1) >= max(maxdepth, 10):
+        return dg
+    else:
+        return make_simple_datagroup(child=dg,
+                                     maxdepth=maxdepth,
+                                     cur_depth=cur_depth + 1)
+
+
 def make_binned_data_array(ndim=1, with_variance=False, masks=False):
 
     N = 50
