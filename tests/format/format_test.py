@@ -23,6 +23,98 @@ def test_variable_default(var):
     assert '{:}'.format(var) == str(var)
 
 
+@pytest.mark.parametrize('s', ('^', ''))
+def test_variable_default_length_central(s):
+    var = sc.arange('x', 10)
+    assert '[0, 1, ..., 8, 9]' in f'{var:{s}}'
+    assert '[0, 1, ..., 8, 9]' in f'{var:{s}#4}'
+    assert '[0, 1, ..., 7, 8, 9]' in f'{var:{s}#5}'
+    assert '[0, 1, 2, ..., 7, 8, 9]' in f'{var:{s}#6}'
+
+    var = sc.arange('x', 4)
+    assert '[0, 1, 2, 3]' in f'{var:{s}}'
+    assert '[0, 1, 2, 3]' in f'{var:{s}#5}'
+    assert '[0, ..., 2, 3]' in f'{var:{s}#3}'
+    assert '[0, ..., 3]' in f'{var:{s}#2}'
+    assert '[..., 3]' in f'{var:{s}#1}'
+    assert '[...]' in f'{var:{s}#0}'
+
+    var = sc.arange('x', 0)
+    assert '[]' in f'{var:{s}}'
+    assert '[]' in f'{var:{s}#6}'
+    assert '[]' in f'{var:{s}#0}'
+
+    var = sc.scalar(31354)
+    assert '31354' in f'{var:{s}}'
+    assert '31354' in f'{var:{s}#2}'
+    assert '31354' not in f'{var:{s}#0}'
+    assert '...' in f'{var:{s}#0}'
+
+
+def test_variable_default_length_left():
+    var = sc.arange('x', 10)
+    assert '[0, 1, 2, 3, ...]' in f'{var:<}'
+    assert '[0, 1, 2, 3, ...]' in f'{var:<#4}'
+    assert '[0, 1, 2, 3, 4, ...]' in f'{var:<#5}'
+    assert '[0, 1, 2, 3, 4, 5, ...]' in f'{var:<#6}'
+
+    var = sc.arange('x', 4)
+    assert '[0, 1, 2, 3]' in f'{var:<}'
+    assert '[0, 1, 2, 3]' in f'{var:<#5}'
+    assert '[0, 1, 2, ...]' in f'{var:<#3}'
+    assert '[0, 1, ...]' in f'{var:<#2}'
+    assert '[0, ...]' in f'{var:<#1}'
+    assert '[...]' in f'{var:<#0}'
+
+    var = sc.arange('x', 0)
+    assert '[]' in f'{var:<}'
+    assert '[]' in f'{var:<#6}'
+    assert '[]' in f'{var:<#0}'
+
+    var = sc.scalar(4512)
+    assert '4512' in f'{var:<}'
+    assert '4512' in f'{var:<#2}'
+    assert '4512' not in f'{var:<#0}'
+    assert '...' in f'{var:<#0}'
+
+
+def test_variable_default_length_right():
+    var = sc.arange('x', 10)
+    assert '[..., 6, 7, 8, 9]' in f'{var:>}'
+    assert '[..., 6, 7, 8, 9]' in f'{var:>#4}'
+    assert '[..., 5, 6, 7, 8, 9]' in f'{var:>#5}'
+    assert '[..., 4, 5, 6, 7, 8, 9]' in f'{var:>#6}'
+
+    var = sc.arange('x', 4)
+    assert '[0, 1, 2, 3]' in f'{var:>}'
+    assert '[0, 1, 2, 3]' in f'{var:>#5}'
+    assert '[..., 1, 2, 3]' in f'{var:>#3}'
+    assert '[..., 2, 3]' in f'{var:>#2}'
+    assert '[..., 3]' in f'{var:>#1}'
+    assert '[...]' in f'{var:>#0}'
+
+    var = sc.arange('x', 0)
+    assert '[]' in f'{var:>}'
+    assert '[]' in f'{var:>#6}'
+    assert '[]' in f'{var:>#0}'
+
+    var = sc.scalar(846)
+    assert '846' in f'{var:>}'
+    assert '846' in f'{var:>#2}'
+    assert '846' not in f'{var:>#0}'
+    assert '...' in f'{var:>#0}'
+
+
+def test_variable_default_variances():
+    var = sc.arange('x', 10.0)
+    var.variances = var.values
+    var.values *= -1
+    assert f'{var}' == str(var)
+    # matches array of variances
+    assert '[0, 1, ..., 8, 9]' in f'{var}'
+    assert '[0, 1, 2, 3, 4, ...]' in f'{var:<#5}'
+
+
 def test_variable_default_nested_exponential():
     var = sc.array(dims=['ys'], values=[1.2345, 654.98], unit='kg')
     res = f'{var::.2e}'
@@ -86,6 +178,26 @@ def test_variable_compact_array_with_variance():
                        variances=np.array(errors)**2,
                        unit=unit)
         assert f'{var:c}' == expected
+
+
+def test_variable_compact_raises_for_length():
+    var = sc.scalar(2)
+    with pytest.raises(ValueError):
+        f'{var:#3c}'
+    with pytest.raises(ValueError):
+        f'{var:#4c}'
+    with pytest.raises(ValueError):
+        f'{var:#6c}'
+
+
+def test_variable_compact_raises_for_selection():
+    var = sc.scalar(2)
+    with pytest.raises(ValueError):
+        f'{var:<c}'
+    with pytest.raises(ValueError):
+        f'{var:>c}'
+    with pytest.raises(ValueError):
+        f'{var:^c}'
 
 
 def test_variable_compact_raises_for_nested():

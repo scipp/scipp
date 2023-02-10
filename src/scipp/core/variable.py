@@ -57,21 +57,21 @@ def scalar(value: Any,
     With deduced dtype and default unit:
 
       >>> sc.scalar(3.14)
-      <scipp.Variable> ()    float64  [dimensionless]  [3.14]
+      <scipp.Variable> ()    float64  [dimensionless]  3.14
 
       >>> sc.scalar('a string')
-      <scipp.Variable> ()     string           <no unit>  ["a string"]
+      <scipp.Variable> ()     string           <no unit>  "a string"
 
     Or specifying a unit and dtype:
 
       >>> sc.scalar(3.14, unit='m', dtype=int)
-      <scipp.Variable> ()      int64              [m]  [3]
+      <scipp.Variable> ()      int64              [m]  3
 
     Calling ``scalar`` with a list (or similar array-like object) will store that
     object in a scalar variable and *not* create an array variable:
 
       >>> sc.scalar([1, 2, 3])
-      <scipp.Variable> ()   PyObject           <no unit>  [[1, 2, 3]]
+      <scipp.Variable> ()   PyObject           <no unit>  [1, 2, 3]
     """
     return _cpp.Variable(dims=(),
                          values=value,
@@ -106,7 +106,7 @@ def index(value: Any, *, dtype: Optional[DTypeLike] = None) -> Variable:
     --------
 
       >>> sc.index(123)
-      <scipp.Variable> ()      int64           <no unit>  [123]
+      <scipp.Variable> ()      int64           <no unit>  123
     """
     return scalar(value=value, dtype=dtype, unit=None)
 
@@ -412,10 +412,10 @@ def vector(value: Union[_np.ndarray, list],
     --------
 
       >>> sc.vector(value=[1, 2, 3])
-      <scipp.Variable> ()    vector3  [dimensionless]  [(1, 2, 3)]
+      <scipp.Variable> ()    vector3  [dimensionless]  (1, 2, 3)
 
       >>> sc.vector(value=[4, 5, 6], unit='m')
-      <scipp.Variable> ()    vector3              [m]  [(4, 5, 6)]
+      <scipp.Variable> ()    vector3              [m]  (4, 5, 6)
     """
     return _cpp.vectors(dims=[], unit=unit, values=value)
 
@@ -911,11 +911,11 @@ def datetime(value: Union[str, int, _np.datetime64],
     --------
 
       >>> sc.datetime('2021-01-10T14:16:15')
-      <scipp.Variable> ()  datetime64              [s]  [2021-01-10T14:16:15]
+      <scipp.Variable> ()  datetime64              [s]  2021-01-10T14:16:15
       >>> sc.datetime('2021-01-10T14:16:15', unit='ns')
-      <scipp.Variable> ()  datetime64             [ns]  [2021-01-10T14:16:15.000000000]
+      <scipp.Variable> ()  datetime64             [ns]  2021-01-10T14:16:15.000000000
       >>> sc.datetime(1610288175, unit='s')
-      <scipp.Variable> ()  datetime64              [s]  [2021-01-10T14:16:15]
+      <scipp.Variable> ()  datetime64              [s]  2021-01-10T14:16:15
 
     Get the current time:
 
@@ -1001,6 +1001,6 @@ def epoch(*, unit: Union[Unit, str]) -> Variable:
     --------
 
       >>> sc.epoch(unit='s')
-      <scipp.Variable> ()  datetime64              [s]  [1970-01-01T00:00:00]
+      <scipp.Variable> ()  datetime64              [s]  1970-01-01T00:00:00
     """
     return scalar(0, unit=unit, dtype=_cpp.DType.datetime64)

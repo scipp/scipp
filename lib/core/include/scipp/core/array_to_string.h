@@ -61,6 +61,13 @@ element_to_string(const T &item,
 }
 
 template <class T>
+std::string scalar_array_to_string(const T &arr,
+                                   const std::optional<units::Unit> &unit) {
+  auto s = element_to_string(arr[0], unit);
+  return s.substr(0, s.size() - 2);
+}
+
+template <class T>
 std::string array_to_string(const T &arr,
                             const std::optional<units::Unit> &unit) {
   const auto size = scipp::size(arr);

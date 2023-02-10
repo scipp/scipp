@@ -2,7 +2,7 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Gregory Tucker, Jan-Lukas Wynen
 
-from typing import Any, List
+from typing import Any, List, Tuple
 
 import numpy as np
 
@@ -53,6 +53,12 @@ def _format_element(elem: Any, *, dtype: DType, spec: str):
     return f'{elem}'
 
 
+def _format_scalar(data: Any, *, dtype: DType, spec: FormatSpec) -> str:
+    if spec.length == 0:
+        return '...'
+    return _format_element(data, dtype=dtype, spec=spec.nested)
+
+
 def _as_flat_array(data):
     if isinstance(data, np.ndarray):
         return data.flat
@@ -61,7 +67,7 @@ def _as_flat_array(data):
     return np.array([data])
 
 
-def _format_array_flat(data, *, dtype: DType, length: int, spec: str) -> str:
+def _format_array_flat(data, *, dtype: DType, spec: FormatSpec) -> str:
     if dtype in (DType.Variable, DType.DataArray, DType.Dataset, DType.VariableView,
                  DType.DataArrayView, DType.DatasetView):
         return _format_array_flat_scipp_objects(data)
@@ -72,7 +78,7 @@ def _format_array_flat(data, *, dtype: DType, length: int, spec: str) -> str:
         elif isinstance(data, DataGroup):
             return _format_data_group_element(data)
     data = _as_flat_array(data)
-    return _format_array_flat_regular(data, dtype=dtype, length=length, spec=spec)
+    return _format_array_flat_regular(data, dtype=dtype, spec=spec)
 
 
 def _format_array_flat_scipp_objects(data) -> str:
@@ -85,18 +91,33 @@ def _format_data_group_element(data: scipp.DataGroup):
     return f'[{data}]'
 
 
-def _format_array_flat_regular(data: np.ndarray, *, dtype: DType, length: int,
-                               spec: str) -> str:
+def _element_ranges(spec: FormatSpec) -> Tuple[slice, slice]:
+    if spec.selection == '^':
+        return slice(None, spec.length // 2), slice(-spec.length // 2, None)
+    if spec.selection == '<':
+        return slice(None, spec.length), slice(0, 0)
+    if spec.selection == '>':
+        return slice(0, 0), slice(-spec.length, None)
+
+
+def _format_array_flat_regular(data: np.ndarray, *, dtype: DType,
+                               spec: FormatSpec) -> str:
 
     def _format_all_in(d) -> List[str]:
-        return [_format_element(e, dtype=dtype, spec=spec) for e in d]
+        return [_format_element(e, dtype=dtype, spec=spec.nested) for e in d]
 
-    if len(data) <= length:
+    if len(data) <= spec.length:
         elements = _format_all_in(data)
+    elif spec.length == 0:
+        elements = ['...']
     else:
-        elements = _format_all_in(data[:length // 2])
+        left, right = _element_ranges(spec)
+        elements = []
+        if left != slice(0, 0):
+            elements.extend(_format_all_in(data[left]))
         elements.append('...')
-        elements.extend(_format_all_in(data[-length // 2:]))
+        if right != slice(0, 0):
+            elements.extend(_format_all_in(data[right]))
     return f'[{", ".join(elements)}]'
 
 
@@ -104,18 +125,22 @@ def _format_variable_default(var: Variable, spec: FormatSpec) -> str:
     dims = _format_sizes(var)
     dtype = str(var.dtype)
     unit = _format_unit(var)
-    values = _format_array_flat(var.values, dtype=var.dtype, length=4, spec=spec.nested)
-    variances = _format_array_flat(
-        var.variances, length=4, dtype=var.dtype,
-        spec=spec.nested) if var.variances else ''
+    if var.ndim == 0:
+        values = _format_scalar(var.value, dtype=var.dtype, spec=spec)
+        variances = (_format_scalar(var.variance, dtype=var.dtype, spec=spec)
+                     if var.variance is not None else '')
+    else:
+        values = _format_array_flat(var.values, dtype=var.dtype, spec=spec)
+        variances = _format_array_flat(var.variances, dtype=var.dtype,
+                                       spec=spec) if var.variances is not None else ''
 
     return (f'<scipp.Variable> {dims}  {dtype:>9}  {unit:>15}  {values}' +
             ('  ' + variances if variances else ''))
 
 
 def _format_variable_compact(var: Variable, spec: FormatSpec) -> str:
-    if spec.nested:
-        raise ValueError("Compact formatting does not support nested format specs")
+    if spec.has_nested or spec.has_length or spec.has_selection:
+        raise ValueError(f"Invalid format spec for compact formatter: '{spec}'")
     if not _is_numeric(var.dtype):
         raise ValueError(f"Compact formatting is not supported for dtype {var.dtype}")
 
