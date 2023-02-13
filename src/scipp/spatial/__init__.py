@@ -5,8 +5,10 @@ from typing import Sequence, Union
 import numpy as _np
 import numpy as np
 
-from .. import Unit, UnitError, Variable, units, vectors
+from .. import units
 from .._scipp import core as _core_cpp
+from ..core import Unit, UnitError, Variable, vectors
+from ..core._cpp_wrapper_util import call_func as _call_cpp_func
 
 
 def _to_eigen_layout(a):
@@ -24,7 +26,7 @@ def translation(*,
     :param unit: The unit of the translation
     :param value: A list or NumPy array of 3 items
     """
-    return _core_cpp.translations(dims=[], unit=unit, values=value)
+    return _call_cpp_func(_core_cpp.translations, dims=[], unit=unit, values=value)
 
 
 def translations(*,
@@ -38,7 +40,7 @@ def translations(*,
     :param unit: The unit of the translation
     :param value: A list or NumPy array of 3-vectors
     """
-    return _core_cpp.translations(dims=dims, unit=unit, values=values)
+    return _call_cpp_func(_core_cpp.translations, dims=dims, unit=unit, values=values)
 
 
 def scaling_from_vector(*, value: Union[_np.ndarray, list]):
@@ -78,7 +80,7 @@ def rotation(*, value: Union[_np.ndarray, list]):
     :param value: a NumPy array or list with length 4, corresponding to the quaternion
         coefficients (x*i, y*j, z*k, w)
     """
-    return _core_cpp.rotations(dims=[], values=value)
+    return _call_cpp_func(_core_cpp.rotations, dims=[], values=value)
 
 
 def rotations(*, dims: Sequence[str], values: Union[_np.ndarray, list]):
@@ -96,7 +98,7 @@ def rotations(*, dims: Sequence[str], values: Union[_np.ndarray, list]):
         raise ValueError("Inputs must be Quaternions to create a rotation, i.e., have "
                          "4 components. If you want to pass a rotation matrix, use "
                          "sc.linear_transforms instead.")
-    return _core_cpp.rotations(dims=dims, values=values)
+    return _call_cpp_func(_core_cpp.rotations, dims=dims, values=values)
 
 
 def rotations_from_rotvecs(rotation_vectors: Variable) -> Variable:
@@ -171,9 +173,10 @@ def affine_transforms(*,
     :param unit: The unit of the affine transformation's translation component.
     :param value: An array of 4x4 matrices of affine coefficients.
     """
-    return _core_cpp.affine_transforms(dims=dims,
-                                       unit=unit,
-                                       values=_to_eigen_layout(values))
+    return _call_cpp_func(_core_cpp.affine_transforms,
+                          dims=dims,
+                          unit=unit,
+                          values=_to_eigen_layout(values))
 
 
 def linear_transform(*,
@@ -189,7 +192,10 @@ def linear_transform(*,
     :returns: A scalar (zero-dimensional) Variable.
     :rtype: Variable
     """
-    return _core_cpp.matrices(dims=[], unit=unit, values=_to_eigen_layout(value))
+    return _call_cpp_func(_core_cpp.matrices,
+                          dims=[],
+                          unit=unit,
+                          values=_to_eigen_layout(value))
 
 
 def linear_transforms(*,
@@ -205,11 +211,23 @@ def linear_transforms(*,
     :param values: Initial values.
     :param unit: Optional, data unit. Default=dimensionless
     """
-    return _core_cpp.matrices(dims=dims, unit=unit, values=_to_eigen_layout(values))
+    return _call_cpp_func(_core_cpp.matrices,
+                          dims=dims,
+                          unit=unit,
+                          values=_to_eigen_layout(values))
 
 
 __all__ = [
-    'rotation', 'rotations', 'rotations_from_rotvecs', 'rotation_as_rotvec',
-    'scaling_from_vector', 'scalings_from_vectors', 'translation', 'translations',
-    'affine_transform', 'affine_transforms', 'linear_transform', 'linear_transforms'
+    'rotation',
+    'rotations',
+    'rotations_from_rotvecs',
+    'rotation_as_rotvec',
+    'scaling_from_vector',
+    'scalings_from_vectors',
+    'translation',
+    'translations',
+    'affine_transform',
+    'affine_transforms',
+    'linear_transform',
+    'linear_transforms',
 ]
