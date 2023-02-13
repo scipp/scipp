@@ -23,8 +23,17 @@ def translation(*,
     """
     Creates a translation transformation from a single provided 3-vector.
 
-    :param unit: The unit of the translation
-    :param value: A list or NumPy array of 3 items
+    Parameters
+    ----------
+    unit:
+        The unit of the translation
+    value:
+        A list or NumPy array of 3 items
+
+    Returns
+    -------
+    :
+        A scalar variable of dtype ``translation3``.
     """
     return _call_cpp_func(_core_cpp.translations, dims=[], unit=unit, values=value)
 
@@ -36,9 +45,19 @@ def translations(*,
     """
     Creates translation transformations from multiple 3-vectors.
 
-    :param dims: The dimensions of the created variable
-    :param unit: The unit of the translation
-    :param value: A list or NumPy array of 3-vectors
+    Parameters
+    ----------
+    dims:
+        The dimensions of the created variable
+    unit:
+        The unit of the translation
+    values:
+        A list or NumPy array of 3-vectors
+
+    Returns
+    -------
+    :
+        An array variable of dtype ``translation3``.
     """
     return _call_cpp_func(_core_cpp.translations, dims=dims, unit=unit, values=values)
 
@@ -47,8 +66,16 @@ def scaling_from_vector(*, value: Union[_np.ndarray, list]):
     """
     Creates a scaling transformation from a provided 3-vector.
 
-    :param value: a list or NumPy array of 3 values, corresponding to scaling
+    Parameters
+    ----------
+    value:
+        A list or NumPy array of 3 values, corresponding to scaling
         coefficients in the x, y and z directions respectively.
+
+    Returns
+    -------
+    :
+       A scalar variable of dtype ``linear_transform3``.
     """
     return linear_transforms(dims=[], values=_np.diag(value))
 
@@ -57,9 +84,18 @@ def scalings_from_vectors(*, dims: Sequence[str], values: Union[_np.ndarray, lis
     """
     Creates scaling transformations from corresponding to the provided 3-vectors.
 
-    :param dims: the dimensions of the variable
-    :param values: a list or NumPy array of 3-vectors, each corresponding to scaling
+    Parameters
+    ----------
+    dims:
+        The dimensions of the variable.
+    values:
+        A list or NumPy array of 3-vectors, each corresponding to scaling
         coefficients in the x, y and z directions respectively.
+
+    Returns
+    -------
+    :
+        An array variable of dtype ``linear_transform3``.
     """
     identity = linear_transform(value=np.identity(3))
     matrices = identity.broadcast(dims=dims, shape=(len(values), )).copy()
@@ -77,8 +113,16 @@ def rotation(*, value: Union[_np.ndarray, list]):
     The quaternion coefficients are provided in scalar-last order (x, y, z, w), where
     x, y, z and w form the quaternion w + xi + yj + zk.
 
-    :param value: a NumPy array or list with length 4, corresponding to the quaternion
+    Parameters
+    ----------
+    value:
+        A NumPy array or list with length 4, corresponding to the quaternion
         coefficients (x*i, y*j, z*k, w)
+
+    Returns
+    -------
+    :
+        A scalar variable of dtype ``rotation3``.
     """
     return _call_cpp_func(_core_cpp.rotations, dims=[], values=value)
 
@@ -90,8 +134,18 @@ def rotations(*, dims: Sequence[str], values: Union[_np.ndarray, list]):
     The quaternion coefficients are provided in scalar-last order (x, y, z, w), where
     x, y, z and w form the quaternion w + xi + yj + zk.
 
-    :param values: a NumPy array of NumPy arrays corresponding to the quaternion
+    Parameters
+    ----------
+    dims:
+        The dimensions of the variable.
+    values:
+        A NumPy array of NumPy arrays corresponding to the quaternion
         coefficients (w, x*i, y*j, z*k)
+
+    Returns
+    -------
+    :
+        An array variable of dtype ``rotation3``.
     """
     values = np.asarray(values)
     if values.shape[-1] != 4:
@@ -111,7 +165,15 @@ def rotations_from_rotvecs(rotation_vectors: Variable) -> Variable:
     A rotation vector is a 3 dimensional vector which is co-directional to the axis of
     rotation and whose norm gives the angle of rotation.
 
-    :param rotation_vectors: A Variable with vector dtype
+    Parameters
+    ----------
+    rotation_vectors:
+        A Variable with vector dtype
+
+    Returns
+    -------
+    :
+        An array variable of dtype ``rotation3``.
     """
     from scipy.spatial.transform import Rotation as R
     supported = [units.deg, units.rad]
@@ -132,9 +194,17 @@ def rotation_as_rotvec(rotation: Variable, *, unit='rad') -> Variable:
     A rotation vector is a 3 dimensional vector which is co-directional to the axis of
     rotation and whose norm gives the angle of rotation.
 
-    :param rotation: A variable with rotation matrices.
-    :returns: Variable with rotation vectors.
-    :rtype: Variable
+    Parameters
+    ----------
+    rotation:
+        A variable with rotation matrices.
+    unit:
+        Angle unit for the rotation vectors.
+
+    Returns
+    -------
+    :
+        An array variable with rotation vectors of dtype ``vector3``.
     """
     unit = Unit(unit)
     supported = [units.deg, units.rad]
@@ -156,8 +226,17 @@ def affine_transform(*,
     Initializes a single affine transformation from the provided affine matrix
     coefficients.
 
-    :param unit: The unit of the affine transformation's translation component.
-    :param value: A 4x4 matrix of affine coefficients.
+    Parameters
+    ----------
+    unit:
+        The unit of the affine transformation's translation component.
+    value:
+        A 4x4 matrix of affine coefficients.
+
+    Returns
+    -------
+    :
+        A scalar variable of dtype ``affine_transform3``.
     """
     return affine_transforms(dims=[], unit=unit, values=value)
 
@@ -170,8 +249,19 @@ def affine_transforms(*,
     Initializes affine transformations from the provided affine matrix
     coefficients.
 
-    :param unit: The unit of the affine transformation's translation component.
-    :param value: An array of 4x4 matrices of affine coefficients.
+    Parameters
+    ----------
+    dims:
+        The dimensions of the variable.
+    unit:
+        The unit of the affine transformation's translation component.
+    values:
+        An array of 4x4 matrices of affine coefficients.
+
+    Returns
+    -------
+    :
+        An array variable of dtype ``affine_transform3``.
     """
     return _call_cpp_func(_core_cpp.affine_transforms,
                           dims=dims,
@@ -185,12 +275,17 @@ def linear_transform(*,
     """Constructs a zero dimensional :class:`Variable` holding a single 3x3
     matrix.
 
-    :seealso: :py:func:`scipp.matrices`
+    Parameters
+    ----------
+    value:
+        Initial value, a list or 1-D NumPy array.
+    unit:
+        Optional, unit. Default=dimensionless
 
-    :param value: Initial value, a list or 1-D NumPy array.
-    :param unit: Optional, unit. Default=dimensionless
-    :returns: A scalar (zero-dimensional) Variable.
-    :rtype: Variable
+    Returns
+    -------
+    :
+        A scalar variable of dtype ``linear_transform3``.
     """
     return _call_cpp_func(_core_cpp.matrices,
                           dims=[],
@@ -205,11 +300,19 @@ def linear_transforms(*,
     """Constructs a :class:`Variable` with given dimensions holding an array
     of 3x3 matrices.
 
-    :seealso: :py:func:`scipp.matrix`
+    Parameters
+    ----------
+    dims:
+        Dimension labels.
+    values:
+        Initial values.
+    unit:
+        Optional, data unit. Default=dimensionless
 
-    :param dims: Dimension labels.
-    :param values: Initial values.
-    :param unit: Optional, data unit. Default=dimensionless
+    Returns
+    -------
+    :
+        An array variable of dtype ``linear_transform3``.
     """
     return _call_cpp_func(_core_cpp.matrices,
                           dims=dims,
