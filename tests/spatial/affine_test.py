@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 import scipp as sc
-from scipp.spatial import affine_transform, affine_transforms
+from scipp.spatial import affine_transform, affine_transforms, inverse
 
 
 def test_from_affine_matrix():
@@ -65,3 +65,13 @@ def test_can_set_value_of_0d_variable():
     var = affine_transform(value=value)
     var.value += value
     assert np.array_equal(var.value, value + value)
+
+
+def test_inverse():
+    rng = np.random.default_rng()
+    value = rng.random((4, 4))
+    transform = affine_transform(value=value)
+    inv = inverse(transform)
+    vec = sc.vector([3.2, 1, 4.1])
+    assert sc.allclose(transform * inv * vec, vec)
+    assert sc.allclose(inv * transform * vec, vec)

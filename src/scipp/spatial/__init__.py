@@ -217,6 +217,28 @@ def linear_transforms(*,
                           values=_to_eigen_layout(values))
 
 
+def inverse(var: Variable) -> Variable:
+    """Return the inverse of a spatial transformation.
+
+    Parameters
+    ----------
+    var:
+        Input variable.
+        Its ``dtype`` must be one of
+
+        - :attr:`scipp.DType.linear_transform3`
+        - :attr:`scipp.DType.affine_transform3`
+        - :attr:`scipp.DType.rotation3`
+        - :attr:`scipp.DType.translation3`
+
+    Returns
+    -------
+    :
+        A variable holding the inverse transformation to ``var``.
+    """
+    return _call_cpp_func(_core_cpp.inverse, var)
+
+
 __all__ = [
     'rotation',
     'rotations',
@@ -230,4 +252,5 @@ __all__ = [
     'affine_transforms',
     'linear_transform',
     'linear_transforms',
+    'inverse',
 ]
