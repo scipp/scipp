@@ -20,6 +20,7 @@ set(INC_FILES
     include/scipp/variable/shape.h
     include/scipp/variable/slice.h
     include/scipp/variable/sort.h
+    include/scipp/variable/inverse.h
     include/scipp/variable/special_values.h
     include/scipp/variable/string.h
     include/scipp/variable/structures.h
@@ -56,6 +57,7 @@ set(SRC_FILES
     shape.cpp
     slice.cpp
     sort.cpp
+    inverse.cpp
     special_values.cpp
     string.cpp
     structures.cpp

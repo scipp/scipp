@@ -27,6 +27,7 @@ add_executable(
   shape_test.cpp
   slice_test.cpp
   sort_test.cpp
+  inverse_test.cpp
   special_values_test.cpp
   subspan_view_test.cpp
   sum_test.cpp
