@@ -2,7 +2,6 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 
 import uuid
-from collections import deque
 from string import Template
 from typing import Union
 
@@ -45,27 +44,28 @@ def _format_multi_dim_data(var: Union[Variable, DataArray, Dataset, np.ndarray],
             return _format_atomic_value(var.value, maxidx=30)
 
     if isinstance(var, Dataset):
-        view_iter = iter(var.items())
+        view_iterable = list(var.items())
         format_item = _format_dictionary_item
         var_len = len(var)
-    elif isinstance(var, (Variable, DataArray)):
-        view_iter = iter(np.ravel(var.values))
-        format_item = _format_atomic_value
-        var_len = len(var)
-    else:
-        view_iter = iter(np.ravel(var))
+    elif isinstance(var, np.ndarray):
+        view_iterable = np.ravel(var)
         format_item = _format_atomic_value
         var_len = var.size
+    elif isinstance(var, (Variable, DataArray)):
+        view_iterable = np.ravel(var.values)
+        format_item = _format_atomic_value
+        var_len = len(var)
 
     max_item_number = max(2, max_item_number)
     max_first_items = min(var_len, max_item_number - 1)
+
+    view_iter = iter(view_iterable)
     view_items = [format_item(next(view_iter)) for _ in range(max_first_items)]
 
     if var_len > max_first_items:
         if var_len > max_item_number:
             view_items.append('... ')
-        view_items.append(format_item(deque(view_iter).pop()))
-
+        view_items.append(format_item(view_iterable[-1]))
     return ', '.join(view_items)
 
 
