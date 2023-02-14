@@ -17,8 +17,7 @@ bool is_close(const Variable &var, const Eigen::Vector3d &vec) {
 } // namespace
 
 TEST(ElementInverseTest, linear_transform) {
-  Eigen::Matrix3d t;
-  t << 0.1, 2.3, 1.7, 3.1, 0.4, 0.6, 0.9, 1.2, 1.6;
+  const Eigen::Matrix3d t({{0.1, 2.3, 1.7}, {3.1, 0.4, 0.6}, {0.9, 1.2, 1.6}});
   const auto transform =
       makeVariable<Eigen::Matrix3d>(Dims{}, Values{t}, units::m);
 
@@ -36,8 +35,8 @@ TEST(ElementInverseTest, linear_transform) {
 }
 
 TEST(ElementInverseTest, affine_transform) {
-  Eigen::Matrix3d rotation;
-  rotation << 0.1, 2.3, 1.7, 3.1, 0.4, 0.6, 0.9, 1.2, 1.6;
+  const Eigen::Matrix3d rotation{
+      {0.1, 2.3, 1.7}, {3.1, 0.4, 0.6}, {0.9, 1.2, 1.6}};
   Eigen::Affine3d t(Eigen::Translation<double, 3>(Eigen::Vector3d(1, 2, 3)));
   t *= rotation;
   const auto transform =
