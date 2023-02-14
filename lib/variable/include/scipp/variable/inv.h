@@ -7,5 +7,5 @@
 #include "scipp/variable/variable.h"
 
 namespace scipp::variable {
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable inverse(const Variable &var);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable inv(const Variable &var);
 }

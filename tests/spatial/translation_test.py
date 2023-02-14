@@ -1,7 +1,7 @@
 import numpy as np
 
 import scipp as sc
-from scipp.spatial import inverse, translation, translations
+from scipp.spatial import inv, translation, translations
 
 
 def test_translation():
@@ -51,7 +51,6 @@ def test_inverse():
     rng = np.random.default_rng()
     value = rng.random((3, ))
     transform = translation(value=value)
-    inv = inverse(transform)
     vec = sc.vector([3.2, 1, 4.1])
-    assert sc.allclose(transform * inv * vec, vec)
-    assert sc.allclose(inv * transform * vec, vec)
+    assert sc.allclose(transform * inv(transform) * vec, vec)
+    assert sc.allclose(inv(transform) * transform * vec, vec)

@@ -363,7 +363,7 @@ def linear_transforms(*,
                           values=_to_eigen_layout(values))
 
 
-def inverse(var: Variable) -> Variable:
+def inv(var: Variable) -> Variable:
     """Return the inverse of a spatial transformation.
 
     Parameters
@@ -382,7 +382,7 @@ def inverse(var: Variable) -> Variable:
     :
         A variable holding the inverse transformation to ``var``.
     """
-    return _call_cpp_func(_core_cpp.inverse, var)
+    return _call_cpp_func(_core_cpp.inv, var)
 
 
 __all__ = [

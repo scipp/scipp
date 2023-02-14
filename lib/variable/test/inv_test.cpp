@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/spatial_transforms.h"
-#include "scipp/variable/inverse.h"
+#include "scipp/variable/inv.h"
 
 using namespace scipp;
 using namespace scipp::variable;
@@ -21,7 +21,6 @@ TEST(ElementInverseTest, linear_transform) {
   t << 0.1, 2.3, 1.7, 3.1, 0.4, 0.6, 0.9, 1.2, 1.6;
   const auto transform =
       makeVariable<Eigen::Matrix3d>(Dims{}, Values{t}, units::m);
-  const auto inv = inverse(transform);
 
   const Eigen::Vector3d v(0.1, 2.1, 1.4);
   const auto vec = makeVariable<Eigen::Vector3d>(Dims{}, Values{v}, units::s);
@@ -30,7 +29,7 @@ TEST(ElementInverseTest, linear_transform) {
   const auto atol = makeVariable<Eigen::Vector3d>(
       Values{Eigen::Vector3d(TOLERANCE, TOLERANCE, TOLERANCE)});
 
-  const auto res = inv * transform * vec;
+  const auto res = inv(transform) * transform * vec;
   EXPECT_TRUE(is_close(res, v));
   EXPECT_EQ(res.unit(), vec.unit());
   EXPECT_EQ(res.dims(), vec.dims());
@@ -43,12 +42,11 @@ TEST(ElementInverseTest, affine_transform) {
   t *= rotation;
   const auto transform =
       makeVariable<Eigen::Affine3d>(Dims{}, Values{t}, units::m);
-  const auto inv = inverse(transform);
 
   const Eigen::Vector3d v(1.1, -5.2, 4.0);
   const auto vec = makeVariable<Eigen::Vector3d>(Dims{}, Values{v}, units::m);
 
-  const auto res = inv * transform * vec;
+  const auto res = inv(transform) * transform * vec;
   EXPECT_TRUE(is_close(res, v));
   EXPECT_EQ(res.unit(), vec.unit());
   EXPECT_EQ(res.dims(), vec.dims());
@@ -58,12 +56,11 @@ TEST(ElementInverseTest, translation) {
   const core::Translation t(Eigen::Vector3d(4, 2, -3));
   const auto transform =
       makeVariable<core::Translation>(Dims{}, Values{t}, units::s);
-  const auto inv = inverse(transform);
 
   const Eigen::Vector3d v(-0.2, 0.5, 11.2);
   const auto vec = makeVariable<Eigen::Vector3d>(Dims{}, Values{v}, units::s);
 
-  const auto res = inv * transform * vec;
+  const auto res = inv(transform) * transform * vec;
   EXPECT_TRUE(is_close(res, v));
   EXPECT_EQ(res.unit(), vec.unit());
   EXPECT_EQ(res.dims(), vec.dims());
@@ -72,12 +69,11 @@ TEST(ElementInverseTest, translation) {
 TEST(ElementInverseTest, rotation) {
   const core::Quaternion t(Eigen::Quaterniond(0.3, -0.5, 0.2, 1.2));
   const auto transform = makeVariable<core::Quaternion>(Dims{}, Values{t});
-  const auto inv = inverse(transform);
 
   const Eigen::Vector3d v(4.1, -4.1, -2.2);
   const auto vec = makeVariable<Eigen::Vector3d>(Dims{}, Values{v}, units::kg);
 
-  const auto res = inv * transform * vec;
+  const auto res = inv(transform) * transform * vec;
   EXPECT_TRUE(is_close(res, v));
   EXPECT_EQ(res.unit(), vec.unit());
   EXPECT_EQ(res.dims(), vec.dims());

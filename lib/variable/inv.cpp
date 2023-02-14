@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
-#include "scipp/variable/inverse.h"
+#include "scipp/variable/inv.h"
 
 #include "scipp/common/overloaded.h"
 #include "scipp/core/element/arg_list.h"
@@ -11,7 +11,7 @@
 
 namespace scipp::variable {
 namespace element {
-constexpr auto inverse =
+constexpr auto inv =
     overloaded{core::element::arg_list<Eigen::Matrix3d, Eigen::Affine3d,
                                        core::Translation, core::Quaternion>,
                core::transform_flags::expect_no_variance_arg<0>,
@@ -24,11 +24,11 @@ constexpr auto inverse =
                }};
 }
 
-Variable inverse(const Variable &var) {
+Variable inv(const Variable &var) {
   const auto result_unit = (var.dtype() == dtype<Eigen::Matrix3d>)
                                ? units::one / var.unit()
                                : var.unit();
-  auto res = variable::transform(var, element::inverse, "inverse");
+  auto res = variable::transform(var, element::inv, "inverse");
   res.setUnit(result_unit);
   return res;
 }
