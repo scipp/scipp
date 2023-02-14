@@ -60,7 +60,9 @@ private:
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   Translation() : m_vec(Eigen::Vector3d(0, 0, 0)){};
-  explicit Translation(Eigen::Vector3d x) : m_vec(std::move(x)){};
+  // https://eigen.tuxfamily.org/dox/group__TopicPassingByValue.html
+  // NOLINTNEXTLINE
+  explicit Translation(const Eigen::Vector3d &x) : m_vec(x){};
 
   [[nodiscard]] const Eigen::Vector3d &vector() const { return m_vec; }
 
