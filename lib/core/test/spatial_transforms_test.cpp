@@ -2,7 +2,6 @@
 #include <gtest/gtest.h>
 
 #include "scipp/common/constants.h"
-#include "scipp/core/element/math.h"
 #include "scipp/core/spatial_transforms.h"
 
 #include "fix_typed_test_suite_warnings.h"

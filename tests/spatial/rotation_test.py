@@ -7,7 +7,7 @@ import pytest
 
 import scipp as sc
 from scipp.spatial import rotations_from_rotvecs  # NOQA
-from scipp.spatial import rotation, rotation_as_rotvec, rotations
+from scipp.spatial import inv, rotation, rotation_as_rotvec, rotations
 
 
 def test_from_rotvec_bad_unit():
@@ -103,3 +103,10 @@ def test_can_set_value_of_0d_variable():
     var = rotation(value=value)
     var.value += value
     assert np.array_equal(var.value, value + value)
+
+
+def test_inv():
+    transform = rotation(value=[0.1, 1.1, 2.8, -0.4])
+    vec = sc.vector([3.2, 1, 4.1], unit='s')
+    assert sc.allclose(transform * inv(transform) * vec, vec)
+    assert sc.allclose(inv(transform) * transform * vec, vec)

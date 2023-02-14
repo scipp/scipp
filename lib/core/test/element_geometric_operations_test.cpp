@@ -4,7 +4,6 @@
 
 #include <Eigen/Geometry>
 
-#include "scipp/common/constants.h"
 #include "scipp/core/element/geometric_operations.h"
 #include "scipp/units/unit.h"
 
