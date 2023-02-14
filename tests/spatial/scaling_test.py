@@ -18,9 +18,9 @@ def test_from_scaling_vectors():
         sc.vectors(dims=["x"], values=[[1, 0, -6], [12, 10, 6]], unit=sc.units.m))
 
 
-def test_inverse():
+def test_inv():
     transform = scalings_from_vectors(dims=["x"], values=[[1, 1, -2], [3, 2, 1]])
-    vec = sc.vector([3.2, 1, 4.1])
+    vec = sc.vector([3.2, 1, 4.1], unit='m')
     expected = vec.broadcast(sizes={"x": 2})
     assert sc.allclose(transform * inv(transform) * vec, expected)
     assert sc.allclose(inv(transform) * transform * vec, expected)
