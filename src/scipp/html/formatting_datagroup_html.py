@@ -15,10 +15,34 @@ from .resources import load_atomic_row_tpl, load_collapsible_row_tpl, \
     load_dg_detail_list_tpl, load_dg_repr_tpl, load_dg_style
 
 
-def _format_shape(var: Union[Variable, DataArray, Dataset, DataGroup]) -> str:
+def _merge_wrapped(lines: list, cursor=0) -> list:
+    if cursor >= len(lines) - 1:
+        return lines
+    cur_txt, cur_len = lines[cursor]
+    next_txt, next_len = lines[cursor + 1]
+    if cur_len + next_len < 15:
+        merged_txt = ", ".join([cur_txt, next_txt])
+        merged = (merged_txt, len(merged_txt))
+        smaller_lines = lines[:cursor] + [merged] + lines[cursor + 2:]
+        return _merge_wrapped(smaller_lines, cursor=cursor)
+    else:
+        return _merge_wrapped(lines, cursor=cursor + 1)
+
+
+def _merge_lines(lines: list) -> list:
+    wrapped = [(repr, len(repr) - repr.count('\\')) for repr in lines]
+    merged_wrapped = _merge_wrapped(wrapped)
+    return [repr for repr, _ in merged_wrapped]
+
+
+def _format_shape(var: Union[Variable, DataArray, Dataset, DataGroup],
+                  break_lines=True) -> str:
     """Returns HTML Component that represents the shape of ``var``"""
-    shape_list = ", ".join(f"{str(dim)}: {size}" for dim, size in var.sizes.items())
-    return f"({shape_list})"
+    shape_list = [f"{escape(str(dim))}: {size}" for dim, size in var.sizes.items()]
+    if break_lines:
+        shape_merged = _merge_lines(shape_list)
+        return f"({', <br>&nbsp'.join(shape_merged)})"
+    return f"({', '.join(shape_list)})"
 
 
 def _format_atomic_value(value, maxidx: int = 5) -> str:
@@ -98,7 +122,7 @@ def _summarize_atomic_variable(var, name: str, depth: int = 0) -> str:
                                          name=escape(name),
                                          parent=escape(parent_obj_str),
                                          objtype=escape(objtype_str),
-                                         shape_repr=escape(shape_repr),
+                                         shape_repr=shape_repr,
                                          dtype=escape(dtype_str),
                                          unit=escape(unit),
                                          preview=escape(preview))
@@ -116,7 +140,7 @@ def _collapsible_summary(var: DataGroup, name: str, name_spaces: list) -> str:
     return Template(html_tpl).substitute(name=escape(str(name)),
                                          parent=escape(parent_type),
                                          objtype=escape(objtype),
-                                         shape_repr=escape(shape_repr),
+                                         shape_repr=shape_repr,
                                          summary_section_id=checkbox_id,
                                          depth=depth,
                                          checkbox_status='',
@@ -150,5 +174,5 @@ def datagroup_repr(dg: DataGroup) -> str:
                            header_id=header_id,
                            checkbox_status=checkbox_status,
                            obj_type=obj_type,
-                           shape_repr=_format_shape(dg),
+                           shape_repr=_format_shape(dg, break_lines=False),
                            details=details)
