@@ -1,7 +1,7 @@
 import numpy as np
 
 import scipp as sc
-from scipp.spatial import translation, translations
+from scipp.spatial import inv, translation, translations
 
 
 def test_translation():
@@ -45,3 +45,12 @@ def test_can_set_value_of_0d_variable():
     var = translation(value=value)
     var.value += value
     assert np.array_equal(var.value, value + value)
+
+
+def test_inv():
+    rng = np.random.default_rng()
+    value = rng.random((3, ))
+    transform = translation(value=value, unit='kg')
+    vec = sc.vector([3.2, 1, 4.1], unit='kg')
+    assert sc.allclose(transform * inv(transform) * vec, vec)
+    assert sc.allclose(inv(transform) * transform * vec, vec)

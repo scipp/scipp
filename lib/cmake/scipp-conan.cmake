@@ -55,7 +55,7 @@ conan_cmake_configure(
   REQUIRES
   ${CONAN_BENCHMARK}
   boost/1.79.0
-  eigen/3.3.9
+  eigen/3.4.0
   gtest/1.11.0
   LLNL-Units/0.7.0
   pybind11/2.10.0
