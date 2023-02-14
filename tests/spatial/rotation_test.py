@@ -106,9 +106,7 @@ def test_can_set_value_of_0d_variable():
 
 
 def test_inv():
-    rng = np.random.default_rng()
-    value = rng.random((4, ))
-    transform = rotation(value=value)
+    transform = rotation(value=[0.1, 1.1, 2.8, -0.4])
     vec = sc.vector([3.2, 1, 4.1], unit='s')
     assert sc.allclose(transform * inv(transform) * vec, vec)
     assert sc.allclose(inv(transform) * transform * vec, vec)

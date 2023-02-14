@@ -68,9 +68,9 @@ def test_can_set_value_of_0d_variable():
 
 
 def test_inv():
-    rng = np.random.default_rng()
-    value = rng.random((4, 4))
-    transform = affine_transform(value=value, unit='cm')
+    transform = affine_transform(value=[[1, 0.1, -1.7, 2], [0.3, 1, -0.8, -2],
+                                        [0, 0.2, 1, 3.1], [0, 0, 0, 1]],
+                                 unit='cm')
     vec = sc.vector([3.2, 1, 4.1], unit='cm')
     assert sc.allclose(transform * inv(transform) * vec, vec)
     assert sc.allclose(inv(transform) * transform * vec, vec)
