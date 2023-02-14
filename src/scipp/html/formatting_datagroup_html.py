@@ -39,9 +39,9 @@ def _format_dictionary_item(name_item: tuple, maxidx: int = 10) -> str:
 def _format_multi_dim_data(var: Union[Variable, DataArray, Dataset, np.ndarray],
                            max_item_number: int = 2) -> str:
     if isinstance(var, Variable):
-        if len(var.shape) != len(np.array(var.values).shape):
+        if var.ndim != var.values.ndim:
             return _format_atomic_value(var.values, maxidx=None)
-        elif len(var.shape) == 0:
+        elif var.ndim == 0:
             return _format_atomic_value(var.value, maxidx=30)
 
     if isinstance(var, Dataset):
