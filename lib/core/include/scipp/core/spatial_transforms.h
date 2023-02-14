@@ -49,6 +49,8 @@ public:
   }
 
   [[nodiscard]] Quaternion inverse() const {
+    // We do not guarantee that quaternions are normalized.
+    // So use inverse() here instead of conjugate().
     return Quaternion(m_quat.inverse());
   }
 };

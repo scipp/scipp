@@ -1,5 +1,22 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
+"""Transformations of vectors.
+
+Functions in this module can be used to construct, deconstruct, and modify
+variables with transformations on vectors.
+
+Despite the name, transformations in this module can be applied to 3-vectors
+in any vector space and coordinate system, not just the physical space.
+The user has to ensure that transformations are applied to the correctc vectors.
+
+See Also
+--------
+scipp.vector:
+    Construct a scalar variable holding a 3-vector.
+scipp.vectors:
+    Construct an array variable holding 3-vectors.
+"""
+
 from typing import Sequence, Union
 
 import numpy as _np
@@ -111,7 +128,19 @@ def rotation(*, value: Union[_np.ndarray, list]):
     Creates a rotation-type variable from the provided quaternion coefficients.
 
     The quaternion coefficients are provided in scalar-last order (x, y, z, w), where
-    x, y, z and w form the quaternion w + xi + yj + zk.
+    x, y, z and w form the quaternion
+
+    .. math::
+
+        q = w + xi + yj + zk.
+
+    Attention
+    ---------
+    The quaternion must be normalized in order to represent a rotation.
+    You can use, e.g.
+
+        >>> q = np.array([1, 2, 3, 4])
+        >>> rot = sc.spatial.rotation(value=q / np.linalg.norm(q))
 
     Parameters
     ----------
@@ -132,7 +161,21 @@ def rotations(*, dims: Sequence[str], values: Union[_np.ndarray, list]):
     Creates a rotation-type variable from the provided quaternion coefficients.
 
     The quaternion coefficients are provided in scalar-last order (x, y, z, w), where
-    x, y, z and w form the quaternion w + xi + yj + zk.
+    x, y, z and w form the quaternion
+
+    .. math::
+
+        q = w + xi + yj + zk.
+
+    Attention
+    ---------
+    The quaternions must be normalized in order to represent a rotation.
+    You can use, e.g.
+
+        >>> q = np.array([[1, 2, 3, 4], [-1, -2, -3, -4]])
+        >>> rot = sc.spatial.rotations(
+        ...     dims=['x'],
+        ...     values=q / np.linalg.norm(q, axis=1)[:, np.newaxis])
 
     Parameters
     ----------
@@ -159,8 +202,8 @@ def rotations_from_rotvecs(rotation_vectors: Variable) -> Variable:
     """
     Creates rotation transformations from rotation vectors.
 
-    This requires ``scipy`` to be installed, as is wraps ``Rotation.from_rotvec()``
-    from ``scipy.spatial.transform``.
+    This requires ``scipy`` to be installed, as is wraps
+    :meth:`scipy.spatial.transform.Rotation.from_rotvec`.
 
     A rotation vector is a 3 dimensional vector which is co-directional to the axis of
     rotation and whose norm gives the angle of rotation.
@@ -188,8 +231,8 @@ def rotation_as_rotvec(rotation: Variable, *, unit='rad') -> Variable:
     """
     Represent a rotation matrix (or matrices) as rotation vector(s).
 
-    This requires ``scipy`` to be installed, as is wraps ``Rotation.as_rotvec()``
-    from ``scipy.spatial.transform``.
+    This requires ``scipy`` to be installed, as is wraps
+    :meth:`scipy.spatial.transform.Rotation.as_rotvec`.
 
     A rotation vector is a 3 dimensional vector which is co-directional to the axis of
     rotation and whose norm gives the angle of rotation.
