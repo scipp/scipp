@@ -100,7 +100,7 @@
 }
 
 .dg-detail-item:hover > div > div {
-  background-color: var(--sc-background-color2);
+  background-color: var(--sc-background-color2) !important;
 }
 
 .dg-detail-item > div span {
@@ -175,7 +175,7 @@
 .dg-detail-item .dg-detail-preview {
   grid-area: "preview";
   min-width: 15em;
-  max-width: 35em;
+  max-width: 100em !important;
   text-align: left;
 }
 
