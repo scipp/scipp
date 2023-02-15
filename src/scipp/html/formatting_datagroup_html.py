@@ -22,25 +22,29 @@ def _format_shape(var: Union[Variable, DataArray, Dataset, DataGroup]) -> str:
     return f"({shape_list})"
 
 
-def _format_atomic_value(value, maxlen: int = 5) -> str:
-    value_repr = str(value)[:maxlen]
+def _format_atomic_value(value, maxidx: int = 5) -> str:
+    value_repr = str(value)[:maxidx]
     if len(value_repr) < len(str(value)):
         value_repr += "..."
     return value_repr
 
 
-def _format_dictionary_item(name_item: tuple, maxlen: int = 10) -> str:
+def _format_dictionary_item(name_item: tuple, maxidx: int = 10) -> str:
     name, item = name_item
-    name = _format_atomic_value(name, maxlen=maxlen)
-    type_repr = _format_atomic_value(type(item).__name__, maxlen=maxlen)
+    name = _format_atomic_value(name, maxidx=maxidx)
+    type_repr = _format_atomic_value(type(item).__name__, maxidx=maxidx)
     return "(" + ": ".join((name, type_repr)) + ")"
 
 
 def _format_multi_dim_data(var: Union[Variable, DataArray, Dataset, np.ndarray],
                            max_item_number: int = 2) -> str:
-    if len(var.shape) == 0 and (not isinstance(var, Dataset)):
-        return _format_atomic_value(var.value, maxlen=30)
-    elif isinstance(var, Dataset):
+    if isinstance(var, Variable):
+        if var.ndim != var.values.ndim:
+            return _format_atomic_value(var.values, maxidx=None)
+        elif var.ndim == 0:
+            return _format_atomic_value(var.value, maxidx=30)
+
+    if isinstance(var, Dataset):
         view_iter = iter(var.items())
         format_item = _format_dictionary_item
         var_len = len(var)
@@ -87,7 +91,7 @@ def _summarize_atomic_variable(var, name: str, depth: int = 0) -> str:
         preview += _format_multi_dim_data(var)
 
     elif preview == '' and hasattr(var, "__str__"):
-        preview = _format_atomic_value(var, maxlen=30)
+        preview = _format_atomic_value(var, maxidx=30)
 
     html_tpl = load_atomic_row_tpl()
     return Template(html_tpl).substitute(depth=depth,
