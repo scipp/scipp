@@ -47,7 +47,7 @@ def _format_multi_dim_data(var: Union[Variable, DataArray, Dataset, np.ndarray],
             return _format_atomic_value(var.value, maxidx=30)
 
     if isinstance(var, Dataset):
-        view_iterable = list(var.items())[0]
+        view_iterable = list(var.items())
         var_len = len(var)
         first_idx, last_idx = 0, -1
         format_item = _format_dictionary_item
