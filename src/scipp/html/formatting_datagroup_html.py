@@ -10,7 +10,7 @@ import numpy as np
 from ..core.cpp_classes import DataArray, Dataset, Variable
 from ..core.data_group import DataGroup
 from ..units import dimensionless
-from .formatting_html import escape
+from .formatting_html import escape, inline_variable_repr
 from .resources import load_atomic_row_tpl, load_collapsible_row_tpl, \
     load_dg_detail_list_tpl, load_dg_repr_tpl, load_dg_style
 
@@ -42,13 +42,9 @@ def _format_dictionary_item(name_item: tuple, maxidx: int = 10) -> str:
 
 def _format_multi_dim_data(var: Union[Variable, DataArray, Dataset, np.ndarray]) -> str:
     """Inline preview of single or multi-dimensional data"""
-    if isinstance(var, Variable):
-        if var.ndim != var.values.ndim:
-            return _format_atomic_value(var.values, maxidx=None)
-        elif var.ndim == 0:
-            return _format_atomic_value(var.value, maxidx=30)
-
-    if isinstance(var, Dataset):
+    if isinstance(var, (Variable, DataArray)):
+        return inline_variable_repr(var).replace("<div>", '').replace("</div>", '')
+    elif isinstance(var, Dataset):
         view_iterable = list(var.items())
         var_len = len(var)
         first_idx, last_idx = 0, -1
@@ -59,17 +55,11 @@ def _format_multi_dim_data(var: Union[Variable, DataArray, Dataset, np.ndarray])
         first_idx = tuple(np.zeros(var.ndim, dtype=int))
         last_idx = tuple(np.array(var.shape, dtype=int) - np.ones(var.ndim, dtype=int))
         format_item = _format_atomic_value
-    elif isinstance(var, (Variable, DataArray)):
-        view_iterable = var.values
-        var_len = len(var)
-        first_idx = tuple(np.zeros(var.ndim, dtype=int))
-        last_idx = tuple(np.array(var.shape, dtype=int) - np.ones(var.ndim, dtype=int))
-        format_item = _format_atomic_value
 
     view_items = []
     if var_len > 0:
         view_items.append(format_item(view_iterable[first_idx]))
-    if len(var) > 2:
+    if var_len > 2:
         view_items.append('... ')
     if var_len > 1:
         view_items.append(format_item(view_iterable[last_idx]))
