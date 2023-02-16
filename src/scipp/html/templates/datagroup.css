@@ -152,7 +152,7 @@
 }
 
 .dg-detail-item .dg-detail-shape {
-  max-width: 15em;
+  max-width: 30em;
   grid-area: "shape";
   text-align: left;
 }

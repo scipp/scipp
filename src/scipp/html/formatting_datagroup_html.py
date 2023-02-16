@@ -15,7 +15,7 @@ from .resources import load_atomic_row_tpl, load_collapsible_row_tpl, \
     load_dg_detail_list_tpl, load_dg_repr_tpl, load_dg_style
 
 
-def _format_shape(var: Union[Variable, DataArray, Dataset, DataGroup], br_at=15) -> str:
+def _format_shape(var: Union[Variable, DataArray, Dataset, DataGroup], br_at=30) -> str:
     """Return HTML Component that represents the shape of ``var``"""
     shape_list = [f"{escape(str(dim))}: {size}" for dim, size in var.sizes.items()]
     if sum([len(line) - line.count('\\') for line in shape_list]) < br_at:

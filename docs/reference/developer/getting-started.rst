@@ -43,6 +43,10 @@ Build the docs:
 
    tox -e docs
 
+   # To clean and build all docs
+
+   tox -e docs-clean
+
 Update the pip requirements via ``pip-compile-multi``:
 
 .. code-block:: bash
@@ -272,6 +276,7 @@ Run
 
 
 This will build the HTML documentation and put it in a folder named ``html``.
+If you want to build all docs after cleaning ``html`` and ``doctrees`` folders, please use ``tox -e docs-clean``.
 
 
 Using Scipp as a C++ library
