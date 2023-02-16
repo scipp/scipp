@@ -16,7 +16,7 @@ from .resources import load_atomic_row_tpl, load_collapsible_row_tpl, \
 
 
 def _format_shape(var: Union[Variable, DataArray, Dataset, DataGroup], br_at=15) -> str:
-    """Returns HTML Component that represents the shape of ``var``"""
+    """Return HTML Component that represents the shape of ``var``"""
     shape_list = [f"{escape(str(dim))}: {size}" for dim, size in var.sizes.items()]
     if sum([len(line) - line.count('\\') for line in shape_list]) < br_at:
         return f"({', '.join(shape_list)})"
@@ -25,6 +25,7 @@ def _format_shape(var: Union[Variable, DataArray, Dataset, DataGroup], br_at=15)
 
 
 def _format_atomic_value(value, maxidx: int = 5) -> str:
+    """Inline preview of single value"""
     value_repr = str(value)[:maxidx]
     if len(value_repr) < len(str(value)):
         value_repr += "..."
@@ -32,14 +33,15 @@ def _format_atomic_value(value, maxidx: int = 5) -> str:
 
 
 def _format_dictionary_item(name_item: tuple, maxidx: int = 10) -> str:
+    """Inline preview of a dictionary"""
     name, item = name_item
     name = _format_atomic_value(name, maxidx=maxidx)
     type_repr = _format_atomic_value(type(item).__name__, maxidx=maxidx)
     return "(" + ": ".join((name, type_repr)) + ")"
 
 
-def _format_multi_dim_data(var: Union[Variable, DataArray, Dataset, np.ndarray],
-                           max_item_number: int = 2) -> str:
+def _format_multi_dim_data(var: Union[Variable, DataArray, Dataset, np.ndarray]) -> str:
+    """Inline preview of single or multi-dimensional data"""
     if isinstance(var, Variable):
         if var.ndim != var.values.ndim:
             return _format_atomic_value(var.values, maxidx=None)
@@ -76,7 +78,7 @@ def _format_multi_dim_data(var: Union[Variable, DataArray, Dataset, np.ndarray],
 
 
 def _summarize_atomic_variable(var, name: str, depth: int = 0) -> str:
-    """Returns HTML Component that contains summary of ``var``"""
+    """Return HTML Component that contains summary of ``var``"""
     shape_repr = escape("()")
     unit = ''
     dtype_str = ''
