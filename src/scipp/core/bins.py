@@ -497,7 +497,8 @@ def bins(*,
         If not provided each row of ``data`` is mapped to a different bin.
     end:
         Optional end indices of bins, used for slicing ``data``. If not
-        provided this is assumed to be ``begin + 1``.
+        provided, ``begin`` is used as starting offsets for each bin, i.e., the end of
+        the Nth bin is set to the begin of the N+1st bin.
     dim:
         Dimension of ``data`` that will be sliced to obtain data for
         any given bin.
