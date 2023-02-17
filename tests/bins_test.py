@@ -24,7 +24,7 @@ def test_bins_default_begin_end():
         assert sc.identical(var['x', i].value, data['x', i:i + 1])
 
 
-def test_bins_default_end():
+def test_bins_default_end_uses_begin_as_offsets():
     data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
     begin = sc.Variable(dims=['y'], values=[1, 3], dtype=sc.DType.int64, unit=None)
     var = sc.bins(begin=begin, dim='x', data=data)
