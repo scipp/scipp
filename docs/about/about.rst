@@ -33,9 +33,16 @@ Other major contributions were provided by the `Science and Technology Facilitie
 References and citations
 ------------------------
 
+Please cite the following:
+
+.. image:: https://zenodo.org/badge/147631466.svg
+   :target: https://zenodo.org/badge/latestdoi/147631466
+
+To cite a specific version of Scipp, select the desired version on Zenodo to get the corresponding DOI.
+
 An article about Scipp has been published in the conference proceedings of ICANS, see `Scipp: Scientific data handling with labeled multi-dimensional arrays for C++ and Python <https://content.iospress.com/articles/journal-of-neutron-research/jnr190131>`_ or `the paywall-free copy on the Arxiv <https://arxiv.org/abs/2010.00257>`_.
 
-A significant amount of changes such as multi-threading and support for binned (event) data has gone into Scipp since the publication so we recommend to also cite the Scipp documentation pages.
+A significant amount of changes such as multi-threading and support for binned (event) data has gone into Scipp since the publication so we recommend to also cite the Scipp documentation pages or version on Zenodo.
 
 License
 -------
