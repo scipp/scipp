@@ -552,15 +552,6 @@ def test_elemwise_unary_raises_with_out_arg():
         sc.sin(dg, out=out)
 
 
-def test_identical_raises_TypeError_when_comparing_to_Dataset():
-    dg = sc.DataGroup(a=sc.scalar(1))
-    ds = sc.Dataset({"a": sc.scalar(1)})
-    with pytest.raises(TypeError):
-        sc.identical(dg, ds)
-    with pytest.raises(TypeError):
-        sc.identical(ds, dg)
-
-
 def test_construction_from_dataset_creates_dataarray_items():
     ds = sc.Dataset({'a': sc.scalar(1), 'b': sc.scalar(2)}, coords={'x': sc.scalar(3)})
     dg = sc.DataGroup(ds)

@@ -5,10 +5,13 @@
 
 from __future__ import annotations
 
+import numpy as np
+
 from .._scipp import core as _cpp
 from ..typing import VariableLike
 from . import data_group
 from ._cpp_wrapper_util import call_func as _call_cpp_func
+from .cpp_classes import DataArray, Dataset, Variable
 from .variable import scalar
 
 
@@ -144,6 +147,25 @@ def not_equal(x: VariableLike, y: VariableLike) -> VariableLike:
     return _call_cpp_func(_cpp.not_equal, x, y)
 
 
+def _identical_data_groups(x: data_group.DataGroup, y: data_group.DataGroup, *,
+                           equal_nan: bool) -> bool:
+
+    def compare(a, b):
+        if not isinstance(a, type(b)):
+            return False
+        if isinstance(a, (Variable, DataArray, Dataset, data_group.DataGroup)):
+            return identical(a, b, equal_nan=equal_nan)
+        if isinstance(a, np.ndarray):
+            return np.array_equal(a, b, equal_nan=equal_nan)
+        # Explicit conversion to bool in case __eq__ returns
+        # something else like an array.
+        return bool(a == b)
+
+    if x.keys() != y.keys():
+        return False
+    return all(compare(x[k], y[k]) for k in x.keys())
+
+
 def identical(x: VariableLike, y: VariableLike, *, equal_nan: bool = False) -> bool:
     """Full comparison of x and y.
 
@@ -166,10 +188,7 @@ def identical(x: VariableLike, y: VariableLike, *, equal_nan: bool = False) -> b
     if isinstance(x, data_group.DataGroup):
         if not isinstance(y, data_group.DataGroup):
             raise TypeError("Both or neither of the arguments must be a DataGroup")
-        if x.keys() != y.keys():
-            return False
-        results = data_group._data_group_binary(identical, x, y, equal_nan=equal_nan)
-        return all(results.values())
+        return _identical_data_groups(x, y, equal_nan=equal_nan)
 
     return _call_cpp_func(_cpp.identical, x, y, equal_nan=equal_nan)
 
