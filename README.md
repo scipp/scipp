@@ -2,6 +2,7 @@
 [![Anaconda-Server Badge](https://anaconda.org/scipp/scipp/badges/version.svg)](https://anaconda.org/scipp/scipp)
 [![License: BSD 3-Clause](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/4019/badge)](https://bestpractices.coreinfrastructure.org/projects/4019)
+[![DOI](https://zenodo.org/badge/147631466.svg)](https://zenodo.org/badge/latestdoi/147631466)
 
 # Scipp
 
