@@ -157,7 +157,7 @@ def make_simple_datagroup(child=None, maxdepth=1, cur_depth=1):
     dg['np-' + id_suffix] = np.random.sample((3, 2, 10))
     dg['scalar-' + id_suffix] = make_scalar()
     dg['str-' + id_suffix] = id_suffix
-    binning = sc.array(dims=['k'], values=[0, 30], unit=None)
+    binning = sc.array(dims=['k'], values=[0, 30], unit=None, dtype=sc.DType('int64'))
     binned = sc.bins(begin=binning, dim='x', data=dg['var-' + id_suffix])
     dg['binned-' + id_suffix] = binned
     dg['nonnum-da-' + id_suffix] = sc.array(dims=['row'], values=['a', 'b'])
