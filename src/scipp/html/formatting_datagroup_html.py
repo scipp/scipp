@@ -43,7 +43,7 @@ def _format_dictionary_item(name_item: tuple, maxidx: int = 10) -> str:
 def _format_multi_dim_data(var: Union[Variable, DataArray, Dataset, np.ndarray]) -> str:
     """Inline preview of single or multi-dimensional data"""
     if isinstance(var, (Variable, DataArray)):
-        return inline_variable_repr(var)[5:-6]
+        return inline_variable_repr(var)
     elif isinstance(var, Dataset):
         view_iterable = list(var.items())
         var_len = len(var)

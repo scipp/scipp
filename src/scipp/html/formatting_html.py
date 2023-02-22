@@ -70,7 +70,7 @@ def _format_non_events(var, has_variances):
     s = _format_array(data, size, ellipsis_after=2)
     if has_variances:
         s = f'{STDDEV_PREFIX}{s}'
-    return _make_row(s)
+    return s
 
 
 def _repr_item(bin_dim, item):
@@ -105,7 +105,7 @@ def _get_events(var, variances, ellipsis_after):
 
 def _format_events(var, has_variances):
     s = _get_events(var, has_variances, ellipsis_after=2)
-    return _make_row(f'binned data [{", ".join([row for row in s])}]')
+    return f'binned data [{", ".join([row for row in s])}]'
 
 
 def _ordered_dict(data):
@@ -307,13 +307,13 @@ def summarize_variable(name,
 
     disabled, attrs_ul = _make_inline_attributes(var, has_attrs, embedded_in)
 
-    preview = inline_variable_repr(var)
+    preview = _make_row(inline_variable_repr(var))
     data_repr = short_data_repr_html(var)
     if var.bins is None:
         data_repr = "Values:<br>" + data_repr
     variances_preview = None
     if var.variances is not None:
-        variances_preview = inline_variable_repr(var, has_variances=True)
+        variances_preview = _make_row(inline_variable_repr(var, has_variances=True))
         data_repr += f"<br><br>Variances ({VARIANCES_SYMBOL}):<br>\
 {short_data_repr_html(var, variances=True)}"
 
