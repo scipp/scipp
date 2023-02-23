@@ -190,7 +190,8 @@ def _upper_bound(x: Variable) -> Variable:
     if bound.dtype in ('int32', 'int64', 'datetime64'):
         bound.value += 1
     else:
-        bound.value = np.nextafter(bound.value, bound.value + 1)
+        bound.value = np.nextafter(
+            bound.value, (bound + scalar(1, unit=bound.unit, dtype=bound.dtype)).value)
     return bound
 
 
