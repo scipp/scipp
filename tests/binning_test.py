@@ -47,8 +47,11 @@ def test_many_combinations():
     }
 
 
-def test_hist_table_define_edges_from_bin_count():
+@pytest.mark.parametrize('dtype', ['float32', 'float64'])
+def test_hist_table_define_edges_from_bin_count(dtype):
     da = sc.data.table_xyz(100)
+    for c in list(da.coords.keys()):
+        da.coords[c] = da.coords[c].to(dtype=dtype)
     histogrammed = da.hist(y=4)
     edges = histogrammed.coords['y']
     assert len(edges) == 5
@@ -58,24 +61,6 @@ def test_hist_table_define_edges_from_bin_count():
     ymax = da.coords['y'].max()
     assert edges.max().value == np.nextafter(
         ymax.value, (ymax + sc.scalar(1.0, unit=ymax.unit, dtype=ymax.dtype)).value)
-
-
-def test_hist_table_define_edges_from_bin_count_float32():
-    da = sc.data.table_xyz(100)
-    for c in list(da.coords.keys()):
-        da.coords[c] = da.coords[c].to(dtype='float32')
-    # Make the last y value larger, so we end up with only one element in the last bin
-    da.coords['y'].values[-1] = 5.0
-    histogrammed = da.hist(y=10)
-    edges = histogrammed.coords['y']
-    assert len(edges) == 11
-    assert histogrammed.sizes['y'] == 10
-    assert edges.min().value == da.coords['y'].min().value
-    assert edges.max().value > da.coords['y'].max().value
-    ymax = da.coords['y'].max()
-    assert edges.max().value == np.nextafter(
-        ymax.value, (ymax + sc.scalar(1, unit=ymax.unit, dtype=ymax.dtype)).value)
-    assert histogrammed.values[-1] == da.values[-1]
 
 
 def test_hist_binned_define_edges_from_bin_count():
