@@ -336,3 +336,128 @@ def test_items_elements(make, mapping):
 
     mapview['a'] = sc.scalar(2.0)
     assert list(mapview.items()) == [('x', sc.scalar(1.0)), ('a', sc.scalar(2.0))]
+
+
+@pytest.mark.parametrize(*PARAMS)
+def test_keys_equality(make, mapping):
+    d0 = make(sc.array(dims=['x'], values=np.arange(4.), unit='m'))
+    d1 = make(sc.array(dims=['x'], values=np.arange(4.), unit='m'))
+    mapview0 = getattr(d0, mapping)
+    mapview1 = getattr(d1, mapping)
+    assert mapview0.keys() == mapview0.keys()
+    assert mapview0.keys() == mapview1.keys()
+
+    mapview0['x'] = sc.scalar(1.0)
+    assert mapview0.keys() == mapview0.keys()
+    assert not (mapview0.keys() == mapview1.keys())
+    assert mapview0.keys() != mapview1.keys()
+
+    mapview1['x'] = sc.scalar(2.0)
+    assert mapview0.keys() == mapview0.keys()
+    assert mapview0.keys() == mapview1.keys()
+
+    mapview1['y'] = sc.scalar(3.0)
+    assert mapview1.keys() == mapview1.keys()
+    assert not (mapview0.keys() == mapview1.keys())
+    assert mapview0.keys() != mapview1.keys()
+
+    # mapview1 has (x, y), mapview0 has (y, x)
+    del mapview0['x']
+    mapview0['y'] = sc.scalar(4.0)
+    mapview0['x'] = sc.scalar(1.0)
+    assert mapview0.keys() == mapview0.keys()
+    assert mapview0.keys() == mapview1.keys()
+
+
+@pytest.mark.parametrize(*PARAMS)
+def test_values_equality(make, mapping):
+    d0 = make(sc.array(dims=['x'], values=np.arange(4.), unit='m'))
+    d1 = make(sc.array(dims=['x'], values=np.arange(4.), unit='m'))
+    mapview0 = getattr(d0, mapping)
+    mapview1 = getattr(d1, mapping)
+    assert mapview0.values() != mapview0.values()
+    assert mapview0.values() != mapview1.values()
+
+    mapview0['x'] = sc.scalar(1.0)
+    assert mapview0.values() != mapview0.values()
+    assert not (mapview0.values() == mapview1.values())
+    assert mapview0.values() != mapview1.values()
+
+    mapview1['y'] = sc.scalar(1.0)
+    assert mapview1.values() != mapview1.values()
+    assert not (mapview0.values() == mapview1.values())
+    assert mapview0.values() != mapview1.values()
+
+
+@pytest.mark.parametrize(*PARAMS)
+def test_equality(make, mapping):
+    d0 = make(sc.array(dims=['x'], values=np.arange(4.), unit='m'))
+    d1 = make(sc.array(dims=['x'], values=np.arange(4.), unit='m'))
+    mapview0 = getattr(d0, mapping)
+    mapview1 = getattr(d1, mapping)
+    assert mapview0 == mapview0
+    assert mapview0 == mapview1
+
+    mapview0['x'] = sc.scalar(1.0)
+    assert mapview0 == mapview0
+    assert not (mapview0 == mapview1)
+    assert mapview0 != mapview1
+
+    mapview1['x'] = sc.scalar(2.0)
+    assert not (mapview0 == mapview1)
+    assert mapview0 != mapview1
+
+    mapview1['x'] = sc.scalar(1.0)
+    assert mapview0 == mapview1
+
+    mapview1['y'] = sc.scalar(3.0)
+    assert mapview1 == mapview1
+    assert not (mapview0 == mapview1)
+    assert mapview0 != mapview1
+
+    # mapview0 has (x, y), mapview1 has (y, x)
+    del mapview0['x']
+    mapview0['y'] = sc.scalar(4.0)
+    mapview0['x'] = sc.scalar(1.0)
+    assert mapview0 == mapview0
+    assert mapview0 != mapview1
+
+    mapview0['y'] = sc.scalar(3.0)
+    assert mapview0 == mapview1
+
+
+@pytest.mark.parametrize(*PARAMS)
+def test_items_equality(make, mapping):
+    d0 = make(sc.array(dims=['x'], values=np.arange(4.), unit='m'))
+    d1 = make(sc.array(dims=['x'], values=np.arange(4.), unit='m'))
+    mapview0 = getattr(d0, mapping)
+    mapview1 = getattr(d1, mapping)
+    assert mapview0.items() == mapview0.items()
+    assert mapview0.items() == mapview1.items()
+
+    mapview0['x'] = sc.scalar(1.0)
+    assert mapview0.items() == mapview0.items()
+    assert not (mapview0.items() == mapview1.items())
+    assert mapview0.items() != mapview1.items()
+
+    mapview1['x'] = sc.scalar(2.0)
+    assert not (mapview0.items() == mapview1.items())
+    assert mapview0.items() != mapview1.items()
+
+    mapview1['x'] = sc.scalar(1.0)
+    assert mapview0.items() == mapview1.items()
+
+    mapview1['y'] = sc.scalar(3.0)
+    assert mapview1.items() == mapview1.items()
+    assert not (mapview0.items() == mapview1.items())
+    assert mapview0.items() != mapview1.items()
+
+    # mapview0 has (x, y), mapview1 has (y, x)
+    del mapview0['x']
+    mapview0['y'] = sc.scalar(4.0)
+    mapview0['x'] = sc.scalar(1.0)
+    assert mapview0.items() == mapview0.items()
+    assert mapview0.items() != mapview1.items()
+
+    mapview0['y'] = sc.scalar(3.0)
+    assert mapview0.items() == mapview1.items()
