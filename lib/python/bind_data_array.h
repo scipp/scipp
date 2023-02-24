@@ -17,25 +17,30 @@ using namespace scipp;
 template <template <class> class View, class T>
 void bind_helper_view(py::module &m, const std::string &name) {
   std::string suffix;
-  if (std::is_same_v<View<T>, items_view<T>> ||
-      std::is_same_v<View<T>, str_items_view<T>>)
+  if constexpr (std::is_same_v<View<T>, items_view<T>> ||
+                std::is_same_v<View<T>, str_items_view<T>>)
     suffix = "_items_view";
-  if (std::is_same_v<View<T>, values_view<T>>)
+  if constexpr (std::is_same_v<View<T>, values_view<T>>)
     suffix = "_values_view";
-  if (std::is_same_v<View<T>, keys_view<T>> ||
-      std::is_same_v<View<T>, str_keys_view<T>>)
+  if constexpr (std::is_same_v<View<T>, keys_view<T>> ||
+                std::is_same_v<View<T>, str_keys_view<T>>)
     suffix = "_keys_view";
-  py::class_<View<T>>(m, (name + suffix).c_str())
-      .def("__len__", &View<T>::size)
-      .def("__repr__", [](const View<T> &self) { return self.tostring(); })
-      .def("__str__", [](const View<T> &self) { return self.tostring(); })
-      .def(
-          "__iter__",
-          [](const View<T> &self) {
-            return py::make_iterator(self.begin(), self.end(),
-                                     py::return_value_policy::move);
-          },
-          py::return_value_policy::move, py::keep_alive<0, 1>());
+  auto cls =
+      py::class_<View<T>>(m, (name + suffix).c_str())
+          .def("__len__", &View<T>::size)
+          .def("__repr__", [](const View<T> &self) { return self.tostring(); })
+          .def("__str__", [](const View<T> &self) { return self.tostring(); })
+          .def(
+              "__iter__",
+              [](const View<T> &self) {
+                return py::make_iterator(self.begin(), self.end(),
+                                         py::return_value_policy::move);
+              },
+              py::return_value_policy::move, py::keep_alive<0, 1>());
+  if constexpr (!std::is_same_v<View<T>, values_view<T>>)
+    cls.def("__eq__", [](const View<T> &self, const View<T> &other) {
+      return self == other;
+    });
 }
 
 template <class T, class... Ignored>
