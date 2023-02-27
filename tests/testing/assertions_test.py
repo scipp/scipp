@@ -138,7 +138,7 @@ def test_assert_identical_variables_presence_of_variances():
                   'qkk': sc.array(dims=['t'], values=[1.0, 2.0], variances=[0.0, 0.1])
               },
               masks={'1': sc.arange('y', 7) < 4})))
-def test_assert_identical_data_arrays(a):
+def test_assert_identical_data_arrays_equal(a):
     assert_identical(deepcopy(a), deepcopy(a))
 
 
@@ -241,6 +241,78 @@ def test_assert_identical_data_array_masks_value_mismatch():
 
     a = sc.DataArray(sc.scalar(-8), masks={'a': sc.scalar(True), 't': sc.scalar(True)})
     b = sc.DataArray(sc.scalar(-8), masks={'a': sc.scalar(True), 't': sc.scalar(False)})
+    with pytest.raises(AssertionError):
+        assert_identical(a, b)
+    with pytest.raises(AssertionError):
+        assert_identical(b, a)
+
+
+@pytest.mark.parametrize(
+    'a', (sc.Dataset(), sc.Dataset({'f': sc.scalar(
+        91, unit='F')}), sc.Dataset({'r': sc.scalar(6.4)}, coords={'g': sc.scalar(4)}),
+          sc.Dataset({
+              '2': sc.arange('u', 5),
+              '3': sc.arange('b', 7)
+          }),
+          sc.Dataset(
+              {
+                  'yy':
+                  sc.DataArray(sc.arange('yy', 5),
+                               attrs={'a': sc.scalar([2, 3])},
+                               masks={'m': sc.arange('yy', 5) < 2}),
+                  'i':
+                  sc.arange('i', 3)
+              },
+              coords={'i': sc.arange('w', 15).fold('w', {
+                  'i': 3,
+                  'yy': 5
+              })})))
+def test_assert_identical_datasets_equal(a):
+    assert_identical(deepcopy(a), deepcopy(a))
+
+
+def test_assert_identical_dataset_data_key_mismatch():
+    a = sc.Dataset({'a': sc.arange('t', 3)})
+    b = sc.Dataset({'b': sc.arange('t', 3)})
+    with pytest.raises(AssertionError):
+        assert_identical(a, b)
+    with pytest.raises(AssertionError):
+        assert_identical(b, a)
+
+
+def test_assert_identical_dataset_data_value_mismatch():
+    a = sc.Dataset({'a': sc.arange('t', 3)})
+    b = sc.Dataset({'a': -sc.arange('t', 3)})
+    with pytest.raises(AssertionError):
+        assert_identical(a, b)
+    with pytest.raises(AssertionError):
+        assert_identical(b, a)
+
+
+def test_assert_identical_dataset_coords_key_mismatch():
+    a = sc.Dataset({'a': sc.arange('t', 3)}, coords={'t': sc.scalar(2)})
+    b = sc.Dataset({'a': sc.arange('t', 3)}, coords={'j': sc.scalar(2)})
+    with pytest.raises(AssertionError):
+        assert_identical(a, b)
+    with pytest.raises(AssertionError):
+        assert_identical(b, a)
+
+    a = sc.Dataset({
+        'a': sc.arange('t', 3),
+        'b': sc.arange('c', 5)
+    },
+                   coords={
+                       't': sc.scalar(2),
+                       'c': sc.arange('c', 5)
+                   })
+    b = sc.Dataset({
+        'a': sc.arange('t', 3),
+        'b': sc.arange('c', 5)
+    },
+                   coords={
+                       't': sc.scalar(2),
+                       'c': sc.arange('c', 6)
+                   })
     with pytest.raises(AssertionError):
         assert_identical(a, b)
     with pytest.raises(AssertionError):

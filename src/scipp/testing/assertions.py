@@ -12,11 +12,11 @@ Place the following code in your ``conftest.py``:
 
 """
 
-from typing import TypeVar
+from typing import Any, Mapping, TypeVar
 
 import numpy as np
 
-from ..core import DataArray, Variable
+from ..core import DataArray, Dataset, Variable
 
 T = TypeVar('T')
 
@@ -28,6 +28,8 @@ def assert_identical(a: T, b: T) -> None:
         _assert_identical_variable(a, b)
     elif isinstance(a, DataArray):
         _assert_identical_data_array(a, b)
+    elif isinstance(a, Dataset):
+        _assert_identical_dataset(a, b)
     else:
         assert a == b
 
@@ -48,15 +50,16 @@ def _assert_identical_variable(a: Variable, b: Variable) -> None:
 
 def _assert_identical_data_array(a: DataArray, b: DataArray) -> None:
     _assert_identical_variable(a.data, b.data)
+    _assert_mapping_eq(a.coords, b.coords)
+    _assert_mapping_eq(a.attrs, b.attrs)
+    _assert_mapping_eq(a.masks, b.masks)
 
-    assert a.coords.keys() == b.coords.keys()
-    for name, coord_a in a.coords.items():
-        _assert_identical_variable(coord_a, b.coords[name])
 
-    assert a.attrs.keys() == b.attrs.keys()
-    for name, attr_a in a.attrs.items():
-        _assert_identical_variable(attr_a, b.attrs[name])
+def _assert_identical_dataset(a: Dataset, b: Dataset) -> None:
+    _assert_mapping_eq(a, b)
 
-    assert a.masks.keys() == b.masks.keys()
-    for name, mask_a in a.masks.items():
-        _assert_identical_variable(mask_a, b.masks[name])
+
+def _assert_mapping_eq(a: Mapping[str, Any], b: Mapping[str, Any]) -> None:
+    assert a.keys() == b.keys()
+    for name, var_a in a.items():
+        assert_identical(var_a, b[name])
