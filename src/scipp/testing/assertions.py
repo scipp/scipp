@@ -22,7 +22,30 @@ T = TypeVar('T')
 
 
 def assert_identical(a: T, b: T) -> None:
-    """TODO"""
+    """Raise an AssertionError if two objects are not identical.
+
+    For Scipp objects, ``assert_identical(a, b)`` is equivalent to
+    ``assert sc.identical(a, b)`` but produces a more precise error message in pytest.
+    If this function is called with arguments that are not supported by
+    :func:`scipp.identical`, it calls ``assert a == b``.
+
+    This function requires exact equality including equal types.
+    For example, ``assert_identical(1, 1.0)`` will raise.
+
+    NaN elements of Scipp variables are treated as equal.
+
+    Parameters
+    ----------
+    a:
+        The actual object to check.
+    b:
+        The desired, expected object.
+
+    Raises
+    ------
+    AssertionError
+        If the objects are not identical.
+    """
     assert type(a) == type(b)
     if isinstance(a, Variable):
         _assert_identical_variable(a, b)
