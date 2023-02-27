@@ -47,15 +47,20 @@ def test_many_combinations():
     }
 
 
-def test_hist_table_define_edges_from_bin_count():
+@pytest.mark.parametrize('dtype', ['float32', 'float64'])
+def test_hist_table_define_edges_from_bin_count(dtype):
     da = sc.data.table_xyz(100)
+    for c in list(da.coords.keys()):
+        da.coords[c] = da.coords[c].to(dtype=dtype)
     histogrammed = da.hist(y=4)
     edges = histogrammed.coords['y']
     assert len(edges) == 5
     assert histogrammed.sizes['y'] == 4
     assert edges.min().value == da.coords['y'].min().value
     assert edges.max().value > da.coords['y'].max().value
-    assert edges.max().value == np.nextafter(da.coords['y'].max().value, np.inf)
+    ymax = da.coords['y'].max()
+    assert edges.max().value == np.nextafter(
+        ymax.value, (ymax + sc.scalar(1.0, unit=ymax.unit, dtype=ymax.dtype)).value)
 
 
 def test_hist_binned_define_edges_from_bin_count():
