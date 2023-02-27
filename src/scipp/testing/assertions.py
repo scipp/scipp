@@ -16,7 +16,7 @@ from typing import Any, Mapping, TypeVar
 
 import numpy as np
 
-from ..core import DataArray, Dataset, Variable
+from ..core import DataArray, DataGroup, Dataset, Variable
 
 T = TypeVar('T')
 
@@ -30,6 +30,8 @@ def assert_identical(a: T, b: T) -> None:
         _assert_identical_data_array(a, b)
     elif isinstance(a, Dataset):
         _assert_identical_dataset(a, b)
+    elif isinstance(a, DataGroup):
+        _assert_identical_datagroup(a, b)
     else:
         assert a == b
 
@@ -56,6 +58,10 @@ def _assert_identical_data_array(a: DataArray, b: DataArray) -> None:
 
 
 def _assert_identical_dataset(a: Dataset, b: Dataset) -> None:
+    _assert_mapping_eq(a, b)
+
+
+def _assert_identical_datagroup(a: DataGroup, b: DataGroup) -> None:
     _assert_mapping_eq(a, b)
 
 

@@ -26,11 +26,11 @@ def test_assert_identical_builtin_mismatch(a, b):
     'a', (sc.scalar(3), sc.scalar(7.12, variance=0.33, unit='m'), sc.scalar('jja ow=-'),
           sc.arange('u', 9.5, 13.0, 0.4), sc.linspace('ppl', 3.7, -99, 10, unit='kg'),
           sc.array(dims=['ww', 'gas'], values=[[np.nan], [3]])))
-def test_assert_identical_variables_equal(a):
+def test_assert_identical_variable_equal(a):
     assert_identical(deepcopy(a), deepcopy(a))
 
 
-def test_assert_identical_variables_dim_mismatch():
+def test_assert_identical_variable_dim_mismatch():
     a = sc.arange('rst', 5, unit='m')
     b = sc.arange('llf', 5, unit='m')
     with pytest.raises(AssertionError):
@@ -46,7 +46,7 @@ def test_assert_identical_variables_dim_mismatch():
         assert_identical(b, a)
 
 
-def test_assert_identical_variables_shape_mismatch():
+def test_assert_identical_variable_shape_mismatch():
     a = sc.arange('x', 5, unit='m')
     b = sc.arange('x', 6, unit='m')
     with pytest.raises(AssertionError):
@@ -62,7 +62,7 @@ def test_assert_identical_variables_shape_mismatch():
         assert_identical(b, a)
 
 
-def test_assert_identical_variables_unit_mismatch():
+def test_assert_identical_variable_unit_mismatch():
     a = sc.arange('u', 6.1, unit='m')
     b = sc.arange('u', 6.1, unit='kg')
     with pytest.raises(AssertionError):
@@ -71,7 +71,7 @@ def test_assert_identical_variables_unit_mismatch():
         assert_identical(b, a)
 
 
-def test_assert_identical_variables_values_mismatch():
+def test_assert_identical_variable_values_mismatch():
     a = sc.arange('u', 6.1, unit='m')
     b = sc.arange('u', 6.1, unit='m') * 0.1
     with pytest.raises(AssertionError):
@@ -80,7 +80,7 @@ def test_assert_identical_variables_values_mismatch():
         assert_identical(b, a)
 
 
-def test_assert_identical_variables_values_mismatch_nan():
+def test_assert_identical_variable_values_mismatch_nan():
     a = sc.arange('u', 6.1, unit='m')
     b = sc.arange('u', 6.1, unit='m')
     b[2] = np.nan
@@ -90,7 +90,7 @@ def test_assert_identical_variables_values_mismatch_nan():
         assert_identical(b, a)
 
 
-def test_assert_identical_variables_variances_mismatch():
+def test_assert_identical_variable_variances_mismatch():
     a = sc.arange('u', 6.1, unit='m')
     a.variances = a.values
     b = sc.arange('u', 6.1, unit='m')
@@ -101,7 +101,7 @@ def test_assert_identical_variables_variances_mismatch():
         assert_identical(b, a)
 
 
-def test_assert_identical_variables_variances_mismatch_nan():
+def test_assert_identical_variable_variances_mismatch_nan():
     a = sc.arange('u', 6.1, unit='m')
     a.variances = a.values
     b = sc.arange('u', 6.1, unit='m')
@@ -113,7 +113,7 @@ def test_assert_identical_variables_variances_mismatch_nan():
         assert_identical(b, a)
 
 
-def test_assert_identical_variables_presence_of_variances():
+def test_assert_identical_variable_presence_of_variances():
     a = sc.scalar(1.1, variance=0.1)
     b = sc.scalar(1.1)
     with pytest.raises(AssertionError):
@@ -313,6 +313,52 @@ def test_assert_identical_dataset_coords_key_mismatch():
                        't': sc.scalar(2),
                        'c': sc.arange('c', 6)
                    })
+    with pytest.raises(AssertionError):
+        assert_identical(a, b)
+    with pytest.raises(AssertionError):
+        assert_identical(b, a)
+
+
+@pytest.mark.parametrize('a', (sc.DataGroup(), sc.DataGroup(
+    {'hg': 4}), sc.DataGroup({'ii': sc.scalar(
+        3.01, unit='s')}), sc.DataGroup({
+            'Å': [5, 2],
+            'pl': sc.arange(';', 6)
+        }), sc.DataGroup({'q': sc.DataGroup({'ik': sc.arange('ik', 2)})})))
+def test_assert_identical_data_group_equal(a):
+    assert_identical(deepcopy(a), deepcopy(a))
+
+
+def test_assert_identical_data_group_keys_mismatch():
+    a = sc.DataGroup({'a': sc.arange('ook', 9)})
+    b = sc.DataGroup({'b': sc.arange('ook', 9)})
+    with pytest.raises(AssertionError):
+        assert_identical(a, b)
+    with pytest.raises(AssertionError):
+        assert_identical(b, a)
+
+
+def test_assert_identical_data_group_values_mismatch_variable():
+    a = sc.DataGroup({'a': sc.arange('ook', 9)})
+    b = sc.DataGroup({'a': sc.arange('wak', 9)})
+    with pytest.raises(AssertionError):
+        assert_identical(a, b)
+    with pytest.raises(AssertionError):
+        assert_identical(b, a)
+
+
+def test_assert_identical_data_group_values_mismatch_builtin():
+    a = sc.DataGroup({'a': sc.arange('ook', 9), 'gg': 'well'})
+    b = sc.DataGroup({'a': sc.arange('ook', 9), 'gg': 'done'})
+    with pytest.raises(AssertionError):
+        assert_identical(a, b)
+    with pytest.raises(AssertionError):
+        assert_identical(b, a)
+
+
+def test_assert_identical_data_group_values_mismatch_nested():
+    a = sc.DataGroup({'a': sc.DataGroup({'rz': sc.arange('rz', 4)})})
+    b = sc.DataGroup({'a': sc.DataGroup({'rz': -sc.arange('rz', 4)})})
     with pytest.raises(AssertionError):
         assert_identical(a, b)
     with pytest.raises(AssertionError):
