@@ -22,15 +22,20 @@ build-verbosity = 1
 [tool.cibuildwheel.macos]
 archs = ["x86_64", "arm64"]
 
-[tool.bandit.assert_used]
-skips = [
-  "docs/conf.py",
-  "tests",
+[tool.bandit]
+exclude_dirs = [
   "install",
   "conda/cmake-package-test",
   "tools",
   "setup.py",
-  "src/scipp/testing/assertions.py"]
+  "docs/conf.py",
+]
+
+[tool.bandit.assert_used]
+skips = [
+  "*/*_test.py",
+  "src/scipp/testing/assertions.py"
+]
 
 [tool.codespell]
 ignore-words-list = "elemt"
