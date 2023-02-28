@@ -35,7 +35,8 @@ def assert_identical(a: T, b: T) -> None:
     """Raise an AssertionError if two objects are not identical.
 
     For Scipp objects, ``assert_identical(a, b)`` is equivalent to
-    ``assert sc.identical(a, b)`` but produces a more precise error message in pytest.
+    ``assert sc.identical(a, b, equal_nan=True)`` but produces a more precise
+    error message in pytest.
     If this function is called with arguments that are not supported by
     :func:`scipp.identical`, it calls ``assert a == b``.
 

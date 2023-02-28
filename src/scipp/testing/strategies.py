@@ -134,7 +134,7 @@ def _variable_arg_strategies(*,
 # `variables` is called. Sampling via `_concrete_args` then reuses
 # those strategies.
 # A previous implementation constructed those component strategies inside
-# an `st.composite` function for every example drawn. This lead to high
+# an `st.composite` function for every example drawn. This led to high
 # memory consumption by hypothesis and failed
 # `hypothesis.HealthCheck.data_too_large`.
 def variables(*,

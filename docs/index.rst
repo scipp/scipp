@@ -125,6 +125,7 @@ and open new discussions if none of the existing ones provide a satisfactory ans
    reference/error-propagation
    reference/ownership-mechanism-and-readonly-flags
    reference/logging
+   reference/testing
    reference/runtime-configuration
    reference/developer-documentation
 
