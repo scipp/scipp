@@ -17,6 +17,7 @@ from typing import Any, Mapping, TypeVar
 import numpy as np
 
 from ..core import DataArray, DataGroup, Dataset, Variable
+from ..core.comparison import identical
 
 T = TypeVar('T')
 
@@ -63,6 +64,21 @@ def _assert_identical_variable(a: Variable, b: Variable) -> None:
     assert a.sizes == b.sizes
     assert a.unit == b.unit
     assert a.dtype == b.dtype
+    assert (a.bins is None) == (b.bins is None)
+    if a.bins is None:
+        _assert_identical_dense_variable_data(a, b)
+    else:
+        _assert_identical_binned_variable_data(a, b)
+
+
+def _assert_identical_binned_variable_data(a: Variable, b: Variable) -> None:
+    # Support for iterating over bin contents is limited in Python.
+    # So, simply use `identical` even though it does not produce good error messages.
+    assert a.bins.unit == b.bins.unit
+    assert identical(a, b)
+
+
+def _assert_identical_dense_variable_data(a: Variable, b: Variable) -> None:
     np.testing.assert_array_equal(a.values, b.values, err_msg='when comparing values')
     if a.variances is not None:
         assert b.variances is not None, 'a has variances but b does not'

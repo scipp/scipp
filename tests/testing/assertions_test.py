@@ -363,3 +363,122 @@ def test_assert_identical_data_group_values_mismatch_nested():
         assert_identical(a, b)
     with pytest.raises(AssertionError):
         assert_identical(b, a)
+
+
+@pytest.mark.parametrize(
+    'buffer',
+    (sc.ones(sizes={'e': 10}, unit='counts'), sc.arange('.', 13, unit='m'),
+     sc.DataArray(sc.zeros(sizes={'bm': 10}), coords={'bm': sc.arange('bm', 10)})))
+@pytest.mark.parametrize('indices',
+                         (sc.array(dims=['lm'], values=[0, 3, 8, 10], unit=None),
+                          sc.array(dims=['h'], values=[2, 4, 10], unit=None),
+                          sc.array(dims=['lka'], values=[0, 6], unit=None),
+                          sc.array(dims=['l we'], values=[], dtype='int64', unit=None)))
+def test_assert_identical_binned_variable_equal(buffer, indices):
+    begin, end = indices[:-1], indices[1:]
+    a = sc.bins(data=buffer, dim=buffer.dim, begin=begin, end=end)
+    assert_identical(deepcopy(a), deepcopy(a))
+
+
+def test_assert_identical_binned_data_array_equal():
+    da = sc.DataArray(sc.ones(sizes={'vv': 9}), coords={
+        'vv': sc.arange('vv', 9)
+    }).bin(vv=3)
+    assert_identical(deepcopy(da), deepcopy(da))
+
+
+@pytest.mark.parametrize(
+    'buffer',
+    (sc.ones(sizes={'e': 10}, unit='counts'),
+     sc.DataArray(sc.zeros(sizes={'bm': 10}), coords={'bm': sc.arange('bm', 10)})))
+@pytest.mark.parametrize('indices',
+                         (sc.array(dims=['lm'], values=[0, 3, 8, 10], unit=None),
+                          sc.array(dims=['l we'], values=[], dtype='int64', unit=None)))
+def test_assert_identical_binned_variable_unit_mismatch(buffer, indices):
+    begin, end = indices[:-1], indices[1:]
+    a = sc.bins(data=buffer, dim=buffer.dim, begin=begin, end=end)
+    buffer = deepcopy(buffer)
+    buffer.unit = 'm'
+    b = sc.bins(data=buffer, dim=buffer.dim, begin=begin, end=end)
+    with pytest.raises(AssertionError):
+        assert_identical(a, b)
+    with pytest.raises(AssertionError):
+        assert_identical(b, a)
+
+
+@pytest.mark.parametrize(
+    'buffer',
+    (sc.ones(sizes={'e': 10}, unit='counts'),
+     sc.DataArray(sc.zeros(sizes={'bm': 10}), coords={'bm': sc.arange('bm', 10)})))
+@pytest.mark.parametrize(
+    'indices', (sc.array(dims=['lm'], values=[0, 3, 8, 10], unit=None),
+                sc.array(dims=['l we'], values=[2, 6], dtype='int64', unit=None)))
+def test_assert_identical_binned_variable_value_mismatch(buffer, indices):
+    begin, end = indices[:-1], indices[1:]
+    a = sc.bins(data=buffer, dim=buffer.dim, begin=begin, end=end)
+    buffer = deepcopy(buffer)
+    buffer[3] = -1
+    b = sc.bins(data=buffer, dim=buffer.dim, begin=begin, end=end)
+    with pytest.raises(AssertionError):
+        assert_identical(a, b)
+    with pytest.raises(AssertionError):
+        assert_identical(b, a)
+
+
+@pytest.mark.parametrize(
+    'indices', (sc.array(dims=['lm'], values=[0, 3, 8, 10], unit=None),
+                sc.array(dims=['l we'], values=[1, 6], dtype='int64', unit=None)))
+def test_assert_identical_binned_variable_coord_mismatch(indices):
+    buffer = sc.DataArray(sc.zeros(sizes={'bm': 10}),
+                          coords={'bm': sc.arange('bm', 10)})
+    begin, end = indices[:-1], indices[1:]
+    a = sc.bins(data=buffer, dim=buffer.dim, begin=begin, end=end)
+    buffer = deepcopy(buffer)
+    buffer.coords['bm'][1] = -10
+    b = sc.bins(data=buffer, dim=buffer.dim, begin=begin, end=end)
+    with pytest.raises(AssertionError):
+        assert_identical(a, b)
+    with pytest.raises(AssertionError):
+        assert_identical(b, a)
+
+
+def test_assert_identical_binned_data_array_value_mismatch():
+    a = sc.DataArray(sc.ones(sizes={'rv': 9}),
+                     coords={
+                         'rv': sc.arange('rv', 9),
+                         'j': sc.scalar(3.1)
+                     }).bin(rv=3)
+    b = deepcopy(a)
+    b.bins.constituents['data'][7] = -1.2
+    with pytest.raises(AssertionError):
+        assert_identical(a, b)
+    with pytest.raises(AssertionError):
+        assert_identical(b, a)
+
+
+def test_assert_identical_binned_data_array_event_coord_mismatch():
+    a = sc.DataArray(sc.ones(sizes={'rv': 9}),
+                     coords={
+                         'rv': sc.arange('rv', 9),
+                         'j': sc.scalar(3.1)
+                     }).bin(rv=3)
+    b = deepcopy(a)
+    b.bins.constituents['data'].coords['rv'][5] = 0.2
+    with pytest.raises(AssertionError):
+        assert_identical(a, b)
+    with pytest.raises(AssertionError):
+        assert_identical(b, a)
+
+
+def test_assert_identical_binned_data_array_bin_coord_mismatch():
+    a = sc.DataArray(sc.ones(sizes={'rv': 9}),
+                     coords={
+                         'rv': sc.arange('rv', 9),
+                         'j': sc.scalar(3.1)
+                     }).bin(rv=3)
+    b = deepcopy(a)
+    b.coords['j'].unit = 'm'
+    with pytest.raises(AssertionError):
+        assert_identical(a, b)
+    with pytest.raises(AssertionError):
+        assert_identical(b, a)
