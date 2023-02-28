@@ -31,7 +31,7 @@ requirements:
     - conan>=1.45.0
     - cppcheck [linux64]
     - git
-    - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
+    - markupsafe>=2.1.2
     - ninja
     - python
   host:
@@ -60,7 +60,7 @@ test:
     - hypothesis
     - ipympl
     - ipywidgets
-    - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
+    - markupsafe>=2.1.2
     - matplotlib-base
     - pandas
     - pytest
