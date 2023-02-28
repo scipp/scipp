@@ -53,6 +53,7 @@ test:
     - scipp
   requires:
     - {{ compiler('cxx') }}
+    - bs4
     - cmake
     - conan==1.59.0
     - h5py
