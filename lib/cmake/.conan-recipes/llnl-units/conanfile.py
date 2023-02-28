@@ -1,6 +1,9 @@
 import os
 
-from conans import CMake, ConanFile, tools
+from conan import ConanFile
+from conan.tools.cmake import CMakeToolchain, CMake
+from conan.tools.files import replace_in_file
+from conan.tools.scm import Git
 
 CMAKE_PROJECT_STR = """project(
     UNITS
@@ -10,7 +13,7 @@ CMAKE_PROJECT_STR = """project(
 
 
 class UnitsConan(ConanFile):
-    name = "LLNL-Units"
+    name = "llnl_units"
     version = "0.7.0"
     license = "BSD-3"
     url = "https://github.com/llnl/units"
@@ -26,7 +29,7 @@ class UnitsConan(ConanFile):
         "shared": [True, False],
         "fPIC": [True, False],
         "base_type": ["uint32_t", "uint64_t"],
-        "namespace": "ANY"
+        "namespace": ["ANY"]
     }
     default_options = {
         "shared": False,
@@ -37,32 +40,35 @@ class UnitsConan(ConanFile):
     generators = "cmake"
 
     def source(self):
-        git = tools.Git("units")
+        git = Git("units")
         git.clone("https://github.com/LLNL/units.git")
         git.checkout("v" + self.version)
 
         cmake_project_str = (CMAKE_PROJECT_STR.replace("\n", os.linesep)
                              if self.settings.os == "Windows" else CMAKE_PROJECT_STR)
 
-        tools.replace_in_file(
+        replace_in_file(
             "units/CMakeLists.txt", cmake_project_str, cmake_project_str + """
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()""")
 
-    def build(self):
-        cmake = CMake(self)
+    def generate(self):
+        tc = CMakeToolchain(self)
+        tc.definitions["UNITS_ENABLE_TESTS"] = "OFF"
+        tc.definitions["UNITS_BASE_TYPE"] = self.options.base_type
         units_namespace = self.options.get_safe("namespace")
-        cmake.definitions["UNITS_ENABLE_TESTS"] = "OFF"
-        cmake.definitions["UNITS_BASE_TYPE"] = self.options.base_type
         if units_namespace:
-            cmake.definitions["UNITS_NAMESPACE"] = units_namespace
+            tc.definitions["UNITS_NAMESPACE"] = units_namespace
         if self.options["shared"]:
-            cmake.definitions["UNITS_BUILD_SHARED_LIBRARY"] = "ON"
-            cmake.definitions["UNITS_BUILD_STATIC_LIBRARY"] = "OFF"
+            tc.definitions["UNITS_BUILD_SHARED_LIBRARY"] = "ON"
+            tc.definitions["UNITS_BUILD_STATIC_LIBRARY"] = "OFF"
         # The library uses C++14, but we want to set the namespace
         # to llnl::units which requires C++17.
-        cmake.definitions["CMAKE_CXX_STANDARD"] = "17"
-        cmake.configure(source_folder="units")
+        tc.definitions["CMAKE_CXX_STANDARD"] = "17"
+        tc.generate(source_folder="units")
+
+    def build(self):
+        cmake = CMake(self)
         cmake.build(target="units")
 
     def package(self):

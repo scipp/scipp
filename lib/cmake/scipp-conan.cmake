@@ -8,7 +8,7 @@ execute_process(
                     COMMAND_ECHO STDOUT
 )
 execute_process(
-  COMMAND conan export . 2.10.0@
+  COMMAND conan export . --version 2.10.0
   WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/.conan-recipes/pybind11"
                     COMMAND_ECHO STDOUT
 )

@@ -3,10 +3,11 @@ import functools
 import os
 
 from conan.errors import ConanInvalidConfiguration
+from conan.tools.cmake import CMake
 from conan.tools.files import copy, get, replace_in_file
 from conan.tools.layout import basic_layout
 from conan.tools.scm import Version
-from conans import CMake, ConanFile
+from conan import ConanFile
 
 required_conan_version = ">=1.33.0"
 
