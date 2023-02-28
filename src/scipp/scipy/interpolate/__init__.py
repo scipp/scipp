@@ -12,8 +12,16 @@ from typing import Any, Callable, Literal, Union
 import numpy as np
 
 from ...compat.wrapping import wrap1d
-from ...core import DataArray, DimensionError, DType, UnitError, Variable, empty, \
-    epoch, irreducible_mask  # NOQA
+from ...core import (  # NOQA
+    DataArray,
+    DimensionError,
+    DType,
+    UnitError,
+    Variable,
+    empty,
+    epoch,
+    irreducible_mask,
+)
 
 
 def _as_interpolation_type(x):
@@ -39,14 +47,27 @@ def _drop_masked(da, dim):
 
 
 @wrap1d(is_partial=True, accept_masks=True)
-def interp1d(da: DataArray,
-             dim: str,
-             *,
-             kind: Union[int,
-                         Literal['linear', 'nearest', 'nearest-up', 'zero', 'slinear',
-                                 'quadratic', 'cubic', 'previous', 'next']] = 'linear',
-             fill_value: Any = np.nan,
-             **kwargs) -> Callable:
+def interp1d(
+    da: DataArray,
+    dim: str,
+    *,
+    kind: Union[
+        int,
+        Literal[
+            'linear',
+            'nearest',
+            'nearest-up',
+            'zero',
+            'slinear',
+            'quadratic',
+            'cubic',
+            'previous',
+            'next',
+        ],
+    ] = 'linear',
+    fill_value: Any = np.nan,
+    **kwargs,
+) -> Callable:
     """Interpolate a 1-D function.
 
     A data array is used to approximate some function f: y = f(x), where y is given by
@@ -162,16 +183,20 @@ def interp1d(da: DataArray,
             raise UnitError(
                 f"Unit of interpolation points '{xnew.unit}' does not match unit "
                 f"'{da.coords[dim].unit}' of points defining the interpolation "
-                "function along dimension '{dim}'.")
+                "function along dimension '{dim}'."
+            )
         if xnew.dim != dim:
             raise DimensionError(
                 f"Dimension of interpolation points '{xnew.dim}' does not match "
-                f"interpolation dimension '{dim}'")
-        f = inter.interp1d(x=_as_interpolation_type(da.coords[dim].values),
-                           y=da.values,
-                           kind=kind,
-                           fill_value=fill_value,
-                           **kwargs)
+                f"interpolation dimension '{dim}'"
+            )
+        f = inter.interp1d(
+            x=_as_interpolation_type(da.coords[dim].values),
+            y=da.values,
+            kind=kind,
+            fill_value=fill_value,
+            **kwargs,
+        )
         x_ = _as_interpolation_type(_midpoints(xnew, dim) if midpoints else xnew)
         sizes = da.sizes
         sizes[dim] = x_.sizes[dim]

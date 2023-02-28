@@ -95,14 +95,9 @@ def graph_3():
     def fi(h, f):
         pass
 
-    return scgraph.Graph({
-        'b': 'a',
-        ('c', 'f'): fcf,
-        'd': fd,
-        'g': fg,
-        'h': fh,
-        'i': fi
-    })
+    return scgraph.Graph(
+        {'b': 'a', ('c', 'f'): fcf, 'd': fd, 'g': fg, 'h': fh, 'i': fi}
+    )
 
 
 def graph_4():
@@ -133,13 +128,14 @@ def graph_4():
     return scgraph.Graph({'b': fb, 'c': fc, 'd': fd, 'e': fe})
 
 
-def make_data(coords, dims=('x', )):
-    return sc.DataArray(sc.ones(dims=dims, shape=[1] * len(dims)),
-                        coords={
-                            name: sc.ones(dims=[name] if name in dims else dims[:1],
-                                          shape=[1])
-                            for name in coords
-                        })
+def make_data(coords, dims=('x',)):
+    return sc.DataArray(
+        sc.ones(dims=dims, shape=[1] * len(dims)),
+        coords={
+            name: sc.ones(dims=[name] if name in dims else dims[:1], shape=[1])
+            for name in coords
+        },
+    )
 
 
 def test_children_of():
@@ -208,7 +204,7 @@ def test_graph_for_graph_0_finds_intermediates():
 
 def test_graph_for_graph_1():
     base_graph = graph_1()
-    da = make_data(('a', ))
+    da = make_data(('a',))
 
     graph = base_graph.graph_for(da, {'b'})
     assert_rule(graph, 'a', FetchRule, set())

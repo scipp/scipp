@@ -121,11 +121,13 @@ def concat(x: Sequence[VariableLikeType], dim: str) -> VariableLikeType:
     return _call_cpp_func(_cpp.concat, x, dim)
 
 
-def fold(x: VariableLikeType,
-         dim: str,
-         sizes: Optional[Dict[str, int]] = None,
-         dims: Optional[Union[List[str], Tuple[str, ...]]] = None,
-         shape: Optional[Sequence[int]] = None) -> VariableLikeType:
+def fold(
+    x: VariableLikeType,
+    dim: str,
+    sizes: Optional[Dict[str, int]] = None,
+    dims: Optional[Union[List[str], Tuple[str, ...]]] = None,
+    shape: Optional[Sequence[int]] = None,
+) -> VariableLikeType:
     """Fold a single dimension of a variable or data array into multiple dims.
 
     One and only one of these sets of arguments must be given:
@@ -199,24 +201,30 @@ def fold(x: VariableLikeType,
     minus_one_count = new_shape.count(-1)
     if minus_one_count > 1:
         raise _cpp.DimensionError(
-            "Can only have a single -1 in the new requested shape.")
+            "Can only have a single -1 in the new requested shape."
+        )
     if minus_one_count == 1:
         ind = new_shape.index(-1)
         new_shape[ind] = 1
         new_volume = np.prod(new_shape)
         dim_size = x.sizes[dim] // new_volume
         if x.sizes[dim] % new_volume != 0:
-            raise ValueError("-1 in new shape was computed to be {}, but the original "
-                             "shape {} cannot be divided by {}.".format(
-                                 dim_size, x.sizes[dim], dim_size))
+            raise ValueError(
+                "-1 in new shape was computed to be {}, but the original "
+                "shape {} cannot be divided by {}.".format(
+                    dim_size, x.sizes[dim], dim_size
+                )
+            )
         new_shape[ind] = dim_size
 
     return _call_cpp_func(_cpp.fold, x, dim, sizes["dims"], new_shape)
 
 
-def flatten(x: VariableLikeType,
-            dims: Optional[Union[List[str], Tuple[str, ...]]] = None,
-            to: Optional[str] = None) -> VariableLikeType:
+def flatten(
+    x: VariableLikeType,
+    dims: Optional[Union[List[str], Tuple[str, ...]]] = None,
+    to: Optional[str] = None,
+) -> VariableLikeType:
     """Flatten multiple dimensions into a single dimension.
 
     If the input has a bin-edge coordinate that cannot be joined together it will not
@@ -307,8 +315,8 @@ def flatten(x: VariableLikeType,
 
 
 def transpose(
-        x: VariableLikeType,
-        dims: Optional[Union[List[str], Tuple[str, ...]]] = None) -> VariableLikeType:
+    x: VariableLikeType, dims: Optional[Union[List[str], Tuple[str, ...]]] = None
+) -> VariableLikeType:
     """Transpose dimensions of the input.
 
     Parameters
@@ -333,9 +341,8 @@ def transpose(
 
 
 def squeeze(
-        x: VariableLikeType,
-        dim: Optional[Union[str, List[str], Tuple[str,
-                                                  ...]]] = None) -> VariableLikeType:
+    x: VariableLikeType, dim: Optional[Union[str, List[str], Tuple[str, ...]]] = None
+) -> VariableLikeType:
     """Remove dimensions of length 1.
 
     This is equivalent to indexing the squeezed dimensions with index 0, that is
@@ -399,4 +406,4 @@ def squeeze(
       Attributes:
         x                           int64  [dimensionless]  ()  0
     """
-    return _call_cpp_func(_cpp.squeeze, x, (dim, ) if isinstance(dim, str) else dim)
+    return _call_cpp_func(_cpp.squeeze, x, (dim,) if isinstance(dim, str) else dim)

@@ -18,7 +18,14 @@ class PlotPanel3d(PlotPanel):
 
         self.current_cut_surface_value = None
         self.options = [
-            'x', 'y', 'z', 'radius', 'radius_x', 'radius_y', 'radius_z', 'value'
+            'x',
+            'y',
+            'z',
+            'radius',
+            'radius_x',
+            'radius_y',
+            'radius_z',
+            'value',
         ]
         self._cut_sliders = {}
         self._cut_surface_thicknesses = {}
@@ -38,17 +45,20 @@ class PlotPanel3d(PlotPanel):
             step=step,
             layout={"width": "200px"},
             description=f'Δ{key}{unit}:',
-            style={'description_width': 'initial'})
+            style={'description_width': 'initial'},
+        )
         cut_surface_thickness.observe(self._update_cut_surface, names="value")
 
         # Add slider to control position of cut surface
-        cut_slider = ipw.FloatSlider(min=low.value,
-                                     max=high.value,
-                                     step=0.5 * cut_surface_thickness.value,
-                                     description=f'{key}:',
-                                     value=0.5 * (high + low).value,
-                                     continuous_update=False,
-                                     layout={"width": "350px"})
+        cut_slider = ipw.FloatSlider(
+            min=low.value,
+            max=high.value,
+            step=0.5 * cut_surface_thickness.value,
+            description=f'{key}:',
+            value=0.5 * (high + low).value,
+            continuous_update=False,
+            layout={"width": "350px"},
+        )
         cut_unit = ipw.Label(value=str(low.unit))
         cut_slider.observe(self._update_cut_surface, names="value")
 
@@ -78,7 +88,8 @@ class PlotPanel3d(PlotPanel):
             "present, the max value is the opacity of the slice, while the "
             "min value is the opacity of the background.",
             continuous_update=False,
-            style={'description_width': '60px'})
+            style={'description_width': '60px'},
+        )
         self.opacity_slider.observe(self._update_opacity, names="value")
 
         # Add buttons to provide a choice of different cut surfaces:
@@ -90,20 +101,30 @@ class PlotPanel3d(PlotPanel):
         # options must be unique.
         self.cut_surface_buttons = ipw.ToggleButtons(
             options=list(
-                zip(['X ', 'Y ', 'Z ', 'R ', ' X ', ' Y ', ' Z ', ''],
-                    range(len(self.options)))),
+                zip(
+                    ['X ', 'Y ', 'Z ', 'R ', ' X ', ' Y ', ' Z ', ''],
+                    range(len(self.options)),
+                )
+            ),
             value=None,
             description='Cut surface:',
             button_style='',
             tooltips=[
-                'X-plane', 'Y-plane', 'Z-plane', 'Sphere', 'Cylinder-X', 'Cylinder-Y',
-                'Cylinder-Z', 'Value'
+                'X-plane',
+                'Y-plane',
+                'Z-plane',
+                'Sphere',
+                'Cylinder-X',
+                'Cylinder-Y',
+                'Cylinder-Z',
+                'Value',
             ],
             icons=(['cube'] * 3) + ['circle-o'] + (['toggle-on'] * 3) + ['magic'],
             style={"button_width": "50px"},
         )
-        self.cut_surface_buttons.observe(self._update_cut_surface_buttons,
-                                         names="value")
+        self.cut_surface_buttons.observe(
+            self._update_cut_surface_buttons, names="value"
+        )
         # Add a capture for a click event: if the active button is clicked,
         # this resets the togglebuttons value to None and deletes the cut
         # surface.
@@ -118,7 +139,7 @@ class PlotPanel3d(PlotPanel):
         # self.xminmax["x"] = axparams['x']['lims'] / axparams['x']['scaling']
         controls = self._make_cut_controls(key, low, high)
         self._cut_controls.append(controls)
-        self._cut_controls_box.children += (controls, )
+        self._cut_controls_box.children += (controls,)
 
     def update_axes(self):
         """
@@ -135,10 +156,9 @@ class PlotPanel3d(PlotPanel):
         if self.cut_surface_buttons.value is None:
             self.controller.update_opacity(alpha={"main": change["new"][1]})
         else:
-            self.controller.update_opacity(alpha={
-                "main": change["new"][0],
-                "cut": change["new"][1]
-            })
+            self.controller.update_opacity(
+                alpha={"main": change["new"][0], "cut": change["new"][1]}
+            )
 
     def _check_if_reset_needed(self, owner, content, buffers):
         """
@@ -177,7 +197,8 @@ class PlotPanel3d(PlotPanel):
             center=self._cut_sliders[self._current_cut].value,
             delta=delta,
             inactive=self.opacity_slider.lower,
-            active=self.opacity_slider.upper)
+            active=self.opacity_slider.upper,
+        )
 
     def update_data(self, axparams=None):
         """
@@ -194,9 +215,9 @@ class PlotPanel3d(PlotPanel):
         controls = self._make_cut_controls('value', vmin, vmax)
         if len(self._cut_controls) != len(self.options):
             self._cut_controls.append(controls)
-            self._cut_controls_box.children += (controls, )
+            self._cut_controls_box.children += (controls,)
         else:
             controls.layout.display = self._cut_controls[-1].layout.display
             self._cut_controls[-1] = controls
-            children = self._cut_controls_box.children[:-1] + (controls, )
+            children = self._cut_controls_box.children[:-1] + (controls,)
             self._cut_controls_box.children = children

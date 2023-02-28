@@ -25,9 +25,24 @@ class PlotFigure3d(Displayable):
     It renders an interactive scene containing a point cloud using `pythreejs`.
     """
 
-    def __init__(self, *, background, cmap, extend, figsize, mask_cmap, nan_color, norm,
-                 pixel_size, show_outline, tick_size, xlabel, ylabel, zlabel, camera):
-
+    def __init__(
+        self,
+        *,
+        background,
+        cmap,
+        extend,
+        figsize,
+        mask_cmap,
+        nan_color,
+        norm,
+        pixel_size,
+        show_outline,
+        tick_size,
+        xlabel,
+        ylabel,
+        zlabel,
+        camera,
+    ):
         self._pixel_size = pixel_size
         if pixel_size is not None:
             self._pixel_size = pixel_size
@@ -66,16 +81,18 @@ class PlotFigure3d(Displayable):
 
         # Define camera
         self.initial_camera_view = camera
-        self.camera = p3.PerspectiveCamera(position=[0, 0, 0],
-                                           aspect=config['plot']['width'] /
-                                           config['plot']['height'])
+        self.camera = p3.PerspectiveCamera(
+            position=[0, 0, 0],
+            aspect=config['plot']['width'] / config['plot']['height'],
+        )
 
         # Add red/green/blue axes helper
         self.axes_3d = p3.AxesHelper()
 
         # Create the pythreejs scene
-        self.scene = p3.Scene(children=[self.camera, self.axes_3d],
-                              background=background)
+        self.scene = p3.Scene(
+            children=[self.camera, self.axes_3d], background=background
+        )
 
         # Add camera controller
         # TODO: additional parameters whose default values are Inf need to be specified
@@ -83,18 +100,22 @@ class PlotFigure3d(Displayable):
         # maxDistance, maxZoom. Note that we change the maxDistance once we know the
         # extents of the box.
         # See https://github.com/jupyter-widgets/pythreejs/issues/366.
-        self.controls = p3.OrbitControls(controlling=self.camera,
-                                         minAzimuthAngle=-1.0e9,
-                                         maxAzimuthAngle=1.0e9,
-                                         maxDistance=1.0,
-                                         maxZoom=1)
+        self.controls = p3.OrbitControls(
+            controlling=self.camera,
+            minAzimuthAngle=-1.0e9,
+            maxAzimuthAngle=1.0e9,
+            maxDistance=1.0,
+            maxZoom=1,
+        )
 
         # Render the scene into a widget
-        self.renderer = p3.Renderer(camera=self.camera,
-                                    scene=self.scene,
-                                    controls=[self.controls],
-                                    width=figsize[0],
-                                    height=figsize[1])
+        self.renderer = p3.Renderer(
+            camera=self.camera,
+            scene=self.scene,
+            controls=[self.controls],
+            width=figsize[0],
+            height=figsize[1],
+        )
 
     def initialize_toolbar(self, **kwargs):
         self.toolbar.initialize(**kwargs)
@@ -104,8 +125,8 @@ class PlotFigure3d(Displayable):
         Return the renderer and the colorbar into a widget box.
         """
         return ipw.HBox(
-            [self.toolbar._to_widget(),
-             ipw.HBox([self.renderer]), self.cbar_image])
+            [self.toolbar._to_widget(), ipw.HBox([self.renderer]), self.cbar_image]
+        )
 
     def savefig(self, filename=None):
         """
@@ -113,8 +134,9 @@ class PlotFigure3d(Displayable):
         TODO: would be nice to save as static png, as well as interactive html,
         like `ipyvolume`.
         """
-        raise RuntimeError("Saving figures is not yet implemented for 3D "
-                           "visualization.")
+        raise RuntimeError(
+            "Saving figures is not yet implemented for 3D " "visualization."
+        )
 
     def initialize(self, *args, **kwargs):
         """
@@ -143,11 +165,13 @@ class PlotFigure3d(Displayable):
         self._create_outline(limits=limits, box_size=box_size, center=center)
 
         self.axticks = self._generate_axis_ticks_and_labels(
-            box_size=box_size, limits=limits, components=params.components)
+            box_size=box_size, limits=limits, components=params.components
+        )
 
         self.point_cloud_positions = params.positions.values.astype('float32')
         self.point_clouds["main"] = self._create_point_cloud(
-            positions=self.point_cloud_positions)
+            positions=self.point_cloud_positions
+        )
 
         # Set camera controller target
         distance_from_center = 1.2
@@ -155,8 +179,9 @@ class PlotFigure3d(Displayable):
         camera_lookat = tuple(center)
         if self.initial_camera_view is not None:
             camera_position = self.initial_camera_view.get('position', camera_position)
-            camera_lookat = tuple(self.initial_camera_view.get(
-                'look_at', camera_lookat))
+            camera_lookat = tuple(
+                self.initial_camera_view.get('look_at', camera_lookat)
+            )
             self.initial_camera_view = None
         self.camera.position = camera_position
         cam_pos_norm = np.linalg.norm(self.camera.position)
@@ -173,13 +198,19 @@ class PlotFigure3d(Displayable):
         self.camera_backup["reset"] = copy(self.camera.position)
         self.camera_backup["center"] = tuple(copy(center))
         self.camera_backup["x_normal"] = [
-            center[0] - distance_from_center * box_mean_size, center[1], center[2]
+            center[0] - distance_from_center * box_mean_size,
+            center[1],
+            center[2],
         ]
         self.camera_backup["y_normal"] = [
-            center[0], center[1] - distance_from_center * box_mean_size, center[2]
+            center[0],
+            center[1] - distance_from_center * box_mean_size,
+            center[2],
         ]
         self.camera_backup["z_normal"] = [
-            center[0], center[1], center[2] - distance_from_center * box_mean_size
+            center[0],
+            center[1],
+            center[2] - distance_from_center * box_mean_size,
         ]
 
         # Rescale axes helper
@@ -199,20 +230,21 @@ class PlotFigure3d(Displayable):
         """
         self.points_geometry = p3.BufferGeometry(
             attributes={
-                'position':
-                p3.BufferAttribute(array=positions),
-                'color':
-                p3.BufferAttribute(
-                    array=np.ones([positions.shape[0], 3], dtype='float32'))
-            })
+                'position': p3.BufferAttribute(array=positions),
+                'color': p3.BufferAttribute(
+                    array=np.ones([positions.shape[0], 3], dtype='float32')
+                ),
+            }
+        )
 
         pixel_ratio = config['plot']['pixel_ratio']
         # Note that an additional factor of 2.5 (obtained from trial and error) seems to
         # be required to get the sizes right in the scene.
-        self.points_material = p3.PointsMaterial(vertexColors='VertexColors',
-                                                 size=2.5 * self._pixel_size *
-                                                 pixel_ratio,
-                                                 transparent=True)
+        self.points_material = p3.PointsMaterial(
+            vertexColors='VertexColors',
+            size=2.5 * self._pixel_size * pixel_ratio,
+            transparent=True,
+        )
         return p3.Points(geometry=self.points_geometry, material=self.points_material)
 
     def _create_outline(self, *, limits, box_size, center):
@@ -221,19 +253,22 @@ class PlotFigure3d(Displayable):
         """
         box_geometry = p3.BoxBufferGeometry(*list(box_size))
         edges = p3.EdgesGeometry(box_geometry)
-        self.outline = p3.LineSegments(geometry=edges,
-                                       material=p3.LineBasicMaterial(color='#000000'),
-                                       position=tuple(center))
+        self.outline = p3.LineSegments(
+            geometry=edges,
+            material=p3.LineBasicMaterial(color='#000000'),
+            position=tuple(center),
+        )
 
     def _make_axis_tick(self, string, position, color="black", size=1.0):
         """
         Make a text-based sprite for axis tick
         """
-        sm = p3.SpriteMaterial(map=p3.TextTexture(string=string,
-                                                  color=color,
-                                                  size=300,
-                                                  squareTexture=True),
-                               transparent=True)
+        sm = p3.SpriteMaterial(
+            map=p3.TextTexture(
+                string=string, color=color, size=300, squareTexture=True
+            ),
+            transparent=True,
+        )
         return p3.Sprite(material=sm, position=position, scale=[size, size, size])
 
     def _generate_axis_ticks_and_labels(self, *, limits, box_size, components):
@@ -261,20 +296,31 @@ class PlotFigure3d(Displayable):
                 if lims[x][0] <= tick <= lims[x][1]:
                     tick_pos = iden[axis] * tick + get_offsets(x, 0)
                     ticks_and_labels.add(
-                        self._make_axis_tick(string=value_to_string(tick, precision=1),
-                                             position=tick_pos.tolist(),
-                                             size=self.tick_size))
+                        self._make_axis_tick(
+                            string=value_to_string(tick, precision=1),
+                            position=tick_pos.tolist(),
+                            size=self.tick_size,
+                        )
+                    )
             coord = components[dim]
-            axis_label = f'{dim} [{coord.unit}]' if self.axlabels[
-                x] is None else self.axlabels[x]
+            axis_label = (
+                f'{dim} [{coord.unit}]'
+                if self.axlabels[x] is None
+                else self.axlabels[x]
+            )
             # Offset labels 5% beyond axis ticks to reduce overlap
             delta = 0.05
             ticks_and_labels.add(
-                self._make_axis_tick(string=axis_label,
-                                     position=(iden[axis] * 0.5 * np.sum(limits[x]) +
-                                               (1.0 + delta) * get_offsets(x, 0) -
-                                               delta * get_offsets(x, 1)).tolist(),
-                                     size=self.tick_size * 0.3 * len(axis_label)))
+                self._make_axis_tick(
+                    string=axis_label,
+                    position=(
+                        iden[axis] * 0.5 * np.sum(limits[x])
+                        + (1.0 + delta) * get_offsets(x, 0)
+                        - delta * get_offsets(x, 1)
+                    ).tolist(),
+                    size=self.tick_size * 0.3 * len(axis_label),
+                )
+            )
 
         return ticks_and_labels
 
@@ -314,9 +360,13 @@ class PlotFigure3d(Displayable):
         """
         self.cut_surface_indices = cut_surface_indices
         self.point_clouds["cut"] = self._create_point_cloud(
-            self.point_cloud_positions[cut_surface_indices])
-        self.point_clouds["cut"].geometry.attributes["color"].array = self.point_clouds[
-            "main"].geometry.attributes["color"].array[self.cut_surface_indices]
+            self.point_cloud_positions[cut_surface_indices]
+        )
+        self.point_clouds["cut"].geometry.attributes["color"].array = (
+            self.point_clouds["main"]
+            .geometry.attributes["color"]
+            .array[self.cut_surface_indices]
+        )
         self.scene.add(self.point_clouds["cut"])
 
     def toggle_mask(self, *args, **kwargs):
@@ -336,15 +386,17 @@ class PlotFigure3d(Displayable):
         if 'mask' in new_values:
             # We change the colors of the points in-place where masks are True
             masks_inds = np.where(new_values['mask'].values)
-            masks_colors = self.masks_scalar_map.to_rgba(
-                array.values[masks_inds])[..., :3]
+            masks_colors = self.masks_scalar_map.to_rgba(array.values[masks_inds])[
+                ..., :3
+            ]
             colors[masks_inds] = masks_colors
 
         colors = colors.astype('float32')
         self.point_clouds["main"].geometry.attributes["color"].array = colors
         if "cut" in self.point_clouds:
             self.point_clouds["cut"].geometry.attributes["color"].array = colors[
-                self.cut_surface_indices]
+                self.cut_surface_indices
+            ]
 
     def rescale_to_data(self, vmin=None, vmax=None):
         """
@@ -363,13 +415,16 @@ class PlotFigure3d(Displayable):
         re-appearing further down the notebook.
         """
         height_inches = self.figsize[1] / config['plot']['dpi']
-        cbar_fig = plt.figure(figsize=(height_inches * 0.2, height_inches),
-                              dpi=config['plot']['dpi'])
+        cbar_fig = plt.figure(
+            figsize=(height_inches * 0.2, height_inches), dpi=config['plot']['dpi']
+        )
         cbar_ax = cbar_fig.add_axes([0.05, 0.02, 0.25, 0.94])
-        _ = ColorbarBase(cbar_ax,
-                         cmap=self.scalar_map.get_cmap(),
-                         norm=self.scalar_map.norm,
-                         extend=self.extend)
+        _ = ColorbarBase(
+            cbar_ax,
+            cmap=self.scalar_map.get_cmap(),
+            norm=self.scalar_map.norm,
+            extend=self.extend,
+        )
         if not isinstance(self.scalar_map.norm, LogNorm):
             _.formatter.set_useOffset(False)
         cbar_ax.set_ylabel(self._unit)
@@ -420,8 +475,11 @@ class PlotFigure3d(Displayable):
         """
         Toggle color normalization when toolbar button is clicked.
         """
-        new_norm = LogNorm(vmin=vmin, vmax=vmax) if norm == "log" else Normalize(
-            vmin=vmin, vmax=vmax)
+        new_norm = (
+            LogNorm(vmin=vmin, vmax=vmax)
+            if norm == "log"
+            else Normalize(vmin=vmin, vmax=vmax)
+        )
         self.scalar_map.set_norm(new_norm)
         self.masks_scalar_map.set_norm(new_norm)
         self._update_colorbar()

@@ -13,6 +13,7 @@ def serialize(var: Union[Variable, DataArray, Dataset]) -> Tuple[Dict, List[byte
     import h5py
 
     from .io.hdf5 import HDF5IO
+
     header = {}
     buf = BytesIO()
     with h5py.File(buf, "w") as f:
@@ -21,19 +22,22 @@ def serialize(var: Union[Variable, DataArray, Dataset]) -> Tuple[Dict, List[byte
     return header, frames
 
 
-def deserialize(header: Dict,
-                frames: List[bytes]) -> Union[Variable, DataArray, Dataset]:
+def deserialize(
+    header: Dict, frames: List[bytes]
+) -> Union[Variable, DataArray, Dataset]:
     """Deserialize Scipp object."""
     from io import BytesIO
 
     import h5py
 
     from .io.hdf5 import HDF5IO
+
     return HDF5IO.read(h5py.File(BytesIO(frames[0]), "r"))
 
 
 try:
     from distributed.protocol import register_serialization
+
     register_serialization(Variable, serialize, deserialize)
     register_serialization(DataArray, serialize, deserialize)
     register_serialization(Dataset, serialize, deserialize)

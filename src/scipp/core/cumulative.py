@@ -10,9 +10,11 @@ from ._cpp_wrapper_util import call_func as _call_cpp_func
 from .concepts import transform_data
 
 
-def cumsum(a: VariableLikeType,
-           dim: Optional[str] = None,
-           mode: Literal['exclusive', 'inclusive'] = 'inclusive') -> VariableLikeType:
+def cumsum(
+    a: VariableLikeType,
+    dim: Optional[str] = None,
+    mode: Literal['exclusive', 'inclusive'] = 'inclusive',
+) -> VariableLikeType:
     """Return the cumulative sum along the specified dimension.
 
     See :py:func:`scipp.sum` on how rounding errors for float32 inputs are handled.

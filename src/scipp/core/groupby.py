@@ -12,7 +12,7 @@ def groupby(
     /,
     group: Union[_cpp.Variable, str],
     *,
-    bins: Optional[_cpp.Variable] = None
+    bins: Optional[_cpp.Variable] = None,
 ) -> Union[_cpp.GroupByDataArray, _cpp.GroupByDataset]:
     """Group dataset or data array based on values of specified labels.
 

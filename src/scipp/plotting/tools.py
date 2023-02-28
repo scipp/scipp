@@ -52,6 +52,7 @@ def get_colormap(name):
     Return a matplotlib colormap.
     """
     import matplotlib
+
     if hasattr(matplotlib, 'colormaps'):
         # This exists since matplotlib v3.5
         return matplotlib.colormaps[name]
@@ -86,17 +87,22 @@ def parse_params(params=None, defaults=None, globs=None, array=None):
     elif parsed["norm"] == "linear":
         norm = Normalize
     else:
-        raise RuntimeError("Unknown norm. Expected 'linear' or 'log', "
-                           "got {}.".format(parsed["norm"]))
+        raise RuntimeError(
+            "Unknown norm. Expected 'linear' or 'log', "
+            "got {}.".format(parsed["norm"])
+        )
     vmin = parsed["vmin"]
     vmax = parsed["vmax"]
-    parsed["norm"] = norm(vmin=vmin.value if vmin is not None else None,
-                          vmax=vmax.value if vmax is not None else None)
+    parsed["norm"] = norm(
+        vmin=vmin.value if vmin is not None else None,
+        vmax=vmax.value if vmax is not None else None,
+    )
 
     # Convert color into custom colormap
     if parsed["color"] is not None:
         parsed["cmap"] = LinearSegmentedColormap.from_list(
-            "tmp", [parsed["color"], parsed["color"]])
+            "tmp", [parsed["color"], parsed["color"]]
+        )
     else:
         parsed["cmap"] = copy(get_colormap(parsed["cmap"]))
 
@@ -128,12 +134,13 @@ def find_log_limits(x):
     and 1.0e+30 and include only bins that are non-zero.
     """
     from .. import flatten, ones
+
     volume = np.product(x.shape)
     pixel = flatten(values(x.astype(DType.float64)), to='pixel')
     weights = ones(dims=['pixel'], shape=[volume], unit='counts')
-    hist = DataArray(data=weights, coords={
-        'order': pixel
-    }).hist(order=geomspace('order', 1e-30, 1e30, num=61, unit=x.unit))
+    hist = DataArray(data=weights, coords={'order': pixel}).hist(
+        order=geomspace('order', 1e-30, 1e30, num=61, unit=x.unit)
+    )
     # Find the first and the last non-zero bins
     inds = np.nonzero((hist.data > scalar(0.0, unit=units.counts)).values)
     ar = np.arange(hist.data.shape[0])[inds]
@@ -166,7 +173,7 @@ def find_linear_limits(x):
     finite_max = np.amax(finite_vals)
     return [
         scalar(finite_min, unit=x.unit, dtype='float64'),
-        scalar(finite_max, unit=x.unit, dtype='float64')
+        scalar(finite_max, unit=x.unit, dtype='float64'),
     ]
 
 
@@ -209,6 +216,7 @@ def fig_to_pngbytes(fig):
     cells further down the notebook.
     """
     import matplotlib.pyplot as plt
+
     buf = io.BytesIO()
     fig.savefig(buf, format='png')
     plt.close(fig)
@@ -228,6 +236,7 @@ def is_static():
     Returns `True` if the `inline` matplotlib backend is currently in use.
     """
     from matplotlib.pyplot import get_backend
+
     return get_backend().lower().endswith('inline')
 
 
@@ -238,6 +247,7 @@ def is_sphinx_build():
     if not running_in_jupyter():
         return False
     from IPython import get_ipython
+
     ipy = get_ipython()
     cfg = ipy.config
     meta = cfg["Session"]["metadata"]

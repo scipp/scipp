@@ -38,9 +38,9 @@ def islinspace(x: Variable, dim: str = None) -> Variable:
         return _call_cpp_func(_cpp.islinspace, x, dim)
 
 
-def issorted(x: Variable,
-             dim: str,
-             order: Literal['ascending', 'descending'] = 'ascending') -> Variable:
+def issorted(
+    x: Variable, dim: str, order: Literal['ascending', 'descending'] = 'ascending'
+) -> Variable:
     """Check if the values of a variable are sorted.
 
     - If ``order`` is 'ascending',
@@ -71,9 +71,9 @@ def issorted(x: Variable,
     return _call_cpp_func(_cpp.issorted, x, dim, order)
 
 
-def allsorted(x: Variable,
-              dim: str,
-              order: Literal['ascending', 'descending'] = 'ascending') -> bool:
+def allsorted(
+    x: Variable, dim: str, order: Literal['ascending', 'descending'] = 'ascending'
+) -> bool:
     """Check if all values of a variable are sorted.
 
     - If ``order`` is 'ascending',
@@ -103,9 +103,11 @@ def allsorted(x: Variable,
     return _call_cpp_func(_cpp.allsorted, x, dim, order)
 
 
-def sort(x: VariableLikeType,
-         key: Union[str, Variable],
-         order: Literal['ascending', 'descending'] = 'ascending') -> VariableLikeType:
+def sort(
+    x: VariableLikeType,
+    key: Union[str, Variable],
+    order: Literal['ascending', 'descending'] = 'ascending',
+) -> VariableLikeType:
     """Sort variable along a dimension by a sort key or dimension label.
 
     - If ``order`` is 'ascending',
@@ -219,11 +221,12 @@ def where(condition: Variable, x: Variable, y: Variable) -> Variable:
 
 
 def to(
-        var: VariableLikeType,  # noqa
-        *,
-        unit: Optional[Union[_cpp.Unit, str]] = None,
-        dtype: Optional[Any] = None,
-        copy: bool = True) -> VariableLikeType:
+    var: VariableLikeType,  # noqa
+    *,
+    unit: Optional[Union[_cpp.Unit, str]] = None,
+    dtype: Optional[Any] = None,
+    copy: bool = True,
+) -> VariableLikeType:
     """Converts a Variable or DataArray to a different dtype and/or a different unit.
 
     If the dtype and unit are both unchanged and ``copy`` is `False`,
@@ -339,6 +342,7 @@ def _generic_identical(a: Any, b: Any) -> bool:
         return identical(a, b)
     except TypeError:
         from numpy import array_equal
+
         try:
             return array_equal(a, b)
         except TypeError:

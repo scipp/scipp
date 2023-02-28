@@ -7,8 +7,13 @@ import types
 from ._scipp import core
 
 _dict_likes = [
-    core.Dataset, core.Coords, core.Masks, core._BinsMeta, core._BinsCoords,
-    core._BinsMasks, core._BinsAttrs
+    core.Dataset,
+    core.Coords,
+    core.Masks,
+    core._BinsMeta,
+    core._BinsCoords,
+    core._BinsMasks,
+    core._BinsAttrs,
 ]
 
 
@@ -25,8 +30,9 @@ def _get(self, key, default=None):
 def bind_get():
     for cls in _dict_likes:
         method = _convert_to_method(name='get', func=_get, abbreviate_doc=False)
-        method.__doc__ = "Get the value associated with the " \
-                         "provided key or the default value."
+        method.__doc__ = (
+            "Get the value associated with the " "provided key or the default value."
+        )
         cls.get = method
 
 
@@ -58,7 +64,6 @@ def bind_conversion_to_builtin(cls):
 
 
 class _NoDefaultType:
-
     def __repr__(self):
         return 'NotSpecified'
 
@@ -88,13 +93,17 @@ def bind_functions_as_methods(cls, namespace, func_names):
 
 
 def bind_function_as_method(*, cls, name, func, abbreviate_doc=True):
-    setattr(cls, name,
-            _convert_to_method(name=name, func=func, abbreviate_doc=abbreviate_doc))
+    setattr(
+        cls,
+        name,
+        _convert_to_method(name=name, func=func, abbreviate_doc=abbreviate_doc),
+    )
 
 
 def _convert_to_method(*, name, func, abbreviate_doc=True):
-    method = types.FunctionType(func.__code__, func.__globals__, name,
-                                func.__defaults__, func.__closure__)
+    method = types.FunctionType(
+        func.__code__, func.__globals__, name, func.__defaults__, func.__closure__
+    )
     method.__kwdefaults__ = func.__kwdefaults__
     method.__annotations__ = func.__annotations__
     if func.__doc__ is not None:
@@ -104,8 +113,10 @@ def _convert_to_method(*, name, func, abbreviate_doc=True):
         # Line feeds are replaced because they mess with the
         # reST parser of autosummary.
         if abbreviate_doc:
-            method.__doc__ = (func.__doc__.split('\n\n', 1)[0].replace('\n', ' ') +
-                              f'\n\n:seealso: Details in :py:meth:`scipp.{name}`')
+            method.__doc__ = (
+                func.__doc__.split('\n\n', 1)[0].replace('\n', ' ')
+                + f'\n\n:seealso: Details in :py:meth:`scipp.{name}`'
+            )
         else:
             method.__doc__ = func.__doc__
     if hasattr(func, '__wrapped__'):

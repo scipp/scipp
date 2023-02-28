@@ -44,8 +44,9 @@ def test_numpy_self_assign_2d_flip_second():
 
 def test_numpy_self_assign_shift_2d_flip_both():
     var = sc.Variable(dims=['y', 'x'], values=np.arange(9).reshape(3, 3))
-    expected = sc.Variable(dims=['y', 'x'],
-                           values=np.array([[0, 1, 2], [3, 4, 3], [6, 1, 0]]))
+    expected = sc.Variable(
+        dims=['y', 'x'], values=np.array([[0, 1, 2], [3, 4, 3], [6, 1, 0]])
+    )
     var['y', 1:3]['x', 1:3].values = np.flip(var['y', 0:2]['x', 0:2].values)
     assert sc.identical(var, expected)
 
@@ -55,16 +56,18 @@ def test_numpy_self_assign_shift_2d_flip_first():
     # backwards from "begin", but away from "end" since the outer dim has a
     # positive stride, so a naive range check based does not catch this case.
     var = sc.Variable(dims=['y', 'x'], values=np.arange(9).reshape(3, 3))
-    expected = sc.Variable(dims=['y', 'x'],
-                           values=np.array([[0, 1, 2], [3, 3, 4], [6, 0, 1]]))
+    expected = sc.Variable(
+        dims=['y', 'x'], values=np.array([[0, 1, 2], [3, 3, 4], [6, 0, 1]])
+    )
     var['y', 1:3]['x', 1:3].values = np.flip(var['y', 0:2]['x', 0:2].values, axis=0)
     assert sc.identical(var, expected)
 
 
 def test_numpy_self_assign_shift_2d_flip_second():
     var = sc.Variable(dims=['y', 'x'], values=np.arange(9).reshape(3, 3))
-    expected = sc.Variable(dims=['y', 'x'],
-                           values=np.array([[0, 1, 2], [3, 1, 0], [6, 4, 3]]))
+    expected = sc.Variable(
+        dims=['y', 'x'], values=np.array([[0, 1, 2], [3, 1, 0], [6, 4, 3]])
+    )
     var['y', 1:3]['x', 1:3].values = np.flip(var['y', 0:2]['x', 0:2].values, axis=1)
     assert sc.identical(var, expected)
 

@@ -7,7 +7,7 @@ def __rmul(self, value):
 
 
 def __rtruediv(self, value):
-    return scalar(value, unit=self**(-1))
+    return scalar(value, unit=self ** (-1))
 
 
 # add magic python methods to Unit class

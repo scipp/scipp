@@ -59,23 +59,28 @@ def _input_to_data_array(item, all_keys, key=None):
     elif isinstance(item, np.ndarray):
         if key is None:
             key = str(type(item))
-        to_plot[_make_plot_key(
-            key, all_keys)] = sc.DataArray(data=_ndarray_to_variable(item))
+        to_plot[_make_plot_key(key, all_keys)] = sc.DataArray(
+            data=_ndarray_to_variable(item)
+        )
     else:
-        raise RuntimeError("plot: Unknown input type: {}. Allowed inputs are "
-                           "a Dataset, a DataArray, a Variable (and their "
-                           "respective views), a numpy ndarray, and a dict of "
-                           "Variables, DataArrays or ndarrays".format(type(item)))
+        raise RuntimeError(
+            "plot: Unknown input type: {}. Allowed inputs are "
+            "a Dataset, a DataArray, a Variable (and their "
+            "respective views), a numpy ndarray, and a dict of "
+            "Variables, DataArrays or ndarrays".format(type(item))
+        )
     return to_plot
 
 
-def plot(scipp_obj,
-         projection=None,
-         color=None,
-         marker=None,
-         linestyle=None,
-         linewidth=None,
-         **kwargs):
+def plot(
+    scipp_obj,
+    projection=None,
+    color=None,
+    marker=None,
+    linestyle=None,
+    linewidth=None,
+    **kwargs,
+):
     """
     Wrapper function to plot a scipp object.
 
@@ -102,11 +107,13 @@ def plot(scipp_obj,
     if isinstance(scipp_obj, dict):
         try:
             inventory.update(
-                _input_to_data_array(from_dict(scipp_obj), all_keys=inventory.keys()))
+                _input_to_data_array(from_dict(scipp_obj), all_keys=inventory.keys())
+            )
         except Exception:  # noqa
             for key, item in scipp_obj.items():
                 inventory.update(
-                    _input_to_data_array(item, all_keys=inventory.keys(), key=key))
+                    _input_to_data_array(item, all_keys=inventory.keys(), key=key)
+                )
     else:
         inventory.update(_input_to_data_array(scipp_obj, all_keys=inventory.keys()))
 
@@ -115,7 +122,7 @@ def plot(scipp_obj,
         "color": color,
         "marker": marker,
         "linestyle": linestyle,
-        "linewidth": linewidth
+        "linewidth": linewidth,
     }
 
     # Counter for 1d/event data
@@ -156,13 +163,14 @@ def plot(scipp_obj,
                 else:
                     mpl_line_params[n] = p
                 if isinstance(mpl_line_params[n], int):
-                    mpl_line_params[n] = get_line_param(name=n,
-                                                        index=mpl_line_params[n])
+                    mpl_line_params[n] = get_line_param(
+                        name=n, index=mpl_line_params[n]
+                    )
 
             if key not in tobeplotted.keys():
-                tobeplotted[key] = dict(ndims=ndims,
-                                        scipp_obj_dict=dict(),
-                                        mpl_line_params=dict())
+                tobeplotted[key] = dict(
+                    ndims=ndims, scipp_obj_dict=dict(), mpl_line_params=dict()
+                )
                 for n in mpl_line_params.keys():
                     tobeplotted[key]["mpl_line_params"][n] = {}
             tobeplotted[key]["scipp_obj_dict"][name] = inventory[name]
@@ -172,17 +180,21 @@ def plot(scipp_obj,
     # Plot all the subsets
     output = PlotDict()
     for key, val in tobeplotted.items():
-        output._items[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
-                                      ndim=val["ndims"],
-                                      projection=projection,
-                                      mpl_line_params=val["mpl_line_params"],
-                                      **kwargs)
+        output._items[key] = dispatch(
+            scipp_obj_dict=val["scipp_obj_dict"],
+            ndim=val["ndims"],
+            projection=projection,
+            mpl_line_params=val["mpl_line_params"],
+            **kwargs,
+        )
 
     if len(output) > 1:
         return output
     elif len(output) > 0:
         return output._items[list(output.keys())[0]]
     else:
-        raise ValueError("Input contains nothing that can be plotted. "
-                         "Input may be of dtype vector or string, "
-                         f"or may have zero dimensions:\n{scipp_obj}")
+        raise ValueError(
+            "Input contains nothing that can be plotted. "
+            "Input may be of dtype vector or string, "
+            f"or may have zero dimensions:\n{scipp_obj}"
+        )

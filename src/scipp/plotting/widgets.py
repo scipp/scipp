@@ -16,8 +16,8 @@ class PlotWidgets(Displayable):
     """
 
     def __init__(self, *, dims, formatters, ndim, dim_label_map, masks, sizes):
-
         import ipywidgets as ipw
+
         self._dims = dims
         self._labels = dim_label_map
         self._controller = None
@@ -32,11 +32,11 @@ class PlotWidgets(Displayable):
         # all_masks_button: button to hide/show all masks in a single click
         self.all_masks_button = None
 
-        self._slider_dims = list(dims[:len(dims) - ndim])
+        self._slider_dims = list(dims[: len(dims) - ndim])
 
-        self.profile_button = ipw.Button(description="Profile",
-                                         button_style="",
-                                         layout={"width": "initial"})
+        self.profile_button = ipw.Button(
+            description="Profile", button_style="", layout={"width": "initial"}
+        )
         # TODO: hide the profile button for 3D plots. Renable this once
         # profile picking is supported on 3D plots
         if ndim == 3:
@@ -51,39 +51,43 @@ class PlotWidgets(Displayable):
                     multid_coord = dim
 
         for dim in dims:
-            slider = ipw.IntSlider(step=1,
-                                   continuous_update=True,
-                                   readout=False,
-                                   layout={"width": "200px"})
+            slider = ipw.IntSlider(
+                step=1, continuous_update=True, readout=False, layout={"width": "200px"}
+            )
 
-            continuous_update = ipw.Checkbox(value=True,
-                                             description="Continuous update",
-                                             indent=False,
-                                             layout={"width": "20px"})
+            continuous_update = ipw.Checkbox(
+                value=True,
+                description="Continuous update",
+                indent=False,
+                layout={"width": "20px"},
+            )
             ipw.jslink((continuous_update, 'value'), (slider, 'continuous_update'))
 
-            thickness_slider = ipw.IntSlider(min=1,
-                                             step=1,
-                                             description="Thickness",
-                                             continuous_update=False,
-                                             readout=False,
-                                             layout={'width': "180px"},
-                                             style={'description_width': 'initial'})
+            thickness_slider = ipw.IntSlider(
+                min=1,
+                step=1,
+                description="Thickness",
+                continuous_update=False,
+                readout=False,
+                layout={'width': "180px"},
+                style={'description_width': 'initial'},
+            )
             # If there is a multid coord, we only allow slices of thickness 1
             if multid_coord is not None:
                 thickness_slider.layout.display = 'none'
 
             slider_readout = ipw.Label()
 
-            unit = ipw.Label(value=self._formatters[dim]['unit'],
-                             layout={"width": "60px"})
+            unit = ipw.Label(
+                value=self._formatters[dim]['unit'], layout={"width": "60px"}
+            )
 
             self._controls[dim] = {
                 'continuous': continuous_update,
                 'slider': slider,
                 'value': slider_readout,
                 'unit': unit,
-                'thickness': thickness_slider
+                'thickness': thickness_slider,
             }
 
         first = True
@@ -94,16 +98,22 @@ class PlotWidgets(Displayable):
                 self.dim_buttons[index][dim_] = ipw.Button(
                     description=dim_label_map[dim_],
                     button_style='info' if dim == dim_ else '',
-                    disabled=((dim != dim_) and (dim_ in self._slider_dims)
-                              or (dim_ == multid_coord)),
-                    layout={"width": 'initial'})
+                    disabled=(
+                        (dim != dim_)
+                        and (dim_ in self._slider_dims)
+                        or (dim_ == multid_coord)
+                    ),
+                    layout={"width": 'initial'},
+                )
                 # Add observer to buttons
                 self.dim_buttons[index][dim_].on_click(
-                    self.update_buttons(index, dim=dim_))
+                    self.update_buttons(index, dim=dim_)
+                )
 
             # Add the row of sliders + buttons
             row = list(self.dim_buttons[index].values()) + list(
-                self._controls[dim].values())
+                self._controls[dim].values()
+            )
             if first:
                 first = False
                 row.append(self.profile_button)
@@ -117,6 +127,7 @@ class PlotWidgets(Displayable):
         Gather all widgets in a single container box.
         """
         import ipywidgets as ipw
+
         return ipw.VBox(self.container)
 
     def _add_masks_controls(self, masks):
@@ -125,6 +136,7 @@ class PlotWidgets(Displayable):
         toggle button.
         """
         import ipywidgets as ipw
+
         masks_found = False
         self.mask_checkboxes = {}
         for name in masks:
@@ -136,7 +148,8 @@ class PlotWidgets(Displayable):
                         value=True,
                         description="{}:{}".format(escape(name), escape(key)),
                         indent=False,
-                        layout={"width": "initial"})
+                        layout={"width": "initial"},
+                    )
                     self.mask_checkboxes[name][key].mask_group = name
                     self.mask_checkboxes[name][key].mask_name = key
 
@@ -144,17 +157,18 @@ class PlotWidgets(Displayable):
             self.masks_lab = ipw.Label(value="Masks:")
 
             # Add a master button to control all masks in one go
-            self.all_masks_button = ipw.ToggleButton(value=True,
-                                                     description="Hide all",
-                                                     disabled=False,
-                                                     button_style="",
-                                                     layout={"width": "initial"})
+            self.all_masks_button = ipw.ToggleButton(
+                value=True,
+                description="Hide all",
+                disabled=False,
+                button_style="",
+                layout={"width": "initial"},
+            )
             self.all_masks_button.observe(self.toggle_all_masks, names="value")
 
-            box_layout = ipw.Layout(display='flex',
-                                    flex_flow='row wrap',
-                                    align_items='stretch',
-                                    width='70%')
+            box_layout = ipw.Layout(
+                display='flex', flex_flow='row wrap', align_items='stretch', width='70%'
+            )
             mask_list = []
             for name in self.mask_checkboxes:
                 for cbox in self.mask_checkboxes[name].values():
@@ -180,8 +194,11 @@ class PlotWidgets(Displayable):
             # Put controls for new dim into layout
             children = self.container[index].children
             pos = len(self._dims)
-            children = children[:pos] + tuple(
-                self._controls[dim].values()) + children[pos + 5:]
+            children = (
+                children[:pos]
+                + tuple(self._controls[dim].values())
+                + children[pos + 5 :]
+            )
             self.container[index].children = children
 
             self.dim_buttons[index][old_dim].button_style = ""
@@ -224,10 +241,9 @@ class PlotWidgets(Displayable):
         """
 
         def _update(change=None):
-            self.update_slider_range(dim,
-                                     change["new"],
-                                     change["owner"].max - 1,
-                                     set_value=False)
+            self.update_slider_range(
+                dim, change["new"], change["owner"].max - 1, set_value=False
+            )
             self._controller.update_data()
 
         return _update
@@ -252,8 +268,7 @@ class PlotWidgets(Displayable):
         for name in self.mask_checkboxes:
             for key in self.mask_checkboxes[name]:
                 self.mask_checkboxes[name][key].value = change["new"]
-        change["owner"].description = "Hide all" if change["new"] else \
-            "Show all"
+        change["owner"].description = "Hide all" if change["new"] else "Show all"
         return
 
     def connect(self, controller):
@@ -263,16 +278,19 @@ class PlotWidgets(Displayable):
         """
         self._controller = controller
         self.profile_button.on_click(
-            partial(controller.toggle_profile_view, dims=self._slider_dims))
+            partial(controller.toggle_profile_view, dims=self._slider_dims)
+        )
         for dim in self._controls:
             self._controls[dim]['slider'].observe(self._slider_moved, names="value")
-            self._controls[dim]['thickness'].observe(self.update_thickness(dim),
-                                                     names="value")
+            self._controls[dim]['thickness'].observe(
+                self.update_thickness(dim), names="value"
+            )
 
         for name in self.mask_checkboxes:
             for m in self.mask_checkboxes[name]:
-                self.mask_checkboxes[name][m].observe(controller.toggle_mask,
-                                                      names="value")
+                self.mask_checkboxes[name][m].observe(
+                    controller.toggle_mask, names="value"
+                )
 
     def initialize(self, sizes):
         """
@@ -321,8 +339,7 @@ class PlotWidgets(Displayable):
         mask_info = {}
         for name in self.mask_checkboxes:
             mask_info[name] = {
-                m: chbx.value
-                for m, chbx in self.mask_checkboxes[name].items()
+                m: chbx.value for m, chbx in self.mask_checkboxes[name].items()
             }
         return mask_info
 

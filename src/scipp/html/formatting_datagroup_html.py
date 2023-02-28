@@ -11,8 +11,13 @@ from ..core.cpp_classes import DataArray, Dataset, Variable
 from ..core.data_group import DataGroup
 from ..units import dimensionless
 from .formatting_html import escape, inline_variable_repr
-from .resources import load_atomic_row_tpl, load_collapsible_row_tpl, \
-    load_dg_detail_list_tpl, load_dg_repr_tpl, load_dg_style
+from .resources import (
+    load_atomic_row_tpl,
+    load_collapsible_row_tpl,
+    load_dg_detail_list_tpl,
+    load_dg_repr_tpl,
+    load_dg_style,
+)
 
 
 def _format_shape(var: Union[Variable, DataArray, Dataset, DataGroup], br_at=30) -> str:
@@ -92,14 +97,16 @@ def _summarize_atomic_variable(var, name: str, depth: int = 0) -> str:
         preview = _format_atomic_value(var, maxidx=30)
 
     html_tpl = load_atomic_row_tpl()
-    return Template(html_tpl).substitute(depth=depth,
-                                         name=escape(name),
-                                         parent=escape(parent_obj_str),
-                                         objtype=escape(objtype_str),
-                                         shape_repr=shape_repr,
-                                         dtype=escape(dtype_str),
-                                         unit=escape(unit),
-                                         preview=escape(preview))
+    return Template(html_tpl).substitute(
+        depth=depth,
+        name=escape(name),
+        parent=escape(parent_obj_str),
+        objtype=escape(objtype_str),
+        shape_repr=shape_repr,
+        dtype=escape(dtype_str),
+        unit=escape(unit),
+        preview=escape(preview),
+    )
 
 
 def _collapsible_summary(var: DataGroup, name: str, name_spaces: list) -> str:
@@ -111,14 +118,16 @@ def _collapsible_summary(var: DataGroup, name: str, name_spaces: list) -> str:
     subsection = _datagroup_detail(var, name_spaces + [name])
     html_tpl = load_collapsible_row_tpl()
 
-    return Template(html_tpl).substitute(name=escape(str(name)),
-                                         parent=escape(parent_type),
-                                         objtype=escape(objtype),
-                                         shape_repr=shape_repr,
-                                         summary_section_id=checkbox_id,
-                                         depth=depth,
-                                         checkbox_status='',
-                                         subsection=subsection)
+    return Template(html_tpl).substitute(
+        name=escape(str(name)),
+        parent=escape(parent_type),
+        objtype=escape(objtype),
+        shape_repr=shape_repr,
+        summary_section_id=checkbox_id,
+        depth=depth,
+        checkbox_status='',
+        subsection=subsection,
+    )
 
 
 def _datagroup_detail(dg: DataGroup, name_spaces: list = None) -> str:
@@ -131,7 +140,8 @@ def _datagroup_detail(dg: DataGroup, name_spaces: list = None) -> str:
             summary_rows.append(collapsible_row)
         else:
             summary_rows.append(
-                _summarize_atomic_variable(item, name, depth=len(name_spaces)))
+                _summarize_atomic_variable(item, name, depth=len(name_spaces))
+            )
 
     dg_detail_tpl = Template(load_dg_detail_list_tpl())
     return dg_detail_tpl.substitute(summary_rows=''.join(summary_rows))
@@ -144,9 +154,11 @@ def datagroup_repr(dg: DataGroup) -> str:
     header_id = "datagroup-view-" + str(uuid.uuid4())
     details = _datagroup_detail(dg)
     html = Template(load_dg_repr_tpl())
-    return html.substitute(style_sheet=load_dg_style(),
-                           header_id=header_id,
-                           checkbox_status=checkbox_status,
-                           obj_type=obj_type,
-                           shape_repr=_format_shape(dg, br_at=200),
-                           details=details)
+    return html.substitute(
+        style_sheet=load_dg_style(),
+        header_id=header_id,
+        checkbox_status=checkbox_status,
+        obj_type=obj_type,
+        shape_repr=_format_shape(dg, br_at=200),
+        details=details,
+    )

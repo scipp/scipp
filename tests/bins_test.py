@@ -21,7 +21,7 @@ def test_bins_default_begin_end():
     assert var.dims == data.dims
     assert var.shape == data.shape
     for i in range(4):
-        assert sc.identical(var['x', i].value, data['x', i:i + 1])
+        assert sc.identical(var['x', i].value, data['x', i : i + 1])
 
 
 def test_bins_default_end_uses_begin_as_offsets():
@@ -43,10 +43,9 @@ def test_bins_fail_only_end():
 
 def test_bins_constituents():
     var = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
-    data = sc.DataArray(data=var,
-                        coords={'coord': var},
-                        masks={'mask': var},
-                        attrs={'attr': var})
+    data = sc.DataArray(
+        data=var, coords={'coord': var}, masks={'mask': var}, attrs={'attr': var}
+    )
     begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64, unit=None)
     end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.DType.int64, unit=None)
     binned = sc.bins(begin=begin, end=end, dim='x', data=data)
@@ -95,10 +94,9 @@ def test_bins_raises_when_DataGroup_given():
 
 def test_bins_of_transpose():
     data = sc.Variable(dims=['row'], values=[1, 2, 3, 4])
-    begin = sc.Variable(dims=['x', 'y'],
-                        values=[[0, 1], [2, 3]],
-                        dtype=sc.DType.int64,
-                        unit=None)
+    begin = sc.Variable(
+        dims=['x', 'y'], values=[[0, 1], [2, 3]], dtype=sc.DType.int64, unit=None
+    )
     end = begin + sc.index(1)
     var = sc.bins(begin=begin, end=end, dim='row', data=data)
     assert sc.identical(sc.bins(**var.transpose().bins.constituents), var.transpose())
@@ -106,10 +104,12 @@ def test_bins_of_transpose():
 
 def make_binned():
     col = sc.Variable(dims=['event'], values=[1, 2, 3, 4])
-    table = sc.DataArray(data=col,
-                         coords={'time': col * 2.2},
-                         attrs={'attr': col * 3.3},
-                         masks={'mask': col == col})
+    table = sc.DataArray(
+        data=col,
+        coords={'time': col * 2.2},
+        attrs={'attr': col * 3.3},
+        masks={'mask': col == col},
+    )
     begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64, unit=None)
     end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.DType.int64, unit=None)
     return sc.bins(begin=begin, end=end, dim='event', data=table)
@@ -177,53 +177,51 @@ def test_bins_arithmetic():
     var = sc.Variable(dims=['event'], values=[1.0, 2.0, 3.0, 4.0])
     table = sc.DataArray(var, coords={'x': var})
     binned = table.bin(x=sc.array(dims=['x'], values=[1.0, 5.0]))
-    hist = sc.DataArray(data=sc.Variable(dims=['x'], values=[1.0, 2.0]),
-                        coords={'x': sc.Variable(dims=['x'], values=[1.0, 3.0, 5.0])})
+    hist = sc.DataArray(
+        data=sc.Variable(dims=['x'], values=[1.0, 2.0]),
+        coords={'x': sc.Variable(dims=['x'], values=[1.0, 3.0, 5.0])},
+    )
     binned.bins *= sc.lookup(func=hist, dim='x')
-    assert sc.identical(binned.bins.constituents['data'].data,
-                        sc.Variable(dims=['event'], values=[1.0, 2.0, 6.0, 8.0]))
+    assert sc.identical(
+        binned.bins.constituents['data'].data,
+        sc.Variable(dims=['event'], values=[1.0, 2.0, 6.0, 8.0]),
+    )
 
 
 def test_bins_sum_with_masked_buffer():
     N = 5
     values = np.ones(N)
-    data = sc.DataArray(data=sc.Variable(dims=['position'],
-                                         unit=sc.units.counts,
-                                         values=values,
-                                         variances=values),
-                        coords={
-                            'position':
-                            sc.Variable(dims=['position'],
-                                        values=['site-{}'.format(i) for i in range(N)]),
-                            'x':
-                            sc.Variable(dims=['position'],
-                                        unit=sc.units.m,
-                                        values=[0.2] * 5),
-                            'y':
-                            sc.Variable(dims=['position'],
-                                        unit=sc.units.m,
-                                        values=[0.2] * 5)
-                        },
-                        masks={
-                            'test-mask':
-                            sc.Variable(dims=['position'],
-                                        values=[True, False, True, False, True])
-                        })
+    data = sc.DataArray(
+        data=sc.Variable(
+            dims=['position'], unit=sc.units.counts, values=values, variances=values
+        ),
+        coords={
+            'position': sc.Variable(
+                dims=['position'], values=['site-{}'.format(i) for i in range(N)]
+            ),
+            'x': sc.Variable(dims=['position'], unit=sc.units.m, values=[0.2] * 5),
+            'y': sc.Variable(dims=['position'], unit=sc.units.m, values=[0.2] * 5),
+        },
+        masks={
+            'test-mask': sc.Variable(
+                dims=['position'], values=[True, False, True, False, True]
+            )
+        },
+    )
     xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
     binned = sc.bin(data, x=xbins)
     assert binned.bins.sum().values[0] == 2
 
 
 def test_bins_mean():
-    data = sc.DataArray(data=sc.Variable(dims=['position'],
-                                         unit=sc.units.counts,
-                                         values=[0.1, 0.2, 0.3, 0.4, 0.5]),
-                        coords={
-                            'x':
-                            sc.Variable(dims=['position'],
-                                        unit=sc.units.m,
-                                        values=[1, 2, 3, 4, 5])
-                        })
+    data = sc.DataArray(
+        data=sc.Variable(
+            dims=['position'], unit=sc.units.counts, values=[0.1, 0.2, 0.3, 0.4, 0.5]
+        ),
+        coords={
+            'x': sc.Variable(dims=['position'], unit=sc.units.m, values=[1, 2, 3, 4, 5])
+        },
+    )
     xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0, 5, 6, 7])
     binned = data.bin(x=xbins)
 
@@ -236,26 +234,25 @@ def test_bins_mean():
     # Mean of last (empty) bin should be NaN
     assert isnan(binned.bins.mean().values[2])
 
-    assert binned.bins.mean().dims == ('x', )
-    assert binned.bins.mean().shape == (3, )
+    assert binned.bins.mean().dims == ('x',)
+    assert binned.bins.mean().shape == (3,)
     assert binned.bins.mean().unit == sc.units.counts
 
 
 def test_bins_mean_with_masks():
-    data = sc.DataArray(data=sc.Variable(dims=['position'],
-                                         unit=sc.units.counts,
-                                         values=[0.1, 0.2, 0.3, 0.4, 0.5]),
-                        coords={
-                            'x':
-                            sc.Variable(dims=['position'],
-                                        unit=sc.units.m,
-                                        values=[1, 2, 3, 4, 5])
-                        },
-                        masks={
-                            'test-mask':
-                            sc.Variable(dims=['position'],
-                                        values=[False, True, False, True, False])
-                        })
+    data = sc.DataArray(
+        data=sc.Variable(
+            dims=['position'], unit=sc.units.counts, values=[0.1, 0.2, 0.3, 0.4, 0.5]
+        ),
+        coords={
+            'x': sc.Variable(dims=['position'], unit=sc.units.m, values=[1, 2, 3, 4, 5])
+        },
+        masks={
+            'test-mask': sc.Variable(
+                dims=['position'], values=[False, True, False, True, False]
+            )
+        },
+    )
     xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0, 5, 6, 7])
     binned = data.bin(x=xbins)
 
@@ -268,8 +265,8 @@ def test_bins_mean_with_masks():
     # Mean of last (empty) bin should be NaN
     assert isnan(binned.bins.mean().values[2])
 
-    assert binned.bins.mean().dims == ('x', )
-    assert binned.bins.mean().shape == (3, )
+    assert binned.bins.mean().dims == ('x',)
+    assert binned.bins.mean().shape == (3,)
     assert binned.bins.mean().unit == sc.units.counts
 
 
@@ -284,13 +281,15 @@ def test_bins_mean_using_bins():
 
     assert sc.identical(
         means,
-        sc.array(dims=["x"], values=[0.5, 3], unit=sc.units.ns, dtype=sc.DType.float64))
+        sc.array(dims=["x"], values=[0.5, 3], unit=sc.units.ns, dtype=sc.DType.float64),
+    )
 
 
 def test_bins_nanmean():
     data = sc.DataArray(
         data=sc.array(dims=['position'], values=[1.0, 2.0, -np.nan, 5.0, np.nan]),
-        coords={'group': sc.array(dims=['position'], values=[0, 1, 1, 0, 2])})
+        coords={'group': sc.array(dims=['position'], values=[0, 1, 1, 0, 2])},
+    )
     groups = sc.array(dims=['group'], values=[0, 1, 2])
     binned = data.group(groups)
 
@@ -304,77 +303,91 @@ def test_bins_nanmean():
 def test_bins_nansum():
     data = sc.DataArray(
         data=sc.array(dims=['position'], values=[1.0, 2.0, -np.nan, 5.0, np.nan]),
-        coords={'group': sc.array(dims=['position'], values=[0, 1, 1, 0, 2])})
+        coords={'group': sc.array(dims=['position'], values=[0, 1, 1, 0, 2])},
+    )
     groups = sc.array(dims=['group'], values=[0, 1, 2])
     binned = data.group(groups)
-    expected = sc.DataArray(sc.array(dims=['group'], values=[6.0, 2.0, 0.0]),
-                            coords={'group': groups})
+    expected = sc.DataArray(
+        sc.array(dims=['group'], values=[6.0, 2.0, 0.0]), coords={'group': groups}
+    )
     assert sc.identical(binned.bins.nansum(), expected)
 
 
 def test_bins_max():
     data = sc.DataArray(
         data=sc.array(dims=['position'], values=[1.0, 2.0, 3.0, 5.0, 6.0]),
-        coords={'group': sc.array(dims=['position'], values=[0, 1, 1, 0, 2])})
+        coords={'group': sc.array(dims=['position'], values=[0, 1, 1, 0, 2])},
+    )
     groups = sc.array(dims=['group'], values=[0, 1, 2])
     binned = data.group(groups)
-    expected = sc.DataArray(sc.array(dims=['group'], values=[5.0, 3.0, 6.0]),
-                            coords={'group': groups})
+    expected = sc.DataArray(
+        sc.array(dims=['group'], values=[5.0, 3.0, 6.0]), coords={'group': groups}
+    )
     assert sc.identical(binned.bins.max(), expected)
 
 
 def test_bins_nanmax():
     data = sc.DataArray(
         data=sc.array(dims=['position'], values=[1.0, 2.0, -np.nan, 5.0, 6.0]),
-        coords={'group': sc.array(dims=['position'], values=[0, 1, 1, 0, 2])})
+        coords={'group': sc.array(dims=['position'], values=[0, 1, 1, 0, 2])},
+    )
     groups = sc.array(dims=['group'], values=[0, 1, 2])
     binned = data.group(groups)
-    expected = sc.DataArray(sc.array(dims=['group'], values=[5.0, 2.0, 6.0]),
-                            coords={'group': groups})
+    expected = sc.DataArray(
+        sc.array(dims=['group'], values=[5.0, 2.0, 6.0]), coords={'group': groups}
+    )
     assert sc.identical(binned.bins.nanmax(), expected)
 
 
 def test_bins_min():
     data = sc.DataArray(
         data=sc.array(dims=['position'], values=[1.0, 2.0, 3.0, 5.0, 6.0]),
-        coords={'group': sc.array(dims=['position'], values=[0, 1, 1, 0, 2])})
+        coords={'group': sc.array(dims=['position'], values=[0, 1, 1, 0, 2])},
+    )
     groups = sc.array(dims=['group'], values=[0, 1, 2])
     binned = data.group(groups)
-    expected = sc.DataArray(sc.array(dims=['group'], values=[1.0, 2.0, 6.0]),
-                            coords={'group': groups})
+    expected = sc.DataArray(
+        sc.array(dims=['group'], values=[1.0, 2.0, 6.0]), coords={'group': groups}
+    )
     assert sc.identical(binned.bins.min(), expected)
 
 
 def test_bins_nanmin():
     data = sc.DataArray(
         data=sc.array(dims=['position'], values=[1.0, 2.0, -np.nan, 5.0, 6.0]),
-        coords={'group': sc.array(dims=['position'], values=[0, 1, 1, 0, 2])})
+        coords={'group': sc.array(dims=['position'], values=[0, 1, 1, 0, 2])},
+    )
     groups = sc.array(dims=['group'], values=[0, 1, 2])
     binned = data.group(groups)
-    expected = sc.DataArray(sc.array(dims=['group'], values=[1.0, 2.0, 6.0]),
-                            coords={'group': groups})
+    expected = sc.DataArray(
+        sc.array(dims=['group'], values=[1.0, 2.0, 6.0]), coords={'group': groups}
+    )
     assert sc.identical(binned.bins.nanmin(), expected)
 
 
 def test_bins_all():
     data = sc.DataArray(
         data=sc.array(dims=['position'], values=[True, False, True, True, True]),
-        coords={'group': sc.array(dims=['position'], values=[0, 1, 1, 0, 2])})
+        coords={'group': sc.array(dims=['position'], values=[0, 1, 1, 0, 2])},
+    )
     groups = sc.array(dims=['group'], values=[0, 1, 2])
     binned = data.group(groups)
-    expected = sc.DataArray(sc.array(dims=['group'], values=[True, False, True]),
-                            coords={'group': groups})
+    expected = sc.DataArray(
+        sc.array(dims=['group'], values=[True, False, True]), coords={'group': groups}
+    )
     assert sc.identical(binned.bins.all(), expected)
 
 
 def test_bins_any():
     data = sc.DataArray(
         data=sc.array(dims=['position'], values=[False, False, True, False, False]),
-        coords={'group': sc.array(dims=['position'], values=[0, 1, 1, 0, 2])})
+        coords={'group': sc.array(dims=['position'], values=[0, 1, 1, 0, 2])},
+    )
     groups = sc.array(dims=['group'], values=[0, 1, 2])
     binned = data.group(groups)
-    expected = sc.DataArray(sc.array(dims=['group'], values=[False, True, False]),
-                            coords={'group': groups})
+    expected = sc.DataArray(
+        sc.array(dims=['group'], values=[False, True, False]), coords={'group': groups}
+    )
     assert sc.identical(binned.bins.any(), expected)
 
 
@@ -494,6 +507,7 @@ def test_bin_1d_by_coord_without_event_coord():
     da.coords['param'] = param
     edges = sc.linspace('param', 0.0, 1.0, num=13)
     from scipp.core.bin_remapping import combine_bins
+
     result = combine_bins(da, [edges], [], ['x'])
     # Setup flat table with param for computing expected result
     da.bins.coords['param'] = sc.bins_like(da, param)
@@ -509,6 +523,7 @@ def test_bin_1d_by_attr_without_event_coord():
     da.attrs['param'] = param
     edges = sc.linspace('param', 0.0, 1.0, num=13)
     from scipp.core.bin_remapping import combine_bins
+
     result = combine_bins(da, [edges], [], ['x'])
     # Setup flat table with param for computing expected result
     da.bins.coords['param'] = sc.bins_like(da, param)
@@ -525,6 +540,7 @@ def test_bin_outer_of_2d_without_event_coord():
     da.coords['param'] = param
     edges = sc.linspace('param', 0.0, 1.0, num=5)
     from scipp.core.bin_remapping import combine_bins
+
     result = combine_bins(da, [edges], [], ['x'])
     # Setup flat table with param for computing expected result
     da.bins.coords['param'] = sc.bins_like(da, param)
@@ -540,6 +556,7 @@ def test_bin_combined_outer_and_inner_of_2d_without_event_coord():
     param = sc.array(dims=['x', 'y'], values=rng.random(da.shape))
     edges = sc.linspace('param', 0.0, 1.0, num=5)
     from scipp.core.bin_remapping import combine_bins
+
     da.coords['param'] = param
     result_xy = combine_bins(da, [edges], [], ['x', 'y'])
     da.coords['param'] = param.transpose()
@@ -561,6 +578,7 @@ def test_bin_outer_and_inner_of_2d_without_event_coord():
     xnew = sc.linspace('xnew', 0.0, 1.0, num=5)
     ynew = sc.linspace('ynew', 0.0, 1.0, num=4)
     from scipp.core.bin_remapping import combine_bins
+
     da.coords['xnew'] = x
     da.coords['ynew'] = y
     result = combine_bins(da, [xnew, ynew], [], ['x', 'y'])

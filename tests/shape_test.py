@@ -10,28 +10,29 @@ import scipp as sc
 
 def test_broadcast_variable():
     x = sc.arange('x', 3)
-    assert sc.identical(sc.broadcast(x, sizes={
-        'x': 3,
-        'y': 2
-    }), sc.array(dims=['x', 'y'], values=[[0, 0], [1, 1], [2, 2]]))
-    assert sc.identical(sc.broadcast(x, dims=['x', 'y'], shape=[3, 2]),
-                        sc.array(dims=['x', 'y'], values=[[0, 0], [1, 1], [2, 2]]))
+    assert sc.identical(
+        sc.broadcast(x, sizes={'x': 3, 'y': 2}),
+        sc.array(dims=['x', 'y'], values=[[0, 0], [1, 1], [2, 2]]),
+    )
+    assert sc.identical(
+        sc.broadcast(x, dims=['x', 'y'], shape=[3, 2]),
+        sc.array(dims=['x', 'y'], values=[[0, 0], [1, 1], [2, 2]]),
+    )
 
 
 def test_broadcast_data_array():
     N = 6
-    d = sc.linspace('x', 2., 10., N)
+    d = sc.linspace('x', 2.0, 10.0, N)
     x = sc.arange('x', float(N))
     a = sc.arange('x', float(N)) + 3.0
-    m = x < 3.
+    m = x < 3.0
     da = sc.DataArray(d, coords={'x': x}, attrs={'a': a}, masks={'m': m})
-    expected = sc.DataArray(sc.broadcast(d, sizes={
-        'x': 6,
-        'y': 3
-    }),
-                            coords={'x': x},
-                            attrs={'a': a},
-                            masks={'m': m})
+    expected = sc.DataArray(
+        sc.broadcast(d, sizes={'x': 6, 'y': 3}),
+        coords={'x': x},
+        attrs={'a': a},
+        masks={'m': m},
+    )
     assert sc.identical(sc.broadcast(da, sizes={'x': 6, 'y': 3}), expected)
     assert sc.identical(sc.broadcast(da, dims=['x', 'y'], shape=[6, 3]), expected)
 
@@ -48,8 +49,10 @@ def test_broadcast_fails_with_bad_inputs():
 
 def test_concat():
     var = sc.scalar(1.0)
-    assert sc.identical(sc.concat([var, var + var, 3 * var], 'x'),
-                        sc.array(dims=['x'], values=[1.0, 2.0, 3.0]))
+    assert sc.identical(
+        sc.concat([var, var + var, 3 * var], 'x'),
+        sc.array(dims=['x'], values=[1.0, 2.0, 3.0]),
+    )
 
 
 def test_concat_data_group():
@@ -62,61 +65,51 @@ def test_concat_data_group():
 
 def test_fold_variable():
     var = sc.arange('f', 6)
-    assert sc.identical(sc.fold(var, dim='f', sizes={
-        'g': 2,
-        'h': 3
-    }), sc.array(dims=['g', 'h'], values=[[0, 1, 2], [3, 4, 5]]))
-    assert sc.identical(sc.fold(var, dim='f', dims=['g', 'h'], shape=[2, 3]),
-                        sc.array(dims=['g', 'h'], values=[[0, 1, 2], [3, 4, 5]]))
+    assert sc.identical(
+        sc.fold(var, dim='f', sizes={'g': 2, 'h': 3}),
+        sc.array(dims=['g', 'h'], values=[[0, 1, 2], [3, 4, 5]]),
+    )
+    assert sc.identical(
+        sc.fold(var, dim='f', dims=['g', 'h'], shape=[2, 3]),
+        sc.array(dims=['g', 'h'], values=[[0, 1, 2], [3, 4, 5]]),
+    )
 
 
 def test_fold_data_array():
     da = sc.DataArray(sc.arange('f', 6))
     assert sc.identical(
-        sc.fold(da, dim='f', sizes={
-            'g': 2,
-            'h': 3
-        }), sc.DataArray(sc.array(dims=['g', 'h'], values=[[0, 1, 2], [3, 4, 5]])))
+        sc.fold(da, dim='f', sizes={'g': 2, 'h': 3}),
+        sc.DataArray(sc.array(dims=['g', 'h'], values=[[0, 1, 2], [3, 4, 5]])),
+    )
     assert sc.identical(
         sc.fold(da, dim='f', dims=['g', 'h'], shape=[2, 3]),
-        sc.DataArray(sc.array(dims=['g', 'h'], values=[[0, 1, 2], [3, 4, 5]])))
+        sc.DataArray(sc.array(dims=['g', 'h'], values=[[0, 1, 2], [3, 4, 5]])),
+    )
 
 
 def test_fold_size_minus_1_variable():
     x = sc.array(dims=['x'], values=np.arange(6.0))
-    assert sc.identical(sc.fold(x, dim='x', sizes={
-        'x': 2,
-        'y': 3
-    }), sc.fold(x, dim='x', sizes={
-        'x': 2,
-        'y': -1
-    }))
-    assert sc.identical(sc.fold(x, dim='x', sizes={
-        'x': 2,
-        'y': 3
-    }), sc.fold(x, dim='x', sizes={
-        'x': -1,
-        'y': 3
-    }))
+    assert sc.identical(
+        sc.fold(x, dim='x', sizes={'x': 2, 'y': 3}),
+        sc.fold(x, dim='x', sizes={'x': 2, 'y': -1}),
+    )
+    assert sc.identical(
+        sc.fold(x, dim='x', sizes={'x': 2, 'y': 3}),
+        sc.fold(x, dim='x', sizes={'x': -1, 'y': 3}),
+    )
 
 
 def test_fold_size_minus_1_data_array():
     x = sc.array(dims=['x'], values=np.arange(6.0))
     da = sc.DataArray(x)
-    assert sc.identical(sc.fold(da, dim='x', sizes={
-        'x': 2,
-        'y': 3
-    }), sc.fold(da, dim='x', sizes={
-        'x': 2,
-        'y': -1
-    }))
-    assert sc.identical(sc.fold(da, dim='x', sizes={
-        'x': 2,
-        'y': 3
-    }), sc.fold(da, dim='x', sizes={
-        'x': -1,
-        'y': 3
-    }))
+    assert sc.identical(
+        sc.fold(da, dim='x', sizes={'x': 2, 'y': 3}),
+        sc.fold(da, dim='x', sizes={'x': 2, 'y': -1}),
+    )
+    assert sc.identical(
+        sc.fold(da, dim='x', sizes={'x': 2, 'y': 3}),
+        sc.fold(da, dim='x', sizes={'x': -1, 'y': 3}),
+    )
 
 
 def test_fold_raises_two_minus_1():
@@ -145,8 +138,9 @@ def test_flatten_variable():
 
 def test_flatten_data_array():
     da = sc.DataArray(sc.arange('r', 6).fold('r', sizes={'a': 2, 'b': 3}))
-    assert sc.identical(sc.flatten(da, dims=['a', 'b'], to='f'),
-                        sc.DataArray(sc.arange('f', 6)))
+    assert sc.identical(
+        sc.flatten(da, dims=['a', 'b'], to='f'), sc.DataArray(sc.arange('f', 6))
+    )
     assert sc.identical(sc.flatten(da, to='f'), sc.DataArray(sc.arange('f', 6)))
 
 

@@ -19,14 +19,16 @@ def make_params(*, cmap=None, norm=None, vmin=None, vmax=None, masks=None, color
     masks_globs = {"norm": norm, "vmin": vmin, "vmax": vmax}
     # Get the colormap and normalization
     params["values"] = parse_params(globs=globs)
-    params["masks"] = parse_params(params=masks,
-                                   defaults={
-                                       "cmap": "gray",
-                                       "cbar": False,
-                                       "under_color": None,
-                                       "over_color": None
-                                   },
-                                   globs=masks_globs)
+    params["masks"] = parse_params(
+        params=masks,
+        defaults={
+            "cmap": "gray",
+            "cbar": False,
+            "under_color": None,
+            "over_color": None,
+        },
+        globs=masks_globs,
+    )
     # Set cmap extend state: if we have sliders then we need to extend.
     # We also need to extend if vmin or vmax are set.
     extend_cmap = "neither"
@@ -53,8 +55,10 @@ def _make_errorbar_params(arrays, errorbars):
         elif isinstance(errorbars, dict):
             params = errorbars
         else:
-            raise TypeError("Unsupported type for argument "
-                            "'errorbars': {}".format(type(errorbars)))
+            raise TypeError(
+                "Unsupported type for argument "
+                "'errorbars': {}".format(type(errorbars))
+            )
     for name, array in arrays.items():
         has_variances = array.variances is not None
         if name in params:
@@ -75,18 +79,17 @@ def _make_formatters(*, dims, arrays, labels):
 
 def make_profile(ax, mask_color):
     from .profile import PlotProfile
+
     cfg = config['plot']
     bbox = list(cfg['bounding_box'])
     bbox[2] = 0.77
-    return PlotProfile(ax=ax,
-                       mask_color=mask_color,
-                       figsize=(1.3 * cfg['width'] / cfg['dpi'],
-                                0.6 * cfg['height'] / cfg['dpi']),
-                       bounding_box=bbox,
-                       legend={
-                           "show": True,
-                           "loc": (1.02, 0.0)
-                       })
+    return PlotProfile(
+        ax=ax,
+        mask_color=mask_color,
+        figsize=(1.3 * cfg['width'] / cfg['dpi'], 0.6 * cfg['height'] / cfg['dpi']),
+        bounding_box=bbox,
+        legend={"show": True, "loc": (1.02, 0.0)},
+    )
 
 
 class PlotDict(Displayable):
@@ -122,6 +125,7 @@ class PlotDict(Displayable):
         Return plot contents into a single VBocx container
         """
         import ipywidgets as ipw
+
         contents = []
         for item in self.values():
             if item is not None:
@@ -129,8 +133,7 @@ class PlotDict(Displayable):
         return ipw.VBox(contents)
 
     def show(self):
-        """
-        """
+        """ """
         for item in self.values():
             item.show()
 
@@ -195,26 +198,27 @@ class Plot(Displayable):
           pieces above.
     """
 
-    def __init__(self,
-                 scipp_obj_dict,
-                 controller,
-                 figure,
-                 model=None,
-                 profile_figure=None,
-                 errorbars=None,
-                 panel=None,
-                 labels=None,
-                 resolution=None,
-                 dims=None,
-                 view=None,
-                 vmin=None,
-                 vmax=None,
-                 axes=None,
-                 norm=False,
-                 resampling_mode=None,
-                 scale=None,
-                 view_ndims=None):
-
+    def __init__(
+        self,
+        scipp_obj_dict,
+        controller,
+        figure,
+        model=None,
+        profile_figure=None,
+        errorbars=None,
+        panel=None,
+        labels=None,
+        resolution=None,
+        dims=None,
+        view=None,
+        vmin=None,
+        vmax=None,
+        axes=None,
+        norm=False,
+        resampling_mode=None,
+        scale=None,
+        view_ndims=None,
+    ):
         self._scipp_obj_dict = scipp_obj_dict
         self.panel = panel
         self.profile = None
@@ -237,9 +241,11 @@ class Plot(Displayable):
             self.dims = dims
         for dim in self.dims[:-view_ndims]:
             if dim in array.meta and len(array.meta[dim].dims) > 1:
-                raise DimensionError("A ragged coordinate cannot lie along "
-                                     "a slider dimension, it must be one of "
-                                     "the displayed dimensions.")
+                raise DimensionError(
+                    "A ragged coordinate cannot lie along "
+                    "a slider dimension, it must be one of "
+                    "the displayed dimensions."
+                )
 
         self._tool_button_states = {}
         if norm:
@@ -251,43 +257,45 @@ class Plot(Displayable):
         if resampling_mode is None:
             resampling_mode = _guess_resampling_mode(array)
         else:
-            resampling_mode = {
-                'sum': ResamplingMode.sum,
-                'mean': ResamplingMode.mean
-            }[resampling_mode]
+            resampling_mode = {'sum': ResamplingMode.sum, 'mean': ResamplingMode.mean}[
+                resampling_mode
+            ]
 
         errorbars = _make_errorbar_params(scipp_obj_dict, errorbars)
         figure.errorbars = errorbars
         if profile_figure is not None:
             profile_figure.errorbars = errorbars
-        labels, formatters = _make_formatters(arrays=scipp_obj_dict,
-                                              labels=labels,
-                                              dims=self.dims)
+        labels, formatters = _make_formatters(
+            arrays=scipp_obj_dict, labels=labels, dims=self.dims
+        )
         self.profile = profile_figure
         self.view = view(figure=figure, formatters=formatters)
 
-        self.widgets = PlotWidgets(dims=self.dims,
-                                   formatters=formatters,
-                                   ndim=self.view_ndims,
-                                   dim_label_map=labels,
-                                   masks=self._scipp_obj_dict,
-                                   sizes={dim: array.sizes[dim]
-                                          for dim in self.dims})
+        self.widgets = PlotWidgets(
+            dims=self.dims,
+            formatters=formatters,
+            ndim=self.view_ndims,
+            dim_label_map=labels,
+            masks=self._scipp_obj_dict,
+            sizes={dim: array.sizes[dim] for dim in self.dims},
+        )
 
         self.model = model(scipp_obj_dict=self._scipp_obj_dict, resolution=resolution)
         profile_model = PlotModel1d(scipp_obj_dict=self._scipp_obj_dict)
-        self.controller = controller(dims=self.dims,
-                                     vmin=vmin,
-                                     vmax=vmax,
-                                     norm=norm,
-                                     resampling_mode=resampling_mode,
-                                     scale=scale,
-                                     widgets=self.widgets,
-                                     model=self.model,
-                                     profile_model=profile_model,
-                                     view=self.view,
-                                     panel=self.panel,
-                                     profile=self.profile)
+        self.controller = controller(
+            dims=self.dims,
+            vmin=vmin,
+            vmax=vmax,
+            norm=norm,
+            resampling_mode=resampling_mode,
+            scale=scale,
+            widgets=self.widgets,
+            model=self.model,
+            profile_model=profile_model,
+            view=self.view,
+            panel=self.panel,
+            profile=self.profile,
+        )
         self._tool_button_states['resampling_mode'] = self.model.mode
         self._render()
 
@@ -296,6 +304,7 @@ class Plot(Displayable):
         Get the SciPlot object as an `ipywidget`.
         """
         import ipywidgets as ipw
+
         widget_list = [self.view._to_widget()]
         if self.profile is not None and (not is_sphinx_build()):
             widget_list.append(self.profile._to_widget())
@@ -329,11 +338,13 @@ class Plot(Displayable):
         Perform some initial calls to render the figure once all components
         have been created.
         """
-        self.view.figure.initialize_toolbar(log_axis_buttons=self.dims,
-                                            button_states=self._tool_button_states)
+        self.view.figure.initialize_toolbar(
+            log_axis_buttons=self.dims, button_states=self._tool_button_states
+        )
         if self.profile is not None:
-            self.profile.initialize_toolbar(log_axis_buttons=self.dims,
-                                            button_states=self._tool_button_states)
+            self.profile.initialize_toolbar(
+                log_axis_buttons=self.dims, button_states=self._tool_button_states
+            )
         self.controller.render()
         if hasattr(self.view.figure, "fig"):
             self.fig = self.view.figure.fig
@@ -369,25 +380,29 @@ class Plot(Displayable):
             self.profile.set_draw_no_delay(value)
 
 
-def make_plot(builder,
-              scipp_obj_dict,
-              filename=None,
-              labels=None,
-              errorbars=None,
-              norm=None,
-              resampling_mode=None,
-              scale=None,
-              resolution=None,
-              **kwargs):
+def make_plot(
+    builder,
+    scipp_obj_dict,
+    filename=None,
+    labels=None,
+    errorbars=None,
+    norm=None,
+    resampling_mode=None,
+    scale=None,
+    resolution=None,
+    **kwargs,
+):
     dims = next(iter(scipp_obj_dict.values())).dims
-    sp = Plot(scipp_obj_dict=scipp_obj_dict,
-              **builder(dims=dims, norm=norm, **kwargs),
-              errorbars=errorbars,
-              labels=labels,
-              resolution=resolution,
-              norm=norm,
-              resampling_mode=resampling_mode,
-              scale=scale)
+    sp = Plot(
+        scipp_obj_dict=scipp_obj_dict,
+        **builder(dims=dims, norm=norm, **kwargs),
+        errorbars=errorbars,
+        labels=labels,
+        resolution=resolution,
+        norm=norm,
+        resampling_mode=resampling_mode,
+        scale=scale,
+    )
     if filename is not None:
         sp.savefig(filename)
     else:

@@ -58,18 +58,20 @@ def _variable_to_dict(v):
         "dims": _dims_to_strings(v.dims),
         "shape": v.shape,
         "unit": v.unit,
-        "dtype": v.dtype
+        "dtype": v.dtype,
     }
 
     # Use defaultdict to return the raw values/variances by default
     dtype_parser = defaultdict(lambda: lambda x, y: x)
     # Using raw dtypes as dict keys doesn't appear to work, so we need to
     # convert to strings.
-    dtype_parser.update({
-        str(DType.vector3): _vec_parser,
-        str(DType.linear_transform3): _vec_parser,
-        str(DType.string): _vec_parser,
-    })
+    dtype_parser.update(
+        {
+            str(DType.vector3): _vec_parser,
+            str(DType.linear_transform3): _vec_parser,
+            str(DType.string): _vec_parser,
+        }
+    )
 
     str_dtype = str(v.dtype)
 
@@ -77,8 +79,9 @@ def _variable_to_dict(v):
     suffix = "s" if len(out["dims"]) > 0 else ""
     out["values"] = dtype_parser[str_dtype](getattr(v, "value" + suffix), v.shape)
     var = getattr(v, "variance" + suffix)
-    out["variances"] = dtype_parser[str_dtype](var,
-                                               v.shape) if var is not None else None
+    out["variances"] = (
+        dtype_parser[str_dtype](var, v.shape) if var is not None else None
+    )
     return out
 
 
@@ -126,8 +129,9 @@ def from_dict(dict_obj: dict) -> VariableLike:
     if {"coords", "data"}.issubset(keys_as_set):
         # Case of a DataArray-like dict (most-likely)
         return _dict_to_data_array(dict_obj)
-    elif keys_as_set.issubset({"dims", "values", "variances",
-                               "unit", "dtype", "shape"}):  # yapf: disable
+    elif keys_as_set.issubset(
+        {"dims", "values", "variances", "unit", "dtype", "shape"}
+    ):
         # Case of a Variable-like dict (most-likely)
         return _dict_to_variable(dict_obj)
     else:
@@ -174,8 +178,10 @@ def _dict_to_data_array(d):
     """Convert a Python dict to a Scipp DataArray."""
     d = dict(d)
     if "data" not in d:
-        raise KeyError("To create a DataArray, the supplied dict must contain "
-                       "'data'. Got {}.".format(d.keys()))
+        raise KeyError(
+            "To create a DataArray, the supplied dict must contain "
+            "'data'. Got {}.".format(d.keys())
+        )
     out = {"coords": {}, "masks": {}, "attrs": {}}
     for key in out.keys():
         if key in d:

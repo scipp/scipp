@@ -15,24 +15,32 @@ class UnitsConan(ConanFile):
     license = "BSD-3"
     url = "https://github.com/llnl/units"
     homepage = "https://units.readthedocs.io"
-    description = ("A run-time C++ library for working with units "
-                   "of measurement and conversions between them "
-                   "and with string representations of units "
-                   "and measurements")
-    topics = ("units", "dimensions", "quantities", "physical-units",
-              "dimensional-analysis", "run-time")
+    description = (
+        "A run-time C++ library for working with units "
+        "of measurement and conversions between them "
+        "and with string representations of units "
+        "and measurements"
+    )
+    topics = (
+        "units",
+        "dimensions",
+        "quantities",
+        "physical-units",
+        "dimensional-analysis",
+        "run-time",
+    )
     settings = "os", "compiler", "build_type", "arch"
     options = {
         "shared": [True, False],
         "fPIC": [True, False],
         "base_type": ["uint32_t", "uint64_t"],
-        "namespace": "ANY"
+        "namespace": "ANY",
     }
     default_options = {
         "shared": False,
         "fPIC": True,
         "base_type": "uint32_t",
-        "namespace": None
+        "namespace": None,
     }
     generators = "cmake"
 
@@ -41,13 +49,20 @@ class UnitsConan(ConanFile):
         git.clone("https://github.com/LLNL/units.git")
         git.checkout("v" + self.version)
 
-        cmake_project_str = (CMAKE_PROJECT_STR.replace("\n", os.linesep)
-                             if self.settings.os == "Windows" else CMAKE_PROJECT_STR)
+        cmake_project_str = (
+            CMAKE_PROJECT_STR.replace("\n", os.linesep)
+            if self.settings.os == "Windows"
+            else CMAKE_PROJECT_STR
+        )
 
         tools.replace_in_file(
-            "units/CMakeLists.txt", cmake_project_str, cmake_project_str + """
+            "units/CMakeLists.txt",
+            cmake_project_str,
+            cmake_project_str
+            + """
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-conan_basic_setup()""")
+conan_basic_setup()""",
+        )
 
     def build(self):
         cmake = CMake(self)

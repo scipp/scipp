@@ -12,9 +12,9 @@ from ._cpp_wrapper_util import call_func as _call_cpp_func
 from .variable import scalar
 
 
-def abs(x: Union[VariableLike, _cpp.Unit],
-        *,
-        out: Optional[_cpp.Variable] = None) -> Union[VariableLike, _cpp.Unit]:
+def abs(
+    x: Union[VariableLike, _cpp.Unit], *, out: Optional[_cpp.Variable] = None
+) -> Union[VariableLike, _cpp.Unit]:
     """Element-wise absolute value.
 
     Parameters
@@ -87,12 +87,14 @@ def dot(x: VariableLike, y: VariableLike) -> VariableLike:
     return _call_cpp_func(_cpp.dot, x, y)
 
 
-def nan_to_num(x: _cpp.Variable,
-               *,
-               nan: _cpp.Variable = None,
-               posinf: _cpp.Variable = None,
-               neginf: _cpp.Variable = None,
-               out: _cpp.Variable = None) -> _cpp.Variable:
+def nan_to_num(
+    x: _cpp.Variable,
+    *,
+    nan: _cpp.Variable = None,
+    posinf: _cpp.Variable = None,
+    neginf: _cpp.Variable = None,
+    out: _cpp.Variable = None,
+) -> _cpp.Variable:
     """Element-wise special value replacement.
 
     All elements in the output are identical to input except in the presence
@@ -125,12 +127,9 @@ def nan_to_num(x: _cpp.Variable,
     :
         Input with specified substitutions.
     """
-    return _call_cpp_func(_cpp.nan_to_num,
-                          x,
-                          nan=nan,
-                          posinf=posinf,
-                          neginf=neginf,
-                          out=out)
+    return _call_cpp_func(
+        _cpp.nan_to_num, x, nan=nan, posinf=posinf, neginf=neginf, out=out
+    )
 
 
 def norm(x: VariableLike) -> VariableLike:
@@ -154,9 +153,9 @@ def norm(x: VariableLike) -> VariableLike:
     return _call_cpp_func(_cpp.norm, x, out=None)
 
 
-def reciprocal(x: Union[VariableLike, _cpp.Unit],
-               *,
-               out: Optional[_cpp.Variable] = None) -> Union[VariableLike, _cpp.Unit]:
+def reciprocal(
+    x: Union[VariableLike, _cpp.Unit], *, out: Optional[_cpp.Variable] = None
+) -> Union[VariableLike, _cpp.Unit]:
     """Element-wise reciprocal.
 
     Parameters
@@ -179,8 +178,9 @@ def reciprocal(x: Union[VariableLike, _cpp.Unit],
     return _call_cpp_func(_cpp.reciprocal, x, out=out)
 
 
-def pow(base: Union[VariableLike, _cpp.Unit],
-        exponent: Union[VariableLike, Real]) -> Union[VariableLike, _cpp.Unit]:
+def pow(
+    base: Union[VariableLike, _cpp.Unit], exponent: Union[VariableLike, Real]
+) -> Union[VariableLike, _cpp.Unit]:
     """Element-wise power.
 
     If the base has a unit, the exponent must be scalar in order to get
@@ -208,9 +208,9 @@ def pow(base: Union[VariableLike, _cpp.Unit],
     return _call_cpp_func(_cpp.pow, base, exponent)
 
 
-def sqrt(x: Union[VariableLike, _cpp.Unit],
-         *,
-         out: Optional[_cpp.Variable] = None) -> Union[VariableLike, _cpp.Unit]:
+def sqrt(
+    x: Union[VariableLike, _cpp.Unit], *, out: Optional[_cpp.Variable] = None
+) -> Union[VariableLike, _cpp.Unit]:
     """Element-wise square-root.
 
     Parameters

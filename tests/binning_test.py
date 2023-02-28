@@ -43,7 +43,7 @@ def test_many_combinations():
     assert table.bin(x=5).group('label').hist(y=5).sizes == {
         'x': 5,
         'label': 10,
-        'y': 5
+        'y': 5,
     }
 
 
@@ -60,7 +60,8 @@ def test_hist_table_define_edges_from_bin_count(dtype):
     assert edges.max().value > da.coords['y'].max().value
     ymax = da.coords['y'].max()
     assert edges.max().value == np.nextafter(
-        ymax.value, (ymax + sc.scalar(1.0, unit=ymax.unit, dtype=ymax.dtype)).value)
+        ymax.value, (ymax + sc.scalar(1.0, unit=ymax.unit, dtype=ymax.dtype)).value
+    )
 
 
 def test_hist_binned_define_edges_from_bin_count():
@@ -253,7 +254,7 @@ def test_bin_erases_dims_automatically_if_labels_for_same_dim():
     # With a bin-coord for x2 we can deduce that the new binning is by different
     # 'labels' for the same data dimension.
     da.coords['x2'] = da.coords['x'] * 2
-    assert da.bin(x2=100).dims == ('x2', )
+    assert da.bin(x2=100).dims == ('x2',)
 
 
 def test_bin_by_two_coords_depending_on_same_dim():
@@ -268,7 +269,7 @@ def test_bin_by_2d_erases_2_input_dims():
     da = table.bin(x=10, y=12)
     # Note: These are bin edges, but `bin` still works
     da.coords['xy'] = da.coords['x'][1:] + da.coords['y']
-    assert da.bin(xy=20).dims == ('xy', )
+    assert da.bin(xy=20).dims == ('xy',)
 
 
 def test_bin_by_2d_dimension_coord_does_not_erase_extra_dim():
@@ -331,7 +332,7 @@ def test_bin_without_coord_keeps_dim():
 
 def test_bin_with_1d_dimcoord_keeps_dim():
     da = date_month_day_table_grouped_by_date()
-    assert da.bin(date=4).dims == ('date', )
+    assert da.bin(date=4).dims == ('date',)
 
 
 def test_bin_with_2d_dimcoord_keeps_dims():
@@ -347,7 +348,7 @@ def test_bin_with_2d_dimcoord_keeps_dims():
 def test_bin_with_nondimcoord_removes_dim():
     da = date_month_day_table_grouped_by_date()
     da.coords['month'] = da.coords['date'] // 30
-    assert da.bin(month=12).dims == ('month', )
+    assert da.bin(month=12).dims == ('month',)
 
 
 def test_bin_with_multiple_nondimcoords_removes_dim():
@@ -370,7 +371,7 @@ def test_bin_with_nondimcoord_removes_multiple_input_dims():
     da.coords['day'] = da.coords['date'] % 30
     da2d = da.group('month', 'day')
     da2d.coords['date'] = da2d.coords['day'] + 30 * da2d.coords['month']
-    assert da2d.bin(date=4).dims == ('date', )
+    assert da2d.bin(date=4).dims == ('date',)
 
 
 # 2. group
@@ -384,8 +385,9 @@ def test_group_without_coord_keeps_dim():
 
 def test_group_with_1d_dimcoord_keeps_dim():
     da = date_month_day_table_grouped_by_date()
-    assert da.group(sc.array(dims=['date'], values=[1, 3, 5],
-                             dtype='int64')).dims == ('date', )
+    assert da.group(sc.array(dims=['date'], values=[1, 3, 5], dtype='int64')).dims == (
+        'date',
+    )
 
 
 def test_group_with_2d_dimcoord_keeps_dims():
@@ -401,7 +403,7 @@ def test_group_with_2d_dimcoord_keeps_dims():
 def test_group_with_nondimcoord_removes_dim():
     da = date_month_day_table_grouped_by_date()
     da.coords['month'] = da.coords['date'] // 30
-    assert da.group('month').dims == ('month', )
+    assert da.group('month').dims == ('month',)
 
 
 def test_group_with_multiple_nondimcoords_removes_dim():
@@ -424,7 +426,7 @@ def test_group_with_nondimcoord_removes_multiple_input_dims():
     da.coords['day'] = da.coords['date'] % 30
     da2d = da.group('month', 'day')
     da2d.coords['date'] = da2d.coords['day'] + 30 * da2d.coords['month']
-    assert da2d.group('date').dims == ('date', )
+    assert da2d.group('date').dims == ('date',)
 
 
 # 3. hist
@@ -438,7 +440,7 @@ def test_hist_without_coord_keeps_dim():
 
 def test_hist_with_1d_dimcoord_keeps_dim():
     da = date_month_day_table_grouped_by_date()
-    assert da.hist(date=4).dims == ('date', )
+    assert da.hist(date=4).dims == ('date',)
 
 
 def test_hist_with_2d_dimcoord_keeps_dims():
@@ -456,7 +458,7 @@ def test_hist_with_2d_dimcoord_keeps_dims():
 def test_hist_with_nondimcoord_removes_dim():
     da = date_month_day_table_grouped_by_date()
     da.coords['month'] = da.coords['date'] // 30
-    assert da.hist(month=12).dims == ('month', )
+    assert da.hist(month=12).dims == ('month',)
 
 
 def test_hist_with_multiple_nondimcoords_removes_dim():
@@ -478,7 +480,7 @@ def test_hist_with_nondimcoord_removes_multiple_input_dims():
     da.coords['day'] = da.coords['date'] % 30
     da2d = da.group('month', 'day')
     da2d.coords['date'] = da2d.coords['day'] + 30 * da2d.coords['month']
-    assert da2d.hist(date=4).dims == ('date', )
+    assert da2d.hist(date=4).dims == ('date',)
 
 
 # 4. nanhist
@@ -492,7 +494,7 @@ def test_nanhist_without_coord_keeps_dim():
 
 def test_nanhist_with_1d_dimcoord_keeps_dim():
     da = date_month_day_table_grouped_by_date()
-    assert da.nanhist(date=4).dims == ('date', )
+    assert da.nanhist(date=4).dims == ('date',)
 
 
 def test_nanhist_with_2d_dimcoord_keeps_dims():
@@ -508,7 +510,7 @@ def test_nanhist_with_2d_dimcoord_keeps_dims():
 def test_nanhist_with_nondimcoord_removes_dim():
     da = date_month_day_table_grouped_by_date()
     da.coords['month'] = da.coords['date'] // 30
-    assert da.nanhist(month=12).dims == ('month', )
+    assert da.nanhist(month=12).dims == ('month',)
 
 
 def test_nanhist_with_multiple_nondimcoords_removes_dim():
@@ -530,7 +532,7 @@ def test_nanhist_with_nondimcoord_removes_multiple_input_dims():
     da.coords['day'] = da.coords['date'] % 30
     da2d = da.group('month', 'day')
     da2d.coords['date'] = da2d.coords['day'] + 30 * da2d.coords['month']
-    assert da2d.nanhist(date=4).dims == ('date', )
+    assert da2d.nanhist(date=4).dims == ('date',)
 
 
 def test_bin_along_existing_bin_edge_dims_keeps_bounds():
@@ -559,6 +561,7 @@ def test_rebin_along_existing_bin_edge_dims_keeps_bounds():
 
 def test_binning_low_level_functions_exist():
     from scipp import binning
+
     binning.make_binned
     binning.make_histogrammed
 
@@ -677,6 +680,7 @@ def test_group_many_to_many_by_two_coords_along_same_dim_uses_optimized_codepath
 
 def test_group_many_and_erase():
     from scipp import binning
+
     binning.make_binned
     size = 512
     table = sc.data.table_xyz(int(1e3))
@@ -689,12 +693,14 @@ def test_group_many_and_erase():
         da,
         edges=[],
         groups=[sc.arange('xcoarse', size // 2, dtype=xcoarse.dtype)],
-        erase=['x', 'y'])
+        erase=['x', 'y'],
+    )
     assert result.dims == ('z', 'xcoarse')
 
 
 def test_erase_multiple():
     from scipp import binning
+
     binning.make_binned
     table = sc.data.table_xyz(int(1e3))
     da = table.bin(x=13, y=7)
@@ -704,6 +710,7 @@ def test_erase_multiple():
 
 def test_erase_2d_mask():
     from scipp import binning
+
     binning.make_binned
     table = sc.data.table_xyz(100)
     table.data = sc.arange('row', 100)
@@ -717,6 +724,7 @@ def test_erase_2d_mask():
 
 def test_erase_multiple_masks():
     from scipp import binning
+
     binning.make_binned
     table = sc.data.table_xyz(100)
     table.data = sc.arange('row', 100)

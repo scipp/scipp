@@ -22,22 +22,24 @@ def unqualified_cpp_class(node: Union[ast.Attribute, ast.Name]) -> Optional[str]
 
 
 def replace_function(base: ast.FunctionDef, **kwargs) -> ast.FunctionDef:
-    args = dict(name=base.name,
-                args=base.args,
-                body=base.body,
-                decorator_list=base.decorator_list,
-                returns=base.returns,
-                type_comment=base.type_comment)
+    args = dict(
+        name=base.name,
+        args=base.args,
+        body=base.body,
+        decorator_list=base.decorator_list,
+        returns=base.returns,
+        type_comment=base.type_comment,
+    )
     return ast.FunctionDef(**{**args, **kwargs})
 
 
-def add_decorator(base: ast.FunctionDef,
-                  decorator: Union[ast.Name, ast.Attribute]) -> ast.FunctionDef:
+def add_decorator(
+    base: ast.FunctionDef, decorator: Union[ast.Name, ast.Attribute]
+) -> ast.FunctionDef:
     return replace_function(base, decorator_list=[decorator, *base.decorator_list])
 
 
 class AddOverloadedDecorator(ast.NodeTransformer):
-
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
         self.generic_visit(node)
         return add_decorator(node, decorator=ast.Name(id='overload', ctx=ast.Load()))
@@ -52,8 +54,9 @@ class RemoveDecorators(ast.NodeTransformer):
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
         self.generic_visit(node)
         decorators = node.decorator_list
-        return replace_function(node,
-                                decorator_list=decorators[:len(decorators) - self.n])
+        return replace_function(
+            node, decorator_list=decorators[: len(decorators) - self.n]
+        )
 
 
 class FixSelfArgName(ast.NodeTransformer):
@@ -61,24 +64,31 @@ class FixSelfArgName(ast.NodeTransformer):
 
     def visit_arguments(self, node: ast.arguments) -> ast.arguments:
         self.generic_visit(node)
-        keep = dict(kwonlyargs=node.kwonlyargs,
-                    vararg=node.vararg,
-                    kwarg=node.kwarg,
-                    kw_defaults=node.kw_defaults,
-                    defaults=node.defaults)
+        keep = dict(
+            kwonlyargs=node.kwonlyargs,
+            vararg=node.vararg,
+            kwarg=node.kwarg,
+            kw_defaults=node.kw_defaults,
+            defaults=node.defaults,
+        )
         if node.posonlyargs and node.posonlyargs[0].arg != 'self':
-            return ast.arguments(posonlyargs=[
-                ast.arg('self', annotation=None, type_comment=None),
-                *node.posonlyargs[1:]
-            ],
-                                 args=node.args,
-                                 **keep)
+            return ast.arguments(
+                posonlyargs=[
+                    ast.arg('self', annotation=None, type_comment=None),
+                    *node.posonlyargs[1:],
+                ],
+                args=node.args,
+                **keep,
+            )
         if not node.posonlyargs and node.args and node.args[0].arg != 'self':
-            return ast.arguments(args=[
-                ast.arg('self', annotation=None, type_comment=None), *node.args[1:]
-            ],
-                                 posonlyargs=node.posonlyargs,
-                                 **keep)
+            return ast.arguments(
+                args=[
+                    ast.arg('self', annotation=None, type_comment=None),
+                    *node.args[1:],
+                ],
+                posonlyargs=node.posonlyargs,
+                **keep,
+            )
         return node
 
 
@@ -105,7 +115,6 @@ class ShortenCppClassAnnotation(ast.NodeTransformer):
 
 
 class DropTypingModule(ast.NodeTransformer):
-
     def visit_Attribute(self, node: ast.Attribute) -> Union[ast.Attribute, ast.Name]:
         self.generic_visit(node)
         if isinstance(node.value, ast.Name) and node.value.id == 'typing':
@@ -114,11 +123,13 @@ class DropTypingModule(ast.NodeTransformer):
 
 
 class DropFunctionBody(ast.NodeTransformer):
-
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
         self.generic_visit(node)
-        if node.body and isinstance(node.body[0], ast.Expr) and isinstance(
-                node.body[0].value, ast.Constant):
+        if (
+            node.body
+            and isinstance(node.body[0], ast.Expr)
+            and isinstance(node.body[0].value, ast.Constant)
+        ):
             new_body = [ast.Expr(value=ast.Constant(value=node.body[0].value.value))]
         else:
             new_body = [ast.Expr(value=ast.Constant(value=Ellipsis))]
@@ -126,7 +137,6 @@ class DropFunctionBody(ast.NodeTransformer):
 
 
 class SetFunctionName(ast.NodeTransformer):
-
     def __init__(self, name: str) -> None:
         self.target_name = name
 
@@ -136,12 +146,10 @@ class SetFunctionName(ast.NodeTransformer):
 
 
 class FixArgumentFromSupertypes(ast.NodeTransformer):
-
     def __init__(self) -> None:
         self._do_replacement = False
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
-
         if node.name in ('__eq__', '__ne__'):
             self._do_replacement = True
         self.generic_visit(node)
@@ -150,9 +158,9 @@ class FixArgumentFromSupertypes(ast.NodeTransformer):
 
     def visit_arg(self, node: ast.arg) -> ast.arg:
         if self._do_replacement and node.arg != 'self':
-            return ast.arg(arg=node.arg,
-                           annotation=ast.Name('object'),
-                           type_comment=None)
+            return ast.arg(
+                arg=node.arg, annotation=ast.Name('object'), type_comment=None
+            )
         return node
 
 
@@ -168,8 +176,7 @@ class FixObjectReturnType(ast.NodeTransformer):
         '__imul__',
         '__ior__',
         '__ipow__',
-        '__irshift__'
-        '__isub__',
+        '__irshift__' '__isub__',
         '__itruediv__',
         '__ixor__',
     )
@@ -179,14 +186,16 @@ class FixObjectReturnType(ast.NodeTransformer):
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
         self.generic_visit(node)
-        if node.name in self.METHODS and isinstance(
-                node.returns, ast.Name) and node.returns.id in ('Any', 'object'):
+        if (
+            node.name in self.METHODS
+            and isinstance(node.returns, ast.Name)
+            and node.returns.id in ('Any', 'object')
+        ):
             return replace_function(node, returns=ast.Name(self.cls))
         return node
 
 
 class ObjectToAny(ast.NodeTransformer):
-
     def visit_Name(self, node: ast.Name) -> ast.Name:
         if node.id == 'object':
             return ast.Name(id='Any', ctx=ast.Load())
@@ -194,7 +203,6 @@ class ObjectToAny(ast.NodeTransformer):
 
 
 class ReplaceNoneType(ast.NodeTransformer):
-
     def visit_Name(self, node: ast) -> ast.Name:
         if node.id == 'NoneType':
             return ast.Name(id='None', ctx=ast.Load())
@@ -202,11 +210,11 @@ class ReplaceNoneType(ast.NodeTransformer):
 
 
 class RemoveDocstring(ast.NodeTransformer):
-
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
         self.generic_visit(node)
-        return replace_function(node,
-                                body=[ast.Expr(value=ast.Constant(value=Ellipsis))])
+        return replace_function(
+            node, body=[ast.Expr(value=ast.Constant(value=Ellipsis))]
+        )
 
 
 def _fix_common(node: ast.AST) -> ast.AST:

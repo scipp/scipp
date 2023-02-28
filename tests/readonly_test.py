@@ -87,12 +87,12 @@ def assert_readonly_data_array(da, readonly_data: bool):
 
 
 def test_readonly_variable_unit_and_variances():
-    var = sc.array(dims=['x'], values=np.arange(4.), variances=np.arange(4.))
+    var = sc.array(dims=['x'], values=np.arange(4.0), variances=np.arange(4.0))
     assert_variable_writable(var)
 
 
 def test_readonly_variable():
-    var = sc.broadcast(sc.scalar(value=1., variance=1.), dims=['x'], shape=[4])
+    var = sc.broadcast(sc.scalar(value=1.0, variance=1.0), dims=['x'], shape=[4])
     assert_variable_readonly(var)
     assert_variable_readonly(var.copy(deep=False))
     assert_variable_writable(var.copy())
@@ -100,17 +100,18 @@ def test_readonly_variable():
 
 def _make_data_array():
     var = sc.array(dims=['x'], values=np.arange(4))
-    return sc.DataArray(data=var.copy(),
-                        coords={'x': var.copy()},
-                        masks={'m': var.copy()},
-                        attrs={'a': var.copy()})
+    return sc.DataArray(
+        data=var.copy(),
+        coords={'x': var.copy()},
+        masks={'m': var.copy()},
+        attrs={'a': var.copy()},
+    )
 
 
 def _make_dataset():
-    return sc.Dataset(data={
-        'a': _make_data_array(),
-        'scalar': _make_data_array()['x', 0].copy()
-    })
+    return sc.Dataset(
+        data={'a': _make_data_array(), 'scalar': _make_data_array()['x', 0].copy()}
+    )
 
 
 def test_readonly_data_array_slice():

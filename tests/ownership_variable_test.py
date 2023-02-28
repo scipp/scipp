@@ -18,7 +18,7 @@ def make_variable(data, variances=None, **kwargs):
     if variances is not None and isinstance(variances, (list, tuple)):
         variances = np.array(variances)
     if isinstance(data, np.ndarray):
-        dims = ['x', 'y'][:np.ndim(data)]
+        dims = ['x', 'y'][: np.ndim(data)]
         return sc.array(dims=dims, values=data, variances=variances, **kwargs)
     return sc.scalar(data, **kwargs)
 
@@ -125,8 +125,9 @@ def test_own_var_scalar_nested_set():
     inner['x', 2] = -3
     inner.unit = 's'
     a[3] = -4
-    assert sc.identical(outer, make_variable(make_variable([-1, -2, -3, 3, 4],
-                                                           unit='s')))
+    assert sc.identical(
+        outer, make_variable(make_variable([-1, -2, -3, 3, 4], unit='s'))
+    )
     assert sc.identical(inner, make_variable([-1, -2, -3, 3, 4], unit='s'))
     np.testing.assert_array_equal(a, [0, 1, 2, -4, 4])
 
@@ -199,8 +200,9 @@ def test_own_var_scalar_nested_str_get():
     outer.value = make_variable(np.array(['ghi', 'jkl', 'mno']))
     outer.value['x', 0] = sc.scalar('asd')
     inner['x', 1] = sc.scalar('qwe')
-    assert sc.identical(outer,
-                        make_variable(make_variable(np.array(['asd', 'qwe', 'mno']))))
+    assert sc.identical(
+        outer, make_variable(make_variable(np.array(['asd', 'qwe', 'mno'])))
+    )
     assert sc.identical(inner, make_variable(np.array(['asd', 'qwe', 'mno'])))
     np.testing.assert_array_equal(a, ['abc', 'def'])
 
@@ -262,12 +264,14 @@ def test_own_var_1d_copy():
     v.values[1] = -2.0
     v.variances[1] = -12.0
     v.unit = 'kg'
-    original = make_variable([-1.0, 6.0, 7.0, 8.0, 9.0],
-                             variances=[10.0, 11.0, 12.0, 13.0, 14.0],
-                             unit='s')
-    modified = make_variable([-1.0, -2.0, 7.0, 8.0, 9.0],
-                             variances=[10.0, -12.0, 12.0, 13.0, 14.0],
-                             unit='kg')
+    original = make_variable(
+        [-1.0, 6.0, 7.0, 8.0, 9.0], variances=[10.0, 11.0, 12.0, 13.0, 14.0], unit='s'
+    )
+    modified = make_variable(
+        [-1.0, -2.0, 7.0, 8.0, 9.0],
+        variances=[10.0, -12.0, 12.0, 13.0, 14.0],
+        unit='kg',
+    )
     assert sc.identical(v, modified)
     assert sc.identical(v_copy, modified)
     assert sc.identical(v_deepcopy, original)
@@ -285,34 +289,27 @@ def test_own_var_1d_pyobj_set():
     y['num'] = -4
     assert sc.identical(
         v,
-        sc.concat([
-            make_variable({
-                'num': -1,
-                'list': [-2, 3]
-            }),
-            make_variable({
-                'num': 4,
-                'list': [5, 6]
-            })
-        ],
-                  dim='x'))
+        sc.concat(
+            [
+                make_variable({'num': -1, 'list': [-2, 3]}),
+                make_variable({'num': 4, 'list': [5, 6]}),
+            ],
+            dim='x',
+        ),
+    )
     assert x == {'num': 1, 'list': [2, 3]}
     assert y == {'num': -4, 'list': [5, 6]}
 
 
 def test_own_var_1d_pyobj_get():
     # .values getter shares ownership of the array.
-    v = sc.concat([
-        make_variable({
-            'num': 1,
-            'list': [2, 3]
-        }),
-        make_variable({
-            'num': 4,
-            'list': [5, 6]
-        })
-    ],
-                  dim='x')
+    v = sc.concat(
+        [
+            make_variable({'num': 1, 'list': [2, 3]}),
+            make_variable({'num': 4, 'list': [5, 6]}),
+        ],
+        dim='x',
+    )
     x = v['x', 0].value
     y = v['x', 1].value
     x['num'] = -1
@@ -322,8 +319,8 @@ def test_own_var_1d_pyobj_get():
     x_expected = {'num': -1, 'list': [-2, 3]}
     y_expected = {'num': -5, 'list': [-6, 6]}
     assert sc.identical(
-        v, sc.concat([make_variable(x_expected),
-                      make_variable(y_expected)], dim='x'))
+        v, sc.concat([make_variable(x_expected), make_variable(y_expected)], dim='x')
+    )
     assert x == x_expected
     assert y == y_expected
 
@@ -396,10 +393,9 @@ def test_own_var_1d_bin_set():
     a_indices = np.array([0, 2, 5], dtype=np.int64)
     buffer = make_variable(a_buffer, unit='m')
     indices = make_variable(a_indices, dtype=sc.DType.int64, unit=None)
-    binned = sc.bins(data=buffer,
-                     begin=indices['x', :-1],
-                     end=indices['x', 1:],
-                     dim='x')
+    binned = sc.bins(
+        data=buffer, begin=indices['x', :-1], end=indices['x', 1:], dim='x'
+    )
     binned['x', 0].value['x', 0] = -1
     binned.values[0]['x', 1] = -2
     binned.bins.constituents['data']['x', 2] = -3
@@ -408,10 +404,13 @@ def test_own_var_1d_bin_set():
     a_buffer[4] = -5
     assert sc.identical(
         binned,
-        sc.bins(data=make_variable([-1, -2, -3, -4, 4], unit='s'),
-                begin=indices['x', :-1],
-                end=indices['x', 1:],
-                dim='x'))
+        sc.bins(
+            data=make_variable([-1, -2, -3, -4, 4], unit='s'),
+            begin=indices['x', :-1],
+            end=indices['x', 1:],
+            dim='x',
+        ),
+    )
     assert sc.identical(buffer, make_variable([-1, -2, -3, -4, 4], unit='s'))
     np.testing.assert_array_equal(a_buffer, [0, 1, 2, 3, -5])
 
@@ -421,10 +420,13 @@ def test_own_var_1d_bin_set():
     binned.bins.constituents['end'] = make_variable([3, 5])
     assert sc.identical(
         binned,
-        sc.bins(data=make_variable([-1, -2, -3, -4, 4], unit='s'),
-                begin=indices['x', :-1],
-                end=indices['x', 1:],
-                dim='x'))
+        sc.bins(
+            data=make_variable([-1, -2, -3, -4, 4], unit='s'),
+            begin=indices['x', :-1],
+            end=indices['x', 1:],
+            dim='x',
+        ),
+    )
 
     # Bin begin/end indices can be changed, there is no safety check
     binned.bins.constituents['begin']['x', 0] = 1
@@ -432,19 +434,24 @@ def test_own_var_1d_bin_set():
     indices['x', 1] = 1
     assert sc.identical(
         binned,
-        sc.bins(data=make_variable([-1, -2, -3, -4, 4], unit='s'),
-                begin=make_variable([1, 2], dtype=sc.DType.int64, unit=None),
-                end=make_variable([2, 4], dtype=sc.DType.int64, unit=None),
-                dim='x'))
+        sc.bins(
+            data=make_variable([-1, -2, -3, -4, 4], unit='s'),
+            begin=make_variable([1, 2], dtype=sc.DType.int64, unit=None),
+            end=make_variable([2, 4], dtype=sc.DType.int64, unit=None),
+            dim='x',
+        ),
+    )
 
 
 def test_own_var_1d_bin_get():
     # The buffer is shared.
     indices = make_variable(np.array([0, 2, 5]), dtype=sc.DType.int64, unit=None)
-    binned = sc.bins(data=make_variable(np.arange(5), unit='m'),
-                     begin=indices['x', :-1],
-                     end=indices['x', 1:],
-                     dim='x')
+    binned = sc.bins(
+        data=make_variable(np.arange(5), unit='m'),
+        begin=indices['x', :-1],
+        end=indices['x', 1:],
+        dim='x',
+    )
     buffer = binned.bins.constituents['data']
     binned['x', 0].value['x', 0] = -1
     binned.values[0]['x', 1] = -2
@@ -456,10 +463,12 @@ def test_own_var_1d_bin_get():
 def test_own_var_1d_bin_copy():
     # Depth of copies of variables can be controlled.
     indices = make_variable(np.array([0, 2, 5]), dtype=sc.DType.int64, unit=None)
-    binned = sc.bins(data=make_variable(np.arange(5), unit='m'),
-                     begin=indices['x', :-1],
-                     end=indices['x', 1:],
-                     dim='x')
+    binned = sc.bins(
+        data=make_variable(np.arange(5), unit='m'),
+        begin=indices['x', :-1],
+        end=indices['x', 1:],
+        dim='x',
+    )
     binned_copy = copy(binned)
     binned_deepcopy = deepcopy(binned)
     binned_methcopy = binned.copy(deep=False)
@@ -470,14 +479,18 @@ def test_own_var_1d_bin_copy():
     binned.bins.constituents['data']['x', 2] = -3
     binned.bins.constituents['data'].unit = 's'
 
-    modified = sc.bins(data=make_variable([-1, -2, -3, 3, 4], unit='s'),
-                       begin=indices['x', :-1],
-                       end=indices['x', 1:],
-                       dim='x')
-    original = sc.bins(data=make_variable(np.arange(5), unit='m'),
-                       begin=indices['x', :-1],
-                       end=indices['x', 1:],
-                       dim='x')
+    modified = sc.bins(
+        data=make_variable([-1, -2, -3, 3, 4], unit='s'),
+        begin=indices['x', :-1],
+        end=indices['x', 1:],
+        dim='x',
+    )
+    original = sc.bins(
+        data=make_variable(np.arange(5), unit='m'),
+        begin=indices['x', :-1],
+        end=indices['x', 1:],
+        dim='x',
+    )
     assert sc.identical(binned, modified)
     assert sc.identical(binned_copy, modified)
     assert sc.identical(binned_deepcopy, original)
@@ -493,8 +506,9 @@ def test_own_var_2d_set():
     v.values[1] = -30
     v['y', 3:]['x', 1] = [-40, -50]
     a[0, 0] = -100
-    assert sc.identical(v,
-                        make_variable([[0, -1, -2, -3, -4], [-30, -30, -30, -40, -50]]))
+    assert sc.identical(
+        v, make_variable([[0, -1, -2, -3, -4], [-30, -30, -30, -40, -50]])
+    )
     np.testing.assert_array_equal(a, [[-100, 1, 2, 3, 4], [5, 6, 7, 8, 9]])
 
 

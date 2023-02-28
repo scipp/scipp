@@ -23,7 +23,8 @@ def _make_arrays(units, num_arrays, minsize=1):
     units = units if isinstance(units, (tuple, list)) else [units] * num_arrays
     res = [
         np.array(
-            [np.datetime64(np.random.randint(0, 100000), unit) for _ in range(size)])
+            [np.datetime64(np.random.randint(0, 100000), unit) for _ in range(size)]
+        )
         for unit in units
     ]
     if num_arrays == 1:
@@ -44,11 +45,12 @@ def test_construct_0d_datetime(unit):
     dtype = f'datetime64[{unit}]'
     value = _make_datetimes(unit, 1)
     # with value
-    for var in (sc.Variable(dims=(), dtype=dtype, unit=unit,
-                            values=value), sc.Variable(dims=(), unit=unit,
-                                                       values=value),
-                sc.Variable(dims=(), dtype=dtype,
-                            values=value), sc.Variable(dims=(), values=value)):
+    for var in (
+        sc.Variable(dims=(), dtype=dtype, unit=unit, values=value),
+        sc.Variable(dims=(), unit=unit, values=value),
+        sc.Variable(dims=(), dtype=dtype, values=value),
+        sc.Variable(dims=(), values=value),
+    ):
         assert var.dtype == sc.DType.datetime64
         assert var.unit == unit
         assert var.value.dtype == dtype
@@ -84,7 +86,8 @@ def test_construct_0d_datetime_unit_conversion(unit1, unit2):
     expected = sc.to_unit(sc.Variable(dims=(), values=value), unit2)
     assert sc.identical(sc.Variable(dims=(), values=value, unit=unit2), expected)
     assert sc.identical(
-        sc.Variable(dims=(), values=value, dtype=f'datetime64[{unit2}]'), expected)
+        sc.Variable(dims=(), values=value, dtype=f'datetime64[{unit2}]'), expected
+    )
 
 
 def test_construct_0d_datetime_nounit():
@@ -125,11 +128,13 @@ def test_construct_datetime(unit):
     dtype = f'datetime64[{unit}]'
     values = _make_arrays(unit, 1)
     # with values
-    for var in (sc.Variable(dims=['x'], dtype=dtype, unit=unit, values=values),
-                sc.Variable(dims=['x'], unit=unit, values=values),
-                sc.Variable(dims=['x'], dtype=dtype,
-                            values=values), sc.Variable(dims=['x'], values=values)):
-        assert var.dims == ('x', )
+    for var in (
+        sc.Variable(dims=['x'], dtype=dtype, unit=unit, values=values),
+        sc.Variable(dims=['x'], unit=unit, values=values),
+        sc.Variable(dims=['x'], dtype=dtype, values=values),
+        sc.Variable(dims=['x'], values=values),
+    ):
+        assert var.dims == ('x',)
         assert str(var.dtype) == 'datetime64'
         assert var.unit == unit
         assert var.values.dtype == dtype
@@ -159,7 +164,8 @@ def test_construct_datetime_unit_conversion(unit1, unit2):
     expected = sc.to_unit(sc.Variable(dims=['x'], values=values), unit2)
     assert sc.identical(sc.Variable(dims=['x'], values=values, unit=unit2), expected)
     assert sc.identical(
-        sc.Variable(dims=['x'], values=values, dtype=f'datetime64[{unit2}]'), expected)
+        sc.Variable(dims=['x'], values=values, dtype=f'datetime64[{unit2}]'), expected
+    )
 
 
 def test_construct_datetime_nounit():
@@ -204,8 +210,9 @@ def test_datetime_slicing(unit):
         assert sc.identical(var['x', i], sc.Variable(dims=(), values=values1[i]))
     for i in range(len(values1) - 2):
         for j in range(i + 1, len(values1)):
-            assert sc.identical(var['x', i:j],
-                                sc.Variable(dims=['x'], values=values1[i:j]))
+            assert sc.identical(
+                var['x', i:j], sc.Variable(dims=['x'], values=values1[i:j])
+            )
 
     for i in range(len(values1)):
         var['x', i] = values2[i] * sc.Unit(unit)
@@ -242,7 +249,8 @@ def test_datetime_operations_mismatch():
         var + 1 * sc.Unit('s')
     with pytest.raises(RuntimeError):
         var + sc.Variable(
-            dims=['x'], values=np.random.randint(0, 100, len(values)), unit=sc.units.us)
+            dims=['x'], values=np.random.randint(0, 100, len(values)), unit=sc.units.us
+        )
 
 
 def fmt(time_point, unit):

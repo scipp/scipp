@@ -21,7 +21,8 @@ def test_logical_ior_variable_with_variable():
     b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
     a |= b
     assert sc.identical(
-        a, sc.Variable(dims=['x'], values=np.array([False, True, True, True])))
+        a, sc.Variable(dims=['x'], values=np.array([False, True, True, True]))
+    )
 
 
 def test_logical_or_variable_with_variable():
@@ -31,9 +32,9 @@ def test_logical_or_variable_with_variable():
 
     a = sc.Variable(dims=['x'], values=np.array([False, True, False, True]))
     b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
-    assert sc.identical((a | b),
-                        sc.Variable(dims=['x'],
-                                    values=np.array([False, True, True, True])))
+    assert sc.identical(
+        (a | b), sc.Variable(dims=['x'], values=np.array([False, True, True, True]))
+    )
 
 
 def test_logical_iand_variable_with_variable():
@@ -46,7 +47,8 @@ def test_logical_iand_variable_with_variable():
     b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
     a &= b
     assert sc.identical(
-        a, sc.Variable(dims=['x'], values=np.array([False, False, False, True])))
+        a, sc.Variable(dims=['x'], values=np.array([False, False, False, True]))
+    )
 
 
 def test_logical_and_variable_with_variable():
@@ -56,9 +58,9 @@ def test_logical_and_variable_with_variable():
 
     a = sc.Variable(dims=['x'], values=np.array([False, True, False, True]))
     b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
-    assert sc.identical((a & b),
-                        sc.Variable(dims=['x'],
-                                    values=np.array([False, False, False, True])))
+    assert sc.identical(
+        (a & b), sc.Variable(dims=['x'], values=np.array([False, False, False, True]))
+    )
 
 
 def test_logical_ixor_variable_with_variable():
@@ -71,7 +73,8 @@ def test_logical_ixor_variable_with_variable():
     b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
     a ^= b
     assert sc.identical(
-        a, sc.Variable(dims=['x'], values=np.array([False, True, True, False])))
+        a, sc.Variable(dims=['x'], values=np.array([False, True, True, False]))
+    )
 
 
 def test_logical_xor_variable_with_variable():
@@ -81,9 +84,9 @@ def test_logical_xor_variable_with_variable():
 
     a = sc.Variable(dims=['x'], values=np.array([False, True, False, True]))
     b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
-    assert sc.identical((a ^ b),
-                        sc.Variable(dims=['x'],
-                                    values=np.array([False, True, True, False])))
+    assert sc.identical(
+        (a ^ b), sc.Variable(dims=['x'], values=np.array([False, True, True, False]))
+    )
 
 
 def test_logical_not_function():
@@ -92,18 +95,21 @@ def test_logical_not_function():
 
 
 def test_logical_and_function():
-    assert sc.identical(sc.logical_and(sc.scalar(True), sc.scalar(False)),
-                        sc.scalar(False))
+    assert sc.identical(
+        sc.logical_and(sc.scalar(True), sc.scalar(False)), sc.scalar(False)
+    )
 
 
 def test_logical_or_function():
-    assert sc.identical(sc.logical_or(sc.scalar(True), sc.scalar(False)),
-                        sc.scalar(True))
+    assert sc.identical(
+        sc.logical_or(sc.scalar(True), sc.scalar(False)), sc.scalar(True)
+    )
 
 
 def test_logical_xor_function():
-    assert sc.identical(sc.logical_xor(sc.scalar(True), sc.scalar(False)),
-                        sc.scalar(True))
+    assert sc.identical(
+        sc.logical_xor(sc.scalar(True), sc.scalar(False)), sc.scalar(True)
+    )
 
 
 def test_logical_not_data_array():

@@ -9,8 +9,13 @@ CPP_CORE_MODULE_NAME = 'scipp._scipp.core'
 TEMPLATE_FILE = Path(__file__).resolve().parent / 'stub_template.py.template'
 
 # Place the generated stub file here unless overridden by a command line argument.
-DEFAULT_TARGET = Path(__file__).resolve(
-).parent.parent.parent / 'src' / 'scipp' / 'core' / 'cpp_classes.pyi'
+DEFAULT_TARGET = (
+    Path(__file__).resolve().parent.parent.parent
+    / 'src'
+    / 'scipp'
+    / 'core'
+    / 'cpp_classes.pyi'
+)
 
 # Select whether docstrings are included in the stub.
 INCLUDE_DOCS = False
@@ -32,7 +37,8 @@ def class_is_excluded(name: str) -> bool:
 
 
 def _squash_binary_more_narrow_type(
-        overloads: List[ast.FunctionDef]) -> List[ast.FunctionDef]:
+    overloads: List[ast.FunctionDef],
+) -> List[ast.FunctionDef]:
     # A lot of binary functions have overloads for int and float.
     # But the former is superseded by the latter because int is more narrow than float.
     # Drop all int overloads in this case.

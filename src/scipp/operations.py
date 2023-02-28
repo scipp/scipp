@@ -11,6 +11,7 @@ from .core import Variable
 
 def _as_numba_cfunc(function, unit_func=None):
     import numba
+
     dtype = 'double'
     narg = len(signature(function).parameters)
     cfunc = numba.cfunc(dtype + '(' + ','.join([dtype] * narg) + ')')(function)
@@ -19,11 +20,13 @@ def _as_numba_cfunc(function, unit_func=None):
     return cfunc
 
 
-def elemwise_func(func: Optional[Callable] = None,
-                  *,
-                  unit_func: Optional[Callable] = None,
-                  dtype: str = 'float64',
-                  auto_convert_dtypes: bool = False) -> Callable:
+def elemwise_func(
+    func: Optional[Callable] = None,
+    *,
+    unit_func: Optional[Callable] = None,
+    dtype: str = 'float64',
+    auto_convert_dtypes: bool = False
+) -> Callable:
     """
     Create a function for transforming input variables based on element-wise operation.
 

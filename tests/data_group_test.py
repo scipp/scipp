@@ -20,7 +20,7 @@ def test_create_from_dict_works_with_mixed_types_and_non_scipp_objects():
         'a': 1,
         'b': sc.scalar(2),
         'c': sc.DataArray(sc.scalar(3)),
-        'd': np.arange(4)
+        'd': np.arange(4),
     }
     dg = sc.DataGroup(items)
     assert tuple(dg.keys()) == ('a', 'b', 'c', 'd')
@@ -33,12 +33,13 @@ def test_init_raises_when_keys_are_not_strings():
 
 
 @pytest.mark.parametrize(
-    'copy_func', [copy.deepcopy, sc.DataGroup.copy, lambda x: x.copy(deep=True)])
+    'copy_func', [copy.deepcopy, sc.DataGroup.copy, lambda x: x.copy(deep=True)]
+)
 def test_deepcopy(copy_func):
     items = {
         'a': sc.scalar(2),
         'b': np.arange(4),
-        'c': sc.DataGroup(nested=sc.scalar(1))
+        'c': sc.DataGroup(nested=sc.scalar(1)),
     }
     dg = sc.DataGroup(items)
     result = copy_func(dg)
@@ -62,7 +63,7 @@ def test_copy(copy_func):
     items = {
         'a': sc.scalar(2),
         'b': np.arange(4),
-        'c': sc.DataGroup(nested=sc.scalar(1))
+        'c': sc.DataGroup(nested=sc.scalar(1)),
     }
     dg = sc.DataGroup(items)
     result = copy_func(dg)
@@ -135,31 +136,36 @@ def test_delitem_raises_KeyError_when_not_found():
 
 def test_dims_with_scipp_objects_combines_dims_in_insertion_order():
     assert sc.DataGroup({'a': sc.scalar(1)}).dims == ()
-    assert sc.DataGroup({'a': sc.ones(dims=('x', ), shape=(2, ))}).dims == ('x', )
-    assert sc.DataGroup({
-        'a': sc.ones(dims=('x', ), shape=(2, )),
-        'b': sc.ones(dims=('y', ), shape=(2, ))
-    }).dims == ('x', 'y')
-    assert sc.DataGroup({
-        'b': sc.ones(dims=('y', ), shape=(2, )),
-        'a': sc.ones(dims=('x', ), shape=(2, ))
-    }).dims == ('y', 'x')
+    assert sc.DataGroup({'a': sc.ones(dims=('x',), shape=(2,))}).dims == ('x',)
+    assert sc.DataGroup(
+        {'a': sc.ones(dims=('x',), shape=(2,)), 'b': sc.ones(dims=('y',), shape=(2,))}
+    ).dims == ('x', 'y')
+    assert sc.DataGroup(
+        {'b': sc.ones(dims=('y',), shape=(2,)), 'a': sc.ones(dims=('x',), shape=(2,))}
+    ).dims == ('y', 'x')
     # In this case there would be a better order, but in general there is not, so at
     # least for now the implementation makes no attempt at this.
-    assert sc.DataGroup({
-        'a': sc.ones(dims=('x', 'z'), shape=(2, 2)),
-        'b': sc.ones(dims=('y', 'z'), shape=(2, 2))
-    }).dims == ('x', 'z', 'y')
+    assert sc.DataGroup(
+        {
+            'a': sc.ones(dims=('x', 'z'), shape=(2, 2)),
+            'b': sc.ones(dims=('y', 'z'), shape=(2, 2)),
+        }
+    ).dims == ('x', 'z', 'y')
 
 
 def test_ndim():
     assert sc.DataGroup({'a': sc.scalar(1)}).ndim == 0
-    assert sc.DataGroup({'a': sc.ones(dims=('x', ), shape=(1, ))}).ndim == 1
+    assert sc.DataGroup({'a': sc.ones(dims=('x',), shape=(1,))}).ndim == 1
     assert sc.DataGroup({'a': sc.ones(dims=('x', 'y'), shape=(1, 1))}).ndim == 2
-    assert sc.DataGroup({
-        'a': sc.ones(dims=('x', ), shape=(2, )),
-        'b': sc.ones(dims=('y', ), shape=(2, ))
-    }).ndim == 2
+    assert (
+        sc.DataGroup(
+            {
+                'a': sc.ones(dims=('x',), shape=(2,)),
+                'b': sc.ones(dims=('y',), shape=(2,)),
+            }
+        ).ndim
+        == 2
+    )
 
 
 def test_non_scipp_objects_are_considered_to_have_0_dims():
@@ -168,19 +174,21 @@ def test_non_scipp_objects_are_considered_to_have_0_dims():
 
 
 def test_shape_and_sizes():
-    dg = sc.DataGroup({
-        'a': sc.ones(dims=('x', 'z'), shape=(2, 4)),
-        'b': sc.ones(dims=('y', 'z'), shape=(3, 4))
-    })
+    dg = sc.DataGroup(
+        {
+            'a': sc.ones(dims=('x', 'z'), shape=(2, 4)),
+            'b': sc.ones(dims=('y', 'z'), shape=(3, 4)),
+        }
+    )
     assert dg.shape == (2, 4, 3)
     assert dg.sizes == {'x': 2, 'z': 4, 'y': 3}
 
 
 def test_inconsistent_shapes_are_reported_as_None():
     dg = sc.DataGroup({'x1': sc.arange('x', 4)})
-    assert dg.shape == (4, )
+    assert dg.shape == (4,)
     dg['x2'] = sc.arange('x', 5)
-    assert dg.shape == (None, )
+    assert dg.shape == (None,)
     dg['y1'] = sc.arange('y', 5)
     assert dg.shape == (None, 5)
     dg['y2'] = sc.arange('y', 6)
@@ -254,9 +262,9 @@ def test_getitem_label_indexing_based_works_when_length_is_not_unique():
     da1 = sc.DataArray(sc.arange('x', 4), coords={'x': sc.linspace('x', 0.0, 1.0, 4)})
     da2 = sc.DataArray(sc.arange('x', 5), coords={'x': sc.linspace('x', 0.0, 1.0, 5)})
     dg = sc.DataGroup({'a': da1, 'b': da2})
-    result = dg['x', :sc.scalar(0.5)]
-    assert sc.identical(result['a'], da1['x', :sc.scalar(0.5)])
-    assert sc.identical(result['b'], da2['x', :sc.scalar(0.5)])
+    result = dg['x', : sc.scalar(0.5)]
+    assert sc.identical(result['a'], da1['x', : sc.scalar(0.5)])
+    assert sc.identical(result['b'], da2['x', : sc.scalar(0.5)])
 
 
 def test_getitem_boolean_variable_indexing():
@@ -313,8 +321,20 @@ BINARY_NUMBER_OPERATIONS = (
     lambda a, b: a < b,
     lambda a, b: a <= b,
 )
-BINARY_NUMBER_OPERATION_NAMES = ('+', '-', '*', '/', '//', '%', '==', '!=', '>', '>=',
-                                 '<', '<=')
+BINARY_NUMBER_OPERATION_NAMES = (
+    '+',
+    '-',
+    '*',
+    '/',
+    '//',
+    '%',
+    '==',
+    '!=',
+    '>',
+    '>=',
+    '<',
+    '<=',
+)
 
 
 def reverse_op(op, reverse: bool):
@@ -323,9 +343,9 @@ def reverse_op(op, reverse: bool):
     return lambda a, b: op(b, a)
 
 
-@pytest.mark.parametrize('op',
-                         BINARY_NUMBER_OPERATIONS,
-                         ids=BINARY_NUMBER_OPERATION_NAMES)
+@pytest.mark.parametrize(
+    'op', BINARY_NUMBER_OPERATIONS, ids=BINARY_NUMBER_OPERATION_NAMES
+)
 def test_binary_data_group_with_data_group(op):
     x = sc.arange('x', 1, 5, unit='m')
     dg1 = sc.DataGroup({'a': x})
@@ -336,9 +356,9 @@ def test_binary_data_group_with_data_group(op):
     assert sc.identical(result['a'], op(x, 2 * x))
 
 
-@pytest.mark.parametrize('op',
-                         BINARY_NUMBER_OPERATIONS,
-                         ids=BINARY_NUMBER_OPERATION_NAMES)
+@pytest.mark.parametrize(
+    'op', BINARY_NUMBER_OPERATIONS, ids=BINARY_NUMBER_OPERATION_NAMES
+)
 def test_binary_data_group_with_nested_data_group(op):
     x = sc.arange('x', 1, 5, unit='m')
     dg1 = sc.DataGroup({'a': x})
@@ -351,9 +371,9 @@ def test_binary_data_group_with_nested_data_group(op):
     assert sc.identical(result['a'], op(x, inner))
 
 
-@pytest.mark.parametrize('op',
-                         BINARY_NUMBER_OPERATIONS,
-                         ids=BINARY_NUMBER_OPERATION_NAMES)
+@pytest.mark.parametrize(
+    'op', BINARY_NUMBER_OPERATIONS, ids=BINARY_NUMBER_OPERATION_NAMES
+)
 def test_binary_nested_data_group_with_data_group(op):
     x = sc.arange('x', 1, 5, unit='m')
     inner = sc.DataGroup({'b': 2 * x, 'c': -x})
@@ -366,9 +386,9 @@ def test_binary_nested_data_group_with_data_group(op):
     assert sc.identical(result['a'], op(inner, x))
 
 
-@pytest.mark.parametrize('op',
-                         BINARY_NUMBER_OPERATIONS,
-                         ids=BINARY_NUMBER_OPERATION_NAMES)
+@pytest.mark.parametrize(
+    'op', BINARY_NUMBER_OPERATIONS, ids=BINARY_NUMBER_OPERATION_NAMES
+)
 @pytest.mark.parametrize('typ', (int, float))
 @pytest.mark.parametrize('reverse', (False, True))
 def test_arithmetic_data_group_with_builtin(op, typ, reverse):
@@ -381,9 +401,9 @@ def test_arithmetic_data_group_with_builtin(op, typ, reverse):
     assert sc.identical(result['a'], op(x, other))
 
 
-@pytest.mark.parametrize('op',
-                         BINARY_NUMBER_OPERATIONS,
-                         ids=BINARY_NUMBER_OPERATION_NAMES)
+@pytest.mark.parametrize(
+    'op', BINARY_NUMBER_OPERATIONS, ids=BINARY_NUMBER_OPERATION_NAMES
+)
 @pytest.mark.parametrize('reverse', (False, True))
 def test_arithmetic_data_group_with_variable(op, reverse):
     op = reverse_op(op, reverse)
@@ -395,9 +415,9 @@ def test_arithmetic_data_group_with_variable(op, reverse):
     assert sc.identical(result['a'], op(x, other))
 
 
-@pytest.mark.parametrize('op',
-                         BINARY_NUMBER_OPERATIONS,
-                         ids=BINARY_NUMBER_OPERATION_NAMES)
+@pytest.mark.parametrize(
+    'op', BINARY_NUMBER_OPERATIONS, ids=BINARY_NUMBER_OPERATION_NAMES
+)
 @pytest.mark.parametrize('reverse', (False, True))
 def test_arithmetic_data_group_with_data_array(op, reverse):
     op = reverse_op(op, reverse)
@@ -409,9 +429,9 @@ def test_arithmetic_data_group_with_data_array(op, reverse):
     assert sc.identical(result['a'], op(x, other))
 
 
-@pytest.mark.parametrize('op',
-                         BINARY_NUMBER_OPERATIONS,
-                         ids=BINARY_NUMBER_OPERATION_NAMES)
+@pytest.mark.parametrize(
+    'op', BINARY_NUMBER_OPERATIONS, ids=BINARY_NUMBER_OPERATION_NAMES
+)
 def test_arithmetic_data_group_with_data_array_coord_mismatch(op):
     x = sc.DataArray(sc.arange('x', 1, 5, unit='m'), coords={'x': sc.arange('x', 5)})
     dg = sc.DataGroup({'a': x.copy()})
@@ -428,14 +448,21 @@ def test_pow_data_group_with_data_group():
     result = dg1**dg2
     assert 'a' in result
     assert 'b' not in result
-    assert sc.identical(result['a'], x**(2 * x))
+    assert sc.identical(result['a'], x ** (2 * x))
 
 
-@pytest.mark.parametrize('other',
-                         (3, sc.arange('x', 0, 4, dtype='int64'),
-                          sc.DataArray(sc.arange('x', 0, 4, dtype='int64'),
-                                       coords={'x': sc.arange('x', 5, dtype='int64')})),
-                         ids=('int', 'Variable', 'DataArray'))
+@pytest.mark.parametrize(
+    'other',
+    (
+        3,
+        sc.arange('x', 0, 4, dtype='int64'),
+        sc.DataArray(
+            sc.arange('x', 0, 4, dtype='int64'),
+            coords={'x': sc.arange('x', 5, dtype='int64')},
+        ),
+    ),
+    ids=('int', 'Variable', 'DataArray'),
+)
 @pytest.mark.parametrize('reverse', (False, True))
 def test_pow_data_group_with_other(other, reverse):
     op = reverse_op(lambda a, b: a**b, reverse)
@@ -454,9 +481,9 @@ BINARY_LOGIC_OPERATIONS = (
 BINARY_LOGIC_OPERATION_NAMES = ('&', '|', '^')
 
 
-@pytest.mark.parametrize('op',
-                         BINARY_LOGIC_OPERATIONS,
-                         ids=BINARY_LOGIC_OPERATION_NAMES)
+@pytest.mark.parametrize(
+    'op', BINARY_LOGIC_OPERATIONS, ids=BINARY_LOGIC_OPERATION_NAMES
+)
 def test_logical_data_group_with_data_group(op):
     x = sc.array(dims=['l'], values=[True, False, False, True])
     y = sc.array(dims=['l'], values=[True, False, True, False])
@@ -473,9 +500,18 @@ def test_logical_not():
     assert sc.identical(result['a'], ~x)
 
 
-@pytest.mark.parametrize('op',
-                         (operator.iadd, operator.isub, operator.imul, operator.imod,
-                          operator.itruediv, operator.ifloordiv, operator.ipow))
+@pytest.mark.parametrize(
+    'op',
+    (
+        operator.iadd,
+        operator.isub,
+        operator.imul,
+        operator.imod,
+        operator.itruediv,
+        operator.ifloordiv,
+        operator.ipow,
+    ),
+)
 def test_inplace_is_disabled(op):
     x = sc.arange('x', 1, 5, dtype='int64')
     dg1 = sc.DataGroup({'a': x.copy()})
@@ -561,9 +597,10 @@ def test_construction_from_dataset_creates_dataarray_items():
 
 
 def test_dataset_can_be_created_from_datagroup_with_variable_or_dataarray_items():
-    dg = sc.DataGroup(a=sc.DataArray(sc.arange('x', 4),
-                                     coords={'x': sc.linspace('x', 0.0, 1.0, 4)}),
-                      b=sc.arange('x', 4))
+    dg = sc.DataGroup(
+        a=sc.DataArray(sc.arange('x', 4), coords={'x': sc.linspace('x', 0.0, 1.0, 4)}),
+        b=sc.arange('x', 4),
+    )
     ds = sc.Dataset(dg)
     assert len(ds) == 2
     assert sc.identical(dg['a'], ds['a'])
@@ -577,19 +614,22 @@ def test_fold_flatten():
 
 def test_squeeze():
     dg = sc.DataGroup(a=sc.ones(dims=['x', 'y'], shape=(4, 1)))
-    assert sc.identical(dg.squeeze(), sc.DataGroup(a=sc.ones(dims=['x'], shape=(4, ))))
+    assert sc.identical(dg.squeeze(), sc.DataGroup(a=sc.ones(dims=['x'], shape=(4,))))
 
 
 def test_transpose():
     dg = sc.DataGroup(a=sc.ones(dims=['x', 'y'], shape=(2, 3)))
-    assert sc.identical(dg.transpose(),
-                        sc.DataGroup(a=sc.ones(dims=['y', 'x'], shape=(3, 2))))
+    assert sc.identical(
+        dg.transpose(), sc.DataGroup(a=sc.ones(dims=['y', 'x'], shape=(3, 2)))
+    )
 
 
 def test_broadcast():
     dg = sc.DataGroup(a=sc.scalar(1))
-    assert sc.identical(dg.broadcast(sizes={'x': 2}),
-                        sc.DataGroup(a=sc.scalar(1).broadcast(sizes={'x': 2})))
+    assert sc.identical(
+        dg.broadcast(sizes={'x': 2}),
+        sc.DataGroup(a=sc.scalar(1).broadcast(sizes={'x': 2})),
+    )
 
 
 def test_methods_work_with_any_value_type_that_supports_it():
@@ -603,16 +643,17 @@ def test_bins_property_indexing():
     table = sc.data.table_xyz(10)
     dg = sc.DataGroup(a=table)
     dg = dg.bin(x=10)
-    result = dg.bins['x', sc.scalar(0.5, unit='m'):]
-    assert sc.identical(result['a'], dg['a'].bins['x', sc.scalar(0.5, unit='m'):])
+    result = dg.bins['x', sc.scalar(0.5, unit='m') :]
+    assert sc.identical(result['a'], dg['a'].bins['x', sc.scalar(0.5, unit='m') :])
 
 
 def test_merge():
     dg1 = sc.DataGroup(a=sc.arange('x', 6), b='a string', d=np.array([1, 2]))
-    dg2 = sc.DataGroup(c=sc.DataArray(sc.arange('y', 3),
-                                      coords={'y': -sc.arange('y', 3)}),
-                       b='a string',
-                       d=np.array([1, 2]))
+    dg2 = sc.DataGroup(
+        c=sc.DataArray(sc.arange('y', 3), coords={'y': -sc.arange('y', 3)}),
+        b='a string',
+        d=np.array([1, 2]),
+    )
     merged = sc.merge(dg1, dg2)
     assert set(merged.keys()) == {'a', 'b', 'c', 'd'}
     assert sc.identical(merged['a'], dg1['a'])
@@ -637,30 +678,37 @@ def test_merge_conflict_numpy_array():
 
 def test_merge_conflict_python_object():
     dg1 = sc.DataGroup(a=sc.arange('x', 6), b='a string')
-    dg2 = sc.DataGroup(c=sc.DataArray(sc.arange('y', 3),
-                                      coords={'y': -sc.arange('y', 3)}),
-                       b='another string')
+    dg2 = sc.DataGroup(
+        c=sc.DataArray(sc.arange('y', 3), coords={'y': -sc.arange('y', 3)}),
+        b='another string',
+    )
     with pytest.raises(sc.DatasetError):
         sc.merge(dg1, dg2)
 
 
-@pytest.mark.parametrize('func',
-                         (sc.bin, lambda x, /, *args, **kwargs: x.bin(*args, **kwargs)))
+@pytest.mark.parametrize(
+    'func', (sc.bin, lambda x, /, *args, **kwargs: x.bin(*args, **kwargs))
+)
 def test_bin(func):
-    dg = sc.DataGroup({
-        'da':
-        sc.DataArray(10 * sc.arange('x', 5.0), coords={'x': sc.arange('x', 5.0)}),
-        'dg':
-        sc.DataGroup({
-            'inner_da':
-            sc.DataArray(10 * sc.arange('x', 50.0), coords={'x': sc.arange('x', 50.0)})
-        })
-    })
+    dg = sc.DataGroup(
+        {
+            'da': sc.DataArray(
+                10 * sc.arange('x', 5.0), coords={'x': sc.arange('x', 5.0)}
+            ),
+            'dg': sc.DataGroup(
+                {
+                    'inner_da': sc.DataArray(
+                        10 * sc.arange('x', 50.0), coords={'x': sc.arange('x', 50.0)}
+                    )
+                }
+            ),
+        }
+    )
     edges = {'x': 3}
-    expected = sc.DataGroup({
-        'da':
-        dg['da'].bin(**edges),
-        'dg':
-        sc.DataGroup({'inner_da': dg['dg']['inner_da'].bin(**edges)})
-    })
+    expected = sc.DataGroup(
+        {
+            'da': dg['da'].bin(**edges),
+            'dg': sc.DataGroup({'inner_da': dg['dg']['inner_da'].bin(**edges)}),
+        }
+    )
     assert sc.identical(func(dg, **edges), expected)

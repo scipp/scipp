@@ -33,7 +33,8 @@ def test_scalar_Variable_values_property_PyObject():
 
 
 @pytest.mark.parametrize(
-    'var', (sc.scalar(3.1), sc.scalar(-2), sc.scalar('abc'), sc.scalar([1, 2])))
+    'var', (sc.scalar(3.1), sc.scalar(-2), sc.scalar('abc'), sc.scalar([1, 2]))
+)
 def test_scalar_Variable_value_is_same_as_values(var):
     assert var.value == var.values
 

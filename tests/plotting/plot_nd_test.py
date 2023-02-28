@@ -46,20 +46,24 @@ def test_plot_sliceviewer_2d_with_binedges():
 
 def test_plot_variable_3d():
     N = 50
-    v3d = sc.Variable(dims=['z', 'y', 'x'],
-                      values=np.random.rand(N, N, N),
-                      unit=sc.units.m)
+    v3d = sc.Variable(
+        dims=['z', 'y', 'x'], values=np.random.rand(N, N, N), unit=sc.units.m
+    )
     sc.plot(v3d)
 
 
 def test_plot_4d_with_masks_no_coords():
-    da = sc.DataArray(data=sc.Variable(dims=['pack', 'tube', 'straw', 'pixel'],
-                                       values=np.random.rand(2, 8, 7, 256)),
-                      coords={})
+    da = sc.DataArray(
+        data=sc.Variable(
+            dims=['pack', 'tube', 'straw', 'pixel'], values=np.random.rand(2, 8, 7, 256)
+        ),
+        coords={},
+    )
     a = np.sin(np.linspace(0, 3.14, num=256))
     da += sc.Variable(dims=['pixel'], values=a)
-    da.masks['tube_ends'] = sc.Variable(dims=['pixel'],
-                                        values=np.where(a > 0.5, True, False))
+    da.masks['tube_ends'] = sc.Variable(
+        dims=['pixel'], values=np.where(a > 0.5, True, False)
+    )
     sc.plot(da)
     sc.plot(sc.transpose(da, dims=['pack', 'tube', 'straw', 'pixel']))
     sc.plot(sc.transpose(da, dims=['pack', 'straw', 'tube', 'pixel']))
@@ -77,9 +81,11 @@ def test_plot_3d_data_ragged():
     # slider dim
     with pytest.raises(RuntimeError) as e:
         sc.plot(sc.transpose(da))
-    assert str(e.value) == ('A ragged coordinate cannot lie along '
-                            'a slider dimension, it must be one of '
-                            'the displayed dimensions.')
+    assert str(e.value) == (
+        'A ragged coordinate cannot lie along '
+        'a slider dimension, it must be one of '
+        'the displayed dimensions.'
+    )
 
 
 def test_plot_3d_data_ragged_with_edges():

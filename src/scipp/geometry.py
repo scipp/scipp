@@ -23,7 +23,8 @@ def position(x: _cpp.Variable, y: _cpp.Variable, z: _cpp.Variable) -> _cpp.Varia
 
 
 def rotation_matrix_from_quaternion_coeffs(
-        value: Union[list, tuple, np.ndarray]) -> _cpp.Variable:
+    value: Union[list, tuple, np.ndarray]
+) -> _cpp.Variable:
     """Construct a rotation matrix from quaternions.
 
     :param value: Coefficients for the 4 quaternions in a one

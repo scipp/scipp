@@ -11,11 +11,9 @@ def test_wont_match_when_meta_size_unequal():
     b = sc.DataArray(data=point)
     assert not su.isnear(a, b, rtol=0 * sc.units.one, atol=1.0 * sc.units.one)
     # ignore attributes, should give the same result
-    assert su.isnear(a,
-                     b,
-                     rtol=0 * sc.units.one,
-                     atol=1.0 * sc.units.one,
-                     include_attrs=False)
+    assert su.isnear(
+        a, b, rtol=0 * sc.units.one, atol=1.0 * sc.units.one, include_attrs=False
+    )
 
 
 def test_wont_match_when_meta_keys_unequal():
@@ -50,11 +48,9 @@ def test_data_scalar_no_coords():
 def test_data_scalar_no_coords_no_data():
     a = sc.DataArray(data=sc.scalar(value=1))
     b = a.copy()
-    assert su.isnear(a,
-                     b,
-                     rtol=0 * sc.units.one,
-                     atol=1e-14 * sc.units.one,
-                     include_data=False)  # Should compare equal
+    assert su.isnear(
+        a, b, rtol=0 * sc.units.one, atol=1e-14 * sc.units.one, include_data=False
+    )  # Should compare equal
 
 
 def test_scalar_with_coord():
@@ -85,8 +81,6 @@ def test_with_many_coords_and_attrs():
     assert su.isnear(a, b, rtol=0.0 * sc.units.one, atol=1.0 * sc.units.one)
     assert not su.isnear(a, b, rtol=0.0 * sc.units.one, atol=0.9999 * sc.units.one)
     # Now disable attrs matching (should be near)
-    assert su.isnear(a,
-                     b,
-                     rtol=0.0 * sc.units.one,
-                     atol=0.9999 * sc.units.one,
-                     include_attrs=False)
+    assert su.isnear(
+        a, b, rtol=0.0 * sc.units.one, atol=0.9999 * sc.units.one, include_attrs=False
+    )

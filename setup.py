@@ -7,8 +7,14 @@ from skbuild import setup
 
 def get_version():
     import subprocess
-    return subprocess.run(['git', 'describe', '--tags', '--abbrev=0'],
-                          stdout=subprocess.PIPE).stdout.decode('utf8').strip()
+
+    return (
+        subprocess.run(
+            ['git', 'describe', '--tags', '--abbrev=0'], stdout=subprocess.PIPE
+        )
+        .stdout.decode('utf8')
+        .strip()
+    )
 
 
 def get_cmake_args():
@@ -38,55 +44,57 @@ If your use case requires one or several of the items on the following list, usi
 - Internals written in C++ for better performance (for certain applications), in combination with Python bindings.
 """  # noqa #501
 
-setup(name='scipp',
-      version=get_version(),
-      description='Multi-dimensional data arrays with labeled dimensions',
-      long_description=long_description,
-      long_description_content_type='text/markdown',
-      author='Scipp contributors (https://github.com/scipp)',
-      url='https://github.com/scipp/scipp',
-      project_urls={
-          'Documentation': 'https://scipp.github.io/',
-          'Bug Tracker': 'https://github.com/scipp/scipp/issues',
-          'Changelog': 'https://scipp.github.io/about/release-notes.html',
-      },
-      license='BSD-3-Clause',
-      packages=find_packages(where="src"),
-      package_dir={'': 'src'},
-      cmake_args=get_cmake_args(),
-      cmake_install_dir='src/scipp',
-      include_package_data=True,
-      python_requires='>=3.8',
-      install_requires=['confuse', 'graphlib-backport', 'numpy>=1.20'],
-      extras_require={
-          "test": ["pytest", "matplotlib", "xarray", "pandas", "pythreejs", "bs4"],
-          'all': ['h5py', 'scipy>=1.7.0', 'graphviz', 'pooch', 'plopp', 'matplotlib'],
-          'interactive': [
-              'ipympl',
-              'ipython',
-              'ipywidgets',
-              'matplotlib',
-              'jupyterlab',
-              'jupyterlab-widgets',
-              'jupyter_nbextensions_configurator',
-              'nodejs',
-              'plopp',
-              'pythreejs',
-          ],
-      },
-      classifiers=[
-          'Intended Audience :: Science/Research',
-          'License :: OSI Approved :: BSD License',
-          'Natural Language :: English',
-          'Programming Language :: Python :: 3',
-          'Programming Language :: Python :: 3 :: Only',
-          'Programming Language :: Python :: 3.8',
-          'Programming Language :: Python :: 3.9',
-          'Programming Language :: Python :: 3.10',
-          'Programming Language :: Python :: 3.11',
-          'Operating System :: MacOS :: MacOS X',
-          'Operating System :: Microsoft :: Windows',
-          'Operating System :: POSIX :: Linux',
-          'Topic :: Scientific/Engineering',
-          'Typing :: Typed',
-      ])
+setup(
+    name='scipp',
+    version=get_version(),
+    description='Multi-dimensional data arrays with labeled dimensions',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+    author='Scipp contributors (https://github.com/scipp)',
+    url='https://github.com/scipp/scipp',
+    project_urls={
+        'Documentation': 'https://scipp.github.io/',
+        'Bug Tracker': 'https://github.com/scipp/scipp/issues',
+        'Changelog': 'https://scipp.github.io/about/release-notes.html',
+    },
+    license='BSD-3-Clause',
+    packages=find_packages(where="src"),
+    package_dir={'': 'src'},
+    cmake_args=get_cmake_args(),
+    cmake_install_dir='src/scipp',
+    include_package_data=True,
+    python_requires='>=3.8',
+    install_requires=['confuse', 'graphlib-backport', 'numpy>=1.20'],
+    extras_require={
+        "test": ["pytest", "matplotlib", "xarray", "pandas", "pythreejs", "bs4"],
+        'all': ['h5py', 'scipy>=1.7.0', 'graphviz', 'pooch', 'plopp', 'matplotlib'],
+        'interactive': [
+            'ipympl',
+            'ipython',
+            'ipywidgets',
+            'matplotlib',
+            'jupyterlab',
+            'jupyterlab-widgets',
+            'jupyter_nbextensions_configurator',
+            'nodejs',
+            'plopp',
+            'pythreejs',
+        ],
+    },
+    classifiers=[
+        'Intended Audience :: Science/Research',
+        'License :: OSI Approved :: BSD License',
+        'Natural Language :: English',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3 :: Only',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Operating System :: MacOS :: MacOS X',
+        'Operating System :: Microsoft :: Windows',
+        'Operating System :: POSIX :: Linux',
+        'Topic :: Scientific/Engineering',
+        'Typing :: Typed',
+    ],
+)

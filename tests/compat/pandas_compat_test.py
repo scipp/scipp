@@ -126,11 +126,9 @@ def test_2d_dataframe():
 
     sc_ds = from_pandas(pd_df)
 
-    reference_ds = _make_2d_reference_ds("row", [0, 1],
-                                         data={
-                                             "col1": (2, 3),
-                                             "col2": (5, 6)
-                                         })
+    reference_ds = _make_2d_reference_ds(
+        "row", [0, 1], data={"col1": (2, 3), "col2": (5, 6)}
+    )
 
     assert sc.identical(sc_ds, reference_ds)
 
@@ -141,10 +139,8 @@ def test_2d_dataframe_with_named_axes():
 
     sc_ds = from_pandas(pd_df)
 
-    reference_ds = _make_2d_reference_ds("my-name-for-rows", [0, 1],
-                                         data={
-                                             "col1": (2, 3),
-                                             "col2": (5, 6)
-                                         })
+    reference_ds = _make_2d_reference_ds(
+        "my-name-for-rows", [0, 1], data={"col1": (2, 3), "col2": (5, 6)}
+    )
 
     assert sc.identical(sc_ds, reference_ds)

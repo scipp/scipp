@@ -10,7 +10,8 @@ class Binned1d:
     """
     Benchmark different aspects of binned data
     """
-    params = (list(10**np.arange(8)), list(10**np.arange(0, 7)))
+
+    params = (list(10 ** np.arange(8)), list(10 ** np.arange(0, 7)))
     param_names = ['nevent', 'nbin']
 
     def setup(self, nevent, nbin):
@@ -36,7 +37,8 @@ class Binned2dConcat:
     """
     Benchmark reduction with 'concat' for 2d binned data
     """
-    params = ([1, 2, 4, 8, 16, 32, 64, 128], )
+
+    params = ([1, 2, 4, 8, 16, 32, 64, 128],)
     param_names = ['nbin']
     timeout = 300.0
 
@@ -54,7 +56,8 @@ class Binned2dConcatInner:
     """
     Benchmark reduction with 'concat' along inner for 2d binned data
     """
-    params = (list(2**np.arange(10, 16)), )
+
+    params = (list(2 ** np.arange(10, 16)),)
     param_names = ['nbin']
     timeout = 300.0
 

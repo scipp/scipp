@@ -16,17 +16,19 @@ class PlotFigure(Displayable):
     Base class for 1d and 2d figures, that holds matplotlib axes.
     """
 
-    def __init__(self,
-                 ax=None,
-                 cax=None,
-                 figsize=None,
-                 title=None,
-                 bounding_box=None,
-                 ndim=1,
-                 xlabel=None,
-                 ylabel=None,
-                 toolbar=None,
-                 grid=False):
+    def __init__(
+        self,
+        ax=None,
+        cax=None,
+        figsize=None,
+        title=None,
+        bounding_box=None,
+        ndim=1,
+        xlabel=None,
+        ylabel=None,
+        toolbar=None,
+        grid=False,
+    ):
         self.fig = None
         self.closed = False
         self.ax = ax
@@ -99,9 +101,9 @@ class PlotFigure(Displayable):
         """
         width, height = self.fig.get_size_inches()
         dpi = self.fig.get_dpi()
-        return ipw.Image(value=fig_to_pngbytes(self.fig),
-                         width=width * dpi,
-                         height=height * dpi)
+        return ipw.Image(
+            value=fig_to_pngbytes(self.fig), width=width * dpi, height=height * dpi
+        )
 
     def close(self):
         """
@@ -130,17 +132,19 @@ class PlotFigure(Displayable):
                     form = formatter[key]
                     if "need_callbacks" in formatter:
                         from functools import partial
-                        form = partial(form,
-                                       axis=axis,
-                                       get_axis_bounds=self.get_axis_bounds,
-                                       set_axis_label=self.set_axis_label)
+
+                        form = partial(
+                            form,
+                            axis=axis,
+                            get_axis_bounds=self.get_axis_bounds,
+                            set_axis_label=self.set_axis_label,
+                        )
                     self.axformatter[axis][key] = ticker.FuncFormatter(form)
             self.axlocator[axis] = {
-                "linear":
-                ticker.MaxNLocator(integer=True)
-                if axformatters[axis]["custom_locator"] else ticker.AutoLocator(),
-                "log":
-                ticker.LogLocator()
+                "linear": ticker.MaxNLocator(integer=True)
+                if axformatters[axis]["custom_locator"]
+                else ticker.AutoLocator(),
+                "log": ticker.LogLocator(),
             }
 
     def connect(self, controller):
@@ -155,11 +159,14 @@ class PlotFigure(Displayable):
     def toggle_mouse_events(self, active, event_handler):
         if active:
             self.event_connections['button_press_event'] = self.fig.canvas.mpl_connect(
-                'button_press_event', event_handler.handle_button_press)
+                'button_press_event', event_handler.handle_button_press
+            )
             self.event_connections['pick_event'] = self.fig.canvas.mpl_connect(
-                'pick_event', event_handler.handle_pick)
+                'pick_event', event_handler.handle_pick
+            )
             self.event_connections['motion_notify_event'] = self.fig.canvas.mpl_connect(
-                'motion_notify_event', event_handler.handle_motion_notify)
+                'motion_notify_event', event_handler.handle_motion_notify
+            )
         else:
             for cid in self.event_connections.values():
                 self.fig.canvas.mpl_disconnect(cid)

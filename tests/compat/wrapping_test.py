@@ -14,7 +14,6 @@ def func1d(da, dim, **kwargs):
 
 @wrap1d(is_partial=True)
 def factory1d(da, dim, **kwargs):
-
     def func(arg):
         assert kwargs['axis'] == da.dims.index(dim)
         out = da[dim, 1:3].copy()
@@ -52,9 +51,8 @@ def check_metadata(out, da, x):
 
 
 @pytest.mark.parametrize(
-    "da", [make_array(),
-           make_array().transpose(),
-           make_array().transpose().copy()])
+    "da", [make_array(), make_array().transpose(), make_array().transpose().copy()]
+)
 def test_wrap1d_metadata_factory1d(da):
     f = factory1d(da, 'xx')
     x = sc.linspace(dim='xx', start=0.1, stop=0.4, num=2, unit='rad')
@@ -62,9 +60,8 @@ def test_wrap1d_metadata_factory1d(da):
 
 
 @pytest.mark.parametrize(
-    "da", [make_array(),
-           make_array().transpose(),
-           make_array().transpose().copy()])
+    "da", [make_array(), make_array().transpose(), make_array().transpose().copy()]
+)
 def test_wrap1d_metadata_func1d(da):
     check_metadata(func1d(da, dim='xx'), da, x=None)
 

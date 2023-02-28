@@ -66,6 +66,7 @@ def test_constant(integ):
 def test_trapzoid_sections(split):
     da = make_periodic()
     assert sc.allclose(
-        trapezoid(da['xx', :split + 1], 'xx').data +
-        trapezoid(da['xx', split:], 'xx').data,
-        trapezoid(da, 'xx').data)
+        trapezoid(da['xx', : split + 1], 'xx').data
+        + trapezoid(da['xx', split:], 'xx').data,
+        trapezoid(da, 'xx').data,
+    )

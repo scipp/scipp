@@ -11,9 +11,9 @@ from ..typing import VariableLikeType
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 
 
-def sin(x: VariableLikeType,
-        *,
-        out: Optional[VariableLikeType] = None) -> VariableLikeType:
+def sin(
+    x: VariableLikeType, *, out: Optional[VariableLikeType] = None
+) -> VariableLikeType:
     """Element-wise sine.
 
     The input must have a plane-angle unit, i.e. ``rad``, ``deg``.
@@ -33,9 +33,9 @@ def sin(x: VariableLikeType,
     return _call_cpp_func(_cpp.sin, x, out=out)
 
 
-def cos(x: VariableLikeType,
-        *,
-        out: Optional[VariableLikeType] = None) -> VariableLikeType:
+def cos(
+    x: VariableLikeType, *, out: Optional[VariableLikeType] = None
+) -> VariableLikeType:
     """Element-wise cosine.
 
     The input must have a plane-angle unit, i.e. ``rad``, ``deg``.
@@ -55,9 +55,9 @@ def cos(x: VariableLikeType,
     return _call_cpp_func(_cpp.cos, x, out=out)
 
 
-def tan(x: VariableLikeType,
-        *,
-        out: Optional[VariableLikeType] = None) -> VariableLikeType:
+def tan(
+    x: VariableLikeType, *, out: Optional[VariableLikeType] = None
+) -> VariableLikeType:
     """Element-wise tangent.
 
     The input must have a plane-angle unit, i.e. ``rad``, ``deg``.
@@ -77,9 +77,9 @@ def tan(x: VariableLikeType,
     return _call_cpp_func(_cpp.tan, x, out=out)
 
 
-def asin(x: VariableLikeType,
-         *,
-         out: Optional[VariableLikeType] = None) -> VariableLikeType:
+def asin(
+    x: VariableLikeType, *, out: Optional[VariableLikeType] = None
+) -> VariableLikeType:
     """Element-wise inverse sine.
 
     Parameters
@@ -97,9 +97,9 @@ def asin(x: VariableLikeType,
     return _call_cpp_func(_cpp.asin, x, out=out)
 
 
-def acos(x: VariableLikeType,
-         *,
-         out: Optional[VariableLikeType] = None) -> VariableLikeType:
+def acos(
+    x: VariableLikeType, *, out: Optional[VariableLikeType] = None
+) -> VariableLikeType:
     """Element-wise inverse cosine.
 
     Parameters
@@ -117,9 +117,9 @@ def acos(x: VariableLikeType,
     return _call_cpp_func(_cpp.acos, x, out=out)
 
 
-def atan(x: VariableLikeType,
-         *,
-         out: Optional[VariableLikeType] = None) -> VariableLikeType:
+def atan(
+    x: VariableLikeType, *, out: Optional[VariableLikeType] = None
+) -> VariableLikeType:
     """Element-wise inverse tangent.
 
     Parameters
@@ -137,10 +137,9 @@ def atan(x: VariableLikeType,
     return _call_cpp_func(_cpp.atan, x, out=out)
 
 
-def atan2(*,
-          y: _cpp.Variable,
-          x: _cpp.Variable,
-          out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
+def atan2(
+    *, y: _cpp.Variable, x: _cpp.Variable, out: Optional[_cpp.Variable] = None
+) -> _cpp.Variable:
     """Element-wise inverse tangent of y/x determining the correct quadrant.
 
     Parameters

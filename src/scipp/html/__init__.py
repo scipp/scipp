@@ -34,6 +34,7 @@ def make_html(container: VariableLike) -> str:
     """
     from .formatting_datagroup_html import datagroup_repr
     from .formatting_html import dataset_repr, variable_repr
+
     if isinstance(container, Variable):
         return variable_repr(container)
     elif isinstance(container, DataGroup):
@@ -57,4 +58,5 @@ def to_html(container: VariableLike):
         Works outside of notebooks.
     """
     from IPython.display import HTML, display
+
     display(HTML(make_html(container)))

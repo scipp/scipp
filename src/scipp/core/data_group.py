@@ -10,8 +10,20 @@ import numbers
 import operator
 from collections.abc import MutableMapping
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, NoReturn, Optional, \
-    Tuple, TypeVar, Union, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    NoReturn,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 import numpy as np
 
@@ -37,14 +49,12 @@ def _summarize(item):
 
 
 def _is_positional_index(key) -> bool:
-
     def is_int(x):
         return isinstance(x, numbers.Integral)
 
     if is_int(key):
         return True
     if isinstance(key, slice):
-
         if is_int(key.start) or is_int(key.stop) or is_int(key.step):
             return True
         if key.start is None and key.stop is None and key.step is None:
@@ -114,6 +124,7 @@ class DataGroup(MutableMapping):
         variable.
         """
         from .bins import Bins
+
         if isinstance(name, str):
             return self._items[name]
         if isinstance(name, tuple) and name == ():
@@ -125,7 +136,8 @@ class DataGroup(MutableMapping):
                 raise DimensionError(
                     "Slicing with implicit dimension label is only possible "
                     f"for 1-D objects. Got {self.sizes} with ndim={self.ndim}. Provide "
-                    "an explicit dimension label, e.g., var['x', 0] instead of var[0].")
+                    "an explicit dimension label, e.g., var['x', 0] instead of var[0]."
+                )
             dim = self.dims[0]
             index = name
         else:
@@ -133,12 +145,16 @@ class DataGroup(MutableMapping):
         if _is_positional_index(index) and self.sizes[dim] is None:
             raise DimensionError(
                 f"Positional indexing dim '{dim}' not possible as the length is not "
-                "unique.")
-        return DataGroup({
-            key: var[dim, index] if
-            (isinstance(var, Bins) or dim in _item_dims(var)) else var
-            for key, var in self.items()
-        })
+                "unique."
+            )
+        return DataGroup(
+            {
+                key: var[dim, index]
+                if (isinstance(var, Bins) or dim in _item_dims(var))
+                else var
+                for key, var in self.items()
+            }
+        )
 
     @overload
     def __setitem__(self, name: str, value: Any):
@@ -194,6 +210,7 @@ class DataGroup(MutableMapping):
 
     def _repr_html_(self):
         from ..html.formatting_datagroup_html import datagroup_repr
+
         return datagroup_repr(self)
 
     def __repr__(self):
@@ -308,136 +325,144 @@ class DataGroup(MutableMapping):
 
     def plot(self, *args, **kwargs):
         import plopp
+
         return plopp.plot(self, *args, **kwargs)
 
-    def __eq__(self, other: Union[DataGroup, DataArray, Variable,
-                                  numbers.Real]) -> DataGroup:
+    def __eq__(
+        self, other: Union[DataGroup, DataArray, Variable, numbers.Real]
+    ) -> DataGroup:
         """Item-wise equal."""
         return data_group_nary(operator.eq, self, other)
 
-    def __ne__(self, other: Union[DataGroup, DataArray, Variable,
-                                  numbers.Real]) -> DataGroup:
+    def __ne__(
+        self, other: Union[DataGroup, DataArray, Variable, numbers.Real]
+    ) -> DataGroup:
         """Item-wise not-equal."""
         return data_group_nary(operator.ne, self, other)
 
-    def __gt__(self, other: Union[DataGroup, DataArray, Variable,
-                                  numbers.Real]) -> DataGroup:
+    def __gt__(
+        self, other: Union[DataGroup, DataArray, Variable, numbers.Real]
+    ) -> DataGroup:
         """Item-wise greater-than."""
         return data_group_nary(operator.gt, self, other)
 
-    def __ge__(self, other: Union[DataGroup, DataArray, Variable,
-                                  numbers.Real]) -> DataGroup:
+    def __ge__(
+        self, other: Union[DataGroup, DataArray, Variable, numbers.Real]
+    ) -> DataGroup:
         """Item-wise greater-equal."""
         return data_group_nary(operator.ge, self, other)
 
-    def __lt__(self, other: Union[DataGroup, DataArray, Variable,
-                                  numbers.Real]) -> DataGroup:
+    def __lt__(
+        self, other: Union[DataGroup, DataArray, Variable, numbers.Real]
+    ) -> DataGroup:
         """Item-wise less-than."""
         return data_group_nary(operator.lt, self, other)
 
-    def __le__(self, other: Union[DataGroup, DataArray, Variable,
-                                  numbers.Real]) -> DataGroup:
+    def __le__(
+        self, other: Union[DataGroup, DataArray, Variable, numbers.Real]
+    ) -> DataGroup:
         """Item-wise less-equal."""
         return data_group_nary(operator.le, self, other)
 
     def __add__(
-            self, other: Union[DataGroup, DataArray, Variable,
-                               numbers.Real]) -> DataGroup:
+        self, other: Union[DataGroup, DataArray, Variable, numbers.Real]
+    ) -> DataGroup:
         """Apply ``add`` item-by-item."""
         return data_group_nary(operator.add, self, other)
 
     def __sub__(
-            self, other: Union[DataGroup, DataArray, Variable,
-                               numbers.Real]) -> DataGroup:
+        self, other: Union[DataGroup, DataArray, Variable, numbers.Real]
+    ) -> DataGroup:
         """Apply ``sub`` item-by-item."""
         return data_group_nary(operator.sub, self, other)
 
     def __mul__(
-            self, other: Union[DataGroup, DataArray, Variable,
-                               numbers.Real]) -> DataGroup:
+        self, other: Union[DataGroup, DataArray, Variable, numbers.Real]
+    ) -> DataGroup:
         """Apply ``mul`` item-by-item."""
         return data_group_nary(operator.mul, self, other)
 
     def __truediv__(
-            self, other: Union[DataGroup, DataArray, Variable,
-                               numbers.Real]) -> DataGroup:
+        self, other: Union[DataGroup, DataArray, Variable, numbers.Real]
+    ) -> DataGroup:
         """Apply ``truediv`` item-by-item."""
         return data_group_nary(operator.truediv, self, other)
 
     def __floordiv__(
-            self, other: Union[DataGroup, DataArray, Variable,
-                               numbers.Real]) -> DataGroup:
+        self, other: Union[DataGroup, DataArray, Variable, numbers.Real]
+    ) -> DataGroup:
         """Apply ``floordiv`` item-by-item."""
         return data_group_nary(operator.floordiv, self, other)
 
     def __mod__(
-            self, other: Union[DataGroup, DataArray, Variable,
-                               numbers.Real]) -> DataGroup:
+        self, other: Union[DataGroup, DataArray, Variable, numbers.Real]
+    ) -> DataGroup:
         """Apply ``mod`` item-by-item."""
         return data_group_nary(operator.mod, self, other)
 
     def __pow__(
-            self, other: Union[DataGroup, DataArray, Variable,
-                               numbers.Real]) -> DataGroup:
+        self, other: Union[DataGroup, DataArray, Variable, numbers.Real]
+    ) -> DataGroup:
         """Apply ``pow`` item-by-item."""
         return data_group_nary(operator.pow, self, other)
 
     def __radd__(
-            self, other: Union[DataGroup, DataArray, Variable,
-                               numbers.Real]) -> DataGroup:
+        self, other: Union[DataGroup, DataArray, Variable, numbers.Real]
+    ) -> DataGroup:
         """Apply ``add`` item-by-item."""
         return data_group_nary(operator.add, other, self)
 
     def __rsub__(
-            self, other: Union[DataGroup, DataArray, Variable,
-                               numbers.Real]) -> DataGroup:
+        self, other: Union[DataGroup, DataArray, Variable, numbers.Real]
+    ) -> DataGroup:
         """Apply ``sub`` item-by-item."""
         return data_group_nary(operator.sub, other, self)
 
     def __rmul__(
-            self, other: Union[DataGroup, DataArray, Variable,
-                               numbers.Real]) -> DataGroup:
+        self, other: Union[DataGroup, DataArray, Variable, numbers.Real]
+    ) -> DataGroup:
         """Apply ``mul`` item-by-item."""
         return data_group_nary(operator.mul, other, self)
 
     def __rtruediv__(
-            self, other: Union[DataGroup, DataArray, Variable,
-                               numbers.Real]) -> DataGroup:
+        self, other: Union[DataGroup, DataArray, Variable, numbers.Real]
+    ) -> DataGroup:
         """Apply ``truediv`` item-by-item."""
         return data_group_nary(operator.truediv, other, self)
 
     def __rfloordiv__(
-            self, other: Union[DataGroup, DataArray, Variable,
-                               numbers.Real]) -> DataGroup:
+        self, other: Union[DataGroup, DataArray, Variable, numbers.Real]
+    ) -> DataGroup:
         """Apply ``floordiv`` item-by-item."""
         return data_group_nary(operator.floordiv, other, self)
 
     def __rmod__(
-            self, other: Union[DataGroup, DataArray, Variable,
-                               numbers.Real]) -> DataGroup:
+        self, other: Union[DataGroup, DataArray, Variable, numbers.Real]
+    ) -> DataGroup:
         """Apply ``mod`` item-by-item."""
         return data_group_nary(operator.mod, other, self)
 
     def __rpow__(
-            self, other: Union[DataGroup, DataArray, Variable,
-                               numbers.Real]) -> DataGroup:
+        self, other: Union[DataGroup, DataArray, Variable, numbers.Real]
+    ) -> DataGroup:
         """Apply ``pow`` item-by-item."""
         return data_group_nary(operator.pow, other, self)
 
     def __and__(
-            self, other: Union[DataGroup, DataArray, Variable,
-                               numbers.Real]) -> DataGroup:
+        self, other: Union[DataGroup, DataArray, Variable, numbers.Real]
+    ) -> DataGroup:
         """Return the element-wise ``and`` of items."""
         return data_group_nary(operator.and_, self, other)
 
-    def __or__(self, other: Union[DataGroup, DataArray, Variable,
-                                  numbers.Real]) -> DataGroup:
+    def __or__(
+        self, other: Union[DataGroup, DataArray, Variable, numbers.Real]
+    ) -> DataGroup:
         """Return the element-wise ``or`` of items."""
         return data_group_nary(operator.or_, self, other)
 
     def __xor__(
-            self, other: Union[DataGroup, DataArray, Variable,
-                               numbers.Real]) -> DataGroup:
+        self, other: Union[DataGroup, DataArray, Variable, numbers.Real]
+    ) -> DataGroup:
         """Return the element-wise ``xor`` of items."""
         return data_group_nary(operator.xor, self, other)
 
@@ -446,36 +471,44 @@ class DataGroup(MutableMapping):
         return self.apply(operator.invert)
 
 
-def _data_group_binary(func: Callable, dg1: DataGroup, dg2: DataGroup, *args,
-                       **kwargs) -> DataGroup:
-    return DataGroup({
-        key: func(dg1[key], dg2[key], *args, **kwargs)
-        for key in dg1.keys() & dg2.keys()
-    })
+def _data_group_binary(
+    func: Callable, dg1: DataGroup, dg2: DataGroup, *args, **kwargs
+) -> DataGroup:
+    return DataGroup(
+        {
+            key: func(dg1[key], dg2[key], *args, **kwargs)
+            for key in dg1.keys() & dg2.keys()
+        }
+    )
 
 
 def data_group_nary(func: Callable, *args, **kwargs) -> DataGroup:
-    dgs = filter(lambda x: isinstance(x, DataGroup),
-                 itertools.chain(args, kwargs.values()))
+    dgs = filter(
+        lambda x: isinstance(x, DataGroup), itertools.chain(args, kwargs.values())
+    )
     keys = functools.reduce(operator.and_, [dg.keys() for dg in dgs])
 
     def elem(x, key):
         return x[key] if isinstance(x, DataGroup) else x
 
-    return DataGroup({
-        key: func(*[elem(x, key) for x in args],
-                  **{name: elem(x, key)
-                     for name, x in kwargs.items()})
-        for key in keys
-    })
+    return DataGroup(
+        {
+            key: func(
+                *[elem(x, key) for x in args],
+                **{name: elem(x, key) for name, x in kwargs.items()},
+            )
+            for key in keys
+        }
+    )
 
 
-def _apply_to_items(func: Callable, dgs: Iterable[DataGroup], *args,
-                    **kwargs) -> DataGroup:
+def _apply_to_items(
+    func: Callable, dgs: Iterable[DataGroup], *args, **kwargs
+) -> DataGroup:
     keys = functools.reduce(operator.and_, [dg.keys() for dg in dgs])
     return DataGroup(
-        {key: func([dg[key] for dg in dgs], *args, **kwargs)
-         for key in keys})
+        {key: func([dg[key] for dg in dgs], *args, **kwargs) for key in keys}
+    )
 
 
 _F = TypeVar('_F', bound=Callable[..., Any])
@@ -500,6 +533,7 @@ def data_group_overload(func: _F) -> _F:
     :
         Decorated function.
     """
+
     # Do not assign '__annotations__' because that causes an error in Sphinx.
     @wraps(func, assigned=('__module__', '__name__', '__qualname__', '__doc__'))
     def impl(data, *args, **kwargs):
@@ -520,9 +554,9 @@ def data_group_overload(func: _F) -> _F:
 # Binding these functions dynamically has the added benefit that type checkers think
 # that the operations are not implemented.
 def _make_inplace_binary_op(name: str):
-
-    def impl(self, other: Union[DataGroup, DataArray, Variable,
-                                numbers.Real]) -> NoReturn:
+    def impl(
+        self, other: Union[DataGroup, DataArray, Variable, numbers.Real]
+    ) -> NoReturn:
         raise TypeError(f'In-place operation i{name} is not supported by DataGroup.')
 
     return impl
@@ -530,8 +564,8 @@ def _make_inplace_binary_op(name: str):
 
 for _name in ('add', 'sub', 'mul', 'truediv', 'floordiv', 'mod', 'pow'):
     full_name = f'__i{_name}__'
-    _binding.bind_function_as_method(cls=DataGroup,
-                                     name=full_name,
-                                     func=_make_inplace_binary_op(full_name))
+    _binding.bind_function_as_method(
+        cls=DataGroup, name=full_name, func=_make_inplace_binary_op(full_name)
+    )
 
 del _name, full_name

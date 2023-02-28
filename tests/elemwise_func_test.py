@@ -48,7 +48,6 @@ def test_handles_unit_using_same_kernel():
 
 
 def test_custom_unit_func_is_used():
-
     def unit_func(a, b, c):
         return 'K'
 
@@ -77,7 +76,6 @@ def test_auto_convert_dtype_handles_dtype_mismatch():
 
 
 def test_usable_as_decorator():
-
     @sc.elemwise_func(unit_func=lambda u: u)
     def add1(a):
         return a + 1

@@ -105,22 +105,18 @@ def test_sigma_accepts_mixed_label_based_and_positional_param():
 
 def test_label_based_sigma_equivalent_to_positional_sigma_given_bin_edge_coord():
     da = make_histogram2d()
-    result = gaussian_filter(da,
-                             sigma={
-                                 'x': sc.scalar(1.0, unit='mm'),
-                                 'y': sc.scalar(5.0, unit='mm')
-                             })
+    result = gaussian_filter(
+        da, sigma={'x': sc.scalar(1.0, unit='mm'), 'y': sc.scalar(5.0, unit='mm')}
+    )
     reference = gaussian_filter(da, sigma=10)
     assert sc.identical(result, reference)
 
 
 def test_label_based_sigma_equivalent_to_positional_sigma():
     da = make_data2d()
-    result = gaussian_filter(da,
-                             sigma={
-                                 'x': sc.scalar(1.0, unit='mm'),
-                                 'y': sc.scalar(5.0, unit='mm')
-                             })
+    result = gaussian_filter(
+        da, sigma={'x': sc.scalar(1.0, unit='mm'), 'y': sc.scalar(5.0, unit='mm')}
+    )
     reference = gaussian_filter(da, sigma=10)
     assert sc.identical(result, reference)
 
@@ -133,7 +129,8 @@ def test_order_is_equivalent_to_scipy_order(order):
     reference.values = scipy.ndimage.gaussian_filter(
         reference.values,
         sigma=1.5,
-        order=order if isinstance(order, int) else order.values())
+        order=order if isinstance(order, int) else order.values(),
+    )
     assert sc.identical(result, reference)
 
 

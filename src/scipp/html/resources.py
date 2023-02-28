@@ -11,8 +11,11 @@ from string import Template
 def _read_text(filename):
     if hasattr(importlib.resources, 'files'):
         # Use new API added in Python 3.9
-        return importlib.resources.files('scipp.html.templates').joinpath(
-            filename).read_text()
+        return (
+            importlib.resources.files('scipp.html.templates')
+            .joinpath(filename)
+            .read_text()
+        )
     # Old API, deprecated as of Python 3.11
     return importlib.resources.read_text('scipp.html.templates', filename)
 
@@ -23,8 +26,8 @@ def _format_style(template: str) -> str:
     # Color patterns in the CSS template use the name in
     # the config file plus a _color suffix.
     return Template(template).substitute(
-        **{f'{key}_color': val
-           for key, val in config['colors'].items()})
+        **{f'{key}_color': val for key, val in config['colors'].items()}
+    )
 
 
 def _preprocess_style(template: str) -> str:
@@ -75,9 +78,12 @@ def load_dg_style() -> str:
     """
     from .formatting_html import load_style
     from .resources import _preprocess_style, _read_text
-    style_sheet = '<style id="datagroup-style-sheet">' + \
-                  _preprocess_style(_read_text('datagroup.css')) + \
-                  '</style>'
+
+    style_sheet = (
+        '<style id="datagroup-style-sheet">'
+        + _preprocess_style(_read_text('datagroup.css'))
+        + '</style>'
+    )
 
     return load_style() + style_sheet
 

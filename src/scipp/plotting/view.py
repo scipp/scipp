@@ -13,8 +13,9 @@ def _slice_params(array, dim, loc):
     if not isinstance(array, core.DataArray):
         array = next(iter(array.values()))
     if array.sizes[dim] + 1 == coord.sizes[dim]:
-        _, i = core.get_slice_params(array.data, coord, core.scalar(loc,
-                                                                    unit=coord.unit))
+        _, i = core.get_slice_params(
+            array.data, coord, core.scalar(loc, unit=coord.unit)
+        )
         if i < 0 or i + 1 >= coord.sizes[dim]:
             return None
         return coord[dim, i], coord[dim, i + 1]
@@ -149,8 +150,8 @@ class PlotView(Displayable):
         Forward axes update to the `figure`.
         """
         self.figure.initialize(
-            {axis: self.formatters[dim]
-             for axis, dim in zip(self._axes, self._dims)})
+            {axis: self.formatters[dim] for axis, dim in zip(self._axes, self._dims)}
+        )
         scale = {axis: self._scale[dim] for axis, dim in zip(self._axes, self._dims)}
         unit = '' if self._data.unit is None else f'[{self._data.unit}]'
         self.figure.update_axes(scale=scale, unit=unit)

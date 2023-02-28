@@ -19,6 +19,7 @@ def test_from_rotvec():
     values = [1.2, -2.3, 3.4]
     rot = rotations_from_rotvecs(sc.vectors(dims=["x"], values=[values], unit='deg'))
     from scipy.spatial.transform import Rotation as R
+
     expected = R.from_rotvec(values, degrees=True)
 
     # Test rotations are equivalent by applying to a test vector.
@@ -35,7 +36,8 @@ def test_from_rotvec_rotation():
 def test_from_rotvec_rad():
     assert sc.identical(
         rotations_from_rotvecs(sc.vector(value=[pi / 2, 0, 0], unit="rad")),
-        rotations_from_rotvecs(sc.vector(value=[90, 0, 0], unit="deg")))
+        rotations_from_rotvecs(sc.vector(value=[90, 0, 0], unit="deg")),
+    )
 
 
 def test_as_rotvec_bad_unit():
@@ -50,8 +52,9 @@ def test_from_quaternion():
     transform = rotation(value=quat)
     vector = sc.vector(value=[1, 2, 3], unit=sc.units.m)
 
-    assert sc.allclose(transform * vector, sc.vector(value=[1, -2, -3],
-                                                     unit=sc.units.m))
+    assert sc.allclose(
+        transform * vector, sc.vector(value=[1, -2, -3], unit=sc.units.m)
+    )
 
 
 def test_from_quaternions():
@@ -63,7 +66,8 @@ def test_from_quaternions():
 
     assert sc.allclose(
         transforms * vectors,
-        sc.vectors(dims=["x"], values=[[1, -2, -3], [-4, 5, -6]], unit=sc.units.m))
+        sc.vectors(dims=["x"], values=[[1, -2, -3], [-4, 5, -6]], unit=sc.units.m),
+    )
 
 
 def test_from_quaternions_2d():
@@ -75,13 +79,14 @@ def test_from_quaternions_2d():
 
     assert sc.allclose(
         transforms * vectors,
-        sc.vectors(dims=["y", "x"],
-                   values=[[[1, -2, -3], [-4, 5, -6]]],
-                   unit=sc.units.m))
+        sc.vectors(
+            dims=["y", "x"], values=[[[1, -2, -3], [-4, 5, -6]]], unit=sc.units.m
+        ),
+    )
 
 
 def test_rotation_default_unit_is_dimensionless():
-    var = rotation(value=np.ones(shape=(4, )))
+    var = rotation(value=np.ones(shape=(4,)))
     assert var.unit == sc.units.one
 
 
@@ -92,14 +97,14 @@ def test_rotations_default_unit_is_dimensionless():
 
 def test_can_get_value_of_0d_variable():
     rng = np.random.default_rng()
-    value = rng.random((4, ))
+    value = rng.random((4,))
     var = rotation(value=value)
     assert np.array_equal(var.value, value)
 
 
 def test_can_set_value_of_0d_variable():
     rng = np.random.default_rng()
-    value = rng.random((4, ))
+    value = rng.random((4,))
     var = rotation(value=value)
     var.value += value
     assert np.array_equal(var.value, value + value)

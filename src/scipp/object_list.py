@@ -12,16 +12,21 @@ def _repr_html_():
     # current IPython stack when calling _repr_html_ so this is bound to break.
     scope = inspect.stack()[7][0].f_globals
     from IPython import get_ipython
+
     ipython = get_ipython()
     out = ''
     for category in ['Variable', 'DataArray', 'Dataset']:
         names = ipython.magic(f"who_ls {category}")
-        out += f"<details open=\"open\"><summary>{category}s:"\
-               f"({len(names)})</summary>"
+        out += (
+            f"<details open=\"open\"><summary>{category}s:" f"({len(names)})</summary>"
+        )
         for name in names:
             html = make_html(eval(name, scope))  # nosec: B307
-            out += f"<details style=\"padding-left:2em\"><summary>"\
-                   f"{name}</summary>{html}</details>"
+            out += (
+                f"<details style=\"padding-left:2em\"><summary>"
+                f"{name}</summary>{html}</details>"
+            )
         out += "</details>"
     from IPython.core.display import HTML, display
+
     display(HTML(out))

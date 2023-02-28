@@ -76,12 +76,15 @@ def test_nanmean():
 def test_sum_multiple_dims():
     values = np.arange(24).reshape(2, 3, 4)
     var = sc.array(dims=['x', 'y', 'z'], values=values)
-    assert sc.identical(var.sum(('x', 'y')),
-                        sc.array(dims=['z'], values=values.sum(axis=(0, 1))))
-    assert sc.identical(var.sum(('x', 'z')),
-                        sc.array(dims=['y'], values=values.sum(axis=(0, 2))))
-    assert sc.identical(var.sum(('z', 'x')),
-                        sc.array(dims=['y'], values=values.sum(axis=(0, 2))))
+    assert sc.identical(
+        var.sum(('x', 'y')), sc.array(dims=['z'], values=values.sum(axis=(0, 1)))
+    )
+    assert sc.identical(
+        var.sum(('x', 'z')), sc.array(dims=['y'], values=values.sum(axis=(0, 2)))
+    )
+    assert sc.identical(
+        var.sum(('z', 'x')), sc.array(dims=['y'], values=values.sum(axis=(0, 2)))
+    )
     assert sc.identical(var.sum(()), var)
-    assert sc.identical(var.sum(('x', )), var.sum('x'))
+    assert sc.identical(var.sum(('x',)), var.sum('x'))
     assert sc.identical(var.sum(('x', 'y', 'z')), var.sum())

@@ -22,10 +22,24 @@ def _dtype_lut():
     # handling, but will do as we add support for other types such as
     # variable-length strings.
     dtypes = [
-        d.float64, d.float32, d.int64, d.int32, d.bool, d.datetime64, d.string,
-        d.Variable, d.DataArray, d.Dataset, d.VariableView, d.DataArrayView,
-        d.DatasetView, d.vector3, d.linear_transform3, d.affine_transform3,
-        d.translation3, d.rotation3
+        d.float64,
+        d.float32,
+        d.int64,
+        d.int32,
+        d.bool,
+        d.datetime64,
+        d.string,
+        d.Variable,
+        d.DataArray,
+        d.Dataset,
+        d.VariableView,
+        d.DataArrayView,
+        d.DatasetView,
+        d.vector3,
+        d.linear_transform3,
+        d.affine_transform3,
+        d.translation3,
+        d.rotation3,
     ]
     names = [str(dtype) for dtype in dtypes]
     return dict(zip(names, dtypes))
@@ -41,13 +55,16 @@ def collection_element_name(name, index):
     """
     Convert name into an ASCII string that can be used as an object name in HDF5.
     """
-    ascii_name = name.replace('.', '&#46;').replace('/', '&#47;').encode(
-        'ascii', 'xmlcharrefreplace').decode('ascii')
+    ascii_name = (
+        name.replace('.', '&#46;')
+        .replace('/', '&#47;')
+        .encode('ascii', 'xmlcharrefreplace')
+        .decode('ascii')
+    )
     return f'elem_{index:03d}_{ascii_name}'
 
 
 class NumpyDataIO:
-
     @staticmethod
     def write(group, data):
         dset = group.create_dataset('values', data=_as_hdf5_type(data.values))
@@ -70,7 +87,6 @@ class NumpyDataIO:
 
 
 class BinDataIO:
-
     @staticmethod
     def write(group, data):
         bins = data.bins.constituents
@@ -94,6 +110,7 @@ class BinDataIO:
     @staticmethod
     def read(group):
         from .._scipp import core as sc
+
         values = group['values']
         begin = VariableIO.read(values['begin'])
         end = VariableIO.read(values['end'])
@@ -103,7 +120,6 @@ class BinDataIO:
 
 
 class ScippDataIO:
-
     @staticmethod
     def write(group, data):
         values = group.create_group('values')
@@ -125,10 +141,10 @@ class ScippDataIO:
 
 
 class StringDataIO:
-
     @staticmethod
     def write(group, data):
         import h5py
+
         dt = h5py.string_dtype(encoding='utf-8')
         dset = group.create_dataset('values', shape=data.shape, dtype=dt)
         if len(data.shape) == 0:
@@ -150,6 +166,7 @@ class StringDataIO:
 
 def _write_scipp_header(group, what):
     from .._scipp import __version__
+
     group.attrs['scipp-version'] = __version__
     group.attrs['scipp-type'] = what
 
@@ -157,18 +174,30 @@ def _write_scipp_header(group, what):
 def _check_scipp_header(group, what):
     if 'scipp-version' not in group.attrs:
         raise RuntimeError(
-            "This does not look like an HDF5 file/group written by Scipp.")
+            "This does not look like an HDF5 file/group written by Scipp."
+        )
     if group.attrs['scipp-type'] != what:
         raise RuntimeError(
-            f"Attempt to read {what}, found {group.attrs['scipp-type']}.")
+            f"Attempt to read {what}, found {group.attrs['scipp-type']}."
+        )
 
 
 def _data_handler_lut():
     from .._scipp.core import DType as d
+
     handler = {}
     for dtype in [
-            d.float64, d.float32, d.int64, d.int32, d.bool, d.datetime64, d.vector3,
-            d.linear_transform3, d.rotation3, d.translation3, d.affine_transform3
+        d.float64,
+        d.float32,
+        d.int64,
+        d.int32,
+        d.bool,
+        d.datetime64,
+        d.vector3,
+        d.linear_transform3,
+        d.rotation3,
+        d.translation3,
+        d.affine_transform3,
     ]:
         handler[str(dtype)] = NumpyDataIO
     for dtype in [d.VariableView, d.DataArrayView, d.DatasetView]:
@@ -199,8 +228,7 @@ def _read_unit_attr(ds):
     unit_dict = {'__version__': u['__version__'], 'multiplier': u['multiplier']}
     if 'powers' in u.dtype.names:
         unit_dict['powers'] = {
-            name: u['powers'][name]
-            for name in u['powers'].dtype.names
+            name: u['powers'][name] for name in u['powers'].dtype.names
         }
     return Unit.from_dict(unit_dict)
 
@@ -222,8 +250,9 @@ class VariableIO:
         if var.dtype not in cls._dtypes.values():
             # In practice this may make the file unreadable, e.g., if values
             # have unsupported dtype.
-            get_logger().warning('Writing with dtype=%s not implemented, skipping.',
-                                 var.dtype)
+            get_logger().warning(
+                'Writing with dtype=%s not implemented, skipping.', var.dtype
+            )
             return
         _write_scipp_header(group, 'Variable')
         dset = cls._write_data(group, var)
@@ -239,6 +268,7 @@ class VariableIO:
         _check_scipp_header(group, 'Variable')
         from .._scipp import core as sc
         from .._scipp.core import DType as d
+
         values = group['values']
         contents = {key: values.attrs[key] for key in ['dims', 'shape']}
         contents['dtype'] = cls._dtypes[values.attrs['dtype']]
@@ -263,8 +293,9 @@ def _write_mapping(parent, mapping, override=None):
         if (g := override.get(name)) is not None:
             parent[var_group_name] = g
         else:
-            g = HDF5IO.write(group=parent.create_group(var_group_name),
-                             data=mapping[name])
+            g = HDF5IO.write(
+                group=parent.create_group(var_group_name), data=mapping[name]
+            )
             if g is None:
                 del parent[var_group_name]
             else:
@@ -275,14 +306,14 @@ def _read_mapping(group, override=None):
     if override is None:
         override = {}
     return {
-        g.attrs['name']:
-        override[g.attrs['name']] if g.attrs['name'] in override else HDF5IO.read(g)
+        g.attrs['name']: override[g.attrs['name']]
+        if g.attrs['name'] in override
+        else HDF5IO.read(g)
         for g in group.values()
     }
 
 
 class DataArrayIO:
-
     @staticmethod
     def write(group, data, override=None):
         if override is None:
@@ -306,6 +337,7 @@ class DataArrayIO:
         if override is None:
             override = {}
         from ..core import DataArray
+
         contents = dict()
         contents['name'] = group.attrs['name']
         contents['data'] = VariableIO.read(group['data'])
@@ -315,7 +347,6 @@ class DataArrayIO:
 
 
 class DatasetIO:
-
     @staticmethod
     def write(group, data):
         _write_scipp_header(group, 'Dataset')
@@ -327,23 +358,26 @@ class DatasetIO:
         # is not sufficient.
         coords = {v.attrs['name']: v for v in coords.values()}
         for i, (name, da) in enumerate(data.items()):
-            HDF5IO.write(entries.create_group(collection_element_name(name, i)),
-                         da,
-                         override={'coords': coords})
+            HDF5IO.write(
+                entries.create_group(collection_element_name(name, i)),
+                da,
+                override={'coords': coords},
+            )
         return group
 
     @staticmethod
     def read(group):
         _check_scipp_header(group, 'Dataset')
         from ..core import Dataset
+
         coords = _read_mapping(group['coords'])
-        return Dataset(coords=coords,
-                       data=_read_mapping(group['entries'], override={'coords':
-                                                                      coords}))
+        return Dataset(
+            coords=coords,
+            data=_read_mapping(group['entries'], override={'coords': coords}),
+        )
 
 
 class DataGroupIO:
-
     @staticmethod
     def write(group, data):
         _write_scipp_header(group, 'DataGroup')
@@ -355,13 +389,17 @@ class DataGroupIO:
     def read(group):
         _check_scipp_header(group, 'DataGroup')
         from ..core import DataGroup
+
         return DataGroup(_read_mapping(group['entries']))
 
 
 class HDF5IO:
     _handlers = dict(
-        zip(['Variable', 'DataArray', 'Dataset', 'DataGroup'],
-            [VariableIO, DataArrayIO, DatasetIO, DataGroupIO]))
+        zip(
+            ['Variable', 'DataArray', 'Dataset', 'DataGroup'],
+            [VariableIO, DataArrayIO, DatasetIO, DataGroupIO],
+        )
+    )
 
     @classmethod
     def write(cls, group, data, **kwargs):
@@ -369,8 +407,9 @@ class HDF5IO:
         try:
             handler = cls._handlers[name]
         except KeyError:
-            get_logger().warning("Writing type '%s' to HDF5 not implemented, skipping.",
-                                 type(data))
+            get_logger().warning(
+                "Writing type '%s' to HDF5 not implemented, skipping.", type(data)
+            )
             return None
         return handler.write(group, data, **kwargs)
 
@@ -384,11 +423,13 @@ def to_hdf5(obj: VariableLike, filename: Union[str, Path]):
     Writes object out to file in hdf5 format.
     """
     import h5py
+
     with h5py.File(filename, 'w') as f:
         HDF5IO.write(f, obj)
 
 
 def open_hdf5(filename: Union[str, Path]) -> VariableLike:
     import h5py
+
     with h5py.File(filename, 'r') as f:
         return HDF5IO.read(f)

@@ -104,9 +104,9 @@ def test_low_and_high_frequency_components_removed_by_bandpass_filter():
     band = sc.array(dims=['ignored'], values=[2, 10], unit=sc.units.one / x.unit)
     sos = butter(da.coords[dim], N=6, Wn=band, btype='bandpass')
     out = sosfiltfilt(da, dim, sos=sos)
-    assert sc.allclose(out[400:-400].data,
-                       mid_freq[400:-400].data,
-                       atol=sc.scalar(0.01))
+    assert sc.allclose(
+        out[400:-400].data, mid_freq[400:-400].data, atol=sc.scalar(0.01)
+    )
 
 
 def test_filtering_inner_and_outer_dimension_yields_equivalent_results():
@@ -130,10 +130,13 @@ def array2d(dim, extra_dim):
     return sc.concat([da, da + da], extra_dim)
 
 
-@pytest.mark.parametrize("da", [
-    array2d(dim='xx', extra_dim='yy'),
-    array2d(dim='xx', extra_dim='yy').transpose().copy()
-])
+@pytest.mark.parametrize(
+    "da",
+    [
+        array2d(dim='xx', extra_dim='yy'),
+        array2d(dim='xx', extra_dim='yy').transpose().copy(),
+    ],
+)
 def test_filtering_slice_identical_to_slice_of_filtered(da):
     sos = butter(da.coords['xx'], N=4, Wn=20 / da.coords['xx'].unit)
     out2d = sosfiltfilt(da, 'xx', sos=sos)
@@ -144,8 +147,9 @@ def test_filtering_slice_identical_to_slice_of_filtered(da):
 def test_given_variable_uses_coord_passed_to_butter():
     da = array1d_linspace()
     sos = butter(da.coords[da.dim], N=4, Wn=4 / da.coords[da.dim].unit)
-    assert sc.identical(sosfiltfilt(da.data, da.dim, sos=sos),
-                        sosfiltfilt(da, da.dim, sos=sos))
+    assert sc.identical(
+        sosfiltfilt(da.data, da.dim, sos=sos), sosfiltfilt(da, da.dim, sos=sos)
+    )
 
 
 def test_SOS_filtfilt_same_as_sosfiltfilt():

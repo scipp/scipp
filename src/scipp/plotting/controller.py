@@ -5,13 +5,13 @@ from .view1d import PlotView1d
 
 
 class MarkerModel:
-
     def __init__(self):
         self._counter = -1
         self._markers = {}
 
     def generate(self):
         from ..utils import make_random_color
+
         color = make_random_color(fmt='rgba')
         self._counter += 1
         self._markers[self._counter] = color
@@ -36,20 +36,21 @@ class PlotController:
 
     """
 
-    def __init__(self,
-                 dims,
-                 vmin=None,
-                 vmax=None,
-                 norm=None,
-                 resampling_mode=None,
-                 scale=None,
-                 widgets=None,
-                 model=None,
-                 profile_model=None,
-                 panel=None,
-                 profile=None,
-                 view=None):
-
+    def __init__(
+        self,
+        dims,
+        vmin=None,
+        vmax=None,
+        norm=None,
+        resampling_mode=None,
+        scale=None,
+        widgets=None,
+        model=None,
+        profile_model=None,
+        panel=None,
+        profile=None,
+        view=None,
+    ):
         self._dims = dims
         self.widgets = widgets
         self.model = model
@@ -63,7 +64,7 @@ class PlotController:
         self.profile = profile
         if profile is not None:
             self._profile_view = PlotView1d(figure=profile, formatters=view.formatters)
-            self._profile_model.dims = self._dims[:-len(self.model.dims)]
+            self._profile_model.dims = self._dims[: -len(self.model.dims)]
             self._profile_model.mode = resampling_mode
         self.view = view
 
@@ -121,9 +122,9 @@ class PlotController:
         vmin, vmax = self.find_vmin_vmax(button=button)
         self.view.rescale_to_data(vmin, vmax)
         if self.panel is not None:
-            self.panel.rescale_to_data(vmin=vmin,
-                                       vmax=vmax,
-                                       mask_info=self.get_masks_info())
+            self.panel.rescale_to_data(
+                vmin=vmin, vmax=vmax, mask_info=self.get_masks_info()
+            )
         self.refresh()
 
     def refresh(self):
@@ -246,8 +247,9 @@ class PlotController:
         self.view.toggle_mask(change)
         self.refresh()
         if self.profile is not None:
-            self.profile.toggle_mask(change["owner"].mask_group,
-                                     change["owner"].mask_name, change["new"])
+            self.profile.toggle_mask(
+                change["owner"].mask_group, change["owner"].mask_name, change["new"]
+            )
 
     def get_masks_info(self):
         """
@@ -281,7 +283,8 @@ class PlotController:
         else:
             if len(dims) != 1:
                 raise NotImplementedError(
-                    "Profile view only supports 1-dimensional data")
+                    "Profile view only supports 1-dimensional data"
+                )
             if owner.button_style == "info":
                 owner.button_style = ""
                 visible = False
@@ -305,8 +308,9 @@ class PlotController:
                 for dim in self._profile_model.dims:
                     del slices[dim]
                 new_values = self._profile_model.update_data(slices=slices)
-                self._profile_view.update_data(new_values,
-                                               mask_info=self.get_masks_info())
+                self._profile_view.update_data(
+                    new_values, mask_info=self.get_masks_info()
+                )
                 self.profile.toggle_hover_visibility(True)
             else:
                 self.profile.toggle_hover_visibility(False)

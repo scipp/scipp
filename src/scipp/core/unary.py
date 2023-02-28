@@ -8,7 +8,7 @@ from ._cpp_wrapper_util import call_func as _call_cpp_func
 
 
 def isnan(x: _cpp.Variable) -> _cpp.Variable:
-    """Element-wise isnan (true if an element is nan). """
+    """Element-wise isnan (true if an element is nan)."""
     return _call_cpp_func(_cpp.isnan, x)
 
 
@@ -32,10 +32,9 @@ def isneginf(x: _cpp.Variable) -> _cpp.Variable:
     return _call_cpp_func(_cpp.isneginf, x)
 
 
-def to_unit(x: _cpp.Variable,
-            unit: _Union[_cpp.Unit, str],
-            *,
-            copy: bool = True) -> _cpp.Variable:
+def to_unit(
+    x: _cpp.Variable, unit: _Union[_cpp.Unit, str], *, copy: bool = True
+) -> _cpp.Variable:
     """Convert the variable to a different unit.
 
     Raises a :class:`scipp.UnitError` if the input unit is not compatible

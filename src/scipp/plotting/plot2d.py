@@ -20,54 +20,61 @@ def plot2d(scipp_obj_dict, **kwargs):
     a dynamic image resampling for better performance with large images.
     """
 
-    def builder(*,
-                dims,
-                norm=None,
-                masks=None,
-                ax=None,
-                cax=None,
-                pax=None,
-                figsize=None,
-                aspect=None,
-                cmap=None,
-                vmin=None,
-                vmax=None,
-                title=None,
-                xlabel=None,
-                ylabel=None,
-                grid=False):
+    def builder(
+        *,
+        dims,
+        norm=None,
+        masks=None,
+        ax=None,
+        cax=None,
+        pax=None,
+        figsize=None,
+        aspect=None,
+        cmap=None,
+        vmin=None,
+        vmax=None,
+        title=None,
+        xlabel=None,
+        ylabel=None,
+        grid=False
+    ):
         out = {
             'view_ndims': 2,
             'model': PlotModel2d,
             'view': PlotView2d,
-            'controller': PlotController2d
+            'controller': PlotController2d,
         }
         params = make_params(cmap=cmap, norm=norm, vmin=vmin, vmax=vmax, masks=masks)
         out['vmin'] = params["values"]["vmin"]
         out['vmax'] = params["values"]["vmax"]
         if len(dims) > 2:
             if is_static():
-                raise RuntimeError("Plotting slices of data with more than two "
-                                   "dimensions requires the interactive matplotlib "
-                                   "backend. Enable with `%matplotlib widget`.")
+                raise RuntimeError(
+                    "Plotting slices of data with more than two "
+                    "dimensions requires the interactive matplotlib "
+                    "backend. Enable with `%matplotlib widget`."
+                )
             params['extend_cmap'] = 'both'
-            out['profile_figure'] = make_profile(ax=pax,
-                                                 mask_color=params['masks']['color'])
+            out['profile_figure'] = make_profile(
+                ax=pax, mask_color=params['masks']['color']
+            )
 
-        out['figure'] = PlotFigure2d(ax=ax,
-                                     cax=cax,
-                                     figsize=figsize,
-                                     aspect=aspect,
-                                     cmap=params["values"]["cmap"],
-                                     norm=params["values"]["norm"],
-                                     name=next(iter(scipp_obj_dict)),
-                                     cbar=params["values"]["cbar"],
-                                     mask_cmap=params['masks']['cmap'],
-                                     extend=params['extend_cmap'],
-                                     title=title,
-                                     xlabel=xlabel,
-                                     ylabel=ylabel,
-                                     grid=grid)
+        out['figure'] = PlotFigure2d(
+            ax=ax,
+            cax=cax,
+            figsize=figsize,
+            aspect=aspect,
+            cmap=params["values"]["cmap"],
+            norm=params["values"]["norm"],
+            name=next(iter(scipp_obj_dict)),
+            cbar=params["values"]["cbar"],
+            mask_cmap=params['masks']['cmap'],
+            extend=params['extend_cmap'],
+            title=title,
+            xlabel=xlabel,
+            ylabel=ylabel,
+            grid=grid,
+        )
         return out
 
     return make_plot(builder, scipp_obj_dict, **kwargs)

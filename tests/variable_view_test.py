@@ -10,14 +10,16 @@ import scipp as sc
 
 
 def test_type():
-    variable_slice = sc.Variable(dims=['x'], values=np.arange(1, 10,
-                                                              dtype=float))['x', :]
+    variable_slice = sc.Variable(dims=['x'], values=np.arange(1, 10, dtype=float))[
+        'x', :
+    ]
     assert type(variable_slice) == sc.Variable
 
 
 def test_astype():
-    variable_slice = sc.Variable(dims=['x'], values=np.arange(1, 10,
-                                                              dtype=np.int64))['x', :]
+    variable_slice = sc.Variable(dims=['x'], values=np.arange(1, 10, dtype=np.int64))[
+        'x', :
+    ]
     assert variable_slice.dtype == sc.DType.int64
 
     var_as_float = variable_slice.astype(sc.DType.float32)

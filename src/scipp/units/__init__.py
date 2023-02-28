@@ -35,8 +35,23 @@ from typing import Dict, Iterable, Tuple, Union
 
 from .._scipp.core import add_unit_alias as _add_unit_alias
 from .._scipp.core import clear_unit_aliases as _clear_unit_aliases
-from .._scipp.core.units import K, angstrom, counts, default_unit, deg, dimensionless, \
-    kg, m, meV, mm, ns, one, rad, s, us  # NOQA
+from .._scipp.core.units import (  # NOQA
+    K,
+    angstrom,
+    counts,
+    default_unit,
+    deg,
+    dimensionless,
+    kg,
+    m,
+    meV,
+    mm,
+    ns,
+    one,
+    rad,
+    s,
+    us,
+)
 from ..core.cpp_classes import Unit, Variable, VariancesError
 
 
@@ -149,8 +164,7 @@ class UnitAliases:
           True
         """
         overridden = {
-            name: unit
-            for name, unit in self._aliases.items() if name in kwargs
+            name: unit for name, unit in self._aliases.items() if name in kwargs
         }
         for name, unit in kwargs.items():
             self[name] = unit
@@ -200,6 +214,19 @@ aliases = UnitAliases()
 """Table of unit aliases."""
 
 __all__ = [
-    'angstrom', 'counts', 'default_unit', 'deg', 'dimensionless', 'kg', 'K', 'meV', 'm',
-    'one', 'rad', 's', 'us', 'ns', 'mm'
+    'angstrom',
+    'counts',
+    'default_unit',
+    'deg',
+    'dimensionless',
+    'kg',
+    'K',
+    'meV',
+    'm',
+    'one',
+    'rad',
+    's',
+    'us',
+    'ns',
+    'mm',
 ]
