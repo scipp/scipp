@@ -43,7 +43,8 @@ Features
 ~~~~~~~~
 
 * Added new string-formatting options `#3017 <https://github.com/scipp/scipp/pull/3017>`_, `#3028 <https://github.com/scipp/scipp/pull/3028>`_.
-* Add ``size`` property to :class:`scipp.Variable` and :class:`scipp.DataArray`.
+* Added ``size`` property to :class:`scipp.Variable` and :class:`scipp.DataArray`.
+* Added :func:`scipp.testing.assert_identical` `#3066 <https://github.com/scipp/scipp/pull/3066>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
