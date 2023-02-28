@@ -11,13 +11,22 @@ Place the following code in your ``conftest.py``:
     pytest.register_assert_rewrite('scipp.testing.assertions')
 
 """
-
-from typing import Any, Mapping, TypeVar
+from contextlib import contextmanager
+from typing import Any, Iterator, Mapping, TypeVar
 
 import numpy as np
 
 from ..core import DataArray, DataGroup, Dataset, Variable
 from ..core.comparison import identical
+
+# Exception notes are formatted as 'PREPOSITION {loc}',
+# where 'loc' is set by the concrete assertion functions to indicate coords, attrs, etc.
+# 'PREPOSITION' is replaced at the top level to produce exception messages like:
+#
+# [...]
+# in coord 'x'
+# of data group item 'b'
+# of data group item 'a'
 
 T = TypeVar('T')
 
@@ -47,6 +56,25 @@ def assert_identical(a: T, b: T) -> None:
     AssertionError
         If the objects are not identical.
     """
+    try:
+        _assert_identical_impl(a, b)
+    except AssertionError as exc:
+        if hasattr(exc, '__notes__'):
+            # See comment above.
+            notes = []
+            rest = -1
+            for i, note in enumerate(exc.__notes__):
+                if 'PREPOSITION' in note:
+                    notes.append(note.replace('PREPOSITION', 'in'))
+                    rest = i
+                    break
+            notes.extend(
+                note.replace('PREPOSITION', 'of') for note in exc.__notes__[rest + 1:])
+            exc.__notes__ = notes
+        raise
+
+
+def _assert_identical_impl(a: T, b: T) -> None:
     assert type(a) == type(b)
     if isinstance(a, Variable):
         _assert_identical_variable(a, b)
@@ -79,32 +107,50 @@ def _assert_identical_binned_variable_data(a: Variable, b: Variable) -> None:
 
 
 def _assert_identical_dense_variable_data(a: Variable, b: Variable) -> None:
-    np.testing.assert_array_equal(a.values, b.values, err_msg='when comparing values')
+    with _add_note('values'):
+        np.testing.assert_array_equal(a.values,
+                                      b.values,
+                                      err_msg='when comparing values')
     if a.variances is not None:
         assert b.variances is not None, 'a has variances but b does not'
-        np.testing.assert_array_equal(a.variances,
-                                      b.variances,
-                                      err_msg='when comparing variances')
+        with _add_note('variances'):
+            np.testing.assert_array_equal(a.variances,
+                                          b.variances,
+                                          err_msg='when comparing variances')
     else:
         assert b.variances is None, 'a has no variances but b does'
 
 
 def _assert_identical_data_array(a: DataArray, b: DataArray) -> None:
     _assert_identical_variable(a.data, b.data)
-    _assert_mapping_eq(a.coords, b.coords)
-    _assert_mapping_eq(a.attrs, b.attrs)
-    _assert_mapping_eq(a.masks, b.masks)
+    _assert_mapping_eq(a.coords, b.coords, 'coord')
+    _assert_mapping_eq(a.attrs, b.attrs, 'attr')
+    _assert_mapping_eq(a.masks, b.masks, 'mask')
 
 
 def _assert_identical_dataset(a: Dataset, b: Dataset) -> None:
-    _assert_mapping_eq(a, b)
+    _assert_mapping_eq(a, b, 'dataset item')
 
 
 def _assert_identical_datagroup(a: DataGroup, b: DataGroup) -> None:
-    _assert_mapping_eq(a, b)
+    _assert_mapping_eq(a, b, 'data group item')
 
 
-def _assert_mapping_eq(a: Mapping[str, Any], b: Mapping[str, Any]) -> None:
-    assert a.keys() == b.keys()
+def _assert_mapping_eq(a: Mapping[str, Any], b: Mapping[str, Any],
+                       map_name: str) -> None:
+    with _add_note(map_name + 's'):
+        assert a.keys() == b.keys()
     for name, var_a in a.items():
-        assert_identical(var_a, b[name])
+        with _add_note("{} '{}'", map_name, name):
+            _assert_identical_impl(var_a, b[name])
+
+
+@contextmanager
+def _add_note(loc: str, *args: str) -> Iterator[None]:
+    try:
+        yield
+    except AssertionError as exc:
+        if hasattr(exc, 'add_note'):
+            # Needs Python >= 3.11
+            exc.add_note(f'PREPOSITION {loc.format(*args)}')
+        raise
