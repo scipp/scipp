@@ -65,6 +65,8 @@ Deprecations
 Stability, Maintainability, and Testing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+* Switched to black for Python code formatting `#3070 <https://github.com/scipp/scipp/pull/3070>`_.
+
 Contributors
 ~~~~~~~~~~~~
 
