@@ -34,6 +34,10 @@ gitpython==3.1.30
     # via -r requirements/docs.in
 imagesize==1.4.1
     # via sphinx
+importlib-metadata==6.0.0
+    # via
+    #   nbconvert
+    #   sphinx
 ipympl==0.9.2
     # via -r requirements/docs.in
 ipython-genutils==0.2.0
@@ -110,6 +114,8 @@ webencodings==0.5.1
     # via
     #   bleach
     #   tinycss2
+zipp==3.15.0
+    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

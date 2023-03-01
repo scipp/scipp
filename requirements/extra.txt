@@ -32,13 +32,11 @@ executing==1.2.0
 fonttools==4.38.0
     # via matplotlib
 graphviz==0.20.1
-    # via -r extra.in
+    # via -r requirements/extra.in
 h5py==3.7.0
-    # via -r extra.in
+    # via -r requirements/extra.in
 idna==3.4
     # via requests
-importlib-metadata==5.1.0
-    # via numba
 ipydatawidgets==4.3.2
     # via pythreejs
 ipykernel==6.19.2
@@ -64,7 +62,7 @@ kiwisolver==1.4.4
 llvmlite==0.39.1
     # via numba
 matplotlib==3.6.2
-    # via -r extra.in
+    # via -r requirements/extra.in
 matplotlib-inline==0.1.6
     # via
     #   ipykernel
@@ -74,7 +72,7 @@ nest-asyncio==1.5.6
     #   ipykernel
     #   jupyter-client
 numba==0.56.4
-    # via -r extra.in
+    # via -r requirements/extra.in
 numpy==1.23.5
     # via
     #   contourpy
@@ -94,7 +92,7 @@ packaging==22.0
     #   xarray
 pandas==1.5.2
     # via
-    #   -r extra.in
+    #   -r requirements/extra.in
     #   xarray
 parso==0.8.3
     # via jedi
@@ -107,7 +105,7 @@ pillow==9.3.0
 platformdirs==2.6.0
     # via jupyter-core
 pooch==1.6.0
-    # via -r extra.in
+    # via -r requirements/extra.in
 prompt-toolkit==3.0.36
     # via ipython
 psutil==5.9.4
@@ -126,7 +124,7 @@ python-dateutil==2.8.2
     #   matplotlib
     #   pandas
 pythreejs==2.4.1
-    # via -r extra.in
+    # via -r requirements/extra.in
 pytz==2022.6
     # via pandas
 pyzmq==24.0.1
@@ -136,7 +134,7 @@ pyzmq==24.0.1
 requests==2.28.1
     # via pooch
 scipy==1.9.3
-    # via -r extra.in
+    # via -r requirements/extra.in
 six==1.16.0
     # via
     #   asttokens
@@ -167,9 +165,7 @@ wcwidth==0.2.5
 widgetsnbextension==4.0.4
     # via ipywidgets
 xarray==2022.12.0
-    # via -r extra.in
-zipp==3.11.0
-    # via importlib-metadata
+    # via -r requirements/extra.in
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
