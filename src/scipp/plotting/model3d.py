@@ -50,7 +50,8 @@ class ScatterPointModel:
     def _initialize(self):
         scipp_obj_dict = {
             key: _flatten(array, dims=self._positions_dims, mode=self.mode)
-            for key, array in self._scipp_obj_dict.items()
+            for key,
+            array in self._scipp_obj_dict.items()
         }
         self._data_model = PlotModel1d(scipp_obj_dict=scipp_obj_dict,
                                        resolution=self._resolution)

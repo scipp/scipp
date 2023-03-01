@@ -19,8 +19,12 @@ class UnitsConan(ConanFile):
                    "of measurement and conversions between them "
                    "and with string representations of units "
                    "and measurements")
-    topics = ("units", "dimensions", "quantities", "physical-units",
-              "dimensional-analysis", "run-time")
+    topics = ("units",
+              "dimensions",
+              "quantities",
+              "physical-units",
+              "dimensional-analysis",
+              "run-time")
     settings = "os", "compiler", "build_type", "arch"
     options = {
         "shared": [True, False],
@@ -29,10 +33,7 @@ class UnitsConan(ConanFile):
         "namespace": "ANY"
     }
     default_options = {
-        "shared": False,
-        "fPIC": True,
-        "base_type": "uint32_t",
-        "namespace": None
+        "shared": False, "fPIC": True, "base_type": "uint32_t", "namespace": None
     }
     generators = "cmake"
 
@@ -45,7 +46,9 @@ class UnitsConan(ConanFile):
                              if self.settings.os == "Windows" else CMAKE_PROJECT_STR)
 
         tools.replace_in_file(
-            "units/CMakeLists.txt", cmake_project_str, cmake_project_str + """
+            "units/CMakeLists.txt",
+            cmake_project_str,
+            cmake_project_str + """
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()""")
 

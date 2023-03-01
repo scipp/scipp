@@ -25,8 +25,22 @@ class PlotFigure3d(Displayable):
     It renders an interactive scene containing a point cloud using `pythreejs`.
     """
 
-    def __init__(self, *, background, cmap, extend, figsize, mask_cmap, nan_color, norm,
-                 pixel_size, show_outline, tick_size, xlabel, ylabel, zlabel, camera):
+    def __init__(self,
+                 *,
+                 background,
+                 cmap,
+                 extend,
+                 figsize,
+                 mask_cmap,
+                 nan_color,
+                 norm,
+                 pixel_size,
+                 show_outline,
+                 tick_size,
+                 xlabel,
+                 ylabel,
+                 zlabel,
+                 camera):
 
         self._pixel_size = pixel_size
         if pixel_size is not None:
@@ -104,8 +118,7 @@ class PlotFigure3d(Displayable):
         Return the renderer and the colorbar into a widget box.
         """
         return ipw.HBox(
-            [self.toolbar._to_widget(),
-             ipw.HBox([self.renderer]), self.cbar_image])
+            [self.toolbar._to_widget(), ipw.HBox([self.renderer]), self.cbar_image])
 
     def savefig(self, filename=None):
         """
@@ -199,10 +212,8 @@ class PlotFigure3d(Displayable):
         """
         self.points_geometry = p3.BufferGeometry(
             attributes={
-                'position':
-                p3.BufferAttribute(array=positions),
-                'color':
-                p3.BufferAttribute(
+                'position': p3.BufferAttribute(array=positions),
+                'color': p3.BufferAttribute(
                     array=np.ones([positions.shape[0], 3], dtype='float32'))
             })
 

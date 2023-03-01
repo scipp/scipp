@@ -57,10 +57,7 @@ def add_buttons(
     for r in entries:
         lines.append({"type": "link", "text": f"{r}", "url": f"{base}/release/{r}"})
     header_buttons.append({
-        "type": "group",
-        "buttons": lines,
-        "icon": "fa fa-caret-down",
-        "text": current
+        "type": "group", "buttons": lines, "icon": "fa fa-caret-down", "text": current
     })
 
 
@@ -126,8 +123,7 @@ napoleon_type_aliases = {
     # objects without namespace: scipp
     "DataArray": "~scipp.DataArray",
     "Dataset": "~scipp.Dataset",
-    "Variable": "~scipp.Variable",
-    # objects without namespace: numpy
+    "Variable": "~scipp.Variable",  # objects without namespace: numpy
     "ndarray": "~numpy.ndarray",
 }
 typehints_defaults = 'comma'
@@ -241,8 +237,13 @@ man_pages = [(master_doc, 'scipp', u'scipp Documentation', [author], 1)]
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'scipp', u'scipp Documentation', author, 'scipp',
-     'One line description of project.', 'Miscellaneous'),
+    (master_doc,
+     'scipp',
+     u'scipp Documentation',
+     author,
+     'scipp',
+     'One line description of project.',
+     'Miscellaneous'),
 ]
 
 # -- Options for Matplotlib in notebooks ----------------------------------
@@ -294,9 +295,7 @@ linkcheck_ignore = [
     # Many links for PRs from our release notes. Slow and unlikely to cause issues.
     'https://github.com/scipp/scipp/pull/[0-9]+',
     # NASA mission website for solar flares data is down
-    'https://hesperia.gsfc.nasa.gov/rhessi3+',
-    # Flaky Kitware repo link
-    'https://apt.kitware.com+',
-    # Flaky pooch fatiando website
+    'https://hesperia.gsfc.nasa.gov/rhessi3+',  # Flaky Kitware repo link
+    'https://apt.kitware.com+',  # Flaky pooch fatiando website
     'https://www.fatiando.org/pooch+',
 ]

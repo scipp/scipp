@@ -71,7 +71,10 @@ arithmetic:
 MetaDataMap = _std_typing.MutableMapping[str, Variable]
 """dict-like object mapping dimension labels to Variables."""
 
-VariableLikeType = _std_typing.TypeVar('VariableLikeType', Variable, DataArray, Dataset,
+VariableLikeType = _std_typing.TypeVar('VariableLikeType',
+                                       Variable,
+                                       DataArray,
+                                       Dataset,
                                        DataGroup)
 """TypeVar for use in annotations.
 
@@ -101,8 +104,16 @@ if _std_typing.TYPE_CHECKING:
 else:
     ellipsis = type(Ellipsis)
 
-ScippIndex = _std_typing.Union[ellipsis, int, tuple, slice, list, np.ndarray,
+ScippIndex = _std_typing.Union[ellipsis,
+                               int,
+                               tuple,
+                               slice,
+                               list,
+                               np.ndarray,
                                _std_typing.Tuple[str,
-                                                 _std_typing.Union[int, slice, list,
+                                                 _std_typing.Union[int,
+                                                                   slice,
+                                                                   list,
                                                                    np.ndarray,
-                                                                   Variable]], Variable]
+                                                                   Variable]],
+                               Variable]

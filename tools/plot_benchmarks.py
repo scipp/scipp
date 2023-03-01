@@ -24,8 +24,14 @@ NAME_PATTERN = re.compile(r'(BM_)?(?P<name>[^/]+)(/[^_]*)?(_(?P<aggregate>\w+))?
 
 # Table columns written by Google Benchmark by default.
 DEFAULT_COLUMN_NAMES = [
-    'name', 'iterations', 'real_time', 'cpu_time', 'time_unit', 'bytes_per_second',
-    'items_per_second', 'label'
+    'name',
+    'iterations',
+    'real_time',
+    'cpu_time',
+    'time_unit',
+    'bytes_per_second',
+    'items_per_second',
+    'label'
 ]
 
 
@@ -105,8 +111,8 @@ def group_plots(data, designations):
 
 def plot_title(data, designations):
     """Format a title for a plot of ``data``."""
-    return ', '.join(f'{c}={data[c].unique()[0]}'
-                     for c, d in zip(data.columns, designations) if d == 'meta')
+    return ', '.join(f'{c}={data[c].unique()[0]}' for c,
+                     d in zip(data.columns, designations) if d == 'meta')
 
 
 def get_unit(data, name):

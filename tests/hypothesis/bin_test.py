@@ -32,8 +32,8 @@ def test_bin_2d_linspace_bounds(a, b):
 
 
 @settings(max_examples=1000, deadline=1000)
-@given(st.integers(min_value=0, max_value=5555), st.integers(min_value=0,
-                                                             max_value=1234),
+@given(st.integers(min_value=0, max_value=5555),
+       st.integers(min_value=0, max_value=1234),
        st.integers(min_value=0, max_value=1234))
 def test_automatic_grouping_optimization(nrow, i, j):
     base = sc.DataArray(sc.ones(dims=['row'], shape=[nrow]))

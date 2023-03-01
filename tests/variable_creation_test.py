@@ -483,8 +483,10 @@ def test_arange_datetime_from_int():
 
 
 def test_arange_datetime_from_np_datetime64():
-    var = sc.arange('t', np.datetime64('2022-08-02T11:18'),
-                    np.datetime64('2022-08-02T11:52'), 15)
+    var = sc.arange('t',
+                    np.datetime64('2022-08-02T11:18'),
+                    np.datetime64('2022-08-02T11:52'),
+                    15)
     expected = sc.datetimes(
         dims=['t'],
         values=['2022-08-02T11:18', '2022-08-02T11:33', '2022-08-02T11:48'],
@@ -524,8 +526,10 @@ def test_arange_datetime_from_str():
 
 
 def test_arange_datetime_from_scipp_datetime():
-    var = sc.arange('t', sc.datetime('2013-04-25T14:09:11'),
-                    sc.datetime('2013-04-25T14:11:23'), sc.scalar(62, unit='s'))
+    var = sc.arange('t',
+                    sc.datetime('2013-04-25T14:09:11'),
+                    sc.datetime('2013-04-25T14:11:23'),
+                    sc.scalar(62, unit='s'))
     expected = sc.datetimes(
         dims=['t'],
         values=['2013-04-25T14:09:11', '2013-04-25T14:10:13', '2013-04-25T14:11:15'],
@@ -674,7 +678,9 @@ def test_arange_with_uniform_scipp_arg_dtype_creates_array_with_same_dtype(dtype
         sc.arange('x', sc.scalar(2, dtype=dtype), sc.scalar(4, dtype=dtype)),
         sc.array(dims=['x'], values=[2, 3], dtype=dtype))
     assert sc.identical(
-        sc.arange('x', sc.scalar(2, dtype=dtype), sc.scalar(4, dtype=dtype),
+        sc.arange('x',
+                  sc.scalar(2, dtype=dtype),
+                  sc.scalar(4, dtype=dtype),
                   sc.scalar(2, dtype=dtype)),
         sc.array(dims=['x'], values=[2], dtype=dtype))
 
@@ -764,8 +770,7 @@ def test_datetimes():
     assert sc.identical(
         sc.datetimes(dims=['t'], values=['1970', '2021'], unit='Y'),
         sc.array(dims=['t'],
-                 values=[np.datetime64('1970', 'Y'),
-                         np.datetime64('2021', 'Y')],
+                 values=[np.datetime64('1970', 'Y'), np.datetime64('2021', 'Y')],
                  unit='Y'))
     assert sc.identical(
         sc.datetimes(dims=['t'],

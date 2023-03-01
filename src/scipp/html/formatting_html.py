@@ -164,8 +164,8 @@ def format_dims(dims, sizes, coords):
 
     dims_li = "".join(f"<li><span{dim_css_map[dim]}>"
                       f"{escape(str(dim))}</span>: "
-                      f"{size if size is not None else 'Events' }</li>"
-                      for dim, size in zip(dims, sizes))
+                      f"{size if size is not None else 'Events' }</li>" for dim,
+                      size in zip(dims, sizes))
 
     return f"<ul class='sc-dim-list'>{dims_li}</ul>"
 
@@ -190,14 +190,16 @@ def summarize_mask(dim, var, ds=None):
 def summarize_coords(coords, ds=None):
     vars_li = "".join("<li class='sc-var-item'>"
                       f"{summarize_coord(dim, var, ds)}"
-                      "</span></li>" for dim, var in _ordered_dict(coords).items())
+                      "</span></li>" for dim,
+                      var in _ordered_dict(coords).items())
     return f"<ul class='sc-var-list'>{vars_li}</ul>"
 
 
 def summarize_masks(masks, ds=None):
     vars_li = "".join("<li class='sc-var-item'>"
                       f"{summarize_mask(dim, var, ds)}"
-                      "</span></li>" for dim, var in _ordered_dict(masks).items())
+                      "</span></li>" for dim,
+                      var in _ordered_dict(masks).items())
     return f"<ul class='sc-var-list'>{vars_li}</ul>"
 
 
@@ -207,8 +209,8 @@ def summarize_attrs(attrs, embedded_in=None):
                            var,
                            has_attrs=False,
                            embedded_in=embedded_in,
-                           is_index=name in var.dims))
-                       for name, var in _ordered_dict(attrs).items())
+                           is_index=name in var.dims)) for name,
+                       var in _ordered_dict(attrs).items())
     return f"<ul class='sc-var-list'>{attrs_li}</ul>"
 
 
@@ -266,9 +268,11 @@ def _make_dim_labels(dim, bin_edges=None):
 
 def _make_dim_str(var, bin_edges, add_dim_size=False):
     dims_text = ', '.join(
-        '{}{}{}'.format(str(dim), _make_dim_labels(dim, bin_edges),
+        '{}{}{}'.format(str(dim),
+                        _make_dim_labels(dim, bin_edges),
                         f': {size}' if add_dim_size and size is not None else '')
-        for dim, size in zip(var.dims, var.shape))
+        for dim,
+        size in zip(var.dims, var.shape))
     return dims_text
 
 
@@ -327,7 +331,8 @@ def summarize_variable(name,
     else:
         html = [
             f"<div class='sc-var-name'><span{cssclass_idx}>{escape(str(name))}"
-            "</span></div>", f"<div class='sc-var-dims'>{escape(dims_str)}</div>"
+            "</span></div>",
+            f"<div class='sc-var-dims'>{escape(dims_str)}</div>"
         ]
     html += [
         f"<div class='sc-var-dtype'>{escape(str(var.dtype))}</div>",
@@ -355,7 +360,8 @@ def summarize_data(dataset):
     vars_li = "".join("<li class='sc-var-item'>{}</li>".format(
         summarize_variable(
             name, var, has_attrs=has_attrs, embedded_in=dataset if has_attrs else None))
-                      for name, var in _ordered_dict(dataset).items())
+                      for name,
+                      var in _ordered_dict(dataset).items())
     return f"<ul class='sc-var-list'>{vars_li}</ul>"
 
 

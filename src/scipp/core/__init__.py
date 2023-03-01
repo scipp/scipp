@@ -39,7 +39,8 @@ setattr(Dataset, 'bins', property(_bins, _set_bins))
 from .structured import _fields
 
 setattr(
-    Variable, 'fields',
+    Variable,
+    'fields',
     property(
         _fields,
         doc=

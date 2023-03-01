@@ -47,9 +47,7 @@ DTYPE_INPUT_TO_EXPECTED = (
 
 @pytest.mark.parametrize(
     "value",
-    [1.2, np.float64(1.2),
-     sc.Variable(dims=(), values=1.2).value,
-     np.array(1.2)])
+    [1.2, np.float64(1.2), sc.Variable(dims=(), values=1.2).value, np.array(1.2)])
 def test_create_scalar_with_float_value(value):
     var = sc.Variable(dims=(), values=value)
     assert var.value == value
@@ -61,9 +59,7 @@ def test_create_scalar_with_float_value(value):
 
 @pytest.mark.parametrize(
     "variance",
-    [1.2, np.float64(1.2),
-     sc.Variable(dims=(), values=1.2).value,
-     np.array(1.2)])
+    [1.2, np.float64(1.2), sc.Variable(dims=(), values=1.2).value, np.array(1.2)])
 def test_create_scalar_with_float_variance(variance):
     var = sc.Variable(dims=(), variances=variance)
     assert var.value == 0.0
@@ -76,14 +72,10 @@ def test_create_scalar_with_float_variance(variance):
 
 @pytest.mark.parametrize(
     "value",
-    [1.2, np.float64(1.2),
-     sc.Variable(dims=(), values=1.2).value,
-     np.array(1.2)])
+    [1.2, np.float64(1.2), sc.Variable(dims=(), values=1.2).value, np.array(1.2)])
 @pytest.mark.parametrize(
     "variance",
-    [3.4, np.float64(3.4),
-     sc.Variable(dims=(), values=3.4).value,
-     np.array(3.4)])
+    [3.4, np.float64(3.4), sc.Variable(dims=(), values=3.4).value, np.array(3.4)])
 def test_create_scalar_with_float_value_and_variance(value, variance):
     var = sc.Variable(dims=(), values=value, variances=variance)
     assert var.value == value
@@ -94,8 +86,9 @@ def test_create_scalar_with_float_value_and_variance(value, variance):
     assert var.unit == sc.units.dimensionless
 
 
-@pytest.mark.parametrize('args', ((sc.DType.int64, 1), (sc.DType.bool, True),
-                                  (sc.DType.string, 'a')))
+@pytest.mark.parametrize('args',
+                         ((sc.DType.int64, 1), (sc.DType.bool, True),
+                          (sc.DType.string, 'a')))
 def test_create_scalar_with_value(args):
     dtype, value = args
     var = sc.Variable(dims=(), values=value)
@@ -152,11 +145,13 @@ def test_create_scalar_invalid_variance(variance):
         sc.Variable(dims=(), variances=variance)
 
 
-@pytest.mark.parametrize("unit", [
-    sc.units.m,
-    sc.Unit('m'), 'm',
-    sc.Variable(dims=(), values=1.2, unit=sc.units.m).unit
-])
+@pytest.mark.parametrize("unit",
+                         [
+                             sc.units.m,
+                             sc.Unit('m'),
+                             'm',
+                             sc.Variable(dims=(), values=1.2, unit=sc.units.m).unit
+                         ])
 def test_create_scalar_with_unit(unit):
     var = sc.Variable(dims=(), values=1.0, unit=unit)
     assert var.dims == ()
@@ -236,8 +231,12 @@ def test_create_scalar_dtype_Dataset(dtype):
 
 
 @pytest.mark.parametrize("dtype",
-                         (1, 2.3, 'string', sc.scalar(0), sc.DataArray(
-                             sc.scalar(1)), sc.Dataset({'a': sc.scalar(3)})))
+                         (1,
+                          2.3,
+                          'string',
+                          sc.scalar(0),
+                          sc.DataArray(sc.scalar(1)),
+                          sc.Dataset({'a': sc.scalar(3)})))
 def test_create_scalar_with_instance_as_dtype(dtype):
     with pytest.raises(TypeError):
         sc.Variable(dims=(), values=dtype, dtype=dtype)
@@ -435,7 +434,8 @@ def test_create_2d_variances_array_like(inner_variances_type, outer_variances_ty
 @pytest.mark.parametrize('outer_values_type', (tuple, list, np.array))
 @pytest.mark.parametrize('inner_variances_type', (tuple, list, np.array))
 @pytest.mark.parametrize('outer_variances_type', (tuple, list, np.array))
-def test_create_2d_values_and_variances_array_like(inner_values_type, outer_values_type,
+def test_create_2d_values_and_variances_array_like(inner_values_type,
+                                                   outer_values_type,
                                                    inner_variances_type,
                                                    outer_variances_type):
     values = np.arange(15.0).reshape(3, 5)

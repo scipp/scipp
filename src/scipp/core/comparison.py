@@ -147,7 +147,9 @@ def not_equal(x: VariableLike, y: VariableLike) -> VariableLike:
     return _call_cpp_func(_cpp.not_equal, x, y)
 
 
-def _identical_data_groups(x: data_group.DataGroup, y: data_group.DataGroup, *,
+def _identical_data_groups(x: data_group.DataGroup,
+                           y: data_group.DataGroup,
+                           *,
                            equal_nan: bool) -> bool:
 
     def compare(a, b):

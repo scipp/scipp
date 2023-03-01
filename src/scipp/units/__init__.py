@@ -150,7 +150,8 @@ class UnitAliases:
         """
         overridden = {
             name: unit
-            for name, unit in self._aliases.items() if name in kwargs
+            for name, unit in self._aliases.items()
+            if name in kwargs
         }
         for name, unit in kwargs.items():
             self[name] = unit
@@ -200,6 +201,19 @@ aliases = UnitAliases()
 """Table of unit aliases."""
 
 __all__ = [
-    'angstrom', 'counts', 'default_unit', 'deg', 'dimensionless', 'kg', 'K', 'meV', 'm',
-    'one', 'rad', 's', 'us', 'ns', 'mm'
+    'angstrom',
+    'counts',
+    'default_unit',
+    'deg',
+    'dimensionless',
+    'kg',
+    'K',
+    'meV',
+    'm',
+    'one',
+    'rad',
+    's',
+    'us',
+    'ns',
+    'mm'
 ]

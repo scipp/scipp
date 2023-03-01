@@ -50,8 +50,8 @@ def test_from_quaternion():
     transform = rotation(value=quat)
     vector = sc.vector(value=[1, 2, 3], unit=sc.units.m)
 
-    assert sc.allclose(transform * vector, sc.vector(value=[1, -2, -3],
-                                                     unit=sc.units.m))
+    assert sc.allclose(transform * vector,
+                       sc.vector(value=[1, -2, -3], unit=sc.units.m))
 
 
 def test_from_quaternions():

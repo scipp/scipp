@@ -17,10 +17,7 @@ def test_create_from_kwargs():
 
 def test_create_from_dict_works_with_mixed_types_and_non_scipp_objects():
     items = {
-        'a': 1,
-        'b': sc.scalar(2),
-        'c': sc.DataArray(sc.scalar(3)),
-        'd': np.arange(4)
+        'a': 1, 'b': sc.scalar(2), 'c': sc.DataArray(sc.scalar(3)), 'd': np.arange(4)
     }
     dg = sc.DataGroup(items)
     assert tuple(dg.keys()) == ('a', 'b', 'c', 'd')
@@ -36,9 +33,7 @@ def test_init_raises_when_keys_are_not_strings():
     'copy_func', [copy.deepcopy, sc.DataGroup.copy, lambda x: x.copy(deep=True)])
 def test_deepcopy(copy_func):
     items = {
-        'a': sc.scalar(2),
-        'b': np.arange(4),
-        'c': sc.DataGroup(nested=sc.scalar(1))
+        'a': sc.scalar(2), 'b': np.arange(4), 'c': sc.DataGroup(nested=sc.scalar(1))
     }
     dg = sc.DataGroup(items)
     result = copy_func(dg)
@@ -60,9 +55,7 @@ def test_deepcopy(copy_func):
 @pytest.mark.parametrize('copy_func', [copy.copy, lambda x: x.copy(deep=False)])
 def test_copy(copy_func):
     items = {
-        'a': sc.scalar(2),
-        'b': np.arange(4),
-        'c': sc.DataGroup(nested=sc.scalar(1))
+        'a': sc.scalar(2), 'b': np.arange(4), 'c': sc.DataGroup(nested=sc.scalar(1))
     }
     dg = sc.DataGroup(items)
     result = copy_func(dg)
@@ -300,21 +293,43 @@ def test_getitem_integer_array_indexing_with_numpy_array():
 
 
 BINARY_NUMBER_OPERATIONS = (
-    lambda a, b: a + b,
-    lambda a, b: a - b,
-    lambda a, b: a * b,
-    lambda a, b: a / b,
-    lambda a, b: a // b,
-    lambda a, b: a % b,
-    lambda a, b: a == b,
-    lambda a, b: a != b,
-    lambda a, b: a > b,
-    lambda a, b: a >= b,
-    lambda a, b: a < b,
-    lambda a, b: a <= b,
+    lambda a,
+    b: a + b,
+    lambda a,
+    b: a - b,
+    lambda a,
+    b: a * b,
+    lambda a,
+    b: a / b,
+    lambda a,
+    b: a // b,
+    lambda a,
+    b: a % b,
+    lambda a,
+    b: a == b,
+    lambda a,
+    b: a != b,
+    lambda a,
+    b: a > b,
+    lambda a,
+    b: a >= b,
+    lambda a,
+    b: a < b,
+    lambda a,
+    b: a <= b,
 )
-BINARY_NUMBER_OPERATION_NAMES = ('+', '-', '*', '/', '//', '%', '==', '!=', '>', '>=',
-                                 '<', '<=')
+BINARY_NUMBER_OPERATION_NAMES = ('+',
+                                 '-',
+                                 '*',
+                                 '/',
+                                 '//',
+                                 '%',
+                                 '==',
+                                 '!=',
+                                 '>',
+                                 '>=',
+                                 '<',
+                                 '<=')
 
 
 def reverse_op(op, reverse: bool):
@@ -432,7 +447,8 @@ def test_pow_data_group_with_data_group():
 
 
 @pytest.mark.parametrize('other',
-                         (3, sc.arange('x', 0, 4, dtype='int64'),
+                         (3,
+                          sc.arange('x', 0, 4, dtype='int64'),
                           sc.DataArray(sc.arange('x', 0, 4, dtype='int64'),
                                        coords={'x': sc.arange('x', 5, dtype='int64')})),
                          ids=('int', 'Variable', 'DataArray'))
@@ -474,8 +490,13 @@ def test_logical_not():
 
 
 @pytest.mark.parametrize('op',
-                         (operator.iadd, operator.isub, operator.imul, operator.imod,
-                          operator.itruediv, operator.ifloordiv, operator.ipow))
+                         (operator.iadd,
+                          operator.isub,
+                          operator.imul,
+                          operator.imod,
+                          operator.itruediv,
+                          operator.ifloordiv,
+                          operator.ipow))
 def test_inplace_is_disabled(op):
     x = sc.arange('x', 1, 5, dtype='int64')
     dg1 = sc.DataGroup({'a': x.copy()})
@@ -648,19 +669,15 @@ def test_merge_conflict_python_object():
                          (sc.bin, lambda x, /, *args, **kwargs: x.bin(*args, **kwargs)))
 def test_bin(func):
     dg = sc.DataGroup({
-        'da':
-        sc.DataArray(10 * sc.arange('x', 5.0), coords={'x': sc.arange('x', 5.0)}),
-        'dg':
-        sc.DataGroup({
-            'inner_da':
-            sc.DataArray(10 * sc.arange('x', 50.0), coords={'x': sc.arange('x', 50.0)})
+        'da': sc.DataArray(10 * sc.arange('x', 5.0), coords={'x': sc.arange('x', 5.0)}),
+        'dg': sc.DataGroup({
+            'inner_da': sc.DataArray(10 * sc.arange('x', 50.0),
+                                     coords={'x': sc.arange('x', 50.0)})
         })
     })
     edges = {'x': 3}
     expected = sc.DataGroup({
-        'da':
-        dg['da'].bin(**edges),
-        'dg':
-        sc.DataGroup({'inner_da': dg['dg']['inner_da'].bin(**edges)})
+        'da': dg['da'].bin(**edges),
+        'dg': sc.DataGroup({'inner_da': dg['dg']['inner_da'].bin(**edges)})
     })
     assert sc.identical(func(dg, **edges), expected)

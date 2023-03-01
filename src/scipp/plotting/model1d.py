@@ -42,7 +42,9 @@ class PlotModel1d(PlotModel):
                     slices[dim][0], sc.Variable):
                 continue
             start, stop = slices[dim]
-            s = sc.get_slice_params(model._array.data, model._array.meta[dim], start,
+            s = sc.get_slice_params(model._array.data,
+                                    model._array.meta[dim],
+                                    start,
                                     stop)[1]
             if s.start + 1 == s.stop:
                 slices[dim] = s.start
@@ -85,7 +87,8 @@ class PlotModel1d(PlotModel):
         """
         self.dslice = {
             name: self._resample(array, slices)
-            for name, array in self.data_arrays.items()
+            for name,
+            array in self.data_arrays.items()
         }
         return DataArrayDict(self.dslice)
 

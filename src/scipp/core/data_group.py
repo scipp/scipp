@@ -137,7 +137,8 @@ class DataGroup(MutableMapping):
         return DataGroup({
             key: var[dim, index] if
             (isinstance(var, Bins) or dim in _item_dims(var)) else var
-            for key, var in self.items()
+            for key,
+            var in self.items()
         })
 
     @overload

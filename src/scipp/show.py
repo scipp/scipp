@@ -212,8 +212,10 @@ class VariableDrawer:
         except Exception:
             unit = '(undefined)'
         details = 'dims={}, shape={}, unit={}, variances={}'.format(
-            self._variable.dims, self._variable.shape, unit, self._variable.variances
-            is not None)
+            self._variable.dims,
+            self._variable.shape,
+            unit,
+            self._variable.variances is not None)
         x_pos = offset[0]
         y_pos = offset[1] + 0.6
         if title is not None:
@@ -242,7 +244,8 @@ class VariableDrawer:
         svg += f'<line x1={x0} y1={y0+0} x2={x0+2} y2={y0-1} {style}/>'
         svg += f'<line x1={x0} y1={y0+1} x2={x0+2} y2={y0+height} {style}/>'
         svg += '<g transform="translate({},{}) scale(0.5)">{}</g>'.format(
-            self.size()[0] + 1, 0,
+            self.size()[0] + 1,
+            0,
             make_svg(self._variable.bins.constituents['data'], content_only=True))
         return svg
 
@@ -277,9 +280,10 @@ class VariableDrawer:
     def make_svg(self, content_only=False):
         if content_only:
             return self.draw(color=config['colors']['data'])
-        return _build_svg(self.make_svg(content_only=True), 0, 0,
-                          max(_cubes_in_full_width,
-                              self.size()[0]),
+        return _build_svg(self.make_svg(content_only=True),
+                          0,
+                          0,
+                          max(_cubes_in_full_width, self.size()[0]),
                           self.size()[1])
 
 
@@ -290,7 +294,13 @@ class DrawerItem:
         self._data = data
         self._color = color
 
-    def append_to_svg(self, content, width, height, offset, layout_direction, margin,
+    def append_to_svg(self,
+                      content,
+                      width,
+                      height,
+                      offset,
+                      layout_direction,
+                      margin,
                       dims):
         drawer = VariableDrawer(self._data, margin, target_dims=dims)
         content += drawer.draw(color=self._color, offset=offset, title=self._name)

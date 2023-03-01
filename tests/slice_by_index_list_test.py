@@ -26,8 +26,7 @@ def make_dataset() -> sc.Dataset:
     return ds
 
 
-@pytest.fixture(params=[make_var(), make_array(),
-                        make_dataset()],
+@pytest.fixture(params=[make_var(), make_array(), make_dataset()],
                 ids=['Variable', 'DataArray', 'Dataset'])
 def sliceable(request):
     return request.param
@@ -66,15 +65,15 @@ def test_unordered_outer_indices_yields_result_with_reordered_slices(sliceable):
 def test_unordered_inner_indices_yields_result_with_reordered_slices(sliceable):
     s0 = sliceable['yy', 0:1]
     s1 = sliceable['yy', 1:2]
-    assert sc.identical(sliceable['yy', [1, 1, 0, 1]], sc.concat([s1, s1, s0, s1],
-                                                                 'yy'))
+    assert sc.identical(sliceable['yy', [1, 1, 0, 1]],
+                        sc.concat([s1, s1, s0, s1], 'yy'))
 
 
 def test_duplicate_indices_duplicate_slices_in_output(sliceable):
     s1 = sliceable['xx', 1:2]
     s2 = sliceable['xx', 2:3]
-    assert sc.identical(sliceable['xx', [2, 1, 1, 2]], sc.concat([s2, s1, s1, s2],
-                                                                 'xx'))
+    assert sc.identical(sliceable['xx', [2, 1, 1, 2]],
+                        sc.concat([s2, s1, s1, s2], 'xx'))
 
 
 def test_reversing_twice_gives_original(sliceable):

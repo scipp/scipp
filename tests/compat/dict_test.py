@@ -97,9 +97,7 @@ def test_variable_0D_from_dict():
 
 def test_variable_vector_from_dict():
     var_dict = {
-        "dims": ('x', ),
-        "values": np.arange(6).reshape(2, 3),
-        "dtype": "vector3"
+        "dims": ('x', ), "values": np.arange(6).reshape(2, 3), "dtype": "vector3"
     }
     var = sc.from_dict(var_dict)
     assert var.dims == var_dict["dims"]
@@ -135,9 +133,7 @@ def test_variable_matrix_from_dict():
 
 def test_variable_0D_matrix_from_dict():
     var_dict = {
-        "dims": (),
-        "values": np.arange(9).reshape(3, 3),
-        "dtype": "linear_transform3"
+        "dims": (), "values": np.arange(9).reshape(3, 3), "dtype": "linear_transform3"
     }
     var = sc.from_dict(var_dict)
     assert var.dims == ()
@@ -213,32 +209,12 @@ def test_data_array_to_dict():
 def test_data_array_from_dict():
     da_dict = {
         "coords": {
-            "x": {
-                "dims": ["x"],
-                "values": np.arange(10)
-            },
-            "y": {
-                "dims": ["y"],
-                "values": np.arange(5),
-                "unit": sc.units.m
-            },
+            "x": {"dims": ["x"], "values": np.arange(10)},
+            "y": {"dims": ["y"], "values": np.arange(5), "unit": sc.units.m},
         },
-        "masks": {
-            "amask": {
-                "dims": ["y"],
-                "values": [True, True, False, True, False]
-            }
-        },
-        "attrs": {
-            "attr1": {
-                "dims": ["x"],
-                "values": np.random.random(10)
-            }
-        },
-        "data": {
-            "dims": ["y", "x"],
-            "values": np.random.random([5, 10])
-        }
+        "masks": {"amask": {"dims": ["y"], "values": [True, True, False, True, False]}},
+        "attrs": {"attr1": {"dims": ["x"], "values": np.random.random(10)}},
+        "data": {"dims": ["y", "x"], "values": np.random.random([5, 10])}
     }
     da = sc.from_dict(da_dict)
     assert sc.identical(da.coords["x"], sc.from_dict(da_dict["coords"]["x"]))
@@ -250,15 +226,12 @@ def test_data_array_from_dict():
 
 def test_data_array_round_trip():
     da = sc.DataArray(coords={
-        "x":
-        sc.Variable(dims=["x"], values=np.arange(10.)),
-        "y":
-        sc.Variable(dims=["y"], values=np.arange(5), unit=sc.units.m),
+        "x": sc.Variable(dims=["x"], values=np.arange(10.)),
+        "y": sc.Variable(dims=["y"], values=np.arange(5), unit=sc.units.m),
     },
                       masks={
-                          "amask":
-                          sc.Variable(dims=["y"],
-                                      values=[True, True, False, True, False])
+                          "amask": sc.Variable(dims=["y"],
+                                               values=[True, True, False, True, False])
                       },
                       data=sc.Variable(dims=["y", "x"],
                                        values=np.random.random([5, 10])))
@@ -288,44 +261,21 @@ def test_dataset_from_dict():
     ds_dict = {
         "a": {
             "coords": {
-                "x": {
-                    "dims": ["x"],
-                    "values": np.arange(10)
-                },
-                "y": {
-                    "dims": ["y"],
-                    "values": np.arange(5),
-                    "unit": sc.units.m
-                },
+                "x": {"dims": ["x"], "values": np.arange(10)},
+                "y": {"dims": ["y"], "values": np.arange(5), "unit": sc.units.m},
             },
             "masks": {
-                "amask": {
-                    "dims": ["y"],
-                    "values": [True, True, False, True, False]
-                }
+                "amask": {"dims": ["y"], "values": [True, True, False, True, False]}
             },
-            "data": {
-                "dims": ["y", "x"],
-                "values": np.random.random([5, 10])
-            }
+            "data": {"dims": ["y", "x"], "values": np.random.random([5, 10])}
         },
         "b": {
             "coords": {
-                "x": {
-                    "dims": ["x"],
-                    "values": np.arange(10)
-                },
-                "y": {
-                    "dims": ["y"],
-                    "values": np.arange(5),
-                    "unit": sc.units.m
-                },
+                "x": {"dims": ["x"], "values": np.arange(10)},
+                "y": {"dims": ["y"], "values": np.arange(5), "unit": sc.units.m},
             },
             "masks": {
-                "amask": {
-                    "dims": ["y"],
-                    "values": [True, True, False, True, False]
-                }
+                "amask": {"dims": ["y"], "values": [True, True, False, True, False]}
             },
             "data": {
                 "dims": ["y", "x"],

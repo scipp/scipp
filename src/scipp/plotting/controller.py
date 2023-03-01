@@ -247,7 +247,8 @@ class PlotController:
         self.refresh()
         if self.profile is not None:
             self.profile.toggle_mask(change["owner"].mask_group,
-                                     change["owner"].mask_name, change["new"])
+                                     change["owner"].mask_name,
+                                     change["new"])
 
     def get_masks_info(self):
         """

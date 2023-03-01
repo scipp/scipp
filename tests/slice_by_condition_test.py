@@ -9,10 +9,7 @@ import scipp as sc
 
 def make_var(xx=4) -> sc.Variable:
     return sc.arange('dummy', 12, dtype='int64').fold(dim='dummy',
-                                                      sizes={
-                                                          'xx': xx,
-                                                          'yy': 3
-                                                      })
+                                                      sizes={'xx': xx, 'yy': 3})
 
 
 def make_array() -> sc.DataArray:
@@ -59,8 +56,12 @@ def make_binned_dataset() -> sc.Dataset:
     make_binned_dataset()
 ],
                 ids=[
-                    'Variable', 'DataArray', 'Dataset', 'binned-DataArray',
-                    'binned-DataArray-buffer-Variable', 'binned-dataset'
+                    'Variable',
+                    'DataArray',
+                    'Dataset',
+                    'binned-DataArray',
+                    'binned-DataArray-buffer-Variable',
+                    'binned-dataset'
                 ])
 def sliceable(request):
     return request.param

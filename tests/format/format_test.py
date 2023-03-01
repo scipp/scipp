@@ -8,14 +8,17 @@ import pytest
 import scipp as sc
 
 
-@pytest.mark.parametrize(
-    'var',
-    (sc.scalar(1), sc.scalar(-4, dtype='int32'), sc.scalar(
-        3.1, variance=0.1, unit='m'), sc.scalar(2.1, variance=0.1, dtype='float32'),
-     sc.array(dims=['x', 't'], values=np.ones((3, 4)), unit='kg/s'),
-     sc.scalar('some string'), sc.array(dims=['s'], values=['str', '2']),
-     sc.scalar(6134, dtype='datetime64',
-               unit='s'), sc.array(dims=['e'], values=[512, 1662], unit='s')))
+@pytest.mark.parametrize('var',
+                         (sc.scalar(1),
+                          sc.scalar(-4, dtype='int32'),
+                          sc.scalar(3.1, variance=0.1, unit='m'),
+                          sc.scalar(2.1, variance=0.1, dtype='float32'),
+                          sc.array(dims=['x', 't'], values=np.ones(
+                              (3, 4)), unit='kg/s'),
+                          sc.scalar('some string'),
+                          sc.array(dims=['s'], values=['str', '2']),
+                          sc.scalar(6134, dtype='datetime64', unit='s'),
+                          sc.array(dims=['e'], values=[512, 1662], unit='s')))
 def test_variable_default(var):
     assert f'{var}' == str(var)
     assert f'{var:}' == str(var)
@@ -168,9 +171,9 @@ def test_variable_compact_array_no_variance():
 
 def test_variable_compact_array_with_variance():
     array_variables = [([100., 20.], [1., 2.], 'm', '100.0(10), 20(2) m'),
-                       ([9000., 800., 70.,
-                         6.], [100., 20., 3.,
-                               0.4], '1', '9000(100), 800(20), 70(3), 6.0(4)'),
+                       ([9000., 800., 70., 6.], [100., 20., 3., 0.4],
+                        '1',
+                        '9000(100), 800(20), 70(3), 6.0(4)'),
                        ([1., 2., 3.], [0., 1., 0.2], 'C', '1.0, 2.0(10), 3.0(2) C')]
     for values, errors, unit, expected in array_variables:
         var = sc.array(dims=['ga'],

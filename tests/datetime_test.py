@@ -23,7 +23,8 @@ def _make_arrays(units, num_arrays, minsize=1):
     units = units if isinstance(units, (tuple, list)) else [units] * num_arrays
     res = [
         np.array(
-            [np.datetime64(np.random.randint(0, 100000), unit) for _ in range(size)])
+            [np.datetime64(np.random.randint(0, 100000), unit)
+             for _ in range(size)])
         for unit in units
     ]
     if num_arrays == 1:
@@ -44,11 +45,10 @@ def test_construct_0d_datetime(unit):
     dtype = f'datetime64[{unit}]'
     value = _make_datetimes(unit, 1)
     # with value
-    for var in (sc.Variable(dims=(), dtype=dtype, unit=unit,
-                            values=value), sc.Variable(dims=(), unit=unit,
-                                                       values=value),
-                sc.Variable(dims=(), dtype=dtype,
-                            values=value), sc.Variable(dims=(), values=value)):
+    for var in (sc.Variable(dims=(), dtype=dtype, unit=unit, values=value),
+                sc.Variable(dims=(), unit=unit, values=value),
+                sc.Variable(dims=(), dtype=dtype, values=value),
+                sc.Variable(dims=(), values=value)):
         assert var.dtype == sc.DType.datetime64
         assert var.unit == unit
         assert var.value.dtype == dtype
@@ -127,8 +127,8 @@ def test_construct_datetime(unit):
     # with values
     for var in (sc.Variable(dims=['x'], dtype=dtype, unit=unit, values=values),
                 sc.Variable(dims=['x'], unit=unit, values=values),
-                sc.Variable(dims=['x'], dtype=dtype,
-                            values=values), sc.Variable(dims=['x'], values=values)):
+                sc.Variable(dims=['x'], dtype=dtype, values=values),
+                sc.Variable(dims=['x'], values=values)):
         assert var.dims == ('x', )
         assert str(var.dtype) == 'datetime64'
         assert var.unit == unit

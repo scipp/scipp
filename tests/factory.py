@@ -187,9 +187,9 @@ def make_binned_data_array(ndim=1, with_variance=False, masks=False):
                                     unit=sc.units.counts,
                                     values=values),
                       coords={
-                          'position':
-                          sc.array(dims=['position'],
-                                   values=['site-{}'.format(i) for i in range(N)])
+                          'position': sc.array(
+                              dims=['position'],
+                              values=['site-{}'.format(i) for i in range(N)])
                       })
 
     if with_variance:

@@ -59,8 +59,9 @@ class FetchRule(Rule):
     Can be used to abstract away retrieving coords and attrs from the input DataArray.
     """
 
-    def __init__(self, out_names: Tuple[str, ...], dense_sources: Mapping[str,
-                                                                          Variable],
+    def __init__(self,
+                 out_names: Tuple[str, ...],
+                 dense_sources: Mapping[str, Variable],
                  event_sources: Mapping[str, Variable]):
         super().__init__(out_names)
         self._dense_sources = dense_sources
@@ -139,13 +140,15 @@ class ComputeRule(Rule):
         outputs = self._to_dict(outputs)
         return {
             name: Coord(dense=var, event=None, destination=Destination.coord)
-            for name, var in outputs.items()
+            for name,
+            var in outputs.items()
         }
 
     def _compute_with_events(self, inputs):
         args = {
             name: coord.event if coord.has_event else coord.dense
-            for name, coord in inputs.items()
+            for name,
+            coord in inputs.items()
         }
         outputs = self._to_dict(self._func(**args))
         # Dense outputs may be produced as side effects of processing event
@@ -154,7 +157,8 @@ class ComputeRule(Rule):
             name: Coord(dense=var if var.bins is None else None,
                         event=var if var.bins is not None else None,
                         destination=Destination.coord)
-            for name, var in outputs.items()
+            for name,
+            var in outputs.items()
         }
         return outputs
 

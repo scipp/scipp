@@ -187,28 +187,21 @@ def test_bins_arithmetic():
 def test_bins_sum_with_masked_buffer():
     N = 5
     values = np.ones(N)
-    data = sc.DataArray(data=sc.Variable(dims=['position'],
-                                         unit=sc.units.counts,
-                                         values=values,
-                                         variances=values),
-                        coords={
-                            'position':
-                            sc.Variable(dims=['position'],
-                                        values=['site-{}'.format(i) for i in range(N)]),
-                            'x':
-                            sc.Variable(dims=['position'],
-                                        unit=sc.units.m,
-                                        values=[0.2] * 5),
-                            'y':
-                            sc.Variable(dims=['position'],
-                                        unit=sc.units.m,
-                                        values=[0.2] * 5)
-                        },
-                        masks={
-                            'test-mask':
-                            sc.Variable(dims=['position'],
-                                        values=[True, False, True, False, True])
-                        })
+    data = sc.DataArray(
+        data=sc.Variable(dims=['position'],
+                         unit=sc.units.counts,
+                         values=values,
+                         variances=values),
+        coords={
+            'position': sc.Variable(dims=['position'],
+                                    values=['site-{}'.format(i) for i in range(N)]),
+            'x': sc.Variable(dims=['position'], unit=sc.units.m, values=[0.2] * 5),
+            'y': sc.Variable(dims=['position'], unit=sc.units.m, values=[0.2] * 5)
+        },
+        masks={
+            'test-mask': sc.Variable(dims=['position'],
+                                     values=[True, False, True, False, True])
+        })
     xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
     binned = sc.bin(data, x=xbins)
     assert binned.bins.sum().values[0] == 2
@@ -219,10 +212,9 @@ def test_bins_mean():
                                          unit=sc.units.counts,
                                          values=[0.1, 0.2, 0.3, 0.4, 0.5]),
                         coords={
-                            'x':
-                            sc.Variable(dims=['position'],
-                                        unit=sc.units.m,
-                                        values=[1, 2, 3, 4, 5])
+                            'x': sc.Variable(dims=['position'],
+                                             unit=sc.units.m,
+                                             values=[1, 2, 3, 4, 5])
                         })
     xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0, 5, 6, 7])
     binned = data.bin(x=xbins)
@@ -246,15 +238,14 @@ def test_bins_mean_with_masks():
                                          unit=sc.units.counts,
                                          values=[0.1, 0.2, 0.3, 0.4, 0.5]),
                         coords={
-                            'x':
-                            sc.Variable(dims=['position'],
-                                        unit=sc.units.m,
-                                        values=[1, 2, 3, 4, 5])
+                            'x': sc.Variable(dims=['position'],
+                                             unit=sc.units.m,
+                                             values=[1, 2, 3, 4, 5])
                         },
                         masks={
-                            'test-mask':
-                            sc.Variable(dims=['position'],
-                                        values=[False, True, False, True, False])
+                            'test-mask': sc.Variable(
+                                dims=['position'],
+                                values=[False, True, False, True, False])
                         })
     xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0, 5, 6, 7])
     binned = data.bin(x=xbins)

@@ -63,8 +63,10 @@ def _positional_index(x: Union[Variable, DataArray], index, name=None, dtype=int
 def gaussian_filter(x: VariableLikeType,
                     /,
                     *,
-                    sigma: Union[int, float, Variable, Dict[str, Union[int, float,
-                                                                       Variable]]],
+                    sigma: Union[int,
+                                 float,
+                                 Variable,
+                                 Dict[str, Union[int, float, Variable]]],
                     order: Optional[Union[int, Dict[str, int]]] = 0,
                     **kwargs) -> VariableLikeType:
     """
@@ -171,10 +173,12 @@ def _make_footprint_filter(name, example=True, extra_args=''):
     def footprint_filter(x: VariableLike,
                          /,
                          *,
-                         size: Optional[Union[int, Variable,
+                         size: Optional[Union[int,
+                                              Variable,
                                               Dict[str, Union[int, Variable]]]] = None,
                          footprint: Optional[Variable] = None,
-                         origin: Optional[Union[int, Variable,
+                         origin: Optional[Union[int,
+                                                Variable,
                                                 Dict[str, Union[int, Variable]]]] = 0,
                          **kwargs) -> VariableLike:
         footprint = _make_footprint(x, size=size, footprint=footprint)

@@ -38,8 +38,9 @@ def test_unary_math_trigonometry_out(func):
     assert sc.identical(out, func(sc.scalar(0.932, unit='rad')))
 
 
-@pytest.mark.parametrize('funcs', ((sc.asin, np.arcsin), (sc.acos, np.arccos),
-                                   (sc.atan, np.arctan)))
+@pytest.mark.parametrize('funcs',
+                         ((sc.asin, np.arcsin), (sc.acos, np.arccos),
+                          (sc.atan, np.arctan)))
 def test_compare_unary_math_to_numpy_inv_trigonometry(funcs):
     sc_f, ref = funcs
     assert sc.allclose(sc_f(sc.scalar(0.512)), sc.scalar(ref(0.512), unit='rad'))

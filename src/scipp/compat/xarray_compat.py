@@ -107,7 +107,9 @@ def _from_xarray_dataarray(da: xr.DataArray) -> DataArray:
     attrs = {
         # Attr keys can have any type in xarray, so we convert to string
         f"{name}": scalar(attr)
-        for name, attr in da.attrs.items() if name != "units"
+        for name,
+        attr in da.attrs.items()
+        if name != "units"
     }
 
     for name, coord in da.coords.items():

@@ -46,7 +46,9 @@ def test_astype_datetime():
     assert var.dtype == sc.DType.datetime64
     assert var.unit == sc.units.s
 
-    for target_dtype in (sc.DType.datetime64, np.datetime64, 'datetime64',
+    for target_dtype in (sc.DType.datetime64,
+                         np.datetime64,
+                         'datetime64',
                          'datetime64[s]'):
         same = var.astype(target_dtype)
         assert same.dtype == sc.DType.datetime64
@@ -102,9 +104,10 @@ def test_0D_scalar_access():
     assert var.values == 1.2
 
 
-@pytest.mark.parametrize('dtypes', (('int32', np.int32), ('int64', np.int64),
-                                    ('float32', np.float32), ('float64', np.float64),
-                                    ('datetime64', np.datetime64), ('bool', bool)))
+@pytest.mark.parametrize('dtypes',
+                         (('int32', np.int32), ('int64', np.int64),
+                          ('float32', np.float32), ('float64', np.float64),
+                          ('datetime64', np.datetime64), ('bool', bool)))
 def test_0d_scalar_access_dtype(dtypes):
     dtype, expected = dtypes
     assert isinstance(sc.scalar(7, unit='s', dtype=dtype).value, expected)

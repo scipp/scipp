@@ -7,8 +7,13 @@ import types
 from ._scipp import core
 
 _dict_likes = [
-    core.Dataset, core.Coords, core.Masks, core._BinsMeta, core._BinsCoords,
-    core._BinsMasks, core._BinsAttrs
+    core.Dataset,
+    core.Coords,
+    core.Masks,
+    core._BinsMeta,
+    core._BinsCoords,
+    core._BinsMasks,
+    core._BinsAttrs
 ]
 
 
@@ -88,13 +93,17 @@ def bind_functions_as_methods(cls, namespace, func_names):
 
 
 def bind_function_as_method(*, cls, name, func, abbreviate_doc=True):
-    setattr(cls, name,
+    setattr(cls,
+            name,
             _convert_to_method(name=name, func=func, abbreviate_doc=abbreviate_doc))
 
 
 def _convert_to_method(*, name, func, abbreviate_doc=True):
-    method = types.FunctionType(func.__code__, func.__globals__, name,
-                                func.__defaults__, func.__closure__)
+    method = types.FunctionType(func.__code__,
+                                func.__globals__,
+                                name,
+                                func.__defaults__,
+                                func.__closure__)
     method.__kwdefaults__ = func.__kwdefaults__
     method.__annotations__ = func.__annotations__
     if func.__doc__ is not None:

@@ -168,13 +168,7 @@ def test_n_variables_all_have_same_parameters(variables):
 
 @settings(max_examples=N_EXAMPLES)
 @given(
-    scst.dataarrays(data_args={
-        'dtype': int,
-        'sizes': {
-            'a': 2,
-            'b': 3
-        }
-    },
+    scst.dataarrays(data_args={'dtype': int, 'sizes': {'a': 2, 'b': 3}},
                     coords=['b'],
                     coord_args=None))
 def test_dataarrays(da):

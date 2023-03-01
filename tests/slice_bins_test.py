@@ -48,8 +48,7 @@ def test_slice_bins_by_float_label_range():
     assert sc.identical(result.attrs['z'],
                         sc.array(dims=['z'], values=[0.1, 0.2], unit='m'))
     assert sc.identical(
-        result,
-        da.bin(z=sc.array(dims=['z'], values=[0.1, 0.2], unit='m')).squeeze())
+        result, da.bin(z=sc.array(dims=['z'], values=[0.1, 0.2], unit='m')).squeeze())
 
 
 def test_slice_bins_by_open_range_includes_everything():
@@ -66,8 +65,8 @@ def test_slice_bins_by_half_open_float_range_splits_without_duplication():
     left = da.bins['z', :split]
     right = da.bins['z', split:]
     assert left.bins.size().sum().value + right.bins.size().sum().value == 100
-    assert sc.identical(left.meta['z'], sc.concat([da.bins.meta['z'].min(), split],
-                                                  'z'))
+    assert sc.identical(left.meta['z'],
+                        sc.concat([da.bins.meta['z'].min(), split], 'z'))
     import numpy as np
     expected_stop = np.nextafter(da.bins.meta['z'].max().value, np.inf) * sc.Unit('m')
     assert sc.identical(right.meta['z'], sc.concat([split, expected_stop], 'z'))
@@ -110,8 +109,8 @@ def test_bins_slicing_open_start_too_small_stop_given():
     too_small_stop = da.bins.meta['x'].min() - 0.001 * sc.Unit('m')
     left = da.bins['x', :too_small_stop]
     assert left.bins.size().sum().value == 0
-    assert sc.identical(left.meta['x'], sc.concat([too_small_stop, too_small_stop],
-                                                  'x'))
+    assert sc.identical(left.meta['x'],
+                        sc.concat([too_small_stop, too_small_stop], 'x'))
 
 
 def test_bins_slicing_open_stop_too_big_stop_given():

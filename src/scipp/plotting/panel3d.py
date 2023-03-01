@@ -96,8 +96,14 @@ class PlotPanel3d(PlotPanel):
             description='Cut surface:',
             button_style='',
             tooltips=[
-                'X-plane', 'Y-plane', 'Z-plane', 'Sphere', 'Cylinder-X', 'Cylinder-Y',
-                'Cylinder-Z', 'Value'
+                'X-plane',
+                'Y-plane',
+                'Z-plane',
+                'Sphere',
+                'Cylinder-X',
+                'Cylinder-Y',
+                'Cylinder-Z',
+                'Value'
             ],
             icons=(['cube'] * 3) + ['circle-o'] + (['toggle-on'] * 3) + ['magic'],
             style={"button_width": "50px"},
@@ -135,10 +141,8 @@ class PlotPanel3d(PlotPanel):
         if self.cut_surface_buttons.value is None:
             self.controller.update_opacity(alpha={"main": change["new"][1]})
         else:
-            self.controller.update_opacity(alpha={
-                "main": change["new"][0],
-                "cut": change["new"][1]
-            })
+            self.controller.update_opacity(
+                alpha={"main": change["new"][0], "cut": change["new"][1]})
 
     def _check_if_reset_needed(self, owner, content, buffers):
         """

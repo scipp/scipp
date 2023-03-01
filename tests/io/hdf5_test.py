@@ -55,32 +55,19 @@ datetime64us_1d = sc.Variable(dims=['x'],
                               values=np.arange(10))
 
 array_1d = sc.DataArray(data=x,
-                        coords={
-                            'x': x,
-                            'λ': 2.0 * x
-                        },
+                        coords={'x': x, 'λ': 2.0 * x},
                         masks={
                             'mask.1': sc.less(x, 1.5 * sc.units.m),
                             'mask.2': sc.less(x, 2.5 * sc.units.m)
                         },
-                        attrs={
-                            'attr1': x,
-                            'attr2': 1.2 * sc.units.K
-                        })
+                        attrs={'attr1': x, 'attr2': 1.2 * sc.units.K})
 array_2d = sc.DataArray(data=xy,
-                        coords={
-                            'x': x,
-                            'y': y,
-                            'x2': 2.0 * x
-                        },
+                        coords={'x': x, 'y': y, 'x2': 2.0 * x},
                         masks={
                             'mask1': sc.less(x, 1.5 * sc.units.m),
                             'mask2': sc.less(xy, 0.5 * sc.units.kg)
                         },
-                        attrs={
-                            'attr1': xy,
-                            'attr2': 1.2 * sc.units.K
-                        })
+                        attrs={'attr1': xy, 'attr2': 1.2 * sc.units.K})
 
 
 def test_variable_1d():
@@ -176,8 +163,12 @@ def test_data_array_1d_no_coords():
 
 def test_data_array_all_units_supported():
     for unit in [
-            sc.units.one, sc.units.us, sc.units.angstrom, sc.units.counts,
-            sc.units.counts / sc.units.us, sc.units.meV
+            sc.units.one,
+            sc.units.us,
+            sc.units.angstrom,
+            sc.units.counts,
+            sc.units.counts / sc.units.us,
+            sc.units.meV
     ]:
         a = sc.DataArray(data=1.0 * unit)
         check_roundtrip(a)
@@ -278,20 +269,10 @@ def test_dataset_with_many_coords():
 
 def test_data_group():
     dg = sc.DataGroup({
-        'variable':
-        vector,
-        'data_array':
-        array_2d,
-        'dataset':
-        sc.Dataset({
-            'a': array_1d,
-            'b': array_2d
-        }),
-        'data group':
-        sc.DataGroup({
-            'v.same': vector,
-            'm/copy': matrix.copy()
-        })
+        'variable': vector,
+        'data_array': array_2d,
+        'dataset': sc.Dataset({'a': array_1d, 'b': array_2d}),
+        'data group': sc.DataGroup({'v.same': vector, 'm/copy': matrix.copy()})
     })
     check_roundtrip(dg)
 

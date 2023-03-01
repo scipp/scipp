@@ -44,10 +44,7 @@ def test_should_not_raise_given_function_with_dimensionful_params_and_1d_array()
     data = array1d_from_vars(a=sc.scalar(1.2, unit='s'), b=sc.scalar(100.0, unit='m'))
     curve_fit(func_with_vars,
               data,
-              p0={
-                  'a': sc.scalar(1.0, unit='s'),
-                  'b': sc.scalar(1.0, unit='m')
-              })
+              p0={'a': sc.scalar(1.0, unit='s'), 'b': sc.scalar(1.0, unit='m')})
 
 
 def test_should_raise_TypeError_when_xdata_given_as_param():
@@ -275,10 +272,7 @@ def test_bounds_must_have_unit_convertable_to_param_unit():
         curve_fit(
             func_with_vars,
             data,
-            p0={
-                'a': sc.scalar(1.0, unit='s'),
-                'b': sc.scalar(1.0, unit='m')
-            },
+            p0={'a': sc.scalar(1.0, unit='s'), 'b': sc.scalar(1.0, unit='m')},
             bounds={'a': (sc.scalar(-10.0, unit='s'), sc.scalar(10.0, unit='kg'))})
 
 

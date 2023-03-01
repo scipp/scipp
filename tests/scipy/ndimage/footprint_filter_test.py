@@ -8,8 +8,12 @@ import scipp as sc
 from scipp.scipy.ndimage import generic_filter, maximum_filter, median_filter, \
     minimum_filter, percentile_filter, rank_filter  # NOQA
 
-filters = (generic_filter, maximum_filter, median_filter, minimum_filter,
-           percentile_filter, rank_filter)
+filters = (generic_filter,
+           maximum_filter,
+           median_filter,
+           minimum_filter,
+           percentile_filter,
+           rank_filter)
 
 
 def make_histogram2d():
@@ -28,8 +32,12 @@ def make_data2d():
 
 @pytest.fixture(scope="module",
                 params=[
-                    generic_filter, maximum_filter, median_filter, minimum_filter,
-                    percentile_filter, rank_filter
+                    generic_filter,
+                    maximum_filter,
+                    median_filter,
+                    minimum_filter,
+                    percentile_filter,
+                    rank_filter
                 ])
 def filter_func(request):
     return request.param
@@ -152,22 +160,16 @@ def test_size_accepts_mixed_label_based_and_positional_param(simple_filter_func)
 def test_label_based_size_equivalent_to_positional_size_given_bin_edge_coord(
         simple_filter_func):
     da = make_histogram2d()
-    result = simple_filter_func(da,
-                                size={
-                                    'x': sc.scalar(1.0, unit='mm'),
-                                    'y': sc.scalar(5.0, unit='mm')
-                                })
+    result = simple_filter_func(
+        da, size={'x': sc.scalar(1.0, unit='mm'), 'y': sc.scalar(5.0, unit='mm')})
     reference = simple_filter_func(da, size=10)
     assert sc.identical(result, reference)
 
 
 def test_label_based_size_equivalent_to_positional_size(simple_filter_func):
     da = make_data2d()
-    result = simple_filter_func(da,
-                                size={
-                                    'x': sc.scalar(1.0, unit='mm'),
-                                    'y': sc.scalar(5.0, unit='mm')
-                                })
+    result = simple_filter_func(
+        da, size={'x': sc.scalar(1.0, unit='mm'), 'y': sc.scalar(5.0, unit='mm')})
     reference = simple_filter_func(da, size=10)
     assert sc.identical(result, reference)
 

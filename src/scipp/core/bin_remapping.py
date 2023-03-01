@@ -60,8 +60,11 @@ def _concat_bins(var: Variable, dim: List[str]) -> Variable:
     return _with_bin_sizes(out, sizes)
 
 
-def _combine_bins(var: Variable, coords: Dict[str, Variable], edges: List[Variable],
-                  groups: List[Variable], dim: Dims) -> Dict[str, Variable]:
+def _combine_bins(var: Variable,
+                  coords: Dict[str, Variable],
+                  edges: List[Variable],
+                  groups: List[Variable],
+                  dim: Dims) -> Dict[str, Variable]:
     from .binning import make_binned
 
     # Overview
@@ -119,7 +122,9 @@ def _combine_bins(var: Variable, coords: Dict[str, Variable], edges: List[Variab
     return _with_bin_sizes(source.copy(), sizes=params.data.bins.sum())
 
 
-def combine_bins(da: DataArray, edges: List[Variable], groups: List[Variable],
+def combine_bins(da: DataArray,
+                 edges: List[Variable],
+                 groups: List[Variable],
                  dim: Dims) -> DataArray:
     masked = hide_masked(da, dim)
     if len(edges) == 0 and len(groups) == 0:

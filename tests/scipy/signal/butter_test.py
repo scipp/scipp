@@ -7,10 +7,11 @@ import scipp as sc
 from scipp.scipy.signal import butter
 
 
-@pytest.mark.parametrize("coord", [
-    sc.array(dims=['xx'], values=[1.1, 1.2, 1.3, 1.41, 1.5]),
-    sc.geomspace(dim='xx', start=1.0, stop=100.0, num=100)
-])
+@pytest.mark.parametrize("coord",
+                         [
+                             sc.array(dims=['xx'], values=[1.1, 1.2, 1.3, 1.41, 1.5]),
+                             sc.geomspace(dim='xx', start=1.0, stop=100.0, num=100)
+                         ])
 def test_raises_CoordError_if_not_linspace(coord):
     with pytest.raises(sc.CoordError):
         butter(coord, N=4, Wn=sc.scalar(4.0))

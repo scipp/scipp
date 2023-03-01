@@ -41,9 +41,7 @@ def test_many_combinations():
     assert table.bin(x=5).hist(x=3, y=7).sizes == {'x': 3, 'y': 7}
     assert table.bin(x=5).group('label').hist().sizes == {'x': 5, 'label': 10}
     assert table.bin(x=5).group('label').hist(y=5).sizes == {
-        'x': 5,
-        'label': 10,
-        'y': 5
+        'x': 5, 'label': 10, 'y': 5
     }
 
 

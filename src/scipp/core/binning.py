@@ -195,7 +195,8 @@ def _upper_bound(x: Variable) -> Variable:
     return bound
 
 
-def _parse_coords_arg(x: Union[Variable, DataArray, Dataset], name: str,
+def _parse_coords_arg(x: Union[Variable, DataArray, Dataset],
+                      name: str,
                       arg: Union[int, Variable]) -> Variable:
     if isinstance(arg, Variable) and name in arg.dims:
         return arg
@@ -218,8 +219,8 @@ def _parse_coords_arg(x: Union[Variable, DataArray, Dataset], name: str,
     return arange(name, start, stop + step, step=step)
 
 
-def _make_edges(x: Union[Variable, DataArray,
-                         Dataset], arg_dict: Optional[Dict[str, Union[int, Variable]]],
+def _make_edges(x: Union[Variable, DataArray, Dataset],
+                arg_dict: Optional[Dict[str, Union[int, Variable]]],
                 kwargs: Dict[str, Union[int, Variable]]) -> Dict[str, Variable]:
     if arg_dict is not None:
         kwargs = dict(**arg_dict, **kwargs)
@@ -644,7 +645,8 @@ def rebin(x, arg_dict=None, deprecated=None, /, **kwargs):
             warnings.warn(
                 "The 'bins' keyword argument and positional syntax for setting bin "
                 "edges is deprecated. Use, e.g., 'sc.rebin(da, x=x_edges)'. See the "
-                "documentation for details.", UserWarning)
+                "documentation for details.",
+                UserWarning)
             bins = {'bins': deprecated, **kwargs}
             return _cpp.rebin(x, arg_dict, **bins)
     edges = _make_edges(x, arg_dict, kwargs)

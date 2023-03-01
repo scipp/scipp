@@ -136,11 +136,9 @@ class PlotFigure(Displayable):
                                        set_axis_label=self.set_axis_label)
                     self.axformatter[axis][key] = ticker.FuncFormatter(form)
             self.axlocator[axis] = {
-                "linear":
-                ticker.MaxNLocator(integer=True)
+                "linear": ticker.MaxNLocator(integer=True)
                 if axformatters[axis]["custom_locator"] else ticker.AutoLocator(),
-                "log":
-                ticker.LogLocator()
+                "log": ticker.LogLocator()
             }
 
     def connect(self, controller):

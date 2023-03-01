@@ -81,8 +81,8 @@ def _get_specific_bounds(bounds, name, unit) -> Tuple[float, float]:
         raise ValueError("Parameter bounds must be given as a tuple of length 2. "
                          f"Got a collection of length {len(b)} as bounds for '{name}'.")
     if isinstance(b[0], Variable):
-        return (b[0].to(unit=unit, dtype=float).value, b[1].to(unit=unit,
-                                                               dtype=float).value)
+        return (b[0].to(unit=unit, dtype=float).value,
+                b[1].to(unit=unit, dtype=float).value)
     return b
 
 
@@ -94,7 +94,8 @@ def _parse_bounds(bounds,
     bounds_tuples = [
         _get_specific_bounds(
             bounds, name, param.unit if isinstance(param, Variable) else dimensionless)
-        for name, param in params.items()
+        for name,
+        param in params.items()
     ]
     bounds_array = np.array(bounds_tuples).T
     return bounds_array[0], bounds_array[1]
@@ -108,8 +109,8 @@ def curve_fit(
     bounds: Optional[Dict[str, Union[Tuple[Variable, Variable], Tuple[Real,
                                                                       Real]]]] = None,
     **kwargs
-) -> Tuple[Dict[str, Union[Variable, Real]], Dict[str, Dict[str, Union[Variable,
-                                                                       Real]]]]:
+) -> Tuple[Dict[str, Union[Variable, Real]],
+           Dict[str, Dict[str, Union[Variable, Real]]]]:
     """Use non-linear least squares to fit a function, f, to data.
 
     This is a wrapper around :py:func:`scipy.optimize.curve_fit`. See there for a
@@ -221,7 +222,10 @@ def curve_fit(
                                **kwargs)
     popt = {
         name: scalar(value=val, variance=var, unit=u)
-        for name, val, var, u in zip(params.keys(), popt, np.diag(pcov), p_units)
+        for name,
+        val,
+        var,
+        u in zip(params.keys(), popt, np.diag(pcov), p_units)
     }
     pcov = _covariance_with_units(list(params.keys()), pcov, p_units)
     return popt, pcov

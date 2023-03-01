@@ -50,25 +50,38 @@ class PyBind11Conan(ConanFile):
         cmake = self._configure_cmake()
         cmake.install()
         for filename in [
-                "pybind11Targets.cmake", "pybind11Config.cmake",
+                "pybind11Targets.cmake",
+                "pybind11Config.cmake",
                 "pybind11ConfigVersion.cmake"
         ]:
             try:
                 os.unlink(
-                    os.path.join(self.package_folder, "lib", "cmake", "pybind11",
+                    os.path.join(self.package_folder,
+                                 "lib",
+                                 "cmake",
+                                 "pybind11",
                                  filename))
             except RuntimeError:
                 pass
         if Version(self.version) >= "2.6.0":
             replace_in_file(
                 self,
-                os.path.join(self.package_folder, "lib", "cmake", "pybind11",
-                             "pybind11Common.cmake"), "if(TARGET pybind11::lto)",
+                os.path.join(self.package_folder,
+                             "lib",
+                             "cmake",
+                             "pybind11",
+                             "pybind11Common.cmake"),
+                "if(TARGET pybind11::lto)",
                 "if(FALSE)")
             replace_in_file(
                 self,
-                os.path.join(self.package_folder, "lib", "cmake", "pybind11",
-                             "pybind11Common.cmake"), "add_library(", "# add_library(")
+                os.path.join(self.package_folder,
+                             "lib",
+                             "cmake",
+                             "pybind11",
+                             "pybind11Common.cmake"),
+                "add_library(",
+                "# add_library(")
 
     def package_id(self):
         self.info.clear()
@@ -109,7 +122,9 @@ class PyBind11Conan(ConanFile):
             ]
             self.cpp_info.set_property("cmake_build_modules", cmake_files)
             for generator in [
-                    "cmake", "cmake_multi", "cmake_find_package",
+                    "cmake",
+                    "cmake_multi",
+                    "cmake_find_package",
                     "cmake_find_package_multi"
             ]:
                 self.cpp_info.build_modules[generator] = cmake_files

@@ -23,7 +23,8 @@ def _make_2d_reference_ds(row_name, row_coords, data, dtype="int64"):
     return sc.Dataset(
         data={
             key: sc.Variable(dims=[row_name], values=value, dtype=dtype)
-            for key, value in data.items()
+            for key,
+            value in data.items()
         },
         coords={
             row_name: sc.Variable(dims=[row_name], values=row_coords, dtype=dtype),
@@ -127,10 +128,7 @@ def test_2d_dataframe():
     sc_ds = from_pandas(pd_df)
 
     reference_ds = _make_2d_reference_ds("row", [0, 1],
-                                         data={
-                                             "col1": (2, 3),
-                                             "col2": (5, 6)
-                                         })
+                                         data={"col1": (2, 3), "col2": (5, 6)})
 
     assert sc.identical(sc_ds, reference_ds)
 
@@ -142,9 +140,6 @@ def test_2d_dataframe_with_named_axes():
     sc_ds = from_pandas(pd_df)
 
     reference_ds = _make_2d_reference_ds("my-name-for-rows", [0, 1],
-                                         data={
-                                             "col1": (2, 3),
-                                             "col2": (5, 6)
-                                         })
+                                         data={"col1": (2, 3), "col2": (5, 6)})
 
     assert sc.identical(sc_ds, reference_ds)

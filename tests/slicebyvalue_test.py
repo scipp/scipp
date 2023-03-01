@@ -70,7 +70,8 @@ class TestSliceByValue:
 
         def test(sliceable):
 
-            by_value = sliceable['x', 1.5 * sc.units.dimensionless:4.5 *
+            by_value = sliceable['x',
+                                 1.5 * sc.units.dimensionless:4.5 *
                                  sc.units.dimensionless]
             by_index = sliceable['x', 1:-1]
             assert sc.identical(by_value, by_index)

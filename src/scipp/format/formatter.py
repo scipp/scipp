@@ -68,8 +68,12 @@ def _as_flat_array(data):
 
 
 def _format_array_flat(data, *, dtype: DType, spec: FormatSpec) -> str:
-    if dtype in (DType.Variable, DType.DataArray, DType.Dataset, DType.VariableView,
-                 DType.DataArrayView, DType.DatasetView):
+    if dtype in (DType.Variable,
+                 DType.DataArray,
+                 DType.Dataset,
+                 DType.VariableView,
+                 DType.DataArrayView,
+                 DType.DatasetView):
         return _format_array_flat_scipp_objects(data)
     if dtype == DType.PyObject:
         if 'ElementArray' in repr(type(data)):

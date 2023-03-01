@@ -107,10 +107,8 @@ def _make_data_array():
 
 
 def _make_dataset():
-    return sc.Dataset(data={
-        'a': _make_data_array(),
-        'scalar': _make_data_array()['x', 0].copy()
-    })
+    return sc.Dataset(
+        data={'a': _make_data_array(), 'scalar': _make_data_array()['x', 0].copy()})
 
 
 def test_readonly_data_array_slice():

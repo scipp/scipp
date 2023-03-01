@@ -173,7 +173,9 @@ def show_graph(graph: GraphDict, size: str = None, simplified: bool = False):
     return Graph(graph).show(size=size, simplified=simplified)
 
 
-def _transform_data_array(original: DataArray, targets: Set[str], graph: Graph,
+def _transform_data_array(original: DataArray,
+                          targets: Set[str],
+                          graph: Graph,
                           options: Options) -> DataArray:
     graph = graph.graph_for(original, targets)
     rules = rule_sequence(graph)
@@ -196,7 +198,10 @@ def _transform_data_array(original: DataArray, targets: Set[str], graph: Graph,
     return res.rename_dims(dim_name_changes)
 
 
-def _transform_dataset(original: Dataset, targets: Set[str], graph: Graph, *,
+def _transform_dataset(original: Dataset,
+                       targets: Set[str],
+                       graph: Graph,
+                       *,
                        options: Options) -> Dataset:
     # Note the inefficiency here in datasets with multiple items: Coord
     # transform is repeated for every item rather than sharing what is
@@ -226,8 +231,10 @@ def _transform_dataset(original: Dataset, targets: Set[str], graph: Graph, *,
     return Dataset(coords=transformed.coords)
 
 
-def _log_transform(rules: List[Rule], targets: Set[str],
-                   dim_name_changes: Mapping[str, str], coords: CoordTable) -> None:
+def _log_transform(rules: List[Rule],
+                   targets: Set[str],
+                   dim_name_changes: Mapping[str, str],
+                   coords: CoordTable) -> None:
     inputs = set(rule_output_names(rules, FetchRule))
     byproducts = {
         name
@@ -243,8 +250,8 @@ def _log_transform(rules: List[Rule], targets: Set[str],
     if byproducts:
         message += f'\n  Byproducts:\n    {", ".join(sorted(byproducts))}'
     if dim_name_changes:
-        dim_rename_steps = '\n'.join(f'    {t} <- {f}'
-                                     for f, t in dim_name_changes.items())
+        dim_rename_steps = '\n'.join(
+            f'    {t} <- {f}' for f, t in dim_name_changes.items())
         message += '\n  Renamed dimensions:\n' + dim_rename_steps
     if preexisting:
         message += ('\n  Outputs already present in input:'
@@ -323,8 +330,8 @@ def _color_dims(graph: Graph, dim_coords: Set[str]) -> Dict[str, Dict[str, Fract
 
 
 def _has_full_color_of_dim(colors: Dict[str, Fraction], dim: str) -> bool:
-    return all(fraction == 1 if d == dim else fraction != 1
-               for d, fraction in colors.items())
+    return all(
+        fraction == 1 if d == dim else fraction != 1 for d, fraction in colors.items())
 
 
 def _dim_name_changes(rule_graph: Graph, dim_coords: Set[str]) -> Dict[str, str]:

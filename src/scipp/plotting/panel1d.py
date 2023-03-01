@@ -51,10 +51,7 @@ class PlotPanel1d(PlotPanel):
         but.on_click(self.keep_remove_line)
         col.observe(self.update_line_color, names="value")
         self.keep_buttons[line_id] = {
-            "dropdown": drop,
-            "button": but,
-            "colorpicker": col,
-            "label": lab
+            "dropdown": drop, "button": but, "colorpicker": col, "label": lab
         }
         self.update_widgets()
 

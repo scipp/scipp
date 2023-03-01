@@ -99,9 +99,18 @@ def test_default_unit_for_string_is_none():
     assert var.unit is None
 
 
-@pytest.mark.parametrize(
-    'u_str', ('one', 'm', 'count / s', '12.3 * m/A*kg^2/rad^3', 'count', 'decibels',
-              'CXCUN[1]', 'arbitraryunit', 'EQXUN[1]', 'Sv', 'degC'))
+@pytest.mark.parametrize('u_str',
+                         ('one',
+                          'm',
+                          'count / s',
+                          '12.3 * m/A*kg^2/rad^3',
+                          'count',
+                          'decibels',
+                          'CXCUN[1]',
+                          'arbitraryunit',
+                          'EQXUN[1]',
+                          'Sv',
+                          'degC'))
 def test_dict_roundtrip(u_str):
     u = sc.Unit(u_str)
     assert units_identical(sc.Unit.from_dict(u.to_dict()), u)
@@ -276,8 +285,7 @@ def test_unit_aliases_iterate_over_aliases():
     assert sorted(sc.units.aliases) == ['clucks', 'dogyear']
     assert sorted(sc.units.aliases.keys()) == ['clucks', 'dogyear']
     assert sorted(sc.units.aliases.values(),
-                  key=lambda u: repr(u)) == [sc.Unit('19.3 m*A'),
-                                             sc.Unit('4492800s')]
+                  key=lambda u: repr(u)) == [sc.Unit('19.3 m*A'), sc.Unit('4492800s')]
     assert sorted(sc.units.aliases.items()) == [('clucks', sc.Unit('19.3 m*A')),
                                                 ('dogyear', sc.Unit('4492800s'))]
 

@@ -95,14 +95,8 @@ def graph_3():
     def fi(h, f):
         pass
 
-    return scgraph.Graph({
-        'b': 'a',
-        ('c', 'f'): fcf,
-        'd': fd,
-        'g': fg,
-        'h': fh,
-        'i': fi
-    })
+    return scgraph.Graph(
+        {'b': 'a', ('c', 'f'): fcf, 'd': fd, 'g': fg, 'h': fh, 'i': fi})
 
 
 def graph_4():

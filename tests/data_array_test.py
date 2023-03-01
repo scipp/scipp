@@ -13,16 +13,13 @@ def make_dataarray(dim1='x', dim2='y', seed=None):
     return sc.DataArray(data=sc.Variable(dims=[dim1, dim2], values=np.random.rand(2,
                                                                                   3)),
                         coords={
-                            dim1:
-                            sc.Variable(dims=[dim1],
-                                        values=np.arange(2.0),
-                                        unit=sc.units.m),
-                            dim2:
-                            sc.Variable(dims=[dim2],
-                                        values=np.arange(3.0),
-                                        unit=sc.units.m),
-                            'aux':
-                            sc.Variable(dims=[dim2], values=np.random.rand(3))
+                            dim1: sc.Variable(dims=[dim1],
+                                              values=np.arange(2.0),
+                                              unit=sc.units.m),
+                            dim2: sc.Variable(dims=[dim2],
+                                              values=np.arange(3.0),
+                                              unit=sc.units.m),
+                            'aux': sc.Variable(dims=[dim2], values=np.random.rand(3))
                         },
                         attrs={'meta': sc.Variable(dims=[dim2], values=np.arange(3))})
 
@@ -89,14 +86,8 @@ def test_init_from_variable_views():
 def test_init_from_existing_metadata(coords_wrapper, attrs_wrapper, masks_wrapper):
     da1 = sc.DataArray(
         sc.arange('x', 4),
-        coords={
-            'x': sc.arange('x', 5, unit='m'),
-            'y': sc.scalar(12.34)
-        },
-        attrs={
-            'a': sc.arange('x', 4, unit='s'),
-            'b': sc.scalar('attr-b')
-        },
+        coords={'x': sc.arange('x', 5, unit='m'), 'y': sc.scalar(12.34)},
+        attrs={'a': sc.arange('x', 4, unit='s'), 'b': sc.scalar('attr-b')},
         masks={'m': sc.array(dims=['x'], values=[False, True, True, False, False])})
     da2 = sc.DataArray(-sc.arange('x', 4),
                        coords=coords_wrapper(da1.coords),
@@ -407,11 +398,7 @@ def test_drop_coords():
     coord1 = sc.linspace('y', start=1, stop=4, num=3)
     coord2 = sc.linspace('z', start=-0.1, stop=0.1, num=5)
     da = sc.DataArray(data,
-                      coords={
-                          'coord0': coord0,
-                          'coord1': coord1,
-                          'coord2': coord2
-                      })
+                      coords={'coord0': coord0, 'coord1': coord1, 'coord2': coord2})
 
     assert 'coord0' not in da.drop_coords(['coord0']).coords
     assert 'coord0' not in da.drop_coords('coord0').coords

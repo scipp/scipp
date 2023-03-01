@@ -43,11 +43,9 @@ class PlotView2d(PlotView):
             self.current_lims[dim] = [xmin, xmax]
         values = new_values.values
         slice_values = {
-            "values":
-            values,
-            "extent":
-            np.array([self.current_lims[dims[1]],
-                      self.current_lims[dims[0]]]).flatten()
+            "values": values,
+            "extent": np.array([self.current_lims[dims[1]],
+                                self.current_lims[dims[0]]]).flatten()
         }
         mask_info = next(iter(mask_info.values()))
         if len(mask_info) > 0:

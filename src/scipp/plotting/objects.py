@@ -83,10 +83,7 @@ def make_profile(ax, mask_color):
                        figsize=(1.3 * cfg['width'] / cfg['dpi'],
                                 0.6 * cfg['height'] / cfg['dpi']),
                        bounding_box=bbox,
-                       legend={
-                           "show": True,
-                           "loc": (1.02, 0.0)
-                       })
+                       legend={"show": True, "loc": (1.02, 0.0)})
 
 
 class PlotDict(Displayable):
@@ -251,10 +248,8 @@ class Plot(Displayable):
         if resampling_mode is None:
             resampling_mode = _guess_resampling_mode(array)
         else:
-            resampling_mode = {
-                'sum': ResamplingMode.sum,
-                'mean': ResamplingMode.mean
-            }[resampling_mode]
+            resampling_mode = {'sum': ResamplingMode.sum,
+                               'mean': ResamplingMode.mean}[resampling_mode]
 
         errorbars = _make_errorbar_params(scipp_obj_dict, errorbars)
         figure.errorbars = errorbars

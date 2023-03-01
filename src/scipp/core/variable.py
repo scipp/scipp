@@ -359,7 +359,8 @@ def matrix(*,
     warnings.warn(
         "sc.matrix() has been deprecated in favour of "
         "sc.spatial.linear_transform(), and will be removed in a future "
-        "version of scipp.", DeprecationWarning)
+        "version of scipp.",
+        DeprecationWarning)
     from ..spatial import linear_transform
     return linear_transform(unit=unit, value=value)
 
@@ -381,7 +382,8 @@ def matrices(*,
     warnings.warn(
         "sc.matrices() has been deprecated in favour of "
         "sc.spatial.linear_transforms(), and will be removed in a future "
-        "version of scipp.", DeprecationWarning)
+        "version of scipp.",
+        DeprecationWarning)
     from ..spatial import linear_transforms
     return linear_transforms(dims=dims, unit=unit, values=values)
 
@@ -538,8 +540,8 @@ def array(*,
 
 def _expect_no_variances(args):
     has_variances = [
-        key for key, val in args.items()
-        if val is not None and val.variances is not None
+        key for key,
+        val in args.items() if val is not None and val.variances is not None
     ]
     if has_variances:
         raise _cpp.VariancesError('Arguments cannot have variances. '
@@ -565,7 +567,9 @@ def _ensure_same_unit(*, unit, args: dict):
 def _normalize_range_args(*, unit, **kwargs):
     is_var = {
         key: isinstance(val, _cpp.Variable)
-        for key, val in kwargs.items() if val is not None
+        for key,
+        val in kwargs.items()
+        if val is not None
     }
     if any(is_var.values()):
         if not all(is_var.values()):

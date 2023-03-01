@@ -12,10 +12,7 @@ def _make_xy():
     x = sc.linspace(dim='x', unit='m', start=0.1, stop=0.2, num=3)
     y = sc.linspace(dim='y', unit='m', start=0.1, stop=0.3, num=4)
     return sc.DataArray(data=sc.ones(dims=['x', 'y'], shape=[3, 4]),
-                        coords={
-                            'x': x,
-                            'y': y
-                        })
+                        coords={'x': x, 'y': y})
 
 
 def test_rename_2_steps():
@@ -336,7 +333,10 @@ def test_dim_rename_produced_dim_coord_cycle(a, c):
 @pytest.mark.parametrize('keep_inputs', (True, False))
 @pytest.mark.parametrize('keep_intermediates', (True, False))
 @pytest.mark.parametrize('keep_aliases', (True, False))
-def test_dim_rename_keep_arguments_have_no_effect(a, b, keep_inputs, keep_intermediates,
+def test_dim_rename_keep_arguments_have_no_effect(a,
+                                                  b,
+                                                  keep_inputs,
+                                                  keep_intermediates,
                                                   keep_aliases):
     # *x
     #  |
@@ -373,14 +373,12 @@ def test_rename_dims_param(a):
 def binned_in_a_b(request):
     events = sc.DataArray(data=sc.arange('event', 10, unit='counts'),
                           coords={
-                              'a':
-                              sc.array(dims=['event'],
-                                       values=np.random.rand(10),
-                                       unit='m'),
-                              'b':
-                              sc.array(dims=['event'],
-                                       values=np.random.rand(10),
-                                       unit='m')
+                              'a': sc.array(dims=['event'],
+                                            values=np.random.rand(10),
+                                            unit='m'),
+                              'b': sc.array(dims=['event'],
+                                            values=np.random.rand(10),
+                                            unit='m')
                           })
     binned = events.bin(a=2, b=2)
     # use non-bin-edge coord
@@ -672,10 +670,7 @@ def test_dataset_missing_attr_in_one_item_with_rule_to_make_it(a):
     ds = sc.Dataset({'item1': da1, 'item2': da2})
     with pytest.raises(sc.DatasetError):
         ds.transform_coords('b',
-                            graph={
-                                'b': lambda a, aa: a + aa,
-                                'aa': lambda a: a + 2
-                            })
+                            graph={'b': lambda a, aa: a + aa, 'aa': lambda a: a + 2})
 
 
 def test_dataset_missing_coord_in_one_item_without_rule_to_make_it(a, b):
@@ -811,14 +806,12 @@ def make_binned():
     N = 50
     data = sc.DataArray(data=sc.ones(dims=['event'], unit=sc.units.counts, shape=[N]),
                         coords={
-                            'x':
-                            sc.array(dims=['event'],
-                                     unit=sc.units.m,
-                                     values=np.random.rand(N)),
-                            'y':
-                            sc.array(dims=['event'],
-                                     unit=sc.units.m,
-                                     values=np.random.rand(N))
+                            'x': sc.array(dims=['event'],
+                                          unit=sc.units.m,
+                                          values=np.random.rand(N)),
+                            'y': sc.array(dims=['event'],
+                                          unit=sc.units.m,
+                                          values=np.random.rand(N))
                         })
     xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
     ybins = sc.Variable(dims=['y'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
@@ -961,11 +954,7 @@ def test_arg_vs_kwarg_kwonly(a):
 
     original = sc.DataArray(data=a, coords={'a': a})
     da = original.transform_coords(['b', 'c', 'd'],
-                                   graph={
-                                       'b': arg,
-                                       'c': kwarg,
-                                       'd': kwonly
-                                   })
+                                   graph={'b': arg, 'c': kwarg, 'd': kwonly})
     assert sc.identical(da.coords['b'], original.coords['a'])
     assert sc.identical(da.coords['c'], original.coords['a'])
     assert sc.identical(da.coords['d'], original.coords['a'])

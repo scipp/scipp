@@ -180,23 +180,18 @@ def load_txt_file():
             "radial": event_array("radial", "asec"),
         },
         attrs={
-            "min_energy":
-            energy_range["energy", 0],
-            "max_energy":
-            energy_range["energy", 1],
-            "quality":
-            event_array("quality", None),
+            "min_energy": energy_range["energy", 0],
+            "max_energy": energy_range["energy", 1],
+            "quality": event_array("quality", None),
             **{key: event_array(key, None)
                for key in list(values)},
-            "description":
-            sc.scalar("X-ray flares recorded by NASA's Reuven Ramaty High Energy Solar"
-                      " Spectroscopic Imager (RHESSI) Small Explorer"),
-            "url":
-            sc.scalar(
+            "description": sc.scalar(
+                "X-ray flares recorded by NASA's Reuven Ramaty High Energy Solar"
+                " Spectroscopic Imager (RHESSI) Small Explorer"),
+            "url": sc.scalar(
                 "https://hesperia.gsfc.nasa.gov/rhessi3/data-access/rhessi-data/flare-list/index.html"  # noqa
             ),
-            "citation":
-            sc.scalar("https://doi.org/10.1023/A:1022428818870"),
+            "citation": sc.scalar("https://doi.org/10.1023/A:1022428818870"),
         },
     )
 
@@ -245,10 +240,7 @@ def remove_events(da, rng):
             values=np.array([[0.9, 0.95, 0.77], [0.98, 0.89, 0.82], [0.93, 0.94,
                                                                      0.91]]),
         ),
-        coords={
-            "x": collimator_x,
-            "y": collimator_y
-        },
+        coords={"x": collimator_x, "y": collimator_y},
     )
 
     da = sc.sort(da, "x")

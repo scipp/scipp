@@ -17,8 +17,7 @@ import h5py
 def migrate_object(name, obj):
     if 'dtype' in obj.attrs:
         mapping = {
-            'vector_3_float64': 'vector3',
-            'matrix_3_float64': 'linear_transform3'
+            'vector_3_float64': 'vector3', 'matrix_3_float64': 'linear_transform3'
         }
         for old, new in mapping.items():
             if obj.attrs['dtype'] == old:

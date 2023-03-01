@@ -100,7 +100,8 @@ def _parse_instancemethod(func: object, name: Optional[str]) -> List[ast.Functio
     return body  # type: ignore
 
 
-def _make_regular_method_code_for_parse(signature: inspect.Signature, name: str,
+def _make_regular_method_code_for_parse(signature: inspect.Signature,
+                                        name: str,
                                         docstring: str) -> str:
     sig = f'def {name}{signature}:'
     if not docstring:
@@ -136,11 +137,8 @@ def parse_method(func: Any, name: Optional[str] = None) -> List[ast.FunctionDef]
 
 
 def _make_property(prop: property, name: str, part: str) -> Optional[ast.FunctionDef]:
-    func = getattr(prop, {
-        'getter': 'fget',
-        'setter': 'fset',
-        'deleter': 'fdel'
-    }[part], None)
+    func = getattr(prop, {'getter': 'fget', 'setter': 'fset', 'deleter': 'fdel'}[part],
+                   None)
     if func is None:
         return None
 
@@ -157,5 +155,6 @@ def _make_property(prop: property, name: str, part: str) -> Optional[ast.Functio
 
 def parse_property(prop: property, name: str) -> List[ast.FunctionDef]:
     return list(
-        filter(lambda p: p is not None, (_make_property(prop, name=name, part=part)
-                                         for part in ('getter', 'setter', 'deleter'))))
+        filter(lambda p: p is not None,
+               (_make_property(prop, name=name, part=part)
+                for part in ('getter', 'setter', 'deleter'))))

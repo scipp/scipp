@@ -77,7 +77,8 @@ def _process_block(lines: List[str], begin: int, end: int) -> List[str]:
             # Adding some indentation here fixes that but also modifies indentation
             # if the block is already indented. That should not cause problems.
             return [
-                ' ' * _indentation_of(prev) + '.. plot::', '',
+                ' ' * _indentation_of(prev) + '.. plot::',
+                '',
                 *map(lambda x: '    ' + x, block)
             ]
     return block

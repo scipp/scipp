@@ -140,7 +140,13 @@ class DateFormatter:
             set_axis_label(axis, label)
         return string
 
-    def check_for_transition(self, pos, string, date_min, date_max, dt, check_time,
+    def check_for_transition(self,
+                             pos,
+                             string,
+                             date_min,
+                             date_max,
+                             dt,
+                             check_time,
                              check_ms):
         """
         Function that checks for transitions between years, months, days etc..

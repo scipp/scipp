@@ -66,10 +66,7 @@ def test_from_xarray_converts_names_to_strings_in_dataarray():
     x = xr.Variable(dims=['x'], data=np.arange(3.))
     y = xr.Variable(dims=['y'], data=np.arange(4.))
     xr_da = xr.DataArray(a,
-                         coords={
-                             'x': x,
-                             0: y
-                         },
+                         coords={'x': x, 0: y},
                          attrs={
                              1: 6.54321,
                              2: "test-string",
@@ -154,10 +151,10 @@ def test_from_xarray_dataset_with_units():
 
     reference_ds = sc.Dataset(
         data={
-            "array1":
-            sc.DataArray(data=sc.zeros(dims=["x"], shape=(100, ), unit=sc.Unit("m"))),
-            "array2":
-            sc.DataArray(data=sc.zeros(dims=["y"], shape=(50, ), unit=sc.Unit("s"))),
+            "array1": sc.DataArray(
+                data=sc.zeros(dims=["x"], shape=(100, ), unit=sc.Unit("m"))),
+            "array2": sc.DataArray(
+                data=sc.zeros(dims=["y"], shape=(50, ), unit=sc.Unit("s"))),
         })
 
     assert sc.identical(sc_ds, reference_ds)
@@ -166,14 +163,12 @@ def test_from_xarray_dataset_with_units():
 def test_from_xarray_dataset_with_non_indexed_coords():
     xr_ds = xr.Dataset(
         data_vars={
-            "array1":
-            xr.DataArray(data=np.zeros((100, )),
-                         dims=["x"],
-                         coords={
-                             "x": np.arange(100, dtype="int64"),
-                         }),
-            "array2":
-            xr.DataArray(
+            "array1": xr.DataArray(data=np.zeros((100, )),
+                                   dims=["x"],
+                                   coords={
+                                       "x": np.arange(100, dtype="int64"),
+                                   }),
+            "array2": xr.DataArray(
                 data=np.zeros((50, )),
                 dims=["y"],
                 coords={
@@ -187,11 +182,10 @@ def test_from_xarray_dataset_with_non_indexed_coords():
     sc_ds = from_xarray(xr_ds)
 
     reference_ds = sc.Dataset(data={
-        "array1":
-        sc.DataArray(data=sc.zeros(dims=["x"], shape=(100, ), dtype="float64")),
-        "array2":
-        sc.DataArray(data=sc.zeros(dims=["y"], shape=(50, ), dtype="float64"),
-                     attrs={"z": sc.arange("y", 0, 100, 2, dtype="int64")}),
+        "array1": sc.DataArray(
+            data=sc.zeros(dims=["x"], shape=(100, ), dtype="float64")),
+        "array2": sc.DataArray(data=sc.zeros(dims=["y"], shape=(50, ), dtype="float64"),
+                               attrs={"z": sc.arange("y", 0, 100, 2, dtype="int64")}),
     },
                               coords={
                                   "x": sc.arange("x", 100, dtype="int64"),
@@ -204,26 +198,24 @@ def test_from_xarray_dataset_with_non_indexed_coords():
 def test_from_xarray_dataset_with_extra_coord():
     xr_ds = xr.Dataset(
         data_vars={
-            "array1":
-            xr.DataArray(data=np.zeros((100, )),
-                         dims=["x"],
-                         coords={
-                             "x": np.arange(100, dtype="int64"),
-                         }),
-            "array2":
-            xr.DataArray(data=np.zeros((50, )),
-                         dims=["y"],
-                         coords={"y": np.arange(50, dtype="int64")}),
+            "array1": xr.DataArray(data=np.zeros((100, )),
+                                   dims=["x"],
+                                   coords={
+                                       "x": np.arange(100, dtype="int64"),
+                                   }),
+            "array2": xr.DataArray(data=np.zeros((50, )),
+                                   dims=["y"],
+                                   coords={"y": np.arange(50, dtype="int64")}),
         })
     xr_ds.coords["z"] = xr.Variable(dims="z", data=np.arange(66.))
 
     sc_ds = from_xarray(xr_ds)
 
     reference_ds = sc.Dataset(data={
-        "array1":
-        sc.DataArray(data=sc.zeros(dims=["x"], shape=(100, ), dtype="float64")),
-        "array2":
-        sc.DataArray(data=sc.zeros(dims=["y"], shape=(50, ), dtype="float64")),
+        "array1": sc.DataArray(
+            data=sc.zeros(dims=["x"], shape=(100, ), dtype="float64")),
+        "array2": sc.DataArray(
+            data=sc.zeros(dims=["y"], shape=(50, ), dtype="float64")),
     },
                               coords={
                                   "x": sc.arange("x", 100, dtype="int64"),

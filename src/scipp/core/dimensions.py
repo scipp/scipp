@@ -183,7 +183,8 @@ def _rename_dataset(ds: Dataset,
         if dim not in ds_from_items.coords:
             dims_dict = {
                 old: new
-                for old, new in renaming_dict.items() if old in coord.dims
+                for old, new in renaming_dict.items()
+                if old in coord.dims
             }
             dict_of_coords[dims_dict.get(dim, dim)] = _rename_variable(coord, dims_dict)
     return merge(ds_from_items, Dataset(coords=dict_of_coords))

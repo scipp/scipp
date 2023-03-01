@@ -13,10 +13,7 @@ def make_containers():
     rng = np.random.default_rng(87325)
     var = sc.array(dims=['x', 'y'], values=rng.uniform(-5, 5, (4, 3)))
     da = sc.DataArray(var.copy(),
-                      coords={
-                          'x': sc.arange('x', 4),
-                          'y': 0.1 * sc.arange('y', 3)
-                      })
+                      coords={'x': sc.arange('x', 4), 'y': 0.1 * sc.arange('y', 3)})
     return var, da
 
 
@@ -52,13 +49,8 @@ def test_bound_methods_shape():
     for obj in (var, da):
         assert sc.identical(obj.flatten(dims=['x', 'y'], to='z'),
                             sc.flatten(obj, dims=['x', 'y'], to='z'))
-        assert sc.identical(obj.fold(dim='x', sizes={
-            'a': 2,
-            'b': 2
-        }), sc.fold(obj, dim='x', sizes={
-            'a': 2,
-            'b': 2
-        }))
+        assert sc.identical(obj.fold(dim='x', sizes={'a': 2, 'b': 2}),
+                            sc.fold(obj, dim='x', sizes={'a': 2, 'b': 2}))
 
 
 def test_bound_methods_groupby():

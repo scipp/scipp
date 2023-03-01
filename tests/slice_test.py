@@ -115,10 +115,7 @@ def test_dataset_slice_single_index_then_get_item():
 
 
 def test_dataset_set_slice_range():
-    ds = sc.Dataset({
-        'a': sc.arange('xx', 5),
-        'b': sc.arange('xx', 5, 10)
-    },
+    ds = sc.Dataset({'a': sc.arange('xx', 5), 'b': sc.arange('xx', 5, 10)},
                     coords={'xx': sc.arange('xx', 0, 10, 2)})
     aa = sc.array(dims=['xx'], values=[-7, -4])
     ds['xx', 2:4] = aa

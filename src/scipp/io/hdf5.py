@@ -22,10 +22,24 @@ def _dtype_lut():
     # handling, but will do as we add support for other types such as
     # variable-length strings.
     dtypes = [
-        d.float64, d.float32, d.int64, d.int32, d.bool, d.datetime64, d.string,
-        d.Variable, d.DataArray, d.Dataset, d.VariableView, d.DataArrayView,
-        d.DatasetView, d.vector3, d.linear_transform3, d.affine_transform3,
-        d.translation3, d.rotation3
+        d.float64,
+        d.float32,
+        d.int64,
+        d.int32,
+        d.bool,
+        d.datetime64,
+        d.string,
+        d.Variable,
+        d.DataArray,
+        d.Dataset,
+        d.VariableView,
+        d.DataArrayView,
+        d.DatasetView,
+        d.vector3,
+        d.linear_transform3,
+        d.affine_transform3,
+        d.translation3,
+        d.rotation3
     ]
     names = [str(dtype) for dtype in dtypes]
     return dict(zip(names, dtypes))
@@ -167,8 +181,17 @@ def _data_handler_lut():
     from .._scipp.core import DType as d
     handler = {}
     for dtype in [
-            d.float64, d.float32, d.int64, d.int32, d.bool, d.datetime64, d.vector3,
-            d.linear_transform3, d.rotation3, d.translation3, d.affine_transform3
+            d.float64,
+            d.float32,
+            d.int64,
+            d.int32,
+            d.bool,
+            d.datetime64,
+            d.vector3,
+            d.linear_transform3,
+            d.rotation3,
+            d.translation3,
+            d.affine_transform3
     ]:
         handler[str(dtype)] = NumpyDataIO
     for dtype in [d.VariableView, d.DataArrayView, d.DatasetView]:
@@ -338,8 +361,8 @@ class DatasetIO:
         from ..core import Dataset
         coords = _read_mapping(group['coords'])
         return Dataset(coords=coords,
-                       data=_read_mapping(group['entries'], override={'coords':
-                                                                      coords}))
+                       data=_read_mapping(group['entries'],
+                                          override={'coords': coords}))
 
 
 class DataGroupIO:

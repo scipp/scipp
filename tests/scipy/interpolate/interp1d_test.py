@@ -22,9 +22,7 @@ def check_metadata(out, da, x):
 
 
 @pytest.mark.parametrize(
-    "da", [make_array(),
-           make_array().transpose(),
-           make_array().transpose().copy()])
+    "da", [make_array(), make_array().transpose(), make_array().transpose().copy()])
 def test_metadata(da):
     f = interp1d(da, 'xx')
     x = sc.linspace(dim='xx', start=0.1, stop=0.4, num=10, unit='rad')

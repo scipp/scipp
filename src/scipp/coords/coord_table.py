@@ -20,7 +20,9 @@ class CoordTable:
 
     def __init__(self, rules: List[Rule], targets: Set[str], options: Options):
         self._coords = {}
-        self._total_usages = _apply_keep_options(_count_usages(rules), rules, targets,
+        self._total_usages = _apply_keep_options(_count_usages(rules),
+                                                 rules,
+                                                 targets,
                                                  options)
         # Preserve all targets regardless of keep_* options.
         for name in targets:
@@ -55,7 +57,9 @@ def _count_usages(rules: List[Rule]) -> Dict[str, int]:
     return usages
 
 
-def _apply_keep_options(usages: Dict[str, int], rules: List[Rule], targets: Set[str],
+def _apply_keep_options(usages: Dict[str, int],
+                        rules: List[Rule],
+                        targets: Set[str],
                         options: Options) -> Dict[str, int]:
 
     def out_names(rule_type):

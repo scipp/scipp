@@ -128,16 +128,10 @@ def test_plot_2d_with_masks_and_labels():
 
 
 def test_plot_2d_with_2d_coord_1d_mask():
-    da = sc.DataArray(sc.arange('a', 6.0).fold('a', {
-        'x': 2,
-        'y': 3
-    }),
+    da = sc.DataArray(sc.arange('a', 6.0).fold('a', {'x': 2, 'y': 3}),
                       coords={
                           'x': sc.arange('x', 2.0),
-                          'y': sc.arange('a', 6.0).fold('a', {
-                              'x': 2,
-                              'y': 3
-                          })
+                          'y': sc.arange('a', 6.0).fold('a', {'x': 2, 'y': 3})
                       },
                       masks={'m': sc.array(dims=['y'], values=[True, False, True])})
     sc.plot(da)
@@ -189,19 +183,10 @@ def test_plot_from_dict_variable_2d():
 
 def test_plot_from_dict_data_array_2d():
     sc.plot({
-        'data': {
-            'dims': ['yy', 'xx'],
-            'values': np.random.random([20, 10])
-        },
+        'data': {'dims': ['yy', 'xx'], 'values': np.random.random([20, 10])},
         'coords': {
-            'xx': {
-                'dims': ['xx'],
-                'values': np.arange(11)
-            },
-            'yy': {
-                'dims': ['yy'],
-                'values': np.arange(21)
-            }
+            'xx': {'dims': ['xx'], 'values': np.arange(11)},
+            'yy': {'dims': ['yy'], 'values': np.arange(21)}
         }
     })
 
@@ -216,12 +201,10 @@ def test_plot_string_and_vector_axis_labels_2d():
                                        values=np.random.random([M, N]),
                                        unit='counts'),
                       coords={
-                          'xx':
-                          sc.vectors(dims=['xx'], values=vecs, unit='m'),
-                          'yy':
-                          sc.Variable(dims=['yy'],
-                                      values=['a', 'b', 'c', 'd', 'e'],
-                                      unit='m')
+                          'xx': sc.vectors(dims=['xx'], values=vecs, unit='m'),
+                          'yy': sc.Variable(dims=['yy'],
+                                            values=['a', 'b', 'c', 'd', 'e'],
+                                            unit='m')
                       })
     sc.plot(da)
 
@@ -480,16 +463,11 @@ def test_plot_redraw_binned_concat_inplace():
 def test_plot_various_2d_coord():
 
     def make_array(dims, coord_name):
-        return sc.DataArray(data=sc.fold(sc.arange('xx', 2 * 10), 'xx', {
-            dims[0]: 10,
-            dims[1]: 2
-        }),
+        return sc.DataArray(data=sc.fold(sc.arange('xx', 2 * 10),
+                                         'xx', {dims[0]: 10, dims[1]: 2}),
                             coords={
-                                coord_name:
-                                sc.fold(0.1 * sc.arange('xx', 20), 'xx', {
-                                    dims[0]: 10,
-                                    dims[1]: 2
-                                })
+                                coord_name: sc.fold(0.1 * sc.arange('xx', 20),
+                                                    'xx', {dims[0]: 10, dims[1]: 2})
                             })
 
     # Dimension coord for xx
@@ -507,11 +485,9 @@ def test_plot_various_2d_coord():
 def test_when_2d_data_has_y_coord_associated_with_dim_x():
     N = 10
     M = 15
-    da = sc.DataArray(sc.array(dims=['x', 'y'], values=np.random.random([N, M])),
-                      coords={
-                          'x': sc.arange('x', 2, N + 2),
-                          'y': sc.arange('x', 1, N + 1)
-                      })
+    da = sc.DataArray(
+        sc.array(dims=['x', 'y'], values=np.random.random([N, M])),
+        coords={'x': sc.arange('x', 2, N + 2), 'y': sc.arange('x', 1, N + 1)})
     sc.plot(da)
 
 

@@ -200,7 +200,9 @@ class ResamplingModel():
                     # range on this slice, which rebin cannot handle.
                     if len(self._array.meta[dim].dims) == 1:
                         out = out[get_slice_params(out.data, out.meta[dim], low, high)]
-                params[dim] = (low.value, high.value, low.unit,
+                params[dim] = (low.value,
+                               high.value,
+                               low.unit,
                                self.resolution.get(dim, None))
         if params == self._home_params:
             # This is a crude caching mechanism for past views. Currently we
@@ -332,7 +334,9 @@ class ResamplingDenseModel(ResamplingModel):
         return array
 
     def _resample(self, array):
-        coords = _replace_edge_coords(array, self._array.dims, self.bounds,
+        coords = _replace_edge_coords(array,
+                                      self._array.dims,
+                                      self.bounds,
                                       self._prefix)
         return self._rebin(array.data, sizes=array.sizes, coords=coords)
 

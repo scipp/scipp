@@ -66,7 +66,8 @@ class PlotView1d(PlotView):
         """
         Forward mask toggling to the `figure`.
         """
-        self.figure.toggle_mask(change["owner"].mask_group, change["owner"].mask_name,
+        self.figure.toggle_mask(change["owner"].mask_group,
+                                change["owner"].mask_name,
                                 change["new"])
 
     def keep_line(self, *args, **kwargs):

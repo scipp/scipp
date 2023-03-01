@@ -13,7 +13,8 @@ from ..factory import make_binned_data_array, make_dense_data_array
 
 def _with_fake_pos(*args, **kwargs):
     da = make_dense_data_array(*args, **kwargs)
-    da.coords['pos'] = sc.geometry.position(da.coords['xx'], da.coords['yy'],
+    da.coords['pos'] = sc.geometry.position(da.coords['xx'],
+                                            da.coords['yy'],
                                             da.coords['zz']).transpose(da.dims[:3])
     return da
 
@@ -31,12 +32,10 @@ def make_data_array_with_position_vectors():
     a = np.arange(M * N).reshape([M, N]) * np.sin(y)
     da = sc.DataArray(data=sc.Variable(dims=['time', 'xyz'], values=a),
                       coords={
-                          'xyz':
-                          sc.vectors(dims=['xyz'], values=np.array([x, y, z]).T),
-                          'pos':
-                          sc.vectors(dims=['xyz'], values=np.array([x, y, z]).T + 20.0),
-                          'time':
-                          sc.Variable(dims=['time'], values=time)
+                          'xyz': sc.vectors(dims=['xyz'], values=np.array([x, y, z]).T),
+                          'pos': sc.vectors(dims=['xyz'],
+                                            values=np.array([x, y, z]).T + 20.0),
+                          'time': sc.Variable(dims=['time'], values=time)
                       })
     return da
 
@@ -119,12 +118,11 @@ def test_plot_3d_with_2d_position_coordinate():
         data=sc.Variable(dims=['x', 'y', 't'],
                          values=np.arange(nx * ny * nt).reshape(nx, ny, nt)),
         coords={
-            'pos':
-            sc.vectors(dims=['x', 'y'],
-                       values=np.array([xx, yy,
-                                        np.zeros_like(xx)]).T.reshape(nx, ny, 3)),
-            't':
-            sc.arange('t', nt + 1, dtype=np.float64)
+            'pos': sc.vectors(dims=['x', 'y'],
+                              values=np.array([xx, yy,
+                                               np.zeros_like(xx)]).T.reshape(nx, ny,
+                                                                             3)),
+            't': sc.arange('t', nt + 1, dtype=np.float64)
         })
 
     sc.plot(da, projection="3d", positions="pos")

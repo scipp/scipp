@@ -175,16 +175,8 @@ def test_plot_from_dict_variable_1d():
 
 def test_plot_from_dict_data_array_1d():
     sc.plot({
-        "data": {
-            "dims": ["adim"],
-            "values": np.random.random(20)
-        },
-        "coords": {
-            "adim": {
-                "dims": ["adim"],
-                "values": np.arange(21)
-            }
-        }
+        "data": {"dims": ["adim"], "values": np.random.random(20)},
+        "coords": {"adim": {"dims": ["adim"], "values": np.arange(21)}}
     })
 
 
@@ -199,10 +191,9 @@ def test_plot_vector_axis_labels_1d():
                                        values=np.random.random(N),
                                        unit='counts'),
                       coords={
-                          'xx':
-                          sc.vectors(dims=['xx'],
-                                     values=np.random.random([N, 3]),
-                                     unit=sc.units.m)
+                          'xx': sc.vectors(dims=['xx'],
+                                           values=np.random.random([N, 3]),
+                                           unit=sc.units.m)
                       })
     sc.plot(da)
 
@@ -213,8 +204,7 @@ def test_plot_string_axis_labels_1d():
                                        values=np.random.random(N),
                                        unit='counts'),
                       coords={
-                          'xx':
-                          sc.Variable(
+                          'xx': sc.Variable(
                               dims=['xx'],
                               values=["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"],
                               unit='m')
@@ -228,10 +218,9 @@ def test_plot_string_axis_labels_1d_short():
                                        values=np.random.random(N),
                                        unit='counts'),
                       coords={
-                          'xx':
-                          sc.Variable(dims=['xx'],
-                                      values=["a", "b", "c", "d", "e"],
-                                      unit='m')
+                          'xx': sc.Variable(dims=['xx'],
+                                            values=["a", "b", "c", "d", "e"],
+                                            unit='m')
                       })
     sc.plot(da)
 
@@ -242,12 +231,10 @@ def test_plot_with_vector_labels():
                                        values=np.random.random(N),
                                        unit='counts'),
                       coords={
-                          'xx':
-                          sc.arange('xx', float(N), unit='m'),
-                          'labs':
-                          sc.vectors(dims=['xx'],
-                                     values=np.random.random([N, 3]),
-                                     unit='m')
+                          'xx': sc.arange('xx', float(N), unit='m'),
+                          'labs': sc.vectors(dims=['xx'],
+                                             values=np.random.random([N, 3]),
+                                             unit='m')
                       })
     sc.plot(da, labels={'xx': 'labs'})
 
@@ -258,12 +245,10 @@ def test_plot_vector_axis_with_labels():
                                        values=np.random.random(N),
                                        unit='counts'),
                       coords={
-                          'labs':
-                          sc.arange('xx', float(N), unit='m'),
-                          'xx':
-                          sc.vectors(dims=['xx'],
-                                     values=np.random.random([N, 3]),
-                                     unit='m')
+                          'labs': sc.arange('xx', float(N), unit='m'),
+                          'xx': sc.vectors(dims=['xx'],
+                                           values=np.random.random([N, 3]),
+                                           unit='m')
                       })
     sc.plot(da)
 
@@ -315,7 +300,8 @@ def test_plot_1d_datetime():
 def test_plot_1d_datetime_binedges():
     time = sc.array(dims=['time'],
                     values=np.arange(np.datetime64('2017-01-01T12:00:00'),
-                                     np.datetime64('2017-01-01T13:00:00'), 20))
+                                     np.datetime64('2017-01-01T13:00:00'),
+                                     20))
 
     da = sc.DataArray(data=sc.array(dims=['time'],
                                     values=np.random.random(time.sizes['time'] - 1),

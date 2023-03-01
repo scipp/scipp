@@ -26,10 +26,8 @@ def test_plot_0d_dataset():
 
 
 def test_plot_not_all_0d_dataset():
-    ds = sc.Dataset(data={
-        'a': sc.scalar(1),
-        'b': sc.Variable(dims=['x'], values=[1, 2])
-    })
+    ds = sc.Dataset(
+        data={'a': sc.scalar(1), 'b': sc.Variable(dims=['x'], values=[1, 2])})
     sc.plot(ds)  # Throw nothing
 
 

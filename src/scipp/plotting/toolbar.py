@@ -18,10 +18,7 @@ def set_button_color(button, selected=False):
 
 
 def _make_toggle_button(**kwargs):
-    button = ipw.ToggleButton(layout={
-        "width": "34px",
-        "padding": "0px 0px 0px 0px"
-    },
+    button = ipw.ToggleButton(layout={"width": "34px", "padding": "0px 0px 0px 0px"},
                               **kwargs)
     set_button_color(button)
     return button
@@ -56,8 +53,7 @@ class PlotToolbar(Displayable):
         self.members['resampling_mode'] = self._resampling_mode
         if 'resampling_mode' in button_states:
             resampling_modes = {
-                ResamplingMode.mean: (True, 'mean'),
-                ResamplingMode.sum: (False, 'sum')
+                ResamplingMode.mean: (True, 'mean'), ResamplingMode.sum: (False, 'sum')
             }
             mode = button_states.pop('resampling_mode')
             state, description = resampling_modes[mode]

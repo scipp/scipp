@@ -97,48 +97,30 @@ def test_identical(t):
 
 def test_identical_data_group():
     dg1 = sc.DataGroup({
-        'variable':
-        sc.scalar(4.182, unit='s'),
-        'data array':
-        sc.DataArray(sc.scalar(52), coords={'x': sc.scalar('abc')}),
-        'data group':
-        sc.DataGroup({
+        'variable': sc.scalar(4.182, unit='s'),
+        'data array': sc.DataArray(sc.scalar(52), coords={'x': sc.scalar('abc')}),
+        'data group': sc.DataGroup({
             '1': sc.arange('x', 5),
         }),
-        'tråde':
-        'Ét eksempel',
-        'a number':
-        123,
-        'dict': {
-            'k': 'value1',
-            'n': 77
-        },
-        'numpy-array':
-        np.array([1, 6, 23])
+        'tråde': 'Ét eksempel',
+        'a number': 123,
+        'dict': {'k': 'value1', 'n': 77},
+        'numpy-array': np.array([1, 6, 23])
     })
     assert sc.identical(dg1, dg1.copy())
 
 
 def test_identical_data_group_disordered():
     dg1 = sc.DataGroup({
-        'variable':
-        sc.scalar(4.182, unit='s'),
-        'data array':
-        sc.DataArray(sc.scalar(52), coords={'x': sc.scalar('abc')}),
-        'data group':
-        sc.DataGroup({
+        'variable': sc.scalar(4.182, unit='s'),
+        'data array': sc.DataArray(sc.scalar(52), coords={'x': sc.scalar('abc')}),
+        'data group': sc.DataGroup({
             '1': sc.arange('x', 5),
         }),
-        'tråde':
-        'Ét eksempel',
-        'a number':
-        123,
-        'dict': {
-            'k': 'value1',
-            'n': 77
-        },
-        'numpy-array':
-        np.array([1, 6, 23])
+        'tråde': 'Ét eksempel',
+        'a number': 123,
+        'dict': {'k': 'value1', 'n': 77},
+        'numpy-array': np.array([1, 6, 23])
     })
     dg2 = sc.DataGroup({key: dg1[key] for key in sorted(dg1.keys())})
     assert sc.identical(dg1, dg2)
@@ -146,24 +128,15 @@ def test_identical_data_group_disordered():
 
 def test_identical_data_group_mismatched_value():
     dg1 = sc.DataGroup({
-        'variable':
-        sc.scalar(4.182, unit='s'),
-        'data array':
-        sc.DataArray(sc.scalar(52), coords={'x': sc.scalar('abc')}),
-        'data group':
-        sc.DataGroup({
+        'variable': sc.scalar(4.182, unit='s'),
+        'data array': sc.DataArray(sc.scalar(52), coords={'x': sc.scalar('abc')}),
+        'data group': sc.DataGroup({
             '1': sc.arange('x', 5),
         }),
-        'tråde':
-        'Ét eksempel',
-        'a number':
-        123,
-        'dict': {
-            'k': 'value1',
-            'n': 77
-        },
-        'numpy-array':
-        np.array([1, 6, 23])
+        'tråde': 'Ét eksempel',
+        'a number': 123,
+        'dict': {'k': 'value1', 'n': 77},
+        'numpy-array': np.array([1, 6, 23])
     })
 
     dg2 = dg1.copy()
@@ -184,24 +157,15 @@ def test_identical_data_group_mismatched_value():
 
 def test_identical_data_group_mismatched_type():
     dg1 = sc.DataGroup({
-        'variable':
-        sc.scalar(4.182, unit='s'),
-        'data array':
-        sc.DataArray(sc.scalar(52), coords={'x': sc.scalar('abc')}),
-        'data group':
-        sc.DataGroup({
+        'variable': sc.scalar(4.182, unit='s'),
+        'data array': sc.DataArray(sc.scalar(52), coords={'x': sc.scalar('abc')}),
+        'data group': sc.DataGroup({
             '1': sc.arange('x', 5),
         }),
-        'tråde':
-        'Ét eksempel',
-        'a number':
-        123,
-        'dict': {
-            'k': 'value1',
-            'n': 77
-        },
-        'numpy-array':
-        np.array([1, 6, 23])
+        'tråde': 'Ét eksempel',
+        'a number': 123,
+        'dict': {'k': 'value1', 'n': 77},
+        'numpy-array': np.array([1, 6, 23])
     })
 
     dg2 = dg1.copy()
@@ -211,24 +175,15 @@ def test_identical_data_group_mismatched_type():
 
 def test_identical_data_group_different_keys():
     dg1 = sc.DataGroup({
-        'variable':
-        sc.scalar(4.182, unit='s'),
-        'data array':
-        sc.DataArray(sc.scalar(52), coords={'x': sc.scalar('abc')}),
-        'data group':
-        sc.DataGroup({
+        'variable': sc.scalar(4.182, unit='s'),
+        'data array': sc.DataArray(sc.scalar(52), coords={'x': sc.scalar('abc')}),
+        'data group': sc.DataGroup({
             '1': sc.arange('x', 5),
         }),
-        'tråde':
-        'Ét eksempel',
-        'a number':
-        123,
-        'dict': {
-            'k': 'value1',
-            'n': 77
-        },
-        'numpy-array':
-        np.array([1, 6, 23])
+        'tråde': 'Ét eksempel',
+        'a number': 123,
+        'dict': {'k': 'value1', 'n': 77},
+        'numpy-array': np.array([1, 6, 23])
     })
 
     dg2 = dg1.copy()

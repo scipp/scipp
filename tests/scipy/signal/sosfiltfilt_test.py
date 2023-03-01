@@ -130,10 +130,11 @@ def array2d(dim, extra_dim):
     return sc.concat([da, da + da], extra_dim)
 
 
-@pytest.mark.parametrize("da", [
-    array2d(dim='xx', extra_dim='yy'),
-    array2d(dim='xx', extra_dim='yy').transpose().copy()
-])
+@pytest.mark.parametrize("da",
+                         [
+                             array2d(dim='xx', extra_dim='yy'),
+                             array2d(dim='xx', extra_dim='yy').transpose().copy()
+                         ])
 def test_filtering_slice_identical_to_slice_of_filtered(da):
     sos = butter(da.coords['xx'], N=4, Wn=20 / da.coords['xx'].unit)
     out2d = sosfiltfilt(da, 'xx', sos=sos)
