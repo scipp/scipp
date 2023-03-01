@@ -369,11 +369,11 @@ def test_assert_identical_data_group_values_mismatch_nested():
     'buffer',
     (sc.ones(sizes={'e': 10}, unit='counts'), sc.arange('.', 13, unit='m'),
      sc.DataArray(sc.zeros(sizes={'bm': 10}), coords={'bm': sc.arange('bm', 10)})))
-@pytest.mark.parametrize('indices',
-                         (sc.array(dims=['lm'], values=[0, 3, 8, 10], unit=None),
-                          sc.array(dims=['h'], values=[2, 4, 10], unit=None),
-                          sc.array(dims=['lka'], values=[0, 6], unit=None),
-                          sc.array(dims=['l we'], values=[], dtype='int64', unit=None)))
+@pytest.mark.parametrize(
+    'indices', (sc.array(dims=['lm'], values=[0, 3, 8, 10], dtype='int64', unit=None),
+                sc.array(dims=['h'], values=[2, 4, 10], dtype='int64', unit=None),
+                sc.array(dims=['lka'], values=[0, 6], dtype='int64', unit=None),
+                sc.array(dims=['l we'], values=[], dtype='int64', unit=None)))
 def test_assert_identical_binned_variable_equal(buffer, indices):
     begin, end = indices[:-1], indices[1:]
     a = sc.bins(data=buffer, dim=buffer.dim, begin=begin, end=end)
@@ -391,9 +391,9 @@ def test_assert_identical_binned_data_array_equal():
     'buffer',
     (sc.ones(sizes={'e': 10}, unit='counts'),
      sc.DataArray(sc.zeros(sizes={'bm': 10}), coords={'bm': sc.arange('bm', 10)})))
-@pytest.mark.parametrize('indices',
-                         (sc.array(dims=['lm'], values=[0, 3, 8, 10], unit=None),
-                          sc.array(dims=['l we'], values=[], dtype='int64', unit=None)))
+@pytest.mark.parametrize(
+    'indices', (sc.array(dims=['lm'], values=[0, 3, 8, 10], dtype='int64', unit=None),
+                sc.array(dims=['l we'], values=[], dtype='int64', unit=None)))
 def test_assert_identical_binned_variable_unit_mismatch(buffer, indices):
     begin, end = indices[:-1], indices[1:]
     a = sc.bins(data=buffer, dim=buffer.dim, begin=begin, end=end)
@@ -411,7 +411,7 @@ def test_assert_identical_binned_variable_unit_mismatch(buffer, indices):
     (sc.ones(sizes={'e': 10}, unit='counts'),
      sc.DataArray(sc.zeros(sizes={'bm': 10}), coords={'bm': sc.arange('bm', 10)})))
 @pytest.mark.parametrize(
-    'indices', (sc.array(dims=['lm'], values=[0, 3, 8, 10], unit=None),
+    'indices', (sc.array(dims=['lm'], values=[0, 3, 8, 10], dtype='int64', unit=None),
                 sc.array(dims=['l we'], values=[2, 6], dtype='int64', unit=None)))
 def test_assert_identical_binned_variable_value_mismatch(buffer, indices):
     begin, end = indices[:-1], indices[1:]
@@ -426,7 +426,7 @@ def test_assert_identical_binned_variable_value_mismatch(buffer, indices):
 
 
 @pytest.mark.parametrize(
-    'indices', (sc.array(dims=['lm'], values=[0, 3, 8, 10], unit=None),
+    'indices', (sc.array(dims=['lm'], values=[0, 3, 8, 10], dtype='int64', unit=None),
                 sc.array(dims=['l we'], values=[1, 6], dtype='int64', unit=None)))
 def test_assert_identical_binned_variable_coord_mismatch(indices):
     buffer = sc.DataArray(sc.zeros(sizes={'bm': 10}),
