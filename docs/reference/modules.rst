@@ -36,6 +36,7 @@ Utilities
 
    configuration
    logging
+   testing
 
 Sphinx
 ------
