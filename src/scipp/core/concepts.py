@@ -20,20 +20,25 @@ def _reduced(obj: Mapping[str, Variable], dims: List[str]) -> Dict[str, Variable
 
 def rewrap_output_data(prototype: VariableLikeType, data) -> VariableLikeType:
     if isinstance(prototype, DataArray):
-        return DataArray(data=data,
-                         coords=prototype.coords,
-                         attrs=prototype.attrs,
-                         masks=_copied(prototype.masks))
+        return DataArray(
+            data=data,
+            coords=prototype.coords,
+            attrs=prototype.attrs,
+            masks=_copied(prototype.masks),
+        )
     else:
         return data
 
 
-def rewrap_reduced_data(prototype: VariableLikeType, data,
-                        dim: Dims) -> VariableLikeType:
-    return DataArray(data,
-                     coords=reduced_coords(prototype, dim),
-                     masks=reduced_masks(prototype, dim),
-                     attrs=reduced_attrs(prototype, dim))
+def rewrap_reduced_data(
+    prototype: VariableLikeType, data, dim: Dims
+) -> VariableLikeType:
+    return DataArray(
+        data,
+        coords=reduced_coords(prototype, dim),
+        masks=reduced_masks(prototype, dim),
+        attrs=reduced_attrs(prototype, dim),
+    )
 
 
 def transform_data(obj: VariableLikeType, func: Callable) -> VariableLikeType:
@@ -52,7 +57,7 @@ def concrete_dims(obj: VariableLikeType, dim: Dims) -> Tuple[str]:
     """
     if dim is None:
         return obj.dims
-    return (dim, ) if isinstance(dim, str) else tuple(dim)
+    return (dim,) if isinstance(dim, str) else tuple(dim)
 
 
 def reduced_coords(da: DataArray, dim: Dims) -> Dict[str, Variable]:

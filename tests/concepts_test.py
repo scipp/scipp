@@ -7,7 +7,7 @@ from scipp.core import concepts
 
 def test_concrete_dims_given_single_dim_returns_dim_as_tuple():
     var = sc.empty(dims=('xx', 'yy'), shape=(2, 2))
-    assert concepts.concrete_dims(var, 'xx') == ('xx', )
+    assert concepts.concrete_dims(var, 'xx') == ('xx',)
 
 
 def test_concrete_dims_given_dim_list_returns_dim_tuple():
@@ -24,14 +24,19 @@ def test_irreducible_mask_returns_union_of_relevant_masks():
     da = sc.DataArray(sc.empty(dims=('xx', 'yy'), shape=(2, 3)))
     da.masks['x'] = sc.array(dims=['xx'], values=[False, True])
     da.masks['y'] = sc.array(dims=['yy'], values=[False, True, False])
-    da.masks['xy'] = sc.array(dims=['xx', 'yy'],
-                              values=[[False, False, False], [False, False, True]])
-    assert sc.identical(concepts.irreducible_mask(da, 'xx'),
-                        da.masks['x'] | da.masks['xy'])
-    assert sc.identical(concepts.irreducible_mask(da, 'yy'),
-                        da.masks['y'] | da.masks['xy'])
-    assert sc.identical(concepts.irreducible_mask(da, ('xx', 'yy')),
-                        da.masks['x'] | da.masks['y'] | da.masks['xy'])
+    da.masks['xy'] = sc.array(
+        dims=['xx', 'yy'], values=[[False, False, False], [False, False, True]]
+    )
+    assert sc.identical(
+        concepts.irreducible_mask(da, 'xx'), da.masks['x'] | da.masks['xy']
+    )
+    assert sc.identical(
+        concepts.irreducible_mask(da, 'yy'), da.masks['y'] | da.masks['xy']
+    )
+    assert sc.identical(
+        concepts.irreducible_mask(da, ('xx', 'yy')),
+        da.masks['x'] | da.masks['y'] | da.masks['xy'],
+    )
 
 
 def test_irreducible_mask_returns_None_if_all_masks_unrelated():

@@ -13,41 +13,52 @@ import platform as _platform
 from functools import reduce
 
 parser = argparse.ArgumentParser(
-    description='Generate a conda environment file from a conda recipe meta.yaml file')
-parser.add_argument('--dir',
-                    default='.',
-                    help='the directory where the conda meta.yaml file is located')
-parser.add_argument('--meta-file',
-                    default='meta.yaml',
-                    help='the name of the conda meta yaml file')
-parser.add_argument('--env-file',
-                    default='environment.yml',
-                    help='name of the output environment file')
-parser.add_argument('--env-name',
-                    '--name',
-                    default='',
-                    help='name of the environment that is stored inside the '
-                    'environment file (if no name is supplied, the name will be '
-                    'the same as the file name, without the .yml extension)')
-parser.add_argument('--channels',
-                    default='conda-forge',
-                    help='the conda channels to be added at the top of the '
-                    'environment file (to specify multiple channels, separate them '
-                    'with commas: --channels=conda-forge,scipp)')
-parser.add_argument('--platform',
-                    default=None,
-                    help='the platform (linux, osx, or win) on which the environment '
-                    'is destined to be created (if no platform is specified, the '
-                    'platform on which this script is running will be used)')
-parser.add_argument('--extra',
-                    default='',
-                    help='additional packages to be included in the environment '
-                    '(use commas to separate multiple entries, e.g. '
-                    '--extra=numpy,matplotlib,scipy)')
-parser.add_argument('--merge-with',
-                    default='',
-                    help='a second environment file that is to be merged with the '
-                    'one that would be created by the conda meta.yaml file alone')
+    description='Generate a conda environment file from a conda recipe meta.yaml file'
+)
+parser.add_argument(
+    '--dir', default='.', help='the directory where the conda meta.yaml file is located'
+)
+parser.add_argument(
+    '--meta-file', default='meta.yaml', help='the name of the conda meta yaml file'
+)
+parser.add_argument(
+    '--env-file', default='environment.yml', help='name of the output environment file'
+)
+parser.add_argument(
+    '--env-name',
+    '--name',
+    default='',
+    help='name of the environment that is stored inside the '
+    'environment file (if no name is supplied, the name will be '
+    'the same as the file name, without the .yml extension)',
+)
+parser.add_argument(
+    '--channels',
+    default='conda-forge',
+    help='the conda channels to be added at the top of the '
+    'environment file (to specify multiple channels, separate them '
+    'with commas: --channels=conda-forge,scipp)',
+)
+parser.add_argument(
+    '--platform',
+    default=None,
+    help='the platform (linux, osx, or win) on which the environment '
+    'is destined to be created (if no platform is specified, the '
+    'platform on which this script is running will be used)',
+)
+parser.add_argument(
+    '--extra',
+    default='',
+    help='additional packages to be included in the environment '
+    '(use commas to separate multiple entries, e.g. '
+    '--extra=numpy,matplotlib,scipy)',
+)
+parser.add_argument(
+    '--merge-with',
+    default='',
+    help='a second environment file that is to be merged with the '
+    'one that would be created by the conda meta.yaml file alone',
+)
 
 
 def _indentation_level(string):
@@ -87,7 +98,6 @@ def _parse_yaml(text):
                 clean_text.append(line.rstrip(' \n'))
 
     for i, line in enumerate(clean_text):
-
         if i > 0:
             line_indent = _indentation_level(line)
             if line_indent < _indentation_level(clean_text[i - 1]):
@@ -113,7 +123,7 @@ def _parse_yaml(text):
                 handle[stripped.strip(' -')] = None
             elif ':' in stripped:
                 ind = stripped.find(':')
-                handle[stripped[:ind]] = stripped[ind + 1:]
+                handle[stripped[:ind]] = stripped[ind + 1 :]
 
     return out
 
@@ -132,13 +142,16 @@ def _jinja_filter(dependencies, platform):
                 left = key.find('[')
                 right = key.find(']')
                 if key.count(']') != key.count('[') or right < left:
-                    raise RuntimeError("Bad preprocessing selector: "
-                                       "unmatched square brackets or closing bracket "
-                                       "found before opening bracket: {}".format(key))
-                selector = key[left:right + 1]
+                    raise RuntimeError(
+                        "Bad preprocessing selector: "
+                        "unmatched square brackets or closing bracket "
+                        "found before opening bracket: {}".format(key)
+                    )
+                selector = key[left : right + 1]
                 if selector.startswith('[not'):
-                    if (platform in selector) or (selector.replace(
-                            '[not', '')[:-1].strip() in platform):
+                    if (platform in selector) or (
+                        selector.replace('[not', '')[:-1].strip() in platform
+                    ):
                         ok = False
                 else:
                     if (platform not in selector) and (selector[1:-1] not in platform):
@@ -178,7 +191,6 @@ def _write_dict(d, file_handle, indent):
 
 
 def main(metafile, envfile, envname, channels, platform, extra, mergewith):
-
     # Find current platform
     if platform is None:
         platform_mapping = {"Linux": "linux", "Darwin": "osx", "Windows": "win"}
@@ -193,7 +205,8 @@ def main(metafile, envfile, envname, channels, platform, extra, mergewith):
     meta_dependencies = meta["requirements:"]["build:"].copy()
     reduce(
         _merge_dicts,
-        [meta_dependencies, meta["requirements:"]["run:"], meta["test:"]["requires:"]])
+        [meta_dependencies, meta["requirements:"]["run:"], meta["test:"]["requires:"]],
+    )
 
     # Read file with additional dependencies
     if len(mergewith) > 0:
@@ -242,10 +255,12 @@ if __name__ == '__main__':
     if "," in args.extra:
         extra = args.extra.split(",")
 
-    main(metafile=os.path.join(args.dir, args.meta_file),
-         envfile=args.env_file,
-         envname=args.env_name,
-         channels=channels,
-         platform=args.platform,
-         extra=extra,
-         mergewith=args.merge_with)
+    main(
+        metafile=os.path.join(args.dir, args.meta_file),
+        envfile=args.env_file,
+        envname=args.env_name,
+        channels=channels,
+        platform=args.platform,
+        extra=extra,
+        mergewith=args.merge_with,
+    )

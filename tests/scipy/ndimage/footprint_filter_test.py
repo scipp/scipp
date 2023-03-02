@@ -5,11 +5,23 @@ import pytest
 import scipy.ndimage
 
 import scipp as sc
-from scipp.scipy.ndimage import generic_filter, maximum_filter, median_filter, \
-    minimum_filter, percentile_filter, rank_filter  # NOQA
+from scipp.scipy.ndimage import (  # NOQA
+    generic_filter,
+    maximum_filter,
+    median_filter,
+    minimum_filter,
+    percentile_filter,
+    rank_filter,
+)
 
-filters = (generic_filter, maximum_filter, median_filter, minimum_filter,
-           percentile_filter, rank_filter)
+filters = (
+    generic_filter,
+    maximum_filter,
+    median_filter,
+    minimum_filter,
+    percentile_filter,
+    rank_filter,
+)
 
 
 def make_histogram2d():
@@ -26,11 +38,17 @@ def make_data2d():
     return da
 
 
-@pytest.fixture(scope="module",
-                params=[
-                    generic_filter, maximum_filter, median_filter, minimum_filter,
-                    percentile_filter, rank_filter
-                ])
+@pytest.fixture(
+    scope="module",
+    params=[
+        generic_filter,
+        maximum_filter,
+        median_filter,
+        minimum_filter,
+        percentile_filter,
+        rank_filter,
+    ],
+)
 def filter_func(request):
     return request.param
 
@@ -113,7 +131,8 @@ def test_raises_KeyError_if_origin_has_extra_labels(filter_func):
 
 
 def test_raises_CoordError_with_label_based_size_or_origin_if_coord_not_linspace(
-        filter_func):
+    filter_func,
+):
     da = make_histogram2d()
     da.coords['x'][-1] *= 1.1
     with pytest.raises(sc.CoordError):
@@ -132,7 +151,8 @@ def test_raises_KeyError_with_label_based_size_if_coord_missing(filter_func):
 
 
 def test_input_with_non_linspace_coord_accepted_if_size_is_positional(
-        simple_filter_func):
+    simple_filter_func,
+):
     da = make_histogram2d()
     da.coords['x'][-1] *= 1.1
     simple_filter_func(da, size=3)
@@ -150,24 +170,21 @@ def test_size_accepts_mixed_label_based_and_positional_param(simple_filter_func)
 
 
 def test_label_based_size_equivalent_to_positional_size_given_bin_edge_coord(
-        simple_filter_func):
+    simple_filter_func,
+):
     da = make_histogram2d()
-    result = simple_filter_func(da,
-                                size={
-                                    'x': sc.scalar(1.0, unit='mm'),
-                                    'y': sc.scalar(5.0, unit='mm')
-                                })
+    result = simple_filter_func(
+        da, size={'x': sc.scalar(1.0, unit='mm'), 'y': sc.scalar(5.0, unit='mm')}
+    )
     reference = simple_filter_func(da, size=10)
     assert sc.identical(result, reference)
 
 
 def test_label_based_size_equivalent_to_positional_size(simple_filter_func):
     da = make_data2d()
-    result = simple_filter_func(da,
-                                size={
-                                    'x': sc.scalar(1.0, unit='mm'),
-                                    'y': sc.scalar(5.0, unit='mm')
-                                })
+    result = simple_filter_func(
+        da, size={'x': sc.scalar(1.0, unit='mm'), 'y': sc.scalar(5.0, unit='mm')}
+    )
     reference = simple_filter_func(da, size=10)
     assert sc.identical(result, reference)
 
@@ -180,7 +197,8 @@ def test_origin_is_equivalent_to_scipy_origin(origin):
     reference.values = scipy.ndimage.median_filter(
         reference.values,
         size=4,
-        origin=origin if isinstance(origin, int) else origin.values())
+        origin=origin if isinstance(origin, int) else origin.values(),
+    )
     assert sc.identical(result, reference)
 
 
@@ -190,7 +208,8 @@ def test_size_is_equivalent_to_scipy_size(size):
     result = median_filter(da, size=size)
     reference = da.copy()
     reference.values = scipy.ndimage.median_filter(
-        reference.values, size=size if isinstance(size, int) else size.values())
+        reference.values, size=size if isinstance(size, int) else size.values()
+    )
     assert sc.identical(result, reference)
 
 

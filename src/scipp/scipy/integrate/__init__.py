@@ -15,12 +15,15 @@ from ...core import DataArray, array
 
 def _integrate(func: Callable, da: DataArray, dim: str, **kwargs) -> DataArray:
     if 'dx' in kwargs:
-        raise ValueError("Invalid argument 'dx': Spacing of integration points is "
-                         f"given by the '{dim}' coord.")
+        raise ValueError(
+            "Invalid argument 'dx': Spacing of integration points is "
+            f"given by the '{dim}' coord."
+        )
     integral = func(x=da.coords[dim].values, y=da.values, **kwargs)
     dims = [d for d in da.dims if d != dim]
     return DataArray(
-        data=array(dims=dims, values=integral, unit=da.unit * da.coords[dim].unit))
+        data=array(dims=dims, values=integral, unit=da.unit * da.coords[dim].unit)
+    )
 
 
 @wrap1d()
@@ -42,6 +45,7 @@ def trapezoid(da: DataArray, dim: str, **kwargs) -> DataArray:
                                   float64            [m^3]  ()  0.0217094
     """
     import scipy.integrate as integ
+
     return _integrate(integ.trapezoid, da, dim, **kwargs)
 
 
@@ -63,6 +67,7 @@ def simpson(da: DataArray, dim: str, **kwargs) -> DataArray:
                                   float64            [m^3]  ()  0.0212871
     """
     import scipy.integrate as integ
+
     return _integrate(integ.simpson, da, dim, **kwargs)
 
 

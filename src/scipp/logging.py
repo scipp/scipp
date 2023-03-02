@@ -32,6 +32,7 @@ class WidgetLogRecord:
     """
     Preprocessed data for display in ``LogWidget``.
     """
+
     name: str
     levelname: str
     time_stamp: str
@@ -40,8 +41,10 @@ class WidgetLogRecord:
 
 def make_log_widget(**widget_kwargs):
     if not running_in_jupyter():
-        raise RuntimeError('Cannot create a logging widget because '
-                           'Python is not running in a Jupyter notebook.')
+        raise RuntimeError(
+            'Cannot create a logging widget because '
+            'Python is not running in a Jupyter notebook.'
+        )
 
     from ipywidgets import HTML
 
@@ -75,12 +78,15 @@ def make_log_widget(**widget_kwargs):
                 f'<td class="sc-log-level">{html.escape(record.levelname)}</td>'
                 f'<td class="sc-log-message">{record.message}</td>'
                 f'<td class="sc-log-name">&lt;{html.escape(record.name)}&gt;</td>'
-                '</tr>')
+                '</tr>'
+            )
 
         def _update(self) -> None:
-            self.value = ('<div class="sc-log">'
-                          f'<table class="sc-log">{self._rows_str}</table>'
-                          '</div>')
+            self.value = (
+                '<div class="sc-log">'
+                f'<table class="sc-log">{self._rows_str}</table>'
+                '</div>'
+            )
 
         def clear(self) -> None:
             """
@@ -112,10 +118,12 @@ def display_logs() -> None:
     widget = get_log_widget()
     if widget is None:
         raise RuntimeError(
-            'Cannot display log widgets because no widget handler is installed.')
+            'Cannot display log widgets because no widget handler is installed.'
+        )
 
     from IPython.display import display
     from ipywidgets import HTML, VBox
+
     display(VBox([HTML(value=load_style()), widget]).add_class('sc-log-wrap'))
 
 
@@ -200,13 +208,19 @@ class WidgetHandler(logging.Handler):
         """
         Format the specified record for consumption by a ``LogWidget``.
         """
-        message = self._format_html(record) if _has_html_repr(
-            record.msg) else self._format_text(record)
-        return WidgetLogRecord(name=record.name,
-                               levelname=record.levelname,
-                               time_stamp=time.strftime('%Y-%m-%dT%H:%M:%S',
-                                                        time.localtime(record.created)),
-                               message=message)
+        message = (
+            self._format_html(record)
+            if _has_html_repr(record.msg)
+            else self._format_text(record)
+        )
+        return WidgetLogRecord(
+            name=record.name,
+            levelname=record.levelname,
+            time_stamp=time.strftime(
+                '%Y-%m-%dT%H:%M:%S', time.localtime(record.created)
+            ),
+            message=message,
+        )
 
     def _format_text(self, record: logging.LogRecord) -> str:
         args, replacements = _preprocess_format_args(record.args)
@@ -245,7 +259,10 @@ def get_widget_handler() -> Optional[WidgetHandler]:
     """
     try:
         return next(  # type: ignore
-            filter(lambda handler: isinstance(handler, WidgetHandler),
-                   get_logger().handlers))
+            filter(
+                lambda handler: isinstance(handler, WidgetHandler),
+                get_logger().handlers,
+            )
+        )
     except StopIteration:
         return None

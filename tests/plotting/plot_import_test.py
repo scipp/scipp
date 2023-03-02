@@ -6,6 +6,7 @@ import scipp as sc
 
 def import_and_call():
     from scipp.plotting import plot
+
     plot(sc.data.table_xyz(10))
 
 

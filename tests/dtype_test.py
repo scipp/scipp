@@ -52,8 +52,9 @@ def check_numpy_version_for_comaprison():
     return False
 
 
-@pytest.mark.skipif(check_numpy_version_for_comaprison(),
-                    reason='at least numpy 1.21 required')
+@pytest.mark.skipif(
+    check_numpy_version_for_comaprison(), reason='at least numpy 1.21 required'
+)
 def test_numpy_comparison_numpy_on_lhs():
     assert np.dtype(np.int32) == sc.DType.int32
     assert np.dtype(np.int32) != sc.DType.int64

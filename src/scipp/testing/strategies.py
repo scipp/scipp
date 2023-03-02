@@ -19,15 +19,19 @@ from ..core import variable as creation
 def dims() -> st.SearchStrategy:
     # Allowing all graphic utf-8 characters and control characters
     # except NULL, which causes problems in C and C++ code (e.g. HDF5).
-    return st.text(st.characters(
-        whitelist_categories=['L', 'M', 'N', 'P', 'S', 'Zs', 'Cc'],
-        blacklist_characters='\0'),
-                   min_size=0,
-                   max_size=50)
+    return st.text(
+        st.characters(
+            whitelist_categories=['L', 'M', 'N', 'P', 'S', 'Zs', 'Cc'],
+            blacklist_characters='\0',
+        ),
+        min_size=0,
+        max_size=50,
+    )
 
 
 def sizes_dicts(
-        ndim: Optional[Union[int, st.SearchStrategy]] = None) -> st.SearchStrategy:
+    ndim: Optional[Union[int, st.SearchStrategy]] = None
+) -> st.SearchStrategy:
     if isinstance(ndim, st.SearchStrategy):
         return ndim.flatmap(lambda n: sizes_dicts(ndim=n))
     keys = dims()
@@ -56,23 +60,23 @@ def scalar_numeric_dtypes() -> st.SearchStrategy:
 
 
 def _variables_from_fixed_args(args: dict) -> st.SearchStrategy:
-
     def make_array():
-        return npst.arrays(args['dtype'],
-                           tuple(args['sizes'].values()),
-                           elements=args['elements'],
-                           fill=args['fill'],
-                           unique=args['unique'])
+        return npst.arrays(
+            args['dtype'],
+            tuple(args['sizes'].values()),
+            elements=args['elements'],
+            fill=args['fill'],
+            unique=args['unique'],
+        )
 
-    return st.builds(partial(creation.array,
-                             dims=list(args['sizes'].keys()),
-                             unit=args['unit']),
-                     values=make_array(),
-                     variances=make_array() if args['with_variances'] else st.none())
+    return st.builds(
+        partial(creation.array, dims=list(args['sizes'].keys()), unit=args['unit']),
+        values=make_array(),
+        variances=make_array() if args['with_variances'] else st.none(),
+    )
 
 
 class _ConditionallyWithVariances:
-
     def __init__(self):
         self._strategy = st.booleans()
 
@@ -84,7 +88,6 @@ class _ConditionallyWithVariances:
 
 @st.composite
 def _concrete_args(draw, args: dict) -> st.SearchStrategy:
-
     def _draw(x):
         return draw(x) if isinstance(x, st.SearchStrategy) else x
 
@@ -94,23 +97,23 @@ def _concrete_args(draw, args: dict) -> st.SearchStrategy:
     return concrete
 
 
-def _variable_arg_strategies(*,
-                             ndim: Union[int, st.SearchStrategy, None] = None,
-                             sizes: Union[Dict[str, int], st.SearchStrategy,
-                                          None] = None,
-                             unit: Union[str, Unit, st.SearchStrategy, None] = None,
-                             dtype: Union[str, DType, type, st.SearchStrategy,
-                                          None] = None,
-                             with_variances: Union[bool, st.SearchStrategy,
-                                                   None] = None,
-                             elements: Union[int, float, st.SearchStrategy,
-                                             None] = None,
-                             fill: Union[int, float, st.SearchStrategy, None] = None,
-                             unique: Union[bool, st.SearchStrategy, None] = None):
+def _variable_arg_strategies(
+    *,
+    ndim: Union[int, st.SearchStrategy, None] = None,
+    sizes: Union[Dict[str, int], st.SearchStrategy, None] = None,
+    unit: Union[str, Unit, st.SearchStrategy, None] = None,
+    dtype: Union[str, DType, type, st.SearchStrategy, None] = None,
+    with_variances: Union[bool, st.SearchStrategy, None] = None,
+    elements: Union[int, float, st.SearchStrategy, None] = None,
+    fill: Union[int, float, st.SearchStrategy, None] = None,
+    unique: Union[bool, st.SearchStrategy, None] = None,
+):
     if ndim is not None:
         if sizes is not None:
-            raise InvalidArgument('Arguments `ndim` and `sizes` cannot both be used. '
-                                  f'Got {ndim=}, {sizes=}.')
+            raise InvalidArgument(
+                'Arguments `ndim` and `sizes` cannot both be used. '
+                f'Got {ndim=}, {sizes=}.'
+            )
     if sizes is None:
         sizes = sizes_dicts(ndim)
     if unit is None:
@@ -120,13 +123,15 @@ def _variable_arg_strategies(*,
         dtype = scalar_numeric_dtypes()
     if with_variances is None:
         with_variances = _ConditionallyWithVariances()
-    return dict(sizes=sizes,
-                unit=unit,
-                dtype=dtype,
-                with_variances=with_variances,
-                elements=elements,
-                fill=fill,
-                unique=unique)
+    return dict(
+        sizes=sizes,
+        unit=unit,
+        dtype=dtype,
+        with_variances=with_variances,
+        elements=elements,
+        fill=fill,
+        unique=unique,
+    )
 
 
 # This implementation is designed such that the individual strategies
@@ -137,52 +142,60 @@ def _variable_arg_strategies(*,
 # an `st.composite` function for every example drawn. This led to high
 # memory consumption by hypothesis and failed
 # `hypothesis.HealthCheck.data_too_large`.
-def variables(*,
-              ndim: Union[int, st.SearchStrategy, None] = None,
-              sizes: Union[Dict[str, int], st.SearchStrategy, None] = None,
-              unit: Union[str, Unit, st.SearchStrategy, None] = None,
-              dtype: Union[str, DType, type, st.SearchStrategy, None] = None,
-              with_variances: Union[bool, st.SearchStrategy, None] = None,
-              elements: Union[int, float, st.SearchStrategy, None] = None,
-              fill: Union[int, float, st.SearchStrategy, None] = None,
-              unique: Union[bool, st.SearchStrategy, None] = None) -> st.SearchStrategy:
-    args = _variable_arg_strategies(ndim=ndim,
-                                    sizes=sizes,
-                                    unit=unit,
-                                    dtype=dtype,
-                                    with_variances=with_variances,
-                                    elements=elements,
-                                    fill=fill,
-                                    unique=unique)
+def variables(
+    *,
+    ndim: Union[int, st.SearchStrategy, None] = None,
+    sizes: Union[Dict[str, int], st.SearchStrategy, None] = None,
+    unit: Union[str, Unit, st.SearchStrategy, None] = None,
+    dtype: Union[str, DType, type, st.SearchStrategy, None] = None,
+    with_variances: Union[bool, st.SearchStrategy, None] = None,
+    elements: Union[int, float, st.SearchStrategy, None] = None,
+    fill: Union[int, float, st.SearchStrategy, None] = None,
+    unique: Union[bool, st.SearchStrategy, None] = None,
+) -> st.SearchStrategy:
+    args = _variable_arg_strategies(
+        ndim=ndim,
+        sizes=sizes,
+        unit=unit,
+        dtype=dtype,
+        with_variances=with_variances,
+        elements=elements,
+        fill=fill,
+        unique=unique,
+    )
     return _concrete_args(args).flatmap(_variables_from_fixed_args)
 
 
 def n_variables(
-        n: int,
-        *,
-        ndim: Union[int, st.SearchStrategy, None] = None,
-        sizes: Union[Dict[str, int], st.SearchStrategy, None] = None,
-        unit: Union[str, Unit, st.SearchStrategy, None] = None,
-        dtype: Union[str, DType, type, st.SearchStrategy, None] = None,
-        with_variances: Union[bool, st.SearchStrategy, None] = None,
-        elements: Union[int, float, st.SearchStrategy, None] = None,
-        fill: Union[int, float, st.SearchStrategy, None] = None,
-        unique: Union[bool, st.SearchStrategy, None] = None) -> st.SearchStrategy:
-    args = _variable_arg_strategies(ndim=ndim,
-                                    sizes=sizes,
-                                    unit=unit,
-                                    dtype=dtype,
-                                    with_variances=with_variances,
-                                    elements=elements,
-                                    fill=fill,
-                                    unique=unique)
+    n: int,
+    *,
+    ndim: Union[int, st.SearchStrategy, None] = None,
+    sizes: Union[Dict[str, int], st.SearchStrategy, None] = None,
+    unit: Union[str, Unit, st.SearchStrategy, None] = None,
+    dtype: Union[str, DType, type, st.SearchStrategy, None] = None,
+    with_variances: Union[bool, st.SearchStrategy, None] = None,
+    elements: Union[int, float, st.SearchStrategy, None] = None,
+    fill: Union[int, float, st.SearchStrategy, None] = None,
+    unique: Union[bool, st.SearchStrategy, None] = None,
+) -> st.SearchStrategy:
+    args = _variable_arg_strategies(
+        ndim=ndim,
+        sizes=sizes,
+        unit=unit,
+        dtype=dtype,
+        with_variances=with_variances,
+        elements=elements,
+        fill=fill,
+        unique=unique,
+    )
     return _concrete_args(args).flatmap(
-        lambda a: st.tuples(*(_variables_from_fixed_args(a) for _ in range(n))))
+        lambda a: st.tuples(*(_variables_from_fixed_args(a) for _ in range(n)))
+    )
 
 
 @st.composite
 def coord_dicts(draw, *, coords, sizes, args=None) -> dict:
-    args = (args or {})
+    args = args or {}
     args['sizes'] = sizes
     try:
         del args['ndim']
@@ -192,7 +205,6 @@ def coord_dicts(draw, *, coords, sizes, args=None) -> dict:
 
 
 class _NotSetType:
-
     def __repr__(self):
         return 'Default'
 
@@ -204,10 +216,9 @@ _NotSet = _NotSetType()
 
 
 @st.composite
-def dataarrays(draw,
-               data_args=None,
-               coords=_NotSet,
-               coord_args=None) -> st.SearchStrategy:
+def dataarrays(
+    draw, data_args=None, coords=_NotSet, coord_args=None
+) -> st.SearchStrategy:
     data = draw(variables(**(data_args or {})))
     if coords is _NotSet:
         coords = data.dims

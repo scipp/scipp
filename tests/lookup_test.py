@@ -120,9 +120,9 @@ def test_previous_single_value(dtype):
     data = sc.array(dims=['xx'], values=[11], dtype=dtype)
     da = sc.DataArray(data=data, coords={'xx': x})
     var = sc.array(dims=['event'], values=[0.1, 0.5, 0.6])
-    expected = sc.array(dims=['event'],
-                        values=[outofbounds(dtype), 11, 11],
-                        dtype=dtype)
+    expected = sc.array(
+        dims=['event'], values=[outofbounds(dtype), 11, 11], dtype=dtype
+    )
     assert sc.identical(sc.lookup(da, mode='previous')(var), expected, equal_nan=True)
 
 

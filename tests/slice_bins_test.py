@@ -16,8 +16,10 @@ def test_slice_bins_by_int_label():
     assert sc.identical(result.attrs['param'], param)
     assert sc.identical(
         result,
-        da.group(sc.array(dims=['param'], values=[4], dtype='int64',
-                          unit='m')).squeeze())
+        da.group(
+            sc.array(dims=['param'], values=[4], dtype='int64', unit='m')
+        ).squeeze(),
+    )
 
 
 def test_slice_bins_by_int_label_range():
@@ -30,12 +32,15 @@ def test_slice_bins_by_int_label_range():
     assert result.dims == da.dims
     assert sc.identical(
         result.attrs['param'],
-        sc.array(dims=['param'], values=[4, 6], unit='s', dtype='int64'))
+        sc.array(dims=['param'], values=[4, 6], unit='s', dtype='int64'),
+    )
     assert result.bins.size().sum().value == 20  # 2x10 events
     assert sc.identical(
         result,
-        da.bin(param=sc.array(dims=['param'], values=[4, 6], unit='s',
-                              dtype='int64')).squeeze())
+        da.bin(
+            param=sc.array(dims=['param'], values=[4, 6], unit='s', dtype='int64')
+        ).squeeze(),
+    )
 
 
 def test_slice_bins_by_float_label_range():
@@ -45,11 +50,12 @@ def test_slice_bins_by_float_label_range():
     stop = sc.scalar(0.2, unit='m')
     result = da.bins['z', start:stop]
     assert result.dims == da.dims
-    assert sc.identical(result.attrs['z'],
-                        sc.array(dims=['z'], values=[0.1, 0.2], unit='m'))
     assert sc.identical(
-        result,
-        da.bin(z=sc.array(dims=['z'], values=[0.1, 0.2], unit='m')).squeeze())
+        result.attrs['z'], sc.array(dims=['z'], values=[0.1, 0.2], unit='m')
+    )
+    assert sc.identical(
+        result, da.bin(z=sc.array(dims=['z'], values=[0.1, 0.2], unit='m')).squeeze()
+    )
 
 
 def test_slice_bins_by_open_range_includes_everything():
@@ -66,9 +72,11 @@ def test_slice_bins_by_half_open_float_range_splits_without_duplication():
     left = da.bins['z', :split]
     right = da.bins['z', split:]
     assert left.bins.size().sum().value + right.bins.size().sum().value == 100
-    assert sc.identical(left.meta['z'], sc.concat([da.bins.meta['z'].min(), split],
-                                                  'z'))
+    assert sc.identical(
+        left.meta['z'], sc.concat([da.bins.meta['z'].min(), split], 'z')
+    )
     import numpy as np
+
     expected_stop = np.nextafter(da.bins.meta['z'].max().value, np.inf) * sc.Unit('m')
     assert sc.identical(right.meta['z'], sc.concat([split, expected_stop], 'z'))
 
@@ -81,8 +89,9 @@ def test_slice_bins_by_half_open_int_range_splits_without_duplication():
     left = da.bins['param', :split]
     right = da.bins['param', split:]
     assert left.bins.size().sum().value + right.bins.size().sum().value == 100
-    assert sc.identical(left.meta['param'],
-                        sc.concat([da.bins.meta['param'].min(), split], 'param'))
+    assert sc.identical(
+        left.meta['param'], sc.concat([da.bins.meta['param'].min(), split], 'param')
+    )
     expected_stop = da.bins.meta['param'].max() + 1 * sc.Unit('s')
     assert sc.identical(right.meta['param'], sc.concat([split, expected_stop], 'param'))
 
@@ -110,8 +119,9 @@ def test_bins_slicing_open_start_too_small_stop_given():
     too_small_stop = da.bins.meta['x'].min() - 0.001 * sc.Unit('m')
     left = da.bins['x', :too_small_stop]
     assert left.bins.size().sum().value == 0
-    assert sc.identical(left.meta['x'], sc.concat([too_small_stop, too_small_stop],
-                                                  'x'))
+    assert sc.identical(
+        left.meta['x'], sc.concat([too_small_stop, too_small_stop], 'x')
+    )
 
 
 def test_bins_slicing_open_stop_too_big_stop_given():

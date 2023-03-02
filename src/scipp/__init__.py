@@ -15,6 +15,7 @@ if os.name == "nt" and "CONDA_PREFIX" in os.environ:
     # https://github.com/conda-forge/python-feedstock/blob/289b2a8017ddd000896e525f18867f4caacec6f2/recipe/patches/0020-Add-CondaEcosystemModifyDllSearchPath.patch
     #
     import importlib.resources
+
     with importlib.resources.path("scipp", "__init__.py") as path:
         dll_directory = (path.parent.parent / "bin").resolve()
         os.environ["PATH"] += os.pathsep + str(dll_directory)
@@ -22,17 +23,31 @@ if os.name == "nt" and "CONDA_PREFIX" in os.environ:
 from .configuration import config
 
 from .core import __version__
+
 # Import classes
 from .core import Variable, DataArray, DataGroup, Dataset, DType, Unit
+
 # Import errors
-from .core import BinEdgeError, BinnedDataError, CoordError, \
-                         DataArrayError, DatasetError, DimensionError, \
-                         DTypeError, UnitError, VariableError, VariancesError
+from .core import (
+    BinEdgeError,
+    BinnedDataError,
+    CoordError,
+    DataArrayError,
+    DatasetError,
+    DimensionError,
+    DTypeError,
+    UnitError,
+    VariableError,
+    VariancesError,
+)
+
 # Import submodules
 from . import units
 from . import geometry
+
 # Import functions
 from ._scipp.core import as_const
+
 # Import python functions
 from .show import show, make_svg
 
@@ -65,19 +80,79 @@ from .coords import transform_coords, show_graph
 from .core import add, divide, floor_divide, mod, multiply, negative, subtract
 from .core import bin, group, hist, nanhist, rebin
 from .core import lookup, bins, bins_like
-from .core import less, greater, less_equal, greater_equal, equal, not_equal, identical, isclose, allclose
+from .core import (
+    less,
+    greater,
+    less_equal,
+    greater_equal,
+    equal,
+    not_equal,
+    identical,
+    isclose,
+    allclose,
+)
 from .core import counts_to_density, density_to_counts
 from .core import cumsum
 from .core import merge
 from .core import groupby
 from .core import logical_not, logical_and, logical_or, logical_xor
-from .core import abs, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10, round, floor, ceil, erf, erfc, midpoints
-from .core import dot, islinspace, issorted, allsorted, cross, sort, values, variances, stddevs, where
+from .core import (
+    abs,
+    nan_to_num,
+    norm,
+    reciprocal,
+    pow,
+    sqrt,
+    exp,
+    log,
+    log10,
+    round,
+    floor,
+    ceil,
+    erf,
+    erfc,
+    midpoints,
+)
+from .core import (
+    dot,
+    islinspace,
+    issorted,
+    allsorted,
+    cross,
+    sort,
+    values,
+    variances,
+    stddevs,
+    where,
+)
 from .core import mean, nanmean, sum, nansum, min, max, nanmin, nanmax, all, any
 from .core import broadcast, concat, fold, flatten, squeeze, transpose
 from .core import sin, cos, tan, asin, acos, atan, atan2
 from .core import isnan, isinf, isfinite, isposinf, isneginf, to_unit
-from .core import scalar, index, zeros, zeros_like, ones, ones_like, empty, empty_like, full, full_like, matrix, matrices, vector, vectors, array, linspace, geomspace, logspace, arange, datetime, datetimes, epoch
+from .core import (
+    scalar,
+    index,
+    zeros,
+    zeros_like,
+    ones,
+    ones_like,
+    empty,
+    empty_like,
+    full,
+    full_like,
+    matrix,
+    matrices,
+    vector,
+    vectors,
+    array,
+    linspace,
+    geomspace,
+    logspace,
+    arange,
+    datetime,
+    datetimes,
+    epoch,
+)
 from .core import to
 
 from .logging import display_logs, get_logger
@@ -94,28 +169,53 @@ _binding.bind_pop()
 _binding.bind_conversion_to_builtin(Variable)
 # Assign method binding for all containers
 for _cls in (Variable, DataArray, Dataset):
-    _binding.bind_functions_as_methods(_cls, globals(),
-                                       ('sum', 'nansum', 'mean', 'nanmean', 'max',
-                                        'min', 'nanmax', 'nanmin', 'all', 'any'))
+    _binding.bind_functions_as_methods(
+        _cls,
+        globals(),
+        (
+            'sum',
+            'nansum',
+            'mean',
+            'nanmean',
+            'max',
+            'min',
+            'nanmax',
+            'nanmin',
+            'all',
+            'any',
+        ),
+    )
 del _cls
 # Assign method binding for both Variable and DataArray
 for _cls in (Variable, DataArray):
-    _binding.bind_functions_as_methods(_cls, globals(),
-                                       ('broadcast', 'flatten', 'fold', 'squeeze',
-                                        'transpose', 'floor', 'ceil', 'round'))
+    _binding.bind_functions_as_methods(
+        _cls,
+        globals(),
+        (
+            'broadcast',
+            'flatten',
+            'fold',
+            'squeeze',
+            'transpose',
+            'floor',
+            'ceil',
+            'round',
+        ),
+    )
     _binding.bind_function_as_method(cls=_cls, name='to', func=to, abbreviate_doc=False)
 del _cls
 del to
 # Assign method binding for JUST Variable
-_binding.bind_functions_as_methods(Variable, globals(), ('cumsum', ))
+_binding.bind_functions_as_methods(Variable, globals(), ('cumsum',))
 # Assign method binding for JUST Dataset
-_binding.bind_functions_as_methods(Dataset, globals(), ('squeeze', ))
+_binding.bind_functions_as_methods(Dataset, globals(), ('squeeze',))
 for _cls in (DataArray, Dataset):
     _binding.bind_functions_as_methods(_cls, globals(), ('groupby', 'transform_coords'))
 del _cls
 _binding.bind_functions_as_methods(Variable, globals(), ('bin', 'hist', 'nanhist'))
-_binding.bind_functions_as_methods(DataArray, globals(),
-                                   ('bin', 'group', 'hist', 'nanhist', 'rebin'))
+_binding.bind_functions_as_methods(
+    DataArray, globals(), ('bin', 'group', 'hist', 'nanhist', 'rebin')
+)
 _binding.bind_functions_as_methods(Dataset, globals(), ('hist', 'rebin'))
 del _binding
 

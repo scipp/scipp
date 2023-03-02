@@ -5,8 +5,15 @@
 from enum import Enum
 
 from .. import units
-from ..core import DataArray, DimensionError, DType, broadcast, concat, \
-    get_slice_params, linspace  # NOQA
+from ..core import (  # NOQA
+    DataArray,
+    DimensionError,
+    DType,
+    broadcast,
+    concat,
+    get_slice_params,
+    linspace,
+)
 from ..core.binning import make_binned, make_histogrammed
 from .tools import to_bin_edges
 
@@ -43,8 +50,7 @@ def _resample(array, mode: ResamplingMode, dim, edges):
     return array
 
 
-class ResamplingModel():
-
+class ResamplingModel:
     def __init__(self, array, *, resolution=None, bounds=None):
         """
         Model over a data array providing unified resampling functionality.
@@ -122,9 +128,9 @@ class ResamplingModel():
             if dim in coord_dims and not data_dims.isdisjoint(coord_dims):
                 for d in coord_dims:
                     if d not in data_dims:
-                        data = broadcast(data,
-                                         dims=(d, *data.dims),
-                                         shape=(sizes[d], *data.shape))
+                        data = broadcast(
+                            data, dims=(d, *data.dims), shape=(sizes[d], *data.shape)
+                        )
         array = DataArray(data=data)
         for dim in coords:
             try:
@@ -150,8 +156,10 @@ class ResamplingModel():
                 edge.unit = ''
             try:
                 array = _resample(array, self.mode, edge.dims[-1], edge)
-            except (KeyError,
-                    DimensionError):  # Limitation of rebin for slice of inner dim
+            except (
+                KeyError,
+                DimensionError,
+            ):  # Limitation of rebin for slice of inner dim
                 array = _resample(array.copy(), self.mode, edge.dims[-1], edge)
         return array
 
@@ -163,8 +171,9 @@ class ResamplingModel():
             low, high, unit, res = par
             if res is None:
                 res = 1
-            edges.append(linspace(dim=dim, unit=unit, start=low, stop=high,
-                                  num=res + 1))
+            edges.append(
+                linspace(dim=dim, unit=unit, start=low, stop=high, num=res + 1)
+            )
             # The order of edges matters. We need to put the length 1 edges
             # first to rebin these dims first and effectively slice them out,
             # otherwise we will rebin N-D variables on high resolution.
@@ -200,8 +209,12 @@ class ResamplingModel():
                     # range on this slice, which rebin cannot handle.
                     if len(self._array.meta[dim].dims) == 1:
                         out = out[get_slice_params(out.data, out.meta[dim], low, high)]
-                params[dim] = (low.value, high.value, low.unit,
-                               self.resolution.get(dim, None))
+                params[dim] = (
+                    low.value,
+                    high.value,
+                    low.unit,
+                    self.resolution.get(dim, None),
+                )
         if params == self._home_params:
             # This is a crude caching mechanism for past views. Currently we
             # have the "back" buttons disabled in the matplotlib toolbar, so
@@ -214,10 +227,12 @@ class ResamplingModel():
             self._edges = self._make_edges(params)
             self._resampled = self._resample(out)
             for name, mask in out.masks.items():
-                m = self._rebin(mask,
-                                sizes=out.sizes,
-                                coords=out.meta,
-                                sanitize=isinstance(self, ResamplingBinnedModel))
+                m = self._rebin(
+                    mask,
+                    sizes=out.sizes,
+                    coords=out.meta,
+                    sanitize=isinstance(self, ResamplingBinnedModel),
+                )
                 # rebin changes to float-valued mask, but need bool
                 self._resampled.masks[name] = m.data.to(dtype='bool', copy=False)
             for dim in params:
@@ -244,7 +259,6 @@ class ResamplingModel():
 
 
 class ResamplingBinnedModel(ResamplingModel):
-
     def _make_array(self, array):
         return array
 
@@ -280,7 +294,8 @@ class ResamplingBinnedModel(ResamplingModel):
             bounds = concat([edges[dim, 0], edges[dim, -1]], dim)
             binned = make_binned(
                 array,
-                edges=[bounds if i == index else e for i, e in enumerate(self.edges)])
+                edges=[bounds if i == index else e for i, e in enumerate(self.edges)],
+            )
             # TODO Use histogramming with "mean" mode once implemented
             if self.mode == ResamplingMode.mean:
                 return make_binned(binned, edges=[edges]).bins.mean()
@@ -326,14 +341,14 @@ def _replace_edge_coords(array, dims, bounds, prefix):
 
 
 class ResamplingDenseModel(ResamplingModel):
-
     def _make_array(self, array):
         array, self._prefix = _with_edges(array)
         return array
 
     def _resample(self, array):
-        coords = _replace_edge_coords(array, self._array.dims, self.bounds,
-                                      self._prefix)
+        coords = _replace_edge_coords(
+            array, self._array.dims, self.bounds, self._prefix
+        )
         return self._rebin(array.data, sizes=array.sizes, coords=coords)
 
 

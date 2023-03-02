@@ -22,9 +22,8 @@ def check_metadata(out, da, x):
 
 
 @pytest.mark.parametrize(
-    "da", [make_array(),
-           make_array().transpose(),
-           make_array().transpose().copy()])
+    "da", [make_array(), make_array().transpose(), make_array().transpose().copy()]
+)
 def test_metadata(da):
     f = interp1d(da, 'xx')
     x = sc.linspace(dim='xx', start=0.1, stop=0.4, num=10, unit='rad')
@@ -72,33 +71,35 @@ def test_data():
     out = interp1d(da, 'xx')(x)
     assert np.array_equal(
         out.values,
-        theirs.interp1d(x=da.coords['xx'].values, y=da.values, axis=0)(x.values))
+        theirs.interp1d(x=da.coords['xx'].values, y=da.values, axis=0)(x.values),
+    )
     da = da.transpose()
     out = interp1d(da, 'xx')(x)
     assert np.array_equal(
         out.values,
-        theirs.interp1d(x=da.coords['xx'].values, y=da.values, axis=1)(x.values))
+        theirs.interp1d(x=da.coords['xx'].values, y=da.values, axis=1)(x.values),
+    )
     da = da.copy()
     out = interp1d(da, 'xx')(x)
     assert np.array_equal(
         out.values,
-        theirs.interp1d(x=da.coords['xx'].values, y=da.values, axis=1)(x.values))
+        theirs.interp1d(x=da.coords['xx'].values, y=da.values, axis=1)(x.values),
+    )
 
 
 def test_data_datetime():
     da = make_array().rename_dims({'xx': 'time'})
-    x = sc.arange(dim='time',
-                  start=0,
-                  stop=da.sizes['time'],
-                  step=1,
-                  unit='s',
-                  dtype='datetime64')
+    x = sc.arange(
+        dim='time', start=0, stop=da.sizes['time'], step=1, unit='s', dtype='datetime64'
+    )
     da.coords['time'] = x
     out = interp1d(da, 'time')(da.coords['time'])
     assert np.array_equal(
         out.values,
-        theirs.interp1d(x=da.coords['time'].values.astype('int64'), y=da.values,
-                        axis=0)(x.values))
+        theirs.interp1d(
+            x=da.coords['time'].values.astype('int64'), y=da.values, axis=0
+        )(x.values),
+    )
 
 
 def test_close():
@@ -134,25 +135,25 @@ def test_midpoints():
     midpoints = (x[:-1] + 0.5 * (x[1:] - x[:-1])).values
     assert np.array_equal(
         out.values,
-        theirs.interp1d(x=da.coords['xx'].values, y=da.values, axis=0)(midpoints))
+        theirs.interp1d(x=da.coords['xx'].values, y=da.values, axis=0)(midpoints),
+    )
 
 
 def test_midpoints_datetime():
     da = make_array().rename_dims({'xx': 'time'})
-    x = sc.arange(dim='time',
-                  start=0,
-                  stop=da.sizes['time'],
-                  step=1,
-                  unit='s',
-                  dtype='datetime64')
+    x = sc.arange(
+        dim='time', start=0, stop=da.sizes['time'], step=1, unit='s', dtype='datetime64'
+    )
     da.coords['time'] = x
     out = interp1d(da, 'time')(da.coords['time'], midpoints=True)
     int_x = (x - sc.epoch(unit=x.unit)).values
     midpoints = int_x[:-1] + 0.5 * (int_x[1:] - int_x[:-1])
     assert np.array_equal(
         out.values,
-        theirs.interp1d(x=da.coords['time'].values.astype('int64'), y=da.values,
-                        axis=0)(midpoints))
+        theirs.interp1d(
+            x=da.coords['time'].values.astype('int64'), y=da.values, axis=0
+        )(midpoints),
+    )
 
 
 @pytest.mark.parametrize("kind", ['nearest', 'quadratic', 'cubic'])
@@ -163,23 +164,26 @@ def test_options(kind, fill_value):
     out = interp1d(da, 'xx', kind=kind, fill_value=fill_value)(x)
     assert np.array_equal(
         out.values,
-        theirs.interp1d(x=da.coords['xx'].values,
-                        y=da.values,
-                        axis=0,
-                        kind=kind,
-                        fill_value=fill_value)(x.values))
+        theirs.interp1d(
+            x=da.coords['xx'].values,
+            y=da.values,
+            axis=0,
+            kind=kind,
+            fill_value=fill_value,
+        )(x.values),
+    )
 
 
 def test_structured_dtype_interpolation_interpolates_elements():
     x = sc.array(dims=['x'], values=[1, 3])
-    da = sc.DataArray(data=sc.vectors(dims=['x'],
-                                      values=[[1, 2, 3], [5, 4, 3]],
-                                      unit='m'),
-                      coords={'x': x})
+    da = sc.DataArray(
+        data=sc.vectors(dims=['x'], values=[[1, 2, 3], [5, 4, 3]], unit='m'),
+        coords={'x': x},
+    )
     xnew = sc.array(dims=['x'], values=[1, 2, 3])
     out = interp1d(da, 'x')(xnew)
-    expected = sc.DataArray(data=sc.vectors(dims=['x'],
-                                            values=[[1, 2, 3], [3, 3, 3], [5, 4, 3]],
-                                            unit='m'),
-                            coords={'x': xnew})
+    expected = sc.DataArray(
+        data=sc.vectors(dims=['x'], values=[[1, 2, 3], [3, 3, 3], [5, 4, 3]], unit='m'),
+        coords={'x': xnew},
+    )
     assert sc.identical(out, expected)

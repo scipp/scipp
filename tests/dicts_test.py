@@ -16,8 +16,12 @@ def make_dataset(var, **kwargs):
 
 PARAMS = [
     "make,mapping",
-    [(make_data_array, "coords"), (make_data_array, "masks"),
-     (make_data_array, "attrs"), (make_dataset, "coords")]
+    [
+        (make_data_array, "coords"),
+        (make_data_array, "masks"),
+        (make_data_array, "attrs"),
+        (make_dataset, "coords"),
+    ],
 ]
 
 
@@ -37,7 +41,7 @@ def test_setitem(make, mapping):
 
 @pytest.mark.parametrize(*PARAMS)
 def test_contains(make, mapping):
-    var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
+    var = sc.array(dims=['x'], values=np.arange(4.0), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
     assert 'x' not in mapview
@@ -47,7 +51,7 @@ def test_contains(make, mapping):
 
 @pytest.mark.parametrize(*PARAMS)
 def test_get(make, mapping):
-    var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
+    var = sc.array(dims=['x'], values=np.arange(4.0), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
     mapview['x'] = sc.scalar(1.0)
@@ -59,7 +63,7 @@ def test_get(make, mapping):
 
 @pytest.mark.parametrize(*PARAMS)
 def test_pop(make, mapping):
-    var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
+    var = sc.array(dims=['x'], values=np.arange(4.0), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
     mapview['x'] = sc.scalar(1.0)
@@ -74,12 +78,12 @@ def test_pop(make, mapping):
 
 @pytest.mark.parametrize(*PARAMS)
 def test_clear(make, mapping):
-    var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
+    var = sc.array(dims=['x'], values=np.arange(4.0), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
     assert len(mapview) == 0
-    mapview['x'] = sc.array(dims=['x'], values=3.3 * np.arange(4.), unit='m')
-    mapview['y'] = sc.array(dims=['x'], values=-51.0 * np.arange(4.), unit='m')
+    mapview['x'] = sc.array(dims=['x'], values=3.3 * np.arange(4.0), unit='m')
+    mapview['y'] = sc.array(dims=['x'], values=-51.0 * np.arange(4.0), unit='m')
     assert len(mapview) == 2
     mapview.clear()
     assert len(mapview) == 0
@@ -87,7 +91,7 @@ def test_clear(make, mapping):
 
 @pytest.mark.parametrize(*PARAMS)
 def test_update_from_dict_adds_items(make, mapping):
-    var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
+    var = sc.array(dims=['x'], values=np.arange(4.0), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
     mapview['a'] = sc.scalar(1.0)
@@ -98,7 +102,7 @@ def test_update_from_dict_adds_items(make, mapping):
 
 @pytest.mark.parametrize(*PARAMS)
 def test_update_from_mapping_adds_items(make, mapping):
-    var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
+    var = sc.array(dims=['x'], values=np.arange(4.0), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
     mapview['a'] = sc.scalar(1.0)
@@ -114,7 +118,7 @@ def test_update_from_mapping_adds_items(make, mapping):
 
 @pytest.mark.parametrize(*PARAMS)
 def test_update_from_sequence_of_tuples_adds_items(make, mapping):
-    var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
+    var = sc.array(dims=['x'], values=np.arange(4.0), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
     mapview['a'] = sc.scalar(1.0)
@@ -127,12 +131,11 @@ def test_update_from_sequence_of_tuples_adds_items(make, mapping):
 
 @pytest.mark.parametrize(*PARAMS)
 def test_update_from_iterable_of_tuples_adds_items(make, mapping):
-
     def extra_items():
         yield 'b', sc.scalar(3.0)
         yield 'c', sc.scalar(4.0)
 
-    var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
+    var = sc.array(dims=['x'], values=np.arange(4.0), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
     mapview['a'] = sc.scalar(1.0)
@@ -145,7 +148,7 @@ def test_update_from_iterable_of_tuples_adds_items(make, mapping):
 
 @pytest.mark.parametrize(*PARAMS)
 def test_update_from_kwargs_adds_items(make, mapping):
-    var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
+    var = sc.array(dims=['x'], values=np.arange(4.0), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
     mapview['a'] = sc.scalar(1.0)
@@ -158,7 +161,7 @@ def test_update_from_kwargs_adds_items(make, mapping):
 
 @pytest.mark.parametrize(*PARAMS)
 def test_update_from_kwargs_overwrites_other_dict(make, mapping):
-    var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
+    var = sc.array(dims=['x'], values=np.arange(4.0), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
     mapview['a'] = sc.scalar(1.0)
@@ -169,7 +172,7 @@ def test_update_from_kwargs_overwrites_other_dict(make, mapping):
 
 @pytest.mark.parametrize(*PARAMS)
 def test_update_without_args_does_nothing(make, mapping):
-    var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
+    var = sc.array(dims=['x'], values=np.arange(4.0), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
     mapview['a'] = sc.scalar(1.0)
@@ -181,7 +184,7 @@ def test_update_without_args_does_nothing(make, mapping):
 
 @pytest.mark.parametrize(*PARAMS)
 def test_view_comparison_operators(make, mapping):
-    var = sc.array(dims=['x'], values=np.arange(10.), unit='m')
+    var = sc.array(dims=['x'], values=np.arange(10.0), unit='m')
     d1 = make(var)
     getattr(d1, mapping)['x'] = sc.array(dims=['x'], values=np.arange(10.0))
     d2 = make(var)
@@ -251,7 +254,7 @@ def test_copy_deep(make, mapping):
 
 @pytest.mark.parametrize(*PARAMS)
 def test_popitem(make, mapping):
-    var = sc.array(dims=['x'], values=np.arange(4.), unit='m')
+    var = sc.array(dims=['x'], values=np.arange(4.0), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
     mapview['x'] = sc.scalar(1.0)
@@ -268,7 +271,7 @@ def test_popitem(make, mapping):
 
 @pytest.mark.parametrize(*PARAMS)
 def test_views_len(make, mapping):
-    d = make(sc.array(dims=['x'], values=np.arange(4.), unit='m'))
+    d = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
     mapview = getattr(d, mapping)
     assert len(mapview.keys()) == 0
     assert len(mapview.values()) == 0
@@ -287,7 +290,7 @@ def test_views_len(make, mapping):
 
 @pytest.mark.parametrize(*PARAMS)
 def test_views_convert_to_bool(make, mapping):
-    d = make(sc.array(dims=['x'], values=np.arange(4.), unit='m'))
+    d = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
     mapview = getattr(d, mapping)
     assert not mapview.keys()
     assert not mapview.values()
@@ -301,7 +304,7 @@ def test_views_convert_to_bool(make, mapping):
 
 @pytest.mark.parametrize(*PARAMS)
 def test_keys_elements(make, mapping):
-    d = make(sc.array(dims=['x'], values=np.arange(4.), unit='m'))
+    d = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
     mapview = getattr(d, mapping)
     assert list(mapview.keys()) == []
 
@@ -314,7 +317,7 @@ def test_keys_elements(make, mapping):
 
 @pytest.mark.parametrize(*PARAMS)
 def test_values_elements(make, mapping):
-    d = make(sc.array(dims=['x'], values=np.arange(4.), unit='m'))
+    d = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
     mapview = getattr(d, mapping)
     assert list(mapview.values()) == []
 
@@ -327,7 +330,7 @@ def test_values_elements(make, mapping):
 
 @pytest.mark.parametrize(*PARAMS)
 def test_items_elements(make, mapping):
-    d = make(sc.array(dims=['x'], values=np.arange(4.), unit='m'))
+    d = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
     mapview = getattr(d, mapping)
     assert list(mapview.items()) == []
 
@@ -340,8 +343,8 @@ def test_items_elements(make, mapping):
 
 @pytest.mark.parametrize(*PARAMS)
 def test_keys_equality(make, mapping):
-    d0 = make(sc.array(dims=['x'], values=np.arange(4.), unit='m'))
-    d1 = make(sc.array(dims=['x'], values=np.arange(4.), unit='m'))
+    d0 = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
+    d1 = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
     mapview0 = getattr(d0, mapping)
     mapview1 = getattr(d1, mapping)
     assert mapview0.keys() == mapview0.keys()
@@ -371,8 +374,8 @@ def test_keys_equality(make, mapping):
 
 @pytest.mark.parametrize(*PARAMS)
 def test_values_equality(make, mapping):
-    d0 = make(sc.array(dims=['x'], values=np.arange(4.), unit='m'))
-    d1 = make(sc.array(dims=['x'], values=np.arange(4.), unit='m'))
+    d0 = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
+    d1 = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
     mapview0 = getattr(d0, mapping)
     mapview1 = getattr(d1, mapping)
     assert mapview0.values() != mapview0.values()
@@ -391,8 +394,8 @@ def test_values_equality(make, mapping):
 
 @pytest.mark.parametrize(*PARAMS)
 def test_equality(make, mapping):
-    d0 = make(sc.array(dims=['x'], values=np.arange(4.), unit='m'))
-    d1 = make(sc.array(dims=['x'], values=np.arange(4.), unit='m'))
+    d0 = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
+    d1 = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
     mapview0 = getattr(d0, mapping)
     mapview1 = getattr(d1, mapping)
     assert mapview0 == mapview0
@@ -428,8 +431,8 @@ def test_equality(make, mapping):
 
 @pytest.mark.parametrize(*PARAMS)
 def test_items_equality(make, mapping):
-    d0 = make(sc.array(dims=['x'], values=np.arange(4.), unit='m'))
-    d1 = make(sc.array(dims=['x'], values=np.arange(4.), unit='m'))
+    d0 = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
+    d1 = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
     mapview0 = getattr(d0, mapping)
     mapview1 = getattr(d1, mapping)
     assert mapview0.items() == mapview0.items()

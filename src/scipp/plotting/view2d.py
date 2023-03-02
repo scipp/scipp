@@ -43,11 +43,10 @@ class PlotView2d(PlotView):
             self.current_lims[dim] = [xmin, xmax]
         values = new_values.values
         slice_values = {
-            "values":
-            values,
-            "extent":
-            np.array([self.current_lims[dims[1]],
-                      self.current_lims[dims[0]]]).flatten()
+            "values": values,
+            "extent": np.array(
+                [self.current_lims[dims[1]], self.current_lims[dims[0]]]
+            ).flatten(),
         }
         mask_info = next(iter(mask_info.values()))
         if len(mask_info) > 0:
@@ -81,7 +80,7 @@ class PlotView2d(PlotView):
         dimy = self.dims[0]
         xylims = {
             dimx: np.clip(self.figure.ax.get_xlim(), *sorted(self.global_lims[dimx])),
-            dimy: np.clip(self.figure.ax.get_ylim(), *sorted(self.global_lims[dimy]))
+            dimy: np.clip(self.figure.ax.get_ylim(), *sorted(self.global_lims[dimy])),
         }
 
         dx = np.abs(self.current_lims[dimx][1] - self.current_lims[dimx][0])
@@ -151,16 +150,16 @@ class PlotView2d(PlotView):
         Add a marker (colored scatter point).
         """
         if self._marks_scatter is None:
-            self._marks_scatter = self.figure.ax.scatter([x], [y],
-                                                         c=[color],
-                                                         edgecolors="w",
-                                                         picker=5,
-                                                         zorder=10)
+            self._marks_scatter = self.figure.ax.scatter(
+                [x], [y], c=[color], edgecolors="w", picker=5, zorder=10
+            )
         else:
-            new_offsets = np.concatenate((self._marks_scatter.get_offsets(), [[x, y]]),
-                                         axis=0)
-            new_colors = np.concatenate((self._marks_scatter.get_facecolors(), [color]),
-                                        axis=0)
+            new_offsets = np.concatenate(
+                (self._marks_scatter.get_offsets(), [[x, y]]), axis=0
+            )
+            new_colors = np.concatenate(
+                (self._marks_scatter.get_facecolors(), [color]), axis=0
+            )
             self._marks_scatter.set_offsets(new_offsets)
             self._marks_scatter.set_facecolors(new_colors)
         self._marker_index.append(index)

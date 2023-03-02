@@ -25,7 +25,6 @@ try:
     # CoordTable is only needed for type annotations here,
     # so a protocol is enough.
     class _CoordProvider(_Protocol):
-
         def consume(self, name: str) -> Coord:
             pass
 
@@ -35,7 +34,6 @@ except ImportError:
 
 
 class Rule(ABC):
-
     def __init__(self, out_names: Tuple[str, ...]):
         self.out_names = out_names
 
@@ -59,18 +57,23 @@ class FetchRule(Rule):
     Can be used to abstract away retrieving coords and attrs from the input DataArray.
     """
 
-    def __init__(self, out_names: Tuple[str, ...], dense_sources: Mapping[str,
-                                                                          Variable],
-                 event_sources: Mapping[str, Variable]):
+    def __init__(
+        self,
+        out_names: Tuple[str, ...],
+        dense_sources: Mapping[str, Variable],
+        event_sources: Mapping[str, Variable],
+    ):
         super().__init__(out_names)
         self._dense_sources = dense_sources
         self._event_sources = event_sources
 
     def __call__(self, coords: _CoordProvider) -> Dict[str, Coord]:
         return {
-            out_name: Coord(dense=self._dense_sources.get(out_name, None),
-                            event=self._event_sources.get(out_name, None),
-                            destination=Destination.coord)
+            out_name: Coord(
+                dense=self._dense_sources.get(out_name, None),
+                event=self._event_sources.get(out_name, None),
+                destination=Destination.coord,
+            )
             for out_name in self.out_names
         }
 
@@ -95,13 +98,12 @@ class RenameRule(Rule):
         # Shallow copy the _Coord object to allow the alias to have
         # a different destination and usage count than the original.
         return {
-            out_name: copy(coords.consume(self._in_name))
-            for out_name in self.out_names
+            out_name: copy(coords.consume(self._in_name)) for out_name in self.out_names
         }
 
     @property
     def dependencies(self) -> Tuple[str]:
-        return tuple((self._in_name, ))
+        return tuple((self._in_name,))
 
     def __str__(self):
         return f'Rename  {self._format_out_names()} <- {self._in_name}'
@@ -119,8 +121,7 @@ class ComputeRule(Rule):
 
     def __call__(self, coords: _CoordProvider) -> Dict[str, Coord]:
         inputs = {
-            name: coords.consume(coord)
-            for coord, name in self._arg_names.items()
+            name: coords.consume(coord) for coord, name in self._arg_names.items()
         }
         outputs = None
         if any(coord.has_event for coord in inputs.values()):
@@ -151,9 +152,11 @@ class ComputeRule(Rule):
         # Dense outputs may be produced as side effects of processing event
         # coords.
         outputs = {
-            name: Coord(dense=var if var.bins is None else None,
-                        event=var if var.bins is not None else None,
-                        destination=Destination.coord)
+            name: Coord(
+                dense=var if var.bins is None else None,
+                event=var if var.bins is not None else None,
+                destination=Destination.coord,
+            )
             for name, var in outputs.items()
         }
         return outputs
@@ -164,14 +167,17 @@ class ComputeRule(Rule):
             raise TypeError(
                 f'transform_coords was expected to compute {missing_outputs} '
                 f'using `{self._func.__name__}` but the function returned '
-                f'{list(d.keys())} instead.')
+                f'{list(d.keys())} instead.'
+            )
         return {key: d[key] for key in self.out_names}
 
     def _to_dict(self, output) -> Dict[str, Variable]:
         if not isinstance(output, dict):
             if len(self.out_names) != 1:
-                raise TypeError('Function returned a single output but '
-                                f'{len(self.out_names)} were expected.')
+                raise TypeError(
+                    'Function returned a single output but '
+                    f'{len(self.out_names)} were expected.'
+                )
             return {self.out_names[0]: output}
         return output
 
@@ -187,8 +193,10 @@ class ComputeRule(Rule):
         # Class instances defining __call__ as well as objects created with
         # functools.partial may/do not define __name__.
         name = getattr(self._func, '__name__', repr(self._func))
-        return f'Compute {self._format_out_names()} = {name}' \
-               f'({", ".join(self.dependencies)})'
+        return (
+            f'Compute {self._format_out_names()} = {name}'
+            f'({", ".join(self.dependencies)})'
+        )
 
 
 def rules_of_type(rules: List[Rule], rule_type: type) -> Iterable[Rule]:
@@ -203,8 +211,10 @@ def rule_output_names(rules: List[Rule], rule_type: type) -> Iterable[str]:
 def _arg_names(func) -> Dict[str, str]:
     spec = inspect.getfullargspec(func)
     if spec.varargs is not None or spec.varkw is not None:
-        raise ValueError('Function with variable arguments not allowed in '
-                         f'conversion graph: `{func.__name__}`.')
+        raise ValueError(
+            'Function with variable arguments not allowed in '
+            f'conversion graph: `{func.__name__}`.'
+        )
     if inspect.isfunction(func) or func.__class__ == partial:
         args = spec.args
     else:

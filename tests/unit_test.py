@@ -66,15 +66,17 @@ def test_unit_repr():
     assert repr(sc.Unit('m^2/s^3')) == 'Unit(m**2*s**-3)'
     assert repr(sc.Unit('1.234*kg')) == 'Unit(1.234*kg)'
     assert repr(sc.Unit('degC')) == 'Unit(K, e_flag=True)'
-    assert repr(
-        sc.Unit('decibels')) == 'Unit(1, i_flag=True, e_flag=True, equation=True)'
+    assert (
+        repr(sc.Unit('decibels')) == 'Unit(1, i_flag=True, e_flag=True, equation=True)'
+    )
 
 
-@pytest.mark.parametrize('u',
-                         ('m', 'kg', 's', 'A', 'cd', 'K', 'mol', 'counts', '$', 'rad'))
+@pytest.mark.parametrize(
+    'u', ('m', 'kg', 's', 'A', 'cd', 'K', 'mol', 'counts', '$', 'rad')
+)
 def test_unit_repr_uses_all_bases(u):
     assert repr(sc.Unit(u)) == f'Unit({u})'
-    assert repr(sc.Unit(u)**2) == f'Unit({u}**2)'
+    assert repr(sc.Unit(u) ** 2) == f'Unit({u}**2)'
 
 
 def test_unit_property_from_str():
@@ -100,8 +102,21 @@ def test_default_unit_for_string_is_none():
 
 
 @pytest.mark.parametrize(
-    'u_str', ('one', 'm', 'count / s', '12.3 * m/A*kg^2/rad^3', 'count', 'decibels',
-              'CXCUN[1]', 'arbitraryunit', 'EQXUN[1]', 'Sv', 'degC'))
+    'u_str',
+    (
+        'one',
+        'm',
+        'count / s',
+        '12.3 * m/A*kg^2/rad^3',
+        'count',
+        'decibels',
+        'CXCUN[1]',
+        'arbitraryunit',
+        'EQXUN[1]',
+        'Sv',
+        'degC',
+    ),
+)
 def test_dict_roundtrip(u_str):
     u = sc.Unit(u_str)
     assert units_identical(sc.Unit.from_dict(u.to_dict()), u)
@@ -275,11 +290,14 @@ def test_unit_aliases_iterate_over_aliases():
     sc.units.aliases['dogyear'] = '4492800s'
     assert sorted(sc.units.aliases) == ['clucks', 'dogyear']
     assert sorted(sc.units.aliases.keys()) == ['clucks', 'dogyear']
-    assert sorted(sc.units.aliases.values(),
-                  key=lambda u: repr(u)) == [sc.Unit('19.3 m*A'),
-                                             sc.Unit('4492800s')]
-    assert sorted(sc.units.aliases.items()) == [('clucks', sc.Unit('19.3 m*A')),
-                                                ('dogyear', sc.Unit('4492800s'))]
+    assert sorted(sc.units.aliases.values(), key=lambda u: repr(u)) == [
+        sc.Unit('19.3 m*A'),
+        sc.Unit('4492800s'),
+    ]
+    assert sorted(sc.units.aliases.items()) == [
+        ('clucks', sc.Unit('19.3 m*A')),
+        ('dogyear', sc.Unit('4492800s')),
+    ]
 
 
 def test_aliases_is_a_singleton():

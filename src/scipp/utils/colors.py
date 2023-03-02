@@ -6,7 +6,7 @@ import numpy as np
 
 
 def hex_to_rgb(hex_color):
-    rgb_hex = [hex_color[x:x + 2] for x in [1, 3, 5]]
+    rgb_hex = [hex_color[x : x + 2] for x in [1, 3, 5]]
     return np.array([int(hex_value, 16) for hex_value in rgb_hex])
 
 
@@ -40,5 +40,7 @@ def make_random_color(fmt='rgb'):
     elif fmt == 'hex':
         return rgb_to_hex(rgb)
     else:
-        raise RuntimeError("Unknown color format {}. Possible choices are: "
-                           "rgb, dec, rgba, and hex.".format(fmt))
+        raise RuntimeError(
+            "Unknown color format {}. Possible choices are: "
+            "rgb, dec, rgba, and hex.".format(fmt)
+        )

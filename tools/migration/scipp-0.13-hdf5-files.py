@@ -18,8 +18,12 @@ def collection_element_name(name, index):
     """
     Convert name into an ASCII string that can be used as an object name in HDF5.
     """
-    ascii_name = name.replace('.', '&#46;').replace('/', '&#47;').encode(
-        'ascii', 'xmlcharrefreplace').decode('ascii')
+    ascii_name = (
+        name.replace('.', '&#46;')
+        .replace('/', '&#47;')
+        .encode('ascii', 'xmlcharrefreplace')
+        .decode('ascii')
+    )
     return f'elem_{index:03d}_{ascii_name}'
 
 

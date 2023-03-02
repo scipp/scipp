@@ -16,15 +16,19 @@ from .shape import concat
 
 
 class Lookup:
-
-    def __init__(self,
-                 op: Callable,
-                 func: _cpp.DataArray,
-                 dim: str,
-                 fill_value: Optional[_cpp.Variable] = None):
-        if not func.masks and func.ndim == 1 and len(func) > 0 and func.dtype in [
-                _cpp.DType.bool, _cpp.DType.int32, _cpp.DType.int64
-        ]:
+    def __init__(
+        self,
+        op: Callable,
+        func: _cpp.DataArray,
+        dim: str,
+        fill_value: Optional[_cpp.Variable] = None,
+    ):
+        if (
+            not func.masks
+            and func.ndim == 1
+            and len(func) > 0
+            and func.dtype in [_cpp.DType.bool, _cpp.DType.int32, _cpp.DType.int64]
+        ):
             # Significant speedup if `func` is large but mostly constant.
             if op == _cpp.buckets.map:
                 if not islinspace(func.coords[dim], dim).value:
@@ -38,7 +42,7 @@ class Lookup:
         self.func = func
         self.dim = dim
         self.fill_value = fill_value
-        self.__transform_coords_input_keys__ = (dim, )  # for transform_coords
+        self.__transform_coords_input_keys__ = (dim,)  # for transform_coords
 
     def __call__(self, var):
         return self.op(self.func, var, self.dim, self.fill_value)
@@ -47,11 +51,13 @@ class Lookup:
         return self(var)
 
 
-def lookup(func: _cpp.DataArray,
-           dim: Optional[str] = None,
-           *,
-           mode: Optional[Literal['previous', 'nearest']] = None,
-           fill_value: Optional[_cpp.Variable] = None):
+def lookup(
+    func: _cpp.DataArray,
+    dim: Optional[str] = None,
+    *,
+    mode: Optional[Literal['previous', 'nearest']] = None,
+    fill_value: Optional[_cpp.Variable] = None,
+):
     """Create a "lookup table" from a histogram (data array with bin-edge coord).
 
     The lookup table can be used to map, e.g., time-stamps to corresponding values
@@ -148,9 +154,12 @@ class Bins:
                 return self._obj.group(index.flatten(to=dim)).squeeze(dim)
         elif isinstance(index, slice):
             from .binning import _upper_bound
+
             if index.step is not None:
-                raise ValueError("Label-based indexing with step (stride) is not "
-                                 f"supported. Got '{key}'")
+                raise ValueError(
+                    "Label-based indexing with step (stride) is not "
+                    f"supported. Got '{key}'"
+                )
             start = index.start
             stop = index.stop
             if start is None:
@@ -158,11 +167,13 @@ class Bins:
             if stop is None:
                 stop = _upper_bound(self._obj.bins.meta[dim].max())
 
-            if not (isinstance(start, _cpp.Variable)
-                    and isinstance(stop, _cpp.Variable)):
+            if not (
+                isinstance(start, _cpp.Variable) and isinstance(stop, _cpp.Variable)
+            ):
                 raise ValueError(
                     "Bins can only by sliced using label-based indexing. Expected "
-                    f"start and stop to be scipp.Variable, got '{start}' and '{stop}'.")
+                    f"start and stop to be scipp.Variable, got '{start}' and '{stop}'."
+                )
 
             if start > stop:
                 if index.start is None:
@@ -174,7 +185,8 @@ class Bins:
         raise ValueError(
             f"Unsupported key '{key}'. Expected a dimension label and "
             "a 0-D variable or a dimension label and a slice object with start "
-            "and stop given by a 0-D variable.")
+            "and stop given by a 0-D variable."
+        )
 
     @property
     def coords(self) -> MetaDataMap:
@@ -401,10 +413,10 @@ class Bins:
         return concat_bins(self._obj, dim)
 
     def concatenate(
-            self,
-            other: Union[_cpp.Variable, _cpp.DataArray],
-            *,
-            out: Optional[_cpp.DataArray] = None
+        self,
+        other: Union[_cpp.Variable, _cpp.DataArray],
+        *,
+        out: Optional[_cpp.DataArray] = None,
     ) -> Union[_cpp.Variable, _cpp.DataArray]:
         """Concatenate bins element-wise by concatenating bin contents along
         their internal bin dimension.
@@ -447,7 +459,8 @@ class GroupbyBins:
     def concat(self, dim):
         warnings.warn(
             "groupby(...).bins.concat(dim) is deprecated. Use `group` or `bin` instead",
-            UserWarning)
+            UserWarning,
+        )
         return self._obj.concat(dim)
 
 
@@ -472,11 +485,13 @@ def _groupby_bins(obj):
     return GroupbyBins(obj)
 
 
-def bins(*,
-         data: VariableLike,
-         dim: str,
-         begin: Optional[_cpp.Variable] = None,
-         end: Optional[_cpp.Variable] = None) -> _cpp.Variable:
+def bins(
+    *,
+    data: VariableLike,
+    dim: str,
+    begin: Optional[_cpp.Variable] = None,
+    end: Optional[_cpp.Variable] = None,
+) -> _cpp.Variable:
     """Create a binned variable from bin indices.
 
     The elements of the returned variable are "bins", defined as views into

@@ -60,8 +60,13 @@ def _concat_bins(var: Variable, dim: List[str]) -> Variable:
     return _with_bin_sizes(out, sizes)
 
 
-def _combine_bins(var: Variable, coords: Dict[str, Variable], edges: List[Variable],
-                  groups: List[Variable], dim: Dims) -> Dict[str, Variable]:
+def _combine_bins(
+    var: Variable,
+    coords: Dict[str, Variable],
+    edges: List[Variable],
+    groups: List[Variable],
+    dim: Dims,
+) -> Dict[str, Variable]:
     from .binning import make_binned
 
     # Overview
@@ -94,8 +99,9 @@ def _combine_bins(var: Variable, coords: Dict[str, Variable], edges: List[Variab
     params.attrs['end'] = var.bins.constituents['end'].copy()
 
     # Sizes and begin/end indices of changed subspace
-    sub_sizes = index(changed_volume).broadcast(dims=unchanged_dims,
-                                                shape=unchanged_shape)
+    sub_sizes = index(changed_volume).broadcast(
+        dims=unchanged_dims, shape=unchanged_shape
+    )
     params = params.flatten(to=uuid.uuid4().hex)
     # Setup pseudo binning for unchanged subspace. All further reordering (for grouping
     # and binning) will then occur *within* those pseudo bins (by splitting them).
@@ -119,8 +125,9 @@ def _combine_bins(var: Variable, coords: Dict[str, Variable], edges: List[Variab
     return _with_bin_sizes(source.copy(), sizes=params.data.bins.sum())
 
 
-def combine_bins(da: DataArray, edges: List[Variable], groups: List[Variable],
-                 dim: Dims) -> DataArray:
+def combine_bins(
+    da: DataArray, edges: List[Variable], groups: List[Variable], dim: Dims
+) -> DataArray:
     masked = hide_masked(da, dim)
     if len(edges) == 0 and len(groups) == 0:
         data = _concat_bins(masked, dim=dim)

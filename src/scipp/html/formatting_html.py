@@ -96,10 +96,12 @@ def _get_events(var, variances, ellipsis_after):
             s.append(_repr_item(bin_dim, item))
             i += 1
     else:
-        s.append(_repr_item(
-            bin_dim,
-            var.value,
-        ))
+        s.append(
+            _repr_item(
+                bin_dim,
+                var.value,
+            )
+        )
     return s
 
 
@@ -109,8 +111,9 @@ def _format_events(var, has_variances):
 
 
 def _ordered_dict(data):
-    data_ordered = collections.OrderedDict(sorted(data.items(),
-                                                  key=lambda t: str(t[0])))
+    data_ordered = collections.OrderedDict(
+        sorted(data.items(), key=lambda t: str(t[0]))
+    )
     return data_ordered
 
 
@@ -158,24 +161,27 @@ def format_dims(dims, sizes, coords):
         return ""
 
     dim_css_map = {
-        dim: " class='sc-has-index'" if dim in coords else ""
-        for dim in dims
+        dim: " class='sc-has-index'" if dim in coords else "" for dim in dims
     }
 
-    dims_li = "".join(f"<li><span{dim_css_map[dim]}>"
-                      f"{escape(str(dim))}</span>: "
-                      f"{size if size is not None else 'Events' }</li>"
-                      for dim, size in zip(dims, sizes))
+    dims_li = "".join(
+        f"<li><span{dim_css_map[dim]}>"
+        f"{escape(str(dim))}</span>: "
+        f"{size if size is not None else 'Events' }</li>"
+        for dim, size in zip(dims, sizes)
+    )
 
     return f"<ul class='sc-dim-list'>{dims_li}</ul>"
 
 
 def _icon(icon_name):
     # icon_name is defined in icon-svg-inline.html
-    return ("<svg class='icon sc-{0}'>"
-            "<use xlink:href='#{0}'>"
-            "</use>"
-            "</svg>".format(icon_name))
+    return (
+        "<svg class='icon sc-{0}'>"
+        "<use xlink:href='#{0}'>"
+        "</use>"
+        "</svg>".format(icon_name)
+    )
 
 
 def summarize_coord(dim, var, ds=None):
@@ -188,27 +194,34 @@ def summarize_mask(dim, var, ds=None):
 
 
 def summarize_coords(coords, ds=None):
-    vars_li = "".join("<li class='sc-var-item'>"
-                      f"{summarize_coord(dim, var, ds)}"
-                      "</span></li>" for dim, var in _ordered_dict(coords).items())
+    vars_li = "".join(
+        "<li class='sc-var-item'>" f"{summarize_coord(dim, var, ds)}" "</span></li>"
+        for dim, var in _ordered_dict(coords).items()
+    )
     return f"<ul class='sc-var-list'>{vars_li}</ul>"
 
 
 def summarize_masks(masks, ds=None):
-    vars_li = "".join("<li class='sc-var-item'>"
-                      f"{summarize_mask(dim, var, ds)}"
-                      "</span></li>" for dim, var in _ordered_dict(masks).items())
+    vars_li = "".join(
+        "<li class='sc-var-item'>" f"{summarize_mask(dim, var, ds)}" "</span></li>"
+        for dim, var in _ordered_dict(masks).items()
+    )
     return f"<ul class='sc-var-list'>{vars_li}</ul>"
 
 
 def summarize_attrs(attrs, embedded_in=None):
-    attrs_li = "".join("<li class='sc-var-item'>{}</li>".format(
-        summarize_variable(name,
-                           var,
-                           has_attrs=False,
-                           embedded_in=embedded_in,
-                           is_index=name in var.dims))
-                       for name, var in _ordered_dict(attrs).items())
+    attrs_li = "".join(
+        "<li class='sc-var-item'>{}</li>".format(
+            summarize_variable(
+                name,
+                var,
+                has_attrs=False,
+                embedded_in=embedded_in,
+                is_index=name in var.dims,
+            )
+        )
+        for name, var in _ordered_dict(attrs).items()
+    )
     return f"<ul class='sc-var-list'>{attrs_li}</ul>"
 
 
@@ -245,11 +258,15 @@ def _make_inline_attributes(var, has_attrs, embedded_in):
             disabled = ""
 
     if len(attrs_sections) > 0:
-        attrs_sections = "".join(f"<li class='sc-section-item sc-subsection'>{s}</li>"
-                                 for s in attrs_sections)
-        attrs_ul = "<div class='sc-wrap'>"\
-            f"<ul class='sc-sections'>{attrs_sections}</ul>"\
+        attrs_sections = "".join(
+            f"<li class='sc-section-item sc-subsection'>{s}</li>"
+            for s in attrs_sections
+        )
+        attrs_ul = (
+            "<div class='sc-wrap'>"
+            f"<ul class='sc-sections'>{attrs_sections}</ul>"
             "</div>"
+        )
 
     return disabled, attrs_ul
 
@@ -266,9 +283,13 @@ def _make_dim_labels(dim, bin_edges=None):
 
 def _make_dim_str(var, bin_edges, add_dim_size=False):
     dims_text = ', '.join(
-        '{}{}{}'.format(str(dim), _make_dim_labels(dim, bin_edges),
-                        f': {size}' if add_dim_size and size is not None else '')
-        for dim, size in zip(var.dims, var.shape))
+        '{}{}{}'.format(
+            str(dim),
+            _make_dim_labels(dim, bin_edges),
+            f': {size}' if add_dim_size and size is not None else '',
+        )
+        for dim, size in zip(var.dims, var.shape)
+    )
     return dims_text
 
 
@@ -284,12 +305,9 @@ def _format_common(is_index):
     return cssclass_idx, attrs_id, attrs_icon, data_id, data_icon
 
 
-def summarize_variable(name,
-                       var,
-                       is_index=False,
-                       has_attrs=False,
-                       embedded_in=None,
-                       add_dim_size=False):
+def summarize_variable(
+    name, var, is_index=False, has_attrs=False, embedded_in=None, add_dim_size=False
+):
     """
     Formats the variable data into the format expected when displaying
     as a standalone variable (when a single variable or data array is
@@ -299,7 +317,9 @@ def summarize_variable(name,
         _make_dim_str(
             var,
             find_bin_edges(var, embedded_in) if embedded_in is not None else None,
-            add_dim_size))
+            add_dim_size,
+        )
+    )
     if var.unit is None:
         unit = ''
     else:
@@ -327,14 +347,16 @@ def summarize_variable(name,
     else:
         html = [
             f"<div class='sc-var-name'><span{cssclass_idx}>{escape(str(name))}"
-            "</span></div>", f"<div class='sc-var-dims'>{escape(dims_str)}</div>"
+            "</span></div>",
+            f"<div class='sc-var-dims'>{escape(dims_str)}</div>",
         ]
     html += [
         f"<div class='sc-var-dtype'>{escape(str(var.dtype))}</div>",
         f"<div class='sc-var-unit'>{escape(unit)}</div>",
         f"<div class='sc-value-preview sc-preview'><span>{preview}</span>",
-        "{}</div>".format(f'<span>{variances_preview}</span>'
-                          if variances_preview is not None else ''),
+        "{}</div>".format(
+            f'<span>{variances_preview}</span>' if variances_preview is not None else ''
+        ),
         f"<input id='{attrs_id}' class='sc-var-attrs-in' ",
         f"type='checkbox' {disabled}>",
         f"<label for='{attrs_id}' "
@@ -352,19 +374,23 @@ def summarize_variable(name,
 
 def summarize_data(dataset):
     has_attrs = isinstance(dataset, sc.Dataset)
-    vars_li = "".join("<li class='sc-var-item'>{}</li>".format(
-        summarize_variable(
-            name, var, has_attrs=has_attrs, embedded_in=dataset if has_attrs else None))
-                      for name, var in _ordered_dict(dataset).items())
+    vars_li = "".join(
+        "<li class='sc-var-item'>{}</li>".format(
+            summarize_variable(
+                name,
+                var,
+                has_attrs=has_attrs,
+                embedded_in=dataset if has_attrs else None,
+            )
+        )
+        for name, var in _ordered_dict(dataset).items()
+    )
     return f"<ul class='sc-var-list'>{vars_li}</ul>"
 
 
-def collapsible_section(name,
-                        inline_details="",
-                        details="",
-                        n_items=None,
-                        enabled=True,
-                        collapsed=False):
+def collapsible_section(
+    name, inline_details="", details="", n_items=None, enabled=True, collapsed=False
+):
     # "unique" id to expand/collapse the section
     data_id = "section-" + str(uuid.uuid4())
 
@@ -374,20 +400,24 @@ def collapsible_section(name,
     collapsed = "" if collapsed or not has_items else "checked"
     tip = " title='Expand/collapse section'" if enabled else ""
 
-    return (f"<input id='{data_id}' class='sc-section-summary-in' "
-            f"type='checkbox' {enabled} {collapsed}>"
-            f"<label for='{data_id}' class='sc-section-summary' {tip}>"
-            f"{name}:{n_items_span}</label>"
-            f"<div class='sc-section-inline-details'>{inline_details}</div>"
-            f"<div class='sc-section-details'>{details}</div>")
+    return (
+        f"<input id='{data_id}' class='sc-section-summary-in' "
+        f"type='checkbox' {enabled} {collapsed}>"
+        f"<label for='{data_id}' class='sc-section-summary' {tip}>"
+        f"{name}:{n_items_span}</label>"
+        f"<div class='sc-section-inline-details'>{inline_details}</div>"
+        f"<div class='sc-section-details'>{details}</div>"
+    )
 
 
-def _mapping_section(mapping,
-                     *extra_details_func_args,
-                     name=None,
-                     details_func=None,
-                     max_items_collapse=None,
-                     enabled=True):
+def _mapping_section(
+    mapping,
+    *extra_details_func_args,
+    name=None,
+    details_func=None,
+    max_items_collapse=None,
+    enabled=True,
+):
     n_items = 1 if isinstance(mapping, sc.DataArray) else len(mapping)
     collapsed = n_items >= max_items_collapse
 
@@ -404,15 +434,16 @@ def dim_section(dataset):
     coords = dataset.coords if hasattr(dataset, "coords") else dict()
     dim_list = format_dims(dataset.dims, dataset.shape, coords)
 
-    return collapsible_section("Dimensions",
-                               inline_details=dim_list,
-                               enabled=False,
-                               collapsed=True)
+    return collapsible_section(
+        "Dimensions", inline_details=dim_list, enabled=False, collapsed=True
+    )
 
 
 def summarize_array(var, is_variable=False):
-    vars_li = "".join("<li class='sc-var-item'>"
-                      f"{summarize_variable(None, var, add_dim_size=is_variable)}</li>")
+    vars_li = "".join(
+        "<li class='sc-var-item'>"
+        f"{summarize_variable(None, var, add_dim_size=is_variable)}</li>"
+    )
     return f"<ul class='sc-var-list'>{vars_li}</ul>"
 
 
@@ -427,10 +458,9 @@ coord_section = partial(
     max_items_collapse=25,
 )
 
-mask_section = partial(_mapping_section,
-                       name="Masks",
-                       details_func=summarize_masks,
-                       max_items_collapse=10)
+mask_section = partial(
+    _mapping_section, name="Masks", details_func=summarize_masks, max_items_collapse=10
+)
 
 data_section = partial(
     _mapping_section,
@@ -448,18 +478,19 @@ attr_section = partial(
 
 
 def _obj_repr(header_components, sections):
-    header = f"<div class='sc-header'>"\
-        f"{''.join(h for h in header_components)}</div>"
+    header = f"<div class='sc-header'>" f"{''.join(h for h in header_components)}</div>"
     sections = "".join(f"<li class='sc-section-item'>{s}</li>" for s in sections)
 
-    return ("<div>"
-            f"{load_icons()}"
-            f"{load_style()}"
-            "<div class='sc-wrap sc-root'>"
-            f"{header}"
-            f"<ul class='sc-sections'>{sections}</ul>"
-            "</div>"
-            "</div>")
+    return (
+        "<div>"
+        f"{load_icons()}"
+        f"{load_style()}"
+        "<div class='sc-wrap sc-root'>"
+        f"{header}"
+        f"<ul class='sc-sections'>{sections}</ul>"
+        "</div>"
+        "</div>"
+    )
 
 
 def _format_size(obj):
@@ -467,8 +498,10 @@ def _format_size(obj):
     underlying_size = obj.underlying_size()
     res = f"({human_readable_size(view_size)}"
     if view_size != underlying_size:
-        res += " <span class='sc-underlying-size'>out of "\
-               f"{human_readable_size(underlying_size)}</span>"
+        res += (
+            " <span class='sc-underlying-size'>out of "
+            f"{human_readable_size(underlying_size)}</span>"
+        )
     return res + ")"
 
 

@@ -147,9 +147,9 @@ def not_equal(x: VariableLike, y: VariableLike) -> VariableLike:
     return _call_cpp_func(_cpp.not_equal, x, y)
 
 
-def _identical_data_groups(x: data_group.DataGroup, y: data_group.DataGroup, *,
-                           equal_nan: bool) -> bool:
-
+def _identical_data_groups(
+    x: data_group.DataGroup, y: data_group.DataGroup, *, equal_nan: bool
+) -> bool:
     def compare(a, b):
         if not isinstance(a, type(b)):
             return False
@@ -193,12 +193,14 @@ def identical(x: VariableLike, y: VariableLike, *, equal_nan: bool = False) -> b
     return _call_cpp_func(_cpp.identical, x, y, equal_nan=equal_nan)
 
 
-def isclose(x: _cpp.Variable,
-            y: _cpp.Variable,
-            *,
-            rtol: _cpp.Variable = None,
-            atol: _cpp.Variable = None,
-            equal_nan: bool = False) -> _cpp.Variable:
+def isclose(
+    x: _cpp.Variable,
+    y: _cpp.Variable,
+    *,
+    rtol: _cpp.Variable = None,
+    atol: _cpp.Variable = None,
+    equal_nan: bool = False,
+) -> _cpp.Variable:
     """Checks element-wise if the inputs are close to each other.
 
     Compares values of x and y element by element against absolute
@@ -315,6 +317,6 @@ def allclose(x, y, rtol=None, atol=None, equal_nan=False) -> True:
     scipp.isclose:
         Compares element-wise with specified tolerances.
     """
-    return _call_cpp_func(_cpp.all,
-                          isclose(x, y, rtol=rtol, atol=atol,
-                                  equal_nan=equal_nan)).value
+    return _call_cpp_func(
+        _cpp.all, isclose(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan)
+    ).value

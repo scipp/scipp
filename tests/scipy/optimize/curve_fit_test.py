@@ -42,12 +42,11 @@ def test_should_not_raise_given_function_with_dimensionless_params_and_1d_array(
 
 def test_should_not_raise_given_function_with_dimensionful_params_and_1d_array():
     data = array1d_from_vars(a=sc.scalar(1.2, unit='s'), b=sc.scalar(100.0, unit='m'))
-    curve_fit(func_with_vars,
-              data,
-              p0={
-                  'a': sc.scalar(1.0, unit='s'),
-                  'b': sc.scalar(1.0, unit='m')
-              })
+    curve_fit(
+        func_with_vars,
+        data,
+        p0={'a': sc.scalar(1.0, unit='s'), 'b': sc.scalar(1.0, unit='m')},
+    )
 
 
 def test_should_raise_TypeError_when_xdata_given_as_param():
@@ -131,20 +130,25 @@ def test_optimized_params_variances_are_diag_of_covariance_matrix():
 def test_masked_points_are_treated_as_if_they_were_removed(mask_pos, mask_size):
     da = array1d(size=10)
     da.masks['mask'] = sc.zeros(sizes=da.sizes, dtype=bool)
-    da.masks['mask'][mask_pos:mask_pos + mask_size] = sc.scalar(True)
+    da.masks['mask'][mask_pos : mask_pos + mask_size] = sc.scalar(True)
     masked, _ = curve_fit(func, da)
     removed, _ = curve_fit(
-        func, sc.concat([da[:mask_pos], da[mask_pos + mask_size:]], da.dim))
+        func, sc.concat([da[:mask_pos], da[mask_pos + mask_size :]], da.dim)
+    )
     assert sc.identical(masked['a'], removed['a'])
     assert sc.identical(masked['b'], removed['b'])
 
 
-@pytest.mark.parametrize("variance,expected", [(1e9, 1.0), (1, 2.0), (1 / 3, 3.0),
-                                               (1e-9, 5.0)],
-                         ids=['disabled', 'equal', 'high', 'dominant'])
+@pytest.mark.parametrize(
+    "variance,expected",
+    [(1e9, 1.0), (1, 2.0), (1 / 3, 3.0), (1e-9, 5.0)],
+    ids=['disabled', 'equal', 'high', 'dominant'],
+)
 def test_variances_determine_weights(variance, expected):
     x = sc.array(dims=['x'], values=[1, 2, 3, 4])
-    y = sc.array(dims=['x'], values=[1., 5., 1., 1.], variances=[1., 1., 1., 1.])
+    y = sc.array(
+        dims=['x'], values=[1.0, 5.0, 1.0, 1.0], variances=[1.0, 1.0, 1.0, 1.0]
+    )
     da = sc.DataArray(data=y, coords={'x': x})
     da.variances[1] = variance
     # Fit a constant to highlight influence of weights
@@ -153,7 +157,6 @@ def test_variances_determine_weights(variance, expected):
 
 
 def test_fit_function_with_dimensionful_params_raises_UnitError_when_no_p0_given():
-
     def f(x, *, a, b):
         return a * sc.exp(-b * x)
 
@@ -162,7 +165,6 @@ def test_fit_function_with_dimensionful_params_raises_UnitError_when_no_p0_given
 
 
 def test_fit_function_with_dimensionful_params_yields_outputs_with_units():
-
     def f(x, *, a, b):
         return a * sc.exp(-b * x)
 
@@ -179,17 +181,20 @@ def test_fit_function_with_dimensionful_params_yields_outputs_with_units():
 
 def test_default_params_are_not_used_for_fit():
     noise_scale = 1e-3
-    popt, _ = curve_fit(partial(func, b=1.5),
-                        array1d(a=1.7, b=1.5, noise_scale=noise_scale))
+    popt, _ = curve_fit(
+        partial(func, b=1.5), array1d(a=1.7, b=1.5, noise_scale=noise_scale)
+    )
     assert 'b' not in popt
     assert sc.allclose(popt['a'], sc.scalar(1.7), rtol=sc.scalar(2.0 * noise_scale))
 
 
 def test_default_params_with_initial_guess_are_used_for_fit():
     noise_scale = 1e-3
-    popt, _ = curve_fit(partial(func, b=1.5),
-                        array1d(a=1.7, b=1.5, noise_scale=noise_scale),
-                        p0={'b': 1.1})
+    popt, _ = curve_fit(
+        partial(func, b=1.5),
+        array1d(a=1.7, b=1.5, noise_scale=noise_scale),
+        p0={'b': 1.1},
+    )
     assert sc.allclose(popt['a'], sc.scalar(1.7), rtol=sc.scalar(2.0 * noise_scale))
     assert sc.allclose(popt['b'], sc.scalar(1.5), rtol=sc.scalar(2.0 * noise_scale))
 
@@ -201,44 +206,36 @@ def test_bounds_limit_param_range_without_units():
     assert sc.abs(unconstrained['a']).value > 3.0
     assert sc.abs(unconstrained['b']).value > 2.0
 
-    constrained, _ = curve_fit(func,
-                               data,
-                               p0={
-                                   'a': 1.0,
-                                   'b': 1.0
-                               },
-                               bounds={
-                                   'a': (-3, 3),
-                                   'b': (sc.scalar(-2), sc.scalar(2))
-                               })
+    constrained, _ = curve_fit(
+        func,
+        data,
+        p0={'a': 1.0, 'b': 1.0},
+        bounds={'a': (-3, 3), 'b': (sc.scalar(-2), sc.scalar(2))},
+    )
     assert sc.abs(constrained['a']).value < 3.0
     assert sc.abs(constrained['b']).value < 2.0
 
 
 def test_bounds_limit_param_range_with_units():
     data = array1d_from_vars(a=sc.scalar(20.0, unit='s'), b=sc.scalar(10.0, unit='m'))
-    unconstrained, _ = curve_fit(func_with_vars,
-                                 data,
-                                 p0={
-                                     'a': sc.scalar(1.0, unit='s'),
-                                     'b': sc.scalar(1.0, unit='m')
-                                 })
+    unconstrained, _ = curve_fit(
+        func_with_vars,
+        data,
+        p0={'a': sc.scalar(1.0, unit='s'), 'b': sc.scalar(1.0, unit='m')},
+    )
     # Fit approaches correct value more closely than with the bound below.
     assert (abs(unconstrained['a']) > sc.scalar(3.0, unit='s')).value
     assert (abs(unconstrained['b']) > sc.scalar(2.0, unit='m')).value
 
-    constrained, _ = curve_fit(func_with_vars,
-                               data,
-                               p0={
-                                   'a': sc.scalar(1.0, unit='s'),
-                                   'b': sc.scalar(1.0, unit='m')
-                               },
-                               bounds={
-                                   'a': (sc.scalar(-3.0,
-                                                   unit='s'), sc.scalar(3.0, unit='s')),
-                                   'b': (sc.scalar(-2, unit='m'), sc.scalar(2,
-                                                                            unit='m')),
-                               })
+    constrained, _ = curve_fit(
+        func_with_vars,
+        data,
+        p0={'a': sc.scalar(1.0, unit='s'), 'b': sc.scalar(1.0, unit='m')},
+        bounds={
+            'a': (sc.scalar(-3.0, unit='s'), sc.scalar(3.0, unit='s')),
+            'b': (sc.scalar(-2, unit='m'), sc.scalar(2, unit='m')),
+        },
+    )
 
     assert (abs(constrained['a']) < sc.scalar(3.0, unit='s')).value
     assert (abs(constrained['b']) < sc.scalar(2.0, unit='m')).value
@@ -246,12 +243,11 @@ def test_bounds_limit_param_range_with_units():
 
 def test_bounds_limit_only_given_parameters_param_range():
     data = array1d_from_vars(a=sc.scalar(20.0, unit='s'), b=sc.scalar(10.0, unit='m'))
-    unconstrained, _ = curve_fit(func_with_vars,
-                                 data,
-                                 p0={
-                                     'a': sc.scalar(1.0, unit='s'),
-                                     'b': sc.scalar(1.0, unit='m')
-                                 })
+    unconstrained, _ = curve_fit(
+        func_with_vars,
+        data,
+        p0={'a': sc.scalar(1.0, unit='s'), 'b': sc.scalar(1.0, unit='m')},
+    )
     # Fit approaches correct value more closely than with the bound below.
     assert (abs(unconstrained['a']) > sc.scalar(5.0, unit='s')).value
     assert (abs(unconstrained['b']) > sc.scalar(2.0, unit='m')).value
@@ -259,11 +255,9 @@ def test_bounds_limit_only_given_parameters_param_range():
     constrained, _ = curve_fit(
         func_with_vars,
         data,
-        p0={
-            'a': sc.scalar(1.0, unit='s'),
-            'b': sc.scalar(1.0, unit='m')
-        },
-        bounds={'b': (sc.scalar(-2, unit='m'), sc.scalar(2, unit='m'))})
+        p0={'a': sc.scalar(1.0, unit='s'), 'b': sc.scalar(1.0, unit='m')},
+        bounds={'b': (sc.scalar(-2, unit='m'), sc.scalar(2, unit='m'))},
+    )
 
     assert (abs(constrained['a']) > sc.scalar(5.0, unit='s')).value
     assert (abs(constrained['b']) < sc.scalar(2.0, unit='m')).value
@@ -275,11 +269,9 @@ def test_bounds_must_have_unit_convertable_to_param_unit():
         curve_fit(
             func_with_vars,
             data,
-            p0={
-                'a': sc.scalar(1.0, unit='s'),
-                'b': sc.scalar(1.0, unit='m')
-            },
-            bounds={'a': (sc.scalar(-10.0, unit='s'), sc.scalar(10.0, unit='kg'))})
+            p0={'a': sc.scalar(1.0, unit='s'), 'b': sc.scalar(1.0, unit='m')},
+            bounds={'a': (sc.scalar(-10.0, unit='s'), sc.scalar(10.0, unit='kg'))},
+        )
 
 
 def test_jac_is_not_implemented():

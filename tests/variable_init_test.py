@@ -47,9 +47,8 @@ DTYPE_INPUT_TO_EXPECTED = (
 
 @pytest.mark.parametrize(
     "value",
-    [1.2, np.float64(1.2),
-     sc.Variable(dims=(), values=1.2).value,
-     np.array(1.2)])
+    [1.2, np.float64(1.2), sc.Variable(dims=(), values=1.2).value, np.array(1.2)],
+)
 def test_create_scalar_with_float_value(value):
     var = sc.Variable(dims=(), values=value)
     assert var.value == value
@@ -61,9 +60,8 @@ def test_create_scalar_with_float_value(value):
 
 @pytest.mark.parametrize(
     "variance",
-    [1.2, np.float64(1.2),
-     sc.Variable(dims=(), values=1.2).value,
-     np.array(1.2)])
+    [1.2, np.float64(1.2), sc.Variable(dims=(), values=1.2).value, np.array(1.2)],
+)
 def test_create_scalar_with_float_variance(variance):
     var = sc.Variable(dims=(), variances=variance)
     assert var.value == 0.0
@@ -76,14 +74,12 @@ def test_create_scalar_with_float_variance(variance):
 
 @pytest.mark.parametrize(
     "value",
-    [1.2, np.float64(1.2),
-     sc.Variable(dims=(), values=1.2).value,
-     np.array(1.2)])
+    [1.2, np.float64(1.2), sc.Variable(dims=(), values=1.2).value, np.array(1.2)],
+)
 @pytest.mark.parametrize(
     "variance",
-    [3.4, np.float64(3.4),
-     sc.Variable(dims=(), values=3.4).value,
-     np.array(3.4)])
+    [3.4, np.float64(3.4), sc.Variable(dims=(), values=3.4).value, np.array(3.4)],
+)
 def test_create_scalar_with_float_value_and_variance(value, variance):
     var = sc.Variable(dims=(), values=value, variances=variance)
     assert var.value == value
@@ -94,8 +90,9 @@ def test_create_scalar_with_float_value_and_variance(value, variance):
     assert var.unit == sc.units.dimensionless
 
 
-@pytest.mark.parametrize('args', ((sc.DType.int64, 1), (sc.DType.bool, True),
-                                  (sc.DType.string, 'a')))
+@pytest.mark.parametrize(
+    'args', ((sc.DType.int64, 1), (sc.DType.bool, True), (sc.DType.string, 'a'))
+)
 def test_create_scalar_with_value(args):
     dtype, value = args
     var = sc.Variable(dims=(), values=value)
@@ -142,7 +139,7 @@ def test_create_scalar_numpy():
     var = v['x', 0].copy()
     var.unit = sc.units.m
     assert sc.identical(var, np.float32(0.0) * sc.units.m)
-    var.unit = sc.units.m**(-1)
+    var.unit = sc.units.m ** (-1)
     assert sc.identical(var, np.float32(0.0) / sc.units.m)
 
 
@@ -152,11 +149,15 @@ def test_create_scalar_invalid_variance(variance):
         sc.Variable(dims=(), variances=variance)
 
 
-@pytest.mark.parametrize("unit", [
-    sc.units.m,
-    sc.Unit('m'), 'm',
-    sc.Variable(dims=(), values=1.2, unit=sc.units.m).unit
-])
+@pytest.mark.parametrize(
+    "unit",
+    [
+        sc.units.m,
+        sc.Unit('m'),
+        'm',
+        sc.Variable(dims=(), values=1.2, unit=sc.units.m).unit,
+    ],
+)
 def test_create_scalar_with_unit(unit):
     var = sc.Variable(dims=(), values=1.0, unit=unit)
     assert var.dims == ()
@@ -187,10 +188,16 @@ def test_create_scalar_dtypes():
         assert sc.scalar(val, dtype=dtype, unit=unit).dtype == expected
 
 
-@pytest.mark.parametrize("val_and_dtype",
-                         ((np.int32(2), 'int32'), (np.int64(42), 'int64'),
-                          (np.float32(5.4), 'float32'), (np.float64(9.9), 'float64'),
-                          (np.bool_(True), 'bool')))
+@pytest.mark.parametrize(
+    "val_and_dtype",
+    (
+        (np.int32(2), 'int32'),
+        (np.int64(42), 'int64'),
+        (np.float32(5.4), 'float32'),
+        (np.float64(9.9), 'float64'),
+        (np.bool_(True), 'bool'),
+    ),
+)
 def test_create_scalar_numpy_type(val_and_dtype):
     val, dtype = val_and_dtype
     assert sc.scalar(val).dtype == dtype
@@ -235,9 +242,17 @@ def test_create_scalar_dtype_Dataset(dtype):
     assert var.dtype == sc.DType.Dataset
 
 
-@pytest.mark.parametrize("dtype",
-                         (1, 2.3, 'string', sc.scalar(0), sc.DataArray(
-                             sc.scalar(1)), sc.Dataset({'a': sc.scalar(3)})))
+@pytest.mark.parametrize(
+    "dtype",
+    (
+        1,
+        2.3,
+        'string',
+        sc.scalar(0),
+        sc.DataArray(sc.scalar(1)),
+        sc.Dataset({'a': sc.scalar(3)}),
+    ),
+)
 def test_create_scalar_with_instance_as_dtype(dtype):
     with pytest.raises(TypeError):
         sc.Variable(dims=(), values=dtype, dtype=dtype)
@@ -265,7 +280,8 @@ def test_create_scalar_invalid_conversion_numeric(value, dtype):
 
 
 @pytest.mark.parametrize(
-    'dtype', (sc.DType.int32, sc.DType.int64, sc.DType.float64, sc.DType.Variable))
+    'dtype', (sc.DType.int32, sc.DType.int64, sc.DType.float64, sc.DType.Variable)
+)
 def test_create_scalar_invalid_conversion_str(dtype):
     with pytest.raises(ValueError):
         sc.Variable(dims=(), values='abc', dtype=dtype)
@@ -273,21 +289,25 @@ def test_create_scalar_invalid_conversion_str(dtype):
 
 def test_create_1d_size_4():
     var = sc.Variable(dims=['x'], values=np.arange(4.0), unit=sc.units.m)
-    assert var.shape == (4, )
+    assert var.shape == (4,)
     np.testing.assert_array_equal(var.values, [0, 1, 2, 3])
-    assert var.dims == ('x', )
+    assert var.dims == ('x',)
     assert var.ndim == 1
     assert var.dtype == sc.DType.float64
     assert var.unit == sc.units.m
 
 
 @pytest.mark.parametrize('values_type', (tuple, list, np.array))
-@pytest.mark.parametrize('dtype_and_values',
-                         ((sc.DType.int64, [1, 2]), (sc.DType.float64, [1.2, 3.4]),
-                          (sc.DType.bool, [True, False]),
-                          (sc.DType.string, ['a', 'bc'])))
+@pytest.mark.parametrize(
+    'dtype_and_values',
+    (
+        (sc.DType.int64, [1, 2]),
+        (sc.DType.float64, [1.2, 3.4]),
+        (sc.DType.bool, [True, False]),
+        (sc.DType.string, ['a', 'bc']),
+    ),
+)
 def test_create_1d_dtype(values_type, dtype_and_values):
-
     def check(v):
         if dtype == sc.DType.int64:
             # The dtype varies between Windows and Linux / MacOS.
@@ -346,16 +366,15 @@ def test_create_1d_variances_array_like(variances_type):
 def test_create_1d_values_and_variances_array_like(values_type, variances_type):
     values = np.arange(5.0)
     variances = np.arange(5.0) * 0.1
-    var = sc.Variable(dims=['x'],
-                      values=values_type(values),
-                      variances=variances_type(variances))
+    var = sc.Variable(
+        dims=['x'], values=values_type(values), variances=variances_type(variances)
+    )
     assert var.dtype == sc.DType.float64
     np.testing.assert_array_equal(var.values, values)
     np.testing.assert_array_equal(var.variances, variances)
 
 
 def test_create_1d_dtype_object():
-
     def check(v):
         assert v.dtype == sc.DType.PyObject
         # Cannot iterate over an ElementArrayView.
@@ -384,7 +403,7 @@ def test_create_1D_vector3():
     assert len(var.values) == 2
     np.testing.assert_array_equal(var.values[0], [1, 2, 3])
     np.testing.assert_array_equal(var.values[1], [4, 5, 6])
-    assert var.dims == ('x', )
+    assert var.dims == ('x',)
     assert var.ndim == 1
     assert var.dtype == sc.DType.vector3
     assert var.unit == sc.units.m
@@ -396,9 +415,9 @@ def test_create_1d_bad_dims():
 
 
 def test_create_2d_inner_size_3():
-    var = sc.Variable(dims=['x', 'y'],
-                      values=np.arange(6.0).reshape(2, 3),
-                      unit=sc.units.m)
+    var = sc.Variable(
+        dims=['x', 'y'], values=np.arange(6.0).reshape(2, 3), unit=sc.units.m
+    )
     assert var.shape == (2, 3)
     np.testing.assert_array_equal(var.values[0], [0, 1, 2])
     np.testing.assert_array_equal(var.values[1], [3, 4, 5])
@@ -414,9 +433,10 @@ def test_create_2d_values_array_like(inner_values_type, outer_values_type):
     values = np.arange(15.0).reshape(3, 5)
     expected = sc.Variable(dims=('x', 'y'), values=values)
 
-    var = sc.Variable(dims=['x', 'y'],
-                      values=outer_values_type(
-                          [inner_values_type(val) for val in values]))
+    var = sc.Variable(
+        dims=['x', 'y'],
+        values=outer_values_type([inner_values_type(val) for val in values]),
+    )
     assert sc.identical(var, expected)
 
 
@@ -424,9 +444,12 @@ def test_create_2d_values_array_like(inner_values_type, outer_values_type):
 @pytest.mark.parametrize('outer_variances_type', (tuple, list, np.array))
 def test_create_2d_variances_array_like(inner_variances_type, outer_variances_type):
     variances = np.arange(15.0).reshape(3, 5)
-    var = sc.Variable(dims=['x', 'y'],
-                      variances=outer_variances_type(
-                          [inner_variances_type(val) for val in variances]))
+    var = sc.Variable(
+        dims=['x', 'y'],
+        variances=outer_variances_type(
+            [inner_variances_type(val) for val in variances]
+        ),
+    )
     np.testing.assert_array_equal(var.values, np.zeros_like(variances))
     np.testing.assert_array_equal(var.variances, variances)
 
@@ -435,9 +458,9 @@ def test_create_2d_variances_array_like(inner_variances_type, outer_variances_ty
 @pytest.mark.parametrize('outer_values_type', (tuple, list, np.array))
 @pytest.mark.parametrize('inner_variances_type', (tuple, list, np.array))
 @pytest.mark.parametrize('outer_variances_type', (tuple, list, np.array))
-def test_create_2d_values_and_variances_array_like(inner_values_type, outer_values_type,
-                                                   inner_variances_type,
-                                                   outer_variances_type):
+def test_create_2d_values_and_variances_array_like(
+    inner_values_type, outer_values_type, inner_variances_type, outer_variances_type
+):
     values = np.arange(15.0).reshape(3, 5)
     variances = np.arange(15.0).reshape(3, 5) + 15
     expected = sc.Variable(dims=('x', 'y'), values=values, variances=variances)
@@ -445,6 +468,8 @@ def test_create_2d_values_and_variances_array_like(inner_values_type, outer_valu
     var = sc.Variable(
         dims=['x', 'y'],
         values=outer_values_type([inner_values_type(val) for val in values]),
-        variances=outer_variances_type([inner_variances_type(val)
-                                        for val in variances]))
+        variances=outer_variances_type(
+            [inner_variances_type(val) for val in variances]
+        ),
+    )
     assert sc.identical(var, expected)

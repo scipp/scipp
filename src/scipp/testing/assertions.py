@@ -70,7 +70,8 @@ def assert_identical(a: T, b: T) -> None:
                     rest = i
                     break
             notes.extend(
-                note.replace('PREPOSITION', 'of') for note in exc.__notes__[rest + 1:])
+                note.replace('PREPOSITION', 'of') for note in exc.__notes__[rest + 1 :]
+            )
             exc.__notes__ = notes
         raise
 
@@ -109,15 +110,15 @@ def _assert_identical_binned_variable_data(a: Variable, b: Variable) -> None:
 
 def _assert_identical_dense_variable_data(a: Variable, b: Variable) -> None:
     with _add_note('values'):
-        np.testing.assert_array_equal(a.values,
-                                      b.values,
-                                      err_msg='when comparing values')
+        np.testing.assert_array_equal(
+            a.values, b.values, err_msg='when comparing values'
+        )
     if a.variances is not None:
         assert b.variances is not None, 'a has variances but b does not'
         with _add_note('variances'):
-            np.testing.assert_array_equal(a.variances,
-                                          b.variances,
-                                          err_msg='when comparing variances')
+            np.testing.assert_array_equal(
+                a.variances, b.variances, err_msg='when comparing variances'
+            )
     else:
         assert b.variances is None, 'a has no variances but b does'
 
@@ -137,8 +138,9 @@ def _assert_identical_datagroup(a: DataGroup, b: DataGroup) -> None:
     _assert_mapping_eq(a, b, 'data group item')
 
 
-def _assert_mapping_eq(a: Mapping[str, Any], b: Mapping[str, Any],
-                       map_name: str) -> None:
+def _assert_mapping_eq(
+    a: Mapping[str, Any], b: Mapping[str, Any], map_name: str
+) -> None:
     with _add_note(map_name + 's'):
         assert a.keys() == b.keys()
     for name, var_a in a.items():

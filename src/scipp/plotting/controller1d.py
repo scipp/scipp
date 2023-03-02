@@ -40,7 +40,7 @@ class PlotController1d(PlotController):
             vmin.unit = one
             vmax.unit = one
         if self.norm == "log":
-            delta = 10**(0.05 * np.log10(vmax.value / vmin.value))
+            delta = 10 ** (0.05 * np.log10(vmax.value / vmin.value))
             if with_min_padding or (button is not None):
                 vmin /= delta
             if with_max_padding or (button is not None):

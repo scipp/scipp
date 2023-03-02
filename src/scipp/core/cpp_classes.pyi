@@ -6,8 +6,21 @@
 # flake8: noqa
 
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Literal, Mapping, \
-    Optional, Sequence, Tuple, Union, overload
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Literal,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    overload,
+)
 
 from .._binding import _NoDefault
 from ..coords.graph import GraphDict

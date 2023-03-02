@@ -52,8 +52,9 @@ class ScatterPointModel:
             key: _flatten(array, dims=self._positions_dims, mode=self.mode)
             for key, array in self._scipp_obj_dict.items()
         }
-        self._data_model = PlotModel1d(scipp_obj_dict=scipp_obj_dict,
-                                       resolution=self._resolution)
+        self._data_model = PlotModel1d(
+            scipp_obj_dict=scipp_obj_dict, resolution=self._resolution
+        )
         self._data_model.mode = self._mode
 
     @property
@@ -99,7 +100,8 @@ class ScatterPointModel:
     @lru_cache(maxsize=None)  # noqa: B019
     def box_size(self):
         return np.array(
-            [self.limits[dim][1] - self.limits[dim][0] for dim in self.dims])
+            [self.limits[dim][1] - self.limits[dim][0] for dim in self.dims]
+        )
 
     @property
     @lru_cache(maxsize=None)  # noqa: B019
@@ -109,7 +111,8 @@ class ScatterPointModel:
     @lru_cache(maxsize=None)  # noqa: B019
     def planar_radius(self, axis):
         return _planar_norm(
-            *[comp for dim, comp in self.components.items() if dim is not axis])
+            *[comp for dim, comp in self.components.items() if dim is not axis]
+        )
 
     @property
     @lru_cache(maxsize=None)  # noqa: B019

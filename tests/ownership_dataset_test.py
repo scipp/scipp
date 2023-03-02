@@ -16,38 +16,38 @@ def data_array_components():
     return v, c, a, m
 
 
-@pytest.fixture(params=(lambda k, v: {
-    k: v
-}, lambda k, v: {
-    k: v
-}.items(), lambda k, v: sc.DataArray(v, coords={
-    k: v
-}).coords),
-                ids=['dict', 'iterator', 'Coords'])
+@pytest.fixture(
+    params=(
+        lambda k, v: {k: v},
+        lambda k, v: {k: v}.items(),
+        lambda k, v: sc.DataArray(v, coords={k: v}).coords,
+    ),
+    ids=['dict', 'iterator', 'Coords'],
+)
 def coords_arg_wrapper(request):
     return request.param
 
 
-@pytest.fixture(params=(lambda k, v: {
-    k: v
-}, lambda k, v: {
-    k: v
-}.items(), lambda k, v: sc.DataArray(v, attrs={
-    k: v
-}).attrs),
-                ids=['dict', 'iterator', 'Coords'])
+@pytest.fixture(
+    params=(
+        lambda k, v: {k: v},
+        lambda k, v: {k: v}.items(),
+        lambda k, v: sc.DataArray(v, attrs={k: v}).attrs,
+    ),
+    ids=['dict', 'iterator', 'Coords'],
+)
 def attrs_arg_wrapper(request):
     return request.param
 
 
-@pytest.fixture(params=(lambda k, v: {
-    k: v
-}, lambda k, v: {
-    k: v
-}.items(), lambda k, v: sc.DataArray(v, masks={
-    k: v
-}).masks),
-                ids=['dict', 'iterator', 'Coords'])
+@pytest.fixture(
+    params=(
+        lambda k, v: {k: v},
+        lambda k, v: {k: v}.items(),
+        lambda k, v: sc.DataArray(v, masks={k: v}).masks,
+    ),
+    ids=['dict', 'iterator', 'Coords'],
+)
 def masks_arg_wrapper(request):
     return request.param
 
@@ -55,10 +55,12 @@ def masks_arg_wrapper(request):
 @pytest.fixture
 def data_array_and_components(coords_arg_wrapper, attrs_arg_wrapper, masks_arg_wrapper):
     v, c, a, m = data_array_components()
-    da = sc.DataArray(v,
-                      coords=coords_arg_wrapper('x', c),
-                      attrs=attrs_arg_wrapper('a', a),
-                      masks=masks_arg_wrapper('m', m))
+    da = sc.DataArray(
+        v,
+        coords=coords_arg_wrapper('x', c),
+        attrs=attrs_arg_wrapper('a', a),
+        masks=masks_arg_wrapper('m', m),
+    )
     return da, v, c, a, m
 
 
@@ -83,10 +85,13 @@ def test_own_darr_set(data_array_and_components):
     da.coords['x'].unit = 'J'
     assert sc.identical(
         da,
-        sc.DataArray(sc.array(dims=['x'], values=[-10, -20], unit='kg'),
-                     coords={'x': sc.array(dims=['x'], values=[-1, -2], unit='J')},
-                     attrs={'a': sc.array(dims=['x'], values=[-100, -200])},
-                     masks={'m': sc.array(dims=['x'], values=[False, True])}))
+        sc.DataArray(
+            sc.array(dims=['x'], values=[-10, -20], unit='kg'),
+            coords={'x': sc.array(dims=['x'], values=[-1, -2], unit='J')},
+            attrs={'a': sc.array(dims=['x'], values=[-100, -200])},
+            masks={'m': sc.array(dims=['x'], values=[False, True])},
+        ),
+    )
     assert sc.identical(v, sc.array(dims=['x'], values=[-10, -20], unit='kg'))
     assert sc.identical(c, sc.array(dims=['x'], values=[-1, -2], unit='J'))
     assert sc.identical(a, sc.array(dims=['x'], values=[-100, -200]))
@@ -99,10 +104,13 @@ def test_own_darr_set(data_array_and_components):
     da.masks['m'] = sc.array(dims=['x'], values=[True, True])
     assert sc.identical(
         da,
-        sc.DataArray(sc.array(dims=['x'], values=[11, 22], unit='m'),
-                     coords={'x': sc.array(dims=['x'], values=[3, 4], unit='s')},
-                     attrs={'a': sc.array(dims=['x'], values=[300, 400])},
-                     masks={'m': sc.array(dims=['x'], values=[True, True])}))
+        sc.DataArray(
+            sc.array(dims=['x'], values=[11, 22], unit='m'),
+            coords={'x': sc.array(dims=['x'], values=[3, 4], unit='s')},
+            attrs={'a': sc.array(dims=['x'], values=[300, 400])},
+            masks={'m': sc.array(dims=['x'], values=[True, True])},
+        ),
+    )
     # Assignment replaces data
     assert not sc.identical(v, sc.array(dims=['x'], values=[11, 22], unit='m'))
     assert sc.identical(da.data, sc.array(dims=['x'], values=[11, 22], unit='m'))
@@ -130,10 +138,13 @@ def test_own_darr_get():
     da.coords['x'].unit = 'J'
     assert sc.identical(
         da,
-        sc.DataArray(sc.array(dims=['x'], values=[-10, -20], unit='kg'),
-                     coords={'x': sc.array(dims=['x'], values=[-1, -2], unit='J')},
-                     attrs={'a': sc.array(dims=['x'], values=[-100, -200])},
-                     masks={'m': sc.array(dims=['x'], values=[False, True])}))
+        sc.DataArray(
+            sc.array(dims=['x'], values=[-10, -20], unit='kg'),
+            coords={'x': sc.array(dims=['x'], values=[-1, -2], unit='J')},
+            attrs={'a': sc.array(dims=['x'], values=[-100, -200])},
+            masks={'m': sc.array(dims=['x'], values=[False, True])},
+        ),
+    )
     assert sc.identical(v, sc.array(dims=['x'], values=[-10, -20], unit='kg'))
     assert sc.identical(c, sc.array(dims=['x'], values=[-1, -2], unit='J'))
     assert sc.identical(a, sc.array(dims=['x'], values=[-100, -200]))
@@ -146,10 +157,13 @@ def test_own_darr_get():
     da.masks['m'] = sc.array(dims=['x'], values=[True, True])
     assert sc.identical(
         da,
-        sc.DataArray(sc.array(dims=['x'], values=[11, 22], unit='m'),
-                     coords={'x': sc.array(dims=['x'], values=[3, 4], unit='s')},
-                     attrs={'a': sc.array(dims=['x'], values=[300, 400])},
-                     masks={'m': sc.array(dims=['x'], values=[True, True])}))
+        sc.DataArray(
+            sc.array(dims=['x'], values=[11, 22], unit='m'),
+            coords={'x': sc.array(dims=['x'], values=[3, 4], unit='s')},
+            attrs={'a': sc.array(dims=['x'], values=[300, 400])},
+            masks={'m': sc.array(dims=['x'], values=[True, True])},
+        ),
+    )
     # Assignment replaces data
     assert not sc.identical(v, sc.array(dims=['x'], values=[11, 22], unit='m'))
     assert sc.identical(da.data, sc.array(dims=['x'], values=[11, 22], unit='m'))
@@ -175,9 +189,12 @@ def test_own_darr_get_meta():
     da.coords['x'].unit = 'J'
     assert sc.identical(
         da,
-        sc.DataArray(sc.array(dims=['x'], values=[-10, -20], unit='kg'),
-                     coords={'x': sc.array(dims=['x'], values=[-1, -2], unit='J')},
-                     attrs={'a': sc.array(dims=['x'], values=[-100, -200])}))
+        sc.DataArray(
+            sc.array(dims=['x'], values=[-10, -20], unit='kg'),
+            coords={'x': sc.array(dims=['x'], values=[-1, -2], unit='J')},
+            attrs={'a': sc.array(dims=['x'], values=[-100, -200])},
+        ),
+    )
     assert sc.identical(v, sc.array(dims=['x'], values=[-10, -20], unit='kg'))
     assert sc.identical(c, sc.array(dims=['x'], values=[-1, -2], unit='J'))
     assert sc.identical(a, sc.array(dims=['x'], values=[-100, -200]))
@@ -188,9 +205,12 @@ def test_own_darr_get_meta():
     da.attrs['a'] = sc.array(dims=['x'], values=[300, 400])
     assert sc.identical(
         da,
-        sc.DataArray(sc.array(dims=['x'], values=[11, 22], unit='m'),
-                     coords={'x': sc.array(dims=['x'], values=[3, 4], unit='s')},
-                     attrs={'a': sc.array(dims=['x'], values=[300, 400])}))
+        sc.DataArray(
+            sc.array(dims=['x'], values=[11, 22], unit='m'),
+            coords={'x': sc.array(dims=['x'], values=[3, 4], unit='s')},
+            attrs={'a': sc.array(dims=['x'], values=[300, 400])},
+        ),
+    )
     # Assignment replaces data
     assert not sc.identical(v, sc.array(dims=['x'], values=[11, 22], unit='m'))
     assert sc.identical(da.data, sc.array(dims=['x'], values=[11, 22], unit='m'))
@@ -220,7 +240,8 @@ def test_own_darr_copy():
         sc.array(dims=['x'], values=[-10, -20], unit='kg'),
         coords={'x': sc.array(dims=['x'], values=[-1, -2], unit='J')},
         attrs={'a': sc.array(dims=['x'], values=[-100, -200])},
-        masks={'m': sc.array(dims=['x'], values=[False, True])})
+        masks={'m': sc.array(dims=['x'], values=[False, True])},
+    )
     assert sc.identical(da, modified)
     assert sc.identical(da_copy, modified)
     assert sc.identical(da_deepcopy, make_data_array()[0])
@@ -228,12 +249,11 @@ def test_own_darr_copy():
     assert sc.identical(da_methdeepcopy, make_data_array()[0])
 
 
-@pytest.mark.parametrize('data_array_wrapper', (lambda k, v: {
-    k: v
-}, lambda k, v: {
-    k: v
-}.items(), lambda k, v: sc.Dataset({k: v})),
-                         ids=['dict', 'iterator', 'Dataset'])
+@pytest.mark.parametrize(
+    'data_array_wrapper',
+    (lambda k, v: {k: v}, lambda k, v: {k: v}.items(), lambda k, v: sc.Dataset({k: v})),
+    ids=['dict', 'iterator', 'Dataset'],
+)
 def test_own_dset_init(data_array_wrapper):
     da, *_ = make_data_array()
     dset = sc.Dataset(data_array_wrapper('da1', da))
@@ -251,7 +271,8 @@ def test_own_dset_init(data_array_wrapper):
         sc.array(dims=['x'], values=[-10, -20], unit='kg'),
         coords={'x': sc.array(dims=['x'], values=[1, -2], unit='s')},
         attrs={'a': sc.array(dims=['x'], values=[-100, -200])},
-        masks={'m': sc.array(dims=['x'], values=[False, True])})
+        masks={'m': sc.array(dims=['x'], values=[False, True])},
+    )
     assert sc.identical(dset, sc.Dataset(data={'da1': expected}))
     assert sc.identical(da, expected)
 
@@ -275,7 +296,8 @@ def test_own_dset_set_access_through_dataarray():
         sc.array(dims=['x'], values=[-10, -20], unit='kg'),
         coords={'x': sc.array(dims=['x'], values=[1, -2], unit='s')},
         attrs={'a': sc.array(dims=['x'], values=[-100, -200])},
-        masks={'m': sc.array(dims=['x'], values=[False, True])})
+        masks={'m': sc.array(dims=['x'], values=[False, True])},
+    )
     assert sc.identical(dset, sc.Dataset(data={'da1': expected}))
     assert sc.identical(da, expected)
 
@@ -294,10 +316,12 @@ def test_own_dset_set_access_through_scalar_slice():
     with pytest.raises(sc.UnitError):
         dset['x', 0]['da1'].unit = 's'
 
-    expected = sc.DataArray(sc.array(dims=['x'], values=[-10, 20], unit='m'),
-                            coords={'x': sc.array(dims=['x'], values=[1, 2], unit='s')},
-                            attrs={'a': sc.array(dims=['x'], values=[-100, 200])},
-                            masks={'m': sc.array(dims=['x'], values=[False, False])})
+    expected = sc.DataArray(
+        sc.array(dims=['x'], values=[-10, 20], unit='m'),
+        coords={'x': sc.array(dims=['x'], values=[1, 2], unit='s')},
+        attrs={'a': sc.array(dims=['x'], values=[-100, 200])},
+        masks={'m': sc.array(dims=['x'], values=[False, False])},
+    )
     assert sc.identical(dset, sc.Dataset(data={'da1': expected}))
     assert sc.identical(da, expected)
 
@@ -313,10 +337,12 @@ def test_own_dset_set_access_through_range_slice():
     dset['x', :]['da1'].masks['m']['x', False] = False
     dset['x', :]['da1'].unit = 'kg'
 
-    expected = sc.DataArray(sc.array(dims=['x'], values=[-10, 20], unit='kg'),
-                            coords={'x': sc.array(dims=['x'], values=[1, 2], unit='s')},
-                            attrs={'a': sc.array(dims=['x'], values=[-100, 200])},
-                            masks={'m': sc.array(dims=['x'], values=[False, False])})
+    expected = sc.DataArray(
+        sc.array(dims=['x'], values=[-10, 20], unit='kg'),
+        coords={'x': sc.array(dims=['x'], values=[1, 2], unit='s')},
+        attrs={'a': sc.array(dims=['x'], values=[-100, 200])},
+        masks={'m': sc.array(dims=['x'], values=[False, False])},
+    )
     assert sc.identical(dset, sc.Dataset(data={'da1': expected}))
     assert sc.identical(da, expected)
 

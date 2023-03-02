@@ -14,17 +14,19 @@ from .options import Options
 from .rule import ComputeRule, FetchRule, RenameRule, Rule, rule_output_names
 
 
-def transform_coords(x: Union[DataArray, Dataset],
-                     targets: Optional[Union[str, Iterable[str]]] = None,
-                     /,
-                     graph: Optional[GraphDict] = None,
-                     *,
-                     rename_dims: bool = True,
-                     keep_aliases: bool = True,
-                     keep_intermediate: bool = True,
-                     keep_inputs: bool = True,
-                     quiet: bool = False,
-                     **kwargs: Callable) -> Union[DataArray, Dataset]:
+def transform_coords(
+    x: Union[DataArray, Dataset],
+    targets: Optional[Union[str, Iterable[str]]] = None,
+    /,
+    graph: Optional[GraphDict] = None,
+    *,
+    rename_dims: bool = True,
+    keep_aliases: bool = True,
+    keep_intermediate: bool = True,
+    keep_inputs: bool = True,
+    quiet: bool = False,
+    **kwargs: Callable,
+) -> Union[DataArray, Dataset]:
     """Compute new coords based on transformations of input coords.
 
     See the section in the user guide on
@@ -111,23 +113,27 @@ def transform_coords(x: Union[DataArray, Dataset],
       >>> graph = {'xy': lambda x, y: x + y, 'xyz': lambda xy, z: xy + z}
       >>> transformed = da.transform_coords('xyz', graph=graph)
     """
-    options = Options(rename_dims=rename_dims,
-                      keep_aliases=keep_aliases,
-                      keep_intermediate=keep_intermediate,
-                      keep_inputs=keep_inputs,
-                      quiet=quiet)
+    options = Options(
+        rename_dims=rename_dims,
+        keep_aliases=keep_aliases,
+        keep_intermediate=keep_intermediate,
+        keep_inputs=keep_inputs,
+        quiet=quiet,
+    )
     for field in fields(options):
         if not isinstance(getattr(options, field.name), bool):
             raise TypeError(
                 f"'{field.name}' is a reserved for keyword argument. "
                 "Use explicit targets and graph arguments to create an output "
-                "coordinate of this name.")
+                "coordinate of this name."
+            )
 
     if kwargs:
         if targets is not None or graph is not None:
             raise ValueError(
                 "Explicit targets or graph not allowed since keyword arguments "
-                f"{kwargs} define targets and graph.")
+                f"{kwargs} define targets and graph."
+            )
 
     if targets is None:
         targets = set(kwargs)
@@ -173,8 +179,9 @@ def show_graph(graph: GraphDict, size: str = None, simplified: bool = False):
     return Graph(graph).show(size=size, simplified=simplified)
 
 
-def _transform_data_array(original: DataArray, targets: Set[str], graph: Graph,
-                          options: Options) -> DataArray:
+def _transform_data_array(
+    original: DataArray, targets: Set[str], graph: Graph, options: Options
+) -> DataArray:
     graph = graph.graph_for(original, targets)
     rules = rule_sequence(graph)
     working_coords = CoordTable(rules, targets, options)
@@ -188,16 +195,18 @@ def _transform_data_array(original: DataArray, targets: Set[str], graph: Graph,
             if name in original.dims and coord.has_dim(name):
                 dim_coords.add(name)
 
-    dim_name_changes = (_dim_name_changes(graph, dim_coords)
-                        if options.rename_dims else {})
+    dim_name_changes = (
+        _dim_name_changes(graph, dim_coords) if options.rename_dims else {}
+    )
     if not options.quiet:
         _log_transform(rules, targets, dim_name_changes, working_coords)
     res = _store_results(original, working_coords, targets)
     return res.rename_dims(dim_name_changes)
 
 
-def _transform_dataset(original: Dataset, targets: Set[str], graph: Graph, *,
-                       options: Options) -> Dataset:
+def _transform_dataset(
+    original: Dataset, targets: Set[str], graph: Graph, *, options: Options
+) -> Dataset:
     # Note the inefficiency here in datasets with multiple items: Coord
     # transform is repeated for every item rather than sharing what is
     # possible. Implementing this would be tricky and likely error-prone,
@@ -208,55 +217,67 @@ def _transform_dataset(original: Dataset, targets: Set[str], graph: Graph, *,
         return Dataset(
             data={
                 name: _transform_data_array(
-                    original[name], targets=targets, graph=graph, options=options)
+                    original[name], targets=targets, graph=graph, options=options
+                )
                 for name in original
-            })
+            }
+        )
 
     # Cannot keep attributes in output anyway.
     # So make sure they are removed as early as possible.
-    options = dataclasses.replace(options,
-                                  keep_inputs=False,
-                                  keep_aliases=False,
-                                  keep_intermediate=False)
+    options = dataclasses.replace(
+        options, keep_inputs=False, keep_aliases=False, keep_intermediate=False
+    )
     dummy = DataArray(empty(sizes=original.sizes), coords=original.coords)
-    transformed = _transform_data_array(dummy,
-                                        targets=targets,
-                                        graph=graph,
-                                        options=options)
+    transformed = _transform_data_array(
+        dummy, targets=targets, graph=graph, options=options
+    )
     return Dataset(coords=transformed.coords)
 
 
-def _log_transform(rules: List[Rule], targets: Set[str],
-                   dim_name_changes: Mapping[str, str], coords: CoordTable) -> None:
+def _log_transform(
+    rules: List[Rule],
+    targets: Set[str],
+    dim_name_changes: Mapping[str, str],
+    coords: CoordTable,
+) -> None:
     inputs = set(rule_output_names(rules, FetchRule))
     byproducts = {
         name
-        for name in (set(rule_output_names(rules, RenameRule))
-                     | set(rule_output_names(rules, ComputeRule))) - targets
+        for name in (
+            set(rule_output_names(rules, RenameRule))
+            | set(rule_output_names(rules, ComputeRule))
+        )
+        - targets
         if coords.total_usages(name) < 0
     }
     preexisting = {target for target in targets if target in inputs}
     steps = [rule for rule in rules if not isinstance(rule, FetchRule)]
 
-    message = f'Transformed coords ({", ".join(sorted(inputs))}) ' \
-              f'-> ({", ".join(sorted(targets))})'
+    message = (
+        f'Transformed coords ({", ".join(sorted(inputs))}) '
+        f'-> ({", ".join(sorted(targets))})'
+    )
     if byproducts:
         message += f'\n  Byproducts:\n    {", ".join(sorted(byproducts))}'
     if dim_name_changes:
-        dim_rename_steps = '\n'.join(f'    {t} <- {f}'
-                                     for f, t in dim_name_changes.items())
+        dim_rename_steps = '\n'.join(
+            f'    {t} <- {f}' for f, t in dim_name_changes.items()
+        )
         message += '\n  Renamed dimensions:\n' + dim_rename_steps
     if preexisting:
-        message += ('\n  Outputs already present in input:'
-                    f'\n    {", ".join(sorted(preexisting))}')
-    message += '\n  Steps:\n' + ('\n'.join(f'    {rule}'
-                                           for rule in steps) if steps else '    None')
+        message += (
+            '\n  Outputs already present in input:'
+            f'\n    {", ".join(sorted(preexisting))}'
+        )
+    message += '\n  Steps:\n' + (
+        '\n'.join(f'    {rule}' for rule in steps) if steps else '    None'
+    )
 
     get_logger().info(message)
 
 
 def _store_coord(da: DataArray, name: str, coord: Coord) -> None:
-
     def try_del(dest):
         if dest == Destination.coord:
             da.coords.pop(name, None)
@@ -302,9 +323,7 @@ def _store_results(da: DataArray, coords: CoordTable, targets: Set[str]) -> Data
 
 def _color_dims(graph: Graph, dim_coords: Set[str]) -> Dict[str, Dict[str, Fraction]]:
     colors = {
-        coord: {dim: Fraction(0, 1)
-                for dim in dim_coords}
-        for coord in graph.nodes()
+        coord: {dim: Fraction(0, 1) for dim in dim_coords} for coord in graph.nodes()
     }
     for dim in dim_coords:
         colors[dim][dim] = Fraction(1, 1)
@@ -316,15 +335,17 @@ def _color_dims(graph: Graph, dim_coords: Set[str]) -> Dict[str, Dict[str, Fract
                 # test for produced dim coords
                 if child not in dim_coords:
                     colors[child][dim] += colors[coord][dim] * Fraction(
-                        1, len(children))
+                        1, len(children)
+                    )
             depth_first_stack.extend(children)
 
     return colors
 
 
 def _has_full_color_of_dim(colors: Dict[str, Fraction], dim: str) -> bool:
-    return all(fraction == 1 if d == dim else fraction != 1
-               for d, fraction in colors.items())
+    return all(
+        fraction == 1 if d == dim else fraction != 1 for d, fraction in colors.items()
+    )
 
 
 def _dim_name_changes(rule_graph: Graph, dim_coords: Set[str]) -> Dict[str, str]:

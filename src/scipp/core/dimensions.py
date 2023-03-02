@@ -9,20 +9,21 @@ from .bins import bins
 from .operations import merge
 
 
-def _combine_dims(dims_dict: Optional[Dict[str, str]],
-                  names: Dict[str, str]) -> Dict[str, str]:
+def _combine_dims(
+    dims_dict: Optional[Dict[str, str]], names: Dict[str, str]
+) -> Dict[str, str]:
     dims_dict = {} if dims_dict is None else dims_dict
     if set(dims_dict).intersection(names):
         raise ValueError(
             'The names passed in the dict and as keyword arguments must be distinct.'
-            f'Got {dims_dict} and {names}')
+            f'Got {dims_dict} and {names}'
+        )
     return {**dims_dict, **names}
 
 
-def _rename_dims(self: VariableLikeType,
-                 dims_dict: Optional[Dict[str, str]] = None,
-                 /,
-                 **names: str) -> VariableLikeType:
+def _rename_dims(
+    self: VariableLikeType, dims_dict: Optional[Dict[str, str]] = None, /, **names: str
+) -> VariableLikeType:
     """Rename dimensions.
 
     The renaming can be defined:
@@ -53,10 +54,9 @@ def _rename_dims(self: VariableLikeType,
     return self._rename_dims(_combine_dims(dims_dict, names))
 
 
-def _rename_variable(var: Variable,
-                     dims_dict: Dict[str, str] = None,
-                     /,
-                     **names: str) -> Variable:
+def _rename_variable(
+    var: Variable, dims_dict: Dict[str, str] = None, /, **names: str
+) -> Variable:
     """Rename dimension labels.
 
     The renaming can be defined:
@@ -88,10 +88,9 @@ def _rename_variable(var: Variable,
     return var.rename_dims(_combine_dims(dims_dict, names))
 
 
-def _rename_data_array(da: DataArray,
-                       dims_dict: Dict[str, str] = None,
-                       /,
-                       **names: str) -> DataArray:
+def _rename_data_array(
+    da: DataArray, dims_dict: Dict[str, str] = None, /, **names: str
+) -> DataArray:
     """Rename the dimensions, coordinates, and attributes.
 
     The renaming can be defined:
@@ -129,7 +128,8 @@ def _rename_data_array(da: DataArray,
         if new in out.meta:
             raise CoordError(
                 f"Cannot rename '{old}' to '{new}', since a coord or attr named {new} "
-                "already exists.")
+                "already exists."
+            )
         for meta in (out.coords, out.attrs):
             if old in meta:
                 meta[new] = meta.pop(old)
@@ -140,10 +140,9 @@ def _rename_data_array(da: DataArray,
     return out
 
 
-def _rename_dataset(ds: Dataset,
-                    dims_dict: Dict[str, str] = None,
-                    /,
-                    **names: str) -> Dataset:
+def _rename_dataset(
+    ds: Dataset, dims_dict: Dict[str, str] = None, /, **names: str
+) -> Dataset:
     """Rename the dimensions, coordinates and attributes of all the items.
 
     The renaming can be defined:
@@ -182,8 +181,7 @@ def _rename_dataset(ds: Dataset,
     for dim, coord in ds.coords.items():
         if dim not in ds_from_items.coords:
             dims_dict = {
-                old: new
-                for old, new in renaming_dict.items() if old in coord.dims
+                old: new for old, new in renaming_dict.items() if old in coord.dims
             }
             dict_of_coords[dims_dict.get(dim, dim)] = _rename_variable(coord, dims_dict)
     return merge(ds_from_items, Dataset(coords=dict_of_coords))

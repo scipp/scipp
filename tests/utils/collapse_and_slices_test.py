@@ -20,12 +20,12 @@ def make_dataset():
     d = sc.Dataset()
     d['sample'] = sc.Variable(dims=['y', 'x', 'tof'], values=a, variances=v)
     d.coords['tof'] = sc.Variable(dims=['tof'], values=x, unit=sc.units.us)
-    d.coords['x'] = sc.Variable(dims=['x'],
-                                values=np.arange(M).astype(np.float64),
-                                unit=sc.units.m)
-    d.coords['y'] = sc.Variable(dims=['y'],
-                                values=np.arange(L).astype(np.float64),
-                                unit=sc.units.m)
+    d.coords['x'] = sc.Variable(
+        dims=['x'], values=np.arange(M).astype(np.float64), unit=sc.units.m
+    )
+    d.coords['y'] = sc.Variable(
+        dims=['y'], values=np.arange(L).astype(np.float64), unit=sc.units.m
+    )
     return d
 
 

@@ -23,15 +23,19 @@ def copy_for_overwrite(obj: VariableLikeType) -> VariableLikeType:
     if isinstance(obj, Variable):
         return empty_like(obj)
     if isinstance(obj, DataArray):
-        return DataArray(copy_for_overwrite(obj.data),
-                         coords=_copy_dict_for_overwrite(obj.coords),
-                         masks=_copy_dict_for_overwrite(obj.masks),
-                         attrs=_copy_dict_for_overwrite(obj.attrs))
+        return DataArray(
+            copy_for_overwrite(obj.data),
+            coords=_copy_dict_for_overwrite(obj.coords),
+            masks=_copy_dict_for_overwrite(obj.masks),
+            attrs=_copy_dict_for_overwrite(obj.attrs),
+        )
     ds = Dataset(coords=_copy_dict_for_overwrite(obj.coords))
     for name, da in obj.items():
-        ds[name] = DataArray(copy_for_overwrite(da.data),
-                             masks=_copy_dict_for_overwrite(da.masks),
-                             attrs=_copy_dict_for_overwrite(da.attrs))
+        ds[name] = DataArray(
+            copy_for_overwrite(da.data),
+            masks=_copy_dict_for_overwrite(da.masks),
+            attrs=_copy_dict_for_overwrite(da.attrs),
+        )
     return ds
 
 

@@ -25,7 +25,8 @@ def merge_equal_adjacent(da: DataArray) -> DataArray:
         dim = da.dim
     except DimensionError as e:
         raise DimensionError(
-            "Cannot merge equal adjacent bins non-1-D data array") from e
+            "Cannot merge equal adjacent bins non-1-D data array"
+        ) from e
     tmp = DataArray(da.data, coords={dim: da.coords[dim][dim, 1:]})
     condition = empty(dims=da.dims, shape=da.shape, dtype='bool')
     condition[dim, -1] = True

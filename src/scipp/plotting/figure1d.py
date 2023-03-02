@@ -21,28 +21,31 @@ class PlotFigure1d(PlotFigure):
     previously saved line.
     """
 
-    def __init__(self,
-                 ax=None,
-                 mpl_line_params=None,
-                 title=None,
-                 norm=None,
-                 grid=False,
-                 mask_color=None,
-                 figsize=None,
-                 picker=False,
-                 legend=None,
-                 bounding_box=None,
-                 xlabel=None,
-                 ylabel=None):
-
-        super().__init__(ax=ax,
-                         figsize=figsize,
-                         title=title,
-                         bounding_box=bounding_box,
-                         xlabel=xlabel,
-                         ylabel=ylabel,
-                         toolbar=PlotToolbar1d,
-                         grid=grid)
+    def __init__(
+        self,
+        ax=None,
+        mpl_line_params=None,
+        title=None,
+        norm=None,
+        grid=False,
+        mask_color=None,
+        figsize=None,
+        picker=False,
+        legend=None,
+        bounding_box=None,
+        xlabel=None,
+        ylabel=None,
+    ):
+        super().__init__(
+            ax=ax,
+            figsize=figsize,
+            title=title,
+            bounding_box=bounding_box,
+            xlabel=xlabel,
+            ylabel=ylabel,
+            toolbar=PlotToolbar1d,
+            grid=grid,
+        )
 
         self._lines = {}
 
@@ -84,7 +87,8 @@ class PlotFigure1d(PlotFigure):
         self.ax.set_ylabel(unit if self.ylabel is None else self.ylabel)
 
         self.ax.set_xlabel(
-            self._formatters['x']['label'] if self.xlabel is None else self.xlabel)
+            self._formatters['x']['label'] if self.xlabel is None else self.xlabel
+        )
 
         self.ax.xaxis.set_major_locator(self.axlocator['x'][scale])
         self.ax.xaxis.set_major_formatter(self.axformatter['x'][scale])
@@ -95,9 +99,7 @@ class PlotFigure1d(PlotFigure):
         self._axes_updated = True
 
     def _make_line(self, name, masks, hist):
-
         class Line:
-
             def __init__(self):
                 self.data = None
                 self.error = None
@@ -120,18 +122,21 @@ class PlotFigure1d(PlotFigure):
 
         if hist:
             line.data = self.ax.step(
-                [1, 2], [1, 2],
+                [1, 2],
+                [1, 2],
                 label=label,
                 zorder=10,
                 picker=self.picker,
-                **{key: line.mpl_params[key]
-                   for key in ["color", "linewidth"]})[0]
+                **{key: line.mpl_params[key] for key in ["color", "linewidth"]},
+            )[0]
             for m in masks:
-                line.masks[m] = self.ax.step([1, 2], [1, 2],
-                                             linewidth=line.mpl_params["linewidth"] *
-                                             3.0,
-                                             color=self._mask_color,
-                                             zorder=9)[0]
+                line.masks[m] = self.ax.step(
+                    [1, 2],
+                    [1, 2],
+                    linewidth=line.mpl_params["linewidth"] * 3.0,
+                    color=self._mask_color,
+                    zorder=9,
+                )[0]
                 # Abuse a mostly unused property `gid` of Line2D to
                 # identify the line as a mask. We set gid to `onaxes`.
                 # This is used by the profile viewer in the 2D plotter
@@ -140,19 +145,25 @@ class PlotFigure1d(PlotFigure):
                 # not.
                 line.masks[m].set_gid("onaxes")
         else:
-            line.data = self.ax.plot([1, 2], [1, 2],
-                                     label=label,
-                                     zorder=10,
-                                     picker=self.picker,
-                                     **line.mpl_params)[0]
+            line.data = self.ax.plot(
+                [1, 2],
+                [1, 2],
+                label=label,
+                zorder=10,
+                picker=self.picker,
+                **line.mpl_params,
+            )[0]
             for m in masks:
-                line.masks[m] = self.ax.plot([1, 2], [1, 2],
-                                             zorder=11,
-                                             mec=self._mask_color,
-                                             mfc="None",
-                                             mew=3.0,
-                                             linestyle="none",
-                                             marker=line.mpl_params["marker"])[0]
+                line.masks[m] = self.ax.plot(
+                    [1, 2],
+                    [1, 2],
+                    zorder=11,
+                    mec=self._mask_color,
+                    mfc="None",
+                    mew=3.0,
+                    linestyle="none",
+                    marker=line.mpl_params["marker"],
+                )[0]
                 line.masks[m].set_gid("onaxes")
 
         if self.picker:
@@ -161,11 +172,14 @@ class PlotFigure1d(PlotFigure):
 
         # Add error bars
         if self.errorbars[name]:
-            line.error = self.ax.errorbar([1, 2], [1, 2],
-                                          yerr=[1, 1],
-                                          color=line.mpl_params["color"],
-                                          zorder=10,
-                                          fmt="none")
+            line.error = self.ax.errorbar(
+                [1, 2],
+                [1, 2],
+                yerr=[1, 1],
+                color=line.mpl_params["color"],
+                zorder=10,
+                fmt="none",
+            )
         if self.show_legend():
             self.ax.legend(loc=self.legend["loc"])
         return line
@@ -198,9 +212,9 @@ class PlotFigure1d(PlotFigure):
         for name in new_values:
             vals, hist = self._preprocess_hist(name, new_values[name])
             if name not in self._lines:
-                self._lines[name] = self._make_line(name,
-                                                    masks=vals['masks'].keys(),
-                                                    hist=hist)
+                self._lines[name] = self._make_line(
+                    name, masks=vals['masks'].keys(), hist=hist
+                )
             line = self._lines[name]
             line.data.set_data(vals["values"]["x"], vals["values"]["y"])
             lab = vals["label"] if len(vals["label"]) > 0 else name
@@ -209,15 +223,20 @@ class PlotFigure1d(PlotFigure):
             for m in vals["masks"]:
                 line.masks[m].set_data(
                     vals["values"]["x"],
-                    np.where(vals["masks"][m], vals["values"]["y"],
-                             None).astype(np.float32))
+                    np.where(vals["masks"][m], vals["values"]["y"], None).astype(
+                        np.float32
+                    ),
+                )
 
             if self.errorbars[name]:
                 coll = line.error.get_children()[0]
                 coll.set_segments(
-                    self._change_segments_y(vals["variances"]["x"],
-                                            vals["variances"]["y"],
-                                            vals["variances"]["e"]))
+                    self._change_segments_y(
+                        vals["variances"]["x"],
+                        vals["variances"]["y"],
+                        vals["variances"]["e"],
+                    )
+                )
             coord = vals["values"]["x"]
             low = min(coord[0], coord[-1])
             high = max(coord[0], coord[-1])

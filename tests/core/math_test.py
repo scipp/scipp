@@ -8,10 +8,17 @@ import scipy
 import scipp as sc
 
 
-@pytest.mark.parametrize('funcs',
-                         ((sc.erf, scipy.special.erf), (sc.erfc, scipy.special.erfc),
-                          (sc.exp, np.exp), (sc.log, np.log), (sc.log10, np.log10),
-                          (sc.sqrt, np.sqrt)))
+@pytest.mark.parametrize(
+    'funcs',
+    (
+        (sc.erf, scipy.special.erf),
+        (sc.erfc, scipy.special.erfc),
+        (sc.exp, np.exp),
+        (sc.log, np.log),
+        (sc.log10, np.log10),
+        (sc.sqrt, np.sqrt),
+    ),
+)
 def test_unary_math_compare_to_numpy_dimensionless(funcs):
     sc_f, ref = funcs
     assert sc.allclose(sc_f(sc.scalar(0.512)), sc.scalar(ref(0.512)))
@@ -24,8 +31,9 @@ def test_unary_math_out(func):
     assert sc.identical(out, func(sc.scalar(0.932)))
 
 
-@pytest.mark.parametrize('funcs',
-                         ((sc.sin, np.sin), (sc.cos, np.cos), (sc.tan, np.tan)))
+@pytest.mark.parametrize(
+    'funcs', ((sc.sin, np.sin), (sc.cos, np.cos), (sc.tan, np.tan))
+)
 def test_compare_unary_math_to_numpy_trigonometry(funcs):
     sc_f, ref = funcs
     assert sc.allclose(sc_f(sc.scalar(0.512, unit='rad')), sc.scalar(ref(0.512)))
@@ -38,8 +46,9 @@ def test_unary_math_trigonometry_out(func):
     assert sc.identical(out, func(sc.scalar(0.932, unit='rad')))
 
 
-@pytest.mark.parametrize('funcs', ((sc.asin, np.arcsin), (sc.acos, np.arccos),
-                                   (sc.atan, np.arctan)))
+@pytest.mark.parametrize(
+    'funcs', ((sc.asin, np.arcsin), (sc.acos, np.arccos), (sc.atan, np.arctan))
+)
 def test_compare_unary_math_to_numpy_inv_trigonometry(funcs):
     sc_f, ref = funcs
     assert sc.allclose(sc_f(sc.scalar(0.512)), sc.scalar(ref(0.512), unit='rad'))
@@ -52,7 +61,7 @@ def test_unary_math_inv_trigonometry_out(func):
     assert sc.identical(out, func(sc.scalar(0.932)))
 
 
-@pytest.mark.parametrize('args', ((sc.sqrt, sc.Unit('m^2'), sc.Unit('m')), ))
+@pytest.mark.parametrize('args', ((sc.sqrt, sc.Unit('m^2'), sc.Unit('m')),))
 def test_unary_math_unit(args):
     func, inp, expected = args
     assert func(inp) == expected
@@ -72,20 +81,26 @@ def test_abs_out():
 
 
 def test_cross():
-    assert sc.identical(sc.cross(sc.vector([0, 0, 1]), sc.vector([0, 1, 0])),
-                        sc.vector([-1, 0, 0]))
+    assert sc.identical(
+        sc.cross(sc.vector([0, 0, 1]), sc.vector([0, 1, 0])), sc.vector([-1, 0, 0])
+    )
 
 
 def test_dot():
-    assert sc.identical(sc.dot(sc.vector([1, 0, 2]), sc.vector([0, 1, 3])),
-                        sc.scalar(6.0))
+    assert sc.identical(
+        sc.dot(sc.vector([1, 0, 2]), sc.vector([0, 1, 3])), sc.scalar(6.0)
+    )
 
 
 def test_midpoints():
-    assert sc.allclose(sc.midpoints(sc.array(dims=['xy'], values=[0.0, 1.0])),
-                       sc.array(dims=['xy'], values=[0.5]))
-    assert sc.allclose(sc.midpoints(sc.array(dims=['xy'], values=[0.0, 1.0]), dim='xy'),
-                       sc.array(dims=['xy'], values=[0.5]))
+    assert sc.allclose(
+        sc.midpoints(sc.array(dims=['xy'], values=[0.0, 1.0])),
+        sc.array(dims=['xy'], values=[0.5]),
+    )
+    assert sc.allclose(
+        sc.midpoints(sc.array(dims=['xy'], values=[0.0, 1.0]), dim='xy'),
+        sc.array(dims=['xy'], values=[0.5]),
+    )
 
 
 def test_norm():
@@ -100,8 +115,10 @@ def test_pow():
 
 
 def test_atan2():
-    assert sc.allclose(sc.atan2(y=sc.scalar(0.5), x=sc.scalar(1.2)),
-                       sc.scalar(np.arctan2(0.5, 1.2), unit='rad'))
+    assert sc.allclose(
+        sc.atan2(y=sc.scalar(0.5), x=sc.scalar(1.2)),
+        sc.scalar(np.arctan2(0.5, 1.2), unit='rad'),
+    )
 
 
 def test_atan2_out():
@@ -123,7 +140,7 @@ def test_reciprocal_out():
 
 def test_round():
     x = sc.array(dims=['x'], values=(1.1, 1.5, 2.5, 4.7))
-    expected = sc.array(dims=['x'], values=(1., 2., 2., 5.))
+    expected = sc.array(dims=['x'], values=(1.0, 2.0, 2.0, 5.0))
     assert sc.identical(sc.round(x), expected)
 
     x_out = sc.zeros_like(expected)
@@ -133,7 +150,7 @@ def test_round():
 
 def test_ceil():
     x = sc.array(dims=['x'], values=(1.1, 1.5, 2.5, 4.7))
-    expected = sc.array(dims=['x'], values=(2., 2., 3., 5.))
+    expected = sc.array(dims=['x'], values=(2.0, 2.0, 3.0, 5.0))
     assert sc.identical(sc.ceil(x), expected)
 
     x_out = sc.zeros_like(expected)
@@ -143,7 +160,7 @@ def test_ceil():
 
 def test_floor():
     x = sc.array(dims=['x'], values=(1.1, 1.5, 2.5, 4.7))
-    expected = sc.array(dims=['x'], values=(1., 1., 2., 4.))
+    expected = sc.array(dims=['x'], values=(1.0, 1.0, 2.0, 4.0))
     assert sc.identical(sc.floor(x), expected)
 
     x_out = sc.zeros_like(expected)

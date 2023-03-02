@@ -10,6 +10,7 @@ class Options:
     """
     Optional arguments of transform_coords.
     """
+
     rename_dims: bool
     keep_aliases: bool
     keep_intermediate: bool

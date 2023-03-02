@@ -68,8 +68,14 @@ def _as_flat_array(data):
 
 
 def _format_array_flat(data, *, dtype: DType, spec: FormatSpec) -> str:
-    if dtype in (DType.Variable, DType.DataArray, DType.Dataset, DType.VariableView,
-                 DType.DataArrayView, DType.DatasetView):
+    if dtype in (
+        DType.Variable,
+        DType.DataArray,
+        DType.Dataset,
+        DType.VariableView,
+        DType.DataArrayView,
+        DType.DatasetView,
+    ):
         return _format_array_flat_scipp_objects(data)
     if dtype == DType.PyObject:
         if 'ElementArray' in repr(type(data)):
@@ -100,9 +106,9 @@ def _element_ranges(spec: FormatSpec) -> Tuple[slice, slice]:
         return slice(0, 0), slice(-spec.length, None)
 
 
-def _format_array_flat_regular(data: np.ndarray, *, dtype: DType,
-                               spec: FormatSpec) -> str:
-
+def _format_array_flat_regular(
+    data: np.ndarray, *, dtype: DType, spec: FormatSpec
+) -> str:
     def _format_all_in(d) -> List[str]:
         return [_format_element(e, dtype=dtype, spec=spec.nested) for e in d]
 
@@ -127,15 +133,22 @@ def _format_variable_default(var: Variable, spec: FormatSpec) -> str:
     unit = _format_unit(var)
     if var.ndim == 0:
         values = _format_scalar(var.value, dtype=var.dtype, spec=spec)
-        variances = (_format_scalar(var.variance, dtype=var.dtype, spec=spec)
-                     if var.variance is not None else '')
+        variances = (
+            _format_scalar(var.variance, dtype=var.dtype, spec=spec)
+            if var.variance is not None
+            else ''
+        )
     else:
         values = _format_array_flat(var.values, dtype=var.dtype, spec=spec)
-        variances = _format_array_flat(var.variances, dtype=var.dtype,
-                                       spec=spec) if var.variances is not None else ''
+        variances = (
+            _format_array_flat(var.variances, dtype=var.dtype, spec=spec)
+            if var.variances is not None
+            else ''
+        )
 
-    return (f'<scipp.Variable> {dims}  {dtype:>9}  {unit:>15}  {values}' +
-            ('  ' + variances if variances else ''))
+    return f'<scipp.Variable> {dims}  {dtype:>9}  {unit:>15}  {values}' + (
+        '  ' + variances if variances else ''
+    )
 
 
 def _format_variable_compact(var: Variable, spec: FormatSpec) -> str:
@@ -144,8 +157,8 @@ def _format_variable_compact(var: Variable, spec: FormatSpec) -> str:
     if not _is_numeric(var.dtype):
         raise ValueError(f"Compact formatting is not supported for dtype {var.dtype}")
 
-    values = var.values if var.shape else np.array((var.value, ))
-    variances = var.variances if var.shape else np.array((var.variance, ))
+    values = var.values if var.shape else np.array((var.value,))
+    variances = var.variances if var.shape else np.array((var.variance,))
     unt = "" if var.unit == Unit('dimensionless') else f" {var.unit}"
 
     # Iterate over array values to handle no- and infinite-precision cases
@@ -179,12 +192,12 @@ def _round(value, variance):
 
     # By convention, if the first digit of the error rounds to 1,
     # add an extra digit of precision, so there are two-digits of uncertainty
-    if round(error * power(10., -precision)) == 1:
+    if round(error * power(10.0, -precision)) == 1:
         precision -= 1
 
     # Build powers of ten to enable rounding to the specified precision
-    negative_power = power(10., -precision)
-    positive_power = power(10., precision)
+    negative_power = power(10.0, -precision)
+    positive_power = power(10.0, precision)
 
     # Round the error, keeping the shifted value for the compact string
     error = int(round(error * negative_power))

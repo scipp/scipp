@@ -11,20 +11,28 @@ from typing import Callable, Dict, Optional, Union
 
 import scipy.ndimage
 
-from ...core import CoordError, DataArray, DimensionError, Variable, VariancesError, \
-    empty_like, islinspace, ones  # NOQA
+from ...core import (  # NOQA
+    CoordError,
+    DataArray,
+    DimensionError,
+    Variable,
+    VariancesError,
+    empty_like,
+    islinspace,
+    ones,
+)
 from ...typing import VariableLike, VariableLikeType
 
 
 def _ndfilter(func: Callable) -> Callable:
-
     @wraps(func)
     def function(x: Union[Variable, DataArray], **kwargs) -> Union[Variable, DataArray]:
         if 'output' in kwargs:
             raise TypeError("The 'output' argument is not supported")
         if x.variances is not None:
             raise VariancesError(
-                "Filter cannot be applied to input array with variances.")
+                "Filter cannot be applied to input array with variances."
+            )
         if getattr(x, 'masks', None):
             raise ValueError("Filter cannot be applied to input array with masks.")
         return func(x, **kwargs)
@@ -41,15 +49,18 @@ def _delta_to_positional(x: Union[Variable, DataArray], dim, index, dtype):
             f"Data points not regularly spaced along {dim}. To ignore this, "
             f"provide a plain value (convertible to {dtype.__name__}) instead of a "
             "scalar variable. Note that this will correspond to plain positional "
-            "indices/offsets.")
+            "indices/offsets."
+        )
     pos = (len(coord) - 1) * (index.to(unit=coord.unit) / (coord[-1] - coord[0])).value
     return dtype(pos)
 
 
 def _require_matching_dims(index, x, name):
     if set(index) != set(x.dims):
-        raise KeyError(f"Data has dims={x.dims} but input argument '{name}' provides "
-                       f"values for {tuple(index)}")
+        raise KeyError(
+            f"Data has dims={x.dims} but input argument '{name}' provides "
+            f"values for {tuple(index)}"
+        )
 
 
 def _positional_index(x: Union[Variable, DataArray], index, name=None, dtype=int):
@@ -60,13 +71,14 @@ def _positional_index(x: Union[Variable, DataArray], index, name=None, dtype=int
 
 
 @_ndfilter
-def gaussian_filter(x: VariableLikeType,
-                    /,
-                    *,
-                    sigma: Union[int, float, Variable, Dict[str, Union[int, float,
-                                                                       Variable]]],
-                    order: Optional[Union[int, Dict[str, int]]] = 0,
-                    **kwargs) -> VariableLikeType:
+def gaussian_filter(
+    x: VariableLikeType,
+    /,
+    *,
+    sigma: Union[int, float, Variable, Dict[str, Union[int, float, Variable]]],
+    order: Optional[Union[int, Dict[str, int]]] = 0,
+    **kwargs,
+) -> VariableLikeType:
     """
     Multidimensional Gaussian filter.
 
@@ -145,11 +157,9 @@ def gaussian_filter(x: VariableLikeType,
         _require_matching_dims(order, x, 'order')
         order = [order[dim] for dim in x.dims]
     out = empty_like(x)
-    scipy.ndimage.gaussian_filter(x.values,
-                                  sigma=sigma,
-                                  order=order,
-                                  output=out.values,
-                                  **kwargs)
+    scipy.ndimage.gaussian_filter(
+        x.values, sigma=sigma, order=order, output=out.values, **kwargs
+    )
     return out
 
 
@@ -162,30 +172,32 @@ def _make_footprint(x: Union[Variable, DataArray], size, footprint) -> Variable:
             raise ValueError("Provide either 'size' or 'footprint', not both.")
         if set(footprint.dims) != set(x.dims):
             raise DimensionError(
-                f"Dimensions {footprint.dims} must match data dimensions {x.dim}")
+                f"Dimensions {footprint.dims} must match data dimensions {x.dim}"
+            )
     return footprint
 
 
 def _make_footprint_filter(name, example=True, extra_args=''):
-
-    def footprint_filter(x: VariableLike,
-                         /,
-                         *,
-                         size: Optional[Union[int, Variable,
-                                              Dict[str, Union[int, Variable]]]] = None,
-                         footprint: Optional[Variable] = None,
-                         origin: Optional[Union[int, Variable,
-                                                Dict[str, Union[int, Variable]]]] = 0,
-                         **kwargs) -> VariableLike:
+    def footprint_filter(
+        x: VariableLike,
+        /,
+        *,
+        size: Optional[Union[int, Variable, Dict[str, Union[int, Variable]]]] = None,
+        footprint: Optional[Variable] = None,
+        origin: Optional[Union[int, Variable, Dict[str, Union[int, Variable]]]] = 0,
+        **kwargs,
+    ) -> VariableLike:
         footprint = _make_footprint(x, size=size, footprint=footprint)
         origin = _positional_index(x, origin, name='origin')
         out = empty_like(x)
         scipy_filter = getattr(scipy.ndimage, name)
-        scipy_filter(x.values,
-                     footprint=footprint.values,
-                     origin=origin,
-                     output=out.values,
-                     **kwargs)
+        scipy_filter(
+            x.values,
+            footprint=footprint.values,
+            origin=origin,
+            output=out.values,
+            **kwargs,
+        )
         return out
 
     footprint_filter.__name__ = name
@@ -274,8 +286,9 @@ generic_filter = _make_footprint_filter('generic_filter', example=False)
 maximum_filter = _make_footprint_filter('maximum_filter')
 median_filter = _make_footprint_filter('median_filter')
 minimum_filter = _make_footprint_filter('minimum_filter')
-percentile_filter = _make_footprint_filter('percentile_filter',
-                                           extra_args='percentile=80')
+percentile_filter = _make_footprint_filter(
+    'percentile_filter', extra_args='percentile=80'
+)
 rank_filter = _make_footprint_filter('rank_filter', extra_args='rank=3')
 
 __all__ = [

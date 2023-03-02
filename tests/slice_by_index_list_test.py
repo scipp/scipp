@@ -26,16 +26,17 @@ def make_dataset() -> sc.Dataset:
     return ds
 
 
-@pytest.fixture(params=[make_var(), make_array(),
-                        make_dataset()],
-                ids=['Variable', 'DataArray', 'Dataset'])
+@pytest.fixture(
+    params=[make_var(), make_array(), make_dataset()],
+    ids=['Variable', 'DataArray', 'Dataset'],
+)
 def sliceable(request):
     return request.param
 
 
 @pytest.mark.parametrize("pos", [0, 1, 2, 3, -2, -3, -4])
 def test_length_1_list_gives_corresponding_length_1_slice(sliceable, pos):
-    assert sc.identical(sliceable['xx', [pos]], sliceable['xx', pos:pos + 1])
+    assert sc.identical(sliceable['xx', [pos]], sliceable['xx', pos : pos + 1])
 
 
 def test_slicing_with_numpy_array_works_and_gives_equivalent_result():
@@ -59,22 +60,26 @@ def test_every_other_index_gives_stride_2_slice(sliceable):
 
 
 def test_unordered_outer_indices_yields_result_with_reordered_slices(sliceable):
-    assert sc.identical(sliceable['xx', [2, 3, 0]],
-                        sc.concat([sliceable['xx', 2:4], sliceable['xx', 0:1]], 'xx'))
+    assert sc.identical(
+        sliceable['xx', [2, 3, 0]],
+        sc.concat([sliceable['xx', 2:4], sliceable['xx', 0:1]], 'xx'),
+    )
 
 
 def test_unordered_inner_indices_yields_result_with_reordered_slices(sliceable):
     s0 = sliceable['yy', 0:1]
     s1 = sliceable['yy', 1:2]
-    assert sc.identical(sliceable['yy', [1, 1, 0, 1]], sc.concat([s1, s1, s0, s1],
-                                                                 'yy'))
+    assert sc.identical(
+        sliceable['yy', [1, 1, 0, 1]], sc.concat([s1, s1, s0, s1], 'yy')
+    )
 
 
 def test_duplicate_indices_duplicate_slices_in_output(sliceable):
     s1 = sliceable['xx', 1:2]
     s2 = sliceable['xx', 2:3]
-    assert sc.identical(sliceable['xx', [2, 1, 1, 2]], sc.concat([s2, s1, s1, s2],
-                                                                 'xx'))
+    assert sc.identical(
+        sliceable['xx', [2, 1, 1, 2]], sc.concat([s2, s1, s1, s2], 'xx')
+    )
 
 
 def test_reversing_twice_gives_original(sliceable):
@@ -87,13 +92,20 @@ def test_bin_edges_are_dropped(sliceable, what):
     sliceable = sliceable.copy()
     base = sliceable.copy()
     edges = sc.concat([sliceable.coords['xx'], sliceable.coords['xx'][-1] + 1], 'xx')
-    da = sliceable if isinstance(sliceable,
-                                 sc.DataArray) or what == 'coords' else sliceable['xy']
+    da = (
+        sliceable
+        if isinstance(sliceable, sc.DataArray) or what == 'coords'
+        else sliceable['xy']
+    )
     getattr(da, what)['edges'] = edges
-    assert sc.identical(sliceable['xx', [0, 2, 3]],
-                        sc.concat([base['xx', 0], base['xx', 2:]], 'xx'))
-    da = sliceable if isinstance(sliceable,
-                                 sc.DataArray) or what == 'coords' else sliceable['xy']
+    assert sc.identical(
+        sliceable['xx', [0, 2, 3]], sc.concat([base['xx', 0], base['xx', 2:]], 'xx')
+    )
+    da = (
+        sliceable
+        if isinstance(sliceable, sc.DataArray) or what == 'coords'
+        else sliceable['xy']
+    )
     assert 'edges' in getattr(da, what)
 
 

@@ -73,6 +73,7 @@ def physical_constants(key: str, with_variance: bool = False) -> Variable:
     :rtype: Variable
     """
     from scipy.constants import physical_constants as _cd
+
     value, unit, uncertainty = _cd[key]
     args = {'value': value, 'unit': unit.replace(' ', '*')}
     if with_variance:

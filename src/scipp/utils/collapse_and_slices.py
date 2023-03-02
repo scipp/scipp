@@ -7,7 +7,6 @@ import numpy as np
 
 
 def _to_slices(scipp_obj, slice_dims, slice_shape, volume):
-
     # Create container to collect all 1D slices as 1D variables
     all_slices = dict()
 
@@ -44,8 +43,10 @@ def _to_slices(scipp_obj, slice_dims, slice_shape, volume):
     #   [[Y, 3], [Z, 1]],
     # ...
     # ]
-    slice_list = np.reshape(np.transpose(np.array(slice_list, dtype=np.dtype('O'))),
-                            (volume, len(slice_dims), 2))
+    slice_list = np.reshape(
+        np.transpose(np.array(slice_list, dtype=np.dtype('O'))),
+        (volume, len(slice_dims), 2),
+    )
 
     # Extract each entry from the slice_list
     for line in slice_list:

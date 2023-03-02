@@ -54,16 +54,24 @@ class FormatSpec:
 
     def __str__(self) -> str:
         return (
-            self.selection if self.has_selection else '' +
-            f'#{self.length}' if self.has_length else '' +
-            str(self.format_type) if self.format_type != FormatType.default else '' +
-            f':{self.nested}' if self.has_nested else '')
+            self.selection
+            if self.has_selection
+            else '' + f'#{self.length}'
+            if self.has_length
+            else '' + str(self.format_type)
+            if self.format_type != FormatType.default
+            else '' + f':{self.nested}'
+            if self.has_nested
+            else ''
+        )
 
 
-_FORMAT_PATTERN = re.compile('^(?P<selection>[><^])?'
-                             r'(?:#(?P<length>\d+))?'
-                             '(?P<type>[c])?'
-                             '(?::(?P<nested>.*))?$')
+_FORMAT_PATTERN = re.compile(
+    '^(?P<selection>[><^])?'
+    r'(?:#(?P<length>\d+))?'
+    '(?P<type>[c])?'
+    '(?::(?P<nested>.*))?$'
+)
 
 
 def parse(raw_spec: str, cls: type) -> FormatSpec:

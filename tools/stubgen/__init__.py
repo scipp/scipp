@@ -4,19 +4,24 @@ import inspect
 from string import Template
 from typing import Iterable, List, Optional, Type
 
-from .config import DISABLE_TYPE_CHECK_OVERRIDE, HEADER, INCLUDE_DOCS, TEMPLATE_FILE, \
-    class_is_excluded
+from .config import (
+    DISABLE_TYPE_CHECK_OVERRIDE,
+    HEADER,
+    INCLUDE_DOCS,
+    TEMPLATE_FILE,
+    class_is_excluded,
+)
 from .parse import parse_method, parse_property
 from .transformer import RemoveDocstring, fix_method, fix_property
 
 
 def _format_dunder_all(names):
-    return '__all__ = [\n    ' + ',\n    '.join('"' + name + '"'
-                                                for name in names) + '\n]'
+    return (
+        '__all__ = [\n    ' + ',\n    '.join('"' + name + '"' for name in names) + '\n]'
+    )
 
 
 def _add_suppression_comments(code: str) -> str:
-
     def _add_override(s: str) -> str:
         for name in DISABLE_TYPE_CHECK_OVERRIDE:
             if name in s:
@@ -41,10 +46,12 @@ def _build_property(cls: Type[type], property_name: str) -> [ast.FunctionDef]:
 def _build_attr(cls: Type[type], attr_name: str) -> [ast.Expr]:
     typ: str = ast.parse(type(getattr(cls, attr_name)).__name__).body[0].value.id
     return [
-        ast.AnnAssign(target=ast.Name(id=attr_name, ctx=ast.Store()),
-                      annotation=ast.Name(id=typ, ctx=ast.Load()),
-                      value=ast.Constant(value=Ellipsis),
-                      simple=1)
+        ast.AnnAssign(
+            target=ast.Name(id=attr_name, ctx=ast.Store()),
+            annotation=ast.Name(id=typ, ctx=ast.Load()),
+            value=ast.Constant(value=Ellipsis),
+            simple=1,
+        )
     ]
 
 
@@ -112,6 +119,7 @@ def _build_class(cls: Type[type]) -> Optional[ast.ClassDef]:
 
 def _cpp_classes() -> Iterable[Type[type]]:
     from scipp._scipp import core
+
     for name, cls in inspect.getmembers(core, inspect.isclass):
         if not class_is_excluded(name):
             yield cls
@@ -125,6 +133,8 @@ def generate_stub() -> str:
     with TEMPLATE_FILE.open('r') as f:
         templ = Template(f.read())
 
-    return templ.substitute(header=HEADER,
-                            classes=classes_code,
-                            dunder_all=_format_dunder_all(cls.name for cls in classes))
+    return templ.substitute(
+        header=HEADER,
+        classes=classes_code,
+        dunder_all=_format_dunder_all(cls.name for cls in classes),
+    )

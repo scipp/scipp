@@ -10,11 +10,13 @@ from hypothesis import strategies as st
 import scipp as sc
 from scipp.testing import strategies as scst
 
-float_args = dict(min_value=-1e300,
-                  max_value=1e300,
-                  allow_nan=False,
-                  allow_infinity=False,
-                  allow_subnormal=False)
+float_args = dict(
+    min_value=-1e300,
+    max_value=1e300,
+    allow_nan=False,
+    allow_infinity=False,
+    allow_subnormal=False,
+)
 
 
 @given(st.floats(**float_args), st.floats(**float_args))
@@ -32,9 +34,11 @@ def test_bin_2d_linspace_bounds(a, b):
 
 
 @settings(max_examples=1000, deadline=1000)
-@given(st.integers(min_value=0, max_value=5555), st.integers(min_value=0,
-                                                             max_value=1234),
-       st.integers(min_value=0, max_value=1234))
+@given(
+    st.integers(min_value=0, max_value=5555),
+    st.integers(min_value=0, max_value=1234),
+    st.integers(min_value=0, max_value=1234),
+)
 def test_automatic_grouping_optimization(nrow, i, j):
     base = sc.DataArray(sc.ones(dims=['row'], shape=[nrow]))
     base.coords['label'] = sc.arange('row', 0, nrow, dtype='int64')
@@ -43,19 +47,23 @@ def test_automatic_grouping_optimization(nrow, i, j):
     table = sc.concat([base[:i], base[j:]], 'row')
     assert sc.identical(
         table.group('label').coords['label'],
-        sc.array(dims=['label'], values=np.unique(table.coords['label'].values)))
+        sc.array(dims=['label'], values=np.unique(table.coords['label'].values)),
+    )
 
 
 @settings(max_examples=100, deadline=1000)
-@given(st.integers(min_value=1, max_value=12345),
-       scst.variables(dtype=bool, ndim=st.integers(min_value=1, max_value=3)))
+@given(
+    st.integers(min_value=1, max_value=12345),
+    scst.variables(dtype=bool, ndim=st.integers(min_value=1, max_value=3)),
+)
 def test_bins_concat_masking(nevent, mask):
     from numpy.random import default_rng
+
     rng = default_rng(seed=1234)
     mask.unit = None
     table = sc.DataArray(sc.arange('row', nevent))
     for dim in mask.dims:
-        table.coords[dim] = sc.array(dims=['row'], values=rng.random((nevent, )))
+        table.coords[dim] = sc.array(dims=['row'], values=rng.random((nevent,)))
     da = table.bin(mask.sizes)
     for n in range(1, mask.ndim + 1):
         for dims in itertools.permutations(mask.dims, n):
@@ -67,6 +75,7 @@ def test_bins_concat_masking(nevent, mask):
     for n in range(1, da.ndim + 1):
         for dims in itertools.permutations(da.dims, n):
             assert sc.identical(da.bins.concat(dims).hist(), da.hist().sum(dims))
-            assert sc.identical(da.transpose().bins.concat(dims).hist(),
-                                da.transpose().hist().sum(dims))
+            assert sc.identical(
+                da.transpose().bins.concat(dims).hist(), da.transpose().hist().sum(dims)
+            )
     assert sc.identical(da.bins.concat(None).hist(), da.hist().sum(None))

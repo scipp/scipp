@@ -35,6 +35,7 @@ def from_xarray(obj: Union[xr.Variable, xr.DataArray, xr.Dataset]) -> VariableLi
     scipp.compat.to_xarray
     """
     import xarray as xr
+
     if isinstance(obj, xr.Variable):
         return _from_xarray_variable(obj)
     elif isinstance(obj, xr.DataArray):
@@ -79,12 +80,13 @@ def to_xarray(obj: VariableLike) -> Union[xr.Variable, xr.DataArray, xr.Dataset]
 
 
 def _from_xarray_variable(xr_obj: Union[xr.Coordinate, xr.DataArray]) -> Variable:
-    """Converts an xarray Coordinate or the data in a DataArray to a scipp.Variable.
-    """
+    """Converts an xarray Coordinate or the data in a DataArray to a scipp.Variable."""
     unit = xr_obj.attrs.get('units', None)
-    return Variable(dims=xr_obj.dims,
-                    values=xr_obj.values,
-                    unit=Unit(unit) if unit is not None else default_unit)
+    return Variable(
+        dims=xr_obj.dims,
+        values=xr_obj.values,
+        unit=Unit(unit) if unit is not None else default_unit,
+    )
 
 
 def _to_xarray_variable(var: Variable) -> xr.Variable:
@@ -92,6 +94,7 @@ def _to_xarray_variable(var: Variable) -> xr.Variable:
     in either an xarray Coordinate or DataArray.
     """
     import xarray as xr
+
     if var.bins is not None:
         raise ValueError("Xarray does not support binned data.")
     if var.variances is not None:
@@ -101,13 +104,13 @@ def _to_xarray_variable(var: Variable) -> xr.Variable:
 
 
 def _from_xarray_dataarray(da: xr.DataArray) -> DataArray:
-    """Converts an xarray.DataArray object to a scipp.DataArray object.
-    """
+    """Converts an xarray.DataArray object to a scipp.DataArray object."""
     coords = {}
     attrs = {
         # Attr keys can have any type in xarray, so we convert to string
         f"{name}": scalar(attr)
-        for name, attr in da.attrs.items() if name != "units"
+        for name, attr in da.attrs.items()
+        if name != "units"
     }
 
     for name, coord in da.coords.items():
@@ -116,23 +119,29 @@ def _from_xarray_dataarray(da: xr.DataArray) -> DataArray:
             coords[key] = _from_xarray_variable(coord)
         else:
             if key in attrs:
-                raise ValueError("Non-indexed coord would erase an existing attribute "
-                                 "with the same name.")
+                raise ValueError(
+                    "Non-indexed coord would erase an existing attribute "
+                    "with the same name."
+                )
             attrs[key] = _from_xarray_variable(coord)
 
-    return DataArray(data=_from_xarray_variable(da),
-                     coords=coords,
-                     attrs=attrs,
-                     name=getattr(da, "name", None) or "")
+    return DataArray(
+        data=_from_xarray_variable(da),
+        coords=coords,
+        attrs=attrs,
+        name=getattr(da, "name", None) or "",
+    )
 
 
 def _to_xarray_dataarray(da: DataArray) -> xr.DataArray:
-    """Converts a scipp.DataArray object to an xarray.DataArray object.
-    """
+    """Converts a scipp.DataArray object to an xarray.DataArray object."""
     import xarray as xr
+
     if da.masks:
-        warn("Some masks were found in the DataArray. "
-             "These have been removed when converting to Xarray.")
+        warn(
+            "Some masks were found in the DataArray. "
+            "These have been removed when converting to Xarray."
+        )
     out = xr.DataArray(_to_xarray_variable(da.data))
     for key, coord in {**da.coords, **da.attrs}.items():
         for dim in coord.dims:
@@ -143,11 +152,12 @@ def _to_xarray_dataarray(da: DataArray) -> xr.DataArray:
 
 
 def _from_xarray_dataset(ds: xr.Dataset) -> Dataset:
-    """Converts an xarray.Dataset object to a scipp.Dataset object.
-    """
+    """Converts an xarray.Dataset object to a scipp.Dataset object."""
     if ds.attrs:
-        warn("Input data contains some attributes which have been dropped during the "
-             "conversion.")
+        warn(
+            "Input data contains some attributes which have been dropped during the "
+            "conversion."
+        )
     sc_data = {k: _from_xarray_dataarray(v) for k, v in ds.items()}
     # The non-indexed coordinates of items also show up as global coordinates in an
     # Xarray dataset, so we make sure we exclude those when we add the remaining coords,
@@ -155,19 +165,20 @@ def _from_xarray_dataset(ds: xr.Dataset) -> Dataset:
     coords_in_data_arrays = []
     for item in ds.values():
         coords_in_data_arrays += list(item.coords.keys())
-    return Dataset(data=sc_data,
-                   coords={
-                       key: _from_xarray_variable(ds.coords[key])
-                       for key in (set(ds.coords.keys()) - set(coords_in_data_arrays))
-                   })
+    return Dataset(
+        data=sc_data,
+        coords={
+            key: _from_xarray_variable(ds.coords[key])
+            for key in (set(ds.coords.keys()) - set(coords_in_data_arrays))
+        },
+    )
 
 
 def _to_xarray_dataset(ds: Dataset) -> xr.Dataset:
-    """Converts a scipp.Dataset object to an xarray.Dataset object.
-    """
+    """Converts a scipp.Dataset object to an xarray.Dataset object."""
     import xarray as xr
+
     return xr.Dataset(
-        data_vars={k: _to_xarray_variable(v.data)
-                   for k, v in ds.items()},
-        coords={c: _to_xarray_variable(coord)
-                for c, coord in ds.coords.items()})
+        data_vars={k: _to_xarray_variable(v.data) for k, v in ds.items()},
+        coords={c: _to_xarray_variable(coord) for c, coord in ds.coords.items()},
+    )

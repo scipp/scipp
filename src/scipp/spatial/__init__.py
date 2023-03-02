@@ -34,9 +34,11 @@ def _to_eigen_layout(a):
     return _np.moveaxis(a, -1, -2)
 
 
-def translation(*,
-                unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
-                value: Union[_np.ndarray, list]):
+def translation(
+    *,
+    unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
+    value: Union[_np.ndarray, list],
+):
     """
     Creates a translation transformation from a single provided 3-vector.
 
@@ -55,10 +57,12 @@ def translation(*,
     return _call_cpp_func(_core_cpp.translations, dims=[], unit=unit, values=value)
 
 
-def translations(*,
-                 dims: Sequence[str],
-                 unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
-                 values: Union[_np.ndarray, list]):
+def translations(
+    *,
+    dims: Sequence[str],
+    unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
+    values: Union[_np.ndarray, list],
+):
     """
     Creates translation transformations from multiple 3-vectors.
 
@@ -115,11 +119,11 @@ def scalings_from_vectors(*, dims: Sequence[str], values: Union[_np.ndarray, lis
         An array variable of dtype ``linear_transform3``.
     """
     identity = linear_transform(value=np.identity(3))
-    matrices = identity.broadcast(dims=dims, shape=(len(values), )).copy()
+    matrices = identity.broadcast(dims=dims, shape=(len(values),)).copy()
     for field_name, index in (("xx", 0), ("yy", 1), ("zz", 2)):
-        matrices.fields[field_name] = Variable(dims=dims,
-                                               values=np.asarray(values)[:, index],
-                                               dtype="float64")
+        matrices.fields[field_name] = Variable(
+            dims=dims, values=np.asarray(values)[:, index], dtype="float64"
+        )
     return matrices
 
 
@@ -192,9 +196,11 @@ def rotations(*, dims: Sequence[str], values: Union[_np.ndarray, list]):
     """
     values = np.asarray(values)
     if values.shape[-1] != 4:
-        raise ValueError("Inputs must be Quaternions to create a rotation, i.e., have "
-                         "4 components. If you want to pass a rotation matrix, use "
-                         "sc.linear_transforms instead.")
+        raise ValueError(
+            "Inputs must be Quaternions to create a rotation, i.e., have "
+            "4 components. If you want to pass a rotation matrix, use "
+            "sc.linear_transforms instead."
+        )
     return _call_cpp_func(_core_cpp.rotations, dims=dims, values=values)
 
 
@@ -219,6 +225,7 @@ def rotations_from_rotvecs(rotation_vectors: Variable) -> Variable:
         An array variable of dtype ``rotation3``.
     """
     from scipy.spatial.transform import Rotation as R
+
     supported = [units.deg, units.rad]
     unit = rotation_vectors.unit
     if unit not in supported:
@@ -254,17 +261,20 @@ def rotation_as_rotvec(rotation: Variable, *, unit='rad') -> Variable:
     if unit not in supported:
         raise UnitError(f"Rotation vector unit must be one of {supported}.")
     from scipy.spatial.transform import Rotation as R
+
     r = R.from_matrix(rotation.values)
     if rotation.unit not in [units.one, units.dimensionless]:
         raise UnitError(f"Rotation matrix must be dimensionless, got {rotation.unit}.")
-    return vectors(dims=rotation.dims,
-                   values=r.as_rotvec(degrees=unit == units.deg),
-                   unit=unit)
+    return vectors(
+        dims=rotation.dims, values=r.as_rotvec(degrees=unit == units.deg), unit=unit
+    )
 
 
-def affine_transform(*,
-                     unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
-                     value: Union[_np.ndarray, list]):
+def affine_transform(
+    *,
+    unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
+    value: Union[_np.ndarray, list],
+):
     """
     Initializes a single affine transformation from the provided affine matrix
     coefficients.
@@ -284,10 +294,12 @@ def affine_transform(*,
     return affine_transforms(dims=[], unit=unit, values=value)
 
 
-def affine_transforms(*,
-                      dims: Sequence[str],
-                      unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
-                      values: Union[_np.ndarray, list]):
+def affine_transforms(
+    *,
+    dims: Sequence[str],
+    unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
+    values: Union[_np.ndarray, list],
+):
     """
     Initializes affine transformations from the provided affine matrix
     coefficients.
@@ -306,15 +318,19 @@ def affine_transforms(*,
     :
         An array variable of dtype ``affine_transform3``.
     """
-    return _call_cpp_func(_core_cpp.affine_transforms,
-                          dims=dims,
-                          unit=unit,
-                          values=_to_eigen_layout(values))
+    return _call_cpp_func(
+        _core_cpp.affine_transforms,
+        dims=dims,
+        unit=unit,
+        values=_to_eigen_layout(values),
+    )
 
 
-def linear_transform(*,
-                     unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
-                     value: Union[_np.ndarray, list]):
+def linear_transform(
+    *,
+    unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
+    value: Union[_np.ndarray, list],
+):
     """Constructs a zero dimensional :class:`Variable` holding a single 3x3
     matrix.
 
@@ -330,16 +346,17 @@ def linear_transform(*,
     :
         A scalar variable of dtype ``linear_transform3``.
     """
-    return _call_cpp_func(_core_cpp.matrices,
-                          dims=[],
-                          unit=unit,
-                          values=_to_eigen_layout(value))
+    return _call_cpp_func(
+        _core_cpp.matrices, dims=[], unit=unit, values=_to_eigen_layout(value)
+    )
 
 
-def linear_transforms(*,
-                      dims: Sequence[str],
-                      unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
-                      values: Union[_np.ndarray, list]):
+def linear_transforms(
+    *,
+    dims: Sequence[str],
+    unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
+    values: Union[_np.ndarray, list],
+):
     """Constructs a :class:`Variable` with given dimensions holding an array
     of 3x3 matrices.
 
@@ -357,10 +374,9 @@ def linear_transforms(*,
     :
         An array variable of dtype ``linear_transform3``.
     """
-    return _call_cpp_func(_core_cpp.matrices,
-                          dims=dims,
-                          unit=unit,
-                          values=_to_eigen_layout(values))
+    return _call_cpp_func(
+        _core_cpp.matrices, dims=dims, unit=unit, values=_to_eigen_layout(values)
+    )
 
 
 def inv(var: Variable) -> Variable:

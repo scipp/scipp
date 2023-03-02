@@ -12,8 +12,16 @@ from typing import Union
 from numpy import ndarray
 
 from ...compat.wrapping import wrap1d
-from ...core import CoordError, DataArray, UnitError, Variable, array, identical, \
-    islinspace, to_unit  # NOQA
+from ...core import (  # NOQA
+    CoordError,
+    DataArray,
+    UnitError,
+    Variable,
+    array,
+    identical,
+    islinspace,
+    to_unit,
+)
 from ...units import one
 
 
@@ -24,11 +32,13 @@ class SOS:
 
     This is used as input to :py:func:`scipp.signal.sosfiltfilt`.
     """
+
     coord: Variable
     sos: ndarray
 
-    def filtfilt(self, obj: Union[Variable, DataArray], dim: str,
-                 **kwargs) -> DataArray:
+    def filtfilt(
+        self, obj: Union[Variable, DataArray], dim: str, **kwargs
+    ) -> DataArray:
         """
         Forwards to :py:func:`scipp.signal.sosfiltfilt` with sos argument set to the SOS
         instance.
@@ -70,29 +80,38 @@ def butter(coord: Variable, *, N: int, Wn: Variable, **kwargs) -> SOS:
     except UnitError:
         raise UnitError(
             f"Critical frequency unit '{Wn.unit}' incompatible with sampling unit "
-            f"'{one / coord.unit}'") from None
+            f"'{one / coord.unit}'"
+        ) from None
     import scipy.signal
-    return SOS(coord=coord.copy(),
-               sos=scipy.signal.butter(N=N, Wn=Wn.values, fs=fs, output='sos',
-                                       **kwargs))
+
+    return SOS(
+        coord=coord.copy(),
+        sos=scipy.signal.butter(N=N, Wn=Wn.values, fs=fs, output='sos', **kwargs),
+    )
 
 
 @wrap1d(keep_coords=True)
 def _sosfiltfilt(da: DataArray, dim: str, *, sos: SOS, **kwargs) -> DataArray:
     if not identical(da.coords[dim], sos.coord):
-        raise CoordError(f"Coord\n{da.coords[dim]}\nof filter dimension '{dim}' does "
-                         f"not match coord\n{sos.coord}\nused for creating the "
-                         "second-order sections representation by "
-                         "scipp.scipy.signal.butter.")
+        raise CoordError(
+            f"Coord\n{da.coords[dim]}\nof filter dimension '{dim}' does "
+            f"not match coord\n{sos.coord}\nused for creating the "
+            "second-order sections representation by "
+            "scipp.scipy.signal.butter."
+        )
     import scipy.signal
-    data = array(dims=da.dims,
-                 unit=da.unit,
-                 values=scipy.signal.sosfiltfilt(sos.sos, da.values, **kwargs))
+
+    data = array(
+        dims=da.dims,
+        unit=da.unit,
+        values=scipy.signal.sosfiltfilt(sos.sos, da.values, **kwargs),
+    )
     return DataArray(data=data)
 
 
-def sosfiltfilt(obj: Union[Variable, DataArray], dim: str, *, sos: SOS,
-                **kwargs) -> DataArray:
+def sosfiltfilt(
+    obj: Union[Variable, DataArray], dim: str, *, sos: SOS, **kwargs
+) -> DataArray:
     """
     A forward-backward digital filter using cascaded second-order sections.
 
@@ -125,8 +144,11 @@ def sosfiltfilt(obj: Union[Variable, DataArray], dim: str, *, sos: SOS,
 
       >>> out = butter(da.coords['x'], N=4, Wn=20 / x.unit).filtfilt(da, 'x')
     """
-    da = obj if isinstance(obj, DataArray) else DataArray(data=obj,
-                                                          coords={dim: sos.coord})
+    da = (
+        obj
+        if isinstance(obj, DataArray)
+        else DataArray(data=obj, coords={dim: sos.coord})
+    )
     return _sosfiltfilt(da, dim=dim, sos=sos, **kwargs)
 
 

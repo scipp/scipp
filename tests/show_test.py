@@ -23,7 +23,8 @@ def test_too_many_dataset_dimensions():
     d = sc.Dataset(
         data={
             'xy': sc.zeros(dims=['x', 'y'], shape=(1, 1)),
-            'zt': sc.zeros(dims=['z', 'time'], shape=(1, 1))
-        })
+            'zt': sc.zeros(dims=['z', 'time'], shape=(1, 1)),
+        }
+    )
     with pytest.raises(RuntimeError):
         sc.make_svg(d)

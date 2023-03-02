@@ -29,22 +29,26 @@ def test_comparison_functions():
 def test_isclose():
     unit = sc.units.m
     a = sc.Variable(dims=['x'], values=np.array([1, 2, 3]), unit=unit)
-    assert sc.identical(sc.isclose(a, a, rtol=0 * sc.units.one, atol=0 * unit),
-                        sc.full(sizes={'x': 3}, value=True))
+    assert sc.identical(
+        sc.isclose(a, a, rtol=0 * sc.units.one, atol=0 * unit),
+        sc.full(sizes={'x': 3}, value=True),
+    )
 
 
 def test_isclose_atol_defaults():
     unit = sc.units.s
     a = sc.Variable(dims=['x'], values=np.array([1, 2, 3]), unit=unit)
-    assert sc.identical(sc.isclose(a, a, rtol=0 * sc.units.one),
-                        sc.full(sizes={'x': 3}, value=True))
+    assert sc.identical(
+        sc.isclose(a, a, rtol=0 * sc.units.one), sc.full(sizes={'x': 3}, value=True)
+    )
 
 
 def test_isclose_rtol_defaults():
     unit = sc.units.kg
     a = sc.Variable(dims=['x'], values=np.array([1, 2, 3]), unit=unit)
-    assert sc.identical(sc.isclose(a, a, atol=0 * unit),
-                        sc.full(sizes={'x': 3}, value=True))
+    assert sc.identical(
+        sc.isclose(a, a, atol=0 * unit), sc.full(sizes={'x': 3}, value=True)
+    )
 
 
 def test_isclose_no_unit():
@@ -84,97 +88,89 @@ def test_allclose_no_unit():
     assert sc.allclose(a, a)
 
 
-@pytest.mark.parametrize('t',
-                         (lambda x: x, sc.DataArray, lambda x: sc.Dataset({'a': x})))
+@pytest.mark.parametrize(
+    't', (lambda x: x, sc.DataArray, lambda x: sc.Dataset({'a': x}))
+)
 def test_identical(t):
     assert sc.identical(t(sc.scalar(1.23)), t(sc.scalar(1.23)))
     assert not sc.identical(t(sc.scalar(1.23)), t(sc.scalar(1.23, unit='m')))
     assert not sc.identical(t(sc.scalar(1.23)), t(sc.scalar(5.2)))
     assert not sc.identical(t(sc.scalar(1.23)), t(sc.array(dims=['x'], values=[1.23])))
-    assert sc.identical(t(sc.array(dims=['x'], values=[1.23], unit='m')),
-                        t(sc.array(dims=['x'], values=[1.23], unit='m')))
+    assert sc.identical(
+        t(sc.array(dims=['x'], values=[1.23], unit='m')),
+        t(sc.array(dims=['x'], values=[1.23], unit='m')),
+    )
 
 
 def test_identical_data_group():
-    dg1 = sc.DataGroup({
-        'variable':
-        sc.scalar(4.182, unit='s'),
-        'data array':
-        sc.DataArray(sc.scalar(52), coords={'x': sc.scalar('abc')}),
-        'data group':
-        sc.DataGroup({
-            '1': sc.arange('x', 5),
-        }),
-        'tråde':
-        'Ét eksempel',
-        'a number':
-        123,
-        'dict': {
-            'k': 'value1',
-            'n': 77
-        },
-        'numpy-array':
-        np.array([1, 6, 23])
-    })
+    dg1 = sc.DataGroup(
+        {
+            'variable': sc.scalar(4.182, unit='s'),
+            'data array': sc.DataArray(sc.scalar(52), coords={'x': sc.scalar('abc')}),
+            'data group': sc.DataGroup(
+                {
+                    '1': sc.arange('x', 5),
+                }
+            ),
+            'tråde': 'Ét eksempel',
+            'a number': 123,
+            'dict': {'k': 'value1', 'n': 77},
+            'numpy-array': np.array([1, 6, 23]),
+        }
+    )
     assert sc.identical(dg1, dg1.copy())
 
 
 def test_identical_data_group_disordered():
-    dg1 = sc.DataGroup({
-        'variable':
-        sc.scalar(4.182, unit='s'),
-        'data array':
-        sc.DataArray(sc.scalar(52), coords={'x': sc.scalar('abc')}),
-        'data group':
-        sc.DataGroup({
-            '1': sc.arange('x', 5),
-        }),
-        'tråde':
-        'Ét eksempel',
-        'a number':
-        123,
-        'dict': {
-            'k': 'value1',
-            'n': 77
-        },
-        'numpy-array':
-        np.array([1, 6, 23])
-    })
+    dg1 = sc.DataGroup(
+        {
+            'variable': sc.scalar(4.182, unit='s'),
+            'data array': sc.DataArray(sc.scalar(52), coords={'x': sc.scalar('abc')}),
+            'data group': sc.DataGroup(
+                {
+                    '1': sc.arange('x', 5),
+                }
+            ),
+            'tråde': 'Ét eksempel',
+            'a number': 123,
+            'dict': {'k': 'value1', 'n': 77},
+            'numpy-array': np.array([1, 6, 23]),
+        }
+    )
     dg2 = sc.DataGroup({key: dg1[key] for key in sorted(dg1.keys())})
     assert sc.identical(dg1, dg2)
 
 
 def test_identical_data_group_mismatched_value():
-    dg1 = sc.DataGroup({
-        'variable':
-        sc.scalar(4.182, unit='s'),
-        'data array':
-        sc.DataArray(sc.scalar(52), coords={'x': sc.scalar('abc')}),
-        'data group':
-        sc.DataGroup({
-            '1': sc.arange('x', 5),
-        }),
-        'tråde':
-        'Ét eksempel',
-        'a number':
-        123,
-        'dict': {
-            'k': 'value1',
-            'n': 77
-        },
-        'numpy-array':
-        np.array([1, 6, 23])
-    })
+    dg1 = sc.DataGroup(
+        {
+            'variable': sc.scalar(4.182, unit='s'),
+            'data array': sc.DataArray(sc.scalar(52), coords={'x': sc.scalar('abc')}),
+            'data group': sc.DataGroup(
+                {
+                    '1': sc.arange('x', 5),
+                }
+            ),
+            'tråde': 'Ét eksempel',
+            'a number': 123,
+            'dict': {'k': 'value1', 'n': 77},
+            'numpy-array': np.array([1, 6, 23]),
+        }
+    )
 
     dg2 = dg1.copy()
     dg2['variable'] = sc.scalar(512, unit='m')
     assert not sc.identical(dg1, dg2)
 
     dg2 = dg1.copy()
-    dg2['data group'] = sc.DataGroup({
-        '1': sc.arange('x', 5),
-        '2': 'number 2',
-    }),
+    dg2['data group'] = (
+        sc.DataGroup(
+            {
+                '1': sc.arange('x', 5),
+                '2': 'number 2',
+            }
+        ),
+    )
     assert not sc.identical(dg1, dg2)
 
     dg2 = dg1.copy()
@@ -183,26 +179,21 @@ def test_identical_data_group_mismatched_value():
 
 
 def test_identical_data_group_mismatched_type():
-    dg1 = sc.DataGroup({
-        'variable':
-        sc.scalar(4.182, unit='s'),
-        'data array':
-        sc.DataArray(sc.scalar(52), coords={'x': sc.scalar('abc')}),
-        'data group':
-        sc.DataGroup({
-            '1': sc.arange('x', 5),
-        }),
-        'tråde':
-        'Ét eksempel',
-        'a number':
-        123,
-        'dict': {
-            'k': 'value1',
-            'n': 77
-        },
-        'numpy-array':
-        np.array([1, 6, 23])
-    })
+    dg1 = sc.DataGroup(
+        {
+            'variable': sc.scalar(4.182, unit='s'),
+            'data array': sc.DataArray(sc.scalar(52), coords={'x': sc.scalar('abc')}),
+            'data group': sc.DataGroup(
+                {
+                    '1': sc.arange('x', 5),
+                }
+            ),
+            'tråde': 'Ét eksempel',
+            'a number': 123,
+            'dict': {'k': 'value1', 'n': 77},
+            'numpy-array': np.array([1, 6, 23]),
+        }
+    )
 
     dg2 = dg1.copy()
     dg2['variable'] = np.array(4.182)
@@ -210,26 +201,21 @@ def test_identical_data_group_mismatched_type():
 
 
 def test_identical_data_group_different_keys():
-    dg1 = sc.DataGroup({
-        'variable':
-        sc.scalar(4.182, unit='s'),
-        'data array':
-        sc.DataArray(sc.scalar(52), coords={'x': sc.scalar('abc')}),
-        'data group':
-        sc.DataGroup({
-            '1': sc.arange('x', 5),
-        }),
-        'tråde':
-        'Ét eksempel',
-        'a number':
-        123,
-        'dict': {
-            'k': 'value1',
-            'n': 77
-        },
-        'numpy-array':
-        np.array([1, 6, 23])
-    })
+    dg1 = sc.DataGroup(
+        {
+            'variable': sc.scalar(4.182, unit='s'),
+            'data array': sc.DataArray(sc.scalar(52), coords={'x': sc.scalar('abc')}),
+            'data group': sc.DataGroup(
+                {
+                    '1': sc.arange('x', 5),
+                }
+            ),
+            'tråde': 'Ét eksempel',
+            'a number': 123,
+            'dict': {'k': 'value1', 'n': 77},
+            'numpy-array': np.array([1, 6, 23]),
+        }
+    )
 
     dg2 = dg1.copy()
     del dg2['dict']

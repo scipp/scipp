@@ -10,7 +10,8 @@ class Bin2dRebinLongDim:
     """
     Benchmark sc.bin, changing existing long dimension
     """
-    params = (list(2**np.arange(10, 16)), )
+
+    params = (list(2 ** np.arange(10, 16)),)
     param_names = ['nbin']
     timeout = 300.0
 
@@ -37,7 +38,8 @@ class Bin1d:
     """
     Benchmark sc.bin, for 1d binning.
     """
-    params = (list(2**np.arange(0, 20)), )
+
+    params = (list(2 ** np.arange(0, 20)),)
     param_names = ['nbin']
     timeout = 300.0
 

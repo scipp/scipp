@@ -64,16 +64,19 @@ def make_histogrammed(x, *, edges):
             if x.meta.is_edges(dim):
                 raise BinEdgeError(
                     "Cannot histogram data with existing bin edges "
-                    "unless event data coordinate for histogramming is available.")
+                    "unless event data coordinate for histogramming is available."
+                )
             return make_histogrammed(x.bins.sum(), edges=edges)
     return _cpp.histogram(x, edges)
 
 
-def make_binned(x: Union[Variable, DataArray],
-                *,
-                edges: Optional[Sequence[Variable]] = None,
-                groups: Optional[Sequence[Variable]] = None,
-                erase: Optional[Sequence[Variable]] = None) -> DataArray:
+def make_binned(
+    x: Union[Variable, DataArray],
+    *,
+    edges: Optional[Sequence[Variable]] = None,
+    groups: Optional[Sequence[Variable]] = None,
+    erase: Optional[Sequence[Variable]] = None,
+) -> DataArray:
     """Create binned data by binning input along all dimensions given by edges or
     groups.
 
@@ -137,8 +140,10 @@ def make_binned(x: Union[Variable, DataArray],
     elif isinstance(x, Variable):
         coords = [*edges, *groups]
         if len(coords) != 1:
-            raise ValueError("Edges for exactly one dimension must be specified when "
-                             "binning or histogramming a variable.")
+            raise ValueError(
+                "Edges for exactly one dimension must be specified when "
+                "binning or histogramming a variable."
+            )
         data = scalar(1.0, unit='counts').broadcast(sizes=x.sizes).copy()
         x = DataArray(data, coords={coords[0].dim: x})
     if _can_operate_on_bins(x, edges, groups, erase):
@@ -186,17 +191,20 @@ def _get_coord(x, name):
 
 def _upper_bound(x: Variable) -> Variable:
     import numpy as np
+
     bound = x.max()
     if bound.dtype in ('int32', 'int64', 'datetime64'):
         bound.value += 1
     else:
         bound.value = np.nextafter(
-            bound.value, (bound + scalar(1, unit=bound.unit, dtype=bound.dtype)).value)
+            bound.value, (bound + scalar(1, unit=bound.unit, dtype=bound.dtype)).value
+        )
     return bound
 
 
-def _parse_coords_arg(x: Union[Variable, DataArray, Dataset], name: str,
-                      arg: Union[int, Variable]) -> Variable:
+def _parse_coords_arg(
+    x: Union[Variable, DataArray, Dataset], name: str, arg: Union[int, Variable]
+) -> Variable:
     if isinstance(arg, Variable) and name in arg.dims:
         return arg
     coord = _get_coord(x, name)
@@ -208,19 +216,23 @@ def _parse_coords_arg(x: Union[Variable, DataArray, Dataset], name: str,
     if isinstance(arg, Integral):
         if start.dtype == DType.datetime64:
             base = epoch(unit=start.unit)
-            return base + round_(linspace(name, start - base, stop - base,
-                                          num=arg + 1)).to(dtype='int64')
-        return linspace(name, start, stop, num=arg + 1).to(dtype=start.dtype,
-                                                           copy=False)
+            return base + round_(
+                linspace(name, start - base, stop - base, num=arg + 1)
+            ).to(dtype='int64')
+        return linspace(name, start, stop, num=arg + 1).to(
+            dtype=start.dtype, copy=False
+        )
     step = arg.to(dtype=start.dtype, unit=start.unit)
     if step.value == 0:
         raise ValueError("Step size cannot be 0.")
     return arange(name, start, stop + step, step=step)
 
 
-def _make_edges(x: Union[Variable, DataArray,
-                         Dataset], arg_dict: Optional[Dict[str, Union[int, Variable]]],
-                kwargs: Dict[str, Union[int, Variable]]) -> Dict[str, Variable]:
+def _make_edges(
+    x: Union[Variable, DataArray, Dataset],
+    arg_dict: Optional[Dict[str, Union[int, Variable]]],
+    kwargs: Dict[str, Union[int, Variable]],
+) -> Dict[str, Variable]:
     if arg_dict is not None:
         kwargs = dict(**arg_dict, **kwargs)
     return {name: _parse_coords_arg(x, name, arg) for name, arg in kwargs.items()}
@@ -238,26 +250,32 @@ def _find_replaced_dims(x, dims):
 
 
 @overload
-def hist(x: Union[Variable, DataArray],
-         arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
-         /,
-         **kwargs: Union[int, Variable]) -> DataArray:
+def hist(
+    x: Union[Variable, DataArray],
+    arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
+    /,
+    **kwargs: Union[int, Variable],
+) -> DataArray:
     ...
 
 
 @overload
-def hist(x: Dataset,
-         arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
-         /,
-         **kwargs: Union[int, Variable]) -> Dataset:
+def hist(
+    x: Dataset,
+    arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
+    /,
+    **kwargs: Union[int, Variable],
+) -> Dataset:
     ...
 
 
 @overload
-def hist(x: DataGroup,
-         arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
-         /,
-         **kwargs: Union[int, Variable]) -> DataGroup:
+def hist(
+    x: DataGroup,
+    arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
+    /,
+    **kwargs: Union[int, Variable],
+) -> DataGroup:
     ...
 
 
@@ -357,8 +375,10 @@ def hist(x, arg_dict=None, /, **kwargs):
     edges = _make_edges(x, arg_dict, kwargs)
     erase = _find_replaced_dims(x, edges)
     if isinstance(x, Variable) and len(edges) != 1:
-        raise ValueError("Edges for exactly one dimension must be specified when "
-                         "binning or histogramming a variable.")
+        raise ValueError(
+            "Edges for exactly one dimension must be specified when "
+            "binning or histogramming a variable."
+        )
     if len(edges) == 0:
         if x.bins is None:
             raise TypeError("Data is not binned so bin edges must be provided.")
@@ -375,8 +395,9 @@ def hist(x, arg_dict=None, /, **kwargs):
             if hist_dim not in x.bins.meta:
                 hist_coord_dim = x.meta[hist_dim].dims[-1]
                 erase = [e for e in erase if e != hist_coord_dim]
-        out = make_histogrammed(make_binned(x, edges=edges[:-1], erase=erase),
-                                edges=edges[-1])
+        out = make_histogrammed(
+            make_binned(x, edges=edges[:-1], erase=erase), edges=edges[-1]
+        )
     for dim in erase:
         if dim in out.dims:
             out = out.sum(dim)
@@ -384,18 +405,22 @@ def hist(x, arg_dict=None, /, **kwargs):
 
 
 @overload
-def nanhist(x: Union[Variable, DataArray],
-            arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
-            /,
-            **kwargs: Union[int, Variable]) -> DataArray:
+def nanhist(
+    x: Union[Variable, DataArray],
+    arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
+    /,
+    **kwargs: Union[int, Variable],
+) -> DataArray:
     ...
 
 
 @overload
-def nanhist(x: DataGroup,
-            arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
-            /,
-            **kwargs: Union[int, Variable]) -> DataGroup:
+def nanhist(
+    x: DataGroup,
+    arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
+    /,
+    **kwargs: Union[int, Variable],
+) -> DataGroup:
     ...
 
 
@@ -429,18 +454,22 @@ def nanhist(x, arg_dict=None, /, **kwargs):
 
 
 @overload
-def bin(x: Union[Variable, DataArray],
-        arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
-        /,
-        **kwargs: Union[int, Variable]) -> DataArray:
+def bin(
+    x: Union[Variable, DataArray],
+    arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
+    /,
+    **kwargs: Union[int, Variable],
+) -> DataArray:
     ...
 
 
 @overload
-def bin(x: DataGroup,
-        arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
-        /,
-        **kwargs: Union[int, Variable]) -> DataGroup:
+def bin(
+    x: DataGroup,
+    arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
+    /,
+    **kwargs: Union[int, Variable],
+) -> DataGroup:
     ...
 
 
@@ -545,7 +574,8 @@ def bin(x, arg_dict=None, /, **kwargs):
                     "The 'edges', 'groups', and 'erase' keyword arguments "
                     "are deprecated. Use, e.g., 'sc.bin(da, x=x_edges)' or "
                     "'sc.group(da, groups)'. See the documentation for details.",
-                    UserWarning)
+                    UserWarning,
+                )
                 return make_binned(x, **kwargs)
     edges = _make_edges(x, arg_dict, kwargs)
     erase = _find_replaced_dims(x, edges)
@@ -553,29 +583,35 @@ def bin(x, arg_dict=None, /, **kwargs):
 
 
 @overload
-def rebin(x: DataArray,
-          arg_dict: Dict[str, Union[int, Variable]] = None,
-          deprecated=None,
-          /,
-          **kwargs: Union[int, Variable]) -> DataArray:
+def rebin(
+    x: DataArray,
+    arg_dict: Dict[str, Union[int, Variable]] = None,
+    deprecated=None,
+    /,
+    **kwargs: Union[int, Variable],
+) -> DataArray:
     ...
 
 
 @overload
-def rebin(x: Dataset,
-          arg_dict: Dict[str, Union[int, Variable]] = None,
-          deprecated=None,
-          /,
-          **kwargs: Union[int, Variable]) -> Dataset:
+def rebin(
+    x: Dataset,
+    arg_dict: Dict[str, Union[int, Variable]] = None,
+    deprecated=None,
+    /,
+    **kwargs: Union[int, Variable],
+) -> Dataset:
     ...
 
 
 @overload
-def rebin(x: DataGroup,
-          arg_dict: Dict[str, Union[int, Variable]] = None,
-          deprecated=None,
-          /,
-          **kwargs: Union[int, Variable]) -> DataGroup:
+def rebin(
+    x: DataGroup,
+    arg_dict: Dict[str, Union[int, Variable]] = None,
+    deprecated=None,
+    /,
+    **kwargs: Union[int, Variable],
+) -> DataGroup:
     ...
 
 
@@ -644,7 +680,9 @@ def rebin(x, arg_dict=None, deprecated=None, /, **kwargs):
             warnings.warn(
                 "The 'bins' keyword argument and positional syntax for setting bin "
                 "edges is deprecated. Use, e.g., 'sc.rebin(da, x=x_edges)'. See the "
-                "documentation for details.", UserWarning)
+                "documentation for details.",
+                UserWarning,
+            )
             bins = {'bins': deprecated, **kwargs}
             return _cpp.rebin(x, arg_dict, **bins)
     edges = _make_edges(x, arg_dict, kwargs)
@@ -656,6 +694,7 @@ def rebin(x, arg_dict=None, deprecated=None, /, **kwargs):
 
 def _make_groups(x, arg):
     import numpy as np
+
     if isinstance(arg, Variable):
         return arg
     coord = x.bins.meta.get(arg) if x.bins is not None else None
@@ -678,7 +717,7 @@ def _make_groups(x, arg):
         for pivot in [1000, 100, 10, 1]:
             if len(unique) == max_ - min_ + 1:
                 break
-            unique = np.unique(values[:len(values) // pivot])
+            unique = np.unique(values[: len(values) // pivot])
     else:
         unique = np.unique(coord.values)
     return array(dims=[arg], values=unique, unit=coord.unit)
@@ -785,10 +824,12 @@ def group(x, /, *args: Union[str, Variable]):
     return make_binned(x, groups=groups, erase=erase)
 
 
-def histogram(x: Union[DataArray, Dataset], *,
-              bins: Variable) -> Union[DataArray, Dataset]:
+def histogram(
+    x: Union[DataArray, Dataset], *, bins: Variable
+) -> Union[DataArray, Dataset]:
     """Deprecated. See :py:func:`scipp.hist`."""
     warnings.warn("'histogram' is deprecated. Use 'hist' instead.", UserWarning)
-    warnings.warn("'histogram' is deprecated. Use 'hist' instead.",
-                  VisibleDeprecationWarning)
+    warnings.warn(
+        "'histogram' is deprecated. Use 'hist' instead.", VisibleDeprecationWarning
+    )
     return make_histogrammed(x, edges=bins)

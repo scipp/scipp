@@ -29,20 +29,24 @@ class PlotPanel1d(PlotPanel):
         Dynamically create a new "keep" button, when a line is saved, as the
         old "keep" button gets converted to a "remove" button.
         """
-        drop = ipw.Dropdown(options=self.data_names,
-                            description='',
-                            layout={'width': 'initial'})
+        drop = ipw.Dropdown(
+            options=self.data_names, description='', layout={'width': 'initial'}
+        )
         lab = ipw.Label()
-        but = ipw.Button(description="Keep",
-                         disabled=False,
-                         button_style="",
-                         layout={'width': "70px"})
+        but = ipw.Button(
+            description="Keep",
+            disabled=False,
+            button_style="",
+            layout={'width': "70px"},
+        )
         # Generate a random color.
         # TODO: should we initialise the seed?
-        col = ipw.ColorPicker(concise=True,
-                              description='',
-                              value=make_random_color(fmt='hex'),
-                              layout={'width': "40px"})
+        col = ipw.ColorPicker(
+            concise=True,
+            description='',
+            value=make_random_color(fmt='hex'),
+            layout={'width': "40px"},
+        )
         # Make a unique id
         self.counter += 1
         line_id = self.counter
@@ -54,7 +58,7 @@ class PlotPanel1d(PlotPanel):
             "dropdown": drop,
             "button": but,
             "colorpicker": col,
-            "label": lab
+            "label": lab,
         }
         self.update_widgets()
 
@@ -99,7 +103,8 @@ class PlotPanel1d(PlotPanel):
         self.controller.keep_line(
             name=name,
             color=self.keep_buttons[owner.id]["colorpicker"].value,
-            line_id=owner.id)
+            line_id=owner.id,
+        )
         self.keep_buttons[owner.id]["dropdown"].disabled = True
         self.keep_buttons[owner.id]["label"].value = self.slice_label
         self.make_keep_button()

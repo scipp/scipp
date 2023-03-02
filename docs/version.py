@@ -22,7 +22,6 @@ def _get_releases() -> List[Version]:
 
 
 class VersionInfo:
-
     def __init__(self):
         self._releases = _get_releases()
 
@@ -93,19 +92,20 @@ def main(repo: str, action: str, version: str) -> int:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('--repo', dest='repo', required=True, help='Repository name')
-    parser.add_argument('--action',
-                        choices=['is-latest', 'is-new', 'get-replaced', 'get-target'],
-                        required=True,
-                        help='Action to perform: Check whether this major or minor '
-                        'release exists or is new (is-latest), check whether this is a '
-                        'new major or minor release (is-new), get the version this is '
-                        'replacing (get-replaced), get the target folder for '
-                        'publishing the docs (get-target). In all cases the '
-                        'patch/micro version is ignored.')
-    parser.add_argument('--version',
-                        dest='version',
-                        required=True,
-                        help='Version the action refers to')
+    parser.add_argument(
+        '--action',
+        choices=['is-latest', 'is-new', 'get-replaced', 'get-target'],
+        required=True,
+        help='Action to perform: Check whether this major or minor '
+        'release exists or is new (is-latest), check whether this is a '
+        'new major or minor release (is-new), get the version this is '
+        'replacing (get-replaced), get the target folder for '
+        'publishing the docs (get-target). In all cases the '
+        'patch/micro version is ignored.',
+    )
+    parser.add_argument(
+        '--version', dest='version', required=True, help='Version the action refers to'
+    )
 
     args = parser.parse_args()
     sys.exit(main(**vars(args)))

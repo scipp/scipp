@@ -47,10 +47,9 @@ class PlotProfile(PlotFigure1d):
         """
         super().update_axes(*args, legend_labels=False, **kwargs)
         # PlotFigure1d.update_axes clears self.ax
-        self.slice_area = self.ax.axvspan(self._xstart,
-                                          self._xend,
-                                          alpha=0.5,
-                                          color='lightgrey')
+        self.slice_area = self.ax.axvspan(
+            self._xstart, self._xend, alpha=0.5, color='lightgrey'
+        )
 
     def toggle_hover_visibility(self, value):
         """
@@ -80,8 +79,9 @@ class PlotProfile(PlotFigure1d):
         self._xstart = xstart
         self._xend = xend
         if self.slice_area is not None:
-            new_xy = np.array([[xstart, 0.0], [xstart, 1.0], [xend, 1.0], [xend, 0.0],
-                               [xstart, 0.0]])
+            new_xy = np.array(
+                [[xstart, 0.0], [xstart, 1.0], [xend, 1.0], [xend, 0.0], [xstart, 0.0]]
+            )
             self.slice_area.set_xy(new_xy)
             self.draw()
 

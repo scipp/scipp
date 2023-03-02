@@ -18,11 +18,9 @@ def set_button_color(button, selected=False):
 
 
 def _make_toggle_button(**kwargs):
-    button = ipw.ToggleButton(layout={
-        "width": "34px",
-        "padding": "0px 0px 0px 0px"
-    },
-                              **kwargs)
+    button = ipw.ToggleButton(
+        layout={"width": "34px", "padding": "0px 0px 0px 0px"}, **kwargs
+    )
     set_button_color(button)
     return button
 
@@ -50,26 +48,29 @@ class PlotToolbar(Displayable):
             tooltip="Switch current resampling mode. Options are 'sum' and 'mean'."
             " The correct mode depends on the interpretation of data."
             " The default value is guessed based on the data unit but in practice"
-            " the automatic selection cannot always be relied on.")
+            " the automatic selection cannot always be relied on.",
+        )
 
     def initialize(self, log_axis_buttons, button_states):
         self.members['resampling_mode'] = self._resampling_mode
         if 'resampling_mode' in button_states:
             resampling_modes = {
                 ResamplingMode.mean: (True, 'mean'),
-                ResamplingMode.sum: (False, 'sum')
+                ResamplingMode.sum: (False, 'sum'),
             }
             mode = button_states.pop('resampling_mode')
             state, description = resampling_modes[mode]
             self._resampling_mode.description = description
             self.toggle_button_color(self._resampling_mode, value=state)
         self._log_axis = {
-            dim: _make_toggle_button(tooltip=f'log({dim})')
-            for dim in log_axis_buttons
+            dim: _make_toggle_button(tooltip=f'log({dim})') for dim in log_axis_buttons
         }
         for name, state in button_states.items():
-            button = self._log_axis[name[4:]] if name.startswith(
-                'log_') else self.members[name]
+            button = (
+                self._log_axis[name[4:]]
+                if name.startswith('log_')
+                else self.members[name]
+            )
             self.toggle_button_color(button, value=state)
 
     @property
@@ -173,8 +174,7 @@ class PlotToolbar(Displayable):
 
     @property
     def tool_active(self):
-        return self.members["zoom_view"].value or \
-                self.members["pan_view"].value
+        return self.members["zoom_view"].value or self.members["pan_view"].value
 
     def home_view(self, button):
         self.mpl_toolbar.home()
@@ -213,16 +213,15 @@ class PlotToolbar1d(PlotToolbar):
     """
 
     def __init__(self, *args, **kwargs):
-
         super().__init__(*args, **kwargs)
 
         self.add_togglebutton(name="pan_view", icon="arrows", tooltip="Pan")
         self.add_togglebutton(name="zoom_view", icon="square-o", tooltip="Zoom")
         self.add_button(name="rescale_to_data", icon="arrows-v", tooltip="Rescale")
         self.members['toggle_xaxis_scale'] = None
-        self.add_togglebutton(name="toggle_norm",
-                              description="logy",
-                              tooltip="log(data)")
+        self.add_togglebutton(
+            name="toggle_norm", description="logy", tooltip="log(data)"
+        )
         self.members['resampling_mode'] = None
         self.add_button(name="save_view", icon="save", tooltip="Save")
 
@@ -233,7 +232,6 @@ class PlotToolbar2d(PlotToolbar):
     """
 
     def __init__(self, *args, **kwargs):
-
         super().__init__(*args, **kwargs)
 
         self.add_togglebutton(name="pan_view", icon="arrows", tooltip="Pan")
@@ -242,9 +240,9 @@ class PlotToolbar2d(PlotToolbar):
         self.add_button(name="transpose", icon="retweet", tooltip="Transpose")
         self.members['toggle_xaxis_scale'] = None
         self.members['toggle_yaxis_scale'] = None
-        self.add_togglebutton(name="toggle_norm",
-                              description="log",
-                              tooltip="log(data)")
+        self.add_togglebutton(
+            name="toggle_norm", description="log", tooltip="log(data)"
+        )
         self.members['resampling_mode'] = None
         self.add_button(name="save_view", icon="save", tooltip="Save")
 
@@ -255,36 +253,42 @@ class PlotToolbar3d(PlotToolbar):
     """
 
     def __init__(self, *args, **kwargs):
-
         super().__init__(*args, **kwargs)
-        self.add_button(name="camera_x_normal",
-                        icon="camera",
-                        description="X",
-                        tooltip="Camera to X normal. "
-                        "Click twice to flip the view direction.")
-        self.add_button(name="camera_y_normal",
-                        icon="camera",
-                        description="Y",
-                        tooltip="Camera to Y normal. "
-                        "Click twice to flip the view direction.")
-        self.add_button(name="camera_z_normal",
-                        icon="camera",
-                        description="Z",
-                        tooltip="Camera to Z normal. "
-                        "Click twice to flip the view direction.")
-        self.add_togglebutton(name="toggle_axes_helper",
-                              value=True,
-                              description="\u27C0",
-                              style={"font_weight": "bold"},
-                              tooltip="Toggle visibility of XYZ axes")
-        self.add_togglebutton(name="toggle_outline",
-                              value=True,
-                              icon="codepen",
-                              tooltip="Toggle visibility of outline box")
+        self.add_button(
+            name="camera_x_normal",
+            icon="camera",
+            description="X",
+            tooltip="Camera to X normal. " "Click twice to flip the view direction.",
+        )
+        self.add_button(
+            name="camera_y_normal",
+            icon="camera",
+            description="Y",
+            tooltip="Camera to Y normal. " "Click twice to flip the view direction.",
+        )
+        self.add_button(
+            name="camera_z_normal",
+            icon="camera",
+            description="Z",
+            tooltip="Camera to Z normal. " "Click twice to flip the view direction.",
+        )
+        self.add_togglebutton(
+            name="toggle_axes_helper",
+            value=True,
+            description="\u27C0",
+            style={"font_weight": "bold"},
+            tooltip="Toggle visibility of XYZ axes",
+        )
+        self.add_togglebutton(
+            name="toggle_outline",
+            value=True,
+            icon="codepen",
+            tooltip="Toggle visibility of outline box",
+        )
         self.add_button(name="rescale_to_data", icon="arrows-v", tooltip="Rescale")
-        self.add_togglebutton(name="toggle_norm",
-                              description="log",
-                              tooltip="log(data)")
+        self.add_togglebutton(
+            name="toggle_norm", description="log", tooltip="log(data)"
+        )
         self.members['resampling_mode'] = None
 
     def home_view(self, button):

@@ -85,7 +85,7 @@ def test_setitem_with_stride_2_sets_every_other_element():
 
 def test_setitem_data_array_value_based_slice():
     da = sc.data.table_xyz(10)
-    var = sc.scalar(44., unit='K')
+    var = sc.scalar(44.0, unit='K')
     da['x', da.coords['x'][0]] = var
     assert sc.identical(da[0].data, var)
     da['x', da.coords['x'][0]] = da['x', da.coords['x'][1]]
@@ -115,11 +115,10 @@ def test_dataset_slice_single_index_then_get_item():
 
 
 def test_dataset_set_slice_range():
-    ds = sc.Dataset({
-        'a': sc.arange('xx', 5),
-        'b': sc.arange('xx', 5, 10)
-    },
-                    coords={'xx': sc.arange('xx', 0, 10, 2)})
+    ds = sc.Dataset(
+        {'a': sc.arange('xx', 5), 'b': sc.arange('xx', 5, 10)},
+        coords={'xx': sc.arange('xx', 0, 10, 2)},
+    )
     aa = sc.array(dims=['xx'], values=[-7, -4])
     ds['xx', 2:4] = aa
     assert sc.identical(ds['a'].data, sc.array(dims=['xx'], values=[0, 1, -7, -4, 4]))

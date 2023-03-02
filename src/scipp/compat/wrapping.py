@@ -14,7 +14,8 @@ def _validated_masks(da, dim):
         if dim in mask.dims:
             raise DimensionError(
                 f"Cannot apply function along '{dim}' since mask '{name}' depends "
-                "on this dimension.")
+                "on this dimension."
+            )
         masks[name] = mask.copy()
     return masks
 
@@ -46,7 +47,6 @@ def wrap1d(is_partial=False, accept_masks=False, keep_coords=False):
     """
 
     def decorator(func: Callable) -> Callable:
-
         @wraps(func)
         def function(da: DataArray, dim: str, **kwargs) -> Union[DataArray, Callable]:
             if 'axis' in kwargs:
@@ -54,10 +54,12 @@ def wrap1d(is_partial=False, accept_masks=False, keep_coords=False):
             if da.variances is not None:
                 raise VariancesError(
                     "Cannot apply function to data with uncertainties. If uncertainties"
-                    " should be ignored, use 'sc.values(da)' to extract only values.")
+                    " should be ignored, use 'sc.values(da)' to extract only values."
+                )
             if da.sizes[dim] != da.coords[dim].sizes[dim]:
                 raise BinEdgeError(
-                    "Cannot apply function to data array with bin edges.")
+                    "Cannot apply function to data array with bin edges."
+                )
 
             kwargs['axis'] = da.dims.index(dim)
 
@@ -82,7 +84,6 @@ def wrap1d(is_partial=False, accept_masks=False, keep_coords=False):
                 return da
 
             def postprocessing(func):
-
                 @wraps(func)
                 def function(*args, **kwargs):
                     return _add_observing_metadata(func(*args, **kwargs))

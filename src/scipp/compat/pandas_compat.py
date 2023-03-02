@@ -20,7 +20,8 @@ def from_pandas_series(se: pd.Series) -> DataArray:
     return DataArray(
         data=Variable(values=se.values, dims=[row_index_name]),
         coords={row_index_name: Variable(dims=[row_index_name], values=row_index)},
-        name=name)
+        name=name,
+    )
 
 
 def from_pandas_dataframe(df: pd.DataFrame) -> Dataset:
@@ -56,6 +57,7 @@ def from_pandas(pd_obj: Union[pd.DataFrame, pd.Series]) -> VariableLike:
         The converted scipp object.
     """
     import pandas as pd
+
     if isinstance(pd_obj, pd.DataFrame):
         return from_pandas_dataframe(pd_obj)
     elif isinstance(pd_obj, pd.Series):

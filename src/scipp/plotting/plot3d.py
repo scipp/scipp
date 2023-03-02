@@ -21,25 +21,27 @@ def plot3d(scipp_obj_dict, *, positions, **kwargs):
     planes.
     """
 
-    def builder(*,
-                dims,
-                norm=None,
-                masks=None,
-                ax=None,
-                pax=None,
-                figsize=None,
-                cmap=None,
-                vmin=None,
-                vmax=None,
-                title=None,
-                background="#f0f0f0",
-                pixel_size=None,
-                tick_size=None,
-                show_outline=True,
-                xlabel=None,
-                ylabel=None,
-                zlabel=None,
-                camera=None):
+    def builder(
+        *,
+        dims,
+        norm=None,
+        masks=None,
+        ax=None,
+        pax=None,
+        figsize=None,
+        cmap=None,
+        vmin=None,
+        vmax=None,
+        title=None,
+        background="#f0f0f0",
+        pixel_size=None,
+        tick_size=None,
+        show_outline=True,
+        xlabel=None,
+        ylabel=None,
+        zlabel=None,
+        camera=None,
+    ):
         array = next(iter(scipp_obj_dict.values()))
         pos = array.meta[positions] if isinstance(positions, str) else positions
         if camera is not None:
@@ -50,14 +52,15 @@ def plot3d(scipp_obj_dict, *, positions, **kwargs):
                 except UnitError:
                     raise UnitError(
                         f"Unit  '{v.unit}' of camera['{k}'] not convertible "
-                        f"to unit of scatter point positions '{pos.unit}'.") from None
+                        f"to unit of scatter point positions '{pos.unit}'."
+                    ) from None
             camera = {k: tuple(v.value) for k, v in camera.items()}
         out = {
             'view_ndims': 0,
             'dims': list(set(array.dims) - set(pos.dims)),
             'model': partial(ScatterPointModel, positions=pos),
             'view': PlotView3d,
-            'controller': PlotController3d
+            'controller': PlotController3d,
         }
         params = make_params(cmap=cmap, norm=norm, vmin=vmin, vmax=vmax, masks=masks)
         out['vmin'] = params["values"]["vmin"]
@@ -66,20 +69,22 @@ def plot3d(scipp_obj_dict, *, positions, **kwargs):
         if len(dims) > 2:
             params['extend_cmap'] = 'both'
         out['panel'] = PlotPanel3d()
-        out['figure'] = PlotFigure3d(background=background,
-                                     cmap=params["values"]["cmap"],
-                                     extend=params['extend_cmap'],
-                                     figsize=figsize,
-                                     mask_cmap=params['masks']['cmap'],
-                                     nan_color=params["values"]["nan_color"],
-                                     norm=params["values"]["norm"],
-                                     pixel_size=pixel_size,
-                                     show_outline=show_outline,
-                                     tick_size=tick_size,
-                                     xlabel=xlabel,
-                                     ylabel=ylabel,
-                                     zlabel=zlabel,
-                                     camera=camera)
+        out['figure'] = PlotFigure3d(
+            background=background,
+            cmap=params["values"]["cmap"],
+            extend=params['extend_cmap'],
+            figsize=figsize,
+            mask_cmap=params['masks']['cmap'],
+            nan_color=params["values"]["nan_color"],
+            norm=params["values"]["norm"],
+            pixel_size=pixel_size,
+            show_outline=show_outline,
+            tick_size=tick_size,
+            xlabel=xlabel,
+            ylabel=ylabel,
+            zlabel=zlabel,
+            camera=camera,
+        )
 
         return out
 

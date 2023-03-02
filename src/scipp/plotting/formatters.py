@@ -34,9 +34,18 @@ class VectorFormatter:
         self.size = size
 
     def formatter(self, val, pos):
-        return "(" + ",".join([
-            value_to_string(item, precision=2) for item in self.array_values[int(val)]
-        ]) + ")" if (0 <= int(val) < self.size) else ""
+        return (
+            "("
+            + ",".join(
+                [
+                    value_to_string(item, precision=2)
+                    for item in self.array_values[int(val)]
+                ]
+            )
+            + ")"
+            if (0 <= int(val) < self.size)
+            else ""
+        )
 
 
 class StringFormatter:
@@ -130,9 +139,15 @@ class DateFormatter:
             check_transition = False
 
         if check_transition:
-            string, trim = self.check_for_transition(pos, string, str(date_min.value),
-                                                     str(date_max.value), dt,
-                                                     check_time, check_ms)
+            string, trim = self.check_for_transition(
+                pos,
+                string,
+                str(date_min.value),
+                str(date_max.value),
+                dt,
+                check_time,
+                check_ms,
+            )
 
         if pos == 1:
             if trim > 0:
@@ -140,8 +155,9 @@ class DateFormatter:
             set_axis_label(axis, label)
         return string
 
-    def check_for_transition(self, pos, string, date_min, date_max, dt, check_time,
-                             check_ms):
+    def check_for_transition(
+        self, pos, string, date_min, date_max, dt, check_time, check_ms
+    ):
         """
         Function that checks for transitions between years, months, days etc..
         adds a row of information below the tick labels if
@@ -162,8 +178,9 @@ class DateFormatter:
                 time_end = 23
             else:
                 time_end = 19
-            different_time = date_min[time_start:time_end] != date_max[
-                time_start:time_end]
+            different_time = (
+                date_min[time_start:time_end] != date_max[time_start:time_end]
+            )
 
         if (not different_date) and (not different_time):
             trim = max(date_end, time_end)
@@ -189,6 +206,7 @@ class Kind(enum.Enum):
     """
     Small enum listing the special cases for the axis tick formatters.
     """
+
     vector = enum.auto()
     string = enum.auto()
     datetime = enum.auto()

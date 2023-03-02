@@ -42,7 +42,8 @@ class PlotView1d(PlotView):
         for m in mask_info:
             if m in array.masks:
                 msk = base_mask * Variable(
-                    dims=array.masks[m].dims, unit=None, values=array.masks[m].values)
+                    dims=array.masks[m].dims, unit=None, values=array.masks[m].values
+                )
                 masks[m] = msk.values
             else:
                 masks[m] = None
@@ -66,8 +67,9 @@ class PlotView1d(PlotView):
         """
         Forward mask toggling to the `figure`.
         """
-        self.figure.toggle_mask(change["owner"].mask_group, change["owner"].mask_name,
-                                change["new"])
+        self.figure.toggle_mask(
+            change["owner"].mask_group, change["owner"].mask_name, change["new"]
+        )
 
     def keep_line(self, *args, **kwargs):
         """

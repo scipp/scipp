@@ -23,9 +23,16 @@ def test_assert_identical_builtin_mismatch(a, b):
 
 
 @pytest.mark.parametrize(
-    'a', (sc.scalar(3), sc.scalar(7.12, variance=0.33, unit='m'), sc.scalar('jja ow=-'),
-          sc.arange('u', 9.5, 13.0, 0.4), sc.linspace('ppl', 3.7, -99, 10, unit='kg'),
-          sc.array(dims=['ww', 'gas'], values=[[np.nan], [3]])))
+    'a',
+    (
+        sc.scalar(3),
+        sc.scalar(7.12, variance=0.33, unit='m'),
+        sc.scalar('jja ow=-'),
+        sc.arange('u', 9.5, 13.0, 0.4),
+        sc.linspace('ppl', 3.7, -99, 10, unit='kg'),
+        sc.array(dims=['ww', 'gas'], values=[[np.nan], [3]]),
+    ),
+)
 def test_assert_identical_variable_equal(a):
     assert_identical(deepcopy(a), deepcopy(a))
 
@@ -123,21 +130,23 @@ def test_assert_identical_variable_presence_of_variances():
 
 
 @pytest.mark.parametrize(
-    'a', (sc.DataArray(sc.scalar(
-        91, unit='F')), sc.DataArray(sc.scalar(6.4), coords={'g': sc.scalar(4)}),
-          sc.DataArray(sc.scalar(6.4), attrs={'rat': sc.scalar(0.01)}),
-          sc.DataArray(sc.scalar(6.4), masks={'m': sc.scalar(False)}),
-          sc.DataArray(
-              sc.arange('y', 6.1, unit='mm'),
-              coords={
-                  'y': sc.arange('y', 6.1, unit='s') * 3,
-                  'e': sc.arange('y', 8)
-              },
-              attrs={
-                  'w': sc.scalar('wws'),
-                  'qkk': sc.array(dims=['t'], values=[1.0, 2.0], variances=[0.0, 0.1])
-              },
-              masks={'1': sc.arange('y', 7) < 4})))
+    'a',
+    (
+        sc.DataArray(sc.scalar(91, unit='F')),
+        sc.DataArray(sc.scalar(6.4), coords={'g': sc.scalar(4)}),
+        sc.DataArray(sc.scalar(6.4), attrs={'rat': sc.scalar(0.01)}),
+        sc.DataArray(sc.scalar(6.4), masks={'m': sc.scalar(False)}),
+        sc.DataArray(
+            sc.arange('y', 6.1, unit='mm'),
+            coords={'y': sc.arange('y', 6.1, unit='s') * 3, 'e': sc.arange('y', 8)},
+            attrs={
+                'w': sc.scalar('wws'),
+                'qkk': sc.array(dims=['t'], values=[1.0, 2.0], variances=[0.0, 0.1]),
+            },
+            masks={'1': sc.arange('y', 7) < 4},
+        ),
+    ),
+)
 def test_assert_identical_data_arrays_equal(a):
     assert_identical(deepcopy(a), deepcopy(a))
 
@@ -248,25 +257,25 @@ def test_assert_identical_data_array_masks_value_mismatch():
 
 
 @pytest.mark.parametrize(
-    'a', (sc.Dataset(), sc.Dataset({'f': sc.scalar(
-        91, unit='F')}), sc.Dataset({'r': sc.scalar(6.4)}, coords={'g': sc.scalar(4)}),
-          sc.Dataset({
-              '2': sc.arange('u', 5),
-              '3': sc.arange('b', 7)
-          }),
-          sc.Dataset(
-              {
-                  'yy':
-                  sc.DataArray(sc.arange('yy', 5),
-                               attrs={'a': sc.scalar([2, 3])},
-                               masks={'m': sc.arange('yy', 5) < 2}),
-                  'i':
-                  sc.arange('i', 3)
-              },
-              coords={'i': sc.arange('w', 15).fold('w', {
-                  'i': 3,
-                  'yy': 5
-              })})))
+    'a',
+    (
+        sc.Dataset(),
+        sc.Dataset({'f': sc.scalar(91, unit='F')}),
+        sc.Dataset({'r': sc.scalar(6.4)}, coords={'g': sc.scalar(4)}),
+        sc.Dataset({'2': sc.arange('u', 5), '3': sc.arange('b', 7)}),
+        sc.Dataset(
+            {
+                'yy': sc.DataArray(
+                    sc.arange('yy', 5),
+                    attrs={'a': sc.scalar([2, 3])},
+                    masks={'m': sc.arange('yy', 5) < 2},
+                ),
+                'i': sc.arange('i', 3),
+            },
+            coords={'i': sc.arange('w', 15).fold('w', {'i': 3, 'yy': 5})},
+        ),
+    ),
+)
 def test_assert_identical_datasets_equal(a):
     assert_identical(deepcopy(a), deepcopy(a))
 
@@ -297,34 +306,30 @@ def test_assert_identical_dataset_coords_key_mismatch():
     with pytest.raises(AssertionError):
         assert_identical(b, a)
 
-    a = sc.Dataset({
-        'a': sc.arange('t', 3),
-        'b': sc.arange('c', 5)
-    },
-                   coords={
-                       't': sc.scalar(2),
-                       'c': sc.arange('c', 5)
-                   })
-    b = sc.Dataset({
-        'a': sc.arange('t', 3),
-        'b': sc.arange('c', 5)
-    },
-                   coords={
-                       't': sc.scalar(2),
-                       'c': sc.arange('c', 6)
-                   })
+    a = sc.Dataset(
+        {'a': sc.arange('t', 3), 'b': sc.arange('c', 5)},
+        coords={'t': sc.scalar(2), 'c': sc.arange('c', 5)},
+    )
+    b = sc.Dataset(
+        {'a': sc.arange('t', 3), 'b': sc.arange('c', 5)},
+        coords={'t': sc.scalar(2), 'c': sc.arange('c', 6)},
+    )
     with pytest.raises(AssertionError):
         assert_identical(a, b)
     with pytest.raises(AssertionError):
         assert_identical(b, a)
 
 
-@pytest.mark.parametrize('a', (sc.DataGroup(), sc.DataGroup(
-    {'hg': 4}), sc.DataGroup({'ii': sc.scalar(
-        3.01, unit='s')}), sc.DataGroup({
-            'Å': [5, 2],
-            'pl': sc.arange(';', 6)
-        }), sc.DataGroup({'q': sc.DataGroup({'ik': sc.arange('ik', 2)})})))
+@pytest.mark.parametrize(
+    'a',
+    (
+        sc.DataGroup(),
+        sc.DataGroup({'hg': 4}),
+        sc.DataGroup({'ii': sc.scalar(3.01, unit='s')}),
+        sc.DataGroup({'Å': [5, 2], 'pl': sc.arange(';', 6)}),
+        sc.DataGroup({'q': sc.DataGroup({'ik': sc.arange('ik', 2)})}),
+    ),
+)
 def test_assert_identical_data_group_equal(a):
     assert_identical(deepcopy(a), deepcopy(a))
 
@@ -367,13 +372,21 @@ def test_assert_identical_data_group_values_mismatch_nested():
 
 @pytest.mark.parametrize(
     'buffer',
-    (sc.ones(sizes={'e': 10}, unit='counts'), sc.arange('.', 13, unit='m'),
-     sc.DataArray(sc.zeros(sizes={'bm': 10}), coords={'bm': sc.arange('bm', 10)})))
+    (
+        sc.ones(sizes={'e': 10}, unit='counts'),
+        sc.arange('.', 13, unit='m'),
+        sc.DataArray(sc.zeros(sizes={'bm': 10}), coords={'bm': sc.arange('bm', 10)}),
+    ),
+)
 @pytest.mark.parametrize(
-    'indices', (sc.array(dims=['lm'], values=[0, 3, 8, 10], dtype='int64', unit=None),
-                sc.array(dims=['h'], values=[2, 4, 10], dtype='int64', unit=None),
-                sc.array(dims=['lka'], values=[0, 6], dtype='int64', unit=None),
-                sc.array(dims=['l we'], values=[], dtype='int64', unit=None)))
+    'indices',
+    (
+        sc.array(dims=['lm'], values=[0, 3, 8, 10], dtype='int64', unit=None),
+        sc.array(dims=['h'], values=[2, 4, 10], dtype='int64', unit=None),
+        sc.array(dims=['lka'], values=[0, 6], dtype='int64', unit=None),
+        sc.array(dims=['l we'], values=[], dtype='int64', unit=None),
+    ),
+)
 def test_assert_identical_binned_variable_equal(buffer, indices):
     begin, end = indices[:-1], indices[1:]
     a = sc.bins(data=buffer, dim=buffer.dim, begin=begin, end=end)
@@ -381,19 +394,26 @@ def test_assert_identical_binned_variable_equal(buffer, indices):
 
 
 def test_assert_identical_binned_data_array_equal():
-    da = sc.DataArray(sc.ones(sizes={'vv': 9}), coords={
-        'vv': sc.arange('vv', 9)
-    }).bin(vv=3)
+    da = sc.DataArray(sc.ones(sizes={'vv': 9}), coords={'vv': sc.arange('vv', 9)}).bin(
+        vv=3
+    )
     assert_identical(deepcopy(da), deepcopy(da))
 
 
 @pytest.mark.parametrize(
     'buffer',
-    (sc.ones(sizes={'e': 10}, unit='counts'),
-     sc.DataArray(sc.zeros(sizes={'bm': 10}), coords={'bm': sc.arange('bm', 10)})))
+    (
+        sc.ones(sizes={'e': 10}, unit='counts'),
+        sc.DataArray(sc.zeros(sizes={'bm': 10}), coords={'bm': sc.arange('bm', 10)}),
+    ),
+)
 @pytest.mark.parametrize(
-    'indices', (sc.array(dims=['lm'], values=[0, 3, 8, 10], dtype='int64', unit=None),
-                sc.array(dims=['l we'], values=[], dtype='int64', unit=None)))
+    'indices',
+    (
+        sc.array(dims=['lm'], values=[0, 3, 8, 10], dtype='int64', unit=None),
+        sc.array(dims=['l we'], values=[], dtype='int64', unit=None),
+    ),
+)
 def test_assert_identical_binned_variable_unit_mismatch(buffer, indices):
     begin, end = indices[:-1], indices[1:]
     a = sc.bins(data=buffer, dim=buffer.dim, begin=begin, end=end)
@@ -408,11 +428,18 @@ def test_assert_identical_binned_variable_unit_mismatch(buffer, indices):
 
 @pytest.mark.parametrize(
     'buffer',
-    (sc.ones(sizes={'e': 10}, unit='counts'),
-     sc.DataArray(sc.zeros(sizes={'bm': 10}), coords={'bm': sc.arange('bm', 10)})))
+    (
+        sc.ones(sizes={'e': 10}, unit='counts'),
+        sc.DataArray(sc.zeros(sizes={'bm': 10}), coords={'bm': sc.arange('bm', 10)}),
+    ),
+)
 @pytest.mark.parametrize(
-    'indices', (sc.array(dims=['lm'], values=[0, 3, 8, 10], dtype='int64', unit=None),
-                sc.array(dims=['l we'], values=[2, 6], dtype='int64', unit=None)))
+    'indices',
+    (
+        sc.array(dims=['lm'], values=[0, 3, 8, 10], dtype='int64', unit=None),
+        sc.array(dims=['l we'], values=[2, 6], dtype='int64', unit=None),
+    ),
+)
 def test_assert_identical_binned_variable_value_mismatch(buffer, indices):
     begin, end = indices[:-1], indices[1:]
     a = sc.bins(data=buffer, dim=buffer.dim, begin=begin, end=end)
@@ -426,11 +453,16 @@ def test_assert_identical_binned_variable_value_mismatch(buffer, indices):
 
 
 @pytest.mark.parametrize(
-    'indices', (sc.array(dims=['lm'], values=[0, 3, 8, 10], dtype='int64', unit=None),
-                sc.array(dims=['l we'], values=[1, 6], dtype='int64', unit=None)))
+    'indices',
+    (
+        sc.array(dims=['lm'], values=[0, 3, 8, 10], dtype='int64', unit=None),
+        sc.array(dims=['l we'], values=[1, 6], dtype='int64', unit=None),
+    ),
+)
 def test_assert_identical_binned_variable_coord_mismatch(indices):
-    buffer = sc.DataArray(sc.zeros(sizes={'bm': 10}),
-                          coords={'bm': sc.arange('bm', 10)})
+    buffer = sc.DataArray(
+        sc.zeros(sizes={'bm': 10}), coords={'bm': sc.arange('bm', 10)}
+    )
     begin, end = indices[:-1], indices[1:]
     a = sc.bins(data=buffer, dim=buffer.dim, begin=begin, end=end)
     buffer = deepcopy(buffer)
@@ -443,11 +475,9 @@ def test_assert_identical_binned_variable_coord_mismatch(indices):
 
 
 def test_assert_identical_binned_data_array_value_mismatch():
-    a = sc.DataArray(sc.ones(sizes={'rv': 9}),
-                     coords={
-                         'rv': sc.arange('rv', 9),
-                         'j': sc.scalar(3.1)
-                     }).bin(rv=3)
+    a = sc.DataArray(
+        sc.ones(sizes={'rv': 9}), coords={'rv': sc.arange('rv', 9), 'j': sc.scalar(3.1)}
+    ).bin(rv=3)
     b = deepcopy(a)
     b.bins.constituents['data'][7] = -1.2
     with pytest.raises(AssertionError):
@@ -457,11 +487,9 @@ def test_assert_identical_binned_data_array_value_mismatch():
 
 
 def test_assert_identical_binned_data_array_event_coord_mismatch():
-    a = sc.DataArray(sc.ones(sizes={'rv': 9}),
-                     coords={
-                         'rv': sc.arange('rv', 9),
-                         'j': sc.scalar(3.1)
-                     }).bin(rv=3)
+    a = sc.DataArray(
+        sc.ones(sizes={'rv': 9}), coords={'rv': sc.arange('rv', 9), 'j': sc.scalar(3.1)}
+    ).bin(rv=3)
     b = deepcopy(a)
     b.bins.constituents['data'].coords['rv'][5] = 0.2
     with pytest.raises(AssertionError):
@@ -471,11 +499,9 @@ def test_assert_identical_binned_data_array_event_coord_mismatch():
 
 
 def test_assert_identical_binned_data_array_bin_coord_mismatch():
-    a = sc.DataArray(sc.ones(sizes={'rv': 9}),
-                     coords={
-                         'rv': sc.arange('rv', 9),
-                         'j': sc.scalar(3.1)
-                     }).bin(rv=3)
+    a = sc.DataArray(
+        sc.ones(sizes={'rv': 9}), coords={'rv': sc.arange('rv', 9), 'j': sc.scalar(3.1)}
+    ).bin(rv=3)
     b = deepcopy(a)
     b.coords['j'].unit = 'm'
     with pytest.raises(AssertionError):

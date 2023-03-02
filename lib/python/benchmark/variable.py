@@ -26,8 +26,7 @@ def assign_from_numpy_1d(size):
     size_bytes = size * np.dtype(np.float64).itemsize
 
     read_write_factor = 3
-    bytes_per_second = (n_iterations * read_write_factor * size_bytes) \
-        / total_time
+    bytes_per_second = (n_iterations * read_write_factor * size_bytes) / total_time
 
     total_time /= n_iterations
     total_time *= 1e3

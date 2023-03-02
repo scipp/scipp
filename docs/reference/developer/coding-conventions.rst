@@ -21,7 +21,7 @@ As a general rule all new functionality and bug fixes should be accompanied with
 Formatting
 ----------
 
-There are no explicit formatting conventions since we use ``clang-format`` (C++) and ``yapf`` (Python).
+There are no explicit formatting conventions since we use ``clang-format`` (C++) and ``black`` (Python).
 
 Docstrings
 ~~~~~~~~~~

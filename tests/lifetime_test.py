@@ -28,8 +28,10 @@ def test_lifetime_values_of_item():
 
 
 def test_lifetime_values_of_item_of_temporary():
-    d = sc.Dataset(data={'a': sc.Variable(dims=['x'], values=np.arange(3))},
-                   coords={'x': sc.Variable(dims=['x'], values=["aa", "bb", "cc"])})
+    d = sc.Dataset(
+        data={'a': sc.Variable(dims=['x'], values=np.arange(3))},
+        coords={'x': sc.Variable(dims=['x'], values=["aa", "bb", "cc"])},
+    )
     vals = (d + d).coords['x'].values
     d + d  # do something allocating memory to trigger potential segfault
     assert vals[2] == "cc"
@@ -82,6 +84,7 @@ def test_lifetime_scalar_py_object():
     assert var.dtype == sc.DType.PyObject
     val = var.copy().value
     import gc
+
     gc.collect()
     var.copy()  # do something allocating memory to trigger potential segfault
     assert val[-1] == 1
@@ -92,6 +95,7 @@ def test_lifetime_scalar_nested():
     arr = var.value.values
     var.value = sc.array(dims=['x'], values=np.array([2, 3]))
     import gc
+
     gc.collect()
     np.testing.assert_array_equal(arr, [0, 1])
 
@@ -101,6 +105,7 @@ def test_lifetime_scalar_nested_string():
     arr = var.value.values
     var.value = sc.array(dims=['x'], values=np.array(['ghi', 'jkl']))
     import gc
+
     gc.collect()
     np.testing.assert_array_equal(arr, ['abc', 'def'])
 
@@ -111,6 +116,7 @@ def test_lifetime_scalar():
     assert sc.identical(var.values, elem)
     vals = var.copy().values
     import gc
+
     gc.collect()
     var.copy()  # do something allocating memory to trigger potential segfault
     assert sc.identical(vals, elem)
@@ -121,6 +127,7 @@ def test_lifetime_array():
     array = var.values
     del var
     import gc
+
     gc.collect()
     # do something allocating memory to trigger potential segfault
     sc.Variable(dims=['x'], values=np.arange(5, 10))
@@ -132,6 +139,7 @@ def test_lifetime_string_array():
     assert var.values[100000] == 'ab'
     vals = var.copy().values
     import gc
+
     gc.collect()
     var.copy()  # do something allocating memory to trigger potential segfault
     assert vals[100000] == 'ab'

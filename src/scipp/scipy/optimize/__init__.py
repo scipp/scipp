@@ -25,7 +25,6 @@ def _as_scalar(obj, unit):
 
 
 def _wrap_func(f, p_names, p_units):
-
     def func(x, *args):
         p = {k: _as_scalar(v, u) for k, v, u in zip(p_names, args, p_units)}
         return f(x, **p).values
@@ -42,7 +41,8 @@ def _get_sigma(da):
         raise ValueError(
             'There is a 0 in the input variances. This would break the optimizer. '
             'Mask the offending elements, remove them, or assign a meaningful '
-            'variance if possible before calling curve_fit.')
+            'variance if possible before calling curve_fit.'
+        )
     return sigma
 
 
@@ -78,22 +78,28 @@ def _get_specific_bounds(bounds, name, unit) -> Tuple[float, float]:
         return -np.inf, np.inf
     b = bounds[name]
     if len(b) != 2:
-        raise ValueError("Parameter bounds must be given as a tuple of length 2. "
-                         f"Got a collection of length {len(b)} as bounds for '{name}'.")
+        raise ValueError(
+            "Parameter bounds must be given as a tuple of length 2. "
+            f"Got a collection of length {len(b)} as bounds for '{name}'."
+        )
     if isinstance(b[0], Variable):
-        return (b[0].to(unit=unit, dtype=float).value, b[1].to(unit=unit,
-                                                               dtype=float).value)
+        return (
+            b[0].to(unit=unit, dtype=float).value,
+            b[1].to(unit=unit, dtype=float).value,
+        )
     return b
 
 
-def _parse_bounds(bounds,
-                  params) -> Union[Tuple[float, float], Tuple[np.ndarray, np.ndarray]]:
+def _parse_bounds(
+    bounds, params
+) -> Union[Tuple[float, float], Tuple[np.ndarray, np.ndarray]]:
     if bounds is None:
         return -np.inf, np.inf
 
     bounds_tuples = [
         _get_specific_bounds(
-            bounds, name, param.unit if isinstance(param, Variable) else dimensionless)
+            bounds, name, param.unit if isinstance(param, Variable) else dimensionless
+        )
         for name, param in params.items()
     ]
     bounds_array = np.array(bounds_tuples).T
@@ -105,11 +111,13 @@ def curve_fit(
     da: DataArray,
     *,
     p0: Dict[str, Union[Variable, Real]] = None,
-    bounds: Optional[Dict[str, Union[Tuple[Variable, Variable], Tuple[Real,
-                                                                      Real]]]] = None,
-    **kwargs
-) -> Tuple[Dict[str, Union[Variable, Real]], Dict[str, Dict[str, Union[Variable,
-                                                                       Real]]]]:
+    bounds: Optional[
+        Dict[str, Union[Tuple[Variable, Variable], Tuple[Real, Real]]]
+    ] = None,
+    **kwargs,
+) -> Tuple[
+    Dict[str, Union[Variable, Real]], Dict[str, Dict[str, Union[Variable, Real]]]
+]:
     """Use non-linear least squares to fit a function, f, to data.
 
     This is a wrapper around :py:func:`scipy.optimize.curve_fit`. See there for a
@@ -197,28 +205,34 @@ def curve_fit(
       True
     """
     if 'jac' in kwargs:
-        raise NotImplementedError("The 'jac' argument is not yet supported. "
-                                  "See https://github.com/scipp/scipp/issues/2544")
+        raise NotImplementedError(
+            "The 'jac' argument is not yet supported. "
+            "See https://github.com/scipp/scipp/issues/2544"
+        )
     for arg in ['xdata', 'ydata', 'sigma']:
         if arg in kwargs:
             raise TypeError(
-                f"Invalid argument '{arg}', already defined by the input data array.")
+                f"Invalid argument '{arg}', already defined by the input data array."
+            )
     if da.sizes[da.dim] != da.coords[da.dim].sizes[da.dim]:
         raise BinEdgeError("Cannot fit data array with bin-edge coordinate.")
     import scipy.optimize as opt
+
     da = _drop_masked(da, da.dim)
     params = _make_defaults(f, p0)
     p_units = [
         p.unit if isinstance(p, Variable) else default_unit for p in params.values()
     ]
     p0 = [p.value if isinstance(p, Variable) else p for p in params.values()]
-    popt, pcov = opt.curve_fit(f=_wrap_func(f, params.keys(), p_units),
-                               xdata=da.coords[da.dim],
-                               ydata=da.values,
-                               sigma=_get_sigma(da),
-                               p0=p0,
-                               bounds=_parse_bounds(bounds, params),
-                               **kwargs)
+    popt, pcov = opt.curve_fit(
+        f=_wrap_func(f, params.keys(), p_units),
+        xdata=da.coords[da.dim],
+        ydata=da.values,
+        sigma=_get_sigma(da),
+        p0=p0,
+        bounds=_parse_bounds(bounds, params),
+        **kwargs,
+    )
     popt = {
         name: scalar(value=val, variance=var, unit=u)
         for name, val, var, u in zip(params.keys(), popt, np.diag(pcov), p_units)

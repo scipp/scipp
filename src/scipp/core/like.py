@@ -37,11 +37,13 @@ def zeros_like(obj: VariableLikeType, /) -> VariableLikeType:
     scipp.empty_like:
         Create an object with uninitialized elements.
     """
-    new_values = zeros(dims=obj.dims,
-                       shape=obj.shape,
-                       unit=obj.unit,
-                       dtype=obj.dtype,
-                       with_variances=obj.variances is not None)
+    new_values = zeros(
+        dims=obj.dims,
+        shape=obj.shape,
+        unit=obj.unit,
+        dtype=obj.dtype,
+        with_variances=obj.variances is not None,
+    )
     return rewrap_output_data(obj, new_values)
 
 
@@ -74,11 +76,13 @@ def ones_like(obj: VariableLikeType, /) -> VariableLikeType:
     scipp.empty_like:
         Create an object with uninitialized elements.
     """
-    new_values = ones(dims=obj.dims,
-                      shape=obj.shape,
-                      unit=obj.unit,
-                      dtype=obj.dtype,
-                      with_variances=obj.variances is not None)
+    new_values = ones(
+        dims=obj.dims,
+        shape=obj.shape,
+        unit=obj.unit,
+        dtype=obj.dtype,
+        with_variances=obj.variances is not None,
+    )
     return rewrap_output_data(obj, new_values)
 
 
@@ -115,19 +119,19 @@ def empty_like(obj: VariableLikeType, /) -> VariableLikeType:
     scipp.full_like:
         Create an object filled with a given value.
     """
-    new_values = empty(dims=obj.dims,
-                       shape=obj.shape,
-                       unit=obj.unit,
-                       dtype=obj.dtype,
-                       with_variances=obj.variances is not None)
+    new_values = empty(
+        dims=obj.dims,
+        shape=obj.shape,
+        unit=obj.unit,
+        dtype=obj.dtype,
+        with_variances=obj.variances is not None,
+    )
     return rewrap_output_data(obj, new_values)
 
 
-def full_like(obj: VariableLikeType,
-              /,
-              value: Any,
-              *,
-              variance: Any = None) -> VariableLikeType:
+def full_like(
+    obj: VariableLikeType, /, value: Any, *, variance: Any = None
+) -> VariableLikeType:
     """Return a new object with the same dims, shape, unit,
     and dtype as the input and all elements initialized to the given value.
 
@@ -160,10 +164,12 @@ def full_like(obj: VariableLikeType,
     scipp.empty_like:
         Create an object with uninitialized elements.
     """
-    new_values = full(dims=obj.dims,
-                      shape=obj.shape,
-                      unit=obj.unit,
-                      dtype=obj.dtype,
-                      value=value,
-                      variance=variance)
+    new_values = full(
+        dims=obj.dims,
+        shape=obj.shape,
+        unit=obj.unit,
+        dtype=obj.dtype,
+        value=value,
+        variance=variance,
+    )
     return rewrap_output_data(obj, new_values)

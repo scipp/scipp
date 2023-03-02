@@ -31,8 +31,10 @@ def test_merge_equal_adjacent_length_1():
 def test_merge_equal_adjacent_length_2():
     data = sc.ones(dims=['x'], shape=[2], dtype='int64')
     da = sc.DataArray(data=data, coords={'x': sc.array(dims=['x'], values=[0, 1, 2])})
-    expected = sc.DataArray(data=sc.array(dims=['x'], values=[1], dtype='int64'),
-                            coords={'x': sc.array(dims=['x'], values=[0, 2])})
+    expected = sc.DataArray(
+        data=sc.array(dims=['x'], values=[1], dtype='int64'),
+        coords={'x': sc.array(dims=['x'], values=[0, 2])},
+    )
     assert sc.identical(merge_equal_adjacent(da), expected)
 
 
@@ -46,8 +48,10 @@ def test_merge_equal_adjacent_constant():
     data = sc.ones(dims=['x'], shape=[9], dtype='int64')
     da = sc.DataArray(data=data, coords={'x': x})
 
-    expected = sc.DataArray(data=sc.array(dims=['x'], values=[1], dtype='int64'),
-                            coords={'x': sc.array(dims=['x'], values=[0, 9])})
+    expected = sc.DataArray(
+        data=sc.array(dims=['x'], values=[1], dtype='int64'),
+        coords={'x': sc.array(dims=['x'], values=[0, 9])},
+    )
     assert sc.identical(merge_equal_adjacent(da), expected)
 
 

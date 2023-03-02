@@ -18,7 +18,7 @@ def _string_in_cell(v: Variable) -> str:
         return f'len={v.value.shape}'
     if v.dtype not in (DType.float32, DType.float64):
         return str(v.value)
-    if (v.variance is None):
+    if v.variance is None:
         return f'{v.value:.3f}'
     err = np.sqrt(v.variance)
     if err == 0.0:
@@ -42,12 +42,14 @@ def _add_td_tags(cell_list: List[str], border: str = '') -> List[str]:
     return [f'{td}{cell}</td>' for cell in cell_list]
 
 
-def _make_variable_column(name: str,
-                          var: Variable,
-                          indices: list,
-                          need_bin_edge: bool,
-                          is_bin_edge,
-                          border: str = '') -> List[str]:
+def _make_variable_column(
+    name: str,
+    var: Variable,
+    indices: list,
+    need_bin_edge: bool,
+    is_bin_edge,
+    border: str = '',
+) -> List[str]:
     head = [_var_name_with_unit(name, var)]
     rows = []
     for i in indices:
@@ -61,38 +63,45 @@ def _make_variable_column(name: str,
         else:
             rows.append('')
     return _add_td_tags(head, border=border + BOTTOM_BORDER) + _add_td_tags(
-        rows, border=border)
+        rows, border=border
+    )
 
 
-def _make_data_array_table(da: DataArray,
-                           indices: list,
-                           bin_edges: bool,
-                           no_left_border: bool = False) -> List[list]:
-
+def _make_data_array_table(
+    da: DataArray, indices: list, bin_edges: bool, no_left_border: bool = False
+) -> List[list]:
     out = [
-        _make_variable_column(name='',
-                              var=da.data,
-                              indices=indices,
-                              need_bin_edge=bin_edges,
-                              is_bin_edge=False,
-                              border='' if no_left_border else LEFT_BORDER)
+        _make_variable_column(
+            name='',
+            var=da.data,
+            indices=indices,
+            need_bin_edge=bin_edges,
+            is_bin_edge=False,
+            border='' if no_left_border else LEFT_BORDER,
+        )
     ]
 
     for name, var in sorted(da.masks.items()):
         out.append(
-            _make_variable_column(name=name,
-                                  var=var,
-                                  indices=indices,
-                                  need_bin_edge=bin_edges,
-                                  is_bin_edge=False))
+            _make_variable_column(
+                name=name,
+                var=var,
+                indices=indices,
+                need_bin_edge=bin_edges,
+                is_bin_edge=False,
+            )
+        )
 
     for name, var in sorted(da.attrs.items()):
         out.append(
-            _make_variable_column(name=name,
-                                  var=var,
-                                  indices=indices,
-                                  need_bin_edge=bin_edges,
-                                  is_bin_edge=da.attrs.is_edges(name)))
+            _make_variable_column(
+                name=name,
+                var=var,
+                indices=indices,
+                need_bin_edge=bin_edges,
+                is_bin_edge=da.attrs.is_edges(name),
+            )
+        )
 
     return out
 
@@ -148,21 +157,22 @@ def _strip_scalars_and_broadcast_masks(ds: Dataset) -> Dataset:
     out = Dataset()
     for key, da in ds.items():
         if da.ndim == 1:
-            out[key] = DataArray(data=da.data,
-                                 coords={
-                                     key: var
-                                     for key, var in da.coords.items()
-                                     if var.dims == da.data.dims
-                                 },
-                                 attrs={
-                                     key: var
-                                     for key, var in da.attrs.items()
-                                     if var.dims == da.data.dims
-                                 },
-                                 masks={
-                                     key: var.broadcast(sizes=da.sizes)
-                                     for key, var in da.masks.items()
-                                 })
+            out[key] = DataArray(
+                data=da.data,
+                coords={
+                    key: var
+                    for key, var in da.coords.items()
+                    if var.dims == da.data.dims
+                },
+                attrs={
+                    key: var
+                    for key, var in da.attrs.items()
+                    if var.dims == da.data.dims
+                },
+                masks={
+                    key: var.broadcast(sizes=da.sizes) for key, var in da.masks.items()
+                },
+            )
     return out
 
 
@@ -219,21 +229,26 @@ def table(obj: Dict[str, Union[Variable, DataArray]], max_rows: int = 20):
 
     # First attach coords
     body = [
-        _make_variable_column(name=name,
-                              var=var,
-                              indices=inds,
-                              need_bin_edge=bin_edges,
-                              is_bin_edge=obj.coords.is_edges(name))
+        _make_variable_column(
+            name=name,
+            var=var,
+            indices=inds,
+            need_bin_edge=bin_edges,
+            is_bin_edge=obj.coords.is_edges(name),
+        )
         for name, var in sorted(obj.coords.items())
     ]
 
     # Rest of the table from DataArrays
     for i, (_, da) in enumerate(sorted(obj.items())):
-        body += _make_data_array_table(da=da,
-                                       indices=inds,
-                                       bin_edges=bin_edges,
-                                       no_left_border=(i == 0) and (not obj.coords))
+        body += _make_data_array_table(
+            da=da,
+            indices=inds,
+            bin_edges=bin_edges,
+            no_left_border=(i == 0) and (not obj.coords),
+        )
 
     html = _to_html_table(header=header, body=body)
     from IPython.display import HTML
+
     return HTML(html)

@@ -26,7 +26,8 @@ def test_physical_constants():
 
 
 @pytest.mark.parametrize(
-    "var", [ours.m_e, ours.physical_constants('speed of light in vacuum')])
+    "var", [ours.m_e, ours.physical_constants('speed of light in vacuum')]
+)
 def test_constants_cannot_be_modified(var):
     original = var.copy()
     with pytest.raises(sc.VariableError):

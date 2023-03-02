@@ -8,6 +8,7 @@ import scipp as sc
 
 def make_dataarray(dim1, dim2) -> sc.DataArray:
     from numpy.random import default_rng
+
     rng = default_rng(seed=1234)
     da = sc.DataArray(sc.array(dims=[dim1, dim2], values=rng.random((100, 100))))
     da.coords[dim1] = sc.linspace(dim1, 0.0, 1.0, num=100, unit='mm')

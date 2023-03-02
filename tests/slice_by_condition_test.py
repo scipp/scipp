@@ -8,11 +8,9 @@ import scipp as sc
 
 
 def make_var(xx=4) -> sc.Variable:
-    return sc.arange('dummy', 12, dtype='int64').fold(dim='dummy',
-                                                      sizes={
-                                                          'xx': xx,
-                                                          'yy': 3
-                                                      })
+    return sc.arange('dummy', 12, dtype='int64').fold(
+        dim='dummy', sizes={'xx': xx, 'yy': 3}
+    )
 
 
 def make_array() -> sc.DataArray:
@@ -50,18 +48,24 @@ def make_binned_dataset() -> sc.Dataset:
     return ds
 
 
-@pytest.fixture(params=[
-    make_var(),
-    make_array(),
-    make_dataset(),
-    make_binned_array(),
-    make_binned_array_variable_buffer(),
-    make_binned_dataset()
-],
-                ids=[
-                    'Variable', 'DataArray', 'Dataset', 'binned-DataArray',
-                    'binned-DataArray-buffer-Variable', 'binned-dataset'
-                ])
+@pytest.fixture(
+    params=[
+        make_var(),
+        make_array(),
+        make_dataset(),
+        make_binned_array(),
+        make_binned_array_variable_buffer(),
+        make_binned_dataset(),
+    ],
+    ids=[
+        'Variable',
+        'DataArray',
+        'Dataset',
+        'binned-DataArray',
+        'binned-DataArray-buffer-Variable',
+        'binned-dataset',
+    ],
+)
 def sliceable(request):
     return request.param
 
@@ -82,16 +86,19 @@ def test_all_true_gives_copy(sliceable):
 
 def test_true_and_false_concats_slices(sliceable):
     condition = sc.array(dims=['xx'], values=[True, False, True, True])
-    assert sc.identical(sliceable[condition],
-                        sc.concat([sliceable['xx', 0], sliceable['xx', 2:]], 'xx'))
+    assert sc.identical(
+        sliceable[condition], sc.concat([sliceable['xx', 0], sliceable['xx', 2:]], 'xx')
+    )
 
 
 def test_non_dimension_coords_are_preserved():
     da = make_array()
     da.coords['xx2'] = da.coords['xx']
     condition = sc.array(dims=['xx'], values=[True, False, True, True])
-    assert sc.identical(da[condition].coords['xx2'],
-                        sc.array(dims=['xx'], dtype='int64', values=[0, 2, 3]))
+    assert sc.identical(
+        da[condition].coords['xx2'],
+        sc.array(dims=['xx'], dtype='int64', values=[0, 2, 3]),
+    )
 
 
 def test_bin_edges_are_dropped():

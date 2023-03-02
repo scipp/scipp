@@ -136,8 +136,7 @@ def parse_line(line):
         "eclipsed": eclipsed,
         "non_solar": non_solar,
         "quality": quality,
-        **{name: name in flags
-           for name in FLAGS},
+        **{name: name in flags for name in FLAGS},
     }
 
 
@@ -161,9 +160,9 @@ def load_txt_file():
             for key, val in entry.items():
                 values.setdefault(key, []).append(val)
 
-    energy_range = sc.array(dims=["flare", "energy"],
-                            values=values.pop("energy_range"),
-                            unit="keV")
+    energy_range = sc.array(
+        dims=["flare", "energy"], values=values.pop("energy_range"), unit="keV"
+    )
 
     def event_array(name, unit):
         return sc.array(dims=["flare"], values=values.pop(name), unit=unit)
@@ -180,23 +179,18 @@ def load_txt_file():
             "radial": event_array("radial", "asec"),
         },
         attrs={
-            "min_energy":
-            energy_range["energy", 0],
-            "max_energy":
-            energy_range["energy", 1],
-            "quality":
-            event_array("quality", None),
-            **{key: event_array(key, None)
-               for key in list(values)},
-            "description":
-            sc.scalar("X-ray flares recorded by NASA's Reuven Ramaty High Energy Solar"
-                      " Spectroscopic Imager (RHESSI) Small Explorer"),
-            "url":
-            sc.scalar(
+            "min_energy": energy_range["energy", 0],
+            "max_energy": energy_range["energy", 1],
+            "quality": event_array("quality", None),
+            **{key: event_array(key, None) for key in list(values)},
+            "description": sc.scalar(
+                "X-ray flares recorded by NASA's Reuven Ramaty High Energy Solar"
+                " Spectroscopic Imager (RHESSI) Small Explorer"
+            ),
+            "url": sc.scalar(
                 "https://hesperia.gsfc.nasa.gov/rhessi3/data-access/rhessi-data/flare-list/index.html"  # noqa
             ),
-            "citation":
-            sc.scalar("https://doi.org/10.1023/A:1022428818870"),
+            "citation": sc.scalar("https://doi.org/10.1023/A:1022428818870"),
         },
     )
 
@@ -231,43 +225,40 @@ def remove_events(da, rng):
     can be normalised using `events / efficiency`.
     """
     print("removing events based on detector efficiency")
-    collimator_x = sc.array(dims=["x"],
-                            values=[-1000, -300, 300, 1000],
-                            unit="asec",
-                            dtype="float64")
-    collimator_y = sc.array(dims=["y"],
-                            values=[-600, -200, 200, 600],
-                            unit="asec",
-                            dtype="float64")
+    collimator_x = sc.array(
+        dims=["x"], values=[-1000, -300, 300, 1000], unit="asec", dtype="float64"
+    )
+    collimator_y = sc.array(
+        dims=["y"], values=[-600, -200, 200, 600], unit="asec", dtype="float64"
+    )
     efficiency = sc.DataArray(
         sc.array(
             dims=["x", "y"],
-            values=np.array([[0.9, 0.95, 0.77], [0.98, 0.89, 0.82], [0.93, 0.94,
-                                                                     0.91]]),
+            values=np.array(
+                [[0.9, 0.95, 0.77], [0.98, 0.89, 0.82], [0.93, 0.94, 0.91]]
+            ),
         ),
-        coords={
-            "x": collimator_x,
-            "y": collimator_y
-        },
+        coords={"x": collimator_x, "y": collimator_y},
     )
 
     da = sc.sort(da, "x")
     filtered = []
     for i in range(len(collimator_x) - 1):
-        column = sc.sort(da["x", collimator_x[i]:collimator_x[i + 1]], "y")
-        filtered.append(column["y", -1e8 * collimator_y.unit:collimator_y[0]])
-        filtered.append(column["y", collimator_y[-1]:1e8 * collimator_y.unit])
+        column = sc.sort(da["x", collimator_x[i] : collimator_x[i + 1]], "y")
+        filtered.append(column["y", -1e8 * collimator_y.unit : collimator_y[0]])
+        filtered.append(column["y", collimator_y[-1] : 1e8 * collimator_y.unit])
         for j in range(len(collimator_y) - 1):
-            cell = column["y", collimator_y[j]:collimator_y[j + 1]]
+            cell = column["y", collimator_y[j] : collimator_y[j + 1]]
             n = cell.sizes["flare"]
             selected = np.sort(
-                rng.choice(n,
-                           size=int(n * efficiency["x", i]["y", j].value),
-                           replace=False))
+                rng.choice(
+                    n, size=int(n * efficiency["x", i]["y", j].value), replace=False
+                )
+            )
             filtered.append(cell[selected])
 
-    filtered.append(da["x", -1e8 * collimator_x.unit:collimator_x[0]])
-    filtered.append(da["x", collimator_x[-1]:11e8 * collimator_x.unit])
+    filtered.append(da["x", -1e8 * collimator_x.unit : collimator_x[0]])
+    filtered.append(da["x", collimator_x[-1] : 11e8 * collimator_x.unit])
 
     out = sc.sort(sc.concat(filtered, "flare"), "peak_time")
     out.attrs["detector_efficiency"] = sc.scalar(efficiency)

@@ -114,9 +114,9 @@ class PlotModel:
                 if typing.has_datetime_type(coord):
                     coord = coord - coord.min()
                 coord_list[dim] = coord
-        tmp['data'] = DataArray(data=array.data,
-                                coords=coord_list,
-                                masks=to_dict(array.masks))
+        tmp['data'] = DataArray(
+            data=array.data, coords=coord_list, masks=to_dict(array.masks)
+        )
         return bins(**tmp)
 
     def _axis_coord(self, array, dim):
@@ -125,8 +125,11 @@ class PlotModel:
         """
         if dim in array.meta:
             coord = array.meta[dim]
-            if typing.has_vector_type(coord) or typing.has_string_type(coord) or (
-                    dim not in coord.dims):
+            if (
+                typing.has_vector_type(coord)
+                or typing.has_string_type(coord)
+                or (dim not in coord.dims)
+            ):
                 coord = arange(dim=dim, start=0, stop=array.sizes[dim])
             elif typing.has_datetime_type(coord):
                 coord = coord - coord.min()

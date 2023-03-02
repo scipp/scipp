@@ -39,11 +39,13 @@ class PlotModel1d(PlotModel):
             if len(model._array.meta[dim].dims) != 1:
                 continue
             if not isinstance(slices[dim], tuple) or not isinstance(
-                    slices[dim][0], sc.Variable):
+                slices[dim][0], sc.Variable
+            ):
                 continue
             start, stop = slices[dim]
-            s = sc.get_slice_params(model._array.data, model._array.meta[dim], start,
-                                    stop)[1]
+            s = sc.get_slice_params(
+                model._array.data, model._array.meta[dim], start, stop
+            )[1]
             if s.start + 1 == s.stop:
                 slices[dim] = s.start
             else:

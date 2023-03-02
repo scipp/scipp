@@ -92,9 +92,10 @@ class Config:
             self._cfg.read(user=False, defaults=True)
         # Add source after _cfg.read to override 'user' and 'defaults'
         self._cfg.set(
-            confuse.YamlSource('./scipp.config.yaml',
-                               optional=True,
-                               loader=self._cfg.loader))
+            confuse.YamlSource(
+                './scipp.config.yaml', optional=True, loader=self._cfg.loader
+            )
+        )
 
     @lru_cache()  # noqa: B019
     def get(self) -> dict:
@@ -110,7 +111,8 @@ class Config:
         """Change the value of a parameter."""
         if name not in self.get():
             raise TypeError(
-                f"New items cannot be inserted into the configuration, got '{name}'.")
+                f"New items cannot be inserted into the configuration, got '{name}'."
+            )
         self.get()[name] = value
 
     def keys(self) -> Iterable[str]:

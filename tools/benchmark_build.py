@@ -48,7 +48,7 @@ COMMON_BUILD_ARGS = ['-j6']
 CASES = [
     Case(name='base'),
     Case(name='feature', cmake_args=dict(MY_FEATURE='ON')),
-    Case(name='serial', build_args=['-j1'])
+    Case(name='serial', build_args=['-j1']),
 ]
 
 # For every set of files provided here, the build is re-run after touching
@@ -88,23 +88,29 @@ def grope(paths):
 def configure(case, build_dir, install_dir):
     cmake_args = [
         f'-D{key}={val}'
-        for key, val in chain(COMMON_CMAKE_ARGS.items(), case.cmake_args.items()) if val
+        for key, val in chain(COMMON_CMAKE_ARGS.items(), case.cmake_args.items())
+        if val
     ]
-    cmake_args.extend([
-        f'-DCMAKE_INSTALL_PREFIX={install_dir}',
-        f'-DPython_EXECUTABLE={sys.executable}',
-        str(SRCDIR)
-    ])
+    cmake_args.extend(
+        [
+            f'-DCMAKE_INSTALL_PREFIX={install_dir}',
+            f'-DPython_EXECUTABLE={sys.executable}',
+            str(SRCDIR),
+        ]
+    )
 
     try:
-        subprocess.run(['cmake', *cmake_args],
-                       capture_output=True,
-                       check=True,
-                       encoding='utf-8',
-                       cwd=build_dir)
+        subprocess.run(
+            ['cmake', *cmake_args],
+            capture_output=True,
+            check=True,
+            encoding='utf-8',
+            cwd=build_dir,
+        )
     except subprocess.CalledProcessError as err:
-        print(f"Configuring build '{case.name}' "
-              f"failed:\n{err.stdout}\n{err.stderr}")
+        print(
+            f"Configuring build '{case.name}' " f"failed:\n{err.stdout}\n{err.stderr}"
+        )
         sys.exit(1)
 
 
@@ -117,13 +123,15 @@ class Times:
     def parse(cls, msg):
         time_pattern = re.compile(r'(real|user|sys)\s+(\d+)m(\d+)[,.]?(\d*)s')
         times_dict = dict()
-        for line in msg.rsplit(
-                '\n', 10)[1:]:  # do not look at all of the output, it can get very long
+        for line in msg.rsplit('\n', 10)[
+            1:
+        ]:  # do not look at all of the output, it can get very long
             match = time_pattern.match(line)
             if match:
                 # Truncate sub second results, those will not be reliable.
-                times_dict[match[1]] = timedelta(minutes=int(match[2]),
-                                                 seconds=int(match[3]))
+                times_dict[match[1]] = timedelta(
+                    minutes=int(match[2]), seconds=int(match[3])
+                )
         try:
             return cls(times_dict['real'], times_dict['user'])
         except KeyError:
@@ -138,12 +146,14 @@ def build(case, build_dir):
         build_args.append('--')
         build_args.extend(all_build_args)
     try:
-        res = subprocess.run(' '.join(['time', 'cmake', *build_args]),
-                             capture_output=True,
-                             check=True,
-                             encoding='utf-8',
-                             cwd=build_dir,
-                             shell=True)
+        res = subprocess.run(
+            ' '.join(['time', 'cmake', *build_args]),
+            capture_output=True,
+            check=True,
+            encoding='utf-8',
+            cwd=build_dir,
+            shell=True,
+        )
     except subprocess.CalledProcessError as err:
         print(f"Build '{case.name}' failed:\n{err.stdout}\n{err.stderr}")
         sys.exit(1)
@@ -153,14 +163,19 @@ def build(case, build_dir):
 
 def report(results):
     print('Result:\n')
-    results = sorted(sorted(results, key=lambda t: t[0]),
-                     key=lambda t: ' '.join('' if t[1] == 'clean' else str(t[1])))
+    results = sorted(
+        sorted(results, key=lambda t: t[0]),
+        key=lambda t: ' '.join('' if t[1] == 'clean' else str(t[1])),
+    )
     printed_names = False
     for touch, group in groupby(results, key=lambda t: t[1]):
         names, _, times = zip(*group)
         if not printed_names:
-            print('                      ' + '  '.join(f'{name:20s}'
-                                                       for name in names) + '\n')
+            print(
+                '                      '
+                + '  '.join(f'{name:20s}' for name in names)
+                + '\n'
+            )
             printed_names = True
         if touch:
             for path in touch[:-1]:
@@ -171,8 +186,11 @@ def report(results):
             f'U{time.user.seconds // 60:2d}m{time.user.seconds % 60:02d}s'
             for time in times
         ]
-        print(f'{str(touch)[-20::]:20s}  ' + '  '.join(f'{time:20s}'
-                                                       for time in time_strs) + '\n')
+        print(
+            f'{str(touch)[-20::]:20s}  '
+            + '  '.join(f'{time:20s}' for time in time_strs)
+            + '\n'
+        )
 
 
 def main():
