@@ -1,3 +1,5 @@
 confuse
 graphlib-backport
-numpy>=1.20
+# numba requires <1.24, putting no upper bound here causes conflict
+# between base.txt and extra.txt
+numpy>=1.20,<1.24
