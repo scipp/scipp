@@ -187,7 +187,6 @@ html_theme = 'sphinx_book_theme'
 # documentation.
 #
 html_theme_options = {
-    "logo_only": True,
     "repository_url": f"https://github.com/scipp/{project}",
     "repository_branch": "main",
     "path_to_docs": "docs",
