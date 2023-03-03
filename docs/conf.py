@@ -1,7 +1,7 @@
 import doctest
 import os
 import sys
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import sphinx_book_theme
 from docutils.nodes import document
@@ -23,29 +23,46 @@ long_version = scipp.__version__
 outdated = not version_info.is_latest(long_version)
 
 
-def add_buttons(
-    app: Sphinx,
-    pagename: str,
-    templatename: str,
-    context: Dict[str, Any],
-    doctree: Optional[document],
-):
-    base = "https://scipp.github.io"
-    l1 = []
-    l1.append({"type": "link", "text": "scipp", "url": f"{base}"})
-    l1.append({"type": "link", "text": "plopp", "url": f"{base}/plopp"})
-    l1.append({"type": "link", "text": "scippnexus", "url": f"{base}/scippnexus"})
-    l1.append({"type": "link", "text": "scippneutron", "url": f"{base}/scippneutron"})
-    l1.append({"type": "link", "text": "ess", "url": f"{base}/ess"})
-    header_buttons = context["header_buttons"]
-    header_buttons.append(
+def make_text_icon(text: str) -> str:
+    # Inject some text into the icon of a launch button.
+    # This may need to be updated in future releases of sphinx-book-theme.
+    return (
+        '"></i>'
+        f'<span class="btn__text-container">{text}</span>'
+        '<i class="fa fa-caret-down'
+    )
+
+
+def add_button_group(
+    context: Dict[str, Any], buttons: List[Dict[str, str]], *, name: str, label: str
+) -> None:
+    context["header_buttons"].append(
         {
             "type": "group",
-            "buttons": l1,
-            "icon": "fa fa-caret-down",
-            "text": "Related projects",
+            "buttons": buttons,
+            "icon": make_text_icon(name),
+            "label": label,
+            "tooltip": name,
         }
     )
+
+
+def add_related_project_buttons(context: Dict[str, Any]) -> None:
+    base = "https://scipp.github.io"
+    buttons = [
+        {"type": "link", "text": "scipp", "url": f"{base}"},
+        {"type": "link", "text": "plopp", "url": f"{base}/plopp"},
+        {"type": "link", "text": "scippnexus", "url": f"{base}/scippnexus"},
+        {"type": "link", "text": "scippneutron", "url": f"{base}/scippneutron"},
+        {"type": "link", "text": "ess", "url": f"{base}/ess"},
+    ]
+    add_button_group(
+        context, buttons, name="Related projects", label="related-projects"
+    )
+
+
+def add_version_buttons(context: Dict[str, Any]) -> None:
+    base = "https://scipp.github.io"
     releases = version_info.minor_releases(first='0.8')
     if outdated:
         current = f"{long_version} (outdated)"
@@ -58,9 +75,18 @@ def add_buttons(
     lines = [{"type": "link", "text": latest, "url": f"{base}"}]
     for r in entries:
         lines.append({"type": "link", "text": f"{r}", "url": f"{base}/release/{r}"})
-    header_buttons.append(
-        {"type": "group", "buttons": lines, "icon": "fa fa-caret-down", "text": current}
-    )
+    add_button_group(context, lines, name=current, label="versions")
+
+
+def add_buttons(
+    app: Sphinx,
+    pagename: str,
+    templatename: str,
+    context: Dict[str, Any],
+    doctree: Optional[document],
+) -> None:
+    add_related_project_buttons(context)
+    add_version_buttons(context)
 
 
 sphinx_book_theme.add_launch_buttons = add_buttons
@@ -211,6 +237,7 @@ html_favicon = "_static/favicon.ico"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+html_css_files = ["custom.css"]
 
 # -- Options for HTMLHelp output ------------------------------------------
 

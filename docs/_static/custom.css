@@ -1,0 +1,10 @@
+.dropdown-related-projects ul.dropdown-menu ,
+.dropdown-versions ul.dropdown-menu {
+    /* Menus of launch buttons are normally shifted by -75%.
+       This makes no sense for buttons with text. */
+    transform:translateX(0);
+}
+
+.btn__text-container {
+    margin-right: 0.4em;
+}
