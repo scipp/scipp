@@ -49,6 +49,8 @@ Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
+* `Plopp <https://scipp.github.io/plopp/>`_ is now the default plotting backend `#3076 <https://github.com/scipp/scipp/pull/3076>`_.
+
 Bugfixes
 ~~~~~~~~
 
