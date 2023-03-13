@@ -5,7 +5,6 @@ ipykernel
 ipympl
 ipywidgets
 packaging
-plopp
 requests
 sphinx
 sphinx-autodoc-typehints==1.18.3  # later versions require sphinx >=5 which is incompatible with current sphinx-book-theme

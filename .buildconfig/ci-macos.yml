@@ -8,6 +8,7 @@ dependencies:
   - cmake=3.23.2
   - conan=1.59.0
   - ninja=1.11.0
+  - scipp::plopp=23.03.0
   - tbb=2020.2.*
   - tbb-devel=2020.2.*
   - tox=3.25.0
