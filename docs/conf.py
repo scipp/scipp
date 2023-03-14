@@ -309,4 +309,6 @@ linkcheck_ignore = [
     'https://apt.kitware.com+',
     # Flaky pooch fatiando website
     'https://www.fatiando.org/pooch+',
+    # Fails to validate SSL certificate but Firefox is happy with the URL.
+    'https://physics.nist.gov/cuu/Constants/',
 ]
