@@ -36,7 +36,7 @@ Release Notes
    and Sunyoung Yoo :sup:`a`
 
 
-vRELEASE_PLACEHOLDER
+v23.03.0
 --------
 
 Features
