@@ -142,7 +142,6 @@ def legacy_plot(*args, **kwargs):
     warnings.warn(
         "You are using Scipp's deprecated plotting backend. "
         "This will be removed in Scipp v23.08.0 (August 2023) or after. "
-        "Scipp v23.03.0 (March 2023) and all later versions will use Plopp by default. "
         "See https://scipp.github.io/visualization/plotting-overview.html#Migrating-to-the-new-backend "  # noqa
         "for details and a migration guide.",
         VisibleDeprecationWarning,
@@ -172,7 +171,7 @@ def legacy_plot(*args, **kwargs):
 
 
 def plot(*args, **kwargs):
-    if config['plot'].get('use_plopp'):
+    if config['plot'].get('use_plopp', True):
         import plopp
 
         return plopp.plot(*args, **kwargs)

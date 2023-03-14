@@ -3,6 +3,7 @@ h5py
 matplotlib
 numba
 pandas
+plopp
 pooch
 pythreejs
 scipy>=1.7.0
