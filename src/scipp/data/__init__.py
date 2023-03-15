@@ -4,7 +4,7 @@
 from functools import lru_cache
 
 from ..core import DataArray, array, linspace, ones
-from ..io import open_hdf5
+from ..io import load_hdf5
 
 _version = '1'
 
@@ -66,7 +66,7 @@ def rhessi_flares() -> str:
 
 
 def vulcan_steel_strain_data() -> DataArray:
-    return open_hdf5(get_path('VULCAN_221040_processed.h5'))
+    return load_hdf5(get_path('VULCAN_221040_processed.h5'))
 
 
 def table_xyz(nrow: int) -> DataArray:

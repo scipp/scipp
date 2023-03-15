@@ -418,17 +418,16 @@ class HDF5IO:
         return cls._handlers[group.attrs['scipp-type']].read(group, **kwargs)
 
 
-def to_hdf5(obj: VariableLike, filename: Union[str, Path]):
-    """
-    Writes object out to file in hdf5 format.
-    """
+def save_hdf5(obj: VariableLike, filename: Union[str, Path]):
+    """Write an object out to file in HDF5 format."""
     import h5py
 
     with h5py.File(filename, 'w') as f:
         HDF5IO.write(f, obj)
 
 
-def open_hdf5(filename: Union[str, Path]) -> VariableLike:
+def load_hdf5(filename: Union[str, Path]) -> VariableLike:
+    """Load a Scipp-HDF5 file."""
     import h5py
 
     with h5py.File(filename, 'r') as f:
