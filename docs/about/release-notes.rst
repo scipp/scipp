@@ -50,6 +50,7 @@ Breaking changes
 ~~~~~~~~~~~~~~~~
 
 * `Plopp <https://scipp.github.io/plopp/>`_ is now the default plotting backend `#3076 <https://github.com/scipp/scipp/pull/3076>`_.
+* ``open_hdf5`` and ``to_hdf5`` have been renamed to ``load_hdf5`` and ``save_hdf5``, respectively, `#3081 <https://github.com/scipp/scipp/pull/3081>`_.
 
 Bugfixes
 ~~~~~~~~
