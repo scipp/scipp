@@ -23,6 +23,9 @@ In contrast to semantic versioning, which may give a vague indirect hint about w
   Scipp will generally not follow a deprecation process in these cases.
   That is, we prioritize correctness over convenience.
   In rare cases bugfix releases may thus break user code, or regular releases may break user code without prior deprecation warnings.
+- Due to the calendar versioning scheme, deprecations can usually not name a concrete version for a removal.
+  Instead, they name the earliest possible version.
+  A message like "will be removed in version 23.09.0" should be read as "will be removed in the first version in or after September 2023".
 
 Development
 -----------

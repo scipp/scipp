@@ -418,18 +418,55 @@ class HDF5IO:
         return cls._handlers[group.attrs['scipp-type']].read(group, **kwargs)
 
 
-def to_hdf5(obj: VariableLike, filename: Union[str, Path]):
-    """
-    Writes object out to file in hdf5 format.
-    """
+def save_hdf5(obj: VariableLike, filename: Union[str, Path]) -> None:
+    """Write an object out to file in HDF5 format."""
     import h5py
 
     with h5py.File(filename, 'w') as f:
         HDF5IO.write(f, obj)
 
 
-def open_hdf5(filename: Union[str, Path]) -> VariableLike:
+def load_hdf5(filename: Union[str, Path]) -> VariableLike:
+    """Load a Scipp-HDF5 file."""
     import h5py
 
     with h5py.File(filename, 'r') as f:
         return HDF5IO.read(f)
+
+
+def to_hdf5(obj: VariableLike, filename: Union[str, Path]) -> None:
+    """Write an object out to file in HDF5 format.
+
+    .. deprecated:: 23.03.0
+       Use :func:`scipp.io.hdf5.save_hdf5` instead.
+       Will be removed in version 23.09.0.
+    """
+    import warnings
+
+    from ..core.util import VisibleDeprecationWarning
+
+    warnings.warn(
+        "scipp.io.hdf5.to_hdf5 is deprecated. Use scipp.io.hdf5.save_hdf5 instead."
+        "to_hdf5 will be removed in Scipp v23.09.0 (September 2023) or after.",
+        VisibleDeprecationWarning,
+    )
+    return save_hdf5(obj, filename)
+
+
+def open_hdf5(filename: Union[str, Path]) -> VariableLike:
+    """Load a Scipp-HDF5 file.
+
+    .. deprecated:: 23.03.0
+       Use :func:`scipp.io.hdf5.load_hdf5` instead.
+       Will be removed in version 23.09.0.
+    """
+    import warnings
+
+    from ..core.util import VisibleDeprecationWarning
+
+    warnings.warn(
+        "scipp.io.hdf5.open_hdf5 is deprecated. Use scipp.io.hdf5.save_hdf5 instead."
+        "open_hdf5 will be removed in Scipp v23.09.0 (September 2023) or after.",
+        VisibleDeprecationWarning,
+    )
+    return load_hdf5(filename)

@@ -4,7 +4,7 @@ import scippneutron as scn
 
 import scipp as sc
 
-da = sc.io.open_hdf5('/home/simon/mantid/instruments/VULCAN/VULCAN_221040.h5')
+da = sc.io.load_hdf5('/home/simon/mantid/instruments/VULCAN/VULCAN_221040.h5')
 dspacing = scn.convert(da, 'tof', 'dspacing', scatter=True).squeeze()
 dspacing
 
@@ -21,4 +21,4 @@ tmp.bins.coords['time'] = tmp.bins.coords.pop('pulse_time')
 tmp.attrs['proton_charge'].value = tmp.attrs['proton_charge'].value.rename(
     pulse_time='time'
 )
-tmp.to_hdf5('VULCAN_221040_processed.h5')
+tmp.save_hdf5('VULCAN_221040_processed.h5')

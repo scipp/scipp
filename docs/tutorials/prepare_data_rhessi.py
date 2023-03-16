@@ -270,7 +270,7 @@ def main():
     da = load_txt_file()
     da = prefilter(da)
     da = remove_events(da, rng)
-    da.to_hdf5(DATA_DIR / "rhessi_flares.h5")
+    da.save_hdf5(DATA_DIR / "rhessi_flares.h5")
 
 
 if __name__ == "__main__":
