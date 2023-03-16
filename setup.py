@@ -66,7 +66,15 @@ setup(
     python_requires='>=3.8',
     install_requires=['confuse', 'graphlib-backport', 'numpy>=1.20'],
     extras_require={
-        "test": ["pytest", "matplotlib", "xarray", "pandas", "pythreejs", "bs4"],
+        "test": [
+            "pytest",
+            "matplotlib",
+            "xarray",
+            "pandas",
+            "pythreejs",
+            "bs4",
+            "numba;python_version<'3.11'",  # numba does not support 3.11 yet
+        ],
         'all': ['h5py', 'scipy>=1.7.0', 'graphviz', 'pooch', 'plopp', 'matplotlib'],
         'interactive': [
             'ipympl',
