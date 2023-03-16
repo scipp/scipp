@@ -7,7 +7,9 @@ import pytest
 import scipp as sc
 
 # numba is not supported for these versions
-pytestmark = pytest.mark.skipif(sys.version_info >= (3, 11))
+pytestmark = pytest.mark.skipif(
+    sys.version_info >= (3, 11), reason='numba does not support this Python version'
+)
 
 
 def test_unary():
