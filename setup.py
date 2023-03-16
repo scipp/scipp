@@ -73,7 +73,7 @@ setup(
             "pandas",
             "pythreejs",
             "bs4",
-            "numba",
+            "numba;python_version<'3.11'",  # numba does not support 3.11 yet
         ],
         'all': ['h5py', 'scipy>=1.7.0', 'graphviz', 'pooch', 'plopp', 'matplotlib'],
         'interactive': [

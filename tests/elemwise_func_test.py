@@ -1,8 +1,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
+import sys
+
 import pytest
 
 import scipp as sc
+
+# numba is not supported for these versions
+pytestmark = pytest.mark.skipif(sys.version_info >= (3, 11))
 
 
 def test_unary():
