@@ -61,6 +61,7 @@ test:
     - ipympl
     - ipywidgets
     - matplotlib-base
+    - numba # [py<3.11]
     - pandas
     - pytest
     - pythreejs
