@@ -51,7 +51,7 @@ jobs:
       - run: |
           sleep 120  # PyPI upload have a small delay until visible, avoid workflow fails in release builds
           tox --skip-pkg-install -e docs -- scipp==${VERSION}
-          echo "target=$(python docs/version.py --repo=scipp --version=${VERSION} --action=get-target)" >> $GITHUB_ENV
+          echo "target=release/23.1" >> $GITHUB_ENV
         if: ${{ inputs.publish }}
       - run: tox -e docs
         if: ${{ !inputs.publish }}
