@@ -8,6 +8,6 @@ packaging
 requests
 sphinx
 sphinx-autodoc-typehints==1.18.3  # later versions require sphinx >=5 which is incompatible with current sphinx-book-theme
-sphinx-book-theme
+sphinx-book-theme==0.3.3
 sphinx-copybutton
 nbsphinx
