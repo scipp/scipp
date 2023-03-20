@@ -58,6 +58,8 @@ def as_vectors(x: Variable, y: Variable, z: Variable) -> Variable:
     ------
     scipp.DTypeError
         If the dtypes of inputs are not ``float64``.
+
+    .. versionadded:: RELEASE_PLACEHOLDER
     """
     return _call_cpp_func(_core_cpp.geometry.as_vectors, x, y, z)
 
