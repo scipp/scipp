@@ -34,6 +34,34 @@ def _to_eigen_layout(a):
     return _np.moveaxis(a, -1, -2)
 
 
+def as_vectors(x: Variable, y: Variable, z: Variable) -> Variable:
+    """Return inputs combined into vectors.
+
+    Inputs may be broadcast to a common shape,.
+
+    Parameters
+    ----------
+    x:
+        Variable containing x components.
+    y:
+        Variable containing y components.
+    z:
+        Variable containing z components.
+
+    Returns
+    -------
+    :
+        Zip of input x, y and z with dtype ``vector3``.
+        The output unit is the same as input unit.
+
+    Raises
+    ------
+    scipp.DTypeError
+        If the dtypes of inputs are not ``float64``.
+    """
+    return _call_cpp_func(_core_cpp.geometry.as_vectors, x, y, z)
+
+
 def translation(
     *,
     unit: Union[Unit, str] = units.dimensionless,

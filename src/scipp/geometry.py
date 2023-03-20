@@ -2,15 +2,19 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Jan-Lukas Wynen
 
+import warnings
 from typing import Union
 
 import numpy as np
 
+from . import spatial
 from ._scipp import core as _cpp
+from .core import Variable
 from .core._cpp_wrapper_util import call_func as _call_cpp_func
+from .core.util import VisibleDeprecationWarning
 
 
-def position(x: _cpp.Variable, y: _cpp.Variable, z: _cpp.Variable) -> _cpp.Variable:
+def position(x: Variable, y: Variable, z: Variable) -> Variable:
     """Element-wise zip functionality to produce a 3 element vector.
 
     :param x: Variable containing x components.
@@ -18,8 +22,16 @@ def position(x: _cpp.Variable, y: _cpp.Variable, z: _cpp.Variable) -> _cpp.Varia
     :param z: Variable containing z components.
     :raises: If the dtypes of inputs are not double precision floats.
     :return: Zip of input x, y and z. Output unit is same as input unit.
+
+    .. deprecated:: RELEASE_PLACEHOLDER
+       Has been moved to :func:`scipp.spatial.as_vectors`.
     """
-    return _call_cpp_func(_cpp.geometry.position, x, y, z)
+    warnings.warn(
+        "position has been deprecated and will be removed in Scipp v23.09.0. "
+        "Use scipp.spatial.as_vectors instead.",
+        VisibleDeprecationWarning,
+    )
+    return spatial.as_vectors(x, y, z)
 
 
 def rotation_matrix_from_quaternion_coeffs(
