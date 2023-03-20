@@ -45,11 +45,9 @@ def _format_dictionary_item(name_item: tuple, maxidx: int = 10) -> str:
     return "(" + ": ".join((name, type_repr)) + ")"
 
 
-def _format_multi_dim_data(var: Union[Variable, DataArray, Dataset, np.ndarray]) -> str:
+def _format_multi_dim_data(var: Union[Dataset, np.ndarray]) -> str:
     """Inline preview of single or multi-dimensional data"""
-    if isinstance(var, (Variable, DataArray)):
-        return inline_variable_repr(var)
-    elif isinstance(var, Dataset):
+    if isinstance(var, Dataset):
         view_iterable = list(var.items())
         var_len = len(var)
         first_idx, last_idx = 0, -1
@@ -83,18 +81,20 @@ def _summarize_atomic_variable(var, name: str, depth: int = 0) -> str:
     if isinstance(var, (Dataset, DataArray, Variable)):
         parent_obj_str = "scipp"
         shape_repr = _format_shape(var)
-        preview = _format_multi_dim_data(var)
-        if not isinstance(var, Dataset):
-            dtype_str = str(var.dtype)
-            if var.unit is not None:
-                unit = '𝟙' if var.unit == dimensionless else str(var.unit)
+    if isinstance(var, (DataArray, Variable)):
+        preview = inline_variable_repr(var)
+        dtype_str = str(var.dtype)
+        if var.unit is not None:
+            unit = '𝟙' if var.unit == dimensionless else str(var.unit)
+    elif isinstance(var, Dataset):
+        preview = escape(_format_multi_dim_data(var))
     elif isinstance(var, np.ndarray):
         parent_obj_str = "numpy"
         preview = f"shape={var.shape}, dtype={var.dtype}, values="
-        preview += _format_multi_dim_data(var)
+        preview += escape(_format_multi_dim_data(var))
 
     elif preview == '' and hasattr(var, "__str__"):
-        preview = _format_atomic_value(var, maxidx=30)
+        preview = escape(_format_atomic_value(var, maxidx=30))
 
     html_tpl = load_atomic_row_tpl()
     return Template(html_tpl).substitute(
@@ -105,7 +105,7 @@ def _summarize_atomic_variable(var, name: str, depth: int = 0) -> str:
         shape_repr=shape_repr,
         dtype=escape(dtype_str),
         unit=escape(unit),
-        preview=escape(preview),
+        preview=preview,
     )
 
 
