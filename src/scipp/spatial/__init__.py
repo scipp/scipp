@@ -7,7 +7,7 @@ variables with transformations on vectors.
 
 Despite the name, transformations in this module can be applied to 3-vectors
 in any vector space and coordinate system, not just the physical space.
-The user has to ensure that transformations are applied to the correctc vectors.
+The user has to ensure that transformations are applied to the correct vectors.
 
 See Also
 --------
@@ -36,7 +36,7 @@ def _to_eigen_layout(a):
 
 def translation(
     *,
-    unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
+    unit: Union[Unit, str] = units.dimensionless,
     value: Union[_np.ndarray, list],
 ):
     """
@@ -60,7 +60,7 @@ def translation(
 def translations(
     *,
     dims: Sequence[str],
-    unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
+    unit: Union[Unit, str] = units.dimensionless,
     values: Union[_np.ndarray, list],
 ):
     """
@@ -272,7 +272,7 @@ def rotation_as_rotvec(rotation: Variable, *, unit='rad') -> Variable:
 
 def affine_transform(
     *,
-    unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
+    unit: Union[Unit, str] = units.dimensionless,
     value: Union[_np.ndarray, list],
 ):
     """
@@ -297,7 +297,7 @@ def affine_transform(
 def affine_transforms(
     *,
     dims: Sequence[str],
-    unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
+    unit: Union[Unit, str] = units.dimensionless,
     values: Union[_np.ndarray, list],
 ):
     """
@@ -328,7 +328,7 @@ def affine_transforms(
 
 def linear_transform(
     *,
-    unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
+    unit: Union[Unit, str] = units.dimensionless,
     value: Union[_np.ndarray, list],
 ):
     """Constructs a zero dimensional :class:`Variable` holding a single 3x3
@@ -354,7 +354,7 @@ def linear_transform(
 def linear_transforms(
     *,
     dims: Sequence[str],
-    unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
+    unit: Union[Unit, str] = units.dimensionless,
     values: Union[_np.ndarray, list],
 ):
     """Constructs a :class:`Variable` with given dimensions holding an array
