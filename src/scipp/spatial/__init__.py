@@ -414,5 +414,5 @@ __all__ = [
     'affine_transforms',
     'linear_transform',
     'linear_transforms',
-    'inverse',
+    'inv',
 ]
