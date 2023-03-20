@@ -27,7 +27,8 @@ def position(x: Variable, y: Variable, z: Variable) -> Variable:
        Has been moved to :func:`scipp.spatial.as_vectors`.
     """
     warnings.warn(
-        "position has been deprecated and will be removed in Scipp v23.09.0. "
+        "sc.geometry.position has been deprecated "
+        "and will be removed in Scipp v23.09.0. "
         "Use scipp.spatial.as_vectors instead.",
         VisibleDeprecationWarning,
     )
@@ -36,12 +37,21 @@ def position(x: Variable, y: Variable, z: Variable) -> Variable:
 
 def rotation_matrix_from_quaternion_coeffs(
     value: Union[list, tuple, np.ndarray]
-) -> _cpp.Variable:
+) -> Variable:
     """Construct a rotation matrix from quaternions.
 
     :param value: Coefficients for the 4 quaternions in a one
                   dimensional array of 4 elements.
     :raises: If the input size is not 4.
     :return: 3x3 rotation matrix
+
+    .. deprecated:: RELEASE_PLACEHOLDER
+       Will be removed in favor of :func:`scipp.spatial.rotations`.
     """
+    warnings.warn(
+        "sc.geometry.rotation_matrix_from_quaternion_coeffs has been deprecated and "
+        "will be removed in Scipp v23.09.0. "
+        "Use scipp.spatial.rotations to construct a rotation transform.",
+        VisibleDeprecationWarning,
+    )
     return _call_cpp_func(_cpp.geometry.rotation_matrix_from_quaternion_coeffs, value)
