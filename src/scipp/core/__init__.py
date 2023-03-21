@@ -147,8 +147,6 @@ from .variable import (
     ones,
     empty,
     full,
-    matrix,
-    matrices,
     vector,
     vectors,
     array,

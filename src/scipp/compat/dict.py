@@ -9,7 +9,8 @@ from collections import defaultdict
 import numpy as np
 
 from ..core import vectors  # NOQA
-from ..core import DataArray, Dataset, DType, Variable, matrices, matrix, vector
+from ..core import DataArray, Dataset, DType, Variable, vector
+from ..spatial import linear_transform, linear_transforms
 from ..typing import VariableLike
 
 
@@ -159,9 +160,9 @@ def _dict_to_variable(d):
             out[key] = d[key]
     # Hack for types that cannot be directly constructed using Variable()
     if out['dims']:
-        init = {'vector3': vectors, 'linear_transform3': matrices}
+        init = {'vector3': vectors, 'linear_transform3': linear_transforms}
     else:
-        init = {'vector3': vector, 'linear_transform3': matrix}
+        init = {'vector3': vector, 'linear_transform3': linear_transform}
     make_var = init.get(str(out.get('dtype', None)), Variable)
     if make_var != Variable:
         if not out['dims']:

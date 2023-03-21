@@ -19,8 +19,6 @@ Creation functions
    index
    linspace
    logspace
-   matrix
-   matrices
    ones
    ones_like
    scalar

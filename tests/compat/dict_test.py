@@ -50,7 +50,7 @@ def test_variable_0D_vector_to_dict():
     assert var_dict["dtype"] == sc.DType.vector3
 
 
-def test_variable_matrix_to_dict():
+def test_variable_linear_transform_to_dict():
     data = np.array(
         [
             np.arange(9.0).reshape(3, 3),
@@ -59,15 +59,15 @@ def test_variable_matrix_to_dict():
             np.arange(2.0, 11.0).reshape(3, 3),
         ]
     )
-    var = sc.matrices(dims=['x'], values=data, unit=sc.units.m)
+    var = sc.spatial.linear_transforms(dims=['x'], values=data, unit=sc.units.m)
     var_dict = sc.to_dict(var)
     assert var_dict["shape"] == (4,)
     assert var_dict["values"].shape == (4, 3, 3)
     assert var_dict["dtype"] == sc.DType.linear_transform3
 
 
-def test_variable_0D_matrix_to_dict():
-    var = sc.matrix(value=np.arange(1, 10).reshape(3, 3))
+def test_variable_0D_linear_transform_to_dict():
+    var = sc.spatial.linear_transform(value=np.arange(1, 10).reshape(3, 3))
     var_dict = sc.to_dict(var)
     assert var_dict["dims"] == ()
     assert var_dict["shape"] == ()
@@ -123,7 +123,7 @@ def test_variable_0D_vector_from_dict():
     assert var.dtype == sc.DType.vector3
 
 
-def test_variable_matrix_from_dict():
+def test_variable_linear_transform_from_dict():
     var_dict = {
         "dims": ('x',),
         "values": np.arange(18).reshape(2, 3, 3),
@@ -137,7 +137,7 @@ def test_variable_matrix_from_dict():
     assert var.dtype == sc.DType.linear_transform3
 
 
-def test_variable_0D_matrix_from_dict():
+def test_variable_0D_linear_transform_from_dict():
     var_dict = {
         "dims": (),
         "values": np.arange(9).reshape(3, 3),
@@ -176,7 +176,7 @@ def test_variable_0D_vector_round_trip():
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 
-def test_variable_matrix_round_trip():
+def test_variable_linear_transform_round_trip():
     data = np.array(
         [
             np.arange(9.0).reshape(3, 3),
@@ -185,12 +185,12 @@ def test_variable_matrix_round_trip():
             np.arange(2.0, 11.0).reshape(3, 3),
         ]
     )
-    var = sc.matrices(dims=['x'], values=data, unit=sc.units.m)
+    var = sc.spatial.linear_transforms(dims=['x'], values=data, unit=sc.units.m)
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 
 def test_variable_0D_matrix_round_trip():
-    var = sc.matrix(value=np.arange(1, 10).reshape(3, 3))
+    var = sc.spatial.linear_transform(value=np.arange(1, 10).reshape(3, 3))
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 

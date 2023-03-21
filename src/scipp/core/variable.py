@@ -360,57 +360,6 @@ def full(
     )
 
 
-def matrix(
-    *, unit: Union[Unit, str, None] = default_unit, value: Union[_np.ndarray, list]
-) -> Variable:
-    """Constructs a zero dimensional :class:`Variable` holding a single 3x3
-    matrix.
-
-
-    :param value: Initial value, a list or 1-D NumPy array.
-    :param unit: Optional, unit. Default=dimensionless
-    :returns: A scalar (zero-dimensional) Variable.
-
-    :seealso: :py:func:`scipp.matrices`
-    """
-    warnings.warn(
-        "sc.matrix() has been deprecated in favour of "
-        "sc.spatial.linear_transform(), and will be removed in a future "
-        "version of scipp.",
-        DeprecationWarning,
-    )
-    from ..spatial import linear_transform
-
-    return linear_transform(unit=unit, value=value)
-
-
-def matrices(
-    *,
-    dims: Sequence[str],
-    unit: Union[Unit, str, None] = default_unit,
-    values: Union[_np.ndarray, list],
-) -> Variable:
-    """Constructs a :class:`Variable` with given dimensions holding an array
-    of 3x3 matrices.
-
-
-    :param dims: Dimension labels.
-    :param values: Initial values.
-    :param unit: Optional, data unit. Default=dimensionless
-
-    :seealso: :py:func:`scipp.matrix`
-    """
-    warnings.warn(
-        "sc.matrices() has been deprecated in favour of "
-        "sc.spatial.linear_transforms(), and will be removed in a future "
-        "version of scipp.",
-        DeprecationWarning,
-    )
-    from ..spatial import linear_transforms
-
-    return linear_transforms(dims=dims, unit=unit, values=values)
-
-
 def vector(
     value: Union[_np.ndarray, list], *, unit: Union[Unit, str, None] = default_unit
 ) -> Variable:
