@@ -18,7 +18,7 @@ void init_geometry(py::module &m) {
   auto geom_m = m.def_submodule("geometry");
 
   geom_m.def(
-      "position",
+      "as_vectors",
       [](const Variable &x, const Variable &y, const Variable &z) {
         return position(x, y, z);
       },

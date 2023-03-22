@@ -431,7 +431,10 @@ def vector(
 
     See Also
     --------
-    scipp.vectors
+    scipp.vectors:
+        Construct an array of vectors.
+    scipp.spatial.as_vectors:
+        Construct vectors from Scipp Variables
 
     Examples
     --------
@@ -470,7 +473,10 @@ def vectors(
 
     See Also
     --------
-    scipp.vector
+    scipp.vector:
+        Construct a single vector.
+    scipp.spatial.as_vectors:
+        Construct vectors from Scipp Variables
 
     Examples
     --------

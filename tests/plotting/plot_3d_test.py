@@ -13,7 +13,7 @@ from ..factory import make_binned_data_array, make_dense_data_array
 
 def _with_fake_pos(*args, **kwargs):
     da = make_dense_data_array(*args, **kwargs)
-    da.coords['pos'] = sc.geometry.position(
+    da.coords['pos'] = sc.spatial.as_vectors(
         da.coords['xx'], da.coords['yy'], da.coords['zz']
     ).transpose(da.dims[:3])
     return da
@@ -98,7 +98,7 @@ def test_plot_4d_with_masks_projection_3d():
     da.masks['tube_ends'] = sc.Variable(
         dims=['pixel'], values=np.where(a > 0.5, True, False)
     )
-    da.coords['pos'] = sc.geometry.position(
+    da.coords['pos'] = sc.spatial.as_vectors(
         sc.arange(dim='pack', start=0.0, stop=2),
         sc.arange(dim='tube', start=0.0, stop=8),
         sc.arange(dim='straw', start=0.0, stop=7),
