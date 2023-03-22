@@ -169,7 +169,9 @@ def make_simple_datagroup(child=None, maxdepth=1, cur_depth=1):
         dims=['x'], values=[[1, 2, 3], [1, 2, 3], [1, 2, 3]]
     )
     dg['trans3-' + id_suffix] = trans3
-    dg['matrix-' + id_suffix] = sc.matrix(value=[[1, 2.5, 3.75], [1, 2, 3], [1, 2, 3]])
+    dg['linear-' + id_suffix] = sc.spatial.linear_transform(
+        value=[[1, 2.5, 3.75], [1, 2, 3], [1, 2, 3]]
+    )
     if cur_depth > 1:
         dg['dg-' + id_suffix] = child
 

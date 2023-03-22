@@ -148,8 +148,6 @@ from .core import (
     empty_like,
     full,
     full_like,
-    matrix,
-    matrices,
     vector,
     vectors,
     array,

@@ -374,7 +374,7 @@ def linear_transform(
     Parameters
     ----------
     value:
-        Initial value, a list or 1-D NumPy array.
+        Initial value, a list of lists or 2-D NumPy array.
     unit:
         Optional, unit. Default=dimensionless
 

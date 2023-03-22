@@ -63,8 +63,6 @@ addopts = """
 filterwarnings = [
   'error',
   'ignore:You are running a "Debug" build of scipp:',
-  'ignore:sc.matrix\(\) has been deprecated:DeprecationWarning',
-  'ignore:sc.matrices\(\) has been deprecated:DeprecationWarning',
   'ignore:sc.geometry.rotation_matrix_from_quaternion_coeffs has been deprecated:scipp.VisibleDeprecationWarning',
   # Comes from pytest_asyncio and is not our fault.
   "ignore:The 'asyncio_mode' default value will change to 'strict' in future:DeprecationWarning",
