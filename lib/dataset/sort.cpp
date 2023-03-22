@@ -59,11 +59,13 @@ Variable indices_for_sorting(const Variable &key, const SortOrder order) {
       core::time_point>::apply<IndicesForSorting>(key.dtype(), key, order);
 }
 
-void require_same_shape(const Dimensions &a, const Dimensions &b,
+void require_same_shape(const Dimensions &var_dims, const Dimensions &key_dims,
                         const Dim dim) {
-  if (a[dim] != b[dim])
+  if (var_dims[dim] != key_dims[dim])
     throw except::DimensionError(
-        "Cannot sort based on key with different shape.");
+        "Cannot sort: key for dimension " + to_string(dim) + " has length " +
+        std::to_string(key_dims[dim]) + " while variable has length " +
+        std::to_string(var_dims[dim]) + ". Lengths must agree.");
 }
 
 } // namespace
