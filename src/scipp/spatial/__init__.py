@@ -7,7 +7,7 @@ variables with transformations on vectors.
 
 Despite the name, transformations in this module can be applied to 3-vectors
 in any vector space and coordinate system, not just the physical space.
-The user has to ensure that transformations are applied to the correctc vectors.
+The user has to ensure that transformations are applied to the correct vectors.
 
 See Also
 --------
@@ -34,9 +34,46 @@ def _to_eigen_layout(a):
     return _np.moveaxis(a, -1, -2)
 
 
+def as_vectors(x: Variable, y: Variable, z: Variable) -> Variable:
+    """Return inputs combined into vectors.
+
+    Inputs may be broadcast to a common shape,.
+
+    Parameters
+    ----------
+    x:
+        Variable containing x components.
+    y:
+        Variable containing y components.
+    z:
+        Variable containing z components.
+
+    Returns
+    -------
+    :
+        Zip of input x, y and z with dtype ``vector3``.
+        The output unit is the same as input unit.
+
+    Raises
+    ------
+    scipp.DTypeError
+        If the dtypes of inputs are not ``float64``.
+
+    See also
+    --------
+    scipp.vector:
+        Construct a vector from plain numbers.
+    scipp.vectors:
+        Construct vectors from plain numpy arrays or lists.
+
+    .. versionadded:: RELEASE_PLACEHOLDER
+    """
+    return _call_cpp_func(_core_cpp.geometry.as_vectors, x, y, z)
+
+
 def translation(
     *,
-    unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
+    unit: Union[Unit, str] = units.dimensionless,
     value: Union[_np.ndarray, list],
 ):
     """
@@ -60,7 +97,7 @@ def translation(
 def translations(
     *,
     dims: Sequence[str],
-    unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
+    unit: Union[Unit, str] = units.dimensionless,
     values: Union[_np.ndarray, list],
 ):
     """
@@ -272,7 +309,7 @@ def rotation_as_rotvec(rotation: Variable, *, unit='rad') -> Variable:
 
 def affine_transform(
     *,
-    unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
+    unit: Union[Unit, str] = units.dimensionless,
     value: Union[_np.ndarray, list],
 ):
     """
@@ -297,7 +334,7 @@ def affine_transform(
 def affine_transforms(
     *,
     dims: Sequence[str],
-    unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
+    unit: Union[Unit, str] = units.dimensionless,
     values: Union[_np.ndarray, list],
 ):
     """
@@ -328,7 +365,7 @@ def affine_transforms(
 
 def linear_transform(
     *,
-    unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
+    unit: Union[Unit, str] = units.dimensionless,
     value: Union[_np.ndarray, list],
 ):
     """Constructs a zero dimensional :class:`Variable` holding a single 3x3
@@ -354,7 +391,7 @@ def linear_transform(
 def linear_transforms(
     *,
     dims: Sequence[str],
-    unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
+    unit: Union[Unit, str] = units.dimensionless,
     values: Union[_np.ndarray, list],
 ):
     """Constructs a :class:`Variable` with given dimensions holding an array
@@ -414,5 +451,5 @@ __all__ = [
     'affine_transforms',
     'linear_transform',
     'linear_transforms',
-    'inverse',
+    'inv',
 ]

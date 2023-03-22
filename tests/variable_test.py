@@ -602,13 +602,6 @@ def test_nan_to_num_out_with_multiple_special_replacements():
     assert sc.identical(out, expected)
 
 
-def test_position():
-    assert sc.identical(
-        sc.geometry.position(x=sc.scalar(1.0), y=sc.scalar(2.0), z=sc.scalar(3.0)),
-        sc.vector([1, 2, 3]),
-    )
-
-
 def test_sort():
     var = sc.array(dims=['s'], values=[3, 5, 1])
     assert sc.identical(
