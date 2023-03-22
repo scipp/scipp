@@ -34,7 +34,7 @@ TEST(SortTest, variable_1d_bad_key_shape_throws) {
   const auto var = makeVariable<float>(Dims{Dim::X}, Shape{3}, units::m,
                                        Values{1, 2, 3}, Variances{4, 5, 6});
   const auto key =
-      makeVariable<int>(Dims{Dim::X}, Shape{4}, Values{10, 20, -1, 5});
+      makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{10, 20, -1, 5, 3});
   EXPECT_THROW(sort(var, key), except::DimensionError);
 }
 
