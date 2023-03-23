@@ -30,6 +30,14 @@ TEST(SortTest, variable_1d_descending) {
   EXPECT_EQ(sort(var, key, SortOrder::Descending), expected);
 }
 
+TEST(SortTest, variable_1d_bad_key_shape_throws) {
+  const auto var = makeVariable<float>(Dims{Dim::X}, Shape{3}, units::m,
+                                       Values{1, 2, 3}, Variances{4, 5, 6});
+  const auto key =
+      makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{10, 20, -1, 5, 3});
+  EXPECT_THROW(sort(var, key), except::DimensionError);
+}
+
 TEST(SortTest, variable_2d) {
   const auto var = makeVariable<int>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
                                      units::m, Values{1, 2, 3, 4, 5, 6});
@@ -126,6 +134,15 @@ TEST(SortTest, data_array_1d_descending) {
       DataArray(sorted_data, {{Dim::X, sorted_x}, {Dim("scalar"), scalar}},
                 {{"mask", sorted_mask}});
   EXPECT_EQ(sort(table, Dim::X, SortOrder::Descending), sorted_table);
+}
+
+TEST(SortTest, data_array_bin_edge_coord_throws) {
+  Variable data = makeVariable<double>(
+      Dims{Dim::Event}, Shape{4}, Values{1, 2, 3, 4}, Variances{1, 3, 2, 4});
+  Variable x =
+      makeVariable<double>(Dims{Dim::Event}, Shape{5}, Values{5, 3, 2, 4, 1});
+  DataArray table = DataArray(data, {{Dim::X, x}});
+  EXPECT_THROW(sort(table, Dim::X), except::DimensionError);
 }
 
 TEST(SortTest, dataset_1d) {

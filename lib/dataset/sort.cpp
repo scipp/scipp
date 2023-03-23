@@ -59,16 +59,27 @@ Variable indices_for_sorting(const Variable &key, const SortOrder order) {
       core::time_point>::apply<IndicesForSorting>(key.dtype(), key, order);
 }
 
+void require_same_shape(const Dimensions &var_dims, const Dimensions &key_dims,
+                        const Dim dim) {
+  if (var_dims[dim] != key_dims[dim])
+    throw except::DimensionError(
+        "Cannot sort: key for dimension " + to_string(dim) + " has length " +
+        std::to_string(key_dims[dim]) + " while variable has length " +
+        std::to_string(var_dims[dim]) + ". Lengths must agree.");
+}
+
 } // namespace
 
 /// Return a Variable sorted based on key.
 Variable sort(const Variable &var, const Variable &key, const SortOrder order) {
+  require_same_shape(var.dims(), key.dims(), key.dim());
   return extract_ranges(indices_for_sorting(key, order), var, key.dim());
 }
 
 /// Return a DataArray sorted based on key.
 DataArray sort(const DataArray &array, const Variable &key,
                const SortOrder order) {
+  require_same_shape(array.dims(), key.dims(), key.dim());
   return extract_ranges(indices_for_sorting(key, order), array, key.dim());
 }
 
