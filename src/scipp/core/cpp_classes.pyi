@@ -146,6 +146,9 @@ class Coords:
 
 class Coords_items_view:
 
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+        ...
+
     def __iter__(self) -> Iterator:
         ...
 
@@ -159,6 +162,9 @@ class Coords_items_view:
         ...
 
 class Coords_keys_view:
+
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+        ...
 
     def __iter__(self) -> Iterator:
         ...
@@ -345,6 +351,18 @@ class DataArray:
 
     @overload
     def __iand__(self, arg0: Variable) -> DataArray:
+        ...
+
+    @overload
+    def __ifloordiv__(self, arg0: DataArray) -> DataArray:
+        ...
+
+    @overload
+    def __ifloordiv__(self, arg0: Variable) -> DataArray:
+        ...
+
+    @overload
+    def __ifloordiv__(self, arg0: float) -> DataArray:
         ...
 
     @overload
@@ -752,6 +770,9 @@ class DataArray:
     def round(self, *, out: Optional[VariableLike]=None) -> VariableLike:
         ...
 
+    def save_hdf5(self, filename: Union[str, Path]) -> None:
+        ...
+
     @property
     def shape(self) -> tuple:
         ...
@@ -773,7 +794,7 @@ class DataArray:
     def to(self, *, unit: Optional[Union[Unit, str]]=None, dtype: Optional[Any]=None, copy: bool=True) -> VariableLikeType:
         ...
 
-    def save_hdf5(self, filename: Union[str, Path]):
+    def to_hdf5(self, filename: Union[str, Path]) -> None:
         ...
 
     def transform_coords(self, targets: Optional[Union[str, Iterable[str]]]=None, /, graph: Optional[GraphDict]=None, *, rename_dims: bool=True, keep_aliases: bool=True, keep_intermediate: bool=True, keep_inputs: bool=True, quiet: bool=False, **kwargs: Callable) -> Union[DataArray, Dataset]:
@@ -1158,6 +1179,9 @@ class Dataset:
     def rename_dims(self, dims_dict: Optional[Dict[str, str]]=None, /, **names: str) -> VariableLikeType:
         ...
 
+    def save_hdf5(self, filename: Union[str, Path]) -> None:
+        ...
+
     @property
     def shape(self) -> tuple:
         ...
@@ -1172,7 +1196,7 @@ class Dataset:
     def sum(self, dim: Dims=None) -> VariableLikeType:
         ...
 
-    def save_hdf5(self, filename: Union[str, Path]):
+    def to_hdf5(self, filename: Union[str, Path]) -> None:
         ...
 
     def transform_coords(self, targets: Optional[Union[str, Iterable[str]]]=None, /, graph: Optional[GraphDict]=None, *, rename_dims: bool=True, keep_aliases: bool=True, keep_intermediate: bool=True, keep_inputs: bool=True, quiet: bool=False, **kwargs: Callable) -> Union[DataArray, Dataset]:
@@ -1192,6 +1216,9 @@ class DatasetError(RuntimeError):
 
 class Dataset_items_view:
 
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+        ...
+
     def __iter__(self) -> Iterator:
         ...
 
@@ -1205,6 +1232,9 @@ class Dataset_items_view:
         ...
 
 class Dataset_keys_view:
+
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+        ...
 
     def __iter__(self) -> Iterator:
         ...
@@ -1388,6 +1418,9 @@ class Masks:
 
 class Masks_items_view:
 
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+        ...
+
     def __iter__(self) -> Iterator:
         ...
 
@@ -1401,6 +1434,9 @@ class Masks_items_view:
         ...
 
 class Masks_keys_view:
+
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+        ...
 
     def __iter__(self) -> Iterator:
         ...
@@ -1601,6 +1637,14 @@ class Variable:
         ...
 
     def __iand__(self, arg0: Variable) -> Variable:
+        ...
+
+    @overload
+    def __ifloordiv__(self, arg0: Variable) -> Variable:
+        ...
+
+    @overload
+    def __ifloordiv__(self, arg0: float) -> Variable:
         ...
 
     @overload
@@ -1905,6 +1949,9 @@ class Variable:
     def round(self, *, out: Optional[VariableLike]=None) -> VariableLike:
         ...
 
+    def save_hdf5(self, filename: Union[str, Path]) -> None:
+        ...
+
     @property
     def shape(self) -> tuple:
         ...
@@ -1926,7 +1973,7 @@ class Variable:
     def to(self, *, unit: Optional[Union[Unit, str]]=None, dtype: Optional[Any]=None, copy: bool=True) -> VariableLikeType:
         ...
 
-    def save_hdf5(self, filename: Union[str, Path]):
+    def to_hdf5(self, filename: Union[str, Path]) -> None:
         ...
 
     def transpose(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None) -> VariableLikeType:
