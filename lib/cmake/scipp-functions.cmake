@@ -147,6 +147,15 @@ scipp_function(
   variable/arithmetic.h
   SKIP_PYTHON
 )
+scipp_function(
+  "inplace"
+  arithmetic
+  floor_divide_equals
+  SKIP_VARIABLE
+  BASE_INCLUDE
+  variable/arithmetic.h
+  SKIP_PYTHON
+)
 scipp_function("inplace" arithmetic operator%= OP mod_equals SKIP_PYTHON)
 setup_scipp_category(arithmetic)
 

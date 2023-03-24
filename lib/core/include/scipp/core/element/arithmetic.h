@@ -51,8 +51,7 @@ constexpr auto mul_inplace_types = arg_list<
     std::tuple<Eigen::Vector3d, int64_t>, std::tuple<Eigen::Vector3d, int32_t>>;
 
 // Note that we do *not* support any integer type as left-hand-side, to match
-// Python 3 and numpy "truediv" behavior. If "floordiv" is required it should be
-// implemented as a separate operation.
+// Python 3 and numpy "truediv" behavior.
 constexpr auto div_inplace_types = arg_list<
     double, float, std::tuple<double, float>, std::tuple<float, double>,
     std::tuple<double, int64_t>, std::tuple<double, int32_t>,
@@ -60,10 +59,20 @@ constexpr auto div_inplace_types = arg_list<
     std::tuple<Eigen::Vector3d, double>, std::tuple<Eigen::Vector3d, float>,
     std::tuple<Eigen::Vector3d, int64_t>, std::tuple<Eigen::Vector3d, int32_t>>;
 
+constexpr auto floor_div_inplace_types =
+    arg_list<double, float, int64_t, int32_t, std::tuple<double, float>,
+             std::tuple<float, double>, std::tuple<double, int64_t>,
+             std::tuple<double, int32_t>, std::tuple<float, int64_t>,
+             std::tuple<float, int32_t>>;
+
 constexpr auto multiply_equals =
     overloaded{mul_inplace_types, [](auto &&a, const auto &b) { a *= b; }};
 constexpr auto divide_equals =
     overloaded{div_inplace_types, [](auto &&a, const auto &b) { a /= b; }};
+constexpr auto floor_divide_equals = overloaded{
+    floor_div_inplace_types, transform_flags::expect_no_variance_arg<0>,
+    transform_flags::expect_no_variance_arg<1>,
+    [](auto &&a, const auto &b) { a = numeric::floor_divide(a, b); }};
 
 using arithmetic_and_matrix_type_pairs = decltype(std::tuple_cat(
     std::declval<arithmetic_type_pairs>(),

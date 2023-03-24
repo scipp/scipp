@@ -87,6 +87,11 @@ Variable &operator/=(Variable &a, const Variable &b) {
   return a;
 }
 
+Variable &floor_divide_equals(Variable &a, const Variable &b) {
+  floor_divide_equals(Variable(a), b);
+  return a;
+}
+
 Variable operator+=(Variable &&a, const Variable &b) {
   if (correlated(a, b))
     return a *= make_factor(a, 2.0);
@@ -115,6 +120,12 @@ Variable operator/=(Variable &&a, const Variable &b) {
   if (correlated(a, b))
     return pow(a, make_factor(a, 0.0), a);
   transform_in_place(a, b, core::element::divide_equals,
+                     std::string_view("divide_equals"));
+  return std::move(a);
+}
+
+Variable floor_divide_equals(Variable &&a, const Variable &b) {
+  transform_in_place(a, b, core::element::floor_divide_equals,
                      std::string_view("divide_equals"));
   return std::move(a);
 }

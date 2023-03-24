@@ -189,6 +189,13 @@ template <class RHSSetup> struct OpBinder {
             return a;
           },
           py::is_operator(), py::call_guard<py::gil_scoped_release>());
+      c.def(
+          "__ifloordiv__",
+          [](py::object &a, Other &b) {
+            floor_divide_equals(a.cast<T &>(), RHSSetup{}(b));
+            return a;
+          },
+          py::is_operator(), py::call_guard<py::gil_scoped_release>());
       if constexpr (!(std::is_same_v<T, DataArray> ||
                       std::is_same_v<Other, DataArray>)) {
         c.def(

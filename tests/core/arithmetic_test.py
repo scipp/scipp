@@ -47,6 +47,13 @@ def test_itruediv_returns_original_object():
     assert sc.identical(a, b)
 
 
+def test_ifloordiv_returns_original_object():
+    a = sc.scalar(1.2)
+    b = a
+    a //= 1.0
+    assert sc.identical(a, b)
+
+
 def test_add_variable():
     a, b, a_slice, b_slice, data = make_variables()
     c = a + b
@@ -160,6 +167,13 @@ def test_itruediv_variable_with_scalar():
     v = sc.Variable(dims=['x'], values=[10.0])
     expected = sc.Variable(dims=['x'], values=[5.0])
     v /= 2
+    assert sc.identical(v, expected)
+
+
+def test_ifloordiv_variable_with_scalar():
+    v = sc.Variable(dims=['x'], values=[10.0, 7.0])
+    expected = sc.Variable(dims=['x'], values=[5.0, 3.0])
+    v //= 2
     assert sc.identical(v, expected)
 
 
