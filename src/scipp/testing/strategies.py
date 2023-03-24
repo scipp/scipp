@@ -8,6 +8,7 @@ Search strategies for hypothesis to generate inputs for tests.
 from functools import partial
 from typing import Dict, Optional, Sequence, Union
 
+import numpy as np
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as npst
@@ -60,19 +61,27 @@ def scalar_numeric_dtypes() -> st.SearchStrategy:
 
 
 def _variables_from_fixed_args(args: dict) -> st.SearchStrategy:
-    def make_array():
+    def make_array(variances: bool):
+        elements = args['elements']
+        if elements is None and variances:
+            # Make sure that variances are non-negative and
+            # let the user decide otherwise.
+            elements = st.floats(
+                min_value=0.0, width=32 if np.dtype(args['dtype']) == np.float32 else 64
+            )
+
         return npst.arrays(
             args['dtype'],
             tuple(args['sizes'].values()),
-            elements=args['elements'],
+            elements=elements,
             fill=args['fill'],
             unique=args['unique'],
         )
 
     return st.builds(
         partial(creation.array, dims=list(args['sizes'].keys()), unit=args['unit']),
-        values=make_array(),
-        variances=make_array() if args['with_variances'] else st.none(),
+        values=make_array(False),
+        variances=make_array(True) if args['with_variances'] else st.none(),
     )
 
 
