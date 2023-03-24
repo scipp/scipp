@@ -151,6 +151,12 @@ def test_variables_can_toggle_variances_off(var):
 
 
 @settings(max_examples=N_EXAMPLES)
+@given(scst.variables(with_variances=True, dtype=scst.floating_dtypes()))
+def test_variable_variances_are_non_negative(var):
+    assert sc.all(sc.variances(var) >= 0.0 * var.unit**2)
+
+
+@settings(max_examples=N_EXAMPLES)
 @given(scst.variables(with_variances=st.just(True), dtype=scst.floating_dtypes()))
 def test_variables_can_set_variances_strategy(var):
     assert var.variances is not None
