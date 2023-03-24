@@ -47,6 +47,8 @@ Breaking changes
 Bugfixes
 ~~~~~~~~
 
+* Fix bug that caused ``scipp.testing.strategies.variables`` to produce negative variances `#3100 <https://github.com/scipp/scipp/pull/3100>`_.
+
 Documentation
 ~~~~~~~~~~~~~
 
