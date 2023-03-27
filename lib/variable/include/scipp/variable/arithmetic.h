@@ -23,11 +23,15 @@ SCIPP_VARIABLE_EXPORT Variable &operator+=(Variable &a, const Variable &b);
 SCIPP_VARIABLE_EXPORT Variable &operator-=(Variable &a, const Variable &b);
 SCIPP_VARIABLE_EXPORT Variable &operator*=(Variable &a, const Variable &b);
 SCIPP_VARIABLE_EXPORT Variable &operator/=(Variable &a, const Variable &b);
+SCIPP_VARIABLE_EXPORT Variable &floor_divide_equals(Variable &a,
+                                                    const Variable &b);
 
 SCIPP_VARIABLE_EXPORT Variable operator+=(Variable &&a, const Variable &b);
 SCIPP_VARIABLE_EXPORT Variable operator-=(Variable &&a, const Variable &b);
 SCIPP_VARIABLE_EXPORT Variable operator*=(Variable &&a, const Variable &b);
 SCIPP_VARIABLE_EXPORT Variable operator/=(Variable &&a, const Variable &b);
+SCIPP_VARIABLE_EXPORT Variable floor_divide_equals(Variable &&a,
+                                                   const Variable &b);
 
 } // namespace scipp::variable
 

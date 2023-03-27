@@ -41,6 +41,8 @@ vRELEASE_PLACEHOLDER
 Features
 ~~~~~~~~
 
+* Added ``__ifloordiv__`` to ``Variable`` and ``DataArray`` `#3101 <https://github.com/scipp/scipp/pull/3101>`_.
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
