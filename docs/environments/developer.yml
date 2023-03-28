@@ -33,7 +33,7 @@ dependencies:
   - pyyaml
   - scipp::plopp
   - scipy>=1.7.0
-  - tbb=2020.2.*
-  - tbb-devel=2020.2.*
+  - tbb=2021.8.*
+  - tbb-devel=2021.8.*
   - tox
   - xarray
