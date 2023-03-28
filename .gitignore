@@ -24,6 +24,7 @@ CMakeSettings.json
 .mypy_cache
 src/scipp.egg-info
 .tox
+conda/package
 
 ### VisualStudioCode ###
 .vscode/*
