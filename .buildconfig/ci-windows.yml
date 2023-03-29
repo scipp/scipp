@@ -6,6 +6,7 @@ channels:
   - conda-forge
 dependencies:
   - cmake=3.23.2
+  - comm=0.1.3  # earlier versions break tests with ipywidgets with latest ipykernel
   - conan=1.59.0
   - ninja=1.11.0
   - scipp::plopp=23.03.0

@@ -35,14 +35,14 @@ requirements:
     - python
   host:
     - python
-    - tbb-devel=2020.2.*
+    - tbb-devel {{ tbb_devel }}
   run:
     - confuse
     - graphlib-backport # for python < 3.9
     - numpy
     - python
     - pyyaml
-    - tbb=2020.2.*
+    - tbb {{ tbb }}
 
 # Only the cmake-package-test works when cross compiling.
 # But it is not very important at the moment and
@@ -55,18 +55,22 @@ test:
     - {{ compiler('cxx') }}
     - bs4
     - cmake
+    - comm>=0.1.3  # earlier versions break tests with ipywidgets with latest ipykernel
     - conan==1.59.0
     - h5py
     - hypothesis
+    - ipykernel
     - ipympl
     - ipywidgets
     - matplotlib-base
+    - numba
+    - numpy
     - pandas
     - pytest
     - pythreejs
     - python-graphviz
     - scipy>=1.7.0
-    - tbb-devel=2020.2.*
+    - tbb-devel {{ tbb_devel }}
     - xarray
   files:
     - cmake-package-test/

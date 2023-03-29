@@ -10,11 +10,6 @@ import scipp as sc
 pytestmark = pytest.mark.skipif(
     sys.version_info >= (3, 11), reason='numba does not support this Python version'
 )
-try:
-    import numba  # noqa: F401
-except ImportError:
-    # Fallback for conda build. Remove this once conda build is fixed.
-    pytest.skip("numba is not available", allow_module_level=True)
 
 
 def test_unary():
