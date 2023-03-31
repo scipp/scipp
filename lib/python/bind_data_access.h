@@ -304,8 +304,7 @@ public:
 
 private:
   static auto numpy_attr(const char *const name) {
-    static const auto np = py::module_::import("numpy");
-    return np.attr(name);
+    return py::module_::import("numpy").attr(name);
   }
 
   template <class Scalar, class View>
