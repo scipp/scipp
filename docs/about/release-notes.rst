@@ -50,6 +50,7 @@ Bugfixes
 ~~~~~~~~
 
 * Fix bug that caused ``scipp.testing.strategies.variables`` to produce negative variances `#3100 <https://github.com/scipp/scipp/pull/3100>`_.
+* Fix the source of segmentation faults coming from caching the NumPy module in ``Variable.value`` `#3105 <https://github.com/scipp/scipp/pull/3105>`_.
 
 Documentation
 ~~~~~~~~~~~~~
