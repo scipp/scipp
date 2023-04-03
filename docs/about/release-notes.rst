@@ -43,26 +43,17 @@ Features
 
 * Added ``__ifloordiv__`` to ``Variable`` and ``DataArray`` `#3101 <https://github.com/scipp/scipp/pull/3101>`_.
 
-Breaking changes
-~~~~~~~~~~~~~~~~
-
 Bugfixes
 ~~~~~~~~
 
 * Fix bug that caused ``scipp.testing.strategies.variables`` to produce negative variances `#3100 <https://github.com/scipp/scipp/pull/3100>`_.
 * Fix the source of segmentation faults coming from caching the NumPy module in ``Variable.value`` `#3105 <https://github.com/scipp/scipp/pull/3105>`_.
 
-Documentation
-~~~~~~~~~~~~~
-
 Deprecations
 ~~~~~~~~~~~~
 
 * ``scipp.geometry.position`` has been moved to ``scipp.spatial.as_vectors``, the original function is deprecated `#3094 <https://github.com/scipp/scipp/pull/3094>`_.
 * ``scipp.geometry.rotation_matrix_from_quaternion_coeffs`` has been deprecated without replacement `#3094 <https://github.com/scipp/scipp/pull/3094>`_.
-
-Stability, Maintainability, and Testing
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 v23.03.0
 --------
