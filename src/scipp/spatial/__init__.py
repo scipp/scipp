@@ -66,7 +66,7 @@ def as_vectors(x: Variable, y: Variable, z: Variable) -> Variable:
     scipp.vectors:
         Construct vectors from plain numpy arrays or lists.
 
-    .. versionadded:: RELEASE_PLACEHOLDER
+    .. versionadded:: 23.03.1
     """
     return _call_cpp_func(_core_cpp.geometry.as_vectors, x, y, z)
 

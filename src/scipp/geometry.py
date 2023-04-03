@@ -23,7 +23,7 @@ def position(x: Variable, y: Variable, z: Variable) -> Variable:
     :raises: If the dtypes of inputs are not double precision floats.
     :return: Zip of input x, y and z. Output unit is same as input unit.
 
-    .. deprecated:: RELEASE_PLACEHOLDER
+    .. deprecated:: 23.03.1
        Has been moved to :func:`scipp.spatial.as_vectors`.
     """
     warnings.warn(
@@ -45,7 +45,7 @@ def rotation_matrix_from_quaternion_coeffs(
     :raises: If the input size is not 4.
     :return: 3x3 rotation matrix
 
-    .. deprecated:: RELEASE_PLACEHOLDER
+    .. deprecated:: 23.03.1
        Will be removed in favor of :func:`scipp.spatial.rotations`.
     """
     warnings.warn(
