@@ -315,3 +315,113 @@ TEST_F(DataArrayTest, drop_multiple_attrs) {
       {{Dim{"attr0"}, attr}}};
   ASSERT_EQ(new_da, expected_da);
 }
+
+TEST_F(DataArrayTest, assign_single_coord) {
+  Variable values =
+      makeVariable<double>(Dims{Dim{"dim0"}}, Shape{3}, Values{0.1, 0.2, 0.3});
+  auto da = DataArray(values);
+  auto coord0 =
+      makeVariable<double>(Dims{Dim{"dim0"}}, Shape{3}, Values{1, 2, 3});
+  auto new_da = da.assign_coords({{Dim{"coord0"}, coord0}});
+  const DataArray expected_da{values, {{Dim{"coord0"}, coord0}}};
+  ASSERT_EQ(new_da, expected_da);
+}
+
+TEST_F(DataArrayTest, assign_update_coord) {
+  Variable values =
+      makeVariable<double>(Dims{Dim{"dim0"}}, Shape{3}, Values{0.1, 0.2, 0.3});
+  auto old_coord =
+      makeVariable<double>(Dims{Dim{"dim0"}}, Shape{3}, Values{-1, -2, -3});
+  auto da = DataArray(values, {{Dim{"coord0"}, old_coord}});
+  auto coord0 =
+      makeVariable<double>(Dims{Dim{"dim0"}}, Shape{3}, Values{1, 2, 3});
+  auto new_da = da.assign_coords({{Dim{"coord0"}, coord0}});
+  const DataArray expected_da{values, {{Dim{"coord0"}, coord0}}};
+  ASSERT_EQ(new_da, expected_da);
+}
+
+TEST_F(DataArrayTest, assign_multiple_coords) {
+  Variable values =
+      makeVariable<double>(Dims{Dim{"dim0"}}, Shape{3}, Values{0.1, 0.2, 0.3});
+  auto da = DataArray(values);
+  auto coord0 =
+      makeVariable<double>(Dims{Dim{"dim0"}}, Shape{3}, Values{1, 2, 3});
+  auto coord1 =
+      makeVariable<double>(Dims{Dim{"dim0"}}, Shape{3}, Values{-1, -2, -3});
+  auto new_da =
+      da.assign_coords({{Dim{"coord0"}, coord0}, {Dim{"coord1"}, coord1}});
+  const DataArray expected_da{
+      values, {{Dim{"coord0"}, coord0}, {Dim{"coord1"}, coord1}}};
+  ASSERT_EQ(new_da, expected_da);
+}
+
+TEST_F(DataArrayTest, assign_single_mask) {
+  Variable values = makeVariable<double>(Values{1});
+  auto da = DataArray(values, {{Dim{"coord0"}, coord}});
+  auto mask0 = makeVariable<bool>(Values{true});
+  auto new_da = da.assign_masks({{"mask0", mask0}});
+  const DataArray expected_da{
+      values, {{Dim{"coord0"}, coord}}, {{"mask0", mask0}}};
+  ASSERT_EQ(new_da, expected_da);
+}
+
+TEST_F(DataArrayTest, assign_update_mask) {
+  Variable values = makeVariable<double>(Values{1});
+  auto old_mask = makeVariable<bool>(Values{false});
+  auto da = DataArray(values, {{Dim{"coord0"}, coord}}, {{"mask0", old_mask}});
+  auto mask0 = makeVariable<bool>(Values{true});
+  auto new_da = da.assign_masks({{"mask0", mask0}});
+  const DataArray expected_da{
+      values, {{Dim{"coord0"}, coord}}, {{"mask0", mask0}}};
+  ASSERT_EQ(new_da, expected_da);
+}
+
+TEST_F(DataArrayTest, assign_multiple_masks) {
+  Variable values = makeVariable<double>(Values{1});
+  auto da = DataArray(values, {{Dim{"coord0"}, coord}});
+  auto mask0 = makeVariable<bool>(Values{true});
+  auto mask1 = makeVariable<double>(Values{0.1});
+  auto new_da = da.assign_masks({{"mask0", mask0}, {"mask1", mask1}});
+  const DataArray expected_da{
+      values, {{Dim{"coord0"}, coord}}, {{"mask0", mask0}, {"mask1", mask1}}};
+  ASSERT_EQ(new_da, expected_da);
+}
+
+TEST_F(DataArrayTest, assign_single_attr) {
+  Variable values = makeVariable<double>(Values{1});
+  auto da = DataArray(values, {{Dim{"coord0"}, coord}}, {{"mask0", mask}});
+  auto attr0 = makeVariable<std::string>(Values{"attr0"});
+  auto new_da = da.assign_attrs({{Dim{"attr0"}, attr0}});
+  const DataArray expected_da{values,
+                              {{Dim{"coord0"}, coord}},
+                              {{"mask0", mask}},
+                              {{Dim{"attr0"}, attr0}}};
+  ASSERT_EQ(new_da, expected_da);
+}
+
+TEST_F(DataArrayTest, assign_update_attr) {
+  Variable values = makeVariable<double>(Values{1});
+  auto old_attr = makeVariable<double>(Values{0.1});
+  auto da = DataArray(values, {{Dim{"coord0"}, coord}}, {{"mask0", mask}},
+                      {{Dim{"attr0"}, old_attr}});
+  auto attr0 = makeVariable<std::string>(Values{"attr0"});
+  auto new_da = da.assign_attrs({{Dim{"attr0"}, attr0}});
+  const DataArray expected_da{values,
+                              {{Dim{"coord0"}, coord}},
+                              {{"mask0", mask}},
+                              {{Dim{"attr0"}, attr0}}};
+  ASSERT_EQ(new_da, expected_da);
+}
+
+TEST_F(DataArrayTest, assign_multiple_attr) {
+  Variable values = makeVariable<double>(Values{1});
+  auto da = DataArray(values, {{Dim{"coord0"}, coord}}, {{"mask0", mask}});
+  auto attr0 = makeVariable<std::string>(Values{"attr0"});
+  auto attr1 = makeVariable<bool>(Values{true});
+  auto new_da = da.assign_attrs({{Dim{"attr0"}, attr0}, {Dim{"attr1"}, attr1}});
+  const DataArray expected_da{values,
+                              {{Dim{"coord0"}, coord}},
+                              {{"mask0", mask}},
+                              {{Dim{"attr0"}, attr0}, {Dim{"attr1"}, attr1}}};
+  ASSERT_EQ(new_da, expected_da);
+}
