@@ -207,30 +207,6 @@ DataArray DataArray::drop_attrs(const scipp::span<const Dim> attr_names) const {
   return result;
 }
 
-DataArray DataArray::assign_coords(typename Coords::holder_type coords) const {
-  DataArray result = *this;
-  for (const auto &[coord_name, coord] : coords) {
-    result.coords().set(coord_name, std::move(coord));
-  }
-  return result;
-}
-
-DataArray DataArray::assign_masks(typename Masks::holder_type masks) const {
-  DataArray result = *this;
-  for (const auto &[mask_name, mask] : masks) {
-    result.masks().set(mask_name, std::move(mask));
-  }
-  return result;
-}
-
-DataArray DataArray::assign_attrs(typename Attrs::holder_type attrs) const {
-  DataArray result = *this;
-  for (const auto &[attr_name, attr] : attrs) {
-    result.attrs().set(attr_name, std::move(attr));
-  }
-  return result;
-}
-
 DataArray DataArray::rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
                                  const bool fail_on_unknown) const {
   return DataArray(m_data->rename_dims(names, fail_on_unknown),

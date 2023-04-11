@@ -45,9 +45,6 @@ public:
   Coords &coords() { return *m_coords; }
 
   DataArray drop_coords(const scipp::span<const Dim> coord_names) const;
-  DataArray assign_coords(typename Coords::holder_type coords) const;
-  DataArray assign_attrs(typename Attrs::holder_type attrs) const;
-  DataArray assign_masks(typename Masks::holder_type masks) const;
 
   const Masks &masks() const { return *m_masks; }
   Masks &masks() { return *m_masks; }
