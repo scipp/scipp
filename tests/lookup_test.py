@@ -134,3 +134,17 @@ def test_nearest_single_value(dtype):
     var = sc.array(dims=['event'], values=[0.1, 0.5, 0.6])
     expected = sc.array(dims=['event'], values=[11, 11, 11], dtype=dtype)
     assert sc.identical(sc.lookup(da, mode='nearest')(var), expected)
+
+
+def test_ignores_unrelated_coords():
+    var = sc.Variable(dims=['event'], values=[1.0, 2.0, 3.0, 4.0])
+    table = sc.DataArray(var, coords={'x': var})
+    binned = table.bin(x=sc.array(dims=['x'], values=[1.0, 5.0]))
+    hist = sc.DataArray(
+        data=sc.Variable(dims=['x'], values=[1.0, 2.0]),
+        coords={'x': sc.Variable(dims=['x'], values=[1.0, 3.0, 5.0])},
+    )
+    hist.coords['scalar'] = sc.scalar(1.2)
+    result = binned.bins * sc.lookup(func=hist, dim='x')
+    assert 'scalar' not in result.coords
+    assert 'scalar' not in result.bins.coords
