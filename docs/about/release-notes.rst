@@ -47,7 +47,7 @@ Breaking changes
 Bugfixes
 ~~~~~~~~
 
-* Fix bug in :func:`scipp.lookup` raising an exception in arithmetic operations with unrelated coords `#3110 <https://github.com/scipp/scipp/pull/3110>`_.
+* Fix bug in :func:`scipp.lookup` raising an exception in arithmetic operations with unrelated coords `#3112 <https://github.com/scipp/scipp/pull/3112>`_.
 
 v23.03.1
 --------
