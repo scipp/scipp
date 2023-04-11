@@ -476,3 +476,102 @@ def test_masks_update_from_dict_adds_items():
     da.masks.update({'b': sc.scalar(False)})
     assert sc.identical(da.masks['a'], sc.scalar(True))
     assert sc.identical(da.masks['b'], sc.scalar(False))
+
+
+def test_assign_coords():
+    data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
+    da = sc.DataArray(data)
+    coord0 = sc.linspace('x', start=0.2, stop=1.61, num=4)
+    coord1 = sc.linspace('y', start=1, stop=4, num=3)
+    da.assign_coords({'coord0': coord0, 'coord1': coord1})
+    assert sc.identical(
+        da, sc.DataArray(data, coords={'coord0': coord0, 'coord1': coord1})
+    )
+
+
+def test_assign_coords_kwargs():
+    data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
+    da = sc.DataArray(data)
+    coord0 = sc.linspace('x', start=0.2, stop=1.61, num=4)
+    coord1 = sc.linspace('y', start=1, stop=4, num=3)
+    da.assign_coords(coord0=coord0, coord1=coord1)
+    assert sc.identical(
+        da, sc.DataArray(data, coords={'coord0': coord0, 'coord1': coord1})
+    )
+
+
+def test_assign_update_coords():
+    data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
+    coord0_o = sc.linspace('x', start=0.2, stop=1.61, num=4)
+    coord1_o = sc.linspace('y', start=1, stop=4, num=4)
+    da = sc.DataArray(data, coords={'coord0': coord0_o, 'coord1': coord1_o})
+    coord0_n = sc.linspace('x', start=0.2, stop=1.61, num=4)
+    coord1_n = sc.linspace('y', start=1, stop=4, num=4)
+    da.assign_coords(coord0=coord0_n, coord1=coord1_n)
+    assert sc.identical(
+        da, sc.DataArray(data, coords={'coord0': coord0_n, 'coord1': coord1_n})
+    )
+
+
+def test_assign_masks():
+    data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
+    da = sc.DataArray(data)
+    mask0 = sc.array(dims=['x'], values=[False, True, True, False])
+    mask1 = sc.array(dims=['y'], values=[1, 2, 4])
+    da.assign_masks({'mask0': mask0, 'mask1': mask1})
+    assert sc.identical(da, sc.DataArray(data, masks={'mask0': mask0, 'mask1': mask1}))
+
+
+def test_assign_masks_kwargs():
+    data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
+    da = sc.DataArray(data)
+    mask0 = sc.array(dims=['x'], values=[False, True, True, False])
+    mask1 = sc.array(dims=['y'], values=[1, 2, 4])
+    da.assign_masks(mask0=mask0, mask1=mask1)
+    assert sc.identical(da, sc.DataArray(data, masks={'mask0': mask0, 'mask1': mask1}))
+
+
+def test_assign_update_masks():
+    data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
+    mask0_o = sc.array(dims=['x'], values=[False, True, True, False])
+    mask1_o = sc.array(dims=['y'], values=[1, 2, 4])
+    da = sc.DataArray(data, masks={'mask0': mask0_o, 'mask1': mask1_o})
+
+    mask0_n = sc.array(dims=['x'], values=[True, False, False, True])
+    mask1_n = sc.array(dims=['y'], values=[0.1, 0.2, 0.4])
+    da.assign_masks(mask0=mask0_n, mask1=mask1_n)
+    assert sc.identical(
+        da, sc.DataArray(data, masks={'mask0': mask0_n, 'mask1': mask1_n})
+    )
+
+
+def test_assign_attrs():
+    data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
+    attr0 = sc.scalar('attribute_0')
+    attr1 = sc.linspace('y', start=0.2, stop=1.61, num=4)
+    da = sc.DataArray(data)
+    da.assign_attrs({'attr0': attr0, 'attr1': attr1})
+    assert sc.identical(da, sc.DataArray(data, attrs={'attr0': attr0, 'attr1': attr1}))
+
+
+def test_assign_attrs_kwargs():
+    data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
+    attr0 = sc.scalar('attribute_0')
+    attr1 = sc.linspace('y', start=0.2, stop=1.61, num=4)
+    da = sc.DataArray(data)
+    da.assign_attrs(attr0=attr0, attr1=attr1)
+    assert sc.identical(da, sc.DataArray(data, attrs={'attr0': attr0, 'attr1': attr1}))
+
+
+def test_assign_update_attrs():
+    data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
+    attr0_o = sc.scalar('attribute_0')
+    attr1_o = sc.linspace('y', start=0.2, stop=1.61, num=4)
+    da = sc.DataArray(data, attrs={'attr0': attr0_o, 'attr1': attr1_o})
+
+    attr0_n = sc.scalar('attribute_new')
+    attr1_n = sc.linspace('y', start=-1.61, stop=0.2, num=4)
+    da.assign_attrs(attr0=attr0_n, attr1=attr1_n)
+    assert sc.identical(
+        da, sc.DataArray(data, attrs={'attr0': attr0_n, 'attr1': attr1_n})
+    )
