@@ -11,7 +11,8 @@ from packaging.version import InvalidVersion, Version, parse
 
 def _get_releases() -> List[Version]:
     """Return reversed sorted list of release tag names."""
-    tags = git.Repo('..').tags
+    # Will use the value of GIT_DIR, or current dir.
+    tags = git.Repo().tags
     versions = []
     for t in tags:
         try:
@@ -76,8 +77,8 @@ class VersionInfo:
                 return release
 
 
-def main(repo: str, action: str, version: str) -> int:
-    info = VersionInfo(repo=repo)
+def main(action: str, version: str) -> int:
+    info = VersionInfo()
     if action == 'is-latest':
         print(info.is_latest(version))
     elif action == 'is-new':
@@ -91,7 +92,6 @@ def main(repo: str, action: str, version: str) -> int:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some integers.')
-    parser.add_argument('--repo', dest='repo', required=True, help='Repository name')
     parser.add_argument(
         '--action',
         choices=['is-latest', 'is-new', 'get-replaced', 'get-target'],

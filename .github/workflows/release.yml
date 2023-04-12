@@ -159,8 +159,8 @@ jobs:
       - name: Set outputs
         id: version
         run: |
-          echo "new=$(python docs/version.py --repo=scipp --version=${GITHUB_REF_NAME} --action=is-new)" >> $GITHUB_OUTPUT
-          echo "replaced=$(python docs/version.py --repo=scipp --version=${GITHUB_REF_NAME} --action=get-replaced)" >> $GITHUB_OUTPUT
+          echo "new=$(python docs/version.py --version=${GITHUB_REF_NAME} --action=is-new)" >> $GITHUB_OUTPUT
+          echo "replaced=$(python docs/version.py --version=${GITHUB_REF_NAME} --action=get-replaced)" >> $GITHUB_OUTPUT
 
   docs:
     needs: [upload_conda, upload_pypi, manage-versions]
