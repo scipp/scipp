@@ -16,8 +16,7 @@ def assign_coords(
     Parameters
     ----------
     coords :
-        Coornidates to be updated or inserted to the
-        ``scipp.DataArray`` or ``scipp.Dataset``.
+        New coordinates.
 
     **coords_kwargs :
         Keyword arguments form of ``coords``.
