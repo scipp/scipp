@@ -16,7 +16,7 @@ def _combine_args(arg0: Optional[Dict[str, Variable]] = None, /, **kwargs):
         overlapped = set(posarg).intersection(kwargs)
         raise ValueError(
             'The keys in the dictionary positional argument '
-            'and the keys of keyword arguments must be distinct.'
+            'and the keys of keyword arguments must be distinct. '
             f'Following names were used in both places: {overlapped}.'
         )
 
