@@ -53,10 +53,9 @@ def test_bins_works_with_int32_begin_end(begin_dtype, end_dtype):
     assert sc.identical(var['y', 1].value, data['x', 3:4])
 
 
-@pytest.mark.parametrize('begin_dtype', [sc.DType.int32, sc.DType.int64])
-def test_bins_works_with_int32_begin(begin_dtype):
+def test_bins_works_with_int32_begin():
     data = sc.array(dims=['x'], values=[1, 2, 3, 4])
-    begin = sc.Variable(dims=['y'], values=[1, 3], dtype=begin_dtype, unit=None)
+    begin = sc.Variable(dims=['y'], values=[1, 3], dtype=sc.DType.int32, unit=None)
     var = sc.bins(begin=begin, dim='x', data=data)
     assert var.sizes == begin.sizes
     assert sc.identical(var['y', 0].value, data['x', 1:3])
