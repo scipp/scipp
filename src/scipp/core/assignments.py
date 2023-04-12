@@ -11,7 +11,7 @@ from ..typing import DataArray, Dataset
 def assign_coords(
     self, coords: Optional[Dict] = None, **coords_kwargs
 ) -> Union[DataArray, Dataset]:
-    """Update or insert coordinates to ``scipp.DataArray`` or ``scipp.Dataset``.
+    """Return new object with updated or inserted coordinate.
 
     Parameters
     ----------
