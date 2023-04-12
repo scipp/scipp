@@ -97,7 +97,7 @@ def lookup(
     if mode is None:
         mode = 'nearest'
     elif mode not in ['previous', 'nearest']:
-        raise ValueError(f"Mode most be one of ['previous', 'nearest'], got '{mode}'")
+        raise ValueError(f"Mode must be one of ['previous', 'nearest'], got '{mode}'")
     if mode == 'nearest' and func.sizes[dim] != 0:
         coord = func.coords[dim]
         lowest = coord[dim, 0:0].max()  # trick to get lowest representable value
