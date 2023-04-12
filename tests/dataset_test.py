@@ -778,50 +778,25 @@ def test_drop_coords():
 def test_assign_coords():
     data0 = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
     data1 = sc.array(dims=['x'], values=np.random.rand(4))
-    ds = sc.Dataset(data={'data0': data0, 'data1': data1})
+    ds_o = sc.Dataset(data={'data0': data0, 'data1': data1})
 
     coord0 = sc.linspace('x', start=0.2, stop=1.61, num=4)
     coord1 = sc.linspace('y', start=1, stop=4, num=3)
-    ds.assign_coords({'coord0': coord0, 'coord1': coord1})
-
+    ds_n = ds_o.assign_coords({'coord0': coord0, 'coord1': coord1})
+    assert sc.identical(ds_o, sc.Dataset(data={'data0': data0, 'data1': data1}))
     assert sc.identical(
-        ds,
+        ds_n,
         sc.Dataset(
             data={'data0': data0, 'data1': data1},
             coords={'coord0': coord0, 'coord1': coord1},
         ),
     )
     assert sc.identical(
-        ds['data0'],
+        ds_n['data0'],
         sc.DataArray(data=data0, coords={'coord0': coord0, 'coord1': coord1}),
     )
     assert sc.identical(
-        ds['data1'], sc.DataArray(data=data1, coords={'coord0': coord0})
-    )
-
-
-def test_assign_coords_kwargs():
-    data0 = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
-    data1 = sc.array(dims=['x'], values=np.random.rand(4))
-    ds = sc.Dataset(data={'data0': data0, 'data1': data1})
-
-    coord0 = sc.linspace('x', start=0.2, stop=1.61, num=4)
-    coord1 = sc.linspace('y', start=1, stop=4, num=3)
-    ds.assign_coords(coord0=coord0, coord1=coord1)
-
-    assert sc.identical(
-        ds,
-        sc.Dataset(
-            data={'data0': data0, 'data1': data1},
-            coords={'coord0': coord0, 'coord1': coord1},
-        ),
-    )
-    assert sc.identical(
-        ds['data0'],
-        sc.DataArray(data=data0, coords={'coord0': coord0, 'coord1': coord1}),
-    )
-    assert sc.identical(
-        ds['data1'], sc.DataArray(data=data1, coords={'coord0': coord0})
+        ds_n['data1'], sc.DataArray(data=data1, coords={'coord0': coord0})
     )
 
 
@@ -830,26 +805,33 @@ def test_assign_update_coords():
     data1 = sc.array(dims=['x'], values=np.random.rand(4))
     coord0_o = sc.linspace('x', start=0.2, stop=1.61, num=4)
     coord1_o = sc.linspace('y', start=1, stop=4, num=3)
-    ds = sc.Dataset(
+    ds_o = sc.Dataset(
         data={'data0': data0, 'data1': data1},
         coords={'coord0': coord0_o, 'coord1': coord1_o},
     )
 
     coord0_n = sc.linspace('x', start=0.2, stop=1.61, num=4)
     coord1_n = sc.linspace('y', start=1, stop=4, num=3)
-    ds.assign_coords(coord0=coord0_n, coord1=coord1_n)
+    ds_n = ds_o.assign_coords({'coord0': coord0_n, 'coord1': coord1_n})
 
     assert sc.identical(
-        ds,
+        ds_o,
+        sc.Dataset(
+            data={'data0': data0, 'data1': data1},
+            coords={'coord0': coord0_o, 'coord1': coord1_o},
+        ),
+    )
+    assert sc.identical(
+        ds_n,
         sc.Dataset(
             data={'data0': data0, 'data1': data1},
             coords={'coord0': coord0_n, 'coord1': coord1_n},
         ),
     )
     assert sc.identical(
-        ds['data0'],
+        ds_n['data0'],
         sc.DataArray(data=data0, coords={'coord0': coord0_n, 'coord1': coord1_n}),
     )
     assert sc.identical(
-        ds['data1'], sc.DataArray(data=data1, coords={'coord0': coord0_n})
+        ds_n['data1'], sc.DataArray(data=data1, coords={'coord0': coord0_n})
     )

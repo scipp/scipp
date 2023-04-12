@@ -3,24 +3,18 @@
 
 from __future__ import annotations
 
-from typing import Dict, Optional, Union
+from typing import Dict, Union
 
 from ..typing import DataArray, Dataset
 
 
-def assign_coords(
-    self, coords: Optional[Dict] = None, **coords_kwargs
-) -> Union[DataArray, Dataset]:
+def assign_coords(self, coords: Dict) -> Union[DataArray, Dataset]:
     """Return new object with updated or inserted coordinate.
 
     Parameters
     ----------
     coords :
         New coordinates.
-
-    **coords_kwargs :
-        Keyword arguments form of ``coords``.
-
 
     Returns
     -------
@@ -29,28 +23,20 @@ def assign_coords(
 
     """
 
-    if coords is not None:
-        collected_coords = {**coords, **coords_kwargs}
-    else:
-        collected_coords = coords_kwargs
+    out = self.copy(deep=False)
+    for coord_key, coord in coords.items():
+        out.coords[coord_key] = coord
 
-    for coord_key, coord in collected_coords.items():
-        self.coords[coord_key] = coord
-
-    return self
+    return out
 
 
-def assign_masks(self, masks: Optional[Dict] = None, **masks_kwargs) -> DataArray:
-    """Update or insert masks to the ``scipp.DataArray``.
+def assign_masks(self, masks: Dict) -> DataArray:
+    """Return new object with updated or inserted masks.
 
     Parameters
     ----------
     masks :
-        Masks to be updated or inserted to the ``scipp.DataArray``.
-
-    **masks_kwargs :
-        Keyword arguments form of ``masks``.
-
+        New masks.
 
     Returns
     -------
@@ -58,28 +44,20 @@ def assign_masks(self, masks: Optional[Dict] = None, **masks_kwargs) -> DataArra
         ``scipp.DataArray`` with updated masks.
 
     """
-    if masks is not None:
-        collected_masks = {**masks, **masks_kwargs}
-    else:
-        collected_masks = masks_kwargs
+    out = self.copy(deep=False)
+    for mask_key, mask in masks.items():
+        out.masks[mask_key] = mask
 
-    for mask_key, mask in collected_masks.items():
-        self.masks[mask_key] = mask
-
-    return self
+    return out
 
 
-def assign_attrs(self, attrs: Optional[Dict] = None, **attrs_kwargs) -> DataArray:
-    """Update or insert attributes to the ``scipp.DataArray``.
+def assign_attrs(self, attrs: Dict) -> DataArray:
+    """Return new object with updated or inserted attrs.
 
     Parameters
     ----------
     attrs :
-        Attributes to be updated or inserted to the ``scipp.DataArray``.
-
-    **attrs_kwargs :
-        Keyword arguments form of ``attrs``.
-
+        New attrs.
 
     Returns
     -------
@@ -87,12 +65,8 @@ def assign_attrs(self, attrs: Optional[Dict] = None, **attrs_kwargs) -> DataArra
         ``scipp.DataArray`` with updated attributes.
 
     """
-    if attrs is not None:
-        collected_attrs = {**attrs, **attrs_kwargs}
-    else:
-        collected_attrs = attrs_kwargs
+    out = self.copy(deep=False)
+    for attr_key, attr in attrs.items():
+        out.attrs[attr_key] = attr
 
-    for attr_key, attr in collected_attrs.items():
-        self.attrs[attr_key] = attr
-
-    return self
+    return out
