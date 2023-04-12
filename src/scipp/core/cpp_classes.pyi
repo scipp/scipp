@@ -618,13 +618,13 @@ class DataArray:
     def any(self, dim: Optional[str]=None) -> VariableLikeType:
         ...
 
-    def assign_attrs(self, attrs: Optional[Dict]=None, **attrs_kwargs) -> DataArray:
+    def assign_attrs(self, attrs: Optional[Dict[str, Variable]]=None, /, **attrs_kwargs) -> DataArray:
         ...
 
-    def assign_coords(self, coords: Optional[Dict]=None, **coords_kwargs) -> Union[DataArray, Dataset]:
+    def assign_coords(self, coords: Optional[Dict[str, Variable]]=None, /, **coords_kwargs) -> Union[DataArray, Dataset]:
         ...
 
-    def assign_masks(self, masks: Optional[Dict]=None, **masks_kwargs) -> DataArray:
+    def assign_masks(self, masks: Optional[Dict[str, Variable]]=None, /, **masks_kwargs) -> DataArray:
         ...
 
     def astype(self, type: Any, *, copy: bool=True) -> DataArray:
@@ -1095,7 +1095,7 @@ class Dataset:
     def any(self, dim: Optional[str]=None) -> VariableLikeType:
         ...
 
-    def assign_coords(self, coords: Optional[Dict]=None, **coords_kwargs) -> Union[DataArray, Dataset]:
+    def assign_coords(self, coords: Optional[Dict[str, Variable]]=None, /, **coords_kwargs) -> Union[DataArray, Dataset]:
         ...
 
     @property

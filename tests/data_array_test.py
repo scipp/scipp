@@ -502,6 +502,14 @@ def test_assign_coords_kwargs():
     )
 
 
+def test_assign_coords_overlapping_names():
+    data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
+    da = sc.DataArray(data)
+    coord0 = sc.linspace('x', start=0.2, stop=1.61, num=4)
+    with pytest.raises(ValueError):
+        da.assign_coords({'coord0': coord0}, coord0=coord0)
+
+
 def test_assign_update_coords():
     data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
     coord0_o = sc.linspace('x', start=0.2, stop=1.61, num=4)
@@ -540,6 +548,14 @@ def test_assign_masks_kwargs():
     assert sc.identical(
         da_n, sc.DataArray(data, masks={'mask0': mask0, 'mask1': mask1})
     )
+
+
+def test_assign_masks_overlapping_names():
+    data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
+    da = sc.DataArray(data)
+    mask0 = sc.array(dims=['x'], values=[False, True, True, False])
+    with pytest.raises(ValueError):
+        da.assign_masks({'mask0': mask0}, mask0=mask0)
 
 
 def test_assign_update_masks():
@@ -581,6 +597,14 @@ def test_assign_attrs_kwargs():
     assert sc.identical(
         da_n, sc.DataArray(data, attrs={'attr0': attr0, 'attr1': attr1})
     )
+
+
+def test_assign_attrs_overlapping_names():
+    data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
+    attr0 = sc.scalar('attribute_0')
+    da = sc.DataArray(data)
+    with pytest.raises(ValueError):
+        da.assign_attrs({'attr0': attr0}, attr0=attr0)
 
 
 def test_assign_update_attrs():

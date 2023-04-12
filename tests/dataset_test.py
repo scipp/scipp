@@ -825,6 +825,15 @@ def test_assign_coords_kwargs():
     )
 
 
+def test_assign_coords_name_overlapping():
+    data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
+    ds = sc.Dataset(data={'data0': data})
+    coord0 = sc.linspace('x', start=0.2, stop=1.61, num=4)
+
+    with pytest.raises(ValueError):
+        ds.assign_coords({'coord0': coord0}, coord0=coord0)
+
+
 def test_assign_update_coords():
     data0 = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
     data1 = sc.array(dims=['x'], values=np.random.rand(4))
