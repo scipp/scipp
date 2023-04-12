@@ -6,21 +6,7 @@ from __future__ import annotations
 from typing import Dict, Optional, Union
 
 from ..typing import DataArray, Dataset, Variable
-
-
-def _combine_args(arg0: Optional[Dict[str, Variable]] = None, /, **kwargs):
-    posarg = {} if arg0 is None else arg0
-    collected = {**posarg, **kwargs}
-
-    if len(collected) != len(posarg) + len(kwargs):
-        overlapped = set(posarg).intersection(kwargs)
-        raise ValueError(
-            'The keys in the dictionary positional argument '
-            'and the keys of keyword arguments must be distinct. '
-            f'Following names were used in both places: {overlapped}.'
-        )
-
-    return collected
+from .argument_handlers import combine_dict_args
 
 
 def assign_coords(
@@ -42,7 +28,7 @@ def assign_coords(
         ``scipp.DataArray`` or ``scipp.Dataset`` with updated coordinates.
 
     """
-    collected_coords = _combine_args(coords, **coords_kwargs)
+    collected_coords = combine_dict_args(coords, **coords_kwargs)
 
     out = self.copy(deep=False)
     for coord_key, coord in collected_coords.items():
@@ -70,7 +56,7 @@ def assign_masks(
         ``scipp.DataArray`` with updated masks.
 
     """
-    collected_masks = _combine_args(masks, **masks_kwargs)
+    collected_masks = combine_dict_args(masks, **masks_kwargs)
 
     out = self.copy(deep=False)
     for mask_key, mask in collected_masks.items():
@@ -98,7 +84,7 @@ def assign_attrs(
         ``scipp.DataArray`` with updated attributes.
 
     """
-    collected_attrs = _combine_args(attrs, **attrs_kwargs)
+    collected_attrs = combine_dict_args(attrs, **attrs_kwargs)
 
     out = self.copy(deep=False)
     for attr_key, attr in collected_attrs.items():
