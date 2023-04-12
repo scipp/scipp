@@ -41,6 +41,27 @@ def test_bins_fail_only_end():
         sc.bins(end=end, dim='x', data=data)
 
 
+@pytest.mark.parametrize('begin_dtype', [sc.DType.int32, sc.DType.int64])
+@pytest.mark.parametrize('end_dtype', [sc.DType.int32, sc.DType.int64])
+def test_bins_works_with_int32_begin_end(begin_dtype, end_dtype):
+    data = sc.array(dims=['x'], values=[1, 2, 3, 4])
+    begin = sc.Variable(dims=['y'], values=[1, 3], dtype=begin_dtype, unit=None)
+    end = sc.Variable(dims=['y'], values=[3, 4], dtype=end_dtype, unit=None)
+    var = sc.bins(begin=begin, end=end, dim='x', data=data)
+    assert var.sizes == begin.sizes
+    assert sc.identical(var['y', 0].value, data['x', 1:3])
+    assert sc.identical(var['y', 1].value, data['x', 3:4])
+
+
+def test_bins_works_with_int32_begin():
+    data = sc.array(dims=['x'], values=[1, 2, 3, 4])
+    begin = sc.Variable(dims=['y'], values=[1, 3], dtype=sc.DType.int32, unit=None)
+    var = sc.bins(begin=begin, dim='x', data=data)
+    assert var.sizes == begin.sizes
+    assert sc.identical(var['y', 0].value, data['x', 1:3])
+    assert sc.identical(var['y', 1].value, data['x', 3:4])
+
+
 def test_bins_constituents():
     var = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
     data = sc.DataArray(

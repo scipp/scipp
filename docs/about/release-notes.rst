@@ -44,6 +44,14 @@ Features
 * :class:`scipp.Dataset` now supports ``assign_coords``, which updates or inserts the given coordinates to the :class:`scipp.Dataset` `#3110 <https://github.com/scipp/scipp/pull/3110/>`_.
 * :class:`scipp.DataArray` now supports ``assign_coords``/ ``assign_masks``/ ``assign_attrs``, which updates or inserts the given coordinates/masks/attributes to the :class:`scipp.DataArray` `#3110 <https://github.com/scipp/scipp/pull/3110/>`_.
 
+v23.03.2
+--------
+
+Bugfixes
+~~~~~~~~
+
+* Fix :func:`scipp.bins` to work with ``int32`` begin/end indices instead of just ``int64`` `#3116 <https://github.com/scipp/scipp/pull/3116>`_.
+
 v23.03.1
 --------
 
