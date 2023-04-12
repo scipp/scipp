@@ -3,10 +3,24 @@
 
 from __future__ import annotations
 
-from typing import Dict, Optional, Union
+from typing import Dict, Literal, Optional, Union
 
 from ..typing import DataArray, Dataset, Variable
 from .argument_handlers import combine_dict_args
+
+
+def _assign(
+    obj: Union[Dataset, DataArray],
+    name: Literal['coords', 'masks', 'attrs'],
+    obj_attrs: Optional[Dict[str, Variable]] = None,
+    /,
+    **kw_obj_attrs,
+) -> Union[Dataset, DataArray]:
+    out = obj.copy(deep=False)
+    collected = combine_dict_args(obj_attrs, **kw_obj_attrs)
+    for key, value in collected.items():
+        getattr(out, name)[key] = value
+    return out
 
 
 def assign_coords(
@@ -28,13 +42,7 @@ def assign_coords(
         ``scipp.DataArray`` or ``scipp.Dataset`` with updated coordinates.
 
     """
-    collected_coords = combine_dict_args(coords, **coords_kwargs)
-
-    out = self.copy(deep=False)
-    for coord_key, coord in collected_coords.items():
-        out.coords[coord_key] = coord
-
-    return out
+    return _assign(self, 'coords', coords, **coords_kwargs)
 
 
 def assign_masks(
@@ -56,13 +64,7 @@ def assign_masks(
         ``scipp.DataArray`` with updated masks.
 
     """
-    collected_masks = combine_dict_args(masks, **masks_kwargs)
-
-    out = self.copy(deep=False)
-    for mask_key, mask in collected_masks.items():
-        out.masks[mask_key] = mask
-
-    return out
+    return _assign(self, 'masks', masks, **masks_kwargs)
 
 
 def assign_attrs(
@@ -84,10 +86,4 @@ def assign_attrs(
         ``scipp.DataArray`` with updated attributes.
 
     """
-    collected_attrs = combine_dict_args(attrs, **attrs_kwargs)
-
-    out = self.copy(deep=False)
-    for attr_key, attr in collected_attrs.items():
-        out.attrs[attr_key] = attr
-
-    return out
+    return _assign(self, 'attrs', attrs, **attrs_kwargs)
