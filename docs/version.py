@@ -11,8 +11,7 @@ from packaging.version import InvalidVersion, Version, parse
 
 def _get_releases() -> List[Version]:
     """Return reversed sorted list of release tag names."""
-    # Will use the value of GIT_DIR, or current dir.
-    tags = git.Repo().tags
+    tags = git.Repo(search_parent_directories=True).tags
     versions = []
     for t in tags:
         try:
