@@ -8,6 +8,21 @@ from typing import Dict, Optional, Union
 from ..typing import DataArray, Dataset, Variable
 
 
+def _combine_args(arg0: Optional[Dict[str, Variable]] = None, /, **kwargs):
+    posarg = {} if arg0 is None else arg0
+    collected = {**posarg, **kwargs}
+
+    if len(collected) != len(posarg) + len(kwargs):
+        overlapped = set(posarg).intersection(kwargs)
+        raise ValueError(
+            'The keys in the dictionary positional argument '
+            'and the keys of keyword arguments must be distinct.'
+            f'Following names were used in both places: {overlapped}.'
+        )
+
+    return collected
+
+
 def assign_coords(
     self, coords: Optional[Dict[str, Variable]] = None, /, **coords_kwargs
 ) -> Union[DataArray, Dataset]:
@@ -27,16 +42,7 @@ def assign_coords(
         ``scipp.DataArray`` or ``scipp.Dataset`` with updated coordinates.
 
     """
-    coords_posarg = {} if coords is None else coords
-    collected_coords = {**coords_posarg, **coords_kwargs}
-
-    if len(collected_coords) != len(coords_posarg) + len(coords_kwargs):
-        overlapped = set(coords).intersection(coords_kwargs)
-        raise ValueError(
-            'The names of coords passed in the dict '
-            'and as keyword arguments must be distinct.'
-            f'Following names were used in both places: {overlapped}.'
-        )
+    collected_coords = _combine_args(coords, **coords_kwargs)
 
     out = self.copy(deep=False)
     for coord_key, coord in collected_coords.items():
@@ -64,16 +70,7 @@ def assign_masks(
         ``scipp.DataArray`` with updated masks.
 
     """
-    masks_posarg = {} if masks is None else masks
-    collected_masks = {**masks_posarg, **masks_kwargs}
-
-    if len(collected_masks) != len(masks_posarg) + len(masks_kwargs):
-        overlapped = set(masks).intersection(masks_kwargs)
-        raise ValueError(
-            'The names of masks passed in the dict '
-            'and as keyword arguments must be distinct.'
-            f'Following names were used in both places: {overlapped}.'
-        )
+    collected_masks = _combine_args(masks, **masks_kwargs)
 
     out = self.copy(deep=False)
     for mask_key, mask in collected_masks.items():
@@ -101,16 +98,7 @@ def assign_attrs(
         ``scipp.DataArray`` with updated attributes.
 
     """
-    attrs_posarg = {} if attrs is None else attrs
-    collected_attrs = {**attrs_posarg, **attrs_kwargs}
-
-    if len(collected_attrs) != len(attrs_posarg) + len(attrs_kwargs):
-        overlapped = set(attrs_posarg).intersection(attrs_kwargs)
-        raise ValueError(
-            'The names of attributes passed in the dict '
-            'and as keyword arguments must be distinct.'
-            f'Following names were used in both places: {overlapped}.'
-        )
+    collected_attrs = _combine_args(attrs, **attrs_kwargs)
 
     out = self.copy(deep=False)
     for attr_key, attr in collected_attrs.items():
