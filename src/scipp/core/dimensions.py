@@ -40,7 +40,7 @@ def _rename_dims(
     :
         A new object with renamed dimensions.
     """
-    return self._rename_dims(combine_dict_args(dims_dict, **names))
+    return self._rename_dims(combine_dict_args(dims_dict, names))
 
 
 def _rename_variable(
@@ -74,7 +74,7 @@ def _rename_variable(
     scipp.Variable.rename_dims:
         Equivalent for ``Variable`` but differs for ``DataArray`` and ``Dataset``.
     """
-    return var.rename_dims(combine_dict_args(dims_dict, **names))
+    return var.rename_dims(combine_dict_args(dims_dict, names))
 
 
 def _rename_data_array(
@@ -109,7 +109,7 @@ def _rename_data_array(
     scipp.DataArray.rename_dims:
         Only rename dimensions, not coordinates and attributes.
     """
-    renaming_dict = combine_dict_args(dims_dict, **names)
+    renaming_dict = combine_dict_args(dims_dict, names)
     out = da.rename_dims(renaming_dict)
     if out.bins is not None:
         out.data = bins(**out.bins.constituents)
@@ -161,7 +161,7 @@ def _rename_dataset(
     scipp.Dataset.rename_dims:
         Only rename dimensions, not coordinates and attributes.
     """
-    renaming_dict = combine_dict_args(dims_dict, **names)
+    renaming_dict = combine_dict_args(dims_dict, names)
     ds_from_items = Dataset()
     for key, item in ds.items():
         dims_dict = {old: new for old, new in renaming_dict.items() if old in item.dims}

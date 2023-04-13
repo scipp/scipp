@@ -17,7 +17,7 @@ def _assign(
     **kw_obj_attrs,
 ) -> Union[Dataset, DataArray]:
     out = obj.copy(deep=False)
-    collected = combine_dict_args(obj_attrs, **kw_obj_attrs)
+    collected = combine_dict_args(obj_attrs, kw_obj_attrs)
     for key, value in collected.items():
         getattr(out, name)[key] = value
     return out
