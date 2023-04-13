@@ -14,7 +14,7 @@ jobs:
     name: Check if package can be released
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
         with:
           python-version: 3.8
@@ -37,7 +37,7 @@ jobs:
         python-version: ["3.8", "3.9", "3.10"]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: true
           fetch-depth: 0  # history required so cmake can determine version
@@ -59,7 +59,7 @@ jobs:
           --override-channels
           --output-folder conda/package conda
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: conda-package-${{ matrix.variant.os }}-py${{ matrix.python-version }}
           path: conda/package/*/scipp*.tar.bz2
@@ -69,7 +69,7 @@ jobs:
     needs: check_release
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
         fetch-depth: 0  # history required so cmake can determine version
@@ -80,7 +80,7 @@ jobs:
     - name: Check metadata
       run: pipx run twine check dist/*
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: dist
         path: dist/*.tar.gz
@@ -96,7 +96,7 @@ jobs:
         build: [cp38, cp39, cp310, cp311]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
         fetch-depth: 0  # history required so cmake can determine version
@@ -111,7 +111,7 @@ jobs:
       shell: bash
 
     - name: Upload wheels
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: dist
         path: wheelhouse/*.whl
@@ -123,7 +123,7 @@ jobs:
     if: github.event_name == 'release' && github.event.action == 'published'
 
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
       - uses: actions/setup-python@v3
       - uses: pypa/gh-action-pypi-publish@v1.8.5
         with:
@@ -137,7 +137,7 @@ jobs:
     if: github.event_name == 'release' && github.event.action == 'published'
 
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
       - uses: conda-incubator/setup-miniconda@v2
       - run: conda install -c conda-forge --yes anaconda-client
       - run: anaconda --token ${{ secrets.ANACONDATOKEN }} upload --user scipp --label main $(ls conda-package-*/*/*.tar.bz2)
@@ -159,8 +159,8 @@ jobs:
       - name: Set outputs
         id: version
         run: |
-          echo "new=$(python docs/version.py --repo=scipp --version=${GITHUB_REF_NAME} --action=is-new)" >> $GITHUB_OUTPUT
-          echo "replaced=$(python docs/version.py --repo=scipp --version=${GITHUB_REF_NAME} --action=get-replaced)" >> $GITHUB_OUTPUT
+          echo "new=$(python docs/version.py --version=${GITHUB_REF_NAME} --action=is-new)" >> $GITHUB_OUTPUT
+          echo "replaced=$(python docs/version.py --version=${GITHUB_REF_NAME} --action=get-replaced)" >> $GITHUB_OUTPUT
 
   docs:
     needs: [upload_conda, upload_pypi, manage-versions]

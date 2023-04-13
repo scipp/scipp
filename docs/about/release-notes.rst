@@ -35,6 +35,7 @@ Release Notes
    Jan-Lukas Wynen :sup:`a`\ ,
    and Sunyoung Yoo :sup:`a`
 
+
 vrelease
 --------
 
@@ -48,6 +49,14 @@ Bugfixes
 ~~~~~~~~
 
 * Fix bug in :func:`scipp.lookup` raising an exception in arithmetic operations with unrelated coords `#3112 <https://github.com/scipp/scipp/pull/3112>`_.
+
+v23.03.2
+--------
+
+Bugfixes
+~~~~~~~~
+
+* Fix :func:`scipp.bins` to work with ``int32`` begin/end indices instead of just ``int64`` `#3116 <https://github.com/scipp/scipp/pull/3116>`_.
 
 v23.03.1
 --------

@@ -80,7 +80,9 @@ bool allsorted(const Variable &x, const Dim dim, const SortOrder order) {
 
 /// Zip elements of two variables into a variable where each element is a pair.
 Variable zip(const Variable &first, const Variable &second) {
-  return transform(first, second, core::element::zip, "zip");
+  return transform(astype(first, dtype<int64_t>, CopyPolicy::TryAvoid),
+                   astype(second, dtype<int64_t>, CopyPolicy::TryAvoid),
+                   core::element::zip, "zip");
 }
 
 /// For an input where elements are pairs, return two variables containing the
