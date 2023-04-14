@@ -465,7 +465,7 @@ def open_hdf5(filename: Union[str, Path]) -> VariableLike:
     from ..core.util import VisibleDeprecationWarning
 
     warnings.warn(
-        "scipp.io.hdf5.open_hdf5 is deprecated. Use scipp.io.hdf5.save_hdf5 instead."
+        "scipp.io.hdf5.open_hdf5 is deprecated. Use scipp.io.hdf5.load_hdf5 instead."
         "open_hdf5 will be removed in Scipp v23.09.0 (September 2023) or after.",
         VisibleDeprecationWarning,
     )
