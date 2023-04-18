@@ -86,6 +86,7 @@ for _cls in (Variable, DataArray, Dataset):
     setattr(_cls, '__array_ufunc__', None)
 del _cls
 
+
 from .arithmetic import add, divide, floor_divide, mod, multiply, negative, subtract
 from .binning import bin, group, hist, nanhist, rebin
 from .bins import lookup, bins, bins_like
@@ -159,3 +160,11 @@ from .variable import (
     epoch,
 )
 from .like import zeros_like, ones_like, empty_like, full_like
+
+from .assignments import assign_coords, assign_masks, assign_attrs
+
+setattr(Dataset, 'assign_coords', assign_coords)
+setattr(DataArray, 'assign_coords', assign_coords)
+setattr(DataArray, 'assign_masks', assign_masks)
+setattr(DataArray, 'assign_attrs', assign_attrs)
+del assign_coords, assign_masks, assign_attrs
