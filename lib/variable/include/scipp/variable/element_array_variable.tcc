@@ -127,10 +127,10 @@ void ElementArrayModel<T>::assign(const VariableConcept &other) {
 
 template <class T>
 void ElementArrayModel<T>::setVariances(const Variable &variances) {
-  if (!core::canHaveVariances<T>())
-    throw except::VariancesError("This data type cannot have variances.");
   if (!variances.is_valid())
     return m_variances.reset();
+  if (!core::canHaveVariances<T>())
+    throw except::VariancesError("This data type cannot have variances.");
   // TODO Could move if refcount is 1?
   if (variances.has_variances())
     throw except::VariancesError(
