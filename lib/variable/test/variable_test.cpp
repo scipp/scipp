@@ -737,10 +737,22 @@ TEST(VariableTest, set_variances) {
   test_set_variances(var);
 }
 
+TEST(VariableTest, set_variances_rejects_ints) {
+  Variable var = makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{});
+  EXPECT_THROW(var.setVariances(var), except::VariancesError);
+}
+
 TEST(VariableTest, set_variances_remove) {
   Variable var =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{}, Variances{});
   EXPECT_TRUE(var.has_variances());
+  EXPECT_NO_THROW(var.setVariances(Variable()));
+  EXPECT_FALSE(var.has_variances());
+}
+
+TEST(VariableTest, set_variances_remove_int) {
+  Variable var = makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{});
+  EXPECT_FALSE(var.has_variances());
   EXPECT_NO_THROW(var.setVariances(Variable()));
   EXPECT_FALSE(var.has_variances());
 }
