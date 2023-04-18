@@ -89,19 +89,19 @@ def lookup(
     """
     if dim is None:
         dim = func.dim
-    if func.meta.is_edges(dim):
+    func = _cpp.DataArray(func.data, coords={dim: func.meta[dim]}, masks=func.masks)
+    if func.coords.is_edges(dim):
         if mode is not None:
             raise ValueError("Input is a histogram, 'mode' must not be set.")
         return Lookup(_cpp.buckets.map, func, dim, fill_value)
     if mode is None:
         mode = 'nearest'
     elif mode not in ['previous', 'nearest']:
-        raise ValueError(f"Mode most be one of ['previous', 'nearest'], got '{mode}'")
+        raise ValueError(f"Mode must be one of ['previous', 'nearest'], got '{mode}'")
     if mode == 'nearest' and func.sizes[dim] != 0:
-        coord = func.meta[dim]
+        coord = func.coords[dim]
         lowest = coord[dim, 0:0].max()  # trick to get lowest representable value
         parts = [lowest] if coord.sizes[dim] < 2 else [lowest, midpoints(coord, dim)]
-        func = func.copy(deep=False)
         func.coords[dim] = concat(parts, dim)
     return Lookup(_cpp.lookup_previous, func, dim, fill_value)
 
