@@ -14,7 +14,7 @@ namespace scipp::core {
 class time_point {
 public:
   time_point() = default;
-  explicit time_point(int64_t duration) : m_duration{duration} {}
+  explicit time_point(int64_t duration) noexcept : m_duration{duration} {}
 
   [[nodiscard]] int64_t time_since_epoch() const noexcept {
     return m_duration;
@@ -64,7 +64,7 @@ public:
   }
 
 private:
-  int64_t m_duration = 0;
+  int64_t m_duration;
 };
 
 } // namespace scipp::core
