@@ -94,7 +94,7 @@ def _summarize_atomic_variable(var, name: str, depth: int = 0) -> str:
         preview += escape(_format_multi_dim_data(var))
 
     elif preview == '' and hasattr(var, "__str__"):
-        preview = escape(_format_atomic_value(var, maxidx=30))
+        preview = escape(_format_atomic_value(var, maxidx=80))
 
     html_tpl = load_atomic_row_tpl()
     return Template(html_tpl).substitute(

@@ -28,9 +28,12 @@ element_to_string(const T &item,
                   const std::optional<units::Unit> &unit = std::nullopt) {
   using core::to_string;
   using std::to_string;
-  if constexpr (std::is_same_v<T, std::string>)
+  if constexpr (std::is_same_v<T, std::string>) {
+    if (item.length() > 80) {
+      return {'"' + item.substr(0, 77) + "...\", "};
+    }
     return {'"' + item + "\", "};
-  else if constexpr (std::is_same_v<T, bool>)
+  } else if constexpr (std::is_same_v<T, bool>)
     return core::to_string(item) + ", ";
   else if constexpr (std::is_same_v<T, scipp::core::time_point>) {
     return core::to_string(to_iso_date(item, unit.value())) + ", ";
