@@ -151,6 +151,8 @@ jobs:
       version-replaced: ${{ steps.version.outputs.replaced }}
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # history required so cmake can determine version
       - uses: actions/setup-python@v3
         with:
           python-version: 3.8
