@@ -23,12 +23,17 @@ def name_with_unit(var=None, name=None, log=False):
     return text
 
 
-def value_to_string(val, precision=3):
+def value_to_string(val, precision=3, max_str_len=133):
     """
     Convert a number to a human readable string.
     """
     if (not isinstance(val, float)) or (val == 0):
-        text = str(val)
+        raw_text = str(val)
+        if len(raw_text) > max_str_len:
+            preview_len = int((max_str_len - 5) / 2)
+            text = f"{raw_text[:preview_len]} ... {raw_text[-preview_len:]}"
+        else:
+            text = raw_text
     elif (abs(val) >= 10.0 ** (precision + 1)) or (
         abs(val) <= 10.0 ** (-precision - 1)
     ):
