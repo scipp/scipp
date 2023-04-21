@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
+#include <type_traits>
 
 #include "scipp/core/time_point.h"
 #include "scipp/units/except.h"
@@ -43,4 +44,12 @@ TEST_F(TimePointTest, inplace_arithmetics) {
   time_point aux = t2;
   EXPECT_EQ(aux -= 1, t1);
   EXPECT_EQ(aux += 1, t2);
+}
+
+TEST(TimePointTypeTest, is_pod) {
+  // It is essential that time_point is a POD-type, to ensure that operations
+  // such as sc.empty are fast and do not call constructors and initialize
+  // memory --- in particular since this is also used internally for
+  // initialization the output in the implementation of many operations.
+  ASSERT_TRUE(std::is_pod_v<time_point>);
 }
