@@ -393,13 +393,51 @@ class DataGroupIO:
         return DataGroup(_read_mapping(group['entries']))
 
 
+def _direct_io(cls, convert=None):
+    type_name = cls.__name__
+    if convert is None:
+        convert = cls
+
+    class GenericIO:
+        @staticmethod
+        def write(group, data):
+            _write_scipp_header(group, type_name)
+            group['entry'] = data
+            return group
+
+        @staticmethod
+        def read(group):
+            _check_scipp_header(group, type_name)
+            return convert(group['entry'][()])
+
+    return GenericIO
+
+
 class HDF5IO:
-    _handlers = dict(
-        zip(
-            ['Variable', 'DataArray', 'Dataset', 'DataGroup'],
-            [VariableIO, DataArrayIO, DatasetIO, DataGroupIO],
-        )
-    )
+    _handlers = {
+        'Variable': VariableIO,
+        'DataArray': DataArrayIO,
+        'Dataset': DatasetIO,
+        'DataGroup': DataGroupIO,
+        'str': _direct_io(str, convert=lambda b: b.decode('utf-8')),
+        'ndarray': _direct_io(np.ndarray, convert=lambda x: x),
+        **{
+            cls.__name__: _direct_io(cls)
+            for cls in (
+                int,
+                np.int64,
+                np.int32,
+                np.uint64,
+                np.uint32,
+                float,
+                np.float32,
+                np.float64,
+                bool,
+                np.bool_,
+                bytes,
+            )
+        },
+    }
 
     @classmethod
     def write(cls, group, data, **kwargs):

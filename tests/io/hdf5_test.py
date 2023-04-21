@@ -279,6 +279,19 @@ def test_data_group():
             'data_array': array_2d,
             'dataset': sc.Dataset({'a': array_1d, 'b': array_2d}),
             'data group': sc.DataGroup({'v.same': vector, 'm/copy': matrix.copy()}),
+            'integer': 513,
+            'numpy int64': np.int64(9),
+            'numpy int32': np.int32(-23),
+            'numpy uint64': np.uint64(9312),
+            'numpy uint32': np.uint32(66134),
+            'float': 7.81,
+            'numpy float64': np.float64(5235.1),
+            'numpy float32': np.float32(0.031),
+            'boolean': True,
+            'numpy bool_': np.bool_(False),
+            'string': 'a string for testing',
+            'bytes': b'a bytes array',
+            'numpy array': x.values,
         }
     )
     check_roundtrip(dg)
@@ -294,13 +307,6 @@ def test_data_group_unsupported_PyObject():
     res = roundtrip(dg)
     assert sc.identical(res['a'], dg['a'])
     assert 'b' not in res
-
-
-def test_data_group_unsupported_type():
-    dg = sc.DataGroup({'a': 2, 'b': sc.scalar(3)})
-    res = roundtrip(dg)
-    assert 'a' not in res
-    assert sc.identical(res['b'], dg['b'])
 
 
 def test_variable_with_zero_length_dimension():
