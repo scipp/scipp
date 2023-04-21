@@ -290,6 +290,7 @@ def test_data_group():
             'boolean': True,
             'numpy bool_': np.bool_(False),
             'string': 'a string for testing',
+            'bytes': b'a bytes array',
             'numpy array': x.values,
         }
     )

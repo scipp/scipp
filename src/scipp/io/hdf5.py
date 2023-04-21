@@ -434,6 +434,7 @@ class HDF5IO:
                 np.float64,
                 bool,
                 np.bool_,
+                bytes,
             )
         },
     }
