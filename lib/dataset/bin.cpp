@@ -156,9 +156,10 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
   for (const auto &[dim_, coord] : attrs)
     if (!rebinned(coord) && !out_coords.contains(dim_))
       out_attrs.insert_or_assign(dim_, copy(coord));
-  return DataArray{
-      make_bins(zip(end - bin_sizes, end), buffer_dim, std::move(buffer)),
-      std::move(out_coords), std::move(out_masks), std::move(out_attrs)};
+  return DataArray{make_bins_no_validate(zip(end - bin_sizes, end), buffer_dim,
+                                         std::move(buffer)),
+                   std::move(out_coords), std::move(out_masks),
+                   std::move(out_attrs)};
 }
 
 class TargetBinBuilder {
