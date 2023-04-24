@@ -38,12 +38,8 @@ static constexpr auto end_edge =
                  index = bin + 2;
                }};
 
-constexpr auto subbin_sizes_exclusive_scan =
-    overloaded{arg_list<SubbinSizes>, [](auto &sum, auto &x) {
-                 sum.trim_to(x);
-                 sum += x;
-                 x = sum - x;
-               }};
+constexpr auto subbin_sizes_exclusive_scan = overloaded{
+    arg_list<SubbinSizes>, [](auto &sum, auto &x) { sum.exclusive_scan(x); }};
 
 constexpr auto subbin_sizes_add_intersection =
     overloaded{arg_list<SubbinSizes>,

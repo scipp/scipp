@@ -62,16 +62,12 @@ TEST_F(SubbinSizesTest, sum) {
   EXPECT_EQ(x.sum(), 6);
 }
 
-TEST_F(SubbinSizesTest, trim_to) {
-  SubbinSizes x(2, {1, 2, 3});
-  x.trim_to({2, {6, 6, 6}});
-  EXPECT_EQ(x, SubbinSizes(2, {1, 2, 3}));
-  x.trim_to({3, {6, 6, 6}});
-  EXPECT_EQ(x, SubbinSizes(3, {2, 3, 0}));
-  x.trim_to({1, {6, 6, 6, 6, 6}});
-  EXPECT_EQ(x, SubbinSizes(1, {0, 0, 2, 3, 0}));
-  x.trim_to({2, {6, 6, 6}});
-  EXPECT_EQ(x, SubbinSizes(2, {0, 2, 3}));
+TEST_F(SubbinSizesTest, exclusive_scan) {
+  SubbinSizes accum(1, {1, 2, 3});
+  SubbinSizes x(2, {2, 0, 3});
+  accum.exclusive_scan(x);
+  EXPECT_EQ(accum, SubbinSizes(2, {2 + 2, 3 + 0, 0 + 3}));
+  EXPECT_EQ(x, SubbinSizes(2, {2, 3, 0}));
 }
 
 TEST_F(SubbinSizesTest, add_intersection) {
