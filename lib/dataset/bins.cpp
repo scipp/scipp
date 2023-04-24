@@ -215,8 +215,12 @@ Variable lookup_previous(const DataArray &function, const Variable &x, Dim dim,
 Variable pretend_bins_for_threading(const DataArray &da, Dim bin_dim) {
   const auto dim = da.dims().inner();
   const auto size = std::max(scipp::index(1), da.dims()[dim]);
-  // TODO automatic setup with reasonable bin count
-  const auto stride = std::max(scipp::index(1), size / 24);
+  const auto nthread = size > 10000000  ? 24
+                       : size > 1000000 ? 4
+                       : size > 100000  ? 2
+                                        : 1;
+
+  const auto stride = std::max(scipp::index(1), size / nthread);
   auto begin = bin_detail::make_range(0, size, stride, bin_dim);
   auto end = begin + stride * units::none;
   end.values<scipp::index>().as_span().back() = da.dims()[dim];
