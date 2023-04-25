@@ -27,8 +27,8 @@ public:
 
   SubbinSizes cumsum_exclusive() const;
   scipp::index sum() const;
-  void trim_to(const SubbinSizes &other);
   SubbinSizes &add_intersection(const SubbinSizes &other);
+  void exclusive_scan(SubbinSizes &x);
 
 private:
   scipp::index m_offset{0};

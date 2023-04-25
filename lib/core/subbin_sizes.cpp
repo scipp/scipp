@@ -51,27 +51,6 @@ scipp::index SubbinSizes::sum() const {
   return std::accumulate(sizes().begin(), sizes().end(), scipp::index{0});
 }
 
-void SubbinSizes::trim_to(const SubbinSizes &other) {
-  auto out = other; // TODO in principle this allocation could be avoided, but
-                    // initial implementation attempts got messy.
-  out = 0;
-  // full index begin/end
-  const auto begin = std::max(offset(), out.offset());
-
-  const auto end = std::min(offset() + scipp::size(sizes()),
-                            out.offset() + scipp::size(out.sizes()));
-
-  const auto ibegin =
-      sizes().begin() +
-      std::clamp(begin - offset(), scipp::index(0), scipp::size(sizes()));
-
-  const auto obegin =
-      out.m_sizes.begin() + std::max(begin - out.offset(), scipp::index(0));
-
-  std::copy_n(ibegin, std::max(scipp::index(0), end - begin), obegin);
-  *this = std::move(out);
-}
-
 SubbinSizes &SubbinSizes::add_intersection(const SubbinSizes &other) {
   scipp::index delta = other.offset() - offset();
   auto i = std::max(scipp::index(0), delta);
@@ -107,6 +86,31 @@ SubbinSizes operator+(const SubbinSizes &a, const SubbinSizes &b) {
 
 SubbinSizes operator-(const SubbinSizes &a, const SubbinSizes &b) {
   return binary(a, b, element::subtract_equals);
+}
+
+/** Perform a step of an exclusive scan.
+ *
+ * The instance is the accumulant, the argument is the next value to be added.
+ * Trims the accumulant to the offset and size of the argument.
+ *
+ * Note that effective cache use matters here, so we do not implemented this
+ * via suboperations but a single loop.
+ */
+void SubbinSizes::exclusive_scan(SubbinSizes &x) {
+  const scipp::index osize = scipp::size(sizes());
+  const scipp::index size = scipp::size(x.sizes());
+  const auto delta = x.offset() - offset();
+  m_sizes.reserve(size);
+  m_offset = x.m_offset;
+  for (scipp::index i = 0; i < size; ++i) {
+    const auto prev = delta + i >= osize ? 0 : m_sizes[delta + i];
+    if (i >= osize)
+      m_sizes.push_back(prev + x.m_sizes[i]);
+    else
+      m_sizes[i] = prev + x.m_sizes[i];
+    x.m_sizes[i] = prev;
+  }
+  m_sizes.resize(size);
 }
 
 } // namespace scipp::core
