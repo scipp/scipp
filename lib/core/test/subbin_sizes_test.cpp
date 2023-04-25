@@ -70,6 +70,22 @@ TEST_F(SubbinSizesTest, exclusive_scan) {
   EXPECT_EQ(x, SubbinSizes(2, {2, 3, 0}));
 }
 
+TEST_F(SubbinSizesTest, exclusive_scan_empty_accum) {
+  SubbinSizes accum(1, {});
+  SubbinSizes x(2, {2, 0, 3});
+  accum.exclusive_scan(x);
+  EXPECT_EQ(accum, SubbinSizes(2, {2, 0, 3}));
+  EXPECT_EQ(x, SubbinSizes(2, {0, 0, 0}));
+}
+
+TEST_F(SubbinSizesTest, exclusive_scan_empty_value) {
+  SubbinSizes accum(1, {1, 2, 3});
+  SubbinSizes x(2, {});
+  accum.exclusive_scan(x);
+  EXPECT_EQ(accum, SubbinSizes(2, {}));
+  EXPECT_EQ(x, SubbinSizes(2, {}));
+}
+
 TEST_F(SubbinSizesTest, add_intersection) {
   SubbinSizes x(2, {1, 2, 3});
   // no overlap
