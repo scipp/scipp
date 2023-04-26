@@ -270,15 +270,14 @@ scipp::index Dataset::ndim() const { return scipp::size(m_coords.sizes()); }
 
 bool Dataset::is_readonly() const noexcept { return m_readonly; }
 
-typename Masks::holder_type union_or(const Masks &currentMasks,
-                                     const Masks &otherMasks) {
-  typename Masks::holder_type out;
+Masks union_or(const Masks &currentMasks, const Masks &otherMasks) {
+  Masks out(merge(currentMasks.sizes(), otherMasks.sizes()), {});
 
   for (const auto &[key, item] : currentMasks)
-    out.insert_or_assign(key, copy(item));
+    out.set(key, copy(item));
   for (const auto &[key, item] : otherMasks) {
     if (!currentMasks.contains(key)) {
-      out.insert_or_assign(key, copy(item));
+      out.set(key, copy(item));
     } else if (item.dtype() != core::dtype<bool> ||
                out[key].dtype() != core::dtype<bool>) {
       throw except::TypeError(" Cannot combine non-boolean mask '" + key +
@@ -290,7 +289,7 @@ typename Masks::holder_type union_or(const Masks &currentMasks,
     } else if (out[key].dims().includes(item.dims())) {
       out[key] |= item;
     } else {
-      out[key] = out[key] | item;
+      out.set(key, out[key] | item);
     }
   }
   return out;

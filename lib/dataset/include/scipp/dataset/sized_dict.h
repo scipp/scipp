@@ -167,15 +167,15 @@ template <class Key, class Value>
 bool equals_nan(const SizedDict<Key, Value> &a, const SizedDict<Key, Value> &b);
 
 template <class Key, class Value>
-core::Dict<Key, Value> union_(const SizedDict<Key, Value> &a,
-                              const SizedDict<Key, Value> &b,
-                              std::string_view opname);
+SizedDict<Key, Value> union_(const SizedDict<Key, Value> &a,
+                             const SizedDict<Key, Value> &b,
+                             std::string_view opname);
 
 /// Return intersection of dicts, i.e., all items with matching names that
 /// have matching content.
 template <class Key, class Value>
-core::Dict<Key, Value> intersection(const SizedDict<Key, Value> &a,
-                                    const SizedDict<Key, Value> &b);
+SizedDict<Key, Value> intersection(const SizedDict<Key, Value> &a,
+                                   const SizedDict<Key, Value> &b);
 
 constexpr auto get_data = [](auto &&a) -> decltype(auto) { return a.data(); };
 constexpr auto get_sizes = [](auto &&a) -> decltype(auto) { return a.sizes(); };

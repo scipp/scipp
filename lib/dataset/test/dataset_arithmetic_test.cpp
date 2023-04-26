@@ -586,8 +586,16 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataset_rhs) {
 
   /* Expect coordinates to be copied to the result dataset */
   EXPECT_EQ(res.coords(), dataset_a.coords());
-  for (const auto &item : res)
+  for (const auto &item : res) {
+    for (const auto &[k, v] : item.masks()) {
+      std::cout << k << " : " << v << '\n';
+    }
+    std::cout << "-----\n";
+    for (const auto &[k, v] : dataset_b[item.name()].masks()) {
+      std::cout << k << " : " << v << '\n';
+    }
     EXPECT_EQ(item.masks(), dataset_b[item.name()].masks());
+  }
 }
 
 TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_variableconstview_rhs) {

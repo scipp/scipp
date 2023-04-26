@@ -257,8 +257,7 @@ SCIPP_DATASET_EXPORT Dataset operator/(const Variable &lhs, const Dataset &rhs);
 /// If any of the masks repeat they are OR'ed.
 /// The result is stored in a new map
 SCIPP_DATASET_EXPORT
-typename Masks::holder_type union_or(const Masks &currentMasks,
-                                     const Masks &otherMasks);
+Masks union_or(const Masks &currentMasks, const Masks &otherMasks);
 
 /// Union the masks of the two proxies.
 /// If any of the masks repeat they are OR'ed.

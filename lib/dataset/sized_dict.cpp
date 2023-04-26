@@ -365,30 +365,30 @@ bool SizedDict<Key, Value>::is_edges(const Key &key,
 }
 
 template <class Key, class Value>
-core::Dict<Key, Value> union_(const SizedDict<Key, Value> &a,
-                              const SizedDict<Key, Value> &b,
-                              std::string_view opname) {
-  core::Dict<Key, Value> out;
+SizedDict<Key, Value> union_(const SizedDict<Key, Value> &a,
+                             const SizedDict<Key, Value> &b,
+                             std::string_view opname) {
+  SizedDict<Key, Value> out(merge(a.sizes(), b.sizes()), {});
   out.reserve(out.size() + b.size());
   for (const auto &[key, val] : a)
-    out.insert_or_assign(key, val);
+    out.set(key, val);
   for (const auto &[key, val] : b) {
     if (const auto it = a.find(key); it != a.end()) {
       expect::matching_coord(it->first, it->second, val, opname);
     } else
-      out.insert_or_assign(key, val);
+      out.set(key, val);
   }
   return out;
 }
 
 template <class Key, class Value>
-core::Dict<Key, Value> intersection(const SizedDict<Key, Value> &a,
-                                    const SizedDict<Key, Value> &b) {
-  core::Dict<Key, Value> out;
+SizedDict<Key, Value> intersection(const SizedDict<Key, Value> &a,
+                                   const SizedDict<Key, Value> &b) {
+  SizedDict<Key, Value> out(merge(a.sizes(), b.sizes()), {});
   for (const auto &[key, item] : a)
     if (const auto it = b.find(key);
         it != b.end() && equals_nan(it->second, item))
-      out.insert_or_assign(key, item);
+      out.set(key, item);
   return out;
 }
 
@@ -396,8 +396,8 @@ template class SCIPP_DATASET_EXPORT SizedDict<Dim, Variable>;
 template class SCIPP_DATASET_EXPORT SizedDict<std::string, Variable>;
 template SCIPP_DATASET_EXPORT bool equals_nan(const Coords &a, const Coords &b);
 template SCIPP_DATASET_EXPORT bool equals_nan(const Masks &a, const Masks &b);
-template SCIPP_DATASET_EXPORT typename Coords::holder_type
-union_(const Coords &, const Coords &, std::string_view opname);
-template SCIPP_DATASET_EXPORT typename Coords::holder_type
-intersection(const Coords &, const Coords &);
+template SCIPP_DATASET_EXPORT Coords union_(const Coords &, const Coords &,
+                                            std::string_view opname);
+template SCIPP_DATASET_EXPORT Coords intersection(const Coords &,
+                                                  const Coords &);
 } // namespace scipp::dataset
