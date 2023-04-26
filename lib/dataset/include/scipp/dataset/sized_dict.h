@@ -149,6 +149,126 @@ protected:
   bool m_readonly{false};
 };
 
+template <class Value> struct AlignedValue {
+  Value value;
+  bool aligned;
+
+  bool operator==(const AlignedValue &other) const noexcept {
+    return value == other.value && aligned == other.aligned;
+  }
+
+  [[nodiscard]] bool is_same(const AlignedValue &other) const noexcept {
+    return value.is_same(other.value) && aligned == other.aligned;
+  }
+
+  [[nodiscard]] bool equals_nan(const AlignedValue &other) const noexcept {
+    return equals_nan(value, other.value) && aligned == other.aligned;
+  }
+
+  [[nodiscard]] const core::Dimensions &dims() const noexcept {
+    return value.dims();
+  }
+
+  friend std::string to_string(const AlignedValue &x) {
+    return to_string(x.value);
+  }
+};
+
+/// Dict with fixed dimensions and alignment flag.
+template <class Key, class Value>
+class AlignedDict : public SizedDict<Key, AlignedValue<Value>> {
+public:
+  using key_type = Key;
+  using mapped_type = Value;
+  using aligned_mapped_type = AlignedValue<Value>;
+  using holder_type = core::Dict<key_type, AlignedValue<Value>>;
+  using raw_holder_type = core::Dict<key_type, Value>;
+
+  AlignedDict() = default;
+  AlignedDict(const Sizes &sizes,
+              std::initializer_list<std::pair<const Key, Value>> items,
+              bool readonly = false);
+  AlignedDict(Sizes sizes, raw_holder_type items, bool readonly = false);
+  AlignedDict(Sizes sizes, holder_type items, bool readonly = false);
+  AlignedDict(const AlignedDict &other);
+  AlignedDict(AlignedDict &&other) noexcept;
+  AlignedDict &operator=(const AlignedDict &other);
+  AlignedDict &operator=(AlignedDict &&other) noexcept;
+
+  const mapped_type &operator[](const Key &key) const;
+  const mapped_type &at(const Key &key) const;
+  const aligned_mapped_type &item_at(const Key &key) const;
+  // Note that the non-const versions return by value, to avoid breakage of
+  // invariants.
+  mapped_type operator[](const Key &key);
+  mapped_type at(const Key &key);
+
+  auto find(const Key &k) const noexcept {
+    return this->m_items.find(k).transform(GetValue{});
+  }
+  auto find(const Key &k) noexcept {
+    return this->m_items.find(k).transform(GetValue{});
+  }
+
+  /// Return const iterator to the beginning of all items.
+  auto begin() const noexcept {
+    return this->m_items.begin().transform(GetValue{});
+  }
+  auto begin() noexcept { return this->m_items.begin().transform(GetValue{}); }
+  /// Return const iterator to the end of all items.
+  auto end() const noexcept {
+    return this->m_items.end().transform(GetValue{});
+  }
+  auto end() noexcept { return this->m_items.end().transform(GetValue{}); }
+
+  auto items_begin() const && = delete;
+  /// Return const iterator to the beginning of all items.
+  auto items_begin() const &noexcept { return begin().transform(GetValue{}); }
+  auto items_end() const && = delete;
+  /// Return const iterator to the end of all items.
+  auto items_end() const &noexcept { return end().transform(GetValue{}); }
+
+  auto keys_begin() const && = delete;
+  /// Return const iterator to the beginning of all keys.
+  auto keys_begin() const &noexcept { return this->m_items.keys_begin(); }
+  auto keys_end() const && = delete;
+  /// Return const iterator to the end of all keys.
+  auto keys_end() const &noexcept { return this->m_items.keys_end(); }
+
+  auto values_begin() const && = delete;
+  /// Return const iterator to the beginning of all values.
+  auto values_begin() const &noexcept {
+    return this->m_items.values_begin().transform(GetValue{});
+  }
+  auto values_end() const && = delete;
+  /// Return const iterator to the end of all values.
+  auto values_end() const &noexcept {
+    return this->m_items.values_end().transform(GetValue{});
+  }
+
+  void set(const key_type &key, mapped_type coord, bool aligned = true);
+  mapped_type extract(const key_type &key);
+  mapped_type extract(const key_type &key, const mapped_type &default_value);
+
+  [[nodiscard]] AlignedDict merge_from(const AlignedDict &other) const;
+
+  [[nodiscard]] bool is_aligned(const Key &key) const noexcept;
+
+private:
+  struct GetValue {
+    template <class T>
+    constexpr auto operator()(T &&x) const noexcept -> decltype(auto) {
+      if constexpr (std::is_same_v<std::decay_t<T>, aligned_mapped_type>)
+        return std::forward<T>(x).value;
+      else { // pair<Key, ValueHolder>
+        auto &&[k, v] = x;
+        return std::pair{std::forward<decltype(k)>(k),
+                         std::forward<decltype(v)>(v).value};
+      }
+    }
+  };
+};
+
 /// Returns the union of all masks with irreducible dimension `dim`.
 ///
 /// Irreducible means that a reduction operation must apply these masks since
