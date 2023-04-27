@@ -401,7 +401,8 @@ template <class... Vars>
       "unhandled correlations. Input dimensions were:\n" +
       ((to_string(vars.dims()) +
         " variances=" + (vars.has_variances() ? "True" : "False") + '\n') +
-       ...));
+       ...) +
+      "\n" + "See https://doi.org/10.3233/JNR-220049 for more background.");
 }
 
 template <class Op> struct Transform {
