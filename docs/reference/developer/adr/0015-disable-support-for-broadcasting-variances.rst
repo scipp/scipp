@@ -10,7 +10,7 @@ Context
 
 One of Scipp's key features is propagation of uncertainties in operations.
 The mechanism was carried over from an equivalent mechanism in Mantid.
-Our recent publication `Systematic underestimation of uncertainties by widespread neutron-scattering data-reduction software <https://content.iospress.com/articles/journal-of-neutron-research/jnr220049>`_ highlights a ubiquitous problem in this mechanism.
+Our recent publication `Systematic underestimation of uncertainties by widespread neutron-scattering data-reduction software <https://doi.org/10.3233/JNR-220049>`_ highlights a ubiquitous problem in this mechanism.
 
 In neutron-scattering applications normalization terms typically have lower dimensionality than the data and are thus broadcast in operations.
 This leads to unhandled correlations in the normalized result.
