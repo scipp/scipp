@@ -43,6 +43,13 @@ void check_nested_in_assign(const T &lhs, const SizedDict<Key, Value> &rhs) {
   }
 }
 
+template <class T, class Key, class Value>
+void check_nested_in_assign(const T &lhs, const AlignedDict<Key, Value> &rhs) {
+  for (const auto &[_, var] : rhs) {
+    check_nested_in_assign(lhs, var);
+  }
+}
+
 template <class L, class R>
 void check_nested_in_assign(const L &lhs, const R &rhs) {
   if constexpr (std::is_same_v<L, R>) {

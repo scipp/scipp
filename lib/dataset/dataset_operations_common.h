@@ -14,10 +14,10 @@ template <bool ApplyToData, class Func, class... Args>
 DataArray apply_or_copy_dim_impl(const DataArray &da, Func func, const Dim dim,
                                  Args &&...args) {
   const auto copy_independent = [&](const auto &mapping, const bool share) {
-    typename std::decay_t<decltype(mapping)>::holder_type out;
+    std::decay_t<decltype(mapping)> out(mapping.sizes(), {});
     for (auto &&[d, var] : mapping)
       if (!var.dims().contains(dim))
-        out.insert_or_assign(d, share ? var : copy(var));
+        out.set(d, share ? var : copy(var));
     return out;
   };
   auto coords = copy_independent(da.coords(), true);
@@ -92,8 +92,14 @@ auto transform_map(const Mapping &map, Func func) {
   OutMapping out;
   for (const auto &[key, item] : map) {
     auto transformed = func(item);
-    if (transformed.is_valid())
-      out.insert_or_assign(key, std::move(transformed));
+    if (transformed.is_valid()) {
+      if constexpr (std::is_same_v<std::decay_t<Mapping>, Coords>)
+        out.insert_or_assign(
+            key, typename Mapping::aligned_mapped_type{std::move(transformed),
+                                                       map.is_aligned(key)});
+      else
+        out.insert_or_assign(key, std::move(transformed));
+    }
   }
   return out;
 }

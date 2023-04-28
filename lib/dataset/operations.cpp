@@ -36,16 +36,21 @@ Dataset merge(const Dataset &a, const Dataset &b) {
   return Dataset(union_(a, b), union_(a.coords(), b.coords(), "merge"));
 }
 
-/// Return a copy of dict-like objects as a core::Dict.
+/// Return a copy of dict-like objects.
 template <class Mapping> auto copy_map(const Mapping &map) {
-  core::Dict<typename Mapping::key_type, typename Mapping::mapped_type> out;
-  for (const auto &[key, item] : map)
-    out.insert_or_assign(key, copy(item));
+  std::decay_t<Mapping> out(map.sizes(), {});
+  for (const auto &[key, item] : map) {
+    if constexpr (std::is_same_v<std::decay_t<Mapping>, Coords>)
+      out.set(key, copy(item), map.is_aligned(key));
+    else
+      out.set(key, copy(item));
+  }
   return out;
 }
 
-Coords copy(const Coords &coords) { return {coords.sizes(), copy_map(coords)}; }
-Masks copy(const Masks &masks) { return {masks.sizes(), copy_map(masks)}; }
+Coords copy(const Coords &coords) { return copy_map(coords); }
+Masks copy(const Masks &masks) { return copy_map(masks); }
+Attrs copy(const Attrs &attrs) { return copy_map(attrs); }
 
 /// Return a deep copy of a DataArray.
 DataArray copy(const DataArray &array, const AttrPolicy attrPolicy) {

@@ -267,6 +267,10 @@ public:
     }
   }
 
+  template <class V> void set(const key_type &key, V &&value) {
+    insert_or_assign(key, std::forward<V>(value));
+  }
+
   void erase(const key_type &key) { static_cast<void>(extract(key)); }
 
   mapped_type extract(const key_type &key) {

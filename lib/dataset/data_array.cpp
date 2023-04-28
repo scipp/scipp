@@ -121,7 +121,7 @@ const std::string &DataArray::name() const { return m_name; }
 void DataArray::setName(const std::string_view name) { m_name = name; }
 
 Coords DataArray::meta() const {
-  auto out = attrs().merge_from(coords());
+  auto out = coords().merge_from(attrs());
   out.set_readonly();
   return out;
 }
@@ -170,13 +170,12 @@ DataArray DataArray::view_with_coords(const Coords &coords,
   DataArray out;
   out.m_data = m_data; // share data
   const Sizes sizes(dims());
-  typename Coords::holder_type selected;
+  Coords selected(coords.sizes(), {});
   for (const auto &[dim, coord] : coords)
     if (coords.item_applies_to(dim, dims()))
-      selected.insert_or_assign(dim, coord.as_const());
+      selected.set(dim, coord.as_const());
   const bool readonly_coords = true;
-  out.m_coords =
-      std::make_shared<Coords>(sizes, std::move(selected), readonly_coords);
+  out.m_coords = std::make_shared<Coords>(std::move(selected));
   out.m_masks = m_masks; // share masks
   out.m_attrs = m_attrs; // share attrs
   out.m_name = name;

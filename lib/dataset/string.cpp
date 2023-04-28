@@ -107,8 +107,8 @@ std::string to_string(const Dataset &dataset) {
 }
 
 namespace {
-template <class Key, class Value>
-std::string dict_to_string(const SizedDict<Key, Value> &view) {
+template <class Key, class Value, class Impl>
+std::string dict_to_string(const SizedDict<Key, Value, Impl> &view) {
   std::stringstream ss;
   ss << "<scipp.Dict>\n";
   for (const auto &[key, item] : view)
@@ -119,6 +119,7 @@ std::string dict_to_string(const SizedDict<Key, Value> &view) {
 
 std::string to_string(const Coords &coords) { return dict_to_string(coords); }
 std::string to_string(const Masks &masks) { return dict_to_string(masks); }
+std::string to_string(const Attrs &attrs) { return dict_to_string(attrs); }
 
 std::string dict_keys_to_string(const Coords &coords) {
   return core::dict_keys_to_string(coords.keys_begin(), coords.keys_end(),
@@ -127,6 +128,11 @@ std::string dict_keys_to_string(const Coords &coords) {
 
 std::string dict_keys_to_string(const Masks &masks) {
   return core::dict_keys_to_string(masks.keys_begin(), masks.keys_end(),
+                                   "scipp.Dict.keys");
+}
+
+std::string dict_keys_to_string(const Attrs &attrs) {
+  return core::dict_keys_to_string(attrs.keys_begin(), attrs.keys_end(),
                                    "scipp.Dict.keys");
 }
 
