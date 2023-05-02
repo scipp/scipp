@@ -238,7 +238,7 @@ class DataGroup(MutableMapping):
         Call func on all "sized" values and return new DataGroup containing the results.
 
         "Sized" values are those that have a `dims` attribute, i.e., those that are
-        handled supported for slicing in __getitem__.
+        handled by __getitem__.
         """
         return DataGroup(
             {
