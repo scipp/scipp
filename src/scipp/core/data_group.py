@@ -233,6 +233,20 @@ class DataGroup(MutableMapping):
         """Call func on all values and return new DataGroup containing the results."""
         return DataGroup({key: func(v, *args, **kwargs) for key, v in self.items()})
 
+    def apply_to_unsized(self, func: Callable, *args, **kwargs) -> DataGroup:
+        """
+        Call func on all "sized" values and return new DataGroup containing the results.
+
+        "Sized" values are those that have a `dims` attribute, i.e., those that are
+        handled supported for slicing in __getitem__.
+        """
+        return DataGroup(
+            {
+                key: v if _item_dims(v) == () else func(v, *args, **kwargs)
+                for key, v in self.items()
+            }
+        )
+
     def copy(self, deep: bool = True) -> DataGroup:
         return copy.deepcopy(self) if deep else copy.copy(self)
 
@@ -261,7 +275,7 @@ class DataGroup(MutableMapping):
         return self.apply(operator.methodcaller('floor', *args, **kwargs))
 
     def fold(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('fold', *args, **kwargs))
+        return self.apply_to_unsized(operator.methodcaller('fold', *args, **kwargs))
 
     def group(self, *args, **kwargs):
         return self.apply(operator.methodcaller('group', *args, **kwargs))
@@ -309,7 +323,7 @@ class DataGroup(MutableMapping):
         return self.apply(operator.methodcaller('round', *args, **kwargs))
 
     def squeeze(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('squeeze', *args, **kwargs))
+        return self.apply_to_unsized(operator.methodcaller('squeeze', *args, **kwargs))
 
     def sum(self, *args, **kwargs):
         return self.apply(operator.methodcaller('sum', *args, **kwargs))
@@ -321,7 +335,9 @@ class DataGroup(MutableMapping):
         return self.apply(operator.methodcaller('transform_coords', *args, **kwargs))
 
     def transpose(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('transpose', *args, **kwargs))
+        return self.apply_to_unsized(
+            operator.methodcaller('transpose', *args, **kwargs)
+        )
 
     def plot(self, *args, **kwargs):
         import plopp

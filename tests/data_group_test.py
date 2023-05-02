@@ -22,6 +22,7 @@ def test_create_from_dict_works_with_mixed_types_and_non_scipp_objects():
         'c': sc.DataArray(sc.scalar(3)),
         'd': np.arange(4),
     }
+
     dg = sc.DataGroup(items)
     assert tuple(dg.keys()) == ('a', 'b', 'c', 'd')
 
@@ -612,15 +613,49 @@ def test_fold_flatten():
     assert sc.identical(dg.fold('x', sizes={'y': 2, 'z': -1}).flatten(to='x'), dg)
 
 
+def test_fold_ignores_python_objects():
+    dg = sc.DataGroup(a=sc.arange('x', 4, dtype='int64'), b='abc')
+    assert sc.identical(
+        dg.fold('x', sizes={'y': 2, 'z': -1}),
+        sc.DataGroup(
+            a=sc.array(dims=['y', 'z'], values=[[0, 1], [2, 3]], dtype='int64'), b='abc'
+        ),
+    )
+
+
 def test_squeeze():
     dg = sc.DataGroup(a=sc.ones(dims=['x', 'y'], shape=(4, 1)))
     assert sc.identical(dg.squeeze(), sc.DataGroup(a=sc.ones(dims=['x'], shape=(4,))))
+
+
+def test_squeeze_leaves_numpy_array_unchanged():
+    dg = sc.DataGroup(a=np.ones(shape=(4, 1)))
+    assert sc.identical(dg.squeeze(), sc.DataGroup(a=np.ones(shape=(4, 1))))
+
+
+def test_squeeze_ignores_python_objects():
+    dg = sc.DataGroup(a='abc', b=sc.ones(dims=['x', 'y'], shape=(4, 1)))
+    assert sc.identical(
+        dg.squeeze(), sc.DataGroup(a='abc', b=sc.ones(dims=['x'], shape=(4,)))
+    )
 
 
 def test_transpose():
     dg = sc.DataGroup(a=sc.ones(dims=['x', 'y'], shape=(2, 3)))
     assert sc.identical(
         dg.transpose(), sc.DataGroup(a=sc.ones(dims=['y', 'x'], shape=(3, 2)))
+    )
+
+
+def test_transpose_leaves_numpy_array_unchanged():
+    dg = sc.DataGroup(a=np.ones(shape=(2, 3)))
+    assert sc.identical(dg.transpose(), sc.DataGroup(a=np.ones(shape=(2, 3))))
+
+
+def test_transpose_ignores_python_objects():
+    dg = sc.DataGroup(a=sc.ones(dims=['x', 'y'], shape=(2, 3)), b='abc')
+    assert sc.identical(
+        dg.transpose(), sc.DataGroup(a=sc.ones(dims=['y', 'x'], shape=(3, 2)), b='abc')
     )
 
 
