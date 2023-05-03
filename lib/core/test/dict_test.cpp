@@ -559,6 +559,29 @@ TEST(Dict, transform_iterator_struct) {
   EXPECT_EQ(it, dict.end());
 }
 
+TEST(Dict, double_transform_iterator) {
+  DimDict dict{{Dim::Y, 773}, {Dim::Time, -9}};
+
+  struct Wrapper {
+    int i;
+  };
+
+  auto it = dict.begin()
+                .transform([](std::pair<Dim, Int> p) {
+                  return std::pair{p.first, Wrapper{p.second}};
+                })
+                .transform([](std::pair<Dim, Wrapper> p) {
+                  return std::pair{p.first, Wrapper{p.second.i * 2}};
+                });
+  EXPECT_EQ(it->first, Dim::Y);
+  EXPECT_EQ(it->second.i, 2 * 773);
+  ++it;
+  EXPECT_EQ(it->first, Dim::Time);
+  EXPECT_EQ(it->second.i, 2 * -9);
+  ++it;
+  EXPECT_EQ(it, dict.end());
+}
+
 TEST(Dict, transform_iterator_compare_with_end_with_transform) {
   DimDict dict{{Dim::Time, 72}, {Dim::Y, 41}};
 

@@ -286,10 +286,10 @@ public:
 
   auto items_begin() const && = delete;
   /// Return const iterator to the beginning of all items.
-  auto items_begin() const &noexcept { return begin().transform(GetValue{}); }
+  auto items_begin() const &noexcept { return begin(); }
   auto items_end() const && = delete;
   /// Return const iterator to the end of all items.
-  auto items_end() const &noexcept { return end().transform(GetValue{}); }
+  auto items_end() const &noexcept { return end(); }
 
   auto keys_begin() const && = delete;
   /// Return const iterator to the beginning of all keys.

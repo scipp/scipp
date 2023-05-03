@@ -163,6 +163,19 @@ public:
     return Result(**this);
   }
 
+  template <class F> auto transform(F &&func) const & {
+    // Need explicit template params here because `TransformIterator` refers to
+    // the type of `*this`, i.e., with the same `BaseIterator` and `Func` and
+    // not the new ones.
+    return TransformIterator<std::decay_t<decltype(*this)>, std::decay_t<F>>{
+        *this, std::forward<F>(func)};
+  }
+
+  template <class F> auto transform(F &&func) && {
+    return TransformIterator<std::decay_t<decltype(*this)>, std::decay_t<F>>{
+        std::move(*this), std::forward<F>(func)};
+  }
+
 private:
   std::decay_t<Func> m_func;
 };
