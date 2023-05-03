@@ -20,11 +20,10 @@ std::string compact_dict_entry(const Key &key, const Value &var) {
   return s.str();
 }
 
-template <class Key, class Value>
-std::string
-dict_to_compact_string(const scipp::dataset::SizedDict<Key, Value> &dict,
-                       const std::string &description,
-                       const std::string &margin) {
+template <class Mapping>
+std::string dict_to_compact_string(const Mapping &dict,
+                                   const std::string &description,
+                                   const std::string &margin) {
   std::stringstream s;
   const scipp::index max_length = 70;
   const auto indent = margin.size() + description.size() + 2;

@@ -23,6 +23,10 @@ using Coords = AlignedDict<Dim, variable::Variable>;
 using Masks = SizedDict<std::string, variable::Variable>;
 /// Dict of attributes of DataArray and Dataset.
 using Attrs = SizedDict<Dim, variable::Variable>;
+/// Underlying dict of coordinates.
+/// This alias is needed because Coords::holder_type cannot be accessed when
+/// only the forward declaration is visible.
+using CoordsHolder = SizedDict<Dim, AlignedValue<variable::Variable>>;
 
 [[nodiscard]] SCIPP_DATASET_EXPORT Coords copy(const Coords &coords);
 [[nodiscard]] SCIPP_DATASET_EXPORT Masks copy(const Masks &masks);

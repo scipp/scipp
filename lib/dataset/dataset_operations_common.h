@@ -13,8 +13,17 @@ namespace scipp::dataset {
 template <bool ApplyToData, class Func, class... Args>
 DataArray apply_or_copy_dim_impl(const DataArray &da, Func func, const Dim dim,
                                  Args &&...args) {
+  auto data_result = [&]() {
+    if constexpr (ApplyToData) {
+      return func(da.data(), dim, std::forward<Args>(args)...);
+    } else {
+      return func(da, dim, std::forward<Args>(args)...);
+    }
+  }();
+  const Sizes out_sizes = data_result.dims();
+
   const auto copy_independent = [&](const auto &mapping, const bool share) {
-    std::decay_t<decltype(mapping)> out(mapping.sizes(), {});
+    std::decay_t<decltype(mapping)> out(out_sizes, {});
     for (auto &&[d, var] : mapping)
       if (!var.dims().contains(dim))
         out.set(d, share ? var : copy(var));
@@ -24,14 +33,8 @@ DataArray apply_or_copy_dim_impl(const DataArray &da, Func func, const Dim dim,
   auto attrs = copy_independent(da.attrs(), true);
   auto masks = copy_independent(da.masks(), false);
 
-  if constexpr (ApplyToData) {
-    return DataArray(func(da.data(), dim, args...), std::move(coords),
-                     std::move(masks), std::move(attrs), da.name());
-  } else {
-    return DataArray(func(da, dim, std::forward<Args>(args)...),
-                     std::move(coords), std::move(masks), std::move(attrs),
-                     da.name());
-  }
+  return DataArray(std::move(data_result), std::move(coords), std::move(masks),
+                   std::move(attrs), da.name());
 }
 
 /// Helper for creating operations that return an object with modified data with

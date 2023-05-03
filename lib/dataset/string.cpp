@@ -121,7 +121,7 @@ std::string to_string(const Coords &coords) { return dict_to_string(coords); }
 std::string to_string(const Masks &masks) { return dict_to_string(masks); }
 std::string to_string(const Attrs &attrs) { return dict_to_string(attrs); }
 
-std::string dict_keys_to_string(const Coords &coords) {
+std::string dict_keys_to_string(const CoordsHolder &coords) {
   return core::dict_keys_to_string(coords.keys_begin(), coords.keys_end(),
                                    "scipp.Dict.keys");
 }

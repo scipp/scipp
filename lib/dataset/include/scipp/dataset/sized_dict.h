@@ -14,9 +14,28 @@
 #include "scipp/variable/variable.h"
 
 namespace scipp::dataset {
+template <class Key, class Value>
+auto empty_mapping_like([[maybe_unused]] const core::Dict<Key, Value> &mapping,
+                        [[maybe_unused]] const Sizes &target_sizes) {
+  return core::Dict<Key, Value>{};
+}
+
+template <class Key, class Value, class Impl>
+auto empty_mapping_like(
+    [[maybe_unused]] const SizedDict<Key, Value, Impl> &mapping,
+    const Sizes &target_sizes) {
+  return SizedDict<Key, Value, Impl>{target_sizes, {}};
+}
+
+template <class Key, class Value>
+auto empty_mapping_like([[maybe_unused]] const AlignedDict<Key, Value> &mapping,
+                        const Sizes &target_sizes) {
+  return AlignedDict<Key, Value>{target_sizes, {}};
+}
+
 template <class Mapping>
 Mapping slice_map(const Sizes &sizes, const Mapping &map, const Slice &params) {
-  Mapping out;
+  Mapping out = empty_mapping_like(map, sizes.slice(params));
   for (const auto &[key, value] : map) {
     if (value.dims().contains(params.dim())) {
       if (value.dims()[params.dim()] == sizes[params.dim()]) {
@@ -130,10 +149,12 @@ public:
   void erase(const key_type &key);
   mapped_type extract(const key_type &key);
   mapped_type extract(const key_type &key, const mapped_type &default_value);
+  // Like extract but without conversion in AlignedDict.
+  mapped_type extract_raw(const key_type &key) { return extract(key); }
 
   impl slice(const Slice &params) const;
   void validateSlice(const Slice &s, const SizedDict &dict) const;
-  [[maybe_unused]] impl &setSlice(const Slice &s, const SizedDict &dict);
+  [[maybe_unused]] void setSlice(const Slice &s, const SizedDict &dict);
 
   [[nodiscard]] impl rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
                                  const bool fail_on_unknown = true) const;
@@ -156,8 +177,18 @@ template <class Value> struct AlignedValue {
   Value value;
   bool aligned;
 
+  AlignedValue(Value val) noexcept : value(std::move(val)), aligned(true) {}
+  AlignedValue(Value val, const bool a) noexcept
+      : value(std::move(val)), aligned(a) {}
+
+  operator Value() const { return value; }
+
   bool operator==(const AlignedValue &other) const noexcept {
     return value == other.value && aligned == other.aligned;
+  }
+
+  bool operator!=(const AlignedValue &other) const noexcept {
+    return !(*this == other);
   }
 
   [[nodiscard]] bool is_same(const AlignedValue &other) const noexcept {
@@ -168,6 +199,8 @@ template <class Value> struct AlignedValue {
     return equals_nan(value, other.value) && aligned == other.aligned;
   }
 
+  [[nodiscard]] auto dim() const -> decltype(auto) { return value.dim(); }
+
   [[nodiscard]] const core::Dimensions &dims() const noexcept {
     return value.dims();
   }
@@ -176,13 +209,22 @@ template <class Value> struct AlignedValue {
     return {value.slice(params), aligned};
   }
 
+  void setSlice(const Slice &s, const Variable &data) {
+    value.setSlice(s, data);
+  }
+
   [[nodiscard]] AlignedValue
-  rename_dims(const std::vector<std::pair<Dim, Dim>> &names) {
-    return value.rename_dims(names);
+  rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
+              const bool fail_on_unknown = true) {
+    return value.rename_dims(names, fail_on_unknown);
   }
 
   [[nodiscard]] AlignedValue as_const() const noexcept {
     return {value.as_const(), aligned};
+  }
+
+  [[nodiscard]] bool is_readonly() const noexcept {
+    return value.is_readonly();
   }
 
   friend std::string to_string(const AlignedValue &x) {
@@ -218,7 +260,7 @@ public:
 
   const mapped_type &operator[](const Key &key) const;
   const mapped_type &at(const Key &key) const;
-  const aligned_mapped_type &item_at(const Key &key) const;
+  const aligned_mapped_type &raw_at(const Key &key) const;
   // Note that the non-const versions return by value, to avoid breakage of
   // invariants.
   mapped_type operator[](const Key &key);

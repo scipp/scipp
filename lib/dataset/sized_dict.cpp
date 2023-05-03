@@ -240,8 +240,8 @@ void SizedDict<Key, Value, Impl>::validateSlice(const Slice &s,
 }
 
 template <class Key, class Value, class Impl>
-typename SizedDict<Key, Value, Impl>::impl &
-SizedDict<Key, Value, Impl>::setSlice(const Slice &s, const SizedDict &dict) {
+void SizedDict<Key, Value, Impl>::setSlice(const Slice &s,
+                                           const SizedDict &dict) {
   validateSlice(s, dict);
   for (const auto &[key, item] : dict) {
     const auto it = find(key);
@@ -249,7 +249,6 @@ SizedDict<Key, Value, Impl>::setSlice(const Slice &s, const SizedDict &dict) {
         it->second.dims().contains(s.dim()))
       it->second.setSlice(s, item);
   }
-  return *this;
 }
 
 template <class Key, class Value, class Impl>
@@ -400,7 +399,7 @@ const Value &AlignedDict<Key, Value>::operator[](const Key &key) const {
 /// Const reference to the coordinate for given dimension.
 template <class Key, class Value>
 const Value &AlignedDict<Key, Value>::at(const Key &key) const {
-  return item_at(key).value;
+  return raw_at(key).value;
 }
 
 /// The coordinate for given dimension.
@@ -411,7 +410,7 @@ Value AlignedDict<Key, Value>::operator[](const Key &key) {
 
 template <class Key, class Value>
 const AlignedValue<Value> &
-AlignedDict<Key, Value>::item_at(const Key &key) const {
+AlignedDict<Key, Value>::raw_at(const Key &key) const {
   scipp::expect::contains(*this, key);
   return this->m_items.at(key);
 }
@@ -567,9 +566,12 @@ SizedDict<Key, Value> intersection(const SizedDict<Key, Value> &a,
 
 template class SCIPP_DATASET_EXPORT SizedDict<Dim, Variable>;
 template class SCIPP_DATASET_EXPORT SizedDict<std::string, Variable>;
+template class SCIPP_DATASET_EXPORT
+    SizedDict<Dim, AlignedValue<Variable>, AlignedDict<Dim, Variable>>;
 template class SCIPP_DATASET_EXPORT AlignedDict<Dim, Variable>;
 template SCIPP_DATASET_EXPORT bool equals_nan(const Coords &a, const Coords &b);
 template SCIPP_DATASET_EXPORT bool equals_nan(const Masks &a, const Masks &b);
+template SCIPP_DATASET_EXPORT bool equals_nan(const Attrs &a, const Attrs &b);
 template SCIPP_DATASET_EXPORT Coords union_(const Coords &, const Coords &,
                                             std::string_view opname);
 template SCIPP_DATASET_EXPORT Attrs intersection(const Attrs &, const Attrs &);

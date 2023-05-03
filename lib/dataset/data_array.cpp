@@ -170,11 +170,11 @@ DataArray DataArray::view_with_coords(const Coords &coords,
   DataArray out;
   out.m_data = m_data; // share data
   const Sizes sizes(dims());
-  Coords selected(coords.sizes(), {});
+  Coords selected(out.dims(), {});
   for (const auto &[dim, coord] : coords)
     if (coords.item_applies_to(dim, dims()))
       selected.set(dim, coord.as_const());
-  const bool readonly_coords = true;
+  selected.set_readonly();
   out.m_coords = std::make_shared<Coords>(std::move(selected));
   out.m_masks = m_masks; // share masks
   out.m_attrs = m_attrs; // share attrs

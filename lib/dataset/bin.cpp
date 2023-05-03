@@ -101,16 +101,16 @@ auto setup_and_apply(const Variable &data, const Variable &indices,
 }
 
 template <class T, class Mapping>
-auto extract_unbinned(T &array, Mapping &map) {
+auto extract_unbinned(T &array, Mapping &map, const Dimensions &bin_dims) {
   const auto dim = array.dims().inner();
   using Key = typename Mapping::key_type;
   std::vector<Key> to_extract;
   // WARNING: Do not use `map` while extracting, `extract` invalidates it!
   std::copy_if(map.keys_begin(), map.keys_end(), std::back_inserter(to_extract),
                [&](const auto &key) { return !map[key].dims().contains(dim); });
-  core::Dict<Key, Variable> extracted;
+  Mapping extracted = empty_mapping_like(map, bin_dims);
   for (const auto &key : to_extract)
-    extracted.insert_or_assign(key, map.extract(key));
+    extracted.set(key, map.extract_raw(key));
   return extracted;
 }
 
@@ -139,23 +139,23 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
         return true;
     return false;
   };
-  auto out_coords = extract_unbinned(buffer, buffer.coords());
+  auto out_coords = extract_unbinned(buffer, buffer.coords(), bin_sizes.dims());
   for (const auto &c : {edges, groups})
     for (const auto &coord : c) {
       dims.emplace(coord.dims().inner());
-      out_coords.insert_or_assign(coord.dims().inner(), copy(coord));
+      out_coords.set(coord.dims().inner(), copy(coord));
     }
   for (const auto &[dim_, coord] : coords)
     if (!rebinned(coord) && !out_coords.contains(dim_))
-      out_coords.insert_or_assign(dim_, copy(coord));
-  auto out_masks = extract_unbinned(buffer, buffer.masks());
+      out_coords.set(dim_, copy(coord));
+  auto out_masks = extract_unbinned(buffer, buffer.masks(), bin_sizes.dims());
   for (const auto &[name, mask] : masks)
     if (!rebinned(mask))
-      out_masks.insert_or_assign(name, copy(mask));
-  auto out_attrs = extract_unbinned(buffer, buffer.attrs());
+      out_masks.set(name, copy(mask));
+  auto out_attrs = extract_unbinned(buffer, buffer.attrs(), bin_sizes.dims());
   for (const auto &[dim_, coord] : attrs)
     if (!rebinned(coord) && !out_coords.contains(dim_))
-      out_attrs.insert_or_assign(dim_, copy(coord));
+      out_attrs.set(dim_, copy(coord));
   return DataArray{make_bins_no_validate(zip(end - bin_sizes, end), buffer_dim,
                                          std::move(buffer)),
                    std::move(out_coords), std::move(out_masks),
@@ -536,7 +536,7 @@ DataArray bin(const Variable &data, const Coords &coords, const Masks &masks,
               const Attrs &attrs, const std::vector<Variable> &edges,
               const std::vector<Variable> &groups,
               const std::vector<Dim> &erase) {
-  const auto meta = attrs.merge_from(coords);
+  const auto meta = coords.merge_from(attrs);
   auto builder = axis_actions(data, meta, edges, groups, erase);
   const auto masked = hide_masked(data, masks, builder.dims().labels());
   TargetBins<DataArray> target_bins(masked, builder.dims());

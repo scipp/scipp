@@ -540,7 +540,8 @@ protected:
 };
 
 TEST_F(DatasetRenameTest, fail_duplicate_dim) {
-  ASSERT_THROW(d.rename_dims({{Dim::X, Dim::Y}}), except::DimensionError);
+  ASSERT_THROW_DISCARD(d.rename_dims({{Dim::X, Dim::Y}}),
+                       except::DimensionError);
   ASSERT_EQ(d, original);
 }
 
@@ -548,28 +549,28 @@ TEST_F(DatasetRenameTest, fail_duplicate_in_edge_dim_of_coord) {
   auto ds = copy(d);
   const Dim dim{"edge"};
   ds.setCoord(dim, makeVariable<double>(Dims{dim}, Shape{2}));
-  ASSERT_THROW(ds.rename_dims({{Dim::X, dim}}), except::DimensionError);
+  ASSERT_THROW_DISCARD(ds.rename_dims({{Dim::X, dim}}), except::DimensionError);
 }
 
 TEST_F(DatasetRenameTest, fail_duplicate_in_edge_dim_of_item_attr) {
   auto ds = copy(d);
   const Dim dim{"edge"};
   ds["data_xy"].attrs().set(dim, makeVariable<double>(Dims{dim}, Shape{2}));
-  ASSERT_THROW(ds.rename_dims({{Dim::X, dim}}), except::DimensionError);
+  ASSERT_THROW_DISCARD(ds.rename_dims({{Dim::X, dim}}), except::DimensionError);
 }
 
 TEST_F(DatasetRenameTest, fail_duplicate_in_edge_dim_in_data_array_coord) {
   auto da = copy(d["data_xy"]);
   const Dim dim{"edge"};
   da.coords().set(dim, makeVariable<double>(Dims{dim}, Shape{2}));
-  ASSERT_THROW(da.rename_dims({{Dim::X, dim}}), except::DimensionError);
+  ASSERT_THROW_DISCARD(da.rename_dims({{Dim::X, dim}}), except::DimensionError);
 }
 
 TEST_F(DatasetRenameTest, fail_duplicate_in_edge_dim_in_data_array_attr) {
   auto da = copy(d["data_xy"]);
   const Dim dim{"edge"};
   da.attrs().set(dim, makeVariable<double>(Dims{dim}, Shape{2}));
-  ASSERT_THROW(da.rename_dims({{Dim::X, dim}}), except::DimensionError);
+  ASSERT_THROW_DISCARD(da.rename_dims({{Dim::X, dim}}), except::DimensionError);
 }
 
 TEST_F(DatasetRenameTest, existing) {
