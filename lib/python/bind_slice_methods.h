@@ -227,15 +227,14 @@ void expect_positional_index(const py::slice &py_slice) {
 template <class T>
 T slice_by_list(const T &obj,
                 const std::tuple<Dim, std::vector<scipp::index>> &index) {
-  const auto make_slice = [](const scipp::index p, const scipp::index s) {
-    py::gil_scoped_acquire acquire;
-    const auto slice = py::slice(p, p + 1, 1);
-    size_t start, stop, step, slicelength;
-    if (!slice.compute(s, &start, &stop, &step, &slicelength))
-      throw py::error_already_set();
-    return std::tuple{start, stop};
+  const auto make_slice = [](scipp::index p, const scipp::index s) {
+    const auto positive_p = p < 0 ? s + p : p;
+    if (positive_p < 0 || positive_p >= s)
+      throw std::out_of_range("The requested index " + std::to_string(p) +
+                              " is out of range for dimension of length " +
+                              std::to_string(s));
+    return std::tuple{positive_p, positive_p + 1};
   };
-
   const auto &[dim, indices] = index;
   const auto size = obj.dims()[dim];
   if (!indices.empty()) {
