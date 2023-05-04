@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 
 import scipp as sc
+from scipp.testing import assert_identical
 
 
 def test_create_from_kwargs():
@@ -747,3 +748,54 @@ def test_bin(func):
         }
     )
     assert sc.identical(func(dg, **edges), expected)
+
+
+reduction_ops = (
+    'sum',
+    'mean',
+    'all',
+    'any',
+    'min',
+    'max',
+    'nansum',
+    'nanmean',
+    'nanmin',
+    'nanmax',
+)
+
+
+@pytest.mark.parametrize('dim', ('x', None))
+@pytest.mark.parametrize('op', reduction_ops)
+def test_reduction_op_ignores_python_objects(op, dim):
+    dtype = 'bool' if op in ('all', 'any') else 'float64'
+    op = operator.methodcaller(op, dim=dim)
+    dg = sc.DataGroup(a=sc.ones(dims=['x', 'y'], shape=(2, 3), dtype=dtype), b='abc')
+    result = op(dg)
+    assert_identical(result['a'], op(dg['a']))
+    assert result['b'] == dg['b']
+
+
+@pytest.mark.parametrize('dim', ('x', None))
+@pytest.mark.parametrize('op', reduction_ops)
+def test_reduction_op_ignores_numpy_arrays(op, dim):
+    dtype = 'bool' if op in ('all', 'any') else 'float64'
+    op = operator.methodcaller(op, dim=dim)
+    dg = sc.DataGroup(
+        a=sc.ones(dims=['x', 'y'], shape=(2, 3), dtype=dtype), b=np.ones((4,))
+    )
+    result = op(dg)
+    assert_identical(result['a'], op(dg['a']))
+    assert np.array_equal(result['b'], dg['b'])
+
+
+@pytest.mark.parametrize('op', reduction_ops)
+def test_reduction_op_ignores_objects_lacking_given_dim(op):
+    dtype = 'bool' if op in ('all', 'any') else 'float64'
+    op = operator.methodcaller(op, dim='x')
+    dg = sc.DataGroup(
+        a=sc.ones(dims=['x', 'y'], shape=(2, 3), dtype=dtype),
+        b=sc.ones(dims=['y'], shape=(2,), dtype=dtype),
+    )
+    result = op(dg)
+    assert_identical(result['a'], op(dg['a']))
+    assert_identical(result['b'], dg['b'])

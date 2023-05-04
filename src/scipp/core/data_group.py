@@ -247,14 +247,37 @@ class DataGroup(MutableMapping):
             }
         )
 
+    def _reduce(
+        self, method: str, dim: Union[None, str, Tuple[str, ...]] = None, **kwargs
+    ) -> DataGroup:
+        reduce_all = operator.methodcaller(method, **kwargs)
+
+        def _reduce_child(v, dim):
+            child_dims = _item_dims(v)
+            if child_dims == ():
+                return v
+            if dim is None:
+                return reduce_all(v)
+            if isinstance(dim, str):
+                dims_to_reduce = dim if dim in child_dims else ()
+            else:
+                dims_to_reduce = tuple(d for d in dim if d in child_dims)
+            return (
+                v
+                if not dims_to_reduce
+                else operator.methodcaller(method, dims_to_reduce, **kwargs)(v)
+            )
+
+        return DataGroup({key: _reduce_child(v, dim) for key, v in self.items()})
+
     def copy(self, deep: bool = True) -> DataGroup:
         return copy.deepcopy(self) if deep else copy.copy(self)
 
     def all(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('all', *args, **kwargs))
+        return self._reduce('all', *args, **kwargs)
 
     def any(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('any', *args, **kwargs))
+        return self._reduce('any', *args, **kwargs)
 
     def astype(self, *args, **kwargs):
         return self.apply(operator.methodcaller('astype', *args, **kwargs))
@@ -287,28 +310,28 @@ class DataGroup(MutableMapping):
         return self.apply(operator.methodcaller('hist', *args, **kwargs))
 
     def max(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('max', *args, **kwargs))
+        return self._reduce('max', *args, **kwargs)
 
     def mean(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('mean', *args, **kwargs))
+        return self._reduce('mean', *args, **kwargs)
 
     def min(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('min', *args, **kwargs))
+        return self._reduce('min', *args, **kwargs)
 
     def nanhist(self, *args, **kwargs):
         return self.apply(operator.methodcaller('nanhist', *args, **kwargs))
 
     def nanmax(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('nanmax', *args, **kwargs))
+        return self._reduce('nanmax', *args, **kwargs)
 
     def nanmean(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('nanmean', *args, **kwargs))
+        return self._reduce('nanmean', *args, **kwargs)
 
     def nanmin(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('nanmin', *args, **kwargs))
+        return self._reduce('nanmin', *args, **kwargs)
 
     def nansum(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('nansum', *args, **kwargs))
+        return self._reduce('nansum', *args, **kwargs)
 
     def rebin(self, *args, **kwargs):
         return self.apply(operator.methodcaller('rebin', *args, **kwargs))
@@ -326,7 +349,7 @@ class DataGroup(MutableMapping):
         return self.apply_to_unsized(operator.methodcaller('squeeze', *args, **kwargs))
 
     def sum(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('sum', *args, **kwargs))
+        return self._reduce('sum', *args, **kwargs)
 
     def to(self, *args, **kwargs):
         return self.apply(operator.methodcaller('to', *args, **kwargs))
