@@ -456,11 +456,11 @@ constexpr auto unaligned_by_dim_slice = [](const auto &coords, const auto &key,
 
 // TODO change to set alignment flag instead of splitting into coords+attrs
 template <class Key, class Value>
-std::tuple<AlignedDict<Key, Value>, SizedDict<Key, Value>>
+std::tuple<AlignedDict<Key, Value>, AlignedDict<Key, Value>>
 AlignedDict<Key, Value>::slice_coords(const Slice &params) const {
   auto coords = this->slice(params);
   coords.m_readonly = false;
-  SizedDict<Key, Value> attrs(coords.sizes(), {});
+  AlignedDict<Key, Value> attrs(coords.sizes(), {});
   for (const auto &[key, var] : *this)
     if (unaligned_by_dim_slice(*this, key, var, params))
       attrs.set(key, coords.extract(key));
@@ -483,28 +483,6 @@ AlignedDict<Key, Value>::merge_from(const AlignedDict &other) const {
           "an array or use the `coords` and `attrs` properties instead of "
           "`meta`.");
     out.set(key, aligned_value.value, aligned_value.aligned);
-  }
-  out.m_readonly = this->m_readonly;
-  return out;
-}
-
-template <class Key, class Value>
-AlignedDict<Key, Value>
-AlignedDict<Key, Value>::merge_from(const SizedDict<Key, Value> &other) const {
-  using core::to_string;
-  using units::to_string;
-  auto out(*this);
-  out.m_readonly = false;
-  for (const auto &[key, value] : other) {
-    if (out.contains(key))
-      throw except::DataArrayError(
-          "Coord '" + to_string(key) +
-          "' shadows attr of the same name. Remove the attr if you are slicing "
-          "an array or use the `coords` and `attrs` properties instead of "
-          "`meta`.");
-    out.set(
-        key, value,
-        false); // false because this function is for merging attrs into coords
   }
   out.m_readonly = this->m_readonly;
   return out;
@@ -554,9 +532,9 @@ AlignedDict<Key, Value> union_(const AlignedDict<Key, Value> &a,
 }
 
 template <class Key, class Value>
-SizedDict<Key, Value> intersection(const SizedDict<Key, Value> &a,
-                                   const SizedDict<Key, Value> &b) {
-  SizedDict<Key, Value> out(merge(a.sizes(), b.sizes()), {});
+AlignedDict<Key, Value> intersection(const AlignedDict<Key, Value> &a,
+                                     const AlignedDict<Key, Value> &b) {
+  AlignedDict<Key, Value> out(merge(a.sizes(), b.sizes()), {});
   for (const auto &[key, item] : a)
     if (const auto it = b.find(key);
         it != b.end() && equals_nan(it->second, item))
@@ -564,14 +542,12 @@ SizedDict<Key, Value> intersection(const SizedDict<Key, Value> &a,
   return out;
 }
 
-template class SCIPP_DATASET_EXPORT SizedDict<Dim, Variable>;
 template class SCIPP_DATASET_EXPORT SizedDict<std::string, Variable>;
 template class SCIPP_DATASET_EXPORT
     SizedDict<Dim, AlignedValue<Variable>, AlignedDict<Dim, Variable>>;
 template class SCIPP_DATASET_EXPORT AlignedDict<Dim, Variable>;
 template SCIPP_DATASET_EXPORT bool equals_nan(const Coords &a, const Coords &b);
 template SCIPP_DATASET_EXPORT bool equals_nan(const Masks &a, const Masks &b);
-template SCIPP_DATASET_EXPORT bool equals_nan(const Attrs &a, const Attrs &b);
 template SCIPP_DATASET_EXPORT Coords union_(const Coords &, const Coords &,
                                             std::string_view opname);
 template SCIPP_DATASET_EXPORT Attrs intersection(const Attrs &, const Attrs &);

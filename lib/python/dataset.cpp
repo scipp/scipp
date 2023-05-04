@@ -131,6 +131,16 @@ template <class Key, class Value> auto to_cpp_dict(const py::dict &dict) {
   }
   return out;
 }
+
+template <class Key, class Value>
+auto to_cpp_aligned_dict(const py::dict &dict) {
+  core::Dict<Key, AlignedValue<Value>> out;
+  for (const auto &[key, val] : dict) {
+    out.insert_or_assign(Key{key.template cast<std::string>()},
+                         AlignedValue{val.template cast<Value &>()});
+  }
+  return out;
+}
 } // namespace
 
 void init_dataset(py::module &m) {
@@ -149,7 +159,7 @@ void init_dataset(py::module &m) {
   bind_mutable_view_no_dim<Coords>(m, "Coords",
                                    R"(dict-like collection of meta data
 
-Returned by :py:func:`DataArray.coords`, :py:func:`DataArray.attrs`, :py:func:`DataArray.meta`,
+Returned by :py:func:`DataArray.coords`, :py:func:`DataArray.meta`,
 and the corresponding properties of :py:class:`Dataset`.)");
   bind_mutable_view<Masks>(m, "Masks", R"(dict-like collection of masks.
 
@@ -163,9 +173,9 @@ Returned by :py:func:`DataArray.masks`)");
       py::init([](const Variable &data, const py::object &coords,
                   const py::object &masks, const py::object &attrs,
                   const std::string &name) {
-        return DataArray{data, to_cpp_dict<Dim, Variable>(coords),
+        return DataArray{data, to_cpp_aligned_dict<Dim, Variable>(coords),
                          to_cpp_dict<std::string, Variable>(masks),
-                         to_cpp_dict<Dim, Variable>(attrs), name};
+                         to_cpp_aligned_dict<Dim, Variable>(attrs), name};
       }),
       py::arg("data"), py::kw_only(), py::arg("coords") = py::dict(),
       py::arg("masks") = py::dict(), py::arg("attrs") = py::dict(),

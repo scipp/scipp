@@ -45,7 +45,7 @@ void bind_helper_view(py::module &m, const std::string &name) {
 
 template <class T, class... Ignored>
 void bind_common_mutable_view_operators(pybind11::class_<T, Ignored...> &view) {
-  view.def("__len__", &T::size)
+  view.def("__len__", [](const T &self) { return self.size(); })
       .def(
           "__getitem__",
           [](const T &self, const std::string &key) {

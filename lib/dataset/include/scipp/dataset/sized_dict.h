@@ -314,14 +314,10 @@ public:
   mapped_type extract(const key_type &key);
   mapped_type extract(const key_type &key, const mapped_type &default_value);
 
-  std::tuple<AlignedDict, SizedDict<Key, Value>>
+  std::tuple<AlignedDict, AlignedDict<Key, Value>>
   slice_coords(const Slice &params) const;
 
   [[nodiscard]] AlignedDict merge_from(const AlignedDict &other) const;
-  // TODO This is only used to merge attrs into coords in meta.
-  //  Remove when we remove meta.
-  [[nodiscard]] AlignedDict
-  merge_from(const SizedDict<Key, Value> &other) const;
 
   [[nodiscard]] bool is_aligned(const Key &key) const noexcept;
 
@@ -369,8 +365,8 @@ AlignedDict<Key, Value> union_(const AlignedDict<Key, Value> &a,
 /// Return intersection of dicts, i.e., all items with matching names that
 /// have matching content.
 template <class Key, class Value>
-SizedDict<Key, Value> intersection(const SizedDict<Key, Value> &a,
-                                   const SizedDict<Key, Value> &b);
+AlignedDict<Key, Value> intersection(const AlignedDict<Key, Value> &a,
+                                     const AlignedDict<Key, Value> &b);
 
 constexpr auto get_data = [](auto &&a) -> decltype(auto) { return a.data(); };
 constexpr auto get_sizes = [](auto &&a) -> decltype(auto) { return a.sizes(); };

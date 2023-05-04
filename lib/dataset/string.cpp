@@ -119,20 +119,19 @@ std::string dict_to_string(const SizedDict<Key, Value, Impl> &view) {
 
 std::string to_string(const Coords &coords) { return dict_to_string(coords); }
 std::string to_string(const Masks &masks) { return dict_to_string(masks); }
-std::string to_string(const Attrs &attrs) { return dict_to_string(attrs); }
 
 std::string dict_keys_to_string(const CoordsHolder &coords) {
   return core::dict_keys_to_string(coords.keys_begin(), coords.keys_end(),
                                    "scipp.Dict.keys");
 }
 
-std::string dict_keys_to_string(const Masks &masks) {
-  return core::dict_keys_to_string(masks.keys_begin(), masks.keys_end(),
+std::string dict_keys_to_string(const Coords &coords) {
+  return core::dict_keys_to_string(coords.keys_begin(), coords.keys_end(),
                                    "scipp.Dict.keys");
 }
 
-std::string dict_keys_to_string(const Attrs &attrs) {
-  return core::dict_keys_to_string(attrs.keys_begin(), attrs.keys_end(),
+std::string dict_keys_to_string(const Masks &masks) {
+  return core::dict_keys_to_string(masks.keys_begin(), masks.keys_end(),
                                    "scipp.Dict.keys");
 }
 

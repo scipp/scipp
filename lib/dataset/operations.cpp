@@ -50,7 +50,6 @@ template <class Mapping> auto copy_map(const Mapping &map) {
 
 Coords copy(const Coords &coords) { return copy_map(coords); }
 Masks copy(const Masks &masks) { return copy_map(masks); }
-Attrs copy(const Attrs &attrs) { return copy_map(attrs); }
 
 /// Return a deep copy of a DataArray.
 DataArray copy(const DataArray &array, const AttrPolicy attrPolicy) {
