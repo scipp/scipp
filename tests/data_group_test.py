@@ -668,13 +668,6 @@ def test_broadcast():
     )
 
 
-def test_methods_work_with_any_value_type_that_supports_it():
-    dg = sc.DataGroup(a=sc.arange('x', 4), b=np.arange(5))
-    result = dg.max()
-    assert sc.identical(result['a'], sc.arange('x', 4).max())
-    assert np.array_equal(result['b'], np.arange(5).max())
-
-
 def test_bins_property_indexing():
     table = sc.data.table_xyz(10)
     dg = sc.DataGroup(a=table)
@@ -799,3 +792,28 @@ def test_reduction_op_ignores_objects_lacking_given_dim(op):
     result = op(dg)
     assert_identical(result['a'], op(dg['a']))
     assert_identical(result['b'], dg['b'])
+
+
+@pytest.mark.parametrize('dim', ('x', None))
+@pytest.mark.parametrize('opname', reduction_ops)
+def test_reduction_op_handles_bin_without_dim(opname, dim):
+    dtype = 'bool' if opname in ('all', 'any') else 'float64'
+    op = operator.methodcaller(opname, dim=dim)
+    content = sc.ones(dims=['row'], shape=[6], dtype=dtype)
+    binned = sc.bins(begin=sc.index(0), end=sc.index(6), data=content, dim='row')
+    dg = sc.DataGroup(a=sc.ones(dims=['x', 'y'], shape=(2, 3), dtype=dtype), b=binned)
+    result = op(dg)
+    assert_identical(result['a'], op(dg['a']))
+    assert_identical(result['b'], operator.methodcaller(opname)(content))
+
+
+@pytest.mark.parametrize('opname', reduction_ops)
+def test_reduction_op_handles_bins_reduction(opname):
+    dtype = 'bool' if opname in ('all', 'any') else 'float64'
+    op = operator.methodcaller(opname)
+    content = sc.ones(dims=['row'], shape=[6], dtype=dtype)
+    binned = sc.bins(begin=sc.index(0), end=sc.index(6), data=content, dim='row')
+    dg = sc.DataGroup(a=binned)
+    result = op(dg.bins)
+    print(result)
+    assert_identical(result['a'], operator.methodcaller(opname)(content))

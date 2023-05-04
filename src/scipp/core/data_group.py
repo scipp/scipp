@@ -28,7 +28,14 @@ from typing import (
 import numpy as np
 
 from .. import _binding
-from .cpp_classes import DataArray, Dataset, DimensionError, Variable
+from .cpp_classes import (
+    DataArray,
+    Dataset,
+    DimensionError,
+    GroupByDataArray,
+    GroupByDataset,
+    Variable,
+)
 
 if TYPE_CHECKING:
     # typing imports data_group.
@@ -38,6 +45,14 @@ if TYPE_CHECKING:
 
 def _item_dims(item):
     return getattr(item, 'dims', ())
+
+
+def _is_binned(item):
+    from .bins import Bins
+
+    if isinstance(item, Bins):
+        return True
+    return hasattr(item, 'bins') and item.bins is not None
 
 
 def _summarize(item):
@@ -253,8 +268,12 @@ class DataGroup(MutableMapping):
         reduce_all = operator.methodcaller(method, **kwargs)
 
         def _reduce_child(v, dim):
-            child_dims = _item_dims(v)
-            if child_dims == ():
+            if isinstance(v, (GroupByDataArray, GroupByDataset)):
+                child_dims = (dim,)
+            else:
+                child_dims = _item_dims(v)
+            binned = _is_binned(v)
+            if child_dims == () and not binned:
                 return v
             if dim is None:
                 return reduce_all(v)
@@ -262,6 +281,8 @@ class DataGroup(MutableMapping):
                 dims_to_reduce = dim if dim in child_dims else ()
             else:
                 dims_to_reduce = tuple(d for d in dim if d in child_dims)
+            if dims_to_reduce == () and binned:
+                return reduce_all(v)
             return (
                 v
                 if not dims_to_reduce
@@ -346,7 +367,7 @@ class DataGroup(MutableMapping):
         return self.apply(operator.methodcaller('round', *args, **kwargs))
 
     def squeeze(self, *args, **kwargs):
-        return self.apply_to_unsized(operator.methodcaller('squeeze', *args, **kwargs))
+        return self._reduce('squeeze', *args, **kwargs)
 
     def sum(self, *args, **kwargs):
         return self._reduce('sum', *args, **kwargs)
