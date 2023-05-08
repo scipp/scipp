@@ -861,3 +861,17 @@ def test_reduction_op_handles_bins_reduction(opname):
     result = op(dg.bins)
     print(result)
     assert_identical(result['a'], operator.methodcaller(opname)(content))
+
+
+@pytest.mark.parametrize('opname', reduction_ops)
+def test_reduction_op_handles_dim_with_empty_name(opname):
+    dtype = 'bool' if opname in ('all', 'any') else 'float64'
+    op = operator.methodcaller(opname, dim='')
+    dg = sc.DataGroup(
+        a=sc.ones(dims=['', 'y'], shape=(3, 2), dtype=dtype),
+        b=sc.ones(dims=[''], shape=(2,), dtype=dtype),
+    )
+    result = op(dg)
+    assert '' not in result.dims
+    assert_identical(result['a'], op(dg['a']))
+    assert_identical(result['b'], op(dg['b']))

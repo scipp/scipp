@@ -295,7 +295,7 @@ class DataGroup(MutableMapping):
                 return reduce_all(v)
             return (
                 v
-                if not dims_to_reduce
+                if dims_to_reduce == tuple()
                 else operator.methodcaller(method, dims_to_reduce, **kwargs)(v)
             )
 
