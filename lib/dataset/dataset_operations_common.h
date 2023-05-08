@@ -13,13 +13,15 @@ namespace scipp::dataset {
 template <bool ApplyToData, class Func, class... Args>
 DataArray apply_or_copy_dim_impl(const DataArray &da, Func func, const Dim dim,
                                  Args &&...args) {
-  auto data_result = [&]() {
-    if constexpr (ApplyToData) {
-      return func(da.data(), dim, std::forward<Args>(args)...);
-    } else {
-      return func(da, dim, std::forward<Args>(args)...);
-    }
-  }();
+  auto data_result = func(
+      [&]() {
+        if constexpr (ApplyToData) {
+          return da.data();
+        } else {
+          return da;
+        }
+      }(),
+      dim, std::forward<Args>(args)...);
   const Sizes out_sizes = data_result.dims();
 
   const auto copy_independent = [&](const auto &mapping, const bool share) {
