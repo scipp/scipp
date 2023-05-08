@@ -88,8 +88,13 @@ const Value &SizedDict<Key, Value, Impl>::operator[](const Key &key) const {
 /// Const reference to the coordinate for given dimension.
 template <class Key, class Value, class Impl>
 const Value &SizedDict<Key, Value, Impl>::at(const Key &key) const {
-  scipp::expect::contains(*this, key);
-  return m_items.at(key);
+  if (const auto it = m_items.find(key); it == m_items.end()) {
+    using core::to_string;
+    throw except::NotFoundError("Expected " + to_string(*this) +
+                                " to contain " + to_string(key) + ".");
+  } else {
+    return it->second;
+  }
 }
 
 /// The coordinate for given dimension.
@@ -411,8 +416,7 @@ Value AlignedDict<Key, Value>::operator[](const Key &key) {
 template <class Key, class Value>
 const AlignedValue<Value> &
 AlignedDict<Key, Value>::raw_at(const Key &key) const {
-  scipp::expect::contains(*this, key);
-  return this->m_items.at(key);
+  return SizedDict<Key, AlignedValue<Value>, AlignedDict<Key, Value>>::at(key);
 }
 
 /// The coordinate for given dimension.
