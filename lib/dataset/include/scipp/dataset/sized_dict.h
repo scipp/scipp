@@ -67,8 +67,15 @@ Mapping slice_map(const Sizes &sizes, const Mapping &map, const Slice &params) {
 /// that coords are valid for a data array.
 ///
 /// Template parameter Impl is used to specify return types of member functions
-/// that return new instances of SizedDict. It can override the type to one
-/// that can be constructed as Impl{SizedDict{...}}.
+/// that return new instances of SizedDict. Instances of Impl must be
+/// constructible from rvalues of SizedDict, e.g. this must be valid:
+/// Impl{SizedDict{...}}. See for example `slice` which uses
+///   SizedDict sliced =...
+///   // ...
+///   return Impl{std::move(sliced)};
+/// That is, it builds a new instance of SizedDict but converts it to Impl
+/// before return. This means that, e.g., AlignedDict does not need to
+/// reimplement this method.
 template <class Key, class Value, class Impl> class SizedDict {
 public:
   using key_type = Key;
@@ -149,7 +156,7 @@ public:
   void erase(const key_type &key);
   mapped_type extract(const key_type &key);
   mapped_type extract(const key_type &key, const mapped_type &default_value);
-  // Like extract but without conversion in AlignedDict.
+  /// Like extract but without conversion in AlignedDict.
   mapped_type extract_raw(const key_type &key) { return extract(key); }
 
   impl slice(const Slice &params) const;
