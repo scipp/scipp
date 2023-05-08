@@ -28,7 +28,14 @@ from typing import (
 import numpy as np
 
 from .. import _binding
-from .cpp_classes import DataArray, Dataset, DimensionError, Variable
+from .cpp_classes import (
+    DataArray,
+    Dataset,
+    DimensionError,
+    GroupByDataArray,
+    GroupByDataset,
+    Variable,
+)
 
 if TYPE_CHECKING:
     # typing imports data_group.
@@ -38,6 +45,14 @@ if TYPE_CHECKING:
 
 def _item_dims(item):
     return getattr(item, 'dims', ())
+
+
+def _is_binned(item):
+    from .bins import Bins
+
+    if isinstance(item, Bins):
+        return True
+    return hasattr(item, 'bins') and item.bins is not None
 
 
 def _summarize(item):
@@ -233,14 +248,67 @@ class DataGroup(MutableMapping):
         """Call func on all values and return new DataGroup containing the results."""
         return DataGroup({key: func(v, *args, **kwargs) for key, v in self.items()})
 
+    def _transform_dim(
+        self, func: Callable, *, dim: Union[None, str, Iterable[str]], **kwargs
+    ) -> DataGroup:
+        """Transform items that depend on one or more dimensions given by `dim`."""
+        dims = (dim,) if isinstance(dim, str) else dim
+
+        def intersects(item):
+            item_dims = _item_dims(item)
+            if dims is None:
+                return item_dims != ()
+            return set(dims).intersection(item_dims) != set()
+
+        return DataGroup(
+            {
+                key: v
+                if not intersects(v)
+                else operator.methodcaller(func, dim, **kwargs)(v)
+                for key, v in self.items()
+            }
+        )
+
+    def _reduce(
+        self, method: str, dim: Union[None, str, Tuple[str, ...]] = None, **kwargs
+    ) -> DataGroup:
+        reduce_all = operator.methodcaller(method, **kwargs)
+
+        def _reduce_child(v, dim):
+            if isinstance(v, (GroupByDataArray, GroupByDataset)):
+                child_dims = (dim,)
+            else:
+                child_dims = _item_dims(v)
+            # Reduction operations on binned data implicitly reduce over bin content.
+            # Therefore, a purely dimension-based logic is not sufficient to determine
+            # if the item has to be reduced or not.
+            binned = _is_binned(v)
+            if child_dims == () and not binned:
+                return v
+            if dim is None:
+                return reduce_all(v)
+            if isinstance(dim, str):
+                dims_to_reduce = dim if dim in child_dims else ()
+            else:
+                dims_to_reduce = tuple(d for d in dim if d in child_dims)
+            if dims_to_reduce == () and binned:
+                return reduce_all(v)
+            return (
+                v
+                if dims_to_reduce == tuple()
+                else operator.methodcaller(method, dims_to_reduce, **kwargs)(v)
+            )
+
+        return DataGroup({key: _reduce_child(v, dim) for key, v in self.items()})
+
     def copy(self, deep: bool = True) -> DataGroup:
         return copy.deepcopy(self) if deep else copy.copy(self)
 
     def all(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('all', *args, **kwargs))
+        return self._reduce('all', *args, **kwargs)
 
     def any(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('any', *args, **kwargs))
+        return self._reduce('any', *args, **kwargs)
 
     def astype(self, *args, **kwargs):
         return self.apply(operator.methodcaller('astype', *args, **kwargs))
@@ -254,14 +322,14 @@ class DataGroup(MutableMapping):
     def ceil(self, *args, **kwargs):
         return self.apply(operator.methodcaller('ceil', *args, **kwargs))
 
-    def flatten(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('flatten', *args, **kwargs))
+    def flatten(self, dims: Union[None, Iterable[str]] = None, **kwargs):
+        return self._transform_dim('flatten', dim=dims, **kwargs)
 
     def floor(self, *args, **kwargs):
         return self.apply(operator.methodcaller('floor', *args, **kwargs))
 
-    def fold(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('fold', *args, **kwargs))
+    def fold(self, dim: str, **kwargs):
+        return self._transform_dim('fold', dim=dim, **kwargs)
 
     def group(self, *args, **kwargs):
         return self.apply(operator.methodcaller('group', *args, **kwargs))
@@ -273,28 +341,28 @@ class DataGroup(MutableMapping):
         return self.apply(operator.methodcaller('hist', *args, **kwargs))
 
     def max(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('max', *args, **kwargs))
+        return self._reduce('max', *args, **kwargs)
 
     def mean(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('mean', *args, **kwargs))
+        return self._reduce('mean', *args, **kwargs)
 
     def min(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('min', *args, **kwargs))
+        return self._reduce('min', *args, **kwargs)
 
     def nanhist(self, *args, **kwargs):
         return self.apply(operator.methodcaller('nanhist', *args, **kwargs))
 
     def nanmax(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('nanmax', *args, **kwargs))
+        return self._reduce('nanmax', *args, **kwargs)
 
     def nanmean(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('nanmean', *args, **kwargs))
+        return self._reduce('nanmean', *args, **kwargs)
 
     def nanmin(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('nanmin', *args, **kwargs))
+        return self._reduce('nanmin', *args, **kwargs)
 
     def nansum(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('nansum', *args, **kwargs))
+        return self._reduce('nansum', *args, **kwargs)
 
     def rebin(self, *args, **kwargs):
         return self.apply(operator.methodcaller('rebin', *args, **kwargs))
@@ -309,10 +377,10 @@ class DataGroup(MutableMapping):
         return self.apply(operator.methodcaller('round', *args, **kwargs))
 
     def squeeze(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('squeeze', *args, **kwargs))
+        return self._reduce('squeeze', *args, **kwargs)
 
     def sum(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('sum', *args, **kwargs))
+        return self._reduce('sum', *args, **kwargs)
 
     def to(self, *args, **kwargs):
         return self.apply(operator.methodcaller('to', *args, **kwargs))
@@ -320,8 +388,8 @@ class DataGroup(MutableMapping):
     def transform_coords(self, *args, **kwargs):
         return self.apply(operator.methodcaller('transform_coords', *args, **kwargs))
 
-    def transpose(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('transpose', *args, **kwargs))
+    def transpose(self, dims: Union[None, Tuple[str, ...]] = None):
+        return self._transform_dim('transpose', dim=dims)
 
     def plot(self, *args, **kwargs):
         import plopp

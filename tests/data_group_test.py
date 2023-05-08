@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 
 import scipp as sc
+from scipp.testing import assert_identical
 
 
 def test_create_from_kwargs():
@@ -22,6 +23,7 @@ def test_create_from_dict_works_with_mixed_types_and_non_scipp_objects():
         'c': sc.DataArray(sc.scalar(3)),
         'd': np.arange(4),
     }
+
     dg = sc.DataGroup(items)
     assert tuple(dg.keys()) == ('a', 'b', 'c', 'd')
 
@@ -612,9 +614,75 @@ def test_fold_flatten():
     assert sc.identical(dg.fold('x', sizes={'y': 2, 'z': -1}).flatten(to='x'), dg)
 
 
+def test_fold_ignores_python_objects():
+    dg = sc.DataGroup(a=sc.arange('x', 4, dtype='int64'), b='abc')
+    assert sc.identical(
+        dg.fold('x', sizes={'y': 2, 'z': -1}),
+        sc.DataGroup(
+            a=sc.array(dims=['y', 'z'], values=[[0, 1], [2, 3]], dtype='int64'), b='abc'
+        ),
+    )
+
+
+def test_fold_skips_items_that_lack_input_dim():
+    dg = sc.DataGroup(
+        a=sc.arange('x', 4, dtype='int64'),
+        b=sc.arange('other', 2, dtype='int64'),
+        c=sc.scalar(1),
+        d='abc',
+    )
+    expected = dg.copy()
+    expected['a'] = sc.array(dims=['y', 'z'], values=[[0, 1], [2, 3]], dtype='int64')
+    assert_identical(dg.fold('x', sizes={'y': 2, 'z': -1}), expected)
+
+
+def test_flatten_preserves_items_that_lack_input_dim():
+    dg = sc.DataGroup(
+        a=sc.array(dims=['y', 'z'], values=[[0, 1], [2, 3]], dtype='int64'),
+        b=sc.arange('other', 2, dtype='int64'),
+        c=sc.scalar(1),
+        d='abc',
+    )
+    expected = dg.copy()
+    expected['a'] = sc.arange('x', 4, dtype='int64')
+    assert_identical(dg.flatten(dims=['y', 'z'], to='x'), expected)
+
+
+def test_fold_works_with_existing_dim_in_sibling():
+    dg = sc.DataGroup(
+        a=sc.arange('x', 4, dtype='int64'), b=sc.arange('y', 2, dtype='int64')
+    )
+    assert sc.identical(
+        dg.fold('x', sizes={'y': 2, 'z': -1}),
+        sc.DataGroup(
+            a=sc.array(dims=['y', 'z'], values=[[0, 1], [2, 3]], dtype='int64'),
+            b=dg['b'],
+        ),
+    )
+
+
 def test_squeeze():
     dg = sc.DataGroup(a=sc.ones(dims=['x', 'y'], shape=(4, 1)))
     assert sc.identical(dg.squeeze(), sc.DataGroup(a=sc.ones(dims=['x'], shape=(4,))))
+
+
+def test_squeeze_works_with_binned():
+    content = sc.ones(dims=['row'], shape=[6])
+    binned = sc.bins(begin=sc.index(0), end=sc.index(6), data=content, dim='row')
+    dg = sc.DataGroup(a=binned)
+    assert sc.identical(dg.squeeze(), dg)
+
+
+def test_squeeze_leaves_numpy_array_unchanged():
+    dg = sc.DataGroup(a=np.ones(shape=(4, 1)))
+    assert sc.identical(dg.squeeze(), sc.DataGroup(a=np.ones(shape=(4, 1))))
+
+
+def test_squeeze_ignores_python_objects():
+    dg = sc.DataGroup(a='abc', b=sc.ones(dims=['x', 'y'], shape=(4, 1)))
+    assert sc.identical(
+        dg.squeeze(), sc.DataGroup(a='abc', b=sc.ones(dims=['x'], shape=(4,)))
+    )
 
 
 def test_transpose():
@@ -624,19 +692,24 @@ def test_transpose():
     )
 
 
+def test_transpose_leaves_numpy_array_unchanged():
+    dg = sc.DataGroup(a=np.ones(shape=(2, 3)))
+    assert sc.identical(dg.transpose(), sc.DataGroup(a=np.ones(shape=(2, 3))))
+
+
+def test_transpose_ignores_python_objects():
+    dg = sc.DataGroup(a=sc.ones(dims=['x', 'y'], shape=(2, 3)), b='abc')
+    assert sc.identical(
+        dg.transpose(), sc.DataGroup(a=sc.ones(dims=['y', 'x'], shape=(3, 2)), b='abc')
+    )
+
+
 def test_broadcast():
     dg = sc.DataGroup(a=sc.scalar(1))
     assert sc.identical(
         dg.broadcast(sizes={'x': 2}),
         sc.DataGroup(a=sc.scalar(1).broadcast(sizes={'x': 2})),
     )
-
-
-def test_methods_work_with_any_value_type_that_supports_it():
-    dg = sc.DataGroup(a=sc.arange('x', 4), b=np.arange(5))
-    result = dg.max()
-    assert sc.identical(result['a'], sc.arange('x', 4).max())
-    assert np.array_equal(result['b'], np.arange(5).max())
 
 
 def test_bins_property_indexing():
@@ -712,3 +785,93 @@ def test_bin(func):
         }
     )
     assert sc.identical(func(dg, **edges), expected)
+
+
+reduction_ops = (
+    'sum',
+    'mean',
+    'all',
+    'any',
+    'min',
+    'max',
+    'nansum',
+    'nanmean',
+    'nanmin',
+    'nanmax',
+)
+
+
+@pytest.mark.parametrize('dim', ('x', None))
+@pytest.mark.parametrize('op', reduction_ops)
+def test_reduction_op_ignores_python_objects(op, dim):
+    dtype = 'bool' if op in ('all', 'any') else 'float64'
+    op = operator.methodcaller(op, dim=dim)
+    dg = sc.DataGroup(a=sc.ones(dims=['x', 'y'], shape=(2, 3), dtype=dtype), b='abc')
+    result = op(dg)
+    assert_identical(result['a'], op(dg['a']))
+    assert result['b'] == dg['b']
+
+
+@pytest.mark.parametrize('dim', ('x', None))
+@pytest.mark.parametrize('op', reduction_ops)
+def test_reduction_op_ignores_numpy_arrays(op, dim):
+    dtype = 'bool' if op in ('all', 'any') else 'float64'
+    op = operator.methodcaller(op, dim=dim)
+    dg = sc.DataGroup(
+        a=sc.ones(dims=['x', 'y'], shape=(2, 3), dtype=dtype), b=np.ones((4,))
+    )
+    result = op(dg)
+    assert_identical(result['a'], op(dg['a']))
+    assert np.array_equal(result['b'], dg['b'])
+
+
+@pytest.mark.parametrize('op', reduction_ops)
+def test_reduction_op_ignores_objects_lacking_given_dim(op):
+    dtype = 'bool' if op in ('all', 'any') else 'float64'
+    op = operator.methodcaller(op, dim='x')
+    dg = sc.DataGroup(
+        a=sc.ones(dims=['x', 'y'], shape=(2, 3), dtype=dtype),
+        b=sc.ones(dims=['y'], shape=(2,), dtype=dtype),
+    )
+    result = op(dg)
+    assert_identical(result['a'], op(dg['a']))
+    assert_identical(result['b'], dg['b'])
+
+
+@pytest.mark.parametrize('dim', ('x', None))
+@pytest.mark.parametrize('opname', reduction_ops)
+def test_reduction_op_handles_bin_without_dim(opname, dim):
+    dtype = 'bool' if opname in ('all', 'any') else 'float64'
+    op = operator.methodcaller(opname, dim=dim)
+    content = sc.ones(dims=['row'], shape=[6], dtype=dtype)
+    binned = sc.bins(begin=sc.index(0), end=sc.index(6), data=content, dim='row')
+    dg = sc.DataGroup(a=sc.ones(dims=['x', 'y'], shape=(2, 3), dtype=dtype), b=binned)
+    result = op(dg)
+    assert_identical(result['a'], op(dg['a']))
+    assert_identical(result['b'], operator.methodcaller(opname)(content))
+
+
+@pytest.mark.parametrize('opname', reduction_ops)
+def test_reduction_op_handles_bins_reduction(opname):
+    dtype = 'bool' if opname in ('all', 'any') else 'float64'
+    op = operator.methodcaller(opname)
+    content = sc.ones(dims=['row'], shape=[6], dtype=dtype)
+    binned = sc.bins(begin=sc.index(0), end=sc.index(6), data=content, dim='row')
+    dg = sc.DataGroup(a=binned)
+    result = op(dg.bins)
+    print(result)
+    assert_identical(result['a'], operator.methodcaller(opname)(content))
+
+
+@pytest.mark.parametrize('opname', reduction_ops)
+def test_reduction_op_handles_dim_with_empty_name(opname):
+    dtype = 'bool' if opname in ('all', 'any') else 'float64'
+    op = operator.methodcaller(opname, dim='')
+    dg = sc.DataGroup(
+        a=sc.ones(dims=['', 'y'], shape=(3, 2), dtype=dtype),
+        b=sc.ones(dims=[''], shape=(2,), dtype=dtype),
+    )
+    result = op(dg)
+    assert '' not in result.dims
+    assert_identical(result['a'], op(dg['a']))
+    assert_identical(result['b'], op(dg['b']))
