@@ -248,16 +248,23 @@ class DataGroup(MutableMapping):
         """Call func on all values and return new DataGroup containing the results."""
         return DataGroup({key: func(v, *args, **kwargs) for key, v in self.items()})
 
-    def apply_to_unsized(self, func: Callable, *args, **kwargs) -> DataGroup:
-        """
-        Call func on all "sized" values and return new DataGroup containing the results.
+    def _transform_dim(
+        self, func: Callable, *, dim: Union[None, str, Iterable[str]], **kwargs
+    ) -> DataGroup:
+        """Transform items that depend on one or more dimensions given by `dim`."""
+        dims = (dim,) if isinstance(dim, str) else dim
 
-        "Sized" values are those that have a `dims` attribute, i.e., those that are
-        handled by __getitem__.
-        """
+        def intersects(item):
+            item_dims = _item_dims(item)
+            if dims is None:
+                return item_dims != ()
+            return set(dims).intersection(item_dims) != set()
+
         return DataGroup(
             {
-                key: v if _item_dims(v) == () else func(v, *args, **kwargs)
+                key: v
+                if not intersects(v)
+                else operator.methodcaller(func, dim, **kwargs)(v)
                 for key, v in self.items()
             }
         )
@@ -272,6 +279,9 @@ class DataGroup(MutableMapping):
                 child_dims = (dim,)
             else:
                 child_dims = _item_dims(v)
+            # Reduction operations on binned data implicitly reduce over bin content.
+            # Therefore, a purely dimension-based logic is not sufficient to determine
+            # if the item has to be reduced or not.
             binned = _is_binned(v)
             if child_dims == () and not binned:
                 return v
@@ -312,14 +322,14 @@ class DataGroup(MutableMapping):
     def ceil(self, *args, **kwargs):
         return self.apply(operator.methodcaller('ceil', *args, **kwargs))
 
-    def flatten(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('flatten', *args, **kwargs))
+    def flatten(self, dims: Union[None, Iterable[str]] = None, **kwargs):
+        return self._transform_dim('flatten', dim=dims, **kwargs)
 
     def floor(self, *args, **kwargs):
         return self.apply(operator.methodcaller('floor', *args, **kwargs))
 
-    def fold(self, *args, **kwargs):
-        return self.apply_to_unsized(operator.methodcaller('fold', *args, **kwargs))
+    def fold(self, dim: str, **kwargs):
+        return self._transform_dim('fold', dim=dim, **kwargs)
 
     def group(self, *args, **kwargs):
         return self.apply(operator.methodcaller('group', *args, **kwargs))
@@ -378,10 +388,8 @@ class DataGroup(MutableMapping):
     def transform_coords(self, *args, **kwargs):
         return self.apply(operator.methodcaller('transform_coords', *args, **kwargs))
 
-    def transpose(self, *args, **kwargs):
-        return self.apply_to_unsized(
-            operator.methodcaller('transpose', *args, **kwargs)
-        )
+    def transpose(self, dims: Union[None, Tuple[str, ...]] = None):
+        return self._transform_dim('transpose', dim=dims)
 
     def plot(self, *args, **kwargs):
         import plopp

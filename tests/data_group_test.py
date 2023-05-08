@@ -624,9 +624,53 @@ def test_fold_ignores_python_objects():
     )
 
 
+def test_fold_skips_items_that_lack_input_dim():
+    dg = sc.DataGroup(
+        a=sc.arange('x', 4, dtype='int64'),
+        b=sc.arange('other', 2, dtype='int64'),
+        c=sc.scalar(1),
+        d='abc',
+    )
+    expected = dg.copy()
+    expected['a'] = sc.array(dims=['y', 'z'], values=[[0, 1], [2, 3]], dtype='int64')
+    assert_identical(dg.fold('x', sizes={'y': 2, 'z': -1}), expected)
+
+
+def test_flatten_preserves_items_that_lack_input_dim():
+    dg = sc.DataGroup(
+        a=sc.array(dims=['y', 'z'], values=[[0, 1], [2, 3]], dtype='int64'),
+        b=sc.arange('other', 2, dtype='int64'),
+        c=sc.scalar(1),
+        d='abc',
+    )
+    expected = dg.copy()
+    expected['a'] = sc.arange('x', 4, dtype='int64')
+    assert_identical(dg.flatten(dims=['y', 'z'], to='x'), expected)
+
+
+def test_fold_works_with_existing_dim_in_sibling():
+    dg = sc.DataGroup(
+        a=sc.arange('x', 4, dtype='int64'), b=sc.arange('y', 2, dtype='int64')
+    )
+    assert sc.identical(
+        dg.fold('x', sizes={'y': 2, 'z': -1}),
+        sc.DataGroup(
+            a=sc.array(dims=['y', 'z'], values=[[0, 1], [2, 3]], dtype='int64'),
+            b=dg['b'],
+        ),
+    )
+
+
 def test_squeeze():
     dg = sc.DataGroup(a=sc.ones(dims=['x', 'y'], shape=(4, 1)))
     assert sc.identical(dg.squeeze(), sc.DataGroup(a=sc.ones(dims=['x'], shape=(4,))))
+
+
+def test_squeeze_works_with_binned():
+    content = sc.ones(dims=['row'], shape=[6])
+    binned = sc.bins(begin=sc.index(0), end=sc.index(6), data=content, dim='row')
+    dg = sc.DataGroup(a=binned)
+    assert sc.identical(dg.squeeze(), dg)
 
 
 def test_squeeze_leaves_numpy_array_unchanged():
