@@ -188,7 +188,8 @@ template <class Value> struct AlignedValue {
   AlignedValue(Value val, const bool a) noexcept
       : value(std::move(val)), aligned(a) {}
 
-  operator Value() const { return value; }
+  operator const Value &() const & { return value; }
+  operator Value &() & { return value; }
 
   bool operator==(const AlignedValue &other) const noexcept {
     return value == other.value && aligned == other.aligned;
