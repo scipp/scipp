@@ -44,7 +44,9 @@ Features
 * :class:`scipp.Dataset` now supports ``assign_coords``, which updates or inserts the given coordinates to the :class:`scipp.Dataset` `#3110 <https://github.com/scipp/scipp/pull/3110/>`_.
 * :class:`scipp.DataArray` now supports ``assign_coords``/ ``assign_masks``/ ``assign_attrs``, which updates or inserts the given coordinates/masks/attributes to the :class:`scipp.DataArray` `#3110 <https://github.com/scipp/scipp/pull/3110/>`_.
 * Fixed performance issues for ``datetime64`` operations `#3123 <https://github.com/scipp/scipp/pull/3123/>`_.
-* The HDF5 writer and reader now support builtin types (e.g. ``int``, ``str``) and numpy types (e.g. ``np.ndarray``, ``np.int64``) as data group items `#3124 <https://github.com/scipp/scipp/pull/3124/>`_.
+* The HDF5 writer and reader now supports builtin types (e.g. ``int``, ``str``) and numpy types (e.g. ``np.ndarray``, ``np.int64``) as data group items `#3124 <https://github.com/scipp/scipp/pull/3124/>`_.
+* :class:`scipp.DataGroup` reduction- and shape operations now handle items of lower dimensionality more consistently.
+  Operations will thus work in more situations, rather than raise exceptions `#3136 <https://github.com/scipp/scipp/pull/3136/>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
