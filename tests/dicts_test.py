@@ -464,3 +464,28 @@ def test_items_equality(make, mapping):
 
     mapview0['y'] = sc.scalar(3.0)
     assert mapview0.items() == mapview1.items()
+
+
+@pytest.mark.parametrize(
+    "make,mapping",
+    [
+        (make_data_array, "coords"),
+        (make_dataset, "coords"),
+    ],
+)
+def test_set_aligned(make, mapping):
+    d = make(sc.arange('x', 4.0, unit='m'))
+    mapview = getattr(d, mapping)
+    mapview['x'] = sc.scalar(1.0)
+    mapview['y'] = sc.scalar(2.0)
+
+    assert mapview['x'].aligned
+    assert mapview['y'].aligned
+
+    mapview.set_aligned('x', False)
+    assert not mapview['x'].aligned
+    assert mapview['y'].aligned
+
+    mapview.set_aligned('x', True)
+    assert mapview['x'].aligned
+    assert mapview['y'].aligned
