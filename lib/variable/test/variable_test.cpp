@@ -122,6 +122,19 @@ TEST(Variable, is_readonly) {
   EXPECT_TRUE(Variable(const_var).is_readonly()); // propagated on copy
 }
 
+TEST(Variable, is_aligned_default) {
+  const auto var = makeVariable<double>(Values{1});
+  EXPECT_TRUE(var.is_aligned());
+}
+
+TEST(Variable, can_set_aligned_flag) {
+  auto var = makeVariable<double>(Values{1});
+  var.set_aligned(false);
+  EXPECT_FALSE(var.is_aligned());
+  var.set_aligned(true);
+  EXPECT_TRUE(var.is_aligned());
+}
+
 TEST(Variable, is_valid) {
   auto a = Variable();
   EXPECT_FALSE(a.is_valid());

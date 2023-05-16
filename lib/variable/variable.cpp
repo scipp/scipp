@@ -294,6 +294,10 @@ bool Variable::is_same(const Variable &other) const noexcept {
                   other.m_object);
 }
 
+bool Variable::is_aligned() const noexcept { return m_aligned; }
+
+void Variable::set_aligned(bool aligned) noexcept { m_aligned = aligned; }
+
 void Variable::setVariances(const Variable &v) {
   expect_writable();
   if (is_slice())

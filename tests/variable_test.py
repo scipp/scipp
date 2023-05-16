@@ -732,3 +732,17 @@ def test_setting_string_unit_property_to_default_gives_none():
     var = sc.scalar('abc', unit='m')
     var.unit = sc.units.default_unit
     assert var.unit is None
+
+
+def test_aligned_default():
+    var = sc.scalar(1)
+    assert var.aligned
+
+
+def test_cannot_set_aligned_flag():
+    # Cannot set alignment like this because it would be easy to make mistakes.
+    # I.e. `da.coords['x'].aligned = False` has no effect because Coords.__getitem__
+    # returns a copy of the variable.
+    var = sc.scalar(1)
+    with pytest.raises(AttributeError):
+        var.aligned = False
