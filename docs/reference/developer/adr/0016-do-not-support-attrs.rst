@@ -16,10 +16,12 @@ Examples include:
 
 - HDF5 attrs for datasets and groups
 - Attributes in NetCDF
+- Attributes in Zarr
 - Attributes in NeXus (typically using HDF5 attrs)
 - ``xarray.Variable.attrs`` and ``xarray.DataArray.attrs``
 
-Scipp's ``DataArray`` supports ``attrs`` (note that currently ``attrs`` doubles as a place to store "unaligned" coords, which is not directly related to the topic discussed here).
+Scipp's ``DataArray`` supports ``attrs``.
+Note that currently ``attrs`` doubles as a place to store "unaligned" coords, which is not directly related to the topic discussed here.
 However, ``scipp.Variable`` does not support ``attrs``.
 In part this is due to a reduced need for ``attrs``, since Scipp has native support for physical units, which is one of the recurring applications of ``attrs`` in other libraries.
 The other reason is legacy:
@@ -27,7 +29,7 @@ The other reason is legacy:
 
 When interacting with files such as HDF5 or NeXus we encounter a recurring need to load arbitrary attributes.
 Currently this is not possible in Scipp, at least not if we want to represent an HDF5 dataset as a ``scipp.Variable``.
-Support for ``scipp.Variable.attrs`` would allow us to represent arbitrary attributes in a ``scipp.Variable``.
+Support for ``scipp.Variable.attrs`` would allow for representing arbitrary attributes in a ``scipp.Variable``.
 The question is whether this is a good idea.
 
 Analysis
@@ -37,20 +39,27 @@ Addition of ``scipp.Variable.attrs`` would add a significant amount complexity t
 It would likely also impact performance in some applications, as we would need to handle references to Python objects (requiring GIL acquisition in C++ code) or shared pointers.
 It could furthermore increase the chance of running into problems with Python garbage collection similar to the existing (low-propability) issues described in https://github.com/scipp/scipp/issues/2813.
 
-Aside from the technical aspects (which could in principle be overcome or partially ignored) we need to consider the conceptual aspects.
-Are "attrs" a good solution for a real problem?
+Aside from these technical hurdles (which could in principle be overcome or partially ignored) we need to consider the conceptual aspects.
+Is a dictionary of arbitrary attributes a good solution for a real problem?
 Obviously, attributes of datasets in files are widespread and have valid and important applications.
 However, Scipp's main purpose is *processing* data, not *storing* data.
-The attributes encountered in files strictly describe the dataset as it was stored, and are not necessarily valid after processing.
+The attributes encountered in files strictly describe the array or dataset as it was stored, and are not necessarily valid after modifying it.
 
-If we consider binary operations such as addition or division, it is not clear how attributes should be handled if they mismatch between operands or are missing in one operand.
-Xarray attempts to do this, but results are not fully consistent, and furthermore lead to complications of some interfaces with keyword arguments to define attribute handling.
+If we consider binary operations (such as addition or division) then it is not clear how attributes should be handled if they mismatch between operands or are missing in one operand.
+This is an example where Scipp made a different choice than Xarray.
+In Xarray, ``((a + b) + c).attrs != (a + (b + c)).attrs`` whereas in Scipp ``((a + b) + c).attrs == (a + (b + c)).attrs``.
+Scipp ensures this by treating a missing attribute in one operand as mismatches and thus drops the attribute.
+This ensures consistency, but comes at a significant cost:
+In practice attributes are very frequently dropped in binary operations.
+This raises some questions about the usability of the mechanism.
+Xarray's approach is more "useful", at the cost of consistency.
+Xarray's mechanism furthermore necessiated complications, such as global settings that influence the behavior as well as certain interfaces with keyword arguments to define attribute handling.
 
 Ignoring binary operations, one could argue that keeping attributes is still useful for unary operations where those problems do not arise.
 However, attributes can nevertheless become invalid:
-For example, a "long_name" attribute may no longer be valid after a unit conversion, or applying a unary function such as ``np.power`` or ``np.sin``.
-The same holds for a "units" attribute &mdash; and issue Scipp avoids by having native handling of units.
-Here is a brief code example how this goes badly wrong in Xarray:
+For example, a "long_name" attribute may no longer be valid after a unit conversion, or after applying a unary function such as ``np.power`` or ``np.sin``.
+The same holds for a "units" attribute &mdash; an issue Scipp avoids by having native handling of units.
+Here is a brief code example illustrating how this goes badly wrong in Xarray:
 
 .. code-block:: python
 
@@ -68,7 +77,7 @@ Here is a brief code example how this goes badly wrong in Xarray:
 This resulting plot is labelled with "Temperature [K]" on the y-axis, which is clearly wrong and dangerously misleading.
 
 We see this as an indicator that any attempt to handle "unknown" attributes is bound to fail.
-While we acknowledge that there are valid and important use cases for attributes, we believe that the risk of introducing invalid attributes in processing is too high and outweighs the benefits of supporting attributes.
+While we acknowledge that there are valid and important use cases for attributes, we believe that the risk of introducing invalid attributes in operations applied to variables or data arrays is too high and outweighs the benefits of supporting attributes.
 
 Proposed solution
 ~~~~~~~~~~~~~~~~~
