@@ -162,6 +162,28 @@ TEST(SizedDictTest, rename_dims) {
   }
 }
 
+TEST(SizedDictTest, preserves_alignement) {
+  const auto a = makeVariable<int>(Dims{Dim{"a"}}, Shape{2}, Values{1, 2});
+  auto b = makeVariable<int>(Dims{Dim{"b"}}, Shape{2}, Values{3, 4});
+  auto c = makeVariable<int>(Dims{Dim{"c"}}, Shape{2}, Values{5, 6});
+  const auto d = makeVariable<int>(Dims{Dim{"d"}}, Shape{2}, Values{7, 8});
+  b.set_aligned(false);
+  c.set_aligned(false);
+
+  DataArray da(a + b + c + d, {{Dim("a"), a}, {Dim("b"), b}});
+  auto &coords = da.coords();
+
+  EXPECT_TRUE(coords.at(Dim("a")).is_aligned());
+  EXPECT_FALSE(coords.at(Dim("b")).is_aligned());
+
+  coords.set(Dim("c"), c);
+  coords.set(Dim("d"), d);
+  EXPECT_TRUE(coords.at(Dim("a")).is_aligned());
+  EXPECT_FALSE(coords.at(Dim("b")).is_aligned());
+  EXPECT_FALSE(coords.at(Dim("c")).is_aligned());
+  EXPECT_TRUE(coords.at(Dim("d")).is_aligned());
+}
+
 TEST(SizedDictTest, set_alignment) {
   const auto a = makeVariable<int>(Dims{Dim{"a"}}, Shape{2}, Values{1, 2});
   const auto b = makeVariable<int>(Dims{Dim{"b"}}, Shape{2}, Values{3, 4});
