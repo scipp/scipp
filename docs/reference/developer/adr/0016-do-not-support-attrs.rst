@@ -93,7 +93,7 @@ We could consider support for *storing* attributes, but *dropping* them on any m
 An HDF5 dataset can then be loaded including its attributes, while at the same time avoiding the risk of invalidating attributes in operations.
 However, unless we lock down mutable access to ``scipp.Variable.values`` such a mechanism would always have loopholes.
 Is there a viable and safe mechanism for such attributes?
-Is there a sufficient number of application where such a restricted attribute support would be worthwhile?
+Is there a sufficient number of applications where such a restricted attribute support would be worthwhile?
 
 Decision
 --------
@@ -104,5 +104,14 @@ Consequences
 Positive:
 ~~~~~~~~~
 
+- Simpler code.
+- Cleaner semantics.
+  Scipp data structures will be a simple and basic building block for labelled data.
+- Avoids problems with potentially invalid attributes in results of operations.
+
 Negative:
 ~~~~~~~~~
+
+- Removing ``scipp.DataArray.attrs`` represents a breaking change that will affects users.
+  We need to find and implement alternative solutions, e.g., by handling attributes on a higher level.
+- Fully representing information from HDF5 or similar files will not be possible directly.
