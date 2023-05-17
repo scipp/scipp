@@ -47,13 +47,14 @@ The attributes encountered in files strictly describe the array or dataset as it
 
 If we consider binary operations (such as addition or division) then it is not clear how attributes should be handled if they mismatch between operands or are missing in one operand.
 This is an example where Scipp made a different choice than Xarray.
-In Xarray, ``((a + b) + c).attrs != (a + (b + c)).attrs`` whereas in Scipp ``((a + b) + c).attrs == (a + (b + c)).attrs``.
+Consider for example three (Scipp or Xarray) data arrays, ``a``, ``b``, and ``c``, each with an attribute named ``attr1``, each with a different value.
+In Xarray, ``((a + b) + c).attrs != (a + (b + c)).attrs`` (on the left, ``attr1`` is preserved with the value it had in ``c`` whereas on the right the value in ``a`` is preserved) whereas in Scipp ``((a + b) + c).attrs == (a + (b + c)).attrs`` (``attr1`` is dropped).
 Scipp ensures this by treating a missing attribute in one operand as mismatches and thus drops the attribute.
 This ensures consistency, but comes at a significant cost:
 In practice attributes are very frequently dropped in binary operations.
 This raises some questions about the usability of the mechanism.
 Xarray's approach is more "useful", at the cost of consistency.
-Xarray's mechanism furthermore necessiated complications, such as global settings that influence the behavior as well as certain interfaces with keyword arguments to define attribute handling.
+Xarray's mechanism furthermore necessitates complications, such as global settings that influence the behavior as well as certain interfaces with keyword arguments to define attribute handling.
 
 Ignoring binary operations, one could argue that keeping attributes is still useful for unary operations where those problems do not arise.
 However, attributes can nevertheless become invalid:
