@@ -6,6 +6,7 @@
 
 #include "scipp/core/dimensions.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/except.h"
 #include "scipp/variable/shape.h"
 #include "test_macros.h"
 
@@ -209,4 +210,13 @@ TEST(SizedDictTest, set_alignment) {
   EXPECT_FALSE(coords.at(Dim("a")).is_aligned());
   EXPECT_TRUE(coords.at(Dim("b")).is_aligned());
   EXPECT_TRUE(coords.at(Dim("c")).is_aligned());
+}
+
+TEST(SizedDictTest, set_alignement_requires_writable) {
+  const auto a = makeVariable<int>(Dims{Dim{"a"}}, Shape{2}, Values{1, 2});
+  DataArray da(a, {{Dim("a"), a}});
+  auto &coords = da.coords();
+  coords.set_readonly();
+
+  EXPECT_THROW(coords.set_aligned(Dim("a"), false), except::DataArrayError);
 }
