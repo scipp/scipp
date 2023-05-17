@@ -6,6 +6,7 @@
 
 #include "scipp/core/dimensions.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/except.h"
 #include "scipp/variable/shape.h"
 #include "test_macros.h"
 
@@ -160,4 +161,62 @@ TEST(SizedDictTest, rename_dims) {
     ASSERT_NE(it2, expected.end());
     EXPECT_EQ(*it1, *it2);
   }
+}
+
+TEST(SizedDictTest, insertion_preserves_alignement) {
+  const auto a = makeVariable<int>(Dims{Dim{"a"}}, Shape{2}, Values{1, 2});
+  auto b = makeVariable<int>(Dims{Dim{"b"}}, Shape{2}, Values{3, 4});
+  auto c = makeVariable<int>(Dims{Dim{"c"}}, Shape{2}, Values{5, 6});
+  const auto d = makeVariable<int>(Dims{Dim{"d"}}, Shape{2}, Values{7, 8});
+  b.set_aligned(false);
+  c.set_aligned(false);
+
+  DataArray da(a + b + c + d, {{Dim("a"), a}, {Dim("b"), b}});
+  auto &coords = da.coords();
+
+  EXPECT_TRUE(coords.at(Dim("a")).is_aligned());
+  EXPECT_FALSE(coords.at(Dim("b")).is_aligned());
+
+  coords.set(Dim("c"), c);
+  coords.set(Dim("d"), d);
+  EXPECT_TRUE(coords.at(Dim("a")).is_aligned());
+  EXPECT_FALSE(coords.at(Dim("b")).is_aligned());
+  EXPECT_FALSE(coords.at(Dim("c")).is_aligned());
+  EXPECT_TRUE(coords.at(Dim("d")).is_aligned());
+}
+
+TEST(SizedDictTest, set_alignment) {
+  const auto a = makeVariable<int>(Dims{Dim{"a"}}, Shape{2}, Values{1, 2});
+  const auto b = makeVariable<int>(Dims{Dim{"b"}}, Shape{2}, Values{3, 4});
+  const auto c = makeVariable<int>(Dims{Dim{"c"}}, Shape{2}, Values{5, 6});
+  DataArray da(a + b + c, {{Dim("a"), a}, {Dim("b"), b}, {Dim("c"), c}});
+  auto &coords = da.coords();
+
+  EXPECT_TRUE(coords.at(Dim("a")).is_aligned());
+  EXPECT_TRUE(coords.at(Dim("b")).is_aligned());
+  EXPECT_TRUE(coords.at(Dim("c")).is_aligned());
+
+  // This has no effect because coords.at returns a new variable.
+  coords.at(Dim("b")).set_aligned(false);
+  EXPECT_TRUE(coords.at(Dim("b")).is_aligned());
+
+  coords.set_aligned(Dim("a"), false);
+  coords.set_aligned(Dim("c"), false);
+  EXPECT_FALSE(coords.at(Dim("a")).is_aligned());
+  EXPECT_TRUE(coords.at(Dim("b")).is_aligned());
+  EXPECT_FALSE(coords.at(Dim("c")).is_aligned());
+
+  coords.set_aligned(Dim("c"), true);
+  EXPECT_FALSE(coords.at(Dim("a")).is_aligned());
+  EXPECT_TRUE(coords.at(Dim("b")).is_aligned());
+  EXPECT_TRUE(coords.at(Dim("c")).is_aligned());
+}
+
+TEST(SizedDictTest, set_alignement_requires_writable) {
+  const auto a = makeVariable<int>(Dims{Dim{"a"}}, Shape{2}, Values{1, 2});
+  DataArray da(a, {{Dim("a"), a}});
+  auto &coords = da.coords();
+  coords.set_readonly();
+
+  EXPECT_THROW(coords.set_aligned(Dim("a"), false), except::DataArrayError);
 }

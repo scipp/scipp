@@ -365,6 +365,12 @@ bool SizedDict<Key, Value>::is_edges(const Key &key,
 }
 
 template <class Key, class Value>
+void SizedDict<Key, Value>::set_aligned(const Key &key, const bool aligned) {
+  expect_writable(*this);
+  m_items.at(key).set_aligned(aligned);
+}
+
+template <class Key, class Value>
 core::Dict<Key, Value> union_(const SizedDict<Key, Value> &a,
                               const SizedDict<Key, Value> &b,
                               std::string_view opname) {

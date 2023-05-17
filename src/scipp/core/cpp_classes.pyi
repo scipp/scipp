@@ -138,6 +138,9 @@ class Coords:
     def popitem(self) -> Tuple[str, Any]:
         ...
 
+    def set_aligned(self, key: str, aligned: bool) -> None:
+        ...
+
     def update(self, other: Any=None, /, **kwargs) -> None:
         ...
 
@@ -1859,6 +1862,10 @@ class Variable:
         ...
 
     def _repr_html_(self) -> str:
+        ...
+
+    @property
+    def aligned(self) -> bool:
         ...
 
     def all(self, dim: Optional[str]=None) -> VariableLikeType:

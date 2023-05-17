@@ -143,6 +143,8 @@ public:
   bool item_applies_to(const Key &key, const Dimensions &dims) const;
   bool is_edges(const Key &key, std::optional<Dim> dim = std::nullopt) const;
 
+  void set_aligned(const Key &key, bool aligned);
+
 protected:
   Sizes m_sizes;
   holder_type m_items;

@@ -19,6 +19,7 @@ namespace scipp::variable {
 /// Return a deep copy of a Variable.
 Variable copy(const Variable &var) {
   Variable out(empty_like(var));
+  out.set_aligned(var.is_aligned());
   out.data().copy(var, out);
   return out;
 }

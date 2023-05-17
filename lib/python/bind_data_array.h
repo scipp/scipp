@@ -263,6 +263,13 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name,
           "items", [](T &self) { return str_items_view(self); },
           py::return_value_policy::move, py::keep_alive<0, 1>(),
           R"(view on self's items)")
+      .def(
+          "set_aligned",
+          // cppcheck-suppress constParameter  # False positive.
+          [](T &self, const std::string &key, const bool aligned) {
+            self.set_aligned(typename T::key_type{key}, aligned);
+          },
+          py::arg("key"), py::arg("aligned"))
       .def("_ipython_key_completions_",
            [](const T &self) {
              py::list out;

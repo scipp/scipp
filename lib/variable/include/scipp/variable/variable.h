@@ -143,6 +143,9 @@ public:
   [[nodiscard]] bool is_readonly() const noexcept;
   [[nodiscard]] bool is_same(const Variable &other) const noexcept;
 
+  [[nodiscard]] bool is_aligned() const noexcept;
+  void set_aligned(bool aligned) noexcept;
+
   [[nodiscard]] Variable as_const() const;
 
   auto &unchecked_dims() { return m_dims; }
@@ -164,6 +167,7 @@ private:
   scipp::index m_offset{0};
   VariableConceptHandle m_object;
   bool m_readonly{false};
+  bool m_aligned{true};
 };
 
 /// Factory function for Variable supporting "keyword arguments"
