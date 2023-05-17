@@ -19,7 +19,7 @@ Examples include:
 - Attributes in NeXus (typically using HDF5 attrs)
 - ``xarray.Variable.attrs`` and ``xarray.DataArray.attrs``
 
-Scipp's ``DataArray`` supports ``attrs`` (note that currently ``attrs`` doubles as a place to store "unaligned" coords, which not directly related to the topic discussed here).
+Scipp's ``DataArray`` supports ``attrs`` (note that currently ``attrs`` doubles as a place to store "unaligned" coords, which is not directly related to the topic discussed here).
 However, ``scipp.Variable`` does not support ``attrs``.
 In part this is due to a reduced need for ``attrs``, since Scipp has native support for physical units, which is one of the recurring applications of ``attrs`` in other libraries.
 The other reason is legacy:
@@ -44,12 +44,12 @@ However, Scipp's main purpose is *processing* data, not *storing* data.
 The attributes encountered in files strictly describe the dataset as it was stored, and are not necessarily valid after processing.
 
 If we consider binary operations such as addition or division, it is not clear how attributes should be handled if they mismatch between operands or are missing in one operand.
-Xarray attempt to do this, but results are not fully consistent, and furthermore lead to complications of some interfaces with keyword arguments the define attribute handling.
+Xarray attempts to do this, but results are not fully consistent, and furthermore lead to complications of some interfaces with keyword arguments to define attribute handling.
 
 Ignoring binary operations, one could argue that keeping attributes is still useful for unary operations where those problems do not arise.
 However, attributes can nevertheless become invalid:
 For example, a "long_name" attribute may no longer be valid after a unit conversion, or applying a unary function such as ``np.power`` or ``np.sin``.
-The same holds for a "units" attribute &mdash; and issue Scipp avoids for having native handling of units.
+The same holds for a "units" attribute &mdash; and issue Scipp avoids by having native handling of units.
 Here is a brief code example how this goes badly wrong in Xarray:
 
 .. code-block:: python
@@ -84,7 +84,7 @@ We could consider support for *storing* attributes, but *dropping* them on any m
 An HDF5 dataset can then be loaded including its attributes, while at the same time avoiding the risk of invalidating attributes in operations.
 However, unless we lock down mutable access to ``scipp.Variable.values`` such a mechanism would always have loopholes.
 Is there a viable and safe mechanism for such attributes?
-Is the there a sufficient number of application where such a restricted attribute support would be worthwhile?
+Is there a sufficient number of application where such a restricted attribute support would be worthwhile?
 
 Decision
 --------
