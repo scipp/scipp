@@ -117,9 +117,11 @@ TEST(Variable, is_readonly) {
   auto var = makeVariable<double>(Values{1});
   EXPECT_FALSE(var.is_readonly());
   EXPECT_FALSE(Variable(var).is_readonly()); // propagated on copy
+  EXPECT_FALSE(copy(var).is_readonly());     // reset on deep copy
   auto const_var = var.as_const();
   EXPECT_TRUE(const_var.is_readonly());
   EXPECT_TRUE(Variable(const_var).is_readonly()); // propagated on copy
+  EXPECT_FALSE(copy(const_var).is_readonly());    // reset on deep copy
 }
 
 TEST(Variable, is_aligned_default) {
@@ -133,6 +135,34 @@ TEST(Variable, can_set_aligned_flag) {
   EXPECT_FALSE(var.is_aligned());
   var.set_aligned(true);
   EXPECT_TRUE(var.is_aligned());
+}
+
+TEST(Variable, alignment_copy_behavior) {
+  auto var = makeVariable<double>(Values{1});
+  EXPECT_TRUE(Variable(var).is_aligned());
+  EXPECT_TRUE(copy(var).is_aligned());
+  var.set_aligned(false);
+  EXPECT_FALSE(Variable(var).is_aligned());
+  EXPECT_FALSE(copy(var).is_aligned());
+}
+
+TEST(Variable, alignment_copy_assignment_behavior) {
+  auto var = makeVariable<double>(Values{1});
+  const auto var2 = var;
+  EXPECT_TRUE(var2.is_aligned());
+  var.set_aligned(false);
+  const auto var3 = var;
+  EXPECT_FALSE(var3.is_aligned());
+}
+
+TEST(Variable, alignment_move_assignment_behavior) {
+  auto var = makeVariable<double>(Values{1});
+  const auto var2 = std::move(var);
+  EXPECT_TRUE(var2.is_aligned());
+  var = makeVariable<double>(Values{1});
+  var.set_aligned(false);
+  const auto var3 = std::move(var);
+  EXPECT_FALSE(var3.is_aligned());
 }
 
 TEST(Variable, is_valid) {
