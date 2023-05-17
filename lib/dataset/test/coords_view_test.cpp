@@ -163,7 +163,7 @@ TEST(SizedDictTest, rename_dims) {
   }
 }
 
-TEST(SizedDictTest, preserves_alignement) {
+TEST(SizedDictTest, insertion_preserves_alignement) {
   const auto a = makeVariable<int>(Dims{Dim{"a"}}, Shape{2}, Values{1, 2});
   auto b = makeVariable<int>(Dims{Dim{"b"}}, Shape{2}, Values{3, 4});
   auto c = makeVariable<int>(Dims{Dim{"c"}}, Shape{2}, Values{5, 6});
