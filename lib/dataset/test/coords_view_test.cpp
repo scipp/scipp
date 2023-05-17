@@ -173,7 +173,7 @@ TEST(SizedDictTest, set_alignment) {
   EXPECT_TRUE(coords.at(Dim("b")).is_aligned());
   EXPECT_TRUE(coords.at(Dim("c")).is_aligned());
 
-  // This has no effect.
+  // This has no effect because coords.at returns a new variable.
   coords.at(Dim("b")).set_aligned(false);
   EXPECT_TRUE(coords.at(Dim("b")).is_aligned());
 
