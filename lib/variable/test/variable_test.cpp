@@ -137,6 +137,15 @@ TEST(Variable, can_set_aligned_flag) {
   EXPECT_TRUE(var.is_aligned());
 }
 
+TEST(Variable, set_aligned_doesn_not_affect_copies) {
+  auto var = makeVariable<double>(Values{1});
+  auto shallow_copy = Variable(var);
+  auto deep_copy = copy(var);
+  var.set_aligned(false);
+  EXPECT_TRUE(shallow_copy.is_aligned());
+  EXPECT_TRUE(deep_copy.is_aligned());
+}
+
 TEST(Variable, alignment_copy_behavior) {
   auto var = makeVariable<double>(Values{1});
   EXPECT_TRUE(Variable(var).is_aligned());
