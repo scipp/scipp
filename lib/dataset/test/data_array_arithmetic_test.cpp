@@ -11,7 +11,7 @@
 
 using namespace scipp;
 
-TEST(DataArrayArithmeticTest, fail_op_non_matching_coords) {
+TEST(DataArrayArithmeticTest, fail_op_non_matching_aligned_coords) {
   auto coord_1 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   auto coord_2 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
   auto data = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
@@ -19,6 +19,19 @@ TEST(DataArrayArithmeticTest, fail_op_non_matching_coords) {
   const DataArray da_2(data, {{Dim::X, coord_2}, {Dim::Y, data}});
   EXPECT_THROW_DISCARD(da_1 + da_2, except::CoordMismatchError);
   EXPECT_THROW_DISCARD(da_1 - da_2, except::CoordMismatchError);
+}
+
+TEST(DataArrayArithmeticTest, aligned_coord_overrides_unaligned) {
+  auto coord_1 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+  auto coord_2 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
+  coord_2.set_aligned(false);
+  auto data = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
+  const DataArray da_1(data, {{Dim::X, coord_1}});
+  const DataArray da_2(data, {{Dim::X, coord_2}});
+
+  const auto res = da_1 + da_2;
+  EXPECT_EQ(res.coords()[Dim::X], coord_1);
+  EXPECT_TRUE(res.coords()[Dim::X].is_aligned());
 }
 
 TEST(DataArrayArithmeticTest, merge_coords_alignment) {
@@ -49,8 +62,8 @@ TEST(DataArrayArithmeticTest, merge_coords_alignment) {
 
   const auto res = da_1 + da_2;
   EXPECT_TRUE(res.coords()[Dim::X].is_aligned());
-  EXPECT_FALSE(res.coords()[Dim::Y].is_aligned());
-  EXPECT_FALSE(res.coords()[Dim::Z].is_aligned());
+  EXPECT_TRUE(res.coords()[Dim::Y].is_aligned());
+  EXPECT_TRUE(res.coords()[Dim::Z].is_aligned());
   EXPECT_TRUE(res.coords()[Dim{"1.4"}].is_aligned());
   EXPECT_FALSE(res.coords()[Dim{"1.5"}].is_aligned());
   EXPECT_TRUE(res.coords()[Dim{"2.4"}].is_aligned());
