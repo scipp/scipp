@@ -219,3 +219,12 @@ TEST_F(Variable_comparison_operators, readonly) {
   EXPECT_TRUE(readonly.is_readonly());
   expect_eq(var, readonly);
 }
+
+TEST_F(Variable_comparison_operators, aligned) {
+  const auto var = makeVariable<double>(Values{1.0});
+  auto unaligned = var;
+  unaligned.set_aligned(false);
+  EXPECT_TRUE(var.is_aligned());
+  EXPECT_FALSE(unaligned.is_aligned());
+  expect_eq(var, unaligned);
+}
