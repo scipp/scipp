@@ -14,7 +14,7 @@ add_executable(
   bins_reduction_test.cpp
   bins_view_test.cpp
   bin_test.cpp
-  concatenate_test.cpp
+  concat_test.cpp
   coords_view_test.cpp
   copy_test.cpp
   counts_test.cpp

@@ -103,6 +103,13 @@ TEST_F(Concatenate1DTest, sharing) {
   EXPECT_FALSE(out.masks()["mask_1"].is_same(da1.masks()["mask_1"]));
 }
 
+TEST_F(Concatenate1DTest, alignment_flag) {
+  const auto d = concat2(a, b, Dim::X);
+
+  EXPECT_TRUE(d.coords()[Dim::X].is_aligned());
+  EXPECT_FALSE(d["data_1"].attrs()[Dim("label_1")].is_aligned());
+}
+
 class Concatenate1DHistogramTest : public ::testing::Test {
 protected:
   Concatenate1DHistogramTest() {

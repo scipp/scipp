@@ -117,10 +117,13 @@ DataArray concat(const scipp::span<const DataArray> das, const Dim dim) {
   const auto &coords = map(das, get_coords);
   for (auto &&[d, coord] : concat_maps(map(das, get_meta), dim)) {
     if (d == dim || std::any_of(coords.begin(), coords.end(),
-                                [&d = d](auto &_) { return _.contains(d); }))
+                                [&d = d](auto &_) { return _.contains(d); })) {
+      coord.set_aligned(true);
       out.coords().set(d, std::move(coord));
-    else
+    } else {
+      coord.set_aligned(false);
       out.attrs().set(d, std::move(coord));
+    }
   }
   return out;
 }
