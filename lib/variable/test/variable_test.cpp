@@ -137,7 +137,7 @@ TEST(Variable, can_set_aligned_flag) {
   EXPECT_TRUE(var.is_aligned());
 }
 
-TEST(Variable, set_aligned_doesn_not_affect_copies) {
+TEST(Variable, set_aligned_does_not_affect_copies) {
   auto var = makeVariable<double>(Values{1});
   auto shallow_copy = Variable(var);
   auto deep_copy = copy(var);
@@ -156,22 +156,30 @@ TEST(Variable, alignment_copy_behavior) {
 }
 
 TEST(Variable, alignment_copy_assignment_behavior) {
-  auto var = makeVariable<double>(Values{1});
-  const auto var2 = var;
+  auto var1 = makeVariable<double>(Values{1});
+  auto var2 = makeVariable<double>(Values{1});
+  var2.set_aligned(false);
+  var2 = var1;
   EXPECT_TRUE(var2.is_aligned());
-  var.set_aligned(false);
-  const auto var3 = var;
-  EXPECT_FALSE(var3.is_aligned());
+
+  var1.set_aligned(false);
+  var2.set_aligned(true);
+  var2 = var1;
+  EXPECT_FALSE(var2.is_aligned());
 }
 
 TEST(Variable, alignment_move_assignment_behavior) {
-  auto var = makeVariable<double>(Values{1});
-  const auto var2 = std::move(var);
+  auto var1 = makeVariable<double>(Values{1});
+  auto var2 = makeVariable<double>(Values{1});
+  var2.set_aligned(false);
+  var2 = std::move(var1);
   EXPECT_TRUE(var2.is_aligned());
-  var = makeVariable<double>(Values{1});
-  var.set_aligned(false);
-  const auto var3 = std::move(var);
-  EXPECT_FALSE(var3.is_aligned());
+
+  auto var3 = makeVariable<double>(Values{1});
+  var3.set_aligned(false);
+  var2.set_aligned(true);
+  var2 = std::move(var3);
+  EXPECT_FALSE(var2.is_aligned());
 }
 
 TEST(Variable, is_valid) {
