@@ -143,7 +143,9 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
   for (const auto &c : {edges, groups})
     for (const auto &coord : c) {
       dims.emplace(coord.dims().inner());
-      out_coords.insert_or_assign(coord.dims().inner(), copy(coord));
+      auto to_insert = copy(coord);
+      to_insert.set_aligned(true);
+      out_coords.insert_or_assign(coord.dims().inner(), std::move(to_insert));
     }
   for (const auto &[dim_, coord] : coords)
     if (!rebinned(coord) && !out_coords.contains(dim_))
