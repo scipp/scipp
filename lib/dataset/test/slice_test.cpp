@@ -15,6 +15,29 @@
 using namespace scipp;
 using namespace scipp::dataset;
 
+auto drop_unaligned_edges(const DataArray &da) {
+  // Given a dataset
+  //   ds = Dataset({'a': scalar(0), 'b': arange('x', 2)},
+  //                coords={'x': arange('x', 2)})
+  // we treat x as a coord for b but not for a because otherwise, it would be
+  // both a bin-edge and regular coordinate.
+  // So we have
+  //   ds['a'] == DataArray(scalar(0), coords={})
+  // This means that for some datasets d['x', 0]['a'] != d['a']['x', 0]
+  // as the latter may have additional coordinates.
+  //
+  // This function removes all such coordinates to simplify
+  // comparisons in tests.
+  auto out = da;
+  for (const auto &[key, coord] : da.coords()) {
+    if (!coord.is_aligned() &&
+        std::any_of(coord.dims().begin(), coord.dims().end(),
+                    [&da](const Dim dim) { return !da.dims().contains(dim); }))
+      out.coords().erase(key);
+  }
+  return out;
+}
+
 class Dataset3DTest : public ::testing::Test {
 protected:
   Dataset3DTest() : dataset(factory.make()) {}
@@ -203,30 +226,14 @@ INSTANTIATE_TEST_SUITE_P(NonEmptyRanges, Dataset3DTest_slice_range_z,
 TEST_P(Dataset3DTest_slice_x, slice) {
   const auto pos = GetParam();
   auto expected = reference(pos);
+  auto sliced = dataset.slice({Dim::X, pos});
+  EXPECT_EQ(sliced, expected);
+
   // Non-range slice converts aligned coord to unaligned coord
   for (const auto &name :
        {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"})
-    for (const auto &attr : {"x", "labels_x"})
-      expected[name].attrs().set(
-          Dim(attr), dataset.coords()[Dim(attr)].slice({Dim::X, pos}));
-  EXPECT_EQ(dataset.slice({Dim::X, pos}), expected);
-}
-
-TEST_P(Dataset3DTest_slice_x, slice_bin_edges) {
-  const auto pos = GetParam();
-  auto datasetWithEdges = dataset;
-  datasetWithEdges.setCoord(Dim::X, makeRandom({Dim::X, 5}));
-  auto expected = reference(pos);
-  // Non-range slice converts aligned coord to unaligned coord
-  for (const auto &name :
-       {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"}) {
-    expected[name].attrs().set(
-        Dim("labels_x"),
-        datasetWithEdges.coords()[Dim("labels_x")].slice({Dim::X, pos}));
-    expected[name].attrs().set(Dim::X, datasetWithEdges.coords()[Dim::X].slice(
-                                           {Dim::X, pos, pos + 2}));
-  }
-  EXPECT_EQ(datasetWithEdges.slice({Dim::X, pos}), expected);
+    for (const auto &coord_name : {"x", "labels_x"})
+      EXPECT_FALSE(sliced[name].coords()[Dim{coord_name}].is_aligned());
 }
 
 TEST_P(Dataset3DTest_slice_y, slice) {
@@ -257,16 +264,17 @@ TEST_P(Dataset3DTest_slice_z, slice) {
   reference.setCoord(Dim("labels_xy"), dataset.coords()[Dim("labels_xy")]);
   reference.setData("data_zyx", dataset["data_zyx"].slice({Dim::Z, pos}));
   reference.setData("data_xyz", dataset["data_xyz"].slice({Dim::Z, pos}));
-  for (const auto &name : {"data_zyx", "data_xyz"}) {
-    for (const auto &attr : {"z", "labels_z"})
-      reference[name].attrs().set(
-          Dim(attr), dataset.coords()[Dim(attr)].slice({Dim::Z, pos}));
-  }
   for (const auto &item : dataset)
     if (!reference.contains(item.name()))
       reference.setData(item.name(), copy(item));
 
-  EXPECT_EQ(dataset.slice({Dim::Z, pos}), reference);
+  auto sliced = dataset.slice({Dim::Z, pos});
+  EXPECT_EQ(sliced, reference);
+
+  for (const auto &name : {"data_zyx", "data_xyz"}) {
+    for (const auto &coord_name : {"z", "labels_z"})
+      EXPECT_FALSE(sliced[name].coords()[Dim{coord_name}].is_aligned());
+  }
 }
 
 TEST_P(Dataset3DTest_slice_range_x, slice) {
@@ -512,7 +520,8 @@ TYPED_TEST(DataArrayView3DTest, slice_single_with_edges) {
         if (item.dims().contains(dim)) {
           EXPECT_ANY_THROW(item.slice({dim, -1}));
           for (scipp::index i = 0; i < item.dims()[dim]; ++i)
-            EXPECT_EQ(item.slice({dim, i}), d.slice({dim, i})[item.name()]);
+            EXPECT_EQ(drop_unaligned_edges(item.slice({dim, i})),
+                      d.slice({dim, i})[item.name()]);
           EXPECT_ANY_THROW(item.slice({dim, item.dims()[dim]}));
         } else {
           EXPECT_ANY_THROW(item.slice({dim, 0}));
@@ -608,56 +617,6 @@ TYPED_TEST(DataArrayView3DTest, slice_with_edges) {
       }
     }
   }
-}
-
-class CoordToAttrMappingTest : public ::testing::Test {
-protected:
-  Variable x = makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
-  DataArray a{x, {{Dim::X, x}}};
-};
-
-template <class T> void test_coord_aligned_to_unaligned_mapping(T &o) {
-  EXPECT_FALSE(o.attrs().contains(Dim::X));
-  EXPECT_FALSE(o.slice({Dim::X, 2, 3}).attrs().contains(Dim::X));
-  EXPECT_TRUE(o.slice({Dim::X, 2}).attrs().contains(Dim::X));
-  EXPECT_EQ(o.slice({Dim::X, 2}).attrs()[Dim::X], 3.0 * units::one);
-  EXPECT_TRUE(
-      o.slice({Dim::X, 2, 3}).slice({Dim::X, 0}).attrs().contains(Dim::X));
-  EXPECT_EQ(o.slice({Dim::X, 2, 3}).slice({Dim::X, 0}).attrs()[Dim::X],
-            3.0 * units::one);
-}
-
-template <class T> void test_dataset_coord_aligned_to_unaligned_mapping(T &o) {
-  EXPECT_TRUE(o.coords().contains(Dim::X));
-  EXPECT_TRUE(o.slice({Dim::X, 2, 3}).coords().contains(Dim::X));
-  // No mapping to "unaligned coords" of *dataset* (does not exist)
-  EXPECT_FALSE(o.slice({Dim::X, 2}).coords().contains(Dim::X));
-  // Mapped "aligned" coord of dataset to unaligned coord (of item)
-  EXPECT_TRUE(o.slice({Dim::X, 2})["a"].attrs().contains(Dim::X));
-  EXPECT_EQ(o.slice({Dim::X, 2})["a"].attrs()[Dim::X], 3.0 * units::one);
-  EXPECT_TRUE(
-      o.slice({Dim::X, 2, 3}).slice({Dim::X, 0})["a"].attrs().contains(Dim::X));
-  EXPECT_EQ(o.slice({Dim::X, 2, 3}).slice({Dim::X, 0})["a"].attrs()[Dim::X],
-            3.0 * units::one);
-}
-
-TEST_F(CoordToAttrMappingTest, DataArrayView) {
-  test_coord_aligned_to_unaligned_mapping(a);
-}
-
-TEST_F(CoordToAttrMappingTest, DataArrayConstView) {
-  const DataArray &const_a = a;
-  test_coord_aligned_to_unaligned_mapping(const_a);
-}
-
-TEST_F(CoordToAttrMappingTest, DatasetView) {
-  Dataset d({{"a", a}});
-  test_dataset_coord_aligned_to_unaligned_mapping(d);
-}
-
-TEST_F(CoordToAttrMappingTest, DatasetConstView) {
-  const Dataset d({{"a", a}});
-  test_dataset_coord_aligned_to_unaligned_mapping(d);
 }
 
 TEST(SliceWithStrideTest, throws_SliceError_if_bin_edges_along_slice_dim) {

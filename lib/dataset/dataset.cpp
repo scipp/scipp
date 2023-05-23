@@ -182,15 +182,7 @@ void Dataset::setData(const std::string &name, DataArray data) {
 /// Return slice of the dataset along given dimension with given extents.
 Dataset Dataset::slice(const Slice &s) const {
   Dataset out(slice_map(m_coords.sizes(), m_data, s));
-  auto [coords, attrs] = m_coords.slice_coords(s);
-  out.m_coords = std::move(coords);
-  for (auto &&item : out.m_data) {
-    Attrs item_attrs(out.m_coords.sizes(), {});
-    for (const auto &[dim, coord] : attrs)
-      if (m_coords.item_applies_to(dim, m_data.at(item.first).dims()))
-        item_attrs.set(dim, coord.as_const());
-    item.second.attrs() = item.second.attrs().merge_from(item_attrs);
-  }
+  out.m_coords = m_coords.slice_coords(s);
   out.m_readonly = true;
   return out;
 }

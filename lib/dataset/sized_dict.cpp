@@ -236,16 +236,15 @@ constexpr auto unaligned_by_dim_slice = [](const auto &coords, const auto &key,
 }
 
 template <class Key, class Value>
-std::tuple<SizedDict<Key, Value>, SizedDict<Key, Value>>
+SizedDict<Key, Value>
 SizedDict<Key, Value>::slice_coords(const Slice &params) const {
   auto coords = slice(params);
   coords.m_readonly = false;
-  SizedDict<Key, Value> attrs(coords.sizes(), {});
   for (const auto &[key, var] : *this)
     if (unaligned_by_dim_slice(*this, key, var, params))
-      attrs.set(key, coords.extract(key));
+      coords.set_aligned(key, false);
   coords.m_readonly = true;
-  return {std::move(coords), std::move(attrs)};
+  return coords;
 }
 
 template <class Key, class Value>
