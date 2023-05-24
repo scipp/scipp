@@ -35,7 +35,7 @@ Release Notes
    Jan-Lukas Wynen :sup:`a`\ ,
    and Sunyoung Yoo :sup:`a`
 
-vRELEASE_PLACEHOLDER
+v23.05.0
 --------
 
 Features
