@@ -13,7 +13,8 @@ def test_slice_bins_by_int_label():
     param = sc.scalar(4, unit='m')
     result = da.bins['param', param]
     assert result.dims == da.dims
-    assert sc.identical(result.attrs['param'], param)
+    assert sc.identical(result.coords['param'], param)
+    assert not result.coords['param'].aligned
     assert sc.identical(
         result,
         da.group(
@@ -31,9 +32,10 @@ def test_slice_bins_by_int_label_range():
     result = da.bins['param', start:stop]
     assert result.dims == da.dims
     assert sc.identical(
-        result.attrs['param'],
+        result.coords['param'],
         sc.array(dims=['param'], values=[4, 6], unit='s', dtype='int64'),
     )
+    assert not result.coords['param'].aligned
     assert result.bins.size().sum().value == 20  # 2x10 events
     assert sc.identical(
         result,
@@ -51,8 +53,9 @@ def test_slice_bins_by_float_label_range():
     result = da.bins['z', start:stop]
     assert result.dims == da.dims
     assert sc.identical(
-        result.attrs['z'], sc.array(dims=['z'], values=[0.1, 0.2], unit='m')
+        result.coords['z'], sc.array(dims=['z'], values=[0.1, 0.2], unit='m')
     )
+    assert not result.coords['z'].aligned
     assert sc.identical(
         result, da.bin(z=sc.array(dims=['z'], values=[0.1, 0.2], unit='m')).squeeze()
     )
