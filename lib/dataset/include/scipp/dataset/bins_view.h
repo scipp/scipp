@@ -76,6 +76,9 @@ public:
   scipp::index count(const key_type &key) const noexcept {
     return mapView().count(key);
   }
+  void set_aligned(const key_type &key, const bool aligned) {
+    mapView().set_aligned(key, aligned);
+  }
 
 private:
   decltype(auto) mapView() const { return m_map(this->buffer()); }

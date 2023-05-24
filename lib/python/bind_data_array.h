@@ -134,6 +134,17 @@ void bind_pop(pybind11::class_<T, Ignored...> &view) {
 }
 
 template <class T, class... Ignored>
+void bind_set_aligned(pybind11::class_<T, Ignored...> &view) {
+  view.def(
+      "set_aligned",
+      // cppcheck-suppress constParameter  # False positive.
+      [](T &self, const std::string &key, const bool aligned) {
+        self.set_aligned(typename T::key_type{key}, aligned);
+      },
+      py::arg("key"), py::arg("aligned"));
+}
+
+template <class T, class... Ignored>
 void bind_dict_clear(pybind11::class_<T, Ignored...> &view) {
   view.def("clear", [](T &self) {
     std::vector<typename T::key_type> keys;
@@ -244,6 +255,7 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name,
   bind_dict_update(view, [](T &self, const units::Dim &key,
                             const Variable &value) { self.set(key, value); });
   bind_pop(view);
+  bind_set_aligned(view);
   bind_dict_clear(view);
   bind_dict_popitem(view);
   bind_dict_copy(view);
@@ -263,13 +275,6 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name,
           "items", [](T &self) { return str_items_view(self); },
           py::return_value_policy::move, py::keep_alive<0, 1>(),
           R"(view on self's items)")
-      .def(
-          "set_aligned",
-          // cppcheck-suppress constParameter  # False positive.
-          [](T &self, const std::string &key, const bool aligned) {
-            self.set_aligned(typename T::key_type{key}, aligned);
-          },
-          py::arg("key"), py::arg("aligned"))
       .def("_ipython_key_completions_",
            [](const T &self) {
              py::list out;
