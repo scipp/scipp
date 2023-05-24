@@ -16,17 +16,9 @@ using namespace scipp;
 using namespace scipp::dataset;
 
 auto drop_unaligned_edges(const DataArray &da) {
-  // Given a dataset
-  //   ds = Dataset({'a': scalar(0), 'b': arange('x', 2)},
-  //                coords={'x': arange('x', 2)})
-  // we treat x as a coord for b but not for a because otherwise, it would be
-  // both a bin-edge and regular coordinate.
-  // So we have
-  //   ds['a'] == DataArray(scalar(0), coords={})
-  // This means that for some datasets d['x', 0]['a'] != d['a']['x', 0]
-  // as the latter may have additional coordinates.
+  // See #3148
   //
-  // This function removes all such coordinates to simplify
+  // This function removes all offending coordinates to simplify
   // comparisons in tests.
   auto out = da;
   for (const auto &[key, coord] : da.coords()) {

@@ -150,6 +150,21 @@ void Dataset::setData(const std::string &name, Variable data,
     rebuildDims();
 }
 
+namespace {
+auto coords_to_skip(const Dataset &dst, DataArray &src) {
+  std::vector<Dim> to_skip;
+  for (auto &&[dim, coord] : src.coords())
+    if (const auto it = dst.coords().find(dim); it != dst.coords().end()) {
+      if (it->second.is_aligned() == coord.is_aligned())
+        expect::matching_coord(dim, coord, it->second, "set coord");
+      else if (it->second.is_aligned())
+        // Aligned coords overwrite unaligned.
+        to_skip.push_back(dim);
+    }
+  return to_skip;
+}
+} // namespace
+
 /// Set (insert or replace) data from a DataArray with a given name.
 ///
 /// Coordinates, masks, and attributes of the data array are added to the
@@ -163,14 +178,13 @@ void Dataset::setData(const std::string &name, DataArray data) {
         it->attrs() == data.attrs() && it->coords() == data.coords())
       return;
   }
-  for (auto &&[dim, coord] : data.coords())
-    if (const auto it = m_coords.find(dim); it != m_coords.end())
-      expect::matching_coord(dim, coord, it->second, "set coord");
+  const auto to_skip = coords_to_skip(*this, data);
 
   setData(name, data.data());
   auto &item = m_data[name];
   for (auto &&[dim, coord] : data.coords())
-    if (const auto it = m_coords.find(dim); it == m_coords.end())
+    if (m_coords.find(dim) == m_coords.end() &&
+        std::find(to_skip.begin(), to_skip.end(), dim) == to_skip.end())
       setCoord(dim, std::move(coord));
   // Attrs might be shadowed by a coord, but this cannot be prevented in
   // general, so instead of failing here we proceed (and may fail later if

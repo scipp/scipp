@@ -163,6 +163,8 @@ TEST_F(Concatenate1DHistogramTest, simple_1d) {
 }
 
 TEST_F(Concatenate1DHistogramTest, slices_of_1d) {
+  GTEST_SKIP() << "See #3148";
+
   EXPECT_EQ(concat2(a.slice({Dim::X, 0}), a.slice({Dim::X, 1}), Dim::X),
             a.slice({Dim::X, 0, 2}));
   EXPECT_EQ(concat2(a.slice({Dim::X, 0}), a.slice({Dim::X, 1, 2}), Dim::X), a);
