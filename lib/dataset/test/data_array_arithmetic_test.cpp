@@ -79,16 +79,16 @@ TEST(DataArrayArithmeticTest, operation_does_not_overwrite_input_alignment) {
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
 
   coord_3.set_aligned(false);
-  const DataArray da_1(
+  DataArray da_1(
       data,
       {{Dim::X, coord_1}, {Dim::Y, copy(coord_2)}, {Dim::Z, copy(coord_3)}});
 
   coord_2.set_aligned(false);
   coord_3.set_aligned(true);
-  const DataArray da_2(
-      data, {{Dim::X, coord_1}, {Dim::Y, coord_2}, {Dim::Z, coord_3}});
+  DataArray da_2(data,
+                 {{Dim::X, coord_1}, {Dim::Y, coord_2}, {Dim::Z, coord_3}});
 
-  const auto res = da_1 + da_2;
+  [[maybe_unused]] const auto res = da_1 + da_2;
   EXPECT_TRUE(da_1.coords()[Dim::X].is_aligned());
   EXPECT_TRUE(da_1.coords()[Dim::Y].is_aligned());
   EXPECT_FALSE(da_1.coords()[Dim::Z].is_aligned());
