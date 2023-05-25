@@ -130,15 +130,26 @@ bool BinArrayModel<T>::equals_nan(const Variable &a, const Variable &b) const {
          equals_nan_impl(a.values<bucket<T>>(), b.values<bucket<T>>());
 }
 
+namespace {
+template <class T>
+void copy_coord_alignment(const T &src_buffer, Variable &dest) {
+  auto &dest_buffer = dest.bin_buffer<T>();
+  for (const auto &[key, var] : src_buffer.coords())
+    dest_buffer.coords().set_aligned(key, var.is_aligned());
+}
+} // namespace
+
 template <class T>
 void BinArrayModel<T>::copy(const Variable &src, Variable &dest) const {
   if constexpr (std::is_same_v<T, Variable>) {
     copy_data(src, dest);
+    dest.set_aligned(src.is_aligned());
   } else {
     const auto &[indices0, dim0, buffer0] = src.constituents<T>();
     auto &&[indices1, dim1, buffer1] = dest.constituents<T>();
     static_cast<void>(dim1);
     copy_slices(buffer0, buffer1, dim0, indices0, indices1);
+    copy_coord_alignment(buffer0, dest);
   }
 }
 
