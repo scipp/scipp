@@ -91,7 +91,8 @@ of variances.)");
   variable.def("_rename_dims", &rename_dims<Variable>)
       .def_property_readonly("dtype", &Variable::dtype)
       .def_property_readonly(
-          "aligned", [](const Variable &self) { return self.is_aligned(); });
+          "aligned", [](const Variable &self) { return self.is_aligned(); },
+          "Alignment flag for coordinates.");
 
   bind_common_operators(variable);
 

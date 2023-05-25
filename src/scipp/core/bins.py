@@ -229,6 +229,11 @@ class Bins:
         self.constituents['data'].unit = unit
 
     @property
+    def aligned(self) -> bool:
+        """Alignment flag for coordinates."""
+        return self.constituents['data'].aligned
+
+    @property
     def constituents(self) -> Dict[str, Union[str, _cpp.Variable, _cpp.DataArray]]:
         """Constituents of binned data, as supported by :py:func:`sc.bins`."""
         return _call_cpp_func(_cpp.bins_constituents, self._data())
