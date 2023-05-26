@@ -115,15 +115,14 @@ DataArray concat(const scipp::span<const DataArray> das, const Dim dim) {
   auto out = DataArray(concat(map(das, get_data), dim), {},
                        concat_maps(map(das, get_masks), dim));
   const auto &coords = map(das, get_coords);
-  for (auto &&[d, coord] : concat_maps(map(das, get_meta), dim)) {
-    if (d == dim || std::any_of(coords.begin(), coords.end(),
-                                [&d = d](auto &_) { return _.contains(d); })) {
-      coord.set_aligned(true);
-      out.coords().set(d, std::move(coord));
-    } else {
-      coord.set_aligned(false);
-      out.attrs().set(d, std::move(coord));
-    }
+  for (auto &&[d, coord] : concat_maps(coords, dim)) {
+    coord.set_aligned(d == dim ||
+                      std::any_of(coords.begin(), coords.end(),
+                                  [&d = d](auto &_) { return _.contains(d); }));
+    out.coords().set(d, std::move(coord));
+  }
+  for (auto &&[d, attr] : concat_maps(map(das, get_attrs), dim)) {
+    out.attrs().set(d, std::move(attr));
   }
   return out;
 }

@@ -104,10 +104,20 @@ TEST_F(Concatenate1DTest, sharing) {
 }
 
 TEST_F(Concatenate1DTest, alignment_flag) {
-  const auto d = concat2(a, b, Dim::X);
+  const auto d1 = concat2(a, b, Dim::X);
+  EXPECT_TRUE(d1.coords()[Dim::X].is_aligned());
 
-  EXPECT_TRUE(d.coords()[Dim::X].is_aligned());
-  EXPECT_FALSE(d["data_1"].attrs()[Dim("label_1")].is_aligned());
+  a.coords().set_aligned(Dim::X, false);
+  const auto d2 = concat2(a, b, Dim::X);
+  EXPECT_TRUE(d2.coords()[Dim::X].is_aligned());
+
+  b.coords().set_aligned(Dim::X, false);
+  const auto d3 = concat2(a, b, Dim::X);
+  EXPECT_TRUE(d3.coords()[Dim::X].is_aligned());
+
+  a.coords().set_aligned(Dim::X, true);
+  const auto d4 = concat2(a, b, Dim::X);
+  EXPECT_TRUE(d4.coords()[Dim::X].is_aligned());
 }
 
 class Concatenate1DHistogramTest : public ::testing::Test {
