@@ -40,7 +40,7 @@ pluggy==1.0.0
     # via tox
 pyproject-api==1.5.1
     # via tox
-requests==2.28.2
+requests==2.31.0
     # via -r requirements/ci.in
 smmap==5.0.0
     # via gitdb
