@@ -230,7 +230,7 @@ class Bins:
 
     @property
     def aligned(self) -> bool:
-        """Alignment flag for coordinates."""
+        """Alignment flag for coordinates of bin elements."""
         return self.constituents['data'].aligned
 
     @property

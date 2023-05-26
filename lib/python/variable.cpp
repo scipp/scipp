@@ -92,7 +92,24 @@ of variances.)");
       .def_property_readonly("dtype", &Variable::dtype)
       .def_property_readonly(
           "aligned", [](const Variable &self) { return self.is_aligned(); },
-          "Alignment flag for coordinates.");
+          R"(Alignment flag for coordinates.
+
+Indicates whether a coordinate is aligned.
+Aligned coordinates must match between the operands of binary operations while
+unaligned coordinates are dropped on mismatch.
+
+This flag is only meaningful when the variable is contained in a ``coords``
+``dict``.
+
+It cannot be set on a variable directly;
+instead, use :meth:`sc.Coords.set_aligned`.
+
+For *binned* coordinates of a binned data array ``da``,
+``da.bins.coords[name].aligned`` should always be ``True``.
+The alignment w.r.t. the events can be queried via
+``da.bins.coords[name].bins.aligned`` and set via
+``da.bins.coords.set_aligned(name, alignment)``.
+)");
 
   bind_common_operators(variable);
 
