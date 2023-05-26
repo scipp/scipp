@@ -374,22 +374,32 @@ core::Dict<Key, Value> union_(const SizedDict<Key, Value> &a,
                               const SizedDict<Key, Value> &b,
                               std::string_view opname) {
   core::Dict<Key, Value> out;
-  out.reserve(out.size() + b.size());
-  for (const auto &[key, val] : a)
-    out.insert_or_assign(key, val);
-  for (const auto &[key, val] : b) {
-    if (const auto it = out.find(key); it != out.end()) {
-      if (it->second.is_aligned() && val.is_aligned())
-        expect::matching_coord(key, it->second, val, opname);
-      else if (val.is_aligned())
-        it->second = val; // aligned overrides unaligned
-      else if (!it->second.is_aligned() && !equals_nan(it->second, val))
-        out.erase(key); // conflicting unaligned coords
-      // else: matching unaligned coord or coord in out is aligned and
-      //       takes precedence over unaligned coord in b.
-    } else
-      out.insert_or_assign(key, val);
+  out.reserve(a.size() + b.size());
+  for (const auto &[key, val_a] : a)
+    if (val_a.is_aligned())
+      out.insert_or_assign(key, val_a);
+
+  for (const auto &[key, val_b] : b) {
+    if (const auto it = a.find(key); it != a.end()) {
+      auto &&val_a = it->second;
+      if (val_a.is_aligned() && val_b.is_aligned())
+        expect::matching_coord(key, val_a, val_b, opname);
+      else if (val_b.is_aligned())
+        // aligned b takes precedence over unaligned a
+        out.insert_or_assign(key, val_b);
+      else if (!val_a.is_aligned()) {
+        // neither is aligned
+        if (equals_nan(val_a, val_b))
+          out.insert_or_assign(key, val_b);
+        // else: mismatching unaligned coords => do not include in out
+      }
+      // else: aligned a takes precedence over unaligned b
+    } else {
+      if (val_b.is_aligned())
+        out.insert_or_assign(key, val_b);
+    }
   }
+
   return out;
 }
 

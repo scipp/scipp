@@ -11,116 +11,138 @@
 
 using namespace scipp;
 
-TEST(DataArrayArithmeticTest, fail_op_non_matching_aligned_coords) {
-  auto coord_1 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-  auto coord_2 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
-  auto data = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
-  const DataArray da_1(data, {{Dim::X, coord_1}, {Dim::Y, data}});
-  const DataArray da_2(data, {{Dim::X, coord_2}, {Dim::Y, data}});
-  EXPECT_THROW_DISCARD(da_1 + da_2, except::CoordMismatchError);
-  EXPECT_THROW_DISCARD(da_1 - da_2, except::CoordMismatchError);
+class DataArrayArithmeticCoordTest : public ::testing::Test {
+protected:
+  DataArrayArithmeticCoordTest()
+      : aligned_1(makeVariable<double>(Dims{dim}, Shape{len}, Values{1, 2, 3})),
+        aligned_2(makeVariable<double>(Dims{dim}, Shape{len}, Values{4, 5, 6})),
+        unaligned_1(aligned_1), unaligned_2(aligned_2),
+        data(makeVariable<double>(Dims{dim}, Shape{len}, Values{10, 20, 30})) {
+    unaligned_1.set_aligned(false);
+    unaligned_2.set_aligned(false);
+  }
+
+  Dim dim = Dim::X;
+  scipp::index len = 3;
+  Variable aligned_1;
+  Variable aligned_2;
+  Variable unaligned_1;
+  Variable unaligned_2;
+  Variable data;
+};
+
+TEST_F(DataArrayArithmeticCoordTest, aligned_aligned_match) {
+  const DataArray a(data, {{dim, aligned_1}});
+  const DataArray b(data, {{dim, aligned_1}});
+  const auto res = a + b;
+  EXPECT_EQ(size(res.coords()), 1);
+  EXPECT_EQ(res.coords()[dim], aligned_1);
+  EXPECT_TRUE(res.coords()[dim].is_aligned());
 }
 
-TEST(DataArrayArithmeticTest, drop_non_matching_unaligned_coords) {
-  auto coord_1 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-  auto coord_2 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
-  coord_1.set_aligned(false);
-  coord_2.set_aligned(false);
-  auto data = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
-  const DataArray da_1(data, {{Dim::X, coord_1}, {Dim::Y, data}});
-  const DataArray da_2(data, {{Dim::X, coord_2}, {Dim::Y, data}});
-  EXPECT_FALSE((da_1 + da_2).coords().contains(Dim::X));
-  EXPECT_FALSE((da_1 - da_2).coords().contains(Dim::X));
+TEST_F(DataArrayArithmeticCoordTest, aligned_aligned_mismatch) {
+  const DataArray a(data, {{dim, aligned_1}});
+  const DataArray b(data, {{dim, aligned_2}});
+  EXPECT_THROW_DISCARD(a + b, except::CoordMismatchError);
+  EXPECT_THROW_DISCARD(b + a, except::CoordMismatchError);
 }
 
-TEST(DataArrayArithmeticTest, preserve_matching_matching_unaligned_coords) {
-  auto coord_1 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-  coord_1.set_aligned(false);
-  auto data = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
-  const DataArray da_1(data, {{Dim::X, coord_1}, {Dim::Y, data}});
-  const DataArray da_2(data, {{Dim::X, coord_1}, {Dim::Y, data}});
-  EXPECT_EQ((da_1 + da_2).coords()[Dim::X], coord_1);
-  EXPECT_EQ((da_2 - da_1).coords()[Dim::X], coord_1);
+TEST_F(DataArrayArithmeticCoordTest, aligned_missing) {
+  const DataArray a(data, {{dim, aligned_1}});
+  const DataArray b(data, {});
+
+  const auto res_1 = a + b;
+  EXPECT_EQ(size(res_1.coords()), 1);
+  EXPECT_EQ(res_1.coords()[dim], aligned_1);
+  EXPECT_TRUE(res_1.coords()[dim].is_aligned());
+
+  const auto res_2 = b + a;
+  EXPECT_EQ(size(res_2.coords()), 1);
+  EXPECT_EQ(res_2.coords()[dim], aligned_1);
+  EXPECT_TRUE(res_2.coords()[dim].is_aligned());
 }
 
-TEST(DataArrayArithmeticTest, aligned_coord_overrides_unaligned) {
-  auto coord_1 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-  auto coord_2 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
-  coord_2.set_aligned(false);
-  auto data = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
-  const DataArray da_1(data, {{Dim::X, coord_1}});
-  const DataArray da_2(data, {{Dim::X, coord_2}});
+TEST_F(DataArrayArithmeticCoordTest, aligned_unaligned_match) {
+  const DataArray a(data, {{dim, aligned_1}});
+  const DataArray b(data, {{dim, unaligned_1}});
 
-  const auto res1 = da_1 + da_2;
-  EXPECT_EQ(res1.coords()[Dim::X], coord_1);
-  EXPECT_TRUE(res1.coords()[Dim::X].is_aligned());
+  const auto res_1 = a + b;
+  EXPECT_EQ(size(res_1.coords()), 1);
+  EXPECT_EQ(res_1.coords()[dim], aligned_1);
+  EXPECT_TRUE(res_1.coords()[dim].is_aligned());
+  EXPECT_TRUE(aligned_1.is_aligned());
+  EXPECT_FALSE(unaligned_1.is_aligned());
 
-  const auto res2 = da_2 + da_1;
-  EXPECT_EQ(res2.coords()[Dim::X], coord_1);
-  EXPECT_TRUE(res2.coords()[Dim::X].is_aligned());
+  const auto res_2 = b + a;
+  EXPECT_EQ(size(res_2.coords()), 1);
+  EXPECT_EQ(res_2.coords()[dim], aligned_1);
+  EXPECT_TRUE(res_2.coords()[dim].is_aligned());
+  EXPECT_TRUE(aligned_1.is_aligned());
+  EXPECT_FALSE(unaligned_1.is_aligned());
 }
 
-TEST(DataArrayArithmeticTest, merge_coords_alignment) {
-  const auto coord_1 =
-      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-  auto coord_2 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
-  auto coord_3 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
-  auto coord_4 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
-  auto coord_5 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
-  const auto data =
-      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
+TEST_F(DataArrayArithmeticCoordTest, aligned_unaligned_mismatch) {
+  const DataArray a(data, {{dim, aligned_1}});
+  const DataArray b(data, {{dim, unaligned_2}});
 
-  coord_3.set_aligned(false);
-  coord_5.set_aligned(false);
-  const DataArray da_1(data, {{Dim::X, coord_1},
-                              {Dim::Y, copy(coord_2)},
-                              {Dim::Z, copy(coord_3)},
-                              {Dim{"1.4"}, coord_4},
-                              {Dim{"1.5"}, coord_5}});
+  const auto res_1 = a + b;
+  EXPECT_EQ(size(res_1.coords()), 1);
+  EXPECT_EQ(res_1.coords()[dim], aligned_1);
+  EXPECT_TRUE(res_1.coords()[dim].is_aligned());
+  EXPECT_TRUE(aligned_1.is_aligned());
+  EXPECT_FALSE(unaligned_2.is_aligned());
 
-  coord_2.set_aligned(false);
-  coord_3.set_aligned(true);
-  const DataArray da_2(data, {{Dim::X, coord_1},
-                              {Dim::Y, coord_2},
-                              {Dim::Z, coord_3},
-                              {Dim{"2.4"}, coord_4},
-                              {Dim{"2.5"}, coord_5}});
-
-  const auto res = da_1 + da_2;
-  EXPECT_TRUE(res.coords()[Dim::X].is_aligned());
-  EXPECT_TRUE(res.coords()[Dim::Y].is_aligned());
-  EXPECT_TRUE(res.coords()[Dim::Z].is_aligned());
-  EXPECT_TRUE(res.coords()[Dim{"1.4"}].is_aligned());
-  EXPECT_FALSE(res.coords()[Dim{"1.5"}].is_aligned());
-  EXPECT_TRUE(res.coords()[Dim{"2.4"}].is_aligned());
-  EXPECT_FALSE(res.coords()[Dim{"2.5"}].is_aligned());
+  const auto res_2 = b + a;
+  EXPECT_EQ(size(res_2.coords()), 1);
+  EXPECT_EQ(res_2.coords()[dim], aligned_1);
+  EXPECT_TRUE(res_2.coords()[dim].is_aligned());
+  EXPECT_TRUE(aligned_1.is_aligned());
+  EXPECT_FALSE(unaligned_2.is_aligned());
 }
 
-TEST(DataArrayArithmeticTest, operation_does_not_overwrite_input_alignment) {
-  const auto coord_1 =
-      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-  auto coord_2 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
-  auto coord_3 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
-  const auto data =
-      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
+TEST_F(DataArrayArithmeticCoordTest, unaligned_unaligned_match) {
+  const DataArray a(data, {{dim, unaligned_1}});
+  const DataArray b(data, {{dim, unaligned_1}});
 
-  coord_3.set_aligned(false);
-  DataArray da_1(
-      data,
-      {{Dim::X, coord_1}, {Dim::Y, copy(coord_2)}, {Dim::Z, copy(coord_3)}});
+  const auto res = a + b;
+  EXPECT_EQ(size(res.coords()), 1);
+  EXPECT_EQ(res.coords()[dim], unaligned_1);
+  EXPECT_FALSE(res.coords()[dim].is_aligned());
+}
 
-  coord_2.set_aligned(false);
-  coord_3.set_aligned(true);
-  DataArray da_2(data,
-                 {{Dim::X, coord_1}, {Dim::Y, coord_2}, {Dim::Z, coord_3}});
+TEST_F(DataArrayArithmeticCoordTest, unaligned_unaligned_mismatch) {
+  const DataArray a(data, {{dim, unaligned_1}});
+  const DataArray b(data, {{dim, unaligned_2}});
 
-  [[maybe_unused]] const auto res = da_1 + da_2;
-  EXPECT_TRUE(da_1.coords()[Dim::X].is_aligned());
-  EXPECT_TRUE(da_1.coords()[Dim::Y].is_aligned());
-  EXPECT_FALSE(da_1.coords()[Dim::Z].is_aligned());
-  EXPECT_TRUE(da_2.coords()[Dim::X].is_aligned());
-  EXPECT_FALSE(da_2.coords()[Dim::Y].is_aligned());
-  EXPECT_TRUE(da_2.coords()[Dim::Z].is_aligned());
+  const auto res_1 = a + b;
+  EXPECT_TRUE(res_1.coords().empty());
+
+  const auto res_2 = b + a;
+  EXPECT_TRUE(res_2.coords().empty());
+}
+
+// This is needed to ensure (a + b) + c == a + (b + c)
+// e.g. if a, b, c all have an unaligned coord x, all with different values.
+TEST_F(DataArrayArithmeticCoordTest, unaligned_missing) {
+  const DataArray a(data, {{dim, unaligned_1}});
+  const DataArray b(data, {});
+
+  const auto res_1 = a + b;
+  EXPECT_TRUE(res_1.coords().empty());
+
+  const auto res_2 = b + a;
+  EXPECT_TRUE(res_2.coords().empty());
+}
+
+TEST(DataArrayArithmeticTest, produces_correct_data) {
+  const DataArray a(
+      makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{1, 2}),
+      {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{3, 4})}});
+  const DataArray b(
+      makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{10, 20}),
+      {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{3, 4})}});
+  EXPECT_EQ((a + b).data(), a.data() + b.data());
+  EXPECT_EQ((a - b).data(), a.data() - b.data());
 }
 
 TEST(DataArrayArithmeticTest, sum_dataset_columns_via_DataArray) {
