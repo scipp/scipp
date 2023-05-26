@@ -85,7 +85,7 @@ std::string array_to_string(const T &arr,
     }
     s += element_to_string(arr[i], unit);
   }
-  s.resize(s.size() - 2);
+  s.resize(s.size() > 1 ? s.size() - 2 : 1);
   s += "]";
   return s;
 }
