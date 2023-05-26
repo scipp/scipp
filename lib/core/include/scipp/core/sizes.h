@@ -6,7 +6,11 @@
 
 #include <array>
 
+// Warnings are raised by boost small_vector with gcc12
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overread"
 #include <boost/container/small_vector.hpp>
+#pragma GCC diagnostic pop
 
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"

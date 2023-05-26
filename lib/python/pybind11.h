@@ -7,7 +7,13 @@
 // When a module is split into several compilation units, *all* compilation
 // units must include the extra headers with type casters, otherwise we get ODR
 // errors/warning. This header provides all pybind11 includes that we are using.
+
+// Warnings are raised by eigen headers with gcc12
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #include <pybind11/eigen.h>
+#pragma GCC diagnostic pop
+
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
