@@ -383,8 +383,10 @@ core::Dict<Key, Value> union_(const SizedDict<Key, Value> &a,
         expect::matching_coord(key, it->second, val, opname);
       else if (val.is_aligned())
         it->second = val; // aligned overrides unaligned
-      else if (!it->second.is_aligned())
+      else if (!it->second.is_aligned() && !equals_nan(it->second, val))
         out.erase(key); // conflicting unaligned coords
+      // else: matching unaligned coord or coord in out is aligned and
+      //       takes precedence over unaligned coord in b.
     } else
       out.insert_or_assign(key, val);
   }

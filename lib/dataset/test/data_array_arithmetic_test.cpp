@@ -33,6 +33,16 @@ TEST(DataArrayArithmeticTest, drop_non_matching_unaligned_coords) {
   EXPECT_FALSE((da_1 - da_2).coords().contains(Dim::X));
 }
 
+TEST(DataArrayArithmeticTest, preserve_matching_matching_unaligned_coords) {
+  auto coord_1 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+  coord_1.set_aligned(false);
+  auto data = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
+  const DataArray da_1(data, {{Dim::X, coord_1}, {Dim::Y, data}});
+  const DataArray da_2(data, {{Dim::X, coord_1}, {Dim::Y, data}});
+  EXPECT_EQ((da_1 + da_2).coords()[Dim::X], coord_1);
+  EXPECT_EQ((da_2 - da_1).coords()[Dim::X], coord_1);
+}
+
 TEST(DataArrayArithmeticTest, aligned_coord_overrides_unaligned) {
   auto coord_1 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   auto coord_2 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
