@@ -52,13 +52,26 @@ template <class Key, class Value>
 SizedDict<Key, Value> &
 SizedDict<Key, Value>::operator=(SizedDict &&other) noexcept = default;
 
+namespace {
+template <class Item, class Key, class Value, class Compare>
+bool item_in_other(const Item &item, const SizedDict<Key, Value> &other,
+                   Compare &&compare_data) {
+  const auto &[name, data] = item;
+  if (!other.contains(name))
+    return false;
+  const auto &other_data = other[name];
+  return compare_data(data, other_data) &&
+         data.is_aligned() == other_data.is_aligned();
+}
+} // namespace
+
 template <class Key, class Value>
 bool SizedDict<Key, Value>::operator==(const SizedDict &other) const {
   if (size() != other.size())
     return false;
   return std::all_of(this->begin(), this->end(), [&other](const auto &item) {
-    const auto &[name, data] = item;
-    return other.contains(name) && data == other[name];
+    return item_in_other(item, other,
+                         [](const auto &x, const auto &y) { return x == y; });
   });
 }
 
@@ -68,8 +81,8 @@ bool equals_nan(const SizedDict<Key, Value> &a,
   if (a.size() != b.size())
     return false;
   return std::all_of(a.begin(), a.end(), [&b](const auto &item) {
-    const auto &[name, data] = item;
-    return b.contains(name) && equals_nan(data, b[name]);
+    return item_in_other(
+        item, b, [](const auto &x, const auto &y) { return equals_nan(x, y); });
   });
 }
 
