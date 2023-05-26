@@ -1,3 +1,3 @@
 confuse
 graphlib-backport
-numpy>=1.20,<1.24 # upper limit because of numba
+numpy>=1.20
