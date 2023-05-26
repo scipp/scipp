@@ -118,6 +118,7 @@ def test_multi_output_produced_regardless_of_targets(a):
     graph = {('a2', 'a3'): split_a}
     original = sc.DataArray(data=a, coords={'a': a})
     expected = sc.DataArray(data=a, coords={'a': a, 'a2': a, 'a3': a})
+    expected.coords.set_aligned('a', False)
     # a3 is computed regardless of whether it is requested.
     assert sc.identical(original.transform_coords(['a2', 'a3'], graph=graph), expected)
     assert sc.identical(original.transform_coords(['a2'], graph=graph), expected)
@@ -125,6 +126,7 @@ def test_multi_output_produced_regardless_of_targets(a):
     graph = {'a2': split_a}
     expected = sc.DataArray(data=a, coords={'a': a, 'a2': a})
     expected = expected.rename_dims({'a': 'a2'})
+    expected.coords.set_aligned('a', False)
     # a3 is not computed because it is not part of the graph.
     assert sc.identical(original.transform_coords(['a2'], graph=graph), expected)
 

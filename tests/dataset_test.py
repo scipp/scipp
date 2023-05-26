@@ -388,6 +388,7 @@ def test_slice():
             'b': sc.scalar(1.0),
         }
     )
+    expected.coords.set_aligned('x', False)
     assert sc.identical(d['x', 1], expected)
 
 
@@ -411,8 +412,10 @@ def test_chained_slicing():
     expected['a'] = sc.Variable(dims=['y'], values=np.arange(501.0, 600.0, 10.0))
     expected['b'] = sc.scalar(1.5)
     expected.coords['x'] = x['x', 1:3]
+    expected.coords.set_aligned('x', False)
     expected.coords['y'] = sc.Variable(dims=['y'], values=np.arange(11.0))
     expected.coords['z'] = z['z', 5:7]
+    expected.coords.set_aligned('z', False)
 
     assert sc.identical(d['x', 1]['z', 5], expected)
 
