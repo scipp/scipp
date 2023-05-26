@@ -21,7 +21,7 @@ TEST(DataArrayArithmeticTest, fail_op_non_matching_aligned_coords) {
   EXPECT_THROW_DISCARD(da_1 - da_2, except::CoordMismatchError);
 }
 
-TEST(DataArrayArithmeticTest, fail_op_non_matching_unaligned_coords) {
+TEST(DataArrayArithmeticTest, drop_non_matching_unaligned_coords) {
   auto coord_1 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   auto coord_2 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
   coord_1.set_aligned(false);
@@ -29,8 +29,8 @@ TEST(DataArrayArithmeticTest, fail_op_non_matching_unaligned_coords) {
   auto data = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
   const DataArray da_1(data, {{Dim::X, coord_1}, {Dim::Y, data}});
   const DataArray da_2(data, {{Dim::X, coord_2}, {Dim::Y, data}});
-  EXPECT_THROW_DISCARD(da_1 + da_2, except::CoordMismatchError);
-  EXPECT_THROW_DISCARD(da_1 - da_2, except::CoordMismatchError);
+  EXPECT_FALSE((da_1 + da_2).coords().contains(Dim::X));
+  EXPECT_FALSE((da_1 - da_2).coords().contains(Dim::X));
 }
 
 TEST(DataArrayArithmeticTest, aligned_coord_overrides_unaligned) {
@@ -41,9 +41,13 @@ TEST(DataArrayArithmeticTest, aligned_coord_overrides_unaligned) {
   const DataArray da_1(data, {{Dim::X, coord_1}});
   const DataArray da_2(data, {{Dim::X, coord_2}});
 
-  const auto res = da_1 + da_2;
-  EXPECT_EQ(res.coords()[Dim::X], coord_1);
-  EXPECT_TRUE(res.coords()[Dim::X].is_aligned());
+  const auto res1 = da_1 + da_2;
+  EXPECT_EQ(res1.coords()[Dim::X], coord_1);
+  EXPECT_TRUE(res1.coords()[Dim::X].is_aligned());
+
+  const auto res2 = da_2 + da_1;
+  EXPECT_EQ(res2.coords()[Dim::X], coord_1);
+  EXPECT_TRUE(res2.coords()[Dim::X].is_aligned());
 }
 
 TEST(DataArrayArithmeticTest, merge_coords_alignment) {

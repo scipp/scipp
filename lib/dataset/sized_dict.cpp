@@ -379,12 +379,12 @@ core::Dict<Key, Value> union_(const SizedDict<Key, Value> &a,
     out.insert_or_assign(key, val);
   for (const auto &[key, val] : b) {
     if (const auto it = out.find(key); it != out.end()) {
-      if (it->second.is_aligned() == val.is_aligned())
+      if (it->second.is_aligned() && val.is_aligned())
         expect::matching_coord(key, it->second, val, opname);
       else if (val.is_aligned())
         it->second = val; // aligned overrides unaligned
       else if (!it->second.is_aligned())
-        out.erase(key); // conflicting unaligned coord
+        out.erase(key); // conflicting unaligned coords
     } else
       out.insert_or_assign(key, val);
   }
