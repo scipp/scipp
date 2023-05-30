@@ -19,7 +19,10 @@ auto make_unique_for_overwrite_array(const scipp::index size) {
   // error which happens when we try to handle both arrays and 'normal' pointers
   // using std::remove_extent_t<T> as the type we pass to the unique_ptr.
   using Ptr = std::unique_ptr<T[]>;
-  return Ptr(new T[size]);
+  if ((size <= PTRDIFF_MAX) && (size >= 0))
+    return Ptr(new T[size]);
+  throw std::runtime_error(
+      "Allocation size is either negative or exceeds PTRDIFF_MAX");
 }
 
 /// Tag for requesting default-initialization in methods of class element_array.
