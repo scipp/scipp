@@ -75,7 +75,7 @@ Here is a brief code example illustrating how this goes badly wrong in Xarray:
 
     np.power(da, 2).plot()
 
-This resulting plot is labelled with "Temperature [K]" on the y-axis, which is clearly wrong and dangerously misleading.
+The resulting plot is labelled with "Temperature [K]" on the y-axis, which is clearly wrong and dangerously misleading.
 
 We see this as an indicator that any attempt to handle "unknown" attributes is bound to fail.
 While we acknowledge that there are valid and important use cases for attributes, we believe that the risk of introducing invalid attributes in operations applied to variables or data arrays is too high and outweighs the benefits of supporting attributes.
