@@ -204,6 +204,15 @@ if outdated:
         "style='color:white;text-decoration:underline;'"
         ">latest</a> version. ⚠️"
     )
+else:
+    html_theme_options["announcement"] = (
+        "We are hiring! "
+        "Come work with us as a <a href='https://europeanspallationsource.se/careers/"
+        "vacancies?rmpage=job&rmjob=1532&rmlang=UK' "
+        "style='color:white;text-decoration:underline;'"
+        ">Software Engineer (Python)</a> "
+        "at the European Spallation Source."
+    )
 
 html_logo = "_static/logo-2022.svg"
 html_favicon = "_static/favicon.ico"
