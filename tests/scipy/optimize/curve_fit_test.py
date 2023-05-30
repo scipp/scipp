@@ -66,7 +66,7 @@ def test_should_raise_TypeError_when_sigma_given_as_param():
 
 def test_should_raise_ValueError_when_sigma_contains_zeros():
     da = array1d(size=50)
-    da.variances = np.random.default_rng().normal(0.0, 0.1, size=50)
+    da.variances = np.random.default_rng().normal(0.0, 0.1, size=50) ** 2
     da['xx', 21].variance = 0.0
     with pytest.raises(ValueError):
         curve_fit(func, da)
@@ -74,7 +74,7 @@ def test_should_raise_ValueError_when_sigma_contains_zeros():
 
 def test_does_not_raise_when_sigma_contains_zeros_that_is_masked():
     da = array1d(size=50)
-    da.variances = np.random.default_rng().normal(0.0, 0.1, size=50)
+    da.variances = np.random.default_rng().normal(0.0, 0.1, size=50) ** 2
     da.masks['m'] = sc.full(value=False, sizes=da.sizes)
     da['xx', 21].variance = 0.0
     da.masks['m']['xx', 21] = True
