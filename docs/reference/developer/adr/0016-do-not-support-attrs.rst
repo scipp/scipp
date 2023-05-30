@@ -37,7 +37,7 @@ Analysis
 
 Addition of ``scipp.Variable.attrs`` would add a significant amount complexity to the code base.
 It would likely also impact performance in some applications, as we would need to handle references to Python objects (requiring GIL acquisition in C++ code) or shared pointers.
-It could furthermore increase the chance of running into problems with Python garbage collection similar to the existing (low-propability) issues described in https://github.com/scipp/scipp/issues/2813.
+It could furthermore increase the chance of running into problems with Python garbage collection similar to the existing (low-probability) issues described in https://github.com/scipp/scipp/issues/2813.
 
 Aside from these technical hurdles (which could in principle be overcome or partially ignored) we need to consider the conceptual aspects.
 Is a dictionary of arbitrary attributes a good solution for a real problem?
