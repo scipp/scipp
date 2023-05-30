@@ -3,7 +3,13 @@
 /// @file
 /// @author Simon Heybrock
 #pragma once
+
+// Warnings are raised by eigen headers with gcc12
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #include <Eigen/Core>
+#pragma GCC diagnostic pop
+
 #include <Eigen/Geometry>
 
 #include "scipp/common/numeric.h"
