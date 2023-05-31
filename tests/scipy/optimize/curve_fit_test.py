@@ -282,10 +282,9 @@ def test_jac_is_not_implemented():
 
 def test_can_pass_extra_kwargs():
     data = array1d()
-    data[2] = np.inf
 
-    # does not raise
-    curve_fit(func, data, check_finite=False)
+    # Does not raise
+    curve_fit(func, data, method='lm')
 
     with pytest.raises(ValueError):
-        curve_fit(func, data, check_finite=True)
+        curve_fit(func, data, method='bad_method')
