@@ -64,75 +64,76 @@ jobs:
           name: conda-package-${{ matrix.variant.os }}-py${{ matrix.python-version }}
           path: conda/package/*/scipp*.tar.bz2
 
-  build_sdist:
-    name: Build SDist
-    needs: check_release
-    runs-on: ubuntu-20.04
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: true
-        fetch-depth: 0  # history required so cmake can determine version
+  # build_sdist:
+  #   name: Build SDist
+  #   needs: check_release
+  #   runs-on: ubuntu-20.04
+  #   steps:
+  #   - uses: actions/checkout@v3
+  #     with:
+  #       submodules: true
+  #       fetch-depth: 0  # history required so cmake can determine version
 
-    - name: Build SDist
-      run: pipx run build --sdist
+  #   - name: Build SDist
+  #     run: pipx run build --sdist
 
-    - name: Check metadata
-      run: pipx run twine check dist/*
+  #   - name: Check metadata
+  #     run: pipx run twine check dist/*
 
-    - uses: actions/upload-artifact@v3
-      with:
-        name: dist
-        path: dist/*.tar.gz
+  #   - uses: actions/upload-artifact@v3
+  #     with:
+  #       name: dist
+  #       path: dist/*.tar.gz
 
-  build_wheels:
-    name: Wheels on ${{ matrix.os }}-${{ matrix.build }}
-    needs: check_release
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-20.04, macos-11, windows-2019]
-        build: [cp38, cp39, cp310, cp311]
+  # build_wheels:
+  #   name: Wheels on ${{ matrix.os }}-${{ matrix.build }}
+  #   needs: check_release
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [ubuntu-20.04, macos-11, windows-2019]
+  #       build: [cp38, cp39, cp310, cp311]
 
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: true
-        fetch-depth: 0  # history required so cmake can determine version
+  #   steps:
+  #   - uses: actions/checkout@v3
+  #     with:
+  #       submodules: true
+  #       fetch-depth: 0  # history required so cmake can determine version
 
-    - uses: pypa/cibuildwheel@v2.13.0
-      env:
-        CIBW_BUILD: ${{ matrix.build }}-*
-        MACOSX_DEPLOYMENT_TARGET: "10.15"
+  #   - uses: pypa/cibuildwheel@v2.13.0
+  #     env:
+  #       CIBW_BUILD: ${{ matrix.build }}-*
+  #       MACOSX_DEPLOYMENT_TARGET: "10.15"
 
-    - name: Verify clean directory
-      run: git diff --exit-code
-      shell: bash
+  #   - name: Verify clean directory
+  #     run: git diff --exit-code
+  #     shell: bash
 
-    - name: Upload wheels
-      uses: actions/upload-artifact@v3
-      with:
-        name: dist
-        path: wheelhouse/*.whl
+  #   - name: Upload wheels
+  #     uses: actions/upload-artifact@v3
+  #     with:
+  #       name: dist
+  #       path: wheelhouse/*.whl
 
-  upload_pypi:
-    name: Deploy PyPI
-    needs: [build_wheels, build_sdist, build_conda]
-    runs-on: ubuntu-20.04
-    if: github.event_name == 'release' && github.event.action == 'published'
+  # upload_pypi:
+  #   name: Deploy PyPI
+  #   needs: [build_wheels, build_sdist, build_conda]
+  #   runs-on: ubuntu-20.04
+  #   if: github.event_name == 'release' && github.event.action == 'published'
 
-    steps:
-      - uses: actions/download-artifact@v3
-      - uses: actions/setup-python@v3
-      - uses: pypa/gh-action-pypi-publish@v1.8.6
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_TOKEN }}
+  #   steps:
+  #     - uses: actions/download-artifact@v3
+  #     - uses: actions/setup-python@v3
+  #     - uses: pypa/gh-action-pypi-publish@v1.8.6
+  #       with:
+  #         user: __token__
+  #         password: ${{ secrets.PYPI_TOKEN }}
 
   upload_conda:
     name: Deploy Conda Forge
-    needs: [build_wheels, build_sdist, build_conda]
+    needs: [build_conda]
+    # needs: [build_wheels, build_sdist, build_conda]
     runs-on: ubuntu-20.04
     if: github.event_name == 'release' && github.event.action == 'published'
 
@@ -167,7 +168,8 @@ jobs:
           echo "replaced=$(python docs/version.py --version=${GITHUB_REF_NAME} --action=get-replaced)" >> $GITHUB_OUTPUT
 
   docs:
-    needs: [upload_conda, upload_pypi, manage-versions]
+    needs: [upload_conda, manage-versions]
+    # needs: [upload_conda, upload_pypi, manage-versions]
     uses: ./.github/workflows/docs.yml
     with:
       publish: ${{ github.event_name == 'release' && github.event.action == 'published' }}
