@@ -32,7 +32,7 @@ to_string(const std::pair<std::string, Variable> &attr);
 
 SCIPP_VARIABLE_EXPORT std::string
 format_variable(const Variable &variable,
-                std::optional<Sizes> datasetSizes = std::nullopt);
+                const std::optional<Sizes> &datasetSizes = std::nullopt);
 SCIPP_VARIABLE_EXPORT std::string
 format_variable_compact(const Variable &variable);
 

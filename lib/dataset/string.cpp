@@ -37,7 +37,7 @@ template <class T> auto sorted(const T &map) {
 
 namespace {
 std::string format_variable(const std::string &key, const Variable &variable,
-                            const std::optional<Sizes> datasetSizes,
+                            const std::optional<Sizes> &datasetSizes,
                             const bool show_alignment = false) {
   std::stringstream s;
   s << (show_alignment && variable.is_aligned() ? '*' : ' ') << tab_minus_1
