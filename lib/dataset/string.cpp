@@ -23,6 +23,7 @@ std::ostream &operator<<(std::ostream &os, const Dataset &dataset) {
 }
 
 constexpr const char *tab = "  ";
+constexpr const char *tab_minus_1 = " ";
 
 template <class T> auto sorted(const T &map) {
   using core::to_string;
@@ -36,9 +37,11 @@ template <class T> auto sorted(const T &map) {
 
 namespace {
 std::string format_variable(const std::string &key, const Variable &variable,
-                            const std::optional<Sizes> datasetSizes) {
+                            const std::optional<Sizes> datasetSizes,
+                            const bool show_alignment = false) {
   std::stringstream s;
-  s << tab << std::left << std::setw(24) << key
+  s << (show_alignment && variable.is_aligned() ? '*' : ' ') << tab_minus_1
+    << std::left << std::setw(24) << key
     << format_variable(variable, datasetSizes) << '\n';
   return s.str();
 }
@@ -75,9 +78,9 @@ std::string do_to_string(const D &dataset, const std::string &id,
 
   if (!dataset.coords().empty()) {
     s << shift << "Coordinates:\n";
-    Coords map = dataset.coords();
+    const Coords &map = dataset.coords();
     for (const auto &[name, var] : sorted(map))
-      s << shift << format_variable(name, var, dims);
+      s << shift << format_variable(name, var, dims, true);
   }
 
   if constexpr (std::is_same_v<D, DataArray>) {
