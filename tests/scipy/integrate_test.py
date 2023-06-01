@@ -58,7 +58,7 @@ def test_constant(integ):
     da = sc.DataArray(data=sc.full_like(x, 1.2), coords={'xx': x})
     expected = da['xx', 0].copy()
     expected.data *= 3.0
-    del expected.attrs['xx']
+    del expected.coords['xx']
     assert sc.identical(integ(da, 'xx'), expected)
 
 

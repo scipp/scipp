@@ -384,10 +384,11 @@ def test_slice():
     )
     expected = sc.Dataset(
         data={
-            'a': sc.DataArray(1.0 * sc.units.one, attrs={'x': 1.0 * sc.units.one}),
+            'a': sc.DataArray(1.0 * sc.units.one, coords={'x': 1.0 * sc.units.one}),
             'b': sc.scalar(1.0),
         }
     )
+    expected.coords.set_aligned('x', False)
     assert sc.identical(d['x', 1], expected)
 
 
@@ -410,11 +411,11 @@ def test_chained_slicing():
     expected = sc.Dataset()
     expected['a'] = sc.Variable(dims=['y'], values=np.arange(501.0, 600.0, 10.0))
     expected['b'] = sc.scalar(1.5)
-    expected['a'].attrs['x'] = x['x', 1:3]
-    expected['b'].attrs['x'] = x['x', 1:3]
-    expected['a'].attrs['z'] = z['z', 5:7]
-    expected['b'].attrs['z'] = z['z', 5:7]
+    expected.coords['x'] = x['x', 1:3]
+    expected.coords.set_aligned('x', False)
     expected.coords['y'] = sc.Variable(dims=['y'], values=np.arange(11.0))
+    expected.coords['z'] = z['z', 5:7]
+    expected.coords.set_aligned('z', False)
 
     assert sc.identical(d['x', 1]['z', 5], expected)
 

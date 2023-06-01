@@ -3,26 +3,16 @@
 # @author Jan-Lukas Wynen
 
 import dataclasses
-from enum import Enum, auto
 from typing import Optional
 
 from ..core import Variable
-
-
-class Destination(Enum):
-    coord = auto()
-    attr = auto()
-
-    @property
-    def other(self):
-        return Destination.attr if self == Destination.coord else Destination.coord
 
 
 @dataclasses.dataclass
 class Coord:
     dense: Optional[Variable]  # for dense variable or bin-coord
     event: Optional[Variable]
-    destination: Destination
+    aligned: bool
     usages: int = -1  # negative for unlimited usages
 
     @property

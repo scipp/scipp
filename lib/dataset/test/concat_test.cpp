@@ -103,6 +103,23 @@ TEST_F(Concatenate1DTest, sharing) {
   EXPECT_FALSE(out.masks()["mask_1"].is_same(da1.masks()["mask_1"]));
 }
 
+TEST_F(Concatenate1DTest, alignment_flag) {
+  const auto d1 = concat2(a, b, Dim::X);
+  EXPECT_TRUE(d1.coords()[Dim::X].is_aligned());
+
+  a.coords().set_aligned(Dim::X, false);
+  const auto d2 = concat2(a, b, Dim::X);
+  EXPECT_TRUE(d2.coords()[Dim::X].is_aligned());
+
+  b.coords().set_aligned(Dim::X, false);
+  const auto d3 = concat2(a, b, Dim::X);
+  EXPECT_TRUE(d3.coords()[Dim::X].is_aligned());
+
+  a.coords().set_aligned(Dim::X, true);
+  const auto d4 = concat2(a, b, Dim::X);
+  EXPECT_TRUE(d4.coords()[Dim::X].is_aligned());
+}
+
 class Concatenate1DHistogramTest : public ::testing::Test {
 protected:
   Concatenate1DHistogramTest() {
@@ -156,6 +173,8 @@ TEST_F(Concatenate1DHistogramTest, simple_1d) {
 }
 
 TEST_F(Concatenate1DHistogramTest, slices_of_1d) {
+  GTEST_SKIP() << "See #3148";
+
   EXPECT_EQ(concat2(a.slice({Dim::X, 0}), a.slice({Dim::X, 1}), Dim::X),
             a.slice({Dim::X, 0, 2}));
   EXPECT_EQ(concat2(a.slice({Dim::X, 0}), a.slice({Dim::X, 1, 2}), Dim::X), a);

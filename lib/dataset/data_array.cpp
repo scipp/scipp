@@ -127,9 +127,8 @@ Coords DataArray::meta() const {
 }
 
 DataArray DataArray::slice(const Slice &s) const {
-  auto [coords, attrs] = m_coords->slice_coords(s);
-  auto out = DataArray{m_data->slice(s), std::move(coords), m_masks->slice(s),
-                       m_attrs->slice(s).merge_from(attrs), m_name};
+  auto out = DataArray{m_data->slice(s), m_coords->slice_coords(s),
+                       m_masks->slice(s), m_attrs->slice(s), m_name};
   out.m_readonly = true;
   return out;
 }

@@ -471,25 +471,25 @@ TEST_F(GroupbyWithBinsTest, single_bin) {
       makeVariable<double>(Dims{Dim::Z}, Shape{2}, units::m, Values{1.0, 5.0});
   const auto groups = groupby(d, Dim("labels2"), bins);
 
-  // Non-range slice drops Dim::Z, so the result must be equal to a global `sum`
-  // or `mean` with the corresponding coord (the edges) attr added.
+  // Non-range slice makes Dim::Z unaligned, so the result must be equal to a
+  // global `sum` or `mean` with the corresponding coord (the edges) added.
   const auto add_bins = [&bins](auto data) {
-    data["a"].attrs().set(Dim("z"), bins);
-    data["b"].attrs().set(Dim("z"), bins);
+    data.coords().set(Dim("z"), bins);
+    data.coords().set_aligned(Dim("z"), false);
     return data;
   };
   EXPECT_EQ(groups.sum(Dim::X).slice({Dim::Z, 0}), add_bins(sum(d, Dim::X)));
   EXPECT_EQ(groups.mean(Dim::X).slice({Dim::Z, 0}), add_bins(mean(d, Dim::X)));
 }
 
-TEST_F(GroupbyWithBinsTest, two_bin) {
+TEST_F(GroupbyWithBinsTest, two_bins) {
   auto bins = makeVariable<double>(Dims{Dim::Z}, Shape{3}, units::m,
                                    Values{1.0, 2.0, 5.0});
   const auto groups = groupby(d, Dim("labels2"), bins);
 
   const auto add_bins = [&bins](auto data, const scipp::index bin) {
-    data["a"].attrs().set(Dim("z"), bins.slice({Dim::Z, bin, bin + 2}));
-    data["b"].attrs().set(Dim("z"), bins.slice({Dim::Z, bin, bin + 2}));
+    data.coords().set(Dim("z"), bins.slice({Dim::Z, bin, bin + 2}));
+    data.coords().set_aligned(Dim("z"), false);
     return data;
   };
 

@@ -312,7 +312,7 @@ def test_own_dset_set_access_through_scalar_slice():
     dset['x', 0]['da1'].attrs['a'].value = -100
     dset['x', 0]['da1'].masks['m'].value = False
     with pytest.raises(sc.VariableError):
-        dset['x', 0]['da1'].attrs['x'].value = -1
+        dset['x', 0]['da1'].coords['x'].value = -1
     with pytest.raises(sc.UnitError):
         dset['x', 0]['da1'].unit = 's'
 

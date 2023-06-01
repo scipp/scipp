@@ -92,11 +92,17 @@ template <class T> py::dict bins_constituents(const Variable &var) {
   return out;
 }
 
-template <class T>
+template <class T, bool HasAlignment = false>
 void bind_bins_map_view(py::module &m, const std::string &name) {
   py::class_<T> c(m, name.c_str());
   bind_common_mutable_view_operators(c);
   bind_pop(c);
+  c.def(
+      "keys", [](T &self) { return keys_view(self); }, py::keep_alive<0, 1>(),
+      R"(view on self's keys)");
+  if constexpr (HasAlignment) {
+    bind_set_aligned(c);
+  }
 }
 
 template <class T> void bind_bins_view(py::module &m) {
@@ -104,8 +110,8 @@ template <class T> void bind_bins_view(py::module &m) {
       m, "_BinsViewDataArray");
   bind_bins_map_view<decltype(dataset::bins_view<T>(Variable{}).meta())>(
       m, "_BinsMeta");
-  bind_bins_map_view<decltype(dataset::bins_view<T>(Variable{}).coords())>(
-      m, "_BinsCoords");
+  bind_bins_map_view<decltype(dataset::bins_view<T>(Variable{}).coords()),
+                     true>(m, "_BinsCoords");
   bind_bins_map_view<decltype(dataset::bins_view<T>(Variable{}).masks())>(
       m, "_BinsMasks");
   bind_bins_map_view<decltype(dataset::bins_view<T>(Variable{}).attrs())>(

@@ -58,10 +58,18 @@ void contains(const scipp::dataset::Dataset &a, const std::string &b) {
 namespace scipp::dataset::expect {
 void coords_are_superset(const Coords &a_coords, const Coords &b_coords,
                          const std::string_view opname) {
-  for (const auto &b_coord : b_coords) {
-    if (a_coords[b_coord.first] != b_coord.second)
-      throw except::CoordMismatchError(b_coord.first, a_coords[b_coord.first],
-                                       b_coord.second, opname);
+  for (const auto &[key, b_coord] : b_coords) {
+    if (!a_coords.contains(key)) {
+      if (b_coord.is_aligned())
+        throw except::CoordMismatchError(
+            "Expected coord " + to_string(key) + " in " + to_string(a_coords) +
+            " in operation '" + std::string(opname) + '\'');
+      else
+        continue;
+    }
+    const auto &a_coord = a_coords[key];
+    if (a_coord.is_aligned() && b_coord.is_aligned() && a_coord != b_coord)
+      throw except::CoordMismatchError(key, a_coord, b_coord, opname);
   }
 }
 

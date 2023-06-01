@@ -291,3 +291,17 @@ TEST_F(DataArray_comparison_operators, different_attr_insertion_order) {
   for (const auto &a_ : a)
     expect_eq(a_, b[a_.name()]);
 }
+
+TEST_F(DataArray_comparison_operators, respects_coord_alignment) {
+  auto a = copy(dataset["val"]);
+  auto b = copy(dataset["val"]);
+
+  a.coords().set_aligned(Dim::X, false);
+  expect_ne(a, b);
+
+  b.coords().set_aligned(Dim::X, false);
+  expect_eq(a, b);
+
+  a.coords().set_aligned(Dim::X, true);
+  expect_ne(a, b);
+}

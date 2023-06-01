@@ -8,7 +8,7 @@ from typing import Callable, Dict, Iterable, List, Mapping, Optional, Set, Union
 
 from ..core import DataArray, Dataset, DimensionError, VariableError, bins, empty
 from ..logging import get_logger
-from .coord_table import Coord, CoordTable, Destination
+from .coord_table import Coord, CoordTable
 from .graph import Graph, GraphDict, rule_sequence
 from .options import Options
 from .rule import ComputeRule, FetchRule, RenameRule, Rule, rule_output_names
@@ -60,13 +60,13 @@ def transform_coords(
         See the user guide for more details and examples.
         Default is True.
     keep_aliases:
-        If True, aliases for coords defined in graph are
-        included in the output. Default is True.
+        If True, include aliases in the output.
+        Default is True.
     keep_intermediate:
-        Keep attributes created as intermediate results.
+        If True, include intermediate results in the output.
         Default is True.
     keep_inputs:
-        Keep consumed input coordinates or attributes.
+        Include consumed input coordinates in the output.
         Default is True.
     quiet:
         If True, no log output is produced. Otherwise, ``transform_coords``
@@ -190,7 +190,7 @@ def _transform_data_array(
         for name, coord in rule(working_coords).items():
             working_coords.add(name, coord)
             # Check if coord is a dimension-coord. Need to also check if it is in the
-            # data dimensions because slicing can produce attrs with dims that are
+            # data dimensions because slicing can produce coords with dims that are
             # no longer in the data.
             if name in original.dims and coord.has_dim(name):
                 dim_coords.add(name)
@@ -209,10 +209,10 @@ def _transform_dataset(
 ) -> Dataset:
     # Note the inefficiency here in datasets with multiple items: Coord
     # transform is repeated for every item rather than sharing what is
-    # possible. Implementing this would be tricky and likely error-prone,
-    # since different items may have different attributes. Unless we have
-    # clear performance requirements we therefore go with the safe and
-    # simple solution
+    # possible. Implementing this used to be tricky and likely error-prone,
+    # since different items may have had different attributes. Unless we have
+    # clear performance requirements, we therefore went with the safe and
+    # simple solution.
     if len(original) > 0:
         return Dataset(
             data={
@@ -278,26 +278,17 @@ def _log_transform(
 
 
 def _store_coord(da: DataArray, name: str, coord: Coord) -> None:
-    def try_del(dest):
-        if dest == Destination.coord:
-            da.coords.pop(name, None)
-            if da.bins is not None:
-                da.bins.coords.pop(name, None)
-        else:
-            da.attrs.pop(name, None)
-            if da.bins is not None:
-                da.bins.attrs.pop(name, None)
+    def try_del():
+        da.coords.pop(name, None)
+        if da.bins is not None:
+            da.bins.coords.pop(name, None)
 
     def store(x, c):
-        if coord.destination == Destination.coord:
-            x.coords[name] = c
-        else:
-            x.attrs[name] = c
-
-    try_del(coord.destination.other)
+        x.coords[name] = c
+        x.coords.set_aligned(name, coord.aligned)
 
     if coord.usages == 0:
-        try_del(coord.destination)
+        try_del()
     else:
         if coord.has_dense:
             store(da, coord.dense)
@@ -316,7 +307,7 @@ def _store_results(da: DataArray, coords: CoordTable, targets: Set[str]) -> Data
         da.data = bins(**da.bins.constituents)
     for name, coord in coords.items():
         if name in targets:
-            coord.destination = Destination.coord
+            coord.aligned = True
         _store_coord(da, name, coord)
     return da
 

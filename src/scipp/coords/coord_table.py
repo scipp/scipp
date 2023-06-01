@@ -5,7 +5,7 @@
 import dataclasses
 from typing import Dict, Iterable, List, Set, Tuple
 
-from .coord import Coord, Destination
+from .coord import Coord
 from .options import Options
 from .rule import FetchRule, RenameRule, Rule, rule_output_names
 
@@ -32,7 +32,7 @@ class CoordTable:
 
     def consume(self, name: str) -> Coord:
         coord = self._coords[name]
-        coord.destination = Destination.attr
+        coord.aligned = False
         coord.use()
         if coord.usages == 0:
             # The coord's data is no longer needed in the table.

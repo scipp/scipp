@@ -479,7 +479,7 @@ def test_bins_concat_along_outer_length_1_dim_equivalent_to_squeeze():
     table = sc.data.table_xyz(nrow=100)
     da = table.bin(x=1, y=5, z=7)
     expected = da.squeeze()
-    del expected.attrs['x']
+    del expected.coords['x']
     assert sc.identical(da.bins.concat('x'), expected)
 
 
@@ -487,7 +487,7 @@ def test_bins_concat_along_middle_length_1_dim_equivalent_to_squeeze():
     table = sc.data.table_xyz(nrow=100)
     da = table.bin(x=5, y=1, z=7)
     expected = da.squeeze()
-    del expected.attrs['y']
+    del expected.coords['y']
     assert sc.identical(da.bins.concat('y'), expected)
 
 
@@ -495,7 +495,7 @@ def test_bins_concat_along_inner_length_1_dim_equivalent_to_squeeze():
     table = sc.data.table_xyz(nrow=100)
     da = table.bin(x=5, y=7, z=1)
     expected = da.squeeze()
-    del expected.attrs['z']
+    del expected.coords['z']
     assert sc.identical(da.bins.concat('z'), expected)
 
 

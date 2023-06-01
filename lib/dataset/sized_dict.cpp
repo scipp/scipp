@@ -52,13 +52,26 @@ template <class Key, class Value>
 SizedDict<Key, Value> &
 SizedDict<Key, Value>::operator=(SizedDict &&other) noexcept = default;
 
+namespace {
+template <class Item, class Key, class Value, class Compare>
+bool item_in_other(const Item &item, const SizedDict<Key, Value> &other,
+                   Compare &&compare_data) {
+  const auto &[name, data] = item;
+  if (!other.contains(name))
+    return false;
+  const auto &other_data = other[name];
+  return compare_data(data, other_data) &&
+         data.is_aligned() == other_data.is_aligned();
+}
+} // namespace
+
 template <class Key, class Value>
 bool SizedDict<Key, Value>::operator==(const SizedDict &other) const {
   if (size() != other.size())
     return false;
   return std::all_of(this->begin(), this->end(), [&other](const auto &item) {
-    const auto &[name, data] = item;
-    return other.contains(name) && data == other[name];
+    return item_in_other(item, other,
+                         [](const auto &x, const auto &y) { return x == y; });
   });
 }
 
@@ -68,8 +81,8 @@ bool equals_nan(const SizedDict<Key, Value> &a,
   if (a.size() != b.size())
     return false;
   return std::all_of(a.begin(), a.end(), [&b](const auto &item) {
-    const auto &[name, data] = item;
-    return b.contains(name) && equals_nan(data, b[name]);
+    return item_in_other(
+        item, b, [](const auto &x, const auto &y) { return equals_nan(x, y); });
   });
 }
 
@@ -236,16 +249,15 @@ constexpr auto unaligned_by_dim_slice = [](const auto &coords, const auto &key,
 }
 
 template <class Key, class Value>
-std::tuple<SizedDict<Key, Value>, SizedDict<Key, Value>>
+SizedDict<Key, Value>
 SizedDict<Key, Value>::slice_coords(const Slice &params) const {
   auto coords = slice(params);
   coords.m_readonly = false;
-  SizedDict<Key, Value> attrs(coords.sizes(), {});
   for (const auto &[key, var] : *this)
     if (unaligned_by_dim_slice(*this, key, var, params))
-      attrs.set(key, coords.extract(key));
+      coords.set_aligned(key, false);
   coords.m_readonly = true;
-  return {std::move(coords), std::move(attrs)};
+  return coords;
 }
 
 template <class Key, class Value>
@@ -375,15 +387,32 @@ core::Dict<Key, Value> union_(const SizedDict<Key, Value> &a,
                               const SizedDict<Key, Value> &b,
                               std::string_view opname) {
   core::Dict<Key, Value> out;
-  out.reserve(out.size() + b.size());
-  for (const auto &[key, val] : a)
-    out.insert_or_assign(key, val);
-  for (const auto &[key, val] : b) {
+  out.reserve(a.size() + b.size());
+  for (const auto &[key, val_a] : a)
+    if (val_a.is_aligned())
+      out.insert_or_assign(key, val_a);
+
+  for (const auto &[key, val_b] : b) {
     if (const auto it = a.find(key); it != a.end()) {
-      expect::matching_coord(it->first, it->second, val, opname);
-    } else
-      out.insert_or_assign(key, val);
+      auto &&val_a = it->second;
+      if (val_a.is_aligned() && val_b.is_aligned())
+        expect::matching_coord(key, val_a, val_b, opname);
+      else if (val_b.is_aligned())
+        // aligned b takes precedence over unaligned a
+        out.insert_or_assign(key, val_b);
+      else if (!val_a.is_aligned()) {
+        // neither is aligned
+        if (equals_nan(val_a, val_b))
+          out.insert_or_assign(key, val_b);
+        // else: mismatching unaligned coords => do not include in out
+      }
+      // else: aligned a takes precedence over unaligned b
+    } else {
+      if (val_b.is_aligned())
+        out.insert_or_assign(key, val_b);
+    }
   }
+
   return out;
 }
 

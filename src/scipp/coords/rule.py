@@ -15,7 +15,7 @@ from functools import partial
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Tuple
 
 from ..core import Variable
-from .coord import Coord, Destination
+from .coord import Coord
 
 try:
     from typing import Protocol as _Protocol
@@ -54,7 +54,7 @@ class FetchRule(Rule):
     """
     Get coords from the provided dict-like sources.
 
-    Can be used to abstract away retrieving coords and attrs from the input DataArray.
+    Can be used to abstract away retrieving coords from the input DataArray.
     """
 
     def __init__(
@@ -72,7 +72,7 @@ class FetchRule(Rule):
             out_name: Coord(
                 dense=self._dense_sources.get(out_name, None),
                 event=self._event_sources.get(out_name, None),
-                destination=Destination.coord,
+                aligned=True,
             )
             for out_name in self.out_names
         }
@@ -96,7 +96,7 @@ class RenameRule(Rule):
 
     def __call__(self, coords: _CoordProvider) -> Dict[str, Coord]:
         # Shallow copy the _Coord object to allow the alias to have
-        # a different destination and usage count than the original.
+        # a different alignment and usage count than the original.
         return {
             out_name: copy(coords.consume(self._in_name)) for out_name in self.out_names
         }
@@ -139,7 +139,7 @@ class ComputeRule(Rule):
         outputs = self._func(**{name: coord.dense for name, coord in inputs.items()})
         outputs = self._to_dict(outputs)
         return {
-            name: Coord(dense=var, event=None, destination=Destination.coord)
+            name: Coord(dense=var, event=None, aligned=True)
             for name, var in outputs.items()
         }
 
@@ -155,7 +155,7 @@ class ComputeRule(Rule):
             name: Coord(
                 dense=var if var.bins is None else None,
                 event=var if var.bins is not None else None,
-                destination=Destination.coord,
+                aligned=True,
             )
             for name, var in outputs.items()
         }

@@ -52,7 +52,7 @@ TEST_F(DataArrayBinsTest, concatenate_dim_1d_masked) {
   DataArray a(var, {{Dim::Y, y}, {Dim("scalar"), scalar}},
               {{"mask", mask}, {"scalar", scalar_mask}});
   auto expected = copy(a.slice({Dim::Y, 1}));
-  expected.attrs().erase(Dim::Y);
+  expected.coords().erase(Dim::Y);
   expected.masks().erase("mask");
   EXPECT_EQ(buckets::concatenate(a, Dim::Y), expected);
 }

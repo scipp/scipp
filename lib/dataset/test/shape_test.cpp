@@ -624,8 +624,8 @@ TEST_F(SqueezeTest, data_array_3d_outer) {
   const auto dims = std::vector<Dim>{Dim::X};
   const auto squeezed = squeeze(a, dims);
   EXPECT_EQ(squeezed.data(), squeeze(xyz, dims));
-  EXPECT_FALSE(squeezed.coords().contains(Dim::X));
-  EXPECT_EQ(squeezed.attrs()[Dim::X], makeVariable<double>(Values{10}));
+  EXPECT_EQ(squeezed.coords()[Dim::X], makeVariable<double>(Values{10}));
+  EXPECT_FALSE(squeezed.coords()[Dim::X].is_aligned());
   EXPECT_EQ(squeezed.coords()[Dim::Y], y);
   EXPECT_EQ(squeezed.coords()[Dim::Z], z);
   EXPECT_EQ(squeezed.coords()[Dim{"xyz"}], squeeze(xyz, dims));
@@ -640,8 +640,8 @@ TEST_F(SqueezeTest, data_array_3d_center) {
   const auto squeezed = squeeze(a, dims);
   EXPECT_EQ(squeezed.data(), squeeze(xyz, dims));
   EXPECT_EQ(squeezed.coords()[Dim::X], x);
-  EXPECT_FALSE(squeezed.coords().contains(Dim::Y));
-  EXPECT_EQ(squeezed.attrs()[Dim::Y], makeVariable<double>(Values{20}));
+  EXPECT_EQ(squeezed.coords()[Dim::Y], makeVariable<double>(Values{20}));
+  EXPECT_FALSE(squeezed.coords()[Dim::Y].is_aligned());
   EXPECT_EQ(squeezed.coords()[Dim::Z], z);
   EXPECT_EQ(squeezed.coords()[Dim{"xyz"}], squeeze(xyz, dims));
   EXPECT_EQ(squeezed.masks()["mask-x"], x);
@@ -654,10 +654,10 @@ TEST_F(SqueezeTest, data_array_3d_inner_and_center) {
   const auto dims = std::vector<Dim>{Dim::Y, Dim::X};
   const auto squeezed = squeeze(a, dims);
   EXPECT_EQ(squeezed.data(), squeeze(xyz, dims));
-  EXPECT_FALSE(squeezed.coords().contains(Dim::X));
-  EXPECT_EQ(squeezed.attrs()[Dim::X], makeVariable<double>(Values{10}));
-  EXPECT_FALSE(squeezed.coords().contains(Dim::Y));
-  EXPECT_EQ(squeezed.attrs()[Dim::Y], makeVariable<double>(Values{20}));
+  EXPECT_EQ(squeezed.coords()[Dim::X], makeVariable<double>(Values{10}));
+  EXPECT_FALSE(squeezed.coords()[Dim::X].is_aligned());
+  EXPECT_EQ(squeezed.coords()[Dim::Y], makeVariable<double>(Values{20}));
+  EXPECT_FALSE(squeezed.coords()[Dim::Y].is_aligned());
   EXPECT_EQ(squeezed.coords()[Dim::Z], z);
   EXPECT_EQ(squeezed.coords()[Dim{"xyz"}], squeeze(xyz, dims));
   EXPECT_EQ(squeezed.masks()["mask-x"], makeVariable<double>(Values{10}));
@@ -672,9 +672,9 @@ TEST_F(SqueezeTest, data_array_3d_outer_bin_edge) {
                  makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{-1, -2}));
   const auto squeezed = squeeze(a, dims);
   EXPECT_EQ(squeezed.data(), squeeze(xyz, dims));
-  EXPECT_FALSE(squeezed.coords().contains(Dim::X));
-  EXPECT_EQ(squeezed.attrs()[Dim::X],
+  EXPECT_EQ(squeezed.coords()[Dim::X],
             makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{-1, -2}));
+  EXPECT_FALSE(squeezed.coords()[Dim::X].is_aligned());
   EXPECT_EQ(squeezed.coords()[Dim::Y], y);
   EXPECT_EQ(squeezed.coords()[Dim::Z], z);
   EXPECT_EQ(squeezed.coords()[Dim{"xyz"}], squeeze(xyz, dims));
@@ -731,6 +731,10 @@ TEST_F(SqueezeDatasetTest, dataset_3d_outer) {
   const auto squeezed = squeeze(dset, dims);
   // b contains 'xyz' now because the latter has dims [y,z] after squeezing.
   b.coords().set(Dim{"xyz"}, squeeze(xyz, dims));
+  // c's initial unaligned y coord was overridden by the aligned coord of
+  // a and b which no longer applies to dset["c"].
+  // See #3149
+  c.coords().erase(Dim::Y);
 
   EXPECT_EQ(squeezed["a"], squeeze(a, dims));
   EXPECT_EQ(squeezed["b"], b);
@@ -742,6 +746,10 @@ TEST_F(SqueezeDatasetTest, dataset_3d_center) {
   const auto squeezed = squeeze(dset, dims);
   // b contains 'xyz' now because the latter has dims [x,z] after squeezing.
   c.coords().set(Dim{"xyz"}, squeeze(xyz, dims));
+  // b's initial unaligned x coord was overridden by the aligned coord of
+  // a and c which no longer applies to dset["b"].
+  // See #3149
+  b.coords().erase(Dim::X);
 
   EXPECT_EQ(squeezed["a"], squeeze(a, dims));
   EXPECT_EQ(squeezed["b"], squeeze(b, dims));

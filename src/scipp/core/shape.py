@@ -384,7 +384,7 @@ def squeeze(
       >>> sc.squeeze(v, ['x', 'z'])
       <scipp.Variable> (y: 3)      int64  [dimensionless]  [0, 1, 2]
 
-    Coordinates for squeezed dimensions are turned into attributes:
+    Coordinates for squeezed dimensions become unaligned:
 
       >>> da = sc.DataArray(v, coords={'x': sc.arange('x', 1),
       ...                              'y': sc.arange('y', 3)})
@@ -400,10 +400,9 @@ def squeeze(
       <scipp.DataArray>
       Dimensions: Sizes[y:3, ]
       Coordinates:
+        x                           int64  [dimensionless]  ()  0
         y                           int64  [dimensionless]  (y)  [0, 1, 2]
       Data:
                                     int64  [dimensionless]  (y)  [0, 1, 2]
-      Attributes:
-        x                           int64  [dimensionless]  ()  0
     """
     return _call_cpp_func(_cpp.squeeze, x, (dim,) if isinstance(dim, str) else dim)

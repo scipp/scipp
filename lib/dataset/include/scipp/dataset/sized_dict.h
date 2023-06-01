@@ -127,7 +127,7 @@ public:
   mapped_type extract(const key_type &key, const mapped_type &default_value);
 
   SizedDict slice(const Slice &params) const;
-  std::tuple<SizedDict, SizedDict> slice_coords(const Slice &params) const;
+  SizedDict slice_coords(const Slice &params) const;
   void validateSlice(const Slice &s, const SizedDict &dict) const;
   [[maybe_unused]] SizedDict &setSlice(const Slice &s, const SizedDict &dict);
 

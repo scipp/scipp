@@ -79,6 +79,7 @@ Variable &Variable::operator=(Variable &&other) {
   m_offset = other.m_offset;
   m_object = std::move(other.m_object);
   m_readonly = other.m_readonly;
+  m_aligned = other.m_aligned;
   return *this;
 }
 

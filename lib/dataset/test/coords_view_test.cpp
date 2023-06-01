@@ -5,6 +5,7 @@
 #include <numeric>
 
 #include "scipp/core/dimensions.h"
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/variable/shape.h"
@@ -219,4 +220,54 @@ TEST(SizedDictTest, set_alignement_requires_writable) {
   coords.set_readonly();
 
   EXPECT_THROW(coords.set_aligned(Dim("a"), false), except::DataArrayError);
+}
+
+TEST(SizedDictTest, copy_preserves_alignment) {
+  const auto a = makeVariable<int>(Dims{Dim{"a"}}, Shape{2}, Values{1, 2});
+  auto b = makeVariable<int>(Dims{Dim{"b"}}, Shape{2}, Values{3, 4});
+  b.set_aligned(false);
+
+  DataArray da(a + b, {{Dim("a"), a}, {Dim("b"), b}});
+  auto copied = da.coords();
+  EXPECT_TRUE(copied.at(Dim("a")).is_aligned());
+  EXPECT_FALSE(copied.at(Dim("b")).is_aligned());
+}
+
+TEST(SizedDictTest, data_array_copy_preserves_alignment) {
+  const auto a = makeVariable<int>(Dims{Dim{"a"}}, Shape{2}, Values{1, 2});
+  auto b = makeVariable<int>(Dims{Dim{"b"}}, Shape{2}, Values{3, 4});
+  b.set_aligned(false);
+
+  const DataArray da(a + b, {{Dim("a"), a}, {Dim("b"), b}});
+  const auto shallow_copied(da);
+  auto &shallow_coords = shallow_copied.coords();
+  EXPECT_TRUE(shallow_coords.at(Dim("a")).is_aligned());
+  EXPECT_FALSE(shallow_coords.at(Dim("b")).is_aligned());
+
+  const auto deep_copied = copy(da);
+  auto &deep_coords = deep_copied.coords();
+  EXPECT_TRUE(deep_coords.at(Dim("a")).is_aligned());
+  EXPECT_FALSE(deep_coords.at(Dim("b")).is_aligned());
+}
+
+TEST(SizedDictTest, binned_data_array_copy_preserves_alignment) {
+  const auto a = makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{1, 2});
+  auto b = makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{3, 4});
+  b.set_aligned(false);
+
+  const DataArray da(a + b, {{Dim("a"), a}, {Dim("b"), b}});
+  const auto indices = makeVariable<scipp::index_pair>(
+      Dims{Dim::X}, Shape{2}, Values{std::pair{0, 1}, std::pair{1, 2}});
+  const auto binned = make_bins(indices, Dim::X, da);
+
+  const auto shallow_copied(binned);
+  const auto shallow_buffer =
+      std::get<2>(shallow_copied.constituents<DataArray>());
+  EXPECT_TRUE(shallow_buffer.coords().at(Dim("a")).is_aligned());
+  EXPECT_FALSE(shallow_buffer.coords().at(Dim("b")).is_aligned());
+
+  const auto deep_copied = copy(binned);
+  const auto deep_buffer = std::get<2>(deep_copied.constituents<DataArray>());
+  EXPECT_TRUE(deep_buffer.coords().at(Dim("a")).is_aligned());
+  EXPECT_FALSE(deep_buffer.coords().at(Dim("b")).is_aligned());
 }

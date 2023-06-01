@@ -71,8 +71,8 @@ class Graph:
         return Graph(subgraph)
 
     def _rule_for(self, out_name: str, da: DataArray) -> Rule:
-        if _is_in_meta_data(out_name, da):
-            return FetchRule((out_name,), da.meta, da.bins.meta if da.bins else {})
+        if _is_in_coords(out_name, da):
+            return FetchRule((out_name,), da.coords, da.bins.coords if da.bins else {})
         try:
             return self._rules[out_name]
         except KeyError:
@@ -141,5 +141,5 @@ def _convert_to_rule_graph(graph: GraphDict) -> Dict[str, Rule]:
     return rule_graph
 
 
-def _is_in_meta_data(name: str, da: DataArray) -> bool:
-    return name in da.meta or (da.bins is not None and name in da.bins.meta)
+def _is_in_coords(name: str, da: DataArray) -> bool:
+    return name in da.coords or (da.bins is not None and name in da.bins.coords)
