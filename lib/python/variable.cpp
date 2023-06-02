@@ -41,22 +41,11 @@ template <class T> struct SetElements {
   }
 };
 
-void bind_init(py::class_<Variable> &cls);
-
-void init_variable(py::module &m) {
-  // Needed to let numpy arrays keep alive the scipp buffers.
-  // VariableConcept must ALWAYS be passed to Python by its handle.
-  py::class_<VariableConcept, VariableConceptHandle> variable_concept(
-      m, "_VariableConcept");
-
-  py::class_<Variable> variable(m, "Variable", py::dynamic_attr(),
-                                R"(
-Array of values with dimension labels and a unit, optionally including an array
-of variances.)");
-
-  bind_init(variable);
-  variable.def("_rename_dims", &rename_dims<Variable>)
-      .def_property_readonly("dtype", &Variable::dtype)
+template <class T> void bind_alignment_functions(py::class_<T> &variable) {
+  // We use a separate setter instead of making the 'aligned' property writable
+  // in order to reduce the chance of accidentally setting the flag on
+  // temporary variables.
+  variable
       .def_property_readonly(
           "aligned", [](const Variable &self) { return self.is_aligned(); },
           R"(Alignment flag for coordinates.
@@ -75,8 +64,44 @@ For *binned* coordinates of a binned data array ``da``,
 ``da.bins.coords[name].aligned`` should always be ``True``.
 The alignment w.r.t. the events can be queried via
 ``da.bins.coords[name].bins.aligned`` and set via
-``da.bins.coords.set_aligned(name, alignment)``.
-)");
+``da.bins.coords.set_aligned(name, aligned)``.
+)")
+      .def(
+          "set_aligned",
+          [](Variable &self, const bool aligned) { self.set_aligned(aligned); },
+          R"(Set the alignment flag of the variable.
+
+Attention
+---------
+This is likely not the function you want to use as it may only affect
+a temporary variable and not the actual coordinate of a data array.
+Use ``da.coords.set_aligned(name, alignment)`` instead.
+
+Parameters
+----------
+aligned:
+    New value for the alignment flag.
+)",
+          py::arg("aligned"));
+}
+} // namespace
+
+void bind_init(py::class_<Variable> &cls);
+
+void init_variable(py::module &m) {
+  // Needed to let numpy arrays keep alive the scipp buffers.
+  // VariableConcept must ALWAYS be passed to Python by its handle.
+  py::class_<VariableConcept, VariableConceptHandle> variable_concept(
+      m, "_VariableConcept");
+
+  py::class_<Variable> variable(m, "Variable", py::dynamic_attr(),
+                                R"(
+Array of values with dimension labels and a unit, optionally including an array
+of variances.)");
+
+  bind_init(variable);
+  variable.def("_rename_dims", &rename_dims<Variable>)
+      .def_property_readonly("dtype", &Variable::dtype);
 
   bind_common_operators(variable);
 
@@ -101,6 +126,7 @@ The alignment w.r.t. the events can be queried via
   bind_logical<Variable>(variable);
 
   bind_data_properties(variable);
+  bind_alignment_functions(variable);
 
   m.def(
       "islinspace",
