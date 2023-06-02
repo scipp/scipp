@@ -35,6 +35,41 @@ Release Notes
    Jan-Lukas Wynen :sup:`a`\ ,
    and Sunyoung Yoo :sup:`a`
 
+vrelease
+--------
+
+Features
+~~~~~~~~
+
+* Added alignment flag to ``Variable`` `#3144 <https://github.com/scipp/scipp/pull/3144>`_.
+* Handle alignment of coordinates in operations `#3153 <https://github.com/scipp/scipp/pull/3153>`_.
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+* Coordinates are no longer converted to attributes when slicing or by ``transform_coords``.
+  Instead, they become unaligned `#3153 <https://github.com/scipp/scipp/pull/3153>`_.
+
+Bugfixes
+~~~~~~~~
+
+Documentation
+~~~~~~~~~~~~~
+
+Deprecations
+~~~~~~~~~~~~
+
+Stability, Maintainability, and Testing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Contributors
+~~~~~~~~~~~~
+
+Simon Heybrock :sup:`a`\ ,
+Neil Vaytet :sup:`a`\ ,
+Jan-Lukas Wynen :sup:`a`\ ,
+and Sunyoung Yoo :sup:`a`
+
 v23.05.0
 --------
 
@@ -47,9 +82,6 @@ Features
 * The HDF5 writer and reader now supports builtin types (e.g. ``int``, ``str``) and numpy types (e.g. ``np.ndarray``, ``np.int64``) as data group items `#3124 <https://github.com/scipp/scipp/pull/3124/>`_.
 * :class:`scipp.DataGroup` reduction- and shape operations now handle items of lower dimensionality more consistently.
   Operations will thus work in more situations, rather than raise exceptions `#3136 <https://github.com/scipp/scipp/pull/3136/>`_.
-
-Breaking changes
-~~~~~~~~~~~~~~~~
 
 Bugfixes
 ~~~~~~~~
