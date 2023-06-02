@@ -261,6 +261,7 @@ class VariableIO:
         dset.attrs['dtype'] = str(var.dtype)
         if var.unit is not None:
             dset.attrs['unit'] = _serialize_unit(var.unit)
+        dset.attrs['aligned'] = var.aligned
         return group
 
     @classmethod
@@ -282,6 +283,7 @@ class VariableIO:
         else:
             var = sc.empty(**contents)
             cls._read_data(group, var)
+        var.set_aligned(values.attrs.get('aligned', True))
         return var
 
 
