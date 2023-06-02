@@ -56,12 +56,13 @@ def _build_svg(content, left, top, width, height):
 
 
 class VariableDrawer:
-    def __init__(self, variable, margin=1.0, target_dims=None):
+    def __init__(self, variable, margin=1.0, target_dims=None, show_alignment=False):
         self._margin = margin
         self._variable = variable
         self._target_dims = target_dims
         if self._target_dims is None:
             self._target_dims = self._dims()
+        self._show_alignment = show_alignment
         self._x_stride = 1
         if len(self._dims()) > 3:
             raise RuntimeError("Cannot visualize {}-D data".format(len(self._dims())))
@@ -235,17 +236,22 @@ class VariableDrawer:
         )
         x_pos = offset[0]
         y_pos = offset[1] + 0.6
+        weight = (
+            "font-weight: bold"
+            if self._show_alignment and self._variable.aligned
+            else ""
+        )
         if title is not None:
             # Crudely avoid label overlap, ignoring actual character width
             brief_title = _truncate_long_string(str(title), int(2.5 * self.size()[0]))
             svg = f'<text x="{x_pos}" y="{y_pos}" \
-                    class="sc-name" style="font-size:#normal-font"> \
+                    class="sc-name" style="font-size:#normal-font;{weight}"> \
                     {escape(brief_title)}</text>'
 
             svg += f'<title>{title}({escape(details)})</title>'
         else:
             svg = f'<text x="{x_pos}" y="{y_pos}" \
-                    class="sc-name" style="font-size:#small-font"> \
+                    class="sc-name" style="font-size:#small-font;{weight}"> \
                     {escape(details)}</text>'
 
         return svg
@@ -314,15 +320,18 @@ class VariableDrawer:
 
 
 class DrawerItem:
-    def __init__(self, name, data, color):
+    def __init__(self, name, data, colors, show_alignment=False):
         self._name = name
         self._data = data
-        self._color = color
+        self._color = colors
+        self._show_alignment = show_alignment
 
     def append_to_svg(
         self, content, width, height, offset, layout_direction, margin, dims
     ):
-        drawer = VariableDrawer(self._data, margin, target_dims=dims)
+        drawer = VariableDrawer(
+            self._data, margin, target_dims=dims, show_alignment=self._show_alignment
+        )
         content += drawer.draw(color=self._color, offset=offset, title=self._name)
         size = drawer.size()
         width, height, offset = _new_size_and_offset(
@@ -407,12 +416,12 @@ class DatasetDrawer:
         area_xy = []
         area_0d = []
         if isinstance(self._dataset, sc.DataArray):
-            area_xy.append(DrawerItem('', self._dataset, config['colors']['data']))
+            area_xy.append(DrawerItem('', self._dataset.data, config['colors']['data']))
         else:
             # Render highest-dimension items last so coords are optically
             # aligned
             for name, data in sorted(self._dataset.items()):
-                item = DrawerItem(name, data, config['colors']['data'])
+                item = DrawerItem(name, data.data, config['colors']['data'])
                 # Using only x and 0d areas for 1-D dataset
                 if len(dims) == 1 or data.dims != dims:
                     if len(data.dims) == 0:
@@ -437,7 +446,9 @@ class DatasetDrawer:
             categories = zip(['coords'], [ds.coords])
         for what, items in categories:
             for name, var in sorted(items.items()):
-                item = DrawerItem(name, var, config['colors'][what])
+                item = DrawerItem(
+                    name, var, config['colors'][what], show_alignment=what == 'coords'
+                )
                 if len(var.dims) == 0:
                     area_0d.append(item)
                 elif var.dims[-1] == dims[-1]:
