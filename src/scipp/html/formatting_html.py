@@ -185,12 +185,11 @@ def _icon(icon_name):
 
 
 def summarize_coord(dim, var, ds=None):
-    is_index = dim in var.dims
-    return summarize_variable(str(dim), var, is_index, embedded_in=ds)
+    return summarize_variable(str(dim), var, is_aligned=var.aligned, embedded_in=ds)
 
 
 def summarize_mask(dim, var, ds=None):
-    return summarize_variable(str(dim), var, is_index=False, embedded_in=ds)
+    return summarize_variable(str(dim), var, is_aligned=False, embedded_in=ds)
 
 
 def summarize_coords(coords, ds=None):
@@ -217,7 +216,7 @@ def summarize_attrs(attrs, embedded_in=None):
                 var,
                 has_attrs=False,
                 embedded_in=embedded_in,
-                is_index=name in var.dims,
+                is_aligned=False,
             )
         )
         for name, var in _ordered_dict(attrs).items()
@@ -294,7 +293,7 @@ def _make_dim_str(var, bin_edges, add_dim_size=False):
 
 
 def _format_common(is_index):
-    cssclass_idx = " class='sc-has-index'" if is_index else ""
+    cssclass_aligned = " class='sc-aligned'" if is_index else ""
 
     # "unique" ids required to expand/collapse subsections
     attrs_id = "attrs-" + str(uuid.uuid4())
@@ -302,11 +301,11 @@ def _format_common(is_index):
     attrs_icon = _icon("icon-file-text2")
     data_icon = _icon("icon-database")
 
-    return cssclass_idx, attrs_id, attrs_icon, data_id, data_icon
+    return cssclass_aligned, attrs_id, attrs_icon, data_id, data_icon
 
 
 def summarize_variable(
-    name, var, is_index=False, has_attrs=False, embedded_in=None, add_dim_size=False
+    name, var, is_aligned=False, has_attrs=False, embedded_in=None, add_dim_size=False
 ):
     """
     Formats the variable data into the format expected when displaying
@@ -337,16 +336,18 @@ def summarize_variable(
         data_repr += f"<br><br>Variances ({VARIANCES_SYMBOL}):<br>\
 {short_data_repr_html(var, variances=True)}"
 
-    cssclass_idx, attrs_id, attrs_icon, data_id, data_icon = _format_common(is_index)
+    cssclass_aligned, attrs_id, attrs_icon, data_id, data_icon = _format_common(
+        is_aligned
+    )
 
     if name is None:
         html = [
-            f"<div class='sc-standalone-var-name'><span{cssclass_idx}>"
+            f"<div class='sc-standalone-var-name'><span{cssclass_aligned}>"
             f"{escape(dims_str)}</span></div>"
         ]
     else:
         html = [
-            f"<div class='sc-var-name'><span{cssclass_idx}>{escape(str(name))}"
+            f"<div class='sc-var-name'><span{cssclass_aligned}>{escape(str(name))}"
             "</span></div>",
             f"<div class='sc-var-dims'>{escape(dims_str)}</div>",
         ]
@@ -378,7 +379,7 @@ def summarize_data(dataset):
         "<li class='sc-var-item'>{}</li>".format(
             summarize_variable(
                 name,
-                var,
+                var.data,
                 has_attrs=has_attrs,
                 embedded_in=dataset if has_attrs else None,
             )
