@@ -1,3 +1,4 @@
+-r base.in
 graphviz
 h5py
 matplotlib

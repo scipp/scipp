@@ -1,6 +1,7 @@
 -r base.in
 -r extra.in
 gitpython
+hypothesis
 ipykernel
 ipympl
 ipywidgets

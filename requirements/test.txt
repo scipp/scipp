@@ -7,11 +7,9 @@
 #
 -r base.txt
 -r extra.txt
-attrs==22.2.0
-    # via
-    #   hypothesis
-    #   pytest
-beautifulsoup4==4.11.2
+attrs==23.1.0
+    # via hypothesis
+beautifulsoup4==4.12.2
     # via
     #   -r requirements/test.in
     #   bs4
@@ -23,24 +21,21 @@ exceptiongroup==1.1.1
     #   pytest
 execnet==1.9.0
     # via pytest-xdist
-hypothesis==6.68.2
+hypothesis==6.75.9
     # via -r requirements/test.in
 iniconfig==2.0.0
     # via pytest
 pluggy==1.0.0
     # via pytest
-pytest==7.2.2
+pytest==7.3.1
     # via
     #   -r requirements/test.in
     #   pytest-xdist
-pytest-xdist==3.2.1
+pytest-xdist==3.3.1
     # via -r requirements/test.in
 sortedcontainers==2.4.0
     # via hypothesis
-soupsieve==2.4
+soupsieve==2.4.1
     # via beautifulsoup4
 tomli==2.0.1
     # via pytest
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools
