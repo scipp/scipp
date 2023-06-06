@@ -45,10 +45,9 @@ template <class T> void bind_alignment_functions(py::class_<T> &variable) {
   // We use a separate setter instead of making the 'aligned' property writable
   // in order to reduce the chance of accidentally setting the flag on
   // temporary variables.
-  variable
-      .def_property_readonly(
-          "aligned", [](const Variable &self) { return self.is_aligned(); },
-          R"(Alignment flag for coordinates.
+  variable.def_property_readonly(
+      "aligned", [](const Variable &self) { return self.is_aligned(); },
+      R"(Alignment flag for coordinates.
 
 Indicates whether a coordinate is aligned.
 Aligned coordinates must match between the operands of binary operations while
@@ -65,26 +64,8 @@ For *binned* coordinates of a binned data array ``da``,
 The alignment w.r.t. the events can be queried via
 ``da.bins.coords[name].bins.aligned`` and set via
 ``da.bins.coords.set_aligned(name, aligned)``.
-)")
-      .def(
-          "set_aligned",
-          [](Variable &self, const bool aligned) { self.set_aligned(aligned); },
-          R"(Set the alignment flag of the variable.
-
-Attention
----------
-This is likely not the function you want to use as it may only affect
-a temporary variable and not the actual coordinate of a data array.
-Use ``da.coords.set_aligned(name, alignment)`` instead.
-
-Parameters
-----------
-aligned:
-    New value for the alignment flag.
-)",
-          py::arg("aligned"));
+)");
 }
-} // namespace
 
 void bind_init(py::class_<Variable> &cls);
 

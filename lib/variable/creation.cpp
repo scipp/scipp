@@ -12,8 +12,11 @@
 namespace scipp::variable {
 
 Variable empty(const Dimensions &dims, const units::Unit &unit,
-               const DType type, const bool with_variances) {
-  return variableFactory().create(type, dims, unit, with_variances);
+               const DType type, const bool with_variances,
+               const bool aligned) {
+  auto var = variableFactory().create(type, dims, unit, with_variances);
+  var.set_aligned(aligned);
+  return var;
 }
 
 Variable ones(const Dimensions &dims, const units::Unit &unit, const DType type,

@@ -272,7 +272,7 @@ void bind_init(py::class_<Variable> &cls) {
   cls.def(
       py::init([](const py::object &dim_labels, const py::object &values,
                   const py::object &variances, const ProtoUnit unit,
-                  const py::object &dtype) {
+                  const py::object &dtype, const bool aligned) {
         if (values.is_none() && variances.is_none()) {
           throw std::invalid_argument(
               "At least one argument of 'values' and 'variances' is required.");
@@ -280,28 +280,33 @@ void bind_init(py::class_<Variable> &cls) {
         const auto [scipp_dtype, actual_unit] =
             cast_dtype_and_unit(dtype, unit);
 
-        if (scipp_dtype == ::dtype<Eigen::Vector3d>)
-          return make_structured_variable<Eigen::Vector3d, double, 3>(
-              dim_labels, values, variances, actual_unit);
-        if (scipp_dtype == ::dtype<Eigen::Matrix3d>)
-          return make_structured_variable<Eigen::Matrix3d, double, 3, 3>(
-              dim_labels, values, variances, actual_unit);
-        if (scipp_dtype == ::dtype<Eigen::Affine3d>)
-          return make_structured_variable<Eigen::Affine3d, double, 4, 4>(
-              dim_labels, values, variances, actual_unit);
-        if (scipp_dtype == ::dtype<core::Quaternion>)
-          return make_structured_variable<core::Quaternion, double, 4>(
-              dim_labels, values, variances, actual_unit);
-        if (scipp_dtype == ::dtype<core::Translation>)
-          return make_structured_variable<core::Translation, double, 3>(
-              dim_labels, values, variances, actual_unit);
+        auto var = [&, scipp_dtype = scipp_dtype, actual_unit = actual_unit]() {
+          if (scipp_dtype == ::dtype<Eigen::Vector3d>)
+            return make_structured_variable<Eigen::Vector3d, double, 3>(
+                dim_labels, values, variances, actual_unit);
+          if (scipp_dtype == ::dtype<Eigen::Matrix3d>)
+            return make_structured_variable<Eigen::Matrix3d, double, 3, 3>(
+                dim_labels, values, variances, actual_unit);
+          if (scipp_dtype == ::dtype<Eigen::Affine3d>)
+            return make_structured_variable<Eigen::Affine3d, double, 4, 4>(
+                dim_labels, values, variances, actual_unit);
+          if (scipp_dtype == ::dtype<core::Quaternion>)
+            return make_structured_variable<core::Quaternion, double, 4>(
+                dim_labels, values, variances, actual_unit);
+          if (scipp_dtype == ::dtype<core::Translation>)
+            return make_structured_variable<core::Translation, double, 3>(
+                dim_labels, values, variances, actual_unit);
 
-        return make_variable(dim_labels, values, variances, actual_unit,
-                             scipp_dtype);
+          return make_variable(dim_labels, values, variances, actual_unit,
+                               scipp_dtype);
+        }();
+
+        var.set_aligned(aligned);
+        return var;
       }),
       py::kw_only(), py::arg("dims"), py::arg("values") = py::none(),
       py::arg("variances") = py::none(), py::arg("unit") = DefaultUnit{},
-      py::arg("dtype") = py::none(),
+      py::arg("dtype") = py::none(), py::arg("aligned") = true,
       R"raw(
 Initialize a variable with values and/or variances.
 
@@ -329,5 +334,7 @@ dtype:
    Type of the variable's elements. Is deduced from other arguments
    in most cases. Defaults to ``sc.DType.float64`` if no deduction is
    possible.
+aligned:
+   Initial value for the alignment flag.
 )raw");
 }

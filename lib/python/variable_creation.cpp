@@ -32,15 +32,17 @@ void init_creation(py::module &m) {
       "empty",
       [](const std::vector<std::string> &dims,
          const std::vector<scipp::index> &shape, const ProtoUnit &unit,
-         const py::object &dtype, const bool with_variances) {
+         const py::object &dtype, const bool with_variances,
+         const bool aligned) {
         const auto dtype_ = scipp_dtype(dtype);
         py::gil_scoped_release release;
         const auto unit_ = unit_or_default(unit, dtype_);
         return variable::empty(make_dims(dims, shape), unit_, dtype_,
-                               with_variances);
+                               with_variances, aligned);
       },
       py::arg("dims"), py::arg("shape"), py::arg("unit") = DefaultUnit{},
-      py::arg("dtype") = py::none(), py::arg("with_variances") = std::nullopt);
+      py::arg("dtype") = py::none(), py::arg("with_variances") = false,
+      py::arg("aligned") = true);
   m.def(
       "zeros",
       [](const std::vector<std::string> &dims,

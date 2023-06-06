@@ -244,6 +244,7 @@ def empty(
     unit: Union[Unit, str, None] = default_unit,
     dtype: DTypeLike = DType.float64,
     with_variances: bool = False,
+    aligned: bool = True,
 ) -> Variable:
     """Constructs a :class:`Variable` with uninitialized values with given
     dimension labels and shape.
@@ -271,6 +272,8 @@ def empty(
         Type of underlying data.
     with_variances:
         If True includes uninitialized variances.
+    aligned:
+        Initial value for the alignment flag.
 
     Returns
     -------
@@ -294,6 +297,7 @@ def empty(
         unit=unit,
         dtype=dtype,
         with_variances=with_variances,
+        aligned=aligned,
     )
 
 
