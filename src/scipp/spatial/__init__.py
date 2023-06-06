@@ -91,9 +91,7 @@ def translation(
     :
         A scalar variable of dtype ``translation3``.
     """
-    return _core_cpp.Variable(
-        dims=(), unit=unit, values=value, dtype=DType.translation3
-    )
+    return translations(dims=(), unit=unit, values=value)
 
 
 def translations(
@@ -198,7 +196,7 @@ def rotation(*, value: Union[_np.ndarray, list]):
     :
         A scalar variable of dtype ``rotation3``.
     """
-    return _core_cpp.Variable(dims=(), values=value, dtype=DType.rotation3)
+    return rotations(dims=(), values=value)
 
 
 def rotations(*, dims: Sequence[str], values: Union[_np.ndarray, list]):
@@ -387,11 +385,10 @@ def linear_transform(
     :
         A scalar variable of dtype ``linear_transform3``.
     """
-    return _core_cpp.Variable(
+    return linear_transforms(
         dims=(),
         unit=unit,
-        values=_to_eigen_layout(value),
-        dtype=DType.linear_transform3,
+        values=value,
     )
 
 

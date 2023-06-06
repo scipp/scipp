@@ -394,7 +394,7 @@ def vector(
       >>> sc.vector(value=[4, 5, 6], unit='m')
       <scipp.Variable> ()    vector3              [m]  (4, 5, 6)
     """
-    return _cpp.Variable(dims=(), values=value, unit=unit, dtype=DType.vector3)
+    return vectors(dims=(), values=value, unit=unit)
 
 
 def vectors(
