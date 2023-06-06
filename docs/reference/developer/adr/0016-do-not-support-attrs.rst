@@ -1,9 +1,9 @@
 ADR 0016: Do not support "attrs"
 ================================
 
-- Status: draft
-- Deciders:
-- Date: 2023-05-16
+- Status: accepted
+- Deciders: Jan-Lukas, Neil, Simon, Sunyoung
+- Date: 2023-06-06
 
 Context
 -------
@@ -98,6 +98,9 @@ Is there a sufficient number of applications where such a restricted attribute s
 
 Decision
 --------
+
+- Clearly document the scope of Scipp, in particular that data structures must remain conceptually simple.
+- Go with proposed solution, i.e., remove ``attrs`` from ``DataArray``.
 
 Consequences
 ------------
