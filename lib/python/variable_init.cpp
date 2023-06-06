@@ -10,6 +10,7 @@
 #include "scipp/core/tag_util.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/units/string.h"
+#include "scipp/variable/structures.h"
 #include "scipp/variable/to_unit.h"
 #include "scipp/variable/variable.h"
 
@@ -81,7 +82,18 @@ void ensure_same_shape(const py::object &values, const py::object &variances) {
 }
 
 namespace detail {
+void consume_extra_dims(py::iterator &shape_it,
+                        const scipp::index n_extra_dims) {
+  for (scipp::index i = 0; i < n_extra_dims; ++i) {
+    if (shape_it == shape_it.end())
+      throw std::invalid_argument(
+          "Data has too few dimensions for given dimension labels.");
+    ++shape_it;
+  }
+}
+
 Dimensions build_dimensions(py::iterator &&label_it, py::iterator &&shape_it,
+                            const scipp::index n_extra_dims,
                             const std::string_view shape_name) {
   Dimensions dims;
   scipp::index dim = 0;
@@ -90,6 +102,7 @@ Dimensions build_dimensions(py::iterator &&label_it, py::iterator &&shape_it,
     dims.addInner(Dim{label_it->cast<std::string>()},
                   shape_it->cast<scipp::index>());
   }
+  consume_extra_dims(shape_it, n_extra_dims);
   if (label_it != label_it.end() || shape_it != shape_it.end()) {
     throw_ndim_mismatch_error(dim + n_remaining(label_it), "dims",
                               dim + n_remaining(shape_it), shape_name);
@@ -100,17 +113,18 @@ Dimensions build_dimensions(py::iterator &&label_it, py::iterator &&shape_it,
 
 Dimensions build_dimensions(const py::object &dim_labels,
                             const py::object &values,
-                            const py::object &variances) {
+                            const py::object &variances,
+                            const scipp::index n_extra_dims = 0) {
   if (is_empty(dim_labels)) {
     return Dimensions{};
   } else {
     if (!values.is_none()) {
       ensure_same_shape(values, variances);
       return detail::build_dimensions(py::iter(dim_labels), shape_of(values),
-                                      "values");
+                                      n_extra_dims, "values");
     } else {
       return detail::build_dimensions(py::iter(dim_labels), shape_of(variances),
-                                      "variances");
+                                      n_extra_dims, "variances");
     }
   }
 }
@@ -211,11 +225,42 @@ Variable make_variable(const py::object &dim_labels, const py::object &values,
   const auto unit = unit_.value_or(variable::default_unit_for(dtype));
   return core::CallDType<double, float, int64_t, int32_t, bool,
                          scipp::core::time_point, std::string, Variable,
-                         DataArray, Dataset, Eigen::Vector3d, Eigen::Matrix3d,
+                         DataArray, Dataset,
                          python::PyObject>::apply<MakeVariable>(dtype, dims,
                                                                 values,
                                                                 variances,
                                                                 unit);
+}
+
+template <int N> Dimensions pad_structure_dimensions(Dimensions dims) {
+  dims.addInner(Dim::InternalStructureComponent, N);
+  return dims;
+}
+
+template <int M, int N> Dimensions pad_structure_dimensions(Dimensions dims) {
+  dims.addInner(Dim::InternalStructureRow, M);
+  dims.addInner(Dim::InternalStructureColumn, N);
+  return dims;
+}
+
+template <class T, class Elem, int... N>
+Variable make_structured_variable(const py::object &dim_labels,
+                                  const py::object &values_,
+                                  const py::object &variances,
+                                  const std::optional<units::Unit> &unit_) {
+  if (!variances.is_none())
+    throw except::VariancesError("Variances not supported for dtype " +
+                                 to_string(dtype<Elem>));
+
+  const auto values = py::array(values_);
+  const auto unit = unit_.value_or(variable::default_unit_for(dtype<Elem>));
+  const auto dims =
+      build_dimensions(dim_labels, values, py::none(), sizeof...(N));
+  const auto padded_dims = pad_structure_dimensions<N...>(dims);
+
+  auto var = variable::make_structures<T, Elem>(
+      dims, unit, make_element_array<Elem>(padded_dims, values, unit));
+  return var;
 }
 } // namespace
 
@@ -234,6 +279,23 @@ void bind_init(py::class_<Variable> &cls) {
         }
         const auto [scipp_dtype, actual_unit] =
             cast_dtype_and_unit(dtype, unit);
+
+        if (scipp_dtype == ::dtype<Eigen::Vector3d>)
+          return make_structured_variable<Eigen::Vector3d, double, 3>(
+              dim_labels, values, variances, actual_unit);
+        if (scipp_dtype == ::dtype<Eigen::Matrix3d>)
+          return make_structured_variable<Eigen::Matrix3d, double, 3, 3>(
+              dim_labels, values, variances, actual_unit);
+        if (scipp_dtype == ::dtype<Eigen::Affine3d>)
+          return make_structured_variable<Eigen::Affine3d, double, 4, 4>(
+              dim_labels, values, variances, actual_unit);
+        if (scipp_dtype == ::dtype<core::Quaternion>)
+          return make_structured_variable<core::Quaternion, double, 4>(
+              dim_labels, values, variances, actual_unit);
+        if (scipp_dtype == ::dtype<core::Translation>)
+          return make_structured_variable<core::Translation, double, 3>(
+              dim_labels, values, variances, actual_unit);
+
         return make_variable(dim_labels, values, variances, actual_unit,
                              scipp_dtype);
       }),
