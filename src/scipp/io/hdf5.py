@@ -278,12 +278,12 @@ class VariableIO:
         else:
             contents['unit'] = None  # essential, otherwise default unit is used
         contents['with_variances'] = 'variances' in group
+        contents['aligned'] = values.attrs.get('aligned', True)
         if contents['dtype'] in [d.VariableView, d.DataArrayView, d.DatasetView]:
             var = BinDataIO.read(group)
         else:
             var = sc.empty(**contents)
             cls._read_data(group, var)
-        var.set_aligned(values.attrs.get('aligned', True))
         return var
 
 

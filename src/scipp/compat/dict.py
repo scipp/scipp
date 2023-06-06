@@ -150,7 +150,7 @@ def _dict_to_variable(d):
     d = dict(d)
     # The Variable constructor does not accept both `shape` and `values`. If
     # `values` is present, remove `shape` from the list.
-    keylist = set(d.keys()) - {"aligned"}
+    keylist = set(d.keys())
     if "values" in keylist and "shape" in keylist:
         keylist.remove("shape")
     out = {}
@@ -175,7 +175,6 @@ def _dict_to_variable(d):
             if key in out:
                 del out[key]
     var = make_var(**out)
-    var.set_aligned(d.get("aligned", True))
     return var
 
 
