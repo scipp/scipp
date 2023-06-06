@@ -24,7 +24,7 @@ import numpy as np
 
 from .. import units
 from .._scipp import core as _core_cpp
-from ..core import Unit, UnitError, Variable, vectors
+from ..core import DType, Unit, UnitError, Variable, vectors
 from ..core._cpp_wrapper_util import call_func as _call_cpp_func
 
 
@@ -91,7 +91,9 @@ def translation(
     :
         A scalar variable of dtype ``translation3``.
     """
-    return _call_cpp_func(_core_cpp.translations, dims=[], unit=unit, values=value)
+    return _core_cpp.Variable(
+        dims=(), unit=unit, values=value, dtype=DType.translation3
+    )
 
 
 def translations(
@@ -117,7 +119,9 @@ def translations(
     :
         An array variable of dtype ``translation3``.
     """
-    return _call_cpp_func(_core_cpp.translations, dims=dims, unit=unit, values=values)
+    return _core_cpp.Variable(
+        dims=dims, unit=unit, values=values, dtype=DType.translation3
+    )
 
 
 def scaling_from_vector(*, value: Union[_np.ndarray, list]):
@@ -194,7 +198,7 @@ def rotation(*, value: Union[_np.ndarray, list]):
     :
         A scalar variable of dtype ``rotation3``.
     """
-    return _call_cpp_func(_core_cpp.rotations, dims=[], values=value)
+    return _core_cpp.Variable(dims=(), values=value, dtype=DType.rotation3)
 
 
 def rotations(*, dims: Sequence[str], values: Union[_np.ndarray, list]):
@@ -238,7 +242,7 @@ def rotations(*, dims: Sequence[str], values: Union[_np.ndarray, list]):
             "4 components. If you want to pass a rotation matrix, use "
             "sc.linear_transforms instead."
         )
-    return _call_cpp_func(_core_cpp.rotations, dims=dims, values=values)
+    return _core_cpp.Variable(dims=dims, values=values, dtype=DType.rotation3)
 
 
 def rotations_from_rotvecs(rotation_vectors: Variable) -> Variable:
@@ -355,11 +359,11 @@ def affine_transforms(
     :
         An array variable of dtype ``affine_transform3``.
     """
-    return _call_cpp_func(
-        _core_cpp.affine_transforms,
+    return _core_cpp.Variable(
         dims=dims,
         unit=unit,
         values=_to_eigen_layout(values),
+        dtype=DType.affine_transform3,
     )
 
 
@@ -383,8 +387,11 @@ def linear_transform(
     :
         A scalar variable of dtype ``linear_transform3``.
     """
-    return _call_cpp_func(
-        _core_cpp.matrices, dims=[], unit=unit, values=_to_eigen_layout(value)
+    return _core_cpp.Variable(
+        dims=(),
+        unit=unit,
+        values=_to_eigen_layout(value),
+        dtype=DType.linear_transform3,
     )
 
 
@@ -411,8 +418,11 @@ def linear_transforms(
     :
         An array variable of dtype ``linear_transform3``.
     """
-    return _call_cpp_func(
-        _core_cpp.matrices, dims=dims, unit=unit, values=_to_eigen_layout(values)
+    return _core_cpp.Variable(
+        dims=dims,
+        unit=unit,
+        values=_to_eigen_layout(values),
+        dtype=DType.linear_transform3,
     )
 
 

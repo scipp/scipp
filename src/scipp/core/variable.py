@@ -394,7 +394,7 @@ def vector(
       >>> sc.vector(value=[4, 5, 6], unit='m')
       <scipp.Variable> ()    vector3              [m]  (4, 5, 6)
     """
-    return _cpp.vectors(dims=[], unit=unit, values=value)
+    return _cpp.Variable(dims=(), values=value, unit=unit, dtype=DType.vector3)
 
 
 def vectors(
@@ -443,7 +443,7 @@ def vectors(
       >>> sc.vectors(dims=['x'], values=[[1, 2, 3], [4, 5, 6]], unit='mm')
       <scipp.Variable> (x: 2)    vector3             [mm]  [(1, 2, 3), (4, 5, 6)]
     """
-    return _cpp.vectors(dims=dims, unit=unit, values=values)
+    return _cpp.Variable(dims=dims, values=values, unit=unit, dtype=DType.vector3)
 
 
 def array(

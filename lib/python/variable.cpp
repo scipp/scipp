@@ -5,9 +5,6 @@
 
 #include "scipp/units/unit.h"
 
-#include "scipp/common/numeric.h"
-
-#include "scipp/core/dtype.h"
 #include "scipp/core/spatial_transforms.h"
 #include "scipp/core/time_point.h"
 
@@ -23,43 +20,13 @@
 #include "bind_operators.h"
 #include "bind_slice_methods.h"
 #include "dim.h"
-#include "numpy.h"
 #include "pybind11.h"
 #include "rename.h"
-#include "unit.h"
 
 using namespace scipp;
 using namespace scipp::variable;
 
 namespace py = pybind11;
-
-template <class T, class Elem, int... N>
-void bind_structured_creation(py::module &m, const std::string &name) {
-  m.def(
-      name.c_str(),
-      [](const std::vector<std::string> &labels, py::array_t<Elem> &values,
-         const ProtoUnit &unit) {
-        if (scipp::size(labels) != values.ndim() - scipp::index(sizeof...(N)))
-          throw std::runtime_error("bad shape to make structured type");
-        const auto unit_ = unit_or_default(unit, dtype<T>);
-        auto var = variable::make_structures<T, Elem>(
-            Dimensions(to_dim_type(labels),
-                       std::vector<scipp::index>(
-                           values.shape(), values.shape() + labels.size())),
-            unit_,
-            element_array<Elem>(values.size(), core::init_for_overwrite));
-        auto elems = var.template elements<T>();
-        if constexpr (sizeof...(N) != 1)
-          elems = fold(elems, Dim::InternalStructureComponent,
-                       Dimensions({Dim::InternalStructureRow,
-                                   Dim::InternalStructureColumn},
-                                  {scipp::index(N)...}));
-        copy_array_into_view(values, elems.template values<Elem>(),
-                             elems.dims());
-        return var;
-      },
-      py::arg("dims"), py::arg("values"), py::arg("unit") = DefaultUnit{});
-}
 
 template <class T> struct GetElements {
   static Variable apply(Variable &var, const std::string &key) {
@@ -144,14 +111,6 @@ The alignment w.r.t. the events can be queried via
       },
       py::arg("x"), py::arg("dim") = py::none(),
       py::call_guard<py::gil_scoped_release>());
-
-  bind_structured_creation<Eigen::Vector3d, double, 3>(m, "vectors");
-  bind_structured_creation<Eigen::Matrix3d, double, 3, 3>(m, "matrices");
-  bind_structured_creation<Eigen::Affine3d, double, 4, 4>(m,
-                                                          "affine_transforms");
-  bind_structured_creation<scipp::core::Quaternion, double, 4>(m, "rotations");
-  bind_structured_creation<scipp::core::Translation, double, 3>(m,
-                                                                "translations");
 
   using structured_t =
       std::tuple<Eigen::Vector3d, Eigen::Matrix3d, Eigen::Affine3d,
