@@ -5,4 +5,5 @@
 
 # flake8: noqa
 
+from .csv import load_csv
 from .hdf5 import load_hdf5, open_hdf5
