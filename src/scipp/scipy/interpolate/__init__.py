@@ -145,7 +145,7 @@ def interp1d(
       <scipp.DataArray>
       Dimensions: Sizes[x:12, ]
       Coordinates:
-        x                         float64            [rad]  (x)  [0.1, 0.218182, ..., 1.28182, 1.4]
+      * x                         float64            [rad]  (x)  [0.1, 0.218182, ..., 1.28182, 1.4]
       Data:
                                   float64  [dimensionless]  (x)  [0.0998334, 0.211262, ..., 0.941144, 0.98545]
 
@@ -153,7 +153,7 @@ def interp1d(
       <scipp.DataArray>
       Dimensions: Sizes[x:11, ]
       Coordinates:
-        x                         float64            [rad]  (x [bin-edge])  [0.1, 0.218182, ..., 1.28182, 1.4]
+      * x                         float64            [rad]  (x [bin-edge])  [0.1, 0.218182, ..., 1.28182, 1.4]
       Data:
                                   float64  [dimensionless]  (x)  [0.155548, 0.266977, ..., 0.918992, 0.963297]
 

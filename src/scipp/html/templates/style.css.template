@@ -206,7 +206,7 @@ caused by <span> tag wrapping around the dollar-sign in the Jpyter notebook.
   padding: 0 !important;
 }
 
-.sc-has-index {
+.sc-aligned {
   font-weight: bold;
 }
 

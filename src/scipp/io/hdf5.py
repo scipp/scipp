@@ -261,6 +261,7 @@ class VariableIO:
         dset.attrs['dtype'] = str(var.dtype)
         if var.unit is not None:
             dset.attrs['unit'] = _serialize_unit(var.unit)
+        dset.attrs['aligned'] = var.aligned
         return group
 
     @classmethod
@@ -277,6 +278,7 @@ class VariableIO:
         else:
             contents['unit'] = None  # essential, otherwise default unit is used
         contents['with_variances'] = 'variances' in group
+        contents['aligned'] = values.attrs.get('aligned', True)
         if contents['dtype'] in [d.VariableView, d.DataArrayView, d.DatasetView]:
             var = BinDataIO.read(group)
         else:

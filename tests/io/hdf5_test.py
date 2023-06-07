@@ -224,6 +224,19 @@ def test_data_array_unsupported_PyObject_coord():
     assert sc.identical(a, b)
 
 
+def test_data_array_coord_alignment():
+    a = array_2d.copy()
+    a.coords.set_aligned('y', False)
+    b = roundtrip(a)
+    assert sc.identical(a, b)
+
+
+def test_variable_binned_data_array_coord_alignment():
+    binned = sc.bins(dim='x', data=array_1d)
+    binned.bins.coords.set_aligned('x', False)
+    check_roundtrip(binned)
+
+
 def test_dataset():
     d = sc.Dataset(data={'a': array_1d, 'b': array_2d})
     check_roundtrip(d)

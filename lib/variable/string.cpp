@@ -85,7 +85,7 @@ std::string format_variable_compact(const Variable &variable) {
 }
 
 std::string format_variable(const Variable &variable,
-                            const std::optional<Sizes> datasetSizes) {
+                            const std::optional<Sizes> &datasetSizes) {
   if (!variable.is_valid())
     return "invalid variable\n";
   std::stringstream s;

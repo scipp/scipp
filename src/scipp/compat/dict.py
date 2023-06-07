@@ -61,6 +61,8 @@ def _variable_to_dict(v):
         "unit": v.unit,
         "dtype": v.dtype,
     }
+    if not v.aligned:
+        out["aligned"] = False
 
     # Use defaultdict to return the raw values/variances by default
     dtype_parser = defaultdict(lambda: lambda x, y: x)
@@ -131,7 +133,7 @@ def from_dict(dict_obj: dict) -> VariableLike:
         # Case of a DataArray-like dict (most-likely)
         return _dict_to_data_array(dict_obj)
     elif keys_as_set.issubset(
-        {"dims", "values", "variances", "unit", "dtype", "shape"}
+        {"dims", "values", "variances", "unit", "dtype", "shape", "aligned"}
     ):
         # Case of a Variable-like dict (most-likely)
         return _dict_to_variable(dict_obj)
@@ -148,7 +150,7 @@ def _dict_to_variable(d):
     d = dict(d)
     # The Variable constructor does not accept both `shape` and `values`. If
     # `values` is present, remove `shape` from the list.
-    keylist = list(d.keys())
+    keylist = set(d.keys())
     if "values" in keylist and "shape" in keylist:
         keylist.remove("shape")
     out = {}
@@ -172,7 +174,8 @@ def _dict_to_variable(d):
         for key in ['dtype', 'variance', 'variances']:
             if key in out:
                 del out[key]
-    return make_var(**out)
+    var = make_var(**out)
+    return var
 
 
 def _dict_to_data_array(d):

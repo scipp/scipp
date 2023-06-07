@@ -110,7 +110,7 @@ def concat(x: Sequence[VariableLikeType], dim: str) -> VariableLikeType:
       <scipp.DataArray>
       Dimensions: Sizes[x:6, ]
       Coordinates:
-        x                           int64  [dimensionless]  (x)  [0, 1, ..., 100, 200]
+      * x                           int64  [dimensionless]  (x)  [0, 1, ..., 100, 200]
       Data:
                                     int64  [dimensionless]  (x)  [0, 1, ..., 100, 200]
       >>> z.values
@@ -182,7 +182,7 @@ def fold(
       <scipp.DataArray>
       Dimensions: Sizes[y:2, z:3, ]
       Coordinates:
-        x                           int64  [dimensionless]  (y, z)  [0, 1, ..., 4, 5]
+      * x                           int64  [dimensionless]  (y, z)  [0, 1, ..., 4, 5]
       Data:
                                   float64  [dimensionless]  (y, z)  [0, 0.1, ..., 0.4, 0.5]
       >>> sc.fold(a, dim='x', sizes={'y': 2, 'z': 3}).data.values
@@ -289,18 +289,18 @@ def flatten(
       <scipp.DataArray>
       Dimensions: Sizes[x:2, y:3, ]
       Coordinates:
-        x                           int64  [dimensionless]  (x)  [0, 1]
-        xy                          int64  [dimensionless]  (x, y)  [0, 1, ..., 4, 5]
-        y                           int64  [dimensionless]  (y)  [0, 1, 2]
+      * x                           int64  [dimensionless]  (x)  [0, 1]
+      * xy                          int64  [dimensionless]  (x, y)  [0, 1, ..., 4, 5]
+      * y                           int64  [dimensionless]  (y)  [0, 1, 2]
       Data:
                                   float64  [dimensionless]  (x, y)  [0, 0.1, ..., 0.4, 0.5]
       >>> sc.flatten(a, to='u')
       <scipp.DataArray>
       Dimensions: Sizes[u:6, ]
       Coordinates:
-        x                           int64  [dimensionless]  (u)  [0, 0, ..., 1, 1]
-        xy                          int64  [dimensionless]  (u)  [0, 1, ..., 4, 5]
-        y                           int64  [dimensionless]  (u)  [0, 1, ..., 1, 2]
+      * x                           int64  [dimensionless]  (u)  [0, 0, ..., 1, 1]
+      * xy                          int64  [dimensionless]  (u)  [0, 1, ..., 4, 5]
+      * y                           int64  [dimensionless]  (u)  [0, 1, ..., 1, 2]
       Data:
                                   float64  [dimensionless]  (u)  [0, 0.1, ..., 0.4, 0.5]
 
@@ -392,8 +392,8 @@ def squeeze(
       <scipp.DataArray>
       Dimensions: Sizes[x:1, y:3, z:1, ]
       Coordinates:
-        x                           int64  [dimensionless]  (x)  [0]
-        y                           int64  [dimensionless]  (y)  [0, 1, 2]
+      * x                           int64  [dimensionless]  (x)  [0]
+      * y                           int64  [dimensionless]  (y)  [0, 1, 2]
       Data:
                                     int64  [dimensionless]  (x, y, z)  [0, 1, 2]
       >>> sc.squeeze(da)
@@ -401,7 +401,7 @@ def squeeze(
       Dimensions: Sizes[y:3, ]
       Coordinates:
         x                           int64  [dimensionless]  ()  0
-        y                           int64  [dimensionless]  (y)  [0, 1, 2]
+      * y                           int64  [dimensionless]  (y)  [0, 1, 2]
       Data:
                                     int64  [dimensionless]  (y)  [0, 1, 2]
     """

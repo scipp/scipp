@@ -339,7 +339,7 @@ def hist(x, arg_dict=None, /, **kwargs):
       <scipp.DataArray>
       Dimensions: Sizes[x:2, ]
       Coordinates:
-        x                         float64              [m]  (x [bin-edge])  [0.00313229, 0.497696, 0.992259]
+      * x                         float64              [m]  (x [bin-edge])  [0.00313229, 0.497696, 0.992259]
       Data:
                                   float64              [K]  (x)  [53, 47]
 

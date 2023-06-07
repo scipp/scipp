@@ -1971,6 +1971,9 @@ class Variable:
     def save_hdf5(self, filename: Union[str, Path]) -> None:
         ...
 
+    def set_aligned(self, aligned: bool) -> None:
+        ...
+
     @property
     def shape(self) -> tuple:
         ...
