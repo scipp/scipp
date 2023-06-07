@@ -3,7 +3,7 @@
 
 from io import BytesIO, StringIO
 from os import PathLike
-from typing import Union
+from typing import Iterable, Optional, Union
 
 from ..compat import from_pandas
 from ..core import Dataset
@@ -25,8 +25,29 @@ def _load_dataframe(
     return pd.read_table(filepath_or_buffer, sep=sep)
 
 
+def _assign_coords_in_place(
+    ds: Dataset, data_columns: Optional[Union[str, Iterable[str]]] = None
+):
+    if data_columns is None:
+        return
+    if isinstance(data_columns, str):
+        data_columns = {data_columns}
+
+    if extra_keys := set(data_columns) - set(ds.keys()):
+        raise KeyError(f"Dataset has no such columns: {extra_keys}")
+
+    for key in list(ds.keys()):
+        if key not in data_columns:
+            ds.coords[key] = ds.pop(key).data
+
+
 def load_csv(
-    filename: Union[str, PathLike[str], StringIO, BytesIO], sep: str = '\t'
+    filename: Union[str, PathLike[str], StringIO, BytesIO],
+    *,
+    sep: str = '\t',
+    data_columns: Optional[Union[str, Iterable[str]]] = None,
 ) -> Dataset:
     df = _load_dataframe(filename, sep=sep)
-    return from_pandas(df)
+    ds = from_pandas(df)
+    _assign_coords_in_place(ds, data_columns)
+    return ds

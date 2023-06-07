@@ -48,3 +48,69 @@ def test_load_csv_dataset_default_sep():
         coords={'row': sc.array(dims=['row'], values=[0, 1, 2, 3])},
     )
     assert_identical(loaded, expected)
+
+
+@pytest.mark.parametrize('data_columns', ('xyz', ['xyz']))
+def test_load_csv_dataset_select_single_data(data_columns):
+    csv = '''abc\txyz\tfoo
+1.2\t3.4\t5.6
+0.8\t0.6\t0.4'''
+
+    loaded = sc.io.load_csv(StringIO(csv), data_columns=data_columns)
+    expected = sc.Dataset(
+        {
+            'xyz': sc.array(dims=['row'], values=[3.4, 0.6]),
+        },
+        coords={
+            'row': sc.array(dims=['row'], values=[0, 1]),
+            'abc': sc.array(dims=['row'], values=[1.2, 0.8]),
+            'foo': sc.array(dims=['row'], values=[5.6, 0.4]),
+        },
+    )
+    assert_identical(loaded, expected)
+
+
+def test_load_csv_dataset_select_multiple_data():
+    csv = '''abc\txyz\tfoo
+1.2\t3.4\t5.6
+0.8\t0.6\t0.4'''
+
+    loaded = sc.io.load_csv(StringIO(csv), data_columns=['xyz', 'abc'])
+    expected = sc.Dataset(
+        {
+            'abc': sc.array(dims=['row'], values=[1.2, 0.8]),
+            'xyz': sc.array(dims=['row'], values=[3.4, 0.6]),
+        },
+        coords={
+            'row': sc.array(dims=['row'], values=[0, 1]),
+            'foo': sc.array(dims=['row'], values=[5.6, 0.4]),
+        },
+    )
+    assert_identical(loaded, expected)
+
+
+def test_load_csv_dataset_select_no_data():
+    csv = '''abc\txyz\tfoo
+1.2\t3.4\t5.6
+0.8\t0.6\t0.4'''
+
+    loaded = sc.io.load_csv(StringIO(csv), data_columns=[])
+    expected = sc.Dataset(
+        {},
+        coords={
+            'row': sc.array(dims=['row'], values=[0, 1]),
+            'abc': sc.array(dims=['row'], values=[1.2, 0.8]),
+            'xyz': sc.array(dims=['row'], values=[3.4, 0.6]),
+            'foo': sc.array(dims=['row'], values=[5.6, 0.4]),
+        },
+    )
+    assert_identical(loaded, expected)
+
+
+def test_load_csv_dataset_select_undefined_data_raises():
+    csv = '''abc\txyz\tfoo
+1.2\t3.4\t5.6
+0.8\t0.6\t0.4'''
+
+    with pytest.raises(KeyError):
+        _ = sc.io.load_csv(StringIO(csv), data_columns=['does-not-exist'])
