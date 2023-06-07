@@ -114,3 +114,19 @@ def test_load_csv_dataset_select_undefined_data_raises():
 
     with pytest.raises(KeyError):
         _ = sc.io.load_csv(StringIO(csv), data_columns=['does-not-exist'])
+
+
+def test_load_csv_dataset_without_index():
+    csv = '''abc\txyz
+1.2\t3.4
+0.8\t0.6'''
+
+    loaded = sc.io.load_csv(StringIO(csv), include_index=False)
+    expected = sc.Dataset(
+        {
+            'abc': sc.array(dims=['row'], values=[1.2, 0.8]),
+            'xyz': sc.array(dims=['row'], values=[3.4, 0.6]),
+        },
+        coords={},
+    )
+    assert_identical(loaded, expected)

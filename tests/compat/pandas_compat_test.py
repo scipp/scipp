@@ -100,6 +100,17 @@ def test_series_with_named_series_and_named_axis():
     assert sc.identical(sc_ds, reference_da)
 
 
+def test_series_without_index_coord():
+    pd_df = pandas.Series(data=[1, 2, 3])
+
+    sc_ds = from_pandas(pd_df, include_index=False)
+
+    reference_da = _make_reference_da("row", [0, 1, 2], [1, 2, 3])
+    reference_da.coords.clear()
+
+    assert sc.identical(sc_ds, reference_da)
+
+
 def test_1d_dataframe():
     pd_df = pandas.DataFrame(data=[1, 2, 3])
 
@@ -117,6 +128,17 @@ def test_1d_dataframe_with_named_axis():
     sc_ds = from_pandas(pd_df)
 
     reference_ds = _make_1d_reference_ds("1d_df", "my-column", [1, 2, 3], [0, 1, 2])
+
+    assert sc.identical(sc_ds, reference_ds)
+
+
+def test_1d_dataframe_without_index_coord():
+    pd_df = pandas.DataFrame(data=[1, 2, 3])
+
+    sc_ds = from_pandas(pd_df, include_index=False)
+
+    reference_ds = _make_1d_reference_ds("row", "0", [1, 2, 3], [0, 1, 2])
+    reference_ds.coords.clear()
 
     assert sc.identical(sc_ds, reference_ds)
 

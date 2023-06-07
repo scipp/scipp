@@ -46,8 +46,9 @@ def load_csv(
     *,
     sep: str = '\t',
     data_columns: Optional[Union[str, Iterable[str]]] = None,
+    include_index: bool = True,
 ) -> Dataset:
     df = _load_dataframe(filename, sep=sep)
-    ds = from_pandas(df)
+    ds = from_pandas(df, include_index=include_index)
     _assign_coords_in_place(ds, data_columns)
     return ds
