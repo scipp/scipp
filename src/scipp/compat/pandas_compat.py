@@ -52,15 +52,26 @@ def from_pandas_dataframe(
 ) -> Dataset:
     import pandas as pd
 
-    data = [
+    columns = (
         from_pandas_series(
             pd.Series(df[column_name]),
             include_index=include_index,
             head_parser=head_parser,
         )
         for column_name in df.axes[1]
-    ]
-    return Dataset({da.name: da for da in data})
+    )
+    coords = {da.name: da for da in columns}
+
+    if data_columns is None:
+        data = coords
+        coords = {}
+    else:
+        if isinstance(data_columns, str):
+            data_columns = (data_columns,)
+        data = {name: coords.pop(name) for name in data_columns}
+        coords = {name: coord.data for name, coord in coords.items()}
+
+    return Dataset(data, coords=coords)
 
 
 def from_pandas(
@@ -80,6 +91,8 @@ def from_pandas(
     data_columns:
         Select which columns to assign as data.
         The rest are returned as coordinates.
+        If ``None``, all columns are assigned as data.
+        Use an empty list to assign all columns as coordinates.
     include_index:
         If True, the row index is included in the output as a coordinate.
     head_parser:
@@ -105,7 +118,10 @@ def from_pandas(
 
     if isinstance(pd_obj, pd.DataFrame):
         return from_pandas_dataframe(
-            pd_obj, include_index=include_index, head_parser=head_parser
+            pd_obj,
+            data_columns=data_columns,
+            include_index=include_index,
+            head_parser=head_parser,
         )
     elif isinstance(pd_obj, pd.Series):
         return from_pandas_series(

@@ -25,31 +25,39 @@ def _load_dataframe(
     return pd.read_table(filepath_or_buffer, sep=sep)
 
 
-def _assign_coords_in_place(
-    ds: Dataset, data_columns: Optional[Union[str, Iterable[str]]] = None
-):
-    if data_columns is None:
-        return
-    if isinstance(data_columns, str):
-        data_columns = {data_columns}
-
-    if extra_keys := set(data_columns) - set(ds.keys()):
-        raise KeyError(f"Dataset has no such columns: {extra_keys}")
-
-    for key in list(ds.keys()):
-        if key not in data_columns:
-            ds.coords[key] = ds.pop(key).data
-
-
 def load_csv(
     filename: Union[str, PathLike[str], StringIO, BytesIO],
     *,
-    sep: str = '\t',
+    sep: Optional[str] = '\t',
     data_columns: Optional[Union[str, Iterable[str]]] = None,
     include_index: bool = True,
     head_parser: HeadParserArg = None,
 ) -> Dataset:
+    """Load a CSV file as a dataset.
+
+    Parameters
+    ----------
+    filename:
+        Path or URL of file to load or buffer to load from.
+    sep:
+        Column separator.
+        Automatically deduced if ``sep is None``.
+        See :func:`pandas.read_csv` for details.
+    data_columns:
+        Select which columns to assign as data.
+        The rest are returned as coordinates.
+        If ``None``, all columns are assigned as data.
+        Use an empty list to assign all columns as coordinates.
+    include_index:
+        If ``True``, include the index as a coordinate.
+    head_parser:
+        Parser for column headers.
+        See :func:`scipp.compat.pandas_compat.from_pandas` for details.
+    """
     df = _load_dataframe(filename, sep=sep)
-    ds = from_pandas(df, include_index=include_index, head_parser=head_parser)
-    _assign_coords_in_place(ds, data_columns)
-    return ds
+    return from_pandas(
+        df,
+        data_columns=data_columns,
+        include_index=include_index,
+        head_parser=head_parser,
+    )
