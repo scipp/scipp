@@ -32,7 +32,7 @@ from ..core import Dataset
 # The typehint of filepath_or_buffer is less generic than in pd.read_table
 # because the definitions of protocols are private in pandas.
 def _load_dataframe(
-    filepath_or_buffer: Union[str, PathLike[str], StringIO, BytesIO], sep: str
+    filepath_or_buffer: Union[str, PathLike, StringIO, BytesIO], sep: str
 ):
     try:
         import pandas as pd
@@ -46,7 +46,7 @@ def _load_dataframe(
 
 
 def load_csv(
-    filename: Union[str, PathLike[str], StringIO, BytesIO],
+    filename: Union[str, PathLike, StringIO, BytesIO],
     *,
     sep: Optional[str] = '\t',
     data_columns: Optional[Union[str, Iterable[str]]] = None,
