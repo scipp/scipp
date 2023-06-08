@@ -130,3 +130,20 @@ def test_load_csv_dataset_without_index():
         coords={},
     )
     assert_identical(loaded, expected)
+
+
+def test_load_csv_parse_units():
+    csv = '''abc [m]\t [kg/s]\t foo
+1.2\t3.4\t5.6
+0.8\t0.6\t0.4'''
+
+    loaded = sc.io.load_csv(StringIO(csv), head_parser="bracket")
+    expected = sc.Dataset(
+        {
+            'abc': sc.array(dims=['row'], values=[1.2, 0.8], unit='m'),
+            '': sc.array(dims=['row'], values=[3.4, 0.6], unit='kg/s'),
+            ' foo': sc.array(dims=['row'], values=[5.6, 0.4], unit='one'),
+        },
+        coords={'row': sc.array(dims=['row'], values=[0, 1])},
+    )
+    assert_identical(loaded, expected)

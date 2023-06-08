@@ -5,11 +5,11 @@ from io import BytesIO, StringIO
 from os import PathLike
 from typing import Iterable, Optional, Union
 
-from ..compat import from_pandas
+from ..compat.pandas_compat import HeadParserArg, from_pandas
 from ..core import Dataset
 
 
-# The typehint of filepath_or_buffer is only an approximation of Panda's
+# The typehint of filepath_or_buffer is less generic than in pd.read_table
 # because the definitions of protocols are private in pandas.
 def _load_dataframe(
     filepath_or_buffer: Union[str, PathLike[str], StringIO, BytesIO], sep: str
@@ -47,8 +47,9 @@ def load_csv(
     sep: str = '\t',
     data_columns: Optional[Union[str, Iterable[str]]] = None,
     include_index: bool = True,
+    head_parser: HeadParserArg = None,
 ) -> Dataset:
     df = _load_dataframe(filename, sep=sep)
-    ds = from_pandas(df, include_index=include_index)
+    ds = from_pandas(df, include_index=include_index, head_parser=head_parser)
     _assign_coords_in_place(ds, data_columns)
     return ds
