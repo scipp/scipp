@@ -12,6 +12,7 @@ Core Functionality
    :recursive:
 
    binning
+   compat
    constants
    io
    spatial

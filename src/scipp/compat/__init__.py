@@ -3,6 +3,8 @@
 # @file
 # @author Jan-Lukas Wynen
 
+"""Functions to convert to/from data structures of other libraries."""
+
 from .pandas_compat import from_pandas
 from .xarray_compat import from_xarray, to_xarray
 
