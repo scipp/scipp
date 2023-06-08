@@ -1,6 +1,26 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 
+"""Load CSV files.
+
+Note
+----
+CSV support requires `pandas <https://pandas.pydata.org/>`_ to be installed.
+You need to do this manually as it is not declared as a dependency of Scipp.
+You can use either ``pip install pandas`` or ``conda install -c conda-forge pandas``.
+
+
+CSV ('comma separated values') files store a simple table of data as a string.
+There are many different forms of this format.
+So check whether the loaded data is what you expect for your files.
+See ``scipp.io.csv.load_csv`` for examples.
+
+See Also
+--------
+pandas.read_csv:
+    More details on the underlying parser.
+"""
+
 from io import BytesIO, StringIO
 from os import PathLike
 from typing import Iterable, Optional, Union
@@ -52,7 +72,65 @@ def load_csv(
         If ``True``, include the index as a coordinate.
     head_parser:
         Parser for column headers.
-        See :func:`scipp.compat.pandas_compat.from_pandas` for details.
+        See :func:`scipp.compat.from_pandas` for details.
+
+    Returns
+    -------
+    :
+        A the loaded data as a dataset.
+
+    Examples
+    --------
+    Given the following CSV 'file':
+
+       >>> from io import StringIO
+       >>> csv_content = '''a [m]\\tb [s]\\tc
+       ... 1\\t5\\t9
+       ... 2\\t6\\t10
+       ... 3\\t7\\t11
+       ... 4\\t8\\t12'''
+
+    By default, it will be loaded as
+
+       >>> sc.io.load_csv(StringIO(csv_content))
+       <scipp.Dataset>
+       Dimensions: Sizes[row:4, ]
+       Coordinates:
+       * row                         int64  [dimensionless]  (row)  [0, 1, 2, 3]
+       Data:
+         a [m]                       int64  [dimensionless]  (row)  [1, 2, 3, 4]
+         b [s]                       int64  [dimensionless]  (row)  [5, 6, 7, 8]
+         c                           int64  [dimensionless]  (row)  [9, 10, 11, 12]
+
+    In this example, the column headers encode units.
+    They can be parsed into actual units:
+
+       >>> sc.io.load_csv(StringIO(csv_content), head_parser='bracket')
+       <scipp.Dataset>
+       Dimensions: Sizes[row:4, ]
+       Coordinates:
+       * row                         int64  [dimensionless]  (row)  [0, 1, 2, 3]
+       Data:
+         a                           int64              [m]  (row)  [1, 2, 3, 4]
+         b                           int64              [s]  (row)  [5, 6, 7, 8]
+         c                           int64  [dimensionless]  (row)  [9, 10, 11, 12]
+
+    It is possible to select which columns are stored as data.
+    In addition, this example omits the auxiliary 'row' coordinate.
+
+       >>> sc.io.load_csv(
+       ...     StringIO(csv_content),
+       ...     head_parser='bracket',
+       ...     data_columns='a',
+       ...     include_index=False
+       ... )
+       <scipp.Dataset>
+       Dimensions: Sizes[row:4, ]
+       Coordinates:
+       * b                           int64              [s]  (row)  [5, 6, 7, 8]
+       * c                           int64  [dimensionless]  (row)  [9, 10, 11, 12]
+       Data:
+         a                           int64              [m]  (row)  [1, 2, 3, 4]
     """
     df = _load_dataframe(filename, sep=sep)
     return from_pandas(

@@ -13,6 +13,7 @@ Core Functionality
 
    binning
    constants
+   io
    spatial
    units
 
