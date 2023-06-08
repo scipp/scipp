@@ -100,14 +100,11 @@ def from_pandas(
         By default, it returns the column name and uses the default unit.
         Builtin parsers can be specified by name:
 
-        - ``"bracket"``: Parses strings of the form ``name [unit]`` where ``name``
-          be any string that does not contain the character ``[``.
-          Whitespace between the name and unit is removed.
-          Both name and unit, including brackets, are optional.
+        - ``"bracket"``: See :func:`scipp.compat.pandas_compat.parse_bracket_head`.
 
-        When implementing a parser, make sure to return ``sc.units.default_unit``
-        if the unit is not specified instead of ``sc.Unit("")`` to get a sensible
-        result for non-numeric columns.
+        Before implementing a custom parser, check out
+        :func:`scipp.compat.pandas_compat.parse_bracket_head`
+        to get an overview of how to handle edge cases.
 
     Returns
     -------
@@ -131,11 +128,36 @@ def from_pandas(
         raise ValueError(f"from_pandas: cannot convert type '{type(pd_obj)}'")
 
 
-HeadParser = Callable[[str], Tuple[str, Unit]]
+HeadParser = Callable[[str], Tuple[str, Optional[Unit]]]
 HeadParserArg = Optional[Union[Literal["bracket"], HeadParser]]
 
 
-def parse_bracket_head(head: str) -> Tuple[str, Unit]:
+def parse_bracket_head(head: str) -> Tuple[str, Optional[Unit]]:
+    """Parses strings of the form ``name [unit]``.
+
+    ``name`` may be any string that does not contain the character ``[``.
+    And ``unit`` must be a valid unit string to be parsed by ``sc.Unit(unit)``.
+    Whitespace between the name and unit is removed.
+
+    Both name and unit, including brackets, are optional.
+    If the unit is missing but empty brackets are present,
+    ``sc.units.default_unit`` is returned.
+    If the brackets are absent as well, the returned unit is ``None``.
+    This ensures that columns without unit information are not accidentally assigned
+    ``dimensionless`` which can silence downstream errors.
+
+    If the name is missing, an empty string is returned.
+
+    Parameters
+    ----------
+    head:
+        The string to parse.
+
+    Returns
+    -------
+    :
+        The parsed name and unit.
+    """
     import re
 
     m = re.match(r"^([^[]*)(?:\[([^[]*)])?$", head)
@@ -146,10 +168,10 @@ def parse_bracket_head(head: str) -> Tuple[str, Unit]:
 
     if m.lastindex == 2:
         name = m[1].rstrip()
-        unit = Unit(m[2]) if m[2] else default_unit
+        unit = Unit(m[2]) if m[2].strip() else default_unit
     else:
         name = m[1]
-        unit = default_unit
+        unit = None
     return name, unit
 
 

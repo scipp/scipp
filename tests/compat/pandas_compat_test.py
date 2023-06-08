@@ -270,21 +270,21 @@ def test_2d_dataframe_parse_units_brackets_string_dtype():
 def test_parse_bracket_head_whitespace():
     name, unit = parse_bracket_head("")
     assert name == ""
-    assert unit == sc.units.default_unit
+    assert unit is None
 
     name, unit = parse_bracket_head(" ")
     assert name == " "
-    assert unit == sc.units.default_unit
+    assert unit is None
 
 
 def test_parse_bracket_head_only_name():
     name, unit = parse_bracket_head("a name 123")
     assert name == "a name 123"
-    assert unit == sc.units.default_unit
+    assert unit is None
 
     name, unit = parse_bracket_head(" padded name  ")
     assert name == " padded name  "
-    assert unit == sc.units.default_unit
+    assert unit is None
 
 
 def test_parse_bracket_head_only_unit():
