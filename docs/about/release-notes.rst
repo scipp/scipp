@@ -43,6 +43,8 @@ Features
 
 * Added alignment flag to ``Variable`` `#3144 <https://github.com/scipp/scipp/pull/3144>`_.
 * Handle alignment of coordinates in operations `#3153 <https://github.com/scipp/scipp/pull/3153>`_.
+* ``sc.compat.from_pandas`` now has additional arguments `#3169 <https://github.com/scipp/scipp/pull/3169>`_.
+* Added ``sc.io.load_csv`` `#3169 <https://github.com/scipp/scipp/pull/3169>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
