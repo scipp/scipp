@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Literal, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Callable, Iterable, Literal, Optional, Tuple, Union
 
 from ..core import DataArray, Dataset, Unit, array
 from ..typing import VariableLike
@@ -44,39 +44,29 @@ def from_pandas_series(
 
 
 def from_pandas_dataframe(
-    df: pd.DataFrame, *, include_index: bool = True, head_parser: HeadParserArg = None
+    df: pd.DataFrame,
+    *,
+    data_columns: Optional[Union[str, Iterable[str]]] = None,
+    include_index: bool = True,
+    head_parser: HeadParserArg = None,
 ) -> Dataset:
     import pandas as pd
 
-    row_index = df.axes[0]
-    row_index_name = row_index.name or "row"
-
-    if df.ndim == 1:
-        # Special case for 1d dataframes, treat them as a series, but still
-        # wrap them in a dataset object for consistency of return types.
-        return Dataset(
-            data={
-                row_index_name: from_pandas_series(
-                    pd.Series(df), include_index=include_index, head_parser=head_parser
-                )
-            }
-        )
-
-    sc_data = {}
-    for column_name in df.axes[1]:
-        da = from_pandas_series(
+    data = [
+        from_pandas_series(
             pd.Series(df[column_name]),
             include_index=include_index,
             head_parser=head_parser,
         )
-        sc_data[da.name] = da
-
-    return Dataset(data=sc_data)
+        for column_name in df.axes[1]
+    ]
+    return Dataset({da.name: da for da in data})
 
 
 def from_pandas(
     pd_obj: Union[pd.DataFrame, pd.Series],
     *,
+    data_columns: Optional[Union[str, Iterable[str]]] = None,
     include_index: bool = True,
     head_parser: HeadParserArg = None,
 ) -> VariableLike:
@@ -87,6 +77,9 @@ def from_pandas(
     ----------
     pd_obj:
         The Dataframe or Series to convert.
+    data_columns:
+        Select which columns to assign as data.
+        The rest are returned as coordinates.
     include_index:
         If True, the row index is included in the output as a coordinate.
     head_parser:
