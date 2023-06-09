@@ -95,7 +95,7 @@ def test_load_csv_parse_units():
         {
             'abc': sc.array(dims=['row'], values=[1.2, 0.8], unit='m'),
             '': sc.array(dims=['row'], values=[3.4, 0.6], unit='kg/s'),
-            ' foo': sc.array(dims=['row'], values=[5.6, 0.4], unit='one'),
+            ' foo': sc.array(dims=['row'], values=[5.6, 0.4], unit=None),
         },
         coords={'row': sc.array(dims=['row'], values=[0, 1])},
     )
