@@ -103,9 +103,9 @@ def load_csv(
        Coordinates:
        * row                         int64        <no unit>  (row)  [0, 1, 2, 3]
        Data:
-         a [m]                       int64  [dimensionless]  (row)  [1, 2, 3, 4]
-         b [s]                       int64  [dimensionless]  (row)  [5, 6, 7, 8]
-         c                           int64  [dimensionless]  (row)  [9, 10, 11, 12]
+         a [m]                       int64        <no unit>  (row)  [1, 2, 3, 4]
+         b [s]                       int64        <no unit>  (row)  [5, 6, 7, 8]
+         c                           int64        <no unit>  (row)  [9, 10, 11, 12]
 
     In this example, the column headers encode units.
     They can be parsed into actual units:

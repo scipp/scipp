@@ -19,9 +19,9 @@ def test_load_csv_dataset_default_sep():
     loaded = sc.io.load_csv(StringIO(csv))
     expected = sc.Dataset(
         {
-            'x': sc.array(dims=['row'], values=[1, 4, 7, 10]),
-            'y': sc.array(dims=['row'], values=[2, 5, 8, 11]),
-            'z': sc.array(dims=['row'], values=[3, 6, 9, 12]),
+            'x': sc.array(dims=['row'], values=[1, 4, 7, 10], unit=None),
+            'y': sc.array(dims=['row'], values=[2, 5, 8, 11], unit=None),
+            'z': sc.array(dims=['row'], values=[3, 6, 9, 12], unit=None),
         },
         coords={'row': sc.array(dims=['row'], values=[0, 1, 2, 3], unit=None)},
     )
@@ -41,9 +41,9 @@ def test_load_csv_dataset_choose_separator(sep):
     loaded = sc.io.load_csv(StringIO(csv), sep=sep)
     expected = sc.Dataset(
         {
-            'x': sc.array(dims=['row'], values=[1, 4, 7, 10]),
-            'y': sc.array(dims=['row'], values=[2, 5, 8, 11]),
-            'z': sc.array(dims=['row'], values=[3, 6, 9, 12]),
+            'x': sc.array(dims=['row'], values=[1, 4, 7, 10], unit=None),
+            'y': sc.array(dims=['row'], values=[2, 5, 8, 11], unit=None),
+            'z': sc.array(dims=['row'], values=[3, 6, 9, 12], unit=None),
         },
         coords={'row': sc.array(dims=['row'], values=[0, 1, 2, 3], unit=None)},
     )
@@ -58,12 +58,12 @@ def test_load_csv_dataset_select_data():
     loaded = sc.io.load_csv(StringIO(csv), data_columns=['xyz', 'abc'])
     expected = sc.Dataset(
         {
-            'abc': sc.array(dims=['row'], values=[1.2, 0.8]),
-            'xyz': sc.array(dims=['row'], values=[3.4, 0.6]),
+            'abc': sc.array(dims=['row'], values=[1.2, 0.8], unit=None),
+            'xyz': sc.array(dims=['row'], values=[3.4, 0.6], unit=None),
         },
         coords={
             'row': sc.array(dims=['row'], values=[0, 1], unit=None),
-            'foo': sc.array(dims=['row'], values=[5.6, 0.4]),
+            'foo': sc.array(dims=['row'], values=[5.6, 0.4], unit=None),
         },
     )
     assert_identical(loaded, expected)
@@ -77,8 +77,8 @@ def test_load_csv_dataset_without_index():
     loaded = sc.io.load_csv(StringIO(csv), include_index=False)
     expected = sc.Dataset(
         {
-            'abc': sc.array(dims=['row'], values=[1.2, 0.8]),
-            'xyz': sc.array(dims=['row'], values=[3.4, 0.6]),
+            'abc': sc.array(dims=['row'], values=[1.2, 0.8], unit=None),
+            'xyz': sc.array(dims=['row'], values=[3.4, 0.6], unit=None),
         },
         coords={},
     )
@@ -110,9 +110,9 @@ def test_load_csv_forwards_kwargs_to_pandas():
     loaded = sc.io.load_csv(StringIO(csv), names=['x', 'y', 'z'], header=0)
     expected = sc.Dataset(
         {
-            'x': sc.array(dims=['row'], values=[1.2, 0.8]),
-            'y': sc.array(dims=['row'], values=[3.4, 0.6]),
-            'z': sc.array(dims=['row'], values=[5.6, 0.4]),
+            'x': sc.array(dims=['row'], values=[1.2, 0.8], unit=None),
+            'y': sc.array(dims=['row'], values=[3.4, 0.6], unit=None),
+            'z': sc.array(dims=['row'], values=[5.6, 0.4], unit=None),
         },
         coords={'row': sc.array(dims=['row'], values=[0, 1], unit=None)},
     )
