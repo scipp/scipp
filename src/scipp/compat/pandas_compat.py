@@ -14,14 +14,14 @@ if TYPE_CHECKING:
 
 
 def from_pandas_series(
-    se: pd.Series, *, include_index: bool = True, head_parser: HeadParserArg = None
+    se: pd.Series, *, include_index: bool = True, head_parser: HeaderParserArg = None
 ) -> DataArray:
     row_index = se.axes[0]
     row_index_name = "row" if row_index.name is None else str(row_index.name)
     name, unit = (
         ("", default_unit)
         if se.name is None
-        else _parse_head(str(se.name), head_parser)
+        else _parse_header(str(se.name), head_parser)
     )
 
     coords = (
@@ -48,7 +48,7 @@ def from_pandas_dataframe(
     *,
     data_columns: Optional[Union[str, Iterable[str]]] = None,
     include_index: bool = True,
-    head_parser: HeadParserArg = None,
+    head_parser: HeaderParserArg = None,
 ) -> Dataset:
     import pandas as pd
 
@@ -79,7 +79,7 @@ def from_pandas(
     *,
     data_columns: Optional[Union[str, Iterable[str]]] = None,
     include_index: bool = True,
-    head_parser: HeadParserArg = None,
+    header_parser: HeaderParserArg = None,
 ) -> VariableLike:
     """Converts a pandas.DataFrame or pandas.Series object into a
     scipp Dataset or DataArray respectively.
@@ -95,15 +95,15 @@ def from_pandas(
         Use an empty list to assign all columns as coordinates.
     include_index:
         If True, the row index is included in the output as a coordinate.
-    head_parser:
-        Parses each column name to extract a name and unit for each data array.
+    header_parser:
+        Parses each column header to extract a name and unit for each data array.
         By default, it returns the column name and uses the default unit.
         Builtin parsers can be specified by name:
 
-        - ``"bracket"``: See :func:`scipp.compat.pandas_compat.parse_bracket_head`.
+        - ``"bracket"``: See :func:`scipp.compat.pandas_compat.parse_bracket_header`.
 
         Before implementing a custom parser, check out
-        :func:`scipp.compat.pandas_compat.parse_bracket_head`
+        :func:`scipp.compat.pandas_compat.parse_bracket_header`
         to get an overview of how to handle edge cases.
 
     Returns
@@ -118,21 +118,21 @@ def from_pandas(
             pd_obj,
             data_columns=data_columns,
             include_index=include_index,
-            head_parser=head_parser,
+            head_parser=header_parser,
         )
     elif isinstance(pd_obj, pd.Series):
         return from_pandas_series(
-            pd_obj, include_index=include_index, head_parser=head_parser
+            pd_obj, include_index=include_index, head_parser=header_parser
         )
     else:
         raise ValueError(f"from_pandas: cannot convert type '{type(pd_obj)}'")
 
 
-HeadParser = Callable[[str], Tuple[str, Optional[Unit]]]
-HeadParserArg = Optional[Union[Literal["bracket"], HeadParser]]
+HeaderParser = Callable[[str], Tuple[str, Optional[Unit]]]
+HeaderParserArg = Optional[Union[Literal["bracket"], HeaderParser]]
 
 
-def parse_bracket_head(head: str) -> Tuple[str, Optional[Unit]]:
+def parse_bracket_header(head: str) -> Tuple[str, Optional[Unit]]:
     """Parses strings of the form ``name [unit]``.
 
     ``name`` may be any string that does not contain the character ``[``.
@@ -175,20 +175,20 @@ def parse_bracket_head(head: str) -> Tuple[str, Optional[Unit]]:
     return name, unit
 
 
-_HEAD_PARSERS = {
-    "bracket": parse_bracket_head,
+_HEADER_PARSERS = {
+    "bracket": parse_bracket_header,
 }
 
 
-def _parse_head(head: str, parser: HeadParserArg) -> Tuple[str, Unit]:
+def _parse_header(header: str, parser: HeaderParserArg) -> Tuple[str, Unit]:
     if parser is None:
-        return head, default_unit
+        return header, default_unit
     if callable(parser):
-        return parser(head)
-    if (parser := _HEAD_PARSERS.get(parser)) is not None:
-        return parser(head)
+        return parser(header)
+    if (parser := _HEADER_PARSERS.get(parser)) is not None:
+        return parser(header)
     else:
         raise ValueError(
-            f"Unknown head parser '{parser}', "
-            f"supported builtin parsers: {list(_HEAD_PARSERS.keys())}."
+            f"Unknown header parser '{parser}', "
+            f"supported builtin parsers: {list(_HEADER_PARSERS.keys())}."
         )

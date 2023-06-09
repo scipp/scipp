@@ -3,7 +3,7 @@ import pytest
 
 import scipp as sc
 from scipp.compat import from_pandas
-from scipp.compat.pandas_compat import parse_bracket_head
+from scipp.compat.pandas_compat import parse_bracket_header
 from scipp.testing import assert_identical
 
 
@@ -237,7 +237,7 @@ def test_2d_dataframe_does_not_parse_units_by_default():
 def test_2d_dataframe_parse_units_brackets():
     pd_df = pandas.DataFrame(data={"col1 [m]": (1, 2), "col2 [one]": (6, 3)})
 
-    sc_ds = from_pandas(pd_df, head_parser="bracket")
+    sc_ds = from_pandas(pd_df, header_parser="bracket")
 
     reference_ds = _make_nd_reference_ds(
         "row", [0, 1], data={"col1": (1, 2), "col2": (6, 3)}
@@ -253,7 +253,7 @@ def test_2d_dataframe_parse_units_brackets_string_dtype():
         data={"col1 [m]": ("a", "b"), "col2": ("c", "d")}, dtype="string"
     )
 
-    sc_ds = from_pandas(pd_df, head_parser="bracket")
+    sc_ds = from_pandas(pd_df, header_parser="bracket")
 
     reference_ds = _make_nd_reference_ds(
         "row",
@@ -267,68 +267,68 @@ def test_2d_dataframe_parse_units_brackets_string_dtype():
     assert_identical(sc_ds, reference_ds)
 
 
-def test_parse_bracket_head_whitespace():
-    name, unit = parse_bracket_head("")
+def test_parse_bracket_header_whitespace():
+    name, unit = parse_bracket_header("")
     assert name == ""
     assert unit is None
 
-    name, unit = parse_bracket_head(" ")
+    name, unit = parse_bracket_header(" ")
     assert name == " "
     assert unit is None
 
 
-def test_parse_bracket_head_only_name():
-    name, unit = parse_bracket_head("a name 123")
+def test_parse_bracket_header_only_name():
+    name, unit = parse_bracket_header("a name 123")
     assert name == "a name 123"
     assert unit is None
 
-    name, unit = parse_bracket_head(" padded name  ")
+    name, unit = parse_bracket_header(" padded name  ")
     assert name == " padded name  "
     assert unit is None
 
 
-def test_parse_bracket_head_only_unit():
-    name, unit = parse_bracket_head("[m]")
+def test_parse_bracket_header_only_unit():
+    name, unit = parse_bracket_header("[m]")
     assert name == ""
     assert unit == "m"
 
-    name, unit = parse_bracket_head(" [kg]")
+    name, unit = parse_bracket_header(" [kg]")
     assert name == ""
     assert unit == "kg"
 
 
-def test_parse_bracket_head_name_and_unit():
-    name, unit = parse_bracket_head("the name [s]")
+def test_parse_bracket_header_name_and_unit():
+    name, unit = parse_bracket_header("the name [s]")
     assert name == "the name"
     assert unit == "s"
 
-    name, unit = parse_bracket_head("title[A]")
+    name, unit = parse_bracket_header("title[A]")
     assert name == "title"
     assert unit == "A"
 
 
-def test_parse_bracket_head_empty_unit():
-    name, unit = parse_bracket_head("name []")
+def test_parse_bracket_header_empty_unit():
+    name, unit = parse_bracket_header("name []")
     assert name == "name"
     assert unit == sc.units.default_unit
 
 
-def test_parse_bracket_head_dimensionless():
-    name, unit = parse_bracket_head("name [one]")
+def test_parse_bracket_header_dimensionless():
+    name, unit = parse_bracket_header("name [one]")
     assert name == "name"
     assert unit == "one"
 
-    name, unit = parse_bracket_head("name [dimensionless]")
+    name, unit = parse_bracket_header("name [dimensionless]")
     assert name == "name"
     assert unit == "one"
 
 
-def test_parse_bracket_head_complex_unit():
-    name, unit = parse_bracket_head("name [m / s**2]")
+def test_parse_bracket_header_complex_unit():
+    name, unit = parse_bracket_header("name [m / s**2]")
     assert name == "name"
     assert unit == "m/s**2"
 
 
-def test_parse_bracket_head_bad_string():
+def test_parse_bracket_header_bad_string():
     with pytest.raises(ValueError):
-        parse_bracket_head("too [many] [brackets]")
+        parse_bracket_header("too [many] [brackets]")

@@ -25,7 +25,7 @@ from io import BytesIO, StringIO
 from os import PathLike
 from typing import Iterable, Optional, Union
 
-from ..compat.pandas_compat import HeadParserArg, from_pandas
+from ..compat.pandas_compat import HeaderParserArg, from_pandas
 from ..core import Dataset
 
 
@@ -51,7 +51,7 @@ def load_csv(
     sep: Optional[str] = '\t',
     data_columns: Optional[Union[str, Iterable[str]]] = None,
     include_index: bool = True,
-    head_parser: HeadParserArg = None,
+    header_parser: HeaderParserArg = None,
 ) -> Dataset:
     """Load a CSV file as a dataset.
 
@@ -70,7 +70,7 @@ def load_csv(
         Use an empty list to assign all columns as coordinates.
     include_index:
         If ``True``, include the index as a coordinate.
-    head_parser:
+    header_parser:
         Parser for column headers.
         See :func:`scipp.compat.from_pandas` for details.
 
@@ -105,7 +105,7 @@ def load_csv(
     In this example, the column headers encode units.
     They can be parsed into actual units:
 
-       >>> sc.io.load_csv(StringIO(csv_content), head_parser='bracket')
+       >>> sc.io.load_csv(StringIO(csv_content), header_parser='bracket')
        <scipp.Dataset>
        Dimensions: Sizes[row:4, ]
        Coordinates:
@@ -120,7 +120,7 @@ def load_csv(
 
        >>> sc.io.load_csv(
        ...     StringIO(csv_content),
-       ...     head_parser='bracket',
+       ...     header_parser='bracket',
        ...     data_columns='a',
        ...     include_index=False
        ... )
@@ -137,5 +137,5 @@ def load_csv(
         df,
         data_columns=data_columns,
         include_index=include_index,
-        head_parser=head_parser,
+        header_parser=header_parser,
     )
