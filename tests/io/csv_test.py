@@ -19,11 +19,13 @@ def test_load_csv_dataset_default_sep():
     loaded = sc.io.load_csv(StringIO(csv))
     expected = sc.Dataset(
         {
-            'x': sc.array(dims=['row'], values=[1, 4, 7, 10], unit=None),
-            'y': sc.array(dims=['row'], values=[2, 5, 8, 11], unit=None),
-            'z': sc.array(dims=['row'], values=[3, 6, 9, 12], unit=None),
+            'x': sc.array(dims=['row'], values=[1, 4, 7, 10], dtype='int64', unit=None),
+            'y': sc.array(dims=['row'], values=[2, 5, 8, 11], dtype='int64', unit=None),
+            'z': sc.array(dims=['row'], values=[3, 6, 9, 12], dtype='int64', unit=None),
         },
-        coords={'row': sc.array(dims=['row'], values=[0, 1, 2, 3], unit=None)},
+        coords={
+            'row': sc.array(dims=['row'], values=[0, 1, 2, 3], dtype='int64', unit=None)
+        },
     )
     assert_identical(loaded, expected)
 
@@ -41,11 +43,13 @@ def test_load_csv_dataset_choose_separator(sep):
     loaded = sc.io.load_csv(StringIO(csv), sep=sep)
     expected = sc.Dataset(
         {
-            'x': sc.array(dims=['row'], values=[1, 4, 7, 10], unit=None),
-            'y': sc.array(dims=['row'], values=[2, 5, 8, 11], unit=None),
-            'z': sc.array(dims=['row'], values=[3, 6, 9, 12], unit=None),
+            'x': sc.array(dims=['row'], values=[1, 4, 7, 10], dtype='int64', unit=None),
+            'y': sc.array(dims=['row'], values=[2, 5, 8, 11], dtype='int64', unit=None),
+            'z': sc.array(dims=['row'], values=[3, 6, 9, 12], dtype='int64', unit=None),
         },
-        coords={'row': sc.array(dims=['row'], values=[0, 1, 2, 3], unit=None)},
+        coords={
+            'row': sc.array(dims=['row'], values=[0, 1, 2, 3], dtype='int64', unit=None)
+        },
     )
     assert_identical(loaded, expected)
 
@@ -62,7 +66,7 @@ def test_load_csv_dataset_select_data():
             'xyz': sc.array(dims=['row'], values=[3.4, 0.6], unit=None),
         },
         coords={
-            'row': sc.array(dims=['row'], values=[0, 1], unit=None),
+            'row': sc.array(dims=['row'], values=[0, 1], dtype='int64', unit=None),
             'foo': sc.array(dims=['row'], values=[5.6, 0.4], unit=None),
         },
     )
@@ -97,7 +101,7 @@ def test_load_csv_parse_units():
             '': sc.array(dims=['row'], values=[3.4, 0.6], unit='kg/s'),
             ' foo': sc.array(dims=['row'], values=[5.6, 0.4], unit=None),
         },
-        coords={'row': sc.array(dims=['row'], values=[0, 1], unit=None)},
+        coords={'row': sc.array(dims=['row'], values=[0, 1], dtype='int64', unit=None)},
     )
     assert_identical(loaded, expected)
 
@@ -114,6 +118,6 @@ def test_load_csv_forwards_kwargs_to_pandas():
             'y': sc.array(dims=['row'], values=[3.4, 0.6], unit=None),
             'z': sc.array(dims=['row'], values=[5.6, 0.4], unit=None),
         },
-        coords={'row': sc.array(dims=['row'], values=[0, 1], unit=None)},
+        coords={'row': sc.array(dims=['row'], values=[0, 1], dtype='int64', unit=None)},
     )
     assert_identical(loaded, expected)
