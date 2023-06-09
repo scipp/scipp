@@ -77,7 +77,7 @@ def load_csv(
         Parser for column headers.
         See :func:`scipp.compat.from_pandas` for details.
     kwargs:
-        Forwarded to :func:`pandas_read_csv`.
+        Forwarded to :func:`pandas.read_csv`.
 
     Returns
     -------
