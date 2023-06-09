@@ -50,7 +50,7 @@ def _load_dataframe(
 def load_csv(
     filename: Union[str, PathLike, StringIO, BytesIO],
     *,
-    sep: Optional[str] = '\t',
+    sep: Optional[str] = ',',
     data_columns: Optional[Union[str, Iterable[str]]] = None,
     include_index: bool = True,
     header_parser: HeaderParserArg = None,
@@ -89,11 +89,11 @@ def load_csv(
     Given the following CSV 'file':
 
        >>> from io import StringIO
-       >>> csv_content = '''a [m]\\tb [s]\\tc
-       ... 1\\t5\\t9
-       ... 2\\t6\\t10
-       ... 3\\t7\\t11
-       ... 4\\t8\\t12'''
+       >>> csv_content = '''a [m],b [s],c
+       ... 1,5,9
+       ... 2,6,10
+       ... 3,7,11
+       ... 4,8,12'''
 
     By default, it will be loaded as
 
