@@ -14,14 +14,14 @@ if TYPE_CHECKING:
 
 
 def from_pandas_series(
-    se: pd.Series, *, include_index: bool = True, head_parser: HeaderParserArg = None
+    se: pd.Series, *, include_index: bool = True, header_parser: HeaderParserArg = None
 ) -> DataArray:
     row_index = se.axes[0]
     row_index_name = "row" if row_index.name is None else str(row_index.name)
     name, unit = (
         ("", default_unit)
         if se.name is None
-        else _parse_header(str(se.name), head_parser)
+        else _parse_header(str(se.name), header_parser)
     )
 
     coords = (
@@ -48,7 +48,7 @@ def from_pandas_dataframe(
     *,
     data_columns: Optional[Union[str, Iterable[str]]] = None,
     include_index: bool = True,
-    head_parser: HeaderParserArg = None,
+    header_parser: HeaderParserArg = None,
 ) -> Dataset:
     import pandas as pd
 
@@ -56,7 +56,7 @@ def from_pandas_dataframe(
         from_pandas_series(
             pd.Series(df[column_name]),
             include_index=include_index,
-            head_parser=head_parser,
+            header_parser=header_parser,
         )
         for column_name in df.axes[1]
     )
@@ -118,11 +118,11 @@ def from_pandas(
             pd_obj,
             data_columns=data_columns,
             include_index=include_index,
-            head_parser=header_parser,
+            header_parser=header_parser,
         )
     elif isinstance(pd_obj, pd.Series):
         return from_pandas_series(
-            pd_obj, include_index=include_index, head_parser=header_parser
+            pd_obj, include_index=include_index, header_parser=header_parser
         )
     else:
         raise ValueError(f"from_pandas: cannot convert type '{type(pd_obj)}'")
