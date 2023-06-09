@@ -23,7 +23,7 @@ def test_load_csv_dataset_default_sep():
             'y': sc.array(dims=['row'], values=[2, 5, 8, 11]),
             'z': sc.array(dims=['row'], values=[3, 6, 9, 12]),
         },
-        coords={'row': sc.array(dims=['row'], values=[0, 1, 2, 3])},
+        coords={'row': sc.array(dims=['row'], values=[0, 1, 2, 3], unit=None)},
     )
     assert_identical(loaded, expected)
 
@@ -45,7 +45,7 @@ def test_load_csv_dataset_choose_separator(sep):
             'y': sc.array(dims=['row'], values=[2, 5, 8, 11]),
             'z': sc.array(dims=['row'], values=[3, 6, 9, 12]),
         },
-        coords={'row': sc.array(dims=['row'], values=[0, 1, 2, 3])},
+        coords={'row': sc.array(dims=['row'], values=[0, 1, 2, 3], unit=None)},
     )
     assert_identical(loaded, expected)
 
@@ -62,7 +62,7 @@ def test_load_csv_dataset_select_data():
             'xyz': sc.array(dims=['row'], values=[3.4, 0.6]),
         },
         coords={
-            'row': sc.array(dims=['row'], values=[0, 1]),
+            'row': sc.array(dims=['row'], values=[0, 1], unit=None),
             'foo': sc.array(dims=['row'], values=[5.6, 0.4]),
         },
     )
@@ -97,7 +97,7 @@ def test_load_csv_parse_units():
             '': sc.array(dims=['row'], values=[3.4, 0.6], unit='kg/s'),
             ' foo': sc.array(dims=['row'], values=[5.6, 0.4], unit=None),
         },
-        coords={'row': sc.array(dims=['row'], values=[0, 1])},
+        coords={'row': sc.array(dims=['row'], values=[0, 1], unit=None)},
     )
     assert_identical(loaded, expected)
 
@@ -114,6 +114,6 @@ def test_load_csv_forwards_kwargs_to_pandas():
             'y': sc.array(dims=['row'], values=[3.4, 0.6]),
             'z': sc.array(dims=['row'], values=[5.6, 0.4]),
         },
-        coords={'row': sc.array(dims=['row'], values=[0, 1])},
+        coords={'row': sc.array(dims=['row'], values=[0, 1], unit=None)},
     )
     assert_identical(loaded, expected)

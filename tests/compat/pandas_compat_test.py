@@ -9,27 +9,23 @@ from scipp.testing import assert_identical
 
 def _make_reference_da(row_name, row_coords, values, dtype="int64"):
     return sc.DataArray(
-        data=sc.Variable(dims=[row_name], values=values, dtype=dtype),
-        coords={row_name: sc.Variable(dims=[row_name], values=row_coords, dtype=dtype)},
+        data=sc.array(dims=[row_name], values=values, dtype=dtype),
+        coords={row_name: sc.array(dims=[row_name], values=row_coords, unit=None)},
         name=row_name,
     )
 
 
 def _make_1d_reference_ds(row_name, data_name, values, coords, dtype="int64"):
     return sc.Dataset(
-        data={data_name: sc.Variable(dims=[row_name], values=values, dtype=dtype)},
-        coords={row_name: sc.Variable(dims=[row_name], values=coords, dtype=dtype)},
+        data={data_name: _make_reference_da(row_name, coords, values, dtype)},
     )
 
 
 def _make_nd_reference_ds(row_name, row_coords, data, dtype="int64"):
     return sc.Dataset(
         data={
-            key: sc.Variable(dims=[row_name], values=value, dtype=dtype)
+            key: _make_reference_da(row_name, row_coords, value, dtype)
             for key, value in data.items()
-        },
-        coords={
-            row_name: sc.Variable(dims=[row_name], values=row_coords),
         },
     )
 

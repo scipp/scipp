@@ -101,7 +101,7 @@ def load_csv(
        <scipp.Dataset>
        Dimensions: Sizes[row:4, ]
        Coordinates:
-       * row                         int64  [dimensionless]  (row)  [0, 1, 2, 3]
+       * row                         int64        <no unit>  (row)  [0, 1, 2, 3]
        Data:
          a [m]                       int64  [dimensionless]  (row)  [1, 2, 3, 4]
          b [s]                       int64  [dimensionless]  (row)  [5, 6, 7, 8]
@@ -114,11 +114,11 @@ def load_csv(
        <scipp.Dataset>
        Dimensions: Sizes[row:4, ]
        Coordinates:
-       * row                         int64  [dimensionless]  (row)  [0, 1, 2, 3]
+       * row                         int64        <no unit>  (row)  [0, 1, 2, 3]
        Data:
          a                           int64              [m]  (row)  [1, 2, 3, 4]
          b                           int64              [s]  (row)  [5, 6, 7, 8]
-         c                           int64  [dimensionless]  (row)  [9, 10, 11, 12]
+         c                           int64        <no unit>  (row)  [9, 10, 11, 12]
 
     It is possible to select which columns are stored as data.
     In addition, this example omits the auxiliary 'row' coordinate.
@@ -133,7 +133,7 @@ def load_csv(
        Dimensions: Sizes[row:4, ]
        Coordinates:
        * b                           int64              [s]  (row)  [5, 6, 7, 8]
-       * c                           int64  [dimensionless]  (row)  [9, 10, 11, 12]
+       * c                           int64        <no unit>  (row)  [9, 10, 11, 12]
        Data:
          a                           int64              [m]  (row)  [1, 2, 3, 4]
     """
