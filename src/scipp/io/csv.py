@@ -29,7 +29,7 @@ from ..compat.pandas_compat import HeaderParserArg, from_pandas
 from ..core import Dataset
 
 
-# The typehint of filepath_or_buffer is less generic than in pd.read_table
+# The typehint of filepath_or_buffer is less generic than in pd.read_csv
 # because the definitions of protocols are private in pandas.
 def _load_dataframe(
     filepath_or_buffer: Union[str, PathLike, StringIO, BytesIO], sep: str
@@ -42,7 +42,7 @@ def _load_dataframe(
             "Install it with `pip install pandas` or "
             "`conda install -c conda-forge pandas`."
         ) from None
-    return pd.read_table(filepath_or_buffer, sep=sep)
+    return pd.read_csv(filepath_or_buffer, sep=sep)
 
 
 def load_csv(
