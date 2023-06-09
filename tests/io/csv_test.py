@@ -100,3 +100,20 @@ def test_load_csv_parse_units():
         coords={'row': sc.array(dims=['row'], values=[0, 1])},
     )
     assert_identical(loaded, expected)
+
+
+def test_load_csv_forwards_kwargs_to_pandas():
+    csv = '''abc\txyz\tfoo
+1.2\t3.4\t5.6
+0.8\t0.6\t0.4'''
+
+    loaded = sc.io.load_csv(StringIO(csv), names=['x', 'y', 'z'], header=0)
+    expected = sc.Dataset(
+        {
+            'x': sc.array(dims=['row'], values=[1.2, 0.8]),
+            'y': sc.array(dims=['row'], values=[3.4, 0.6]),
+            'z': sc.array(dims=['row'], values=[5.6, 0.4]),
+        },
+        coords={'row': sc.array(dims=['row'], values=[0, 1])},
+    )
+    assert_identical(loaded, expected)

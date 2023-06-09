@@ -23,7 +23,7 @@ pandas.read_csv:
 
 from io import BytesIO, StringIO
 from os import PathLike
-from typing import Iterable, Optional, Union
+from typing import Any, Dict, Iterable, Optional, Union
 
 from ..compat.pandas_compat import HeaderParserArg, from_pandas
 from ..core import Dataset
@@ -32,7 +32,9 @@ from ..core import Dataset
 # The typehint of filepath_or_buffer is less generic than in pd.read_csv
 # because the definitions of protocols are private in pandas.
 def _load_dataframe(
-    filepath_or_buffer: Union[str, PathLike, StringIO, BytesIO], sep: str
+    filepath_or_buffer: Union[str, PathLike, StringIO, BytesIO],
+    sep: str,
+    kwargs: Dict[str, Any],
 ):
     try:
         import pandas as pd
@@ -42,7 +44,7 @@ def _load_dataframe(
             "Install it with `pip install pandas` or "
             "`conda install -c conda-forge pandas`."
         ) from None
-    return pd.read_csv(filepath_or_buffer, sep=sep)
+    return pd.read_csv(filepath_or_buffer, sep=sep, **kwargs)
 
 
 def load_csv(
@@ -52,6 +54,7 @@ def load_csv(
     data_columns: Optional[Union[str, Iterable[str]]] = None,
     include_index: bool = True,
     header_parser: HeaderParserArg = None,
+    **kwargs: Any,
 ) -> Dataset:
     """Load a CSV file as a dataset.
 
@@ -73,6 +76,8 @@ def load_csv(
     header_parser:
         Parser for column headers.
         See :func:`scipp.compat.from_pandas` for details.
+    kwargs:
+        Forwarded to :func:`pandas_read_csv`.
 
     Returns
     -------
@@ -132,7 +137,7 @@ def load_csv(
        Data:
          a                           int64              [m]  (row)  [1, 2, 3, 4]
     """
-    df = _load_dataframe(filename, sep=sep)
+    df = _load_dataframe(filename, sep=sep, kwargs=kwargs)
     return from_pandas(
         df,
         data_columns=data_columns,
