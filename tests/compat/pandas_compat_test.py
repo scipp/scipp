@@ -10,7 +10,11 @@ from scipp.testing import assert_identical
 def _make_reference_da(row_name, row_coords, values, dtype="int64"):
     return sc.DataArray(
         data=sc.array(dims=[row_name], values=values, dtype=dtype, unit=None),
-        coords={row_name: sc.array(dims=[row_name], values=row_coords, unit=None)},
+        coords={
+            row_name: sc.array(
+                dims=[row_name], values=row_coords, dtype='int64', unit=None
+            )
+        },
         name=row_name,
     )
 
