@@ -40,6 +40,9 @@ const Variable &get_1d_coord(const Variable &coord) {
 
 auto get_coord(const Variable &coord, const Dim dim) {
   get_1d_coord(coord);
+  if (coord.dims()[dim] == 1)
+    // Need this because issorted returns false for length-1 variables.
+    return std::tuple(coord, true);
   const bool ascending = allsorted(coord, dim, SortOrder::Ascending);
   const bool descending = allsorted(coord, dim, SortOrder::Descending);
   if (!(ascending ^ descending))
