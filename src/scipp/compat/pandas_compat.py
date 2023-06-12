@@ -101,6 +101,8 @@ def from_pandas(
         Builtin parsers can be specified by name:
 
         - ``"bracket"``: See :func:`scipp.compat.pandas_compat.parse_bracket_header`.
+          Parses strings where the unit is given between square brackets,
+          i.e., strings like ``name [unit]``.
 
         Before implementing a custom parser, check out
         :func:`scipp.compat.pandas_compat.parse_bracket_header`
