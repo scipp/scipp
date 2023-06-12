@@ -25,7 +25,7 @@ def from_pandas_series(
     )
 
     coords = (
-        {row_index_name: array(dims=[row_index_name], values=row_index, unit=None)}
+        {row_index_name: array(dims=[row_index_name], values=row_index)}
         if include_index
         else {}
     )
