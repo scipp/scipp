@@ -53,6 +53,8 @@ Breaking changes
 Bugfixes
 ~~~~~~~~
 
+* Fixed label based indexing for arrays with a single element in the sliced dimension `#3171 <https://github.com/scipp/scipp/pull/3171>`_.
+
 Documentation
 ~~~~~~~~~~~~~
 
