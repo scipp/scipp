@@ -314,3 +314,43 @@ TEST(SliceByValueTest, test_slice_point_on_edge_coord_1D_duplicate) {
   test(da);
   test(Dataset{da});
 }
+
+TEST(SliceByValueTest, test_slice_point_on_single_point_1D) {
+  auto da = make_points(2);
+  const auto test = [](const auto &sliceable) {
+    EXPECT_EQ(slice(sliceable, Dim::X, 2 * units::s),
+              sliceable.slice({Dim::X, 0}));
+  };
+  test(da);
+  test(Dataset{da});
+}
+
+TEST(SliceByValueTest, test_slice_point_on_single_edge_1D) {
+  auto da = make_histogram(2, 3);
+  const auto test = [](const auto &sliceable) {
+    EXPECT_EQ(slice(sliceable, Dim::X, 2 * units::s),
+              sliceable.slice({Dim::X, 0}));
+  };
+  test(da);
+  test(Dataset{da});
+}
+
+TEST(SliceByValueTest, test_slice_range_on_single_point_1D) {
+  auto da = make_points(2);
+  const auto test = [](const auto &sliceable) {
+    EXPECT_EQ(slice(sliceable, Dim::X, 2 * units::s, 3 * units::s),
+              sliceable.slice({Dim::X, 0, 1}));
+  };
+  test(da);
+  test(Dataset{da});
+}
+
+TEST(SliceByValueTest, test_slice_range_on_single_edge_1D) {
+  auto da = make_histogram(2, 3);
+  const auto test = [](const auto &sliceable) {
+    EXPECT_EQ(slice(sliceable, Dim::X, 2 * units::s, 3 * units::s),
+              sliceable.slice({Dim::X, 0, 1}));
+  };
+  test(da);
+  test(Dataset{da});
+}
