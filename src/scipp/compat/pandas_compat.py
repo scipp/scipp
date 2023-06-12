@@ -19,7 +19,9 @@ def from_pandas_series(
     row_index = se.axes[0]
     row_index_name = "row" if row_index.name is None else str(row_index.name)
     name, unit = (
-        ("", None) if se.name is None else _parse_header(str(se.name), header_parser)
+        ("", default_unit)
+        if se.name is None
+        else _parse_header(str(se.name), header_parser)
     )
 
     coords = (
@@ -180,7 +182,7 @@ _HEADER_PARSERS = {
 
 def _parse_header(header: str, parser: HeaderParserArg) -> Tuple[str, Optional[Unit]]:
     if parser is None:
-        return header, None
+        return header, default_unit
     if callable(parser):
         return parser(header)
     if (parser := _HEADER_PARSERS.get(parser)) is not None:

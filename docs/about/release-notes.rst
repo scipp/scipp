@@ -51,7 +51,7 @@ Breaking changes
 
 * Coordinates are no longer converted to attributes when slicing or by ``transform_coords``.
   Instead, they become unaligned `#3153 <https://github.com/scipp/scipp/pull/3153>`_.
-* By default, ``sc.compat.from_pandas`` now returns data with ``unit=None`` (used to be dimensionless) `#3169 <https://github.com/scipp/scipp/pull/3169>`_.
+* By default, the row coordinate produced by ``sc.compat.from_pandas`` now has ``unit=None`` (used to be dimensionless) `#3169 <https://github.com/scipp/scipp/pull/3169>`_.
 
 Bugfixes
 ~~~~~~~~
