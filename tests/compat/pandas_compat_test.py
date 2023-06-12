@@ -110,6 +110,17 @@ def test_series_without_index_coord():
     assert sc.identical(sc_ds, reference_da)
 
 
+def test_series_without_name_parse_bracket_header():
+    pd_df = pandas.Series(data=[1, 2, 3])
+
+    sc_ds = from_pandas(pd_df, header_parser="bracket")
+
+    reference_da = _make_reference_da("row", [0, 1, 2], [1, 2, 3])
+    reference_da.unit = None
+
+    assert sc.identical(sc_ds, reference_da)
+
+
 def test_1d_dataframe():
     pd_df = pandas.DataFrame(data=[1, 2, 3])
 

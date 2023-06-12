@@ -18,11 +18,7 @@ def from_pandas_series(
 ) -> DataArray:
     row_index = se.axes[0]
     row_index_name = "row" if row_index.name is None else str(row_index.name)
-    name, unit = (
-        ("", default_unit)
-        if se.name is None
-        else _parse_header(str(se.name), header_parser)
-    )
+    name, unit = _parse_header("" if se.name is None else str(se.name), header_parser)
 
     coords = (
         {row_index_name: array(dims=[row_index_name], values=row_index)}
