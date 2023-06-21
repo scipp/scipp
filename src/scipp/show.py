@@ -378,7 +378,7 @@ class DatasetDrawer:
             for item in self._dataset.meta.values():
                 for dim in item.dims:
                     if dim not in dims:
-                        dims = [dim] + dims
+                        dims = (dim, ) + dims
         if len(dims) > 3:
             raise RuntimeError("Cannot visualize {}-D data".format(len(dims)))
         return dims
