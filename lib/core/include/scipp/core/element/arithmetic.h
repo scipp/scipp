@@ -192,10 +192,18 @@ constexpr auto mod = overloaded{
     [](const auto a, const auto b) { return numeric::remainder(a, b); },
     [](const units::Unit &a, const units::Unit &b) { return a % b; }};
 
-constexpr auto mod_equals =
-    overloaded{arg_list<int64_t, int32_t, std::tuple<int64_t, int32_t>>,
-               [](units::Unit &a, const units::Unit &b) { a %= b; },
-               [](auto &&a, const auto &b) { a = mod(a, b); }};
+constexpr auto remainder_inplace_types =
+    arg_list<double, float, int64_t, int32_t, std::tuple<double, float>,
+             std::tuple<float, double>, std::tuple<double, int64_t>,
+             std::tuple<double, int32_t>, std::tuple<float, int64_t>,
+             std::tuple<float, int32_t>, std::tuple<int32_t, int64_t>,
+             std::tuple<int64_t, int32_t>>;
+
+constexpr auto mod_equals = overloaded{
+    remainder_inplace_types, transform_flags::expect_no_variance_arg<0>,
+    transform_flags::expect_no_variance_arg<1>,
+    [](units::Unit &a, const units::Unit &b) { a %= b; },
+    [](auto &&a, const auto &b) { a = mod(a, b); }};
 
 constexpr auto negative =
     overloaded{arg_list<double, float, int64_t, int32_t, Eigen::Vector3d>,
