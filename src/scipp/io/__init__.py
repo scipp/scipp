@@ -6,3 +6,5 @@
 # flake8: noqa
 
 from .hdf5 import load_hdf5, open_hdf5
+
+__all__ = ['load_hdf5', 'open_hdf5']

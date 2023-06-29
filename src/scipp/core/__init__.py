@@ -11,6 +11,8 @@ if _debug_:
     warnings.warn(
         'You are running a "Debug" build of Scipp. For optimal performance use a "Release" build.'
     )
+    del warnings
+del _debug_
 
 from .._scipp import __version__
 from .cpp_classes import (
@@ -39,6 +41,9 @@ from .cpp_classes import (
     VariancesError,
 )
 
+from .._scipp.core import as_const
+
+# TODO Only used by plotting, remove when builtin plotting is removed.
 from .._scipp.core import get_slice_params
 
 from .data_group import DataGroup
@@ -77,6 +82,7 @@ from .bins import _groupby_bins, Bins
 
 setattr(GroupByDataArray, 'bins', property(_groupby_bins))
 setattr(GroupByDataset, 'bins', property(_groupby_bins))
+del _groupby_bins
 
 # Prevent unwanted conversion to numpy arrays by operations. Properly defining
 # __array_ufunc__ should be possible by converting non-scipp arguments to
@@ -168,3 +174,161 @@ setattr(DataArray, 'assign_coords', assign_coords)
 setattr(DataArray, 'assign_masks', assign_masks)
 setattr(DataArray, 'assign_attrs', assign_attrs)
 del assign_coords, assign_masks, assign_attrs
+
+# Remove submodules to reduce clutter
+del (
+    arithmetic,
+    assignments,
+    binning,
+    comparison,
+    counts,
+    cpp_classes,
+    cumulative,
+    dataset,
+    data_group,
+    dimensions,
+    like,
+    logical,
+    math,
+    operations,
+    reduction,
+    shape,
+    structured,
+    trigonometry,
+    unary,
+    variable,
+)
+
+__all__ = [
+    'BinEdgeError',
+    'BinnedDataError',
+    'Bins',
+    'CoordError',
+    'Coords',
+    'DType',
+    'DTypeError',
+    'DataArray',
+    'DataArrayError',
+    'DataGroup',
+    'Dataset',
+    'DatasetError',
+    'DimensionError',
+    'GroupByDataArray',
+    'GroupByDataset',
+    'Masks',
+    'Unit',
+    'UnitError',
+    'Variable',
+    'VariableError',
+    'VariancesError',
+    'abs',
+    'acos',
+    'add',
+    'all',
+    'allclose',
+    'allsorted',
+    'any',
+    'arange',
+    'array',
+    'as_const',
+    'asin',
+    'atan',
+    'atan2',
+    'bin',
+    'bins',
+    'bins_like',
+    'broadcast',
+    'ceil',
+    'concat',
+    'cos',
+    'counts_to_density',
+    'cross',
+    'cumsum',
+    'datetime',
+    'datetimes',
+    'density_to_counts',
+    'divide',
+    'dot',
+    'empty',
+    'empty_like',
+    'epoch',
+    'equal',
+    'erf',
+    'erfc',
+    'exp',
+    'flatten',
+    'floor',
+    'floor_divide',
+    'fold',
+    'full',
+    'full_like',
+    'geomspace',
+    'greater',
+    'greater_equal',
+    'group',
+    'groupby',
+    'hist',
+    'identical',
+    'index',
+    'irreducible_mask',
+    'isclose',
+    'isfinite',
+    'isinf',
+    'islinspace',
+    'isnan',
+    'isneginf',
+    'isposinf',
+    'issorted',
+    'less',
+    'less_equal',
+    'linspace',
+    'log',
+    'log10',
+    'logical_and',
+    'logical_not',
+    'logical_or',
+    'logical_xor',
+    'logspace',
+    'lookup',
+    'max',
+    'mean',
+    'merge',
+    'midpoints',
+    'min',
+    'mod',
+    'multiply',
+    'nan_to_num',
+    'nanhist',
+    'nanmax',
+    'nanmean',
+    'nanmin',
+    'nansum',
+    'negative',
+    'norm',
+    'not_equal',
+    'ones',
+    'ones_like',
+    'pow',
+    'rebin',
+    'reciprocal',
+    'round',
+    'scalar',
+    'sin',
+    'sort',
+    'sqrt',
+    'squeeze',
+    'stddevs',
+    'subtract',
+    'sum',
+    'tan',
+    'to',
+    'to_unit',
+    'transpose',
+    'values',
+    'variances',
+    'vector',
+    'vectors',
+    'where',
+    'zeros',
+    'zeros_like',
+]
