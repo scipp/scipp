@@ -81,7 +81,11 @@ from .format import format_variable as _format_variable
 setattr(Variable, '__format__', _format_variable)
 del _format_variable
 
-from .extend_units import *
+from ._extend_units import extend_units
+
+extend_units()
+del extend_units
+
 from .compat.dict import to_dict, from_dict
 
 from .object_list import _repr_html_
