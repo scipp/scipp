@@ -19,8 +19,11 @@ if os.name == "nt" and "CONDA_PREFIX" in os.environ:
     with importlib.resources.path("scipp", "__init__.py") as path:
         dll_directory = (path.parent.parent / "bin").resolve()
         os.environ["PATH"] += os.pathsep + str(dll_directory)
+del os
 
 from .configuration import config
+
+del configuration
 
 from .core import __version__
 
@@ -46,7 +49,6 @@ from . import units
 from . import geometry
 
 # Import functions
-from ._scipp.core import as_const
 
 # Import python functions
 from .show import show, make_svg
@@ -56,6 +58,7 @@ from .html import to_html, make_html, table
 setattr(Variable, '_repr_html_', make_html)
 setattr(DataArray, '_repr_html_', make_html)
 setattr(Dataset, '_repr_html_', make_html)
+del html
 
 from .io.hdf5 import save_hdf5 as _save_hdf5
 
@@ -78,10 +81,17 @@ from .format import format_variable as _format_variable
 setattr(Variable, '__format__', _format_variable)
 del _format_variable
 
-from .extend_units import *
+from ._extend_units import extend_units
+
+extend_units()
+del extend_units
+
+from .compat.dict import to_dict, from_dict
+
 from .object_list import _repr_html_
 from .utils import collapse, slices
-from .compat.dict import to_dict, from_dict
+
+del object_list, utils
 
 from .coords import transform_coords, show_graph
 
@@ -159,11 +169,14 @@ from .core import (
     datetimes,
     epoch,
 )
+from .core import as_const
 from .core import to
 
 from .logging import display_logs, get_logger
 
 from .reduction import reduce
+
+del reduction
 
 # Mainly imported for docs
 from .core import Bins, Coords, GroupByDataset, GroupByDataArray, Masks
@@ -229,6 +242,8 @@ from . import data
 from . import spatial
 from .operations import elemwise_func
 
+del operations
+
 from .core.binning import histogram
 
 from .plotting import plot
@@ -238,3 +253,170 @@ setattr(DataArray, 'plot', plot)
 setattr(Dataset, 'plot', plot)
 
 from .core.util import VisibleDeprecationWarning
+
+del core
+
+
+__all__ = [
+    'BinEdgeError',
+    'BinnedDataError',
+    'Bins',
+    'CoordError',
+    'Coords',
+    'DType',
+    'DTypeError',
+    'DataArray',
+    'DataArrayError',
+    'DataGroup',
+    'Dataset',
+    'DatasetError',
+    'DimensionError',
+    'GroupByDataArray',
+    'GroupByDataset',
+    'Masks',
+    'Unit',
+    'UnitError',
+    'Variable',
+    'VariableError',
+    'VariancesError',
+    'VisibleDeprecationWarning',
+    'abs',
+    'acos',
+    'add',
+    'all',
+    'allclose',
+    'allsorted',
+    'any',
+    'arange',
+    'array',
+    'as_const',
+    'asin',
+    'atan',
+    'atan2',
+    'bin',
+    'bins',
+    'bins_like',
+    'broadcast',
+    'ceil',
+    'collapse',
+    'compat',
+    'concat',
+    'config',
+    'coords',
+    'cos',
+    'counts_to_density',
+    'cross',
+    'cumsum',
+    'data',
+    'datetime',
+    'datetimes',
+    'density_to_counts',
+    'display_logs',
+    'divide',
+    'dot',
+    'elemwise_func',
+    'empty',
+    'empty_like',
+    'epoch',
+    'equal',
+    'erf',
+    'erfc',
+    'exp',
+    'flatten',
+    'floor',
+    'floor_divide',
+    'fold',
+    'format',
+    'from_dict',
+    'full',
+    'full_like',
+    'geometry',
+    'geomspace',
+    'get_logger',
+    'greater',
+    'greater_equal',
+    'group',
+    'groupby',
+    'hist',
+    'histogram',
+    'identical',
+    'index',
+    'io',
+    'isclose',
+    'isfinite',
+    'isinf',
+    'islinspace',
+    'isnan',
+    'isneginf',
+    'isposinf',
+    'issorted',
+    'less',
+    'less_equal',
+    'linspace',
+    'log',
+    'log10',
+    'logging',
+    'logical_and',
+    'logical_not',
+    'logical_or',
+    'logical_xor',
+    'logspace',
+    'lookup',
+    'make_html',
+    'make_svg',
+    'max',
+    'mean',
+    'merge',
+    'midpoints',
+    'min',
+    'mod',
+    'multiply',
+    'nan_to_num',
+    'nanhist',
+    'nanmax',
+    'nanmean',
+    'nanmin',
+    'nansum',
+    'negative',
+    'norm',
+    'not_equal',
+    'ones',
+    'ones_like',
+    'plot',
+    'plotting',
+    'pow',
+    'rebin',
+    'reciprocal',
+    'reduce',
+    'reduction',
+    'round',
+    'scalar',
+    'show',
+    'show_graph',
+    'sin',
+    'slices',
+    'sort',
+    'spatial',
+    'sqrt',
+    'squeeze',
+    'stddevs',
+    'subtract',
+    'sum',
+    'table',
+    'tan',
+    'to_dict',
+    'to_html',
+    'to_unit',
+    'transform_coords',
+    'transpose',
+    'typing',
+    'units',
+    'utils',
+    'values',
+    'variances',
+    'vector',
+    'vectors',
+    'where',
+    'zeros',
+    'zeros_like',
+]

@@ -236,3 +236,17 @@ def dataarrays(
     else:
         coord_dict = {}
     return DataArray(data, coords=coord_dict)
+
+
+__all__ = [
+    'dims',
+    'sizes_dicts',
+    'units',
+    'integer_dtypes',
+    'floating_dtypes',
+    'scalar_numeric_dtypes',
+    'variables',
+    'n_variables',
+    'coord_dicts',
+    'dataarrays',
+]
