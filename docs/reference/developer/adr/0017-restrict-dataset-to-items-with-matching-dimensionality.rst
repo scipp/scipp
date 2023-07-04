@@ -25,7 +25,7 @@ Finally, there have been discussions around structure-of-array data-types.
 Analysis
 ~~~~~~~~
 
-There a two possible ways of reasoning about ``Dataset``.
+There are two possible ways of reasoning about ``Dataset``.
 Firstly, we may argue that while technically complex, the work has already been done, and the problems detailed below are encountered only in edge cases.
 Secondly, we can ask ourselves if we would have added ``Dataset`` in its current form and shape if we had ``DataArray`` and ``DataGroup``.
 
@@ -37,7 +37,7 @@ Concrete problems are:
   Then we should maybe not use ``Dataset``, as the temperature is not actually height-independent.
   In this context, having ``Dataset`` with support for lower-dimensional items can be seen as risky, as it may lead to incorrect data analysis.
 - If we consider two slices of a ``Dataset`` containing a lower-dimensional item "abc" then, e.g., addition of these slices will yield a ``Dataset`` containing the sum of "abc" with itself.
-  There is not indication that this is the case, and it may be surprising to the users.
+  There is no indication that this happens, and it may be surprising to the users.
 - Reduction operations such as ``sum()`` are not truly well-defined.
   We currently raise if there is a lower-dimensional item when a concrete reduction dim is provided, but support reducing all dimensions.
   This is inconsistent and potentially not a good choice (note though that a similar problem applies to ``DataGroup``).
@@ -52,10 +52,10 @@ Concrete problems are:
 - ``dims`` and ``sizes`` of ``DataArray`` imply an order, but they do not for ``Dataset``.
   This leads to some code overhead and risk of confusion.
 - Complicated (internal) logic for updating the ``sizes`` dict.
-  This is not a problem for the user, except for rare edge cases where size-changing item replacements are not support although they could be.
+  This is not a problem for the user, except for rare edge cases where size-changing item replacements are not supported although they could be.
 
 Given the long-term focus of the project, and the limited area of applicability of ``Dataset`` with its current semantics, we believe that it is worth considering a change.
-While none of the above issues is major, they add up to a significant amount of complexity that may turn out hard to manage or justify in the long run.
+While none of the above issues are major, they add up to a significant amount of complexity that may turn out hard to manage or justify in the long run.
 Even in its current state several aspects of the above are not well-documented, neither for developers nor for users.
 
 Proposed solution
