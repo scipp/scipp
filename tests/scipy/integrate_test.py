@@ -40,8 +40,8 @@ def test_unit(integ):
 
 
 def make_periodic():
-    x = sc.linspace(dim='xx', start=0.0, stop=4 * np.pi, num=20, unit='rad')
-    y = sc.linspace(dim='yy', start=0.0, stop=4 * np.pi, num=20, unit='rad')
+    x = sc.linspace(dim='xx', start=0.0, stop=4 * np.pi, num=1000, unit='rad')
+    y = sc.linspace(dim='yy', start=0.0, stop=4 * np.pi, num=1000, unit='rad')
     return sc.DataArray(sc.sin(x) + sc.sin(y), coords={'xx': x, 'yy': y})
 
 
@@ -49,7 +49,11 @@ def make_periodic():
 @pytest.mark.parametrize('integ2', [trapezoid, simpson])
 def test_zero_integral(integ1, integ2):
     da = make_periodic()
-    assert sc.allclose(integ1(integ2(da, 'xx'), 'yy').data, sc.scalar(0.0, unit='sr'))
+    assert sc.allclose(
+        integ1(integ2(da, 'xx'), 'yy').data,
+        sc.scalar(0.0, unit='sr'),
+        atol=1e-7 * sc.Unit('sr'),
+    )
 
 
 @pytest.mark.parametrize('integ', [trapezoid, simpson])
