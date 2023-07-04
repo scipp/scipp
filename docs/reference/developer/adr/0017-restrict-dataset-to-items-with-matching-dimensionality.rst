@@ -25,56 +25,38 @@ Finally, there have been discussions around structure-of-array data-types.
 Analysis
 ~~~~~~~~
 
-Certain meaningful applications cannot be handled.
-But what are concrete examples?
-If one item has lower dimensionality than another, what is the meaning of the data in the lower-dimensional item?
-``Dataset`` takes the stance that this means the value is constant along the missing dimensions.
-However, in practice this may actually not be true.
-For example, imagine a 2-D temperature array and a 3-D pressure array.
-Was the temperature measured only at ground level?
-Then we should maybe not use ``Dataset``.
-In this context, having ``Dataset`` with support for lower-dimensional items can be seen as risky, as it may lead to incorrect data analysis.
+There a two possible ways of reasoning about ``Dataset``.
+Firstly, we may argue that while technically complex, the work has already been done, and the problems detailed below are encountered only in edge cases.
+Secondly, we can ask ourselves if we would have added ``Dataset`` in its current form and shape if we had ``DataArray`` and ``DataGroup``.
 
-Concrete problems:
+Concrete problems are:
 
-- Reduction operations (e.g., ``sum()``) are not well-defined.
+- If an item in a ``Dataset`` lacks one or more dimensions of other items, ``Dataset`` takes the stance that the value is constant along the missing dimensions.
+  For example, imagine a 2-D temperature array and a 3-D pressure array.
+  Was the temperature measured only at ground level?
+  Then we should maybe not use ``Dataset``, as the temperature is not actually height-independent.
+  In this context, having ``Dataset`` with support for lower-dimensional items can be seen as risky, as it may lead to incorrect data analysis.
+- If we consider two slices of a ``Dataset`` containing a lower-dimensional item "abc" then, e.g., addition of these slices will yield a ``Dataset`` containing the sum of "abc" with itself.
+  There is not indication that this is the case, and it may be surprising to the users.
+- Reduction operations such as ``sum()`` are not truly well-defined.
   We currently raise if there is a lower-dimensional item when a concrete reduction dim is provided, but support reducing all dimensions.
-- Complicated logic for selecting coordinates.
+  This is inconsistent and potentially not a good choice (note though that a similar problem applies to ``DataGroup``).
+  This implies, e.g., that addition of two ``Dataset`` items does not commute with calling ``sum()`` on the ``Dataset``.
+- Complicated logic for selecting coordinates, affecting code as well as documentation needs.
   If a dataset has a dimension of length 1, should items without that dim have the coordinate?
 - Slicing a dim can make coords suddenly apply for an item.
 - Readonly flags in ``DataArray`` are required to avoid modifying data in lower-dimensional items via slices of a dataset.
+- Consistency issues after the introduction of the alignment flag: `issues selecting coords with length-2 bin edges #3148 <https://github.com/scipp/scipp/issues/3148>`_ and `disappearing unaligned coords #3149 <https://github.com/scipp/scipp/issues/3149>`_.
+- ``Dataset.dim`` may "lie" if an item is 0-D.
+  Maybe it should have raised unless all items are 1-D?
+- ``dims`` and ``sizes`` of ``DataArray`` imply an order, but they do not for ``Dataset``.
+  This leads to some code overhead and risk of confusion.
+- Complicated (internal) logic for updating the ``sizes`` dict.
+  This is not a problem for the user, except for rare edge cases where size-changing item replacements are not support although they could be.
 
-- https://github.com/scipp/scipp/issues/3148 and https://github.com/scipp/scipp/issues/3149
-
-``Dataset.dim`` may "lie" if an item is 0-D.
-Need to distinguish between ordered and unordered dimensions for data array vs. dataset.
-Should we still allow storing transposed items?
-Maybe not.
-We should probably set the dataset dims on creation?
-But how do support empty dataset?
-Keep uninitialized dataset dims, and set only when inserting first item?
-
-Complicated updated of "sizes" dict.
-
-.. code::
-
-  import scipp as sc
-
-  ds = sc.Dataset(dict(a=sc.arange("x", 4), b=sc.scalar(3)))
-  ds[1] + ds[2]
-
-There is no indication that 'b' is added to itself.
-Note that ``DataGroup`` has the same shortcoming.
-
-Summation and item access do not commute: ``sum()`` treats item as scalar, whereas other ops treat it as constant along dims:
-
-.. code::
-
-  import scipp as sc
-
-  ds = sc.Dataset(dict(a=sc.arange("x", 4), b=sc.scalar(3)))
-  print((ds.sum()['a'] + ds.sum()['b']).value)
-  print((ds['a'] + ds['b']).sum().value)
+Given the long-term focus of the project, and the limited area of applicability of ``Dataset`` with its current semantics, we believe that it is worth considering a change.
+While none of the above issues is major, they add up to a significant amount of complexity that may turn out hard to manage or justify in the long run.
+Even in its current state several aspects of the above are not well-documented, neither for developers nor for users.
 
 Proposed solution
 ~~~~~~~~~~~~~~~~~
@@ -82,35 +64,15 @@ Proposed solution
 We propose to restrict ``Dataset`` to items with matching dimensionality.
 Each item of a dataset will retain a ``masks`` dictionary (no change).
 
-Should we do this change under a new name, such as ``scipp.DataFrame``?
-We believe that we currently have relatively few users of ``Dataset``, so in either case a migration would be simple.
-Keeping the name ``Dataset`` would potentially be confusing for ``xarray`` users.
-However ``DataFrame`` could also add confusion since items can be multi-dimensional.
-
-Use ``DataArray`` with extra dimension if:
-
-- Columns/items have the same ``dtype``.
-- Column/item removal is not required.
-
-Use ``Dataset`` if:
-
-- Columns/items have different ``dtype``.
-- Column/item removal is required.
-
-User ``DataGroup`` if:
-
-- Columns/items have different dimensionality or dimension sizes.
-
-If we had ``DataArray`` and ``DataGroup``, would we add ``Dataset`` in its current form and shape?
-Probably not.
-We might just add something to provide table-like data, but not necessarily with the more complex semantics as ``Dataset``.
-
-There a two possible ways of looking at this:
-Firstly, we may argue that while technically complex, the work has already been done, and the problems are encountered only in edge cases.
-Secondly, we can ask ourselves if we would have added ``Dataset`` in its current form and shape if we had ``DataArray`` and ``DataGroup``.
+We can then think of Scipp providing a natural cascade of objects:
+Given a number of arrays that we would like to combine, if ``sizes`` and ``dtype`` are consistent use ``DataArray`` with an extra dimension.
+If only ``sizes`` are consistent use ``Dataset``.
+If ``sizes`` are not consistent use ``DataGroup``.
 
 Decision
 --------
+
+- ``Dataset`` will be restricted to items with matching dimensionality.
 
 Consequences
 ------------
