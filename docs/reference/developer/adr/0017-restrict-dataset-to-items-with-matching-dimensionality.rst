@@ -68,6 +68,7 @@ We can then think of Scipp providing a natural cascade of objects:
 Given a number of arrays that we would like to combine, if ``sizes`` and ``dtype`` are consistent use ``DataArray`` with an extra dimension.
 If only ``sizes`` are consistent use ``Dataset``.
 If ``sizes`` are not consistent use ``DataGroup``.
+Note that there also other reasons for choosing ``Dataset`` over ``DataArray``, in particular for simple string-based column access and efficient addition of or removal of items.
 
 Decision
 --------
