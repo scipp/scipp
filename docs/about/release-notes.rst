@@ -1078,4 +1078,4 @@ Contributing Organizations
 --------------------------
 * :sup:`a`\  `European Spallation Source ERIC <https://europeanspallationsource.se/>`_, Sweden
 * :sup:`b`\  `Science and Technology Facilities Council <https://www.ukri.org/councils/stfc/>`_, UK
-* :sup:`c`\  `Tessella <https://www.tessella.com/>`_, UK
+* :sup:`c`\  Tessella, UK
