@@ -127,36 +127,25 @@ template <class... StridesArgs>
 MultiIndex<N>::MultiIndex(const Dimensions &iter_dims,
                           const StridesArgs &...strides)
     : m_ndim{flatten_dims(make_span(m_stride, 0), make_span(m_shape, 0),
-                          iter_dims, 0, strides...)},
-      m_inner_ndim{m_ndim} {}
+                          iter_dims, 0, strides...)} {}
 
 template <scipp::index N>
 template <class... Params>
 MultiIndex<N>::MultiIndex(binned_tag, const Dimensions &inner_dims,
                           const Dimensions &bin_dims, const Params &...params)
-    : m_bin{BinIterator(params.bucketParams(), bin_dims.volume())...} {
+    : MultiIndex(bin_dims, params.strides()...) {
+  // TODO Where is the check for matching bin dims and shape?
   validate_bin_indices(params...);
-
-  const Dim slice_dim = get_slice_dim(params.bucketParams()...);
-
+  // TODO init from bin volume
   // NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
-  m_inner_ndim = flatten_dims(
-      make_span(m_stride, 0), make_span(m_shape, 0), inner_dims,
-      inner_dims.index(slice_dim),
-      params.bucketParams() ? params.bucketParams().strides : Strides{}...);
-  // NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
-  m_ndim = m_inner_ndim + flatten_dims(make_span(m_stride, m_inner_ndim),
-                                       make_span(m_shape, m_inner_ndim),
-                                       bin_dims, 0, params.strides()...);
-
-  // NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
-  m_nested_dim_index = m_inner_ndim - inner_dims.index(slice_dim) - 1;
-
-  for (scipp::index data = 0; data < N; ++data) {
-    load_bin_params(data);
-  }
-  if (m_shape[m_nested_dim_index] == 0 || bin_dims.volume() == 0)
-    seek_bin();
+  const auto bin_dim = get_slice_dim(params.bucketParams()...);
+  m_bin_size_scale = inner_dims.volume() / inner_dims[bin_dim];
+  m_indices = {params.bucketParams().indices...};
+  m_inner_strides = {(params.bucketParams().indices == nullptr ? 0 : 1)...};
+  // get index of first 1 in m_inner_strides
+  m_binned_arg = std::distance(
+      m_inner_strides.begin(),
+      std::find(m_inner_strides.begin(), m_inner_strides.end(), 1));
 }
 
 template SCIPP_CORE_EXPORT MultiIndex<1>::MultiIndex(const Dimensions &,

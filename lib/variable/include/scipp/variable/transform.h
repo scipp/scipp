@@ -255,15 +255,37 @@ static void transform_elements(Op op, Out &&out, Ts &&...other) {
 
   auto run = [&](auto &indices, const auto &end) {
     const auto inner_strides = indices.inner_strides();
-    while (indices != end) {
-      // Shape can change when moving between bins -> recompute every time.
+    // NOTE Just branch here if binned? Can compute inner_size only once,
+    // and call different increment_by
+    // Overall plan:
+    // 1. MultiIndex index handling and incrementing just operates on outer
+    // 2. MultiIndex provides special method for getting bin size
+    // 3. MultiIndex provides special method for getting dereferenced index
+    // 4. transform has explicit branching to call correct methods
+    if (!indices.has_bins()) {
       const auto inner_size = indices.in_same_chunk(end, 1)
                                   ? indices.inner_distance_to(end)
                                   : indices.inner_distance_to_end();
-      dispatch_inner_loop<false>(op, indices.get(), inner_strides, inner_size,
-                                 std::forward<Out>(out),
-                                 std::forward<Ts>(other)...);
-      indices.increment_by(inner_size != 0 ? inner_size : 1);
+      while (indices != end) {
+        dispatch_inner_loop<false>(op, indices.get(), inner_strides, inner_size,
+                                   std::forward<Out>(out),
+                                   std::forward<Ts>(other)...);
+        // Does not have to handle bin load! Do we still need the zero check?
+        indices.increment_by(inner_size != 0 ? inner_size : 1);
+      }
+    } else {
+      while (indices != end) {
+        // Inner size is current bins size
+        const auto inner_size = indices.bin_size();
+        // This will still instantiate runtime stride handling, but we do not
+        // need that!
+        // Use special get(), which dereferences bin-begin
+        dispatch_inner_loop<false>(
+            op, indices.get_deref_binned(), inner_strides, inner_size,
+            std::forward<Out>(out), std::forward<Ts>(other)...);
+        indices.increment_by(1); // move to next bin
+        // indices.increment(); // move to next bin
+      }
     }
   };
 
@@ -495,15 +517,24 @@ template <bool dry_run> struct in_place {
 
     auto run = [&](auto &indices, const auto &end) {
       const auto inner_strides = indices.inner_strides();
-      while (indices != end) {
-        // Shape can change when moving between bins -> recompute every time.
+      if (!indices.has_bins()) {
         const auto inner_size = indices.in_same_chunk(end, 1)
                                     ? indices.inner_distance_to(end)
                                     : indices.inner_distance_to_end();
-        detail::dispatch_inner_loop<true>(op, indices.get(), inner_strides,
-                                          inner_size, std::forward<T>(arg),
-                                          std::forward<Ts>(other)...);
-        indices.increment_by(inner_size != 0 ? inner_size : 1);
+        while (indices != end) {
+          detail::dispatch_inner_loop<true>(op, indices.get(), inner_strides,
+                                            inner_size, std::forward<T>(arg),
+                                            std::forward<Ts>(other)...);
+          indices.increment_by(inner_size != 0 ? inner_size : 1);
+        }
+      } else {
+        while (indices != end) {
+          const auto inner_size = indices.bin_size();
+          detail::dispatch_inner_loop<true>(
+              op, indices.get_deref_binned(), inner_strides, inner_size,
+              std::forward<T>(arg), std::forward<Ts>(other)...);
+          indices.increment_by(1);
+        }
       }
     };
     if (begin.has_stride_zero()) {
