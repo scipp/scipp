@@ -173,6 +173,8 @@ public:
 
   /// Return true if the first subindex has a 0 stride
   [[nodiscard]] bool has_stride_zero() const noexcept {
+    // TODO Is this still correct in the binned case? What if we reduce over bin
+    // contents?
     for (scipp::index dim = 0; dim < m_ndim; ++dim)
       if (m_stride[dim][0] == 0)
         return true;
