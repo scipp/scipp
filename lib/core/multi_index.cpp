@@ -93,7 +93,6 @@ template <class... StridesArgs>
 flatten_dims(const scipp::span<std::array<scipp::index, sizeof...(StridesArgs)>>
                  &out_strides,
              const scipp::span<scipp::index> &out_shape, const Dimensions &dims,
-             const scipp::index non_flattenable_dim,
              const StridesArgs &...strides) {
   constexpr scipp::index N = sizeof...(StridesArgs);
   std::array strides_array{std::ref(strides)...};
@@ -105,7 +104,7 @@ flatten_dims(const scipp::span<std::array<scipp::index, sizeof...(StridesArgs)>>
                                std::to_string(NDIM_OP_MAX) +
                                " dimensions are not supported.");
     const auto size = dims.size(dim_read);
-    if (dim_read > non_flattenable_dim &&
+    if (dim_read > 0 &&
         can_be_flattened(dim_read, size, std::make_index_sequence<N>{},
                          strides_for_contiguous, strides...)) {
       out_shape[dim_write - 1] *= size;
@@ -127,7 +126,7 @@ template <class... StridesArgs>
 MultiIndex<N>::MultiIndex(const Dimensions &iter_dims,
                           const StridesArgs &...strides)
     : m_ndim{flatten_dims(make_span(m_stride, 0), make_span(m_shape, 0),
-                          iter_dims, 0, strides...)} {}
+                          iter_dims, strides...)} {}
 
 template <scipp::index N>
 template <class... Params>
