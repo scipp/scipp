@@ -136,10 +136,14 @@ MultiIndex<N>::MultiIndex(binned_tag, const Dimensions &inner_dims,
     : MultiIndex(bin_dims, params.strides()...) {
   // TODO Where is the check for matching bin dims and shape?
   validate_bin_indices(params...);
-  // TODO init from bin volume
   // NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
   const auto bin_dim = get_slice_dim(params.bucketParams()...);
-  m_bin_size_scale = inner_dims.volume() / inner_dims[bin_dim];
+  m_bin_size_scale = 1;
+  for (const auto dim : inner_dims) {
+    if (dim == bin_dim)
+      continue;
+    m_bin_size_scale *= inner_dims[dim];
+  }
   m_indices = {params.bucketParams().indices...};
   m_inner_strides = {(params.bucketParams().indices == nullptr ? 0 : 1)...};
   // get index of first 1 in m_inner_strides

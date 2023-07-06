@@ -263,10 +263,10 @@ static void transform_elements(Op op, Out &&out, Ts &&...other) {
     // 3. MultiIndex provides special method for getting dereferenced index
     // 4. transform has explicit branching to call correct methods
     if (!indices.has_bins()) {
-      const auto inner_size = indices.in_same_chunk(end, 1)
-                                  ? indices.inner_distance_to(end)
-                                  : indices.inner_distance_to_end();
       while (indices != end) {
+        const auto inner_size = indices.in_same_chunk(end, 1)
+                                    ? indices.inner_distance_to(end)
+                                    : indices.inner_distance_to_end();
         dispatch_inner_loop<false>(op, indices.get(), inner_strides, inner_size,
                                    std::forward<Out>(out),
                                    std::forward<Ts>(other)...);
@@ -518,10 +518,10 @@ template <bool dry_run> struct in_place {
     auto run = [&](auto &indices, const auto &end) {
       const auto inner_strides = indices.inner_strides();
       if (!indices.has_bins()) {
-        const auto inner_size = indices.in_same_chunk(end, 1)
-                                    ? indices.inner_distance_to(end)
-                                    : indices.inner_distance_to_end();
         while (indices != end) {
+          const auto inner_size = indices.in_same_chunk(end, 1)
+                                      ? indices.inner_distance_to(end)
+                                      : indices.inner_distance_to_end();
           detail::dispatch_inner_loop<true>(op, indices.get(), inner_strides,
                                             inner_size, std::forward<T>(arg),
                                             std::forward<Ts>(other)...);
