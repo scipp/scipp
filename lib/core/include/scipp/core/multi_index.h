@@ -60,16 +60,8 @@ public:
           return this->m_data_index[data];
         },
         0, m_ndim - 1);
-    // Nested dims incremented, move on to bins.
-    // Note that we do not check whether there are any bins, instead whether
-    // the outer Variable is scalar because the loop above is enough to set up
-    // the coord in that case.
-    // if (has_bins() && dim_at_end(m_inner_ndim - 1))
-    //  seek_bin();
   }
 
-  // NOTE only used internally for bin index validation
-  // ... but calls increment_outer, which does bin increments
   void increment() noexcept {
     for (scipp::index data = 0; data < N; ++data)
       m_data_index[data] += m_stride[0][data];
@@ -79,10 +71,6 @@ public:
   }
 
   void increment_by(const scipp::index inner_distance) noexcept {
-    // NOTE
-    // If binned data, we know that this always increments exactly to the end
-    // of the bin (for binned operands), or not at all (other operands).
-    // We should simply call increment_outer() instead?
     for (scipp::index data = 0; data < N; ++data) {
       m_data_index[data] += inner_distance * m_stride[0][data];
     }
@@ -246,12 +234,15 @@ private:
   std::array<scipp::index, NDIM_OP_MAX + 1> m_shape = {};
   /// Total number of dimensions.
   scipp::index m_ndim{0};
+  /// Scale factor for bin size (1 unless bins are multi-dim).
   scipp::index m_bin_size_scale{-1};
+  /// Start/stop indices for binned args, used for translating m_data_index to
+  /// index for the bin content.
   std::array<const std::pair<scipp::index, scipp::index> *, N> m_indices = {};
+  /// Inner strides in case of iteration with bins
   std::array<scipp::index, N> m_inner_strides = {};
+  /// Index of an argument with bins
   scipp::index m_binned_arg{-1};
-  /// Parameters of the currently loaded bins.
-  /// std::array<BinIterator, N> m_bin = {};
 };
 
 template <class... StridesArgs>
