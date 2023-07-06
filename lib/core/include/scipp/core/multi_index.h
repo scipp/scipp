@@ -53,13 +53,17 @@ private:
 
 public:
   void increment_outer() noexcept {
-    // Go through all nested dims (with bins) / all dims (without bins)
-    // where we have reached the end.
-    increment_in_dims(
-        [this](const scipp::index data) -> scipp::index & {
-          return this->m_data_index[data];
-        },
-        0, m_ndim - 1);
+    for (scipp::index dim = 0; dim < m_ndim - 1 && dim_at_end(dim); ++dim) {
+      for (scipp::index data = 0; data < N; ++data) {
+        m_data_index[data] +=
+            // take a step in dimension dim+1
+            m_stride[dim + 1][data]
+            // rewind dimension dim (coord(d) == m_shape[d])
+            - m_coord[dim] * m_stride[dim][data];
+      }
+      ++m_coord[dim + 1];
+      m_coord[dim] = 0;
+    }
   }
 
   void increment() noexcept {
@@ -178,23 +182,6 @@ public:
 private:
   [[nodiscard]] auto dim_at_end(const scipp::index dim) const noexcept {
     return m_coord[dim] == std::max(m_shape[dim], scipp::index{1});
-  }
-
-  template <class F>
-  void increment_in_dims(const F &data_index, const scipp::index begin_dim,
-                         const scipp::index end_dim) {
-    for (scipp::index dim = begin_dim; dim < end_dim && dim_at_end(dim);
-         ++dim) {
-      for (scipp::index data = 0; data < N; ++data) {
-        data_index(data) +=
-            // take a step in dimension dim+1
-            m_stride[dim + 1][data]
-            // rewind dimension dim (coord(d) == m_shape[d])
-            - m_coord[dim] * m_stride[dim][data];
-      }
-      ++m_coord[dim + 1];
-      m_coord[dim] = 0;
-    }
   }
 
   scipp::index flat_index(const scipp::index i_data, scipp::index begin_index,
