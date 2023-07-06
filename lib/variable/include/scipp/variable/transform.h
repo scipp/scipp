@@ -255,13 +255,6 @@ static void transform_elements(Op op, Out &&out, Ts &&...other) {
 
   auto run = [&](auto &indices, const auto &end) {
     const auto inner_strides = indices.inner_strides();
-    // NOTE Just branch here if binned? Can compute inner_size only once,
-    // and call different increment_by
-    // Overall plan:
-    // 1. MultiIndex index handling and incrementing just operates on outer
-    // 2. MultiIndex provides special method for getting bin size
-    // 3. MultiIndex provides special method for getting dereferenced index
-    // 4. transform has explicit branching to call correct methods
     if (!indices.has_bins()) {
       while (indices != end) {
         const auto inner_size = indices.in_same_chunk(end, 1)
@@ -270,7 +263,6 @@ static void transform_elements(Op op, Out &&out, Ts &&...other) {
         dispatch_inner_loop<false>(op, indices.get(), inner_strides, inner_size,
                                    std::forward<Out>(out),
                                    std::forward<Ts>(other)...);
-        // Does not have to handle bin load! Do we still need the zero check?
         indices.increment_by(inner_size != 0 ? inner_size : 1);
       }
     } else {
@@ -284,7 +276,6 @@ static void transform_elements(Op op, Out &&out, Ts &&...other) {
             op, indices.get_deref_binned(), inner_strides, inner_size,
             std::forward<Out>(out), std::forward<Ts>(other)...);
         indices.increment_by(1); // move to next bin
-        // indices.increment(); // move to next bin
       }
     }
   };
