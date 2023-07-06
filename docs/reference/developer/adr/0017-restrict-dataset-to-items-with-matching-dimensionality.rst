@@ -1,7 +1,7 @@
 ADR 0017: Restrict Dataset to items with matching dimensionality
 ================================================================
 
-- Status: proposed
+- Status: accepted
 - Deciders: Jan-Lukas, Neil, Simon, Sunyoung
 - Date: 2023-07-04
 
