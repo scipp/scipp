@@ -361,5 +361,6 @@ def test_parse_bracket_header_complex_unit():
 
 
 def test_parse_bracket_header_bad_string():
-    with pytest.raises(ValueError):
-        parse_bracket_header("too [many] [brackets]")
+    name, unit = parse_bracket_header("too [many] [brackets]")
+    assert name == "too [many] [brackets]"
+    assert unit is None

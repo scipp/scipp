@@ -166,6 +166,10 @@ def parse_bracket_header(head: str) -> Tuple[str, Optional[Unit]]:
 
     If the name is missing, an empty string is returned.
 
+    If the input does not conform to the expected pattern, it is returned in full
+    and the unit is returned as ``None``.
+    This happens, e.g., when there are multiple opening brackets (``[``).
+
     Parameters
     ----------
     head:
@@ -180,9 +184,7 @@ def parse_bracket_header(head: str) -> Tuple[str, Optional[Unit]]:
 
     m = re.match(r"^([^[]*)(?:\[([^[]*)])?$", head)
     if m is None:
-        raise ValueError(
-            f"Column header does not conform to pattern `name [unit]`: {head}"
-        )
+        return head, None
 
     if m.lastindex == 2:
         name = m[1].rstrip()
