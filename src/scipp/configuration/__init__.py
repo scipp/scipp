@@ -129,3 +129,4 @@ class Config:
 
 
 config = Config()
+__all__ = ['config']

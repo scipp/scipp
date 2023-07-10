@@ -27,15 +27,7 @@ Release Notes
    Stability, Maintainability, and Testing
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   Contributors
-   ~~~~~~~~~~~~
-
-   Simon Heybrock :sup:`a`\ ,
-   Neil Vaytet :sup:`a`\ ,
-   Jan-Lukas Wynen :sup:`a`\ ,
-   and Sunyoung Yoo :sup:`a`
-
-vrelease
+v23.07.0
 --------
 
 Features
@@ -56,23 +48,7 @@ Bugfixes
 ~~~~~~~~
 
 * Fixed label based indexing for arrays with a single element in the sliced dimension `#3171 <https://github.com/scipp/scipp/pull/3171>`_.
-
-Documentation
-~~~~~~~~~~~~~
-
-Deprecations
-~~~~~~~~~~~~
-
-Stability, Maintainability, and Testing
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Contributors
-~~~~~~~~~~~~
-
-Simon Heybrock :sup:`a`\ ,
-Neil Vaytet :sup:`a`\ ,
-Jan-Lukas Wynen :sup:`a`\ ,
-and Sunyoung Yoo :sup:`a`
+* Fixed ``scipp.show`` in the presence of bin-edge coords that have been sliced out `#3178 <https://github.com/scipp/scipp/pull/3178>`_.
 
 v23.05.0
 --------
@@ -1104,4 +1080,4 @@ Contributing Organizations
 --------------------------
 * :sup:`a`\  `European Spallation Source ERIC <https://europeanspallationsource.se/>`_, Sweden
 * :sup:`b`\  `Science and Technology Facilities Council <https://www.ukri.org/councils/stfc/>`_, UK
-* :sup:`c`\  `Tessella <https://www.tessella.com/>`_, UK
+* :sup:`c`\  Tessella, UK

@@ -157,3 +157,6 @@ def _add_note(loc: str, *args: str) -> Iterator[None]:
             # Needs Python >= 3.11
             exc.add_note(f'PREPOSITION {loc.format(*args)}')
         raise
+
+
+__all__ = ['assert_identical']
