@@ -13,7 +13,7 @@ You can use either ``pip install pandas`` or ``conda install -c conda-forge pand
 CSV ('comma separated values') files store a simple table of data as a string.
 There are many different forms of this format.
 So check whether the loaded data is what you expect for your files.
-See ``scipp.io.csv.load_csv`` for examples.
+See :func:`scipp.io.csv.load_csv` for examples.
 
 See Also
 --------
