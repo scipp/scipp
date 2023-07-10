@@ -23,7 +23,7 @@ pandas.read_csv:
 
 from io import BytesIO, StringIO
 from os import PathLike
-from typing import Any, Dict, Iterable, Optional, Union
+from typing import Iterable, Optional, Union
 
 from ..compat.pandas_compat import HeaderParserArg, from_pandas
 from ..core import Dataset
@@ -34,7 +34,6 @@ from ..core import Dataset
 def _load_dataframe(
     filepath_or_buffer: Union[str, PathLike, StringIO, BytesIO],
     sep: str,
-    kwargs: Dict[str, Any],
 ):
     try:
         import pandas as pd
@@ -44,7 +43,7 @@ def _load_dataframe(
             "Install it with `pip install pandas` or "
             "`conda install -c conda-forge pandas`."
         ) from None
-    return pd.read_csv(filepath_or_buffer, sep=sep, **kwargs)
+    return pd.read_csv(filepath_or_buffer, sep=sep)
 
 
 def load_csv(
@@ -53,9 +52,19 @@ def load_csv(
     sep: Optional[str] = ',',
     data_columns: Optional[Union[str, Iterable[str]]] = None,
     header_parser: HeaderParserArg = None,
-    **kwargs: Any,
 ) -> Dataset:
     """Load a CSV file as a dataset.
+
+    This function currently uses Pandas to load the file and converts the result
+    into a :class:`scipp.Dataset`.
+    Pandas is not a hard dependency of Scipp and will thus not be installed
+    automatically, so you need to install it manually.
+
+    ``load_csv`` exists to conveniently load simple CSV files.
+    If a file cannot be loaded directly, consider using Pandas directly.
+    For example, use :func:`pandas.read_csv` to load the file into a data frame and
+    :func:`scipp.compat.pandas_compat.from_pandas` to convert
+    the data frame into a dataset.
 
     Parameters
     ----------
@@ -72,14 +81,12 @@ def load_csv(
         Use an empty list to assign all columns as coordinates.
     header_parser:
         Parser for column headers.
-        See :func:`scipp.compat.from_pandas` for details.
-    kwargs:
-        Forwarded to :func:`pandas.read_csv`.
+        See :func:`scipp.compat.pandas_compat.from_pandas` for details.
 
     Returns
     -------
     :
-        A the loaded data as a dataset.
+        The loaded data as a dataset.
 
     Examples
     --------
@@ -128,7 +135,7 @@ def load_csv(
        Data:
          a                           int64              [m]  (row)  [1, 2, 3, 4]
     """
-    df = _load_dataframe(filename, sep=sep, kwargs=kwargs)
+    df = _load_dataframe(filename, sep=sep)
     return from_pandas(
         df,
         data_columns=data_columns,
