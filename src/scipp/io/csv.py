@@ -52,7 +52,6 @@ def load_csv(
     *,
     sep: Optional[str] = ',',
     data_columns: Optional[Union[str, Iterable[str]]] = None,
-    include_index: bool = True,
     header_parser: HeaderParserArg = None,
     **kwargs: Any,
 ) -> Dataset:
@@ -71,8 +70,6 @@ def load_csv(
         The rest are returned as coordinates.
         If ``None``, all columns are assigned as data.
         Use an empty list to assign all columns as coordinates.
-    include_index:
-        If ``True``, include the index as a coordinate.
     header_parser:
         Parser for column headers.
         See :func:`scipp.compat.from_pandas` for details.
@@ -100,8 +97,6 @@ def load_csv(
        >>> sc.io.load_csv(StringIO(csv_content))
        <scipp.Dataset>
        Dimensions: Sizes[row:4, ]
-       Coordinates:
-       * row                         int64  [dimensionless]  (row)  [0, 1, 2, 3]
        Data:
          a [m]                       int64  [dimensionless]  (row)  [1, 2, 3, 4]
          b [s]                       int64  [dimensionless]  (row)  [5, 6, 7, 8]
@@ -113,21 +108,17 @@ def load_csv(
        >>> sc.io.load_csv(StringIO(csv_content), header_parser='bracket')
        <scipp.Dataset>
        Dimensions: Sizes[row:4, ]
-       Coordinates:
-       * row                         int64  [dimensionless]  (row)  [0, 1, 2, 3]
        Data:
          a                           int64              [m]  (row)  [1, 2, 3, 4]
          b                           int64              [s]  (row)  [5, 6, 7, 8]
          c                           int64        <no unit>  (row)  [9, 10, 11, 12]
 
-    It is possible to select which columns are stored as data.
-    In addition, this example omits the auxiliary 'row' coordinate.
+    It is possible to select which columns are stored as data:
 
        >>> sc.io.load_csv(
        ...     StringIO(csv_content),
        ...     header_parser='bracket',
        ...     data_columns='a',
-       ...     include_index=False
        ... )
        <scipp.Dataset>
        Dimensions: Sizes[row:4, ]
@@ -141,6 +132,6 @@ def load_csv(
     return from_pandas(
         df,
         data_columns=data_columns,
-        include_index=include_index,
+        include_trivial_index=False,
         header_parser=header_parser,
     )

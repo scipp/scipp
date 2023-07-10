@@ -13,8 +13,22 @@ if TYPE_CHECKING:
     import pandas as pd
 
 
+def _index_is_trivial(index: pd.Index, n_rows: int) -> bool:
+    from pandas import RangeIndex
+
+    return (
+        isinstance(index, RangeIndex)
+        and index.start == 0
+        and index.stop == n_rows
+        and index.step == 1
+    )
+
+
 def from_pandas_series(
-    se: pd.Series, *, include_index: bool = True, header_parser: HeaderParserArg = None
+    se: pd.Series,
+    *,
+    include_trivial_index: bool = False,
+    header_parser: HeaderParserArg = None,
 ) -> DataArray:
     row_index = se.axes[0]
     row_index_name = "row" if row_index.name is None else str(row_index.name)
@@ -22,7 +36,7 @@ def from_pandas_series(
 
     coords = (
         {row_index_name: array(dims=[row_index_name], values=row_index)}
-        if include_index
+        if include_trivial_index or not _index_is_trivial(row_index, len(se))
         else {}
     )
 
@@ -43,7 +57,7 @@ def from_pandas_dataframe(
     df: pd.DataFrame,
     *,
     data_columns: Optional[Union[str, Iterable[str]]] = None,
-    include_index: bool = True,
+    include_trivial_index: bool = False,
     header_parser: HeaderParserArg = None,
 ) -> Dataset:
     import pandas as pd
@@ -51,7 +65,7 @@ def from_pandas_dataframe(
     columns = (
         from_pandas_series(
             pd.Series(df[column_name]),
-            include_index=include_index,
+            include_trivial_index=include_trivial_index,
             header_parser=header_parser,
         )
         for column_name in df.axes[1]
@@ -74,7 +88,7 @@ def from_pandas(
     pd_obj: Union[pd.DataFrame, pd.Series],
     *,
     data_columns: Optional[Union[str, Iterable[str]]] = None,
-    include_index: bool = True,
+    include_trivial_index: bool = False,
     header_parser: HeaderParserArg = None,
 ) -> VariableLike:
     """Converts a pandas.DataFrame or pandas.Series object into a
@@ -89,8 +103,12 @@ def from_pandas(
         The rest are returned as coordinates.
         If ``None``, all columns are assigned as data.
         Use an empty list to assign all columns as coordinates.
-    include_index:
-        If True, the row index is included in the output as a coordinate.
+    include_trivial_index:
+        ``from_pandas`` can include the index of the data frame / series as a
+        coordinate.
+        But when the index is ``RangeIndex(start=0, stop=n, step=1)``, where ``n``
+        is the length of the data frame / series, the index is excluded by default.
+        Set this argument to ``True`` to include to index anyway in this case.
     header_parser:
         Parses each column header to extract a name and unit for each data array.
         By default, it returns the column name and uses the default unit.
@@ -115,12 +133,14 @@ def from_pandas(
         return from_pandas_dataframe(
             pd_obj,
             data_columns=data_columns,
-            include_index=include_index,
+            include_trivial_index=include_trivial_index,
             header_parser=header_parser,
         )
     elif isinstance(pd_obj, pd.Series):
         return from_pandas_series(
-            pd_obj, include_index=include_index, header_parser=header_parser
+            pd_obj,
+            include_trivial_index=include_trivial_index,
+            header_parser=header_parser,
         )
     else:
         raise ValueError(f"from_pandas: cannot convert type '{type(pd_obj)}'")

@@ -10,7 +10,7 @@ from scipp.testing import assert_identical
 def _make_reference_da(row_name, row_coords, values, dtype="int64"):
     return sc.DataArray(
         data=sc.array(dims=[row_name], values=values, dtype=dtype),
-        coords={row_name: sc.array(dims=[row_name], values=row_coords, dtype='int64')},
+        coords={},
         name=row_name,
     )
 
@@ -99,13 +99,25 @@ def test_series_with_named_series_and_named_axis():
     assert sc.identical(sc_ds, reference_da)
 
 
-def test_series_without_index_coord():
+def test_series_with_trivial_index_coord():
     pd_df = pandas.Series(data=[1, 2, 3])
 
-    sc_ds = from_pandas(pd_df, include_index=False)
+    sc_ds = from_pandas(pd_df, include_trivial_index=True)
 
     reference_da = _make_reference_da("row", [0, 1, 2], [1, 2, 3])
-    reference_da.coords.clear()
+    reference_da.coords["row"] = sc.arange("row", 3, dtype='int64')
+
+    assert sc.identical(sc_ds, reference_da)
+
+
+@pytest.mark.parametrize('include_trivial_index', [True, False])
+def test_series_with_nontrivial_index_coord(include_trivial_index):
+    pd_df = pandas.Series(data=[1, 2, 3], index=[-1, -2, -3])
+
+    sc_ds = from_pandas(pd_df, include_trivial_index=include_trivial_index)
+
+    reference_da = _make_reference_da("row", [0, 1, 2], [1, 2, 3])
+    reference_da.coords["row"] = sc.arange("row", -1, -4, -1, dtype="int64")
 
     assert sc.identical(sc_ds, reference_da)
 
@@ -142,13 +154,25 @@ def test_1d_dataframe_with_named_axis():
     assert sc.identical(sc_ds, reference_ds)
 
 
-def test_1d_dataframe_without_index_coord():
+def test_1d_dataframe_with_trivial_index_coord():
     pd_df = pandas.DataFrame(data=[1, 2, 3])
 
-    sc_ds = from_pandas(pd_df, include_index=False)
+    sc_ds = from_pandas(pd_df, include_trivial_index=True)
 
     reference_ds = _make_1d_reference_ds("row", "0", [1, 2, 3], [0, 1, 2])
-    reference_ds.coords.clear()
+    reference_ds.coords["row"] = sc.arange("row", 3, dtype="int64")
+
+    assert sc.identical(sc_ds, reference_ds)
+
+
+@pytest.mark.parametrize('include_trivial_index', [True, False])
+def test_1d_dataframe_with_nontrivial_index_coord(include_trivial_index):
+    pd_df = pandas.DataFrame(data=[1, 2, 3], index=[-1, -2, -3])
+
+    sc_ds = from_pandas(pd_df, include_trivial_index=include_trivial_index)
+
+    reference_ds = _make_1d_reference_ds("row", "0", [1, 2, 3], [0, 1, 2])
+    reference_ds.coords["row"] = sc.arange("row", -1, -4, -1, dtype="int64")
 
     assert sc.identical(sc_ds, reference_ds)
 
