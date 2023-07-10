@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Callable, Iterable, Literal, Optional, Tuple, Union
 
-from ..core import DataArray, Dataset, Unit, array
+from ..core import DataArray, Dataset, Unit, UnitError, array
 from ..typing import VariableLike
 from ..units import default_unit
 
@@ -170,6 +170,9 @@ def parse_bracket_header(head: str) -> Tuple[str, Optional[Unit]]:
     and the unit is returned as ``None``.
     This happens, e.g., when there are multiple opening brackets (``[``).
 
+    If the string between brackets does not represent a valid unit, the full input
+    is returned as the name and the unit is returned as ``None``.
+
     Parameters
     ----------
     head:
@@ -186,13 +189,17 @@ def parse_bracket_header(head: str) -> Tuple[str, Optional[Unit]]:
     if m is None:
         return head, None
 
-    if m.lastindex == 2:
-        name = m[1].rstrip()
-        unit = Unit(m[2]) if m[2].strip() else default_unit
-    else:
-        name = m[1]
-        unit = None
-    return name, unit
+    if m.lastindex != 2:
+        return m[1], None
+
+    name = m[1].rstrip()
+    if m[2].strip():
+        try:
+            return name, Unit(m[2])
+        except UnitError:
+            return head, None
+
+    return name, default_unit
 
 
 _HEADER_PARSERS = {

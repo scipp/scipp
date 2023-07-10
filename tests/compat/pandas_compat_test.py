@@ -364,3 +364,9 @@ def test_parse_bracket_header_bad_string():
     name, unit = parse_bracket_header("too [many] [brackets]")
     assert name == "too [many] [brackets]"
     assert unit is None
+
+
+def test_parse_bracket_header_bad_unit():
+    name, unit = parse_bracket_header("label [bogus]")
+    assert name == "label [bogus]"
+    assert unit is None
