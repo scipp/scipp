@@ -3,46 +3,94 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Callable, Iterable, Literal, Optional, Tuple, Union
 
-from .._scipp.core import DataArray, Dataset, Variable
+from ..core import DataArray, Dataset, Unit, UnitError, array
 from ..typing import VariableLike
+from ..units import default_unit
 
 if TYPE_CHECKING:
     import pandas as pd
 
 
-def from_pandas_series(se: pd.Series) -> DataArray:
+def _index_is_trivial(index: pd.Index, n_rows: int) -> bool:
+    from pandas import RangeIndex
+
+    return (
+        isinstance(index, RangeIndex)
+        and index.start == 0
+        and index.stop == n_rows
+        and index.step == 1
+    )
+
+
+def from_pandas_series(
+    se: pd.Series,
+    *,
+    include_trivial_index: bool = False,
+    header_parser: HeaderParserArg = None,
+) -> DataArray:
     row_index = se.axes[0]
     row_index_name = "row" if row_index.name is None else str(row_index.name)
-    name = "" if se.name is None else str(se.name)
+    name, unit = _parse_header("" if se.name is None else str(se.name), header_parser)
 
+    coords = (
+        {row_index_name: array(dims=[row_index_name], values=row_index)}
+        if include_trivial_index or not _index_is_trivial(row_index, len(se))
+        else {}
+    )
+
+    if se.dtype == "string":
+        # se.to_numpy() and np.array(se.values) produce an array of dtype=object
+        # when the series contains strings.
+        values = se.to_numpy(dtype=str)
+    else:
+        values = se.to_numpy()
     return DataArray(
-        data=Variable(values=se.values, dims=[row_index_name]),
-        coords={row_index_name: Variable(dims=[row_index_name], values=row_index)},
+        data=array(values=values, dims=[row_index_name], unit=unit),
+        coords=coords,
         name=name,
     )
 
 
-def from_pandas_dataframe(df: pd.DataFrame) -> Dataset:
+def from_pandas_dataframe(
+    df: pd.DataFrame,
+    *,
+    data_columns: Optional[Union[str, Iterable[str]]] = None,
+    include_trivial_index: bool = False,
+    header_parser: HeaderParserArg = None,
+) -> Dataset:
     import pandas as pd
 
-    row_index = df.axes[0]
-    row_index_name = row_index.name or "row"
+    columns = (
+        from_pandas_series(
+            pd.Series(df[column_name]),
+            include_trivial_index=include_trivial_index,
+            header_parser=header_parser,
+        )
+        for column_name in df.axes[1]
+    )
+    coords = {da.name: da for da in columns}
 
-    if df.ndim == 1:
-        # Special case for 1d dataframes, treat them as a series, but still
-        # wrap them in a dataset object for consistency of return types.
-        return Dataset(data={row_index_name: from_pandas_series(pd.Series(df))})
+    if data_columns is None:
+        data = coords
+        coords = {}
+    else:
+        if isinstance(data_columns, str):
+            data_columns = (data_columns,)
+        data = {name: coords.pop(name) for name in data_columns}
+        coords = {name: coord.data for name, coord in coords.items()}
 
-    sc_data = {}
-    for column_name in df.axes[1]:
-        sc_data[f"{column_name}"] = from_pandas_series(pd.Series(df[column_name]))
-
-    return Dataset(data=sc_data)
+    return Dataset(data, coords=coords)
 
 
-def from_pandas(pd_obj: Union[pd.DataFrame, pd.Series]) -> VariableLike:
+def from_pandas(
+    pd_obj: Union[pd.DataFrame, pd.Series],
+    *,
+    data_columns: Optional[Union[str, Iterable[str]]] = None,
+    include_trivial_index: bool = False,
+    header_parser: HeaderParserArg = None,
+) -> VariableLike:
     """Converts a pandas.DataFrame or pandas.Series object into a
     scipp Dataset or DataArray respectively.
 
@@ -50,6 +98,29 @@ def from_pandas(pd_obj: Union[pd.DataFrame, pd.Series]) -> VariableLike:
     ----------
     pd_obj:
         The Dataframe or Series to convert.
+    data_columns:
+        Select which columns to assign as data.
+        The rest are returned as coordinates.
+        If ``None``, all columns are assigned as data.
+        Use an empty list to assign all columns as coordinates.
+    include_trivial_index:
+        ``from_pandas`` can include the index of the data frame / series as a
+        coordinate.
+        But when the index is ``RangeIndex(start=0, stop=n, step=1)``, where ``n``
+        is the length of the data frame / series, the index is excluded by default.
+        Set this argument to ``True`` to include to index anyway in this case.
+    header_parser:
+        Parses each column header to extract a name and unit for each data array.
+        By default, it returns the column name and uses the default unit.
+        Builtin parsers can be specified by name:
+
+        - ``"bracket"``: See :func:`scipp.compat.pandas_compat.parse_bracket_header`.
+          Parses strings where the unit is given between square brackets,
+          i.e., strings like ``name [unit]``.
+
+        Before implementing a custom parser, check out
+        :func:`scipp.compat.pandas_compat.parse_bracket_header`
+        to get an overview of how to handle edge cases.
 
     Returns
     -------
@@ -59,8 +130,92 @@ def from_pandas(pd_obj: Union[pd.DataFrame, pd.Series]) -> VariableLike:
     import pandas as pd
 
     if isinstance(pd_obj, pd.DataFrame):
-        return from_pandas_dataframe(pd_obj)
+        return from_pandas_dataframe(
+            pd_obj,
+            data_columns=data_columns,
+            include_trivial_index=include_trivial_index,
+            header_parser=header_parser,
+        )
     elif isinstance(pd_obj, pd.Series):
-        return from_pandas_series(pd_obj)
+        return from_pandas_series(
+            pd_obj,
+            include_trivial_index=include_trivial_index,
+            header_parser=header_parser,
+        )
     else:
         raise ValueError(f"from_pandas: cannot convert type '{type(pd_obj)}'")
+
+
+HeaderParser = Callable[[str], Tuple[str, Optional[Unit]]]
+HeaderParserArg = Optional[Union[Literal["bracket"], HeaderParser]]
+
+
+def parse_bracket_header(head: str) -> Tuple[str, Optional[Unit]]:
+    """Parses strings of the form ``name [unit]``.
+
+    ``name`` may be any string that does not contain the character ``[``.
+    And ``unit`` must be a valid unit string to be parsed by ``sc.Unit(unit)``.
+    Whitespace between the name and unit is removed.
+
+    Both name and unit, including brackets, are optional.
+    If the unit is missing but empty brackets are present,
+    ``sc.units.default_unit`` is returned.
+    If the brackets are absent as well, the returned unit is ``None``.
+    This ensures that columns without unit information are not accidentally assigned
+    ``dimensionless`` which can silence downstream errors.
+
+    If the name is missing, an empty string is returned.
+
+    If the input does not conform to the expected pattern, it is returned in full
+    and the unit is returned as ``None``.
+    This happens, e.g., when there are multiple opening brackets (``[``).
+
+    If the string between brackets does not represent a valid unit, the full input
+    is returned as the name and the unit is returned as ``None``.
+
+    Parameters
+    ----------
+    head:
+        The string to parse.
+
+    Returns
+    -------
+    :
+        The parsed name and unit.
+    """
+    import re
+
+    m = re.match(r"^([^[]*)(?:\[([^[]*)])?$", head)
+    if m is None:
+        return head, None
+
+    if m.lastindex != 2:
+        return m[1], None
+
+    name = m[1].rstrip()
+    if m[2].strip():
+        try:
+            return name, Unit(m[2])
+        except UnitError:
+            return head, None
+
+    return name, default_unit
+
+
+_HEADER_PARSERS = {
+    "bracket": parse_bracket_header,
+}
+
+
+def _parse_header(header: str, parser: HeaderParserArg) -> Tuple[str, Optional[Unit]]:
+    if parser is None:
+        return header, default_unit
+    if callable(parser):
+        return parser(header)
+    if (parser := _HEADER_PARSERS.get(parser)) is not None:
+        return parser(header)
+    else:
+        raise ValueError(
+            f"Unknown header parser '{parser}', "
+            f"supported builtin parsers: {list(_HEADER_PARSERS.keys())}."
+        )

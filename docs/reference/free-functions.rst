@@ -196,19 +196,6 @@ Visualization
    to_html
 
 
-Compatibility
-~~~~~~~~~~~~~
-
-.. autosummary::
-   :toctree: ../generated/functions
-
-   to_dict
-   from_dict
-   compat.from_pandas
-   compat.from_xarray
-   compat.to_xarray
-
-
 Logging
 ~~~~~~~
 
