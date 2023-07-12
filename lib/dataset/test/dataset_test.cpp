@@ -24,8 +24,8 @@ using namespace scipp;
 TEST(DatasetTest, construct_default) { ASSERT_NO_THROW(Dataset d); }
 
 TEST(DatasetTest, clear) {
-  DatasetFactory3D factory;
-  auto dataset = factory.make();
+  DatasetFactory factory;
+  auto dataset = factory.make("data");
 
   ASSERT_FALSE(dataset.empty());
   ASSERT_FALSE(dataset.coords().empty());
@@ -43,15 +43,15 @@ TEST(DatasetTest, erase_non_existant) {
 }
 
 TEST(DatasetTest, erase) {
-  DatasetFactory3D factory;
-  auto dataset = factory.make();
-  ASSERT_NO_THROW(dataset.erase("data_xyz"));
-  ASSERT_FALSE(dataset.contains("data_xyz"));
+  DatasetFactory factory;
+  auto dataset = factory.make("data");
+  ASSERT_NO_THROW(dataset.erase("data"));
+  ASSERT_FALSE(dataset.contains("data"));
 }
 
 TEST(DatasetTest, extract) {
-  DatasetFactory3D factory;
-  auto dataset = factory.make();
+  DatasetFactory factory;
+  auto dataset = factory.make("data");
   auto reference = copy(dataset);
 
   auto ptr = dataset["data"].values<double>().data();
@@ -420,25 +420,25 @@ TEST(DatasetTest, iterators) {
 }
 
 TEST(DatasetTest, slice_temporary) {
-  DatasetFactory3D factory;
+  DatasetFactory factory;
   auto dataset = factory.make().slice({Dim::X, 1});
   ASSERT_TRUE((std::is_same_v<decltype(dataset), Dataset>));
 }
 
 TEST(DatasetTest, construct_from_slice) {
-  DatasetFactory3D factory;
+  DatasetFactory factory;
   const auto dataset = factory.make();
   const auto slice = dataset.slice({Dim::X, 1});
-  Dataset from_slice = copy(slice);
+  const Dataset from_slice = copy(slice);
   ASSERT_EQ(from_slice, dataset.slice({Dim::X, 1}));
 }
 
 TEST(DatasetTest, construct_dataarray_from_slice) {
-  DatasetFactory3D factory;
-  const auto dataset = factory.make();
-  const auto slice = dataset["data_xyz"].slice({Dim::X, 1});
-  DataArray from_slice = copy(slice);
-  ASSERT_EQ(from_slice, dataset["data_xyz"].slice({Dim::X, 1}));
+  DatasetFactory factory;
+  const auto dataset = factory.make("data");
+  const auto slice = dataset["data"].slice({Dim::X, 1});
+  const DataArray from_slice = copy(slice);
+  ASSERT_EQ(from_slice, dataset["data"].slice({Dim::X, 1}));
 }
 
 TEST(DatasetTest, slice_no_data) {
@@ -486,7 +486,7 @@ TEST(DatasetTest, slice_validation_complex) {
 }
 
 TEST(DatasetTest, extract_coord) {
-  DatasetFactory3D factory;
+  DatasetFactory factory;
   const auto ref = factory.make();
   Dataset ds = copy(ref);
   auto coord = ds.coords()[Dim::X];
@@ -504,69 +504,52 @@ TEST(DatasetTest, extract_coord) {
 }
 
 TEST(DatasetTest, cannot_set_or_erase_item_coord) {
-  DatasetFactory3D factory;
-  auto ds = factory.make();
-  ASSERT_TRUE(ds.contains("data_x"));
-  ASSERT_THROW(ds["data_x"].coords().erase(Dim::X), except::DataArrayError);
+  DatasetFactory factory;
+  auto ds = factory.make("data");
+  ASSERT_TRUE(ds.contains("data"));
+  ASSERT_THROW(ds["data"].coords().erase(Dim::X), except::DataArrayError);
   ASSERT_TRUE(ds.coords().contains(Dim::X));
-  ASSERT_THROW(ds["data_x"].coords().set(Dim("new"), ds.coords()[Dim::X]),
+  ASSERT_THROW(ds["data"].coords().set(Dim("new"), ds.coords()[Dim::X]),
                except::DataArrayError);
   ASSERT_FALSE(ds.coords().contains(Dim("new")));
 }
 
 TEST(DatasetTest, item_coord_cannot_change_coord) {
-  DatasetFactory3D factory;
-  Dataset ds = factory.make();
+  DatasetFactory factory;
+  Dataset ds = factory.make("data");
   const auto original = copy(ds.coords()[Dim::X]);
-  ASSERT_THROW(ds["data_x"].coords()[Dim::X] += original,
-               except::VariableError);
+  ASSERT_THROW(ds["data"].coords()[Dim::X] += original, except::VariableError);
   ASSERT_EQ(ds.coords()[Dim::X], original);
 }
 
-TEST(DatasetTest, extract_labels) {
-  DatasetFactory3D factory;
-  const auto ref = factory.make();
-  Dataset ds = copy(ref);
-  auto labels = ds.coords()[Dim("labels_x")];
-  ds.coords().extract(Dim("labels_x"));
-  EXPECT_FALSE(ds.coords().contains(Dim("labels_x")));
-  ds.setCoord(Dim("labels_x"), labels);
-  EXPECT_EQ(ref, ds);
-
-  ds.coords().erase(Dim("labels_x"));
-  EXPECT_FALSE(ds.coords().contains(Dim("labels_x")));
-  ds.setCoord(Dim("labels_x"), labels);
-  EXPECT_EQ(ref, ds);
-}
-
 TEST(DatasetTest, set_erase_item_attr) {
-  DatasetFactory3D factory;
-  auto ds = factory.make();
+  DatasetFactory factory;
+  auto ds = factory.make("data");
   const auto attr = makeVariable<double>(Values{1.0});
-  ds["data_x"].attrs().set(Dim("item-attr"), attr);
-  EXPECT_TRUE(ds["data_x"].attrs().contains(Dim("item-attr")));
-  ds["data_x"].attrs().erase(Dim("item-attr"));
-  EXPECT_FALSE(ds["data_x"].attrs().contains(Dim("item-attr")));
+  ds["data"].attrs().set(Dim("item-attr"), attr);
+  EXPECT_TRUE(ds["data"].attrs().contains(Dim("item-attr")));
+  ds["data"].attrs().erase(Dim("item-attr"));
+  EXPECT_FALSE(ds["data"].attrs().contains(Dim("item-attr")));
 }
 
 TEST(DatasetTest, set_erase_item_mask) {
-  DatasetFactory3D factory;
-  auto ds = factory.make();
+  DatasetFactory factory;
+  auto ds = factory.make("data");
   const auto mask = makeVariable<double>(Values{true});
-  ds["data_x"].masks().set("item-mask", mask);
-  EXPECT_TRUE(ds["data_x"].masks().contains("item-mask"));
-  ds["data_x"].masks().erase("item-mask");
-  EXPECT_FALSE(ds["data_x"].masks().contains("item-mask"));
+  ds["data"].masks().set("item-mask", mask);
+  EXPECT_TRUE(ds["data"].masks().contains("item-mask"));
+  ds["data"].masks().erase("item-mask");
+  EXPECT_FALSE(ds["data"].masks().contains("item-mask"));
 }
 
 TEST(DatasetTest, item_name) {
-  DatasetFactory3D factory;
-  const auto dataset = factory.make();
-  DataArray array(dataset["data_xyz"]);
-  EXPECT_EQ(array, dataset["data_xyz"]);
+  DatasetFactory factory;
+  const auto dataset = factory.make("data");
+  const DataArray array(dataset["data"]);
+  EXPECT_EQ(array, dataset["data"]);
   // Comparison ignores the name, so this is tested separately.
-  EXPECT_EQ(dataset["data_xyz"].name(), "data_xyz");
-  EXPECT_EQ(array.name(), "data_xyz");
+  EXPECT_EQ(dataset["data"].name(), "data");
+  EXPECT_EQ(array.name(), "data");
 }
 
 TEST(DatasetTest, self_nesting) {
@@ -599,9 +582,9 @@ TEST(DatasetTest, drop_coords) {
 
 struct DatasetRenameTest : public ::testing::Test {
   DatasetRenameTest() {
-    DatasetFactory3D factory(4, 5, 6, Dim::X);
-    factory.seed(0);
-    d = factory.make();
+    DatasetFactory factory(Dimensions({{Dim::X, 3}, {Dim::Y, 4}}));
+    factory.seed(98741);
+    d = factory.make("data_xy");
     original = d;
   }
 
@@ -657,9 +640,14 @@ TEST_F(DatasetRenameTest, back_and_forth) {
 }
 
 TEST_F(DatasetRenameTest, rename_dims) {
+  // Same as in fixture
+  DatasetFactory factory(Dimensions({{Dim::Row, 3}, {Dim::Y, 4}}));
+  factory.seed(98741);
+  auto expected = factory.make("data_xy");
+  expected.coords().set(Dim{"labels_x"},
+                        expected.coords().extract(Dim{"labels_row"}));
+
   auto renamed = d.rename_dims({{Dim::X, Dim::Row}});
-  DatasetFactory3D factory(4, 5, 6, Dim::Row);
-  factory.seed(0);
   renamed.coords().set(Dim::Row, renamed.coords().extract(Dim::X));
-  EXPECT_EQ(renamed, factory.make());
+  EXPECT_EQ(renamed, expected);
 }

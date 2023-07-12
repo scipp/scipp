@@ -19,6 +19,27 @@ std::vector<bool> make_bools(const scipp::index size, bool pattern);
 /// Factory for creating datasets for testing. For a given instance, `make()`
 /// will return datasets with identical coords, such that they are compatible in
 /// binary operations.
+class DatasetFactory {
+public:
+  DatasetFactory();
+  DatasetFactory(Dim dim, scipp::index length);
+  explicit DatasetFactory(Dimensions dims);
+
+  void seed(uint32_t seed);
+  Dataset make(std::string_view data_name = "data");
+
+private:
+  void assign_coords();
+
+  Dimensions m_dims;
+  Random m_rand;
+  RandomBool m_rand_bool;
+  Dataset m_base;
+};
+
+/// Factory for creating datasets for testing. For a given instance, `make()`
+/// will return datasets with identical coords, such that they are compatible in
+/// binary operations.
 class DatasetFactory3D {
 public:
   DatasetFactory3D(const scipp::index lx = 4, const scipp::index ly = 5,

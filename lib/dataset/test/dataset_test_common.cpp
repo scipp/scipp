@@ -22,6 +22,45 @@ std::vector<bool> make_bools(const scipp::index size, bool pattern) {
   return make_bools(size, std::initializer_list<bool>{pattern});
 }
 
+DatasetFactory::DatasetFactory()
+    : DatasetFactory(Dimensions{{Dim::X, 4}, {Dim::Y, 3}, {Dim::Z, 5}}) {}
+
+DatasetFactory::DatasetFactory(const scipp::units::Dim dim,
+                               const scipp::index length)
+    : DatasetFactory(Dimensions({{dim, length}})) {}
+
+DatasetFactory::DatasetFactory(const Dimensions dims) : m_dims{dims} {
+  seed(549634198);
+  assign_coords();
+}
+
+void DatasetFactory::seed(const uint32_t seed) {
+  m_rand.seed(seed);
+  m_rand_bool.seed(seed);
+}
+
+Dataset DatasetFactory::make(const std::string_view data_name) {
+  Dataset result = m_base;
+  const std::string name{data_name};
+  result.setData(name,
+                 makeVariable<double>(m_dims, Values(m_rand(m_dims.volume()))));
+  result[name].masks().set(
+      "mask", makeVariable<bool>(
+                  m_dims, Values(make_bools(m_dims.volume(), {true, false}))));
+  return result;
+}
+
+void DatasetFactory::assign_coords() {
+  for (const auto dim : m_dims) {
+    const auto length = m_dims[dim];
+    m_base.setCoord(dim, makeVariable<double>(Dimensions{dim, length},
+                                              Values(m_rand(length))));
+    m_base.setCoord(
+        Dim("labels_" + to_string(dim)),
+        makeVariable<double>(Dimensions{dim, length}, Values(m_rand(length))));
+  }
+}
+
 DatasetFactory3D::DatasetFactory3D(const scipp::index lx_,
                                    const scipp::index ly_,
                                    const scipp::index lz_, const Dim dim)
