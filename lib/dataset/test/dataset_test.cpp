@@ -398,26 +398,25 @@ TEST(DatasetTest, const_iterators_return_types) {
 
 TEST(DatasetTest, iterators) {
   DataArray da1(makeVariable<double>(Dims{Dim::X}, Shape{2}));
-  DataArray da2(makeVariable<double>(Dims{Dim::Y}, Shape{2}));
-  da2.coords().set(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{2}));
+  DataArray da2(makeVariable<double>(Dims{Dim::X}, Shape{2}));
+  da2.coords().set(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{2}));
   Dataset d;
   d.setData("data1", da1);
   d.setData("data2", da2);
 
-  const std::vector data_arrays{std::ref(da1), std::ref(da2)};
-  for (auto it = d.begin(); it != d.end(); ++it) {
-    EXPECT_THAT(data_arrays, ::testing::Contains(*it));
-  }
+  da1.coords().set(Dim::X, da2.coords()[Dim::X]);
+  const std::vector expected_arrays{da1, da2};
+  const std::vector actual_arrays(d.begin(), d.end());
+  EXPECT_EQ(actual_arrays, expected_arrays);
 
-  const std::vector names{"data1", "data2"};
-  for (auto it = d.keys_begin(); it != d.keys_end(); ++it) {
-    EXPECT_THAT(names, ::testing::Contains(*it));
-  }
+  const std::vector<std::string> names{"data1", "data2"};
+  const std::vector actual_names(d.keys_begin(), d.keys_end());
+  EXPECT_EQ(actual_names, names);
 
-  for (auto it = d.items_begin(); it != d.items_end(); ++it) {
-    EXPECT_THAT(names, ::testing::Contains(it->first));
-    EXPECT_THAT(data_arrays, ::testing::Contains(it->second));
-  }
+  const std::vector<std::pair<std::string, DataArray>> expected_items{
+      {"data1", da1}, {"data2", da2}};
+  const std::vector actual_items(d.items_begin(), d.items_end());
+  EXPECT_EQ(actual_items, expected_items);
 }
 
 TEST(DatasetTest, slice_temporary) {
