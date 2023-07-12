@@ -2,8 +2,10 @@
 // Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/dataset/dataset.h"
+#include <sstream>
+
 #include "scipp/core/except.h"
+#include "scipp/dataset/dataset.h"
 #include "scipp/dataset/dataset_util.h"
 #include "scipp/dataset/except.h"
 #include "scipp/units/unit.h"
@@ -15,6 +17,17 @@ template <class T> void expect_writable(const T &dict) {
   if (dict.is_readonly())
     throw except::DatasetError(
         "Read-only flag is set, cannot insert new or erase existing items.");
+}
+
+template <class T>
+void expect_matching_item_dims(const Dataset &dset, const std::string_view key,
+                               const T &to_insert) {
+  if (dset.sizes() != to_insert.dims()) {
+    std::ostringstream msg;
+    msg << "Cannot add item '" << key << "' with dims " << to_insert.dims()
+        << " to dataset with dims " << to_string(dset.sizes()) << ".";
+    throw except::DimensionError(msg.str());
+  }
 }
 } // namespace
 
@@ -44,7 +57,6 @@ Dataset &Dataset::operator=(Dataset &&other) {
 void Dataset::clear() {
   expect_writable(*this);
   m_data.clear();
-  rebuildDims();
 }
 
 void Dataset::setCoords(Coords other) {
@@ -81,7 +93,6 @@ void Dataset::erase(const std::string &name) {
   expect_writable(*this);
   scipp::expect::contains(*this, name);
   m_data.erase(std::string(name));
-  rebuildDims();
 }
 
 /// Extract a data item from the Dataset, returning a DataArray
@@ -99,23 +110,14 @@ DataArray Dataset::operator[](const std::string &name) const {
   return *find(name);
 }
 
-/// Consistency-enforcing update of the dimensions of the dataset.
-///
-/// Calling this in the various set* methods prevents insertion of variables
-/// with bad shape. This supports insertion of bin edges. Note that the current
-/// implementation does not support shape-changing operations which would in
-/// theory be permitted but are probably not important in reality: The previous
-/// extent of a replaced item is not excluded from the check, so even if that
-/// replaced item is the only one in the dataset with that dimension it cannot
-/// be "resized" in this way.
-void Dataset::setSizes(const Sizes &sizes) {
-  m_coords.setSizes(merge(m_coords.sizes(), sizes));
-}
-
-void Dataset::rebuildDims() {
-  m_coords.rebuildSizes();
-  for (const auto &d : *this)
-    setSizes(d.dims());
+void Dataset::set_sizes_to_insert_data(const std::string_view name,
+                                       const Variable &data) {
+  if (empty())
+    // Merge sizes to allow for defining the dataset dims by assigning arbitrary
+    // coordinates into an empty dataset.
+    m_coords.setSizes(merge(m_coords.sizes(), data.dims()));
+  else
+    expect_matching_item_dims(*this, name, data);
 }
 
 /// Set (insert or replace) the coordinate for the given dimension.
@@ -125,8 +127,9 @@ void Dataset::setCoord(const Dim dim, Variable coord) {
   for (const auto &coord_dim : coord.dims())
     if (is_edges(m_coords.sizes(), coord.dims(), coord_dim))
       set_sizes = false;
-  if (set_sizes)
-    setSizes(coord.dims());
+  if (set_sizes && empty()) {
+    m_coords.setSizes(merge(m_coords.sizes(), coord.dims()));
+  }
   m_coords.set(dim, std::move(coord));
 }
 
@@ -138,7 +141,7 @@ void Dataset::setCoord(const Dim dim, Variable coord) {
 void Dataset::setData(const std::string &name, Variable data,
                       const AttrPolicy attrPolicy) {
   expect_writable(*this);
-  setSizes(data.dims());
+  set_sizes_to_insert_data(name, data);
   const auto replace = contains(name);
   if (replace && attrPolicy == AttrPolicy::Keep)
     m_data.insert_or_assign(
@@ -146,8 +149,6 @@ void Dataset::setData(const std::string &name, Variable data,
                         m_data[name].attrs().items(), name));
   else
     m_data.insert_or_assign(name, DataArray(std::move(data)));
-  if (replace)
-    rebuildDims();
 }
 
 namespace {

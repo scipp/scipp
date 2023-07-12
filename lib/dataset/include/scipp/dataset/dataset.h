@@ -197,8 +197,8 @@ private:
   // Declared friend so gtest recognizes it
   friend SCIPP_DATASET_EXPORT std::ostream &operator<<(std::ostream &,
                                                        const Dataset &);
-  void setSizes(const Sizes &sizes);
-  void rebuildDims();
+  void set_sizes_to_insert_data(const std::string_view name,
+                                const Variable &data);
 
   Coords m_coords; // aligned coords
   core::Dict<std::string, DataArray> m_data;
