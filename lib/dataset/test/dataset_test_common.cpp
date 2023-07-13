@@ -71,6 +71,14 @@ Dataset DatasetFactory::make_empty_with_coords() {
         Dim("labels_" + to_string(dim)),
         makeVariable<double>(Dimensions{dim, length}, Values(m_rand(length))));
   }
+  if (m_dims.ndim() > 1) {
+    const std::vector dims(m_dims.begin(), m_dims.end());
+    result.setCoord(Dim{to_string(dims[0]) + to_string(dims[1])},
+                    makeVariable<double>(
+                        Dims{dims[0], dims[1]},
+                        Shape{m_dims[dims[0]], m_dims[dims[1]]},
+                        Values(m_rand(m_dims[dims[0]] * m_dims[dims[1]]))));
+  }
   return result;
 }
 
