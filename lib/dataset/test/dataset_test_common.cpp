@@ -29,9 +29,12 @@ DatasetFactory::DatasetFactory(const scipp::units::Dim dim,
                                const scipp::index length)
     : DatasetFactory(Dimensions({{dim, length}})) {}
 
-DatasetFactory::DatasetFactory(const Dimensions dims) : m_dims{dims} {
+DatasetFactory::DatasetFactory(
+    const std::initializer_list<std::pair<Dim, scipp::index>> dims)
+    : DatasetFactory(Dimensions(dims)) {}
+
+DatasetFactory::DatasetFactory(Dimensions dims) : m_dims{std::move(dims)} {
   seed(549634198);
-  assign_coords();
 }
 
 void DatasetFactory::seed(const uint32_t seed) {
@@ -40,7 +43,7 @@ void DatasetFactory::seed(const uint32_t seed) {
 }
 
 Dataset DatasetFactory::make(const std::string_view data_name) {
-  Dataset result = m_base;
+  Dataset result = make_empty_with_coords();
   const std::string name{data_name};
   result.setData(name,
                  makeVariable<double>(m_dims, Values(m_rand(m_dims.volume()))));
@@ -50,15 +53,25 @@ Dataset DatasetFactory::make(const std::string_view data_name) {
   return result;
 }
 
-void DatasetFactory::assign_coords() {
+Dataset
+DatasetFactory::make_with_random_masks(const std::string_view data_name) {
+  auto result = make(data_name);
+  result[std::string(data_name)].masks().set(
+      "mask", makeVariable<bool>(m_dims, Values(m_rand_bool(m_dims.volume()))));
+  return result;
+}
+
+Dataset DatasetFactory::make_empty_with_coords() {
+  Dataset result;
   for (const auto dim : m_dims) {
     const auto length = m_dims[dim];
-    m_base.setCoord(dim, makeVariable<double>(Dimensions{dim, length},
+    result.setCoord(dim, makeVariable<double>(Dimensions{dim, length},
                                               Values(m_rand(length))));
-    m_base.setCoord(
+    result.setCoord(
         Dim("labels_" + to_string(dim)),
         makeVariable<double>(Dimensions{dim, length}, Values(m_rand(length))));
   }
+  return result;
 }
 
 DatasetFactory3D::DatasetFactory3D(const scipp::index lx_,

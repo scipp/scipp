@@ -23,18 +23,21 @@ class DatasetFactory {
 public:
   DatasetFactory();
   DatasetFactory(Dim dim, scipp::index length);
+  DatasetFactory(std::initializer_list<std::pair<Dim, scipp::index>> dims);
   explicit DatasetFactory(Dimensions dims);
 
   void seed(uint32_t seed);
   Dataset make(std::string_view data_name = "data");
+  Dataset make_with_random_masks(std::string_view data_name = "data");
+
+  [[nodiscard]] const Dimensions &dims() const noexcept { return m_dims; }
 
 private:
-  void assign_coords();
+  Dataset make_empty_with_coords();
 
   Dimensions m_dims;
   Random m_rand;
   RandomBool m_rand_bool;
-  Dataset m_base;
 };
 
 /// Factory for creating datasets for testing. For a given instance, `make()`
