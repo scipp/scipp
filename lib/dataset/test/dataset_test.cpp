@@ -2,7 +2,6 @@
 // Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 #include "scipp/core/except.h"
 #include "test_macros.h"
-#include <gmock/gmock.h>
 #include <gtest/gtest-matchers.h>
 #include <gtest/gtest.h>
 
@@ -652,10 +651,13 @@ TEST_F(DatasetRenameTest, rename_dims) {
   DatasetFactory factory(Dimensions({{Dim::Row, 3}, {Dim::Y, 4}}));
   factory.seed(98741);
   auto expected = factory.make("data_xy");
+  // Set coord names to the same as in `d`.
+  expected.coords().set(Dim{"x"}, expected.coords().extract(Dim{"row"}));
+  ;
   expected.coords().set(Dim{"labels_x"},
                         expected.coords().extract(Dim{"labels_row"}));
+  expected.coords().set(Dim{"xy"}, expected.coords().extract(Dim{"rowy"}));
 
   auto renamed = d.rename_dims({{Dim::X, Dim::Row}});
-  renamed.coords().set(Dim::Row, renamed.coords().extract(Dim::X));
   EXPECT_EQ(renamed, expected);
 }

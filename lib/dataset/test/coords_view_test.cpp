@@ -92,18 +92,18 @@ TYPED_TEST(CoordsViewTest, iterators) {
 }
 
 TYPED_TEST(CoordsViewTest, find_and_contains) {
-  DatasetFactory3D factory;
+  DatasetFactory factory({{Dim::X, 3}, {Dim::Y, 2}});
   auto dataset = factory.make();
   const auto coords = TestFixture::access(dataset).coords();
 
   EXPECT_EQ(coords.find(Dim::Row), coords.end());
-  EXPECT_EQ(coords.find(Dim::Time)->first, Dim::Time);
-  EXPECT_EQ(coords.find(Dim::Time)->second, coords[Dim::Time]);
-  EXPECT_FALSE(coords.contains(Dim::Row));
-  EXPECT_TRUE(coords.contains(Dim::Time));
-
   EXPECT_EQ(coords.find(Dim::X)->first, Dim::X);
   EXPECT_EQ(coords.find(Dim::X)->second, coords[Dim::X]);
+  EXPECT_FALSE(coords.contains(Dim::Row));
+  EXPECT_TRUE(coords.contains(Dim::X));
+
+  EXPECT_EQ(coords.find(Dim::Y)->first, Dim::Y);
+  EXPECT_EQ(coords.find(Dim::Y)->second, coords[Dim::Y]);
 }
 
 TEST(MutableCoordsViewTest, item_write) {

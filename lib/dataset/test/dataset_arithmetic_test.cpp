@@ -19,13 +19,8 @@
 using namespace scipp;
 using namespace scipp::dataset;
 
-DatasetFactory3D datasetFactory() {
-  static DatasetFactory3D factory;
-  return factory;
-}
-
 template <class T> auto make_no_variances(T &&factory) {
-  auto ds = factory.make();
+  auto ds = factory.make("data");
   for (auto &&x : ds)
     x.data().setVariances({});
   return ds;
@@ -82,10 +77,12 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
                makeVariable<double>(Dims{Dim::Y}, Shape{ly}, Values(coordY)));
     a.setCoord(Dim("t"), labelT);
     a.setData("data_a",
-              makeVariable<double>(Dimensions{Dim::X, lx}, Values(rand(lx))));
+              makeVariable<double>(Dimensions{{Dim::X, lx}, {Dim::Y, ly}},
+                                   Values(rand(lx * ly))));
     a["data_a"].masks().set("mask", makeVariable<bool>(Values{false}));
     a.setData("data_b",
-              makeVariable<double>(Dimensions{Dim::Y, ly}, Values(rand(ly))));
+              makeVariable<double>(Dimensions{{Dim::Y, ly}, {Dim::X, lx}},
+                                   Values(rand(lx * ly))));
   }
 
   Dataset b;
@@ -96,7 +93,8 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
                makeVariable<double>(Dims{Dim::Y}, Shape{ly}, Values(coordY)));
     b.setCoord(Dim("t"), labelT);
     b.setData("data_a",
-              makeVariable<double>(Dimensions{Dim::Y, ly}, Values(rand(ly))));
+              makeVariable<double>(Dimensions{{Dim::X, lx}, {Dim::Y, ly}},
+                                   Values(rand(lx * ly))));
     b["data_a"].masks().set("mask", mask);
   }
 
@@ -108,30 +106,33 @@ TYPED_TEST_SUITE(DatasetBinaryEqualsOpTest, BinaryEquals);
 TYPED_TEST_SUITE(DatasetViewBinaryEqualsOpTest, BinaryEquals);
 
 TYPED_TEST(DataArrayViewBinaryEqualsOpTest, other_data_unchanged) {
-  const auto dataset_b = make_no_variances(datasetFactory());
+  const auto dataset_b = make_no_variances(DatasetFactory{});
 
   for (const auto &item : dataset_b) {
-    auto dataset_a = datasetFactory().make();
+    auto dataset_a = DatasetFactory{}.make();
     const auto original_a = copy(dataset_a);
-    auto target = dataset_a["data_zyx"];
+    auto target = dataset_a["data"];
 
     ASSERT_NO_THROW(TestFixture::op(target, item));
 
     for (const auto &data : dataset_a) {
-      if (data.name() != "data_zyx") {
+      if (data.name() != "data") {
         EXPECT_EQ(data, original_a[data.name()]);
+      } else {
+        EXPECT_NE(data, original_a[data.name()]);
       }
     }
   }
 }
 
 TYPED_TEST(DataArrayViewBinaryEqualsOpTest, lhs_with_variance) {
-  const auto dataset_b = datasetFactory().make();
+  DatasetFactory factory;
+  const auto dataset_b = factory.make();
 
   for (const auto &item : dataset_b) {
-    const bool randomMasks = true;
-    auto dataset_a = datasetFactory().make(randomMasks);
-    auto target = copy(dataset_a["data_zyx"]);
+    auto dataset_a = factory.make_with_random_masks("data");
+    dataset_a.coords() = dataset_b.coords();
+    auto target = copy(dataset_a["data"]);
     auto data_array = copy(target);
 
     auto reference = copy(target.data());
@@ -150,12 +151,13 @@ TYPED_TEST(DataArrayViewBinaryEqualsOpTest, lhs_with_variance) {
 }
 
 TYPED_TEST(DataArrayViewBinaryEqualsOpTest, lhs_without_variance) {
-  const auto dataset_b = datasetFactory().make();
+  DatasetFactory factory;
+  const auto dataset_b = factory.make("data");
 
   for (const auto &item : dataset_b) {
-    const bool randomMasks = true;
-    auto dataset_a = datasetFactory().make(randomMasks);
-    auto target = copy(dataset_a["data_xyz"]);
+    auto dataset_a = factory.make_with_random_masks("data");
+    dataset_a.coords() = dataset_b.coords();
+    auto target = copy(dataset_a["data"]);
     auto data_array = copy(target);
 
     if (item.has_variances()) {
@@ -173,12 +175,13 @@ TYPED_TEST(DataArrayViewBinaryEqualsOpTest, lhs_without_variance) {
 }
 
 TYPED_TEST(DataArrayViewBinaryEqualsOpTest, slice_lhs_with_variance) {
-  const auto dataset_b = datasetFactory().make();
+  DatasetFactory factory;
+  const auto dataset_b = factory.make("data");
 
   for (const auto &item : dataset_b) {
-    const bool randomMasks = true;
-    auto dataset_a = datasetFactory().make(randomMasks);
-    auto target = copy(dataset_a["data_zyx"]);
+    auto dataset_a = factory.make_with_random_masks("data");
+    dataset_a.coords() = dataset_b.coords();
+    auto target = copy(dataset_a["data"]);
     const auto &dims = item.dims();
 
     for (const Dim dim : dims.labels()) {
@@ -213,23 +216,24 @@ TYPED_TEST(DataArrayViewBinaryEqualsOpTest, slice_lhs_with_variance) {
 }
 
 // DataArrayViewBinaryEqualsOpTest ensures correctness of operations between
-// DataArrayView with itself, so we can rely on that for building the reference.
+// DataArray with itself, so we can rely on that for building the reference.
 TYPED_TEST(DatasetBinaryEqualsOpTest, return_value) {
-  auto a = make_no_variances(datasetFactory());
-  auto b = make_no_variances(datasetFactory());
+  DatasetFactory factory;
+  auto a = make_no_variances(factory);
+  auto b = make_no_variances(factory);
+  b.coords() = a.coords();
 
-  ASSERT_TRUE(
-      (std::is_same_v<decltype(TestFixture::op(a, b["data_scalar"].data())),
-                      Dataset &>));
+  ASSERT_TRUE((std::is_same_v<decltype(TestFixture::op(a, b["data"].data())),
+                              Dataset &>));
   {
-    const auto &result = TestFixture::op(a, b["data_scalar"].data());
+    const auto &result = TestFixture::op(a, b["data"].data());
     ASSERT_EQ(&result, &a);
   }
 
-  ASSERT_TRUE((std::is_same_v<decltype(TestFixture::op(a, b["data_scalar"])),
-                              Dataset &>));
+  ASSERT_TRUE(
+      (std::is_same_v<decltype(TestFixture::op(a, b["data"])), Dataset &>));
   {
-    const auto &result = TestFixture::op(a, b["data_scalar"]);
+    const auto &result = TestFixture::op(a, b["data"]);
     ASSERT_EQ(&result, &a);
   }
 
@@ -256,45 +260,44 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, return_value) {
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DataArrayView_self_overlap) {
-  auto dataset = datasetFactory().make();
+  auto dataset = DatasetFactory{}.make();
   auto original = copy(dataset);
   auto reference = copy(dataset);
 
-  ASSERT_NO_THROW(TestFixture::op(dataset, dataset["data_scalar"]));
+  ASSERT_NO_THROW(TestFixture::op(dataset, dataset["data"]));
   for (const auto &item : dataset) {
-    EXPECT_EQ(item,
-              TestFixture::op(reference[item.name()], original["data_scalar"]));
+    EXPECT_EQ(item, TestFixture::op(reference[item.name()], original["data"]));
   }
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Variable_self_overlap) {
-  auto dataset = datasetFactory().make();
+  auto dataset = DatasetFactory{}.make();
   auto original(dataset);
   auto reference(dataset);
 
-  ASSERT_NO_THROW(TestFixture::op(dataset, dataset["data_scalar"].data()));
+  ASSERT_NO_THROW(TestFixture::op(dataset, dataset["data"].data()));
   for (const auto &item : dataset) {
-    EXPECT_EQ(item, TestFixture::op(reference[item.name()],
-                                    original["data_scalar"].data()));
+    EXPECT_EQ(item,
+              TestFixture::op(reference[item.name()], original["data"].data()));
   }
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DataArrayView_self_overlap_slice) {
-  auto dataset = datasetFactory().make();
+  auto dataset = DatasetFactory{}.make();
+  dataset.coords().erase(Dim{"xy"}); // multi-dim coord causes mismatch
   auto original = copy(dataset);
   auto reference = copy(dataset);
 
-  ASSERT_NO_THROW(
-      TestFixture::op(dataset, dataset["values_x"].slice({Dim::X, 1})));
+  ASSERT_NO_THROW(TestFixture::op(dataset, dataset["data"].slice({Dim::X, 1})));
   for (const auto &item : dataset) {
     EXPECT_EQ(item, TestFixture::op(reference[item.name()],
-                                    original["values_x"].slice({Dim::X, 1})));
+                                    original["data"].slice({Dim::X, 1})));
   }
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset) {
-  auto a = datasetFactory().make();
-  auto b = datasetFactory().make();
+  auto a = DatasetFactory{}.make();
+  auto b = DatasetFactory{}.make();
   auto reference(a);
 
   ASSERT_NO_THROW(TestFixture::op(a, b));
@@ -304,17 +307,22 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset) {
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset_coord_mismatch) {
-  auto a = datasetFactory().make();
-  DatasetFactory3D otherCoordsFactory;
-  auto b = otherCoordsFactory.make();
+  DatasetFactory factory_a;
+  factory_a.seed(7471);
+  DatasetFactory factory_b;
+  factory_b.seed(7198);
+  auto a = factory_a.make();
+  auto b = factory_b.make();
 
   ASSERT_THROW(TestFixture::op(a, b), except::CoordMismatchError);
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
-  auto a = datasetFactory().make();
-  a.setData("extra", makeVariable<double>(Values{double{}}));
-  auto b = datasetFactory().make();
+  DatasetFactory factory;
+  auto a = factory.make();
+  a.setData("extra", makeVariable<double>(a["data"].dims()));
+  auto b = factory.make();
+  b.coords() = a.coords();
   auto reference(a);
 
   ASSERT_NO_THROW(TestFixture::op(a, b));
@@ -328,15 +336,15 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Dataset_with_extra_items) {
-  auto a = datasetFactory().make();
-  auto b = datasetFactory().make();
-  b.setData("extra", makeVariable<double>(Values{double{}}));
+  auto a = DatasetFactory{}.make();
+  auto b = DatasetFactory{}.make();
+  b.setData("extra", b["data"]);
 
   ASSERT_ANY_THROW(TestFixture::op(a, b));
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetView_self_overlap) {
-  auto dataset = make_no_variances(datasetFactory());
+  auto dataset = make_no_variances(DatasetFactory{});
   const auto slice = dataset.slice({Dim::Z, 3});
   auto reference(dataset);
 
@@ -354,7 +362,8 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetView_self_overlap) {
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetView_coord_mismatch) {
-  auto dataset = datasetFactory().make()["data_xyz"];
+  DatasetFactory factory{{Dim::X, 4}, {Dim::Y, 5}, {Dim::Z, 4}};
+  auto dataset = factory.make()["data"];
 
   // Non-range sliced throws for X and Y due to multi-dimensional coords.
   ASSERT_THROW(TestFixture::op(dataset, dataset.slice({Dim::X, 3})),
@@ -371,51 +380,47 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetView_coord_mismatch) {
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, masks_propagate) {
-  auto a = datasetFactory().make();
-  auto b = datasetFactory().make();
+  DatasetFactory factory;
+  auto a = factory.make("data");
+  auto b = factory.make("data");
+  b.coords() = a.coords();
   const auto expectedMask =
-      makeVariable<bool>(Dimensions{Dim::X, datasetFactory().lx},
-                         Values(make_bools(datasetFactory().lx, true)));
-
-  for (const auto &item :
-       {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"})
-    b[item].masks().set("masks_x", expectedMask);
+      makeVariable<bool>(Dimensions{Dim::X, factory.dims()[Dim::X]},
+                         Values(make_bools(factory.dims()[Dim::X], true)));
+  b["data"].masks().set("masks_x", expectedMask);
 
   TestFixture::op(a, b);
 
-  for (const auto &item :
-       {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"})
-    EXPECT_EQ(a[item].masks()["masks_x"], expectedMask);
+  EXPECT_EQ(a["data"].masks()["masks_x"], expectedMask);
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, masks_not_shared) {
   // See test of same name in DatasetBinaryOpTest
-  auto a = datasetFactory().make();
-  auto b = datasetFactory().make();
+  DatasetFactory factory;
+  auto a = factory.make("data");
+  auto b = factory.make("data");
+  b.coords() = a.coords();
 
-  const auto maskA = makeVariable<bool>(Dimensions{Dim::X, datasetFactory().lx},
-                                        Values{false, false, true, false});
-  const auto maskB = makeVariable<bool>(Dimensions{Dim::X, datasetFactory().lx},
-                                        Values{false, false, false, true});
-  const auto maskC = makeVariable<bool>(Dimensions{Dim::X, datasetFactory().lx},
-                                        Values{false, true, false, false});
+  const auto maskA =
+      makeVariable<bool>(Dimensions{Dim::X, factory.dims()[Dim::X]},
+                         Values{false, false, true, false});
+  const auto maskB =
+      makeVariable<bool>(Dimensions{Dim::X, factory.dims()[Dim::X]},
+                         Values{false, false, false, true});
+  const auto maskC =
+      makeVariable<bool>(Dimensions{Dim::X, factory.dims()[Dim::X]},
+                         Values{false, true, false, false});
 
-  for (const auto &item :
-       {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"}) {
-    a[item].masks().set("mask_ab", copy(maskA));
-    b[item].masks().set("mask_ab", copy(maskB));
-    b[item].masks().set("mask_b", copy(maskB));
-  }
+  a["data"].masks().set("mask_ab", copy(maskA));
+  b["data"].masks().set("mask_ab", copy(maskB));
+  b["data"].masks().set("mask_b", copy(maskB));
 
   TestFixture::op(a, b);
 
-  for (const auto &item :
-       {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"}) {
-    a[item].masks()["mask_b"] |= maskC;
-    a[item].masks()["mask_ab"] |= maskC;
-    EXPECT_EQ(b[item].masks()["mask_ab"], maskB);
-    EXPECT_EQ(b[item].masks()["mask_b"], maskB);
-  }
+  a["data"].masks()["mask_b"] |= maskC;
+  a["data"].masks()["mask_ab"] |= maskC;
+  EXPECT_EQ(b["data"].masks()["mask_ab"], maskB);
+  EXPECT_EQ(b["data"].masks()["mask_b"], maskB);
 }
 
 TYPED_TEST_SUITE(DatasetMaskSlicingBinaryOpTest, Binary);
@@ -435,46 +440,35 @@ TYPED_TEST(DatasetMaskSlicingBinaryOpTest, binary_op_on_sliced_masks) {
   EXPECT_EQ(slice3["data_x"].masks()["masks_x"], expectedMask);
 }
 
-TYPED_TEST(DatasetViewBinaryEqualsOpTest,
-           rhs_DataArray_prevented_modification_of_lower_dimensional_items) {
-  auto dataset = datasetFactory().make();
-  auto reference = copy(dataset);
-  for (scipp::index z = 0; z < dataset.coords()[Dim::Z].dims()[Dim::Z]; ++z) {
-    ASSERT_THROW(
-        TestFixture::op(dataset.slice({Dim::Z, z}), dataset["data_scalar"]),
-        except::VariableError);
-  }
-  EXPECT_EQ(dataset, reference);
-}
-
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DataArray_self_overlap) {
-  auto dataset = datasetFactory().make();
-  for (const auto &name : {"values_x", "data_x", "data_xy", "data_scalar"})
-    dataset.erase(name);
+  auto dataset = DatasetFactory{}.make();
   // Unless we take the last slice this will not work
-  const auto slice = dataset["data_xyz"].slice({Dim::Z, 5});
+  const auto slice =
+      dataset["data"].slice({Dim::Z, dataset.dims()[Dim::Z] - 1});
   auto reference = copy(dataset);
 
   for (scipp::index z = 0; z < dataset.coords()[Dim::Z].dims()[Dim::Z]; ++z)
     ASSERT_NO_THROW(TestFixture::op(dataset.slice({Dim::Z, z}), slice));
-  const auto rhs = copy(reference["data_xyz"].slice({Dim::Z, 5}));
+  const auto rhs =
+      copy(reference["data"].slice({Dim::Z, dataset.dims()[Dim::Z] - 1}));
   for (const auto &item : dataset) {
     EXPECT_EQ(item, TestFixture::op(reference[item.name()], rhs));
   }
 }
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_Dataset_coord_mismatch) {
-  DatasetFactory3D otherCoordsFactory;
-  auto a = otherCoordsFactory.make();
-  auto b = datasetFactory().make();
+  DatasetFactory factory;
+  auto a = factory.make();
+  auto b = factory.make();
 
   ASSERT_THROW(TestFixture::op(copy(a), b), except::CoordMismatchError);
 }
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
-  auto a = datasetFactory().make();
-  a.setData("extra", makeVariable<double>(Values{double{}}));
-  auto b = datasetFactory().make();
+  DatasetFactory factory;
+  auto a = factory.make("data");
+  auto b = a;
+  a.setData("extra", a["data"]);
   auto reference(a);
 
   ASSERT_NO_THROW(TestFixture::op(copy(a), b));
@@ -488,29 +482,16 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
 }
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_Dataset_with_extra_items) {
-  auto a = datasetFactory().make();
-  auto b = datasetFactory().make();
-  b.setData("extra", makeVariable<double>(Values{double{}}));
+  auto a = DatasetFactory{}.make();
+  auto b = DatasetFactory{}.make();
+  b.setData("extra", b["data"]);
 
   ASSERT_ANY_THROW(TestFixture::op(copy(a), b));
 }
 
-TYPED_TEST(DatasetViewBinaryEqualsOpTest,
-           rhs_Dataset_prevented_modification_of_lower_dimensional_items) {
-  auto dataset = datasetFactory().make();
-  const auto slice = dataset.slice({Dim::Z, 3});
-  auto reference = copy(dataset);
-  ASSERT_THROW(TestFixture::op(dataset.slice({Dim::Z, 0, 3}), slice),
-               except::VariableError);
-  ASSERT_THROW(TestFixture::op(dataset.slice({Dim::Z, 3, 6}), slice),
-               except::VariableError);
-  EXPECT_EQ(dataset, reference);
-}
-
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DatasetView_self_overlap) {
-  auto dataset = make_no_variances(datasetFactory());
-  for (const auto &name : {"values_x", "data_x", "data_xy", "data_scalar"})
-    dataset.erase(name);
+  DatasetFactory factory{{Dim::Z, 6}};
+  auto dataset = make_no_variances(factory);
   const auto slice = dataset.slice({Dim::Z, 3});
   auto reference = copy(dataset);
 
@@ -524,9 +505,8 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DatasetView_self_overlap) {
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest,
            rhs_DatasetView_self_overlap_undetectable) {
-  auto dataset = make_no_variances(datasetFactory());
-  for (const auto &name : {"values_x", "data_x", "data_xy", "data_scalar"})
-    dataset.erase(name);
+  DatasetFactory factory{{Dim::Z, 6}};
+  auto dataset = make_no_variances(factory);
   const auto slice = dataset.slice({Dim::Z, 3});
   auto reference = copy(dataset);
 
@@ -543,7 +523,8 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest,
 }
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_slice_coord_mismatch) {
-  auto dataset = datasetFactory().make()["data_xyz"];
+  DatasetFactory factory{{Dim::X, 4}, {Dim::Y, 5}, {Dim::Z, 4}};
+  auto dataset = factory.make()["data"];
 
   // Non-range sliced throws for X and Y due to multi-dimensional coords.
   ASSERT_THROW(TestFixture::op(dataset, dataset.slice({Dim::X, 3})),
@@ -657,47 +638,33 @@ TYPED_TEST(DatasetBinaryOpTest, scalar_lhs_dataset_rhs) {
   EXPECT_EQ(res.coords(), dataset.coords());
 }
 
-TYPED_TEST(DatasetBinaryOpTest, datasetconstview_lhs_dataset_rhs) {
-  const auto dataset_a = datasetFactory().make();
-  const auto dataset_b = datasetFactory().make().slice({Dim::X, 1});
-
-  Dataset dataset_a_view = dataset_a.slice({Dim::X, 1});
-  const auto res = TestFixture::op(dataset_a_view, dataset_b);
-
-  const auto reference = TestFixture::op(dataset_a_view, dataset_b);
-  EXPECT_EQ(res, reference);
-}
-
 TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataarray_rhs) {
-  auto dataset_a = datasetFactory().make();
-  auto dataset_b = datasetFactory().make();
+  const auto [dataset_a, dataset_b] = generateBinaryOpTestCase();
 
-  const auto res = TestFixture::op(dataset_a, dataset_b["data_scalar"]);
+  const auto res = TestFixture::op(dataset_a, dataset_b["data_a"]);
 
   for (const auto &item : res) {
     const auto reference = TestFixture::op(dataset_a[item.name()].data(),
-                                           dataset_b["data_scalar"].data());
+                                           dataset_b["data_a"].data());
     EXPECT_EQ(reference, item.data());
   }
 }
 
 TYPED_TEST(DatasetBinaryOpTest, masks_propagate) {
-  auto a = datasetFactory().make();
-  auto b = datasetFactory().make();
+  DatasetFactory factory;
+  auto a = factory.make("data");
+  auto b = factory.make("data");
+  b.coords() = a.coords();
 
   const auto expectedMask =
-      makeVariable<bool>(Dimensions{Dim::X, datasetFactory().lx},
-                         Values(make_bools(datasetFactory().lx, true)));
+      makeVariable<bool>(Dimensions{Dim::X, factory.dims()[Dim::X]},
+                         Values(make_bools(factory.dims()[Dim::X], true)));
 
-  for (const auto &item :
-       {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"})
-    b[item].masks().set("masks_x", expectedMask);
+  b["data"].masks().set("masks_x", expectedMask);
 
   const auto res = TestFixture::op(a, b);
 
-  for (const auto &item :
-       {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"})
-    EXPECT_EQ(res[item].masks()["masks_x"], expectedMask);
+  EXPECT_EQ(res["data"].masks()["masks_x"], expectedMask);
 }
 
 TYPED_TEST(DatasetBinaryOpTest, masks_not_shared) {
@@ -708,36 +675,35 @@ TYPED_TEST(DatasetBinaryOpTest, masks_not_shared) {
   //    most sensibly behavior appears to be to *copy* it, i.e., masks behave
   //    like data. Otherwise future operations with the output will break
   //    unrelated operands.
-  auto a = datasetFactory().make();
-  auto b = datasetFactory().make();
+  DatasetFactory factory;
+  auto a = factory.make("data");
+  auto b = factory.make("data");
+  b.coords() = a.coords();
 
-  const auto maskA = makeVariable<bool>(Dimensions{Dim::X, datasetFactory().lx},
-                                        Values{false, false, true, false});
-  const auto maskB = makeVariable<bool>(Dimensions{Dim::X, datasetFactory().lx},
-                                        Values{false, false, false, true});
-  const auto maskC = makeVariable<bool>(Dimensions{Dim::X, datasetFactory().lx},
-                                        Values{false, true, false, false});
+  const auto maskA =
+      makeVariable<bool>(Dimensions{Dim::X, factory.dims()[Dim::X]},
+                         Values{false, false, true, false});
+  const auto maskB =
+      makeVariable<bool>(Dimensions{Dim::X, factory.dims()[Dim::X]},
+                         Values{false, false, false, true});
+  const auto maskC =
+      makeVariable<bool>(Dimensions{Dim::X, factory.dims()[Dim::X]},
+                         Values{false, true, false, false});
 
-  for (const auto &item :
-       {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"}) {
-    a[item].masks().set("mask_ab", copy(maskA));
-    a[item].masks().set("mask_a", copy(maskA));
-    b[item].masks().set("mask_ab", copy(maskB));
-    b[item].masks().set("mask_b", copy(maskB));
-  }
+  a["data"].masks().set("mask_ab", copy(maskA));
+  a["data"].masks().set("mask_a", copy(maskA));
+  b["data"].masks().set("mask_ab", copy(maskB));
+  b["data"].masks().set("mask_b", copy(maskB));
 
   const auto res = TestFixture::op(a, b);
 
-  for (const auto &item :
-       {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"}) {
-    res[item].masks()["mask_a"] |= maskC;
-    res[item].masks()["mask_b"] |= maskC;
-    res[item].masks()["mask_ab"] |= maskC;
-    EXPECT_EQ(a[item].masks()["mask_ab"], maskA);
-    EXPECT_EQ(a[item].masks()["mask_a"], maskA);
-    EXPECT_EQ(b[item].masks()["mask_ab"], maskB);
-    EXPECT_EQ(b[item].masks()["mask_b"], maskB);
-  }
+  res["data"].masks()["mask_a"] |= maskC;
+  res["data"].masks()["mask_b"] |= maskC;
+  res["data"].masks()["mask_ab"] |= maskC;
+  EXPECT_EQ(a["data"].masks()["mask_ab"], maskA);
+  EXPECT_EQ(a["data"].masks()["mask_a"], maskA);
+  EXPECT_EQ(b["data"].masks()["mask_ab"], maskB);
+  EXPECT_EQ(b["data"].masks()["mask_b"], maskB);
 }
 
 TEST(DatasetInPlaceStrongExceptionGuarantee, events) {

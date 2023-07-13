@@ -38,18 +38,8 @@ private:
   }
 
 protected:
-  Dataset_comparison_operators() {
-    dataset.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
-    dataset.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3}));
-
-    dataset.setCoord(Dim("labels"), makeVariable<int>(Dims{Dim::X}, Shape{4}));
-
-    dataset.setData("val_and_var",
-                    makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 4},
-                                         Values(12), Variances(12)));
-
-    dataset.setData("val", makeVariable<double>(Dims{Dim::X}, Shape{4}));
-  }
+  Dataset_comparison_operators()
+      : dataset(DatasetFactory{{Dim::X, 4}, {Dim::Y, 3}}.make("data")) {}
   void expect_eq(const Dataset &a, const Dataset &b) const {
     expect_eq_impl(a, b);
     expect_eq_impl(a, copy(b));
@@ -153,14 +143,13 @@ TEST_F(Dataset_comparison_operators, extra_labels) {
 
 TEST_F(Dataset_comparison_operators, extra_data) {
   auto extra = dataset;
-  extra.setData("extra", makeVariable<double>(Dims{Dim::Z}, Shape{2}));
+  extra.setData("extra", dataset["data"]);
   expect_ne(extra, dataset);
 }
 
 TEST_F(Dataset_comparison_operators, extra_variance) {
-  auto extra = dataset;
-  extra.setData("val", makeVariable<double>(Dimensions{Dim::X, 4}, Values(4),
-                                            Variances(4)));
+  auto extra = copy(dataset);
+  extra["data"].data().setVariances(makeVariable<double>(extra["data"].dims()));
   expect_ne(extra, dataset);
 }
 
@@ -177,9 +166,11 @@ TEST_F(Dataset_comparison_operators, different_coord_insertion_order) {
 TEST_F(Dataset_comparison_operators, different_data_insertion_order) {
   auto a = make_empty();
   auto b = make_empty();
-  a.setData("x", dataset.coords()[Dim::X]);
-  a.setData("y", dataset.coords()[Dim::Y]);
-  b.setData("y", dataset.coords()[Dim::Y]);
-  b.setData("x", dataset.coords()[Dim::X]);
+  auto xy1 = dataset.coords()[Dim::X] * dataset.coords()[Dim::Y];
+  auto xy2 = dataset.coords()[Dim::X] + dataset.coords()[Dim::Y];
+  a.setData("x", xy1);
+  a.setData("y", xy2);
+  b.setData("y", xy2);
+  b.setData("x", xy1);
   expect_eq(a, b);
 }

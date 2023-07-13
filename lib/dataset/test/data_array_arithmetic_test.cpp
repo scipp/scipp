@@ -144,17 +144,3 @@ TEST(DataArrayArithmeticTest, produces_correct_data) {
   EXPECT_EQ((a + b).data(), a.data() + b.data());
   EXPECT_EQ((a - b).data(), a.data() - b.data());
 }
-
-TEST(DataArrayArithmeticTest, sum_dataset_columns_via_DataArray) {
-  DatasetFactory3D factory;
-  auto dataset = factory.make();
-
-  DataArray array(dataset["data_zyx"]);
-  auto sum = array + dataset["data_xyz"];
-
-  dataset["data_zyx"] += dataset["data_xyz"];
-
-  // This would fail if the data items had attributes, since += preserves them
-  // but + does not.
-  EXPECT_EQ(sum, dataset["data_zyx"]);
-}

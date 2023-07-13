@@ -73,7 +73,7 @@ TYPED_TEST(DatasetViewTest, find_in_slice) {
   d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{2}));
   d.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{2}));
   d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{2}));
-  d.setData("b", makeVariable<float>(Dims{Dim::Y}, Shape{2}));
+  d.setData("b", makeVariable<float>(Dims{Dim::X}, Shape{2}));
   auto &&view = TestFixture::access(d);
 
   const auto slice = view.slice({Dim::X, 1});
