@@ -160,7 +160,7 @@ public:
   void setCoord(const Dim dim, Variable coord);
   void setData(const std::string &name, Variable data,
                const AttrPolicy attrPolicy = AttrPolicy::Drop);
-  void setData(const std::string &name, DataArray data);
+  void setData(const std::string &name, const DataArray &data);
 
   Dataset slice(const Slice &s) const;
   [[maybe_unused]] Dataset &setSlice(const Slice &s, const Dataset &dataset);

@@ -283,6 +283,14 @@ TEST(DatasetTest, setData_from_DataArray_replace) {
   check_array_shared(ds, "a", array2, shared_coord);
 }
 
+TEST(DatasetTest, setData_preserves_rvalue_input) {
+  const auto array1 = make_data_array_1d(0);
+  Dataset ds({{"a", array1}});
+  ds.setData("b", ds["a"]);
+  EXPECT_EQ(ds, Dataset({{"a", make_data_array_1d(0)},
+                         {"b", make_data_array_1d(0)}}));
+}
+
 TEST(DatasetTest, setData_cannot_change_decrease_ndim) {
   const auto xy = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3});
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{2});

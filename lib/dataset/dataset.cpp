@@ -152,7 +152,7 @@ void Dataset::setData(const std::string &name, Variable data,
 }
 
 namespace {
-auto coords_to_skip(const Dataset &dst, DataArray &src) {
+auto coords_to_skip(const Dataset &dst, const DataArray &src) {
   std::vector<Dim> to_skip;
   for (auto &&[dim, coord] : src.coords())
     if (const auto it = dst.coords().find(dim); it != dst.coords().end()) {
@@ -172,7 +172,7 @@ auto coords_to_skip(const Dataset &dst, DataArray &src) {
 /// dataset. Throws if there are existing but mismatching coords, masks, or
 /// attributes. Throws if the provided data brings the dataset into an
 /// inconsistent state (mismatching dimensions).
-void Dataset::setData(const std::string &name, DataArray data) {
+void Dataset::setData(const std::string &name, const DataArray &data) {
   // Return early on self assign to avoid exceptions from Python inplace ops
   if (const auto it = find(name); it != end()) {
     if (it->data().is_same(data.data()) && it->masks() == data.masks() &&
@@ -186,12 +186,12 @@ void Dataset::setData(const std::string &name, DataArray data) {
   for (auto &&[dim, coord] : data.coords())
     if (m_coords.find(dim) == m_coords.end() &&
         std::find(to_skip.begin(), to_skip.end(), dim) == to_skip.end())
-      setCoord(dim, std::move(coord));
+      setCoord(dim, coord);
   // Attrs might be shadowed by a coord, but this cannot be prevented in
   // general, so instead of failing here we proceed (and may fail later if
   // meta() is called).
-  item.attrs() = std::move(data.attrs());
-  item.masks() = std::move(data.masks());
+  item.attrs() = data.attrs();
+  item.masks() = data.masks();
 }
 
 /// Return slice of the dataset along given dimension with given extents.
