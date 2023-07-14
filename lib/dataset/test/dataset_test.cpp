@@ -120,96 +120,141 @@ TEST(DatasetTest, erase_preserves_dim) {
 TEST(DatasetTest, setCoord) {
   Dataset d;
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3});
+  d.setData("a", var);
 
-  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.size(), 1);
   ASSERT_EQ(d.coords().size(), 0);
-  ASSERT_EQ(d.dims(), Dimensions{});
+  ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 3}}));
 
   ASSERT_NO_THROW(d.setCoord(Dim::X, var));
-  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.size(), 1);
   ASSERT_EQ(d.coords().size(), 1);
   ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 3}}));
 
   ASSERT_NO_THROW(d.setCoord(Dim::Y, var));
-  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.size(), 1);
   ASSERT_EQ(d.coords().size(), 2);
   ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 3}}));
 
   ASSERT_NO_THROW(d.setCoord(Dim::X, var));
-  ASSERT_EQ(d.size(), 0);
+  ASSERT_EQ(d.size(), 1);
   ASSERT_EQ(d.coords().size(), 2);
   ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 3}}));
 }
 
-TEST(DatasetTest, setCoord_grow) {
-  const auto var3 = makeVariable<double>(Dims{Dim::X}, Shape{3});
-  const auto var4 = makeVariable<double>(Dims{Dim::X}, Shape{4});
+TEST(DatasetTest, setCoord_requires_data) {
   Dataset d;
-  ASSERT_NO_THROW(d.setCoord(Dim::X, var3));
-  ASSERT_NO_THROW(d.setCoord(Dim::Y, var4));
-  ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 3}}));
+  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3});
+  ASSERT_THROW(d.setCoord(Dim::X, var), std::invalid_argument);
 }
 
-TEST(DatasetTest, setCoord_shrink) {
-  const auto var3 = makeVariable<double>(Dims{Dim::X}, Shape{3});
-  const auto var4 = makeVariable<double>(Dims{Dim::X}, Shape{4});
+TEST(DatasetTest, setCoord_length_2) {
   Dataset d;
-  ASSERT_NO_THROW(d.setCoord(Dim::X, var4));
-  ASSERT_THROW(d.setCoord(Dim::Y, var3), except::DimensionError);
-  ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 4}}));
+  d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{2}));
+  d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{2}));
+  ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 2}}));
 }
 
-TEST(DatasetTest, setCoord_increase_ndim) {
-  const auto x3 = makeVariable<double>(Dims{Dim::X}, Shape{3});
-  const auto y4 = makeVariable<double>(Dims{Dim::Y}, Shape{4});
+TEST(DatasetTest, setCoord_length_2_bin_edges) {
   Dataset d;
-  ASSERT_NO_THROW(d.setCoord(Dim::X, x3));
-  ASSERT_NO_THROW(d.setCoord(Dim::Y, y4));
-  ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 3}, {Dim::Y, 4}}));
+  d.setData("a", makeVariable<double>(Dims{}));
+  d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{2}));
+  ASSERT_EQ(d.dims(), Dimensions());
 }
 
-TEST(DatasetTest, setCoord_grow_one_dim) {
-  const auto x3 = makeVariable<double>(Dims{Dim::X}, Shape{3});
-  const auto x4 = makeVariable<double>(Dims{Dim::X}, Shape{3});
-  const auto y4 = makeVariable<double>(Dims{Dim::Y}, Shape{4});
-  const auto y5 = makeVariable<double>(Dims{Dim::Y}, Shape{5});
+TEST(DatasetTest, setCoord_length_2_multi_dim) {
   Dataset d;
-  ASSERT_NO_THROW(d.setCoord(Dim::X, x3));
-  ASSERT_NO_THROW(d.setCoord(Dim::Y, y4));
-  ASSERT_NO_THROW(d.setCoord(Dim::X, x4));
-  ASSERT_NO_THROW(d.setCoord(Dim::Y, y5));
-  ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 3}, {Dim::Y, 4}}));
+  d.setData("a", makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3}));
+  d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3}));
+  ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 2}, {Dim::Y, 3}}));
 }
 
-TEST(DatasetTest, setCoord_grow_multi_dim) {
-  const auto x3 = makeVariable<double>(Dims{Dim::X}, Shape{3});
-  const auto y4 = makeVariable<double>(Dims{Dim::Y}, Shape{4});
-  const auto x4y4 = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 4});
+TEST(DatasetTest, setCoord_length_2_multi_dim_bin_edges) {
   Dataset d;
-  ASSERT_NO_THROW(d.setCoord(Dim::X, x3));
-  ASSERT_NO_THROW(d.setCoord(Dim::Y, y4));
-  ASSERT_NO_THROW(d.setCoord(Dim{"XY"}, x4y4));
-  ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 3}, {Dim::Y, 4}}));
+  d.setData("a", makeVariable<double>(Dims{Dim::Y}, Shape{3}));
+  d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3}));
+  ASSERT_EQ(d.dims(), Dimensions({{Dim::Y, 3}}));
 }
 
-TEST(DatasetTest, setCoord_grow_when_there_is_data) {
-  const auto var3 = makeVariable<double>(Dims{Dim::X}, Shape{3});
-  const auto var4 = makeVariable<double>(Dims{Dim::X}, Shape{4});
+TEST(DatasetTest, setCoord_multiple) {
   Dataset d;
-  ASSERT_NO_THROW(d.setCoord(Dim::X, var3));
-  ASSERT_NO_THROW(d.setData("data", var3));
-  ASSERT_NO_THROW(d.setCoord(Dim::Y, var4));
-  ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 3}}));
+  d.setData("a", makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 4}));
+  d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
+  d.setCoord(Dim::Time,
+             makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 3}));
+  d.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3}));
+  d.setCoord(Dim::Row, makeVariable<double>(Dims{Dim::Y}, Shape{4}));
+
+  ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 4}, {Dim::Y, 3}}));
 }
 
-TEST(DatasetTest, setCoord_cannot_increase_ndim_when_there_is_data) {
-  const auto x3 = makeVariable<double>(Dims{Dim::X}, Shape{3});
-  const auto y4 = makeVariable<double>(Dims{Dim::Y}, Shape{4});
+TEST(DatasetTest, setCoord_dims_mismatch) {
   Dataset d;
-  ASSERT_NO_THROW(d.setCoord(Dim::X, x3));
-  ASSERT_NO_THROW(d.setData("data", x3));
-  ASSERT_THROW(d.setCoord(Dim::Y, y4), scipp::except::DimensionError);
-  ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 3}}));
+  d.setData("a", makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 4}));
+
+  ASSERT_THROW(d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3})),
+               except::DimensionError);
+  ASSERT_TRUE(d.coords().empty());
+
+  ASSERT_THROW(d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::Z}, Shape{3})),
+               except::DimensionError);
+  ASSERT_TRUE(d.coords().empty());
+
+  ASSERT_THROW(d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X, Dim::Y},
+                                                       Shape{6, 3})),
+               except::DimensionError);
+  ASSERT_TRUE(d.coords().empty());
+}
+
+TEST(DatasetTest, setCoords_too_large) {
+  Dataset d;
+  d.setData("a", makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2}));
+
+  const Coords coords(
+      Dimensions({{Dim::X, 4}, {Dim::Y, 2}}),
+      {
+          {Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4})},
+          {Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{2})},
+      });
+  ASSERT_THROW(d.setCoords(coords), except::DimensionError);
+}
+
+TEST(DatasetTest, setCoords_too_small) {
+  Dataset d;
+  d.setData("a", makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2}));
+
+  const Coords coords(
+      Dimensions({{Dim::X, 2}, {Dim::Y, 2}}),
+      {
+          {Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{2})},
+          {Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{2})},
+      });
+  ASSERT_THROW(d.setCoords(coords), except::DimensionError);
+}
+
+TEST(DatasetTest, setCoords_too_many_dims) {
+  Dataset d;
+  d.setData("a", makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2}));
+
+  const Coords coords(
+      Dimensions({{Dim::X, 2}, {Dim::Y, 2}, {Dim::Z, 3}}),
+      {
+          {Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{2})},
+          {Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{2})},
+      });
+  ASSERT_THROW(d.setCoords(coords), except::DimensionError);
+}
+
+TEST(DatasetTest, setCoords_too_few_dims) {
+  Dataset d;
+  d.setData("a", makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2}));
+
+  const Coords coords(
+      Dimensions({{Dim::X, 2}}),
+      {
+          {Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{2})},
+      });
+  ASSERT_THROW(d.setCoords(coords), except::DimensionError);
 }
 
 TEST(DatasetTest, set_item_mask) {
@@ -290,7 +335,7 @@ TEST(DatasetTest, setData_preserves_rvalue_input) {
                          {"b", make_data_array_1d(0)}}));
 }
 
-TEST(DatasetTest, setData_cannot_change_decrease_ndim) {
+TEST(DatasetTest, setData_cannot_decrease_ndim) {
   const auto xy = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3});
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{2});
 
@@ -300,7 +345,7 @@ TEST(DatasetTest, setData_cannot_change_decrease_ndim) {
   ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 2}, {Dim::Y, 3}}));
 }
 
-TEST(DatasetTest, setData_cannot_change_increase_ndim) {
+TEST(DatasetTest, setData_cannot_increase_ndim) {
   const auto xy = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3});
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{2});
 
@@ -308,6 +353,24 @@ TEST(DatasetTest, setData_cannot_change_increase_ndim) {
   d.setData("x", x);
   ASSERT_THROW(d.setData("x", xy), scipp::except::DimensionError);
   ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 2}}));
+}
+
+TEST(DatasetTest, setData_cannot_insert_lower_ndim) {
+  const auto xy = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 3});
+  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3});
+
+  Dataset d;
+  d.setData("a", xy);
+  ASSERT_THROW(d.setData("b", x), scipp::except::DimensionError);
+}
+
+TEST(DatasetTest, setData_cannot_insert_higher_ndim) {
+  const auto xy = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 3});
+  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3});
+
+  Dataset d;
+  d.setData("a", x);
+  ASSERT_THROW(d.setData("b", xy), scipp::except::DimensionError);
 }
 
 TEST(DatasetTest, setData_clears_attributes) {
@@ -448,19 +511,10 @@ TEST(DatasetTest, construct_dataarray_from_slice) {
   ASSERT_EQ(from_slice, dataset["data"].slice({Dim::X, 1}));
 }
 
-TEST(DatasetTest, slice_no_data) {
-  Dataset d;
-  d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
-  EXPECT_TRUE(d.coords().contains(Dim::X));
-  const auto slice = d.slice({Dim::X, 1, 3});
-  EXPECT_TRUE(slice.coords().contains(Dim::X));
-}
-
 TEST(DatasetTest, slice_validation_simple) {
   Dataset dataset;
-  // TODO this fails length 2, since setCoords detects bin edges and does not
-  // add dim
   auto var = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+  dataset.setData("a", var);
   dataset.setCoord(Dim::X, var);
   EXPECT_THROW(dataset.slice(Slice{Dim::Y, 0, 1}), except::SliceError);
   EXPECT_THROW(dataset.slice(Slice{Dim::X, 0, 4}), except::SliceError);
@@ -481,8 +535,9 @@ TEST(DatasetTest, slice_with_no_coords) {
 TEST(DatasetTest, slice_validation_complex) {
   Dataset ds;
   auto var1 = makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
-  ds.setCoord(Dim::X, var1);
   auto var2 = makeVariable<double>(Dims{Dim::Y}, Shape{4}, Values{1, 2, 3, 4});
+  ds.setData("a", var1 * var2);
+  ds.setCoord(Dim::X, var1);
   ds.setCoord(Dim::Y, var2);
 
   // Slice arguments applied in order.

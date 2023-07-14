@@ -43,13 +43,14 @@ void DatasetFactory::seed(const uint32_t seed) {
 }
 
 Dataset DatasetFactory::make(const std::string_view data_name) {
-  Dataset result = make_empty_with_coords();
+  Dataset result;
   const std::string name{data_name};
   result.setData(name,
                  makeVariable<double>(m_dims, Values(m_rand(m_dims.volume()))));
   result[name].masks().set(
       "mask", makeVariable<bool>(
                   m_dims, Values(make_bools(m_dims.volume(), {true, false}))));
+  assign_coords(result);
   return result;
 }
 
@@ -61,25 +62,23 @@ DatasetFactory::make_with_random_masks(const std::string_view data_name) {
   return result;
 }
 
-Dataset DatasetFactory::make_empty_with_coords() {
-  Dataset result;
+void DatasetFactory::assign_coords(Dataset &dset) {
   for (const auto dim : m_dims) {
     const auto length = m_dims[dim];
-    result.setCoord(dim, makeVariable<double>(Dimensions{dim, length},
-                                              Values(m_rand(length))));
-    result.setCoord(
+    dset.setCoord(dim, makeVariable<double>(Dimensions{dim, length},
+                                            Values(m_rand(length))));
+    dset.setCoord(
         Dim("labels_" + to_string(dim)),
         makeVariable<double>(Dimensions{dim, length}, Values(m_rand(length))));
   }
   if (m_dims.ndim() > 1) {
     const std::vector dims(m_dims.begin(), m_dims.end());
-    result.setCoord(Dim{to_string(dims[0]) + to_string(dims[1])},
-                    makeVariable<double>(
-                        Dims{dims[0], dims[1]},
-                        Shape{m_dims[dims[0]], m_dims[dims[1]]},
-                        Values(m_rand(m_dims[dims[0]] * m_dims[dims[1]]))));
+    dset.setCoord(Dim{to_string(dims[0]) + to_string(dims[1])},
+                  makeVariable<double>(
+                      Dims{dims[0], dims[1]},
+                      Shape{m_dims[dims[0]], m_dims[dims[1]]},
+                      Values(m_rand(m_dims[dims[0]] * m_dims[dims[1]]))));
   }
-  return result;
 }
 
 DatasetFactory3D::DatasetFactory3D(const scipp::index lx_,

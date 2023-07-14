@@ -123,6 +123,10 @@ void Dataset::set_sizes_to_insert_data(const std::string_view name,
 /// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
   expect_writable(*this);
+  if (empty())
+    throw std::invalid_argument(
+        "Dataset is empty, cannot add coordinates before data has been added "
+        "to set the dimensions.");
   bool set_sizes = true;
   for (const auto &coord_dim : coord.dims())
     if (is_edges(m_coords.sizes(), coord.dims(), coord_dim))
@@ -233,9 +237,10 @@ Dataset &Dataset::setSlice(const Slice &s, const Variable &data) {
 /// Rename dimension `from` to `to`.
 Dataset
 Dataset::rename_dims(const std::vector<std::pair<Dim, Dim>> &names) const {
-  Dataset out({}, m_coords.rename_dims(names));
+  Dataset out;
   for (const auto &[name, da] : m_data)
     out.setData(name, da.rename_dims(names, false));
+  out.setCoords(m_coords.rename_dims(names));
   return out;
 }
 
