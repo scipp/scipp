@@ -7,7 +7,6 @@
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/creation.h"
 #include "scipp/variable/shape.h"
 
 #include "test_data_arrays.h"
@@ -210,7 +209,7 @@ TEST(ConcatenateTest, fail_mixing_point_data_and_histogram) {
                        except::BinEdgeError);
 }
 
-TEST(ConcatenateTest, identical_non_dependant_data_is_copied) {
+TEST(ConcatenateTest, identical_non_dependant_data_is_stacked) {
   const auto axis = makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   const auto data =
       makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{11, 12, 13});
@@ -226,7 +225,9 @@ TEST(ConcatenateTest, identical_non_dependant_data_is_copied) {
   const auto d = concat2(a, b, Dim::Y);
 
   EXPECT_EQ(d.coords()[Dim::X], axis);
-  EXPECT_EQ(d["data_1"].data(), data);
+  EXPECT_EQ(d["data_1"].data(),
+            makeVariable<int>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                              Values{11, 12, 13, 11, 12, 13}));
 }
 
 TEST(ConcatenateTest, non_dependant_data_is_stacked) {
