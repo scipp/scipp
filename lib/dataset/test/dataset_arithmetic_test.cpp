@@ -71,11 +71,6 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
 
   Dataset a;
   {
-    a.setCoord(Dim::X,
-               makeVariable<double>(Dims{Dim::X}, Shape{lx}, Values(coordX)));
-    a.setCoord(Dim::Y,
-               makeVariable<double>(Dims{Dim::Y}, Shape{ly}, Values(coordY)));
-    a.setCoord(Dim("t"), labelT);
     a.setData("data_a",
               makeVariable<double>(Dimensions{{Dim::X, lx}, {Dim::Y, ly}},
                                    Values(rand(lx * ly))));
@@ -83,19 +78,24 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
     a.setData("data_b",
               makeVariable<double>(Dimensions{{Dim::Y, ly}, {Dim::X, lx}},
                                    Values(rand(lx * ly))));
+    a.setCoord(Dim::X,
+               makeVariable<double>(Dims{Dim::X}, Shape{lx}, Values(coordX)));
+    a.setCoord(Dim::Y,
+               makeVariable<double>(Dims{Dim::Y}, Shape{ly}, Values(coordY)));
+    a.setCoord(Dim("t"), labelT);
   }
 
   Dataset b;
   {
+    b.setData("data_a",
+              makeVariable<double>(Dimensions{{Dim::X, lx}, {Dim::Y, ly}},
+                                   Values(rand(lx * ly))));
+    b["data_a"].masks().set("mask", mask);
     b.setCoord(Dim::X,
                makeVariable<double>(Dims{Dim::X}, Shape{lx}, Values(coordX)));
     b.setCoord(Dim::Y,
                makeVariable<double>(Dims{Dim::Y}, Shape{ly}, Values(coordY)));
     b.setCoord(Dim("t"), labelT);
-    b.setData("data_a",
-              makeVariable<double>(Dimensions{{Dim::X, lx}, {Dim::Y, ly}},
-                                   Values(rand(lx * ly))));
-    b["data_a"].masks().set("mask", mask);
   }
 
   return std::make_tuple(a, b);
@@ -596,9 +596,9 @@ TYPED_TEST(DatasetBinaryOpTest, broadcast) {
   const auto c = makeVariable<double>(Values{2.0});
   Dataset a;
   Dataset b;
-  a.setCoord(Dim::X, x);
   a.setData("data1", x);
   a.setData("data2", x);
+  a.setCoord(Dim::X, x);
   b.setData("data1", c);
   b.setData("data2", c + c);
   const auto res = TestFixture::op(a, b);

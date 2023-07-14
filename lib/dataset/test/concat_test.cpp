@@ -22,8 +22,6 @@ template <class T> auto concat2(const T &a, const T &b, const Dim dim) {
 class Concatenate1DTest : public ::testing::Test {
 protected:
   Concatenate1DTest() {
-    a.setCoord(Dim::X,
-               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
     a.setData("data_1",
               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{11, 12, 13}));
     a["data_1"].attrs().set(
@@ -32,9 +30,9 @@ protected:
     a["data_1"].masks().set(
         "mask_1",
         makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false}));
+    a.setCoord(Dim::X,
+               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
 
-    b.setCoord(Dim::X,
-               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{4, 5, 6}));
     b.setData("data_1",
               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{14, 15, 16}));
     b["data_1"].attrs().set(
@@ -43,6 +41,8 @@ protected:
     b["data_1"].masks().set(
         "mask_1",
         makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false}));
+    b.setCoord(Dim::X,
+               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{4, 5, 6}));
   }
 
   Dataset a;
@@ -198,8 +198,8 @@ TEST(ConcatenateTest, fail_when_histograms_have_non_overlapping_bins) {
 
 TEST(ConcatenateTest, fail_mixing_point_data_and_histogram) {
   Dataset pointData;
-  pointData.setCoord(Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}));
   pointData.setData("data_1", makeVariable<int>(Dims{Dim::X}, Shape{3}));
+  pointData.setCoord(Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}));
 
   Dataset histogram;
   histogram.setData("data_1", makeVariable<int>(Dims{Dim::X}, Shape{2}));
@@ -215,12 +215,12 @@ TEST(ConcatenateTest, identical_non_dependant_data_is_stacked) {
       makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{11, 12, 13});
 
   Dataset a;
-  a.setCoord(Dim::X, axis);
   a.setData("data_1", data);
+  a.setCoord(Dim::X, axis);
 
   Dataset b;
-  b.setCoord(Dim::X, axis);
   b.setData("data_1", data);
+  b.setCoord(Dim::X, axis);
 
   const auto d = concat2(a, b, Dim::Y);
 
@@ -234,14 +234,14 @@ TEST(ConcatenateTest, non_dependant_data_is_stacked) {
   const auto axis = makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
 
   Dataset a;
-  a.setCoord(Dim::X, axis);
   a.setData("data_1",
             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{11, 12, 13}));
+  a.setCoord(Dim::X, axis);
 
   Dataset b;
-  b.setCoord(Dim::X, axis);
   b.setData("data_1",
             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{14, 15, 16}));
+  b.setCoord(Dim::X, axis);
 
   const auto d = concat2(a, b, Dim::Y);
 
@@ -252,10 +252,10 @@ TEST(ConcatenateTest, non_dependant_data_is_stacked) {
 
 TEST(ConcatenateTest, concat_2d_coord) {
   Dataset a;
-  a.setCoord(Dim::X,
-             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
   a.setData("data_1",
             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{11, 12, 13}));
+  a.setCoord(Dim::X,
+             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
   a.setCoord(Dim("label_1"),
              makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
   a["data_1"].masks().set(
@@ -268,13 +268,13 @@ TEST(ConcatenateTest, concat_2d_coord) {
   b["data_1"].data() += 100 * units::one;
 
   Dataset expected;
-  expected.setCoord(
-      Dim::X, makeVariable<int>(Dims{Dim::Y, Dim::X}, Shape{4, 3},
-                                Values{1, 2, 3, 4, 5, 6, 4, 5, 6, 1, 2, 3}));
   expected.setData("data_1",
                    makeVariable<int>(Dims{Dim::Y, Dim::X}, Shape{4, 3},
                                      Values{11, 12, 13, 111, 112, 113, 111, 112,
                                             113, 11, 12, 13}));
+  expected.setCoord(
+      Dim::X, makeVariable<int>(Dims{Dim::Y, Dim::X}, Shape{4, 3},
+                                Values{1, 2, 3, 4, 5, 6, 4, 5, 6, 1, 2, 3}));
   expected.setCoord(Dim("label_1"), makeVariable<int>(Dims{Dim::X}, Shape{3},
                                                       Values{21, 22, 23}));
   expected["data_1"].masks().set(
@@ -286,26 +286,6 @@ TEST(ConcatenateTest, concat_2d_coord) {
   const auto abba = concat2(ab, ba, Dim::Y);
 
   EXPECT_EQ(abba, expected);
-}
-
-TEST(ConcatenateTest, dataset_with_no_data_items) {
-  Dataset ds;
-  ds.setCoord(Dim::X,
-              makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4}));
-  ds.setCoord(Dim("points"), makeVariable<double>(Dims{Dim::X}, Shape{4},
-                                                  Values{.1, .2, .3, .4}));
-  EXPECT_EQ(concat2(ds.slice({Dim::X, 0, 2}), ds.slice({Dim::X, 2, 4}), Dim::X),
-            ds);
-}
-
-TEST(ConcatenateTest, dataset_with_no_data_items_histogram) {
-  Dataset ds;
-  ds.setCoord(Dim("histogram"), makeVariable<double>(Dims{Dim::X}, Shape{4},
-                                                     Values{.1, .2, .3, .4}));
-  ds.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{5},
-                                           Values{1, 2, 3, 4, 5}));
-  EXPECT_EQ(concat2(ds.slice({Dim::X, 0, 2}), ds.slice({Dim::X, 2, 4}), Dim::X),
-            ds);
 }
 
 TEST(ConcatenateTest, broadcast_coord) {

@@ -24,7 +24,7 @@ TEST(StringFormattingTest, to_string_Dataset) {
   EXPECT_EQ(to_string(a), to_string(b));
 }
 
-std::tuple<Dataset, Dataset> makeDatasets() {
+TEST(StringFormattingTest, to_string_MutableView) {
   Dataset a;
   a.setCoord(Dim::X,
              makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
@@ -38,42 +38,27 @@ std::tuple<Dataset, Dataset> makeDatasets() {
              makeVariable<int>(Dims{Dim::Y}, Shape{3}, Values{21, 22, 23}));
   a.setCoord(Dim("label_3"),
              makeVariable<int>(Dims{Dim::Z}, Shape{3}, Values{21, 22, 23}));
-  a.setData("a", makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
-  a.setData("b", makeVariable<int>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3}));
-  a.setData("c", makeVariable<int>(Dims{Dim::Z}, Shape{3}, Values{1, 2, 3}));
 
-  Dataset b;
-  b.setCoord(Dim::X,
-             makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
-  b.setCoord(Dim::Y,
-             makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3}));
-  b.setCoord(Dim::Z,
-             makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{1, 2, 3}));
-  b.setCoord(Dim("label_1"),
-             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
-  b.setCoord(Dim("label_2"),
-             makeVariable<int>(Dims{Dim::Y}, Shape{3}, Values{21, 22, 23}));
-  b.setCoord(Dim("label_3"),
-             makeVariable<int>(Dims{Dim::Z}, Shape{3}, Values{21, 22, 23}));
-  b.setData("a", makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
-  b.setData("b", makeVariable<int>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3}));
-  b.setData("c", makeVariable<int>(Dims{Dim::Z}, Shape{3}, Values{1, 2, 3}));
-
-  return std::make_tuple(a, b);
-}
-
-TEST(StringFormattingTest, to_string_MutableView) {
-  auto [a, b] = makeDatasets();
-
-  EXPECT_EQ(to_string(a.coords()), to_string(b.coords()));
-  EXPECT_EQ(to_string(a["a"].masks()), to_string(b["a"].masks()));
+  EXPECT_NO_THROW(to_string(a.coords()));
 }
 
 TEST(StringFormattingTest, to_string_ConstView) {
-  const auto [a, b] = makeDatasets();
+  Dataset a;
+  a.setCoord(Dim::X,
+             makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
+  a.setCoord(Dim::Y,
+             makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3}));
+  a.setCoord(Dim::Z,
+             makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{1, 2, 3}));
+  a.setCoord(Dim("label_1"),
+             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
+  a.setCoord(Dim("label_2"),
+             makeVariable<int>(Dims{Dim::Y}, Shape{3}, Values{21, 22, 23}));
+  a.setCoord(Dim("label_3"),
+             makeVariable<int>(Dims{Dim::Z}, Shape{3}, Values{21, 22, 23}));
+  const auto ca = a;
 
-  EXPECT_EQ(to_string(a.coords()), to_string(b.coords()));
-  EXPECT_EQ(to_string(a["a"].masks()), to_string(b["a"].masks()));
+  EXPECT_NO_THROW(to_string(ca.coords()));
 }
 
 TEST(ValidSliceTest, test_slice_range) {

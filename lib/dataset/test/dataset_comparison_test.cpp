@@ -156,6 +156,8 @@ TEST_F(Dataset_comparison_operators, extra_variance) {
 TEST_F(Dataset_comparison_operators, different_coord_insertion_order) {
   auto a = make_empty();
   auto b = make_empty();
+  a.setData("a", dataset["data"].data());
+  b.setData("a", dataset["data"].data());
   a.setCoord(Dim::X, dataset.coords()[Dim::X]);
   a.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
   b.setCoord(Dim::Y, dataset.coords()[Dim::Y]);

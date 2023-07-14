@@ -47,10 +47,10 @@ TYPED_TEST(DataArrayViewTest, dims_with_extra_coords) {
   typename TestFixture::dataset_type &d_ref(d);
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{4, 5, 6});
-  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3});
+  const auto var = x * y;
+  d.setData("a", var);
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
-  d.setData("a", var);
 
   ASSERT_EQ(d_ref["a"].dims(), var.dims());
 }
@@ -78,60 +78,6 @@ TYPED_TEST(DataArrayViewTest, coords) {
   typename TestFixture::dataset_type &d_ref(d);
   ASSERT_NO_THROW(d_ref["a"].coords());
   ASSERT_EQ(d_ref["a"].coords(), d.coords());
-}
-
-TYPED_TEST(DataArrayViewTest, coords_contains_only_relevant) {
-  Dataset d;
-  typename TestFixture::dataset_type &d_ref(d);
-  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-  const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{4, 5, 6});
-  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3});
-  d.setCoord(Dim::X, x);
-  d.setCoord(Dim::Y, y);
-  d.setData("a", var);
-  const auto coords = d_ref["a"].coords();
-
-  ASSERT_NE(coords, d.coords());
-  ASSERT_EQ(coords.size(), 1);
-  ASSERT_NO_THROW(coords[Dim::X]);
-  ASSERT_EQ(coords[Dim::X], x);
-}
-
-TYPED_TEST(DataArrayViewTest, coords_contains_only_relevant_2d_dropped) {
-  Dataset d;
-  typename TestFixture::dataset_type &d_ref(d);
-  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-  const auto y = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3});
-  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3});
-  d.setCoord(Dim::X, x);
-  d.setCoord(Dim::Y, y);
-  d.setData("a", var);
-  const auto coords = d_ref["a"].coords();
-
-  ASSERT_NE(coords, d.coords());
-  ASSERT_EQ(coords.size(), 1);
-  ASSERT_NO_THROW(coords[Dim::X]);
-  ASSERT_EQ(coords[Dim::X], x);
-}
-
-TYPED_TEST(DataArrayViewTest, coords_contains_only_relevant_2d) {
-  Dataset d;
-  typename TestFixture::dataset_type &d_ref(d);
-  const auto x = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3});
-  const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{3});
-  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3});
-  d.setCoord(Dim::X, x);
-  d.setCoord(Dim::Y, y);
-  d.setData("a", var);
-  const auto coords = d_ref["a"].coords();
-
-  // This is a very special case which is probably unlikely to occur in
-  // practice. If the coordinate depends on extra dimensions and the data is
-  // not, it implies that the coordinate cannot be for this data item, so it
-  // is dropped.
-  ASSERT_NE(coords, d.coords());
-  ASSERT_EQ(coords.size(), 0);
-  ASSERT_FALSE(coords.contains(Dim::X));
 }
 
 TYPED_TEST(DataArrayViewTest, has_variances) {

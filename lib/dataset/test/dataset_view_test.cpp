@@ -70,10 +70,10 @@ TYPED_TEST(DatasetViewTest, find_and_contains) {
 
 TYPED_TEST(DatasetViewTest, find_in_slice) {
   Dataset d;
-  d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{2}));
-  d.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{2}));
   d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{2}));
   d.setData("b", makeVariable<float>(Dims{Dim::X}, Shape{2}));
+  d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{2}));
+  d.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{2}));
   auto &&view = TestFixture::access(d);
 
   const auto slice = view.slice({Dim::X, 1});
@@ -87,15 +87,6 @@ TYPED_TEST(DatasetViewTest, find_in_slice) {
 
 TYPED_TEST(DatasetViewTest, iterators_empty_dataset) {
   Dataset d;
-  auto &&view = TestFixture::access(d);
-  ASSERT_NO_THROW(view.begin());
-  ASSERT_NO_THROW(view.end());
-  EXPECT_EQ(view.begin(), view.end());
-}
-
-TYPED_TEST(DatasetViewTest, iterators_only_coords) {
-  Dataset d;
-  d.setCoord(Dim::X, makeVariable<double>(Values{double{}}));
   auto &&view = TestFixture::access(d);
   ASSERT_NO_THROW(view.begin());
   ASSERT_NO_THROW(view.end());

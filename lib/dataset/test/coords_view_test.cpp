@@ -45,6 +45,7 @@ TYPED_TEST(CoordsViewTest, item_access) {
   Dataset d;
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{4, 5});
+  d.setData("a", x);
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
 
@@ -66,6 +67,7 @@ TYPED_TEST(CoordsViewTest, iterators) {
   Dataset d;
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{4, 5});
+  d.setData("a", x);
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
   const auto coords = TestFixture::access(d).coords();
@@ -114,6 +116,7 @@ TEST(MutableCoordsViewTest, item_write) {
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1.5, 2.0, 3.0});
   const auto y_reference =
       makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{4.5, 5.0});
+  d.setData("a", x);
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
 
