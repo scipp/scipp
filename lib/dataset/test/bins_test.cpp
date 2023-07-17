@@ -438,12 +438,13 @@ TEST_F(DataArrayBinsPlusMinusTest, minus_equals) {
 class DatasetBinsTest : public ::testing::Test {
 protected:
   Dimensions dims{Dim::Y, 2};
+  Dimensions buffer_dims{Dim::X, 3};
   Variable indices = makeVariable<scipp::index_pair>(
       dims, Values{std::pair{0, 2}, std::pair{2, 3}});
   Variable column =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-  Dataset buffer0;
-  Dataset buffer1;
+  Dataset buffer0{Sizes(buffer_dims)};
+  Dataset buffer1{Sizes(buffer_dims)};
 
   void check() {
     Variable var0 = make_bins(indices, Dim::X, buffer0);

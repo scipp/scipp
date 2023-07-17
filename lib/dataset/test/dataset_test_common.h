@@ -33,13 +33,14 @@ public:
   [[nodiscard]] const Dimensions &dims() const noexcept { return m_dims; }
 
 private:
-  Dataset make_empty_with_coords();
+  void assign_coords(Dataset &dset);
 
   Dimensions m_dims;
   Random m_rand;
   RandomBool m_rand_bool;
 };
 
+// TODO remove
 /// Factory for creating datasets for testing. For a given instance, `make()`
 /// will return datasets with identical coords, such that they are compatible in
 /// binary operations.
@@ -70,6 +71,8 @@ template <class T, class T2>
 auto make_1_coord(const Dim dim, const Dimensions &dims, const units::Unit unit,
                   const std::initializer_list<T2> &data) {
   auto d = make_empty();
+  d.setData("a",
+            makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
   d.setCoord(
       dim, makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
   return d;
@@ -80,6 +83,8 @@ auto make_1_labels(const std::string &name, const Dimensions &dims,
                    const units::Unit unit,
                    const std::initializer_list<T2> &data) {
   auto d = make_empty();
+  d.setData("a",
+            makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
   d.setCoord(Dim(name), makeVariable<T>(Dimensions(dims), units::Unit(unit),
                                         Values(data)));
   return d;

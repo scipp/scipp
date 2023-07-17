@@ -140,7 +140,11 @@ DataArray resize_default_init(const DataArray &parent, const Dim dim,
 
 Dataset resize_default_init(const Dataset &parent, const Dim dim,
                             const scipp::index size) {
-  Dataset buffer;
+  auto new_sizes = parent.sizes();
+  if (new_sizes.contains(dim))
+    new_sizes.resize(dim, size);
+
+  Dataset buffer(new_sizes);
   for (const auto &[name, var] : parent.coords())
     buffer.setCoord(name, copy_or_resize(var, dim, size));
   for (const auto &item : parent) {

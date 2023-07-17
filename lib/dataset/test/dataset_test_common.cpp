@@ -63,6 +63,7 @@ DatasetFactory::make_with_random_masks(const std::string_view data_name) {
 }
 
 void DatasetFactory::assign_coords(Dataset &dset) {
+  dset.setCoord(Dim{"scalar"}, makeVariable<double>(Values{1.2}));
   for (const auto dim : m_dims) {
     const auto length = m_dims[dim];
     dset.setCoord(dim, makeVariable<double>(Dimensions{dim, length},

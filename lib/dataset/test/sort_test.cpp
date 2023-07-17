@@ -151,7 +151,6 @@ TEST(SortTest, dataset_1d) {
                                      Values{1, 2, 3}, Variances{4, 5, 6}));
   d.setData("b", makeVariable<double>(Dims{Dim::X}, Shape{3}, units::s,
                                       Values{0.1, 0.2, 0.3}));
-  d.setData("scalar", makeVariable<double>(Values{1.2}));
   d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m,
                                           Values{1, 2, 3}));
 
@@ -161,7 +160,6 @@ TEST(SortTest, dataset_1d) {
                                        Values{3, 1, 2}, Variances{6, 4, 5}));
   expected.setData("b", makeVariable<double>(Dims{Dim::X}, Shape{3}, units::s,
                                              Values{0.3, 0.1, 0.2}));
-  expected.setData("scalar", makeVariable<double>(Values{1.2}));
   expected.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3},
                                                  units::m, Values{3, 1, 2}));
 
@@ -177,7 +175,6 @@ TEST(SortTest, dataset_1d_descending) {
                                      Values{1, 2, 3}, Variances{4, 5, 6}));
   d.setData("b", makeVariable<double>(Dims{Dim::X}, Shape{3}, units::s,
                                       Values{0.1, 0.2, 0.3}));
-  d.setData("scalar", makeVariable<double>(Values{1.2}));
   d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m,
                                           Values{1, 2, 3}));
 
@@ -187,7 +184,6 @@ TEST(SortTest, dataset_1d_descending) {
                                        Values{2, 1, 3}, Variances{5, 4, 6}));
   expected.setData("b", makeVariable<double>(Dims{Dim::X}, Shape{3}, units::s,
                                              Values{0.2, 0.1, 0.3}));
-  expected.setData("scalar", makeVariable<double>(Values{1.2}));
   expected.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3},
                                                  units::m, Values{2, 1, 3}));
 

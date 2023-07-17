@@ -32,10 +32,6 @@ TEST_F(SelfAssignmentTest, dataset_item) {
   dataset.setData("a", dataset["a"]);
   EXPECT_EQ(dataset["a"], expected);
   EXPECT_EQ(dataset["a"].values<double>().data(), expected_ptr);
-  // Store slice of current item under same name.
-  dataset.setData("a", dataset["a"].slice({Dim::X, 0}));
-  EXPECT_EQ(dataset["a"], expected.slice({Dim::X, 0}));
-  EXPECT_EQ(dataset["a"].values<double>().data(), expected_ptr);
 }
 
 TEST_F(SelfAssignmentTest, data_view_assign) {

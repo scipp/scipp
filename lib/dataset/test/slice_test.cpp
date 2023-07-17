@@ -32,7 +32,7 @@ auto drop_unaligned_edges(const DataArray &da) {
 
 class Dataset3DTest : public ::testing::Test {
 protected:
-  Dataset3DTest() : dataset(factory.make()) {}
+  Dataset3DTest() : dataset(factory.make("data_xyz")) {}
 
   Dataset
   datasetWithEdges(const std::initializer_list<units::Dim::Id> &edgeDims) {
@@ -45,7 +45,7 @@ protected:
     return d;
   }
 
-  DatasetFactory3D factory;
+  DatasetFactory factory{{{Dim::X, 4}, {Dim::Y, 5}, {Dim::Z, 6}}};
   Dataset dataset;
 };
 
@@ -109,20 +109,13 @@ class Dataset3DTest_slice_x : public Dataset3DTest,
 protected:
   Dataset reference(const scipp::index pos) {
     Dataset d;
-    d.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
-    d.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
-    d.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({Dim::X, pos}));
-    d.setCoord(Dim("labels_xy"),
-               dataset.coords()[Dim("labels_xy")].slice({Dim::X, pos}));
-    d.setCoord(Dim("labels_z"), dataset.coords()[Dim("labels_z")]);
-    d.setData("values_x", dataset["values_x"].slice({Dim::X, pos}));
-    d.setData("data_x", dataset["data_x"].slice({Dim::X, pos}));
-    d.setData("data_xy", dataset["data_xy"].slice({Dim::X, pos}));
-    d.setData("data_zyx", dataset["data_zyx"].slice({Dim::X, pos}));
     d.setData("data_xyz", dataset["data_xyz"].slice({Dim::X, pos}));
-    for (const auto &item : dataset)
-      if (!d.contains(item.name()))
-        d.setData(item.name(), copy(item));
+    d.setCoord(Dim{"scalar"}, dataset.coords()[Dim{"scalar"}]);
+    d.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
+    d.setCoord(Dim::Z, dataset.coords()[Dim::Z]);
+    d.setCoord(Dim{"xy"}, dataset.coords()[Dim{"xy"}].slice({Dim::X, pos}));
+    d.setCoord(Dim("labels_y"), dataset.coords()[Dim("labels_y")]);
+    d.setCoord(Dim("labels_z"), dataset.coords()[Dim("labels_z")]);
     return copy(d);
   }
 };
@@ -141,21 +134,17 @@ class Dataset3DTest_slice_range_y : public Dataset3DTest,
 protected:
   Dataset reference(const scipp::index begin, const scipp::index end) {
     Dataset d;
-    d.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
+    d.setData("data_xyz", dataset["data_xyz"].slice({Dim::Y, begin, end}));
+    d.setCoord(Dim{"scalar"}, dataset.coords()[Dim{"scalar"}]);
     d.setCoord(Dim::X, dataset.coords()[Dim::X]);
     d.setCoord(Dim::Y, dataset.coords()[Dim::Y].slice({Dim::Y, begin, end}));
-    d.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({Dim::Y, begin, end}));
+    d.setCoord(Dim::Z, dataset.coords()[Dim::Z]);
+    d.setCoord(Dim{"xy"},
+               dataset.coords()[Dim{"xy"}].slice({Dim::Y, begin, end}));
     d.setCoord(Dim("labels_x"), dataset.coords()[Dim("labels_x")]);
-    d.setCoord(Dim("labels_xy"),
-               dataset.coords()[Dim("labels_xy")].slice({Dim::Y, begin, end}));
+    d.setCoord(Dim("labels_y"),
+               dataset.coords()[Dim("labels_y")].slice({Dim::Y, begin, end}));
     d.setCoord(Dim("labels_z"), dataset.coords()[Dim("labels_z")]);
-
-    d.setData("data_xy", dataset["data_xy"].slice({Dim::Y, begin, end}));
-    d.setData("data_zyx", dataset["data_zyx"].slice({Dim::Y, begin, end}));
-    d.setData("data_xyz", dataset["data_xyz"].slice({Dim::Y, begin, end}));
-    for (const auto &item : dataset)
-      if (!d.contains(item.name()))
-        d.setData(item.name(), copy(item));
     return d;
   }
 };
@@ -165,19 +154,15 @@ class Dataset3DTest_slice_range_z : public Dataset3DTest,
 protected:
   Dataset reference(const scipp::index begin, const scipp::index end) {
     Dataset d;
-    d.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
+    d.setData("data_xyz", dataset["data_xyz"].slice({Dim::Z, begin, end}));
+    d.setCoord(Dim{"scalar"}, dataset.coords()[Dim{"scalar"}]);
     d.setCoord(Dim::X, dataset.coords()[Dim::X]);
     d.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
     d.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({Dim::Z, begin, end}));
     d.setCoord(Dim("labels_x"), dataset.coords()[Dim("labels_x")]);
-    d.setCoord(Dim("labels_xy"), dataset.coords()[Dim("labels_xy")]);
+    d.setCoord(Dim("labels_y"), dataset.coords()[Dim("labels_y")]);
     d.setCoord(Dim("labels_z"),
                dataset.coords()[Dim("labels_z")].slice({Dim::Z, begin, end}));
-    d.setData("data_zyx", dataset["data_zyx"].slice({Dim::Z, begin, end}));
-    d.setData("data_xyz", dataset["data_xyz"].slice({Dim::Z, begin, end}));
-    for (const auto &item : dataset)
-      if (!d.contains(item.name()))
-        d.setData(item.name(), copy(item));
     return d;
   }
 };
@@ -222,79 +207,52 @@ TEST_P(Dataset3DTest_slice_x, slice) {
   EXPECT_EQ(sliced, expected);
 
   // Non-range slice converts aligned coord to unaligned coord
-  for (const auto &name :
-       {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"})
-    for (const auto &coord_name : {"x", "labels_x"})
-      EXPECT_FALSE(sliced[name].coords()[Dim{coord_name}].is_aligned());
+  for (const auto &coord_name : {"x", "labels_x"})
+    EXPECT_FALSE(sliced["data_xyz"].coords()[Dim{coord_name}].is_aligned());
 }
 
 TEST_P(Dataset3DTest_slice_y, slice) {
   const auto pos = GetParam();
   Dataset reference;
-  reference.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
+  reference.setData("data_xyz", dataset["data_xyz"].slice({Dim::Y, pos}));
+  reference.setCoord(Dim{"scalar"}, dataset.coords()[Dim{"scalar"}]);
   reference.setCoord(Dim::X, dataset.coords()[Dim::X]);
-  reference.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({Dim::Y, pos}));
+  reference.setCoord(Dim::Z, dataset.coords()[Dim::Z]);
+  reference.setCoord(Dim{"xy"},
+                     dataset.coords()[Dim{"xy"}].slice({Dim::Y, pos}));
   reference.setCoord(Dim("labels_x"), dataset.coords()[Dim("labels_x")]);
   reference.setCoord(Dim("labels_z"), dataset.coords()[Dim("labels_z")]);
-  reference.setData("data_xy", dataset["data_xy"].slice({Dim::Y, pos}));
-  reference.setData("data_zyx", dataset["data_zyx"].slice({Dim::Y, pos}));
-  reference.setData("data_xyz", dataset["data_xyz"].slice({Dim::Y, pos}));
-  for (const auto &item : dataset)
-    if (!reference.contains(item.name()))
-      reference.setData(item.name(), copy(item));
-
   EXPECT_EQ(dataset.slice({Dim::Y, pos}), reference);
 }
 
 TEST_P(Dataset3DTest_slice_z, slice) {
   const auto pos = GetParam();
   Dataset reference;
-  reference.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
+  reference.setData("data_xyz", dataset["data_xyz"].slice({Dim::Z, pos}));
+  reference.setCoord(Dim{"scalar"}, dataset.coords()[Dim{"scalar"}]);
   reference.setCoord(Dim::X, dataset.coords()[Dim::X]);
   reference.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
   reference.setCoord(Dim("labels_x"), dataset.coords()[Dim("labels_x")]);
-  reference.setCoord(Dim("labels_xy"), dataset.coords()[Dim("labels_xy")]);
-  reference.setData("data_zyx", dataset["data_zyx"].slice({Dim::Z, pos}));
-  reference.setData("data_xyz", dataset["data_xyz"].slice({Dim::Z, pos}));
-  for (const auto &item : dataset)
-    if (!reference.contains(item.name()))
-      reference.setData(item.name(), copy(item));
-
-  auto sliced = dataset.slice({Dim::Z, pos});
-  EXPECT_EQ(sliced, reference);
-
-  for (const auto &name : {"data_zyx", "data_xyz"}) {
-    for (const auto &coord_name : {"z", "labels_z"})
-      EXPECT_FALSE(sliced[name].coords()[Dim{coord_name}].is_aligned());
-  }
+  reference.setCoord(Dim("labels_y"), dataset.coords()[Dim("labels_y")]);
+  EXPECT_EQ(dataset.slice({Dim::Z, pos}), reference);
 }
 
 TEST_P(Dataset3DTest_slice_range_x, slice) {
   const auto [begin, end] = GetParam();
   Dataset reference;
-  reference.setCoord(Dim::Time, dataset.coords()[Dim::Time]);
+  reference.setData("data_xyz",
+                    dataset["data_xyz"].slice({Dim::X, begin, end}));
+  reference.setCoord(Dim{"scalar"}, dataset.coords()[Dim{"scalar"}]);
   reference.setCoord(Dim::X,
                      dataset.coords()[Dim::X].slice({Dim::X, begin, end}));
   reference.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
-  reference.setCoord(Dim::Z,
-                     dataset.coords()[Dim::Z].slice({Dim::X, begin, end}));
+  reference.setCoord(Dim::Z, dataset.coords()[Dim::Z]);
+  reference.setCoord(Dim{"xy"},
+                     dataset.coords()[Dim{"xy"}].slice({Dim::X, begin, end}));
   reference.setCoord(Dim("labels_x"), dataset.coords()[Dim("labels_x")].slice(
                                           {Dim::X, begin, end}));
-  reference.setCoord(Dim("labels_xy"), dataset.coords()[Dim("labels_xy")].slice(
-                                           {Dim::X, begin, end}));
+  reference.setCoord(Dim("labels_y"), dataset.coords()[Dim("labels_y")]);
   reference.setCoord(Dim("labels_z"), dataset.coords()[Dim("labels_z")]);
-  reference.setData("values_x",
-                    dataset["values_x"].slice({Dim::X, begin, end}));
-  reference.setData("data_x", dataset["data_x"].slice({Dim::X, begin, end}));
-  reference.setData("data_xy", dataset["data_xy"].slice({Dim::X, begin, end}));
-  reference.setData("data_zyx",
-                    dataset["data_zyx"].slice({Dim::X, begin, end}));
-  reference.setData("data_xyz",
-                    dataset["data_xyz"].slice({Dim::X, begin, end}));
-  for (const auto &item : dataset)
-    if (!reference.contains(item.name()))
-      reference.setData(item.name(), copy(item));
-
   EXPECT_EQ(dataset.slice({Dim::X, begin, end}), reference);
 }
 

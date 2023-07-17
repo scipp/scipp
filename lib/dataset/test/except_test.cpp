@@ -25,7 +25,7 @@ TEST(StringFormattingTest, to_string_Dataset) {
 }
 
 TEST(StringFormattingTest, to_string_MutableView) {
-  Dataset a;
+  Dataset a(Sizes(Dimensions({{Dim::X, 3}, {Dim::Y, 3}, {Dim::Z, 3}})));
   a.setCoord(Dim::X,
              makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
   a.setCoord(Dim::Y,
@@ -43,7 +43,7 @@ TEST(StringFormattingTest, to_string_MutableView) {
 }
 
 TEST(StringFormattingTest, to_string_ConstView) {
-  Dataset a;
+  Dataset a(Sizes(Dimensions({{Dim::X, 3}, {Dim::Y, 3}, {Dim::Z, 3}})));
   a.setCoord(Dim::X,
              makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
   a.setCoord(Dim::Y,
