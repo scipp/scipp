@@ -120,7 +120,6 @@ public:
   [[nodiscard]] const auto &items() const noexcept { return m_items; }
 
   void setSizes(const Sizes &sizes);
-  void rebuildSizes();
   void set(const key_type &key, mapped_type coord);
   void erase(const key_type &key);
   mapped_type extract(const key_type &key);

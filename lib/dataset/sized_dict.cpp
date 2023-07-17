@@ -162,23 +162,6 @@ void SizedDict<Key, Value>::setSizes(const Sizes &sizes) {
   m_sizes_are_set = true;
 }
 
-template <class Key, class Value> void SizedDict<Key, Value>::rebuildSizes() {
-  throw std::runtime_error("rebuildSizes should not be used");
-  Sizes new_sizes = m_sizes;
-  for (const auto &dim : m_sizes) {
-    bool erase = true;
-    for (const auto &item : *this) {
-      if (item.second.dims().contains(dim)) {
-        erase = false;
-        break;
-      }
-    }
-    if (erase)
-      new_sizes.erase(dim);
-  }
-  m_sizes = std::move(new_sizes);
-}
-
 namespace {
 template <class Key>
 void expect_valid_coord_dims(const Key &key, const Dimensions &coord_dims,
