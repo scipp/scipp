@@ -40,31 +40,6 @@ private:
   RandomBool m_rand_bool;
 };
 
-// TODO remove
-/// Factory for creating datasets for testing. For a given instance, `make()`
-/// will return datasets with identical coords, such that they are compatible in
-/// binary operations.
-class DatasetFactory3D {
-public:
-  DatasetFactory3D(const scipp::index lx = 4, const scipp::index ly = 5,
-                   const scipp::index lz = 6, const Dim dim = Dim::X);
-
-  void seed(const uint32_t value);
-  Dataset make(const bool randomMasks = false);
-
-  const scipp::index lx;
-  const scipp::index ly;
-  const scipp::index lz;
-
-private:
-  void init();
-
-  Dim m_dim;
-  Random rand;
-  RandomBool randBool;
-  Dataset base;
-};
-
 Dataset make_empty();
 
 template <class T, class T2>
