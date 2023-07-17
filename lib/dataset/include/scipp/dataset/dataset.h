@@ -45,6 +45,7 @@ public:
   Dataset() = default;
   Dataset(const Dataset &other);
   Dataset(Dataset &&other) = default;
+  explicit Dataset(const Sizes &dims);
   explicit Dataset(const DataArray &data);
 
   template <class DataMap = core::Dict<std::string, DataArray>,
@@ -200,7 +201,7 @@ private:
   void set_sizes_to_insert_data(const std::string_view name,
                                 const Variable &data);
 
-  Coords m_coords; // aligned coords
+  Coords m_coords;
   core::Dict<std::string, DataArray> m_data;
   bool m_readonly{false};
 };

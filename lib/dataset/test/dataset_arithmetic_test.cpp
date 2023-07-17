@@ -706,6 +706,24 @@ TYPED_TEST(DatasetBinaryOpTest, masks_not_shared) {
   EXPECT_EQ(b["data"].masks()["mask_b"], maskB);
 }
 
+TYPED_TEST(DatasetBinaryOpTest, unsized_input_returns_unsized) {
+  const auto [sized, _] = generateBinaryOpTestCase();
+  const Dataset unsized;
+
+  // If output's sizes are unset, setCoord will raise.
+  auto a = TestFixture::op(sized, unsized);
+  EXPECT_EQ(a.sizes(), Sizes());
+  EXPECT_THROW(
+      a.setCoord(Dim::Row, makeVariable<int>(Dims{Dim::Row}, Shape{1})),
+      std::invalid_argument);
+
+  auto b = TestFixture::op(sized, unsized);
+  EXPECT_EQ(b.sizes(), Sizes());
+  EXPECT_THROW(
+      b.setCoord(Dim::Row, makeVariable<int>(Dims{Dim::Row}, Shape{1})),
+      std::invalid_argument);
+}
+
 TEST(DatasetInPlaceStrongExceptionGuarantee, events) {
   Variable indicesGood = makeVariable<std::pair<scipp::index, scipp::index>>(
       Dims{Dim::X}, Shape{2}, Values{std::pair{0, 2}, std::pair{2, 3}});

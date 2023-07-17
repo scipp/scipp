@@ -28,7 +28,7 @@ SizedDict<Key, Value>::SizedDict(
 template <class Key, class Value>
 SizedDict<Key, Value>::SizedDict(Sizes sizes, holder_type items,
                                  const bool readonly)
-    : m_sizes(std::move(sizes)) {
+    : m_sizes(std::move(sizes)), m_sizes_are_set(true) {
   for (auto &&[key, value] : items)
     set(key, std::move(value));
   // `set` requires Dict to be writable, set readonly flag at the end.
@@ -159,9 +159,11 @@ template <class Key, class Value>
 void SizedDict<Key, Value>::setSizes(const Sizes &sizes) {
   scipp::expect::includes(sizes, m_sizes);
   m_sizes = sizes;
+  m_sizes_are_set = true;
 }
 
 template <class Key, class Value> void SizedDict<Key, Value>::rebuildSizes() {
+  throw std::runtime_error("rebuildSizes should not be used");
   Sizes new_sizes = m_sizes;
   for (const auto &dim : m_sizes) {
     bool erase = true;
@@ -188,6 +190,29 @@ void expect_valid_coord_dims(const Key &key, const Dimensions &coord_dims,
         to_string(coord_dims) + " to DataArray with dims " +
         to_string(Dimensions{da_sizes.labels(), da_sizes.sizes()}));
 }
+
+template <class Key>
+bool check_coord_for_unset_sizes(const Key &key, const Dimensions &coord_dims) {
+  using core::to_string;
+
+  bool bin_edges = false;
+  bool valid = true;
+  for (const auto size : coord_dims.sizes()) {
+    if (size == 2)
+      bin_edges = true;
+    else if (size != 0)
+      valid = false;
+  }
+
+  if (!valid)
+    throw std::invalid_argument(
+        "Cannot add coordinate '" + to_string(key) + "' with dims " +
+        to_string(coord_dims) +
+        " because the dimensions have not been set. "
+        "Only scalar or length-2 coordinates are allowed.");
+
+  return bin_edges;
+}
 } // namespace
 
 template <class Key, class Value>
@@ -195,9 +220,15 @@ void SizedDict<Key, Value>::set(const key_type &key, mapped_type coord) {
   if (contains(key) && at(key).is_same(coord))
     return;
   expect_writable(*this);
+  auto dims = coord.dims();
+  if (!m_sizes_are_set)
+    // If there are bin-edges for scalar data (length-2 dim in coord),
+    // fix the sizes to empty. Otherwise, adding data later could change
+    // the coord from bin-edges to a regular coord.
+    m_sizes_are_set = check_coord_for_unset_sizes(key, dims);
+
   // Is a good definition for things that are allowed: "would be possible to
   // concat along existing dim or extra dim"?
-  auto dims = coord.dims();
   for (const auto &dim : coord.dims()) {
     if (!sizes().contains(dim) && dims[dim] == 2) { // bin edge along extra dim
       dims.erase(dim);
@@ -345,6 +376,10 @@ SizedDict<Key, Value>
 SizedDict<Key, Value>::merge_from(const SizedDict &other) const {
   using core::to_string;
   using units::to_string;
+  if (!m_sizes_are_set || !other.m_sizes_are_set)
+    throw std::invalid_argument(
+        "Cannot merge coords because an input has unknown dimensions.");
+
   auto out(*this);
   out.m_readonly = false;
   for (const auto &[key, value] : other) {
@@ -383,9 +418,18 @@ void SizedDict<Key, Value>::set_aligned(const Key &key, const bool aligned) {
 }
 
 template <class Key, class Value>
+bool SizedDict<Key, Value>::sizes_are_set() const noexcept {
+  return m_sizes_are_set;
+}
+
+template <class Key, class Value>
 core::Dict<Key, Value> union_(const SizedDict<Key, Value> &a,
                               const SizedDict<Key, Value> &b,
                               std::string_view opname) {
+  if (!a.sizes_are_set() || !b.sizes_are_set())
+    throw std::invalid_argument(
+        "Cannot merge coords because an input has unknown dimensions.");
+
   core::Dict<Key, Value> out;
   out.reserve(a.size() + b.size());
   for (const auto &[key, val_a] : a)

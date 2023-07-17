@@ -127,6 +127,76 @@ TEST(MutableCoordsViewTest, item_write) {
   ASSERT_EQ(coords[Dim::Y], y_reference);
 }
 
+TEST(SizedDictTest, default_init) {
+  const Coords coords;
+  ASSERT_TRUE(coords.empty());
+  ASSERT_EQ(coords.sizes(), Sizes());
+  ASSERT_FALSE(coords.sizes_are_set());
+}
+
+TEST(SizedDictTest, init_with_dict) {
+  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+  const auto y = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 5});
+  const Coords::holder_type dict({{Dim::X, x}, {Dim::Y, y}});
+  const Coords coords(Dimensions({{Dim::X, 3}, {Dim::Y, 5}}), dict);
+  ASSERT_EQ(coords.size(), 2);
+  ASSERT_EQ(coords.sizes(), Dimensions({{Dim::X, 3}, {Dim::Y, 5}}));
+  ASSERT_TRUE(coords.sizes_are_set());
+  ASSERT_EQ(coords[Dim::X], x);
+  ASSERT_EQ(coords[Dim::Y], y);
+}
+
+TEST(SizedDictTest, init_with_dict_bad_sizes) {
+  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+  const auto y = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 5});
+  const Coords::holder_type dict({{Dim::X, x}, {Dim::Y, y}});
+  ASSERT_THROW(Coords(Dimensions({{Dim::X, 4}, {Dim::Y, 5}}), dict),
+               except::DimensionError);
+  ASSERT_THROW(Coords(Dimensions({{Dim::X, 3}, {Dim::Y, 4}}), dict),
+               except::DimensionError);
+  ASSERT_THROW(Coords(Dimensions({{Dim::X, 3}, {Dim::Y, 7}}), dict),
+               except::DimensionError);
+}
+
+TEST(SizedDictTest, set_scalar_without_setting_sizes) {
+  const auto scalar = makeVariable<double>(Dims{}, Values{1.2});
+  Coords coords;
+  coords.set(Dim::X, scalar);
+  ASSERT_EQ(coords.size(), 1);
+  ASSERT_EQ(coords.sizes(), Sizes());
+  ASSERT_FALSE(coords.sizes_are_set());
+  ASSERT_EQ(coords[Dim::X], scalar);
+}
+
+TEST(SizedDictTest, set_length_2_without_setting_sizes) {
+  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{4, 2});
+  Coords coords;
+  coords.set(Dim::X, x);
+  ASSERT_EQ(coords.size(), 1);
+  ASSERT_EQ(coords.sizes(), Sizes());
+  ASSERT_TRUE(coords.sizes_are_set());
+  ASSERT_EQ(coords[Dim::X], x);
+}
+
+TEST(SizedDictTest, cannot_set_long_coord_without_setting_sizes) {
+  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{4});
+  const auto xy = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 1});
+  Coords coords;
+  ASSERT_THROW(coords.set(Dim::X, x), std::invalid_argument);
+  ASSERT_THROW(coords.set(Dim::X, xy), std::invalid_argument);
+}
+
+TEST(SizedDictTest, set_sizes_explicitly) {
+  Coords coords;
+  coords.setSizes(Dimensions({{Dim::X, 3}, {Dim::Y, 5}}));
+  ASSERT_EQ(coords.sizes(), Dimensions({{Dim::X, 3}, {Dim::Y, 5}}));
+  ASSERT_TRUE(coords.sizes_are_set());
+
+  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3});
+  coords.set(Dim::X, x);
+  ASSERT_EQ(coords[Dim::X], x);
+}
+
 TEST(SizedDictTest, set_bin_edges) {
   const auto x2y3 = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3});
   const auto x2y4 = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 4});
@@ -273,4 +343,29 @@ TEST(SizedDictTest, binned_data_array_copy_preserves_alignment) {
   const auto deep_buffer = std::get<2>(deep_copied.constituents<DataArray>());
   EXPECT_TRUE(deep_buffer.coords().at(Dim("a")).is_aligned());
   EXPECT_FALSE(deep_buffer.coords().at(Dim("b")).is_aligned());
+}
+
+TEST(SizedDictTest, merge_from) {
+  const Dimensions dims({{Dim::X, 3}, {Dim::Y, 4}});
+  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3});
+  const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{4});
+  const auto xy = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{4, 3});
+  const Coords a(dims, {{Dim::X, x}});
+  const Coords b(dims, {{Dim::Y, y}, {Dim::Row, xy}});
+
+  const auto merged = a.merge_from(b);
+  EXPECT_EQ(merged.sizes(), dims);
+  EXPECT_EQ(merged.size(), 3);
+  EXPECT_EQ(merged[Dim::X], x);
+  EXPECT_EQ(merged[Dim::Y], y);
+  EXPECT_EQ(merged[Dim::Row], xy);
+}
+
+TEST(SizedDictTest, merge_from_requires_sizes_are_set) {
+  const Dimensions dims({{Dim::X, 3}});
+  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3});
+  const Coords set(dims, {{Dim::X, x}});
+  const Coords unset;
+  EXPECT_THROW_DISCARD(set.merge_from(unset), std::invalid_argument);
+  EXPECT_THROW_DISCARD(unset.merge_from(set), std::invalid_argument);
 }

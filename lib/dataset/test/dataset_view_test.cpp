@@ -25,6 +25,14 @@ TYPED_TEST(DatasetViewTest, empty) {
   ASSERT_EQ(view.size(), 0);
 }
 
+TYPED_TEST(DatasetViewTest, default_dims) {
+  Dataset d;
+  auto &&view = TestFixture::access(d);
+  ASSERT_EQ(view.sizes(), Sizes());
+  ASSERT_EQ(view.dims(), Dimensions());
+  ASSERT_EQ(view.ndim(), 0);
+}
+
 TYPED_TEST(DatasetViewTest, coords) {
   Dataset d;
   auto &&view = TestFixture::access(d);

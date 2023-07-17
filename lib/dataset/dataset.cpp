@@ -34,6 +34,9 @@ void expect_matching_item_dims(const Dataset &dset, const std::string_view key,
 Dataset::Dataset(const Dataset &other)
     : m_coords(other.m_coords), m_data(other.m_data), m_readonly(false) {}
 
+Dataset::Dataset(const Sizes &dims)
+    : m_coords(dims, {}), m_data{}, m_readonly{false} {}
+
 Dataset::Dataset(const DataArray &data) { setData(data.name(), data); }
 
 Dataset &Dataset::operator=(const Dataset &other) {
@@ -112,10 +115,8 @@ DataArray Dataset::operator[](const std::string &name) const {
 
 void Dataset::set_sizes_to_insert_data(const std::string_view name,
                                        const Variable &data) {
-  if (empty())
-    // Merge sizes to allow for defining the dataset dims by assigning arbitrary
-    // coordinates into an empty dataset.
-    m_coords.setSizes(merge(m_coords.sizes(), data.dims()));
+  if (!m_coords.sizes_are_set())
+    m_coords.setSizes(data.dims());
   else
     expect_matching_item_dims(*this, name, data);
 }
@@ -123,17 +124,6 @@ void Dataset::set_sizes_to_insert_data(const std::string_view name,
 /// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
   expect_writable(*this);
-  if (empty())
-    throw std::invalid_argument(
-        "Dataset is empty, cannot add coordinates before data has been added "
-        "to set the dimensions.");
-  bool set_sizes = true;
-  for (const auto &coord_dim : coord.dims())
-    if (is_edges(m_coords.sizes(), coord.dims(), coord_dim))
-      set_sizes = false;
-  if (set_sizes && empty()) {
-    m_coords.setSizes(merge(m_coords.sizes(), coord.dims()));
-  }
   m_coords.set(dim, std::move(coord));
 }
 

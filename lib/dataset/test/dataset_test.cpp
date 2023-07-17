@@ -23,16 +23,27 @@ using namespace scipp;
 TEST(DatasetTest, construct_default) { ASSERT_NO_THROW(Dataset d); }
 
 TEST(DatasetTest, clear) {
-  DatasetFactory factory;
+  DatasetFactory factory({{Dim::X, 2}, {Dim::Y, 3}});
   auto dataset = factory.make("data");
 
   ASSERT_FALSE(dataset.empty());
   ASSERT_FALSE(dataset.coords().empty());
+  ASSERT_EQ(dataset.dims(), Dimensions({{Dim::X, 2}, {Dim::Y, 3}}));
 
   ASSERT_NO_THROW(dataset.clear());
 
   ASSERT_TRUE(dataset.empty());
   ASSERT_FALSE(dataset.coords().empty());
+  ASSERT_EQ(dataset.dims(), Dimensions({{Dim::X, 2}, {Dim::Y, 3}}));
+}
+
+TEST(DatasetTest, can_set_coord_after_clear) {
+  DatasetFactory factory({{Dim::X, 2}, {Dim::Y, 3}});
+  auto dataset = factory.make("data");
+  dataset.clear();
+
+  ASSERT_NO_THROW(dataset.setCoord(
+      Dim{"new x"}, makeVariable<double>(Dims{Dim::X}, Shape{2})));
 }
 
 TEST(DatasetTest, erase_non_existant) {
@@ -48,6 +59,15 @@ TEST(DatasetTest, erase) {
   ASSERT_FALSE(dataset.contains("data"));
 }
 
+TEST(DatasetTest, erase_preserves_coords) {
+  DatasetFactory factory;
+  auto dataset = factory.make("data");
+  const Dataset original = dataset;
+  dataset.erase("data");
+  ASSERT_FALSE(dataset.coords().empty());
+  ASSERT_EQ(dataset.coords(), original.coords());
+}
+
 TEST(DatasetTest, extract) {
   DatasetFactory factory;
   auto dataset = factory.make("data");
@@ -61,6 +81,15 @@ TEST(DatasetTest, extract) {
   EXPECT_EQ(array, reference["data"]);
   reference.erase("data");
   EXPECT_EQ(dataset, reference);
+}
+
+TEST(DatasetTest, extract_preserves_coords) {
+  DatasetFactory factory;
+  auto dataset = factory.make("data");
+  const Dataset original = dataset;
+  [[maybe_unused]] const auto x = dataset.extract("data");
+  ASSERT_FALSE(dataset.coords().empty());
+  ASSERT_EQ(dataset.coords(), original.coords());
 }
 
 TEST(DatasetTest, cannot_reshape_after_erase) {
@@ -142,10 +171,45 @@ TEST(DatasetTest, setCoord) {
   ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 3}}));
 }
 
-TEST(DatasetTest, setCoord_requires_data) {
+TEST(DatasetTest, setCoord_requires_setting_sizes) {
   Dataset d;
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3});
   ASSERT_THROW(d.setCoord(Dim::X, var), std::invalid_argument);
+  ASSERT_THROW(d.coords().set(Dim::X, var), std::invalid_argument);
+}
+
+TEST(DatasetTest, setCoord_with_initial_sizes) {
+  Dataset d(Sizes(Dimensions({{Dim::X, 3}})));
+  const auto var1 = makeVariable<double>(Dims{Dim::X}, Shape{3});
+  const auto var2 = makeVariable<double>(Dims{});
+  d.setCoord(Dim::X, var1);
+  d.coords().set(Dim::Time, var2);
+  ASSERT_EQ(d.coords().size(), 2);
+  ASSERT_EQ(d.coords()[Dim::X], var1);
+  ASSERT_EQ(d.coords()[Dim::Time], var2);
+}
+
+TEST(DatasetTest, setCoord_scalar_without_setting_sizes) {
+  Dataset d;
+  const auto var = makeVariable<double>(Dims{});
+  d.setCoord(Dim::X, var);
+  ASSERT_EQ(d.coords()[Dim::X], var);
+  ASSERT_EQ(d.dims(), Dimensions());
+
+  // The dataset's dims have not been fixed.
+  ASSERT_NO_THROW(d.setData("a", makeVariable<double>(Dims{Dim::Z}, Shape{2})));
+  ASSERT_EQ(d.dims(), Dimensions({{Dim::Z, 2}}));
+}
+
+TEST(DatasetTest, setCoord_length_2_without_setting_sizes) {
+  Dataset d;
+  const auto var = makeVariable<double>(Dims{Dim::Z}, Shape{2});
+  d.setCoord(Dim::X, var);
+  ASSERT_EQ(d.coords()[Dim::X], var);
+  ASSERT_EQ(d.dims(), Dimensions()); // Coord treated as bin-edges
+
+  // The dataset's dims have been fixed to scalar.
+  ASSERT_THROW(d.setData("a", var), except::DimensionError);
 }
 
 TEST(DatasetTest, setCoord_length_2) {
@@ -177,15 +241,26 @@ TEST(DatasetTest, setCoord_length_2_multi_dim_bin_edges) {
 }
 
 TEST(DatasetTest, setCoord_multiple) {
+  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{4});
+  const auto time = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 3});
+  const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{3});
+  const auto row = makeVariable<double>(Dims{Dim::Y}, Shape{4});
+  const auto group = makeVariable<double>(Dims{});
+
   Dataset d;
   d.setData("a", makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 4}));
-  d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
-  d.setCoord(Dim::Time,
-             makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 3}));
-  d.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3}));
-  d.setCoord(Dim::Row, makeVariable<double>(Dims{Dim::Y}, Shape{4}));
+  d.setCoord(Dim::X, x);
+  d.setCoord(Dim::Time, time);
+  d.setCoord(Dim::Y, y);
+  d.setCoord(Dim::Row, row);
+  d.setCoord(Dim::Group, group);
 
   ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 4}, {Dim::Y, 3}}));
+  ASSERT_EQ(d.coords()[Dim::X], x);
+  ASSERT_EQ(d.coords()[Dim::Time], time);
+  ASSERT_EQ(d.coords()[Dim::Y], y);
+  ASSERT_EQ(d.coords()[Dim::Row], row);
+  ASSERT_EQ(d.coords()[Dim::Group], group);
 }
 
 TEST(DatasetTest, setCoord_dims_mismatch) {
@@ -206,6 +281,17 @@ TEST(DatasetTest, setCoord_dims_mismatch) {
   ASSERT_TRUE(d.coords().empty());
 }
 
+TEST(DatasetTest, setCoords) {
+  Dataset a;
+  a.setData("a", makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2}));
+  Dataset b = a;
+
+  a.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2}));
+  a.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3}));
+  b.setCoords(a.coords());
+  ASSERT_EQ(a.coords(), b.coords());
+}
+
 TEST(DatasetTest, setCoords_too_large) {
   Dataset d;
   d.setData("a", makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2}));
@@ -217,6 +303,7 @@ TEST(DatasetTest, setCoords_too_large) {
           {Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{2})},
       });
   ASSERT_THROW(d.setCoords(coords), except::DimensionError);
+  ASSERT_TRUE(d.coords().empty());
 }
 
 TEST(DatasetTest, setCoords_too_small) {
@@ -230,6 +317,7 @@ TEST(DatasetTest, setCoords_too_small) {
           {Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{2})},
       });
   ASSERT_THROW(d.setCoords(coords), except::DimensionError);
+  ASSERT_TRUE(d.coords().empty());
 }
 
 TEST(DatasetTest, setCoords_too_many_dims) {
@@ -243,6 +331,7 @@ TEST(DatasetTest, setCoords_too_many_dims) {
           {Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{2})},
       });
   ASSERT_THROW(d.setCoords(coords), except::DimensionError);
+  ASSERT_TRUE(d.coords().empty());
 }
 
 TEST(DatasetTest, setCoords_too_few_dims) {
@@ -255,6 +344,7 @@ TEST(DatasetTest, setCoords_too_few_dims) {
           {Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{2})},
       });
   ASSERT_THROW(d.setCoords(coords), except::DimensionError);
+  ASSERT_TRUE(d.coords().empty());
 }
 
 TEST(DatasetTest, set_item_mask) {
@@ -371,6 +461,17 @@ TEST(DatasetTest, setData_cannot_insert_higher_ndim) {
   Dataset d;
   d.setData("a", x);
   ASSERT_THROW(d.setData("b", xy), scipp::except::DimensionError);
+}
+
+TEST(DatasetTest, setData_sets_sizes) {
+  const auto xy = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 3});
+  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{4});
+
+  Dataset d;
+  d.setData("a", xy);
+  ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 4}, {Dim::Y, 3}}));
+  d.setCoord(Dim::X, x); // can insert coord because setData set the dims.
+  ASSERT_EQ(d.coords()[Dim::X], x);
 }
 
 TEST(DatasetTest, setData_clears_attributes) {

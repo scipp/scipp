@@ -145,10 +145,13 @@ public:
 
   void set_aligned(const Key &key, bool aligned);
 
+  [[nodiscard]] bool sizes_are_set() const noexcept;
+
 protected:
   Sizes m_sizes;
   holder_type m_items;
   bool m_readonly{false};
+  bool m_sizes_are_set{false};
 };
 
 /// Returns the union of all masks with irreducible dimension `dim`.
