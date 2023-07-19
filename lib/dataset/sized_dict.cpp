@@ -37,12 +37,13 @@ SizedDict<Key, Value>::SizedDict(Sizes sizes, holder_type items,
 
 template <class Key, class Value>
 SizedDict<Key, Value>::SizedDict(const SizedDict &other)
-    : SizedDict(other.m_sizes, other.m_items, false) {}
+    : m_sizes(other.m_sizes), m_items(other.m_items), m_readonly(false),
+      m_sizes_are_set(other.m_sizes_are_set) {}
 
 template <class Key, class Value>
 SizedDict<Key, Value>::SizedDict(SizedDict &&other) noexcept
-    : SizedDict(std::move(other.m_sizes), std::move(other.m_items),
-                other.m_readonly) {}
+    : m_sizes(std::move(other.m_sizes)), m_items(std::move(other.m_items)),
+      m_readonly(other.m_readonly), m_sizes_are_set(other.m_sizes_are_set) {}
 
 template <class Key, class Value>
 SizedDict<Key, Value> &

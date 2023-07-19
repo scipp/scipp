@@ -158,6 +158,43 @@ TEST(SizedDictTest, init_with_dict_bad_sizes) {
                except::DimensionError);
 }
 
+TEST(SizedDictTest, copy) {
+  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+  const auto y = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 5});
+  const Coords::holder_type dict({{Dim::X, x}, {Dim::Y, y}});
+  const Coords coords(Dimensions({{Dim::X, 3}, {Dim::Y, 5}}), dict);
+
+  const Coords copy = coords;
+
+  ASSERT_EQ(copy.size(), 2);
+  ASSERT_EQ(copy.sizes(), Dimensions({{Dim::X, 3}, {Dim::Y, 5}}));
+  ASSERT_TRUE(copy.sizes_are_set());
+  ASSERT_EQ(copy[Dim::X], x);
+  ASSERT_EQ(copy[Dim::Y], y);
+}
+
+TEST(SizedDictTest, copy_preserves_sizes_set_flag) {
+  const Coords a;
+  const Coords copy_a = a;
+  ASSERT_FALSE(copy_a.sizes_are_set());
+
+  Coords b;
+  b.setSizes(Sizes());
+  const Coords copy_b = b;
+  ASSERT_TRUE(copy_b.sizes_are_set());
+}
+
+TEST(SizedDictTest, copy_resets_readonly_flag) {
+  const Coords a;
+  const Coords copy_a = a;
+  ASSERT_FALSE(copy_a.is_readonly());
+
+  Coords b;
+  b.set_readonly();
+  const Coords copy_b = b;
+  ASSERT_FALSE(copy_b.is_readonly());
+}
+
 TEST(SizedDictTest, set_scalar_without_setting_sizes) {
   const auto scalar = makeVariable<double>(Dims{}, Values{1.2});
   Coords coords;
