@@ -533,13 +533,6 @@ TEST(DatasetTest, DataArrayView_setData) {
   EXPECT_EQ(d["a"].data(), var + var);
 }
 
-struct SetDataTest : public ::testing::Test {
-protected:
-  Variable var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
-  Variable y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 3});
-  DataArray data{var, {{Dim::Y, var}}};
-};
-
 TEST(DatasetTest, setCoord_with_name_matching_data_name) {
   Dataset d;
   d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{3}));
