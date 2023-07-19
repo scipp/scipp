@@ -22,7 +22,6 @@ def make_array() -> sc.DataArray:
 def make_dataset() -> sc.Dataset:
     ds = sc.Dataset()
     ds['xy'] = make_array()
-    ds['x'] = ds.coords['xx']
     return ds
 
 

@@ -262,15 +262,14 @@ def test_assert_identical_data_array_masks_value_mismatch():
         sc.Dataset(),
         sc.Dataset({'f': sc.scalar(91, unit='F')}),
         sc.Dataset({'r': sc.scalar(6.4)}, coords={'g': sc.scalar(4)}),
-        sc.Dataset({'2': sc.arange('u', 5), '3': sc.arange('b', 7)}),
+        sc.Dataset({'2': sc.arange('u', 5)}),
         sc.Dataset(
             {
                 'yy': sc.DataArray(
-                    sc.arange('yy', 5),
+                    sc.arange('w', 15).fold('w', {'i': 3, 'yy': 5}),
                     attrs={'a': sc.scalar([2, 3])},
                     masks={'m': sc.arange('yy', 5) < 2},
                 ),
-                'i': sc.arange('i', 3),
             },
             coords={'i': sc.arange('w', 15).fold('w', {'i': 3, 'yy': 5})},
         ),

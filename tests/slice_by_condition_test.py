@@ -36,7 +36,6 @@ def make_binned_array_variable_buffer() -> sc.DataArray:
 def make_dataset() -> sc.Dataset:
     ds = sc.Dataset()
     ds['xy'] = make_array()
-    ds['x'] = ds.coords['xx']
     return ds
 
 
