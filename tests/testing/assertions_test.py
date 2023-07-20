@@ -305,19 +305,6 @@ def test_assert_identical_dataset_coords_key_mismatch():
     with pytest.raises(AssertionError):
         assert_identical(b, a)
 
-    a = sc.Dataset(
-        {'a': sc.arange('t', 3), 'b': sc.arange('c', 5)},
-        coords={'t': sc.scalar(2), 'c': sc.arange('c', 5)},
-    )
-    b = sc.Dataset(
-        {'a': sc.arange('t', 3), 'b': sc.arange('c', 5)},
-        coords={'t': sc.scalar(2), 'c': sc.arange('c', 6)},
-    )
-    with pytest.raises(AssertionError):
-        assert_identical(a, b)
-    with pytest.raises(AssertionError):
-        assert_identical(b, a)
-
 
 @pytest.mark.parametrize(
     'a',
