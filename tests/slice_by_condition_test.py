@@ -108,12 +108,6 @@ def test_bin_edges_are_dropped():
     assert sc.identical(da[condition], sc.concat([base['xx', 0], base['xx', 2:]], 'xx'))
 
 
-def test_dataset_item_independent_of_condition_dim_preserved_unchanged():
-    condition = sc.array(dims=['yy'], values=[True, False, True])
-    ds = make_dataset()
-    assert sc.identical(ds[condition]['x'], ds['x'])
-
-
 def test_non_boolean_condition_raises_DTypeError():
     var = make_var()
     with pytest.raises(sc.DTypeError):

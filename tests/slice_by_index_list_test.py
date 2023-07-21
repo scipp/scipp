@@ -108,11 +108,6 @@ def test_bin_edges_are_dropped(sliceable, what):
     assert 'edges' in getattr(da, what)
 
 
-def test_dataset_item_independent_of_slice_dim_preserved_unchanged():
-    ds = make_dataset()
-    assert sc.identical(ds['yy', [0, 2]]['x'], ds['x'])
-
-
 def test_2d_list_raises_TypeError():
     var = make_var()
     with pytest.raises(TypeError):

@@ -49,7 +49,6 @@ def test_sum_dataset_with_coords():
     d = sc.Dataset(
         data={
             'a': sc.arange('a', 6, dtype='int64').fold('a', {'x': 2, 'y': 3}),
-            'b': sc.arange('y', 3, dtype='int64'),
         },
         coords={
             'x': sc.arange('x', 2, dtype='int64'),
@@ -61,7 +60,6 @@ def test_sum_dataset_with_coords():
     d_ref = sc.Dataset(
         data={
             'a': sc.array(dims=['x'], values=[3, 12], dtype='int64'),
-            'b': sc.scalar(3),
         },
         coords={
             'x': sc.arange('x', 2, dtype='int64'),
@@ -166,7 +164,6 @@ def test_mean_dataset_with_coords():
             'a': sc.Variable(
                 dims=['x', 'y'], values=np.arange(6, dtype=np.int64).reshape(2, 3)
             ),
-            'b': sc.Variable(dims=['y'], values=np.arange(3, dtype=np.int64)),
         },
         coords={
             'x': sc.Variable(dims=['x'], values=np.arange(2, dtype=np.int64)),
@@ -179,7 +176,6 @@ def test_mean_dataset_with_coords():
     )
 
     assert (sc.mean(d, 'y')['a'].values == [1.0, 4.0]).all()
-    assert sc.mean(d, 'y')['b'].value == 1.0
 
 
 def test_mean_masked():

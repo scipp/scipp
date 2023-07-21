@@ -109,9 +109,7 @@ def _make_data_array():
 
 
 def _make_dataset():
-    return sc.Dataset(
-        data={'a': _make_data_array(), 'scalar': _make_data_array()['x', 0].copy()}
-    )
+    return sc.Dataset(data={'a': _make_data_array()})
 
 
 def test_readonly_data_array_slice():
@@ -168,8 +166,10 @@ def test_readonly_dataset_slice():
 
 
 def test_readonly_dataset_slice_items():
-    ds = _make_dataset()
-    xy = sc.broadcast(ds['a'].data, dims=['y', 'x'], shape=[2, 4]).copy()
-    ds['b'] = sc.DataArray(data=xy, masks={'m': xy.copy()}, attrs={'a': xy.copy()})
+    ds = sc.Dataset(
+        {
+            key: val.broadcast(dims=['x', 'y'], shape=[4, 3])
+            for key, val in _make_dataset().items()
+        }
+    )
     assert_readonly_data_array(ds['y', 0]['a'], readonly_data=True)
-    assert_readonly_data_array(ds['y', 0]['b'], readonly_data=False)
