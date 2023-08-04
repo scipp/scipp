@@ -9,12 +9,7 @@ dependencies:
   - ipython
   - ipywidgets
   - jupyterlab
-  - jupyterlab_widgets
-  - jupyter_nbextensions_configurator
-  - matplotlib-base
-  - nodejs
-  - pythreejs
+  - python-graphviz
+  - scipp::plopp
   - scipp::scipp
   - scipy
-  - scipp::plopp
-  - python-graphviz
