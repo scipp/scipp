@@ -697,9 +697,9 @@ TYPED_TEST(DatasetBinaryOpTest, masks_not_shared) {
 
   const auto res = TestFixture::op(a, b);
 
-  res["data"].masks()["mask_a"] |= maskC;
-  res["data"].masks()["mask_b"] |= maskC;
-  res["data"].masks()["mask_ab"] |= maskC;
+  res["data"].masks()["mask_a"] |= maskC;  // cppcheck-suppress unreadVariable
+  res["data"].masks()["mask_b"] |= maskC;  // cppcheck-suppress unreadVariable
+  res["data"].masks()["mask_ab"] |= maskC; // cppcheck-suppress unreadVariable
   EXPECT_EQ(a["data"].masks()["mask_ab"], maskA);
   EXPECT_EQ(a["data"].masks()["mask_a"], maskA);
   EXPECT_EQ(b["data"].masks()["mask_ab"], maskB);
