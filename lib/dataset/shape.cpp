@@ -128,13 +128,6 @@ DataArray concat(const scipp::span<const DataArray> das, const Dim dim) {
 }
 
 Dataset concat(const scipp::span<const Dataset> dss, const Dim dim) {
-  // Note that in the special case of a dataset without data items (only coords)
-  // concatenating a range slice with a non-range slice will fail due to the
-  // missing unaligned coord in the non-range slice. This is an extremely
-  // special case and cannot be handled without adding support for unaligned
-  // coords to dataset (which is not desirable for a variety of reasons). It is
-  // unlikely that this will cause trouble in practice. Users can just use a
-  // range slice of thickness 1.
   if (dss.empty())
     throw std::invalid_argument("Cannot concat empty list.");
   Dataset result;
