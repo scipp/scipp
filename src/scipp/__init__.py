@@ -246,15 +246,12 @@ del operations
 
 from .core.binning import histogram
 
+from .plotting import plot
 
-try:
-    from plopp import plot
-
-    setattr(Variable, 'plot', plot)
-    setattr(DataArray, 'plot', plot)
-    setattr(Dataset, 'plot', plot)
-except ImportError:
-    pass
+setattr(Variable, 'plot', plot)
+setattr(DataArray, 'plot', plot)
+setattr(Dataset, 'plot', plot)
+del plotting
 
 from .core.util import VisibleDeprecationWarning
 
