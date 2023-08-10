@@ -36,13 +36,13 @@ Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
-* All items of datasets must have the same dimensions now `# <https://github.com/scipp/scipp/pull/>`_.
-* It is no longer possible to insert coordinates into datasets before inserting data `# <https://github.com/scipp/scipp/pull/>`_.
+* All items of datasets must have the same dimensions now `#3199 <https://github.com/scipp/scipp/pull/3199>`_.
+* It is no longer possible to insert coordinates into datasets before inserting data `#3199 <https://github.com/scipp/scipp/pull/3199>`_.
 
 Bugfixes
 ~~~~~~~~
 
-* Concatenating two datasets with identical data in a new dimension now actually concatenates them; it used to return the input unchanged `# <https://github.com/scipp/scipp/pull/>`_.
+* Concatenating two datasets with identical data in a new dimension now actually concatenates them; it used to return the input unchanged `#3199 <https://github.com/scipp/scipp/pull/3199>`_.
 
 Documentation
 ~~~~~~~~~~~~~
