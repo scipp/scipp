@@ -1,11 +1,11 @@
 -r base.in
 graphviz
 h5py
-matplotlib
+# matplotlib
 numba
 pandas
-plopp
+# plopp
 pooch
-pythreejs
+# pythreejs
 scipy>=1.7.0
 xarray

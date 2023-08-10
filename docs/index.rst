@@ -108,8 +108,7 @@ and open new discussions if none of the existing ones provide a satisfactory ans
    :maxdepth: 3
 
    visualization/representations-and-tables
-   visualization/plotting-overview
-   visualization/plotting-in-depth
+   visualization/plotting
 
 .. toctree::
    :hidden:

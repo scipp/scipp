@@ -5,7 +5,9 @@ hypothesis
 ipykernel
 ipympl
 ipywidgets
+matplotlib
 packaging
+pythreejs
 requests
 sphinx
 sphinx-autodoc-typehints==1.18.3  # later versions require sphinx >=5 which is incompatible with current sphinx-book-theme

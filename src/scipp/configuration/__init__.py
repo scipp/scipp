@@ -34,30 +34,6 @@ class Config:
 
     _TEMPLATE = {
         'colors': confuse.MappingValues(str),
-        'plot': {
-            'use_plopp': bool,
-            'aspect': confuse.OneOf((confuse.Number(), str)),
-            'color': confuse.Sequence(str),
-            'dpi': int,
-            'height': int,
-            'linestyle': confuse.Sequence(confuse.Optional(str)),
-            'linewidth': confuse.Sequence(int),
-            'marker': confuse.Sequence(str),
-            'bounding_box': confuse.Sequence(confuse.Number()),
-            'params': {
-                'cbar': bool,
-                'cmap': str,
-                'color': confuse.Optional(str),
-                'nan_color': str,
-                'norm': confuse.Choice(('linear', 'log')),
-                'over_color': str,
-                'under_color': str,
-                'vmax': confuse.Optional(confuse.Number()),
-                'vmin': confuse.Optional(confuse.Number()),
-            },
-            'pixel_ratio': confuse.Number(),
-            'width': confuse.Number(),
-        },
         'table_max_size': int,
     }
 

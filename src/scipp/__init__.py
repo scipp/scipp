@@ -246,11 +246,15 @@ del operations
 
 from .core.binning import histogram
 
-from .plotting import plot
 
-setattr(Variable, 'plot', plot)
-setattr(DataArray, 'plot', plot)
-setattr(Dataset, 'plot', plot)
+try:
+    from plopp import plot
+
+    setattr(Variable, 'plot', plot)
+    setattr(DataArray, 'plot', plot)
+    setattr(Dataset, 'plot', plot)
+except ImportError:
+    pass
 
 from .core.util import VisibleDeprecationWarning
 
@@ -383,7 +387,6 @@ __all__ = [
     'ones',
     'ones_like',
     'plot',
-    'plotting',
     'pow',
     'rebin',
     'reciprocal',
