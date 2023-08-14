@@ -71,6 +71,16 @@ def test_unit_repr():
     )
 
 
+def test_str():
+    assert str(sc.Unit('kJ/mol')) == 'kJ/mol'
+
+
+def test_degC_square():
+    two_degC = sc.scalar(2.0, unit='degC')
+    assert two_degC**2 == sc.scalar(4.0, unit='degC^2')
+    assert sc.sqrt(two_degC**2) == two_degC
+
+
 @pytest.mark.parametrize(
     'u', ('m', 'kg', 's', 'A', 'cd', 'K', 'mol', 'counts', '$', 'rad')
 )

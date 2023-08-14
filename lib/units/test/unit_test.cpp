@@ -245,10 +245,10 @@ TEST(UnitParseTest, singular_plural) {
 
 TEST(UnitFormatTest, roundtrip_string) {
   for (const auto &s :
-       {"m",        "m/s",      "meV",      "pAh",        "mAh",
-        "ns",       "counts",   "counts^2", "counts/meV", "1/counts",
-        "counts/m", "rad",      "$",        "Y",          "M",
-        "D",        "CXCUN[1]", "EQXUN[1]", "EQXUN[23]",  "°C"}) {
+       {"m",        "m/s",       "meV",      "pAh",        "mAh",
+        "ns",       "counts",    "counts^2", "counts/meV", "1/counts",
+        "counts/m", "rad",       "$",        "Y",          "M",
+        "D",        "arb. unit", "EQXUN[1]", "EQXUN[23]",  "°C"}) {
     const auto unit = units::Unit(s);
     EXPECT_EQ(to_string(unit), s);
     EXPECT_EQ(units::Unit(to_string(unit)), unit);
