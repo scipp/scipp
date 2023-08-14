@@ -129,7 +129,7 @@ Coords DataArray::meta() const {
 DataArray DataArray::slice(const Slice &s) const {
   auto out = DataArray{m_data->slice(s), m_coords->slice_coords(s),
                        m_masks->slice(s), m_attrs->slice(s), m_name};
-  out.m_readonly = true; // TODO still required?
+  out.m_readonly = true;
   return out;
 }
 
