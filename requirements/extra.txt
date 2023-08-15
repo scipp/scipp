@@ -109,7 +109,7 @@ platformdirs==3.5.1
     # via
     #   jupyter-core
     #   pooch
-plopp==23.5.1
+plopp==23.8.0
     # via -r extra.in
 pooch==1.7.0
     # via -r extra.in
