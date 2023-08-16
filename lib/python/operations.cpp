@@ -93,21 +93,6 @@ void init_operations(py::module &m) {
   bind_allsorted(m);
   bind_midpoints(m);
 
-  m.def(
-      "get_slice_params",
-      [](const Variable &var, const Variable &coord, const Variable &value) {
-        const auto [dim, index] = get_slice_params(var.dims(), coord, value);
-        return std::tuple{dim.name(), index};
-      },
-      py::call_guard<py::gil_scoped_release>());
-  m.def("get_slice_params", [](const Variable &var, const Variable &coord,
-                               const Variable &begin, const Variable &end) {
-    const auto [dim, start, stop] =
-        get_slice_params(var.dims(), coord, begin, end);
-    // Do NOT release GIL since using py::slice
-    return std::tuple{dim.name(), py::slice(start, stop, 1)};
-  });
-
   m.def("where", &variable::where, py::arg("condition"), py::arg("x"),
         py::arg("y"), py::call_guard<py::gil_scoped_release>());
 }

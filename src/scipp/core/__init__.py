@@ -43,9 +43,6 @@ from .cpp_classes import (
 
 from .._scipp.core import as_const
 
-# TODO Only used by plotting, remove when builtin plotting is removed.
-from .._scipp.core import get_slice_params
-
 from .data_group import DataGroup
 from .dimensions import (
     _rename_dims,

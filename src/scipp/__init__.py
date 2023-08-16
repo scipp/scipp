@@ -251,6 +251,7 @@ from .plotting import plot
 setattr(Variable, 'plot', plot)
 setattr(DataArray, 'plot', plot)
 setattr(Dataset, 'plot', plot)
+del plotting
 
 from .core.util import VisibleDeprecationWarning
 
@@ -383,7 +384,6 @@ __all__ = [
     'ones',
     'ones_like',
     'plot',
-    'plotting',
     'pow',
     'rebin',
     'reciprocal',

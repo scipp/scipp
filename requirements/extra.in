@@ -1,11 +1,9 @@
 -r base.in
 graphviz
 h5py
-matplotlib
+ipykernel
 numba
 pandas
-plopp
 pooch
-pythreejs
 scipy>=1.7.0
 xarray
