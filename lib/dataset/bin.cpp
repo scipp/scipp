@@ -30,15 +30,54 @@ namespace scipp::dataset {
 
 namespace {
 
+class TwoStageBuilder {
+public:
+  TwoStageBuilder(const Dimensions &dims, const scipp::index nbin = 1024)
+      : m_dims(dims),
+        m_offsets(makeVariable<scipp::index>(Values{0}, units::none)),
+        m_nbin(nbin * units::none) {}
+
+  [[nodiscard]] Dimensions dims() const noexcept { return m_dims; }
+  [[nodiscard]] const Variable &offsets() const noexcept { return m_offsets; }
+  [[nodiscard]] const Variable &nbin() const noexcept { return m_nbin; }
+
+private:
+  Dimensions m_dims;
+  Variable m_offsets;
+  Variable m_nbin;
+};
+
 template <class T, class Builder>
-auto setup_and_apply(const Variable &data, const Variable &indices,
-                     const Builder &builder) {
+std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable indices,
+                                        const Builder &builder) {
   const auto dims = builder.dims();
   // Setup offsets within output bins, for every input bin. If rebinning occurs
   // along a dimension each output bin sees contributions from all input bins
   // along that dim.
-  auto output_bin_sizes =
-      bin_detail::bin_sizes(indices, builder.offsets(), builder.nbin());
+  Variable output_bin_sizes;
+  Variable fine_indices;
+  Variable n_coarse_bin;
+  if (!std::is_same_v<Builder, TwoStageBuilder> &&
+      builder.nbin().dims().empty() && builder.offsets().dims().empty()) {
+    fprintf(stderr, "simple.\n");
+    const auto chunk_size =
+        makeVariable<scipp::index>(Values{1024}, units::none);
+    fine_indices = indices % chunk_size;
+    fprintf(stderr, "indices: %s\n",
+            to_string(indices.bin_buffer<Variable>()).c_str());
+    indices = floor_divide(indices, chunk_size);
+    fprintf(stderr, "indices: %s\n",
+            to_string(indices.bin_buffer<Variable>()).c_str());
+    n_coarse_bin = dims.volume() == 0
+                       ? builder.nbin()
+                       : floor_divide(builder.nbin(), chunk_size) +
+                             makeVariable<scipp::index>(Values{1}, units::none);
+    output_bin_sizes =
+        bin_detail::bin_sizes(indices, builder.offsets(), n_coarse_bin);
+  } else {
+    output_bin_sizes =
+        bin_detail::bin_sizes(indices, builder.offsets(), builder.nbin());
+  }
   auto offsets = copy(output_bin_sizes);
   fill_zeros(offsets);
   // Not using cumsum along *all* dims, since some outer dims may be left
@@ -82,7 +121,7 @@ auto setup_and_apply(const Variable &data, const Variable &indices,
     auto out_subspans =
         subspan_view(out, buffer_dim, filtered_input_bin_ranges);
     map_to_bins(out_subspans, as_subspan_view(var), offsets,
-                as_subspan_view(indices));
+                as_subspan_view(std::as_const(indices)));
     return out;
   };
   T out_buffer;
@@ -93,11 +132,55 @@ auto setup_and_apply(const Variable &data, const Variable &indices,
 
   // Up until here the output was viewed with same bin index ranges as input.
   // Now switch to desired final bin indices.
+  // if fine, use coarse size instead of dims.volume()
+  // then call this func again, with fine (mapped to coarse bins) as indices
+  // and dummy builder
   auto output_dims = merge(output_bin_sizes.dims(), dims);
-  auto bin_sizes = makeVariable<scipp::index>(
-      output_dims, units::none,
-      Values(flatten_subbin_sizes(output_bin_sizes, dims.volume())));
-  return std::tuple{std::move(out_buffer), std::move(bin_sizes)};
+  fprintf(stderr, "dims: %s\n", to_string(dims).c_str());
+  fprintf(stderr, "data_dims: %s\n", to_string(data.dims()).c_str());
+  fprintf(stderr, "output_dims: %s\n", to_string(output_dims).c_str());
+  if (fine_indices.is_valid()) {
+    fine_indices = do_bin(fine_indices);
+    fprintf(stderr, "fine_indices: %s\n", to_string(fine_indices).c_str());
+    Dimensions coarse_dims(Dim::InternalStructureRow,
+                           n_coarse_bin.value<scipp::index>());
+    auto output_dims2 = merge(output_bin_sizes.dims(), coarse_dims);
+    auto bin_sizes2 = makeVariable<scipp::index>(
+        output_dims2, units::none,
+        Values(flatten_subbin_sizes(output_bin_sizes,
+                                    n_coarse_bin.value<scipp::index>())));
+
+    fprintf(stderr, "bin_sizes2=%s\n", to_string(bin_sizes2).c_str());
+    const auto end2 = cumsum(bin_sizes2);
+    const auto buffer_dim = out_buffer.dims().inner();
+    fprintf(stderr, "end2=%s\n", to_string(end2).c_str());
+
+    const auto tmp = make_bins_no_validate(zip(end2 - bin_sizes2, end2),
+                                           buffer_dim, out_buffer);
+    fine_indices = make_bins_no_validate(zip(end2 - bin_sizes2, end2),
+                                         buffer_dim, fine_indices);
+    Dimensions fine_dims(Dim::InternalStructureColumn, 1024);
+    TwoStageBuilder builder2(fine_dims, 1024);
+    const auto &[buffer, sizes] =
+        setup_and_apply<T>(tmp, fine_indices, builder2);
+    fprintf(stderr, "buffer: %s\n", to_string(buffer).c_str());
+    fprintf(stderr, "sizes: %s\n", to_string(sizes).c_str());
+    return std::tuple{
+        buffer,
+        // fold(squeeze(sizes, std::vector<Dim>{Dim::InternalStructureRow})
+        fold(flatten(sizes, sizes.dims().labels(), Dim::InternalSort)
+                 .slice({Dim::InternalSort, 0, output_dims.volume()}),
+             Dim::InternalSort, output_dims)};
+  } else {
+    auto bin_sizes = makeVariable<scipp::index>(
+        output_dims, units::none,
+        Values(flatten_subbin_sizes(output_bin_sizes, dims.volume())));
+    fprintf(stderr, "output_dims: %s\n", to_string(output_dims).c_str());
+    fprintf(stderr, "output_bin_sizes.sizes: %s\n",
+            to_string(output_bin_sizes.dims()).c_str());
+    fprintf(stderr, "bin_sizes: %s\n", to_string(bin_sizes).c_str());
+    return std::tuple{std::move(out_buffer), std::move(bin_sizes)};
+  }
 }
 
 template <class T, class Mapping>

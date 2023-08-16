@@ -151,10 +151,10 @@ def make_binned(
         x = DataArray(data, coords={coords[0].dim: x})
     if _can_operate_on_bins(x, edges, groups, erase):
         return combine_bins(x, edges=edges, groups=groups, dim=erase)
-    if _is_simple_grouping(x, edges, groups, erase):
-        grouping = groups[0]
-        if _can_group_two_stage(x, grouping):
-            return _group_two_stage(x, grouping)
+    # if _is_simple_grouping(x, edges, groups, erase):
+    #     grouping = groups[0]
+    #     if _can_group_two_stage(x, grouping):
+    #         return _group_two_stage(x, grouping)
     return _cpp.bin(x, edges, groups, erase)
 
 

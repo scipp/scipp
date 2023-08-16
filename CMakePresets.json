@@ -89,16 +89,24 @@
       "generator": "Visual Studio 16 2019"
     },
     {
-      "name": "coverage",
-      "description": "Options for coverage build (Linux only)",
+      "name": "debug",
+      "description": "Options for debug build",
       "binaryDir": "${sourceDir}/build",
-      "generator": "Unix Makefiles",
+      "generator": "Ninja",
       "cacheVariables": {
-        "COVERAGE": "ON",
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
         "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
         "THREADING": "OFF"
+      }
+    },
+    {
+      "name": "coverage",
+      "inherits": "debug",
+      "description": "Options for coverage build (Linux only)",
+      "generator": "Unix Makefiles",
+      "cacheVariables": {
+        "COVERAGE": "ON"
       }
     }
   ],
@@ -131,6 +139,14 @@
       "name": "test",
       "configurePreset": "base",
       "configuration": "Release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "debug-test",
+      "configurePreset": "debug",
+      "configuration": "Debug",
       "output": {
         "outputOnFailure": true
       }
