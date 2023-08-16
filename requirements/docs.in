@@ -2,7 +2,6 @@
 -r extra.in
 gitpython
 hypothesis
-ipykernel
 ipympl
 ipywidgets
 packaging

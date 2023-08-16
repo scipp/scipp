@@ -1,6 +1,7 @@
 -r base.in
 graphviz
 h5py
+ipykernel
 numba
 pandas
 pooch
