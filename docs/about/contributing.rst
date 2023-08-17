@@ -15,7 +15,7 @@ Code of conduct
 ---------------
 
 This project is a community effort, and everyone is welcome to contribute.
-Everyone within the community is expected to abide by our `code of conduct <https://scipp.github.io/CODE_OF_CONDUCT.md>`_.
+Everyone within the community is expected to abide by our `code of conduct <https://github.com/scipp/scipp/CODE_OF_CONDUCT.md>`_.
 
 Scope
 -----
