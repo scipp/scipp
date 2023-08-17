@@ -62,30 +62,20 @@ std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable indices,
       builder.nbin().template value<scipp::index>() > 0 &&
       builder.offsets().dims().empty() &&
       builder.offsets().template value<scipp::index>() == 0) {
-    fprintf(stderr, "simple.\n");
     const auto chunk_size =
         makeVariable<scipp::index>(Values{1024}, units::none);
     fine_indices = indices % chunk_size;
-    fprintf(stderr, "indices: %s\n",
-            to_string(indices.bin_buffer<Variable>()).c_str());
     indices = floor_divide(indices, chunk_size);
-    fprintf(stderr, "indices: %s\n",
-            to_string(indices.bin_buffer<Variable>()).c_str());
     n_coarse_bin = dims.volume() == 0
                        ? builder.nbin()
                        : floor_divide(builder.nbin(), chunk_size) +
                              makeVariable<scipp::index>(Values{1}, units::none);
-    fprintf(stderr, "n_coarse_bin: %s\n", to_string(n_coarse_bin).c_str());
     output_bin_sizes =
         bin_detail::bin_sizes(indices, builder.offsets(), n_coarse_bin);
   } else {
     output_bin_sizes =
         bin_detail::bin_sizes(indices, builder.offsets(), builder.nbin());
   }
-  fprintf(stderr, "builder.offsets: %s\n",
-          to_string(builder.offsets()).c_str());
-  fprintf(stderr, "output_bin_sizes.dims: %s\n",
-          to_string(output_bin_sizes.dims()).c_str());
   auto offsets = copy(output_bin_sizes);
   fill_zeros(offsets);
   // Not using cumsum along *all* dims, since some outer dims may be left
@@ -144,12 +134,8 @@ std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable indices,
   // then call this func again, with fine (mapped to coarse bins) as indices
   // and dummy builder
   auto output_dims = merge(output_bin_sizes.dims(), dims);
-  fprintf(stderr, "dims: %s\n", to_string(dims).c_str());
-  fprintf(stderr, "data_dims: %s\n", to_string(data.dims()).c_str());
-  fprintf(stderr, "output_dims: %s\n", to_string(output_dims).c_str());
   if (fine_indices.is_valid()) {
     fine_indices = do_bin(fine_indices);
-    fprintf(stderr, "fine_indices: %s\n", to_string(fine_indices).c_str());
     Dimensions coarse_dims(Dim::InternalStructureRow,
                            n_coarse_bin.value<scipp::index>());
     auto output_dims2 = merge(output_bin_sizes.dims(), coarse_dims);
@@ -158,10 +144,8 @@ std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable indices,
         Values(flatten_subbin_sizes(output_bin_sizes,
                                     n_coarse_bin.value<scipp::index>())));
 
-    fprintf(stderr, "bin_sizes2=%s\n", to_string(bin_sizes2).c_str());
     const auto end2 = cumsum(bin_sizes2);
     const auto buffer_dim = out_buffer.dims().inner();
-    fprintf(stderr, "end2=%s\n", to_string(end2).c_str());
 
     const auto tmp = make_bins_no_validate(zip(end2 - bin_sizes2, end2),
                                            buffer_dim, out_buffer);
@@ -171,25 +155,17 @@ std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable indices,
     TwoStageBuilder builder2(fine_dims);
     const auto &[buffer, sizes] =
         setup_and_apply<T>(tmp, fine_indices, builder2);
-    fprintf(stderr, "buffer: %s\n", to_string(buffer).c_str());
-    fprintf(stderr, "sizes: %s\n", to_string(sizes).c_str());
     return std::tuple{
-        buffer,
-        // fold(squeeze(sizes, std::vector<Dim>{Dim::InternalStructureRow})
-        fold(flatten(sizes,
-                     std::vector<Dim>{Dim::InternalStructureRow,
-                                      Dim::InternalStructureColumn},
-                     Dim::InternalSort)
-                 .slice({Dim::InternalSort, 0, dims.volume()}),
-             Dim::InternalSort, dims)};
+        buffer, fold(flatten(sizes,
+                             std::vector<Dim>{Dim::InternalStructureRow,
+                                              Dim::InternalStructureColumn},
+                             Dim::InternalSort)
+                         .slice({Dim::InternalSort, 0, dims.volume()}),
+                     Dim::InternalSort, dims)};
   } else {
     auto bin_sizes = makeVariable<scipp::index>(
         output_dims, units::none,
         Values(flatten_subbin_sizes(output_bin_sizes, dims.volume())));
-    fprintf(stderr, "output_dims: %s\n", to_string(output_dims).c_str());
-    fprintf(stderr, "output_bin_sizes.sizes: %s\n",
-            to_string(output_bin_sizes.dims()).c_str());
-    fprintf(stderr, "bin_sizes: %s\n", to_string(bin_sizes).c_str());
     return std::tuple{std::move(out_buffer), std::move(bin_sizes)};
   }
 }
