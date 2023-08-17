@@ -61,18 +61,20 @@ std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable &indices,
   scipp::index chunk_size = 0;
   if (!std::is_same_v<Builder, TwoStageBuilder> &&
       builder.nbin().dims().empty() &&
-      builder.nbin().template value<scipp::index>() > 2 * 1024 &&
+      builder.nbin().template value<scipp::index>() > 16 * 1024 &&
       builder.offsets().dims().empty() &&
       builder.offsets().template value<scipp::index>() == 0) {
     chunk_size = builder.nbin().template value<scipp::index>() / 1024;
-    chunk_size = 1024;
+    chunk_size = floor(sqrt(builder.nbin().template value<scipp::index>()));
+    // chunk_size = 1024;
     const auto chunk =
         astype(makeVariable<scipp::index>(Values{chunk_size}, units::none),
                indices.bin_buffer<Variable>().dtype());
-    // fine_indices = indices % chunk;
-    // indices = floor_divide(indices, chunk);
-    fine_indices = mod1024(indices);
-    floor_divide_1024_inplace(indices);
+    fine_indices = indices;
+    indices = floor_divide(indices, chunk);
+    fine_indices %= chunk;
+    // fine_indices = mod1024(indices);
+    // floor_divide_1024_inplace(indices);
     n_coarse_bin = dims.volume() == 0
                        ? builder.nbin()
                        : floor_divide(builder.nbin(), chunk) +
