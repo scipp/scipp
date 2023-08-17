@@ -2,18 +2,15 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import itertools
-import uuid
 import warnings
 from numbers import Integral
 from typing import Dict, Optional, Sequence, Union, overload
 
 from .._scipp import core as _cpp
 from .bin_remapping import combine_bins
-from .bins import bins
 from .cpp_classes import BinEdgeError, CoordError, DataArray, Dataset, DType, Variable
 from .data_group import DataGroup, data_group_overload
 from .math import round as round_
-from .operations import issorted
 from .shape import concat
 from .util import VisibleDeprecationWarning
 from .variable import arange, array, epoch, linspace, scalar
@@ -151,61 +148,7 @@ def make_binned(
         x = DataArray(data, coords={coords[0].dim: x})
     if _can_operate_on_bins(x, edges, groups, erase):
         return combine_bins(x, edges=edges, groups=groups, dim=erase)
-    # if _is_simple_grouping(x, edges, groups, erase):
-    #     grouping = groups[0]
-    #     if _can_group_two_stage(x, grouping):
-    #         return _group_two_stage(x, grouping)
     return _cpp.bin(x, edges, groups, erase)
-
-
-def _is_simple_grouping(x, edges, groups, erase):
-    if x.bins is not None:
-        return False
-    if len(edges) != 0:
-        return False
-    if len(groups) != 1:
-        return False
-    if len(erase) != 0:
-        return False
-    if groups[0].ndim != 1:
-        return False
-    return True
-
-
-def _can_group_two_stage(x, grouping):
-    if grouping.sizes[grouping.dim] < 1024 * 128:
-        return False
-    low = grouping[0]
-    high = grouping[-1]
-    if (high - low).value != grouping.sizes[grouping.dim] - 1:
-        return False
-    if not issorted(grouping, grouping.dim):
-        return False
-    return True
-
-
-def _group_two_stage(da, grouping):
-    low = grouping[0]
-    high = grouping[-1]
-    chunk = 1024
-    da = da.copy(deep=False)
-    coarse_dim = uuid.uuid4().hex
-    fine_dim = uuid.uuid4().hex
-    dim = grouping.dim
-    size = grouping.sizes[dim]
-    unit = da.coords[dim].unit
-    da.coords[coarse_dim] = da.coords[dim] // chunk
-    da.coords[fine_dim] = da.coords[dim] % chunk
-    del da.coords[dim]
-    coarse_groups = arange(
-        coarse_dim, low.value // chunk, high.value // chunk + 1, unit=unit
-    )
-    fine_groups = arange(fine_dim, 0, chunk, unit=unit)
-    tmp = _cpp.bin(da, [], [coarse_groups], [])
-    tmp = _cpp.bin(tmp, [], [fine_groups], [])
-    tmp = tmp.drop_coords([coarse_dim, fine_dim]).flatten(to=dim)
-    comps = tmp[:size].bins.constituents
-    return DataArray(bins(**comps), coords={dim: grouping})
 
 
 def _can_operate_on_bins(x, edges, groups, erase) -> bool:
