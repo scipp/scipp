@@ -25,7 +25,4 @@ subbin_sizes_cumsum_exclusive(const Variable &var, const Dim dim);
 SCIPP_VARIABLE_EXPORT void subbin_sizes_add_intersection(Variable &a,
                                                          const Variable &b);
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable mod1024(const Variable &var);
-SCIPP_VARIABLE_EXPORT void floor_divide_1024_inplace(Variable &var);
-
 } // namespace scipp::variable::bin_detail
