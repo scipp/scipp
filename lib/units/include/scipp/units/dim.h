@@ -22,6 +22,9 @@ public:
     InternalHistogram,
     InternalSort,
     InternalAccumulate,
+    InternalBinCoarse,
+    InternalBinFine,
+    InternalSubbin,
     Energy,
     Event,
     Group,
@@ -44,7 +47,9 @@ public:
   constexpr static auto InternalHistogram = Id::InternalHistogram;
   constexpr static auto InternalSort = Id::InternalSort;
   constexpr static auto InternalAccumulate = Id::InternalAccumulate;
-
+  constexpr static auto InternalBinCoarse = Id::InternalBinCoarse;
+  constexpr static auto InternalBinFine = Id::InternalBinFine;
+  constexpr static auto InternalSubbin = Id::InternalSubbin;
   constexpr static auto Energy = Id::Energy;
   constexpr static auto Event = Id::Event;
   constexpr static auto Group = Id::Group;

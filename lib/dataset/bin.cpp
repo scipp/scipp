@@ -136,14 +136,11 @@ std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable &indices,
 
   // Up until here the output was viewed with same bin index ranges as input.
   // Now switch to desired final bin indices.
-  // if fine, use coarse size instead of dims.volume()
-  // then call this func again, with fine (mapped to coarse bins) as indices
-  // and dummy builder
   auto output_dims = merge(output_bin_sizes.dims(), dims);
   if (fine_indices.is_valid()) {
     fine_indices = do_bin(fine_indices);
     indices = Variable();
-    Dimensions coarse_dims(Dim::InternalStructureRow,
+    Dimensions coarse_dims(Dim::InternalBinCoarse,
                            n_coarse_bin.value<scipp::index>());
     auto output_dims2 = merge(output_bin_sizes.dims(), coarse_dims);
     auto bin_sizes2 = makeVariable<scipp::index>(
@@ -158,17 +155,17 @@ std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable &indices,
                                            buffer_dim, out_buffer);
     fine_indices = make_bins_no_validate(zip(end2 - bin_sizes2, end2),
                                          buffer_dim, fine_indices);
-    Dimensions fine_dims(Dim::InternalStructureColumn, chunk_size);
+    Dimensions fine_dims(Dim::InternalBinFine, chunk_size);
     TwoStageBuilder builder2(fine_dims);
     const auto &[buffer, sizes] =
         setup_and_apply<T>(tmp, fine_indices, builder2);
-    return std::tuple{
-        buffer, fold(flatten(sizes,
-                             std::vector<Dim>{Dim::InternalStructureRow,
-                                              Dim::InternalStructureColumn},
-                             Dim::InternalSort)
-                         .slice({Dim::InternalSort, 0, dims.volume()}),
-                     Dim::InternalSort, dims)};
+    return std::tuple{buffer,
+                      fold(flatten(sizes,
+                                   std::vector<Dim>{Dim::InternalBinCoarse,
+                                                    Dim::InternalBinFine},
+                                   Dim::InternalSubbin)
+                               .slice({Dim::InternalSubbin, 0, dims.volume()}),
+                           Dim::InternalSubbin, dims)};
   } else {
     auto bin_sizes = makeVariable<scipp::index>(
         output_dims, units::none,

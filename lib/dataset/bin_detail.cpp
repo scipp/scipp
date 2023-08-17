@@ -64,12 +64,12 @@ Variable groups_to_map(const Variable &var, const Dim dim) {
 void update_indices_by_grouping(Variable &indices, const Variable &key,
                                 const Variable &groups) {
   if ((groups.dtype() == dtype<int32_t> ||
-       groups.dtype() == dtype<int64_t>)&&isarange(groups, groups.dim())
-          .value<bool>()) {
-    fprintf(stderr, "nice\n");
+       groups.dtype() == dtype<int64_t>)&&groups.dims()
+              .volume() != 0 &&
+      isarange(groups, groups.dim()).value<bool>()) {
     const auto ngroup =
         makeVariable<scipp::index>(Values{groups.dims().volume()}, units::none);
-    const auto offset = min(groups);
+    const auto offset = groups.slice({groups.dim(), 0});
     variable::transform_in_place(indices, key, ngroup, offset,
                                  core::element::update_indices_by_grouping2,
                                  "scipp.bin.update_indices_by_grouping2");

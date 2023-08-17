@@ -43,8 +43,6 @@ template <class Range> bool isarange(const Range &range) {
     return true;
   if (range.back() <= range.front())
     return false;
-
-  using T = typename Range::value_type;
   return std::adjacent_find(range.begin(), range.end(),
                             [](const auto &a, const auto &b) {
                               return std::abs(b - a) != 1;
