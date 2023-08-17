@@ -32,10 +32,10 @@ namespace {
 
 class TwoStageBuilder {
 public:
-  TwoStageBuilder(const Dimensions &dims, const scipp::index nbin = 1024)
+  TwoStageBuilder(const Dimensions &dims)
       : m_dims(dims),
         m_offsets(makeVariable<scipp::index>(Values{0}, units::none)),
-        m_nbin(nbin * units::none) {}
+        m_nbin(dims.volume() * units::none) {}
 
   [[nodiscard]] Dimensions dims() const noexcept { return m_dims; }
   [[nodiscard]] const Variable &offsets() const noexcept { return m_offsets; }
@@ -58,7 +58,10 @@ std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable indices,
   Variable fine_indices;
   Variable n_coarse_bin;
   if (!std::is_same_v<Builder, TwoStageBuilder> &&
-      builder.nbin().dims().empty() && builder.offsets().dims().empty()) {
+      builder.nbin().dims().empty() &&
+      builder.nbin().template value<scipp::index>() > 0 &&
+      builder.offsets().dims().empty() &&
+      builder.offsets().template value<scipp::index>() == 0) {
     fprintf(stderr, "simple.\n");
     const auto chunk_size =
         makeVariable<scipp::index>(Values{1024}, units::none);
@@ -72,12 +75,17 @@ std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable indices,
                        ? builder.nbin()
                        : floor_divide(builder.nbin(), chunk_size) +
                              makeVariable<scipp::index>(Values{1}, units::none);
+    fprintf(stderr, "n_coarse_bin: %s\n", to_string(n_coarse_bin).c_str());
     output_bin_sizes =
         bin_detail::bin_sizes(indices, builder.offsets(), n_coarse_bin);
   } else {
     output_bin_sizes =
         bin_detail::bin_sizes(indices, builder.offsets(), builder.nbin());
   }
+  fprintf(stderr, "builder.offsets: %s\n",
+          to_string(builder.offsets()).c_str());
+  fprintf(stderr, "output_bin_sizes.dims: %s\n",
+          to_string(output_bin_sizes.dims()).c_str());
   auto offsets = copy(output_bin_sizes);
   fill_zeros(offsets);
   // Not using cumsum along *all* dims, since some outer dims may be left
@@ -160,7 +168,7 @@ std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable indices,
     fine_indices = make_bins_no_validate(zip(end2 - bin_sizes2, end2),
                                          buffer_dim, fine_indices);
     Dimensions fine_dims(Dim::InternalStructureColumn, 1024);
-    TwoStageBuilder builder2(fine_dims, 1024);
+    TwoStageBuilder builder2(fine_dims);
     const auto &[buffer, sizes] =
         setup_and_apply<T>(tmp, fine_indices, builder2);
     fprintf(stderr, "buffer: %s\n", to_string(buffer).c_str());
@@ -168,9 +176,12 @@ std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable indices,
     return std::tuple{
         buffer,
         // fold(squeeze(sizes, std::vector<Dim>{Dim::InternalStructureRow})
-        fold(flatten(sizes, sizes.dims().labels(), Dim::InternalSort)
-                 .slice({Dim::InternalSort, 0, output_dims.volume()}),
-             Dim::InternalSort, output_dims)};
+        fold(flatten(sizes,
+                     std::vector<Dim>{Dim::InternalStructureRow,
+                                      Dim::InternalStructureColumn},
+                     Dim::InternalSort)
+                 .slice({Dim::InternalSort, 0, dims.volume()}),
+             Dim::InternalSort, dims)};
   } else {
     auto bin_sizes = makeVariable<scipp::index>(
         output_dims, units::none,
