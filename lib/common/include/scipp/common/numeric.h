@@ -38,6 +38,19 @@ template <class Range> bool islinspace(const Range &range) {
   }
 }
 
+template <class Range> bool isarange(const Range &range) {
+  if (scipp::size(range) < 2)
+    return true;
+  if (range.back() <= range.front())
+    return false;
+
+  using T = typename Range::value_type;
+  return std::adjacent_find(range.begin(), range.end(),
+                            [](const auto &a, const auto &b) {
+                              return std::abs(b - a) != 1;
+                            }) == range.end();
+}
+
 // Division like Python's __truediv__
 template <class T, class U> auto true_divide(const T &a, const U &b) {
   if constexpr (std::is_integral_v<T> && std::is_integral_v<U>)

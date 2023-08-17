@@ -6,9 +6,11 @@
 #include "scipp/core/element/map_to_bins.h"
 
 #include "scipp/variable/cumulative.h"
+#include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
+#include "scipp/variable/util.h"
 
 #include "bin_detail.h"
 
@@ -61,6 +63,19 @@ Variable groups_to_map(const Variable &var, const Dim dim) {
 
 void update_indices_by_grouping(Variable &indices, const Variable &key,
                                 const Variable &groups) {
+  if ((groups.dtype() == dtype<int32_t> ||
+       groups.dtype() == dtype<int64_t>)&&isarange(groups, groups.dim())
+          .value<bool>()) {
+    fprintf(stderr, "nice\n");
+    const auto ngroup =
+        makeVariable<scipp::index>(Values{groups.dims().volume()}, units::none);
+    const auto offset = min(groups);
+    variable::transform_in_place(indices, key, ngroup, offset,
+                                 core::element::update_indices_by_grouping2,
+                                 "scipp.bin.update_indices_by_grouping2");
+    return;
+  }
+
   const auto dim = groups.dims().inner();
   const auto map = (indices.dtype() == dtype<int64_t>)
                        ? groups_to_map<int64_t>(groups, dim)

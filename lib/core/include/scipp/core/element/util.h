@@ -97,6 +97,12 @@ constexpr auto islinspace =
                [](const units::Unit &) { return units::one; },
                [](const auto &range) { return numeric::islinspace(range); }};
 
+constexpr auto isarange =
+    overloaded{arg_list<scipp::span<const int64_t>, scipp::span<const int32_t>>,
+               transform_flags::expect_no_variance_arg<0>,
+               [](const units::Unit &) { return units::one; },
+               [](const auto &range) { return numeric::isarange(range); }};
+
 constexpr auto zip =
     overloaded{arg_list<int64_t>, transform_flags::expect_no_variance_arg<0>,
                transform_flags::expect_no_variance_arg<1>,
