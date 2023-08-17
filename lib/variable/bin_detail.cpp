@@ -90,4 +90,18 @@ void subbin_sizes_add_intersection(Variable &a, const Variable &b) {
                      "scipp.bin.subbin_sizes_add_intersection");
 }
 
+Variable mod1024(const Variable &var) {
+  return transform<int32_t>(var,
+                            overloaded{[](const units::Unit &u) { return u; },
+                                       [](const auto &x) { return x % 1024; }},
+                            "scipp.bin.mod1024");
+}
+
+void floor_divide_1024_inplace(Variable &var) {
+  return transform_in_place<int32_t>(
+      var,
+      overloaded{[](units::Unit &u) { return; }, [](auto &x) { x /= 1024; }},
+      "scipp.bin.floor_divide_inplace_1024");
+}
+
 } // namespace scipp::variable::bin_detail

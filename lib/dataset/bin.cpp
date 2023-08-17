@@ -5,6 +5,7 @@
 #include <numeric>
 #include <set>
 
+#include "scipp/variable/astype.h"
 #include "scipp/variable/bin_detail.h"
 #include "scipp/variable/bin_util.h"
 #include "scipp/variable/bins.h"
@@ -48,7 +49,7 @@ private:
 };
 
 template <class T, class Builder>
-std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable indices,
+std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable &indices,
                                         const Builder &builder) {
   const auto dims = builder.dims();
   // Setup offsets within output bins, for every input bin. If rebinning occurs
@@ -57,18 +58,24 @@ std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable indices,
   Variable output_bin_sizes;
   Variable fine_indices;
   Variable n_coarse_bin;
+  scipp::index chunk_size = 0;
   if (!std::is_same_v<Builder, TwoStageBuilder> &&
       builder.nbin().dims().empty() &&
-      builder.nbin().template value<scipp::index>() > 0 &&
+      builder.nbin().template value<scipp::index>() > 2 * 1024 &&
       builder.offsets().dims().empty() &&
       builder.offsets().template value<scipp::index>() == 0) {
-    const auto chunk_size =
-        makeVariable<scipp::index>(Values{1024}, units::none);
-    fine_indices = indices % chunk_size;
-    indices = floor_divide(indices, chunk_size);
+    chunk_size = builder.nbin().template value<scipp::index>() / 1024;
+    chunk_size = 1024;
+    const auto chunk =
+        astype(makeVariable<scipp::index>(Values{chunk_size}, units::none),
+               indices.bin_buffer<Variable>().dtype());
+    // fine_indices = indices % chunk;
+    // indices = floor_divide(indices, chunk);
+    fine_indices = mod1024(indices);
+    floor_divide_1024_inplace(indices);
     n_coarse_bin = dims.volume() == 0
                        ? builder.nbin()
-                       : floor_divide(builder.nbin(), chunk_size) +
+                       : floor_divide(builder.nbin(), chunk) +
                              makeVariable<scipp::index>(Values{1}, units::none);
     output_bin_sizes =
         bin_detail::bin_sizes(indices, builder.offsets(), n_coarse_bin);
@@ -136,6 +143,7 @@ std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable indices,
   auto output_dims = merge(output_bin_sizes.dims(), dims);
   if (fine_indices.is_valid()) {
     fine_indices = do_bin(fine_indices);
+    indices = Variable();
     Dimensions coarse_dims(Dim::InternalStructureRow,
                            n_coarse_bin.value<scipp::index>());
     auto output_dims2 = merge(output_bin_sizes.dims(), coarse_dims);
@@ -151,7 +159,7 @@ std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable indices,
                                            buffer_dim, out_buffer);
     fine_indices = make_bins_no_validate(zip(end2 - bin_sizes2, end2),
                                          buffer_dim, fine_indices);
-    Dimensions fine_dims(Dim::InternalStructureColumn, 1024);
+    Dimensions fine_dims(Dim::InternalStructureColumn, chunk_size);
     TwoStageBuilder builder2(fine_dims);
     const auto &[buffer, sizes] =
         setup_and_apply<T>(tmp, fine_indices, builder2);
@@ -581,7 +589,7 @@ DataArray bin(const DataArray &array, const std::vector<Variable> &edges,
             : makeVariable<int32_t>(data.dims(), units::none);
     auto builder = axis_actions(data, meta, edges, groups, erase);
     builder.build(target_bins_buffer, meta);
-    const auto target_bins = make_bins_no_validate(
+    auto target_bins = make_bins_no_validate(
         tmp.bin_indices(), data.dims().inner(), target_bins_buffer);
     return add_metadata(
         setup_and_apply<DataArray>(drop_grouped_event_coords(tmp, groups),
