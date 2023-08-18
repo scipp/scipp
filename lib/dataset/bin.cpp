@@ -55,9 +55,9 @@ std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable &indices,
   // Setup offsets within output bins, for every input bin. If rebinning occurs
   // along a dimension each output bin sees contributions from all input bins
   // along that dim.
+  Dimensions new_output_dims;
   Variable output_bin_sizes;
   Variable fine_indices;
-  Variable n_coarse_bin;
   scipp::index chunk_size = 0;
   if (!std::is_same_v<Builder, TwoStageBuilder> &&
       builder.nbin().dims().empty() &&
@@ -73,13 +73,15 @@ std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable &indices,
     fine_indices = indices;
     indices = floor_divide(indices, chunk);
     fine_indices %= chunk;
-    n_coarse_bin = dims.volume() == 0
-                       ? builder.nbin()
-                       : floor_divide(builder.nbin(), chunk) +
-                             makeVariable<scipp::index>(Values{1}, units::none);
+    const Variable n_coarse_bin =
+        floor_divide(builder.nbin(), chunk) +
+        makeVariable<scipp::index>(Values{1}, units::none);
+    new_output_dims =
+        Dimensions(Dim::InternalBinCoarse, n_coarse_bin.value<scipp::index>());
     output_bin_sizes =
         bin_detail::bin_sizes(indices, builder.offsets(), n_coarse_bin);
   } else {
+    new_output_dims = dims;
     output_bin_sizes =
         bin_detail::bin_sizes(indices, builder.offsets(), builder.nbin());
   }
@@ -137,24 +139,19 @@ std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable &indices,
 
   // Up until here the output was viewed with same bin index ranges as input.
   // Now switch to desired final bin indices.
-  auto output_dims = merge(output_bin_sizes.dims(), dims);
+  auto output_dims = merge(output_bin_sizes.dims(), new_output_dims);
+  auto bin_sizes = makeVariable<scipp::index>(
+      output_dims, units::none,
+      Values(flatten_subbin_sizes(output_bin_sizes, new_output_dims.volume())));
   if (fine_indices.is_valid()) {
     fine_indices = do_bin(fine_indices);
     indices = Variable();
-    Dimensions coarse_dims(Dim::InternalBinCoarse,
-                           n_coarse_bin.value<scipp::index>());
-    auto output_dims2 = merge(output_bin_sizes.dims(), coarse_dims);
-    auto bin_sizes2 = makeVariable<scipp::index>(
-        output_dims2, units::none,
-        Values(flatten_subbin_sizes(output_bin_sizes,
-                                    n_coarse_bin.value<scipp::index>())));
-
-    const auto end2 = cumsum(bin_sizes2);
+    const auto end2 = cumsum(bin_sizes);
     const auto buffer_dim = out_buffer.dims().inner();
 
-    const auto tmp = make_bins_no_validate(zip(end2 - bin_sizes2, end2),
+    const auto tmp = make_bins_no_validate(zip(end2 - bin_sizes, end2),
                                            buffer_dim, out_buffer);
-    fine_indices = make_bins_no_validate(zip(end2 - bin_sizes2, end2),
+    fine_indices = make_bins_no_validate(zip(end2 - bin_sizes, end2),
                                          buffer_dim, fine_indices);
     Dimensions fine_dims(Dim::InternalBinFine, chunk_size);
     TwoStageBuilder builder2(fine_dims);
@@ -168,9 +165,6 @@ std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable &indices,
                                .slice({Dim::InternalSubbin, 0, dims.volume()}),
                            Dim::InternalSubbin, dims)};
   } else {
-    auto bin_sizes = makeVariable<scipp::index>(
-        output_dims, units::none,
-        Values(flatten_subbin_sizes(output_bin_sizes, dims.volume())));
     return std::tuple{std::move(out_buffer), std::move(bin_sizes)};
   }
 }
