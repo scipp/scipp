@@ -61,6 +61,7 @@ std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable &indices,
   scipp::index chunk_size = 0;
   if (!std::is_same_v<Builder, TwoStageBuilder> &&
       builder.nbin().dims().empty() &&
+      builder.nbin().template value<scipp::index>() == dims.volume() &&
       // empirically determined crossover point (approx.)
       builder.nbin().template value<scipp::index>() > 16 * 1024 &&
       builder.offsets().dims().empty() &&
