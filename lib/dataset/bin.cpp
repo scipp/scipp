@@ -48,6 +48,17 @@ private:
   Variable m_nbin;
 };
 
+template <class Builder> bool use_two_stage_remap(const Builder &bld) {
+  return std::is_same_v<Builder, TwoStageBuilder> &&
+         bld.nbin().dims().empty() &&
+         bld.nbin().template value<scipp::index>() == bld.dims().volume() &&
+         // empirically determined crossover point (approx.)
+         // builder.nbin().template value<scipp::index>() > 16 * 1024 &&
+         bld.nbin().template value<scipp::index>() > 0 &&
+         bld.offsets().dims().empty() &&
+         bld.offsets().template value<scipp::index>() == 0;
+}
+
 template <class T, class Builder>
 std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable &indices,
                                         const Builder &builder) {
@@ -59,26 +70,17 @@ std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable &indices,
   Variable output_bin_sizes;
   Variable fine_indices;
   scipp::index chunk_size = 0;
-  if (!std::is_same_v<Builder, TwoStageBuilder> &&
-      builder.nbin().dims().empty() &&
-      builder.nbin().template value<scipp::index>() == dims.volume() &&
-      // empirically determined crossover point (approx.)
-      // builder.nbin().template value<scipp::index>() > 16 * 1024 &&
-      builder.nbin().template value<scipp::index>() > 0 &&
-      builder.offsets().dims().empty() &&
-      builder.offsets().template value<scipp::index>() == 0) {
+  if (use_two_stage_remap(builder)) {
     chunk_size = floor(sqrt(builder.nbin().template value<scipp::index>()));
     const auto chunk = astype(scipp::index{chunk_size} * units::none,
                               indices.bin_buffer<Variable>().dtype());
     fine_indices = indices;
     indices = floor_divide(indices, chunk);
     fine_indices %= chunk;
-    const Variable n_coarse_bin =
-        floor_divide(builder.nbin(), chunk) + scipp::index{1} * units::none;
-    new_output_dims =
-        Dimensions(Dim::InternalBinCoarse, n_coarse_bin.value<scipp::index>());
-    output_bin_sizes =
-        bin_detail::bin_sizes(indices, builder.offsets(), n_coarse_bin);
+    const auto n_coarse_bin = dims.volume() / chunk_size + 1;
+    new_output_dims = Dimensions(Dim::InternalBinCoarse, n_coarse_bin);
+    output_bin_sizes = bin_detail::bin_sizes(indices, builder.offsets(),
+                                             n_coarse_bin * units::none);
   } else {
     new_output_dims = dims;
     output_bin_sizes =
