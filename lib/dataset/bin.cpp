@@ -59,6 +59,81 @@ template <class Builder> bool use_two_stage_remap(const Builder &bld) {
          bld.offsets().template value<scipp::index>() == 0;
 }
 
+class Mapper {
+public:
+  Mapper(const Dimensions &dims, const Variable &indices,
+         const Variable &output_bin_sizes)
+      : m_dims(dims), m_indices(indices), m_output_bin_sizes(output_bin_sizes) {
+    m_offsets = copy(output_bin_sizes);
+    fill_zeros(m_offsets);
+    // Not using cumsum along *all* dims, since some outer dims may be left
+    // untouched (no rebin).
+    std::vector<std::pair<Dim, scipp::index>> strategy;
+    for (const auto dim : m_indices.dims())
+      if (m_dims.contains(dim))
+        strategy.emplace_back(dim, m_indices.dims()[dim]);
+    // To avoid excessive memory consumption in intermediate results for
+    // `output_bin_sizes` (in the loop below, computing sums and cumsums) we
+    // need to ensure to handle the longest dimensions first,
+    std::sort(strategy.begin(), strategy.end(),
+              [](auto &&a, auto &&b) { return a.second > b.second; });
+    for (const auto &item : strategy) {
+      const auto dim = item.first;
+      subbin_sizes_add_intersection(
+          m_offsets, subbin_sizes_cumsum_exclusive(m_output_bin_sizes, dim));
+      m_output_bin_sizes = sum(m_output_bin_sizes, dim);
+    }
+    // cumsum with bin dimension is last, since this corresponds to different
+    // output bins, whereas the cumsum above handled different subbins of same
+    // output bin, i.e., contributions of different input bins to some output
+    // bin.
+    subbin_sizes_add_intersection(
+        m_offsets, cumsum_exclusive_subbin_sizes(m_output_bin_sizes));
+    const auto filtered_input_bin_size = sum_subbin_sizes(m_output_bin_sizes);
+    auto end = cumsum(filtered_input_bin_size);
+    m_total_size = end.dims().volume() > 0
+                       ? end.values<scipp::index>().as_span().back()
+                       : 0;
+    end = broadcast(end,
+                    m_indices.dims()); // required for some cases of rebinning
+    m_filtered_input_bin_ranges = zip(end - filtered_input_bin_size, end);
+  }
+
+  template <class T> T do_bin(const Variable &data) {
+    const auto _do_bin = [&](const Variable &var) {
+      if (!is_bins(var))
+        return copy(var);
+      const auto &[input_indices, dim, content] = var.constituents<Variable>();
+      static_cast<void>(input_indices);
+      auto out = resize_default_init(content, dim, m_total_size);
+      auto out_subspans = subspan_view(out, dim, m_filtered_input_bin_ranges);
+      map_to_bins(out_subspans, as_subspan_view(var), m_offsets,
+                  as_subspan_view(std::as_const(m_indices)));
+      return out;
+    };
+    if constexpr (std::is_same_v<T, Variable>)
+      return _do_bin(data);
+    else
+      return dataset::transform(bins_view<T>(data), _do_bin);
+  }
+
+  Variable bin_sizes(const Dimensions &new_output_dims) const {
+    auto output_dims = merge(m_output_bin_sizes.dims(), new_output_dims);
+    return makeVariable<scipp::index>(
+        output_dims, units::none,
+        Values(flatten_subbin_sizes(m_output_bin_sizes,
+                                    new_output_dims.volume())));
+  }
+
+private:
+  Dimensions m_dims;
+  Variable m_indices;
+  Variable m_output_bin_sizes;
+  Variable m_offsets;
+  Variable m_filtered_input_bin_ranges;
+  scipp::index m_total_size;
+};
+
 template <class T, class Builder>
 std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable &indices,
                                         const Builder &builder) {
@@ -86,66 +161,16 @@ std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable &indices,
     output_bin_sizes =
         bin_detail::bin_sizes(indices, builder.offsets(), builder.nbin());
   }
-  auto offsets = copy(output_bin_sizes);
-  fill_zeros(offsets);
-  // Not using cumsum along *all* dims, since some outer dims may be left
-  // untouched (no rebin).
-  std::vector<std::pair<Dim, scipp::index>> strategy;
-  for (const auto dim : data.dims())
-    if (dims.contains(dim))
-      strategy.emplace_back(dim, data.dims()[dim]);
-  // To avoid excessive memory consumption in intermediate results for
-  // `output_bin_sizes` (in the loop below, computing sums and cumsums) we need
-  // to ensure to handle the longest dimensions first,
-  std::sort(strategy.begin(), strategy.end(),
-            [](auto &&a, auto &&b) { return a.second > b.second; });
-  for (const auto &item : strategy) {
-    const auto dim = item.first;
-    subbin_sizes_add_intersection(
-        offsets, subbin_sizes_cumsum_exclusive(output_bin_sizes, dim));
-    output_bin_sizes = sum(output_bin_sizes, dim);
-  }
-  // cumsum with bin dimension is last, since this corresponds to different
-  // output bins, whereas the cumsum above handled different subbins of same
-  // output bin, i.e., contributions of different input bins to some output bin.
-  subbin_sizes_add_intersection(
-      offsets, cumsum_exclusive_subbin_sizes(output_bin_sizes));
-  Variable filtered_input_bin_size = sum_subbin_sizes(output_bin_sizes);
-  auto end = cumsum(filtered_input_bin_size);
-  const auto total_size =
-      end.dims().volume() > 0 ? end.values<scipp::index>().as_span().back() : 0;
-  end = broadcast(end, data.dims()); // required for some cases of rebinning
-  const auto filtered_input_bin_ranges =
-      zip(end - filtered_input_bin_size, end);
+  Mapper mapper(dims, indices, output_bin_sizes);
 
   // Perform actual binning step for data, all coords, all masks, ...
-  const auto do_bin = [&](const auto &var) {
-    if (!is_bins(var))
-      return copy(var);
-    const auto &[input_indices, buffer_dim, in_buffer] =
-        var.template constituents<Variable>();
-    static_cast<void>(input_indices);
-    auto out = resize_default_init(in_buffer, buffer_dim, total_size);
-    auto out_subspans =
-        subspan_view(out, buffer_dim, filtered_input_bin_ranges);
-    map_to_bins(out_subspans, as_subspan_view(var), offsets,
-                as_subspan_view(std::as_const(indices)));
-    return out;
-  };
-  T out_buffer;
-  if constexpr (std::is_same_v<T, Variable>)
-    out_buffer = do_bin(data);
-  else
-    out_buffer = dataset::transform(bins_view<T>(data), do_bin);
+  T out_buffer = mapper.do_bin<T>(data);
 
   // Up until here the output was viewed with same bin index ranges as input.
   // Now switch to desired final bin indices.
-  auto output_dims = merge(output_bin_sizes.dims(), new_output_dims);
-  auto bin_sizes = makeVariable<scipp::index>(
-      output_dims, units::none,
-      Values(flatten_subbin_sizes(output_bin_sizes, new_output_dims.volume())));
+  const auto bin_sizes = mapper.bin_sizes(new_output_dims);
   if (fine_indices.is_valid()) {
-    fine_indices = do_bin(fine_indices);
+    fine_indices = mapper.do_bin<Variable>(fine_indices);
     indices = Variable(); // used by do_bin, can free memory now
     const auto end_ = cumsum(bin_sizes);
     const auto indices_ = zip(end_ - bin_sizes, end_);
