@@ -5,23 +5,23 @@
 #
 #    pip-compile-multi
 #
-cfgv==3.3.1
+cfgv==3.4.0
     # via pre-commit
-distlib==0.3.6
+distlib==0.3.7
     # via virtualenv
-filelock==3.12.0
+filelock==3.12.2
     # via virtualenv
-identify==2.5.24
+identify==2.5.26
     # via pre-commit
 nodeenv==1.8.0
     # via pre-commit
-platformdirs==3.5.1
+platformdirs==3.10.0
     # via virtualenv
-pre-commit==3.3.2
-    # via -r requirements/static.in
-pyyaml==6.0
+pre-commit==3.3.3
+    # via -r static.in
+pyyaml==6.0.1
     # via pre-commit
-virtualenv==20.23.0
+virtualenv==20.24.3
     # via pre-commit
 
 # The following packages are considered to be unsafe in a requirements file:
