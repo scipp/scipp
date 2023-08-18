@@ -63,14 +63,17 @@ class Mapper {
 public:
   Mapper(const Dimensions &dims, const Variable &indices,
          const Variable &output_bin_sizes)
-      : m_dims(dims), m_indices(indices), m_output_bin_sizes(output_bin_sizes) {
-    m_offsets = copy(output_bin_sizes);
+      : m_indices(indices), m_output_bin_sizes(output_bin_sizes) {
+    // Setup offsets within output bins, for every input bin. If rebinning
+    // occurs along a dimension each output bin sees contributions from all
+    // input bins along that dim.
+    m_offsets = copy(m_output_bin_sizes);
     fill_zeros(m_offsets);
     // Not using cumsum along *all* dims, since some outer dims may be left
     // untouched (no rebin).
     std::vector<std::pair<Dim, scipp::index>> strategy;
     for (const auto dim : m_indices.dims())
-      if (m_dims.contains(dim))
+      if (dims.contains(dim))
         strategy.emplace_back(dim, m_indices.dims()[dim]);
     // To avoid excessive memory consumption in intermediate results for
     // `output_bin_sizes` (in the loop below, computing sums and cumsums) we
@@ -118,6 +121,8 @@ public:
   }
 
   Variable bin_sizes(const Dimensions &new_output_dims) const {
+    // Up until here the output was viewed with same bin index ranges as input.
+    // Now setup the desired final bin indices.
     auto output_dims = merge(m_output_bin_sizes.dims(), new_output_dims);
     return makeVariable<scipp::index>(
         output_dims, units::none,
@@ -126,71 +131,65 @@ public:
   }
 
 private:
-  Dimensions m_dims;
   Variable m_indices;
   Variable m_output_bin_sizes;
   Variable m_offsets;
   Variable m_filtered_input_bin_ranges;
   scipp::index m_total_size;
 };
+template <class T, class Builder>
+std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable &indices,
+                                        const Builder &builder);
+
+template <class T, class Builder>
+std::tuple<T, Variable> setup_and_apply_two_stage(const Variable &data,
+                                                  Variable &indices,
+                                                  const Builder &builder) {
+  const auto dims = builder.dims();
+  scipp::index chunk_size =
+      floor(sqrt(builder.nbin().template value<scipp::index>()));
+  const auto chunk = astype(scipp::index{chunk_size} * units::none,
+                            indices.bin_buffer<Variable>().dtype());
+  Variable fine_indices = indices;
+  indices = floor_divide(indices, chunk);
+  fine_indices %= chunk;
+  const auto n_coarse_bin = dims.volume() / chunk_size + 1;
+  Dimensions new_output_dims(Dim::InternalBinCoarse, n_coarse_bin);
+  Variable output_bin_sizes = bin_detail::bin_sizes(indices, builder.offsets(),
+                                                    n_coarse_bin * units::none);
+  Mapper mapper(dims, indices, output_bin_sizes);
+  T out_buffer = mapper.do_bin<T>(data);
+  const auto bin_sizes = mapper.bin_sizes(new_output_dims);
+  fine_indices = mapper.do_bin<Variable>(fine_indices);
+  const auto end_ = cumsum(bin_sizes);
+  const auto indices_ = zip(end_ - bin_sizes, end_);
+  const auto buffer_dim = out_buffer.dims().inner();
+  const auto tmp = make_bins_no_validate(indices_, buffer_dim, out_buffer);
+  fine_indices = make_bins_no_validate(indices_, buffer_dim, fine_indices);
+  Dimensions fine_dims(Dim::InternalBinFine, chunk_size);
+  TwoStageBuilder builder2(fine_dims);
+  const auto &[buffer, sizes] = setup_and_apply<T>(tmp, fine_indices, builder2);
+  return std::tuple{buffer,
+                    fold(flatten(sizes,
+                                 std::vector<Dim>{Dim::InternalBinCoarse,
+                                                  Dim::InternalBinFine},
+                                 Dim::InternalSubbin)
+                             .slice({Dim::InternalSubbin, 0, dims.volume()}),
+                         Dim::InternalSubbin, dims)};
+}
 
 template <class T, class Builder>
 std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable &indices,
                                         const Builder &builder) {
-  const auto dims = builder.dims();
-  // Setup offsets within output bins, for every input bin. If rebinning occurs
-  // along a dimension each output bin sees contributions from all input bins
-  // along that dim.
-  Dimensions new_output_dims;
-  Variable output_bin_sizes;
-  Variable fine_indices;
-  scipp::index chunk_size = 0;
   if (use_two_stage_remap(builder)) {
-    chunk_size = floor(sqrt(builder.nbin().template value<scipp::index>()));
-    const auto chunk = astype(scipp::index{chunk_size} * units::none,
-                              indices.bin_buffer<Variable>().dtype());
-    fine_indices = indices;
-    indices = floor_divide(indices, chunk);
-    fine_indices %= chunk;
-    const auto n_coarse_bin = dims.volume() / chunk_size + 1;
-    new_output_dims = Dimensions(Dim::InternalBinCoarse, n_coarse_bin);
-    output_bin_sizes = bin_detail::bin_sizes(indices, builder.offsets(),
-                                             n_coarse_bin * units::none);
-  } else {
-    new_output_dims = dims;
-    output_bin_sizes =
-        bin_detail::bin_sizes(indices, builder.offsets(), builder.nbin());
+    return setup_and_apply_two_stage<T>(data, indices, builder);
   }
+  const auto dims = builder.dims();
+  const auto output_bin_sizes =
+      bin_detail::bin_sizes(indices, builder.offsets(), builder.nbin());
   Mapper mapper(dims, indices, output_bin_sizes);
-
   // Perform actual binning step for data, all coords, all masks, ...
-  T out_buffer = mapper.do_bin<T>(data);
-
-  // Up until here the output was viewed with same bin index ranges as input.
-  // Now switch to desired final bin indices.
-  const auto bin_sizes = mapper.bin_sizes(new_output_dims);
-  if (fine_indices.is_valid()) {
-    fine_indices = mapper.do_bin<Variable>(fine_indices);
-    indices = Variable(); // used by do_bin, can free memory now
-    const auto end_ = cumsum(bin_sizes);
-    const auto indices_ = zip(end_ - bin_sizes, end_);
-    const auto buffer_dim = out_buffer.dims().inner();
-    const auto tmp = make_bins_no_validate(indices_, buffer_dim, out_buffer);
-    fine_indices = make_bins_no_validate(indices_, buffer_dim, fine_indices);
-    Dimensions fine_dims(Dim::InternalBinFine, chunk_size);
-    TwoStageBuilder builder2(fine_dims);
-    const auto &[buffer, sizes] =
-        setup_and_apply<T>(tmp, fine_indices, builder2);
-    return std::tuple{buffer,
-                      fold(flatten(sizes,
-                                   std::vector<Dim>{Dim::InternalBinCoarse,
-                                                    Dim::InternalBinFine},
-                                   Dim::InternalSubbin)
-                               .slice({Dim::InternalSubbin, 0, dims.volume()}),
-                           Dim::InternalSubbin, dims)};
-  } else {
-    return std::tuple{std::move(out_buffer), std::move(bin_sizes)};
-  }
+  return {mapper.do_bin<T>(data), mapper.bin_sizes(dims)};
 }
 
 template <class T, class Mapping>
