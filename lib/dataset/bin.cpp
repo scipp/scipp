@@ -63,19 +63,18 @@ std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable &indices,
       builder.nbin().dims().empty() &&
       builder.nbin().template value<scipp::index>() == dims.volume() &&
       // empirically determined crossover point (approx.)
-      builder.nbin().template value<scipp::index>() > 16 * 1024 &&
+      // builder.nbin().template value<scipp::index>() > 16 * 1024 &&
+      builder.nbin().template value<scipp::index>() > 0 &&
       builder.offsets().dims().empty() &&
       builder.offsets().template value<scipp::index>() == 0) {
     chunk_size = floor(sqrt(builder.nbin().template value<scipp::index>()));
-    const auto chunk =
-        astype(makeVariable<scipp::index>(Values{chunk_size}, units::none),
-               indices.bin_buffer<Variable>().dtype());
+    const auto chunk = astype(scipp::index{chunk_size} * units::none,
+                              indices.bin_buffer<Variable>().dtype());
     fine_indices = indices;
     indices = floor_divide(indices, chunk);
     fine_indices %= chunk;
     const Variable n_coarse_bin =
-        floor_divide(builder.nbin(), chunk) +
-        makeVariable<scipp::index>(Values{1}, units::none);
+        floor_divide(builder.nbin(), chunk) + scipp::index{1} * units::none;
     new_output_dims =
         Dimensions(Dim::InternalBinCoarse, n_coarse_bin.value<scipp::index>());
     output_bin_sizes =
@@ -145,14 +144,12 @@ std::tuple<T, Variable> setup_and_apply(const Variable &data, Variable &indices,
       Values(flatten_subbin_sizes(output_bin_sizes, new_output_dims.volume())));
   if (fine_indices.is_valid()) {
     fine_indices = do_bin(fine_indices);
-    indices = Variable();
-    const auto end2 = cumsum(bin_sizes);
+    indices = Variable(); // used by do_bin, can free memory now
+    const auto end_ = cumsum(bin_sizes);
+    const auto indices_ = zip(end_ - bin_sizes, end_);
     const auto buffer_dim = out_buffer.dims().inner();
-
-    const auto tmp = make_bins_no_validate(zip(end2 - bin_sizes, end2),
-                                           buffer_dim, out_buffer);
-    fine_indices = make_bins_no_validate(zip(end2 - bin_sizes, end2),
-                                         buffer_dim, fine_indices);
+    const auto tmp = make_bins_no_validate(indices_, buffer_dim, out_buffer);
+    fine_indices = make_bins_no_validate(indices_, buffer_dim, fine_indices);
     Dimensions fine_dims(Dim::InternalBinFine, chunk_size);
     TwoStageBuilder builder2(fine_dims);
     const auto &[buffer, sizes] =
