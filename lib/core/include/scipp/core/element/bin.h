@@ -141,21 +141,21 @@ static constexpr auto update_indices_by_grouping = overloaded{
     }};
 
 template <class Index, class Coord, class Edges = Coord>
-using update_indices_by_grouping_arg2 =
-    std::tuple<Index, Coord, scipp::index, Coord>;
+using update_indices_by_grouping_contiguous_arg =
+    std::tuple<Index, Coord, scipp::index, Edges>;
 
-static constexpr auto update_indices_by_grouping2 = overloaded{
+static constexpr auto update_indices_by_grouping_contiguous = overloaded{
     element::arg_list<
-        update_indices_by_grouping_arg2<int64_t, int64_t>,
-        update_indices_by_grouping_arg2<int32_t, int64_t>,
+        update_indices_by_grouping_contiguous_arg<int64_t, int64_t>,
+        update_indices_by_grouping_contiguous_arg<int32_t, int64_t>,
         // Given int32 target groups, select from int64. Note that
         // we do not support the reverse for now, since the
         // `groups.find(x)` below would then have to cast to a
         // lower precision, i.e., we would need special handling.
-        update_indices_by_grouping_arg2<int64_t, int64_t, int32_t>,
-        update_indices_by_grouping_arg2<int32_t, int64_t, int32_t>,
-        update_indices_by_grouping_arg2<int64_t, int32_t>,
-        update_indices_by_grouping_arg2<int32_t, int32_t>>,
+        update_indices_by_grouping_contiguous_arg<int64_t, int64_t, int32_t>,
+        update_indices_by_grouping_contiguous_arg<int32_t, int64_t, int32_t>,
+        update_indices_by_grouping_contiguous_arg<int64_t, int32_t>,
+        update_indices_by_grouping_contiguous_arg<int32_t, int32_t>>,
     [](units::Unit &indices, const units::Unit &coord,
        const units::Unit &ngroup, const units::Unit &offset) {
       expect::equals(coord, offset);

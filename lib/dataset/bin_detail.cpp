@@ -66,13 +66,18 @@ void update_indices_by_grouping(Variable &indices, const Variable &key,
   if ((groups.dtype() == dtype<int32_t> ||
        groups.dtype() == dtype<int64_t>)&&groups.dims()
               .volume() != 0 &&
+      // We can avoid expensive lookups in std::unordered_map if the groups are
+      // contiguous, by simple subtraction of and offset. This is especially
+      // important when the number of target groups is large since the map
+      // lookup would result in cache misses.
       isarange(groups, groups.dim()).value<bool>()) {
     const auto ngroup =
         makeVariable<scipp::index>(Values{groups.dims().volume()}, units::none);
     const auto offset = groups.slice({groups.dim(), 0});
-    variable::transform_in_place(indices, key, ngroup, offset,
-                                 core::element::update_indices_by_grouping2,
-                                 "scipp.bin.update_indices_by_grouping2");
+    variable::transform_in_place(
+        indices, key, ngroup, offset,
+        core::element::update_indices_by_grouping_contiguous,
+        "scipp.bin.update_indices_by_grouping_contiguous");
     return;
   }
 
