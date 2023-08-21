@@ -189,16 +189,14 @@ std::unique_ptr<Mapper> make_mapper(const Variable &indices,
     auto indices_ = floor_divide(indices, chunk);
     fine_indices %= chunk;
     const auto n_coarse_bin = dims.volume() / chunk_size + 1;
+
     Variable output_bin_sizes = bin_detail::bin_sizes(
         indices_, builder.offsets(), n_coarse_bin * units::none);
-
     SingleStageMapper stage1_mapper(dims, indices_, output_bin_sizes);
 
-    fine_indices = stage1_mapper.do_bin<Variable>(fine_indices);
-
     Dimensions stage1_out_dims(Dim::InternalBinCoarse, n_coarse_bin);
-    const auto stage1_out_sizes = stage1_mapper.bin_sizes(stage1_out_dims);
-    fine_indices = bins_from_sizes(std::move(fine_indices), stage1_out_sizes);
+    fine_indices = bins_from_sizes(stage1_mapper.do_bin<Variable>(fine_indices),
+                                   stage1_mapper.bin_sizes(stage1_out_dims));
     Dimensions fine_dims(Dim::InternalBinFine, chunk_size);
     const auto fine_output_bin_sizes =
         bin_detail::bin_sizes(fine_indices, scipp::index{0} * units::none,
