@@ -86,8 +86,6 @@ public:
   }
 
   virtual Variable _do_bin(const Variable &var) const {
-    if (!is_bins(var))
-      return copy(var);
     const auto &[input_indices, dim, content] = var.constituents<Variable>();
     static_cast<void>(input_indices);
     auto out = resize_default_init(content, dim, m_total_size);
@@ -97,12 +95,13 @@ public:
     return out;
   }
   template <class T> T do_bin(const Variable &data) {
+    const auto maybe_bin = [this](const auto &var) {
+      return is_bins(var) ? _do_bin(var) : copy(var);
+    };
     if constexpr (std::is_same_v<T, Variable>)
-      return _do_bin(data);
+      return maybe_bin(data);
     else
-      return dataset::transform(
-          bins_view<T>(data),
-          [this](const Variable &var) { return _do_bin(var); });
+      return dataset::transform(bins_view<T>(data), maybe_bin);
   }
 
   virtual Variable bin_sizes(const Dimensions &new_output_dims) const {
@@ -146,10 +145,7 @@ public:
   Variable _do_bin(const Variable &var) const override {
     Variable out_buffer = Mapper::_do_bin(var);
     return m_stage2_mapper._do_bin(
-        out_buffer.dims().contains(m_buffer_dim)
-            ? make_bins_no_validate(m_stage1_out_indices, m_buffer_dim,
-                                    out_buffer)
-            : out_buffer);
+        make_bins_no_validate(m_stage1_out_indices, m_buffer_dim, out_buffer));
   }
 
   Variable bin_sizes(const Dimensions &dims) const override {
