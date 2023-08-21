@@ -31,26 +31,8 @@ namespace scipp::dataset {
 
 namespace {
 
-class TwoStageBuilder {
-public:
-  TwoStageBuilder(const scipp::index &chunk_size)
-      : m_dims(Dim::InternalBinFine, chunk_size),
-        m_offsets(makeVariable<scipp::index>(Values{0}, units::none)),
-        m_nbin(m_dims.volume() * units::none) {}
-
-  [[nodiscard]] Dimensions dims() const noexcept { return m_dims; }
-  [[nodiscard]] const Variable &offsets() const noexcept { return m_offsets; }
-  [[nodiscard]] const Variable &nbin() const noexcept { return m_nbin; }
-
-private:
-  Dimensions m_dims;
-  Variable m_offsets;
-  Variable m_nbin;
-};
-
 template <class Builder> bool use_two_stage_remap(const Builder &bld) {
-  return !std::is_same_v<Builder, TwoStageBuilder> &&
-         bld.nbin().dims().empty() &&
+  return bld.nbin().dims().empty() &&
          bld.nbin().template value<scipp::index>() == bld.dims().volume() &&
          // empirically determined crossover point (approx.)
          // builder.nbin().template value<scipp::index>() > 16 * 1024 &&
@@ -155,7 +137,6 @@ public:
     m_buffer_dim = fine_indices_.dims().inner();
     fine_indices_ = make_bins_no_validate(m_stage1_out_indices, m_buffer_dim,
                                           fine_indices_);
-
     m_stage2_mapper = Mapper(fine_dims, fine_indices, m_stage1_out_sizes);
   }
 
@@ -207,17 +188,6 @@ std::tuple<T, Variable> setup_and_apply_two_stage(const Variable &data,
                         fine_indices, n_coarse_bin);
 
   return std::tuple{mapper.do_bin<T>(data), mapper.bin_sizes(dims)};
-  /*
-  T out_buffer = mapper.do_bin<T>(data);
-  const auto &[buffer, sizes] = setup_and_apply<T>(tmp, fine_indices, builder2);
-  return std::tuple{buffer,
-                    fold(flatten(sizes,
-                                 std::vector<Dim>{Dim::InternalBinCoarse,
-                                                  Dim::InternalBinFine},
-                                 Dim::InternalSubbin)
-                             .slice({Dim::InternalSubbin, 0, dims.volume()}),
-                         Dim::InternalSubbin, dims)};
-                         */
 }
 
 template <class T, class Builder>
