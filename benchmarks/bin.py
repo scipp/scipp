@@ -40,6 +40,8 @@ class Bin1d:
     """
 
     params = (list(2 ** np.arange(0, 20)),)
+    # For full runs (too large for CI) use:
+    # params = (list(2 ** np.arange(0, 25)),)
     param_names = ['nbin']
     timeout = 300.0
 
@@ -49,3 +51,33 @@ class Bin1d:
 
     def time_bin_table(self, nbin):
         make_binned(self.table, edges=[self.x])
+
+
+class Group1d:
+    """
+    Benchmark sc.group, for 1d grouping.
+    """
+
+    nevent = [1_000, 1_000_000, 10_000_000, 100_000_000]
+    ngroup = list(2 ** np.arange(2, 20))
+    # For full runs (too large for CI) use:
+    # nevent = [1_000, 1_000_000, 10_000_000, 100_000_000]
+    # ngroup = list(2 ** np.arange(2, 25))
+    params = (nevent, ngroup)
+    param_names = ['nevent', 'ngroup']
+    timeout = 300.0
+
+    def setup(self, nevent, ngroup):
+        self.table = sc.data.table_xyz(nevent)
+        self.table.coords['group'] = (ngroup * self.table.coords['x']).to(dtype='int64')
+        del self.table.coords['x']
+        self.contiguous_groups = sc.arange('group', ngroup, unit='m')
+        self.groups = sc.arange('group', ngroup, unit='m')
+        self.groups.values[0] = 1
+        self.groups.values[1] = 0
+
+    def time_group_contiguous(self, nevent, ngroup):
+        self.table.group(self.contiguous_groups)
+
+    def time_group(self, nevent, ngroup):
+        self.table.group(self.groups)
