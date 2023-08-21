@@ -94,6 +94,7 @@ public:
                 as_subspan_view(std::as_const(m_indices)));
     return out;
   }
+
   template <class T> T do_bin(const Variable &data) {
     const auto maybe_bin = [this](const auto &var) {
       return is_bins(var) ? _do_bin(var) : copy(var);
@@ -166,37 +167,30 @@ private:
 
 template <class Builder>
 std::tuple<std::unique_ptr<Mapper>, Variable>
-setup_and_apply_two_stage(Variable indices, const Builder &builder) {
-  const auto dims = builder.dims();
-  scipp::index chunk_size =
-      floor(sqrt(builder.nbin().template value<scipp::index>()));
-  const auto chunk = astype(scipp::index{chunk_size} * units::none,
-                            indices.bin_buffer<Variable>().dtype());
-  Variable fine_indices = indices;
-  indices = floor_divide(indices, chunk);
-  fine_indices %= chunk;
-  const auto n_coarse_bin = dims.volume() / chunk_size + 1;
-  Variable output_bin_sizes = bin_detail::bin_sizes(indices, builder.offsets(),
-                                                    n_coarse_bin * units::none);
-  Dimensions fine_dims(Dim::InternalBinFine, chunk_size);
-  auto mapper = std::make_unique<TwoStageMapper>(
-      dims, indices, output_bin_sizes, fine_dims, fine_indices, n_coarse_bin);
-
-  auto bin_sizes = mapper->bin_sizes(dims);
-  return std::tuple{std::move(mapper), bin_sizes};
-}
-
-template <class Builder>
-std::tuple<std::unique_ptr<Mapper>, Variable>
 setup_and_apply(const Variable &indices, const Builder &builder) {
-  if (use_two_stage_remap(builder)) {
-    return setup_and_apply_two_stage(indices, builder);
-  }
+  std::unique_ptr<Mapper> mapper;
   const auto dims = builder.dims();
-  const auto output_bin_sizes =
-      bin_detail::bin_sizes(indices, builder.offsets(), builder.nbin());
-  auto mapper = std::make_unique<Mapper>(dims, indices, output_bin_sizes);
-  // Perform actual binning step for data, all coords, all masks, ...
+  if (use_two_stage_remap(builder)) {
+    scipp::index chunk_size =
+        floor(sqrt(builder.nbin().template value<scipp::index>()));
+    const auto chunk = astype(scipp::index{chunk_size} * units::none,
+                              indices.bin_buffer<Variable>().dtype());
+    Variable fine_indices = indices;
+    auto indices_ = floor_divide(indices, chunk);
+    fine_indices %= chunk;
+    const auto n_coarse_bin = dims.volume() / chunk_size + 1;
+    Variable output_bin_sizes = bin_detail::bin_sizes(
+        indices_, builder.offsets(), n_coarse_bin * units::none);
+    Dimensions fine_dims(Dim::InternalBinFine, chunk_size);
+    mapper =
+        std::make_unique<TwoStageMapper>(dims, indices_, output_bin_sizes,
+                                         fine_dims, fine_indices, n_coarse_bin);
+
+  } else {
+    const auto output_bin_sizes =
+        bin_detail::bin_sizes(indices, builder.offsets(), builder.nbin());
+    mapper = std::make_unique<Mapper>(dims, indices, output_bin_sizes);
+  }
   auto bin_sizes = mapper->bin_sizes(dims);
   return std::tuple{std::move(mapper), bin_sizes};
 }
