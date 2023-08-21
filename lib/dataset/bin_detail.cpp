@@ -67,9 +67,9 @@ void update_indices_by_grouping(Variable &indices, const Variable &key,
        groups.dtype() == dtype<int64_t>)&&groups.dims()
               .volume() != 0 &&
       // We can avoid expensive lookups in std::unordered_map if the groups are
-      // contiguous, by simple subtraction of and offset. This is especially
+      // contiguous, by simple subtraction of an offset. This is especially
       // important when the number of target groups is large since the map
-      // lookup would result in cache misses.
+      // lookup would result in frequent cache misses.
       isarange(groups, groups.dim()).value<bool>()) {
     const auto ngroup =
         makeVariable<scipp::index>(Values{groups.dims().volume()}, units::none);
