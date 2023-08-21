@@ -35,17 +35,31 @@ template <class Builder> bool use_two_stage_remap(const Builder &bld) {
   return bld.nbin().dims().empty() &&
          bld.nbin().template value<scipp::index>() == bld.dims().volume() &&
          // empirically determined crossover point (approx.)
-         // builder.nbin().template value<scipp::index>() > 16 * 1024 &&
-         bld.nbin().template value<scipp::index>() > 0 &&
+         bld.nbin().template value<scipp::index>() > 16 * 1024 &&
          bld.offsets().dims().empty() &&
          bld.offsets().template value<scipp::index>() == 0;
 }
-
 class Mapper {
 public:
-  Mapper() = default;
-  Mapper(const Dimensions &dims, const Variable &indices,
-         const Variable &output_bin_sizes)
+  template <class T> T do_bin(const Variable &data) {
+    const auto maybe_bin = [this](const auto &var) {
+      return is_bins(var) ? _do_bin(var) : copy(var);
+    };
+    if constexpr (std::is_same_v<T, Variable>)
+      return maybe_bin(data);
+    else
+      return dataset::transform(bins_view<T>(data), maybe_bin);
+  }
+
+  virtual Variable bin_sizes(
+      const std::optional<Dimensions> &dims_override = std::nullopt) const = 0;
+  virtual Variable _do_bin(const Variable &var) const = 0;
+};
+
+class SingleStageMapper : public Mapper {
+public:
+  SingleStageMapper(const Dimensions &dims, const Variable &indices,
+                    const Variable &output_bin_sizes)
       : m_dims(dims), m_indices(indices), m_output_bin_sizes(output_bin_sizes) {
     // Setup offsets within output bins, for every input bin. If rebinning
     // occurs along a dimension each output bin sees contributions from all
@@ -85,7 +99,7 @@ public:
     m_filtered_input_bin_ranges = zip(end - filtered_input_bin_size, end);
   }
 
-  virtual Variable _do_bin(const Variable &var) const {
+  Variable _do_bin(const Variable &var) const override {
     const auto &[input_indices, dim, content] = var.constituents<Variable>();
     static_cast<void>(input_indices);
     auto out = resize_default_init(content, dim, m_total_size);
@@ -95,18 +109,8 @@ public:
     return out;
   }
 
-  template <class T> T do_bin(const Variable &data) {
-    const auto maybe_bin = [this](const auto &var) {
-      return is_bins(var) ? _do_bin(var) : copy(var);
-    };
-    if constexpr (std::is_same_v<T, Variable>)
-      return maybe_bin(data);
-    else
-      return dataset::transform(bins_view<T>(data), maybe_bin);
-  }
-
-  virtual Variable bin_sizes(
-      const std::optional<Dimensions> &dims_override = std::nullopt) const {
+  Variable bin_sizes(const std::optional<Dimensions> &dims_override =
+                         std::nullopt) const override {
     // Up until here the output was viewed with same bin index ranges as input.
     // Now setup the desired final bin indices.
     const auto dims = dims_override.value_or(m_dims);
@@ -116,11 +120,10 @@ public:
         Values(flatten_subbin_sizes(m_output_bin_sizes, dims.volume())));
   }
 
-protected:
   Dimensions m_dims;
+  Variable m_indices;
 
 private:
-  Variable m_indices;
   Variable m_output_bin_sizes;
   Variable m_offsets;
   Variable m_filtered_input_bin_ranges;
@@ -129,38 +132,27 @@ private:
 
 class TwoStageMapper : public Mapper {
 public:
-  TwoStageMapper(const Dimensions &dims, const Variable &indices,
-                 const Variable &output_bin_sizes, const Dimensions &fine_dims,
-                 const Variable &fine_indices, const scipp::index n_coarse_bin)
-      : Mapper(dims, indices, output_bin_sizes), m_fine_dims(fine_dims) {
-    Variable fine_indices_ = Mapper::_do_bin(fine_indices);
-    Dimensions stage1_out_dims(Dim::InternalBinCoarse, n_coarse_bin);
-    const auto stage1_out_sizes = Mapper::bin_sizes(stage1_out_dims);
-    const auto end_ = cumsum(stage1_out_sizes);
-    m_stage1_out_indices = zip(end_ - stage1_out_sizes, end_);
-    fine_indices_ = make_bins_no_validate(
-        m_stage1_out_indices, fine_indices_.dims().inner(), fine_indices_);
-    const auto fine_output_bin_sizes =
-        bin_detail::bin_sizes(fine_indices_, scipp::index{0} * units::none,
-                              fine_dims.volume() * units::none);
-    m_stage2_mapper = Mapper(fine_dims, fine_indices_, fine_output_bin_sizes);
-  }
+  TwoStageMapper(SingleStageMapper &&stage1_mapper,
+                 SingleStageMapper &&stage2_mapper)
+      : m_stage1_mapper(std::move(stage1_mapper)),
+        m_stage2_mapper(std::move(stage2_mapper)) {}
 
   Variable _do_bin(const Variable &var) const override {
     // Note how by having the virtual call on the Variable level we avoid
     // making the temporary buffer for the whole content buffer (typically a
     // DataArray), but instead just for one of the content buffer's columns
     // at a time.
-    Variable out_buffer = Mapper::_do_bin(var);
-    return m_stage2_mapper._do_bin(make_bins_no_validate(
-        m_stage1_out_indices, out_buffer.dims().inner(), out_buffer));
+    Variable content = m_stage1_mapper._do_bin(var);
+    Variable indices = m_stage2_mapper.m_indices.bin_indices();
+    return m_stage2_mapper._do_bin(
+        make_bins_no_validate(indices, content.dims().inner(), content));
   }
 
   Variable bin_sizes(const std::optional<Dimensions> &dims_override =
                          std::nullopt) const override {
-    const auto dims = dims_override.value_or(m_dims);
+    const auto dims = dims_override.value_or(m_stage1_mapper.m_dims);
     return fold(
-        flatten(m_stage2_mapper.bin_sizes(m_fine_dims),
+        flatten(m_stage2_mapper.bin_sizes(),
                 std::vector<Dim>{Dim::InternalBinCoarse, Dim::InternalBinFine},
                 Dim::InternalSubbin)
             .slice({Dim::InternalSubbin, 0, dims.volume()}),
@@ -168,9 +160,8 @@ public:
   }
 
 private:
-  Mapper m_stage2_mapper;
-  Variable m_stage1_out_indices;
-  Dimensions m_fine_dims;
+  SingleStageMapper m_stage1_mapper;
+  SingleStageMapper m_stage2_mapper;
 };
 
 template <class Builder>
@@ -194,14 +185,28 @@ std::unique_ptr<Mapper> make_mapper(const Variable &indices,
     Variable output_bin_sizes = bin_detail::bin_sizes(
         indices_, builder.offsets(), n_coarse_bin * units::none);
     Dimensions fine_dims(Dim::InternalBinFine, chunk_size);
-    return std::make_unique<TwoStageMapper>(dims, indices_, output_bin_sizes,
-                                            fine_dims, fine_indices,
-                                            n_coarse_bin);
 
+    SingleStageMapper stage1_mapper(dims, indices_, output_bin_sizes);
+    Variable fine_indices_ = stage1_mapper.do_bin<Variable>(fine_indices);
+
+    Dimensions stage1_out_dims(Dim::InternalBinCoarse, n_coarse_bin);
+    const auto stage1_out_sizes = stage1_mapper.bin_sizes(stage1_out_dims);
+    const auto end_ = cumsum(stage1_out_sizes);
+    const auto stage1_out_indices = zip(end_ - stage1_out_sizes, end_);
+    fine_indices_ = make_bins_no_validate(
+        stage1_out_indices, fine_indices_.dims().inner(), fine_indices_);
+    const auto fine_output_bin_sizes =
+        bin_detail::bin_sizes(fine_indices_, scipp::index{0} * units::none,
+                              fine_dims.volume() * units::none);
+    SingleStageMapper stage2_mapper(fine_dims, fine_indices_,
+                                    fine_output_bin_sizes);
+
+    return std::make_unique<TwoStageMapper>(std::move(stage1_mapper),
+                                            std::move(stage2_mapper));
   } else {
     const auto output_bin_sizes =
         bin_detail::bin_sizes(indices, builder.offsets(), builder.nbin());
-    return std::make_unique<Mapper>(dims, indices, output_bin_sizes);
+    return std::make_unique<SingleStageMapper>(dims, indices, output_bin_sizes);
   }
 }
 
