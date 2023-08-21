@@ -128,28 +128,33 @@ public:
   TwoStageMapper(const Dimensions &dims, const Variable &indices,
                  const Variable &output_bin_sizes, const Dimensions &fine_dims,
                  const Variable &fine_indices, const scipp::index n_coarse_bin)
-      : Mapper(dims, indices, output_bin_sizes) {
-    Variable fine_indices_ = do_bin<Variable>(fine_indices);
+      : Mapper(dims, indices, output_bin_sizes), m_fine_dims(fine_dims) {
+    Variable fine_indices_ = Mapper::_do_bin(fine_indices);
     Dimensions new_output_dims(Dim::InternalBinCoarse, n_coarse_bin);
-    m_stage1_out_sizes = Mapper::bin_sizes(new_output_dims);
-    const auto end_ = cumsum(m_stage1_out_sizes);
-    m_stage1_out_indices = zip(end_ - m_stage1_out_sizes, end_);
+    const auto stage1_out_sizes = Mapper::bin_sizes(new_output_dims);
+    const auto end_ = cumsum(stage1_out_sizes);
+    m_stage1_out_indices = zip(end_ - stage1_out_sizes, end_);
     m_buffer_dim = fine_indices_.dims().inner();
     fine_indices_ = make_bins_no_validate(m_stage1_out_indices, m_buffer_dim,
                                           fine_indices_);
-    m_stage2_mapper = Mapper(fine_dims, fine_indices, m_stage1_out_sizes);
+    const auto fine_output_bin_sizes =
+        bin_detail::bin_sizes(fine_indices_, scipp::index{0} * units::none,
+                              fine_dims.volume() * units::none);
+    m_stage2_mapper = Mapper(fine_dims, fine_indices_, fine_output_bin_sizes);
   }
 
   Variable _do_bin(const Variable &var) const override {
-    Variable out_buffer = _do_bin(var);
-    const auto tmp =
-        make_bins_no_validate(m_stage1_out_indices, m_buffer_dim, out_buffer);
-    return m_stage2_mapper._do_bin(tmp);
+    Variable out_buffer = Mapper::_do_bin(var);
+    return m_stage2_mapper._do_bin(
+        out_buffer.dims().contains(m_buffer_dim)
+            ? make_bins_no_validate(m_stage1_out_indices, m_buffer_dim,
+                                    out_buffer)
+            : out_buffer);
   }
 
   Variable bin_sizes(const Dimensions &dims) const override {
     return fold(
-        flatten(m_stage1_out_sizes,
+        flatten(m_stage2_mapper.bin_sizes(m_fine_dims),
                 std::vector<Dim>{Dim::InternalBinCoarse, Dim::InternalBinFine},
                 Dim::InternalSubbin)
             .slice({Dim::InternalSubbin, 0, dims.volume()}),
@@ -159,7 +164,7 @@ public:
 private:
   Mapper m_stage2_mapper;
   Variable m_stage1_out_indices;
-  Variable m_stage1_out_sizes;
+  Dimensions m_fine_dims;
   Dim m_buffer_dim;
 };
 
