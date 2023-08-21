@@ -147,6 +147,10 @@ public:
   }
 
   Variable _do_bin(const Variable &var) const override {
+    // Note how by having the virtual call on the Variable level we avoid
+    // making the temporary buffer for the whole content buffer (typically a
+    // DataArray), but instead just for one of the content buffer's columns
+    // at a time.
     Variable out_buffer = Mapper::_do_bin(var);
     return m_stage2_mapper._do_bin(make_bins_no_validate(
         m_stage1_out_indices, out_buffer.dims().inner(), out_buffer));
@@ -174,6 +178,11 @@ std::unique_ptr<Mapper> make_mapper(const Variable &indices,
                                     const Builder &builder) {
   const auto dims = builder.dims();
   if (use_two_stage_remap(builder)) {
+    // There are many output bins. Mapping directly would lead to excessive
+    // number of cache misses as well as potential false-sharing problems
+    // between threads. We therefore map in two stages. This requires an
+    // additional temporary buffer with size given by the number of events,
+    // but has proven to be faster in practice.
     scipp::index chunk_size =
         floor(sqrt(builder.nbin().template value<scipp::index>()));
     const auto chunk = astype(scipp::index{chunk_size} * units::none,
