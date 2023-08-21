@@ -49,7 +49,7 @@ private:
 };
 
 template <class Builder> bool use_two_stage_remap(const Builder &bld) {
-  return std::is_same_v<Builder, TwoStageBuilder> &&
+  return !std::is_same_v<Builder, TwoStageBuilder> &&
          bld.nbin().dims().empty() &&
          bld.nbin().template value<scipp::index>() == bld.dims().volume() &&
          // empirically determined crossover point (approx.)
