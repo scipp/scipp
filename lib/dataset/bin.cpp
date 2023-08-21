@@ -164,15 +164,9 @@ private:
   Dim m_buffer_dim;
 };
 
-template <class T, class Builder>
-std::tuple<T, Variable> setup_and_apply(const Variable &data,
-                                        const Variable &indices,
-                                        const Builder &builder);
-
-template <class T, class Builder>
-std::tuple<T, Variable> setup_and_apply_two_stage(const Variable &data,
-                                                  Variable indices,
-                                                  const Builder &builder) {
+template <class Builder>
+std::tuple<std::unique_ptr<Mapper>, Variable>
+setup_and_apply_two_stage(Variable indices, const Builder &builder) {
   const auto dims = builder.dims();
   scipp::index chunk_size =
       floor(sqrt(builder.nbin().template value<scipp::index>()));
@@ -185,25 +179,26 @@ std::tuple<T, Variable> setup_and_apply_two_stage(const Variable &data,
   Variable output_bin_sizes = bin_detail::bin_sizes(indices, builder.offsets(),
                                                     n_coarse_bin * units::none);
   Dimensions fine_dims(Dim::InternalBinFine, chunk_size);
-  TwoStageMapper mapper(dims, indices, output_bin_sizes, fine_dims,
-                        fine_indices, n_coarse_bin);
+  auto mapper = std::make_unique<TwoStageMapper>(
+      dims, indices, output_bin_sizes, fine_dims, fine_indices, n_coarse_bin);
 
-  return std::tuple{mapper.do_bin<T>(data), mapper.bin_sizes(dims)};
+  auto bin_sizes = mapper->bin_sizes(dims);
+  return std::tuple{std::move(mapper), bin_sizes};
 }
 
-template <class T, class Builder>
-std::tuple<T, Variable> setup_and_apply(const Variable &data,
-                                        const Variable &indices,
-                                        const Builder &builder) {
+template <class Builder>
+std::tuple<std::unique_ptr<Mapper>, Variable>
+setup_and_apply(const Variable &indices, const Builder &builder) {
   if (use_two_stage_remap(builder)) {
-    return setup_and_apply_two_stage<T>(data, indices, builder);
+    return setup_and_apply_two_stage(indices, builder);
   }
   const auto dims = builder.dims();
   const auto output_bin_sizes =
       bin_detail::bin_sizes(indices, builder.offsets(), builder.nbin());
-  Mapper mapper(dims, indices, output_bin_sizes);
+  auto mapper = std::make_unique<Mapper>(dims, indices, output_bin_sizes);
   // Perform actual binning step for data, all coords, all masks, ...
-  return {mapper.do_bin<T>(data), mapper.bin_sizes(dims)};
+  auto bin_sizes = mapper->bin_sizes(dims);
+  return std::tuple{std::move(mapper), bin_sizes};
 }
 
 template <class T, class Mapping>
@@ -229,12 +224,14 @@ auto extract_unbinned(T &array, Mapping &map) {
 ///   step.
 /// - If rebinning, existing meta data along unchanged dimensions is preserved.
 template <class Coords, class Masks, class Attrs>
-DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
+DataArray add_metadata(const Variable &data,
+                       std::tuple<std::unique_ptr<Mapper>, Variable> &&proto,
                        const Coords &coords, const Masks &masks,
                        const Attrs &attrs, const std::vector<Variable> &edges,
                        const std::vector<Variable> &groups,
                        const std::vector<Dim> &erase) {
-  auto &[buffer, bin_sizes] = proto;
+  auto &[mapper, bin_sizes] = proto;
+  auto buffer = mapper->template do_bin<DataArray>(data);
   bin_sizes = squeeze(bin_sizes, erase);
   const auto end = cumsum(bin_sizes);
   const auto buffer_dim = buffer.dims().inner();
@@ -510,7 +507,8 @@ template <class T> Variable concat_bins(const Variable &var, const Dim dim) {
   TargetBins<T> target_bins(var, builder.dims());
 
   builder.build(*target_bins, std::map<Dim, Variable>{});
-  auto [buffer, bin_sizes] = setup_and_apply<T>(var, *target_bins, builder);
+  auto [mapper, bin_sizes] = setup_and_apply(*target_bins, builder);
+  auto buffer = mapper->template do_bin<T>(var);
   bin_sizes = squeeze(bin_sizes, scipp::span{&dim, 1});
   const auto end = cumsum(bin_sizes);
   const auto buffer_dim = buffer.dims().inner();
@@ -550,7 +548,7 @@ DataArray groupby_concat_bins(const DataArray &array, const Variable &edges,
   // Note: Unlike in the other cases below we do not call
   // `drop_grouped_event_coords` here. Grouping is based on a bin-coord rather
   // than event-coord so we do not touch the latter.
-  return add_metadata(setup_and_apply<DataArray>(masked, *target_bins, builder),
+  return add_metadata(masked, setup_and_apply(*target_bins, builder),
                       array.coords(), array.masks(), array.attrs(),
                       builder.edges(), builder.groups(), {reductionDim});
 }
@@ -619,10 +617,9 @@ DataArray bin(const DataArray &array, const std::vector<Variable> &edges,
     builder.build(target_bins_buffer, meta);
     const auto target_bins = make_bins_no_validate(
         tmp.bin_indices(), data.dims().inner(), target_bins_buffer);
-    return add_metadata(
-        setup_and_apply<DataArray>(drop_grouped_event_coords(tmp, groups),
-                                   target_bins, builder),
-        coords, masks, attrs, builder.edges(), builder.groups(), erase);
+    return add_metadata(drop_grouped_event_coords(tmp, groups),
+                        setup_and_apply(target_bins, builder), coords, masks,
+                        attrs, builder.edges(), builder.groups(), erase);
   }
 }
 
@@ -649,10 +646,9 @@ DataArray bin(const Variable &data, const Coords &coords, const Masks &masks,
   const auto masked = hide_masked(data, masks, builder.dims().labels());
   TargetBins<DataArray> target_bins(masked, builder.dims());
   builder.build(*target_bins, bins_view<DataArray>(masked).meta(), meta);
-  return add_metadata(
-      setup_and_apply<DataArray>(drop_grouped_event_coords(masked, groups),
-                                 *target_bins, builder),
-      coords, masks, attrs, builder.edges(), builder.groups(), erase);
+  return add_metadata(drop_grouped_event_coords(masked, groups),
+                      setup_and_apply(*target_bins, builder), coords, masks,
+                      attrs, builder.edges(), builder.groups(), erase);
 }
 
 } // namespace scipp::dataset
