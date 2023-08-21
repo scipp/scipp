@@ -31,6 +31,13 @@ namespace scipp::dataset {
 
 namespace {
 
+template <class T>
+Variable bins_from_sizes(T &&content, const Variable &bin_sizes) {
+  const auto end = cumsum(bin_sizes);
+  const auto buffer_dim = content.dims().inner();
+  return make_bins(zip(end - bin_sizes, end), buffer_dim, std::move(content));
+}
+
 template <class Builder> bool use_two_stage_remap(const Builder &bld) {
   return bld.nbin().dims().empty() &&
          bld.nbin().template value<scipp::index>() == bld.dims().volume() &&
@@ -184,21 +191,19 @@ std::unique_ptr<Mapper> make_mapper(const Variable &indices,
     const auto n_coarse_bin = dims.volume() / chunk_size + 1;
     Variable output_bin_sizes = bin_detail::bin_sizes(
         indices_, builder.offsets(), n_coarse_bin * units::none);
-    Dimensions fine_dims(Dim::InternalBinFine, chunk_size);
 
     SingleStageMapper stage1_mapper(dims, indices_, output_bin_sizes);
-    Variable fine_indices_ = stage1_mapper.do_bin<Variable>(fine_indices);
+
+    fine_indices = stage1_mapper.do_bin<Variable>(fine_indices);
 
     Dimensions stage1_out_dims(Dim::InternalBinCoarse, n_coarse_bin);
     const auto stage1_out_sizes = stage1_mapper.bin_sizes(stage1_out_dims);
-    const auto end_ = cumsum(stage1_out_sizes);
-    const auto stage1_out_indices = zip(end_ - stage1_out_sizes, end_);
-    fine_indices_ = make_bins_no_validate(
-        stage1_out_indices, fine_indices_.dims().inner(), fine_indices_);
+    fine_indices = bins_from_sizes(std::move(fine_indices), stage1_out_sizes);
+    Dimensions fine_dims(Dim::InternalBinFine, chunk_size);
     const auto fine_output_bin_sizes =
-        bin_detail::bin_sizes(fine_indices_, scipp::index{0} * units::none,
+        bin_detail::bin_sizes(fine_indices, scipp::index{0} * units::none,
                               fine_dims.volume() * units::none);
-    SingleStageMapper stage2_mapper(fine_dims, fine_indices_,
+    SingleStageMapper stage2_mapper(fine_dims, fine_indices,
                                     fine_output_bin_sizes);
 
     return std::make_unique<TwoStageMapper>(std::move(stage1_mapper),
@@ -241,7 +246,6 @@ DataArray add_metadata(const Variable &data, std::unique_ptr<Mapper> mapper,
   auto bin_sizes = mapper->bin_sizes();
   auto buffer = mapper->template do_bin<DataArray>(data);
   bin_sizes = squeeze(bin_sizes, erase);
-  const auto end = cumsum(bin_sizes);
   const auto buffer_dim = buffer.dims().inner();
   std::set<Dim> dims(erase.begin(), erase.end());
   const auto rebinned = [&](const auto &var) {
@@ -269,8 +273,7 @@ DataArray add_metadata(const Variable &data, std::unique_ptr<Mapper> mapper,
   for (const auto &[dim_, coord] : attrs)
     if (!rebinned(coord) && !out_coords.contains(dim_))
       out_attrs.insert_or_assign(dim_, copy(coord));
-  return DataArray{make_bins_no_validate(zip(end - bin_sizes, end), buffer_dim,
-                                         std::move(buffer)),
+  return DataArray{bins_from_sizes(std::move(buffer), bin_sizes),
                    std::move(out_coords), std::move(out_masks),
                    std::move(out_attrs)};
 }
@@ -519,9 +522,7 @@ template <class T> Variable concat_bins(const Variable &var, const Dim dim) {
   auto buffer = mapper->template do_bin<T>(var);
   auto bin_sizes = mapper->bin_sizes();
   bin_sizes = squeeze(bin_sizes, scipp::span{&dim, 1});
-  const auto end = cumsum(bin_sizes);
-  const auto buffer_dim = buffer.dims().inner();
-  return make_bins(zip(end - bin_sizes, end), buffer_dim, std::move(buffer));
+  return bins_from_sizes(std::move(buffer), bin_sizes);
 }
 template Variable concat_bins<Variable>(const Variable &, const Dim);
 template Variable concat_bins<DataArray>(const Variable &, const Dim);
