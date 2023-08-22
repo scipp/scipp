@@ -119,8 +119,8 @@ public:
 
   Variable bin_sizes(const std::optional<Dimensions> &dims_override =
                          std::nullopt) const override {
-    // Up until here the output was viewed with same bin index ranges as input.
-    // Now setup the desired final bin indices.
+    // During mapping of values to the output layout, the output was viewed with
+    // same bin index ranges as input. Now setup the desired final bin indices.
     const auto dims = dims_override.value_or(m_dims);
     auto output_dims = merge(m_output_bin_sizes.dims(), dims);
     return makeVariable<scipp::index>(
