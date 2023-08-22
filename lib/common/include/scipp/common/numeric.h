@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <type_traits>
 
 #include "scipp/common/index.h"
 
@@ -39,6 +40,7 @@ template <class Range> bool islinspace(const Range &range) {
 }
 
 template <class Range> bool isarange(const Range &range) {
+  static_assert(std::is_integral_v<typename Range::value_type>);
   if (scipp::size(range) < 2)
     return true;
   if (range.back() <= range.front())
