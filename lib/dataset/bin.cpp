@@ -61,7 +61,8 @@ public:
 
   virtual Variable bin_sizes(
       const std::optional<Dimensions> &dims_override = std::nullopt) const = 0;
-  virtual Variable apply_to_variable(const Variable &var) const = 0;
+  virtual Variable apply_to_variable(const Variable &var,
+                                     Variable &&out = {}) const = 0;
 };
 
 class SingleStageMapper : public Mapper {
@@ -107,10 +108,17 @@ public:
     m_filtered_input_bin_ranges = zip(end - filtered_input_bin_size, end);
   }
 
-  Variable apply_to_variable(const Variable &var) const override {
+  Variable apply_to_variable(const Variable &var,
+                             Variable &&out = {}) const override {
     const auto &[input_indices, dim, content] = var.constituents<Variable>();
     static_cast<void>(input_indices);
-    auto out = resize_default_init(content, dim, m_total_size);
+    // The optional `out` argument is used to avoid creating a temporary buffer
+    // when TwoStageMapper is applied to a series of columns of matching dtype.
+    if (!out.is_valid() || out.dtype() != content.dtype() ||
+        out.has_variances() != content.has_variances())
+      out = resize_default_init(content, dim, m_total_size);
+    else
+      out.setUnit(content.unit());
     auto out_subspans = subspan_view(out, dim, m_filtered_input_bin_ranges);
     map_to_bins(out_subspans, as_subspan_view(var), m_offsets,
                 as_subspan_view(std::as_const(m_indices)));
@@ -145,15 +153,20 @@ public:
       : m_stage1_mapper(std::move(stage1_mapper)),
         m_stage2_mapper(std::move(stage2_mapper)) {}
 
-  Variable apply_to_variable(const Variable &var) const override {
+  Variable apply_to_variable(const Variable &var,
+                             Variable && = {}) const override {
     // Note how by having the virtual call on the Variable level we avoid
     // making the temporary buffer for the whole content buffer (typically a
     // DataArray), but instead just for one of the content buffer's columns
     // at a time.
-    Variable content = m_stage1_mapper.apply_to_variable(var);
+    // As a further optimization we can reuse the content buffer. With the
+    // current implementation of handling dtype this will only work if the dtype
+    // is the same as that of the previously processed column. Otherwise a new
+    // buffer is created.
+    m_buffer = m_stage1_mapper.apply_to_variable(var, std::move(m_buffer));
     Variable indices = m_stage2_mapper.m_indices.bin_indices();
     return m_stage2_mapper.apply_to_variable(
-        make_bins_no_validate(indices, content.dims().inner(), content));
+        make_bins_no_validate(indices, m_buffer.dims().inner(), m_buffer));
   }
 
   Variable bin_sizes(const std::optional<Dimensions> &dims_override =
@@ -170,6 +183,7 @@ public:
 private:
   SingleStageMapper m_stage1_mapper;
   SingleStageMapper m_stage2_mapper;
+  mutable Variable m_buffer;
 };
 
 template <class Builder>
