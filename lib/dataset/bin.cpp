@@ -49,9 +49,9 @@ template <class Builder> bool use_two_stage_remap(const Builder &bld) {
 }
 class Mapper {
 public:
-  template <class T> T do_bin(const Variable &data) {
+  template <class T> T apply(const Variable &data) {
     const auto maybe_bin = [this](const auto &var) {
-      return is_bins(var) ? _do_bin(var) : copy(var);
+      return is_bins(var) ? apply_to_variable(var) : copy(var);
     };
     if constexpr (std::is_same_v<T, Variable>)
       return maybe_bin(data);
@@ -61,7 +61,7 @@ public:
 
   virtual Variable bin_sizes(
       const std::optional<Dimensions> &dims_override = std::nullopt) const = 0;
-  virtual Variable _do_bin(const Variable &var) const = 0;
+  virtual Variable apply_to_variable(const Variable &var) const = 0;
 };
 
 class SingleStageMapper : public Mapper {
@@ -107,7 +107,7 @@ public:
     m_filtered_input_bin_ranges = zip(end - filtered_input_bin_size, end);
   }
 
-  Variable _do_bin(const Variable &var) const override {
+  Variable apply_to_variable(const Variable &var) const override {
     const auto &[input_indices, dim, content] = var.constituents<Variable>();
     static_cast<void>(input_indices);
     auto out = resize_default_init(content, dim, m_total_size);
@@ -145,14 +145,14 @@ public:
       : m_stage1_mapper(std::move(stage1_mapper)),
         m_stage2_mapper(std::move(stage2_mapper)) {}
 
-  Variable _do_bin(const Variable &var) const override {
+  Variable apply_to_variable(const Variable &var) const override {
     // Note how by having the virtual call on the Variable level we avoid
     // making the temporary buffer for the whole content buffer (typically a
     // DataArray), but instead just for one of the content buffer's columns
     // at a time.
-    Variable content = m_stage1_mapper._do_bin(var);
+    Variable content = m_stage1_mapper.apply_to_variable(var);
     Variable indices = m_stage2_mapper.m_indices.bin_indices();
-    return m_stage2_mapper._do_bin(
+    return m_stage2_mapper.apply_to_variable(
         make_bins_no_validate(indices, content.dims().inner(), content));
   }
 
@@ -196,7 +196,7 @@ std::unique_ptr<Mapper> make_mapper(const Variable &indices,
     SingleStageMapper stage1_mapper(dims, indices_, output_bin_sizes);
 
     Dimensions stage1_out_dims(Dim::InternalBinCoarse, n_coarse_bin);
-    fine_indices = bins_from_sizes(stage1_mapper.do_bin<Variable>(fine_indices),
+    fine_indices = bins_from_sizes(stage1_mapper.apply<Variable>(fine_indices),
                                    stage1_mapper.bin_sizes(stage1_out_dims));
     Dimensions fine_dims(Dim::InternalBinFine, chunk_size);
     const auto fine_output_bin_sizes =
@@ -243,7 +243,7 @@ DataArray add_metadata(const Variable &data, std::unique_ptr<Mapper> mapper,
                        const std::vector<Variable> &groups,
                        const std::vector<Dim> &erase) {
   auto bin_sizes = mapper->bin_sizes();
-  auto buffer = mapper->template do_bin<DataArray>(data);
+  auto buffer = mapper->template apply<DataArray>(data);
   bin_sizes = squeeze(bin_sizes, erase);
   const auto buffer_dim = buffer.dims().inner();
   std::set<Dim> dims(erase.begin(), erase.end());
@@ -518,7 +518,7 @@ template <class T> Variable concat_bins(const Variable &var, const Dim dim) {
 
   builder.build(*target_bins, std::map<Dim, Variable>{});
   auto mapper = make_mapper(*target_bins, builder);
-  auto buffer = mapper->template do_bin<T>(var);
+  auto buffer = mapper->template apply<T>(var);
   auto bin_sizes = mapper->bin_sizes();
   bin_sizes = squeeze(bin_sizes, scipp::span{&dim, 1});
   return bins_from_sizes(std::move(buffer), bin_sizes);
