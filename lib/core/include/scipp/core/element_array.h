@@ -6,9 +6,36 @@
 
 #include <algorithm>
 #include <memory>
+#include <oneapi/tbb/scalable_allocator.h>
 
 #include "scipp/common/index.h"
 #include "scipp/core/parallel.h"
+
+/*
+template <class T> struct TBBDeleter {
+  TBBDeleter(tbb::scalable_allocator<T> &&allocator, scipp::index size)
+      : m_allocator(std::move(allocator)), m_size(size) {}
+  TBBDeleter() = default;
+  TBBDeleter(const TBBDeleter &) = delete;
+  TBBDeleter(TBBDeleter &&) noexcept = default;
+  TBBDeleter &operator=(const TBBDeleter &) = delete;
+  TBBDeleter &operator=(TBBDeleter &&) noexcept = default;
+  void operator()(T *ptr) noexcept { m_allocator.deallocate(ptr, m_size); }
+  tbb::scalable_allocator<T> m_allocator;
+  scipp::index m_size;
+};
+*/
+
+template <class T> struct TBBDeleter {
+  void operator()(T *ptr) noexcept {
+    tbb::scalable_allocator<T>().deallocate(ptr, 1);
+  }
+};
+
+// const auto tbb_deleter = [](T *ptr) {
+//   tbb::scalable_allocator<T>().deallocate(ptr, 1);
+// };
+template <class T> using tbb_unique_ptr = std::unique_ptr<T[], TBBDeleter<T>>;
 
 namespace scipp::core {
 
@@ -18,12 +45,21 @@ auto make_unique_for_overwrite_array(const scipp::index size) {
   // This is specifically written in this way to avoid an internal cppcheck
   // error which happens when we try to handle both arrays and 'normal' pointers
   // using std::remove_extent_t<T> as the type we pass to the unique_ptr.
-  using Ptr = std::unique_ptr<T[]>;
   // We add a size and sign check to avoid warnings about exceeding maximum
   // object size. See e.g.
   // https://gcc.gnu.org/bugzilla//show_bug.cgi?id=85783#c3
-  if ((size <= PTRDIFF_MAX) && (size >= 0))
-    return Ptr(new T[size]);
+  if ((size <= PTRDIFF_MAX) && (size >= 0)) {
+    tbb::scalable_allocator<T> alloc;
+    auto buffer = alloc.allocate(size);
+    // auto deleter = [size](T *ptr) {
+    //   tbb::scalable_allocator<T>().deallocate(ptr, size);
+    // };
+    // using Ptr = std::unique_ptr<T[], decltype(deleter)>;
+    return tbb_unique_ptr<T>(buffer);
+    // return tbb_unique_ptr<T>(buffer, TBBDeleter<T>{std::move(alloc), size});
+    //  return tbb_unique_ptr<T>(buffer, tbb_deleter<T>);
+    //  return Ptr(new T[size]);
+  }
   throw std::runtime_error(
       "Allocation size is either negative or exceeds PTRDIFF_MAX");
 }
@@ -152,7 +188,7 @@ private:
     }
   }
   scipp::index m_size{-1};
-  std::unique_ptr<T[]> m_data;
+  tbb_unique_ptr<T> m_data;
 };
 
 } // namespace scipp::core

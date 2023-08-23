@@ -61,7 +61,7 @@ include(GenerateExportHeader)
 
 option(THREADING "Build with multi-threading" ON)
 if(THREADING)
-  find_package(TBB CONFIG REQUIRED)
+  find_package(TBB CONFIG REQUIRED COMPONENTS tbb tbbmalloc tbbmalloc_proxy)
   configure_file(
     core/include/scipp/core/parallel-tbb.h core/include/scipp/core/parallel.h
     COPYONLY

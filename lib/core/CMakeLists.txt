@@ -64,7 +64,7 @@ target_link_libraries(
   ${TARGET_NAME} PUBLIC scipp-common scipp-units Boost::Boost Eigen3::Eigen
 )
 if(TBB_FOUND)
-  target_link_libraries(${TARGET_NAME} PUBLIC TBB::tbb)
+  target_link_libraries(${TARGET_NAME} PUBLIC TBB::tbb TBB::tbbmalloc)
 endif()
 
 # Include tcb/span as system header to avoid compiler warnings.
