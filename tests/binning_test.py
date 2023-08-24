@@ -8,6 +8,7 @@ import pytest
 from numpy.random import default_rng
 
 import scipp as sc
+from scipp.testing import assert_identical
 
 
 @pytest.mark.parametrize('op', ['bin', 'hist', 'nanhist', 'rebin'])
@@ -890,3 +891,39 @@ def test_hist_large_input_sections():
     for pivot in [0, 17, 3333, 50_000, 123_456, 654_321, 999_999]:
         hist2 = table[:pivot].hist(x=edges) + table[pivot:].hist(x=edges)
         assert sc.identical(hist1, hist2)
+
+
+def make_groupable(ngroup: int) -> sc.DataArray:
+    label = sc.concat(
+        [
+            sc.arange('row', ngroup - 1, -1, -1, dtype='int64'),
+            sc.arange('row', ngroup, dtype='int64'),
+        ],
+        'row',
+    )
+    return sc.DataArray(label, coords={'label': label, 'other': label})
+
+
+@pytest.mark.parametrize('ngroup', [0, 1, 17, 23_434, 102_111, 2_003_045])
+def test_group_many_groups(ngroup):
+    table = make_groupable(ngroup)
+
+    grouped = table.group('label')
+    expected = table[ngroup:].copy()
+    del expected.coords['label']
+    assert_identical(grouped.bins.constituents['data'][::2], expected)
+    assert_identical(grouped.bins.constituents['data'][1::2], expected)
+
+    reversed_labels = table.coords['label'][:ngroup].rename(row='label')
+    grouped = table.group(reversed_labels)
+    expected = table[:ngroup].copy()
+    del expected.coords['label']
+    assert_identical(grouped.bins.constituents['data'][::2], expected)
+    assert_identical(grouped.bins.constituents['data'][1::2], expected)
+
+    incomplete_labels = table.coords['label'][: ngroup // 2].rename(row='label')
+    grouped = table.group(incomplete_labels)
+    expected = table[: ngroup // 2].copy()
+    del expected.coords['label']
+    assert_identical(grouped.bins.constituents['data'][::2], expected)
+    assert_identical(grouped.bins.constituents['data'][1::2], expected)

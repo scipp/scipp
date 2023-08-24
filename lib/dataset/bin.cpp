@@ -187,7 +187,7 @@ private:
 };
 
 template <class Builder>
-std::unique_ptr<Mapper> make_mapper(const Variable &indices,
+std::unique_ptr<Mapper> make_mapper(Variable &&indices,
                                     const Builder &builder) {
   const auto dims = builder.dims();
   if (use_two_stage_remap(builder)) {
@@ -200,8 +200,8 @@ std::unique_ptr<Mapper> make_mapper(const Variable &indices,
         floor(sqrt(builder.nbin().template value<scipp::index>()));
     const auto chunk = astype(scipp::index{chunk_size} * units::none,
                               indices.bin_buffer<Variable>().dtype());
-    Variable fine_indices = indices;
-    auto indices_ = floor_divide(indices, chunk);
+    Variable fine_indices(std::move(indices));
+    auto indices_ = floor_divide(fine_indices, chunk);
     fine_indices %= chunk;
     const auto n_coarse_bin = dims.volume() / chunk_size + 1;
 
@@ -513,6 +513,7 @@ public:
     m_target_bins = make_bins_no_validate(begin_end, dim, m_target_bins_buffer);
   }
   auto &operator*() noexcept { return m_target_bins; }
+  Variable &&release() noexcept { return std::move(m_target_bins); }
 
 private:
   Variable m_target_bins_buffer;
@@ -531,7 +532,7 @@ template <class T> Variable concat_bins(const Variable &var, const Dim dim) {
   TargetBins<T> target_bins(var, builder.dims());
 
   builder.build(*target_bins, std::map<Dim, Variable>{});
-  auto mapper = make_mapper(*target_bins, builder);
+  auto mapper = make_mapper(target_bins.release(), builder);
   auto buffer = mapper->template apply<T>(var);
   auto bin_sizes = mapper->bin_sizes();
   bin_sizes = squeeze(bin_sizes, scipp::span{&dim, 1});
@@ -571,7 +572,7 @@ DataArray groupby_concat_bins(const DataArray &array, const Variable &edges,
   // Note: Unlike in the other cases below we do not call
   // `drop_grouped_event_coords` here. Grouping is based on a bin-coord rather
   // than event-coord so we do not touch the latter.
-  return add_metadata(masked, make_mapper(*target_bins, builder),
+  return add_metadata(masked, make_mapper(target_bins.release(), builder),
                       array.coords(), array.masks(), array.attrs(),
                       builder.edges(), builder.groups(), {reductionDim});
 }
@@ -638,11 +639,11 @@ DataArray bin(const DataArray &array, const std::vector<Variable> &edges,
             : makeVariable<int32_t>(data.dims(), units::none);
     auto builder = axis_actions(data, meta, edges, groups, erase);
     builder.build(target_bins_buffer, meta);
-    const auto target_bins = make_bins_no_validate(
+    auto target_bins = make_bins_no_validate(
         tmp.bin_indices(), data.dims().inner(), target_bins_buffer);
     return add_metadata(drop_grouped_event_coords(tmp, groups),
-                        make_mapper(target_bins, builder), coords, masks, attrs,
-                        builder.edges(), builder.groups(), erase);
+                        make_mapper(std::move(target_bins), builder), coords,
+                        masks, attrs, builder.edges(), builder.groups(), erase);
   }
 }
 
@@ -670,8 +671,8 @@ DataArray bin(const Variable &data, const Coords &coords, const Masks &masks,
   TargetBins<DataArray> target_bins(masked, builder.dims());
   builder.build(*target_bins, bins_view<DataArray>(masked).meta(), meta);
   return add_metadata(drop_grouped_event_coords(masked, groups),
-                      make_mapper(*target_bins, builder), coords, masks, attrs,
-                      builder.edges(), builder.groups(), erase);
+                      make_mapper(target_bins.release(), builder), coords,
+                      masks, attrs, builder.edges(), builder.groups(), erase);
 }
 
 } // namespace scipp::dataset
