@@ -6,9 +6,11 @@
 #include "scipp/core/element/map_to_bins.h"
 
 #include "scipp/variable/cumulative.h"
+#include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
+#include "scipp/variable/util.h"
 
 #include "bin_detail.h"
 
@@ -61,6 +63,24 @@ Variable groups_to_map(const Variable &var, const Dim dim) {
 
 void update_indices_by_grouping(Variable &indices, const Variable &key,
                                 const Variable &groups) {
+  if ((groups.dtype() == dtype<int32_t> ||
+       groups.dtype() == dtype<int64_t>)&&groups.dims()
+              .volume() != 0 &&
+      // We can avoid expensive lookups in std::unordered_map if the groups are
+      // contiguous, by simple subtraction of an offset. This is especially
+      // important when the number of target groups is large since the map
+      // lookup would result in frequent cache misses.
+      isarange(groups, groups.dim()).value<bool>()) {
+    const auto ngroup =
+        makeVariable<scipp::index>(Values{groups.dims().volume()}, units::none);
+    const auto offset = groups.slice({groups.dim(), 0});
+    variable::transform_in_place(
+        indices, key, ngroup, offset,
+        core::element::update_indices_by_grouping_contiguous,
+        "scipp.bin.update_indices_by_grouping_contiguous");
+    return;
+  }
+
   const auto dim = groups.dims().inner();
   const auto map = (indices.dtype() == dtype<int64_t>)
                        ? groups_to_map<int64_t>(groups, dim)

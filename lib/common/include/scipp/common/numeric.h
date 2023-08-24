@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <type_traits>
 
 #include "scipp/common/index.h"
 
@@ -36,6 +37,18 @@ template <class Range> bool islinspace(const Range &range) {
                                 return std::abs(b - a) != delta;
                               }) == range.end();
   }
+}
+
+template <class Range> bool isarange(const Range &range) {
+  static_assert(std::is_integral_v<typename Range::value_type>);
+  if (scipp::size(range) < 2)
+    return true;
+  if (range.back() <= range.front())
+    return false;
+  return std::adjacent_find(range.begin(), range.end(),
+                            [](const auto &a, const auto &b) {
+                              return std::abs(b - a) != 1;
+                            }) == range.end();
 }
 
 // Division like Python's __truediv__

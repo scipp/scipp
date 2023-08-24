@@ -48,6 +48,10 @@ Variable islinspace(const Variable &var, const Dim dim) {
                    "islinspace");
 }
 
+Variable isarange(const Variable &var, const Dim dim) {
+  return transform(subspan_view(var, dim), core::element::isarange, "isarange");
+}
+
 /// Return a variable of True, if variable values are sorted along given dim.
 ///
 /// If `order` is SortOrder::Ascending, checks if values are non-decreasing.

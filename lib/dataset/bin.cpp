@@ -5,6 +5,7 @@
 #include <numeric>
 #include <set>
 
+#include "scipp/variable/astype.h"
 #include "scipp/variable/bin_detail.h"
 #include "scipp/variable/bin_util.h"
 #include "scipp/variable/bins.h"
@@ -30,74 +31,187 @@ namespace scipp::dataset {
 
 namespace {
 
-template <class T, class Builder>
-auto setup_and_apply(const Variable &data, const Variable &indices,
-                     const Builder &builder) {
-  const auto dims = builder.dims();
-  // Setup offsets within output bins, for every input bin. If rebinning occurs
-  // along a dimension each output bin sees contributions from all input bins
-  // along that dim.
-  auto output_bin_sizes =
-      bin_detail::bin_sizes(indices, builder.offsets(), builder.nbin());
-  auto offsets = copy(output_bin_sizes);
-  fill_zeros(offsets);
-  // Not using cumsum along *all* dims, since some outer dims may be left
-  // untouched (no rebin).
-  std::vector<std::pair<Dim, scipp::index>> strategy;
-  for (const auto dim : data.dims())
-    if (dims.contains(dim))
-      strategy.emplace_back(dim, data.dims()[dim]);
-  // To avoid excessive memory consumption in intermediate results for
-  // `output_bin_sizes` (in the loop below, computing sums and cumsums) we need
-  // to ensure to handle the longest dimensions first,
-  std::sort(strategy.begin(), strategy.end(),
-            [](auto &&a, auto &&b) { return a.second > b.second; });
-  for (const auto &item : strategy) {
-    const auto dim = item.first;
-    subbin_sizes_add_intersection(
-        offsets, subbin_sizes_cumsum_exclusive(output_bin_sizes, dim));
-    output_bin_sizes = sum(output_bin_sizes, dim);
+template <class T>
+Variable bins_from_sizes(T &&content, const Variable &bin_sizes) {
+  const auto end = cumsum(bin_sizes);
+  const auto buffer_dim = content.dims().inner();
+  return make_bins(zip(end - bin_sizes, end), buffer_dim,
+                   std::forward<T>(content));
+}
+
+template <class Builder> bool use_two_stage_remap(const Builder &bld) {
+  return bld.nbin().dims().empty() &&
+         bld.nbin().template value<scipp::index>() == bld.dims().volume() &&
+         // empirically determined crossover point (approx.)
+         bld.nbin().template value<scipp::index>() > 16 * 1024 &&
+         bld.offsets().dims().empty() &&
+         bld.offsets().template value<scipp::index>() == 0;
+}
+class Mapper {
+public:
+  template <class T> T apply(const Variable &data) {
+    const auto maybe_bin = [this](const auto &var) {
+      return is_bins(var) ? apply_to_variable(var) : copy(var);
+    };
+    if constexpr (std::is_same_v<T, Variable>)
+      return maybe_bin(data);
+    else
+      return dataset::transform(bins_view<T>(data), maybe_bin);
   }
-  // cumsum with bin dimension is last, since this corresponds to different
-  // output bins, whereas the cumsum above handled different subbins of same
-  // output bin, i.e., contributions of different input bins to some output bin.
-  subbin_sizes_add_intersection(
-      offsets, cumsum_exclusive_subbin_sizes(output_bin_sizes));
-  Variable filtered_input_bin_size = sum_subbin_sizes(output_bin_sizes);
-  auto end = cumsum(filtered_input_bin_size);
-  const auto total_size =
-      end.dims().volume() > 0 ? end.values<scipp::index>().as_span().back() : 0;
-  end = broadcast(end, data.dims()); // required for some cases of rebinning
-  const auto filtered_input_bin_ranges =
-      zip(end - filtered_input_bin_size, end);
 
-  // Perform actual binning step for data, all coords, all masks, ...
-  const auto do_bin = [&](const auto &var) {
-    if (!is_bins(var))
-      return copy(var);
-    const auto &[input_indices, buffer_dim, in_buffer] =
-        var.template constituents<Variable>();
+  virtual Variable bin_sizes(
+      const std::optional<Dimensions> &dims_override = std::nullopt) const = 0;
+  virtual Variable apply_to_variable(const Variable &var) const = 0;
+};
+
+class SingleStageMapper : public Mapper {
+public:
+  SingleStageMapper(const Dimensions &dims, const Variable &indices,
+                    const Variable &output_bin_sizes)
+      : m_dims(dims), m_indices(indices), m_output_bin_sizes(output_bin_sizes) {
+    // Setup offsets within output bins, for every input bin. If rebinning
+    // occurs along a dimension each output bin sees contributions from all
+    // input bins along that dim.
+    m_offsets = copy(m_output_bin_sizes);
+    fill_zeros(m_offsets);
+    // Not using cumsum along *all* dims, since some outer dims may be left
+    // untouched (no rebin).
+    std::vector<std::pair<Dim, scipp::index>> strategy;
+    for (const auto dim : m_indices.dims())
+      if (dims.contains(dim))
+        strategy.emplace_back(dim, m_indices.dims()[dim]);
+    // To avoid excessive memory consumption in intermediate results for
+    // `output_bin_sizes` (in the loop below, computing sums and cumsums) we
+    // need to ensure to handle the longest dimensions first,
+    std::sort(strategy.begin(), strategy.end(),
+              [](auto &&a, auto &&b) { return a.second > b.second; });
+    for (const auto &item : strategy) {
+      const auto dim = item.first;
+      subbin_sizes_add_intersection(
+          m_offsets, subbin_sizes_cumsum_exclusive(m_output_bin_sizes, dim));
+      m_output_bin_sizes = sum(m_output_bin_sizes, dim);
+    }
+    // cumsum with bin dimension is last, since this corresponds to different
+    // output bins, whereas the cumsum above handled different subbins of same
+    // output bin, i.e., contributions of different input bins to some output
+    // bin.
+    subbin_sizes_add_intersection(
+        m_offsets, cumsum_exclusive_subbin_sizes(m_output_bin_sizes));
+    const auto filtered_input_bin_size = sum_subbin_sizes(m_output_bin_sizes);
+    auto end = cumsum(filtered_input_bin_size);
+    m_total_size = end.dims().volume() > 0
+                       ? end.values<scipp::index>().as_span().back()
+                       : 0;
+    end = broadcast(end,
+                    m_indices.dims()); // required for some cases of rebinning
+    m_filtered_input_bin_ranges = zip(end - filtered_input_bin_size, end);
+  }
+
+  Variable apply_to_variable(const Variable &var) const override {
+    const auto &[input_indices, dim, content] = var.constituents<Variable>();
     static_cast<void>(input_indices);
-    auto out = resize_default_init(in_buffer, buffer_dim, total_size);
-    auto out_subspans =
-        subspan_view(out, buffer_dim, filtered_input_bin_ranges);
-    map_to_bins(out_subspans, as_subspan_view(var), offsets,
-                as_subspan_view(indices));
+    auto out = resize_default_init(content, dim, m_total_size);
+    auto out_subspans = subspan_view(out, dim, m_filtered_input_bin_ranges);
+    map_to_bins(out_subspans, as_subspan_view(var), m_offsets,
+                as_subspan_view(std::as_const(m_indices)));
     return out;
-  };
-  T out_buffer;
-  if constexpr (std::is_same_v<T, Variable>)
-    out_buffer = do_bin(data);
-  else
-    out_buffer = dataset::transform(bins_view<T>(data), do_bin);
+  }
 
-  // Up until here the output was viewed with same bin index ranges as input.
-  // Now switch to desired final bin indices.
-  auto output_dims = merge(output_bin_sizes.dims(), dims);
-  auto bin_sizes = makeVariable<scipp::index>(
-      output_dims, units::none,
-      Values(flatten_subbin_sizes(output_bin_sizes, dims.volume())));
-  return std::tuple{std::move(out_buffer), std::move(bin_sizes)};
+  Variable bin_sizes(const std::optional<Dimensions> &dims_override =
+                         std::nullopt) const override {
+    // During mapping of values to the output layout, the output was viewed with
+    // same bin index ranges as input. Now setup the desired final bin indices.
+    const auto dims = dims_override.value_or(m_dims);
+    auto output_dims = merge(m_output_bin_sizes.dims(), dims);
+    return makeVariable<scipp::index>(
+        output_dims, units::none,
+        Values(flatten_subbin_sizes(m_output_bin_sizes, dims.volume())));
+  }
+
+  Dimensions m_dims;
+  Variable m_indices;
+
+private:
+  Variable m_output_bin_sizes;
+  Variable m_offsets;
+  Variable m_filtered_input_bin_ranges;
+  scipp::index m_total_size;
+};
+
+class TwoStageMapper : public Mapper {
+public:
+  TwoStageMapper(SingleStageMapper &&stage1_mapper,
+                 SingleStageMapper &&stage2_mapper)
+      : m_stage1_mapper(std::move(stage1_mapper)),
+        m_stage2_mapper(std::move(stage2_mapper)) {}
+
+  Variable apply_to_variable(const Variable &var) const override {
+    // Note how by having the virtual call on the Variable level we avoid
+    // making the temporary buffer for the whole content buffer (typically a
+    // DataArray), but instead just for one of the content buffer's columns
+    // at a time.
+    Variable content = m_stage1_mapper.apply_to_variable(var);
+    Variable indices = m_stage2_mapper.m_indices.bin_indices();
+    return m_stage2_mapper.apply_to_variable(
+        make_bins_no_validate(indices, content.dims().inner(), content));
+  }
+
+  Variable bin_sizes(const std::optional<Dimensions> &dims_override =
+                         std::nullopt) const override {
+    const auto dims = dims_override.value_or(m_stage1_mapper.m_dims);
+    return fold(
+        flatten(m_stage2_mapper.bin_sizes(),
+                std::vector<Dim>{Dim::InternalBinCoarse, Dim::InternalBinFine},
+                Dim::InternalSubbin)
+            .slice({Dim::InternalSubbin, 0, dims.volume()}),
+        Dim::InternalSubbin, dims);
+  }
+
+private:
+  SingleStageMapper m_stage1_mapper;
+  SingleStageMapper m_stage2_mapper;
+};
+
+template <class Builder>
+std::unique_ptr<Mapper> make_mapper(Variable &&indices,
+                                    const Builder &builder) {
+  const auto dims = builder.dims();
+  if (use_two_stage_remap(builder)) {
+    // There are many output bins. Mapping directly would lead to excessive
+    // number of cache misses as well as potential false-sharing problems
+    // between threads. We therefore map in two stages. This requires an
+    // additional temporary buffer with size given by the number of events,
+    // but has proven to be faster in practice.
+    scipp::index chunk_size =
+        floor(sqrt(builder.nbin().template value<scipp::index>()));
+    const auto chunk = astype(scipp::index{chunk_size} * units::none,
+                              indices.bin_buffer<Variable>().dtype());
+    Variable fine_indices(std::move(indices));
+    auto indices_ = floor_divide(fine_indices, chunk);
+    fine_indices %= chunk;
+    const auto n_coarse_bin = dims.volume() / chunk_size + 1;
+
+    Variable output_bin_sizes = bin_detail::bin_sizes(
+        indices_, builder.offsets(), n_coarse_bin * units::none);
+    SingleStageMapper stage1_mapper(dims, indices_, output_bin_sizes);
+
+    Dimensions stage1_out_dims(Dim::InternalBinCoarse, n_coarse_bin);
+    fine_indices = bins_from_sizes(stage1_mapper.apply<Variable>(fine_indices),
+                                   stage1_mapper.bin_sizes(stage1_out_dims));
+    Dimensions fine_dims(Dim::InternalBinFine, chunk_size);
+    const auto fine_output_bin_sizes =
+        bin_detail::bin_sizes(fine_indices, scipp::index{0} * units::none,
+                              fine_dims.volume() * units::none);
+    SingleStageMapper stage2_mapper(fine_dims, fine_indices,
+                                    fine_output_bin_sizes);
+
+    return std::make_unique<TwoStageMapper>(std::move(stage1_mapper),
+                                            std::move(stage2_mapper));
+  } else {
+    const auto output_bin_sizes =
+        bin_detail::bin_sizes(indices, builder.offsets(), builder.nbin());
+    return std::make_unique<SingleStageMapper>(dims, indices, output_bin_sizes);
+  }
 }
 
 template <class T, class Mapping>
@@ -123,14 +237,14 @@ auto extract_unbinned(T &array, Mapping &map) {
 ///   step.
 /// - If rebinning, existing meta data along unchanged dimensions is preserved.
 template <class Coords, class Masks, class Attrs>
-DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
+DataArray add_metadata(const Variable &data, std::unique_ptr<Mapper> mapper,
                        const Coords &coords, const Masks &masks,
                        const Attrs &attrs, const std::vector<Variable> &edges,
                        const std::vector<Variable> &groups,
                        const std::vector<Dim> &erase) {
-  auto &[buffer, bin_sizes] = proto;
+  auto bin_sizes = mapper->bin_sizes();
+  auto buffer = mapper->template apply<DataArray>(data);
   bin_sizes = squeeze(bin_sizes, erase);
-  const auto end = cumsum(bin_sizes);
   const auto buffer_dim = buffer.dims().inner();
   std::set<Dim> dims(erase.begin(), erase.end());
   const auto rebinned = [&](const auto &var) {
@@ -158,8 +272,7 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
   for (const auto &[dim_, coord] : attrs)
     if (!rebinned(coord) && !out_coords.contains(dim_))
       out_attrs.insert_or_assign(dim_, copy(coord));
-  return DataArray{make_bins_no_validate(zip(end - bin_sizes, end), buffer_dim,
-                                         std::move(buffer)),
+  return DataArray{bins_from_sizes(std::move(buffer), bin_sizes),
                    std::move(out_coords), std::move(out_masks),
                    std::move(out_attrs)};
 }
@@ -386,6 +499,7 @@ public:
     m_target_bins = make_bins_no_validate(begin_end, dim, m_target_bins_buffer);
   }
   auto &operator*() noexcept { return m_target_bins; }
+  Variable &&release() noexcept { return std::move(m_target_bins); }
 
 private:
   Variable m_target_bins_buffer;
@@ -404,11 +518,11 @@ template <class T> Variable concat_bins(const Variable &var, const Dim dim) {
   TargetBins<T> target_bins(var, builder.dims());
 
   builder.build(*target_bins, std::map<Dim, Variable>{});
-  auto [buffer, bin_sizes] = setup_and_apply<T>(var, *target_bins, builder);
+  auto mapper = make_mapper(target_bins.release(), builder);
+  auto buffer = mapper->template apply<T>(var);
+  auto bin_sizes = mapper->bin_sizes();
   bin_sizes = squeeze(bin_sizes, scipp::span{&dim, 1});
-  const auto end = cumsum(bin_sizes);
-  const auto buffer_dim = buffer.dims().inner();
-  return make_bins(zip(end - bin_sizes, end), buffer_dim, std::move(buffer));
+  return bins_from_sizes(std::move(buffer), bin_sizes);
 }
 template Variable concat_bins<Variable>(const Variable &, const Dim);
 template Variable concat_bins<DataArray>(const Variable &, const Dim);
@@ -444,7 +558,7 @@ DataArray groupby_concat_bins(const DataArray &array, const Variable &edges,
   // Note: Unlike in the other cases below we do not call
   // `drop_grouped_event_coords` here. Grouping is based on a bin-coord rather
   // than event-coord so we do not touch the latter.
-  return add_metadata(setup_and_apply<DataArray>(masked, *target_bins, builder),
+  return add_metadata(masked, make_mapper(target_bins.release(), builder),
                       array.coords(), array.masks(), array.attrs(),
                       builder.edges(), builder.groups(), {reductionDim});
 }
@@ -511,12 +625,11 @@ DataArray bin(const DataArray &array, const std::vector<Variable> &edges,
             : makeVariable<int32_t>(data.dims(), units::none);
     auto builder = axis_actions(data, meta, edges, groups, erase);
     builder.build(target_bins_buffer, meta);
-    const auto target_bins = make_bins_no_validate(
+    auto target_bins = make_bins_no_validate(
         tmp.bin_indices(), data.dims().inner(), target_bins_buffer);
-    return add_metadata(
-        setup_and_apply<DataArray>(drop_grouped_event_coords(tmp, groups),
-                                   target_bins, builder),
-        coords, masks, attrs, builder.edges(), builder.groups(), erase);
+    return add_metadata(drop_grouped_event_coords(tmp, groups),
+                        make_mapper(std::move(target_bins), builder), coords,
+                        masks, attrs, builder.edges(), builder.groups(), erase);
   }
 }
 
@@ -543,10 +656,9 @@ DataArray bin(const Variable &data, const Coords &coords, const Masks &masks,
   const auto masked = hide_masked(data, masks, builder.dims().labels());
   TargetBins<DataArray> target_bins(masked, builder.dims());
   builder.build(*target_bins, bins_view<DataArray>(masked).meta(), meta);
-  return add_metadata(
-      setup_and_apply<DataArray>(drop_grouped_event_coords(masked, groups),
-                                 *target_bins, builder),
-      coords, masks, attrs, builder.edges(), builder.groups(), erase);
+  return add_metadata(drop_grouped_event_coords(masked, groups),
+                      make_mapper(target_bins.release(), builder), coords,
+                      masks, attrs, builder.edges(), builder.groups(), erase);
 }
 
 } // namespace scipp::dataset
