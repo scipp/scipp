@@ -19,13 +19,11 @@ jobs:
         variant:
           - {os: ubuntu-20.04, target: linux_64}
         python-version: ["3.8", "3.10"]
-
-    steps:
-    - uses: ./.github/workflows/conda.yml
-      with:
-        os: ${{ matrix.variant.os }}
-        target: ${{ matrix.variant.target }}
-        python-version: ${{ matrix.python-version }}
+    uses: ./.github/workflows/conda.yml
+    with:
+      os: ${{ matrix.variant.os }}
+      target: ${{ matrix.variant.target }}
+      python-version: ${{ matrix.python-version }}
 
   build_wheels:
     name: Wheels on ${{ matrix.os }}-${{ matrix.build }}
@@ -34,9 +32,7 @@ jobs:
       matrix:
         os: [ubuntu-20.04]
         build: [cp38, cp311]
-
-    steps:
-    - uses: ./.github/workflows/wheel.yml
-      with:
-        os: ${{ matrix.os }}
-        build: ${{ matrix.build }}
+    uses: ./.github/workflows/wheel.yml
+    with:
+      os: ${{ matrix.os }}
+      build: ${{ matrix.build }}
