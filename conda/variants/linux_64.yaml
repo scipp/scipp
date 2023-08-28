@@ -1,5 +1,5 @@
 numpy:
-  - '1.21'
+  - '1.22'
 python_impl:
   - cpython
 target_platform:
