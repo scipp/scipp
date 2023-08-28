@@ -13,7 +13,6 @@ defaults:
 jobs:
   build_conda:
     name: Package build (${{ matrix.variant.target }}, py${{ matrix.python-version }})
-    runs-on: ${{ matrix.variant.os }}
     strategy:
       matrix:
         variant:
@@ -27,7 +26,6 @@ jobs:
 
   build_wheels:
     name: Wheels on ${{ matrix.os }}-${{ matrix.build }}
-    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-20.04]
