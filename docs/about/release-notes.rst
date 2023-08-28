@@ -27,6 +27,24 @@ Release Notes
    Stability, Maintainability, and Testing
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+v23.08.0
+--------
+
+Features
+~~~~~~~~
+
+* Improve performance when binning or grouping into many bins `#3215 <https://github.com/scipp/scipp/pull/3215>`_.
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+* Built-in legacy plotting support has been removed, as per prior deprecation, in favor of Plopp `#3200 <https://github.com/scipp/scipp/pull/3200>`_.
+
+Bugfixes
+~~~~~~~~
+
+* Update units library to fix various small issues `#3203 <https://github.com/scipp/scipp/pull/3203>`_.
+
 v23.07.0
 --------
 
