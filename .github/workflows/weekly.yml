@@ -21,32 +21,11 @@ jobs:
         python-version: ["3.8", "3.10"]
 
     steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: true
-          fetch-depth: 0  # history required so cmake can determine version
-
-      - uses: conda-incubator/setup-miniconda@v2
-      - run: >
-          conda install
-          --channel conda-forge
-          --channel nodefaults
-          --yes
-          conda-build conda-forge-pinning
-      - run: >
-          conda build
-          --channel conda-forge
-          --variant-config-files=${CONDA_PREFIX}/conda_build_config.yaml
-          --variant-config-files=${GITHUB_WORKSPACE}/conda/variants/${{ matrix.variant.target }}.yaml
-          --python="${{ matrix.python-version }}.* *_cpython"
-          --no-anaconda-upload
-          --override-channels
-          --output-folder conda/package conda
-
-      - uses: actions/upload-artifact@v3
-        with:
-          name: conda-package-${{ matrix.variant.os }}-py${{ matrix.python-version }}
-          path: conda/package/*/scipp*.tar.bz2
+    - uses: ./.github/workflows/conda.yml
+      with:
+        os: ${{ matrix.variant.os }}
+        target: ${{ matrix.variant.target }}
+        python-version: ${{ matrix.python-version }}
 
   build_wheels:
     name: Wheels on ${{ matrix.os }}-${{ matrix.build }}
@@ -57,22 +36,7 @@ jobs:
         build: [cp38, cp311]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: ./.github/workflows/wheel.yml
       with:
-        submodules: true
-        fetch-depth: 0  # history required so cmake can determine version
-
-    - uses: pypa/cibuildwheel@v2.15.0
-      env:
-        CIBW_BUILD: ${{ matrix.build }}-*
-        MACOSX_DEPLOYMENT_TARGET: "10.15"
-
-    - name: Verify clean directory
-      run: git diff --exit-code
-      shell: bash
-
-    - name: Upload wheels
-      uses: actions/upload-artifact@v3
-      with:
-        name: dist
-        path: wheelhouse/*.whl
+        os: ${{ matrix.os }}
+        build: ${{ matrix.build }}

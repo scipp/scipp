@@ -1,0 +1,39 @@
+name: Wheel build
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        description: 'Operating system: ubuntu-20.04, macos-11, or windows-2019'
+        required: true
+        type: string
+      build:
+        description: "Wheel build variant such as cp38"
+        required: true
+        type: string
+
+jobs:
+  build_wheels:
+    name: Wheels on ${{ inputs.os }}-${{ inputs.build }}
+    runs-on: ${{ inputs.os }}
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+        fetch-depth: 0  # history required so cmake can determine version
+
+    - uses: pypa/cibuildwheel@v2.15.0
+      env:
+        CIBW_BUILD: ${{ inputs.build }}-*
+        MACOSX_DEPLOYMENT_TARGET: "10.15"
+
+    - name: Verify clean directory
+      run: git diff --exit-code
+      shell: bash
+
+    - name: Upload wheels
+      uses: actions/upload-artifact@v3
+      with:
+        name: dist
+        path: wheelhouse/*.whl
