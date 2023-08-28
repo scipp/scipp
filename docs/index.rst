@@ -39,10 +39,12 @@ News
 ----
 
 - [|SCIPP_RELEASE_MONTH|] scipp-|SCIPP_VERSION| `has been released <about/release-notes.rst>`_.
-- [March 2023] Plopp is now the default plotting backend. This is a major breaking change for code using the old, builtin backend. Plopp must be installed as a separate dependency. See `Migrating to the new backend <visualization/plotting-overview.ipynb#Migrating-to-the-new-backend>`_ for details.
+- [August 2023] Writing workflows or data pipelines?
+  Checkout our new project `Sciline <https://scipp.github.io/sciline>`_.
+- [August 2023] `Plopp <https://scipp.github.io/plopp>`_ is now the only supported plotting backend.
+  Plopp must be installed as a separate dependency.
+  See `Plotting <visualization/plotting.ipynb>`_ for details.
 - [January 2023] Scipp now comes with a **new data structure**, `DataGroup <user-guide/data-structures/data-structures.ipynb#DataGroup>`_, a ``dict``-like container with Scipp functionality.
-- [November 2022] Scipp is migrating to use `Plopp <https://scipp.github.io/plopp>`_ instead of a built-in plotting solution.
-  See `Migrating to the new backend <visualization/plotting-overview.ipynb#Migrating-to-the-new-backend>`_ for details.
 - [November 2022] Scipp switched to "Calendar Versioning".
   See `Version numbers and deprecation policy <about/about.rst#Version-numbers-and-deprecation-policy>`_ for details.
 - Is your data stored in NeXus files?

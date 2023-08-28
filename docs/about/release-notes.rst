@@ -229,7 +229,6 @@ Deprecations
   The latter is now deprecated.
   Scipp v23.03.0 (March 2023) and all later versions will use Plopp by default.
   The built-in plotting solution is deprecated and will be removed (at the earliest) in Scipp v23.08.0 (August 2023) without further warning.
-  See `Migrating to the new backend <../visualization/plotting-overview.ipynb#Migrating-to-the-new-backend>`_ for details.
 
 Contributors
 ~~~~~~~~~~~~
