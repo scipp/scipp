@@ -1,6 +1,7 @@
 name: Weekly package builds
 
 on:
+  pull_request:  # temp for testing
   workflow_dispatch:
   schedule:
     - cron: "0 0 * * 6" # every Saturday at midnight
