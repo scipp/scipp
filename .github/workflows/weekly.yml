@@ -2,6 +2,9 @@ name: Weekly package builds
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/weekly.yml'
   schedule:
     - cron: "0 0 * * 6" # every Saturday at midnight
 
@@ -15,7 +18,7 @@ jobs:
       matrix:
         variant:
           - {os: ubuntu-20.04, target: linux_64}
-        python-version: ["3.8", "3.10"]
+        python-version: ["3.8", "3.11"]
     uses: ./.github/workflows/conda.yml
     with:
       os: ${{ matrix.variant.os }}
