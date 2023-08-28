@@ -14,6 +14,7 @@ on:
 
 jobs:
   build_wheels:
+    name: Wheels on ${{ inputs.os }}-${{ inputs.build }}
     runs-on: ${{ inputs.os }}
 
     steps:

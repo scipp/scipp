@@ -22,6 +22,7 @@ defaults:
 
 jobs:
   build_conda:
+    name: Package build (${{ inputs.target }}, py${{ inputs.python-version }})
     runs-on: ${{ inputs.os }}
     steps:
       - uses: actions/checkout@v3
