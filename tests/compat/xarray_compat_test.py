@@ -41,7 +41,7 @@ def test_from_xarray_empty_attrs_dataarray():
     assert len(sc_da.masks) == 0
 
 
-def test_from_xarray_attrs_dataarray():
+def test_from_xarray_attrs_dataarray_warns_if_attrs_dropped():
     xr_da = xr.DataArray(
         data=np.zeros((1,)),
         dims=["x"],
@@ -52,39 +52,21 @@ def test_from_xarray_attrs_dataarray():
         },
     )
 
-    sc_da = from_xarray(xr_da)
+    with pytest.warns(UserWarning):
+        sc_da = from_xarray(xr_da)
 
-    assert sc_da.attrs["attrib_int"].values == 5
-    assert sc_da.attrs["attrib_float"].values == 6.54321
-    assert sc_da.attrs["attrib_str"].values == "test-string"
-
-
-def test_from_xarray_raises_when_attrs_shadowing():
-    xr_da = xr.DataArray(data=np.zeros(10), dims=["x"], coords={"x": np.arange(10)})
-    xr_da.coords['aux'] = xr.Variable(dims=['x'], data=np.arange(10.0))
-    xr_da.attrs['aux'] = 'this is an attribute'
-    with pytest.raises(ValueError):
-        _ = from_xarray(xr_da)
+    assert len(sc_da.attrs) == 0
 
 
 def test_from_xarray_converts_names_to_strings_in_dataarray():
     a = xr.Variable(dims=['y', 'x'], data=np.arange(12.0).reshape(4, 3))
     x = xr.Variable(dims=['x'], data=np.arange(3.0))
     y = xr.Variable(dims=['y'], data=np.arange(4.0))
-    xr_da = xr.DataArray(
-        a,
-        coords={'x': x, 0: y},
-        attrs={
-            1: 6.54321,
-            2: "test-string",
-        },
-    )
+    xr_da = xr.DataArray(a, coords={'x': x, 0: y})
 
     sc_da = from_xarray(xr_da)
 
-    assert np.array_equal(sc_da.attrs["0"].values, np.arange(4.0))
-    assert sc_da.attrs["1"].values == 6.54321
-    assert sc_da.attrs["2"].values == "test-string"
+    assert np.array_equal(sc_da.coords["0"].values, np.arange(4.0))
 
 
 def test_from_xarray_named_dataarray():
@@ -210,7 +192,7 @@ def test_from_xarray_dataset_with_non_indexed_coords():
             ),
             "array2": sc.DataArray(
                 data=sc.zeros(dims=["y"], shape=(50,), dtype="float64"),
-                attrs={"z": sc.arange("y", 0, 100, 2, dtype="int64")},
+                coords={"z": sc.arange("y", 0, 100, 2, dtype="int64")},
             ),
         },
         coords={
@@ -218,6 +200,7 @@ def test_from_xarray_dataset_with_non_indexed_coords():
             "y": sc.arange("y", 50, dtype="int64"),
         },
     )
+    reference_ds.coords.set_aligned('z', False)
 
     assert sc.identical(sc_ds, reference_ds)
 
@@ -306,11 +289,12 @@ def test_to_xarray_dataarray_2d_coord():
     assert xr_da.coords['a2dcoord'].dims == ("yy", "xx")
 
 
-def test_to_xarray_dataarray_with_attrs():
-    sc_da = make_dense_data_array(ndim=2, attrs=True)
+def test_to_xarray_dataarray_with_unaligned_coords():
+    sc_da = make_dense_data_array(ndim=2)
+    sc_da.coords.set_aligned('xx', False)
     xr_da = to_xarray(sc_da)
-    assert "attr" in xr_da.coords
-    assert "attr" not in xr_da.indexes
+    assert "xx" in xr_da.coords
+    assert "xx" not in xr_da.indexes
 
 
 def test_to_xarray_dataarray_fails_on_bin_edges():

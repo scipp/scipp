@@ -6,7 +6,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Union
 from warnings import warn
 
-from ..core import DataArray, Dataset, Unit, Variable, scalar
+from ..core import DataArray, Dataset, Unit, Variable
 from ..typing import VariableLike
 from ..units import default_unit
 
@@ -105,32 +105,23 @@ def _to_xarray_variable(var: Variable) -> xr.Variable:
 
 def _from_xarray_dataarray(da: xr.DataArray) -> DataArray:
     """Converts an xarray.DataArray object to a scipp.DataArray object."""
-    coords = {}
-    attrs = {
-        # Attr keys can have any type in xarray, so we convert to string
-        f"{name}": scalar(attr)
-        for name, attr in da.attrs.items()
-        if name != "units"
+    if da.attrs and set(da.attrs) != {"units"}:
+        warn(
+            "Input data contains some attributes which have been dropped during the "
+            "conversion."
+        )
+    coords = {
+        f"{name}": _from_xarray_variable(coord) for name, coord in da.coords.items()
     }
-
-    for name, coord in da.coords.items():
-        key = f"{name}"
-        if name in da.indexes:
-            coords[key] = _from_xarray_variable(coord)
-        else:
-            if key in attrs:
-                raise ValueError(
-                    "Non-indexed coord would erase an existing attribute "
-                    "with the same name."
-                )
-            attrs[key] = _from_xarray_variable(coord)
-
-    return DataArray(
+    scipp_da = DataArray(
         data=_from_xarray_variable(da),
         coords=coords,
-        attrs=attrs,
         name=getattr(da, "name", None) or "",
     )
+    for name in da.coords:
+        if name not in da.indexes:
+            scipp_da.coords.set_aligned(f'{name}', False)
+    return scipp_da
 
 
 def _to_xarray_dataarray(da: DataArray) -> xr.DataArray:
@@ -143,11 +134,13 @@ def _to_xarray_dataarray(da: DataArray) -> xr.DataArray:
             "These have been removed when converting to Xarray."
         )
     out = xr.DataArray(_to_xarray_variable(da.data))
-    for key, coord in {**da.coords, **da.attrs}.items():
+    for key, coord in da.coords.items():
         for dim in coord.dims:
             if da.meta.is_edges(key, dim=dim):
                 raise ValueError("Xarray does not support coordinates with bin edges.")
         out.coords[key] = _to_xarray_variable(coord)
+        if not coord.aligned:
+            out = out.drop_indexes(key)
     return out
 
 
