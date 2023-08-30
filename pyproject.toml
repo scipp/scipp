@@ -68,4 +68,5 @@ filterwarnings = [
   "ignore:The 'asyncio_mode' default value will change to 'strict' in future:DeprecationWarning",
   'ignore::scipy.optimize._optimize.OptimizeWarning',
   'ignore:Support for mapping types has been deprecated and will be dropped in a future release.:DeprecationWarning',
+  'ignore:sc.DataArray.attrs has been deprecated:scipp.VisibleDeprecationWarning',
 ]

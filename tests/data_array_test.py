@@ -622,3 +622,27 @@ def test_assign_update_attrs():
     assert sc.identical(
         da_n, sc.DataArray(data, attrs={'attr0': attr0_n, 'attr1': attr1_n})
     )
+
+
+def test_accessing_attrs_property_warns_about_deprecation():
+    da = sc.DataArray(sc.arange('x', 4))
+    with pytest.warns(sc.VisibleDeprecationWarning):
+        da.attrs
+
+
+def test_accessing_meta_property_warns_about_deprecation():
+    da = sc.DataArray(sc.arange('x', 4))
+    with pytest.warns(sc.VisibleDeprecationWarning):
+        da.meta
+
+
+def test_accessing_attrs_property_of_bins_warns_about_deprecation():
+    da = sc.data.binned_x(1, 1)
+    with pytest.warns(sc.VisibleDeprecationWarning):
+        da.bins.attrs
+
+
+def test_accessing_meta_property_of_bins_warns_about_deprecation():
+    da = sc.data.binned_x(1, 1)
+    with pytest.warns(sc.VisibleDeprecationWarning):
+        da.bins.meta

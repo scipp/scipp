@@ -9,6 +9,7 @@ from ..typing import Dims, MetaDataMap, VariableLike
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from .bin_remapping import concat_bins
 from .data_group import DataGroup
+from .deprecation import _warn_attr_removal
 from .domains import merge_equal_adjacent
 from .math import midpoints
 from .operations import islinspace
@@ -195,13 +196,25 @@ class Bins:
 
     @property
     def meta(self) -> MetaDataMap:
-        """Coords and attrs of the bins"""
-        return _cpp._bins_view(self._data()).meta
+        """Coords and attrs of the bins
+
+        .. deprecated:: 23.9.0
+           Use :py:attr:`coords` with unset alignment flag instead, or
+           store attributes in higher-level data structures.
+        """
+        _warn_attr_removal()
+        return _cpp._bins_view(self._data()).deprecated_meta
 
     @property
     def attrs(self) -> MetaDataMap:
-        """Coords of the bins"""
-        return _cpp._bins_view(self._data()).attrs
+        """Attrs of the bins
+
+        .. deprecated:: 23.9.0
+           Use :py:attr:`coords` with unset alignment flag instead, or
+           store attributes in higher-level data structures.
+        """
+        _warn_attr_removal()
+        return _cpp._bins_view(self._data()).deprecated_attrs
 
     @property
     def masks(self) -> MetaDataMap:

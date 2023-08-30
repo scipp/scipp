@@ -305,10 +305,11 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
       "coords", [](T &self) -> decltype(auto) { return self.coords(); },
       R"(Dict of aligned coords.)");
   c.def_property_readonly(
-      "meta", [](T &self) -> decltype(auto) { return self.meta(); },
+      "deprecated_meta", [](T &self) -> decltype(auto) { return self.meta(); },
       R"(Dict of coords and attrs.)");
   c.def_property_readonly(
-      "attrs", [](T &self) -> decltype(auto) { return self.attrs(); },
+      "deprecated_attrs",
+      [](T &self) -> decltype(auto) { return self.attrs(); },
       R"(Dict of attrs.)");
   c.def_property_readonly(
       "masks", [](T &self) -> decltype(auto) { return self.masks(); },
@@ -331,15 +332,16 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
   c.def("drop_masks", [](T &self, std::vector<std::string> &mask_names) {
     return self.drop_masks(mask_names);
   });
-  c.def("drop_attrs", [](T &self, std::string &attr_name) {
+  c.def("deprecated_drop_attrs", [](T &self, std::string &attr_name) {
     std::vector<scipp::Dim> attr_names_c = {scipp::Dim{attr_name}};
     return self.drop_attrs(attr_names_c);
   });
-  c.def("drop_attrs", [](T &self, std::vector<std::string> &attr_names) {
-    std::vector<scipp::Dim> attr_names_c;
-    std::transform(attr_names.begin(), attr_names.end(),
-                   std::back_inserter(attr_names_c),
-                   [](const auto &name) { return scipp::Dim{name}; });
-    return self.drop_attrs(attr_names_c);
-  });
+  c.def("deprecated_drop_attrs",
+        [](T &self, std::vector<std::string> &attr_names) {
+          std::vector<scipp::Dim> attr_names_c;
+          std::transform(attr_names.begin(), attr_names.end(),
+                         std::back_inserter(attr_names_c),
+                         [](const auto &name) { return scipp::Dim{name}; });
+          return self.drop_attrs(attr_names_c);
+        });
 }
