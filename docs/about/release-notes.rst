@@ -27,6 +27,14 @@ Release Notes
    Stability, Maintainability, and Testing
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+v23.09.0
+--------
+
+Deprecations
+~~~~~~~~~~~~
+
+* ``scipp.DataArray.attrs`` and all related methods and properties have been deprecated `#3227 <https://github.com/scipp/scipp/pull/3227>`_.
+
 v23.08.0
 --------
 

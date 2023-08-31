@@ -51,6 +51,14 @@ from .dimensions import (
     _rename_dataset,
 )
 
+
+from .deprecation import _deprecated_attrs, _deprecated_meta, _deprecated_drop_attrs
+
+setattr(DataArray, 'attrs', property(_deprecated_attrs))
+setattr(DataArray, 'meta', property(_deprecated_meta))
+setattr(DataArray, 'drop_attrs', _deprecated_drop_attrs)
+del _deprecated_attrs, _deprecated_meta, _deprecated_drop_attrs
+
 for cls in (Variable, DataArray, Dataset):
     setattr(cls, 'rename_dims', _rename_dims)
 setattr(Variable, 'rename', _rename_variable)
