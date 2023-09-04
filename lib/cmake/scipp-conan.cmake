@@ -57,7 +57,7 @@ conan_cmake_configure(
   boost/1.79.0
   eigen/3.4.0
   gtest/1.11.0
-  LLNL-Units/0.9.0
+  LLNL-Units/0.9.1
   pybind11/2.10.0
   ${CONAN_ONETBB}
   OPTIONS
