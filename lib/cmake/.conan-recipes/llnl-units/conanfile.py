@@ -3,7 +3,7 @@ import os
 from conans import CMake, ConanFile, tools
 
 CMAKE_PROJECT_STR = """project(
-    UNITS
+    ${UNITS_CMAKE_PROJECT_NAME}
     LANGUAGES C CXX
     VERSION 0.9.1
 )"""
