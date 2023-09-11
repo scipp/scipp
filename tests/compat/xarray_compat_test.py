@@ -187,20 +187,15 @@ def test_from_xarray_dataset_with_non_indexed_coords():
 
     reference_ds = sc.Dataset(
         data={
-            "array1": sc.DataArray(
-                data=sc.zeros(dims=["x"], shape=(50,), dtype="float64"),
-                attrs={"y": sc.arange("x", 0, 100, 2, dtype="int64")},
-            ),
-            "array2": sc.DataArray(
-                data=sc.zeros(dims=["x"], shape=(50,), dtype="float64"),
-                coords={"y": sc.arange("x", 0, 100, 2, dtype="int64")},
-            ),
+            "array1": sc.zeros(dims=["x"], shape=(50,), dtype="float64"),
+            "array2": sc.zeros(dims=["x"], shape=(50,), dtype="float64"),
         },
         coords={
             "x": sc.arange("x", 50, dtype="int64"),
+            "y": sc.arange("x", 0, 100, 2, dtype="int64"),
         },
     )
-    reference_ds.coords.set_aligned('z', False)
+    reference_ds.coords.set_aligned('y', False)
 
     assert sc.identical(sc_ds, reference_ds)
 
@@ -228,23 +223,15 @@ def test_from_xarray_dataset_with_extra_coord():
 
     reference_ds = sc.Dataset(
         data={
-            "array1": sc.DataArray(
-                data=sc.zeros(dims=["x"], shape=(50,), dtype="float64"),
-                attrs={
-                    "z": sc.arange("x", 50.0),
-                },
-            ),
-            "array2": sc.DataArray(
-                data=sc.zeros(dims=["x"], shape=(50,), dtype="float64"),
-                attrs={
-                    "z": sc.arange("x", 50.0),
-                },
-            ),
+            "array1": sc.zeros(dims=["x"], shape=(50,), dtype="float64"),
+            "array2": sc.zeros(dims=["x"], shape=(50,), dtype="float64"),
         },
         coords={
             "x": sc.arange("x", 50, dtype="int64"),
+            "z": sc.arange("x", 50.0),
         },
     )
+    reference_ds.coords.set_aligned("z", False)
 
     assert sc.identical(sc_ds, reference_ds)
 
