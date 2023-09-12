@@ -231,6 +231,17 @@ def test_bin_integer_coord_by_fractional_stepsize_raises(dtype):
         table.bin(label=sc.scalar(0.5, unit='m'))
 
 
+def test_bin_with_automatic_bin_bounds_raises_if_no_events():
+    table = sc.data.table_xyz(0)
+    with pytest.raises(ValueError):
+        table.bin(x=4)
+
+
+def test_bin_with_manual_bin_bounds_not_raises_if_no_events():
+    table = sc.data.table_xyz(0)
+    table.bin(x=sc.linspace('x', 0, 1, 4, unit=table.coords['x'].unit))
+
+
 def test_group_after_bin_considers_event_value():
     table = sc.data.table_xyz(100)
     table.coords['label'] = (table.coords['x'] * 10).to(dtype='int64')
