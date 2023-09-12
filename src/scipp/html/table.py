@@ -127,7 +127,10 @@ def _make_sections_header(ds: Dataset) -> str:
         if da.masks:
             out += f'<th style="{CENTER}" colspan="{len(da.masks)}">Masks</th>'
         if da.deprecated_attrs:
-            out += f'<th style="{CENTER}" colspan="{len(da.deprecated_attrs)}">Attributes</th>'
+            out += (
+                f'<th style="{CENTER}" '
+                f'colspan="{len(da.deprecated_attrs)}">Attributes</th>'
+            )
     out += '</tr>'
     return out
 
