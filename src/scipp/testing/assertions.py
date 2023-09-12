@@ -126,7 +126,7 @@ def _assert_identical_dense_variable_data(a: Variable, b: Variable) -> None:
 def _assert_identical_data_array(a: DataArray, b: DataArray) -> None:
     _assert_identical_variable(a.data, b.data)
     _assert_mapping_eq(a.coords, b.coords, 'coord')
-    _assert_mapping_eq(a.attrs, b.attrs, 'attr')
+    _assert_mapping_eq(a.deprecated_attrs, b.deprecated_attrs, 'attr')
     _assert_mapping_eq(a.masks, b.masks, 'mask')
 
 
