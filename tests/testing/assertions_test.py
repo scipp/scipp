@@ -192,6 +192,25 @@ def test_assert_identical_data_array_coords_value_mismatch():
         assert_identical(b, a)
 
 
+def test_assert_identical_data_array_coords_alignment_mismatch():
+    a = sc.DataArray(sc.scalar(-8), coords={'a': sc.scalar(23)})
+    b = sc.DataArray(sc.scalar(-8), coords={'a': sc.scalar(23)})
+    b.coords.set_aligned('a', False)
+    with pytest.raises(AssertionError):
+        assert_identical(a, b)
+    with pytest.raises(AssertionError):
+        assert_identical(b, a)
+
+
+def test_assert_identical_data_array_extra_coord():
+    a = sc.DataArray(sc.scalar(-8), coords={'a': sc.scalar(23)})
+    b = sc.DataArray(sc.scalar(-8), coords={'a': sc.scalar(23), 'b': sc.scalar(23)})
+    with pytest.raises(AssertionError):
+        assert_identical(a, b)
+    with pytest.raises(AssertionError):
+        assert_identical(b, a)
+
+
 def test_assert_identical_data_array_attrs_key_mismatch():
     a = sc.DataArray(sc.scalar(-8), attrs={'a': sc.scalar(33)})
     b = sc.DataArray(sc.scalar(-8), attrs={'n': sc.scalar(33)})

@@ -138,14 +138,21 @@ def _assert_identical_datagroup(a: DataGroup, b: DataGroup) -> None:
     _assert_mapping_eq(a, b, 'data group item')
 
 
+def _assert_identical_alignment(a: Any, b: Any) -> None:
+    if isinstance(a, Variable) and isinstance(b, Variable):
+        assert a.aligned == b.aligned
+
+
 def _assert_mapping_eq(
     a: Mapping[str, Any], b: Mapping[str, Any], map_name: str
 ) -> None:
     with _add_note(map_name + 's'):
         assert a.keys() == b.keys()
-    for name, var_a in a.items():
+    for name, val_a in a.items():
         with _add_note("{} '{}'", map_name, name):
-            _assert_identical_impl(var_a, b[name])
+            val_b = b[name]
+            _assert_identical_impl(val_a, val_b)
+            _assert_identical_alignment(val_a, val_b)
 
 
 @contextmanager
