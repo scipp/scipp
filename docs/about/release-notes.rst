@@ -27,6 +27,29 @@ Release Notes
    Stability, Maintainability, and Testing
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+vrelease
+--------
+
+Features
+~~~~~~~~
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+Bugfixes
+~~~~~~~~
+
+* :func:`scipp.testing.assert_identical` now compares the alignment of coordinates `#3242 <https://github.com/scipp/scipp/pull/3242>`_.
+
+Documentation
+~~~~~~~~~~~~~
+
+Deprecations
+~~~~~~~~~~~~
+
+Stability, Maintainability, and Testing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 v23.09.0
 --------
 
