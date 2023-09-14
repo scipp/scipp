@@ -177,7 +177,10 @@ class DataGroup(MutableMapping):
 
     def __setitem__(self, name, value):
         """Set self[key] to value."""
-        self._items[name] = value
+        if isinstance(name, str):
+            self._items[name] = value
+        else:
+            raise TypeError('Keys must be strings')
 
     def __delitem__(self, name: str):
         """Delete self[key]."""
