@@ -443,10 +443,8 @@ protected:
       dims, Values{std::pair{0, 2}, std::pair{2, 3}});
   Variable column =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-  Dataset buffer0{Sizes(buffer_dims)};
-  Dataset buffer1{Sizes(buffer_dims)};
 
-  void check() {
+  void check(const Dataset &buffer0, const Dataset &buffer1) {
     Variable var0 = make_bins(indices, Dim::X, buffer0);
     Variable var1 = make_bins(indices, Dim::X, buffer1);
     const auto result = buckets::concatenate(var0, var1);
@@ -459,7 +457,7 @@ protected:
                                  buffer1.slice({Dim::X, 2, 3})},
                      Dim::X));
   }
-  void check_fail() {
+  void check_fail(const Dataset &buffer0, const Dataset &buffer1) {
     Variable var0 = make_bins(indices, Dim::X, buffer0);
     Variable var1 = make_bins(indices, Dim::X, buffer1);
     EXPECT_ANY_THROW([[maybe_unused]] auto joined =
@@ -468,30 +466,30 @@ protected:
 };
 
 TEST_F(DatasetBinsTest, concatenate) {
-  buffer0.setCoord(Dim::X, column);
-  buffer1.setCoord(Dim::X, column + column);
-  check();
+  Dataset buffer0({}, {{Dim::X, column}});
+  Dataset buffer1({}, {{Dim::X, column + column}});
+  check(buffer0, buffer1);
   buffer0.setData("a", column * column);
-  check_fail();
+  check_fail(buffer0, buffer1);
   buffer1.setData("a", column);
-  check();
+  check(buffer0, buffer1);
   buffer0.setData("b", column * column);
-  check_fail();
+  check_fail(buffer0, buffer1);
   // cppcheck-suppress duplicateExpression  # Intentional, see above.
   buffer1.setData("b", column / column);
-  check();
+  check(buffer0, buffer1);
   buffer0["a"].masks().set("mask", column);
-  check_fail();
+  check_fail(buffer0, buffer1);
   buffer1["a"].masks().set("mask", column);
-  check();
+  check(buffer0, buffer1);
   buffer0["b"].attrs().set(Dim("attr"), column);
-  check_fail();
+  check_fail(buffer0, buffer1);
   buffer1["b"].attrs().set(Dim("attr"), column);
-  check();
+  check(buffer0, buffer1);
   buffer0.coords().set(Dim("scalar"), 1.0 * units::m);
-  check_fail();
+  check_fail(buffer0, buffer1);
   buffer1.coords().set(Dim("scalar"), 1.0 * units::m);
-  check();
+  check(buffer0, buffer1);
   buffer1.coords().set(Dim("scalar2"), 1.0 * units::m);
-  check_fail();
+  check_fail(buffer0, buffer1);
 }

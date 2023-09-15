@@ -131,7 +131,6 @@ TEST(SizedDictTest, default_init) {
   const Coords coords;
   ASSERT_TRUE(coords.empty());
   ASSERT_EQ(coords.sizes(), Sizes());
-  ASSERT_FALSE(coords.sizes_are_set());
 }
 
 TEST(SizedDictTest, init_with_dict) {
@@ -141,7 +140,6 @@ TEST(SizedDictTest, init_with_dict) {
   const Coords coords(Dimensions({{Dim::X, 3}, {Dim::Y, 5}}), dict);
   ASSERT_EQ(coords.size(), 2);
   ASSERT_EQ(coords.sizes(), Dimensions({{Dim::X, 3}, {Dim::Y, 5}}));
-  ASSERT_TRUE(coords.sizes_are_set());
   ASSERT_EQ(coords[Dim::X], x);
   ASSERT_EQ(coords[Dim::Y], y);
 }
@@ -168,20 +166,8 @@ TEST(SizedDictTest, copy) {
 
   ASSERT_EQ(copy.size(), 2);
   ASSERT_EQ(copy.sizes(), Dimensions({{Dim::X, 3}, {Dim::Y, 5}}));
-  ASSERT_TRUE(copy.sizes_are_set());
   ASSERT_EQ(copy[Dim::X], x);
   ASSERT_EQ(copy[Dim::Y], y);
-}
-
-TEST(SizedDictTest, copy_preserves_sizes_set_flag) {
-  const Coords a;
-  const Coords copy_a = a;
-  ASSERT_FALSE(copy_a.sizes_are_set());
-
-  Coords b;
-  b.setSizes(Sizes());
-  const Coords copy_b = b;
-  ASSERT_TRUE(copy_b.sizes_are_set());
 }
 
 TEST(SizedDictTest, copy_resets_readonly_flag) {
@@ -201,7 +187,6 @@ TEST(SizedDictTest, set_scalar_without_setting_sizes) {
   coords.set(Dim::X, scalar);
   ASSERT_EQ(coords.size(), 1);
   ASSERT_EQ(coords.sizes(), Sizes());
-  ASSERT_FALSE(coords.sizes_are_set());
   ASSERT_EQ(coords[Dim::X], scalar);
 }
 
@@ -211,7 +196,6 @@ TEST(SizedDictTest, set_length_2_without_setting_sizes) {
   coords.set(Dim::X, x);
   ASSERT_EQ(coords.size(), 1);
   ASSERT_EQ(coords.sizes(), Sizes());
-  ASSERT_TRUE(coords.sizes_are_set());
   ASSERT_EQ(coords[Dim::X], x);
 }
 
@@ -227,7 +211,6 @@ TEST(SizedDictTest, set_sizes_explicitly) {
   Coords coords;
   coords.setSizes(Dimensions({{Dim::X, 3}, {Dim::Y, 5}}));
   ASSERT_EQ(coords.sizes(), Dimensions({{Dim::X, 3}, {Dim::Y, 5}}));
-  ASSERT_TRUE(coords.sizes_are_set());
 
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3});
   coords.set(Dim::X, x);

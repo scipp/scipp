@@ -43,13 +43,13 @@ void DatasetFactory::seed(const uint32_t seed) {
 }
 
 Dataset DatasetFactory::make(const std::string_view data_name) {
-  Dataset result;
   const std::string name{data_name};
-  result.setData(name,
-                 makeVariable<double>(m_dims, Values(m_rand(m_dims.volume()))));
-  result[name].masks().set(
-      "mask", makeVariable<bool>(
-                  m_dims, Values(make_bools(m_dims.volume(), {true, false}))));
+  DataArray data(
+      makeVariable<double>(m_dims, Values(m_rand(m_dims.volume()))), {},
+      {{"mask",
+        makeVariable<bool>(
+            m_dims, Values(make_bools(m_dims.volume(), {true, false})))}});
+  Dataset result({{name, std::move(data)}});
   assign_coords(result);
   return result;
 }

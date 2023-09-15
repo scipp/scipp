@@ -56,21 +56,17 @@ TEST(MergeTest, non_matching_dense_data) {
 }
 
 TEST(MergeTest, non_matching_dense_coords) {
-  Dataset a(Sizes(Dimensions({{Dim::X, 5}})));
-  Dataset b(Sizes(Dimensions({{Dim::X, 5}})));
-  a.setCoord(Dim::X,
-             makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{1, 2, 3, 4, 5}));
-  b.setCoord(Dim::X,
-             makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{2, 3, 4, 5, 6}));
+  Dataset a({}, {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{5},
+                                            Values{1, 2, 3, 4, 5})}});
+  Dataset b({}, {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{5},
+                                            Values{2, 3, 4, 5, 6})}});
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
 }
 
 TEST(MergeTest, non_matching_dense_labels) {
-  Dataset a(Sizes(Dimensions({{Dim::X, 5}})));
-  Dataset b(Sizes(Dimensions({{Dim::X, 5}})));
-  a.setCoord(Dim("l"),
-             makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{1, 2, 3, 4, 5}));
-  b.setCoord(Dim("l"),
-             makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{2, 3, 4, 5, 6}));
+  Dataset a({}, {{Dim("l"), makeVariable<int>(Dims{Dim::X}, Shape{5},
+                                              Values{1, 2, 3, 4, 5})}});
+  Dataset b({}, {{Dim("l"), makeVariable<int>(Dims{Dim::X}, Shape{5},
+                                              Values{2, 3, 4, 5, 6})}});
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
 }

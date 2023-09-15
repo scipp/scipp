@@ -59,9 +59,14 @@ DataArray copy(const DataArray &array, const AttrPolicy attrPolicy) {
 
 /// Return a deep copy of a Dataset.
 Dataset copy(const Dataset &dataset, const AttrPolicy attrPolicy) {
-  Dataset out{};
-  out.setCoords(copy(dataset.coords()));
+  Dataset out{{}, copy(dataset.coords())};
+
+  bool sizes_set = !out.coords().empty();
   for (const auto &item : dataset) {
+    if (!sizes_set) {
+      out.coords().setSizes(item.dims());
+      sizes_set = true;
+    }
     out.setData(item.name(), copy(item, attrPolicy));
   }
   return out;

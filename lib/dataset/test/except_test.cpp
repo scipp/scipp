@@ -25,40 +25,41 @@ TEST(StringFormattingTest, to_string_Dataset) {
 }
 
 TEST(StringFormattingTest, to_string_MutableView) {
-  Dataset a(Sizes(Dimensions({{Dim::X, 3}, {Dim::Y, 3}, {Dim::Z, 3}})));
-  a.setCoord(Dim::X,
-             makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
-  a.setCoord(Dim::Y,
-             makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3}));
-  a.setCoord(Dim::Z,
-             makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{1, 2, 3}));
-  a.setCoord(Dim("label_1"),
-             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
-  a.setCoord(Dim("label_2"),
-             makeVariable<int>(Dims{Dim::Y}, Shape{3}, Values{21, 22, 23}));
-  a.setCoord(Dim("label_3"),
-             makeVariable<int>(Dims{Dim::Z}, Shape{3}, Values{21, 22, 23}));
-
+  Dataset a({},
+            {
+                {Dim::X,
+                 makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3})},
+                {Dim::Y,
+                 makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3})},
+                {Dim::Z,
+                 makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{1, 2, 3})},
+                {Dim("label_1"),
+                 makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23})},
+                {Dim("label_2"),
+                 makeVariable<int>(Dims{Dim::Y}, Shape{3}, Values{21, 22, 23})},
+                {Dim("label_3"),
+                 makeVariable<int>(Dims{Dim::Z}, Shape{3}, Values{21, 22, 23})},
+            });
   EXPECT_NO_THROW(to_string(a.coords()));
 }
 
 TEST(StringFormattingTest, to_string_ConstView) {
-  Dataset a(Sizes(Dimensions({{Dim::X, 3}, {Dim::Y, 3}, {Dim::Z, 3}})));
-  a.setCoord(Dim::X,
-             makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
-  a.setCoord(Dim::Y,
-             makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3}));
-  a.setCoord(Dim::Z,
-             makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{1, 2, 3}));
-  a.setCoord(Dim("label_1"),
-             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
-  a.setCoord(Dim("label_2"),
-             makeVariable<int>(Dims{Dim::Y}, Shape{3}, Values{21, 22, 23}));
-  a.setCoord(Dim("label_3"),
-             makeVariable<int>(Dims{Dim::Z}, Shape{3}, Values{21, 22, 23}));
-  const auto ca = a;
-
-  EXPECT_NO_THROW(to_string(ca.coords()));
+  const Dataset a(
+      {}, {
+              {Dim::X,
+               makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3})},
+              {Dim::Y,
+               makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3})},
+              {Dim::Z,
+               makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{1, 2, 3})},
+              {Dim("label_1"),
+               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23})},
+              {Dim("label_2"),
+               makeVariable<int>(Dims{Dim::Y}, Shape{3}, Values{21, 22, 23})},
+              {Dim("label_3"),
+               makeVariable<int>(Dims{Dim::Z}, Shape{3}, Values{21, 22, 23})},
+          });
+  EXPECT_NO_THROW(to_string(a.coords()));
 }
 
 TEST(ValidSliceTest, test_slice_range) {
