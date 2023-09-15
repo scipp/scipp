@@ -98,6 +98,7 @@ Bugfixes
 
 * Fixed label based indexing for arrays with a single element in the sliced dimension `#3171 <https://github.com/scipp/scipp/pull/3171>`_.
 * Fixed ``scipp.show`` in the presence of bin-edge coords that have been sliced out `#3178 <https://github.com/scipp/scipp/pull/3178>`_.
+* Fixed in-place mod function for float `#3179 <https://github.com/scipp/scipp/pull/3179>`_.
 
 v23.05.0
 --------
