@@ -4,6 +4,11 @@
 
 import numpy as np
 
+ATTRS = '#ff5555'
+COORDS = '#c6e590'
+DATA = '#f6d028'
+MASKS = '#c8c8c8'
+
 
 def hex_to_rgb(hex_color):
     rgb_hex = [hex_color[x : x + 2] for x in [1, 3, 5]]

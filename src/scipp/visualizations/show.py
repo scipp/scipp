@@ -8,11 +8,10 @@ from typing import Optional
 
 import numpy as np
 
-from . import config
-from ._scipp import core as sc
-from .html.resources import load_style
-from .typing import VariableLike
-from .utils import hex_to_rgb, rgb_to_hex
+from . import colors
+from .._scipp import core as sc
+from .resources import load_style
+from ..typing import VariableLike
 
 # Unit is `em`. This particular value is chosen to avoid a horizontal scroll
 # bar with the readthedocs theme.
@@ -33,9 +32,9 @@ def _color_variants(hex_color):
     """
     Produce darker and lighter color variants, given an input color.
     """
-    rgb = hex_to_rgb(hex_color)
-    dark = rgb_to_hex(np.clip(rgb - 40, 0, 255))
-    light = rgb_to_hex(np.clip(rgb + 30, 0, 255))
+    rgb = colors.hex_to_rgb(hex_color)
+    dark = colors.rgb_to_hex(np.clip(rgb - 40, 0, 255))
+    light = colors.rgb_to_hex(np.clip(rgb + 30, 0, 255))
     return light, hex_color, dark
 
 
@@ -309,7 +308,7 @@ class VariableDrawer:
 
     def make_svg(self, content_only=False):
         if content_only:
-            return self.draw(color=config['colors']['data'])
+            return self.draw(color=colors.data)
         return _build_svg(
             self.make_svg(content_only=True),
             0,
@@ -416,12 +415,12 @@ class DatasetDrawer:
         area_xy = []
         area_0d = []
         if isinstance(self._dataset, sc.DataArray):
-            area_xy.append(DrawerItem('', self._dataset.data, config['colors']['data']))
+            area_xy.append(DrawerItem('', self._dataset.data, colors.DATA))
         else:
             # Render highest-dimension items last so coords are optically
             # aligned
             for name, data in sorted(self._dataset.items()):
-                item = DrawerItem(name, data.data, config['colors']['data'])
+                item = DrawerItem(name, data.data, colors.DATA)
                 # Using only x and 0d areas for 1-D dataset
                 if len(dims) == 1 or data.dims != dims:
                     if len(data.dims) == 0:
@@ -447,7 +446,10 @@ class DatasetDrawer:
         for what, items in categories:
             for name, var in sorted(items.items()):
                 item = DrawerItem(
-                    name, var, config['colors'][what], show_alignment=what == 'coords'
+                    name,
+                    var,
+                    getattr(colors, what.upper()),
+                    show_alignment=what == 'coords',
                 )
                 if len(var.dims) == 0:
                     area_0d.append(item)
