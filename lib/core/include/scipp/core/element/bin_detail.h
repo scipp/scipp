@@ -16,9 +16,14 @@ using bin_range_arg =
     std::tuple<scipp::index, scipp::index, Coord, scipp::span<const Edge>>;
 
 static constexpr auto bin_range_common = overloaded{
-    arg_list<bin_range_arg<double, double>, bin_range_arg<int64_t, double>,
-             bin_range_arg<int64_t, int64_t>, bin_range_arg<int32_t, int32_t>,
-             bin_range_arg<int32_t, double>,
+    arg_list<bin_range_arg<double, double>, bin_range_arg<double, float>,
+             bin_range_arg<double, int32_t>, bin_range_arg<double, int64_t>,
+             bin_range_arg<float, double>, bin_range_arg<float, float>,
+             bin_range_arg<float, int32_t>, bin_range_arg<float, int64_t>,
+             bin_range_arg<int32_t, double>, bin_range_arg<int32_t, float>,
+             bin_range_arg<int32_t, int32_t>, bin_range_arg<int32_t, int64_t>,
+             bin_range_arg<int64_t, double>, bin_range_arg<int64_t, float>,
+             bin_range_arg<int64_t, int32_t>, bin_range_arg<int64_t, int64_t>,
              bin_range_arg<time_point, time_point>>,
     transform_flags::expect_no_variance_arg<2>};
 
