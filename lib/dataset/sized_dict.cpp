@@ -81,13 +81,12 @@ SizedDict<Key, Value>::SizedDict(AutoSizeTag, holder_type items,
 
 template <class Key, class Value>
 SizedDict<Key, Value>::SizedDict(const SizedDict &other)
-    : m_sizes(other.m_sizes), m_items(other.m_items), m_readonly(false),
-      m_sizes_are_set(other.m_sizes_are_set) {}
+    : m_sizes(other.m_sizes), m_items(other.m_items), m_readonly(false) {}
 
 template <class Key, class Value>
 SizedDict<Key, Value>::SizedDict(SizedDict &&other) noexcept
     : m_sizes(std::move(other.m_sizes)), m_items(std::move(other.m_items)),
-      m_readonly(other.m_readonly), m_sizes_are_set(other.m_sizes_are_set) {}
+      m_readonly(other.m_readonly) {}
 
 template <class Key, class Value>
 SizedDict<Key, Value> &
@@ -204,7 +203,6 @@ template <class Key, class Value>
 void SizedDict<Key, Value>::setSizes(const Sizes &sizes) {
   scipp::expect::includes(sizes, m_sizes);
   m_sizes = sizes;
-  m_sizes_are_set = true;
 }
 
 namespace {
@@ -249,12 +247,6 @@ void SizedDict<Key, Value>::set(const key_type &key, mapped_type coord) {
     return;
   expect_writable(*this);
   auto dims = coord.dims();
-  if (!m_sizes_are_set)
-    // If there are bin-edges for scalar data (length-2 dim in coord),
-    // fix the sizes to empty. Otherwise, adding data later could change
-    // the coord from bin-edges to a regular coord.
-    m_sizes_are_set = check_coord_for_unset_sizes(key, dims);
-
   // Is a good definition for things that are allowed: "would be possible to
   // concat along existing dim or extra dim"?
   for (const auto &dim : coord.dims()) {
@@ -404,9 +396,6 @@ SizedDict<Key, Value>
 SizedDict<Key, Value>::merge_from(const SizedDict &other) const {
   using core::to_string;
   using units::to_string;
-  if (!m_sizes_are_set || !other.m_sizes_are_set)
-    throw std::invalid_argument(
-        "Cannot merge coords because an input has unknown dimensions.");
 
   auto out(*this);
   out.m_readonly = false;
@@ -446,18 +435,9 @@ void SizedDict<Key, Value>::set_aligned(const Key &key, const bool aligned) {
 }
 
 template <class Key, class Value>
-bool SizedDict<Key, Value>::sizes_are_set() const noexcept {
-  return m_sizes_are_set;
-}
-
-template <class Key, class Value>
 core::Dict<Key, Value> union_(const SizedDict<Key, Value> &a,
                               const SizedDict<Key, Value> &b,
                               std::string_view opname) {
-  if (!a.sizes_are_set() || !b.sizes_are_set())
-    throw std::invalid_argument(
-        "Cannot merge coords because an input has unknown dimensions.");
-
   core::Dict<Key, Value> out;
   out.reserve(a.size() + b.size());
   for (const auto &[key, val_a] : a)
