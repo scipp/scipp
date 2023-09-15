@@ -42,24 +42,38 @@ public:
   using mapped_type = DataArray;
   using value_type = std::pair<const std::string &, DataArray>;
 
-  Dataset() = default;
+  Dataset();
   Dataset(const Dataset &other);
   Dataset(Dataset &&other) = default;
-  explicit Dataset(const Sizes &dims);
   explicit Dataset(const DataArray &data);
 
   template <class DataMap = core::Dict<std::string, DataArray>,
             class CoordMap = core::Dict<Dim, Variable>>
   explicit Dataset(DataMap data,
                    CoordMap coords = core::Dict<Dim, Variable>{}) {
-    if constexpr (std::is_base_of_v<Dataset, std::decay_t<DataMap>>)
-      for (auto &&item : data)
-        setData(item.name(), item);
+    if constexpr (std::is_same_v<std::decay_t<CoordMap>, Coords>)
+      m_coords = std::move(coords);
     else
-      for (auto &&[name, item] : data)
+      m_coords = Coords(AutoSizeTag{}, std::move(coords));
+
+    bool sizes_set = false;
+    const auto init_sizes = [this, &sizes_set](const auto &item) {
+      if (sizes_set)
+        return;
+      this->m_coords.setSizes(item.dims());
+      sizes_set = true;
+    };
+
+    if constexpr (std::is_base_of_v<Dataset, std::decay_t<DataMap>>)
+      for (auto &&item : data) {
+        init_sizes(item);
+        setData(item.name(), item);
+      }
+    else
+      for (auto &&[name, item] : data) {
+        init_sizes(item);
         setData(std::string(name), std::move(item));
-    for (auto &&[dim, coord] : coords)
-      setCoord(dim, std::move(coord));
+      }
   }
 
   Dataset &operator=(const Dataset &other);
@@ -198,8 +212,6 @@ private:
   // Declared friend so gtest recognizes it
   friend SCIPP_DATASET_EXPORT std::ostream &operator<<(std::ostream &,
                                                        const Dataset &);
-  void set_sizes_to_insert_data(const std::string_view name,
-                                const Variable &data);
 
   Coords m_coords;
   core::Dict<std::string, DataArray> m_data;

@@ -31,13 +31,18 @@ void expect_matching_item_dims(const Dataset &dset, const std::string_view key,
 }
 } // namespace
 
+Dataset::Dataset() {
+  throw std::invalid_argument(
+      "Cannot create Dataset without data or coordinates.");
+}
+
 Dataset::Dataset(const Dataset &other)
     : m_coords(other.m_coords), m_data(other.m_data), m_readonly(false) {}
 
-Dataset::Dataset(const Sizes &dims)
-    : m_coords(dims, {}), m_data{}, m_readonly{false} {}
-
-Dataset::Dataset(const DataArray &data) { setData(data.name(), data); }
+Dataset::Dataset(const DataArray &data) {
+  m_coords.setSizes(data.dims());
+  setData(data.name(), data);
+}
 
 Dataset &Dataset::operator=(const Dataset &other) {
   return *this = Dataset(other);
@@ -113,14 +118,6 @@ DataArray Dataset::operator[](const std::string &name) const {
   return *find(name);
 }
 
-void Dataset::set_sizes_to_insert_data(const std::string_view name,
-                                       const Variable &data) {
-  if (!m_coords.sizes_are_set())
-    m_coords.setSizes(data.dims());
-  else
-    expect_matching_item_dims(*this, name, data);
-}
-
 /// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
   expect_writable(*this);
@@ -135,7 +132,7 @@ void Dataset::setCoord(const Dim dim, Variable coord) {
 void Dataset::setData(const std::string &name, Variable data,
                       const AttrPolicy attrPolicy) {
   expect_writable(*this);
-  set_sizes_to_insert_data(name, data);
+  expect_matching_item_dims(*this, name, data);
   const auto replace = contains(name);
   if (replace && attrPolicy == AttrPolicy::Keep)
     m_data.insert_or_assign(

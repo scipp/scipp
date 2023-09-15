@@ -20,7 +20,103 @@ using namespace scipp;
 // Any dataset functionality that is also available for Dataset(Const)View is
 // to be tested in dataset_view_test.cpp, not here!
 
-TEST(DatasetTest, construct_default) { ASSERT_NO_THROW(Dataset d); }
+TEST(DatasetTest, construct_default) {
+  ASSERT_THROW(Dataset d, std::invalid_argument);
+}
+
+TEST(DatasetTest, construct_data) {
+  const Dataset d(
+      {{"a", DataArray(makeVariable<int>(Dims{Dim::X}, Shape{3}))}});
+  ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 3}}));
+  ASSERT_EQ(d["a"], DataArray(makeVariable<int>(Dims{Dim::X}, Shape{3})));
+  ASSERT_TRUE(d.coords().empty());
+}
+
+TEST(DatasetTest, construct_multiple_conflicting_data) {
+  ASSERT_THROW(
+      Dataset({{"a", DataArray(makeVariable<int>(Dims{Dim::X}, Shape{4}))},
+               {"b", DataArray(makeVariable<int>(Dims{Dim::X}, Shape{5}))}}),
+      except::DimensionError);
+}
+
+TEST(DatasetTest, construct_multiple_conflicting_data_extra_dim) {
+  ASSERT_THROW(
+      Dataset({{"a", DataArray(makeVariable<int>(Dims{Dim::X}, Shape{4}))},
+               {"b", DataArray(makeVariable<int>(Dims{Dim::Y}, Shape{5}))}}),
+      except::DimensionError);
+}
+
+TEST(DatasetTest, construct_coord) {
+  const Dataset d({}, {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{4})}});
+  ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 4}}));
+  ASSERT_TRUE(d.empty());
+  ASSERT_EQ(d.coords()[Dim::X], makeVariable<int>(Dims{Dim::X}, Shape{4}));
+}
+
+TEST(DatasetTest, construct_multiple_coords_grow_dimension) {
+  const Dataset d(
+      {}, {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{4})},
+           {Dim::Y, makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{4, 6})},
+           {Dim::Z, makeVariable<int>(Dims{Dim::Z}, Shape{2})}});
+  ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 4}, {Dim::Y, 6}, {Dim::Z, 2}}));
+  ASSERT_TRUE(d.empty());
+  ASSERT_EQ(d.coords()[Dim::X], makeVariable<int>(Dims{Dim::X}, Shape{4}));
+  ASSERT_EQ(d.coords()[Dim::Y],
+            makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{4, 6}));
+  ASSERT_EQ(d.coords()[Dim::Z], makeVariable<int>(Dims{Dim::Z}, Shape{2}));
+}
+
+TEST(DatasetTest, construct_multiple_coords_bin_edges_second) {
+  const Dataset d({}, {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{4})},
+                       {Dim::Y, makeVariable<int>(Dims{Dim::X}, Shape{5})}});
+  ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 4}}));
+  ASSERT_TRUE(d.empty());
+  ASSERT_EQ(d.coords()[Dim::X], makeVariable<int>(Dims{Dim::X}, Shape{4}));
+  ASSERT_EQ(d.coords()[Dim::Y], makeVariable<int>(Dims{Dim::X}, Shape{5}));
+}
+
+TEST(DatasetTest, construct_multiple_coords_bin_edges_first) {
+  const Dataset d({}, {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{5})},
+                       {Dim::Y, makeVariable<int>(Dims{Dim::X}, Shape{4})}});
+  ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 4}}));
+  ASSERT_TRUE(d.empty());
+  ASSERT_EQ(d.coords()[Dim::X], makeVariable<int>(Dims{Dim::X}, Shape{5}));
+  ASSERT_EQ(d.coords()[Dim::Y], makeVariable<int>(Dims{Dim::X}, Shape{4}));
+}
+
+TEST(DatasetTest, construct_multiple_conflicting_coords) {
+  ASSERT_THROW(
+      Dataset({}, {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{4})},
+                   {Dim::Y, makeVariable<int>(Dims{Dim::X}, Shape{6})}}),
+      except::DimensionError);
+}
+
+TEST(DatasetTest, construct_data_and_coord) {
+  const Dataset d({{"a", DataArray(makeVariable<int>(Dims{Dim::X}, Shape{5}))}},
+                  {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{5})}});
+  ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 5}}));
+  ASSERT_EQ(d["a"],
+            DataArray(makeVariable<int>(Dims{Dim::X}, Shape{5}),
+                      {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{5})}}));
+  ASSERT_EQ(d.coords()[Dim::X], makeVariable<int>(Dims{Dim::X}, Shape{5}));
+}
+
+TEST(DatasetTest, construct_data_and_bin_edge_coord) {
+  const Dataset d({{"a", DataArray(makeVariable<int>(Dims{Dim::X}, Shape{5}))}},
+                  {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{6})}});
+  ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 5}}));
+  ASSERT_EQ(d["a"],
+            DataArray(makeVariable<int>(Dims{Dim::X}, Shape{5}),
+                      {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{6})}}));
+  ASSERT_EQ(d.coords()[Dim::X], makeVariable<int>(Dims{Dim::X}, Shape{6}));
+}
+
+TEST(DatasetTest, construct_conflicting_data_and_coord) {
+  ASSERT_THROW(
+      Dataset({{"a", DataArray(makeVariable<int>(Dims{Dim::X}, Shape{4}))}},
+              {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{6})}}),
+      except::DimensionError);
+}
 
 TEST(DatasetTest, clear) {
   DatasetFactory factory({{Dim::X, 2}, {Dim::Y, 3}});
@@ -46,10 +142,11 @@ TEST(DatasetTest, can_set_coord_after_clear) {
       Dim{"new x"}, makeVariable<double>(Dims{Dim::X}, Shape{2})));
 }
 
-TEST(DatasetTest, erase_non_existant) {
-  Dataset d;
-  ASSERT_THROW(d.erase("not an item"), except::NotFoundError);
-  ASSERT_THROW_DISCARD(d.extract("not an item"), except::NotFoundError);
+TEST(DatasetTest, erase_non_existent) {
+  DatasetFactory factory;
+  auto dataset = factory.make("data");
+  ASSERT_THROW(dataset.erase("not an item"), except::NotFoundError);
+  ASSERT_THROW_DISCARD(dataset.extract("not an item"), except::NotFoundError);
 }
 
 TEST(DatasetTest, erase) {
@@ -93,9 +190,9 @@ TEST(DatasetTest, extract_preserves_coords) {
 }
 
 TEST(DatasetTest, cannot_reshape_after_erase) {
-  Dataset d;
+  DatasetFactory factory({{Dim::X, 10}});
+  auto d = factory.make("a");
 
-  d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{10}));
   ASSERT_TRUE(d.contains("a"));
 
   ASSERT_NO_THROW(d.erase("a"));
@@ -107,9 +204,9 @@ TEST(DatasetTest, cannot_reshape_after_erase) {
 }
 
 TEST(DatasetTest, cannot_reshape_after_extract) {
-  Dataset d;
+  DatasetFactory factory({{Dim::X, 10}});
+  auto d = factory.make("a");
 
-  d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{10}));
   ASSERT_TRUE(d.contains("a"));
 
   ASSERT_NO_THROW(auto _ = d.extract("a"));
@@ -169,47 +266,6 @@ TEST(DatasetTest, setCoord) {
   ASSERT_EQ(d.size(), 1);
   ASSERT_EQ(d.coords().size(), 2);
   ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 3}}));
-}
-
-TEST(DatasetTest, setCoord_requires_setting_sizes) {
-  Dataset d;
-  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3});
-  ASSERT_THROW(d.setCoord(Dim::X, var), std::invalid_argument);
-  ASSERT_THROW(d.coords().set(Dim::X, var), std::invalid_argument);
-}
-
-TEST(DatasetTest, setCoord_with_initial_sizes) {
-  Dataset d(Sizes(Dimensions({{Dim::X, 3}})));
-  const auto var1 = makeVariable<double>(Dims{Dim::X}, Shape{3});
-  const auto var2 = makeVariable<double>(Dims{});
-  d.setCoord(Dim::X, var1);
-  d.coords().set(Dim::Time, var2);
-  ASSERT_EQ(d.coords().size(), 2);
-  ASSERT_EQ(d.coords()[Dim::X], var1);
-  ASSERT_EQ(d.coords()[Dim::Time], var2);
-}
-
-TEST(DatasetTest, setCoord_scalar_without_setting_sizes) {
-  Dataset d;
-  const auto var = makeVariable<double>(Dims{});
-  d.setCoord(Dim::X, var);
-  ASSERT_EQ(d.coords()[Dim::X], var);
-  ASSERT_EQ(d.dims(), Dimensions());
-
-  // The dataset's dims have not been fixed.
-  ASSERT_NO_THROW(d.setData("a", makeVariable<double>(Dims{Dim::Z}, Shape{2})));
-  ASSERT_EQ(d.dims(), Dimensions({{Dim::Z, 2}}));
-}
-
-TEST(DatasetTest, setCoord_length_2_without_setting_sizes) {
-  Dataset d;
-  const auto var = makeVariable<double>(Dims{Dim::Z}, Shape{2});
-  d.setCoord(Dim::X, var);
-  ASSERT_EQ(d.coords()[Dim::X], var);
-  ASSERT_EQ(d.dims(), Dimensions()); // Coord treated as bin-edges
-
-  // The dataset's dims have been fixed to scalar.
-  ASSERT_THROW(d.setData("a", var), except::DimensionError);
 }
 
 TEST(DatasetTest, setCoord_length_2) {
