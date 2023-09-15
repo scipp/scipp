@@ -9,9 +9,20 @@
 using namespace scipp;
 using namespace scipp::core::element;
 
-TEST(ElementBinUtilTest, begin_edge) {
-  constexpr auto check = [](const double coord, const scipp::index expected) {
-    const std::vector<double> edges{0, 1, 2, 3};
+template <typename T> class ElementBinUtilTest : public ::testing::Test {};
+using CoordEdgeTypePairs =
+    ::testing::Types<std::pair<double, double>, std::pair<double, float>,
+                     std::pair<double, int32_t>, std::pair<double, int64_t>,
+                     std::pair<float, double>, std::pair<float, float>,
+                     std::pair<float, int32_t>, std::pair<float, int64_t>>;
+TYPED_TEST_SUITE(ElementBinUtilTest, CoordEdgeTypePairs);
+
+TYPED_TEST(ElementBinUtilTest, begin_edge) {
+  typedef typename TypeParam::first_type CoordType;
+  typedef typename TypeParam::second_type EdgeType;
+  constexpr auto check = [](const CoordType coord,
+                            const scipp::index expected) {
+    const std::vector<EdgeType> edges{0, 1, 2, 3};
     scipp::index bin{0};
     scipp::index index;
     begin_edge(bin, index, coord, edges);
@@ -26,9 +37,12 @@ TEST(ElementBinUtilTest, begin_edge) {
   check(3.0, 2);
 }
 
-TEST(ElementBinUtilTest, end_edge) {
-  constexpr auto check = [](const double coord, const scipp::index expected) {
-    const std::vector<double> edges{0, 1, 2, 3};
+TYPED_TEST(ElementBinUtilTest, end_edge) {
+  typedef typename TypeParam::first_type CoordType;
+  typedef typename TypeParam::second_type EdgeType;
+  constexpr auto check = [](const CoordType coord,
+                            const scipp::index expected) {
+    const std::vector<EdgeType> edges{0, 1, 2, 3};
     scipp::index bin{0};
     scipp::index index;
     end_edge(bin, index, coord, edges);
