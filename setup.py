@@ -64,7 +64,7 @@ setup(
     cmake_install_dir='src/scipp',
     include_package_data=True,
     python_requires='>=3.8',
-    install_requires=['confuse', 'graphlib-backport', 'numpy>=1.20'],
+    install_requires=['graphlib-backport', 'numpy>=1.20'],
     extras_require={
         "test": [
             "pytest",

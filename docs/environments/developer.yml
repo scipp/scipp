@@ -10,7 +10,6 @@ dependencies:
   - cmake>=3.21
   - conan==1.59.0
   - conda-build
-  - confuse
   - graphlib-backport # for python < 3.9
   - h5py
   - hypothesis
