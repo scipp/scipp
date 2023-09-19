@@ -4,7 +4,6 @@
 
 import numpy as np
 
-
 STYLE = {
     'attrs': '#ff5555',
     'coords': '#c6e590',
