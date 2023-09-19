@@ -6,4 +6,4 @@ from .html import to_html, make_html
 from .show import show, make_svg
 from .table import table
 
-__all__ = ["html", "show", "table"]
+__all__ = ["to_html", "make_html", "show", "make_svg", "table"]
