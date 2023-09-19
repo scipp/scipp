@@ -8,10 +8,10 @@ from typing import Optional
 
 import numpy as np
 
-from . import colors
 from .._scipp import core as sc
-from .resources import load_style
 from ..typing import VariableLike
+from . import colors
+from .resources import load_style
 
 # Unit is `em`. This particular value is chosen to avoid a horizontal scroll
 # bar with the readthedocs theme.
