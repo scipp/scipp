@@ -308,7 +308,7 @@ class VariableDrawer:
 
     def make_svg(self, content_only=False):
         if content_only:
-            return self.draw(color=colors.style['data'])
+            return self.draw(color=colors.STYLE['data'])
         return _build_svg(
             self.make_svg(content_only=True),
             0,
