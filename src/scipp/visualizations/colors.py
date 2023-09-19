@@ -4,10 +4,17 @@
 
 import numpy as np
 
-ATTRS = '#ff5555'
-COORDS = '#c6e590'
-DATA = '#f6d028'
-MASKS = '#c8c8c8'
+
+STYLE = {
+    'attrs': '#ff5555',
+    'coords': '#c6e590',
+    'data': '#f6d028',
+    'masks': '#c8c8c8',
+    'button': '#bdbdbd49',  # Color for plot control button.
+    'button_selected': '#bdbdbdbb',  # Color for selected plot control button.
+    'header_text': '#111111',  # Color for table header text.
+    'hover': '#d6eaf8',  # Color for hovering on table rows.
+}
 
 
 def hex_to_rgb(hex_color):

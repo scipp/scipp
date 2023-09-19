@@ -21,12 +21,12 @@ def _read_text(filename):
 
 
 def _format_style(template: str) -> str:
-    from .. import config
+    from .colors import STYLE
 
     # Color patterns in the CSS template use the name in
-    # the config file plus a _color suffix.
+    # the colors file plus a _color suffix.
     return Template(template).substitute(
-        **{f'{key}_color': val for key, val in config['colors'].items()}
+        **{f'{key}_color': val for key, val in STYLE.items()}
     )
 
 
