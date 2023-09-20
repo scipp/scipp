@@ -64,7 +64,7 @@ To add Scipp to an existing conda environment:
 
 After installation the module, Scipp can be imported in Python.
 Note that only the bare essential dependencies are installed.
-If you wish to use plotting functionality you will also need to install ``matplotlib`` and ``ipywidgets``.
+If you wish to use plotting functionality you will also need to install ``plopp`` and ``ipywidgets``.
 
 To update or remove Scipp use `conda update <https://docs.conda.io/projects/conda/en/latest/commands/update.html>`_ and `conda remove <https://docs.conda.io/projects/conda/en/latest/commands/remove.html>`_.
 
