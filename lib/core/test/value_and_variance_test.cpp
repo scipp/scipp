@@ -278,6 +278,52 @@ TYPED_TEST(ValueAndVarianceBinaryOpTest, valueandvariance_lhs_scalar_rhs) {
   EXPECT_EQ(expected.variance, result.variance);
 }
 
+TYPED_TEST(ValueAndVarianceBinaryOpTest, int_scalar_lhs_valueandvariance_rhs) {
+  const ValueAndVariance lhs{5.0, 0.0};
+  const ValueAndVariance rhs{8.0, 2.0};
+
+  const auto expected = TestFixture::op(lhs, rhs);
+  const auto result = TestFixture::op(static_cast<int32_t>(lhs.value), rhs);
+
+  EXPECT_EQ(expected.value, result.value);
+  EXPECT_EQ(expected.variance, result.variance);
+}
+
+TYPED_TEST(ValueAndVarianceBinaryOpTest, valueandvariance_lhs_int_scalar_rhs) {
+  const ValueAndVariance lhs{5.0, 1.0};
+  const ValueAndVariance rhs{8.0, 0.0};
+
+  const auto expected = TestFixture::op(lhs, rhs);
+  const auto result = TestFixture::op(lhs, static_cast<int32_t>(rhs.value));
+
+  EXPECT_EQ(expected.value, result.value);
+  EXPECT_EQ(expected.variance, result.variance);
+}
+
+TYPED_TEST(ValueAndVarianceBinaryOpTest, no_int_overflow_lhs) {
+  const int32_t lhs_value = 1615722;
+  const ValueAndVariance lhs{static_cast<double>(lhs_value), 0.0};
+  const ValueAndVariance rhs{419.0, 419.0};
+
+  const auto expected = TestFixture::op(lhs, rhs);
+  const auto result = TestFixture::op(lhs_value, rhs);
+
+  EXPECT_EQ(expected.value, result.value);
+  EXPECT_EQ(expected.variance, result.variance);
+}
+
+TYPED_TEST(ValueAndVarianceBinaryOpTest, no_int_overflow_rhs) {
+  const int32_t rhs_value = 1615722;
+  const ValueAndVariance lhs{419.0, 419.0};
+  const ValueAndVariance rhs{static_cast<double>(rhs_value), 0.0};
+
+  const auto expected = TestFixture::op(lhs, rhs);
+  const auto result = TestFixture::op(lhs, rhs_value);
+
+  EXPECT_EQ(expected.value, result.value);
+  EXPECT_EQ(expected.variance, result.variance);
+}
+
 /* This test suite tests for equality between ValueAndVariance-scalar binary
  * equals operations and the equivalent ValueAndVariance-ValueAndVariance
  * operation. */
