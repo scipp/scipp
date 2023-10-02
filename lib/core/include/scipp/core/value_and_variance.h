@@ -179,15 +179,24 @@ constexpr auto operator-(const T2 a, const ValueAndVariance<T1> b) noexcept {
 }
 template <class T1, class T2>
 constexpr auto operator*(const ValueAndVariance<T1> a, const T2 b) noexcept {
+  // Order of operations to prevent integer overflow of `b*b`.
   return ValueAndVariance{a.value * b, a.variance * b * b};
 }
 template <class T1, class T2>
 constexpr auto operator*(const T1 a, const ValueAndVariance<T2> b) noexcept {
-  return ValueAndVariance{a * b.value, a * a * b.variance};
+  // Order of operations to prevent integer overflow of `a*a`.
+  return ValueAndVariance{a * b.value, b.variance * a * a};
 }
 template <class T1, class T2>
 constexpr auto operator/(const ValueAndVariance<T1> a, const T2 b) noexcept {
-  return ValueAndVariance{a.value / b, a.variance / (b * b)};
+  const auto denominator = [b]() {
+    if constexpr (std::is_integral_v<T2>)
+      // Prevent int overflow.
+      return static_cast<T1>(b) * static_cast<T1>(b);
+    else
+      return b * b;
+  }();
+  return ValueAndVariance{a.value / b, a.variance / denominator};
 }
 template <class T1, class T2>
 constexpr auto operator/(const T1 a, const ValueAndVariance<T2> b) noexcept {
