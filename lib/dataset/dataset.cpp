@@ -234,10 +234,22 @@ Dataset &Dataset::setSlice(const Slice &s, const Variable &data) {
 Dataset
 Dataset::rename_dims(const std::vector<std::pair<Dim, Dim>> &names) const {
   Dataset out;
-  for (const auto &[name, da] : m_data)
-    out.setData(name, da.rename_dims(names, false));
-  out.setCoords(m_coords.rename_dims(names));
-  return out;
+  bool first = true;
+  for (const auto &[name, da] : m_data) {
+    if (first) {
+      // Set the sizes based on the first entry.
+      out = Dataset({{name, da.rename_dims(names, false)}});
+      first = false;
+    } else {
+      out.setData(name, da.rename_dims(names, false));
+    }
+  }
+  if (out.is_valid()) {
+    out.setCoords(m_coords.rename_dims(names));
+    return out;
+  }
+  // out is invalid because no data has been set.
+  return Dataset({}, m_coords.rename_dims(names));
 }
 
 /// Return true if the datasets have identical content.
