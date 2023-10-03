@@ -194,6 +194,15 @@ void Dataset::setData(const std::string &name, const DataArray &data) {
   item.masks() = data.masks();
 }
 
+/// Like setData but allow inserting into a default-initialized dataset.
+void Dataset::setDataInit(const std::string &name, const DataArray &data) {
+  if (!is_valid()) {
+    m_coords.setSizes(data.dims());
+    m_valid = true;
+  }
+  setData(name, data);
+}
+
 /// Return slice of the dataset along given dimension with given extents.
 Dataset Dataset::slice(const Slice &s) const {
   Dataset out(slice_map(m_coords.sizes(), m_data, s));
@@ -234,16 +243,8 @@ Dataset &Dataset::setSlice(const Slice &s, const Variable &data) {
 Dataset
 Dataset::rename_dims(const std::vector<std::pair<Dim, Dim>> &names) const {
   Dataset out;
-  bool first = true;
-  for (const auto &[name, da] : m_data) {
-    if (first) {
-      // Set the sizes based on the first entry.
-      out = Dataset({{name, da.rename_dims(names, false)}});
-      first = false;
-    } else {
-      out.setData(name, da.rename_dims(names, false));
-    }
-  }
+  for (const auto &[name, da] : m_data)
+    out.setDataInit(name, da);
   if (out.is_valid()) {
     out.setCoords(m_coords.rename_dims(names));
     return out;
