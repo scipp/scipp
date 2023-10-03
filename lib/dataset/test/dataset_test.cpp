@@ -590,9 +590,8 @@ TEST(DatasetTest, setData_invalid_dataset) {
 }
 
 TEST(DatasetTest, setCoord_with_name_matching_data_name) {
-  Dataset d;
-  d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{3}));
-  d.setData("b", makeVariable<double>(Dims{Dim::X}, Shape{3}));
+  Dataset d({{"a", makeVariable<double>(Dims{Dim::X}, Shape{3})},
+             {"b", makeVariable<double>(Dims{Dim::X}, Shape{3})}});
 
   // It is possible to set labels with a name matching data. However, there is
   // no special meaning attached to this. In particular it is *not* linking the
@@ -605,13 +604,13 @@ TEST(DatasetTest, setCoord_with_name_matching_data_name) {
 }
 
 TEST(DatasetTest, iterators_return_types) {
-  Dataset d;
+  Dataset d({{"a", makeVariable<double>()}});
   ASSERT_TRUE((std::is_same_v<decltype(*d.begin()), DataArray>));
   ASSERT_TRUE((std::is_same_v<decltype(*d.end()), DataArray>));
 }
 
 TEST(DatasetTest, const_iterators_return_types) {
-  const Dataset d;
+  const Dataset d({{"a", makeVariable<double>()}});
   ASSERT_TRUE((std::is_same_v<decltype(*d.begin()), DataArray>));
   ASSERT_TRUE((std::is_same_v<decltype(*d.end()), DataArray>));
 }
@@ -620,9 +619,7 @@ TEST(DatasetTest, iterators) {
   DataArray da1(makeVariable<double>(Dims{Dim::X}, Shape{2}));
   DataArray da2(makeVariable<double>(Dims{Dim::X}, Shape{2}));
   da2.coords().set(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{2}));
-  Dataset d;
-  d.setData("data1", da1);
-  d.setData("data2", da2);
+  Dataset d({{"data1", da1}, {"data2", da2}});
 
   da1.coords().set(Dim::X, da2.coords()[Dim::X]);
   const std::vector expected_arrays{da1, da2};
@@ -662,10 +659,8 @@ TEST(DatasetTest, construct_dataarray_from_slice) {
 }
 
 TEST(DatasetTest, slice_validation_simple) {
-  Dataset dataset;
   auto var = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-  dataset.setData("a", var);
-  dataset.setCoord(Dim::X, var);
+  Dataset dataset({{"a", var}}, {{Dim::X, var}});
   EXPECT_THROW(dataset.slice(Slice{Dim::Y, 0, 1}), except::SliceError);
   EXPECT_THROW(dataset.slice(Slice{Dim::X, 0, 4}), except::SliceError);
   EXPECT_THROW(dataset.slice(Slice{Dim::X, -1, 0}), except::SliceError);
@@ -673,9 +668,8 @@ TEST(DatasetTest, slice_validation_simple) {
 }
 
 TEST(DatasetTest, slice_with_no_coords) {
-  Dataset ds;
   auto var = makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
-  ds.setData("a", var);
+  Dataset ds({{"a", var}});
   // No dataset coords. slicing should still work.
   auto slice = ds.slice(Slice{Dim::X, 0, 2});
   auto extents = slice["a"].data().dims()[Dim::X];
@@ -683,12 +677,9 @@ TEST(DatasetTest, slice_with_no_coords) {
 }
 
 TEST(DatasetTest, slice_validation_complex) {
-  Dataset ds;
   auto var1 = makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
   auto var2 = makeVariable<double>(Dims{Dim::Y}, Shape{4}, Values{1, 2, 3, 4});
-  ds.setData("a", var1 * var2);
-  ds.setCoord(Dim::X, var1);
-  ds.setCoord(Dim::Y, var2);
+  Dataset ds({{"a", var1 * var2}}, {{Dim::X, var1}, {Dim::Y, var2}});
 
   // Slice arguments applied in order.
   EXPECT_NO_THROW(ds.slice(Slice{Dim::X, 0, 3}).slice(Slice{Dim::X, 1, 2}));
@@ -765,21 +756,15 @@ TEST(DatasetTest, item_name) {
 }
 
 TEST(DatasetTest, self_nesting) {
-  const auto make_dset = [](const std::string &name, const Variable &var) {
-    Dataset dset;
-    dset.setData(name, var);
-    return dset;
-  };
-  auto inner = make_dset(
-      "data", makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2}));
+  const Dataset inner(
+      {{"data", makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2})}});
   Variable var = makeVariable<Dataset>(Values{inner});
 
-  auto nested_in_data = make_dset("nested", var);
+  const Dataset nested_in_data({{"nested", var}});
   ASSERT_THROW_DISCARD(var.value<Dataset>() = nested_in_data,
                        std::invalid_argument);
 
-  Dataset nested_in_coord;
-  nested_in_coord.coords().set(Dim::X, var);
+  const Dataset nested_in_coord({}, {{Dim::X, var}});
   ASSERT_THROW_DISCARD(var.value<Dataset>() = nested_in_coord,
                        std::invalid_argument);
 }
