@@ -82,13 +82,10 @@ void DatasetFactory::assign_coords(Dataset &dset) {
   }
 }
 
-Dataset make_empty() { return Dataset(); }
-
 Dataset make_1d_masked() {
   Random random;
-  Dataset ds;
-  ds.setData("data_x",
-             makeVariable<double>(Dimensions{Dim::X, 10}, Values(random(10))));
+  Dataset ds({{"data_x", makeVariable<double>(Dimensions{Dim::X, 10},
+                                              Values(random(10)))}});
   ds["data_x"].masks().set(
       "masks_x", makeVariable<bool>(Dimensions{Dim::X, 10},
                                     Values(make_bools(10, {false, true}))));
@@ -98,17 +95,15 @@ Dataset make_1d_masked() {
 namespace scipp::testdata {
 
 Dataset make_dataset_x() {
-  Dataset d;
-  d.setData("a", makeVariable<double>(Dims{Dim::X}, units::kg, Shape{3},
-                                      Values{4, 5, 6}));
-  d.setData("b", makeVariable<int32_t>(Dims{Dim::X}, units::s, Shape{3},
-                                       Values{7, 8, 9}));
-  d.setCoord(Dim("scalar"), 1.2 * units::K);
-  d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, units::m, Shape{3},
-                                          Values{1, 2, 4}));
-  d.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::X}, units::m, Shape{3},
-                                          Values{1, 2, 3}));
-  return d;
+  return Dataset({{"a", makeVariable<double>(Dims{Dim::X}, units::kg, Shape{3},
+                                             Values{4, 5, 6})},
+                  {"b", makeVariable<int32_t>(Dims{Dim::X}, units::s, Shape{3},
+                                              Values{7, 8, 9})}},
+                 {{Dim("scalar"), 1.2 * units::K},
+                  {Dim::X, makeVariable<double>(Dims{Dim::X}, units::m,
+                                                Shape{3}, Values{1, 2, 4})},
+                  {Dim::Y, makeVariable<double>(Dims{Dim::X}, units::m,
+                                                Shape{3}, Values{1, 2, 3})}});
 }
 
 DataArray make_table(const scipp::index size) {

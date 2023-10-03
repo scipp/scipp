@@ -40,39 +40,32 @@ private:
   RandomBool m_rand_bool;
 };
 
-Dataset make_empty();
-
 template <class T, class T2>
 auto make_1_coord(const Dim dim, const Dimensions &dims, const units::Unit unit,
                   const std::initializer_list<T2> &data) {
-  auto d = make_empty();
-  d.setData("a",
-            makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
-  d.setCoord(
-      dim, makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
-  return d;
+  return Dataset({{"a", makeVariable<T>(Dimensions(dims), units::Unit(unit),
+                                        Values(data))}},
+                 {{dim, makeVariable<T>(Dimensions(dims), units::Unit(unit),
+                                        Values(data))}});
 }
 
 template <class T, class T2>
 auto make_1_labels(const std::string &name, const Dimensions &dims,
                    const units::Unit unit,
                    const std::initializer_list<T2> &data) {
-  auto d = make_empty();
-  d.setData("a",
-            makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
-  d.setCoord(Dim(name), makeVariable<T>(Dimensions(dims), units::Unit(unit),
-                                        Values(data)));
-  return d;
+  return Dataset(
+      {{"a",
+        makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data))}},
+      {{Dim(name),
+        makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data))}});
 }
 
 template <class T, class T2>
 auto make_1_values(const std::string &name, const Dimensions &dims,
                    const units::Unit unit,
                    const std::initializer_list<T2> &data) {
-  auto d = make_empty();
-  d.setData(name,
-            makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
-  return d;
+  return Dataset({{name, makeVariable<T>(Dimensions(dims), units::Unit(unit),
+                                         Values(data))}});
 }
 
 template <class T, class T2>
@@ -80,10 +73,9 @@ auto make_1_values_and_variances(const std::string &name,
                                  const Dimensions &dims, const units::Unit unit,
                                  const std::initializer_list<T2> &values,
                                  const std::initializer_list<T2> &variances) {
-  auto d = make_empty();
-  d.setData(name, makeVariable<T>(Dimensions(dims), units::Unit(unit),
-                                  Values(values), Variances(variances)));
-  return d;
+  return Dataset(
+      {{name, makeVariable<T>(Dimensions(dims), units::Unit(unit),
+                              Values(values), Variances(variances))}});
 }
 
 Dataset make_1d_masked();
