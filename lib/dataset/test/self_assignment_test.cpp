@@ -18,10 +18,9 @@ using namespace scipp::dataset;
 
 class SelfAssignmentTest : public ::testing::Test {
 protected:
-  SelfAssignmentTest() {
-    dataset.setData("a",
-                    makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2}));
-  }
+  SelfAssignmentTest()
+      : dataset({{"a", makeVariable<double>(Dims{Dim::X}, Shape{2},
+                                            Values{1, 2})}}) {}
 
   Dataset dataset;
 };

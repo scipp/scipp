@@ -26,32 +26,24 @@ TYPED_TEST_SUITE(DataArrayViewTest, DataArrayViewTypes);
 
 TYPED_TEST(DataArrayViewTest, name_ignored_in_comparison) {
   const auto var = makeVariable<double>(Values{1.0});
-  Dataset d;
-  d.setData("a", var);
-  d.setData("b", var);
+  Dataset d({{"a", var}, {"b", var}});
   typename TestFixture::dataset_type &d_ref(d);
   EXPECT_EQ(d_ref["a"], d_ref["b"]);
 }
 
 TYPED_TEST(DataArrayViewTest, dims) {
-  Dataset d;
   const auto dense = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{1, 2});
+  Dataset d({{"dense", dense}});
   typename TestFixture::dataset_type &d_ref(d);
-
-  d.setData("dense", dense);
   ASSERT_EQ(d_ref["dense"].dims(), dense.dims());
 }
 
 TYPED_TEST(DataArrayViewTest, dims_with_extra_coords) {
-  Dataset d;
-  typename TestFixture::dataset_type &d_ref(d);
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{4, 5, 6});
   const auto var = x * y;
-  d.setData("a", var);
-  d.setCoord(Dim::X, x);
-  d.setCoord(Dim::Y, y);
-
+  Dataset d({{"a", var}}, {{Dim::X, x}, {Dim::Y, y}});
+  typename TestFixture::dataset_type &d_ref(d);
   ASSERT_EQ(d_ref["a"].dims(), var.dims());
 }
 
@@ -70,10 +62,8 @@ TYPED_TEST(DataArrayViewTest, unit) {
 }
 
 TYPED_TEST(DataArrayViewTest, coords) {
-  Dataset d;
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3});
-  d.setData("a", var);
-  d.coords().set(Dim::X, var);
+  Dataset d({{"a", var}}, {{Dim::X, var}});
 
   typename TestFixture::dataset_type &d_ref(d);
   ASSERT_NO_THROW(d_ref["a"].coords());
@@ -81,20 +71,18 @@ TYPED_TEST(DataArrayViewTest, coords) {
 }
 
 TYPED_TEST(DataArrayViewTest, has_variances) {
-  Dataset d;
+  Dataset d({{"a", makeVariable<double>(Values{double{}})},
+             {"b", makeVariable<double>(Values{1}, Variances{1})}});
   typename TestFixture::dataset_type &d_ref(d);
-  d.setData("a", makeVariable<double>(Values{double{}}));
-  d.setData("b", makeVariable<double>(Values{1}, Variances{1}));
   ASSERT_FALSE(d_ref["a"].has_variances());
   ASSERT_TRUE(d_ref["b"].has_variances());
 }
 
 TYPED_TEST(DataArrayViewTest, values_variances) {
-  Dataset d;
-  typename TestFixture::dataset_type &d_ref(d);
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2},
                                         Variances{3, 4});
-  d.setData("a", var);
+  Dataset d({{"a", var}});
+  typename TestFixture::dataset_type &d_ref(d);
 
   ASSERT_EQ(d_ref["a"].data(), var);
   ASSERT_TRUE(equals(d_ref["a"].template values<double>(), {1, 2}));

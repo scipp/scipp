@@ -47,10 +47,9 @@ TYPED_TEST(DatasetViewTest, bad_item_access) {
 }
 
 TYPED_TEST(DatasetViewTest, name) {
-  Dataset d;
-  d.setData("a", makeVariable<double>(Values{double{}}));
-  d.setData("b", makeVariable<float>(Values{float{}}));
-  d.setData("c", makeVariable<int64_t>(Values{int64_t{}}));
+  Dataset d({{"a", makeVariable<double>(Values{double{}})},
+             {"b", makeVariable<float>(Values{float{}})},
+             {"c", makeVariable<int64_t>(Values{int64_t{}})}});
   auto &&view = TestFixture::access(d);
 
   for (const auto &name : {"a", "b", "c"})
@@ -60,10 +59,9 @@ TYPED_TEST(DatasetViewTest, name) {
 }
 
 TYPED_TEST(DatasetViewTest, find_and_contains) {
-  Dataset d;
-  d.setData("a", makeVariable<double>(Values{double{}}));
-  d.setData("b", makeVariable<float>(Values{float{}}));
-  d.setData("c", makeVariable<int64_t>(Values{int64_t{}}));
+  Dataset d({{"a", makeVariable<double>(Values{double{}})},
+             {"b", makeVariable<float>(Values{float{}})},
+             {"c", makeVariable<int64_t>(Values{int64_t{}})}});
   auto &&view = TestFixture::access(d);
 
   EXPECT_EQ(view.find("not a thing"), view.end());
@@ -77,11 +75,10 @@ TYPED_TEST(DatasetViewTest, find_and_contains) {
 }
 
 TYPED_TEST(DatasetViewTest, find_in_slice) {
-  Dataset d;
-  d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{2}));
-  d.setData("b", makeVariable<float>(Dims{Dim::X}, Shape{2}));
-  d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{2}));
-  d.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{2}));
+  Dataset d({{"a", makeVariable<double>(Dims{Dim::X}, Shape{2})},
+             {"b", makeVariable<float>(Dims{Dim::X}, Shape{2})}},
+            {{Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{2})},
+             {Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{2})}});
   auto &&view = TestFixture::access(d);
 
   const auto slice = view.slice({Dim::X, 1});
@@ -102,10 +99,9 @@ TYPED_TEST(DatasetViewTest, iterators_empty_dataset) {
 }
 
 TYPED_TEST(DatasetViewTest, iterators) {
-  Dataset d;
-  d.setData("a", makeVariable<double>(Values{double{}}));
-  d.setData("b", makeVariable<float>(Values{float{}}));
-  d.setData("c", makeVariable<int64_t>(Values{int64_t{}}));
+  Dataset d({{"a", makeVariable<double>(Values{double{}})},
+             {"b", makeVariable<float>(Values{float{}})},
+             {"c", makeVariable<int64_t>(Values{int64_t{}})}});
   auto &&view = TestFixture::access(d);
 
   ASSERT_NO_THROW(view.begin());

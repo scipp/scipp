@@ -109,8 +109,7 @@ auto make_single_events() {
   const DataArray table(weights, {{Dim::X, x}});
   const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       Values{std::pair{0, 5}});
-  Dataset events;
-  events.setData("events", make_bins(indices, Dim::Event, table));
+  Dataset events({{"events", make_bins(indices, Dim::Event, table)}});
   return events;
 }
 

@@ -16,7 +16,7 @@ template <class T> void check_equal(const T &var) {
 
 class EqualsNanTest : public ::testing::Test {
 protected:
-  EqualsNanTest() { ds.setData("a", da); }
+  EqualsNanTest() : ds({{"a", da}}) {}
   Dimensions dims{Dim::Y, 2};
   Variable indices = makeVariable<scipp::index_pair>(
       dims, Values{std::pair{0, 2}, std::pair{2, 4}});

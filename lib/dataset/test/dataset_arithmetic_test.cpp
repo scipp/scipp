@@ -69,34 +69,23 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
   const auto mask = makeVariable<bool>(Dimensions{Dim::Y, ly},
                                        Values(make_bools(ly, {false, true})));
 
-  Dataset a;
-  {
-    a.setData("data_a",
-              makeVariable<double>(Dimensions{{Dim::X, lx}, {Dim::Y, ly}},
-                                   Values(rand(lx * ly))));
-    a["data_a"].masks().set("mask", makeVariable<bool>(Values{false}));
-    a.setData("data_b",
-              makeVariable<double>(Dimensions{{Dim::Y, ly}, {Dim::X, lx}},
-                                   Values(rand(lx * ly))));
-    a.setCoord(Dim::X,
-               makeVariable<double>(Dims{Dim::X}, Shape{lx}, Values(coordX)));
-    a.setCoord(Dim::Y,
-               makeVariable<double>(Dims{Dim::Y}, Shape{ly}, Values(coordY)));
-    a.setCoord(Dim("t"), labelT);
-  }
+  Dataset a(
+      {{"data_a", makeVariable<double>(Dimensions{{Dim::X, lx}, {Dim::Y, ly}},
+                                       Values(rand(lx * ly)))},
+       {"data_b", makeVariable<double>(Dimensions{{Dim::Y, ly}, {Dim::X, lx}},
+                                       Values(rand(lx * ly)))}},
+      {{Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{lx}, Values(coordX))},
+       {Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{ly}, Values(coordY))},
+       {Dim("t"), labelT}});
+  a["data_a"].masks().set("mask", makeVariable<bool>(Values{false}));
 
-  Dataset b;
-  {
-    b.setData("data_a",
-              makeVariable<double>(Dimensions{{Dim::X, lx}, {Dim::Y, ly}},
-                                   Values(rand(lx * ly))));
-    b["data_a"].masks().set("mask", mask);
-    b.setCoord(Dim::X,
-               makeVariable<double>(Dims{Dim::X}, Shape{lx}, Values(coordX)));
-    b.setCoord(Dim::Y,
-               makeVariable<double>(Dims{Dim::Y}, Shape{ly}, Values(coordY)));
-    b.setCoord(Dim("t"), labelT);
-  }
+  Dataset b(
+      {{"data_a", makeVariable<double>(Dimensions{{Dim::X, lx}, {Dim::Y, ly}},
+                                       Values(rand(lx * ly)))}},
+      {{Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{lx}, Values(coordX))},
+       {Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{ly}, Values(coordY))},
+       {Dim("t"), labelT}});
+  b["data_a"].masks().set("mask", mask);
 
   return std::make_tuple(a, b);
 }
@@ -594,13 +583,8 @@ TYPED_TEST(DatasetBinaryOpTest, variableconstview_lhs_dataset_rhs) {
 TYPED_TEST(DatasetBinaryOpTest, broadcast) {
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   const auto c = makeVariable<double>(Values{2.0});
-  Dataset a;
-  Dataset b;
-  a.setData("data1", x);
-  a.setData("data2", x);
-  a.setCoord(Dim::X, x);
-  b.setData("data1", c);
-  b.setData("data2", c + c);
+  Dataset a({{"data1", x}, {"data2", x}}, {{Dim::X, x}});
+  Dataset b({{"data1", c}, {"data2", c + c}});
   const auto res = TestFixture::op(a, b);
   EXPECT_EQ(res["data1"].data(), TestFixture::op(x, c));
   EXPECT_EQ(res["data2"].data(), TestFixture::op(x, c + c));
@@ -706,24 +690,6 @@ TYPED_TEST(DatasetBinaryOpTest, masks_not_shared) {
   EXPECT_EQ(b["data"].masks()["mask_b"], maskB);
 }
 
-TYPED_TEST(DatasetBinaryOpTest, unsized_input_returns_unsized) {
-  const auto [sized, _] = generateBinaryOpTestCase();
-  const Dataset unsized;
-
-  // If output's sizes are unset, setCoord will raise.
-  auto a = TestFixture::op(sized, unsized);
-  EXPECT_EQ(a.sizes(), Sizes());
-  EXPECT_THROW(
-      a.setCoord(Dim::Row, makeVariable<int>(Dims{Dim::Row}, Shape{1})),
-      std::invalid_argument);
-
-  auto b = TestFixture::op(sized, unsized);
-  EXPECT_EQ(b.sizes(), Sizes());
-  EXPECT_THROW(
-      b.setCoord(Dim::Row, makeVariable<int>(Dims{Dim::Row}, Shape{1})),
-      std::invalid_argument);
-}
-
 TEST(DatasetInPlaceStrongExceptionGuarantee, events) {
   Variable indicesGood = makeVariable<std::pair<scipp::index, scipp::index>>(
       Dims{Dim::X}, Shape{2}, Values{std::pair{0, 2}, std::pair{2, 3}});
@@ -735,9 +701,7 @@ TEST(DatasetInPlaceStrongExceptionGuarantee, events) {
   Variable good = make_bins(indicesGood, Dim::Event, table);
   Variable bad = make_bins(indicesBad, Dim::Event, table);
   DataArray good_array(good, {}, {});
-  Dataset good_dataset;
-  good_dataset.setData("a", good);
-  good_dataset.setData("b", good);
+  Dataset good_dataset({{"a", good}, {"b", good}});
 
   // We have no control over the iteration order in the implementation of binary
   // operations. All we know that data is in some sort of (unordered) map.

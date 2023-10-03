@@ -86,7 +86,9 @@ auto apply_with_broadcast(const Op &op, const A &a, const B &b) {
   Dataset res;
   for (const auto &item : b)
     if (const auto it = a.find(item.name()); it != a.end())
-      res.setData(item.name(), op(*it, item));
+      res.setDataInit(item.name(), op(*it, item));
+  if (!res.is_valid())
+    return Dataset({}, {}); // Make sure to always return a valid dataset.
   return res;
 }
 
@@ -94,7 +96,7 @@ template <class Op, class A>
 auto apply_with_broadcast(const Op &op, const A &a, const DataArray &b) {
   Dataset res;
   for (const auto &item : a)
-    res.setData(item.name(), op(item, b));
+    res.setDataInit(item.name(), op(item, b));
   return res;
 }
 
@@ -102,7 +104,7 @@ template <class Op, class B>
 auto apply_with_broadcast(const Op &op, const DataArray &a, const B &b) {
   Dataset res;
   for (const auto &item : b)
-    res.setData(item.name(), op(a, item));
+    res.setDataInit(item.name(), op(a, item));
   return res;
 }
 
@@ -110,7 +112,7 @@ template <class Op, class A>
 auto apply_with_broadcast(const Op &op, const A &a, const Variable &b) {
   Dataset res;
   for (const auto &item : a)
-    res.setData(item.name(), op(item, b));
+    res.setDataInit(item.name(), op(item, b));
   return res;
 }
 
@@ -118,7 +120,7 @@ template <class Op, class B>
 auto apply_with_broadcast(const Op &op, const Variable &a, const B &b) {
   Dataset res;
   for (const auto &item : b)
-    res.setData(item.name(), op(a, item));
+    res.setDataInit(item.name(), op(a, item));
   return res;
 }
 

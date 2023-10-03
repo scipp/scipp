@@ -10,9 +10,8 @@ using namespace scipp;
 using namespace scipp::dataset;
 
 TEST(CountsTest, toDensity_fromDensity) {
-  Dataset d;
-  d.setData("", makeVariable<double>(Dims{Dim::Time}, Shape{3}, units::counts,
-                                     Values{12, 12, 12}));
+  Dataset d({{"", makeVariable<double>(Dims{Dim::Time}, Shape{3}, units::counts,
+                                       Values{12, 12, 12})}});
   d.setCoord(Dim::Time, makeVariable<double>(Dims{Dim::Time}, Shape{4},
                                              units::us, Values{1, 2, 4, 8}));
 

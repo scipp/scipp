@@ -108,15 +108,14 @@ class Dataset3DTest_slice_x : public Dataset3DTest,
                               public ::testing::WithParamInterface<int> {
 protected:
   Dataset reference(const scipp::index pos) {
-    Dataset d;
-    d.setData("data_xyz", dataset["data_xyz"].slice({Dim::X, pos}));
-    d.setCoord(Dim{"scalar"}, dataset.coords()[Dim{"scalar"}]);
-    d.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
-    d.setCoord(Dim::Z, dataset.coords()[Dim::Z]);
-    d.setCoord(Dim{"xy"}, dataset.coords()[Dim{"xy"}].slice({Dim::X, pos}));
-    d.setCoord(Dim("labels_y"), dataset.coords()[Dim("labels_y")]);
-    d.setCoord(Dim("labels_z"), dataset.coords()[Dim("labels_z")]);
-    return copy(d);
+    return copy(
+        Dataset({{"data_xyz", dataset["data_xyz"].slice({Dim::X, pos})}},
+                {{Dim{"scalar"}, dataset.coords()[Dim{"scalar"}]},
+                 {Dim::Y, dataset.coords()[Dim::Y]},
+                 {Dim::Z, dataset.coords()[Dim::Z]},
+                 {Dim{"xy"}, dataset.coords()[Dim{"xy"}].slice({Dim::X, pos})},
+                 {Dim("labels_y"), dataset.coords()[Dim("labels_y")]},
+                 {Dim("labels_z"), dataset.coords()[Dim("labels_z")]}}));
   }
 };
 class Dataset3DTest_slice_y : public Dataset3DTest,
@@ -133,8 +132,7 @@ class Dataset3DTest_slice_range_y : public Dataset3DTest,
                                         std::pair<scipp::index, scipp::index>> {
 protected:
   Dataset reference(const scipp::index begin, const scipp::index end) {
-    Dataset d;
-    d.setData("data_xyz", dataset["data_xyz"].slice({Dim::Y, begin, end}));
+    Dataset d({{"data_xyz", dataset["data_xyz"].slice({Dim::Y, begin, end})}});
     d.setCoord(Dim{"scalar"}, dataset.coords()[Dim{"scalar"}]);
     d.setCoord(Dim::X, dataset.coords()[Dim::X]);
     d.setCoord(Dim::Y, dataset.coords()[Dim::Y].slice({Dim::Y, begin, end}));
@@ -153,8 +151,7 @@ class Dataset3DTest_slice_range_z : public Dataset3DTest,
                                         std::pair<scipp::index, scipp::index>> {
 protected:
   Dataset reference(const scipp::index begin, const scipp::index end) {
-    Dataset d;
-    d.setData("data_xyz", dataset["data_xyz"].slice({Dim::Z, begin, end}));
+    Dataset d({{"data_xyz", dataset["data_xyz"].slice({Dim::Z, begin, end})}});
     d.setCoord(Dim{"scalar"}, dataset.coords()[Dim{"scalar"}]);
     d.setCoord(Dim::X, dataset.coords()[Dim::X]);
     d.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
@@ -213,8 +210,7 @@ TEST_P(Dataset3DTest_slice_x, slice) {
 
 TEST_P(Dataset3DTest_slice_y, slice) {
   const auto pos = GetParam();
-  Dataset reference;
-  reference.setData("data_xyz", dataset["data_xyz"].slice({Dim::Y, pos}));
+  Dataset reference({{"data_xyz", dataset["data_xyz"].slice({Dim::Y, pos})}});
   reference.setCoord(Dim{"scalar"}, dataset.coords()[Dim{"scalar"}]);
   reference.setCoord(Dim::X, dataset.coords()[Dim::X]);
   reference.setCoord(Dim::Z, dataset.coords()[Dim::Z]);
@@ -227,8 +223,7 @@ TEST_P(Dataset3DTest_slice_y, slice) {
 
 TEST_P(Dataset3DTest_slice_z, slice) {
   const auto pos = GetParam();
-  Dataset reference;
-  reference.setData("data_xyz", dataset["data_xyz"].slice({Dim::Z, pos}));
+  Dataset reference({{"data_xyz", dataset["data_xyz"].slice({Dim::Z, pos})}});
   reference.setCoord(Dim{"scalar"}, dataset.coords()[Dim{"scalar"}]);
   reference.setCoord(Dim::X, dataset.coords()[Dim::X]);
   reference.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
@@ -239,9 +234,8 @@ TEST_P(Dataset3DTest_slice_z, slice) {
 
 TEST_P(Dataset3DTest_slice_range_x, slice) {
   const auto [begin, end] = GetParam();
-  Dataset reference;
-  reference.setData("data_xyz",
-                    dataset["data_xyz"].slice({Dim::X, begin, end}));
+  Dataset reference(
+      {{"data_xyz", dataset["data_xyz"].slice({Dim::X, begin, end})}});
   reference.setCoord(Dim{"scalar"}, dataset.coords()[Dim{"scalar"}]);
   reference.setCoord(Dim::X,
                      dataset.coords()[Dim::X].slice({Dim::X, begin, end}));

@@ -13,13 +13,11 @@ using namespace scipp;
 using namespace scipp::dataset;
 
 TEST(StringFormattingTest, to_string_Dataset) {
-  Dataset a;
-  a.setData("a", makeVariable<double>(Values{double{}}));
-  a.setData("b", makeVariable<double>(Values{double{}}));
+  Dataset a({{"a", makeVariable<double>(Values{double{}})},
+             {"b", makeVariable<double>(Values{double{}})}});
   // Create new dataset with same variables but different order
-  Dataset b;
-  b.setData("b", makeVariable<double>(Values{double{}}));
-  b.setData("a", makeVariable<double>(Values{double{}}));
+  Dataset b({{"b", makeVariable<double>(Values{double{}})},
+             {"a", makeVariable<double>(Values{double{}})}});
   // string representations should be the same
   EXPECT_EQ(to_string(a), to_string(b));
 }

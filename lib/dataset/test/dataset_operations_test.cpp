@@ -94,11 +94,11 @@ TYPED_TEST(DatasetShapeChangingOpTest, mean_fully_masked) {
 }
 
 TEST(DatasetOperationsTest, mean_two_dims) {
-  Dataset ds;
   // the negative values should have been masked out
-  ds.setData("data_xy", makeVariable<int64_t>(Dims{Dim::X, Dim::Y}, Shape{5, 2},
-                                              Values{-999, -999, 3, -999, 5, 6,
-                                                     -999, 10, 10, -999}));
+  Dataset ds(
+      {{"data_xy", makeVariable<int64_t>(Dims{Dim::X, Dim::Y}, Shape{5, 2},
+                                         Values{-999, -999, 3, -999, 5, 6, -999,
+                                                10, 10, -999})}});
 
   ds["data_xy"].masks().set(
       "mask_xy", makeVariable<bool>(Dims{Dim::X, Dim::Y}, Shape{5, 2},
@@ -111,13 +111,12 @@ TEST(DatasetOperationsTest, mean_two_dims) {
 }
 
 TEST(DatasetOperationsTest, mean_three_dims) {
-  Dataset ds;
   // the negative values should have been masked out
-  ds.setData("data_xy",
-             makeVariable<int64_t>(
-                 Dims{Dim::Z, Dim::X, Dim::Y}, Shape{2, 5, 2},
-                 Values{-999, -999, 3, -999, 5, 6, -999, 10, 10, -999,
-                        -999, -999, 3, -999, 5, 6, -999, 10, 10, -999}));
+  Dataset ds({{"data_xy",
+               makeVariable<int64_t>(
+                   Dims{Dim::Z, Dim::X, Dim::Y}, Shape{2, 5, 2},
+                   Values{-999, -999, 3, -999, 5, 6, -999, 10, 10, -999,
+                          -999, -999, 3, -999, 5, 6, -999, 10, 10, -999})}});
 
   ds["data_xy"].masks().set(
       "mask_xy",

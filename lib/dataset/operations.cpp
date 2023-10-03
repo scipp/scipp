@@ -61,12 +61,12 @@ DataArray copy(const DataArray &array, const AttrPolicy attrPolicy) {
 Dataset copy(const Dataset &dataset, const AttrPolicy attrPolicy) {
   Dataset out{{}, copy(dataset.coords())};
 
-  bool sizes_set = !out.coords().empty();
+  //  bool sizes_set = !out.coords().empty();
   for (const auto &item : dataset) {
-    if (!sizes_set) {
-      out.coords().setSizes(item.dims());
-      sizes_set = true;
-    }
+    //    if (!sizes_set) {
+    //      out.coords().setSizes(item.dims());
+    //      sizes_set = true;
+    //    }
     out.setData(item.name(), copy(item, attrPolicy));
   }
   return out;

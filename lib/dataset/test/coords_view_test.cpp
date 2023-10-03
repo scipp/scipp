@@ -42,12 +42,9 @@ TYPED_TEST(CoordsViewTest, bad_item_access) {
 }
 
 TYPED_TEST(CoordsViewTest, item_access) {
-  Dataset d;
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{4, 5});
-  d.setData("a", x);
-  d.setCoord(Dim::X, x);
-  d.setCoord(Dim::Y, y);
+  Dataset d({{"a", x}}, {{Dim::X, x}, {Dim::Y, y}});
 
   const auto coords = TestFixture::access(d).coords();
   ASSERT_EQ(coords[Dim::X], x);
@@ -64,12 +61,9 @@ TYPED_TEST(CoordsViewTest, iterators_empty_coords) {
 }
 
 TYPED_TEST(CoordsViewTest, iterators) {
-  Dataset d;
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{4, 5});
-  d.setData("a", x);
-  d.setCoord(Dim::X, x);
-  d.setCoord(Dim::Y, y);
+  Dataset d({{"a", x}}, {{Dim::X, x}, {Dim::Y, y}});
   const auto coords = TestFixture::access(d).coords();
 
   ASSERT_NO_THROW(coords.begin());
@@ -109,16 +103,13 @@ TYPED_TEST(CoordsViewTest, find_and_contains) {
 }
 
 TEST(MutableCoordsViewTest, item_write) {
-  Dataset d;
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{4, 5});
   const auto x_reference =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1.5, 2.0, 3.0});
   const auto y_reference =
       makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{4.5, 5.0});
-  d.setData("a", x);
-  d.setCoord(Dim::X, x);
-  d.setCoord(Dim::Y, y);
+  Dataset d({{"a", x}}, {{Dim::X, x}, {Dim::Y, y}});
 
   auto &coords = d.coords();
   coords[Dim::X].values<double>()[0] += 0.5;
@@ -197,14 +188,6 @@ TEST(SizedDictTest, set_length_2_without_setting_sizes) {
   ASSERT_EQ(coords.size(), 1);
   ASSERT_EQ(coords.sizes(), Sizes());
   ASSERT_EQ(coords[Dim::X], x);
-}
-
-TEST(SizedDictTest, cannot_set_long_coord_without_setting_sizes) {
-  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{4});
-  const auto xy = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 1});
-  Coords coords;
-  ASSERT_THROW(coords.set(Dim::X, x), std::invalid_argument);
-  ASSERT_THROW(coords.set(Dim::X, xy), std::invalid_argument);
 }
 
 TEST(SizedDictTest, set_sizes_explicitly) {
@@ -379,13 +362,4 @@ TEST(SizedDictTest, merge_from) {
   EXPECT_EQ(merged[Dim::X], x);
   EXPECT_EQ(merged[Dim::Y], y);
   EXPECT_EQ(merged[Dim::Row], xy);
-}
-
-TEST(SizedDictTest, merge_from_requires_sizes_are_set) {
-  const Dimensions dims({{Dim::X, 3}});
-  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3});
-  const Coords set(dims, {{Dim::X, x}});
-  const Coords unset;
-  EXPECT_THROW_DISCARD(set.merge_from(unset), std::invalid_argument);
-  EXPECT_THROW_DISCARD(unset.merge_from(set), std::invalid_argument);
 }

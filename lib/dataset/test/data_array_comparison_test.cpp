@@ -103,10 +103,10 @@ template <class T, class T2>
 auto make_values(const std::string &name, const Dimensions &dims,
                  const units::Unit unit,
                  const std::initializer_list<T2> &data) {
-  Dataset d;
-  d.setData(name,
-            makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
-  return DataArray(d[name]);
+  DataArray da(
+      makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
+  da.setName(name);
+  return da;
 }
 
 template <class T, class T2>
@@ -114,10 +114,10 @@ auto make_values_and_variances(const std::string &name, const Dimensions &dims,
                                const units::Unit unit,
                                const std::initializer_list<T2> &values,
                                const std::initializer_list<T2> &variances) {
-  Dataset d;
-  d.setData(name, makeVariable<T>(Dimensions(dims), units::Unit(unit),
-                                  Values(values), Variances(variances)));
-  return DataArray(d[name]);
+  DataArray da(makeVariable<T>(Dimensions(dims), units::Unit(unit),
+                               Values(values), Variances(variances)));
+  da.setName(name);
+  return da;
 }
 } // namespace
 

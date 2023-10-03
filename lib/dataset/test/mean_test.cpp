@@ -13,9 +13,9 @@
 using namespace scipp;
 
 TEST(DatasetTest, sum_and_mean) {
-  Dataset ds;
-  ds.setData("a", makeVariable<float>(Dimensions{Dim::X, 3}, units::one,
-                                      Values{1, 2, 3}, Variances{12, 15, 18}));
+  Dataset ds(
+      {{"a", makeVariable<float>(Dimensions{Dim::X, 3}, units::one,
+                                 Values{1, 2, 3}, Variances{12, 15, 18})}});
   EXPECT_EQ(sum(ds, Dim::X)["a"].data(),
             makeVariable<float>(Values{6}, Variances{45}));
   EXPECT_EQ(sum(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
@@ -37,19 +37,16 @@ auto make_one_item_dataset(const std::string &name, const Dimensions &dims,
                            const units::Unit unit,
                            const std::initializer_list<T2> &values,
                            const std::initializer_list<T2> &variances) {
-  auto d = Dataset();
-  d.setData(name, makeVariable<T>(Dimensions(dims), units::Unit(unit),
-                                  Values(values), Variances(variances)));
-  return d;
+  return Dataset(
+      {{name, makeVariable<T>(Dimensions(dims), units::Unit(unit),
+                              Values(values), Variances(variances))}});
 }
 template <class T, class T2>
 auto make_one_item_dataset(const std::string &name, const Dimensions &dims,
                            const units::Unit unit,
                            const std::initializer_list<T2> &values) {
-  auto d = Dataset();
-  d.setData(name, makeVariable<T>(Dimensions(dims), units::Unit(unit),
-                                  Values(values)));
-  return d;
+  return Dataset({{name, makeVariable<T>(Dimensions(dims), units::Unit(unit),
+                                         Values(values))}});
 }
 
 template <typename Op> void test_masked_data_array_1_mask(Op op) {
