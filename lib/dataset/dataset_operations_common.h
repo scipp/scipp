@@ -77,8 +77,15 @@ template <class... Args> bool copy_attr(const Variable &, const Args &...) {
 template <class Func, class... Args>
 Dataset apply_to_items(const Dataset &d, Func func, Args &&...args) {
   Dataset result;
-  for (const auto &data : d)
-    result.setData(data.name(), func(data, std::forward<Args>(args)...));
+  bool first = true;
+  for (const auto &data : d) {
+    if (first) {
+      result =
+          Dataset({{data.name(), func(data, std::forward<Args>(args)...)}});
+      first = false;
+    } else
+      result.setData(data.name(), func(data, std::forward<Args>(args)...));
+  }
   return result;
 }
 
