@@ -40,6 +40,7 @@ Bugfixes
 ~~~~~~~~
 
 * :func:`scipp.testing.assert_identical` now compares the alignment of coordinates `#3242 <https://github.com/scipp/scipp/pull/3242>`_.
+* Fixed overflow in variances with large integers `#3262 <https://github.com/scipp/scipp/pull/3262>`_.
 
 Documentation
 ~~~~~~~~~~~~~
