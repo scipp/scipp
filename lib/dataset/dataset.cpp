@@ -19,6 +19,13 @@ template <class T> void expect_writable(const T &dict) {
         "Read-only flag is set, cannot insert new or erase existing items.");
 }
 
+void expect_valid(const Dataset &ds) {
+  if (!ds.is_valid())
+    throw except::DatasetError(
+        "Dataset is not valid. This is an internal error stemming from an "
+        "improperly initialized dataset.");
+}
+
 template <class T>
 void expect_matching_item_dims(const Dataset &dset, const std::string_view key,
                                const T &to_insert) {
@@ -31,13 +38,11 @@ void expect_matching_item_dims(const Dataset &dset, const std::string_view key,
 }
 } // namespace
 
-Dataset::Dataset() {
-  throw std::invalid_argument(
-      "Cannot create Dataset without data or coordinates.");
-}
+Dataset::Dataset() : m_valid{false} {}
 
 Dataset::Dataset(const Dataset &other)
-    : m_coords(other.m_coords), m_data(other.m_data), m_readonly(false) {}
+    : m_coords(other.m_coords), m_data(other.m_data),
+      m_readonly(false), m_valid{other.m_valid} {}
 
 Dataset::Dataset(const DataArray &data) {
   m_coords.setSizes(data.dims());
@@ -56,6 +61,7 @@ Dataset &Dataset::operator=(Dataset &&other) {
   m_coords = std::move(other.m_coords);
   m_data = std::move(other.m_data);
   m_readonly = other.m_readonly;
+  m_valid = other.m_valid;
   return *this;
 }
 
@@ -68,6 +74,7 @@ void Dataset::clear() {
 }
 
 void Dataset::setCoords(Coords other) {
+  expect_valid(*this);
   scipp::expect::includes(other.sizes(), m_coords.sizes());
   m_coords = std::move(other);
 }
@@ -121,6 +128,7 @@ DataArray Dataset::operator[](const std::string &name) const {
 /// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
   expect_writable(*this);
+  expect_valid(*this);
   m_coords.set(dim, std::move(coord));
 }
 
@@ -132,6 +140,7 @@ void Dataset::setCoord(const Dim dim, Variable coord) {
 void Dataset::setData(const std::string &name, Variable data,
                       const AttrPolicy attrPolicy) {
   expect_writable(*this);
+  expect_valid(*this);
   expect_matching_item_dims(*this, name, data);
   const auto replace = contains(name);
   if (replace && attrPolicy == AttrPolicy::Keep)
@@ -268,6 +277,8 @@ Dim Dataset::dim() const {
 scipp::index Dataset::ndim() const { return scipp::size(m_coords.sizes()); }
 
 bool Dataset::is_readonly() const noexcept { return m_readonly; }
+
+bool Dataset::is_valid() const noexcept { return m_valid; }
 
 typename Masks::holder_type union_or(const Masks &currentMasks,
                                      const Masks &otherMasks) {

@@ -220,6 +220,7 @@ public:
   [[nodiscard]] scipp::index ndim() const;
 
   bool is_readonly() const noexcept;
+  bool is_valid() const noexcept;
 
 private:
   // Declared friend so gtest recognizes it
@@ -229,6 +230,7 @@ private:
   Coords m_coords;
   core::Dict<std::string, DataArray> m_data;
   bool m_readonly{false};
+  bool m_valid{true};
 };
 
 [[nodiscard]] SCIPP_DATASET_EXPORT Dataset
