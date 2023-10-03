@@ -25,6 +25,11 @@ TEST(DatasetTest, construct_default) {
   ASSERT_FALSE(d.is_valid());
 }
 
+TEST(DatasetTest, construct_empty_dicts) {
+  Dataset d({}, {});
+  ASSERT_EQ(d.ndim(), 0);
+}
+
 TEST(DatasetTest, construct_data) {
   const Dataset d(
       {{"a", DataArray(makeVariable<int>(Dims{Dim::X}, Shape{3}))}});

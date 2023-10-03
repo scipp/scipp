@@ -64,29 +64,28 @@ public:
   explicit Dataset(
       DataMap data, CoordMap coords = core::Dict<Dim, Variable>{},
       const detail::init_from_data_arrays_t = detail::init_from_data_arrays) {
-    if constexpr (std::is_same_v<std::decay_t<CoordMap>, Coords>)
-      m_coords = std::move(coords);
-    else
-      m_coords = Coords(AutoSizeTag{}, std::move(coords));
-
-    bool sizes_set = false;
-    const auto init_sizes = [this, &sizes_set](const auto &item) {
-      if (sizes_set)
-        return;
-      this->m_coords.setSizes(item.dims());
-      sizes_set = true;
-    };
-
-    if constexpr (std::is_base_of_v<Dataset, std::decay_t<DataMap>>)
-      for (auto &&item : data) {
-        init_sizes(item);
-        setData(item.name(), item);
+    if (data.empty()) {
+      if constexpr (std::is_same_v<std::decay_t<CoordMap>, Coords>)
+        m_coords = std::move(coords);
+      else
+        m_coords = Coords(AutoSizeTag{}, std::move(coords));
+    } else {
+      // Set the sizes based on data in order to handle bin-edge coords.
+      // The coords are then individually checked against those sizes.
+      m_coords = Coords(data.begin()->second.dims(), {});
+      for (auto &&[name, item] : coords) {
+        setCoord(name, std::move(item));
       }
-    else
-      for (auto &&[name, item] : data) {
-        init_sizes(item);
-        setData(std::string(name), std::move(item));
-      }
+
+      if constexpr (std::is_base_of_v<Dataset, std::decay_t<DataMap>>)
+        for (auto &&item : data) {
+          setData(item.name(), item);
+        }
+      else
+        for (auto &&[name, item] : data) {
+          setData(std::string(name), std::move(item));
+        }
+    }
   }
 
   Dataset &operator=(const Dataset &other);
