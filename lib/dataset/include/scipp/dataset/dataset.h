@@ -33,6 +33,10 @@ template <class D> struct item_with_coords {
 };
 
 template <class D> item_with_coords(const D *) -> item_with_coords<D>;
+
+// Use to disambiguate constructors.
+struct init_from_data_arrays_t {};
+static constexpr auto init_from_data_arrays = init_from_data_arrays_t{};
 } // namespace detail
 
 /// Collection of data arrays.
@@ -47,10 +51,19 @@ public:
   Dataset(Dataset &&other) = default;
   explicit Dataset(const DataArray &data);
 
+  // The constructor with the DataMap template also works with Variables.
+  // But the compiler cannot deduce the type when called with initializer lists.
+  template <class CoordMap = core::Dict<Dim, Variable>>
+  explicit Dataset(core::Dict<std::string, Variable> data,
+                   CoordMap coords = core::Dict<Dim, Variable>{})
+      : Dataset(std::move(data), std::move(coords),
+                detail::init_from_data_arrays) {}
+
   template <class DataMap = core::Dict<std::string, DataArray>,
             class CoordMap = core::Dict<Dim, Variable>>
-  explicit Dataset(DataMap data,
-                   CoordMap coords = core::Dict<Dim, Variable>{}) {
+  explicit Dataset(
+      DataMap data, CoordMap coords = core::Dict<Dim, Variable>{},
+      const detail::init_from_data_arrays_t = detail::init_from_data_arrays) {
     if constexpr (std::is_same_v<std::decay_t<CoordMap>, Coords>)
       m_coords = std::move(coords);
     else
