@@ -97,9 +97,6 @@ void bind_bins_map_view(py::module &m, const std::string &name) {
   py::class_<T> c(m, name.c_str());
   bind_common_mutable_view_operators(c);
   bind_pop(c);
-  c.def(
-      "keys", [](T &self) { return keys_view(self); }, py::keep_alive<0, 1>(),
-      R"(view on self's keys)");
   if constexpr (HasAlignment) {
     bind_set_aligned(c);
   }
