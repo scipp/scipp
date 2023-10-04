@@ -214,29 +214,6 @@ void expect_valid_coord_dims(const Key &key, const Dimensions &coord_dims,
         to_string(coord_dims) + " to DataArray with dims " +
         to_string(Dimensions{da_sizes.labels(), da_sizes.sizes()}));
 }
-
-template <class Key>
-bool check_coord_for_unset_sizes(const Key &key, const Dimensions &coord_dims) {
-  using core::to_string;
-
-  bool bin_edges = false;
-  bool valid = true;
-  for (const auto size : coord_dims.sizes()) {
-    if (size == 2)
-      bin_edges = true;
-    else if (size != 0)
-      valid = false;
-  }
-
-  if (!valid)
-    throw std::invalid_argument(
-        "Cannot add coordinate '" + to_string(key) + "' with dims " +
-        to_string(coord_dims) +
-        " because the dimensions have not been set. "
-        "Only scalar or length-2 coordinates are allowed.");
-
-  return bin_edges;
-}
 } // namespace
 
 template <class Key, class Value>
