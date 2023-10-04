@@ -154,7 +154,7 @@ def _find_bin_edges(ds: Dataset) -> bool:
 
 
 def _strip_scalars_and_broadcast_masks(ds: Dataset) -> Dataset:
-    out = Dataset()
+    out = {}
     for key, da in ds.items():
         if da.ndim == 1:
             out[key] = DataArray(
@@ -173,7 +173,7 @@ def _strip_scalars_and_broadcast_masks(ds: Dataset) -> Dataset:
                     key: var.broadcast(sizes=da.sizes) for key, var in da.masks.items()
                 },
             )
-    return out
+    return Dataset(out)
 
 
 def _to_dataset(obj: Union[VariableLike, dict]) -> Dataset:
