@@ -259,7 +259,6 @@ def test_assert_identical_data_array_masks_value_mismatch():
 @pytest.mark.parametrize(
     'a',
     (
-        sc.Dataset(),
         sc.Dataset({'f': sc.scalar(91, unit='F')}),
         sc.Dataset({'r': sc.scalar(6.4)}, coords={'g': sc.scalar(4)}),
         sc.Dataset({'2': sc.arange('u', 5)}),

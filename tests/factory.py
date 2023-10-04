@@ -119,10 +119,12 @@ def make_dense_data_array(
 def make_dense_dataset(entries=None, **kwargs):
     if entries is None:
         entries = ['a', 'b']
-    ds = sc.Dataset()
-    for entry in entries:
-        ds[entry] = (10.0 * np.random.rand()) * make_dense_data_array(**kwargs)
-    return ds
+    return sc.Dataset(
+        {
+            entry: (10.0 * np.random.rand()) * make_dense_data_array(**kwargs)
+            for entry in entries
+        }
+    )
 
 
 def make_dense_datagroup(child=None, maxdepth=1, cur_depth=1, entries=None, **kwargs):

@@ -34,17 +34,17 @@ def make_binned_array_variable_buffer() -> sc.DataArray:
 
 
 def make_dataset() -> sc.Dataset:
-    ds = sc.Dataset()
-    ds['xy'] = make_array()
-    return ds
+    return sc.Dataset({'xy': make_array()})
 
 
 def make_binned_dataset() -> sc.Dataset:
-    ds = sc.Dataset()
-    ds['xy'] = make_array().data
-    ds['binned'] = make_binned_array()
-    ds['binned-variable'] = make_binned_array_variable_buffer()
-    return ds
+    return sc.Dataset(
+        {
+            'xy': make_array().data,
+            'binned': make_binned_array(),
+            'binned-variable': make_binned_array_variable_buffer(),
+        }
+    )
 
 
 @pytest.fixture(

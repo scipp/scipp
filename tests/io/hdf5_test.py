@@ -247,11 +247,12 @@ def test_dataset_item_can_be_read_as_data_array():
     with tempfile.TemporaryDirectory() as path:
         name = f'{path}/test.hdf5'
         ds.save_hdf5(filename=name)
-        loaded = sc.Dataset()
+        loaded = {}
         with h5py.File(name, 'r') as f:
             for entry in f['entries'].values():
                 da = sc.io.hdf5.HDF5IO.read(entry)
                 loaded[da.name] = da
+        loaded = sc.Dataset(loaded)
         assert sc.identical(loaded, ds)
 
 

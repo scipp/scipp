@@ -9,10 +9,13 @@ import scipp as sc
 
 @pytest.fixture(params=['Dataset', 'DatasetView'])
 def dataset_abc(request):
-    d = sc.Dataset()
-    d['a'] = sc.Variable(dims=['x'], values=[1, 2])
-    d['b'] = sc.Variable(dims=['x'], values=[3, 4])
-    d['c'] = sc.Variable(dims=['x'], values=[5, 6])
+    d = sc.Dataset(
+        {
+            'a': sc.Variable(dims=['x'], values=[1, 2]),
+            'b': sc.Variable(dims=['x'], values=[3, 4]),
+            'c': sc.Variable(dims=['x'], values=[5, 6]),
+        }
+    )
     # Using yield so `d` does not go out of scope when returning slice
     if request.param == 'Dataset':
         yield d
@@ -48,11 +51,13 @@ def test_dataset_items(dataset_abc):
 
 
 def make_coords_xyz():
-    d = sc.Dataset()
-    d.coords['x'] = 1.0 * sc.units.m
-    d.coords['y'] = 2.0 * sc.units.m
-    d.coords['z'] = 3.0 * sc.units.m
-    return d
+    return sc.Dataset(
+        coords={
+            'x': 1.0 * sc.units.m,
+            'y': 2.0 * sc.units.m,
+            'z': 3.0 * sc.units.m,
+        }
+    )
 
 
 def test_dataset_coords_iter():

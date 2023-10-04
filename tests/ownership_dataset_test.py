@@ -279,9 +279,8 @@ def test_own_dset_init(data_array_wrapper):
 
 def test_own_dset_set_access_through_dataarray():
     # The DataArray is shared.
-    dset = sc.Dataset()
     da, *_ = make_data_array()
-    dset['da1'] = da
+    dset = sc.Dataset({'da1': da})
 
     dset['da1']['x', 0] = -10
     dset['da1'].attrs['a']['x', 0] = -100
@@ -304,9 +303,8 @@ def test_own_dset_set_access_through_dataarray():
 
 def test_own_dset_set_access_through_scalar_slice():
     # The DataArray is shared.
-    dset = sc.Dataset()
     da, *_ = make_data_array()
-    dset['da1'] = da
+    dset = sc.Dataset({'da1': da})
 
     dset['x', 0]['da1'].value = -10
     dset['x', 0]['da1'].attrs['a'].value = -100
@@ -328,9 +326,8 @@ def test_own_dset_set_access_through_scalar_slice():
 
 def test_own_dset_set_access_through_range_slice():
     # The DataArray is shared.
-    dset = sc.Dataset()
     da, *_ = make_data_array()
-    dset['da1'] = da
+    dset = sc.Dataset({'da1': da})
 
     dset['x', :]['da1']['x', 0] = -10
     dset['x', :]['da1'].attrs['a']['x', 0] = -100
@@ -349,9 +346,8 @@ def test_own_dset_set_access_through_range_slice():
 
 def test_own_dset_set_access_through_coords():
     # The DataArray is shared.
-    dset = sc.Dataset()
     da, *_ = make_data_array()
-    dset['da1'] = da
+    dset = sc.Dataset({'da1': da})
     dset.coords['x']['x', 0] = -1
 
     expected, *_ = make_data_array()
@@ -362,9 +358,8 @@ def test_own_dset_set_access_through_coords():
 
 def test_own_dset_set_access_through_range_slice_coords():
     # The DataArray is shared.
-    dset = sc.Dataset()
     da, *_ = make_data_array()
-    dset['da1'] = da
+    dset = sc.Dataset({'da1': da})
     dset['x', :]['da1']['x', 0] = -10
     dset['x', :].coords['x']['x', 0] = -1
 

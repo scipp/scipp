@@ -185,39 +185,29 @@ def test_sizes():
     assert d.sizes == {'x': 2, 'y': 3}
 
 
-def test_create_empty():
-    d = sc.Dataset()
-    assert len(d) == 0
-    assert len(d.coords) == 0
-    assert len(d.dims) == 0
-
-
 def test_clear():
-    d = sc.Dataset()
-    d['a'] = sc.Variable(dims=['x'], values=np.arange(3))
+    d = sc.Dataset({'a': sc.Variable(dims=['x'], values=np.arange(3))})
     assert 'a' in d
     d.clear()
     assert len(d) == 0
 
 
 def test_setitem():
-    d = sc.Dataset()
-    d['a'] = sc.scalar(1.0)
+    d = sc.Dataset({'a': sc.scalar(1.0)})
     assert len(d) == 1
     assert sc.identical(d['a'].data, sc.scalar(1.0))
     assert len(d.coords) == 0
 
 
 def test_del_item():
-    d = sc.Dataset()
-    d['a'] = sc.scalar(1.0)
+    d = sc.Dataset({'a': sc.scalar(1.0)})
     assert 'a' in d
     del d['a']
     assert 'a' not in d
 
 
 def test_del_item_missing():
-    d = sc.Dataset()
+    d = sc.Dataset({'a': sc.scalar(1.0)})
     with pytest.raises(KeyError):
         del d['not an item']
 
@@ -342,9 +332,7 @@ def test_iadd_range():
 
 
 def test_contains():
-    d = sc.Dataset()
-    assert 'a' not in d
-    d['a'] = sc.scalar(1.0)
+    d = sc.Dataset({'a': sc.scalar(1.0)})
     assert 'a' in d
     assert 'b' not in d
     d['b'] = sc.scalar(1.0)
@@ -379,8 +367,7 @@ def test_chained_slicing():
         coords={'x': x, 'y': y, 'z': z},
     )
 
-    expected = sc.Dataset()
-    expected['a'] = sc.arange('y', 501.0, 600.0, 10.0)
+    expected = sc.Dataset({'a': sc.arange('y', 501.0, 600.0, 10.0)})
     expected.coords['x'] = x['x', 1:3]
     expected.coords.set_aligned('x', False)
     expected.coords['y'] = sc.arange('y', 11.0)
@@ -437,8 +424,7 @@ def test_dataset_set_data():
         },
     )
 
-    d3 = sc.Dataset()
-    d3['b'] = d1['a']
+    d3 = sc.Dataset({'b': d1['a']})
     assert sc.identical(d3['b'].data, d1['a'].data)
     assert d3['b'].coords == d1['a'].coords
     d1['a'] = d2['a']
@@ -446,19 +432,23 @@ def test_dataset_set_data():
     assert sc.identical(d2['a'].data, d1['a'].data)
     assert sc.identical(d2['a'].data, d1['c'].data)
 
-    d = sc.Dataset()
-    d['a'] = sc.array(dims=['row'], values=np.arange(10.0), variances=np.arange(10.0))
+    d = sc.Dataset(
+        {'a': sc.array(dims=['row'], values=np.arange(10.0), variances=np.arange(10.0))}
+    )
     d['b'] = sc.arange('row', 10.0, 20.0)
     d.coords['row'] = sc.arange('row', 10.0)
     d1 = d['row', 0:1]
     d2 = sc.Dataset(data={'a': d1['a'].data}, coords={'row': d1['a'].coords['row']})
     d2['b'] = d1['b']
-    expected = sc.Dataset()
-    expected['a'] = sc.array(
-        dims=['row'], values=np.arange(1.0), variances=np.arange(1.0)
+    expected = sc.Dataset(
+        {
+            'a': sc.array(
+                dims=['row'], values=np.arange(1.0), variances=np.arange(1.0)
+            ),
+            'b': sc.arange('row', 10.0, 11.0),
+        },
+        coords={'row': sc.arange('row', 1.0)},
     )
-    expected['b'] = sc.arange('row', 10.0, 11.0)
-    expected.coords['row'] = sc.arange('row', 1.0)
     assert sc.identical(d2, expected)
 
 
@@ -585,9 +575,12 @@ def test_replace():
 
 
 def test_rebin():
-    dataset = sc.Dataset()
-    dataset['data'] = sc.Variable(
-        dims=['x'], values=np.array(10 * [1.0]), unit=sc.units.counts
+    dataset = sc.Dataset(
+        {
+            'data': sc.array(
+                dims=['x'], values=np.array(10 * [1.0]), unit=sc.units.counts
+            )
+        }
     )
     dataset.coords['x'] = sc.Variable(dims=['x'], values=np.arange(11.0))
     new_coord = sc.Variable(dims=['x'], values=np.arange(0.0, 11, 2))
@@ -613,8 +606,7 @@ def _is_deep_copy_of(orig, copy):
 def test_copy():
     import copy
 
-    a = sc.Dataset()
-    a['x'] = sc.scalar(1)
+    a = sc.Dataset({'x': sc.scalar(1)})
     _is_copy_of(a, a.copy(deep=False))
     _is_deep_copy_of(a, a.copy())
     _is_copy_of(a, copy.copy(a))
