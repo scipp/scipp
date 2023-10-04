@@ -49,6 +49,11 @@ TEST_F(ElementArithmeticTest, floor_divide_equals) {
   EXPECT_EQ(val, numeric::floor_divide(a, b));
 }
 
+TEST_F(ElementArithmeticTest, mod_equals) {
+  mod_equals(val, b);
+  EXPECT_EQ(val, mod(a, b));
+}
+
 TEST_F(ElementArithmeticTest, non_in_place) {
   EXPECT_EQ(add(a, b), a + b);
   EXPECT_EQ(subtract(a, b), a - b);

@@ -62,9 +62,6 @@ void bind_common_mutable_view_operators(pybind11::class_<T, Ignored...> &view) {
             self.erase(typename T::key_type{key});
           },
           py::call_guard<py::gil_scoped_release>())
-      .def(
-          "values", [](T &self) { return values_view(self); },
-          py::keep_alive<0, 1>(), R"(view on self's values)")
       .def("__contains__", [](const T &self, const std::string &key) {
         return self.contains(typename T::key_type{key});
       });
@@ -230,6 +227,9 @@ void bind_mutable_view(py::module &m, const std::string &name,
           "keys", [](T &self) { return keys_view(self); },
           py::keep_alive<0, 1>(), R"(view on self's keys)")
       .def(
+          "values", [](T &self) { return values_view(self); },
+          py::keep_alive<0, 1>(), R"(view on self's values)")
+      .def(
           "items", [](T &self) { return items_view(self); },
           py::return_value_policy::move, py::keep_alive<0, 1>(),
           R"(view on self's items)")
@@ -271,6 +271,9 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name,
       .def(
           "keys", [](T &self) { return str_keys_view(self); },
           py::keep_alive<0, 1>(), R"(view on self's keys)")
+      .def(
+          "values", [](T &self) { return values_view(self); },
+          py::keep_alive<0, 1>(), R"(view on self's values)")
       .def(
           "items", [](T &self) { return str_items_view(self); },
           py::return_value_policy::move, py::keep_alive<0, 1>(),

@@ -124,6 +124,12 @@ def test_setitem_str_key_replace():
     assert sc.identical(dg['a'], sc.scalar(2))
 
 
+def test_setitem_nonstr_key_fails():
+    dg = sc.DataGroup(a=sc.arange('x', 2))
+    with pytest.raises(TypeError):
+        dg[0] = sc.scalar(1)
+
+
 def test_delitem_removes_item():
     dg = sc.DataGroup({'a': sc.scalar(1)})
     del dg['a']

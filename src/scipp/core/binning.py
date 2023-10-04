@@ -213,6 +213,13 @@ def _parse_coords_arg(
         stop = coord.max()  # existing bin-edges, do not extend
     else:
         stop = _upper_bound(coord)
+    if start > stop:
+        raise ValueError(
+            (
+                'Empty data range, cannot automatically determine bounds. '
+                'Must provide concrete bin edges.'
+            )
+        )
     if isinstance(arg, Integral):
         if start.dtype == DType.datetime64:
             base = epoch(unit=start.unit)

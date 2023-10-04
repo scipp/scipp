@@ -11,7 +11,7 @@ certifi==2023.7.22
     # via requests
 charset-normalizer==3.2.0
     # via requests
-cmake==3.27.2
+cmake==3.27.4.1
     # via -r build.in
 colorama==0.4.6
     # via conan
@@ -51,7 +51,7 @@ six==1.16.0
     #   python-dateutil
 tqdm==4.66.1
     # via conan
-urllib3==1.26.16
+urllib3==1.26.17
     # via
     #   conan
     #   requests

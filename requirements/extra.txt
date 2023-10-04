@@ -6,7 +6,7 @@
 #    pip-compile-multi
 #
 -r base.txt
-asttokens==2.2.1
+asttokens==2.4.0
     # via stack-data
 backcall==0.2.0
     # via ipython
@@ -16,7 +16,7 @@ charset-normalizer==3.2.0
     # via requests
 comm==0.1.4
     # via ipykernel
-debugpy==1.6.7.post1
+debugpy==1.8.0
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -29,16 +29,14 @@ h5py==3.9.0
 idna==3.4
     # via requests
 importlib-metadata==6.8.0
-    # via
-    #   jupyter-client
-    #   numba
-ipykernel==6.25.1
+    # via jupyter-client
+ipykernel==6.25.2
     # via -r extra.in
 ipython==8.12.2
     # via ipykernel
 jedi==0.19.0
     # via ipython
-jupyter-client==8.3.0
+jupyter-client==8.3.1
     # via ipykernel
 jupyter-core==5.3.1
     # via
@@ -89,7 +87,7 @@ python-dateutil==2.8.2
     # via
     #   jupyter-client
     #   pandas
-pytz==2023.3
+pytz==2023.3.post1
     # via pandas
 pyzmq==25.1.1
     # via
@@ -100,7 +98,9 @@ requests==2.31.0
 scipy==1.10.1
     # via -r extra.in
 six==1.16.0
-    # via python-dateutil
+    # via
+    #   asttokens
+    #   python-dateutil
 stack-data==0.6.2
     # via ipython
 tornado==6.3.3
@@ -119,7 +119,7 @@ typing-extensions==4.7.1
     # via ipython
 tzdata==2023.3
     # via pandas
-urllib3==2.0.4
+urllib3==2.0.6
     # via requests
 wcwidth==0.2.6
     # via prompt-toolkit

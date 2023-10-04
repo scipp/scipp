@@ -41,7 +41,9 @@ Breaking changes
 Bugfixes
 ~~~~~~~~
 
-* Concatenating two datasets with identical data in a new dimension now actually concatenates them; it used to return the input unchanged `#3199 <https://github.com/scipp/scipp/pull/3199>`_.
+* :func:`scipp.testing.assert_identical` now compares the alignment of coordinates `#3242 <https://github.com/scipp/scipp/pull/3242>`_.
+* Fixed overflow in variances with large integers `#3262 <https://github.com/scipp/scipp/pull/3262>`_.
+* All items of datasets must have the same dimensions now `#3199 <https://github.com/scipp/scipp/pull/3199>`_.
 
 Documentation
 ~~~~~~~~~~~~~

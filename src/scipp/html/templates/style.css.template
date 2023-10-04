@@ -19,6 +19,18 @@
   --sc-table-header-font-color: $header_text_color;
 }
 
+body.vscode-dark .sc-root {
+  --sc-font-color0: rgba(255, 255, 255, 1);
+  --sc-font-color1: rgba(255, 255, 255, 0.70);
+  --sc-font-color2: rgba(255, 255, 255, 0.54);
+  --sc-font-color3: rgba(255, 255, 255, 0.38);
+  --sc-border-color: #1F1F1F;
+  --sc-disabled-color: #515151;
+  --sc-background-color0: #111111;
+  --sc-background-color1: #111111;
+  --sc-background-color2: #313131;
+}
+
 .sc-wrap {
   font-size: 14px;
   min-width: 300px;

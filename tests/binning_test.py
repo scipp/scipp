@@ -24,16 +24,22 @@ def test_group_raises_CoordError_if_coord_not_found():
         table.group('abc')
 
 
-def test_many_combinations():
-    table = sc.data.table_xyz(100)
-    table.coords['label'] = (table.coords['x'] * 10).to(dtype='int64')
+@pytest.mark.parametrize('coord_dtype', ['int32', 'int64', 'float32', 'float64'])
+def test_many_combinations(coord_dtype):
+    table = sc.data.table_xyz(100, coord_max=10, coord_dtype=coord_dtype)
+    table.coords['label'] = table.coords['x'].to(dtype='int64')
+
     assert table.group('label').hist(x=5, y=3).sizes == {'label': 10, 'x': 5, 'y': 3}
     assert table.group('label').hist(x=5).sizes == {'label': 10, 'x': 5}
     assert table.group('label').hist().sizes == {'label': 10}
     assert table.hist(x=5, y=3).sizes == {'x': 5, 'y': 3}
     assert table.hist(x=5).sizes == {'x': 5}
-    assert table.hist(x=5).rebin(x=3).sizes == {'x': 3}
-    assert table.hist(x=5, y=3).rebin(x=3, y=2).sizes == {'x': 3, 'y': 2}
+
+    # rebin only supports float64
+    if coord_dtype == 'float64':
+        assert table.hist(x=5).rebin(x=3).sizes == {'x': 3}
+        assert table.hist(x=5, y=3).rebin(x=3, y=2).sizes == {'x': 3, 'y': 2}
+
     assert table.bin(x=5).bin(x=6).bin(y=6).sizes == {'x': 6, 'y': 6}
     assert table.bin(x=5).bin(y=6, x=7).sizes == {'x': 7, 'y': 6}
     assert table.bin(x=5).hist().sizes == {'x': 5}
@@ -229,6 +235,17 @@ def test_bin_integer_coord_by_fractional_stepsize_raises(dtype):
     table.coords['label'] = (table.coords['x'] * 10).to(dtype=dtype)
     with pytest.raises(ValueError):
         table.bin(label=sc.scalar(0.5, unit='m'))
+
+
+def test_bin_with_automatic_bin_bounds_raises_if_no_events():
+    table = sc.data.table_xyz(0)
+    with pytest.raises(ValueError):
+        table.bin(x=4)
+
+
+def test_bin_with_manual_bin_bounds_not_raises_if_no_events():
+    table = sc.data.table_xyz(0)
+    table.bin(x=sc.linspace('x', 0, 1, 4, unit=table.coords['x'].unit))
 
 
 def test_group_after_bin_considers_event_value():
