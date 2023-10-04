@@ -16,6 +16,37 @@ template <class T> void expect_writable(const T &dict) {
     throw except::DataArrayError(
         "Read-only flag is set, cannot mutate metadata dict.");
 }
+
+void merge_sizes_into(Sizes &target, const Dimensions &s) {
+  using std::to_string;
+
+  for (const auto &dim : s) {
+    if (target.contains(dim)) {
+      const auto a = target[dim];
+      const auto b = s[dim];
+      if (a == b + 1) // had bin-edges, replace by regular coord
+        target.resize(dim, b);
+      else if (a + 1 == b) { // had regular coord, got extra by bin-edges
+        // keep current
+      } else if (a != b)
+        throw except::DimensionError(
+            "Conflicting length in dimension " + to_string(dim) + ": " +
+            to_string(target[dim]) + " vs " + to_string(s[dim]));
+    } else {
+      target.set(dim, s[dim]);
+    }
+  }
+}
+
+template <class Key, class Value>
+auto make_from_items(typename SizedDict<Key, Value>::holder_type items,
+                     const bool readonly) {
+  Sizes sizes;
+  for (auto &&[key, value] : items) {
+    merge_sizes_into(sizes, value.dims());
+  }
+  return SizedDict<Key, Value>(std::move(sizes), std::move(items), readonly);
+}
 } // namespace
 
 template <class Key, class Value>
@@ -41,43 +72,10 @@ SizedDict<Key, Value>::SizedDict(Sizes sizes, holder_type items,
   m_readonly = readonly; // NOLINT(cppcoreguidelines-prefer-member-initializer)
 }
 
-namespace {
-void merge_sizes_into(Sizes &target, const Dimensions &s) {
-  using std::to_string;
-
-  for (const auto &dim : s) {
-    if (target.contains(dim)) {
-      const auto a = target[dim];
-      const auto b = s[dim];
-      if (a == b + 1) // had bin-edges, replace by regular coord
-        target.resize(dim, b);
-      else if (a + 1 == b) { // had regular coord, got extra by bin-edges
-        // keep current
-      } else if (a != b)
-        throw except::DimensionError(
-            "Conflicting length in dimension " + to_string(dim) + ": " +
-            to_string(target[dim]) + " vs " + to_string(s[dim]));
-    } else {
-      target.set(dim, s[dim]);
-    }
-  }
-}
-} // namespace
-
 template <class Key, class Value>
 SizedDict<Key, Value>::SizedDict(AutoSizeTag, holder_type items,
-                                 const bool readonly) {
-  Sizes sizes;
-  for (auto &&[key, value] : items) {
-    merge_sizes_into(sizes, value.dims());
-  }
-  m_sizes = std::move(sizes);
-
-  for (auto &&[key, value] : items)
-    set(key, std::move(value));
-  // `set` requires Dict to be writable, set readonly flag at the end.
-  m_readonly = readonly; // NOLINT(cppcoreguidelines-prefer-member-initializer)
-}
+                                 const bool readonly)
+    : SizedDict(make_from_items<Key, Value>(std::move(items), readonly)) {}
 
 template <class Key, class Value>
 SizedDict<Key, Value>::SizedDict(const SizedDict &other)
