@@ -7,6 +7,7 @@ from .._scipp.core import CoordError, DataArray, Dataset, Variable
 from ..typing import VariableLikeType
 from .argument_handlers import combine_dict_args
 from .bins import bins
+from .variable import scalar
 
 
 def _rename_dims(
@@ -161,6 +162,13 @@ def _rename_dataset(
         Only rename dimensions, not coordinates and attributes.
     """
     dims_dict = combine_dict_args(dims_dict, names)
-    return Dataset(
-        {key: _rename_data_array(value, dims_dict) for key, value in ds.items()}
+    if len(ds) != 0:
+        return Dataset(
+            {key: _rename_data_array(value, dims_dict) for key, value in ds.items()}
+        )
+    # This relies on broadcast and DataArray.__init__ not making copies
+    # to avoid allocating too much extra memory.
+    dummy = DataArray(
+        scalar(0).broadcast(dims=ds.dims, shape=ds.shape), coords=ds.coords
     )
+    return Dataset(coords=_rename_data_array(dummy, dims_dict).coords)

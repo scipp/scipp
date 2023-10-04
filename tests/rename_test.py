@@ -114,3 +114,26 @@ def test_rename_raises_DimensionError_if_only_bins_coords_or_attrs():
     da = table.bin(x=2)
     with pytest.raises(sc.DimensionError):
         da.rename(y='y2', z='z2')
+
+
+def test_rename_dataset_only_data():
+    ds = sc.Dataset({'a': make_dataarray('x', 'y').data})
+    renamed = ds.rename({'y': 'z'})
+    assert set(renamed.keys()) == {'a'}
+    expected = make_dataarray('x', 'z')
+    expected.coords.clear()
+    assert sc.identical(renamed['a'], expected)
+
+
+def test_rename_dataset_only_coords():
+    ds = sc.Dataset(coords=make_dataarray('x', 'y').coords)
+    renamed = ds.rename({'y': 'z'})
+    assert len(renamed) == 0
+    assert renamed.coords == make_dataarray('x', 'z').coords
+
+
+def test_rename_dataset_data_and_coords():
+    ds = sc.Dataset({'a': make_dataarray('x', 'y')})
+    renamed = ds.rename({'y': 'z'})
+    assert set(renamed.keys()) == {'a'}
+    assert sc.identical(renamed['a'], make_dataarray('x', 'z'))
