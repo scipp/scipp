@@ -188,6 +188,8 @@ public:
   void setData(const std::string &name, Variable data,
                const AttrPolicy attrPolicy = AttrPolicy::Drop);
   void setData(const std::string &name, const DataArray &data);
+  void setDataInit(const std::string &name, Variable data,
+                   const AttrPolicy attrPolicy = AttrPolicy::Drop);
   void setDataInit(const std::string &name, const DataArray &data);
 
   Dataset slice(const Slice &s) const;

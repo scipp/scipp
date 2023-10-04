@@ -151,6 +151,15 @@ void Dataset::setData(const std::string &name, Variable data,
     m_data.insert_or_assign(name, DataArray(std::move(data)));
 }
 
+void Dataset::setDataInit(const std::string &name, Variable data,
+                          const AttrPolicy attrPolicy) {
+  if (!is_valid()) {
+    m_coords.setSizes(data.dims());
+    m_valid = true;
+  }
+  setData(name, std::move(data), attrPolicy);
+}
+
 namespace {
 auto coords_to_skip(const Dataset &dst, const DataArray &src) {
   std::vector<Dim> to_skip;
