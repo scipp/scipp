@@ -37,7 +37,6 @@ Breaking changes
 ~~~~~~~~~~~~~~~~
 
 * All items of datasets must have the same dimensions now `#3199 <https://github.com/scipp/scipp/pull/3199>`_.
-* It is no longer possible to insert coordinates into datasets before inserting data `#3199 <https://github.com/scipp/scipp/pull/3199>`_.
 
 Bugfixes
 ~~~~~~~~
