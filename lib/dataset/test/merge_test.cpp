@@ -10,23 +10,21 @@ using namespace scipp;
 using namespace scipp::dataset;
 
 TEST(MergeTest, simple) {
-  Dataset a;
-  a.setData("data_1",
-            makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{15, 16, 17}));
-  a.setCoord(Dim::X,
-             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
-  a.setCoord(Dim("label_1"),
-             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{9, 8, 7}));
+  Dataset a(
+      {{"data_1",
+        makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{15, 16, 17})}},
+      {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3})},
+       {Dim("label_1"),
+        makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{9, 8, 7})}});
   a["data_1"].attrs().set(Dim("attr_1"), makeVariable<int>(Values{42}));
   a["data_1"].attrs().set(Dim("attr_2"), makeVariable<int>(Values{495}));
 
-  Dataset b;
-  b.setData("data_2",
-            makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{11, 12, 13}));
-  b.setCoord(Dim::X,
-             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
-  b.setCoord(Dim("label_2"),
-             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{9, 8, 9}));
+  Dataset b(
+      {{"data_2",
+        makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{11, 12, 13})}},
+      {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3})},
+       {Dim("label_2"),
+        makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{9, 8, 9})}});
   b["data_2"].attrs().set(Dim("attr_2"), makeVariable<int>(Values{495}));
 
   const auto d = merge(a, b);
@@ -46,12 +44,10 @@ TEST(MergeTest, simple) {
 }
 
 TEST(MergeTest, non_matching_dense_data) {
-  Dataset a;
-  Dataset b;
-  a.setData("data",
-            makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{1, 2, 3, 4, 5}));
-  b.setData("data",
-            makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{2, 3, 4, 5, 6}));
+  Dataset a({{"data", makeVariable<int>(Dims{Dim::X}, Shape{5},
+                                        Values{1, 2, 3, 4, 5})}});
+  Dataset b({{"data", makeVariable<int>(Dims{Dim::X}, Shape{5},
+                                        Values{2, 3, 4, 5, 6})}});
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
 }
 

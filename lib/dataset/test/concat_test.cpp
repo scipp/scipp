@@ -21,28 +21,27 @@ template <class T> auto concat2(const T &a, const T &b, const Dim dim) {
 
 class Concatenate1DTest : public ::testing::Test {
 protected:
-  Concatenate1DTest() {
-    a.setData("data_1",
-              makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{11, 12, 13}));
+  Concatenate1DTest()
+      : a({{"data_1",
+            makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{11, 12, 13})}},
+          {{Dim::X,
+            makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3})}}),
+        b({{"data_1",
+            makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{14, 15, 16})}},
+          {{Dim::X,
+            makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{4, 5, 6})}}) {
     a["data_1"].attrs().set(
         Dim("label_1"),
         makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
     a["data_1"].masks().set(
         "mask_1",
         makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false}));
-    a.setCoord(Dim::X,
-               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
-
-    b.setData("data_1",
-              makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{14, 15, 16}));
     b["data_1"].attrs().set(
         Dim("label_1"),
         makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{24, 25, 26}));
     b["data_1"].masks().set(
         "mask_1",
         makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false}));
-    b.setCoord(Dim::X,
-               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{4, 5, 6}));
   }
 
   Dataset a;
@@ -121,11 +120,15 @@ TEST_F(Concatenate1DTest, alignment_flag) {
 
 class Concatenate1DHistogramTest : public ::testing::Test {
 protected:
-  Concatenate1DHistogramTest() {
-    a.setData("data_1",
-              makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{11, 12}));
-    a.setCoord(Dim::X,
-               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
+  Concatenate1DHistogramTest()
+      : a({{"data_1",
+            makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{11, 12})}},
+          {{Dim::X,
+            makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3})}}),
+        b({{"data_1",
+            makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{13, 14})}},
+          {{Dim::X,
+            makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{3, 4, 5})}}) {
     a["data_1"].attrs().set(
         Dim("edge_labels"),
         makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
@@ -134,10 +137,6 @@ protected:
         makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{21, 22}));
     a["data_1"].masks().set("masks", makeVariable<bool>(Dims{Dim::X}, Shape{2},
                                                         Values{false, true}));
-    b.setData("data_1",
-              makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{13, 14}));
-    b.setCoord(Dim::X,
-               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{3, 4, 5}));
     b["data_1"].attrs().set(
         Dim("edge_labels"),
         makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{23, 24, 25}));
@@ -153,11 +152,10 @@ protected:
 };
 
 TEST_F(Concatenate1DHistogramTest, simple_1d) {
-  Dataset expected;
-  expected.setData("data_1", makeVariable<int>(Dims{Dim::X}, Shape{4},
-                                               Values{11, 12, 13, 14}));
-  expected.setCoord(
-      Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{1, 2, 3, 4, 5}));
+  Dataset expected({{"data_1", makeVariable<int>(Dims{Dim::X}, Shape{4},
+                                                 Values{11, 12, 13, 14})}},
+                   {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{5},
+                                               Values{1, 2, 3, 4, 5})}});
   expected["data_1"].attrs().set(
       Dim("edge_labels"),
       makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{21, 22, 23, 24, 25}));
@@ -181,29 +179,25 @@ TEST_F(Concatenate1DHistogramTest, slices_of_1d) {
 }
 
 TEST(ConcatenateTest, fail_when_histograms_have_non_overlapping_bins) {
-  Dataset a;
-  a.setData("data_1",
-            makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{11, 12}));
-  a.setCoord(Dim::X,
-             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
+  const Dataset a(
+      {{"data_1", makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{11, 12})}},
+      {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3})}});
 
-  Dataset b;
-  b.setData("data_1",
-            makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{13, 14}));
-  b.setCoord(Dim::X,
-             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{4, 5, 6}));
+  const Dataset b(
+      {{"data_1", makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{13, 14})}},
+      {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{4, 5, 6})}});
 
   EXPECT_THROW_DISCARD(concat2(a, b, Dim::X), except::VariableError);
 }
 
 TEST(ConcatenateTest, fail_mixing_point_data_and_histogram) {
-  Dataset pointData;
-  pointData.setData("data_1", makeVariable<int>(Dims{Dim::X}, Shape{3}));
-  pointData.setCoord(Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}));
+  const Dataset pointData(
+      {{"data_1", makeVariable<int>(Dims{Dim::X}, Shape{3})}},
+      {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3})}});
 
-  Dataset histogram;
-  histogram.setData("data_1", makeVariable<int>(Dims{Dim::X}, Shape{2}));
-  histogram.setCoord(Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}));
+  const Dataset histogram(
+      {{"data_1", makeVariable<int>(Dims{Dim::X}, Shape{2})}},
+      {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3})}});
 
   EXPECT_THROW_DISCARD(concat2(pointData, histogram, Dim::X),
                        except::BinEdgeError);
@@ -214,13 +208,8 @@ TEST(ConcatenateTest, identical_non_dependant_data_is_stacked) {
   const auto data =
       makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{11, 12, 13});
 
-  Dataset a;
-  a.setData("data_1", data);
-  a.setCoord(Dim::X, axis);
-
-  Dataset b;
-  b.setData("data_1", data);
-  b.setCoord(Dim::X, axis);
+  const Dataset a({{"data_1", data}}, {{Dim::X, axis}});
+  const Dataset b({{"data_1", data}}, {{Dim::X, axis}});
 
   const auto d = concat2(a, b, Dim::Y);
 
@@ -233,15 +222,12 @@ TEST(ConcatenateTest, identical_non_dependant_data_is_stacked) {
 TEST(ConcatenateTest, non_dependant_data_is_stacked) {
   const auto axis = makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
 
-  Dataset a;
-  a.setData("data_1",
-            makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{11, 12, 13}));
-  a.setCoord(Dim::X, axis);
-
-  Dataset b;
-  b.setData("data_1",
-            makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{14, 15, 16}));
-  b.setCoord(Dim::X, axis);
+  const Dataset a({{"data_1", makeVariable<int>(Dims{Dim::X}, Shape{3},
+                                                Values{11, 12, 13})}},
+                  {{Dim::X, axis}});
+  const Dataset b({{"data_1", makeVariable<int>(Dims{Dim::X}, Shape{3},
+                                                Values{14, 15, 16})}},
+                  {{Dim::X, axis}});
 
   const auto d = concat2(a, b, Dim::Y);
 
@@ -251,13 +237,12 @@ TEST(ConcatenateTest, non_dependant_data_is_stacked) {
 }
 
 TEST(ConcatenateTest, concat_2d_coord) {
-  Dataset a;
-  a.setData("data_1",
-            makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{11, 12, 13}));
-  a.setCoord(Dim::X,
-             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
-  a.setCoord(Dim("label_1"),
-             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
+  Dataset a(
+      {{"data_1",
+        makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{11, 12, 13})}},
+      {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3})},
+       {Dim("label_1"),
+        makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23})}});
   a["data_1"].masks().set(
       "mask_1",
       makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false}));
@@ -267,16 +252,14 @@ TEST(ConcatenateTest, concat_2d_coord) {
   b.coords()[Dim::X] += 3 * units::one;
   b["data_1"].data() += 100 * units::one;
 
-  Dataset expected;
-  expected.setData("data_1",
-                   makeVariable<int>(Dims{Dim::Y, Dim::X}, Shape{4, 3},
-                                     Values{11, 12, 13, 111, 112, 113, 111, 112,
-                                            113, 11, 12, 13}));
-  expected.setCoord(
-      Dim::X, makeVariable<int>(Dims{Dim::Y, Dim::X}, Shape{4, 3},
-                                Values{1, 2, 3, 4, 5, 6, 4, 5, 6, 1, 2, 3}));
-  expected.setCoord(Dim("label_1"), makeVariable<int>(Dims{Dim::X}, Shape{3},
-                                                      Values{21, 22, 23}));
+  Dataset expected(
+      {{"data_1", makeVariable<int>(Dims{Dim::Y, Dim::X}, Shape{4, 3},
+                                    Values{11, 12, 13, 111, 112, 113, 111, 112,
+                                           113, 11, 12, 13})}},
+      {{Dim::X, makeVariable<int>(Dims{Dim::Y, Dim::X}, Shape{4, 3},
+                                  Values{1, 2, 3, 4, 5, 6, 4, 5, 6, 1, 2, 3})},
+       {Dim("label_1"),
+        makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23})}});
   expected["data_1"].masks().set(
       "mask_1",
       makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false}));

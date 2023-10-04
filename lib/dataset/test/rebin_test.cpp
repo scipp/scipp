@@ -232,14 +232,12 @@ TEST(RebinWithMaskTest, applies_mask_along_rebin_dim) {
 }
 
 TEST(RebinWithMaskTest, preserves_unrelated_mask) {
-  Dataset ds;
-  ds.setData("data_xy", broadcast(makeVariable<double>(Dimensions{Dim::X, 5},
-                                                       units::counts,
-                                                       Values{1, 2, 3, 4, 5}),
-                                  Dimensions({Dim::Y, Dim::X}, {5, 5})));
-  ds.setCoord(Dim::X, makeVariable<double>(Dimensions{Dim::X, 6},
-                                           Values{1, 2, 3, 4, 5, 6}));
-
+  Dataset ds({{"data_xy", broadcast(makeVariable<double>(Dimensions{Dim::X, 5},
+                                                         units::counts,
+                                                         Values{1, 2, 3, 4, 5}),
+                                    Dimensions({Dim::Y, Dim::X}, {5, 5}))}},
+             {{Dim::X, makeVariable<double>(Dimensions{Dim::X, 6},
+                                            Values{1, 2, 3, 4, 5, 6})}});
   ds["data_xy"].masks().set(
       "mask_y", makeVariable<bool>(Dimensions{Dim::Y, 5},
                                    Values{false, false, true, false, false}));

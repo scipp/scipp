@@ -119,10 +119,7 @@ Dataset make_example_dataset(const std::string_view xmask_name = "mask_x",
                              const std::string_view ymask_name = "mask_y") {
   auto a = make_example_dataarray(xmask_name, Dim::X);
   auto b = make_example_dataarray(ymask_name, Dim::Y);
-  auto ds = Dataset{};
-  ds.setData("a", a);
-  ds.setData("b", b);
-  return ds;
+  return Dataset({{"a", a}, {"b", b}});
 }
 
 TEST_F(SetSliceTest, set_dataarray_slice_when_metadata_missing) {

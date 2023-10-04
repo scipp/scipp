@@ -52,8 +52,8 @@ template <typename T>
 class DatasetShapeChangingOpTest : public ::testing::Test {
 public:
   void SetUp() {
-    ds.setData("data_x",
-               makeVariable<T>(Dims{Dim::X}, Shape{5}, Values{1, 5, 4, 5, 1}));
+    ds = Dataset({{"data_x", makeVariable<T>(Dims{Dim::X}, Shape{5},
+                                             Values{1, 5, 4, 5, 1})}});
     ds["data_x"].masks().set(
         "masks_x", makeVariable<bool>(Dims{Dim::X}, Shape{5},
                                       Values{false, true, false, true, false}));

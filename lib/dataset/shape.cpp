@@ -131,15 +131,15 @@ Dataset concat(const scipp::span<const Dataset> dss, const Dim dim) {
   if (dss.empty())
     throw std::invalid_argument("Cannot concat empty list.");
   Dataset result;
-  if (dss.front().empty())
-    result.setCoords(Coords(concat(map(dss, get_sizes), dim),
-                            concat_maps(map(dss, get_coords), dim)));
   for (const auto &first : dss.front())
     if (std::all_of(dss.begin(), dss.end(),
                     [&first](auto &ds) { return ds.contains(first.name()); })) {
       auto das = map(dss, [&first](auto &&ds) { return ds[first.name()]; });
-      result.setData(first.name(), concat(das, dim));
+      result.setDataInit(first.name(), concat(das, dim));
     }
+  if (dss.front().empty())
+    return Dataset({}, Coords(concat(map(dss, get_sizes), dim),
+                              concat_maps(map(dss, get_coords), dim)));
   return result;
 }
 

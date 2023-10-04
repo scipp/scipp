@@ -577,9 +577,7 @@ TEST_F(TransposeTest, data_array_2d_meta_data) {
 }
 
 TEST_F(TransposeTest, dataset_no_order) {
-  Dataset d;
-  d.setData("a", a);
-  d.setData("b", transpose(a));
+  Dataset d({{"a", a}, {"b", transpose(a)}});
   // Slightly unusual but "simple" behavior if no dim order given
   auto transposed = transpose(d);
   EXPECT_EQ(transposed["a"], d["b"]);
@@ -587,9 +585,7 @@ TEST_F(TransposeTest, dataset_no_order) {
 }
 
 TEST_F(TransposeTest, dataset_2d) {
-  Dataset d;
-  d.setData("a", a);
-  d.setData("b", transpose(a));
+  Dataset d({{"a", a}, {"b", transpose(a)}});
   auto transposed = transpose(d, std::vector<Dim>{Dim::X, Dim::Y});
   EXPECT_EQ(transposed["a"], d["b"]);
   EXPECT_EQ(transposed["b"], d["b"]);

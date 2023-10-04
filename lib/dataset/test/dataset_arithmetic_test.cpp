@@ -714,9 +714,7 @@ TEST(DatasetInPlaceStrongExceptionGuarantee, events) {
     auto &[key1, key2] = keys;
     for (const auto &values : {std::pair{good, bad}, std::pair{bad, good}}) {
       auto &[value1, value2] = values;
-      Dataset d;
-      d.setData(key1, value1);
-      d.setData(key2, value2);
+      Dataset d({{key1, value1}, {key2, value2}});
       auto original(d);
 
       ASSERT_ANY_THROW(d += good_dataset);
