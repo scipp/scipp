@@ -9,9 +9,8 @@ import scipp as sc
 
 
 def test_init_default():
-    d = sc.Dataset()
-    assert len(d) == 0
-    assert len(d.coords) == 0
+    with pytest.raises(TypeError):
+        sc.Dataset()
 
 
 def test_init_dict_of_variables():
@@ -150,6 +149,14 @@ def test_init_extra_coords_from_iterator_of_tuples():
             coords={'x': sc.arange('x', 5), 'y': sc.arange('x', 5, 11)},
         ),
     )
+
+
+def tset_init_coords_only():
+    d = sc.Dataset(coords={'x': sc.arange('x', 5), 'y': sc.arange('x', 5, 12)})
+    assert len(d) == 0
+    assert len(d.coords) == 2
+    assert sc.identical(d.coords['x'], sc.arange('x', 5))
+    assert sc.identical(d.coords['y'], sc.arange('x', 5, 12))
 
 
 def test_dims():

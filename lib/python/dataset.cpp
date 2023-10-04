@@ -131,6 +131,32 @@ template <class Key, class Value> auto to_cpp_dict(const py::dict &dict) {
   }
   return out;
 }
+
+auto dataset_from_data_and_coords(const py::dict &data,
+                                  const py::dict &coords) {
+  Dataset d;
+  for (auto &&[name, item] : data) {
+    if (py::isinstance<DataArray>(item)) {
+      d.setDataInit(name.cast<std::string>(), item.cast<DataArray &>());
+    } else {
+      d.setDataInit(name.cast<std::string>(), item.cast<Variable &>());
+    }
+  }
+  if (d.is_valid()) {
+    // Need to use dataset_from_coords when there is no data to initialize
+    // dimensions properly.
+    for (auto &&[dim, coord] : coords)
+      d.setCoord(Dim{dim.cast<std::string>()}, coord.cast<Variable &>());
+  }
+  return d;
+}
+
+auto dataset_from_coords(const py::dict &py_coords) {
+  Coords coords;
+  for (auto &&[dim, coord] : py_coords)
+    coords.set(Dim{dim.cast<std::string>()}, coord.cast<Variable &>());
+  return Dataset({}, std::move(coords));
+}
 } // namespace
 
 void init_dataset(py::module &m) {
@@ -196,17 +222,12 @@ Returned by :py:func:`DataArray.masks`)");
   options.disable_function_signatures();
   dataset.def(
       py::init([](const py::object &data, const py::object &coords) {
-        Dataset d;
-        for (auto &&[name, item] : py::dict(data)) {
-          if (py::isinstance<DataArray>(item)) {
-            d.setData(name.cast<std::string>(), item.cast<DataArray &>());
-          } else {
-            d.setData(name.cast<std::string>(), item.cast<Variable &>());
-          }
-        }
-        for (auto &&[dim, coord] : py::dict(coords))
-          d.setCoord(Dim{dim.cast<std::string>()}, coord.cast<Variable &>());
-        return d;
+        const auto data_dict = py::dict(data);
+        const auto coords_dict = py::dict(coords);
+        if (data_dict.empty() && coords_dict.empty())
+          throw py::type_error("Dataset needs data or coordinates or both.");
+        auto d = dataset_from_data_and_coords(data_dict, coords_dict);
+        return d.is_valid() ? d : dataset_from_coords(coords_dict);
       }),
       py::arg("data") = py::dict(), py::kw_only(),
       py::arg("coords") = std::map<std::string, Variable>{},
