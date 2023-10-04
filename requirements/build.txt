@@ -51,7 +51,7 @@ six==1.16.0
     #   python-dateutil
 tqdm==4.66.1
     # via conan
-urllib3==1.26.16
+urllib3==1.26.17
     # via
     #   conan
     #   requests

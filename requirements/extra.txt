@@ -29,9 +29,7 @@ h5py==3.9.0
 idna==3.4
     # via requests
 importlib-metadata==6.8.0
-    # via
-    #   jupyter-client
-    #   numba
+    # via jupyter-client
 ipykernel==6.25.2
     # via -r extra.in
 ipython==8.12.2
@@ -121,7 +119,7 @@ typing-extensions==4.7.1
     # via ipython
 tzdata==2023.3
     # via pandas
-urllib3==2.0.4
+urllib3==2.0.6
     # via requests
 wcwidth==0.2.6
     # via prompt-toolkit
