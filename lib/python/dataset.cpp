@@ -152,9 +152,10 @@ auto dataset_from_data_and_coords(const py::dict &data,
 }
 
 auto dataset_from_coords(const py::dict &py_coords) {
-  Coords coords;
+  typename Coords::holder_type coords;
   for (auto &&[dim, coord] : py_coords)
-    coords.set(Dim{dim.cast<std::string>()}, coord.cast<Variable &>());
+    coords.insert_or_assign(Dim{dim.cast<std::string>()},
+                            coord.cast<Variable &>());
   return Dataset({}, std::move(coords));
 }
 } // namespace
