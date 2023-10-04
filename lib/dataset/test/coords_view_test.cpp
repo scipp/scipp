@@ -147,6 +147,22 @@ TEST(SizedDictTest, init_with_dict_bad_sizes) {
                except::DimensionError);
 }
 
+TEST(SizedDictTest, init_with_dict_decreasing_sizes) {
+  const auto a = makeVariable<int>(Dims{Dim::X}, Shape{5});
+  const auto b = makeVariable<int>(Dims{Dim::X}, Shape{4});
+  const auto c = makeVariable<int>(Dims{Dim::X}, Shape{3});
+  const Coords::holder_type dict({{Dim{"a"}, a}, {Dim{"b"}, b}, {Dim{"c"}, c}});
+  ASSERT_THROW(Coords(AutoSizeTag{}, dict), except::DimensionError);
+}
+
+TEST(SizedDictTest, init_with_dict_increasing_sizes) {
+  const auto a = makeVariable<int>(Dims{Dim::X}, Shape{3});
+  const auto b = makeVariable<int>(Dims{Dim::X}, Shape{4});
+  const auto c = makeVariable<int>(Dims{Dim::X}, Shape{5});
+  const Coords::holder_type dict({{Dim{"a"}, a}, {Dim{"b"}, b}, {Dim{"c"}, c}});
+  ASSERT_THROW(Coords(AutoSizeTag{}, dict), except::DimensionError);
+}
+
 TEST(SizedDictTest, copy) {
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   const auto y = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 5});
