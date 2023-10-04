@@ -97,7 +97,7 @@ auto apply_with_broadcast(const Op &op, const A &a, const DataArray &b) {
   Dataset res;
   for (const auto &item : a)
     res.setDataInit(item.name(), op(item, b));
-  return res;
+  return res.is_valid() ? res : Dataset({}, {});
 }
 
 template <class Op, class B>
