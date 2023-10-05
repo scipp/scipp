@@ -229,9 +229,7 @@ def _find_bin_edges(var, ds):
     Checks if the coordinate contains bin-edges.
     """
     return [
-        dim
-        for dim, length in var.sizes.items()
-        if ds.sizes.get(dim, 1) + 1 == length
+        dim for dim, length in var.sizes.items() if ds.sizes.get(dim, 1) + 1 == length
     ]
 
 
