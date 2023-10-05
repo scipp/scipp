@@ -9,10 +9,6 @@ STYLE = {
     'coords': '#c6e590',
     'data': '#f6d028',
     'masks': '#c8c8c8',
-    'button': '#bdbdbd49',  # Color for plot control button.
-    'button_selected': '#bdbdbdbb',  # Color for selected plot control button.
-    'header_text': '#111111',  # Color for table header text.
-    'hover': '#d6eaf8',  # Color for hovering on table rows.
 }
 
 

@@ -16,7 +16,7 @@
   --sc-table-coords-color: $coords_color;
   --sc-table-masks-color: $masks_color;
   --sc-table-attrs-color: $attrs_color;
-  --sc-table-header-font-color: $header_text_color;
+  --sc-table-header-font-color: #111111;
 }
 
 body.vscode-dark .sc-root {
