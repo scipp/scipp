@@ -8,10 +8,10 @@ from typing import Optional
 
 import numpy as np
 
-from . import colors
 from .._scipp import core as sc
-from .resources import load_style
 from ..typing import VariableLike
+from . import colors
+from .resources import load_style
 
 # Unit is `em`. This particular value is chosen to avoid a horizontal scroll
 # bar with the readthedocs theme.
@@ -308,7 +308,7 @@ class VariableDrawer:
 
     def make_svg(self, content_only=False):
         if content_only:
-            return self.draw(color=colors.data)
+            return self.draw(color=colors.STYLE['data'])
         return _build_svg(
             self.make_svg(content_only=True),
             0,
@@ -415,12 +415,12 @@ class DatasetDrawer:
         area_xy = []
         area_0d = []
         if isinstance(self._dataset, sc.DataArray):
-            area_xy.append(DrawerItem('', self._dataset.data, colors.DATA))
+            area_xy.append(DrawerItem('', self._dataset.data, colors.STYLE['data']))
         else:
             # Render highest-dimension items last so coords are optically
             # aligned
             for name, data in sorted(self._dataset.items()):
-                item = DrawerItem(name, data.data, colors.DATA)
+                item = DrawerItem(name, data.data, colors.STYLE['data'])
                 # Using only x and 0d areas for 1-D dataset
                 if len(dims) == 1 or data.dims != dims:
                     if len(data.dims) == 0:
@@ -448,7 +448,7 @@ class DatasetDrawer:
                 item = DrawerItem(
                     name,
                     var,
-                    getattr(colors, what.upper()),
+                    colors.STYLE[what],
                     show_alignment=what == 'coords',
                 )
                 if len(var.dims) == 0:

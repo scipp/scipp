@@ -36,6 +36,8 @@ Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
+* The runtime configuration has been removed `#3254 <https://github.com/scipp/scipp/pull/3254>`_.
+
 Bugfixes
 ~~~~~~~~
 

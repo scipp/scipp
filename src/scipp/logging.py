@@ -15,9 +15,9 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple
 
 from .core import DataArray, Dataset, Variable
-from .html import make_html
-from .html.resources import load_style
 from .utils import running_in_jupyter
+from .visualizations import make_html
+from .visualizations.resources import load_style
 
 
 def get_logger() -> logging.Logger:

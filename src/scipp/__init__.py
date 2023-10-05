@@ -21,10 +21,6 @@ if os.name == "nt" and "CONDA_PREFIX" in os.environ:
         os.environ["PATH"] += os.pathsep + str(dll_directory)
 del os
 
-from .configuration import config
-
-del configuration
-
 from .core import __version__
 
 # Import classes
@@ -300,7 +296,6 @@ __all__ = [
     'collapse',
     'compat',
     'concat',
-    'config',
     'coords',
     'cos',
     'counts_to_density',

@@ -12,21 +12,21 @@ def _read_text(filename):
     if hasattr(importlib.resources, 'files'):
         # Use new API added in Python 3.9
         return (
-            importlib.resources.files('scipp.html.templates')
+            importlib.resources.files('scipp.visualizations.templates')
             .joinpath(filename)
             .read_text()
         )
     # Old API, deprecated as of Python 3.11
-    return importlib.resources.read_text('scipp.html.templates', filename)
+    return importlib.resources.read_text('scipp.visualizations.templates', filename)
 
 
 def _format_style(template: str) -> str:
-    from .. import config
+    from .colors import STYLE
 
     # Color patterns in the CSS template use the name in
-    # the config file plus a _color suffix.
+    # the colors file plus a _color suffix.
     return Template(template).substitute(
-        **{f'{key}_color': val for key, val in config['colors'].items()}
+        **{f'{key}_color': val for key, val in STYLE.items()}
     )
 
 
@@ -90,7 +90,7 @@ def load_dg_style() -> str:
 
 @lru_cache(maxsize=4)
 def _load_template(name: str) -> str:
-    """HTML template in scipp.html.templates"""
+    """HTML template in scipp.visualizations.templates"""
     html_tpl = _read_text(name + '.html')
     import re
 

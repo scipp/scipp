@@ -9,7 +9,6 @@ INTERNAL USE ONLY
 """
 
 from .collapse_and_slices import *
-from .colors import *
 from .comparison import *
 from .pyshell import *
 from .to_string import *

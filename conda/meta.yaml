@@ -37,7 +37,6 @@ requirements:
     - python
     - tbb-devel {{ tbb_devel }}
   run:
-    - confuse
     - graphlib-backport # for python < 3.9
     - numpy
     - python
