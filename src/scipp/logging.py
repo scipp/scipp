@@ -16,8 +16,8 @@ from typing import Any, Dict, Optional, Tuple
 
 from .core import DataArray, Dataset, Variable
 from .utils import running_in_jupyter
-from .visualizations import make_html
-from .visualizations.resources import load_style
+from .visualization import make_html
+from .visualization.resources import load_style
 
 
 def get_logger() -> logging.Logger:

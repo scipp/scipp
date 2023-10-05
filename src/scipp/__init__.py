@@ -47,12 +47,12 @@ from . import geometry
 # Import functions
 
 # Import python functions
-from .visualizations import show, make_svg, to_html, make_html, table
+from .visualization import show, make_svg, to_html, make_html, table
 
 setattr(Variable, '_repr_html_', make_html)
 setattr(DataArray, '_repr_html_', make_html)
 setattr(Dataset, '_repr_html_', make_html)
-del visualizations
+del visualization
 
 from .io.hdf5 import save_hdf5 as _save_hdf5
 

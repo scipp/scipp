@@ -2,7 +2,7 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
-from .visualizations import make_html
+from .visualization import make_html
 
 
 def _repr_html_():
