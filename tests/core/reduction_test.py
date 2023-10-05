@@ -405,3 +405,10 @@ def test_any_single_dim(container):
     assert sc.identical(
         x.any('yy'), container(sc.array(dims=['xx'], values=[True, True]))
     )
+
+
+def test_reduction_with_mask_works_with_vectors():
+    data = sc.vectors(dims=['x'], values=np.arange(12, dtype=np.int64).reshape(4, 3))
+    mask = sc.array(dims=['x'], values=[False, True, False, True])
+    da = sc.DataArray(data=data, masks={'mask': mask})
+    da.sum()
