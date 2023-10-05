@@ -698,7 +698,7 @@ def test_dataset_without_data(a):
     ds = sc.Dataset(coords={'a': a.copy()})
     transformed = ds.transform_coords('b', graph={'b': 'a'})
     assert sc.identical(transformed.coords['b'], a.rename(a='b'))
-    assert 'a' not in transformed.coords
+    assert not transformed.coords['a'].aligned
     assert len(transformed) == 0
 
 
