@@ -230,7 +230,7 @@ def _find_bin_edges(var, ds):
     """
     return [
         dim
-        for length, dim in zip(var.shape, var.dims)
+        for dim, length in var.sizes.items()
         if ds.sizes.get(dim, 1) + 1 == length
     ]
 
