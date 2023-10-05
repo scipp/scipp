@@ -8,7 +8,7 @@
 -r base.txt
 -r extra.txt
 asv==0.6.1
-    # via -r requirements/asv.in
+    # via -r asv.in
 asv-runner==0.1.0
     # via asv
 json5==0.9.14

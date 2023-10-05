@@ -6,6 +6,6 @@
 #    pip-compile-multi
 #
 graphlib-backport==1.0.3
-    # via -r requirements/base.in
+    # via -r base.in
 numpy==1.24.4
-    # via -r requirements/base.in
+    # via -r base.in

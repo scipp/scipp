@@ -24,12 +24,12 @@ filelock==3.12.4
 gitdb==4.0.10
     # via gitpython
 gitpython==3.1.36
-    # via -r requirements/ci.in
+    # via -r ci.in
 idna==3.4
     # via requests
 packaging==23.1
     # via
-    #   -r requirements/ci.in
+    #   -r ci.in
     #   pyproject-api
     #   tox
 platformdirs==3.10.0
@@ -41,7 +41,7 @@ pluggy==1.3.0
 pyproject-api==1.6.1
     # via tox
 requests==2.31.0
-    # via -r requirements/ci.in
+    # via -r ci.in
 smmap==5.0.0
     # via gitdb
 tomli==2.0.1
