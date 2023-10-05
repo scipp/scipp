@@ -9,6 +9,7 @@
 #include "scipp/variable/bin_array_model.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/element_array_model.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/structure_array_model.h"
 
 using namespace scipp;
@@ -138,6 +139,21 @@ TEST(SizeOf, variable_of_long_string) {
       makeVariable<std::string>(Shape{1}, Dims{Dim::X}, Values{str});
   EXPECT_EQ(size_of(var, SizeofTag::ViewOnly), expected_size);
   EXPECT_EQ(size_of(var, SizeofTag::Underlying), expected_size);
+}
+
+TEST(SizeOf, variable_of_many_strings) {
+  // Targets the multithreaded implementation of sizeof for strings
+  const auto object_size =
+      sizeof(Variable) + sizeof(variable::ElementArrayModel<std::string>);
+
+  const auto n = 1000000;
+  Dimensions dims(Dim::X, n);
+  const std::string str = "A rather long string that is hopefully on the heap";
+  const auto str_size = sizeof(std::string) + str.size();
+  const auto view_size = n * str_size + object_size;
+  const auto var = broadcast(makeVariable<std::string>(Values{str}), dims);
+  EXPECT_EQ(size_of(var, SizeofTag::ViewOnly), view_size);
+  EXPECT_EQ(size_of(var, SizeofTag::Underlying), str_size + object_size);
 }
 
 TEST(SizeOf, variable_of_three_strings) {

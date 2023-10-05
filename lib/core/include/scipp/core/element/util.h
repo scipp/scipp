@@ -8,6 +8,7 @@
 
 #include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
+#include "scipp/core/eigen.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/subbin_sizes.h"
 #include "scipp/core/time_point.h"
@@ -128,12 +129,13 @@ constexpr auto fill_zeros =
     overloaded{arg_list<double, float, int64_t, int32_t, SubbinSizes>,
                [](units::Unit &) {}, [](auto &x) { x = 0; }};
 
+template <class... Ts>
+constexpr arg_list_t<std::tuple<bool, Ts, Ts>...> where_arg_list{};
+
 constexpr auto where = overloaded{
-    core::element::arg_list<
-        std::tuple<bool, double, double>, std::tuple<bool, float, float>,
-        std::tuple<bool, int64_t, int64_t>, std::tuple<bool, int32_t, int32_t>,
-        std::tuple<bool, bool, bool>, std::tuple<bool, time_point, time_point>,
-        std::tuple<bool, scipp::index_pair, scipp::index_pair>>,
+    where_arg_list<double, float, int64_t, int32_t, bool, core::time_point,
+                   index_pair, std::string, Eigen::Vector3d, Eigen::Matrix3d,
+                   Eigen::Affine3d, core::Quaternion, core::Translation>,
     transform_flags::force_variance_broadcast,
     [](const auto &condition, const auto &x, const auto &y) {
       return condition ? x : y;

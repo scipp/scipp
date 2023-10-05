@@ -69,16 +69,27 @@ def vulcan_steel_strain_data() -> DataArray:
     return load_hdf5(get_path('VULCAN_221040_processed.h5'))
 
 
-def table_xyz(nrow: int) -> DataArray:
+def table_xyz(nrow: int, coord_max=None, coord_dtype=None) -> DataArray:
     """
     Return a 1-D data array ("table") with x, y, and z coord columns.
     """
     from numpy.random import default_rng
 
     rng = default_rng(seed=1234)
-    x = array(dims=['row'], unit='m', values=rng.random(nrow))
-    y = array(dims=['row'], unit='m', values=rng.random(nrow))
-    z = array(dims=['row'], unit='m', values=rng.random(nrow))
+
+    def random_coordinate():
+        return array(
+            dims=['row'],
+            unit='m',
+            values=(
+                rng.random(nrow) if coord_max is None else rng.random(nrow) * coord_max
+            ),
+            dtype=coord_dtype,
+        )
+
+    x = random_coordinate()
+    y = random_coordinate()
+    z = random_coordinate()
     data = ones(dims=['row'], unit='K', shape=[nrow])
     data.values += 0.1 * rng.random(nrow)
     return DataArray(data=data, coords={'x': x, 'y': y, 'z': z})

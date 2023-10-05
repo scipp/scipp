@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock, Jan-Lukas Wynen
-import dataclasses
 from dataclasses import fields
 from fractions import Fraction
 from typing import Callable, Dict, Iterable, List, Mapping, Optional, Set, Union
@@ -207,12 +206,10 @@ def _transform_data_array(
 def _transform_dataset(
     original: Dataset, targets: Set[str], graph: Graph, *, options: Options
 ) -> Dataset:
-    # Note the inefficiency here in datasets with multiple items: Coord
-    # transform is repeated for every item rather than sharing what is
-    # possible. Implementing this used to be tricky and likely error-prone,
-    # since different items may have had different attributes. Unless we have
-    # clear performance requirements, we therefore went with the safe and
-    # simple solution.
+    # Note the inefficiency here in datasets with multiple items: Coord transform is
+    # repeated for every item rather than sharing what is possible. Since we may have
+    # dataset items with binned data this is far from trivial. Unless we have clear
+    # performance requirements, we go with the safe and simple solution.
     if len(original) > 0:
         return Dataset(
             data={
@@ -222,12 +219,6 @@ def _transform_dataset(
                 for name in original
             }
         )
-
-    # Cannot keep attributes in output anyway.
-    # So make sure they are removed as early as possible.
-    options = dataclasses.replace(
-        options, keep_inputs=False, keep_aliases=False, keep_intermediate=False
-    )
     dummy = DataArray(empty(sizes=original.sizes), coords=original.coords)
     transformed = _transform_data_array(
         dummy, targets=targets, graph=graph, options=options
@@ -303,6 +294,7 @@ def _store_coord(da: DataArray, name: str, coord: Coord) -> None:
 
 def _store_results(da: DataArray, coords: CoordTable, targets: Set[str]) -> DataArray:
     da = da.copy(deep=False)
+    # See #2773 for why this is necessary.
     if da.bins is not None:
         da.data = bins(**da.bins.constituents)
     for name, coord in coords.items():

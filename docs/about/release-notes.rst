@@ -40,6 +40,9 @@ Bugfixes
 ~~~~~~~~
 
 * :func:`scipp.testing.assert_identical` now compares the alignment of coordinates `#3242 <https://github.com/scipp/scipp/pull/3242>`_.
+* Fixed overflow in variances with large integers `#3262 <https://github.com/scipp/scipp/pull/3262>`_.
+* Fixed reduction operations for data arrays containing vectors with masks `#3276 <https://github.com/scipp/scipp/pull/3276>`_.
+* Fixed :func:`scipp.where` to work with most dtypes `#3276 <https://github.com/scipp/scipp/pull/3276>`_.
 
 Documentation
 ~~~~~~~~~~~~~

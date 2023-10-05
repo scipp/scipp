@@ -71,22 +71,26 @@ size_of_impl(const Dataset &ds, const SizeofTag tag,
   return size;
 }
 
-constexpr auto size_of_kernel = overloaded{
-    core::element::arg_list<std::tuple<scipp::index, std::string>>,
-    [](auto &out, const std::string &str) {
-      if (const auto str_address =
-              reinterpret_cast<const char *>(std::addressof(str));
-          str.data() > str_address &&
-          str.data() + str.size() < str_address + sizeof(std::string)) {
-        // Small string optimization: The characters are located
-        // in the string's internal buffer.
-        out += sizeof(std::string);
-      } else {
-        // A long string: The characters are in a separate
-        // array on the heap.
-        out += sizeof(std::string) + str.size();
-      }
-    }};
+struct SizeOfKernel {
+  using types = std::tuple<std::tuple<scipp::index, std::string>,
+                           std::tuple<scipp::index, scipp::index>>;
+
+  void operator()(scipp::index &out, const std::string &str) {
+    if (const auto str_address =
+            reinterpret_cast<const char *>(std::addressof(str));
+        str.data() > str_address &&
+        str.data() + str.size() < str_address + sizeof(std::string)) {
+      // Small string optimization: The characters are located
+      // in the string's internal buffer.
+      out += sizeof(std::string);
+    } else {
+      // A long string: The characters are in a separate
+      // array on the heap.
+      out += sizeof(std::string) + str.size();
+    }
+  }
+  void operator()(scipp::index &out, const scipp::index &s) { out += s; }
+};
 
 struct SizeOfContainerKernel {
   using types = std::tuple<std::tuple<scipp::index, Variable>,
@@ -148,7 +152,7 @@ size_of_elements(const Variable &view, const SizeofTag tag,
     return size_of_bins<Dataset>(view, tag);
   }
   if (view.dtype() == dtype<std::string>) {
-    return accumulate_size_of(view, tag, size_of_kernel);
+    return accumulate_size_of(view, tag, SizeOfKernel{});
   }
   if (view.dtype() == dtype<Variable> || view.dtype() == dtype<DataArray> ||
       view.dtype() == dtype<Dataset>) {
