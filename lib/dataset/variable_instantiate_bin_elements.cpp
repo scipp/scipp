@@ -104,8 +104,10 @@ private:
     auto buffer = DataArray(
         variable::variableFactory().create(type, dims, unit, variances),
         copy(source.coords()), copy(source.masks()), copy(source.attrs()));
-    // TODO is the copy needed?
-    return make_bins(copy(indices), dim, std::move(buffer));
+    // only caller appears to be BinVariableMaker::create, which makes its own
+    // valid indices? is all we need a buffer size check, or is that valid as
+    // well?
+    return make_bins_no_validate(indices, dim, std::move(buffer));
   }
   const Variable &data(const Variable &var) const override {
     return buffer(var).data();

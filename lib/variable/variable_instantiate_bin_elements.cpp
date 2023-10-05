@@ -26,8 +26,8 @@ private:
                           const bool variances) const override {
     // Buffer contains only variable, which is created with new dtype, no
     // information to copy from parent.
-    return make_bins(copy(indices), dim,
-                     variableFactory().create(type, dims, unit, variances));
+    return make_bins_no_validate(
+        indices, dim, variableFactory().create(type, dims, unit, variances));
   }
   const Variable &data(const Variable &var) const override {
     return this->buffer(var);
