@@ -43,7 +43,8 @@ Bugfixes
 
 * :func:`scipp.testing.assert_identical` now compares the alignment of coordinates `#3242 <https://github.com/scipp/scipp/pull/3242>`_.
 * Fixed overflow in variances with large integers `#3262 <https://github.com/scipp/scipp/pull/3262>`_.
-* All items of datasets must have the same dimensions now `#3199 <https://github.com/scipp/scipp/pull/3199>`_.
+* Fixed reduction operations for data arrays containing vectors with masks `#3276 <https://github.com/scipp/scipp/pull/3276>`_.
+* Fixed :func:`scipp.where` to work with most dtypes `#3276 <https://github.com/scipp/scipp/pull/3276>`_.
 
 Documentation
 ~~~~~~~~~~~~~
@@ -102,6 +103,7 @@ Bugfixes
 
 * Fixed label based indexing for arrays with a single element in the sliced dimension `#3171 <https://github.com/scipp/scipp/pull/3171>`_.
 * Fixed ``scipp.show`` in the presence of bin-edge coords that have been sliced out `#3178 <https://github.com/scipp/scipp/pull/3178>`_.
+* Fixed in-place mod function for float `#3179 <https://github.com/scipp/scipp/pull/3179>`_.
 
 v23.05.0
 --------
