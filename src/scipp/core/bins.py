@@ -14,6 +14,7 @@ from .domains import merge_equal_adjacent
 from .math import midpoints
 from .operations import islinspace
 from .shape import concat
+from .variable import scalar
 
 
 class Lookup:
@@ -124,12 +125,18 @@ class Bins:
             return self._obj
 
     def __mul__(self, lut: lookup):
-        copy = self._obj.copy()
+        target_dtype = (
+            scalar(1, dtype=self.dtype) * scalar(1, dtype=lut.func.dtype)
+        ).dtype
+        copy = self._obj.to(dtype=target_dtype)
         _cpp.buckets.scale(copy, lut.func, lut.dim)
         return copy
 
     def __truediv__(self, lut: lookup):
-        copy = self._obj.copy()
+        target_dtype = (
+            scalar(1, dtype=self.dtype) / scalar(1, dtype=lut.func.dtype)
+        ).dtype
+        copy = self._obj.to(dtype=target_dtype)
         _cpp.buckets.scale(copy, _cpp.reciprocal(lut.func), lut.dim)
         return copy
 
@@ -240,6 +247,11 @@ class Bins:
     def unit(self, unit: Union[_cpp.Unit, str]):
         """Set unit of the bin elements"""
         self.constituents['data'].unit = unit
+
+    @property
+    def dtype(self) -> _cpp.DType:
+        """Data type of the bin elements."""
+        return self.constituents['data'].dtype
 
     @property
     def aligned(self) -> bool:
