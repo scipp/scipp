@@ -21,7 +21,6 @@ def _read_text(filename):
 
 
 def _preprocess_style(raw_css: str) -> str:
-    # css = _format_style(template)
     import re
 
     # line breaks are not needed
