@@ -126,8 +126,7 @@ class Bins:
 
     def __mul__(self, lut: lookup):
         target_dtype = (
-            scalar(1, dtype=self.constituents['data'].dtype)
-            * scalar(1, dtype=lut.func.dtype)
+            scalar(1, dtype=self.dtype) * scalar(1, dtype=lut.func.dtype)
         ).dtype
         copy = self._obj.to(dtype=target_dtype)
         _cpp.buckets.scale(copy, lut.func, lut.dim)
@@ -135,8 +134,7 @@ class Bins:
 
     def __truediv__(self, lut: lookup):
         target_dtype = (
-            scalar(1, dtype=self.constituents['data'].dtype)
-            / scalar(1, dtype=lut.func.dtype)
+            scalar(1, dtype=self.dtype) / scalar(1, dtype=lut.func.dtype)
         ).dtype
         copy = self._obj.to(dtype=target_dtype)
         _cpp.buckets.scale(copy, _cpp.reciprocal(lut.func), lut.dim)
@@ -249,6 +247,11 @@ class Bins:
     def unit(self, unit: Union[_cpp.Unit, str]):
         """Set unit of the bin elements"""
         self.constituents['data'].unit = unit
+
+    @property
+    def dtype(self) -> _cpp.DType:
+        """Data type of the bin elements."""
+        return self.constituents['data'].dtype
 
     @property
     def aligned(self) -> bool:
