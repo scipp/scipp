@@ -208,7 +208,7 @@ void Dataset::setData(const std::string &name, const DataArray &data) {
 /// A default-constructed dataset cannot be filled using setData or setCoord
 /// as the dataset's dimensions are unknown and the input cannot be validated.
 /// setDataInit sets the sizes when called with a default-initialized dataset.
-/// If can be used for creating a new dataset and filling it step by step.
+/// It can be used for creating a new dataset and filling it step by step.
 void Dataset::setDataInit(const std::string &name, const DataArray &data) {
   if (!is_valid()) {
     m_coords.setSizes(data.dims());
