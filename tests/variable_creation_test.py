@@ -321,6 +321,78 @@ def test_array_empty_dims():
     )
 
 
+@pytest.mark.parametrize('ndim', range(7))
+def test_array_nd_contiguous_c_layout(ndim):
+    shape = list(range(2, ndim + 2))
+    values = np.arange(np.prod(shape)).reshape(shape)
+    var = sc.array(dims=[f'dim_{d}' for d in range(ndim)], values=values)
+    assert var.ndim == ndim
+    assert var.shape == values.shape
+    np.testing.assert_array_equal(var.values, values)
+
+
+# ndim=0 doesn't work because np.asfortranarray(values) produces a 1d array
+@pytest.mark.parametrize('ndim', range(1, 7))
+def test_array_nd_contiguous_fortran_layout(ndim):
+    shape = list(range(2, ndim + 2))
+    values = np.arange(np.prod(shape)).reshape(shape)
+    values = np.asfortranarray(values)
+    var = sc.array(dims=[f'dim_{d}' for d in range(ndim)], values=values)
+    assert var.ndim == ndim
+    assert var.shape == values.shape
+    np.testing.assert_array_equal(var.values, values)
+
+
+def slice_array_in_dim(array, dim):
+    # We cannot use numpy.take here because we don't want to
+    # copy the output but get a sliced array with corresponding strides.
+    if dim == 0:
+        return array[::2]
+    elif dim == 1:
+        return array[:, ::2]
+    elif dim == 2:
+        return array[:, :, ::2]
+    elif dim == 3:
+        return array[:, :, :, ::2]
+    elif dim == 4:
+        return array[:, :, :, :, ::2]
+    elif dim == 5:
+        return array[:, :, :, :, :, ::2]
+    elif dim == 6:
+        return array[:, :, :, :, :, :, ::2]
+
+
+@pytest.mark.parametrize(
+    'ndim_and_slice_dim',
+    [(ndim, slice_dim) for ndim in range(1, 7) for slice_dim in range(ndim)],
+)
+def test_array_nd_sliced_c_layout(ndim_and_slice_dim):
+    ndim, slice_dim = ndim_and_slice_dim
+    shape = list(range(2, ndim + 2))
+    values = np.arange(np.prod(shape)).reshape(shape)
+    values = slice_array_in_dim(values, slice_dim)
+    var = sc.array(dims=[f'dim_{d}' for d in range(ndim)], values=values)
+    assert var.ndim == ndim
+    assert var.shape == values.shape
+    np.testing.assert_array_equal(var.values, values)
+
+
+@pytest.mark.parametrize(
+    'ndim_and_slice_dim',
+    [(ndim, slice_dim) for ndim in range(1, 7) for slice_dim in range(ndim)],
+)
+def test_array_nd_sliced_fortran_layout(ndim_and_slice_dim):
+    ndim, slice_dim = ndim_and_slice_dim
+    shape = list(range(2, ndim + 2))
+    values = np.arange(np.prod(shape)).reshape(shape)
+    values = np.asfortranarray(values)
+    values = slice_array_in_dim(values, slice_dim)
+    var = sc.array(dims=[f'dim_{d}' for d in range(ndim)], values=values)
+    assert var.ndim == ndim
+    assert var.shape == values.shape
+    np.testing.assert_array_equal(var.values, values)
+
+
 def test_zeros_like():
     var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
     expected = sc.zeros(dims=['x', 'y', 'z'], shape=[1, 2, 3])

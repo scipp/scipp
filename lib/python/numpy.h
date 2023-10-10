@@ -43,6 +43,7 @@ template <> struct ElementTypeMap<scipp::python::PyObject> {
 
 template <bool convert, class Source, class Destination>
 void copy_element(const Source &src, Destination &&dst) {
+  using std::to_string;
   if constexpr (convert) {
     dst = std::remove_reference_t<Destination>{src};
   } else {
@@ -85,54 +86,53 @@ auto cast_to_array_like(const py::object &obj, const units::Unit unit) {
   }
 }
 
-template <bool convert, class T, class View>
-void copy_flattened_0d(const py::array_t<T> &data, View &&view) {
-  auto r = data.unchecked();
-  auto it = view.begin();
-  copy_element<convert>(r(), *it);
+template <class T> struct typed_buffer {
+  const T *ptr;
+  ssize_t ndim;
+  scipp::span<ssize_t> shape;
+
+  typed_buffer(const T *ptr_, const ssize_t ndim_, scipp::span<ssize_t> shape_,
+               py::buffer_info base_buffer_)
+      : ptr{ptr_}, ndim{ndim_}, shape{shape_}, m_base_buffer{
+                                                   std::move(base_buffer_)} {}
+
+  [[nodiscard]] ssize_t stride(const ssize_t dim) const noexcept {
+    return m_base_buffer.strides[dim] / m_base_buffer.itemsize;
+  }
+
+private:
+  py::buffer_info m_base_buffer;
+};
+
+template <class T> auto request_typed_buffer(const py::array_t<T> &array) {
+  // Order of operations such that we can safely move base_buffer.
+  auto base_buffer = array.request();
+  auto ptr = reinterpret_cast<const T *>(base_buffer.ptr);
+  auto ndim = base_buffer.ndim;
+  scipp::span<ssize_t> shape = base_buffer.shape;
+  return typed_buffer(ptr, ndim, shape, std::move(base_buffer));
 }
 
-template <bool convert, class T, class View>
-void copy_flattened_1d(const py::array_t<T> &data, View &&view) {
-  auto r = data.unchecked();
-  auto it = view.begin();
-  for (scipp::index i = 0; i < r.shape(0); ++i, ++it) {
-    copy_element<convert>(r(i), *it);
+template <bool convert, class T, class Out>
+void copy_flattened_inner_loop(const typed_buffer<T> &src, Out &out,
+                               const ssize_t dim, const ssize_t offset) {
+  const auto stride = src.stride(dim);
+  for (scipp::index i = 0; i < src.shape[dim]; ++i) {
+    copy_element<convert>(src.ptr[i * stride + offset], *out);
+    ++out;
   }
 }
 
-template <bool convert, class T, class View>
-void copy_flattened_2d(const py::array_t<T> &data, View &&view) {
-  auto r = data.unchecked();
-  const auto begin = view.begin();
-  core::parallel::parallel_for(
-      core::parallel::blocked_range(0, r.shape(0)), [&](const auto &range) {
-        auto it = begin + range.begin() * r.shape(1);
-        for (scipp::index i = range.begin(); i < range.end(); ++i)
-          for (scipp::index j = 0; j < r.shape(1); ++j, ++it)
-            copy_element<convert>(r(i, j), *it);
-      });
-}
-
-template <bool convert, class T, class View>
-void copy_flattened_3d(const py::array_t<T> &data, View &&view) {
-  auto r = data.unchecked();
-  auto it = view.begin();
-  for (scipp::index i = 0; i < r.shape(0); ++i)
-    for (scipp::index j = 0; j < r.shape(1); ++j)
-      for (scipp::index k = 0; k < r.shape(2); ++k, ++it)
-        copy_element<convert>(r(i, j, k), *it);
-}
-
-template <bool convert, class T, class View>
-void copy_flattened_4d(const py::array_t<T> &data, View &&view) {
-  auto r = data.unchecked();
-  auto it = view.begin();
-  for (scipp::index i = 0; i < r.shape(0); ++i)
-    for (scipp::index j = 0; j < r.shape(1); ++j)
-      for (scipp::index k = 0; k < r.shape(2); ++k)
-        for (scipp::index l = 0; l < r.shape(3); ++l, ++it)
-          copy_element<convert>(r(i, j, k, l), *it);
+template <bool convert, class T, class Out>
+void copy_flattened(const typed_buffer<T> &src, Out &out, const ssize_t dim,
+                    const ssize_t offset) {
+  if (dim + 1 == src.ndim)
+    copy_flattened_inner_loop<convert>(src, out, dim, offset);
+  else {
+    const auto stride = src.stride(dim);
+    for (scipp::index i = 0; i < src.shape[dim]; ++i)
+      copy_flattened<convert>(src, out, dim + 1, i * stride + offset);
+  }
 }
 
 template <class T> auto memory_begin_end(const py::buffer_info &info) {
@@ -159,7 +159,7 @@ bool memory_overlaps(const py::array_t<T> &data, const View &view) {
 
 /// Copy all elements from src into dst.
 /// Performs an explicit conversion of elements in `src` to the element type of
-/// `dst` `convert == true`.
+/// `dst` if `convert == true`.
 /// Otherwise, elements in src are simply assigned to dst.
 template <bool convert, class T, class View>
 void copy_flattened(const py::array_t<T> &src, View &&dst) {
@@ -167,25 +167,12 @@ void copy_flattened(const py::array_t<T> &src, View &&dst) {
     throw std::runtime_error(
         "Numpy data size does not match size of target object.");
 
-  const auto dispatch = [](const py::array_t<T> &src_, View &&dst_) {
-    switch (src_.ndim()) {
-    case 0:
-      return copy_flattened_0d<convert>(src_, std::forward<View>(dst_));
-    case 1:
-      return copy_flattened_1d<convert>(src_, std::forward<View>(dst_));
-    case 2:
-      return copy_flattened_2d<convert>(src_, std::forward<View>(dst_));
-    case 3:
-      return copy_flattened_3d<convert>(src_, std::forward<View>(dst_));
-    case 4:
-      return copy_flattened_4d<convert>(src_, std::forward<View>(dst_));
-    default:
-      throw std::runtime_error("Numpy array has more dimensions than supported "
-                               "in the current implementation.");
-    }
-  };
-  dispatch(memory_overlaps(src, dst) ? py::array_t<T>(src.request()) : src,
-           std::forward<View>(dst));
+  [](const py::array_t<T> &src_, auto &&dst_) {
+    const auto src_buffer = request_typed_buffer(src_);
+    auto out = dst_.begin();
+    copy_flattened<convert>(src_buffer, out, 0, 0);
+  }(memory_overlaps(src, dst) ? py::array_t<T>(src.request()) : src,
+    std::forward<View>(dst));
 }
 
 template <class SourceDType, class Destination>
