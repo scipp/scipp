@@ -20,22 +20,12 @@ def _read_text(filename):
     return importlib.resources.read_text('scipp.visualization.templates', filename)
 
 
-def _format_style(template: str) -> str:
-    from .colors import STYLE
-
-    # Color patterns in the CSS template use the name in
-    # the colors file plus a _color suffix.
-    return Template(template).substitute(
-        **{f'{key}_color': val for key, val in STYLE.items()}
-    )
-
-
-def _preprocess_style(template: str) -> str:
-    css = _format_style(template)
+def _preprocess_style(raw_css: str) -> str:
+    # css = _format_style(template)
     import re
 
     # line breaks are not needed
-    css = css.replace('\n', '')
+    css = raw_css.replace('\n', '')
     # remove comments
     css = re.sub(r'/\*(\*(?!/)|[^*])*\*/', '', css)
     # remove space around special characters
@@ -49,7 +39,7 @@ def load_style_sheet() -> str:
     Load the bundled CSS style and return it as a string.
     The string is cached upon first call.
     """
-    return _preprocess_style(_read_text('style.css.template'))
+    return _preprocess_style(_read_text('style.css'))
 
 
 def load_style() -> str:
@@ -73,8 +63,8 @@ def load_dg_style() -> str:
     """
     Load the bundled CSS style and return it within <style> tags.
     The string is cached upon first call.
-    Datagroup stylesheet is dependent on ``style.css.template``.
-    Therefore it loads both ``style.css.template`` and ``datagroup.css``.
+    Datagroup stylesheet is dependent on ``style.css``.
+    Therefore it loads both ``style.css`` and ``datagroup.css``.
     """
     from .formatting_html import load_style
     from .resources import _preprocess_style, _read_text
