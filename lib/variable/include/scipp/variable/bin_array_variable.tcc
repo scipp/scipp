@@ -129,7 +129,6 @@ public:
       const override {
     const Variable &parent = bin_parent(parents);
     const auto &[parentIndices, dim, buffer] = parent.constituents<T>();
-    // TODO is it faster to use sizes and cumsum approach, as elsewhere?
     auto [indices, size] =
         bin_array_variable_detail::contiguous_indices(parentIndices, dims);
     auto bufferDims = buffer.dims();
