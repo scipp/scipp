@@ -90,7 +90,7 @@ def lookup(
     """
     if dim is None:
         dim = func.dim
-    func = _cpp.DataArray(func.data, coords={dim: func.meta[dim]}, masks=func.masks)
+    func = _cpp.DataArray(func.data, coords={dim: func.coords[dim]}, masks=func.masks)
     if func.coords.is_edges(dim):
         if mode is not None:
             raise ValueError("Input is a histogram, 'mode' must not be set.")
@@ -164,9 +164,9 @@ class Bins:
             start = index.start
             stop = index.stop
             if start is None:
-                start = self._obj.bins.meta[dim].min()
+                start = self._obj.bins.coords[dim].min()
             if stop is None:
-                stop = _upper_bound(self._obj.bins.meta[dim].max())
+                stop = _upper_bound(self._obj.bins.coords[dim].max())
 
             if not (
                 isinstance(start, _cpp.Variable) and isinstance(stop, _cpp.Variable)
@@ -203,7 +203,7 @@ class Bins:
            store attributes in higher-level data structures.
         """
         _warn_attr_removal()
-        return _cpp._bins_view(self._data()).deprecated_meta
+        return self.deprecated_meta
 
     @property
     def attrs(self) -> MetaDataMap:
@@ -214,6 +214,14 @@ class Bins:
            store attributes in higher-level data structures.
         """
         _warn_attr_removal()
+        return self.deprecated_attrs
+
+    @property
+    def deprecated_meta(self) -> MetaDataMap:
+        return _cpp._bins_view(self._data()).deprecated_meta
+
+    @property
+    def deprecated_attrs(self) -> MetaDataMap:
         return _cpp._bins_view(self._data()).deprecated_attrs
 
     @property

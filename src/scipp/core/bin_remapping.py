@@ -95,8 +95,8 @@ def _combine_bins(
     # bins, without mixing contents from different unchanged bins.
     var = var.transpose(unchanged_dims + changed_dims)
     params = DataArray(var.bins.size(), coords=coords)
-    params.attrs['begin'] = var.bins.constituents['begin'].copy()
-    params.attrs['end'] = var.bins.constituents['end'].copy()
+    params.coords['begin'] = var.bins.constituents['begin'].copy()
+    params.coords['end'] = var.bins.constituents['end'].copy()
 
     # Sizes and begin/end indices of changed subspace
     sub_sizes = index(changed_volume).broadcast(
@@ -113,8 +113,8 @@ def _combine_bins(
     source = _cpp._bins_no_validate(
         data=var.bins.constituents['data'],
         dim=var.bins.constituents['dim'],
-        begin=params.bins.constituents['data'].attrs['begin'],
-        end=params.bins.constituents['data'].attrs['end'],
+        begin=params.bins.constituents['data'].coords['begin'],
+        end=params.bins.constituents['data'].coords['end'],
     )
     # Call `copy()` to reorder data. This is based on the underlying behavior of `copy`
     # for binned data: It computes a new contiguous and ordered mapping of bin contents
@@ -133,7 +133,7 @@ def combine_bins(
         data = _concat_bins(masked, dim=dim)
     else:
         names = [coord.dim for coord in itertools.chain(edges, groups)]
-        coords = {name: da.meta[name] for name in names}
+        coords = {name: da.coords[name] for name in names}
         data = _combine_bins(masked, coords=coords, edges=edges, groups=groups, dim=dim)
     out = rewrap_reduced_data(da, data, dim=dim)
     for coord in itertools.chain(edges, groups):

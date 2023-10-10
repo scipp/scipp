@@ -23,7 +23,7 @@ def rewrap_output_data(prototype: VariableLikeType, data) -> VariableLikeType:
         return DataArray(
             data=data,
             coords=prototype.coords,
-            attrs=prototype.attrs,
+            attrs=prototype.deprecated_attrs,
             masks=_copied(prototype.masks),
         )
     else:
@@ -65,7 +65,7 @@ def reduced_coords(da: DataArray, dim: Dims) -> Dict[str, Variable]:
 
 
 def reduced_attrs(da: DataArray, dim: Dims) -> Dict[str, Variable]:
-    return _reduced(da.attrs, concrete_dims(da, dim))
+    return _reduced(da.deprecated_attrs, concrete_dims(da, dim))
 
 
 def reduced_masks(da: DataArray, dim: Dims) -> Dict[str, Variable]:
