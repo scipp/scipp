@@ -114,24 +114,50 @@ template <class T> auto request_typed_buffer(const py::array_t<T> &array) {
 }
 
 template <bool convert, class T, class Out>
-void copy_flattened_inner_loop(const typed_buffer<T> &src, Out &out,
-                               const ssize_t dim, const ssize_t offset) {
+void copy_flattened_0d(const typed_buffer<T> &src, Out &out) {
+  copy_element<convert>(*src.ptr, *out);
+}
+
+template <bool convert, class T, class Out>
+void copy_flattened_inner_dim(const typed_buffer<T> &src, Out &out,
+                              ssize_t length, const ssize_t dim,
+                              const ssize_t offset) {
   const auto stride = src.stride(dim);
-  for (scipp::index i = 0; i < src.shape[dim]; ++i) {
+  length = length == -1 ? src.shape[dim] : length;
+  for (scipp::index i = 0; i < length; ++i) {
     copy_element<convert>(src.ptr[i * stride + offset], *out);
     ++out;
   }
 }
 
 template <bool convert, class T, class Out>
-void copy_flattened(const typed_buffer<T> &src, Out &out, const ssize_t dim,
-                    const ssize_t offset) {
+void copy_flattened_middle_dims(const typed_buffer<T> &src, Out &out,
+                                ssize_t length, const ssize_t dim,
+                                const ssize_t offset) {
   if (dim + 1 == src.ndim)
-    copy_flattened_inner_loop<convert>(src, out, dim, offset);
+    copy_flattened_inner_dim<convert>(src, out, length, dim, offset);
   else {
     const auto stride = src.stride(dim);
-    for (scipp::index i = 0; i < src.shape[dim]; ++i)
-      copy_flattened<convert>(src, out, dim + 1, i * stride + offset);
+    length = length == -1 ? src.shape[dim] : length;
+    for (scipp::index i = 0; i < length; ++i)
+      copy_flattened_middle_dims<convert>(src, out, -1, dim + 1,
+                                          i * stride + offset);
+  }
+}
+
+template <bool convert, class T, class Out>
+void copy_flattened(const typed_buffer<T> &src, Out &out) {
+  if (src.ndim == 0)
+    copy_flattened_0d<convert>(src, out);
+  else {
+    const auto stride = src.stride(0);
+    core::parallel::parallel_for(
+        core::parallel::blocked_range(0, src.shape[0]), [&](const auto &range) {
+          auto block_out = out + range.begin() * stride;
+          copy_flattened_middle_dims<convert>(src, block_out,
+                                              range.end() - range.begin(), 0,
+                                              range.begin() * stride);
+        });
   }
 }
 
@@ -170,7 +196,7 @@ void copy_flattened(const py::array_t<T> &src, View &&dst) {
   [](const py::array_t<T> &src_, auto &&dst_) {
     const auto src_buffer = request_typed_buffer(src_);
     auto out = dst_.begin();
-    copy_flattened<convert>(src_buffer, out, 0, 0);
+    copy_flattened<convert>(src_buffer, out);
   }(memory_overlaps(src, dst) ? py::array_t<T>(src.request()) : src,
     std::forward<View>(dst));
 }
