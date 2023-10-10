@@ -7,8 +7,10 @@
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/string.h"
+#include "scipp/variable/astype.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/operations.h"
+#include "scipp/variable/shape.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
@@ -76,4 +78,35 @@ TEST_F(BinnedArithmeticTest, var_and_array) {
   EXPECT_EQ(arr_var.dtype(), binned_arr.dtype());
   EXPECT_EQ(var_arr, make_bins(indices, Dim::Event, expected_array));
   EXPECT_EQ(arr_var, make_bins(indices, Dim::Event, expected_array));
+}
+
+TEST_F(BinnedArithmeticTest, op_on_transpose) {
+  const auto indices2d =
+      makeVariable<scipp::index_pair>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
+                                      Values{std::pair{0, 1}, std::pair{1, 2},
+                                             std::pair{2, 4}, std::pair{4, 5}});
+  const auto binned = make_bins(indices2d, Dim::Event, array);
+  const auto transposed = transpose(binned);
+  const auto one = makeVariable<double>(Values{1});
+  EXPECT_EQ(transposed * one, copy(transposed));
+}
+
+TEST_F(BinnedArithmeticTest, op_on_transpose_with_dtype_change) {
+  const auto indices2d =
+      makeVariable<scipp::index_pair>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
+                                      Values{std::pair{0, 1}, std::pair{1, 2},
+                                             std::pair{2, 4}, std::pair{4, 5}});
+  DataArray int_array =
+      DataArray(astype(var, dtype<int>), {{Dim::X, var + var}});
+  const auto binned = make_bins(indices2d, Dim::Event, int_array);
+  const auto transposed = transpose(binned);
+  const auto one = makeVariable<double>(Values{1});
+  EXPECT_EQ(transposed * one, copy(transposed) * one);
+}
+
+TEST_F(BinnedArithmeticTest, op_on_slice) {
+  const auto binned = make_bins(indices, Dim::Event, array);
+  const auto slice = binned.slice({Dim::X, 1, 2});
+  const auto one = makeVariable<double>(Values{1});
+  EXPECT_EQ(slice * one, copy(slice));
 }
