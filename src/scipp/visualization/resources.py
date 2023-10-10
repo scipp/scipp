@@ -5,7 +5,6 @@
 
 import importlib.resources
 from functools import lru_cache, partial
-from string import Template
 
 
 def _read_text(filename):
