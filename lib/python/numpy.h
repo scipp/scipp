@@ -43,7 +43,6 @@ template <> struct ElementTypeMap<scipp::python::PyObject> {
 
 template <bool convert, class Source, class Destination>
 void copy_element(const Source &src, Destination &&dst) {
-  using std::to_string;
   if constexpr (convert) {
     dst = std::remove_reference_t<Destination>{src};
   } else {
@@ -113,50 +112,56 @@ template <class T> auto request_typed_buffer(const py::array_t<T> &array) {
   return typed_buffer(ptr, ndim, shape, std::move(base_buffer));
 }
 
-template <bool convert, class T, class Out>
-void copy_flattened_0d(const typed_buffer<T> &src, Out &out) {
-  copy_element<convert>(*src.ptr, *out);
+template <bool convert, class T, class Dst>
+void copy_flattened_0d(const typed_buffer<T> &src, Dst &dst) {
+  copy_element<convert>(*src.ptr, *dst);
 }
 
-template <bool convert, class T, class Out>
-void copy_flattened_inner_dim(const typed_buffer<T> &src, Out &out,
+template <bool convert, class T, class Dst>
+void copy_flattened_inner_dim(const typed_buffer<T> &src, Dst &dst,
                               ssize_t length, const ssize_t dim,
                               const ssize_t offset) {
   const auto stride = src.stride(dim);
   length = length == -1 ? src.shape[dim] : length;
   for (scipp::index i = 0; i < length; ++i) {
-    copy_element<convert>(src.ptr[i * stride + offset], *out);
-    ++out;
+    copy_element<convert>(src.ptr[i * stride + offset], *dst);
+    ++dst;
   }
 }
 
-template <bool convert, class T, class Out>
-void copy_flattened_middle_dims(const typed_buffer<T> &src, Out &out,
+template <bool convert, class T, class Dst>
+void copy_flattened_middle_dims(const typed_buffer<T> &src, Dst &dst,
                                 ssize_t length, const ssize_t dim,
                                 const ssize_t offset) {
   if (dim + 1 == src.ndim)
-    copy_flattened_inner_dim<convert>(src, out, length, dim, offset);
+    copy_flattened_inner_dim<convert>(src, dst, length, dim, offset);
   else {
     const auto stride = src.stride(dim);
     length = length == -1 ? src.shape[dim] : length;
     for (scipp::index i = 0; i < length; ++i)
-      copy_flattened_middle_dims<convert>(src, out, -1, dim + 1,
+      copy_flattened_middle_dims<convert>(src, dst, -1, dim + 1,
                                           i * stride + offset);
   }
 }
 
-template <bool convert, class T, class Out>
-void copy_flattened(const typed_buffer<T> &src, Out &out) {
+template <class T> ssize_t inner_volume(const typed_buffer<T> &buffer) {
+  return std::accumulate(std::next(buffer.shape.begin()), buffer.shape.end(), 1,
+                         std::multiplies<ssize_t>{});
+}
+
+template <bool convert, class T, class Dst>
+void copy_flattened(const typed_buffer<T> &src, Dst &dst) {
   if (src.ndim == 0)
-    copy_flattened_0d<convert>(src, out);
+    copy_flattened_0d<convert>(src, dst);
   else {
-    const auto stride = src.stride(0);
+    const auto src_stride = src.stride(0);
+    const auto dst_stride = inner_volume(src);
     core::parallel::parallel_for(
         core::parallel::blocked_range(0, src.shape[0]), [&](const auto &range) {
-          auto block_out = out + range.begin() * stride;
+          auto block_out = dst + range.begin() * dst_stride;
           copy_flattened_middle_dims<convert>(src, block_out,
                                               range.end() - range.begin(), 0,
-                                              range.begin() * stride);
+                                              range.begin() * src_stride);
         });
   }
 }
