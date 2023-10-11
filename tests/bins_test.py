@@ -520,28 +520,14 @@ def test_bins_concat_applies_irreducible_masks():
     assert sc.identical(da.bins.concat('x'), da['x', :4].bins.concat('x'))
 
 
-def test_bin_1d_by_coord_without_event_coord():
+@pytest.mark.parametrize('aligned', [True, False])
+def test_bin_1d_by_coord_without_event_coord(aligned: bool):
     table = sc.data.table_xyz(nrow=1000)
     da = table.bin(x=100)
     rng = default_rng(seed=1234)
     param = sc.array(dims='x', values=rng.random(da.sizes['x']))
     da.coords['param'] = param
-    edges = sc.linspace('param', 0.0, 1.0, num=13)
-    from scipp.core.bin_remapping import combine_bins
-
-    result = combine_bins(da, [edges], [], ['x'])
-    # Setup flat table with param for computing expected result
-    da.bins.coords['param'] = sc.bins_like(da, param)
-    table = da.bins.constituents['data']
-    assert sc.identical(result.hist(), table.hist(param=edges))
-
-
-def test_bin_1d_by_attr_without_event_coord():
-    table = sc.data.table_xyz(nrow=1000)
-    da = table.bin(x=100)
-    rng = default_rng(seed=1234)
-    param = sc.array(dims='x', values=rng.random(da.sizes['x']))
-    da.attrs['param'] = param
+    da.coords.set_aligned('param', aligned)
     edges = sc.linspace('param', 0.0, 1.0, num=13)
     from scipp.core.bin_remapping import combine_bins
 
