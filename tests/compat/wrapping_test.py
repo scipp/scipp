@@ -31,9 +31,9 @@ def make_array():
     mask = y.copy()
     mask.unit = ''
     da.masks['yy'] = mask < mask**2
-    da.attrs['xx'] = x
-    da.attrs['yy'] = y
-    da.attrs['scalar'] = x[0]
+    da.deprecated_attrs['xx'] = x
+    da.deprecated_attrs['yy'] = y
+    da.deprecated_attrs['scalar'] = x[0]
     return da
 
 
