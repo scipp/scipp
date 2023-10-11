@@ -104,7 +104,7 @@ private:
     auto data_buffer =
         variable::variableFactory().create(type, dims, unit, variances);
     // If the buffer size is unchanged and input indices match output indices we
-    // can use a cheap and simply copy of the buffers coords and masks.
+    // can use a cheap and simple copy of the buffer's coords and masks.
     // Otherwise we fall back to a copy via the binned views of the respective
     // content buffers.
     if (source.dims() == Dimensions{dim, dims.volume()} &&
