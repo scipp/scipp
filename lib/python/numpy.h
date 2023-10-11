@@ -41,15 +41,6 @@ template <> struct ElementTypeMap<scipp::python::PyObject> {
   static void check_assignable(const py::object &, const units::Unit &) {}
 };
 
-template <bool convert, class Source, class Destination>
-void copy_element(const Source &src, Destination &&dst) {
-  if constexpr (convert) {
-    dst = std::remove_reference_t<Destination>{src};
-  } else {
-    std::forward<Destination>(dst) = src;
-  }
-}
-
 /// Cast a py::object referring to an array to py::array_t<auto> if supported.
 /// Otherwise, copies the contents into a std::vector<auto>.
 template <class T>
@@ -82,6 +73,17 @@ auto cast_to_array_like(const py::object &obj, const units::Unit unit) {
           << " to " << scipp::core::dtype<T>;
       throw std::invalid_argument(oss.str());
     }
+  }
+}
+
+namespace scipp::detail {
+namespace {
+template <bool convert, class Source, class Destination>
+void copy_element(const Source &src, Destination &&dst) {
+  if constexpr (convert) {
+    dst = std::remove_reference_t<Destination>{src};
+  } else {
+    std::forward<Destination>(dst) = src;
   }
 }
 
@@ -205,6 +207,8 @@ void copy_flattened(const py::array_t<T> &src, View &&dst) {
   }(memory_overlaps(src, dst) ? py::array_t<T>(src.request()) : src,
     std::forward<View>(dst));
 }
+} // namespace
+} // namespace scipp::detail
 
 template <class SourceDType, class Destination>
 void copy_array_into_view(const py::array_t<SourceDType> &src,
@@ -215,7 +219,7 @@ void copy_array_into_view(const py::array_t<SourceDType> &src,
     throw except::DimensionError("The shape of the provided data "
                                  "does not match the existing "
                                  "object.");
-  copy_flattened<ElementTypeMap<
+  scipp::detail::copy_flattened<ElementTypeMap<
       typename std::remove_reference_t<Destination>::value_type>::convert>(
       src, std::forward<Destination>(dst));
 }
