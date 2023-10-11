@@ -12,11 +12,6 @@
   --sc-font-color1: var(--jp-content-font-color1, #555);
   --sc-font-color2: var(--jp-content-font-color2, #888);
   --sc-font-color3: var(--jp-content-font-color3, #ccc);
-  --sc-table-data-color: $data_color;
-  --sc-table-coords-color: $coords_color;
-  --sc-table-masks-color: $masks_color;
-  --sc-table-attrs-color: $attrs_color;
-  --sc-table-header-font-color: $header_text_color;
 }
 
 body.vscode-dark .sc-root {
@@ -393,10 +388,6 @@ label.sc-hide-icon svg{
   padding-right:10px;
 }
 
-.sc-table {
-  border-collapse: collapse;
-}
-
 .sc-title {
   font-weight:bold;
   font-size:1.5em;
@@ -408,54 +399,6 @@ label.sc-hide-icon svg{
   text-align:left;
   font-size:1.2em;
   padding: 1px;
-}
-
-.sc-table th, .sc-table td {
-  border: 1px solid var(--sc-inverse-background-color0);
-  padding: 0 5px 0 5px;
-}
-
-.sc-table th {
-  text-align: center;
-}
-
-.sc-table tr {
-  background-color: var(--sc-background-color1);
-  text-align: right;
-}
-
-.sc-table tr:hover {
-  background-color: var(--sc-background-color2);
-}
-
-.sc-table th.sc-data {
-  background-color: var(--sc-table-data-color);
-  color: var(--sc-table-header-font-color);
-}
-
-.sc-table th.sc-coords {
-  background-color: var(--sc-table-coords-color);
-  color: var(--sc-table-header-font-color);
-}
-
-.sc-table th.sc-masks {
-  background-color: var(--sc-table-masks-color);
-  color: var(--sc-table-header-font-color);
-}
-
-.sc-table th.sc-attrs {
-  background-color: var(--sc-table-attrs-color);
-  color: var(--sc-table-header-font-color);
-}
-
-.sc-table th.sc-subheader {
-  background-color: var(--sc-background-color2);
-}
-
-.sc-table td.sc-padding {
-  background-color: var(--sc-background-color1);
-  border: 0 solid var(--sc-background-color1);
-  height: 1.2em;
 }
 
 .sc-label {

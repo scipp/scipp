@@ -4,6 +4,13 @@
 
 import numpy as np
 
+STYLE = {
+    'attrs': '#ff5555',
+    'coords': '#c6e590',
+    'data': '#f6d028',
+    'masks': '#c8c8c8',
+}
+
 
 def hex_to_rgb(hex_color):
     rgb_hex = [hex_color[x : x + 2] for x in [1, 3, 5]]

@@ -2,15 +2,12 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 
 import os
-from pathlib import Path
 from typing import Any, List
 
 import pytest
 
 import scipp as sc
 
-# Load the config file in the test dir instead of the user's.
-os.environ['SCIPPDIR'] = os.fspath(Path(__file__).resolve().parent)
 # Silence warning from Jupyter
 os.environ['JUPYTER_PLATFORM_DIRS'] = '1'
 
