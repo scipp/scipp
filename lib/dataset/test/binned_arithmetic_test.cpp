@@ -83,7 +83,7 @@ TEST_F(BinnedArithmeticTest, var_and_array) {
 TEST_F(BinnedArithmeticTest, op_on_transpose) {
   const auto indices2d =
       makeVariable<scipp::index_pair>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
-                                      Values{std::pair{0, 1}, std::pair{1, 2},
+                                      Values{std::pair{0, 1}, std::pair{1, 1},
                                              std::pair{2, 4}, std::pair{4, 5}});
   const auto binned = make_bins(indices2d, Dim::Event, array);
   const auto transposed = transpose(binned);
@@ -94,7 +94,7 @@ TEST_F(BinnedArithmeticTest, op_on_transpose) {
 TEST_F(BinnedArithmeticTest, op_on_transpose_with_dtype_change) {
   const auto indices2d =
       makeVariable<scipp::index_pair>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
-                                      Values{std::pair{0, 1}, std::pair{1, 2},
+                                      Values{std::pair{0, 1}, std::pair{1, 1},
                                              std::pair{2, 4}, std::pair{4, 5}});
   DataArray int_array =
       DataArray(astype(var, dtype<int>), {{Dim::X, var + var}});
