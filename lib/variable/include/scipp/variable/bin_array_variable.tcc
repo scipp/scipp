@@ -30,7 +30,6 @@ contiguous_indices(const Variable &parent, const Dimensions &dims);
 SCIPP_VARIABLE_EXPORT const scipp::index_pair *
 index_pair_data(const Variable &indices);
 SCIPP_VARIABLE_EXPORT scipp::index size_from_end_index(const Variable &end);
-SCIPP_VARIABLE_EXPORT const scipp::index &index_value(const Variable &index);
 SCIPP_VARIABLE_EXPORT VariableConceptHandle
 zero_indices(const scipp::index size);
 } // namespace bin_array_variable_detail
@@ -81,8 +80,9 @@ public:
     }
     const auto end = cumsum(sizes_);
     const auto begin = end - sizes_;
-    const auto size = bin_array_variable_detail::index_value(sum(end - begin));
-    return make_bins(zip(begin, end), dim, resize_default_init(buf, dim, size));
+    const auto size = bin_array_variable_detail::size_from_end_index(end);
+    return make_bins_no_validate(zip(begin, end), dim,
+                                 resize_default_init(buf, dim, size));
   }
 };
 
