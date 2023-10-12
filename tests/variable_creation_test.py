@@ -379,6 +379,29 @@ def test_array_nd_sliced_c_layout(ndim_and_slice_dim, step):
 
 
 @pytest.mark.parametrize(
+    'ndim_and_slice_dims',
+    [
+        (ndim, slice_dim0, slice_dim1)
+        for ndim in range(1, 7)
+        for slice_dim0 in range(ndim)
+        for slice_dim1 in range(ndim)
+    ],
+)
+@pytest.mark.parametrize('step', (2, -1, -2))
+def test_array_nd_sliced_twice_c_layout(ndim_and_slice_dims, step):
+    ndim, slice_dim0, slice_dim1 = ndim_and_slice_dims
+    shape = list(range(2, ndim + 2))
+    values = np.arange(np.prod(shape)).reshape(shape)
+    values = slice_array_in_dim(
+        slice_array_in_dim(values, slice_dim0, step), slice_dim1, step
+    )
+    var = sc.array(dims=[f'dim_{d}' for d in range(ndim)], values=values)
+    assert var.ndim == ndim
+    assert var.shape == values.shape
+    np.testing.assert_array_equal(var.values, values)
+
+
+@pytest.mark.parametrize(
     'ndim_and_slice_dim',
     [(ndim, slice_dim) for ndim in range(1, 7) for slice_dim in range(ndim)],
 )
@@ -389,6 +412,30 @@ def test_array_nd_sliced_fortran_layout(ndim_and_slice_dim, step):
     values = np.arange(np.prod(shape)).reshape(shape)
     values = np.asfortranarray(values)
     values = slice_array_in_dim(values, slice_dim, step)
+    var = sc.array(dims=[f'dim_{d}' for d in range(ndim)], values=values)
+    assert var.ndim == ndim
+    assert var.shape == values.shape
+    np.testing.assert_array_equal(var.values, values)
+
+
+@pytest.mark.parametrize(
+    'ndim_and_slice_dims',
+    [
+        (ndim, slice_dim0, slice_dim1)
+        for ndim in range(1, 7)
+        for slice_dim0 in range(ndim)
+        for slice_dim1 in range(ndim)
+    ],
+)
+@pytest.mark.parametrize('step', (2, -1, -2))
+def test_array_nd_sliced_twice_fortran_layout(ndim_and_slice_dims, step):
+    ndim, slice_dim0, slice_dim1 = ndim_and_slice_dims
+    shape = list(range(2, ndim + 2))
+    values = np.arange(np.prod(shape)).reshape(shape)
+    values = np.asfortranarray(values)
+    values = slice_array_in_dim(
+        slice_array_in_dim(values, slice_dim0, step), slice_dim1, step
+    )
     var = sc.array(dims=[f'dim_{d}' for d in range(ndim)], values=values)
     assert var.ndim == ndim
     assert var.shape == values.shape
