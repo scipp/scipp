@@ -185,7 +185,7 @@ void copy_flattened(const typed_buffer<T> &src, Dst &dst) {
     const auto src_stride = src.stride(0);
     const auto dst_stride = inner_volume(src);
     core::parallel::parallel_for(
-        core::parallel::blocked_range(0, src.shape[0], 1000),
+        core::parallel::blocked_range(0, src.shape[0], 10000),
         [&](const auto &range) {
           auto block_dst = dst + range.begin() * dst_stride;
           copy_flattened_middle_dims<convert>(src, block_dst,
