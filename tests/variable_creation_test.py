@@ -343,34 +343,35 @@ def test_array_nd_contiguous_fortran_layout(ndim):
     np.testing.assert_array_equal(var.values, values)
 
 
-def slice_array_in_dim(array, dim):
+def slice_array_in_dim(array, dim, step):
     # We cannot use numpy.take here because we don't want to
     # copy the output but get a sliced array with corresponding strides.
     if dim == 0:
-        return array[::2]
+        return array[::step]
     elif dim == 1:
-        return array[:, ::2]
+        return array[:, ::step]
     elif dim == 2:
-        return array[:, :, ::2]
+        return array[:, :, ::step]
     elif dim == 3:
-        return array[:, :, :, ::2]
+        return array[:, :, :, ::step]
     elif dim == 4:
-        return array[:, :, :, :, ::2]
+        return array[:, :, :, :, ::step]
     elif dim == 5:
-        return array[:, :, :, :, :, ::2]
+        return array[:, :, :, :, :, ::step]
     elif dim == 6:
-        return array[:, :, :, :, :, :, ::2]
+        return array[:, :, :, :, :, :, ::step]
 
 
 @pytest.mark.parametrize(
     'ndim_and_slice_dim',
     [(ndim, slice_dim) for ndim in range(1, 7) for slice_dim in range(ndim)],
 )
-def test_array_nd_sliced_c_layout(ndim_and_slice_dim):
+@pytest.mark.parametrize('step', (2, -1, -2))
+def test_array_nd_sliced_c_layout(ndim_and_slice_dim, step):
     ndim, slice_dim = ndim_and_slice_dim
     shape = list(range(2, ndim + 2))
     values = np.arange(np.prod(shape)).reshape(shape)
-    values = slice_array_in_dim(values, slice_dim)
+    values = slice_array_in_dim(values, slice_dim, step)
     var = sc.array(dims=[f'dim_{d}' for d in range(ndim)], values=values)
     assert var.ndim == ndim
     assert var.shape == values.shape
@@ -381,12 +382,13 @@ def test_array_nd_sliced_c_layout(ndim_and_slice_dim):
     'ndim_and_slice_dim',
     [(ndim, slice_dim) for ndim in range(1, 7) for slice_dim in range(ndim)],
 )
-def test_array_nd_sliced_fortran_layout(ndim_and_slice_dim):
+@pytest.mark.parametrize('step', (2, -1, -2))
+def test_array_nd_sliced_fortran_layout(ndim_and_slice_dim, step):
     ndim, slice_dim = ndim_and_slice_dim
     shape = list(range(2, ndim + 2))
     values = np.arange(np.prod(shape)).reshape(shape)
     values = np.asfortranarray(values)
-    values = slice_array_in_dim(values, slice_dim)
+    values = slice_array_in_dim(values, slice_dim, step)
     var = sc.array(dims=[f'dim_{d}' for d in range(ndim)], values=values)
     assert var.ndim == ndim
     assert var.shape == values.shape
