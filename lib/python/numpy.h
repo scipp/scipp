@@ -91,11 +91,12 @@ template <class T> struct typed_buffer {
   const T *ptr;
   ssize_t ndim;
   scipp::span<ssize_t> shape;
+  bool c_contiguous;
 
   typed_buffer(const T *ptr_, const ssize_t ndim_, scipp::span<ssize_t> shape_,
-               py::buffer_info base_buffer_)
-      : ptr{ptr_}, ndim{ndim_}, shape{shape_}, m_base_buffer{
-                                                   std::move(base_buffer_)} {}
+               py::buffer_info base_buffer_, const bool c_contiguous_)
+      : ptr{ptr_}, ndim{ndim_}, shape{shape_}, c_contiguous{c_contiguous_},
+        m_base_buffer{std::move(base_buffer_)} {}
 
   [[nodiscard]] ssize_t stride(const ssize_t dim) const noexcept {
     return m_base_buffer.strides[dim] / m_base_buffer.itemsize;
@@ -105,13 +106,24 @@ private:
   py::buffer_info m_base_buffer;
 };
 
+template <class T> bool is_c_contiguous(const py::array_t<T> &array) {
+  Py_buffer buffer;
+  if (PyObject_GetBuffer(array.ptr(), &buffer, PyBUF_C_CONTIGUOUS) != 0) {
+    PyErr_Clear();
+    return false;
+  }
+  PyBuffer_Release(&buffer);
+  return true;
+}
+
 template <class T> auto request_typed_buffer(const py::array_t<T> &array) {
   // Order of operations such that we can safely move base_buffer.
   auto base_buffer = array.request();
   auto ptr = reinterpret_cast<const T *>(base_buffer.ptr);
   auto ndim = base_buffer.ndim;
   scipp::span<ssize_t> shape = base_buffer.shape;
-  return typed_buffer(ptr, ndim, shape, std::move(base_buffer));
+  return typed_buffer(ptr, ndim, shape, std::move(base_buffer),
+                      is_c_contiguous(array));
 }
 
 template <bool convert, class T, class Dst>
@@ -119,11 +131,16 @@ void copy_flattened_0d(const typed_buffer<T> &src, Dst &dst) {
   copy_element<convert>(*src.ptr, *dst);
 }
 
-template <bool convert, class T, class Dst>
+template <bool convert, ssize_t static_stride = -1, class T, class Dst>
 void copy_flattened_inner_dim(const typed_buffer<T> &src, Dst &dst,
                               ssize_t length, const ssize_t dim,
                               const ssize_t offset) {
-  const auto stride = src.stride(dim);
+  const auto stride = [&src, dim]() {
+    if constexpr (static_stride > 0)
+      return static_stride;
+    else
+      return src.stride(dim);
+  }();
   length = length == -1 ? src.shape[dim] : length;
   for (scipp::index i = 0; i < length; ++i) {
     copy_element<convert>(src.ptr[i * stride + offset], *dst);
@@ -155,13 +172,23 @@ template <bool convert, class T, class Dst>
 void copy_flattened(const typed_buffer<T> &src, Dst &dst) {
   if (src.ndim == 0)
     copy_flattened_0d<convert>(src, dst);
-  else {
+  else if (src.c_contiguous) {
+    const auto volume = src.shape[0] * inner_volume(src);
+    core::parallel::parallel_for(
+        core::parallel::blocked_range(0, volume, 10000),
+        [&](const auto &range) {
+          auto block_dst = dst + range.begin();
+          copy_flattened_inner_dim<convert, 1>(
+              src, block_dst, range.end() - range.begin(), 0, range.begin());
+        });
+  } else {
     const auto src_stride = src.stride(0);
     const auto dst_stride = inner_volume(src);
     core::parallel::parallel_for(
-        core::parallel::blocked_range(0, src.shape[0]), [&](const auto &range) {
-          auto block_out = dst + range.begin() * dst_stride;
-          copy_flattened_middle_dims<convert>(src, block_out,
+        core::parallel::blocked_range(0, src.shape[0], 1000),
+        [&](const auto &range) {
+          auto block_dst = dst + range.begin() * dst_stride;
+          copy_flattened_middle_dims<convert>(src, block_dst,
                                               range.end() - range.begin(), 0,
                                               range.begin() * src_stride);
         });
