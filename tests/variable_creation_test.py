@@ -360,6 +360,8 @@ def slice_array_in_dim(array, dim, step):
         return array[:, :, :, :, :, ::step]
     elif dim == 6:
         return array[:, :, :, :, :, :, ::step]
+    else:
+        raise NotImplementedError()
 
 
 @pytest.mark.parametrize(
