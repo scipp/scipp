@@ -151,6 +151,14 @@ def nansum(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
 def min(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
     """Minimum of elements in the input.
 
+    Warning
+    -------
+
+    Scipp returns DBL_MAX for empty inputs, while NumPy returns NaN. For integer
+    inputs, Scipp returns INT_MAX, while NumPy raises. Note that in the case of
+    :py:class:`DataArray`, inputs can also be "empty" if all elements contributing
+    to an output element are masked.
+
     Parameters
     ----------
     x: scipp.typing.VariableLike
@@ -181,6 +189,14 @@ def min(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
 
 def max(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
     """Maximum of elements in the input.
+
+    Warning
+    -------
+
+    Scipp returns DBL_MIN for empty inputs, while NumPy returns NaN. For integer
+    inputs, Scipp returns INT_MIN, while NumPy raises. Note that in the case of
+    :py:class:`DataArray`, inputs can also be "empty" if all elements contributing
+    to an output element are masked.
 
     Parameters
     ----------
@@ -213,6 +229,15 @@ def max(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
 def nanmin(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
     """Minimum of elements in the input ignoring NaN's.
 
+    Warning
+    -------
+
+    Scipp returns DBL_MAX for empty inputs, while NumPy returns NaN. For integer
+    inputs, Scipp returns INT_MAX, while NumPy raises. Note that in the case of
+    :py:class:`DataArray`, inputs can also be "empty" if all elements contributing
+    to an output element are masked. The same applies if all elements are NaN (or
+    masked).
+
     Parameters
     ----------
     x: scipp.typing.VariableLike
@@ -243,6 +268,15 @@ def nanmin(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
 
 def nanmax(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
     """Maximum of elements in the input ignoring NaN's.
+
+    Warning
+    -------
+
+    Scipp returns DBL_MIN for empty inputs, while NumPy returns NaN. For integer
+    inputs, Scipp returns INT_MIN, while NumPy raises. Note that in the case of
+    :py:class:`DataArray`, inputs can also be "empty" if all elements contributing
+    to an output element are masked. The same applies if all elements are NaN (or
+    masked).
 
     Parameters
     ----------
