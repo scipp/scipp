@@ -1,13 +1,82 @@
 [build-system]
 requires = [
   "setuptools>=42",
-  "wheel",
-  "cmake>=3.21",
-  "conan==1.57.0",
-  "ninja",
-  "scikit-build==0.13.1",
+  "conan==1.61.0",
+  "scikit-build-core"
 ]
-build-backend = "setuptools.build_meta"
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "scipp"
+description = "Multi-dimensional data arrays with labeled dimensions"
+readme = "README.md"
+license = { "file" = "LICENSE" }
+authors = [{ name = "Scipp contributors (https://github.com/scipp)" }]
+classifiers = [
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: BSD License",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Operating System :: MacOS :: MacOS X",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Topic :: Scientific/Engineering",
+  "Typing :: Typed",
+]
+requires-python = ">=3.8"
+dependencies = [
+  "graphlib-backport",
+  "numpy >= 1.20",
+]
+dynamic = ["version"]
+
+[project.urls]
+"Documentation" = "https://scipp.github.io/"
+"Source" = "https://github.com/scipp/scipp"
+"Bug Tracker" = "https://github.com/scipp/scipp/issues"
+"Changelog" = "https://scipp.github.io/about/release-notes.html"
+
+[project.optional-dependencies]
+test = [
+  "pytest",
+  "matplotlib",
+  "xarray",
+  "pandas",
+  "bs4",
+  "numba",
+]
+all = [
+  "h5py",
+  "scipy>=1.7.0",
+  "graphviz",
+  "pooch",
+  "plopp",
+  "matplotlib"
+]
+interactive = [
+    "ipympl",
+    "ipython",
+    "ipywidgets",
+    "matplotlib",
+    "jupyterlab",
+    "jupyterlab-widgets",
+    "jupyter_nbextensions_configurator",
+    "nodejs",
+    "plopp",
+    "pythreejs",
+]
+
+[tool.scikit-build]
+metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
+cmake.minimum-version = "3.21"
+
+[tool.setuptools_scm]
+write_to = "src/scipp/_version.py"
 
 [tool.cibuildwheel]
 archs = ["auto64"]
