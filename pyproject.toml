@@ -49,6 +49,7 @@ test = [
   "pandas",
   "bs4",
   "numba",
+  "ipython",
 ]
 all = [
   "h5py",
