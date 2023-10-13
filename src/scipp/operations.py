@@ -25,7 +25,7 @@ def elemwise_func(
     *,
     unit_func: Optional[Callable] = None,
     dtype: str = 'float64',
-    auto_convert_dtypes: bool = False
+    auto_convert_dtypes: bool = False,
 ) -> Callable:
     """
     Create a function for transforming input variables based on element-wise operation.
