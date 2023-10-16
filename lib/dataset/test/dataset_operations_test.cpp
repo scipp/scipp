@@ -31,6 +31,15 @@ TEST(DatasetOperationsTest, sum_all_dims) {
   EXPECT_EQ(nansum(ds)["a"], nansum(da));
 }
 
+TEST(DatasetOperationsTest, sum_over_dim_empty_dataset) {
+  auto ds = make_1_values_and_variances<float>(
+      "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
+  ds.erase("a");
+  auto res = sum(ds, Dim::X);
+  EXPECT_TRUE(res.is_valid());
+  EXPECT_EQ(res, Dataset({}, {}));
+}
+
 TEST(DatasetOperationsTest, nansum_over_dim) {
   auto ds = make_1_values_and_variances<double>(
       "a", {Dim::X, 3}, units::dimensionless, {1.0, 2.0, double(NAN)},
@@ -46,6 +55,15 @@ TEST(DatasetOperationsTest, nansum_all_dims) {
 
   Dataset ds{{{"a", da}}};
   EXPECT_EQ(nansum(ds)["a"], nansum(da));
+}
+
+TEST(DatasetOperationsTest, nansum_over_dim_empty_dataset) {
+  auto ds = make_1_values_and_variances<float>(
+      "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
+  ds.erase("a");
+  auto res = nansum(ds, Dim::X);
+  EXPECT_TRUE(res.is_valid());
+  EXPECT_EQ(res, Dataset({}, {}));
 }
 
 template <typename T>

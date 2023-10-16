@@ -580,6 +580,21 @@ TYPED_TEST(DatasetBinaryOpTest, variableconstview_lhs_dataset_rhs) {
   EXPECT_EQ(reference, res["data_a"].data());
 }
 
+TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataset_rhs_empty_operand) {
+  auto [dataset_a, dataset_b] = generateBinaryOpTestCase();
+  dataset_b.erase("data_a");
+
+  const auto ab = TestFixture::op(dataset_a, dataset_b);
+  EXPECT_TRUE(ab.is_valid());
+  EXPECT_TRUE(ab.empty());
+  EXPECT_EQ(ab.dims(), Dimensions{});
+
+  const auto ba = TestFixture::op(dataset_b, dataset_a);
+  EXPECT_TRUE(ba.is_valid());
+  EXPECT_TRUE(ba.empty());
+  EXPECT_EQ(ba.dims(), Dimensions{});
+}
+
 TYPED_TEST(DatasetBinaryOpTest, broadcast) {
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   const auto c = makeVariable<double>(Values{2.0});
@@ -622,6 +637,17 @@ TYPED_TEST(DatasetBinaryOpTest, scalar_lhs_dataset_rhs) {
   EXPECT_EQ(res.coords(), dataset.coords());
 }
 
+TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_scalar_rhs_empty_operand) {
+  auto dataset = std::get<1>(generateBinaryOpTestCase());
+  dataset.erase("data_a");
+  const auto scalar = 4.5 * units::one;
+
+  const auto res = TestFixture::op(dataset, scalar);
+  EXPECT_TRUE(res.is_valid());
+  EXPECT_TRUE(res.empty());
+  EXPECT_EQ(res.dims(), Dimensions{});
+}
+
 TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataarray_rhs) {
   const auto [dataset_a, dataset_b] = generateBinaryOpTestCase();
 
@@ -632,6 +658,16 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataarray_rhs) {
                                            dataset_b["data_a"].data());
     EXPECT_EQ(reference, item.data());
   }
+}
+
+TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataarray_rhs_empty_operand) {
+  auto [dataset_a, dataset_b] = generateBinaryOpTestCase();
+  dataset_b.erase("data_a");
+
+  const auto res = TestFixture::op(dataset_a["data_a"], dataset_b);
+  EXPECT_TRUE(res.is_valid());
+  EXPECT_TRUE(res.empty());
+  EXPECT_EQ(res.dims(), Dimensions{});
 }
 
 TYPED_TEST(DatasetBinaryOpTest, masks_propagate) {

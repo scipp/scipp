@@ -137,10 +137,10 @@ Dataset concat(const scipp::span<const Dataset> dss, const Dim dim) {
       auto das = map(dss, [&first](auto &&ds) { return ds[first.name()]; });
       result.setDataInit(first.name(), concat(das, dim));
     }
-  if (dss.front().empty())
-    return Dataset({}, Coords(concat(map(dss, get_sizes), dim),
-                              concat_maps(map(dss, get_coords), dim)));
-  return result;
+  if (result.is_valid())
+    return result;
+  return Dataset({}, Coords(concat(map(dss, get_sizes), dim),
+                            concat_maps(map(dss, get_coords), dim)));
 }
 
 DataArray resize(const DataArray &a, const Dim dim, const scipp::index size,

@@ -843,11 +843,29 @@ TEST_F(DatasetRenameTest, rename_dims) {
   auto expected = factory.make("data_xy");
   // Set coord names to the same as in `d`.
   expected.coords().set(Dim{"x"}, expected.coords().extract(Dim{"row"}));
-  ;
   expected.coords().set(Dim{"labels_x"},
                         expected.coords().extract(Dim{"labels_row"}));
   expected.coords().set(Dim{"xy"}, expected.coords().extract(Dim{"rowy"}));
 
   auto renamed = d.rename_dims({{Dim::X, Dim::Row}});
+  EXPECT_EQ(renamed, expected);
+}
+
+TEST_F(DatasetRenameTest, no_data) {
+  // Same as in fixture
+  DatasetFactory factory(Dimensions({{Dim::Row, 3}, {Dim::Y, 4}}));
+  factory.seed(98741);
+  auto expected = factory.make("data_xy");
+  // Set coord names to the same as in `d`.
+  expected.coords().set(Dim{"x"}, expected.coords().extract(Dim{"row"}));
+  expected.coords().set(Dim{"labels_x"},
+                        expected.coords().extract(Dim{"labels_row"}));
+  expected.coords().set(Dim{"xy"}, expected.coords().extract(Dim{"rowy"}));
+
+  d.erase("data_xy");
+  expected.erase("data_xy");
+
+  auto renamed = d.rename_dims({{Dim::X, Dim::Row}});
+  EXPECT_TRUE(renamed.is_valid());
   EXPECT_EQ(renamed, expected);
 }

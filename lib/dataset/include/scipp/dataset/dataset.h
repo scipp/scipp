@@ -224,6 +224,12 @@ public:
   bool is_readonly() const noexcept;
   bool is_valid() const noexcept;
 
+  [[nodiscard]] Dataset or_empty() && {
+    if (is_valid())
+      return std::move(*this);
+    return Dataset({}, {});
+  }
+
 private:
   // Declared friend so gtest recognizes it
   friend SCIPP_DATASET_EXPORT std::ostream &operator<<(std::ostream &,
@@ -232,6 +238,8 @@ private:
   Coords m_coords;
   core::Dict<std::string, DataArray> m_data;
   bool m_readonly{false};
+  /// See documentation of setDataInit.
+  /// Invalid datasets are for internal use only.
   bool m_valid{true};
 };
 

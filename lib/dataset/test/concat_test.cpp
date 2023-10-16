@@ -88,6 +88,34 @@ TEST_F(Concatenate1DTest, to_2d_with_0d_coord) {
                     Dim::Y));
 }
 
+TEST_F(Concatenate1DTest, empty_dataset) {
+  a.erase("data_1");
+
+  const auto ab = concat2(a, b, Dim::X);
+  EXPECT_TRUE(ab.is_valid());
+  EXPECT_EQ(ab, Dataset({}, {{Dim::X, concat2(a.coords()[Dim::X],
+                                              b.coords()[Dim::X], Dim::X)}}));
+
+  const auto ba = concat2(b, a, Dim::X);
+  EXPECT_TRUE(ba.is_valid());
+  EXPECT_EQ(ba, Dataset({}, {{Dim::X, concat2(b.coords()[Dim::X],
+                                              a.coords()[Dim::X], Dim::X)}}));
+}
+
+TEST_F(Concatenate1DTest, non_overlapping_names) {
+  a.setData("new_data", a.extract("data_1"));
+
+  const auto ab = concat2(a, b, Dim::X);
+  EXPECT_TRUE(ab.is_valid());
+  EXPECT_EQ(ab, Dataset({}, {{Dim::X, concat2(a.coords()[Dim::X],
+                                              b.coords()[Dim::X], Dim::X)}}));
+
+  const auto ba = concat2(b, a, Dim::X);
+  EXPECT_TRUE(ba.is_valid());
+  EXPECT_EQ(ba, Dataset({}, {{Dim::X, concat2(b.coords()[Dim::X],
+                                              a.coords()[Dim::X], Dim::X)}}));
+}
+
 TEST_F(Concatenate1DTest, sharing) {
   auto da1 = copy(a["data_1"]);
   auto da2 = copy(b["data_1"]);

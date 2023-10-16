@@ -38,6 +38,10 @@ void expect_matching_item_dims(const Dataset &dset, const std::string_view key,
 }
 } // namespace
 
+/// Make an invalid dataset.
+///
+/// Such a dataset is intended to be filled using setDataInit and must
+/// never be exposed to Python!
 Dataset::Dataset() : m_valid{false} {}
 
 Dataset::Dataset(const Dataset &other)
@@ -151,6 +155,7 @@ void Dataset::setData(const std::string &name, Variable data,
     m_data.insert_or_assign(name, DataArray(std::move(data)));
 }
 
+// See docs of overload for data arrays.
 void Dataset::setDataInit(const std::string &name, Variable data,
                           const AttrPolicy attrPolicy) {
   if (!is_valid()) {
@@ -209,6 +214,10 @@ void Dataset::setData(const std::string &name, const DataArray &data) {
 /// as the dataset's dimensions are unknown and the input cannot be validated.
 /// setDataInit sets the sizes when called with a default-initialized dataset.
 /// It can be used for creating a new dataset and filling it step by step.
+///
+/// When using this, always make sure to ultimately produce a valid dataset.
+/// setDataInit is often called in a look.
+/// Keep in mind that the loop might not run when the input dataset is empty!
 void Dataset::setDataInit(const std::string &name, const DataArray &data) {
   if (!is_valid()) {
     m_coords.setSizes(data.dims());
