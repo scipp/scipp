@@ -18,7 +18,7 @@ Instead we publish new releases when major feature additions or breaking changes
 Upcoming milestones
 -------------------
 
-We are currently consolidate and simplified Scipp's core data structures.
+We are currently consolidating and simplifying Scipp's core data structures.
 In particular:
 
 - ``scipp.Dataset`` will be restricted to items of matching dimensionality (``scipp.DataGroup`` can be used for other applications).
