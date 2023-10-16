@@ -18,11 +18,11 @@ Instead we publish new releases when major feature additions or breaking changes
 Upcoming milestones
 -------------------
 
-- We plan to provide a new and more powerful, but mainly more predictable plotting module.
-  The current behavior, which automatically resamples data that is not 1-D, will then be deprecated.
-  Later on, the new plotting module will become the default, and the current implementation will be removed.
-- The current implementation of propagation of uncertainties has a fatal flaw when broadcasting is involved, since Scipp cannot track correlations.
-  It is therefore likely that we will disable support for automatic broadcasts of operands with uncertainties in a future release.
+We are currently consolidating and simplifying Scipp's core data structures.
+In particular:
+
+- ``scipp.Dataset`` will be restricted to items of matching dimensionality (``scipp.DataGroup`` can be used for other applications).
+- Support for attributes will be removed from ``scipp.DataArray`` due to conceptual consistency issues.
 
 Future direction and plans
 --------------------------
@@ -32,3 +32,6 @@ At this point we have not prioritized, scheduled, or funded any of these:
 
 - `dask <https://dask.org/>`_ support.
 - Support for `numpy's array-function API <https://numpy.org/doc/stable/reference/arrays.classes.html#numpy.class.__array_function__>`_, for better interoperability.
+- Experiment with moving more high-level functionality from C++ to Python.
+  Could we wrap NumPy (or similar) arrays, or is the performance penalty too high?
+- Better support for structured dtypes and spatial dtypes.
