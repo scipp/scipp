@@ -20,6 +20,33 @@ import pooch
 
 import scipp as sc
 
+# IMPORTANT
+# NASA have updated the flare list.
+# It is now more heavily filtered which makes some steps in the tutorial obsolete.
+# Also, the parser in this script no longer works because there are some lines
+# where the total counts fill their entire column and there is no space to split by.
+# This could be fixed by using that the columns each have a fixed width.
+#
+# The old file was apparently removed from the public server.
+#
+# The following code converts the output file of this script
+# to the one used by the tutorial.
+"""
+import scipp as sc
+
+old = sc.io.load_hdf5("rhessi_flares-old.h5")
+print(old)
+new = sc.DataGroup(
+    flares=old,
+    non_solar=old.attrs.pop("non_solar"),
+    **{key: old.attrs.pop(key).value
+       for key in ("detector_efficiency", "citation", "description", "url")},
+)
+new['flares'].coords['max_energy'] = new['flares'].attrs.pop('max_energy')
+new['flares'].coords['min_energy'] = new['flares'].attrs.pop('min_energy')
+new.save_hdf5("docs/tutorials/data/rhessi_flares.h5")
+"""
+
 DATA_DIR = Path(__file__).parent / "data"
 
 

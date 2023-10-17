@@ -34,7 +34,7 @@ or install all optional components of Scipp:
         base_url='https://public.esss.dk/groups/scipp/scipp/{version}/',
         version=_version,
         registry={
-            'rhessi_flares.h5': 'md5:13a73789d3777e79d60ee172d63b4af6',
+            'rhessi_flares.h5': 'md5:b4fdc9508c6d1d7aab1c6ebdd13956f2',
             'VULCAN_221040_processed.h5': 'md5:626484b95372d3341b156dc2012722f9',
         },
     )
