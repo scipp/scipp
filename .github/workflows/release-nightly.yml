@@ -39,7 +39,6 @@ jobs:
           allowUpdates: true
           artifacts: 'dist/*.whl'
           body: 'Nightly release for testing of downstream projects.'
-          commit: 'main'
           makeLatest: false
           prerelease: true
           removeArtifacts: true
