@@ -44,4 +44,5 @@ jobs:
           body: 'Nightly release for testing of downstream projects.'
           makeLatest: false
           prerelease: true
+          removeArtifacts: true
           tag: 'nightly'
