@@ -227,7 +227,7 @@ class DataGroup(MutableMapping):
         return {d: next(iter(s)) if len(s) == 1 else None for d, s in all_sizes.items()}
 
     def _repr_html_(self):
-        from ..html.formatting_datagroup_html import datagroup_repr
+        from ..visualization.formatting_datagroup_html import datagroup_repr
 
         return datagroup_repr(self)
 

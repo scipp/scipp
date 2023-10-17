@@ -47,8 +47,6 @@ hypothesis==6.84.3
     # via -r docs.in
 imagesize==1.4.1
     # via sphinx
-importlib-resources==6.0.1
-    # via matplotlib
 ipydatawidgets==4.3.5
     # via pythreejs
 ipympl==0.9.3
@@ -111,6 +109,8 @@ pyparsing==3.1.1
     # via matplotlib
 pythreejs==2.4.2
     # via -r docs.in
+pyyaml==6.0.1
+    # via sphinx-book-theme
 referencing==0.30.2
     # via
     #   jsonschema

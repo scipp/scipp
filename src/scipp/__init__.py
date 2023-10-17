@@ -21,10 +21,6 @@ if os.name == "nt" and "CONDA_PREFIX" in os.environ:
         os.environ["PATH"] += os.pathsep + str(dll_directory)
 del os
 
-from .configuration import config
-
-del configuration
-
 from .core import __version__
 
 # Import classes
@@ -51,14 +47,12 @@ from . import geometry
 # Import functions
 
 # Import python functions
-from .show import show, make_svg
-
-from .html import to_html, make_html, table
+from .visualization import show, make_svg, to_html, make_html, table
 
 setattr(Variable, '_repr_html_', make_html)
 setattr(DataArray, '_repr_html_', make_html)
 setattr(Dataset, '_repr_html_', make_html)
-del html
+del visualization
 
 from .io.hdf5 import save_hdf5 as _save_hdf5
 
@@ -302,7 +296,6 @@ __all__ = [
     'collapse',
     'compat',
     'concat',
-    'config',
     'coords',
     'cos',
     'counts_to_density',

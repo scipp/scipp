@@ -69,13 +69,15 @@ def isnear(
         else True
     )
     same_len = (
-        len(x.meta) == len(y.meta) if include_attrs else len(x.coords) == len(y.coords)
+        len(x.deprecated_meta) == len(y.deprecated_meta)
+        if include_attrs
+        else len(x.coords) == len(y.coords)
     )
     if not same_len:
         return False
-    for key, val in x.meta.items() if include_attrs else x.coords.items():
-        a = x.meta[key] if include_attrs else x.coords[key]
-        b = y.meta[key] if include_attrs else y.coords[key]
+    for key, val in x.deprecated_meta.items() if include_attrs else x.coords.items():
+        a = x.deprecated_meta[key] if include_attrs else x.coords[key]
+        b = y.deprecated_meta[key] if include_attrs else y.coords[key]
         if a.shape != b.shape:
             raise CoordError(
                 f'Coord (or attr) with key {key} have different'

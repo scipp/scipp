@@ -33,10 +33,14 @@ vrelease
 Features
 ~~~~~~~~
 
+* Operations on binned variables with a data array content buffer now also work with slices of binned variables `#3282 <https://github.com/scipp/scipp/pull/3282>`_.
+* Reduced per-bin overhead in many operations involving binned variables by about 20 milliseconds per 1 million bins `#3282 <https://github.com/scipp/scipp/pull/3282>`_.
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
 * All items of datasets must have the same dimensions now `#3199 <https://github.com/scipp/scipp/pull/3199>`_.
+* The runtime configuration has been removed `#3254 <https://github.com/scipp/scipp/pull/3254>`_.
 
 Bugfixes
 ~~~~~~~~
@@ -45,6 +49,8 @@ Bugfixes
 * Fixed overflow in variances with large integers `#3262 <https://github.com/scipp/scipp/pull/3262>`_.
 * Fixed reduction operations for data arrays containing vectors with masks `#3276 <https://github.com/scipp/scipp/pull/3276>`_.
 * Fixed :func:`scipp.where` to work with most dtypes `#3276 <https://github.com/scipp/scipp/pull/3276>`_.
+* Event-centric arithmetic now uses the correct dtype in the result `#3278 <https://github.com/scipp/scipp/pull/3278>`_.
+* Fixed a serious bug where operations on, e.g., transposed binned data resulted in corrupt coord, mask, and attr values of the bin contents  `#3282 <https://github.com/scipp/scipp/pull/3282>`_.
 
 Documentation
 ~~~~~~~~~~~~~

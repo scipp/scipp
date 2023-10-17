@@ -14,6 +14,7 @@ from .domains import merge_equal_adjacent
 from .math import midpoints
 from .operations import islinspace
 from .shape import concat
+from .variable import scalar
 
 
 class Lookup:
@@ -90,7 +91,7 @@ def lookup(
     """
     if dim is None:
         dim = func.dim
-    func = _cpp.DataArray(func.data, coords={dim: func.meta[dim]}, masks=func.masks)
+    func = _cpp.DataArray(func.data, coords={dim: func.coords[dim]}, masks=func.masks)
     if func.coords.is_edges(dim):
         if mode is not None:
             raise ValueError("Input is a histogram, 'mode' must not be set.")
@@ -124,12 +125,18 @@ class Bins:
             return self._obj
 
     def __mul__(self, lut: lookup):
-        copy = self._obj.copy()
+        target_dtype = (
+            scalar(1, dtype=self.dtype) * scalar(1, dtype=lut.func.dtype)
+        ).dtype
+        copy = self._obj.to(dtype=target_dtype)
         _cpp.buckets.scale(copy, lut.func, lut.dim)
         return copy
 
     def __truediv__(self, lut: lookup):
-        copy = self._obj.copy()
+        target_dtype = (
+            scalar(1, dtype=self.dtype) / scalar(1, dtype=lut.func.dtype)
+        ).dtype
+        copy = self._obj.to(dtype=target_dtype)
         _cpp.buckets.scale(copy, _cpp.reciprocal(lut.func), lut.dim)
         return copy
 
@@ -164,9 +171,9 @@ class Bins:
             start = index.start
             stop = index.stop
             if start is None:
-                start = self._obj.bins.meta[dim].min()
+                start = self._obj.bins.coords[dim].min()
             if stop is None:
-                stop = _upper_bound(self._obj.bins.meta[dim].max())
+                stop = _upper_bound(self._obj.bins.coords[dim].max())
 
             if not (
                 isinstance(start, _cpp.Variable) and isinstance(stop, _cpp.Variable)
@@ -203,7 +210,7 @@ class Bins:
            store attributes in higher-level data structures.
         """
         _warn_attr_removal()
-        return _cpp._bins_view(self._data()).deprecated_meta
+        return self.deprecated_meta
 
     @property
     def attrs(self) -> MetaDataMap:
@@ -214,6 +221,14 @@ class Bins:
            store attributes in higher-level data structures.
         """
         _warn_attr_removal()
+        return self.deprecated_attrs
+
+    @property
+    def deprecated_meta(self) -> MetaDataMap:
+        return _cpp._bins_view(self._data()).deprecated_meta
+
+    @property
+    def deprecated_attrs(self) -> MetaDataMap:
         return _cpp._bins_view(self._data()).deprecated_attrs
 
     @property
@@ -240,6 +255,11 @@ class Bins:
     def unit(self, unit: Union[_cpp.Unit, str]):
         """Set unit of the bin elements"""
         self.constituents['data'].unit = unit
+
+    @property
+    def dtype(self) -> _cpp.DType:
+        """Data type of the bin elements."""
+        return self.constituents['data'].dtype
 
     @property
     def aligned(self) -> bool:

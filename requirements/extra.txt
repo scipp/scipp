@@ -28,8 +28,6 @@ h5py==3.9.0
     # via -r extra.in
 idna==3.4
     # via requests
-importlib-metadata==6.8.0
-    # via jupyter-client
 ipykernel==6.25.2
     # via -r extra.in
 ipython==8.12.2
@@ -115,8 +113,6 @@ traitlets==5.9.0
     #   jupyter-client
     #   jupyter-core
     #   matplotlib-inline
-typing-extensions==4.7.1
-    # via ipython
 tzdata==2023.3
     # via pandas
 urllib3==2.0.6
@@ -125,5 +121,3 @@ wcwidth==0.2.6
     # via prompt-toolkit
 xarray==2023.1.0
     # via -r extra.in
-zipp==3.16.2
-    # via importlib-metadata

@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+from operator import mul, truediv
+
 import numpy as np
 import pytest
 
@@ -148,3 +150,25 @@ def test_ignores_unrelated_coords():
     result = binned.bins * sc.lookup(func=hist, dim='x')
     assert 'scalar' not in result.coords
     assert 'scalar' not in result.bins.coords
+
+
+@pytest.mark.parametrize("dtype", ['float32', 'float64'])
+@pytest.mark.parametrize("op", [mul, truediv])
+def test_promotes_to_dtype_of_lut(op, dtype):
+    da = sc.data.table_xyz(10).to(dtype='float32').bin(x=2)
+    edges = sc.array(dims=['x'], unit='m', values=[0.0, 0.5, 1.0])
+    weight = sc.array(dims=['x'], values=[10.0, 3.0], dtype=dtype)
+    hist = sc.DataArray(weight, coords={'x': edges})
+    result = op(da.bins, sc.lookup(func=hist, dim='x'))
+    assert result.bins.constituents['data'].dtype == dtype
+
+
+@pytest.mark.parametrize("dtype", ['float32', 'float64'])
+@pytest.mark.parametrize("op", [mul, truediv])
+def test_promotes_to_dtype_of_events(op, dtype):
+    da = sc.data.table_xyz(10).to(dtype=dtype).bin(x=2)
+    edges = sc.array(dims=['x'], unit='m', values=[0.0, 0.5, 1.0])
+    weight = sc.array(dims=['x'], values=[10.0, 3.0], dtype='float32')
+    hist = sc.DataArray(weight, coords={'x': edges})
+    result = op(da.bins, sc.lookup(func=hist, dim='x'))
+    assert result.bins.constituents['data'].dtype == dtype

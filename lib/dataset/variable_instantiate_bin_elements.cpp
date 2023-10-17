@@ -99,13 +99,29 @@ private:
             .dims()) // would need to select and copy slices from source coords
       throw std::runtime_error(
           "Shape changing operations with bucket<DataArray> not supported yet");
-    // TODO This may also fail if the input buffer has extra capacity (rows not
-    // in any bucket).
-    auto buffer = DataArray(
-        variable::variableFactory().create(type, dims, unit, variances),
-        copy(source.coords()), copy(source.masks()), copy(source.attrs()));
-    // TODO is the copy needed?
-    return make_bins(copy(indices), dim, std::move(buffer));
+    // The only caller is BinVariableMaker::create, which should ensure that
+    // indices and buffer size are valid and compatible.
+    auto data_buffer =
+        variable::variableFactory().create(type, dims, unit, variances);
+    // If the buffer size is unchanged and input indices match output indices we
+    // can use a cheap and simple copy of the buffer's coords and masks.
+    // Otherwise we fall back to a copy via the binned views of the respective
+    // content buffers.
+    if (source.dims() == Dimensions{dim, dims.volume()} &&
+        indices == parent.bin_indices()) {
+      auto buffer = DataArray(std::move(data_buffer), copy(source.coords()),
+                              copy(source.masks()), copy(source.attrs()));
+      return make_bins_no_validate(indices, dim, std::move(buffer));
+    } else {
+      auto buffer = resize_default_init(source, dim, dims.volume());
+      auto out = make_bins_no_validate(indices, dim, std::move(buffer));
+      // Note the inefficiency here: The data is copied, even though it will be
+      // replaced and overwritten. Since this branch is a special case it is not
+      // worth the effort to avoid this.
+      copy(parent, out);
+      out.bin_buffer<DataArray>().setData(std::move(data_buffer));
+      return out;
+    }
   }
   const Variable &data(const Variable &var) const override {
     return buffer(var).data();

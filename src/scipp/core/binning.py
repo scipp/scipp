@@ -60,8 +60,8 @@ def make_histogrammed(x, *, edges):
         x = DataArray(data, coords={edges.dim: x})
     elif isinstance(x, DataArray) and x.bins is not None:
         dim = edges.dims[-1]
-        if dim not in x.bins.meta:
-            if x.meta.is_edges(dim):
+        if dim not in x.bins.coords:
+            if x.coords.is_edges(dim):
                 raise BinEdgeError(
                     "Cannot histogram data with existing bin edges "
                     "unless event data coordinate for histogramming is available."
@@ -158,11 +158,11 @@ def _can_operate_on_bins(x, edges, groups, erase) -> bool:
     for coord in itertools.chain(edges, groups):
         if coord.ndim != 1:
             return False
-        if coord.dim in x.bins.meta:
+        if coord.dim in x.bins.coords:
             return False
-        if coord.dim not in x.meta:
+        if coord.dim not in x.coords:
             return False
-        dims += x.meta[coord.dim].dims
+        dims += x.coords[coord.dim].dims
     return set(dims) <= set(erase)
 
 
@@ -183,8 +183,8 @@ def _get_coord(x, name):
             cmax = c.max() if cmax is None else max(cmin, c.max())
         coord = concat([cmin, cmax], dim='dummy')
     else:
-        event_coord = x.bins.meta.get(name) if x.bins is not None else None
-        coord = x.meta.get(name, event_coord)
+        event_coord = x.bins.deprecated_meta.get(name) if x.bins is not None else None
+        coord = x.deprecated_meta.get(name, event_coord)
     _require_coord(name, coord)
     return coord
 
@@ -209,7 +209,11 @@ def _parse_coords_arg(
         return arg
     coord = _get_coord(x, name)
     start = coord.min()
-    if not isinstance(x, Variable) and (name in x.meta) and x.meta.is_edges(name, name):
+    if (
+        not isinstance(x, Variable)
+        and (name in x.coords)
+        and x.coords.is_edges(name, name)
+    ):
         stop = coord.max()  # existing bin-edges, do not extend
     else:
         stop = _upper_bound(coord)
@@ -250,7 +254,7 @@ def _find_replaced_dims(x, dims):
         return []
     erase = set()
     for dim in dims:
-        if (coord := x.meta.get(dim)) is not None:
+        if (coord := x.coords.get(dim)) is not None:
             if dim not in coord.dims:
                 erase = erase.union(coord.dims)
     return [dim for dim in erase if dim not in dims]
@@ -399,8 +403,8 @@ def hist(x, arg_dict=None, /, **kwargs):
         # must not erase that dim, since it removes the coord required for histogramming
         if isinstance(x, DataArray) and x.bins is not None:
             hist_dim = edges[-1].dims[-1]
-            if hist_dim not in x.bins.meta:
-                hist_coord_dim = x.meta[hist_dim].dims[-1]
+            if hist_dim not in x.bins.coords:
+                hist_coord_dim = x.coords[hist_dim].dims[-1]
                 erase = [e for e in erase if e != hist_coord_dim]
         out = make_histogrammed(
             make_binned(x, edges=edges[:-1], erase=erase), edges=edges[-1]
@@ -704,9 +708,9 @@ def _make_groups(x, arg):
 
     if isinstance(arg, Variable):
         return arg
-    coord = x.bins.meta.get(arg) if x.bins is not None else None
+    coord = x.bins.coords.get(arg) if x.bins is not None else None
     if coord is None:
-        coord = x.meta.get(arg)
+        coord = x.coords.get(arg)
     _require_coord(arg, coord)
     if coord.bins is not None:
         coord = coord.copy().bins.constituents['data']

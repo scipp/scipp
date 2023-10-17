@@ -36,7 +36,6 @@ Utilities
    :template: scipp-module-template.rst
    :recursive:
 
-   configuration
    logging
    testing
 

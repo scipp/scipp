@@ -114,16 +114,16 @@ def _rename_data_array(
     if out.bins is not None:
         out.data = bins(**out.bins.constituents)
     for old, new in renaming_dict.items():
-        if new in out.meta:
+        if new in out.deprecated_meta:
             raise CoordError(
                 f"Cannot rename '{old}' to '{new}', since a coord or attr named {new} "
                 "already exists."
             )
-        for meta in (out.coords, out.attrs):
+        for meta in (out.coords, out.deprecated_attrs):
             if old in meta:
                 meta[new] = meta.pop(old)
         if out.bins is not None:
-            for meta in (out.bins.coords, out.bins.attrs):
+            for meta in (out.bins.coords, out.bins.deprecated_attrs):
                 if old in meta:
                     meta[new] = meta.pop(old)
     return out
