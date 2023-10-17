@@ -321,7 +321,6 @@ def test_array_empty_dims():
     )
 
 
-# TODO slice first and last  element
 @pytest.mark.parametrize('ndim', range(9))
 def test_array_nd_contiguous_c_layout(ndim):
     shape = list(range(2, ndim + 2))
@@ -439,6 +438,28 @@ def test_array_nd_sliced_twice_fortran_layout(ndim_and_slice_dims, step):
     values = slice_array_in_dim(
         slice_array_in_dim(values, slice_dim0, step), slice_dim1, step
     )
+    var = sc.array(dims=[f'dim_{d}' for d in range(ndim)], values=values)
+    assert var.ndim == ndim
+    assert var.shape == values.shape
+    np.testing.assert_array_equal(var.values, values)
+
+
+@pytest.mark.parametrize('ndim', range(7, 9))
+def test_array_nd_high_dim_sliced_begin_c_layout(ndim):
+    shape = list(range(2, ndim + 2))
+    values = np.arange(np.prod(shape)).reshape(shape)
+    values = values[1:]
+    var = sc.array(dims=[f'dim_{d}' for d in range(ndim)], values=values)
+    assert var.ndim == ndim
+    assert var.shape == values.shape
+    np.testing.assert_array_equal(var.values, values)
+
+
+@pytest.mark.parametrize('ndim', range(7, 9))
+def test_array_nd_high_dim_sliced_end_c_layout(ndim):
+    shape = list(range(2, ndim + 2))
+    values = np.arange(np.prod(shape)).reshape(shape)
+    values = values[:-1]
     var = sc.array(dims=[f'dim_{d}' for d in range(ndim)], values=values)
     assert var.ndim == ndim
     assert var.shape == values.shape
