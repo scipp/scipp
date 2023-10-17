@@ -678,30 +678,6 @@ def test_dataset_works_with_matching_coord(a):
     assert sc.identical(transformed.coords['b'], a.rename_dims({'a': 'b'}))
 
 
-def test_dataset_missing_coord_in_one_item_without_rule_to_make_it(a, b):
-    da1 = sc.DataArray(data=a + b, coords={'a': a.copy(), 'b': b.copy()})
-    da2 = sc.DataArray(data=a.copy(), coords={'a': a.copy()})
-    ds = sc.Dataset({'item1': da1, 'item2': da2})
-    with pytest.raises(KeyError):
-        ds.transform_coords('c', graph={'c': lambda a, b: a + b})
-
-
-def test_dataset_missing_coord_in_one_item_with_rule_to_make_it(a, b):
-    da1 = sc.DataArray(data=a + b, coords={'a': a.copy(), 'b': b.copy()})
-    da2 = sc.DataArray(data=a.copy(), coords={'a': a.copy()})
-    ds = sc.Dataset({'item1': da1, 'item2': da2})
-    with pytest.raises(sc.DatasetError):
-        ds.transform_coords('c', graph={'c': lambda a, b: a + b, 'b': 'a'})
-
-
-def test_dataset_without_data(a):
-    ds = sc.Dataset(coords={'a': a.copy()})
-    transformed = ds.transform_coords('b', graph={'b': 'a'})
-    assert sc.identical(transformed.coords['b'], a.rename(a='b'))
-    assert not transformed.coords['a'].aligned
-    assert len(transformed) == 0
-
-
 def test_binned_does_not_modify_inputs(binned_in_a_b):
     _ = binned_in_a_b.transform_coords(['b2'], graph={'b2': 'b'})
     assert 'b' in binned_in_a_b.coords

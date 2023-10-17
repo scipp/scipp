@@ -57,8 +57,7 @@ def test_scalar_Variable_py_object_comparison():
 
 
 def test_py_object_delitem():
-    d = sc.Dataset()
-    d['a'] = sc.scalar([1, 2])
+    d = sc.Dataset({'a': sc.scalar([1, 2])})
     # Dataset.__delitem__ releases the GIL. This will segfault unless
     # scipp::python::PyObject::~PyObject acquires the GIL.
     del d['a']

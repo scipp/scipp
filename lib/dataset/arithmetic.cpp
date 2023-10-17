@@ -86,40 +86,40 @@ auto apply_with_broadcast(const Op &op, const A &a, const B &b) {
   Dataset res;
   for (const auto &item : b)
     if (const auto it = a.find(item.name()); it != a.end())
-      res.setData(item.name(), op(*it, item));
-  return res;
+      res.setDataInit(item.name(), op(*it, item));
+  return std::move(res).or_empty();
 }
 
 template <class Op, class A>
 auto apply_with_broadcast(const Op &op, const A &a, const DataArray &b) {
   Dataset res;
   for (const auto &item : a)
-    res.setData(item.name(), op(item, b));
-  return res;
+    res.setDataInit(item.name(), op(item, b));
+  return std::move(res).or_empty();
 }
 
 template <class Op, class B>
 auto apply_with_broadcast(const Op &op, const DataArray &a, const B &b) {
   Dataset res;
   for (const auto &item : b)
-    res.setData(item.name(), op(a, item));
-  return res;
+    res.setDataInit(item.name(), op(a, item));
+  return std::move(res).or_empty();
 }
 
 template <class Op, class A>
 auto apply_with_broadcast(const Op &op, const A &a, const Variable &b) {
   Dataset res;
   for (const auto &item : a)
-    res.setData(item.name(), op(item, b));
-  return res;
+    res.setDataInit(item.name(), op(item, b));
+  return std::move(res).or_empty();
 }
 
 template <class Op, class B>
 auto apply_with_broadcast(const Op &op, const Variable &a, const B &b) {
   Dataset res;
   for (const auto &item : b)
-    res.setData(item.name(), op(a, item));
-  return res;
+    res.setDataInit(item.name(), op(a, item));
+  return std::move(res).or_empty();
 }
 
 } // namespace

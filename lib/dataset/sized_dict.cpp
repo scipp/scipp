@@ -16,6 +16,37 @@ template <class T> void expect_writable(const T &dict) {
     throw except::DataArrayError(
         "Read-only flag is set, cannot mutate metadata dict.");
 }
+
+void merge_sizes_into(Sizes &target, const Dimensions &s) {
+  using std::to_string;
+
+  for (const auto &dim : s) {
+    if (target.contains(dim)) {
+      const auto a = target[dim];
+      const auto b = s[dim];
+      if (a == b + 1) // had bin-edges, replace by regular coord
+        target.resize(dim, b);
+      else if (a + 1 == b) { // had regular coord, got extra by bin-edges
+        // keep current
+      } else if (a != b)
+        throw except::DimensionError(
+            "Conflicting length in dimension " + to_string(dim) + ": " +
+            to_string(target[dim]) + " vs " + to_string(s[dim]));
+    } else {
+      target.set(dim, s[dim]);
+    }
+  }
+}
+
+template <class Key, class Value>
+auto make_from_items(typename SizedDict<Key, Value>::holder_type items,
+                     const bool readonly) {
+  Sizes sizes;
+  for (auto &&[key, value] : items) {
+    merge_sizes_into(sizes, value.dims());
+  }
+  return SizedDict<Key, Value>(std::move(sizes), std::move(items), readonly);
+}
 } // namespace
 
 template <class Key, class Value>
@@ -24,6 +55,12 @@ SizedDict<Key, Value>::SizedDict(
     std::initializer_list<std::pair<const Key, Value>> items,
     const bool readonly)
     : SizedDict(sizes, holder_type(items), readonly) {}
+
+template <class Key, class Value>
+SizedDict<Key, Value>::SizedDict(
+    AutoSizeTag tag, std::initializer_list<std::pair<const Key, Value>> items,
+    const bool readonly)
+    : SizedDict(tag, holder_type(items), readonly) {}
 
 template <class Key, class Value>
 SizedDict<Key, Value>::SizedDict(Sizes sizes, holder_type items,
@@ -36,13 +73,18 @@ SizedDict<Key, Value>::SizedDict(Sizes sizes, holder_type items,
 }
 
 template <class Key, class Value>
+SizedDict<Key, Value>::SizedDict(AutoSizeTag, holder_type items,
+                                 const bool readonly)
+    : SizedDict(make_from_items<Key, Value>(std::move(items), readonly)) {}
+
+template <class Key, class Value>
 SizedDict<Key, Value>::SizedDict(const SizedDict &other)
-    : SizedDict(other.m_sizes, other.m_items, false) {}
+    : m_sizes(other.m_sizes), m_items(other.m_items), m_readonly(false) {}
 
 template <class Key, class Value>
 SizedDict<Key, Value>::SizedDict(SizedDict &&other) noexcept
-    : SizedDict(std::move(other.m_sizes), std::move(other.m_items),
-                other.m_readonly) {}
+    : m_sizes(std::move(other.m_sizes)), m_items(std::move(other.m_items)),
+      m_readonly(other.m_readonly) {}
 
 template <class Key, class Value>
 SizedDict<Key, Value> &
@@ -161,22 +203,6 @@ void SizedDict<Key, Value>::setSizes(const Sizes &sizes) {
   m_sizes = sizes;
 }
 
-template <class Key, class Value> void SizedDict<Key, Value>::rebuildSizes() {
-  Sizes new_sizes = m_sizes;
-  for (const auto &dim : m_sizes) {
-    bool erase = true;
-    for (const auto &item : *this) {
-      if (item.second.dims().contains(dim)) {
-        erase = false;
-        break;
-      }
-    }
-    if (erase)
-      new_sizes.erase(dim);
-  }
-  m_sizes = std::move(new_sizes);
-}
-
 namespace {
 template <class Key>
 void expect_valid_coord_dims(const Key &key, const Dimensions &coord_dims,
@@ -195,9 +221,9 @@ void SizedDict<Key, Value>::set(const key_type &key, mapped_type coord) {
   if (contains(key) && at(key).is_same(coord))
     return;
   expect_writable(*this);
+  auto dims = coord.dims();
   // Is a good definition for things that are allowed: "would be possible to
   // concat along existing dim or extra dim"?
-  auto dims = coord.dims();
   for (const auto &dim : coord.dims()) {
     if (!sizes().contains(dim) && dims[dim] == 2) { // bin edge along extra dim
       dims.erase(dim);
@@ -345,6 +371,7 @@ SizedDict<Key, Value>
 SizedDict<Key, Value>::merge_from(const SizedDict &other) const {
   using core::to_string;
   using units::to_string;
+
   auto out(*this);
   out.m_readonly = false;
   for (const auto &[key, value] : other) {

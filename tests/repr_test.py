@@ -41,14 +41,6 @@ def test_dataset_iterators_repr_does_not_raise():
     repr(ds.items())
 
 
-def test_dataset_empty_mapping_repr_does_not_raise():
-    ds = sc.Dataset()
-    repr(ds.coords)
-    repr(ds.coords.keys())
-    repr(ds.coords.values())
-    repr(ds.coords.items())
-
-
 @pytest.mark.parametrize("mapping", ["coords", "attrs", "meta", "masks"])
 def test_data_array_mapping_str_does_not_raise(mapping):
     da = sc.data.table_xyz(10)
@@ -82,11 +74,3 @@ def test_dataset_iterators_str_does_not_raise():
     str(ds.keys())
     str(ds.values())
     str(ds.items())
-
-
-def test_dataset_empty_mapping_str_does_not_raise():
-    ds = sc.Dataset()
-    str(ds.coords)
-    str(ds.coords.keys())
-    str(ds.coords.values())
-    str(ds.coords.items())

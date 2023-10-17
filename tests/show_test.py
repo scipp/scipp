@@ -23,8 +23,7 @@ def test_too_many_variable_dimensions():
 def test_too_many_dataset_dimensions():
     d = sc.Dataset(
         data={
-            'xy': sc.zeros(dims=['x', 'y'], shape=(1, 1)),
-            'zt': sc.zeros(dims=['z', 'time'], shape=(1, 1)),
+            'a': sc.zeros(dims=['x', 'y', 'z', 'time'], shape=(1, 1, 1, 1)),
         }
     )
     with pytest.raises(RuntimeError):

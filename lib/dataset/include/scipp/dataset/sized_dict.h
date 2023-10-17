@@ -42,6 +42,11 @@ Mapping slice_map(const Sizes &sizes, const Mapping &map, const Slice &params) {
   return out;
 }
 
+// Used to disambiguate overloaded constructors that accept either a SizedDict
+// or a SizedDict::holder_type.
+// E.g. DataArray
+struct AutoSizeTag {};
+
 /// Dict with fixed dimensions.
 ///
 /// Values must have dimensions and those dimensions must be a subset
@@ -57,7 +62,11 @@ public:
   SizedDict(const Sizes &sizes,
             std::initializer_list<std::pair<const Key, Value>> items,
             bool readonly = false);
+  SizedDict(AutoSizeTag,
+            std::initializer_list<std::pair<const Key, Value>> items,
+            bool readonly = false);
   SizedDict(Sizes sizes, holder_type items, bool readonly = false);
+  SizedDict(AutoSizeTag, holder_type items, bool readonly = false);
   SizedDict(const SizedDict &other);
   SizedDict(SizedDict &&other) noexcept;
   SizedDict &operator=(const SizedDict &other);
@@ -120,7 +129,6 @@ public:
   [[nodiscard]] const auto &items() const noexcept { return m_items; }
 
   void setSizes(const Sizes &sizes);
-  void rebuildSizes();
   void set(const key_type &key, mapped_type coord);
   void erase(const key_type &key);
   mapped_type extract(const key_type &key);

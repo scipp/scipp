@@ -34,18 +34,17 @@ def make_binned_array_variable_buffer() -> sc.DataArray:
 
 
 def make_dataset() -> sc.Dataset:
-    ds = sc.Dataset()
-    ds['xy'] = make_array()
-    ds['x'] = ds.coords['xx']
-    return ds
+    return sc.Dataset({'xy': make_array()})
 
 
 def make_binned_dataset() -> sc.Dataset:
-    ds = sc.Dataset()
-    ds['xy'] = make_array().data
-    ds['binned'] = make_binned_array()
-    ds['binned-variable'] = make_binned_array_variable_buffer()
-    return ds
+    return sc.Dataset(
+        {
+            'xy': make_array().data,
+            'binned': make_binned_array(),
+            'binned-variable': make_binned_array_variable_buffer(),
+        }
+    )
 
 
 @pytest.fixture(
@@ -107,12 +106,6 @@ def test_bin_edges_are_dropped():
     da.coords['edges'] = sc.concat([da.coords['xx'], da.coords['xx'][-1] + 1], 'xx')
     condition = sc.array(dims=['xx'], values=[True, False, True, True])
     assert sc.identical(da[condition], sc.concat([base['xx', 0], base['xx', 2:]], 'xx'))
-
-
-def test_dataset_item_independent_of_condition_dim_preserved_unchanged():
-    condition = sc.array(dims=['yy'], values=[True, False, True])
-    ds = make_dataset()
-    assert sc.identical(ds[condition]['x'], ds['x'])
 
 
 def test_non_boolean_condition_raises_DTypeError():

@@ -16,7 +16,7 @@ template <class T> void check_equal(const T &var) {
 
 class EqualsNanTest : public ::testing::Test {
 protected:
-  EqualsNanTest() { ds.setData("a", da); }
+  EqualsNanTest() : ds({{"a", da}}) {}
   Dimensions dims{Dim::Y, 2};
   Variable indices = makeVariable<scipp::index_pair>(
       dims, Values{std::pair{0, 2}, std::pair{2, 4}});
@@ -90,13 +90,11 @@ TEST_F(EqualsNanTest, concat_nan_attr) {
 TEST_F(EqualsNanTest, concat_nan_item) {
   da.masks().erase("mask");
   ds["a"].masks().erase("mask");
-  ds.setData("b", copy(da));
   ds["a"] += nan;
   auto ds2 = copy(ds);
-  ds2["b"] += da;
   const auto out = dataset::concat(std::vector{ds, ds2}, Dim::Y);
-  // concat will avoid broadcasting "a" since it is equal, need to accepts NAN
-  ASSERT_TRUE(equals_nan(out["a"], da));
+  const auto expected = concat(std::vector{da, da}, Dim::Y);
+  ASSERT_TRUE(equals_nan(out["a"], expected));
 }
 
 TEST_F(EqualsNanTest, dataset_item_self_assign) {

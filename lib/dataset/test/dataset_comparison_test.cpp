@@ -38,18 +38,8 @@ private:
   }
 
 protected:
-  Dataset_comparison_operators() {
-    dataset.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
-    dataset.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3}));
-
-    dataset.setCoord(Dim("labels"), makeVariable<int>(Dims{Dim::X}, Shape{4}));
-
-    dataset.setData("val_and_var",
-                    makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 4},
-                                         Values(12), Variances(12)));
-
-    dataset.setData("val", makeVariable<double>(Dims{Dim::X}, Shape{4}));
-  }
+  Dataset_comparison_operators()
+      : dataset(DatasetFactory{{Dim::X, 4}, {Dim::Y, 3}}.make("data")) {}
   void expect_eq(const Dataset &a, const Dataset &b) const {
     expect_eq_impl(a, b);
     expect_eq_impl(a, copy(b));
@@ -73,7 +63,7 @@ protected:
 TEST_F(Dataset_comparison_operators, single_coord) {
   auto d = make_1_coord<double>(Dim::X, {Dim::X, 3}, units::m, {1, 2, 3});
   expect_eq(d, d);
-  expect_ne(d, make_empty());
+  expect_ne(d, Dataset{});
   expect_ne(d, make_1_coord<float>(Dim::X, {Dim::X, 3}, units::m, {1, 2, 3}));
   expect_ne(d, make_1_coord<double>(Dim::Y, {Dim::X, 3}, units::m, {1, 2, 3}));
   expect_ne(d, make_1_coord<double>(Dim::X, {Dim::Y, 3}, units::m, {1, 2, 3}));
@@ -85,7 +75,7 @@ TEST_F(Dataset_comparison_operators, single_coord) {
 TEST_F(Dataset_comparison_operators, single_labels) {
   auto d = make_1_labels<double>("a", {Dim::X, 3}, units::m, {1, 2, 3});
   expect_eq(d, d);
-  expect_ne(d, make_empty());
+  expect_ne(d, Dataset{});
   expect_ne(d, make_1_labels<float>("a", {Dim::X, 3}, units::m, {1, 2, 3}));
   expect_ne(d, make_1_labels<double>("b", {Dim::X, 3}, units::m, {1, 2, 3}));
   expect_ne(d, make_1_labels<double>("a", {Dim::Y, 3}, units::m, {1, 2, 3}));
@@ -97,7 +87,7 @@ TEST_F(Dataset_comparison_operators, single_labels) {
 TEST_F(Dataset_comparison_operators, single_values) {
   auto d = make_1_values<double>("a", {Dim::X, 3}, units::m, {1, 2, 3});
   expect_eq(d, d);
-  expect_ne(d, make_empty());
+  expect_ne(d, Dataset{});
   expect_ne(d, make_1_values<float>("a", {Dim::X, 3}, units::m, {1, 2, 3}));
   expect_ne(d, make_1_values<double>("b", {Dim::X, 3}, units::m, {1, 2, 3}));
   expect_ne(d, make_1_values<double>("a", {Dim::Y, 3}, units::m, {1, 2, 3}));
@@ -110,7 +100,7 @@ TEST_F(Dataset_comparison_operators, single_values_and_variances) {
   auto d = make_1_values_and_variances<double>("a", {Dim::X, 3}, units::m,
                                                {1, 2, 3}, {4, 5, 6});
   expect_eq(d, d);
-  expect_ne(d, make_empty());
+  expect_ne(d, Dataset{});
   expect_ne(d, make_1_values_and_variances<float>("a", {Dim::X, 3}, units::m,
                                                   {1, 2, 3}, {4, 5, 6}));
   expect_ne(d, make_1_values_and_variances<double>("b", {Dim::X, 3}, units::m,
@@ -129,7 +119,7 @@ TEST_F(Dataset_comparison_operators, single_values_and_variances) {
 // End baseline checks.
 
 TEST_F(Dataset_comparison_operators, empty) {
-  const auto empty = make_empty();
+  const auto empty = Dataset{};
   expect_eq(empty, empty);
 }
 
@@ -153,20 +143,19 @@ TEST_F(Dataset_comparison_operators, extra_labels) {
 
 TEST_F(Dataset_comparison_operators, extra_data) {
   auto extra = dataset;
-  extra.setData("extra", makeVariable<double>(Dims{Dim::Z}, Shape{2}));
+  extra.setData("extra", dataset["data"]);
   expect_ne(extra, dataset);
 }
 
 TEST_F(Dataset_comparison_operators, extra_variance) {
-  auto extra = dataset;
-  extra.setData("val", makeVariable<double>(Dimensions{Dim::X, 4}, Values(4),
-                                            Variances(4)));
+  auto extra = copy(dataset);
+  extra["data"].data().setVariances(makeVariable<double>(extra["data"].dims()));
   expect_ne(extra, dataset);
 }
 
 TEST_F(Dataset_comparison_operators, different_coord_insertion_order) {
-  auto a = make_empty();
-  auto b = make_empty();
+  Dataset a({{"a", dataset["data"].data()}});
+  Dataset b({{"a", dataset["data"].data()}});
   a.setCoord(Dim::X, dataset.coords()[Dim::X]);
   a.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
   b.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
@@ -175,11 +164,9 @@ TEST_F(Dataset_comparison_operators, different_coord_insertion_order) {
 }
 
 TEST_F(Dataset_comparison_operators, different_data_insertion_order) {
-  auto a = make_empty();
-  auto b = make_empty();
-  a.setData("x", dataset.coords()[Dim::X]);
-  a.setData("y", dataset.coords()[Dim::Y]);
-  b.setData("y", dataset.coords()[Dim::Y]);
-  b.setData("x", dataset.coords()[Dim::X]);
+  auto xy1 = dataset.coords()[Dim::X] * dataset.coords()[Dim::Y];
+  auto xy2 = dataset.coords()[Dim::X] + dataset.coords()[Dim::Y];
+  Dataset a({{"x", xy1}, {"y", xy2}});
+  Dataset b({{"y", xy2}, {"x", xy1}});
   expect_eq(a, b);
 }

@@ -78,8 +78,8 @@ template <class Func, class... Args>
 Dataset apply_to_items(const Dataset &d, Func func, Args &&...args) {
   Dataset result;
   for (const auto &data : d)
-    result.setData(data.name(), func(data, std::forward<Args>(args)...));
-  return result;
+    result.setDataInit(data.name(), func(data, std::forward<Args>(args)...));
+  return std::move(result).or_empty();
 }
 
 /// Return a copy of map-like objects such as Coords with `func` applied to each

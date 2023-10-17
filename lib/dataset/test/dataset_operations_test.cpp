@@ -31,6 +31,15 @@ TEST(DatasetOperationsTest, sum_all_dims) {
   EXPECT_EQ(nansum(ds)["a"], nansum(da));
 }
 
+TEST(DatasetOperationsTest, sum_over_dim_empty_dataset) {
+  auto ds = make_1_values_and_variances<float>(
+      "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
+  ds.erase("a");
+  auto res = sum(ds, Dim::X);
+  EXPECT_TRUE(res.is_valid());
+  EXPECT_EQ(res, Dataset({}, {}));
+}
+
 TEST(DatasetOperationsTest, nansum_over_dim) {
   auto ds = make_1_values_and_variances<double>(
       "a", {Dim::X, 3}, units::dimensionless, {1.0, 2.0, double(NAN)},
@@ -48,12 +57,21 @@ TEST(DatasetOperationsTest, nansum_all_dims) {
   EXPECT_EQ(nansum(ds)["a"], nansum(da));
 }
 
+TEST(DatasetOperationsTest, nansum_over_dim_empty_dataset) {
+  auto ds = make_1_values_and_variances<float>(
+      "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
+  ds.erase("a");
+  auto res = nansum(ds, Dim::X);
+  EXPECT_TRUE(res.is_valid());
+  EXPECT_EQ(res, Dataset({}, {}));
+}
+
 template <typename T>
 class DatasetShapeChangingOpTest : public ::testing::Test {
 public:
   void SetUp() {
-    ds.setData("data_x",
-               makeVariable<T>(Dims{Dim::X}, Shape{5}, Values{1, 5, 4, 5, 1}));
+    ds = Dataset({{"data_x", makeVariable<T>(Dims{Dim::X}, Shape{5},
+                                             Values{1, 5, 4, 5, 1})}});
     ds["data_x"].masks().set(
         "masks_x", makeVariable<bool>(Dims{Dim::X}, Shape{5},
                                       Values{false, true, false, true, false}));
@@ -94,11 +112,11 @@ TYPED_TEST(DatasetShapeChangingOpTest, mean_fully_masked) {
 }
 
 TEST(DatasetOperationsTest, mean_two_dims) {
-  Dataset ds;
   // the negative values should have been masked out
-  ds.setData("data_xy", makeVariable<int64_t>(Dims{Dim::X, Dim::Y}, Shape{5, 2},
-                                              Values{-999, -999, 3, -999, 5, 6,
-                                                     -999, 10, 10, -999}));
+  Dataset ds(
+      {{"data_xy", makeVariable<int64_t>(Dims{Dim::X, Dim::Y}, Shape{5, 2},
+                                         Values{-999, -999, 3, -999, 5, 6, -999,
+                                                10, 10, -999})}});
 
   ds["data_xy"].masks().set(
       "mask_xy", makeVariable<bool>(Dims{Dim::X, Dim::Y}, Shape{5, 2},
@@ -111,13 +129,12 @@ TEST(DatasetOperationsTest, mean_two_dims) {
 }
 
 TEST(DatasetOperationsTest, mean_three_dims) {
-  Dataset ds;
   // the negative values should have been masked out
-  ds.setData("data_xy",
-             makeVariable<int64_t>(
-                 Dims{Dim::Z, Dim::X, Dim::Y}, Shape{2, 5, 2},
-                 Values{-999, -999, 3, -999, 5, 6, -999, 10, 10, -999,
-                        -999, -999, 3, -999, 5, 6, -999, 10, 10, -999}));
+  Dataset ds({{"data_xy",
+               makeVariable<int64_t>(
+                   Dims{Dim::Z, Dim::X, Dim::Y}, Shape{2, 5, 2},
+                   Values{-999, -999, 3, -999, 5, 6, -999, 10, 10, -999,
+                          -999, -999, 3, -999, 5, 6, -999, 10, 10, -999})}});
 
   ds["data_xy"].masks().set(
       "mask_xy",
@@ -131,13 +148,4 @@ TEST(DatasetOperationsTest, mean_three_dims) {
   ASSERT_EQ(result["data_xy"].data(),
             makeVariable<double>(Dims{Dim::Z, Dim::Y}, Shape{2, 2},
                                  Values{6, 8, 6, 8}));
-}
-
-TEST(DatasetOperationsTest, dataset_mean_fails) {
-  Dataset d;
-  d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{2}));
-  d.setData("b", makeVariable<double>(Values{1.0}));
-  // "b" does not depend on X, so this fails. This could change in the future if
-  // we find a clear definition of the functions behavior in this case.
-  EXPECT_THROW(mean(d, Dim::X), except::DimensionError);
 }

@@ -110,14 +110,6 @@ def test_table_raises_with_2d_dataset():
         sc.table(ds)
 
 
-def test_table_dataset_with_0d_elements():
-    ds = make_dense_dataset(ndim=1, attrs=True, masks=True)
-    ds.coords['scalar_coord'] = sc.scalar(44.0)
-    ds['scalar_data'] = sc.scalar(111.0)
-    ds['a'].masks['0d_mask'] = sc.scalar(True)
-    sc.table(ds)
-
-
 def test_table_dataset_with_0d_bin_edge_attributes():
     ds = make_dense_dataset(ndim=2, attrs=True, masks=True, binedges=True)
     sc.table(ds['yy', 0])

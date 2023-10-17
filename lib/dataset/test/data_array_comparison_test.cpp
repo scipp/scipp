@@ -4,6 +4,7 @@
 // The test in this file ensure that comparison operators for DataArray are
 // correct. More complex tests should build on the assumption that comparison
 // operators are correct.
+#include "random.h"
 #include "test_macros.h"
 #include <gtest/gtest.h>
 
@@ -38,25 +39,21 @@ void expect_ne(const DataArray &a, const DataArray &b) {
 class DataArray_comparison_operators : public ::testing::Test {
 protected:
   DataArray_comparison_operators() {
-    dataset.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
-    dataset.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3}));
-
-    dataset.setCoord(Dim("labels"), makeVariable<int>(Dims{Dim::X}, Shape{4}));
-
-    dataset.setData("val_and_var",
-                    makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 4},
-                                         Values(12), Variances(12)));
-    dataset["val_and_var"].attrs().set(Dim("attr"),
-                                       makeVariable<int>(Values{int{}}));
-
-    dataset.setData("val", makeVariable<double>(Dims{Dim::X}, Shape{4}));
-    dataset["val"].attrs().set(Dim("attr"), makeVariable<int>(Values{int{}}));
-    for (const auto &item : {"val_and_var", "val"})
-      dataset[item].masks().set("mask",
-                                makeVariable<bool>(Dims{Dim::X}, Shape{4}));
+    Random rand;
+    rand.seed(78847891);
+    RandomBool rand_bool;
+    rand_bool.seed(93481);
+    da = DataArray(makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 4},
+                                        Values(rand(3 * 4))),
+                   {{Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3},
+                                                  Values(rand(3)))},
+                    {Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{4},
+                                                  Values(rand(4)))}},
+                   {{"mask", makeVariable<bool>(Dims{Dim::X}, Shape{3},
+                                                Values(rand_bool(3)))}});
   }
 
-  Dataset dataset;
+  DataArray da;
 };
 
 namespace {
@@ -106,10 +103,10 @@ template <class T, class T2>
 auto make_values(const std::string &name, const Dimensions &dims,
                  const units::Unit unit,
                  const std::initializer_list<T2> &data) {
-  Dataset d;
-  d.setData(name,
-            makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
-  return DataArray(d[name]);
+  DataArray da(
+      makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
+  da.setName(name);
+  return da;
 }
 
 template <class T, class T2>
@@ -117,10 +114,10 @@ auto make_values_and_variances(const std::string &name, const Dimensions &dims,
                                const units::Unit unit,
                                const std::initializer_list<T2> &values,
                                const std::initializer_list<T2> &variances) {
-  Dataset d;
-  d.setData(name, makeVariable<T>(Dimensions(dims), units::Unit(unit),
-                                  Values(values), Variances(variances)));
-  return DataArray(d[name]);
+  DataArray da(makeVariable<T>(Dimensions(dims), units::Unit(unit),
+                               Values(values), Variances(variances)));
+  da.setName(name);
+  return da;
 }
 } // namespace
 
@@ -215,86 +212,62 @@ TEST_F(DataArray_comparison_operators, single_values_and_variances) {
 }
 // End baseline checks.
 
-TEST_F(DataArray_comparison_operators, self) {
-  for (const auto item : dataset) {
-    DataArray a(item);
-    expect_eq(a, a);
-  }
-}
+TEST_F(DataArray_comparison_operators, self) { expect_eq(da, da); }
 
 TEST_F(DataArray_comparison_operators, copy) {
-  auto copy = dataset;
-  for (const auto &a : copy) {
-    expect_eq(a, dataset[a.name()]);
-  }
+  const DataArray copy = da;
+  expect_eq(copy, da);
 }
 
 TEST_F(DataArray_comparison_operators, extra_coord) {
-  auto extra = dataset;
-  extra.setCoord(Dim::Z, makeVariable<double>(Values{0.0}));
-  for (const auto &a : extra)
-    expect_ne(a, dataset[a.name()]);
-}
-
-TEST_F(DataArray_comparison_operators, extra_labels) {
-  auto extra = dataset;
-  extra.setCoord(Dim("extra"), makeVariable<double>(Values{0.0}));
-  for (const auto &a : extra)
-    expect_ne(a, dataset[a.name()]);
+  auto extra = da;
+  extra.coords().set(Dim::Z, makeVariable<double>(Values{0.0}));
+  expect_ne(extra, da);
 }
 
 TEST_F(DataArray_comparison_operators, extra_mask) {
-  auto extra = dataset;
-  for (auto &&a : extra) {
-    a.masks().set("extra", makeVariable<bool>(Values{false}));
-    expect_ne(a, dataset[a.name()]);
-  }
+  auto extra = da;
+  extra.masks().set("extra", makeVariable<bool>(Values{false}));
+  expect_ne(extra, da);
 }
 
 TEST_F(DataArray_comparison_operators, extra_attr) {
-  auto extra = dataset;
-  for (const auto &a : extra) {
-    extra[a.name()].attrs().set(Dim("extra"),
-                                makeVariable<double>(Values{0.0}));
-    expect_ne(a, dataset[a.name()]);
-  }
+  auto extra = da;
+  extra.attrs().set(Dim("extra"), makeVariable<double>(Values{0.0}));
+  expect_ne(extra, da);
 }
 
 TEST_F(DataArray_comparison_operators, extra_variance) {
-  auto extra = dataset;
-  extra.setData("val", makeVariable<double>(Dimensions{Dim::X, 4}, Values(4),
-                                            Variances(4)));
-  expect_ne(extra["val"], dataset["val"]);
+  auto extra = copy(da);
+  da.data().setVariances(makeVariable<double>(da.dims()));
+  expect_ne(extra, da);
 }
 
 TEST_F(DataArray_comparison_operators, different_coord_insertion_order) {
-  const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 3});
+  const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 4});
   auto a = DataArray(var);
   auto b = DataArray(var);
-  a.coords().set(Dim::X, dataset.coords()[Dim::X]);
-  a.coords().set(Dim::Y, dataset.coords()[Dim::Y]);
-  b.coords().set(Dim::Y, dataset.coords()[Dim::Y]);
-  b.coords().set(Dim::X, dataset.coords()[Dim::X]);
+  a.coords().set(Dim::X, da.coords()[Dim::X]);
+  a.coords().set(Dim::Y, da.coords()[Dim::Y]);
+  b.coords().set(Dim::Y, da.coords()[Dim::Y]);
+  b.coords().set(Dim::X, da.coords()[Dim::X]);
   expect_eq(a, b);
 }
 
 TEST_F(DataArray_comparison_operators, different_attr_insertion_order) {
-  auto a = Dataset();
-  auto b = Dataset();
-  const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 3});
-  a.setData("item", var);
-  b.setData("item", var);
-  a["item"].attrs().set(Dim::X, dataset.coords()[Dim::X]);
-  a["item"].attrs().set(Dim::Y, dataset.coords()[Dim::Y]);
-  b["item"].attrs().set(Dim::Y, dataset.coords()[Dim::Y]);
-  b["item"].attrs().set(Dim::X, dataset.coords()[Dim::X]);
-  for (const auto &a_ : a)
-    expect_eq(a_, b[a_.name()]);
+  const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 4});
+  auto a = DataArray(var);
+  auto b = DataArray(var);
+  a.attrs().set(Dim::X, da.coords()[Dim::X]);
+  a.attrs().set(Dim::Y, da.coords()[Dim::Y]);
+  b.attrs().set(Dim::Y, da.coords()[Dim::Y]);
+  b.attrs().set(Dim::X, da.coords()[Dim::X]);
+  expect_eq(a, b);
 }
 
 TEST_F(DataArray_comparison_operators, respects_coord_alignment) {
-  auto a = copy(dataset["val"]);
-  auto b = copy(dataset["val"]);
+  auto a = da;
+  auto b = da;
 
   a.coords().set_aligned(Dim::X, false);
   expect_ne(a, b);

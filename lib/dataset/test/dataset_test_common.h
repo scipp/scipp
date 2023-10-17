@@ -19,56 +19,53 @@ std::vector<bool> make_bools(const scipp::index size, bool pattern);
 /// Factory for creating datasets for testing. For a given instance, `make()`
 /// will return datasets with identical coords, such that they are compatible in
 /// binary operations.
-class DatasetFactory3D {
+class DatasetFactory {
 public:
-  DatasetFactory3D(const scipp::index lx = 4, const scipp::index ly = 5,
-                   const scipp::index lz = 6, const Dim dim = Dim::X);
+  DatasetFactory();
+  DatasetFactory(Dim dim, scipp::index length);
+  DatasetFactory(std::initializer_list<std::pair<Dim, scipp::index>> dims);
+  explicit DatasetFactory(Dimensions dims);
 
-  void seed(const uint32_t value);
-  Dataset make(const bool randomMasks = false);
+  void seed(uint32_t seed);
+  Dataset make(std::string_view data_name = "data");
+  Dataset make_with_random_masks(std::string_view data_name = "data");
 
-  const scipp::index lx;
-  const scipp::index ly;
-  const scipp::index lz;
+  [[nodiscard]] const Dimensions &dims() const noexcept { return m_dims; }
 
 private:
-  void init();
+  void assign_coords(Dataset &dset);
 
-  Dim m_dim;
-  Random rand;
-  RandomBool randBool;
-  Dataset base;
+  Dimensions m_dims;
+  Random m_rand;
+  RandomBool m_rand_bool;
 };
-
-Dataset make_empty();
 
 template <class T, class T2>
 auto make_1_coord(const Dim dim, const Dimensions &dims, const units::Unit unit,
                   const std::initializer_list<T2> &data) {
-  auto d = make_empty();
-  d.setCoord(
-      dim, makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
-  return d;
+  return Dataset({{"a", makeVariable<T>(Dimensions(dims), units::Unit(unit),
+                                        Values(data))}},
+                 {{dim, makeVariable<T>(Dimensions(dims), units::Unit(unit),
+                                        Values(data))}});
 }
 
 template <class T, class T2>
 auto make_1_labels(const std::string &name, const Dimensions &dims,
                    const units::Unit unit,
                    const std::initializer_list<T2> &data) {
-  auto d = make_empty();
-  d.setCoord(Dim(name), makeVariable<T>(Dimensions(dims), units::Unit(unit),
-                                        Values(data)));
-  return d;
+  return Dataset(
+      {{"a",
+        makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data))}},
+      {{Dim(name),
+        makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data))}});
 }
 
 template <class T, class T2>
 auto make_1_values(const std::string &name, const Dimensions &dims,
                    const units::Unit unit,
                    const std::initializer_list<T2> &data) {
-  auto d = make_empty();
-  d.setData(name,
-            makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
-  return d;
+  return Dataset({{name, makeVariable<T>(Dimensions(dims), units::Unit(unit),
+                                         Values(data))}});
 }
 
 template <class T, class T2>
@@ -76,10 +73,9 @@ auto make_1_values_and_variances(const std::string &name,
                                  const Dimensions &dims, const units::Unit unit,
                                  const std::initializer_list<T2> &values,
                                  const std::initializer_list<T2> &variances) {
-  auto d = make_empty();
-  d.setData(name, makeVariable<T>(Dimensions(dims), units::Unit(unit),
-                                  Values(values), Variances(variances)));
-  return d;
+  return Dataset(
+      {{name, makeVariable<T>(Dimensions(dims), units::Unit(unit),
+                              Values(values), Variances(variances))}});
 }
 
 Dataset make_1d_masked();

@@ -20,10 +20,7 @@ def make_array() -> sc.DataArray:
 
 
 def make_dataset() -> sc.Dataset:
-    ds = sc.Dataset()
-    ds['xy'] = make_array()
-    ds['x'] = ds.coords['xx']
-    return ds
+    return sc.Dataset({'xy': make_array()})
 
 
 @pytest.fixture(
@@ -107,11 +104,6 @@ def test_bin_edges_are_dropped(sliceable, what):
         else sliceable['xy']
     )
     assert 'edges' in getattr(da, what)
-
-
-def test_dataset_item_independent_of_slice_dim_preserved_unchanged():
-    ds = make_dataset()
-    assert sc.identical(ds['yy', [0, 2]]['x'], ds['x'])
 
 
 def test_2d_list_raises_TypeError():

@@ -139,9 +139,9 @@ def from_dict(dict_obj: dict) -> VariableLike:
         return _dict_to_variable(dict_obj)
     else:
         # Case of a Dataset-like dict
-        out = Dataset()
-        for key, item in dict_obj.items():
-            out[key] = _dict_to_data_array(item)
+        out = Dataset(
+            {key: _dict_to_data_array(item) for key, item in dict_obj.items()}
+        )
         return out
 
 

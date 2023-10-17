@@ -2,8 +2,10 @@
 // Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/dataset/dataset.h"
+#include <sstream>
+
 #include "scipp/core/except.h"
+#include "scipp/dataset/dataset.h"
 #include "scipp/dataset/dataset_util.h"
 #include "scipp/dataset/except.h"
 #include "scipp/units/unit.h"
@@ -16,12 +18,40 @@ template <class T> void expect_writable(const T &dict) {
     throw except::DatasetError(
         "Read-only flag is set, cannot insert new or erase existing items.");
 }
+
+void expect_valid(const Dataset &ds) {
+  if (!ds.is_valid())
+    throw except::DatasetError(
+        "Dataset is not valid. This is an internal error stemming from an "
+        "improperly initialized dataset.");
+}
+
+template <class T>
+void expect_matching_item_dims(const Dataset &dset, const std::string_view key,
+                               const T &to_insert) {
+  if (dset.sizes() != to_insert.dims()) {
+    std::ostringstream msg;
+    msg << "Cannot add item '" << key << "' with dims " << to_insert.dims()
+        << " to dataset with dims " << to_string(dset.sizes()) << ".";
+    throw except::DimensionError(msg.str());
+  }
+}
 } // namespace
 
-Dataset::Dataset(const Dataset &other)
-    : m_coords(other.m_coords), m_data(other.m_data), m_readonly(false) {}
+/// Make an invalid dataset.
+///
+/// Such a dataset is intended to be filled using setDataInit and must
+/// never be exposed to Python!
+Dataset::Dataset() : m_valid{false} {}
 
-Dataset::Dataset(const DataArray &data) { setData(data.name(), data); }
+Dataset::Dataset(const Dataset &other)
+    : m_coords(other.m_coords), m_data(other.m_data),
+      m_readonly(false), m_valid{other.m_valid} {}
+
+Dataset::Dataset(const DataArray &data) {
+  m_coords.setSizes(data.dims());
+  setData(data.name(), data);
+}
 
 Dataset &Dataset::operator=(const Dataset &other) {
   return *this = Dataset(other);
@@ -35,6 +65,7 @@ Dataset &Dataset::operator=(Dataset &&other) {
   m_coords = std::move(other.m_coords);
   m_data = std::move(other.m_data);
   m_readonly = other.m_readonly;
+  m_valid = other.m_valid;
   return *this;
 }
 
@@ -44,10 +75,10 @@ Dataset &Dataset::operator=(Dataset &&other) {
 void Dataset::clear() {
   expect_writable(*this);
   m_data.clear();
-  rebuildDims();
 }
 
 void Dataset::setCoords(Coords other) {
+  expect_valid(*this);
   scipp::expect::includes(other.sizes(), m_coords.sizes());
   m_coords = std::move(other);
 }
@@ -81,7 +112,6 @@ void Dataset::erase(const std::string &name) {
   expect_writable(*this);
   scipp::expect::contains(*this, name);
   m_data.erase(std::string(name));
-  rebuildDims();
 }
 
 /// Extract a data item from the Dataset, returning a DataArray
@@ -99,34 +129,10 @@ DataArray Dataset::operator[](const std::string &name) const {
   return *find(name);
 }
 
-/// Consistency-enforcing update of the dimensions of the dataset.
-///
-/// Calling this in the various set* methods prevents insertion of variables
-/// with bad shape. This supports insertion of bin edges. Note that the current
-/// implementation does not support shape-changing operations which would in
-/// theory be permitted but are probably not important in reality: The previous
-/// extent of a replaced item is not excluded from the check, so even if that
-/// replaced item is the only one in the dataset with that dimension it cannot
-/// be "resized" in this way.
-void Dataset::setSizes(const Sizes &sizes) {
-  m_coords.setSizes(merge(m_coords.sizes(), sizes));
-}
-
-void Dataset::rebuildDims() {
-  m_coords.rebuildSizes();
-  for (const auto &d : *this)
-    setSizes(d.dims());
-}
-
 /// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
   expect_writable(*this);
-  bool set_sizes = true;
-  for (const auto &coord_dim : coord.dims())
-    if (is_edges(m_coords.sizes(), coord.dims(), coord_dim))
-      set_sizes = false;
-  if (set_sizes)
-    setSizes(coord.dims());
+  expect_valid(*this);
   m_coords.set(dim, std::move(coord));
 }
 
@@ -138,7 +144,8 @@ void Dataset::setCoord(const Dim dim, Variable coord) {
 void Dataset::setData(const std::string &name, Variable data,
                       const AttrPolicy attrPolicy) {
   expect_writable(*this);
-  setSizes(data.dims());
+  expect_valid(*this);
+  expect_matching_item_dims(*this, name, data);
   const auto replace = contains(name);
   if (replace && attrPolicy == AttrPolicy::Keep)
     m_data.insert_or_assign(
@@ -146,12 +153,20 @@ void Dataset::setData(const std::string &name, Variable data,
                         m_data[name].attrs().items(), name));
   else
     m_data.insert_or_assign(name, DataArray(std::move(data)));
-  if (replace)
-    rebuildDims();
+}
+
+// See docs of overload for data arrays.
+void Dataset::setDataInit(const std::string &name, Variable data,
+                          const AttrPolicy attrPolicy) {
+  if (!is_valid()) {
+    m_coords.setSizes(data.dims());
+    m_valid = true;
+  }
+  setData(name, std::move(data), attrPolicy);
 }
 
 namespace {
-auto coords_to_skip(const Dataset &dst, DataArray &src) {
+auto coords_to_skip(const Dataset &dst, const DataArray &src) {
   std::vector<Dim> to_skip;
   for (auto &&[dim, coord] : src.coords())
     if (const auto it = dst.coords().find(dim); it != dst.coords().end()) {
@@ -171,7 +186,7 @@ auto coords_to_skip(const Dataset &dst, DataArray &src) {
 /// dataset. Throws if there are existing but mismatching coords, masks, or
 /// attributes. Throws if the provided data brings the dataset into an
 /// inconsistent state (mismatching dimensions).
-void Dataset::setData(const std::string &name, DataArray data) {
+void Dataset::setData(const std::string &name, const DataArray &data) {
   // Return early on self assign to avoid exceptions from Python inplace ops
   if (const auto it = find(name); it != end()) {
     if (it->data().is_same(data.data()) && it->masks() == data.masks() &&
@@ -185,12 +200,30 @@ void Dataset::setData(const std::string &name, DataArray data) {
   for (auto &&[dim, coord] : data.coords())
     if (m_coords.find(dim) == m_coords.end() &&
         std::find(to_skip.begin(), to_skip.end(), dim) == to_skip.end())
-      setCoord(dim, std::move(coord));
+      setCoord(dim, coord);
   // Attrs might be shadowed by a coord, but this cannot be prevented in
   // general, so instead of failing here we proceed (and may fail later if
   // meta() is called).
-  item.attrs() = std::move(data.attrs());
-  item.masks() = std::move(data.masks());
+  item.attrs() = data.attrs();
+  item.masks() = data.masks();
+}
+
+/// Like setData but allow inserting into a default-initialized dataset.
+///
+/// A default-constructed dataset cannot be filled using setData or setCoord
+/// as the dataset's dimensions are unknown and the input cannot be validated.
+/// setDataInit sets the sizes when called with a default-initialized dataset.
+/// It can be used for creating a new dataset and filling it step by step.
+///
+/// When using this, always make sure to ultimately produce a valid dataset.
+/// setDataInit is often called in a loop.
+/// Keep in mind that the loop might not run when the input dataset is empty!
+void Dataset::setDataInit(const std::string &name, const DataArray &data) {
+  if (!is_valid()) {
+    m_coords.setSizes(data.dims());
+    m_valid = true;
+  }
+  setData(name, data);
 }
 
 /// Return slice of the dataset along given dimension with given extents.
@@ -275,6 +308,8 @@ Dim Dataset::dim() const {
 scipp::index Dataset::ndim() const { return scipp::size(m_coords.sizes()); }
 
 bool Dataset::is_readonly() const noexcept { return m_readonly; }
+
+bool Dataset::is_valid() const noexcept { return m_valid; }
 
 typename Masks::holder_type union_or(const Masks &currentMasks,
                                      const Masks &otherMasks) {

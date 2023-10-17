@@ -146,24 +146,20 @@ TEST(SortTest, data_array_bin_edge_coord_throws) {
 }
 
 TEST(SortTest, dataset_1d) {
-  Dataset d;
-  d.setData("a", makeVariable<float>(Dims{Dim::X}, Shape{3}, units::m,
-                                     Values{1, 2, 3}, Variances{4, 5, 6}));
-  d.setData("b", makeVariable<double>(Dims{Dim::X}, Shape{3}, units::s,
-                                      Values{0.1, 0.2, 0.3}));
-  d.setData("scalar", makeVariable<double>(Values{1.2}));
-  d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m,
-                                          Values{1, 2, 3}));
+  Dataset d({{"a", makeVariable<float>(Dims{Dim::X}, Shape{3}, units::m,
+                                       Values{1, 2, 3}, Variances{4, 5, 6})},
+             {"b", makeVariable<double>(Dims{Dim::X}, Shape{3}, units::s,
+                                        Values{0.1, 0.2, 0.3})}},
+            {{Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m,
+                                           Values{1, 2, 3})}});
 
-  Dataset expected;
-  expected.setData("a",
-                   makeVariable<float>(Dims{Dim::X}, Shape{3}, units::m,
-                                       Values{3, 1, 2}, Variances{6, 4, 5}));
-  expected.setData("b", makeVariable<double>(Dims{Dim::X}, Shape{3}, units::s,
-                                             Values{0.3, 0.1, 0.2}));
-  expected.setData("scalar", makeVariable<double>(Values{1.2}));
-  expected.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3},
-                                                 units::m, Values{3, 1, 2}));
+  Dataset expected(
+      {{"a", makeVariable<float>(Dims{Dim::X}, Shape{3}, units::m,
+                                 Values{3, 1, 2}, Variances{6, 4, 5})},
+       {"b", makeVariable<double>(Dims{Dim::X}, Shape{3}, units::s,
+                                  Values{0.3, 0.1, 0.2})}},
+      {{Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m,
+                                     Values{3, 1, 2})}});
 
   const auto key =
       makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{10, 20, -1});
@@ -172,24 +168,20 @@ TEST(SortTest, dataset_1d) {
 }
 
 TEST(SortTest, dataset_1d_descending) {
-  Dataset d;
-  d.setData("a", makeVariable<float>(Dims{Dim::X}, Shape{3}, units::m,
-                                     Values{1, 2, 3}, Variances{4, 5, 6}));
-  d.setData("b", makeVariable<double>(Dims{Dim::X}, Shape{3}, units::s,
-                                      Values{0.1, 0.2, 0.3}));
-  d.setData("scalar", makeVariable<double>(Values{1.2}));
-  d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m,
-                                          Values{1, 2, 3}));
+  Dataset d({{"a", makeVariable<float>(Dims{Dim::X}, Shape{3}, units::m,
+                                       Values{1, 2, 3}, Variances{4, 5, 6})},
+             {"b", makeVariable<double>(Dims{Dim::X}, Shape{3}, units::s,
+                                        Values{0.1, 0.2, 0.3})}},
+            {{Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m,
+                                           Values{1, 2, 3})}});
 
-  Dataset expected;
-  expected.setData("a",
-                   makeVariable<float>(Dims{Dim::X}, Shape{3}, units::m,
-                                       Values{2, 1, 3}, Variances{5, 4, 6}));
-  expected.setData("b", makeVariable<double>(Dims{Dim::X}, Shape{3}, units::s,
-                                             Values{0.2, 0.1, 0.3}));
-  expected.setData("scalar", makeVariable<double>(Values{1.2}));
-  expected.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3},
-                                                 units::m, Values{2, 1, 3}));
+  Dataset expected(
+      {{"a", makeVariable<float>(Dims{Dim::X}, Shape{3}, units::m,
+                                 Values{2, 1, 3}, Variances{5, 4, 6})},
+       {"b", makeVariable<double>(Dims{Dim::X}, Shape{3}, units::s,
+                                  Values{0.2, 0.1, 0.3})}},
+      {{Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m,
+                                     Values{2, 1, 3})}});
 
   const auto key =
       makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{10, 20, -1});

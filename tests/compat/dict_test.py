@@ -256,17 +256,22 @@ def test_data_array_round_trip():
 
 
 def test_dataset_to_dict():
-    ds = sc.Dataset()
-    ds["a"] = sc.Variable(dims=["y", "x"], values=np.random.random([5, 10]))
-    ds["b"] = sc.Variable(
-        dims=["y", "x"],
-        values=np.random.random([5, 10]),
-        variances=np.random.random([5, 10]),
-        unit=sc.units.s,
+    ds = sc.Dataset(
+        {
+            'a': sc.array(dims=["y", "x"], values=np.random.random([5, 10])),
+            "b": sc.array(
+                dims=["y", "x"],
+                values=np.random.random([5, 10]),
+                variances=np.random.random([5, 10]),
+                unit=sc.units.s,
+            ),
+        },
+        coords={
+            "x": sc.array(dims=["x"], values=np.arange(10)),
+            "y": sc.array(dims=["y"], values=np.arange(5), unit=sc.units.m),
+        },
     )
-    ds.coords["x"] = sc.Variable(dims=["x"], values=np.arange(10))
-    ds.coords["y"] = sc.Variable(dims=["y"], values=np.arange(5), unit=sc.units.m)
-    ds["a"].masks["amask"] = sc.Variable(
+    ds["a"].masks["amask"] = sc.array(
         dims=["y"], values=[True, True, False, True, False]
     )
     # Note that attributes complicate things here, as they are duplicated in
@@ -310,16 +315,21 @@ def test_dataset_from_dict():
 
 
 def test_dataset_round_trip():
-    ds = sc.Dataset()
-    ds["a"] = sc.Variable(dims=["y", "x"], values=np.random.random([5, 10]))
-    ds["b"] = sc.Variable(
-        dims=["y", "x"],
-        values=np.random.random([5, 10]),
-        variances=np.random.random([5, 10]),
-        unit=sc.units.s,
+    ds = sc.Dataset(
+        {
+            "a": sc.array(dims=["y", "x"], values=np.random.random([5, 10])),
+            "b": sc.array(
+                dims=["y", "x"],
+                values=np.random.random([5, 10]),
+                variances=np.random.random([5, 10]),
+                unit=sc.units.s,
+            ),
+        },
+        coords={
+            "x": sc.Variable(dims=["x"], values=np.arange(10)),
+            "y": sc.Variable(dims=["y"], values=np.arange(5), unit=sc.units.m),
+        },
     )
-    ds.coords["x"] = sc.Variable(dims=["x"], values=np.arange(10))
-    ds.coords["y"] = sc.Variable(dims=["y"], values=np.arange(5), unit=sc.units.m)
     ds["a"].masks["amask"] = sc.Variable(
         dims=["y"], values=[True, True, False, True, False]
     )

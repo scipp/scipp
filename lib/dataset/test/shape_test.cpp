@@ -577,27 +577,18 @@ TEST_F(TransposeTest, data_array_2d_meta_data) {
 }
 
 TEST_F(TransposeTest, dataset_no_order) {
-  Dataset d;
-  d.setData("a", a);
-  d.setData("b", transpose(a));
-  d.setData("c", a.slice({Dim::X, 0}));
+  Dataset d({{"a", a}, {"b", transpose(a)}});
   // Slightly unusual but "simple" behavior if no dim order given
   auto transposed = transpose(d);
   EXPECT_EQ(transposed["a"], d["b"]);
   EXPECT_EQ(transposed["b"], d["a"]);
-  EXPECT_EQ(transposed["c"], d["c"]);
 }
 
 TEST_F(TransposeTest, dataset_2d) {
-  Dataset d;
-  d.setData("a", a);
-  d.setData("b", transpose(a));
+  Dataset d({{"a", a}, {"b", transpose(a)}});
   auto transposed = transpose(d, std::vector<Dim>{Dim::X, Dim::Y});
   EXPECT_EQ(transposed["a"], d["b"]);
   EXPECT_EQ(transposed["b"], d["b"]);
-  d.setData("c", a.slice({Dim::X, 0}));
-  EXPECT_THROW_DISCARD(transpose(d, std::vector<Dim>{Dim::X, Dim::Y}),
-                       except::DimensionError);
 }
 
 class SqueezeTest : public ::testing::Test {
@@ -711,61 +702,27 @@ TEST_F(SqueezeTest, data_array_output_is_not_readonly) {
 
 class SqueezeDatasetTest : public SqueezeTest {
 protected:
-  SqueezeDatasetTest()
-      : b(copy(a.slice({Dim::X, 0}))), c(copy(a.slice({Dim::Y, 0}))) {
-    // Keeping them would cause a mismatch error when inserting into d.
-    b.coords().erase(Dim{"xyz"});
-    c.coords().erase(Dim{"xyz"});
-    dset.setData("a", a);
-    dset.setData("b", b);
-    dset.setData("c", c);
-  }
+  SqueezeDatasetTest() : dset{{{"a", a}}} {}
 
   Dataset dset;
-  DataArray b;
-  DataArray c;
 };
 
 TEST_F(SqueezeDatasetTest, dataset_3d_outer) {
   const std::vector<Dim> dims{Dim::X};
   const auto squeezed = squeeze(dset, dims);
-  // b contains 'xyz' now because the latter has dims [y,z] after squeezing.
-  b.coords().set(Dim{"xyz"}, squeeze(xyz, dims));
-  // c's initial unaligned y coord was overridden by the aligned coord of
-  // a and b which no longer applies to dset["c"].
-  // See #3149
-  c.coords().erase(Dim::Y);
-
   EXPECT_EQ(squeezed["a"], squeeze(a, dims));
-  EXPECT_EQ(squeezed["b"], b);
-  EXPECT_EQ(squeezed["c"], squeeze(c, dims));
 }
 
 TEST_F(SqueezeDatasetTest, dataset_3d_center) {
   const std::vector<Dim> dims{Dim::Y};
   const auto squeezed = squeeze(dset, dims);
-  // b contains 'xyz' now because the latter has dims [x,z] after squeezing.
-  c.coords().set(Dim{"xyz"}, squeeze(xyz, dims));
-  // b's initial unaligned x coord was overridden by the aligned coord of
-  // a and c which no longer applies to dset["b"].
-  // See #3149
-  b.coords().erase(Dim::X);
-
   EXPECT_EQ(squeezed["a"], squeeze(a, dims));
-  EXPECT_EQ(squeezed["b"], squeeze(b, dims));
-  EXPECT_EQ(squeezed["c"], c);
 }
 
 TEST_F(SqueezeDatasetTest, dataset_3d_all) {
   const auto dims = std::nullopt;
   const auto squeezed = squeeze(dset, dims);
-  // b,c contain 'xyz' now because the latter has dims [z] after squeezing.
-  b.coords().set(Dim{"xyz"}, squeeze(xyz, dims));
-  c.coords().set(Dim{"xyz"}, squeeze(xyz, dims));
-
   EXPECT_EQ(squeezed["a"], squeeze(a, dims));
-  EXPECT_EQ(squeezed["b"], squeeze(b, std::vector<Dim>({Dim::Y})));
-  EXPECT_EQ(squeezed["c"], squeeze(c, std::vector<Dim>({Dim::X})));
 }
 
 TEST_F(SqueezeDatasetTest, dataset_3d_no_dims) {

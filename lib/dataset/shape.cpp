@@ -128,31 +128,19 @@ DataArray concat(const scipp::span<const DataArray> das, const Dim dim) {
 }
 
 Dataset concat(const scipp::span<const Dataset> dss, const Dim dim) {
-  // Note that in the special case of a dataset without data items (only coords)
-  // concatenating a range slice with a non-range slice will fail due to the
-  // missing unaligned coord in the non-range slice. This is an extremely
-  // special case and cannot be handled without adding support for unaligned
-  // coords to dataset (which is not desirable for a variety of reasons). It is
-  // unlikely that this will cause trouble in practice. Users can just use a
-  // range slice of thickness 1.
   if (dss.empty())
     throw std::invalid_argument("Cannot concat empty list.");
   Dataset result;
-  if (dss.front().empty())
-    result.setCoords(Coords(concat(map(dss, get_sizes), dim),
-                            concat_maps(map(dss, get_coords), dim)));
   for (const auto &first : dss.front())
     if (std::all_of(dss.begin(), dss.end(),
                     [&first](auto &ds) { return ds.contains(first.name()); })) {
       auto das = map(dss, [&first](auto &&ds) { return ds[first.name()]; });
-      if (std::any_of(das.begin(), das.end(), [dim, &first](auto &da) {
-            return da.dims().contains(dim) || !equals_nan(da, first);
-          }))
-        result.setData(first.name(), concat(das, dim));
-      else
-        result.setData(first.name(), first);
+      result.setDataInit(first.name(), concat(das, dim));
     }
-  return result;
+  if (result.is_valid())
+    return result;
+  return Dataset({}, Coords(concat(map(dss, get_sizes), dim),
+                            concat_maps(map(dss, get_coords), dim)));
 }
 
 DataArray resize(const DataArray &a, const Dim dim, const scipp::index size,

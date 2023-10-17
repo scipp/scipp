@@ -33,6 +33,10 @@ template <class D> struct item_with_coords {
 };
 
 template <class D> item_with_coords(const D *) -> item_with_coords<D>;
+
+// Use to disambiguate constructors.
+struct init_from_data_arrays_t {};
+static constexpr auto init_from_data_arrays = init_from_data_arrays_t{};
 } // namespace detail
 
 /// Collection of data arrays.
@@ -42,23 +46,46 @@ public:
   using mapped_type = DataArray;
   using value_type = std::pair<const std::string &, DataArray>;
 
-  Dataset() = default;
+  Dataset();
   Dataset(const Dataset &other);
   Dataset(Dataset &&other) = default;
   explicit Dataset(const DataArray &data);
 
+  // The constructor with the DataMap template also works with Variables.
+  // But the compiler cannot deduce the type when called with initializer lists.
+  template <class CoordMap = core::Dict<Dim, Variable>>
+  explicit Dataset(core::Dict<std::string, Variable> data,
+                   CoordMap coords = core::Dict<Dim, Variable>{})
+      : Dataset(std::move(data), std::move(coords),
+                detail::init_from_data_arrays) {}
+
   template <class DataMap = core::Dict<std::string, DataArray>,
             class CoordMap = core::Dict<Dim, Variable>>
-  explicit Dataset(DataMap data,
-                   CoordMap coords = core::Dict<Dim, Variable>{}) {
-    if constexpr (std::is_base_of_v<Dataset, std::decay_t<DataMap>>)
-      for (auto &&item : data)
-        setData(item.name(), item);
-    else
-      for (auto &&[name, item] : data)
-        setData(std::string(name), std::move(item));
-    for (auto &&[dim, coord] : coords)
-      setCoord(dim, std::move(coord));
+  explicit Dataset(
+      DataMap data, CoordMap coords = core::Dict<Dim, Variable>{},
+      const detail::init_from_data_arrays_t = detail::init_from_data_arrays) {
+    if (data.empty()) {
+      if constexpr (std::is_same_v<std::decay_t<CoordMap>, Coords>)
+        m_coords = std::move(coords);
+      else
+        m_coords = Coords(AutoSizeTag{}, std::move(coords));
+    } else {
+      // Set the sizes based on data in order to handle bin-edge coords.
+      // The coords are then individually checked against those sizes.
+      m_coords = Coords(data.begin()->second.dims(), {});
+      for (auto &&[name, item] : coords) {
+        setCoord(name, std::move(item));
+      }
+
+      if constexpr (std::is_base_of_v<Dataset, std::decay_t<DataMap>>)
+        for (auto &&item : data) {
+          setData(item.name(), item);
+        }
+      else
+        for (auto &&[name, item] : data) {
+          setData(std::string(name), std::move(item));
+        }
+    }
   }
 
   Dataset &operator=(const Dataset &other);
@@ -160,7 +187,10 @@ public:
   void setCoord(const Dim dim, Variable coord);
   void setData(const std::string &name, Variable data,
                const AttrPolicy attrPolicy = AttrPolicy::Drop);
-  void setData(const std::string &name, DataArray data);
+  void setData(const std::string &name, const DataArray &data);
+  void setDataInit(const std::string &name, Variable data,
+                   const AttrPolicy attrPolicy = AttrPolicy::Drop);
+  void setDataInit(const std::string &name, const DataArray &data);
 
   Dataset slice(const Slice &s) const;
   [[maybe_unused]] Dataset &setSlice(const Slice &s, const Dataset &dataset);
@@ -192,17 +222,25 @@ public:
   [[nodiscard]] scipp::index ndim() const;
 
   bool is_readonly() const noexcept;
+  bool is_valid() const noexcept;
+
+  [[nodiscard]] Dataset or_empty() && {
+    if (is_valid())
+      return std::move(*this);
+    return Dataset({}, {});
+  }
 
 private:
   // Declared friend so gtest recognizes it
   friend SCIPP_DATASET_EXPORT std::ostream &operator<<(std::ostream &,
                                                        const Dataset &);
-  void setSizes(const Sizes &sizes);
-  void rebuildDims();
 
-  Coords m_coords; // aligned coords
+  Coords m_coords;
   core::Dict<std::string, DataArray> m_data;
   bool m_readonly{false};
+  /// See documentation of setDataInit.
+  /// Invalid datasets are for internal use only.
+  bool m_valid{true};
 };
 
 [[nodiscard]] SCIPP_DATASET_EXPORT Dataset

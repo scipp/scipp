@@ -39,6 +39,7 @@ Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
+* All items of datasets must have the same dimensions now `#3199 <https://github.com/scipp/scipp/pull/3199>`_.
 * The runtime configuration has been removed `#3254 <https://github.com/scipp/scipp/pull/3254>`_.
 
 Bugfixes

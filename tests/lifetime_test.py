@@ -72,8 +72,8 @@ def test_lifetime_single_value():
 
 
 def test_lifetime_coord_values():
-    var = sc.Variable(dims=['x'], values=np.arange(10))
-    d = sc.Dataset(coords={'x': var})
+    var = sc.arange('x', 10)
+    d = sc.Dataset({'a': var}, coords={'x': var})
     values = d.coords['x'].values
     d += d
     assert np.array_equal(values, var.values)

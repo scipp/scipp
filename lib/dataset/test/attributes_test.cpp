@@ -22,8 +22,7 @@ protected:
 };
 
 TEST_F(AttributesTest, dataset_item_attrs) {
-  Dataset d;
-  d.setData("a", varX);
+  Dataset d({{"a", varX}});
   d["a"].attrs().set(Dim("scalar"), scalar);
   d["a"].attrs().set(Dim("x"), varX);
   d.coords().set(Dim("dataset_attr"), scalar);
@@ -43,8 +42,7 @@ TEST_F(AttributesTest, dataset_item_attrs) {
 }
 
 TEST_F(AttributesTest, slice_dataset_item_attrs) {
-  Dataset d;
-  d.setData("a", varZX);
+  Dataset d({{"a", varZX}});
   d["a"].attrs().set(Dim("scalar"), scalar);
   d["a"].attrs().set(Dim("x"), varX);
 
@@ -65,8 +63,7 @@ TEST_F(AttributesTest, slice_dataset_item_attrs) {
 }
 
 TEST_F(AttributesTest, coords_are_not_transferred_to_attrs_in_slicing) {
-  Dataset d;
-  d.setData("a", copy(varX));
+  Dataset d({{"a", copy(varX)}});
   d.coords().set(Dim::X, copy(varX));
   ASSERT_TRUE(d.slice({Dim::X, 0})["a"].coords().contains(Dim::X));
   ASSERT_TRUE(d.slice({Dim::X, 0})["a"].coords()[Dim::X].is_readonly());
@@ -77,8 +74,7 @@ TEST_F(AttributesTest, coords_are_not_transferred_to_attrs_in_slicing) {
 }
 
 TEST_F(AttributesTest, binary_ops_matching_attrs_preserved) {
-  Dataset d;
-  d.setData("a", varX);
+  Dataset d({{"a", varX}});
   d["a"].attrs().set(Dim("a_attr"), scalar);
 
   for (const auto &result : {d + d, d - d, d * d, d / d}) {
@@ -87,11 +83,9 @@ TEST_F(AttributesTest, binary_ops_matching_attrs_preserved) {
 }
 
 TEST_F(AttributesTest, binary_ops_mismatching_attrs_dropped) {
-  Dataset d1;
-  d1.setData("a", varX);
+  Dataset d1({{"a", varX}});
   d1["a"].attrs().set(Dim("a_attr"), scalar);
-  Dataset d2;
-  d2.setData("a", varX);
+  Dataset d2({{"a", varX}});
   d2["a"].attrs().set(Dim("a_attr"), scalar + scalar); // mismatching content
   d2["a"].attrs().set(Dim("a_attr2"), scalar);         // mismatching name
 
@@ -101,12 +95,10 @@ TEST_F(AttributesTest, binary_ops_mismatching_attrs_dropped) {
 }
 
 TEST_F(AttributesTest, binary_ops_in_place) {
-  Dataset d1;
-  d1.setData("a", varX);
+  Dataset d1({{"a", varX}});
   d1["a"].attrs().set(Dim("a_attr"), scalar);
 
-  Dataset d2;
-  d2.setData("a", varX);
+  Dataset d2({{"a", varX}});
   d2["a"].attrs().set(Dim("a_attr"), varX);
   d2["a"].attrs().set(Dim("a_attr2"), varX);
 
@@ -128,9 +120,8 @@ TEST_F(AttributesTest, binary_ops_in_place) {
 }
 
 TEST_F(AttributesTest, reduction_ops) {
-  Dataset d;
-  d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{2}, units::counts,
-                                      Values{10, 20}));
+  Dataset d({{"a", makeVariable<double>(Dims{Dim::X}, Shape{2}, units::counts,
+                                        Values{10, 20})}});
   d.setCoord(Dim::X,
              makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{0, 1, 2}));
   d["a"].attrs().set(Dim("a_attr"), scalar);

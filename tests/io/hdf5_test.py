@@ -201,7 +201,7 @@ def test_data_array_dtype_scipp_container():
     a.coords['1d'] = sc.empty(dims=x.dims, shape=x.shape, dtype=sc.DType.DataArray)
     for i in range(4):
         a.coords['1d'].values[i] = sc.DataArray(float(i) * sc.units.m)
-    a.coords['dataset'] = sc.scalar(sc.Dataset(data={'a': array_1d, 'b': array_2d}))
+    a.coords['dataset'] = sc.scalar(sc.Dataset(data={'a': array_1d}))
     check_roundtrip(a)
 
 
@@ -238,20 +238,21 @@ def test_variable_binned_data_array_coord_alignment():
 
 
 def test_dataset():
-    d = sc.Dataset(data={'a': array_1d, 'b': array_2d})
+    d = sc.Dataset(data={'a': array_2d, 'b': array_2d})
     check_roundtrip(d)
 
 
 def test_dataset_item_can_be_read_as_data_array():
-    ds = sc.Dataset(data={'a': array_1d, 'b': array_2d})
+    ds = sc.Dataset(data={'a': array_1d})
     with tempfile.TemporaryDirectory() as path:
         name = f'{path}/test.hdf5'
         ds.save_hdf5(filename=name)
-        loaded = sc.Dataset()
+        loaded = {}
         with h5py.File(name, 'r') as f:
             for entry in f['entries'].values():
                 da = sc.io.hdf5.HDF5IO.read(entry)
                 loaded[da.name] = da
+        loaded = sc.Dataset(loaded)
         assert sc.identical(loaded, ds)
 
 
@@ -263,11 +264,8 @@ def test_dataset_with_many_coords():
         k: sc.ones(dims=['row'], shape=[rows], dtype='float64', unit=None)
         for k in 'abcdefghijklmnopqrstuvwxyz'
     }
-    ds1 = sc.Dataset(coords=coords)
-    ds1['a'] = a
-    ds2 = sc.Dataset(coords=coords)
-    ds2['a'] = a
-    ds2['b'] = b
+    ds1 = sc.Dataset({'a': a}, coords=coords)
+    ds2 = sc.Dataset({'a': a, 'b': b}, coords=coords)
     with tempfile.TemporaryDirectory() as path:
         name1 = f'{path}/test1.hdf5'
         name2 = f'{path}/test2.hdf5'
@@ -290,7 +288,7 @@ def test_data_group():
         {
             'variable': vector,
             'data_array': array_2d,
-            'dataset': sc.Dataset({'a': array_1d, 'b': array_2d}),
+            'dataset': sc.Dataset({'a': array_1d}),
             'data group': sc.DataGroup({'v.same': vector, 'm/copy': matrix.copy()}),
             'integer': 513,
             'numpy int64': np.int64(9),

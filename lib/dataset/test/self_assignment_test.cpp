@@ -18,10 +18,9 @@ using namespace scipp::dataset;
 
 class SelfAssignmentTest : public ::testing::Test {
 protected:
-  SelfAssignmentTest() {
-    dataset.setData("a",
-                    makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2}));
-  }
+  SelfAssignmentTest()
+      : dataset({{"a", makeVariable<double>(Dims{Dim::X}, Shape{2},
+                                            Values{1, 2})}}) {}
 
   Dataset dataset;
 };
@@ -31,10 +30,6 @@ TEST_F(SelfAssignmentTest, dataset_item) {
   const auto *expected_ptr = dataset["a"].values<double>().data();
   dataset.setData("a", dataset["a"]);
   EXPECT_EQ(dataset["a"], expected);
-  EXPECT_EQ(dataset["a"].values<double>().data(), expected_ptr);
-  // Store slice of current item under same name.
-  dataset.setData("a", dataset["a"].slice({Dim::X, 0}));
-  EXPECT_EQ(dataset["a"], expected.slice({Dim::X, 0}));
   EXPECT_EQ(dataset["a"].values<double>().data(), expected_ptr);
 }
 
