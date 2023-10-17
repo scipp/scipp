@@ -206,6 +206,16 @@ TEST_F(Concatenate1DHistogramTest, slices_of_1d) {
   EXPECT_EQ(concat2(a.slice({Dim::X, 0, 1}), a.slice({Dim::X, 1}), Dim::X), a);
 }
 
+TEST_F(Concatenate1DHistogramTest, empty_dataset) {
+  a.erase("data_1");
+
+  const auto res = concat2(a, b, Dim::X);
+  const auto expected_x =
+      makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{1, 2, 3, 4, 5});
+  EXPECT_TRUE(res.is_valid());
+  EXPECT_EQ(res, Dataset({}, {{Dim::X, expected_x}}));
+}
+
 TEST(ConcatenateTest, fail_when_histograms_have_non_overlapping_bins) {
   const Dataset a(
       {{"data_1", makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{11, 12})}},
