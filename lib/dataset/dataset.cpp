@@ -216,7 +216,7 @@ void Dataset::setData(const std::string &name, const DataArray &data) {
 /// It can be used for creating a new dataset and filling it step by step.
 ///
 /// When using this, always make sure to ultimately produce a valid dataset.
-/// setDataInit is often called in a look.
+/// setDataInit is often called in a loop.
 /// Keep in mind that the loop might not run when the input dataset is empty!
 void Dataset::setDataInit(const std::string &name, const DataArray &data) {
   if (!is_valid()) {
