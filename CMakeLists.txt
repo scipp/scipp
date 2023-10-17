@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.21)
 cmake_policy(SET CMP0091 NEW)
 
 execute_process(
-  COMMAND git describe --tags --abbrev=0
+  COMMAND git describe --tags --abbrev=0 --exclude nightly
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
   OUTPUT_VARIABLE SCIPP_VERSION
   OUTPUT_STRIP_TRAILING_WHITESPACE
