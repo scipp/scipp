@@ -78,34 +78,6 @@ auto cast_to_array_like(const py::object &obj, const units::Unit unit) {
 
 namespace scipp::detail {
 namespace {
-template <bool convert, class Source, class Destination>
-void copy_element(const Source &src, Destination &&dst) {
-  if constexpr (convert) {
-    dst = std::remove_reference_t<Destination>{src};
-  } else {
-    std::forward<Destination>(dst) = src;
-  }
-}
-
-template <class T> struct typed_buffer {
-  const T *ptr;
-  ssize_t ndim;
-  scipp::span<ssize_t> shape;
-  bool c_contiguous;
-
-  typed_buffer(const T *ptr_, const ssize_t ndim_, scipp::span<ssize_t> shape_,
-               py::buffer_info base_buffer_, const bool c_contiguous_)
-      : ptr{ptr_}, ndim{ndim_}, shape{shape_}, c_contiguous{c_contiguous_},
-        m_base_buffer{std::move(base_buffer_)} {}
-
-  [[nodiscard]] ssize_t stride(const ssize_t dim) const noexcept {
-    return m_base_buffer.strides[dim] / m_base_buffer.itemsize;
-  }
-
-private:
-  py::buffer_info m_base_buffer;
-};
-
 template <class T> bool is_c_contiguous(const py::array_t<T> &array) {
   Py_buffer buffer;
   if (PyObject_GetBuffer(array.ptr(), &buffer, PyBUF_C_CONTIGUOUS) != 0) {
@@ -116,83 +88,132 @@ template <class T> bool is_c_contiguous(const py::array_t<T> &array) {
   return true;
 }
 
-template <class T> auto request_typed_buffer(const py::array_t<T> &array) {
-  // Order of operations such that we can safely move base_buffer.
-  auto base_buffer = array.request();
-  auto ptr = reinterpret_cast<const T *>(base_buffer.ptr);
-  auto ndim = base_buffer.ndim;
-  scipp::span<ssize_t> shape = base_buffer.shape;
-  return typed_buffer(ptr, ndim, shape, std::move(base_buffer),
-                      is_c_contiguous(array));
-}
-
-template <bool convert, class T, class Dst>
-void copy_flattened_0d(const typed_buffer<T> &src, Dst &dst) {
-  copy_element<convert>(*src.ptr, *dst);
-}
-
-template <bool convert, ssize_t static_stride = -1, class T, class Dst>
-void copy_flattened_inner_dim(const typed_buffer<T> &src, Dst &dst,
-                              ssize_t length, const ssize_t dim,
-                              const ssize_t offset) {
-  const auto stride = [&src, dim]() {
-    if constexpr (static_stride > 0)
-      return static_stride;
-    else
-      return src.stride(dim);
-  }();
-  length = length == -1 ? src.shape[dim] : length;
-  for (scipp::index i = 0; i < length; ++i) {
-    copy_element<convert>(src.ptr[i * stride + offset], *dst);
-    ++dst;
-  }
-}
-
-template <bool convert, class T, class Dst>
-void copy_flattened_middle_dims(const typed_buffer<T> &src, Dst &dst,
-                                ssize_t length, const ssize_t dim,
-                                const ssize_t offset) {
-  if (dim + 1 == src.ndim)
-    copy_flattened_inner_dim<convert>(src, dst, length, dim, offset);
-  else {
-    const auto stride = src.stride(dim);
-    length = length == -1 ? src.shape[dim] : length;
-    for (scipp::index i = 0; i < length; ++i)
-      copy_flattened_middle_dims<convert>(src, dst, -1, dim + 1,
-                                          i * stride + offset);
-  }
-}
-
-template <class T> ssize_t inner_volume(const typed_buffer<T> &buffer) {
-  return std::accumulate(std::next(buffer.shape.begin()), buffer.shape.end(), 1,
-                         std::multiplies<ssize_t>{});
-}
-
-template <bool convert, class T, class Dst>
-void copy_flattened(const typed_buffer<T> &src, Dst &dst) {
-  if (src.ndim == 0)
-    copy_flattened_0d<convert>(src, dst);
-  else if (src.c_contiguous) {
-    const auto volume = src.shape[0] * inner_volume(src);
-    core::parallel::parallel_for(
-        core::parallel::blocked_range(0, volume, 10000),
-        [&](const auto &range) {
-          auto block_dst = dst + range.begin();
-          copy_flattened_inner_dim<convert, 1>(
-              src, block_dst, range.end() - range.begin(), 0, range.begin());
-        });
+template <bool convert, class Source, class Destination>
+void copy_element(const Source &src, Destination &&dst) {
+  if constexpr (convert) {
+    dst = std::remove_reference_t<Destination>{src};
   } else {
-    const auto src_stride = src.stride(0);
-    const auto dst_stride = inner_volume(src);
-    core::parallel::parallel_for(
-        core::parallel::blocked_range(0, src.shape[0], 10000),
-        [&](const auto &range) {
-          auto block_dst = dst + range.begin() * dst_stride;
-          copy_flattened_middle_dims<convert>(src, block_dst,
-                                              range.end() - range.begin(), 0,
-                                              range.begin() * src_stride);
-        });
+    std::forward<Destination>(dst) = src;
   }
+}
+
+template <bool convert, class T, class Dst>
+void copy_flattened_0d(const py::array_t<T> &src_array, Dst &dst) {
+  const auto src = src_array.template unchecked<0>();
+  auto it = dst.begin();
+  copy_element<convert>(src(), *it);
+}
+
+template <bool convert, class T, class Dst>
+void copy_flattened_1d(const py::array_t<T> &src_array, Dst &dst) {
+  const auto src = src_array.template unchecked<1>();
+  const auto begin = dst.begin();
+  core::parallel::parallel_for(
+      core::parallel::blocked_range(0, src.shape(0), 10000),
+      [&](const auto &range) {
+        auto it = begin + range.begin();
+        for (scipp::index i = range.begin(); i < range.end(); ++i, ++it) {
+          copy_element<convert>(src(i), *it);
+        }
+      });
+}
+
+template <bool convert, class T, class Dst>
+void copy_flattened_2d(const py::array_t<T> &src_array, Dst &dst) {
+  const auto src = src_array.template unchecked<2>();
+  const auto begin = dst.begin();
+  core::parallel::parallel_for(
+      core::parallel::blocked_range(0, src.shape(0), 10000),
+      [&](const auto &range) {
+        auto it = begin + range.begin() * src.shape(1);
+        for (scipp::index i = range.begin(); i < range.end(); ++i)
+          for (scipp::index j = 0; j < src.shape(1); ++j, ++it)
+            copy_element<convert>(src(i, j), *it);
+      });
+}
+
+template <bool convert, class T, class Dst>
+void copy_flattened_3d(const py::array_t<T> &src_array, Dst &dst) {
+  const auto src = src_array.template unchecked<3>();
+  const auto begin = dst.begin();
+  core::parallel::parallel_for(
+      core::parallel::blocked_range(0, src.shape(0), 10000),
+      [&](const auto &range) {
+        auto it = begin + range.begin() * src.shape(1) * src.shape(2);
+        for (scipp::index i = range.begin(); i < range.end(); ++i)
+          for (scipp::index j = 0; j < src.shape(1); ++j)
+            for (scipp::index k = 0; k < src.shape(2); ++k, ++it)
+              copy_element<convert>(src(i, j, k), *it);
+      });
+}
+
+template <bool convert, class T, class Dst>
+void copy_flattened_4d(const py::array_t<T> &src_array, Dst &dst) {
+  const auto src = src_array.template unchecked<4>();
+  const auto begin = dst.begin();
+  core::parallel::parallel_for(
+      core::parallel::blocked_range(0, src.shape(0), 10000),
+      [&](const auto &range) {
+        auto it =
+            begin + range.begin() * src.shape(1) * src.shape(2) * src.shape(3);
+        for (scipp::index i = range.begin(); i < range.end(); ++i)
+          for (scipp::index j = 0; j < src.shape(1); ++j)
+            for (scipp::index k = 0; k < src.shape(2); ++k)
+              for (scipp::index l = 0; l < src.shape(3); ++l, ++it)
+                copy_element<convert>(src(i, j, k, l), *it);
+      });
+}
+
+template <bool convert, class T, class Dst>
+void copy_flattened_5d(const py::array_t<T> &src_array, Dst &dst) {
+  const auto src = src_array.template unchecked<5>();
+  const auto begin = dst.begin();
+  core::parallel::parallel_for(
+      core::parallel::blocked_range(0, src.shape(0), 10000),
+      [&](const auto &range) {
+        auto it = begin + range.begin() * src.shape(1) * src.shape(2) *
+                              src.shape(3) * src.shape(4);
+        for (scipp::index i = range.begin(); i < range.end(); ++i)
+          for (scipp::index j = 0; j < src.shape(1); ++j)
+            for (scipp::index k = 0; k < src.shape(2); ++k)
+              for (scipp::index l = 0; l < src.shape(3); ++l)
+                for (scipp::index m = 0; m < src.shape(4); ++m, ++it)
+                  copy_element<convert>(src(i, j, k, l, m), *it);
+      });
+}
+
+template <bool convert, class T, class Dst>
+void copy_flattened_6d(const py::array_t<T> &src_array, Dst &dst) {
+  const auto src = src_array.template unchecked<6>();
+  const auto begin = dst.begin();
+  core::parallel::parallel_for(
+      core::parallel::blocked_range(0, src.shape(0), 10000),
+      [&](const auto &range) {
+        auto it = begin + range.begin() * src.shape(1) * src.shape(2) *
+                              src.shape(3) * src.shape(4) * src.shape(5);
+        for (scipp::index i = range.begin(); i < range.end(); ++i)
+          for (scipp::index j = 0; j < src.shape(1); ++j)
+            for (scipp::index k = 0; k < src.shape(2); ++k)
+              for (scipp::index l = 0; l < src.shape(3); ++l)
+                for (scipp::index m = 0; m < src.shape(4); ++m)
+                  for (scipp::index n = 0; n < src.shape(5); ++n, ++it)
+                    copy_element<convert>(src(i, j, k, l, m, n), *it);
+      });
+}
+
+template <bool convert, class T, class Dst>
+void copy_flattened(const py::array_t<T> &src_array, Dst &dst) {
+  const auto src_buffer = src_array.request();
+  auto src = reinterpret_cast<const T *>(src_buffer.ptr);
+  const auto begin = dst.begin();
+  core::parallel::parallel_for(
+      core::parallel::blocked_range(0, src_buffer.size, 10000),
+      [&](const auto &range) {
+        auto it = begin + range.begin();
+        for (scipp::index i = range.begin(); i < range.end(); ++i, ++it) {
+          copy_element<convert>(src[i], *it);
+        }
+      });
 }
 
 template <class T> auto memory_begin_end(const py::buffer_info &info) {
@@ -217,22 +238,57 @@ bool memory_overlaps(const py::array_t<T> &data, const View &view) {
          std::greater<>()(data_end, view_begin);
 }
 
+/*
+ * The code here is not pretty.
+ * But a generic copy function would be much more complicated than the
+ * straightforward nested loops we use here.
+ * In practice, there is also little need to support ndim > 6 for non-contiguous
+ * data as transform does not support such variables either.
+ *
+ * For a working, generic implementation, see git ref
+ *  bd2e5f0a84d02bd5baf6d0afc32a2ab66dc09e2b
+ * and its history, in particular
+ *  86761b1e280a63b4f0b723a165188d21dd097972
+ *  8721b2d02b98c1acae5c786ffda88055551d832b
+ *  4c03a553827f2881672ae1f00f43ae06e879452c
+ *  c2a1e3898467083bf7d019a3cb54702c8b50ba86
+ *  c2a1e3898467083bf7d019a3cb54702c8b50ba86
+ */
 /// Copy all elements from src into dst.
 /// Performs an explicit conversion of elements in `src` to the element type of
 /// `dst` if `convert == true`.
 /// Otherwise, elements in src are simply assigned to dst.
-template <bool convert, class T, class View>
-void copy_flattened(const py::array_t<T> &src, View &&dst) {
+template <bool convert, class T, class Dst>
+void copy_elements(const py::array_t<T> &src, Dst &dst) {
   if (scipp::size(dst) != src.size())
     throw std::runtime_error(
         "Numpy data size does not match size of target object.");
 
-  [](const py::array_t<T> &src_, auto &&dst_) {
-    const auto src_buffer = request_typed_buffer(src_);
-    auto out = dst_.begin();
-    copy_flattened<convert>(src_buffer, out);
-  }(memory_overlaps(src, dst) ? py::array_t<T>(src.request()) : src,
-    std::forward<View>(dst));
+  const auto dispatch = [&dst](const py::array_t<T> &src_) {
+    if (is_c_contiguous(src_))
+      return copy_flattened<convert>(src_, dst);
+
+    switch (src_.ndim()) {
+    case 0:
+      return copy_flattened_0d<convert>(src_, dst);
+    case 1:
+      return copy_flattened_1d<convert>(src_, dst);
+    case 2:
+      return copy_flattened_2d<convert>(src_, dst);
+    case 3:
+      return copy_flattened_3d<convert>(src_, dst);
+    case 4:
+      return copy_flattened_4d<convert>(src_, dst);
+    case 5:
+      return copy_flattened_5d<convert>(src_, dst);
+    case 6:
+      return copy_flattened_6d<convert>(src_, dst);
+    default:
+      throw std::runtime_error("Numpy array has more dimensions than supported "
+                               "in the current implementation.");
+    }
+  };
+  dispatch(memory_overlaps(src, dst) ? py::array_t<T>(src.request()) : src);
 }
 } // namespace
 } // namespace scipp::detail
@@ -246,14 +302,14 @@ void copy_array_into_view(const py::array_t<SourceDType> &src,
     throw except::DimensionError("The shape of the provided data "
                                  "does not match the existing "
                                  "object.");
-  scipp::detail::copy_flattened<ElementTypeMap<
-      typename std::remove_reference_t<Destination>::value_type>::convert>(
-      src, std::forward<Destination>(dst));
+  scipp::detail::copy_elements<ElementTypeMap<
+      typename std::remove_reference_t<Destination>::value_type>::convert>(src,
+                                                                           dst);
 }
 
 template <class SourceDType, class Destination>
-void copy_array_into_view(const std::vector<SourceDType> &src,
-                          Destination &&dst, const Dimensions &) {
+void copy_array_into_view(const std::vector<SourceDType> &src, Destination &dst,
+                          const Dimensions &) {
   core::expect::sizeMatches(dst, src);
   std::copy(begin(src), end(src), dst.begin());
 }

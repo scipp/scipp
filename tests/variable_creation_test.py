@@ -321,7 +321,8 @@ def test_array_empty_dims():
     )
 
 
-@pytest.mark.parametrize('ndim', range(7))
+# TODO slice first and last  element
+@pytest.mark.parametrize('ndim', range(9))
 def test_array_nd_contiguous_c_layout(ndim):
     shape = list(range(2, ndim + 2))
     values = np.arange(np.prod(shape)).reshape(shape)
