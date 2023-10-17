@@ -1,0 +1,44 @@
+name: Nightly Release
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/release-nightly.yml'
+  schedule:
+    - cron: '0 0 * * *'
+
+defaults:
+  run:
+    shell: bash -l {0}  # required for conda env
+
+jobs:
+  build_wheels:
+    name: Wheels
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04]
+        build: [cp38]
+    uses: ./.github/workflows/wheel.yml
+    with:
+      os: ${{ matrix.os }}
+      build: ${{ matrix.build }}
+
+  release:
+    name: Make Release on GitHub
+    needs: build_wheels
+    runs-on: ubuntu-20.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v3
+      - uses: actions/setup-python@v3
+      - uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          artifacts: 'dist/*.whl'
+          commit: 'main'
+          makeLatest: false
+          prerelease: true
+          tag: 'nightly'
