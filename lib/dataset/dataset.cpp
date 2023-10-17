@@ -265,15 +265,10 @@ Dataset &Dataset::setSlice(const Slice &s, const Variable &data) {
 /// Rename dimension `from` to `to`.
 Dataset
 Dataset::rename_dims(const std::vector<std::pair<Dim, Dim>> &names) const {
-  Dataset out;
+  Dataset out({}, m_coords.rename_dims(names));
   for (const auto &[name, da] : m_data)
-    out.setDataInit(name, da.rename_dims(names, false));
-  if (out.is_valid()) {
-    out.setCoords(m_coords.rename_dims(names));
-    return out;
-  }
-  // out is invalid because no data has been set.
-  return Dataset({}, m_coords.rename_dims(names));
+    out.setData(name, da.rename_dims(names, false));
+  return out;
 }
 
 /// Return true if the datasets have identical content.
