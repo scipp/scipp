@@ -29,6 +29,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/download-artifact@v3
+      - uses: actions/setup-python@v4
+      - run: python .github/workflows/rename-dev-wheels.py
       - uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
