@@ -142,7 +142,7 @@ def make_dense_datagroup(child=None, maxdepth=1, cur_depth=1, entries=None, **kw
             maxdepth=maxdepth,
             cur_depth=cur_depth + 1,
             entries=entries,
-            **kwargs
+            **kwargs,
         )
 
 
