@@ -6,11 +6,7 @@ on:
     paths:
       - '.github/workflows/release-nightly.yml'
   schedule:
-    - cron: '0 0 * * *'
-
-defaults:
-  run:
-    shell: bash -l {0}  # required for conda env
+    - cron: '0 20 * * *'
 
 jobs:
   build_wheels:
@@ -33,7 +29,6 @@ jobs:
       contents: write
     steps:
       - uses: actions/download-artifact@v3
-      - uses: actions/setup-python@v3
       - uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
