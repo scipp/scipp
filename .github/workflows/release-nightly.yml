@@ -34,12 +34,14 @@ jobs:
         with:
           python-version: 3.8
       - run: python .github/workflows/rename-dev-wheels.py
+      - run: |
+          git tag -f nightly
+          git push -f origin nightly
       - uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
           artifacts: 'dist/*.whl'
           body: 'Nightly release for testing of downstream projects.'
-          commit: 'main'
           makeLatest: false
           prerelease: true
           tag: 'nightly'
