@@ -28,6 +28,7 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v3
       - uses: actions/download-artifact@v3
       - uses: actions/setup-python@v4
       - run: python .github/workflows/rename-dev-wheels.py
