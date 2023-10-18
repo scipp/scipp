@@ -20,8 +20,7 @@ Places that define dependencies
   Note one known issue:
   ``pypa/cibuildwheel`` updates may add support for new Python versions, but our ``pybind11`` may not be supporting it.
   Make sure to run the ``release.yml`` workflow before accepting an update, or consider adding future Python versions to the ``[tool.cibuildwheel]`` ``skip`` list to make support for new Python versions a process fully under our control.
-- `pyproject.toml <https://github.com/scipp/scipp/blob/main/pyproject.toml>`_ defines build requirements for Python Wheels.
-- `setup.py <https://github.com/scipp/scipp/blob/main/setup.py>`_ defines runtime requirements and "extras" for the ``pip`` package.
+- `pyproject.toml <https://github.com/scipp/scipp/blob/main/pyproject.toml>`_ defines build requirements for Python Wheels, runtime requirements, and "extras" for the ``pip`` package.
 - All Python dependencies for static analysis, tests, documentation, and more are defined in ``requirements/*.in``.
   ``pip-compile-multi`` is used to generate the corresponding ``requirements/*.txt`` files.
   This should be run regularly, e.g., before a release.
