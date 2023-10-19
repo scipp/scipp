@@ -281,8 +281,11 @@ void copy_elements(const py::array_t<T> &src, Dst &dst) {
     case 6:
       return copy_array_6d<convert>(src_, dst);
     default:
-      throw std::runtime_error("Numpy array has more dimensions than supported "
-                               "in the current implementation.");
+      throw std::runtime_error(
+          "Numpy array with non-c-contiguous memory layout has more "
+          "dimensions than supported in the current implementation. "
+          "Try making a copy of the array first to get a "
+          "c-contiguous layout.");
     }
   };
   dispatch(memory_overlaps(src, dst) ? py::array_t<T>(src.request()) : src);
