@@ -98,14 +98,14 @@ void copy_element(const Source &src, Destination &&dst) {
 }
 
 template <bool convert, class T, class Dst>
-void copy_flattened_0d(const py::array_t<T> &src_array, Dst &dst) {
+void copy_array_0d(const py::array_t<T> &src_array, Dst &dst) {
   const auto src = src_array.template unchecked<0>();
   auto it = dst.begin();
   copy_element<convert>(src(), *it);
 }
 
 template <bool convert, class T, class Dst>
-void copy_flattened_1d(const py::array_t<T> &src_array, Dst &dst) {
+void copy_array_1d(const py::array_t<T> &src_array, Dst &dst) {
   const auto src = src_array.template unchecked<1>();
   const auto begin = dst.begin();
   core::parallel::parallel_for(
@@ -119,7 +119,7 @@ void copy_flattened_1d(const py::array_t<T> &src_array, Dst &dst) {
 }
 
 template <bool convert, class T, class Dst>
-void copy_flattened_2d(const py::array_t<T> &src_array, Dst &dst) {
+void copy_array_2d(const py::array_t<T> &src_array, Dst &dst) {
   const auto src = src_array.template unchecked<2>();
   const auto begin = dst.begin();
   core::parallel::parallel_for(
@@ -133,7 +133,7 @@ void copy_flattened_2d(const py::array_t<T> &src_array, Dst &dst) {
 }
 
 template <bool convert, class T, class Dst>
-void copy_flattened_3d(const py::array_t<T> &src_array, Dst &dst) {
+void copy_array_3d(const py::array_t<T> &src_array, Dst &dst) {
   const auto src = src_array.template unchecked<3>();
   const auto begin = dst.begin();
   core::parallel::parallel_for(
@@ -148,7 +148,7 @@ void copy_flattened_3d(const py::array_t<T> &src_array, Dst &dst) {
 }
 
 template <bool convert, class T, class Dst>
-void copy_flattened_4d(const py::array_t<T> &src_array, Dst &dst) {
+void copy_array_4d(const py::array_t<T> &src_array, Dst &dst) {
   const auto src = src_array.template unchecked<4>();
   const auto begin = dst.begin();
   core::parallel::parallel_for(
@@ -165,7 +165,7 @@ void copy_flattened_4d(const py::array_t<T> &src_array, Dst &dst) {
 }
 
 template <bool convert, class T, class Dst>
-void copy_flattened_5d(const py::array_t<T> &src_array, Dst &dst) {
+void copy_array_5d(const py::array_t<T> &src_array, Dst &dst) {
   const auto src = src_array.template unchecked<5>();
   const auto begin = dst.begin();
   core::parallel::parallel_for(
@@ -183,7 +183,7 @@ void copy_flattened_5d(const py::array_t<T> &src_array, Dst &dst) {
 }
 
 template <bool convert, class T, class Dst>
-void copy_flattened_6d(const py::array_t<T> &src_array, Dst &dst) {
+void copy_array_6d(const py::array_t<T> &src_array, Dst &dst) {
   const auto src = src_array.template unchecked<6>();
   const auto begin = dst.begin();
   core::parallel::parallel_for(
@@ -270,19 +270,19 @@ void copy_elements(const py::array_t<T> &src, Dst &dst) {
 
     switch (src_.ndim()) {
     case 0:
-      return copy_flattened_0d<convert>(src_, dst);
+      return copy_array_0d<convert>(src_, dst);
     case 1:
-      return copy_flattened_1d<convert>(src_, dst);
+      return copy_array_1d<convert>(src_, dst);
     case 2:
-      return copy_flattened_2d<convert>(src_, dst);
+      return copy_array_2d<convert>(src_, dst);
     case 3:
-      return copy_flattened_3d<convert>(src_, dst);
+      return copy_array_3d<convert>(src_, dst);
     case 4:
-      return copy_flattened_4d<convert>(src_, dst);
+      return copy_array_4d<convert>(src_, dst);
     case 5:
-      return copy_flattened_5d<convert>(src_, dst);
+      return copy_array_5d<convert>(src_, dst);
     case 6:
-      return copy_flattened_6d<convert>(src_, dst);
+      return copy_array_6d<convert>(src_, dst);
     default:
       throw std::runtime_error("Numpy array has more dimensions than supported "
                                "in the current implementation.");
