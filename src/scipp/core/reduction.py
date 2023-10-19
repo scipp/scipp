@@ -154,8 +154,8 @@ def min(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
     Warning
     -------
 
-    Scipp returns DBL_MAX and INT_MAX for empty inputs of float or int dtype,
-    respectively, while NumPy rases. Note that in the case of :py:class:`DataArray`,
+    Scipp returns DBL_MAX or INT_MAX for empty inputs of float or int dtype,
+    respectively, while NumPy raises. Note that in the case of :py:class:`DataArray`,
     inputs can also be "empty" if all elements contributing to an output element are
     masked.
 
@@ -193,8 +193,8 @@ def max(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
     Warning
     -------
 
-    Scipp returns DBL_MIN and INT_MIN for empty inputs of float or int dtype,
-    respectively, while NumPy rases. Note that in the case of :py:class:`DataArray`,
+    Scipp returns DBL_MIN or INT_MIN for empty inputs of float or int dtype,
+    respectively, while NumPy raises. Note that in the case of :py:class:`DataArray`,
     inputs can also be "empty" if all elements contributing to an output element are
     masked.
 
@@ -232,8 +232,8 @@ def nanmin(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
     Warning
     -------
 
-    Scipp returns DBL_MAX and INT_MAX for empty inputs of float or int dtype,
-    respectively, while NumPy rases. Note that in the case of :py:class:`DataArray`,
+    Scipp returns DBL_MAX or INT_MAX for empty inputs of float or int dtype,
+    respectively, while NumPy raises. Note that in the case of :py:class:`DataArray`,
     inputs can also be "empty" if all elements contributing to an output element are
     masked. The same applies if all elements are NaN (or masked).
 
@@ -271,8 +271,8 @@ def nanmax(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
     Warning
     -------
 
-    Scipp returns DBL_MIN and INT_MIN for empty inputs of float or int dtype,
-    respectively, while NumPy rases. Note that in the case of :py:class:`DataArray`,
+    Scipp returns DBL_MIN or INT_MIN for empty inputs of float or int dtype,
+    respectively, while NumPy raises. Note that in the case of :py:class:`DataArray`,
     inputs can also be "empty" if all elements contributing to an output element are
     masked. The same applies if all elements are NaN (or masked).
 
