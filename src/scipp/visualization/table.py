@@ -159,23 +159,18 @@ def _find_bin_edges(ds: Dataset) -> bool:
 def _strip_scalars_and_broadcast_masks(ds: Dataset) -> Dataset:
     out = {}
     for key, da in ds.items():
-        if da.ndim == 1:
-            out[key] = DataArray(
-                data=da.data,
-                coords={
-                    key: var
-                    for key, var in da.coords.items()
-                    if var.dims == da.data.dims
-                },
-                attrs={
-                    key: var
-                    for key, var in da.deprecated_attrs.items()
-                    if var.dims == da.data.dims
-                },
-                masks={
-                    key: var.broadcast(sizes=da.sizes) for key, var in da.masks.items()
-                },
-            )
+        out[key] = DataArray(
+            data=da.data,
+            coords={
+                key: var for key, var in da.coords.items() if var.dims == da.data.dims
+            },
+            attrs={
+                key: var
+                for key, var in da.deprecated_attrs.items()
+                if var.dims == da.data.dims
+            },
+            masks={key: var.broadcast(sizes=da.sizes) for key, var in da.masks.items()},
+        )
     return Dataset(out)
 
 
