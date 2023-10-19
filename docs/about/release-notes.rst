@@ -35,6 +35,9 @@ Features
 
 * Operations on binned variables with a data array content buffer now also work with slices of binned variables `#3282 <https://github.com/scipp/scipp/pull/3282>`_.
 * Reduced per-bin overhead in many operations involving binned variables by about 20 milliseconds per 1 million bins `#3282 <https://github.com/scipp/scipp/pull/3282>`_.
+* It is now possible to construct Scipp variables from Numpy arrays with up to 6 dimensions for arbitrary memory layouts and any number of dimensions for c-contiguous memory layouts.
+  The limit used to be ``ndim <= 4``.
+  This also improves performance in many cases `#3284 <https://github.com/scipp/scipp/pull/3284>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
