@@ -78,6 +78,8 @@ auto cast_to_array_like(const py::object &obj, const units::Unit unit) {
 
 namespace scipp::detail {
 namespace {
+constexpr static size_t grainsize_1d = 10000;
+
 template <class T> bool is_c_contiguous(const py::array_t<T> &array) {
   Py_buffer buffer;
   if (PyObject_GetBuffer(array.ptr(), &buffer, PyBUF_C_CONTIGUOUS) != 0) {
@@ -109,7 +111,7 @@ void copy_array_1d(const py::array_t<T> &src_array, Dst &dst) {
   const auto src = src_array.template unchecked<1>();
   const auto begin = dst.begin();
   core::parallel::parallel_for(
-      core::parallel::blocked_range(0, src.shape(0), 10000),
+      core::parallel::blocked_range(0, src.shape(0), grainsize_1d),
       [&](const auto &range) {
         auto it = begin + range.begin();
         for (scipp::index i = range.begin(); i < range.end(); ++i, ++it) {
@@ -123,8 +125,7 @@ void copy_array_2d(const py::array_t<T> &src_array, Dst &dst) {
   const auto src = src_array.template unchecked<2>();
   const auto begin = dst.begin();
   core::parallel::parallel_for(
-      core::parallel::blocked_range(0, src.shape(0), 10000),
-      [&](const auto &range) {
+      core::parallel::blocked_range(0, src.shape(0)), [&](const auto &range) {
         auto it = begin + range.begin() * src.shape(1);
         for (scipp::index i = range.begin(); i < range.end(); ++i)
           for (scipp::index j = 0; j < src.shape(1); ++j, ++it)
@@ -137,8 +138,7 @@ void copy_array_3d(const py::array_t<T> &src_array, Dst &dst) {
   const auto src = src_array.template unchecked<3>();
   const auto begin = dst.begin();
   core::parallel::parallel_for(
-      core::parallel::blocked_range(0, src.shape(0), 10000),
-      [&](const auto &range) {
+      core::parallel::blocked_range(0, src.shape(0)), [&](const auto &range) {
         auto it = begin + range.begin() * src.shape(1) * src.shape(2);
         for (scipp::index i = range.begin(); i < range.end(); ++i)
           for (scipp::index j = 0; j < src.shape(1); ++j)
@@ -152,8 +152,7 @@ void copy_array_4d(const py::array_t<T> &src_array, Dst &dst) {
   const auto src = src_array.template unchecked<4>();
   const auto begin = dst.begin();
   core::parallel::parallel_for(
-      core::parallel::blocked_range(0, src.shape(0), 10000),
-      [&](const auto &range) {
+      core::parallel::blocked_range(0, src.shape(0)), [&](const auto &range) {
         auto it =
             begin + range.begin() * src.shape(1) * src.shape(2) * src.shape(3);
         for (scipp::index i = range.begin(); i < range.end(); ++i)
@@ -169,8 +168,7 @@ void copy_array_5d(const py::array_t<T> &src_array, Dst &dst) {
   const auto src = src_array.template unchecked<5>();
   const auto begin = dst.begin();
   core::parallel::parallel_for(
-      core::parallel::blocked_range(0, src.shape(0), 10000),
-      [&](const auto &range) {
+      core::parallel::blocked_range(0, src.shape(0)), [&](const auto &range) {
         auto it = begin + range.begin() * src.shape(1) * src.shape(2) *
                               src.shape(3) * src.shape(4);
         for (scipp::index i = range.begin(); i < range.end(); ++i)
@@ -187,8 +185,7 @@ void copy_array_6d(const py::array_t<T> &src_array, Dst &dst) {
   const auto src = src_array.template unchecked<6>();
   const auto begin = dst.begin();
   core::parallel::parallel_for(
-      core::parallel::blocked_range(0, src.shape(0), 10000),
-      [&](const auto &range) {
+      core::parallel::blocked_range(0, src.shape(0)), [&](const auto &range) {
         auto it = begin + range.begin() * src.shape(1) * src.shape(2) *
                               src.shape(3) * src.shape(4) * src.shape(5);
         for (scipp::index i = range.begin(); i < range.end(); ++i)
@@ -207,7 +204,7 @@ void copy_flattened(const py::array_t<T> &src_array, Dst &dst) {
   auto src = reinterpret_cast<const T *>(src_buffer.ptr);
   const auto begin = dst.begin();
   core::parallel::parallel_for(
-      core::parallel::blocked_range(0, src_buffer.size, 10000),
+      core::parallel::blocked_range(0, src_buffer.size, grainsize_1d),
       [&](const auto &range) {
         auto it = begin + range.begin();
         for (scipp::index i = range.begin(); i < range.end(); ++i, ++it) {
