@@ -144,7 +144,6 @@ and open new discussions if none of the existing ones provide a satisfactory ans
    :maxdepth: 3
 
    about/about
-   about/whats-new
    about/roadmap
    about/contributing
    about/release-notes
