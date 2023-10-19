@@ -2,8 +2,12 @@
 // Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Jan-Lukas Wynen
+#include <array>
 #include <cmath>
+#include <type_traits>
 
+#include "scipp/common/overloaded.h"
+#include "scipp/core/element/arg_list.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/variable/astype.h"
@@ -67,4 +71,32 @@ Variable astype(const Variable &var, DType type, const CopyPolicy copy) {
              ? (copy == CopyPolicy::TryAvoid ? var : variable::copy(var))
              : MakeVariableWithType::make(var, type);
 }
+
+namespace {
+template <class T, class... Ts> constexpr auto inner_lut() {
+  return std::array{std::pair{dtype<Ts>, dtype<std::common_type_t<T, Ts>>}...};
+}
+
+template <class... Ts> constexpr auto outer_lut() {
+  return std::array{std::pair{dtype<Ts>, inner_lut<Ts, Ts...>()}...};
+}
+} // namespace
+
+DType common_type(const Variable &a, const Variable &b) {
+  if (a.dtype() == b.dtype())
+    return a.dtype();
+  const auto lut = outer_lut<double, float, int64_t, int32_t>();
+  const auto it = std::find_if(lut.begin(), lut.end(), [&](const auto &pair) {
+    return pair.first == a.dtype();
+  });
+  if (it == lut.end())
+    throw except::TypeError("'common_type' does not support dtype ", a);
+  const auto it2 =
+      std::find_if(it->second.begin(), it->second.end(),
+                   [&](const auto &pair) { return pair.first == b.dtype(); });
+  if (it2 == it->second.end())
+    throw except::TypeError("'common_type' does not support dtype ", b);
+  return it2->second;
+}
+
 } // namespace scipp::variable

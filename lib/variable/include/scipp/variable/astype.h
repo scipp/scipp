@@ -11,7 +11,9 @@
 
 namespace scipp::variable {
 
-SCIPP_VARIABLE_EXPORT Variable astype(const Variable &var, DType type,
-                                      CopyPolicy copy = CopyPolicy::Always);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+astype(const Variable &var, DType type, CopyPolicy copy = CopyPolicy::Always);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT DType common_type(const Variable &a,
+                                                      const Variable &b);
 
 } // namespace scipp::variable
