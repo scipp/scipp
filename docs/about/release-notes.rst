@@ -53,10 +53,12 @@ Bugfixes
 * Fixed reduction operations for data arrays containing vectors with masks `#3276 <https://github.com/scipp/scipp/pull/3276>`_.
 * Fixed :func:`scipp.where` to work with most dtypes `#3276 <https://github.com/scipp/scipp/pull/3276>`_.
 * Event-centric arithmetic now uses the correct dtype in the result `#3278 <https://github.com/scipp/scipp/pull/3278>`_.
-* Fixed a serious bug where operations on, e.g., transposed binned data resulted in corrupt coord, mask, and attr values of the bin contents  `#3282 <https://github.com/scipp/scipp/pull/3282>`_.
+* Fixed a serious bug where operations on, e.g., transposed binned data resulted in corrupt coord, mask, and attr values of the bin contents `#3282 <https://github.com/scipp/scipp/pull/3282>`_.
 
 Documentation
 ~~~~~~~~~~~~~
+
+* Removed the "What's new" page because it had not been updated in a while and Scipp changes less drastically now `#3296 <https://github.com/scipp/scipp/pull/3296>`_.
 
 Deprecations
 ~~~~~~~~~~~~
