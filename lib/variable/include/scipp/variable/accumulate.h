@@ -111,7 +111,7 @@ static void do_accumulate(const std::tuple<Ts...> &types, Op op,
 
 template <class... Ts, class Op, class Var, class... Other>
 static void accumulate(const std::tuple<Ts...> &types, Op op,
-                       const std::string_view name, Var &&var,
+                       const std::string_view &name, Var &&var,
                        Other &&...other) {
   // `other` not const, threading for cumulative ops not possible
   if constexpr ((!std::is_const_v<std::remove_reference_t<Other>> || ...))
@@ -135,7 +135,7 @@ static void accumulate(const std::tuple<Ts...> &types, Op op,
 /// operations.
 template <class... Ts, class Var, class Other, class Op>
 void accumulate_in_place(Var &&var, Other &&other, Op op,
-                         const std::string_view name) {
+                         const std::string_view &name) {
   // Note lack of dims check here and below: transform_data calls `merge` on the
   // dims which does the required checks, supporting broadcasting of outputs and
   // inputs but ensuring compatibility otherwise.
@@ -145,7 +145,7 @@ void accumulate_in_place(Var &&var, Other &&other, Op op,
 
 template <class... Ts, class Var, class Op>
 void accumulate_in_place(Var &&var, const Variable &var1, const Variable &var2,
-                         Op op, const std::string_view name) {
+                         Op op, const std::string_view &name) {
   detail::accumulate(type_tuples<Ts...>(op), op, name, std::forward<Var>(var),
                      var1, var2);
 }
@@ -153,7 +153,7 @@ void accumulate_in_place(Var &&var, const Variable &var1, const Variable &var2,
 template <class... Ts, class Var, class Op>
 void accumulate_in_place(Var &&var, Variable &var1, const Variable &var2,
                          const Variable &var3, Op op,
-                         const std::string_view name) {
+                         const std::string_view &name) {
   detail::accumulate(type_tuples<Ts...>(op), op, name, std::forward<Var>(var),
                      var1, var2, var3);
 }

@@ -11,6 +11,7 @@
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/histogram.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/astype.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/transform_subspan.h"
@@ -77,11 +78,21 @@ DataArray histogram(const DataArray &events, const Variable &binEdges) {
             // This sums automatically over Dim::InternalHistogram
             return buckets::histogram(binned, binEdges_);
           }
-          return transform_subspan(events_.dtype(), dim,
-                                   binEdges_.dims()[dim] - 1,
-                                   subspan_view(cont_coord, event_dim_),
-                                   subspan_view(cont_data, event_dim_),
-                                   binEdges_, element::histogram, "histogram");
+          // Due to the combinatoric explosion of dtype combinations, we promote
+          // either the bin edges or the coord in case their dtypes mismatch.
+          // This is less efficient, but hopefully and edge case. If performance
+          // matters, users should ensure that they use bin edges and coord with
+          // the same dtype.
+          const auto dt = common_type(binEdges_, cont_coord);
+          const auto promoted_coord =
+              astype(cont_coord, dt, CopyPolicy::TryAvoid);
+          const auto promoted_edges =
+              astype(binEdges_, dt, CopyPolicy::TryAvoid);
+          return transform_subspan(
+              events_.dtype(), dim, binEdges_.dims()[dim] - 1,
+              subspan_view(promoted_coord, event_dim_),
+              subspan_view(cont_data, event_dim_), promoted_edges,
+              element::histogram, "histogram");
         },
         event_dim, binEdges);
   } else {

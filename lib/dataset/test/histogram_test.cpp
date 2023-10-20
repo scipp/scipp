@@ -12,6 +12,7 @@
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/histogram.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/astype.h"
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/shape.h"
 
@@ -278,6 +279,30 @@ TEST(HistogramTest, dense_vs_binned) {
   }
 }
 
+TEST(HistogramTest, binned_with_mismatching_coord_and_edge_dtype) {
+  using testdata::make_table;
+  auto table = make_table(100);
+  EXPECT_EQ(table.coords()[Dim::X].dtype(), dtype<double>);
+  table.setUnit(units::counts);
+  const auto old_edges =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{-2, 0, 2});
+  const auto new_edges =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{-2, -1, 0, 2});
+  auto binned = bin(table, {old_edges});
+  for (const auto old_edge_dtype :
+       {dtype<double>, dtype<int64_t>, dtype<float>}) {
+    for (const auto new_edge_dtype :
+         {dtype<double>, dtype<int64_t>, dtype<float>}) {
+      // We are making sure to test influence of dtype of BOTH the existing
+      // edges for the initial binning as well as the new edges for the
+      // histogram.
+      binned.coords().set(Dim::X, astype(old_edges, old_edge_dtype));
+      const auto edges = astype(new_edges, new_edge_dtype);
+      EXPECT_EQ(histogram(table, edges), histogram(binned, edges));
+    }
+  }
+}
+
 struct Histogram1DTest : public ::testing::Test {
 protected:
   Histogram1DTest() {
@@ -309,6 +334,34 @@ TEST_F(Histogram1DTest, coord_name_differs_dim) {
   EXPECT_EQ(histogram(da, edges).data(),
             makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::counts,
                                  Values{19, 12, 12}));
+}
+
+TEST_F(Histogram1DTest, int64_weights) {
+  DataArray da(astype(data, dtype<int64_t>), {{Dim::X, coord}},
+               {{"mask", mask}});
+  const auto edges =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
+  EXPECT_EQ(histogram(da, edges).data(),
+            makeVariable<int64_t>(Dims{Dim::X}, Shape{3}, units::counts,
+                                  Values{19, 12, 12}));
+}
+
+TEST_F(Histogram1DTest, mismatching_coord_and_edge_dtype) {
+  const auto coord_dtype = dtype<double>;
+  const auto expected_data = makeVariable<int64_t>(
+      Dims{Dim::X}, Shape{3}, units::counts, Values{19, 12, 12});
+  DataArray da(astype(data, dtype<int64_t>),
+               {{Dim::X, astype(coord, coord_dtype)}}, {{"mask", mask}});
+
+  auto edges = makeVariable<float>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
+  auto hist = histogram(da, edges);
+  EXPECT_EQ(hist.data(), expected_data);
+  EXPECT_EQ(hist.coords()[Dim::X], edges);
+
+  edges = makeVariable<int64_t>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
+  hist = histogram(da, edges);
+  EXPECT_EQ(hist.data(), expected_data);
+  EXPECT_EQ(hist.coords()[Dim::X], edges);
 }
 
 struct Histogram2DTest : public ::testing::Test {
