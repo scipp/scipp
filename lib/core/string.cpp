@@ -57,7 +57,7 @@ std::string to_string(const Sizes &sizes) {
 }
 
 const std::string &to_string(const std::string &s) { return s; }
-std::string_view to_string(const std::string_view s) { return s; }
+std::string_view to_string(const std::string_view &s) { return s; }
 std::string to_string(const char *s) { return std::string(s); }
 
 std::string to_string(const bool b) { return b ? "True" : "False"; }

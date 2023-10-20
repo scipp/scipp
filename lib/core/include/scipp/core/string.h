@@ -26,7 +26,7 @@ SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const scipp::index_pair &index);
 
 SCIPP_CORE_EXPORT const std::string &to_string(const std::string &s);
-SCIPP_CORE_EXPORT std::string_view to_string(const std::string_view s);
+SCIPP_CORE_EXPORT std::string_view to_string(const std::string_view &s);
 SCIPP_CORE_EXPORT std::string to_string(const char *s);
 SCIPP_CORE_EXPORT std::string to_string(const bool b);
 SCIPP_CORE_EXPORT std::string to_string(const DType dtype);
