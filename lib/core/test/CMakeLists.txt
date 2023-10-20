@@ -9,6 +9,7 @@ add_executable(
   array_to_string_test.cpp
   dict_test.cpp
   dimensions_test.cpp
+  dtype_test.cpp
   eigen_test.cpp
   element_array_test.cpp
   element_array_view_test.cpp
