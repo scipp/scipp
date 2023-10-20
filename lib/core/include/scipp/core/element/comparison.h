@@ -115,8 +115,12 @@ constexpr auto max_equals =
     overloaded{arg_list<double, float, int64_t, int32_t, bool, time_point>,
                transform_flags::expect_in_variance_if_out_variance,
                [](auto &&a, const auto &b) {
+                 using numeric::isnan;
                  using std::max;
-                 a = max(a, b);
+                 if (isnan(b))
+                   a = b;
+                 else if (!isnan(a))
+                   a = max(a, b);
                }};
 
 constexpr auto nanmax_equals =
@@ -135,8 +139,12 @@ constexpr auto min_equals =
     overloaded{arg_list<double, float, int64_t, int32_t, bool, time_point>,
                transform_flags::expect_in_variance_if_out_variance,
                [](auto &&a, const auto &b) {
+                 using numeric::isnan;
                  using std::min;
-                 a = min(a, b);
+                 if (isnan(b))
+                   a = b;
+                 else if (!isnan(a))
+                   a = min(a, b);
                }};
 
 constexpr auto nanmin_equals =
