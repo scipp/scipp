@@ -54,6 +54,7 @@ Bugfixes
 * Fixed :func:`scipp.where` to work with most dtypes `#3276 <https://github.com/scipp/scipp/pull/3276>`_.
 * Event-centric arithmetic now uses the correct dtype in the result `#3278 <https://github.com/scipp/scipp/pull/3278>`_.
 * Fixed a serious bug where operations on, e.g., transposed binned data resulted in corrupt coord, mask, and attr values of the bin contents `#3282 <https://github.com/scipp/scipp/pull/3282>`_.
+* ``min`` and ``max`` now return not-a-number if any input element is not-a-number instead of ignoring that element `#3299 <https://github.com/scipp/scipp/pull/3299>`_.
 
 Documentation
 ~~~~~~~~~~~~~
