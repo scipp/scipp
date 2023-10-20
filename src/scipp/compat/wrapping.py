@@ -69,10 +69,12 @@ def wrap1d(is_partial=False, accept_masks=False, keep_coords=False):
                 masks = _validated_masks(da, dim)
             if keep_coords:
                 coords = da.coords
-                attrs = da.attrs
+                attrs = da.deprecated_attrs
             else:
                 coords = {k: v for k, v in da.coords.items() if dim not in v.dims}
-                attrs = {k: v for k, v in da.attrs.items() if dim not in v.dims}
+                attrs = {
+                    k: v for k, v in da.deprecated_attrs.items() if dim not in v.dims
+                }
 
             def _add_observing_metadata(da):
                 for k, v in coords.items():
@@ -80,7 +82,7 @@ def wrap1d(is_partial=False, accept_masks=False, keep_coords=False):
                 for k, v in masks.items():
                     da.masks[k] = v.copy()
                 for k, v in attrs.items():
-                    da.attrs[k] = v
+                    da.deprecated_attrs[k] = v
                 return da
 
             def postprocessing(func):
