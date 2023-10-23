@@ -13,6 +13,20 @@ def test_init_default():
         sc.Dataset()
 
 
+def test_init_empty():
+    ds = sc.Dataset({})
+    assert ds.sizes == {}
+    assert len(ds) == 0
+
+    ds = sc.Dataset(coords={})
+    assert ds.sizes == {}
+    assert len(ds) == 0
+
+    ds = sc.Dataset({}, coords={})
+    assert ds.sizes == {}
+    assert len(ds) == 0
+
+
 def test_init_dict_of_variables():
     d = sc.Dataset({'a': sc.arange('x', 5), 'b': sc.arange('x', 5, 10, unit='m')})
     assert sc.identical(d['a'], sc.DataArray(sc.arange('x', 5)))
