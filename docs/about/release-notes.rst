@@ -44,6 +44,7 @@ Breaking changes
 
 * All items of datasets must have the same dimensions now `#3199 <https://github.com/scipp/scipp/pull/3199>`_.
 * The runtime configuration has been removed `#3254 <https://github.com/scipp/scipp/pull/3254>`_.
+* The deprecated function ``open_hdf5`` and ``to_hdf5`` have been removed in favor of ``load_hdf5`` and ``save_hdf5`` `#3300 <https://github.com/scipp/scipp/pull/3300>`_.
 
 Bugfixes
 ~~~~~~~~
