@@ -62,14 +62,6 @@ setattr(Dataset, 'save_hdf5', _save_hdf5)
 setattr(DataGroup, 'save_hdf5', _save_hdf5)
 del _save_hdf5
 
-from .io.hdf5 import to_hdf5 as _to_hdf5
-
-setattr(Variable, 'to_hdf5', _to_hdf5)
-setattr(DataArray, 'to_hdf5', _to_hdf5)
-setattr(Dataset, 'to_hdf5', _to_hdf5)
-setattr(DataGroup, 'to_hdf5', _to_hdf5)
-del _to_hdf5
-
 from .format import format_variable as _format_variable
 
 setattr(Variable, '__format__', _format_variable)
