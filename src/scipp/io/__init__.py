@@ -20,9 +20,10 @@ Functions
 
    csv.load_csv
    hdf5.load_hdf5
+   hdf5.save_hdf5
 """
 
 from .csv import load_csv
-from .hdf5 import load_hdf5
+from .hdf5 import load_hdf5, save_hdf5
 
-__all__ = ["load_csv", "load_hdf5"]
+__all__ = ["load_csv", "load_hdf5", "save_hdf5"]
