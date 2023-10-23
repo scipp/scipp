@@ -806,9 +806,6 @@ class DataArray:
     def to(self, *, unit: Optional[Union[Unit, str]]=None, dtype: Optional[Any]=None, copy: bool=True) -> VariableLikeType:
         ...
 
-    def to_hdf5(self, filename: Union[str, Path]) -> None:
-        ...
-
     def transform_coords(self, targets: Optional[Union[str, Iterable[str]]]=None, /, graph: Optional[GraphDict]=None, *, rename_dims: bool=True, keep_aliases: bool=True, keep_intermediate: bool=True, keep_inputs: bool=True, quiet: bool=False, **kwargs: Callable) -> Union[DataArray, Dataset]:
         ...
 
@@ -1209,9 +1206,6 @@ class Dataset:
         ...
 
     def sum(self, dim: Dims=None) -> VariableLikeType:
-        ...
-
-    def to_hdf5(self, filename: Union[str, Path]) -> None:
         ...
 
     def transform_coords(self, targets: Optional[Union[str, Iterable[str]]]=None, /, graph: Optional[GraphDict]=None, *, rename_dims: bool=True, keep_aliases: bool=True, keep_intermediate: bool=True, keep_inputs: bool=True, quiet: bool=False, **kwargs: Callable) -> Union[DataArray, Dataset]:
@@ -1993,9 +1987,6 @@ class Variable:
         ...
 
     def to(self, *, unit: Optional[Union[Unit, str]]=None, dtype: Optional[Any]=None, copy: bool=True) -> VariableLikeType:
-        ...
-
-    def to_hdf5(self, filename: Union[str, Path]) -> None:
         ...
 
     def transpose(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None) -> VariableLikeType:
