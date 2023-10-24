@@ -248,10 +248,11 @@ def test_from_xarray_dataset_with_attrs_warns():
 
 
 @pytest.mark.filterwarnings("ignore:.*attributes.*:UserWarning")
-def test_from_xarray_dataset_with_only_attrs_raises():
+def test_from_xarray_dataset_with_only_attrs():
     xr_ds = xr.Dataset(attrs={'a': 1, 'b': 2})
-    with pytest.raises(TypeError):
-        from_xarray(xr_ds)
+    sc_ds = from_xarray(xr_ds)
+    assert len(sc_ds) == 0
+    assert sc_ds.sizes == {}
 
 
 def test_to_xarray_variable():
