@@ -1,0 +1,42 @@
+name: Nightly Release
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 20 * * *'
+
+jobs:
+  build_wheels:
+    name: Wheels
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04]
+        build: [cp38]
+    uses: ./.github/workflows/wheel.yml
+    with:
+      os: ${{ matrix.os }}
+      build: ${{ matrix.build }}
+
+  release:
+    name: Make Release on GitHub
+    needs: build_wheels
+    runs-on: ubuntu-20.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+      - run: python .github/workflows/rename-dev-wheels.py
+      - uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          artifacts: 'dist/*.whl'
+          body: 'Nightly release for testing of downstream projects.'
+          makeLatest: false
+          prerelease: true
+          removeArtifacts: true
+          tag: 'nightly'
