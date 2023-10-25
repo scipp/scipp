@@ -223,15 +223,16 @@ Returned by :py:func:`DataArray.masks`)");
   options.disable_function_signatures();
   dataset.def(
       py::init([](const py::object &data, const py::object &coords) {
-        const auto data_dict = py::dict(data);
-        const auto coords_dict = py::dict(coords);
-        if (data_dict.empty() && coords_dict.empty())
+        if (data.is_none() && coords.is_none())
           throw py::type_error("Dataset needs data or coordinates or both.");
+        const auto data_dict = data.is_none() ? py::dict() : py::dict(data);
+        const auto coords_dict =
+            coords.is_none() ? py::dict() : py::dict(coords);
         auto d = dataset_from_data_and_coords(data_dict, coords_dict);
         return d.is_valid() ? d : dataset_from_coords(coords_dict);
       }),
-      py::arg("data") = py::dict(), py::kw_only(),
-      py::arg("coords") = std::map<std::string, Variable>{},
+      py::arg("data") = py::none{}, py::kw_only(),
+      py::arg("coords") = py::none{},
       R"doc(__init__(self, data: Union[typing.Mapping[str, Union[Variable, DataArray]], Iterable[Tuple[str, Union[Variable, DataArray]]]] = {}, coords: Union[typing.Mapping[str, Variable], Iterable[Tuple[str, Variable]]] = {}) -> None
 
       Dataset initializer.
