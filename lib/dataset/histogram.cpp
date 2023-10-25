@@ -80,7 +80,7 @@ DataArray histogram(const DataArray &events, const Variable &binEdges) {
           }
           // Due to the combinatoric explosion of dtype combinations, we promote
           // either the bin edges or the coord in case their dtypes mismatch.
-          // This is less efficient, but hopefully and edge case. If performance
+          // This is less efficient, but hopefully an edge case. If performance
           // matters, users should ensure that they use bin edges and coord with
           // the same dtype.
           const auto dt = common_type(binEdges_, cont_coord);
