@@ -44,7 +44,7 @@ new = sc.DataGroup(
 )
 new['flares'].coords['max_energy'] = new['flares'].attrs.pop('max_energy')
 new['flares'].coords['min_energy'] = new['flares'].attrs.pop('min_energy')
-new.save_hdf5("docs/tutorials/data/rhessi_flares.h5")
+new.save_hdf5("rhessi_flares.h5")
 """
 
 DATA_DIR = Path(__file__).parent / "data"
