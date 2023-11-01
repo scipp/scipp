@@ -53,7 +53,7 @@ The data array concept
 ----------------------
 
 The core data structure of Scipp is :py:class:`scipp.DataArray`.
-A data array is essentially a multi-dimensional array with associated dicts of coordinates, masks, and attributes.
+A data array is essentially a multi-dimensional array with associated dicts of coordinates and masks.
 For a more detailed explanation we refer to the `documentation of DataArray <../user-guide/data-structures.rst#DataArray>`_.
 
 Scipp labels dimensions and their associated coordinates with labels such as ``'x'``, ``'temperature'``, or ``'wavelength'``.
