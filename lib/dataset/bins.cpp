@@ -347,10 +347,14 @@ Variable histogram(const Variable &data, const Variable &binEdges) {
   }
 
   const auto masked = masked_data(buffer, dim);
+  const auto coord = buffer.meta()[hist_dim];
+  const auto dt = common_type(binEdges, coord);
+  const auto promoted_coord = astype(coord, dt, CopyPolicy::TryAvoid);
+  const auto promoted_edges = astype(binEdges, dt, CopyPolicy::TryAvoid);
   auto hist = variable::transform_subspan(
       buffer.dtype(), hist_dim, nbin,
-      subspan_view(buffer.meta()[hist_dim], dim, indices),
-      subspan_view(masked, dim, indices), binEdges, element::histogram,
+      subspan_view(promoted_coord, dim, indices),
+      subspan_view(masked, dim, indices), promoted_edges, element::histogram,
       "histogram");
   if (hist.dims().contains(dummy))
     return sum(hist, dummy);

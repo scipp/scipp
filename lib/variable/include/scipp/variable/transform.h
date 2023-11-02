@@ -636,7 +636,7 @@ template <bool dry_run> struct in_place {
 
   template <class... Ts, class Op, class Var, class... Other>
   static void transform_data(const std::tuple<Ts...> &, Op op,
-                             const std::string_view name, Var &&var,
+                             const std::string_view &name, Var &&var,
                              Other &&...other) {
     using namespace detail;
     try {
@@ -648,7 +648,7 @@ template <bool dry_run> struct in_place {
     }
   }
   template <class... Ts, class Op, class Var, class... Other>
-  static void transform(Op op, const std::string_view name, Var &&var,
+  static void transform(Op op, const std::string_view &name, Var &&var,
                         const Other &...other) {
     using namespace detail;
     (scipp::expect::includes(var.dims(), other.dims()), ...);
@@ -683,7 +683,7 @@ template <bool dry_run> struct in_place {
 /// equivalent to std::transform with a single input range and an output range
 /// identical to the input range, but avoids potentially costly element copies.
 template <class... Ts, class Var, class Op>
-void transform_in_place(Var &&var, Op op, const std::string_view name) {
+void transform_in_place(Var &&var, Op op, const std::string_view &name) {
   in_place<false>::transform<Ts...>(op, name, std::forward<Var>(var));
 }
 
@@ -694,7 +694,7 @@ void transform_in_place(Var &&var, Op op, const std::string_view name) {
 /// costly element copies.
 template <class... TypePairs, class Var, class Op>
 void transform_in_place(Var &&var, const Variable &other, Op op,
-                        const std::string_view name) {
+                        const std::string_view &name) {
   in_place<false>::transform<TypePairs...>(op, name, std::forward<Var>(var),
                                            other);
 }
@@ -702,7 +702,7 @@ void transform_in_place(Var &&var, const Variable &other, Op op,
 /// Transform the data elements of a variable in-place.
 template <class... TypePairs, class Var, class Op>
 void transform_in_place(Var &&var, const Variable &var1, const Variable &var2,
-                        Op op, const std::string_view name) {
+                        Op op, const std::string_view &name) {
   in_place<false>::transform<TypePairs...>(op, name, std::forward<Var>(var),
                                            var1, var2);
 }
@@ -711,19 +711,19 @@ void transform_in_place(Var &&var, const Variable &var1, const Variable &var2,
 template <class... TypePairs, class Var, class Op>
 void transform_in_place(Var &&var, const Variable &var1, const Variable &var2,
                         const Variable &var3, Op op,
-                        const std::string_view name) {
+                        const std::string_view &name) {
   in_place<false>::transform<TypePairs...>(op, name, std::forward<Var>(var),
                                            var1, var2, var3);
 }
 
 namespace dry_run {
 template <class... Ts, class Var, class Op>
-void transform_in_place(Var &&var, Op op, const std::string_view name) {
+void transform_in_place(Var &&var, Op op, const std::string_view &name) {
   in_place<true>::transform<Ts...>(op, name, std::forward<Var>(var));
 }
 template <class... TypePairs, class Var, class Op>
 void transform_in_place(Var &&var, const Variable &other, Op op,
-                        const std::string_view name) {
+                        const std::string_view &name) {
   in_place<true>::transform<TypePairs...>(op, name, std::forward<Var>(var),
                                           other);
 }
@@ -731,7 +731,7 @@ void transform_in_place(Var &&var, const Variable &other, Op op,
 
 namespace detail {
 template <class... Ts, class Op, class... Vars>
-Variable transform(std::tuple<Ts...> &&, Op op, const std::string_view name,
+Variable transform(std::tuple<Ts...> &&, Op op, const std::string_view &name,
                    const Vars &...vars) {
   using namespace detail;
   try {
@@ -750,7 +750,7 @@ Variable transform(std::tuple<Ts...> &&, Op op, const std::string_view name,
 /// need for, e.g., std::back_inserter.
 template <class... Ts, class Op>
 [[nodiscard]] Variable transform(const Variable &var, Op op,
-                                 const std::string_view name) {
+                                 const std::string_view &name) {
   return detail::transform(type_tuples<Ts...>(op), op, name, var);
 }
 
@@ -761,7 +761,7 @@ template <class... Ts, class Op>
 /// need for, e.g., std::back_inserter.
 template <class... Ts, class Op>
 [[nodiscard]] Variable transform(const Variable &var1, const Variable &var2,
-                                 Op op, const std::string_view name) {
+                                 Op op, const std::string_view &name) {
   return detail::transform(type_tuples<Ts...>(op), op, name, var1, var2);
 }
 
@@ -769,7 +769,7 @@ template <class... Ts, class Op>
 template <class... Ts, class Op>
 [[nodiscard]] Variable transform(const Variable &var1, const Variable &var2,
                                  const Variable &var3, Op op,
-                                 const std::string_view name) {
+                                 const std::string_view &name) {
   return detail::transform(type_tuples<Ts...>(op), op, name, var1, var2, var3);
 }
 
@@ -777,7 +777,7 @@ template <class... Ts, class Op>
 template <class... Ts, class Op>
 [[nodiscard]] Variable transform(const Variable &var1, const Variable &var2,
                                  const Variable &var3, const Variable &var4,
-                                 Op op, const std::string_view name) {
+                                 Op op, const std::string_view &name) {
   return detail::transform(type_tuples<Ts...>(op), op, name, var1, var2, var3,
                            var4);
 }

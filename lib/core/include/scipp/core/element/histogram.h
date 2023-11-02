@@ -30,33 +30,32 @@ constexpr auto iadd = [](const auto &x1, const scipp::index i1, const auto &x2,
 } // namespace
 
 namespace histogram_detail {
-template <class Out, class Coord, class Weight, class Edge>
-using args = std::tuple<scipp::span<Out>, scipp::span<const Coord>,
-                        scipp::span<const Weight>, scipp::span<const Edge>>;
+template <class Coord, class Weight>
+using args = std::tuple<scipp::span<Weight>, scipp::span<const Coord>,
+                        scipp::span<const Weight>, scipp::span<const Coord>>;
 }
 
 static constexpr auto histogram = overloaded{
-    element::arg_list<
-        histogram_detail::args<float, double, float, double>,
-        histogram_detail::args<float, float, float, double>,
-        histogram_detail::args<float, float, float, float>,
-        histogram_detail::args<float, int64_t, float, double>,
-        histogram_detail::args<float, int32_t, float, double>,
-        histogram_detail::args<float, int64_t, float, int64_t>,
-        histogram_detail::args<float, int32_t, float, int32_t>,
-        histogram_detail::args<double, double, double, double>,
-        histogram_detail::args<double, float, double, double>,
-        histogram_detail::args<double, double, double, float>,
-        histogram_detail::args<double, float, double, float>,
-        histogram_detail::args<double, double, float, double>,
-        histogram_detail::args<double, int64_t, double, int64_t>,
-        histogram_detail::args<double, int32_t, double, int64_t>,
-        histogram_detail::args<double, int64_t, double, int32_t>,
-        histogram_detail::args<double, int32_t, double, int32_t>,
-        histogram_detail::args<double, time_point, double, time_point>,
-        histogram_detail::args<double, time_point, float, time_point>,
-        histogram_detail::args<float, time_point, double, time_point>,
-        histogram_detail::args<float, time_point, float, time_point>>,
+    element::arg_list<histogram_detail::args<double, double>,
+                      histogram_detail::args<double, float>,
+                      histogram_detail::args<double, int64_t>,
+                      histogram_detail::args<double, int32_t>,
+                      histogram_detail::args<float, double>,
+                      histogram_detail::args<float, float>,
+                      histogram_detail::args<float, int64_t>,
+                      histogram_detail::args<float, int32_t>,
+                      histogram_detail::args<int32_t, double>,
+                      histogram_detail::args<int32_t, float>,
+                      histogram_detail::args<int32_t, int64_t>,
+                      histogram_detail::args<int32_t, int32_t>,
+                      histogram_detail::args<int64_t, double>,
+                      histogram_detail::args<int64_t, float>,
+                      histogram_detail::args<int64_t, int64_t>,
+                      histogram_detail::args<int64_t, int32_t>,
+                      histogram_detail::args<time_point, double>,
+                      histogram_detail::args<time_point, float>,
+                      histogram_detail::args<time_point, int64_t>,
+                      histogram_detail::args<time_point, int32_t>>,
     [](const auto &data, const auto &events, const auto &weights,
        const auto &edges) {
       zero(data);
