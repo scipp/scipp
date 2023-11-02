@@ -88,19 +88,6 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --param inline-unit-growth=50")
 endif()
 
-# Get version from git-describe
-execute_process(
-  COMMAND git describe --tag
-  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-  RESULT_VARIABLE HAVE_GIT_VERSION_INFO
-  OUTPUT_VARIABLE GIT_VERSION_INFO
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-if(${HAVE_GIT_VERSION_INFO} EQUAL 0)
-  message(STATUS "Got version from Git: ${GIT_VERSION_INFO}")
-  add_definitions(-DSCIPP_VERSION="${GIT_VERSION_INFO}")
-endif()
-
 if(NOT WIN32)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
   add_compile_options(
