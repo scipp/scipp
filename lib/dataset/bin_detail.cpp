@@ -27,13 +27,6 @@ Variable make_range(const scipp::index begin, const scipp::index end,
   return cumsum(broadcast(stride * units::none, {dim, (end - begin) / stride}),
                 dim, CumSumMode::Exclusive);
 }
-namespace {
-Variable to_subspan_view(const Variable &edges, const Dim dim) {
-  const auto con_edges = scipp::variable::as_contiguous(edges, dim);
-  return subspan_view(con_edges, dim);
-}
-
-} // namespace
 
 void update_indices_by_binning(Variable &indices, const Variable &key,
                                const Variable &edges, const bool linspace) {
@@ -45,7 +38,7 @@ void update_indices_by_binning(Variable &indices, const Variable &key,
         "event-coordinate. Provide an event coordinate or convert the "
         "bin-edge coordinate to a non-edge coordinate.");
   const auto &edge_view =
-      is_bins(edges) ? as_subspan_view(edges) : to_subspan_view(edges, dim);
+      is_bins(edges) ? as_subspan_view(edges) : subspan_view(edges, dim);
   if (linspace) {
     variable::transform_in_place(
         indices, key, edge_view,
@@ -62,8 +55,7 @@ void update_indices_by_binning(Variable &indices, const Variable &key,
 namespace {
 template <class Index>
 Variable groups_to_map(const Variable &var, const Dim dim) {
-  const auto con_var = scipp::variable::as_contiguous(var, dim);
-  return variable::transform(subspan_view(con_var, dim),
+  return variable::transform(subspan_view(var, dim),
                              core::element::groups_to_map<Index>,
                              "scipp.bin.groups_to_map");
 }

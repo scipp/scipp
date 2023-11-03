@@ -44,8 +44,7 @@ Variable linspace(const Variable &start, const Variable &stop, const Dim dim,
 }
 
 Variable islinspace(const Variable &var, const Dim dim) {
-  const auto con_var = as_contiguous(var, dim);
-  return transform(subspan_view(con_var, dim), core::element::islinspace,
+  return transform(subspan_view(var, dim), core::element::islinspace,
                    "islinspace");
 }
 

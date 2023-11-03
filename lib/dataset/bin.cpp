@@ -13,6 +13,7 @@
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/subspan_view.h"
+#include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
 
 #include "scipp/dataset/bin.h"
@@ -413,13 +414,15 @@ public:
   void group(const Variable &groups) {
     const auto dim = groups.dims().inner();
     m_dims.addInner(dim, groups.dims()[dim]);
-    m_actions.emplace_back(AxisAction::Group, dim, groups);
+    const auto con_groups = scipp::variable::as_contiguous(groups, dim);
+    m_actions.emplace_back(AxisAction::Group, dim, con_groups);
   }
 
   void bin(const Variable &edges) {
     const auto dim = edges.dims().inner();
     m_dims.addInner(dim, edges.dims()[dim] - 1);
-    m_actions.emplace_back(AxisAction::Bin, dim, edges);
+    const auto con_edges = scipp::variable::as_contiguous(edges, dim);
+    m_actions.emplace_back(AxisAction::Bin, dim, con_edges);
   }
 
   void existing(const Dim dim, const scipp::index size) {
