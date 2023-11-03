@@ -2,6 +2,7 @@
 // Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <iostream>
 #include "scipp/core/element/bin.h"
 #include "scipp/core/element/map_to_bins.h"
 
