@@ -87,14 +87,6 @@ struct Less {
   }
 };
 
-auto as_contiguous(const Variable &var, const Dim dim) {
-  if (var.stride(dim) == 1)
-    return var;
-  auto dims = var.dims();
-  dims.erase(dim);
-  dims.addInner(dim, var.dims()[dim]);
-  return copy(transpose(var, dims.labels()));
-}
 } // namespace
 
 Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
