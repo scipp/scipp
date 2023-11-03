@@ -45,6 +45,7 @@ SCIPP_VARIABLE_EXPORT void fill_zeros(Variable &var);
                                                    const Variable &x,
                                                    const Variable &y);
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable as_contiguous(const Variable &var, const Dim dim);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable as_contiguous(const Variable &var,
+                                                           const Dim dim);
 
 } // namespace scipp::variable
