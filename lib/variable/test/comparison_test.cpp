@@ -229,6 +229,20 @@ TEST(ComparisonTest, variances_test) {
   EXPECT_EQ(not_equal(a, b), true * units::none);
 }
 
+TEST(ComparisonTest, can_broadcast_variances) {
+  const auto a =
+      makeVariable<float>(Dims{Dim::X}, Shape{1}, Values{1.0}, Variances{1.0});
+  const auto b = makeVariable<float>(Values{2.0}, Variances{2.0});
+  const auto True = makeVariable<bool>(Dims{Dim::X}, Shape{1}, Values{true});
+  const auto False = ~True;
+  EXPECT_EQ(less(a, b), True);
+  EXPECT_EQ(less_equal(a, b), True);
+  EXPECT_EQ(greater(a, b), False);
+  EXPECT_EQ(greater_equal(a, b), False);
+  EXPECT_EQ(equal(a, b), False);
+  EXPECT_EQ(not_equal(a, b), True);
+}
+
 TEST(ComparisonTest, less_units_test) {
   const auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
   auto b = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0.0, 3.0});
