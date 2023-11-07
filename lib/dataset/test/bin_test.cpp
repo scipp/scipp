@@ -715,7 +715,7 @@ TEST(BinTest, non_contiguous_edges) {
 
   const scipp::core::Slice slice(Dim::X, 0, 4, 2L);
   const auto non_cont_x = cont_x.slice(slice);
-  EXPECT_THROW(bin(table, {non_cont_x}), scipp::except::DimensionError);
+  EXPECT_NO_THROW(bin(table, {non_cont_x}));
 }
 
 TEST(BinTest, bin_by_non_contiguous_group) {
@@ -725,7 +725,7 @@ TEST(BinTest, bin_by_non_contiguous_group) {
 
   const scipp::core::Slice slice(Dim::X, 0, 4, 2L);
   const auto non_cont_group = cont_group.slice(slice);
-  EXPECT_THROW(bin(table, {}, {non_cont_group}), scipp::except::DimensionError);
+  EXPECT_NO_THROW(bin(table, {}, {non_cont_group}));
 }
 
 TEST(BinTest, bin_by_non_contiguous_int_group) {
@@ -738,5 +738,5 @@ TEST(BinTest, bin_by_non_contiguous_int_group) {
   const auto cont_group =
       makeVariable<int64_t>(Dims{Dim::Z}, Shape{6}, Values{0, 1, 2, 3, 4, 5});
   const auto non_cont_group = cont_group.slice(slice);
-  EXPECT_THROW(bin(table, {}, {non_cont_group}), scipp::except::DimensionError);
+  EXPECT_NO_THROW(bin(table, {}, {non_cont_group}));
 }
