@@ -69,6 +69,9 @@ struct equality_types_t {
       std::tuple<Translation>{}));
 };
 
+// Allow variance broadcasts because we just want to check for numeric equality.
+// For inequalities, the variances are ignored anyway.
+// See issue #3266
 constexpr auto comparison = overloaded{
     transform_flags::no_out_variance, transform_flags::force_variance_broadcast,
     [](const units::Unit &x, const units::Unit &y) {
