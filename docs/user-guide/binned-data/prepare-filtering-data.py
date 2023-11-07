@@ -4,21 +4,37 @@ import scippneutron as scn
 
 import scipp as sc
 
-da = sc.io.load_hdf5('/home/simon/mantid/instruments/VULCAN/VULCAN_221040.h5')
-dspacing = scn.convert(da, 'tof', 'dspacing', scatter=True).squeeze()
-dspacing
+# Load with Mantid (slow)
+# dg = scn.load_with_mantid('VULCAN_221040.nxs.h5')
+# data = dg['data']
+# strain = dg['loadframe.strain']
+# proton_charge = dg['proton_charge']
+# dg = sc.DataGroup({'data': data,
+#                    'loadframe.strain': strain,
+#                    'proton_charge': proton_charge})
+# dg.save_hdf5('VULCAN_221040.h5')
+
+# Load cached file with Scipp
+dg = sc.io.load_hdf5('VULCAN_221040.h5')
+data = dg['data']
+strain = dg['loadframe.strain']
+proton_charge = dg['proton_charge']
+
+graph = {
+    **scn.conversion.graph.beamline.beamline(scatter=True),
+    **scn.conversion.graph.tof.elastic_dspacing('tof'),
+}
+dspacing = data.transform_coords(
+    'dspacing', graph=graph, keep_inputs=False, keep_intermediate=False
+)
 
 start = 1.5 * sc.Unit('angstrom')
 stop = 2.5 * sc.Unit('angstrom')
 tmp = dspacing['spectrum', :10000].bins['dspacing', start:stop]
 tmp = tmp.bins.concat('spectrum').bin(dspacing=100)
-tmp.hist(dspacing=200).plot()
-del tmp.bins.attrs['tof']
-for name in list(tmp.attrs):
-    if name not in ['proton_charge', 'loadframe.strain']:
-        del tmp.attrs[name]
 tmp.bins.coords['time'] = tmp.bins.coords.pop('pulse_time')
-tmp.attrs['proton_charge'].value = tmp.attrs['proton_charge'].value.rename(
-    pulse_time='time'
+
+out = sc.DataGroup(
+    {'data': tmp, 'loadframe.strain': strain, 'proton_charge': proton_charge}
 )
-tmp.save_hdf5('VULCAN_221040_processed.h5')
+out.save_hdf5('VULCAN_221040_processed.h5')

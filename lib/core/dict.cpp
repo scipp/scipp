@@ -10,7 +10,7 @@
 namespace scipp::core {
 template <class It>
 std::string dict_keys_to_string(It it, const It end,
-                                const std::string_view dict_name) {
+                                const std::string_view &dict_name) {
   std::ostringstream ss;
   ss << "<" << dict_name << " {";
   bool first = true;
@@ -31,9 +31,9 @@ using dim_dict_key_iterator = Dict<Dim, int>::const_key_iterator;
 using str_dict_key_iterator = Dict<std::string, int>::const_key_iterator;
 
 template SCIPP_CORE_EXPORT std::string
-    dict_keys_to_string(dim_dict_key_iterator, dim_dict_key_iterator,
-                        std::string_view);
+dict_keys_to_string(dim_dict_key_iterator, dim_dict_key_iterator,
+                    const std::string_view &);
 template SCIPP_CORE_EXPORT std::string
-    dict_keys_to_string(str_dict_key_iterator, str_dict_key_iterator,
-                        std::string_view);
+dict_keys_to_string(str_dict_key_iterator, str_dict_key_iterator,
+                    const std::string_view &);
 } // namespace scipp::core

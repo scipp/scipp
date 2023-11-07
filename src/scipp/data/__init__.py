@@ -3,10 +3,10 @@
 # @author Simon Heybrock
 from functools import lru_cache
 
-from ..core import DataArray, array, linspace, ones
+from ..core import DataArray, DataGroup, array, linspace, ones
 from ..io import load_hdf5
 
-_version = '1'
+_version = '2'
 
 
 @lru_cache(maxsize=1)
@@ -34,8 +34,8 @@ or install all optional components of Scipp:
         base_url='https://public.esss.dk/groups/scipp/scipp/{version}/',
         version=_version,
         registry={
-            'rhessi_flares.h5': 'md5:13a73789d3777e79d60ee172d63b4af6',
-            'VULCAN_221040_processed.h5': 'md5:58342d57e0f12e362504fa27af7361f3',
+            'rhessi_flares.h5': 'md5:b4fdc9508c6d1d7aab1c6ebdd13956f2',
+            'VULCAN_221040_processed.h5': 'md5:626484b95372d3341b156dc2012722f9',
         },
     )
 
@@ -65,7 +65,7 @@ def rhessi_flares() -> str:
     return get_path('rhessi_flares.h5')
 
 
-def vulcan_steel_strain_data() -> DataArray:
+def vulcan_steel_strain_data() -> DataGroup:
     return load_hdf5(get_path('VULCAN_221040_processed.h5'))
 
 

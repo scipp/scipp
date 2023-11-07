@@ -69,12 +69,15 @@ struct equality_types_t {
       std::tuple<Translation>{}));
 };
 
-constexpr auto comparison =
-    overloaded{transform_flags::no_out_variance,
-               [](const units::Unit &x, const units::Unit &y) {
-                 expect::equals(x, y);
-                 return units::none;
-               }};
+// Allow variance broadcasts because we just want to check for numeric equality.
+// For inequalities, the variances are ignored anyway.
+// See issue #3266
+constexpr auto comparison = overloaded{
+    transform_flags::no_out_variance, transform_flags::force_variance_broadcast,
+    [](const units::Unit &x, const units::Unit &y) {
+      expect::equals(x, y);
+      return units::none;
+    }};
 
 constexpr auto inequality = overloaded{comparison_types_t{}, comparison};
 

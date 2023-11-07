@@ -75,3 +75,31 @@ TEST(AsTypeTest, buffer_handling) {
   const auto required_copy = astype(var, dtype<double>, CopyPolicy::TryAvoid);
   EXPECT_FALSE(required_copy.is_same(var));
 }
+
+TEST(CommonTypeTest, raises_if_not_same_or_arithmetic) {
+  // This test would belong into core, but does not work there since the dtype
+  // registry is not initialized yet at the point.
+  EXPECT_THROW_DISCARD(common_type(dtype<int32_t>, dtype<core::time_point>),
+                       except::TypeError);
+  EXPECT_THROW_DISCARD(common_type(dtype<core::time_point>, dtype<int32_t>),
+                       except::TypeError);
+}
+
+TEST(CommonTypeTest, uses_elem_dtype) {
+  const auto dense_int32 =
+      makeVariable<int32_t>(Dims{Dim::X}, Shape{1}, Values{1});
+  const auto dense_int64 =
+      makeVariable<int64_t>(Dims{Dim::X}, Shape{1}, Values{1});
+  const auto indices =
+      makeVariable<scipp::index_pair>(Values{scipp::index_pair{0, 1}});
+  const auto binned_int32 = make_bins(indices, Dim::X, dense_int32);
+  const auto binned_int64 = make_bins(indices, Dim::X, dense_int64);
+  EXPECT_EQ(common_type(dense_int32, dense_int32), dtype<int32_t>);
+  EXPECT_EQ(common_type(dense_int32, dense_int64), dtype<int64_t>);
+  EXPECT_EQ(common_type(dense_int32, binned_int32), dtype<int32_t>);
+  EXPECT_EQ(common_type(dense_int32, binned_int64), dtype<int64_t>);
+  EXPECT_EQ(common_type(binned_int32, dense_int32), dtype<int32_t>);
+  EXPECT_EQ(common_type(binned_int32, dense_int64), dtype<int64_t>);
+  EXPECT_EQ(common_type(binned_int32, binned_int32), dtype<int32_t>);
+  EXPECT_EQ(common_type(binned_int32, binned_int64), dtype<int64_t>);
+}

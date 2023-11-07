@@ -2,8 +2,12 @@
 // Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Jan-Lukas Wynen
+#include <array>
 #include <cmath>
+#include <type_traits>
 
+#include "scipp/common/overloaded.h"
+#include "scipp/core/element/arg_list.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/variable/astype.h"
@@ -67,4 +71,10 @@ Variable astype(const Variable &var, DType type, const CopyPolicy copy) {
              ? (copy == CopyPolicy::TryAvoid ? var : variable::copy(var))
              : MakeVariableWithType::make(var, type);
 }
+
+DType common_type(const Variable &a, const Variable &b) {
+  return common_type(variableFactory().elem_dtype(a),
+                     variableFactory().elem_dtype(b));
+}
+
 } // namespace scipp::variable

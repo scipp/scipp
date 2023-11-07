@@ -76,7 +76,7 @@ class Lookup:
     """
 
     def setup(self):
-        self.data = sc.data.binned_x(100_000_000, 10000)
+        self.binned_x = sc.data.binned_x(100_000_000, 10000).bins.coords['x']
         x = sc.linspace(dim='x', start=0.0, stop=1.0, num=1_000_001, unit='m')
         groups = sc.arange(dim='x', start=0, stop=1_000_000) // 1000 % 5
         self.hist_bool = sc.DataArray(data=groups.astype('bool'), coords={'x': x})
@@ -97,21 +97,21 @@ class Lookup:
 
     def time_map_bool(self):
         self.hist_float.coords['x'].values[-1] *= 1.1
-        sc.lookup(self.hist_bool, 'x')[self.data.bins.coords['x']]
+        sc.lookup(self.hist_bool, 'x')[self.binned_x]
 
     def time_map_float64(self):
         self.hist_float.coords['x'].values[-1] *= 1.1
-        sc.lookup(self.hist_float, 'x')[self.data.bins.coords['x']]
+        sc.lookup(self.hist_float, 'x')[self.binned_x]
 
     def time_map_int64(self):
         self.hist_int.coords['x'].values[-1] *= 1.1
-        sc.lookup(self.hist_int, 'x')[self.data.bins.coords['x']]
+        sc.lookup(self.hist_int, 'x')[self.binned_x]
 
     def time_map_linspace_bool(self):
-        sc.lookup(self.hist_bool, 'x')[self.data.bins.coords['x']]
+        sc.lookup(self.hist_bool, 'x')[self.binned_x]
 
     def time_map_linspace_int64(self):
-        sc.lookup(self.hist_int, 'x')[self.data.bins.coords['x']]
+        sc.lookup(self.hist_int, 'x')[self.binned_x]
 
     def time_map_linspace_float64(self):
-        sc.lookup(self.hist_float, 'x')[self.data.bins.coords['x']]
+        sc.lookup(self.hist_float, 'x')[self.binned_x]

@@ -383,11 +383,12 @@ private:
 };
 
 template <class It>
-std::string dict_keys_to_string(It it, It end, std::string_view dict_name);
+std::string dict_keys_to_string(It it, It end,
+                                const std::string_view &dict_name);
 
 template <class Key, class Value>
 std::string dict_keys_to_string(const Dict<Key, Value> &dict,
-                                const std::string_view dict_name = "Dict") {
+                                const std::string_view &dict_name = "Dict") {
   return dict_keys_to_string(dict.keys_begin(), dict.keys_end(), dict_name);
 }
 } // namespace scipp::core

@@ -116,6 +116,9 @@ template <class T> constexpr bool canHaveVariances() noexcept {
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const DType &dtype);
 
+[[nodiscard]] SCIPP_CORE_EXPORT DType common_type(const DType &a,
+                                                  const DType &b);
+
 } // namespace scipp::core
 
 namespace scipp {
