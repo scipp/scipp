@@ -8,7 +8,6 @@
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
-#include "scipp/variable/util.h"
 
 namespace scipp::dataset::bin_detail {
 
