@@ -707,3 +707,36 @@ TEST(BinLinspaceTest, many_events_many_bins) {
       linspace(0.0 * units::one, 1.0 * units::one, Dim::X, 70000);
   EXPECT_EQ(sum(bin(da, {edges}).data()), sum(da.data()));
 }
+
+TEST(BinTest, non_contiguous_edges) {
+  const auto table = make_table(10);
+  const auto cont_x =
+      makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{-2, -1, 0, 1, 2});
+
+  const scipp::core::Slice slice(Dim::X, 0, 4, 2L);
+  const auto non_cont_x = cont_x.slice(slice);
+  EXPECT_THROW(bin(table, {non_cont_x}), scipp::except::DimensionError);
+}
+
+TEST(BinTest, bin_by_non_contiguous_group) {
+  const auto table = make_table(10);
+  const auto cont_group =
+      makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{-2, -1, 0, 1, 2});
+
+  const scipp::core::Slice slice(Dim::X, 0, 4, 2L);
+  const auto non_cont_group = cont_group.slice(slice);
+  EXPECT_THROW(bin(table, {}, {non_cont_group}), scipp::except::DimensionError);
+}
+
+TEST(BinTest, bin_by_non_contiguous_int_group) {
+  auto table = make_table(6);
+  const auto z_coord = makeVariable<int64_t>(Dims{table.dim()}, Shape{6},
+                                             Values{0, 1, 2, 3, 4, 5});
+  table.coords().set(Dim::Z, z_coord);
+
+  const scipp::core::Slice slice(Dim::Z, 0, 5, 2L);
+  const auto cont_group =
+      makeVariable<int64_t>(Dims{Dim::Z}, Shape{6}, Values{0, 1, 2, 3, 4, 5});
+  const auto non_cont_group = cont_group.slice(slice);
+  EXPECT_THROW(bin(table, {}, {non_cont_group}), scipp::except::DimensionError);
+}
