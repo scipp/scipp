@@ -78,7 +78,7 @@ cmake.minimum-version = "3.21"
 wheel.install-dir = "scipp"
 
 [tool.setuptools_scm]
-write_to = "src/scipp/_version.py"
+version_file = "src/scipp/_version.py"
 
 [tool.cibuildwheel]
 archs = ["auto64"]
