@@ -29,13 +29,16 @@ Variable make_range(const scipp::index begin, const scipp::index end,
 }
 
 namespace {
-template <class T> Variable as_edge_view(T &edges) {
+template <class T> std::tuple<T, Variable> as_edge_view(T &edges) {
+  // The contiguous edges should also be returned along with the view
+  // so that it does not go out of the scope
+  // and kept until the end of the expression where it is called.
   if (is_bins(edges)) {
-    return as_subspan_view(edges);
+    return std::make_pair(edges, as_subspan_view(edges));
   }
   const Dim dim = edges.dims().inner();
   const auto con_edges = scipp::variable::as_contiguous(edges, dim);
-  return subspan_view(con_edges, dim);
+  return std::make_pair(con_edges, subspan_view(con_edges, dim));
 }
 } // namespace
 
@@ -47,7 +50,9 @@ void update_indices_by_binning(Variable &indices, const Variable &key,
         "' but input contains a bin-edge coordinate with no corresponding "
         "event-coordinate. Provide an event coordinate or convert the "
         "bin-edge coordinate to a non-edge coordinate.");
-  const auto &edge_view = as_edge_view(edges);
+
+  const auto &[con_edges, edge_view] = as_edge_view(edges);
+
   if (linspace) {
     variable::transform_in_place(
         indices, key, edge_view,
