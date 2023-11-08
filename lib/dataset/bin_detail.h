@@ -13,11 +13,10 @@ namespace scipp::dataset::bin_detail {
 
 template <class T> Variable as_subspan_view(T &&binned) {
   auto &&[indices, dim, buffer] = binned.template constituents<Variable>();
-  if constexpr (std::is_const_v<std::remove_reference_t<T>>) {
+  if constexpr (std::is_const_v<std::remove_reference_t<T>>)
     return subspan_view(std::as_const(buffer), dim, indices);
-  } else {
+  else
     return subspan_view(buffer, dim, indices);
-  }
 }
 
 void map_to_bins(Variable &out, const Variable &var, const Variable &offsets,
