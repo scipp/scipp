@@ -33,7 +33,7 @@ jobs:
           - {os: macos-11, target: osx_64}
           - {os: macos-11, target: osx_arm64}
           - {os: windows-2019, target: win_64}
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
     uses: ./.github/workflows/conda.yml
     with:
       os: ${{ matrix.variant.os }}
@@ -68,7 +68,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-20.04, macos-11, windows-2019]
-        build: [cp38, cp39, cp310, cp311]
+        build: [cp38, cp39, cp310, cp311, cp312]
     uses: ./.github/workflows/wheel.yml
     with:
       os: ${{ matrix.os }}
