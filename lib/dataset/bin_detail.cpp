@@ -30,9 +30,10 @@ Variable make_range(const scipp::index begin, const scipp::index end,
 
 void update_indices_by_binning(Variable &indices, const Variable &key,
                                const Variable &edges, const bool linspace) {
+  const auto dim = edges.dims().inner();
   if (!indices.dims().includes(key.dims()))
     throw except::BinEdgeError(
-        "Requested binning in dimension '" + to_string(edges.dims().inner()) +
+        "Requested binning in dimension '" + to_string(dim) +
         "' but input contains a bin-edge coordinate with no corresponding "
         "event-coordinate. Provide an event coordinate or convert the "
         "bin-edge coordinate to a non-edge coordinate.");
@@ -43,7 +44,6 @@ void update_indices_by_binning(Variable &indices, const Variable &key,
   if (is_bins(edges)) {
     edge_view = as_subspan_view(edges);
   } else {
-    const Dim dim = edges.dims().inner();
     con_edges = scipp::variable::as_contiguous(edges, dim);
     edge_view = subspan_view(con_edges.as_const(), dim);
   }
