@@ -975,6 +975,7 @@ def test_group_edges_referencing_original_variable() -> None:
     groups *= 2
     assert_identical(binned.coords['x'], doubled_groups)
 
+
 @pytest.fixture
 def noncontiguous_var() -> sc.Variable:
     var = sc.linspace('x', 0, 1, 101, unit='m')[::2]
