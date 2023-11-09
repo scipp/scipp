@@ -28,20 +28,6 @@ Variable make_range(const scipp::index begin, const scipp::index end,
                 dim, CumSumMode::Exclusive);
 }
 
-namespace {
-template <class T> std::tuple<T, Variable> as_edge_view(T &edges) {
-  // The contiguous edges should also be returned along with the view
-  // so that it does not go out of the scope
-  // and kept until the end of the expression where it is called.
-  if (is_bins(edges)) {
-    return std::make_pair(edges, as_subspan_view(edges));
-  }
-  const Dim dim = edges.dims().inner();
-  const auto con_edges = scipp::variable::as_contiguous(edges, dim);
-  return std::make_pair(con_edges, subspan_view(con_edges, dim));
-}
-} // namespace
-
 void update_indices_by_binning(Variable &indices, const Variable &key,
                                const Variable &edges, const bool linspace) {
   if (!indices.dims().includes(key.dims()))
@@ -51,16 +37,25 @@ void update_indices_by_binning(Variable &indices, const Variable &key,
         "event-coordinate. Provide an event coordinate or convert the "
         "bin-edge coordinate to a non-edge coordinate.");
 
-  const auto &[con_edges, edge_view] = as_edge_view(edges);
+  Variable con_edges;
+  Variable edge_view;
+
+  if (is_bins(edges)) {
+    edge_view = as_subspan_view(edges);
+  } else {
+    const Dim dim = edges.dims().inner();
+    con_edges = scipp::variable::as_contiguous(edges, dim);
+    edge_view = subspan_view(con_edges.as_const(), dim);
+  }
 
   if (linspace) {
     variable::transform_in_place(
-        indices, key, edge_view,
+        indices, key, edge_view.as_const(),
         core::element::update_indices_by_binning_linspace,
         "scipp.bin.update_indices_by_binning_linspace");
   } else {
     variable::transform_in_place(
-        indices, key, edge_view,
+        indices, key, edge_view.as_const(),
         core::element::update_indices_by_binning_sorted_edges,
         "scipp.bin.update_indices_by_binning_sorted_edges");
   }
