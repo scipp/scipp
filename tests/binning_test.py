@@ -944,3 +944,13 @@ def test_group_many_groups(ngroup):
     del expected.coords['label']
     assert_identical(grouped.bins.constituents['data'][::2], expected)
     assert_identical(grouped.bins.constituents['data'][1::2], expected)
+
+
+def test_hist_edges_referencing_original_variable() -> None:
+    table = sc.data.table_xyz(100)
+    edges = sc.linspace('x', 0, 1, 11, unit='m')
+    histogrammed = table.hist(x=edges)
+    doubled_edges = edges * 2
+    assert not sc.identical(histogrammed.coords['x'], doubled_edges)
+    edges *= 2
+    assert_identical(histogrammed.coords['x'], doubled_edges)
