@@ -37,16 +37,25 @@ void update_indices_by_binning(Variable &indices, const Variable &key,
         "' but input contains a bin-edge coordinate with no corresponding "
         "event-coordinate. Provide an event coordinate or convert the "
         "bin-edge coordinate to a non-edge coordinate.");
-  const auto &edge_view =
-      is_bins(edges) ? as_subspan_view(edges) : subspan_view(edges, dim);
+
+  Variable con_edges;
+  Variable edge_view;
+
+  if (is_bins(edges)) {
+    edge_view = as_subspan_view(edges);
+  } else {
+    con_edges = scipp::variable::as_contiguous(edges, dim);
+    edge_view = subspan_view(con_edges.as_const(), dim);
+  }
+
   if (linspace) {
     variable::transform_in_place(
-        indices, key, edge_view,
+        indices, key, edge_view.as_const(),
         core::element::update_indices_by_binning_linspace,
         "scipp.bin.update_indices_by_binning_linspace");
   } else {
     variable::transform_in_place(
-        indices, key, edge_view,
+        indices, key, edge_view.as_const(),
         core::element::update_indices_by_binning_sorted_edges,
         "scipp.bin.update_indices_by_binning_sorted_edges");
   }
@@ -63,17 +72,20 @@ Variable groups_to_map(const Variable &var, const Dim dim) {
 
 void update_indices_by_grouping(Variable &indices, const Variable &key,
                                 const Variable &groups) {
-  if ((groups.dtype() == dtype<int32_t> ||
-       groups.dtype() == dtype<int64_t>)&&groups.dims()
-              .volume() != 0 &&
+  const auto dim = groups.dims().inner();
+  const auto con_groups = scipp::variable::as_contiguous(groups, dim);
+
+  if ((con_groups.dtype() == dtype<int32_t> ||
+       con_groups.dtype() == dtype<int64_t>)&&con_groups.dims()
+              .volume() != 0
       // We can avoid expensive lookups in std::unordered_map if the groups are
       // contiguous, by simple subtraction of an offset. This is especially
       // important when the number of target groups is large since the map
       // lookup would result in frequent cache misses.
-      isarange(groups, groups.dim()).value<bool>()) {
-    const auto ngroup =
-        makeVariable<scipp::index>(Values{groups.dims().volume()}, units::none);
-    const auto offset = groups.slice({groups.dim(), 0});
+      && isarange(con_groups, con_groups.dim()).value<bool>()) {
+    const auto ngroup = makeVariable<scipp::index>(
+        Values{con_groups.dims().volume()}, units::none);
+    const auto offset = con_groups.slice({con_groups.dim(), 0});
     variable::transform_in_place(
         indices, key, ngroup, offset,
         core::element::update_indices_by_grouping_contiguous,
@@ -81,10 +93,9 @@ void update_indices_by_grouping(Variable &indices, const Variable &key,
     return;
   }
 
-  const auto dim = groups.dims().inner();
   const auto map = (indices.dtype() == dtype<int64_t>)
-                       ? groups_to_map<int64_t>(groups, dim)
-                       : groups_to_map<int32_t>(groups, dim);
+                       ? groups_to_map<int64_t>(con_groups, dim)
+                       : groups_to_map<int32_t>(con_groups, dim);
   variable::transform_in_place(indices, key, map,
                                core::element::update_indices_by_grouping,
                                "scipp.bin.update_indices_by_grouping");

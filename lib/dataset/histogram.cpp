@@ -15,6 +15,7 @@
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/transform_subspan.h"
+#include "scipp/variable/util.h"
 
 #include "bins_util.h"
 #include "dataset_operations_common.h"
@@ -24,22 +25,10 @@ using namespace scipp::variable;
 
 namespace scipp::dataset {
 
-namespace {
-/// Return `var` unchanged if stride along `dim` is 1, else move `dim` to inner
-/// dim and return copy such that stride is 1.
-auto as_contiguous(const Variable &var, const Dim dim) {
-  if (var.strides()[var.dims().index(dim)] == 1)
-    return var;
-  std::vector<Dim> dims(var.dims().begin(), var.dims().end());
-  const auto it = std::find(dims.begin(), dims.end(), dim);
-  std::rotate(it, it + 1, dims.end());
-  return copy(transpose(var, dims));
-}
-} // namespace
-
 DataArray histogram(const DataArray &events, const Variable &binEdges) {
   using namespace scipp::core;
   auto dim = binEdges.dims().inner();
+  auto con_bin_edges = as_contiguous(binEdges, dim);
 
   DataArray result;
   if (events.dtype() == dtype<bucket<DataArray>>) {
@@ -55,7 +44,7 @@ DataArray histogram(const DataArray &events, const Variable &binEdges) {
                           scipp::span<const Dim>{&dim_, 1}),
               binEdges_);
         },
-        dim, binEdges);
+        dim, con_bin_edges);
   } else if (!is_histogram(events, dim)) {
     const auto event_dim = events.coords().dim_of(dim);
     result = apply_and_drop_dim(
@@ -94,7 +83,7 @@ DataArray histogram(const DataArray &events, const Variable &binEdges) {
               subspan_view(cont_data, event_dim_), promoted_edges,
               element::histogram, "histogram");
         },
-        event_dim, binEdges);
+        event_dim, con_bin_edges);
   } else {
     throw except::BinEdgeError(
         "Data is already histogrammed. Expected event data or dense point "
