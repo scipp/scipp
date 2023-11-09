@@ -974,3 +974,51 @@ def test_group_edges_referencing_original_variable() -> None:
     assert not sc.identical(binned.coords['x'], doubled_groups)
     groups *= 2
     assert_identical(binned.coords['x'], doubled_groups)
+
+@pytest.fixture
+def noncontiguous_var() -> sc.Variable:
+    var = sc.linspace('x', 0, 1, 101, unit='m')[::2]
+    assert not var.values.data.contiguous
+    return var
+
+
+@pytest.fixture
+def contiguous_var(noncontiguous_var: sc.Variable) -> sc.Variable:
+    var = noncontiguous_var.copy()
+    assert var.values.data.contiguous
+    return var
+
+
+def test_noncontiguous_binning(
+    noncontiguous_var: sc.Variable, contiguous_var: sc.Variable
+):
+    table = sc.data.table_xyz(1_000)
+    assert sc.identical(table.bin(x=noncontiguous_var), table.bin(x=contiguous_var))
+
+
+def test_noncontiguous_histogramming(
+    noncontiguous_var: sc.Variable, contiguous_var: sc.Variable
+):
+    table = sc.data.table_xyz(1_000)
+    assert_identical(table.hist(x=noncontiguous_var), table.hist(x=contiguous_var))
+
+
+def test_noncontiguous_grouping(
+    noncontiguous_var: sc.Variable, contiguous_var: sc.Variable
+):
+    table = sc.data.table_xyz(1_000)
+    assert_identical(table.group(noncontiguous_var), table.group(contiguous_var))
+
+
+def test_noncontiguous_int_grouping():
+    table = sc.data.table_xyz(1_000)
+    table.coords['idx'] = sc.arange(dim='row', start=0, stop=1000, step=1, dtype=int)
+
+    nonnontiguous_idx = sc.arange(dim='idx', start=0, stop=1000, step=1, dtype=int)[
+        ::10
+    ]
+    contiguous_idx = sc.arange(dim='idx', start=0, stop=1000, step=10, dtype=int)
+    assert not nonnontiguous_idx.values.data.contiguous
+    assert contiguous_idx.values.data.contiguous
+
+    assert_identical(table.group(nonnontiguous_idx), table.group(contiguous_idx))

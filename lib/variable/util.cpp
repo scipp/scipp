@@ -44,7 +44,8 @@ Variable linspace(const Variable &start, const Variable &stop, const Dim dim,
 }
 
 Variable islinspace(const Variable &var, const Dim dim) {
-  return transform(subspan_view(var, dim), core::element::islinspace,
+  const auto con_var = as_contiguous(var, dim);
+  return transform(subspan_view(con_var, dim), core::element::islinspace,
                    "islinspace");
 }
 
@@ -110,6 +111,15 @@ void fill_zeros(Variable &var) {
 Variable where(const Variable &condition, const Variable &x,
                const Variable &y) {
   return variable::transform(condition, x, y, element::where, "where");
+}
+
+Variable as_contiguous(const Variable &var, const Dim dim) {
+  if (var.stride(dim) == 1)
+    return var;
+  auto dims = var.dims();
+  dims.erase(dim);
+  dims.addInner(dim, var.dims()[dim]);
+  return copy(transpose(var, dims.labels()));
 }
 
 } // namespace scipp::variable
