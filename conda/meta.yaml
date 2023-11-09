@@ -28,7 +28,6 @@ requirements:
     - {{ compiler('cxx') }}
     - cross-python_{{ target_platform }}  # [build_platform != target_platform]
     - cmake
-    - conan==1.59.0
     - cppcheck [linux64]
     - git
     - ninja
@@ -55,7 +54,6 @@ test:
     - bs4
     - cmake
     - comm>=0.1.3  # earlier versions break tests with ipywidgets with latest ipykernel
-    - conan==1.59.0
     - h5py
     - hypothesis
     - ipykernel
@@ -73,6 +71,7 @@ test:
     - tests/
   commands:
     - python -m pytest -v tests
+    - pip install git+https://github.com/conan-io/conan@develop
     - python cmake-package-test/build.py
 {% endif %}
 
@@ -80,6 +79,7 @@ build:
   # Build number is number of Git commits since last tag, if that fails use 0
   number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
   script:
+    - pip install git+https://github.com/conan-io/conan@develop
     # Passing Python_EXECUTABLE ensures that cmake sees the host interpreter instead of build.
     - cmake --preset package-{{ target_platform }} -DPython_EXECUTABLE=$PYTHON
     - cmake --build --preset build
