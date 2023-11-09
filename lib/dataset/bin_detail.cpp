@@ -10,6 +10,7 @@
 #include "scipp/variable/shape.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
+#include "scipp/variable/util.h"
 
 #include "bin_detail.h"
 
