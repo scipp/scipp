@@ -271,7 +271,7 @@ DataArray add_metadata(const Variable &data, std::unique_ptr<Mapper> mapper,
   for (const auto &c : {edges, groups})
     for (const auto &coord : c) {
       dims.emplace(coord.dims().inner());
-      auto to_insert = copy(coord);
+      Variable to_insert(coord);
       to_insert.set_aligned(true);
       out_coords.insert_or_assign(coord.dims().inner(), std::move(to_insert));
     }

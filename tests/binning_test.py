@@ -954,3 +954,23 @@ def test_hist_edges_referencing_original_variable() -> None:
     assert not sc.identical(histogrammed.coords['x'], doubled_edges)
     edges *= 2
     assert_identical(histogrammed.coords['x'], doubled_edges)
+
+
+def test_bin_edges_referencing_original_variable() -> None:
+    table = sc.data.table_xyz(100)
+    edges = sc.linspace('x', 0, 1, 11, unit='m')
+    binned = table.bin(x=edges)
+    doubled_edges = edges * 2
+    assert not sc.identical(binned.coords['x'], doubled_edges)
+    edges *= 2
+    assert_identical(binned.coords['x'], doubled_edges)
+
+
+def test_group_edges_referencing_original_variable() -> None:
+    table = sc.data.table_xyz(100)
+    groups = sc.linspace('x', 0, 1, 10, unit='m')
+    binned = table.group(groups)
+    doubled_groups = groups * 2
+    assert not sc.identical(binned.coords['x'], doubled_groups)
+    groups *= 2
+    assert_identical(binned.coords['x'], doubled_groups)

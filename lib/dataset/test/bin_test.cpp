@@ -707,3 +707,23 @@ TEST(BinLinspaceTest, many_events_many_bins) {
       linspace(0.0 * units::one, 1.0 * units::one, Dim::X, 70000);
   EXPECT_EQ(sum(bin(da, {edges}).data()), sum(da.data()));
 }
+
+TEST(BinEdgeTest, edge_reference_reserved) {
+  const auto table = make_table(10);
+  const auto x_edges =
+      makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{-2, -1, 0, 1, 2});
+  const auto binned = bin(table, {x_edges});
+
+  EXPECT_EQ(&binned.coords()[Dim::X].values<double>()[0],
+            &x_edges.values<double>()[0]);
+}
+
+TEST(BinGroupTest, group_reference_reserved) {
+  const auto table = make_table(10);
+  const auto x_groups =
+      makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{-2, -1, 0, 1, 2});
+  const auto binned = bin(table, {}, {x_groups});
+
+  EXPECT_EQ(&binned.coords()[Dim::X].values<double>()[0],
+            &x_groups.values<double>()[0]);
+}
