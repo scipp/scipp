@@ -15,6 +15,7 @@
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/transform_subspan.h"
+#include "scipp/variable/util.h"
 
 #include "bins_util.h"
 #include "dataset_operations_common.h"
