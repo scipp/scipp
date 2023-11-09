@@ -88,19 +88,17 @@ DataArray histogram(const DataArray &events, const Variable &binEdges) {
         "Data is already histogrammed. Expected event data or dense point "
         "data, got data with bin edges.");
   }
-  result.coords().set(dim, con_bin_edges);
+  result.coords().set(dim, binEdges);
   return result;
 }
 
 Dataset histogram(const Dataset &dataset, const Variable &binEdges) {
-  auto dim = binEdges.dims().inner();
-  auto con_bin_edges = as_contiguous(binEdges, dim);
   return apply_to_items(
       dataset,
       [](const auto &item, const Dim, const auto &binEdges_) {
         return histogram(item, binEdges_);
       },
-      dim, con_bin_edges);
+      binEdges.dims().inner(), binEdges);
 }
 
 /// Return the dimensions of the given data array that have an "bin edge"
