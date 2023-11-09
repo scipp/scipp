@@ -966,14 +966,55 @@ def test_bin_edges_referencing_original_variable() -> None:
     assert_identical(binned.coords['x'], doubled_edges)
 
 
+def test_rebin_edges_referencing_original_variable() -> None:
+    table = sc.data.table_xyz(100)
+    edges = sc.linspace('x', 0, 1, 11, unit='m')
+    smaller_edges = sc.linspace('x', 0, 1, 101, unit='m')
+    rebinned = table.bin(x=edges).bin(x=edges)
+    doubled_edges = smaller_edges * 2
+    assert not sc.identical(rebinned.coords['x'], doubled_edges)
+    smaller_edges *= 2
+    assert_identical(rebinned.coords['x'], doubled_edges)
+
+
+def test_rebin_multi_dim_edges_referencing_original_variable() -> None:
+    table = sc.data.table_xyz(100)
+    x_edges = sc.linspace('x', 0, 1, 11, unit='m')
+    y_edges = sc.linspace('y', 0, 1, 11, unit='m')
+    rebinned = table.bin(x=x_edges).bin(x=y_edges)
+    doubled_x_edges = x_edges * 2
+    doubled_y_edges = y_edges * 2
+    assert not sc.identical(rebinned.coords['x'], doubled_x_edges)
+    assert not sc.identical(rebinned.coords['y'], doubled_y_edges)
+    x_edges *= 2
+    y_edges *= 2
+    assert_identical(rebinned.coords['x'], doubled_x_edges)
+    assert_identical(rebinned.coords['y'], doubled_y_edges)
+
+
 def test_group_edges_referencing_original_variable() -> None:
     table = sc.data.table_xyz(100)
     groups = sc.linspace('x', 0, 1, 10, unit='m')
-    binned = table.group(groups)
+    grouped = table.group(groups)
     doubled_groups = groups * 2
-    assert not sc.identical(binned.coords['x'], doubled_groups)
+    assert not sc.identical(grouped.coords['x'], doubled_groups)
     groups *= 2
-    assert_identical(binned.coords['x'], doubled_groups)
+    assert_identical(grouped.coords['x'], doubled_groups)
+
+
+def test_group_binned_edges_referencing_original_variable() -> None:
+    table = sc.data.table_xyz(100)
+    edges = sc.linspace('x', 0, 1, 11, unit='m')
+    groups = sc.linspace('y', 0, 1, 10, unit='m')
+    grouped = table.bin(x=edges).group(groups)
+    doubled_edges = edges * 2
+    doubled_groups = groups * 2
+    assert not sc.identical(grouped.coords['x'], doubled_edges)
+    assert not sc.identical(grouped.coords['y'], doubled_groups)
+    edges *= 2
+    groups *= 2
+    assert_identical(grouped.coords['x'], doubled_edges)
+    assert_identical(grouped.coords['y'], doubled_groups)
 
 
 @pytest.fixture

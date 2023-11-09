@@ -718,6 +718,48 @@ TEST(BinEdgeTest, edge_reference_reserved) {
             &x_edges.values<double>()[0]);
 }
 
+TEST(BinEdgeTest, rebinning_edge_reference_reserved) {
+  const auto table = make_table(10);
+  const auto x_edges = makeVariable<double>(Dims{Dim::X}, Shape{5},
+                                            Values{-0.2, -0.1, 0., 0.1, 0.2});
+  const auto x_less_edges =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{-0.2, 0., 0.2});
+  const auto rebinned = bin(bin(table, {x_edges}), {x_less_edges});
+
+  EXPECT_EQ(&rebinned.coords()[Dim::X].values<double>()[0],
+            &x_less_edges.values<double>()[0]);
+}
+
+TEST(BinEdgeTest, rebinning_multi_dim_edge_reference_reserved) {
+  const auto table = make_table(10);
+  const auto x_edges = makeVariable<double>(Dims{Dim::X}, Shape{5},
+                                            Values{-0.2, -0.1, 0., 0.1, 0.2});
+  const auto y_edges = makeVariable<double>(Dims{Dim::Y}, Shape{5},
+                                            Values{-0.2, -0.1, 0., 0.1, 0.2});
+  const auto binned = bin(table, {x_edges});
+  const auto rebinned = bin(binned, {y_edges});
+
+  EXPECT_EQ(&rebinned.coords()[Dim::X].values<double>()[0],
+            &x_edges.values<double>()[0]);
+  EXPECT_EQ(&rebinned.coords()[Dim::Y].values<double>()[0],
+            &y_edges.values<double>()[0]);
+}
+
+TEST(BinEdgeTest, group_binned_multi_dim_edge_reference_reserved) {
+  const auto table = make_table(10);
+  const auto x_edges = makeVariable<double>(Dims{Dim::X}, Shape{5},
+                                            Values{-0.2, -0.1, 0., 0.1, 0.2});
+  const auto y_edges = makeVariable<double>(Dims{Dim::Y}, Shape{5},
+                                            Values{-0.2, -0.1, 0., 0.1, 0.2});
+  const auto binned = bin(table, {x_edges});
+  const auto rebinned = bin(binned, {y_edges});
+
+  EXPECT_EQ(&rebinned.coords()[Dim::X].values<double>()[0],
+            &x_edges.values<double>()[0]);
+  EXPECT_EQ(&rebinned.coords()[Dim::Y].values<double>()[0],
+            &y_edges.values<double>()[0]);
+}
+
 TEST(BinGroupTest, group_reference_reserved) {
   const auto table = make_table(10);
   const auto x_groups =
@@ -726,53 +768,54 @@ TEST(BinGroupTest, group_reference_reserved) {
 
   EXPECT_EQ(&binned.coords()[Dim::X].values<double>()[0],
             &x_groups.values<double>()[0]);
+}
 
-  TEST(BinTest, noncontiguous_edges) {
-    const auto table = make_table(10);
-    const auto cont_x =
-        makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{-2, 0, 2});
-    EXPECT_TRUE(cont_x.stride(Dim::X) == 1);
+TEST(BinTest, noncontiguous_edges) {
+  const auto table = make_table(10);
+  const auto cont_x =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{-2, 0, 2});
+  EXPECT_TRUE(cont_x.stride(Dim::X) == 1);
 
-    const auto x_edges =
-        makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{-2, -1, 0, 1, 2});
-    const scipp::core::Slice slice(Dim::X, 0, 5, 2);
-    const auto non_cont_x = x_edges.slice(slice);
-    EXPECT_TRUE(non_cont_x.stride(Dim::X) != 1);
+  const auto x_edges =
+      makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{-2, -1, 0, 1, 2});
+  const scipp::core::Slice slice(Dim::X, 0, 5, 2);
+  const auto non_cont_x = x_edges.slice(slice);
+  EXPECT_TRUE(non_cont_x.stride(Dim::X) != 1);
 
-    EXPECT_EQ(bin(table, {non_cont_x}), bin(table, {cont_x}));
-  }
+  EXPECT_EQ(bin(table, {non_cont_x}), bin(table, {cont_x}));
+}
 
-  TEST(BinTest, bin_by_noncontiguous_group) {
-    const auto table = make_table(10);
+TEST(BinTest, bin_by_noncontiguous_group) {
+  const auto table = make_table(10);
 
-    const auto cont_group =
-        makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{-2, 0, 2});
-    EXPECT_TRUE(cont_group.stride(Dim::X) == 1);
+  const auto cont_group =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{-2, 0, 2});
+  EXPECT_TRUE(cont_group.stride(Dim::X) == 1);
 
-    const auto group =
-        makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{-2, -1, 0, 1, 2});
-    const scipp::core::Slice slice(Dim::X, 0, 5, 2);
-    const auto non_cont_group = group.slice(slice);
-    EXPECT_TRUE(non_cont_group.stride(Dim::X) != 1);
+  const auto group =
+      makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{-2, -1, 0, 1, 2});
+  const scipp::core::Slice slice(Dim::X, 0, 5, 2);
+  const auto non_cont_group = group.slice(slice);
+  EXPECT_TRUE(non_cont_group.stride(Dim::X) != 1);
 
-    EXPECT_EQ(bin(table, {}, {non_cont_group}), bin(table, {}, {cont_group}));
-  }
+  EXPECT_EQ(bin(table, {}, {non_cont_group}), bin(table, {}, {cont_group}));
+}
 
-  TEST(BinTest, bin_by_noncontiguous_int_group) {
-    auto table = make_table(6);
-    const auto z_coord = makeVariable<int64_t>(Dims{table.dim()}, Shape{6},
-                                               Values{0, 1, 2, 3, 4, 5});
-    table.coords().set(Dim::Z, z_coord);
+TEST(BinTest, bin_by_noncontiguous_int_group) {
+  auto table = make_table(6);
+  const auto z_coord = makeVariable<int64_t>(Dims{table.dim()}, Shape{6},
+                                             Values{0, 1, 2, 3, 4, 5});
+  table.coords().set(Dim::Z, z_coord);
 
-    const auto cont_group =
-        makeVariable<int64_t>(Dims{Dim::Z}, Shape{3}, Values{0, 2, 4});
-    EXPECT_TRUE(cont_group.stride(Dim::Z) == 1);
+  const auto cont_group =
+      makeVariable<int64_t>(Dims{Dim::Z}, Shape{3}, Values{0, 2, 4});
+  EXPECT_TRUE(cont_group.stride(Dim::Z) == 1);
 
-    const scipp::core::Slice slice(Dim::Z, 0, 6, 2);
-    const auto group =
-        makeVariable<int64_t>(Dims{Dim::Z}, Shape{6}, Values{0, 1, 2, 3, 4, 5});
-    const auto non_cont_group = group.slice(slice);
-    EXPECT_TRUE(non_cont_group.stride(Dim::Z) != 1);
+  const scipp::core::Slice slice(Dim::Z, 0, 6, 2);
+  const auto group =
+      makeVariable<int64_t>(Dims{Dim::Z}, Shape{6}, Values{0, 1, 2, 3, 4, 5});
+  const auto non_cont_group = group.slice(slice);
+  EXPECT_TRUE(non_cont_group.stride(Dim::Z) != 1);
 
-    EXPECT_EQ(bin(table, {}, {non_cont_group}), bin(table, {}, {cont_group}));
-  }
+  EXPECT_EQ(bin(table, {}, {non_cont_group}), bin(table, {}, {cont_group}));
+}
