@@ -708,7 +708,7 @@ TEST(BinLinspaceTest, many_events_many_bins) {
   EXPECT_EQ(sum(bin(da, {edges}).data()), sum(da.data()));
 }
 
-TEST(BinEdgeTest, edge_reference_reserved) {
+TEST(BinEdgeTest, edge_reference_prereserved) {
   const auto table = make_table(10);
   const auto x_edges =
       makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{-2, -1, 0, 1, 2});
@@ -718,7 +718,7 @@ TEST(BinEdgeTest, edge_reference_reserved) {
             &x_edges.values<double>()[0]);
 }
 
-TEST(BinEdgeTest, rebinning_edge_reference_reserved) {
+TEST(BinEdgeTest, rebinning_edge_reference_prereserved) {
   const auto table = make_table(10);
   const auto x_edges = makeVariable<double>(Dims{Dim::X}, Shape{5},
                                             Values{-0.2, -0.1, 0., 0.1, 0.2});
@@ -730,7 +730,7 @@ TEST(BinEdgeTest, rebinning_edge_reference_reserved) {
             &x_less_edges.values<double>()[0]);
 }
 
-TEST(BinEdgeTest, rebinning_multi_dim_edge_reference_reserved) {
+TEST(BinEdgeTest, rebinning_multi_dim_edge_reference_prereserved) {
   const auto table = make_table(10);
   const auto x_edges = makeVariable<double>(Dims{Dim::X}, Shape{5},
                                             Values{-0.2, -0.1, 0., 0.1, 0.2});
@@ -745,7 +745,7 @@ TEST(BinEdgeTest, rebinning_multi_dim_edge_reference_reserved) {
             &y_edges.values<double>()[0]);
 }
 
-TEST(BinEdgeTest, group_binned_multi_dim_edge_reference_reserved) {
+TEST(BinEdgeTest, group_binned_multi_dim_edge_reference_prereserved) {
   const auto table = make_table(10);
   const auto x_edges = makeVariable<double>(Dims{Dim::X}, Shape{5},
                                             Values{-0.2, -0.1, 0., 0.1, 0.2});
@@ -760,7 +760,7 @@ TEST(BinEdgeTest, group_binned_multi_dim_edge_reference_reserved) {
             &y_edges.values<double>()[0]);
 }
 
-TEST(BinGroupTest, group_reference_reserved) {
+TEST(BinGroupTest, group_reference_prereserved) {
   const auto table = make_table(10);
   const auto x_groups =
       makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{-2, -1, 0, 1, 2});
