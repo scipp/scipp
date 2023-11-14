@@ -237,8 +237,10 @@ auto extract_unbinned(T &array, Mapping &map) {
   std::copy_if(map.keys_begin(), map.keys_end(), std::back_inserter(to_extract),
                [&](const auto &key) { return !map[key].dims().contains(dim); });
   core::Dict<Key, Variable> extracted;
-  for (const auto &key : to_extract)
-    extracted.insert_or_assign(key, map.extract(key));
+  for (const auto &key : to_extract) {
+    extracted.insert_or_assign(key, map.at(key));
+    map.erase(key);
+  }
   return extracted;
 }
 
