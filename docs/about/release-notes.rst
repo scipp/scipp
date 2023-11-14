@@ -27,7 +27,8 @@ Release Notes
    Stability, Maintainability, and Testing
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-vrelease
+
+v23.11.0
 --------
 
 Features
@@ -61,15 +62,6 @@ Documentation
 ~~~~~~~~~~~~~
 
 * Removed the "What's new" page because it had not been updated in a while and Scipp changes less drastically now `#3296 <https://github.com/scipp/scipp/pull/3296>`_.
-
-Deprecations
-~~~~~~~~~~~~
-
-Stability, Maintainability, and Testing
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-v23.09.0
---------
 
 Deprecations
 ~~~~~~~~~~~~
