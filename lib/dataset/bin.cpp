@@ -277,7 +277,7 @@ DataArray add_metadata(const Variable &data, std::unique_ptr<Mapper> mapper,
     }
   for (const auto &[dim_, coord] : coords)
     if (!rebinned(coord) && !out_coords.contains(dim_))
-      out_coords.insert_or_assign(dim_, copy(coord));
+      out_coords.insert_or_assign(dim_, coord);
   auto out_masks = extract_unbinned(buffer, buffer.masks());
   for (const auto &[name, mask] : masks)
     if (!rebinned(mask))
@@ -285,7 +285,7 @@ DataArray add_metadata(const Variable &data, std::unique_ptr<Mapper> mapper,
   auto out_attrs = extract_unbinned(buffer, buffer.attrs());
   for (const auto &[dim_, coord] : attrs)
     if (!rebinned(coord) && !out_coords.contains(dim_))
-      out_attrs.insert_or_assign(dim_, copy(coord));
+      out_attrs.insert_or_assign(dim_, coord);
   return DataArray{bins_from_sizes(std::move(buffer), bin_sizes),
                    std::move(out_coords), std::move(out_masks),
                    std::move(out_attrs)};
