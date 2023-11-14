@@ -970,7 +970,7 @@ def test_rebin_edges_referencing_original_variable() -> None:
     table = sc.data.table_xyz(100)
     edges = sc.linspace('x', 0, 1, 11, unit='m')
     smaller_edges = sc.linspace('x', 0, 1, 101, unit='m')
-    rebinned = table.bin(x=edges).bin(x=edges)
+    rebinned = table.bin(x=edges).bin(x=smaller_edges)
     doubled_edges = smaller_edges * 2
     assert not sc.identical(rebinned.coords['x'], doubled_edges)
     smaller_edges *= 2
@@ -981,7 +981,7 @@ def test_rebin_multi_dim_edges_referencing_original_variable() -> None:
     table = sc.data.table_xyz(100)
     x_edges = sc.linspace('x', 0, 1, 11, unit='m')
     y_edges = sc.linspace('y', 0, 1, 11, unit='m')
-    rebinned = table.bin(x=x_edges).bin(x=y_edges)
+    rebinned = table.bin(x=x_edges).bin(y=y_edges)
     doubled_x_edges = x_edges * 2
     doubled_y_edges = y_edges * 2
     assert not sc.identical(rebinned.coords['x'], doubled_x_edges)
