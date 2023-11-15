@@ -253,3 +253,12 @@ TEST(RebinWithMaskTest, preserves_unrelated_mask) {
   ASSERT_EQ(result["data_xy"].masks()["mask_y"],
             ds["data_xy"].masks()["mask_y"]);
 }
+
+TEST_F(RebinTest, rebin_reference_prereserved) {
+  auto edges =
+      makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1.0, 2.5, 3.5});
+  const auto rebinned = rebin(array, Dim::Y, edges);
+
+  EXPECT_EQ(&rebinned.coords()[Dim::Y].values<double>()[0],
+            &edges.values<double>()[0]);
+}

@@ -776,3 +776,12 @@ TEST(GroupbyLargeTest, sum) {
   auto grouped = groupby(da, Dim::Z).sum(Dim::X);
   EXPECT_EQ(sum(grouped), sum(da));
 }
+
+TEST_F(GroupbyWithBinsTest, groupby_reference_prereserved) {
+  auto bins = makeVariable<double>(Dims{Dim::Z}, Shape{4}, units::m,
+                                   Values{0.0, 1.0, 2.0, 3.0});
+
+  auto grouped = groupby(d, Dim("labels2"), bins);
+  EXPECT_EQ(&grouped.sum(Dim::X).coords()[Dim::Z].values<double>()[0],
+            &bins.values<double>()[0]);
+}

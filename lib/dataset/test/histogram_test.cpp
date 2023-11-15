@@ -496,3 +496,13 @@ TEST(HistogramLinspaceTest, event_mapped_to_correct_bin_at_end) {
     }
   }
 }
+
+TEST(HistogramEdgeTest, edge_reference_prereserved) {
+  const auto table = testdata::make_table(10);
+  const auto x_edges =
+      makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{-2, -1, 0, 1, 2});
+  const auto histogrammed = histogram(table, x_edges);
+
+  EXPECT_EQ(&histogrammed.coords()[Dim::X].values<double>()[0],
+            &x_edges.values<double>()[0]);
+}

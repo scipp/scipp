@@ -708,6 +708,68 @@ TEST(BinLinspaceTest, many_events_many_bins) {
   EXPECT_EQ(sum(bin(da, {edges}).data()), sum(da.data()));
 }
 
+TEST(BinEdgeTest, edge_reference_prereserved) {
+  const auto table = make_table(10);
+  const auto x_edges =
+      makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{-2, -1, 0, 1, 2});
+  const auto binned = bin(table, {x_edges});
+
+  EXPECT_EQ(&binned.coords()[Dim::X].values<double>()[0],
+            &x_edges.values<double>()[0]);
+}
+
+TEST(BinEdgeTest, rebinning_edge_reference_prereserved) {
+  const auto table = make_table(10);
+  const auto x_edges = makeVariable<double>(Dims{Dim::X}, Shape{5},
+                                            Values{-0.2, -0.1, 0., 0.1, 0.2});
+  const auto x_less_edges =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{-0.2, 0., 0.2});
+  const auto rebinned = bin(bin(table, {x_edges}), {x_less_edges});
+
+  EXPECT_EQ(&rebinned.coords()[Dim::X].values<double>()[0],
+            &x_less_edges.values<double>()[0]);
+}
+
+TEST(BinEdgeTest, rebinning_multi_dim_edge_reference_prereserved) {
+  const auto table = make_table(10);
+  const auto x_edges = makeVariable<double>(Dims{Dim::X}, Shape{5},
+                                            Values{-0.2, -0.1, 0., 0.1, 0.2});
+  const auto y_edges = makeVariable<double>(Dims{Dim::Y}, Shape{5},
+                                            Values{-0.2, -0.1, 0., 0.1, 0.2});
+  const auto binned = bin(table, {x_edges});
+  const auto rebinned = bin(binned, {y_edges});
+
+  EXPECT_EQ(&rebinned.coords()[Dim::X].values<double>()[0],
+            &x_edges.values<double>()[0]);
+  EXPECT_EQ(&rebinned.coords()[Dim::Y].values<double>()[0],
+            &y_edges.values<double>()[0]);
+}
+
+TEST(BinEdgeTest, group_binned_multi_dim_edge_reference_prereserved) {
+  const auto table = make_table(10);
+  const auto x_edges = makeVariable<double>(Dims{Dim::X}, Shape{5},
+                                            Values{-0.2, -0.1, 0., 0.1, 0.2});
+  const auto y_edges = makeVariable<double>(Dims{Dim::Y}, Shape{5},
+                                            Values{-0.2, -0.1, 0., 0.1, 0.2});
+  const auto binned = bin(table, {x_edges});
+  const auto rebinned = bin(binned, {y_edges});
+
+  EXPECT_EQ(&rebinned.coords()[Dim::X].values<double>()[0],
+            &x_edges.values<double>()[0]);
+  EXPECT_EQ(&rebinned.coords()[Dim::Y].values<double>()[0],
+            &y_edges.values<double>()[0]);
+}
+
+TEST(BinGroupTest, group_reference_prereserved) {
+  const auto table = make_table(10);
+  const auto x_groups =
+      makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{-2, -1, 0, 1, 2});
+  const auto binned = bin(table, {}, {x_groups});
+
+  EXPECT_EQ(&binned.coords()[Dim::X].values<double>()[0],
+            &x_groups.values<double>()[0]);
+}
+
 TEST(BinTest, noncontiguous_edges) {
   const auto table = make_table(10);
   const auto cont_x =
