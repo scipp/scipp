@@ -252,6 +252,8 @@ def curve_fit(
 ) -> Tuple[DataGroup, DataGroup]:
     """Use non-linear least squares to fit a function, f, to data.
 
+    .. versionadded:: 23.12.0
+
     This is a wrapper around :py:func:`scipy.optimize.curve_fit`. See there for a
     complete description of parameters. The differences are:
 
