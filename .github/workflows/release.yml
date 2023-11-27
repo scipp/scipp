@@ -141,3 +141,21 @@ jobs:
       version: ${{ needs.manage-versions.outputs.version-replaced }}
       branch: ${{ needs.manage-versions.outputs.version-replaced }}
     secrets: inherit
+
+  assets:
+    name: Upload docs
+    needs: docs
+    runs-on: 'ubuntu-22.04'
+    permissions:
+      contents: write  # This is needed so that the action can upload the asset
+    steps:
+    - uses: actions/download-artifact@v3
+    - name: Zip documentation
+      run: |
+        mv html documentation-${{ github.ref_name }}
+        zip -r documentation-${{ github.ref_name }}.zip documentation-${{ github.ref_name }}
+    - name: Upload release assets
+      uses: svenstaro/upload-release-action@v2
+      with:
+        file: ./documentation-${{ github.ref_name }}.zip
+        overwrite: false
