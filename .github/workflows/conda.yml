@@ -30,7 +30,7 @@ jobs:
           submodules: true
           fetch-depth: 0  # history required so cmake can determine version
 
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v3
       - run: >
           conda install
           --channel conda-forge
