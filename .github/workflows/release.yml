@@ -96,7 +96,7 @@ jobs:
 
     steps:
       - uses: actions/download-artifact@v3
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           python-version: '3.8'
       - run: conda install -c conda-forge --yes anaconda-client
