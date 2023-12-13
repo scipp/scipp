@@ -49,6 +49,7 @@ template <class Builder> bool use_two_stage_remap(const Builder &bld) {
 }
 class Mapper {
 public:
+  virtual ~Mapper() = default;
   template <class T> T apply(const Variable &data) {
     const auto maybe_bin = [this](const auto &var) {
       return is_bins(var) ? apply_to_variable(var) : copy(var);
