@@ -28,6 +28,14 @@ Release Notes
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
+v23.11.1
+--------
+
+Bugfixes
+~~~~~~~~
+
+* Fix a memory leak in functions such as :func:`scipp.bin` and :func:`scipp.group` that affects Scipp versions between 23.08.0 and 23.11.0 `#3342 <https://github.com/scipp/scipp/pull/3342>`_.
+
 v23.11.0
 --------
 
