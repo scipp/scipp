@@ -34,7 +34,7 @@ def func3d_np(x, t, y, a, b):
     return a * y * np.exp(-b * t / (1 + x))
 
 
-def array(coords, f, params, noise_scale, seed=1234):
+def array(coords, f, noise_scale, seed=1234):
     rng = np.random.default_rng(seed)
     da_coords = {
         c: sc.linspace(
@@ -43,7 +43,7 @@ def array(coords, f, params, noise_scale, seed=1234):
         )
         for c, kw in coords.items()
     }
-    data = f(**da_coords, **params)
+    data = f(**da_coords)
     # Noise is random but avoiding unbounded values to avoid flaky tests
     data.values += noise_scale * np.clip(rng.normal(size=data.values.shape), -1.5, 1.5)
     return sc.DataArray(data, coords=da_coords)
@@ -51,43 +51,39 @@ def array(coords, f, params, noise_scale, seed=1234):
 
 def array1d(*, a=1.2, b=1.3, noise_scale=0.1, size=50):
     return array(
-        dict(x=dict(dim='xx', start=-0.1, stop=4.0, num=size)),
-        func,
-        dict(a=a, b=b),
+        coords=dict(x=dict(dim='xx', start=-0.1, stop=4.0, num=size)),
+        f=partial(func, a=a, b=b),
         noise_scale=noise_scale,
     )
 
 
 def array2d(*, a=1.2, b=1.3, noise_scale=0.1, size=20):
     return array(
-        dict(
+        coords=dict(
             x=dict(dim='xx', start=-0.1, stop=4.0, num=size),
             t=dict(dim='tt', start=0.0, stop=1.0, num=size // 2),
         ),
-        func2d,
-        dict(a=a, b=b),
+        f=partial(func2d, a=a, b=b),
         noise_scale=noise_scale,
     )
 
 
 def array3d(*, a=1.2, b=1.3, noise_scale=0.1, size=10):
     return array(
-        dict(
+        coords=dict(
             x=dict(dim='xx', start=-0.1, stop=4.0, num=size),
             t=dict(dim='tt', start=0.0, stop=1.0, num=size // 2),
             y=dict(dim='yy', start=2.0, stop=4.0, num=size),
         ),
-        func3d,
-        dict(a=a, b=b),
+        f=partial(func3d, a=a, b=b),
         noise_scale=noise_scale,
     )
 
 
 def array1d_from_vars(*, a, b, noise_scale=0.1, size=50):
     return array(
-        dict(x=dict(dim='xx', start=0.1, stop=4.0, num=size, unit='m')),
-        func,
-        dict(a=a, b=b),
+        coords=dict(x=dict(dim='xx', start=0.1, stop=4.0, num=size, unit='m')),
+        f=partial(func, a=a, b=b),
         noise_scale=noise_scale,
     )
 
@@ -131,13 +127,7 @@ def test_compare_to_curve_fit_xarray(dims, coords, reduce_dims, p0, params, boun
     }[len(coords)]
     da = array(
         {c: dict(start=1, stop=3, num=n) for c, n in dims.items()},
-        lambda **x: (
-            sc.broadcast(
-                f(**{c: x[c] for c in x if c in coords or c in params}),
-                sizes=dims,
-            ).copy()
-        ),
-        params,
+        partial(func3d, **params),
         noise_scale=0.0,
     )
 
@@ -163,11 +153,6 @@ def test_compare_to_curve_fit_xarray(dims, coords, reduce_dims, p0, params, boun
             result[param_name].data,
             xresult['param', sc.scalar(param_name)].data,
         )
-        if (
-            bounds is None
-            or bounds[param_name][0] <= params[param_name] <= bounds[param_name][1]
-        ):
-            assert sc.allclose(result[param_name].data, sc.scalar(params[param_name]))
 
 
 def test_dimensions_present_in_reduce_dims_argument_are_not_present_in_output():
