@@ -11,8 +11,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04]
-        build: [cp38, cp39]
+        os: [ubuntu-22.04]
+        build: [cp39, cp310]
     uses: ./.github/workflows/wheel.yml
     with:
       os: ${{ matrix.os }}
@@ -21,7 +21,7 @@ jobs:
   release:
     name: Make Release on GitHub
     needs: build_wheels
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     permissions:
       contents: write
     steps:
@@ -29,7 +29,7 @@ jobs:
       - uses: actions/download-artifact@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: 3.9
       - run: python .github/workflows/rename-dev-wheels.py
       - uses: ncipollo/release-action@v1
         with:

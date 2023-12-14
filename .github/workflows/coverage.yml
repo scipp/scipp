@@ -11,7 +11,7 @@ defaults:
 
 jobs:
   coverage:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Install dependencies
         run: |
@@ -37,7 +37,7 @@ jobs:
           micromamba-version: 0.24.0
           environment-file: env.yml
           cache-env: true
-          extra-specs: python="3.8"
+          extra-specs: python="3.9"
 
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.10
