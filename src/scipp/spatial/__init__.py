@@ -68,7 +68,10 @@ def as_vectors(x: Variable, y: Variable, z: Variable) -> Variable:
 
     .. versionadded:: 23.03.1
     """
-    return _call_cpp_func(_core_cpp.geometry.as_vectors, x, y, z)
+    return _call_cpp_func(
+        _core_cpp.geometry.as_vectors,
+        *(c.to(dtype='float64', copy=False) for c in (x, y, z)),
+    )
 
 
 def translation(
