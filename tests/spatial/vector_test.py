@@ -49,7 +49,7 @@ def test_as_vectors_requires_matching_units():
 
 
 @pytest.mark.parametrize('dtype', ('float32', 'int64'))
-def test_as_vectors_requires_float64(dtype):
+def test_as_vectors_does_not_require_float64(dtype):
     v = sc.scalar(1.0, unit='m', dtype=dtype)
-    with pytest.raises(sc.DTypeError):
-        sc.spatial.as_vectors(v, v, v)
+    w = sc.scalar(1.0, unit='m', dtype='float64')
+    assert sc.allclose(sc.spatial.as_vectors(v, v, v), sc.spatial.as_vectors(w, w, w))
