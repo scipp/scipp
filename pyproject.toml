@@ -1,7 +1,7 @@
 [build-system]
 requires = [
   "setuptools>=68",
-  "conan @ git+https://github.com/conan-io/conan@develop",
+  "conan>=1.62.0",
   "scikit-build-core"
 ]
 build-backend = "scikit_build_core.build"
@@ -49,7 +49,6 @@ test = [
   "xarray",
   "pandas",
   "bs4",
-  #"numba",
   "ipython",
 ]
 all = [
