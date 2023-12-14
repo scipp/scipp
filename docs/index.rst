@@ -39,6 +39,7 @@ News
 ----
 
 - [|SCIPP_RELEASE_MONTH|] scipp-|SCIPP_VERSION| `has been released <about/release-notes.rst>`_.
+- [December 2023] Scipp dropped support for Python 3.8. Scipp for Python 3.12 is available via ``pip``, ``conda`` remains limited to 3.11 for now.
 - [August 2023] Writing workflows or data pipelines?
   Checkout our new project `Sciline <https://scipp.github.io/sciline>`_.
 - [August 2023] `Plopp <https://scipp.github.io/plopp>`_ is now the only supported plotting backend.
