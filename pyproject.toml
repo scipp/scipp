@@ -46,8 +46,6 @@ dynamic = ["version"]
 test = [
   "pytest",
   "matplotlib",
-  "xarray",
-  "pandas",
   "bs4",
   "ipython",
 ]
