@@ -3,7 +3,6 @@
 
 import numpy as np
 import pytest
-import xarray as xr
 
 import scipp as sc
 from scipp.compat import from_xarray, to_xarray
@@ -14,6 +13,8 @@ from ..factory import (  # NOQA
     make_dense_dataset,
     make_variable,
 )
+
+xr = pytest.importorskip('xarray')
 
 
 def test_from_xarray_variable():

@@ -1,7 +1,7 @@
 [build-system]
 requires = [
   "setuptools>=68",
-  "conan==1.61.0",
+  "conan==1.62.0",
   "scikit-build-core"
 ]
 build-backend = "scikit_build_core.build"
@@ -22,6 +22,7 @@ classifiers = [
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Operating System :: MacOS :: MacOS X",
   "Operating System :: Microsoft :: Windows",
   "Operating System :: POSIX :: Linux",
@@ -45,10 +46,7 @@ dynamic = ["version"]
 test = [
   "pytest",
   "matplotlib",
-  "xarray",
-  "pandas",
   "bs4",
-  "numba",
   "ipython",
 ]
 all = [

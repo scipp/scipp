@@ -8,6 +8,8 @@ import pytest
 import scipp as sc
 from scipp.testing import assert_identical
 
+_ = pytest.importorskip('pandas')
+
 
 def test_load_csv_dataset_default_sep():
     csv = '''x,y,z
