@@ -1,11 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
-# @author Simon Heybrock
-"""Sub-package for optimization such as curve fitting.
 
-This subpackage provides wrappers for a subset of functions from
-:py:mod:`scipy.optimize`.
-"""
 from inspect import getfullargspec
 from numbers import Real
 from typing import Callable, Dict, Mapping, Optional, Sequence, Tuple, Union
@@ -206,6 +201,9 @@ def _curve_fit(
         return
 
     fda = da.flatten(to='row')
+
+    for m in fda.masks.values():
+        fda = fda[~m]
 
     if not unsafe_numpy_f:
         # Making the coords into a dict improves runtime,
@@ -497,9 +495,6 @@ def curve_fit(
             if dims_participating_in_fit.intersection(da.masks[m].dims)
         },
     )
-
-    for m in _da.masks.values():
-        _da = _da[~m]
 
     out = _prepare_numpy_outputs(da, p0, map_over)
 

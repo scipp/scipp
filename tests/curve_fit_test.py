@@ -492,3 +492,38 @@ def test_can_use_non_coord_in_fit():
     data = array1d()
     z = data.coords['x'].copy()
     curve_fit(dict(x=z), func, data)
+
+
+def test_1d_mask():
+    noise_scale = 0.01
+    da = array1d(a=1.2, b=1.3, noise_scale=noise_scale)
+    mask = (da.coords['x'] > 1) & (da.coords['x'] < 2)
+    da.data += sc.where(mask, sc.scalar(1000_000), sc.scalar(0))
+    da.masks['high'] = mask
+    res, _ = curve_fit(['x'], func, da)
+    assert sc.allclose(
+        res['a'].data, sc.scalar(1.2), atol=sc.scalar(noise_scale, unit='dimensionless')
+    )
+    assert sc.allclose(
+        res['b'].data, sc.scalar(1.3), atol=sc.scalar(noise_scale, unit='dimensionless')
+    )
+
+
+def test_2d_mask():
+    noise_scale = 0.01
+    da = array2d(a=1.2, b=1.3, noise_scale=noise_scale)
+    mask = (
+        (da.coords['x'] > 1)
+        & (da.coords['x'] < 2)
+        & (da.coords['t'] > 0.4)
+        & (da.coords['t'] < 0.6)
+    )
+    da.data += sc.where(mask, sc.scalar(1000_000), sc.scalar(0))
+    da.masks['high'] = mask
+    res, _ = curve_fit(['x', 't'], func2d, da)
+    assert sc.allclose(
+        res['a'].data, sc.scalar(1.2), atol=sc.scalar(noise_scale, unit='dimensionless')
+    )
+    assert sc.allclose(
+        res['b'].data, sc.scalar(1.3), atol=sc.scalar(noise_scale, unit='dimensionless')
+    )
