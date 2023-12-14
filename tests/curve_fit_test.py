@@ -51,6 +51,8 @@ def array(coords, f, noise_scale, seed=1234):
 
 def array1d(*, a=1.2, b=1.3, noise_scale=0.1, size=50):
     return array(
+        # Note, dim name different from coord name to make sure
+        # the code doesn't depend on them being the same.
         coords=dict(x=dict(dim='xx', start=-0.1, stop=4.0, num=size)),
         f=partial(func, a=a, b=b),
         noise_scale=noise_scale,
