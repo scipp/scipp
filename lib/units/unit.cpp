@@ -195,6 +195,21 @@ Unit atan2(const Unit &y, const Unit &x) {
       " b " + y.name() + ".");
 }
 
+Unit hyperbolic(const Unit &a) {
+  if (a == units::dimensionless)
+    return units::dimensionless;
+  throw except::UnitError(
+      "Hyperbolic function requires dimensionless input, got " + a.name() +
+      ".");
+}
+
+Unit sinh(const Unit &a) { return hyperbolic(a); }
+Unit cosh(const Unit &a) { return hyperbolic(a); }
+Unit tanh(const Unit &a) { return hyperbolic(a); }
+Unit asinh(const Unit &a) { return hyperbolic(a); }
+Unit acosh(const Unit &a) { return hyperbolic(a); }
+Unit atanh(const Unit &a) { return hyperbolic(a); }
+
 bool identical(const Unit &a, const Unit &b) {
   return a.has_value() && b.has_value() &&
          a.underlying().is_exactly_the_same(b.underlying());
