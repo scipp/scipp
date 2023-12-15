@@ -116,6 +116,7 @@ from .counts import counts_to_density, density_to_counts
 from .cumulative import cumsum
 from .dataset import irreducible_mask
 from .groupby import groupby
+from .hyperbolic import sinh, cosh, tanh, asinh, acosh, atanh
 from .logical import logical_not, logical_and, logical_or, logical_xor
 from .math import (
     abs,
@@ -228,6 +229,7 @@ __all__ = [
     'VariancesError',
     'abs',
     'acos',
+    'acosh',
     'add',
     'all',
     'allclose',
@@ -237,8 +239,10 @@ __all__ = [
     'array',
     'as_const',
     'asin',
+    'asinh',
     'atan',
     'atan2',
+    'atanh',
     'bin',
     'bins',
     'bins_like',
@@ -246,6 +250,7 @@ __all__ = [
     'ceil',
     'concat',
     'cos',
+    'cosh',
     'counts_to_density',
     'cross',
     'cumsum',
@@ -319,6 +324,7 @@ __all__ = [
     'round',
     'scalar',
     'sin',
+    'sinh',
     'sort',
     'sqrt',
     'squeeze',
@@ -326,6 +332,7 @@ __all__ = [
     'subtract',
     'sum',
     'tan',
+    'tanh',
     'to',
     'to_unit',
     'transpose',

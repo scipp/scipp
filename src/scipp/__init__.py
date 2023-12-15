@@ -131,6 +131,7 @@ from .core import (
 )
 from .core import mean, nanmean, sum, nansum, min, max, nanmin, nanmax, all, any
 from .core import broadcast, concat, fold, flatten, squeeze, transpose
+from .core import sinh, cosh, tanh, asinh, acosh, atanh
 from .core import sin, cos, tan, asin, acos, atan, atan2
 from .core import isnan, isinf, isfinite, isposinf, isneginf, to_unit
 from .core import (
@@ -269,6 +270,7 @@ __all__ = [
     'VisibleDeprecationWarning',
     'abs',
     'acos',
+    'acosh',
     'add',
     'all',
     'allclose',
@@ -278,7 +280,9 @@ __all__ = [
     'array',
     'as_const',
     'asin',
+    'asinh',
     'atan',
+    'atanh',
     'atan2',
     'bin',
     'bins',
@@ -290,6 +294,7 @@ __all__ = [
     'concat',
     'coords',
     'cos',
+    'cosh',
     'counts_to_density',
     'cross',
     'cumsum',
@@ -379,6 +384,7 @@ __all__ = [
     'show',
     'show_graph',
     'sin',
+    'sinh',
     'slices',
     'sort',
     'spatial',
@@ -389,6 +395,7 @@ __all__ = [
     'sum',
     'table',
     'tan',
+    'tanh',
     'to_dict',
     'to_html',
     'to_unit',
