@@ -37,10 +37,8 @@ requirements:
     - python
     - tbb-devel {{ tbb_devel }}
   run:
-    - graphlib-backport # for python < 3.9
     - numpy
     - python
-    - pyyaml
     - tbb {{ tbb }}
 
 # Only the cmake-package-test works when cross compiling.

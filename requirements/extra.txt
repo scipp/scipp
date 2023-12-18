@@ -6,80 +6,80 @@
 #    pip-compile-multi
 #
 -r base.txt
-asttokens==2.4.0
+asttokens==2.4.1
     # via stack-data
-backcall==0.2.0
-    # via ipython
-certifi==2023.7.22
+certifi==2023.11.17
     # via requests
-charset-normalizer==3.2.0
+charset-normalizer==3.3.2
     # via requests
-comm==0.1.4
+comm==0.2.0
     # via ipykernel
 debugpy==1.8.0
     # via ipykernel
 decorator==5.1.1
     # via ipython
-executing==1.2.0
+exceptiongroup==1.2.0
+    # via ipython
+executing==2.0.1
     # via stack-data
 graphviz==0.20.1
     # via -r extra.in
-h5py==3.9.0
+h5py==3.10.0
     # via -r extra.in
-idna==3.4
+idna==3.6
     # via requests
-ipykernel==6.25.2
+importlib-metadata==7.0.0
+    # via jupyter-client
+ipykernel==6.27.1
     # via -r extra.in
-ipython==8.12.2
+ipython==8.18.1
     # via ipykernel
-jedi==0.19.0
+jedi==0.19.1
     # via ipython
-jupyter-client==8.3.1
+jupyter-client==8.6.0
     # via ipykernel
-jupyter-core==5.3.1
+jupyter-core==5.5.0
     # via
     #   ipykernel
     #   jupyter-client
-llvmlite==0.40.1
+llvmlite==0.41.1
     # via numba
 matplotlib-inline==0.1.6
     # via
     #   ipykernel
     #   ipython
-nest-asyncio==1.5.7
+nest-asyncio==1.5.8
     # via ipykernel
-numba==0.57.1
+numba==0.58.1
     # via -r extra.in
-packaging==23.1
+packaging==23.2
     # via
     #   ipykernel
     #   pooch
     #   xarray
-pandas==2.0.3
+pandas==2.1.4
     # via
     #   -r extra.in
     #   xarray
 parso==0.8.3
     # via jedi
-pexpect==4.8.0
+pexpect==4.9.0
     # via ipython
-pickleshare==0.7.5
-    # via ipython
-platformdirs==3.10.0
+platformdirs==4.1.0
     # via
     #   jupyter-core
     #   pooch
-pooch==1.7.0
+pooch==1.8.0
     # via -r extra.in
-prompt-toolkit==3.0.39
+prompt-toolkit==3.0.43
     # via ipython
-psutil==5.9.5
+psutil==5.9.6
     # via ipykernel
 ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pygments==2.16.1
+pygments==2.17.2
     # via ipython
 python-dateutil==2.8.2
     # via
@@ -87,25 +87,25 @@ python-dateutil==2.8.2
     #   pandas
 pytz==2023.3.post1
     # via pandas
-pyzmq==25.1.1
+pyzmq==25.1.2
     # via
     #   ipykernel
     #   jupyter-client
 requests==2.31.0
     # via pooch
-scipy==1.10.1
+scipy==1.11.4
     # via -r extra.in
 six==1.16.0
     # via
     #   asttokens
     #   python-dateutil
-stack-data==0.6.2
+stack-data==0.6.3
     # via ipython
-tornado==6.3.3
+tornado==6.4
     # via
     #   ipykernel
     #   jupyter-client
-traitlets==5.9.0
+traitlets==5.14.0
     # via
     #   comm
     #   ipykernel
@@ -113,11 +113,15 @@ traitlets==5.9.0
     #   jupyter-client
     #   jupyter-core
     #   matplotlib-inline
+typing-extensions==4.9.0
+    # via ipython
 tzdata==2023.3
     # via pandas
-urllib3==2.0.6
+urllib3==2.1.0
     # via requests
-wcwidth==0.2.6
+wcwidth==0.2.12
     # via prompt-toolkit
-xarray==2023.1.0
+xarray==2023.12.0
     # via -r extra.in
+zipp==3.17.0
+    # via importlib-metadata
