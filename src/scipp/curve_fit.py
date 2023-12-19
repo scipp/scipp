@@ -249,11 +249,12 @@ def curve_fit(
     **kwargs,
 ) -> Tuple[DataGroup, DataGroup]:
     """Use non-linear least squares to fit a function, f, to data.
+    The function interface is similar to that of :py:func:`xarray.DataArray.curvefit`.
 
     .. versionadded:: 23.12.0
 
-    This is a wrapper around :py:func:`scipy.optimize.curve_fit`. See there for a
-    complete description of parameters. The differences are:
+    This is a wrapper around :py:func:`scipy.optimize.curve_fit`. See there for
+    indepth documentation and keyword arguments. The differences are:
 
     - Instead of separate ``xdata``, ``ydata``, and ``sigma`` arguments,
       the input data array defines these, ``xdata`` by the coords on the data array,
