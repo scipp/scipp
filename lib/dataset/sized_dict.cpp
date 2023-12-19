@@ -7,6 +7,7 @@
 
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/sized_dict.h"
+#include "scipp/variable/variable_factory.h"
 
 namespace scipp::dataset {
 
@@ -221,6 +222,17 @@ void SizedDict<Key, Value>::set(const key_type &key, mapped_type coord) {
   if (contains(key) && at(key).is_same(coord))
     return;
   expect_writable(*this);
+  using core::to_string;
+  if (is_bins(coord))
+    throw except::VariableError(
+        std::string("Cannot set binned variable as coord or mask.\n") +
+        "When working with binned data, binned coords or masks are typically "
+        "set via the `bins` property.\nInstead of\n"
+        "    da.coords[" +
+        to_string(key) + "] = binned_var`\n" +
+        "use\n"
+        "    da.bins.coords[" +
+        to_string(key) + "] = binned_var`");
   auto dims = coord.dims();
   // Is a good definition for things that are allowed: "would be possible to
   // concat along existing dim or extra dim"?
