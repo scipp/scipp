@@ -646,3 +646,23 @@ def test_accessing_meta_property_of_bins_warns_about_deprecation():
     da = sc.data.binned_x(1, 1)
     with pytest.warns(sc.VisibleDeprecationWarning):
         da.bins.meta
+
+
+def test_setting_binned_var_as_coord_or_mask_raises():
+    da = sc.data.binned_x(1, 1)
+    bad = da.bins.coords['x']
+    with pytest.raises(sc.VariableError):
+        da.coords['x'] = bad
+    with pytest.raises(sc.VariableError):
+        da.masks['x'] = bad
+
+
+def test_creating_data_array_with_binned_var_as_coord_or_mask_raises():
+    da = sc.data.binned_x(1, 1)
+    bad = da.bins.coords['x'][0]
+    with pytest.raises(sc.VariableError):
+        sc.DataArray(data=sc.scalar(1), coords={'x': bad})
+    with pytest.raises(sc.VariableError):
+        sc.DataArray(data=sc.scalar(1), masks={'x': bad})
+    with pytest.raises(sc.VariableError):
+        sc.Dataset(coords={'x': bad})
