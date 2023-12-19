@@ -29,6 +29,7 @@ void init_transform(py::module &);
 void init_generated_arithmetic(py::module &);
 void init_generated_bins(py::module &);
 void init_generated_comparison(py::module &);
+void init_generated_hyperbolic(py::module &);
 void init_generated_logical(py::module &);
 void init_generated_math(py::module &);
 void init_generated_reduction(py::module &);
@@ -64,6 +65,7 @@ void init_core(py::module &m) {
   init_generated_arithmetic(core);
   init_generated_bins(core);
   init_generated_comparison(core);
+  init_generated_hyperbolic(core);
   init_generated_logical(core);
   init_generated_math(core);
   init_generated_reduction(core);

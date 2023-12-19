@@ -17,6 +17,7 @@ add_executable(
   creation_test.cpp
   cumulative_test.cpp
   equals_nan_test.cpp
+  hyperbolic_test.cpp
   linalg_test.cpp
   math_test.cpp
   mean_test.cpp
