@@ -313,7 +313,7 @@ def curve_fit(
     unsafe_numpy_f:
         By default the provided fit function ``f`` is assumed to take scipp Variables
         as input and use scipp operations to produce a scipp Variable as output.
-        This has the safety advantages of unit and dimension checking.
+        This has the safety advantage of unit checking.
         However, in some cases it might be advantageous to implement ``f`` using Numpy
         operations for performance reasons. This is particularly the case if the
         curve fit will make many small curve fits involving relatively few data points.
