@@ -255,63 +255,68 @@ def curve_fit(
     This is a wrapper around :py:func:`scipy.optimize.curve_fit`. See there for a
     complete description of parameters. The differences are:
 
-    - Instead of separate xdata, ydata, and sigma arguments, the input data array
-      defines provides these, with sigma defined as the square root of the variances,
-      if present, i.e., the standard deviations.
-    - The fit function f must work with scipp objects. This provides additional safety
-      over the underlying scipy function by ensuring units are consistent.
-    - The initial guess in p0 must be provided as a dict, mapping from fit-function
+    - Instead of separate ``xdata``, ``ydata``, and ``sigma`` arguments,
+      the input data array defines these, ``xdata`` by the coords on the data array,
+      ``ydata`` by ``da.data``, and ``sigma`` is defined as the square root of
+      the variances, if present, i.e., the standard deviations.
+    - The fit function ``f`` must work with scipp objects. This provides additional
+      safety over the underlying scipy function by ensuring units are consistent.
+    - The initial guess in ``p0`` must be provided as a dict, mapping from fit-function
       parameter names to initial guesses.
-    - The parameter bounds must also be provided as a dict, like p0.
+    - The parameter bounds must also be provided as a dict, like ``p0``.
     - The fit parameters may be scalar scipp variables. In that case an initial guess
-      p0 with the correct units must be provided.
-    - The returned optimal parameter values popt and the coverance matrix pcov will
-      have units provided that the initial parameters have units. popt and pcov are
-      DataGroup and a DataGroup of DataGroup respectively. They are indexed using
-      the fit parameter names. The variance of the returned optimal parameter values
-      is set to the corresponding diagonal value of the covariance matrix.
+      ``p0`` with the correct units must be provided.
+    - The returned optimal parameter values ``popt`` and the covariance matrix ``pcov``
+      will have units provided that the initial parameters have units. ``popt`` and
+      ``pcov`` are DataGroup and a DataGroup of DataGroup respectively. They are indexed
+      by the fit parameter names. The variances of the parameter values in ``popt``
+      are set to the corresponding diagonal value in the covariance matrix.
 
     Parameters
     ----------
     coords:
         The coords that act as predictor variables in the fit.
-        If a mapping the keys signify names of arguments to f and the values
-        signify coordinate names in `da.coords`. If the fit coordinate
-        is not present in `da.coords` it can be passed as a Variable.
+        If a mapping, the keys signify names of arguments to ``f`` and the values
+        signify coordinate names in ``da.coords``. If a sequence, the names of the
+        arguments to ``f`` and the names of the coords are taken to be the same.
+        To use a fit coordinate not present in ``da.coords``, pass it as a Variable.
     f:
-        The model function, f(x, y..., a, b...). It must take all coordinates listed
-        in `coords` as arguments, all other arguments will be treated as parameters
-        of the fit.
+        The model function, ``f(x, y..., a, b...)``. It must take all coordinates
+        listed in ``coords`` as arguments, otherwise a ``ValueError`` will be raised,
+        all *other* arguments will be treated as parameters of the fit.
     da:
         The values of the data array provide the dependent data. If the data array
         stores variances then the standard deviations (square root of the variances)
         are taken into account when fitting.
     p0:
-        An optional dict of optional initial guesses for the parameters. If None,
-        then the initial values will all be 1 (if the parameter names for the function
-        can be determined using introspection, otherwise a ValueError is raised). If
-        the fit function cannot handle initial values of 1, in particular for parameters
-        that are not dimensionless, then typically a :py:class:`scipp.UnitError` is
-        raised, but details will depend on the function.
+        An optional dict of initial guesses for the parameters.
+        If None, then the initial values will all be dimensionless 1.
+        If the fit function cannot handle initial values of 1, in particular for
+        parameters that are not dimensionless, then typically a
+        :py:class:``scipp.UnitError`` is raised,
+        but details will depend on the function.
     bounds:
         Lower and upper bounds on parameters.
         Defaults to no bounds.
         Bounds are given as a dict of 2-tuples of (lower, upper) for each parameter
         where lower and upper are either both Variables or plain numbers.
-        Parameters omitted from the `bounds` dict are unbounded.
+        Parameters omitted from the ``bounds`` dict are unbounded.
     reduce_dims:
         Additional dimensions to aggregate while fitting.
-        If a dimension is not in `reduce_dims` or in any of the dimensions
-        of the coords then that dimension will be present in the output
-        and one fit will be performed for every slice of that dimension.
-        If a dimension is passed to `reduce_dims` it will not be present in the output.
+        If a dimension is not in ``reduce_dims``, or in the dimensions
+        of the coords used in the fit, then the values of the optimal parameters
+        will depend on that dimension. One fit will be performed for every slice,
+        and the data arrays in the output will have the dimension in their ``dims``.
+        If a dimension is passed to ``reduce_dims`` all data in that dimension
+        is instead aggregated in a single fit and the dimension will *not*
+        be present in the output.
     unsafe_numpy_f:
-        By default the provided fit function `f` is assumed to take scipp Variables as
-        input and use scipp operations to produce a scipp Variable as output.
+        By default the provided fit function ``f`` is assumed to take scipp Variables
+        as input and use scipp operations to produce a scipp Variable as output.
         This has the safety advantage of unit checking.
-        However, in some cases it might be advantageous to implement `f` using Numpy
-        operations. If `unsafe_numpy_f` is set to `True` then the arguments passed
-        to `f` will be Numpy arrays instead of scipp Variables.
+        However, in some cases it might be advantageous to implement ``f`` using Numpy
+        operations. If ``unsafe_numpy_f`` is set to ``True`` then the arguments passed
+        to ``f`` will be Numpy arrays instead of scipp Variables.
 
     Returns
     -------
@@ -319,6 +324,11 @@ def curve_fit(
         Optimal values for the parameters.
     pcov:
         The estimated covariance of popt.
+
+    See Also
+    --------
+    scipp.scipy.optimize.curve_fit:
+        Similar functionality for 1D fits.
 
     Examples
     --------

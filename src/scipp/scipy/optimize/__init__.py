@@ -174,6 +174,11 @@ def curve_fit(
     pcov:
         The estimated covariance of popt.
 
+    See Also
+    --------
+    scipp.scipy.curve_fit:
+        Supports N-D curve fits.
+
     Examples
     --------
 
