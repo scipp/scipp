@@ -28,6 +28,20 @@ Release Notes
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
+v23.12.0
+--------
+
+Features
+~~~~~~~~
+
+* Add :func:`scipp.curve_fit` `#3303 <https://github.com/scipp/scipp/pull/3303>`_.
+* Add hyperbolic functions such as :func:`scipp.sinh` `#3348 <https://github.com/scipp/scipp/pull/3348>`_.
+
+Bugfixes
+~~~~~~~~
+
+* :func:`scipp.spatial.as_vectors` now works with input dtypes other than float64 `#3346 <https://github.com/scipp/scipp/pull/3346>`_.
+
 v23.11.1
 --------
 
