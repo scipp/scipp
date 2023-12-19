@@ -313,10 +313,14 @@ def curve_fit(
     unsafe_numpy_f:
         By default the provided fit function ``f`` is assumed to take scipp Variables
         as input and use scipp operations to produce a scipp Variable as output.
-        This has the safety advantage of unit checking.
+        This has the safety advantages of unit and dimension checking.
         However, in some cases it might be advantageous to implement ``f`` using Numpy
-        operations. If ``unsafe_numpy_f`` is set to ``True`` then the arguments passed
-        to ``f`` will be Numpy arrays instead of scipp Variables.
+        operations for performance reasons. This is particularly the case if the
+        curve fit will make many small curve fits involving relatively few data points.
+        In this case the pybind overhead on scipp operations might be considerable.
+        If ``unsafe_numpy_f`` is set to ``True`` then the arguments passed to ``f``
+        will be Numpy arrays instead of scipp Variables and the output of ``f`` is
+        expected to be a Numpy array.
 
     Returns
     -------
@@ -348,7 +352,7 @@ def curve_fit(
       >>> y.values += 0.01 * rng.normal(size=50)
       >>> da = sc.DataArray(y, coords={'x': x})
 
-      >>> from scipp.scipy.optimize import curve_fit
+      >>> from scipp import curve_fit
       >>> popt, _ = curve_fit(['x'], func, da, p0 = {'b': 1.0 / sc.Unit('m')})
       >>> round(sc.values(popt['a']), 3), round(sc.stddevs(popt['a']), 4)
       (<scipp.DataArray>
@@ -373,7 +377,6 @@ def curve_fit(
       >>> y.values += 0.01 * rng.normal(size=500).reshape(10, 50)
       >>> da = sc.DataArray(y, coords={'x': x, 'z': z})
 
-      >>> from scipp.scipy.optimize import curve_fit
       >>> popt, _ = curve_fit(['x', 'z'], func, da, p0 = {'b': 1.0 / sc.Unit('m')})
       >>> round(sc.values(popt['a']), 3), round(sc.stddevs(popt['a']), 3)
       (<scipp.DataArray>

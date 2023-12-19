@@ -13,6 +13,7 @@ General
    bins
    bins_like
    collapse
+   curve_fit
    elemwise_func
    group
    hist
