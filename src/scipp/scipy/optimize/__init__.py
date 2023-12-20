@@ -176,7 +176,7 @@ def curve_fit(
 
     See Also
     --------
-    scipp.scipy.curve_fit:
+    scipp.curve_fit:
         Supports N-D curve fits.
 
     Examples
