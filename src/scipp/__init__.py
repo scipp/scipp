@@ -244,6 +244,7 @@ from .core.util import VisibleDeprecationWarning
 
 del core
 
+from .curve_fit import curve_fit
 
 __all__ = [
     'BinEdgeError',
@@ -298,6 +299,7 @@ __all__ = [
     'counts_to_density',
     'cross',
     'cumsum',
+    'curve_fit',
     'data',
     'datetime',
     'datetimes',
