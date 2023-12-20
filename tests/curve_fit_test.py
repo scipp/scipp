@@ -122,6 +122,7 @@ def test_should_not_raise_given_function_with_dimensionless_params_and_1d_array(
     ),
 )
 def test_compare_to_curve_fit_xarray(dims, coords, reduce_dims, p0, params, bounds):
+    _ = pytest.importorskip('xarray')
     f, fxarray = {
         1: (func, func_np),
         2: (func2d, lambda x, a, b: func2d_np(*x, a, b)),
