@@ -238,6 +238,36 @@ TEST(UnitFunctionsTest, atan2) {
   EXPECT_THROW(atan2(units::m, units::s), except::UnitError);
 }
 
+TEST(UnitFunctionsTest, sinh) {
+  EXPECT_EQ(sinh(units::dimensionless), units::dimensionless);
+  EXPECT_THROW(sinh(units::m), except::UnitError);
+}
+
+TEST(UnitFunctionsTest, cosh) {
+  EXPECT_EQ(cosh(units::dimensionless), units::dimensionless);
+  EXPECT_THROW(cosh(units::m), except::UnitError);
+}
+
+TEST(UnitFunctionsTest, tanh) {
+  EXPECT_EQ(tanh(units::dimensionless), units::dimensionless);
+  EXPECT_THROW(tanh(units::m), except::UnitError);
+}
+
+TEST(UnitFunctionsTest, asinh) {
+  EXPECT_EQ(asinh(units::dimensionless), units::dimensionless);
+  EXPECT_THROW(asinh(units::m), except::UnitError);
+}
+
+TEST(UnitFunctionsTest, acosh) {
+  EXPECT_EQ(acosh(units::dimensionless), units::dimensionless);
+  EXPECT_THROW(acosh(units::m), except::UnitError);
+}
+
+TEST(UnitFunctionsTest, atanh) {
+  EXPECT_EQ(atanh(units::dimensionless), units::dimensionless);
+  EXPECT_THROW(atanh(units::m), except::UnitError);
+}
+
 TEST(UnitParseTest, singular_plural) {
   EXPECT_EQ(units::Unit("counts"), units::counts);
   EXPECT_EQ(units::Unit("count"), units::counts);

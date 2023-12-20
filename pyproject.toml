@@ -1,7 +1,7 @@
 [build-system]
 requires = [
   "setuptools>=68",
-  "conan==1.61.0",
+  "conan==1.62.0",
   "scikit-build-core"
 ]
 build-backend = "scikit_build_core.build"
@@ -18,19 +18,18 @@ classifiers = [
   "Natural Language :: English",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Operating System :: MacOS :: MacOS X",
   "Operating System :: Microsoft :: Windows",
   "Operating System :: POSIX :: Linux",
   "Topic :: Scientific/Engineering",
   "Typing :: Typed",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
-  "graphlib-backport",
   "numpy >= 1.20",
 ]
 dynamic = ["version"]
@@ -45,10 +44,7 @@ dynamic = ["version"]
 test = [
   "pytest",
   "matplotlib",
-  "xarray",
-  "pandas",
   "bs4",
-  "numba",
   "ipython",
 ]
 all = [

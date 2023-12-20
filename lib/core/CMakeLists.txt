@@ -28,6 +28,7 @@ set(INC_FILES
     include/scipp/core/element/event_operations.h
     include/scipp/core/element/geometric_operations.h
     include/scipp/core/element/histogram.h
+    include/scipp/core/element/hyperbolic.h
     include/scipp/core/element/logical.h
     include/scipp/core/element/math.h
     include/scipp/core/element/rebin.h

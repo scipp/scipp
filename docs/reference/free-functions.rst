@@ -149,6 +149,19 @@ Trigonometric
    atan
    atan2
 
+Hyperbolic
+~~~~~~~~~~
+
+.. autosummary::
+   :toctree: ../generated/functions
+
+   sinh
+   cosh
+   tanh
+   asinh
+   acosh
+   atanh
+
 Geometric
 ~~~~~~~~~
 

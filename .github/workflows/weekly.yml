@@ -17,8 +17,8 @@ jobs:
     strategy:
       matrix:
         variant:
-          - {os: ubuntu-20.04, target: linux_64}
-        python-version: ["3.8", "3.11"]
+          - {os: ubuntu-22.04, target: linux_64}
+        python-version: ["3.9", "3.11"]
     uses: ./.github/workflows/conda.yml
     with:
       os: ${{ matrix.variant.os }}
@@ -28,8 +28,8 @@ jobs:
   build_wheels:
     strategy:
       matrix:
-        os: [ubuntu-20.04]
-        build: [cp38, cp311]
+        os: [ubuntu-22.04]
+        build: [cp39, cp312]
     uses: ./.github/workflows/wheel.yml
     with:
       os: ${{ matrix.os }}

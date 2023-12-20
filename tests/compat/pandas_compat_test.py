@@ -1,10 +1,11 @@
-import pandas
 import pytest
 
 import scipp as sc
 from scipp.compat import from_pandas
 from scipp.compat.pandas_compat import parse_bracket_header
 from scipp.testing import assert_identical
+
+pandas = pytest.importorskip('pandas')
 
 
 def _make_reference_da(row_name, row_coords, values, dtype="int64"):

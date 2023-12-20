@@ -75,7 +75,7 @@ def make_binned(
     *,
     edges: Optional[Sequence[Variable]] = None,
     groups: Optional[Sequence[Variable]] = None,
-    erase: Optional[Sequence[Variable]] = None,
+    erase: Optional[Sequence[str]] = None,
 ) -> DataArray:
     """Create binned data by binning input along all dimensions given by edges or
     groups.

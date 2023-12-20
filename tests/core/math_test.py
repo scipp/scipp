@@ -17,6 +17,11 @@ import scipp as sc
         (sc.log, np.log),
         (sc.log10, np.log10),
         (sc.sqrt, np.sqrt),
+        (sc.sinh, np.sinh),
+        (sc.cosh, np.cosh),
+        (sc.tanh, np.tanh),
+        (sc.asinh, np.arcsinh),
+        (sc.atanh, np.arctanh),
     ),
 )
 def test_unary_math_compare_to_numpy_dimensionless(funcs):
@@ -24,7 +29,12 @@ def test_unary_math_compare_to_numpy_dimensionless(funcs):
     assert sc.allclose(sc_f(sc.scalar(0.512)), sc.scalar(ref(0.512)))
 
 
-@pytest.mark.parametrize('func', (sc.exp, sc.log, sc.log10, sc.sqrt))
+def test_unary_math_compare_to_numpy_dimensionless_acosh():
+    # Cannot use the value in the generic function
+    assert sc.allclose(sc.acosh(sc.scalar(1.612)), sc.scalar(np.arccosh(1.612)))
+
+
+@pytest.mark.parametrize('func', (sc.exp, sc.log, sc.log10, sc.sqrt, sc.sinh))
 def test_unary_math_out(func):
     out = sc.scalar(np.nan)
     func(sc.scalar(0.932), out=out)

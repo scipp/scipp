@@ -5,6 +5,7 @@
 #include <limits>
 #include <mutex>
 #include <shared_mutex>
+#include <stdexcept>
 #include <unordered_map>
 
 #include "scipp/common/index.h"

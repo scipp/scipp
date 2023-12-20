@@ -15,6 +15,7 @@ set(INC_FILES
     include/scipp/dataset/extract.h
     include/scipp/dataset/groupby.h
     include/scipp/dataset/histogram.h
+    include/scipp/dataset/hyperbolic.h
     include/scipp/dataset/math.h
     include/scipp/dataset/mean.h
     include/scipp/dataset/nanmean.h
