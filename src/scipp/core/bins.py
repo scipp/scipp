@@ -59,7 +59,7 @@ def lookup(
     *,
     mode: Optional[Literal['previous', 'nearest']] = None,
     fill_value: Optional[_cpp.Variable] = None,
-):
+) -> Lookup:
     """Create a "lookup table" from a histogram (data array with bin-edge coord).
 
     The lookup table can be used to map, e.g., time-stamps to corresponding values
