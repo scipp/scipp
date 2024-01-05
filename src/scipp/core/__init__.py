@@ -100,7 +100,7 @@ del _cls
 
 from .arithmetic import add, divide, floor_divide, mod, multiply, negative, subtract
 from .binning import bin, group, hist, nanhist, rebin
-from .bins import lookup, bins, bins_like
+from .bins import Lookup, lookup, bins, bins_like
 from .comparison import (
     less,
     greater,
@@ -221,6 +221,7 @@ __all__ = [
     'DimensionError',
     'GroupByDataArray',
     'GroupByDataset',
+    'Lookup',
     'Masks',
     'Unit',
     'UnitError',

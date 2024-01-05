@@ -30,6 +30,7 @@ Auxiliary Containers
    Coords
    GroupByDataArray
    GroupByDataset
+   Lookup
    Masks
 
 Exceptions

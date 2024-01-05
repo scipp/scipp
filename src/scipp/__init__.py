@@ -83,7 +83,7 @@ from .coords import transform_coords, show_graph
 
 from .core import add, divide, floor_divide, mod, multiply, negative, subtract
 from .core import bin, group, hist, nanhist, rebin
-from .core import lookup, bins, bins_like
+from .core import Lookup, lookup, bins, bins_like
 from .core import (
     less,
     greater,
@@ -262,6 +262,7 @@ __all__ = [
     'DimensionError',
     'GroupByDataArray',
     'GroupByDataset',
+    'Lookup',
     'Masks',
     'Unit',
     'UnitError',
