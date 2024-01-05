@@ -8,6 +8,7 @@ from .._scipp import core as _cpp
 from ..typing import Dims, MetaDataMap, VariableLike
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from .bin_remapping import concat_bins
+from .cpp_classes import Variable
 from .data_group import DataGroup
 from .deprecation import _warn_attr_removal
 from .domains import merge_equal_adjacent
@@ -18,12 +19,20 @@ from .variable import scalar
 
 
 class Lookup:
+    """Lookup table.
+
+    See Also
+    --------
+    scipp.core.bins.lookup:
+        Function for creating lookup tables.
+    """
+
     def __init__(
         self,
         op: Callable,
         func: _cpp.DataArray,
         dim: str,
-        fill_value: Optional[_cpp.Variable] = None,
+        fill_value: Optional[Variable] = None,
     ):
         if (
             not func.masks
@@ -46,10 +55,12 @@ class Lookup:
         self.fill_value = fill_value
         self.__transform_coords_input_keys__ = (dim,)  # for transform_coords
 
-    def __call__(self, var):
+    def __call__(self, var: Variable) -> Variable:
+        """Return table values for the given points."""
         return self.op(self.func, var, self.dim, self.fill_value)
 
-    def __getitem__(self, var):
+    def __getitem__(self, var: Variable) -> Variable:
+        """Return table values for the given points."""
         return self(var)
 
 
@@ -79,6 +90,11 @@ def lookup(
         masked regions of the function. If set to None (the default) this will use NaN
         for floating point types and 0 for integral types. Must have the same dtype and
         unit as the function values.
+
+    Returns
+    -------
+    :
+        The created lookup table.
 
     Examples
     --------
