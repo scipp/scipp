@@ -21,10 +21,10 @@ from .variable import scalar
 class Lookup:
     """Lookup table.
 
-    See Also
-    --------
-    scipp.core.bins.lookup:
-        Function for creating lookup tables.
+    This is class should never be instantiated manually.
+    Instead, use :func:`scipp.lookup`.
+
+    See :func:`scipp.lookup` also for usage examples.
     """
 
     def __init__(
