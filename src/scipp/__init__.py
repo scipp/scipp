@@ -1,8 +1,20 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-
 # flake8: noqa
+"""Multi-dimensional data arrays with labeled dimensions.
+
+Scipp provides
+
+* Physical units are stored with each data or coord array and are handled in arithmetic operations.
+* Histograms, i.e., bin-edge axes, which are by 1 longer than the data extent.
+* Support for non-regular or scattered data and non-destructive binning.
+* Support for masks stored with data.
+* Propagation of uncertainties.
+
+See the online documentation for user guides and an API reference: https://scipp.github.io/
+"""
+
 import os
 
 if os.name == "nt" and "CONDA_PREFIX" in os.environ:
