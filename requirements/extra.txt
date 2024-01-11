@@ -12,7 +12,7 @@ certifi==2023.11.17
     # via requests
 charset-normalizer==3.3.2
     # via requests
-comm==0.2.0
+comm==0.2.1
     # via ipykernel
 debugpy==1.8.0
     # via ipykernel
@@ -28,9 +28,9 @@ h5py==3.10.0
     # via -r extra.in
 idna==3.6
     # via requests
-importlib-metadata==7.0.0
+importlib-metadata==7.0.1
     # via jupyter-client
-ipykernel==6.27.1
+ipykernel==6.28.0
     # via -r extra.in
 ipython==8.18.1
     # via ipykernel
@@ -38,7 +38,7 @@ jedi==0.19.1
     # via ipython
 jupyter-client==8.6.0
     # via ipykernel
-jupyter-core==5.5.0
+jupyter-core==5.7.1
     # via
     #   ipykernel
     #   jupyter-client
@@ -73,7 +73,7 @@ pooch==1.8.0
     # via -r extra.in
 prompt-toolkit==3.0.43
     # via ipython
-psutil==5.9.6
+psutil==5.9.7
     # via ipykernel
 ptyprocess==0.7.0
     # via pexpect
@@ -105,7 +105,7 @@ tornado==6.4
     # via
     #   ipykernel
     #   jupyter-client
-traitlets==5.14.0
+traitlets==5.14.1
     # via
     #   comm
     #   ipykernel
@@ -115,11 +115,11 @@ traitlets==5.14.0
     #   matplotlib-inline
 typing-extensions==4.9.0
     # via ipython
-tzdata==2023.3
+tzdata==2023.4
     # via pandas
 urllib3==2.1.0
     # via requests
-wcwidth==0.2.12
+wcwidth==0.2.13
     # via prompt-toolkit
 xarray==2023.12.0
     # via -r extra.in
