@@ -23,7 +23,7 @@ filelock==3.13.1
     #   virtualenv
 gitdb==4.0.11
     # via gitpython
-gitpython==3.1.40
+gitpython==3.1.41
     # via -r ci.in
 idna==3.6
     # via requests

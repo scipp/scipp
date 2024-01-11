@@ -7,7 +7,7 @@
 #
 -r base.txt
 -r extra.txt
-attrs==23.1.0
+attrs==23.2.0
     # via hypothesis
 beautifulsoup4==4.12.2
     # via
@@ -17,13 +17,13 @@ bs4==0.0.1
     # via -r test.in
 execnet==2.0.2
     # via pytest-xdist
-hypothesis==6.92.0
+hypothesis==6.92.8
     # via -r test.in
 iniconfig==2.0.0
     # via pytest
 pluggy==1.3.0
     # via pytest
-pytest==7.4.3
+pytest==7.4.4
     # via
     #   -r test.in
     #   pytest-xdist
