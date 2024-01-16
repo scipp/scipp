@@ -1,16 +1,10 @@
 import doctest
 import os
 import sys
-from typing import Any, Dict, Optional
-
-from docutils.nodes import document
-from sphinx.application import Sphinx
 
 import scipp
 
 sys.path.insert(0, os.path.abspath('.'))
-
-from version import VersionInfo  # noqa: E402
 
 # General information about the project.
 project = u'Scipp'
