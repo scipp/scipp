@@ -82,70 +82,10 @@ and open new discussions if none of the existing ones provide a satisfactory ans
 
 .. toctree::
    :hidden:
-   :caption: Getting Started
-   :maxdepth: 3
 
-   getting-started/overview
-   getting-started/installation
-   getting-started/quick-start
-   getting-started/faq
-
-.. toctree::
-   :hidden:
-   :caption: User Guide
-   :maxdepth: 3
-
-   user-guide/data-structures
-   user-guide/slicing
-   user-guide/computation
-   user-guide/masking
-   user-guide/binned-data
-   user-guide/groupby
-   user-guide/coordinate-transformations
-   user-guide/reading-and-writing-files
-   user-guide/tips-tricks-and-anti-patterns
-
-.. toctree::
-   :hidden:
-   :caption: Visualization
-   :maxdepth: 3
-
-   visualization/representations-and-tables
-   visualization/plotting
-
-.. toctree::
-   :hidden:
-   :caption: Reference
-   :maxdepth: 3
-
-   reference/classes
-   reference/creation-functions
-   reference/free-functions
-   reference/modules
-   reference/linear-algebra
-   reference/dtype
-   reference/units
-   reference/error-propagation
-   reference/ownership-mechanism-and-readonly-flags
-   reference/logging
-   reference/testing
-   reference/developer-documentation
-
-.. toctree::
-   :hidden:
-   :caption: Tutorials
-   :maxdepth: 3
-
-   tutorials/from-tabular-data-to-binned-data
-   tutorials/solar_flares
-
-.. toctree::
-   :hidden:
-   :caption: About
-   :maxdepth: 3
-
-   about/about
-   about/roadmap
-   about/contributing
-   about/release-notes
-   about/migration-notes
+   getting-started/index
+   user-guide/index
+   visualization/index
+   reference/index
+   tutorials/index
+   about/index
