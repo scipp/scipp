@@ -110,3 +110,14 @@ TEST_F(BinnedArithmeticTest, op_on_slice) {
   const auto one = makeVariable<double>(Values{1});
   EXPECT_EQ(slice * one, copy(slice));
 }
+
+TEST_F(BinnedArithmeticTest, too_many_dims) {
+  // 6 outer dims + 1 event dim are 1 too many.
+  const auto indices6d = makeVariable<scipp::index_pair>(
+      Dims{Dim{"a"}, Dim{"b"}, Dim{"c"}, Dim{"d"}, Dim{"e"}, Dim{"f"}},
+      Shape{1, 1, 1, 1, 1, 1}, Values{std::pair{0, 1}});
+  const auto buffer = makeVariable<int>(Dims{Dim::Event}, Shape{1}, Values{1});
+  const auto binned = make_bins(indices6d, Dim::Event, buffer);
+  const auto rhs = makeVariable<int>(Dims{}, Values{3});
+  EXPECT_THROW_DISCARD(binned + rhs, std::runtime_error);
+}
