@@ -156,7 +156,7 @@ html_theme_options = {
     "pygment_dark_style": "github-dark-high-contrast",
     "logo": {
         "image_light": "_static/logo-2022.svg",
-        # "image_dark": "_static/logo-dark.svg",
+        "image_dark": "_static/logo-dark.svg",
     },
     "external_links": [
         {"name": "Plopp", "url": "https://scipp.github.io/plopp"},
