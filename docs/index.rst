@@ -85,7 +85,6 @@ and open new discussions if none of the existing ones provide a satisfactory ans
 
    getting-started/index
    user-guide/index
-   visualization/index
    reference/index
    tutorials/index
    about/index

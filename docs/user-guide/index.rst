@@ -13,3 +13,5 @@ User Guide
    coordinate-transformations
    reading-and-writing-files
    tips-tricks-and-anti-patterns
+   representations-and-tables
+   plotting
