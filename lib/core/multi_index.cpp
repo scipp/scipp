@@ -100,10 +100,12 @@ flatten_dims(const scipp::span<std::array<scipp::index, sizeof...(StridesArgs)>>
   std::array<scipp::index, N> strides_for_contiguous{};
   scipp::index dim_write = 0;
   for (scipp::index dim_read = dims.ndim() - 1; dim_read >= 0; --dim_read) {
-    if (dim_write >= NDIM_OP_MAX)
+    if (dim_write >= static_cast<scipp::index>(out_shape.size()))
       throw std::runtime_error("Operations with more than " +
                                std::to_string(NDIM_OP_MAX) +
-                               " dimensions are not supported.");
+                               " dimensions are not supported. "
+                               "For binned data, the combined bin+event "
+                               "dimensions count");
     const auto size = dims.size(dim_read);
     if (dim_read > non_flattenable_dim &&
         can_be_flattened(dim_read, size, std::make_index_sequence<N>{},
