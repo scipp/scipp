@@ -117,7 +117,7 @@ pillow==10.2.0
     #   matplotlib
 plopp==23.11.0
     # via -r docs.in
-pydata-sphinx-theme==0.15.1
+pydata-sphinx-theme==0.15.2
     # via -r docs.in
 pyparsing==3.1.1
     # via matplotlib
