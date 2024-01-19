@@ -3,13 +3,15 @@
 gitpython
 hypothesis
 ipympl
+ipython!=8.7.0  # Breaks syntax highlighting in Jupyter code cells.
 ipywidgets
+myst-parser
+nbsphinx
 packaging
 plopp
+pydata-sphinx-theme>=0.14
 pythreejs
 requests
 sphinx
-sphinx-autodoc-typehints==1.18.3  # later versions require sphinx >=5 which is incompatible with current sphinx-book-theme
-sphinx-book-theme==0.3.3
+sphinx-autodoc-typehints
 sphinx-copybutton
-nbsphinx
