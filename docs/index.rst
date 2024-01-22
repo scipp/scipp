@@ -87,4 +87,5 @@ and open new discussions if none of the existing ones provide a satisfactory ans
    user-guide/index
    reference/index
    tutorials/index
+   developer/index
    about/index
