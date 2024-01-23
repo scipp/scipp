@@ -1,5 +1,5 @@
-Developer Area
-==============
+Development
+===========
 
 .. toctree::
    :maxdepth: 2
