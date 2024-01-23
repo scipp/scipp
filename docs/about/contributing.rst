@@ -33,7 +33,7 @@ Contributing a pull request
 Please make sure you have checked the list below before you start:
 
 - Before you begin, make sure the GitHub issue is assigned to you, to avoid duplicate work.
-- Read the `Getting Started <../reference/developer/getting-started.rst>`_ page.
+- Read the `Getting Started <../development/getting-started.rst>`_ page.
   Using the recommended ``pre-commit`` setup and running tests locally will ensure that the builds will pass for your pull request.
 - Reference the issue when you open a pull request.
   If the issue would be resolved by merging the pull request then use one of GitHub's keywords to do so automatically, such as ``Fixes #12345``.
