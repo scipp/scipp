@@ -95,4 +95,4 @@ We recommend combining this with ``all``:
 From source
 -----------
 
-See `developer getting started <../reference/developer/getting-started.rst>`_.
+See the `Getting Started <../development/getting-started.rst>`_ page in the Development section.

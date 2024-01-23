@@ -8,3 +8,4 @@ Getting Started
    installation
    quick-start
    faq
+   tutorials/index
