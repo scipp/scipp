@@ -53,19 +53,17 @@ private:
 
 public:
   void increment_outer() noexcept {
-    // Go through all nested dims (with bins) / all dims (without bins)
-    // where we have reached the end.
-    increment_in_dims(
-        [this](const scipp::index data) -> scipp::index & {
-          return this->m_data_index[data];
-        },
-        0, m_inner_ndim - 1);
-    // Nested dims incremented, move on to bins.
-    // Note that we do not check whether there are any bins, instead whether
-    // the outer Variable is scalar because the loop above is enough to set up
-    // the coord in that case.
-    if (has_bins() && dim_at_end(m_inner_ndim - 1))
-      seek_bin();
+    for (scipp::index dim = 0; dim < m_ndim - 1 && dim_at_end(dim); ++dim) {
+      for (scipp::index data = 0; data < N; ++data) {
+        m_data_index[data] +=
+            // take a step in dimension dim+1
+            m_stride[dim + 1][data]
+            // rewind dimension dim (coord(d) == m_shape[d])
+            - m_coord[dim] * m_stride[dim][data];
+      }
+      ++m_coord[dim + 1];
+      m_coord[dim] = 0;
+    }
   }
 
   void increment() noexcept {
@@ -86,7 +84,14 @@ public:
   }
 
   [[nodiscard]] auto inner_strides() const noexcept {
-    return scipp::span<const scipp::index>(m_stride[0].data(), N);
+    return scipp::span<const scipp::index>(
+        has_bins() ? m_inner_strides.data() : m_stride[0].data(), N);
+  }
+
+  [[nodiscard]] scipp::index bin_size() const noexcept {
+    const auto [begin, end] =
+        m_indices[m_binned_arg][m_data_index[m_binned_arg]];
+    return m_bin_size_scale * (end - begin);
   }
 
   [[nodiscard]] scipp::index inner_distance_to_end() const noexcept {
@@ -102,33 +107,34 @@ public:
   /// this sets the *index of the bin* and NOT the full index within the
   /// iterated data.
   void set_index(const scipp::index index) noexcept {
-    if (has_bins()) {
-      set_bins_index(index);
-    } else {
-      extract_indices(index, shape_it(), shape_it(m_inner_ndim), coord_it());
-      for (scipp::index data = 0; data < N; ++data) {
-        m_data_index[data] = flat_index(data, 0, m_inner_ndim);
-      }
+    extract_indices(index, shape_it(), shape_it(m_ndim), coord_it());
+    for (scipp::index data = 0; data < N; ++data) {
+      m_data_index[data] = flat_index(data, 0, m_ndim);
     }
   }
 
   void set_to_end() noexcept {
-    if (has_bins()) {
-      set_to_end_bin();
+    if (m_ndim == 0) {
+      m_coord[0] = 1;
     } else {
-      if (m_inner_ndim == 0) {
-        m_coord[0] = 1;
-      } else {
-        zero_out_coords(m_inner_ndim - 1);
-        m_coord[m_inner_ndim - 1] = m_shape[m_inner_ndim - 1];
-      }
-      for (scipp::index data = 0; data < N; ++data) {
-        m_data_index[data] = flat_index(data, 0, m_inner_ndim);
-      }
+      zero_out_coords(m_ndim - 1);
+      m_coord[m_ndim - 1] = m_shape[m_ndim - 1];
+    }
+    for (scipp::index data = 0; data < N; ++data) {
+      m_data_index[data] = flat_index(data, 0, m_ndim);
     }
   }
 
   [[nodiscard]] constexpr auto get() const noexcept { return m_data_index; }
+
+  [[nodiscard]] constexpr auto get_deref_binned() const noexcept {
+    auto index = m_data_index;
+    for (scipp::index data = 0; data < N; ++data) {
+      if (m_indices[data] != nullptr)
+        index[data] = m_bin_size_scale * m_indices[data][index[data]].first;
+    }
+    return index;
+  }
 
   bool operator==(const MultiIndex &other) const noexcept {
     // Assuming the number dimensions match to make the check cheaper.
@@ -143,8 +149,7 @@ public:
   in_same_chunk(const MultiIndex &other,
                 const scipp::index first_dim) const noexcept {
     // Take scalars of bins into account when calculating ndim.
-    for (scipp::index dim = first_dim;
-         dim < m_inner_ndim + std::max(bin_ndim(), scipp::index{1}); ++dim) {
+    for (scipp::index dim = first_dim; dim < m_ndim; ++dim) {
       if (m_coord[dim] != other.m_coord[dim]) {
         return false;
       }
@@ -164,12 +169,12 @@ public:
     return it;
   }
 
-  [[nodiscard]] bool has_bins() const noexcept {
-    return m_nested_dim_index != -1;
-  }
+  [[nodiscard]] bool has_bins() const noexcept { return m_bin_size_scale >= 0; }
 
   /// Return true if the first subindex has a 0 stride
   [[nodiscard]] bool has_stride_zero() const noexcept {
+    // TODO Is this still correct in the binned case? What if we reduce over bin
+    // contents?
     for (scipp::index dim = 0; dim < m_ndim; ++dim)
       if (m_stride[dim][0] == 0)
         return true;
@@ -179,131 +184,6 @@ public:
 private:
   [[nodiscard]] auto dim_at_end(const scipp::index dim) const noexcept {
     return m_coord[dim] == std::max(m_shape[dim], scipp::index{1});
-  }
-
-  [[nodiscard]] bool at_end() const noexcept { return dim_at_end(last_dim()); }
-
-  [[nodiscard]] scipp::index last_dim() const noexcept {
-    if (has_bins()) {
-      return bin_ndim() == 0 ? m_ndim : m_ndim - 1;
-    } else {
-      return std::max(m_ndim - 1, scipp::index{0});
-    }
-  }
-
-  template <class F>
-  void increment_in_dims(const F &data_index, const scipp::index begin_dim,
-                         const scipp::index end_dim) {
-    for (scipp::index dim = begin_dim; dim < end_dim && dim_at_end(dim);
-         ++dim) {
-      for (scipp::index data = 0; data < N; ++data) {
-        data_index(data) +=
-            // take a step in dimension dim+1
-            m_stride[dim + 1][data]
-            // rewind dimension dim (coord(d) == m_shape[d])
-            - m_coord[dim] * m_stride[dim][data];
-      }
-      ++m_coord[dim + 1];
-      m_coord[dim] = 0;
-    }
-  }
-
-  [[nodiscard]] constexpr auto bin_ndim() const noexcept {
-    return m_ndim - m_inner_ndim;
-  }
-
-  [[nodiscard]] bool current_bin_is_empty() const noexcept {
-    return m_shape[m_nested_dim_index] == 0;
-  }
-
-  struct BinIterator {
-    BinIterator() = default;
-    explicit BinIterator(const BucketParams &bucket_params,
-                         const scipp::index outer_volume)
-        : m_is_binned{static_cast<bool>(bucket_params)},
-          // indices can be != nullptr but outer_volume == 0 when Variable
-          // was sliced.
-          m_indices{outer_volume == 0 ? nullptr : bucket_params.indices} {}
-
-    const bool m_is_binned{false};
-    scipp::index m_bin_index{0};
-    const std::pair<scipp::index, scipp::index> *m_indices{nullptr};
-  };
-
-  void increment_outer_bins() noexcept {
-    increment_in_dims(
-        [this](const scipp::index data) -> scipp::index & {
-          return this->m_bin[data].m_bin_index;
-        },
-        m_inner_ndim, m_ndim - 1);
-  }
-
-  void increment_bins() noexcept {
-    const auto dim = m_inner_ndim;
-    for (scipp::index data = 0; data < N; ++data) {
-      m_bin[data].m_bin_index += m_stride[dim][data];
-    }
-    zero_out_coords(m_inner_ndim);
-    ++m_coord[dim];
-    if (dim_at_end(dim))
-      increment_outer_bins();
-    if (!at_end()) {
-      for (scipp::index data = 0; data < N; ++data) {
-        load_bin_params(data);
-      }
-    }
-  }
-
-  void seek_bin() noexcept {
-    do {
-      increment_bins();
-    } while (current_bin_is_empty() && !at_end());
-  }
-
-  void load_bin_params(const scipp::index data) noexcept {
-    if (!m_bin[data].m_is_binned) {
-      m_data_index[data] = flat_index(data, 0, m_ndim);
-    } else if (!at_end()) {
-      // All bins are guaranteed to have the same size.
-      if (m_bin[data].m_indices != nullptr) {
-        const auto [begin, end] =
-            m_bin[data].m_indices[m_bin[data].m_bin_index];
-        m_shape[m_nested_dim_index] = end - begin;
-        m_data_index[data] = m_stride[m_nested_dim_index][data] * begin;
-      } else {
-        // m_indices can be nullptr if there are bins, but they are empty.
-        m_shape[m_nested_dim_index] = 0;
-        m_data_index[data] = 0;
-      }
-    }
-    // else: at end of bins
-  }
-
-  void set_bins_index(const scipp::index index) noexcept {
-    if (bin_ndim() == 0 && index != 0) {
-      // Scalar outer dims and setting to / past end.
-      set_to_end_bin();
-    } else {
-      zero_out_coords(m_inner_ndim);
-      extract_indices(index, shape_it(m_inner_ndim), shape_end(),
-                      coord_it(m_inner_ndim));
-    }
-
-    for (scipp::index data = 0; data < N; ++data) {
-      m_bin[data].m_bin_index = flat_index(data, m_inner_ndim, m_ndim);
-      load_bin_params(data);
-    }
-    if (current_bin_is_empty() && !at_end())
-      seek_bin();
-  }
-
-  void set_to_end_bin() noexcept {
-    zero_out_coords(m_ndim);
-    if (bin_ndim() == 0) {
-      m_coord[m_inner_ndim] = 1;
-    } else {
-      m_coord[m_ndim - 1] = std::max(m_shape[m_ndim - 1], scipp::index{1});
-    }
   }
 
   scipp::index flat_index(const scipp::index i_data, scipp::index begin_index,
@@ -343,15 +223,15 @@ private:
   std::array<scipp::index, NDIM_OP_MAX + 1> m_shape = {};
   /// Total number of dimensions.
   scipp::index m_ndim{0};
-  /// Number of dense dimensions, i.e. same as m_ndim when not binned,
-  /// else number of dims in bins.
-  scipp::index m_inner_ndim{0};
-  /// Index of dim referred to by bin indices to distinguish, e.g., 2D bins
-  /// slicing along first or second dim.
-  /// -1 if not binned.
-  scipp::index m_nested_dim_index{-1};
-  /// Parameters of the currently loaded bins.
-  std::array<BinIterator, N> m_bin = {};
+  /// Scale factor for bin size (1 unless bins are multi-dim).
+  scipp::index m_bin_size_scale{-1};
+  /// Start/stop indices for binned args, used for translating m_data_index to
+  /// index for the bin content.
+  std::array<const std::pair<scipp::index, scipp::index> *, N> m_indices = {};
+  /// Inner strides in case of iteration with bins
+  std::array<scipp::index, N> m_inner_strides = {};
+  /// Index of an argument with bins
+  scipp::index m_binned_arg{-1};
 };
 
 template <class... StridesArgs>
