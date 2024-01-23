@@ -151,7 +151,7 @@ html_theme_options = {
     "navbar_persistent": ["search-button"],
     "show_nav_level": 1,
     # Adjust this to ensure external links are moved to "Move" menu
-    "header_links_before_dropdown": 6,
+    "header_links_before_dropdown": 5,
     "pygment_light_style": "github-light-high-contrast",
     "pygment_dark_style": "github-dark-high-contrast",
     "logo": {
