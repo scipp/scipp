@@ -18,7 +18,7 @@ template class SCIPP_CORE_EXPORT MultiIndex<5>;
 namespace {
 void validate_bin_indices_impl(const ElementArrayViewParams &param0,
                                const ElementArrayViewParams &param1) {
-  const auto iterDims = param0.dims();
+  const auto &iterDims = param0.dims();
   auto index = MultiIndex(iterDims, param0.strides(), param1.strides());
   const auto indices0 = param0.bucketParams().indices;
   const auto indices1 = param1.bucketParams().indices;
@@ -76,9 +76,7 @@ bool can_be_flattened(
     std::array<scipp::index, sizeof...(I)> &strides_for_contiguous,
     const StridesArgs &...strides) {
   const bool res =
-      ((value_or_default(strides, dim) == strides_for_contiguous[I] &&
-        value_or_default(strides, dim) != 0) &&
-       ...);
+      ((value_or_default(strides, dim) == strides_for_contiguous[I]) && ...);
   ((strides_for_contiguous[I] = size * value_or_default(strides, dim)), ...);
   return res;
 }
@@ -108,6 +106,7 @@ flatten_dims(const scipp::span<std::array<scipp::index, sizeof...(StridesArgs)>>
                                "dimensions count");
     const auto size = dims.size(dim_read);
     if (dim_read > non_flattenable_dim &&
+        dim_write > 0 && // need to write at least one inner dim
         can_be_flattened(dim_read, size, std::make_index_sequence<N>{},
                          strides_for_contiguous, strides...)) {
       out_shape[dim_write - 1] *= size;
