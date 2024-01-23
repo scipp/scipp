@@ -39,7 +39,7 @@ On the right, the input data is first sliced in dimension ``[a]`` and ``c`` is c
 Here, ``b`` is the only dimension-coordinate in the inputs and dimension ``[b]`` is therefore renamed to ``[c]``.
 When we finally concatenate the transformed slices, ``c`` has dimensions ``[a,x,c]`` which differ from the result in the left graph.
 
-.. image:: ../../../images/transform_coords/slice-transform-concat.svg
+.. image:: ../../images/transform_coords/slice-transform-concat.svg
   :width: 640
   :alt: slice-transform-concat
 
@@ -60,7 +60,7 @@ However, when an extra node ``e`` is inserted (graph 2), ``c`` has only a single
 Dimension ``a`` is therefore renamed to ``e``.
 This is undesirable because the distance between a node and dimension coordinates should not matter, ``b`` is an ancestor of ``c`` in both cases.
 
-.. image:: ../../../images/transform_coords/split-join.svg
+.. image:: ../../images/transform_coords/split-join.svg
   :width: 360
   :alt: split-join graph
 
@@ -74,7 +74,7 @@ Node ``d`` can be uniquely associated with ``a`` in this case.
 This would allow renaming dimension ``a`` to ``d``.
 The purely local rule in versions 0.8 - 0.10 does not, however, rename as it treats the ``{a,b,c}`` and ``{b,c,d}`` subgraphs separately.
 
-.. image:: ../../../images/transform_coords/cycle.svg
+.. image:: ../../images/transform_coords/cycle.svg
   :width: 100
   :alt: cycle graph
 
@@ -129,7 +129,7 @@ Therefore, dimension ``d`` is not renamed.
 ``a`` could in principle be renamed to ``c`` but ``c`` is excluded from renaming because it is in a cycle.
 (It does not matter that the cycle contains only a single node. In general, cycles represent multiple nodes and do not represent dimensions that can be renamed.)
 
-.. image:: ../../../images/transform_coords/cycle-contraction.svg
+.. image:: ../../images/transform_coords/cycle-contraction.svg
   :width: 640
   :alt: cycle graph
 
@@ -156,7 +156,7 @@ Nodes can have multiple colors and keep track of the 'amount' of each color as i
    As a result, most nodes have a fractional color and can therefore not be associated with dimension ``a``.
    The final node, ``h`` receives full contributions from both ``a`` and ``d``, meaning that those colors cancel.
 
-.. image:: ../../../images/transform_coords/fractional-colors.svg
+.. image:: ../../images/transform_coords/fractional-colors.svg
   :width: 640
   :alt: cycle graph
 

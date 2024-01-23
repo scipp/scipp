@@ -38,25 +38,25 @@ Below are some examples of event flow in the new pattern.
 
 Moving the slider in a 1D plot:
 
-.. image:: ../../../images/plotting-1d-slider-event.png
+.. image:: ../../images/plotting-1d-slider-event.png
   :width: 640
   :alt: Moving the slider in a 1D plot
 
 Saving a line from the panel buttons in a 1D plot:
 
-.. image:: ../../../images/plotting-1d-keep-event.png
+.. image:: ../../images/plotting-1d-keep-event.png
   :width: 640
   :alt: Saving a line from the panel buttons in a 1D plot
 
 Clicking on the 1d view to save a profile:
 
-.. image:: ../../../images/plotting-1d-pick-event.png
+.. image:: ../../images/plotting-1d-pick-event.png
   :width: 640
   :alt: Clicking on the 1d view to save a profile
 
 Moving the slider in a 2D plot:
 
-.. image:: ../../../images/plotting-2d-slider-event.png
+.. image:: ../../images/plotting-2d-slider-event.png
   :width: 640
   :alt: Moving the slider in a 2D plot
 
