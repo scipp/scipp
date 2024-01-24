@@ -44,7 +44,7 @@ News
   Checkout our new project `Sciline <https://scipp.github.io/sciline>`_.
 - [August 2023] `Plopp <https://scipp.github.io/plopp>`_ is now the only supported plotting backend.
   Plopp must be installed as a separate dependency.
-  See `Plotting <visualization/plotting.ipynb>`_ for details.
+  See `Plotting <user-guide/plotting.ipynb>`_ for details.
 - [January 2023] Scipp now comes with a **new data structure**, `DataGroup <user-guide/data-structures/data-structures.ipynb#DataGroup>`_, a ``dict``-like container with Scipp functionality.
 - [November 2022] Scipp switched to "Calendar Versioning".
   See `Version numbers and deprecation policy <about/about.rst#Version-numbers-and-deprecation-policy>`_ for details.
@@ -64,7 +64,7 @@ Depending on your area of application you may be most interested in `Binned Data
 `GroupBy <user-guide/groupby.rst>`_, or
 `Masking <user-guide/masking.rst>`_.
 The combination of these features is what sets Scipp apart from other Python libraries.
-Make sure to also check out `Representations and Tables <visualization/representations-and-tables.rst>`_ and `Plotting <visualization/plotting.rst>`_ for an overview of Scipp's powerful visualization features.
+Make sure to also check out `Representations and Tables <user-guide/representations-and-tables.rst>`_ and `Plotting <user-guide/plotting.rst>`_ for an overview of Scipp's powerful visualization features.
 
 The **Reference** documentation section provides a detailed listing of all functions and classes of Scipp, as well as some more technical documentation.
 If you are looking for something in particular, use the **Search the docs** function in the left navigation panel.
