@@ -37,9 +37,9 @@ TEST(Variable, many_dims_works_or_fails_gracefully) {
   EXPECT_EQ(var.ndim(), 15);
   EXPECT_EQ(copy(var), var);
   EXPECT_EQ(var + var, makeVariable<double>(dims, Values{2}));
+  EXPECT_EQ(var + 1.0 * units::one, makeVariable<double>(dims, Values{2}));
   // TODO In principle we should be able to support all of the below with
   // flattening, but the current implementation dos not handle this.
-  ASSERT_THROW(var += 1.0 * units::one, std::runtime_error);
   ASSERT_THROW(var +=
                makeVariable<double>(Dims{Dim("a")}, Shape{2}, Values{1, 2}),
                std::runtime_error);

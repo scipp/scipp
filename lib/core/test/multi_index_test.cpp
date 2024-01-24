@@ -139,6 +139,15 @@ Strides make_strides(const Dimensions &iter_dims, const Dimensions &data_dims) {
   return strides;
 }
 
+TEST_F(MultiIndexTest, broadcast_scalar) {
+  check(MultiIndex(xy, make_strides(xy, Dimensions{})), {0, 0, 0, 0, 0, 0});
+}
+
+TEST_F(MultiIndexTest, broadcast_scalar_with_2d_array) {
+  check(MultiIndex(xy, make_strides(xy, Dimensions{}), make_strides(xy, xy)),
+        {0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5});
+}
+
 TEST_F(MultiIndexTest, broadcast_inner) {
   check(MultiIndex(xy, make_strides(xy, x)), {0, 0, 0, 1, 1, 1});
 }
