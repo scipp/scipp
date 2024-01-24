@@ -113,7 +113,7 @@ A lot of this has been (and still is) happening since 2018/2019, i.e., some of t
   The goal is to address the fragmentation between libraries such as NumPy, Tensorflow, PyTorch, Dask, JAX, CuPy, MXNet, Xarray, and others.
 - NEP18 added `__array_function__` (in addition to the previous `__array_ufunc__`), experimental in numpy-1.16 (Jan 2019), default in numpy-1.17 (July 2019).
 - Based on `__array_function__`, Xarray could work on better [Pint](https://github.com/hgrecco/pint) support, resulting also in the experimental [pint-xarray](https://github.com/xarray-contrib/pint-xarray).
-- The above is part of the wider "duck array wrapping" effort, see the [ongoing Xarray project](https://github.com/pydata/xarray/projects/2) and the [Duck array compatibility meeintg](https://github.com/pydata/xarray#5648).
+- The above is part of the wider "duck array wrapping" effort, see the [ongoing Xarray project](https://github.com/pydata/xarray/projects/2) and the [Duck array compatibility meeting](https://github.com/pydata/xarray/issues/5648).
 - The [Xarray roadmap](https://docs.xarray.dev/en/stable/roadmap.html):
   - [Extracting xarray.Variable into a standalone package](https://docs.xarray.dev/en/stable/roadmap.html#labeled-array-without-coordinates) is a highly relevant development.
     It would allow for use of this component without the much larger Xarray (and Pandas) dependency.
