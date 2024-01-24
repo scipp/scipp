@@ -14,7 +14,7 @@ def make_html(container: VariableLike) -> str:
     """Return the HTML representation of an object.
 
     See 'HTML representation' in
-    `Representations and Tables <../../visualization/representations-and-tables.rst>`_
+    `Representations and Tables <../../user-guide/representations-and-tables.rst>`_
     for details.
 
     Parameters

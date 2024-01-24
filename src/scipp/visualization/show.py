@@ -525,7 +525,7 @@ def show(container: VariableLike):
     Show a graphical representation of a variable, data array, or dataset.
 
     See 'SVG representation' in
-    `Representations and Tables <../../visualization/representations-and-tables.rst>`_
+    `Representations and Tables <../../user-guide/representations-and-tables.rst>`_
     for details.
     """
     from IPython.core.display import HTML, display

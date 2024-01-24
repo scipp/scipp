@@ -5,7 +5,7 @@
 def plot(*args, **kwargs):
     """
     Wrapper function to plot data.
-    See https://scipp.github.io/plopp/reference/generated/plopp.plot.html for details.
+    See https://scipp.github.io/plopp/ for details.
     """
     from plopp import plot as _plot
 

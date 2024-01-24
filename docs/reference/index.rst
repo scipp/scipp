@@ -15,4 +15,3 @@ API Reference
    ownership-mechanism-and-readonly-flags
    logging
    testing
-   developer-documentation
