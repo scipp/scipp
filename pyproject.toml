@@ -124,6 +124,7 @@ testpaths = "tests"
 addopts = """
 --strict-config
 --strict-markers
+--import-mode=importlib
 -ra
 -v
 """
