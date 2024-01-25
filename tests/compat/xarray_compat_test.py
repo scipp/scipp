@@ -7,13 +7,6 @@ import pytest
 import scipp as sc
 from scipp.compat import from_xarray, to_xarray
 
-from ..factory import (  # NOQA
-    make_binned_data_array,
-    make_dense_data_array,
-    make_dense_dataset,
-    make_variable,
-)
-
 xr = pytest.importorskip('xarray')
 
 
@@ -257,63 +250,126 @@ def test_from_xarray_dataset_with_only_attrs():
 
 
 def test_to_xarray_variable():
-    sc_var = make_variable(ndim=2, unit='m')
+    sc_var = sc.arange('aux', 0.0, 90, 2, unit='m').fold(
+        'aux', sizes={'xx': 5, 'yy': 9}
+    )
     xr_var = to_xarray(sc_var)
-    assert xr_var.sizes == {"yy": 50, "xx": 40}
+    assert xr_var.sizes == {"yy": 9, "xx": 5}
     assert xr_var.attrs["units"] == "m"
     assert np.array_equal(xr_var.values, sc_var.values)
 
 
 def test_to_xarray_variable_variances_dropped():
-    sc_var = make_variable(ndim=2, unit='m', with_variance=True)
+    sc_var = sc.arange('aux', 0.0, 90, 2, unit='m').fold(
+        'aux', sizes={'xx': 5, 'yy': 9}
+    )
+    sc_var.variances = sc_var.values * 0.1
     with pytest.warns(UserWarning):
         xr_var = to_xarray(sc_var)
-    assert xr_var.sizes == {"yy": 50, "xx": 40}
+    assert xr_var.sizes == {"yy": 9, "xx": 5}
     assert xr_var.attrs["units"] == "m"
     assert np.array_equal(xr_var.values, sc_var.values)
 
 
 def test_to_xarray_dataarray():
-    sc_da = make_dense_data_array(ndim=2)
+    sc_da = sc.DataArray(
+        sc.arange('aux', 0.0, 90, 2, unit='counts').fold(
+            'aux', sizes={'xx': 5, 'yy': 9}
+        ),
+        coords={
+            'xx': sc.arange('xx', 5.0, unit='s'),
+            'yy': sc.arange('yy', 9.0, unit='µK'),
+        },
+    )
     xr_da = to_xarray(sc_da)
     assert xr_da.dims == sc_da.dims
     assert xr_da.shape == sc_da.shape
     assert all(x in xr_da.coords for x in ["xx", "yy"])
     assert xr_da.attrs['units'] == 'counts'
     assert np.array_equal(xr_da.values, sc_da.values)
+    assert np.array_equal(xr_da.coords['xx'].values, sc_da.coords['xx'].values)
+    assert np.array_equal(xr_da.coords['yy'].values, sc_da.coords['yy'].values)
 
 
 def test_to_xarray_dataarray_2d_coord():
-    sc_da = make_dense_data_array(ndim=2)
-    sc_da.coords['a2dcoord'] = sc.fold(
-        sc.arange('_', float(np.prod(sc_da.shape))), dim='_', sizes=sc_da.sizes
+    sc_da = sc.DataArray(
+        sc.arange('aux', 0.0, 90, 2, unit='counts'),
+        coords={'a2dcoord': sc.arange('aux', 45.0, 90.0)},
+    ).fold('aux', sizes={'xx': 5, 'yy': 9})
+    xr_da = to_xarray(sc_da)
+    assert xr_da.coords['a2dcoord'].dims == ("xx", "yy")
+    assert np.array_equal(
+        xr_da.coords['a2dcoord'].values, sc_da.coords['a2dcoord'].values
     )
+
+
+@pytest.mark.parametrize('coord', ('xx', 'yy'))
+def test_to_xarray_dataarray_with_unaligned_coords(coord):
+    sc_da = sc.DataArray(
+        sc.arange('aux', 0.0, 90, 2, unit='counts').fold(
+            'aux', sizes={'yy': 9, 'xx': 5}
+        ),
+        coords={
+            'xx': sc.arange('xx', 5.0, unit='m'),
+            'yy': sc.arange('yy', 9.0, unit='m'),
+        },
+    )
+    sc_da.coords.set_aligned(coord, False)
     xr_da = to_xarray(sc_da)
-    assert xr_da.coords['a2dcoord'].dims == ("yy", "xx")
+    assert coord in xr_da.coords
+    assert coord not in xr_da.indexes
 
 
-def test_to_xarray_dataarray_with_unaligned_coords():
-    sc_da = make_dense_data_array(ndim=2)
+def test_to_xarray_dataarray_with_unaligned_coords_multiple():
+    sc_da = sc.DataArray(
+        sc.arange('aux', 0.0, 90, 2, unit='counts').fold(
+            'aux', sizes={'yy': 9, 'xx': 5}
+        ),
+        coords={
+            'xx': sc.arange('xx', 5.0, unit='m'),
+            'yy': sc.arange('yy', 9.0, unit='m'),
+        },
+    )
     sc_da.coords.set_aligned('xx', False)
+    sc_da.coords.set_aligned('yy', False)
     xr_da = to_xarray(sc_da)
-    assert "xx" in xr_da.coords
-    assert "xx" not in xr_da.indexes
+    assert 'xx' in xr_da.coords
+    assert 'xx' not in xr_da.indexes
+    assert 'yy' in xr_da.coords
+    assert 'yy' not in xr_da.indexes
 
 
 def test_to_xarray_dataarray_fails_on_bin_edges():
-    sc_da = make_dense_data_array(ndim=2, binedges=True)
+    sc_da = sc.DataArray(
+        sc.arange('aux', 0.0, 90, 2, unit='counts').fold(
+            'aux', sizes={'xx': 5, 'yy': 9}
+        ),
+        coords={'xx': sc.arange('xx', 6.0, unit='s')},
+    )
     with pytest.raises(ValueError):
         _ = to_xarray(sc_da)
 
 
 def test_to_xarray_dataarray_fails_on_binned_data():
-    sc_da = make_binned_data_array(ndim=2)
+    buffer = sc.DataArray(
+        sc.ones(sizes={'event': 5}), coords={'id': sc.arange('event', 5)}
+    )
+    binned = buffer.bin(id=3)
     with pytest.raises(ValueError):
-        _ = to_xarray(sc_da)
+        _ = to_xarray(binned)
 
 
 def test_to_xarray_dataarray_masks_dropped():
-    sc_da = make_dense_data_array(ndim=2, masks=True)
+    sc_da = sc.DataArray(
+        sc.arange('aux', 0.0, 90, 2, unit='counts').fold(
+            'aux', sizes={'xx': 5, 'yy': 9}
+        ),
+        coords={
+            'xx': sc.arange('xx', 5.0, unit='s'),
+            'yy': sc.arange('yy', 9.0, unit='µK'),
+        },
+        masks={'m': sc.array(dims=['xx'], values=[False, False, True, False, True])},
+    )
     with pytest.warns(UserWarning):
         xr_da = to_xarray(sc_da)
     assert xr_da.dims == sc_da.dims
@@ -324,12 +380,29 @@ def test_to_xarray_dataarray_masks_dropped():
 
 
 def test_dataarray_round_trip():
-    sc_da = make_dense_data_array(ndim=2)
+    sc_da = sc.DataArray(
+        sc.arange('aux', 0.0, 90, 2, unit='counts').fold(
+            'aux', sizes={'xx': 5, 'yy': 9}
+        ),
+        coords={
+            'xx': sc.arange('xx', 5.0, unit='s'),
+            'yy': sc.arange('yy', 9.0, unit='µK'),
+        },
+    )
     assert sc.identical(sc_da, from_xarray(to_xarray(sc_da)))
 
 
 def test_to_xarray_dataset():
-    sc_ds = make_dense_dataset(ndim=2)
+    sc_da = sc.DataArray(
+        sc.arange('aux', 0.0, 90, 2, unit='counts').fold(
+            'aux', sizes={'xx': 5, 'yy': 9}
+        ),
+        coords={
+            'xx': sc.arange('xx', 5.0, unit='s'),
+            'yy': sc.arange('yy', 9.0, unit='µK'),
+        },
+    )
+    sc_ds = sc.Dataset({'a': sc_da, 'b': 2.0 * sc_da})
     xr_ds = to_xarray(sc_ds)
     assert all(x in xr_ds.coords for x in ["xx", "yy"])
     assert all(x in xr_ds for x in ["a", "b"])
