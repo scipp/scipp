@@ -97,7 +97,7 @@ class _ConditionallyWithVariances:
 
 
 @st.composite
-def _concrete_args(draw, args: dict) -> st.SearchStrategy:
+def _concrete_args(draw, args: dict) -> dict:
     def _draw(x):
         return draw(x) if isinstance(x, st.SearchStrategy) else x
 
@@ -210,7 +210,7 @@ def coord_dicts(
     sizes: dict[str, int],
     args: Optional[dict[str, Any]] = None,
     bin_edges: bool = True,
-) -> st.SearchStrategy[dict[str, Variable]]:
+) -> dict[str, Variable]:
     args = args or {}
     args['sizes'] = sizes
     try:
@@ -258,7 +258,7 @@ def dataarrays(
     masks: bool = True,
     mask_args: Optional[dict[str, Any]] = None,
     bin_edges: bool = True,
-) -> st.SearchStrategy[DataArray]:
+) -> DataArray:
     """Generate data arrays with coords and masks.
 
     The data variable can be any variable supported by
