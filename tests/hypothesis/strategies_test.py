@@ -176,11 +176,63 @@ def test_n_variables_all_have_same_parameters(variables):
 @given(
     scst.dataarrays(
         data_args={'dtype': int, 'sizes': {'a': 2, 'b': 3}},
-        coords=['b'],
-        coord_args=None,
     )
 )
 def test_dataarrays(da):
     assert da.sizes == {'a': 2, 'b': 3}
     assert da.dtype == int
-    assert da.coords['b'].sizes == {'a': 2, 'b': 3}
+
+
+@settings(max_examples=N_EXAMPLES)
+@given(
+    scst.dataarrays(
+        data_args={'ndim': 0},
+    )
+)
+def test_dataarrays_scalar(da):
+    assert da.sizes == {}
+
+
+@settings(max_examples=N_EXAMPLES)
+@given(scst.dataarrays(data_args={'ndim': st.integers(min_value=2, max_value=4)}))
+def test_dataarrays_makes_1d_coords_and_masks(da):
+    for name, coord in da.coords.items():
+        assert coord.ndim == 1, f"coord {name = }"
+    for name, mask in da.masks.items():
+        assert mask.ndim == 1, f"mask {name = }"
+
+
+@settings(max_examples=N_EXAMPLES)
+@given(
+    scst.dataarrays(
+        data_args={'dtype': int, 'sizes': {'a': 2, 'b': 3}},
+        coords=False,
+    )
+)
+def test_dataarrays_without_coords(da):
+    assert not da.coords
+
+
+@settings(max_examples=N_EXAMPLES)
+@given(
+    scst.dataarrays(
+        data_args={'dtype': int, 'sizes': {'a': 2, 'b': 3}},
+        masks=False,
+    )
+)
+def test_dataarrays_without_masks(da):
+    assert not da.masks
+
+
+@settings(max_examples=N_EXAMPLES)
+@given(
+    scst.dataarrays(
+        data_args={'dtype': int, 'sizes': {'a': 2, 'b': 3}},
+        bin_edges=False,
+    )
+)
+def test_dataarrays_no_bin_edges(da):
+    for name in da.coords:
+        assert not da.coords.is_edges(name)
+    for name in da.masks:
+        assert not da.masks.is_edges(name)
