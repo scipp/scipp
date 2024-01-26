@@ -7,7 +7,7 @@ from functools import reduce
 
 import hypothesis
 import numpy as np
-from hypothesis import given
+from hypothesis import assume, given
 from hypothesis import strategies as st
 
 import scipp as sc
@@ -79,15 +79,21 @@ def test_html_repr_data_array_nd_coord(da):
     sc.make_html(da)
 
 
-@given(buffer=scst.dataarrays(data_args={'ndim': 1}))
+@given(
+    buffer=scst.dataarrays(data_args={'ndim': 1}),
+    coord_sizes=scst.sizes_dicts(ndim=st.integers(min_value=1, max_value=1)),
+)
 @settings()
-def test_html_repr_binned_data_array(buffer):
-    buffer.coords['x'] = sc.arange(buffer.dim, len(buffer))
-    binned = buffer.bin(x=5)
+def test_html_repr_binned_data_array(buffer, coord_sizes):
+    dim = next(iter(coord_sizes))
+    assume(coord_sizes[dim] > 1)  # need at least length=2 to slice below
+    for i, key in enumerate(coord_sizes, 1):
+        buffer.coords[key] = i * sc.arange(buffer.dim, len(buffer))
+    binned = buffer.bin(coord_sizes)
     sc.make_html(binned)
-    sc.make_html(binned['x', 1:3])
-    sc.make_html(binned['x', 1])
-    sc.make_html(binned['x', 1].bins.data)
+    sc.make_html(binned[dim, 1:3])
+    sc.make_html(binned[dim, 1])
+    sc.make_html(binned[dim, 1].bins.data)
 
 
 @given(da=scst.dataarrays(data_args={'ndim': st.integers(min_value=1, max_value=4)}))
