@@ -277,11 +277,11 @@ def dataarrays(
     coords:
         Selects whether coords are generated.
     coord_args:
-        Arguments for creating the data variable.
+        Arguments for creating the coordinate variable.
     masks:
         Selects whether masks are generated.
     mask_args:
-        Arguments for creating the data variable.
+        Arguments for creating the mask variable.
     bin_edges:
         If ``True``, coords may be bin edges.
 
