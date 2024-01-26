@@ -162,7 +162,7 @@ def variables(
     elements: Union[int, float, st.SearchStrategy, None] = None,
     fill: Union[int, float, st.SearchStrategy, None] = None,
     unique: Union[bool, st.SearchStrategy, None] = None,
-) -> st.SearchStrategy:
+) -> st.SearchStrategy[Variable]:
     args = _variable_arg_strategies(
         ndim=ndim,
         sizes=sizes,
@@ -205,7 +205,11 @@ def n_variables(
 
 @st.composite
 def coord_dicts(
-    draw, *, sizes, args=None, bin_edges=True
+    draw: Callable[[st.SearchStrategy[Ex]], Ex],
+    *,
+    sizes: dict[str, int],
+    args: Optional[dict[str, Any]] = None,
+    bin_edges: bool = True,
 ) -> st.SearchStrategy[dict[str, Variable]]:
     args = args or {}
     args['sizes'] = sizes
