@@ -224,18 +224,31 @@ class _NotSetType:
 _NotSet = _NotSetType()
 
 
+def _aligned_dict(draw, data, names, args):
+    if names is None:
+        return {}
+    if names is _NotSet:
+        names = data.dims
+    return draw(coord_dicts(coords=names, sizes=data.sizes, args=args))
+
+
 @st.composite
 def dataarrays(
-    draw, data_args=None, coords=_NotSet, coord_args=None
+    draw,
+    data_args=None,
+    coords=_NotSet,
+    coord_args=None,
+    masks=_NotSet,
+    mask_args=None,
 ) -> st.SearchStrategy:
+    mask_args = mask_args or {}
+    mask_args['dtype'] = bool
     data = draw(variables(**(data_args or {})))
-    if coords is _NotSet:
-        coords = data.dims
-    if coords is not None:
-        coord_dict = draw(coord_dicts(coords=coords, sizes=data.sizes, args=coord_args))
-    else:
-        coord_dict = {}
-    return DataArray(data, coords=coord_dict)
+    return DataArray(
+        data,
+        coords=_aligned_dict(draw, data, coords, coord_args),
+        masks=_aligned_dict(draw, data, masks, mask_args),
+    )
 
 
 __all__ = [
