@@ -12,12 +12,11 @@ Place the following code in your ``conftest.py``:
 
 """
 from contextlib import contextmanager
-from typing import Any, Iterator, Mapping, TypeVar
+from typing import Any, Callable, Iterator, Mapping, TypeVar
 
 import numpy as np
 
 from ..core import DataArray, DataGroup, Dataset, Variable
-from ..core.comparison import identical
 
 # Exception notes are formatted as 'PREPOSITION {loc}',
 # where 'loc' is set by the concrete assertion functions to indicate coords, attrs, etc.
@@ -29,6 +28,27 @@ from ..core.comparison import identical
 # of data group item 'a'
 
 T = TypeVar('T')
+
+
+def assert_allclose(
+    a: T, b: T, rtol: Variable = None, atol: Variable = None, **kwargs
+) -> None:
+    """Raise an AssertionError if two objects don't have similar values
+    or if their other properties are not identical.
+
+    Parameters
+    ----------
+    a:
+        The actual object to check.
+    b:
+        The desired, expected object.
+
+    Raises
+    ------
+    AssertionError
+        If the objects are not identical.
+    """
+    return _assert_similar(_assert_allclose_impl, a, b, rtol=rtol, atol=atol, **kwargs)
 
 
 def assert_identical(a: T, b: T) -> None:
@@ -57,8 +77,12 @@ def assert_identical(a: T, b: T) -> None:
     AssertionError
         If the objects are not identical.
     """
+    return _assert_similar(_assert_identical_impl, a, b)
+
+
+def _assert_similar(impl: Callable, *args, **kwargs) -> None:
     try:
-        _assert_identical_impl(a, b)
+        impl(*args, **kwargs)
     except AssertionError as exc:
         if hasattr(exc, '__notes__'):
             # See comment above.
@@ -76,55 +100,49 @@ def assert_identical(a: T, b: T) -> None:
         raise
 
 
-def _assert_identical_impl(a: T, b: T) -> None:
+def _assert_identical_impl(
+    a: T,
+    b: T,
+) -> None:
+    _assert_identical_structure(a, b)
+    _assert_identical_data(a, b)
+
+
+def _assert_allclose_impl(
+    a: T,
+    b: T,
+    **kwargs,
+) -> None:
+    _assert_identical_structure(a, b)
+    _assert_allclose_data(a, b, **kwargs)
+
+
+def _assert_identical_structure(
+    a: T,
+    b: T,
+) -> None:
     assert type(a) == type(b)
     if isinstance(a, Variable):
-        _assert_identical_variable(a, b)
+        _assert_identical_variable_structure(a, b)
     elif isinstance(a, DataArray):
-        _assert_identical_data_array(a, b)
-    elif isinstance(a, Dataset):
-        _assert_identical_dataset(a, b)
-    elif isinstance(a, DataGroup):
-        _assert_identical_datagroup(a, b)
-    else:
-        assert a == b
+        _assert_identical_data_array_structure(a, b)
 
 
-def _assert_identical_variable(a: Variable, b: Variable) -> None:
+def _assert_identical_variable_structure(a: Variable, b: Variable) -> None:
     assert a.sizes == b.sizes
     assert a.unit == b.unit
     assert a.dtype == b.dtype
     assert (a.bins is None) == (b.bins is None)
-    if a.bins is None:
-        _assert_identical_dense_variable_data(a, b)
+    if a.bins is not None:
+        assert a.bins.unit == b.bins.unit
     else:
-        _assert_identical_binned_variable_data(a, b)
+        if a.variances is not None:
+            assert b.variances is not None, 'a has variances but b does not'
+        else:
+            assert b.variances is None, 'a has no variances but b does'
 
 
-def _assert_identical_binned_variable_data(a: Variable, b: Variable) -> None:
-    # Support for iterating over bin contents is limited in Python.
-    # So, simply use `identical` even though it does not produce good error messages.
-    assert a.bins.unit == b.bins.unit
-    assert identical(a, b)
-
-
-def _assert_identical_dense_variable_data(a: Variable, b: Variable) -> None:
-    with _add_note('values'):
-        np.testing.assert_array_equal(
-            a.values, b.values, err_msg='when comparing values'
-        )
-    if a.variances is not None:
-        assert b.variances is not None, 'a has variances but b does not'
-        with _add_note('variances'):
-            np.testing.assert_array_equal(
-                a.variances, b.variances, err_msg='when comparing variances'
-            )
-    else:
-        assert b.variances is None, 'a has no variances but b does'
-
-
-def _assert_identical_data_array(a: DataArray, b: DataArray) -> None:
-    _assert_identical_variable(a.data, b.data)
+def _assert_identical_data_array_structure(a: DataArray, b: DataArray) -> None:
     _assert_mapping_eq(a.coords, b.coords, 'coord')
     _assert_mapping_eq(a.deprecated_attrs, b.deprecated_attrs, 'attr')
     _assert_mapping_eq(a.masks, b.masks, 'mask')
@@ -144,7 +162,10 @@ def _assert_identical_alignment(a: Any, b: Any) -> None:
 
 
 def _assert_mapping_eq(
-    a: Mapping[str, Any], b: Mapping[str, Any], map_name: str
+    a: Mapping[str, Any],
+    b: Mapping[str, Any],
+    map_name: str,
+    **kwargs,
 ) -> None:
     with _add_note(map_name + 's'):
         assert a.keys() == b.keys()
@@ -153,6 +174,97 @@ def _assert_mapping_eq(
             val_b = b[name]
             _assert_identical_impl(val_a, val_b)
             _assert_identical_alignment(val_a, val_b)
+
+
+def _assert_identical_data(
+    a: T,
+    b: T,
+) -> None:
+    if isinstance(a, Variable):
+        _assert_identical_variable_data(a, b)
+    elif isinstance(a, DataArray):
+        _assert_identical_variable_data(a.data, b.data)
+    elif isinstance(a, Dataset):
+        _assert_identical_dataset(a, b)
+    elif isinstance(a, DataGroup):
+        _assert_identical_datagroup(a, b)
+    else:
+        assert a == b
+
+
+def _assert_identical_variable_data(a: Variable, b: Variable) -> None:
+    if a.bins is None:
+        _assert_identical_dense_variable_data(a, b)
+    else:
+        _assert_identical_binned_variable_data(a, b)
+
+
+def _assert_identical_dense_variable_data(a: Variable, b: Variable) -> None:
+    with _add_note('values'):
+        np.testing.assert_array_equal(
+            a.values, b.values, err_msg='when comparing values'
+        )
+        if a.variances is not None:
+            with _add_note('variances'):
+                np.testing.assert_array_equal(
+                    a.variances, b.variances, err_msg='when comparing variances'
+                )
+
+
+def _assert_identical_binned_variable_data(a: Variable, b: Variable) -> None:
+    _assert_identical_impl(a.bins.concat().value, b.bins.concat().value)
+
+
+def _assert_allclose_data(
+    a: T,
+    b: T,
+    **kwargs,
+) -> None:
+    if isinstance(a, Variable):
+        _assert_allclose_variable_data(a, b, **kwargs)
+    elif isinstance(a, DataArray):
+        _assert_allclose_variable_data(a.data, b.data, **kwargs)
+    else:
+        raise NotImplementedError
+
+
+def _assert_allclose_variable_data(a: Variable, b: Variable, **kwargs) -> None:
+    if a.bins is None:
+        _assert_allclose_dense_variable_data(a, b, **kwargs)
+    else:
+        _assert_allclose_binned_variable_data(a, b, **kwargs)
+
+
+def _assert_allclose_dense_variable_data(
+    a: Variable, b: Variable, rtol: Variable = None, atol: Variable = None, **kwargs
+) -> None:
+    if rtol is not None:
+        kwargs['rtol'] = rtol.to(unit='dimensionless').value
+    if atol is not None:
+        if hasattr(a, 'unit'):
+            atol = atol.to(unit=a.unit)
+        else:
+            atol = atol.to(unit='dimensionless')
+        kwargs['atol'] = atol.value
+
+    with _add_note('values'):
+        np.testing.assert_allclose(
+            a.values, b.values, err_msg='when comparing values', **kwargs
+        )
+        if a.variances is not None:
+            with _add_note('variances'):
+                np.testing.assert_allclose(
+                    a.variances,
+                    b.variances,
+                    err_msg='when comparing variances',
+                    **kwargs,
+                )
+
+
+def _assert_allclose_binned_variable_data(
+    a: Variable, b: Variable, rtol: Variable, atol: Variable, **kwargs
+) -> None:
+    _assert_allclose_impl(a.bins.concat().value, b.bins.concat().value, **kwargs)
 
 
 @contextmanager
@@ -166,4 +278,4 @@ def _add_note(loc: str, *args: str) -> Iterator[None]:
         raise
 
 
-__all__ = ['assert_identical']
+__all__ = ['assert_identical', 'assert_allclose']
