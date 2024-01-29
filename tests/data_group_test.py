@@ -252,18 +252,48 @@ def test_getitem_positional_indexing_without_dim_label_raises_unless_1d():
         dg2d[::]
 
 
-def test_getitem_positional_indexing_raises_when_length_is_not_unique():
+def test_getitem_positional_slice_does_not_raise_when_length_is_not_unique():
     dg = sc.DataGroup({'a': sc.arange('x', 4), 'b': sc.arange('x', 5)})
-    with pytest.raises(sc.DimensionError):
+    dg['x', 2:3]
+    dg['x', 2:]
+    dg['x', 2:10]
+    dg['x', 2:4]
+    dg['x', -1:]
+    dg['x', -10:]
+
+
+def test_getitem_positional_indexing_raise_when_one_is_empty():
+    dg = sc.DataGroup({'a': sc.array(dims='x', values=[]), 'b': sc.arange('x', 5)})
+    with pytest.raises(IndexError):
         dg['x', 2]
-    with pytest.raises(sc.DimensionError):
-        dg['x', 2:3]
+
+
+def test_getitem_positional_indexing_raise_when_out_of_range():
+    dg = sc.DataGroup({'a': sc.arange('x', 3), 'b': sc.arange('x', 5)})
+    with pytest.raises(IndexError):
+        dg['x', 3]
 
 
 def test_getitem_positional_indexing_treats_numpy_arrays_as_scalars():
     dg = sc.DataGroup({'a': sc.arange('x', 4), 'b': np.arange(4)})
     assert np.array_equal(dg[1]['b'], dg['b'])
     assert np.array_equal(dg['x', 1]['b'], dg['b'])
+
+
+@pytest.mark.parametrize(
+    's',
+    [
+        slice(*v)
+        for v in ((2,), (2, 3), (2, None), (2, 10), (2, 4), (-1, None), (-10, None))
+    ],
+)
+def test_getitem_positional_slicing_works_when_length_is_not_unique(s):
+    da1 = sc.DataArray(sc.arange('x', 4), coords={'x': sc.linspace('x', 0.0, 1.0, 4)})
+    da2 = sc.DataArray(sc.arange('x', 5), coords={'x': sc.linspace('x', 0.0, 1.0, 5)})
+    dg = sc.DataGroup({'a': da1, 'b': da2})
+    result = dg['x', s]
+    sc.testing.assert_identical(result['a'], da1['x', s])
+    sc.testing.assert_identical(result['b'], da2['x', s])
 
 
 def test_getitem_label_indexing_based_works_when_length_is_not_unique():
