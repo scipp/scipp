@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 
 import scipp as sc
+import scipp.testing
 
 
 @pytest.fixture(
@@ -166,21 +167,26 @@ def test_mean_single_dim(container):
 def test_mean_dataset_with_coords():
     d = sc.Dataset(
         data={
-            'a': sc.Variable(
-                dims=['x', 'y'], values=np.arange(6, dtype=np.int64).reshape(2, 3)
-            ),
+            'a': sc.arange('aux', 6, dtype='int64').fold('aux', sizes={'x': 2, 'y': 3}),
         },
         coords={
-            'x': sc.Variable(dims=['x'], values=np.arange(2, dtype=np.int64)),
-            'y': sc.Variable(dims=['y'], values=np.arange(3, dtype=np.int64)),
-            'l1': sc.Variable(
-                dims=['x', 'y'], values=np.arange(6, dtype=np.int64).reshape(2, 3)
+            'x': sc.arange('x', 2, dtype='int64'),
+            'y': sc.arange('y', 3, dtype='int64'),
+            'l1': sc.arange('aux', 6, dtype='int64').fold(
+                'aux', sizes={'x': 2, 'y': 3}
             ),
-            'l2': sc.Variable(dims=['x'], values=np.arange(2, dtype=np.int64)),
+            'l2': 2 * sc.arange('x', 2, dtype='int64'),
         },
     )
-
-    assert (sc.mean(d, 'y')['a'].values == [1.0, 4.0]).all()
+    expected = sc.Dataset(
+        data={'a': sc.array(dims=['x'], values=[1.0, 4.0])},
+        coords={
+            'x': sc.arange('x', 2, dtype='int64'),
+            'l2': 2 * sc.arange('x', 2, dtype='int64'),
+        },
+    )
+    sc.testing.assert_identical(sc.mean(d, 'y'), expected)
+    sc.testing.assert_identical(d.mean('y'), expected)
 
 
 def test_mean_masked():
