@@ -8,8 +8,13 @@ import scipp as sc
 
 
 @pytest.fixture(
-    params=[lambda x: x, lambda x: sc.DataArray(x), lambda x: sc.Dataset({'a': x})],
-    ids=['Variable', 'DataArray', 'Dataset'],
+    params=[
+        lambda x: x,
+        lambda x: sc.DataArray(x),
+        lambda x: sc.Dataset({'a': x}),
+        lambda x: sc.DataGroup({'a': x}),
+    ],
+    ids=['Variable', 'DataArray', 'Dataset', 'DataGroup'],
 )
 def container(request):
     return request.param
