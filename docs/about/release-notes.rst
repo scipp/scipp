@@ -27,6 +27,29 @@ Release Notes
    Stability, Maintainability, and Testing
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+vrelease
+--------
+
+Features
+~~~~~~~~
+
+* Added :func:`scipp.median`, :func:`scipp.nanmedian`, :func:`scipp.var`, :func:`scipp.nanvar`, :func:`scipp.std`, :func:`scipp.nanstd` `#3378 <https://github.com/scipp/scipp/pull/3378>`_.
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+Bugfixes
+~~~~~~~~
+
+Documentation
+~~~~~~~~~~~~~
+
+Deprecations
+~~~~~~~~~~~~
+
+Stability, Maintainability, and Testing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 v23.12.0
 --------
