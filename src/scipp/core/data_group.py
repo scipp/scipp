@@ -341,6 +341,9 @@ class DataGroup(MutableMapping):
     def mean(self, *args, **kwargs):
         return self._reduce('mean', *args, **kwargs)
 
+    def median(self, *args, **kwargs):
+        return self._reduce('median', *args, **kwargs)
+
     def min(self, *args, **kwargs):
         return self._reduce('min', *args, **kwargs)
 

@@ -4,11 +4,17 @@
 
 from __future__ import annotations
 
-from typing import Optional
+import builtins
+from typing import Optional, Union
+
+import numpy as np
 
 from .._scipp import core as _cpp
 from ..typing import Dims, VariableLikeType
 from ._cpp_wrapper_util import call_func as _call_cpp_func
+from .cpp_classes import Masks
+from .data_group import DataGroup, data_group_nary
+from .variable import array
 
 
 def mean(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
@@ -81,6 +87,40 @@ def nanmean(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
         return _call_cpp_func(_cpp.nanmean, x)
     else:
         return _call_cpp_func(_cpp.nanmean, x, dim=dim)
+
+
+def median(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
+    # TODO warn about costs (numpy, numpy.ma -> broadcast)
+    # TODO explain all masked
+    if isinstance(x, _cpp.Dataset):
+        return _cpp.Dataset({k: median(v, dim=dim) for k, v in x.items()})
+    if isinstance(x, DataGroup):
+        return data_group_nary(median, x, dim=dim)
+
+    _expect_no_variance(x, 'median')
+    reduced_dims = _normalize_reduced_dims(x, dim)
+    axis = _dims_to_axis(x, reduced_dims)
+    out_dims = [d for d in x.dims if d not in reduced_dims]
+    if isinstance(x, _cpp.Variable):
+        return array(dims=out_dims, values=np.median(x.values, axis=axis), unit=x.unit)
+    if isinstance(x, _cpp.DataArray):
+        mask, preserved_masks = _merge_masks(x.masks, reduced_dims=reduced_dims)
+        if mask is not None:
+            masked = np.ma.masked_array(
+                x.values, mask=mask.broadcast(x.dims, x.shape).values
+            )
+            res = np.ma.median(masked, axis=axis)
+        else:
+            res = np.median(x.values, axis=axis)
+        return _cpp.DataArray(
+            array(dims=out_dims, values=res, unit=x.unit),
+            coords={
+                key: coord
+                for key, coord in x.coords.items()
+                if builtins.all(d in out_dims for d in coord.dims)
+            },
+            masks=preserved_masks,
+        )
 
 
 def sum(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
@@ -358,3 +398,47 @@ def any(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
         return _call_cpp_func(_cpp.any, x)
     else:
         return _call_cpp_func(_cpp.any, x, dim=dim)
+
+
+def _normalize_reduced_dims(x: VariableLikeType, dim: Dims) -> tuple[str, ...]:
+    if dim is None:
+        return x.dims
+    if isinstance(dim, str):
+        return (dim,)
+    return tuple(dim)
+
+
+def _dims_to_axis(
+    x: VariableLikeType, dim: tuple[str, ...]
+) -> Union[int, tuple[int, ...]]:
+    return tuple(_dim_index(x.dims, d) for d in dim)
+
+
+def _dim_index(dims: tuple[str, ...], dim: str) -> int:
+    try:
+        return dims.index(dim)
+    except ValueError:
+        raise _cpp.DimensionError(
+            f'Expected dimension to be in {dims}, got {dim}'
+        ) from None
+
+
+def _expect_no_variance(x: VariableLikeType, op: str) -> None:
+    if x.variances is not None:
+        raise _cpp.VariancesError(f"'{op}' does not support variances")
+
+
+def _merge_masks(
+    masks: Masks, reduced_dims: tuple[str, ...]
+) -> tuple[Optional[_cpp.Variable], dict[str, _cpp.Variable]]:
+    merged = None
+    preserved = {}
+    for key, mask in masks.items():
+        if builtins.any(dim in reduced_dims for dim in mask.dims):
+            if merged is None:
+                merged = mask
+            else:
+                merged = merged | mask
+        else:
+            preserved[key] = mask
+    return merged, preserved

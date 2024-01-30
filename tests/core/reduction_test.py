@@ -236,6 +236,263 @@ def test_nanmean_single_dim(container):
     )
 
 
+def test_median_even(container):
+    x = container(sc.array(dims=['xx', 'yy'], values=[[6, 3, 2], [4, 5, 1]], unit='m'))
+    sc.testing.assert_identical(sc.median(x), container(sc.scalar(3.5, unit='m')))
+    sc.testing.assert_identical(x.median(), container(sc.scalar(3.5, unit='m')))
+    sc.testing.assert_identical(
+        sc.median(x, dim=['xx', 'yy']), container(sc.scalar(3.5, unit='m'))
+    )
+    sc.testing.assert_identical(
+        x.median(dim=['xx', 'yy']), container(sc.scalar(3.5, unit='m'))
+    )
+    sc.testing.assert_identical(
+        sc.median(x, dim=['yy', 'xx']), container(sc.scalar(3.5, unit='m'))
+    )
+    sc.testing.assert_identical(
+        x.median(dim=['yy', 'xx']), container(sc.scalar(3.5, unit='m'))
+    )
+
+
+def test_median_odd(container):
+    x = container(sc.array(dims=['xx'], values=[7, 4, 5, 2, 1], unit='m'))
+    sc.testing.assert_identical(sc.median(x), container(sc.scalar(4.0, unit='m')))
+    sc.testing.assert_identical(x.median(), container(sc.scalar(4.0, unit='m')))
+    sc.testing.assert_identical(
+        sc.median(x, dim=['xx']), container(sc.scalar(4.0, unit='m'))
+    )
+    sc.testing.assert_identical(
+        x.median(dim=['xx']), container(sc.scalar(4.0, unit='m'))
+    )
+
+
+def test_median_single_dim(container):
+    x = container(sc.array(dims=['xx', 'yy'], values=[[6, 3, 2], [4, 5, 1]], unit='m'))
+    sc.testing.assert_identical(
+        sc.median(x, dim='xx'),
+        container(sc.array(dims=['yy'], values=[5, 4, 1.5], unit='m')),
+    )
+    sc.testing.assert_identical(
+        x.median(dim='xx'),
+        container(sc.array(dims=['yy'], values=[5, 4, 1.5], unit='m')),
+    )
+    sc.testing.assert_identical(
+        sc.median(x, dim=['xx']),
+        container(sc.array(dims=['yy'], values=[5, 4, 1.5], unit='m')),
+    )
+    sc.testing.assert_identical(
+        x.median(dim=['xx']),
+        container(sc.array(dims=['yy'], values=[5, 4, 1.5], unit='m')),
+    )
+
+    sc.testing.assert_identical(
+        sc.median(x, dim='yy'),
+        container(sc.array(dims=['xx'], values=[3.0, 4], unit='m')),
+    )
+    sc.testing.assert_identical(
+        x.median(dim='yy'), container(sc.array(dims=['xx'], values=[3.0, 4], unit='m'))
+    )
+    sc.testing.assert_identical(
+        sc.median(x, dim=['yy']),
+        container(sc.array(dims=['xx'], values=[3.0, 4], unit='m')),
+    )
+    sc.testing.assert_identical(
+        x.median(dim=['yy']),
+        container(sc.array(dims=['xx'], values=[3.0, 4], unit='m')),
+    )
+
+
+def test_median_raises_for_variances(container):
+    x = container(sc.array(dims=['x'], values=[1.2, 3.4], variances=[0.1, 1.3]))
+    with pytest.raises(sc.VariancesError):
+        sc.median(x)
+    with pytest.raises(sc.VariancesError):
+        x.median()
+
+
+def test_median_dataset_with_coords():
+    d = sc.Dataset(
+        data={
+            'a': sc.arange('aux', 6, dtype='int64').fold('aux', sizes={'x': 2, 'y': 3}),
+        },
+        coords={
+            'x': sc.arange('x', 2, dtype='int64'),
+            'y': sc.arange('y', 3, dtype='int64'),
+            'l1': sc.arange('aux', 6, dtype='int64').fold(
+                'aux', sizes={'x': 2, 'y': 3}
+            ),
+            'l2': 2 * sc.arange('x', 2, dtype='int64'),
+        },
+    )
+    expected = sc.Dataset(
+        data={'a': sc.array(dims=['x'], values=[1.0, 4.0])},
+        coords={
+            'x': sc.arange('x', 2, dtype='int64'),
+            'l2': 2 * sc.arange('x', 2, dtype='int64'),
+        },
+    )
+    sc.testing.assert_identical(sc.median(d, 'y'), expected)
+    sc.testing.assert_identical(d.median('y'), expected)
+
+
+def test_median_single_mask():
+    d = sc.Dataset(
+        data={
+            'a': sc.array(dims=['x'], values=[1, 5, 4, 5, 1], dtype=sc.DType.float64)
+        },
+    )
+    d['a'].masks['m1'] = sc.array(dims=['x'], values=[False, True, True, False, False])
+    d_ref = sc.Dataset(data={'a': sc.scalar(1.0)})
+    sc.testing.assert_identical(sc.median(d, 'x'), d_ref)
+    sc.testing.assert_identical(sc.nanmedian(d, 'x'), d_ref)
+
+
+def test_median_two_masks_1d():
+    d = sc.Dataset(
+        data={
+            'a': sc.array(dims=['x'], values=[1, 5, 4, 5, 1], dtype=sc.DType.float64)
+        },
+    )
+    d['a'].masks['m1'] = sc.array(dims=['x'], values=[False, False, True, False, False])
+    d['a'].masks['m2'] = sc.array(dims=['x'], values=[False, True, False, False, True])
+    d_ref = sc.Dataset(data={'a': sc.scalar(3.0)})
+    sc.testing.assert_identical(sc.median(d, 'x'), d_ref)
+    sc.testing.assert_identical(sc.nanmedian(d, 'x'), d_ref)
+
+
+def test_median_mask_along_reduced_dim():
+    d = sc.Dataset(
+        data={'a': sc.array(dims=['x', 'y'], values=[[1, 5], [4, 5], [1, 3]])},
+    )
+    d['a'].masks['m1'] = sc.array(dims=['x'], values=[False, False, True])
+    d_ref = sc.Dataset(data={'a': sc.array(dims=['y'], values=[2.5, 5.0])})
+    sc.testing.assert_identical(sc.median(d, 'x'), d_ref)
+    sc.testing.assert_identical(sc.nanmedian(d, 'x'), d_ref)
+
+
+def test_median_mask_along_other_dim():
+    d = sc.Dataset(
+        data={'a': sc.array(dims=['x', 'y'], values=[[1, 5], [4, 5], [1, 3]])},
+    )
+    d['a'].masks['m1'] = sc.array(dims=['x'], values=[False, False, True])
+    d_ref = sc.Dataset(data={'a': sc.array(dims=['x'], values=[3.0, 4.5, 2.0])})
+    d_ref['a'].masks['m1'] = sc.array(dims=['x'], values=[False, False, True])
+    sc.testing.assert_identical(sc.median(d, 'y'), d_ref)
+    sc.testing.assert_identical(sc.nanmedian(d, 'y'), d_ref)
+
+
+def test_median_mask_along_multiple_dims():
+    d = sc.Dataset(
+        data={'a': sc.array(dims=['x', 'y'], values=[[1, 5], [4, 5], [1, 3]])},
+    )
+    d['a'].masks['m1'] = sc.array(dims=['x'], values=[False, False, True])
+    d['a'].masks['m2'] = sc.array(dims=['y'], values=[False, True])
+    d_ref = sc.Dataset(data={'a': sc.scalar(2.5)})
+    sc.testing.assert_identical(sc.median(d), d_ref)
+    sc.testing.assert_identical(sc.nanmedian(d), d_ref)
+
+
+def test_median_multi_dim_mask():
+    d = sc.Dataset(
+        data={'a': sc.array(dims=['x', 'y'], values=[[1, 5], [4, 5], [1, 3]])},
+    )
+    d['a'].masks['m1'] = sc.array(
+        dims=['x', 'y'], values=[[False, True], [True, False], [True, True]]
+    )
+    d_ref = sc.Dataset(data={'a': sc.scalar(3.0)})
+    sc.testing.assert_identical(sc.median(d), d_ref)
+    sc.testing.assert_identical(sc.nanmedian(d), d_ref)
+
+    d_ref = sc.Dataset(data={'a': sc.array(dims=['y'], values=[1.0, 5.0])})
+    sc.testing.assert_identical(sc.median(d, 'x'), d_ref)
+    sc.testing.assert_identical(sc.nanmedian(d, 'x'), d_ref)
+
+    d_ref = sc.Dataset(data={'a': sc.array(dims=['x'], values=[1.0, 5.0, 0.0])})
+    sc.testing.assert_identical(sc.median(d, 'y'), d_ref)
+    sc.testing.assert_identical(sc.nanmedian(d, 'y'), d_ref)
+
+
+def test_median_all_masked():
+    d = sc.Dataset(
+        data={'a': sc.array(dims=['x'], values=[1, 5, 4, 5, 1])},
+    )
+    d['a'].masks['m1'] = sc.full(value=True, sizes=d.sizes)
+    d_ref = sc.Dataset(data={'a': sc.scalar(0.0)})
+    sc.testing.assert_identical(sc.median(d), d_ref)
+    sc.testing.assert_identical(sc.nanmedian(d), d_ref)
+
+
+def test_nanmedian_even(container):
+    x = container(
+        sc.array(dims=['xx', 'yy'], values=[[np.nan, 3, 2], [4, np.nan, 1]], unit='m')
+    )
+    sc.testing.assert_identical(sc.nanmedian(x), container(sc.scalar(2.5, unit='m')))
+    sc.testing.assert_identical(x.nanmedian(), container(sc.scalar(2.5, unit='m')))
+    sc.testing.assert_identical(
+        sc.nanmedian(x, dim=['xx', 'yy']), container(sc.scalar(2.5, unit='m'))
+    )
+    sc.testing.assert_identical(
+        x.nanmedian(dim=['xx', 'yy']), container(sc.scalar(2.5, unit='m'))
+    )
+    sc.testing.assert_identical(
+        sc.nanmedian(x, dim=['yy', 'xx']), container(sc.scalar(2.5, unit='m'))
+    )
+    sc.testing.assert_identical(
+        x.nanmedian(dim=['yy', 'xx']), container(sc.scalar(2.5, unit='m'))
+    )
+
+
+def test_nanmedian_odd(container):
+    x = container(sc.array(dims=['xx'], values=[7, np.nan, 5, np.nan, 1], unit='m'))
+    sc.testing.assert_identical(sc.nanmedian(x), container(sc.scalar(5.0, unit='m')))
+    sc.testing.assert_identical(x.nanmedian(), container(sc.scalar(5.0, unit='m')))
+    sc.testing.assert_identical(
+        sc.nanmedian(x, dim=['xx']), container(sc.scalar(5.0, unit='m'))
+    )
+    sc.testing.assert_identical(
+        x.nanmedian(dim=['xx']), container(sc.scalar(5.0, unit='m'))
+    )
+
+
+def test_nanmedian_single_dim(container):
+    x = container(
+        sc.array(dims=['xx', 'yy'], values=[[6, np.nan, 2], [np.nan, 5, 1]], unit='m')
+    )
+    sc.testing.assert_identical(
+        sc.nanmedian(x, dim='xx'),
+        container(sc.array(dims=['yy'], values=[6, 5, 1.5], unit='m')),
+    )
+    sc.testing.assert_identical(
+        x.nanmedian(dim='xx'),
+        container(sc.array(dims=['yy'], values=[6, 5, 1.5], unit='m')),
+    )
+    sc.testing.assert_identical(
+        sc.nanmedian(x, dim=['xx']),
+        container(sc.array(dims=['yy'], values=[6, 5, 1.5], unit='m')),
+    )
+    sc.testing.assert_identical(
+        x.nanmedian(dim=['xx']),
+        container(sc.array(dims=['yy'], values=[6, 5, 1.5], unit='m')),
+    )
+
+    sc.testing.assert_identical(
+        sc.nanmedian(x, dim='yy'),
+        container(sc.array(dims=['xx'], values=[4.0, 3.0], unit='m')),
+    )
+    sc.testing.assert_identical(
+        x.nanmedian(dim='yy'),
+        container(sc.array(dims=['xx'], values=[4.0, 3.0], unit='m')),
+    )
+    sc.testing.assert_identical(
+        sc.nanmedian(x, dim=['yy']),
+        container(sc.array(dims=['xx'], values=[4.0, 3.0], unit='m')),
+    )
+    sc.testing.assert_identical(
+        x.nanmedian(dim=['yy']),
+        container(sc.array(dims=['xx'], values=[4.0, 3.0], unit='m')),
+    )
+
+
 def test_max(container):
     x = container(
         sc.array(

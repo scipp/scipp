@@ -141,7 +141,7 @@ from .core import (
     stddevs,
     where,
 )
-from .core import mean, nanmean, sum, nansum, min, max, nanmin, nanmax, all, any
+from .core import mean, nanmean, median, sum, nansum, min, max, nanmin, nanmax, all, any
 from .core import broadcast, concat, fold, flatten, squeeze, transpose
 from .core import sinh, cosh, tanh, asinh, acosh, atanh
 from .core import sin, cos, tan, asin, acos, atan, atan2
@@ -195,6 +195,7 @@ for _cls in (Variable, DataArray, Dataset):
             'nansum',
             'mean',
             'nanmean',
+            'median',
             'max',
             'min',
             'nanmax',
@@ -372,6 +373,7 @@ __all__ = [
     'make_svg',
     'max',
     'mean',
+    'median',
     'merge',
     'midpoints',
     'min',

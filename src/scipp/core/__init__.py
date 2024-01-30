@@ -149,7 +149,19 @@ from .operations import (
     to,
     merge,
 )
-from .reduction import mean, nanmean, sum, nansum, min, max, nanmin, nanmax, all, any
+from .reduction import (
+    mean,
+    nanmean,
+    median,
+    sum,
+    nansum,
+    min,
+    max,
+    nanmin,
+    nanmax,
+    all,
+    any,
+)
 from .shape import broadcast, concat, fold, flatten, squeeze, transpose
 from .trigonometry import sin, cos, tan, asin, acos, atan, atan2
 from .unary import isnan, isinf, isfinite, isposinf, isneginf, to_unit
@@ -303,6 +315,7 @@ __all__ = [
     'lookup',
     'max',
     'mean',
+    'median',
     'merge',
     'midpoints',
     'min',
