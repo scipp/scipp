@@ -1,43 +1,32 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 
+import hypothesis
 import numpy as np
 import pytest
+from hypothesis import given
 
 import scipp as sc
-
-from ..factory import (
-    make_binned_data_array,
-    make_dense_data_array,
-    make_dense_dataset,
-    make_variable,
-)
+import scipp.testing.strategies as scst
 
 # TODO:
 # For now,  we are just checking that creating the repr does not throw.
 
 
-def maybe_variances(variances, dtype):
-    if dtype in [sc.DType.float64, sc.DType.float32]:
-        return variances
-    else:
-        return False
+def settings(**kwargs):
+    def impl(func):
+        return hypothesis.settings(**{'max_examples': 10, 'deadline': 1000, **kwargs})(
+            func
+        )
+
+    return impl
 
 
-@pytest.mark.parametrize("variances", [False, True])
-@pytest.mark.parametrize("dtype", [sc.DType.float64, sc.DType.int64])
-@pytest.mark.parametrize("unit", ['dimensionless', 'counts', 's'])
-def test_table_variable(variances, dtype, unit):
-    var = make_variable(
-        ndim=1, with_variance=maybe_variances(variances, dtype), dtype=dtype, unit=unit
-    )
+@given(var=scst.variables(ndim=1))
+@settings()
+def test_table_variable(var):
     sc.table(var)
-    sc.table(var['xx', 1:10])
-
-
-def test_column_with_zero_variance():
-    col = sc.zeros(dims=['row'], shape=(4,), with_variances=True)
-    sc.table(col)
+    sc.table(var[var.dim, 1:10])
 
 
 def test_table_variable_strings():
@@ -60,56 +49,40 @@ def test_table_variable_datetime():
     sc.table(col)
 
 
-@pytest.mark.parametrize("with_all", [True, False])
-@pytest.mark.parametrize("dtype", [sc.DType.float64, sc.DType.int64])
-@pytest.mark.parametrize("unit", ['dimensionless', 'counts', 's'])
-def test_table_data_array(with_all, dtype, unit):
-    da = make_dense_data_array(
-        ndim=1,
-        with_variance=maybe_variances(with_all, dtype),
-        binedges=with_all,
-        labels=with_all,
-        attrs=with_all,
-        masks=with_all,
-        dtype=dtype,
-        unit=unit,
-    )
+@given(da=scst.dataarrays(data_args={'ndim': 1}))
+@settings()
+def test_table_data_array(da):
     sc.table(da)
-    sc.table(da['xx', 1:10])
+    sc.table(da[da.dim, 1:10])
 
 
-@pytest.mark.parametrize("variances", [False, True])
-@pytest.mark.parametrize("masks", [False, True])
-def test_table_binned_data_array(variances, masks):
-    da = make_binned_data_array(ndim=1, with_variance=variances, masks=masks)
-    sc.table(da)
-    sc.table(da['xx', 1:10])
+@given(buffer=scst.dataarrays(data_args={'ndim': 1}))
+@settings()
+def test_table_binned_data_array(buffer):
+    buffer.coords['xx'] = sc.arange(buffer.dim, len(buffer))
+    binned = buffer.bin(xx=5)
+    sc.table(binned)
+    sc.table(binned['xx', 1:10])
 
 
-@pytest.mark.parametrize("with_all", [True, False])
-@pytest.mark.parametrize("dtype", [sc.DType.float64, sc.DType.int64])
-@pytest.mark.parametrize("unit", ['dimensionless', 'counts', 's'])
-def test_table_dataset(with_all, dtype, unit):
-    ds = make_dense_dataset(
-        ndim=1,
-        with_variance=maybe_variances(with_all, dtype),
-        binedges=with_all,
-        labels=with_all,
-        attrs=with_all,
-        masks=with_all,
-        dtype=dtype,
-        unit=unit,
-    )
+@given(da=scst.dataarrays(data_args={'ndim': 1}))
+@settings()
+def test_table_dataset(da):
+    ds = sc.Dataset({'a': da, 'b': 3 * da})
     sc.table(ds)
-    sc.table(ds['xx', 1:10])
+    sc.table(ds[da.dim, 1:10])
 
 
-def test_table_raises_with_2d_dataset():
-    ds = make_dense_dataset(ndim=2)
+@pytest.mark.parametrize('ndim', (0, 2, 4))
+def test_table_raises_with_none_1d_variable(ndim):
+    var = sc.ones(sizes={f'dim{i}': 4 for i in range(ndim)})
+    with pytest.raises(ValueError):
+        sc.table(var)
+
+
+@given(da=scst.dataarrays(data_args={'ndim': 2}))
+@settings()
+def test_table_raises_with_2d_dataset(da):
+    ds = sc.Dataset({'a': da, 'b': 3 * da})
     with pytest.raises(ValueError):
         sc.table(ds)
-
-
-def test_table_dataset_with_0d_bin_edge_attributes():
-    ds = make_dense_dataset(ndim=2, attrs=True, masks=True, binedges=True)
-    sc.table(ds['yy', 0])

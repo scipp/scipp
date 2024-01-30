@@ -124,12 +124,15 @@ testpaths = "tests"
 addopts = """
 --strict-config
 --strict-markers
+--import-mode=importlib
 -ra
 -v
 """
 filterwarnings = [
   'error',
   'ignore:You are running a "Debug" build of scipp:',
+  # From Hypothesis; unclear why it warns, this seems to be an internal bug.
+  'ignore:The recursion limit will not be reset',
   'ignore:sc.geometry.rotation_matrix_from_quaternion_coeffs has been deprecated:scipp.VisibleDeprecationWarning',
   # Comes from pytest_asyncio and is not our fault.
   "ignore:The 'asyncio_mode' default value will change to 'strict' in future:DeprecationWarning",

@@ -6,14 +6,15 @@ Search strategies for hypothesis to generate inputs for tests.
 """
 
 from functools import partial
-from typing import Dict, Optional, Sequence, Union
+from typing import Any, Callable, Dict, Optional, Sequence, Union
 
 import numpy as np
 from hypothesis import strategies as st
+from hypothesis.core import Ex
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as npst
 
-from ..core import DataArray, DType, Unit
+from ..core import DataArray, DType, Unit, Variable
 from ..core import variable as creation
 
 
@@ -96,7 +97,7 @@ class _ConditionallyWithVariances:
 
 
 @st.composite
-def _concrete_args(draw, args: dict) -> st.SearchStrategy:
+def _concrete_args(draw, args: dict) -> dict:
     def _draw(x):
         return draw(x) if isinstance(x, st.SearchStrategy) else x
 
@@ -161,7 +162,7 @@ def variables(
     elements: Union[int, float, st.SearchStrategy, None] = None,
     fill: Union[int, float, st.SearchStrategy, None] = None,
     unique: Union[bool, st.SearchStrategy, None] = None,
-) -> st.SearchStrategy:
+) -> st.SearchStrategy[Variable]:
     args = _variable_arg_strategies(
         ndim=ndim,
         sizes=sizes,
@@ -186,7 +187,7 @@ def n_variables(
     elements: Union[int, float, st.SearchStrategy, None] = None,
     fill: Union[int, float, st.SearchStrategy, None] = None,
     unique: Union[bool, st.SearchStrategy, None] = None,
-) -> st.SearchStrategy:
+) -> st.SearchStrategy[tuple[Variable]]:
     args = _variable_arg_strategies(
         ndim=ndim,
         sizes=sizes,
@@ -203,39 +204,114 @@ def n_variables(
 
 
 @st.composite
-def coord_dicts(draw, *, coords, sizes, args=None) -> dict:
+def coord_dicts(
+    draw: Callable[[st.SearchStrategy[Ex]], Ex],
+    *,
+    sizes: dict[str, int],
+    args: Optional[dict[str, Any]] = None,
+    bin_edges: bool = True,
+) -> dict[str, Variable]:
     args = args or {}
     args['sizes'] = sizes
     try:
         del args['ndim']
     except KeyError:
         pass
-    return {dim: draw(variables(**args)) for dim in coords}
 
+    if bin_edges:
 
-class _NotSetType:
-    def __repr__(self):
-        return 'Default'
+        def size_increment():
+            return draw(st.integers(min_value=0, max_value=1))
 
-    def __bool__(self):
-        return False
+    else:
 
+        def size_increment():
+            return 0
 
-_NotSet = _NotSetType()
+    if not sizes:
+        return {}
+
+    names_and_sizes = draw(
+        st.lists(
+            st.sampled_from(list(sizes))
+            .map(lambda dim: (dim, sizes[dim] + size_increment()))
+            .flatmap(
+                lambda item: (st.just(item[0]) | dims()).map(lambda name: (name, item))
+            ),
+            min_size=0,
+            max_size=6,
+        )
+    )
+    return {
+        name: draw(variables(**{**args, 'sizes': {dim: size}}))
+        for name, (dim, size) in names_and_sizes
+    }
 
 
 @st.composite
 def dataarrays(
-    draw, data_args=None, coords=_NotSet, coord_args=None
-) -> st.SearchStrategy:
+    draw: Callable[[st.SearchStrategy[Ex]], Ex],
+    *,
+    data_args: Optional[dict[str, Any]] = None,
+    coords: bool = True,
+    coord_args: Optional[dict[str, Any]] = None,
+    masks: bool = True,
+    mask_args: Optional[dict[str, Any]] = None,
+    bin_edges: bool = True,
+) -> DataArray:
+    """Generate data arrays with coords and masks.
+
+    The data variable can be any variable supported by
+    ``scipp.testing.strategies.variables``.
+    The coordinates and masks are constrained to be one-dimensional where the
+    dimension is one of the dims of the data.
+    The name of a coordinate or mask may be,
+    but is not required to be, a dimension name.
+
+    Parameters
+    ----------
+    draw:
+        Provided by Hypothesis.
+    data_args:
+        Arguments for creating the data variable.
+    coords:
+        Selects whether coords are generated.
+    coord_args:
+        Arguments for creating the coordinate variable.
+    masks:
+        Selects whether masks are generated.
+    mask_args:
+        Arguments for creating the mask variable.
+    bin_edges:
+        If ``True``, coords may be bin edges.
+
+    See Also
+    --------
+    scipp.testing.strategies.variables:
+        For allowed items in ``*_args`` dicts.
+    """
     data = draw(variables(**(data_args or {})))
-    if coords is _NotSet:
-        coords = data.dims
-    if coords is not None:
-        coord_dict = draw(coord_dicts(coords=coords, sizes=data.sizes, args=coord_args))
+    if coords:
+        coords_dict = draw(
+            coord_dicts(sizes=data.sizes, args=coord_args, bin_edges=bin_edges)
+        )
     else:
-        coord_dict = {}
-    return DataArray(data, coords=coord_dict)
+        coords_dict = {}
+
+    if masks:
+        mask_args = mask_args or {}
+        mask_args['dtype'] = bool
+        masks_dict = draw(
+            coord_dicts(sizes=data.sizes, args=mask_args, bin_edges=False)
+        )
+    else:
+        masks_dict = {}
+
+    return DataArray(
+        data,
+        coords=coords_dict,
+        masks=masks_dict,
+    )
 
 
 __all__ = [

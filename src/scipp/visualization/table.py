@@ -24,7 +24,10 @@ def _string_in_cell(v: Variable) -> str:
     if err == 0.0:
         prec = 3
     else:
-        prec = max(3, -int(np.floor(np.log10(err))))
+        try:
+            prec = max(3, -int(np.floor(np.log10(err))))
+        except OverflowError:
+            prec = 3  # happens when err is non-finite
     return f'{v.value:.{prec}f}&plusmn;{err:.{prec}f}'
 
 
