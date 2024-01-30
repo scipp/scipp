@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import builtins
-from typing import Optional, Union
+from typing import Callable, Optional
 
 import numpy as np
 
@@ -90,37 +90,139 @@ def nanmean(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
 
 
 def median(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
-    # TODO warn about costs (numpy, numpy.ma -> broadcast)
-    # TODO explain all masked
-    if isinstance(x, _cpp.Dataset):
-        return _cpp.Dataset({k: median(v, dim=dim) for k, v in x.items()})
-    if isinstance(x, DataGroup):
-        return data_group_nary(median, x, dim=dim)
+    """Compute the median of the input values.
 
-    _expect_no_variance(x, 'median')
-    reduced_dims = _normalize_reduced_dims(x, dim)
-    axis = _dims_to_axis(x, reduced_dims)
-    out_dims = [d for d in x.dims if d not in reduced_dims]
-    if isinstance(x, _cpp.Variable):
-        return array(dims=out_dims, values=np.median(x.values, axis=axis), unit=x.unit)
-    if isinstance(x, _cpp.DataArray):
-        mask, preserved_masks = _merge_masks(x.masks, reduced_dims=reduced_dims)
-        if mask is not None:
-            masked = np.ma.masked_array(
-                x.values, mask=mask.broadcast(x.dims, x.shape).values
-            )
-            res = np.ma.median(masked, axis=axis)
-        else:
-            res = np.median(x.values, axis=axis)
-        return _cpp.DataArray(
-            array(dims=out_dims, values=res, unit=x.unit),
-            coords={
-                key: coord
-                for key, coord in x.coords.items()
-                if builtins.all(d in out_dims for d in coord.dims)
-            },
-            masks=preserved_masks,
+    The median is the middle value of a sorted copy of the input array
+    along each reduced dimension.
+    That is, for an array of ``N`` unmasked values, the median is
+
+    - odd ``N``: ``x[(N-1)/2]``
+    - even ``N``: ``(x[N/2-1] + x[N/2]) / 2``
+
+    Note
+    ----
+    Masks are broadcast to the shape of ``x``.
+    This can lead to a large temporary memory usage.
+
+    Parameters
+    ----------
+    x: scipp.typing.VariableLike
+        Input data.
+    dim:
+        Dimension(s) along which to calculate the mean.
+        If not given, the median over a flattened version of the array is calculated.
+
+    Returns
+    -------
+    : Same type as x
+        The median of the input values.
+
+    Raises
+    ------
+    scipp.VariancesError
+        If the input has variances.
+
+    See Also
+    --------
+    scipp.nanmedian:
+        Ignore NaN's when calculating the median.
+
+    Examples
+    --------
+        >>> var = sc.array(dims=['x'], values=[2, 5, 1, 8, 4])
+        >>> var.median()
+        <scipp.Variable> ()    float64  [dimensionless]  4
+        >>> var = sc.array(dims=['x'], values=[2, 5, 1, 8])
+        >>> var.median()
+        <scipp.Variable> ()    float64  [dimensionless]  3.5
+
+    The median can be computed along a given dimension:
+
+        >>> var = sc.array(dims=['x', 'y'], values=[[1, 3, 6], [2, 7, 4]])
+        >>> var.median('y')
+        <scipp.Variable> (x: 2)    float64  [dimensionless]  [3, 4]
+
+    Masked elements are ignored:
+
+        >>> da = sc.DataArray(
+        ...     sc.array(dims=['x'], values=[5, 3, 4, 3]),
+        ...     masks={'m': sc.array(dims=['x'], values=[False, True, False, False])}
+        ... )
+        >>> da.median()
+        <scipp.DataArray>
+        Dimensions: Sizes[]
+        Data:
+                                    float64  [dimensionless]  ()  4
+    """
+    return _reduce_with_numpy(
+        x,
+        dim=dim,
+        sc_func=median,
+        np_func=np.median,
+        np_ma_func=np.ma.median,
+    )
+
+
+def nanmedian(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
+    """Compute the median of the input values ignoring NaN's.
+
+    The median is the middle value of a sorted copy of the input array
+    along each reduced dimension.
+    That is, for an array of ``N`` unmasked, non-NaN values, the median is
+
+    - odd ``N``: ``x[(N-1)/2]``
+    - even ``N``: ``(x[N/2-1] + x[N/2]) / 2``
+
+    Parameters
+    ----------
+    x: scipp.typing.VariableLike
+        Input data.
+    dim:
+        Dimension(s) along which to calculate the mean.
+        If not given, the median over a flattened version of the array is calculated.
+
+    Returns
+    -------
+    : Same type as x
+        The median of the input values.
+
+    Raises
+    ------
+    scipp.VariancesError
+        If the input has variances.
+    ValueError
+        If the input has masks.
+        Mask out NaN's and then use :func:`scipp.median` instead.
+
+    See Also
+    --------
+    scipp.median:
+        Compute the median without special handling of NaN's.
+
+    Examples
+    --------
+        >>> var = sc.array(dims=['x'], values=[2, 5, 1, np.nan, 8, 4])
+        >>> var.median()
+        <scipp.Variable> ()    float64  [dimensionless]  4
+        >>> var = sc.array(dims=['x'], values=[2, np.nan, 5, 1, 8])
+        >>> var.median()
+        <scipp.Variable> ()    float64  [dimensionless]  3.5
+    """
+
+    def _catch_masked(*args, **kwargs):
+        # Because there is no np.ma.nanmedian
+        raise ValueError(
+            'nanmedian does not support masked data array. '
+            'Consider masking NaN values and calling scipp.median'
         )
+
+    return _reduce_with_numpy(
+        x,
+        dim=dim,
+        sc_func=nanmedian,
+        np_func=np.nanmedian,
+        np_ma_func=_catch_masked,
+    )
 
 
 def sum(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
@@ -400,6 +502,59 @@ def any(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
         return _call_cpp_func(_cpp.any, x, dim=dim)
 
 
+def _reduce_with_numpy(
+    x: VariableLikeType,
+    *,
+    dim: Dims = None,
+    sc_func: Callable[..., VariableLikeType],
+    np_func: Callable[..., np.ndarray],
+    np_ma_func: Callable[..., np.ndarray],
+    **kwargs,
+) -> VariableLikeType:
+    if isinstance(x, _cpp.Dataset):
+        return _cpp.Dataset(
+            {
+                k: _reduce_with_numpy(
+                    v,
+                    dim=dim,
+                    sc_func=sc_func,
+                    np_func=np_func,
+                    np_ma_func=np_ma_func,
+                    **kwargs,
+                )
+                for k, v in x.items()
+            }
+        )
+    if isinstance(x, DataGroup):
+        return data_group_nary(sc_func, x, dim=dim, **kwargs)
+
+    _expect_no_variance(x, sc_func.__name__)
+    reduced_dims, out_dims, axis = _split_dims(x, dim)
+    if isinstance(x, _cpp.Variable):
+        return array(
+            dims=out_dims, values=np_func(x.values, axis=axis, **kwargs), unit=x.unit
+        )
+    if isinstance(x, _cpp.DataArray):
+        mask, preserved_masks = _merge_masks(x.masks, reduced_dims=reduced_dims)
+        if mask is not None:
+            masked = np.ma.masked_array(
+                x.values, mask=mask.broadcast(x.dims, x.shape).values
+            )
+            res = np_ma_func(masked, axis=axis, **kwargs)
+        else:
+            res = np_func(x.values, axis=axis, **kwargs)
+        return _cpp.DataArray(
+            array(dims=out_dims, values=res, unit=x.unit),
+            coords={
+                key: coord
+                for key, coord in x.coords.items()
+                if builtins.all(d in out_dims for d in coord.dims)
+            },
+            masks=preserved_masks,
+        )
+    raise TypeError(f'invalid argument of type {type(x)} to {sc_func}')
+
+
 def _normalize_reduced_dims(x: VariableLikeType, dim: Dims) -> tuple[str, ...]:
     if dim is None:
         return x.dims
@@ -408,9 +563,7 @@ def _normalize_reduced_dims(x: VariableLikeType, dim: Dims) -> tuple[str, ...]:
     return tuple(dim)
 
 
-def _dims_to_axis(
-    x: VariableLikeType, dim: tuple[str, ...]
-) -> Union[int, tuple[int, ...]]:
+def _dims_to_axis(x: VariableLikeType, dim: tuple[str, ...]) -> tuple[int, ...]:
     return tuple(_dim_index(x.dims, d) for d in dim)
 
 
@@ -421,6 +574,15 @@ def _dim_index(dims: tuple[str, ...], dim: str) -> int:
         raise _cpp.DimensionError(
             f'Expected dimension to be in {dims}, got {dim}'
         ) from None
+
+
+def _split_dims(
+    x: VariableLikeType, dim: Dims
+) -> tuple[tuple[str, ...], tuple[str, ...], tuple[int, ...]]:
+    reduced_dims = _normalize_reduced_dims(x, dim)
+    out_dims = tuple(d for d in x.dims if d not in reduced_dims)
+    axis = _dims_to_axis(x, reduced_dims)
+    return reduced_dims, out_dims, axis
 
 
 def _expect_no_variance(x: VariableLikeType, op: str) -> None:

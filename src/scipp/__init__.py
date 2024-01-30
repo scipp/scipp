@@ -141,7 +141,20 @@ from .core import (
     stddevs,
     where,
 )
-from .core import mean, nanmean, median, sum, nansum, min, max, nanmin, nanmax, all, any
+from .core import (
+    mean,
+    nanmean,
+    median,
+    nanmedian,
+    sum,
+    nansum,
+    min,
+    max,
+    nanmin,
+    nanmax,
+    all,
+    any,
+)
 from .core import broadcast, concat, fold, flatten, squeeze, transpose
 from .core import sinh, cosh, tanh, asinh, acosh, atanh
 from .core import sin, cos, tan, asin, acos, atan, atan2
@@ -196,6 +209,7 @@ for _cls in (Variable, DataArray, Dataset):
             'mean',
             'nanmean',
             'median',
+            'nanmedian',
             'max',
             'min',
             'nanmax',
@@ -383,6 +397,7 @@ __all__ = [
     'nanhist',
     'nanmax',
     'nanmean',
+    'nanmedian',
     'nanmin',
     'nansum',
     'negative',

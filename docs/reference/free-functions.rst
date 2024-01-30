@@ -128,9 +128,11 @@ Reduction operations are operations to remove one or more dimension, e.g., by pe
    cumsum
    max
    mean
+   median
    min
    nanmax
    nanmean
+   nanmedian
    nanmin
    nansum
    sum

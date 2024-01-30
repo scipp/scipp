@@ -356,6 +356,9 @@ class DataGroup(MutableMapping):
     def nanmean(self, *args, **kwargs):
         return self._reduce('nanmean', *args, **kwargs)
 
+    def nanmedian(self, *args, **kwargs):
+        return self._reduce('nanmedian', *args, **kwargs)
+
     def nanmin(self, *args, **kwargs):
         return self._reduce('nanmin', *args, **kwargs)
 

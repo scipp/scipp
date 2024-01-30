@@ -344,7 +344,6 @@ def test_median_single_mask():
     d['a'].masks['m1'] = sc.array(dims=['x'], values=[False, True, True, False, False])
     d_ref = sc.Dataset(data={'a': sc.scalar(1.0)})
     sc.testing.assert_identical(sc.median(d, 'x'), d_ref)
-    sc.testing.assert_identical(sc.nanmedian(d, 'x'), d_ref)
 
 
 def test_median_two_masks_1d():
@@ -357,7 +356,6 @@ def test_median_two_masks_1d():
     d['a'].masks['m2'] = sc.array(dims=['x'], values=[False, True, False, False, True])
     d_ref = sc.Dataset(data={'a': sc.scalar(3.0)})
     sc.testing.assert_identical(sc.median(d, 'x'), d_ref)
-    sc.testing.assert_identical(sc.nanmedian(d, 'x'), d_ref)
 
 
 def test_median_mask_along_reduced_dim():
@@ -367,7 +365,6 @@ def test_median_mask_along_reduced_dim():
     d['a'].masks['m1'] = sc.array(dims=['x'], values=[False, False, True])
     d_ref = sc.Dataset(data={'a': sc.array(dims=['y'], values=[2.5, 5.0])})
     sc.testing.assert_identical(sc.median(d, 'x'), d_ref)
-    sc.testing.assert_identical(sc.nanmedian(d, 'x'), d_ref)
 
 
 def test_median_mask_along_other_dim():
@@ -378,7 +375,6 @@ def test_median_mask_along_other_dim():
     d_ref = sc.Dataset(data={'a': sc.array(dims=['x'], values=[3.0, 4.5, 2.0])})
     d_ref['a'].masks['m1'] = sc.array(dims=['x'], values=[False, False, True])
     sc.testing.assert_identical(sc.median(d, 'y'), d_ref)
-    sc.testing.assert_identical(sc.nanmedian(d, 'y'), d_ref)
 
 
 def test_median_mask_along_multiple_dims():
@@ -389,7 +385,6 @@ def test_median_mask_along_multiple_dims():
     d['a'].masks['m2'] = sc.array(dims=['y'], values=[False, True])
     d_ref = sc.Dataset(data={'a': sc.scalar(2.5)})
     sc.testing.assert_identical(sc.median(d), d_ref)
-    sc.testing.assert_identical(sc.nanmedian(d), d_ref)
 
 
 def test_median_multi_dim_mask():
@@ -401,15 +396,12 @@ def test_median_multi_dim_mask():
     )
     d_ref = sc.Dataset(data={'a': sc.scalar(3.0)})
     sc.testing.assert_identical(sc.median(d), d_ref)
-    sc.testing.assert_identical(sc.nanmedian(d), d_ref)
 
     d_ref = sc.Dataset(data={'a': sc.array(dims=['y'], values=[1.0, 5.0])})
     sc.testing.assert_identical(sc.median(d, 'x'), d_ref)
-    sc.testing.assert_identical(sc.nanmedian(d, 'x'), d_ref)
 
     d_ref = sc.Dataset(data={'a': sc.array(dims=['x'], values=[1.0, 5.0, 0.0])})
     sc.testing.assert_identical(sc.median(d, 'y'), d_ref)
-    sc.testing.assert_identical(sc.nanmedian(d, 'y'), d_ref)
 
 
 def test_median_all_masked():
@@ -419,7 +411,6 @@ def test_median_all_masked():
     d['a'].masks['m1'] = sc.full(value=True, sizes=d.sizes)
     d_ref = sc.Dataset(data={'a': sc.scalar(0.0)})
     sc.testing.assert_identical(sc.median(d), d_ref)
-    sc.testing.assert_identical(sc.nanmedian(d), d_ref)
 
 
 def test_nanmedian_even(container):
