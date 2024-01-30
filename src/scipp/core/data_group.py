@@ -125,9 +125,6 @@ class DataGroup(MutableMapping):
         indexing, or advanced indexing on items that are scipp.Variable or
         scipp.DataArray.
 
-        Positional indexing is only possible when the shape of all items is consistent
-        for the indexed dimension.
-
         Label-based indexing is only possible when all items have a coordinate for the
         indexed dimension.
 
@@ -157,11 +154,6 @@ class DataGroup(MutableMapping):
             index = name
         else:
             dim, index = name
-        if _is_positional_index(index) and self.sizes[dim] is None:
-            raise DimensionError(
-                f"Positional indexing dim '{dim}' not possible as the length is not "
-                "unique."
-            )
         return DataGroup(
             {
                 key: var[dim, index]
