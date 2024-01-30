@@ -134,8 +134,12 @@ Reduction operations are operations to remove one or more dimension, e.g., by pe
    nanmean
    nanmedian
    nanmin
+   nanstd
    nansum
+   nanvar
+   std
    sum
+   var
 
 Trigonometric
 ~~~~~~~~~~~~~

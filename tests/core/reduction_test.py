@@ -484,6 +484,263 @@ def test_nanmedian_single_dim(container):
     )
 
 
+def test_var(container):
+    x = container(sc.array(dims=['xx', 'yy'], values=[[2, 5, 3], [2, 2, 4]], unit='m'))
+    # Yes, using identical with floats.
+    # It works and allclose doesn't support datasets and data groups.
+    sc.testing.assert_identical(
+        sc.var(x, ddof=0), container(sc.scalar(4 / 3, unit='m**2'))
+    )
+    sc.testing.assert_identical(x.var(ddof=0), container(sc.scalar(4 / 3, unit='m**2')))
+    sc.testing.assert_identical(
+        sc.var(x, ddof=0, dim=['xx', 'yy']), container(sc.scalar(4 / 3, unit='m**2'))
+    )
+    sc.testing.assert_identical(
+        x.var(ddof=0, dim=['xx', 'yy']), container(sc.scalar(4 / 3, unit='m**2'))
+    )
+
+    sc.testing.assert_identical(
+        sc.var(x, ddof=1), container(sc.scalar(1.6, unit='m**2'))
+    )
+    sc.testing.assert_identical(x.var(ddof=1), container(sc.scalar(1.6, unit='m**2')))
+    sc.testing.assert_identical(
+        sc.var(x, ddof=1, dim=['xx', 'yy']), container(sc.scalar(1.6, unit='m**2'))
+    )
+    sc.testing.assert_identical(
+        x.var(ddof=1, dim=['xx', 'yy']), container(sc.scalar(1.6, unit='m**2'))
+    )
+
+
+def test_var_single_dim(container):
+    x = container(sc.array(dims=['xx', 'yy'], values=[[2, 5, 3], [2, 2, 4]], unit='m'))
+    # Yes, using identical with floats.
+    # It works and allclose doesn't support datasets and data groups.
+    sc.testing.assert_identical(
+        sc.var(x, 'xx', ddof=0),
+        container(sc.array(dims=['yy'], values=[0.0, 2.25, 0.25], unit='m**2')),
+    )
+    sc.testing.assert_identical(
+        x.var('xx', ddof=0),
+        container(sc.array(dims=['yy'], values=[0.0, 2.25, 0.25], unit='m**2')),
+    )
+    sc.testing.assert_identical(
+        sc.var(x, dim=['yy'], ddof=0),
+        container(sc.array(dims=['xx'], values=[14 / 9, 8 / 9], unit='m**2')),
+    )
+    sc.testing.assert_identical(
+        x.var(dim=['yy'], ddof=0),
+        container(sc.array(dims=['xx'], values=[14 / 9, 8 / 9], unit='m**2')),
+    )
+
+    sc.testing.assert_identical(
+        sc.var(x, 'xx', ddof=1),
+        container(sc.array(dims=['yy'], values=[0.0, 4.5, 0.5], unit='m**2')),
+    )
+    sc.testing.assert_identical(
+        x.var('xx', ddof=1),
+        container(sc.array(dims=['yy'], values=[0.0, 4.5, 0.5], unit='m**2')),
+    )
+    sc.testing.assert_identical(
+        sc.var(x, dim=['yy'], ddof=1),
+        container(sc.array(dims=['xx'], values=[7 / 3, 4 / 3], unit='m**2')),
+    )
+    sc.testing.assert_identical(
+        x.var(dim=['yy'], ddof=1),
+        container(sc.array(dims=['xx'], values=[7 / 3, 4 / 3], unit='m**2')),
+    )
+
+
+def test_nanvar(container):
+    x = container(
+        sc.array(dims=['xx', 'yy'], values=[[2, np.nan, 3], [2, 2, np.nan]], unit='m')
+    )
+    # Yes, using identical with floats.
+    # It works and allclose doesn't support datasets and data groups.
+    sc.testing.assert_identical(
+        sc.nanvar(x, ddof=0), container(sc.scalar(0.1875, unit='m**2'))
+    )
+    sc.testing.assert_identical(
+        x.nanvar(ddof=0), container(sc.scalar(0.1875, unit='m**2'))
+    )
+    sc.testing.assert_identical(
+        sc.nanvar(x, ddof=0, dim=['xx', 'yy']),
+        container(sc.scalar(0.1875, unit='m**2')),
+    )
+    sc.testing.assert_identical(
+        x.nanvar(ddof=0, dim=['xx', 'yy']), container(sc.scalar(0.1875, unit='m**2'))
+    )
+
+
+def test_nanvar_single_dim(container):
+    x = container(
+        sc.array(dims=['xx', 'yy'], values=[[2, np.nan, 3], [2, 2, np.nan]], unit='m')
+    )
+    # Yes, using identical with floats.
+    # It works and allclose doesn't support datasets and data groups.
+    sc.testing.assert_identical(
+        sc.nanvar(x, 'xx', ddof=0),
+        container(sc.array(dims=['yy'], values=[0.0, 0.0, 0.0], unit='m**2')),
+    )
+    sc.testing.assert_identical(
+        x.nanvar('xx', ddof=0),
+        container(sc.array(dims=['yy'], values=[0.0, 0.0, 0.0], unit='m**2')),
+    )
+    sc.testing.assert_identical(
+        sc.nanvar(x, dim=['yy'], ddof=0),
+        container(sc.array(dims=['xx'], values=[0.25, 0.0], unit='m**2')),
+    )
+    sc.testing.assert_identical(
+        x.nanvar(dim=['yy'], ddof=0),
+        container(sc.array(dims=['xx'], values=[0.25, 0.0], unit='m**2')),
+    )
+
+
+def test_std_variable():
+    x = sc.array(dims=['xx', 'yy'], values=[[2, 5, 3], [2, 2, 4]], unit='m')
+    sc.testing.assert_allclose(
+        sc.std(x, ddof=0), sc.scalar(1.1547005383792515, unit='m')
+    )
+    sc.testing.assert_allclose(x.std(ddof=0), sc.scalar(1.1547005383792515, unit='m'))
+    sc.testing.assert_allclose(
+        sc.std(x, ddof=0, dim=['xx', 'yy']), sc.scalar(1.1547005383792515, unit='m')
+    )
+    sc.testing.assert_allclose(
+        x.std(ddof=0, dim=['xx', 'yy']), sc.scalar(1.1547005383792515, unit='m')
+    )
+
+    sc.testing.assert_allclose(
+        sc.std(x, ddof=1), sc.scalar(1.2649110640673518, unit='m')
+    )
+    sc.testing.assert_allclose(x.std(ddof=1), sc.scalar(1.2649110640673518, unit='m'))
+    sc.testing.assert_allclose(
+        sc.std(x, ddof=1, dim=['xx', 'yy']), sc.scalar(1.2649110640673518, unit='m')
+    )
+    sc.testing.assert_allclose(
+        x.std(ddof=1, dim=['xx', 'yy']), sc.scalar(1.2649110640673518, unit='m')
+    )
+
+
+def test_std_data_array():
+    x = sc.DataArray(
+        sc.array(dims=['xx', 'yy'], values=[[2, 5, 3], [2, 2, 4]], unit='m')
+    )
+    sc.testing.assert_allclose(
+        sc.std(x, ddof=0), sc.DataArray(sc.scalar(1.1547005383792515, unit='m'))
+    )
+    sc.testing.assert_allclose(
+        x.std(ddof=0), sc.DataArray(sc.scalar(1.1547005383792515, unit='m'))
+    )
+
+
+def test_std_dataset():
+    x = sc.Dataset(
+        {'a': sc.array(dims=['xx', 'yy'], values=[[2, 5, 3], [2, 2, 4]], unit='m')}
+    )
+    sc.testing.assert_allclose(
+        sc.std(x, ddof=0)['a'], sc.DataArray(sc.scalar(1.1547005383792515, unit='m'))
+    )
+    sc.testing.assert_allclose(
+        x.std(ddof=0)['a'], sc.DataArray(sc.scalar(1.1547005383792515, unit='m'))
+    )
+
+
+def test_std_data_group():
+    x = sc.DataGroup(
+        {'a': sc.array(dims=['xx', 'yy'], values=[[2, 5, 3], [2, 2, 4]], unit='m')}
+    )
+    sc.testing.assert_allclose(
+        sc.std(x, ddof=0)['a'], sc.scalar(1.1547005383792515, unit='m')
+    )
+    sc.testing.assert_allclose(
+        x.std(ddof=0)['a'], sc.scalar(1.1547005383792515, unit='m')
+    )
+
+
+def test_std_single_dim(container):
+    x = container(sc.array(dims=['xx', 'yy'], values=[[2, 5, 3], [2, 2, 4]], unit='m'))
+    # Yes, using identical with floats.
+    # It works and allclose doesn't support datasets and data groups.
+    sc.testing.assert_identical(
+        sc.std(x, 'xx', ddof=0),
+        container(sc.array(dims=['yy'], values=[0.0, 1.5, 0.5], unit='m')),
+    )
+    sc.testing.assert_identical(
+        x.std('xx', ddof=0),
+        container(sc.array(dims=['yy'], values=[0.0, 1.5, 0.5], unit='m')),
+    )
+
+
+def test_std_single_dim_variable():
+    x = sc.array(dims=['xx', 'yy'], values=[[2, 5, 3], [2, 2, 4]], unit='m')
+    sc.testing.assert_allclose(
+        sc.std(x, dim=['yy'], ddof=0),
+        sc.array(dims=['xx'], values=[1.24721913, 0.94280904], unit='m'),
+    )
+    sc.testing.assert_allclose(
+        x.std(dim=['yy'], ddof=0),
+        sc.array(dims=['xx'], values=[1.24721913, 0.94280904], unit='m'),
+    )
+
+    sc.testing.assert_allclose(
+        sc.std(x, 'xx', ddof=1),
+        sc.array(dims=['yy'], values=[0.0, 2.12132034, 0.70710678], unit='m'),
+    )
+    sc.testing.assert_allclose(
+        x.std('xx', ddof=1),
+        sc.array(dims=['yy'], values=[0.0, 2.12132034, 0.70710678], unit='m'),
+    )
+    sc.testing.assert_allclose(
+        sc.std(x, dim=['yy'], ddof=1),
+        sc.array(dims=['xx'], values=[1.52752523, 1.15470054], unit='m'),
+    )
+    sc.testing.assert_allclose(
+        x.std(dim=['yy'], ddof=1),
+        sc.array(dims=['xx'], values=[1.52752523, 1.15470054], unit='m'),
+    )
+
+
+def test_nanstd(container):
+    x = container(
+        sc.array(dims=['xx', 'yy'], values=[[2, np.nan, 3], [2, 3, np.nan]], unit='m')
+    )
+    # Yes, using identical with floats.
+    # It works and allclose doesn't support datasets and data groups.
+    sc.testing.assert_identical(
+        sc.nanstd(x, ddof=0), container(sc.scalar(0.5, unit='m'))
+    )
+    sc.testing.assert_identical(x.nanstd(ddof=0), container(sc.scalar(0.5, unit='m')))
+    sc.testing.assert_identical(
+        sc.nanstd(x, ddof=0, dim=['xx', 'yy']), container(sc.scalar(0.5, unit='m'))
+    )
+    sc.testing.assert_identical(
+        x.nanstd(ddof=0, dim=['xx', 'yy']), container(sc.scalar(0.5, unit='m'))
+    )
+
+
+def test_test_nanstd_single_dim(container):
+    x = container(
+        sc.array(dims=['xx', 'yy'], values=[[2, np.nan, 3], [2, 2, np.nan]], unit='m')
+    )
+    # Yes, using identical with floats.
+    # It works and allclose doesn't support datasets and data groups.
+    sc.testing.assert_identical(
+        sc.nanstd(x, 'xx', ddof=0),
+        container(sc.array(dims=['yy'], values=[0.0, 0.0, 0.0], unit='m')),
+    )
+    sc.testing.assert_identical(
+        x.nanstd('xx', ddof=0),
+        container(sc.array(dims=['yy'], values=[0.0, 0.0, 0.0], unit='m')),
+    )
+    sc.testing.assert_identical(
+        sc.nanstd(x, dim=['yy'], ddof=0),
+        container(sc.array(dims=['xx'], values=[0.5, 0.0], unit='m')),
+    )
+    sc.testing.assert_identical(
+        x.nanstd(dim=['yy'], ddof=0),
+        container(sc.array(dims=['xx'], values=[0.5, 0.0], unit='m')),
+    )
+
+
 def test_max(container):
     x = container(
         sc.array(
