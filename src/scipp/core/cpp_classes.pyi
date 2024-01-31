@@ -634,7 +634,7 @@ class DataArray:
         ...
 
     @property
-    def attrs(self) -> Coords:
+    def attrs(self):
         ...
 
     def bin(self, arg_dict=None, /, **kwargs):
@@ -670,6 +670,22 @@ class DataArray:
         ...
 
     @property
+    def deprecated_attrs(self) -> Coords:
+        ...
+
+    @overload
+    def deprecated_drop_attrs(self, arg0: str) -> DataArray:
+        ...
+
+    @overload
+    def deprecated_drop_attrs(self, arg0: List[str]) -> DataArray:
+        ...
+
+    @property
+    def deprecated_meta(self) -> Coords:
+        ...
+
+    @property
     def dim(self) -> str:
         ...
 
@@ -677,12 +693,7 @@ class DataArray:
     def dims(self) -> tuple:
         ...
 
-    @overload
-    def drop_attrs(self, arg0: str) -> DataArray:
-        ...
-
-    @overload
-    def drop_attrs(self, arg0: List[str]) -> DataArray:
+    def drop_attrs(self, *args, **kwargs):
         ...
 
     @overload
@@ -733,8 +744,11 @@ class DataArray:
     def mean(self, dim: Optional[str]=None) -> VariableLikeType:
         ...
 
+    def median(self, dim: Dims=None) -> VariableLikeType:
+        ...
+
     @property
-    def meta(self) -> Coords:
+    def meta(self):
         ...
 
     def min(self, dim: Optional[str]=None) -> VariableLikeType:
@@ -757,10 +771,19 @@ class DataArray:
     def nanmean(self, dim: Optional[str]=None) -> VariableLikeType:
         ...
 
+    def nanmedian(self, dim: Dims=None) -> VariableLikeType:
+        ...
+
     def nanmin(self, dim: Optional[str]=None) -> VariableLikeType:
         ...
 
+    def nanstd(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+        ...
+
     def nansum(self, dim: Optional[str]=None) -> VariableLikeType:
+        ...
+
+    def nanvar(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
         ...
 
     @property
@@ -800,6 +823,9 @@ class DataArray:
     def squeeze(self, dim: Optional[Union[str, List[str], Tuple[str, ...]]]=None) -> VariableLikeType:
         ...
 
+    def std(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+        ...
+
     def sum(self, dim: Dims=None) -> VariableLikeType:
         ...
 
@@ -837,6 +863,9 @@ class DataArray:
 
     @values.setter
     def values(self, arg1: Any) -> None:
+        ...
+
+    def var(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
         ...
 
     @property
@@ -1153,6 +1182,9 @@ class Dataset:
     def mean(self, dim: Optional[str]=None) -> VariableLikeType:
         ...
 
+    def median(self, dim: Dims=None) -> VariableLikeType:
+        ...
+
     @property
     def meta(self) -> Coords:
         ...
@@ -1166,10 +1198,19 @@ class Dataset:
     def nanmean(self, dim: Optional[str]=None) -> VariableLikeType:
         ...
 
+    def nanmedian(self, dim: Dims=None) -> VariableLikeType:
+        ...
+
     def nanmin(self, dim: Optional[str]=None) -> VariableLikeType:
         ...
 
+    def nanstd(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+        ...
+
     def nansum(self, dim: Optional[str]=None) -> VariableLikeType:
+        ...
+
+    def nanvar(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
         ...
 
     @property
@@ -1205,6 +1246,9 @@ class Dataset:
     def squeeze(self, dim: Optional[Union[str, List[str], Tuple[str, ...]]]=None) -> VariableLikeType:
         ...
 
+    def std(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+        ...
+
     def sum(self, dim: Dims=None) -> VariableLikeType:
         ...
 
@@ -1218,6 +1262,9 @@ class Dataset:
         ...
 
     def values(self) -> Dataset_values_view:
+        ...
+
+    def var(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
         ...
 
 class DatasetError(RuntimeError):
@@ -1672,7 +1719,7 @@ class Variable:
     def __imul__(self, arg0: float) -> Variable:
         ...
 
-    def __init__(self, *, dims: Any, values: Any=None, variances: Any=None, unit: Union[str, Unit, None, DefaultUnit]=default_unit, dtype: Any=None) -> None:
+    def __init__(self, *, dims: Any, values: Any=None, variances: Any=None, unit: Union[str, Unit, None, DefaultUnit]=default_unit, dtype: Any=None, aligned: bool=True) -> None:
         ...
 
     def __int__(self) -> int:
@@ -1928,6 +1975,9 @@ class Variable:
     def mean(self, dim: Optional[str]=None) -> VariableLikeType:
         ...
 
+    def median(self, dim: Dims=None) -> VariableLikeType:
+        ...
+
     def min(self, dim: Optional[str]=None) -> VariableLikeType:
         ...
 
@@ -1940,10 +1990,19 @@ class Variable:
     def nanmean(self, dim: Optional[str]=None) -> VariableLikeType:
         ...
 
+    def nanmedian(self, dim: Dims=None) -> VariableLikeType:
+        ...
+
     def nanmin(self, dim: Optional[str]=None) -> VariableLikeType:
         ...
 
+    def nanstd(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+        ...
+
     def nansum(self, dim: Optional[str]=None) -> VariableLikeType:
+        ...
+
+    def nanvar(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
         ...
 
     @property
@@ -1965,9 +2024,6 @@ class Variable:
     def save_hdf5(self, filename: Union[str, Path]) -> None:
         ...
 
-    def set_aligned(self, aligned: bool) -> None:
-        ...
-
     @property
     def shape(self) -> tuple:
         ...
@@ -1981,6 +2037,9 @@ class Variable:
         ...
 
     def squeeze(self, dim: Optional[Union[str, List[str], Tuple[str, ...]]]=None) -> VariableLikeType:
+        ...
+
+    def std(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
         ...
 
     def sum(self, dim: Dims=None) -> VariableLikeType:
@@ -2017,6 +2076,9 @@ class Variable:
 
     @values.setter
     def values(self, arg1: Any) -> None:
+        ...
+
+    def var(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
         ...
 
     @property
