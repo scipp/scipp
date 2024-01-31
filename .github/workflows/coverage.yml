@@ -32,12 +32,12 @@ jobs:
         run: cat .buildconfig/ci-linux.yml | grep -v 'gxx\|tbb' > env.yml
 
       - name: Setup conda environment
-        uses: mamba-org/provision-with-micromamba@main
+        uses: mamba-org/setup-micromamba@v1
         with:
-          micromamba-version: 0.24.0
+          micromamba-version: 1.5.6-0
           environment-file: env.yml
-          cache-env: true
-          extra-specs: python="3.9"
+          cache-environment: true
+          create-args: python="3.9"
 
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.12
