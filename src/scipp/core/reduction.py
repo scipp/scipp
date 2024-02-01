@@ -4,15 +4,14 @@
 
 from __future__ import annotations
 
-import builtins
 from typing import Any, Callable, Optional
 
 import numpy as np
 
 from .._scipp import core as _cpp
 from ..typing import Dims, VariableLikeType
+from . import concepts
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .cpp_classes import Masks
 from .data_group import DataGroup, data_group_nary
 from .variable import array
 
@@ -888,32 +887,17 @@ def _reduce_with_numpy(
             unit=unit_func(x.unit),
         )
     if isinstance(x, _cpp.DataArray):
-        mask, preserved_masks = _merge_masks(x.masks, reduced_dims=reduced_dims)
-        if mask is not None:
+        if (mask := concepts.irreducible_mask(x, dim)) is not None:
             masked = np.ma.masked_array(
                 x.values, mask=mask.broadcast(x.dims, x.shape).values
             )
             res = np_ma_func(masked, axis=axis, **kwargs)
         else:
             res = np_func(x.values, axis=axis, **kwargs)
-        return _cpp.DataArray(
-            array(dims=out_dims, values=res, unit=x.unit),
-            coords={
-                key: coord
-                for key, coord in x.coords.items()
-                if builtins.all(d in out_dims for d in coord.dims)
-            },
-            masks=preserved_masks,
+        return concepts.rewrap_reduced_data(
+            x, array(dims=out_dims, values=res, unit=x.unit), dim
         )
     raise TypeError(f'invalid argument of type {type(x)} to {sc_func}')
-
-
-def _normalize_reduced_dims(x: VariableLikeType, dim: Dims) -> tuple[str, ...]:
-    if dim is None:
-        return x.dims
-    if isinstance(dim, str):
-        return (dim,)
-    return tuple(dim)
 
 
 def _dims_to_axis(x: VariableLikeType, dim: tuple[str, ...]) -> tuple[int, ...]:
@@ -932,7 +916,7 @@ def _dim_index(dims: tuple[str, ...], dim: str) -> int:
 def _split_dims(
     x: VariableLikeType, dim: Dims
 ) -> tuple[tuple[str, ...], tuple[str, ...], tuple[int, ...]]:
-    reduced_dims = _normalize_reduced_dims(x, dim)
+    reduced_dims = concepts.concrete_dims(x, dim)
     out_dims = tuple(d for d in x.dims if d not in reduced_dims)
     axis = _dims_to_axis(x, reduced_dims)
     return reduced_dims, out_dims, axis
@@ -946,19 +930,3 @@ def _expect_no_variance(x: VariableLikeType, op: str) -> None:
 def _expect_not_binned(x: VariableLikeType, op: str) -> None:
     if x.bins is not None:
         raise _cpp.DTypeError(f"'{op}' does not support binned data")
-
-
-def _merge_masks(
-    masks: Masks, reduced_dims: tuple[str, ...]
-) -> tuple[Optional[_cpp.Variable], dict[str, _cpp.Variable]]:
-    merged = None
-    preserved = {}
-    for key, mask in masks.items():
-        if builtins.any(dim in reduced_dims for dim in mask.dims):
-            if merged is None:
-                merged = mask
-            else:
-                merged = merged | mask
-        else:
-            preserved[key] = mask
-    return merged, preserved
