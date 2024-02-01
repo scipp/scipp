@@ -823,7 +823,7 @@ def test_bin(func):
     assert sc.identical(func(dg, **edges), expected)
 
 
-reduction_ops = (
+bin_reduction_ops = (
     'sum',
     'mean',
     'all',
@@ -836,12 +836,26 @@ reduction_ops = (
     'nanmax',
 )
 
+# These reductions are supported by DataGroup but not by Bins / binned data.
+reduction_ops = (
+    *bin_reduction_ops,
+    'median',
+    'std',
+    'var',
+    'nanmedian',
+    'nanstd',
+    'nanvar',
+)
+
 
 @pytest.mark.parametrize('dim', ('x', None))
 @pytest.mark.parametrize('op', reduction_ops)
 def test_reduction_op_ignores_python_objects(op, dim):
     dtype = 'bool' if op in ('all', 'any') else 'float64'
-    op = operator.methodcaller(op, dim=dim)
+    if 'std' in op or 'var' in op:
+        op = operator.methodcaller(op, dim=dim, ddof=0)
+    else:
+        op = operator.methodcaller(op, dim=dim)
     dg = sc.DataGroup(a=sc.ones(dims=['x', 'y'], shape=(2, 3), dtype=dtype), b='abc')
     result = op(dg)
     assert_identical(result['a'], op(dg['a']))
@@ -852,7 +866,10 @@ def test_reduction_op_ignores_python_objects(op, dim):
 @pytest.mark.parametrize('op', reduction_ops)
 def test_reduction_op_ignores_numpy_arrays(op, dim):
     dtype = 'bool' if op in ('all', 'any') else 'float64'
-    op = operator.methodcaller(op, dim=dim)
+    if 'std' in op or 'var' in op:
+        op = operator.methodcaller(op, dim=dim, ddof=0)
+    else:
+        op = operator.methodcaller(op, dim=dim)
     dg = sc.DataGroup(
         a=sc.ones(dims=['x', 'y'], shape=(2, 3), dtype=dtype), b=np.ones((4,))
     )
@@ -864,7 +881,10 @@ def test_reduction_op_ignores_numpy_arrays(op, dim):
 @pytest.mark.parametrize('op', reduction_ops)
 def test_reduction_op_ignores_objects_lacking_given_dim(op):
     dtype = 'bool' if op in ('all', 'any') else 'float64'
-    op = operator.methodcaller(op, dim='x')
+    if 'std' in op or 'var' in op:
+        op = operator.methodcaller(op, dim='x', ddof=0)
+    else:
+        op = operator.methodcaller(op, dim='x')
     dg = sc.DataGroup(
         a=sc.ones(dims=['x', 'y'], shape=(2, 3), dtype=dtype),
         b=sc.ones(dims=['y'], shape=(2,), dtype=dtype),
@@ -875,7 +895,7 @@ def test_reduction_op_ignores_objects_lacking_given_dim(op):
 
 
 @pytest.mark.parametrize('dim', ('x', None))
-@pytest.mark.parametrize('opname', reduction_ops)
+@pytest.mark.parametrize('opname', bin_reduction_ops)
 def test_reduction_op_handles_bin_without_dim(opname, dim):
     dtype = 'bool' if opname in ('all', 'any') else 'float64'
     op = operator.methodcaller(opname, dim=dim)
@@ -887,7 +907,7 @@ def test_reduction_op_handles_bin_without_dim(opname, dim):
     assert_identical(result['b'], operator.methodcaller(opname)(content))
 
 
-@pytest.mark.parametrize('opname', reduction_ops)
+@pytest.mark.parametrize('opname', bin_reduction_ops)
 def test_reduction_op_handles_bins_reduction(opname):
     dtype = 'bool' if opname in ('all', 'any') else 'float64'
     op = operator.methodcaller(opname)
@@ -901,7 +921,10 @@ def test_reduction_op_handles_bins_reduction(opname):
 @pytest.mark.parametrize('opname', reduction_ops)
 def test_reduction_op_handles_dim_with_empty_name(opname):
     dtype = 'bool' if opname in ('all', 'any') else 'float64'
-    op = operator.methodcaller(opname, dim='')
+    if 'std' in opname or 'var' in opname:
+        op = operator.methodcaller(opname, dim='', ddof=0)
+    else:
+        op = operator.methodcaller(opname, dim='')
     dg = sc.DataGroup(
         a=sc.ones(dims=['', 'y'], shape=(3, 2), dtype=dtype),
         b=sc.ones(dims=[''], shape=(2,), dtype=dtype),
