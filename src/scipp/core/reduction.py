@@ -278,6 +278,10 @@ def var(x: VariableLikeType, dim: Dims = None, *, ddof: int) -> VariableLikeType
         likelihood estimate.
         See :func:`numpy.var` for more details.
 
+        In contrast to NumPy, this is a required parameter in Scipp to
+        avoid potentially hard-to-find mistakes based on implicit assumptions
+        about what the input data represents.
+
     Returns
     -------
     : Same type as x
@@ -357,7 +361,11 @@ def nanvar(x: VariableLikeType, dim: Dims = None, *, ddof: int) -> VariableLikeT
         For sample variances, set ``ddof=1`` to obtain an unbiased estimator.
         For normally distributed variables, set ``ddof=0`` to obtain a maximum
         likelihood estimate.
-        See :func:`numpy.var` for more details.
+        See :func:`numpy.nanvar` for more details.
+
+        In contrast to NumPy, this is a required parameter in Scipp to
+        avoid potentially hard-to-find mistakes based on implicit assumptions
+        about what the input data represents.
 
     Returns
     -------
@@ -447,6 +455,10 @@ def std(x: VariableLikeType, dim: Dims = None, *, ddof: int) -> VariableLikeType
         likelihood estimate.
         See :func:`numpy.std` for more details.
 
+        In contrast to NumPy, this is a required parameter in Scipp to
+        avoid potentially hard-to-find mistakes based on implicit assumptions
+        about what the input data represents.
+
     Returns
     -------
     : Same type as x
@@ -529,7 +541,11 @@ def nanstd(x: VariableLikeType, dim: Dims = None, *, ddof: int) -> VariableLikeT
         For sample standard deviations, set ``ddof=1`` to obtain an unbiased estimator.
         For normally distributed variables, set ``ddof=0`` to obtain a maximum
         likelihood estimate.
-        See :func:`numpy.std` for more details.
+        See :func:`numpy.nanstd` for more details.
+
+        In contrast to NumPy, this is a required parameter in Scipp to
+        avoid potentially hard-to-find mistakes based on implicit assumptions
+        about what the input data represents.
 
     Returns
     -------
