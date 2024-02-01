@@ -895,7 +895,6 @@ def test_reduction_op_handles_bins_reduction(opname):
     binned = sc.bins(begin=sc.index(0), end=sc.index(6), data=content, dim='row')
     dg = sc.DataGroup(a=binned)
     result = op(dg.bins)
-    print(result)
     assert_identical(result['a'], operator.methodcaller(opname)(content))
 
 
