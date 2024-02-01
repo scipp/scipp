@@ -129,6 +129,8 @@ def median(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     ------
     scipp.VariancesError
         If the input has variances.
+    scipp.DTypeError
+        If the input is binned or does otherwise not support computing medians.
 
     See Also
     --------
@@ -202,6 +204,8 @@ def nanmedian(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     ------
     scipp.VariancesError
         If the input has variances.
+    scipp.DTypeError
+        If the input is binned or does otherwise not support computing medians.
     ValueError
         If the input has masks.
         Mask out NaN's and then use :func:`scipp.median` instead.
@@ -284,6 +288,8 @@ def var(x: VariableLikeType, dim: Dims = None, *, ddof: int) -> VariableLikeType
     ------
     scipp.VariancesError
         If the input has variances.
+    scipp.DTypeError
+        If the input is binned or does otherwise not support computing variances.
 
     See Also
     --------
@@ -363,6 +369,8 @@ def nanvar(x: VariableLikeType, dim: Dims = None, *, ddof: int) -> VariableLikeT
     ------
     scipp.VariancesError
         If the input has variances.
+    scipp.DTypeError
+        If the input is binned or does otherwise not support computing variances.
     ValueError
         If the input has masks.
         Mask out NaN's and then use :func:`scipp.var` instead.
@@ -449,6 +457,9 @@ def std(x: VariableLikeType, dim: Dims = None, *, ddof: int) -> VariableLikeType
     ------
     scipp.VariancesError
         If the input has variances.
+    scipp.DTypeError
+        If the input is binned or does
+        otherwise not support computing standard deviations.
 
     See Also
     --------
@@ -530,6 +541,9 @@ def nanstd(x: VariableLikeType, dim: Dims = None, *, ddof: int) -> VariableLikeT
     ------
     scipp.VariancesError
         If the input has variances.
+    scipp.DTypeError
+        If the input is binned or does
+        otherwise not support computing standard deviations.
     ValueError
         If the input has masks.
         Mask out NaN's and then use :func:`scipp.std` instead.
@@ -878,6 +892,7 @@ def _reduce_with_numpy(
         return data_group_nary(sc_func, x, dim=dim, **kwargs)
 
     _expect_no_variance(x, sc_func.__name__)
+    _expect_not_binned(x, sc_func.__name__)
     reduced_dims, out_dims, axis = _split_dims(x, dim)
     if isinstance(x, _cpp.Variable):
         return array(
@@ -939,6 +954,11 @@ def _split_dims(
 def _expect_no_variance(x: VariableLikeType, op: str) -> None:
     if x.variances is not None:
         raise _cpp.VariancesError(f"'{op}' does not support variances")
+
+
+def _expect_not_binned(x: VariableLikeType, op: str) -> None:
+    if x.bins is not None:
+        raise _cpp.DTypeError(f"'{op}' does not support binned data")
 
 
 def _merge_masks(

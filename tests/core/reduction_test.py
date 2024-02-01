@@ -413,6 +413,17 @@ def test_median_all_masked():
     sc.testing.assert_identical(sc.median(d), d_ref)
 
 
+def test_median_binned_not_supported():
+    buffer = sc.DataArray(
+        sc.ones(sizes={'event': 10}), coords={'x': sc.arange('event', 10)}
+    )
+    da = buffer.bin(x=2)
+    with pytest.raises(sc.DTypeError, match='binned'):
+        sc.median(da)
+    with pytest.raises(sc.DTypeError, match='binned'):
+        da.median()
+
+
 def test_nanmedian_even(container):
     x = container(
         sc.array(dims=['xx', 'yy'], values=[[np.nan, 3, 2], [4, np.nan, 1]], unit='m')
