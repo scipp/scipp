@@ -424,7 +424,7 @@ def std(x: VariableLikeType, dim: Dims = None, *, ddof: int) -> VariableLikeType
     r"""Compute the standard deviation of the input values.
 
     This function computes the standard deviation of the input values which is *not*
-    the related to the ``x.variances`` property but instead defined as
+    related to the ``x.variances`` property but instead defined as
 
     .. math::
 
@@ -517,7 +517,7 @@ def nanstd(x: VariableLikeType, dim: Dims = None, *, ddof: int) -> VariableLikeT
     r"""Compute the standard deviation of the input values ignoring NaN's.
 
     This function computes the standard deviation of the input values which is *not*
-    the related to the ``x.variances`` property but instead defined as
+    related to the ``x.variances`` property but instead defined as
 
     .. math::
 
