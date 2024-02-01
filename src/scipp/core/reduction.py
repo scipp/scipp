@@ -874,20 +874,7 @@ def _reduce_with_numpy(
     kwargs: dict[str, Any],
 ) -> VariableLikeType:
     if isinstance(x, _cpp.Dataset):
-        return _cpp.Dataset(
-            {
-                k: _reduce_with_numpy(
-                    v,
-                    dim=dim,
-                    sc_func=sc_func,
-                    np_func=np_func,
-                    np_ma_func=np_ma_func,
-                    unit_func=unit_func,
-                    kwargs=kwargs,
-                )
-                for k, v in x.items()
-            }
-        )
+        return _cpp.Dataset({k: sc_func(v, dim=dim, **kwargs) for k, v in x.items()})
     if isinstance(x, DataGroup):
         return data_group_nary(sc_func, x, dim=dim, **kwargs)
 
