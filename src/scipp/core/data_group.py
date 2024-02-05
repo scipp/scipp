@@ -341,6 +341,9 @@ class DataGroup(MutableMapping):
     def mean(self, *args, **kwargs):
         return self._reduce('mean', *args, **kwargs)
 
+    def median(self, *args, **kwargs):
+        return self._reduce('median', *args, **kwargs)
+
     def min(self, *args, **kwargs):
         return self._reduce('min', *args, **kwargs)
 
@@ -353,11 +356,20 @@ class DataGroup(MutableMapping):
     def nanmean(self, *args, **kwargs):
         return self._reduce('nanmean', *args, **kwargs)
 
+    def nanmedian(self, *args, **kwargs):
+        return self._reduce('nanmedian', *args, **kwargs)
+
     def nanmin(self, *args, **kwargs):
         return self._reduce('nanmin', *args, **kwargs)
 
     def nansum(self, *args, **kwargs):
         return self._reduce('nansum', *args, **kwargs)
+
+    def nanstd(self, *args, **kwargs):
+        return self._reduce('nanstd', *args, **kwargs)
+
+    def nanvar(self, *args, **kwargs):
+        return self._reduce('nanvar', *args, **kwargs)
 
     def rebin(self, *args, **kwargs):
         return self.apply(operator.methodcaller('rebin', *args, **kwargs))
@@ -374,6 +386,9 @@ class DataGroup(MutableMapping):
     def squeeze(self, *args, **kwargs):
         return self._reduce('squeeze', *args, **kwargs)
 
+    def std(self, *args, **kwargs):
+        return self._reduce('std', *args, **kwargs)
+
     def sum(self, *args, **kwargs):
         return self._reduce('sum', *args, **kwargs)
 
@@ -385,6 +400,9 @@ class DataGroup(MutableMapping):
 
     def transpose(self, dims: Union[None, Tuple[str, ...]] = None):
         return self._transform_dim('transpose', dim=dims)
+
+    def var(self, *args, **kwargs):
+        return self._reduce('var', *args, **kwargs)
 
     def plot(self, *args, **kwargs):
         import plopp

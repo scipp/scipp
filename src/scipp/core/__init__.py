@@ -149,7 +149,24 @@ from .operations import (
     to,
     merge,
 )
-from .reduction import mean, nanmean, sum, nansum, min, max, nanmin, nanmax, all, any
+from .reduction import (
+    mean,
+    nanmean,
+    median,
+    nanmedian,
+    std,
+    nanstd,
+    var,
+    nanvar,
+    sum,
+    nansum,
+    min,
+    max,
+    nanmin,
+    nanmax,
+    all,
+    any,
+)
 from .shape import broadcast, concat, fold, flatten, squeeze, transpose
 from .trigonometry import sin, cos, tan, asin, acos, atan, atan2
 from .unary import isnan, isinf, isfinite, isposinf, isneginf, to_unit
@@ -303,6 +320,7 @@ __all__ = [
     'lookup',
     'max',
     'mean',
+    'median',
     'merge',
     'midpoints',
     'min',
@@ -312,8 +330,11 @@ __all__ = [
     'nanhist',
     'nanmax',
     'nanmean',
+    'nanmedian',
     'nanmin',
+    'nanstd',
     'nansum',
+    'nanvar',
     'negative',
     'norm',
     'not_equal',
@@ -329,6 +350,7 @@ __all__ = [
     'sort',
     'sqrt',
     'squeeze',
+    'std',
     'stddevs',
     'subtract',
     'sum',
@@ -338,6 +360,7 @@ __all__ = [
     'to_unit',
     'transpose',
     'values',
+    'var',
     'variances',
     'vector',
     'vectors',
