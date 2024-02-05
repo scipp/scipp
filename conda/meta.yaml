@@ -70,7 +70,7 @@ test:
   source_files:
     - tests/
   commands:
-    - python -m pytest -v tests
+    - python -m pytest -v tests --import-mode=importlib
     - python cmake-package-test/build.py
 {% endif %}
 
