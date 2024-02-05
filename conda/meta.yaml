@@ -68,9 +68,10 @@ test:
   files:
     - cmake-package-test/
   source_files:
+    - pyproject.toml
     - tests/
   commands:
-    - python -m pytest -v tests --import-mode=importlib
+    - python -m pytest -v tests
     - python cmake-package-test/build.py
 {% endif %}
 
