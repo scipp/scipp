@@ -2,10 +2,14 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Matthew Andrew
+from itertools import product
+
 import numpy as np
 import pytest
 
 import scipp as sc
+from scipp.core import label_based_index_to_positional_index
+from scipp.testing import assert_identical
 
 
 class TestSliceByValue:
@@ -179,3 +183,67 @@ def test_raises_DimensionError_if_dim_not_given():
     da = sc.DataArray(var, coords={'x': var})
     with pytest.raises(sc.DimensionError):
         da[sc.scalar(1) : sc.scalar(3)]
+
+
+@pytest.mark.parametrize(
+    'da, coord',
+    (
+        (sc.data.binned_x(8, 15), 'x'),
+        *product(
+            (
+                sc.DataArray(
+                    sc.array(dims=('x', 'y'), values=np.random.randn(5, 10)),
+                    coords={
+                        'x': sc.arange('x', 5),
+                        'y': sc.linspace('y', -1, 1, 10),
+                    },
+                ),
+            ),
+            ('x', 'y'),
+        ),
+    ),
+)
+@pytest.mark.parametrize(
+    's',
+    (
+        (-2, 0),
+        (-2, 0.1),
+        (-2, 3.5),
+        (-2, 10),
+        (0, 0.1),
+        (0, 3.5),
+        (0, 10),
+        (0.1, 3.5),
+        (0.1, 10),
+        (3.5, 10),
+        (1, None),
+        (None, 0.6),
+        (None, None),
+    ),
+)
+def test_label_based_index_to_positional_index(da, coord, s):
+    s = slice(
+        *(
+            sc.scalar(v, unit=da.coords[coord].unit) if v is not None else None
+            for v in s
+        )
+    )
+    ind = label_based_index_to_positional_index(da.sizes, da.coords[coord], s)
+    assert_identical(da[coord, s], da[ind])
+
+
+@pytest.mark.parametrize(
+    'a',
+    (-2, 0, 0.1, 3.5, 10, 0.6),
+)
+def test_label_based_index_to_positional_index_scalar(a):
+    da = sc.DataArray(
+        sc.array(dims=('x', 'y'), values=np.random.randn(6, 10)),
+        coords={
+            'x': sc.array(dims=['x'], values=[-2, 0, 0.1, 0.6, 3.5, 10]),
+            'y': sc.linspace('y', -1, 1, 10),
+        },
+    )
+    a = sc.scalar(a, unit=da.coords['x'].unit)
+    ind = label_based_index_to_positional_index(da.sizes, da.coords['x'], a)
+    assert_identical(da['x', a], da[ind])

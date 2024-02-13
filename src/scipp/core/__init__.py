@@ -148,6 +148,7 @@ from .operations import (
     where,
     to,
     merge,
+    label_based_index_to_positional_index,
 )
 from .reduction import (
     mean,
@@ -307,6 +308,7 @@ __all__ = [
     'isneginf',
     'isposinf',
     'issorted',
+    'label_based_index_to_positional_index',
     'less',
     'less_equal',
     'linspace',

@@ -3,10 +3,10 @@
 # @author Matthew Andrew
 from __future__ import annotations
 
-from typing import Any, Literal, Optional, TypeVar, Union, overload
+from typing import Any, Dict, Literal, Optional, TypeVar, Union, overload
 
 from .._scipp import core as _cpp
-from ..typing import VariableLikeType
+from ..typing import ScippIndex, VariableLikeType
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from .comparison import identical
 from .cpp_classes import Dataset, DatasetError, Variable
@@ -356,3 +356,20 @@ def _merge_data_group(lhs: DataGroup, rhs: DataGroup) -> DataGroup:
             raise DatasetError(f"Cannot merge data groups. Mismatch in item {k}")
         res[k] = v
     return res
+
+
+def label_based_index_to_positional_index(
+    sizes: Dict[str, int],
+    coord: Variable,
+    index: Union[slice[Optional[Variable]], Variable],
+) -> ScippIndex:
+    """Returns the positional index equivalent to label based indexing
+    the coord with values."""
+    dim, *inds = _call_cpp_func(
+        _cpp.label_based_index_to_positional_index,
+        list(sizes.keys()),
+        list(sizes.values()),
+        coord,
+        index,
+    )
+    return (dim, inds[0] if len(inds) == 1 else slice(*inds))

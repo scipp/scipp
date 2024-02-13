@@ -3,6 +3,8 @@
 /// @file
 /// @author Jan-Lukas Wynen
 
+#include <algorithm>
+#include <iterator>
 #include <vector>
 
 #include "scipp/core/dimensions.h"

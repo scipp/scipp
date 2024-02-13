@@ -16,6 +16,7 @@
 #include "scipp/dataset/util.h"
 #include "scipp/variable/slice.h"
 #include "scipp/variable/variable.h"
+#include "slice_utils.h"
 
 namespace py = pybind11;
 using namespace scipp;
@@ -88,26 +89,16 @@ template <class T>
 auto get_slice_range(T &self, const std::tuple<Dim, const py::slice> &index) {
   auto [dim, py_slice] = index;
   if constexpr (std::is_same_v<T, DataArray> || std::is_same_v<T, Dataset>) {
-    try {
-      auto start = py::getattr(py_slice, "start");
-      auto stop = py::getattr(py_slice, "stop");
-      if (!start.is_none() || !stop.is_none()) { // Means default slice : is
-                                                 // treated as index slice
-        auto start_var = start.is_none()
-                             ? Variable{}
-                             : py::getattr(py_slice, "start").cast<Variable>();
-        auto stop_var = stop.is_none()
-                            ? Variable{}
-                            : py::getattr(py_slice, "stop").cast<Variable>();
-        auto step = py::getattr(py_slice, "step");
-        if (!step.is_none()) {
-          throw std::runtime_error(
-              "Step cannot be specified for value based slicing.");
-        }
+    auto start = py::getattr(py_slice, "start");
+    auto stop = py::getattr(py_slice, "stop");
+    if (!start.is_none() || !stop.is_none()) { // Means default slice : is
+                                               // treated as index slice
+      try {
+        auto [start_var, stop_var] = label_bounds_from_pyslice(py_slice);
         return std::make_from_tuple<Slice>(
             get_slice_params(self, dim, start_var, stop_var));
+      } catch (const py::cast_error &) {
       }
-    } catch (const py::cast_error &) {
     }
   }
   return from_py_slice(self, index);
