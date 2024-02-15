@@ -34,6 +34,7 @@ python_add_library(
   variable_instantiate_py_object.cpp
   element_array_view.cpp
   shape.cpp
+  slice_utils.cpp
   ${python_SRC_FILES}
 )
 

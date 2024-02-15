@@ -2,7 +2,9 @@
 // Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "dim.h"
 #include "pybind11.h"
+#include "slice_utils.h"
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/sort.h"
@@ -92,6 +94,31 @@ void init_operations(py::module &m) {
   bind_issorted(m);
   bind_allsorted(m);
   bind_midpoints(m);
+
+  m.def(
+      "label_based_index_to_positional_index",
+      [](const std::vector<std::string> &dims,
+         const std::vector<scipp::index> &shape, const Variable &coord,
+         const Variable &value) {
+        const auto [dim, index] =
+            get_slice_params(make_dims(dims, shape), coord, value);
+        return std::tuple{dim.name(), index};
+      },
+      py::call_guard<py::gil_scoped_release>());
+  m.def("label_based_index_to_positional_index",
+        [](const std::vector<std::string> &dims,
+           const std::vector<scipp::index> &shape, const Variable &coord,
+           const py::slice &py_slice) {
+          try {
+            auto [start_var, stop_var] = label_bounds_from_pyslice(py_slice);
+            const auto [dim, start, stop] = get_slice_params(
+                make_dims(dims, shape), coord, start_var, stop_var);
+            return std::tuple{dim.name(), start, stop};
+          } catch (const py::cast_error &) {
+            throw std::runtime_error(
+                "Value based slice must contain variables.");
+          }
+        });
 
   m.def("where", &variable::where, py::arg("condition"), py::arg("x"),
         py::arg("y"), py::call_guard<py::gil_scoped_release>());
