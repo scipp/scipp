@@ -1,5 +1,4 @@
 # Doxygen build directory
-doxygen/
 generated/
 
 # Data files
