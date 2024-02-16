@@ -8,15 +8,11 @@ from functools import lru_cache, partial
 
 
 def _read_text(filename):
-    if hasattr(importlib.resources, 'files'):
-        # Use new API added in Python 3.9
-        return (
-            importlib.resources.files('scipp.visualization.templates')
-            .joinpath(filename)
-            .read_text()
-        )
-    # Old API, deprecated as of Python 3.11
-    return importlib.resources.read_text('scipp.visualization.templates', filename)
+    return (
+        importlib.resources.files('scipp.visualization.templates')
+        .joinpath(filename)
+        .read_text()
+    )
 
 
 def _preprocess_style(raw_css: str) -> str:
