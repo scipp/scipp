@@ -15,24 +15,6 @@ Scipp provides
 See the online documentation for user guides and an API reference: https://scipp.github.io/
 """
 
-import os
-
-if os.name == "nt" and "CONDA_PREFIX" in os.environ:
-    # Due to https://github.com/conda-forge/python-feedstock/issues/444 , combinations of Python3, Anaconda and Windows
-    # don't respect os.add_dll_path(...), which is python's mechanism for setting DLL search directories. Instead we
-    # need to explicitly add it to the PATH environment variable. For non-conda versions of python we want to keep using
-    # the usual python mechanism.
-    #
-    # This is probably due to the following patch in conda-built versions of python:
-    # https://github.com/conda-forge/python-feedstock/blob/289b2a8017ddd000896e525f18867f4caacec6f2/recipe/patches/0020-Add-CondaEcosystemModifyDllSearchPath.patch
-    #
-    import importlib.resources
-
-    with importlib.resources.path("scipp", "__init__.py") as path:
-        dll_directory = (path.parent.parent / "bin").resolve()
-        os.environ["PATH"] += os.pathsep + str(dll_directory)
-del os
-
 from .core import __version__
 
 # Import classes
