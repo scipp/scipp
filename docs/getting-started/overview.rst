@@ -43,7 +43,7 @@ Comparison with other software
   Compared with Scipp it lacks support for binned data and physical units.
   Experimental support for physical units using `Pint <https://pint.readthedocs.io>`_ is available with `pint-xarray <https://pint-xarray.readthedocs.io>`_.
   Xarray comes with `Dask <https://www.dask.org/>`_ support for highly scalable parallel computing.
-- `Awkward Array <https://awkward-array.readthedocs.io>`_ is a powerful package for nested, variable-sized data.
+- `Awkward Array <https://awkward-array.org>`_ is a powerful package for nested, variable-sized data.
   Its support for records is similar to Scipp's binned data.
   Compared with Scipp it lacks support for multi-dimensional labeled data and physical units.
   It may be combined with Xarray (and Pint) to achieve this, but support for multi-dimensional binning operations may be lacking.
