@@ -14,7 +14,7 @@ jobs:
     name: Check if package can be released
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v3
         with:
           python-version: '3.9'
@@ -45,7 +45,7 @@ jobs:
     needs: check_release
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
         fetch-depth: 0  # history required so cmake can determine version
@@ -56,7 +56,7 @@ jobs:
     - name: Check metadata
       run: pipx run twine check dist/*
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: dist
         path: dist/*.tar.gz
@@ -81,7 +81,7 @@ jobs:
     if: github.event_name == 'release' && github.event.action == 'published'
 
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
       - uses: actions/setup-python@v3
       - uses: pypa/gh-action-pypi-publish@v1.8.11
         with:
@@ -95,7 +95,7 @@ jobs:
     if: github.event_name == 'release' && github.event.action == 'published'
 
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
       - uses: conda-incubator/setup-miniconda@v3
         with:
           python-version: '3.9'
@@ -110,7 +110,7 @@ jobs:
       version-new: ${{ steps.version.outputs.new }}
       version-replaced: ${{ steps.version.outputs.replaced }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # history required so cmake can determine version
       - uses: actions/setup-python@v3
@@ -149,7 +149,7 @@ jobs:
     permissions:
       contents: write  # This is needed so that the action can upload the asset
     steps:
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
     - name: Zip documentation
       run: |
         mv html documentation-${{ github.ref_name }}
