@@ -23,7 +23,7 @@ jobs:
           sudo update-alternatives --set g++ "/usr/bin/g++-11"
           sudo update-alternatives --set gcov "/usr/bin/gcov-11"
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
           fetch-depth: 0  # history required so cmake can determine version

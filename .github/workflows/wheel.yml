@@ -18,7 +18,7 @@ jobs:
     runs-on: ${{ inputs.os }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
         fetch-depth: 0  # history required so cmake can determine version
@@ -33,7 +33,7 @@ jobs:
       shell: bash
 
     - name: Upload wheels
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: dist
         path: wheelhouse/*.whl
