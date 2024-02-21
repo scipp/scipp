@@ -306,7 +306,7 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
       R"(Underlying data item.)");
   c.def_property_readonly(
       "coords", [](T &self) -> decltype(auto) { return self.coords(); },
-      R"(Dict of aligned coords.)");
+      R"(Dict of coords.)");
   c.def_property_readonly(
       "deprecated_meta", [](T &self) -> decltype(auto) { return self.meta(); },
       R"(Dict of coords and attrs.)");

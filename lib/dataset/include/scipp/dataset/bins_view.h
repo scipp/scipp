@@ -47,9 +47,10 @@ template <class T, class MapGetter> class BinsMapView : public BinsCommon<T> {
         return copy(value);
     }
   };
-  struct make_item : make_value {
+  struct make_item {
+    const BinsMapView *view;
     template <class Item> auto operator()(const Item &item) const {
-      return std::pair(item.first, make_value::operator()(item.second));
+      return std::pair(item.first, make_value{view}(item.second));
     }
   };
   using MapView =
@@ -83,8 +84,10 @@ public:
     return mapView().values_begin().transform(make_value{this});
   }
   auto values_end() const noexcept {
-    return mapView().valuess_end().transform(make_value{this});
+    return mapView().values_end().transform(make_value{this});
   }
+  auto items_begin() const noexcept { return begin(); }
+  auto items_end() const noexcept { return end(); }
   bool contains(const key_type &key) const noexcept {
     return mapView().contains(key);
   }
@@ -104,6 +107,9 @@ public:
     return mapView() != other.mapView();
   }
 
+  friend std::string dict_keys_to_string(const BinsMapView &view) {
+    return dict_keys_to_string(view.mapView());
+  }
   friend std::string to_string(const BinsMapView &view) {
     return to_string(view.mapView());
   }

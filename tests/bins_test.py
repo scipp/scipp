@@ -185,6 +185,28 @@ def test_bins_view_coord_unit():
     assert var.bins.coords['time'].bins.unit == 'K'
 
 
+def test_bins_view_coords_iterators():
+    var = make_binned()
+    assert set(var.bins.coords) == {'time'}
+    assert set(var.bins.coords.keys()) == {'time'}
+    [value] = var.bins.coords.values()
+    assert sc.identical(value, var.bins.coords['time'])
+    [(key, value)] = var.bins.coords.items()
+    assert key == 'time'
+    assert sc.identical(value, var.bins.coords['time'])
+
+
+def test_bins_view_masks_iterators():
+    var = make_binned()
+    assert set(var.bins.masks) == {'mask'}
+    assert set(var.bins.masks.keys()) == {'mask'}
+    [value] = var.bins.masks.values()
+    assert sc.identical(value, var.bins.data == var.bins.data)
+    [(key, value)] = var.bins.masks.items()
+    assert key == 'mask'
+    assert sc.identical(value, var.bins.data == var.bins.data)
+
+
 def test_bins_view_data_unit():
     var = make_binned()
     with pytest.raises(sc.UnitError):
