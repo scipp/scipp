@@ -20,9 +20,6 @@ jobs:
 
   release:
     name: Make Release on GitHub
-    strategy:
-      matrix:
-        build: [cp39, cp310]
     needs: build_wheels
     runs-on: ubuntu-22.04
     permissions:
