@@ -30,6 +30,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
       - uses: actions/setup-python@v4
         with:
           python-version: 3.9
@@ -37,7 +40,7 @@ jobs:
       - uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
-          artifacts: 'dist-${{ matrix.build }}/*.whl'
+          artifacts: 'dist/*.whl'
           body: 'Nightly release for testing of downstream projects.'
           makeLatest: false
           prerelease: true
