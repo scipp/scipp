@@ -259,7 +259,9 @@ def test_group_by_2d():
     table = sc.data.table_xyz(100)
     table.coords['label'] = (table.coords['x'] * 10).to(dtype='int64')
     da = table.bin(y=333).group('label')
-    da.coords['label'] = (sc.arange('y', 0, 333) * da.coords['label']) % 23
+    da.coords['label'] = (sc.arange('y', 0, 333) * da.coords['label']) % sc.scalar(
+        23, unit='m'
+    )
     grouped = da.group('label')
     assert grouped.sizes == {'y': 333, 'label': 23}
 

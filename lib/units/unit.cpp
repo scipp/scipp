@@ -132,7 +132,7 @@ Unit operator%(const Unit &a, const Unit &b) {
   if (a == b)
     return a;
   throw except::UnitError("Cannot perform modulo operation with " + a.name() +
-                          " and " + b.name() + ".");
+                          " and " + b.name() + ". Units must be the same.");
 }
 
 Unit operator-(const Unit &a) { return a; }
