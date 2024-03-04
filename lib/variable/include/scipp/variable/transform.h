@@ -654,8 +654,9 @@ template <bool dry_run> struct in_place {
     (scipp::expect::includes(var.dims(), other.dims()), ...);
 
     if (!is_bins(var) && ((is_bins(other) || ...))) {
-      throw except::TypeError("Cannot apply inplace operation where target is "
-                              "not binned but arguments are binned");
+      throw except::BinnedDataError(
+          "Cannot apply inplace operation where target is "
+          "not binned but arguments are binned");
     }
 
     if constexpr (!std::is_base_of_v<
