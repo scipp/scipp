@@ -593,6 +593,16 @@ TEST_F(TransformBinaryTest, events_size_fail) {
                except::BinnedDataError);
 }
 
+TEST_F(TransformBinaryTest, inplace_nonbinned_lhs_binned_rhs) {
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
+  const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::X}, Shape{2}, Values{std::pair{0, 3}, std::pair{3, 3}});
+  const auto table = makeVariable<double>(Dims{Dim::Event}, Shape{4});
+  auto b = make_bins(indices, Dim::Event, table);
+  ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, b, op_in_place, name),
+               except::BinnedDataError);
+}
+
 class TransformTest_events_binary_values_variances_size_fail
     : public ::testing::Test {
 protected:
