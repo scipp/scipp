@@ -129,11 +129,10 @@ Unit operator/(const Unit &a, const Unit &b) {
 }
 
 Unit operator%(const Unit &a, const Unit &b) {
-  if (a == none && b == none)
+  if (a == b)
     return a;
-  expect_not_none(a, "modulo");
-  expect_not_none(b, "modulo");
-  return a;
+  throw except::UnitError("Cannot perform modulo operation with " + a.name() +
+                          " and " + b.name() + ". Units must be the same.");
 }
 
 Unit operator-(const Unit &a) { return a; }

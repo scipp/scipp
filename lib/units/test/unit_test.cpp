@@ -121,10 +121,13 @@ TEST(UnitTest, modulo) {
   Unit one{units::dimensionless};
   Unit l{units::m};
   Unit t{units::s};
-  EXPECT_EQ(l % one, l);
-  EXPECT_EQ(t % one, t);
+  Unit none{units::none};
   EXPECT_EQ(l % l, l);
-  EXPECT_EQ(l % t, l);
+  EXPECT_EQ(t % t, t);
+  EXPECT_THROW(l % t, except::UnitError);
+  EXPECT_THROW(l % one, except::UnitError);
+  EXPECT_THROW(l % none, except::UnitError);
+  EXPECT_THROW(t % l, except::UnitError);
 }
 
 TEST(UnitTest, pow) {
