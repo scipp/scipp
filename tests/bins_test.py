@@ -10,6 +10,14 @@ from numpy.random import default_rng
 import scipp as sc
 
 
+def get_coords(x):
+    return x.coords
+
+
+def get_masks(x):
+    return x.masks
+
+
 def test_dense_data_properties_are_none():
     var = sc.scalar(1)
     assert var.bins is None
@@ -207,31 +215,38 @@ def test_bins_view_masks_iterators():
     assert sc.identical(value, var.bins.data == var.bins.data)
 
 
-def test_bins_view_coord_clear():
+@pytest.mark.parametrize('get', (get_coords, get_masks))
+def test_bins_view_mapping_clear(get):
     var = make_binned()
-    assert len(var.bins.coords) == 1
-    var.bins.coords.clear()
-    assert len(var.bins.coords) == 0
+    assert len(get(var.bins)) == 1
+    get(var.bins).clear()
+    assert len(get(var.bins)) == 0
 
 
-def test_bins_view_coord_delitem():
+@pytest.mark.parametrize('param', ((get_coords, 'time'), (get_masks, 'mask')))
+def test_bins_view_mapping_delitem(param):
+    get, name = param
     var = make_binned()
-    del var.bins.coords['time']
-    assert len(var.bins.coords) == 0
+    del get(var.bins)[name]
+    assert len(get(var.bins)) == 0
 
 
-def test_bins_view_coord_update():
+@pytest.mark.parametrize('param', ((get_coords, 'time'), (get_masks, 'mask')))
+def test_bins_view_mapping_update(param):
+    get, name = param
     var = make_binned()
-    var.bins.coords.update({'time2': 2 * var.bins.coords['time']})
-    assert set(var.bins.coords) == {'time', 'time2'}
-    assert sc.identical(var.bins.coords['time'], make_binned().bins.coords['time'])
-    assert sc.identical(var.bins.coords['time2'], 2 * make_binned().bins.coords['time'])
+    get(var.bins).update({'extra': 2 * var.bins.coords[name]})
+    assert set(get(var.bins)) == {name, 'extra'}
+    assert sc.identical(get(var.bins)[name], get(make_binned().bins)[name])
+    assert sc.identical(get(var.bins)['extra'], 2 * get(make_binned().bins)[name])
 
 
-def test_bins_view_coord_pop():
+@pytest.mark.parametrize('param', ((get_coords, 'time'), (get_masks, 'mask')))
+def test_bins_view_mapping_pop(param):
+    get, name = param
     var = make_binned()
-    time = var.bins.coords.pop('time')
-    assert sc.identical(time, make_binned().bins.coords['time'])
+    x = get(var.bins).pop(name)
+    assert sc.identical(x, get(make_binned().bins)[name])
 
 
 def test_bins_view_data_unit():
