@@ -231,14 +231,20 @@ def test_bins_view_mapping_delitem(param):
     assert len(get(var.bins)) == 0
 
 
-@pytest.mark.parametrize('param', ((get_coords, 'time'), (get_masks, 'mask')))
-def test_bins_view_mapping_update(param):
-    get, name = param
+def test_bins_view_coords_update():
     var = make_binned()
-    get(var.bins).update({'extra': 2 * var.bins.coords[name]})
-    assert set(get(var.bins)) == {name, 'extra'}
-    assert sc.identical(get(var.bins)[name], get(make_binned().bins)[name])
-    assert sc.identical(get(var.bins)['extra'], 2 * get(make_binned().bins)[name])
+    var.bins.coords.update({'extra': 2 * var.bins.coords['time']})
+    assert set(var.bins.coords) == {'time', 'extra'}
+    assert sc.identical(var.bins.coords['time'], make_binned().bins.coords['time'])
+    assert sc.identical(var.bins.coords['extra'], 2 * make_binned().bins.coords['time'])
+
+
+def test_bins_view_masks_update():
+    var = make_binned()
+    var.bins.masks.update({'extra': ~var.bins.masks['mask']})
+    assert set(var.bins.masks) == {'mask', 'extra'}
+    assert sc.identical(var.bins.masks['mask'], make_binned().bins.masks['mask'])
+    assert sc.identical(var.bins.masks['extra'], ~make_binned().bins.masks['mask'])
 
 
 @pytest.mark.parametrize('param', ((get_coords, 'time'), (get_masks, 'mask')))
