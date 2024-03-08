@@ -163,6 +163,21 @@ public:
     return Result(**this);
   }
 
+  template <class F> auto transform(F &&func) const & {
+    return BaseIterator::transform(
+        [new_f = std::forward<F>(func), old_f = this->m_func](const auto &x) {
+          return new_f(old_f(x));
+        });
+  }
+
+  template <class F> auto transform(F &&func) && {
+    // Make a copy for old_f to avoid referencing a member of *this.
+    return BaseIterator::transform(
+        [new_f = std::forward<F>(func), old_f = this->m_func](const auto &x) {
+          return new_f(old_f(x));
+        });
+  }
+
 private:
   std::decay_t<Func> m_func;
 };

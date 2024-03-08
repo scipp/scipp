@@ -10,6 +10,14 @@ from numpy.random import default_rng
 import scipp as sc
 
 
+def get_coords(x):
+    return x.coords
+
+
+def get_masks(x):
+    return x.masks
+
+
 def test_dense_data_properties_are_none():
     var = sc.scalar(1)
     assert var.bins is None
@@ -183,6 +191,68 @@ def test_bins_view_coord_unit():
     assert var.bins.coords['time'].bins.unit == ''
     var.bins.coords['time'].bins.unit = 'K'
     assert var.bins.coords['time'].bins.unit == 'K'
+
+
+def test_bins_view_coords_iterators():
+    var = make_binned()
+    assert set(var.bins.coords) == {'time'}
+    assert set(var.bins.coords.keys()) == {'time'}
+    [value] = var.bins.coords.values()
+    assert sc.identical(value, var.bins.coords['time'])
+    [(key, value)] = var.bins.coords.items()
+    assert key == 'time'
+    assert sc.identical(value, var.bins.coords['time'])
+
+
+def test_bins_view_masks_iterators():
+    var = make_binned()
+    assert set(var.bins.masks) == {'mask'}
+    assert set(var.bins.masks.keys()) == {'mask'}
+    [value] = var.bins.masks.values()
+    assert sc.identical(value, var.bins.data == var.bins.data)
+    [(key, value)] = var.bins.masks.items()
+    assert key == 'mask'
+    assert sc.identical(value, var.bins.data == var.bins.data)
+
+
+@pytest.mark.parametrize('get', (get_coords, get_masks))
+def test_bins_view_mapping_clear(get):
+    var = make_binned()
+    assert len(get(var.bins)) == 1
+    get(var.bins).clear()
+    assert len(get(var.bins)) == 0
+
+
+@pytest.mark.parametrize('param', ((get_coords, 'time'), (get_masks, 'mask')))
+def test_bins_view_mapping_delitem(param):
+    get, name = param
+    var = make_binned()
+    del get(var.bins)[name]
+    assert len(get(var.bins)) == 0
+
+
+def test_bins_view_coords_update():
+    var = make_binned()
+    var.bins.coords.update({'extra': 2 * var.bins.coords['time']})
+    assert set(var.bins.coords) == {'time', 'extra'}
+    assert sc.identical(var.bins.coords['time'], make_binned().bins.coords['time'])
+    assert sc.identical(var.bins.coords['extra'], 2 * make_binned().bins.coords['time'])
+
+
+def test_bins_view_masks_update():
+    var = make_binned()
+    var.bins.masks.update({'extra': ~var.bins.masks['mask']})
+    assert set(var.bins.masks) == {'mask', 'extra'}
+    assert sc.identical(var.bins.masks['mask'], make_binned().bins.masks['mask'])
+    assert sc.identical(var.bins.masks['extra'], ~make_binned().bins.masks['mask'])
+
+
+@pytest.mark.parametrize('param', ((get_coords, 'time'), (get_masks, 'mask')))
+def test_bins_view_mapping_pop(param):
+    get, name = param
+    var = make_binned()
+    x = get(var.bins).pop(name)
+    assert sc.identical(x, get(make_binned().bins)[name])
 
 
 def test_bins_view_data_unit():

@@ -559,6 +559,26 @@ TEST(Dict, transform_iterator_struct) {
   EXPECT_EQ(it, dict.end());
 }
 
+TEST(Dict, transform_iterator_chained) {
+  DimDict dict{{Dim::Energy, -823}, {Dim::Row, 14}};
+
+  auto it = dict.begin()
+                .transform([](const auto &x) {
+                  return std::pair{x.first, 2 * x.second};
+                })
+                .transform([](const auto &x) {
+                  return std::pair{Dim::Energy, x.second};
+                });
+
+  EXPECT_EQ(it->first, Dim::Energy);
+  EXPECT_EQ(it->second, 2 * -823);
+  ++it;
+  EXPECT_EQ(it->first, Dim::Energy);
+  EXPECT_EQ(it->second, 2 * 14);
+  ++it;
+  EXPECT_EQ(it, dict.end());
+}
+
 TEST(Dict, transform_iterator_compare_with_end_with_transform) {
   DimDict dict{{Dim::Time, 72}, {Dim::Y, 41}};
 
