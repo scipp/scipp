@@ -57,9 +57,9 @@ def _is_binned(item):
 
 def _summarize(item):
     if isinstance(item, DataGroup):
-        return f'{type(item).__name__}({len(item)}, {item.sizes})\n'
+        return f'{type(item).__name__}({len(item)}, {item.sizes})'
     if hasattr(item, 'sizes'):
-        return f'{type(item).__name__}({item.sizes})\n'
+        return f'{type(item).__name__}({item.sizes})'
     return str(item)
 
 
@@ -226,7 +226,7 @@ class DataGroup(MutableMapping):
     def __repr__(self):
         r = f'DataGroup(sizes={self.sizes}, keys=[\n'
         for name, var in self.items():
-            r += f'    {name}: {_summarize(var)[:-1]},\n'
+            r += f'    {name}: {_summarize(var)},\n'
         r += '])'
         return r
 
