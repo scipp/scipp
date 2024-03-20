@@ -41,6 +41,39 @@ def test_dataset_iterators_repr_does_not_raise():
     repr(ds.items())
 
 
+def test_data_group_repr_does_not_raise():
+    dg = sc.DataGroup(
+        {
+            'a': sc.data.table_xyz(10),
+            'b': sc.DataGroup(
+                {
+                    'da': sc.data.binned_x(10, 3),
+                    'int': 623,
+                }
+            ),
+            's': 'a string',
+            'var': sc.linspace('tt', 5, 8, 13, unit='Å'),
+        }
+    )
+    repr(dg)
+
+
+def test_data_group_repr_includes_items():
+    dg = sc.DataGroup(
+        {
+            'item 1': 'a string',
+            'another': sc.arange('d', 10, unit='Å'),
+        }
+    )
+    res = repr(dg)
+    idx1 = res.index('item 1')
+    idx2 = res.index('another')
+    assert idx1 < idx2
+    idx1 = res.index('a string')
+    idx2 = res.index('Variable')
+    assert idx1 < idx2
+
+
 @pytest.mark.parametrize("mapping", ["coords", "attrs", "meta", "masks"])
 def test_data_array_mapping_str_does_not_raise(mapping):
     da = sc.data.table_xyz(10)
@@ -74,3 +107,33 @@ def test_dataset_iterators_str_does_not_raise():
     str(ds.keys())
     str(ds.values())
     str(ds.items())
+
+
+def test_data_group_str_does_not_raise():
+    dg = sc.DataGroup(
+        {
+            'a': sc.data.table_xyz(10),
+            'b': sc.DataGroup(
+                {
+                    'da': sc.data.binned_x(10, 3),
+                    'int': 623,
+                }
+            ),
+            's': 'a string',
+            'var': sc.linspace('tt', 5, 8, 13, unit='Å'),
+        }
+    )
+    str(dg)
+
+
+def test_data_group_str_includes_items():
+    dg = sc.DataGroup(
+        {
+            'item 1': 'a string',
+            'another': sc.arange('d', 10, unit='Å'),
+        }
+    )
+    res = str(dg)
+    idx1 = res.index('item 1')
+    idx2 = res.index('another')
+    assert idx1 < idx2
