@@ -6,25 +6,38 @@ cmake_minimum_required(VERSION 3.21)
 
 cmake_policy(SET CMP0091 NEW)
 
-execute_process(
-  COMMAND git describe --tags --exclude nightly
-  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-  RESULT_VARIABLE HAVE_GIT_VERSION_INFO
-  OUTPUT_VARIABLE GIT_VERSION_INFO
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-# We get something like 23.08.0-266-g068b161fe, remove the -g<hash> part
-string(REGEX REPLACE "-g[0-9a-f]+$" "" GIT_VERSION_INFO ${GIT_VERSION_INFO})
-# Replace '-' with '.dev' for PEP440 compatibility
-string(REGEX REPLACE "-" ".dev" SCIPP_VERSION_PEP440 ${GIT_VERSION_INFO})
-# Cmake does not like letters, remove the dev, will act as "tweak" number
-string(REGEX REPLACE "-" "" SCIPP_VERSION_CMAKE ${GIT_VERSION_INFO})
+if(SKBUILD)
+  project(
+    ${SKBUILD_PROJECT_NAME}
+    VERSION ${SKBUILD_PROJECT_VERSION}
+    LANGUAGES CXX
+  )
+  add_definitions(-DSCIPP_VERSION="${SKBUILD_PROJECT_VERSION_FULL}")
+else()
+  execute_process(
+    COMMAND git describe --tags --exclude nightly
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    RESULT_VARIABLE HAVE_GIT_VERSION_INFO
+    OUTPUT_VARIABLE GIT_VERSION_INFO
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  # We get something like 23.08.0-266-g068b161fe, remove the -g<hash> part
+  string(REGEX REPLACE "-g[0-9a-f]+$" "" GIT_VERSION_INFO ${GIT_VERSION_INFO})
+  # Replace '-' with '.dev' for PEP440 compatibility
+  string(REGEX REPLACE "-" ".dev" SCIPP_VERSION_PEP440 ${GIT_VERSION_INFO})
+  # Cmake does not like letters, remove the dev, will act as "tweak" number
+  string(REGEX REPLACE "-" "" SCIPP_VERSION_CMAKE ${GIT_VERSION_INFO})
 
-project(
-  scipp
-  VERSION ${SCIPP_VERSION_CMAKE}
-  LANGUAGES CXX
-)
+  project(
+    scipp
+    VERSION ${SCIPP_VERSION_CMAKE}
+    LANGUAGES CXX
+  )
+  if(${HAVE_GIT_VERSION_INFO} EQUAL 0)
+    message(STATUS "Got version from Git: ${GIT_VERSION_INFO}")
+    add_definitions(-DSCIPP_VERSION="${SCIPP_VERSION_PEP440}")
+  endif()
+endif()
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE
@@ -37,11 +50,6 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-
-if(${HAVE_GIT_VERSION_INFO} EQUAL 0)
-  message(STATUS "Got version from Git: ${GIT_VERSION_INFO}")
-  add_definitions(-DSCIPP_VERSION="${SCIPP_VERSION_PEP440}")
-endif()
 
 # Custom install target for docs to depend on.
 add_custom_target(
