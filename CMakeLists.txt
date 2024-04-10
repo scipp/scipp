@@ -13,6 +13,7 @@ if(SKBUILD)
     LANGUAGES CXX
   )
   add_definitions(-DSCIPP_VERSION="${SKBUILD_PROJECT_VERSION_FULL}")
+  message(STATUS "Got version from SKBUILD: ${SKBUILD_PROJECT_VERSION_FULL}")
 else()
   execute_process(
     COMMAND git describe --tags --exclude nightly
