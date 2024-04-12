@@ -36,7 +36,6 @@ from .core import (
 
 # Import submodules
 from . import units
-from . import geometry
 
 # Import functions
 
@@ -341,7 +340,6 @@ __all__ = [
     'from_dict',
     'full',
     'full_like',
-    'geometry',
     'geomspace',
     'get_logger',
     'greater',

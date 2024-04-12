@@ -115,14 +115,6 @@ def test_vector_readonly_elements():
     assert not var.fields.x.values.flags['WRITEABLE']
 
 
-def test_matrix_from_quat_coeffs_list():
-    sc.geometry.rotation_matrix_from_quaternion_coeffs([1, 2, 3, 4])
-
-
-def test_matrix_from_quat_coeffs_numpy():
-    sc.geometry.rotation_matrix_from_quaternion_coeffs(np.arange(4))
-
-
 def test_elements_binned():
     data = sc.array(dims=['x'], values=[1, 2, 3, 4])
     var = sc.bins(dim='x', data=data)

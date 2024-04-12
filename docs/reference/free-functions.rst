@@ -168,15 +168,6 @@ Hyperbolic
    acosh
    atanh
 
-Geometric
-~~~~~~~~~
-
-.. autosummary::
-   :toctree: ../generated/functions
-
-   geometry.position
-   geometry.rotation_matrix_from_quaternion_coeffs
-
 Group-by (split-apply-combine)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
