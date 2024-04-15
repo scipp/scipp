@@ -56,7 +56,7 @@ def test_unit_str_format():
 
 @pytest.mark.parametrize('u', (sc.units.angstrom, sc.Unit('angstrom')))
 def test_angstrom_str_format(u):
-    assert str(u) in ('\u212B', '\u00C5')
+    assert str(u) in ('\u212b', '\u00c5')
 
 
 def test_unit_repr():

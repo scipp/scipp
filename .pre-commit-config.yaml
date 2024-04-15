@@ -31,8 +31,8 @@ repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.3.7
     hooks:
-#      - id: ruff-format
-#        types_or: [ python, pyi ]
+      - id: ruff-format
+        types_or: [ python, pyi ]
       - id: ruff
         args: [ --fix, --exit-non-zero-on-fix ]
         types_or: [ python, pyi, jupyter ]
