@@ -17,13 +17,13 @@ from .variable import arange, array, epoch, linspace, scalar
 
 
 @overload
-def make_histogrammed(
-    x: Union[Variable, DataArray], *, edges: Variable
-) -> DataArray: ...
+def make_histogrammed(x: Union[Variable, DataArray], *, edges: Variable) -> DataArray:
+    ...
 
 
 @overload
-def make_histogrammed(x: Dataset, *, edges: Variable) -> Dataset: ...
+def make_histogrammed(x: Dataset, *, edges: Variable) -> Dataset:
+    ...
 
 
 def make_histogrammed(x, *, edges):
@@ -266,7 +266,8 @@ def hist(
     arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
     /,
     **kwargs: Union[int, Variable],
-) -> DataArray: ...
+) -> DataArray:
+    ...
 
 
 @overload
@@ -275,7 +276,8 @@ def hist(
     arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
     /,
     **kwargs: Union[int, Variable],
-) -> Dataset: ...
+) -> Dataset:
+    ...
 
 
 @overload
@@ -284,7 +286,8 @@ def hist(
     arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
     /,
     **kwargs: Union[int, Variable],
-) -> DataGroup: ...
+) -> DataGroup:
+    ...
 
 
 @data_group_overload
@@ -418,7 +421,8 @@ def nanhist(
     arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
     /,
     **kwargs: Union[int, Variable],
-) -> DataArray: ...
+) -> DataArray:
+    ...
 
 
 @overload
@@ -427,7 +431,8 @@ def nanhist(
     arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
     /,
     **kwargs: Union[int, Variable],
-) -> DataGroup: ...
+) -> DataGroup:
+    ...
 
 
 @data_group_overload
@@ -465,7 +470,8 @@ def bin(
     arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
     /,
     **kwargs: Union[int, Variable],
-) -> DataArray: ...
+) -> DataArray:
+    ...
 
 
 @overload
@@ -474,7 +480,8 @@ def bin(
     arg_dict: Optional[Dict[str, Union[int, Variable]]] = None,
     /,
     **kwargs: Union[int, Variable],
-) -> DataGroup: ...
+) -> DataGroup:
+    ...
 
 
 @data_group_overload
@@ -594,7 +601,8 @@ def rebin(
     deprecated=None,
     /,
     **kwargs: Union[int, Variable],
-) -> DataArray: ...
+) -> DataArray:
+    ...
 
 
 @overload
@@ -604,7 +612,8 @@ def rebin(
     deprecated=None,
     /,
     **kwargs: Union[int, Variable],
-) -> Dataset: ...
+) -> Dataset:
+    ...
 
 
 @overload
@@ -614,7 +623,8 @@ def rebin(
     deprecated=None,
     /,
     **kwargs: Union[int, Variable],
-) -> DataGroup: ...
+) -> DataGroup:
+    ...
 
 
 @data_group_overload
@@ -727,11 +737,13 @@ def _make_groups(x, arg):
 
 
 @overload
-def group(x: DataArray, /, *args: Union[str, Variable]) -> DataArray: ...
+def group(x: DataArray, /, *args: Union[str, Variable]) -> DataArray:
+    ...
 
 
 @overload
-def group(x: DataGroup, /, *args: Union[str, Variable]) -> DataGroup: ...
+def group(x: DataGroup, /, *args: Union[str, Variable]) -> DataGroup:
+    ...
 
 
 @data_group_overload
@@ -829,12 +841,10 @@ def histogram(
     x: Union[DataArray, Dataset], *, bins: Variable
 ) -> Union[DataArray, Dataset]:
     """Deprecated. See :py:func:`scipp.hist`."""
+    warnings.warn("'histogram' is deprecated. Use 'hist' instead.", UserWarning,
+                  stacklevel=2)
     warnings.warn(
-        "'histogram' is deprecated. Use 'hist' instead.", UserWarning, stacklevel=2
-    )
-    warnings.warn(
-        "'histogram' is deprecated. Use 'hist' instead.",
-        VisibleDeprecationWarning,
-        stacklevel=2,
+        "'histogram' is deprecated. Use 'hist' instead.", VisibleDeprecationWarning,
+        stacklevel=2
     )
     return make_histogrammed(x, edges=bins)

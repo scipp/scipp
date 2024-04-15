@@ -32,7 +32,7 @@ def dims() -> st.SearchStrategy:
 
 
 def sizes_dicts(
-    ndim: Optional[Union[int, st.SearchStrategy]] = None,
+    ndim: Optional[Union[int, st.SearchStrategy]] = None
 ) -> st.SearchStrategy:
     if isinstance(ndim, st.SearchStrategy):
         return ndim.flatmap(lambda n: sizes_dicts(ndim=n))

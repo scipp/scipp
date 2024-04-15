@@ -501,7 +501,7 @@ def test_bins_like():
     assert sc.identical(sc.bins_like(binned, dense['x', 0]), expected)
     with pytest.raises(sc.DimensionError):
         dense = dense.rename_dims({'x': 'y'})
-        sc.bins_like(binned, dense)
+        sc.bins_like(binned, dense),
 
 
 def test_bins_like_raises_when_given_data_group():

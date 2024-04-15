@@ -13,10 +13,8 @@ class Binned1d:
     Benchmark different aspects of binned data
     """
 
-    params: ClassVar[tuple[list[int], list[int]]] = (
-        list(10 ** np.arange(8)),
-        list(10 ** np.arange(0, 7)),
-    )
+    params: ClassVar[tuple[list[int], list[int]]] = (list(10 ** np.arange(8)),
+                                                     list(10 ** np.arange(0, 7)))
     param_names: ClassVar[list[str]] = ['nevent', 'nbin']
 
     def setup(self, nevent, nbin):

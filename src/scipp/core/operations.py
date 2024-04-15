@@ -300,11 +300,13 @@ def to(
 
 
 @overload
-def merge(lhs: Dataset, rhs: Dataset) -> Dataset: ...
+def merge(lhs: Dataset, rhs: Dataset) -> Dataset:
+    ...
 
 
 @overload
-def merge(lhs: DataGroup, rhs: DataGroup) -> DataGroup: ...
+def merge(lhs: DataGroup, rhs: DataGroup) -> DataGroup:
+    ...
 
 
 def merge(lhs, rhs):

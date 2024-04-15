@@ -8,7 +8,6 @@ Changes are:
 * Rename dtype vector_3_float64 to vector3
 * Rename dtype matrix_3_float64 to linear_transform3
 """
-
 import sys
 from shutil import copyfile
 

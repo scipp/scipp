@@ -35,7 +35,9 @@ def test_load_csv_dataset_choose_separator(sep):
 1,2,3
 4,5,6
 7,8,9
-10,11,12'''.replace(',', sep)
+10,11,12'''.replace(
+        ',', sep
+    )
 
     loaded = sc.io.load_csv(StringIO(csv), sep=sep)
     expected = sc.Dataset(

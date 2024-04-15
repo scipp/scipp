@@ -1,5 +1,4 @@
 """Parser for function docstrings."""
-
 import ast
 import inspect
 import re

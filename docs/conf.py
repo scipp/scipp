@@ -7,9 +7,9 @@ import scipp
 sys.path.insert(0, os.path.abspath('.'))
 
 # General information about the project.
-project = 'Scipp'
-copyright = '2024 Scipp contributors'
-author = 'Scipp contributors'
+project = u'Scipp'
+copyright = u'2024 Scipp contributors'
+author = u'Scipp contributors'
 
 html_show_sourcelink = True
 

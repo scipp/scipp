@@ -4,7 +4,6 @@
 """
 Advanced comparisons.
 """
-
 from typing import Optional
 
 from ..core import CoordError, DataArray, DType, Variable, all, isclose
