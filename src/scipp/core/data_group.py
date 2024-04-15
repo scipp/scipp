@@ -109,12 +109,10 @@ class DataGroup(MutableMapping):
         yield from self._items
 
     @overload
-    def __getitem__(self, name: str) -> Any:
-        ...
+    def __getitem__(self, name: str) -> Any: ...
 
     @overload
-    def __getitem__(self, name: ScippIndex) -> DataGroup:
-        ...
+    def __getitem__(self, name: ScippIndex) -> DataGroup: ...
 
     def __getitem__(self, name):
         """Return item of given name or index all items.
@@ -164,8 +162,7 @@ class DataGroup(MutableMapping):
         )
 
     @overload
-    def __setitem__(self, name: str, value: Any):
-        ...
+    def __setitem__(self, name: str, value: Any): ...
 
     def __setitem__(self, name, value):
         """Set self[key] to value."""

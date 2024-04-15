@@ -416,7 +416,7 @@ def _direct_io(cls, convert=None):
 
 
 class HDF5IO:
-    _handlers: ClassVar[dict[str, Any]]= {
+    _handlers: ClassVar[dict[str, Any]] = {
         'Variable': VariableIO,
         'DataArray': DataArrayIO,
         'Dataset': DatasetIO,

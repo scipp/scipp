@@ -177,10 +177,9 @@ def format_dims(dims, sizes, coords):
 def _icon(icon_name):
     # icon_name is defined in icon-svg-inline.html
     return (
-        "<svg class='icon sc-{0}'>"
-        "<use xlink:href='#{0}'>"
-        "</use>"
-        "</svg>".format(icon_name)
+        "<svg class='icon sc-{0}'>" "<use xlink:href='#{0}'>" "</use>" "</svg>".format(
+            icon_name
+        )
     )
 
 

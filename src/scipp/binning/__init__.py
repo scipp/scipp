@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-"""Sub-package for lower-level control over binning and histogramming.
-"""
+"""Sub-package for lower-level control over binning and histogramming."""
 
 # ruff: noqa: F403
 from ..core.binning import make_binned, make_histogrammed

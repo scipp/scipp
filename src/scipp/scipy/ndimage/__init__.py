@@ -6,6 +6,7 @@
 This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.ndimage`.
 """
+
 from functools import wraps
 from typing import Callable, Dict, Optional, Union
 
