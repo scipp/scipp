@@ -66,7 +66,7 @@ autodoc_type_aliases = {
 rst_epilog = f"""
 .. |SCIPP_RELEASE_MONTH| replace:: {os.popen("git show -s --format=%cd --date=format:'%B %Y'").read()}
 .. |SCIPP_VERSION| replace:: {os.popen("git describe --tags --abbrev=0").read()}
-"""  # noqa: E501
+"""  # noqa: E501, S605, S607
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),

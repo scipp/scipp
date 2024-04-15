@@ -11,7 +11,7 @@ from typing import Callable, Dict, Optional, Union
 
 import scipy.ndimage
 
-from ...core import (  # NOQA
+from ...core import (
     CoordError,
     DataArray,
     DimensionError,

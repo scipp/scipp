@@ -382,7 +382,7 @@ def hist(x, arg_dict=None, /, **kwargs):
       >>> binned = table.bin(x=10)
       >>> binned.hist(y=5).sizes
       {'x': 10, 'y': 5}
-    """  # noqa #501
+    """  # noqa: E501
     edges = _make_edges(x, arg_dict, kwargs)
     erase = _find_replaced_dims(x, edges)
     if isinstance(x, Variable) and len(edges) != 1:
@@ -396,7 +396,7 @@ def hist(x, arg_dict=None, /, **kwargs):
         return x.bins.sum()
     if len(edges) == 1:
         # TODO Note that this may swap dims, is that ok?
-        out = make_histogrammed(x, edges=list(edges.values())[0])
+        out = make_histogrammed(x, edges=next(iter(edges.values())))
     else:
         edges = list(edges.values())
         # If histogramming by the final edges needs to use a non-event coord then we
@@ -586,6 +586,7 @@ def bin(x, arg_dict=None, /, **kwargs):
                     "are deprecated. Use, e.g., 'sc.bin(da, x=x_edges)' or "
                     "'sc.group(da, groups)'. See the documentation for details.",
                     UserWarning,
+                    stacklevel=2,
                 )
                 return make_binned(x, **kwargs)
     edges = _make_edges(x, arg_dict, kwargs)
@@ -596,7 +597,7 @@ def bin(x, arg_dict=None, /, **kwargs):
 @overload
 def rebin(
     x: DataArray,
-    arg_dict: Dict[str, Union[int, Variable]] = None,
+    arg_dict: Optional[dict[str, Union[int, Variable]]] = None,
     deprecated=None,
     /,
     **kwargs: Union[int, Variable],
@@ -607,7 +608,7 @@ def rebin(
 @overload
 def rebin(
     x: Dataset,
-    arg_dict: Dict[str, Union[int, Variable]] = None,
+    arg_dict: Optional[dict[str, Union[int, Variable]]] = None,
     deprecated=None,
     /,
     **kwargs: Union[int, Variable],
@@ -618,7 +619,7 @@ def rebin(
 @overload
 def rebin(
     x: DataGroup,
-    arg_dict: Dict[str, Union[int, Variable]] = None,
+    arg_dict: Optional[dict[str, Union[int, Variable]]] = None,
     deprecated=None,
     /,
     **kwargs: Union[int, Variable],
@@ -693,6 +694,7 @@ def rebin(x, arg_dict=None, deprecated=None, /, **kwargs):
                 "edges is deprecated. Use, e.g., 'sc.rebin(da, x=x_edges)'. See the "
                 "documentation for details.",
                 UserWarning,
+                stacklevel=2,
             )
             bins = {'bins': deprecated, **kwargs}
             return _cpp.rebin(x, arg_dict, **bins)
@@ -839,8 +841,10 @@ def histogram(
     x: Union[DataArray, Dataset], *, bins: Variable
 ) -> Union[DataArray, Dataset]:
     """Deprecated. See :py:func:`scipp.hist`."""
-    warnings.warn("'histogram' is deprecated. Use 'hist' instead.", UserWarning)
+    warnings.warn("'histogram' is deprecated. Use 'hist' instead.", UserWarning,
+                  stacklevel=2)
     warnings.warn(
-        "'histogram' is deprecated. Use 'hist' instead.", VisibleDeprecationWarning
+        "'histogram' is deprecated. Use 'hist' instead.", VisibleDeprecationWarning,
+        stacklevel=2
     )
     return make_histogrammed(x, edges=bins)

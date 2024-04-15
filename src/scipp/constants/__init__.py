@@ -1,4 +1,4 @@
-# flake8: noqa: E501
+# ruff: noqa: E501
 r"""
 Physical and mathematical constants with units.
 This module a wrapper around `scipy.constants <https://docs.scipy.org/doc/scipy/reference/constants.html>`_

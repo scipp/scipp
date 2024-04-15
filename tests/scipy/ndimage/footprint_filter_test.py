@@ -5,7 +5,7 @@ import pytest
 import scipy.ndimage
 
 import scipp as sc
-from scipp.scipy.ndimage import (  # NOQA
+from scipp.scipy.ndimage import (
     generic_filter,
     maximum_filter,
     median_filter,

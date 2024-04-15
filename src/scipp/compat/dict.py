@@ -8,8 +8,14 @@ from collections import defaultdict
 
 import numpy as np
 
-from ..core import vectors  # NOQA
-from ..core import DataArray, Dataset, DType, Variable, vector
+from ..core import (
+    DataArray,
+    Dataset,
+    DType,
+    Variable,
+    vector,
+    vectors,
+)
 from ..spatial import linear_transform, linear_transforms
 from ..typing import VariableLike
 

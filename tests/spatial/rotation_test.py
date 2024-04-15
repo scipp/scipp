@@ -6,8 +6,13 @@ import numpy as np
 import pytest
 
 import scipp as sc
-from scipp.spatial import rotations_from_rotvecs  # NOQA
-from scipp.spatial import inv, rotation, rotation_as_rotvec, rotations
+from scipp.spatial import (
+    inv,
+    rotation,
+    rotation_as_rotvec,
+    rotations,
+    rotations_from_rotvecs,
+)
 
 
 def test_from_rotvec_bad_unit():

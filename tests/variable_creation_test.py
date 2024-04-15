@@ -87,7 +87,7 @@ def test_index_unit_is_none():
 
 def test_index_raises_if_unit_given():
     with pytest.raises(TypeError):
-        sc.index(5, unit='')  # type: ignore
+        sc.index(5, unit='')  # type: ignore[call-arg]
 
 
 def test_zeros_creates_variable_with_correct_dims_and_shape():
@@ -617,7 +617,7 @@ def test_xyzspace_with_variables_num_cannot_be_variable(range_fn):
     start = sc.scalar(1)
     stop = sc.scalar(3)
     with pytest.raises(TypeError):
-        range_fn('x', start, stop, sc.scalar(3))  # type: ignore
+        range_fn('x', start, stop, sc.scalar(3))
 
 
 def test_logspace():
@@ -821,9 +821,9 @@ def test_arange_with_variables_mixed_types_not_allowed():
     step = sc.scalar(1, unit='m')
     unit = 'm'
     with pytest.raises(TypeError):
-        sc.arange('x', start, stop, step)  # type: ignore
+        sc.arange('x', start, stop, step)  # type: ignore[type-var]
     with pytest.raises(TypeError):
-        sc.arange('x', start, stop, step, unit=unit)  # type: ignore
+        sc.arange('x', start, stop, step, unit=unit)  # type: ignore[type-var]
 
 
 def test_arange_with_variables_requires_scalar():

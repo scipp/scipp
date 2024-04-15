@@ -7,7 +7,7 @@ import copy
 import pytest
 
 import scipp as sc
-from scipp._scipp.core import units_identical as units_identical  # noqa
+from scipp._scipp.core import units_identical as units_identical
 
 
 @pytest.fixture(autouse=True)
@@ -19,7 +19,7 @@ def clean_unit_aliases():
 
 def test_cannot_construct_unit_without_arguments():
     with pytest.raises(TypeError):
-        sc.Unit()  # noqa
+        sc.Unit()
 
 
 def test_default_unit():
@@ -46,7 +46,7 @@ def test_constructor_raises_with_bad_input():
     with pytest.raises(sc.UnitError):
         sc.Unit('abcdef')  # does not parse
     with pytest.raises(TypeError):
-        sc.Unit(5)  # type: ignore # neither str nor Unit
+        sc.Unit(5)  # type: ignore[call-arg] # neither str nor Unit
 
 
 def test_unit_str_format():

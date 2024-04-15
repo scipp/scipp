@@ -16,7 +16,7 @@ from .unary import to_unit
 _ContainerWithCoords = TypeVar('_ContainerWithCoords', _cpp.DataArray, _cpp.Dataset)
 
 
-def islinspace(x: Variable, dim: str = None) -> Variable:
+def islinspace(x: Variable, dim: Optional[str] = None) -> Variable:
     """Check if the values of a variable are evenly spaced.
 
     Parameters
@@ -221,7 +221,7 @@ def where(condition: Variable, x: Variable, y: Variable) -> Variable:
 
 
 def to(
-    var: VariableLikeType,  # noqa
+    var: VariableLikeType,
     *,
     unit: Optional[Union[_cpp.Unit, str]] = None,
     dtype: Optional[Any] = None,

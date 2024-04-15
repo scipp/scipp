@@ -40,7 +40,7 @@ Disabling autoplot
 ``autoplot`` can be disabled by using the ``.. autoplot-disable::`` directive
 anywhere (on its own line) in a docstring.
 This will disable autoplot for the entire docstring.
-"""  # noqa: E501
+"""
 
 import re
 from typing import List, Optional

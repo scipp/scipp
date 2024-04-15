@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-# flake8: noqa
+# ruff: noqa: E402, F401, F821
 """Multi-dimensional data arrays with labeled dimensions.
 
 Scipp provides
@@ -13,7 +13,7 @@ Scipp provides
 * Propagation of uncertainties.
 
 See the online documentation for user guides and an API reference: https://scipp.github.io/
-"""
+"""  # noqa: E501
 
 from .core import __version__
 
@@ -42,22 +42,22 @@ from . import units
 # Import python functions
 from .visualization import show, make_svg, to_html, make_html, table
 
-setattr(Variable, '_repr_html_', make_html)
-setattr(DataArray, '_repr_html_', make_html)
-setattr(Dataset, '_repr_html_', make_html)
+Variable._repr_html_ = make_html
+DataArray._repr_html_ = make_html
+Dataset._repr_html_ = make_html
 del visualization
 
 from .io.hdf5 import save_hdf5 as _save_hdf5
 
-setattr(Variable, 'save_hdf5', _save_hdf5)
-setattr(DataArray, 'save_hdf5', _save_hdf5)
-setattr(Dataset, 'save_hdf5', _save_hdf5)
-setattr(DataGroup, 'save_hdf5', _save_hdf5)
+Variable.save_hdf5 = _save_hdf5
+DataArray.save_hdf5 = _save_hdf5
+Dataset.save_hdf5 = _save_hdf5
+DataGroup.save_hdf5 = _save_hdf5
 del _save_hdf5
 
 from .format import format_variable as _format_variable
 
-setattr(Variable, '__format__', _format_variable)
+Variable.__format__ = _format_variable
 del _format_variable
 
 from ._extend_units import extend_units
@@ -251,9 +251,9 @@ from .core.binning import histogram
 
 from .plotting import plot
 
-setattr(Variable, 'plot', plot)
-setattr(DataArray, 'plot', plot)
-setattr(Dataset, 'plot', plot)
+Variable.plot = plot
+DataArray.plot = plot
+Dataset.plot = plot
 del plotting
 
 from .core.util import VisibleDeprecationWarning

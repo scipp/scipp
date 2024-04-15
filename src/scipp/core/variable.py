@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Matthew Andrew
-# flake8: noqa: E501
+# ruff: noqa: E501
 
 from __future__ import annotations
 
@@ -113,9 +113,9 @@ def index(value: Any, *, dtype: Optional[DTypeLike] = None) -> Variable:
 
 def zeros(
     *,
-    dims: Sequence[str] = None,
-    shape: Sequence[int] = None,
-    sizes: dict = None,
+    dims: Optional[Sequence[str]] = None,
+    shape: Optional[Sequence[int]] = None,
+    sizes: Optional[dict[str, int]] = None,
     unit: Union[Unit, str, None] = default_unit,
     dtype: DTypeLike = DType.float64,
     with_variances: bool = False,
@@ -177,9 +177,9 @@ def zeros(
 
 def ones(
     *,
-    dims: Sequence[str] = None,
-    shape: Sequence[int] = None,
-    sizes: dict = None,
+    dims: Optional[Sequence[str]] = None,
+    shape: Optional[Sequence[int]] = None,
+    sizes: Optional[dict[str, int]] = None,
     unit: Union[Unit, str, None] = default_unit,
     dtype: DTypeLike = DType.float64,
     with_variances: bool = False,
@@ -238,9 +238,9 @@ def ones(
 
 def empty(
     *,
-    dims: Sequence[str] = None,
-    shape: Sequence[int] = None,
-    sizes: dict = None,
+    dims: Optional[Sequence[str]] = None,
+    shape: Optional[Sequence[int]] = None,
+    sizes: Optional[dict[str, int]] = None,
     unit: Union[Unit, str, None] = default_unit,
     dtype: DTypeLike = DType.float64,
     with_variances: bool = False,
@@ -305,9 +305,9 @@ def full(
     *,
     value: Any,
     variance: Any = None,
-    dims: Sequence[str] = None,
-    shape: Sequence[int] = None,
-    sizes: dict = None,
+    dims: Optional[Sequence[str]] = None,
+    shape: Optional[Sequence[int]] = None,
+    sizes: Optional[dict[str, int]] = None,
     unit: Union[Unit, str, None] = default_unit,
     dtype: Optional[DTypeLike] = None,
 ) -> Variable:

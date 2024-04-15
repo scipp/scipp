@@ -45,7 +45,7 @@ def test_collapse_dataset():
     d = make_dataset()
     collapsed = sc.collapse(d, keep='tof')
     # In a Dataset, the order of the dims is not fixed
-    first_key = list(collapsed.keys())[0]
+    first_key = next(iter(collapsed.keys()))
     if first_key.startswith('x'):
         dim1 = 'x'
         dim2 = 'y'

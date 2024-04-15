@@ -99,11 +99,11 @@ def _parse_instancemethod(func: object, name: Optional[str]) -> List[ast.Functio
         _make_instancemethod_code_for_parse(inspect.getdoc(func), name or func.__name__)
     )
     body = node.body
-    body = squash_overloads(body)  # type: ignore
+    body = squash_overloads(body)
     if len(body) > 1:
         transformer = AddOverloadedDecorator()
         return [transformer.visit(meth) for meth in body]
-    return body  # type: ignore
+    return body
 
 
 def _make_regular_method_code_for_parse(
@@ -132,7 +132,7 @@ def _parse_regular_method(func: Any, name: Optional[str]) -> List[ast.FunctionDe
     if name is not None:
         node = SetFunctionName(name).visit(node)
     node = ast.fix_missing_locations(node)
-    return node.body  # type: ignore
+    return node.body
 
 
 def parse_method(func: Any, name: Optional[str] = None) -> List[ast.FunctionDef]:

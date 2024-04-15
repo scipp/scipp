@@ -35,7 +35,7 @@ def _var_name_with_unit(name: str, var: Variable) -> str:
     out = f'<span style="font-weight: bold;">{name}</span>'
     unit = var.bins.unit if var.bins is not None else var.unit
     if unit is not None:
-        out += ' [𝟙]' if unit == 'dimensionless' else f' [{unit}]'
+        out += ' [𝟙]' if unit == 'dimensionless' else f' [{unit}]'  # noqa: RUF001
     return out
 
 
@@ -218,7 +218,7 @@ def table(obj: Dict[str, Union[Variable, DataArray]], max_rows: int = 20):
     size = obj.shape[0]
     if size > max_rows:
         half = int(max_rows / 2)
-        inds = list(range(half)) + [None] + list(range(size - half, size))
+        inds = [*range(half), None, *range(size - half, size)]
     else:
         inds = range(size)
 

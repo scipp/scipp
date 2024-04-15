@@ -35,7 +35,7 @@ from typing import Dict, Iterable, Tuple, Union
 
 from .._scipp.core import add_unit_alias as _add_unit_alias
 from .._scipp.core import clear_unit_aliases as _clear_unit_aliases
-from .._scipp.core.units import (  # NOQA
+from .._scipp.core.units import (
     K,
     angstrom,
     counts,

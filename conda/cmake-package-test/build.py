@@ -1,3 +1,5 @@
+# ruff: noqa: S603, S607
+
 import os
 import subprocess
 import sys
@@ -24,7 +26,7 @@ elif sys.platform == 'win32':
     cmake_flags.extend(['-G', 'Visual Studio 16 2019'])
 
 subprocess.check_call(
-    ['cmake'] + cmake_flags + ['..'], stderr=subprocess.STDOUT, shell=shell
+    ['cmake', *cmake_flags , '..'], stderr=subprocess.STDOUT, shell=shell
 )
 # Show cmake settings
 subprocess.check_call(

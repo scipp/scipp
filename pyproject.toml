@@ -112,7 +112,7 @@ select = ["B", "E", "F", "G", "I", "S", "T20", "PGH", "RUF"]
 ignore = [
     "E111", "E114", "E117", "D206", "D300",  # conflict with ruff format
 ]
-fixable = ["I001"]
+fixable = ["I001", "B010"]
 isort.known-first-party = ["scipp"]
 pydocstyle.convention = "numpy"
 

@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
+from typing import ClassVar
+
 import numpy as np
 
 import scipp as sc
@@ -11,9 +13,9 @@ class Bin2dRebinLongDim:
     Benchmark sc.bin, changing existing long dimension
     """
 
-    params = (list(2 ** np.arange(10, 16)),)
-    param_names = ['nbin']
-    timeout = 300.0
+    params: ClassVar[tuple[list[int]]] = (list(2 ** np.arange(10, 16)),)
+    param_names: ClassVar[list[str]] = ['nbin']
+    timeout: ClassVar[float] = 300.0
 
     def setup(self, nbin):
         binned = sc.data.binned_x(nevent=2 * nbin, nbin=nbin)
@@ -39,11 +41,11 @@ class Bin1d:
     Benchmark sc.bin, for 1d binning.
     """
 
-    params = (list(2 ** np.arange(0, 20)),)
+    params: ClassVar[tuple[list[int]]] = (list(2 ** np.arange(0, 20)),)
     # For full runs (too large for CI) use:
     # params = (list(2 ** np.arange(0, 25)),)
-    param_names = ['nbin']
-    timeout = 300.0
+    param_names: ClassVar[list[str]] = ['nbin']
+    timeout: ClassVar[float] = 300.0
 
     def setup(self, nbin):
         self.table = sc.data.table_xyz(50_000_000)
@@ -58,14 +60,14 @@ class Group1d:
     Benchmark sc.group, for 1d grouping.
     """
 
-    nevent = [1_000, 1_000_000, 10_000_000, 100_000_000]
-    ngroup = list(2 ** np.arange(2, 20))
+    nevent: ClassVar[list[int]] = [1_000, 1_000_000, 10_000_000, 100_000_000]
+    ngroup: ClassVar[list[int]] = list(2 ** np.arange(2, 20))
     # For full runs (too large for CI) use:
     # nevent = [1_000, 1_000_000, 10_000_000, 100_000_000]
     # ngroup = list(2 ** np.arange(2, 25))
-    params = (nevent, ngroup)
-    param_names = ['nevent', 'ngroup']
-    timeout = 300.0
+    params: ClassVar[tuple[list[int], list[int]]] = (nevent, ngroup)
+    param_names: ClassVar[list[str]] = ['nevent', 'ngroup']
+    timeout: ClassVar[float] = 300.0
 
     def setup(self, nevent, ngroup):
         self.table = sc.data.table_xyz(nevent)

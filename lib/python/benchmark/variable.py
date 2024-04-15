@@ -41,4 +41,4 @@ def assign_from_numpy_1d(size):
 
 if __name__ == '__main__':
     for a in [1e7, 1e8, 1e9, 5e9]:
-        print('assign_from_numpy_1d', assign_from_numpy_1d(int(a)))
+        print('assign_from_numpy_1d', assign_from_numpy_1d(int(a)))  # noqa: T201

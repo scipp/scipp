@@ -101,7 +101,7 @@ def configure(case, build_dir, install_dir):
 
     try:
         subprocess.run(
-            ['cmake', *cmake_args],
+            ['cmake', *cmake_args],  # noqa: S603, S607
             capture_output=True,
             check=True,
             encoding='utf-8',
@@ -152,7 +152,7 @@ def build(case, build_dir):
             check=True,
             encoding='utf-8',
             cwd=build_dir,
-            shell=True,
+            shell=True,  # noqa: S602
         )
     except subprocess.CalledProcessError as err:
         print(f"Build '{case.name}' failed:\n{err.stdout}\n{err.stderr}")

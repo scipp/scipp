@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Union
+from typing import Any, ClassVar, Union
 
 import numpy as np
 
@@ -416,7 +416,7 @@ def _direct_io(cls, convert=None):
 
 
 class HDF5IO:
-    _handlers = {
+    _handlers: ClassVar[dict[str, Any]]= {
         'Variable': VariableIO,
         'DataArray': DataArrayIO,
         'Dataset': DatasetIO,

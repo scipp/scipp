@@ -98,7 +98,8 @@ def _to_xarray_variable(var: Variable) -> xr.Variable:
     if var.bins is not None:
         raise ValueError("Xarray does not support binned data.")
     if var.variances is not None:
-        warn("Variances of variable were stripped when converting to Xarray.")
+        warn("Variances of variable were stripped when converting to Xarray.",
+             stacklevel=3)
     attrs = {'units': str(var.unit)} if var.unit is not None else None
     return xr.Variable(dims=var.dims, data=var.values, attrs=attrs)
 
@@ -108,7 +109,8 @@ def _from_xarray_dataarray(da: xr.DataArray) -> DataArray:
     if da.attrs and set(da.attrs) != {"units"}:
         warn(
             "Input data contains some attributes which have been dropped during the "
-            "conversion."
+            "conversion.",
+             stacklevel=3
         )
     coords = {
         f"{name}": _from_xarray_variable(coord) for name, coord in da.coords.items()
@@ -131,7 +133,8 @@ def _to_xarray_dataarray(da: DataArray) -> xr.DataArray:
     if da.masks:
         warn(
             "Some masks were found in the DataArray. "
-            "These have been removed when converting to Xarray."
+            "These have been removed when converting to Xarray.",
+             stacklevel=3
         )
     out = xr.DataArray(_to_xarray_variable(da.data))
     for key, coord in da.coords.items():
@@ -148,7 +151,8 @@ def _from_xarray_dataset(ds: xr.Dataset) -> Dataset:
     if ds.attrs:
         warn(
             "Input data contains some attributes which have been dropped during the "
-            "conversion."
+            "conversion.",
+             stacklevel=3
         )
     sc_data = {k: _from_xarray_dataarray(v) for k, v in ds.items()}
     # The non-indexed coordinates of items also show up as global coordinates in an

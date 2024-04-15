@@ -78,8 +78,8 @@ class FetchRule(Rule):
         }
 
     @property
-    def dependencies(self) -> Tuple[str]:
-        return ()  # type: ignore
+    def dependencies(self) -> Tuple[str, ...]:
+        return ()
 
     def __str__(self):
         return f'Input   {self._format_out_names()}'
@@ -102,7 +102,7 @@ class RenameRule(Rule):
         }
 
     @property
-    def dependencies(self) -> Tuple[str]:
+    def dependencies(self) -> Tuple[str, ...]:
         return tuple((self._in_name,))
 
     def __str__(self):
@@ -182,7 +182,7 @@ class ComputeRule(Rule):
         return output
 
     @property
-    def dependencies(self) -> Tuple[str]:
+    def dependencies(self) -> Tuple[str, ...]:
         return tuple(self._arg_names)
 
     @property

@@ -514,6 +514,7 @@ class GroupbyBins:
         warnings.warn(
             "groupby(...).bins.concat(dim) is deprecated. Use `group` or `bin` instead",
             UserWarning,
+            stacklevel=2,
         )
         return self._obj.concat(dim)
 

@@ -79,11 +79,11 @@ class VariableDrawer:
                     'id="rect"',
                     'width="xlen" height="1" x="origin_x" y="origin_y"/>',
                     '<path',
-                    'style="fill:{};stroke:#000;stroke-width:0.05;stroke-linejoin:round"',  # noqa #501
+                    'style="fill:{};stroke:#000;stroke-width:0.05;stroke-linejoin:round"',  # noqa: 501
                     'd="m origin_x origin_y l 0.3 -0.3 h xlen l -0.3 0.3 z"',
                     'id="path1" />',
                     '<path',
-                    'style="fill:{};stroke:#000;stroke-width:0.05;stroke-linejoin:round"',  # noqa #501
+                    'style="fill:{};stroke:#000;stroke-width:0.05;stroke-linejoin:round"',  # noqa: 501
                     'd="m origin_x origin_y m xlen 0 l 0.3 -0.3 v 1 l -0.3 0.3 z"',
                     'id="path2" />',
                 ]
@@ -377,7 +377,7 @@ class DatasetDrawer:
             for item in self._dataset.deprecated_meta.values():
                 for dim in item.dims:
                     if dim not in dims:
-                        dims = (dim,) + dims
+                        dims = (dim, *dims)
         if len(dims) > 3:
             raise RuntimeError("Cannot visualize {}-D data".format(len(dims)))
         return dims

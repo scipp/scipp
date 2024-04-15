@@ -17,7 +17,7 @@ from ..utils import value_to_string
 from .resources import load_icons, load_style
 
 BIN_EDGE_LABEL = "[bin-edge]"
-STDDEV_PREFIX = "σ = "
+STDDEV_PREFIX = "σ = "  # noqa: RUF001
 VARIANCES_SYMBOL = "σ²"
 SPARSE_PREFIX = "len={}"
 
@@ -314,7 +314,7 @@ def summarize_variable(
     if var.unit is None:
         unit = ''
     else:
-        unit = '𝟙' if var.unit == sc.units.dimensionless else str(var.unit)
+        unit = '𝟙' if var.unit == sc.units.dimensionless else str(var.unit)  # noqa: RUF001
 
     disabled, attrs_ul = _make_inline_attributes(var, has_attrs, embedded_in)
 

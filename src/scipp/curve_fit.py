@@ -118,7 +118,7 @@ def _datagroup_outputs(da, params, p_units, map_over, pdata, covdata):
 
 def _prepare_numpy_outputs(da, params, map_over):
     shape = [da.sizes[d] for d in map_over]
-    dg = np.empty(shape + [len(params)])
+    dg = np.empty([*shape, len(params)])
     dgcov = np.empty(shape + 2 * [len(params)])
     return dg, dgcov
 
@@ -240,7 +240,7 @@ def curve_fit(
     f: Callable,
     da: DataArray,
     *,
-    p0: Dict[str, Union[Variable, Real]] = None,
+    p0: Optional[Dict[str, Union[Variable, Real]]] = None,
     bounds: Optional[
         Dict[str, Union[Tuple[Variable, Variable], Tuple[Real, Real]]]
     ] = None,

@@ -4,7 +4,7 @@
 """Sub-package for lower-level control over binning and histogramming.
 """
 
-# flake8: noqa
+# ruff: noqa: F403
 from ..core.binning import make_binned, make_histogrammed
 
 # This makes Sphinx display these functions in the docs.

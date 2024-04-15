@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
+from typing import ClassVar
+
 import numpy as np
 
 import scipp as sc
@@ -11,14 +13,15 @@ class Binned1d:
     Benchmark different aspects of binned data
     """
 
-    params = (list(10 ** np.arange(8)), list(10 ** np.arange(0, 7)))
-    param_names = ['nevent', 'nbin']
+    params: ClassVar[tuple[list[int], list[int]]] = (list(10 ** np.arange(8)),
+                                                     list(10 ** np.arange(0, 7)))
+    param_names: ClassVar[list[str]] = ['nevent', 'nbin']
 
     def setup(self, nevent, nbin):
         self.da = sc.data.binned_x(nevent, nbin)
 
     def time_bins_constituents(self, nevent, nbin):
-        self.da.bins.constituents
+        self.da.bins.constituents  # noqa: B018
 
     def time_bins_size(self, nevent, nbin):
         self.da.bins.size()
@@ -38,9 +41,9 @@ class Binned2dConcat:
     Benchmark reduction with 'concat' for 2d binned data
     """
 
-    params = ([1, 2, 4, 8, 16, 32, 64, 128],)
-    param_names = ['nbin']
-    timeout = 300.0
+    params: ClassVar[tuple[list[int]]] = ([1, 2, 4, 8, 16, 32, 64, 128],)
+    param_names: ClassVar[list[str]] = ['nbin']
+    timeout: ClassVar[int] = 300.0
 
     def setup(self, nbin):
         nx = 100000
@@ -57,9 +60,9 @@ class Binned2dConcatInner:
     Benchmark reduction with 'concat' along inner for 2d binned data
     """
 
-    params = (list(2 ** np.arange(10, 16)),)
-    param_names = ['nbin']
-    timeout = 300.0
+    params: ClassVar[tuple[list[int]]] = (list(2 ** np.arange(10, 16)),)
+    param_names: ClassVar[list[str]] = ['nbin']
+    timeout: ClassVar[float] = 300.0
 
     def setup(self, nbin):
         binned = sc.data.binned_x(nevent=2 * nbin, nbin=nbin)
