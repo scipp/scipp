@@ -80,6 +80,9 @@ jobs:
 
       - run: tox -e import-minimal
       - run: tox -e test
+      # Just to test out this PR, should be removed before merging
+      # probably to a separate job
+      - run: tox -e nightlydeps
 
       - run: tox -e docs
         if: ${{ contains(matrix.variant.os, 'ubuntu') }}
