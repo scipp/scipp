@@ -715,7 +715,7 @@ def _make_groups(x, arg):
     if coord.bins is not None:
         coord = coord.copy().bins.constituents['data']
 
-    if coord.values.size == 0:
+    if 0 in coord.shape:
         unique = coord.values[0:0]
     # We are currently using np.unique to find all unique groups. This can be very slow
     # for large inputs. In many cases groups are in a bounded range of integers, and we
