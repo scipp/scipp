@@ -111,9 +111,12 @@ extend-exclude = [
 ]
 
 [tool.ruff.lint]
-select = ["B", "E", "F", "G", "I", "S", "T20", "PGH", "RUF"]
+# See https://docs.astral.sh/ruff/rules/
+select = ["B", "C4", "DTZ", "E", "F", "G", "I", "PERF", "PGH", "PT", "PYI", "RUF", "S", "T20", "W"]
 ignore = [
-    "E111", "E114", "E117", "D206", "D300",  # conflict with ruff format
+    # Conflict with ruff format, see
+    # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
+    "COM812", "COM819", "D206", "D300", "E111", "E114", "E117", "ISC001", "ISC002", "Q000", "Q001", "Q002", "Q003", "W191",
 ]
 fixable = ["I001", "B010"]
 isort.known-first-party = ["scipp"]
