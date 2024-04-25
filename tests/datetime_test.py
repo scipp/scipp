@@ -76,8 +76,8 @@ def test_construct_0d_datetime_from_int(unit):
 
 @pytest.mark.parametrize("unit1,unit2", _mismatch_pairs(_UNIT_STRINGS))
 def test_construct_0d_datetime_mismatch(unit1, unit2):
-    with pytest.raises(ValueError):
-        sc.Variable(dims=(), unit=unit1, dtype=f'datetime64[{unit2}]')
+    with pytest.raises(ValueError, match='unit encoded in the dtype'):
+        sc.scalar(1, unit=unit1, dtype=f'datetime64[{unit2}]')
 
 
 @pytest.mark.parametrize("unit1,unit2", _mismatch_pairs(('s', 'ms', 'us', 'ns')))
@@ -119,7 +119,7 @@ def test_0d_datetime_setter(unit):
 def test_0d_datetime_setter_mismatch(unit1, unit2):
     initial, replacement = _make_datetimes((unit1, unit2), 2)
     var1 = sc.Variable(dims=(), values=initial)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='unit'):
         var1.value = replacement
 
 
@@ -154,8 +154,8 @@ def test_construct_datetime_from_int(unit):
 
 @pytest.mark.parametrize("unit1,unit2", _mismatch_pairs(_UNIT_STRINGS))
 def test_construct_datetime_mismatch(unit1, unit2):
-    with pytest.raises(ValueError):
-        sc.Variable(dims=['x'], unit=unit1, dtype=f'datetime64[{unit2}]')
+    with pytest.raises(ValueError, match='unit encoded in the dtype'):
+        sc.array(dims=['x'], values=[1], unit=unit1, dtype=f'datetime64[{unit2}]')
 
 
 @pytest.mark.parametrize("unit1,unit2", _mismatch_pairs(('s', 'ms', 'us', 'ns')))
@@ -198,7 +198,7 @@ def test_datetime_setter(unit):
 def test_datetime_setter_mismatch(unit1, unit2):
     initial, replacement = _make_arrays((unit1, unit2), 2)
     var1 = sc.Variable(dims=['x'], values=initial)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='unit'):
         var1.values = replacement
 
 

@@ -439,7 +439,9 @@ def test_rename_dims_kwargs():
 def test_rename_dims_dict_and_kwargs_must_be_distinct():
     values = np.arange(6).reshape(2, 3)
     xy = sc.Variable(dims=['x', 'y'], values=values)
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match='The names passed in the dict and as keyword arguments'
+    ):
         xy.rename_dims({'x': 'w'}, x='z')
 
 
@@ -466,7 +468,9 @@ def test_rename_kwargs():
 def test_rename_dict_and_kwargs_must_be_distinct():
     values = np.arange(6).reshape(2, 3)
     xy = sc.Variable(dims=['x', 'y'], values=values)
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match='The names passed in the dict and as keyword arguments'
+    ):
         xy.rename({'x': 'w'}, x='z')
 
 
@@ -718,7 +722,7 @@ def test_to_without_dtype():
 def test_to_without_any_arguments():
     data = sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="m")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Must provide dtype or unit or both'):
         data.to()
 
 

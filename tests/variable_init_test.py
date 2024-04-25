@@ -260,7 +260,7 @@ def test_create_scalar_with_instance_as_dtype(dtype):
 
 @pytest.mark.parametrize("dtype", [str, sc.Variable, sc.DataArray, sc.Dataset])
 def test_create_scalar_value_must_be_convertible_to_dtype(dtype):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Cannot convert values'):
         sc.Variable(dims=(), values=0, dtype=dtype)
 
 
@@ -275,7 +275,7 @@ def test_create_scalar_conversion(value, dtype):
 @pytest.mark.parametrize('value', [1, 1.2, True])
 @pytest.mark.parametrize('dtype', [sc.DType.string, sc.DType.Variable])
 def test_create_scalar_invalid_conversion_numeric(value, dtype):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Cannot convert values'):
         sc.Variable(dims=(), values=value, dtype=dtype)
 
 
@@ -283,7 +283,7 @@ def test_create_scalar_invalid_conversion_numeric(value, dtype):
     'dtype', [sc.DType.int32, sc.DType.int64, sc.DType.float64, sc.DType.Variable]
 )
 def test_create_scalar_invalid_conversion_str(dtype):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Cannot convert values'):
         sc.Variable(dims=(), values='abc', dtype=dtype)
 
 
@@ -410,7 +410,7 @@ def test_create_1D_vector3():
 
 
 def test_create_1d_bad_dims():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='number of dimensions'):
         sc.Variable(dims=['x', 'y'], values=[1, 2])
 
 

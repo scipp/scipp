@@ -346,7 +346,7 @@ def test_to_xarray_dataarray_fails_on_bin_edges():
         ),
         coords={'xx': sc.arange('xx', 6.0, unit='s')},
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='bin edges'):
         _ = to_xarray(sc_da)
 
 
@@ -355,7 +355,7 @@ def test_to_xarray_dataarray_fails_on_binned_data():
         sc.ones(sizes={'event': 5}), coords={'id': sc.arange('event', 5)}
     )
     binned = buffer.bin(id=3)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='binned data'):
         _ = to_xarray(binned)
 
 

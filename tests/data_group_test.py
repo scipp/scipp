@@ -30,7 +30,7 @@ def test_create_from_dict_works_with_mixed_types_and_non_scipp_objects():
 
 def test_init_raises_when_keys_are_not_strings():
     d = {1: 0}
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='DataGroup keys must be strings'):
         sc.DataGroup(d)
 
 
@@ -622,7 +622,7 @@ def test_elemwise_with_kwargs():
 def test_elemwise_unary_raises_with_out_arg():
     dg = sc.DataGroup(a=sc.linspace('x', 0.0, 1.0, num=4, unit='rad'))
     out = sc.DataGroup()
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='`out` argument is not supported'):
         sc.sin(dg, out=out)
 
 

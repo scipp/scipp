@@ -74,7 +74,7 @@ def test_raises_VariancesError_when_data_has_variances(filter_func):
 def test_raises_ValueError_when_data_has_masks(filter_func):
     da = make_histogram2d()
     da.masks['mask'] = da.coords['x'] == da.coords['x']
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='mask'):
         filter_func(da, size=2)
 
 

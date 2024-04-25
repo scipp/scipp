@@ -55,7 +55,7 @@ def test_scalar_without_dtype():
 
 
 def test_scalar_throws_if_wrong_dtype_provided_for_str_types():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Cannot convert values'):
         sc.scalar(value='temp', unit=sc.units.one, dtype=sc.DType.float64)
 
 
@@ -86,7 +86,7 @@ def test_index_unit_is_none():
 
 
 def test_index_raises_if_unit_given():
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError, match='unexpected keyword argument'):
         sc.index(5, unit='')  # type: ignore[call-arg]
 
 
@@ -169,7 +169,7 @@ def test_ones_dtypes():
     assert sc.ones(
         dims=(), shape=(), unit='s', dtype='datetime64'
     ).value == np.datetime64(1, 's')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='string'):
         sc.ones(dims=(), shape=(), dtype=str)
 
 
@@ -671,7 +671,7 @@ def test_arange_datetime_from_str_raises_if_step_has_no_unit():
 
 
 def test_arange_datetime_from_str_raises_given_string_with_timezone():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='timezone'):
         sc.arange(
             't',
             '2022-08-02T06:42:45Z',
@@ -932,7 +932,7 @@ def test_zeros_sizes():
     assert sc.identical(
         sc.zeros(dims=dims, shape=shape), sc.zeros(sizes=dict(zip(dims, shape)))
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='dims and shape must both be None'):
         sc.zeros(dims=dims, shape=shape, sizes=dict(zip(dims, shape)))
 
 
@@ -942,7 +942,7 @@ def test_ones_sizes():
     assert sc.identical(
         sc.ones(dims=dims, shape=shape), sc.ones(sizes=dict(zip(dims, shape)))
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='dims and shape must both be None'):
         sc.ones(dims=dims, shape=shape, sizes=dict(zip(dims, shape)))
 
 
@@ -952,19 +952,19 @@ def test_empty_sizes():
     _compare_properties(
         sc.empty(dims=dims, shape=shape), sc.empty(sizes=dict(zip(dims, shape)))
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='dims and shape must both be None'):
         sc.empty(dims=dims, shape=shape, sizes=dict(zip(dims, shape)))
 
 
 @pytest.mark.parametrize('timezone', ['Z', '-05:00', '+02'])
 def test_datetime_raises_given_string_with_timezone(timezone):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='timezone'):
         sc.datetime(f'2152-11-25T13:13:46{timezone}')
 
 
 @pytest.mark.parametrize('timezone', ['Z', '-05:00', '+02'])
 def test_datetimes_raises_given_string_with_timezone(timezone):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='timezone'):
         sc.datetimes(dims=['time'], values=[f'2152-11-25T13:13:46{timezone}'], unit='s')
 
 

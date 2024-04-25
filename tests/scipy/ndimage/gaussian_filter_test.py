@@ -38,7 +38,7 @@ def test_raises_VariancesError_when_data_has_variances():
 def test_raises_ValueError_when_data_has_masks():
     da = make_histogram2d()
     da.masks['mask'] = da.coords['x'] == da.coords['x']
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='mask'):
         gaussian_filter(da, sigma=1.5)
 
 

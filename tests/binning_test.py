@@ -233,13 +233,13 @@ def test_bin_integer_coord_by_float_stepsize(dtype):
 def test_bin_integer_coord_by_fractional_stepsize_raises(dtype):
     table = sc.data.table_xyz(100)
     table.coords['label'] = (table.coords['x'] * 10).to(dtype=dtype)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Step size'):
         table.bin(label=sc.scalar(0.5, unit='m'))
 
 
 def test_bin_with_automatic_bin_bounds_raises_if_no_events():
     table = sc.data.table_xyz(0)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Empty data range'):
         table.bin(x=4)
 
 
@@ -621,7 +621,9 @@ def test_rebin_deprecated_positional_arguments():
 @pytest.mark.parametrize('op', ['bin', 'hist', 'nanhist'])
 def test_raises_ValueError_given_variable_and_multiple_edges(op):
     var = sc.array(dims=['row'], values=[1, 2, 3])
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match='Edges for exactly one dimension must be specified'
+    ):
         getattr(var, op)(x=2, y=2)
 
 

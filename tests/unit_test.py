@@ -202,13 +202,13 @@ def test_can_redefine_same_alias():
 def test_defining_conflicting_alias_raises():
     sc.units.aliases['speed'] = 'm/s'
     sc.units.aliases['zoomy'] = 'm/ms'
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='There already is an alias'):
         sc.units.aliases['fastness'] = 'm/s'
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='There already is an alias'):
         sc.units.aliases['fastness'] = '100*cm/s'
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='There already is an alias'):
         sc.units.aliases['fastness'] = sc.scalar(1000, unit='mm/s')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='There already is an alias'):
         sc.units.aliases['zoomy'] = 'm/s'
     assert 'fastness' not in sc.units.aliases
 

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 import functools
+from graphlib import CycleError
 
 import numpy as np
 import pytest
@@ -874,15 +875,15 @@ def test_inaccessible_coord(a, b):
 
 def test_cycles(a):
     original = sc.DataArray(data=a, coords={'a': a, 'b': a})
-    with pytest.raises(ValueError):
+    with pytest.raises(CycleError):
         original.transform_coords(['c'], graph={'c': 'c'})
-    with pytest.raises(ValueError):
+    with pytest.raises(CycleError):
         original.transform_coords(['c'], graph={'c': 'd', 'd': 'c'})
-    with pytest.raises(ValueError):
+    with pytest.raises(CycleError):
         original.transform_coords(['c'], graph={'c': 'd', 'd': 'e', 'e': 'c'})
-    with pytest.raises(ValueError):
+    with pytest.raises(CycleError):
         original.transform_coords(['c'], graph={'c': bc})
-    with pytest.raises(ValueError):
+    with pytest.raises(CycleError):
         original.transform_coords(['c'], graph={'c': 'd', 'd': bc})
 
 
@@ -908,13 +909,13 @@ def test_vararg_fail(a):
     def func(*args):
         pass
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='variable arguments'):
         original.transform_coords(['b'], graph={'b': func})
 
     def func(**kwargs):
         pass
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='variable arguments'):
         original.transform_coords(['b'], graph={'b': func})
 
 
@@ -962,11 +963,11 @@ def test_duplicate_output_keys(a):
     def to_bd(*, a):
         return {'b': a, 'd': a}
 
-    with pytest.raises(ValueError):
-        graph = {'b': 'a', ('b', 'c'): to_bc}
+    graph = {'b': 'a', ('b', 'c'): to_bc}
+    with pytest.raises(ValueError, match='Duplicate output name'):
         original.transform_coords(['b'], graph=graph)
-    with pytest.raises(ValueError):
-        graph = {('b', 'd'): to_bd, ('b', 'c'): to_bc}
+    graph = {('b', 'd'): to_bd, ('b', 'c'): to_bc}
+    with pytest.raises(ValueError, match='Duplicate output name'):
         original.transform_coords(['b'], graph=graph)
     # b only named once in graph
     graph = {'b': to_bd, 'c': to_bc}
@@ -1012,13 +1013,13 @@ def test_keyword_syntax_without_entries_and_graph_returns_unchanged():
 
 def test_raises_when_keyword_syntax_combined_with_targets():
     da = sc.data.table_xyz(nrow=10)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Explicit targets or graph'):
         da.transform_coords('a', a=lambda x: x)
 
 
 def test_raises_when_keyword_syntax_combined_with_graph():
     da = sc.data.table_xyz(nrow=10)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Explicit targets or graph'):
         da.transform_coords(a=lambda x: x, graph={'b': 'y'})
 
 

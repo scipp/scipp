@@ -207,7 +207,7 @@ def test_should_raise_ValueError_when_sigma_contains_zeros(rng):
     da = array1d(size=50)
     da.variances = rng.normal(0.0, 0.1, size=50) ** 2
     da['xx', 21].variance = 0.0
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='0 in the input variances'):
         curve_fit(['x'], func, da)
 
 
@@ -485,7 +485,7 @@ def test_can_pass_extra_kwargs():
     # Does not raise
     curve_fit(['x'], func, data, method='lm')
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='method'):
         curve_fit(['x'], func, data, method='bad_method')
 
 

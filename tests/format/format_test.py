@@ -190,31 +190,31 @@ def test_variable_compact_array_with_variance():
 
 def test_variable_compact_raises_for_length():
     var = sc.scalar(2)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Invalid format spec'):
         f'{var:#3c}'
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Invalid format spec'):
         f'{var:#4c}'
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Invalid format spec'):
         f'{var:#6c}'
 
 
 def test_variable_compact_raises_for_selection():
     var = sc.scalar(2)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Invalid format spec'):
         f'{var:<c}'
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Invalid format spec'):
         f'{var:>c}'
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Invalid format spec'):
         f'{var:^c}'
 
 
 def test_variable_compact_raises_for_nested():
     var = sc.scalar(2)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Invalid format spec'):
         f'{var:c:f}'
 
 
 def test_variable_compact_only_supports_numeric_dtype():
     var = sc.scalar('a string')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Compact formatting.*string'):
         f'{var:c}'
