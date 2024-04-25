@@ -165,4 +165,6 @@ filterwarnings = [
   'ignore::scipy.optimize._optimize.OptimizeWarning',
   'ignore:Support for mapping types has been deprecated and will be dropped in a future release.:DeprecationWarning',
   'ignore:sc.DataArray.attrs has been deprecated:scipp.VisibleDeprecationWarning',
+  # Triggered by h5py
+  'ignore:`product` is deprecated as of NumPy 1.25.0:DeprecationWarning'
 ]
