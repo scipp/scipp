@@ -79,11 +79,11 @@ class VariableDrawer:
                     'id="rect"',
                     'width="xlen" height="1" x="origin_x" y="origin_y"/>',
                     '<path',
-                    'style="fill:{};stroke:#000;stroke-width:0.05;stroke-linejoin:round"',  # noqa: 501
+                    'style="fill:{};stroke:#000;stroke-width:0.05;stroke-linejoin:round"',
                     'd="m origin_x origin_y l 0.3 -0.3 h xlen l -0.3 0.3 z"',
                     'id="path1" />',
                     '<path',
-                    'style="fill:{};stroke:#000;stroke-width:0.05;stroke-linejoin:round"',  # noqa: 501
+                    'style="fill:{};stroke:#000;stroke-width:0.05;stroke-linejoin:round"',
                     'd="m origin_x origin_y m xlen 0 l 0.3 -0.3 v 1 l -0.3 0.3 z"',
                     'id="path2" />',
                 ]
