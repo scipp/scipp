@@ -340,7 +340,7 @@ class DataArrayIO:
             override = {}
         from ..core import DataArray
 
-        contents = dict()
+        contents = {}
         contents['name'] = group.attrs['name']
         contents['data'] = VariableIO.read(group['data'])
         for category in ['coords', 'masks', 'attrs']:

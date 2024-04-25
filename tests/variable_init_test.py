@@ -33,7 +33,7 @@ DTYPE_INPUT_TO_EXPECTED = (
     (sc.DType.bool, sc.DType.bool, False),
     (sc.DType.string, sc.DType.string, 'def'),
     (sc.DType.datetime64, sc.DType.datetime64, 123),
-    (sc.DType.PyObject, sc.DType.PyObject, dict()),
+    (sc.DType.PyObject, sc.DType.PyObject, {}),
     (np.int32, sc.DType.int32, 6),
     (np.int64, sc.DType.int64, 7),
     (np.float32, sc.DType.float32, 8.9),

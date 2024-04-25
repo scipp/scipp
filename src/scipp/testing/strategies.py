@@ -133,15 +133,15 @@ def _variable_arg_strategies(
         dtype = scalar_numeric_dtypes()
     if with_variances is None:
         with_variances = _ConditionallyWithVariances()
-    return dict(
-        sizes=sizes,
-        unit=unit,
-        dtype=dtype,
-        with_variances=with_variances,
-        elements=elements,
-        fill=fill,
-        unique=unique,
-    )
+    return {
+        'sizes': sizes,
+        'unit': unit,
+        'dtype': dtype,
+        'with_variances': with_variances,
+        'elements': elements,
+        'fill': fill,
+        'unique': unique,
+    }
 
 
 # This implementation is designed such that the individual strategies

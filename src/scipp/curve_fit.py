@@ -244,7 +244,7 @@ def curve_fit(
     bounds: Optional[
         Dict[str, Union[Tuple[Variable, Variable], Tuple[Real, Real]]]
     ] = None,
-    reduce_dims: Sequence[str] = tuple(),
+    reduce_dims: Sequence[str] = (),
     unsafe_numpy_f: bool = False,
     **kwargs,
 ) -> Tuple[DataGroup, DataGroup]:

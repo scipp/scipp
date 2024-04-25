@@ -423,7 +423,7 @@ def _mapping_section(
 
 
 def dim_section(dataset):
-    coords = dataset.coords if hasattr(dataset, "coords") else dict()
+    coords = dataset.coords if hasattr(dataset, "coords") else {}
     dim_list = format_dims(dataset.dims, dataset.shape, coords)
 
     return collapsible_section(

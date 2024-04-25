@@ -8,7 +8,7 @@ import numpy as np
 
 def _to_slices(scipp_obj, slice_dims, slice_shape, volume):
     # Create container to collect all 1D slices as 1D variables
-    all_slices = dict()
+    all_slices = {}
 
     # Go through the dims that need to be collapsed, and create an array that
     # holds the range of indices for each dimension
@@ -83,7 +83,7 @@ def collapse(scipp_obj, keep):
     # Gather list of dimensions that are to be collapsed
     slice_dims = []
     volume = 1
-    slice_shape = dict()
+    slice_shape = {}
     for d, size in zip(dims, shape):
         if d != keep:
             slice_dims.append(d)
