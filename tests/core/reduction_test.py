@@ -940,7 +940,7 @@ def test_reduction_with_mask_works_with_vectors():
 # See docstring of these functions about why the `ddof` parameter is required.
 # This test exists to prevent accidental or intentional but not thoroughly
 # thought-out changes.
-@pytest.mark.parametrize('opname', ('var', 'nanvar', 'std', 'nanstd'))
+@pytest.mark.parametrize('opname', ['var', 'nanvar', 'std', 'nanstd'])
 def test_variance_reductions_require_ddof_param(opname):
     data = sc.zeros(sizes={'x': 2})
 

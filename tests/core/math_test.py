@@ -10,7 +10,7 @@ import scipp as sc
 
 @pytest.mark.parametrize(
     'funcs',
-    (
+    [
         (sc.erf, scipy.special.erf),
         (sc.erfc, scipy.special.erfc),
         (sc.exp, np.exp),
@@ -22,7 +22,7 @@ import scipp as sc
         (sc.tanh, np.tanh),
         (sc.asinh, np.arcsinh),
         (sc.atanh, np.arctanh),
-    ),
+    ],
 )
 def test_unary_math_compare_to_numpy_dimensionless(funcs):
     sc_f, ref = funcs
@@ -34,7 +34,7 @@ def test_unary_math_compare_to_numpy_dimensionless_acosh():
     assert sc.allclose(sc.acosh(sc.scalar(1.612)), sc.scalar(np.arccosh(1.612)))
 
 
-@pytest.mark.parametrize('func', (sc.exp, sc.log, sc.log10, sc.sqrt, sc.sinh))
+@pytest.mark.parametrize('func', [sc.exp, sc.log, sc.log10, sc.sqrt, sc.sinh])
 def test_unary_math_out(func):
     out = sc.scalar(np.nan)
     func(sc.scalar(0.932), out=out)
@@ -42,14 +42,14 @@ def test_unary_math_out(func):
 
 
 @pytest.mark.parametrize(
-    'funcs', ((sc.sin, np.sin), (sc.cos, np.cos), (sc.tan, np.tan))
+    'funcs', [(sc.sin, np.sin), (sc.cos, np.cos), (sc.tan, np.tan)]
 )
 def test_compare_unary_math_to_numpy_trigonometry(funcs):
     sc_f, ref = funcs
     assert sc.allclose(sc_f(sc.scalar(0.512, unit='rad')), sc.scalar(ref(0.512)))
 
 
-@pytest.mark.parametrize('func', (sc.sin, sc.cos, sc.tan))
+@pytest.mark.parametrize('func', [sc.sin, sc.cos, sc.tan])
 def test_unary_math_trigonometry_out(func):
     out = sc.scalar(np.nan)
     func(sc.scalar(0.932, unit='rad'), out=out)
@@ -57,21 +57,26 @@ def test_unary_math_trigonometry_out(func):
 
 
 @pytest.mark.parametrize(
-    'funcs', ((sc.asin, np.arcsin), (sc.acos, np.arccos), (sc.atan, np.arctan))
+    'funcs', [(sc.asin, np.arcsin), (sc.acos, np.arccos), (sc.atan, np.arctan)]
 )
 def test_compare_unary_math_to_numpy_inv_trigonometry(funcs):
     sc_f, ref = funcs
     assert sc.allclose(sc_f(sc.scalar(0.512)), sc.scalar(ref(0.512), unit='rad'))
 
 
-@pytest.mark.parametrize('func', (sc.asin, sc.acos, sc.atan))
+@pytest.mark.parametrize('func', [sc.asin, sc.acos, sc.atan])
 def test_unary_math_inv_trigonometry_out(func):
     out = sc.scalar(np.nan, unit='rad')
     func(sc.scalar(0.932), out=out)
     assert sc.identical(out, func(sc.scalar(0.932)))
 
 
-@pytest.mark.parametrize('args', ((sc.sqrt, sc.Unit('m^2'), sc.Unit('m')),))
+@pytest.mark.parametrize(
+    'args',
+    [
+        (sc.sqrt, sc.Unit('m^2'), sc.Unit('m')),
+    ],
+)
 def test_unary_math_unit(args):
     func, inp, expected = args
     assert func(inp) == expected

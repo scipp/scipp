@@ -23,13 +23,13 @@ pytest_mark_parameterize_assert_similar = pytest.mark.parametrize(
 )
 
 
-@pytest.mark.parametrize('a', (3, -1.2, 'hjh wed', [], {4}))
+@pytest.mark.parametrize('a', [3, -1.2, 'hjh wed', [], {4}])
 def test_assert_similar_builtin_equal(a):
     assert_identical(deepcopy(a), deepcopy(a))
 
 
-@pytest.mark.parametrize('a', (3, -1.2, 'hjh wed', [], {4}))
-@pytest.mark.parametrize('b', (1, 0.2, 'll', [7], {}))
+@pytest.mark.parametrize('a', [3, -1.2, 'hjh wed', [], {4}])
+@pytest.mark.parametrize('b', [1, 0.2, 'll', [7], {}])
 def test_assert_similar_builtin_mismatch(a, b):
     with pytest.raises(AssertionError):
         assert_identical(a, b)
@@ -38,14 +38,14 @@ def test_assert_similar_builtin_mismatch(a, b):
 @pytest_mark_parameterize_assert_similar
 @pytest.mark.parametrize(
     'a',
-    (
+    [
         sc.scalar(3),
         sc.scalar(7.12, variance=0.33, unit='m'),
         sc.scalar('jja ow=-'),
         sc.arange('u', 9.5, 13.0, 0.4),
         sc.linspace('ppl', 3.7, -99, 10, unit='kg'),
         sc.array(dims=['ww', 'gas'], values=[[np.nan], [3]]),
-    ),
+    ],
 )
 def test_assert_similar_variable_equal(assert_similar, a):
     assert_similar(deepcopy(a), deepcopy(a))
@@ -170,7 +170,7 @@ def test_assert_similar_variable_presence_of_variances(
 @pytest_mark_parameterize_assert_similar
 @pytest.mark.parametrize(
     'a',
-    (
+    [
         sc.DataArray(sc.scalar(91, unit='F')),
         sc.DataArray(sc.scalar(6.4), coords={'g': sc.scalar(4)}),
         sc.DataArray(sc.scalar(6.4), attrs={'rat': sc.scalar(0.01)}),
@@ -184,7 +184,7 @@ def test_assert_similar_variable_presence_of_variances(
             },
             masks={'1': sc.arange('y', 7) < 4},
         ),
-    ),
+    ],
 )
 def test_assert_similar_data_arrays_equal(assert_similar, a):
     assert_similar(deepcopy(a), deepcopy(a))
@@ -343,7 +343,7 @@ def test_assert_similar_data_array_masks_value_mismatch(
 
 @pytest.mark.parametrize(
     'a',
-    (
+    [
         sc.Dataset({'f': sc.scalar(91, unit='F')}),
         sc.Dataset({'r': sc.scalar(6.4)}, coords={'g': sc.scalar(4)}),
         sc.Dataset({'2': sc.arange('u', 5)}),
@@ -357,7 +357,7 @@ def test_assert_similar_data_array_masks_value_mismatch(
             },
             coords={'i': sc.arange('w', 15).fold('w', {'i': 3, 'yy': 5})},
         ),
-    ),
+    ],
 )
 def test_assert_similar_datasets_equal(a):
     assert_identical(deepcopy(a), deepcopy(a))
@@ -392,13 +392,13 @@ def test_assert_similar_dataset_coords_key_mismatch():
 
 @pytest.mark.parametrize(
     'a',
-    (
+    [
         sc.DataGroup(),
         sc.DataGroup({'hg': 4}),
         sc.DataGroup({'ii': sc.scalar(3.01, unit='s')}),
         sc.DataGroup({'Å': [5, 2], 'pl': sc.arange(';', 6)}),
         sc.DataGroup({'q': sc.DataGroup({'ik': sc.arange('ik', 2)})}),
-    ),
+    ],
 )
 def test_assert_similar_data_group_equal(a):
     assert_identical(deepcopy(a), deepcopy(a))
@@ -443,20 +443,20 @@ def test_assert_similar_data_group_values_mismatch_nested():
 @pytest_mark_parameterize_assert_similar
 @pytest.mark.parametrize(
     'buffer',
-    (
+    [
         sc.ones(sizes={'e': 10}, unit='counts'),
         sc.arange('.', 13, unit='m'),
         sc.DataArray(sc.zeros(sizes={'bm': 10}), coords={'bm': sc.arange('bm', 10)}),
-    ),
+    ],
 )
 @pytest.mark.parametrize(
     'indices',
-    (
+    [
         sc.array(dims=['lm'], values=[0, 3, 8, 10], dtype='int64', unit=None),
         sc.array(dims=['h'], values=[2, 4, 10], dtype='int64', unit=None),
         sc.array(dims=['lka'], values=[0, 6], dtype='int64', unit=None),
         sc.array(dims=['l we'], values=[], dtype='int64', unit=None),
-    ),
+    ],
 )
 def test_assert_similar_binned_variable_equal(assert_similar, buffer, indices):
     begin, end = indices[:-1], indices[1:]
@@ -477,17 +477,17 @@ def test_assert_similar_binned_data_array_equal(
 @pytest_mark_parameterize_assert_similar
 @pytest.mark.parametrize(
     'buffer',
-    (
+    [
         sc.ones(sizes={'e': 10}, unit='counts'),
         sc.DataArray(sc.zeros(sizes={'bm': 10}), coords={'bm': sc.arange('bm', 10)}),
-    ),
+    ],
 )
 @pytest.mark.parametrize(
     'indices',
-    (
+    [
         sc.array(dims=['lm'], values=[0, 3, 8, 10], dtype='int64', unit=None),
         sc.array(dims=['l we'], values=[], dtype='int64', unit=None),
-    ),
+    ],
 )
 def test_assert_similar_binned_variable_unit_mismatch(assert_similar, buffer, indices):
     begin, end = indices[:-1], indices[1:]
@@ -507,17 +507,17 @@ def test_assert_similar_binned_variable_unit_mismatch(assert_similar, buffer, in
 )
 @pytest.mark.parametrize(
     'buffer',
-    (
+    [
         sc.ones(sizes={'e': 10}, unit='counts'),
         sc.DataArray(sc.zeros(sizes={'bm': 10}), coords={'bm': sc.arange('bm', 10)}),
-    ),
+    ],
 )
 @pytest.mark.parametrize(
     'indices',
-    (
+    [
         sc.array(dims=['lm'], values=[0, 3, 8, 10], dtype='int64', unit=None),
         sc.array(dims=['l we'], values=[2, 6], dtype='int64', unit=None),
-    ),
+    ],
 )
 def test_assert_similar_binned_variable_value_mismatch(assert_similar, buffer, indices):
     begin, end = indices[:-1], indices[1:]
@@ -537,10 +537,10 @@ def test_assert_similar_binned_variable_value_mismatch(assert_similar, buffer, i
 )
 @pytest.mark.parametrize(
     'indices',
-    (
+    [
         sc.array(dims=['lm'], values=[0, 3, 8, 10], dtype='int64', unit=None),
         sc.array(dims=['l we'], values=[1, 6], dtype='int64', unit=None),
-    ),
+    ],
 )
 def test_assert_similar_binned_variable_coord_mismatch(assert_similar, indices):
     buffer = sc.DataArray(
@@ -621,7 +621,7 @@ def difference_exceeding_tolerance(a, b, rtol):
 
 @pytest.mark.parametrize(
     'a',
-    (
+    [
         sc.array(dims=['x'], values=[1000, -1, 0.001, -2.3]),
         sc.scalar(2.3),
         sc.scalar(-2.0, unit='m'),
@@ -629,9 +629,9 @@ def difference_exceeding_tolerance(a, b, rtol):
             sc.ones(sizes={'rv': 9}),
             coords={'rv': sc.arange('rv', 9), 'j': sc.scalar(3.1)},
         ),
-    ),
+    ],
 )
-@pytest.mark.parametrize('rtol', (1e-8, 1e-5, 1e-3, 1e-1))
+@pytest.mark.parametrize('rtol', [1e-8, 1e-5, 1e-3, 1e-1])
 def test_allclose_different_tolerances(rtol, a):
     np.random.seed(321)
     rtol = sc.scalar(rtol, unit='dimensionless')

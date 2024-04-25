@@ -251,7 +251,7 @@ def test_own_darr_copy():
 
 @pytest.mark.parametrize(
     'data_array_wrapper',
-    (lambda k, v: {k: v}, lambda k, v: {k: v}.items(), lambda k, v: sc.Dataset({k: v})),
+    [lambda k, v: {k: v}, lambda k, v: {k: v}.items(), lambda k, v: sc.Dataset({k: v})],
     ids=['dict', 'iterator', 'Dataset'],
 )
 def test_own_dset_init(data_array_wrapper):

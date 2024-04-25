@@ -187,7 +187,7 @@ def test_raises_DimensionError_if_dim_not_given():
 
 @pytest.mark.parametrize(
     'da, coord',
-    (
+    [
         (sc.data.binned_x(8, 15), 'x'),
         *product(
             (
@@ -201,11 +201,11 @@ def test_raises_DimensionError_if_dim_not_given():
             ),
             ('x', 'y'),
         ),
-    ),
+    ],
 )
 @pytest.mark.parametrize(
     's',
-    (
+    [
         (-2, 0),
         (-2, 0.1),
         (-2, 3.5),
@@ -219,7 +219,7 @@ def test_raises_DimensionError_if_dim_not_given():
         (1, None),
         (None, 0.6),
         (None, None),
-    ),
+    ],
 )
 def test_label_based_index_to_positional_index(da, coord, s):
     s = slice(
@@ -234,7 +234,7 @@ def test_label_based_index_to_positional_index(da, coord, s):
 
 @pytest.mark.parametrize(
     'a',
-    (-2, 0, 0.1, 3.5, 10, 0.6),
+    [-2, 0, 0.1, 3.5, 10, 0.6],
 )
 def test_label_based_index_to_positional_index_scalar(a):
     da = sc.DataArray(

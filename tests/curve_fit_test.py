@@ -103,30 +103,30 @@ def test_should_not_raise_given_function_with_dimensionless_params_and_1d_array(
 
 @pytest.mark.parametrize(
     "p0, params, bounds",
-    (
+    [
         (None, {'a': 1.2, 'b': 1.3}, None),
         ({'a': 3, 'b': 2}, {'a': 1.2, 'b': 1.3}, None),
         ({'a': 0.2, 'b': -1}, {'a': 1.2, 'b': 1.3}, {'a': (-3, 3), 'b': (-2, 2)}),
         ({'a': 0.2, 'b': -1}, {'a': 1.2, 'b': 1.3}, {'a': (-3, 1.1), 'b': (-2, 1.1)}),
-    ),
+    ],
 )
 @pytest.mark.parametrize(
     "dims",
-    (
+    [
         {'x': 10, 't': 10, 'y': 10},
         {'x': 5, 't': 8, 'y': 7},
-    ),
+    ],
 )
 @pytest.mark.parametrize(
     "coords, reduce_dims",
-    (
+    [
         (['x'], []),
         (['x'], ['y']),
         (['x'], ['t', 'y']),
         (['x', 't'], []),
         (['x', 't'], ['y']),
         (['x', 't', 'y'], []),
-    ),
+    ],
 )
 def test_compare_to_curve_fit_xarray(dims, coords, reduce_dims, p0, params, bounds):
     _ = pytest.importorskip('xarray')
@@ -248,11 +248,11 @@ def test_masks_are_not_ignored():
 
 @pytest.mark.parametrize(
     "f,array,coords",
-    (
+    [
         (func, array1d, ['x']),
         (func2d, array2d, ['x', 't']),
         (func3d, array3d, ['x', 't', 'y']),
-    ),
+    ],
 )
 @pytest.mark.parametrize(
     "noise_scale",
@@ -272,11 +272,11 @@ def test_optimized_params_approach_real_params_as_data_noise_decreases(
 
 @pytest.mark.parametrize(
     "f,array,coords",
-    (
+    [
         (func3d, array3d, ['x', 't', 'y']),
         (func3d, array3d, ['y', 'x', 't']),
         (func3d, array3d, ['t', 'y', 'x']),
-    ),
+    ],
 )
 @pytest.mark.parametrize(
     "noise_scale",
@@ -294,11 +294,11 @@ def test_order_of_coords_does_not_matter(noise_scale, f, array, coords):
 
 @pytest.mark.parametrize(
     "f,fnp,array,coords",
-    (
+    [
         (func, func_np, array1d, ['x']),
         (func2d, func2d_np, array2d, ['x', 't']),
         (func3d, func3d_np, array3d, ['x', 't', 'y']),
-    ),
+    ],
 )
 def test_scipp_fun_and_numpy_fun_finds_same_optimized_params(f, fnp, array, coords):
     data = array(a=1.7, b=1.5, noise_scale=1e-2)

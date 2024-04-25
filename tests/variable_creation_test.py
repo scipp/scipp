@@ -368,7 +368,7 @@ def slice_array_in_dim(array, dim, step):
     'ndim_and_slice_dim',
     [(ndim, slice_dim) for ndim in range(1, 7) for slice_dim in range(ndim)],
 )
-@pytest.mark.parametrize('step', (2, -1, -2))
+@pytest.mark.parametrize('step', [2, -1, -2])
 def test_array_nd_sliced_c_layout(ndim_and_slice_dim, step):
     ndim, slice_dim = ndim_and_slice_dim
     shape = list(range(2, ndim + 2))
@@ -389,7 +389,7 @@ def test_array_nd_sliced_c_layout(ndim_and_slice_dim, step):
         for slice_dim1 in range(ndim)
     ],
 )
-@pytest.mark.parametrize('step', (2, -1, -2))
+@pytest.mark.parametrize('step', [2, -1, -2])
 def test_array_nd_sliced_twice_c_layout(ndim_and_slice_dims, step):
     ndim, slice_dim0, slice_dim1 = ndim_and_slice_dims
     shape = list(range(2, ndim + 2))
@@ -407,7 +407,7 @@ def test_array_nd_sliced_twice_c_layout(ndim_and_slice_dims, step):
     'ndim_and_slice_dim',
     [(ndim, slice_dim) for ndim in range(1, 7) for slice_dim in range(ndim)],
 )
-@pytest.mark.parametrize('step', (2, -1, -2))
+@pytest.mark.parametrize('step', [2, -1, -2])
 def test_array_nd_sliced_fortran_layout(ndim_and_slice_dim, step):
     ndim, slice_dim = ndim_and_slice_dim
     shape = list(range(2, ndim + 2))
@@ -429,7 +429,7 @@ def test_array_nd_sliced_fortran_layout(ndim_and_slice_dim, step):
         for slice_dim1 in range(ndim)
     ],
 )
-@pytest.mark.parametrize('step', (2, -1, -2))
+@pytest.mark.parametrize('step', [2, -1, -2])
 def test_array_nd_sliced_twice_fortran_layout(ndim_and_slice_dims, step):
     ndim, slice_dim0, slice_dim1 = ndim_and_slice_dims
     shape = list(range(2, ndim + 2))
@@ -561,11 +561,11 @@ def test_linspace_none_unit():
 
 @pytest.mark.parametrize(
     'range_fns',
-    (
+    [
         (sc.linspace, np.linspace),
         (sc.geomspace, np.geomspace),
         (sc.logspace, np.logspace),
-    ),
+    ],
     ids=('linspace', 'geomspace', 'logspace'),
 )
 def test_xyzspace_with_variables(range_fns):
@@ -577,7 +577,7 @@ def test_xyzspace_with_variables(range_fns):
 
 @pytest.mark.parametrize(
     'range_fns',
-    ((sc.linspace, np.linspace), (sc.geomspace, np.geomspace)),
+    [(sc.linspace, np.linspace), (sc.geomspace, np.geomspace)],
     ids=('linspace', 'geomspace'),
 )
 def test_xyzspace_with_variables_set_unit(range_fns):
@@ -596,7 +596,7 @@ def test_logspace_with_variables_set_unit():
     )
 
 
-@pytest.mark.parametrize('unit', (sc.units.default_unit, 'one', 'm'))
+@pytest.mark.parametrize('unit', [sc.units.default_unit, 'one', 'm'])
 def test_logspace_with_variables_input_must_be_dimensionless(unit):
     with pytest.raises(sc.UnitError):
         sc.logspace('x', sc.scalar(1.0), sc.scalar(3.0, unit='m'), 4, unit=unit)
@@ -610,7 +610,7 @@ def test_logspace_with_variables_input_must_be_dimensionless(unit):
 
 @pytest.mark.parametrize(
     'range_fn',
-    (sc.linspace, sc.geomspace, sc.logspace),
+    [sc.linspace, sc.geomspace, sc.logspace],
     ids=('linspace', 'geomspace', 'logspace'),
 )
 def test_xyzspace_with_variables_num_cannot_be_variable(range_fn):
@@ -712,7 +712,7 @@ def test_arange_datetime_from_scipp_datetime():
     assert sc.identical(var, expected)
 
 
-@pytest.mark.parametrize('unit', ('one', sc.units.default_unit))
+@pytest.mark.parametrize('unit', ['one', sc.units.default_unit])
 def test_arange_with_variables(unit):
     start = sc.scalar(1)
     stop = sc.scalar(4)
@@ -856,7 +856,7 @@ def test_arange_with_variables_mixed_dtype():
     )
 
 
-@pytest.mark.parametrize('dtype', (np.int32, np.int64, np.float32, np.float64))
+@pytest.mark.parametrize('dtype', [np.int32, np.int64, np.float32, np.float64])
 def test_arange_with_uniform_numpy_arg_dtype_creates_array_with_same_dtype(dtype):
     assert sc.identical(
         sc.arange('x', dtype(2)), sc.array(dims=['x'], values=[0, 1], dtype=dtype)
@@ -871,7 +871,7 @@ def test_arange_with_uniform_numpy_arg_dtype_creates_array_with_same_dtype(dtype
     )
 
 
-@pytest.mark.parametrize('dtype', (np.int32, np.int64, np.float32, np.float64))
+@pytest.mark.parametrize('dtype', [np.int32, np.int64, np.float32, np.float64])
 def test_arange_with_uniform_scipp_arg_dtype_creates_array_with_same_dtype(dtype):
     assert sc.identical(
         sc.arange('x', sc.scalar(2, dtype=dtype)),
@@ -894,12 +894,12 @@ def test_arange_with_uniform_scipp_arg_dtype_creates_array_with_same_dtype(dtype
 
 @pytest.mark.parametrize(
     ('dtype', 'larger'),
-    (
+    [
         (np.int32, np.int64),
         (np.float32, np.float64),
         (np.int32, np.float64),
         (np.int64, np.float64),
-    ),
+    ],
 )
 def test_arange_with_non_uniform_arg_dtype_creates_array_with_larger_dtype(
     dtype, larger

@@ -54,7 +54,7 @@ def test_unit_str_format():
     assert str(sc.units.us) == 'µs'
 
 
-@pytest.mark.parametrize('u', (sc.units.angstrom, sc.Unit('angstrom')))
+@pytest.mark.parametrize('u', [sc.units.angstrom, sc.Unit('angstrom')])
 def test_angstrom_str_format(u):
     assert str(u) in ('\u212b', '\u00c5')
 
@@ -82,7 +82,7 @@ def test_degC_square():
 
 
 @pytest.mark.parametrize(
-    'u', ('m', 'kg', 's', 'A', 'cd', 'K', 'mol', 'counts', '$', 'rad')
+    'u', ['m', 'kg', 's', 'A', 'cd', 'K', 'mol', 'counts', '$', 'rad']
 )
 def test_unit_repr_uses_all_bases(u):
     assert repr(sc.Unit(u)) == f'Unit({u})'
@@ -113,7 +113,7 @@ def test_default_unit_for_string_is_none():
 
 @pytest.mark.parametrize(
     'u_str',
-    (
+    [
         'one',
         'm',
         'count / s',
@@ -125,14 +125,14 @@ def test_default_unit_for_string_is_none():
         'EQXUN[1]',
         'Sv',
         'degC',
-    ),
+    ],
 )
 def test_dict_roundtrip(u_str):
     u = sc.Unit(u_str)
     assert units_identical(sc.Unit.from_dict(u.to_dict()), u)
 
 
-@pytest.mark.parametrize('unit_type', (str, sc.Unit))
+@pytest.mark.parametrize('unit_type', [str, sc.Unit])
 def test_unit_alias_overrides_str_formatting(unit_type):
     sc.units.aliases['clucks'] = unit_type('19.3 m*A')
     clucks = sc.Unit('19.3 m*A')

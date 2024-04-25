@@ -215,7 +215,7 @@ def test_bins_view_masks_iterators():
     assert sc.identical(value, var.bins.data == var.bins.data)
 
 
-@pytest.mark.parametrize('get', (get_coords, get_masks))
+@pytest.mark.parametrize('get', [get_coords, get_masks])
 def test_bins_view_mapping_clear(get):
     var = make_binned()
     assert len(get(var.bins)) == 1
@@ -223,7 +223,7 @@ def test_bins_view_mapping_clear(get):
     assert len(get(var.bins)) == 0
 
 
-@pytest.mark.parametrize('param', ((get_coords, 'time'), (get_masks, 'mask')))
+@pytest.mark.parametrize('param', [(get_coords, 'time'), (get_masks, 'mask')])
 def test_bins_view_mapping_delitem(param):
     get, name = param
     var = make_binned()
@@ -247,7 +247,7 @@ def test_bins_view_masks_update():
     assert sc.identical(var.bins.masks['extra'], ~make_binned().bins.masks['mask'])
 
 
-@pytest.mark.parametrize('param', ((get_coords, 'time'), (get_masks, 'mask')))
+@pytest.mark.parametrize('param', [(get_coords, 'time'), (get_masks, 'mask')])
 def test_bins_view_mapping_pop(param):
     get, name = param
     var = make_binned()

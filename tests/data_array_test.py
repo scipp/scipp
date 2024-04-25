@@ -86,9 +86,9 @@ def test_init_from_variable_views():
     assert sc.identical(a, c)
 
 
-@pytest.mark.parametrize('coords_wrapper', (dict, lambda d: d), ids=['dict', 'Coords'])
-@pytest.mark.parametrize('attrs_wrapper', (dict, lambda d: d), ids=['dict', 'Attrs'])
-@pytest.mark.parametrize('masks_wrapper', (dict, lambda d: d), ids=['dict', 'Masks'])
+@pytest.mark.parametrize('coords_wrapper', [dict, lambda d: d], ids=['dict', 'Coords'])
+@pytest.mark.parametrize('attrs_wrapper', [dict, lambda d: d], ids=['dict', 'Attrs'])
+@pytest.mark.parametrize('masks_wrapper', [dict, lambda d: d], ids=['dict', 'Masks'])
 def test_init_from_existing_metadata(coords_wrapper, attrs_wrapper, masks_wrapper):
     da1 = sc.DataArray(
         sc.arange('x', 4),

@@ -29,7 +29,7 @@ def test_load_csv_dataset_default_sep():
     assert_identical(loaded, expected)
 
 
-@pytest.mark.parametrize('sep', ('\t', '/'))
+@pytest.mark.parametrize('sep', ['\t', '/'])
 def test_load_csv_dataset_choose_separator(sep):
     csv = '''x,y,z
 1,2,3

@@ -303,7 +303,7 @@ def test_to_xarray_dataarray_2d_coord():
     )
 
 
-@pytest.mark.parametrize('coord', ('xx', 'yy'))
+@pytest.mark.parametrize('coord', ['xx', 'yy'])
 def test_to_xarray_dataarray_with_unaligned_coords(coord):
     sc_da = sc.DataArray(
         sc.arange('aux', 0.0, 90, 2, unit='counts').fold(
