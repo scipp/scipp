@@ -186,7 +186,7 @@ def test_raises_DimensionError_if_dim_not_given():
 
 
 @pytest.mark.parametrize(
-    'da, coord',
+    ('da', 'coord'),
     [
         (sc.data.binned_x(8, 15), 'x'),
         *product(

@@ -52,7 +52,7 @@ def masks_arg_wrapper(request):
     return request.param
 
 
-@pytest.fixture
+@pytest.fixture()
 def data_array_and_components(coords_arg_wrapper, attrs_arg_wrapper, masks_arg_wrapper):
     v, c, a, m = data_array_components()
     da = sc.DataArray(

@@ -140,7 +140,7 @@ def test_masked_points_are_treated_as_if_they_were_removed(mask_pos, mask_size):
 
 
 @pytest.mark.parametrize(
-    "variance,expected",
+    ('variance', 'expected'),
     [(1e9, 1.0), (1, 2.0), (1 / 3, 3.0), (1e-9, 5.0)],
     ids=['disabled', 'equal', 'high', 'dominant'],
 )

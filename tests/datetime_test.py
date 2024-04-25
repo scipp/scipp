@@ -74,13 +74,13 @@ def test_construct_0d_datetime_from_int(unit):
     assert var.value == np.datetime64(value, unit)
 
 
-@pytest.mark.parametrize("unit1,unit2", _mismatch_pairs(_UNIT_STRINGS))
+@pytest.mark.parametrize(('unit1', 'unit2'), _mismatch_pairs(_UNIT_STRINGS))
 def test_construct_0d_datetime_mismatch(unit1, unit2):
     with pytest.raises(ValueError, match='unit encoded in the dtype'):
         sc.scalar(1, unit=unit1, dtype=f'datetime64[{unit2}]')
 
 
-@pytest.mark.parametrize("unit1,unit2", _mismatch_pairs(('s', 'ms', 'us', 'ns')))
+@pytest.mark.parametrize(('unit1', 'unit2'), _mismatch_pairs(('s', 'ms', 'us', 'ns')))
 def test_construct_0d_datetime_unit_conversion(unit1, unit2):
     value = np.datetime64(2315169201, unit1)
     expected = sc.to_unit(sc.Variable(dims=(), values=value), unit2)
@@ -115,7 +115,7 @@ def test_0d_datetime_setter(unit):
     assert sc.identical(var, sc.Variable(dims=(), values=replacement))
 
 
-@pytest.mark.parametrize("unit1,unit2", _mismatch_pairs(_UNIT_STRINGS))
+@pytest.mark.parametrize(('unit1', 'unit2'), _mismatch_pairs(_UNIT_STRINGS))
 def test_0d_datetime_setter_mismatch(unit1, unit2):
     initial, replacement = _make_datetimes((unit1, unit2), 2)
     var1 = sc.Variable(dims=(), values=initial)
@@ -152,13 +152,13 @@ def test_construct_datetime_from_int(unit):
     np.testing.assert_array_equal(var.values, values.astype(dtype_str))
 
 
-@pytest.mark.parametrize("unit1,unit2", _mismatch_pairs(_UNIT_STRINGS))
+@pytest.mark.parametrize(('unit1', 'unit2'), _mismatch_pairs(_UNIT_STRINGS))
 def test_construct_datetime_mismatch(unit1, unit2):
     with pytest.raises(ValueError, match='unit encoded in the dtype'):
         sc.array(dims=['x'], values=[1], unit=unit1, dtype=f'datetime64[{unit2}]')
 
 
-@pytest.mark.parametrize("unit1,unit2", _mismatch_pairs(('s', 'ms', 'us', 'ns')))
+@pytest.mark.parametrize(('unit1', 'unit2'), _mismatch_pairs(('s', 'ms', 'us', 'ns')))
 def test_construct_datetime_unit_conversion(unit1, unit2):
     values = _make_arrays(unit1, 1)
     expected = sc.to_unit(sc.Variable(dims=['x'], values=values), unit2)
@@ -194,7 +194,7 @@ def test_datetime_setter(unit):
     assert sc.identical(var, sc.Variable(dims=['x'], values=replacement))
 
 
-@pytest.mark.parametrize("unit1,unit2", _mismatch_pairs(_UNIT_STRINGS))
+@pytest.mark.parametrize(('unit1', 'unit2'), _mismatch_pairs(_UNIT_STRINGS))
 def test_datetime_setter_mismatch(unit1, unit2):
     initial, replacement = _make_arrays((unit1, unit2), 2)
     var1 = sc.Variable(dims=['x'], values=initial)

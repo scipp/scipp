@@ -10,7 +10,7 @@ from scipp import curve_fit
 from scipp.compat.xarray_compat import from_xarray, to_xarray
 
 
-@pytest.fixture
+@pytest.fixture()
 def rng():
     return np.random.default_rng(seed=1234)
 
@@ -102,7 +102,7 @@ def test_should_not_raise_given_function_with_dimensionless_params_and_1d_array(
 
 
 @pytest.mark.parametrize(
-    "p0, params, bounds",
+    ('p0', 'params', 'bounds'),
     [
         (None, {'a': 1.2, 'b': 1.3}, None),
         ({'a': 3, 'b': 2}, {'a': 1.2, 'b': 1.3}, None),
@@ -118,7 +118,7 @@ def test_should_not_raise_given_function_with_dimensionless_params_and_1d_array(
     ],
 )
 @pytest.mark.parametrize(
-    "coords, reduce_dims",
+    ('coords', 'reduce_dims'),
     [
         (['x'], []),
         (['x'], ['y']),
@@ -247,7 +247,7 @@ def test_masks_are_not_ignored():
 
 
 @pytest.mark.parametrize(
-    "f,array,coords",
+    ('f', 'array', 'coords'),
     [
         (func, array1d, ['x']),
         (func2d, array2d, ['x', 't']),
@@ -271,7 +271,7 @@ def test_optimized_params_approach_real_params_as_data_noise_decreases(
 
 
 @pytest.mark.parametrize(
-    "f,array,coords",
+    ('f', 'array', 'coords'),
     [
         (func3d, array3d, ['x', 't', 'y']),
         (func3d, array3d, ['y', 'x', 't']),
@@ -293,7 +293,7 @@ def test_order_of_coords_does_not_matter(noise_scale, f, array, coords):
 
 
 @pytest.mark.parametrize(
-    "f,fnp,array,coords",
+    ('f', 'fnp', 'array', 'coords'),
     [
         (func, func_np, array1d, ['x']),
         (func2d, func2d_np, array2d, ['x', 't']),
@@ -330,7 +330,7 @@ def test_masked_points_are_treated_as_if_they_were_removed(mask_pos, mask_size):
 
 
 @pytest.mark.parametrize(
-    "variance,expected",
+    ('variance', 'expected'),
     [(1e9, 1.0), (1, 2.0), (1 / 3, 3.0), (1e-9, 5.0)],
     ids=['disabled', 'equal', 'high', 'dominant'],
 )

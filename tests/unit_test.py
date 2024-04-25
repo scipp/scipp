@@ -11,7 +11,7 @@ from scipp._scipp.core import units_identical as units_identical
 
 
 @pytest.fixture(autouse=True)
-def clean_unit_aliases():
+def _clean_unit_aliases():
     sc.units.aliases.clear()
     yield
     sc.units.aliases.clear()

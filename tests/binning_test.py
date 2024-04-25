@@ -1021,14 +1021,14 @@ def test_group_binned_edges_referencing_original_variable() -> None:
     assert_identical(grouped.coords['y'], doubled_groups)
 
 
-@pytest.fixture
+@pytest.fixture()
 def noncontiguous_var() -> sc.Variable:
     var = sc.linspace('x', 0, 1, 101, unit='m')[::2]
     assert not var.values.data.contiguous
     return var
 
 
-@pytest.fixture
+@pytest.fixture()
 def contiguous_var(noncontiguous_var: sc.Variable) -> sc.Variable:
     var = noncontiguous_var.copy()
     assert var.values.data.contiguous
