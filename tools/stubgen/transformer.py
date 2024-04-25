@@ -22,14 +22,14 @@ def unqualified_cpp_class(node: Union[ast.Attribute, ast.Name]) -> Optional[str]
 
 
 def replace_function(base: ast.FunctionDef, **kwargs) -> ast.FunctionDef:
-    args = dict(
-        name=base.name,
-        args=base.args,
-        body=base.body,
-        decorator_list=base.decorator_list,
-        returns=base.returns,
-        type_comment=base.type_comment,
-    )
+    args = {
+        'name': base.name,
+        'args': base.args,
+        'body': base.body,
+        'decorator_list': base.decorator_list,
+        'returns': base.returns,
+        'type_comment': base.type_comment,
+    }
     return ast.FunctionDef(**{**args, **kwargs})
 
 
@@ -64,13 +64,13 @@ class FixSelfArgName(ast.NodeTransformer):
 
     def visit_arguments(self, node: ast.arguments) -> ast.arguments:
         self.generic_visit(node)
-        keep = dict(
-            kwonlyargs=node.kwonlyargs,
-            vararg=node.vararg,
-            kwarg=node.kwarg,
-            kw_defaults=node.kw_defaults,
-            defaults=node.defaults,
-        )
+        keep = {
+            'kwonlyargs': node.kwonlyargs,
+            'vararg': node.vararg,
+            'kwarg': node.kwarg,
+            'kw_defaults': node.kw_defaults,
+            'defaults': node.defaults,
+        }
         if node.posonlyargs and node.posonlyargs[0].arg != 'self':
             return ast.arguments(
                 posonlyargs=[

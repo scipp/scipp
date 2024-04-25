@@ -104,15 +104,17 @@ def test_slice_bins_with_step_raises():
     start = sc.scalar(0.1, unit='m')
     stop = sc.scalar(0.4, unit='m')
     step = sc.scalar(0.1, unit='m')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Label-based indexing with step'):
         da.bins['z', start:stop:step]
 
 
 def test_slice_bins_with_int_index_raises():
     da = sc.data.table_xyz(100).bin(x=10)
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match='Bins can only by sliced using label-based indexing'
+    ):
         da.bins['z', 1:4]
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Unsupported key'):
         da.bins['z', 1]
 
 

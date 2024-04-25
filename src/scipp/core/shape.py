@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Matthew Andrew
-# flake8: noqa: E501
+# ruff: noqa: E501
 
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 

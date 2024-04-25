@@ -68,7 +68,7 @@ def test_should_raise_ValueError_when_sigma_contains_zeros():
     da = array1d(size=50)
     da.variances = np.random.default_rng().normal(0.0, 0.1, size=50) ** 2
     da['xx', 21].variance = 0.0
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='0 in the input variances'):
         curve_fit(func, da)
 
 
@@ -140,7 +140,7 @@ def test_masked_points_are_treated_as_if_they_were_removed(mask_pos, mask_size):
 
 
 @pytest.mark.parametrize(
-    "variance,expected",
+    ('variance', 'expected'),
     [(1e9, 1.0), (1, 2.0), (1 / 3, 3.0), (1e-9, 5.0)],
     ids=['disabled', 'equal', 'high', 'dominant'],
 )
@@ -286,5 +286,5 @@ def test_can_pass_extra_kwargs():
     # Does not raise
     curve_fit(func, data, method='lm')
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='method'):
         curve_fit(func, data, method='bad_method')

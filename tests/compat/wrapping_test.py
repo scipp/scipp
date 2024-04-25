@@ -68,7 +68,7 @@ def test_wrap1d_metadata_func1d(da):
 
 @pytest.mark.parametrize('func', [factory1d, func1d])
 def test_wrap1d_fail_axis_given(func):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='dim.*axis'):
         func(make_array(), axis=0, dim='xx')
 
 

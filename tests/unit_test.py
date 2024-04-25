@@ -7,11 +7,11 @@ import copy
 import pytest
 
 import scipp as sc
-from scipp._scipp.core import units_identical as units_identical  # noqa
+from scipp._scipp.core import units_identical as units_identical
 
 
 @pytest.fixture(autouse=True)
-def clean_unit_aliases():
+def _clean_unit_aliases():
     sc.units.aliases.clear()
     yield
     sc.units.aliases.clear()
@@ -19,7 +19,7 @@ def clean_unit_aliases():
 
 def test_cannot_construct_unit_without_arguments():
     with pytest.raises(TypeError):
-        sc.Unit()  # noqa
+        sc.Unit()
 
 
 def test_default_unit():
@@ -46,7 +46,7 @@ def test_constructor_raises_with_bad_input():
     with pytest.raises(sc.UnitError):
         sc.Unit('abcdef')  # does not parse
     with pytest.raises(TypeError):
-        sc.Unit(5)  # type: ignore # neither str nor Unit
+        sc.Unit(5)  # type: ignore[call-arg] # neither str nor Unit
 
 
 def test_unit_str_format():
@@ -54,9 +54,9 @@ def test_unit_str_format():
     assert str(sc.units.us) == 'µs'
 
 
-@pytest.mark.parametrize('u', (sc.units.angstrom, sc.Unit('angstrom')))
+@pytest.mark.parametrize('u', [sc.units.angstrom, sc.Unit('angstrom')])
 def test_angstrom_str_format(u):
-    assert str(u) in ('\u212B', '\u00C5')
+    assert str(u) in ('\u212b', '\u00c5')
 
 
 def test_unit_repr():
@@ -82,7 +82,7 @@ def test_degC_square():
 
 
 @pytest.mark.parametrize(
-    'u', ('m', 'kg', 's', 'A', 'cd', 'K', 'mol', 'counts', '$', 'rad')
+    'u', ['m', 'kg', 's', 'A', 'cd', 'K', 'mol', 'counts', '$', 'rad']
 )
 def test_unit_repr_uses_all_bases(u):
     assert repr(sc.Unit(u)) == f'Unit({u})'
@@ -113,7 +113,7 @@ def test_default_unit_for_string_is_none():
 
 @pytest.mark.parametrize(
     'u_str',
-    (
+    [
         'one',
         'm',
         'count / s',
@@ -125,14 +125,14 @@ def test_default_unit_for_string_is_none():
         'EQXUN[1]',
         'Sv',
         'degC',
-    ),
+    ],
 )
 def test_dict_roundtrip(u_str):
     u = sc.Unit(u_str)
     assert units_identical(sc.Unit.from_dict(u.to_dict()), u)
 
 
-@pytest.mark.parametrize('unit_type', (str, sc.Unit))
+@pytest.mark.parametrize('unit_type', [str, sc.Unit])
 def test_unit_alias_overrides_str_formatting(unit_type):
     sc.units.aliases['clucks'] = unit_type('19.3 m*A')
     clucks = sc.Unit('19.3 m*A')
@@ -202,13 +202,13 @@ def test_can_redefine_same_alias():
 def test_defining_conflicting_alias_raises():
     sc.units.aliases['speed'] = 'm/s'
     sc.units.aliases['zoomy'] = 'm/ms'
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='There already is an alias'):
         sc.units.aliases['fastness'] = 'm/s'
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='There already is an alias'):
         sc.units.aliases['fastness'] = '100*cm/s'
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='There already is an alias'):
         sc.units.aliases['fastness'] = sc.scalar(1000, unit='mm/s')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='There already is an alias'):
         sc.units.aliases['zoomy'] = 'm/s'
     assert 'fastness' not in sc.units.aliases
 

@@ -40,7 +40,7 @@ def assert_variable_readonly(var):
 
 
 def assert_dict_writable(d):
-    key = list(d.keys())[0]
+    key = next(iter(d.keys()))
     del d[key]
     assert key not in d
     d['new'] = sc.scalar(4)
@@ -51,7 +51,7 @@ def assert_dict_readonly(d, error=sc.DataArrayError):
     with pytest.raises(error):
         d['new'] = sc.scalar(4)
     assert 'new' not in d
-    key = list(d.keys())[0]
+    key = next(iter(d.keys()))
     with pytest.raises(error):
         del d[key]
     assert key in d

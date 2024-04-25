@@ -112,9 +112,8 @@ class Graph:
 def rule_sequence(rules: Graph) -> List[Rule]:
     already_used = set()
     result = []
-    for rule in filter(
-        lambda r: r not in already_used,
-        map(lambda n: rules[n], rules.nodes_topologically()),
+    for rule in (
+        r for n in rules.nodes_topologically() if (r := rules[n]) not in already_used
     ):
         already_used.add(rule)
         result.append(rule)

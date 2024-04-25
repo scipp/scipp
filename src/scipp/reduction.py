@@ -83,5 +83,5 @@ def reduce(x: Iterable[VariableLike]) -> Reducer:
 
     :param x: List or tuple of variables or data arrays
     :return: Reducer helper object with methods such as ``sum()`` or ``max()``
-    """  # noqa: E501
+    """
     return Reducer(list(x))

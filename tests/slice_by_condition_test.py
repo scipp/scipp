@@ -110,8 +110,8 @@ def test_bin_edges_are_dropped():
 
 def test_non_boolean_condition_raises_DTypeError():
     var = make_var()
+    condition = (var < 3).to(dtype='int32')
     with pytest.raises(sc.DTypeError):
-        condition = (var < 3).to(dtype='int32')
         var[condition]
 
 
@@ -159,8 +159,8 @@ def test_condition_with_wrong_shape_raises_DimensionError():
 
 def test_all_false_2d_condition_raises_DimensionError():
     var = make_var()
+    condition = var != var
     with pytest.raises(sc.DimensionError):
-        condition = var != var
         var[condition]
 
 
@@ -168,22 +168,22 @@ def test_all_true_2d_condition_raises_DimensionError():
     # Strictly speaking this could be supported, but having this odd special case
     # work would likely add more confusion and bugs surfacing add surpising times.
     var = make_var()
+    condition = var == var
     with pytest.raises(sc.DimensionError):
-        condition = var == var
         var[condition]
 
 
 def test_2d_condition_raises_DimensionError():
     var = make_var()
+    condition = var < 3
     with pytest.raises(sc.DimensionError):
-        condition = var < 3
         var[condition]
 
 
 def test_0d_false_condition_raises_DimensionError():
     var = make_var()
+    condition = sc.scalar(False)
     with pytest.raises(sc.DimensionError):
-        condition = sc.scalar(False)
         var[condition]
 
 
@@ -191,6 +191,6 @@ def test_0d_true_condition_raises_DimensionError():
     # Strictly speaking this could be supported, but having this odd special case
     # work would likely add more confusion and bugs surfacing add surpising times.
     var = make_var()
+    condition = sc.scalar(True)
     with pytest.raises(sc.DimensionError):
-        condition = sc.scalar(True)
         var[condition]

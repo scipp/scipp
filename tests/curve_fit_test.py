@@ -10,7 +10,7 @@ from scipp import curve_fit
 from scipp.compat.xarray_compat import from_xarray, to_xarray
 
 
-@pytest.fixture
+@pytest.fixture()
 def rng():
     return np.random.default_rng(seed=1234)
 
@@ -58,7 +58,7 @@ def array1d(*, a=1.2, b=1.3, noise_scale=0.1, size=50):
     return array(
         # Note, dim name different from coord name to make sure
         # the code doesn't depend on them being the same.
-        coords=dict(x=dict(dim='xx', start=-0.1, stop=4.0, num=size)),
+        coords={'x': {'dim': 'xx', 'start': -0.1, 'stop': 4.0, 'num': size}},
         f=partial(func, a=a, b=b),
         noise_scale=noise_scale,
     )
@@ -66,10 +66,10 @@ def array1d(*, a=1.2, b=1.3, noise_scale=0.1, size=50):
 
 def array2d(*, a=1.2, b=1.3, noise_scale=0.1, size=20):
     return array(
-        coords=dict(
-            x=dict(dim='xx', start=-0.1, stop=4.0, num=size),
-            t=dict(dim='tt', start=0.0, stop=1.0, num=size // 2),
-        ),
+        coords={
+            'x': {'dim': 'xx', 'start': -0.1, 'stop': 4.0, 'num': size},
+            't': {'dim': 'tt', 'start': 0.0, 'stop': 1.0, 'num': size // 2},
+        },
         f=partial(func2d, a=a, b=b),
         noise_scale=noise_scale,
     )
@@ -77,11 +77,11 @@ def array2d(*, a=1.2, b=1.3, noise_scale=0.1, size=20):
 
 def array3d(*, a=1.2, b=1.3, noise_scale=0.1, size=10):
     return array(
-        coords=dict(
-            x=dict(dim='xx', start=-0.1, stop=4.0, num=size),
-            t=dict(dim='tt', start=0.0, stop=1.0, num=size // 2),
-            y=dict(dim='yy', start=2.0, stop=4.0, num=size),
-        ),
+        coords={
+            'x': {'dim': 'xx', 'start': -0.1, 'stop': 4.0, 'num': size},
+            't': {'dim': 'tt', 'start': 0.0, 'stop': 1.0, 'num': size // 2},
+            'y': {'dim': 'yy', 'start': 2.0, 'stop': 4.0, 'num': size},
+        },
         f=partial(func3d, a=a, b=b),
         noise_scale=noise_scale,
     )
@@ -89,7 +89,9 @@ def array3d(*, a=1.2, b=1.3, noise_scale=0.1, size=10):
 
 def array1d_from_vars(*, a, b, noise_scale=0.1, size=50):
     return array(
-        coords=dict(x=dict(dim='xx', start=0.1, stop=4.0, num=size, unit='m')),
+        coords={
+            'x': {'dim': 'xx', 'start': 0.1, 'stop': 4.0, 'num': size, 'unit': 'm'}
+        },
         f=partial(func, a=a, b=b),
         noise_scale=noise_scale,
     )
@@ -100,31 +102,31 @@ def test_should_not_raise_given_function_with_dimensionless_params_and_1d_array(
 
 
 @pytest.mark.parametrize(
-    "p0, params, bounds",
-    (
-        (None, dict(a=1.2, b=1.3), None),
-        (dict(a=3, b=2), dict(a=1.2, b=1.3), None),
-        (dict(a=0.2, b=-1), dict(a=1.2, b=1.3), {'a': (-3, 3), 'b': (-2, 2)}),
-        (dict(a=0.2, b=-1), dict(a=1.2, b=1.3), {'a': (-3, 1.1), 'b': (-2, 1.1)}),
-    ),
+    ('p0', 'params', 'bounds'),
+    [
+        (None, {'a': 1.2, 'b': 1.3}, None),
+        ({'a': 3, 'b': 2}, {'a': 1.2, 'b': 1.3}, None),
+        ({'a': 0.2, 'b': -1}, {'a': 1.2, 'b': 1.3}, {'a': (-3, 3), 'b': (-2, 2)}),
+        ({'a': 0.2, 'b': -1}, {'a': 1.2, 'b': 1.3}, {'a': (-3, 1.1), 'b': (-2, 1.1)}),
+    ],
 )
 @pytest.mark.parametrize(
     "dims",
-    (
-        dict(x=10, t=10, y=10),
-        dict(x=5, t=8, y=7),
-    ),
+    [
+        {'x': 10, 't': 10, 'y': 10},
+        {'x': 5, 't': 8, 'y': 7},
+    ],
 )
 @pytest.mark.parametrize(
-    "coords, reduce_dims",
-    (
+    ('coords', 'reduce_dims'),
+    [
         (['x'], []),
         (['x'], ['y']),
         (['x'], ['t', 'y']),
         (['x', 't'], []),
         (['x', 't'], ['y']),
         (['x', 't', 'y'], []),
-    ),
+    ],
 )
 def test_compare_to_curve_fit_xarray(dims, coords, reduce_dims, p0, params, bounds):
     _ = pytest.importorskip('xarray')
@@ -134,7 +136,7 @@ def test_compare_to_curve_fit_xarray(dims, coords, reduce_dims, p0, params, boun
         3: (func3d, lambda x, a, b: func3d_np(*x, a, b)),
     }[len(coords)]
     da = array(
-        {c: dict(start=1, stop=3, num=n) for c, n in dims.items()},
+        {c: {'start': 1, 'stop': 3, 'num': n} for c, n in dims.items()},
         partial(func3d, **params),
         noise_scale=0.0,
     )
@@ -205,7 +207,7 @@ def test_should_raise_ValueError_when_sigma_contains_zeros(rng):
     da = array1d(size=50)
     da.variances = rng.normal(0.0, 0.1, size=50) ** 2
     da['xx', 21].variance = 0.0
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='0 in the input variances'):
         curve_fit(['x'], func, da)
 
 
@@ -245,12 +247,12 @@ def test_masks_are_not_ignored():
 
 
 @pytest.mark.parametrize(
-    "f,array,coords",
-    (
+    ('f', 'array', 'coords'),
+    [
         (func, array1d, ['x']),
         (func2d, array2d, ['x', 't']),
         (func3d, array3d, ['x', 't', 'y']),
-    ),
+    ],
 )
 @pytest.mark.parametrize(
     "noise_scale",
@@ -269,12 +271,12 @@ def test_optimized_params_approach_real_params_as_data_noise_decreases(
 
 
 @pytest.mark.parametrize(
-    "f,array,coords",
-    (
+    ('f', 'array', 'coords'),
+    [
         (func3d, array3d, ['x', 't', 'y']),
         (func3d, array3d, ['y', 'x', 't']),
         (func3d, array3d, ['t', 'y', 'x']),
-    ),
+    ],
 )
 @pytest.mark.parametrize(
     "noise_scale",
@@ -291,12 +293,12 @@ def test_order_of_coords_does_not_matter(noise_scale, f, array, coords):
 
 
 @pytest.mark.parametrize(
-    "f,fnp,array,coords",
-    (
+    ('f', 'fnp', 'array', 'coords'),
+    [
         (func, func_np, array1d, ['x']),
         (func2d, func2d_np, array2d, ['x', 't']),
         (func3d, func3d_np, array3d, ['x', 't', 'y']),
-    ),
+    ],
 )
 def test_scipp_fun_and_numpy_fun_finds_same_optimized_params(f, fnp, array, coords):
     data = array(a=1.7, b=1.5, noise_scale=1e-2)
@@ -328,7 +330,7 @@ def test_masked_points_are_treated_as_if_they_were_removed(mask_pos, mask_size):
 
 
 @pytest.mark.parametrize(
-    "variance,expected",
+    ('variance', 'expected'),
     [(1e9, 1.0), (1, 2.0), (1 / 3, 3.0), (1e-9, 5.0)],
     ids=['disabled', 'equal', 'high', 'dominant'],
 )
@@ -483,7 +485,7 @@ def test_can_pass_extra_kwargs():
     # Does not raise
     curve_fit(['x'], func, data, method='lm')
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='method'):
         curve_fit(['x'], func, data, method='bad_method')
 
 
@@ -491,13 +493,13 @@ def test_can_rename_coords():
     def func(apple, *, a, b):
         return a * sc.exp(-b * apple)
 
-    curve_fit(dict(apple='x'), func, array1d())
+    curve_fit({'apple': 'x'}, func, array1d())
 
 
 def test_can_use_non_coord_in_fit():
     data = array1d()
     z = data.coords['x'].copy()
-    curve_fit(dict(x=z), func, data)
+    curve_fit({'x': z}, func, data)
 
 
 def test_1d_mask():

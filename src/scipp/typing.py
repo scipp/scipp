@@ -92,7 +92,7 @@ This includes
   - :class:`numpy.dtype`
   - :class:`type` objects like :class:`int` and :class:`float`
   - names of dtypes as strings like ``'int32'`` and ``'float64'``
-"""  # noqa: E501
+"""
 
 if _std_typing.TYPE_CHECKING:
     from enum import Enum

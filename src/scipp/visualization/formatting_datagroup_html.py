@@ -3,7 +3,7 @@
 
 import uuid
 from string import Template
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 
@@ -85,7 +85,7 @@ def _summarize_atomic_variable(var, name: str, depth: int = 0) -> str:
         preview = inline_variable_repr(var)
         dtype_str = str(var.dtype)
         if var.unit is not None:
-            unit = '𝟙' if var.unit == dimensionless else str(var.unit)
+            unit = '𝟙' if var.unit == dimensionless else str(var.unit)  # noqa: RUF001
     elif isinstance(var, Dataset):
         preview = escape(_format_multi_dim_data(var))
     elif isinstance(var, np.ndarray):
@@ -115,7 +115,7 @@ def _collapsible_summary(var: DataGroup, name: str, name_spaces: list) -> str:
     shape_repr = _format_shape(var)
     checkbox_id = escape("summary-" + str(uuid.uuid4()))
     depth = len(name_spaces)
-    subsection = _datagroup_detail(var, name_spaces + [name])
+    subsection = _datagroup_detail(var, [*name_spaces, name])
     html_tpl = load_collapsible_row_tpl()
 
     return Template(html_tpl).substitute(
@@ -130,7 +130,7 @@ def _collapsible_summary(var: DataGroup, name: str, name_spaces: list) -> str:
     )
 
 
-def _datagroup_detail(dg: DataGroup, name_spaces: list = None) -> str:
+def _datagroup_detail(dg: DataGroup, name_spaces: Optional[list] = None) -> str:
     if name_spaces is None:
         name_spaces = []
     summary_rows = []

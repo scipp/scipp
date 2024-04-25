@@ -465,7 +465,7 @@ def test_items_equality(make, mapping):
 
 
 @pytest.mark.parametrize(
-    "make,mapping",
+    ('make', 'mapping'),
     [
         (make_data_array, "coords"),
         (make_dataset, "coords"),

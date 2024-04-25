@@ -73,10 +73,10 @@ def test_table_dataset(da):
     sc.table(ds[da.dim, 1:10])
 
 
-@pytest.mark.parametrize('ndim', (0, 2, 4))
+@pytest.mark.parametrize('ndim', [0, 2, 4])
 def test_table_raises_with_none_1d_variable(ndim):
     var = sc.ones(sizes={f'dim{i}': 4 for i in range(ndim)})
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='one-dimensional'):
         sc.table(var)
 
 
@@ -84,5 +84,5 @@ def test_table_raises_with_none_1d_variable(ndim):
 @settings()
 def test_table_raises_with_2d_dataset(da):
     ds = sc.Dataset({'a': da, 'b': 3 * da})
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='one-dimensional'):
         sc.table(ds)

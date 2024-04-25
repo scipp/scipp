@@ -86,9 +86,9 @@ def test_init_from_variable_views():
     assert sc.identical(a, c)
 
 
-@pytest.mark.parametrize('coords_wrapper', (dict, lambda d: d), ids=['dict', 'Coords'])
-@pytest.mark.parametrize('attrs_wrapper', (dict, lambda d: d), ids=['dict', 'Attrs'])
-@pytest.mark.parametrize('masks_wrapper', (dict, lambda d: d), ids=['dict', 'Masks'])
+@pytest.mark.parametrize('coords_wrapper', [dict, lambda d: d], ids=['dict', 'Coords'])
+@pytest.mark.parametrize('attrs_wrapper', [dict, lambda d: d], ids=['dict', 'Attrs'])
+@pytest.mark.parametrize('masks_wrapper', [dict, lambda d: d], ids=['dict', 'Masks'])
 def test_init_from_existing_metadata(coords_wrapper, attrs_wrapper, masks_wrapper):
     da1 = sc.DataArray(
         sc.arange('x', 4),
@@ -506,7 +506,7 @@ def test_assign_coords_overlapping_names():
     data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
     da = sc.DataArray(data)
     coord0 = sc.linspace('x', start=0.2, stop=1.61, num=4)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='names .* distinct'):
         da.assign_coords({'coord0': coord0}, coord0=coord0)
 
 
@@ -554,7 +554,7 @@ def test_assign_masks_overlapping_names():
     data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
     da = sc.DataArray(data)
     mask0 = sc.array(dims=['x'], values=[False, True, True, False])
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='names .* distinct'):
         da.assign_masks({'mask0': mask0}, mask0=mask0)
 
 
@@ -603,7 +603,7 @@ def test_assign_attrs_overlapping_names():
     data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
     attr0 = sc.scalar('attribute_0')
     da = sc.DataArray(data)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='names .* distinct'):
         da.assign_attrs({'attr0': attr0}, attr0=attr0)
 
 

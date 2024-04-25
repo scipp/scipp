@@ -1,2 +1,10 @@
 # Run black on .py files
 d31ec0d1ffb93c71a46af856a26406c17b8ea371
+# Switch to ruff format
+a1db9571e04acb59cedc204f8a6ba6d8de9679b7
+# Apply ruff C408
+95ee2e0680e8007da482a78b5bb026e078865728
+# Apply ruff PT007
+55af9b1dd38d386c102a42be047ca8b6ca87c127
+# Apply ruff PT011
+c2462d02d70f7e1e467d9b9c59c552401cf2d123

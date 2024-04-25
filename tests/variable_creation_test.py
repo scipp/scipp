@@ -55,7 +55,7 @@ def test_scalar_without_dtype():
 
 
 def test_scalar_throws_if_wrong_dtype_provided_for_str_types():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Cannot convert values'):
         sc.scalar(value='temp', unit=sc.units.one, dtype=sc.DType.float64)
 
 
@@ -86,8 +86,8 @@ def test_index_unit_is_none():
 
 
 def test_index_raises_if_unit_given():
-    with pytest.raises(TypeError):
-        sc.index(5, unit='')  # type: ignore
+    with pytest.raises(TypeError, match='unexpected keyword argument'):
+        sc.index(5, unit='')  # type: ignore[call-arg]
 
 
 def test_zeros_creates_variable_with_correct_dims_and_shape():
@@ -169,7 +169,7 @@ def test_ones_dtypes():
     assert sc.ones(
         dims=(), shape=(), unit='s', dtype='datetime64'
     ).value == np.datetime64(1, 's')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='string'):
         sc.ones(dims=(), shape=(), dtype=str)
 
 
@@ -368,7 +368,7 @@ def slice_array_in_dim(array, dim, step):
     'ndim_and_slice_dim',
     [(ndim, slice_dim) for ndim in range(1, 7) for slice_dim in range(ndim)],
 )
-@pytest.mark.parametrize('step', (2, -1, -2))
+@pytest.mark.parametrize('step', [2, -1, -2])
 def test_array_nd_sliced_c_layout(ndim_and_slice_dim, step):
     ndim, slice_dim = ndim_and_slice_dim
     shape = list(range(2, ndim + 2))
@@ -389,7 +389,7 @@ def test_array_nd_sliced_c_layout(ndim_and_slice_dim, step):
         for slice_dim1 in range(ndim)
     ],
 )
-@pytest.mark.parametrize('step', (2, -1, -2))
+@pytest.mark.parametrize('step', [2, -1, -2])
 def test_array_nd_sliced_twice_c_layout(ndim_and_slice_dims, step):
     ndim, slice_dim0, slice_dim1 = ndim_and_slice_dims
     shape = list(range(2, ndim + 2))
@@ -407,7 +407,7 @@ def test_array_nd_sliced_twice_c_layout(ndim_and_slice_dims, step):
     'ndim_and_slice_dim',
     [(ndim, slice_dim) for ndim in range(1, 7) for slice_dim in range(ndim)],
 )
-@pytest.mark.parametrize('step', (2, -1, -2))
+@pytest.mark.parametrize('step', [2, -1, -2])
 def test_array_nd_sliced_fortran_layout(ndim_and_slice_dim, step):
     ndim, slice_dim = ndim_and_slice_dim
     shape = list(range(2, ndim + 2))
@@ -429,7 +429,7 @@ def test_array_nd_sliced_fortran_layout(ndim_and_slice_dim, step):
         for slice_dim1 in range(ndim)
     ],
 )
-@pytest.mark.parametrize('step', (2, -1, -2))
+@pytest.mark.parametrize('step', [2, -1, -2])
 def test_array_nd_sliced_twice_fortran_layout(ndim_and_slice_dims, step):
     ndim, slice_dim0, slice_dim1 = ndim_and_slice_dims
     shape = list(range(2, ndim + 2))
@@ -561,11 +561,11 @@ def test_linspace_none_unit():
 
 @pytest.mark.parametrize(
     'range_fns',
-    (
+    [
         (sc.linspace, np.linspace),
         (sc.geomspace, np.geomspace),
         (sc.logspace, np.logspace),
-    ),
+    ],
     ids=('linspace', 'geomspace', 'logspace'),
 )
 def test_xyzspace_with_variables(range_fns):
@@ -577,7 +577,7 @@ def test_xyzspace_with_variables(range_fns):
 
 @pytest.mark.parametrize(
     'range_fns',
-    ((sc.linspace, np.linspace), (sc.geomspace, np.geomspace)),
+    [(sc.linspace, np.linspace), (sc.geomspace, np.geomspace)],
     ids=('linspace', 'geomspace'),
 )
 def test_xyzspace_with_variables_set_unit(range_fns):
@@ -596,7 +596,7 @@ def test_logspace_with_variables_set_unit():
     )
 
 
-@pytest.mark.parametrize('unit', (sc.units.default_unit, 'one', 'm'))
+@pytest.mark.parametrize('unit', [sc.units.default_unit, 'one', 'm'])
 def test_logspace_with_variables_input_must_be_dimensionless(unit):
     with pytest.raises(sc.UnitError):
         sc.logspace('x', sc.scalar(1.0), sc.scalar(3.0, unit='m'), 4, unit=unit)
@@ -610,14 +610,14 @@ def test_logspace_with_variables_input_must_be_dimensionless(unit):
 
 @pytest.mark.parametrize(
     'range_fn',
-    (sc.linspace, sc.geomspace, sc.logspace),
+    [sc.linspace, sc.geomspace, sc.logspace],
     ids=('linspace', 'geomspace', 'logspace'),
 )
 def test_xyzspace_with_variables_num_cannot_be_variable(range_fn):
     start = sc.scalar(1)
     stop = sc.scalar(3)
     with pytest.raises(TypeError):
-        range_fn('x', start, stop, sc.scalar(3))  # type: ignore
+        range_fn('x', start, stop, sc.scalar(3))
 
 
 def test_logspace():
@@ -671,7 +671,7 @@ def test_arange_datetime_from_str_raises_if_step_has_no_unit():
 
 
 def test_arange_datetime_from_str_raises_given_string_with_timezone():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='timezone'):
         sc.arange(
             't',
             '2022-08-02T06:42:45Z',
@@ -712,7 +712,7 @@ def test_arange_datetime_from_scipp_datetime():
     assert sc.identical(var, expected)
 
 
-@pytest.mark.parametrize('unit', ('one', sc.units.default_unit))
+@pytest.mark.parametrize('unit', ['one', sc.units.default_unit])
 def test_arange_with_variables(unit):
     start = sc.scalar(1)
     stop = sc.scalar(4)
@@ -821,9 +821,9 @@ def test_arange_with_variables_mixed_types_not_allowed():
     step = sc.scalar(1, unit='m')
     unit = 'm'
     with pytest.raises(TypeError):
-        sc.arange('x', start, stop, step)  # type: ignore
+        sc.arange('x', start, stop, step)  # type: ignore[type-var]
     with pytest.raises(TypeError):
-        sc.arange('x', start, stop, step, unit=unit)  # type: ignore
+        sc.arange('x', start, stop, step, unit=unit)  # type: ignore[type-var]
 
 
 def test_arange_with_variables_requires_scalar():
@@ -856,7 +856,7 @@ def test_arange_with_variables_mixed_dtype():
     )
 
 
-@pytest.mark.parametrize('dtype', (np.int32, np.int64, np.float32, np.float64))
+@pytest.mark.parametrize('dtype', [np.int32, np.int64, np.float32, np.float64])
 def test_arange_with_uniform_numpy_arg_dtype_creates_array_with_same_dtype(dtype):
     assert sc.identical(
         sc.arange('x', dtype(2)), sc.array(dims=['x'], values=[0, 1], dtype=dtype)
@@ -871,7 +871,7 @@ def test_arange_with_uniform_numpy_arg_dtype_creates_array_with_same_dtype(dtype
     )
 
 
-@pytest.mark.parametrize('dtype', (np.int32, np.int64, np.float32, np.float64))
+@pytest.mark.parametrize('dtype', [np.int32, np.int64, np.float32, np.float64])
 def test_arange_with_uniform_scipp_arg_dtype_creates_array_with_same_dtype(dtype):
     assert sc.identical(
         sc.arange('x', sc.scalar(2, dtype=dtype)),
@@ -894,12 +894,12 @@ def test_arange_with_uniform_scipp_arg_dtype_creates_array_with_same_dtype(dtype
 
 @pytest.mark.parametrize(
     ('dtype', 'larger'),
-    (
+    [
         (np.int32, np.int64),
         (np.float32, np.float64),
         (np.int32, np.float64),
         (np.int64, np.float64),
-    ),
+    ],
 )
 def test_arange_with_non_uniform_arg_dtype_creates_array_with_larger_dtype(
     dtype, larger
@@ -932,7 +932,7 @@ def test_zeros_sizes():
     assert sc.identical(
         sc.zeros(dims=dims, shape=shape), sc.zeros(sizes=dict(zip(dims, shape)))
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='dims and shape must both be None'):
         sc.zeros(dims=dims, shape=shape, sizes=dict(zip(dims, shape)))
 
 
@@ -942,7 +942,7 @@ def test_ones_sizes():
     assert sc.identical(
         sc.ones(dims=dims, shape=shape), sc.ones(sizes=dict(zip(dims, shape)))
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='dims and shape must both be None'):
         sc.ones(dims=dims, shape=shape, sizes=dict(zip(dims, shape)))
 
 
@@ -952,19 +952,19 @@ def test_empty_sizes():
     _compare_properties(
         sc.empty(dims=dims, shape=shape), sc.empty(sizes=dict(zip(dims, shape)))
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='dims and shape must both be None'):
         sc.empty(dims=dims, shape=shape, sizes=dict(zip(dims, shape)))
 
 
 @pytest.mark.parametrize('timezone', ['Z', '-05:00', '+02'])
 def test_datetime_raises_given_string_with_timezone(timezone):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='timezone'):
         sc.datetime(f'2152-11-25T13:13:46{timezone}')
 
 
 @pytest.mark.parametrize('timezone', ['Z', '-05:00', '+02'])
 def test_datetimes_raises_given_string_with_timezone(timezone):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='timezone'):
         sc.datetimes(dims=['time'], values=[f'2152-11-25T13:13:46{timezone}'], unit='s')
 
 
