@@ -33,12 +33,12 @@ SRCDIR = None
 TARGET = "install"
 
 # CMake configuration arguments used for every case.
-COMMON_CMAKE_ARGS = dict(
-    CMAKE_CXX_COMPILER=None,
-    CMAKE_BUILD_TYPE="Debug",
-    CMAKE_INTERPROCEDURAL_OPTIMIZATION="OFF",
-    DYNAMIC_LIB="ON",
-)
+COMMON_CMAKE_ARGS = {
+    "CMAKE_CXX_COMPILER": None,
+    "CMAKE_BUILD_TYPE": "Debug",
+    "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+    "DYNAMIC_LIB": "ON",
+}
 
 # Build arguments used for every case.
 COMMON_BUILD_ARGS = ['-j6']
@@ -47,7 +47,7 @@ COMMON_BUILD_ARGS = ['-j6']
 # for configuration and build.
 CASES = [
     Case(name='base'),
-    Case(name='feature', cmake_args=dict(MY_FEATURE='ON')),
+    Case(name='feature', cmake_args={"MY_FEATURE": 'ON'}),
     Case(name='serial', build_args=['-j1']),
 ]
 
@@ -101,7 +101,7 @@ def configure(case, build_dir, install_dir):
 
     try:
         subprocess.run(
-            ['cmake', *cmake_args],
+            ['cmake', *cmake_args],  # noqa: S603, S607
             capture_output=True,
             check=True,
             encoding='utf-8',
@@ -122,7 +122,7 @@ class Times:
     @classmethod
     def parse(cls, msg):
         time_pattern = re.compile(r'(real|user|sys)\s+(\d+)m(\d+)[,.]?(\d*)s')
-        times_dict = dict()
+        times_dict = {}
         for line in msg.rsplit('\n', 10)[
             1:
         ]:  # do not look at all of the output, it can get very long
@@ -152,7 +152,7 @@ def build(case, build_dir):
             check=True,
             encoding='utf-8',
             cwd=build_dir,
-            shell=True,
+            shell=True,  # noqa: S602
         )
     except subprocess.CalledProcessError as err:
         print(f"Build '{case.name}' failed:\n{err.stdout}\n{err.stderr}")

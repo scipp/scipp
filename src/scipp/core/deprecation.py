@@ -10,6 +10,7 @@ def _warn_attr_removal():
         "For unaligned coords, use sc.DataArray.coords and unset the alignment flag. "
         "For other attributes, use a higher-level data structure.",
         VisibleDeprecationWarning,
+        stacklevel=3,
     )
 
 

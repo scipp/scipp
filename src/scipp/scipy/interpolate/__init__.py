@@ -12,7 +12,7 @@ from typing import Any, Callable, Literal, Union
 import numpy as np
 
 from ...compat.wrapping import wrap1d
-from ...core import (  # NOQA
+from ...core import (
     DataArray,
     DimensionError,
     DType,
@@ -162,7 +162,7 @@ def interp1d(
       >>> sc.plot({'original':da,
       ...          'interp1d':f(xnew),
       ...          'interp1d-midpoints':f(xnew, midpoints=True)})
-    """  # noqa #501
+    """  # noqa: E501
     import scipy.interpolate as inter
 
     da = _drop_masked(da, dim)

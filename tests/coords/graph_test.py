@@ -10,7 +10,7 @@ from scipp.coords.rule import ComputeRule, FetchRule, RenameRule
 def graph_0():
     r"""
     a b c
-    |╳| |
+    |X| |
     e d |
     |  \|
     g   f
@@ -48,7 +48,7 @@ def graph_2():
     a
     |
     b   c d
-    |\ /╳ |
+    |\ / \|
     | e   f
     g_____|
     """

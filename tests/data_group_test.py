@@ -30,7 +30,7 @@ def test_create_from_dict_works_with_mixed_types_and_non_scipp_objects():
 
 def test_init_raises_when_keys_are_not_strings():
     d = {1: 0}
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='DataGroup keys must be strings'):
         sc.DataGroup(d)
 
 
@@ -427,8 +427,8 @@ def test_binary_nested_data_group_with_data_group(op):
 @pytest.mark.parametrize(
     'op', BINARY_NUMBER_OPERATIONS, ids=BINARY_NUMBER_OPERATION_NAMES
 )
-@pytest.mark.parametrize('typ', (int, float))
-@pytest.mark.parametrize('reverse', (False, True))
+@pytest.mark.parametrize('typ', [int, float])
+@pytest.mark.parametrize('reverse', [False, True])
 def test_arithmetic_data_group_with_builtin(op, typ, reverse):
     op = reverse_op(op, reverse)
     x = sc.arange('x', 1, 5)
@@ -442,7 +442,7 @@ def test_arithmetic_data_group_with_builtin(op, typ, reverse):
 @pytest.mark.parametrize(
     'op', BINARY_NUMBER_OPERATIONS, ids=BINARY_NUMBER_OPERATION_NAMES
 )
-@pytest.mark.parametrize('reverse', (False, True))
+@pytest.mark.parametrize('reverse', [False, True])
 def test_arithmetic_data_group_with_variable(op, reverse):
     op = reverse_op(op, reverse)
     x = sc.arange('x', 1, 5, unit='m')
@@ -456,7 +456,7 @@ def test_arithmetic_data_group_with_variable(op, reverse):
 @pytest.mark.parametrize(
     'op', BINARY_NUMBER_OPERATIONS, ids=BINARY_NUMBER_OPERATION_NAMES
 )
-@pytest.mark.parametrize('reverse', (False, True))
+@pytest.mark.parametrize('reverse', [False, True])
 def test_arithmetic_data_group_with_data_array(op, reverse):
     op = reverse_op(op, reverse)
     x = sc.DataArray(sc.arange('x', 1, 5, unit='m'), coords={'x': sc.arange('x', 5)})
@@ -491,17 +491,17 @@ def test_pow_data_group_with_data_group():
 
 @pytest.mark.parametrize(
     'other',
-    (
+    [
         3,
         sc.arange('x', 0, 4, dtype='int64'),
         sc.DataArray(
             sc.arange('x', 0, 4, dtype='int64'),
             coords={'x': sc.arange('x', 5, dtype='int64')},
         ),
-    ),
+    ],
     ids=('int', 'Variable', 'DataArray'),
 )
-@pytest.mark.parametrize('reverse', (False, True))
+@pytest.mark.parametrize('reverse', [False, True])
 def test_pow_data_group_with_other(other, reverse):
     op = reverse_op(lambda a, b: a**b, reverse)
     x = sc.arange('x', 1, 5, dtype='int64')
@@ -540,7 +540,7 @@ def test_logical_not():
 
 @pytest.mark.parametrize(
     'op',
-    (
+    [
         operator.iadd,
         operator.isub,
         operator.imul,
@@ -548,7 +548,7 @@ def test_logical_not():
         operator.itruediv,
         operator.ifloordiv,
         operator.ipow,
-    ),
+    ],
 )
 def test_inplace_is_disabled(op):
     x = sc.arange('x', 1, 5, dtype='int64')
@@ -622,7 +622,7 @@ def test_elemwise_with_kwargs():
 def test_elemwise_unary_raises_with_out_arg():
     dg = sc.DataGroup(a=sc.linspace('x', 0.0, 1.0, num=4, unit='rad'))
     out = sc.DataGroup()
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='`out` argument is not supported'):
         sc.sin(dg, out=out)
 
 
@@ -796,7 +796,7 @@ def test_merge_conflict_python_object():
 
 
 @pytest.mark.parametrize(
-    'func', (sc.bin, lambda x, /, *args, **kwargs: x.bin(*args, **kwargs))
+    'func', [sc.bin, lambda x, /, *args, **kwargs: x.bin(*args, **kwargs)]
 )
 def test_bin(func):
     dg = sc.DataGroup(
@@ -848,7 +848,7 @@ reduction_ops = (
 )
 
 
-@pytest.mark.parametrize('dim', ('x', None))
+@pytest.mark.parametrize('dim', ['x', None])
 @pytest.mark.parametrize('op', reduction_ops)
 def test_reduction_op_ignores_python_objects(op, dim):
     dtype = 'bool' if op in ('all', 'any') else 'float64'
@@ -862,7 +862,7 @@ def test_reduction_op_ignores_python_objects(op, dim):
     assert result['b'] == dg['b']
 
 
-@pytest.mark.parametrize('dim', ('x', None))
+@pytest.mark.parametrize('dim', ['x', None])
 @pytest.mark.parametrize('op', reduction_ops)
 def test_reduction_op_ignores_numpy_arrays(op, dim):
     dtype = 'bool' if op in ('all', 'any') else 'float64'
@@ -894,7 +894,7 @@ def test_reduction_op_ignores_objects_lacking_given_dim(op):
     assert_identical(result['b'], dg['b'])
 
 
-@pytest.mark.parametrize('dim', ('x', None))
+@pytest.mark.parametrize('dim', ['x', None])
 @pytest.mark.parametrize('opname', bin_reduction_ops)
 def test_reduction_op_handles_bin_without_dim(opname, dim):
     dtype = 'bool' if opname in ('all', 'any') else 'float64'

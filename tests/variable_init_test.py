@@ -33,7 +33,7 @@ DTYPE_INPUT_TO_EXPECTED = (
     (sc.DType.bool, sc.DType.bool, False),
     (sc.DType.string, sc.DType.string, 'def'),
     (sc.DType.datetime64, sc.DType.datetime64, 123),
-    (sc.DType.PyObject, sc.DType.PyObject, dict()),
+    (sc.DType.PyObject, sc.DType.PyObject, {}),
     (np.int32, sc.DType.int32, 6),
     (np.int64, sc.DType.int64, 7),
     (np.float32, sc.DType.float32, 8.9),
@@ -91,7 +91,7 @@ def test_create_scalar_with_float_value_and_variance(value, variance):
 
 
 @pytest.mark.parametrize(
-    'args', ((sc.DType.int64, 1), (sc.DType.bool, True), (sc.DType.string, 'a'))
+    'args', [(sc.DType.int64, 1), (sc.DType.bool, True), (sc.DType.string, 'a')]
 )
 def test_create_scalar_with_value(args):
     dtype, value = args
@@ -106,7 +106,7 @@ def test_create_scalar_with_value(args):
         assert var.unit == sc.units.one
 
 
-@pytest.mark.parametrize('args', ((sc.DType.bool, True), (sc.DType.string, 'a')))
+@pytest.mark.parametrize('args', [(sc.DType.bool, True), (sc.DType.string, 'a')])
 def test_create_scalar_with_value_array(args):
     dtype, value = args
     var = sc.Variable(dims=(), values=np.array(value))
@@ -143,7 +143,7 @@ def test_create_scalar_numpy():
     assert sc.identical(var, np.float32(0.0) / sc.units.m)
 
 
-@pytest.mark.parametrize('variance', (1, True, 'a', sc.Variable(dims=(), values=1.2)))
+@pytest.mark.parametrize('variance', [1, True, 'a', sc.Variable(dims=(), values=1.2)])
 def test_create_scalar_invalid_variance(variance):
     with pytest.raises(sc.VariancesError):
         sc.Variable(dims=(), variances=variance)
@@ -190,20 +190,20 @@ def test_create_scalar_dtypes():
 
 @pytest.mark.parametrize(
     "val_and_dtype",
-    (
+    [
         (np.int32(2), 'int32'),
         (np.int64(42), 'int64'),
         (np.float32(5.4), 'float32'),
         (np.float64(9.9), 'float64'),
         (np.bool_(True), 'bool'),
-    ),
+    ],
 )
 def test_create_scalar_numpy_type(val_and_dtype):
     val, dtype = val_and_dtype
     assert sc.scalar(val).dtype == dtype
 
 
-@pytest.mark.parametrize("dtype", (None, sc.DType.Variable, sc.Variable))
+@pytest.mark.parametrize("dtype", [None, sc.DType.Variable, sc.Variable])
 def test_create_scalar_dtype_Variable(dtype):
     elem = sc.Variable(dims=['x'], values=np.arange(4.0))
     var = sc.Variable(dims=(), values=elem, dtype=dtype)
@@ -216,7 +216,7 @@ def test_create_scalar_dtype_Variable(dtype):
     assert var.dtype == sc.DType.Variable
 
 
-@pytest.mark.parametrize("dtype", (None, sc.DType.DataArray, sc.DataArray))
+@pytest.mark.parametrize("dtype", [None, sc.DType.DataArray, sc.DataArray])
 def test_create_scalar_dtype_DataArray(dtype):
     elem = sc.DataArray(data=sc.Variable(dims=['x'], values=np.arange(4.0)))
     var = sc.Variable(dims=(), values=elem, dtype=dtype)
@@ -229,7 +229,7 @@ def test_create_scalar_dtype_DataArray(dtype):
     assert var.dtype == sc.DType.DataArray
 
 
-@pytest.mark.parametrize("dtype", (None, sc.DType.Dataset, sc.Dataset))
+@pytest.mark.parametrize("dtype", [None, sc.DType.Dataset, sc.Dataset])
 def test_create_scalar_dtype_Dataset(dtype):
     elem = sc.Dataset(data={'a': sc.Variable(dims=['x'], values=np.arange(4.0))})
     var = sc.Variable(dims=(), values=elem, dtype=dtype)
@@ -244,46 +244,46 @@ def test_create_scalar_dtype_Dataset(dtype):
 
 @pytest.mark.parametrize(
     "dtype",
-    (
+    [
         1,
         2.3,
         'string',
         sc.scalar(0),
         sc.DataArray(sc.scalar(1)),
         sc.Dataset({'a': sc.scalar(3)}),
-    ),
+    ],
 )
 def test_create_scalar_with_instance_as_dtype(dtype):
     with pytest.raises(TypeError):
         sc.Variable(dims=(), values=dtype, dtype=dtype)
 
 
-@pytest.mark.parametrize("dtype", (str, sc.Variable, sc.DataArray, sc.Dataset))
+@pytest.mark.parametrize("dtype", [str, sc.Variable, sc.DataArray, sc.Dataset])
 def test_create_scalar_value_must_be_convertible_to_dtype(dtype):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Cannot convert values'):
         sc.Variable(dims=(), values=0, dtype=dtype)
 
 
-@pytest.mark.parametrize('value', (1, 1.2, True))
-@pytest.mark.parametrize('dtype', (np.int32, np.int64, np.float32, np.float64, bool))
+@pytest.mark.parametrize('value', [1, 1.2, True])
+@pytest.mark.parametrize('dtype', [np.int32, np.int64, np.float32, np.float64, bool])
 def test_create_scalar_conversion(value, dtype):
     converted = np.array(value, dtype=dtype).item()
     var = sc.Variable(dims=(), values=value, dtype=dtype)
     assert var.value == converted
 
 
-@pytest.mark.parametrize('value', (1, 1.2, True))
-@pytest.mark.parametrize('dtype', (sc.DType.string, sc.DType.Variable))
+@pytest.mark.parametrize('value', [1, 1.2, True])
+@pytest.mark.parametrize('dtype', [sc.DType.string, sc.DType.Variable])
 def test_create_scalar_invalid_conversion_numeric(value, dtype):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Cannot convert values'):
         sc.Variable(dims=(), values=value, dtype=dtype)
 
 
 @pytest.mark.parametrize(
-    'dtype', (sc.DType.int32, sc.DType.int64, sc.DType.float64, sc.DType.Variable)
+    'dtype', [sc.DType.int32, sc.DType.int64, sc.DType.float64, sc.DType.Variable]
 )
 def test_create_scalar_invalid_conversion_str(dtype):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Cannot convert values'):
         sc.Variable(dims=(), values='abc', dtype=dtype)
 
 
@@ -297,15 +297,15 @@ def test_create_1d_size_4():
     assert var.unit == sc.units.m
 
 
-@pytest.mark.parametrize('values_type', (tuple, list, np.array))
+@pytest.mark.parametrize('values_type', [tuple, list, np.array])
 @pytest.mark.parametrize(
     'dtype_and_values',
-    (
+    [
         (sc.DType.int64, [1, 2]),
         (sc.DType.float64, [1.2, 3.4]),
         (sc.DType.bool, [True, False]),
         (sc.DType.string, ['a', 'bc']),
-    ),
+    ],
 )
 def test_create_1d_dtype(values_type, dtype_and_values):
     def check(v):
@@ -343,7 +343,7 @@ def test_create_1d_dtype_precision():
     assert var.dtype == sc.DType.int32
 
 
-@pytest.mark.parametrize('values_type', (tuple, list, np.array))
+@pytest.mark.parametrize('values_type', [tuple, list, np.array])
 def test_create_1d_values_array_like(values_type):
     values = np.arange(5.0)
     var = sc.Variable(dims=['x'], values=values_type(values))
@@ -352,7 +352,7 @@ def test_create_1d_values_array_like(values_type):
     assert var.variances is None
 
 
-@pytest.mark.parametrize('variances_type', (tuple, list, np.array))
+@pytest.mark.parametrize('variances_type', [tuple, list, np.array])
 def test_create_1d_variances_array_like(variances_type):
     variances = np.arange(5.0)
     var = sc.Variable(dims=['x'], variances=variances_type(variances))
@@ -361,8 +361,8 @@ def test_create_1d_variances_array_like(variances_type):
     np.testing.assert_array_equal(var.variances, variances)
 
 
-@pytest.mark.parametrize('values_type', (tuple, list, np.array))
-@pytest.mark.parametrize('variances_type', (tuple, list, np.array))
+@pytest.mark.parametrize('values_type', [tuple, list, np.array])
+@pytest.mark.parametrize('variances_type', [tuple, list, np.array])
 def test_create_1d_values_and_variances_array_like(values_type, variances_type):
     values = np.arange(5.0)
     variances = np.arange(5.0) * 0.1
@@ -388,8 +388,8 @@ def test_create_1d_dtype_object():
     check(var)
 
 
-@pytest.mark.parametrize('dtype', (int, float, bool))
-@pytest.mark.parametrize('values', ([1, 2], [1.2, 3.4], [True, False]))
+@pytest.mark.parametrize('dtype', [int, float, bool])
+@pytest.mark.parametrize('values', [[1, 2], [1.2, 3.4], [True, False]])
 def test_create_1d_override_dtype(dtype, values):
     var = sc.Variable(dims=['x'], values=values, dtype=dtype)
     converted = np.array(values).astype(dtype)
@@ -410,7 +410,7 @@ def test_create_1D_vector3():
 
 
 def test_create_1d_bad_dims():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='number of dimensions'):
         sc.Variable(dims=['x', 'y'], values=[1, 2])
 
 
@@ -427,8 +427,8 @@ def test_create_2d_inner_size_3():
     assert var.unit == sc.units.m
 
 
-@pytest.mark.parametrize('inner_values_type', (tuple, list, np.array))
-@pytest.mark.parametrize('outer_values_type', (tuple, list, np.array))
+@pytest.mark.parametrize('inner_values_type', [tuple, list, np.array])
+@pytest.mark.parametrize('outer_values_type', [tuple, list, np.array])
 def test_create_2d_values_array_like(inner_values_type, outer_values_type):
     values = np.arange(15.0).reshape(3, 5)
     expected = sc.Variable(dims=('x', 'y'), values=values)
@@ -440,8 +440,8 @@ def test_create_2d_values_array_like(inner_values_type, outer_values_type):
     assert sc.identical(var, expected)
 
 
-@pytest.mark.parametrize('inner_variances_type', (tuple, list, np.array))
-@pytest.mark.parametrize('outer_variances_type', (tuple, list, np.array))
+@pytest.mark.parametrize('inner_variances_type', [tuple, list, np.array])
+@pytest.mark.parametrize('outer_variances_type', [tuple, list, np.array])
 def test_create_2d_variances_array_like(inner_variances_type, outer_variances_type):
     variances = np.arange(15.0).reshape(3, 5)
     var = sc.Variable(
@@ -454,10 +454,10 @@ def test_create_2d_variances_array_like(inner_variances_type, outer_variances_ty
     np.testing.assert_array_equal(var.variances, variances)
 
 
-@pytest.mark.parametrize('inner_values_type', (tuple, list, np.array))
-@pytest.mark.parametrize('outer_values_type', (tuple, list, np.array))
-@pytest.mark.parametrize('inner_variances_type', (tuple, list, np.array))
-@pytest.mark.parametrize('outer_variances_type', (tuple, list, np.array))
+@pytest.mark.parametrize('inner_values_type', [tuple, list, np.array])
+@pytest.mark.parametrize('outer_values_type', [tuple, list, np.array])
+@pytest.mark.parametrize('inner_variances_type', [tuple, list, np.array])
+@pytest.mark.parametrize('outer_variances_type', [tuple, list, np.array])
 def test_create_2d_values_and_variances_array_like(
     inner_values_type, outer_values_type, inner_variances_type, outer_variances_type
 ):

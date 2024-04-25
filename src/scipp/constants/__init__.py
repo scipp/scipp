@@ -1,4 +1,4 @@
-# flake8: noqa: E501
+# ruff: noqa: E501
 r"""
 Physical and mathematical constants with units.
 This module a wrapper around `scipy.constants <https://docs.scipy.org/doc/scipy/reference/constants.html>`_
@@ -57,6 +57,7 @@ The database is accessed using :py:func:`scipp.constants.physical_constants`.
    Physical Constants 2018.
    https://physics.nist.gov/cuu/Constants/
 """
+
 import math as _math
 
 from .. import Variable, as_const, scalar

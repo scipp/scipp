@@ -21,7 +21,7 @@ def _repr_html_():
             f"<details open=\"open\"><summary>{category}s:" f"({len(names)})</summary>"
         )
         for name in names:
-            html = make_html(eval(name, scope))  # nosec: B307
+            html = make_html(eval(name, scope))  # noqa: S307
             out += (
                 f"<details style=\"padding-left:2em\"><summary>"
                 f"{name}</summary>{html}</details>"

@@ -86,6 +86,7 @@ def test__array_ufunc___disabled(obj):
         a * obj
     with pytest.raises(TypeError, match="does not support ufuncs"):
         obj += a
+
+    b = np.arange(2)
     with pytest.raises(TypeError, match="does not support ufuncs"):
-        b = np.arange(2)
         b += obj

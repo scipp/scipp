@@ -11,6 +11,7 @@ Place the following code in your ``conftest.py``:
     pytest.register_assert_rewrite('scipp.testing.assertions')
 
 """
+
 from contextlib import contextmanager
 from typing import Any, Callable, Iterator, Mapping, TypeVar
 

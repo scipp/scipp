@@ -514,6 +514,7 @@ class GroupbyBins:
         warnings.warn(
             "groupby(...).bins.concat(dim) is deprecated. Use `group` or `bin` instead",
             UserWarning,
+            stacklevel=2,
         )
         return self._obj.concat(dim)
 
@@ -585,7 +586,7 @@ def bins(
         For creating DataArrays based on binning of coord value
         instead of explicitly given index ranges.
     """
-    if any([isinstance(x, DataGroup) for x in [begin, end, data]]):
+    if any(isinstance(x, DataGroup) for x in [begin, end, data]):
         raise ValueError("`scipp.bins` does not support DataGroup arguments.")
     return _call_cpp_func(_cpp.bins, begin, end, dim, data)
 

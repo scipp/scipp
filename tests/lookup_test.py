@@ -12,7 +12,7 @@ import scipp as sc
 @pytest.mark.parametrize('mode', ['nearest', 'previous'])
 def test_raises_with_histogram_if_mode_set(mode):
     da = sc.DataArray(sc.arange('x', 4), coords={'x': sc.arange('x', 5)})
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Input is a histogram'):
         sc.lookup(da, mode=mode)
 
 

@@ -3,7 +3,7 @@
 # @file
 # @author Neil Vaytet
 
-# flake8: noqa
+# ruff: noqa: F403
 """
 INTERNAL USE ONLY
 """

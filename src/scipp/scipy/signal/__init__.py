@@ -6,13 +6,14 @@
 This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.signal`.
 """
+
 from dataclasses import dataclass
 from typing import Union
 
 from numpy import ndarray
 
 from ...compat.wrapping import wrap1d
-from ...core import (  # NOQA
+from ...core import (
     CoordError,
     DataArray,
     UnitError,

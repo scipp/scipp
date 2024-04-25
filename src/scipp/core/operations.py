@@ -3,7 +3,7 @@
 # @author Matthew Andrew
 from __future__ import annotations
 
-from typing import Any, Dict, Literal, Optional, TypeVar, Union, overload
+from typing import Any, Dict, Literal, Optional, Union, overload
 
 from .._scipp import core as _cpp
 from ..typing import ScippIndex, VariableLikeType
@@ -13,10 +13,8 @@ from .cpp_classes import Dataset, DatasetError, Variable
 from .data_group import DataGroup
 from .unary import to_unit
 
-_ContainerWithCoords = TypeVar('_ContainerWithCoords', _cpp.DataArray, _cpp.Dataset)
 
-
-def islinspace(x: Variable, dim: str = None) -> Variable:
+def islinspace(x: Variable, dim: Optional[str] = None) -> Variable:
     """Check if the values of a variable are evenly spaced.
 
     Parameters
@@ -221,7 +219,7 @@ def where(condition: Variable, x: Variable, y: Variable) -> Variable:
 
 
 def to(
-    var: VariableLikeType,  # noqa
+    var: VariableLikeType,
     *,
     unit: Optional[Union[_cpp.Unit, str]] = None,
     dtype: Optional[Any] = None,
@@ -300,13 +298,11 @@ def to(
 
 
 @overload
-def merge(lhs: Dataset, rhs: Dataset) -> Dataset:
-    ...
+def merge(lhs: Dataset, rhs: Dataset) -> Dataset: ...
 
 
 @overload
-def merge(lhs: DataGroup, rhs: DataGroup) -> DataGroup:
-    ...
+def merge(lhs: DataGroup, rhs: DataGroup) -> DataGroup: ...
 
 
 def merge(lhs, rhs):

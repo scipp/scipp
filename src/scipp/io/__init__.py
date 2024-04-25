@@ -3,7 +3,7 @@
 # @file
 # @author Simon Heybrock
 
-# flake8: noqa
+# ruff: noqa: F403
 
 """File input and output.
 
@@ -21,7 +21,7 @@ Functions
    csv.load_csv
    hdf5.load_hdf5
    hdf5.save_hdf5
-"""
+"""  # noqa: E501
 
 from .csv import load_csv
 from .hdf5 import load_hdf5, save_hdf5

@@ -1,5 +1,5 @@
 $header
-# flake8: noqa
+# ruff: noqa: F403
 
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, Iterator, List, Literal, Mapping, \

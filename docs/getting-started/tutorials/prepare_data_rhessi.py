@@ -215,7 +215,7 @@ def load_txt_file():
                 " Spectroscopic Imager (RHESSI) Small Explorer"
             ),
             "url": sc.scalar(
-                "https://hesperia.gsfc.nasa.gov/rhessi3/data-access/rhessi-data/flare-list/index.html"  # noqa
+                "https://hesperia.gsfc.nasa.gov/rhessi3/data-access/rhessi-data/flare-list/index.html"
             ),
             "citation": sc.scalar("https://doi.org/10.1023/A:1022428818870"),
         },
@@ -237,10 +237,7 @@ def prefilter(da):
     da = da[~da.attrs.pop("PS")]
 
     for flag in FLAGS:
-        try:
-            del da.attrs[flag]
-        except KeyError:
-            pass
+        da.attrs.pop(flag, None)
     return da
 
 
@@ -251,7 +248,7 @@ def remove_events(da, rng):
     Events are removed randomly based on the efficiencies such that the data
     can be normalised using `events / efficiency`.
     """
-    print("removing events based on detector efficiency")
+    print("removing events based on detector efficiency")  # noqa: T201
     collimator_x = sc.array(
         dims=["x"], values=[-1000, -300, 300, 1000], unit="asec", dtype="float64"
     )

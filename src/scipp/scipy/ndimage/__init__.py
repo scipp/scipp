@@ -6,12 +6,13 @@
 This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.ndimage`.
 """
+
 from functools import wraps
 from typing import Callable, Dict, Optional, Union
 
 import scipy.ndimage
 
-from ...core import (  # NOQA
+from ...core import (
     CoordError,
     DataArray,
     DimensionError,
@@ -75,7 +76,7 @@ def gaussian_filter(
     x: VariableLikeType,
     /,
     *,
-    sigma: Union[int, float, Variable, Dict[str, Union[int, float, Variable]]],
+    sigma: Union[float, Variable, Dict[str, Union[int, float, Variable]]],
     order: Optional[Union[int, Dict[str, int]]] = 0,
     **kwargs,
 ) -> VariableLikeType:

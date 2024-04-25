@@ -8,20 +8,18 @@ import numpy as np
 
 def _to_slices(scipp_obj, slice_dims, slice_shape, volume):
     # Create container to collect all 1D slices as 1D variables
-    all_slices = dict()
+    all_slices = {}
 
     # Go through the dims that need to be collapsed, and create an array that
     # holds the range of indices for each dimension
     # Say we have [Y, 5], and [Z, 3], then dim_list will contain
     # [[0, 1, 2, 3, 4], [0, 1, 2]]
-    dim_list = []
-    for dim in slice_dims:
-        dim_list.append(np.arange(slice_shape[dim], dtype=np.int32))
+    dim_list = [np.arange(slice_shape[dim], dtype=np.int32) for dim in slice_dims]
     # Next create a grid of indices
     # grid will contain
     # [ [[0, 1, 2, 3, 4], [0, 1, 2, 3, 4], [0, 1, 2, 3, 4]],
     #   [[0, 0, 0, 0, 0], [1, 1, 1, 1, 1], [2, 2, 2, 2, 2]] ]
-    grid = np.meshgrid(*[x for x in dim_list])
+    grid = np.meshgrid(*list(dim_list))
     # Reshape the grid to have a 2D array of length volume, i.e.
     # [ [0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4],
     #   [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2] ]
@@ -83,7 +81,7 @@ def collapse(scipp_obj, keep):
     # Gather list of dimensions that are to be collapsed
     slice_dims = []
     volume = 1
-    slice_shape = dict()
+    slice_shape = {}
     for d, size in zip(dims, shape):
         if d != keep:
             slice_dims.append(d)

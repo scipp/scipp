@@ -7,9 +7,9 @@ import scipp
 sys.path.insert(0, os.path.abspath('.'))
 
 # General information about the project.
-project = u'Scipp'
-copyright = u'2024 Scipp contributors'
-author = u'Scipp contributors'
+project = 'Scipp'
+copyright = '2024 Scipp contributors'
+author = 'Scipp contributors'
 
 html_show_sourcelink = True
 
@@ -66,7 +66,7 @@ autodoc_type_aliases = {
 rst_epilog = f"""
 .. |SCIPP_RELEASE_MONTH| replace:: {os.popen("git show -s --format=%cd --date=format:'%B %Y'").read()}
 .. |SCIPP_VERSION| replace:: {os.popen("git describe --tags --abbrev=0").read()}
-"""  # noqa: E501
+"""  # noqa: E501, S605, S607
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),

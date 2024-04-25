@@ -7,9 +7,11 @@ from .data_group import DataGroup, data_group_nary
 
 
 def call_func(func, *args, out=None, **kwargs):
-    if any([isinstance(x, DataGroup) for x in itertools.chain(args, kwargs.values())]):
+    if any(isinstance(x, DataGroup) for x in itertools.chain(args, kwargs.values())):
         if out is not None:
-            raise ValueError("`out` argument are not support for DataGroup operations.")
+            raise ValueError(
+                "`out` argument is not supported for DataGroup operations."
+            )
         return data_group_nary(func, *args, **kwargs)
     if out is None:
         return func(*args, **kwargs)

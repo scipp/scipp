@@ -32,7 +32,7 @@ def dims() -> st.SearchStrategy:
 
 
 def sizes_dicts(
-    ndim: Optional[Union[int, st.SearchStrategy]] = None
+    ndim: Optional[Union[int, st.SearchStrategy]] = None,
 ) -> st.SearchStrategy:
     if isinstance(ndim, st.SearchStrategy):
         return ndim.flatmap(lambda n: sizes_dicts(ndim=n))
@@ -114,8 +114,8 @@ def _variable_arg_strategies(
     unit: Union[str, Unit, st.SearchStrategy, None] = None,
     dtype: Union[str, DType, type, st.SearchStrategy, None] = None,
     with_variances: Union[bool, st.SearchStrategy, None] = None,
-    elements: Union[int, float, st.SearchStrategy, None] = None,
-    fill: Union[int, float, st.SearchStrategy, None] = None,
+    elements: Union[float, st.SearchStrategy, None] = None,
+    fill: Union[float, st.SearchStrategy, None] = None,
     unique: Union[bool, st.SearchStrategy, None] = None,
 ):
     if ndim is not None:
@@ -133,15 +133,15 @@ def _variable_arg_strategies(
         dtype = scalar_numeric_dtypes()
     if with_variances is None:
         with_variances = _ConditionallyWithVariances()
-    return dict(
-        sizes=sizes,
-        unit=unit,
-        dtype=dtype,
-        with_variances=with_variances,
-        elements=elements,
-        fill=fill,
-        unique=unique,
-    )
+    return {
+        'sizes': sizes,
+        'unit': unit,
+        'dtype': dtype,
+        'with_variances': with_variances,
+        'elements': elements,
+        'fill': fill,
+        'unique': unique,
+    }
 
 
 # This implementation is designed such that the individual strategies
@@ -159,8 +159,8 @@ def variables(
     unit: Union[str, Unit, st.SearchStrategy, None] = None,
     dtype: Union[str, DType, type, st.SearchStrategy, None] = None,
     with_variances: Union[bool, st.SearchStrategy, None] = None,
-    elements: Union[int, float, st.SearchStrategy, None] = None,
-    fill: Union[int, float, st.SearchStrategy, None] = None,
+    elements: Union[float, st.SearchStrategy, None] = None,
+    fill: Union[float, st.SearchStrategy, None] = None,
     unique: Union[bool, st.SearchStrategy, None] = None,
 ) -> st.SearchStrategy[Variable]:
     args = _variable_arg_strategies(
@@ -184,8 +184,8 @@ def n_variables(
     unit: Union[str, Unit, st.SearchStrategy, None] = None,
     dtype: Union[str, DType, type, st.SearchStrategy, None] = None,
     with_variances: Union[bool, st.SearchStrategy, None] = None,
-    elements: Union[int, float, st.SearchStrategy, None] = None,
-    fill: Union[int, float, st.SearchStrategy, None] = None,
+    elements: Union[float, st.SearchStrategy, None] = None,
+    fill: Union[float, st.SearchStrategy, None] = None,
     unique: Union[bool, st.SearchStrategy, None] = None,
 ) -> st.SearchStrategy[tuple[Variable]]:
     args = _variable_arg_strategies(

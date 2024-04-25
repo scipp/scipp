@@ -27,18 +27,18 @@ def test_dataset_iter(dataset_abc):
     found = set()
     for key in dataset_abc:
         found.add(key)
-    assert found == set(['a', 'b', 'c'])
+    assert found == {'a', 'b', 'c'}
 
 
 def test_dataset_keys(dataset_abc):
-    assert set(dataset_abc.keys()) == set(['a', 'b', 'c'])
+    assert set(dataset_abc.keys()) == {'a', 'b', 'c'}
 
 
 def test_dataset_values(dataset_abc):
     found = set()
     for value in dataset_abc.values():
         found.add(value.name)
-    assert found == set(['a', 'b', 'c'])
+    assert found == {'a', 'b', 'c'}
 
 
 def test_dataset_items(dataset_abc):
@@ -47,7 +47,7 @@ def test_dataset_items(dataset_abc):
     for name, value in dataset_abc.items():
         assert name == value.name
         found.add(name)
-    assert found == set(['a', 'b', 'c'])
+    assert found == {'a', 'b', 'c'}
 
 
 def make_coords_xyz():
@@ -65,12 +65,12 @@ def test_dataset_coords_iter():
     found = set()
     for key in d.coords:
         found.add(str(key))
-    assert found == set(['x', 'y', 'z'])
+    assert found == {'x', 'y', 'z'}
 
 
 def test_dataset_coords_keys():
     d = make_coords_xyz()
-    assert set(d.coords.keys()) == set(['x', 'y', 'z'])
+    assert set(d.coords.keys()) == {'x', 'y', 'z'}
 
 
 def test_dataset_coords_values():
@@ -78,7 +78,7 @@ def test_dataset_coords_values():
     found = set()
     for value in d.coords.values():
         found.add(value.value)
-    assert found == set([1.0, 2.0, 3.0])
+    assert found == {1.0, 2.0, 3.0}
 
 
 def test_dataset_coords_items():
@@ -87,4 +87,4 @@ def test_dataset_coords_items():
     found = set()
     for dim in d.coords:
         found.add(str(dim))
-    assert found == set(['x', 'y', 'z'])
+    assert found == {'x', 'y', 'z'}

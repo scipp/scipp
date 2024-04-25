@@ -10,13 +10,13 @@ from hypothesis import strategies as st
 import scipp as sc
 from scipp.testing import strategies as scst
 
-float_args = dict(
-    min_value=-1e300,
-    max_value=1e300,
-    allow_nan=False,
-    allow_infinity=False,
-    allow_subnormal=False,
-)
+float_args = {
+    'min_value': -1e300,
+    'max_value': 1e300,
+    'allow_nan': False,
+    'allow_infinity': False,
+    'allow_subnormal': False,
+}
 
 
 @given(st.floats(**float_args), st.floats(**float_args))

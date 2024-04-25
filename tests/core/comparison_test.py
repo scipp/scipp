@@ -89,7 +89,7 @@ def test_allclose_no_unit():
 
 
 @pytest.mark.parametrize(
-    't', (lambda x: x, sc.DataArray, lambda x: sc.Dataset({'a': x}))
+    't', [lambda x: x, sc.DataArray, lambda x: sc.Dataset({'a': x})]
 )
 def test_identical(t):
     assert sc.identical(t(sc.scalar(1.23)), t(sc.scalar(1.23)))
@@ -235,17 +235,17 @@ def test_identical_raises_TypeError_when_comparing_datagroup_to_Dataset():
         sc.identical(ds, dg)
 
 
-@pytest.fixture
+@pytest.fixture()
 def small():
     return sc.scalar(1.0)
 
 
-@pytest.fixture
+@pytest.fixture()
 def medium():
     return sc.scalar(2.0)
 
 
-@pytest.fixture
+@pytest.fixture()
 def large():
     return sc.scalar(3.0)
 

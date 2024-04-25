@@ -20,7 +20,7 @@ def make_containers():
 
 @pytest.mark.parametrize(
     'func_name',
-    ('cumsum', 'max', 'mean', 'min', 'nanmax', 'nanmean', 'nanmin', 'nansum', 'sum'),
+    ['cumsum', 'max', 'mean', 'min', 'nanmax', 'nanmean', 'nanmin', 'nansum', 'sum'],
 )
 def test_bound_methods_reduction_variable(func_name):
     var, _ = make_containers()
@@ -28,7 +28,7 @@ def test_bound_methods_reduction_variable(func_name):
     assert sc.identical(getattr(var, func_name)(), func(var))
 
 
-@pytest.mark.parametrize('func_name', ('any', 'all'))
+@pytest.mark.parametrize('func_name', ['any', 'all'])
 def test_bound_methods_reduction_variable_bool(func_name):
     rng = np.random.default_rng(87415)
     var = sc.array(dims=['x', 'y'], values=rng.choice([True, False], (4, 3)))
@@ -36,7 +36,7 @@ def test_bound_methods_reduction_variable_bool(func_name):
     assert sc.identical(getattr(var, func_name)(), func(var))
 
 
-@pytest.mark.parametrize('func_name', ('mean', 'nanmean', 'nansum', 'sum'))
+@pytest.mark.parametrize('func_name', ['mean', 'nanmean', 'nansum', 'sum'])
 def test_bound_methods_reduction_dataarray(func_name):
     _, da = make_containers()
     func = getattr(sc, func_name)

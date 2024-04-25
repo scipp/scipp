@@ -2,14 +2,16 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 
-# flake8: noqa
+# ruff: noqa: E402, F401, F403, F821
 from .._scipp import _debug_
 
 if _debug_:
     import warnings
 
     warnings.warn(
-        'You are running a "Debug" build of Scipp. For optimal performance use a "Release" build.'
+        'You are running a "Debug" build of Scipp. '
+        'For optimal performance use a "Release" build.',
+        stacklevel=1,
     )
     del warnings
 del _debug_
@@ -54,39 +56,35 @@ from .dimensions import (
 
 from .deprecation import _deprecated_attrs, _deprecated_meta, _deprecated_drop_attrs
 
-setattr(DataArray, 'attrs', property(_deprecated_attrs))
-setattr(DataArray, 'meta', property(_deprecated_meta))
-setattr(DataArray, 'drop_attrs', _deprecated_drop_attrs)
+DataArray.attrs = property(_deprecated_attrs)
+DataArray.meta = property(_deprecated_meta)
+DataArray.drop_attrs = _deprecated_drop_attrs
 del _deprecated_attrs, _deprecated_meta, _deprecated_drop_attrs
 
 for cls in (Variable, DataArray, Dataset):
-    setattr(cls, 'rename_dims', _rename_dims)
-setattr(Variable, 'rename', _rename_variable)
-setattr(DataArray, 'rename', _rename_data_array)
-setattr(Dataset, 'rename', _rename_dataset)
+    cls.rename_dims = _rename_dims
+Variable.rename = _rename_variable
+DataArray.rename = _rename_data_array
+Dataset.rename = _rename_dataset
 del _rename_dims, _rename_variable, _rename_data_array, _rename_dataset, cls
 
 from .bins import _bins, _set_bins
 
-setattr(Variable, 'bins', property(_bins, _set_bins))
-setattr(DataArray, 'bins', property(_bins, _set_bins))
-setattr(Dataset, 'bins', property(_bins, _set_bins))
+Variable.bins = property(_bins, _set_bins)
+DataArray.bins = property(_bins, _set_bins)
+Dataset.bins = property(_bins, _set_bins)
 
 from .structured import _fields
 
-setattr(
-    Variable,
-    'fields',
-    property(
-        _fields,
-        doc="""Provides access to fields of structured types such as vectors or matrices.""",
-    ),
+Variable.fields = property(
+    _fields,
+    doc='Provides access to fields of structured types such as vectors or matrices.',
 )
 
 from .bins import _groupby_bins, Bins
 
-setattr(GroupByDataArray, 'bins', property(_groupby_bins))
-setattr(GroupByDataset, 'bins', property(_groupby_bins))
+GroupByDataArray.bins = property(_groupby_bins)
+GroupByDataset.bins = property(_groupby_bins)
 del _groupby_bins
 
 # Prevent unwanted conversion to numpy arrays by operations. Properly defining
@@ -94,7 +92,7 @@ del _groupby_bins
 # variables. The most difficult part is probably mapping the ufunc to scipp
 # functions.
 for _cls in (Variable, DataArray, Dataset):
-    setattr(_cls, '__array_ufunc__', None)
+    _cls.__array_ufunc__ = None
 del _cls
 
 
@@ -193,10 +191,10 @@ from .like import zeros_like, ones_like, empty_like, full_like
 
 from .assignments import assign_coords, assign_masks, assign_attrs
 
-setattr(Dataset, 'assign_coords', assign_coords)
-setattr(DataArray, 'assign_coords', assign_coords)
-setattr(DataArray, 'assign_masks', assign_masks)
-setattr(DataArray, 'assign_attrs', assign_attrs)
+Dataset.assign_coords = assign_coords
+DataArray.assign_coords = assign_coords
+DataArray.assign_masks = assign_masks
+DataArray.assign_attrs = assign_attrs
 del assign_coords, assign_masks, assign_attrs
 
 # Remove submodules to reduce clutter
