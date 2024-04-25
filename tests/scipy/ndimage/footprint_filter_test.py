@@ -217,14 +217,14 @@ def test_attributes_are_propagated(simple_filter_func):
     da = make_histogram2d()
     da.attrs['attr'] = sc.scalar(1.2)
     result = simple_filter_func(da, size=2)
-    assert set(result.attrs) == set(['attr'])
+    assert set(result.attrs) == {'attr'}
     assert sc.identical(result.attrs['attr'], da.attrs['attr'])
 
 
 def test_coordinates_are_propagated(simple_filter_func):
     da = make_histogram2d()
     result = simple_filter_func(da, size=2)
-    assert set(result.coords) == set(['x', 'y'])
+    assert set(result.coords) == {'x', 'y'}
     assert sc.identical(result.coords['x'], da.coords['x'])
     assert sc.identical(result.coords['y'], da.coords['y'])
 

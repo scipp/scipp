@@ -107,7 +107,7 @@ def _get_events(var, variances, ellipsis_after):
 
 def _format_events(var, has_variances):
     s = _get_events(var, has_variances, ellipsis_after=2)
-    return f'binned data [{", ".join([row for row in s])}]'
+    return f'binned data [{", ".join(s)}]'
 
 
 def _ordered_dict(data):

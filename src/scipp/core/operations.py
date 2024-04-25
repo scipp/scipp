@@ -3,7 +3,7 @@
 # @author Matthew Andrew
 from __future__ import annotations
 
-from typing import Any, Dict, Literal, Optional, TypeVar, Union, overload
+from typing import Any, Dict, Literal, Optional, Union, overload
 
 from .._scipp import core as _cpp
 from ..typing import ScippIndex, VariableLikeType
@@ -12,8 +12,6 @@ from .comparison import identical
 from .cpp_classes import Dataset, DatasetError, Variable
 from .data_group import DataGroup
 from .unary import to_unit
-
-_ContainerWithCoords = TypeVar('_ContainerWithCoords', _cpp.DataArray, _cpp.Dataset)
 
 
 def islinspace(x: Variable, dim: Optional[str] = None) -> Variable:

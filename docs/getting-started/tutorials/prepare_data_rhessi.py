@@ -237,10 +237,7 @@ def prefilter(da):
     da = da[~da.attrs.pop("PS")]
 
     for flag in FLAGS:
-        try:
-            del da.attrs[flag]
-        except KeyError:
-            pass
+        da.attrs.pop(flag, None)
     return da
 
 

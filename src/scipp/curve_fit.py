@@ -37,8 +37,8 @@ def _wrap_numpy_func(f, p_names, coord_names):
         # Make x 2D for consistency.
         if len(x.shape) == 1:
             x = x.reshape(1, -1)
-        coords = {c: arr for c, arr in zip(coord_names, x)}
-        params = {k: v for k, v in zip(p_names, args)}
+        coords = dict(zip(coord_names, x))
+        params = dict(zip(p_names, args))
         return f(**coords, **params)
 
     return func
@@ -125,7 +125,7 @@ def _prepare_numpy_outputs(da, params, map_over):
 
 def _make_defaults(f, coords, params):
     spec = getfullargspec(f)
-    all_args = set((*spec.args, *spec.kwonlyargs))
+    all_args = {*spec.args, *spec.kwonlyargs}
     if not set(coords).issubset(all_args):
         raise ValueError("Function must take the provided coords as arguments")
     default_arguments = dict(

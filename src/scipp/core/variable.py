@@ -700,7 +700,7 @@ def logspace(
     num: int,
     *,
     endpoint: bool = True,
-    base: Union[int, float] = 10.0,
+    base: float = 10.0,
     unit: Union[Unit, str, None] = default_unit,
     dtype: Optional[DTypeLike] = None,
 ) -> Variable:

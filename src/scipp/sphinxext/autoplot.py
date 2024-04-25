@@ -79,7 +79,7 @@ def _process_block(lines: List[str], begin: int, end: int) -> List[str]:
             return [
                 ' ' * _indentation_of(prev) + '.. plot::',
                 '',
-                *map(lambda x: '    ' + x, block),
+                *('    ' + x for x in block),
             ]
     return block
 

@@ -76,7 +76,7 @@ def gaussian_filter(
     x: VariableLikeType,
     /,
     *,
-    sigma: Union[int, float, Variable, Dict[str, Union[int, float, Variable]]],
+    sigma: Union[float, Variable, Dict[str, Union[int, float, Variable]]],
     order: Optional[Union[int, Dict[str, int]]] = 0,
     **kwargs,
 ) -> VariableLikeType:

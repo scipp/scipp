@@ -31,7 +31,7 @@ Special:
 """
 
 from contextlib import contextmanager
-from typing import Dict, Iterable, Tuple, Union
+from typing import Dict, Tuple, Union, Iterator
 
 from .._scipp.core import add_unit_alias as _add_unit_alias
 from .._scipp.core import clear_unit_aliases as _clear_unit_aliases
@@ -71,7 +71,7 @@ class UnitAliases:
     """
 
     def __init__(self):
-        if any(map(lambda x: isinstance(x, UnitAliases), globals().values())):
+        if any((isinstance(x, UnitAliases) for x in globals().values())):
             raise RuntimeError('There can be only one instance of _Aliases')
         self._aliases: Dict[str, Unit] = {}
 
@@ -173,19 +173,19 @@ class UnitAliases:
         for name, unit in overridden.items():
             self[name] = unit
 
-    def __iter__(self) -> Iterable[str]:
+    def __iter__(self) -> Iterator[str]:
         """Iterator over alias names."""
         yield from self.keys()
 
-    def keys(self) -> Iterable[str]:
+    def keys(self) -> Iterator[str]:
         """Iterator over alias names."""
         yield from self._aliases.keys()
 
-    def values(self) -> Iterable[Unit]:
+    def values(self) -> Iterator[Unit]:
         """Iterator over aliased units."""
         yield from self._aliases.values()
 
-    def items(self) -> Iterable[Tuple[str, Unit]]:
+    def items(self) -> Iterator[Tuple[str, Unit]]:
         """Iterator over pairs of alias names and units."""
         yield from self._aliases.items()
 

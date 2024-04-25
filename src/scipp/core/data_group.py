@@ -95,7 +95,7 @@ class DataGroup(MutableMapping):
 
     def __init__(self, /, *args, **kwargs):
         self._items = dict(*args, **kwargs)
-        if not all([isinstance(k, str) for k in self._items.keys()]):
+        if not all(isinstance(k, str) for k in self._items.keys()):
             raise ValueError("DataGroup keys must be strings.")
 
     def __copy__(self) -> DataGroup:

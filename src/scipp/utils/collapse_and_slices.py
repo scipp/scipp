@@ -14,14 +14,12 @@ def _to_slices(scipp_obj, slice_dims, slice_shape, volume):
     # holds the range of indices for each dimension
     # Say we have [Y, 5], and [Z, 3], then dim_list will contain
     # [[0, 1, 2, 3, 4], [0, 1, 2]]
-    dim_list = []
-    for dim in slice_dims:
-        dim_list.append(np.arange(slice_shape[dim], dtype=np.int32))
+    dim_list = [np.arange(slice_shape[dim], dtype=np.int32) for dim in slice_dims]
     # Next create a grid of indices
     # grid will contain
     # [ [[0, 1, 2, 3, 4], [0, 1, 2, 3, 4], [0, 1, 2, 3, 4]],
     #   [[0, 0, 0, 0, 0], [1, 1, 1, 1, 1], [2, 2, 2, 2, 2]] ]
-    grid = np.meshgrid(*[x for x in dim_list])
+    grid = np.meshgrid(*list(dim_list))
     # Reshape the grid to have a 2D array of length volume, i.e.
     # [ [0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4],
     #   [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2] ]

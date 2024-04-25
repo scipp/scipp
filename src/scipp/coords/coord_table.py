@@ -70,7 +70,7 @@ def _apply_keep_options(
 
     inputs = set(out_names(FetchRule))
     aliases = set(out_names(RenameRule))
-    all_inputs = set(dep for rule in rules for dep in rule.dependencies)
+    all_inputs = {dep for rule in rules for dep in rule.dependencies}
     if options.keep_inputs:
         handle_in(inputs)
     if options.keep_intermediate:

@@ -103,7 +103,7 @@ class RenameRule(Rule):
 
     @property
     def dependencies(self) -> Tuple[str, ...]:
-        return tuple((self._in_name,))
+        return (self._in_name,)
 
     def __str__(self):
         return f'Rename  {self._format_out_names()} <- {self._in_name}'
