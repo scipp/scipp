@@ -3,7 +3,7 @@
 Installation
 ============
 
-Scipp requires Python 3.8 or above.
+Scipp requires Python 3.9 or above.
 
 Conda
 -----
@@ -64,7 +64,7 @@ To add Scipp to an existing conda environment:
 
 After installation the module, Scipp can be imported in Python.
 Note that only the bare essential dependencies are installed.
-If you wish to use plotting functionality you will also need to install ``plopp`` and ``ipywidgets``.
+If you wish to use plotting functionality you will also need to install ``plopp``, ``ipympl``, and ``pythreejs``.
 
 To update or remove Scipp use `conda update <https://docs.conda.io/projects/conda/en/latest/commands/update.html>`_ and `conda remove <https://docs.conda.io/projects/conda/en/latest/commands/remove.html>`_.
 
@@ -78,19 +78,19 @@ Scipp is available from `PyPI <https://pypi.org/>`_ via ``pip``:
    pip install scipp
 
 By default, this is only a minimal install without optional dependencies.
-To install components for additional submodules, use the ``all`` extras of the module:
+To install all optional dependencies, including libraries for interactive plotting in Jupyter, use:
 
 .. code-block:: sh
 
    pip install scipp[all]
 
-This will install everything that is needed, with the exception of plotting libraries for interactive use in Jupyter.
-These are available in the ``interactive`` extra.
-We recommend combining this with ``all``:
+
+You can also leave out the interactive tools and bring in only functional optional dependencies,
+such as ``h5py`` and ``scipy``, use ``extra`` instead of ``all``:
 
 .. code-block:: sh
 
-   pip install scipp[all,interactive]
+   pip install scipp[extra]
 
 From source
 -----------
