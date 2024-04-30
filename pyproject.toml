@@ -47,7 +47,7 @@ test = [
   "bs4",
   "ipython",
 ]
-all = [
+extra = [
   "h5py",
   "scipy>=1.7.0",
   "graphviz",
@@ -55,16 +55,15 @@ all = [
   "plopp",
   "matplotlib"
 ]
-interactive = [
+all = [
+    "scipp[extra]",
     "ipympl",
     "ipython",
     "ipywidgets",
-    "matplotlib",
     "jupyterlab",
     "jupyterlab-widgets",
     "jupyter_nbextensions_configurator",
     "nodejs",
-    "plopp",
     "pythreejs",
 ]
 
