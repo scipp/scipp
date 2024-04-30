@@ -52,7 +52,7 @@ def masks_arg_wrapper(request):
     return request.param
 
 
-@pytest.fixture
+@pytest.fixture()
 def data_array_and_components(coords_arg_wrapper, attrs_arg_wrapper, masks_arg_wrapper):
     v, c, a, m = data_array_components()
     da = sc.DataArray(
@@ -251,7 +251,7 @@ def test_own_darr_copy():
 
 @pytest.mark.parametrize(
     'data_array_wrapper',
-    (lambda k, v: {k: v}, lambda k, v: {k: v}.items(), lambda k, v: sc.Dataset({k: v})),
+    [lambda k, v: {k: v}, lambda k, v: {k: v}.items(), lambda k, v: sc.Dataset({k: v})],
     ids=['dict', 'iterator', 'Dataset'],
 )
 def test_own_dset_init(data_array_wrapper):

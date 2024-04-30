@@ -144,7 +144,7 @@ def transform_coords(
     return _transform(x, targets=targets, graph=Graph(graph), options=options)
 
 
-def show_graph(graph: GraphDict, size: str = None, simplified: bool = False):
+def show_graph(graph: GraphDict, size: Optional[str] = None, simplified: bool = False):
     """Show graphical representation of a graph as required by
     :py:func:`transform_coords`
 
@@ -174,7 +174,7 @@ def show_graph(graph: GraphDict, size: str = None, simplified: bool = False):
     ------
     RuntimeError
         If graphviz is not installed.
-    """  # noqa
+    """
     return Graph(graph).show(size=size, simplified=simplified)
 
 

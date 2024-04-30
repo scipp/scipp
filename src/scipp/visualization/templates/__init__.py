@@ -2,5 +2,3 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Sunyoung Yoo
-
-# flake8: noqa

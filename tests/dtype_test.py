@@ -8,17 +8,17 @@ import pytest
 import scipp as sc
 
 
-@pytest.mark.parametrize('dt', (sc.DType.int32, sc.DType.float64, sc.DType.string))
+@pytest.mark.parametrize('dt', [sc.DType.int32, sc.DType.float64, sc.DType.string])
 def test_dtype_comparison_equal(dt):
     assert dt == dt
 
 
-@pytest.mark.parametrize('other', (sc.DType.int32, sc.DType.float64, sc.DType.string))
+@pytest.mark.parametrize('other', [sc.DType.int32, sc.DType.float64, sc.DType.string])
 def test_dtype_comparison_not_equal(other):
     assert sc.DType.int64 != other
 
 
-@pytest.mark.parametrize('name', ('int64', 'float32', 'str'))
+@pytest.mark.parametrize('name', ['int64', 'float32', 'str'])
 def test_dtype_comparison_str(name):
     assert sc.DType(name) == name
     assert name == sc.DType(name)

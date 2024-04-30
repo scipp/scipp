@@ -39,11 +39,11 @@ def test_broadcast_data_array():
 
 def test_broadcast_fails_with_bad_inputs():
     x = sc.array(dims=['x'], values=np.arange(6.0))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='dims and shape must both be None'):
         _ = sc.broadcast(x, sizes={'x': 6, 'y': 3}, dims=['x', 'y'], shape=[6, 3])
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='dims and shape must both be None'):
         _ = sc.broadcast(x, sizes={'x': 6, 'y': 3}, dims=['x', 'y'])
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='dims and shape must both be None'):
         _ = sc.broadcast(x, sizes={'x': 6, 'y': 3}, shape=[6, 3])
 
 
@@ -124,9 +124,9 @@ def test_fold_raises_two_minus_1():
 def test_fold_raises_non_divisible():
     x = sc.array(dims=['x'], values=np.arange(10.0))
     da = sc.DataArray(x)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r'original shape \d+ cannot be divided by'):
         sc.fold(x, dim='x', sizes={'x': 3, 'y': -1})
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r'original shape \d+ cannot be divided by'):
         sc.fold(da, dim='x', sizes={'x': -1, 'y': 3})
 
 

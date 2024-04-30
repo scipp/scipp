@@ -173,7 +173,7 @@ def _format_variable_compact(var: Variable, spec: FormatSpec) -> str:
 
 def _is_numeric(dtype: DType) -> bool:
     dtype = str(dtype)
-    return any([x in dtype for x in ('float', 'int')])
+    return any(x in dtype for x in ('float', 'int'))
 
 
 def _round(value, variance):

@@ -110,7 +110,7 @@ def curve_fit(
     f: Callable,
     da: DataArray,
     *,
-    p0: Dict[str, Union[Variable, Real]] = None,
+    p0: Optional[Dict[str, Union[Variable, Real]]] = None,
     bounds: Optional[
         Dict[str, Union[Tuple[Variable, Variable], Tuple[Real, Real]]]
     ] = None,

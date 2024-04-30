@@ -10,7 +10,7 @@ import scipp as sc
 
 @pytest.mark.parametrize(
     'var',
-    (
+    [
         sc.scalar(1),
         sc.scalar(-4, dtype='int32'),
         sc.scalar(3.1, variance=0.1, unit='m'),
@@ -20,7 +20,7 @@ import scipp as sc
         sc.array(dims=['s'], values=['str', '2']),
         sc.scalar(6134, dtype='datetime64', unit='s'),
         sc.array(dims=['e'], values=[512, 1662], unit='s'),
-    ),
+    ],
 )
 def test_variable_default(var):
     assert f'{var}' == str(var)
@@ -29,7 +29,7 @@ def test_variable_default(var):
     assert '{:}'.format(var) == str(var)
 
 
-@pytest.mark.parametrize('s', ('^', ''))
+@pytest.mark.parametrize('s', ['^', ''])
 def test_variable_default_length_central(s):
     var = sc.arange('x', 10)
     assert '[0, 1, ..., 8, 9]' in f'{var:{s}}'
@@ -190,31 +190,31 @@ def test_variable_compact_array_with_variance():
 
 def test_variable_compact_raises_for_length():
     var = sc.scalar(2)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Invalid format spec'):
         f'{var:#3c}'
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Invalid format spec'):
         f'{var:#4c}'
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Invalid format spec'):
         f'{var:#6c}'
 
 
 def test_variable_compact_raises_for_selection():
     var = sc.scalar(2)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Invalid format spec'):
         f'{var:<c}'
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Invalid format spec'):
         f'{var:>c}'
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Invalid format spec'):
         f'{var:^c}'
 
 
 def test_variable_compact_raises_for_nested():
     var = sc.scalar(2)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Invalid format spec'):
         f'{var:c:f}'
 
 
 def test_variable_compact_only_supports_numeric_dtype():
     var = sc.scalar('a string')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Compact formatting.*string'):
         f'{var:c}'

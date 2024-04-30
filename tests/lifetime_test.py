@@ -50,17 +50,17 @@ def test_lifetime_coords_of_temporary():
 def test_lifetime_items_iter():
     var = sc.Variable(dims=['x'], values=np.arange(10))
     d = sc.Dataset(data={'a': var}, coords={'x': var, 'aux': var})
-    for _, item in (d + d).items():
+    for _, item in (d + d).items():  # noqa: PERF102
         assert sc.identical(item.data, var + var)
-    for _, coord in (d + d).coords.items():
+    for _, coord in (d + d).coords.items():  # noqa: PERF102
         assert sc.identical(coord, var)
-    for _, item in d['x', 1:5].items():
+    for _, item in d['x', 1:5].items():  # noqa: PERF102
         assert sc.identical(item.data, var['x', 1:5])
-    for _, coord in d['x', 1:5].coords.items():
+    for _, coord in d['x', 1:5].coords.items():  # noqa: PERF102
         assert sc.identical(coord, var['x', 1:5])
-    for _, item in (d + d)['x', 1:5].items():
+    for _, item in (d + d)['x', 1:5].items():  # noqa: PERF102
         assert sc.identical(item.data, (var + var)['x', 1:5])
-    for _, coord in (d + d)['x', 1:5].coords.items():
+    for _, coord in (d + d)['x', 1:5].coords.items():  # noqa: PERF102
         assert sc.identical(coord, var['x', 1:5])
 
 

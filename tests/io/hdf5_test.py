@@ -212,7 +212,7 @@ def test_data_array_dtype_string():
 
 
 def test_data_array_unsupported_PyObject_coord():
-    obj = sc.scalar(dict())
+    obj = sc.scalar({})
     a = sc.DataArray(data=x, coords={'obj': obj})
     b = roundtrip(a)
     assert not sc.identical(a, b)

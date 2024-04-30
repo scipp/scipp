@@ -15,12 +15,12 @@ def test_structured_fields_dict_like():
     assert 'y' in var.fields
     assert 'z' in var.fields
     assert 't' not in var.fields
-    assert set(var.fields.keys()) == set(['x', 'y', 'z'])
+    assert set(var.fields.keys()) == {'x', 'y', 'z'}
     found = []
     for field in var.fields:
         found.append(field)
         assert sc.identical(var.fields[field], getattr(var.fields, field))
-    assert set(found) == set(['x', 'y', 'z'])
+    assert set(found) == {'x', 'y', 'z'}
     var2 = var.copy()
     var2.fields['x'] += 1.0 * sc.units.m
     assert sc.identical(var2, sc.vector(value=np.array([2, 2, 3]), unit=sc.units.m))

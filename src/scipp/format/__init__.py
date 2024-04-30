@@ -1,4 +1,4 @@
-# flake8: noqa
+# ruff: noqa: F403
 
 from .formatter import format_variable
 

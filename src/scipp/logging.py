@@ -258,7 +258,7 @@ def get_widget_handler() -> Optional[WidgetHandler]:
     If no widget handler is installed, returns ``None``.
     """
     try:
-        return next(  # type: ignore
+        return next(  # type: ignore[return-value]
             filter(
                 lambda handler: isinstance(handler, WidgetHandler),
                 get_logger().handlers,

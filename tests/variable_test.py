@@ -110,14 +110,14 @@ def test_0D_scalar_access():
 
 @pytest.mark.parametrize(
     'dtypes',
-    (
+    [
         ('int32', np.int32),
         ('int64', np.int64),
         ('float32', np.float32),
         ('float64', np.float64),
         ('datetime64', np.datetime64),
         ('bool', bool),
-    ),
+    ],
 )
 def test_0d_scalar_access_dtype(dtypes):
     dtype, expected = dtypes
@@ -153,7 +153,7 @@ def test_1D_access():
     assert var.values[1] == 1.2
 
 
-@pytest.mark.parametrize('dtype', ('int32', 'int64', 'float32', 'float64'))
+@pytest.mark.parametrize('dtype', ['int32', 'int64', 'float32', 'float64'])
 def test_1d_access_dtype(dtype):
     assert sc.array(dims=['xx'], values=[-9], dtype=dtype).values.dtype == dtype
 
@@ -341,13 +341,13 @@ def test_1d_variance_access():
     np.testing.assert_array_equal(v.variances, [0.1, 2.2])
 
 
-@pytest.mark.parametrize('dtypes', (('float32', np.float32), ('float64', np.float64)))
+@pytest.mark.parametrize('dtypes', [('float32', np.float32), ('float64', np.float64)])
 def test_0d_scalar_variance_access_dtype(dtypes):
     dtype, expected = dtypes
     assert isinstance(sc.scalar(4.1, variance=4.9, dtype=dtype).variance, expected)
 
 
-@pytest.mark.parametrize('dtype', ('float32', 'float64'))
+@pytest.mark.parametrize('dtype', ['float32', 'float64'])
 def test_1d_variance_access_dtype(dtype):
     assert (
         sc.array(
@@ -439,7 +439,9 @@ def test_rename_dims_kwargs():
 def test_rename_dims_dict_and_kwargs_must_be_distinct():
     values = np.arange(6).reshape(2, 3)
     xy = sc.Variable(dims=['x', 'y'], values=values)
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match='The names passed in the dict and as keyword arguments'
+    ):
         xy.rename_dims({'x': 'w'}, x='z')
 
 
@@ -466,7 +468,9 @@ def test_rename_kwargs():
 def test_rename_dict_and_kwargs_must_be_distinct():
     values = np.arange(6).reshape(2, 3)
     xy = sc.Variable(dims=['x', 'y'], values=values)
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match='The names passed in the dict and as keyword arguments'
+    ):
         xy.rename({'x': 'w'}, x='z')
 
 
@@ -718,7 +722,7 @@ def test_to_without_dtype():
 def test_to_without_any_arguments():
     data = sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="m")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Must provide dtype or unit or both'):
         data.to()
 
 

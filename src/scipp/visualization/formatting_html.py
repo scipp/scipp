@@ -17,7 +17,7 @@ from ..utils import value_to_string
 from .resources import load_icons, load_style
 
 BIN_EDGE_LABEL = "[bin-edge]"
-STDDEV_PREFIX = "σ = "
+STDDEV_PREFIX = "σ = "  # noqa: RUF001
 VARIANCES_SYMBOL = "σ²"
 SPARSE_PREFIX = "len={}"
 
@@ -107,7 +107,7 @@ def _get_events(var, variances, ellipsis_after):
 
 def _format_events(var, has_variances):
     s = _get_events(var, has_variances, ellipsis_after=2)
-    return f'binned data [{", ".join([row for row in s])}]'
+    return f'binned data [{", ".join(s)}]'
 
 
 def _ordered_dict(data):
@@ -177,10 +177,9 @@ def format_dims(dims, sizes, coords):
 def _icon(icon_name):
     # icon_name is defined in icon-svg-inline.html
     return (
-        "<svg class='icon sc-{0}'>"
-        "<use xlink:href='#{0}'>"
-        "</use>"
-        "</svg>".format(icon_name)
+        "<svg class='icon sc-{0}'>" "<use xlink:href='#{0}'>" "</use>" "</svg>".format(
+            icon_name
+        )
     )
 
 
@@ -314,7 +313,7 @@ def summarize_variable(
     if var.unit is None:
         unit = ''
     else:
-        unit = '𝟙' if var.unit == sc.units.dimensionless else str(var.unit)
+        unit = '𝟙' if var.unit == sc.units.dimensionless else str(var.unit)  # noqa: RUF001
 
     disabled, attrs_ul = _make_inline_attributes(var, has_attrs, embedded_in)
 
@@ -424,7 +423,7 @@ def _mapping_section(
 
 
 def dim_section(dataset):
-    coords = dataset.coords if hasattr(dataset, "coords") else dict()
+    coords = dataset.coords if hasattr(dataset, "coords") else {}
     dim_list = format_dims(dataset.dims, dataset.shape, coords)
 
     return collapsible_section(

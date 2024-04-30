@@ -16,7 +16,7 @@ def combine_dict_args(
     overlapped = set(pos_dict).intersection(kwargs)
     if overlapped:
         raise ValueError(
-            'The names passed in the dict and as keyword arguments must be distinct.'
+            'The names passed in the dict and as keyword arguments must be distinct. '
             f'Following names are used in both arguments: {overlapped}'
         )
 

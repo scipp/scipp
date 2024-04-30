@@ -12,16 +12,6 @@ repos:
       - id: trailing-whitespace
         args: [ --markdown-linebreak-ext=md ]
         exclude: '\.svg'
-  - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
-    hooks:
-      - id: isort
-        name: isort (python)
-  - repo: https://github.com/psf/black
-    rev: 23.1.0
-    hooks:
-      - id: black
-        exclude: src/scipp/core/cpp_classes.pyi
   - repo: https://github.com/pre-commit/mirrors-clang-format
     rev: v15.0.4
     hooks:
@@ -38,18 +28,14 @@ repos:
         types: [ "jupyter" ]
         args: [ "--drop-empty-cells",
                 "--extra-keys 'metadata.language_info.version cell.metadata.jp-MarkdownHeadingCollapsed cell.metadata.pycharm'" ]
-  - repo: https://github.com/pycqa/flake8
-    rev: 4.0.1
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.1
     hooks:
-      - id: flake8
-        types: ["python"]
-        additional_dependencies: ["flake8-bugbear==22.10.27"]
-  - repo: https://github.com/pycqa/bandit
-    rev: 1.7.4
-    hooks:
-      - id: bandit
-        additional_dependencies: ["bandit[toml]"]
-        args: ["-c", "pyproject.toml"]
+      - id: ruff
+        args: [ --fix ]
+        types_or: [ python, pyi, jupyter ]
+      - id: ruff-format
+        types_or: [ python, pyi ]
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.2
     hooks:

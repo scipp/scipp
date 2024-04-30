@@ -88,7 +88,7 @@ def bind_pop():
 
 
 def bind_functions_as_methods(cls, namespace, func_names):
-    for func_name, func in map(lambda n: (n, namespace[n]), func_names):
+    for func_name, func in ((n, namespace[n]) for n in func_names):
         bind_function_as_method(cls=cls, name=func_name, func=func)
 
 

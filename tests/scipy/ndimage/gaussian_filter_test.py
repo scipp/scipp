@@ -38,7 +38,7 @@ def test_raises_VariancesError_when_data_has_variances():
 def test_raises_ValueError_when_data_has_masks():
     da = make_histogram2d()
     da.masks['mask'] = da.coords['x'] == da.coords['x']
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='mask'):
         gaussian_filter(da, sigma=1.5)
 
 
@@ -147,14 +147,14 @@ def test_attributes_are_propagated():
     da = make_histogram2d()
     da.attrs['attr'] = sc.scalar(1.2)
     result = gaussian_filter(da, sigma=3.4)
-    assert set(result.attrs) == set(['attr'])
+    assert set(result.attrs) == {'attr'}
     assert sc.identical(result.attrs['attr'], da.attrs['attr'])
 
 
 def test_coordinates_are_propagated():
     da = make_histogram2d()
     result = gaussian_filter(da, sigma=3.4)
-    assert set(result.coords) == set(['x', 'y'])
+    assert set(result.coords) == {'x', 'y'}
     assert sc.identical(result.coords['x'], da.coords['x'])
     assert sc.identical(result.coords['y'], da.coords['y'])
 
