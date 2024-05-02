@@ -7,7 +7,16 @@ from typing import Callable, Dict, Mapping, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
-from .core import BinEdgeError, DataArray, DataGroup, Variable, array, scalar, stddevs
+from .core import (
+    BinEdgeError,
+    DataArray,
+    DataGroup,
+    Variable,
+    array,
+    irreducible_mask,
+    scalar,
+    stddevs,
+)
 from .units import default_unit, dimensionless
 
 
@@ -201,9 +210,9 @@ def _curve_fit(
         return
 
     fda = da.flatten(to='row')
-
-    for m in fda.masks.values():
-        fda = fda[~m]
+    mask = irreducible_mask(fda.masks, 'row')
+    if mask is not None:
+        fda = fda[~mask]
 
     if not unsafe_numpy_f:
         # Making the coords into a dict improves runtime,
