@@ -517,6 +517,23 @@ def test_1d_mask():
     )
 
 
+def test_several_masks():
+    noise_scale = 0.01
+    da = array1d(a=1.2, b=1.3, noise_scale=noise_scale)
+    mask1 = (da.coords['x'] > 1) & (da.coords['x'] <= 1.5)
+    mask2 = (da.coords['x'] > 1.5) & (da.coords['x'] <= 2)
+    da.data += sc.where(mask1 | mask2, sc.scalar(1000_000), sc.scalar(0))
+    da.masks['high1'] = mask1
+    da.masks['high2'] = mask2
+    res, _ = curve_fit(['x'], func, da)
+    assert sc.allclose(
+        res['a'].data, sc.scalar(1.2), atol=sc.scalar(noise_scale, unit='dimensionless')
+    )
+    assert sc.allclose(
+        res['b'].data, sc.scalar(1.3), atol=sc.scalar(noise_scale, unit='dimensionless')
+    )
+
+
 def test_2d_mask():
     noise_scale = 0.01
     da = array2d(a=1.2, b=1.3, noise_scale=noise_scale)
