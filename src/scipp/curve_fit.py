@@ -13,9 +13,9 @@ from .core import (
     DataGroup,
     Variable,
     array,
+    irreducible_mask,
     scalar,
     stddevs,
-    zeros,
 )
 from .units import default_unit, dimensionless
 
@@ -210,12 +210,9 @@ def _curve_fit(
         return
 
     fda = da.flatten(to='row')
-
-    combined_mask = zeros(dims=fda.data.dims, shape=fda.data.shape, dtype='bool')
-    for m in fda.masks.values():
-        combined_mask |= m
-
-    fda = fda[~combined_mask]
+    mask = irreducible_mask(fda.masks, 'row')
+    if mask is not None:
+        fda = fda[~mask]
 
     if not unsafe_numpy_f:
         # Making the coords into a dict improves runtime,
