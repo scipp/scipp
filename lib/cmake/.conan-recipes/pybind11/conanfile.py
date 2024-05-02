@@ -65,18 +65,6 @@ class PyBind11Conan(ConanFile):
             except RuntimeError:
                 pass
         if Version(self.version) >= "2.6.0":
-            # replace_in_file(
-            #     self,
-            #     os.path.join(
-            #         self.package_folder,
-            #         "lib",
-            #         "cmake",
-            #         "pybind11",
-            #         "pybind11Common.cmake",
-            #     ),
-            #     "if(TARGET pybind11::lto)",
-            #     "if(FALSE)",
-            # )
             replace_in_file(
                 self,
                 os.path.join(
