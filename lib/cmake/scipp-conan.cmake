@@ -8,7 +8,7 @@ execute_process(
                     COMMAND_ECHO STDOUT
 )
 execute_process(
-  COMMAND conan export . 2.10.0@
+  COMMAND conan export . 2.12.0@
   WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/.conan-recipes/pybind11"
                     COMMAND_ECHO STDOUT
 )
@@ -58,7 +58,7 @@ conan_cmake_configure(
   eigen/3.4.0
   gtest/1.11.0
   LLNL-Units/0.9.1
-  pybind11/2.10.0
+  pybind11/2.12.0
   ${CONAN_ONETBB}
   OPTIONS
   benchmark:shared=False

@@ -55,9 +55,6 @@ set_target_properties(
              "${CMAKE_INSTALL_RPATH}/${RELATIVE_LIB}/${CMAKE_INSTALL_LIBDIR}"
 )
 
-pybind11_strip(_scipp)
-pybind11_extension(_scipp)
-
 if(PRECOMPILED_HEADERS)
   target_precompile_headers(_scipp PRIVATE pybind11.h)
 endif()
