@@ -170,3 +170,20 @@ filterwarnings = [
   # Triggered by h5py
   'ignore:`product` is deprecated as of NumPy 1.25.0:DeprecationWarning'
 ]
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
+enable_error_code = [
+    "ignore-without-code",
+    "redundant-expr",
+    "truthy-bool",
+]
+warn_unreachable = true
+plugins = "numpy.typing.mypy_plugin"
+
+[[tool.mypy.overrides]]
+module = [
+    "scipy",
+]
+ignore_missing_imports = true
