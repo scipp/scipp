@@ -70,7 +70,7 @@ class BinnedDataError(RuntimeError):
 class CoordError(RuntimeError):
     ...
 
-class Coords:
+class Coords(Mapping[str, Variable]):
 
     def __contains__(self, arg0: str) -> bool:
         ...
@@ -887,7 +887,7 @@ class DataArray:
 class DataArrayError(RuntimeError):
     ...
 
-class Dataset:
+class Dataset(Mapping[str, DataArray]):
 
     def __abs__(self) -> Dataset:
         ...
@@ -1398,7 +1398,7 @@ class GroupByDataset:
     def sum(self, dim: str) -> Dataset:
         ...
 
-class Masks:
+class Masks(Mapping[str, Variable]):
 
     def __contains__(self, arg0: str) -> bool:
         ...
