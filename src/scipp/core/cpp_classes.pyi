@@ -90,7 +90,7 @@ class Coords:
     def __getitem__(self, arg0: str) -> Variable:
         ...
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[str]:
         ...
 
     def __len__(self) -> int:
@@ -135,7 +135,7 @@ class Coords:
     def pop(self, key, default=_NoDefault):
         ...
 
-    def popitem(self) -> Tuple[str, Any]:
+    def popitem(self) -> tuple[str, Any]:
         ...
 
     def set_aligned(self, key: str, aligned: bool) -> None:
@@ -152,7 +152,7 @@ class Coords_items_view:
     def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
         ...
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[tuple[str, Variable]]:
         ...
 
     def __len__(self) -> int:
@@ -169,7 +169,7 @@ class Coords_keys_view:
     def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
         ...
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[str]:
         ...
 
     def __len__(self) -> int:
@@ -183,7 +183,7 @@ class Coords_keys_view:
 
 class Coords_values_view:
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[Variable]:
         ...
 
     def __len__(self) -> int:
@@ -305,15 +305,15 @@ class DataArray:
         ...
 
     @overload
-    def __getitem__(self, arg0: Tuple[str, Variable]) -> DataArray:
+    def __getitem__(self, arg0: tuple[str, Variable]) -> DataArray:
         ...
 
     @overload
-    def __getitem__(self, arg0: Tuple[str, int]) -> DataArray:
+    def __getitem__(self, arg0: tuple[str, int]) -> DataArray:
         ...
 
     @overload
-    def __getitem__(self, arg0: Tuple[str, slice]) -> DataArray:
+    def __getitem__(self, arg0: tuple[str, slice]) -> DataArray:
         ...
 
     @overload
@@ -321,11 +321,11 @@ class DataArray:
         ...
 
     @overload
-    def __getitem__(self, arg0: List[int]) -> DataArray:
+    def __getitem__(self, arg0: list[int]) -> DataArray:
         ...
 
     @overload
-    def __getitem__(self, arg0: Tuple[str, List[int]]) -> DataArray:
+    def __getitem__(self, arg0: tuple[str, list[int]]) -> DataArray:
         ...
 
     @overload
@@ -392,7 +392,7 @@ class DataArray:
     def __imul__(self, arg0: float) -> DataArray:
         ...
 
-    def __init__(self, data: Variable, coords: Union[Mapping[str, Variable], Iterable[Tuple[str, Variable]]]={}, masks: Union[Mapping[str, Variable], Iterable[Tuple[str, Variable]]]={}, attrs: Union[Mapping[str, Variable], Iterable[Tuple[str, Variable]]]={}, name: str='') -> None:
+    def __init__(self, data: Variable, coords: Union[Mapping[str, Variable], Iterable[tuple[str, Variable]]]={}, masks: Union[Mapping[str, Variable], Iterable[tuple[str, Variable]]]={}, attrs: Union[Mapping[str, Variable], Iterable[tuple[str, Variable]]]={}, name: str='') -> None:
         ...
 
     def __invert__(self) -> DataArray:
@@ -536,11 +536,11 @@ class DataArray:
         ...
 
     @overload
-    def __setitem__(self, arg0: Tuple[str, Variable], arg1: Variable) -> None:
+    def __setitem__(self, arg0: tuple[str, Variable], arg1: Variable) -> None:
         ...
 
     @overload
-    def __setitem__(self, arg0: Tuple[str, Variable], arg1: DataArray) -> None:
+    def __setitem__(self, arg0: tuple[str, Variable], arg1: DataArray) -> None:
         ...
 
     @overload
@@ -552,11 +552,11 @@ class DataArray:
         ...
 
     @overload
-    def __setitem__(self, arg0: Tuple[str, int], arg1: Any) -> None:
+    def __setitem__(self, arg0: tuple[str, int], arg1: Any) -> None:
         ...
 
     @overload
-    def __setitem__(self, arg0: Tuple[str, slice], arg1: Any) -> None:
+    def __setitem__(self, arg0: tuple[str, slice], arg1: Any) -> None:
         ...
 
     @overload
@@ -609,7 +609,7 @@ class DataArray:
     def _ipython_key_completions_(self) -> list:
         ...
 
-    def _rename_dims(self, arg0: Dict[str, str]) -> DataArray:
+    def _rename_dims(self, arg0: dict[str, str]) -> DataArray:
         ...
 
     def _repr_html_(self) -> str:
@@ -678,7 +678,7 @@ class DataArray:
         ...
 
     @overload
-    def deprecated_drop_attrs(self, arg0: List[str]) -> DataArray:
+    def deprecated_drop_attrs(self, arg0: list[str]) -> DataArray:
         ...
 
     @property
@@ -701,7 +701,7 @@ class DataArray:
         ...
 
     @overload
-    def drop_coords(self, arg0: List[str]) -> DataArray:
+    def drop_coords(self, arg0: list[str]) -> DataArray:
         ...
 
     @overload
@@ -709,7 +709,7 @@ class DataArray:
         ...
 
     @overload
-    def drop_masks(self, arg0: List[str]) -> DataArray:
+    def drop_masks(self, arg0: list[str]) -> DataArray:
         ...
 
     @property
@@ -796,10 +796,10 @@ class DataArray:
     def rebin(self, arg_dict=None, deprecated=None, /, **kwargs):
         ...
 
-    def rename(self, dims_dict: Dict[str, str]=None, /, **names: str) -> DataArray:
+    def rename(self, dims_dict: Optional[dict[str, str]]=None, /, **names: str) -> DataArray:
         ...
 
-    def rename_dims(self, dims_dict: Optional[Dict[str, str]]=None, /, **names: str) -> VariableLikeType:
+    def rename_dims(self, dims_dict: Optional[dict[str, str]]=None, /, **names: str) -> VariableLikeType:
         ...
 
     def round(self, *, out: Optional[VariableLike]=None) -> VariableLike:
@@ -936,15 +936,15 @@ class Dataset:
         ...
 
     @overload
-    def __getitem__(self, arg0: Tuple[str, Variable]) -> Dataset:
+    def __getitem__(self, arg0: tuple[str, Variable]) -> Dataset:
         ...
 
     @overload
-    def __getitem__(self, arg0: Tuple[str, int]) -> Dataset:
+    def __getitem__(self, arg0: tuple[str, int]) -> Dataset:
         ...
 
     @overload
-    def __getitem__(self, arg0: Tuple[str, slice]) -> Dataset:
+    def __getitem__(self, arg0: tuple[str, slice]) -> Dataset:
         ...
 
     @overload
@@ -952,11 +952,11 @@ class Dataset:
         ...
 
     @overload
-    def __getitem__(self, arg0: List[int]) -> Dataset:
+    def __getitem__(self, arg0: list[int]) -> Dataset:
         ...
 
     @overload
-    def __getitem__(self, arg0: Tuple[str, List[int]]) -> Dataset:
+    def __getitem__(self, arg0: tuple[str, list[int]]) -> Dataset:
         ...
 
     @overload
@@ -991,7 +991,7 @@ class Dataset:
     def __imul__(self, arg0: float) -> Dataset:
         ...
 
-    def __init__(self, data: Union[Mapping[str, Union[Variable, DataArray]], Iterable[Tuple[str, Union[Variable, DataArray]]]]={}, coords: Union[Mapping[str, Variable], Iterable[Tuple[str, Variable]]]={}) -> None:
+    def __init__(self, data: Union[Mapping[str, Union[Variable, DataArray]], Iterable[tuple[str, Union[Variable, DataArray]]]]={}, coords: Union[Mapping[str, Variable], Iterable[tuple[str, Variable]]]={}) -> None:
         ...
 
     @overload
@@ -1010,7 +1010,7 @@ class Dataset:
     def __isub__(self, arg0: float) -> Any:
         ...
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[str]:
         ...
 
     @overload
@@ -1056,7 +1056,7 @@ class Dataset:
         ...
 
     @overload
-    def __setitem__(self, arg0: Tuple[str, Variable], arg1: Dataset) -> None:
+    def __setitem__(self, arg0: tuple[str, Variable], arg1: Dataset) -> None:
         ...
 
     @overload
@@ -1068,11 +1068,11 @@ class Dataset:
         ...
 
     @overload
-    def __setitem__(self, arg0: Tuple[str, int], arg1: Any) -> None:
+    def __setitem__(self, arg0: tuple[str, int], arg1: Any) -> None:
         ...
 
     @overload
-    def __setitem__(self, arg0: Tuple[str, slice], arg1: Any) -> None:
+    def __setitem__(self, arg0: tuple[str, slice], arg1: Any) -> None:
         ...
 
     @overload
@@ -1112,7 +1112,7 @@ class Dataset:
     def _pop(self, k: str) -> Any:
         ...
 
-    def _rename_dims(self, arg0: Dict[str, str]) -> Dataset:
+    def _rename_dims(self, arg0: dict[str, str]) -> Dataset:
         ...
 
     def _repr_html_(self) -> str:
@@ -1158,7 +1158,7 @@ class Dataset:
         ...
 
     @overload
-    def drop_coords(self, arg0: List[str]) -> Dataset:
+    def drop_coords(self, arg0: list[str]) -> Dataset:
         ...
 
     def get(self, key, default=None):
@@ -1226,10 +1226,10 @@ class Dataset:
     def rebin(self, arg_dict=None, deprecated=None, /, **kwargs):
         ...
 
-    def rename(self, dims_dict: Dict[str, str]=None, /, **names: str) -> Dataset:
+    def rename(self, dims_dict: Optional[dict[str, str]]=None, /, **names: str) -> Dataset:
         ...
 
-    def rename_dims(self, dims_dict: Optional[Dict[str, str]]=None, /, **names: str) -> VariableLikeType:
+    def rename_dims(self, dims_dict: Optional[dict[str, str]]=None, /, **names: str) -> VariableLikeType:
         ...
 
     def save_hdf5(self, filename: Union[str, Path]) -> None:
@@ -1275,7 +1275,7 @@ class Dataset_items_view:
     def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
         ...
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[tuple[str, DataArray]]:
         ...
 
     def __len__(self) -> int:
@@ -1292,7 +1292,7 @@ class Dataset_keys_view:
     def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
         ...
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[str]:
         ...
 
     def __len__(self) -> int:
@@ -1306,7 +1306,7 @@ class Dataset_keys_view:
 
 class Dataset_values_view:
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[DataArray]:
         ...
 
     def __len__(self) -> int:
@@ -1418,7 +1418,7 @@ class Masks:
     def __getitem__(self, arg0: str) -> Variable:
         ...
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[str]:
         ...
 
     def __len__(self) -> int:
@@ -1463,7 +1463,7 @@ class Masks:
     def pop(self, key, default=_NoDefault):
         ...
 
-    def popitem(self) -> Tuple[str, Any]:
+    def popitem(self) -> tuple[str, Any]:
         ...
 
     def update(self, other: Any=None, /, **kwargs) -> None:
@@ -1477,7 +1477,7 @@ class Masks_items_view:
     def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
         ...
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[tuple[str, Variable]]:
         ...
 
     def __len__(self) -> int:
@@ -1494,7 +1494,7 @@ class Masks_keys_view:
     def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
         ...
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[str]:
         ...
 
     def __len__(self) -> int:
@@ -1508,7 +1508,7 @@ class Masks_keys_view:
 
 class Masks_values_view:
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[Variable]:
         ...
 
     def __len__(self) -> int:
@@ -1657,11 +1657,11 @@ class Variable:
         ...
 
     @overload
-    def __getitem__(self, arg0: Tuple[str, int]) -> Variable:
+    def __getitem__(self, arg0: tuple[str, int]) -> Variable:
         ...
 
     @overload
-    def __getitem__(self, arg0: Tuple[str, slice]) -> Variable:
+    def __getitem__(self, arg0: tuple[str, slice]) -> Variable:
         ...
 
     @overload
@@ -1669,11 +1669,11 @@ class Variable:
         ...
 
     @overload
-    def __getitem__(self, arg0: List[int]) -> Variable:
+    def __getitem__(self, arg0: list[int]) -> Variable:
         ...
 
     @overload
-    def __getitem__(self, arg0: Tuple[str, List[int]]) -> Variable:
+    def __getitem__(self, arg0: tuple[str, list[int]]) -> Variable:
         ...
 
     @overload
@@ -1855,11 +1855,11 @@ class Variable:
         ...
 
     @overload
-    def __setitem__(self, arg0: Tuple[str, int], arg1: Any) -> None:
+    def __setitem__(self, arg0: tuple[str, int], arg1: Any) -> None:
         ...
 
     @overload
-    def __setitem__(self, arg0: Tuple[str, slice], arg1: Any) -> None:
+    def __setitem__(self, arg0: tuple[str, slice], arg1: Any) -> None:
         ...
 
     @overload
@@ -1899,7 +1899,7 @@ class Variable:
     def _ipython_key_completions_(self) -> list:
         ...
 
-    def _rename_dims(self, arg0: Dict[str, str]) -> Variable:
+    def _rename_dims(self, arg0: dict[str, str]) -> Variable:
         ...
 
     def _repr_html_(self) -> str:
@@ -2012,10 +2012,10 @@ class Variable:
     def plot(*args, **kwargs):
         ...
 
-    def rename(self, dims_dict: Dict[str, str]=None, /, **names: str) -> Variable:
+    def rename(self, dims_dict: Optional[dict[str, str]]=None, /, **names: str) -> Variable:
         ...
 
-    def rename_dims(self, dims_dict: Optional[Dict[str, str]]=None, /, **names: str) -> VariableLikeType:
+    def rename_dims(self, dims_dict: Optional[dict[str, str]]=None, /, **names: str) -> VariableLikeType:
         ...
 
     def round(self, *, out: Optional[VariableLike]=None) -> VariableLike:
