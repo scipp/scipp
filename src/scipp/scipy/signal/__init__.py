@@ -8,9 +8,9 @@ This subpackage provides wrappers for a subset of functions from
 """
 
 from dataclasses import dataclass
-from typing import Union
+from typing import Union, Any
 
-from numpy import ndarray
+import numpy.typing as npt
 
 from ...compat.wrapping import wrap1d
 from ...core import (
@@ -35,10 +35,10 @@ class SOS:
     """
 
     coord: Variable
-    sos: ndarray
+    sos: npt.NDArray[Any]
 
     def filtfilt(
-        self, obj: Union[Variable, DataArray], dim: str, **kwargs
+        self, obj: Union[Variable, DataArray], dim: str, **kwargs: Any
     ) -> DataArray:
         """
         Forwards to :py:func:`scipp.signal.sosfiltfilt` with sos argument set to the SOS
@@ -53,7 +53,7 @@ def _frequency(coord: Variable) -> Variable:
     return (len(coord) - 1) / (coord[-1] - coord[0])
 
 
-def butter(coord: Variable, *, N: int, Wn: Variable, **kwargs) -> SOS:
+def butter(coord: Variable, *, N: int, Wn: Variable, **kwargs: Any) -> SOS:
     """
     Butterworth digital and analog filter design.
 
@@ -92,7 +92,7 @@ def butter(coord: Variable, *, N: int, Wn: Variable, **kwargs) -> SOS:
 
 
 @wrap1d(keep_coords=True)
-def _sosfiltfilt(da: DataArray, dim: str, *, sos: SOS, **kwargs) -> DataArray:
+def _sosfiltfilt(da: DataArray, dim: str, *, sos: SOS, **kwargs: Any) -> DataArray:
     if not identical(da.coords[dim], sos.coord):
         raise CoordError(
             f"Coord\n{da.coords[dim]}\nof filter dimension '{dim}' does "
@@ -111,7 +111,7 @@ def _sosfiltfilt(da: DataArray, dim: str, *, sos: SOS, **kwargs) -> DataArray:
 
 
 def sosfiltfilt(
-    obj: Union[Variable, DataArray], dim: str, *, sos: SOS, **kwargs
+    obj: Union[Variable, DataArray], dim: str, *, sos: SOS, **kwargs: Any
 ) -> DataArray:
     """
     A forward-backward digital filter using cascaded second-order sections.

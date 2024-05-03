@@ -981,7 +981,7 @@ def datetimes(
         )
 
 
-def epoch(*, unit: Union[Unit, str]) -> Variable:
+def epoch(*, unit: Union[Unit, str, None]) -> Variable:
     """Constructs a zero dimensional :class:`Variable` with a dtype of
     datetime64 that contains Scipp's epoch.
 
