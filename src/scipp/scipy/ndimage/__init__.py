@@ -8,7 +8,7 @@ This subpackage provides wrappers for a subset of functions from
 """
 
 from functools import wraps
-from typing import Callable, Dict, Optional, Union
+from typing import Callable, Optional, Union, Any, overload, TypeVar
 
 import scipy.ndimage
 
@@ -25,9 +25,13 @@ from ...core import (
 from ...typing import VariableLike, VariableLikeType
 
 
-def _ndfilter(func: Callable) -> Callable:
+def _ndfilter(
+    func: Callable[..., Union[Variable, DataArray]],
+) -> Callable[..., Union[Variable, DataArray]]:
     @wraps(func)
-    def function(x: Union[Variable, DataArray], **kwargs) -> Union[Variable, DataArray]:
+    def function(
+        x: Union[Variable, DataArray], **kwargs: Any
+    ) -> Union[Variable, DataArray]:
         if 'output' in kwargs:
             raise TypeError("The 'output' argument is not supported")
         if x.variances is not None:
@@ -41,7 +45,34 @@ def _ndfilter(func: Callable) -> Callable:
     return function
 
 
-def _delta_to_positional(x: Union[Variable, DataArray], dim, index, dtype):
+_I = TypeVar('_I', bound=Union[int, dict[str, Union[int, Variable]]])
+_T = TypeVar('_T')
+
+
+@overload
+def _delta_to_positional(
+    x: DataArray,
+    dim: str,
+    index: Variable,
+    dtype: type[_T],
+) -> _T: ...
+
+
+@overload
+def _delta_to_positional(
+    x: Any,
+    dim: str,
+    index: _I,
+    dtype: type[_T],
+) -> _I: ...
+
+
+def _delta_to_positional(
+    x: Any,
+    dim: str,
+    index: Union[int, Variable, dict[str, Union[int, Variable]]],
+    dtype: type,
+) -> Any:
     if not isinstance(index, Variable):
         return index
     coord = x.coords[dim]
@@ -56,7 +87,11 @@ def _delta_to_positional(x: Union[Variable, DataArray], dim, index, dtype):
     return dtype(pos)
 
 
-def _require_matching_dims(index, x, name):
+def _require_matching_dims(
+    index: dict[str, Union[int, Variable]],
+    x: VariableLike,
+    name: Optional[str],
+) -> None:
     if set(index) != set(x.dims):
         raise KeyError(
             f"Data has dims={x.dims} but input argument '{name}' provides "
@@ -64,7 +99,30 @@ def _require_matching_dims(index, x, name):
         )
 
 
-def _positional_index(x: Union[Variable, DataArray], index, name=None, dtype=int):
+@overload
+def _positional_index(
+    x: DataArray,
+    index: Variable,
+    name: Optional[str],
+    dtype: type[_T],
+) -> list[_T]: ...
+
+
+@overload
+def _positional_index(
+    x: Union[Variable, DataArray],
+    index: _I,
+    name: Optional[str],
+    dtype: type[_T],
+) -> list[_I]: ...
+
+
+def _positional_index(
+    x: Union[Variable, DataArray],
+    index: Union[int, Variable, dict[str, Union[int, Variable]]],
+    name: Optional[str] = None,
+    dtype: type = int,
+):
     if not isinstance(index, dict):
         return [_delta_to_positional(x, dim, index, dtype=dtype) for dim in x.dims]
     _require_matching_dims(index, x, name)
@@ -76,9 +134,9 @@ def gaussian_filter(
     x: VariableLikeType,
     /,
     *,
-    sigma: Union[float, Variable, Dict[str, Union[int, float, Variable]]],
-    order: Optional[Union[int, Dict[str, int]]] = 0,
-    **kwargs,
+    sigma: Union[float, Variable, dict[str, Union[int, float, Variable]]],
+    order: Optional[Union[int, dict[str, int]]] = 0,
+    **kwargs: Any,
 ) -> VariableLikeType:
     """
     Multidimensional Gaussian filter.
@@ -178,16 +236,16 @@ def _make_footprint(x: Union[Variable, DataArray], size, footprint) -> Variable:
     return footprint
 
 
-def _make_footprint_filter(name, example=True, extra_args=''):
+def _make_footprint_filter(name: str, example: bool = True, extra_args: str = ''):
     def footprint_filter(
-        x: VariableLike,
+        x: VariableLikeType,
         /,
         *,
-        size: Optional[Union[int, Variable, Dict[str, Union[int, Variable]]]] = None,
+        size: Optional[Union[int, Variable, dict[str, Union[int, Variable]]]] = None,
         footprint: Optional[Variable] = None,
-        origin: Optional[Union[int, Variable, Dict[str, Union[int, Variable]]]] = 0,
-        **kwargs,
-    ) -> VariableLike:
+        origin: Optional[Union[int, Variable, dict[str, Union[int, Variable]]]] = 0,
+        **kwargs: Any,
+    ) -> VariableLikeType:
         footprint = _make_footprint(x, size=size, footprint=footprint)
         origin = _positional_index(x, origin, name='origin')
         out = empty_like(x)
