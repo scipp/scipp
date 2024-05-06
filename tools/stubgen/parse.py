@@ -9,6 +9,7 @@ from .config import CPP_CORE_MODULE_NAME, squash_overloads
 from .transformer import (
     AddOverloadedDecorator,
     DropFunctionBody,
+    OverwriteSignature,
     RemoveDecorators,
     SetFunctionName,
     add_decorator,
@@ -132,6 +133,8 @@ def _parse_regular_method(func: Any, name: Optional[str]) -> List[ast.FunctionDe
     node = RemoveDecorators(n_decorators).visit(node)
     if name is not None:
         node = SetFunctionName(name).visit(node)
+    if (sig := getattr(func, '__signature__', None)) is not None:
+        node = OverwriteSignature(sig).visit(node)
     node = ast.fix_missing_locations(node)
     return node.body
 

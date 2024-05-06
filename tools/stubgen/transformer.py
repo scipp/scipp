@@ -1,6 +1,7 @@
 """Transform an AST to fix type annotations."""
 
 import ast
+import inspect
 from typing import Optional, Union
 
 from .config import CPP_CORE_MODULE_NAME
@@ -143,6 +144,23 @@ class SetFunctionName(ast.NodeTransformer):
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
         self.generic_visit(node)
         return replace_function(node, name=self.target_name)
+
+
+class OverwriteSignature(ast.NodeTransformer):
+    """Replaces a function signature by the given signature."""
+
+    def __init__(self, sig: inspect.Signature) -> None:
+        self.sig = sig
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
+        self.generic_visit(node)
+        target = ast.parse(f'def f{self.sig}: ...').body[0]
+        r = replace_function(
+            node,
+            args=target.args,
+            returns=target.returns,
+        )
+        return r
 
 
 class FixArgumentFromSupertypes(ast.NodeTransformer):
