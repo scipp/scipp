@@ -25,7 +25,7 @@ def _add_suppression_comments(code: str) -> str:
     def _add_override(s: str) -> str:
         for name in DISABLE_TYPE_CHECK_OVERRIDE:
             if name in s:
-                return s + '  # type: ignore[override]'
+                return s + '  # type: ignore[override, unused-ignore]'
         return s
 
     return '\n'.join(_add_override(line) for line in code.splitlines())

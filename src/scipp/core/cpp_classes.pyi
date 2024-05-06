@@ -84,7 +84,7 @@ class Coords(Mapping[str, Variable]):
     def __delitem__(self, arg0: str) -> None:
         ...
 
-    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
     def __getitem__(self, arg0: str) -> Variable:
@@ -96,7 +96,7 @@ class Coords(Mapping[str, Variable]):
     def __len__(self) -> int:
         ...
 
-    def __ne__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __ne__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
     def __repr__(self) -> str:
@@ -149,7 +149,7 @@ class Coords(Mapping[str, Variable]):
 
 class Coords_items_view:
 
-    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
     def __iter__(self) -> Iterator[tuple[str, Variable]]:
@@ -166,7 +166,7 @@ class Coords_items_view:
 
 class Coords_keys_view:
 
-    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
     def __iter__(self) -> Iterator[str]:
@@ -204,7 +204,7 @@ class DType:
     Variable: DType = ...
     VariableView: DType = ...
 
-    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
     def __init__(self, arg0: Any) -> None:
@@ -269,7 +269,7 @@ class DataArray:
     def __deepcopy__(self, arg0: dict) -> DataArray:
         ...
 
-    def __eq__(self, arg0: object) -> DataArray:  # type: ignore[override]
+    def __eq__(self, arg0: object) -> DataArray:  # type: ignore[override, unused-ignore]
         ...
 
     @overload
@@ -485,7 +485,7 @@ class DataArray:
     def __mul__(self, arg0: float) -> DataArray:
         ...
 
-    def __ne__(self, arg0: object) -> DataArray:  # type: ignore[override]
+    def __ne__(self, arg0: object) -> DataArray:  # type: ignore[override, unused-ignore]
         ...
 
     def __neg__(self) -> DataArray:
@@ -621,13 +621,13 @@ class DataArray:
     def any(self, dim: Optional[str]=None) -> DataArray:
         ...
 
-    def assign_attrs(self, attrs: Optional[Dict[str, Variable]]=None, /, **attrs_kwargs) -> DataArray:
+    def assign_attrs(self, attrs: Optional[Dict[str, Variable]]=None, /, **attrs_kwargs: Variable) -> DataArray:
         ...
 
-    def assign_coords(self, coords: Optional[Dict[str, Variable]]=None, /, **coords_kwargs) -> Union[DataArray, Dataset]:
+    def assign_coords(self, coords: Optional[Dict[str, Variable]]=None, /, **coords_kwargs: Variable) -> _T:
         ...
 
-    def assign_masks(self, masks: Optional[Dict[str, Variable]]=None, /, **masks_kwargs) -> DataArray:
+    def assign_masks(self, masks: Optional[Dict[str, Variable]]=None, /, **masks_kwargs: Variable) -> DataArray:
         ...
 
     def astype(self, type: Any, *, copy: bool=True) -> DataArray:
@@ -641,11 +641,11 @@ class DataArray:
         ...
 
     @property
-    def bins(self):
+    def bins(self) -> Optional[Bins]:
         ...
 
     @bins.setter
-    def bins(self, bins: Bins):
+    def bins(self, bins: Bins) -> None:
         ...
 
     def broadcast(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, shape: Optional[Sequence[int]]=None, sizes: Optional[Dict[str, int]]=None) -> DataArray:
@@ -790,7 +790,7 @@ class DataArray:
     def ndim(self) -> int:
         ...
 
-    def plot(*args, **kwargs):
+    def plot(*args: Any, **kwargs: Any) -> None:
         ...
 
     def rebin(self, arg_dict=None, deprecated=None, /, **kwargs):
@@ -1124,15 +1124,15 @@ class Dataset(Mapping[str, DataArray]):
     def any(self, dim: Optional[str]=None) -> Dataset:
         ...
 
-    def assign_coords(self, coords: Optional[Dict[str, Variable]]=None, /, **coords_kwargs) -> Union[DataArray, Dataset]:
+    def assign_coords(self, coords: Optional[Dict[str, Variable]]=None, /, **coords_kwargs: Variable) -> _T:
         ...
 
     @property
-    def bins(self):
+    def bins(self) -> Optional[Bins]:
         ...
 
     @bins.setter
-    def bins(self, bins: Bins):
+    def bins(self, bins: Bins) -> None:
         ...
 
     def clear(self) -> None:
@@ -1217,7 +1217,7 @@ class Dataset(Mapping[str, DataArray]):
     def ndim(self) -> int:
         ...
 
-    def plot(*args, **kwargs):
+    def plot(*args: Any, **kwargs: Any) -> None:
         ...
 
     def pop(self, key: str, default: Optional[DataArray]=None) -> Optional[DataArray]:
@@ -1272,7 +1272,7 @@ class DatasetError(RuntimeError):
 
 class Dataset_items_view:
 
-    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
     def __iter__(self) -> Iterator[tuple[str, DataArray]]:
@@ -1289,7 +1289,7 @@ class Dataset_items_view:
 
 class Dataset_keys_view:
 
-    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
     def __iter__(self) -> Iterator[str]:
@@ -1335,7 +1335,7 @@ class GroupByDataArray:
         ...
 
     @property
-    def bins(self):
+    def bins(self) -> GroupbyBins:
         ...
 
     def concat(self, dim: str) -> DataArray:
@@ -1371,7 +1371,7 @@ class GroupByDataset:
         ...
 
     @property
-    def bins(self):
+    def bins(self) -> GroupbyBins:
         ...
 
     def concat(self, dim: str) -> Dataset:
@@ -1412,7 +1412,7 @@ class Masks(Mapping[str, Variable]):
     def __delitem__(self, arg0: str) -> None:
         ...
 
-    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
     def __getitem__(self, arg0: str) -> Variable:
@@ -1424,7 +1424,7 @@ class Masks(Mapping[str, Variable]):
     def __len__(self) -> int:
         ...
 
-    def __ne__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __ne__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
     def __repr__(self) -> str:
@@ -1474,7 +1474,7 @@ class Masks(Mapping[str, Variable]):
 
 class Masks_items_view:
 
-    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
     def __iter__(self) -> Iterator[tuple[str, Variable]]:
@@ -1491,7 +1491,7 @@ class Masks_items_view:
 
 class Masks_keys_view:
 
-    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
     def __iter__(self) -> Iterator[str]:
@@ -1531,7 +1531,7 @@ class Unit:
     def __add__(self, arg0: Unit) -> Unit:
         ...
 
-    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
     def __hash__(self) -> int:
@@ -1543,7 +1543,7 @@ class Unit:
     def __mul__(self, arg0: Unit) -> Unit:
         ...
 
-    def __ne__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __ne__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
     def __pow__(self, arg0: int) -> Unit:
@@ -1615,7 +1615,7 @@ class Variable:
     def __deepcopy__(self, arg0: dict) -> Variable:
         ...
 
-    def __eq__(self, arg0: object) -> Variable:  # type: ignore[override]
+    def __eq__(self, arg0: object) -> Variable:  # type: ignore[override, unused-ignore]
         ...
 
     def __float__(self) -> float:
@@ -1801,7 +1801,7 @@ class Variable:
     def __mul__(self, arg0: float) -> Variable:
         ...
 
-    def __ne__(self, arg0: object) -> Variable:  # type: ignore[override]
+    def __ne__(self, arg0: object) -> Variable:  # type: ignore[override, unused-ignore]
         ...
 
     def __neg__(self) -> Variable:
@@ -1922,11 +1922,11 @@ class Variable:
         ...
 
     @property
-    def bins(self):
+    def bins(self) -> Optional[Bins]:
         ...
 
     @bins.setter
-    def bins(self, bins: Bins):
+    def bins(self, bins: Bins) -> None:
         ...
 
     def broadcast(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, shape: Optional[Sequence[int]]=None, sizes: Optional[Dict[str, int]]=None) -> Variable:
@@ -2009,7 +2009,7 @@ class Variable:
     def ndim(self) -> int:
         ...
 
-    def plot(*args, **kwargs):
+    def plot(*args: Any, **kwargs: Any) -> None:
         ...
 
     def rename(self, dims_dict: Optional[dict[str, str]]=None, /, **names: str) -> Variable:

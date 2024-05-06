@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 
 from .._scipp import core as _cpp
@@ -150,7 +152,7 @@ def not_equal(x: VariableLike, y: VariableLike) -> VariableLike:
 def _identical_data_groups(
     x: data_group.DataGroup, y: data_group.DataGroup, *, equal_nan: bool
 ) -> bool:
-    def compare(a, b):
+    def compare(a: Any, b: Any) -> bool:
         if not isinstance(a, type(b)):
             return False
         if isinstance(a, (Variable, DataArray, Dataset, data_group.DataGroup)):
@@ -190,7 +192,7 @@ def identical(x: VariableLike, y: VariableLike, *, equal_nan: bool = False) -> b
             raise TypeError("Both or neither of the arguments must be a DataGroup")
         return _identical_data_groups(x, y, equal_nan=equal_nan)
 
-    return _call_cpp_func(_cpp.identical, x, y, equal_nan=equal_nan)
+    return _call_cpp_func(_cpp.identical, x, y, equal_nan=equal_nan)  # type: ignore[return-value]
 
 
 def isclose(
@@ -263,7 +265,13 @@ def isclose(
     return _call_cpp_func(_cpp.isclose, x, y, rtol, atol, equal_nan)
 
 
-def allclose(x, y, rtol=None, atol=None, equal_nan=False) -> True:
+def allclose(
+    x: _cpp.Variable,
+    y: _cpp.Variable,
+    rtol: _cpp.Variable = None,
+    atol: _cpp.Variable = None,
+    equal_nan: bool = False,
+) -> bool:
     """Checks if all elements in the inputs are close to each other.
 
     Verifies that ALL element-wise comparisons meet the condition:
@@ -317,6 +325,6 @@ def allclose(x, y, rtol=None, atol=None, equal_nan=False) -> True:
     scipp.isclose:
         Compares element-wise with specified tolerances.
     """
-    return _call_cpp_func(
+    return _call_cpp_func(  # type:ignore[no-any-return]
         _cpp.all, isclose(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan)
-    ).value
+    ).value  # type: ignore[union-attr]
