@@ -8,62 +8,68 @@ import re
 from typing import Optional
 
 
-def _dataclass_with_slots(**kwargs):
-    try:
-        return dataclasses.dataclass(slots=True, **kwargs)
-    except TypeError:
-        # Fallback for Python < 3.10
-        return dataclasses.dataclass(**kwargs)
-
-
 class FormatType(enum.Enum):
     default = None
     compact = 'c'
 
+    def __str__(self) -> str:
+        match self:
+            case FormatType.default:
+                return ''
+            case FormatType.compact:
+                return 'c'
 
-@_dataclass_with_slots(frozen=True)
-class FormatSpec:
-    format_type: FormatType
-    _selection: Optional[str]
-    _length: Optional[int]
-    _nested: Optional[str]
 
-    @property
-    def selection(self) -> str:
-        return '^' if self._selection is None else self._selection
-
-    @property
-    def length(self) -> int:
-        return 4 if self._length is None else int(self._length)
-
-    @property
-    def nested(self) -> str:
-        return '' if self._nested is None else self._nested
-
-    @property
-    def has_selection(self) -> bool:
-        return self._selection is not None
-
-    @property
-    def has_length(self) -> bool:
-        return self._length is not None
-
-    @property
-    def has_nested(self) -> bool:
-        return self._nested is not None
+class Selection(enum.Enum):
+    edges = '^'
+    begin = '<'
+    end = '>'
 
     def __str__(self) -> str:
-        return (
-            self.selection
-            if self.has_selection
-            else '' + f'#{self.length}'
-            if self.has_length
-            else '' + str(self.format_type)
-            if self.format_type != FormatType.default
-            else '' + f':{self.nested}'
-            if self.has_nested
-            else ''
-        )
+        match self:
+            case Selection.edges:
+                return '^'
+            case Selection.begin:
+                return '<'
+            case Selection.end:
+                return '>'
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class FormatSpec:
+    format_type: FormatType
+    _selection: dataclasses.InitVar[Optional[str]]
+    _length: dataclasses.InitVar[Optional[str]]
+    _nested: dataclasses.InitVar[Optional[str]]
+
+    selection: Selection = dataclasses.field(init=False, default=Selection.edges)
+    length: int = dataclasses.field(init=False, default=4)
+    nested: str = dataclasses.field(init=False, default='')
+
+    # Track whether the user specified a value or whether the default is used.
+    has_selection: bool = dataclasses.field(init=False, default=False)
+    has_length: bool = dataclasses.field(init=False, default=False)
+    has_nested: bool = dataclasses.field(init=False, default=False)
+
+    def __post_init__(
+        self, _selection: Optional[str], _length: Optional[str], _nested: Optional[str]
+    ) -> None:
+        if _selection is not None:
+            object.__setattr__(self, 'selection', Selection(_selection))
+            object.__setattr__(self, 'has_selection', True)
+        if _length is not None:
+            object.__setattr__(self, 'length', int(_length))
+            object.__setattr__(self, 'has_length', True)
+        if _nested is not None:
+            object.__setattr__(self, 'nested', _nested)
+            object.__setattr__(self, 'has_nested', True)
+
+    def __str__(self) -> str:
+        sel = str(self.selection) if self.has_selection else ''
+        length = f'#{self.length}' if self.has_length else ''
+        typ = str(self.format_type) if self.format_type != FormatType.default else ''
+        nested = f':{self.nested}' if self.has_nested else ''
+        return f'{sel}{length}{typ}{nested}'
 
 
 _FORMAT_PATTERN = re.compile(
