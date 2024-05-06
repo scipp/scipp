@@ -81,6 +81,7 @@ Variable.fields = property(
     _fields,
     doc='Provides access to fields of structured types such as vectors or matrices.',
 )
+del _fields
 
 from .bins import _groupby_bins, Bins
 
