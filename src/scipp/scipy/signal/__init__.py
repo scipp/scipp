@@ -8,7 +8,7 @@ This subpackage provides wrappers for a subset of functions from
 """
 
 from dataclasses import dataclass
-from typing import Union, Any
+from typing import Any, Union
 
 import numpy.typing as npt
 

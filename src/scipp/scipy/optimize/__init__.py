@@ -7,26 +7,26 @@ This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.optimize`.
 """
 
+from collections.abc import Iterable
 from inspect import getfullargspec
 from numbers import Real
-from typing import Callable, Optional, Union, Any
-from collections.abc import Iterable
+from typing import Any, Callable, Optional, Union
 
 import numpy as np
 import numpy.typing as npt
 
 from ...core import (
-    scalar,
-    stddevs,
-    DefaultUnit,
     BinEdgeError,
     DataArray,
-    Variable,
+    DefaultUnit,
     Unit,
+    Variable,
+    scalar,
+    stddevs,
 )
+from ...typing import VariableLike
 from ...units import default_unit, dimensionless
 from ..interpolate import _drop_masked
-from ...typing import VariableLike
 
 
 def _as_scalar(obj: Any, unit: Union[Unit, DefaultUnit, None]) -> Any:

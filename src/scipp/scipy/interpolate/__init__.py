@@ -9,7 +9,7 @@ This subpackage provides wrappers for a subset of functions from
 
 from __future__ import annotations
 
-from typing import Any, Literal, Union, TypeVar, Protocol
+from typing import Any, Literal, Protocol, TypeVar, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -25,7 +25,6 @@ from ...core import (
     epoch,
     irreducible_mask,
 )
-
 
 _ArrayOrVar = TypeVar('_ArrayOrVar', npt.NDArray[Any], Variable)
 

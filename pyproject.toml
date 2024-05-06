@@ -122,8 +122,9 @@ isort.known-first-party = ["scipp"]
 pydocstyle.convention = "numpy"
 
 [tool.ruff.lint.per-file-ignores]
-# those files have an increased risk of relying on import order
-"__init__.py" = ["I"]
+# those files rely on import order
+"src/scipp/__init__.py" = ["I"]
+"src/scipp/core/__init__.py" = ["I"]
 # asserts are fine because this code is meant to be used with pytest
 "src/scipp/testing/*" = ["S101"]
 "tests/*" = [

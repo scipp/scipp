@@ -31,7 +31,7 @@ Special:
 """
 
 from contextlib import contextmanager
-from typing import Dict, Tuple, Union, Iterator
+from typing import Dict, Iterator, Tuple, Union
 
 from .._scipp.core import add_unit_alias as _add_unit_alias
 from .._scipp.core import clear_unit_aliases as _clear_unit_aliases
