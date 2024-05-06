@@ -120,7 +120,7 @@ class Coords(Mapping[str, Variable]):
     def copy(self, deep: bool=True) -> Coords:
         ...
 
-    def get(self, key, default=None):
+    def get(self, key: str, default: Optional[Variable]=None) -> Optional[Variable]:
         ...
 
     def is_edges(self, key: str, dim: Optional[str]=None) -> bool:
@@ -132,7 +132,7 @@ class Coords(Mapping[str, Variable]):
     def keys(self) -> Coords_keys_view:
         ...
 
-    def pop(self, key, default=_NoDefault):
+    def pop(self, key: str, default: Optional[Variable]=None) -> Optional[Variable]:
         ...
 
     def popitem(self) -> tuple[str, Variable]:
@@ -615,10 +615,10 @@ class DataArray:
     def _repr_html_(self) -> str:
         ...
 
-    def all(self, dim: Optional[str]=None) -> VariableLikeType:
+    def all(self, dim: Optional[str]=None) -> DataArray:
         ...
 
-    def any(self, dim: Optional[str]=None) -> VariableLikeType:
+    def any(self, dim: Optional[str]=None) -> DataArray:
         ...
 
     def assign_attrs(self, attrs: Optional[Dict[str, Variable]]=None, /, **attrs_kwargs) -> DataArray:
@@ -648,7 +648,7 @@ class DataArray:
     def bins(self, bins: Bins):
         ...
 
-    def broadcast(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, shape: Optional[Sequence[int]]=None, sizes: Optional[Dict[str, int]]=None) -> VariableLikeType:
+    def broadcast(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, shape: Optional[Sequence[int]]=None, sizes: Optional[Dict[str, int]]=None) -> DataArray:
         ...
 
     def ceil(self, *, out: Optional[VariableLike]=None) -> VariableLike:
@@ -716,13 +716,13 @@ class DataArray:
     def dtype(self) -> DType:
         ...
 
-    def flatten(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, to: Optional[str]=None) -> VariableLikeType:
+    def flatten(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, to: Optional[str]=None) -> DataArray:
         ...
 
     def floor(self, *, out: Optional[VariableLike]=None) -> VariableLike:
         ...
 
-    def fold(self, dim: str, sizes: Optional[Dict[str, int]]=None, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, shape: Optional[Sequence[int]]=None) -> VariableLikeType:
+    def fold(self, dim: str, sizes: Optional[Dict[str, int]]=None, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, shape: Optional[Sequence[int]]=None) -> DataArray:
         ...
 
     def group(self, /, *args: Union[str, Variable]):
@@ -738,20 +738,20 @@ class DataArray:
     def masks(self) -> Masks:
         ...
 
-    def max(self, dim: Optional[str]=None) -> VariableLikeType:
+    def max(self, dim: Optional[str]=None) -> DataArray:
         ...
 
-    def mean(self, dim: Optional[str]=None) -> VariableLikeType:
+    def mean(self, dim: Optional[str]=None) -> DataArray:
         ...
 
-    def median(self, dim: Dims=None) -> VariableLikeType:
+    def median(self, dim: Dims=None) -> DataArray:
         ...
 
     @property
     def meta(self):
         ...
 
-    def min(self, dim: Optional[str]=None) -> VariableLikeType:
+    def min(self, dim: Optional[str]=None) -> DataArray:
         ...
 
     @property
@@ -765,25 +765,25 @@ class DataArray:
     def nanhist(self, arg_dict=None, /, **kwargs):
         ...
 
-    def nanmax(self, dim: Optional[str]=None) -> VariableLikeType:
+    def nanmax(self, dim: Optional[str]=None) -> DataArray:
         ...
 
-    def nanmean(self, dim: Optional[str]=None) -> VariableLikeType:
+    def nanmean(self, dim: Optional[str]=None) -> DataArray:
         ...
 
-    def nanmedian(self, dim: Dims=None) -> VariableLikeType:
+    def nanmedian(self, dim: Dims=None) -> DataArray:
         ...
 
-    def nanmin(self, dim: Optional[str]=None) -> VariableLikeType:
+    def nanmin(self, dim: Optional[str]=None) -> DataArray:
         ...
 
-    def nanstd(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+    def nanstd(self, dim: Dims=None, *, ddof: int) -> DataArray:
         ...
 
-    def nansum(self, dim: Optional[str]=None) -> VariableLikeType:
+    def nansum(self, dim: Optional[str]=None) -> DataArray:
         ...
 
-    def nanvar(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+    def nanvar(self, dim: Dims=None, *, ddof: int) -> DataArray:
         ...
 
     @property
@@ -799,7 +799,7 @@ class DataArray:
     def rename(self, dims_dict: Optional[dict[str, str]]=None, /, **names: str) -> DataArray:
         ...
 
-    def rename_dims(self, dims_dict: Optional[dict[str, str]]=None, /, **names: str) -> VariableLikeType:
+    def rename_dims(self, dims_dict: Optional[dict[str, str]]=None, /, **names: str) -> DataArray:
         ...
 
     def round(self, *, out: Optional[VariableLike]=None) -> VariableLike:
@@ -820,22 +820,22 @@ class DataArray:
     def sizes(self) -> dict[str, int]:
         ...
 
-    def squeeze(self, dim: Optional[Union[str, List[str], Tuple[str, ...]]]=None) -> VariableLikeType:
+    def squeeze(self, dim: Optional[Union[str, List[str], Tuple[str, ...]]]=None) -> DataArray:
         ...
 
-    def std(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+    def std(self, dim: Dims=None, *, ddof: int) -> DataArray:
         ...
 
-    def sum(self, dim: Dims=None) -> VariableLikeType:
+    def sum(self, dim: Dims=None) -> DataArray:
         ...
 
-    def to(self, *, unit: Optional[Union[Unit, str]]=None, dtype: Optional[Any]=None, copy: bool=True) -> VariableLikeType:
+    def to(self, *, unit: Optional[Union[Unit, str]]=None, dtype: Optional[Any]=None, copy: bool=True) -> DataArray:
         ...
 
     def transform_coords(self, targets: Optional[Union[str, Iterable[str]]]=None, /, graph: Optional[GraphDict]=None, *, rename_dims: bool=True, keep_aliases: bool=True, keep_intermediate: bool=True, keep_inputs: bool=True, quiet: bool=False, **kwargs: Callable) -> Union[DataArray, Dataset]:
         ...
 
-    def transpose(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None) -> VariableLikeType:
+    def transpose(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None) -> DataArray:
         ...
 
     def underlying_size(self) -> int:
@@ -865,7 +865,7 @@ class DataArray:
     def values(self, arg1: Any) -> None:
         ...
 
-    def var(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+    def var(self, dim: Dims=None, *, ddof: int) -> DataArray:
         ...
 
     @property
@@ -1118,10 +1118,10 @@ class Dataset(Mapping[str, DataArray]):
     def _repr_html_(self) -> str:
         ...
 
-    def all(self, dim: Optional[str]=None) -> VariableLikeType:
+    def all(self, dim: Optional[str]=None) -> Dataset:
         ...
 
-    def any(self, dim: Optional[str]=None) -> VariableLikeType:
+    def any(self, dim: Optional[str]=None) -> Dataset:
         ...
 
     def assign_coords(self, coords: Optional[Dict[str, Variable]]=None, /, **coords_kwargs) -> Union[DataArray, Dataset]:
@@ -1161,7 +1161,7 @@ class Dataset(Mapping[str, DataArray]):
     def drop_coords(self, arg0: list[str]) -> Dataset:
         ...
 
-    def get(self, key, default=None):
+    def get(self, key: str, default: Optional[DataArray]=None) -> Optional[DataArray]:
         ...
 
     def groupby(self, /, group: Union[Variable, str], *, bins: Optional[Variable]=None) -> Union[GroupByDataArray, GroupByDataset]:
@@ -1176,41 +1176,41 @@ class Dataset(Mapping[str, DataArray]):
     def keys(self) -> Dataset_keys_view:
         ...
 
-    def max(self, dim: Optional[str]=None) -> VariableLikeType:
+    def max(self, dim: Optional[str]=None) -> Dataset:
         ...
 
-    def mean(self, dim: Optional[str]=None) -> VariableLikeType:
+    def mean(self, dim: Optional[str]=None) -> Dataset:
         ...
 
-    def median(self, dim: Dims=None) -> VariableLikeType:
+    def median(self, dim: Dims=None) -> Dataset:
         ...
 
     @property
     def meta(self) -> Coords:
         ...
 
-    def min(self, dim: Optional[str]=None) -> VariableLikeType:
+    def min(self, dim: Optional[str]=None) -> Dataset:
         ...
 
-    def nanmax(self, dim: Optional[str]=None) -> VariableLikeType:
+    def nanmax(self, dim: Optional[str]=None) -> Dataset:
         ...
 
-    def nanmean(self, dim: Optional[str]=None) -> VariableLikeType:
+    def nanmean(self, dim: Optional[str]=None) -> Dataset:
         ...
 
-    def nanmedian(self, dim: Dims=None) -> VariableLikeType:
+    def nanmedian(self, dim: Dims=None) -> Dataset:
         ...
 
-    def nanmin(self, dim: Optional[str]=None) -> VariableLikeType:
+    def nanmin(self, dim: Optional[str]=None) -> Dataset:
         ...
 
-    def nanstd(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+    def nanstd(self, dim: Dims=None, *, ddof: int) -> Dataset:
         ...
 
-    def nansum(self, dim: Optional[str]=None) -> VariableLikeType:
+    def nansum(self, dim: Optional[str]=None) -> Dataset:
         ...
 
-    def nanvar(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+    def nanvar(self, dim: Dims=None, *, ddof: int) -> Dataset:
         ...
 
     @property
@@ -1220,7 +1220,7 @@ class Dataset(Mapping[str, DataArray]):
     def plot(*args, **kwargs):
         ...
 
-    def pop(self, key, default=_NoDefault):
+    def pop(self, key: str, default: Optional[DataArray]=None) -> Optional[DataArray]:
         ...
 
     def rebin(self, arg_dict=None, deprecated=None, /, **kwargs):
@@ -1229,7 +1229,7 @@ class Dataset(Mapping[str, DataArray]):
     def rename(self, dims_dict: Optional[dict[str, str]]=None, /, **names: str) -> Dataset:
         ...
 
-    def rename_dims(self, dims_dict: Optional[dict[str, str]]=None, /, **names: str) -> VariableLikeType:
+    def rename_dims(self, dims_dict: Optional[dict[str, str]]=None, /, **names: str) -> Dataset:
         ...
 
     def save_hdf5(self, filename: Union[str, Path]) -> None:
@@ -1243,13 +1243,13 @@ class Dataset(Mapping[str, DataArray]):
     def sizes(self) -> dict[str, int]:
         ...
 
-    def squeeze(self, dim: Optional[Union[str, List[str], Tuple[str, ...]]]=None) -> VariableLikeType:
+    def squeeze(self, dim: Optional[Union[str, List[str], Tuple[str, ...]]]=None) -> Dataset:
         ...
 
-    def std(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+    def std(self, dim: Dims=None, *, ddof: int) -> Dataset:
         ...
 
-    def sum(self, dim: Dims=None) -> VariableLikeType:
+    def sum(self, dim: Dims=None) -> Dataset:
         ...
 
     def transform_coords(self, targets: Optional[Union[str, Iterable[str]]]=None, /, graph: Optional[GraphDict]=None, *, rename_dims: bool=True, keep_aliases: bool=True, keep_intermediate: bool=True, keep_inputs: bool=True, quiet: bool=False, **kwargs: Callable) -> Union[DataArray, Dataset]:
@@ -1264,7 +1264,7 @@ class Dataset(Mapping[str, DataArray]):
     def values(self) -> Dataset_values_view:
         ...
 
-    def var(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+    def var(self, dim: Dims=None, *, ddof: int) -> Dataset:
         ...
 
 class DatasetError(RuntimeError):
@@ -1448,7 +1448,7 @@ class Masks(Mapping[str, Variable]):
     def copy(self, deep: bool=True) -> Masks:
         ...
 
-    def get(self, key, default=None):
+    def get(self, key: str, default: Optional[Variable]=None) -> Optional[Variable]:
         ...
 
     def is_edges(self, key: str, dim: Optional[str]=None) -> bool:
@@ -1460,7 +1460,7 @@ class Masks(Mapping[str, Variable]):
     def keys(self) -> Masks_keys_view:
         ...
 
-    def pop(self, key, default=_NoDefault):
+    def pop(self, key: str, default: Optional[Variable]=None) -> Optional[Variable]:
         ...
 
     def popitem(self) -> tuple[str, Variable]:
@@ -1909,10 +1909,10 @@ class Variable:
     def aligned(self) -> bool:
         ...
 
-    def all(self, dim: Optional[str]=None) -> VariableLikeType:
+    def all(self, dim: Optional[str]=None) -> Variable:
         ...
 
-    def any(self, dim: Optional[str]=None) -> VariableLikeType:
+    def any(self, dim: Optional[str]=None) -> Variable:
         ...
 
     def astype(self, type: Any, *, copy: bool=True) -> Variable:
@@ -1929,7 +1929,7 @@ class Variable:
     def bins(self, bins: Bins):
         ...
 
-    def broadcast(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, shape: Optional[Sequence[int]]=None, sizes: Optional[Dict[str, int]]=None) -> VariableLikeType:
+    def broadcast(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, shape: Optional[Sequence[int]]=None, sizes: Optional[Dict[str, int]]=None) -> Variable:
         ...
 
     def ceil(self, *, out: Optional[VariableLike]=None) -> VariableLike:
@@ -1938,7 +1938,7 @@ class Variable:
     def copy(self, deep: bool=True) -> Variable:
         ...
 
-    def cumsum(self, dim: Optional[str]=None, mode: Literal['exclusive', 'inclusive']='inclusive') -> VariableLikeType:
+    def cumsum(self, dim: Optional[str]=None, mode: Literal['exclusive', 'inclusive']='inclusive') -> Variable:
         ...
 
     @property
@@ -1954,55 +1954,55 @@ class Variable:
         ...
 
     @property
-    def fields(self):
+    def fields(self) -> Any:
         ...
 
-    def flatten(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, to: Optional[str]=None) -> VariableLikeType:
+    def flatten(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, to: Optional[str]=None) -> Variable:
         ...
 
     def floor(self, *, out: Optional[VariableLike]=None) -> VariableLike:
         ...
 
-    def fold(self, dim: str, sizes: Optional[Dict[str, int]]=None, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, shape: Optional[Sequence[int]]=None) -> VariableLikeType:
+    def fold(self, dim: str, sizes: Optional[Dict[str, int]]=None, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, shape: Optional[Sequence[int]]=None) -> Variable:
         ...
 
     def hist(self, arg_dict=None, /, **kwargs):
         ...
 
-    def max(self, dim: Optional[str]=None) -> VariableLikeType:
+    def max(self, dim: Optional[str]=None) -> Variable:
         ...
 
-    def mean(self, dim: Optional[str]=None) -> VariableLikeType:
+    def mean(self, dim: Optional[str]=None) -> Variable:
         ...
 
-    def median(self, dim: Dims=None) -> VariableLikeType:
+    def median(self, dim: Dims=None) -> Variable:
         ...
 
-    def min(self, dim: Optional[str]=None) -> VariableLikeType:
+    def min(self, dim: Optional[str]=None) -> Variable:
         ...
 
     def nanhist(self, arg_dict=None, /, **kwargs):
         ...
 
-    def nanmax(self, dim: Optional[str]=None) -> VariableLikeType:
+    def nanmax(self, dim: Optional[str]=None) -> Variable:
         ...
 
-    def nanmean(self, dim: Optional[str]=None) -> VariableLikeType:
+    def nanmean(self, dim: Optional[str]=None) -> Variable:
         ...
 
-    def nanmedian(self, dim: Dims=None) -> VariableLikeType:
+    def nanmedian(self, dim: Dims=None) -> Variable:
         ...
 
-    def nanmin(self, dim: Optional[str]=None) -> VariableLikeType:
+    def nanmin(self, dim: Optional[str]=None) -> Variable:
         ...
 
-    def nanstd(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+    def nanstd(self, dim: Dims=None, *, ddof: int) -> Variable:
         ...
 
-    def nansum(self, dim: Optional[str]=None) -> VariableLikeType:
+    def nansum(self, dim: Optional[str]=None) -> Variable:
         ...
 
-    def nanvar(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+    def nanvar(self, dim: Dims=None, *, ddof: int) -> Variable:
         ...
 
     @property
@@ -2015,7 +2015,7 @@ class Variable:
     def rename(self, dims_dict: Optional[dict[str, str]]=None, /, **names: str) -> Variable:
         ...
 
-    def rename_dims(self, dims_dict: Optional[dict[str, str]]=None, /, **names: str) -> VariableLikeType:
+    def rename_dims(self, dims_dict: Optional[dict[str, str]]=None, /, **names: str) -> Variable:
         ...
 
     def round(self, *, out: Optional[VariableLike]=None) -> VariableLike:
@@ -2036,19 +2036,19 @@ class Variable:
     def sizes(self) -> dict[str, int]:
         ...
 
-    def squeeze(self, dim: Optional[Union[str, List[str], Tuple[str, ...]]]=None) -> VariableLikeType:
+    def squeeze(self, dim: Optional[Union[str, List[str], Tuple[str, ...]]]=None) -> Variable:
         ...
 
-    def std(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+    def std(self, dim: Dims=None, *, ddof: int) -> Variable:
         ...
 
-    def sum(self, dim: Dims=None) -> VariableLikeType:
+    def sum(self, dim: Dims=None) -> Variable:
         ...
 
-    def to(self, *, unit: Optional[Union[Unit, str]]=None, dtype: Optional[Any]=None, copy: bool=True) -> VariableLikeType:
+    def to(self, *, unit: Optional[Union[Unit, str]]=None, dtype: Optional[Any]=None, copy: bool=True) -> Variable:
         ...
 
-    def transpose(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None) -> VariableLikeType:
+    def transpose(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None) -> Variable:
         ...
 
     def underlying_size(self) -> int:
@@ -2078,7 +2078,7 @@ class Variable:
     def values(self, arg1: Any) -> None:
         ...
 
-    def var(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+    def var(self, dim: Dims=None, *, ddof: int) -> Variable:
         ...
 
     @property

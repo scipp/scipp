@@ -40,6 +40,12 @@ def add_decorator(
     return replace_function(base, decorator_list=[decorator, *base.decorator_list])
 
 
+def get_first_argument(node: ast.arguments) -> ast.arg:
+    if node.posonlyargs:
+        return node.posonlyargs[0]
+    return node.args[0]
+
+
 class AddOverloadedDecorator(ast.NodeTransformer):
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
         self.generic_visit(node)
@@ -101,6 +107,41 @@ class DropSelfAnnotation(ast.NodeTransformer):
             self.generic_visit(node)
             return node
         return ast.arg(node.arg, None, None)
+
+
+class ReplaceTypeVarInReturn(ast.NodeTransformer):
+    """Replace TypeVars in return annotations with concrete types.
+
+    Some functions are defined as generic functions in Python, e.g.,
+
+    .. code-block:: python
+
+        def sum(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
+
+    When those functions are bound as methods, the return type is constrained by
+    the class that the method is bound to.
+    So this transformer replaces the annotation by the class name.
+    """
+
+    TYPE_VARS = ('VariableLikeType',)
+
+    def __init__(self, cls_name: str) -> None:
+        self.cls_name = cls_name
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
+        self.generic_visit(node)
+        for type_var in self.TYPE_VARS:
+            if isinstance(node.returns, ast.Name) and node.returns.id == type_var:
+                first_arg = get_first_argument(node.args)
+                try:
+                    self_annotation = first_arg.annotation.id
+                except AttributeError:
+                    continue
+                if self_annotation == type_var:
+                    return replace_function(
+                        node, returns=ast.Name(id=self.cls_name, ctx=ast.Load())
+                    )
+        return node
 
 
 class ShortenCppClassAnnotation(ast.NodeTransformer):
@@ -246,6 +287,7 @@ def _fix_common(node: ast.AST) -> ast.AST:
 
 
 def fix_method(node: ast.AST, cls_name: str) -> ast.AST:
+    node = ReplaceTypeVarInReturn(cls_name).visit(node)  # Must be before FixSelfArgName
     node = _fix_common(node)
     node = FixObjectReturnType(cls_name).visit(node)
     node = FixArgumentFromSupertypes().visit(node)
