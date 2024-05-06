@@ -7,8 +7,9 @@ This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.ndimage`.
 """
 
+from collections.abc import Mapping
 from functools import wraps
-from typing import Callable, Optional, Union, Any, overload, TypeVar
+from typing import Any, Callable, Optional, Protocol, TypeVar, Union
 
 import scipy.ndimage
 
@@ -22,16 +23,16 @@ from ...core import (
     islinspace,
     ones,
 )
-from ...typing import VariableLike, VariableLikeType
+from ...typing import VariableLike
+
+_T = TypeVar('_T', Variable, DataArray)
 
 
 def _ndfilter(
-    func: Callable[..., Union[Variable, DataArray]],
-) -> Callable[..., Union[Variable, DataArray]]:
+    func: Callable[..., _T],
+) -> Callable[..., _T]:
     @wraps(func)
-    def function(
-        x: Union[Variable, DataArray], **kwargs: Any
-    ) -> Union[Variable, DataArray]:
+    def function(x: _T, **kwargs: Any) -> _T:
         if 'output' in kwargs:
             raise TypeError("The 'output' argument is not supported")
         if x.variances is not None:
@@ -45,32 +46,10 @@ def _ndfilter(
     return function
 
 
-_I = TypeVar('_I', bound=Union[int, dict[str, Union[int, Variable]]])
-_T = TypeVar('_T')
-
-
-@overload
-def _delta_to_positional(
-    x: DataArray,
-    dim: str,
-    index: Variable,
-    dtype: type[_T],
-) -> _T: ...
-
-
-@overload
 def _delta_to_positional(
     x: Any,
     dim: str,
-    index: _I,
-    dtype: type[_T],
-) -> _I: ...
-
-
-def _delta_to_positional(
-    x: Any,
-    dim: str,
-    index: Union[int, Variable, dict[str, Union[int, Variable]]],
+    index: Union[float, Variable, Mapping[str, Union[float, Variable]]],
     dtype: type,
 ) -> Any:
     if not isinstance(index, Variable):
@@ -88,7 +67,7 @@ def _delta_to_positional(
 
 
 def _require_matching_dims(
-    index: dict[str, Union[int, Variable]],
+    index: Mapping[str, Union[float, Variable]],
     x: VariableLike,
     name: Optional[str],
 ) -> None:
@@ -99,31 +78,13 @@ def _require_matching_dims(
         )
 
 
-@overload
 def _positional_index(
-    x: DataArray,
-    index: Variable,
-    name: Optional[str],
-    dtype: type[_T],
-) -> list[_T]: ...
-
-
-@overload
-def _positional_index(
-    x: Union[Variable, DataArray],
-    index: _I,
-    name: Optional[str],
-    dtype: type[_T],
-) -> list[_I]: ...
-
-
-def _positional_index(
-    x: Union[Variable, DataArray],
-    index: Union[int, Variable, dict[str, Union[int, Variable]]],
+    x: Any,
+    index: Union[float, Variable, Mapping[str, Union[float, Variable]]],
     name: Optional[str] = None,
     dtype: type = int,
-):
-    if not isinstance(index, dict):
+) -> list[Any]:
+    if not isinstance(index, Mapping):
         return [_delta_to_positional(x, dim, index, dtype=dtype) for dim in x.dims]
     _require_matching_dims(index, x, name)
     return [_delta_to_positional(x, dim, index[dim], dtype=dtype) for dim in x.dims]
@@ -131,13 +92,13 @@ def _positional_index(
 
 @_ndfilter
 def gaussian_filter(
-    x: VariableLikeType,
+    x: _T,
     /,
     *,
-    sigma: Union[float, Variable, dict[str, Union[int, float, Variable]]],
-    order: Optional[Union[int, dict[str, int]]] = 0,
+    sigma: Union[float, Variable, Mapping[str, Union[float, Variable]]],
+    order: Optional[Union[int, Mapping[str, int]]] = 0,
     **kwargs: Any,
-) -> VariableLikeType:
+) -> _T:
     """
     Multidimensional Gaussian filter.
 
@@ -211,21 +172,28 @@ def gaussian_filter(
       ...                                       'y':sc.scalar(1.0, unit='mm')})
       >>> filtered.plot()
     """
-    sigma = _positional_index(x, sigma, name='sigma', dtype=float)
-    if isinstance(order, dict):
+    sigma_values = _positional_index(x, sigma, name='sigma', dtype=float)
+    if isinstance(order, Mapping):
         _require_matching_dims(order, x, 'order')
-        order = [order[dim] for dim in x.dims]
+        order = [order[dim] for dim in x.dims]  # type: ignore[assignment]
     out = empty_like(x)
     scipy.ndimage.gaussian_filter(
-        x.values, sigma=sigma, order=order, output=out.values, **kwargs
+        x.values, sigma=sigma_values, order=order, output=out.values, **kwargs
     )
     return out
 
 
-def _make_footprint(x: Union[Variable, DataArray], size, footprint) -> Variable:
+def _make_footprint(
+    x: Union[Variable, DataArray],
+    size: Optional[Union[int, Variable, Mapping[str, Union[int, Variable]]]],
+    footprint: Optional[Variable],
+) -> Variable:
     if footprint is None:
-        size = _positional_index(x, size, name='size')
-        footprint = ones(dims=x.dims, shape=size, dtype='bool')
+        if size is None:
+            raise ValueError("Provide either 'footprint' or 'size'.")
+        footprint = ones(
+            dims=x.dims, shape=_positional_index(x, size, name='size'), dtype='bool'
+        )
     else:
         if size is not None:
             raise ValueError("Provide either 'size' or 'footprint', not both.")
@@ -236,24 +204,38 @@ def _make_footprint(x: Union[Variable, DataArray], size, footprint) -> Variable:
     return footprint
 
 
-def _make_footprint_filter(name: str, example: bool = True, extra_args: str = ''):
-    def footprint_filter(
-        x: VariableLikeType,
+class _FootprintFilter(Protocol):
+    def __call__(
+        self,
+        x: _T,
         /,
         *,
-        size: Optional[Union[int, Variable, dict[str, Union[int, Variable]]]] = None,
+        size: Optional[Union[int, Variable, Mapping[str, Union[int, Variable]]]] = None,
         footprint: Optional[Variable] = None,
-        origin: Optional[Union[int, Variable, dict[str, Union[int, Variable]]]] = 0,
+        origin: Optional[Union[int, Variable, Mapping[str, Union[int, Variable]]]] = 0,
         **kwargs: Any,
-    ) -> VariableLikeType:
+    ) -> _T: ...
+
+
+def _make_footprint_filter(
+    name: str, example: bool = True, extra_args: str = ''
+) -> _FootprintFilter:
+    def footprint_filter(
+        x: _T,
+        /,
+        *,
+        size: Optional[Union[int, Variable, Mapping[str, Union[int, Variable]]]] = None,
+        footprint: Optional[Variable] = None,
+        origin: Union[int, Variable, Mapping[str, Union[int, Variable]]] = 0,
+        **kwargs: Any,
+    ) -> _T:
         footprint = _make_footprint(x, size=size, footprint=footprint)
-        origin = _positional_index(x, origin, name='origin')
         out = empty_like(x)
         scipy_filter = getattr(scipy.ndimage, name)
         scipy_filter(
             x.values,
             footprint=footprint.values,
-            origin=origin,
+            origin=_positional_index(x, origin, name='origin'),
             output=out.values,
             **kwargs,
         )
