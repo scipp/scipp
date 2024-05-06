@@ -111,7 +111,7 @@ class Coords(Mapping[str, Variable]):
     def _ipython_key_completions_(self) -> list:
         ...
 
-    def _pop(self, k: str) -> Any:
+    def _pop(self, k: str) -> Variable:
         ...
 
     def clear(self) -> None:
@@ -135,7 +135,7 @@ class Coords(Mapping[str, Variable]):
     def pop(self, key, default=_NoDefault):
         ...
 
-    def popitem(self) -> tuple[str, Any]:
+    def popitem(self) -> tuple[str, Variable]:
         ...
 
     def set_aligned(self, key: str, aligned: bool) -> None:
@@ -690,7 +690,7 @@ class DataArray:
         ...
 
     @property
-    def dims(self) -> tuple:
+    def dims(self) -> tuple[str, ...]:
         ...
 
     def drop_attrs(self, *args, **kwargs):
@@ -809,7 +809,7 @@ class DataArray:
         ...
 
     @property
-    def shape(self) -> tuple:
+    def shape(self) -> tuple[int, ...]:
         ...
 
     @property
@@ -817,7 +817,7 @@ class DataArray:
         ...
 
     @property
-    def sizes(self) -> dict:
+    def sizes(self) -> dict[str, int]:
         ...
 
     def squeeze(self, dim: Optional[Union[str, List[str], Tuple[str, ...]]]=None) -> VariableLikeType:
@@ -1109,7 +1109,7 @@ class Dataset(Mapping[str, DataArray]):
     def _ipython_key_completions_(self) -> list:
         ...
 
-    def _pop(self, k: str) -> Any:
+    def _pop(self, k: str) -> DataArray:
         ...
 
     def _rename_dims(self, arg0: dict[str, str]) -> Dataset:
@@ -1150,7 +1150,7 @@ class Dataset(Mapping[str, DataArray]):
         ...
 
     @property
-    def dims(self) -> tuple:
+    def dims(self) -> tuple[str, ...]:
         ...
 
     @overload
@@ -1236,11 +1236,11 @@ class Dataset(Mapping[str, DataArray]):
         ...
 
     @property
-    def shape(self) -> tuple:
+    def shape(self) -> tuple[int, ...]:
         ...
 
     @property
-    def sizes(self) -> dict:
+    def sizes(self) -> dict[str, int]:
         ...
 
     def squeeze(self, dim: Optional[Union[str, List[str], Tuple[str, ...]]]=None) -> VariableLikeType:
@@ -1439,7 +1439,7 @@ class Masks(Mapping[str, Variable]):
     def _ipython_key_completions_(self) -> list:
         ...
 
-    def _pop(self, k: str) -> Any:
+    def _pop(self, k: str) -> Variable:
         ...
 
     def clear(self) -> None:
@@ -1463,7 +1463,7 @@ class Masks(Mapping[str, Variable]):
     def pop(self, key, default=_NoDefault):
         ...
 
-    def popitem(self) -> tuple[str, Any]:
+    def popitem(self) -> tuple[str, Variable]:
         ...
 
     def update(self, other: Any=None, /, **kwargs) -> None:
@@ -1946,7 +1946,7 @@ class Variable:
         ...
 
     @property
-    def dims(self) -> tuple:
+    def dims(self) -> tuple[str, ...]:
         ...
 
     @property
@@ -2025,7 +2025,7 @@ class Variable:
         ...
 
     @property
-    def shape(self) -> tuple:
+    def shape(self) -> tuple[int, ...]:
         ...
 
     @property
@@ -2033,7 +2033,7 @@ class Variable:
         ...
 
     @property
-    def sizes(self) -> dict:
+    def sizes(self) -> dict[str, int]:
         ...
 
     def squeeze(self, dim: Optional[Union[str, List[str], Tuple[str, ...]]]=None) -> VariableLikeType:

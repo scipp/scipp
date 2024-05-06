@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <variant>
 
+#include <pybind11/typing.h>
+
 #include "scipp/core/dtype.h"
 #include "scipp/core/eigen.h"
 #include "scipp/core/spatial_transforms.h"
@@ -447,7 +449,7 @@ void bind_common_data_properties(pybind11::class_<T, Ignored...> &c) {
       [](const T &self) {
         const auto &labels = self.dims().labels();
         const auto ndim = static_cast<size_t>(self.ndim());
-        py::tuple dims(ndim);
+        py::typing::Tuple<py::str, py::ellipsis> dims(ndim);
         for (size_t i = 0; i < ndim; ++i) {
           dims[i] = labels[i].name();
         }
@@ -468,7 +470,7 @@ void bind_common_data_properties(pybind11::class_<T, Ignored...> &c) {
       [](const T &self) {
         const auto &sizes = self.dims().sizes();
         const auto ndim = static_cast<size_t>(self.ndim());
-        py::tuple shape(ndim);
+        py::typing::Tuple<int, py::ellipsis> shape(ndim);
         for (size_t i = 0; i < ndim; ++i) {
           shape[i] = sizes[i];
         }
@@ -481,7 +483,7 @@ void bind_common_data_properties(pybind11::class_<T, Ignored...> &c) {
         const auto &dims = self.dims();
         // Use py::dict directly instead of std::map in order to guarantee
         // that items are stored in the order of insertion.
-        py::dict sizes;
+        py::typing::Dict<py::str, int> sizes;
         for (const auto label : dims.labels()) {
           sizes[label.name().c_str()] = dims[label];
         }
