@@ -26,7 +26,7 @@ def test_variable_default(var):
     assert f'{var}' == str(var)
     assert f'{var:}' == str(var)
     assert f'{var::}' == str(var)
-    assert f'{var}' == str(var)
+    assert '{:}'.format(var) == str(var)  # noqa: UP032, RUF100
 
 
 @pytest.mark.parametrize('s', ['^', ''])
