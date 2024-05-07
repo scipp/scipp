@@ -82,7 +82,7 @@ def collapse(scipp_obj, keep):
     slice_dims = []
     volume = 1
     slice_shape = {}
-    for d, size in zip(dims, shape):
+    for d, size in zip(dims, shape, strict=True):
         if d != keep:
             slice_dims.append(d)
             slice_shape[d] = size

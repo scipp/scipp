@@ -109,7 +109,7 @@ class VariableDrawer:
         """Compute 3D extent, remapping dimension order to target dim order"""
         shape = self._variable.shape
         dims = self._dims()
-        d = dict(zip(dims, shape))
+        d = dict(zip(dims, shape, strict=True))
         e = []
         max_extent = _cubes_in_full_width // 2
         for dim in self._target_dims:
@@ -439,10 +439,12 @@ class DatasetDrawer:
         ds = self._dataset
         if isinstance(ds, sc.DataArray):
             categories = zip(
-                ['coords', 'masks', 'attrs'], [ds.coords, ds.masks, ds.deprecated_attrs]
+                ['coords', 'masks', 'attrs'],
+                [ds.coords, ds.masks, ds.deprecated_attrs],
+                strict=True,
             )
         else:
-            categories = zip(['coords'], [ds.coords])
+            categories = zip(['coords'], [ds.coords], strict=True)
         for what, items in categories:
             for name, var in sorted(items.items()):
                 item = DrawerItem(

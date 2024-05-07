@@ -42,7 +42,7 @@ def _dtype_lut():
         d.rotation3,
     ]
     names = [str(dtype) for dtype in dtypes]
-    return dict(zip(names, dtypes))
+    return dict(zip(names, dtypes, strict=True))
 
 
 def _as_hdf5_type(a):
@@ -328,7 +328,7 @@ class DataArrayIO:
         # Note that we write aligned and unaligned coords into the same group.
         # Distinction is via an attribute, which is more natural than having
         # 2 separate groups.
-        for view_name, view in zip(['coords', 'masks', 'attrs'], views):
+        for view_name, view in zip(['coords', 'masks', 'attrs'], views, strict=True):
             subgroup = group.create_group(view_name)
             _write_mapping(subgroup, view, override.get(view_name))
         return group

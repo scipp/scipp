@@ -26,7 +26,9 @@ def _as_scalar(obj, unit):
 
 def _wrap_func(f, p_names, p_units):
     def func(x, *args):
-        p = {k: _as_scalar(v, u) for k, v, u in zip(p_names, args, p_units)}
+        p = {
+            k: _as_scalar(v, u) for k, v, u in zip(p_names, args, p_units, strict=True)
+        }
         return f(x, **p).values
 
     return func
@@ -240,7 +242,9 @@ def curve_fit(
     )
     popt = {
         name: scalar(value=val, variance=var, unit=u)
-        for name, val, var, u in zip(params.keys(), popt, np.diag(pcov), p_units)
+        for name, val, var, u in zip(
+            params.keys(), popt, np.diag(pcov), p_units, strict=True
+        )
     }
     pcov = _covariance_with_units(list(params.keys()), pcov, p_units)
     return popt, pcov

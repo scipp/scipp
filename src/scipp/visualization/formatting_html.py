@@ -81,7 +81,7 @@ def _repr_item(bin_dim, item):
 def _get_events(var, variances, ellipsis_after):
     dim = var.bins.constituents['dim']
     dims = var.bins.constituents['data'].dims
-    bin_dim = dict(zip(dims, range(len(dims))))[dim]
+    bin_dim = dict(zip(dims, range(len(dims)), strict=True))[dim]
     s = []
     if not isinstance(var.values, (sc.Variable, sc.DataArray, sc.Dataset)):
         size = len(var.values)
@@ -168,7 +168,7 @@ def format_dims(dims, sizes, coords):
         f"<li><span{dim_css_map[dim]}>"
         f"{escape(str(dim))}</span>: "
         f"{size if size is not None else 'Events' }</li>"
-        for dim, size in zip(dims, sizes)
+        for dim, size in zip(dims, sizes, strict=True)
     )
 
     return f"<ul class='sc-dim-list'>{dims_li}</ul>"
@@ -278,7 +278,7 @@ def _make_dim_str(var, bin_edges, add_dim_size=False):
             _make_dim_labels(dim, bin_edges),
             f': {size}' if add_dim_size and size is not None else '',
         )
-        for dim, size in zip(var.dims, var.shape)
+        for dim, size in zip(var.dims, var.shape, strict=True)
     )
     return dims_text
 

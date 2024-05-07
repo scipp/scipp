@@ -930,30 +930,33 @@ def test_zeros_sizes():
     dims = ['x', 'y', 'z']
     shape = [2, 3, 4]
     assert sc.identical(
-        sc.zeros(dims=dims, shape=shape), sc.zeros(sizes=dict(zip(dims, shape)))
+        sc.zeros(dims=dims, shape=shape),
+        sc.zeros(sizes=dict(zip(dims, shape, strict=True))),
     )
     with pytest.raises(ValueError, match='dims and shape must both be None'):
-        sc.zeros(dims=dims, shape=shape, sizes=dict(zip(dims, shape)))
+        sc.zeros(dims=dims, shape=shape, sizes=dict(zip(dims, shape, strict=True)))
 
 
 def test_ones_sizes():
     dims = ['x', 'y', 'z']
     shape = [2, 3, 4]
     assert sc.identical(
-        sc.ones(dims=dims, shape=shape), sc.ones(sizes=dict(zip(dims, shape)))
+        sc.ones(dims=dims, shape=shape),
+        sc.ones(sizes=dict(zip(dims, shape, strict=True))),
     )
     with pytest.raises(ValueError, match='dims and shape must both be None'):
-        sc.ones(dims=dims, shape=shape, sizes=dict(zip(dims, shape)))
+        sc.ones(dims=dims, shape=shape, sizes=dict(zip(dims, shape, strict=True)))
 
 
 def test_empty_sizes():
     dims = ['x', 'y', 'z']
     shape = [2, 3, 4]
     _compare_properties(
-        sc.empty(dims=dims, shape=shape), sc.empty(sizes=dict(zip(dims, shape)))
+        sc.empty(dims=dims, shape=shape),
+        sc.empty(sizes=dict(zip(dims, shape, strict=True))),
     )
     with pytest.raises(ValueError, match='dims and shape must both be None'):
-        sc.empty(dims=dims, shape=shape, sizes=dict(zip(dims, shape)))
+        sc.empty(dims=dims, shape=shape, sizes=dict(zip(dims, shape, strict=True)))
 
 
 @pytest.mark.parametrize('timezone', ['Z', '-05:00', '+02'])
