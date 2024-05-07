@@ -120,7 +120,7 @@ class Coords(Mapping[str, Variable]):
     def copy(self, deep: bool=True) -> Coords:
         ...
 
-    def get(self, key: str, default: Optional[Variable]=None) -> Optional[Variable]:
+    def get(self, key: str, default: Variable | None=None) -> Variable | None:
         ...
 
     def is_edges(self, key: str, dim: Optional[str]=None) -> bool:
@@ -132,7 +132,7 @@ class Coords(Mapping[str, Variable]):
     def keys(self) -> Coords_keys_view:
         ...
 
-    def pop(self, key: str, default: Optional[Variable]=None) -> Optional[Variable]:
+    def pop(self, key: str, default: Variable | None=None) -> Variable | None:
         ...
 
     def popitem(self) -> tuple[str, Variable]:
@@ -615,19 +615,19 @@ class DataArray:
     def _repr_html_(self) -> str:
         ...
 
-    def all(self, dim: Optional[str]=None) -> DataArray:
+    def all(self, dim: str | None=None) -> DataArray:
         ...
 
-    def any(self, dim: Optional[str]=None) -> DataArray:
+    def any(self, dim: str | None=None) -> DataArray:
         ...
 
-    def assign_attrs(self, attrs: Optional[Dict[str, Variable]]=None, /, **attrs_kwargs: Variable) -> DataArray:
+    def assign_attrs(self, attrs: dict[str, Variable] | None=None, /, **attrs_kwargs: Variable) -> DataArray:
         ...
 
-    def assign_coords(self, coords: Optional[Dict[str, Variable]]=None, /, **coords_kwargs: Variable) -> _T:
+    def assign_coords(self, coords: dict[str, Variable] | None=None, /, **coords_kwargs: Variable) -> _T:
         ...
 
-    def assign_masks(self, masks: Optional[Dict[str, Variable]]=None, /, **masks_kwargs: Variable) -> DataArray:
+    def assign_masks(self, masks: dict[str, Variable] | None=None, /, **masks_kwargs: Variable) -> DataArray:
         ...
 
     def astype(self, type: Any, *, copy: bool=True) -> DataArray:
@@ -641,17 +641,17 @@ class DataArray:
         ...
 
     @property
-    def bins(self) -> Optional[Bins]:
+    def bins(self) -> Bins | None:
         ...
 
     @bins.setter
     def bins(self, bins: Bins) -> None:
         ...
 
-    def broadcast(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, shape: Optional[Sequence[int]]=None, sizes: Optional[Dict[str, int]]=None) -> DataArray:
+    def broadcast(self, dims: list[str] | tuple[str, ...] | None=None, shape: Sequence[int] | None=None, sizes: dict[str, int] | None=None) -> DataArray:
         ...
 
-    def ceil(self, *, out: Optional[VariableLike]=None) -> VariableLike:
+    def ceil(self, *, out: VariableLike | None=None) -> VariableLike:
         ...
 
     @property
@@ -716,19 +716,19 @@ class DataArray:
     def dtype(self) -> DType:
         ...
 
-    def flatten(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, to: Optional[str]=None) -> DataArray:
+    def flatten(self, dims: list[str] | tuple[str, ...] | None=None, to: str | None=None) -> DataArray:
         ...
 
-    def floor(self, *, out: Optional[VariableLike]=None) -> VariableLike:
+    def floor(self, *, out: VariableLike | None=None) -> VariableLike:
         ...
 
-    def fold(self, dim: str, sizes: Optional[Dict[str, int]]=None, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, shape: Optional[Sequence[int]]=None) -> DataArray:
+    def fold(self, dim: str, sizes: dict[str, int] | None=None, dims: list[str] | tuple[str, ...] | None=None, shape: Sequence[int] | None=None) -> DataArray:
         ...
 
-    def group(self, /, *args: Union[str, Variable]):
+    def group(self, /, *args: str | Variable):
         ...
 
-    def groupby(self, /, group: Union[Variable, str], *, bins: Optional[Variable]=None) -> Union[GroupByDataArray, GroupByDataset]:
+    def groupby(self, /, group: Variable | str, *, bins: Variable | None=None) -> GroupByDataArray | GroupByDataset:
         ...
 
     def hist(self, arg_dict=None, /, **kwargs):
@@ -738,10 +738,10 @@ class DataArray:
     def masks(self) -> Masks:
         ...
 
-    def max(self, dim: Optional[str]=None) -> DataArray:
+    def max(self, dim: str | None=None) -> DataArray:
         ...
 
-    def mean(self, dim: Optional[str]=None) -> DataArray:
+    def mean(self, dim: str | None=None) -> DataArray:
         ...
 
     def median(self, dim: Dims=None) -> DataArray:
@@ -751,7 +751,7 @@ class DataArray:
     def meta(self):
         ...
 
-    def min(self, dim: Optional[str]=None) -> DataArray:
+    def min(self, dim: str | None=None) -> DataArray:
         ...
 
     @property
@@ -765,22 +765,22 @@ class DataArray:
     def nanhist(self, arg_dict=None, /, **kwargs):
         ...
 
-    def nanmax(self, dim: Optional[str]=None) -> DataArray:
+    def nanmax(self, dim: str | None=None) -> DataArray:
         ...
 
-    def nanmean(self, dim: Optional[str]=None) -> DataArray:
+    def nanmean(self, dim: str | None=None) -> DataArray:
         ...
 
     def nanmedian(self, dim: Dims=None) -> DataArray:
         ...
 
-    def nanmin(self, dim: Optional[str]=None) -> DataArray:
+    def nanmin(self, dim: str | None=None) -> DataArray:
         ...
 
     def nanstd(self, dim: Dims=None, *, ddof: int) -> DataArray:
         ...
 
-    def nansum(self, dim: Optional[str]=None) -> DataArray:
+    def nansum(self, dim: str | None=None) -> DataArray:
         ...
 
     def nanvar(self, dim: Dims=None, *, ddof: int) -> DataArray:
@@ -796,16 +796,16 @@ class DataArray:
     def rebin(self, arg_dict=None, deprecated=None, /, **kwargs):
         ...
 
-    def rename(self, dims_dict: Optional[dict[str, str]]=None, /, **names: str) -> DataArray:
+    def rename(self, dims_dict: dict[str, str] | None=None, /, **names: str) -> DataArray:
         ...
 
-    def rename_dims(self, dims_dict: Optional[dict[str, str]]=None, /, **names: str) -> DataArray:
+    def rename_dims(self, dims_dict: dict[str, str] | None=None, /, **names: str) -> DataArray:
         ...
 
-    def round(self, *, out: Optional[VariableLike]=None) -> VariableLike:
+    def round(self, *, out: VariableLike | None=None) -> VariableLike:
         ...
 
-    def save_hdf5(self, filename: Union[str, Path]) -> None:
+    def save_hdf5(self, filename: str | Path) -> None:
         ...
 
     @property
@@ -820,7 +820,7 @@ class DataArray:
     def sizes(self) -> dict[str, int]:
         ...
 
-    def squeeze(self, dim: Optional[Union[str, List[str], Tuple[str, ...]]]=None) -> DataArray:
+    def squeeze(self, dim: str | list[str] | tuple[str, ...] | None=None) -> DataArray:
         ...
 
     def std(self, dim: Dims=None, *, ddof: int) -> DataArray:
@@ -829,13 +829,13 @@ class DataArray:
     def sum(self, dim: Dims=None) -> DataArray:
         ...
 
-    def to(self, *, unit: Optional[Union[Unit, str]]=None, dtype: Optional[Any]=None, copy: bool=True) -> DataArray:
+    def to(self, *, unit: Unit | str | None=None, dtype: Any | None=None, copy: bool=True) -> DataArray:
         ...
 
-    def transform_coords(self, targets: Optional[Union[str, Iterable[str]]]=None, /, graph: Optional[GraphDict]=None, *, rename_dims: bool=True, keep_aliases: bool=True, keep_intermediate: bool=True, keep_inputs: bool=True, quiet: bool=False, **kwargs: Callable) -> Union[DataArray, Dataset]:
+    def transform_coords(self, targets: str | Iterable[str] | None=None, /, graph: GraphDict | None=None, *, rename_dims: bool=True, keep_aliases: bool=True, keep_intermediate: bool=True, keep_inputs: bool=True, quiet: bool=False, **kwargs: Callable) -> DataArray | Dataset:
         ...
 
-    def transpose(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None) -> DataArray:
+    def transpose(self, dims: list[str] | tuple[str, ...] | None=None) -> DataArray:
         ...
 
     def underlying_size(self) -> int:
@@ -1118,17 +1118,17 @@ class Dataset(Mapping[str, DataArray]):
     def _repr_html_(self) -> str:
         ...
 
-    def all(self, dim: Optional[str]=None) -> Dataset:
+    def all(self, dim: str | None=None) -> Dataset:
         ...
 
-    def any(self, dim: Optional[str]=None) -> Dataset:
+    def any(self, dim: str | None=None) -> Dataset:
         ...
 
-    def assign_coords(self, coords: Optional[Dict[str, Variable]]=None, /, **coords_kwargs: Variable) -> _T:
+    def assign_coords(self, coords: dict[str, Variable] | None=None, /, **coords_kwargs: Variable) -> _T:
         ...
 
     @property
-    def bins(self) -> Optional[Bins]:
+    def bins(self) -> Bins | None:
         ...
 
     @bins.setter
@@ -1161,10 +1161,10 @@ class Dataset(Mapping[str, DataArray]):
     def drop_coords(self, arg0: list[str]) -> Dataset:
         ...
 
-    def get(self, key: str, default: Optional[DataArray]=None) -> Optional[DataArray]:
+    def get(self, key: str, default: DataArray | None=None) -> DataArray | None:
         ...
 
-    def groupby(self, /, group: Union[Variable, str], *, bins: Optional[Variable]=None) -> Union[GroupByDataArray, GroupByDataset]:
+    def groupby(self, /, group: Variable | str, *, bins: Variable | None=None) -> GroupByDataArray | GroupByDataset:
         ...
 
     def hist(self, arg_dict=None, /, **kwargs):
@@ -1176,10 +1176,10 @@ class Dataset(Mapping[str, DataArray]):
     def keys(self) -> Dataset_keys_view:
         ...
 
-    def max(self, dim: Optional[str]=None) -> Dataset:
+    def max(self, dim: str | None=None) -> Dataset:
         ...
 
-    def mean(self, dim: Optional[str]=None) -> Dataset:
+    def mean(self, dim: str | None=None) -> Dataset:
         ...
 
     def median(self, dim: Dims=None) -> Dataset:
@@ -1189,25 +1189,25 @@ class Dataset(Mapping[str, DataArray]):
     def meta(self) -> Coords:
         ...
 
-    def min(self, dim: Optional[str]=None) -> Dataset:
+    def min(self, dim: str | None=None) -> Dataset:
         ...
 
-    def nanmax(self, dim: Optional[str]=None) -> Dataset:
+    def nanmax(self, dim: str | None=None) -> Dataset:
         ...
 
-    def nanmean(self, dim: Optional[str]=None) -> Dataset:
+    def nanmean(self, dim: str | None=None) -> Dataset:
         ...
 
     def nanmedian(self, dim: Dims=None) -> Dataset:
         ...
 
-    def nanmin(self, dim: Optional[str]=None) -> Dataset:
+    def nanmin(self, dim: str | None=None) -> Dataset:
         ...
 
     def nanstd(self, dim: Dims=None, *, ddof: int) -> Dataset:
         ...
 
-    def nansum(self, dim: Optional[str]=None) -> Dataset:
+    def nansum(self, dim: str | None=None) -> Dataset:
         ...
 
     def nanvar(self, dim: Dims=None, *, ddof: int) -> Dataset:
@@ -1220,19 +1220,19 @@ class Dataset(Mapping[str, DataArray]):
     def plot(*args: Any, **kwargs: Any) -> None:
         ...
 
-    def pop(self, key: str, default: Optional[DataArray]=None) -> Optional[DataArray]:
+    def pop(self, key: str, default: DataArray | None=None) -> DataArray | None:
         ...
 
     def rebin(self, arg_dict=None, deprecated=None, /, **kwargs):
         ...
 
-    def rename(self, dims_dict: Optional[dict[str, str]]=None, /, **names: str) -> Dataset:
+    def rename(self, dims_dict: dict[str, str] | None=None, /, **names: str) -> Dataset:
         ...
 
-    def rename_dims(self, dims_dict: Optional[dict[str, str]]=None, /, **names: str) -> Dataset:
+    def rename_dims(self, dims_dict: dict[str, str] | None=None, /, **names: str) -> Dataset:
         ...
 
-    def save_hdf5(self, filename: Union[str, Path]) -> None:
+    def save_hdf5(self, filename: str | Path) -> None:
         ...
 
     @property
@@ -1243,7 +1243,7 @@ class Dataset(Mapping[str, DataArray]):
     def sizes(self) -> dict[str, int]:
         ...
 
-    def squeeze(self, dim: Optional[Union[str, List[str], Tuple[str, ...]]]=None) -> Dataset:
+    def squeeze(self, dim: str | list[str] | tuple[str, ...] | None=None) -> Dataset:
         ...
 
     def std(self, dim: Dims=None, *, ddof: int) -> Dataset:
@@ -1252,7 +1252,7 @@ class Dataset(Mapping[str, DataArray]):
     def sum(self, dim: Dims=None) -> Dataset:
         ...
 
-    def transform_coords(self, targets: Optional[Union[str, Iterable[str]]]=None, /, graph: Optional[GraphDict]=None, *, rename_dims: bool=True, keep_aliases: bool=True, keep_intermediate: bool=True, keep_inputs: bool=True, quiet: bool=False, **kwargs: Callable) -> Union[DataArray, Dataset]:
+    def transform_coords(self, targets: str | Iterable[str] | None=None, /, graph: GraphDict | None=None, *, rename_dims: bool=True, keep_aliases: bool=True, keep_intermediate: bool=True, keep_inputs: bool=True, quiet: bool=False, **kwargs: Callable) -> DataArray | Dataset:
         ...
 
     def underlying_size(self) -> int:
@@ -1448,7 +1448,7 @@ class Masks(Mapping[str, Variable]):
     def copy(self, deep: bool=True) -> Masks:
         ...
 
-    def get(self, key: str, default: Optional[Variable]=None) -> Optional[Variable]:
+    def get(self, key: str, default: Variable | None=None) -> Variable | None:
         ...
 
     def is_edges(self, key: str, dim: Optional[str]=None) -> bool:
@@ -1460,7 +1460,7 @@ class Masks(Mapping[str, Variable]):
     def keys(self) -> Masks_keys_view:
         ...
 
-    def pop(self, key: str, default: Optional[Variable]=None) -> Optional[Variable]:
+    def pop(self, key: str, default: Variable | None=None) -> Variable | None:
         ...
 
     def popitem(self) -> tuple[str, Variable]:
@@ -1909,10 +1909,10 @@ class Variable:
     def aligned(self) -> bool:
         ...
 
-    def all(self, dim: Optional[str]=None) -> Variable:
+    def all(self, dim: str | None=None) -> Variable:
         ...
 
-    def any(self, dim: Optional[str]=None) -> Variable:
+    def any(self, dim: str | None=None) -> Variable:
         ...
 
     def astype(self, type: Any, *, copy: bool=True) -> Variable:
@@ -1922,23 +1922,23 @@ class Variable:
         ...
 
     @property
-    def bins(self) -> Optional[Bins]:
+    def bins(self) -> Bins | None:
         ...
 
     @bins.setter
     def bins(self, bins: Bins) -> None:
         ...
 
-    def broadcast(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, shape: Optional[Sequence[int]]=None, sizes: Optional[Dict[str, int]]=None) -> Variable:
+    def broadcast(self, dims: list[str] | tuple[str, ...] | None=None, shape: Sequence[int] | None=None, sizes: dict[str, int] | None=None) -> Variable:
         ...
 
-    def ceil(self, *, out: Optional[VariableLike]=None) -> VariableLike:
+    def ceil(self, *, out: VariableLike | None=None) -> VariableLike:
         ...
 
     def copy(self, deep: bool=True) -> Variable:
         ...
 
-    def cumsum(self, dim: Optional[str]=None, mode: Literal['exclusive', 'inclusive']='inclusive') -> Variable:
+    def cumsum(self, dim: str | None=None, mode: Literal['exclusive', 'inclusive']='inclusive') -> Variable:
         ...
 
     @property
@@ -1957,49 +1957,49 @@ class Variable:
     def fields(self) -> Any:
         ...
 
-    def flatten(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, to: Optional[str]=None) -> Variable:
+    def flatten(self, dims: list[str] | tuple[str, ...] | None=None, to: str | None=None) -> Variable:
         ...
 
-    def floor(self, *, out: Optional[VariableLike]=None) -> VariableLike:
+    def floor(self, *, out: VariableLike | None=None) -> VariableLike:
         ...
 
-    def fold(self, dim: str, sizes: Optional[Dict[str, int]]=None, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, shape: Optional[Sequence[int]]=None) -> Variable:
+    def fold(self, dim: str, sizes: dict[str, int] | None=None, dims: list[str] | tuple[str, ...] | None=None, shape: Sequence[int] | None=None) -> Variable:
         ...
 
     def hist(self, arg_dict=None, /, **kwargs):
         ...
 
-    def max(self, dim: Optional[str]=None) -> Variable:
+    def max(self, dim: str | None=None) -> Variable:
         ...
 
-    def mean(self, dim: Optional[str]=None) -> Variable:
+    def mean(self, dim: str | None=None) -> Variable:
         ...
 
     def median(self, dim: Dims=None) -> Variable:
         ...
 
-    def min(self, dim: Optional[str]=None) -> Variable:
+    def min(self, dim: str | None=None) -> Variable:
         ...
 
     def nanhist(self, arg_dict=None, /, **kwargs):
         ...
 
-    def nanmax(self, dim: Optional[str]=None) -> Variable:
+    def nanmax(self, dim: str | None=None) -> Variable:
         ...
 
-    def nanmean(self, dim: Optional[str]=None) -> Variable:
+    def nanmean(self, dim: str | None=None) -> Variable:
         ...
 
     def nanmedian(self, dim: Dims=None) -> Variable:
         ...
 
-    def nanmin(self, dim: Optional[str]=None) -> Variable:
+    def nanmin(self, dim: str | None=None) -> Variable:
         ...
 
     def nanstd(self, dim: Dims=None, *, ddof: int) -> Variable:
         ...
 
-    def nansum(self, dim: Optional[str]=None) -> Variable:
+    def nansum(self, dim: str | None=None) -> Variable:
         ...
 
     def nanvar(self, dim: Dims=None, *, ddof: int) -> Variable:
@@ -2012,16 +2012,16 @@ class Variable:
     def plot(*args: Any, **kwargs: Any) -> None:
         ...
 
-    def rename(self, dims_dict: Optional[dict[str, str]]=None, /, **names: str) -> Variable:
+    def rename(self, dims_dict: dict[str, str] | None=None, /, **names: str) -> Variable:
         ...
 
-    def rename_dims(self, dims_dict: Optional[dict[str, str]]=None, /, **names: str) -> Variable:
+    def rename_dims(self, dims_dict: dict[str, str] | None=None, /, **names: str) -> Variable:
         ...
 
-    def round(self, *, out: Optional[VariableLike]=None) -> VariableLike:
+    def round(self, *, out: VariableLike | None=None) -> VariableLike:
         ...
 
-    def save_hdf5(self, filename: Union[str, Path]) -> None:
+    def save_hdf5(self, filename: str | Path) -> None:
         ...
 
     @property
@@ -2036,7 +2036,7 @@ class Variable:
     def sizes(self) -> dict[str, int]:
         ...
 
-    def squeeze(self, dim: Optional[Union[str, List[str], Tuple[str, ...]]]=None) -> Variable:
+    def squeeze(self, dim: str | list[str] | tuple[str, ...] | None=None) -> Variable:
         ...
 
     def std(self, dim: Dims=None, *, ddof: int) -> Variable:
@@ -2045,10 +2045,10 @@ class Variable:
     def sum(self, dim: Dims=None) -> Variable:
         ...
 
-    def to(self, *, unit: Optional[Union[Unit, str]]=None, dtype: Optional[Any]=None, copy: bool=True) -> Variable:
+    def to(self, *, unit: Unit | str | None=None, dtype: Any | None=None, copy: bool=True) -> Variable:
         ...
 
-    def transpose(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None) -> Variable:
+    def transpose(self, dims: list[str] | tuple[str, ...] | None=None) -> Variable:
         ...
 
     def underlying_size(self) -> int:
