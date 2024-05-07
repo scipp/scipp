@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 from html import escape
-from typing import Optional
 
 import numpy as np
 
@@ -511,7 +510,7 @@ class DatasetDrawer:
         return _build_svg(content, left, top, max(_cubes_in_full_width, width), height)
 
 
-def make_svg(container: VariableLike, content_only: Optional[bool] = False) -> str:
+def make_svg(container: VariableLike, content_only: bool | None = False) -> str:
     """
     Return an SVG representation of a variable, data array, or dataset.
     """

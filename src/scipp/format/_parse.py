@@ -5,7 +5,6 @@
 import dataclasses
 import enum
 import re
-from typing import Optional
 
 
 def _dataclass_with_slots(**kwargs):
@@ -24,9 +23,9 @@ class FormatType(enum.Enum):
 @_dataclass_with_slots(frozen=True)
 class FormatSpec:
     format_type: FormatType
-    _selection: Optional[str]
-    _length: Optional[int]
-    _nested: Optional[str]
+    _selection: str | None
+    _length: int | None
+    _nested: str | None
 
     @property
     def selection(self) -> str:

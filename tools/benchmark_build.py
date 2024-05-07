@@ -13,14 +13,13 @@ from datetime import timedelta
 from itertools import chain, groupby
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Dict, List
 
 
 @dataclass
 class Case:
     name: str
-    cmake_args: Dict[str, str] = field(default_factory=dict)
-    build_args: List[str] = field(default_factory=list)
+    cmake_args: dict[str, str] = field(default_factory=dict)
+    build_args: list[str] = field(default_factory=list)
 
 
 ##############################

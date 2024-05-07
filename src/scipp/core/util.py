@@ -1,14 +1,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-from typing import Dict
 
 from ..typing import VariableLikeType
 from .cpp_classes import DataArray, Dataset, Variable
 from .like import empty_like
 
 
-def _copy_dict_for_overwrite(mapping: Dict[str, Variable]) -> Dict[str, Variable]:
+def _copy_dict_for_overwrite(mapping: dict[str, Variable]) -> dict[str, Variable]:
     return {name: copy_for_overwrite(var) for name, var in mapping.items()}
 
 

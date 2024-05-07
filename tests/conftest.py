@@ -2,7 +2,7 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 
 import os
-from typing import Any, List
+from typing import Any
 
 import pytest
 
@@ -14,7 +14,7 @@ os.environ['JUPYTER_PLATFORM_DIRS'] = '1'
 pytest.register_assert_rewrite('scipp.testing.assertions')
 
 
-def pytest_assertrepr_compare(op: str, left: Any, right: Any) -> List[str]:
+def pytest_assertrepr_compare(op: str, left: Any, right: Any) -> list[str]:
     if isinstance(left, sc.Unit) and isinstance(right, sc.Unit):
         return [f'Unit({left}) {op} Unit({right})']
     if isinstance(left, sc.DType) or isinstance(right, sc.DType):

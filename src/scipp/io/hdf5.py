@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, ClassVar, Union
+from typing import Any, ClassVar
 
 import numpy as np
 
@@ -458,7 +458,7 @@ class HDF5IO:
         return cls._handlers[group.attrs['scipp-type']].read(group, **kwargs)
 
 
-def save_hdf5(obj: VariableLike, filename: Union[str, Path]) -> None:
+def save_hdf5(obj: VariableLike, filename: str | Path) -> None:
     """Write an object out to file in HDF5 format."""
     import h5py
 
@@ -466,7 +466,7 @@ def save_hdf5(obj: VariableLike, filename: Union[str, Path]) -> None:
         HDF5IO.write(f, obj)
 
 
-def load_hdf5(filename: Union[str, Path]) -> VariableLike:
+def load_hdf5(filename: str | Path) -> VariableLike:
     """Load a Scipp-HDF5 file."""
     import h5py
 

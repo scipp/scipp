@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 
+from collections.abc import Callable, Mapping, Sequence
 from inspect import getfullargspec
 from numbers import Real
-from typing import Callable, Dict, Mapping, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
@@ -150,7 +150,7 @@ def _make_defaults(f, coords, params):
     }
 
 
-def _get_specific_bounds(bounds, name, unit) -> Tuple[float, float]:
+def _get_specific_bounds(bounds, name, unit) -> tuple[float, float]:
     if name not in bounds:
         return -np.inf, np.inf
     b = bounds[name]
@@ -169,7 +169,7 @@ def _get_specific_bounds(bounds, name, unit) -> Tuple[float, float]:
 
 def _parse_bounds(
     bounds, params
-) -> Union[Tuple[float, float], Tuple[np.ndarray, np.ndarray]]:
+) -> tuple[float, float] | tuple[np.ndarray, np.ndarray]:
     if bounds is None:
         return -np.inf, np.inf
 
@@ -247,18 +247,16 @@ def _curve_fit(
 
 
 def curve_fit(
-    coords: Union[Sequence[str], Mapping[str, Union[str, Variable]]],
+    coords: Sequence[str] | Mapping[str, str | Variable],
     f: Callable,
     da: DataArray,
     *,
-    p0: Optional[Dict[str, Union[Variable, Real]]] = None,
-    bounds: Optional[
-        Dict[str, Union[Tuple[Variable, Variable], Tuple[Real, Real]]]
-    ] = None,
+    p0: dict[str, Variable | Real] | None = None,
+    bounds: dict[str, tuple[Variable, Variable] | tuple[Real, Real]] | None = None,
     reduce_dims: Sequence[str] = (),
     unsafe_numpy_f: bool = False,
     **kwargs,
-) -> Tuple[DataGroup, DataGroup]:
+) -> tuple[DataGroup, DataGroup]:
     """Use non-linear least squares to fit a function, f, to data.
     The function interface is similar to that of :py:func:`xarray.DataArray.curvefit`.
 

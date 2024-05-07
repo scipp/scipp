@@ -2,8 +2,8 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import functools
+from collections.abc import Callable
 from inspect import signature
-from typing import Callable, Optional
 
 from ._scipp.core import transform as cpp_transform
 from .core import Variable
@@ -21,9 +21,9 @@ def _as_numba_cfunc(function, unit_func=None):
 
 
 def elemwise_func(
-    func: Optional[Callable] = None,
+    func: Callable | None = None,
     *,
-    unit_func: Optional[Callable] = None,
+    unit_func: Callable | None = None,
     dtype: str = 'float64',
     auto_convert_dtypes: bool = False,
 ) -> Callable:

@@ -12,8 +12,9 @@ Place the following code in your ``conftest.py``:
 
 """
 
+from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
-from typing import Any, Callable, Iterator, Mapping, TypeVar
+from typing import Any, TypeVar
 
 import numpy as np
 

@@ -3,15 +3,13 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from .._scipp import core as _cpp
 from ..typing import VariableLikeType
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 
 
 def sinh(
-    x: VariableLikeType, *, out: Optional[VariableLikeType] = None
+    x: VariableLikeType, *, out: VariableLikeType | None = None
 ) -> VariableLikeType:
     """Element-wise hyperbolic sine.
 
@@ -33,7 +31,7 @@ def sinh(
 
 
 def cosh(
-    x: VariableLikeType, *, out: Optional[VariableLikeType] = None
+    x: VariableLikeType, *, out: VariableLikeType | None = None
 ) -> VariableLikeType:
     """Element-wise hyperbolic cosine.
 
@@ -55,7 +53,7 @@ def cosh(
 
 
 def tanh(
-    x: VariableLikeType, *, out: Optional[VariableLikeType] = None
+    x: VariableLikeType, *, out: VariableLikeType | None = None
 ) -> VariableLikeType:
     """Element-wise hyperbolic tangent.
 
@@ -77,7 +75,7 @@ def tanh(
 
 
 def asinh(
-    x: VariableLikeType, *, out: Optional[VariableLikeType] = None
+    x: VariableLikeType, *, out: VariableLikeType | None = None
 ) -> VariableLikeType:
     """Element-wise inverse hyperbolic sine.
 
@@ -99,7 +97,7 @@ def asinh(
 
 
 def acosh(
-    x: VariableLikeType, *, out: Optional[VariableLikeType] = None
+    x: VariableLikeType, *, out: VariableLikeType | None = None
 ) -> VariableLikeType:
     """Element-wise inverse hyperbolic cosine.
 
@@ -121,7 +119,7 @@ def acosh(
 
 
 def atanh(
-    x: VariableLikeType, *, out: Optional[VariableLikeType] = None
+    x: VariableLikeType, *, out: VariableLikeType | None = None
 ) -> VariableLikeType:
     """Element-wise inverse hyperbolic tangent.
 
