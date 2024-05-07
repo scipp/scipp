@@ -38,7 +38,7 @@ def value_to_string(val, precision=3, max_str_len=80):
     ):
         text = "{val:.{prec}e}".format(val=val, prec=precision)
     else:
-        text = "{}".format(val)
+        text = f"{val}"
         if len(text) > precision + 2 + (text[0] == '-'):
             text = "{val:.{prec}f}".format(val=val, prec=precision)
     return text

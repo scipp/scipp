@@ -63,7 +63,7 @@ class VariableDrawer:
         self._show_alignment = show_alignment
         self._x_stride = 1
         if len(self._dims()) > 3:
-            raise RuntimeError("Cannot visualize {}-D data".format(len(self._dims())))
+            raise RuntimeError(f"Cannot visualize {len(self._dims())}-D data")
 
     def _dims(self):
         dims = self._variable.dims
@@ -283,7 +283,7 @@ class VariableDrawer:
 
         for i, (name, color) in enumerate(items):
             svg += '<g>'
-            svg += '<title>{}</title>'.format(name)
+            svg += f'<title>{name}</title>'
             svg += self._draw_array(
                 color=color,
                 offset=offset
@@ -300,9 +300,9 @@ class VariableDrawer:
         svg += '</g>'
         svg += self._draw_bins_buffer()
         return (
-            svg.replace('#normal-font', '{}px'.format(_normal_font))
-            .replace('#small-font', '{}px'.format(_small_font))
-            .replace('#smaller-font', '{}px'.format(_smaller_font))
+            svg.replace('#normal-font', f'{_normal_font}px')
+            .replace('#small-font', f'{_small_font}px')
+            .replace('#smaller-font', f'{_smaller_font}px')
         )
 
     def make_svg(self, content_only=False):
@@ -378,7 +378,7 @@ class DatasetDrawer:
                     if dim not in dims:
                         dims = (dim, *dims)
         if len(dims) > 3:
-            raise RuntimeError("Cannot visualize {}-D data".format(len(dims)))
+            raise RuntimeError(f"Cannot visualize {len(dims)}-D data")
         return dims
 
     def make_svg(self, content_only=False):
@@ -483,26 +483,24 @@ class DatasetDrawer:
         left = 0
 
         c, w, h = draw_area(area_xy, 'y')
-        content += '<g transform="translate(0,{})">{}</g>'.format(height, c)
+        content += f'<g transform="translate(0,{height})">{c}</g>'
         c_x, w_x, h_x = draw_area(area_x, 'y')
         c_y, w_y, h_y = draw_area(area_y, 'x', reverse=True)
         height += max(h, h_y)
         width += max(w, w_x)
 
         c, w, h = draw_area(area_z, 'x')
-        content += '<g transform="translate({},{})">{}</g>'.format(width, height - h, c)
+        content += f'<g transform="translate({width},{height - h})">{c}</g>'
         width += w
 
-        content += '<g transform="translate({},{})">{}</g>'.format(
-            -w_y, height - h_y, c_y
-        )
+        content += f'<g transform="translate({-w_y},{height - h_y})">{c_y}</g>'
 
         c, w_0d, h_0d = draw_area(area_0d, 'x', reverse=True, truncate=True)
-        content += '<g transform="translate({},{})">{}</g>'.format(-w_0d, height, c)
+        content += f'<g transform="translate({-w_0d},{height})">{c}</g>'
         width += max(w_y, w_0d)
         left -= max(w_y, w_0d)
 
-        content += '<g transform="translate(0,{})">{}</g>'.format(height, c_x)
+        content += f'<g transform="translate(0,{height})">{c_x}</g>'
         height += max(h_x, h_0d)
 
         if content_only:

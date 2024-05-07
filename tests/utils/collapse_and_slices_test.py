@@ -52,10 +52,10 @@ def test_collapse_dataset():
     else:
         dim1 = 'y'
         dim2 = 'x'
-    assert sc.identical(collapsed['{}:0-{}:0'.format(dim1, dim2)], d[dim2, 0][dim1, 0])
-    assert sc.identical(collapsed['{}:0-{}:1'.format(dim1, dim2)], d[dim2, 1][dim1, 0])
-    assert sc.identical(collapsed['{}:1-{}:0'.format(dim1, dim2)], d[dim2, 0][dim1, 1])
-    assert sc.identical(collapsed['{}:1-{}:1'.format(dim1, dim2)], d[dim2, 1][dim1, 1])
+    assert sc.identical(collapsed[f'{dim1}:0-{dim2}:0'], d[dim2, 0][dim1, 0])
+    assert sc.identical(collapsed[f'{dim1}:0-{dim2}:1'], d[dim2, 1][dim1, 0])
+    assert sc.identical(collapsed[f'{dim1}:1-{dim2}:0'], d[dim2, 0][dim1, 1])
+    assert sc.identical(collapsed[f'{dim1}:1-{dim2}:1'], d[dim2, 1][dim1, 1])
 
 
 def test_slices_data_array():

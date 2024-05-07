@@ -210,10 +210,8 @@ def fold(
         dim_size = x.sizes[dim] // new_volume
         if x.sizes[dim] % new_volume != 0:
             raise ValueError(
-                "-1 in new shape was computed to be {}, but the original "
-                "shape {} cannot be divided by {}.".format(
-                    dim_size, x.sizes[dim], dim_size
-                )
+                f"-1 in new shape was computed to be {dim_size}, but the original "
+                f"shape {x.sizes[dim]} cannot be divided by {dim_size}."
             )
         new_shape[ind] = dim_size
 
