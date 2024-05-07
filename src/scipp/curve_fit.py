@@ -27,10 +27,10 @@ def _as_scalar(obj, unit):
 
 
 def _wrap_scipp_func(f, p_names, p_units):
-    _params = {k: _as_scalar(0.0, u) for k, u in zip(p_names, p_units)}
+    _params = {k: _as_scalar(0.0, u) for k, u in zip(p_names, p_units, strict=True)}
 
     def func(x, *args):
-        for k, v in zip(p_names, args):
+        for k, v in zip(p_names, args, strict=True):
             if isinstance(_params[k], Variable):
                 _params[k].value = v
             else:
@@ -46,8 +46,8 @@ def _wrap_numpy_func(f, p_names, coord_names):
         # Make x 2D for consistency.
         if len(x.shape) == 1:
             x = x.reshape(1, -1)
-        coords = dict(zip(coord_names, x))
-        params = dict(zip(p_names, args))
+        coords = dict(zip(coord_names, x, strict=True))
+        params = dict(zip(p_names, args, strict=True))
         return f(**coords, **params)
 
     return func
@@ -79,7 +79,7 @@ def _datagroup_outputs(da, params, p_units, map_over, pdata, covdata):
                     unit=u,
                 ),
             )
-            for i, (p, u) in enumerate(zip(params, p_units))
+            for i, (p, u) in enumerate(zip(params, p_units, strict=True))
         }
     )
     dgcov = DataGroup(
@@ -103,10 +103,10 @@ def _datagroup_outputs(da, params, p_units, map_over, pdata, covdata):
                             ),
                         ),
                     )
-                    for j, (q, q_u) in enumerate(zip(params, p_units))
+                    for j, (q, q_u) in enumerate(zip(params, p_units, strict=True))
                 }
             )
-            for i, (p, p_u) in enumerate(zip(params, p_units))
+            for i, (p, p_u) in enumerate(zip(params, p_units, strict=True))
         }
     )
     for c in da.coords:
@@ -138,7 +138,9 @@ def _make_defaults(f, coords, params):
     if not set(coords).issubset(all_args):
         raise ValueError("Function must take the provided coords as arguments")
     default_arguments = dict(
-        zip(spec.args[-len(spec.defaults) :], spec.defaults) if spec.defaults else {},
+        zip(spec.args[-len(spec.defaults) :], spec.defaults, strict=True)
+        if spec.defaults
+        else {},
         **(spec.kwonlydefaults or {}),
     )
     return {

@@ -166,7 +166,8 @@ def _format_variable_compact(var: Variable, spec: FormatSpec) -> str:
         formatted = [_format_element_compact(v) for v in values]
     else:
         formatted = [
-            _format_element_compact(*_round(v, e)) for v, e in zip(values, variances)
+            _format_element_compact(*_round(v, e))
+            for v, e in zip(values, variances, strict=True)
         ]
     return f"{', '.join(formatted)}{unt}"
 
