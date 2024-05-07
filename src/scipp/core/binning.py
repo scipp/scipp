@@ -587,7 +587,6 @@ def bin(x, arg_dict=None, /, **kwargs):
 def rebin(
     x: DataArray,
     arg_dict: dict[str, int | Variable] | None = None,
-    deprecated=None,
     /,
     **kwargs: int | Variable,
 ) -> DataArray: ...
@@ -597,7 +596,6 @@ def rebin(
 def rebin(
     x: Dataset,
     arg_dict: dict[str, int | Variable] | None = None,
-    deprecated=None,
     /,
     **kwargs: int | Variable,
 ) -> Dataset: ...
@@ -607,7 +605,6 @@ def rebin(
 def rebin(
     x: DataGroup,
     arg_dict: dict[str, int | Variable] | None = None,
-    deprecated=None,
     /,
     **kwargs: int | Variable,
 ) -> DataGroup: ...
