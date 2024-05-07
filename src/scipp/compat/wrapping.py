@@ -2,8 +2,8 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 
+from collections.abc import Callable
 from functools import wraps
-from typing import Callable, Union
 
 from ..core import BinEdgeError, DataArray, DimensionError, VariancesError
 
@@ -48,7 +48,7 @@ def wrap1d(is_partial=False, accept_masks=False, keep_coords=False):
 
     def decorator(func: Callable) -> Callable:
         @wraps(func)
-        def function(da: DataArray, dim: str, **kwargs) -> Union[DataArray, Callable]:
+        def function(da: DataArray, dim: str, **kwargs) -> DataArray | Callable:
             if 'axis' in kwargs:
                 raise ValueError("Use the 'dim' keyword argument instead of 'axis'.")
             if da.variances is not None:

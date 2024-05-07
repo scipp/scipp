@@ -1,19 +1,19 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+from collections.abc import Callable, Mapping
 from functools import reduce
-from typing import Callable, Dict, List, Mapping, Tuple, Union
 
 from ..typing import Dims, VariableLikeType
 from .cpp_classes import DataArray, Variable
 from .logical import logical_or
 
 
-def _copied(obj: Mapping[str, Variable]) -> Dict[str, Variable]:
+def _copied(obj: Mapping[str, Variable]) -> dict[str, Variable]:
     return {name: var.copy() for name, var in obj.items()}
 
 
-def _reduced(obj: Mapping[str, Variable], dims: List[str]) -> Dict[str, Variable]:
+def _reduced(obj: Mapping[str, Variable], dims: list[str]) -> dict[str, Variable]:
     dims = set(dims)
     return {name: var for name, var in obj.items() if dims.isdisjoint(var.dims)}
 
@@ -50,7 +50,7 @@ def transform_data(obj: VariableLikeType, func: Callable) -> VariableLikeType:
         raise TypeError(f"{func} only supports Variable and DataArray as inputs.")
 
 
-def concrete_dims(obj: VariableLikeType, dim: Dims) -> Tuple[str]:
+def concrete_dims(obj: VariableLikeType, dim: Dims) -> tuple[str]:
     """Convert a dimension specification into a concrete tuple of dimension labels.
 
     This does *not* validate that the dimension labels are valid for the given object.
@@ -60,19 +60,19 @@ def concrete_dims(obj: VariableLikeType, dim: Dims) -> Tuple[str]:
     return (dim,) if isinstance(dim, str) else tuple(dim)
 
 
-def reduced_coords(da: DataArray, dim: Dims) -> Dict[str, Variable]:
+def reduced_coords(da: DataArray, dim: Dims) -> dict[str, Variable]:
     return _reduced(da.coords, concrete_dims(da, dim))
 
 
-def reduced_attrs(da: DataArray, dim: Dims) -> Dict[str, Variable]:
+def reduced_attrs(da: DataArray, dim: Dims) -> dict[str, Variable]:
     return _reduced(da.deprecated_attrs, concrete_dims(da, dim))
 
 
-def reduced_masks(da: DataArray, dim: Dims) -> Dict[str, Variable]:
+def reduced_masks(da: DataArray, dim: Dims) -> dict[str, Variable]:
     return _copied(_reduced(da.masks, concrete_dims(da, dim)))
 
 
-def irreducible_mask(da: DataArray, dim: Dims) -> Union[None, Variable]:
+def irreducible_mask(da: DataArray, dim: Dims) -> None | Variable:
     """
     The union of masks that would need to be applied in a reduction op over dim.
 

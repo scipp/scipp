@@ -31,7 +31,7 @@ Special:
 """
 
 from contextlib import contextmanager
-from typing import Dict, Tuple, Union, Iterator
+from collections.abc import Iterator
 
 from .._scipp.core import add_unit_alias as _add_unit_alias
 from .._scipp.core import clear_unit_aliases as _clear_unit_aliases
@@ -71,11 +71,11 @@ class UnitAliases:
     """
 
     def __init__(self):
-        if any((isinstance(x, UnitAliases) for x in globals().values())):
+        if any(isinstance(x, UnitAliases) for x in globals().values()):
             raise RuntimeError('There can be only one instance of _Aliases')
-        self._aliases: Dict[str, Unit] = {}
+        self._aliases: dict[str, Unit] = {}
 
-    def __setitem__(self, alias: str, unit: Union[str, Unit, Variable]):
+    def __setitem__(self, alias: str, unit: str | Unit | Variable):
         """Define a new unit alias."""
         unit = _build_unit(unit)
         if self._aliases.get(alias) == unit:
@@ -103,7 +103,7 @@ class UnitAliases:
         _clear_unit_aliases()
 
     @contextmanager
-    def scoped(self, **kwargs: Union[str, Unit]):
+    def scoped(self, **kwargs: str | Unit):
         """Contextmanager to define temporary aliases.
 
         Defines new aliases based on ``kwargs`` for the duration of the context.
@@ -185,7 +185,7 @@ class UnitAliases:
         """Iterator over aliased units."""
         yield from self._aliases.values()
 
-    def items(self) -> Iterator[Tuple[str, Unit]]:
+    def items(self) -> Iterator[tuple[str, Unit]]:
         """Iterator over pairs of alias names and units."""
         yield from self._aliases.items()
 
@@ -198,7 +198,7 @@ class UnitAliases:
         raise TypeError('UnitAliases is a singleton and must not be copied')
 
 
-def _build_unit(x: Union[str, Unit, Variable]) -> Unit:
+def _build_unit(x: str | Unit | Variable) -> Unit:
     if isinstance(x, Unit):
         return x
     if isinstance(x, str):

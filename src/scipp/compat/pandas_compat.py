@@ -3,7 +3,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Iterable, Literal, Optional, Tuple, Union
+from collections.abc import Callable, Iterable
+from typing import TYPE_CHECKING, Literal
 
 from ..core import DataArray, Dataset, Unit, UnitError, array
 from ..typing import VariableLike
@@ -56,7 +57,7 @@ def from_pandas_series(
 def from_pandas_dataframe(
     df: pd.DataFrame,
     *,
-    data_columns: Optional[Union[str, Iterable[str]]] = None,
+    data_columns: str | Iterable[str] | None = None,
     include_trivial_index: bool = False,
     header_parser: HeaderParserArg = None,
 ) -> Dataset:
@@ -85,9 +86,9 @@ def from_pandas_dataframe(
 
 
 def from_pandas(
-    pd_obj: Union[pd.DataFrame, pd.Series],
+    pd_obj: pd.DataFrame | pd.Series,
     *,
-    data_columns: Optional[Union[str, Iterable[str]]] = None,
+    data_columns: str | Iterable[str] | None = None,
     include_trivial_index: bool = False,
     header_parser: HeaderParserArg = None,
 ) -> VariableLike:
@@ -146,11 +147,11 @@ def from_pandas(
         raise ValueError(f"from_pandas: cannot convert type '{type(pd_obj)}'")
 
 
-HeaderParser = Callable[[str], Tuple[str, Optional[Unit]]]
-HeaderParserArg = Optional[Union[Literal["bracket"], HeaderParser]]
+HeaderParser = Callable[[str], tuple[str, Unit | None]]
+HeaderParserArg = Literal["bracket"] | HeaderParser | None
 
 
-def parse_bracket_header(head: str) -> Tuple[str, Optional[Unit]]:
+def parse_bracket_header(head: str) -> tuple[str, Unit | None]:
     """Parses strings of the form ``name [unit]``.
 
     ``name`` may be any string that does not contain the character ``[``.
@@ -207,7 +208,7 @@ _HEADER_PARSERS = {
 }
 
 
-def _parse_header(header: str, parser: HeaderParserArg) -> Tuple[str, Optional[Unit]]:
+def _parse_header(header: str, parser: HeaderParserArg) -> tuple[str, Unit | None]:
     if parser is None:
         return header, default_unit
     if callable(parser):

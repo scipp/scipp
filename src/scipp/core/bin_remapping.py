@@ -4,7 +4,6 @@
 import itertools
 import uuid
 from math import prod
-from typing import Dict, List
 
 from .._scipp import core as _cpp
 from ..typing import Dims, VariableLikeType
@@ -43,7 +42,7 @@ def _with_bin_sizes(var: Variable, sizes: Variable) -> Variable:
     return _cpp._bins_no_validate(data=data, dim=dim, begin=begin, end=end)
 
 
-def _concat_bins(var: Variable, dim: List[str]) -> Variable:
+def _concat_bins(var: Variable, dim: list[str]) -> Variable:
     # To concat bins, two things need to happen:
     # 1. Data needs to be written to a contiguous chunk.
     # 2. New bin begin/end indices need to be setup.
@@ -62,11 +61,11 @@ def _concat_bins(var: Variable, dim: List[str]) -> Variable:
 
 def _combine_bins(
     var: Variable,
-    coords: Dict[str, Variable],
-    edges: List[Variable],
-    groups: List[Variable],
+    coords: dict[str, Variable],
+    edges: list[Variable],
+    groups: list[Variable],
     dim: Dims,
-) -> Dict[str, Variable]:
+) -> dict[str, Variable]:
     from .binning import make_binned
 
     # Overview
@@ -126,7 +125,7 @@ def _combine_bins(
 
 
 def combine_bins(
-    da: DataArray, edges: List[Variable], groups: List[Variable], dim: Dims
+    da: DataArray, edges: list[Variable], groups: list[Variable], dim: Dims
 ) -> DataArray:
     masked = hide_masked(da, dim)
     if len(edges) == 0 and len(groups) == 0:

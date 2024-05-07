@@ -83,7 +83,7 @@ def _get_events(var, variances, ellipsis_after):
     dims = var.bins.constituents['data'].dims
     bin_dim = dict(zip(dims, range(len(dims)), strict=True))[dim]
     s = []
-    if not isinstance(var.values, (sc.Variable, sc.DataArray, sc.Dataset)):
+    if not isinstance(var.values, sc.Variable | sc.DataArray | sc.Dataset):
         size = len(var.values)
         i = 0
 
@@ -177,9 +177,7 @@ def format_dims(dims, sizes, coords):
 def _icon(icon_name):
     # icon_name is defined in icon-svg-inline.html
     return (
-        "<svg class='icon sc-{0}'>" "<use xlink:href='#{0}'>" "</use>" "</svg>".format(
-            icon_name
-        )
+        f"<svg class='icon sc-{icon_name}'><use xlink:href='#{icon_name}'></use></svg>"
     )
 
 
@@ -498,7 +496,7 @@ def _format_size(obj):
 
 
 def dataset_repr(ds):
-    obj_type = "scipp.{}".format(type(ds).__name__)
+    obj_type = f"scipp.{type(ds).__name__}"
     header_components = [
         f"<div class='sc-obj-type'>{escape(obj_type)} " + _format_size(ds) + "</div>"
     ]
@@ -520,7 +518,7 @@ def dataset_repr(ds):
 
 
 def variable_repr(var):
-    obj_type = "scipp.{}".format(type(var).__name__)
+    obj_type = f"scipp.{type(var).__name__}"
 
     header_components = [
         f"<div class='sc-obj-type'>{escape(obj_type)} " + _format_size(var) + "</div>"

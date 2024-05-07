@@ -9,7 +9,7 @@ This subpackage provides wrappers for a subset of functions from
 
 from inspect import getfullargspec
 from numbers import Real
-from typing import Callable, Dict, Optional, Tuple, Union
+from collections.abc import Callable
 
 import numpy as np
 
@@ -75,7 +75,7 @@ def _make_defaults(f, p0):
     return kwargs
 
 
-def _get_specific_bounds(bounds, name, unit) -> Tuple[float, float]:
+def _get_specific_bounds(bounds, name, unit) -> tuple[float, float]:
     if name not in bounds:
         return -np.inf, np.inf
     b = bounds[name]
@@ -94,7 +94,7 @@ def _get_specific_bounds(bounds, name, unit) -> Tuple[float, float]:
 
 def _parse_bounds(
     bounds, params
-) -> Union[Tuple[float, float], Tuple[np.ndarray, np.ndarray]]:
+) -> tuple[float, float] | tuple[np.ndarray, np.ndarray]:
     if bounds is None:
         return -np.inf, np.inf
 
@@ -112,14 +112,10 @@ def curve_fit(
     f: Callable,
     da: DataArray,
     *,
-    p0: Optional[Dict[str, Union[Variable, Real]]] = None,
-    bounds: Optional[
-        Dict[str, Union[Tuple[Variable, Variable], Tuple[Real, Real]]]
-    ] = None,
+    p0: dict[str, Variable | Real] | None = None,
+    bounds: dict[str, tuple[Variable, Variable] | tuple[Real, Real]] | None = None,
     **kwargs,
-) -> Tuple[
-    Dict[str, Union[Variable, Real]], Dict[str, Dict[str, Union[Variable, Real]]]
-]:
+) -> tuple[dict[str, Variable | Real], dict[str, dict[str, Variable | Real]]]:
     """Use non-linear least squares to fit a function, f, to data.
 
     This is a wrapper around :py:func:`scipy.optimize.curve_fit`. See there for a

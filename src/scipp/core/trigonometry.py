@@ -4,15 +4,13 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from .._scipp import core as _cpp
 from ..typing import VariableLikeType
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 
 
 def sin(
-    x: VariableLikeType, *, out: Optional[VariableLikeType] = None
+    x: VariableLikeType, *, out: VariableLikeType | None = None
 ) -> VariableLikeType:
     """Element-wise sine.
 
@@ -34,7 +32,7 @@ def sin(
 
 
 def cos(
-    x: VariableLikeType, *, out: Optional[VariableLikeType] = None
+    x: VariableLikeType, *, out: VariableLikeType | None = None
 ) -> VariableLikeType:
     """Element-wise cosine.
 
@@ -56,7 +54,7 @@ def cos(
 
 
 def tan(
-    x: VariableLikeType, *, out: Optional[VariableLikeType] = None
+    x: VariableLikeType, *, out: VariableLikeType | None = None
 ) -> VariableLikeType:
     """Element-wise tangent.
 
@@ -78,7 +76,7 @@ def tan(
 
 
 def asin(
-    x: VariableLikeType, *, out: Optional[VariableLikeType] = None
+    x: VariableLikeType, *, out: VariableLikeType | None = None
 ) -> VariableLikeType:
     """Element-wise inverse sine.
 
@@ -98,7 +96,7 @@ def asin(
 
 
 def acos(
-    x: VariableLikeType, *, out: Optional[VariableLikeType] = None
+    x: VariableLikeType, *, out: VariableLikeType | None = None
 ) -> VariableLikeType:
     """Element-wise inverse cosine.
 
@@ -118,7 +116,7 @@ def acos(
 
 
 def atan(
-    x: VariableLikeType, *, out: Optional[VariableLikeType] = None
+    x: VariableLikeType, *, out: VariableLikeType | None = None
 ) -> VariableLikeType:
     """Element-wise inverse tangent.
 
@@ -138,7 +136,7 @@ def atan(
 
 
 def atan2(
-    *, y: _cpp.Variable, x: _cpp.Variable, out: Optional[_cpp.Variable] = None
+    *, y: _cpp.Variable, x: _cpp.Variable, out: _cpp.Variable | None = None
 ) -> _cpp.Variable:
     """Element-wise inverse tangent of y/x determining the correct quadrant.
 
