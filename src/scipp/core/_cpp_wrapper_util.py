@@ -2,7 +2,8 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import itertools
-from typing import TYPE_CHECKING, Callable, ParamSpec, TypeVar, Union
+from collections.abc import Callable
+from typing import TYPE_CHECKING, ParamSpec, TypeVar
 
 from .data_group import DataGroup, data_group_nary
 
@@ -17,7 +18,7 @@ def call_func(
     func: Callable[_P, _R],
     *args: _P.args,
     **kwargs: _P.kwargs,
-) -> Union[_R, DataGroup]:
+) -> _R | DataGroup:
     out = kwargs.pop('out', None)
     if any(isinstance(x, DataGroup) for x in itertools.chain(args, kwargs.values())):
         if out is not None:

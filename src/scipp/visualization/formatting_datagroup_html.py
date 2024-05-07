@@ -3,7 +3,6 @@
 
 import uuid
 from string import Template
-from typing import Optional, Union
 
 import numpy as np
 
@@ -20,7 +19,7 @@ from .resources import (
 )
 
 
-def _format_shape(var: Union[Variable, DataArray, Dataset, DataGroup], br_at=30) -> str:
+def _format_shape(var: Variable | DataArray | Dataset | DataGroup, br_at=30) -> str:
     """Return HTML Component that represents the shape of ``var``"""
     shape_list = [f"{escape(str(dim))}: {size}" for dim, size in var.sizes.items()]
     if sum([len(line) - line.count('\\') for line in shape_list]) < br_at:
@@ -45,7 +44,7 @@ def _format_dictionary_item(name_item: tuple, maxidx: int = 10) -> str:
     return "(" + ": ".join((name, type_repr)) + ")"
 
 
-def _format_multi_dim_data(var: Union[Dataset, np.ndarray]) -> str:
+def _format_multi_dim_data(var: Dataset | np.ndarray) -> str:
     """Inline preview of single or multi-dimensional data"""
     if isinstance(var, Dataset):
         view_iterable = list(var.items())
@@ -78,10 +77,10 @@ def _summarize_atomic_variable(var, name: str, depth: int = 0) -> str:
     preview = ''
     parent_obj_str = ''
     objtype_str = type(var).__name__
-    if isinstance(var, (Dataset, DataArray, Variable)):
+    if isinstance(var, Dataset | DataArray | Variable):
         parent_obj_str = "scipp"
         shape_repr = _format_shape(var)
-    if isinstance(var, (DataArray, Variable)):
+    if isinstance(var, DataArray | Variable):
         preview = inline_variable_repr(var)
         dtype_str = str(var.dtype)
         if var.unit is not None:
@@ -130,7 +129,7 @@ def _collapsible_summary(var: DataGroup, name: str, name_spaces: list) -> str:
     )
 
 
-def _datagroup_detail(dg: DataGroup, name_spaces: Optional[list] = None) -> str:
+def _datagroup_detail(dg: DataGroup, name_spaces: list | None = None) -> str:
     if name_spaces is None:
         name_spaces = []
     summary_rows = []
@@ -149,7 +148,7 @@ def _datagroup_detail(dg: DataGroup, name_spaces: Optional[list] = None) -> str:
 
 def datagroup_repr(dg: DataGroup) -> str:
     """Return HTML Component containing details of ``dg``"""
-    obj_type = "scipp.{} ".format(type(dg).__name__)
+    obj_type = f"scipp.{type(dg).__name__} "
     checkbox_status = "checked" if len(dg) < 15 else ''
     header_id = "datagroup-view-" + str(uuid.uuid4())
     details = _datagroup_detail(dg)

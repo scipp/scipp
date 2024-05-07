@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Matthew Andrew
-from typing import Union as _Union
 
 from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
@@ -33,7 +32,7 @@ def isneginf(x: _cpp.Variable) -> _cpp.Variable:
 
 
 def to_unit(
-    x: _cpp.Variable, unit: _Union[_cpp.Unit, str], *, copy: bool = True
+    x: _cpp.Variable, unit: _cpp.Unit | str, *, copy: bool = True
 ) -> _cpp.Variable:
     """Convert the variable to a different unit.
 

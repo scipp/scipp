@@ -5,7 +5,6 @@
 import dataclasses
 import enum
 import re
-from typing import Optional
 
 
 class FormatType(enum.Enum):
@@ -38,9 +37,9 @@ class Selection(enum.Enum):
 @dataclasses.dataclass(frozen=True, slots=True)
 class FormatSpec:
     format_type: FormatType
-    _selection: dataclasses.InitVar[Optional[str]]
-    _length: dataclasses.InitVar[Optional[str]]
-    _nested: dataclasses.InitVar[Optional[str]]
+    _selection: dataclasses.InitVar[str | None]
+    _length: dataclasses.InitVar[str | None]
+    _nested: dataclasses.InitVar[str | None]
 
     selection: Selection = dataclasses.field(init=False, default=Selection.edges)
     length: int = dataclasses.field(init=False, default=4)
@@ -52,7 +51,7 @@ class FormatSpec:
     has_nested: bool = dataclasses.field(init=False, default=False)
 
     def __post_init__(
-        self, _selection: Optional[str], _length: Optional[str], _nested: Optional[str]
+        self, _selection: str | None, _length: str | None, _nested: str | None
     ) -> None:
         if _selection is not None:
             object.__setattr__(self, 'selection', Selection(_selection))

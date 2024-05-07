@@ -2,12 +2,11 @@
 
 import ast
 import inspect
-from typing import Optional, Union
 
 from .config import CPP_CORE_MODULE_NAME
 
 
-def unqualified_cpp_class(node: Union[ast.Attribute, ast.Name]) -> Optional[str]:
+def unqualified_cpp_class(node: ast.Attribute | ast.Name) -> str | None:
     """Return the unqualified name of a C++ class in _scipp.core.
     Returns None if the class is not in _scipp.core.
     ``node`` should be a type annotation.
@@ -35,7 +34,7 @@ def replace_function(base: ast.FunctionDef, **kwargs) -> ast.FunctionDef:
 
 
 def add_decorator(
-    base: ast.FunctionDef, decorator: Union[ast.Name, ast.Attribute]
+    base: ast.FunctionDef, decorator: ast.Name | ast.Attribute
 ) -> ast.FunctionDef:
     return replace_function(base, decorator_list=[decorator, *base.decorator_list])
 
@@ -147,7 +146,7 @@ class ReplaceTypeVarInReturn(ast.NodeTransformer):
 class ShortenCppClassAnnotation(ast.NodeTransformer):
     """Remove module qualification from scipp classes."""
 
-    def visit_Attribute(self, node: ast.Attribute) -> Union[ast.Attribute, ast.Name]:
+    def visit_Attribute(self, node: ast.Attribute) -> ast.Attribute | ast.Name:
         self.generic_visit(node)
         if (cls := unqualified_cpp_class(node)) is not None:
             return ast.Name(cls)
@@ -157,7 +156,7 @@ class ShortenCppClassAnnotation(ast.NodeTransformer):
 
 
 class DropTypingModule(ast.NodeTransformer):
-    def visit_Attribute(self, node: ast.Attribute) -> Union[ast.Attribute, ast.Name]:
+    def visit_Attribute(self, node: ast.Attribute) -> ast.Attribute | ast.Name:
         self.generic_visit(node)
         if isinstance(node.value, ast.Name) and node.value.id == 'typing':
             return ast.Name(id=node.attr, ctx=ast.Load())
@@ -240,7 +239,7 @@ class FixObjectReturnType(ast.NodeTransformer):
         '__ixor__',
     )
 
-    def __init__(self, cls: Optional[str]) -> None:
+    def __init__(self, cls: str | None) -> None:
         self.cls = cls
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:

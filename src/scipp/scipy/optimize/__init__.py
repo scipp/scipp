@@ -7,10 +7,10 @@ This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.optimize`.
 """
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from inspect import getfullargspec
 from numbers import Real
-from typing import Any, Callable, Optional, Union
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
@@ -29,7 +29,7 @@ from ...units import default_unit, dimensionless
 from ..interpolate import _drop_masked
 
 
-def _as_scalar(obj: Any, unit: Union[Unit, DefaultUnit, None]) -> Any:
+def _as_scalar(obj: Any, unit: Unit | DefaultUnit | None) -> Any:
     if unit == default_unit:
         return obj
     return scalar(
@@ -39,20 +39,22 @@ def _as_scalar(obj: Any, unit: Union[Unit, DefaultUnit, None]) -> Any:
 
 
 def _wrap_func(
-    f: Callable[..., Union[Variable, DataArray]],
+    f: Callable[..., Variable | DataArray],
     p_names: Iterable[str],
-    p_units: Iterable[Union[Unit, DefaultUnit, None]],
+    p_units: Iterable[Unit | DefaultUnit | None],
 ) -> Callable[..., npt.NDArray[Any]]:
     def func(x: VariableLike, *args: Any) -> npt.NDArray[Any]:
-        p = {k: _as_scalar(v, u) for k, v, u in zip(p_names, args, p_units)}
+        p = {
+            k: _as_scalar(v, u) for k, v, u in zip(p_names, args, p_units, strict=True)
+        }
         return f(x, **p).values  # type: ignore[no-any-return]
 
     return func
 
 
 def _get_sigma(
-    da: Union[Variable, DataArray],
-) -> Optional[npt.NDArray[Union[np.float64, np.float32]]]:
+    da: Variable | DataArray,
+) -> npt.NDArray[np.float64 | np.float32] | None:
     if da.variances is None:
         return None
 
@@ -68,10 +70,10 @@ def _get_sigma(
 
 def _covariance_with_units(
     p_names: list[str],
-    pcov_values: npt.NDArray[Union[np.float64, np.float32]],
-    units: list[Union[Unit, DefaultUnit]],
-) -> dict[str, dict[str, Union[Variable, Real]]]:
-    pcov: dict[str, dict[str, Union[Variable, Real]]] = {}
+    pcov_values: npt.NDArray[np.float64 | np.float32],
+    units: list[Unit | DefaultUnit],
+) -> dict[str, dict[str, Variable | Real]]:
+    pcov: dict[str, dict[str, Variable | Real]] = {}
     for i, row in enumerate(pcov_values):
         pcov[p_names[i]] = {}
         for j, elem in enumerate(row):
@@ -87,7 +89,7 @@ def _covariance_with_units(
 
 
 def _make_defaults(
-    f: Callable[..., Any], p0: Optional[dict[str, Union[Variable, float]]]
+    f: Callable[..., Any], p0: dict[str, Variable | float] | None
 ) -> dict[str, Any]:
     spec = getfullargspec(f)
     if len(spec.args) != 1 or spec.varargs is not None:
@@ -102,9 +104,9 @@ def _make_defaults(
 
 
 def _get_specific_bounds(
-    bounds: dict[str, Union[tuple[Variable, Variable], tuple[float, float]]],
+    bounds: dict[str, tuple[Variable, Variable] | tuple[float, float]],
     name: str,
-    unit: Union[Unit, None],
+    unit: Unit | None,
 ) -> tuple[float, float]:
     if name not in bounds:
         return -np.inf, np.inf
@@ -123,15 +125,12 @@ def _get_specific_bounds(
 
 
 def _parse_bounds(
-    bounds: Optional[dict[str, Union[tuple[Variable, Variable], tuple[float, float]]]],
+    bounds: dict[str, tuple[Variable, Variable] | tuple[float, float]] | None,
     params: dict[str, Any],
-) -> Union[
-    tuple[float, float],
-    tuple[
-        npt.NDArray[Union[np.float64, np.float32]],
-        npt.NDArray[Union[np.float64, np.float32]],
-    ],
-]:
+) -> (
+    tuple[float, float]
+    | tuple[npt.NDArray[np.float64 | np.float32], npt.NDArray[np.float64 | np.float32]]
+):
     if bounds is None:
         return -np.inf, np.inf
 
@@ -146,17 +145,13 @@ def _parse_bounds(
 
 
 def curve_fit(
-    f: Callable[..., Union[Variable, DataArray]],
+    f: Callable[..., Variable | DataArray],
     da: DataArray,
     *,
-    p0: Optional[dict[str, Union[Variable, float]]] = None,
-    bounds: Optional[
-        dict[str, Union[tuple[Variable, Variable], tuple[float, float]]]
-    ] = None,
+    p0: dict[str, Variable | float] | None = None,
+    bounds: dict[str, tuple[Variable, Variable] | tuple[float, float]] | None = None,
     **kwargs: Any,
-) -> tuple[
-    dict[str, Union[Variable, float]], dict[str, dict[str, Union[Variable, float]]]
-]:
+) -> tuple[dict[str, Variable | float], dict[str, dict[str, Variable | float]]]:
     """Use non-linear least squares to fit a function, f, to data.
 
     This is a wrapper around :py:func:`scipy.optimize.curve_fit`. See there for a
@@ -279,7 +274,9 @@ def curve_fit(
     )
     popt = {
         name: scalar(value=val, variance=var, unit=u)
-        for name, val, var, u in zip(params.keys(), popt, np.diag(pcov), p_units)
+        for name, val, var, u in zip(
+            params.keys(), popt, np.diag(pcov), p_units, strict=True
+        )
     }
     pcov = _covariance_with_units(list(params.keys()), pcov, p_units)
     return popt, pcov

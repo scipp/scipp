@@ -13,14 +13,13 @@ from datetime import timedelta
 from itertools import chain, groupby
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Dict, List
 
 
 @dataclass
 class Case:
     name: str
-    cmake_args: Dict[str, str] = field(default_factory=dict)
-    build_args: List[str] = field(default_factory=list)
+    cmake_args: dict[str, str] = field(default_factory=dict)
+    build_args: list[str] = field(default_factory=list)
 
 
 ##############################
@@ -169,7 +168,7 @@ def report(results):
     )
     printed_names = False
     for touch, group in groupby(results, key=lambda t: t[1]):
-        names, _, times = zip(*group)
+        names, _, times = zip(*group, strict=True)
         if not printed_names:
             print(
                 '                      '
@@ -196,7 +195,7 @@ def report(results):
 def main():
     results = []
     with TemporaryDirectory(dir='./') as working_dir:
-        for case, dirs in zip(CASES, make_dirs(working_dir)):
+        for case, dirs in zip(CASES, make_dirs(working_dir), strict=True):
             print(f"Running '{case.name}'")
             print('    Clean build')
             configure(case, *dirs)

@@ -6,7 +6,7 @@ from __future__ import annotations
 import inspect
 import types
 from collections.abc import Iterable, Mapping
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, TypeVar
 
 from ._scipp import core
 from .core.cpp_classes import DataArray, Variable
@@ -38,13 +38,13 @@ def _make_dict_accessor_signature(
             inspect.Parameter(
                 name='default',
                 kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                annotation=Optional[value_type],
+                annotation=value_type | None,
                 default=None,
             )
         )
     sig = inspect.Signature(
         parameters=params,
-        return_annotation=Optional[value_type],
+        return_annotation=value_type | None,
     )
     return sig
 
@@ -53,7 +53,7 @@ _K = TypeVar("_K")
 _V = TypeVar("_V")
 
 
-def _get(self: Mapping[_K, _V], key: _K, default: Optional[_V] = None) -> Optional[_V]:
+def _get(self: Mapping[_K, _V], key: _K, default: _V | None = None) -> _V | None:
     """
     Return the value for key if key is in present, else default.
     """
@@ -75,23 +75,23 @@ def bind_get() -> None:
         cls.get = method
 
 
-def _expect_dimensionless_or_unitless(x: Union[Variable, DataArray]) -> None:
+def _expect_dimensionless_or_unitless(x: Variable | DataArray) -> None:
     if x.unit is not None and x.unit != core.units.dimensionless:
         raise core.UnitError(f'Expected unit dimensionless or no unit, got {x.unit}.')
 
 
-def _expect_no_variance(x: Union[Variable, DataArray]) -> None:
+def _expect_no_variance(x: Variable | DataArray) -> None:
     if x.variance is not None:
         raise core.VariancesError('Expected input without variances.')
 
 
-def _int_dunder(self: Union[Variable, DataArray]) -> int:
+def _int_dunder(self: Variable | DataArray) -> int:
     _expect_dimensionless_or_unitless(self)
     _expect_no_variance(self)
     return int(self.value)
 
 
-def _float_dunder(self: Union[Variable, DataArray]) -> float:
+def _float_dunder(self: Variable | DataArray) -> float:
     _expect_dimensionless_or_unitless(self)
     _expect_no_variance(self)
     return float(self.value)
@@ -111,7 +111,7 @@ _NoDefault = _NoDefaultType()
 
 
 def _pop(
-    self: Mapping[_K, _V], key: _K, default: Union[_V, _NoDefaultType] = _NoDefault
+    self: Mapping[_K, _V], key: _K, default: _V | _NoDefaultType = _NoDefault
 ) -> _V:
     """
     Remove and return an element.

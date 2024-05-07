@@ -3,7 +3,7 @@
 # @author Gregory Tucker, Jan-Lukas Wynen
 
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
@@ -169,7 +169,8 @@ def _format_variable_compact(var: Variable, spec: FormatSpec) -> str:
         formatted = [_format_element_compact(v) for v in values]
     else:
         formatted = [
-            _format_element_compact(*_round(v, e)) for v, e in zip(values, variances)
+            _format_element_compact(*_round(v, e))
+            for v, e in zip(values, variances, strict=True)
         ]
     return f"{', '.join(formatted)}{unt}"
 
@@ -179,8 +180,8 @@ def _is_numeric(dtype: DType) -> bool:
 
 
 def _round(
-    value: float, variance: Optional[float]
-) -> tuple[float, Optional[float], Optional[float]]:
+    value: float, variance: float | None
+) -> tuple[float, float | None, float | None]:
     from numpy import floor, log10, power, round, sqrt
 
     # Treat 'infinite' precision the same as no variance
@@ -217,7 +218,7 @@ def _round(
 
 
 def _format_element_compact(
-    value: float, error: Optional[float] = None, precision: Optional[float] = None
+    value: float, error: float | None = None, precision: float | None = None
 ) -> str:
     # Build the appropriate format string:
     # No variance (or infinite precision) values take no formatting string

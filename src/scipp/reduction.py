@@ -2,7 +2,7 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import uuid
-from typing import Iterable, List
+from collections.abc import Iterable
 
 from .core import concat, reduction
 from .typing import VariableLike
@@ -19,7 +19,7 @@ class BinsReducer:
 
 
 class Reducer:
-    def __init__(self, x: List[VariableLike]):
+    def __init__(self, x: list[VariableLike]):
         self._dim = uuid.uuid4().hex
         # concat in init avoids repeated costly step in case of multiple reductions
         self._obj = concat(x, dim=self._dim)

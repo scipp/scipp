@@ -9,7 +9,7 @@ This subpackage provides wrappers for a subset of functions from
 
 from __future__ import annotations
 
-from typing import Any, Literal, Protocol, TypeVar, Union
+from typing import Any, Literal, Protocol, TypeVar
 
 import numpy as np
 import numpy.typing as npt
@@ -56,19 +56,17 @@ def interp1d(
     da: DataArray,
     dim: str,
     *,
-    kind: Union[
-        int,
-        Literal[
-            'linear',
-            'nearest',
-            'nearest-up',
-            'zero',
-            'slinear',
-            'quadratic',
-            'cubic',
-            'previous',
-            'next',
-        ],
+    kind: int
+    | Literal[
+        'linear',
+        'nearest',
+        'nearest-up',
+        'zero',
+        'slinear',
+        'quadratic',
+        'cubic',
+        'previous',
+        'next',
     ] = 'linear',
     fill_value: Any = np.nan,
     **kwargs: Any,

@@ -6,8 +6,9 @@
 from __future__ import annotations
 
 import warnings
+from collections.abc import Iterable, Sequence
 from contextlib import contextmanager
-from typing import Any, Iterable, Optional, Sequence, TypeVar, Union
+from typing import Any, TypeVar
 
 import numpy as _np
 from numpy.typing import ArrayLike
@@ -18,15 +19,15 @@ from ..units import default_unit
 from ._sizes import _parse_dims_shape_sizes
 from .cpp_classes import DType, Unit, Variable
 
-NumberOrVar = TypeVar('NumberOrVar', Union[int, float], Variable)
+NumberOrVar = TypeVar('NumberOrVar', int | float, Variable)
 
 
 def scalar(
     value: Any,
     *,
     variance: Any = None,
-    unit: Union[Unit, str, None] = default_unit,
-    dtype: Optional[DTypeLike] = None,
+    unit: Unit | str | None = default_unit,
+    dtype: DTypeLike | None = None,
 ) -> Variable:
     """Constructs a zero dimensional :class:`Variable` with a unit and optional
     variance.
@@ -80,7 +81,7 @@ def scalar(
     )
 
 
-def index(value: Any, *, dtype: Optional[DTypeLike] = None) -> Variable:
+def index(value: Any, *, dtype: DTypeLike | None = None) -> Variable:
     """Constructs a zero dimensional :class:`Variable` representing an index.
 
     This is equivalent to calling :py:func:`scipp.scalar` with unit=None.
@@ -113,10 +114,10 @@ def index(value: Any, *, dtype: Optional[DTypeLike] = None) -> Variable:
 
 def zeros(
     *,
-    dims: Optional[Sequence[str]] = None,
-    shape: Optional[Sequence[int]] = None,
-    sizes: Optional[dict[str, int]] = None,
-    unit: Union[Unit, str, None] = default_unit,
+    dims: Sequence[str] | None = None,
+    shape: Sequence[int] | None = None,
+    sizes: dict[str, int] | None = None,
+    unit: Unit | str | None = default_unit,
     dtype: DTypeLike = DType.float64,
     with_variances: bool = False,
 ) -> Variable:
@@ -177,10 +178,10 @@ def zeros(
 
 def ones(
     *,
-    dims: Optional[Sequence[str]] = None,
-    shape: Optional[Sequence[int]] = None,
-    sizes: Optional[dict[str, int]] = None,
-    unit: Union[Unit, str, None] = default_unit,
+    dims: Sequence[str] | None = None,
+    shape: Sequence[int] | None = None,
+    sizes: dict[str, int] | None = None,
+    unit: Unit | str | None = default_unit,
     dtype: DTypeLike = DType.float64,
     with_variances: bool = False,
 ) -> Variable:
@@ -238,10 +239,10 @@ def ones(
 
 def empty(
     *,
-    dims: Optional[Sequence[str]] = None,
-    shape: Optional[Sequence[int]] = None,
-    sizes: Optional[dict[str, int]] = None,
-    unit: Union[Unit, str, None] = default_unit,
+    dims: Sequence[str] | None = None,
+    shape: Sequence[int] | None = None,
+    sizes: dict[str, int] | None = None,
+    unit: Unit | str | None = default_unit,
     dtype: DTypeLike = DType.float64,
     with_variances: bool = False,
     aligned: bool = True,
@@ -305,11 +306,11 @@ def full(
     *,
     value: Any,
     variance: Any = None,
-    dims: Optional[Sequence[str]] = None,
-    shape: Optional[Sequence[int]] = None,
-    sizes: Optional[dict[str, int]] = None,
-    unit: Union[Unit, str, None] = default_unit,
-    dtype: Optional[DTypeLike] = None,
+    dims: Sequence[str] | None = None,
+    shape: Sequence[int] | None = None,
+    sizes: dict[str, int] | None = None,
+    unit: Unit | str | None = default_unit,
+    dtype: DTypeLike | None = None,
 ) -> Variable:
     """Constructs a :class:`Variable` with values initialized to the specified
     value with given dimension labels and shape.
@@ -365,7 +366,7 @@ def full(
 
 
 def vector(
-    value: Union[_np.ndarray, list], *, unit: Union[Unit, str, None] = default_unit
+    value: _np.ndarray | list, *, unit: Unit | str | None = default_unit
 ) -> Variable:
     """Constructs a zero dimensional :class:`Variable` holding a single length-3
     vector.
@@ -404,8 +405,8 @@ def vector(
 def vectors(
     *,
     dims: Sequence[str],
-    values: Union[_np.ndarray, list],
-    unit: Union[Unit, str, None] = default_unit,
+    values: _np.ndarray | list,
+    unit: Unit | str | None = default_unit,
 ) -> Variable:
     """Constructs a :class:`Variable` with given dimensions holding an array
     of length-3 vectors.
@@ -454,9 +455,9 @@ def array(
     *,
     dims: Iterable[str],
     values: ArrayLike,
-    variances: Optional[ArrayLike] = None,
-    unit: Union[Unit, str, None] = default_unit,
-    dtype: Optional[DTypeLike] = None,
+    variances: ArrayLike | None = None,
+    unit: Unit | str | None = default_unit,
+    dtype: DTypeLike | None = None,
 ) -> Variable:
     """Constructs a :class:`Variable` with given dimensions, containing given
     values and optional variances.
@@ -576,8 +577,8 @@ def linspace(
     num: int,
     *,
     endpoint: bool = True,
-    unit: Union[Unit, str, None] = default_unit,
-    dtype: Optional[DTypeLike] = None,
+    unit: Unit | str | None = default_unit,
+    dtype: DTypeLike | None = None,
 ) -> Variable:
     """Constructs a :class:`Variable` with `num` evenly spaced samples,
     calculated over the interval `[start, stop]`.
@@ -636,8 +637,8 @@ def geomspace(
     num: int,
     *,
     endpoint: bool = True,
-    unit: Union[Unit, str, None] = default_unit,
-    dtype: Optional[DTypeLike] = None,
+    unit: Unit | str | None = default_unit,
+    dtype: DTypeLike | None = None,
 ) -> Variable:
     """Constructs a :class:`Variable` with values spaced evenly on a log scale
     (a geometric progression).
@@ -701,8 +702,8 @@ def logspace(
     *,
     endpoint: bool = True,
     base: float = 10.0,
-    unit: Union[Unit, str, None] = default_unit,
-    dtype: Optional[DTypeLike] = None,
+    unit: Unit | str | None = default_unit,
+    dtype: DTypeLike | None = None,
 ) -> Variable:
     """Constructs a :class:`Variable` with values spaced evenly on a log scale.
 
@@ -768,12 +769,12 @@ def logspace(
 
 def arange(
     dim: str,
-    start: Union[NumberOrVar, _np.datetime64, str],
-    stop: Optional[Union[NumberOrVar, _np.datetime64, str]] = None,
-    step: Optional[NumberOrVar] = None,
+    start: NumberOrVar | _np.datetime64 | str,
+    stop: NumberOrVar | _np.datetime64 | str | None = None,
+    step: NumberOrVar | None = None,
     *,
-    unit: Union[Unit, str, None] = default_unit,
-    dtype: Optional[DTypeLike] = None,
+    unit: Unit | str | None = default_unit,
+    dtype: DTypeLike | None = None,
 ) -> Variable:
     """Creates a :class:`Variable` with evenly spaced values within a given interval.
 
@@ -856,7 +857,7 @@ def arange(
         candidates = set(types)
         if len(candidates) == 1:
             dtype = next(iter(candidates))
-    if dtype is not None and dtype != str('datetime64'):
+    if dtype is not None and dtype != 'datetime64':
         numpy_dtype = str(dtype) if isinstance(dtype, DType) else dtype
     else:
         numpy_dtype = None
@@ -883,9 +884,9 @@ def _timezone_warning_as_error():
 
 
 def datetime(
-    value: Union[str, int, _np.datetime64],
+    value: str | int | _np.datetime64,
     *,
-    unit: Optional[Union[Unit, str, None]] = default_unit,
+    unit: Unit | str | None = default_unit,
 ) -> Variable:
     """Constructs a zero dimensional :class:`Variable` with a dtype of datetime64.
 
@@ -935,7 +936,7 @@ def datetime(
 
 
 def datetimes(
-    *, dims, values: ArrayLike, unit: Optional[Union[Unit, str, None]] = default_unit
+    *, dims, values: ArrayLike, unit: Unit | str | None = default_unit
 ) -> Variable:
     """Constructs an array :class:`Variable` with a dtype of datetime64.
 
@@ -981,7 +982,7 @@ def datetimes(
         )
 
 
-def epoch(*, unit: Union[Unit, str, None]) -> Variable:
+def epoch(*, unit: Unit | str | None) -> Variable:
     """Constructs a zero dimensional :class:`Variable` with a dtype of
     datetime64 that contains Scipp's epoch.
 

@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Literal, Optional, TypeVar
+from typing import Literal, TypeVar
 
 from .argument_handlers import combine_dict_args
 from .cpp_classes import DataArray, Dataset, Variable
@@ -14,7 +14,7 @@ _T = TypeVar('_T', Dataset, DataArray)
 def _assign(
     obj: _T,
     name: Literal['coords', 'masks', 'attrs'],
-    obj_attrs: Optional[Dict[str, Variable]] = None,
+    obj_attrs: dict[str, Variable] | None = None,
     /,
     **kw_obj_attrs: Variable,
 ) -> _T:
@@ -26,7 +26,7 @@ def _assign(
 
 
 def assign_coords(
-    self: _T, coords: Optional[Dict[str, Variable]] = None, /, **coords_kwargs: Variable
+    self: _T, coords: dict[str, Variable] | None = None, /, **coords_kwargs: Variable
 ) -> _T:
     """Return new object with updated or inserted coordinate.
 
@@ -49,7 +49,7 @@ def assign_coords(
 
 def assign_masks(
     self: DataArray,
-    masks: Optional[Dict[str, Variable]] = None,
+    masks: dict[str, Variable] | None = None,
     /,
     **masks_kwargs: Variable,
 ) -> DataArray:
@@ -74,7 +74,7 @@ def assign_masks(
 
 def assign_attrs(
     self: DataArray,
-    attrs: Optional[Dict[str, Variable]] = None,
+    attrs: dict[str, Variable] | None = None,
     /,
     **attrs_kwargs: Variable,
 ) -> DataArray:

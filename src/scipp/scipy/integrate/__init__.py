@@ -7,7 +7,8 @@ This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.integrate`.
 """
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import numpy.typing as npt
 

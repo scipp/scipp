@@ -48,7 +48,7 @@ def has_numeric_type(obj: _std_typing.Any) -> bool:
     return (not has_vector_type(obj)) and (not has_string_type(obj))
 
 
-Dims = _std_typing.Union[None, str, _std_typing.Sequence[str]]
+Dims = str | _std_typing.Sequence[str] | None
 """
 Describes dimensions to operate on.
 
@@ -56,7 +56,7 @@ Can be a string (for a single dimension) or a sequence of strings (multiple dime
 A value of ``None`` indicates "all dimensions."
 """
 
-VariableLike = _std_typing.Union[Variable, DataArray, Dataset, DataGroup]
+VariableLike = Variable | DataArray | Dataset | DataGroup
 """Any object that behaves like a :class:`scipp.Variable`.
 
 More concretely, an array with labeled dimensions which supports slicing and
@@ -72,14 +72,14 @@ MetaDataMap = _std_typing.MutableMapping[str, Variable]
 """dict-like object mapping dimension labels to Variables."""
 
 VariableLikeType = _std_typing.TypeVar(
-    'VariableLikeType', bound=_std_typing.Union[Variable, DataArray, Dataset, DataGroup]
+    'VariableLikeType', bound=Variable | DataArray | Dataset | DataGroup
 )
 """TypeVar for use in annotations.
 
 Should be hidden in rendered documentation in favor of VariableLike.
 """
 
-DTypeLike = _std_typing.Union[numpy.typing.DTypeLike, DType]
+DTypeLike = numpy.typing.DTypeLike | DType
 """Anything that can be interpreted as a dtype.
 
 This includes
@@ -103,13 +103,13 @@ if _std_typing.TYPE_CHECKING:
 else:
     ellipsis = type(Ellipsis)
 
-ScippIndex = _std_typing.Union[
-    ellipsis,
-    int,
-    tuple,
-    slice,
-    list,
-    np.ndarray,
-    _std_typing.Tuple[str, _std_typing.Union[int, slice, list, np.ndarray, Variable]],
-    Variable,
-]
+ScippIndex = (
+    ellipsis
+    | int
+    | tuple
+    | slice
+    | list
+    | np.ndarray
+    | tuple[str, int | slice | list | np.ndarray | Variable]
+    | Variable
+)

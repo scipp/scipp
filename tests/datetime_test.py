@@ -20,7 +20,7 @@ def _mismatch_pairs(units):
 
 def _make_arrays(units, num_arrays, minsize=1):
     size = np.random.randint(minsize, minsize + 5)
-    units = units if isinstance(units, (tuple, list)) else [units] * num_arrays
+    units = units if isinstance(units, tuple | list) else [units] * num_arrays
     res = [
         np.array(
             [np.datetime64(np.random.randint(0, 100000), unit) for _ in range(size)]
@@ -33,7 +33,7 @@ def _make_arrays(units, num_arrays, minsize=1):
 
 
 def _make_datetimes(units, num):
-    units = units if isinstance(units, (tuple, list)) else [units] * num
+    units = units if isinstance(units, tuple | list) else [units] * num
     res = [np.datetime64(np.random.randint(0, 1000), unit) for unit in units]
     if num == 1:
         return res[0]

@@ -190,7 +190,7 @@ def _dict_to_data_array(d):
     if "data" not in d:
         raise KeyError(
             "To create a DataArray, the supplied dict must contain "
-            "'data'. Got {}.".format(d.keys())
+            f"'data'. Got {d.keys()}."
         )
     out = {"coords": {}, "masks": {}, "attrs": {}}
     for key in out.keys():

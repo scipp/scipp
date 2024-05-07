@@ -7,9 +7,9 @@ This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.ndimage`.
 """
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from functools import wraps
-from typing import Any, Callable, Optional, Protocol, TypeVar, Union
+from typing import Any, Protocol, TypeVar
 
 import scipy.ndimage
 
@@ -49,7 +49,7 @@ def _ndfilter(
 def _delta_to_positional(
     x: Any,
     dim: str,
-    index: Union[float, Variable, Mapping[str, Union[float, Variable]]],
+    index: float | Variable | Mapping[str, float | Variable],
     dtype: type,
 ) -> Any:
     if not isinstance(index, Variable):
@@ -67,9 +67,9 @@ def _delta_to_positional(
 
 
 def _require_matching_dims(
-    index: Mapping[str, Union[float, Variable]],
+    index: Mapping[str, float | Variable],
     x: VariableLike,
-    name: Optional[str],
+    name: str | None,
 ) -> None:
     if set(index) != set(x.dims):
         raise KeyError(
@@ -80,8 +80,8 @@ def _require_matching_dims(
 
 def _positional_index(
     x: Any,
-    index: Union[float, Variable, Mapping[str, Union[float, Variable]]],
-    name: Optional[str] = None,
+    index: float | Variable | Mapping[str, float | Variable],
+    name: str | None = None,
     dtype: type = int,
 ) -> list[Any]:
     if not isinstance(index, Mapping):
@@ -95,8 +95,8 @@ def gaussian_filter(
     x: _T,
     /,
     *,
-    sigma: Union[float, Variable, Mapping[str, Union[float, Variable]]],
-    order: Optional[Union[int, Mapping[str, int]]] = 0,
+    sigma: float | Variable | Mapping[str, float | Variable],
+    order: int | Mapping[str, int] | None = 0,
     **kwargs: Any,
 ) -> _T:
     """
@@ -184,9 +184,9 @@ def gaussian_filter(
 
 
 def _make_footprint(
-    x: Union[Variable, DataArray],
-    size: Optional[Union[int, Variable, Mapping[str, Union[int, Variable]]]],
-    footprint: Optional[Variable],
+    x: Variable | DataArray,
+    size: int | Variable | Mapping[str, int | Variable] | None,
+    footprint: Variable | None,
 ) -> Variable:
     if footprint is None:
         if size is None:
@@ -210,9 +210,9 @@ class _FootprintFilter(Protocol):
         x: _T,
         /,
         *,
-        size: Optional[Union[int, Variable, Mapping[str, Union[int, Variable]]]] = None,
-        footprint: Optional[Variable] = None,
-        origin: Optional[Union[int, Variable, Mapping[str, Union[int, Variable]]]] = 0,
+        size: int | Variable | Mapping[str, int | Variable] | None = None,
+        footprint: Variable | None = None,
+        origin: int | Variable | Mapping[str, int | Variable] | None = 0,
         **kwargs: Any,
     ) -> _T: ...
 
@@ -224,9 +224,9 @@ def _make_footprint_filter(
         x: _T,
         /,
         *,
-        size: Optional[Union[int, Variable, Mapping[str, Union[int, Variable]]]] = None,
-        footprint: Optional[Variable] = None,
-        origin: Union[int, Variable, Mapping[str, Union[int, Variable]]] = 0,
+        size: int | Variable | Mapping[str, int | Variable] | None = None,
+        footprint: Variable | None = None,
+        origin: int | Variable | Mapping[str, int | Variable] = 0,
         **kwargs: Any,
     ) -> _T:
         footprint = _make_footprint(x, size=size, footprint=footprint)

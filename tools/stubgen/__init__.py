@@ -1,8 +1,8 @@
 import ast
 import enum
 import inspect
+from collections.abc import Iterable
 from string import Template
-from typing import Iterable, List, Optional, Type
 
 from .config import (
     DISABLE_TYPE_CHECK_OVERRIDE,
@@ -31,19 +31,19 @@ def _add_suppression_comments(code: str) -> str:
     return '\n'.join(_add_override(line) for line in code.splitlines())
 
 
-def _build_method(cls: Type[type], method_name: str) -> [ast.FunctionDef]:
+def _build_method(cls: type[type], method_name: str) -> [ast.FunctionDef]:
     meth = inspect.getattr_static(cls, method_name)
     return [
         fix_method(m, cls_name=cls.__name__) for m in parse_method(meth, method_name)
     ]
 
 
-def _build_property(cls: Type[type], property_name: str) -> [ast.FunctionDef]:
+def _build_property(cls: type[type], property_name: str) -> [ast.FunctionDef]:
     prop = inspect.getattr_static(cls, property_name)
     return [fix_property(p) for p in parse_property(prop, property_name)]
 
 
-def _build_attr(cls: Type[type], attr_name: str) -> [ast.Expr]:
+def _build_attr(cls: type[type], attr_name: str) -> [ast.Expr]:
     typ: str = ast.parse(type(getattr(cls, attr_name)).__name__).body[0].value.id
     return [
         ast.AnnAssign(
@@ -63,7 +63,7 @@ class _Member(enum.Enum):
     skip = enum.auto()
 
 
-def _classify(obj: object, member_name: str, cls: Type[type]) -> _Member:
+def _classify(obj: object, member_name: str, cls: type[type]) -> _Member:
     if 'pybind11_static_property' in repr(inspect.getattr_static(cls, member_name)):
         return _Member.attr
     if inspect.isbuiltin(obj):
@@ -77,7 +77,7 @@ def _classify(obj: object, member_name: str, cls: Type[type]) -> _Member:
     return _Member.skip
 
 
-def _get_bases(cls: Type[type]) -> List[ast.Name]:
+def _get_bases(cls: type[type]) -> list[ast.Name]:
     bases = [
         ast.Name(id=base.__name__)
         for base in cls.__bases__
@@ -91,7 +91,7 @@ def _get_bases(cls: Type[type]) -> List[ast.Name]:
     return bases
 
 
-def _build_class(cls: Type[type]) -> Optional[ast.ClassDef]:
+def _build_class(cls: type[type]) -> ast.ClassDef | None:
     print(f'Generating class {cls.__name__}')
     body = []
     if cls.__doc__ and INCLUDE_DOCS:
@@ -126,7 +126,7 @@ def _build_class(cls: Type[type]) -> Optional[ast.ClassDef]:
     return ast.fix_missing_locations(cls)
 
 
-def _cpp_classes() -> Iterable[Type[type]]:
+def _cpp_classes() -> Iterable[type[type]]:
     from scipp._scipp import core
 
     for name, cls in inspect.getmembers(core, inspect.isclass):

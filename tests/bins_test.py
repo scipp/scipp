@@ -288,7 +288,7 @@ def test_bins_sum_with_masked_buffer():
         ),
         coords={
             'position': sc.Variable(
-                dims=['position'], values=['site-{}'.format(i) for i in range(N)]
+                dims=['position'], values=[f'site-{i}' for i in range(N)]
             ),
             'x': sc.Variable(dims=['position'], unit=sc.units.m, values=[0.2] * 5),
             'y': sc.Variable(dims=['position'], unit=sc.units.m, values=[0.2] * 5),

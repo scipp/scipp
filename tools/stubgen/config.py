@@ -1,6 +1,5 @@
 import ast
 from pathlib import Path
-from typing import List
 
 # The name of the C++ module that contains the classes we generate stubs for.
 CPP_CORE_MODULE_NAME = 'scipp._scipp.core'
@@ -37,8 +36,8 @@ def class_is_excluded(name: str) -> bool:
 
 
 def _squash_binary_more_narrow_type(
-    overloads: List[ast.FunctionDef],
-) -> List[ast.FunctionDef]:
+    overloads: list[ast.FunctionDef],
+) -> list[ast.FunctionDef]:
     # A lot of binary functions have overloads for int and float.
     # But the former is superseded by the latter because int is more narrow than float.
     # Drop all int overloads in this case.
@@ -57,7 +56,7 @@ def _squash_binary_more_narrow_type(
     return overloads
 
 
-def squash_overloads(overloads: List[ast.FunctionDef]) -> List[ast.FunctionDef]:
+def squash_overloads(overloads: list[ast.FunctionDef]) -> list[ast.FunctionDef]:
     """Combine overloads if a stub for only one is required."""
     if overloads[0].name in ('__eq__', '__ne__'):
         return overloads[:1]

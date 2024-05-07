@@ -21,9 +21,9 @@ pandas.read_csv:
     More details on the underlying parser.
 """
 
+from collections.abc import Iterable
 from io import BytesIO, StringIO
 from os import PathLike
-from typing import Iterable, Optional, Union
 
 from ..compat.pandas_compat import HeaderParserArg, from_pandas
 from ..core import Dataset
@@ -32,7 +32,7 @@ from ..core import Dataset
 # The typehint of filepath_or_buffer is less generic than in pd.read_csv
 # because the definitions of protocols are private in pandas.
 def _load_dataframe(
-    filepath_or_buffer: Union[str, PathLike, StringIO, BytesIO],
+    filepath_or_buffer: str | PathLike | StringIO | BytesIO,
     sep: str,
 ):
     try:
@@ -47,10 +47,10 @@ def _load_dataframe(
 
 
 def load_csv(
-    filename: Union[str, PathLike, StringIO, BytesIO],
+    filename: str | PathLike | StringIO | BytesIO,
     *,
-    sep: Optional[str] = ',',
-    data_columns: Optional[Union[str, Iterable[str]]] = None,
+    sep: str | None = ',',
+    data_columns: str | Iterable[str] | None = None,
     header_parser: HeaderParserArg = None,
 ) -> Dataset:
     """Load a CSV file as a dataset.

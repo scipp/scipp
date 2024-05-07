@@ -2,9 +2,9 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from functools import wraps
-from typing import Any, Callable, TypeVar, Union
+from typing import Any, TypeVar
 
 from ..core import (
     BinEdgeError,
@@ -27,7 +27,7 @@ def _validated_masks(da: DataArray, dim: str) -> dict[str, Variable]:
     return masks
 
 
-_Out = TypeVar('_Out', bound=Union[DataArray, Callable[..., DataArray]])
+_Out = TypeVar('_Out', bound=DataArray | Callable[..., DataArray])
 
 
 def wrap1d(

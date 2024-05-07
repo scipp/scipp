@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable, Mapping
 from functools import reduce
-from typing import Any, Callable, Mapping, TypeVar, Union, overload
+from typing import Any, TypeVar, overload
 
 from ..typing import Dims, VariableLikeType
 from .cpp_classes import DataArray, Dataset, DimensionError, Variable
@@ -27,9 +27,7 @@ def rewrap_output_data(prototype: DataArray, data: Variable) -> DataArray: ...
 
 
 @overload
-def rewrap_output_data(
-    prototype: Union[Variable, Dataset, DataGroup], data: _T
-) -> _T: ...
+def rewrap_output_data(prototype: Variable | Dataset | DataGroup, data: _T) -> _T: ...
 
 
 def rewrap_output_data(prototype: Any, data: Any) -> Any:
@@ -90,7 +88,7 @@ def reduced_masks(da: DataArray, dim: Dims) -> dict[str, Variable]:
     return _copied(_reduced(da.masks, concrete_dims(da, dim)))
 
 
-def irreducible_mask(da: DataArray, dim: Dims) -> Union[None, Variable]:
+def irreducible_mask(da: DataArray, dim: Dims) -> None | Variable:
     """
     The union of masks that would need to be applied in a reduction op over dim.
 

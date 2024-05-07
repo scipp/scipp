@@ -305,7 +305,7 @@ def test_scipp_fun_and_numpy_fun_finds_same_optimized_params(f, fnp, array, coor
     popt, _ = curve_fit(coords, f, data)
     popt_np, _ = curve_fit(coords, fnp, data, unsafe_numpy_f=True)
 
-    for p, p_np in zip(popt.values(), popt_np.values()):
+    for p, p_np in zip(popt.values(), popt_np.values(), strict=True):
         assert sc.allclose(p.data, p_np.data, rtol=sc.scalar(2.0 * 1e-2))
 
 

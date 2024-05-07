@@ -2,18 +2,17 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Matthew Andrew
 
-from typing import Optional, Union
 
 from .._scipp import core as _cpp
 
 
 def groupby(
-    data: Union[_cpp.DataArray, _cpp.Dataset],
+    data: _cpp.DataArray | _cpp.Dataset,
     /,
-    group: Union[_cpp.Variable, str],
+    group: _cpp.Variable | str,
     *,
-    bins: Optional[_cpp.Variable] = None,
-) -> Union[_cpp.GroupByDataArray, _cpp.GroupByDataset]:
+    bins: _cpp.Variable | None = None,
+) -> _cpp.GroupByDataArray | _cpp.GroupByDataset:
     """Group dataset or data array based on values of specified labels.
 
     Parameters
