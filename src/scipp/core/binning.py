@@ -13,7 +13,6 @@ from .cpp_classes import BinEdgeError, CoordError, DataArray, Dataset, DType, Va
 from .data_group import DataGroup, data_group_overload
 from .math import round as round_
 from .shape import concat
-from .util import VisibleDeprecationWarning
 from .variable import arange, array, epoch, linspace, scalar
 
 
@@ -615,7 +614,7 @@ def rebin(
 
 
 @data_group_overload
-def rebin(x, arg_dict=None, deprecated=None, /, **kwargs):
+def rebin(x, arg_dict=None, /, **kwargs):
     """Rebin a data array or dataset.
 
     The coordinate of the input for the dimension to be rebinned must contain bin edges,
@@ -674,17 +673,6 @@ def rebin(x, arg_dict=None, deprecated=None, /, **kwargs):
       >>> da.rebin(x=4, y=6).sizes
       {'x': 4, 'y': 6}
     """
-    if isinstance(arg_dict, str):
-        if deprecated is not None or 'bins' in kwargs:
-            warnings.warn(
-                "The 'bins' keyword argument and positional syntax for setting bin "
-                "edges is deprecated. Use, e.g., 'sc.rebin(da, x=x_edges)'. See the "
-                "documentation for details.",
-                UserWarning,
-                stacklevel=2,
-            )
-            bins = {'bins': deprecated, **kwargs}
-            return _cpp.rebin(x, arg_dict, **bins)
     edges = _make_edges(x, arg_dict, kwargs)
     out = x
     for dim, edge in edges.items():
@@ -820,16 +808,3 @@ def group(x, /, *args: str | Variable):
     groups = [_make_groups(x, name) for name in args]
     erase = _find_replaced_dims(x, [g.dim for g in groups])
     return make_binned(x, groups=groups, erase=erase)
-
-
-def histogram(x: DataArray | Dataset, *, bins: Variable) -> DataArray | Dataset:
-    """Deprecated. See :py:func:`scipp.hist`."""
-    warnings.warn(
-        "'histogram' is deprecated. Use 'hist' instead.", UserWarning, stacklevel=2
-    )
-    warnings.warn(
-        "'histogram' is deprecated. Use 'hist' instead.",
-        VisibleDeprecationWarning,
-        stacklevel=2,
-    )
-    return make_histogrammed(x, edges=bins)

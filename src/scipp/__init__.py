@@ -247,8 +247,6 @@ from .operations import elemwise_func
 
 del operations
 
-from .core.binning import histogram
-
 from .plotting import plot
 
 Variable.plot = plot
