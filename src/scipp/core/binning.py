@@ -2,7 +2,6 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import itertools
-import warnings
 from collections.abc import Sequence
 from numbers import Integral
 from typing import overload
@@ -567,17 +566,6 @@ def bin(x, arg_dict=None, /, **kwargs):
       >>> binned.bin(y=5).sizes
       {'x': 10, 'y': 5}
     """
-    if arg_dict is None:
-        for name, item in kwargs.items():
-            if name in ('edges', 'groups', 'erase') and isinstance(item, list):
-                warnings.warn(
-                    "The 'edges', 'groups', and 'erase' keyword arguments "
-                    "are deprecated. Use, e.g., 'sc.bin(da, x=x_edges)' or "
-                    "'sc.group(da, groups)'. See the documentation for details.",
-                    UserWarning,
-                    stacklevel=2,
-                )
-                return make_binned(x, **kwargs)
     edges = _make_edges(x, arg_dict, kwargs)
     erase = _find_replaced_dims(x, edges)
     return make_binned(x, edges=list(edges.values()), erase=erase)

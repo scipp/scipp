@@ -586,14 +586,6 @@ def test_binning_low_level_functions_exist():
     binning.make_histogrammed
 
 
-def test_bin_deprecated_arguments():
-    da = sc.data.table_xyz(100)
-    x = sc.linspace('x', 0, 1, num=10, unit='m')
-    with pytest.warns(UserWarning):
-        result = sc.bin(da, edges=[x])
-    assert sc.identical(result, da.bin(x=x))
-
-
 @pytest.mark.parametrize('op', ['bin', 'hist', 'nanhist'])
 def test_raises_ValueError_given_variable_and_multiple_edges(op):
     var = sc.array(dims=['row'], values=[1, 2, 3])
