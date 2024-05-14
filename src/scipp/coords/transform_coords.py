@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock, Jan-Lukas Wynen
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import fields
 from fractions import Fraction
-from typing import Callable, Dict, Iterable, List, Mapping, Optional, Set, Union
 
 from ..core import DataArray, Dataset, DimensionError, VariableError, bins, empty
 from ..logging import get_logger
@@ -14,10 +14,10 @@ from .rule import ComputeRule, FetchRule, RenameRule, Rule, rule_output_names
 
 
 def transform_coords(
-    x: Union[DataArray, Dataset],
-    targets: Optional[Union[str, Iterable[str]]] = None,
+    x: DataArray | Dataset,
+    targets: str | Iterable[str] | None = None,
     /,
-    graph: Optional[GraphDict] = None,
+    graph: GraphDict | None = None,
     *,
     rename_dims: bool = True,
     keep_aliases: bool = True,
@@ -25,7 +25,7 @@ def transform_coords(
     keep_inputs: bool = True,
     quiet: bool = False,
     **kwargs: Callable,
-) -> Union[DataArray, Dataset]:
+) -> DataArray | Dataset:
     """Compute new coords based on transformations of input coords.
 
     See the section in the user guide on
@@ -144,7 +144,7 @@ def transform_coords(
     return _transform(x, targets=targets, graph=Graph(graph), options=options)
 
 
-def show_graph(graph: GraphDict, size: Optional[str] = None, simplified: bool = False):
+def show_graph(graph: GraphDict, size: str | None = None, simplified: bool = False):
     """Show graphical representation of a graph as required by
     :py:func:`transform_coords`
 
@@ -179,7 +179,7 @@ def show_graph(graph: GraphDict, size: Optional[str] = None, simplified: bool = 
 
 
 def _transform_data_array(
-    original: DataArray, targets: Set[str], graph: Graph, options: Options
+    original: DataArray, targets: set[str], graph: Graph, options: Options
 ) -> DataArray:
     graph = graph.graph_for(original, targets)
     rules = rule_sequence(graph)
@@ -204,7 +204,7 @@ def _transform_data_array(
 
 
 def _transform_dataset(
-    original: Dataset, targets: Set[str], graph: Graph, *, options: Options
+    original: Dataset, targets: set[str], graph: Graph, *, options: Options
 ) -> Dataset:
     # Note the inefficiency here in datasets with multiple items: Coord transform is
     # repeated for every item rather than sharing what is possible. Since we may have
@@ -227,8 +227,8 @@ def _transform_dataset(
 
 
 def _log_transform(
-    rules: List[Rule],
-    targets: Set[str],
+    rules: list[Rule],
+    targets: set[str],
     dim_name_changes: Mapping[str, str],
     coords: CoordTable,
 ) -> None:
@@ -292,7 +292,7 @@ def _store_coord(da: DataArray, name: str, coord: Coord) -> None:
                 store(da.bins, coord.event)
 
 
-def _store_results(da: DataArray, coords: CoordTable, targets: Set[str]) -> DataArray:
+def _store_results(da: DataArray, coords: CoordTable, targets: set[str]) -> DataArray:
     da = da.copy(deep=False)
     # See #2773 for why this is necessary.
     if da.bins is not None:
@@ -304,7 +304,7 @@ def _store_results(da: DataArray, coords: CoordTable, targets: Set[str]) -> Data
     return da
 
 
-def _color_dims(graph: Graph, dim_coords: Set[str]) -> Dict[str, Dict[str, Fraction]]:
+def _color_dims(graph: Graph, dim_coords: set[str]) -> dict[str, dict[str, Fraction]]:
     colors = {
         coord: {dim: Fraction(0, 1) for dim in dim_coords} for coord in graph.nodes()
     }
@@ -325,13 +325,13 @@ def _color_dims(graph: Graph, dim_coords: Set[str]) -> Dict[str, Dict[str, Fract
     return colors
 
 
-def _has_full_color_of_dim(colors: Dict[str, Fraction], dim: str) -> bool:
+def _has_full_color_of_dim(colors: dict[str, Fraction], dim: str) -> bool:
     return all(
         fraction == 1 if d == dim else fraction != 1 for d, fraction in colors.items()
     )
 
 
-def _dim_name_changes(rule_graph: Graph, dim_coords: Set[str]) -> Dict[str, str]:
+def _dim_name_changes(rule_graph: Graph, dim_coords: set[str]) -> dict[str, str]:
     colors = _color_dims(rule_graph, dim_coords)
     nodes = list(rule_graph.nodes_topologically())[::-1]
     name_changes = {}

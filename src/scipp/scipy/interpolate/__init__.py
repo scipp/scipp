@@ -7,7 +7,8 @@ This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.interpolate`.
 """
 
-from typing import Any, Callable, Literal, Union
+from typing import Any, Literal
+from collections.abc import Callable
 
 import numpy as np
 
@@ -51,19 +52,17 @@ def interp1d(
     da: DataArray,
     dim: str,
     *,
-    kind: Union[
-        int,
-        Literal[
-            'linear',
-            'nearest',
-            'nearest-up',
-            'zero',
-            'slinear',
-            'quadratic',
-            'cubic',
-            'previous',
-            'next',
-        ],
+    kind: int
+    | Literal[
+        'linear',
+        'nearest',
+        'nearest-up',
+        'zero',
+        'slinear',
+        'quadratic',
+        'cubic',
+        'previous',
+        'next',
     ] = 'linear',
     fill_value: Any = np.nan,
     **kwargs,

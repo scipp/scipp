@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v3
         with:
-          python-version: '3.9'
+          python-version: '3.10'
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -r requirements/ci.txt
       - run: tox -e static
@@ -40,7 +40,7 @@ jobs:
         - {os: ubuntu-22.04, cmake-preset: ci-linux}
         - {os: macos-11, cmake-preset: ci-macos}
         - {os: windows-2019, cmake-preset: ci-windows}
-        python-version: ["3.9"]
+        python-version: ["3.10"]
 
     steps:
       - uses: actions/checkout@v4

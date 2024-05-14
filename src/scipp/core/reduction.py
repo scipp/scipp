@@ -4,7 +4,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 
@@ -16,7 +17,7 @@ from .data_group import DataGroup, data_group_nary
 from .variable import array
 
 
-def mean(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
+def mean(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     """Arithmetic mean of elements in the input.
 
     If the input has variances, the variances stored in the output are based on
@@ -56,7 +57,7 @@ def mean(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
         return _call_cpp_func(_cpp.mean, x, dim=dim)
 
 
-def nanmean(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
+def nanmean(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     """Arithmetic mean of elements in the input ignoring NaN's.
 
     If the input has variances, the variances stored in the output are based on
@@ -637,7 +638,7 @@ def sum(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     return x
 
 
-def nansum(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
+def nansum(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     """Sum of elements in the input ignoring NaN's.
 
     See :py:func:`scipp.sum` on how rounding errors for float32 inputs are handled.
@@ -666,7 +667,7 @@ def nansum(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
         return _call_cpp_func(_cpp.nansum, x, dim=dim)
 
 
-def min(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
+def min(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     """Minimum of elements in the input.
 
     Warning
@@ -705,7 +706,7 @@ def min(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
         return _call_cpp_func(_cpp.min, x, dim=dim)
 
 
-def max(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
+def max(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     """Maximum of elements in the input.
 
     Warning
@@ -744,7 +745,7 @@ def max(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
         return _call_cpp_func(_cpp.max, x, dim=dim)
 
 
-def nanmin(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
+def nanmin(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     """Minimum of elements in the input ignoring NaN's.
 
     Warning
@@ -783,7 +784,7 @@ def nanmin(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
         return _call_cpp_func(_cpp.nanmin, x, dim=dim)
 
 
-def nanmax(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
+def nanmax(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     """Maximum of elements in the input ignoring NaN's.
 
     Warning
@@ -822,7 +823,7 @@ def nanmax(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
         return _call_cpp_func(_cpp.nanmax, x, dim=dim)
 
 
-def all(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
+def all(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     """Logical AND over input values.
 
     Parameters
@@ -850,7 +851,7 @@ def all(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
         return _call_cpp_func(_cpp.all, x, dim=dim)
 
 
-def any(x: VariableLikeType, dim: Optional[str] = None) -> VariableLikeType:
+def any(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     """Logical OR over input values.
 
     Parameters

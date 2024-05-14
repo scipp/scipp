@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-from typing import Optional
 
 from .._scipp.core import CoordError, DataArray, Dataset, Variable
 from ..typing import VariableLikeType
@@ -11,7 +10,7 @@ from .variable import scalar
 
 
 def _rename_dims(
-    self: VariableLikeType, dims_dict: Optional[dict[str, str]] = None, /, **names: str
+    self: VariableLikeType, dims_dict: dict[str, str] | None = None, /, **names: str
 ) -> VariableLikeType:
     """Rename dimensions.
 
@@ -44,7 +43,7 @@ def _rename_dims(
 
 
 def _rename_variable(
-    var: Variable, dims_dict: Optional[dict[str, str]] = None, /, **names: str
+    var: Variable, dims_dict: dict[str, str] | None = None, /, **names: str
 ) -> Variable:
     """Rename dimension labels.
 
@@ -78,7 +77,7 @@ def _rename_variable(
 
 
 def _rename_data_array(
-    da: DataArray, dims_dict: Optional[dict[str, str]] = None, /, **names: str
+    da: DataArray, dims_dict: dict[str, str] | None = None, /, **names: str
 ) -> DataArray:
     """Rename the dimensions, coordinates, and attributes.
 
@@ -130,7 +129,7 @@ def _rename_data_array(
 
 
 def _rename_dataset(
-    ds: Dataset, dims_dict: Optional[dict[str, str]] = None, /, **names: str
+    ds: Dataset, dims_dict: dict[str, str] | None = None, /, **names: str
 ) -> Dataset:
     """Rename the dimensions, coordinates and attributes of all the items.
 

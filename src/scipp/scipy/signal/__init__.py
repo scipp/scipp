@@ -8,7 +8,6 @@ This subpackage provides wrappers for a subset of functions from
 """
 
 from dataclasses import dataclass
-from typing import Union
 
 from numpy import ndarray
 
@@ -37,9 +36,7 @@ class SOS:
     coord: Variable
     sos: ndarray
 
-    def filtfilt(
-        self, obj: Union[Variable, DataArray], dim: str, **kwargs
-    ) -> DataArray:
+    def filtfilt(self, obj: Variable | DataArray, dim: str, **kwargs) -> DataArray:
         """
         Forwards to :py:func:`scipp.signal.sosfiltfilt` with sos argument set to the SOS
         instance.
@@ -111,7 +108,7 @@ def _sosfiltfilt(da: DataArray, dim: str, *, sos: SOS, **kwargs) -> DataArray:
 
 
 def sosfiltfilt(
-    obj: Union[Variable, DataArray], dim: str, *, sos: SOS, **kwargs
+    obj: Variable | DataArray, dim: str, *, sos: SOS, **kwargs
 ) -> DataArray:
     """
     A forward-backward digital filter using cascaded second-order sections.

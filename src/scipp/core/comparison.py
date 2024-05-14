@@ -153,7 +153,7 @@ def _identical_data_groups(
     def compare(a, b):
         if not isinstance(a, type(b)):
             return False
-        if isinstance(a, (Variable, DataArray, Dataset, data_group.DataGroup)):
+        if isinstance(a, Variable | DataArray | Dataset | data_group.DataGroup):
             return identical(a, b, equal_nan=equal_nan)
         if isinstance(a, np.ndarray):
             return np.array_equal(a, b, equal_nan=equal_nan)

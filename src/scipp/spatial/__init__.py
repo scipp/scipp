@@ -17,7 +17,7 @@ scipp.vectors:
     Construct an array variable holding 3-vectors.
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import numpy as _np
 import numpy as np
@@ -76,8 +76,8 @@ def as_vectors(x: Variable, y: Variable, z: Variable) -> Variable:
 
 def translation(
     *,
-    unit: Union[Unit, str] = units.dimensionless,
-    value: Union[_np.ndarray, list],
+    unit: Unit | str = units.dimensionless,
+    value: _np.ndarray | list,
 ):
     """
     Creates a translation transformation from a single provided 3-vector.
@@ -100,8 +100,8 @@ def translation(
 def translations(
     *,
     dims: Sequence[str],
-    unit: Union[Unit, str] = units.dimensionless,
-    values: Union[_np.ndarray, list],
+    unit: Unit | str = units.dimensionless,
+    values: _np.ndarray | list,
 ):
     """
     Creates translation transformations from multiple 3-vectors.
@@ -125,7 +125,7 @@ def translations(
     )
 
 
-def scaling_from_vector(*, value: Union[_np.ndarray, list]):
+def scaling_from_vector(*, value: _np.ndarray | list):
     """
     Creates a scaling transformation from a provided 3-vector.
 
@@ -143,7 +143,7 @@ def scaling_from_vector(*, value: Union[_np.ndarray, list]):
     return linear_transforms(dims=[], values=_np.diag(value))
 
 
-def scalings_from_vectors(*, dims: Sequence[str], values: Union[_np.ndarray, list]):
+def scalings_from_vectors(*, dims: Sequence[str], values: _np.ndarray | list):
     """
     Creates scaling transformations from corresponding to the provided 3-vectors.
 
@@ -169,7 +169,7 @@ def scalings_from_vectors(*, dims: Sequence[str], values: Union[_np.ndarray, lis
     return matrices
 
 
-def rotation(*, value: Union[_np.ndarray, list]):
+def rotation(*, value: _np.ndarray | list):
     """
     Creates a rotation-type variable from the provided quaternion coefficients.
 
@@ -202,7 +202,7 @@ def rotation(*, value: Union[_np.ndarray, list]):
     return rotations(dims=(), values=value)
 
 
-def rotations(*, dims: Sequence[str], values: Union[_np.ndarray, list]):
+def rotations(*, dims: Sequence[str], values: _np.ndarray | list):
     """
     Creates a rotation-type variable from the provided quaternion coefficients.
 
@@ -314,8 +314,8 @@ def rotation_as_rotvec(rotation: Variable, *, unit='rad') -> Variable:
 
 def affine_transform(
     *,
-    unit: Union[Unit, str] = units.dimensionless,
-    value: Union[_np.ndarray, list],
+    unit: Unit | str = units.dimensionless,
+    value: _np.ndarray | list,
 ):
     """
     Initializes a single affine transformation from the provided affine matrix
@@ -339,8 +339,8 @@ def affine_transform(
 def affine_transforms(
     *,
     dims: Sequence[str],
-    unit: Union[Unit, str] = units.dimensionless,
-    values: Union[_np.ndarray, list],
+    unit: Unit | str = units.dimensionless,
+    values: _np.ndarray | list,
 ):
     """
     Initializes affine transformations from the provided affine matrix
@@ -370,8 +370,8 @@ def affine_transforms(
 
 def linear_transform(
     *,
-    unit: Union[Unit, str] = units.dimensionless,
-    value: Union[_np.ndarray, list],
+    unit: Unit | str = units.dimensionless,
+    value: _np.ndarray | list,
 ):
     """Constructs a zero dimensional :class:`Variable` holding a single 3x3
     matrix.
@@ -398,8 +398,8 @@ def linear_transform(
 def linear_transforms(
     *,
     dims: Sequence[str],
-    unit: Union[Unit, str] = units.dimensionless,
-    values: Union[_np.ndarray, list],
+    unit: Unit | str = units.dimensionless,
+    values: _np.ndarray | list,
 ):
     """Constructs a :class:`Variable` with given dimensions holding an array
     of 3x3 matrices.

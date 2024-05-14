@@ -5,8 +5,9 @@
 Search strategies for hypothesis to generate inputs for tests.
 """
 
+from collections.abc import Callable, Sequence
 from functools import partial
-from typing import Any, Callable, Dict, Optional, Sequence, Union
+from typing import Any
 
 import numpy as np
 from hypothesis import strategies as st
@@ -32,7 +33,7 @@ def dims() -> st.SearchStrategy:
 
 
 def sizes_dicts(
-    ndim: Optional[Union[int, st.SearchStrategy]] = None,
+    ndim: int | st.SearchStrategy | None = None,
 ) -> st.SearchStrategy:
     if isinstance(ndim, st.SearchStrategy):
         return ndim.flatmap(lambda n: sizes_dicts(ndim=n))
@@ -109,14 +110,14 @@ def _concrete_args(draw, args: dict) -> dict:
 
 def _variable_arg_strategies(
     *,
-    ndim: Union[int, st.SearchStrategy, None] = None,
-    sizes: Union[Dict[str, int], st.SearchStrategy, None] = None,
-    unit: Union[str, Unit, st.SearchStrategy, None] = None,
-    dtype: Union[str, DType, type, st.SearchStrategy, None] = None,
-    with_variances: Union[bool, st.SearchStrategy, None] = None,
-    elements: Union[float, st.SearchStrategy, None] = None,
-    fill: Union[float, st.SearchStrategy, None] = None,
-    unique: Union[bool, st.SearchStrategy, None] = None,
+    ndim: int | st.SearchStrategy | None = None,
+    sizes: dict[str, int] | st.SearchStrategy | None = None,
+    unit: str | Unit | st.SearchStrategy | None = None,
+    dtype: str | DType | type | st.SearchStrategy | None = None,
+    with_variances: bool | st.SearchStrategy | None = None,
+    elements: float | st.SearchStrategy | None = None,
+    fill: float | st.SearchStrategy | None = None,
+    unique: bool | st.SearchStrategy | None = None,
 ):
     if ndim is not None:
         if sizes is not None:
@@ -154,14 +155,14 @@ def _variable_arg_strategies(
 # `hypothesis.HealthCheck.data_too_large`.
 def variables(
     *,
-    ndim: Union[int, st.SearchStrategy, None] = None,
-    sizes: Union[Dict[str, int], st.SearchStrategy, None] = None,
-    unit: Union[str, Unit, st.SearchStrategy, None] = None,
-    dtype: Union[str, DType, type, st.SearchStrategy, None] = None,
-    with_variances: Union[bool, st.SearchStrategy, None] = None,
-    elements: Union[float, st.SearchStrategy, None] = None,
-    fill: Union[float, st.SearchStrategy, None] = None,
-    unique: Union[bool, st.SearchStrategy, None] = None,
+    ndim: int | st.SearchStrategy | None = None,
+    sizes: dict[str, int] | st.SearchStrategy | None = None,
+    unit: str | Unit | st.SearchStrategy | None = None,
+    dtype: str | DType | type | st.SearchStrategy | None = None,
+    with_variances: bool | st.SearchStrategy | None = None,
+    elements: float | st.SearchStrategy | None = None,
+    fill: float | st.SearchStrategy | None = None,
+    unique: bool | st.SearchStrategy | None = None,
 ) -> st.SearchStrategy[Variable]:
     args = _variable_arg_strategies(
         ndim=ndim,
@@ -179,14 +180,14 @@ def variables(
 def n_variables(
     n: int,
     *,
-    ndim: Union[int, st.SearchStrategy, None] = None,
-    sizes: Union[Dict[str, int], st.SearchStrategy, None] = None,
-    unit: Union[str, Unit, st.SearchStrategy, None] = None,
-    dtype: Union[str, DType, type, st.SearchStrategy, None] = None,
-    with_variances: Union[bool, st.SearchStrategy, None] = None,
-    elements: Union[float, st.SearchStrategy, None] = None,
-    fill: Union[float, st.SearchStrategy, None] = None,
-    unique: Union[bool, st.SearchStrategy, None] = None,
+    ndim: int | st.SearchStrategy | None = None,
+    sizes: dict[str, int] | st.SearchStrategy | None = None,
+    unit: str | Unit | st.SearchStrategy | None = None,
+    dtype: str | DType | type | st.SearchStrategy | None = None,
+    with_variances: bool | st.SearchStrategy | None = None,
+    elements: float | st.SearchStrategy | None = None,
+    fill: float | st.SearchStrategy | None = None,
+    unique: bool | st.SearchStrategy | None = None,
 ) -> st.SearchStrategy[tuple[Variable]]:
     args = _variable_arg_strategies(
         ndim=ndim,
@@ -208,7 +209,7 @@ def coord_dicts(
     draw: Callable[[st.SearchStrategy[Ex]], Ex],
     *,
     sizes: dict[str, int],
-    args: Optional[dict[str, Any]] = None,
+    args: dict[str, Any] | None = None,
     bin_edges: bool = True,
 ) -> dict[str, Variable]:
     args = args or {}
@@ -252,11 +253,11 @@ def coord_dicts(
 def dataarrays(
     draw: Callable[[st.SearchStrategy[Ex]], Ex],
     *,
-    data_args: Optional[dict[str, Any]] = None,
+    data_args: dict[str, Any] | None = None,
     coords: bool = True,
-    coord_args: Optional[dict[str, Any]] = None,
+    coord_args: dict[str, Any] | None = None,
     masks: bool = True,
-    mask_args: Optional[dict[str, Any]] = None,
+    mask_args: dict[str, Any] | None = None,
     bin_edges: bool = True,
 ) -> DataArray:
     """Generate data arrays with coords and masks.

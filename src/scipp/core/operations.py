@@ -3,7 +3,7 @@
 # @author Matthew Andrew
 from __future__ import annotations
 
-from typing import Any, Dict, Literal, Optional, Union, overload
+from typing import Any, Literal, overload
 
 from .._scipp import core as _cpp
 from ..typing import ScippIndex, VariableLikeType
@@ -14,7 +14,7 @@ from .data_group import DataGroup
 from .unary import to_unit
 
 
-def islinspace(x: Variable, dim: Optional[str] = None) -> Variable:
+def islinspace(x: Variable, dim: str | None = None) -> Variable:
     """Check if the values of a variable are evenly spaced.
 
     Parameters
@@ -103,7 +103,7 @@ def allsorted(
 
 def sort(
     x: VariableLikeType,
-    key: Union[str, Variable],
+    key: str | Variable,
     order: Literal['ascending', 'descending'] = 'ascending',
 ) -> VariableLikeType:
     """Sort variable along a dimension by a sort key or dimension label.
@@ -221,8 +221,8 @@ def where(condition: Variable, x: Variable, y: Variable) -> Variable:
 def to(
     var: VariableLikeType,
     *,
-    unit: Optional[Union[_cpp.Unit, str]] = None,
-    dtype: Optional[Any] = None,
+    unit: _cpp.Unit | str | None = None,
+    dtype: Any | None = None,
     copy: bool = True,
 ) -> VariableLikeType:
     """Converts a Variable or DataArray to a different dtype and/or a different unit.
@@ -355,9 +355,9 @@ def _merge_data_group(lhs: DataGroup, rhs: DataGroup) -> DataGroup:
 
 
 def label_based_index_to_positional_index(
-    sizes: Dict[str, int],
+    sizes: dict[str, int],
     coord: Variable,
-    index: Union[slice[Optional[Variable]], Variable],
+    index: slice[Variable | None] | Variable,
 ) -> ScippIndex:
     """Returns the positional index equivalent to label based indexing
     the coord with values."""

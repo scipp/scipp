@@ -2,15 +2,14 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Matthew Andrew
 
-from typing import Union
 
 from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 
 
 def counts_to_density(
-    x: Union[_cpp.DataArray, _cpp.Dataset], dim: str
-) -> Union[_cpp.DataArray, _cpp.Dataset]:
+    x: _cpp.DataArray | _cpp.Dataset, dim: str
+) -> _cpp.DataArray | _cpp.Dataset:
     """Converts counts to count density on a given dimension.
 
     Parameters
@@ -29,8 +28,8 @@ def counts_to_density(
 
 
 def density_to_counts(
-    x: Union[_cpp.DataArray, _cpp.Dataset], dim: str
-) -> Union[_cpp.DataArray, _cpp.Dataset]:
+    x: _cpp.DataArray | _cpp.Dataset, dim: str
+) -> _cpp.DataArray | _cpp.Dataset:
     """Converts counts to count density on a given dimension.
 
     Parameters

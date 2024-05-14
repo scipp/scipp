@@ -1,12 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-from typing import Dict, List, Tuple, Union
 
 from .core import DataArray, Dataset, Variable
 
 
-def serialize(var: Union[Variable, DataArray, Dataset]) -> Tuple[Dict, List[bytes]]:
+def serialize(var: Variable | DataArray | Dataset) -> tuple[dict, list[bytes]]:
     """Serialize Scipp object."""
     from io import BytesIO
 
@@ -22,9 +21,7 @@ def serialize(var: Union[Variable, DataArray, Dataset]) -> Tuple[Dict, List[byte
     return header, frames
 
 
-def deserialize(
-    header: Dict, frames: List[bytes]
-) -> Union[Variable, DataArray, Dataset]:
+def deserialize(header: dict, frames: list[bytes]) -> Variable | DataArray | Dataset:
     """Deserialize Scipp object."""
     from io import BytesIO
 

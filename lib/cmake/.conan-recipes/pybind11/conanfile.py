@@ -74,18 +74,6 @@ class PyBind11Conan(ConanFile):
                     "pybind11",
                     "pybind11Common.cmake",
                 ),
-                "if(TARGET pybind11::lto)",
-                "if(FALSE)",
-            )
-            replace_in_file(
-                self,
-                os.path.join(
-                    self.package_folder,
-                    "lib",
-                    "cmake",
-                    "pybind11",
-                    "pybind11Common.cmake",
-                ),
                 "add_library(",
                 "# add_library(",
             )

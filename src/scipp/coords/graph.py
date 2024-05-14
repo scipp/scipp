@@ -5,31 +5,31 @@
 from __future__ import annotations
 
 import collections
+from collections.abc import Callable, Iterable
 from graphlib import TopologicalSorter
-from typing import Callable, Dict, Iterable, List, Set, Tuple, Union
 
 from ..core import DataArray
 from ..utils.graph import make_graphviz_digraph
 from .rule import ComputeRule, FetchRule, RenameRule, Rule
 
-GraphDict = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
+GraphDict = dict[str | tuple[str, ...], str | Callable]
 
 
 class Graph:
-    def __init__(self, graph: Union[GraphDict, Dict[str, Rule]]):
+    def __init__(self, graph: GraphDict | dict[str, Rule]):
         if not isinstance(graph, collections.abc.Mapping):
             raise TypeError("'graph' must be a dict")
         if not graph:
             self._rules = {}
         elif isinstance(next(iter(graph.values())), Rule):
-            self._rules: Dict[str, Rule] = graph
+            self._rules: dict[str, Rule] = graph
         else:
-            self._rules: Dict[str, Rule] = _convert_to_rule_graph(graph)
+            self._rules: dict[str, Rule] = _convert_to_rule_graph(graph)
 
     def __getitem__(self, name: str) -> Rule:
         return self._rules[name]
 
-    def items(self) -> Iterable[Tuple[str, Rule]]:
+    def items(self) -> Iterable[tuple[str, Rule]]:
         yield from self._rules.items()
 
     def parents_of(self, node: str) -> Iterable[str]:
@@ -53,7 +53,7 @@ class Graph:
             {out: rule.dependencies for out, rule in self._rules.items()}
         ).static_order()
 
-    def graph_for(self, da: DataArray, targets: Set[str]) -> Graph:
+    def graph_for(self, da: DataArray, targets: set[str]) -> Graph:
         """
         Construct a graph containing only rules needed for the given DataArray
         and targets, including FetchRules for the inputs.
@@ -109,7 +109,7 @@ class Graph:
         return dot
 
 
-def rule_sequence(rules: Graph) -> List[Rule]:
+def rule_sequence(rules: Graph) -> list[Rule]:
     already_used = set()
     result = []
     for rule in (
@@ -126,7 +126,7 @@ def _make_rule(products, producer) -> Rule:
     return ComputeRule(products, producer)
 
 
-def _convert_to_rule_graph(graph: GraphDict) -> Dict[str, Rule]:
+def _convert_to_rule_graph(graph: GraphDict) -> dict[str, Rule]:
     rule_graph = {}
     for products, producer in graph.items():
         products = (products,) if isinstance(products, str) else tuple(products)

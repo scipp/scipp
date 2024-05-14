@@ -13,9 +13,9 @@ def make_variable(data, variances=None, **kwargs):
     Make a Variable with default dimensions from data
     while avoiding copies beyond what sc.Variable does.
     """
-    if isinstance(data, (list, tuple)):
+    if isinstance(data, list | tuple):
         data = np.array(data)
-    if variances is not None and isinstance(variances, (list, tuple)):
+    if variances is not None and isinstance(variances, list | tuple):
         variances = np.array(variances)
     if isinstance(data, np.ndarray):
         dims = ['x', 'y'][: np.ndim(data)]

@@ -1,13 +1,22 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 
+from collections.abc import Callable, Mapping, Sequence
 from inspect import getfullargspec
 from numbers import Real
-from typing import Callable, Dict, Mapping, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
-from .core import BinEdgeError, DataArray, DataGroup, Variable, array, scalar, stddevs
+from .core import (
+    BinEdgeError,
+    DataArray,
+    DataGroup,
+    Variable,
+    array,
+    irreducible_mask,
+    scalar,
+    stddevs,
+)
 from .units import default_unit, dimensionless
 
 
@@ -18,10 +27,10 @@ def _as_scalar(obj, unit):
 
 
 def _wrap_scipp_func(f, p_names, p_units):
-    _params = {k: _as_scalar(0.0, u) for k, u in zip(p_names, p_units)}
+    _params = {k: _as_scalar(0.0, u) for k, u in zip(p_names, p_units, strict=True)}
 
     def func(x, *args):
-        for k, v in zip(p_names, args):
+        for k, v in zip(p_names, args, strict=True):
             if isinstance(_params[k], Variable):
                 _params[k].value = v
             else:
@@ -37,8 +46,8 @@ def _wrap_numpy_func(f, p_names, coord_names):
         # Make x 2D for consistency.
         if len(x.shape) == 1:
             x = x.reshape(1, -1)
-        coords = dict(zip(coord_names, x))
-        params = dict(zip(p_names, args))
+        coords = dict(zip(coord_names, x, strict=True))
+        params = dict(zip(p_names, args, strict=True))
         return f(**coords, **params)
 
     return func
@@ -70,7 +79,7 @@ def _datagroup_outputs(da, params, p_units, map_over, pdata, covdata):
                     unit=u,
                 ),
             )
-            for i, (p, u) in enumerate(zip(params, p_units))
+            for i, (p, u) in enumerate(zip(params, p_units, strict=True))
         }
     )
     dgcov = DataGroup(
@@ -94,10 +103,10 @@ def _datagroup_outputs(da, params, p_units, map_over, pdata, covdata):
                             ),
                         ),
                     )
-                    for j, (q, q_u) in enumerate(zip(params, p_units))
+                    for j, (q, q_u) in enumerate(zip(params, p_units, strict=True))
                 }
             )
-            for i, (p, p_u) in enumerate(zip(params, p_units))
+            for i, (p, p_u) in enumerate(zip(params, p_units, strict=True))
         }
     )
     for c in da.coords:
@@ -129,7 +138,9 @@ def _make_defaults(f, coords, params):
     if not set(coords).issubset(all_args):
         raise ValueError("Function must take the provided coords as arguments")
     default_arguments = dict(
-        zip(spec.args[-len(spec.defaults) :], spec.defaults) if spec.defaults else {},
+        zip(spec.args[-len(spec.defaults) :], spec.defaults, strict=True)
+        if spec.defaults
+        else {},
         **(spec.kwonlydefaults or {}),
     )
     return {
@@ -139,7 +150,7 @@ def _make_defaults(f, coords, params):
     }
 
 
-def _get_specific_bounds(bounds, name, unit) -> Tuple[float, float]:
+def _get_specific_bounds(bounds, name, unit) -> tuple[float, float]:
     if name not in bounds:
         return -np.inf, np.inf
     b = bounds[name]
@@ -158,7 +169,7 @@ def _get_specific_bounds(bounds, name, unit) -> Tuple[float, float]:
 
 def _parse_bounds(
     bounds, params
-) -> Union[Tuple[float, float], Tuple[np.ndarray, np.ndarray]]:
+) -> tuple[float, float] | tuple[np.ndarray, np.ndarray]:
     if bounds is None:
         return -np.inf, np.inf
 
@@ -201,9 +212,9 @@ def _curve_fit(
         return
 
     fda = da.flatten(to='row')
-
-    for m in fda.masks.values():
-        fda = fda[~m]
+    mask = irreducible_mask(fda.masks, 'row')
+    if mask is not None:
+        fda = fda[~mask]
 
     if not unsafe_numpy_f:
         # Making the coords into a dict improves runtime,
@@ -236,18 +247,16 @@ def _curve_fit(
 
 
 def curve_fit(
-    coords: Union[Sequence[str], Mapping[str, Union[str, Variable]]],
+    coords: Sequence[str] | Mapping[str, str | Variable],
     f: Callable,
     da: DataArray,
     *,
-    p0: Optional[Dict[str, Union[Variable, Real]]] = None,
-    bounds: Optional[
-        Dict[str, Union[Tuple[Variable, Variable], Tuple[Real, Real]]]
-    ] = None,
+    p0: dict[str, Variable | Real] | None = None,
+    bounds: dict[str, tuple[Variable, Variable] | tuple[Real, Real]] | None = None,
     reduce_dims: Sequence[str] = (),
     unsafe_numpy_f: bool = False,
     **kwargs,
-) -> Tuple[DataGroup, DataGroup]:
+) -> tuple[DataGroup, DataGroup]:
     """Use non-linear least squares to fit a function, f, to data.
     The function interface is similar to that of :py:func:`xarray.DataArray.curvefit`.
 

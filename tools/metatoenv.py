@@ -145,7 +145,7 @@ def _jinja_filter(dependencies, platform):
                     raise RuntimeError(
                         "Bad preprocessing selector: "
                         "unmatched square brackets or closing bracket "
-                        "found before opening bracket: {}".format(key)
+                        f"found before opening bracket: {key}"
                     )
                 selector = key[left : right + 1]
                 if selector.startswith('[not'):
@@ -177,7 +177,7 @@ def _merge_dicts(a, b, path=None):
             elif a[key] == b[key]:
                 pass  # same leaf value
             else:
-                raise Exception('Conflict at %s' % '.'.join((*path, str(key))))
+                raise Exception('Conflict at {}'.format('.'.join((*path, str(key)))))
         else:
             a[key] = b[key]
     return a
@@ -185,7 +185,7 @@ def _merge_dicts(a, b, path=None):
 
 def _write_dict(d, file_handle, indent):
     for key, value in d.items():
-        file_handle.write((" " * indent) + "- {}\n".format(key))
+        file_handle.write((" " * indent) + f"- {key}\n")
         if isinstance(value, dict):
             _write_dict(value, file_handle=file_handle, indent=indent + 2)
 
@@ -197,7 +197,7 @@ def main(metafile, envfile, envname, channels, platform, extra, mergewith):
         platform = platform_mapping[_platform.system()]
 
     # Read and parse metafile
-    with open(metafile, "r") as f:
+    with open(metafile) as f:
         metacontent = f.readlines()
     meta = _parse_yaml(metacontent)
 
@@ -237,10 +237,10 @@ def main(metafile, envfile, envname, channels, platform, extra, mergewith):
         out.write("# Do not update this file in-place.\n")
         out.write("# Use metatoenv.py to create a new file.\n")
         out.write("##############################################################\n\n")
-        out.write("name: {}\n".format(envname))
+        out.write(f"name: {envname}\n")
         out.write("channels:\n")
         for channel in channels:
-            out.write("  - {}\n".format(channel))
+            out.write(f"  - {channel}\n")
         out.write("dependencies:\n")
         _write_dict(meta_dependencies, file_handle=out, indent=2)
 

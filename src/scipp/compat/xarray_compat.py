@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 from warnings import warn
 
 from ..core import DataArray, Dataset, Unit, Variable
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     import xarray as xr
 
 
-def from_xarray(obj: Union[xr.Variable, xr.DataArray, xr.Dataset]) -> VariableLike:
+def from_xarray(obj: xr.Variable | xr.DataArray | xr.Dataset) -> VariableLike:
     """Convert an xarray object to the corresponding scipp object.
     Attributes named `"units"` are used to set the units of the Variables.
     All other DataArray attributes are kept, but attributes of Variables, Coordinates
@@ -46,7 +46,7 @@ def from_xarray(obj: Union[xr.Variable, xr.DataArray, xr.Dataset]) -> VariableLi
         raise ValueError(f"from_xarray: cannot convert type '{type(obj)}'")
 
 
-def to_xarray(obj: VariableLike) -> Union[xr.Variable, xr.DataArray, xr.Dataset]:
+def to_xarray(obj: VariableLike) -> xr.Variable | xr.DataArray | xr.Dataset:
     """Convert a scipp object to the corresponding xarray object.
 
     Warning
@@ -79,7 +79,7 @@ def to_xarray(obj: VariableLike) -> Union[xr.Variable, xr.DataArray, xr.Dataset]
         raise ValueError(f"to_xarray: cannot convert type '{type(obj)}'")
 
 
-def _from_xarray_variable(xr_obj: Union[xr.Coordinate, xr.DataArray]) -> Variable:
+def _from_xarray_variable(xr_obj: xr.Coordinate | xr.DataArray) -> Variable:
     """Converts an xarray Coordinate or the data in a DataArray to a scipp.Variable."""
     unit = xr_obj.attrs.get('units', None)
     return Variable(

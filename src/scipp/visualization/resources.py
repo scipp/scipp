@@ -11,7 +11,7 @@ def _read_text(filename):
     return (
         importlib.resources.files('scipp.visualization.templates')
         .joinpath(filename)
-        .read_text()
+        .read_text(encoding='utf-8')
     )
 
 

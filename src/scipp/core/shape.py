@@ -3,7 +3,7 @@
 # @author Matthew Andrew
 # ruff: noqa: E501
 
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
 
 import numpy as np
 
@@ -17,9 +17,9 @@ from .concepts import transform_data
 
 def broadcast(
     x: VariableLikeType,
-    dims: Optional[Union[List[str], Tuple[str, ...]]] = None,
-    shape: Optional[Sequence[int]] = None,
-    sizes: Optional[Dict[str, int]] = None,
+    dims: list[str] | tuple[str, ...] | None = None,
+    shape: Sequence[int] | None = None,
+    sizes: dict[str, int] | None = None,
 ) -> VariableLikeType:
     """Broadcast a Variable or a DataArray.
 
@@ -124,9 +124,9 @@ def concat(x: Sequence[VariableLikeType], dim: str) -> VariableLikeType:
 def fold(
     x: VariableLikeType,
     dim: str,
-    sizes: Optional[Dict[str, int]] = None,
-    dims: Optional[Union[List[str], Tuple[str, ...]]] = None,
-    shape: Optional[Sequence[int]] = None,
+    sizes: dict[str, int] | None = None,
+    dims: list[str] | tuple[str, ...] | None = None,
+    shape: Sequence[int] | None = None,
 ) -> VariableLikeType:
     """Fold a single dimension of a variable or data array into multiple dims.
 
@@ -210,10 +210,8 @@ def fold(
         dim_size = x.sizes[dim] // new_volume
         if x.sizes[dim] % new_volume != 0:
             raise ValueError(
-                "-1 in new shape was computed to be {}, but the original "
-                "shape {} cannot be divided by {}.".format(
-                    dim_size, x.sizes[dim], dim_size
-                )
+                f"-1 in new shape was computed to be {dim_size}, but the original "
+                f"shape {x.sizes[dim]} cannot be divided by {dim_size}."
             )
         new_shape[ind] = dim_size
 
@@ -222,8 +220,8 @@ def fold(
 
 def flatten(
     x: VariableLikeType,
-    dims: Optional[Union[List[str], Tuple[str, ...]]] = None,
-    to: Optional[str] = None,
+    dims: list[str] | tuple[str, ...] | None = None,
+    to: str | None = None,
 ) -> VariableLikeType:
     """Flatten multiple dimensions into a single dimension.
 
@@ -315,7 +313,7 @@ def flatten(
 
 
 def transpose(
-    x: VariableLikeType, dims: Optional[Union[List[str], Tuple[str, ...]]] = None
+    x: VariableLikeType, dims: list[str] | tuple[str, ...] | None = None
 ) -> VariableLikeType:
     """Transpose dimensions of the input.
 
@@ -341,7 +339,7 @@ def transpose(
 
 
 def squeeze(
-    x: VariableLikeType, dim: Optional[Union[str, List[str], Tuple[str, ...]]] = None
+    x: VariableLikeType, dim: str | list[str] | tuple[str, ...] | None = None
 ) -> VariableLikeType:
     """Remove dimensions of length 1.
 

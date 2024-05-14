@@ -8,7 +8,7 @@ This subpackage provides wrappers for a subset of functions from
 """
 
 from functools import wraps
-from typing import Callable, Dict, Optional, Union
+from collections.abc import Callable
 
 import scipy.ndimage
 
@@ -27,7 +27,7 @@ from ...typing import VariableLike, VariableLikeType
 
 def _ndfilter(func: Callable) -> Callable:
     @wraps(func)
-    def function(x: Union[Variable, DataArray], **kwargs) -> Union[Variable, DataArray]:
+    def function(x: Variable | DataArray, **kwargs) -> Variable | DataArray:
         if 'output' in kwargs:
             raise TypeError("The 'output' argument is not supported")
         if x.variances is not None:
@@ -41,7 +41,7 @@ def _ndfilter(func: Callable) -> Callable:
     return function
 
 
-def _delta_to_positional(x: Union[Variable, DataArray], dim, index, dtype):
+def _delta_to_positional(x: Variable | DataArray, dim, index, dtype):
     if not isinstance(index, Variable):
         return index
     coord = x.coords[dim]
@@ -64,7 +64,7 @@ def _require_matching_dims(index, x, name):
         )
 
 
-def _positional_index(x: Union[Variable, DataArray], index, name=None, dtype=int):
+def _positional_index(x: Variable | DataArray, index, name=None, dtype=int):
     if not isinstance(index, dict):
         return [_delta_to_positional(x, dim, index, dtype=dtype) for dim in x.dims]
     _require_matching_dims(index, x, name)
@@ -76,8 +76,8 @@ def gaussian_filter(
     x: VariableLikeType,
     /,
     *,
-    sigma: Union[float, Variable, Dict[str, Union[int, float, Variable]]],
-    order: Optional[Union[int, Dict[str, int]]] = 0,
+    sigma: float | Variable | dict[str, int | float | Variable],
+    order: int | dict[str, int] | None = 0,
     **kwargs,
 ) -> VariableLikeType:
     """
@@ -164,7 +164,7 @@ def gaussian_filter(
     return out
 
 
-def _make_footprint(x: Union[Variable, DataArray], size, footprint) -> Variable:
+def _make_footprint(x: Variable | DataArray, size, footprint) -> Variable:
     if footprint is None:
         size = _positional_index(x, size, name='size')
         footprint = ones(dims=x.dims, shape=size, dtype='bool')
@@ -183,9 +183,9 @@ def _make_footprint_filter(name, example=True, extra_args=''):
         x: VariableLike,
         /,
         *,
-        size: Optional[Union[int, Variable, Dict[str, Union[int, Variable]]]] = None,
-        footprint: Optional[Variable] = None,
-        origin: Optional[Union[int, Variable, Dict[str, Union[int, Variable]]]] = 0,
+        size: int | Variable | dict[str, int | Variable] | None = None,
+        footprint: Variable | None = None,
+        origin: int | Variable | dict[str, int | Variable] | None = 0,
         **kwargs,
     ) -> VariableLike:
         footprint = _make_footprint(x, size=size, footprint=footprint)

@@ -12,7 +12,7 @@ import logging
 import time
 from copy import copy
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 from .core import DataArray, Dataset, Variable
 from .utils import running_in_jupyter
@@ -139,7 +139,7 @@ def clear_log_widget() -> None:
 
 
 def _has_html_repr(x: Any) -> bool:
-    return isinstance(x, (DataArray, Dataset, Variable))
+    return isinstance(x, DataArray | Dataset | Variable)
 
 
 def _make_html(x) -> str:
@@ -163,7 +163,7 @@ class _ReplacementPattern:
         return repr(self._arg)
 
 
-def _preprocess_format_args(args) -> Tuple[Tuple, Dict[str, Any]]:
+def _preprocess_format_args(args) -> tuple[tuple, dict[str, Any]]:
     format_args = []
     replacements = {}
     for i, arg in enumerate(args):
@@ -176,7 +176,7 @@ def _preprocess_format_args(args) -> Tuple[Tuple, Dict[str, Any]]:
     return tuple(format_args), replacements
 
 
-def _replace_html_repr(message: str, replacements: Dict[str, str]) -> str:
+def _replace_html_repr(message: str, replacements: dict[str, str]) -> str:
     # Do separate check `key in message` in order to avoid calling
     # _make_html unnecessarily. Linear string searches are likely less
     # expensive than HTML formatting.
@@ -251,7 +251,7 @@ def make_widget_handler() -> WidgetHandler:
     return handler
 
 
-def get_widget_handler() -> Optional[WidgetHandler]:
+def get_widget_handler() -> WidgetHandler | None:
     """
     Return the widget handler installed in the Scipp logger.
     If multiple widget handlers are installed, only the first one is returned.
