@@ -52,7 +52,7 @@ from .._scipp.core.units import (
     s,
     us,
 )
-from ..core.cpp_classes import Unit, Variable, VariancesError
+from ..core.cpp_classes import DefaultUnit, Unit, Variable, VariancesError
 
 
 class UnitAliases:
@@ -214,6 +214,7 @@ aliases = UnitAliases()
 """Table of unit aliases."""
 
 __all__ = [
+    'DefaultUnit',
     'angstrom',
     'counts',
     'default_unit',
