@@ -194,7 +194,11 @@ class OverwriteSignature(ast.NodeTransformer):
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
         self.generic_visit(node)
-        target = ast.parse(f'def f{self.sig}: ...').body[0]
+        code = f'def f{self.sig}: ...'
+        # A hack to work around _NoDefault.__repr__
+        # I can't think of a better way to do this :(
+        code = code.replace('NotSpecified', '_NoDefault')
+        target = ast.parse(code).body[0]
         r = replace_function(
             node,
             args=target.args,

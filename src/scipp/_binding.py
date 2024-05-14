@@ -23,7 +23,7 @@ _dict_likes = [
 
 
 def _make_dict_accessor_signature(
-    value_type: type, has_default: bool
+    value_type: type, default, default_type: type
 ) -> inspect.Signature:
     params = [
         inspect.Parameter(name='self', kind=inspect.Parameter.POSITIONAL_OR_KEYWORD),
@@ -32,16 +32,13 @@ def _make_dict_accessor_signature(
             kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
             annotation=str,
         ),
+        inspect.Parameter(
+            name='default',
+            kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            annotation=default_type,
+            default=default,
+        ),
     ]
-    if has_default:
-        params.append(
-            inspect.Parameter(
-                name='default',
-                kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                annotation=value_type | None,
-                default=None,
-            )
-        )
     sig = inspect.Signature(
         parameters=params,
         return_annotation=value_type | None,
@@ -69,7 +66,7 @@ def bind_get() -> None:
             "Get the value associated with the " "provided key or the default value."
         )
         method.__signature__ = _make_dict_accessor_signature(  # type: ignore[attr-defined]
-            value_type, has_default=True
+            value_type, default=None, default_type=value_type | None
         )
         cls.get = method
 
@@ -124,7 +121,7 @@ def bind_pop() -> None:
     for cls, value_type in _dict_likes:
         method = _convert_to_method(name='pop', func=_pop, abbreviate_doc=False)
         method.__signature__ = _make_dict_accessor_signature(  # type: ignore[attr-defined]
-            value_type, has_default=True
+            value_type, default=_NoDefault, default_type=Any
         )
         cls.pop = method
 

@@ -132,7 +132,7 @@ class Coords(Mapping[str, Variable]):
     def keys(self) -> Coords_keys_view:
         ...
 
-    def pop(self, key: str, default: Variable | None=None) -> Variable | None:
+    def pop(self, key: str, default: Any=_NoDefault) -> Variable | None:
         ...
 
     def popitem(self) -> tuple[str, Variable]:
@@ -1220,7 +1220,7 @@ class Dataset(Mapping[str, DataArray]):
     def plot(*args: Any, **kwargs: Any) -> None:
         ...
 
-    def pop(self, key: str, default: DataArray | None=None) -> DataArray | None:
+    def pop(self, key: str, default: Any=_NoDefault) -> DataArray | None:
         ...
 
     def rebin(self, arg_dict=None, deprecated=None, /, **kwargs):
@@ -1460,7 +1460,7 @@ class Masks(Mapping[str, Variable]):
     def keys(self) -> Masks_keys_view:
         ...
 
-    def pop(self, key: str, default: Variable | None=None) -> Variable | None:
+    def pop(self, key: str, default: Any=_NoDefault) -> Variable | None:
         ...
 
     def popitem(self) -> tuple[str, Variable]:
