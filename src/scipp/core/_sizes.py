@@ -8,7 +8,7 @@ def _parse_dims_shape_sizes(
     dims: Sequence[str] | None = None,
     shape: Sequence[int] | None = None,
     sizes: dict[str, int] | None = None,
-) -> Any:
+) -> dict[str, Any]:
     if sizes is not None:
         if dims is not None or shape is not None:
             raise ValueError(
