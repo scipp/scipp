@@ -6,7 +6,7 @@ from __future__ import annotations
 import inspect
 import types
 from collections.abc import Iterable, Mapping
-from typing import Any, TypeVar
+from typing import Any
 
 from ._scipp import core
 from .core.cpp_classes import DataArray, Variable
@@ -49,11 +49,10 @@ def _make_dict_accessor_signature(
     return sig
 
 
-_K = TypeVar("_K")
-_V = TypeVar("_V")
-
-
-def _get(self: Mapping[_K, _V], key: _K, default: _V | None = None) -> _V | None:
+# Using type annotations here would lead to problems with Sphinx autodoc.
+# Type checkers anyway use the stub file
+# which is generated from a custom signature override.
+def _get(self, key, default=None):  # type: ignore[no-untyped-def]
     """
     Return the value for key if key is in present, else default.
     """
@@ -110,9 +109,7 @@ class _NoDefaultType:
 _NoDefault = _NoDefaultType()
 
 
-def _pop(
-    self: Mapping[_K, _V], key: _K, default: _V | _NoDefaultType = _NoDefault
-) -> _V:
+def _pop(self, key, default=_NoDefault):  # type: ignore[no-untyped-def]  # see _get
     """
     Remove and return an element.
 
