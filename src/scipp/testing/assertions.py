@@ -167,7 +167,6 @@ def _assert_mapping_eq(
     a: Mapping[str, Any],
     b: Mapping[str, Any],
     map_name: str,
-    **kwargs,
 ) -> None:
     with _add_note(map_name + 's'):
         assert a.keys() == b.keys()
