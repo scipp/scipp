@@ -29,11 +29,15 @@ from ..core import DataArray, DataGroup, Dataset, Variable
 # of data group item 'b'
 # of data group item 'a'
 
-T = TypeVar('T')
+_T = TypeVar('_T', Variable, DataArray)
 
 
 def assert_allclose(
-    a: T, b: T, rtol: Variable = None, atol: Variable = None, **kwargs
+    a: _T,
+    b: _T,
+    rtol: Variable | None = None,
+    atol: Variable | None = None,
+    **kwargs: Any,
 ) -> None:
     """Raise an AssertionError if two objects don't have similar values
     or if their other properties are not identical.
@@ -44,6 +48,19 @@ def assert_allclose(
         The actual object to check.
     b:
         The desired, expected object.
+    rtol:
+        Tolerance value relative (to b).
+        Can be a scalar or non-scalar.
+        Cannot have variances.
+        Defaults to scalar 1e-7 if unset.
+    atol:
+        Tolerance value absolute.
+        Can be a scalar or non-scalar.
+        Cannot have variances.
+        Defaults to scalar 0 if unset and takes units from y arg.
+    kwargs:
+        Additional arguments to pass to :func:`numpy.testing.assert_allclose`
+        which is used for comparing data.
 
     Raises
     ------
@@ -53,7 +70,7 @@ def assert_allclose(
     return _assert_similar(_assert_allclose_impl, a, b, rtol=rtol, atol=atol, **kwargs)
 
 
-def assert_identical(a: T, b: T) -> None:
+def assert_identical(a: _T, b: _T) -> None:
     """Raise an AssertionError if two objects are not identical.
 
     For Scipp objects, ``assert_identical(a, b)`` is equivalent to
@@ -82,7 +99,7 @@ def assert_identical(a: T, b: T) -> None:
     return _assert_similar(_assert_identical_impl, a, b)
 
 
-def _assert_similar(impl: Callable, *args, **kwargs) -> None:
+def _assert_similar(impl: Callable[..., None], *args: Any, **kwargs: Any) -> None:
     try:
         impl(*args, **kwargs)
     except AssertionError as exc:
@@ -103,25 +120,25 @@ def _assert_similar(impl: Callable, *args, **kwargs) -> None:
 
 
 def _assert_identical_impl(
-    a: T,
-    b: T,
+    a: _T,
+    b: _T,
 ) -> None:
     _assert_identical_structure(a, b)
     _assert_identical_data(a, b)
 
 
 def _assert_allclose_impl(
-    a: T,
-    b: T,
-    **kwargs,
+    a: _T,
+    b: _T,
+    **kwargs: Any,
 ) -> None:
     _assert_identical_structure(a, b)
     _assert_allclose_data(a, b, **kwargs)
 
 
 def _assert_identical_structure(
-    a: T,
-    b: T,
+    a: _T,
+    b: _T,
 ) -> None:
     assert type(a) == type(b)
     if isinstance(a, Variable):
@@ -136,6 +153,7 @@ def _assert_identical_variable_structure(a: Variable, b: Variable) -> None:
     assert a.dtype == b.dtype
     assert (a.bins is None) == (b.bins is None)
     if a.bins is not None:
+        assert b.bins is not None
         assert a.bins.unit == b.bins.unit
     else:
         if a.variances is not None:
@@ -178,8 +196,8 @@ def _assert_mapping_eq(
 
 
 def _assert_identical_data(
-    a: T,
-    b: T,
+    a: _T,
+    b: _T,
 ) -> None:
     if isinstance(a, Variable):
         _assert_identical_variable_data(a, b)
@@ -213,13 +231,15 @@ def _assert_identical_dense_variable_data(a: Variable, b: Variable) -> None:
 
 
 def _assert_identical_binned_variable_data(a: Variable, b: Variable) -> None:
+    assert a.bins is not None
+    assert b.bins is not None
     _assert_identical_impl(a.bins.concat().value, b.bins.concat().value)
 
 
 def _assert_allclose_data(
-    a: T,
-    b: T,
-    **kwargs,
+    a: _T,
+    b: _T,
+    **kwargs: Any,
 ) -> None:
     if isinstance(a, Variable):
         _assert_allclose_variable_data(a, b, **kwargs)
@@ -229,7 +249,7 @@ def _assert_allclose_data(
         raise NotImplementedError
 
 
-def _assert_allclose_variable_data(a: Variable, b: Variable, **kwargs) -> None:
+def _assert_allclose_variable_data(a: Variable, b: Variable, **kwargs: Any) -> None:
     if a.bins is None:
         _assert_allclose_dense_variable_data(a, b, **kwargs)
     else:
@@ -237,7 +257,11 @@ def _assert_allclose_variable_data(a: Variable, b: Variable, **kwargs) -> None:
 
 
 def _assert_allclose_dense_variable_data(
-    a: Variable, b: Variable, rtol: Variable = None, atol: Variable = None, **kwargs
+    a: Variable,
+    b: Variable,
+    rtol: Variable | None = None,
+    atol: Variable | None = None,
+    **kwargs: Any,
 ) -> None:
     if rtol is not None:
         kwargs['rtol'] = rtol.to(unit='dimensionless').value
@@ -263,8 +287,10 @@ def _assert_allclose_dense_variable_data(
 
 
 def _assert_allclose_binned_variable_data(
-    a: Variable, b: Variable, rtol: Variable, atol: Variable, **kwargs
+    a: Variable, b: Variable, **kwargs: Any
 ) -> None:
+    assert a.bins is not None
+    assert b.bins is not None
     _assert_allclose_impl(a.bins.concat().value, b.bins.concat().value, **kwargs)
 
 
