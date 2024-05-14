@@ -122,7 +122,7 @@ class ReplaceTypeVarInReturn(ast.NodeTransformer):
     So this transformer replaces the annotation by the class name.
     """
 
-    TYPE_VARS = ('VariableLikeType',)
+    TYPE_VARS = ('VariableLikeType', '_VarDaDg')
 
     def __init__(self, cls_name: str) -> None:
         self.cls_name = cls_name

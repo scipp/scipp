@@ -3,18 +3,21 @@
 # @author Matthew Andrew
 from __future__ import annotations
 
-from typing import Any, Literal, overload
+from typing import Any, Literal, TypeVar, overload
 
 from .._scipp import core as _cpp
 from ..typing import ScippIndex, VariableLikeType
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from .comparison import identical
-from .cpp_classes import Dataset, DatasetError, Variable
+from .cpp_classes import DataArray, Dataset, DatasetError, Variable
 from .data_group import DataGroup
 from .unary import to_unit
 
+_T = TypeVar('_T', Variable, DataGroup)
+_VarDaDg = TypeVar('_VarDaDg', Variable, DataArray, DataGroup)
 
-def islinspace(x: Variable, dim: str | None = None) -> Variable:
+
+def islinspace(x: _T, dim: str | None = None) -> _T:
     """Check if the values of a variable are evenly spaced.
 
     Parameters
@@ -31,14 +34,14 @@ def islinspace(x: Variable, dim: str | None = None) -> Variable:
         spaced values, variable of value False otherwise.
     """
     if dim is None:
-        return _call_cpp_func(_cpp.islinspace, x)
+        return _call_cpp_func(_cpp.islinspace, x)  # type: ignore[return-value]
     else:
-        return _call_cpp_func(_cpp.islinspace, x, dim)
+        return _call_cpp_func(_cpp.islinspace, x, dim)  # type: ignore[return-value]
 
 
 def issorted(
-    x: Variable, dim: str, order: Literal['ascending', 'descending'] = 'ascending'
-) -> Variable:
+    x: _T, dim: str, order: Literal['ascending', 'descending'] = 'ascending'
+) -> _T:
     """Check if the values of a variable are sorted.
 
     - If ``order`` is 'ascending',
@@ -66,12 +69,26 @@ def issorted(
     --------
     scipp.allsorted
     """
-    return _call_cpp_func(_cpp.issorted, x, dim, order)
+    return _call_cpp_func(_cpp.issorted, x, dim, order)  # type: ignore[return-value]
+
+
+@overload
+def allsorted(
+    x: Variable, dim: str, order: Literal['ascending', 'descending'] = 'ascending'
+) -> bool: ...
+
+
+@overload
+def allsorted(
+    x: DataGroup, dim: str, order: Literal['ascending', 'descending'] = 'ascending'
+) -> DataGroup: ...
 
 
 def allsorted(
-    x: Variable, dim: str, order: Literal['ascending', 'descending'] = 'ascending'
-) -> bool:
+    x: Variable | DataGroup,
+    dim: str,
+    order: Literal['ascending', 'descending'] = 'ascending',
+) -> bool | DataGroup:
     """Check if all values of a variable are sorted.
 
     - If ``order`` is 'ascending',
@@ -132,7 +149,7 @@ def sort(
     scipp.DimensionError
         If the key is a Variable that does not have exactly 1 dimension.
     """
-    return _call_cpp_func(_cpp.sort, x, key, order)
+    return _call_cpp_func(_cpp.sort, x, key, order)  # type: ignore[return-value]
 
 
 def values(x: VariableLikeType) -> VariableLikeType:
@@ -152,7 +169,7 @@ def values(x: VariableLikeType) -> VariableLikeType:
     --------
     scipp.variances, scipp.stddevs
     """
-    return _call_cpp_func(_cpp.values, x)
+    return _call_cpp_func(_cpp.values, x)  # type: ignore[return-value]
 
 
 def variances(x: VariableLikeType) -> VariableLikeType:
@@ -173,7 +190,7 @@ def variances(x: VariableLikeType) -> VariableLikeType:
     --------
     scipp.values, scipp.stddevs
     """
-    return _call_cpp_func(_cpp.variances, x)
+    return _call_cpp_func(_cpp.variances, x)  # type: ignore[return-value]
 
 
 def stddevs(x: VariableLikeType) -> VariableLikeType:
@@ -194,7 +211,7 @@ def stddevs(x: VariableLikeType) -> VariableLikeType:
     --------
     scipp.values, scipp.variances
     """
-    return _call_cpp_func(_cpp.stddevs, x)
+    return _call_cpp_func(_cpp.stddevs, x)  # type: ignore[return-value]
 
 
 def where(condition: Variable, x: Variable, y: Variable) -> Variable:
@@ -215,16 +232,16 @@ def where(condition: Variable, x: Variable, y: Variable) -> Variable:
         Variable with elements from x where condition is True
         and elements from y elsewhere.
     """
-    return _call_cpp_func(_cpp.where, condition, x, y)
+    return _call_cpp_func(_cpp.where, condition, x, y)  # type: ignore[return-value]
 
 
 def to(
-    var: VariableLikeType,
+    var: _VarDaDg,
     *,
     unit: _cpp.Unit | str | None = None,
     dtype: Any | None = None,
     copy: bool = True,
-) -> VariableLikeType:
+) -> _VarDaDg:
     """Converts a Variable or DataArray to a different dtype and/or a different unit.
 
     If the dtype and unit are both unchanged and ``copy`` is `False`,
@@ -305,7 +322,7 @@ def merge(lhs: Dataset, rhs: Dataset) -> Dataset: ...
 def merge(lhs: DataGroup, rhs: DataGroup) -> DataGroup: ...
 
 
-def merge(lhs, rhs):
+def merge(lhs: Dataset | DataGroup, rhs: Dataset | DataGroup) -> Dataset | DataGroup:
     """Merge two datasets or data groups into one.
 
     If an item appears in both inputs, it must have an identical value in both.
@@ -357,7 +374,7 @@ def _merge_data_group(lhs: DataGroup, rhs: DataGroup) -> DataGroup:
 def label_based_index_to_positional_index(
     sizes: dict[str, int],
     coord: Variable,
-    index: slice[Variable | None] | Variable,
+    index: slice | Variable,
 ) -> ScippIndex:
     """Returns the positional index equivalent to label based indexing
     the coord with values."""
