@@ -1036,3 +1036,11 @@ def test_noncontiguous_int_grouping():
     assert contiguous_idx.values.data.contiguous
 
     assert_identical(table.group(nonnontiguous_idx), table.group(contiguous_idx))
+
+
+def test_group_automatic_groups_works_with_string_coord():
+    keys = sc.array(dims=['row'], values=['a', 'b', 'c', 'a', 'b', 'c'])
+    table = sc.DataArray(sc.ones(dims=['row'], shape=[6]), coords={'key': keys})
+    assert sc.identical(
+        table.group('key').coords['key'], sc.array(dims=['key'], values=['a', 'b', 'c'])
+    )
