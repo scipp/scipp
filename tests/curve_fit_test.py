@@ -8,6 +8,7 @@ import pytest
 import scipp as sc
 from scipp import curve_fit
 from scipp.compat.xarray_compat import from_xarray, to_xarray
+from scipp.testing import assert_identical
 
 
 @pytest.fixture()
@@ -552,3 +553,34 @@ def test_2d_mask():
     assert sc.allclose(
         res['b'].data, sc.scalar(1.3), atol=sc.scalar(noise_scale, unit='dimensionless')
     )
+
+
+def test_mask_persists_only_if_fit_is_not_over_mask_dimension():
+    noise_scale = 0.01
+    da = array2d(a=1.2, b=1.3, noise_scale=noise_scale)
+    mask = (da.coords['t'] > 0.4) & (da.coords['t'] < 0.6)
+    da.masks['high'] = mask
+    da.masks['mixed_dims'] = mask & (da.coords['x'] > 0.4)
+    res, _ = curve_fit(['x'], func, da)
+
+    assert 'high' in res['a'].masks
+    assert_identical(res['a'].masks['high'], mask)
+
+    assert 'mixed_dims' not in res['a'].masks
+
+
+def test_param_values_set_to_nan_if_too_few_to_fit():
+    da = array1d(a=1.2, b=1.3, noise_scale=0.01)
+
+    # Mask everything
+    da.masks['mask'] = da.coords['x'] > float('-inf')
+
+    res, cov = curve_fit(['x'], func, da)
+    assert sc.isnan(res['a'].data).all()
+    assert sc.isnan(cov['a']['b'].data).all()
+
+    # Unmask two entries
+    da.masks['mask'][:2] = sc.scalar(False)
+    res, cov = curve_fit(['x'], func, da)
+    assert not sc.isnan(res['a'].data).any()
+    assert not sc.isnan(cov['a']['b'].data).any()
