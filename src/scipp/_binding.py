@@ -135,7 +135,7 @@ def bind_functions_as_methods(
 
 # Ideally, `func` would be annotated as `types.FunctionType`.
 # But that makes mypy flag calls to `bind_function_as_method` as errors
-# because functions are instances of `Callable` but not of `FUnctionType`.
+# because functions are instances of `Callable` but not of `FunctionType`.
 # Note, using `Callable` does not work because it only defines `__call__`,
 # but not define the required attributes.
 def bind_function_as_method(
