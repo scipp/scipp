@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-import warnings
 from collections.abc import Callable
 from typing import Literal
 
@@ -505,21 +504,6 @@ class Bins:
             return out
 
 
-class GroupbyBins:
-    """Proxy for operations on bins of a groupby object."""
-
-    def __init__(self, obj):
-        self._obj = obj
-
-    def concat(self, dim):
-        warnings.warn(
-            "groupby(...).bins.concat(dim) is deprecated. Use `group` or `bin` instead",
-            UserWarning,
-            stacklevel=2,
-        )
-        return self._obj.concat(dim)
-
-
 def _bins(obj):
     """
     Returns helper :py:class:`scipp.Bins` allowing bin-wise operations
@@ -535,10 +519,6 @@ def _set_bins(obj, bins: Bins):
     # Should only be used by __iadd__ and friends
     if obj is not bins._obj:
         raise ValueError("Cannot set bins with a new object")
-
-
-def _groupby_bins(obj):
-    return GroupbyBins(obj)
 
 
 def bins(
