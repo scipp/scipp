@@ -15,6 +15,7 @@ from .unary import to_unit
 
 _T = TypeVar('_T', Variable, DataGroup)
 _VarDaDg = TypeVar('_VarDaDg', Variable, DataArray, DataGroup)
+_DsDg = TypeVar('_DsDg', Dataset, DataGroup)
 
 
 def islinspace(x: _T, dim: str | None = None) -> _T:
@@ -314,29 +315,21 @@ def to(
         return to_unit(var, unit=unit, copy=copy).astype(dtype, copy=False)
 
 
-@overload
-def merge(lhs: Dataset, rhs: Dataset) -> Dataset: ...
-
-
-@overload
-def merge(lhs: DataGroup, rhs: DataGroup) -> DataGroup: ...
-
-
-def merge(lhs: Dataset | DataGroup, rhs: Dataset | DataGroup) -> Dataset | DataGroup:
+def merge(lhs: _DsDg, rhs: _DsDg) -> _DsDg:
     """Merge two datasets or data groups into one.
 
     If an item appears in both inputs, it must have an identical value in both.
 
     Parameters
     ----------
-    lhs:
+    lhs: Dataset | DataGroup
         First dataset or data group.
-    rhs:
+    rhs: Dataset | DataGroup
         Second dataset or data group.
 
     Returns
     -------
-    :
+    : Dataset | DataGroup
         A new object that contains the union of all data items,
         coords, masks and attributes.
 
@@ -345,8 +338,9 @@ def merge(lhs: Dataset | DataGroup, rhs: Dataset | DataGroup) -> Dataset | DataG
     scipp.DatasetError
         If there are conflicting items with different content.
     """
-    if isinstance(lhs, Dataset) or isinstance(rhs, Dataset):
-        return _call_cpp_func(_cpp.merge, lhs, rhs)
+    # Check both arguments to make `_cpp.merge` raise TypeError on mismatch.
+    if isinstance(lhs, Dataset) or isinstance(rhs, Dataset):  # type: ignore[redundant-expr]
+        return _call_cpp_func(_cpp.merge, lhs, rhs)  # type: ignore[return-value]
     return _merge_data_group(lhs, rhs)
 
 
