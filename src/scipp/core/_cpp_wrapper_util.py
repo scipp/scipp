@@ -3,12 +3,9 @@
 # @author Simon Heybrock
 import itertools
 from collections.abc import Callable
-from typing import TYPE_CHECKING, ParamSpec, TypeVar
+from typing import ParamSpec, TypeVar
 
 from .data_group import DataGroup, data_group_nary
-
-if TYPE_CHECKING:
-    from .data_group import DataGroup
 
 _R = TypeVar('_R')
 _P = ParamSpec('_P')
