@@ -115,13 +115,13 @@ def _datagroup_outputs(da, params, p_units, map_over, pdata, covdata):
                 dg[p].coords[c] = da.coords[c]
                 for q in dgcov[p]:
                     dgcov[p][q].coords[c] = da.coords[c]
-
     for m in da.masks:
-        if set(map_over).intersection(da.masks[m].dims):
+        # Drop masks that don't fit the output data
+        if set(da.masks[m].dims).issubset(set(dg.dims)):
             for p in dg:
-                dg[p].masks[c] = da.masks[c]
+                dg[p].masks[m] = da.masks[m]
                 for q in dgcov[p]:
-                    dgcov[p][q].masks[c] = da.masks[c]
+                    dgcov[p][q].masks[m] = da.masks[m]
     return dg, dgcov
 
 
@@ -224,6 +224,12 @@ def _curve_fit(
         X = np.vstack([c.values for c in fda.coords.values()], dtype='float')
 
     import scipy.optimize as opt
+
+    if len(fda) < len(dg):
+        # More parameters than data points, unable to fit, abort.
+        dg[:] = np.nan
+        dgcov[:] = np.nan
+        return
 
     try:
         popt, pcov = opt.curve_fit(
