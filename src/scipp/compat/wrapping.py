@@ -2,13 +2,20 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from functools import wraps
+from typing import Any, TypeVar
 
-from ..core import BinEdgeError, DataArray, DimensionError, VariancesError
+from ..core import (
+    BinEdgeError,
+    DataArray,
+    DimensionError,
+    Variable,
+    VariancesError,
+)
 
 
-def _validated_masks(da, dim):
+def _validated_masks(da: DataArray, dim: str) -> dict[str, Variable]:
     masks = {}
     for name, mask in da.masks.items():
         if dim in mask.dims:
@@ -20,7 +27,12 @@ def _validated_masks(da, dim):
     return masks
 
 
-def wrap1d(is_partial=False, accept_masks=False, keep_coords=False):
+_Out = TypeVar('_Out', bound=DataArray | Callable[..., DataArray])
+
+
+def wrap1d(
+    is_partial: bool = False, accept_masks: bool = False, keep_coords: bool = False
+) -> Callable[[Callable[..., _Out]], Callable[..., _Out]]:
     """Decorator factory for decorating functions that wrap non-scipp 1-D functions.
 
     1-D functions are typically functions from libraries such as scipy that depend
@@ -44,11 +56,18 @@ def wrap1d(is_partial=False, accept_masks=False, keep_coords=False):
         the postprocessing step is not applied to the wrapped function.
         Instead, the callable returned by the decorated function is
         decorated with the postprocessing step.
+    accept_masks:
+        If false, all masks must apply to the dimension that
+        the function is applied to.
+    keep_coords:
+        If true, preserve the input coordinates.
+        If false, drop coordinates that do not apply to the dimension
+        the function is applied to.
     """
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable[..., _Out]) -> Callable[..., _Out]:
         @wraps(func)
-        def function(da: DataArray, dim: str, **kwargs) -> DataArray | Callable:
+        def function(da: DataArray, dim: str, **kwargs: Any) -> _Out:
             if 'axis' in kwargs:
                 raise ValueError("Use the 'dim' keyword argument instead of 'axis'.")
             if da.variances is not None:
@@ -62,41 +81,63 @@ def wrap1d(is_partial=False, accept_masks=False, keep_coords=False):
                 )
 
             kwargs['axis'] = da.dims.index(dim)
-
-            if accept_masks:
-                masks = {k: v for k, v in da.masks.items() if dim not in v.dims}
-            else:
-                masks = _validated_masks(da, dim)
-            if keep_coords:
-                coords = da.coords
-                attrs = da.deprecated_attrs
-            else:
-                coords = {k: v for k, v in da.coords.items() if dim not in v.dims}
-                attrs = {
-                    k: v for k, v in da.deprecated_attrs.items() if dim not in v.dims
-                }
-
-            def _add_observing_metadata(da):
-                for k, v in coords.items():
-                    da.coords[k] = v
-                for k, v in masks.items():
-                    da.masks[k] = v.copy()
-                for k, v in attrs.items():
-                    da.deprecated_attrs[k] = v
-                return da
-
-            def postprocessing(func):
-                @wraps(func)
-                def function(*args, **kwargs):
-                    return _add_observing_metadata(func(*args, **kwargs))
-
-                return function
-
-            if is_partial:
-                return postprocessing(func(da, dim, **kwargs))
-            else:
-                return _add_observing_metadata(func(da, dim, **kwargs))
+            result = func(da, dim, **kwargs)
+            return _postprocess(
+                input_da=da,
+                output_da=result,
+                dim=dim,
+                is_partial=is_partial,
+                accept_masks=accept_masks,
+                keep_coords=keep_coords,
+            )
 
         return function
 
     return decorator
+
+
+def _postprocess(
+    *,
+    input_da: DataArray,
+    output_da: _Out,
+    dim: str,
+    is_partial: bool,
+    accept_masks: bool,
+    keep_coords: bool,
+) -> _Out:
+    if accept_masks:
+        masks = _remove_columns_in_dim(input_da.masks, dim)
+    else:
+        masks = _validated_masks(input_da, dim)
+    if keep_coords:
+        coords: Mapping[str, Variable] = input_da.coords
+        attrs: Mapping[str, Variable] = input_da.deprecated_attrs
+    else:
+        coords = _remove_columns_in_dim(input_da.coords, dim)
+        attrs = _remove_columns_in_dim(input_da.deprecated_attrs, dim)
+
+    def add_observing_metadata(da: DataArray) -> DataArray:
+        # operates in-place!
+        da.coords.update(coords)
+        da.masks.update((key, mask.copy()) for key, mask in masks.items())
+        da.deprecated_attrs.update(attrs)
+        return da
+
+    if is_partial:  # corresponds to `not isinstance(out_da, DataArray)`
+
+        def postprocessing(func: Callable[..., DataArray]) -> Callable[..., DataArray]:
+            @wraps(func)
+            def function(*args: Any, **kwargs: Any) -> DataArray:
+                return add_observing_metadata(func(*args, **kwargs))
+
+            return function
+
+        return postprocessing(output_da)  # type: ignore[arg-type, return-value]
+    else:
+        return add_observing_metadata(output_da)  # type: ignore[arg-type, return-value]
+
+
+def _remove_columns_in_dim(
+    mapping: Mapping[str, Variable], dim: str
+) -> dict[str, Variable]:
+    return {key: var for key, var in mapping.items() if dim not in var.dims}

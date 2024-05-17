@@ -12,6 +12,7 @@ from .._scipp.core import (
     DataArrayError,
     Dataset,
     DatasetError,
+    DefaultUnit,
     DimensionError,
     DType,
     DTypeError,

@@ -1,24 +1,36 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from functools import reduce
+from typing import Any, TypeVar, overload
 
 from ..typing import Dims, VariableLikeType
-from .cpp_classes import DataArray, Variable
+from .cpp_classes import DataArray, Dataset, DimensionError, Variable
+from .data_group import DataGroup
 from .logical import logical_or
+
+_T = TypeVar('_T')
 
 
 def _copied(obj: Mapping[str, Variable]) -> dict[str, Variable]:
     return {name: var.copy() for name, var in obj.items()}
 
 
-def _reduced(obj: Mapping[str, Variable], dims: list[str]) -> dict[str, Variable]:
-    dims = set(dims)
-    return {name: var for name, var in obj.items() if dims.isdisjoint(var.dims)}
+def _reduced(obj: Mapping[str, Variable], dims: Iterable[str]) -> dict[str, Variable]:
+    ref_dims = set(dims)
+    return {name: var for name, var in obj.items() if ref_dims.isdisjoint(var.dims)}
 
 
-def rewrap_output_data(prototype: VariableLikeType, data) -> VariableLikeType:
+@overload
+def rewrap_output_data(prototype: DataArray, data: Variable) -> DataArray: ...
+
+
+@overload
+def rewrap_output_data(prototype: Variable | Dataset | DataGroup, data: _T) -> _T: ...
+
+
+def rewrap_output_data(prototype: Any, data: Any) -> Any:
     if isinstance(prototype, DataArray):
         return DataArray(
             data=data,
@@ -30,9 +42,7 @@ def rewrap_output_data(prototype: VariableLikeType, data) -> VariableLikeType:
         return data
 
 
-def rewrap_reduced_data(
-    prototype: VariableLikeType, data, dim: Dims
-) -> VariableLikeType:
+def rewrap_reduced_data(prototype: DataArray, data: Variable, dim: Dims) -> DataArray:
     return DataArray(
         data,
         coords=reduced_coords(prototype, dim),
@@ -41,22 +51,28 @@ def rewrap_reduced_data(
     )
 
 
-def transform_data(obj: VariableLikeType, func: Callable) -> VariableLikeType:
+def transform_data(
+    obj: VariableLikeType, func: Callable[[Variable], Variable]
+) -> VariableLikeType:
     if isinstance(obj, Variable):
-        return func(obj)
+        return func(obj)  # type: ignore[return-value]
     if isinstance(obj, DataArray):
-        return rewrap_output_data(obj, func(obj.data))
+        return rewrap_output_data(obj, func(obj.data))  # type: ignore[return-value]
     else:
         raise TypeError(f"{func} only supports Variable and DataArray as inputs.")
 
 
-def concrete_dims(obj: VariableLikeType, dim: Dims) -> tuple[str]:
+def concrete_dims(obj: VariableLikeType, dim: Dims) -> tuple[str, ...]:
     """Convert a dimension specification into a concrete tuple of dimension labels.
 
     This does *not* validate that the dimension labels are valid for the given object.
     """
     if dim is None:
-        return obj.dims
+        if None in obj.dims:
+            raise DimensionError(
+                f'Got data group with unequal dimension lengths: dim={obj.dims}'
+            )
+        return obj.dims  # type: ignore[return-value]  # checked above
     return (dim,) if isinstance(dim, str) else tuple(dim)
 
 
@@ -84,8 +100,8 @@ def irreducible_mask(da: DataArray, dim: Dims) -> None | Variable:
     if len(irreducible) == 0:
         return None
 
-    def _transposed_like_data(x):
-        return x.transpose([dim for dim in da.dims if dim in x.dims])
+    def _transposed_like_data(x: Variable) -> Variable:
+        return x.transpose([d for d in da.dims if d in x.dims])
 
     if len(irreducible) == 1:
         return _transposed_like_data(irreducible[0]).copy()

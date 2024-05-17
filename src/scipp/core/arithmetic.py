@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from .._scipp import core as _cpp
-from ..typing import VariableLike
+from ..typing import VariableLike, VariableLikeType
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 
 
@@ -216,7 +216,7 @@ def multiply(left: VariableLike, right: VariableLike) -> VariableLike:
     return _call_cpp_func(_cpp.multiply, left, right)
 
 
-def negative(a) -> VariableLike:
+def negative(a: VariableLikeType) -> VariableLikeType:
     """Element-wise negative.
 
     Equivalent to::
@@ -233,7 +233,7 @@ def negative(a) -> VariableLike:
     :
         ``a`` with flipped signs.
     """
-    return _call_cpp_func(_cpp.negative, a)
+    return _call_cpp_func(_cpp.negative, a)  # type: ignore[return-value]
 
 
 def subtract(minuend: VariableLike, subtrahend: VariableLike) -> VariableLike:

@@ -2,11 +2,21 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import itertools
+from collections.abc import Callable
+from typing import ParamSpec, TypeVar
 
 from .data_group import DataGroup, data_group_nary
 
+_R = TypeVar('_R')
+_P = ParamSpec('_P')
 
-def call_func(func, *args, out=None, **kwargs):
+
+def call_func(
+    func: Callable[_P, _R],
+    *args: _P.args,
+    **kwargs: _P.kwargs,
+) -> _R | DataGroup:
+    out = kwargs.pop('out', None)
     if any(isinstance(x, DataGroup) for x in itertools.chain(args, kwargs.values())):
         if out is not None:
             raise ValueError(
@@ -16,4 +26,4 @@ def call_func(func, *args, out=None, **kwargs):
     if out is None:
         return func(*args, **kwargs)
     else:
-        return func(*args, **kwargs, out=out)
+        return func(*args, **kwargs, out=out)  # type: ignore[arg-type]

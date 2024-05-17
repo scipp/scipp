@@ -30,8 +30,8 @@ Special:
     :py:class:`scipp.Unit` to construct other units.
 """
 
-from contextlib import contextmanager
 from collections.abc import Iterator
+from contextlib import contextmanager
 
 from .._scipp.core import add_unit_alias as _add_unit_alias
 from .._scipp.core import clear_unit_aliases as _clear_unit_aliases
@@ -52,7 +52,7 @@ from .._scipp.core.units import (
     s,
     us,
 )
-from ..core.cpp_classes import Unit, Variable, VariancesError
+from ..core.cpp_classes import DefaultUnit, Unit, Variable, VariancesError
 
 
 class UnitAliases:
@@ -214,6 +214,7 @@ aliases = UnitAliases()
 """Table of unit aliases."""
 
 __all__ = [
+    'DefaultUnit',
     'angstrom',
     'counts',
     'default_unit',

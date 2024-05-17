@@ -504,7 +504,7 @@ class Bins:
             return out
 
 
-def _bins(obj):
+def _bins(obj) -> Bins | None:
     """
     Returns helper :py:class:`scipp.Bins` allowing bin-wise operations
     to be performed or `None` if not binned data.
@@ -515,7 +515,7 @@ def _bins(obj):
         return None
 
 
-def _set_bins(obj, bins: Bins):
+def _set_bins(obj, bins: Bins) -> None:
     # Should only be used by __iadd__ and friends
     if obj is not bins._obj:
         raise ValueError("Cannot set bins with a new object")

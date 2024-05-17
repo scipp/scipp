@@ -8,12 +8,17 @@ This subpackage provides wrappers for a subset of functions from
 """
 
 from collections.abc import Callable
+from typing import Any
+
+import numpy.typing as npt
 
 from ...compat.wrapping import wrap1d
 from ...core import DataArray, array
 
 
-def _integrate(func: Callable, da: DataArray, dim: str, **kwargs) -> DataArray:
+def _integrate(
+    func: Callable[..., npt.NDArray[Any]], da: DataArray, dim: str, **kwargs: Any
+) -> DataArray:
     if 'dx' in kwargs:
         raise ValueError(
             "Invalid argument 'dx': Spacing of integration points is "
@@ -21,13 +26,12 @@ def _integrate(func: Callable, da: DataArray, dim: str, **kwargs) -> DataArray:
         )
     integral = func(x=da.coords[dim].values, y=da.values, **kwargs)
     dims = [d for d in da.dims if d != dim]
-    return DataArray(
-        data=array(dims=dims, values=integral, unit=da.unit * da.coords[dim].unit)
-    )
+    unit = da.unit * da.coords[dim].unit  # type: ignore[operator]  # from unit = None
+    return DataArray(data=array(dims=dims, values=integral, unit=unit))
 
 
 @wrap1d()
-def trapezoid(da: DataArray, dim: str, **kwargs) -> DataArray:
+def trapezoid(da: DataArray, dim: str, **kwargs: Any) -> DataArray:
     """Integrate data array along the given dimension with
     the composite trapezoidal rule.
 
@@ -50,7 +54,7 @@ def trapezoid(da: DataArray, dim: str, **kwargs) -> DataArray:
 
 
 @wrap1d()
-def simpson(da: DataArray, dim: str, **kwargs) -> DataArray:
+def simpson(da: DataArray, dim: str, **kwargs: Any) -> DataArray:
     """Integrate data array along the given dimension with the composite Simpson's rule.
 
     This is a wrapper around :py:func:`scipy.integrate.simpson`.

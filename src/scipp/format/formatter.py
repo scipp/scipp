@@ -2,18 +2,20 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Gregory Tucker, Jan-Lukas Wynen
 
+from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 
 import scipp
 
 from ..core.cpp_classes import DType, Unit, Variable
 from ..core.data_group import DataGroup
-from ._parse import FormatSpec, FormatType, parse
+from ._parse import FormatSpec, FormatType, Selection, parse
 
 
-def format_variable(self, format_spec: str) -> str:
+def format_variable(self: Variable, format_spec: str) -> str:
     """String formats the Variable according to the provided specification.
 
     Parameters
@@ -42,7 +44,7 @@ def _format_unit(data: Variable) -> str:
     return f'[{data.unit}]'
 
 
-def _format_element(elem: Any, *, dtype: DType, spec: str):
+def _format_element(elem: Any, *, dtype: DType, spec: str) -> str:
     if spec:
         return f'{elem:{spec}}'
     if dtype in (DType.float64, DType.float32):
@@ -59,7 +61,7 @@ def _format_scalar(data: Any, *, dtype: DType, spec: FormatSpec) -> str:
     return _format_element(data, dtype=dtype, spec=spec.nested)
 
 
-def _as_flat_array(data):
+def _as_flat_array(data: npt.ArrayLike) -> npt.ArrayLike:
     if isinstance(data, np.ndarray):
         return data.flat
     if 'ElementArray' in repr(type(data)):
@@ -67,7 +69,7 @@ def _as_flat_array(data):
     return np.array([data])
 
 
-def _format_array_flat(data, *, dtype: DType, spec: FormatSpec) -> str:
+def _format_array_flat(data: Any, *, dtype: DType, spec: FormatSpec) -> str:
     if dtype in (
         DType.Variable,
         DType.DataArray,
@@ -87,29 +89,30 @@ def _format_array_flat(data, *, dtype: DType, spec: FormatSpec) -> str:
     return _format_array_flat_regular(data, dtype=dtype, spec=spec)
 
 
-def _format_array_flat_scipp_objects(data) -> str:
+def _format_array_flat_scipp_objects(data: npt.ArrayLike) -> str:
     # Fallback because ElementArrayView does not allow us to
     # slice and access elements nicely.
     return str(data)
 
 
-def _format_data_group_element(data: scipp.DataGroup):
+def _format_data_group_element(data: scipp.DataGroup) -> str:
     return f'[{data}]'
 
 
 def _element_ranges(spec: FormatSpec) -> tuple[slice, slice]:
-    if spec.selection == '^':
-        return slice(None, spec.length // 2), slice(-spec.length // 2, None)
-    if spec.selection == '<':
-        return slice(None, spec.length), slice(0, 0)
-    if spec.selection == '>':
-        return slice(0, 0), slice(-spec.length, None)
+    match spec.selection:
+        case Selection.edges:
+            return slice(None, spec.length // 2), slice(-spec.length // 2, None)
+        case Selection.begin:
+            return slice(None, spec.length), slice(0, 0)
+        case Selection.end:
+            return slice(0, 0), slice(-spec.length, None)
 
 
 def _format_array_flat_regular(
-    data: np.ndarray, *, dtype: DType, spec: FormatSpec
+    data: Sequence[Any], *, dtype: DType, spec: FormatSpec
 ) -> str:
-    def _format_all_in(d) -> list[str]:
+    def _format_all_in(d: Sequence[Any]) -> list[str]:
         return [_format_element(e, dtype=dtype, spec=spec.nested) for e in d]
 
     if len(data) <= spec.length:
@@ -173,11 +176,12 @@ def _format_variable_compact(var: Variable, spec: FormatSpec) -> str:
 
 
 def _is_numeric(dtype: DType) -> bool:
-    dtype = str(dtype)
-    return any(x in dtype for x in ('float', 'int'))
+    return any(x in str(dtype) for x in ('float', 'int'))
 
 
-def _round(value, variance):
+def _round(
+    value: float, variance: float | None
+) -> tuple[float, float | None, float | None]:
     from numpy import floor, log10, power, round, sqrt
 
     # Treat 'infinite' precision the same as no variance
@@ -213,7 +217,9 @@ def _round(value, variance):
     return value, error, precision
 
 
-def _format_element_compact(value, error=None, precision=None):
+def _format_element_compact(
+    value: float, error: float | None = None, precision: float | None = None
+) -> str:
     # Build the appropriate format string:
     # No variance (or infinite precision) values take no formatting string
     # Positive precision implies no decimals, with format '0.0f'

@@ -210,7 +210,7 @@ def main(metafile, envfile, envname, channels, platform, extra, mergewith):
 
     # Read file with additional dependencies
     if len(mergewith) > 0:
-        with open(mergewith, "r") as f:
+        with open(mergewith) as f:
             mergecontent = f.readlines()
         additional = _parse_yaml(mergecontent)
         additional_dependencies = additional["dependencies:"]

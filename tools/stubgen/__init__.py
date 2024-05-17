@@ -1,8 +1,8 @@
 import ast
 import enum
 import inspect
-from string import Template
 from collections.abc import Iterable
+from string import Template
 
 from .config import (
     DISABLE_TYPE_CHECK_OVERRIDE,
@@ -25,7 +25,7 @@ def _add_suppression_comments(code: str) -> str:
     def _add_override(s: str) -> str:
         for name in DISABLE_TYPE_CHECK_OVERRIDE:
             if name in s:
-                return s + '  # type: ignore[override]'
+                return s + '  # type: ignore[override, unused-ignore]'
         return s
 
     return '\n'.join(_add_override(line) for line in code.splitlines())
@@ -78,8 +78,17 @@ def _classify(obj: object, member_name: str, cls: type[type]) -> _Member:
 
 
 def _get_bases(cls: type[type]) -> list[ast.Name]:
-    base_classes = [base for base in cls.__bases__ if 'pybind11' not in repr(base)]
-    return [ast.Name(id=cls.__name__) for cls in base_classes]
+    bases = [
+        ast.Name(id=base.__name__)
+        for base in cls.__bases__
+        if 'pybind11' not in repr(base)
+    ]
+    # Bindings do not set base classes for mappings, so inject them manually.
+    if cls.__name__ in ('Coords', 'Masks'):
+        bases.append(ast.Name(id='Mapping[str, Variable]'))
+    if cls.__name__ == 'Dataset':
+        bases.append(ast.Name(id='Mapping[str, DataArray]'))
+    return bases
 
 
 def _build_class(cls: type[type]) -> ast.ClassDef | None:

@@ -3,19 +3,21 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, TypeVar
 
-from ..typing import DataArray, Dataset, Variable
 from .argument_handlers import combine_dict_args
+from .cpp_classes import DataArray, Dataset, Variable
+
+_T = TypeVar('_T', Dataset, DataArray)
 
 
 def _assign(
-    obj: Dataset | DataArray,
+    obj: _T,
     name: Literal['coords', 'masks', 'attrs'],
     obj_attrs: dict[str, Variable] | None = None,
     /,
-    **kw_obj_attrs,
-) -> Dataset | DataArray:
+    **kw_obj_attrs: Variable,
+) -> _T:
     out = obj.copy(deep=False)
     collected = combine_dict_args(obj_attrs, kw_obj_attrs)
     for key, value in collected.items():
@@ -24,8 +26,8 @@ def _assign(
 
 
 def assign_coords(
-    self, coords: dict[str, Variable] | None = None, /, **coords_kwargs
-) -> DataArray | Dataset:
+    self: _T, coords: dict[str, Variable] | None = None, /, **coords_kwargs: Variable
+) -> _T:
     """Return new object with updated or inserted coordinate.
 
     Parameters
@@ -46,7 +48,10 @@ def assign_coords(
 
 
 def assign_masks(
-    self, masks: dict[str, Variable] | None = None, /, **masks_kwargs
+    self: DataArray,
+    masks: dict[str, Variable] | None = None,
+    /,
+    **masks_kwargs: Variable,
 ) -> DataArray:
     """Return new object with updated or inserted masks.
 
@@ -68,7 +73,10 @@ def assign_masks(
 
 
 def assign_attrs(
-    self, attrs: dict[str, Variable] | None = None, /, **attrs_kwargs
+    self: DataArray,
+    attrs: dict[str, Variable] | None = None,
+    /,
+    **attrs_kwargs: Variable,
 ) -> DataArray:
     """Return new object with updated or inserted attrs.
 

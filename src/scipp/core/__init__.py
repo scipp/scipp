@@ -21,6 +21,7 @@ from .cpp_classes import (
     Coords,
     DataArray,
     Dataset,
+    DefaultUnit,
     DType,
     GroupByDataArray,
     GroupByDataset,
@@ -80,6 +81,7 @@ Variable.fields = property(
     _fields,
     doc='Provides access to fields of structured types such as vectors or matrices.',
 )
+del _fields
 
 from .bins import Bins
 
@@ -230,6 +232,7 @@ __all__ = [
     'DataGroup',
     'Dataset',
     'DatasetError',
+    'DefaultUnit',
     'DimensionError',
     'GroupByDataArray',
     'GroupByDataset',

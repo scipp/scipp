@@ -70,7 +70,7 @@ class BinnedDataError(RuntimeError):
 class CoordError(RuntimeError):
     ...
 
-class Coords:
+class Coords(Mapping[str, Variable]):
 
     def __contains__(self, arg0: str) -> bool:
         ...
@@ -84,19 +84,19 @@ class Coords:
     def __delitem__(self, arg0: str) -> None:
         ...
 
-    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
     def __getitem__(self, arg0: str) -> Variable:
         ...
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[str]:
         ...
 
     def __len__(self) -> int:
         ...
 
-    def __ne__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __ne__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
     def __repr__(self) -> str:
@@ -111,7 +111,7 @@ class Coords:
     def _ipython_key_completions_(self) -> list:
         ...
 
-    def _pop(self, k: str) -> Any:
+    def _pop(self, k: str) -> Variable:
         ...
 
     def clear(self) -> None:
@@ -120,7 +120,7 @@ class Coords:
     def copy(self, deep: bool=True) -> Coords:
         ...
 
-    def get(self, key, default=None):
+    def get(self, key: str, default: Variable | None=None) -> Variable | None:
         ...
 
     def is_edges(self, key: str, dim: Optional[str]=None) -> bool:
@@ -132,10 +132,10 @@ class Coords:
     def keys(self) -> Coords_keys_view:
         ...
 
-    def pop(self, key, default=_NoDefault):
+    def pop(self, key: str, default: Any=_NoDefault) -> Variable | None:
         ...
 
-    def popitem(self) -> Tuple[str, Any]:
+    def popitem(self) -> tuple[str, Variable]:
         ...
 
     def set_aligned(self, key: str, aligned: bool) -> None:
@@ -149,10 +149,10 @@ class Coords:
 
 class Coords_items_view:
 
-    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[tuple[str, Variable]]:
         ...
 
     def __len__(self) -> int:
@@ -166,10 +166,10 @@ class Coords_items_view:
 
 class Coords_keys_view:
 
-    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[str]:
         ...
 
     def __len__(self) -> int:
@@ -183,7 +183,7 @@ class Coords_keys_view:
 
 class Coords_values_view:
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[Variable]:
         ...
 
     def __len__(self) -> int:
@@ -204,7 +204,7 @@ class DType:
     Variable: DType = ...
     VariableView: DType = ...
 
-    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
     def __init__(self, arg0: Any) -> None:
@@ -269,7 +269,7 @@ class DataArray:
     def __deepcopy__(self, arg0: dict) -> DataArray:
         ...
 
-    def __eq__(self, arg0: object) -> DataArray:  # type: ignore[override]
+    def __eq__(self, arg0: object) -> DataArray:  # type: ignore[override, unused-ignore]
         ...
 
     @overload
@@ -305,15 +305,15 @@ class DataArray:
         ...
 
     @overload
-    def __getitem__(self, arg0: Tuple[str, Variable]) -> DataArray:
+    def __getitem__(self, arg0: tuple[str, Variable]) -> DataArray:
         ...
 
     @overload
-    def __getitem__(self, arg0: Tuple[str, int]) -> DataArray:
+    def __getitem__(self, arg0: tuple[str, int]) -> DataArray:
         ...
 
     @overload
-    def __getitem__(self, arg0: Tuple[str, slice]) -> DataArray:
+    def __getitem__(self, arg0: tuple[str, slice]) -> DataArray:
         ...
 
     @overload
@@ -321,11 +321,11 @@ class DataArray:
         ...
 
     @overload
-    def __getitem__(self, arg0: List[int]) -> DataArray:
+    def __getitem__(self, arg0: list[int]) -> DataArray:
         ...
 
     @overload
-    def __getitem__(self, arg0: Tuple[str, List[int]]) -> DataArray:
+    def __getitem__(self, arg0: tuple[str, list[int]]) -> DataArray:
         ...
 
     @overload
@@ -392,7 +392,7 @@ class DataArray:
     def __imul__(self, arg0: float) -> DataArray:
         ...
 
-    def __init__(self, data: Variable, coords: Union[Mapping[str, Variable], Iterable[Tuple[str, Variable]]]={}, masks: Union[Mapping[str, Variable], Iterable[Tuple[str, Variable]]]={}, attrs: Union[Mapping[str, Variable], Iterable[Tuple[str, Variable]]]={}, name: str='') -> None:
+    def __init__(self, data: Variable, coords: Union[Mapping[str, Variable], Iterable[tuple[str, Variable]]]={}, masks: Union[Mapping[str, Variable], Iterable[tuple[str, Variable]]]={}, attrs: Union[Mapping[str, Variable], Iterable[tuple[str, Variable]]]={}, name: str='') -> None:
         ...
 
     def __invert__(self) -> DataArray:
@@ -485,7 +485,7 @@ class DataArray:
     def __mul__(self, arg0: float) -> DataArray:
         ...
 
-    def __ne__(self, arg0: object) -> DataArray:  # type: ignore[override]
+    def __ne__(self, arg0: object) -> DataArray:  # type: ignore[override, unused-ignore]
         ...
 
     def __neg__(self) -> DataArray:
@@ -536,11 +536,11 @@ class DataArray:
         ...
 
     @overload
-    def __setitem__(self, arg0: Tuple[str, Variable], arg1: Variable) -> None:
+    def __setitem__(self, arg0: tuple[str, Variable], arg1: Variable) -> None:
         ...
 
     @overload
-    def __setitem__(self, arg0: Tuple[str, Variable], arg1: DataArray) -> None:
+    def __setitem__(self, arg0: tuple[str, Variable], arg1: DataArray) -> None:
         ...
 
     @overload
@@ -552,11 +552,11 @@ class DataArray:
         ...
 
     @overload
-    def __setitem__(self, arg0: Tuple[str, int], arg1: Any) -> None:
+    def __setitem__(self, arg0: tuple[str, int], arg1: Any) -> None:
         ...
 
     @overload
-    def __setitem__(self, arg0: Tuple[str, slice], arg1: Any) -> None:
+    def __setitem__(self, arg0: tuple[str, slice], arg1: Any) -> None:
         ...
 
     @overload
@@ -609,25 +609,25 @@ class DataArray:
     def _ipython_key_completions_(self) -> list:
         ...
 
-    def _rename_dims(self, arg0: Dict[str, str]) -> DataArray:
+    def _rename_dims(self, arg0: dict[str, str]) -> DataArray:
         ...
 
     def _repr_html_(self) -> str:
         ...
 
-    def all(self, dim: Optional[str]=None) -> VariableLikeType:
+    def all(self, dim: str | None=None) -> DataArray:
         ...
 
-    def any(self, dim: Optional[str]=None) -> VariableLikeType:
+    def any(self, dim: str | None=None) -> DataArray:
         ...
 
-    def assign_attrs(self, attrs: Optional[Dict[str, Variable]]=None, /, **attrs_kwargs) -> DataArray:
+    def assign_attrs(self, attrs: dict[str, Variable] | None=None, /, **attrs_kwargs: Variable) -> DataArray:
         ...
 
-    def assign_coords(self, coords: Optional[Dict[str, Variable]]=None, /, **coords_kwargs) -> Union[DataArray, Dataset]:
+    def assign_coords(self, coords: dict[str, Variable] | None=None, /, **coords_kwargs: Variable) -> _T:
         ...
 
-    def assign_masks(self, masks: Optional[Dict[str, Variable]]=None, /, **masks_kwargs) -> DataArray:
+    def assign_masks(self, masks: dict[str, Variable] | None=None, /, **masks_kwargs: Variable) -> DataArray:
         ...
 
     def astype(self, type: Any, *, copy: bool=True) -> DataArray:
@@ -641,17 +641,17 @@ class DataArray:
         ...
 
     @property
-    def bins(self):
+    def bins(self) -> Bins | None:
         ...
 
     @bins.setter
-    def bins(self, bins: Bins):
+    def bins(self, bins: Bins) -> None:
         ...
 
-    def broadcast(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, shape: Optional[Sequence[int]]=None, sizes: Optional[Dict[str, int]]=None) -> VariableLikeType:
+    def broadcast(self, dims: list[str] | tuple[str, ...] | None=None, shape: Sequence[int] | None=None, sizes: dict[str, int] | None=None) -> DataArray:
         ...
 
-    def ceil(self, *, out: Optional[VariableLike]=None) -> VariableLike:
+    def ceil(self, *, out: VariableLike | None=None) -> VariableLike:
         ...
 
     @property
@@ -678,7 +678,7 @@ class DataArray:
         ...
 
     @overload
-    def deprecated_drop_attrs(self, arg0: List[str]) -> DataArray:
+    def deprecated_drop_attrs(self, arg0: list[str]) -> DataArray:
         ...
 
     @property
@@ -690,7 +690,7 @@ class DataArray:
         ...
 
     @property
-    def dims(self) -> tuple:
+    def dims(self) -> tuple[str, ...]:
         ...
 
     def drop_attrs(self, *args, **kwargs):
@@ -701,7 +701,7 @@ class DataArray:
         ...
 
     @overload
-    def drop_coords(self, arg0: List[str]) -> DataArray:
+    def drop_coords(self, arg0: list[str]) -> DataArray:
         ...
 
     @overload
@@ -709,26 +709,26 @@ class DataArray:
         ...
 
     @overload
-    def drop_masks(self, arg0: List[str]) -> DataArray:
+    def drop_masks(self, arg0: list[str]) -> DataArray:
         ...
 
     @property
     def dtype(self) -> DType:
         ...
 
-    def flatten(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, to: Optional[str]=None) -> VariableLikeType:
+    def flatten(self, dims: list[str] | tuple[str, ...] | None=None, to: str | None=None) -> DataArray:
         ...
 
-    def floor(self, *, out: Optional[VariableLike]=None) -> VariableLike:
+    def floor(self, *, out: VariableLike | None=None) -> VariableLike:
         ...
 
-    def fold(self, dim: str, sizes: Optional[Dict[str, int]]=None, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, shape: Optional[Sequence[int]]=None) -> VariableLikeType:
+    def fold(self, dim: str, sizes: dict[str, int] | None=None, dims: list[str] | tuple[str, ...] | None=None, shape: Sequence[int] | None=None) -> DataArray:
         ...
 
-    def group(self, /, *args: Union[str, Variable]):
+    def group(self, /, *args: str | Variable):
         ...
 
-    def groupby(self, /, group: Union[Variable, str], *, bins: Optional[Variable]=None) -> Union[GroupByDataArray, GroupByDataset]:
+    def groupby(self, /, group: Variable | str, *, bins: Variable | None=None) -> GroupByDataArray | GroupByDataset:
         ...
 
     def hist(self, arg_dict=None, /, **kwargs):
@@ -738,20 +738,20 @@ class DataArray:
     def masks(self) -> Masks:
         ...
 
-    def max(self, dim: Optional[str]=None) -> VariableLikeType:
+    def max(self, dim: str | None=None) -> DataArray:
         ...
 
-    def mean(self, dim: Optional[str]=None) -> VariableLikeType:
+    def mean(self, dim: str | None=None) -> DataArray:
         ...
 
-    def median(self, dim: Dims=None) -> VariableLikeType:
+    def median(self, dim: Dims=None) -> DataArray:
         ...
 
     @property
     def meta(self):
         ...
 
-    def min(self, dim: Optional[str]=None) -> VariableLikeType:
+    def min(self, dim: str | None=None) -> DataArray:
         ...
 
     @property
@@ -765,51 +765,51 @@ class DataArray:
     def nanhist(self, arg_dict=None, /, **kwargs):
         ...
 
-    def nanmax(self, dim: Optional[str]=None) -> VariableLikeType:
+    def nanmax(self, dim: str | None=None) -> DataArray:
         ...
 
-    def nanmean(self, dim: Optional[str]=None) -> VariableLikeType:
+    def nanmean(self, dim: str | None=None) -> DataArray:
         ...
 
-    def nanmedian(self, dim: Dims=None) -> VariableLikeType:
+    def nanmedian(self, dim: Dims=None) -> DataArray:
         ...
 
-    def nanmin(self, dim: Optional[str]=None) -> VariableLikeType:
+    def nanmin(self, dim: str | None=None) -> DataArray:
         ...
 
-    def nanstd(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+    def nanstd(self, dim: Dims=None, *, ddof: int) -> DataArray:
         ...
 
-    def nansum(self, dim: Optional[str]=None) -> VariableLikeType:
+    def nansum(self, dim: str | None=None) -> DataArray:
         ...
 
-    def nanvar(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+    def nanvar(self, dim: Dims=None, *, ddof: int) -> DataArray:
         ...
 
     @property
     def ndim(self) -> int:
         ...
 
-    def plot(*args, **kwargs):
+    def plot(*args: Any, **kwargs: Any) -> None:
         ...
 
     def rebin(self, arg_dict=None, deprecated=None, /, **kwargs):
         ...
 
-    def rename(self, dims_dict: Dict[str, str]=None, /, **names: str) -> DataArray:
+    def rename(self, dims_dict: dict[str, str] | None=None, /, **names: str) -> DataArray:
         ...
 
-    def rename_dims(self, dims_dict: Optional[Dict[str, str]]=None, /, **names: str) -> VariableLikeType:
+    def rename_dims(self, dims_dict: dict[str, str] | None=None, /, **names: str) -> DataArray:
         ...
 
-    def round(self, *, out: Optional[VariableLike]=None) -> VariableLike:
+    def round(self, *, out: VariableLike | None=None) -> VariableLike:
         ...
 
-    def save_hdf5(self, filename: Union[str, Path]) -> None:
+    def save_hdf5(self, filename: str | Path) -> None:
         ...
 
     @property
-    def shape(self) -> tuple:
+    def shape(self) -> tuple[int, ...]:
         ...
 
     @property
@@ -817,25 +817,25 @@ class DataArray:
         ...
 
     @property
-    def sizes(self) -> dict:
+    def sizes(self) -> dict[str, int]:
         ...
 
-    def squeeze(self, dim: Optional[Union[str, List[str], Tuple[str, ...]]]=None) -> VariableLikeType:
+    def squeeze(self, dim: str | list[str] | tuple[str, ...] | None=None) -> DataArray:
         ...
 
-    def std(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+    def std(self, dim: Dims=None, *, ddof: int) -> DataArray:
         ...
 
-    def sum(self, dim: Dims=None) -> VariableLikeType:
+    def sum(self, dim: Dims=None) -> DataArray:
         ...
 
-    def to(self, *, unit: Optional[Union[Unit, str]]=None, dtype: Optional[Any]=None, copy: bool=True) -> VariableLikeType:
+    def to(self, *, unit: Unit | str | None=None, dtype: Any | None=None, copy: bool=True) -> DataArray:
         ...
 
-    def transform_coords(self, targets: Optional[Union[str, Iterable[str]]]=None, /, graph: Optional[GraphDict]=None, *, rename_dims: bool=True, keep_aliases: bool=True, keep_intermediate: bool=True, keep_inputs: bool=True, quiet: bool=False, **kwargs: Callable) -> Union[DataArray, Dataset]:
+    def transform_coords(self, targets: str | Iterable[str] | None=None, /, graph: GraphDict | None=None, *, rename_dims: bool=True, keep_aliases: bool=True, keep_intermediate: bool=True, keep_inputs: bool=True, quiet: bool=False, **kwargs: Callable) -> DataArray | Dataset:
         ...
 
-    def transpose(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None) -> VariableLikeType:
+    def transpose(self, dims: list[str] | tuple[str, ...] | None=None) -> DataArray:
         ...
 
     def underlying_size(self) -> int:
@@ -865,7 +865,7 @@ class DataArray:
     def values(self, arg1: Any) -> None:
         ...
 
-    def var(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+    def var(self, dim: Dims=None, *, ddof: int) -> DataArray:
         ...
 
     @property
@@ -887,7 +887,7 @@ class DataArray:
 class DataArrayError(RuntimeError):
     ...
 
-class Dataset:
+class Dataset(Mapping[str, DataArray]):
 
     def __abs__(self) -> Dataset:
         ...
@@ -936,15 +936,15 @@ class Dataset:
         ...
 
     @overload
-    def __getitem__(self, arg0: Tuple[str, Variable]) -> Dataset:
+    def __getitem__(self, arg0: tuple[str, Variable]) -> Dataset:
         ...
 
     @overload
-    def __getitem__(self, arg0: Tuple[str, int]) -> Dataset:
+    def __getitem__(self, arg0: tuple[str, int]) -> Dataset:
         ...
 
     @overload
-    def __getitem__(self, arg0: Tuple[str, slice]) -> Dataset:
+    def __getitem__(self, arg0: tuple[str, slice]) -> Dataset:
         ...
 
     @overload
@@ -952,11 +952,11 @@ class Dataset:
         ...
 
     @overload
-    def __getitem__(self, arg0: List[int]) -> Dataset:
+    def __getitem__(self, arg0: list[int]) -> Dataset:
         ...
 
     @overload
-    def __getitem__(self, arg0: Tuple[str, List[int]]) -> Dataset:
+    def __getitem__(self, arg0: tuple[str, list[int]]) -> Dataset:
         ...
 
     @overload
@@ -991,7 +991,7 @@ class Dataset:
     def __imul__(self, arg0: float) -> Dataset:
         ...
 
-    def __init__(self, data: Union[Mapping[str, Union[Variable, DataArray]], Iterable[Tuple[str, Union[Variable, DataArray]]]]={}, coords: Union[Mapping[str, Variable], Iterable[Tuple[str, Variable]]]={}) -> None:
+    def __init__(self, data: Union[Mapping[str, Union[Variable, DataArray]], Iterable[tuple[str, Union[Variable, DataArray]]]]={}, coords: Union[Mapping[str, Variable], Iterable[tuple[str, Variable]]]={}) -> None:
         ...
 
     @overload
@@ -1010,7 +1010,7 @@ class Dataset:
     def __isub__(self, arg0: float) -> Any:
         ...
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[str]:
         ...
 
     @overload
@@ -1056,7 +1056,7 @@ class Dataset:
         ...
 
     @overload
-    def __setitem__(self, arg0: Tuple[str, Variable], arg1: Dataset) -> None:
+    def __setitem__(self, arg0: tuple[str, Variable], arg1: Dataset) -> None:
         ...
 
     @overload
@@ -1068,11 +1068,11 @@ class Dataset:
         ...
 
     @overload
-    def __setitem__(self, arg0: Tuple[str, int], arg1: Any) -> None:
+    def __setitem__(self, arg0: tuple[str, int], arg1: Any) -> None:
         ...
 
     @overload
-    def __setitem__(self, arg0: Tuple[str, slice], arg1: Any) -> None:
+    def __setitem__(self, arg0: tuple[str, slice], arg1: Any) -> None:
         ...
 
     @overload
@@ -1109,30 +1109,30 @@ class Dataset:
     def _ipython_key_completions_(self) -> list:
         ...
 
-    def _pop(self, k: str) -> Any:
+    def _pop(self, k: str) -> DataArray:
         ...
 
-    def _rename_dims(self, arg0: Dict[str, str]) -> Dataset:
+    def _rename_dims(self, arg0: dict[str, str]) -> Dataset:
         ...
 
     def _repr_html_(self) -> str:
         ...
 
-    def all(self, dim: Optional[str]=None) -> VariableLikeType:
+    def all(self, dim: str | None=None) -> Dataset:
         ...
 
-    def any(self, dim: Optional[str]=None) -> VariableLikeType:
+    def any(self, dim: str | None=None) -> Dataset:
         ...
 
-    def assign_coords(self, coords: Optional[Dict[str, Variable]]=None, /, **coords_kwargs) -> Union[DataArray, Dataset]:
+    def assign_coords(self, coords: dict[str, Variable] | None=None, /, **coords_kwargs: Variable) -> _T:
         ...
 
     @property
-    def bins(self):
+    def bins(self) -> Bins | None:
         ...
 
     @bins.setter
-    def bins(self, bins: Bins):
+    def bins(self, bins: Bins) -> None:
         ...
 
     def clear(self) -> None:
@@ -1150,7 +1150,7 @@ class Dataset:
         ...
 
     @property
-    def dims(self) -> tuple:
+    def dims(self) -> tuple[str, ...]:
         ...
 
     @overload
@@ -1158,13 +1158,13 @@ class Dataset:
         ...
 
     @overload
-    def drop_coords(self, arg0: List[str]) -> Dataset:
+    def drop_coords(self, arg0: list[str]) -> Dataset:
         ...
 
-    def get(self, key, default=None):
+    def get(self, key: str, default: DataArray | None=None) -> DataArray | None:
         ...
 
-    def groupby(self, /, group: Union[Variable, str], *, bins: Optional[Variable]=None) -> Union[GroupByDataArray, GroupByDataset]:
+    def groupby(self, /, group: Variable | str, *, bins: Variable | None=None) -> GroupByDataArray | GroupByDataset:
         ...
 
     def hist(self, arg_dict=None, /, **kwargs):
@@ -1176,83 +1176,83 @@ class Dataset:
     def keys(self) -> Dataset_keys_view:
         ...
 
-    def max(self, dim: Optional[str]=None) -> VariableLikeType:
+    def max(self, dim: str | None=None) -> Dataset:
         ...
 
-    def mean(self, dim: Optional[str]=None) -> VariableLikeType:
+    def mean(self, dim: str | None=None) -> Dataset:
         ...
 
-    def median(self, dim: Dims=None) -> VariableLikeType:
+    def median(self, dim: Dims=None) -> Dataset:
         ...
 
     @property
     def meta(self) -> Coords:
         ...
 
-    def min(self, dim: Optional[str]=None) -> VariableLikeType:
+    def min(self, dim: str | None=None) -> Dataset:
         ...
 
-    def nanmax(self, dim: Optional[str]=None) -> VariableLikeType:
+    def nanmax(self, dim: str | None=None) -> Dataset:
         ...
 
-    def nanmean(self, dim: Optional[str]=None) -> VariableLikeType:
+    def nanmean(self, dim: str | None=None) -> Dataset:
         ...
 
-    def nanmedian(self, dim: Dims=None) -> VariableLikeType:
+    def nanmedian(self, dim: Dims=None) -> Dataset:
         ...
 
-    def nanmin(self, dim: Optional[str]=None) -> VariableLikeType:
+    def nanmin(self, dim: str | None=None) -> Dataset:
         ...
 
-    def nanstd(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+    def nanstd(self, dim: Dims=None, *, ddof: int) -> Dataset:
         ...
 
-    def nansum(self, dim: Optional[str]=None) -> VariableLikeType:
+    def nansum(self, dim: str | None=None) -> Dataset:
         ...
 
-    def nanvar(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+    def nanvar(self, dim: Dims=None, *, ddof: int) -> Dataset:
         ...
 
     @property
     def ndim(self) -> int:
         ...
 
-    def plot(*args, **kwargs):
+    def plot(*args: Any, **kwargs: Any) -> None:
         ...
 
-    def pop(self, key, default=_NoDefault):
+    def pop(self, key: str, default: Any=_NoDefault) -> DataArray | None:
         ...
 
     def rebin(self, arg_dict=None, deprecated=None, /, **kwargs):
         ...
 
-    def rename(self, dims_dict: Dict[str, str]=None, /, **names: str) -> Dataset:
+    def rename(self, dims_dict: dict[str, str] | None=None, /, **names: str) -> Dataset:
         ...
 
-    def rename_dims(self, dims_dict: Optional[Dict[str, str]]=None, /, **names: str) -> VariableLikeType:
+    def rename_dims(self, dims_dict: dict[str, str] | None=None, /, **names: str) -> Dataset:
         ...
 
-    def save_hdf5(self, filename: Union[str, Path]) -> None:
-        ...
-
-    @property
-    def shape(self) -> tuple:
+    def save_hdf5(self, filename: str | Path) -> None:
         ...
 
     @property
-    def sizes(self) -> dict:
+    def shape(self) -> tuple[int, ...]:
         ...
 
-    def squeeze(self, dim: Optional[Union[str, List[str], Tuple[str, ...]]]=None) -> VariableLikeType:
+    @property
+    def sizes(self) -> dict[str, int]:
         ...
 
-    def std(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+    def squeeze(self, dim: str | list[str] | tuple[str, ...] | None=None) -> Dataset:
         ...
 
-    def sum(self, dim: Dims=None) -> VariableLikeType:
+    def std(self, dim: Dims=None, *, ddof: int) -> Dataset:
         ...
 
-    def transform_coords(self, targets: Optional[Union[str, Iterable[str]]]=None, /, graph: Optional[GraphDict]=None, *, rename_dims: bool=True, keep_aliases: bool=True, keep_intermediate: bool=True, keep_inputs: bool=True, quiet: bool=False, **kwargs: Callable) -> Union[DataArray, Dataset]:
+    def sum(self, dim: Dims=None) -> Dataset:
+        ...
+
+    def transform_coords(self, targets: str | Iterable[str] | None=None, /, graph: GraphDict | None=None, *, rename_dims: bool=True, keep_aliases: bool=True, keep_intermediate: bool=True, keep_inputs: bool=True, quiet: bool=False, **kwargs: Callable) -> DataArray | Dataset:
         ...
 
     def underlying_size(self) -> int:
@@ -1264,7 +1264,7 @@ class Dataset:
     def values(self) -> Dataset_values_view:
         ...
 
-    def var(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+    def var(self, dim: Dims=None, *, ddof: int) -> Dataset:
         ...
 
 class DatasetError(RuntimeError):
@@ -1272,10 +1272,10 @@ class DatasetError(RuntimeError):
 
 class Dataset_items_view:
 
-    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[tuple[str, DataArray]]:
         ...
 
     def __len__(self) -> int:
@@ -1289,10 +1289,10 @@ class Dataset_items_view:
 
 class Dataset_keys_view:
 
-    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[str]:
         ...
 
     def __len__(self) -> int:
@@ -1306,7 +1306,7 @@ class Dataset_keys_view:
 
 class Dataset_values_view:
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[DataArray]:
         ...
 
     def __len__(self) -> int:
@@ -1335,7 +1335,7 @@ class GroupByDataArray:
         ...
 
     @property
-    def bins(self):
+    def bins(self) -> GroupbyBins:
         ...
 
     def concat(self, dim: str) -> DataArray:
@@ -1371,7 +1371,7 @@ class GroupByDataset:
         ...
 
     @property
-    def bins(self):
+    def bins(self) -> GroupbyBins:
         ...
 
     def concat(self, dim: str) -> Dataset:
@@ -1398,7 +1398,7 @@ class GroupByDataset:
     def sum(self, dim: str) -> Dataset:
         ...
 
-class Masks:
+class Masks(Mapping[str, Variable]):
 
     def __contains__(self, arg0: str) -> bool:
         ...
@@ -1412,19 +1412,19 @@ class Masks:
     def __delitem__(self, arg0: str) -> None:
         ...
 
-    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
     def __getitem__(self, arg0: str) -> Variable:
         ...
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[str]:
         ...
 
     def __len__(self) -> int:
         ...
 
-    def __ne__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __ne__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
     def __repr__(self) -> str:
@@ -1439,7 +1439,7 @@ class Masks:
     def _ipython_key_completions_(self) -> list:
         ...
 
-    def _pop(self, k: str) -> Any:
+    def _pop(self, k: str) -> Variable:
         ...
 
     def clear(self) -> None:
@@ -1448,7 +1448,7 @@ class Masks:
     def copy(self, deep: bool=True) -> Masks:
         ...
 
-    def get(self, key, default=None):
+    def get(self, key: str, default: Variable | None=None) -> Variable | None:
         ...
 
     def is_edges(self, key: str, dim: Optional[str]=None) -> bool:
@@ -1460,10 +1460,10 @@ class Masks:
     def keys(self) -> Masks_keys_view:
         ...
 
-    def pop(self, key, default=_NoDefault):
+    def pop(self, key: str, default: Any=_NoDefault) -> Variable | None:
         ...
 
-    def popitem(self) -> Tuple[str, Any]:
+    def popitem(self) -> tuple[str, Variable]:
         ...
 
     def update(self, other: Any=None, /, **kwargs) -> None:
@@ -1474,10 +1474,10 @@ class Masks:
 
 class Masks_items_view:
 
-    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[tuple[str, Variable]]:
         ...
 
     def __len__(self) -> int:
@@ -1491,10 +1491,10 @@ class Masks_items_view:
 
 class Masks_keys_view:
 
-    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[str]:
         ...
 
     def __len__(self) -> int:
@@ -1508,7 +1508,7 @@ class Masks_keys_view:
 
 class Masks_values_view:
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[Variable]:
         ...
 
     def __len__(self) -> int:
@@ -1531,7 +1531,7 @@ class Unit:
     def __add__(self, arg0: Unit) -> Unit:
         ...
 
-    def __eq__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __eq__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
     def __hash__(self) -> int:
@@ -1543,7 +1543,7 @@ class Unit:
     def __mul__(self, arg0: Unit) -> Unit:
         ...
 
-    def __ne__(self, arg0: object) -> bool:  # type: ignore[override]
+    def __ne__(self, arg0: object) -> bool:  # type: ignore[override, unused-ignore]
         ...
 
     def __pow__(self, arg0: int) -> Unit:
@@ -1615,7 +1615,7 @@ class Variable:
     def __deepcopy__(self, arg0: dict) -> Variable:
         ...
 
-    def __eq__(self, arg0: object) -> Variable:  # type: ignore[override]
+    def __eq__(self, arg0: object) -> Variable:  # type: ignore[override, unused-ignore]
         ...
 
     def __float__(self) -> float:
@@ -1657,11 +1657,11 @@ class Variable:
         ...
 
     @overload
-    def __getitem__(self, arg0: Tuple[str, int]) -> Variable:
+    def __getitem__(self, arg0: tuple[str, int]) -> Variable:
         ...
 
     @overload
-    def __getitem__(self, arg0: Tuple[str, slice]) -> Variable:
+    def __getitem__(self, arg0: tuple[str, slice]) -> Variable:
         ...
 
     @overload
@@ -1669,11 +1669,11 @@ class Variable:
         ...
 
     @overload
-    def __getitem__(self, arg0: List[int]) -> Variable:
+    def __getitem__(self, arg0: list[int]) -> Variable:
         ...
 
     @overload
-    def __getitem__(self, arg0: Tuple[str, List[int]]) -> Variable:
+    def __getitem__(self, arg0: tuple[str, list[int]]) -> Variable:
         ...
 
     @overload
@@ -1801,7 +1801,7 @@ class Variable:
     def __mul__(self, arg0: float) -> Variable:
         ...
 
-    def __ne__(self, arg0: object) -> Variable:  # type: ignore[override]
+    def __ne__(self, arg0: object) -> Variable:  # type: ignore[override, unused-ignore]
         ...
 
     def __neg__(self) -> Variable:
@@ -1855,11 +1855,11 @@ class Variable:
         ...
 
     @overload
-    def __setitem__(self, arg0: Tuple[str, int], arg1: Any) -> None:
+    def __setitem__(self, arg0: tuple[str, int], arg1: Any) -> None:
         ...
 
     @overload
-    def __setitem__(self, arg0: Tuple[str, slice], arg1: Any) -> None:
+    def __setitem__(self, arg0: tuple[str, slice], arg1: Any) -> None:
         ...
 
     @overload
@@ -1899,7 +1899,7 @@ class Variable:
     def _ipython_key_completions_(self) -> list:
         ...
 
-    def _rename_dims(self, arg0: Dict[str, str]) -> Variable:
+    def _rename_dims(self, arg0: dict[str, str]) -> Variable:
         ...
 
     def _repr_html_(self) -> str:
@@ -1909,10 +1909,10 @@ class Variable:
     def aligned(self) -> bool:
         ...
 
-    def all(self, dim: Optional[str]=None) -> VariableLikeType:
+    def all(self, dim: str | None=None) -> Variable:
         ...
 
-    def any(self, dim: Optional[str]=None) -> VariableLikeType:
+    def any(self, dim: str | None=None) -> Variable:
         ...
 
     def astype(self, type: Any, *, copy: bool=True) -> Variable:
@@ -1922,23 +1922,23 @@ class Variable:
         ...
 
     @property
-    def bins(self):
+    def bins(self) -> Bins | None:
         ...
 
     @bins.setter
-    def bins(self, bins: Bins):
+    def bins(self, bins: Bins) -> None:
         ...
 
-    def broadcast(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, shape: Optional[Sequence[int]]=None, sizes: Optional[Dict[str, int]]=None) -> VariableLikeType:
+    def broadcast(self, dims: list[str] | tuple[str, ...] | None=None, shape: Sequence[int] | None=None, sizes: dict[str, int] | None=None) -> Variable:
         ...
 
-    def ceil(self, *, out: Optional[VariableLike]=None) -> VariableLike:
+    def ceil(self, *, out: VariableLike | None=None) -> VariableLike:
         ...
 
     def copy(self, deep: bool=True) -> Variable:
         ...
 
-    def cumsum(self, dim: Optional[str]=None, mode: Literal['exclusive', 'inclusive']='inclusive') -> VariableLikeType:
+    def cumsum(self, dim: str | None=None, mode: Literal['exclusive', 'inclusive']='inclusive') -> Variable:
         ...
 
     @property
@@ -1946,7 +1946,7 @@ class Variable:
         ...
 
     @property
-    def dims(self) -> tuple:
+    def dims(self) -> tuple[str, ...]:
         ...
 
     @property
@@ -1954,78 +1954,78 @@ class Variable:
         ...
 
     @property
-    def fields(self):
+    def fields(self) -> Any:
         ...
 
-    def flatten(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, to: Optional[str]=None) -> VariableLikeType:
+    def flatten(self, dims: list[str] | tuple[str, ...] | None=None, to: str | None=None) -> Variable:
         ...
 
-    def floor(self, *, out: Optional[VariableLike]=None) -> VariableLike:
+    def floor(self, *, out: VariableLike | None=None) -> VariableLike:
         ...
 
-    def fold(self, dim: str, sizes: Optional[Dict[str, int]]=None, dims: Optional[Union[List[str], Tuple[str, ...]]]=None, shape: Optional[Sequence[int]]=None) -> VariableLikeType:
+    def fold(self, dim: str, sizes: dict[str, int] | None=None, dims: list[str] | tuple[str, ...] | None=None, shape: Sequence[int] | None=None) -> Variable:
         ...
 
     def hist(self, arg_dict=None, /, **kwargs):
         ...
 
-    def max(self, dim: Optional[str]=None) -> VariableLikeType:
+    def max(self, dim: str | None=None) -> Variable:
         ...
 
-    def mean(self, dim: Optional[str]=None) -> VariableLikeType:
+    def mean(self, dim: str | None=None) -> Variable:
         ...
 
-    def median(self, dim: Dims=None) -> VariableLikeType:
+    def median(self, dim: Dims=None) -> Variable:
         ...
 
-    def min(self, dim: Optional[str]=None) -> VariableLikeType:
+    def min(self, dim: str | None=None) -> Variable:
         ...
 
     def nanhist(self, arg_dict=None, /, **kwargs):
         ...
 
-    def nanmax(self, dim: Optional[str]=None) -> VariableLikeType:
+    def nanmax(self, dim: str | None=None) -> Variable:
         ...
 
-    def nanmean(self, dim: Optional[str]=None) -> VariableLikeType:
+    def nanmean(self, dim: str | None=None) -> Variable:
         ...
 
-    def nanmedian(self, dim: Dims=None) -> VariableLikeType:
+    def nanmedian(self, dim: Dims=None) -> Variable:
         ...
 
-    def nanmin(self, dim: Optional[str]=None) -> VariableLikeType:
+    def nanmin(self, dim: str | None=None) -> Variable:
         ...
 
-    def nanstd(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+    def nanstd(self, dim: Dims=None, *, ddof: int) -> Variable:
         ...
 
-    def nansum(self, dim: Optional[str]=None) -> VariableLikeType:
+    def nansum(self, dim: str | None=None) -> Variable:
         ...
 
-    def nanvar(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+    def nanvar(self, dim: Dims=None, *, ddof: int) -> Variable:
         ...
 
     @property
     def ndim(self) -> int:
         ...
 
-    def plot(*args, **kwargs):
+    def plot(*args: Any, **kwargs: Any) -> None:
         ...
 
-    def rename(self, dims_dict: Dict[str, str]=None, /, **names: str) -> Variable:
+    def rename(self, dims_dict: dict[str, str] | None=None, /, **names: str) -> Variable:
         ...
 
-    def rename_dims(self, dims_dict: Optional[Dict[str, str]]=None, /, **names: str) -> VariableLikeType:
+    def rename_dims(self, dims_dict: dict[str, str] | None=None, /, **names: str) -> Variable:
         ...
 
-    def round(self, *, out: Optional[VariableLike]=None) -> VariableLike:
+    def round(self, *, out: VariableLike | None=None) -> VariableLike:
         ...
 
-    def save_hdf5(self, filename: Union[str, Path]) -> None:
+    def save_hdf5(self, filename: str | Path) -> None:
         ...
 
     @property
-    def shape(self) -> tuple:
+    def shape(self) -> tuple[int, ...]:
         ...
 
     @property
@@ -2033,22 +2033,22 @@ class Variable:
         ...
 
     @property
-    def sizes(self) -> dict:
+    def sizes(self) -> dict[str, int]:
         ...
 
-    def squeeze(self, dim: Optional[Union[str, List[str], Tuple[str, ...]]]=None) -> VariableLikeType:
+    def squeeze(self, dim: str | list[str] | tuple[str, ...] | None=None) -> Variable:
         ...
 
-    def std(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+    def std(self, dim: Dims=None, *, ddof: int) -> Variable:
         ...
 
-    def sum(self, dim: Dims=None) -> VariableLikeType:
+    def sum(self, dim: Dims=None) -> Variable:
         ...
 
-    def to(self, *, unit: Optional[Union[Unit, str]]=None, dtype: Optional[Any]=None, copy: bool=True) -> VariableLikeType:
+    def to(self, *, unit: Unit | str | None=None, dtype: Any | None=None, copy: bool=True) -> Variable:
         ...
 
-    def transpose(self, dims: Optional[Union[List[str], Tuple[str, ...]]]=None) -> VariableLikeType:
+    def transpose(self, dims: list[str] | tuple[str, ...] | None=None) -> Variable:
         ...
 
     def underlying_size(self) -> int:
@@ -2078,7 +2078,7 @@ class Variable:
     def values(self, arg1: Any) -> None:
         ...
 
-    def var(self, dim: Dims=None, *, ddof: int) -> VariableLikeType:
+    def var(self, dim: Dims=None, *, ddof: int) -> Variable:
         ...
 
     @property

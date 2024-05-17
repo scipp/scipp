@@ -4,11 +4,11 @@
 from __future__ import annotations
 
 from .._scipp import core as _cpp
-from ..typing import VariableLike
+from ..typing import VariableLikeType
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 
 
-def logical_not(x: VariableLike) -> VariableLike:
+def logical_not(x: VariableLikeType) -> VariableLikeType:
     """Element-wise logical negation.
 
     Equivalent to::
@@ -28,7 +28,7 @@ def logical_not(x: VariableLike) -> VariableLike:
     return _call_cpp_func(_cpp.logical_not, x)
 
 
-def logical_and(a: VariableLike, b: VariableLike) -> VariableLike:
+def logical_and(a: VariableLikeType, b: VariableLikeType) -> VariableLikeType:
     """Element-wise logical and.
 
     Equivalent to::
@@ -50,7 +50,7 @@ def logical_and(a: VariableLike, b: VariableLike) -> VariableLike:
     return _call_cpp_func(_cpp.logical_and, a, b)
 
 
-def logical_or(a: VariableLike, b: VariableLike) -> VariableLike:
+def logical_or(a: VariableLikeType, b: VariableLikeType) -> VariableLikeType:
     """Element-wise logical or.
 
     Equivalent to::
@@ -72,7 +72,7 @@ def logical_or(a: VariableLike, b: VariableLike) -> VariableLike:
     return _call_cpp_func(_cpp.logical_or, a, b)
 
 
-def logical_xor(a: VariableLike, b: VariableLike) -> VariableLike:
+def logical_xor(a: VariableLikeType, b: VariableLikeType) -> VariableLikeType:
     """Element-wise logical exclusive-or.
 
     Equivalent to::

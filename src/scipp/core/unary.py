@@ -3,37 +3,38 @@
 # @author Matthew Andrew
 
 from .._scipp import core as _cpp
+from ..typing import VariableLikeType
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 
 
-def isnan(x: _cpp.Variable) -> _cpp.Variable:
+def isnan(x: VariableLikeType) -> VariableLikeType:
     """Element-wise isnan (true if an element is nan)."""
-    return _call_cpp_func(_cpp.isnan, x)
+    return _call_cpp_func(_cpp.isnan, x)  # type: ignore[return-value]
 
 
-def isinf(x: _cpp.Variable) -> _cpp.Variable:
+def isinf(x: VariableLikeType) -> VariableLikeType:
     """Element-wise isinf (true if an element is inf)."""
-    return _call_cpp_func(_cpp.isinf, x)
+    return _call_cpp_func(_cpp.isinf, x)  # type: ignore[return-value]
 
 
-def isfinite(x: _cpp.Variable) -> _cpp.Variable:
+def isfinite(x: VariableLikeType) -> VariableLikeType:
     """Element-wise isfinite (true if an element is finite)."""
-    return _call_cpp_func(_cpp.isfinite, x)
+    return _call_cpp_func(_cpp.isfinite, x)  # type: ignore[return-value]
 
 
-def isposinf(x: _cpp.Variable) -> _cpp.Variable:
+def isposinf(x: VariableLikeType) -> VariableLikeType:
     """Element-wise isposinf (true if an element is a positive infinity)."""
-    return _call_cpp_func(_cpp.isposinf, x)
+    return _call_cpp_func(_cpp.isposinf, x)  # type: ignore[return-value]
 
 
-def isneginf(x: _cpp.Variable) -> _cpp.Variable:
+def isneginf(x: VariableLikeType) -> VariableLikeType:
     """Element-wise isneginf (true if an element is a negative infinity)."""
-    return _call_cpp_func(_cpp.isneginf, x)
+    return _call_cpp_func(_cpp.isneginf, x)  # type: ignore[return-value]
 
 
 def to_unit(
-    x: _cpp.Variable, unit: _cpp.Unit | str, *, copy: bool = True
-) -> _cpp.Variable:
+    x: VariableLikeType, unit: _cpp.Unit | str, *, copy: bool = True
+) -> VariableLikeType:
     """Convert the variable to a different unit.
 
     Raises a :class:`scipp.UnitError` if the input unit is not compatible
@@ -44,7 +45,7 @@ def to_unit(
 
     Parameters
     ----------
-    x:
+    x: VariableLike
         Input variable.
     unit:
         Desired target unit.
@@ -65,4 +66,4 @@ def to_unit(
       >>> sc.to_unit(var, unit='mm')
       <scipp.Variable> ()    float64             [mm]  1200
     """
-    return _call_cpp_func(_cpp.to_unit, x=x, unit=unit, copy=copy)
+    return _call_cpp_func(_cpp.to_unit, x=x, unit=unit, copy=copy)  # type: ignore[return-value]
