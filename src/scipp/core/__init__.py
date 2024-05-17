@@ -83,11 +83,7 @@ Variable.fields = property(
 )
 del _fields
 
-from .bins import _groupby_bins, Bins
-
-GroupByDataArray.bins = property(_groupby_bins)
-GroupByDataset.bins = property(_groupby_bins)
-del _groupby_bins
+from .bins import Bins
 
 # Prevent unwanted conversion to numpy arrays by operations. Properly defining
 # __array_ufunc__ should be possible by converting non-scipp arguments to

@@ -2,7 +2,6 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import itertools
-import warnings
 from collections.abc import Sequence
 from numbers import Integral
 from typing import overload
@@ -13,7 +12,6 @@ from .cpp_classes import BinEdgeError, CoordError, DataArray, Dataset, DType, Va
 from .data_group import DataGroup, data_group_overload
 from .math import round as round_
 from .shape import concat
-from .util import VisibleDeprecationWarning
 from .variable import arange, array, epoch, linspace, scalar
 
 
@@ -568,17 +566,6 @@ def bin(x, arg_dict=None, /, **kwargs):
       >>> binned.bin(y=5).sizes
       {'x': 10, 'y': 5}
     """
-    if arg_dict is None:
-        for name, item in kwargs.items():
-            if name in ('edges', 'groups', 'erase') and isinstance(item, list):
-                warnings.warn(
-                    "The 'edges', 'groups', and 'erase' keyword arguments "
-                    "are deprecated. Use, e.g., 'sc.bin(da, x=x_edges)' or "
-                    "'sc.group(da, groups)'. See the documentation for details.",
-                    UserWarning,
-                    stacklevel=2,
-                )
-                return make_binned(x, **kwargs)
     edges = _make_edges(x, arg_dict, kwargs)
     erase = _find_replaced_dims(x, edges)
     return make_binned(x, edges=list(edges.values()), erase=erase)
@@ -588,7 +575,6 @@ def bin(x, arg_dict=None, /, **kwargs):
 def rebin(
     x: DataArray,
     arg_dict: dict[str, int | Variable] | None = None,
-    deprecated=None,
     /,
     **kwargs: int | Variable,
 ) -> DataArray: ...
@@ -598,7 +584,6 @@ def rebin(
 def rebin(
     x: Dataset,
     arg_dict: dict[str, int | Variable] | None = None,
-    deprecated=None,
     /,
     **kwargs: int | Variable,
 ) -> Dataset: ...
@@ -608,14 +593,13 @@ def rebin(
 def rebin(
     x: DataGroup,
     arg_dict: dict[str, int | Variable] | None = None,
-    deprecated=None,
     /,
     **kwargs: int | Variable,
 ) -> DataGroup: ...
 
 
 @data_group_overload
-def rebin(x, arg_dict=None, deprecated=None, /, **kwargs):
+def rebin(x, arg_dict=None, /, **kwargs):
     """Rebin a data array or dataset.
 
     The coordinate of the input for the dimension to be rebinned must contain bin edges,
@@ -674,17 +658,6 @@ def rebin(x, arg_dict=None, deprecated=None, /, **kwargs):
       >>> da.rebin(x=4, y=6).sizes
       {'x': 4, 'y': 6}
     """
-    if isinstance(arg_dict, str):
-        if deprecated is not None or 'bins' in kwargs:
-            warnings.warn(
-                "The 'bins' keyword argument and positional syntax for setting bin "
-                "edges is deprecated. Use, e.g., 'sc.rebin(da, x=x_edges)'. See the "
-                "documentation for details.",
-                UserWarning,
-                stacklevel=2,
-            )
-            bins = {'bins': deprecated, **kwargs}
-            return _cpp.rebin(x, arg_dict, **bins)
     edges = _make_edges(x, arg_dict, kwargs)
     out = x
     for dim, edge in edges.items():
@@ -704,7 +677,7 @@ def _make_groups(x, arg):
     if coord.bins is not None:
         coord = coord.copy().bins.constituents['data']
 
-    if coord.values.size == 0:
+    if 0 in coord.shape:
         unique = coord.values[0:0]
     # We are currently using np.unique to find all unique groups. This can be very slow
     # for large inputs. In many cases groups are in a bounded range of integers, and we
@@ -820,16 +793,3 @@ def group(x, /, *args: str | Variable):
     groups = [_make_groups(x, name) for name in args]
     erase = _find_replaced_dims(x, [g.dim for g in groups])
     return make_binned(x, groups=groups, erase=erase)
-
-
-def histogram(x: DataArray | Dataset, *, bins: Variable) -> DataArray | Dataset:
-    """Deprecated. See :py:func:`scipp.hist`."""
-    warnings.warn(
-        "'histogram' is deprecated. Use 'hist' instead.", UserWarning, stacklevel=2
-    )
-    warnings.warn(
-        "'histogram' is deprecated. Use 'hist' instead.",
-        VisibleDeprecationWarning,
-        stacklevel=2,
-    )
-    return make_histogrammed(x, edges=bins)
