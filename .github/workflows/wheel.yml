@@ -35,5 +35,5 @@ jobs:
     - name: Upload wheels
       uses: actions/upload-artifact@v4
       with:
-        name: dist-${{ inputs.build }}
+        name: dist-${{ inputs.os }}-${{ inputs.build }}
         path: wheelhouse/*.whl
