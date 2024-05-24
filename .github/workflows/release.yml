@@ -101,7 +101,6 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          merge-multiple: true
           pattern: 'conda*'
       - uses: conda-incubator/setup-miniconda@v3
         with:
