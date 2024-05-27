@@ -18,20 +18,26 @@ scipp.vectors:
 """
 
 from collections.abc import Sequence
+from typing import Any, TypeVar
 
-import numpy as _np
 import numpy as np
+import numpy.typing as npt
 
 from .. import units
 from .._scipp import core as _core_cpp
 from ..core import DType, Unit, UnitError, Variable, vectors
 from ..core._cpp_wrapper_util import call_func as _call_cpp_func
 
+# Element type for NumPy arrays.
+# For sequences in multi-dim functions,
+# we use `Sequence[Any]` as a simple but incomplete solution for nested lists.
+_Float = TypeVar('_Float', bound=np.float64 | np.float32, covariant=True)
 
-def _to_eigen_layout(a):
+
+def _to_eigen_layout(a: npt.NDArray[_Float] | Sequence[Any]) -> npt.NDArray[_Float]:
     # Numpy and scipp use row-major, but Eigen matrices use column-major,
     # transpose matrix axes for copying values.
-    return _np.moveaxis(a, -1, -2)
+    return np.moveaxis(a, -1, -2)  # type: ignore[arg-type]
 
 
 def as_vectors(x: Variable, y: Variable, z: Variable) -> Variable:
@@ -68,7 +74,7 @@ def as_vectors(x: Variable, y: Variable, z: Variable) -> Variable:
 
     .. versionadded:: 23.03.1
     """
-    return _call_cpp_func(
+    return _call_cpp_func(  # type: ignore[return-value]
         _core_cpp.geometry.as_vectors,
         *(c.to(dtype='float64', copy=False) for c in (x, y, z)),
     )
@@ -77,8 +83,8 @@ def as_vectors(x: Variable, y: Variable, z: Variable) -> Variable:
 def translation(
     *,
     unit: Unit | str = units.dimensionless,
-    value: _np.ndarray | list,
-):
+    value: npt.NDArray[_Float] | Sequence[_Float],
+) -> Variable:
     """
     Creates a translation transformation from a single provided 3-vector.
 
@@ -101,8 +107,8 @@ def translations(
     *,
     dims: Sequence[str],
     unit: Unit | str = units.dimensionless,
-    values: _np.ndarray | list,
-):
+    values: npt.NDArray[_Float] | Sequence[Any],
+) -> Variable:
     """
     Creates translation transformations from multiple 3-vectors.
 
@@ -120,12 +126,10 @@ def translations(
     :
         An array variable of dtype ``translation3``.
     """
-    return _core_cpp.Variable(
-        dims=dims, unit=unit, values=values, dtype=DType.translation3
-    )
+    return Variable(dims=dims, unit=unit, values=values, dtype=DType.translation3)
 
 
-def scaling_from_vector(*, value: _np.ndarray | list):
+def scaling_from_vector(*, value: npt.NDArray[_Float] | Sequence[_Float]) -> Variable:
     """
     Creates a scaling transformation from a provided 3-vector.
 
@@ -140,10 +144,12 @@ def scaling_from_vector(*, value: _np.ndarray | list):
     :
        A scalar variable of dtype ``linear_transform3``.
     """
-    return linear_transforms(dims=[], values=_np.diag(value))
+    return linear_transforms(dims=[], values=np.diag(value))
 
 
-def scalings_from_vectors(*, dims: Sequence[str], values: _np.ndarray | list):
+def scalings_from_vectors(
+    *, dims: Sequence[str], values: npt.NDArray[_Float] | Sequence[Any]
+) -> Variable:
     """
     Creates scaling transformations from corresponding to the provided 3-vectors.
 
@@ -161,7 +167,10 @@ def scalings_from_vectors(*, dims: Sequence[str], values: _np.ndarray | list):
         An array variable of dtype ``linear_transform3``.
     """
     identity = linear_transform(value=np.identity(3))
-    matrices = identity.broadcast(dims=dims, shape=(len(values),)).copy()
+    matrices = identity.broadcast(
+        dims=dims,  # type: ignore[arg-type]  # shortcoming of annotations of broadcast
+        shape=(len(values),),
+    ).copy()
     for field_name, index in (("xx", 0), ("yy", 1), ("zz", 2)):
         matrices.fields[field_name] = Variable(
             dims=dims, values=np.asarray(values)[:, index], dtype="float64"
@@ -169,7 +178,7 @@ def scalings_from_vectors(*, dims: Sequence[str], values: _np.ndarray | list):
     return matrices
 
 
-def rotation(*, value: _np.ndarray | list):
+def rotation(*, value: npt.NDArray[_Float] | Sequence[_Float]) -> Variable:
     """
     Creates a rotation-type variable from the provided quaternion coefficients.
 
@@ -202,7 +211,9 @@ def rotation(*, value: _np.ndarray | list):
     return rotations(dims=(), values=value)
 
 
-def rotations(*, dims: Sequence[str], values: _np.ndarray | list):
+def rotations(
+    *, dims: Sequence[str], values: npt.NDArray[_Float] | Sequence[Any]
+) -> Variable:
     """
     Creates a rotation-type variable from the provided quaternion coefficients.
 
@@ -243,7 +254,7 @@ def rotations(*, dims: Sequence[str], values: _np.ndarray | list):
             "4 components. If you want to pass a rotation matrix, use "
             "sc.linear_transforms instead."
         )
-    return _core_cpp.Variable(dims=dims, values=values, dtype=DType.rotation3)
+    return Variable(dims=dims, values=values, dtype=DType.rotation3)
 
 
 def rotations_from_rotvecs(rotation_vectors: Variable) -> Variable:
@@ -276,7 +287,7 @@ def rotations_from_rotvecs(rotation_vectors: Variable) -> Variable:
     return rotations(dims=rotation_vectors.dims, values=r.as_quat())
 
 
-def rotation_as_rotvec(rotation: Variable, *, unit='rad') -> Variable:
+def rotation_as_rotvec(rotation: Variable, *, unit: Unit | str = 'rad') -> Variable:
     """
     Represent a rotation matrix (or matrices) as rotation vector(s).
 
@@ -298,7 +309,7 @@ def rotation_as_rotvec(rotation: Variable, *, unit='rad') -> Variable:
     :
         An array variable with rotation vectors of dtype ``vector3``.
     """
-    unit = Unit(unit)
+    unit = Unit(unit) if not isinstance(unit, Unit) else unit
     supported = [units.deg, units.rad]
     if unit not in supported:
         raise UnitError(f"Rotation vector unit must be one of {supported}.")
@@ -315,8 +326,8 @@ def rotation_as_rotvec(rotation: Variable, *, unit='rad') -> Variable:
 def affine_transform(
     *,
     unit: Unit | str = units.dimensionless,
-    value: _np.ndarray | list,
-):
+    value: npt.NDArray[_Float] | Sequence[_Float],
+) -> Variable:
     """
     Initializes a single affine transformation from the provided affine matrix
     coefficients.
@@ -340,8 +351,8 @@ def affine_transforms(
     *,
     dims: Sequence[str],
     unit: Unit | str = units.dimensionless,
-    values: _np.ndarray | list,
-):
+    values: npt.NDArray[_Float] | Sequence[Any],
+) -> Variable:
     """
     Initializes affine transformations from the provided affine matrix
     coefficients.
@@ -360,7 +371,7 @@ def affine_transforms(
     :
         An array variable of dtype ``affine_transform3``.
     """
-    return _core_cpp.Variable(
+    return Variable(
         dims=dims,
         unit=unit,
         values=_to_eigen_layout(values),
@@ -371,8 +382,8 @@ def affine_transforms(
 def linear_transform(
     *,
     unit: Unit | str = units.dimensionless,
-    value: _np.ndarray | list,
-):
+    value: npt.NDArray[_Float] | Sequence[_Float],
+) -> Variable:
     """Constructs a zero dimensional :class:`Variable` holding a single 3x3
     matrix.
 
@@ -399,8 +410,8 @@ def linear_transforms(
     *,
     dims: Sequence[str],
     unit: Unit | str = units.dimensionless,
-    values: _np.ndarray | list,
-):
+    values: npt.NDArray[_Float] | Sequence[Any],
+) -> Variable:
     """Constructs a :class:`Variable` with given dimensions holding an array
     of 3x3 matrices.
 
@@ -418,7 +429,7 @@ def linear_transforms(
     :
         An array variable of dtype ``linear_transform3``.
     """
-    return _core_cpp.Variable(
+    return Variable(
         dims=dims,
         unit=unit,
         values=_to_eigen_layout(values),
@@ -445,7 +456,7 @@ def inv(var: Variable) -> Variable:
     :
         A variable holding the inverse transformation to ``var``.
     """
-    return _call_cpp_func(_core_cpp.inv, var)
+    return _call_cpp_func(_core_cpp.inv, var)  # type: ignore[return-value]
 
 
 __all__ = [
