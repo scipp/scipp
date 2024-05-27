@@ -106,7 +106,7 @@ jobs:
         with:
           python-version: '3.10'
       - run: conda install -c conda-forge --yes anaconda-client
-      - run: anaconda --token ${{ secrets.ANACONDATOKEN }} upload --user scipp --label main $(ls conda-package-*/*/*.tar.bz2)
+      - run: anaconda --token ${{ secrets.ANACONDATOKEN }} upload --user scipp --label main $(find . -type f -name "*.tar.bz2")
 
   manage-versions:
     name: Manage Versions
