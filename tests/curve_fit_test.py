@@ -8,7 +8,7 @@ import pytest
 import scipp as sc
 from scipp import curve_fit
 from scipp.compat.xarray_compat import from_xarray, to_xarray
-from scipp.testing import assert_identical
+from scipp.testing import assert_allclose, assert_identical
 
 
 @pytest.fixture()
@@ -343,7 +343,7 @@ def test_variances_determine_weights(variance, expected):
     da = sc.DataArray(data=y, coords={'x': x})
     da.variances[1] = variance
     # Fit a constant to highlight influence of weights
-    popt, _ = curve_fit(['x'], lambda x, *, a: sc.scalar(a), da)
+    popt, _ = curve_fit(['x'], lambda x, *, a: a, da)
     assert popt['a'].value == pytest.approx(expected)
 
 
@@ -584,3 +584,82 @@ def test_param_values_set_to_nan_if_too_few_to_fit():
     res, cov = curve_fit(['x'], func, da)
     assert not sc.isnan(res['a'].data).any()
     assert not sc.isnan(cov['a']['b'].data).any()
+
+
+def test_array_valued_initial_guess():
+    expected = sc.linspace('xx', 1, 2, 20)
+    da = array2d(a=expected, b=1.3, noise_scale=0.001)
+
+    res, cov = curve_fit(['t'], func2d, da, p0={'a': sc.linspace('xx', 2, 3, 20)})
+    res['a'].data.variances = None
+    assert_allclose(res['a'].data, expected, rtol=sc.scalar(1e-2))
+
+    with pytest.raises(sc.DimensionError):
+        curve_fit(['t'], func2d, da, p0={'a': sc.linspace('yy', 2, 3, 20)})
+
+
+def test_array_valued_bounds():
+    expected = sc.linspace('xx', 1, 2, 20)
+    da = array2d(a=expected, b=1.3, noise_scale=0.001)
+
+    res, cov = curve_fit(
+        ['t'],
+        func2d,
+        da,
+        p0={'a': 3.1},
+        bounds={'a': (sc.linspace('xx', 2.1, 3.1, 20), None)},
+    )
+    res['a'].data.variances = None
+    assert_allclose(res['a'].data - sc.scalar(1.1), expected, rtol=sc.scalar(1e-2))
+
+    with pytest.raises(sc.DimensionError):
+        curve_fit(
+            ['t'],
+            func2d,
+            da,
+            p0={'a': 3},
+            bounds={'a': (sc.linspace('yy', 2, 3, 20), None)},
+        )
+
+
+@pytest.mark.parametrize(
+    ('bound', 'expected'),
+    [
+        ((None, 1), 1.0),
+        ((None, sc.scalar(1)), 1.0),
+        ((float('-inf'), 1), 1.0),
+        ((1, None), 1.2),
+        ((sc.scalar(1.0), None), 1.2),
+        ((sc.scalar(1.0), sc.scalar(float('inf'))), 1.2),
+    ],
+)
+def test_bound_one_sided_with_None(bound, expected):
+    da = array1d(a=1.2, b=1.3, noise_scale=0.001)
+
+    res, cov = curve_fit(
+        ['x'],
+        func,
+        da,
+        p0={'a': 1},
+        bounds={'a': bound},
+    )
+    res['a'].data.variances = None
+    assert_allclose(res['a'].data, sc.scalar(expected), rtol=sc.scalar(1e-2))
+
+
+@pytest.mark.parametrize(
+    'bound',
+    [
+        (-5, sc.scalar(1.0)),
+        (sc.scalar(1.0), 5),
+    ],
+)
+def test_bound_fails_with_mixed_types(bound):
+    da = array1d(a=1.2, b=1.3, noise_scale=0.001)
+    with pytest.raises(ValueError, match=r"Bounds cannot.*"):
+        curve_fit(
+            ['x'],
+            func,
+            da,
+            bounds={'a': bound},
+        )
