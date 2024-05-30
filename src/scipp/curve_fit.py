@@ -117,18 +117,14 @@ def _prepare_numpy_outputs(da, p0, map_over):
 
 def _make_defaults(f, coords, p0):
     spec = getfullargspec(f)
-    all_args = {*spec.args, *spec.kwonlyargs}
-    if not set(coords).issubset(all_args):
-        raise ValueError("Function must take the provided coords as arguments")
-    default_arguments = dict(
-        zip(spec.args[-len(spec.defaults) :], spec.defaults, strict=True)
-        if spec.defaults
-        else {},
-        **(spec.kwonlydefaults or {}),
+    non_default_args = (
+        spec.args[: -len(spec.defaults)] if spec.defaults is not None else spec.args
     )
+    args = {*non_default_args, *spec.kwonlyargs} - set(spec.kwonlydefaults or ())
+    if not set(coords).issubset(args):
+        raise ValueError("Function must take the provided coords as arguments")
     return {
-        **{a: scalar(1.0) for a in all_args - set(coords)},
-        **default_arguments,
+        **{a: scalar(1.0) for a in args - set(coords)},
         **{
             k: v if isinstance(v, Variable) else scalar(v)
             for k, v in (p0 or {}).items()

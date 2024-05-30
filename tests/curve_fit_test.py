@@ -663,3 +663,23 @@ def test_bound_fails_with_mixed_types(bound):
             da,
             bounds={'a': bound},
         )
+
+
+def test_partial():
+    da = array1d(a=1.2, b=1.3, noise_scale=0.01)
+    res, cov = curve_fit(['x'], partial(func, b=1.3), da)
+    assert 'a' in res
+    assert 'b' not in res
+    assert 'b' not in cov
+
+
+def test_ignores_default_arguments():
+    da = array1d(a=1.2, b=1.3, noise_scale=0.01)
+    res, cov = curve_fit(['x'], lambda x, a, b=1.3: func(x, a, b=b), da)
+    assert 'b' not in res
+    res, cov = curve_fit(['x'], lambda x, a, *, b=1.3: func(x, a, b=b), da)
+    assert 'b' not in res
+    res, cov = curve_fit(
+        ['x'], lambda x, a, *, b=1.3: func(x, a, b=b), da, p0={'b': sc.scalar(1.3)}
+    )
+    assert 'b' in res
