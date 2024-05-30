@@ -293,7 +293,7 @@ def curve_fit(
       parameter names to initial guesses.
     - The parameter bounds must also be provided as a dict, like ``p0``.
     - If the fit parameters are not dimensionless the initial guess must be
-       a scipp ``Variable`` with the correct unit.
+      a scipp ``Variable`` with the correct unit.
     - If the fit parameters are not dimensionless the bounds must be a variables
       with the correct unit.
     - The bounds and initial guesses may be scalars or arrays to allow the
