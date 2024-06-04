@@ -5,8 +5,9 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any, ClassVar
+from io import BytesIO, StringIO
+from os import PathLike
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 
@@ -14,6 +15,10 @@ from ..core.cpp_classes import Unit
 from ..logging import get_logger
 from ..typing import VariableLike
 
+if TYPE_CHECKING:
+    import h5py as h5
+else:
+    h5 = Any
 
 def _dtype_lut():
     from .._scipp.core import DType as d
@@ -458,17 +463,28 @@ class HDF5IO:
         return cls._handlers[group.attrs['scipp-type']].read(group, **kwargs)
 
 
-def save_hdf5(obj: VariableLike, filename: str | Path) -> None:
+def save_hdf5(
+    obj: VariableLike,
+    filename: str | PathLike[str] | StringIO | BytesIO | h5.Group,
+) -> None:
     """Write an object out to file in HDF5 format."""
     import h5py
+
+    if isinstance(filename, h5py.Group):
+        return HDF5IO.write(filename, obj)
 
     with h5py.File(filename, 'w') as f:
         HDF5IO.write(f, obj)
 
 
-def load_hdf5(filename: str | Path) -> VariableLike:
+def load_hdf5(
+    filename: str | PathLike[str] | StringIO | BytesIO | h5.Group,
+) -> VariableLike:
     """Load a Scipp-HDF5 file."""
     import h5py
+
+    if isinstance(filename, h5py.Group):
+        return HDF5IO.read(filename)
 
     with h5py.File(filename, 'r') as f:
         return HDF5IO.read(f)
