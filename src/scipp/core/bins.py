@@ -2,7 +2,7 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from collections.abc import Callable
-from typing import Literal
+from typing import Literal, TypedDict
 
 from .._scipp import core as _cpp
 from ..typing import Dims, MetaDataMap, VariableLike
@@ -122,6 +122,19 @@ def lookup(
         parts = [lowest] if coord.sizes[dim] < 2 else [lowest, midpoints(coord, dim)]
         func.coords[dim] = concat(parts, dim)
     return Lookup(_cpp.lookup_previous, func, dim, fill_value)
+
+
+class Constituents(TypedDict):
+    """A dict with bin constituents."""
+
+    data: Variable | DataArray
+    """Buffer with events."""
+    begin: Variable
+    """Begin indices for each bin."""
+    end: Variable
+    """Begin indices for each bin."""
+    dim: str
+    """Dimension in 'data' that the binning applies to."""
 
 
 class Bins:
@@ -281,7 +294,7 @@ class Bins:
         return self.constituents['data'].aligned
 
     @property
-    def constituents(self) -> dict[str, str | _cpp.Variable | _cpp.DataArray]:
+    def constituents(self) -> Constituents:
         """Constituents of binned data, as supported by :py:func:`sc.bins`."""
         return _call_cpp_func(_cpp.bins_constituents, self._data())
 
