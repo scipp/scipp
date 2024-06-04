@@ -220,6 +220,7 @@ del (
 )
 
 __all__ = [
+    '__version__',
     'BinEdgeError',
     'BinnedDataError',
     'Bins',

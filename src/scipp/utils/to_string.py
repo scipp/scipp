@@ -2,11 +2,12 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
+from typing import Any
 
 
-def value_to_string(val, precision=3, max_str_len=80):
+def value_to_string(val: Any, precision: int = 3, max_str_len: int = 80) -> str:
     """
-    Convert a number to a human readable string.
+    Convert a number to a human-readable string.
     """
     if (not isinstance(val, float)) or (val == 0):
         raw_text = str(val)

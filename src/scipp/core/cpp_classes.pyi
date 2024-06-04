@@ -5,19 +5,17 @@
 ############################################
 # ruff: noqa: F403
 
-from pathlib import Path
+from io import BytesIO, StringIO
+from os import PathLike
 from typing import (
     Any,
     Callable,
-    Dict,
     Iterable,
     Iterator,
-    List,
     Literal,
     Mapping,
     Optional,
     Sequence,
-    Tuple,
     Union,
     overload,
 )
@@ -27,6 +25,11 @@ from ..coords.graph import GraphDict
 from ..typing import Dims, VariableLike, VariableLikeType
 from ..units import default_unit
 from .bins import Bins
+
+try:
+    import h5py as h5
+except ModuleNotFoundError:
+    h5 = Any
 
 __all__ = [
     "BinEdgeError",
@@ -793,7 +796,7 @@ class DataArray:
     def plot(*args: Any, **kwargs: Any) -> None:
         ...
 
-    def rebin(self, arg_dict=None, deprecated=None, /, **kwargs):
+    def rebin(self, arg_dict=None, /, **kwargs):
         ...
 
     def rename(self, dims_dict: dict[str, str] | None=None, /, **names: str) -> DataArray:
@@ -805,7 +808,7 @@ class DataArray:
     def round(self, *, out: VariableLike | None=None) -> VariableLike:
         ...
 
-    def save_hdf5(self, filename: str | Path) -> None:
+    def save_hdf5(self, filename: str | PathLike[str] | StringIO | BytesIO | h5.Group) -> None:
         ...
 
     @property
@@ -1223,7 +1226,7 @@ class Dataset(Mapping[str, DataArray]):
     def pop(self, key: str, default: Any=_NoDefault) -> DataArray | None:
         ...
 
-    def rebin(self, arg_dict=None, deprecated=None, /, **kwargs):
+    def rebin(self, arg_dict=None, /, **kwargs):
         ...
 
     def rename(self, dims_dict: dict[str, str] | None=None, /, **names: str) -> Dataset:
@@ -1232,7 +1235,7 @@ class Dataset(Mapping[str, DataArray]):
     def rename_dims(self, dims_dict: dict[str, str] | None=None, /, **names: str) -> Dataset:
         ...
 
-    def save_hdf5(self, filename: str | Path) -> None:
+    def save_hdf5(self, filename: str | PathLike[str] | StringIO | BytesIO | h5.Group) -> None:
         ...
 
     @property
@@ -1334,10 +1337,6 @@ class GroupByDataArray:
     def any(self, dim: str) -> DataArray:
         ...
 
-    @property
-    def bins(self) -> GroupbyBins:
-        ...
-
     def concat(self, dim: str) -> DataArray:
         ...
 
@@ -1368,10 +1367,6 @@ class GroupByDataset:
         ...
 
     def any(self, dim: str) -> Dataset:
-        ...
-
-    @property
-    def bins(self) -> GroupbyBins:
         ...
 
     def concat(self, dim: str) -> Dataset:
@@ -2021,7 +2016,7 @@ class Variable:
     def round(self, *, out: VariableLike | None=None) -> VariableLike:
         ...
 
-    def save_hdf5(self, filename: str | Path) -> None:
+    def save_hdf5(self, filename: str | PathLike[str] | StringIO | BytesIO | h5.Group) -> None:
         ...
 
     @property

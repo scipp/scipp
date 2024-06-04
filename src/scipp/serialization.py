@@ -11,12 +11,12 @@ def serialize(var: Variable | DataArray | Dataset) -> tuple[dict, list[bytes]]:
 
     import h5py
 
-    from .io.hdf5 import HDF5IO
+    from .io.hdf5 import _HDF5IO
 
     header = {}
     buf = BytesIO()
     with h5py.File(buf, "w") as f:
-        HDF5IO.write(f, var)
+        _HDF5IO.write(f, var)
     frames = [buf.getvalue()]
     return header, frames
 
@@ -27,9 +27,9 @@ def deserialize(header: dict, frames: list[bytes]) -> Variable | DataArray | Dat
 
     import h5py
 
-    from .io.hdf5 import HDF5IO
+    from .io.hdf5 import _HDF5IO
 
-    return HDF5IO.read(h5py.File(BytesIO(frames[0]), "r"))
+    return _HDF5IO.read(h5py.File(BytesIO(frames[0]), "r"))
 
 
 try:

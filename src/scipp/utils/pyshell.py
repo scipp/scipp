@@ -12,9 +12,12 @@ def running_in_jupyter() -> bool:
     """
     try:
         import ipykernel.zmqshell
-        from IPython import get_ipython
+        from IPython import get_ipython  # type: ignore[attr-defined]
     except ImportError:
         # Cannot be Jupyter if IPython is not installed.
         return False
 
-    return isinstance(get_ipython(), ipykernel.zmqshell.ZMQInteractiveShell)
+    return isinstance(
+        get_ipython(),  # type: ignore[no-untyped-call]
+        ipykernel.zmqshell.ZMQInteractiveShell,
+    )

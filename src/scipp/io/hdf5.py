@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from io import BytesIO, StringIO
 from os import PathLike
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol
@@ -255,9 +256,9 @@ def _data_writer_lut() -> dict[str, _DataWriter]:
     return handler
 
 
-def _serialize_unit(unit):
+def _serialize_unit(unit: Unit) -> npt.NDArray[Any]:
     unit_dict = unit.to_dict()
-    dtype = [('__version__', int), ('multiplier', float)]
+    dtype: list[tuple[str, Any]] = [('__version__', int), ('multiplier', float)]
     vals = [unit_dict['__version__'], unit_dict['multiplier']]
     if 'powers' in unit_dict:
         dtype.append(('powers', [(name, int) for name in unit_dict['powers']]))
@@ -265,7 +266,7 @@ def _serialize_unit(unit):
     return np.array(tuple(vals), dtype=dtype)
 
 
-def _read_unit_attr(ds):
+def _read_unit_attr(ds: h5.Dataset) -> Unit:
     u = ds.attrs['unit']
     if isinstance(u, str):
         return Unit(u)  # legacy encoding as a string
@@ -300,7 +301,7 @@ class _VariableIO:
             get_logger().warning(
                 'Writing with dtype=%s not implemented, skipping.', var.dtype
             )
-            return
+            return None
         _write_scipp_header(group, 'Variable')
         dset = cls._write_data(group, var)
         dset.attrs['dims'] = [str(dim) for dim in var.dims]
@@ -335,7 +336,11 @@ class _VariableIO:
         return var
 
 
-def _write_mapping(parent, mapping, override=None):
+def _write_mapping(
+    parent: h5.Group,
+    mapping: Mapping[str, VariableLike],
+    override: Mapping[str, h5.Group] | None = None,
+) -> None:
     if override is None:
         override = {}
     for i, name in enumerate(mapping):
@@ -352,7 +357,9 @@ def _write_mapping(parent, mapping, override=None):
                 g.attrs['name'] = str(name)
 
 
-def _read_mapping(group, override=None):
+def _read_mapping(
+    group: h5.Group, override: Mapping[str, h5.Group] | None = None
+) -> VariableLike:
     if override is None:
         override = {}
     return {
