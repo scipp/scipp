@@ -8,7 +8,7 @@ from .._scipp import core as _cpp
 from ..typing import Dims, MetaDataMap, VariableLike
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from .bin_remapping import concat_bins
-from .cpp_classes import Variable
+from .cpp_classes import DataArray, DType, Unit, Variable
 from .data_group import DataGroup
 from .deprecation import _warn_attr_removal
 from .domains import merge_equal_adjacent
@@ -30,7 +30,7 @@ class Lookup:
     def __init__(
         self,
         op: Callable,
-        func: _cpp.DataArray,
+        func: DataArray,
         dim: str,
         fill_value: Variable | None = None,
     ):
@@ -38,7 +38,7 @@ class Lookup:
             not func.masks
             and func.ndim == 1
             and len(func) > 0
-            and func.dtype in [_cpp.DType.bool, _cpp.DType.int32, _cpp.DType.int64]
+            and func.dtype in [DType.bool, DType.int32, DType.int64]
         ):
             # Significant speedup if `func` is large but mostly constant.
             if op == _cpp.buckets.map:
@@ -65,11 +65,11 @@ class Lookup:
 
 
 def lookup(
-    func: _cpp.DataArray,
+    func: DataArray,
     dim: str | None = None,
     *,
     mode: Literal['previous', 'nearest'] | None = None,
-    fill_value: _cpp.Variable | None = None,
+    fill_value: Variable | None = None,
 ) -> Lookup:
     """Create a "lookup table" from a histogram (data array with bin-edge coord).
 
@@ -107,7 +107,7 @@ def lookup(
     """
     if dim is None:
         dim = func.dim
-    func = _cpp.DataArray(func.data, coords={dim: func.coords[dim]}, masks=func.masks)
+    func = DataArray(func.data, coords={dim: func.coords[dim]}, masks=func.masks)
     if func.coords.is_edges(dim):
         if mode is not None:
             raise ValueError("Input is a histogram, 'mode' must not be set.")
@@ -164,7 +164,7 @@ class Bins:
         _cpp.buckets.scale(self._obj, _cpp.reciprocal(lut.func), lut.dim)
         return self
 
-    def __getitem__(self, key: tuple[str, _cpp.Variable | slice]):
+    def __getitem__(self, key: tuple[str, Variable | slice]):
         """
         Extract events from bins based on labels or label ranges and return a copy.
 
@@ -173,7 +173,7 @@ class Bins:
         indexing this returns a copy, as a subset of events is extracted.
         """
         dim, index = key
-        if isinstance(index, _cpp.Variable):
+        if isinstance(index, Variable):
             if index.ndim == 0:
                 return self._obj.group(index.flatten(to=dim)).squeeze(dim)
         elif isinstance(index, slice):
@@ -191,9 +191,7 @@ class Bins:
             if stop is None:
                 stop = _upper_bound(self._obj.bins.coords[dim].max())
 
-            if not (
-                isinstance(start, _cpp.Variable) and isinstance(stop, _cpp.Variable)
-            ):
+            if not (isinstance(start, Variable) and isinstance(stop, Variable)):
                 raise ValueError(
                     "Bins can only by sliced using label-based indexing. Expected "
                     f"start and stop to be scipp.Variable, got '{start}' and '{stop}'."
@@ -253,27 +251,27 @@ class Bins:
         return _cpp._bins_view(self._data()).masks
 
     @property
-    def data(self) -> _cpp.Variable:
+    def data(self) -> Variable:
         """Data of the bins"""
         return _cpp._bins_view(self._data()).data
 
     @data.setter
-    def data(self, data: _cpp.Variable):
+    def data(self, data: Variable):
         """Set data of the bins"""
         _cpp._bins_view(self._data()).data = data
 
     @property
-    def unit(self) -> _cpp.Unit:
+    def unit(self) -> Unit:
         """Unit of the bin elements"""
         return self.constituents['data'].unit
 
     @unit.setter
-    def unit(self, unit: _cpp.Unit | str):
+    def unit(self, unit: Unit | str):
         """Set unit of the bin elements"""
         self.constituents['data'].unit = unit
 
     @property
-    def dtype(self) -> _cpp.DType:
+    def dtype(self) -> DType:
         """Data type of the bin elements."""
         return self.constituents['data'].dtype
 
@@ -287,7 +285,7 @@ class Bins:
         """Constituents of binned data, as supported by :py:func:`sc.bins`."""
         return _call_cpp_func(_cpp.bins_constituents, self._data())
 
-    def sum(self) -> _cpp.Variable | _cpp.DataArray:
+    def sum(self) -> Variable | DataArray:
         """Sum of events in each bin.
 
         Returns
@@ -302,7 +300,7 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bins_sum, self._obj)
 
-    def nansum(self) -> _cpp.Variable | _cpp.DataArray:
+    def nansum(self) -> Variable | DataArray:
         """Sum of events in each bin ignoring NaN's.
 
         Returns
@@ -317,7 +315,7 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bins_nansum, self._obj)
 
-    def mean(self) -> _cpp.Variable | _cpp.DataArray:
+    def mean(self) -> Variable | DataArray:
         """Arithmetic mean of events in each bin.
 
         Returns
@@ -332,7 +330,7 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bins_mean, self._obj)
 
-    def nanmean(self) -> _cpp.Variable | _cpp.DataArray:
+    def nanmean(self) -> Variable | DataArray:
         """Arithmetic mean of events in each bin ignoring NaN's.
 
         Returns
@@ -347,7 +345,7 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bins_nanmean, self._obj)
 
-    def max(self) -> _cpp.Variable | _cpp.DataArray:
+    def max(self) -> Variable | DataArray:
         """Maximum of events in each bin.
 
         Returns
@@ -362,7 +360,7 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bins_max, self._obj)
 
-    def nanmax(self) -> _cpp.Variable | _cpp.DataArray:
+    def nanmax(self) -> Variable | DataArray:
         """Maximum of events in each bin ignoring NaN's.
 
         Returns
@@ -377,7 +375,7 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bins_nanmax, self._obj)
 
-    def min(self) -> _cpp.Variable | _cpp.DataArray:
+    def min(self) -> Variable | DataArray:
         """Minimum of events in each bin.
 
         Returns
@@ -392,7 +390,7 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bins_min, self._obj)
 
-    def nanmin(self) -> _cpp.Variable | _cpp.DataArray:
+    def nanmin(self) -> Variable | DataArray:
         """Minimum of events in each bin ignoring NaN's.
 
         Returns
@@ -407,7 +405,7 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bins_nanmin, self._obj)
 
-    def all(self) -> _cpp.Variable | _cpp.DataArray:
+    def all(self) -> Variable | DataArray:
         """Logical AND of events in each bin ignoring NaN's.
 
         Returns
@@ -422,7 +420,7 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bins_all, self._obj)
 
-    def any(self) -> _cpp.Variable | _cpp.DataArray:
+    def any(self) -> Variable | DataArray:
         """Logical OR of events in each bin ignoring NaN's.
 
         Returns
@@ -437,7 +435,7 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bins_any, self._obj)
 
-    def size(self) -> _cpp.Variable | _cpp.DataArray:
+    def size(self) -> Variable | DataArray:
         """Number of events or elements in a bin.
 
         Returns
@@ -447,7 +445,7 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bin_sizes, self._obj)
 
-    def concat(self, dim: Dims = None) -> _cpp.Variable | _cpp.DataArray:
+    def concat(self, dim: Dims = None) -> Variable | DataArray:
         """Concatenate bins element-wise by concatenating bin contents along
         their internal bin dimension.
 
@@ -468,10 +466,10 @@ class Bins:
 
     def concatenate(
         self,
-        other: _cpp.Variable | _cpp.DataArray,
+        other: Variable | DataArray,
         *,
-        out: _cpp.DataArray | None = None,
-    ) -> _cpp.Variable | _cpp.DataArray:
+        out: DataArray | None = None,
+    ) -> Variable | DataArray:
         """Concatenate bins element-wise by concatenating bin contents along
         their internal bin dimension.
 
@@ -525,9 +523,9 @@ def bins(
     *,
     data: VariableLike,
     dim: str,
-    begin: _cpp.Variable | None = None,
-    end: _cpp.Variable | None = None,
-) -> _cpp.Variable:
+    begin: Variable | None = None,
+    end: Variable | None = None,
+) -> Variable:
     """Create a binned variable from bin indices.
 
     The elements of the returned variable are "bins", defined as views into
@@ -572,7 +570,7 @@ def bins(
     return _call_cpp_func(_cpp.bins, begin, end, dim, data)
 
 
-def bins_like(x: VariableLike, fill_value: _cpp.Variable) -> _cpp.Variable:
+def bins_like(x: VariableLike, fill_value: Variable) -> Variable:
     """Create a binned variable by "broadcasting" fill values to bins of given sizes.
 
     The dimensions and shape of ``fill_value`` must be such that they can be broadcast
@@ -594,6 +592,6 @@ def bins_like(x: VariableLike, fill_value: _cpp.Variable) -> _cpp.Variable:
     if isinstance(x, DataGroup) or isinstance(fill_value, DataGroup):
         raise ValueError("`scipp.bins_like` does not support DataGroup arguments.")
     var = x
-    if not isinstance(x, _cpp.Variable):
+    if not isinstance(x, Variable):
         var = var.data
     return _call_cpp_func(_cpp.bins_like, var, fill_value)
