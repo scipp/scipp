@@ -2,34 +2,35 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 
-from .core import DataArray, Dataset, Variable
+from typing import Any
+
+from .core import DataArray, DataGroup, Dataset, Variable
 
 
-def serialize(var: Variable | DataArray | Dataset) -> tuple[dict, list[bytes]]:
+def serialize(
+    var: Variable | DataArray | Dataset | DataGroup,
+) -> tuple[dict[str, Any], list[bytes]]:
     """Serialize Scipp object."""
     from io import BytesIO
 
-    import h5py
+    from .io.hdf5 import save_hdf5
 
-    from .io.hdf5 import _HDF5IO
-
-    header = {}
+    header: dict[str, Any] = {}
     buf = BytesIO()
-    with h5py.File(buf, "w") as f:
-        _HDF5IO.write(f, var)
+    save_hdf5(var, buf)
     frames = [buf.getvalue()]
     return header, frames
 
 
-def deserialize(header: dict, frames: list[bytes]) -> Variable | DataArray | Dataset:
+def deserialize(
+    header: dict[str, Any], frames: list[bytes]
+) -> Variable | DataArray | Dataset | DataGroup:
     """Deserialize Scipp object."""
     from io import BytesIO
 
-    import h5py
+    from .io.hdf5 import load_hdf5
 
-    from .io.hdf5 import _HDF5IO
-
-    return _HDF5IO.read(h5py.File(BytesIO(frames[0]), "r"))
+    return load_hdf5(BytesIO(frames[0]))
 
 
 try:
