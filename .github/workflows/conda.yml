@@ -49,5 +49,5 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: conda-package-${{ inputs.os }}-py${{ inputs.python-version }}
+          name: conda-package-${{ inputs.target }}-py${{ inputs.python-version }}
           path: conda/package/*/scipp*.tar.bz2

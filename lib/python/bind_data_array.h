@@ -4,6 +4,8 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <pybind11/typing.h>
+
 #include "scipp/dataset/dataset.h"
 #include "scipp/variable/variable_factory.h"
 
@@ -125,7 +127,7 @@ void bind_pop(pybind11::class_<T, Ignored...> &view) {
   view.def(
       "_pop",
       [](T &self, const std::string &key) {
-        return py::cast(self.extract(typename T::key_type{key}));
+        return self.extract(typename T::key_type{key});
       },
       py::arg("k"));
 }
@@ -159,10 +161,16 @@ void bind_dict_popitem(pybind11::class_<T, Ignored...> &view) {
     for (const auto &k : keys_view(self))
       key = k;
     const auto item = py::cast(self.extract(key));
+
+    using Pair =
+        py::typing::Tuple<py::str, std::decay_t<decltype(self.extract(key))>>;
+    Pair result(2);
     if constexpr (std::is_same_v<typename T::key_type, Dim>)
-      return std::tuple{key.name(), item};
+      result[0] = key.name();
     else
-      return std::tuple{key, item};
+      result[0] = key;
+    result[1] = item;
+    return result;
   });
 }
 

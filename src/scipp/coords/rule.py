@@ -10,9 +10,10 @@ from __future__ import annotations
 
 import inspect
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Iterable, Mapping
 from copy import copy
 from functools import partial
-from typing import Any, Callable, Dict, Iterable, List, Mapping, Tuple
+from typing import Any
 
 from ..core import Variable
 from .coord import Coord
@@ -34,16 +35,16 @@ except ImportError:
 
 
 class Rule(ABC):
-    def __init__(self, out_names: Tuple[str, ...]):
+    def __init__(self, out_names: tuple[str, ...]):
         self.out_names = out_names
 
     @abstractmethod
-    def __call__(self, coords: _CoordProvider) -> Dict[str, Coord]:
+    def __call__(self, coords: _CoordProvider) -> dict[str, Coord]:
         """Evaluate the rule."""
 
     @property
     @abstractmethod
-    def dependencies(self) -> Tuple[str]:
+    def dependencies(self) -> tuple[str]:
         """Return names of coords that this rule needs as inputs."""
 
     def _format_out_names(self):
@@ -59,7 +60,7 @@ class FetchRule(Rule):
 
     def __init__(
         self,
-        out_names: Tuple[str, ...],
+        out_names: tuple[str, ...],
         dense_sources: Mapping[str, Variable],
         event_sources: Mapping[str, Variable],
     ):
@@ -67,7 +68,7 @@ class FetchRule(Rule):
         self._dense_sources = dense_sources
         self._event_sources = event_sources
 
-    def __call__(self, coords: _CoordProvider) -> Dict[str, Coord]:
+    def __call__(self, coords: _CoordProvider) -> dict[str, Coord]:
         return {
             out_name: Coord(
                 dense=self._dense_sources.get(out_name, None),
@@ -78,7 +79,7 @@ class FetchRule(Rule):
         }
 
     @property
-    def dependencies(self) -> Tuple[str, ...]:
+    def dependencies(self) -> tuple[str, ...]:
         return ()
 
     def __str__(self):
@@ -90,11 +91,11 @@ class RenameRule(Rule):
     Return the input coordinate and give it a new name.
     """
 
-    def __init__(self, out_names: Tuple[str, ...], in_name: str):
+    def __init__(self, out_names: tuple[str, ...], in_name: str):
         super().__init__(out_names)
         self._in_name = in_name
 
-    def __call__(self, coords: _CoordProvider) -> Dict[str, Coord]:
+    def __call__(self, coords: _CoordProvider) -> dict[str, Coord]:
         # Shallow copy the _Coord object to allow the alias to have
         # a different alignment and usage count than the original.
         return {
@@ -102,7 +103,7 @@ class RenameRule(Rule):
         }
 
     @property
-    def dependencies(self) -> Tuple[str, ...]:
+    def dependencies(self) -> tuple[str, ...]:
         return (self._in_name,)
 
     def __str__(self):
@@ -114,12 +115,12 @@ class ComputeRule(Rule):
     Compute new coordinates using the provided callable.
     """
 
-    def __init__(self, out_names: Tuple[str, ...], func: Callable):
+    def __init__(self, out_names: tuple[str, ...], func: Callable):
         super().__init__(out_names)
         self._func = func
         self._arg_names = _arg_names(func)
 
-    def __call__(self, coords: _CoordProvider) -> Dict[str, Coord]:
+    def __call__(self, coords: _CoordProvider) -> dict[str, Coord]:
         inputs = {
             name: coords.consume(coord) for coord, name in self._arg_names.items()
         }
@@ -161,7 +162,7 @@ class ComputeRule(Rule):
         }
         return outputs
 
-    def _without_unrequested(self, d: Dict[str, Any]) -> Dict[str, Any]:
+    def _without_unrequested(self, d: dict[str, Any]) -> dict[str, Any]:
         missing_outputs = [key for key in self.out_names if key not in d]
         if missing_outputs:
             raise TypeError(
@@ -171,7 +172,7 @@ class ComputeRule(Rule):
             )
         return {key: d[key] for key in self.out_names}
 
-    def _to_dict(self, output) -> Dict[str, Variable]:
+    def _to_dict(self, output) -> dict[str, Variable]:
         if not isinstance(output, dict):
             if len(self.out_names) != 1:
                 raise TypeError(
@@ -182,7 +183,7 @@ class ComputeRule(Rule):
         return output
 
     @property
-    def dependencies(self) -> Tuple[str, ...]:
+    def dependencies(self) -> tuple[str, ...]:
         return tuple(self._arg_names)
 
     @property
@@ -199,16 +200,16 @@ class ComputeRule(Rule):
         )
 
 
-def rules_of_type(rules: List[Rule], rule_type: type) -> Iterable[Rule]:
+def rules_of_type(rules: list[Rule], rule_type: type) -> Iterable[Rule]:
     yield from filter(lambda rule: isinstance(rule, rule_type), rules)
 
 
-def rule_output_names(rules: List[Rule], rule_type: type) -> Iterable[str]:
+def rule_output_names(rules: list[Rule], rule_type: type) -> Iterable[str]:
     for rule in rules_of_type(rules, rule_type):
         yield from rule.out_names
 
 
-def _arg_names(func) -> Dict[str, str]:
+def _arg_names(func) -> dict[str, str]:
     spec = inspect.getfullargspec(func)
     if spec.varargs is not None or spec.varkw is not None:
         raise ValueError(
@@ -223,4 +224,4 @@ def _arg_names(func) -> Dict[str, str]:
         args = spec.args[1:]
     names = tuple(args + spec.kwonlyargs)
     coords = getattr(func, '__transform_coords_input_keys__', names)
-    return dict(zip(coords, names))
+    return dict(zip(coords, names, strict=True))

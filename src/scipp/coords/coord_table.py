@@ -3,7 +3,7 @@
 # @author Jan-Lukas Wynen
 
 import dataclasses
-from typing import Dict, Iterable, List, Set, Tuple
+from collections.abc import Iterable
 
 from .coord import Coord
 from .options import Options
@@ -18,7 +18,7 @@ class CoordTable:
     When that number drops to 0, the coord is removed.
     """
 
-    def __init__(self, rules: List[Rule], targets: Set[str], options: Options):
+    def __init__(self, rules: list[Rule], targets: set[str], options: Options):
         self._coords = {}
         self._total_usages = _apply_keep_options(
             _count_usages(rules), rules, targets, options
@@ -43,11 +43,11 @@ class CoordTable:
     def total_usages(self, name: str) -> int:
         return self._total_usages.get(name, -1)
 
-    def items(self) -> Iterable[Tuple[str, Coord]]:
+    def items(self) -> Iterable[tuple[str, Coord]]:
         yield from self._coords.items()
 
 
-def _count_usages(rules: List[Rule]) -> Dict[str, int]:
+def _count_usages(rules: list[Rule]) -> dict[str, int]:
     usages = {}
     for rule in rules:
         for name in rule.dependencies:
@@ -57,8 +57,8 @@ def _count_usages(rules: List[Rule]) -> Dict[str, int]:
 
 
 def _apply_keep_options(
-    usages: Dict[str, int], rules: List[Rule], targets: Set[str], options: Options
-) -> Dict[str, int]:
+    usages: dict[str, int], rules: list[Rule], targets: set[str], options: Options
+) -> dict[str, int]:
     def out_names(rule_type):
         yield from filter(
             lambda name: name not in targets, rule_output_names(rules, rule_type)

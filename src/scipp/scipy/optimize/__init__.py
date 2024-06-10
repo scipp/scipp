@@ -7,32 +7,54 @@ This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.optimize`.
 """
 
+from collections.abc import Callable, Iterable
 from inspect import getfullargspec
 from numbers import Real
-from typing import Callable, Dict, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 
-from ...core import BinEdgeError, DataArray, Variable, scalar, stddevs
+from ...core import (
+    BinEdgeError,
+    DataArray,
+    DefaultUnit,
+    Unit,
+    Variable,
+    scalar,
+    stddevs,
+)
+from ...typing import VariableLike
 from ...units import default_unit, dimensionless
 from ..interpolate import _drop_masked
 
 
-def _as_scalar(obj, unit):
+def _as_scalar(obj: Any, unit: Unit | DefaultUnit | None) -> Any:
     if unit == default_unit:
         return obj
-    return scalar(value=obj, unit=unit)
+    return scalar(
+        value=obj,
+        unit=unit,  # type:ignore[arg-type] # unit cannot be DefaultUnit here
+    )
 
 
-def _wrap_func(f, p_names, p_units):
-    def func(x, *args):
-        p = {k: _as_scalar(v, u) for k, v, u in zip(p_names, args, p_units)}
-        return f(x, **p).values
+def _wrap_func(
+    f: Callable[..., Variable | DataArray],
+    p_names: Iterable[str],
+    p_units: Iterable[Unit | DefaultUnit | None],
+) -> Callable[..., npt.NDArray[Any]]:
+    def func(x: VariableLike, *args: Any) -> npt.NDArray[Any]:
+        p = {
+            k: _as_scalar(v, u) for k, v, u in zip(p_names, args, p_units, strict=True)
+        }
+        return f(x, **p).values  # type: ignore[no-any-return]
 
     return func
 
 
-def _get_sigma(da):
+def _get_sigma(
+    da: Variable | DataArray,
+) -> npt.NDArray[np.float64 | np.float32] | None:
     if da.variances is None:
         return None
 
@@ -43,11 +65,15 @@ def _get_sigma(da):
             'Mask the offending elements, remove them, or assign a meaningful '
             'variance if possible before calling curve_fit.'
         )
-    return sigma
+    return sigma  # type: ignore[no-any-return]
 
 
-def _covariance_with_units(p_names, pcov_values, units):
-    pcov = {}
+def _covariance_with_units(
+    p_names: list[str],
+    pcov_values: npt.NDArray[np.float64 | np.float32],
+    units: list[Unit | DefaultUnit],
+) -> dict[str, dict[str, Variable | Real]]:
+    pcov: dict[str, dict[str, Variable | Real]] = {}
     for i, row in enumerate(pcov_values):
         pcov[p_names[i]] = {}
         for j, elem in enumerate(row):
@@ -57,23 +83,31 @@ def _covariance_with_units(p_names, pcov_values, units):
             if u == default_unit:
                 u = uj
             elif uj != default_unit:
-                u = ui * uj
+                u = ui * uj  # type: ignore[operator]  # neither operand is DefaultUnit
             pcov[p_names[i]][p_names[j]] = _as_scalar(elem, u)
     return pcov
 
 
-def _make_defaults(f, p0):
+def _make_defaults(
+    f: Callable[..., Any], p0: dict[str, Variable | float] | None
+) -> dict[str, Any]:
     spec = getfullargspec(f)
     if len(spec.args) != 1 or spec.varargs is not None:
         raise ValueError("Fit function must take exactly one positional argument")
     defaults = {} if spec.kwonlydefaults is None else spec.kwonlydefaults
-    kwargs = {arg: 1.0 for arg in spec.kwonlyargs if arg not in defaults}
+    kwargs: dict[str, Any] = {
+        arg: 1.0 for arg in spec.kwonlyargs if arg not in defaults
+    }
     if p0 is not None:
         kwargs.update(p0)
     return kwargs
 
 
-def _get_specific_bounds(bounds, name, unit) -> Tuple[float, float]:
+def _get_specific_bounds(
+    bounds: dict[str, tuple[Variable, Variable] | tuple[float, float]],
+    name: str,
+    unit: Unit | None,
+) -> tuple[float, float]:
     if name not in bounds:
         return -np.inf, np.inf
     b = bounds[name]
@@ -84,15 +118,19 @@ def _get_specific_bounds(bounds, name, unit) -> Tuple[float, float]:
         )
     if isinstance(b[0], Variable):
         return (
-            b[0].to(unit=unit, dtype=float).value,
-            b[1].to(unit=unit, dtype=float).value,
+            b[0].to(unit=unit, dtype=float).value,  # type: ignore[attr-defined]
+            b[1].to(unit=unit, dtype=float).value,  # type: ignore[attr-defined]
         )
     return b
 
 
 def _parse_bounds(
-    bounds, params
-) -> Union[Tuple[float, float], Tuple[np.ndarray, np.ndarray]]:
+    bounds: dict[str, tuple[Variable, Variable] | tuple[float, float]] | None,
+    params: dict[str, Any],
+) -> (
+    tuple[float, float]
+    | tuple[npt.NDArray[np.float64 | np.float32], npt.NDArray[np.float64 | np.float32]]
+):
     if bounds is None:
         return -np.inf, np.inf
 
@@ -107,17 +145,13 @@ def _parse_bounds(
 
 
 def curve_fit(
-    f: Callable,
+    f: Callable[..., Variable | DataArray],
     da: DataArray,
     *,
-    p0: Optional[Dict[str, Union[Variable, Real]]] = None,
-    bounds: Optional[
-        Dict[str, Union[Tuple[Variable, Variable], Tuple[Real, Real]]]
-    ] = None,
-    **kwargs,
-) -> Tuple[
-    Dict[str, Union[Variable, Real]], Dict[str, Dict[str, Union[Variable, Real]]]
-]:
+    p0: dict[str, Variable | float] | None = None,
+    bounds: dict[str, tuple[Variable, Variable] | tuple[float, float]] | None = None,
+    **kwargs: Any,
+) -> tuple[dict[str, Variable | float], dict[str, dict[str, Variable | float]]]:
     """Use non-linear least squares to fit a function, f, to data.
 
     This is a wrapper around :py:func:`scipy.optimize.curve_fit`. See there for a
@@ -228,19 +262,21 @@ def curve_fit(
     p_units = [
         p.unit if isinstance(p, Variable) else default_unit for p in params.values()
     ]
-    p0 = [p.value if isinstance(p, Variable) else p for p in params.values()]
+    p0_values = [p.value if isinstance(p, Variable) else p for p in params.values()]
     popt, pcov = opt.curve_fit(
         f=_wrap_func(f, params.keys(), p_units),
         xdata=da.coords[da.dim],
         ydata=da.values,
         sigma=_get_sigma(da),
-        p0=p0,
+        p0=p0_values,
         bounds=_parse_bounds(bounds, params),
         **kwargs,
     )
     popt = {
         name: scalar(value=val, variance=var, unit=u)
-        for name, val, var, u in zip(params.keys(), popt, np.diag(pcov), p_units)
+        for name, val, var, u in zip(
+            params.keys(), popt, np.diag(pcov), p_units, strict=True
+        )
     }
     pcov = _covariance_with_units(list(params.keys()), pcov, p_units)
     return popt, pcov

@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 from numbers import Real
-from typing import Optional, Union
 
 from .._scipp import core as _cpp
 from ..typing import VariableLike
@@ -13,8 +12,8 @@ from .variable import scalar
 
 
 def abs(
-    x: Union[VariableLike, _cpp.Unit], *, out: Optional[_cpp.Variable] = None
-) -> Union[VariableLike, _cpp.Unit]:
+    x: VariableLike | _cpp.Unit, *, out: _cpp.Variable | None = None
+) -> VariableLike | _cpp.Unit:
     """Element-wise absolute value.
 
     Parameters
@@ -154,8 +153,8 @@ def norm(x: VariableLike) -> VariableLike:
 
 
 def reciprocal(
-    x: Union[VariableLike, _cpp.Unit], *, out: Optional[_cpp.Variable] = None
-) -> Union[VariableLike, _cpp.Unit]:
+    x: VariableLike | _cpp.Unit, *, out: _cpp.Variable | None = None
+) -> VariableLike | _cpp.Unit:
     """Element-wise reciprocal.
 
     Parameters
@@ -179,8 +178,8 @@ def reciprocal(
 
 
 def pow(
-    base: Union[VariableLike, _cpp.Unit], exponent: Union[VariableLike, Real]
-) -> Union[VariableLike, _cpp.Unit]:
+    base: VariableLike | _cpp.Unit, exponent: VariableLike | Real
+) -> VariableLike | _cpp.Unit:
     """Element-wise power.
 
     If the base has a unit, the exponent must be scalar in order to get
@@ -209,8 +208,8 @@ def pow(
 
 
 def sqrt(
-    x: Union[VariableLike, _cpp.Unit], *, out: Optional[_cpp.Variable] = None
-) -> Union[VariableLike, _cpp.Unit]:
+    x: VariableLike | _cpp.Unit, *, out: _cpp.Variable | None = None
+) -> VariableLike | _cpp.Unit:
     """Element-wise square-root.
 
     Parameters
@@ -233,7 +232,7 @@ def sqrt(
     return _call_cpp_func(_cpp.sqrt, x, out=out)
 
 
-def exp(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
+def exp(x: VariableLike, *, out: VariableLike | None = None) -> VariableLike:
     """Element-wise exponential.
 
     Parameters
@@ -251,7 +250,7 @@ def exp(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
     return _call_cpp_func(_cpp.exp, x, out=out)
 
 
-def log(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
+def log(x: VariableLike, *, out: VariableLike | None = None) -> VariableLike:
     """Element-wise natural logarithm.
 
     Parameters
@@ -269,7 +268,7 @@ def log(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
     return _call_cpp_func(_cpp.log, x, out=out)
 
 
-def log10(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
+def log10(x: VariableLike, *, out: VariableLike | None = None) -> VariableLike:
     """Element-wise base 10 logarithm.
 
     Parameters
@@ -287,7 +286,7 @@ def log10(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLik
     return _call_cpp_func(_cpp.log10, x, out=out)
 
 
-def round(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
+def round(x: VariableLike, *, out: VariableLike | None = None) -> VariableLike:
     """
     Round to the nearest integer of all values passed in x.
 
@@ -310,7 +309,7 @@ def round(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLik
     return _call_cpp_func(_cpp.rint, x, out=out)
 
 
-def floor(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
+def floor(x: VariableLike, *, out: VariableLike | None = None) -> VariableLike:
     """
     Round down to the nearest integer of all values passed in x.
 
@@ -329,7 +328,7 @@ def floor(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLik
     return _call_cpp_func(_cpp.floor, x, out=out)
 
 
-def ceil(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
+def ceil(x: VariableLike, *, out: VariableLike | None = None) -> VariableLike:
     """
     Round up to the nearest integer of all values passed in x.
 
@@ -372,7 +371,7 @@ def erfc(x: VariableLike) -> VariableLike:
     return _cpp.erfc(x)
 
 
-def midpoints(x: _cpp.Variable, dim: Optional[str] = None) -> _cpp.Variable:
+def midpoints(x: _cpp.Variable, dim: str | None = None) -> _cpp.Variable:
     """
     Computes the points in the middle of adjacent elements of x.
 

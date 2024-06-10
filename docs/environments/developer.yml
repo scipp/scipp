@@ -10,7 +10,6 @@ dependencies:
   - cmake>=3.21
   - conan==1.59.0
   - conda-build
-  - graphlib-backport # for python < 3.9
   - h5py
   - hypothesis
   - ipympl
@@ -26,7 +25,7 @@ dependencies:
   - pooch
   - pre-commit
   - pytest
-  - python=3.8
+  - python=3.10
   - python-graphviz
   - pythreejs
   - pyyaml

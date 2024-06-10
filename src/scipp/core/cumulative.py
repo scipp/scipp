@@ -2,7 +2,7 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 
-from typing import Literal, Optional
+from typing import Literal
 
 from .._scipp import core as _cpp
 from ..typing import VariableLikeType
@@ -12,7 +12,7 @@ from .concepts import transform_data
 
 def cumsum(
     a: VariableLikeType,
-    dim: Optional[str] = None,
+    dim: str | None = None,
     mode: Literal['exclusive', 'inclusive'] = 'inclusive',
 ) -> VariableLikeType:
     """Return the cumulative sum along the specified dimension.

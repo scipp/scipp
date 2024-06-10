@@ -1,12 +1,12 @@
 """Transform an AST to fix type annotations."""
 
 import ast
-from typing import Optional, Union
+import inspect
 
 from .config import CPP_CORE_MODULE_NAME
 
 
-def unqualified_cpp_class(node: Union[ast.Attribute, ast.Name]) -> Optional[str]:
+def unqualified_cpp_class(node: ast.Attribute | ast.Name) -> str | None:
     """Return the unqualified name of a C++ class in _scipp.core.
     Returns None if the class is not in _scipp.core.
     ``node`` should be a type annotation.
@@ -34,9 +34,15 @@ def replace_function(base: ast.FunctionDef, **kwargs) -> ast.FunctionDef:
 
 
 def add_decorator(
-    base: ast.FunctionDef, decorator: Union[ast.Name, ast.Attribute]
+    base: ast.FunctionDef, decorator: ast.Name | ast.Attribute
 ) -> ast.FunctionDef:
     return replace_function(base, decorator_list=[decorator, *base.decorator_list])
+
+
+def get_first_argument(node: ast.arguments) -> ast.arg:
+    if node.posonlyargs:
+        return node.posonlyargs[0]
+    return node.args[0]
 
 
 class AddOverloadedDecorator(ast.NodeTransformer):
@@ -102,10 +108,45 @@ class DropSelfAnnotation(ast.NodeTransformer):
         return ast.arg(node.arg, None, None)
 
 
+class ReplaceTypeVarInReturn(ast.NodeTransformer):
+    """Replace TypeVars in return annotations with concrete types.
+
+    Some functions are defined as generic functions in Python, e.g.,
+
+    .. code-block:: python
+
+        def sum(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
+
+    When those functions are bound as methods, the return type is constrained by
+    the class that the method is bound to.
+    So this transformer replaces the annotation by the class name.
+    """
+
+    TYPE_VARS = ('VariableLikeType', '_VarDaDg')
+
+    def __init__(self, cls_name: str) -> None:
+        self.cls_name = cls_name
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
+        self.generic_visit(node)
+        for type_var in self.TYPE_VARS:
+            if isinstance(node.returns, ast.Name) and node.returns.id == type_var:
+                first_arg = get_first_argument(node.args)
+                try:
+                    self_annotation = first_arg.annotation.id
+                except AttributeError:
+                    continue
+                if self_annotation == type_var:
+                    return replace_function(
+                        node, returns=ast.Name(id=self.cls_name, ctx=ast.Load())
+                    )
+        return node
+
+
 class ShortenCppClassAnnotation(ast.NodeTransformer):
     """Remove module qualification from scipp classes."""
 
-    def visit_Attribute(self, node: ast.Attribute) -> Union[ast.Attribute, ast.Name]:
+    def visit_Attribute(self, node: ast.Attribute) -> ast.Attribute | ast.Name:
         self.generic_visit(node)
         if (cls := unqualified_cpp_class(node)) is not None:
             return ast.Name(cls)
@@ -115,7 +156,7 @@ class ShortenCppClassAnnotation(ast.NodeTransformer):
 
 
 class DropTypingModule(ast.NodeTransformer):
-    def visit_Attribute(self, node: ast.Attribute) -> Union[ast.Attribute, ast.Name]:
+    def visit_Attribute(self, node: ast.Attribute) -> ast.Attribute | ast.Name:
         self.generic_visit(node)
         if isinstance(node.value, ast.Name) and node.value.id == 'typing':
             return ast.Name(id=node.attr, ctx=ast.Load())
@@ -143,6 +184,27 @@ class SetFunctionName(ast.NodeTransformer):
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
         self.generic_visit(node)
         return replace_function(node, name=self.target_name)
+
+
+class OverwriteSignature(ast.NodeTransformer):
+    """Replaces a function signature by the given signature."""
+
+    def __init__(self, sig: inspect.Signature) -> None:
+        self.sig = sig
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
+        self.generic_visit(node)
+        code = f'def f{self.sig}: ...'
+        # A hack to work around _NoDefault.__repr__
+        # I can't think of a better way to do this :(
+        code = code.replace('NotSpecified', '_NoDefault')
+        target = ast.parse(code).body[0]
+        r = replace_function(
+            node,
+            args=target.args,
+            returns=target.returns,
+        )
+        return r
 
 
 class FixArgumentFromSupertypes(ast.NodeTransformer):
@@ -181,7 +243,7 @@ class FixObjectReturnType(ast.NodeTransformer):
         '__ixor__',
     )
 
-    def __init__(self, cls: Optional[str]) -> None:
+    def __init__(self, cls: str | None) -> None:
         self.cls = cls
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
@@ -228,6 +290,7 @@ def _fix_common(node: ast.AST) -> ast.AST:
 
 
 def fix_method(node: ast.AST, cls_name: str) -> ast.AST:
+    node = ReplaceTypeVarInReturn(cls_name).visit(node)  # Must be before FixSelfArgName
     node = _fix_common(node)
     node = FixObjectReturnType(cls_name).visit(node)
     node = FixArgumentFromSupertypes().visit(node)

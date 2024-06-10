@@ -112,7 +112,9 @@ def designate_columns(data, plot_dims, ignored):
 
 def group_plots(data, designations):
     """Return the number of distinct plot groups and the groups themselves."""
-    meta_columns = [c for c, d in zip(data.columns, designations) if d == 'meta']
+    meta_columns = [
+        c for c, d in zip(data.columns, designations, strict=True) if d == 'meta'
+    ]
     groups = data.groupby(meta_columns)
     return len(groups), [group for _, group in groups]
 
@@ -121,7 +123,7 @@ def plot_title(data, designations):
     """Format a title for a plot of ``data``."""
     return ', '.join(
         f'{c}={data[c].unique()[0]}'
-        for c, d in zip(data.columns, designations)
+        for c, d in zip(data.columns, designations, strict=True)
         if d == 'meta'
     )
 

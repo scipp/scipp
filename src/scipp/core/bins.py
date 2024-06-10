@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-import warnings
-from typing import Callable, Dict, Literal, Optional, Tuple, Union
+from collections.abc import Callable
+from typing import Literal
 
 from .._scipp import core as _cpp
 from ..typing import Dims, MetaDataMap, VariableLike
@@ -32,7 +32,7 @@ class Lookup:
         op: Callable,
         func: _cpp.DataArray,
         dim: str,
-        fill_value: Optional[Variable] = None,
+        fill_value: Variable | None = None,
     ):
         if (
             not func.masks
@@ -66,10 +66,10 @@ class Lookup:
 
 def lookup(
     func: _cpp.DataArray,
-    dim: Optional[str] = None,
+    dim: str | None = None,
     *,
-    mode: Optional[Literal['previous', 'nearest']] = None,
-    fill_value: Optional[_cpp.Variable] = None,
+    mode: Literal['previous', 'nearest'] | None = None,
+    fill_value: _cpp.Variable | None = None,
 ) -> Lookup:
     """Create a "lookup table" from a histogram (data array with bin-edge coord).
 
@@ -164,7 +164,7 @@ class Bins:
         _cpp.buckets.scale(self._obj, _cpp.reciprocal(lut.func), lut.dim)
         return self
 
-    def __getitem__(self, key: Tuple[str, Union[_cpp.Variable, slice]]):
+    def __getitem__(self, key: tuple[str, _cpp.Variable | slice]):
         """
         Extract events from bins based on labels or label ranges and return a copy.
 
@@ -268,7 +268,7 @@ class Bins:
         return self.constituents['data'].unit
 
     @unit.setter
-    def unit(self, unit: Union[_cpp.Unit, str]):
+    def unit(self, unit: _cpp.Unit | str):
         """Set unit of the bin elements"""
         self.constituents['data'].unit = unit
 
@@ -283,11 +283,11 @@ class Bins:
         return self.constituents['data'].aligned
 
     @property
-    def constituents(self) -> Dict[str, Union[str, _cpp.Variable, _cpp.DataArray]]:
+    def constituents(self) -> dict[str, str | _cpp.Variable | _cpp.DataArray]:
         """Constituents of binned data, as supported by :py:func:`sc.bins`."""
         return _call_cpp_func(_cpp.bins_constituents, self._data())
 
-    def sum(self) -> Union[_cpp.Variable, _cpp.DataArray]:
+    def sum(self) -> _cpp.Variable | _cpp.DataArray:
         """Sum of events in each bin.
 
         Returns
@@ -302,7 +302,7 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bins_sum, self._obj)
 
-    def nansum(self) -> Union[_cpp.Variable, _cpp.DataArray]:
+    def nansum(self) -> _cpp.Variable | _cpp.DataArray:
         """Sum of events in each bin ignoring NaN's.
 
         Returns
@@ -317,7 +317,7 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bins_nansum, self._obj)
 
-    def mean(self) -> Union[_cpp.Variable, _cpp.DataArray]:
+    def mean(self) -> _cpp.Variable | _cpp.DataArray:
         """Arithmetic mean of events in each bin.
 
         Returns
@@ -332,7 +332,7 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bins_mean, self._obj)
 
-    def nanmean(self) -> Union[_cpp.Variable, _cpp.DataArray]:
+    def nanmean(self) -> _cpp.Variable | _cpp.DataArray:
         """Arithmetic mean of events in each bin ignoring NaN's.
 
         Returns
@@ -347,7 +347,7 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bins_nanmean, self._obj)
 
-    def max(self) -> Union[_cpp.Variable, _cpp.DataArray]:
+    def max(self) -> _cpp.Variable | _cpp.DataArray:
         """Maximum of events in each bin.
 
         Returns
@@ -362,7 +362,7 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bins_max, self._obj)
 
-    def nanmax(self) -> Union[_cpp.Variable, _cpp.DataArray]:
+    def nanmax(self) -> _cpp.Variable | _cpp.DataArray:
         """Maximum of events in each bin ignoring NaN's.
 
         Returns
@@ -377,7 +377,7 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bins_nanmax, self._obj)
 
-    def min(self) -> Union[_cpp.Variable, _cpp.DataArray]:
+    def min(self) -> _cpp.Variable | _cpp.DataArray:
         """Minimum of events in each bin.
 
         Returns
@@ -392,7 +392,7 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bins_min, self._obj)
 
-    def nanmin(self) -> Union[_cpp.Variable, _cpp.DataArray]:
+    def nanmin(self) -> _cpp.Variable | _cpp.DataArray:
         """Minimum of events in each bin ignoring NaN's.
 
         Returns
@@ -407,7 +407,7 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bins_nanmin, self._obj)
 
-    def all(self) -> Union[_cpp.Variable, _cpp.DataArray]:
+    def all(self) -> _cpp.Variable | _cpp.DataArray:
         """Logical AND of events in each bin ignoring NaN's.
 
         Returns
@@ -422,7 +422,7 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bins_all, self._obj)
 
-    def any(self) -> Union[_cpp.Variable, _cpp.DataArray]:
+    def any(self) -> _cpp.Variable | _cpp.DataArray:
         """Logical OR of events in each bin ignoring NaN's.
 
         Returns
@@ -437,7 +437,7 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bins_any, self._obj)
 
-    def size(self) -> Union[_cpp.Variable, _cpp.DataArray]:
+    def size(self) -> _cpp.Variable | _cpp.DataArray:
         """Number of events or elements in a bin.
 
         Returns
@@ -447,7 +447,7 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bin_sizes, self._obj)
 
-    def concat(self, dim: Dims = None) -> Union[_cpp.Variable, _cpp.DataArray]:
+    def concat(self, dim: Dims = None) -> _cpp.Variable | _cpp.DataArray:
         """Concatenate bins element-wise by concatenating bin contents along
         their internal bin dimension.
 
@@ -468,10 +468,10 @@ class Bins:
 
     def concatenate(
         self,
-        other: Union[_cpp.Variable, _cpp.DataArray],
+        other: _cpp.Variable | _cpp.DataArray,
         *,
-        out: Optional[_cpp.DataArray] = None,
-    ) -> Union[_cpp.Variable, _cpp.DataArray]:
+        out: _cpp.DataArray | None = None,
+    ) -> _cpp.Variable | _cpp.DataArray:
         """Concatenate bins element-wise by concatenating bin contents along
         their internal bin dimension.
 
@@ -504,22 +504,7 @@ class Bins:
             return out
 
 
-class GroupbyBins:
-    """Proxy for operations on bins of a groupby object."""
-
-    def __init__(self, obj):
-        self._obj = obj
-
-    def concat(self, dim):
-        warnings.warn(
-            "groupby(...).bins.concat(dim) is deprecated. Use `group` or `bin` instead",
-            UserWarning,
-            stacklevel=2,
-        )
-        return self._obj.concat(dim)
-
-
-def _bins(obj):
+def _bins(obj) -> Bins | None:
     """
     Returns helper :py:class:`scipp.Bins` allowing bin-wise operations
     to be performed or `None` if not binned data.
@@ -530,22 +515,18 @@ def _bins(obj):
         return None
 
 
-def _set_bins(obj, bins: Bins):
+def _set_bins(obj, bins: Bins) -> None:
     # Should only be used by __iadd__ and friends
     if obj is not bins._obj:
         raise ValueError("Cannot set bins with a new object")
-
-
-def _groupby_bins(obj):
-    return GroupbyBins(obj)
 
 
 def bins(
     *,
     data: VariableLike,
     dim: str,
-    begin: Optional[_cpp.Variable] = None,
-    end: Optional[_cpp.Variable] = None,
+    begin: _cpp.Variable | None = None,
+    end: _cpp.Variable | None = None,
 ) -> _cpp.Variable:
     """Create a binned variable from bin indices.
 

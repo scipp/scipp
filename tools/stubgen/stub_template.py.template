@@ -2,8 +2,21 @@ $header
 # ruff: noqa: F403
 
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Literal, Mapping, \
-    Optional, Sequence, Tuple, Union, overload
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Literal,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    overload,
+)
 
 from .._binding import _NoDefault
 from ..coords.graph import GraphDict

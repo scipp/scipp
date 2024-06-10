@@ -12,7 +12,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04]
-        build: [cp39, cp310]
+        build: [cp310]
     uses: ./.github/workflows/wheel.yml
     with:
       os: ${{ matrix.os }}
@@ -32,7 +32,7 @@ jobs:
           merge-multiple: true
       - uses: actions/setup-python@v4
         with:
-          python-version: 3.9
+          python-version: "3.10"
       - run: python .github/workflows/rename-dev-wheels.py
       - uses: ncipollo/release-action@v1
         with:

@@ -3,15 +3,14 @@
 # @author Jan-Lukas Wynen
 
 import dataclasses
-from typing import Optional
 
 from ..core import Variable
 
 
 @dataclasses.dataclass
 class Coord:
-    dense: Optional[Variable]  # for dense variable or bin-coord
-    event: Optional[Variable]
+    dense: Variable | None  # for dense variable or bin-coord
+    event: Variable | None
     aligned: bool
     usages: int = -1  # negative for unlimited usages
 

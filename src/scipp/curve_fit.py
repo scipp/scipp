@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 
+from collections.abc import Callable, Mapping, Sequence
 from inspect import getfullargspec
 from numbers import Real
-from typing import Callable, Dict, Mapping, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
@@ -11,44 +11,35 @@ from .core import (
     BinEdgeError,
     DataArray,
     DataGroup,
+    DimensionError,
     Variable,
     array,
     irreducible_mask,
     scalar,
     stddevs,
 )
-from .units import default_unit, dimensionless
 
 
-def _as_scalar(obj, unit):
-    if unit == default_unit:
-        return obj
-    return scalar(value=obj, unit=unit)
-
-
-def _wrap_scipp_func(f, p_names, p_units):
-    _params = {k: _as_scalar(0.0, u) for k, u in zip(p_names, p_units)}
+def _wrap_scipp_func(f, p0):
+    p = {k: scalar(0.0, unit=v.unit) for k, v in p0.items()}
 
     def func(x, *args):
-        for k, v in zip(p_names, args):
-            if isinstance(_params[k], Variable):
-                _params[k].value = v
-            else:
-                _params[k] = v
-        return f(**x, **_params).values
+        for k, v in zip(p, args, strict=True):
+            p[k].value = v
+        return f(**x, **p).values
 
     return func
 
 
-def _wrap_numpy_func(f, p_names, coord_names):
+def _wrap_numpy_func(f, param_names, coord_names):
     def func(x, *args):
         # If there is only one predictor variable x might be a 1D array.
         # Make x 2D for consistency.
         if len(x.shape) == 1:
             x = x.reshape(1, -1)
-        coords = dict(zip(coord_names, x))
-        params = dict(zip(p_names, args))
-        return f(**coords, **params)
+        c = dict(zip(coord_names, x, strict=True))
+        p = dict(zip(param_names, args, strict=True))
+        return f(**c, **p)
 
     return func
 
@@ -67,7 +58,7 @@ def _get_sigma(da):
     return sigma
 
 
-def _datagroup_outputs(da, params, p_units, map_over, pdata, covdata):
+def _datagroup_outputs(da, p0, map_over, pdata, covdata):
     variances = np.diagonal(covdata, axis1=-2, axis2=-1)
     dg = DataGroup(
         {
@@ -76,10 +67,10 @@ def _datagroup_outputs(da, params, p_units, map_over, pdata, covdata):
                     dims=map_over,
                     values=pdata[..., i] if pdata.ndim > 1 else pdata[i],
                     variances=variances[..., i] if variances.ndim > 1 else variances[i],
-                    unit=u,
+                    unit=v0.unit,
                 ),
             )
-            for i, (p, u) in enumerate(zip(params, p_units))
+            for i, (p, v0) in enumerate(p0.items())
         }
     )
     dgcov = DataGroup(
@@ -92,21 +83,13 @@ def _datagroup_outputs(da, params, p_units, map_over, pdata, covdata):
                             values=covdata[..., i, j]
                             if covdata.ndim > 2
                             else covdata[i, j],
-                            unit=(
-                                default_unit
-                                if p_u == default_unit and q_u == default_unit
-                                else p_u
-                                if q_u == default_unit
-                                else q_u
-                                if p_u == default_unit
-                                else p_u * q_u
-                            ),
+                            unit=v0.unit * u0.unit,
                         ),
                     )
-                    for j, (q, q_u) in enumerate(zip(params, p_units))
+                    for j, (q, u0) in enumerate(p0.items())
                 }
             )
-            for i, (p, p_u) in enumerate(zip(params, p_units))
+            for i, (p, v0) in enumerate(p0.items())
         }
     )
     for c in da.coords:
@@ -115,70 +98,77 @@ def _datagroup_outputs(da, params, p_units, map_over, pdata, covdata):
                 dg[p].coords[c] = da.coords[c]
                 for q in dgcov[p]:
                     dgcov[p][q].coords[c] = da.coords[c]
-
     for m in da.masks:
-        if set(map_over).intersection(da.masks[m].dims):
+        # Drop masks that don't fit the output data
+        if set(da.masks[m].dims).issubset(set(dg.dims)):
             for p in dg:
-                dg[p].masks[c] = da.masks[c]
+                dg[p].masks[m] = da.masks[m]
                 for q in dgcov[p]:
-                    dgcov[p][q].masks[c] = da.masks[c]
+                    dgcov[p][q].masks[m] = da.masks[m]
     return dg, dgcov
 
 
-def _prepare_numpy_outputs(da, params, map_over):
+def _prepare_numpy_outputs(da, p0, map_over):
     shape = [da.sizes[d] for d in map_over]
-    dg = np.empty([*shape, len(params)])
-    dgcov = np.empty(shape + 2 * [len(params)])
+    dg = np.empty([*shape, len(p0)])
+    dgcov = np.empty(shape + 2 * [len(p0)])
     return dg, dgcov
 
 
-def _make_defaults(f, coords, params):
+def _make_defaults(f, coords, p0):
     spec = getfullargspec(f)
-    all_args = {*spec.args, *spec.kwonlyargs}
-    if not set(coords).issubset(all_args):
-        raise ValueError("Function must take the provided coords as arguments")
-    default_arguments = dict(
-        zip(spec.args[-len(spec.defaults) :], spec.defaults) if spec.defaults else {},
-        **(spec.kwonlydefaults or {}),
+    non_default_args = (
+        spec.args[: -len(spec.defaults)] if spec.defaults is not None else spec.args
     )
+    args = {*non_default_args, *spec.kwonlyargs} - set(spec.kwonlydefaults or ())
+    if not set(coords).issubset(args):
+        raise ValueError("Function must take the provided coords as arguments")
     return {
-        **{a: 1.0 for a in all_args - set(coords)},
-        **default_arguments,
-        **(params or {}),
+        **{a: scalar(1.0) for a in args - set(coords)},
+        **{
+            k: v if isinstance(v, Variable) else scalar(v)
+            for k, v in (p0 or {}).items()
+        },
     }
 
 
-def _get_specific_bounds(bounds, name, unit) -> Tuple[float, float]:
+def _get_specific_bounds(bounds, name, unit):
     if name not in bounds:
-        return -np.inf, np.inf
+        return -scalar(np.inf, unit=unit), scalar(np.inf, unit=unit)
     b = bounds[name]
     if len(b) != 2:
         raise ValueError(
             "Parameter bounds must be given as a tuple of length 2. "
             f"Got a collection of length {len(b)} as bounds for '{name}'."
         )
-    if isinstance(b[0], Variable):
-        return (
-            b[0].to(unit=unit, dtype=float).value,
-            b[1].to(unit=unit, dtype=float).value,
+    if (
+        b[0] is not None
+        and b[1] is not None
+        and isinstance(b[0], Variable) ^ isinstance(b[1], Variable)
+    ):
+        raise ValueError(
+            f"Bounds cannot mix Scipp variables and other number types, "
+            f"got {type(b[0])} and {type(b[1])}"
         )
-    return b
+    le = -scalar(np.inf, unit=unit) if b[0] is None else b[0]
+    ri = scalar(np.inf, unit=unit) if b[1] is None else b[1]
+    le, ri = (
+        v.to(unit=unit) if isinstance(v, Variable) else scalar(v).to(unit=unit)
+        for v in (le, ri)
+    )
+    return le, ri
 
 
-def _parse_bounds(
-    bounds, params
-) -> Union[Tuple[float, float], Tuple[np.ndarray, np.ndarray]]:
-    if bounds is None:
+def _parse_bounds(bounds, p0):
+    return {k: _get_specific_bounds(bounds or {}, k, v.unit) for k, v in p0.items()}
+
+
+def _reshape_bounds(bounds):
+    left, right = zip(*bounds.values(), strict=True)
+    left, right = [le.value for le in left], [ri.value for ri in right]
+    if all(le == -np.inf and ri == np.inf for le, ri in zip(left, right, strict=True)):
         return -np.inf, np.inf
-
-    bounds_tuples = [
-        _get_specific_bounds(
-            bounds, name, param.unit if isinstance(param, Variable) else dimensionless
-        )
-        for name, param in params.items()
-    ]
-    bounds_array = np.array(bounds_tuples).T
-    return bounds_array[0], bounds_array[1]
+    return left, right
 
 
 def _curve_fit(
@@ -199,8 +189,14 @@ def _curve_fit(
             _curve_fit(
                 f,
                 da[dim, i],
-                p0,
-                bounds,
+                {k: v[dim, i] if dim in v.dims else v for k, v in p0.items()},
+                {
+                    k: (
+                        le[dim, i] if dim in le.dims else le,
+                        ri[dim, i] if dim in ri.dims else ri,
+                    )
+                    for k, (le, ri) in bounds.items()
+                },
                 map_over[1:],
                 unsafe_numpy_f,
                 (dg[i], dgcov[i]),
@@ -208,6 +204,20 @@ def _curve_fit(
             )
 
         return
+
+    for k, v in p0.items():
+        if v.shape != ():
+            raise DimensionError(f'Parameter {k} has unexpected dimensions {v.dims}')
+
+    for k, (le, ri) in bounds.items():
+        if le.shape != ():
+            raise DimensionError(
+                f'Left bound of parameter {k} has unexpected dimensions {le.dims}'
+            )
+        if ri.shape != ():
+            raise DimensionError(
+                f'Right bound of parameter {k} has unexpected dimensions {ri.dims}'
+            )
 
     fda = da.flatten(to='row')
     mask = irreducible_mask(fda.masks, 'row')
@@ -223,14 +233,20 @@ def _curve_fit(
 
     import scipy.optimize as opt
 
+    if len(fda) < len(dg):
+        # More parameters than data points, unable to fit, abort.
+        dg[:] = np.nan
+        dgcov[:] = np.nan
+        return
+
     try:
         popt, pcov = opt.curve_fit(
             f,
             X,
             fda.data.values,
-            p0,
+            [v.value for v in p0.values()],
             sigma=_get_sigma(fda),
-            bounds=bounds,
+            bounds=_reshape_bounds(bounds),
             **kwargs,
         )
     except RuntimeError as err:
@@ -245,25 +261,23 @@ def _curve_fit(
 
 
 def curve_fit(
-    coords: Union[Sequence[str], Mapping[str, Union[str, Variable]]],
+    coords: Sequence[str] | Mapping[str, str | Variable],
     f: Callable,
     da: DataArray,
     *,
-    p0: Optional[Dict[str, Union[Variable, Real]]] = None,
-    bounds: Optional[
-        Dict[str, Union[Tuple[Variable, Variable], Tuple[Real, Real]]]
-    ] = None,
+    p0: dict[str, Variable | Real] | None = None,
+    bounds: dict[str, tuple[Variable, Variable] | tuple[Real, Real]] | None = None,
     reduce_dims: Sequence[str] = (),
     unsafe_numpy_f: bool = False,
     **kwargs,
-) -> Tuple[DataGroup, DataGroup]:
+) -> tuple[DataGroup, DataGroup]:
     """Use non-linear least squares to fit a function, f, to data.
     The function interface is similar to that of :py:func:`xarray.DataArray.curvefit`.
 
     .. versionadded:: 23.12.0
 
     This is a wrapper around :py:func:`scipy.optimize.curve_fit`. See there for
-    indepth documentation and keyword arguments. The differences are:
+    in depth documentation and keyword arguments. The differences are:
 
     - Instead of separate ``xdata``, ``ydata``, and ``sigma`` arguments,
       the input data array defines these, ``xdata`` by the coords on the data array,
@@ -274,13 +288,18 @@ def curve_fit(
     - The initial guess in ``p0`` must be provided as a dict, mapping from fit-function
       parameter names to initial guesses.
     - The parameter bounds must also be provided as a dict, like ``p0``.
-    - The fit parameters may be scalar scipp variables. In that case an initial guess
-      ``p0`` with the correct units must be provided.
+    - If the fit parameters are not dimensionless the initial guess must be
+      a scipp ``Variable`` with the correct unit.
+    - If the fit parameters are not dimensionless the bounds must be a variables
+      with the correct unit.
+    - The bounds and initial guesses may be scalars or arrays to allow the
+      initial guesses or bounds to vary in different regions.
+      If they are arrays they will be broadcasted to the shape of the output.
     - The returned optimal parameter values ``popt`` and the covariance matrix ``pcov``
-      will have units provided that the initial parameters have units. ``popt`` and
-      ``pcov`` are DataGroup and a DataGroup of DataGroup respectively. They are indexed
-      by the fit parameter names. The variances of the parameter values in ``popt``
-      are set to the corresponding diagonal value in the covariance matrix.
+      will have units if the initial guess has units. ``popt`` and
+      ``pcov`` are ``DataGroup`` and a ``DataGroup`` of ``DataGroup`` respectively.
+      They are indexed by the fit parameter names. The variances of the parameter values
+      in ``popt`` are set to the corresponding diagonal value in the covariance matrix.
 
     Parameters
     ----------
@@ -491,10 +510,9 @@ def curve_fit(
     }
 
     p0 = _make_defaults(f, coords.keys(), p0)
-    p_units = [p.unit if isinstance(p, Variable) else default_unit for p in p0.values()]
 
     f = (
-        _wrap_scipp_func(f, p0, p_units)
+        _wrap_scipp_func(f, p0)
         if not unsafe_numpy_f
         else _wrap_numpy_func(f, p0, coords.keys())
     )
@@ -524,7 +542,7 @@ def curve_fit(
     _curve_fit(
         f,
         _da,
-        [p.value if isinstance(p, Variable) else p for p in p0.values()],
+        p0,
         _parse_bounds(bounds, p0),
         map_over,
         unsafe_numpy_f,
@@ -532,7 +550,7 @@ def curve_fit(
         **kwargs,
     )
 
-    return _datagroup_outputs(da, p0, p_units, map_over, *out)
+    return _datagroup_outputs(da, p0, map_over, *out)
 
 
 __all__ = ['curve_fit']

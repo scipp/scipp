@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, ClassVar, Union
+from typing import Any, ClassVar
 
 import numpy as np
 
@@ -42,7 +42,7 @@ def _dtype_lut():
         d.rotation3,
     ]
     names = [str(dtype) for dtype in dtypes]
-    return dict(zip(names, dtypes))
+    return dict(zip(names, dtypes, strict=True))
 
 
 def _as_hdf5_type(a):
@@ -328,7 +328,7 @@ class DataArrayIO:
         # Note that we write aligned and unaligned coords into the same group.
         # Distinction is via an attribute, which is more natural than having
         # 2 separate groups.
-        for view_name, view in zip(['coords', 'masks', 'attrs'], views):
+        for view_name, view in zip(['coords', 'masks', 'attrs'], views, strict=True):
             subgroup = group.create_group(view_name)
             _write_mapping(subgroup, view, override.get(view_name))
         return group
@@ -458,7 +458,7 @@ class HDF5IO:
         return cls._handlers[group.attrs['scipp-type']].read(group, **kwargs)
 
 
-def save_hdf5(obj: VariableLike, filename: Union[str, Path]) -> None:
+def save_hdf5(obj: VariableLike, filename: str | Path) -> None:
     """Write an object out to file in HDF5 format."""
     import h5py
 
@@ -466,7 +466,7 @@ def save_hdf5(obj: VariableLike, filename: Union[str, Path]) -> None:
         HDF5IO.write(f, obj)
 
 
-def load_hdf5(filename: Union[str, Path]) -> VariableLike:
+def load_hdf5(filename: str | Path) -> VariableLike:
     """Load a Scipp-HDF5 file."""
     import h5py
 

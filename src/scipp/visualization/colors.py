@@ -22,7 +22,7 @@ def rgb_to_hex(rgb):
     for i in rgb:
         h = hex(int(i))[2:]
         if len(h) < 2:
-            h = "{}0".format(h)
+            h = f"{h}0"
         hex_value.append(h)
     return "#" + "".join(hex_value)
 
@@ -48,6 +48,6 @@ def make_random_color(fmt='rgb'):
         return rgb_to_hex(rgb)
     else:
         raise RuntimeError(
-            "Unknown color format {}. Possible choices are: "
-            "rgb, dec, rgba, and hex.".format(fmt)
+            f"Unknown color format {fmt}. Possible choices are: "
+            "rgb, dec, rgba, and hex."
         )

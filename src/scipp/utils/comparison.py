@@ -5,16 +5,14 @@
 Advanced comparisons.
 """
 
-from typing import Optional
-
 from ..core import CoordError, DataArray, DType, Variable, all, isclose
 
 
 def isnear(
     x: DataArray,
     y: DataArray,
-    rtol: Optional[Variable] = None,
-    atol: Optional[Variable] = None,
+    rtol: Variable | None = None,
+    atol: Variable | None = None,
     include_attrs: bool = True,
     include_data: bool = True,
     equal_nan: bool = True,

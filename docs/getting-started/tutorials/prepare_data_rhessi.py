@@ -13,7 +13,6 @@ from __future__ import annotations
 import re
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
-from typing import Dict, Union
 
 import numpy as np
 import pooch
@@ -76,7 +75,7 @@ def parse_time(t) -> time:
     return time.fromisoformat(t)
 
 
-def parse_datetimes(d, start, peak, end) -> Dict[str, Union[np.datetime64, int]]:
+def parse_datetimes(d, start, peak, end) -> dict[str, np.datetime64 | int]:
     d = parse_date(d)
     start = parse_time(start)
     peak = parse_time(peak)

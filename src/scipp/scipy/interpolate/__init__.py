@@ -7,9 +7,12 @@ This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.interpolate`.
 """
 
-from typing import Any, Callable, Literal, Union
+from __future__ import annotations
+
+from typing import Any, Literal, Protocol, TypeVar
 
 import numpy as np
+import numpy.typing as npt
 
 from ...compat.wrapping import wrap1d
 from ...core import (
@@ -23,8 +26,10 @@ from ...core import (
     irreducible_mask,
 )
 
+_ArrayOrVar = TypeVar('_ArrayOrVar', npt.NDArray[Any], Variable)
 
-def _as_interpolation_type(x):
+
+def _as_interpolation_type(x: _ArrayOrVar) -> _ArrayOrVar:
     if isinstance(x, np.ndarray):
         if x.dtype.kind == 'M':
             return x.astype('int64', copy=False)
@@ -34,13 +39,13 @@ def _as_interpolation_type(x):
     return x
 
 
-def _midpoints(var, dim):
+def _midpoints(var: Variable, dim: str) -> Variable:
     a = var[dim, :-1]
     b = var[dim, 1:]
     return _as_interpolation_type(a) + 0.5 * (b - a)
 
 
-def _drop_masked(da, dim):
+def _drop_masked(da: DataArray, dim: str) -> DataArray:
     if (mask := irreducible_mask(da.masks, dim)) is not None:
         return da[~mask]
     return da
@@ -51,23 +56,21 @@ def interp1d(
     da: DataArray,
     dim: str,
     *,
-    kind: Union[
-        int,
-        Literal[
-            'linear',
-            'nearest',
-            'nearest-up',
-            'zero',
-            'slinear',
-            'quadratic',
-            'cubic',
-            'previous',
-            'next',
-        ],
+    kind: int
+    | Literal[
+        'linear',
+        'nearest',
+        'nearest-up',
+        'zero',
+        'slinear',
+        'quadratic',
+        'cubic',
+        'previous',
+        'next',
     ] = 'linear',
     fill_value: Any = np.nan,
-    **kwargs,
-) -> Callable:
+    **kwargs: Any,
+) -> _Interp1dImpl:
     """Interpolate a 1-D function.
 
     A data array is used to approximate some function f: y = f(x), where y is given by
@@ -167,17 +170,25 @@ def interp1d(
 
     da = _drop_masked(da, dim)
 
-    def func(xnew: Variable, *, midpoints=False) -> DataArray:
+    def func(xnew: Variable, *, midpoints: bool = False) -> DataArray:
         """Compute interpolation function defined by ``interp1d``
         at interpolation points.
 
-        :param xnew: Interpolation points.
-        :param midpoints: Interpolate at midpoints of given points. The result will be
-                          a histogram. Default is ``False``.
-        :return: Interpolated data array with new coord given by interpolation points
-                 and data given by interpolation function evaluated at the
-                 interpolation points (or evaluated at the midpoints of the given
-                 points).
+        Parameters
+        ----------
+        xnew:
+            Interpolation points.
+        midpoints:
+            Interpolate at midpoints of given points.
+            The result will be a histogram.
+            Default is ``False``.
+
+        Returns
+        -------
+        :
+            Interpolated data array with new coord given by interpolation points
+            and data given by interpolation function evaluated at the
+            interpolation points (or evaluated at the midpoints of the given points).
         """
         if xnew.unit != da.coords[dim].unit:
             raise UnitError(
@@ -207,6 +218,10 @@ def interp1d(
         return DataArray(data=ynew, coords={dim: xnew})
 
     return func
+
+
+class _Interp1dImpl(Protocol):
+    def __call__(self, xnew: Variable, *, midpoints: bool = False) -> DataArray: ...
 
 
 __all__ = ['interp1d']

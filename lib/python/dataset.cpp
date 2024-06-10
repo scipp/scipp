@@ -197,7 +197,7 @@ Returned by :py:func:`DataArray.masks`)");
       py::arg("data"), py::kw_only(), py::arg("coords") = py::dict(),
       py::arg("masks") = py::dict(), py::arg("attrs") = py::dict(),
       py::arg("name") = std::string{},
-      R"doc(__init__(self, data: Variable, coords: Union[typing.Mapping[str, Variable], Iterable[Tuple[str, Variable]]] = {}, masks: Union[typing.Mapping[str, Variable], Iterable[Tuple[str, Variable]]] = {}, attrs: Union[typing.Mapping[str, Variable], Iterable[Tuple[str, Variable]]] = {}, name: str = '') -> None
+      R"doc(__init__(self, data: Variable, coords: Union[Mapping[str, Variable], Iterable[tuple[str, Variable]]] = {}, masks: Union[Mapping[str, Variable], Iterable[tuple[str, Variable]]] = {}, attrs: Union[Mapping[str, Variable], Iterable[tuple[str, Variable]]] = {}, name: str = '') -> None
 
           DataArray initializer.
 
@@ -233,7 +233,7 @@ Returned by :py:func:`DataArray.masks`)");
       }),
       py::arg("data") = py::none{}, py::kw_only(),
       py::arg("coords") = py::none{},
-      R"doc(__init__(self, data: Union[typing.Mapping[str, Union[Variable, DataArray]], Iterable[Tuple[str, Union[Variable, DataArray]]]] = {}, coords: Union[typing.Mapping[str, Variable], Iterable[Tuple[str, Variable]]] = {}) -> None
+      R"doc(__init__(self, data: Union[Mapping[str, Union[Variable, DataArray]], Iterable[tuple[str, Union[Variable, DataArray]]]] = {}, coords: Union[Mapping[str, Variable], Iterable[tuple[str, Variable]]] = {}) -> None
 
       Dataset initializer.
 

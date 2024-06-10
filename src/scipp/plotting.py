@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 
+from typing import Any
 
-def plot(*args, **kwargs):
+
+def plot(*args: Any, **kwargs: Any) -> None:
     """
     Wrapper function to plot data.
     See https://scipp.github.io/plopp/ for details.

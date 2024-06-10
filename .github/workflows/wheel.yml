@@ -23,7 +23,7 @@ jobs:
         submodules: true
         fetch-depth: 0  # history required so cmake can determine version
 
-    - uses: pypa/cibuildwheel@v2.17.0
+    - uses: pypa/cibuildwheel@v2.18.1
       env:
         CIBW_BUILD: ${{ inputs.build }}-*
         MACOSX_DEPLOYMENT_TARGET: "10.15"
@@ -35,5 +35,5 @@ jobs:
     - name: Upload wheels
       uses: actions/upload-artifact@v4
       with:
-        name: dist-${{ inputs.build }}
+        name: dist-${{ inputs.os }}-${{ inputs.build }}
         path: wheelhouse/*.whl

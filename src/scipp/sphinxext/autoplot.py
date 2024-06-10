@@ -43,7 +43,6 @@ This will disable autoplot for the entire docstring.
 """
 
 import re
-from typing import List, Optional
 
 from sphinx.util.docutils import SphinxDirective
 
@@ -56,7 +55,7 @@ PLOT_DIRECTIVE_PATTERN = re.compile(r'^\s*\.\. plot::.*')
 DISABLE_DIRECTIVE_PATTERN = re.compile(r'^\s*\.\. autoplot-disable::.*')
 
 
-def _previous_nonempty_line(lines: List[str], index: int) -> Optional[str]:
+def _previous_nonempty_line(lines: list[str], index: int) -> str | None:
     index -= 1
     while index >= 0 and not lines[index].strip():
         index -= 1
@@ -67,7 +66,7 @@ def _indentation_of(s: str) -> int:
     return len(s) - len(s.lstrip())
 
 
-def _process_block(lines: List[str], begin: int, end: int) -> List[str]:
+def _process_block(lines: list[str], begin: int, end: int) -> list[str]:
     block = lines[begin:end]
     if PLOT_PATTERN.search(block[-1]) is not None:
         prev = _previous_nonempty_line(lines, begin)
@@ -93,7 +92,7 @@ def _is_part_of_block(line: str) -> bool:
     return stripped.startswith('>>>') or stripped.startswith('...')
 
 
-def add_plot_directives(app, what, name, obj, options, lines: List[str]):
+def add_plot_directives(app, what, name, obj, options, lines: list[str]):
     new_lines = []
     block_begin = None
     for i, line in enumerate(lines):

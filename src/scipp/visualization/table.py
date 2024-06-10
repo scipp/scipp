@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 
-from typing import Dict, List, Union
 
 import numpy as np
 
@@ -39,7 +38,7 @@ def _var_name_with_unit(name: str, var: Variable) -> str:
     return out
 
 
-def _add_td_tags(cell_list: List[str], border: str = '') -> List[str]:
+def _add_td_tags(cell_list: list[str], border: str = '') -> list[str]:
     td = f' style="{border}"' if border else ''
     td = f'<td{td}>'
     return [f'{td}{cell}</td>' for cell in cell_list]
@@ -52,7 +51,7 @@ def _make_variable_column(
     need_bin_edge: bool,
     is_bin_edge,
     border: str = '',
-) -> List[str]:
+) -> list[str]:
     head = [_var_name_with_unit(name, var)]
     rows = []
     for i in indices:
@@ -72,7 +71,7 @@ def _make_variable_column(
 
 def _make_data_array_table(
     da: DataArray, indices: list, bin_edges: bool, no_left_border: bool = False
-) -> List[list]:
+) -> list[list]:
     out = [
         _make_variable_column(
             name='',
@@ -138,7 +137,7 @@ def _make_sections_header(ds: Dataset) -> str:
     return out
 
 
-def _to_html_table(header: str, body: List[list]) -> str:
+def _to_html_table(header: str, body: list[list]) -> str:
     out = '<table>' + header
     ncols = len(body)
     nrows = len(body[0])
@@ -177,7 +176,7 @@ def _strip_scalars_and_broadcast_masks(ds: Dataset) -> Dataset:
     return Dataset(out)
 
 
-def _to_dataset(obj: Union[VariableLike, dict]) -> Dataset:
+def _to_dataset(obj: VariableLike | dict) -> Dataset:
     if isinstance(obj, DataArray):
         return Dataset({obj.name: obj})
     if isinstance(obj, Variable):
@@ -187,7 +186,7 @@ def _to_dataset(obj: Union[VariableLike, dict]) -> Dataset:
     return obj
 
 
-def table(obj: Dict[str, Union[Variable, DataArray]], max_rows: int = 20):
+def table(obj: dict[str, Variable | DataArray], max_rows: int = 20):
     """Create an HTML table from the contents of the supplied object.
 
     Possible inputs are:
