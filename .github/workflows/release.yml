@@ -138,16 +138,6 @@ jobs:
       version: ${{ github.ref_name }}
     secrets: inherit
 
-  replaced-docs:
-    needs: docs
-    if: github.event_name == 'release' && github.event.action == 'published' && needs.manage-versions.outputs.version-new == 'True'
-    uses: ./.github/workflows/docs.yml
-    with:
-      publish: true
-      version: ${{ needs.manage-versions.outputs.version-replaced }}
-      branch: ${{ needs.manage-versions.outputs.version-replaced }}
-    secrets: inherit
-
   assets:
     name: Upload docs
     needs: docs
