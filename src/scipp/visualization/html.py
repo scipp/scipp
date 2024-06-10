@@ -33,14 +33,14 @@ def make_html(container: VariableLike) -> str:
         Display the HTML representation.
     """
     from .formatting_datagroup_html import datagroup_repr
-    from .formatting_html import dataset_repr, variable_repr
+    from .formatting_html import data_array_dataset_repr, variable_repr
 
     if isinstance(container, Variable):
         return variable_repr(container)
     elif isinstance(container, DataGroup):
         return datagroup_repr(container)
     else:
-        return dataset_repr(container)
+        return data_array_dataset_repr(container)
 
 
 def to_html(container: VariableLike):

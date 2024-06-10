@@ -7,12 +7,14 @@
 import collections
 import operator
 import uuid
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import partial, reduce
 from html import escape as html_escape
 from re import escape as re_escape
+from typing import Any, TypeVar
 
 from .._scipp import core as sc
-from ..core import stddevs
+from ..core import Coords, DataArray, Dataset, Masks, Variable, stddevs
 from ..utils import value_to_string
 from .resources import load_icons, load_style
 
@@ -20,6 +22,8 @@ BIN_EDGE_LABEL = "[bin-edge]"
 STDDEV_PREFIX = "σ = "  # noqa: RUF001
 VARIANCES_SYMBOL = "σ²"
 SPARSE_PREFIX = "len={}"
+
+_T = TypeVar('_T')
 
 
 def escape(content: str) -> str:
@@ -31,7 +35,7 @@ def escape(content: str) -> str:
     return html_escape(content).replace('$', re_escape('$'))
 
 
-def _format_array(data, size, ellipsis_after):
+def _format_array(data: Sequence[Any], size: int, ellipsis_after: int) -> str:
     i = 0
     s = []
     while i < size:
@@ -39,7 +43,7 @@ def _format_array(data, size, ellipsis_after):
             s.append("...")
             i = size - ellipsis_after
         elem = data[i]
-        if isinstance(elem, sc.DataArray):
+        if isinstance(elem, DataArray):
             dims = ', '.join(f'{dim}: {s}' for dim, s in elem.sizes.items())
             coords = ', '.join(elem.coords)
             if elem.unit == sc.units.one:
@@ -52,11 +56,11 @@ def _format_array(data, size, ellipsis_after):
     return escape(", ".join(s))
 
 
-def _make_row(data_html):
+def _make_row(data_html: object) -> str:
     return f"<div>{data_html}</div>"
 
 
-def _format_non_events(var, has_variances):
+def _format_non_events(var: Variable, has_variances: bool) -> str:
     size = reduce(operator.mul, var.shape, 1)
     if len(var.dims):
         var = sc.flatten(var, var.dims, 'ignored')
@@ -73,21 +77,24 @@ def _format_non_events(var, has_variances):
     return s
 
 
-def _repr_item(bin_dim, item):
+def _repr_item(bin_dim: int, item: Variable) -> str:
     shape = item.shape[bin_dim]
     return SPARSE_PREFIX.format(shape)
 
 
-def _get_events(var, variances, ellipsis_after):
-    dim = var.bins.constituents['dim']
-    dims = var.bins.constituents['data'].dims
+def _get_events(
+    var: Variable | DataArray, has_variances: bool, ellipsis_after: int
+) -> list[str]:
+    constituents = var.bins.constituents  # type: ignore[union-attr]
+    dim = constituents['dim']
+    dims = constituents['data'].dims
     bin_dim = dict(zip(dims, range(len(dims)), strict=True))[dim]
     s = []
-    if not isinstance(var.values, sc.Variable | sc.DataArray | sc.Dataset):
+    if not isinstance(var.values, Variable | DataArray | Dataset):
         size = len(var.values)
         i = 0
 
-        data = retrieve(var, variances=variances)
+        data = retrieve(var, has_variances=has_variances)
         while i < size:
             if i == ellipsis_after and size > 2 * ellipsis_after + 1:
                 s.append("...")
@@ -105,21 +112,23 @@ def _get_events(var, variances, ellipsis_after):
     return s
 
 
-def _format_events(var, has_variances):
+def _format_events(var: Variable | DataArray, has_variances: bool) -> str:
     s = _get_events(var, has_variances, ellipsis_after=2)
     return f'binned data [{", ".join(s)}]'
 
 
-def _ordered_dict(data):
+def _ordered_dict(
+    data: Mapping[str, _T],
+) -> collections.OrderedDict[str, _T]:
     data_ordered = collections.OrderedDict(
         sorted(data.items(), key=lambda t: str(t[0]))
     )
     return data_ordered
 
 
-def inline_variable_repr(var, has_variances=False):
+def inline_variable_repr(var: Variable | DataArray, has_variances: bool = False) -> str:
     if var.bins is None:
-        if isinstance(var, sc.DataArray):
+        if isinstance(var, DataArray):
             return _format_non_events(var.data, has_variances)
         else:
             return _format_non_events(var, has_variances)
@@ -127,37 +136,45 @@ def inline_variable_repr(var, has_variances=False):
         return _format_events(var, has_variances)
 
 
-def retrieve(var, variances=False, single=False):
-    if not variances:
+def retrieve(
+    var: Variable | DataArray, has_variances: bool = False, single: bool = False
+) -> Any:
+    if not has_variances:
         return var.value if single else var.values
     else:
         return var.variance if single else var.variances
 
 
-def _short_data_repr_html_non_events(var, variances=False):
-    return repr(retrieve(var, variances))
+def _short_data_repr_html_non_events(
+    var: Variable | DataArray, has_variances: bool = False
+) -> str:
+    return repr(retrieve(var, has_variances))
 
 
-def _short_data_repr_html_events(var):
-    string = str(var.data) if isinstance(var, sc.DataArray) else str(var)
-    if isinstance(var.bins.constituents['data'], sc.Dataset):
+def _short_data_repr_html_events(var: Variable | DataArray) -> str:
+    string = str(var.data) if isinstance(var, DataArray) else str(var)
+    if isinstance(var.bins.constituents['data'], Dataset):  # type: ignore[union-attr]
         return string
     start = 'binned data: '
     ind = string.find(start) + len(start)
     return string[ind:].replace(', content=', ',\ncontent=')
 
 
-def short_data_repr_html(var, variances=False):
+def short_data_repr_html(var: Variable | DataArray, has_variances: bool = False) -> str:
     """Format "data" for DataArray and Variable."""
     if var.bins is not None:
         data_repr = _short_data_repr_html_events(var)
     else:
-        data_repr = _short_data_repr_html_non_events(var, variances)
+        data_repr = _short_data_repr_html_non_events(var, has_variances)
     return escape(data_repr)
 
 
-def format_dims(dims, sizes, coords):
-    if not dims:
+def format_dims(
+    dims: Iterable[str] | None,
+    sizes: Iterable[int | None],
+    coords: Mapping[str, Variable],
+) -> str:
+    if dims is None:
         return ""
 
     dim_css_map = {
@@ -174,22 +191,26 @@ def format_dims(dims, sizes, coords):
     return f"<ul class='sc-dim-list'>{dims_li}</ul>"
 
 
-def _icon(icon_name):
+def _icon(icon_name: str) -> str:
     # icon_name is defined in icon-svg-inline.html
     return (
         f"<svg class='icon sc-{icon_name}'><use xlink:href='#{icon_name}'></use></svg>"
     )
 
 
-def summarize_coord(dim, var, ds=None):
-    return summarize_variable(str(dim), var, is_aligned=var.aligned, embedded_in=ds)
+def summarize_coord(
+    dim: str, var: Variable, ds: DataArray | Dataset | None = None
+) -> str:
+    return summarize_variable(dim, var, is_aligned=var.aligned, embedded_in=ds)
 
 
-def summarize_mask(dim, var, ds=None):
-    return summarize_variable(str(dim), var, is_aligned=False, embedded_in=ds)
+def summarize_mask(
+    dim: str, var: Variable, ds: DataArray | Dataset | None = None
+) -> str:
+    return summarize_variable(dim, var, is_aligned=False, embedded_in=ds)
 
 
-def summarize_coords(coords, ds=None):
+def summarize_coords(coords: Coords, ds: DataArray | Dataset | None = None) -> str:
     vars_li = "".join(
         "<li class='sc-var-item'>" f"{summarize_coord(dim, var, ds)}" "</span></li>"
         for dim, var in _ordered_dict(coords).items()
@@ -197,7 +218,7 @@ def summarize_coords(coords, ds=None):
     return f"<ul class='sc-var-list'>{vars_li}</ul>"
 
 
-def summarize_masks(masks, ds=None):
+def summarize_masks(masks: Masks, ds: DataArray | Dataset | None = None) -> str:
     vars_li = "".join(
         "<li class='sc-var-item'>" f"{summarize_mask(dim, var, ds)}" "</span></li>"
         for dim, var in _ordered_dict(masks).items()
@@ -205,7 +226,9 @@ def summarize_masks(masks, ds=None):
     return f"<ul class='sc-var-list'>{vars_li}</ul>"
 
 
-def summarize_attrs(attrs, embedded_in=None):
+def summarize_attrs(
+    attrs: Coords, embedded_in: DataArray | Dataset | None = None
+) -> str:
     attrs_li = "".join(
         "<li class='sc-var-item'>{}</li>".format(
             summarize_variable(
@@ -221,7 +244,7 @@ def summarize_attrs(attrs, embedded_in=None):
     return f"<ul class='sc-var-list'>{attrs_li}</ul>"
 
 
-def _find_bin_edges(var, ds):
+def _find_bin_edges(var: Variable | DataArray, ds: DataArray | Dataset) -> list[str]:
     """
     Checks if the coordinate contains bin-edges.
     """
@@ -230,7 +253,9 @@ def _find_bin_edges(var, ds):
     ]
 
 
-def _make_inline_attributes(var, has_attrs, embedded_in):
+def _make_inline_attributes(
+    var: Variable | DataArray, has_attrs: bool, embedded_in: DataArray | Dataset | None
+) -> tuple[str, str]:
     disabled = "disabled"
     attrs_ul = ""
     attrs_sections = []
@@ -241,25 +266,25 @@ def _make_inline_attributes(var, has_attrs, embedded_in):
             disabled = ""
 
     if has_attrs and hasattr(var, "deprecated_attrs"):
-        if len(var.attrs) > 0:
+        if len(var.deprecated_attrs) > 0:
             attrs_sections.append(attr_section(var.deprecated_attrs, embedded_in))
             disabled = ""
 
     if len(attrs_sections) > 0:
-        attrs_sections = "".join(
+        attrs_sections_str = "".join(
             f"<li class='sc-section-item sc-subsection'>{s}</li>"
             for s in attrs_sections
         )
         attrs_ul = (
             "<div class='sc-wrap'>"
-            f"<ul class='sc-sections'>{attrs_sections}</ul>"
+            f"<ul class='sc-sections'>{attrs_sections_str}</ul>"
             "</div>"
         )
 
     return disabled, attrs_ul
 
 
-def _make_dim_labels(dim, bin_edges=None):
+def _make_dim_labels(dim: str, bin_edges: Sequence[str] | None = None) -> str:
     # Note: the space needs to be here, otherwise
     # there is a trailing whitespace when no dimension
     # label has been added
@@ -269,7 +294,11 @@ def _make_dim_labels(dim, bin_edges=None):
         return ""
 
 
-def _make_dim_str(var, bin_edges, add_dim_size=False):
+def _make_dim_str(
+    var: Variable | DataArray,
+    bin_edges: Sequence[str] | None,
+    add_dim_size: bool = False,
+) -> str:
     dims_text = ', '.join(
         '{}{}{}'.format(
             str(dim),
@@ -281,7 +310,7 @@ def _make_dim_str(var, bin_edges, add_dim_size=False):
     return dims_text
 
 
-def _format_common(is_index):
+def _format_common(is_index: bool) -> tuple[str, str, str, str, str]:
     cssclass_aligned = " class='sc-aligned'" if is_index else ""
 
     # "unique" ids required to expand/collapse subsections
@@ -294,8 +323,13 @@ def _format_common(is_index):
 
 
 def summarize_variable(
-    name, var, is_aligned=False, has_attrs=False, embedded_in=None, add_dim_size=False
-):
+    name: str | None,
+    var: Variable | DataArray,
+    is_aligned: bool = False,
+    has_attrs: bool = False,
+    embedded_in: DataArray | Dataset | None = None,
+    add_dim_size: bool = False,
+) -> str:
     """
     Formats the variable data into the format expected when displaying
     as a standalone variable (when a single variable or data array is
@@ -323,7 +357,7 @@ def summarize_variable(
     if var.variances is not None:
         variances_preview = _make_row(inline_variable_repr(var, has_variances=True))
         data_repr += f"<br><br>Variances ({VARIANCES_SYMBOL}):<br>\
-{short_data_repr_html(var, variances=True)}"
+{short_data_repr_html(var, has_variances=True)}"
 
     cssclass_aligned, attrs_id, attrs_icon, data_id, data_icon = _format_common(
         is_aligned
@@ -362,15 +396,20 @@ def summarize_variable(
     return "".join(html)
 
 
-def summarize_data(dataset):
-    has_attrs = isinstance(dataset, sc.Dataset)
+def summarize_data(dataset: Mapping[str, DataArray] | Dataset) -> str:
+    if isinstance(dataset, Dataset):
+        has_attrs = True
+        embedded_in: Dataset | None = dataset
+    else:
+        has_attrs = False
+        embedded_in = None
     vars_li = "".join(
         "<li class='sc-var-item'>{}</li>".format(
             summarize_variable(
                 name,
                 var.data,
                 has_attrs=has_attrs,
-                embedded_in=dataset if has_attrs else None,
+                embedded_in=embedded_in,
             )
         )
         for name, var in _ordered_dict(dataset).items()
@@ -379,20 +418,25 @@ def summarize_data(dataset):
 
 
 def collapsible_section(
-    name, inline_details="", details="", n_items=None, enabled=True, collapsed=False
-):
+    name: str,
+    inline_details: str = "",
+    details: str = "",
+    n_items: int | None = None,
+    enabled: bool = True,
+    collapsed: bool = False,
+) -> str:
     # "unique" id to expand/collapse the section
     data_id = "section-" + str(uuid.uuid4())
 
     has_items = n_items is not None and n_items
     n_items_span = "" if n_items is None else f" <span>({n_items})</span>"
-    enabled = "" if enabled and has_items else "disabled"
-    collapsed = "" if collapsed or not has_items else "checked"
+    disabled = "" if enabled and has_items else "disabled"
+    checked = "" if collapsed or not has_items else "checked"
     tip = " title='Expand/collapse section'" if enabled else ""
 
     return (
         f"<input id='{data_id}' class='sc-section-summary-in' "
-        f"type='checkbox' {enabled} {collapsed}>"
+        f"type='checkbox' {disabled} {checked}>"
         f"<label for='{data_id}' class='sc-section-summary' {tip}>"
         f"{name}:{n_items_span}</label>"
         f"<div class='sc-section-inline-details'>{inline_details}</div>"
@@ -401,14 +445,14 @@ def collapsible_section(
 
 
 def _mapping_section(
-    mapping,
-    *extra_details_func_args,
-    name=None,
-    details_func=None,
-    max_items_collapse=None,
-    enabled=True,
-):
-    n_items = 1 if isinstance(mapping, sc.DataArray) else len(mapping)
+    mapping: DataArray | Mapping[str, Variable],
+    *extra_details_func_args: Any,
+    name: str,
+    max_items_collapse: int,
+    details_func: Callable[..., str],
+    enabled: bool = True,
+) -> str:
+    n_items = 1 if isinstance(mapping, DataArray) else len(mapping)
     collapsed = n_items >= max_items_collapse
 
     return collapsible_section(
@@ -420,16 +464,16 @@ def _mapping_section(
     )
 
 
-def dim_section(dataset):
-    coords = dataset.coords if hasattr(dataset, "coords") else {}
-    dim_list = format_dims(dataset.dims, dataset.shape, coords)
+def dim_section(ds: DataArray | Dataset) -> str:
+    coords = ds.coords if hasattr(ds, "coords") else {}
+    dim_list = format_dims(ds.dims, ds.shape, coords)
 
     return collapsible_section(
         "Dimensions", inline_details=dim_list, enabled=False, collapsed=True
     )
 
 
-def summarize_array(var, is_variable=False):
+def summarize_array(var: Variable, is_variable: bool = False) -> str:
     vars_li = "".join(
         "<li class='sc-var-item'>"
         f"{summarize_variable(None, var, add_dim_size=is_variable)}</li>"
@@ -437,7 +481,7 @@ def summarize_array(var, is_variable=False):
     return f"<ul class='sc-var-list'>{vars_li}</ul>"
 
 
-def variable_section(var):
+def variable_section(var: Variable) -> str:
     return summarize_array(var, is_variable=True)
 
 
@@ -467,7 +511,7 @@ attr_section = partial(
 )
 
 
-def _obj_repr(header_components, sections):
+def _obj_repr(header_components: Iterable[str], sections: Iterable[str]) -> str:
     header = f"<div class='sc-header'>" f"{''.join(h for h in header_components)}</div>"
     sections = "".join(f"<li class='sc-section-item'>{s}</li>" for s in sections)
 
@@ -483,7 +527,7 @@ def _obj_repr(header_components, sections):
     )
 
 
-def _format_size(obj):
+def _format_size(obj: Variable | DataArray | Dataset) -> str:
     view_size = obj.__sizeof__()
     underlying_size = obj.underlying_size()
     res = f"({human_readable_size(view_size)}"
@@ -495,7 +539,7 @@ def _format_size(obj):
     return res + ")"
 
 
-def dataset_repr(ds):
+def data_array_dataset_repr(ds: DataArray | Dataset) -> str:
     obj_type = f"scipp.{type(ds).__name__}"
     header_components = [
         f"<div class='sc-obj-type'>{escape(obj_type)} " + _format_size(ds) + "</div>"
@@ -506,9 +550,9 @@ def dataset_repr(ds):
     if len(ds.coords) > 0:
         sections.append(coord_section(ds.coords, ds))
 
-    sections.append(data_section(ds if isinstance(ds, sc.Dataset) else {'': ds}))
+    sections.append(data_section(ds if isinstance(ds, Dataset) else {'': ds}))
 
-    if not isinstance(ds, sc.Dataset):
+    if not isinstance(ds, Dataset):
         if len(ds.masks) > 0:
             sections.append(mask_section(ds.masks, ds))
         if len(ds.deprecated_attrs) > 0:
@@ -517,7 +561,7 @@ def dataset_repr(ds):
     return _obj_repr(header_components, sections)
 
 
-def variable_repr(var):
+def variable_repr(var: Variable) -> str:
     obj_type = f"scipp.{type(var).__name__}"
 
     header_components = [
@@ -529,7 +573,7 @@ def variable_repr(var):
     return _obj_repr(header_components, sections)
 
 
-def human_readable_size(size_in_bytes):
+def human_readable_size(size_in_bytes: int) -> str:
     if size_in_bytes / (1024 * 1024 * 1024) > 1:
         return f'{size_in_bytes/(1024*1024*1024):.2f} GB'
     if size_in_bytes / (1024 * 1024) > 1:
