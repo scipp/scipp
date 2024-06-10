@@ -15,6 +15,7 @@ from .unary import to_unit
 
 _T = TypeVar('_T', Variable, DataGroup)
 _VarDaDg = TypeVar('_VarDaDg', Variable, DataArray, DataGroup)
+_VarDa = TypeVar('_VarDa', Variable, DataArray)
 _DsDg = TypeVar('_DsDg', Dataset, DataGroup)
 
 
@@ -380,3 +381,8 @@ def label_based_index_to_positional_index(
         index,
     )
     return (dim, inds[0] if len(inds) == 1 else slice(*inds))
+
+
+def as_const(x: _VarDa) -> _VarDa:
+    """Return a copy with the readonly flag set."""
+    return _call_cpp_func(_cpp.as_const, x)
