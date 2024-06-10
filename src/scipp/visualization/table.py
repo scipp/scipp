@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 
+from typing import Any
 
 import numpy as np
 
@@ -47,9 +48,9 @@ def _add_td_tags(cell_list: list[str], border: str = '') -> list[str]:
 def _make_variable_column(
     name: str,
     var: Variable,
-    indices: list,
+    indices: list[int | None] | range,
     need_bin_edge: bool,
-    is_bin_edge,
+    is_bin_edge: bool,
     border: str = '',
 ) -> list[str]:
     head = [_var_name_with_unit(name, var)]
@@ -70,8 +71,11 @@ def _make_variable_column(
 
 
 def _make_data_array_table(
-    da: DataArray, indices: list, bin_edges: bool, no_left_border: bool = False
-) -> list[list]:
+    da: DataArray,
+    indices: list[int | None] | range,
+    bin_edges: bool,
+    no_left_border: bool = False,
+) -> list[list[str]]:
     out = [
         _make_variable_column(
             name='',
@@ -137,12 +141,12 @@ def _make_sections_header(ds: Dataset) -> str:
     return out
 
 
-def _to_html_table(header: str, body: list[list]) -> str:
+def _to_html_table(header: str, body: list[list[str]]) -> str:
     out = '<table>' + header
     ncols = len(body)
     nrows = len(body[0])
     for i in range(nrows):
-        out += '<tr>' + ''.join([body[j][i] for j in range(ncols)]) + '</tr>'
+        out += '<tr>' + ''.join(body[j][i] for j in range(ncols)) + '</tr>'
     out += '</table>'
     return out
 
@@ -176,17 +180,22 @@ def _strip_scalars_and_broadcast_masks(ds: Dataset) -> Dataset:
     return Dataset(out)
 
 
-def _to_dataset(obj: VariableLike | dict) -> Dataset:
+def _to_dataset(obj: VariableLike | dict[str, Variable | DataArray]) -> Dataset:
     if isinstance(obj, DataArray):
         return Dataset({obj.name: obj})
     if isinstance(obj, Variable):
         return Dataset(data={"": obj})
     if isinstance(obj, dict):
         return Dataset(obj)
-    return obj
+    if isinstance(obj, Dataset):
+        return obj
+    raise TypeError(f'Unsupported argument type: {type(obj)}')
 
 
-def table(obj: dict[str, Variable | DataArray], max_rows: int = 20):
+def table(
+    obj: Variable | DataArray | Dataset | dict[str, Variable | DataArray],
+    max_rows: int = 20,
+) -> Any:
     """Create an HTML table from the contents of the supplied object.
 
     Possible inputs are:
@@ -206,49 +215,53 @@ def table(obj: dict[str, Variable | DataArray], max_rows: int = 20):
     max_rows:
         Maximum number of rows to display.
     """
-    obj = _to_dataset(obj)
+    ds = _to_dataset(obj)
 
-    if obj.ndim != 1:
+    if ds.ndim != 1:
         raise ValueError("Table can only be generated for one-dimensional objects.")
 
-    obj = _strip_scalars_and_broadcast_masks(obj)
+    ds = _strip_scalars_and_broadcast_masks(ds)
 
     # Limit the number of rows to be printed
-    size = obj.shape[0]
+    size = ds.shape[0]
     if size > max_rows:
         half = int(max_rows / 2)
-        inds = [*range(half), None, *range(size - half, size)]
+        indices: list[int | None] | range = [
+            *range(half),
+            None,
+            *range(size - half, size),
+        ]
     else:
-        inds = range(size)
+        indices = range(size)
 
-    bin_edges = _find_bin_edges(obj)
+    bin_edges = _find_bin_edges(ds)
 
-    header = _make_sections_header(obj)
-    if len(obj) > 1:
-        header = _make_entries_header(obj) + header
+    header = _make_sections_header(ds)
+    if len(ds) > 1:
+        header = _make_entries_header(ds) + header
 
     # First attach coords
     body = [
         _make_variable_column(
             name=name,
             var=var,
-            indices=inds,
+            indices=indices,
             need_bin_edge=bin_edges,
-            is_bin_edge=obj.coords.is_edges(name),
+            is_bin_edge=ds.coords.is_edges(name),
         )
-        for name, var in sorted(obj.coords.items())
+        for name, var in sorted(ds.coords.items())
     ]
 
     # Rest of the table from DataArrays
-    for i, (_, da) in enumerate(sorted(obj.items())):
+    for i, (_, da) in enumerate(sorted(ds.items())):
         body += _make_data_array_table(
             da=da,
-            indices=inds,
+            indices=indices,
             bin_edges=bin_edges,
-            no_left_border=(i == 0) and (not obj.coords),
+            no_left_border=(i == 0) and (not ds.coords),
         )
 
     html = _to_html_table(header=header, body=body)
     from IPython.display import HTML
 
-    return HTML(html)
+    return HTML(html)  # type: ignore[no-untyped-call]
