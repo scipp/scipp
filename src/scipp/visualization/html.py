@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from ..core import DataGroup, Variable
 from ..typing import VariableLike
-from .table import table  # noqa: F401
 
 
 def make_html(container: VariableLike) -> str:
