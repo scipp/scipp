@@ -43,7 +43,7 @@ def make_html(container: VariableLike) -> str:
         return data_array_dataset_repr(container)
 
 
-def to_html(container: VariableLike):
+def to_html(container: VariableLike) -> None:
     """Render am object to HTML in a Jupyter notebook.
 
     Parameters
@@ -59,4 +59,4 @@ def to_html(container: VariableLike):
     """
     from IPython.display import HTML, display
 
-    display(HTML(make_html(container)))
+    display(HTML(make_html(container)))  # type: ignore[no-untyped-call]
