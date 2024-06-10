@@ -13,7 +13,7 @@ dependencies:
   - gxx_linux-64=12.2.*
   - ninja=1.11.0
   - pandoc=2.18
-  - scipp::plopp=23.03.0
+  - scipp::plopp=24.05.0
   - tbb=2020.2.*
   - tbb-devel=2020.2.*
   - tox=3.25.0
