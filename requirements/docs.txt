@@ -7,7 +7,7 @@
 #
 -r base.txt
 -r extra.txt
-accessible-pygments==0.0.4
+accessible-pygments==0.0.5
     # via pydata-sphinx-theme
 alabaster==0.7.16
     # via sphinx
@@ -16,23 +16,23 @@ attrs==23.2.0
     #   hypothesis
     #   jsonschema
     #   referencing
-babel==2.14.0
+babel==2.15.0
     # via
     #   pydata-sphinx-theme
     #   sphinx
-beautifulsoup4==4.12.2
+beautifulsoup4==4.12.3
     # via
     #   nbconvert
     #   pydata-sphinx-theme
 bleach==6.1.0
     # via nbconvert
-contourpy==1.2.0
+contourpy==1.2.1
     # via matplotlib
 cycler==0.12.1
     # via matplotlib
 defusedxml==0.7.1
     # via nbconvert
-docutils==0.20.1
+docutils==0.21.2
     # via
     #   myst-parser
     #   nbsphinx
@@ -40,41 +40,41 @@ docutils==0.20.1
     #   sphinx
 fastjsonschema==2.19.1
     # via nbformat
-fonttools==4.47.0
+fonttools==4.53.0
     # via matplotlib
 gitdb==4.0.11
     # via gitpython
-gitpython==3.1.41
+gitpython==3.1.43
     # via -r docs.in
-hypothesis==6.92.8
+hypothesis==6.103.1
     # via -r docs.in
 imagesize==1.4.1
     # via sphinx
 ipydatawidgets==4.3.5
     # via pythreejs
-ipympl==0.9.3
+ipympl==0.9.4
     # via -r docs.in
 ipython-genutils==0.2.0
     # via ipympl
-ipywidgets==8.1.1
+ipywidgets==8.1.3
     # via
     #   -r docs.in
     #   ipydatawidgets
     #   ipympl
     #   pythreejs
-jinja2==3.1.3
+jinja2==3.1.4
     # via
     #   myst-parser
     #   nbconvert
     #   nbsphinx
     #   sphinx
-jsonschema==4.20.0
+jsonschema==4.22.0
     # via nbformat
 jsonschema-specifications==2023.12.1
     # via jsonschema
 jupyterlab-pygments==0.3.0
     # via nbconvert
-jupyterlab-widgets==3.0.9
+jupyterlab-widgets==3.0.11
     # via ipywidgets
 kiwisolver==1.4.5
     # via matplotlib
@@ -82,54 +82,54 @@ markdown-it-py==3.0.0
     # via
     #   mdit-py-plugins
     #   myst-parser
-markupsafe==2.1.3
+markupsafe==2.1.5
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.8.2
+matplotlib==3.9.0
     # via
     #   ipympl
     #   plopp
-mdit-py-plugins==0.4.0
+mdit-py-plugins==0.4.1
     # via myst-parser
 mdurl==0.1.2
     # via markdown-it-py
 mistune==3.0.2
     # via nbconvert
-myst-parser==2.0.0
+myst-parser==3.0.1
     # via -r docs.in
-nbclient==0.9.0
+nbclient==0.10.0
     # via nbconvert
-nbconvert==7.14.0
+nbconvert==7.16.4
     # via nbsphinx
-nbformat==5.9.2
+nbformat==5.10.4
     # via
     #   nbclient
     #   nbconvert
     #   nbsphinx
-nbsphinx==0.9.3
+nbsphinx==0.9.4
     # via -r docs.in
-pandocfilters==1.5.0
+pandocfilters==1.5.1
     # via nbconvert
-pillow==10.2.0
+pillow==10.3.0
     # via
     #   ipympl
     #   matplotlib
-plopp==23.11.0
+plopp==24.5.0
     # via -r docs.in
-pydata-sphinx-theme==0.15.2
+pydata-sphinx-theme==0.15.3
     # via -r docs.in
-pyparsing==3.1.1
+pyparsing==3.1.2
     # via matplotlib
 pythreejs==2.4.2
     # via -r docs.in
 pyyaml==6.0.1
     # via myst-parser
-referencing==0.32.1
+referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
-rpds-py==0.16.2
+rpds-py==0.18.1
     # via
     #   jsonschema
     #   referencing
@@ -141,7 +141,7 @@ sortedcontainers==2.4.0
     # via hypothesis
 soupsieve==2.5
     # via beautifulsoup4
-sphinx==7.2.6
+sphinx==7.3.7
     # via
     #   -r docs.in
     #   myst-parser
@@ -149,31 +149,31 @@ sphinx==7.2.6
     #   pydata-sphinx-theme
     #   sphinx-autodoc-typehints
     #   sphinx-copybutton
-sphinx-autodoc-typehints==1.18.3
+sphinx-autodoc-typehints==2.1.1
     # via -r docs.in
 sphinx-copybutton==0.5.2
     # via -r docs.in
-sphinxcontrib-applehelp==1.0.4
+sphinxcontrib-applehelp==1.0.8
     # via sphinx
-sphinxcontrib-devhelp==1.0.2
+sphinxcontrib-devhelp==1.0.6
     # via sphinx
-sphinxcontrib-htmlhelp==2.0.1
+sphinxcontrib-htmlhelp==2.0.5
     # via sphinx
 sphinxcontrib-jsmath==1.0.1
     # via sphinx
-sphinxcontrib-qthelp==1.0.3
+sphinxcontrib-qthelp==1.0.7
     # via sphinx
 sphinxcontrib-serializinghtml==1.1.10
     # via sphinx
-tinycss2==1.2.1
+tinycss2==1.3.0
     # via nbconvert
+tomli==2.0.1
+    # via sphinx
 traittypes==0.2.1
     # via ipydatawidgets
-typing-extensions==4.9.0
-    # via pydata-sphinx-theme
 webencodings==0.5.1
     # via
     #   bleach
     #   tinycss2
-widgetsnbextension==4.0.9
+widgetsnbextension==4.0.11
     # via ipywidgets
