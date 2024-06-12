@@ -85,7 +85,10 @@ class _DataWriter(Protocol):
     def write(group: h5.Group, data: Variable) -> h5.Dataset | h5.Group: ...
 
 
-class _ArrayDataReader(Protocol):
+# All readers are writers and have the same interface for writing.
+# But readers for array variables expect a `data` argument that is
+# absent in other readers.
+class _ArrayDataIO(_DataWriter, Protocol):
     @staticmethod
     def read(group: h5.Group, data: Variable) -> None: ...
 
@@ -208,8 +211,8 @@ def _check_scipp_header(group: h5.Group, what: str) -> None:
         )
 
 
-def _array_data_reader_lut() -> dict[str, _ArrayDataReader]:
-    handler: dict[str, _ArrayDataReader] = {}
+def _array_data_io_lut() -> dict[str, _ArrayDataIO]:
+    handler: dict[str, _ArrayDataIO] = {}
     for dtype in [
         DType.float64,
         DType.float32,
@@ -232,27 +235,10 @@ def _array_data_reader_lut() -> dict[str, _ArrayDataReader]:
 
 
 def _data_writer_lut() -> dict[str, _DataWriter]:
-    handler: dict[str, _DataWriter] = {}
-    for dtype in [
-        DType.float64,
-        DType.float32,
-        DType.int64,
-        DType.int32,
-        DType.bool,
-        DType.datetime64,
-        DType.vector3,
-        DType.linear_transform3,
-        DType.rotation3,
-        DType.translation3,
-        DType.affine_transform3,
-    ]:
-        handler[str(dtype)] = _NumpyDataIO
+    # Unpack and repack dict to cast to the correct value type.
+    handler: dict[str, _DataWriter] = {**_array_data_io_lut()}
     for dtype in [DType.VariableView, DType.DataArrayView, DType.DatasetView]:
         handler[str(dtype)] = _BinDataIO
-    for dtype in [DType.Variable, DType.DataArray, DType.Dataset]:
-        handler[str(dtype)] = _ScippDataIO
-    for dtype in [DType.string]:
-        handler[str(dtype)] = _StringDataIO
     return handler
 
 
@@ -282,7 +268,7 @@ def _read_unit_attr(ds: h5.Dataset) -> Unit:
 
 class _VariableIO:
     _dtypes = _dtype_lut()
-    _array_data_readers = _array_data_reader_lut()
+    _array_data_readers = _array_data_io_lut()
     _data_writers = _data_writer_lut()
 
     @classmethod
