@@ -128,11 +128,11 @@ class Constituents(TypedDict):
     """A dict with bin constituents."""
 
     data: Variable | DataArray
-    """Buffer with events."""
+    """Data content."""
     begin: Variable
     """Begin indices for each bin."""
     end: Variable
-    """Begin indices for each bin."""
+    """End indices for each bin."""
     dim: str
     """Dimension in 'data' that the binning applies to."""
 
