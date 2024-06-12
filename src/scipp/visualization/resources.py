@@ -7,7 +7,7 @@ import importlib.resources
 from functools import lru_cache, partial
 
 
-def _read_text(filename):
+def _read_text(filename: str) -> str:
     return (
         importlib.resources.files('scipp.visualization.templates')
         .joinpath(filename)
@@ -60,9 +60,6 @@ def load_dg_style() -> str:
     Datagroup stylesheet is dependent on ``style.css``.
     Therefore it loads both ``style.css`` and ``datagroup.css``.
     """
-    from .formatting_html import load_style
-    from .resources import _preprocess_style, _read_text
-
     style_sheet = (
         '<style id="datagroup-style-sheet">'
         + _preprocess_style(_read_text('datagroup.css'))

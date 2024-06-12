@@ -4,11 +4,11 @@
 from __future__ import annotations
 
 from html import escape
+from typing import Any
 
 import numpy as np
 
-from .._scipp import core as sc
-from ..typing import VariableLike
+from ..core import DataArray, Dataset, Variable
 from . import colors
 from .resources import load_style
 
@@ -27,7 +27,7 @@ _small_font = round(0.8 * _svg_em, 2)
 _smaller_font = round(0.6 * _svg_em, 2)
 
 
-def _color_variants(hex_color):
+def _color_variants(hex_color: str) -> tuple[str, str, str]:
     """
     Produce darker and lighter color variants, given an input color.
     """
@@ -37,7 +37,7 @@ def _color_variants(hex_color):
     return light, hex_color, dark
 
 
-def _truncate_long_string(long_string: str, max_title_length) -> str:
+def _truncate_long_string(long_string: str, max_title_length: int) -> str:
     return (
         (long_string[:max_title_length] + '..')
         if len(long_string) > max_title_length
@@ -45,7 +45,9 @@ def _truncate_long_string(long_string: str, max_title_length) -> str:
     )
 
 
-def _build_svg(content, left, top, width, height):
+def _build_svg(
+    content: Any, left: float, top: float, width: float, height: float
+) -> str:
     return (
         f'<svg width={_svg_width}em viewBox="{left} {top} {width} {height}"'
         ' class="sc-root">'
@@ -54,22 +56,27 @@ def _build_svg(content, left, top, width, height):
 
 
 class VariableDrawer:
-    def __init__(self, variable, margin=1.0, target_dims=None, show_alignment=False):
+    def __init__(
+        self,
+        variable: Variable,
+        margin: float = 1.0,
+        target_dims: tuple[str, ...] | None = None,
+        show_alignment: bool = False,
+    ) -> None:
         self._margin = margin
         self._variable = variable
-        self._target_dims = target_dims
-        if self._target_dims is None:
-            self._target_dims = self._dims()
+        self._target_dims = target_dims or self._dims()
         self._show_alignment = show_alignment
         self._x_stride = 1
         if len(self._dims()) > 3:
             raise RuntimeError(f"Cannot visualize {len(self._dims())}-D data")
 
-    def _dims(self):
-        dims = self._variable.dims
-        return dims
+    def _dims(self) -> tuple[str, ...]:
+        return self._variable.dims
 
-    def _draw_box(self, origin_x, origin_y, color, xlen=1):
+    def _draw_box(
+        self, origin_x: float, origin_y: float, color: str, xlen: int = 1
+    ) -> str:
         return (
             " ".join(
                 [
@@ -93,18 +100,18 @@ class VariableDrawer:
             .replace("xlen", str(xlen))
         )
 
-    def _draw_dots(self, x0, y0):
+    def _draw_dots(self, x0: float, y0: float) -> str:
         dots = ""
         for x, y in 0.1 + 0.8 * np.random.rand(7, 2) + np.array([x0, y0]):
             dots += f'<circle cx="{x}" cy="{y}" r="0.07"/>'
         return dots
 
-    def _variance_offset(self):
+    def _variance_offset(self) -> float:
         shape = self._extents()
         depth = shape[-3] + 1
         return 0.3 * depth
 
-    def _extents(self):
+    def _extents(self) -> list[int]:
         """Compute 3D extent, remapping dimension order to target dim order"""
         shape = self._variable.shape
         dims = self._dims()
@@ -118,19 +125,17 @@ class VariableDrawer:
                 e.append(1)
         return [1] * (3 - len(e)) + e
 
-    def _events_height(self):
+    def _events_height(self) -> float:
         if self._variable.bins is None:
             return 0
         events = self._variable.bins.constituents['data']
         # Rough estimate of vertical space taken by depiction of events buffer
-        if isinstance(events, sc.Variable):
+        if isinstance(events, Variable):
             return 1
-        elif isinstance(events, sc.DataArray):
-            return 1 + 1.3 * (len(events.deprecated_meta) + len(events.masks))
         else:
-            return len(events) + 1.3 * len(events.deprecated_meta)
+            return 1 + 1.3 * (len(events.deprecated_meta) + len(events.masks))
 
-    def size(self):
+    def size(self) -> tuple[float, float]:
         """Return the size (width and height) of the rendered output"""
         width = 2 * self._margin
         height = 3 * self._margin  # double margin on top for title space
@@ -150,12 +155,16 @@ class VariableDrawer:
         width += 0.3 * depth
         height += 0.3 * depth
         height = max(height, self._events_height())
-        return [width, height]
+        return width, height
 
-    def _draw_array(self, color, offset=None, events=False):
+    def _draw_array(
+        self,
+        color: str,
+        offset: tuple[float, float] | None = None,
+        events: bool = False,
+    ) -> str:
         """Draw the array of boxes"""
-        if offset is None:
-            offset = [0, 0]
+        offset = offset or (0, 0)
         dx = offset[0]
         dy = offset[1] + 0.3  # extra offset for top face of top row of cubes
         svg = ''
@@ -176,13 +185,13 @@ class VariableDrawer:
                         svg += self._draw_dots(origin_x, origin_y)
         return svg
 
-    def _draw_labels(self, offset):
+    def _draw_labels(self, offset: tuple[float, float]) -> str:
         view_height = self.size()[1]
         svg = ''
         dx = offset[0]
         dy = offset[1]
 
-        def make_label(dim, extent, axis):
+        def make_label(dim: str, extent: float, axis: int) -> str:
             if axis == 2:
                 x_pos = dx + self._margin + 0.5 * extent
                 y_pos = dy + view_height - self._margin + _smaller_font
@@ -213,6 +222,8 @@ class VariableDrawer:
                     transform="rotate(-45, {x_pos}, {y_pos})">\
                         {escape(dim)}</text>'
 
+            raise ValueError(f"Invalid axis: {axis}")
+
         extents = self._extents()
         for dim in self._variable.dims:
             i = self._target_dims.index(dim) + (3 - len(self._target_dims))
@@ -221,7 +232,7 @@ class VariableDrawer:
             svg += make_label(dim, extent, i)
         return svg
 
-    def _draw_info(self, offset, title):
+    def _draw_info(self, offset: tuple[float, float], title: str | None) -> str:
         try:
             unit = str(self._variable.unit)
         except Exception:
@@ -254,7 +265,7 @@ class VariableDrawer:
 
         return svg
 
-    def _draw_bins_buffer(self):
+    def _draw_bins_buffer(self) -> str:
         if self._variable.bins is None:
             return ''
         svg = ''
@@ -271,8 +282,13 @@ class VariableDrawer:
         )
         return svg
 
-    def draw(self, color, offset=None, title=None):
-        offset = np.zeros(2) if offset is None else offset
+    def draw(
+        self,
+        color: str,
+        offset: tuple[float, float] | None = None,
+        title: str | None = None,
+    ) -> str:
+        offset = (0, 0) if offset is None else offset
         svg = '<g>'
         svg += self._draw_info(offset, title)
         items = []
@@ -286,12 +302,9 @@ class VariableDrawer:
             svg += f'<title>{name}</title>'
             svg += self._draw_array(
                 color=color,
-                offset=offset
-                + np.array(
-                    [
-                        (len(items) - i - 1) * self._variance_offset(),
-                        i * self._variance_offset(),
-                    ]
+                offset=(
+                    offset[0] + (len(items) - i - 1) * self._variance_offset(),
+                    offset[1] + i * self._variance_offset(),
                 ),
                 events=self._variable.bins is not None,
             )
@@ -305,7 +318,7 @@ class VariableDrawer:
             .replace('#smaller-font', f'{_smaller_font}px')
         )
 
-    def make_svg(self, content_only=False):
+    def make_svg(self, content_only: bool = False) -> str:
         if content_only:
             return self.draw(color=colors.STYLE['data'])
         return _build_svg(
@@ -318,15 +331,24 @@ class VariableDrawer:
 
 
 class DrawerItem:
-    def __init__(self, name, data, colors, show_alignment=False):
+    def __init__(
+        self, name: str, data: Variable, color: str, show_alignment: bool = False
+    ) -> None:
         self._name = name
         self._data = data
-        self._color = colors
+        self._color = color
         self._show_alignment = show_alignment
 
     def append_to_svg(
-        self, content, width, height, offset, layout_direction, margin, dims
-    ):
+        self,
+        content: str,
+        width: float,
+        height: float,
+        offset: tuple[float, float],
+        layout_direction: str,
+        margin: float,
+        dims: tuple[str, ...],
+    ) -> tuple[str, float, float, tuple[float, float]]:
         drawer = VariableDrawer(
             self._data, margin, target_dims=dims, show_alignment=self._show_alignment
         )
@@ -340,38 +362,47 @@ class DrawerItem:
 
 class EllipsisItem:
     @staticmethod
-    def append_to_svg(content, width, height, offset, layout_direction, *unused):
+    def append_to_svg(
+        content: str,
+        width: float,
+        height: float,
+        offset: tuple[float, float],
+        layout_direction: str,
+        *unused: object,
+    ) -> tuple[str, float, float, tuple[float, float]]:
         x_pos = offset[0] + 0.3
         y_pos = offset[1] + 2.0
         content += f'<text x="{x_pos}" y="{y_pos}" class="sc-label" \
                     style="font-size:{_large_font}px"> ... </text>'
 
-        ellipsis_size = [1.5, 2.0]
+        ellipsis_size = (1.5, 2.0)
         width, height, offset = _new_size_and_offset(
             ellipsis_size, width, height, layout_direction
         )
         return content, width, height, offset
 
 
-def _new_size_and_offset(added_size, width, height, layout_direction):
+def _new_size_and_offset(
+    added_size: tuple[float, float], width: float, height: float, layout_direction: str
+) -> tuple[float, float, tuple[float, float]]:
     if layout_direction == 'x':
         width += added_size[0]
         height = max(height, added_size[1])
-        offset = [width, 0]
+        offset = (width, 0.0)
     else:
         width = max(width, added_size[0])
         height += added_size[1]
-        offset = [0, height]
+        offset = (0.0, height)
     return width, height, offset
 
 
 class DatasetDrawer:
-    def __init__(self, dataset):
+    def __init__(self, dataset: DataArray | Dataset) -> None:
         self._dataset = dataset
 
-    def _dims(self):
+    def _dims(self) -> tuple[str, ...]:
         dims = self._dataset.dims
-        if isinstance(self._dataset, sc.DataArray):
+        if isinstance(self._dataset, DataArray):
             # Handle, e.g., bin edges of a slice, where data lacks the edge dim
             for item in self._dataset.deprecated_meta.values():
                 for dim in item.dims:
@@ -381,10 +412,10 @@ class DatasetDrawer:
             raise RuntimeError(f"Cannot visualize {len(dims)}-D data")
         return dims
 
-    def make_svg(self, content_only=False):
+    def make_svg(self, content_only: bool = False) -> str:
         content = ''
-        width = 0
-        height = 0
+        width = 0.0
+        height = 0.0
         margin = 0.5
         dims = self._dims()
         # TODO bin edges (offset by 0.5)
@@ -408,12 +439,12 @@ class DatasetDrawer:
         # If there is more than one data item in the center area they are
         # stacked. Unfortunately this breaks the optical alignment with the Y
         # coordinates, but in a static picture there is probably no other way.
-        area_x = []
-        area_y = []
-        area_z = []
-        area_xy = []
-        area_0d = []
-        if isinstance(self._dataset, sc.DataArray):
+        area_x: list[DrawerItem | EllipsisItem] = []
+        area_y: list[DrawerItem | EllipsisItem] = []
+        area_z: list[DrawerItem | EllipsisItem] = []
+        area_xy: list[DrawerItem | EllipsisItem] = []
+        area_0d: list[DrawerItem | EllipsisItem] = []
+        if isinstance(self._dataset, DataArray):
             area_xy.append(DrawerItem('', self._dataset.data, colors.STYLE['data']))
         else:
             # Render highest-dimension items last so coords are optically
@@ -436,7 +467,7 @@ class DatasetDrawer:
                     area_xy.append(item)
 
         ds = self._dataset
-        if isinstance(ds, sc.DataArray):
+        if isinstance(ds, DataArray):
             categories = zip(
                 ['coords', 'masks', 'attrs'],
                 [ds.coords, ds.masks, ds.deprecated_attrs],
@@ -461,26 +492,29 @@ class DatasetDrawer:
                 else:
                     area_z.append(item)
 
-        def draw_area(area, layout_direction, reverse=False, truncate=False):
+        def draw_area(
+            area: list[DrawerItem | EllipsisItem],
+            layout_direction: str,
+            reverse: bool = False,
+            truncate: bool = False,
+        ) -> tuple[str, float, float]:
             number_of_items = len(area)
             min_items_before_worth_truncate = 5
             if truncate and number_of_items > min_items_before_worth_truncate:
                 area[1:-1] = [EllipsisItem()]
 
             content = ''
-            width = 0
-            height = 0
-            offset = [0, 0]
-            if reverse:
-                area = reversed(area)
-            for item in area:
+            width = 0.0
+            height = 0.0
+            offset = (0.0, 0.0)
+            for item in reversed(area) if reverse else area:
                 content, width, height, offset = item.append_to_svg(
                     content, width, height, offset, layout_direction, margin, dims
                 )
             return content, width, height
 
-        top = 0
-        left = 0
+        top = 0.0
+        left = 0.0
 
         c, w, h = draw_area(area_xy, 'y')
         content += f'<g transform="translate(0,{height})">{c}</g>'
@@ -508,18 +542,20 @@ class DatasetDrawer:
         return _build_svg(content, left, top, max(_cubes_in_full_width, width), height)
 
 
-def make_svg(container: VariableLike, content_only: bool | None = False) -> str:
+def make_svg(
+    container: Variable | DataArray | Dataset, content_only: bool = False
+) -> str:
     """
     Return an SVG representation of a variable, data array, or dataset.
     """
-    if isinstance(container, sc.Variable):
-        draw = VariableDrawer(container)
+    if isinstance(container, Variable):
+        draw: VariableDrawer | DatasetDrawer = VariableDrawer(container)
     else:
         draw = DatasetDrawer(container)
     return draw.make_svg(content_only=content_only)
 
 
-def show(container: VariableLike):
+def show(container: Variable | DataArray | Dataset) -> None:
     """
     Show a graphical representation of a variable, data array, or dataset.
 
@@ -529,4 +565,4 @@ def show(container: VariableLike):
     """
     from IPython.core.display import HTML, display
 
-    display(HTML(make_svg(container)))
+    display(HTML(make_svg(container)))  # type: ignore[no-untyped-call]

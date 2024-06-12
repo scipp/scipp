@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 import scipp as sc
-from scipp.io.hdf5 import collection_element_name
+from scipp.io.hdf5 import _collection_element_name
 
 h5py = pytest.importorskip('h5py')
 
@@ -27,9 +27,9 @@ def check_roundtrip(obj):
     return result  # for optional addition tests
 
 
-x = sc.Variable(dims=['x'], values=np.arange(4.0), unit=sc.units.m)
-y = sc.Variable(dims=['y'], values=np.arange(6.0), unit=sc.units.angstrom)
-xy = sc.Variable(
+x = sc.array(dims=['x'], values=np.arange(4.0), unit=sc.units.m)
+y = sc.array(dims=['y'], values=np.arange(6.0), unit=sc.units.angstrom)
+xy = sc.array(
     dims=['y', 'x'],
     values=np.random.rand(6, 4),
     variances=np.random.rand(6, 4),
@@ -38,7 +38,6 @@ xy = sc.Variable(
 vector = sc.vectors(dims=['x'], values=np.random.rand(4, 3))
 
 matrix = sc.spatial.linear_transforms(dims=['x'], values=np.random.rand(4, 3, 3))
-
 rotation = sc.spatial.rotations(dims=['x'], values=[[1, 2, 3, 4]])
 translation = sc.spatial.translations(dims=['x'], values=[[5, 6, 7]], unit=sc.units.m)
 affine = sc.spatial.affine_transforms(
@@ -47,11 +46,15 @@ affine = sc.spatial.affine_transforms(
     unit=sc.units.m,
 )
 
-datetime64ms_1d = sc.Variable(
+strings = sc.array(
+    dims=['s'], values=['a', '', 'long string which, longer than small string opt']
+)
+
+datetime64ms_1d = sc.array(
     dims=['x'], dtype=sc.DType.datetime64, unit='ms', values=np.arange(10)
 )
 
-datetime64us_1d = sc.Variable(
+datetime64us_1d = sc.array(
     dims=['x'], dtype=sc.DType.datetime64, unit='us', values=np.arange(10)
 )
 
@@ -106,6 +109,10 @@ def test_variable_translation():
 def test_variable_affine():
     check_roundtrip(affine)
     check_roundtrip(affine['x', 0])
+
+
+def test_variable_strings():
+    check_roundtrip(strings)
 
 
 def test_variable_datetime64():
@@ -250,7 +257,7 @@ def test_dataset_item_can_be_read_as_data_array():
         loaded = {}
         with h5py.File(name, 'r') as f:
             for entry in f['entries'].values():
-                da = sc.io.hdf5.HDF5IO.read(entry)
+                da = sc.io.load_hdf5(entry)
                 loaded[da.name] = da
         loaded = sc.Dataset(loaded)
         assert sc.identical(loaded, ds)
@@ -343,21 +350,21 @@ def assert_is_valid_hdf5_name(name: str):
 
 
 def test_periods_are_escaped_in_names():
-    assert_is_valid_hdf5_name(collection_element_name('a.b', 0))
-    assert_is_valid_hdf5_name(collection_element_name('a..b', 1))
-    assert_is_valid_hdf5_name(collection_element_name('a.', 2))
-    assert_is_valid_hdf5_name(collection_element_name('.a', 3))
+    assert_is_valid_hdf5_name(_collection_element_name('a.b', 0))
+    assert_is_valid_hdf5_name(_collection_element_name('a..b', 1))
+    assert_is_valid_hdf5_name(_collection_element_name('a.', 2))
+    assert_is_valid_hdf5_name(_collection_element_name('.a', 3))
 
 
 def test_slashes_are_escaped_in_names():
-    assert_is_valid_hdf5_name(collection_element_name('a/b', 0))
-    assert_is_valid_hdf5_name(collection_element_name('a//b', 1))
-    assert_is_valid_hdf5_name(collection_element_name('a/', 2))
-    assert_is_valid_hdf5_name(collection_element_name('/a', 3))
+    assert_is_valid_hdf5_name(_collection_element_name('a/b', 0))
+    assert_is_valid_hdf5_name(_collection_element_name('a//b', 1))
+    assert_is_valid_hdf5_name(_collection_element_name('a/', 2))
+    assert_is_valid_hdf5_name(_collection_element_name('/a', 3))
 
 
 def test_unicode_is_escaped_in_names():
-    assert_is_valid_hdf5_name(collection_element_name('µm', 0))
-    assert_is_valid_hdf5_name(collection_element_name('λ', 1))
-    assert_is_valid_hdf5_name(collection_element_name('Å/travel_time', 2))
-    assert_is_valid_hdf5_name(collection_element_name('λ in Å', 3))
+    assert_is_valid_hdf5_name(_collection_element_name('µm', 0))
+    assert_is_valid_hdf5_name(_collection_element_name('λ', 1))
+    assert_is_valid_hdf5_name(_collection_element_name('Å/travel_time', 2))
+    assert_is_valid_hdf5_name(_collection_element_name('λ in Å', 3))

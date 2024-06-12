@@ -30,7 +30,7 @@ Special:
     :py:class:`scipp.Unit` to construct other units.
 """
 
-from collections.abc import Iterator
+from collections.abc import Generator, Iterator
 from contextlib import contextmanager
 
 from .._scipp.core import add_unit_alias as _add_unit_alias
@@ -52,7 +52,7 @@ from .._scipp.core.units import (
     s,
     us,
 )
-from ..core.cpp_classes import DefaultUnit, Unit, Variable, VariancesError
+from ..core.cpp_classes import DefaultUnit, Unit, UnitError, Variable, VariancesError
 
 
 class UnitAliases:
@@ -70,12 +70,12 @@ class UnitAliases:
     Instead, use it through :attr:`scipp.units.aliases`.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         if any(isinstance(x, UnitAliases) for x in globals().values()):
             raise RuntimeError('There can be only one instance of _Aliases')
         self._aliases: dict[str, Unit] = {}
 
-    def __setitem__(self, alias: str, unit: str | Unit | Variable):
+    def __setitem__(self, alias: str, unit: str | Unit | Variable) -> None:
         """Define a new unit alias."""
         unit = _build_unit(unit)
         if self._aliases.get(alias) == unit:
@@ -85,11 +85,11 @@ class UnitAliases:
         _add_unit_alias(name=alias, unit=unit)
         self._aliases[alias] = unit
 
-    def __delitem__(self, alias: str):
+    def __delitem__(self, alias: str) -> None:
         """Remove an existing alias."""
         self._del_aliases(alias)
 
-    def _del_aliases(self, *names: str):
+    def _del_aliases(self, *names: str) -> None:
         old_aliases = dict(self._aliases)
         for name in names:
             del old_aliases[name]
@@ -97,13 +97,13 @@ class UnitAliases:
         for name, unit in old_aliases.items():
             self[name] = unit
 
-    def clear(self):
+    def clear(self) -> None:
         """Remove all aliases."""
         self._aliases.clear()
         _clear_unit_aliases()
 
     @contextmanager
-    def scoped(self, **kwargs: str | Unit):
+    def scoped(self, **kwargs: str | Unit) -> Generator[None, None, None]:
         """Contextmanager to define temporary aliases.
 
         Defines new aliases based on ``kwargs`` for the duration of the context.
@@ -191,10 +191,10 @@ class UnitAliases:
 
     # Making copies would allow _Alias's internal map and
     # LLNL/Unit's global map to get out of sync.
-    def __copy__(self):
+    def __copy__(self) -> None:
         raise TypeError('UnitAliases is a singleton and must not be copied')
 
-    def __deepcopy__(self):
+    def __deepcopy__(self) -> None:
         raise TypeError('UnitAliases is a singleton and must not be copied')
 
 
@@ -205,6 +205,8 @@ def _build_unit(x: str | Unit | Variable) -> Unit:
         return Unit(x)
     if x.variance is not None:
         raise VariancesError('Cannot define a unit with a variance')
+    if x.unit is None:
+        raise UnitError('Cannot define a unit based on a variable without units')
     # Convert to float first to make sure the variable only contains a
     # multiplier and not a string that would be multiplied to the unit.
     return Unit(str(float(x.value))) * x.unit

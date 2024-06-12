@@ -44,6 +44,7 @@ This will disable autoplot for the entire docstring.
 
 import re
 
+from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
 # If this pattern matches any line of a code block,
@@ -92,9 +93,16 @@ def _is_part_of_block(line: str) -> bool:
     return stripped.startswith('>>>') or stripped.startswith('...')
 
 
-def add_plot_directives(app, what, name, obj, options, lines: list[str]):
+def add_plot_directives(
+    app: object,
+    what: object,
+    name: object,
+    obj: object,
+    options: object,
+    lines: list[str],
+) -> None:
     new_lines = []
-    block_begin = None
+    block_begin: int | None = None
     for i, line in enumerate(lines):
         if DISABLE_DIRECTIVE_PATTERN.match(line):
             return
@@ -119,11 +127,11 @@ def add_plot_directives(app, what, name, obj, options, lines: list[str]):
 class AutoplotDisable(SphinxDirective):
     has_content = False
 
-    def run(self):
+    def run(self) -> list[object]:
         return []
 
 
-def setup(app):
+def setup(app: Sphinx) -> dict[str, int | bool]:
     app.add_directive('autoplot-disable', AutoplotDisable)
     app.connect('autodoc-process-docstring', add_plot_directives)
     return {'version': 1, 'parallel_read_safe': True}

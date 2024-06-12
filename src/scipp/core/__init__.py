@@ -44,7 +44,7 @@ from .cpp_classes import (
     VariancesError,
 )
 
-from .._scipp.core import as_const
+from .operations import as_const
 
 from .data_group import DataGroup
 from .dimensions import (
@@ -220,6 +220,7 @@ del (
 )
 
 __all__ = [
+    '__version__',
     'BinEdgeError',
     'BinnedDataError',
     'Bins',

@@ -24,17 +24,18 @@ pandas.read_csv:
 from collections.abc import Iterable
 from io import BytesIO, StringIO
 from os import PathLike
+from typing import Any
 
-from ..compat.pandas_compat import HeaderParserArg, from_pandas
+from ..compat.pandas_compat import HeaderParserArg, from_pandas_dataframe
 from ..core import Dataset
 
 
 # The typehint of filepath_or_buffer is less generic than in pd.read_csv
 # because the definitions of protocols are private in pandas.
 def _load_dataframe(
-    filepath_or_buffer: str | PathLike | StringIO | BytesIO,
-    sep: str,
-):
+    filepath_or_buffer: str | PathLike[str] | StringIO | BytesIO,
+    sep: str | None,
+) -> Any:
     try:
         import pandas as pd
     except ImportError:
@@ -47,7 +48,7 @@ def _load_dataframe(
 
 
 def load_csv(
-    filename: str | PathLike | StringIO | BytesIO,
+    filename: str | PathLike[str] | StringIO | BytesIO,
     *,
     sep: str | None = ',',
     data_columns: str | Iterable[str] | None = None,
@@ -136,7 +137,7 @@ def load_csv(
          a                           int64              [m]  (row)  [1, 2, 3, 4]
     """
     df = _load_dataframe(filename, sep=sep)
-    return from_pandas(
+    return from_pandas_dataframe(
         df,
         data_columns=data_columns,
         include_trivial_index=False,
