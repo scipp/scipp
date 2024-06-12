@@ -8,7 +8,7 @@ from .._scipp import core as _cpp
 from ..typing import Dims, MetaDataMap, VariableLike
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from .bin_remapping import concat_bins
-from .cpp_classes import DataArray, DType, Unit, Variable
+from .cpp_classes import DataArray, Dataset, DType, Unit, Variable
 from .data_group import DataGroup
 from .deprecation import _warn_attr_removal
 from .domains import merge_equal_adjacent
@@ -127,7 +127,7 @@ def lookup(
 class Constituents(TypedDict):
     """A dict with bin constituents."""
 
-    data: Variable | DataArray
+    data: Variable | DataArray | Dataset
     """Data content."""
     begin: Variable
     """Begin indices for each bin."""
