@@ -2,7 +2,7 @@
 graphviz
 h5py
 ipykernel
-numba==0.60.0rc1
+numba>=0.60.0rc1
 pandas
 pooch
 scipy>=1.7.0
