@@ -1,7 +1,6 @@
 name: Run tests against nightly dependencies
 
 on:
-  pull_request:
   schedule:
     - cron: '0 0 * * 0'
   workflow_dispatch:
@@ -49,7 +48,7 @@ jobs:
           echo "key=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
           echo "path=$(conan config home)" >> $GITHUB_OUTPUT
       - name: Cache conan
-        uses: actions/cache@v1
+        uses: actions/cache@v4
         with:
           path: ${{ steps.conan-cache-key.outputs.path }}
           key: conan-${{ matrix.variant.os }}-${{ steps.conan-cache-key.outputs.key }}
