@@ -4,6 +4,7 @@
 name: macos-latest
 channels:
   - conda-forge
+  - conda-forge/label/numpy_rc
 dependencies:
   - cmake=3.23.2
   - comm=0.1.3  # earlier versions break tests with ipywidgets with latest ipykernel
@@ -13,3 +14,4 @@ dependencies:
   - tbb=2020.2.*
   - tbb-devel=2020.2.*
   - tox=3.25.0
+  - numpy=2.0.0rc2

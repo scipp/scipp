@@ -431,7 +431,13 @@ class _DataGroupIO:
 
 
 def _direct_io(cls, convert=None):
-    type_name = cls.__name__
+    # Use fully qualified name for numpy.bool to avoid confusion with builtin bool."
+    # Numpy bools have different names in 1.x and 2.x
+    # TODO: This should be fixed once we drop support for numpy<2
+    if cls.__module__ == 'numpy' and cls.__name__[:4] == 'bool':
+        type_name = 'numpy.bool'
+    else:
+        type_name = cls.__name__
     if convert is None:
         convert = cls
 
@@ -458,6 +464,7 @@ class _HDF5IO:
         'DataGroup': _DataGroupIO,
         'str': _direct_io(str, convert=lambda b: b.decode('utf-8')),
         'ndarray': _direct_io(np.ndarray, convert=lambda x: x),
+        'numpy.bool': _direct_io(np.bool_),
         **{
             cls.__name__: _direct_io(cls)
             for cls in (
@@ -470,7 +477,6 @@ class _HDF5IO:
                 np.float32,
                 np.float64,
                 bool,
-                np.bool_,
                 bytes,
             )
         },
@@ -478,7 +484,13 @@ class _HDF5IO:
 
     @classmethod
     def write(cls, group: h5.Group, data, **kwargs):
-        name = data.__class__.__name__.replace('View', '')
+        data_cls = data.__class__
+        # Numpy bools have different names in 1.x and 2.x
+        # TODO: This should be fixed once we drop support for numpy<2
+        if data_cls.__module__ == 'numpy' and data_cls.__name__[:4] == 'bool':
+            name = 'numpy.bool'
+        else:
+            name = data_cls.__name__.replace('View', '')
         try:
             handler = cls._handlers[name]
         except KeyError:
