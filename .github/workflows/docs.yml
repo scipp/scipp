@@ -68,5 +68,4 @@ jobs:
           folder: html
           target-folder: ${{ env.target }}
           single-commit: true
-          clean-exclude: release
           ssh-key: ${{ secrets.GH_PAGES_DEPLOY_KEY }}
