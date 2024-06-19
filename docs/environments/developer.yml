@@ -8,7 +8,7 @@ channels:
 
 dependencies:
   - cmake>=3.21
-  - conan==1.59.0
+  - conan==1.64.1
   - conda-build
   - h5py
   - hypothesis
