@@ -17,7 +17,7 @@ colorama==0.4.6
     # via tox
 distlib==0.3.8
     # via virtualenv
-filelock==3.14.0
+filelock==3.15.1
     # via
     #   tox
     #   virtualenv
@@ -50,7 +50,7 @@ tomli==2.0.1
     #   tox
 tox==4.15.1
     # via -r ci.in
-urllib3==2.2.1
+urllib3==2.2.2
     # via requests
 virtualenv==20.26.2
     # via tox

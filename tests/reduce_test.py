@@ -35,7 +35,7 @@ def test_reduce_tuple():
 
 
 def test_reduce_nan():
-    var.values[1, 1] = np.NAN
+    var.values[1, 1] = np.nan
     args = _slices(var)
     assert sc.identical(sc.reduce(args).nanmax(), sc.nanmax(var, dim))
     assert sc.identical(sc.reduce(args).nanmin(), sc.nanmin(var, dim))
