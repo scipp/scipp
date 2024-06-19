@@ -5,5 +5,5 @@
 #
 #    pip-compile-multi
 #
-numpy==1.26.4
+numpy==2.0.0
     # via -r base.in
