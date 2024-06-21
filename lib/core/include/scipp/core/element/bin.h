@@ -121,6 +121,7 @@ static constexpr auto update_indices_by_grouping = overloaded{
                       update_indices_by_grouping_arg<int32_t, int64_t, int32_t>,
                       update_indices_by_grouping_arg<int64_t, int32_t>,
                       update_indices_by_grouping_arg<int32_t, int32_t>,
+                      update_indices_by_grouping_arg<int32_t, int32_t, int64_t>,
                       update_indices_by_grouping_arg<int64_t, bool>,
                       update_indices_by_grouping_arg<int32_t, bool>,
                       update_indices_by_grouping_arg<int64_t, std::string>,
@@ -155,7 +156,8 @@ static constexpr auto update_indices_by_grouping_contiguous = overloaded{
         update_indices_by_grouping_contiguous_arg<int64_t, int64_t, int32_t>,
         update_indices_by_grouping_contiguous_arg<int32_t, int64_t, int32_t>,
         update_indices_by_grouping_contiguous_arg<int64_t, int32_t>,
-        update_indices_by_grouping_contiguous_arg<int32_t, int32_t>>,
+        update_indices_by_grouping_contiguous_arg<int32_t, int32_t>,
+        update_indices_by_grouping_contiguous_arg<int32_t, int32_t, int64_t>>,
     [](units::Unit &indices, const units::Unit &coord,
        const units::Unit &ngroup, const units::Unit &offset) {
       expect::equals(coord, offset);
