@@ -1051,5 +1051,6 @@ def test_explicit_groups_with_mismatching_dtype():
     table = sc.DataArray(sc.ones(dims=['row'], shape=[10]), coords={'label': label})
     groups = sc.arange('label', 8, dtype='int64')
     assert sc.identical(table.group(groups).coords['label'], groups)
+    # Access different code branch, triggering when groups are not contiguous
     groups[-1] += 1
     assert sc.identical(table.group(groups).coords['label'], groups)
