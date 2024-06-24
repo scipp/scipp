@@ -38,7 +38,7 @@ jobs:
       matrix:
         variant:
         - {os: ubuntu-22.04, cmake-preset: ci-linux}
-        - {os: macos-11, cmake-preset: ci-macos}
+        - {os: macos-14, cmake-preset: ci-macos}
         - {os: windows-2019, cmake-preset: ci-windows}
         python-version: ["3.10"]
 
