@@ -46,7 +46,7 @@ def test_numpy_comparison():
 
 
 def check_numpy_version_for_comaprison():
-    major, minor, patch = np.__version__.split('.')
+    major, minor, *_ = np.__version__.split('.')
     if int(major) == 1 and int(minor) < 21:
         return True
     return False

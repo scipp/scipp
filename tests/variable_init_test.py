@@ -12,7 +12,10 @@ import scipp as sc
 
 
 def representation_of_native_int():
-    if platform.system() == 'Windows':
+    if (
+        platform.system() == 'Windows'
+        and np.lib.NumpyVersion(np.__version__) < '2.0.0b1'
+    ):
         return sc.DType.int32
     return sc.DType.int64
 

@@ -1,0 +1,59 @@
+name: Run tests against nightly dependencies
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+
+jobs:
+  build_and_test:
+    name: build and test ${{ matrix.variant.os }}, py${{ matrix.python-version }}
+    runs-on: ${{ matrix.variant.os }}
+    defaults:
+      run:
+        shell: bash -l {0}  # required for conda env
+    strategy:
+      fail-fast: false
+      matrix:
+        variant:
+        - {os: ubuntu-22.04, cmake-preset: ci-linux}
+        - {os: macos-11, cmake-preset: ci-macos}
+        - {os: windows-2019, cmake-preset: ci-windows}
+        python-version: ["3.10"]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0  # history required so cmake can determine version
+
+      - uses: ilammy/msvc-dev-cmd@v1  # Required to set up MSVC dev environment for Ninja builds.
+
+      - name: Setup conda environment
+        uses: mamba-org/setup-micromamba@v1
+        with:
+          micromamba-version: 1.5.6-0
+          environment-file: .buildconfig/${{ matrix.variant.cmake-preset }}.yml
+          cache-environment: true
+          create-args: python=${{ matrix.python-version }}
+
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2.12
+        with:
+          key: ${{ matrix.variant.os }}
+
+      - name: Cache conan setup
+        id: conan-cache-key
+        run: |
+          echo "key=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
+          echo "path=$(conan config home)" >> $GITHUB_OUTPUT
+      - name: Cache conan
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.conan-cache-key.outputs.path }}
+          key: conan-${{ matrix.variant.os }}-${{ steps.conan-cache-key.outputs.key }}
+
+      - run: cmake --preset ${{ matrix.variant.cmake-preset }}
+      - run: cmake --build --preset build
+      - run: ctest --preset test
+      - run: tox -e nightlydeps -vvv

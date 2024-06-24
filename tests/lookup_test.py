@@ -100,7 +100,7 @@ def test_nearest_masked_points_replaced_by_fill_value(dtype):
 
 def outofbounds(dtype):
     if dtype in ['float32', 'float64']:
-        return np.NaN
+        return np.nan
     return 0
 
 
