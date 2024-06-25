@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       os:
-        description: 'Operating system: ubuntu-22.04, macos-11, or windows-2019'
+        description: 'Operating system: ubuntu-22.04, macos-14-large, or windows-2019'
         required: true
         type: string
       target:
