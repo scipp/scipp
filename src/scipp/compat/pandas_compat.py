@@ -7,7 +7,6 @@ from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING, Literal
 
 from ..core import DataArray, Dataset, Unit, UnitError, array
-from ..typing import VariableLike
 from ..units import default_unit
 
 if TYPE_CHECKING:
@@ -91,7 +90,7 @@ def from_pandas(
     data_columns: str | Iterable[str] | None = None,
     include_trivial_index: bool = False,
     header_parser: HeaderParserArg = None,
-) -> VariableLike:
+) -> DataArray | Dataset:
     """Converts a pandas.DataFrame or pandas.Series object into a
     scipp Dataset or DataArray respectively.
 

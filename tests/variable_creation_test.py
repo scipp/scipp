@@ -6,6 +6,12 @@ import pytest
 
 import scipp as sc
 
+# https://numpy.org/devdocs/release/2.0.0-notes.html#remove-datetime64-deprecation-warning-when-constructing-with-timezone
+# TODO: This should be removed once we drop support for numpy<2
+raise_np_datetime = (
+    ValueError if np.lib.NumpyVersion(np.__version__) < '2.0.0b1' else UserWarning
+)
+
 
 def _compare_properties(a, b):
     assert a.dims == b.dims
@@ -671,7 +677,7 @@ def test_arange_datetime_from_str_raises_if_step_has_no_unit():
 
 
 def test_arange_datetime_from_str_raises_given_string_with_timezone():
-    with pytest.raises(ValueError, match='timezone'):
+    with pytest.raises(raise_np_datetime, match='timezone'):
         sc.arange(
             't',
             '2022-08-02T06:42:45Z',
@@ -961,13 +967,13 @@ def test_empty_sizes():
 
 @pytest.mark.parametrize('timezone', ['Z', '-05:00', '+02'])
 def test_datetime_raises_given_string_with_timezone(timezone):
-    with pytest.raises(ValueError, match='timezone'):
+    with pytest.raises(raise_np_datetime, match='timezone'):
         sc.datetime(f'2152-11-25T13:13:46{timezone}')
 
 
 @pytest.mark.parametrize('timezone', ['Z', '-05:00', '+02'])
 def test_datetimes_raises_given_string_with_timezone(timezone):
-    with pytest.raises(ValueError, match='timezone'):
+    with pytest.raises(raise_np_datetime, match='timezone'):
         sc.datetimes(dims=['time'], values=[f'2152-11-25T13:13:46{timezone}'], unit='s')
 
 

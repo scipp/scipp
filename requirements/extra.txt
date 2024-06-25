@@ -6,8 +6,6 @@
 #    pip-compile-multi
 #
 -r base.txt
-appnope==0.1.4
-    # via ipykernel
 asttokens==2.4.1
     # via stack-data
 certifi==2024.6.2
@@ -42,7 +40,7 @@ jupyter-core==5.7.2
     # via
     #   ipykernel
     #   jupyter-client
-llvmlite==0.42.0
+llvmlite==0.43.0
     # via numba
 matplotlib-inline==0.1.7
     # via
@@ -50,7 +48,7 @@ matplotlib-inline==0.1.7
     #   ipython
 nest-asyncio==1.6.0
     # via ipykernel
-numba==0.59.1
+numba==0.60.0
     # via -r extra.in
 packaging==24.1
     # via
@@ -73,7 +71,7 @@ pooch==1.8.2
     # via -r extra.in
 prompt-toolkit==3.0.47
     # via ipython
-psutil==5.9.8
+psutil==6.0.0
     # via ipykernel
 ptyprocess==0.7.0
     # via pexpect
@@ -117,9 +115,9 @@ typing-extensions==4.12.2
     # via ipython
 tzdata==2024.1
     # via pandas
-urllib3==2.2.1
+urllib3==2.2.2
     # via requests
 wcwidth==0.2.13
     # via prompt-toolkit
-xarray==2024.5.0
+xarray==2024.6.0
     # via -r extra.in

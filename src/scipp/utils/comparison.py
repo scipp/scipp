@@ -62,7 +62,7 @@ def isnear(
         If `x`, `y` are not going to be logically comparable
         for reasons relating to shape, item naming or non-finite elements.
     """
-    same_data = (
+    same_data: bool = (
         all(isclose(x.data, y.data, rtol=rtol, atol=atol, equal_nan=equal_nan)).value
         if include_data
         else True

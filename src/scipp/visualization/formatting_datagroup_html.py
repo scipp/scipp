@@ -2,9 +2,12 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 
 import uuid
+from collections.abc import Callable
 from string import Template
+from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 
 from ..core.cpp_classes import DataArray, Dataset, Variable
 from ..core.data_group import DataGroup
@@ -19,7 +22,9 @@ from .resources import (
 )
 
 
-def _format_shape(var: Variable | DataArray | Dataset | DataGroup, br_at=30) -> str:
+def _format_shape(
+    var: Variable | DataArray | Dataset | DataGroup, br_at: int = 30
+) -> str:
     """Return HTML Component that represents the shape of ``var``"""
     shape_list = [f"{escape(str(dim))}: {size}" for dim, size in var.sizes.items()]
     if sum([len(line) - line.count('\\') for line in shape_list]) < br_at:
@@ -28,7 +33,7 @@ def _format_shape(var: Variable | DataArray | Dataset | DataGroup, br_at=30) -> 
         return f"({', <br>&nbsp'.join(shape_list)})"
 
 
-def _format_atomic_value(value, maxidx: int = 5) -> str:
+def _format_atomic_value(value: object, maxidx: int = 5) -> str:
     """Inline preview of single value"""
     value_repr = str(value)[:maxidx]
     if len(value_repr) < len(str(value)):
@@ -36,7 +41,7 @@ def _format_atomic_value(value, maxidx: int = 5) -> str:
     return value_repr
 
 
-def _format_dictionary_item(name_item: tuple, maxidx: int = 10) -> str:
+def _format_dictionary_item(name_item: tuple[str, object], maxidx: int = 10) -> str:
     """Inline preview of a dictionary"""
     name, item = name_item
     name = _format_atomic_value(name, maxidx=maxidx)
@@ -44,13 +49,14 @@ def _format_dictionary_item(name_item: tuple, maxidx: int = 10) -> str:
     return "(" + ": ".join((name, type_repr)) + ")"
 
 
-def _format_multi_dim_data(var: Dataset | np.ndarray) -> str:
+def _format_multi_dim_data(var: Dataset | npt.NDArray[Any]) -> str:
     """Inline preview of single or multi-dimensional data"""
     if isinstance(var, Dataset):
-        view_iterable = list(var.items())
+        view_iterable: list[Any] | npt.NDArray[Any] = list(var.items())
         var_len = len(var)
-        first_idx, last_idx = 0, -1
-        format_item = _format_dictionary_item
+        first_idx: Any = 0
+        last_idx: Any = -1
+        format_item: Callable[..., str] = _format_dictionary_item
     elif isinstance(var, np.ndarray):
         view_iterable = var
         var_len = var.size
@@ -69,7 +75,7 @@ def _format_multi_dim_data(var: Dataset | np.ndarray) -> str:
     return ', '.join(view_items)
 
 
-def _summarize_atomic_variable(var, name: str, depth: int = 0) -> str:
+def _summarize_atomic_variable(var: Any, name: str, depth: int = 0) -> str:
     """Return HTML Component that contains summary of ``var``"""
     shape_repr = escape("()")
     unit = ''
@@ -108,7 +114,7 @@ def _summarize_atomic_variable(var, name: str, depth: int = 0) -> str:
     )
 
 
-def _collapsible_summary(var: DataGroup, name: str, name_spaces: list) -> str:
+def _collapsible_summary(var: DataGroup, name: str, name_spaces: list[object]) -> str:
     parent_type = "scipp"
     objtype = type(var).__name__
     shape_repr = _format_shape(var)
@@ -129,9 +135,8 @@ def _collapsible_summary(var: DataGroup, name: str, name_spaces: list) -> str:
     )
 
 
-def _datagroup_detail(dg: DataGroup, name_spaces: list | None = None) -> str:
-    if name_spaces is None:
-        name_spaces = []
+def _datagroup_detail(dg: DataGroup, name_spaces: list[object] | None = None) -> str:
+    name_spaces = name_spaces or []
     summary_rows = []
     for name, item in dg.items():
         if isinstance(item, DataGroup):

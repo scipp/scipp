@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from ..core import DataGroup, Variable
 from ..typing import VariableLike
-from .table import table  # noqa: F401
 
 
 def make_html(container: VariableLike) -> str:
@@ -33,17 +32,17 @@ def make_html(container: VariableLike) -> str:
         Display the HTML representation.
     """
     from .formatting_datagroup_html import datagroup_repr
-    from .formatting_html import dataset_repr, variable_repr
+    from .formatting_html import data_array_dataset_repr, variable_repr
 
     if isinstance(container, Variable):
         return variable_repr(container)
     elif isinstance(container, DataGroup):
         return datagroup_repr(container)
     else:
-        return dataset_repr(container)
+        return data_array_dataset_repr(container)
 
 
-def to_html(container: VariableLike):
+def to_html(container: VariableLike) -> None:
     """Render am object to HTML in a Jupyter notebook.
 
     Parameters
@@ -59,4 +58,4 @@ def to_html(container: VariableLike):
     """
     from IPython.display import HTML, display
 
-    display(HTML(make_html(container)))
+    display(HTML(make_html(container)))  # type: ignore[no-untyped-call]

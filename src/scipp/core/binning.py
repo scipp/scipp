@@ -390,6 +390,10 @@ def hist(x, arg_dict=None, /, **kwargs):
         # TODO Note that this may swap dims, is that ok?
         out = make_histogrammed(x, edges=next(iter(edges.values())))
     else:
+        if isinstance(x, DataArray):
+            x = _drop_unused_coords(x, edges)
+        elif isinstance(x, Dataset):
+            x = Dataset({k: _drop_unused_coords(v, edges) for k, v in x.items()})
         edges = list(edges.values())
         # If histogramming by the final edges needs to use a non-event coord then we
         # must not erase that dim, since it removes the coord required for histogramming
@@ -405,6 +409,20 @@ def hist(x, arg_dict=None, /, **kwargs):
         if dim in out.dims:
             out = out.sum(dim)
     return out
+
+
+def _drop_unused_coords(x: DataArray, edges: Sequence[str]) -> DataArray:
+    da = x if x.bins is None else x.bins
+    coords = set(da.coords)
+    drop = list(coords - set(edges))
+    if x.bins is None:
+        x = x.drop_coords(drop)
+    else:
+        content = x.bins.constituents
+        content['data'] = content['data'].drop_coords(drop)
+        x = x.copy(deep=False)
+        x.data = _cpp._bins_no_validate(**content)
+    return x
 
 
 @overload
