@@ -78,6 +78,9 @@ jobs:
     name: Deploy PyPI
     needs: [build_wheels, build_sdist, build_conda]
     runs-on: ubuntu-22.04
+    environment: release
+    permissions:
+      id-token: write
     if: github.event_name == 'release' && github.event.action == 'published'
 
     steps:
@@ -86,11 +89,7 @@ jobs:
           path: dist
           merge-multiple: true
           pattern: 'dist*'
-      - uses: actions/setup-python@v5
       - uses: pypa/gh-action-pypi-publish@v1.9.0
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_TOKEN }}
 
   upload_conda:
     name: Deploy Conda Forge
