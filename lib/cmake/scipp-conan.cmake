@@ -7,11 +7,6 @@ execute_process(
   WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/.conan-recipes/llnl-units"
                     COMMAND_ECHO STDOUT
 )
-execute_process(
-  COMMAND conan export . 2.12.0@
-  WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/.conan-recipes/pybind11"
-                    COMMAND_ECHO STDOUT
-)
 
 # Conan dependencies
 if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake")
