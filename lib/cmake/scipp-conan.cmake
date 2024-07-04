@@ -53,7 +53,7 @@ conan_cmake_configure(
   eigen/3.4.0
   gtest/1.11.0
   LLNL-Units/0.9.1
-  pybind11/2.12.0
+  pybind11/2.13.1
   ${CONAN_ONETBB}
   OPTIONS
   benchmark:shared=False
