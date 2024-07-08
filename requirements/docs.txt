@@ -40,13 +40,13 @@ docutils==0.21.2
     #   sphinx
 fastjsonschema==2.20.0
     # via nbformat
-fonttools==4.53.0
+fonttools==4.53.1
     # via matplotlib
 gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
     # via -r docs.in
-hypothesis==6.103.2
+hypothesis==6.105.1
     # via -r docs.in
 imagesize==1.4.1
     # via sphinx
@@ -86,7 +86,7 @@ markupsafe==2.1.5
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.9.0
+matplotlib==3.9.1
     # via
     #   ipympl
     #   plopp
@@ -111,13 +111,13 @@ nbsphinx==0.9.4
     # via -r docs.in
 pandocfilters==1.5.1
     # via nbconvert
-pillow==10.3.0
+pillow==10.4.0
     # via
     #   ipympl
     #   matplotlib
 plopp==24.6.0
     # via -r docs.in
-pydata-sphinx-theme==0.15.3
+pydata-sphinx-theme==0.15.4
     # via -r docs.in
 pyparsing==3.1.2
     # via matplotlib
@@ -149,7 +149,7 @@ sphinx==7.3.7
     #   pydata-sphinx-theme
     #   sphinx-autodoc-typehints
     #   sphinx-copybutton
-sphinx-autodoc-typehints==2.1.1
+sphinx-autodoc-typehints==2.2.2
     # via -r docs.in
 sphinx-copybutton==0.5.2
     # via -r docs.in

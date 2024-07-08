@@ -8,13 +8,13 @@
 -r base.txt
 asttokens==2.4.1
     # via stack-data
-certifi==2024.6.2
+certifi==2024.7.4
     # via requests
 charset-normalizer==3.3.2
     # via requests
 comm==0.2.2
     # via ipykernel
-debugpy==1.8.1
+debugpy==1.8.2
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -28,9 +28,9 @@ h5py==3.11.0
     # via -r extra.in
 idna==3.7
     # via requests
-ipykernel==6.29.4
+ipykernel==6.29.5
     # via -r extra.in
-ipython==8.25.0
+ipython==8.26.0
     # via ipykernel
 jedi==0.19.1
     # via ipython
@@ -91,7 +91,7 @@ pyzmq==26.0.3
     #   jupyter-client
 requests==2.32.3
     # via pooch
-scipy==1.13.1
+scipy==1.14.0
     # via -r extra.in
 six==1.16.0
     # via

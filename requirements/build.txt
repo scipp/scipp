@@ -7,11 +7,11 @@
 #
 bottle==0.12.25
     # via conan
-certifi==2024.6.2
+certifi==2024.7.4
     # via requests
 charset-normalizer==3.3.2
     # via requests
-cmake==3.29.5.1
+cmake==3.30.0
     # via -r build.in
 colorama==0.4.6
     # via conan

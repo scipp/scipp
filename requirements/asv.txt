@@ -15,13 +15,13 @@ build==1.2.1
     # via asv
 distlib==0.3.8
     # via virtualenv
-filelock==3.15.1
+filelock==3.15.4
     # via virtualenv
-importlib-metadata==7.1.0
+importlib-metadata==8.0.0
     # via asv-runner
 json5==0.9.25
     # via asv
-pympler==1.0.1
+pympler==1.1
     # via asv
 pyproject-hooks==1.1.0
     # via build
@@ -33,7 +33,7 @@ tomli==2.0.1
     # via
     #   asv
     #   build
-virtualenv==20.26.2
+virtualenv==20.26.3
     # via asv
 zipp==3.19.2
     # via importlib-metadata
