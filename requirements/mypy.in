@@ -1,2 +1,5 @@
+# Include those so that mypy can import all required packages.
+-r test.in
+-r docs.in
+
 mypy
-numpy  # needed for numpy.typing.mypy_plugin
