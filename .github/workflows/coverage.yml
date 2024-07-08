@@ -60,7 +60,7 @@ jobs:
         run: mv tools/scipp-coverage-index.html coverage_html/index.html
 
       - name: Deploy
-        uses: JamesIves/github-pages-deploy-action@v4.6.1
+        uses: JamesIves/github-pages-deploy-action@v4.6.3
         with:
           repository-name: scipp/scipp-coverage
           branch: main
