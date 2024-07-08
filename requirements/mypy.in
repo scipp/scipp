@@ -1,0 +1,2 @@
+mypy
+numpy  # needed for numpy.typing.mypy_plugin
