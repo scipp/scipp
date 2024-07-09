@@ -4,7 +4,7 @@
 from typing import Any
 
 
-def plot(*args: Any, **kwargs: Any) -> None:
+def plot(*args: Any, **kwargs: Any) -> Any:
     """
     Wrapper function to plot data.
     See https://scipp.github.io/plopp/ for details.

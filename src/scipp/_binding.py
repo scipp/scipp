@@ -120,8 +120,8 @@ def _pop(self, key, default=_NoDefault):  # type: ignore[no-untyped-def]  # see 
     If key is not found, default is returned if given, otherwise KeyError is raised.
     """
     if key not in self and default is not _NoDefault:
-        return default  # type: ignore[return-value]  # the `if` above is a type check
-    return self._pop(key)  # type: ignore[attr-defined, no-any-return]
+        return default
+    return self._pop(key)
 
 
 def bind_pop() -> None:

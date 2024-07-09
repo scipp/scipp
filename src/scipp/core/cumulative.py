@@ -8,6 +8,7 @@ from .._scipp import core as _cpp
 from ..typing import VariableLikeType
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from .concepts import transform_data
+from .cpp_classes import Variable
 
 
 def cumsum(
@@ -36,10 +37,10 @@ def cumsum(
         The cumulative sum of the input values.
     """
 
-    def _cumsum(data):
+    def _cumsum(data: Variable) -> Variable:
         if dim is None:
-            return _call_cpp_func(_cpp.cumsum, data, mode=mode)
+            return _call_cpp_func(_cpp.cumsum, data, mode=mode)  # type: ignore[return-value]
         else:
-            return _call_cpp_func(_cpp.cumsum, data, dim, mode=mode)
+            return _call_cpp_func(_cpp.cumsum, data, dim, mode=mode)  # type: ignore[return-value]
 
     return transform_data(a, _cumsum)

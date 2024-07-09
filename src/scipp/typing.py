@@ -2,46 +2,46 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
+from __future__ import annotations
 
 import typing as _std_typing
 
-import numpy as np
-import numpy.typing
+import numpy.typing as npt
 
 from ._scipp import core as sc
 from .core.cpp_classes import DataArray, Dataset, DType, Variable
 from .core.data_group import DataGroup
 
 
-def is_scalar(obj: _std_typing.Any) -> bool:
+def is_scalar(obj: VariableLike) -> bool:
     """
     Return True if the input is a scalar.
     """
     return obj.ndim == 0
 
 
-def has_vector_type(obj: _std_typing.Any) -> bool:
+def has_vector_type(obj: Variable | DataArray) -> bool:
     """
     Return True if the object dtype is vector3.
     """
-    return obj.dtype == sc.DType.vector3
+    return obj.dtype == sc.DType.vector3  # type: ignore[no-any-return]
 
 
-def has_string_type(obj: _std_typing.Any) -> bool:
+def has_string_type(obj: Variable | DataArray) -> bool:
     """
     Return True if the object dtype is string.
     """
-    return obj.dtype == sc.DType.string
+    return obj.dtype == sc.DType.string  # type: ignore[no-any-return]
 
 
-def has_datetime_type(obj: _std_typing.Any) -> bool:
+def has_datetime_type(obj: Variable | DataArray) -> bool:
     """
     Return True if the object dtype is datetime64.
     """
-    return obj.dtype == sc.DType.datetime64
+    return obj.dtype == sc.DType.datetime64  # type: ignore[no-any-return]
 
 
-def has_numeric_type(obj: _std_typing.Any) -> bool:
+def has_numeric_type(obj: Variable | DataArray) -> bool:
     """
     Return False if the dtype is either vector or string.
     """
@@ -79,7 +79,7 @@ VariableLikeType = _std_typing.TypeVar(
 Should be hidden in rendered documentation in favor of VariableLike.
 """
 
-DTypeLike: _std_typing.TypeAlias = numpy.typing.DTypeLike | DType
+DTypeLike: _std_typing.TypeAlias = npt.DTypeLike | DType
 """Anything that can be interpreted as a dtype.
 
 This includes
@@ -106,10 +106,10 @@ else:
 ScippIndex: _std_typing.TypeAlias = (
     ellipsis
     | int
-    | tuple
+    | tuple[int, ...]
     | slice
-    | list
-    | np.ndarray
-    | tuple[str, int | slice | list | np.ndarray | Variable]
+    | list[int]
+    | npt.NDArray[_std_typing.Any]
+    | tuple[str, int | slice | list[int] | npt.NDArray[_std_typing.Any] | Variable]
     | Variable
 )
