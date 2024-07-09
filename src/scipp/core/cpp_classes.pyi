@@ -38,6 +38,7 @@ __all__ = [
     "GroupByDataArray",
     "GroupByDataset",
     "Masks",
+    "Slice",
     "Unit",
     "UnitError",
     "Variable",
