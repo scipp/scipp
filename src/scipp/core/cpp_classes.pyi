@@ -10,6 +10,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    TypeVar,
     Union,
     overload,
 )
@@ -23,6 +24,8 @@ try:
     import h5py as h5
 except ModuleNotFoundError:
     h5 = Any
+
+_T = TypeVar('_T')
 
 __all__ = [
     "BinEdgeError",
