@@ -16,6 +16,10 @@ namespace py = pybind11;
 constexpr int UNIT_DICT_VERSION = 2;
 constexpr std::array SUPPORTED_UNIT_DICT_VERSIONS = {1, 2};
 
+using UnitDictValue =
+    py::typing::Union<int, double, bool, py::typing::Dict<py::str, double>>;
+using UnitDict = py::typing::Dict<py::str, UnitDictValue>;
+
 namespace {
 
 bool is_supported_unit(const units::Unit &unit) {
@@ -33,10 +37,10 @@ void assert_supported_unit_for_dict(const units::Unit &unit) {
   }
 }
 
-py::dict to_dict(const units::Unit &unit) {
+auto to_dict(const units::Unit &unit) {
   assert_supported_unit_for_dict(unit);
 
-  py::dict dict;
+  UnitDict dict;
   dict["__version__"] = UNIT_DICT_VERSION;
   dict["multiplier"] = unit.underlying().multiplier();
 
@@ -81,7 +85,7 @@ void assert_dict_version_supported(const py::dict &dict) {
   }
 }
 
-units::Unit from_dict(const py::dict &dict) {
+units::Unit from_dict(const UnitDict &dict) {
   assert_dict_version_supported(dict);
 
   const py::dict powers = dict.contains("powers") ? dict["powers"] : py::dict();

@@ -54,34 +54,41 @@ void bind_dataset_coord_properties(py::class_<T, Ignored...> &c) {
       Dict of coordinates.)");
 }
 
-template <class T, class... Ignored>
-void bind_dataset_view_methods(py::class_<T, Ignored...> &c) {
+template <class... Ignored>
+void bind_dataset_view_methods(py::class_<Dataset, Ignored...> &c) {
   bind_common_operators(c);
-  c.def("__len__", &T::size);
+  c.def("__len__", &Dataset::size);
   c.def(
       "__iter__",
-      [](const T &self) {
+      [](const Dataset &self) {
         return py::make_iterator(self.keys_begin(), self.keys_end(),
                                  py::return_value_policy::move);
       },
       py::return_value_policy::move, py::keep_alive<0, 1>());
   c.def(
-      "keys", [](T &self) { return keys_view(self); },
+      "keys", [](Dataset &self) { return keys_view(self); },
       py::return_value_policy::move, py::keep_alive<0, 1>(),
       R"(view on self's keys)");
   c.def(
-      "values", [](T &self) { return values_view(self); },
+      "values", [](Dataset &self) { return values_view(self); },
       py::return_value_policy::move, py::keep_alive<0, 1>(),
       R"(view on self's values)");
   c.def(
-      "items", [](T &self) { return items_view(self); },
+      "items", [](Dataset &self) { return items_view(self); },
       py::return_value_policy::move, py::keep_alive<0, 1>(),
       R"(view on self's items)");
-  c.def("__getitem__",
-        [](const T &self, const std::string &name) { return self[name]; });
-  c.def("__contains__", &T::contains);
-  c.def("_ipython_key_completions_", [](T &self) {
-    py::list out;
+  c.def("__getitem__", [](const Dataset &self, const std::string &name) {
+    return self[name];
+  });
+  c.def("__contains__", [](const Dataset &self, const py::handle &key) {
+    try {
+      return self.contains(key.cast<std::string>());
+    } catch (py::cast_error &) {
+      return false; // if `key` is not a string, it cannot be contained
+    }
+  });
+  c.def("_ipython_key_completions_", [](Dataset &self) {
+    py::typing::List<py::str> out;
     const auto end = self.keys_end();
     for (auto it = self.keys_begin(); it != end; ++it) {
       out.append(*it);
