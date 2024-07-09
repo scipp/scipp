@@ -3,13 +3,8 @@ from os import PathLike
 from collections.abc import ItemsView, KeysView, ValuesView
 from typing import (
     Any,
-    Callable,
-    Iterable,
-    Iterator,
     Literal,
-    Mapping,
     Optional,
-    Sequence,
     TypeVar,
     Union,
     overload,
