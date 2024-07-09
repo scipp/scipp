@@ -14,9 +14,8 @@ from typing import (
     overload,
 )
 
-from .._binding import _NoDefault
 from ..coords.graph import GraphDict
-from ..typing import Dims, VariableLike, VariableLikeType
+from ..typing import Dims, VariableLike
 from ..units import default_unit
 from .bins import Bins
 
