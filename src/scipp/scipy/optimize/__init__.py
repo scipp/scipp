@@ -34,7 +34,7 @@ def _as_scalar(obj: Any, unit: Unit | DefaultUnit | None) -> Any:
         return obj
     return scalar(
         value=obj,
-        unit=unit,  # type:ignore[arg-type] # unit cannot be DefaultUnit here
+        unit=unit,
     )
 
 
@@ -118,8 +118,8 @@ def _get_specific_bounds(
         )
     if isinstance(b[0], Variable):
         return (
-            b[0].to(unit=unit, dtype=float).value,  # type: ignore[attr-defined]
-            b[1].to(unit=unit, dtype=float).value,  # type: ignore[attr-defined]
+            b[0].to(unit=unit, dtype=float).value,
+            b[1].to(unit=unit, dtype=float).value,
         )
     return b
 

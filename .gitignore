@@ -37,6 +37,7 @@ conda/package
 src/include/
 src/lib/
 src/scipp/_scipp.cpython*
+src/scipp/_scipp.so
 
 # Created by setuptools_scm for wheel builds
 src/scipp/_version.py
