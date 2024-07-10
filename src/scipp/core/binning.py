@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+import inspect
 import itertools
 from collections.abc import Sequence
 from numbers import Integral
-from typing import overload
+from typing import TypeVar, overload
 
 from .._scipp import core as _cpp
 from .bin_remapping import combine_bins
@@ -13,6 +14,8 @@ from .data_group import DataGroup, data_group_overload
 from .math import round as round_
 from .shape import concat
 from .variable import arange, array, epoch, linspace, scalar
+
+_T = TypeVar('_T')
 
 
 @overload
@@ -444,7 +447,12 @@ def nanhist(
 
 
 @data_group_overload
-def nanhist(x, arg_dict=None, /, **kwargs):
+def nanhist(
+    x: DataArray,
+    arg_dict: dict[str, int | Variable] | None = None,
+    /,
+    **kwargs: int | Variable,
+) -> DataArray:
     """Compute a histogram, skipping NaN values.
 
     Like :py:func:`scipp.hist`, but NaN values are skipped. See there for details and
@@ -491,7 +499,12 @@ def bin(
 
 
 @data_group_overload
-def bin(x, arg_dict=None, /, **kwargs):
+def bin(
+    x: Variable | DataArray,
+    arg_dict: dict[str, int | Variable] | None = None,
+    /,
+    **kwargs: int | Variable,
+) -> DataArray:
     """Create binned data by binning input along all dimensions given by edges.
 
     Bin edges can be specified in three ways:
@@ -617,7 +630,12 @@ def rebin(
 
 
 @data_group_overload
-def rebin(x, arg_dict=None, /, **kwargs):
+def rebin(
+    x: _T,
+    arg_dict: dict[str, int | Variable] | None = None,
+    /,
+    **kwargs: int | Variable,
+) -> _T:
     """Rebin a data array or dataset.
 
     The coordinate of the input for the dimension to be rebinned must contain bin edges,
@@ -723,7 +741,7 @@ def group(x: DataGroup, /, *args: str | Variable) -> DataGroup: ...
 
 
 @data_group_overload
-def group(x, /, *args: str | Variable):
+def group(x: DataArray, /, *args: str | Variable) -> DataArray:
     """Create binned data by grouping input by one or more coordinates.
 
     Grouping can be specified in two ways: (1) When a string is provided the unique
@@ -811,3 +829,20 @@ def group(x, /, *args: str | Variable):
     groups = [_make_groups(x, name) for name in args]
     erase = _find_replaced_dims(x, [g.dim for g in groups])
     return make_binned(x, groups=groups, erase=erase)
+
+
+VARIABLE_BINNING_SIGNATURE = inspect.Signature(
+    parameters=[
+        inspect.Parameter(name='self', kind=inspect.Parameter.POSITIONAL_ONLY),
+        inspect.Parameter(
+            name='arg_dict',
+            kind=inspect.Parameter.POSITIONAL_ONLY,
+            annotation=dict[str, int | Variable] | None,
+            default=None,
+        ),
+        inspect.Parameter(
+            name='kwargs', kind=inspect.Parameter.VAR_KEYWORD, annotation=int | Variable
+        ),
+    ],
+    return_annotation=DataArray,
+)
