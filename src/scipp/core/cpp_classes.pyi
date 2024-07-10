@@ -41,7 +41,6 @@ __all__ = [
     "GroupByDataArray",
     "GroupByDataset",
     "Masks",
-    "Slice",
     "Unit",
     "UnitError",
     "Variable",
@@ -722,8 +721,6 @@ class Masks(Mapping[str, Variable]):
     def popitem(self) -> tuple[str, Variable]: ...
     def update(self, other: Any = None, /, **kwargs) -> None: ...
     def values(self) -> ValuesView[Variable]: ...
-
-class Slice: ...
 
 class Unit:
     def __abs__(self) -> Unit: ...
