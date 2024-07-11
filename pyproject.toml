@@ -195,7 +195,6 @@ exclude = [
     'scipp/core/bin_remapping\.py',
     'scipp/core/binning\.py',
     'scipp/core/bins\.py',
-    'scipp/core/cpp_classes\.pyi',
     'scipp/core/data_group\.py',
     'scipp/core/hyperbolic\.py',
     'scipp/core/like\.py',
