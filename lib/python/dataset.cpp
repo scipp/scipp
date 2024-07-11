@@ -286,6 +286,7 @@ Returned by :py:func:`DataArray.masks`)");
   bind_binary<Dataset>(dataset);
   bind_binary<DataArray>(dataset);
   bind_binary<Variable>(dataset);
+  bind_binary_scalars(dataset);
 
   dataArray.def("_rename_dims", &rename_dims<DataArray>);
   dataset.def("_rename_dims", &rename_dims<Dataset>);
