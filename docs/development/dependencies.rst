@@ -54,19 +54,19 @@ This list is incomplete, but attempts to aid in better understanding how many th
      - PR
      - Release
      - Comment
-   * - `<http://github.com>`_
+   * - `<https://github.com>`_
      - x
      - x
      -
-   * - `<http://conan.io>`_
+   * - `<https://conan.io>`_
      - x
      - x
      -
-   * - `<http://pypi.org>`_
+   * - `<https://pypi.org>`_
      - x
      - x
      -
-   * - `<http://anaconda.org/conda-forge>`_
+   * - `<https://anaconda.org/conda-forge>`_
      - x
      - x
      -
@@ -74,7 +74,7 @@ This list is incomplete, but attempts to aid in better understanding how many th
      - x
      - x
      - ``pooch`` files, accessed during ``docs`` build
-   * - `<http://azure.archive.ubuntu.com>`_
+   * - `<https://azure.archive.ubuntu.com>`_
      - x
      -
      - ccache-action gets Ubuntu ``ccache`` from here
