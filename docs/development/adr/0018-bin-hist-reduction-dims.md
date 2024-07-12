@@ -12,8 +12,9 @@
 
 1. Add `dim` argument to all `bin` and `hist` functions to specify the dimension(s) to be replaced.
 2. The default `dim=None` means the dimension of the *coordinate* used for the operation.
-3. In case of binned data, `dim=None` means the hidden internal content dimension.
+3. In case of binned data, `dim=None` conceptually means the hidden internal content dimension.
    Coords of the outer data array are ignored for this purpose, if present.
+   The alternative of using the dims of `da.bins.coords[dim]` is equivalent to using `da.dims`, again leading to many breaking changes and is not convenient.
 
 Example of the new function signature:
 
@@ -40,7 +41,7 @@ Dense data:
 | (x,)      | (x,)       | (y,)    | `.hist(y=y)`       | same |&#x2705;|          |
 | (x,)      | (x,)       | (y,z)   | `.hist(y=y, z=z)`  | same |&#x2705;|          |
 | (x,y)     | (y,)       | (z,)    | `.flatten(...)`<br>`.hist(z=z)` | `.hist(z=z,dim=data.dims)` |&#x274c;|          |
-| (x,y)     | (y,)       | (x,y)   | `.flatten(...)`<br>`.group(...)`<br>`.hist(y=y)` | `.hist(y=y)` |&#x274c;|          |
+| (x,y)     | (y,)       | (x,z)   | `.flatten(...)`<br>`.group(...)`<br>`.hist(z=z)` | `.hist(z=z)` |&#x274c;|          |
 | (x,y)     | (x,y)      | (z,)    | `.drop_coords(...)`<br>`.transpose(...)`<br>`.flatten(...)`<br>`.hist(z=z)`       | `.hist(z=z)` |&#x274c;| can also `hist(...).sum(...)` but has memory problems |
 | (x,y)     | (x,y)      | (x,z)   | `.rename_dims(y=z)`<br>`.hist(z=z)` | `.hist(z=z,dim='y')` |&#x274c;|          |
 
@@ -53,6 +54,7 @@ Binned data:
 |-----------|-------------|--------|--------|------------|----------|
 | (...) | (...) | `.hist()`     | same |&#x2705;|     | |
 | (x,)  | (x,)  | `.bin(x=x)`   | same |&#x2705;|     | |
+| (x,)  | (x,)  | `.hist(x=x)`   | same |&#x2705;|     | |
 | (x,)  | (y,)  | `.rename_dims(x=y)`<br>`.bin(y=y)`  | `.bin(y=y,dim='x')` |&#x274c;| Or use `.bin(y=y).bins.concat('x')` |
 | (x,)  | (y,)  | `.rename_dims(x=y)`<br>`.hist(y=y)` | `.hist(y=y,dim='x')` |&#x274c;| Or use `.hist(y=y).sum('x')` |
 | (x,)  | (x,y) | `.bin(y=y)`   | same |&#x2705;|     | |
@@ -69,5 +71,9 @@ There appears to be no breaking change here, since as before a new dimension wil
 ## Consequences
 
 ### Positive:
+
+- More explicit syntax, instead of relying on operation dimension name matching name and dimension of existing coordinate.
+- Avoid several workarounds that are currently required in user code for certain operations.
+- Avoid even more workarounds for optimal performance in user code.
 
 ### Negative:
