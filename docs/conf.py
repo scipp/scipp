@@ -274,4 +274,6 @@ linkcheck_ignore = [
     'https://www.fatiando.org/pooch+',
     # Fails to validate SSL certificate but Firefox is happy with the URL.
     'https://physics.nist.gov/cuu/Constants/',
+    # This link works but is very slow and causes a timeout.
+    'https://anaconda.org/conda-forge',
 ]
