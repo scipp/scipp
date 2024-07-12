@@ -45,6 +45,20 @@ void bind_helper_view(py::module &m, const std::string &name) {
     });
 }
 
+template <class D> auto cast_to_dict_key(const py::handle &obj) {
+  using key_type = typename D::key_type;
+  if constexpr (std::is_same_v<key_type, std::string>) {
+    return obj.cast<std::string>();
+  } else {
+    return key_type{obj.cast<std::string>()};
+  }
+}
+
+template <class D> auto cast_to_dict_value(const py::handle &obj) {
+  using val_type = typename D::mapped_type;
+  return obj.cast<val_type>();
+}
+
 template <class T, class... Ignored>
 void bind_common_mutable_view_operators(pybind11::class_<T, Ignored...> &view) {
   view.def("__len__", &T::size)
@@ -64,23 +78,13 @@ void bind_common_mutable_view_operators(pybind11::class_<T, Ignored...> &view) {
             self.erase(typename T::key_type{key});
           },
           py::call_guard<py::gil_scoped_release>())
-      .def("__contains__", [](const T &self, const std::string &key) {
-        return self.contains(typename T::key_type{key});
+      .def("__contains__", [](const T &self, const py::handle &key) {
+        try {
+          return self.contains(cast_to_dict_key<T>(key));
+        } catch (py::cast_error &) {
+          return false; // if `key` is not a string, it cannot be contained
+        }
       });
-}
-
-template <class D> auto cast_to_dict_key(const py::handle &obj) {
-  using key_type = typename D::key_type;
-  if constexpr (std::is_same_v<key_type, std::string>) {
-    return obj.cast<std::string>();
-  } else {
-    return key_type{obj.cast<std::string>()};
-  }
-}
-
-template <class D> auto cast_to_dict_value(const py::handle &obj) {
-  using val_type = typename D::mapped_type;
-  return obj.cast<val_type>();
 }
 
 template <class T, class... Ignored, class Set>
@@ -193,7 +197,9 @@ void bind_dict_copy(pybind11::class_<T, Ignored...> &view) {
           py::call_guard<py::gil_scoped_release>(), "Return a (shallow) copy.")
       .def(
           "__deepcopy__",
-          [](const T &self, const py::dict &) { return copy(self); },
+          [](const T &self, const py::typing::Dict<py::object, py::object> &) {
+            return copy(self);
+          },
           py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
 }
 
@@ -243,7 +249,7 @@ void bind_mutable_view(py::module &m, const std::string &name,
           R"(view on self's items)")
       .def("_ipython_key_completions_",
            [](const T &self) {
-             py::list out;
+             py::typing::List<py::str> out;
              const auto end = self.keys_end();
              for (auto it = self.keys_begin(); it != end; ++it) {
                out.append(*it);
@@ -288,7 +294,7 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name,
           R"(view on self's items)")
       .def("_ipython_key_completions_",
            [](const T &self) {
-             py::list out;
+             py::typing::List<py::str> out;
              const auto end = self.keys_end();
              for (auto it = self.keys_begin(); it != end; ++it) {
                out.append(it->name());

@@ -2,16 +2,19 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 
+from typing import TypeVar
+
 from .._scipp.core import CoordError, DataArray, Dataset, Variable
-from ..typing import VariableLikeType
 from .argument_handlers import combine_dict_args
 from .bins import bins
 from .variable import scalar
 
+_T = TypeVar('_T', Variable, DataArray, Dataset)
+
 
 def _rename_dims(
-    self: VariableLikeType, dims_dict: dict[str, str] | None = None, /, **names: str
-) -> VariableLikeType:
+    self: _T, dims_dict: dict[str, str] | None = None, /, **names: str
+) -> _T:
     """Rename dimensions.
 
     The renaming can be defined:

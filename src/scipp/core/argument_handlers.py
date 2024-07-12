@@ -3,7 +3,7 @@
 
 from typing import TypeVar
 
-from ..typing import Variable
+from .cpp_classes import Variable
 
 _ValueType = TypeVar('_ValueType', str, Variable)
 

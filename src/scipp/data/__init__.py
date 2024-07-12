@@ -2,15 +2,17 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from functools import lru_cache
+from typing import Any
 
-from ..core import DataArray, DataGroup, array, linspace, ones
+from ..core import DataArray, DataGroup, Variable, array, linspace, ones
 from ..io import load_hdf5
+from ..typing import DTypeLike
 
 _version = '2'
 
 
 @lru_cache(maxsize=1)
-def _get_pooch():
+def _get_pooch() -> Any:
     try:
         import pooch
     except ImportError as err:
@@ -47,7 +49,7 @@ def get_path(name: str) -> str:
     This function only works with example data and cannot handle
     paths to custom files.
     """
-    return _get_pooch().fetch(name)
+    return _get_pooch().fetch(name)  # type: ignore[no-any-return]
 
 
 def rhessi_flares() -> str:
@@ -66,10 +68,12 @@ def rhessi_flares() -> str:
 
 
 def vulcan_steel_strain_data() -> DataGroup:
-    return load_hdf5(get_path('VULCAN_221040_processed.h5'))
+    return load_hdf5(get_path('VULCAN_221040_processed.h5'))  # type: ignore[return-value]
 
 
-def table_xyz(nrow: int, coord_max=None, coord_dtype=None) -> DataArray:
+def table_xyz(
+    nrow: int, coord_max: float | None = None, coord_dtype: DTypeLike | None = None
+) -> DataArray:
     """
     Return a 1-D data array ("table") with x, y, and z coord columns.
     """
@@ -77,7 +81,7 @@ def table_xyz(nrow: int, coord_max=None, coord_dtype=None) -> DataArray:
 
     rng = default_rng(seed=1234)
 
-    def random_coordinate():
+    def random_coordinate() -> Variable:
         return array(
             dims=['row'],
             unit='m',

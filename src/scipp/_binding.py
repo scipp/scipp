@@ -6,10 +6,12 @@ from __future__ import annotations
 import inspect
 import types
 from collections.abc import Iterable, Mapping
-from typing import Any
+from typing import Any, TypeVar
 
 from ._scipp import core
 from .core.cpp_classes import DataArray, Variable
+
+_T = TypeVar('_T')
 
 _dict_likes = [
     (core.Dataset, core.DataArray),
@@ -22,28 +24,33 @@ _dict_likes = [
 ]
 
 
-def _make_dict_accessor_signature(
-    value_type: type, default, default_type: type
-) -> inspect.Signature:
-    params = [
+def _make_dict_accessor_signature(value_type: type) -> list[inspect.Signature]:
+    base_params = [
         inspect.Parameter(name='self', kind=inspect.Parameter.POSITIONAL_OR_KEYWORD),
         inspect.Parameter(
             name='key',
             kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
             annotation=str,
         ),
+    ]
+    params_with_default = [
+        *base_params,
         inspect.Parameter(
             name='default',
             kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
-            annotation=default_type,
-            default=default,
+            annotation=_T,
         ),
     ]
-    sig = inspect.Signature(
-        parameters=params,
-        return_annotation=value_type | None,
-    )
-    return sig
+    return [
+        inspect.Signature(
+            parameters=base_params,
+            return_annotation=value_type,
+        ),
+        inspect.Signature(
+            parameters=params_with_default,
+            return_annotation=value_type | _T,
+        ),
+    ]
 
 
 # Using type annotations here would lead to problems with Sphinx autodoc.
@@ -63,10 +70,10 @@ def bind_get() -> None:
     for cls, value_type in _dict_likes:
         method = _convert_to_method(name='get', func=_get, abbreviate_doc=False)
         method.__doc__ = (
-            "Get the value associated with the " "provided key or the default value."
+            "Get the value associated with the provided key or the default value."
         )
         method.__signature__ = _make_dict_accessor_signature(  # type: ignore[attr-defined]
-            value_type, default=None, default_type=value_type | None
+            value_type
         )
         cls.get = method
 
@@ -113,15 +120,15 @@ def _pop(self, key, default=_NoDefault):  # type: ignore[no-untyped-def]  # see 
     If key is not found, default is returned if given, otherwise KeyError is raised.
     """
     if key not in self and default is not _NoDefault:
-        return default  # type: ignore[return-value]  # the `if` above is a type check
-    return self._pop(key)  # type: ignore[attr-defined, no-any-return]
+        return default
+    return self._pop(key)
 
 
 def bind_pop() -> None:
     for cls, value_type in _dict_likes:
         method = _convert_to_method(name='pop', func=_pop, abbreviate_doc=False)
         method.__signature__ = _make_dict_accessor_signature(  # type: ignore[attr-defined]
-            value_type, default=_NoDefault, default_type=Any
+            value_type
         )
         cls.pop = method
 
