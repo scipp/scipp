@@ -53,13 +53,6 @@ Update the pip requirements via ``pip-compile-multi``:
 
    tox -e deps
 
-Update the stubs with `stubgen <./tooling.rst#stubgen>`_.
-Do this every time you changed the interface of core classes like ``Variable``.
-
-.. code-block:: bash
-
-   tox -e stubgen
-
 Prepare a release (make sure to give the desired release instead):
 
 .. code-block:: bash
