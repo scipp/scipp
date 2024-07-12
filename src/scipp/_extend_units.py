@@ -1,16 +1,18 @@
+from typing import Any
+
 from ._scipp.core import Unit as _Unit
-from .core import scalar
+from .core import Variable, scalar
 
 
-def __rmul(self, value):
+def __rmul(self: _Unit, value: Any) -> Variable:
     return scalar(value, unit=self)
 
 
-def __rtruediv(self, value):
+def __rtruediv(self: _Unit, value: Any) -> Variable:
     return scalar(value, unit=self ** (-1))
 
 
-def extend_units():
+def extend_units() -> None:
     # add magic python methods to Unit class
     # it is done here (on python side) because
     # there is no proper way to do this in pybind11

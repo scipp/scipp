@@ -5,14 +5,14 @@
 from __future__ import annotations
 
 import collections
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable
 from graphlib import TopologicalSorter
 
 from ..core import DataArray
 from ..utils.graph import make_graphviz_digraph
-from .rule import ComputeRule, FetchRule, RenameRule, Rule
+from .rule import ComputeRule, FetchRule, Kernel, RenameRule, Rule
 
-GraphDict = dict[str | tuple[str, ...], str | Callable]
+GraphDict = dict[str | tuple[str, ...], str | Kernel]
 
 
 class Graph:

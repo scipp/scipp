@@ -1,9 +1,10 @@
 import warnings
 
+from .cpp_classes import Coords, DataArray
 from .util import VisibleDeprecationWarning
 
 
-def _warn_attr_removal():
+def _warn_attr_removal() -> None:
     warnings.warn(
         "sc.DataArray.attrs has been deprecated and will be removed in Scipp v24.12.0. "
         "The deprecation includes sc.DataArray.meta and sc.DataArray.drop_attrs. "
@@ -14,7 +15,7 @@ def _warn_attr_removal():
     )
 
 
-def _deprecated_attrs(cls):
+def _deprecated_attrs(cls: DataArray) -> Coords:
     """
     Dict of attrs.
 
@@ -26,7 +27,7 @@ def _deprecated_attrs(cls):
     return cls.deprecated_attrs
 
 
-def _deprecated_meta(cls):
+def _deprecated_meta(cls: DataArray) -> Coords:
     """
     Dict of coords and attrs.
 
@@ -38,7 +39,7 @@ def _deprecated_meta(cls):
     return cls.deprecated_meta
 
 
-def _deprecated_drop_attrs(cls, *args, **kwargs):
+def _deprecated_drop_attrs(cls: DataArray, *args: str) -> DataArray:
     """
     Drop attrs.
 
@@ -47,4 +48,4 @@ def _deprecated_drop_attrs(cls, *args, **kwargs):
        store attributes in higher-level data structures.
     """
     _warn_attr_removal()
-    return cls.deprecated_drop_attrs(*args, **kwargs)
+    return cls.deprecated_drop_attrs(*args)

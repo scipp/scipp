@@ -13,25 +13,27 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable, Mapping
 from copy import copy
 from functools import partial
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ..core import Variable
 from .coord import Coord
 
-try:
+if TYPE_CHECKING:
     from typing import Protocol as _Protocol
 
     # Importing CoordTable from coord_table.py would result in an import
-    # cycle because that module import rule.py
+    # cycle because that module imports rule.py
     # CoordTable is only needed for type annotations here,
     # so a protocol is enough.
     class _CoordProvider(_Protocol):
         def consume(self, name: str) -> Coord:
             pass
 
-except ImportError:
+else:
     _Protocol = object
     _CoordProvider = Any
+
+Kernel = Callable[..., Variable]
 
 
 class Rule(ABC):
@@ -115,7 +117,7 @@ class ComputeRule(Rule):
     Compute new coordinates using the provided callable.
     """
 
-    def __init__(self, out_names: tuple[str, ...], func: Callable):
+    def __init__(self, out_names: tuple[str, ...], func: Kernel):
         super().__init__(out_names)
         self._func = func
         self._arg_names = _arg_names(func)

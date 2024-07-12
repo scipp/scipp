@@ -356,7 +356,7 @@ def erf(x: VariableLike) -> VariableLike:
     x:
         Input data.
     """
-    return _cpp.erf(x)
+    return _call_cpp_func(_cpp.erf, x)
 
 
 def erfc(x: VariableLike) -> VariableLike:
@@ -368,7 +368,7 @@ def erfc(x: VariableLike) -> VariableLike:
     x:
         Input data.
     """
-    return _cpp.erfc(x)
+    return _call_cpp_func(_cpp.erfc, x)
 
 
 def midpoints(x: _cpp.Variable, dim: str | None = None) -> _cpp.Variable:

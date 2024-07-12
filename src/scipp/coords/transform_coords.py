@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock, Jan-Lukas Wynen
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import fields
 from fractions import Fraction
 
@@ -10,7 +10,7 @@ from ..logging import get_logger
 from .coord_table import Coord, CoordTable
 from .graph import Graph, GraphDict, rule_sequence
 from .options import Options
-from .rule import ComputeRule, FetchRule, RenameRule, Rule, rule_output_names
+from .rule import ComputeRule, FetchRule, Kernel, RenameRule, Rule, rule_output_names
 
 
 def transform_coords(
@@ -24,7 +24,7 @@ def transform_coords(
     keep_intermediate: bool = True,
     keep_inputs: bool = True,
     quiet: bool = False,
-    **kwargs: Callable,
+    **kwargs: Kernel,
 ) -> DataArray | Dataset:
     """Compute new coords based on transformations of input coords.
 

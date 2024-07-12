@@ -54,7 +54,9 @@ void bind_common_operators(pybind11::class_<T, Ignored...> &c) {
       py::call_guard<py::gil_scoped_release>(), "Return a (shallow) copy.");
   c.def(
        "__deepcopy__",
-       [](const T &self, const py::dict &) { return copy(self); },
+       [](const T &self, const py::typing::Dict<py::object, py::object> &) {
+         return copy(self);
+       },
        py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
       .def(
           "__sizeof__",
