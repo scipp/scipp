@@ -41,8 +41,8 @@ Dense data:
 | (x,)      | (x,)       | (y,)    | `.hist(y=y)`       | same |&#x2705;|          |
 | (x,)      | (x,)       | (y,z)   | `.hist(y=y, z=z)`  | same |&#x2705;|          |
 | (x,y)     | (y,)       | (z,)    | `.flatten(...)`<br>`.hist(z=z)` | `.hist(z=z,dim=data.dims)` |&#x274c;|          |
-| (x,y)     | (y,)       | (x,z)   | `.flatten(...)`<br>`.group(...)`<br>`.hist(z=z)` | `.hist(z=z)` |&#x274c;|          |
 | (x,y)     | (x,y)      | (z,)    | `.drop_coords(...)`<br>`.transpose(...)`<br>`.flatten(...)`<br>`.hist(z=z)`       | `.hist(z=z)` |&#x274c;| can also `hist(...).sum(...)` but has memory problems |
+| (x,y)     | (y,)       | (x,z)   | `.flatten(...)`<br>`.group(...)`<br>`.hist(z=z)` | `.hist(z=z)` |&#x274c;|          |
 | (x,y)     | (x,y)      | (x,z)   | `.rename_dims(y=z)`<br>`.hist(z=z)` | `.hist(z=z,dim='y')` |&#x274c;|          |
 
 In the cases where workarounds such as `flatten` are required, we currently get exceptions with a direct call to `hist`.
@@ -65,6 +65,22 @@ Binned data:
 
 There appears to be no breaking change here, since as before a new dimension will be added by `bin` or `hist`, with the default `dim=None`.
 
+Binned data (alternative: use dims of outer coords, else add dim).
+
+| Data dims | Coord dims | Result dims | Old op | New op | Change | Consistent with dense |
+|-----------|------------|-------------|--------|--------|------------|----------|
+| (...)     | (...)      | (...) | `.hist()`     | same |&#x2705;| -    |
+| (x,)      | (x,)       | (x,)  | `.hist(x=x)`   | same |&#x2705;| &#x2705;    |
+| (x,)      | -          | (y,)  | `.rename_dims(x=y)`<br>`.hist(y=y)` | `.hist(y=y, dim='x')` |&#x274c;| - |
+| (x,)      | (x,)       | (y,)  | `.rename_dims(x=y)`<br>`.hist(y=y)` | `.hist(y=y)` |&#x274c;|&#x2705;|
+| (x,)      | -          | (x,y) | `.hist(y=y)`  | `.hist(y=y)` |&#x2705;|-     |
+| (x,)      | (x,)       | (x,y) | `.hist(y=y)`  | `.hist(y=y, dim=())` |&#x274c;|&#x2705;     |
+| (x,y)     | -          | (z,)  | `.bins.concat()`<br>`.hist(z=z)`    | `.hist(z=z,dim=data.dims)` |&#x274c;|- |
+| (x,y)     | (y,)       | (z,)  | `.bins.concat()`<br>`.hist(z=z)`    | `.hist(z=z,dim=data.dims)` |&#x274c;|&#x2705; |
+| (x,y)     | (x,y)      | (z,)  | `.bins.concat()`<br>`.hist(z=z)`    | `.hist(z=z)` |&#x274c;|&#x2705; |
+| (x,y)     | -          | (x,z) | `.rename_dims(y=z)`<br>`.hist(z=z)` | `.hist(z=z,dim='y')` |&#x274c;|- |
+| (x,y)     | (y,)       | (x,z) | `.rename_dims(y=z)`<br>`.hist(z=z)` | `.hist(z=z)` |&#x274c;|&#x2705; |
+| (x,y)     | (x,y)      | (x,z) | `.rename_dims(y=z)`<br>`.hist(z=z)` | `.hist(z=z,dim='y')` |&#x274c;|&#x2705; |
 
 ## Decision
 
