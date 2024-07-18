@@ -249,8 +249,9 @@ def _make_edges(
 
 def _find_replaced_dims(
     x: Variable | DataArray | Dataset,
+    *,
     dims: Sequence[str],
-    dim: str | tuple[str, ...] | None = None,
+    dim: str | tuple[str, ...] | None,
 ) -> list[str]:
     if isinstance(x, Variable):
         replaced = x.dims
@@ -269,6 +270,8 @@ def hist(
     x: Variable | DataArray,
     arg_dict: dict[str, int | Variable] | None = None,
     /,
+    *,
+    dim: str | tuple[str, ...] | None = None,
     **kwargs: int | Variable,
 ) -> DataArray: ...
 
@@ -278,6 +281,8 @@ def hist(
     x: Dataset,
     arg_dict: dict[str, int | Variable] | None = None,
     /,
+    *,
+    dim: str | tuple[str, ...] | None = None,
     **kwargs: int | Variable,
 ) -> Dataset: ...
 
@@ -287,12 +292,14 @@ def hist(
     x: DataGroup,
     arg_dict: dict[str, int | Variable] | None = None,
     /,
+    *,
+    dim: str | tuple[str, ...] | None = None,
     **kwargs: int | Variable,
 ) -> DataGroup: ...
 
 
 @data_group_overload
-def hist(x, arg_dict=None, /, **kwargs):
+def hist(x, arg_dict=None, /, *, dim=None, **kwargs):
     """Compute a histogram.
 
     Bin edges can be specified in three ways:
@@ -385,7 +392,7 @@ def hist(x, arg_dict=None, /, **kwargs):
       {'x': 10, 'y': 5}
     """  # noqa: E501
     edges = _make_edges(x, arg_dict, kwargs)
-    erase = _find_replaced_dims(x, edges)
+    erase = _find_replaced_dims(x, dims=edges, dim=dim)
     if isinstance(x, Variable) and len(edges) != 1:
         raise ValueError(
             "Edges for exactly one dimension must be specified when "
@@ -439,6 +446,8 @@ def nanhist(
     x: Variable | DataArray,
     arg_dict: dict[str, int | Variable] | None = None,
     /,
+    *,
+    dim: str | tuple[str, ...] | None = None,
     **kwargs: int | Variable,
 ) -> DataArray: ...
 
@@ -448,6 +457,8 @@ def nanhist(
     x: DataGroup,
     arg_dict: dict[str, int | Variable] | None = None,
     /,
+    *,
+    dim: str | tuple[str, ...] | None = None,
     **kwargs: int | Variable,
 ) -> DataGroup: ...
 
@@ -457,6 +468,8 @@ def nanhist(
     x: DataArray,
     arg_dict: dict[str, int | Variable] | None = None,
     /,
+    *,
+    dim: str | tuple[str, ...] | None = None,
     **kwargs: int | Variable,
 ) -> DataArray:
     """Compute a histogram, skipping NaN values.
@@ -480,7 +493,7 @@ def nanhist(
     """
     edges = _make_edges(x, arg_dict, kwargs)
     if len(edges) > 0:
-        x = x.bin(edges)
+        x = x.bin(edges, dim=dim)
     if x.bins is None:
         raise TypeError("Data is not binned so bin edges must be provided.")
     return x.bins.nansum()
@@ -491,6 +504,8 @@ def bin(
     x: Variable | DataArray,
     arg_dict: dict[str, int | Variable] | None = None,
     /,
+    *,
+    dim: str | tuple[str, ...] | None = None,
     **kwargs: int | Variable,
 ) -> DataArray: ...
 
@@ -500,6 +515,8 @@ def bin(
     x: DataGroup,
     arg_dict: dict[str, int | Variable] | None = None,
     /,
+    *,
+    dim: str | tuple[str, ...] | None = None,
     **kwargs: int | Variable,
 ) -> DataGroup: ...
 
@@ -509,6 +526,8 @@ def bin(
     x: Variable | DataArray,
     arg_dict: dict[str, int | Variable] | None = None,
     /,
+    *,
+    dim: str | tuple[str, ...] | None = None,
     **kwargs: int | Variable,
 ) -> DataArray:
     """Create binned data by binning input along all dimensions given by edges.
@@ -604,7 +623,7 @@ def bin(
       {'x': 10, 'y': 5}
     """
     edges = _make_edges(x, arg_dict, kwargs)
-    erase = _find_replaced_dims(x, edges)
+    erase = _find_replaced_dims(x, dims=edges, dim=dim)
     return make_binned(x, edges=list(edges.values()), erase=erase)
 
 
@@ -739,15 +758,30 @@ def _make_groups(x, arg):
 
 
 @overload
-def group(x: DataArray, /, *args: str | Variable) -> DataArray: ...
+def group(
+    x: DataArray,
+    /,
+    *args: str | Variable,
+    dim: str | tuple[str, ...] | None = None,
+) -> DataArray: ...
 
 
 @overload
-def group(x: DataGroup, /, *args: str | Variable) -> DataGroup: ...
+def group(
+    x: DataGroup,
+    /,
+    *args: str | Variable,
+    dim: str | tuple[str, ...] | None = None,
+) -> DataGroup: ...
 
 
 @data_group_overload
-def group(x: DataArray, /, *args: str | Variable) -> DataArray:
+def group(
+    x: DataArray,
+    /,
+    *args: str | Variable,
+    dim: str | tuple[str, ...] | None = None,
+) -> DataArray:
     """Create binned data by grouping input by one or more coordinates.
 
     Grouping can be specified in two ways: (1) When a string is provided the unique
@@ -833,7 +867,7 @@ def group(x: DataArray, /, *args: str | Variable) -> DataArray:
       {'x': 10, 'a': 10}
     """
     groups = [_make_groups(x, name) for name in args]
-    erase = _find_replaced_dims(x, [g.dim for g in groups])
+    erase = _find_replaced_dims(x, dims=[g.dim for g in groups], dim=dim)
     return make_binned(x, groups=groups, erase=erase)
 
 
