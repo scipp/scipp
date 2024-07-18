@@ -1,7 +1,7 @@
 # ADR 0018: More explicit control of replaced dims in `bin` and `hist` functions
 
 -   Status: proposed
--   Deciders: Simon, Jan-Lukas
+-   Deciders: Simon, Jan-Lukas, Sunyoung
 -   Date: 2024-07-12
 
 ## Context
