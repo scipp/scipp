@@ -481,7 +481,8 @@ auto axis_actions(const Variable &data, const Coords &coords,
       builder.group(groups[groups_dims.index(dim)]);
     } else if (edges_dims.contains(dim)) {
       builder.bin(edges[edges_dims.index(dim)]);
-    } else if (rebin) {
+    } else if (rebin && !builder.dims().contains(dim)) {
+      // If the dim is erased then the builder contains it and we skip 'rebin'
       if (coords.count(dim) && coords.at(dim).dims().ndim() != 1)
         throw except::DimensionError(
             "2-D coordinate " + to_string(coords.at(dim)) +

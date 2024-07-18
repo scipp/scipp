@@ -255,7 +255,7 @@ def test_group_after_bin_considers_event_value():
     assert da.sizes == {'label': 10}
 
 
-def test_group_by_2d():
+def test_group_by_2d_yields_1d():
     table = sc.data.table_xyz(100)
     table.coords['label'] = (table.coords['x'] * 10).to(dtype='int64')
     da = table.bin(y=333).group('label')
@@ -263,7 +263,7 @@ def test_group_by_2d():
         23, unit='m'
     )
     grouped = da.group('label')
-    assert grouped.sizes == {'y': 333, 'label': 23}
+    assert grouped.sizes == {'label': 23}
 
 
 def test_bin_erases_dims_automatically_if_labels_for_same_dim():
@@ -292,14 +292,13 @@ def test_bin_by_2d_erases_2_input_dims():
     assert da.bin(xy=20).dims == ('xy',)
 
 
-def test_bin_by_2d_dimension_coord_does_not_erase_extra_dim():
+def test_bin_by_2d_dimension_coord_erases_extra_dim():
     table = sc.data.table_xyz(100)
     table.coords['xy'] = table.coords['x'] + table.coords['y']
     da = table.bin(x=10, y=12)
     da.coords['xy'] = da.coords['x'][1:] + da.coords['y']
     da = da.rename_dims({'y': 'xy'})
-    # The call to `bin` here "aligns" all bins, so we generally do not want to erase.
-    assert da.bin(xy=20).dims == ('x', 'xy')
+    assert da.bin(xy=20).dims == ('xy',)
 
 
 def test_hist_on_dense_data_without_edges_raisesTypeError():
@@ -355,14 +354,14 @@ def test_bin_with_1d_dimcoord_keeps_dim():
     assert da.bin(date=4).dims == ('date',)
 
 
-def test_bin_with_2d_dimcoord_keeps_dims():
+def test_bin_with_2d_dimcoord_replaces_dims():
     da = date_month_day_table_grouped_by_date()
     da.coords['month'] = da.coords['date'] // 30
     da.coords['day'] = da.coords['date'] % 30
     da2d = da.group('month', 'day')
     da2d.coords['date'] = da2d.coords['day'] + 30 * da2d.coords['month']
     da2d = da2d.rename_dims({'month': 'date'})
-    assert da2d.bin(date=4).dims == ('date', 'day')
+    assert da2d.bin(date=4).dims == ('date',)
 
 
 def test_bin_with_nondimcoord_removes_dim():
@@ -410,14 +409,14 @@ def test_group_with_1d_dimcoord_keeps_dim():
     )
 
 
-def test_group_with_2d_dimcoord_keeps_dims():
+def test_group_with_2d_dimcoord_replaces_dims():
     da = date_month_day_table_grouped_by_date()
     da.coords['month'] = da.coords['date'] // 30
     da.coords['day'] = da.coords['date'] % 30
     da2d = da.group('month', 'day')
     da2d.coords['date'] = da2d.coords['day'] + 30 * da2d.coords['month']
     da2d = da2d.rename_dims({'month': 'date'})
-    assert da2d.group('date').dims == ('date', 'day')
+    assert da2d.group('date').dims == ('date',)
 
 
 def test_group_with_nondimcoord_removes_dim():
@@ -463,16 +462,14 @@ def test_hist_with_1d_dimcoord_keeps_dim():
     assert da.hist(date=4).dims == ('date',)
 
 
-def test_hist_with_2d_dimcoord_keeps_dims():
+def test_hist_with_2d_dimcoord_replaces_dims():
     da = date_month_day_table_grouped_by_date()
     da.coords['month'] = da.coords['date'] // 30
     da.coords['day'] = da.coords['date'] % 30
     da2d = da.group('month', 'day')
     da2d.coords['date'] = da2d.coords['day'] + 30 * da2d.coords['month']
     da2d = da2d.rename_dims({'month': 'date'})
-    # Note current slightly inconsistent behavior by `histogram`: The histogrammed dim
-    # alsways turns into the inner dimension.
-    assert da2d.hist(date=4).dims == ('day', 'date')
+    assert da2d.hist(date=4).dims == ('date',)
 
 
 def test_hist_with_nondimcoord_removes_dim():
@@ -517,14 +514,14 @@ def test_nanhist_with_1d_dimcoord_keeps_dim():
     assert da.nanhist(date=4).dims == ('date',)
 
 
-def test_nanhist_with_2d_dimcoord_keeps_dims():
+def test_nanhist_with_2d_dimcoord_replaces_dims():
     da = date_month_day_table_grouped_by_date()
     da.coords['month'] = da.coords['date'] // 30
     da.coords['day'] = da.coords['date'] % 30
     da2d = da.group('month', 'day')
     da2d.coords['date'] = da2d.coords['day'] + 30 * da2d.coords['month']
     da2d = da2d.rename_dims({'month': 'date'})
-    assert da2d.nanhist(date=4).dims == ('date', 'day')
+    assert da2d.nanhist(date=4).dims == ('date',)
 
 
 def test_nanhist_with_nondimcoord_removes_dim():

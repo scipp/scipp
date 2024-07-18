@@ -247,15 +247,21 @@ def _make_edges(
     return {name: _parse_coords_arg(x, name, arg) for name, arg in kwargs.items()}
 
 
-def _find_replaced_dims(x, dims):
-    if x.bins is None:
-        return []
-    erase = set()
-    for dim in dims:
-        if (coord := x.coords.get(dim)) is not None:
-            if dim not in coord.dims:
-                erase = erase.union(coord.dims)
-    return [dim for dim in erase if dim not in dims]
+def _find_replaced_dims(
+    x: Variable | DataArray | Dataset,
+    dims: Sequence[str],
+    dim: str | tuple[str, ...] | None = None,
+) -> list[str]:
+    if isinstance(x, Variable):
+        replaced = x.dims
+    elif dim is None:
+        replaced = set()
+        for name in dims:
+            if name in x.coords:
+                replaced.update(x.coords[name].dims)
+    else:
+        replaced = (dim,) if isinstance(dim, str) else dim
+    return list(set(replaced) - set(dims))
 
 
 @overload
