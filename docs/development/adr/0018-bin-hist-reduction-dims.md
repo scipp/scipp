@@ -18,7 +18,7 @@ All of this is cumbersome and error prone, so this ADR proposes a more predictab
 
 1. Add a `dim` argument to all `bin` and `hist` functions to specify the dimension(s) to be replaced.
 2. The default `dim=None` means the dimension of the *coordinate(s)* used for the operation.
-3. In case of binned data there can be cases without coordinate, since only the bin contents might have to relevant coordinate.
+3. In case of binned data there can be cases without coordinate, since only the bin contents might have the relevant coordinate.
    In this case `dim=None` means `dim=()`, i.e., no dimension is replaced but a new one is added.
 
 Example of the new function signature:
