@@ -98,7 +98,7 @@ def make_binned(
     When there is existing binning or grouping, the algorithm assumes that coordinates
     of the binned data are correct, i.e., compatible with the corresponding
     coordinate values in the individual bins. If this is not the case then the behavior
-    if UNSPECIFIED. That is, the algorithm may or may not ignore the existing
+    is UNSPECIFIED. That is, the algorithm may or may not ignore the existing
     coordinates. If you encounter such as case, remove the conflicting coordinate,
     e.g., using :py:func:`scipp.DataArray.drop_coords`.
 
