@@ -472,13 +472,16 @@ def hist(x, arg_dict=None, /, *, dim=None, **kwargs):
         edges = list(edges.values())
         # If histogramming by the final edges needs to use a non-event coord then we
         # must not erase that dim, since it removes the coord required for histogramming
+        remaining_erase = set(erase)
         if isinstance(x, DataArray) and x.bins is not None:
             hist_dim = edges[-1].dims[-1]
             if hist_dim not in x.bins.coords:
-                hist_coord_dim = x.coords[hist_dim].dims[-1]
-                erase = [e for e in erase if e != hist_coord_dim]
+                erase = [e for e in erase if e not in x.coords[hist_dim].dims]
+        remaining_erase -= set(erase)
         out = make_histogrammed(
-            make_binned(x, edges=edges[:-1], erase=erase), edges=edges[-1]
+            make_binned(x, edges=edges[:-1], erase=erase),
+            edges=edges[-1],
+            erase=remaining_erase,
         )
     return out
 

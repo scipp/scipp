@@ -184,6 +184,31 @@ def test_hist_2d_without_event_coord_uses_outer_non_dim_coord():
     assert sc.identical(da.hist(y=4, outer=2), expected.transpose())
 
 
+def test_hist_3d_without_event_coord_uses_outer_non_dim_coord_and_erases():
+    table = sc.data.table_xyz(100)
+    table.data = sc.arange('row', 100.0)
+    da = table.bin(x=10)
+    expected = 2 * da.bin(x=2, y=4).hist().rename(x='outer')
+    expected.coords['outer'] = sc.array(dims=['outer'], values=[0, 5, 10])
+    da = sc.concat([da, da], dim='z')
+    da.coords['outer'] = sc.arange('x', 10)
+    assert sc.identical(da.hist(outer=2, y=4, dim=('x', 'z')), expected)
+    assert sc.identical(da.hist(y=4, outer=2, dim=('x', 'z')), expected.transpose())
+
+
+def test_hist_3d_without_event_coord_uses_outer_2d_non_dim_coord_and_erases():
+    table = sc.data.table_xyz(100)
+    table.data = sc.arange('row', 100.0)
+    da = table.bin(x=10)
+    expected = 2 * da.bin(x=2, y=4).hist().rename(x='outer')
+    expected.coords['outer'] = sc.array(dims=['outer'], values=[0, 5, 10])
+    outer = sc.arange('x', 10)
+    da = sc.concat([da, da], dim='z')
+    da.coords['outer'] = sc.concat([outer, outer], dim='z')
+    assert sc.identical(da.hist(outer=2, y=4, dim=('x', 'z')), expected)
+    assert sc.identical(da.hist(y=4, outer=2, dim=('x', 'z')), expected.transpose())
+
+
 def test_hist_without_event_coord_raises_with_outer_bin_edge_coord():
     table = sc.data.table_xyz(100)
     table.data = sc.arange('row', 100.0)
@@ -1102,6 +1127,23 @@ def test_hist_3d_binned_coord_with_explicit_dim_arg_yields_expected_output_dims(
     assert xyz.hist(t=4, dim=('y', 'z')).dims == ('x', 't')
     assert xyz.hist(t=4, dim=('x', 'z', 'y')).dims == ('t',)  # order ignored
     assert xyz.hist(t=4, dim='x').dims == ('y', 'z', 't')
+
+
+def test_hist_by_lower_dim_coord_hists_slabs():
+    xyz = sc.data.table_xyz(1000).bin(x=3, y=4, z=5)
+    xyz.coords['t'] = sc.linspace('y', 0, 1, 4, unit='s')
+
+    assert xyz.hist(t=3).dims == ('x', 'z', 't')
+    assert xyz.hist().hist(t=3).dims == ('x', 'z', 't')
+
+
+def test_hist_by_two_lower_dim_coord_hists_slabs():
+    xyz = sc.data.table_xyz(1000).bin(x=3, y=4, z=5)
+    xyz.coords['t1'] = sc.linspace('y', 0, 1, 4, unit='s')
+    xyz.coords['t2'] = sc.linspace('z', 0, 1, 5, unit='s')
+
+    assert xyz.hist(t1=3, t2=3).dims == ('x', 't1', 't2')
+    assert xyz.hist().hist(t1=3, t2=3).dims == ('x', 't1', 't2')
 
 
 def test_raises_if_explicit_dim_arg_clashes_with_edge_dims():
