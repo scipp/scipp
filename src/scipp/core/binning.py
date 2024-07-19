@@ -183,18 +183,17 @@ def make_binned(
         return combine_bins(x, edges=edges, groups=groups, dim=erase)
     # Many-to-many mapping is expensive, concat first is generally cheaper,
     # despite extra copies.
-    # TODO Does this mean we should look into replacing/removing all the
-    # optimizations for this from the C++ side?
-    # if erase and x.bins is not None:
-    #    # TODO if a rebin is happening we cannot assign all coords/masks!
-    #    x = x.bins.concat(erase)
-    #    erase = ()
-    #    if x.ndim == 0:
-    #        return (
-    #            _cpp.bin(x.bins.constituents['data'], edges, groups, erase)
-    #            .assign_coords(x.coords)
-    #            .assign_masks(x.masks)
-    #        )
+    if erase and x.bins is not None:
+        required_coords = [coord.dims[-1] for coord in itertools.chain(edges, groups)]
+        if all(coord in x.bins.coords for coord in required_coords):
+            x = x.bins.concat(erase)
+            erase = ()
+        if x.ndim == 0:
+            return (
+                _cpp.bin(x.value, edges, groups, erase)
+                .assign_coords(x.coords)
+                .assign_masks(x.masks)
+            )
     x = _prepare_multi_dim_dense(x, *edges, *groups)
     return _cpp.bin(x, edges, groups, erase)
 
@@ -355,7 +354,7 @@ def _find_replaced_dims(
                 replaced.update(x.coords[name].dims)
     else:
         replaced = (dim,) if isinstance(dim, str) else dim
-    return list(set(replaced) - set(dims))
+    return [d for d in x.dims if d in (set(replaced) - set(dims))]
 
 
 @overload
