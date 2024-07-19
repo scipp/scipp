@@ -65,6 +65,7 @@ def make_histogrammed(x, *, edges, erase: Sequence[str] = ()):
     elif isinstance(x, DataArray) and x.bins is not None:
         dim = edges.dims[-1]
         if dim not in x.bins.coords:
+            # The second `dim` is necessary in case the coord is multi-dimensional.
             if x.coords.is_edges(dim, dim):
                 raise BinEdgeError(
                     "Cannot histogram data with existing bin edges "
