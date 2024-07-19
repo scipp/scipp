@@ -115,23 +115,44 @@
       "name": "docs",
       "configurePreset": "base",
       "configuration": "Release",
-      "targets": ["docs", "doctest", "cleanup_docs_html"]
+      "targets": [
+        "docs",
+        "doctest",
+        "cleanup_docs_html"
+      ]
     },
     {
       "name": "package-docs",
       "inherits": "docs",
-      "targets": ["docs", "doctest", "linkcheck" ,"cleanup_docs_html"]
+      "targets": [
+        "docs",
+        "doctest",
+        "linkcheck",
+        "cleanup_docs_html"
+      ]
     },
     {
       "name": "build",
       "configurePreset": "base",
       "configuration": "Release",
-      "targets": ["install"]
+      "targets": [
+        "install"
+      ]
+    },
+    {
+      "name": "build-debug",
+      "configurePreset": "debug",
+      "configuration": "Debug",
+      "targets": [
+        "install"
+      ]
     },
     {
       "name": "coverage",
       "configurePreset": "coverage",
-      "targets": ["coverage"]
+      "targets": [
+        "coverage"
+      ]
     }
   ],
   "testPresets": [
