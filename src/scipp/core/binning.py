@@ -217,6 +217,8 @@ def _prepare_multi_dim_dense(x: DataArray, *edges_or_groups: Variable) -> DataAr
     if any(var.ndim != 1 for var in edges_or_groups):
         raise ValueError("Cannot bin multi-dimensional dense data with ragged edges.")
     coords = [x.coords[var.dim] for var in edges_or_groups]
+    # TODO There is some hole in the logic, multi dim coord should be ok if it gets
+    # erased? or sth?
     op_dims = {coord.dim for coord in coords}
     if len(op_dims) != 1:
         raise ValueError("Cannot bin multi-dimensional dense data along multiple dims.")
