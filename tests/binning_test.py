@@ -1053,6 +1053,68 @@ def test_explicit_groups_with_mismatching_dtype():
     assert sc.identical(table.group(groups).coords['label'], groups)
 
 
+def test_hist_dense_with_explicit_dim_arg_yields_expected_output_dims():
+    xy = sc.data.table_xyz(1000).bin(x=4, y=6)
+    xy.coords['z'] = xy.bins.coords['z'].bins.min()
+    xy = xy.hist()
+
+    assert xy.hist(z=4, dim=xy.dims).dims == ('z',)
+
+
+def test_hist_dense_3d_with_explicit_dim_arg_yields_expected_output_dims():
+    xyz = sc.data.table_xyz(1000).bin(x=3, y=4, z=5)
+    xyz.data = (xyz.data * 1000).to(dtype='int64')
+    xyz.coords['t'] = xyz.bins.coords['z'].bins.mean()
+    xyz = xyz.hist()
+
+    assert_identical(xyz.hist(t=4, dim=xyz.dims), xyz.flatten(to='t').hist(t=4))
+    assert xyz.hist(t=4, dim=xyz.dims).dims == ('t',)
+    assert xyz.hist(t=4, dim=('x', 'y')).dims == ('z', 't')
+    assert xyz.hist(t=4, dim=('x', 'z')).dims == ('y', 't')
+    assert xyz.hist(t=4, dim=('y', 'z')).dims == ('x', 't')
+    assert xyz.hist(t=4, dim=('x', 'z', 'y')).dims == ('t',)  # order ignored
+    assert xyz.hist(t=4, dim='x').dims == ('y', 'z', 't')
+
+
+def test_hist_binned_3d_with_explicit_dim_arg_yields_expected_output_dims():
+    xyz = sc.data.table_xyz(1000).bin(x=3, y=4, z=5)
+    xyz.data = (xyz.data * 1000).to(dtype='int64')
+    xyz.coords['t'] = xyz.bins.coords['z'].bins.mean()
+
+    assert_identical(xyz.hist(t=4, dim=xyz.dims), xyz.flatten(to='t').hist(t=4))
+    assert xyz.hist(t=4, dim=xyz.dims).dims == ('t',)
+    assert xyz.hist(t=4, dim=('x', 'y')).dims == ('z', 't')
+    assert xyz.hist(t=4, dim=('x', 'z')).dims == ('y', 't')
+    assert xyz.hist(t=4, dim=('y', 'z')).dims == ('x', 't')
+    assert xyz.hist(t=4, dim=('x', 'z', 'y')).dims == ('t',)  # order ignored
+    assert xyz.hist(t=4, dim='x').dims == ('y', 'z', 't')
+
+
+def test_hist_3d_binned_coord_with_explicit_dim_arg_yields_expected_output_dims():
+    xyz = sc.data.table_xyz(1000).bin(x=3, y=4, z=5)
+    xyz.data = (xyz.data * 1000).to(dtype='int64')
+    xyz.bins.coords['t'] = xyz.bins.coords['z']
+
+    assert_identical(xyz.hist(t=4, dim=xyz.dims), xyz.flatten(to='t').hist(t=4))
+    assert xyz.hist(t=4, dim=xyz.dims).dims == ('t',)
+    assert xyz.hist(t=4, dim=('x', 'y')).dims == ('z', 't')
+    assert xyz.hist(t=4, dim=('x', 'z')).dims == ('y', 't')
+    assert xyz.hist(t=4, dim=('y', 'z')).dims == ('x', 't')
+    assert xyz.hist(t=4, dim=('x', 'z', 'y')).dims == ('t',)  # order ignored
+    assert xyz.hist(t=4, dim='x').dims == ('y', 'z', 't')
+
+
+def test_raises_if_explicit_dim_arg_clashes_with_edge_dims():
+    xyz = sc.data.table_xyz(1000).bin(x=3, y=4, z=5)
+    x = sc.linspace('x', 0, 1, 10, unit='m').broadcast(sizes={'y': 4, 'x': 10})
+    with pytest.raises(ValueError, match='Clash of dimension\\(s\\) to reduce'):
+        xyz.bin(x=x, dim=('y', 'z'))
+    with pytest.raises(ValueError, match='Clash of dimension\\(s\\) to reduce'):
+        xyz.hist(x=x, dim=('y', 'z'))
+    with pytest.raises(ValueError, match='Clash of dimension\\(s\\) to reduce'):
+        xyz.nanhist(x=x, dim=('y', 'z'))
+
+
 @pytest.mark.parametrize(
     'z',
     [

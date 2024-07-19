@@ -19,14 +19,18 @@ _T = TypeVar('_T')
 
 
 @overload
-def make_histogrammed(x: Variable | DataArray, *, edges: Variable) -> DataArray: ...
+def make_histogrammed(
+    x: Variable | DataArray, *, edges: Variable, erase: Sequence[str] = ()
+) -> DataArray: ...
 
 
 @overload
-def make_histogrammed(x: Dataset, *, edges: Variable) -> Dataset: ...
+def make_histogrammed(
+    x: Dataset, *, edges: Variable, erase: Sequence[str] = ()
+) -> Dataset: ...
 
 
-def make_histogrammed(x, *, edges):
+def make_histogrammed(x, *, edges, erase: Sequence[str] = ()):
     """Create dense data by histogramming data into given bins.
 
     If the input is binned data, then existing binning dimensions are preserved.
@@ -61,13 +65,38 @@ def make_histogrammed(x, *, edges):
     elif isinstance(x, DataArray) and x.bins is not None:
         dim = edges.dims[-1]
         if dim not in x.bins.coords:
-            if x.coords.is_edges(dim):
+            if x.coords.is_edges(dim, dim):
                 raise BinEdgeError(
                     "Cannot histogram data with existing bin edges "
                     "unless event data coordinate for histogramming is available."
                 )
-            return make_histogrammed(x.bins.sum(), edges=edges)
+            return make_histogrammed(x.bins.sum(), edges=edges, erase=erase)
+    _check_erase_dimension_clash(erase, edges)
+    # The C++ implementation uses an older heuristic histogramming a single dimension.
+    # We therefore transpose and flatten the input to match this.
+    hist_dim = edges.dims[-1]
+    to_flatten = [dim for dim in x.dims if dim in erase]
+    if hist_dim in x.dims:
+        to_flatten.append(hist_dim)
+    if to_flatten:
+        x = _drop_coords_for_hist(x, to_flatten, keep=hist_dim)
+        x = _transpose_and_flatten_for_hist(x, to_flatten, to=hist_dim)
     return _cpp.histogram(x, edges)
+
+
+def _drop_coords_for_hist(x, dims: Sequence[str], keep: str) -> DataArray:
+    """Drop unnecessary coords from a DataArray which would make flatten expensive."""
+    to_drop = []
+    for name, coord in x.coords.items():
+        if name != keep and set(coord.dims) & set(dims):
+            to_drop.append(name)
+    return x.drop_coords(to_drop)
+
+
+def _transpose_and_flatten_for_hist(x, dims: Sequence[str], to: str) -> DataArray:
+    """Transpose and flatten a DataArray to prepare for histogram."""
+    new_order = [dim for dim in x.dims if dim not in dims] + dims
+    return x.transpose(new_order).flatten(dims=dims, to=to)
 
 
 def make_binned(
@@ -135,6 +164,8 @@ def make_binned(
         groups = []
     if edges is None:
         edges = []
+    _check_erase_dimension_clash(erase, *edges, *groups)
+
     if isinstance(x, Variable) and x.bins is not None:
         x = DataArray(x)
     elif isinstance(x, Variable):
@@ -148,7 +179,34 @@ def make_binned(
         x = DataArray(data, coords={coords[0].dim: x})
     if _can_operate_on_bins(x, edges, groups, erase):
         return combine_bins(x, edges=edges, groups=groups, dim=erase)
+    # Many-to-many mapping is expensive, concat first is generally cheaper,
+    # despite extra copies.
+    # TODO Does this mean we should look into replacing/removing all the
+    # optimizations for this from the C++ side?
+    # if erase and x.bins is not None:
+    #    # TODO if a rebin is happening we cannot assign all coords/masks!
+    #    x = x.bins.concat(erase)
+    #    erase = ()
+    #    if x.ndim == 0:
+    #        return (
+    #            _cpp.bin(x.bins.constituents['data'], edges, groups, erase)
+    #            .assign_coords(x.coords)
+    #            .assign_masks(x.masks)
+    #        )
     return _cpp.bin(x, edges, groups, erase)
+
+
+def _check_erase_dimension_clash(
+    erase: Sequence[str], *edges_or_groups: Variable
+) -> None:
+    new_dims = set()
+    for var in edges_or_groups:
+        new_dims.update(var.dims)
+    if set(erase) & new_dims:
+        raise ValueError(
+            f"Clash of dimension(s) to reduce {erase} with dimensions defined by "
+            "edges or groups."
+        )
 
 
 def _can_operate_on_bins(x, edges, groups, erase) -> bool:
@@ -404,7 +462,7 @@ def hist(x, arg_dict=None, /, *, dim=None, **kwargs):
         return x.bins.sum()
     if len(edges) == 1:
         # TODO Note that this may swap dims, is that ok?
-        out = make_histogrammed(x, edges=next(iter(edges.values())))
+        out = make_histogrammed(x, edges=next(iter(edges.values())), erase=erase)
     else:
         if isinstance(x, DataArray):
             x = _drop_unused_coords(x, edges)
@@ -421,9 +479,6 @@ def hist(x, arg_dict=None, /, *, dim=None, **kwargs):
         out = make_histogrammed(
             make_binned(x, edges=edges[:-1], erase=erase), edges=edges[-1]
         )
-    for dim in erase:
-        if dim in out.dims:
-            out = out.sum(dim)
     return out
 
 
