@@ -3,6 +3,7 @@
 # @author Simon Heybrock
 import inspect
 import itertools
+import uuid
 from collections.abc import Sequence
 from numbers import Integral
 from typing import TypeVar, overload
@@ -194,7 +195,40 @@ def make_binned(
     #            .assign_coords(x.coords)
     #            .assign_masks(x.masks)
     #        )
+    x = _prepare_multi_dim_dense(x, *edges, *groups)
     return _cpp.bin(x, edges, groups, erase)
+
+
+def _prepare_multi_dim_dense(x: DataArray, *edges_or_groups: Variable) -> DataArray:
+    """Prepare data for binning or grouping.
+
+    This function is a workaround for the C++ implementation not being able to deal with
+    multi-dimensional dense input data. The workaround is to flatten the data along the
+    auxiliary dimensions and regroup.
+
+    In case the ultimate operation is histogramming, this leads the desired
+    higher-dimensional histogram. In case of binning or grouping, we obtain binned data
+    with one additional dimension, whereas conceptually we might expect only the
+    requested dimensions, with the auxiliary dimensions inside the bin content. As this
+    case is likely rare and extra dimensions in bin content are barely supported in
+    scipp, we consider this acceptable for now.
+    """
+    if x.bins is not None or x.ndim == 1:
+        return x
+    if any(var.ndim != 1 for var in edges_or_groups):
+        raise ValueError("Cannot bin multi-dimensional dense data with ragged edges.")
+    coords = [x.coords[var.dim] for var in edges_or_groups]
+    op_dims = {coord.dim for coord in coords}
+    if len(op_dims) != 1:
+        raise ValueError("Cannot bin multi-dimensional dense data along multiple dims.")
+    op_dim = next(iter(op_dims))
+    extra = [dim for dim in x.dims if dim != op_dim]
+    x = x.assign_coords({dim: arange(dim, x.sizes[dim]) for dim in extra})
+    return (
+        x.flatten(to=str(uuid.uuid4()))
+        .group(*[x.coords[dim] for dim in extra])
+        .drop_coords(extra)
+    )
 
 
 def _check_erase_dimension_clash(
