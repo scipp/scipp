@@ -220,18 +220,18 @@ def _prepare_multi_dim_dense(x: DataArray, *edges_or_groups: Variable) -> DataAr
     if len(op_dims) != 1:
         raise ValueError("Cannot bin multi-dimensional dense data along multiple dims.")
     extra = {dim for dim in x.dims if dim != next(iter(op_dims))}
-    coords = {
+    original_coords = {
         name: coord
         for name, coord in x.coords.items()
         if set(coord.dims).issubset(extra)
     }
     helper_coords = {dim: arange(dim, x.sizes[dim]) for dim in extra}
-    x = x.assign_coords(helper_coords)
     return (
-        x.flatten(to=str(uuid.uuid4()))
+        x.assign_coords(helper_coords)
+        .flatten(to=str(uuid.uuid4()))
         .group(*helper_coords.values())
         .drop_coords(tuple(extra))
-        .assign_coords(coords)
+        .assign_coords(original_coords)
     )
 
 
