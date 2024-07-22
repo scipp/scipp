@@ -219,15 +219,19 @@ def _prepare_multi_dim_dense(x: DataArray, *edges_or_groups: Variable) -> DataAr
     op_dims = _get_op_dims(x, *edges_or_groups)
     if len(op_dims) != 1:
         raise ValueError("Cannot bin multi-dimensional dense data along multiple dims.")
-    op_dim = next(iter(op_dims))
-    extra = [dim for dim in x.dims if dim != op_dim and dim not in x.coords]
-    # TODO Some problems here if we have a bin-edge coord, which cannot be used for
-    # re-grouping
-    x = x.assign_coords({dim: arange(dim, x.sizes[dim]) for dim in extra})
+    extra = {dim for dim in x.dims if dim != next(iter(op_dims))}
+    coords = {
+        name: coord
+        for name, coord in x.coords.items()
+        if set(coord.dims).issubset(extra)
+    }
+    helper_coords = {dim: arange(dim, x.sizes[dim]) for dim in extra}
+    x = x.assign_coords(helper_coords)
     return (
         x.flatten(to=str(uuid.uuid4()))
-        .group(*[x.coords[dim] for dim in x.dims if dim != op_dim])
-        .drop_coords(extra)
+        .group(*helper_coords.values())
+        .drop_coords(tuple(extra))
+        .assign_coords(coords)
     )
 
 
@@ -499,6 +503,8 @@ def hist(x, arg_dict=None, /, *, dim=None, **kwargs):
         # TODO Note that this may swap dims, is that ok?
         out = make_histogrammed(x, edges=next(iter(edges.values())), erase=erase)
     else:
+        # Drop coords that would disappear by histogramming, to avoid costly handling
+        # in intermediate binning step.
         if isinstance(x, DataArray):
             x = _drop_unused_coords(x, edges)
         elif isinstance(x, Dataset):
