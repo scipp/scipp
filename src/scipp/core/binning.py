@@ -554,7 +554,7 @@ def _drop_unused_coords(x: DataArray, edges: dict[str, Variable]) -> DataArray:
 def _get_op_dims(x: DataArray, *edges_or_groups: Variable) -> set[str]:
     edge_dims = {edge.dims[-1] for edge in edges_or_groups}
     coords = [x.coords[dim] for dim in edge_dims if dim in x.coords]
-    return {coord.dims[-1] for coord in coords}
+    return {coord.dims[-1] for coord in coords if coord.ndim > 0}
 
 
 @overload
