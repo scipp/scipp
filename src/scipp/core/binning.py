@@ -216,18 +216,17 @@ def _prepare_multi_dim_dense(x: DataArray, *edges_or_groups: Variable) -> DataAr
         return x
     if any(var.ndim != 1 for var in edges_or_groups):
         raise ValueError("Cannot bin multi-dimensional dense data with ragged edges.")
-    coords = [x.coords[var.dim] for var in edges_or_groups]
-    # TODO There is some hole in the logic, multi dim coord should be ok if it gets
-    # erased? or sth?
-    op_dims = {coord.dim for coord in coords}
+    op_dims = _get_op_dims(x, *edges_or_groups)
     if len(op_dims) != 1:
         raise ValueError("Cannot bin multi-dimensional dense data along multiple dims.")
     op_dim = next(iter(op_dims))
-    extra = [dim for dim in x.dims if dim != op_dim]
+    extra = [dim for dim in x.dims if dim != op_dim and dim not in x.coords]
+    # TODO Some problems here if we have a bin-edge coord, which cannot be used for
+    # re-grouping
     x = x.assign_coords({dim: arange(dim, x.sizes[dim]) for dim in extra})
     return (
         x.flatten(to=str(uuid.uuid4()))
-        .group(*[x.coords[dim] for dim in extra])
+        .group(*[x.coords[dim] for dim in x.dims if dim != op_dim])
         .drop_coords(extra)
     )
 
@@ -521,10 +520,13 @@ def hist(x, arg_dict=None, /, *, dim=None, **kwargs):
     return out
 
 
-def _drop_unused_coords(x: DataArray, edges: Sequence[str]) -> DataArray:
+def _drop_unused_coords(x: DataArray, edges: dict[str, Variable]) -> DataArray:
     da = x if x.bins is None else x.bins
-    coords = set(da.coords)
-    drop = list(coords - set(edges))
+    op_dims = _get_op_dims(da, *edges.values())
+    drop = list(
+        {coord for coord in da.coords if set(da.coords[coord].dims) & op_dims}
+        - set(edges)
+    )
     if x.bins is None:
         x = x.drop_coords(drop)
     else:
@@ -533,6 +535,12 @@ def _drop_unused_coords(x: DataArray, edges: Sequence[str]) -> DataArray:
         x = x.copy(deep=False)
         x.data = _cpp._bins_no_validate(**content)
     return x
+
+
+def _get_op_dims(x: DataArray, *edges_or_groups: Variable) -> set[str]:
+    edge_dims = {edge.dims[-1] for edge in edges_or_groups}
+    coords = [x.coords[dim] for dim in edge_dims if dim in x.coords]
+    return {coord.dims[-1] for coord in coords}
 
 
 @overload
