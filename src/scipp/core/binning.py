@@ -182,11 +182,17 @@ def make_binned(
     if _can_operate_on_bins(x, edges, groups, erase):
         return combine_bins(x, edges=edges, groups=groups, dim=erase)
     # Many-to-many mapping is expensive, concat first is generally cheaper,
-    # despite extra copies.
+    # despite extra copies. If some coords are dense, perform binning in two steps.
     if erase and x.bins is not None:
-        required_coords = [coord.dims[-1] for coord in itertools.chain(edges, groups)]
-        if all(coord in x.bins.coords for coord in required_coords):
+        dense_edges = [var for var in edges if var.dims[-1] not in x.bins.coords]
+        dense_groups = [var for var in groups if var.dims[-1] not in x.bins.coords]
+        if len(dense_edges) + len(dense_groups) == 0:
             x = x.bins.concat(erase)
+            erase = ()
+        elif len(dense_edges) + len(dense_groups) < len(edges) + len(groups):
+            x = make_binned(x, edges=dense_edges, groups=dense_groups, erase=erase)
+            edges = [var for var in edges if var.dims[-1] in x.bins.coords]
+            groups = [var for var in groups if var.dims[-1] in x.bins.coords]
             erase = ()
         if x.ndim == 0:
             return (
