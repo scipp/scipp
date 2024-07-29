@@ -52,19 +52,19 @@ conan_cmake_configure(
   boost/1.79.0
   eigen/3.4.0
   gtest/1.11.0
-  LLNL-Units/0.9.1
+  llnl-units/0.9.1
   pybind11/2.13.1
   ${CONAN_ONETBB}
   OPTIONS
-  benchmark:shared=False
-  boost:header_only=True
-  gtest:shared=False
-  LLNL-Units:shared=False
-  LLNL-Units:fPIC=True
-  LLNL-Units:base_type=uint64_t
-  LLNL-Units:namespace=llnl::units
+  benchmark/*:shared=False
+  boost/*:header_only=True
+  gtest/*:shared=False
+  llnl-units/*:shared=False
+  llnl-units/*:fPIC=True
+  llnl-units/*:base_type=uint64_t
+  llnl-units/*:namespace=llnl::units
   GENERATORS
-  cmake_find_package_multi
+  CMakeDeps
   ${CONAN_DEPLOY}
 )
 

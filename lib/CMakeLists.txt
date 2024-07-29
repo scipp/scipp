@@ -29,7 +29,7 @@ endif()
 set(Python_FIND_IMPLEMENTATIONS CPython PyPy)
 
 find_package(Benchmark)
-find_package(Boost 1.67 REQUIRED)
+find_package(Boost 1.79 REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Sanitizers REQUIRED)
 find_package(GTest CONFIG REQUIRED)

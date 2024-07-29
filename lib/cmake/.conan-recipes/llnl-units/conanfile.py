@@ -1,16 +1,12 @@
+
 import os
 
-from conans import CMake, ConanFile, tools
-
-CMAKE_PROJECT_STR = """project(
-    ${UNITS_CMAKE_PROJECT_NAME}
-    LANGUAGES C CXX
-    VERSION 0.9.1
-)"""
-
+from conan import ConanFile
+from conan.tools.cmake import CMake, CMakeToolchain, CMakeDeps
+from conan.tools.files import copy, rm, rmdir, get
 
 class UnitsConan(ConanFile):
-    name = "LLNL-Units"
+    name = "llnl-units"
     version = "0.9.1"
     license = "BSD-3"
     url = "https://github.com/llnl/units"
@@ -34,7 +30,7 @@ class UnitsConan(ConanFile):
         "shared": [True, False],
         "fPIC": [True, False],
         "base_type": ["uint32_t", "uint64_t"],
-        "namespace": "ANY",
+        "namespace": ["ANY"],
     }
     default_options = {
         "shared": False,
@@ -42,51 +38,65 @@ class UnitsConan(ConanFile):
         "base_type": "uint32_t",
         "namespace": None,
     }
-    generators = "cmake"
+    @property
+    def _min_cppstd(self):
+        return 17
+
+    @property
+    def _compilers_minimum_version(self):
+        return {
+            "apple-clang": "10",
+            "clang": "7",
+            "gcc": "7",
+            "msvc": "191",
+            "Visual Studio": "15",
+        }
+
+    def config_options(self):
+        if self.settings.os == "Windows":
+            del self.options.fPIC
+
+    def configure(self):
+        if self.options.shared:
+            self.options.rm_safe("fPIC")
 
     def source(self):
-        git = tools.Git("units")
-        git.clone("https://github.com/LLNL/units.git")
-        git.checkout("v" + self.version)
+        get(self,
+            url="https://github.com/LLNL/units/archive/refs/tags/v0.9.1.tar.gz",
+            sha256= "7edb83613a07cf55873f22d61c0062e46db6f8cb27d137866858811ec2e1ad4f", strip_root=True)
 
-        cmake_project_str = (
-            CMAKE_PROJECT_STR.replace("\n", os.linesep)
-            if self.settings.os == "Windows"
-            else CMAKE_PROJECT_STR
-        )
-
-        tools.replace_in_file(
-            "units/CMakeLists.txt",
-            cmake_project_str,
-            cmake_project_str
-            + """
-include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-conan_basic_setup()""",
-        )
+    def generate(self):
+        deps = CMakeDeps(self)
+        deps.generate()
+        tc = CMakeToolchain(self)
+        tc.preprocessor_definitions["UNITS_CMAKE_PROJECT_NAME"] = "LLNL-UNITS"
+        tc.preprocessor_definitions["UNITS_ENABLE_TESTS"] = "OFF"
+        tc.preprocessor_definitions["UNITS_BUILD_SHARED_LIBRARY"] = self.options.shared
+        tc.preprocessor_definitions[
+            "UNITS_BUILD_STATIC_LIBRARY"
+        ] = not self.options.shared
+        tc.generate()
 
     def build(self):
         cmake = CMake(self)
-        units_namespace = self.options.get_safe("namespace")
-        cmake.definitions["UNITS_ENABLE_TESTS"] = "OFF"
-        cmake.definitions["UNITS_BASE_TYPE"] = self.options.base_type
-        if units_namespace:
-            cmake.definitions["UNITS_NAMESPACE"] = units_namespace
-        if self.options["shared"]:
-            cmake.definitions["UNITS_BUILD_SHARED_LIBRARY"] = "ON"
-            cmake.definitions["UNITS_BUILD_STATIC_LIBRARY"] = "OFF"
-        # The library uses C++14, but we want to set the namespace
-        # to llnl::units which requires C++17.
-        cmake.definitions["CMAKE_CXX_STANDARD"] = "17"
-        cmake.configure(source_folder="units")
-        cmake.build(target="units")
+        cmake.configure()
+        cmake.build()
 
     def package(self):
-        self.copy("*.hpp", dst="include/units", src="units/units")
-        self.copy("*units.lib", dst="lib", keep_path=False)
-        self.copy("*.dll", dst="bin", keep_path=False)
-        self.copy("*.so", dst="lib", keep_path=False)
-        self.copy("*.dylib", dst="lib", keep_path=False)
-        self.copy("*.a", dst="lib", keep_path=False)
+        copy(
+            self,
+            "LICENSE",
+            self.source_folder,
+            os.path.join(self.package_folder, "licenses"),
+        )
+        cmake = CMake(self)
+        cmake.install()
+        rmdir(self, os.path.join(self.package_folder, "lib", "pkgconfig"))
+        rmdir(self, os.path.join(self.package_folder, "lib", "cmake"))
+        rmdir(self, os.path.join(self.package_folder, "share"))
+        rm(self, "*.la", os.path.join(self.package_folder, "lib"))
+        rm(self, "*.pdb", os.path.join(self.package_folder, "lib"))
+        rm(self, "*.pdb", os.path.join(self.package_folder, "bin"))
 
     def package_info(self):
         self.cpp_info.libs = ["units"]
@@ -94,3 +104,5 @@ conan_basic_setup()""",
         self.cpp_info.defines = [f"UNITS_BASE_TYPE={self.options.base_type}"]
         if units_namespace:
             self.cpp_info.defines.append(f"UNITS_NAMESPACE={units_namespace}")
+        self.cpp_info.set_property("cmake_file_name", "llnl-units")
+        self.cpp_info.set_property("cmake_target_name", "llnl-units::llnl-units")
