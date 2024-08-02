@@ -3,6 +3,7 @@
 # @author Simon Heybrock
 import inspect
 import itertools
+import uuid
 from collections.abc import Sequence
 from numbers import Integral
 from typing import TypeVar, overload
@@ -19,14 +20,18 @@ _T = TypeVar('_T')
 
 
 @overload
-def make_histogrammed(x: Variable | DataArray, *, edges: Variable) -> DataArray: ...
+def make_histogrammed(
+    x: Variable | DataArray, *, edges: Variable, erase: Sequence[str] = ()
+) -> DataArray: ...
 
 
 @overload
-def make_histogrammed(x: Dataset, *, edges: Variable) -> Dataset: ...
+def make_histogrammed(
+    x: Dataset, *, edges: Variable, erase: Sequence[str] = ()
+) -> Dataset: ...
 
 
-def make_histogrammed(x, *, edges):
+def make_histogrammed(x, *, edges, erase: Sequence[str] = ()):
     """Create dense data by histogramming data into given bins.
 
     If the input is binned data, then existing binning dimensions are preserved.
@@ -61,13 +66,39 @@ def make_histogrammed(x, *, edges):
     elif isinstance(x, DataArray) and x.bins is not None:
         dim = edges.dims[-1]
         if dim not in x.bins.coords:
-            if x.coords.is_edges(dim):
+            # The second `dim` is necessary in case the coord is multi-dimensional.
+            if x.coords.is_edges(dim, dim):
                 raise BinEdgeError(
                     "Cannot histogram data with existing bin edges "
                     "unless event data coordinate for histogramming is available."
                 )
-            return make_histogrammed(x.bins.sum(), edges=edges)
+            return make_histogrammed(x.bins.sum(), edges=edges, erase=erase)
+    _check_erase_dimension_clash(erase, edges)
+    # The C++ implementation uses an older heuristic histogramming a single dimension.
+    # We therefore transpose and flatten the input to match this.
+    hist_dim = edges.dims[-1]
+    to_flatten = [dim for dim in x.dims if dim in erase]
+    if hist_dim in x.dims:
+        to_flatten.append(hist_dim)
+    if to_flatten:
+        x = _drop_coords_for_hist(x, to_flatten, keep=hist_dim)
+        x = _transpose_and_flatten_for_hist(x, to_flatten, to=hist_dim)
     return _cpp.histogram(x, edges)
+
+
+def _drop_coords_for_hist(x, dims: Sequence[str], keep: str) -> DataArray:
+    """Drop unnecessary coords from a DataArray which would make flatten expensive."""
+    to_drop = []
+    for name, coord in x.coords.items():
+        if name != keep and set(coord.dims) & set(dims):
+            to_drop.append(name)
+    return x.drop_coords(to_drop)
+
+
+def _transpose_and_flatten_for_hist(x, dims: Sequence[str], to: str) -> DataArray:
+    """Transpose and flatten a DataArray to prepare for histogram."""
+    new_order = [dim for dim in x.dims if dim not in dims] + dims
+    return x.transpose(new_order).flatten(dims=dims, to=to)
 
 
 def make_binned(
@@ -98,7 +129,7 @@ def make_binned(
     When there is existing binning or grouping, the algorithm assumes that coordinates
     of the binned data are correct, i.e., compatible with the corresponding
     coordinate values in the individual bins. If this is not the case then the behavior
-    if UNSPECIFIED. That is, the algorithm may or may not ignore the existing
+    is UNSPECIFIED. That is, the algorithm may or may not ignore the existing
     coordinates. If you encounter such as case, remove the conflicting coordinate,
     e.g., using :py:func:`scipp.DataArray.drop_coords`.
 
@@ -135,6 +166,8 @@ def make_binned(
         groups = []
     if edges is None:
         edges = []
+    _check_erase_dimension_clash(erase, *edges, *groups)
+
     if isinstance(x, Variable) and x.bins is not None:
         x = DataArray(x)
     elif isinstance(x, Variable):
@@ -148,7 +181,79 @@ def make_binned(
         x = DataArray(data, coords={coords[0].dim: x})
     if _can_operate_on_bins(x, edges, groups, erase):
         return combine_bins(x, edges=edges, groups=groups, dim=erase)
+    # Many-to-many mapping is expensive, concat first is generally cheaper,
+    # despite extra copies. If some coords are dense, perform binning in two steps,
+    # since concat is not possible then (without mapping dense coords to binned coords,
+    # which might bypass some other optimizations).
+    if erase and x.bins is not None:
+        dense_edges = [var for var in edges if var.dims[-1] not in x.bins.coords]
+        dense_groups = [var for var in groups if var.dims[-1] not in x.bins.coords]
+        if len(dense_edges) + len(dense_groups) == 0:
+            x = x.bins.concat(erase)
+            erase = ()
+        elif len(dense_edges) + len(dense_groups) < len(edges) + len(groups):
+            x = make_binned(x, edges=dense_edges, groups=dense_groups, erase=erase)
+            edges = [var for var in edges if var.dims[-1] in x.bins.coords]
+            groups = [var for var in groups if var.dims[-1] in x.bins.coords]
+            erase = ()
+        if x.ndim == 0:
+            return (
+                _cpp.bin(x.value, edges, groups, erase)
+                .assign_coords(x.coords)
+                .assign_masks(x.masks)
+            )
+    x = _prepare_multi_dim_dense(x, *edges, *groups)
     return _cpp.bin(x, edges, groups, erase)
+
+
+def _prepare_multi_dim_dense(x: DataArray, *edges_or_groups: Variable) -> DataArray:
+    """Prepare data for binning or grouping.
+
+    This function is a workaround for the C++ implementation not being able to deal with
+    multi-dimensional dense input data. The workaround is to flatten the data along the
+    auxiliary dimensions and regroup.
+
+    In case the ultimate operation is histogramming, this leads the desired
+    higher-dimensional histogram. In case of binning or grouping, we obtain binned data
+    with one additional dimension, whereas conceptually we might expect only the
+    requested dimensions, with the auxiliary dimensions inside the bin content. As this
+    case is likely rare and extra dimensions in bin content are barely supported in
+    scipp, we consider this acceptable for now.
+    """
+    if x.bins is not None or x.ndim == 1:
+        return x
+    if any(var.ndim != 1 for var in edges_or_groups):
+        raise ValueError("Cannot bin multi-dimensional dense data with ragged edges.")
+    op_dims = _get_op_dims(x, *edges_or_groups)
+    if len(op_dims) != 1:
+        raise ValueError("Cannot bin multi-dimensional dense data along multiple dims.")
+    extra = {dim for dim in x.dims if dim != next(iter(op_dims))}
+    original_coords = {
+        name: coord
+        for name, coord in x.coords.items()
+        if set(coord.dims).issubset(extra)
+    }
+    helper_coords = {dim: arange(dim, x.sizes[dim]) for dim in extra}
+    return (
+        x.assign_coords(helper_coords)
+        .flatten(to=str(uuid.uuid4()))
+        .group(*helper_coords.values())
+        .drop_coords(tuple(extra))
+        .assign_coords(original_coords)
+    )
+
+
+def _check_erase_dimension_clash(
+    erase: Sequence[str], *edges_or_groups: Variable
+) -> None:
+    new_dims = set()
+    for var in edges_or_groups:
+        new_dims.update(var.dims)
+    if set(erase) & new_dims:
+        raise ValueError(
+            f"Clash of dimension(s) to reduce {erase} with dimensions defined by "
+            "edges or groups."
+        )
 
 
 def _can_operate_on_bins(x, edges, groups, erase) -> bool:
@@ -247,15 +352,22 @@ def _make_edges(
     return {name: _parse_coords_arg(x, name, arg) for name, arg in kwargs.items()}
 
 
-def _find_replaced_dims(x, dims):
-    if x.bins is None:
-        return []
-    erase = set()
-    for dim in dims:
-        if (coord := x.coords.get(dim)) is not None:
-            if dim not in coord.dims:
-                erase = erase.union(coord.dims)
-    return [dim for dim in erase if dim not in dims]
+def _find_replaced_dims(
+    x: Variable | DataArray | Dataset,
+    *,
+    dims: Sequence[str],
+    dim: str | tuple[str, ...] | None,
+) -> list[str]:
+    if isinstance(x, Variable):
+        replaced = x.dims
+    elif dim is None:
+        replaced = set()
+        for name in dims:
+            if name in x.coords:
+                replaced.update(x.coords[name].dims)
+    else:
+        replaced = (dim,) if isinstance(dim, str) else dim
+    return [d for d in x.dims if d in (set(replaced) - set(dims))]
 
 
 @overload
@@ -263,6 +375,8 @@ def hist(
     x: Variable | DataArray,
     arg_dict: dict[str, int | Variable] | None = None,
     /,
+    *,
+    dim: str | tuple[str, ...] | None = None,
     **kwargs: int | Variable,
 ) -> DataArray: ...
 
@@ -272,6 +386,8 @@ def hist(
     x: Dataset,
     arg_dict: dict[str, int | Variable] | None = None,
     /,
+    *,
+    dim: str | tuple[str, ...] | None = None,
     **kwargs: int | Variable,
 ) -> Dataset: ...
 
@@ -281,12 +397,14 @@ def hist(
     x: DataGroup,
     arg_dict: dict[str, int | Variable] | None = None,
     /,
+    *,
+    dim: str | tuple[str, ...] | None = None,
     **kwargs: int | Variable,
 ) -> DataGroup: ...
 
 
 @data_group_overload
-def hist(x, arg_dict=None, /, **kwargs):
+def hist(x, arg_dict=None, /, *, dim=None, **kwargs):
     """Compute a histogram.
 
     Bin edges can be specified in three ways:
@@ -379,7 +497,7 @@ def hist(x, arg_dict=None, /, **kwargs):
       {'x': 10, 'y': 5}
     """  # noqa: E501
     edges = _make_edges(x, arg_dict, kwargs)
-    erase = _find_replaced_dims(x, edges)
+    erase = _find_replaced_dims(x, dims=edges, dim=dim)
     if isinstance(x, Variable) and len(edges) != 1:
         raise ValueError(
             "Edges for exactly one dimension must be specified when "
@@ -391,8 +509,10 @@ def hist(x, arg_dict=None, /, **kwargs):
         return x.bins.sum()
     if len(edges) == 1:
         # TODO Note that this may swap dims, is that ok?
-        out = make_histogrammed(x, edges=next(iter(edges.values())))
+        out = make_histogrammed(x, edges=next(iter(edges.values())), erase=erase)
     else:
+        # Drop coords that would disappear by histogramming, to avoid costly handling
+        # in intermediate binning step.
         if isinstance(x, DataArray):
             x = _drop_unused_coords(x, edges)
         elif isinstance(x, Dataset):
@@ -400,24 +520,27 @@ def hist(x, arg_dict=None, /, **kwargs):
         edges = list(edges.values())
         # If histogramming by the final edges needs to use a non-event coord then we
         # must not erase that dim, since it removes the coord required for histogramming
+        remaining_erase = set(erase)
         if isinstance(x, DataArray) and x.bins is not None:
             hist_dim = edges[-1].dims[-1]
             if hist_dim not in x.bins.coords:
-                hist_coord_dim = x.coords[hist_dim].dims[-1]
-                erase = [e for e in erase if e != hist_coord_dim]
+                erase = [e for e in erase if e not in x.coords[hist_dim].dims]
+        remaining_erase -= set(erase)
         out = make_histogrammed(
-            make_binned(x, edges=edges[:-1], erase=erase), edges=edges[-1]
+            make_binned(x, edges=edges[:-1], erase=erase),
+            edges=edges[-1],
+            erase=remaining_erase,
         )
-    for dim in erase:
-        if dim in out.dims:
-            out = out.sum(dim)
     return out
 
 
-def _drop_unused_coords(x: DataArray, edges: Sequence[str]) -> DataArray:
+def _drop_unused_coords(x: DataArray, edges: dict[str, Variable]) -> DataArray:
     da = x if x.bins is None else x.bins
-    coords = set(da.coords)
-    drop = list(coords - set(edges))
+    op_dims = _get_op_dims(da, *edges.values())
+    drop = list(
+        {coord for coord in da.coords if set(da.coords[coord].dims) & op_dims}
+        - set(edges)
+    )
     if x.bins is None:
         x = x.drop_coords(drop)
     else:
@@ -428,11 +551,19 @@ def _drop_unused_coords(x: DataArray, edges: Sequence[str]) -> DataArray:
     return x
 
 
+def _get_op_dims(x: DataArray, *edges_or_groups: Variable) -> set[str]:
+    edge_dims = {edge.dims[-1] for edge in edges_or_groups}
+    coords = [x.coords[dim] for dim in edge_dims if dim in x.coords]
+    return {coord.dims[-1] for coord in coords if coord.ndim > 0}
+
+
 @overload
 def nanhist(
     x: Variable | DataArray,
     arg_dict: dict[str, int | Variable] | None = None,
     /,
+    *,
+    dim: str | tuple[str, ...] | None = None,
     **kwargs: int | Variable,
 ) -> DataArray: ...
 
@@ -442,6 +573,8 @@ def nanhist(
     x: DataGroup,
     arg_dict: dict[str, int | Variable] | None = None,
     /,
+    *,
+    dim: str | tuple[str, ...] | None = None,
     **kwargs: int | Variable,
 ) -> DataGroup: ...
 
@@ -451,6 +584,8 @@ def nanhist(
     x: DataArray,
     arg_dict: dict[str, int | Variable] | None = None,
     /,
+    *,
+    dim: str | tuple[str, ...] | None = None,
     **kwargs: int | Variable,
 ) -> DataArray:
     """Compute a histogram, skipping NaN values.
@@ -474,7 +609,7 @@ def nanhist(
     """
     edges = _make_edges(x, arg_dict, kwargs)
     if len(edges) > 0:
-        x = x.bin(edges)
+        x = x.bin(edges, dim=dim)
     if x.bins is None:
         raise TypeError("Data is not binned so bin edges must be provided.")
     return x.bins.nansum()
@@ -485,6 +620,8 @@ def bin(
     x: Variable | DataArray,
     arg_dict: dict[str, int | Variable] | None = None,
     /,
+    *,
+    dim: str | tuple[str, ...] | None = None,
     **kwargs: int | Variable,
 ) -> DataArray: ...
 
@@ -494,6 +631,8 @@ def bin(
     x: DataGroup,
     arg_dict: dict[str, int | Variable] | None = None,
     /,
+    *,
+    dim: str | tuple[str, ...] | None = None,
     **kwargs: int | Variable,
 ) -> DataGroup: ...
 
@@ -503,6 +642,8 @@ def bin(
     x: Variable | DataArray,
     arg_dict: dict[str, int | Variable] | None = None,
     /,
+    *,
+    dim: str | tuple[str, ...] | None = None,
     **kwargs: int | Variable,
 ) -> DataArray:
     """Create binned data by binning input along all dimensions given by edges.
@@ -598,7 +739,7 @@ def bin(
       {'x': 10, 'y': 5}
     """
     edges = _make_edges(x, arg_dict, kwargs)
-    erase = _find_replaced_dims(x, edges)
+    erase = _find_replaced_dims(x, dims=edges, dim=dim)
     return make_binned(x, edges=list(edges.values()), erase=erase)
 
 
@@ -733,15 +874,30 @@ def _make_groups(x, arg):
 
 
 @overload
-def group(x: DataArray, /, *args: str | Variable) -> DataArray: ...
+def group(
+    x: DataArray,
+    /,
+    *args: str | Variable,
+    dim: str | tuple[str, ...] | None = None,
+) -> DataArray: ...
 
 
 @overload
-def group(x: DataGroup, /, *args: str | Variable) -> DataGroup: ...
+def group(
+    x: DataGroup,
+    /,
+    *args: str | Variable,
+    dim: str | tuple[str, ...] | None = None,
+) -> DataGroup: ...
 
 
 @data_group_overload
-def group(x: DataArray, /, *args: str | Variable) -> DataArray:
+def group(
+    x: DataArray,
+    /,
+    *args: str | Variable,
+    dim: str | tuple[str, ...] | None = None,
+) -> DataArray:
     """Create binned data by grouping input by one or more coordinates.
 
     Grouping can be specified in two ways: (1) When a string is provided the unique
@@ -827,7 +983,7 @@ def group(x: DataArray, /, *args: str | Variable) -> DataArray:
       {'x': 10, 'a': 10}
     """
     groups = [_make_groups(x, name) for name in args]
-    erase = _find_replaced_dims(x, [g.dim for g in groups])
+    erase = _find_replaced_dims(x, dims=[g.dim for g in groups], dim=dim)
     return make_binned(x, groups=groups, erase=erase)
 
 
