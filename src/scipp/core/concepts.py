@@ -63,7 +63,7 @@ def concrete_dims(obj: VariableLikeType, dim: Dims) -> tuple[str, ...]:
             raise DimensionError(
                 f'Got data group with unequal dimension lengths: dim={obj.dims}'
             )
-        return obj.dims  # type: ignore[return-value]  # checked above
+        return obj.dims
     return (dim,) if isinstance(dim, str) else tuple(dim)
 
 

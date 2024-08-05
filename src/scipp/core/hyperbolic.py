@@ -27,7 +27,7 @@ def sinh(
     : Same type as input
         The hyperbolic sine values of the input.
     """
-    return _call_cpp_func(_cpp.sinh, x, out=out)
+    return _call_cpp_func(_cpp.sinh, x, out=out)  # type: ignore[return-value]
 
 
 def cosh(
@@ -49,7 +49,7 @@ def cosh(
     : Same type as input
         The hyperbolic cosine values of the input.
     """
-    return _call_cpp_func(_cpp.cosh, x, out=out)
+    return _call_cpp_func(_cpp.cosh, x, out=out)  # type: ignore[return-value]
 
 
 def tanh(
@@ -71,7 +71,7 @@ def tanh(
     : Same type as input
         The hyperbolic tangent values of the input.
     """
-    return _call_cpp_func(_cpp.tanh, x, out=out)
+    return _call_cpp_func(_cpp.tanh, x, out=out)  # type: ignore[return-value]
 
 
 def asinh(
@@ -93,7 +93,7 @@ def asinh(
     : Same type as input
         The inverse hyperbolic sine values of the input.
     """
-    return _call_cpp_func(_cpp.asinh, x, out=out)
+    return _call_cpp_func(_cpp.asinh, x, out=out)  # type: ignore[return-value]
 
 
 def acosh(
@@ -115,7 +115,7 @@ def acosh(
     : Same type as input
         The inverse hyperbolic cosine values of the input.
     """
-    return _call_cpp_func(_cpp.acosh, x, out=out)
+    return _call_cpp_func(_cpp.acosh, x, out=out)  # type: ignore[return-value]
 
 
 def atanh(
@@ -137,4 +137,4 @@ def atanh(
     : Same type as input
         The inverse hyperbolic tangent values of the input.
     """
-    return _call_cpp_func(_cpp.atanh, x, out=out)
+    return _call_cpp_func(_cpp.atanh, x, out=out)  # type: ignore[return-value]

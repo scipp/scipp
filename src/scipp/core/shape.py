@@ -251,23 +251,27 @@ def fold(
             "Can only have a single -1 in the new requested shape."
         )
     if minus_one_count == 1:
+        if (size := x.sizes[dim]) is None:
+            raise ValueError(
+                f"Dim {dim} has inconsistent size, cannot compute final shape."
+            )
         ind = new_shape.index(-1)
         new_shape[ind] = 1
         new_volume = np.prod(new_shape)
-        dim_size = x.sizes[dim] // new_volume
-        if x.sizes[dim] % new_volume != 0:
+        dim_size = int(size // new_volume)
+        if size % new_volume != 0:
             raise ValueError(
                 f"-1 in new shape was computed to be {dim_size}, but the original "
-                f"shape {x.sizes[dim]} cannot be divided by {dim_size}."
+                f"shape {size} cannot be divided by {dim_size}."
             )
         new_shape[ind] = dim_size
 
-    return _call_cpp_func(_cpp.fold, x, dim, dims, new_shape)
+    return _call_cpp_func(_cpp.fold, x, dim, dims, new_shape)  # type: ignore[return-value]
 
 
 def flatten(
     x: VariableLikeType,
-    dims: list[str] | tuple[str, ...] | None = None,
+    dims: Sequence[str] | None = None,
     to: str | None = None,
 ) -> VariableLikeType:
     """Flatten multiple dimensions into a single dimension.
@@ -356,11 +360,11 @@ def flatten(
         # makes more sense for the dims that we want to flatten to come first
         # in the argument list.
         raise ValueError("The final flattened dimension is required.")
-    return _call_cpp_func(_cpp.flatten, x, dims, to)
+    return _call_cpp_func(_cpp.flatten, x, dims, to)  # type: ignore[return-value]
 
 
 def transpose(
-    x: VariableLikeType, dims: list[str] | tuple[str, ...] | None = None
+    x: VariableLikeType, dims: Sequence[str] | None = None
 ) -> VariableLikeType:
     """Transpose dimensions of the input.
 
@@ -382,11 +386,11 @@ def transpose(
     scipp.DimensionError
         If ``dims`` are incompatible with the input data.
     """
-    return _call_cpp_func(_cpp.transpose, x, dims if dims is not None else [])
+    return _call_cpp_func(_cpp.transpose, x, dims if dims is not None else [])  # type: ignore[return-value]
 
 
 def squeeze(
-    x: VariableLikeType, dim: str | list[str] | tuple[str, ...] | None = None
+    x: VariableLikeType, dim: str | Sequence[str] | None = None
 ) -> VariableLikeType:
     """Remove dimensions of length 1.
 
@@ -450,4 +454,4 @@ def squeeze(
       Data:
                                     int64  [dimensionless]  (y)  [0, 1, 2]
     """
-    return _call_cpp_func(_cpp.squeeze, x, (dim,) if isinstance(dim, str) else dim)
+    return _call_cpp_func(_cpp.squeeze, x, (dim,) if isinstance(dim, str) else dim)  # type: ignore[return-value]

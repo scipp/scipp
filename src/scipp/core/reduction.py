@@ -5,14 +5,24 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any
+from typing import Any, NoReturn, cast
 
 import numpy as np
+import numpy.typing as npt
 
 from .._scipp import core as _cpp
-from ..typing import Dims, VariableLikeType
+from ..typing import Dims, VariableLike, VariableLikeType
 from . import concepts
 from ._cpp_wrapper_util import call_func as _call_cpp_func
+from .cpp_classes import (
+    DataArray,
+    Dataset,
+    DimensionError,
+    DTypeError,
+    Unit,
+    Variable,
+    VariancesError,
+)
 from .data_group import DataGroup, data_group_nary
 from .variable import array
 
@@ -52,9 +62,9 @@ def mean(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
         Ignore NaN's when calculating the mean.
     """
     if dim is None:
-        return _call_cpp_func(_cpp.mean, x)
+        return _call_cpp_func(_cpp.mean, x)  # type: ignore[return-value]
     else:
-        return _call_cpp_func(_cpp.mean, x, dim=dim)
+        return _call_cpp_func(_cpp.mean, x, dim=dim)  # type: ignore[return-value]
 
 
 def nanmean(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
@@ -92,9 +102,9 @@ def nanmean(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
         Compute the mean without special handling of NaN.
     """
     if dim is None:
-        return _call_cpp_func(_cpp.nanmean, x)
+        return _call_cpp_func(_cpp.nanmean, x)  # type: ignore[return-value]
     else:
-        return _call_cpp_func(_cpp.nanmean, x, dim=dim)
+        return _call_cpp_func(_cpp.nanmean, x, dim=dim)  # type: ignore[return-value]
 
 
 def median(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
@@ -166,15 +176,16 @@ def median(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
         Data:
                                     float64  [dimensionless]  ()  4
     """
-    return _reduce_with_numpy(
+    r = _reduce_with_numpy(
         x,
         dim=dim,
-        sc_func=median,
+        sc_func=cast(Callable[..., VariableLike], median),
         np_func=np.median,
         np_ma_func=np.ma.median,
         unit_func=lambda u: u,
         kwargs={},
     )
+    return r
 
 
 def nanmedian(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
@@ -227,7 +238,7 @@ def nanmedian(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
         <scipp.Variable> ()    float64  [dimensionless]  3.5
     """
 
-    def _catch_masked(*args, **kwargs):
+    def _catch_masked(*args: object, **kwargs: object) -> NoReturn:
         # Because there is no np.ma.nanmedian
         raise ValueError(
             'nanmedian does not support masked data arrays. '
@@ -237,7 +248,7 @@ def nanmedian(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     return _reduce_with_numpy(
         x,
         dim=dim,
-        sc_func=nanmedian,
+        sc_func=cast(Callable[..., VariableLike], nanmedian),
         np_func=np.nanmedian,
         np_ma_func=_catch_masked,
         unit_func=lambda u: u,
@@ -327,7 +338,7 @@ def var(x: VariableLikeType, dim: Dims = None, *, ddof: int) -> VariableLikeType
     return _reduce_with_numpy(
         x,
         dim=dim,
-        sc_func=var,
+        sc_func=cast(Callable[..., VariableLike], var),
         np_func=np.var,
         np_ma_func=np.ma.var,
         unit_func=lambda u: u**2,
@@ -403,7 +414,7 @@ def nanvar(x: VariableLikeType, dim: Dims = None, *, ddof: int) -> VariableLikeT
         <scipp.Variable> ()    float64  [dimensionless]  2.33333
     """
 
-    def _catch_masked(*args, **kwargs):
+    def _catch_masked(*args: object, **kwargs: object) -> NoReturn:
         # Because there is no np.ma.nanvar
         raise ValueError(
             'nanvar does not support masked data arrays. '
@@ -413,7 +424,7 @@ def nanvar(x: VariableLikeType, dim: Dims = None, *, ddof: int) -> VariableLikeT
     return _reduce_with_numpy(
         x,
         dim=dim,
-        sc_func=nanvar,
+        sc_func=cast(Callable[..., VariableLike], nanvar),
         np_func=np.nanvar,
         np_ma_func=_catch_masked,
         unit_func=lambda u: u**2,
@@ -506,7 +517,7 @@ def std(x: VariableLikeType, dim: Dims = None, *, ddof: int) -> VariableLikeType
     return _reduce_with_numpy(
         x,
         dim=dim,
-        sc_func=std,
+        sc_func=cast(Callable[..., VariableLike], std),
         np_func=np.std,
         np_ma_func=np.ma.std,
         unit_func=lambda u: u,
@@ -584,7 +595,7 @@ def nanstd(x: VariableLikeType, dim: Dims = None, *, ddof: int) -> VariableLikeT
         <scipp.Variable> ()    float64  [dimensionless]  1.52753
     """
 
-    def _catch_masked(*args, **kwargs):
+    def _catch_masked(*args: object, **kwargs: object) -> NoReturn:
         # Because there is no np.ma.nanstd
         raise ValueError(
             'nanstd does not support masked data arrays. '
@@ -594,7 +605,7 @@ def nanstd(x: VariableLikeType, dim: Dims = None, *, ddof: int) -> VariableLikeT
     return _reduce_with_numpy(
         x,
         dim=dim,
-        sc_func=nanstd,
+        sc_func=cast(Callable[..., VariableLike], nanstd),
         np_func=np.nanstd,
         np_ma_func=_catch_masked,
         unit_func=lambda u: u,
@@ -630,11 +641,11 @@ def sum(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
         Ignore NaN's when calculating the sum.
     """
     if dim is None:
-        return _call_cpp_func(_cpp.sum, x)
+        return _call_cpp_func(_cpp.sum, x)  # type: ignore[return-value]
     elif isinstance(dim, str):
-        return _call_cpp_func(_cpp.sum, x, dim=dim)
+        return _call_cpp_func(_cpp.sum, x, dim=dim)  # type: ignore[return-value]
     for d in dim:
-        x = _call_cpp_func(_cpp.sum, x, d)
+        x = _call_cpp_func(_cpp.sum, x, d)  # type: ignore[assignment]
     return x
 
 
@@ -662,9 +673,9 @@ def nansum(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
        Compute the sum without special handling of NaN.
     """
     if dim is None:
-        return _call_cpp_func(_cpp.nansum, x)
+        return _call_cpp_func(_cpp.nansum, x)  # type: ignore[return-value]
     else:
-        return _call_cpp_func(_cpp.nansum, x, dim=dim)
+        return _call_cpp_func(_cpp.nansum, x, dim=dim)  # type: ignore[return-value]
 
 
 def min(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
@@ -701,9 +712,9 @@ def min(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
         Same as max but ignoring NaN's.
     """
     if dim is None:
-        return _call_cpp_func(_cpp.min, x)
+        return _call_cpp_func(_cpp.min, x)  # type: ignore[return-value]
     else:
-        return _call_cpp_func(_cpp.min, x, dim=dim)
+        return _call_cpp_func(_cpp.min, x, dim=dim)  # type: ignore[return-value]
 
 
 def max(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
@@ -740,9 +751,9 @@ def max(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
         Same as max but ignoring NaN's.
     """
     if dim is None:
-        return _call_cpp_func(_cpp.max, x)
+        return _call_cpp_func(_cpp.max, x)  # type: ignore[return-value]
     else:
-        return _call_cpp_func(_cpp.max, x, dim=dim)
+        return _call_cpp_func(_cpp.max, x, dim=dim)  # type: ignore[return-value]
 
 
 def nanmin(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
@@ -779,9 +790,9 @@ def nanmin(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
         Same as max but ignoring NaN's.
     """
     if dim is None:
-        return _call_cpp_func(_cpp.nanmin, x)
+        return _call_cpp_func(_cpp.nanmin, x)  # type: ignore[return-value]
     else:
-        return _call_cpp_func(_cpp.nanmin, x, dim=dim)
+        return _call_cpp_func(_cpp.nanmin, x, dim=dim)  # type: ignore[return-value]
 
 
 def nanmax(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
@@ -818,9 +829,9 @@ def nanmax(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
         Same as min but ignoring NaN's.
     """
     if dim is None:
-        return _call_cpp_func(_cpp.nanmax, x)
+        return _call_cpp_func(_cpp.nanmax, x)  # type: ignore[return-value]
     else:
-        return _call_cpp_func(_cpp.nanmax, x, dim=dim)
+        return _call_cpp_func(_cpp.nanmax, x, dim=dim)  # type: ignore[return-value]
 
 
 def all(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
@@ -846,9 +857,9 @@ def all(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
         Logical OR.
     """
     if dim is None:
-        return _call_cpp_func(_cpp.all, x)
+        return _call_cpp_func(_cpp.all, x)  # type: ignore[return-value]
     else:
-        return _call_cpp_func(_cpp.all, x, dim=dim)
+        return _call_cpp_func(_cpp.all, x, dim=dim)  # type: ignore[return-value]
 
 
 def any(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
@@ -874,44 +885,48 @@ def any(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
         Logical AND.
     """
     if dim is None:
-        return _call_cpp_func(_cpp.any, x)
+        return _call_cpp_func(_cpp.any, x)  # type: ignore[return-value]
     else:
-        return _call_cpp_func(_cpp.any, x, dim=dim)
+        return _call_cpp_func(_cpp.any, x, dim=dim)  # type: ignore[return-value]
 
 
+# Note: When passing `sc_func`, make sure to disassociate type vars of that function
+# from the calling function. E.g., in `median`, use
+#   sc_func=cast(Callable[..., VariableLike], median)
+# This ensures that the return type of the `median` function is deduced correctly.
 def _reduce_with_numpy(
     x: VariableLikeType,
     *,
     dim: Dims = None,
-    sc_func: Callable[..., VariableLikeType],
-    np_func: Callable[..., np.ndarray],
-    np_ma_func: Callable[..., np.ndarray],
-    unit_func: Callable[[_cpp.Unit], _cpp.Unit],
+    sc_func: Callable[..., VariableLike],
+    np_func: Callable[..., npt.NDArray[Any]],
+    np_ma_func: Callable[..., npt.NDArray[Any]],
+    unit_func: Callable[[Unit], Unit],
     kwargs: dict[str, Any],
 ) -> VariableLikeType:
-    if isinstance(x, _cpp.Dataset):
-        return _cpp.Dataset({k: sc_func(v, dim=dim, **kwargs) for k, v in x.items()})
+    if isinstance(x, Dataset):
+        return Dataset({k: sc_func(v, dim=dim, **kwargs) for k, v in x.items()})  # type: ignore[return-value, arg-type]
     if isinstance(x, DataGroup):
-        return data_group_nary(sc_func, x, dim=dim, **kwargs)
+        return data_group_nary(sc_func, x, dim=dim, **kwargs)  # type: ignore[return-value]
 
     _expect_no_variance(x, sc_func.__name__)
     _expect_not_binned(x, sc_func.__name__)
     reduced_dims, out_dims, axis = _split_dims(x, dim)
-    if isinstance(x, _cpp.Variable):
-        return array(
+    if isinstance(x, Variable):
+        return array(  # type: ignore[return-value]
             dims=out_dims,
             values=np_func(x.values, axis=axis, **kwargs),
-            unit=unit_func(x.unit),
+            unit=unit_func(x.unit) if x.unit is not None else None,
         )
-    if isinstance(x, _cpp.DataArray):
+    if isinstance(x, DataArray):
         if (mask := concepts.irreducible_mask(x, dim)) is not None:
-            masked = np.ma.masked_array(
-                x.values, mask=mask.broadcast(dims=x.dims, shape=x.shape).values
+            masked = np.ma.masked_where(  # type: ignore[no-untyped-call]
+                mask.broadcast(dims=x.dims, shape=x.shape).values, x.values
             )
             res = np_ma_func(masked, axis=axis, **kwargs)
         else:
             res = np_func(x.values, axis=axis, **kwargs)
-        return concepts.rewrap_reduced_data(
+        return concepts.rewrap_reduced_data(  # type: ignore[return-value]
             x, array(dims=out_dims, values=res, unit=x.unit), dim
         )
     raise TypeError(f'invalid argument of type {type(x)} to {sc_func}')
@@ -925,9 +940,7 @@ def _dim_index(dims: tuple[str, ...], dim: str) -> int:
     try:
         return dims.index(dim)
     except ValueError:
-        raise _cpp.DimensionError(
-            f'Expected dimension to be in {dims}, got {dim}'
-        ) from None
+        raise DimensionError(f'Expected dimension to be in {dims}, got {dim}') from None
 
 
 def _split_dims(
@@ -940,10 +953,10 @@ def _split_dims(
 
 
 def _expect_no_variance(x: VariableLikeType, op: str) -> None:
-    if x.variances is not None:
-        raise _cpp.VariancesError(f"'{op}' does not support variances")
+    if getattr(x, 'variances', None) is not None:
+        raise VariancesError(f"'{op}' does not support variances")
 
 
 def _expect_not_binned(x: VariableLikeType, op: str) -> None:
-    if x.bins is not None:
-        raise _cpp.DTypeError(f"'{op}' does not support binned data")
+    if getattr(x, 'bins', None) is not None:
+        raise DTypeError(f"'{op}' does not support binned data")

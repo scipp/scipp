@@ -186,7 +186,7 @@ class DataGroup(MutableMapping):
         return total_size
 
     @property
-    def dims(self) -> tuple[str | None, ...]:
+    def dims(self) -> tuple[str, ...]:
         """Union of dims of all items. Non-Scipp items are handled as dims=()."""
         return tuple(self.sizes)
 
