@@ -23,7 +23,6 @@ from ..coords.graph import GraphDict
 from ..typing import Dims, VariableLike
 from ..units import default_unit
 from .bins import Bins
-from .._binding import _NoDefault
 
 try:
     import h5py as h5
@@ -352,11 +351,18 @@ class DataArray:
     def bins(self) -> Bins | None: ...
     @bins.setter
     def bins(self, bins: Bins) -> None: ...
+    @overload
     def broadcast(
         self,
-        dims: list[str] | tuple[str, ...] | None = None,
-        shape: Sequence[int] | None = None,
-        sizes: dict[str, int] | None = None,
+        *,
+        dims: Sequence[str],
+        shape: Sequence[int],
+    ) -> DataArray: ...
+    @overload
+    def broadcast(
+        self,
+        *,
+        sizes: dict[str, int],
     ) -> DataArray: ...
     def ceil(self, *, out: VariableLike | None = None) -> VariableLike: ...
     @property
@@ -393,12 +399,20 @@ class DataArray:
         self, dims: list[str] | tuple[str, ...] | None = None, to: str | None = None
     ) -> DataArray: ...
     def floor(self, *, out: VariableLike | None = None) -> VariableLike: ...
+    @overload
     def fold(
         self,
         dim: str,
-        sizes: dict[str, int] | None = None,
-        dims: list[str] | tuple[str, ...] | None = None,
-        shape: Sequence[int] | None = None,
+        *,
+        dims: Sequence[str],
+        shape: Sequence[int],
+    ) -> DataArray: ...
+    @overload
+    def fold(
+        self,
+        dim: str,
+        *,
+        sizes: dict[str, int],
     ) -> DataArray: ...
     def group(self, /, *args: str | Variable) -> DataArray: ...
     def groupby(
@@ -485,9 +499,7 @@ class DataArray:
         quiet: bool = False,
         **kwargs: Callable[..., Variable],
     ) -> DataArray | Dataset: ...
-    def transpose(
-        self, dims: list[str] | tuple[str, ...] | None = None
-    ) -> DataArray: ...
+    def transpose(self, dims: Sequence[str] | None = None) -> DataArray: ...
     def underlying_size(self) -> int: ...
     @property
     def unit(self) -> Optional[Unit]: ...
@@ -1016,11 +1028,18 @@ class Variable:
     def bins(self) -> Bins | None: ...
     @bins.setter
     def bins(self, bins: Bins) -> None: ...
+    @overload
     def broadcast(
         self,
-        dims: list[str] | tuple[str, ...] | None = None,
-        shape: Sequence[int] | None = None,
-        sizes: dict[str, int] | None = None,
+        *,
+        dims: Sequence[str],
+        shape: Sequence[int],
+    ) -> Variable: ...
+    @overload
+    def broadcast(
+        self,
+        *,
+        sizes: dict[str, int],
     ) -> Variable: ...
     def ceil(self, *, out: VariableLike | None = None) -> VariableLike: ...
     def copy(self, deep: bool = True) -> Variable: ...
@@ -1041,12 +1060,20 @@ class Variable:
         self, dims: list[str] | tuple[str, ...] | None = None, to: str | None = None
     ) -> Variable: ...
     def floor(self, *, out: VariableLike | None = None) -> VariableLike: ...
+    @overload
     def fold(
         self,
         dim: str,
-        sizes: dict[str, int] | None = None,
-        dims: list[str] | tuple[str, ...] | None = None,
-        shape: Sequence[int] | None = None,
+        *,
+        dims: Sequence[str],
+        shape: Sequence[int],
+    ) -> Variable: ...
+    @overload
+    def fold(
+        self,
+        dim: str,
+        *,
+        sizes: dict[str, int],
     ) -> Variable: ...
     def hist(
         self,
@@ -1102,9 +1129,7 @@ class Variable:
         dtype: Any | None = None,
         copy: bool = True,
     ) -> Variable: ...
-    def transpose(
-        self, dims: list[str] | tuple[str, ...] | None = None
-    ) -> Variable: ...
+    def transpose(self, dims: Sequence[str] | None = None) -> Variable: ...
     def underlying_size(self) -> int: ...
     @property
     def unit(self) -> Optional[Unit]: ...
