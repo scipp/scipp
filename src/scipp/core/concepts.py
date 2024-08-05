@@ -3,14 +3,13 @@
 # @author Simon Heybrock
 from collections.abc import Callable, Iterable, Mapping
 from functools import reduce
-from typing import Any, TypeVar, overload
+from typing import TypeVar
 
 from ..typing import Dims, VariableLikeType
-from .cpp_classes import DataArray, Dataset, DimensionError, Variable
-from .data_group import DataGroup
+from .cpp_classes import DataArray, DimensionError, Variable
 from .logical import logical_or
 
-_T = TypeVar('_T')
+_VarOrDa = TypeVar('_VarOrDa', Variable, DataArray)
 
 
 def _copied(obj: Mapping[str, Variable]) -> dict[str, Variable]:
@@ -22,15 +21,7 @@ def _reduced(obj: Mapping[str, Variable], dims: Iterable[str]) -> dict[str, Vari
     return {name: var for name, var in obj.items() if ref_dims.isdisjoint(var.dims)}
 
 
-@overload
-def rewrap_output_data(prototype: DataArray, data: Variable) -> DataArray: ...
-
-
-@overload
-def rewrap_output_data(prototype: Variable | Dataset | DataGroup, data: _T) -> _T: ...
-
-
-def rewrap_output_data(prototype: Any, data: Any) -> Any:
+def rewrap_output_data(prototype: _VarOrDa, data: Variable) -> _VarOrDa:
     if isinstance(prototype, DataArray):
         return DataArray(
             data=data,
