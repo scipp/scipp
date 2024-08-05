@@ -7,6 +7,7 @@ from __future__ import annotations
 from .._scipp import core as _cpp
 from ..typing import VariableLikeType
 from ._cpp_wrapper_util import call_func as _call_cpp_func
+from .cpp_classes import Variable
 
 
 def sin(
@@ -28,7 +29,7 @@ def sin(
     : Same type as input
         The sine values of the input.
     """
-    return _call_cpp_func(_cpp.sin, x, out=out)
+    return _call_cpp_func(_cpp.sin, x, out=out)  # type: ignore[return-value]
 
 
 def cos(
@@ -50,7 +51,7 @@ def cos(
     : Same type as input
         The cosine values of the input.
     """
-    return _call_cpp_func(_cpp.cos, x, out=out)
+    return _call_cpp_func(_cpp.cos, x, out=out)  # type: ignore[return-value]
 
 
 def tan(
@@ -72,7 +73,7 @@ def tan(
     : Same type as input
         The tangent values of the input.
     """
-    return _call_cpp_func(_cpp.tan, x, out=out)
+    return _call_cpp_func(_cpp.tan, x, out=out)  # type: ignore[return-value]
 
 
 def asin(
@@ -92,7 +93,7 @@ def asin(
     : Same type as input
         The inverse sine values of the input in radians.
     """
-    return _call_cpp_func(_cpp.asin, x, out=out)
+    return _call_cpp_func(_cpp.asin, x, out=out)  # type: ignore[return-value]
 
 
 def acos(
@@ -112,7 +113,7 @@ def acos(
     : Same type as input
         The inverse cosine values of the input in radians.
     """
-    return _call_cpp_func(_cpp.acos, x, out=out)
+    return _call_cpp_func(_cpp.acos, x, out=out)  # type: ignore[return-value]
 
 
 def atan(
@@ -132,12 +133,10 @@ def atan(
     : Same type as input
         The inverse tangent values of the input in radians.
     """
-    return _call_cpp_func(_cpp.atan, x, out=out)
+    return _call_cpp_func(_cpp.atan, x, out=out)  # type: ignore[return-value]
 
 
-def atan2(
-    *, y: _cpp.Variable, x: _cpp.Variable, out: _cpp.Variable | None = None
-) -> _cpp.Variable:
+def atan2(*, y: Variable, x: Variable, out: Variable | None = None) -> Variable:
     """Element-wise inverse tangent of y/x determining the correct quadrant.
 
     Parameters
@@ -162,4 +161,4 @@ def atan2(
     numpy.arctan2:
         The equivalent in NumPy with additional explanations.
     """
-    return _call_cpp_func(_cpp.atan2, y=y, x=x, out=out)
+    return _call_cpp_func(_cpp.atan2, y=y, x=x, out=out)  # type: ignore[return-value]
