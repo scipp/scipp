@@ -1,13 +1,19 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 from collections.abc import Sequence
+from typing import TypedDict
+
+
+class DimsAndShape(TypedDict):
+    dims: Sequence[str]
+    shape: Sequence[int]
 
 
 def _parse_dims_shape_sizes(
     dims: Sequence[str] | None = None,
     shape: Sequence[int] | None = None,
     sizes: dict[str, int] | None = None,
-) -> dict[str, Sequence[str] | Sequence[int]]:
+) -> DimsAndShape:
     if sizes is not None:
         if dims is not None or shape is not None:
             raise ValueError(
