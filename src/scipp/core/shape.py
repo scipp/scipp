@@ -4,6 +4,7 @@
 # ruff: noqa: E501
 
 from collections.abc import Sequence
+from typing import overload
 
 import numpy as np
 
@@ -13,11 +14,30 @@ from . import data_group
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from ._sizes import _parse_dims_shape_sizes
 from .concepts import transform_data
+from .cpp_classes import Variable
+
+
+@overload
+def broadcast(
+    x: VariableLikeType,
+    *,
+    dims: Sequence[str],
+    shape: Sequence[int],
+) -> VariableLikeType: ...
+
+
+@overload
+def broadcast(
+    x: VariableLikeType,
+    *,
+    sizes: dict[str, int],
+) -> VariableLikeType: ...
 
 
 def broadcast(
     x: VariableLikeType,
-    dims: list[str] | tuple[str, ...] | None = None,
+    *,
+    dims: Sequence[str] | None = None,
     shape: Sequence[int] | None = None,
     sizes: dict[str, int] | None = None,
 ) -> VariableLikeType:
@@ -50,10 +70,12 @@ def broadcast(
     : Same type as input
         New Variable or DataArray with requested dimension labels and shape.
     """
-    sizes = _parse_dims_shape_sizes(dims=dims, shape=shape, sizes=sizes)
+    dims_and_shape = _parse_dims_shape_sizes(dims=dims, shape=shape, sizes=sizes)
+    dims = dims_and_shape["dims"]
+    shape = dims_and_shape["shape"]
 
-    def _broadcast(x):
-        return _call_cpp_func(_cpp.broadcast, x, sizes["dims"], sizes["shape"])
+    def _broadcast(data: Variable) -> Variable:
+        return _call_cpp_func(_cpp.broadcast, data, dims, shape)  # type: ignore[return-value]
 
     return transform_data(x, _broadcast)
 
@@ -117,16 +139,40 @@ def concat(x: Sequence[VariableLikeType], dim: str) -> VariableLikeType:
       array([  0,   1,   2,   0, 100, 200])
     """
     if x and isinstance(x[0], data_group.DataGroup):
-        return data_group._apply_to_items(concat, x, dim)
-    return _call_cpp_func(_cpp.concat, x, dim)
+        return data_group._apply_to_items(  # type: ignore[return-value]
+            concat,
+            x,  # type:ignore[arg-type]
+            dim,
+        )
+    return _call_cpp_func(_cpp.concat, x, dim)  # type: ignore[return-value]
+
+
+@overload
+def fold(
+    x: VariableLikeType,
+    dim: str,
+    *,
+    dims: Sequence[str],
+    shape: Sequence[int],
+) -> VariableLikeType: ...
+
+
+@overload
+def fold(
+    x: VariableLikeType,
+    dim: str,
+    *,
+    sizes: dict[str, int],
+) -> VariableLikeType: ...
 
 
 def fold(
     x: VariableLikeType,
     dim: str,
-    sizes: dict[str, int] | None = None,
-    dims: list[str] | tuple[str, ...] | None = None,
+    *,
+    dims: Sequence[str] | None = None,
     shape: Sequence[int] | None = None,
+    sizes: dict[str, int] | None = None,
 ) -> VariableLikeType:
     """Fold a single dimension of a variable or data array into multiple dims.
 
@@ -192,12 +238,13 @@ def fold(
       array([[0, 1, 2],
              [3, 4, 5]])
     """
-    sizes = _parse_dims_shape_sizes(dims=dims, shape=shape, sizes=sizes)
+    dims_and_shape = _parse_dims_shape_sizes(dims=dims, shape=shape, sizes=sizes)
+    dims = dims_and_shape["dims"]
+    new_shape = list(dims_and_shape["shape"])
 
     # Handle potential size of -1.
     # Note that we implement this here on the Python layer, because one cannot create
     # a C++ Dimensions object with negative sizes.
-    new_shape = sizes["shape"]
     minus_one_count = new_shape.count(-1)
     if minus_one_count > 1:
         raise _cpp.DimensionError(
@@ -215,7 +262,7 @@ def fold(
             )
         new_shape[ind] = dim_size
 
-    return _call_cpp_func(_cpp.fold, x, dim, sizes["dims"], new_shape)
+    return _call_cpp_func(_cpp.fold, x, dim, dims, new_shape)
 
 
 def flatten(

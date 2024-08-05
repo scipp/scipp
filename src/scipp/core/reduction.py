@@ -906,7 +906,7 @@ def _reduce_with_numpy(
     if isinstance(x, _cpp.DataArray):
         if (mask := concepts.irreducible_mask(x, dim)) is not None:
             masked = np.ma.masked_array(
-                x.values, mask=mask.broadcast(x.dims, x.shape).values
+                x.values, mask=mask.broadcast(dims=x.dims, shape=x.shape).values
             )
             res = np_ma_func(masked, axis=axis, **kwargs)
         else:

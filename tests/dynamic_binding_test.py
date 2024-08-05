@@ -46,8 +46,8 @@ def test_bound_methods_reduction_dataarray(func_name):
 def test_bound_methods_shape():
     var, da = make_containers()
     assert sc.identical(
-        var.broadcast(['x', 'y', 'z'], [4, 3, 2]),
-        sc.broadcast(var, ['x', 'y', 'z'], [4, 3, 2]),
+        var.broadcast(dims=['x', 'y', 'z'], shape=[4, 3, 2]),
+        sc.broadcast(var, dims=['x', 'y', 'z'], shape=[4, 3, 2]),
     )
     assert sc.identical(var.transpose(['y', 'x']), sc.transpose(var, ['y', 'x']))
     for obj in (var, da):
