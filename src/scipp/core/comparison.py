@@ -150,7 +150,7 @@ def not_equal(x: VariableLike, y: VariableLike) -> VariableLike:
 
 
 def _identical_data_groups(
-    x: data_group.DataGroup, y: data_group.DataGroup, *, equal_nan: bool
+    x: data_group.DataGroup[Any], y: data_group.DataGroup[Any], *, equal_nan: bool
 ) -> bool:
     def compare(a: Any, b: Any) -> bool:
         if not isinstance(a, type(b)):

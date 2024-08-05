@@ -56,7 +56,9 @@ Can be a string (for a single dimension) or a sequence of strings (multiple dime
 A value of ``None`` indicates "all dimensions."
 """
 
-VariableLike: _std_typing.TypeAlias = Variable | DataArray | Dataset | DataGroup
+VariableLike: _std_typing.TypeAlias = (
+    Variable | DataArray | Dataset | DataGroup[_std_typing.Any]
+)
 """Any object that behaves like a :class:`scipp.Variable`.
 
 More concretely, an array with labeled dimensions which supports slicing and
@@ -72,7 +74,7 @@ MetaDataMap: _std_typing.TypeAlias = _std_typing.MutableMapping[str, Variable]
 """dict-like object mapping dimension labels to Variables."""
 
 VariableLikeType = _std_typing.TypeVar(
-    'VariableLikeType', Variable, DataArray, Dataset, DataGroup
+    'VariableLikeType', Variable, DataArray, Dataset, DataGroup[_std_typing.Any]
 )
 """TypeVar for use in annotations.
 

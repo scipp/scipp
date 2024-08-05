@@ -172,7 +172,7 @@ def _assert_identical_dataset(a: Dataset, b: Dataset) -> None:
     _assert_mapping_eq(a, b, 'dataset item')
 
 
-def _assert_identical_datagroup(a: DataGroup, b: DataGroup) -> None:
+def _assert_identical_datagroup(a: DataGroup[Any], b: DataGroup[Any]) -> None:
     _assert_mapping_eq(a, b, 'data group item')
 
 

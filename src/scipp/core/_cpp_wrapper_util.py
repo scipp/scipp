@@ -3,7 +3,7 @@
 # @author Simon Heybrock
 import itertools
 from collections.abc import Callable
-from typing import ParamSpec, TypeVar
+from typing import Any, ParamSpec, TypeVar
 
 from .data_group import DataGroup, data_group_nary
 
@@ -15,7 +15,7 @@ def call_func(
     func: Callable[_P, _R],
     *args: _P.args,
     **kwargs: _P.kwargs,
-) -> _R | DataGroup:
+) -> _R | DataGroup[Any]:
     out = kwargs.pop('out', None)
     if any(isinstance(x, DataGroup) for x in itertools.chain(args, kwargs.values())):
         if out is not None:

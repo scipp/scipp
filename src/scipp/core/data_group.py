@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     # So the following import would create a cycle at runtime.
     from ..typing import ScippIndex
 
+_V = TypeVar("_V")
 
 def _item_dims(item):
     return getattr(item, 'dims', ())
@@ -75,7 +76,7 @@ def _is_list_index(key) -> bool:
     return isinstance(key, list | np.ndarray)
 
 
-class DataGroup(MutableMapping):
+class DataGroup(MutableMapping[str, _V]):
     """
     A dict-like group of data. Additionally provides dims and shape properties.
 
