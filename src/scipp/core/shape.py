@@ -139,7 +139,7 @@ def concat(x: Sequence[VariableLikeType], dim: str) -> VariableLikeType:
       array([  0,   1,   2,   0, 100, 200])
     """
     if x and isinstance(x[0], data_group.DataGroup):
-        return data_group._apply_to_items(
+        return data_group.apply_to_items(
             concat,
             x,
             dim,

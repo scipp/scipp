@@ -8,12 +8,24 @@ import functools
 import itertools
 import numbers
 import operator
-from collections.abc import Callable, Iterable, MutableMapping
+from collections.abc import (
+    Callable,
+    ItemsView,
+    Iterable,
+    Iterator,
+    KeysView,
+    Mapping,
+    MutableMapping,
+    Sequence,
+    ValuesView,
+)
 from functools import wraps
 from typing import (
     TYPE_CHECKING,
     Any,
+    Concatenate,
     NoReturn,
+    ParamSpec,
     TypeVar,
     cast,
     overload,
@@ -28,29 +40,36 @@ from .cpp_classes import (
     DimensionError,
     GroupByDataArray,
     GroupByDataset,
+    Unit,
     Variable,
 )
 
 if TYPE_CHECKING:
-    # typing imports data_group.
-    # So the following import would create a cycle at runtime.
+    # Avoid cyclic imports
+    from ..coords.graph import GraphDict
     from ..typing import ScippIndex
+    from .bins import Bins
 
-_V = TypeVar("_V")
 
-def _item_dims(item):
+_T = TypeVar("_T")  # Any type
+_V = TypeVar("_V")  # Value type of self
+_R = TypeVar("_R")  # Return type of a callable
+_P = ParamSpec('_P')
+
+
+def _item_dims(item: Any) -> tuple[str, ...]:
     return getattr(item, 'dims', ())
 
 
-def _is_binned(item):
+def _is_binned(item: Any) -> bool:
     from .bins import Bins
 
     if isinstance(item, Bins):
         return True
-    return hasattr(item, 'bins') and item.bins is not None
+    return getattr(item, 'bins', None) is not None
 
 
-def _summarize(item):
+def _summarize(item: Any) -> str:
     if isinstance(item, DataGroup):
         return f'{type(item).__name__}({len(item)}, {item.sizes})'
     if hasattr(item, 'sizes'):
@@ -58,8 +77,8 @@ def _summarize(item):
     return str(item)
 
 
-def _is_positional_index(key) -> bool:
-    def is_int(x):
+def _is_positional_index(key: Any) -> bool:
+    def is_int(x: object) -> bool:
         return isinstance(x, numbers.Integral)
 
     if is_int(key):
@@ -72,7 +91,7 @@ def _is_positional_index(key) -> bool:
     return False
 
 
-def _is_list_index(key) -> bool:
+def _is_list_index(key: Any) -> bool:
     return isinstance(key, list | np.ndarray)
 
 
@@ -88,28 +107,39 @@ class DataGroup(MutableMapping[str, _V]):
     .. versionadded:: 23.01.0
     """
 
-    def __init__(self, /, *args, **kwargs):
+    def __init__(
+        self, /, *args: Iterable[tuple[str, _V]] | Mapping[str, _V], **kwargs: _V
+    ) -> None:
         self._items = dict(*args, **kwargs)
         if not all(isinstance(k, str) for k in self._items.keys()):
             raise ValueError("DataGroup keys must be strings.")
 
-    def __copy__(self) -> DataGroup:
+    def __copy__(self) -> DataGroup[_V]:
         return DataGroup(copy.copy(self._items))
 
     def __len__(self) -> int:
         """Return the number of items in the data group."""
         return len(self._items)
 
-    def __iter__(self):
-        yield from self._items
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._items)
+
+    def keys(self) -> KeysView[str]:
+        return self._items.keys()
+
+    def values(self) -> ValuesView[_V]:
+        return self._items.values()
+
+    def items(self) -> ItemsView[str, _V]:
+        return self._items.items()
 
     @overload
-    def __getitem__(self, name: str) -> Any: ...
+    def __getitem__(self, name: str) -> _V: ...
 
     @overload
-    def __getitem__(self, name: ScippIndex) -> DataGroup: ...
+    def __getitem__(self, name: ScippIndex) -> DataGroup[_V]: ...
 
-    def __getitem__(self, name):
+    def __getitem__(self, name: Any) -> Any:
         """Return item of given name or index all items.
 
         When ``name`` is a string, return the item of the given name. Otherwise, this
@@ -133,9 +163,9 @@ class DataGroup(MutableMapping[str, _V]):
         if isinstance(name, str):
             return self._items[name]
         if isinstance(name, tuple) and name == ():
-            return self.apply(operator.itemgetter(name))
+            return cast(DataGroup[Any], self).apply(operator.itemgetter(name))
         if isinstance(name, Variable):  # boolean indexing
-            return self.apply(operator.itemgetter(name))
+            return cast(DataGroup[Any], self).apply(operator.itemgetter(name))
         if _is_positional_index(name) or _is_list_index(name):
             if self.ndim != 1:
                 raise DimensionError(
@@ -149,24 +179,21 @@ class DataGroup(MutableMapping[str, _V]):
             dim, index = name
         return DataGroup(
             {
-                key: var[dim, index]
+                key: var[dim, index]  # type: ignore[index]
                 if (isinstance(var, Bins) or dim in _item_dims(var))
                 else var
                 for key, var in self.items()
             }
         )
 
-    @overload
-    def __setitem__(self, name: str, value: Any): ...
-
-    def __setitem__(self, name, value):
+    def __setitem__(self, name: str, value: _V) -> None:
         """Set self[key] to value."""
         if isinstance(name, str):
             self._items[name] = value
         else:
             raise TypeError('Keys must be strings')
 
-    def __delitem__(self, name: str):
+    def __delitem__(self, name: str) -> None:
         """Delete self[key]."""
         del self._items[name]
 
@@ -192,7 +219,7 @@ class DataGroup(MutableMapping[str, _V]):
         return tuple(self.sizes)
 
     @property
-    def ndim(self):
+    def ndim(self) -> int:
         """Number of dimensions, i.e., len(self.dims)."""
         return len(self.dims)
 
@@ -204,44 +231,49 @@ class DataGroup(MutableMapping[str, _V]):
     @property
     def sizes(self) -> dict[str, int | None]:
         """Dict combining dims and shape, i.e., mapping dim labels to their size."""
-        all_sizes = {}
+        all_sizes: dict[str, set[int]] = {}
         for x in self.values():
             for dim, size in getattr(x, 'sizes', {}).items():
                 all_sizes.setdefault(dim, set()).add(size)
         return {d: next(iter(s)) if len(s) == 1 else None for d, s in all_sizes.items()}
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         from ..visualization.formatting_datagroup_html import datagroup_repr
 
         return datagroup_repr(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         r = f'DataGroup(sizes={self.sizes}, keys=[\n'
         for name, var in self.items():
             r += f'    {name}: {_summarize(var)},\n'
         r += '])'
         return r
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'DataGroup(sizes={self.sizes}, keys={list(self.keys())})'
 
     @property
-    def bins(self):
+    def bins(self) -> DataGroup[Bins | None]:
         # TODO Returning a regular DataGroup here may be wrong, since the `bins`
         # property provides a different set of attrs and methods.
         return self.apply(operator.attrgetter('bins'))
 
-    def apply(self, func: Callable, *args, **kwargs) -> DataGroup:
+    def apply(
+        self,
+        func: Callable[Concatenate[_V, _P], _R],
+        *args: _P.args,
+        **kwargs: _P.kwargs,
+    ) -> DataGroup[_R]:
         """Call func on all values and return new DataGroup containing the results."""
         return DataGroup({key: func(v, *args, **kwargs) for key, v in self.items()})
 
     def _transform_dim(
-        self, func: Callable, *, dim: None | str | Iterable[str], **kwargs
-    ) -> DataGroup:
+        self, func: str, *, dim: None | str | Iterable[str], **kwargs: Any
+    ) -> DataGroup[Any]:
         """Transform items that depend on one or more dimensions given by `dim`."""
         dims = (dim,) if isinstance(dim, str) else dim
 
-        def intersects(item):
+        def intersects(item: _V) -> bool:
             item_dims = _item_dims(item)
             if dims is None:
                 return item_dims != ()
@@ -257,13 +289,13 @@ class DataGroup(MutableMapping[str, _V]):
         )
 
     def _reduce(
-        self, method: str, dim: None | str | tuple[str, ...] = None, **kwargs
-    ) -> DataGroup:
+        self, method: str, dim: None | str | Sequence[str] = None, **kwargs: Any
+    ) -> DataGroup[Any]:
         reduce_all = operator.methodcaller(method, **kwargs)
 
-        def _reduce_child(v, dim):
+        def _reduce_child(v: _V) -> Any:
             if isinstance(v, GroupByDataArray | GroupByDataset):
-                child_dims = (dim,)
+                child_dims: tuple[None | str | Sequence[str], ...] = (dim,)
             else:
                 child_dims = _item_dims(v)
             # Reduction operations on binned data implicitly reduce over bin content.
@@ -286,282 +318,374 @@ class DataGroup(MutableMapping[str, _V]):
                 else operator.methodcaller(method, dims_to_reduce, **kwargs)(v)
             )
 
-        return DataGroup({key: _reduce_child(v, dim) for key, v in self.items()})
+        return DataGroup({key: _reduce_child(v) for key, v in self.items()})
 
-    def copy(self, deep: bool = True) -> DataGroup:
+    def copy(self, deep: bool = True) -> DataGroup[_V]:
         return copy.deepcopy(self) if deep else copy.copy(self)
 
-    def all(self, *args, **kwargs):
-        return self._reduce('all', *args, **kwargs)
+    def all(self, dim: None | str | tuple[str, ...] = None) -> DataGroup[_V]:
+        return self._reduce('all', dim)
 
-    def any(self, *args, **kwargs):
-        return self._reduce('any', *args, **kwargs)
+    def any(self, dim: None | str | tuple[str, ...] = None) -> DataGroup[_V]:
+        return self._reduce('any', dim)
 
-    def astype(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('astype', *args, **kwargs))
+    def astype(self, type: Any, *, copy: bool = True) -> DataGroup[_V]:
+        return self.apply(operator.methodcaller('astype', type, copy=copy))
 
-    def bin(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('bin', *args, **kwargs))
+    def bin(
+        self,
+        arg_dict: dict[str, int | Variable] | None = None,
+        /,
+        **kwargs: int | Variable,
+    ) -> DataGroup[_V]:
+        return self.apply(operator.methodcaller('bin', arg_dict, **kwargs))
 
-    def broadcast(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('broadcast', *args, **kwargs))
+    @overload
+    def broadcast(
+        self,
+        *,
+        dims: Sequence[str],
+        shape: Sequence[int],
+    ) -> DataGroup[_V]: ...
 
-    def ceil(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('ceil', *args, **kwargs))
+    @overload
+    def broadcast(
+        self,
+        *,
+        sizes: dict[str, int],
+    ) -> DataGroup[_V]: ...
 
-    def flatten(self, dims: None | Iterable[str] = None, **kwargs):
-        return self._transform_dim('flatten', dim=dims, **kwargs)
+    def broadcast(
+        self,
+        *,
+        dims: Sequence[str] | None = None,
+        shape: Sequence[int] | None = None,
+        sizes: dict[str, int] | None = None,
+    ) -> DataGroup[_V]:
+        return self.apply(
+            operator.methodcaller('broadcast', dims=dims, shape=shape, sizes=sizes)
+        )
 
-    def floor(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('floor', *args, **kwargs))
+    def ceil(self) -> DataGroup[_V]:
+        return self.apply(operator.methodcaller('ceil'))
 
-    def fold(self, dim: str, **kwargs):
-        return self._transform_dim('fold', dim=dim, **kwargs)
+    def flatten(
+        self, dims: Sequence[str] | None = None, to: str | None = None
+    ) -> DataGroup[_V]:
+        return self._transform_dim('flatten', dim=dims, to=to)
 
-    def group(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('group', *args, **kwargs))
+    def floor(self) -> DataGroup[_V]:
+        return self.apply(operator.methodcaller('floor'))
 
-    def groupby(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('groupby', *args, **kwargs))
+    @overload
+    def fold(
+        self,
+        dim: str,
+        *,
+        dims: Sequence[str],
+        shape: Sequence[int],
+    ) -> DataGroup[_V]: ...
 
-    def hist(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('hist', *args, **kwargs))
+    @overload
+    def fold(
+        self,
+        dim: str,
+        *,
+        sizes: dict[str, int],
+    ) -> DataGroup[_V]: ...
 
-    def max(self, *args, **kwargs):
-        return self._reduce('max', *args, **kwargs)
+    def fold(
+        self,
+        dim: str,
+        *,
+        dims: Sequence[str] | None = None,
+        shape: Sequence[int] | None = None,
+        sizes: dict[str, int] | None = None,
+    ) -> DataGroup[_V]:
+        return self._transform_dim('fold', dim=dim, dims=dims, shape=shape, sizes=sizes)
 
-    def mean(self, *args, **kwargs):
-        return self._reduce('mean', *args, **kwargs)
+    def group(self, /, *args: str | Variable) -> DataGroup[_V]:
+        return self.apply(operator.methodcaller('group', *args))
 
-    def median(self, *args, **kwargs):
-        return self._reduce('median', *args, **kwargs)
+    def groupby(
+        self, /, group: Variable | str, *, bins: Variable | None = None
+    ) -> DataGroup[GroupByDataArray | GroupByDataset]:
+        return self.apply(operator.methodcaller('groupby', group, bins=bins))
 
-    def min(self, *args, **kwargs):
-        return self._reduce('min', *args, **kwargs)
+    def hist(
+        self,
+        arg_dict: dict[str, int | Variable] | None = None,
+        /,
+        **kwargs: int | Variable,
+    ) -> DataGroup[DataArray | Dataset]:
+        return self.apply(operator.methodcaller('hist', arg_dict, **kwargs))
 
-    def nanhist(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('nanhist', *args, **kwargs))
+    def max(self, dim: None | str | tuple[str, ...] = None) -> DataGroup[_V]:
+        return self._reduce('max', dim)
 
-    def nanmax(self, *args, **kwargs):
-        return self._reduce('nanmax', *args, **kwargs)
+    def mean(self, dim: None | str | tuple[str, ...] = None) -> DataGroup[_V]:
+        return self._reduce('mean', dim)
 
-    def nanmean(self, *args, **kwargs):
-        return self._reduce('nanmean', *args, **kwargs)
+    def median(self, dim: None | str | tuple[str, ...] = None) -> DataGroup[_V]:
+        return self._reduce('median', dim)
 
-    def nanmedian(self, *args, **kwargs):
-        return self._reduce('nanmedian', *args, **kwargs)
+    def min(self, dim: None | str | tuple[str, ...] = None) -> DataGroup[_V]:
+        return self._reduce('min', dim)
 
-    def nanmin(self, *args, **kwargs):
-        return self._reduce('nanmin', *args, **kwargs)
+    def nanhist(
+        self,
+        arg_dict: dict[str, int | Variable] | None = None,
+        /,
+        **kwargs: int | Variable,
+    ) -> DataGroup[DataArray]:
+        return self.apply(operator.methodcaller('nanhist', arg_dict, **kwargs))
 
-    def nansum(self, *args, **kwargs):
-        return self._reduce('nansum', *args, **kwargs)
+    def nanmax(self, dim: None | str | tuple[str, ...] = None) -> DataGroup[_V]:
+        return self._reduce('nanmax', dim)
 
-    def nanstd(self, *args, **kwargs):
-        return self._reduce('nanstd', *args, **kwargs)
+    def nanmean(self, dim: None | str | tuple[str, ...] = None) -> DataGroup[_V]:
+        return self._reduce('nanmean', dim)
 
-    def nanvar(self, *args, **kwargs):
-        return self._reduce('nanvar', *args, **kwargs)
+    def nanmedian(self, dim: None | str | tuple[str, ...] = None) -> DataGroup[_V]:
+        return self._reduce('nanmedian', dim)
 
-    def rebin(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('rebin', *args, **kwargs))
+    def nanmin(self, dim: None | str | tuple[str, ...] = None) -> DataGroup[_V]:
+        return self._reduce('nanmin', dim)
 
-    def rename(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('rename', *args, **kwargs))
+    def nansum(self, dim: None | str | tuple[str, ...] = None) -> DataGroup[_V]:
+        return self._reduce('nansum', dim)
 
-    def rename_dims(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('rename_dims', *args, **kwargs))
+    def nanstd(
+        self, dim: None | str | tuple[str, ...] = None, *, ddof: int
+    ) -> DataGroup[_V]:
+        return self._reduce('nanstd', dim, ddof=ddof)
 
-    def round(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('round', *args, **kwargs))
+    def nanvar(
+        self, dim: None | str | tuple[str, ...] = None, *, ddof: int
+    ) -> DataGroup[_V]:
+        return self._reduce('nanvar', dim, ddof=ddof)
 
-    def squeeze(self, *args, **kwargs):
-        return self._reduce('squeeze', *args, **kwargs)
+    def rebin(
+        self,
+        arg_dict: dict[str, int | Variable] | None = None,
+        /,
+        **kwargs: int | Variable,
+    ) -> DataGroup[_V]:
+        return self.apply(operator.methodcaller('rebin', arg_dict, **kwargs))
 
-    def std(self, *args, **kwargs):
-        return self._reduce('std', *args, **kwargs)
+    def rename(
+        self, dims_dict: dict[str, str] | None = None, /, **names: str
+    ) -> DataGroup[_V]:
+        return self.apply(operator.methodcaller('rename', dims_dict, **names))
 
-    def sum(self, *args, **kwargs):
-        return self._reduce('sum', *args, **kwargs)
+    def rename_dims(
+        self, dims_dict: dict[str, str] | None = None, /, **names: str
+    ) -> DataGroup[_V]:
+        return self.apply(operator.methodcaller('rename_dims', dims_dict, **names))
 
-    def to(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('to', *args, **kwargs))
+    def round(self) -> DataGroup[_V]:
+        return self.apply(operator.methodcaller('round'))
 
-    def transform_coords(self, *args, **kwargs):
-        return self.apply(operator.methodcaller('transform_coords', *args, **kwargs))
+    def squeeze(self, dim: str | Sequence[str] | None = None) -> DataGroup[_V]:
+        return self._reduce('squeeze', dim)
 
-    def transpose(self, dims: None | tuple[str, ...] = None):
+    def std(
+        self, dim: None | str | tuple[str, ...] = None, *, ddof: int
+    ) -> DataGroup[_V]:
+        return self._reduce('std', dim, ddof=ddof)
+
+    def sum(self, dim: None | str | tuple[str, ...] = None) -> DataGroup[_V]:
+        return self._reduce('sum', dim)
+
+    def to(
+        self,
+        *,
+        unit: Unit | str | None = None,
+        dtype: Any | None = None,
+        copy: bool = True,
+    ) -> DataGroup[_V]:
+        return self.apply(
+            operator.methodcaller('to', unit=unit, dtype=dtype, copy=copy)
+        )
+
+    def transform_coords(
+        self,
+        targets: str | Iterable[str] | None = None,
+        /,
+        graph: GraphDict | None = None,
+        *,
+        rename_dims: bool = True,
+        keep_aliases: bool = True,
+        keep_intermediate: bool = True,
+        keep_inputs: bool = True,
+        quiet: bool = False,
+        **kwargs: Callable[..., Variable],
+    ) -> DataGroup[_V]:
+        return self.apply(
+            operator.methodcaller(
+                'transform_coords',
+                targets,
+                graph=graph,
+                rename_dims=rename_dims,
+                keep_aliases=keep_aliases,
+                keep_intermediate=keep_intermediate,
+                keep_inputs=keep_inputs,
+                quiet=quiet,
+                **kwargs,
+            )
+        )
+
+    def transpose(self, dims: None | tuple[str, ...] = None) -> DataGroup[_V]:
         return self._transform_dim('transpose', dim=dims)
 
-    def var(self, *args, **kwargs):
-        return self._reduce('var', *args, **kwargs)
+    def var(
+        self, dim: None | str | tuple[str, ...] = None, *, ddof: int
+    ) -> DataGroup[_V]:
+        return self._reduce('var', dim, ddof=ddof)
 
-    def plot(self, *args, **kwargs):
+    def plot(self, *args: Any, **kwargs: Any) -> Any:
         import plopp
 
         return plopp.plot(self, *args, **kwargs)
 
-    def __eq__(
-        self, other: DataGroup | DataArray | Variable | numbers.Real
-    ) -> DataGroup:
+    def __eq__(  # type: ignore[override]
+        self, other: DataGroup[object] | DataArray | Variable | float
+    ) -> DataGroup[_V | bool]:
         """Item-wise equal."""
         return data_group_nary(operator.eq, self, other)
 
-    def __ne__(
-        self, other: DataGroup | DataArray | Variable | numbers.Real
-    ) -> DataGroup:
+    def __ne__(  # type: ignore[override]
+        self, other: DataGroup[object] | DataArray | Variable | float
+    ) -> DataGroup[_V | bool]:
         """Item-wise not-equal."""
         return data_group_nary(operator.ne, self, other)
 
     def __gt__(
-        self, other: DataGroup | DataArray | Variable | numbers.Real
-    ) -> DataGroup:
+        self, other: DataGroup[object] | DataArray | Variable | float
+    ) -> DataGroup[_V | bool]:
         """Item-wise greater-than."""
         return data_group_nary(operator.gt, self, other)
 
     def __ge__(
-        self, other: DataGroup | DataArray | Variable | numbers.Real
-    ) -> DataGroup:
+        self, other: DataGroup[object] | DataArray | Variable | float
+    ) -> DataGroup[_V | bool]:
         """Item-wise greater-equal."""
         return data_group_nary(operator.ge, self, other)
 
     def __lt__(
-        self, other: DataGroup | DataArray | Variable | numbers.Real
-    ) -> DataGroup:
+        self, other: DataGroup[object] | DataArray | Variable | float
+    ) -> DataGroup[_V | bool]:
         """Item-wise less-than."""
         return data_group_nary(operator.lt, self, other)
 
     def __le__(
-        self, other: DataGroup | DataArray | Variable | numbers.Real
-    ) -> DataGroup:
+        self, other: DataGroup[object] | DataArray | Variable | float
+    ) -> DataGroup[_V | bool]:
         """Item-wise less-equal."""
         return data_group_nary(operator.le, self, other)
 
     def __add__(
-        self, other: DataGroup | DataArray | Variable | numbers.Real
-    ) -> DataGroup:
+        self, other: DataGroup[Any] | DataArray | Variable | float
+    ) -> DataGroup[Any]:
         """Apply ``add`` item-by-item."""
         return data_group_nary(operator.add, self, other)
 
     def __sub__(
-        self, other: DataGroup | DataArray | Variable | numbers.Real
-    ) -> DataGroup:
+        self, other: DataGroup[Any] | DataArray | Variable | float
+    ) -> DataGroup[Any]:
         """Apply ``sub`` item-by-item."""
         return data_group_nary(operator.sub, self, other)
 
     def __mul__(
-        self, other: DataGroup | DataArray | Variable | numbers.Real
-    ) -> DataGroup:
+        self, other: DataGroup[Any] | DataArray | Variable | float
+    ) -> DataGroup[Any]:
         """Apply ``mul`` item-by-item."""
         return data_group_nary(operator.mul, self, other)
 
     def __truediv__(
-        self, other: DataGroup | DataArray | Variable | numbers.Real
-    ) -> DataGroup:
+        self, other: DataGroup[Any] | DataArray | Variable | float
+    ) -> DataGroup[Any]:
         """Apply ``truediv`` item-by-item."""
         return data_group_nary(operator.truediv, self, other)
 
     def __floordiv__(
-        self, other: DataGroup | DataArray | Variable | numbers.Real
-    ) -> DataGroup:
+        self, other: DataGroup[Any] | DataArray | Variable | float
+    ) -> DataGroup[Any]:
         """Apply ``floordiv`` item-by-item."""
         return data_group_nary(operator.floordiv, self, other)
 
     def __mod__(
-        self, other: DataGroup | DataArray | Variable | numbers.Real
-    ) -> DataGroup:
+        self, other: DataGroup[Any] | DataArray | Variable | float
+    ) -> DataGroup[Any]:
         """Apply ``mod`` item-by-item."""
         return data_group_nary(operator.mod, self, other)
 
     def __pow__(
-        self, other: DataGroup | DataArray | Variable | numbers.Real
-    ) -> DataGroup:
+        self, other: DataGroup[Any] | DataArray | Variable | float
+    ) -> DataGroup[Any]:
         """Apply ``pow`` item-by-item."""
         return data_group_nary(operator.pow, self, other)
 
-    def __radd__(
-        self, other: DataGroup | DataArray | Variable | numbers.Real
-    ) -> DataGroup:
+    def __radd__(self, other: DataArray | Variable | float) -> DataGroup[Any]:
         """Apply ``add`` item-by-item."""
         return data_group_nary(operator.add, other, self)
 
-    def __rsub__(
-        self, other: DataGroup | DataArray | Variable | numbers.Real
-    ) -> DataGroup:
+    def __rsub__(self, other: DataArray | Variable | float) -> DataGroup[Any]:
         """Apply ``sub`` item-by-item."""
         return data_group_nary(operator.sub, other, self)
 
-    def __rmul__(
-        self, other: DataGroup | DataArray | Variable | numbers.Real
-    ) -> DataGroup:
+    def __rmul__(self, other: DataArray | Variable | float) -> DataGroup[Any]:
         """Apply ``mul`` item-by-item."""
         return data_group_nary(operator.mul, other, self)
 
-    def __rtruediv__(
-        self, other: DataGroup | DataArray | Variable | numbers.Real
-    ) -> DataGroup:
+    def __rtruediv__(self, other: DataArray | Variable | float) -> DataGroup[Any]:
         """Apply ``truediv`` item-by-item."""
         return data_group_nary(operator.truediv, other, self)
 
-    def __rfloordiv__(
-        self, other: DataGroup | DataArray | Variable | numbers.Real
-    ) -> DataGroup:
+    def __rfloordiv__(self, other: DataArray | Variable | float) -> DataGroup[Any]:
         """Apply ``floordiv`` item-by-item."""
         return data_group_nary(operator.floordiv, other, self)
 
-    def __rmod__(
-        self, other: DataGroup | DataArray | Variable | numbers.Real
-    ) -> DataGroup:
+    def __rmod__(self, other: DataArray | Variable | float) -> DataGroup[Any]:
         """Apply ``mod`` item-by-item."""
         return data_group_nary(operator.mod, other, self)
 
-    def __rpow__(
-        self, other: DataGroup | DataArray | Variable | numbers.Real
-    ) -> DataGroup:
+    def __rpow__(self, other: DataArray | Variable | float) -> DataGroup[Any]:
         """Apply ``pow`` item-by-item."""
         return data_group_nary(operator.pow, other, self)
 
     def __and__(
-        self, other: DataGroup | DataArray | Variable | numbers.Real
-    ) -> DataGroup:
+        self, other: DataGroup[Any] | DataArray | Variable | float
+    ) -> DataGroup[Any]:
         """Return the element-wise ``and`` of items."""
         return data_group_nary(operator.and_, self, other)
 
     def __or__(
-        self, other: DataGroup | DataArray | Variable | numbers.Real
-    ) -> DataGroup:
+        self, other: DataGroup[Any] | DataArray | Variable | float
+    ) -> DataGroup[Any]:
         """Return the element-wise ``or`` of items."""
         return data_group_nary(operator.or_, self, other)
 
     def __xor__(
-        self, other: DataGroup | DataArray | Variable | numbers.Real
-    ) -> DataGroup:
+        self, other: DataGroup[Any] | DataArray | Variable | float
+    ) -> DataGroup[Any]:
         """Return the element-wise ``xor`` of items."""
         return data_group_nary(operator.xor, self, other)
 
-    def __invert__(self) -> DataGroup:
+    def __invert__(self) -> DataGroup[Any]:
         """Return the element-wise ``or`` of items."""
-        return self.apply(operator.invert)
+        return self.apply(operator.invert)  # type: ignore[arg-type]
 
 
-def _data_group_binary(
-    func: Callable, dg1: DataGroup, dg2: DataGroup, *args, **kwargs
-) -> DataGroup:
-    return DataGroup(
-        {
-            key: func(dg1[key], dg2[key], *args, **kwargs)
-            for key in dg1.keys() & dg2.keys()
-        }
-    )
-
-
-def data_group_nary(func: Callable, *args, **kwargs) -> DataGroup:
+def data_group_nary(
+    func: Callable[..., _R], *args: Any, **kwargs: Any
+) -> DataGroup[_R]:
     dgs = filter(
         lambda x: isinstance(x, DataGroup), itertools.chain(args, kwargs.values())
     )
     keys = functools.reduce(operator.and_, [dg.keys() for dg in dgs])
 
-    def elem(x, key):
+    def elem(x: Any, key: str) -> Any:
         return x[key] if isinstance(x, DataGroup) else x
 
     return DataGroup(
@@ -575,19 +699,18 @@ def data_group_nary(func: Callable, *args, **kwargs) -> DataGroup:
     )
 
 
-def _apply_to_items(
-    func: Callable, dgs: Iterable[DataGroup], *args, **kwargs
-) -> DataGroup:
+def apply_to_items(
+    func: Callable[..., _R], dgs: Iterable[DataGroup[Any]], *args: Any, **kwargs: Any
+) -> DataGroup[_R]:
     keys = functools.reduce(operator.and_, [dg.keys() for dg in dgs])
     return DataGroup(
         {key: func([dg[key] for dg in dgs], *args, **kwargs) for key in keys}
     )
 
 
-_F = TypeVar('_F', bound=Callable[..., Any])
-
-
-def data_group_overload(func: _F) -> _F:
+def data_group_overload(
+    func: Callable[Concatenate[_T, _P], _R],
+) -> Callable[..., _R | DataGroup[_R]]:
     """Add an overload for DataGroup to a function.
 
     If the first argument of the function is a data group,
@@ -609,12 +732,14 @@ def data_group_overload(func: _F) -> _F:
 
     # Do not assign '__annotations__' because that causes an error in Sphinx.
     @wraps(func, assigned=('__module__', '__name__', '__qualname__', '__doc__'))
-    def impl(data, *args, **kwargs):
+    def impl(
+        data: _T | DataGroup[Any], *args: _P.args, **kwargs: _P.kwargs
+    ) -> _R | DataGroup[_R]:
         if isinstance(data, DataGroup):
-            return data.apply(impl, *args, **kwargs)
+            return data.apply(impl, *args, **kwargs)  # type: ignore[arg-type]
         return func(data, *args, **kwargs)
 
-    return cast(_F, impl)
+    return impl
 
 
 # There are currently no in-place operations (__iadd__, etc.) because they require
@@ -626,8 +751,10 @@ def data_group_overload(func: _F) -> _F:
 #
 # Binding these functions dynamically has the added benefit that type checkers think
 # that the operations are not implemented.
-def _make_inplace_binary_op(name: str):
-    def impl(self, other: DataGroup | DataArray | Variable | numbers.Real) -> NoReturn:
+def _make_inplace_binary_op(name: str) -> Callable[..., NoReturn]:
+    def impl(
+        self: DataGroup[Any], other: DataGroup[Any] | DataArray | Variable | float
+    ) -> NoReturn:
         raise TypeError(f'In-place operation i{name} is not supported by DataGroup.')
 
     return impl
