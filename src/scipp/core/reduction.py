@@ -905,15 +905,15 @@ def _reduce_with_numpy(
     kwargs: dict[str, Any],
 ) -> VariableLikeType:
     if isinstance(x, Dataset):
-        return Dataset({k: sc_func(v, dim=dim, **kwargs) for k, v in x.items()})  # type: ignore[return-value, arg-type]
+        return Dataset({k: sc_func(v, dim=dim, **kwargs) for k, v in x.items()})  # type: ignore[arg-type]
     if isinstance(x, DataGroup):
-        return data_group_nary(sc_func, x, dim=dim, **kwargs)  # type: ignore[return-value]
+        return data_group_nary(sc_func, x, dim=dim, **kwargs)
 
     _expect_no_variance(x, sc_func.__name__)
     _expect_not_binned(x, sc_func.__name__)
     reduced_dims, out_dims, axis = _split_dims(x, dim)
     if isinstance(x, Variable):
-        return array(  # type: ignore[return-value]
+        return array(
             dims=out_dims,
             values=np_func(x.values, axis=axis, **kwargs),
             unit=unit_func(x.unit) if x.unit is not None else None,
@@ -926,7 +926,7 @@ def _reduce_with_numpy(
             res = np_ma_func(masked, axis=axis, **kwargs)
         else:
             res = np_func(x.values, axis=axis, **kwargs)
-        return concepts.rewrap_reduced_data(  # type: ignore[return-value]
+        return concepts.rewrap_reduced_data(
             x, array(dims=out_dims, values=res, unit=x.unit), dim
         )
     raise TypeError(f'invalid argument of type {type(x)} to {sc_func}')

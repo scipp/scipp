@@ -139,9 +139,9 @@ def concat(x: Sequence[VariableLikeType], dim: str) -> VariableLikeType:
       array([  0,   1,   2,   0, 100, 200])
     """
     if x and isinstance(x[0], data_group.DataGroup):
-        return data_group._apply_to_items(  # type: ignore[return-value]
+        return data_group._apply_to_items(
             concat,
-            x,  # type:ignore[arg-type]
+            x,
             dim,
         )
     return _call_cpp_func(_cpp.concat, x, dim)  # type: ignore[return-value]

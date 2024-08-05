@@ -72,7 +72,7 @@ MetaDataMap: _std_typing.TypeAlias = _std_typing.MutableMapping[str, Variable]
 """dict-like object mapping dimension labels to Variables."""
 
 VariableLikeType = _std_typing.TypeVar(
-    'VariableLikeType', bound=Variable | DataArray | Dataset | DataGroup
+    'VariableLikeType', Variable, DataArray, Dataset, DataGroup
 )
 """TypeVar for use in annotations.
 
