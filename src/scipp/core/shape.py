@@ -423,7 +423,7 @@ def squeeze(
     Examples
     --------
 
-      >>> v = sc.arange('a', 3).fold('a', {'x': 1, 'y': 3, 'z': 1})
+      >>> v = sc.arange('a', 3).fold('a', sizes={'x': 1, 'y': 3, 'z': 1})
       >>> v
       <scipp.Variable> (x: 1, y: 3, z: 1)      int64  [dimensionless]  [0, 1, 2]
       >>> sc.squeeze(v)
