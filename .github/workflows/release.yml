@@ -33,124 +33,124 @@ jobs:
           - {os: macos-14-large, target: osx_64}
           - {os: macos-14, target: osx_arm64}
           - {os: windows-2019, target: win_64}
-        python-version: ["3.10", "3.11"]
+        python-version: ["3.12"]
     uses: ./.github/workflows/conda.yml
     with:
       os: ${{ matrix.variant.os }}
       target: ${{ matrix.variant.target }}
       python-version: ${{ matrix.python-version }}
 
-  build_sdist:
-    name: Build SDist
-    needs: check_release
-    runs-on: ubuntu-22.04
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-        fetch-depth: 0  # history required so cmake can determine version
+  # build_sdist:
+  #   name: Build SDist
+  #   needs: check_release
+  #   runs-on: ubuntu-22.04
+  #   steps:
+  #   - uses: actions/checkout@v4
+  #     with:
+  #       submodules: true
+  #       fetch-depth: 0  # history required so cmake can determine version
 
-    - name: Build SDist
-      run: pipx run build --sdist
+  #   - name: Build SDist
+  #     run: pipx run build --sdist
 
-    - name: Check metadata
-      run: pipx run twine check dist/*
+  #   - name: Check metadata
+  #     run: pipx run twine check dist/*
 
-    - uses: actions/upload-artifact@v4
-      with:
-        name: dist
-        path: dist/*.tar.gz
+  #   - uses: actions/upload-artifact@v4
+  #     with:
+  #       name: dist
+  #       path: dist/*.tar.gz
 
-  build_wheels:
-    name: Wheels
-    needs: check_release
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-22.04, macos-14, windows-2019]
-        build: [cp310, cp311, cp312]
-    uses: ./.github/workflows/wheel.yml
-    with:
-      os: ${{ matrix.os }}
-      build: ${{ matrix.build }}
+  # build_wheels:
+  #   name: Wheels
+  #   needs: check_release
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [ubuntu-22.04, macos-14, windows-2019]
+  #       build: [cp310, cp311, cp312]
+  #   uses: ./.github/workflows/wheel.yml
+  #   with:
+  #     os: ${{ matrix.os }}
+  #     build: ${{ matrix.build }}
 
-  upload_pypi:
-    name: Deploy PyPI
-    needs: [build_wheels, build_sdist, build_conda]
-    runs-on: ubuntu-22.04
-    environment: release
-    permissions:
-      id-token: write
-    if: github.event_name == 'release' && github.event.action == 'published'
+  # upload_pypi:
+  #   name: Deploy PyPI
+  #   needs: [build_wheels, build_sdist, build_conda]
+  #   runs-on: ubuntu-22.04
+  #   environment: release
+  #   permissions:
+  #     id-token: write
+  #   if: github.event_name == 'release' && github.event.action == 'published'
 
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: dist
-          merge-multiple: true
-          pattern: 'dist*'
-      - uses: pypa/gh-action-pypi-publish@v1.9.0
+  #   steps:
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         path: dist
+  #         merge-multiple: true
+  #         pattern: 'dist*'
+  #     - uses: pypa/gh-action-pypi-publish@v1.9.0
 
-  upload_conda:
-    name: Deploy Conda Forge
-    needs: [build_wheels, build_sdist, build_conda]
-    runs-on: ubuntu-22.04
-    if: github.event_name == 'release' && github.event.action == 'published'
+  # upload_conda:
+  #   name: Deploy Conda Forge
+  #   needs: [build_wheels, build_sdist, build_conda]
+  #   runs-on: ubuntu-22.04
+  #   if: github.event_name == 'release' && github.event.action == 'published'
 
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: 'conda*'
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          python-version: '3.10'
-      - run: conda install -c conda-forge --yes anaconda-client
-      - run: anaconda --token ${{ secrets.ANACONDATOKEN }} upload --user scipp --label main $(find . -type f -name "*.tar.bz2")
+  #   steps:
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         pattern: 'conda*'
+  #     - uses: conda-incubator/setup-miniconda@v3
+  #       with:
+  #         python-version: '3.10'
+  #     - run: conda install -c conda-forge --yes anaconda-client
+  #     - run: anaconda --token ${{ secrets.ANACONDATOKEN }} upload --user scipp --label main $(find . -type f -name "*.tar.bz2")
 
-  manage-versions:
-    name: Manage Versions
-    needs: check_release
-    runs-on: ubuntu-22.04
-    outputs:
-      version-new: ${{ steps.version.outputs.new }}
-      version-replaced: ${{ steps.version.outputs.replaced }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # history required so cmake can determine version
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-      - run: python -m pip install --upgrade pip
-      - run: python -m pip install -r requirements/ci.txt
-      - name: Set outputs
-        id: version
-        run: |
-          echo "new=$(python docs/version.py --version=${GITHUB_REF_NAME} --action=is-new)" >> $GITHUB_OUTPUT
-          echo "replaced=$(python docs/version.py --version=${GITHUB_REF_NAME} --action=get-replaced)" >> $GITHUB_OUTPUT
+  # manage-versions:
+  #   name: Manage Versions
+  #   needs: check_release
+  #   runs-on: ubuntu-22.04
+  #   outputs:
+  #     version-new: ${{ steps.version.outputs.new }}
+  #     version-replaced: ${{ steps.version.outputs.replaced }}
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0  # history required so cmake can determine version
+  #     - uses: actions/setup-python@v5
+  #       with:
+  #         python-version: '3.10'
+  #     - run: python -m pip install --upgrade pip
+  #     - run: python -m pip install -r requirements/ci.txt
+  #     - name: Set outputs
+  #       id: version
+  #       run: |
+  #         echo "new=$(python docs/version.py --version=${GITHUB_REF_NAME} --action=is-new)" >> $GITHUB_OUTPUT
+  #         echo "replaced=$(python docs/version.py --version=${GITHUB_REF_NAME} --action=get-replaced)" >> $GITHUB_OUTPUT
 
-  docs:
-    needs: [upload_conda, upload_pypi, manage-versions]
-    uses: ./.github/workflows/docs.yml
-    with:
-      publish: ${{ github.event_name == 'release' && github.event.action == 'published' }}
-      version: ${{ github.ref_name }}
-    secrets: inherit
+  # docs:
+  #   needs: [upload_conda, upload_pypi, manage-versions]
+  #   uses: ./.github/workflows/docs.yml
+  #   with:
+  #     publish: ${{ github.event_name == 'release' && github.event.action == 'published' }}
+  #     version: ${{ github.ref_name }}
+  #   secrets: inherit
 
-  assets:
-    name: Upload docs
-    needs: docs
-    runs-on: 'ubuntu-22.04'
-    permissions:
-      contents: write  # This is needed so that the action can upload the asset
-    steps:
-    - uses: actions/download-artifact@v4
-    - name: Zip documentation
-      run: |
-        mv html documentation-${{ github.ref_name }}
-        zip -r documentation-${{ github.ref_name }}.zip documentation-${{ github.ref_name }}
-    - name: Upload release assets
-      uses: svenstaro/upload-release-action@v2
-      with:
-        file: ./documentation-${{ github.ref_name }}.zip
-        overwrite: false
+  # assets:
+  #   name: Upload docs
+  #   needs: docs
+  #   runs-on: 'ubuntu-22.04'
+  #   permissions:
+  #     contents: write  # This is needed so that the action can upload the asset
+  #   steps:
+  #   - uses: actions/download-artifact@v4
+  #   - name: Zip documentation
+  #     run: |
+  #       mv html documentation-${{ github.ref_name }}
+  #       zip -r documentation-${{ github.ref_name }}.zip documentation-${{ github.ref_name }}
+  #   - name: Upload release assets
+  #     uses: svenstaro/upload-release-action@v2
+  #     with:
+  #       file: ./documentation-${{ github.ref_name }}.zip
+  #       overwrite: false
