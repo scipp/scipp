@@ -15,7 +15,7 @@ def _repr_html_():
 
     ipython = get_ipython()
     out = ''
-    for category in ['Variable', 'DataArray', 'Dataset']:
+    for category in ['Variable', 'DataArray', 'Dataset', 'DataGroup']:
         names = ipython.magic(f"who_ls {category}")
         out += (
             f"<details open=\"open\"><summary>{category}s:" f"({len(names)})</summary>"
