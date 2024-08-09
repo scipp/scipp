@@ -376,7 +376,9 @@ def test_chained_slicing():
     z = sc.arange('z', 11.0)
     d = sc.Dataset(
         data={
-            'a': sc.arange('aux', 1000.0).fold('aux', {'z': 10, 'y': 10, 'x': 10}),
+            'a': sc.arange('aux', 1000.0).fold(
+                'aux', sizes={'z': 10, 'y': 10, 'x': 10}
+            ),
         },
         coords={'x': x, 'y': y, 'z': z},
     )

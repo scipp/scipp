@@ -5,7 +5,7 @@ from collections.abc import Iterator
 from typing import Any
 
 from .._scipp.core import _element_keys, _get_elements, _set_elements
-from .cpp_classes import DType, Variable
+from .cpp_classes import DataArray, Dataset, DType, DTypeError, Variable
 
 
 def _prop(key: str) -> property:
@@ -18,10 +18,16 @@ def _prop(key: str) -> property:
     return property(getter, setter)
 
 
-def is_structured(obj: Variable) -> bool:
+def is_structured(obj: Variable | DataArray) -> bool:
     """Check whether a variable has a structured dtype."""
     if obj.bins is not None:
-        return is_structured(obj.bins.constituents['data'])
+        data = obj.bins.constituents['data']
+        if isinstance(data, Dataset):
+            raise DTypeError(
+                "Datasets cannot have a structured dtype, "
+                "got a variable with Datasets in bins."
+            )
+        return is_structured(data)
     return obj.dtype in [DType.vector3, DType.linear_transform3]
 
 

@@ -227,7 +227,7 @@ def test_2D_access_variances():
 
 
 def test_getitem_element():
-    var = sc.arange('a', 0, 8).fold('a', {'x': 2, 'y': 4})
+    var = sc.arange('a', 0, 8).fold('a', sizes={'x': 2, 'y': 4})
     for i in range(var.sizes['x']):
         assert sc.identical(var['x', i], sc.arange('y', 0 + i * 4, 4 + i * 4))
     for j in range(var.sizes['y']):
@@ -235,7 +235,7 @@ def test_getitem_element():
 
 
 def test_getitem_element_out_of_range():
-    var = sc.arange('a', 0, 8).fold('a', {'x': 2, 'y': 4})
+    var = sc.arange('a', 0, 8).fold('a', sizes={'x': 2, 'y': 4})
     with pytest.raises(IndexError):
         _ = var['x', 4]
     with pytest.raises(IndexError):
@@ -243,7 +243,7 @@ def test_getitem_element_out_of_range():
 
 
 def test_getitem_range():
-    var = sc.arange('a', 0, 8).fold('a', {'x': 2, 'y': 4})
+    var = sc.arange('a', 0, 8).fold('a', sizes={'x': 2, 'y': 4})
     var_slice = var['x', 1:2]
     assert sc.identical(
         var_slice, sc.Variable(dims=['x', 'y'], values=np.arange(4, 8).reshape(1, 4))

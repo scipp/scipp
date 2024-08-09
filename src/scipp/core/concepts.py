@@ -3,14 +3,13 @@
 # @author Simon Heybrock
 from collections.abc import Callable, Iterable, Mapping
 from functools import reduce
-from typing import Any, TypeVar, overload
+from typing import TypeVar
 
 from ..typing import Dims, VariableLikeType
-from .cpp_classes import DataArray, Dataset, DimensionError, Variable
-from .data_group import DataGroup
+from .cpp_classes import DataArray, DimensionError, Variable
 from .logical import logical_or
 
-_T = TypeVar('_T')
+_VarOrDa = TypeVar('_VarOrDa', Variable, DataArray)
 
 
 def _copied(obj: Mapping[str, Variable]) -> dict[str, Variable]:
@@ -22,15 +21,7 @@ def _reduced(obj: Mapping[str, Variable], dims: Iterable[str]) -> dict[str, Vari
     return {name: var for name, var in obj.items() if ref_dims.isdisjoint(var.dims)}
 
 
-@overload
-def rewrap_output_data(prototype: DataArray, data: Variable) -> DataArray: ...
-
-
-@overload
-def rewrap_output_data(prototype: Variable | Dataset | DataGroup, data: _T) -> _T: ...
-
-
-def rewrap_output_data(prototype: Any, data: Any) -> Any:
+def rewrap_output_data(prototype: _VarOrDa, data: Variable) -> _VarOrDa:
     if isinstance(prototype, DataArray):
         return DataArray(
             data=data,
@@ -55,9 +46,9 @@ def transform_data(
     obj: VariableLikeType, func: Callable[[Variable], Variable]
 ) -> VariableLikeType:
     if isinstance(obj, Variable):
-        return func(obj)  # type: ignore[return-value]
+        return func(obj)
     if isinstance(obj, DataArray):
-        return rewrap_output_data(obj, func(obj.data))  # type: ignore[return-value]
+        return rewrap_output_data(obj, func(obj.data))
     else:
         raise TypeError(f"{func} only supports Variable and DataArray as inputs.")
 
@@ -72,7 +63,7 @@ def concrete_dims(obj: VariableLikeType, dim: Dims) -> tuple[str, ...]:
             raise DimensionError(
                 f'Got data group with unequal dimension lengths: dim={obj.dims}'
             )
-        return obj.dims  # type: ignore[return-value]  # checked above
+        return obj.dims
     return (dim,) if isinstance(dim, str) else tuple(dim)
 
 
