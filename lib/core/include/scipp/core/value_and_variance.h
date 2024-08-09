@@ -71,8 +71,10 @@ template <class B, class E>
 constexpr auto pow(const ValueAndVariance<B> base, const E exponent) noexcept {
   const auto pow_1 = numeric::pow(base.value, exponent - 1);
   const auto var_factor = std::abs(exponent) * pow_1;
-  return ValueAndVariance{pow_1 * base.value,
-                          var_factor * var_factor * base.variance};
+  const auto pow_0 = (base.value == 0 && exponent >= 0 && exponent < 1)
+                         ? 0
+                         : pow_1 * base.value;
+  return ValueAndVariance{pow_0, var_factor * var_factor * base.variance};
 }
 
 template <class T> constexpr auto sqrt(const ValueAndVariance<T> a) noexcept {
