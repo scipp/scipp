@@ -74,7 +74,3 @@ This list is incomplete, but attempts to aid in better understanding how many th
      - x
      - x
      - ``pooch`` files, accessed during ``docs`` build
-   * - `<https://azure.archive.ubuntu.com>`_
-     - x
-     -
-     - ccache-action gets Ubuntu ``ccache`` from here
