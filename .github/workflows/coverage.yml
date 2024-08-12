@@ -40,7 +40,7 @@ jobs:
           create-args: python=3.10
 
       - name: ccache
-        uses: hendrikmuhs/ccache-action@v1.2.13
+        uses: hendrikmuhs/ccache-action@v1.2.14
         with:
           key: coverage
 
