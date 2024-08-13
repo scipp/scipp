@@ -418,14 +418,7 @@ def _drop_unused_coords(x: DataArray, edges: Sequence[str]) -> DataArray:
     da = x if x.bins is None else x.bins
     coords = set(da.coords)
     drop = list(coords - set(edges))
-    if x.bins is None:
-        x = x.drop_coords(drop)
-    else:
-        content = x.bins.constituents
-        content['data'] = content['data'].drop_coords(drop)
-        x = x.copy(deep=False)
-        x.data = _cpp._bins_no_validate(**content)
-    return x
+    return da.drop_coords(drop)
 
 
 @overload
