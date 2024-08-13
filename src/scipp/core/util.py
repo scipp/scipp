@@ -1,17 +1,20 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+from collections.abc import Mapping
+from typing import TypeVar
 
-from ..typing import VariableLikeType
 from .cpp_classes import DataArray, Dataset, Variable
 from .like import empty_like
 
+_T = TypeVar('_T', Variable, DataArray, Dataset)
 
-def _copy_dict_for_overwrite(mapping: dict[str, Variable]) -> dict[str, Variable]:
+
+def _copy_dict_for_overwrite(mapping: Mapping[str, Variable]) -> dict[str, Variable]:
     return {name: copy_for_overwrite(var) for name, var in mapping.items()}
 
 
-def copy_for_overwrite(obj: VariableLikeType) -> VariableLikeType:
+def copy_for_overwrite(obj: _T) -> _T:
     """
     Copy a Scipp object for overwriting.
 

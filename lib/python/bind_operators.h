@@ -154,30 +154,34 @@ template <class RHSSetup> struct OpBinder {
     // work in Python (assigning return value to this). This avoids extra
     // copies, and additionally ensures that all references to the object keep
     // referencing the same object after the operation.
+    // WARNING: It is crucial to eplicitly return 'py::object &' here.
+    // Otherwise the py::object is returned by value, which increments the
+    // reference count, which is not only suboptimal but also incorrect since
+    // we have released the GIL via py::gil_scoped_release.
     c.def(
         "__iadd__",
-        [](py::object &a, Other &b) {
+        [](py::object &a, Other &b) -> py::object & {
           a.cast<T &>() += RHSSetup{}(b);
           return a;
         },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
         "__isub__",
-        [](py::object &a, Other &b) {
+        [](py::object &a, Other &b) -> py::object & {
           a.cast<T &>() -= RHSSetup{}(b);
           return a;
         },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
         "__imul__",
-        [](py::object &a, Other &b) {
+        [](py::object &a, Other &b) -> py::object & {
           a.cast<T &>() *= RHSSetup{}(b);
           return a;
         },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
         "__itruediv__",
-        [](py::object &a, Other &b) {
+        [](py::object &a, Other &b) -> py::object & {
           a.cast<T &>() /= RHSSetup{}(b);
           return a;
         },
@@ -186,14 +190,14 @@ template <class RHSSetup> struct OpBinder {
                     std::is_same_v<Other, Dataset>)) {
       c.def(
           "__imod__",
-          [](py::object &a, Other &b) {
+          [](py::object &a, Other &b) -> py::object & {
             a.cast<T &>() %= RHSSetup{}(b);
             return a;
           },
           py::is_operator(), py::call_guard<py::gil_scoped_release>());
       c.def(
           "__ifloordiv__",
-          [](py::object &a, Other &b) {
+          [](py::object &a, Other &b) -> py::object & {
             floor_divide_equals(a.cast<T &>(), RHSSetup{}(b));
             return a;
           },
@@ -202,7 +206,7 @@ template <class RHSSetup> struct OpBinder {
                       std::is_same_v<Other, DataArray>)) {
         c.def(
             "__ipow__",
-            [](T &base, Other &exponent) {
+            [](T &base, Other &exponent) -> T & {
               return pow(base, RHSSetup{}(exponent), base);
             },
             py::is_operator(), py::call_guard<py::gil_scoped_release>());
@@ -376,21 +380,21 @@ void bind_logical(pybind11::class_<T, Ignored...> &c) {
       py::is_operator(), py::call_guard<py::gil_scoped_release>());
   c.def(
       "__ior__",
-      [](const py::object &a, const T2 &b) {
+      [](const py::object &a, const T2 &b) -> const py::object & {
         a.cast<T &>() |= b;
         return a;
       },
       py::is_operator(), py::call_guard<py::gil_scoped_release>());
   c.def(
       "__ixor__",
-      [](const py::object &a, const T2 &b) {
+      [](const py::object &a, const T2 &b) -> const py::object & {
         a.cast<T &>() ^= b;
         return a;
       },
       py::is_operator(), py::call_guard<py::gil_scoped_release>());
   c.def(
       "__iand__",
-      [](const py::object &a, const T2 &b) {
+      [](const py::object &a, const T2 &b) -> const py::object & {
         a.cast<T &>() &= b;
         return a;
       },

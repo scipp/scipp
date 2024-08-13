@@ -1,14 +1,16 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 
-from typing import Any
+from typing import Any, TypeVar
 
-from ..typing import VariableLikeType
 from .concepts import rewrap_output_data
+from .cpp_classes import DataArray, Variable
 from .variable import empty, full, ones, zeros
 
+_T = TypeVar('_T', Variable, DataArray)
 
-def zeros_like(obj: VariableLikeType, /) -> VariableLikeType:
+
+def zeros_like(obj: _T, /) -> _T:
     """Return a new object with the same dims, shape, unit,
     and dtype as the input and all elements initialized to 0.
 
@@ -18,7 +20,7 @@ def zeros_like(obj: VariableLikeType, /) -> VariableLikeType:
 
     Parameters
     ----------
-    obj: scipp.Variable or scipp.DataArray
+    obj: scipp.Variable | scipp.DataArray
         Input object defining dims, shape, unit, and dtype of the output.
 
     Returns
@@ -47,7 +49,7 @@ def zeros_like(obj: VariableLikeType, /) -> VariableLikeType:
     return rewrap_output_data(obj, new_values)
 
 
-def ones_like(obj: VariableLikeType, /) -> VariableLikeType:
+def ones_like(obj: _T, /) -> _T:
     """Return a new object with the same dims, shape, unit,
     and dtype as the input and all elements initialized to 1.
 
@@ -57,7 +59,7 @@ def ones_like(obj: VariableLikeType, /) -> VariableLikeType:
 
     Parameters
     ----------
-    obj: scipp.Variable or scipp.DataArray
+    obj: scipp.Variable | scipp.DataArray
         Input object defining dims, shape, unit, and dtype of the output.
 
     Returns
@@ -86,7 +88,7 @@ def ones_like(obj: VariableLikeType, /) -> VariableLikeType:
     return rewrap_output_data(obj, new_values)
 
 
-def empty_like(obj: VariableLikeType, /) -> VariableLikeType:
+def empty_like(obj: _T, /) -> _T:
     """Return a new object with the same dims, shape, unit,
     and dtype as the input and all elements uninitialized.
 
@@ -100,7 +102,7 @@ def empty_like(obj: VariableLikeType, /) -> VariableLikeType:
 
     Parameters
     ----------
-    obj: scipp.Variable or scipp.DataArray
+    obj: scipp.Variable | scipp.DataArray
         Input object defining dims, shape, unit, and dtype of the output
 
     Returns
@@ -129,9 +131,7 @@ def empty_like(obj: VariableLikeType, /) -> VariableLikeType:
     return rewrap_output_data(obj, new_values)
 
 
-def full_like(
-    obj: VariableLikeType, /, value: Any, *, variance: Any = None
-) -> VariableLikeType:
+def full_like(obj: _T, /, value: Any, *, variance: Any = None) -> _T:
     """Return a new object with the same dims, shape, unit,
     and dtype as the input and all elements initialized to the given value.
 
@@ -140,7 +140,7 @@ def full_like(
 
     Parameters
     ----------
-    obj: scipp.Variable or scipp.DataArray
+    obj: scipp.Variable | scipp.DataArray
         Input object defining dims, shape, unit, and dtype of the output
     value:
         The value to fill the data with.

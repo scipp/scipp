@@ -62,8 +62,8 @@ def test_assert_similar_variable_dim_mismatch(
     with pytest.raises(AssertionError):
         assert_similar(b, a)
 
-    a = sc.arange('t', 12, unit='m').fold('t', {'x': 3, 'k': 4})
-    b = sc.arange('t', 12, unit='m').fold('t', {'x': 3, 't': 4})
+    a = sc.arange('t', 12, unit='m').fold('t', sizes={'x': 3, 'k': 4})
+    b = sc.arange('t', 12, unit='m').fold('t', sizes={'x': 3, 't': 4})
     with pytest.raises(AssertionError):
         assert_similar(a, b)
     with pytest.raises(AssertionError):
@@ -82,7 +82,7 @@ def test_assert_similar_variable_shape_mismatch(
         assert_similar(b, a)
 
     a = sc.arange('i', 5, unit='m')
-    b = sc.arange('t', 10, unit='m').fold('t', {'x': 5, 'k': 2})
+    b = sc.arange('t', 10, unit='m').fold('t', sizes={'x': 5, 'k': 2})
     with pytest.raises(AssertionError):
         assert_similar(a, b)
     with pytest.raises(AssertionError):
@@ -350,12 +350,12 @@ def test_assert_similar_data_array_masks_value_mismatch(
         sc.Dataset(
             {
                 'yy': sc.DataArray(
-                    sc.arange('w', 15).fold('w', {'i': 3, 'yy': 5}),
+                    sc.arange('w', 15).fold('w', sizes={'i': 3, 'yy': 5}),
                     attrs={'a': sc.scalar([2, 3])},
                     masks={'m': sc.arange('yy', 5) < 2},
                 ),
             },
-            coords={'i': sc.arange('w', 15).fold('w', {'i': 3, 'yy': 5})},
+            coords={'i': sc.arange('w', 15).fold('w', sizes={'i': 3, 'yy': 5})},
         ),
     ],
 )

@@ -297,7 +297,7 @@ def _get_coord(x, name):
 def _upper_bound(x: Variable) -> Variable:
     import numpy as np
 
-    bound = x.max()
+    bound = x.nanmax()
     if bound.dtype in ('int32', 'int64', 'datetime64'):
         bound.value += 1
     else:
@@ -313,13 +313,13 @@ def _parse_coords_arg(
     if isinstance(arg, Variable) and name in arg.dims:
         return arg
     coord = _get_coord(x, name)
-    start = coord.min()
+    start = coord.nanmin()
     if (
         not isinstance(x, Variable)
         and (name in x.coords)
         and x.coords.is_edges(name, name)
     ):
-        stop = coord.max()  # existing bin-edges, do not extend
+        stop = coord.nanmax()  # existing bin-edges, do not extend
     else:
         stop = _upper_bound(coord)
     if start > stop:

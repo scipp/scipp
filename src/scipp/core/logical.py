@@ -25,7 +25,7 @@ def logical_not(x: VariableLikeType) -> VariableLikeType:
     :
         The logical inverse of ``x``.
     """
-    return _call_cpp_func(_cpp.logical_not, x)
+    return _call_cpp_func(_cpp.logical_not, x)  # type: ignore[return-value]
 
 
 def logical_and(a: VariableLikeType, b: VariableLikeType) -> VariableLikeType:
@@ -47,7 +47,7 @@ def logical_and(a: VariableLikeType, b: VariableLikeType) -> VariableLikeType:
     :
         The logical and of the elements of ``a`` and ``b``.
     """
-    return _call_cpp_func(_cpp.logical_and, a, b)
+    return _call_cpp_func(_cpp.logical_and, a, b)  # type: ignore[return-value]
 
 
 def logical_or(a: VariableLikeType, b: VariableLikeType) -> VariableLikeType:
@@ -69,7 +69,7 @@ def logical_or(a: VariableLikeType, b: VariableLikeType) -> VariableLikeType:
     :
         The logical or of the elements of ``a`` and ``b``.
     """
-    return _call_cpp_func(_cpp.logical_or, a, b)
+    return _call_cpp_func(_cpp.logical_or, a, b)  # type: ignore[return-value]
 
 
 def logical_xor(a: VariableLikeType, b: VariableLikeType) -> VariableLikeType:
@@ -91,4 +91,4 @@ def logical_xor(a: VariableLikeType, b: VariableLikeType) -> VariableLikeType:
     :
         The logical exclusive-or of the elements of ``a`` and ``b``.
     """
-    return _call_cpp_func(_cpp.logical_xor, a, b)
+    return _call_cpp_func(_cpp.logical_xor, a, b)  # type: ignore[return-value]

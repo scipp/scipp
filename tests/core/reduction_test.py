@@ -54,12 +54,12 @@ def test_sum_single_dim(container):
 def test_sum_dataset_with_coords():
     d = sc.Dataset(
         data={
-            'a': sc.arange('a', 6, dtype='int64').fold('a', {'x': 2, 'y': 3}),
+            'a': sc.arange('a', 6, dtype='int64').fold('a', sizes={'x': 2, 'y': 3}),
         },
         coords={
             'x': sc.arange('x', 2, dtype='int64'),
             'y': sc.arange('y', 3, dtype='int64'),
-            'l1': sc.arange('a', 6, dtype='int64').fold('a', {'x': 2, 'y': 3}),
+            'l1': sc.arange('a', 6, dtype='int64').fold('a', sizes={'x': 2, 'y': 3}),
             'l2': sc.arange('x', 2, dtype='int64'),
         },
     )

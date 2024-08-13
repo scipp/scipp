@@ -8,7 +8,7 @@ from .core import DataArray, DataGroup, Dataset, Variable
 
 
 def serialize(
-    var: Variable | DataArray | Dataset | DataGroup,
+    var: Variable | DataArray | Dataset | DataGroup[Any],
 ) -> tuple[dict[str, Any], list[bytes]]:
     """Serialize Scipp object."""
     from io import BytesIO
@@ -24,7 +24,7 @@ def serialize(
 
 def deserialize(
     header: dict[str, Any], frames: list[bytes]
-) -> Variable | DataArray | Dataset | DataGroup:
+) -> Variable | DataArray | Dataset | DataGroup[Any]:
     """Deserialize Scipp object."""
     from io import BytesIO
 

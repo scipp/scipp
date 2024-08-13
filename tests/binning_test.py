@@ -71,6 +71,24 @@ def test_hist_table_define_edges_from_bin_count(dtype):
     )
 
 
+@pytest.mark.parametrize('dtype', ['float32', 'float64'])
+def test_hist_table_with_nan_define_edges_from_bin_count(dtype):
+    da = sc.data.table_xyz(100)
+    for c in list(da.coords.keys()):
+        da.coords[c] = da.coords[c].to(dtype=dtype)
+        da.coords[c][30] = float('nan')
+    histogrammed = da.hist(y=4)
+    edges = histogrammed.coords['y']
+    assert len(edges) == 5
+    assert histogrammed.sizes['y'] == 4
+    assert edges.min().value == da.coords['y'].nanmin().value
+    assert edges.max().value > da.coords['y'].nanmax().value
+    ymax = da.coords['y'].nanmax()
+    assert edges.max().value == np.nextafter(
+        ymax.value, (ymax + sc.scalar(1.0, unit=ymax.unit, dtype=ymax.dtype)).value
+    )
+
+
 def test_hist_binned_define_edges_from_bin_count():
     da = sc.data.binned_x(100, 10)
     histogrammed = da.hist(y=4)

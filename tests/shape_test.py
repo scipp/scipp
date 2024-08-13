@@ -145,7 +145,7 @@ def test_flatten_data_array():
 
 
 def test_squeeze():
-    xy = sc.arange('a', 2).fold('a', {'x': 1, 'y': 2})
+    xy = sc.arange('a', 2).fold('a', sizes={'x': 1, 'y': 2})
     assert sc.identical(sc.squeeze(xy, dim='x'), sc.arange('y', 2))
     assert sc.identical(sc.squeeze(xy, dim=['x']), sc.arange('y', 2))
     assert sc.identical(sc.squeeze(xy), sc.arange('y', 2))
