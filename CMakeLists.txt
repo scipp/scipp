@@ -6,6 +6,12 @@ cmake_minimum_required(VERSION 3.21)
 
 cmake_policy(SET CMP0091 NEW)
 
+# AppleClang 15 changed linking order
+# https://developer.apple.com/documentation/xcode-release-notes/xcode-15-release-notes#Linking
+if(APPLE)
+  add_link_options("-ld_classic")
+endif()
+
 if(SKBUILD)
   project(
     ${SKBUILD_PROJECT_NAME}
