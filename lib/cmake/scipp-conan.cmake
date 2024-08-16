@@ -31,7 +31,7 @@ list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_BINARY_DIR})
 option(CONAN_TBB "Use TBB from conan" OFF)
 if(SKBUILD OR CONAN_TBB)
   # Conda builds install tbb via conda, not conan
-  set(CONAN_ONETBB onetbb/2021.7.0)
+  set(CONAN_ONETBB onetbb/2021.12.0))
   # The deploy generator is used to install dependencies into a know location.
   # The RUNTIME_DEPENDENCIES DIRECTORIES install option is then used to find the
   # dependencies. This is actually required only for Windows, since on Linux and
