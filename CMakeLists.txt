@@ -12,6 +12,12 @@ if(SKBUILD)
     VERSION ${SKBUILD_PROJECT_VERSION}
     LANGUAGES CXX
   )
+  # AppleClang 15 changed linking order
+  # https://developer.apple.com/documentation/xcode-release-notes/xcode-15-release-notes#Linking
+  if(APPLE AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.0)
+    message(STATUS "Building on macOS with Clang 15 or newer")
+    add_link_options("-ld_classic")
+  endif()
   add_definitions(-DSCIPP_VERSION="${SKBUILD_PROJECT_VERSION_FULL}")
   message(STATUS "Got version from SKBUILD: ${SKBUILD_PROJECT_VERSION_FULL}")
 else()

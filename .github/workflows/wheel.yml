@@ -26,7 +26,7 @@ jobs:
     - uses: pypa/cibuildwheel@v2.20.0
       env:
         CIBW_BUILD: ${{ inputs.build }}-*
-        MACOSX_DEPLOYMENT_TARGET: "10.15"
+        MACOSX_DEPLOYMENT_TARGET: "11.0"
 
     - name: Verify clean directory
       run: git diff --exit-code
