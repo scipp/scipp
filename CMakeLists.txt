@@ -6,12 +6,6 @@ cmake_minimum_required(VERSION 3.21)
 
 cmake_policy(SET CMP0091 NEW)
 
-# AppleClang 15 changed linking order
-# https://developer.apple.com/documentation/xcode-release-notes/xcode-15-release-notes#Linking
-if(APPLE)
-  add_link_options("-ld_classic")
-endif()
-
 if(SKBUILD)
   project(
     ${SKBUILD_PROJECT_NAME}
@@ -44,6 +38,13 @@ else()
     message(STATUS "Got version from Git: ${GIT_VERSION_INFO}")
     add_definitions(-DSCIPP_VERSION="${SCIPP_VERSION_PEP440}")
   endif()
+endif()
+
+# AppleClang 15 changed linking order
+# https://developer.apple.com/documentation/xcode-release-notes/xcode-15-release-notes#Linking
+if(APPLE AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.0)
+  message(STATUS "Building on macOS with Clang 15 or newer")
+  add_link_options("-ld_classic")
 endif()
 
 if(NOT CMAKE_BUILD_TYPE)
