@@ -139,6 +139,19 @@ TEST(ValueAndVarianceTest, binary_pow) {
   EXPECT_NEAR(1.0 / 9.0, result.value, 1e-16);
   // pow.var = (|-2| * (base.val ^ -3)) ^ 2 * base.var
   EXPECT_NEAR(std::pow(2 / 27.0, 2.0) * base.variance, result.variance, 1e-16);
+
+  const ValueAndVariance zero{0.0, 1.0};
+  result = pow(zero, 0.5);
+  EXPECT_NEAR(0., result.value, 1e-15);
+  EXPECT_TRUE(std::isinf(result.variance));
+
+  result = pow(zero, 0.);
+  EXPECT_NEAR(1., result.value, 1e-15);
+
+  const ValueAndVariance zerozero{0.0, 0.0};
+  result = pow(zerozero, 0.5);
+  EXPECT_NEAR(0., result.value, 1e-15);
+  EXPECT_TRUE(std::isnan(result.variance));
 }
 
 TEST(ValueAndVarianceTest, comparison) {
