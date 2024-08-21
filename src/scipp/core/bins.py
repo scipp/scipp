@@ -2,7 +2,7 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from collections.abc import Callable
-from typing import Literal, TypedDict
+from typing import Literal, Sequence, TypedDict
 
 from .._scipp import core as _cpp
 from ..typing import Dims, MetaDataMap, VariableLike
@@ -228,6 +228,14 @@ class Bins:
         """Coords of the bins"""
         return _cpp._bins_view(self._data()).coords
 
+    def drop_coords(self, coords: str | Sequence[str]) -> DataArray:
+        """Drop coords from bin content"""
+        content = self.constituents
+        content['data'] = content['data'].drop_coords(coords)
+        out = self._obj.copy(deep=False)
+        out.data = _cpp._bins_no_validate(**content)
+        return out
+
     @property
     def meta(self) -> MetaDataMap:
         """Coords and attrs of the bins
@@ -262,6 +270,14 @@ class Bins:
     def masks(self) -> MetaDataMap:
         """Masks of the bins"""
         return _cpp._bins_view(self._data()).masks
+
+    def drop_masks(self, masks: str | Sequence[str]) -> DataArray:
+        """Drop masks from bin content"""
+        content = self.constituents
+        content['data'] = content['data'].drop_masks(masks)
+        out = self._obj.copy(deep=False)
+        out.data = _cpp._bins_no_validate(**content)
+        return out
 
     @property
     def data(self) -> Variable:

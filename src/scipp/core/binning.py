@@ -541,14 +541,9 @@ def _drop_unused_coords(x: DataArray, edges: dict[str, Variable]) -> DataArray:
         {coord for coord in da.coords if set(da.coords[coord].dims) & op_dims}
         - set(edges)
     )
-    if x.bins is None:
-        x = x.drop_coords(drop)
-    else:
-        content = x.bins.constituents
-        content['data'] = content['data'].drop_coords(drop)
-        x = x.copy(deep=False)
-        x.data = _cpp._bins_no_validate(**content)
-    return x
+    coords = set(da.coords)
+    drop = list(coords - set(edges))
+    return da.drop_coords(drop)
 
 
 def _get_op_dims(x: DataArray, *edges_or_groups: Variable) -> set[str]:

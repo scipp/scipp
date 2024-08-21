@@ -33,7 +33,7 @@
       "inherits": "base",
       "description": "MacOS options for CI build (PR and Main)",
       "cacheVariables": {
-        "CMAKE_OSX_DEPLOYMENT_TARGET": "10.15"
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "11.0"
       }
     },
     {
@@ -69,7 +69,7 @@
       "inherits": "package",
       "description": "MacOS options for package build for x86_64",
       "cacheVariables": {
-        "CMAKE_OSX_DEPLOYMENT_TARGET": "10.15",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "11.0",
         "CMAKE_OSX_ARCHITECTURES": "x86_64"
       }
     },

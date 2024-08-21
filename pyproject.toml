@@ -84,9 +84,6 @@ test-command = "pytest --ignore {project}/tests/plotting --ignore {project}/test
 skip = ["pp*", "*musllinux*"]
 build-verbosity = 1
 
-[tool.cibuildwheel.macos]
-archs = ["x86_64", "arm64"]
-
 [tool.bandit.assert_used]
 skips = [
   "*/*_test.py",

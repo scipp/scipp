@@ -204,6 +204,14 @@ def test_bins_view_coords_iterators():
     assert sc.identical(value, var.bins.coords['time'])
 
 
+def test_bins_view_coords_drop():
+    var = make_binned()
+    assert set(var.bins.coords) == {'time'}
+    new = var.bins.drop_coords(('time',))
+    assert set(new.bins.coords) == set()
+    assert set(var.bins.coords) == {'time'}
+
+
 def test_bins_view_masks_iterators():
     var = make_binned()
     assert set(var.bins.masks) == {'mask'}
@@ -245,6 +253,14 @@ def test_bins_view_masks_update():
     assert set(var.bins.masks) == {'mask', 'extra'}
     assert sc.identical(var.bins.masks['mask'], make_binned().bins.masks['mask'])
     assert sc.identical(var.bins.masks['extra'], ~make_binned().bins.masks['mask'])
+
+
+def test_bins_view_masks_drop():
+    var = make_binned()
+    assert set(var.bins.masks) == {'mask'}
+    new = var.bins.drop_masks(('mask',))
+    assert set(new.bins.masks) == set()
+    assert set(var.bins.masks) == {'mask'}
 
 
 @pytest.mark.parametrize('param', [(get_coords, 'time'), (get_masks, 'mask')])
