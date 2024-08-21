@@ -213,7 +213,7 @@ def _prepare_multi_dim_dense(x: DataArray, *edges_or_groups: Variable) -> DataAr
     multi-dimensional dense input data. The workaround is to flatten the data along the
     auxiliary dimensions and regroup.
 
-    In case the ultimate operation is histogramming, this leads the desired
+    In case the ultimate operation is histogramming, this leads to the desired
     higher-dimensional histogram. In case of binning or grouping, we obtain binned data
     with one additional dimension, whereas conceptually we might expect only the
     requested dimensions, with the auxiliary dimensions inside the bin content. As this
@@ -252,7 +252,7 @@ def _check_erase_dimension_clash(
     if set(erase) & new_dims:
         raise ValueError(
             f"Clash of dimension(s) to reduce {erase} with dimensions defined by "
-            "edges or groups."
+            f"edges or groups: {new_dims}."
         )
 
 
