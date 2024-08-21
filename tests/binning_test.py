@@ -1147,7 +1147,7 @@ def test_hist_3d_binned_coord_with_explicit_dim_arg_yields_expected_output_dims(
     assert xyz.hist(t=4, dim='x').dims == ('y', 'z', 't')
 
 
-def test_hist_by_lower_dim_coord_operates_on_slabs():
+def test_hist_by_lower_dim_coord_operates_on_slices():
     xyz = sc.data.table_xyz(1000).bin(x=3, y=4, z=5)
     xyz.coords['t'] = sc.linspace('y', 0, 1, 4, unit='s')
 
@@ -1155,7 +1155,7 @@ def test_hist_by_lower_dim_coord_operates_on_slabs():
     assert xyz.hist().hist(t=3).dims == ('x', 'z', 't')
 
 
-def test_hist_by_two_lower_dim_coords_operates_on_slabs():
+def test_hist_by_two_lower_dim_coords_operates_on_slices():
     xyz = sc.data.table_xyz(1000).bin(x=3, y=4, z=5)
     xyz.coords['t1'] = sc.linspace('y', 0, 1, 4, unit='s')
     xyz.coords['t2'] = sc.linspace('z', 0, 1, 5, unit='s')
