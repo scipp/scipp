@@ -417,13 +417,20 @@ def hist(x, arg_dict=None, /, *, dim=None, **kwargs):
     3. A custom coordinate, given as a Scipp variable with compatible unit.
        Typically this should have a single dimension matching the target dimension.
 
-    When histogramming a dimension with an existing dimension-coord, the binning for
-    the dimension is modified, i.e., the input and the output will have the same
-    dimension labels.
+    The `dim` argument controls which dimensions are summed over and which are
+    preserved. The default `dim=None` means that the dimensions of the coordinate
+    used for histogramming are summed over. In case of an input that is binned-data
+    there may be no such coordinate, in which case `dim=None` is equivalent to `dim=()`,
+    resulting in a new dimension in the output. In many cases this default yields the
+    desired behavior, there are two classes of exceptions where specifying `dim`
+    explicitly can be useful:
 
-    When histogramming by non-dimension-coords, the output will have new dimensions
-    given by the names of these coordinates. These new dimensions replace the
-    dimensions the input coordinates depend on.
+    1. Given input data with an N-D coordinate, where N>1, we can use `dim` to restrict
+       the sum to a subset of M dimensions, resulting in an (N-M)-D "array" of histograms.
+    2. Given M-D input data with an N-D coordinate, where N<M, we can specify `dim` to
+       sum over, e.g., the remaining M-N dimensions while histogramming. This is often
+       equivalent to not specifying `dim` and a call to `sum` after histogramming but
+       is more memory efficient.
 
     Parameters
     ----------
@@ -431,6 +438,9 @@ def hist(x, arg_dict=None, /, *, dim=None, **kwargs):
         Input data.
     arg_dict:
         Dictionary mapping dimension labels to binning parameters.
+    dim:
+        Dimension(s) to sum over when histogramming. If None (the default), the
+        dimensions of the coordinate used for histogramming are summed over.
     **kwargs:
         Mapping of dimension label to corresponding binning parameters.
 
@@ -441,6 +451,8 @@ def hist(x, arg_dict=None, /, *, dim=None, **kwargs):
 
     See Also
     --------
+    scipp.nanhist:
+        Like :py:func:`scipp.hist`, but NaN values are skipped.
     scipp.bin:
         Creating binned data by binning instead of summing all contributions.
     scipp.binning.make_histogrammed:
