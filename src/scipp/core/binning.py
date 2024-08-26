@@ -432,6 +432,9 @@ def hist(x, arg_dict=None, /, *, dim=None, **kwargs):
        equivalent to not specifying `dim` and a call to `sum` after histogramming but
        is more memory efficient.
 
+    If the dimensions of the input coordinate are not known, using an explicit `dim`
+    argument can be useful to obtain predictable behavior in generic code.
+
     Parameters
     ----------
     x:
@@ -507,6 +510,26 @@ def hist(x, arg_dict=None, /, *, dim=None, **kwargs):
       >>> binned = table.bin(x=10)
       >>> binned.hist(y=5).sizes
       {'x': 10, 'y': 5}
+
+    The `dim` argument controls which dimensions are summed over and which are
+    preserved. Given 3-D data with a 2-D coordinate, the default `dim=None` results in:
+
+      >>> xyz = sc.data.table_xyz(100).bin(x=4, y=5, z=6)
+      >>> xyz.coords['t'] = sc.array(dims=['x', 'y'], unit='s', values=rng.random((4, 5)))
+      >>> xyz.hist(t=3).sizes
+      {'z': 6, 't': 3}
+
+    Specifying `dim=('x', 'y', 'z')` or equivalently `dim=xyz.dims` will additionally
+    sum over the z-dimension, resulting in a 1-D histogram:
+
+      >>> xyz.hist(t=3, dim=('x', 'y', 'z')).sizes
+      {'t': 3}
+
+    To preserve a dimension of the input's t-coordinate, we can drop this dimension
+    from the tuple of dimensions to sum over:
+
+      >>> xyz.hist(t=4, dim='y').sizes
+      {'x': 4, 'z': 6, 't': 4}
     """  # noqa: E501
     edges = _make_edges(x, arg_dict, kwargs)
     erase = _find_replaced_dims(x, dims=edges, dim=dim)
