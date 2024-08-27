@@ -76,8 +76,8 @@ void update_indices_by_grouping(Variable &indices, const Variable &key,
   const auto con_groups = scipp::variable::as_contiguous(groups, dim);
 
   if ((con_groups.dtype() == dtype<int32_t> ||
-       con_groups.dtype() == dtype<int64_t>)&&con_groups.dims()
-              .volume() != 0
+       con_groups.dtype() == dtype<int64_t>) &&
+      con_groups.dims().volume() != 0
       // We can avoid expensive lookups in std::unordered_map if the groups are
       // contiguous, by simple subtraction of an offset. This is especially
       // important when the number of target groups is large since the map

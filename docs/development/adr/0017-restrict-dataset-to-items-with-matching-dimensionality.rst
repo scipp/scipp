@@ -92,7 +92,7 @@ Negative:
 - ``Dataset`` will no longer be able to represent certain types of data.
   Users will need to resort to ``DataGroup`` instead, which has other limitations, such as requiring to duplicate coordinates.
   Another option would be to replicate data values of the lower-dimensional items to match the dimensionality of the higher-dimensional items.
-  This would reuqire more memory, but would force the users to be explicit about the meaning of data they want to represent.
+  This would require more memory, but would force the users to be explicit about the meaning of data they want to represent.
 - User code needs to be migrated.
 - Existing files with incompatible ``Dataset`` data will no longer be readable.
   We could ignore this issues (as this is unlikely to be have been used in practice), or return a ``DataGroup`` instead.

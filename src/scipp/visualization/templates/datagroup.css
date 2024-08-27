@@ -1,6 +1,6 @@
 /* CSS stylesheet for displaying scipp objects in jupyterlab.
 * scipp.visualization.formatting_datagroup_html.load_dg_style will load the dependency,
-* which is `scipp.visualization.style.css` together with this file in spearate style
+* which is `scipp.visualization.style.css` together with this file in separate style
 * tag with different style id.
 */
 

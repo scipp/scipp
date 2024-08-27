@@ -306,8 +306,7 @@ DataArray transpose(const DataArray &a, const scipp::span<const Dim> dims) {
 }
 
 Dataset transpose(const Dataset &d, const scipp::span<const Dim> dims) {
-  return apply_to_items(
-      d, [](auto &&..._) { return transpose(_...); }, dims);
+  return apply_to_items(d, [](auto &&..._) { return transpose(_...); }, dims);
 }
 
 namespace {

@@ -398,8 +398,8 @@ protected:
   Variable binned2;
 
   TransformBinaryRegularBinsTest()
-      : binned1{make_input_variable(0, 1)}, binned2{
-                                                make_input_variable(3, 10)} {}
+      : binned1{make_input_variable(0, 1)},
+        binned2{make_input_variable(3, 10)} {}
 
   static Variable make_input_variable(const double offset, const double scale) {
     const auto &[event_shape, bin_shape, bin_dim, variances] = GetParam();
@@ -520,9 +520,8 @@ protected:
                                             std::get<bool>(GetParam()), 0, 1)},
         buffer2{make_dense_variable<double>(
             Shape{index_volume(indices)}, std::get<bool>(GetParam()), 3.1, 10)},
-        binned1{make_bins(indices, Dim::X, buffer1)}, binned2{make_bins(
-                                                          indices, Dim::X,
-                                                          buffer2)} {}
+        binned1{make_bins(indices, Dim::X, buffer1)},
+        binned2{make_bins(indices, Dim::X, buffer2)} {}
 
   static Variable compute_on_buffer(const Variable &a, const Variable &b) {
     return compute_on_bin_buffer(a, b, 0, op);

@@ -6,7 +6,7 @@ Version pinning
 
 Frequent issues such broken builds or inability to make a release have led us to freeze as many of our build dependencies as possible.
 Note that this does *not* imply that runtime dependencies of the final packages are frozen.
-There are a number of non-obvious dependencies that have led to surpising issues, so we attempt to document this below.
+There are a number of non-obvious dependencies that have led to surprising issues, so we attempt to document this below.
 
 Places that define dependencies
 ###############################

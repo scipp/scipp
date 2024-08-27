@@ -49,7 +49,7 @@ public:
   }
 
   /// Return the shape of the space defined by *this.
-  [[nodiscard]] scipp::span<const scipp::index> shape() const &noexcept {
+  [[nodiscard]] scipp::span<const scipp::index> shape() const & noexcept {
     return sizes();
   }
 

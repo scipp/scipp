@@ -5,7 +5,7 @@ Assertions
 ----------
 
 It is possible to write tests in terms of regular functions provided by Scipp such as :func:`scipp.identical` or :func:`scipp.allclose`.
-While this works, error messages produced with those functions contain little information and it is often necessary to inspect the comapred objects manually in case of a test failure.
+While this works, error messages produced with those functions contain little information and it is often necessary to inspect the compared objects manually in case of a test failure.
 
 For this reason, the :mod:`scipp.testing.assertions` (also available in :mod:`scipp.testing`) module provides a function to compare objects:
 
@@ -84,4 +84,3 @@ For example, to generate only two-dimensional variables with floating point dtyp
                           dtype=st.sampled_from(('float64', 'float32'))))
     def test_mean_reduces_ndim(var):
         assert var.mean(dim=var.dims[0]).ndim == 1
-

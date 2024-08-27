@@ -111,8 +111,9 @@ inline constexpr auto stride_special_cases<5, false> =
         {{1, 1, 1, 1, 1}, {1, 1, 1, 1, 0}, {1, 1, 1, 0, 0}, {1, 1, 0, 0, 0}}};
 
 template <size_t I, size_t N_Operands, bool in_place, size_t... Is>
-auto stride_sequence_impl(std::index_sequence<Is...>) -> std::integer_sequence<
-    scipp::index, stride_special_cases<N_Operands, in_place>.at(I)[Is]...>;
+auto stride_sequence_impl(std::index_sequence<Is...>)
+    -> std::integer_sequence<
+        scipp::index, stride_special_cases<N_Operands, in_place>.at(I)[Is]...>;
 // THe above uses std::array::at instead of operator[] in order to circumvent
 // a false positive error in MSVC 19.
 

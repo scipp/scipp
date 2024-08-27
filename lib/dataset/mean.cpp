@@ -23,8 +23,7 @@ DataArray mean(const DataArray &a) {
 }
 
 Dataset mean(const Dataset &d, const Dim dim) {
-  return apply_to_items(
-      d, [](auto &&..._) { return mean(_...); }, dim);
+  return apply_to_items(d, [](auto &&..._) { return mean(_...); }, dim);
 }
 
 Dataset mean(const Dataset &d) {

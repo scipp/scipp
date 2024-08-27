@@ -13,7 +13,7 @@ repos:
         args: [ --markdown-linebreak-ext=md ]
         exclude: '\.svg'
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v15.0.4
+    rev: v18.1.8
     hooks:
       - id: clang-format
         types: [ "c++" ]
@@ -37,7 +37,7 @@ repos:
       - id: ruff-format
         types_or: [ python, pyi ]
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.2
+    rev: v2.3.0
     hooks:
       - id: codespell
         additional_dependencies:

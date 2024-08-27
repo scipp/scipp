@@ -22,7 +22,7 @@ constexpr auto make_array_common = [](const auto... values) {
   Variable data = makeVariable<int64_t>(Dims{Dim::X}, Shape{size - N});
   return DataArray{data, {{Dim::X, coord}}};
 };
-}
+} // namespace
 constexpr auto make_points = make_array_common<0>;
 constexpr auto make_histogram = make_array_common<1>;
 

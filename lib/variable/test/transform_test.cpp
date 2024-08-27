@@ -117,10 +117,9 @@ TEST(TransformTest, user_op_with_variances) {
   auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m,
                                   Values{1.1, 2.2}, Variances{1.1, 3.0});
 
-  const auto result = transform<double>(
-      var, [](auto x) { return user_op(x); }, name);
-  transform_in_place<double>(
-      var, [](auto &x) { x = user_op(x); }, name);
+  const auto result =
+      transform<double>(var, [](auto x) { return user_op(x); }, name);
+  transform_in_place<double>(var, [](auto &x) { x = user_op(x); }, name);
 
   auto expected = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::s,
                                        Values{123, 123}, Variances{456, 456});

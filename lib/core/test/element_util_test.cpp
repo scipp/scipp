@@ -86,7 +86,7 @@ constexpr auto test_issorted = [](const auto sorted, const bool order) {
   EXPECT_EQ(unit, units::none);
   EXPECT_THROW(sorted(unit, units::m, units::s), except::UnitError);
 };
-}
+} // namespace
 
 TEST(ElementUtilTest, issorted) {
   test_issorted(issorted_nondescending, true);

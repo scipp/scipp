@@ -410,7 +410,7 @@ const auto no_edges = [](auto da) {
                      Dim::X));
   return da;
 };
-}
+} // namespace
 
 TEST_F(ConcatHistogramTest, fail_mixing_point_data_and_histogram) {
   EXPECT_THROW_DISCARD(concat(std::vector{no_edges(a), b, c}, Dim::X),

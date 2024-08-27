@@ -284,7 +284,7 @@ constexpr auto unaligned_by_dim_slice = [](const auto &coords, const auto &key,
   const Dim dim = params.dim();
   return var.dims().contains(dim) && coords.dim_of(key) == dim;
 };
-}
+} // namespace
 
 template <class Key, class Value>
 SizedDict<Key, Value>

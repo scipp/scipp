@@ -91,7 +91,13 @@ skips = [
 ]
 
 [tool.codespell]
-ignore-words-list = "elemt"
+ignore-words-list = [
+    "elemt",
+    # Codespell wants "socioeconomic" which seems to be the standard spelling.
+    # But we use the word in our code of conduct which is the contributor covenant.
+    # Let's not modify it if we don't have to.
+    "socio-economic",
+]
 skip = "./.git,./install,./build,./cmake-build*,./lib/cmake/sanitizers-cmake,./.tox,*/*_cache,*/.virtual_documents,*/.ipynb_checkpoints,*.pdf,*.svg"
 
 [tool.ruff]

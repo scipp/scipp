@@ -67,7 +67,7 @@ private:
   std::map<DType, std::unique_ptr<AbstractFormatter>> m_formatters;
 };
 
-/// Return the global FormatterRegistry instrance
+/// Return the global FormatterRegistry instance
 SCIPP_VARIABLE_EXPORT FormatterRegistry &formatterRegistry();
 
 } // namespace scipp::variable

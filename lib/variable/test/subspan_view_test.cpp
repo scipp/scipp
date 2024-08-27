@@ -134,14 +134,14 @@ TEST_F(SubspanViewOfSliceTest, broadcast) {
   EXPECT_TRUE(equals(view.values<scipp::span<const double>>()[3], {11, 12}));
 }
 
-TEST_F(SubspanViewOfSliceTest, tranpose) {
+TEST_F(SubspanViewOfSliceTest, transpose) {
   var = var.transpose(std::vector<Dim>{Dim::Y, Dim::Z, Dim::X});
   auto view = subspan_view(var, Dim::X);
   EXPECT_TRUE(equals(view.values<scipp::span<double>>()[0], {1, 2, 3}));
   EXPECT_TRUE(equals(view.values<scipp::span<double>>()[1], {10, 11, 12}));
 }
 
-TEST_F(SubspanViewOfSliceTest, slice_tranpose) {
+TEST_F(SubspanViewOfSliceTest, slice_transpose) {
   var = var.transpose(std::vector<Dim>{Dim::Y, Dim::Z, Dim::X});
   for (auto dim : {Dim::X, Dim::Y, Dim::Z})
     var = var.slice({dim, 1, 3});

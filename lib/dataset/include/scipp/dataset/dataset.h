@@ -125,10 +125,10 @@ public:
 
   auto find() const && = delete;
   auto find() && = delete;
-  auto find(const std::string &name) &noexcept {
+  auto find(const std::string &name) & noexcept {
     return m_data.find(name).transform(detail::with_coords{this});
   }
-  auto find(const std::string &name) const &noexcept {
+  auto find(const std::string &name) const & noexcept {
     return m_data.find(name).transform(detail::with_coords{this});
   }
 
@@ -137,52 +137,52 @@ public:
   auto begin() const && = delete;
   auto begin() && = delete;
   /// Return const iterator to the beginning of all data items.
-  auto begin() const &noexcept {
+  auto begin() const & noexcept {
     return m_data.begin().transform(detail::with_coords{this});
   }
   /// Return iterator to the beginning of all data items.
-  auto begin() &noexcept {
+  auto begin() & noexcept {
     return m_data.begin().transform(detail::with_coords{this});
   }
   auto end() const && = delete;
   auto end() && = delete;
   /// Return const iterator to the end of all data items.
-  auto end() const &noexcept {
+  auto end() const & noexcept {
     return m_data.end().transform(detail::with_coords{this});
   }
 
   /// Return iterator to the end of all data items.
-  auto end() &noexcept {
+  auto end() & noexcept {
     return m_data.end().transform(detail::with_coords{this});
   }
 
   auto items_begin() const && = delete;
   auto items_begin() && = delete;
-  auto items_begin() const &noexcept {
+  auto items_begin() const & noexcept {
     return m_data.begin().transform(detail::item_with_coords{this});
   }
-  auto items_begin() &noexcept {
+  auto items_begin() & noexcept {
     return m_data.begin().transform(detail::item_with_coords{this});
   }
   auto items_end() const && = delete;
   auto items_end() && = delete;
-  auto items_end() const &noexcept {
+  auto items_end() const & noexcept {
     return m_data.end().transform(detail::item_with_coords{this});
   }
 
-  auto items_end() &noexcept {
+  auto items_end() & noexcept {
     return m_data.end().transform(detail::item_with_coords{this});
   }
 
   auto keys_begin() const && = delete;
   auto keys_begin() && = delete;
-  auto keys_begin() const &noexcept { return m_data.keys_begin(); }
-  auto keys_begin() &noexcept { return m_data.keys_begin(); }
+  auto keys_begin() const & noexcept { return m_data.keys_begin(); }
+  auto keys_begin() & noexcept { return m_data.keys_begin(); }
   auto keys_end() const && = delete;
   auto keys_end() && = delete;
-  auto keys_end() const &noexcept { return m_data.keys_end(); }
+  auto keys_end() const & noexcept { return m_data.keys_end(); }
 
-  auto keys_end() &noexcept { return m_data.keys_end(); }
+  auto keys_end() & noexcept { return m_data.keys_end(); }
 
   void setCoord(const Dim dim, Variable coord);
   void setData(const std::string &name, Variable data,
