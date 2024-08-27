@@ -202,6 +202,31 @@ def test_hist_2d_without_event_coord_uses_outer_non_dim_coord():
     assert sc.identical(da.hist(y=4, outer=2), expected.transpose())
 
 
+def test_hist_3d_without_event_coord_uses_outer_non_dim_coord_and_erases():
+    table = sc.data.table_xyz(100)
+    table.data = sc.arange('row', 100.0)
+    da = table.bin(x=10)
+    expected = 2 * da.bin(x=2, y=4).hist().rename(x='outer')
+    expected.coords['outer'] = sc.array(dims=['outer'], values=[0, 5, 10])
+    da = sc.concat([da, da], dim='z')
+    da.coords['outer'] = sc.arange('x', 10)
+    assert sc.identical(da.hist(outer=2, y=4, dim=('x', 'z')), expected)
+    assert sc.identical(da.hist(y=4, outer=2, dim=('x', 'z')), expected.transpose())
+
+
+def test_hist_3d_without_event_coord_uses_outer_2d_non_dim_coord_and_erases():
+    table = sc.data.table_xyz(100)
+    table.data = sc.arange('row', 100.0)
+    da = table.bin(x=10)
+    expected = 2 * da.bin(x=2, y=4).hist().rename(x='outer')
+    expected.coords['outer'] = sc.array(dims=['outer'], values=[0, 5, 10])
+    outer = sc.arange('x', 10)
+    da = sc.concat([da, da], dim='z')
+    da.coords['outer'] = sc.concat([outer, outer], dim='z')
+    assert sc.identical(da.hist(outer=2, y=4, dim=('x', 'z')), expected)
+    assert sc.identical(da.hist(y=4, outer=2, dim=('x', 'z')), expected.transpose())
+
+
 def test_hist_without_event_coord_raises_with_outer_bin_edge_coord():
     table = sc.data.table_xyz(100)
     table.data = sc.arange('row', 100.0)
@@ -273,7 +298,7 @@ def test_group_after_bin_considers_event_value():
     assert da.sizes == {'label': 10}
 
 
-def test_group_by_2d():
+def test_group_by_2d_yields_1d():
     table = sc.data.table_xyz(100)
     table.coords['label'] = (table.coords['x'] * 10).to(dtype='int64')
     da = table.bin(y=333).group('label')
@@ -281,7 +306,7 @@ def test_group_by_2d():
         23, unit='m'
     )
     grouped = da.group('label')
-    assert grouped.sizes == {'y': 333, 'label': 23}
+    assert grouped.sizes == {'label': 23}
 
 
 def test_bin_erases_dims_automatically_if_labels_for_same_dim():
@@ -310,14 +335,13 @@ def test_bin_by_2d_erases_2_input_dims():
     assert da.bin(xy=20).dims == ('xy',)
 
 
-def test_bin_by_2d_dimension_coord_does_not_erase_extra_dim():
+def test_bin_by_2d_dimension_coord_erases_extra_dim():
     table = sc.data.table_xyz(100)
     table.coords['xy'] = table.coords['x'] + table.coords['y']
     da = table.bin(x=10, y=12)
     da.coords['xy'] = da.coords['x'][1:] + da.coords['y']
     da = da.rename_dims({'y': 'xy'})
-    # The call to `bin` here "aligns" all bins, so we generally do not want to erase.
-    assert da.bin(xy=20).dims == ('x', 'xy')
+    assert da.bin(xy=20).dims == ('xy',)
 
 
 def test_hist_on_dense_data_without_edges_raisesTypeError():
@@ -373,14 +397,14 @@ def test_bin_with_1d_dimcoord_keeps_dim():
     assert da.bin(date=4).dims == ('date',)
 
 
-def test_bin_with_2d_dimcoord_keeps_dims():
+def test_bin_with_2d_dimcoord_replaces_dims():
     da = date_month_day_table_grouped_by_date()
     da.coords['month'] = da.coords['date'] // 30
     da.coords['day'] = da.coords['date'] % 30
     da2d = da.group('month', 'day')
     da2d.coords['date'] = da2d.coords['day'] + 30 * da2d.coords['month']
     da2d = da2d.rename_dims({'month': 'date'})
-    assert da2d.bin(date=4).dims == ('date', 'day')
+    assert da2d.bin(date=4).dims == ('date',)
 
 
 def test_bin_with_nondimcoord_removes_dim():
@@ -428,14 +452,14 @@ def test_group_with_1d_dimcoord_keeps_dim():
     )
 
 
-def test_group_with_2d_dimcoord_keeps_dims():
+def test_group_with_2d_dimcoord_replaces_dims():
     da = date_month_day_table_grouped_by_date()
     da.coords['month'] = da.coords['date'] // 30
     da.coords['day'] = da.coords['date'] % 30
     da2d = da.group('month', 'day')
     da2d.coords['date'] = da2d.coords['day'] + 30 * da2d.coords['month']
     da2d = da2d.rename_dims({'month': 'date'})
-    assert da2d.group('date').dims == ('date', 'day')
+    assert da2d.group('date').dims == ('date',)
 
 
 def test_group_with_nondimcoord_removes_dim():
@@ -481,16 +505,14 @@ def test_hist_with_1d_dimcoord_keeps_dim():
     assert da.hist(date=4).dims == ('date',)
 
 
-def test_hist_with_2d_dimcoord_keeps_dims():
+def test_hist_with_2d_dimcoord_replaces_dims():
     da = date_month_day_table_grouped_by_date()
     da.coords['month'] = da.coords['date'] // 30
     da.coords['day'] = da.coords['date'] % 30
     da2d = da.group('month', 'day')
     da2d.coords['date'] = da2d.coords['day'] + 30 * da2d.coords['month']
     da2d = da2d.rename_dims({'month': 'date'})
-    # Note current slightly inconsistent behavior by `histogram`: The histogrammed dim
-    # alsways turns into the inner dimension.
-    assert da2d.hist(date=4).dims == ('day', 'date')
+    assert da2d.hist(date=4).dims == ('date',)
 
 
 def test_hist_with_nondimcoord_removes_dim():
@@ -535,14 +557,14 @@ def test_nanhist_with_1d_dimcoord_keeps_dim():
     assert da.nanhist(date=4).dims == ('date',)
 
 
-def test_nanhist_with_2d_dimcoord_keeps_dims():
+def test_nanhist_with_2d_dimcoord_replaces_dims():
     da = date_month_day_table_grouped_by_date()
     da.coords['month'] = da.coords['date'] // 30
     da.coords['day'] = da.coords['date'] % 30
     da2d = da.group('month', 'day')
     da2d.coords['date'] = da2d.coords['day'] + 30 * da2d.coords['month']
     da2d = da2d.rename_dims({'month': 'date'})
-    assert da2d.nanhist(date=4).dims == ('date', 'day')
+    assert da2d.nanhist(date=4).dims == ('date',)
 
 
 def test_nanhist_with_nondimcoord_removes_dim():
@@ -1072,3 +1094,155 @@ def test_explicit_groups_with_mismatching_dtype():
     # Access different code branch, triggering when groups are not contiguous
     groups[-1] += 1
     assert sc.identical(table.group(groups).coords['label'], groups)
+
+
+def test_hist_dense_with_explicit_dim_arg_yields_expected_output_dims():
+    xy = sc.data.table_xyz(1000).bin(x=4, y=6)
+    xy.coords['z'] = xy.bins.coords['z'].bins.min()
+    xy = xy.hist()
+
+    assert xy.hist(z=4, dim=xy.dims).dims == ('z',)
+
+
+def test_hist_dense_3d_with_explicit_dim_arg_yields_expected_output_dims():
+    xyz = sc.data.table_xyz(1000).bin(x=3, y=4, z=5)
+    xyz.data = (xyz.data * 1000).to(dtype='int64')
+    xyz.coords['t'] = xyz.bins.coords['z'].bins.mean()
+    xyz = xyz.hist()
+
+    assert_identical(xyz.hist(t=4, dim=xyz.dims), xyz.flatten(to='t').hist(t=4))
+    assert xyz.hist(t=4, dim=xyz.dims).dims == ('t',)
+    assert xyz.hist(t=4, dim=('x', 'y')).dims == ('z', 't')
+    assert xyz.hist(t=4, dim=('x', 'z')).dims == ('y', 't')
+    assert xyz.hist(t=4, dim=('y', 'z')).dims == ('x', 't')
+    assert xyz.hist(t=4, dim=('x', 'z', 'y')).dims == ('t',)  # order ignored
+    assert xyz.hist(t=4, dim='x').dims == ('y', 'z', 't')
+
+
+def test_hist_binned_3d_with_explicit_dim_arg_yields_expected_output_dims():
+    xyz = sc.data.table_xyz(1000).bin(x=3, y=4, z=5)
+    xyz.data = (xyz.data * 1000).to(dtype='int64')
+    xyz.coords['t'] = xyz.bins.coords['z'].bins.mean()
+
+    assert_identical(xyz.hist(t=4, dim=xyz.dims), xyz.flatten(to='t').hist(t=4))
+    assert xyz.hist(t=4, dim=xyz.dims).dims == ('t',)
+    assert xyz.hist(t=4, dim=('x', 'y')).dims == ('z', 't')
+    assert xyz.hist(t=4, dim=('x', 'z')).dims == ('y', 't')
+    assert xyz.hist(t=4, dim=('y', 'z')).dims == ('x', 't')
+    assert xyz.hist(t=4, dim=('x', 'z', 'y')).dims == ('t',)  # order ignored
+    assert xyz.hist(t=4, dim='x').dims == ('y', 'z', 't')
+
+
+def test_hist_3d_binned_coord_with_explicit_dim_arg_yields_expected_output_dims():
+    xyz = sc.data.table_xyz(1000).bin(x=3, y=4, z=5)
+    xyz.data = (xyz.data * 1000).to(dtype='int64')
+    xyz.bins.coords['t'] = xyz.bins.coords['z']
+
+    assert_identical(xyz.hist(t=4, dim=xyz.dims), xyz.flatten(to='t').hist(t=4))
+    assert xyz.hist(t=4, dim=xyz.dims).dims == ('t',)
+    assert xyz.hist(t=4, dim=('x', 'y')).dims == ('z', 't')
+    assert xyz.hist(t=4, dim=('x', 'z')).dims == ('y', 't')
+    assert xyz.hist(t=4, dim=('y', 'z')).dims == ('x', 't')
+    assert xyz.hist(t=4, dim=('x', 'z', 'y')).dims == ('t',)  # order ignored
+    assert xyz.hist(t=4, dim='x').dims == ('y', 'z', 't')
+
+
+def test_hist_by_lower_dim_coord_operates_on_slices():
+    xyz = sc.data.table_xyz(1000).bin(x=3, y=4, z=5)
+    xyz.coords['t'] = sc.linspace('y', 0, 1, 4, unit='s')
+
+    assert xyz.hist(t=3).dims == ('x', 'z', 't')
+    assert xyz.hist().hist(t=3).dims == ('x', 'z', 't')
+
+
+def test_hist_by_two_lower_dim_coords_operates_on_slices():
+    xyz = sc.data.table_xyz(1000).bin(x=3, y=4, z=5)
+    xyz.coords['t1'] = sc.linspace('y', 0, 1, 4, unit='s')
+    xyz.coords['t2'] = sc.linspace('z', 0, 1, 5, unit='s')
+
+    assert xyz.hist(t1=3, t2=3).dims == ('x', 't1', 't2')
+    assert xyz.hist().hist(t1=3, t2=3).dims == ('x', 't1', 't2')
+
+
+def test_raises_if_explicit_dim_arg_clashes_with_edge_dims():
+    xyz = sc.data.table_xyz(1000).bin(x=3, y=4, z=5)
+    x = sc.linspace('x', 0, 1, 10, unit='m').broadcast(sizes={'y': 4, 'x': 10})
+    with pytest.raises(ValueError, match='Clash of dimension\\(s\\) to reduce'):
+        xyz.bin(x=x, dim=('y', 'z'))
+    with pytest.raises(ValueError, match='Clash of dimension\\(s\\) to reduce'):
+        xyz.hist(x=x, dim=('y', 'z'))
+    with pytest.raises(ValueError, match='Clash of dimension\\(s\\) to reduce'):
+        xyz.nanhist(x=x, dim=('y', 'z'))
+
+
+@pytest.mark.parametrize(
+    'z',
+    [
+        None,
+        sc.linspace('x', 0, 1, 4, unit='m'),
+        sc.linspace('y', 0, 1, 6, unit='m'),
+        sc.linspace('x', 0, 1, 4, unit='m') + sc.linspace('y', 0, 1, 6, unit='m'),
+    ],
+)
+def test_op_on_binned_with_explicit_dim_arg_yields_expected_output_dims(z):
+    xy = sc.data.table_xyz(1000).bin(x=4, y=6)
+    if z is not None:
+        # Presence of z coord should not affect result if `dim` is explicit
+        xy.coords['z'] = z
+    assert xy.bin(z=4, dim=xy.dims).dims == ('z',)
+    assert xy.bin(z=4, dim='y').dims == ('x', 'z')
+    assert xy.bin(z=4, dim=()).dims == ('x', 'y', 'z')
+    assert xy.group('z', dim=xy.dims).dims == ('z',)
+    assert xy.group('z', dim='y').dims == ('x', 'z')
+    assert xy.group('z', dim=()).dims == ('x', 'y', 'z')
+    assert xy.hist(z=4, dim=xy.dims).dims == ('z',)
+    assert xy.hist(z=4, dim='y').dims == ('x', 'z')
+    assert xy.hist(z=4, dim=()).dims == ('x', 'y', 'z')
+    assert xy.nanhist(z=4, dim=xy.dims).dims == ('z',)
+    assert xy.nanhist(z=4, dim='y').dims == ('x', 'z')
+    assert xy.nanhist(z=4, dim=()).dims == ('x', 'y', 'z')
+
+
+@pytest.mark.parametrize(
+    'z_coord',
+    [
+        None,
+        sc.linspace('x', 0, 1, 4, unit='m'),
+        sc.linspace('y', 0, 1, 6, unit='m'),
+        sc.linspace('x', 0, 1, 4, unit='m') + sc.linspace('y', 0, 1, 6, unit='m'),
+    ],
+)
+def test_bin_binned_with_explicit_dim_arg_equivalent_to_manual_concat_and_bin(z_coord):
+    xy = sc.data.table_xyz(1000).bin(x=4, y=6)
+    if z_coord is not None:
+        # Presence of z coord should not affect result if `dim` is explicit
+        xy.coords['z'] = z_coord
+    z = sc.linspace('z', 0, 1, 4, unit='m')
+    assert_identical(xy.bin(z=z, dim=xy.dims), xy.bins.concat().bin(z=z))
+
+
+@pytest.mark.parametrize(
+    'z_coord',
+    [
+        None,
+        sc.linspace('y', 0, 1, 6, unit='m'),
+        sc.linspace('x', 0, 1, 4, unit='m') + sc.linspace('y', 0, 1, 6, unit='m'),
+    ],
+)
+def test_bin_binned_with_explicit_dim_arg_equivalent_to_manual_rename_dims_and_bin(
+    z_coord,
+):
+    xy = sc.data.table_xyz(1000).bin(x=4, y=6)
+    if z_coord is not None:
+        # Presence of z coord should not affect result if `dim` is explicit
+        xy.coords['z'] = z_coord
+    z = sc.linspace('z', 0, 1, 4, unit='m')
+    drop = 'z' if z_coord is not None else ()
+    # For the reference implementation we drop the coord, since those bin edges are
+    # "lying", leading scipp to drop rows. Note that this is explicitly documented as
+    # unspecified behavior, so the reference implementation is not necessarily wrong.
+    # Without renaming the dimension we do not hit that code path, so the behavior is
+    # different.
+    assert_identical(
+        xy.bin(z=z, dim='y'), xy.drop_coords(drop).rename_dims(y='z').bin(z=z, dim=())
+    )

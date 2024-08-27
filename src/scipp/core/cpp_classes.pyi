@@ -345,6 +345,8 @@ class DataArray:
         self,
         arg_dict: dict[str, int | Variable] | None = None,
         /,
+        *,
+        dim: str | tuple[str, ...] | None = None,
         **kwargs: int | Variable,
     ) -> DataArray: ...
     @property
@@ -414,7 +416,12 @@ class DataArray:
         *,
         sizes: dict[str, int],
     ) -> DataArray: ...
-    def group(self, /, *args: str | Variable) -> DataArray: ...
+    def group(
+        self,
+        /,
+        *args: str | Variable,
+        dim: str | tuple[str, ...] | None = None,
+    ) -> DataArray: ...
     def groupby(
         self, /, group: Variable | str, *, bins: Variable | None = None
     ) -> GroupByDataArray | GroupByDataset: ...
@@ -680,6 +687,8 @@ class Dataset(Mapping[str, DataArray]):
         self,
         arg_dict: dict[str, int | Variable] | None = None,
         /,
+        *,
+        dim: str | tuple[str, ...] | None = None,
         **kwargs: int | Variable,
     ) -> Dataset: ...
     def items(self) -> ItemsView[str, DataArray]: ...
@@ -1085,6 +1094,8 @@ class Variable:
         self,
         arg_dict: dict[str, int | Variable] | None = None,
         /,
+        *,
+        dim: str | tuple[str, ...] | None = None,
         **kwargs: int | Variable,
     ) -> DataArray: ...
     def nanmax(self, dim: str | None = None) -> Variable: ...
