@@ -427,6 +427,11 @@ def hist(x, arg_dict=None, /, *, dim=None, **kwargs):
 
     1. Given input data with an N-D coordinate, where N>1, we can use `dim` to restrict
        the sum to a subset of M dimensions, resulting in an (N-M)-D "array" of histograms.
+       This can be of particular importance when the input is binned data: Frequently
+       we may want to bin to add an additional dimension, but if there is a dense
+       coordinate present the default `dim=None` would result in removal of the
+       coordinate's dimensions. This can be prevented by setting `dim=()`, which will
+       always add a new dimensions.
     2. Given M-D input data with an N-D coordinate, where N<M, we can specify `dim` to
        sum over, e.g., the remaining M-N dimensions while histogramming. This is often
        equivalent to not specifying `dim` and a call to `sum` after histogramming but
@@ -459,8 +464,7 @@ def hist(x, arg_dict=None, /, *, dim=None, **kwargs):
     scipp.bin:
         Creating binned data by binning instead of summing all contributions.
     scipp.binning.make_histogrammed:
-        Lower level function for histogramming that does not automatically
-        replace/erase dimensions.
+        Lower level function for histogramming.
 
     Examples
     --------
@@ -530,6 +534,14 @@ def hist(x, arg_dict=None, /, *, dim=None, **kwargs):
 
       >>> xyz.hist(t=4, dim='y').sizes
       {'x': 4, 'z': 6, 't': 4}
+
+    Finally, we can add a new dimension without touching the existing dimensions:
+
+      >>> xyz.hist(t=4, dim=()).sizes
+      {'x': 4, 'y':5, 'z': 6, 't': 4}
+
+    Note that this is generally only useful if the input is binned data with a binned
+    t-coordinate.
     """  # noqa: E501
     edges = _make_edges(x, arg_dict, kwargs)
     erase = _find_replaced_dims(x, dims=edges, dim=dim)
@@ -629,6 +641,9 @@ def nanhist(
         Input data.
     arg_dict:
         Dictionary mapping dimension labels to binning parameters.
+    dim:
+        Dimension(s) to sum over when histogramming. If None (the default), the
+        dimensions of the coordinate used for histogramming are summed over.
     **kwargs:
         Mapping of dimension label to corresponding binning parameters.
 
@@ -688,13 +703,28 @@ def bin(
     3. A custom coordinate, given as a Scipp variable with compatible unit.
        Typically, this should have a single dimension matching the target dimension.
 
-    When binning a dimension with an existing dimension-coord, the binning for
-    the dimension is modified, i.e., the input and the output will have the same
-    dimension labels.
+    The `dim` argument controls which dimensions are concatenated and which are
+    preserved. The default `dim=None` means that the dimensions of the coordinate
+    used for binning are concatenated. In case of an input that is binned-data
+    there may be no such coordinate, in which case `dim=None` is equivalent to `dim=()`,
+    resulting in a new dimension in the output. In many cases this default yields the
+    desired behavior, there are two classes of exceptions where specifying `dim`
+    explicitly can be useful:
 
-    When binning by non-dimension-coords, the output will have new dimensions
-    given by the names of these coordinates. These new dimensions replace the
-    dimensions the input coordinates depend on.
+    1. Given input data with an N-D coordinate, where N>1, we can use `dim` to restrict
+       the binning to a subset of M dimensions, resulting in an (N-M)-D "array" of bins.
+       This can be of particular importance when the input is binned data: Frequently
+       we may want to bin to add an additional dimension, but if there is a dense
+       coordinate present the default `dim=None` would result in removal of the
+       coordinate's dimensions. This can be prevented by setting `dim=()`, which will
+       always add a new dimensions.
+    2. Given M-D input data with an N-D coordinate, where N<M, we can specify `dim` to
+       concatenate, e.g., the remaining M-N dimensions while binning. This is often
+       equivalent to not specifying `dim` and a call to `da.bins.concat()` after
+       binning but is more memory efficient.
+
+    If the dimensions of the input coordinate are not known, using an explicit `dim`
+    argument can be useful to obtain predictable behavior in generic code.
 
     Warning
     -------
@@ -712,6 +742,9 @@ def bin(
         Input data.
     arg_dict:
         Dictionary mapping dimension labels to binning parameters.
+    dim:
+        Dimension(s) to concatenate into a single bin. If None (the default), the
+        dimensions of the coordinate used for binning are concatenated.
     **kwargs:
         Mapping of dimension label to corresponding binning parameters.
 
@@ -727,8 +760,7 @@ def bin(
     scipp.group:
         Creating binned data by grouping, instead of binning based on edges.
     scipp.binning.make_binned:
-        Lower level function that can bin and group, and does not automatically
-        replace/erase dimensions.
+        Lower level function that can bin and group.
 
     Examples
     --------
@@ -767,6 +799,35 @@ def bin(
       >>> binned = table.bin(x=10)
       >>> binned.bin(y=5).sizes
       {'x': 10, 'y': 5}
+
+    The `dim` argument controls which dimensions are concatenated and which are
+    preserved. Given 3-D data with a 2-D coordinate, the default `dim=None` results in:
+
+      >>> xyz = sc.data.table_xyz(100).bin(x=4, y=5, z=6)
+      >>> values = rng.random((4, 5))
+      >>> xyz.coords['t'] = sc.array(dims=['x', 'y'], unit='s', values=values)
+      >>> xyz.bin(t=3).sizes
+      {'z': 6, 't': 3}
+
+    Specifying `dim=('x', 'y', 'z')` or equivalently `dim=xyz.dims` will additionally
+    concatenate along the z-dimension, resulting in a 1-D array of bins:
+
+      >>> xyz.bin(t=3, dim=('x', 'y', 'z')).sizes
+      {'t': 3}
+
+    To preserve a dimension of the input's t-coordinate, we can drop this dimension
+    from the tuple of dimensions to concatenate:
+
+      >>> xyz.bin(t=4, dim='y').sizes
+      {'x': 4, 'z': 6, 't': 4}
+
+    Finally, we can add a new dimension without touching the existing dimensions:
+
+      >>> xyz.bin(t=4, dim=()).sizes
+      {'x': 4, 'y':5, 'z': 6, 't': 4}
+
+    Note that this is generally only useful if the input is binned data with a binned
+    t-coordinate.
     """
     edges = _make_edges(x, arg_dict, kwargs)
     erase = _find_replaced_dims(x, dims=edges, dim=dim)
@@ -936,13 +997,28 @@ def group(
 
     Note that option (1) may be very slow if the input is very large.
 
-    When grouping a dimension with an existing dimension-coord, the binning for
-    the dimension is modified, i.e., the input and the output will have the same
-    dimension labels.
+    The `dim` argument controls which dimensions are concatenated and which are
+    preserved. The default `dim=None` means that the dimensions of the coordinate
+    used for binning are concatenated. In case of an input that is binned-data
+    there may be no such coordinate, in which case `dim=None` is equivalent to `dim=()`,
+    resulting in a new dimension in the output. In many cases this default yields the
+    desired behavior, there are two classes of exceptions where specifying `dim`
+    explicitly can be useful:
 
-    When grouping by non-dimension-coords, the output will have new dimensions
-    given by the names of these coordinates. These new dimensions replace the
-    dimensions the input coordinates depend on.
+    1. Given input data with an N-D coordinate, where N>1, we can use `dim` to restrict
+       the grouping to a subset of M dimensions, resulting in an (N-M)-D array of bins.
+       This can be of particular importance when the input is binned data: Frequently
+       we may want to group to add an additional dimension, but if there is a dense
+       coordinate present the default `dim=None` would result in removal of the
+       coordinate's dimensions. This can be prevented by setting `dim=()`, which will
+       always add a new dimensions.
+    2. Given M-D input data with an N-D coordinate, where N<M, we can specify `dim` to
+       concatenate, e.g., the remaining M-N dimensions while grouping. This is often
+       equivalent to not specifying `dim` and a call to `da.bins.concat()` after
+       grouping but is more memory efficient.
+
+    If the dimensions of the input coordinate are not known, using an explicit `dim`
+    argument can be useful to obtain predictable behavior in generic code.
 
     Warning
     -------
@@ -960,6 +1036,9 @@ def group(
         Input data.
     *args:
         Dimension labels or grouping variables.
+    dim:
+        Dimension(s) to concatenate into a single bin. If None (the default), the
+        dimensions of the coordinate used for grouping are concatenated.
 
     Returns
     -------
@@ -971,8 +1050,7 @@ def group(
     scipp.bin:
         Creating binned data by binning based on edges, instead of grouping.
     scipp.binning.make_binned:
-        Lower level function that can bin and group, and does not automatically
-        replace/erase dimensions.
+        Lower level function that can bin and group.
 
     Examples
     --------
@@ -1011,6 +1089,35 @@ def group(
       >>> binned = table.bin(x=10)
       >>> binned.group('a').sizes
       {'x': 10, 'a': 10}
+
+    The `dim` argument controls which dimensions are concatenated and which are
+    preserved. Given 3-D data with a 2-D coordinate, the default `dim=None` results in:
+
+      >>> xyz = sc.data.table_xyz(100).bin(x=4, y=5, z=6)
+      >>> times = rng.integers(low=1, high=3, size=(4, 5))
+      >>> xyz.coords['t'] = sc.array(dims=['x', 'y'], unit='s', values=times)
+      >>> xyz.group('t').sizes
+      {'z': 6, 't': 2}
+
+    Specifying `dim=('x', 'y', 'z')` or equivalently `dim=xyz.dims` will additionally
+    concatenate along the z-dimension, resulting in a 1-D array of bins:
+
+      >>> xyz.group('t', dim=('x', 'y', 'z')).sizes
+      {'t': 2}
+
+    To preserve a dimension of the input's t-coordinate, we can drop this dimension
+    from the tuple of dimensions to concatenate:
+
+      >>> xyz.group('t', dim='y').sizes
+      {'x': 4, 'z': 6, 't': 2}
+
+    Finally, we can add a new dimension without touching the existing dimensions:
+
+      >>> xyz.group('t', dim=()).sizes
+      {'x': 4, 'y':5, 'z': 6, 't': 2}
+
+    Note that this is generally only useful if the input is binned data with a binned
+    t-coordinate.
     """
     groups = [_make_groups(x, name) for name in args]
     erase = _find_replaced_dims(x, dims=[g.dim for g in groups], dim=dim)
