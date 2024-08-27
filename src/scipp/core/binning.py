@@ -538,7 +538,7 @@ def hist(x, arg_dict=None, /, *, dim=None, **kwargs):
     Finally, we can add a new dimension without touching the existing dimensions:
 
       >>> xyz.hist(t=4, dim=()).sizes
-      {'x': 4, 'y':5, 'z': 6, 't': 4}
+      {'x': 4, 'y': 5, 'z': 6, 't': 4}
 
     Note that this is generally only useful if the input is binned data with a binned
     t-coordinate.
@@ -824,7 +824,7 @@ def bin(
     Finally, we can add a new dimension without touching the existing dimensions:
 
       >>> xyz.bin(t=4, dim=()).sizes
-      {'x': 4, 'y':5, 'z': 6, 't': 4}
+      {'x': 4, 'y': 5, 'z': 6, 't': 4}
 
     Note that this is generally only useful if the input is binned data with a binned
     t-coordinate.
@@ -1114,7 +1114,7 @@ def group(
     Finally, we can add a new dimension without touching the existing dimensions:
 
       >>> xyz.group('t', dim=()).sizes
-      {'x': 4, 'y':5, 'z': 6, 't': 2}
+      {'x': 4, 'y': 5, 'z': 6, 't': 2}
 
     Note that this is generally only useful if the input is binned data with a binned
     t-coordinate.
