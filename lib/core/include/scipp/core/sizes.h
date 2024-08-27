@@ -61,10 +61,10 @@ public:
   void erase(const Key &key);
   void clear() noexcept;
   void replace_key(const Key &from, const Key &to);
-  [[nodiscard]] scipp::span<const Key> keys() const &noexcept {
+  [[nodiscard]] scipp::span<const Key> keys() const & noexcept {
     return {m_keys.data(), static_cast<size_t>(size())};
   }
-  [[nodiscard]] scipp::span<const Value> values() const &noexcept {
+  [[nodiscard]] scipp::span<const Value> values() const & noexcept {
     return {m_values.data(), static_cast<size_t>(size())};
   }
 
@@ -93,9 +93,9 @@ public:
   [[nodiscard]] Sizes slice(const Slice &params) const;
 
   /// Return the labels of the space defined by *this.
-  [[nodiscard]] auto labels() const &noexcept { return keys(); }
+  [[nodiscard]] auto labels() const & noexcept { return keys(); }
   /// Return the shape of the space defined by *this.
-  [[nodiscard]] auto sizes() const &noexcept { return values(); }
+  [[nodiscard]] auto sizes() const & noexcept { return values(); }
 
   [[nodiscard]] Sizes rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
                                   const bool fail_on_unknown = true) const;

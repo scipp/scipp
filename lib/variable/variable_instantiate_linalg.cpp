@@ -50,11 +50,12 @@ constexpr auto structure_element_offset<scipp::core::Translation> =
 };
 
 template <>
-constexpr auto structure_element_offset<
-    scipp::index_pair> = [](const std::string &key) {
-  static std::map<std::string, scipp::index> offsets{{"begin", 0}, {"end", 1}};
-  return offsets.at(key);
-};
+constexpr auto structure_element_offset<scipp::index_pair> =
+    [](const std::string &key) {
+      static std::map<std::string, scipp::index> offsets{{"begin", 0},
+                                                         {"end", 1}};
+      return offsets.at(key);
+    };
 
 std::vector<std::string> element_keys(const Variable &var) {
   if (variableFactory().elem_dtype(var) == dtype<Eigen::Vector3d>)

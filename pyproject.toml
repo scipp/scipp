@@ -91,7 +91,13 @@ skips = [
 ]
 
 [tool.codespell]
-ignore-words-list = "elemt"
+ignore-words-list = [
+    "elemt",
+    # Codespell wants "socioeconomic" which seems to be the standard spelling.
+    # But we use the word in our code of conduct which is the contributor covenant.
+    # Let's not modify it if we don't have to.
+    "socio-economic",
+]
 skip = "./.git,./install,./build,./cmake-build*,./lib/cmake/sanitizers-cmake,./.tox,*/*_cache,*/.virtual_documents,*/.ipynb_checkpoints,*.pdf,*.svg"
 
 [tool.ruff]
@@ -113,7 +119,7 @@ ignore = [
     # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
     "COM812", "COM819", "D206", "D300", "E111", "E114", "E117", "ISC001", "ISC002", "Q000", "Q001", "Q002", "Q003", "W191",
 ]
-fixable = ["I001", "B010"]
+fixable = ["B010", "I001", "PT001"]
 isort.known-first-party = ["scipp"]
 pydocstyle.convention = "numpy"
 

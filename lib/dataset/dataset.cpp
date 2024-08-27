@@ -45,8 +45,8 @@ void expect_matching_item_dims(const Dataset &dset, const std::string_view key,
 Dataset::Dataset() : m_valid{false} {}
 
 Dataset::Dataset(const Dataset &other)
-    : m_coords(other.m_coords), m_data(other.m_data),
-      m_readonly(false), m_valid{other.m_valid} {}
+    : m_coords(other.m_coords), m_data(other.m_data), m_readonly(false),
+      m_valid{other.m_valid} {}
 
 Dataset::Dataset(const DataArray &data) {
   m_coords.setSizes(data.dims());

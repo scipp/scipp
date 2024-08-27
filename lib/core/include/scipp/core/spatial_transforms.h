@@ -22,8 +22,8 @@ private:
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  Quaternion() : m_quat(Eigen::Quaterniond::Identity()){};
-  explicit Quaternion(const Eigen::Quaterniond &x) : m_quat(x){};
+  Quaternion() : m_quat(Eigen::Quaterniond::Identity()) {};
+  explicit Quaternion(const Eigen::Quaterniond &x) : m_quat(x) {};
 
   [[nodiscard]] const Eigen::Quaterniond &quat() const { return m_quat; }
 
@@ -61,10 +61,10 @@ private:
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  Translation() : m_vec(Eigen::Vector3d(0, 0, 0)){};
+  Translation() : m_vec(Eigen::Vector3d(0, 0, 0)) {};
   // https://eigen.tuxfamily.org/dox/group__TopicPassingByValue.html
   // NOLINTNEXTLINE
-  explicit Translation(const Eigen::Vector3d &x) : m_vec(x){};
+  explicit Translation(const Eigen::Vector3d &x) : m_vec(x) {};
 
   [[nodiscard]] const Eigen::Vector3d &vector() const { return m_vec; }
 

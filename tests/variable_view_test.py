@@ -13,7 +13,7 @@ def test_type():
     variable_slice = sc.Variable(dims=['x'], values=np.arange(1, 10, dtype=float))[
         'x', :
     ]
-    assert type(variable_slice) == sc.Variable
+    assert type(variable_slice) is sc.Variable
 
 
 def test_astype():
@@ -41,7 +41,7 @@ def test_binary_operations():
 
     data = np.copy(a.values)
     c = a + b
-    assert type(c) == sc.Variable
+    assert type(c) is sc.Variable
     assert np.array_equal(c.values, data + data)
     c = a - b
     assert np.array_equal(c.values, data - data)

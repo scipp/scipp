@@ -74,8 +74,7 @@ template <class T> void bind_to_unit(py::module &m) {
 }
 
 template <class T> void bind_as_const(py::module &m) {
-  m.def(
-      "as_const", [](const T &x) { return x.as_const(); }, py::arg("x"));
+  m.def("as_const", [](const T &x) { return x.as_const(); }, py::arg("x"));
 }
 } // namespace
 

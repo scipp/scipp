@@ -154,7 +154,7 @@ template <class RHSSetup> struct OpBinder {
     // work in Python (assigning return value to this). This avoids extra
     // copies, and additionally ensures that all references to the object keep
     // referencing the same object after the operation.
-    // WARNING: It is crucial to eplicitly return 'py::object &' here.
+    // WARNING: It is crucial to explicitly return 'py::object &' here.
     // Otherwise the py::object is returned by value, which increments the
     // reference count, which is not only suboptimal but also incorrect since
     // we have released the GIL via py::gil_scoped_release.

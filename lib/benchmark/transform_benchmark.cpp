@@ -264,8 +264,7 @@ static void BM_transform_buckets_inplace_unary(benchmark::State &state) {
   Variable var = make_bins(indices, Dim::X, buffer);
 
   for (auto _ : state) {
-    transform_in_place<double>(
-        var, [](auto &x) { x += x; }, "");
+    transform_in_place<double>(var, [](auto &x) { x += x; }, "");
   }
 
   state.SetItemsProcessed(state.iterations() * n_bucket);

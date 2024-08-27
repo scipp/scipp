@@ -151,7 +151,7 @@ class UnitAliases:
           True
 
         Aliases defined within the context remain active
-        unless they clash with previous alises:
+        unless they clash with previous aliases:
 
           >>> sc.units.aliases.clear()
           >>> sc.units.aliases['speed'] = 'km/s'

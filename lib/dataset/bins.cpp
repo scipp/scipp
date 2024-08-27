@@ -121,7 +121,7 @@ constexpr auto copy_or_resize = [](const auto &var, const Dim dim,
                                                   var.has_variances())
              : copy(var);
 };
-}
+} // namespace
 
 // TODO These functions are an unfortunate near-duplicate of `resize`. However,
 // the latter drops coords along the resized dimension. Is there a way to unify

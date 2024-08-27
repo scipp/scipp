@@ -99,8 +99,8 @@ def configure(case, build_dir, install_dir):
     )
 
     try:
-        subprocess.run(
-            ['cmake', *cmake_args],  # noqa: S603, S607
+        subprocess.run(  # noqa: S603
+            ['cmake', *cmake_args],  # noqa:  S607
             capture_output=True,
             check=True,
             encoding='utf-8',
@@ -145,13 +145,13 @@ def build(case, build_dir):
         build_args.append('--')
         build_args.extend(all_build_args)
     try:
-        res = subprocess.run(
+        res = subprocess.run(  # noqa: S602
             ' '.join(['time', 'cmake', *build_args]),
             capture_output=True,
             check=True,
             encoding='utf-8',
             cwd=build_dir,
-            shell=True,  # noqa: S602
+            shell=True,
         )
     except subprocess.CalledProcessError as err:
         print(f"Build '{case.name}' failed:\n{err.stdout}\n{err.stderr}")

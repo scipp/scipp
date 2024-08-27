@@ -25,8 +25,7 @@ DataArray nanmean(const DataArray &a) {
 }
 
 Dataset nanmean(const Dataset &d, const Dim dim) {
-  return apply_to_items(
-      d, [](auto &&..._) { return nanmean(_...); }, dim);
+  return apply_to_items(d, [](auto &&..._) { return nanmean(_...); }, dim);
 }
 
 Dataset nanmean(const Dataset &d) {

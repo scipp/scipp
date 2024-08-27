@@ -103,24 +103,24 @@ public:
 
   auto items_begin() const && = delete;
   /// Return const iterator to the beginning of all items.
-  auto items_begin() const &noexcept { return begin(); }
+  auto items_begin() const & noexcept { return begin(); }
   auto items_end() const && = delete;
   /// Return const iterator to the end of all items.
-  auto items_end() const &noexcept { return end(); }
+  auto items_end() const & noexcept { return end(); }
 
   auto keys_begin() const && = delete;
   /// Return const iterator to the beginning of all keys.
-  auto keys_begin() const &noexcept { return m_items.keys_begin(); }
+  auto keys_begin() const & noexcept { return m_items.keys_begin(); }
   auto keys_end() const && = delete;
   /// Return const iterator to the end of all keys.
-  auto keys_end() const &noexcept { return m_items.keys_end(); }
+  auto keys_end() const & noexcept { return m_items.keys_end(); }
 
   auto values_begin() const && = delete;
   /// Return const iterator to the beginning of all values.
-  auto values_begin() const &noexcept { return m_items.values_begin(); }
+  auto values_begin() const & noexcept { return m_items.values_begin(); }
   auto values_end() const && = delete;
   /// Return const iterator to the end of all values.
-  auto values_end() const &noexcept { return m_items.values_end(); }
+  auto values_end() const & noexcept { return m_items.values_end(); }
 
   bool operator==(const SizedDict &other) const;
   bool operator!=(const SizedDict &other) const;

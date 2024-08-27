@@ -281,10 +281,10 @@ TEST(TransformUnaryTest, apply_dtype_preserved) {
       makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
   const auto varF =
       makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
-  auto outD = transform<double, float>(
-      varD, [](const auto x) { return -x; }, name);
-  auto outF = transform<double, float>(
-      varF, [](const auto x) { return -x; }, name);
+  auto outD =
+      transform<double, float>(varD, [](const auto x) { return -x; }, name);
+  auto outF =
+      transform<double, float>(varF, [](const auto x) { return -x; }, name);
   EXPECT_TRUE(equals(outD.values<double>(), {-1.1, -2.2}));
   EXPECT_TRUE(equals(outF.values<float>(), {-1.1f, -2.2f}));
 }

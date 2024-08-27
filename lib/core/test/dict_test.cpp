@@ -474,9 +474,7 @@ TEST(Dict, insertion_order_is_Preserved) {
 
   std::vector<std::pair<Dim, int>> result;
   std::transform(dict.begin(), dict.end(), std::back_inserter(result),
-                 [](const auto &p) {
-                   return std::pair{p.first, p.second};
-                 });
+                 [](const auto &p) { return std::pair{p.first, p.second}; });
 
   std::vector<std::pair<Dim, int>> expected{
       {Dim::Y, 144}, {Dim::Time, -182}, {Dim::Energy, 3441}, {Dim::Event, 123}};
@@ -486,9 +484,8 @@ TEST(Dict, insertion_order_is_Preserved) {
 TEST(Dict, transform_iterator_via_deref) {
   DimDict dict{{Dim::X, 7476}, {Dim::Event, -31}, {Dim::Position, 0}};
 
-  auto it = dict.begin().transform([](const auto &x) {
-    return std::pair{x.first, 2 * x.second};
-  });
+  auto it = dict.begin().transform(
+      [](const auto &x) { return std::pair{x.first, 2 * x.second}; });
   EXPECT_EQ((*it).first, Dim::X);
   EXPECT_EQ((*it).second, 2 * 7476);
   ++it;
@@ -504,9 +501,8 @@ TEST(Dict, transform_iterator_via_deref) {
 TEST(Dict, transform_iterator_via_arrow) {
   DimDict dict{{Dim::X, 7476}, {Dim::Event, -31}, {Dim::Position, 0}};
 
-  auto it = dict.begin().transform([](const auto &x) {
-    return std::pair{x.first, 2 * x.second};
-  });
+  auto it = dict.begin().transform(
+      [](const auto &x) { return std::pair{x.first, 2 * x.second}; });
   EXPECT_EQ(it->first, Dim::X);
   EXPECT_EQ(it->second, 2 * 7476);
   ++it;
@@ -523,9 +519,8 @@ TEST(Dict, transform_iterator_lvalue_iterator) {
   DimDict dict{{Dim::X, 7476}, {Dim::Event, -31}, {Dim::Position, 0}};
 
   auto base_it = dict.begin();
-  auto it = base_it.transform([](const auto &x) {
-    return std::pair{x.first, 2 * x.second};
-  });
+  auto it = base_it.transform(
+      [](const auto &x) { return std::pair{x.first, 2 * x.second}; });
   EXPECT_EQ(it->first, Dim::X);
   EXPECT_EQ(it->second, 2 * 7476);
   ++it;

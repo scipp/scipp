@@ -166,7 +166,7 @@ def test_all_false_2d_condition_raises_DimensionError():
 
 def test_all_true_2d_condition_raises_DimensionError():
     # Strictly speaking this could be supported, but having this odd special case
-    # work would likely add more confusion and bugs surfacing add surpising times.
+    # work would likely add more confusion and bugs surfacing at surprising times.
     var = make_var()
     condition = var == var
     with pytest.raises(sc.DimensionError):
@@ -189,7 +189,7 @@ def test_0d_false_condition_raises_DimensionError():
 
 def test_0d_true_condition_raises_DimensionError():
     # Strictly speaking this could be supported, but having this odd special case
-    # work would likely add more confusion and bugs surfacing add surpising times.
+    # work would likely add more confusion and bugs surfacing at surprising times.
     var = make_var()
     condition = sc.scalar(True)
     with pytest.raises(sc.DimensionError):

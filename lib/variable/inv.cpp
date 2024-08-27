@@ -22,7 +22,7 @@ constexpr auto inv =
                  // the calling code assigns it.
                  return units::none;
                }};
-}
+} // namespace element
 
 namespace {
 bool is_transform_with_translation(const Variable &var) {

@@ -30,8 +30,7 @@ DataArray rebin(const DataArray &a, const Dim dim, const Variable &coord) {
 }
 
 Dataset rebin(const Dataset &d, const Dim dim, const Variable &coord) {
-  return apply_to_items(
-      d, [](auto &&..._) { return rebin(_...); }, dim, coord);
+  return apply_to_items(d, [](auto &&..._) { return rebin(_...); }, dim, coord);
 }
 
 } // namespace scipp::dataset
