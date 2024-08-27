@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.3.0
+    rev: v4.6.0
     hooks:
       - id: check-added-large-files
       - id: check-json
@@ -22,7 +22,7 @@ repos:
     hooks:
       - id: cmake-format
   - repo: https://github.com/kynan/nbstripout
-    rev: 0.6.0
+    rev: 0.7.1
     hooks:
       - id: nbstripout
         types: [ "jupyter" ]
@@ -43,7 +43,7 @@ repos:
         additional_dependencies:
           - tomli
   - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: v1.9.0
+    rev: v1.10.0
     hooks:
       - id: python-no-eval
         exclude: "object_list.py"
