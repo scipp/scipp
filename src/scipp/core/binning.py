@@ -534,14 +534,6 @@ def hist(x, arg_dict=None, /, *, dim=None, **kwargs):
 
       >>> xyz.hist(t=4, dim='y').sizes
       {'x': 4, 'z': 6, 't': 4}
-
-    Finally, we can add a new dimension without touching the existing dimensions:
-
-      >>> xyz.hist(t=4, dim=()).sizes
-      {'x': 4, 'y': 5, 'z': 6, 't': 4}
-
-    Note that this is generally only useful if the input is binned data with a binned
-    t-coordinate.
     """  # noqa: E501
     edges = _make_edges(x, arg_dict, kwargs)
     erase = _find_replaced_dims(x, dims=edges, dim=dim)
