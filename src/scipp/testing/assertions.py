@@ -140,7 +140,7 @@ def _assert_identical_structure(
     a: _T,
     b: _T,
 ) -> None:
-    assert type(a) == type(b)
+    assert type(a) is type(b)
     if isinstance(a, Variable):
         _assert_identical_variable_structure(a, b)
     elif isinstance(a, DataArray):

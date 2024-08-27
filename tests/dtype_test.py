@@ -27,17 +27,17 @@ def test_dtype_comparison_str(name):
 
 
 def test_dtype_comparison_type():
-    assert sc.DType.float64 == float
-    assert float == sc.DType.float64
-    assert sc.DType.string == str
-    assert str == sc.DType.string
+    assert sc.DType.float64 == float  # noqa: E721
+    assert float == sc.DType.float64  # noqa: E721
+    assert sc.DType.string == str  # noqa: E721
+    assert str == sc.DType.string  # noqa: E721
     # Depends on OS
     assert int in (sc.DType.int64, sc.DType.int32)
 
-    assert sc.DType.float64 != int
-    assert int != sc.DType.float64
-    assert sc.DType.string != float
-    assert float != sc.DType.string
+    assert sc.DType.float64 != int  # noqa: E721
+    assert int != sc.DType.float64  # noqa: E721
+    assert sc.DType.string != float  # noqa: E721
+    assert float != sc.DType.string  # noqa: E721
 
 
 def test_numpy_comparison():

@@ -11,7 +11,7 @@ from scipp.compat.xarray_compat import from_xarray, to_xarray
 from scipp.testing import assert_allclose, assert_identical
 
 
-@pytest.fixture()
+@pytest.fixture
 def rng():
     return np.random.default_rng(seed=1234)
 

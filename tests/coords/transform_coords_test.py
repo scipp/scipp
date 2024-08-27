@@ -71,17 +71,17 @@ def split(*, a):
     return {'b': a, 'c': 2 * a}
 
 
-@pytest.fixture()
+@pytest.fixture
 def a():
     return sc.arange(dim='a', start=0, stop=4)
 
 
-@pytest.fixture()
+@pytest.fixture
 def b():
     return sc.arange(dim='b', start=2, stop=6)
 
 
-@pytest.fixture()
+@pytest.fixture
 def c():
     return sc.arange(dim='c', start=4, stop=8)
 
@@ -364,7 +364,7 @@ def test_rename_dims_param(a):
     assert da.dims == ('a',)
 
 
-@pytest.fixture()
+@pytest.fixture
 def binned_in_a_b():
     events = sc.DataArray(
         data=sc.arange('event', 10, unit='counts'),

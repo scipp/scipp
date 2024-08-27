@@ -119,7 +119,7 @@ ignore = [
     # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
     "COM812", "COM819", "D206", "D300", "E111", "E114", "E117", "ISC001", "ISC002", "Q000", "Q001", "Q002", "Q003", "W191",
 ]
-fixable = ["I001", "B010"]
+fixable = ["B010", "I001", "PT001"]
 isort.known-first-party = ["scipp"]
 pydocstyle.convention = "numpy"
 

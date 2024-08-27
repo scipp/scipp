@@ -235,17 +235,17 @@ def test_identical_raises_TypeError_when_comparing_datagroup_to_Dataset():
         sc.identical(ds, dg)
 
 
-@pytest.fixture()
+@pytest.fixture
 def small():
     return sc.scalar(1.0)
 
 
-@pytest.fixture()
+@pytest.fixture
 def medium():
     return sc.scalar(2.0)
 
 
-@pytest.fixture()
+@pytest.fixture
 def large():
     return sc.scalar(3.0)
 
