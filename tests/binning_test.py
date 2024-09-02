@@ -1203,6 +1203,19 @@ def test_op_on_binned_with_explicit_dim_arg_yields_expected_output_dims(z):
     assert xy.nanhist(z=4, dim=()).dims == ('x', 'y', 'z')
 
 
+@pytest.mark.parametrize('op', [sc.bin, sc.hist, sc.nanhist])
+def test_op_with_explicit_dim_arg_keeps_aux_coord(op) -> None:
+    data = sc.ones(dims=['xyz'], shape=(60,))
+    da = sc.DataArray(data)
+    da.coords['u'] = sc.sin(sc.linspace('xyz', 0.0, 2.0, num=60, unit='rad'))
+    da.coords['v'] = sc.cos(sc.linspace('xyz', 0.0, 2.0, num=60, unit='rad'))
+    da.coords['aux'] = sc.cos(sc.linspace('xyz', 0.0, 2.0, num=60, unit='rad'))
+    da = da.fold(dim='xyz', sizes={'x': 3, 'y': 4, 'z': 5})
+    da.coords['x'] = sc.linspace(dim='x', start=0.0, stop=1.0, num=3)
+    result = op(da, u=2, v=2, dim=('y', 'z'))
+    assert sc.identical(result.coords['x'], da.coords['x'])
+
+
 @pytest.mark.parametrize(
     'z_coord',
     [
