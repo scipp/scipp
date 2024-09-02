@@ -81,16 +81,17 @@ def make_histogrammed(x, *, edges, erase: Sequence[str] = ()):
     if hist_dim in x.dims:
         to_flatten.append(hist_dim)
     if to_flatten:
-        x = _drop_coords_for_hist(x, to_flatten, keep=hist_dim)
+        x = _drop_coords_for_hist(x, to_flatten, keep=(hist_dim,))
         x = _transpose_and_flatten_for_hist(x, to_flatten, to=hist_dim)
     return _cpp.histogram(x, edges)
 
 
-def _drop_coords_for_hist(x, dims: Sequence[str], keep: str) -> DataArray:
-    """Drop unnecessary coords from a DataArray which would make flatten expensive."""
+def _drop_coords_for_hist(x, dims: Sequence[str], keep: Sequence[str]) -> DataArray:
+    """Drop unnecessary coords from a DataArray making flatten/bin expensive."""
+    x = x if x.bins is None else x.bins
     to_drop = []
     for name, coord in x.coords.items():
-        if name != keep and set(coord.dims) & set(dims):
+        if (name not in keep) and (set(coord.dims) & set(dims)):
             to_drop.append(name)
     return x.drop_coords(to_drop)
 
@@ -553,9 +554,14 @@ def hist(x, arg_dict=None, /, *, dim=None, **kwargs):
         # Drop coords that would disappear by histogramming, to avoid costly handling
         # in intermediate binning step.
         if isinstance(x, DataArray):
-            x = _drop_unused_coords(x, edges)
+            x = _drop_coords_for_hist(x, dims=erase, keep=edges)
         elif isinstance(x, Dataset):
-            x = Dataset({k: _drop_unused_coords(v, edges) for k, v in x.items()})
+            x = Dataset(
+                {
+                    k: _drop_coords_for_hist(v, dims=erase, keep=edges)
+                    for k, v in x.items()
+                }
+            )
         edges = list(edges.values())
         # If histogramming by the final edges needs to use a non-event coord then we
         # must not erase that dim, since it removes the coord required for histogramming
@@ -571,18 +577,6 @@ def hist(x, arg_dict=None, /, *, dim=None, **kwargs):
             erase=remaining_erase,
         )
     return out
-
-
-def _drop_unused_coords(x: DataArray, edges: dict[str, Variable]) -> DataArray:
-    da = x if x.bins is None else x.bins
-    op_dims = _get_op_dims(da, *edges.values())
-    drop = list(
-        {coord for coord in da.coords if set(da.coords[coord].dims) & op_dims}
-        - set(edges)
-    )
-    coords = set(da.coords)
-    drop = list(coords - set(edges))
-    return da.drop_coords(drop)
 
 
 def _get_op_dims(x: DataArray, *edges_or_groups: Variable) -> set[str]:
