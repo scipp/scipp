@@ -101,7 +101,7 @@ constexpr auto islinspace =
 constexpr auto isarange =
     overloaded{arg_list<scipp::span<const int64_t>, scipp::span<const int32_t>>,
                transform_flags::expect_no_variance_arg<0>,
-               [](const units::Unit &) { return units::one; },
+               [](const units::Unit &) { return units::none; },
                [](const auto &range) { return numeric::isarange(range); }};
 
 constexpr auto zip =
