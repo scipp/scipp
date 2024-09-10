@@ -89,7 +89,7 @@ jobs:
           path: dist
           merge-multiple: true
           pattern: 'dist*'
-      - uses: pypa/gh-action-pypi-publish@v1.10.0
+      - uses: pypa/gh-action-pypi-publish@v1.10.1
 
   upload_conda:
     name: Deploy Conda Forge
