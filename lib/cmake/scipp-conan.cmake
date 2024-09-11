@@ -49,11 +49,11 @@ endif()
 conan_cmake_configure(
   REQUIRES
   ${CONAN_BENCHMARK}
-  boost/1.79.0
+  boost/1.86.0
   eigen/3.4.0
-  gtest/1.11.0
+  gtest/1.15.0
   LLNL-Units/0.9.1
-  pybind11/2.13.1
+  pybind11/2.13.5
   ${CONAN_ONETBB}
   OPTIONS
   benchmark:shared=False
