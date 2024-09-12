@@ -19,7 +19,7 @@ jobs:
       build: ${{ matrix.build }}
 
   release:
-    name: Make Release on GitHub
+    name: Make Release on GitHub and pypi.anaconda.org
     needs: build_wheels
     runs-on: ubuntu-22.04
     permissions:
@@ -30,6 +30,12 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+      - name: Upload wheel to pypi.anaconda.org/scipp/simple
+        uses: scientific-python/upload-nightly-action@b67d7fcc0396e1128a474d1ab2b48aa94680f9fc # 0.5.0
+        with:
+          artifacts_path: dist
+          anaconda_nightly_upload_organization: scipp
+          anaconda_nightly_upload_token: ${{secrets.ANACONDA_NIGHTLY_WHEEL_TOKEN}}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
