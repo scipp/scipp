@@ -41,6 +41,7 @@ jobs:
           init-shell: >-
             bash
           post-cleanup: 'all'
+          environment-name: upload
       - name: Delete old dev wheels from pypi.anaconda.org
         run: |
           curl --silent "https://api.anaconda.org/package/scipp/scipp" | jq -r '.releases[] | select(.version | contains("dev")) | .full_name' > dev_wheels.txt
@@ -48,6 +49,7 @@ jobs:
             echo "Removing $package_name"
             anaconda --token "${{secrets.ANACONDA_NIGHTLY_WHEEL_TOKEN}}" remove "$package_name"
           done < dev_wheels.txt
+        shell: bash -el {0}
       - name: Upload wheel to pypi.anaconda.org/scipp/simple
         uses: scientific-python/upload-nightly-action@b67d7fcc0396e1128a474d1ab2b48aa94680f9fc # 0.5.0
         with:
