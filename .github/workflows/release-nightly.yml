@@ -5,10 +5,6 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 20 * * *'
-    
-defaults:
-  run:
-    shell: bash -leo pipefail {0}
 
 jobs:
   build_wheels:
@@ -38,11 +34,11 @@ jobs:
         with:
           path: dist
           merge-multiple: true
-      - uses: mamba-org/setup-micromamba@v1
-        with:
-          micromamba-version: '1.5.9-1'
-          create-args: anaconda-client
-          environment-name: upload
+      # - uses: mamba-org/setup-micromamba@v1
+      #   with:
+      #     micromamba-version: '1.5.9-1'
+      #     create-args: anaconda-client
+      #     environment-name: upload
       - name: Delete old dev wheels from pypi.anaconda.org
         run: |
           curl --silent "https://api.anaconda.org/package/scipp/scipp" | jq -r '.releases[] | select(.version | contains("dev")) | .full_name' > dev_wheels.txt
