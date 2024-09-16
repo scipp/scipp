@@ -47,7 +47,7 @@ jobs:
           curl --silent "https://api.anaconda.org/package/scipp/scipp" | jq -r '.releases[] | select(.version | contains("dev")) | .full_name' > dev_wheels.txt
           while read -r package_name; do
             echo "Removing $package_name"
-            anaconda --token "${{secrets.ANACONDA_NIGHTLY_WHEEL_TOKEN}}" remove "$package_name"
+            anaconda --token "${{secrets.ANACONDA_NIGHTLY_WHEEL_TOKEN}}" remove -f "$package_name"
           done < dev_wheels.txt
         shell: bash -el {0}
       - name: Upload wheel to pypi.anaconda.org/scipp/simple
