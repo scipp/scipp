@@ -27,19 +27,27 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
       - uses: actions/download-artifact@v4
         with:
           path: dist
           merge-multiple: true
+      - name: Delete old dev wheels from pypi.anaconda.org
+        run: |
+          python -m pip install anaconda-cli
+          curl --silent "https://api.anaconda.org/package/scipp/scipp" | jq -r '.releases[] | select(.version | contains("dev")) | .full_name' > dev_wheels.txt
+          while read -r package_name; do
+            echo "Removing $package_name"
+            anaconda --token "${{secrets.ANACONDA_NIGHTLY_WHEEL_TOKEN}}" remove "$package_name"
+          done < dev_wheels.txt
       - name: Upload wheel to pypi.anaconda.org/scipp/simple
         uses: scientific-python/upload-nightly-action@b67d7fcc0396e1128a474d1ab2b48aa94680f9fc # 0.5.0
         with:
           artifacts_path: dist
           anaconda_nightly_upload_organization: scipp
           anaconda_nightly_upload_token: ${{secrets.ANACONDA_NIGHTLY_WHEEL_TOKEN}}
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
       - run: python .github/workflows/rename-dev-wheels.py
       - uses: ncipollo/release-action@v1
         with:
