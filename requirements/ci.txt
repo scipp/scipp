@@ -25,14 +25,14 @@ gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
     # via -r ci.in
-idna==3.8
+idna==3.10
     # via requests
 packaging==24.1
     # via
     #   -r ci.in
     #   pyproject-api
     #   tox
-platformdirs==4.3.2
+platformdirs==4.3.3
     # via
     #   tox
     #   virtualenv
@@ -46,7 +46,7 @@ smmap==5.0.1
     # via gitdb
 tox==4.18.1
     # via -r ci.in
-urllib3==2.2.2
+urllib3==2.2.3
     # via requests
 virtualenv==20.26.4
     # via tox

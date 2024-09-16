@@ -26,7 +26,7 @@ graphviz==0.20.3
     # via -r extra.in
 h5py==3.11.0
     # via -r extra.in
-idna==3.8
+idna==3.10
     # via requests
 ipykernel==6.29.5
     # via -r extra.in
@@ -63,7 +63,7 @@ parso==0.8.4
     # via jedi
 pexpect==4.9.0
     # via ipython
-platformdirs==4.3.2
+platformdirs==4.3.3
     # via
     #   jupyter-core
     #   pooch
@@ -113,7 +113,7 @@ traitlets==5.14.3
     #   matplotlib-inline
 tzdata==2024.1
     # via pandas
-urllib3==2.2.2
+urllib3==2.2.3
     # via requests
 wcwidth==0.2.13
     # via prompt-toolkit

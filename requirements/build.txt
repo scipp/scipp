@@ -19,7 +19,7 @@ conan==1.64.1
     # via -r build.in
 fasteners==0.19
     # via conan
-idna==3.8
+idna==3.10
     # via requests
 jinja2==3.1.4
     # via conan
