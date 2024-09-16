@@ -34,9 +34,16 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+      - uses: mamba-org/setup-micromamba@v1
+        with:
+          micromamba-version: '1.5.9-1'
+          create-args: anaconda-client
+          init-shell: >-
+            bash
+          cache-environment: true
+          post-cleanup: 'all'
       - name: Delete old dev wheels from pypi.anaconda.org
         run: |
-          python -m pip install anaconda-cli
           curl --silent "https://api.anaconda.org/package/scipp/scipp" | jq -r '.releases[] | select(.version | contains("dev")) | .full_name' > dev_wheels.txt
           while read -r package_name; do
             echo "Removing $package_name"
