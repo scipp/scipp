@@ -46,6 +46,10 @@ else()
   endif()
 endif()
 
+if(MSVC)
+  add_compile_options(/permissive)
+endif()
+
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE
       "Release"
