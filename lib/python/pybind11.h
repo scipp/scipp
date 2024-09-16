@@ -9,10 +9,14 @@
 // errors/warning. This header provides all pybind11 includes that we are using.
 
 // Warnings are raised by eigen headers with gcc12
+#ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
 #include <pybind11/eigen.h>
+#ifdef __GNUC__
 #pragma GCC diagnostic pop
+#endif
 
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
