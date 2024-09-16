@@ -38,9 +38,6 @@ jobs:
         with:
           micromamba-version: '1.5.9-1'
           create-args: anaconda-client
-          init-shell: >-
-            bash
-          post-cleanup: 'all'
           environment-name: upload
       - name: Delete old dev wheels from pypi.anaconda.org
         run: |
