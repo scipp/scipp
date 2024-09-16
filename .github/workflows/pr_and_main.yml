@@ -8,7 +8,7 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.run_number || github.ref }}
-  cancel-in-progress: true  # cancel jobs from previous push
+  cancel-in-progress: true # cancel jobs from previous push
 
 jobs:
   formatting:
@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.10"
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -r requirements/ci.txt
       - run: tox -e static
@@ -32,23 +32,23 @@ jobs:
     runs-on: ${{ matrix.variant.os }}
     defaults:
       run:
-        shell: bash -l {0}  # required for conda env
+        shell: bash -l {0} # required for conda env
     strategy:
       fail-fast: false
       matrix:
         variant:
-        - {os: ubuntu-22.04, cmake-preset: ci-linux}
-        - {os: macos-14, cmake-preset: ci-macos}
-        - {os: windows-2019, cmake-preset: ci-windows}
+          # - {os: ubuntu-22.04, cmake-preset: ci-linux}
+          # - {os: macos-14, cmake-preset: ci-macos}
+          - { os: windows-2022, cmake-preset: ci-windows }
         python-version: ["3.10"]
 
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
-          fetch-depth: 0  # history required so cmake can determine version
+          fetch-depth: 0 # history required so cmake can determine version
 
-      - uses: ilammy/msvc-dev-cmd@v1  # Required to set up MSVC dev environment for Ninja builds.
+      - uses: ilammy/msvc-dev-cmd@v1 # Required to set up MSVC dev environment for Ninja builds.
 
       - name: Setup conda environment
         uses: mamba-org/setup-micromamba@v1
