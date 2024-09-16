@@ -5,6 +5,10 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 20 * * *'
+    
+defaults:
+  run:
+    shell: bash -leo pipefail {0}
 
 jobs:
   build_wheels:
