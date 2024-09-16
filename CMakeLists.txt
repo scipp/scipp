@@ -47,7 +47,7 @@ else()
 endif()
 
 if(MSVC)
-  add_compile_options(/permissive)
+  add_compile_options("/permissive-" "/ZW")
 endif()
 
 if(NOT CMAKE_BUILD_TYPE)
