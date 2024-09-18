@@ -7,10 +7,14 @@
 #include <array>
 
 // Warnings are raised by boost small_vector with gcc12
+#ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstringop-overread"
+#endif
 #include <boost/container/small_vector.hpp>
+#ifdef __GNUC__
 #pragma GCC diagnostic pop
+#endif
 
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"

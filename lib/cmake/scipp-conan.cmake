@@ -16,10 +16,10 @@ if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake")
   )
   file(
     DOWNLOAD
-    "https://raw.githubusercontent.com/conan-io/cmake-conan/0.17.0/conan.cmake"
+    "https://raw.githubusercontent.com/conan-io/cmake-conan/6e5369d13720f22e07e31bb6b9018dbe60529fea/conan.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake"
     EXPECTED_HASH
-      SHA256=3bef79da16c2e031dc429e1dac87a08b9226418b300ce004cc125a82687baeef
+      SHA256=6abed7382c98a76b447675b30baff6a0b2f5d263041f6eb2fb682b80adaa2555
     TLS_VERIFY ON
   )
 endif()
@@ -49,11 +49,11 @@ endif()
 conan_cmake_configure(
   REQUIRES
   ${CONAN_BENCHMARK}
-  boost/1.79.0
+  boost/1.86.0
   eigen/3.4.0
   gtest/1.11.0
   LLNL-Units/0.9.1
-  pybind11/2.13.1
+  pybind11/2.13.5
   ${CONAN_ONETBB}
   OPTIONS
   benchmark:shared=False

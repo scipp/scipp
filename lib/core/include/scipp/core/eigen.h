@@ -5,10 +5,14 @@
 #pragma once
 
 // Warnings are raised by eigen headers with gcc12
+#ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
 #include <Eigen/Core>
+#ifdef __GNUC__
 #pragma GCC diagnostic pop
+#endif
 
 #include <Eigen/Geometry>
 
