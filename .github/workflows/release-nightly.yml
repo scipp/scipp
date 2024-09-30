@@ -12,8 +12,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-13, macos-14, windows-2019]
-        build: [cp310, cp311, cp312]
+        os: [ubuntu-24.04]
+        build: [cp312]
     uses: ./.github/workflows/wheel.yml
     with:
       os: ${{ matrix.os }}
@@ -22,7 +22,7 @@ jobs:
   release:
     name: Make Release on GitHub and pypi.anaconda.org
     needs: build_wheels
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     defaults:
       run:
         shell: bash -l {0} # required for mamba envs
