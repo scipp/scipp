@@ -38,6 +38,8 @@ jobs:
           path: dist
           merge-multiple: true
       - uses: prefix-dev/setup-pixi@v0.8.1
+        with:
+          run-install: false
       - name: Delete old dev wheels from pypi.anaconda.org
         run: |
           curl --silent "https://api.anaconda.org/package/scipp/scipp" | jq -r '.releases[] | select(.version | contains("dev")) | .full_name' > dev_wheels.txt
