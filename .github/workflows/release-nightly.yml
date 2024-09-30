@@ -37,12 +37,13 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+      - uses: prefix-dev/setup-pixi@v0.8.1
       - name: Delete old dev wheels from pypi.anaconda.org
         run: |
           curl --silent "https://api.anaconda.org/package/scipp/scipp" | jq -r '.releases[] | select(.version | contains("dev")) | .full_name' > dev_wheels.txt
           while read -r package_name; do
             echo "Removing $package_name"
-            anaconda --token "${{secrets.ANACONDA_NIGHTLY_WHEEL_TOKEN}}" remove -f "$package_name"
+            pixi exec -s anaconda-client anaconda --token "${{secrets.ANACONDA_NIGHTLY_WHEEL_TOKEN}}" remove -f "$package_name"
           done < dev_wheels.txt
       - name: Upload wheel to pypi.anaconda.org/scipp/simple
         uses: scientific-python/upload-nightly-action@ccf29c805b5d0c1dc31fa97fcdb962be074cade3 # 0.6.0
