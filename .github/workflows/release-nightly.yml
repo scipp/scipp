@@ -39,13 +39,13 @@ jobs:
           merge-multiple: true
       - name: List old dev wheels from pypi.anaconda.org
         run: |
-          curl --silent "https://api.anaconda.org/package/scipp/scipp" | jq -r '.releases[] | select(.version | contains("dev")) | .full_name' > dev_wheels.txt
+          curl --silent "https://api.anaconda.org/package/scipp-nightly-wheels/scipp" | jq -r '.releases[] | select(.version | contains("dev")) | .full_name' > dev_wheels.txt
           cat dev_wheels.txt
-      - name: Upload wheel to pypi.anaconda.org/scipp/simple
+      - name: Upload wheel to pypi.anaconda.org/scipp-nightly-wheels/simple
         uses: scientific-python/upload-nightly-action@ccf29c805b5d0c1dc31fa97fcdb962be074cade3 # 0.6.0
         with:
           artifacts_path: dist
-          anaconda_nightly_upload_organization: scipp
+          anaconda_nightly_upload_organization: scipp-nightly-wheels
           anaconda_nightly_upload_token: ${{secrets.ANACONDA_NIGHTLY_WHEEL_TOKEN}}
       - name: Delete old dev wheels from pypi.anaconda.org
         run: |
