@@ -51,7 +51,7 @@ jobs:
         run: |
           while read -r package_name; do
             echo "Removing $package_name"
-            pixi run anaconda --token "${{secrets.ANACONDA_NIGHTLY_WHEEL_TOKEN}}" remove -f "$package_name"
+            pixi exec -s anaconda-client=1.12.3 anaconda --token "${{secrets.ANACONDA_NIGHTLY_WHEEL_TOKEN}}" remove -f "$package_name"
           done < dev_wheels.txt
       - run: python .github/workflows/rename-dev-wheels.py
       - uses: ncipollo/release-action@v1
