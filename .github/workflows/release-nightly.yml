@@ -42,7 +42,7 @@ jobs:
           curl --silent "https://api.anaconda.org/package/scipp-nightly-wheels/scipp" | jq -r '.releases[] | select(.version | contains("dev")) | .full_name' > dev_wheels.txt
           cat dev_wheels.txt
       - name: Upload wheel to pypi.anaconda.org/scipp-nightly-wheels/simple
-        uses: scientific-python/upload-nightly-action@3fcd15dcbd3e25176438080493f97592a9c84e0b
+        uses: scientific-python/upload-nightly-action@82396a2ed4269ba06c6b2988bb4fd568ef3c3d6b # 0.6.1
         with:
           artifacts_path: dist
           anaconda_nightly_upload_organization: scipp-nightly-wheels
