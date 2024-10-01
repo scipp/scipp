@@ -1,7 +1,6 @@
 name: Nightly Release
 
 on:
-  pull_request:
   workflow_dispatch:
   schedule:
     - cron: '0 20 * * *'
@@ -23,9 +22,6 @@ jobs:
     name: Make Release on GitHub and pypi.anaconda.org
     needs: build_wheels
     runs-on: ubuntu-24.04
-    defaults:
-      run:
-        shell: bash -l {0} # required for mamba envs
     permissions:
       contents: write
     steps:
