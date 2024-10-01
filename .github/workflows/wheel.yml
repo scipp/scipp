@@ -23,7 +23,7 @@ jobs:
         submodules: true
         fetch-depth: 0  # history required so cmake can determine version
 
-    - uses: pypa/cibuildwheel@v2.20.0
+    - uses: pypa/cibuildwheel@v2.21.1
       env:
         CIBW_BUILD: ${{ inputs.build }}-*
         MACOSX_DEPLOYMENT_TARGET: "11.0"
