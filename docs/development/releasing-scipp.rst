@@ -56,3 +56,26 @@ When a token expires, a new one has to be created and added to the Github `Scipp
 - Name it ``ANACONDATOKEN`` and paste the token hash in the ``Value`` field
 - Select the repositories that should have access to the token: namely ``scipp``, ``scippneutron``, ``scippnexus``, ``ess``, ``plopp``
 - Click ``Add secret``
+
+Nightly releases
+----------------
+
+We also maintain nightly releases which are uploaded to a custom PyPI index `custom PyPI index <https://pypi.anaconda.org/scipp-nightly-wheels/simple/>`_
+To consume these packages, users need to set ``index-url`` in their ``pip`` configuration.
+
+.. code-block:: bash
+
+    python -m pip install \
+      --pre \
+      --index-url https://pypi.anaconda.org/scipp-nightly-wheels/simple/ \
+      --extra-index-url https://pypi.org/simple \
+      scipp
+
+The order of the index urls matter and if you are using ``uv`` users need to set the ``extra-index-url`` in the configuration.
+
+.. code-block:: bash
+
+    python -m uv pip install \
+    --pre \
+    --extra-index-url https://pypi.anaconda.org/scipp-nightly-wheels/simple/ \
+    scipp
