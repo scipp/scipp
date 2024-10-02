@@ -60,7 +60,7 @@ When a token expires, a new one has to be created and added to the Github `Scipp
 Nightly releases
 ----------------
 
-We also maintain nightly releases which are uploaded to a custom PyPI index `custom PyPI index <https://pypi.anaconda.org/scipp-nightly-wheels/simple/>`_
+We also maintain nightly releases which are uploaded to a `custom PyPI index <https://pypi.anaconda.org/scipp-nightly-wheels/simple/>`_.
 To consume these packages, users need to set ``index-url`` in their ``pip`` configuration.
 
 .. code-block:: bash
