@@ -26,13 +26,13 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
       - uses: actions/download-artifact@v4
         with:
           path: dist
           merge-multiple: true
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
       - run: python .github/workflows/rename-dev-wheels.py
       - uses: ncipollo/release-action@v1
         with:
@@ -43,3 +43,30 @@ jobs:
           prerelease: true
           removeArtifacts: true
           tag: 'nightly'
+
+  release_pypi:
+    name: Make Release on pypi.anaconda.org
+    needs: build_wheels
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: List old dev wheels from pypi.anaconda.org
+        run: |
+          curl --silent "https://api.anaconda.org/package/scipp-nightly-wheels/scipp" | jq -r '.releases[] | select(.version | contains("dev")) | .full_name' > dev_wheels.txt
+          cat dev_wheels.txt
+      - name: Upload wheel to pypi.anaconda.org/scipp-nightly-wheels/simple
+        uses: scientific-python/upload-nightly-action@82396a2ed4269ba06c6b2988bb4fd568ef3c3d6b # 0.6.1
+        with:
+          artifacts_path: dist
+          anaconda_nightly_upload_organization: scipp-nightly-wheels
+          anaconda_nightly_upload_token: ${{secrets.ANACONDA_NIGHTLY_WHEEL_TOKEN}}
+      - name: Delete old dev wheels from pypi.anaconda.org
+        # We use pixi exec to reuse the pixi already installed by the upload nightly action
+        run: |
+          while read -r package_name; do
+            echo "Removing $package_name"
+            pixi exec -s anaconda-client=1.12.3 anaconda --token "${{secrets.ANACONDA_NIGHTLY_WHEEL_TOKEN}}" remove -f "$package_name"
+          done < dev_wheels.txt
