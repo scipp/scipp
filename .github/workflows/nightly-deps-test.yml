@@ -30,7 +30,7 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1  # Required to set up MSVC dev environment for Ninja builds.
 
       - name: Setup conda environment
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@v2
         with:
           micromamba-version: 1.5.6-0
           environment-file: .buildconfig/${{ matrix.variant.cmake-preset }}.yml
