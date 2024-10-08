@@ -63,10 +63,10 @@ jobs:
           artifacts_path: dist
           anaconda_nightly_upload_organization: scipp-nightly-wheels
           anaconda_nightly_upload_token: ${{secrets.ANACONDA_NIGHTLY_WHEEL_TOKEN}}
-      - name: Delete old dev wheels from pypi.anaconda.org
-        # We use pixi exec to reuse the pixi already installed by the upload nightly action
-        run: |
-          while read -r package_name; do
-            echo "Removing $package_name"
-            pixi exec -s anaconda-client=1.12.3 anaconda --token "${{secrets.ANACONDA_NIGHTLY_WHEEL_TOKEN}}" remove -f "$package_name"
-          done < dev_wheels.txt
+      # - name: Delete old dev wheels from pypi.anaconda.org
+      #   # We use pixi exec to reuse the pixi already installed by the upload nightly action
+      #   run: |
+      #     while read -r package_name; do
+      #       echo "Removing $package_name"
+      #       pixi exec -s anaconda-client=1.12.3 anaconda --token "${{secrets.ANACONDA_NIGHTLY_WHEEL_TOKEN}}" remove -f "$package_name"
+      #     done < dev_wheels.txt
