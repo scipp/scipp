@@ -63,6 +63,11 @@ jobs:
           artifacts_path: dist
           anaconda_nightly_upload_organization: scipp-nightly-wheels
           anaconda_nightly_upload_token: ${{secrets.ANACONDA_NIGHTLY_WHEEL_TOKEN}}
+      # The current implementation in this workflow has a bug, commenting out the delete step
+      # so we don't mistakenly delete the current nightly release. This will be fixed once we
+      # can start using the delete wheel action from scientific-python/upload-nightly-action
+      # upstream. It's okay to keep uploading wheels to pypi.anaconda.org/scipp-nightly-wheels
+      # for now, we can clean it up once the new action is released.
       # - name: Delete old dev wheels from pypi.anaconda.org
       #   # We use pixi exec to reuse the pixi already installed by the upload nightly action
       #   run: |
