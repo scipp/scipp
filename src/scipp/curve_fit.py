@@ -14,9 +14,9 @@ from .core import (
     DimensionError,
     Variable,
     array,
-    irreducible_mask,
     scalar,
     stddevs,
+    zeros,
 )
 
 
@@ -220,9 +220,11 @@ def _curve_fit(
             )
 
     fda = da.flatten(to='row')
-    mask = irreducible_mask(fda.masks, 'row')
-    if mask is not None:
-        fda = fda[~mask]
+    if len(fda.masks) > 0:
+        _mask = zeros(dims=fda.dims, shape=fda.shape, dtype='bool')
+        for mask in fda.masks.values():
+            _mask |= mask
+        fda = fda[~_mask]
 
     if not unsafe_numpy_f:
         # Making the coords into a dict improves runtime,
@@ -523,19 +525,8 @@ def curve_fit(
         if d not in reduce_dims and not any(d in c.dims for c in coords.values())
     )
 
-    dims_participating_in_fit = set(da.dims) - set(map_over)
-
-    # Create a dataarray with only the participating coords and masks
-    # and coordinate names matching the argument names of f.
-    _da = DataArray(
-        da.data,
-        coords=coords,
-        masks={
-            m: da.masks[m]
-            for m in da.masks
-            if dims_participating_in_fit.intersection(da.masks[m].dims)
-        },
-    )
+    # Create a dataarray with only the participating coords
+    _da = DataArray(da.data, coords=coords, masks=da.masks)
 
     out = _prepare_numpy_outputs(da, p0, map_over)
 
