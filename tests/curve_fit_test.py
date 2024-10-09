@@ -586,6 +586,23 @@ def test_param_values_set_to_nan_if_too_few_to_fit():
     assert not sc.isnan(cov['a']['b'].data).any()
 
 
+def test_param_values_set_to_nan_masked():
+    da = array2d(a=1.2, b=1.3, noise_scale=0.01)
+
+    # Mask everything
+    da.masks['mask'] = da.coords['t'] > float('-inf')
+
+    res, cov = curve_fit(['x'], func, da)
+    assert sc.isnan(res['a'].data).all()
+    assert sc.isnan(cov['a']['b'].data).all()
+
+    # Unmask two entries
+    da.masks['mask'][:2] = sc.scalar(False)
+    res, cov = curve_fit(['x'], func, da)
+    assert sc.isnan(res['a'].data).any()
+    assert not sc.isnan(res['a'].data).all()
+
+
 def test_array_valued_initial_guess():
     expected = sc.linspace('xx', 1, 2, 20)
     da = array2d(a=expected, b=1.3, noise_scale=0.001)
