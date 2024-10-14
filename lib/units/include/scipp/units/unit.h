@@ -9,7 +9,7 @@
 #include <optional>
 #include <string>
 
-#include <units/unit_definitions.hpp>
+#include <llnl-units/unit_definitions.hpp>
 
 #include "scipp-units_export.h"
 

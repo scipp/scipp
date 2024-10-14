@@ -40,7 +40,14 @@ add_executable(
   transform_common_test.cpp
 )
 target_link_libraries(
-  ${TARGET_NAME} LINK_PRIVATE scipp-core scipp_test_helpers GTest::GTest
+  ${TARGET_NAME}
+  LINK_PRIVATE
+  scipp-core
+  scipp_test_helpers
+  GTest::gtest
+  GTest::gtest_main
+  GTest::gmock
+  GTest::gmock_main
 )
 
 if(WIN32)

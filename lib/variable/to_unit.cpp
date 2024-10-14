@@ -3,7 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include <cmath>
-#include <units/units.hpp>
+#include <llnl-units/units.hpp>
 
 #include "scipp/core/element/to_unit.h"
 #include "scipp/core/time_point.h"

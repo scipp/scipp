@@ -50,7 +50,14 @@ add_executable(
   variable_test.cpp
 )
 target_link_libraries(
-  ${TARGET_NAME} LINK_PRIVATE scipp-variable scipp_test_helpers GTest::GTest
+  ${TARGET_NAME}
+  LINK_PRIVATE
+  scipp-variable
+  scipp_test_helpers
+  GTest::gtest
+  GTest::gtest_main
+  GTest::gmock
+  GTest::gmock_main
 )
 
 if(WIN32)

@@ -96,3 +96,52 @@ jobs:
         with:
           name: DocumentationHTML
           path: html/
+
+
+  build_test_vcpkg:
+    needs: formatting
+    name: build and test ${{ matrix.variant.os }}, py${{ matrix.python-version }}
+    runs-on: ${{ matrix.variant.os }}
+    defaults:
+      run:
+        shell: bash -l {0} # required for conda env
+    strategy:
+      fail-fast: false
+      matrix:
+        variant:
+        - {os: ubuntu-22.04, cmake-preset: ci-linux}
+        python-version: ["3.10"]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0 # history required so cmake can determine version
+
+      - uses: ilammy/msvc-dev-cmd@v1 # Required to set up MSVC dev environment for Ninja builds.
+
+      - name: Setup conda environment
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          micromamba-version: 1.5.6-0
+          environment-file: .buildconfig/vcpkg.yml
+          cache-environment: true
+          create-args: python=${{ matrix.python-version }}
+
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2.14
+        with:
+          key: ${{ matrix.variant.os }}
+
+      - run: cmake --preset vcpkg
+      - run: cmake --build --preset build
+      - run: ctest --preset test
+
+      - run: tox -e import-minimal
+      - run: tox -e test
+
+      - run: tox -e mypy
+        if: ${{ contains(matrix.variant.os, 'ubuntu') }}
+
+      - run: tox -e docs
+        if: ${{ contains(matrix.variant.os, 'ubuntu') }}

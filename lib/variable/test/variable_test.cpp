@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 #include <vector>
 
-#include <units/units.hpp>
+#include <llnl-units/units.hpp>
 
 #include "test_macros.h"
 

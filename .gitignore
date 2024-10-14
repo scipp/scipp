@@ -25,6 +25,7 @@ CMakeSettings.json
 src/scipp.egg-info
 .tox
 conda/package
+vcpkg_installed/
 
 ### VisualStudioCode ###
 .vscode/*
