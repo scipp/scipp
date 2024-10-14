@@ -100,8 +100,8 @@ TEST(ElementHistogramTest, nan_values_are_dropped_linspace_bins) {
 
 TEST(ElementHistogramTest, infinite_values_are_dropped) {
   std::vector<double> edges{0, 4, 6};
-  std::vector<double> events{std::numeric_limits<double>::infinity(), 2, 3, 4,
-                             std::numeric_limits<double>::infinity(), 6, 7};
+  std::vector<double> events{std::numeric_limits<double>::infinity(),  2, 3, 4,
+                             -std::numeric_limits<double>::infinity(), 6, 7};
   std::vector<double> weight_vals{10, 20, 30, 40, 50, 60, 70};
   std::vector<double> weight_vars{100, 200, 300, 400, 500, 600, 700};
   std::vector<double> result_vals{0, 0};
@@ -117,8 +117,8 @@ TEST(ElementHistogramTest, infinite_values_are_dropped) {
 
 TEST(ElementHistogramTest, infinite_values_are_dropped_linspace_bins) {
   std::vector<double> edges{0, 2, 4, 6};
-  std::vector<double> events{std::numeric_limits<double>::infinity(), 2, 3, 4,
-                             std::numeric_limits<double>::infinity(), 6, 7};
+  std::vector<double> events{std::numeric_limits<double>::infinity(),  2, 3, 4,
+                             -std::numeric_limits<double>::infinity(), 6, 7};
   std::vector<double> weight_vals{10, 20, 30, 40, 50, 60, 70};
   std::vector<double> weight_vars{100, 200, 300, 400, 500, 600, 700};
   std::vector<double> result_vals{0, 0, 0};
