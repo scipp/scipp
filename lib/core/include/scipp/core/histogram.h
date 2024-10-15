@@ -33,9 +33,9 @@ Index get_bin(const T &x, const Edges &edges, const Params &params) {
   // integer overflow when converting the "bin" computation result to `Index`.
   if (x < edges.front() || x >= edges.back())
     return -1;
-  // If x is not finite we also return early as it cannot be in any bin.
+  // If x is NaN we also return early as it cannot be in any bin.
   if constexpr (!std::is_same_v<T, time_point>)
-    if (!std::isfinite(x))
+    if (std::isnan(x))
       return -1;
   const auto [offset, nbin, scale] = params;
   Index bin = (x - offset) * scale;
