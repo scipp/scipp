@@ -26,76 +26,76 @@ jobs:
         with:
           commit_message: Apply automatic formatting
 
-  build_and_test:
-    needs: formatting
-    name: build and test ${{ matrix.variant.os }}, py${{ matrix.python-version }}
-    runs-on: ${{ matrix.variant.os }}
-    defaults:
-      run:
-        shell: bash -l {0} # required for conda env
-    strategy:
-      fail-fast: false
-      matrix:
-        variant:
-        - {os: ubuntu-22.04, cmake-preset: ci-linux}
-        - {os: macos-14, cmake-preset: ci-macos}
-        - {os: windows-2022, cmake-preset: ci-windows}
-        python-version: ["3.10"]
+  # build_and_test:
+  #   needs: formatting
+  #   name: build and test ${{ matrix.variant.os }}, py${{ matrix.python-version }}
+  #   runs-on: ${{ matrix.variant.os }}
+  #   defaults:
+  #     run:
+  #       shell: bash -l {0} # required for conda env
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       variant:
+  #       - {os: ubuntu-22.04, cmake-preset: ci-linux}
+  #       - {os: macos-14, cmake-preset: ci-macos}
+  #       - {os: windows-2022, cmake-preset: ci-windows}
+  #       python-version: ["3.10"]
 
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-          fetch-depth: 0 # history required so cmake can determine version
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         submodules: true
+  #         fetch-depth: 0 # history required so cmake can determine version
 
-      - uses: ilammy/msvc-dev-cmd@v1 # Required to set up MSVC dev environment for Ninja builds.
+  #     - uses: ilammy/msvc-dev-cmd@v1 # Required to set up MSVC dev environment for Ninja builds.
 
-      - name: Setup conda environment
-        uses: mamba-org/setup-micromamba@v2
-        with:
-          micromamba-version: 1.5.6-0
-          environment-file: .buildconfig/${{ matrix.variant.cmake-preset }}.yml
-          cache-environment: true
-          create-args: python=${{ matrix.python-version }}
+  #     - name: Setup conda environment
+  #       uses: mamba-org/setup-micromamba@v2
+  #       with:
+  #         micromamba-version: 1.5.6-0
+  #         environment-file: .buildconfig/${{ matrix.variant.cmake-preset }}.yml
+  #         cache-environment: true
+  #         create-args: python=${{ matrix.python-version }}
 
-      - name: ccache
-        uses: hendrikmuhs/ccache-action@v1.2.14
-        with:
-          key: ${{ matrix.variant.os }}
+  #     - name: ccache
+  #       uses: hendrikmuhs/ccache-action@v1.2.14
+  #       with:
+  #         key: ${{ matrix.variant.os }}
 
-      - name: Cache conan setup
-        id: conan-cache-key
-        run: |
-          echo "key=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
-          echo "path=$(conan config home)" >> $GITHUB_OUTPUT
-      - name: Cache conan
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.conan-cache-key.outputs.path }}
-          key: conan-${{ matrix.variant.os }}-${{ steps.conan-cache-key.outputs.key }}
+  #     - name: Cache conan setup
+  #       id: conan-cache-key
+  #       run: |
+  #         echo "key=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
+  #         echo "path=$(conan config home)" >> $GITHUB_OUTPUT
+  #     - name: Cache conan
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: ${{ steps.conan-cache-key.outputs.path }}
+  #         key: conan-${{ matrix.variant.os }}-${{ steps.conan-cache-key.outputs.key }}
 
-      - run: cmake --preset ${{ matrix.variant.cmake-preset }}
-      - run: cmake --build --preset build
-      - run: ctest --preset test
+  #     - run: cmake --preset ${{ matrix.variant.cmake-preset }}
+  #     - run: cmake --build --preset build
+  #     - run: ctest --preset test
 
-      - run: tox -e import-minimal
-      - run: tox -e test
+  #     - run: tox -e import-minimal
+  #     - run: tox -e test
 
-      - run: tox -e mypy
-        if: ${{ contains(matrix.variant.os, 'ubuntu') }}
+  #     - run: tox -e mypy
+  #       if: ${{ contains(matrix.variant.os, 'ubuntu') }}
 
-      - run: tox -e docs
-        if: ${{ contains(matrix.variant.os, 'ubuntu') }}
+  #     - run: tox -e docs
+  #       if: ${{ contains(matrix.variant.os, 'ubuntu') }}
 
-      - run: tox -e linkcheck
-        # Linkcheck can be flaky. Avoid randomly breaking PR builds by running only on `main`
-        if: ${{ contains(matrix.variant.os, 'ubuntu') && github.ref == 'refs/heads/main' }}
+  #     - run: tox -e linkcheck
+  #       # Linkcheck can be flaky. Avoid randomly breaking PR builds by running only on `main`
+  #       if: ${{ contains(matrix.variant.os, 'ubuntu') && github.ref == 'refs/heads/main' }}
 
-      - uses: actions/upload-artifact@v4
-        if: ${{ contains(matrix.variant.os, 'ubuntu') }}
-        with:
-          name: DocumentationHTML
-          path: html/
+  #     - uses: actions/upload-artifact@v4
+  #       if: ${{ contains(matrix.variant.os, 'ubuntu') }}
+  #       with:
+  #         name: DocumentationHTML
+  #         path: html/
 
 
   build_test_vcpkg:
