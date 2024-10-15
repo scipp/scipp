@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
+
+name: ubuntu-latest
+channels:
+  - conda-forge
+dependencies:
+  - cmake=3.30.3
+  - cppcheck=2.6.2
+  - graphviz=12.0.0
+  - gxx_linux-64=12.2.*
+  - ninja=1.12.1
+  - pandoc=3.4
+  - scipp::plopp=24.09.0
+  - tox=4.18.1

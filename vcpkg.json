@@ -1,0 +1,21 @@
+{
+  "dependencies": [
+    "boost",
+    "eigen3",
+    "gtest",
+    "pybind11",
+    "tbb",
+    "benchmark",
+    "llnl-units"
+  ],
+  "overrides": [
+    {
+        "name": "gtest",
+        "version": "1.11.0"
+    },
+    {
+        "name": "benchmark",
+        "version": "1.6.1"
+    }
+  ]
+}

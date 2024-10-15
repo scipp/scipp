@@ -6,8 +6,8 @@
 #include <regex>
 #include <stdexcept>
 
-#include <units/units.hpp>
-#include <units/units_util.hpp>
+#include <llnl-units/units.hpp>
+#include <llnl-units/units_util.hpp>
 
 #include "scipp/units/except.h"
 #include "scipp/units/unit.h"

@@ -108,6 +108,14 @@
       "cacheVariables": {
         "COVERAGE": "ON"
       }
+    },
+    {
+      "name": "vcpkg",
+      "inherits": "ci-macos",
+      "cacheVariables": {
+        "VCPKG_INSTALLED_DIR": "${sourceDir}/vcpkg_installed",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      }
     }
   ],
   "buildPresets": [
