@@ -29,7 +29,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-22.04]
-        build: [cp310, cp312]
+        build: [cp310, cp313]
     uses: ./.github/workflows/wheel.yml
     with:
       os: ${{ matrix.os }}
