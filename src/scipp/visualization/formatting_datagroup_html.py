@@ -2,7 +2,7 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from string import Template
 from typing import Any
 
@@ -83,9 +83,15 @@ def _summarize_atomic_variable(var: Any, name: str, depth: int = 0) -> str:
     preview = ''
     parent_obj_str = ''
     objtype_str = type(var).__name__
-    if isinstance(var, Dataset | DataArray | Variable):
-        parent_obj_str = "scipp"
-        shape_repr = _format_shape(var)
+    if hasattr(var, '__module__'):
+        parent_obj_str = var.__module__.partition('.')[0]
+    if hasattr(var, 'sizes') and isinstance(var.sizes, Mapping):
+        try:
+            shape_repr = _format_shape(var)
+        except Exception:  # noqa: S110
+            # We don't want the rendering to fail because some
+            # object did not behave the way we expected here
+            pass
     if isinstance(var, DataArray | Variable):
         preview = inline_variable_repr(var)
         dtype_str = str(var.dtype)

@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
-
 import numpy as np
 import pytest
 
@@ -408,3 +407,31 @@ def test_to_xarray_dataset():
     assert all(x in xr_ds for x in ["a", "b"])
     assert all(xr_ds[x].dims == sc_ds[x].dims for x in ["a", "b"])
     assert all(xr_ds[x].shape == sc_ds[x].shape for x in ["a", "b"])
+
+
+def test_repr_html_includes_module_name_dataarray():
+    html = sc.DataGroup(
+        a=xr.DataArray(dims=['z'], data=[1.0, 2.0, 3.0, 4.0])
+    )._repr_html_()
+    assert 'xarray</span></div>' in html
+
+
+def test_repr_html_has_size_dataarray():
+    html = sc.DataGroup(
+        a=xr.DataArray(dims=['z'], data=[1.0, 2.0, 3.0, 4.0])
+    )._repr_html_()
+    assert '<div class=\'dg-detail-shape\'>(z: 4)</div>' in html
+
+
+def test_repr_html_includes_module_name_dataset():
+    html = sc.DataGroup(
+        a=xr.Dataset({'a': xr.DataArray(dims=['z'], data=[1.0, 2.0, 3.0, 4.0])})
+    )._repr_html_()
+    assert 'xarray</span></div>' in html
+
+
+def test_repr_html_has_size_dataset():
+    html = sc.DataGroup(
+        a=xr.Dataset({'a': xr.DataArray(dims=['z'], data=[1.0, 2.0, 3.0, 4.0])})
+    )._repr_html_()
+    assert '<div class=\'dg-detail-shape\'>(z: 4)</div>' in html
