@@ -16,3 +16,9 @@ dependencies:
   - tbb=2021.12.0
   - tbb-devel=2021.12.0
   - tox=4.18.1
+  - benchmark=1.8.5
+  - gtest=1.15.2
+  - gmock=1.15.2
+  - libboost-headers=1.86.0
+  - eigen=3.4.1
+  - pybind11=2.13.6
