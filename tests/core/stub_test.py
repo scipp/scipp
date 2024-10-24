@@ -19,7 +19,11 @@ def _name_participates(name: str) -> bool:
     #   that don't need to be listed in the stub.
     # - They are usually (never) called directly on a concrete class.
     #   So a type checker is of limited use and we can live with discrepancies.
-    return not name.startswith('__') and not name.endswith('__')
+    return (
+        not name.startswith('__')
+        and not name.endswith('__')
+        and name != '_pybind11_conduit_v1_'
+    )
 
 
 @pytest.fixture(scope='module')
