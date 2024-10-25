@@ -53,8 +53,7 @@ add_executable(
   to_unit_test.cpp
 )
 target_link_libraries(
-  ${TARGET_NAME} LINK_PRIVATE scipp-dataset scipp_test_helpers
-  GTest::gtest
+  ${TARGET_NAME} LINK_PRIVATE scipp-dataset scipp_test_helpers GTest::gtest
 )
 
 if(WIN32)
