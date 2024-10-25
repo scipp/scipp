@@ -819,3 +819,75 @@ TEST(BinTest, bin_by_noncontiguous_int_group) {
 
   EXPECT_EQ(bin(table, {}, {non_cont_group}), bin(table, {}, {cont_group}));
 }
+
+TEST(BinTest, nan_values_are_dropped) {
+  const auto table = make_table(10);
+  const auto x_edges = makeVariable<double>(Dims{Dim::X}, Shape{5},
+                                            Values{-2.1, -1.0, 0.0, 1.0, 2.0});
+
+  const scipp::core::Slice slice(Dim::Row, 1, 9, 1);
+  const auto expected = bins_sum(bin(table.slice(slice), {x_edges}));
+
+  // Add nan values at start and end of table
+  auto table_nan = table;
+  table_nan.coords()[Dim::X].values<double>()[0] =
+      std::numeric_limits<double>::quiet_NaN();
+  table_nan.coords()[Dim::X].values<double>()[9] =
+      std::numeric_limits<double>::quiet_NaN();
+
+  EXPECT_EQ(bins_sum(bin(table_nan, {x_edges})), expected);
+}
+
+TEST(BinTest, nan_values_are_dropped_linspace_bins) {
+  const auto table = make_table(10);
+  const auto x_edges = makeVariable<double>(Dims{Dim::X}, Shape{5},
+                                            Values{-2.0, -1.0, 0.0, 1.0, 2.0});
+
+  const scipp::core::Slice slice(Dim::Row, 1, 9, 1);
+  const auto expected = bins_sum(bin(table.slice(slice), {x_edges}));
+
+  // Add nan values at start and end of table
+  auto table_nan = table;
+  table_nan.coords()[Dim::X].values<double>()[0] =
+      std::numeric_limits<double>::quiet_NaN();
+  table_nan.coords()[Dim::X].values<double>()[9] =
+      std::numeric_limits<double>::quiet_NaN();
+
+  EXPECT_EQ(bins_sum(bin(table_nan, {x_edges})), expected);
+}
+
+TEST(BinTest, infinite_values_are_dropped) {
+  const auto table = make_table(10);
+  const auto x_edges = makeVariable<double>(Dims{Dim::X}, Shape{5},
+                                            Values{-2.1, -1.0, 0.0, 1.0, 2.0});
+
+  const scipp::core::Slice slice(Dim::Row, 2, 10, 1);
+  const auto expected = bins_sum(bin(table.slice(slice), {x_edges}));
+
+  // Add infinite values at start of the table
+  auto table_inf = table;
+  table_inf.coords()[Dim::X].values<double>()[0] =
+      std::numeric_limits<double>::infinity();
+  table_inf.coords()[Dim::X].values<double>()[1] =
+      -std::numeric_limits<double>::infinity();
+
+  EXPECT_EQ(bins_sum(bin(table_inf, {x_edges})), expected);
+}
+
+TEST(BinTest, infinite_values_are_dropped_linspace_bins) {
+  const auto table = make_table(10);
+  const auto x_edges = makeVariable<double>(Dims{Dim::X}, Shape{5},
+                                            Values{-2.0, -1.0, 0.0, 1.0, 2.0});
+
+  const scipp::core::Slice slice(Dim::Row, 2, 10, 1);
+  const auto expected = bins_sum(bin(table.slice(slice), {x_edges}));
+
+  // Add infinite values at start of the table
+  auto table_inf = table;
+  table_inf.coords()[Dim::X].values<double>()[0] =
+      std::numeric_limits<double>::infinity();
+  table_inf.coords()[Dim::X].values<double>()[1] =
+      -std::numeric_limits<double>::infinity();
+
+  EXPECT_EQ(bins_sum(bin(table_inf, {x_edges})), expected);
+}
