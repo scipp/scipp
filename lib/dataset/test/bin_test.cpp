@@ -820,7 +820,7 @@ TEST(BinTest, bin_by_noncontiguous_int_group) {
   EXPECT_EQ(bin(table, {}, {non_cont_group}), bin(table, {}, {cont_group}));
 }
 
-TEST(BinTest, nan_values_are_dropped) {
+TEST(BinTest, points_with_nan_coord_values_are_dropped) {
   auto table = make_table(10);
   table.coords()[Dim::X].values<double>()[0] =
       std::numeric_limits<double>::quiet_NaN();
@@ -835,7 +835,7 @@ TEST(BinTest, nan_values_are_dropped) {
   EXPECT_EQ(bins_sum(bin(table, {x_edges})), expected);
 }
 
-TEST(BinTest, nan_values_are_dropped_linspace_bins) {
+TEST(BinTest, points_with_nan_coord_values_are_dropped_linspace_bins) {
   auto table = make_table(10);
   table.coords()[Dim::X].values<double>()[0] =
       std::numeric_limits<double>::quiet_NaN();
@@ -850,7 +850,7 @@ TEST(BinTest, nan_values_are_dropped_linspace_bins) {
   EXPECT_EQ(bins_sum(bin(table, {x_edges})), expected);
 }
 
-TEST(BinTest, infinite_values_are_dropped) {
+TEST(BinTest, points_with_inf_coord_values_are_dropped) {
   auto table = make_table(10);
   table.coords()[Dim::X].values<double>()[0] =
       std::numeric_limits<double>::infinity();
@@ -865,7 +865,7 @@ TEST(BinTest, infinite_values_are_dropped) {
   EXPECT_EQ(bins_sum(bin(table, {x_edges})), expected);
 }
 
-TEST(BinTest, infinite_values_are_dropped_linspace_bins) {
+TEST(BinTest, points_with_inf_coord_values_are_dropped_linspace_bins) {
   auto table = make_table(10);
   table.coords()[Dim::X].values<double>()[0] =
       std::numeric_limits<double>::infinity();
