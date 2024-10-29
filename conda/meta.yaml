@@ -33,6 +33,13 @@ requirements:
     - git
     - ninja
     - python
+    - benchmark=1.6.1
+    - gtest=1.15.2
+    - gmock=1.15.2
+    - libboost-headers=1.86.0
+    - eigen=3.4.0
+    - pybind11=2.13.6
+
   host:
     - python
     - tbb-devel {{ tbb_devel }}
