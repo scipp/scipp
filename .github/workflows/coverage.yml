@@ -4,6 +4,7 @@ on:
   schedule:
     - cron: '0 0 * * 0'
   workflow_dispatch:
+  pull_request:
 
 defaults:
   run:
@@ -59,11 +60,11 @@ jobs:
       - name: Setup HTML
         run: mv tools/scipp-coverage-index.html coverage_html/index.html
 
-      - name: Deploy
-        uses: JamesIves/github-pages-deploy-action@v4.6.8
-        with:
-          repository-name: scipp/scipp-coverage
-          branch: main
-          folder: coverage_html
-          single-commit: true
-          ssh-key: ${{ secrets.COVERAGE_DEPLOY_KEY }}
+      # - name: Deploy
+      #   uses: JamesIves/github-pages-deploy-action@v4.6.8
+      #   with:
+      #     repository-name: scipp/scipp-coverage
+      #     branch: main
+      #     folder: coverage_html
+      #     single-commit: true
+      #     ssh-key: ${{ secrets.COVERAGE_DEPLOY_KEY }}
