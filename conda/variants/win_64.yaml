@@ -1,6 +1,4 @@
 numpy:
-  - '1.22'
-python_impl:
-  - cpython
+  - '1.25'
 target_platform:
   - win-64
