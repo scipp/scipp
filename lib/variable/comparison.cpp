@@ -37,7 +37,7 @@ void expect_rtol_unit_dimensionless_or_none(const Variable &rtol,
                                             const Variable &ref) {
   const auto expected = ref.unit() == units::none ? scipp::units::none
                                                   : scipp::units::dimensionless;
-  core::expect::unit(rtol, expected, " For rtol arg");
+  core::expect::equals(expected, rtol.unit(), " For rtol arg");
 }
 } // namespace
 

@@ -819,3 +819,63 @@ TEST(BinTest, bin_by_noncontiguous_int_group) {
 
   EXPECT_EQ(bin(table, {}, {non_cont_group}), bin(table, {}, {cont_group}));
 }
+
+TEST(BinTest, points_with_nan_coord_values_are_dropped) {
+  auto table = make_table(10);
+  table.coords()[Dim::X].values<double>()[0] =
+      std::numeric_limits<double>::quiet_NaN();
+  table.coords()[Dim::X].values<double>()[9] =
+      std::numeric_limits<double>::quiet_NaN();
+
+  const auto x_edges = makeVariable<double>(Dims{Dim::X}, Shape{5},
+                                            Values{-2.1, -1.0, 0.0, 1.0, 2.0});
+
+  const scipp::core::Slice slice(Dim::Row, 1, 9, 1);
+  const auto expected = bins_sum(bin(table.slice(slice), {x_edges}));
+  EXPECT_EQ(bins_sum(bin(table, {x_edges})), expected);
+}
+
+TEST(BinTest, points_with_nan_coord_values_are_dropped_linspace_bins) {
+  auto table = make_table(10);
+  table.coords()[Dim::X].values<double>()[0] =
+      std::numeric_limits<double>::quiet_NaN();
+  table.coords()[Dim::X].values<double>()[9] =
+      std::numeric_limits<double>::quiet_NaN();
+
+  const auto x_edges = makeVariable<double>(Dims{Dim::X}, Shape{5},
+                                            Values{-2.0, -1.0, 0.0, 1.0, 2.0});
+
+  const scipp::core::Slice slice(Dim::Row, 1, 9, 1);
+  const auto expected = bins_sum(bin(table.slice(slice), {x_edges}));
+  EXPECT_EQ(bins_sum(bin(table, {x_edges})), expected);
+}
+
+TEST(BinTest, points_with_inf_coord_values_are_dropped) {
+  auto table = make_table(10);
+  table.coords()[Dim::X].values<double>()[0] =
+      std::numeric_limits<double>::infinity();
+  table.coords()[Dim::X].values<double>()[1] =
+      -std::numeric_limits<double>::infinity();
+
+  const auto x_edges = makeVariable<double>(Dims{Dim::X}, Shape{5},
+                                            Values{-2.1, -1.0, 0.0, 1.0, 2.0});
+
+  const scipp::core::Slice slice(Dim::Row, 2, 10, 1);
+  const auto expected = bins_sum(bin(table.slice(slice), {x_edges}));
+  EXPECT_EQ(bins_sum(bin(table, {x_edges})), expected);
+}
+
+TEST(BinTest, points_with_inf_coord_values_are_dropped_linspace_bins) {
+  auto table = make_table(10);
+  table.coords()[Dim::X].values<double>()[0] =
+      std::numeric_limits<double>::infinity();
+  table.coords()[Dim::X].values<double>()[1] =
+      -std::numeric_limits<double>::infinity();
+
+  const auto x_edges = makeVariable<double>(Dims{Dim::X}, Shape{5},
+                                            Values{-2.0, -1.0, 0.0, 1.0, 2.0});
+
+  const scipp::core::Slice slice(Dim::Row, 2, 10, 1);
+  const auto expected = bins_sum(bin(table.slice(slice), {x_edges}));
+  EXPECT_EQ(bins_sum(bin(table, {x_edges})), expected);
+}
