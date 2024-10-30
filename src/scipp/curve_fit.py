@@ -2,7 +2,8 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 
 from collections.abc import Callable, Mapping, Sequence
-from inspect import getfullargspec
+from functools import partial
+from inspect import getfullargspec, isfunction
 from numbers import Real
 
 import numpy as np
@@ -120,6 +121,10 @@ def _make_defaults(f, coords, p0):
     non_default_args = (
         spec.args[: -len(spec.defaults)] if spec.defaults is not None else spec.args
     )
+    if not isfunction(f) and not isinstance(f, partial):
+        # f is a class with a __call__ method,
+        # first argument is 'self', exclude it.
+        non_default_args = non_default_args[1:]
     args = {*non_default_args, *spec.kwonlyargs} - set(spec.kwonlydefaults or ())
     if not set(coords).issubset(args):
         raise ValueError("Function must take the provided coords as arguments")
