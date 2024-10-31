@@ -239,13 +239,16 @@ class Bins:
         """Coords of the bins"""
         return _cpp._bins_view(self._data()).coords
 
-    def drop_coords(self, coords: str | Sequence[str]) -> DataArray:
+    def drop_coords(self, coords: str | Sequence[str]) -> Variable | DataArray:
         """Drop coords from bin content"""
         content = self.constituents
         content['data'] = content['data'].drop_coords(coords)
-        out = self._obj.copy(deep=False)
-        out.data = _cpp._bins_no_validate(**content)
-        return out
+        data = _cpp._bins_no_validate(**content)
+        if isinstance(self._obj, DataArray):
+            out = self._obj.copy(deep=False)
+            out.data = data
+            return out
+        return data
 
     @property
     def meta(self) -> MetaDataMap:
@@ -286,9 +289,12 @@ class Bins:
         """Drop masks from bin content"""
         content = self.constituents
         content['data'] = content['data'].drop_masks(masks)
-        out = self._obj.copy(deep=False)
-        out.data = _cpp._bins_no_validate(**content)
-        return out
+        data = _cpp._bins_no_validate(**content)
+        if isinstance(self._obj, DataArray):
+            out = self._obj.copy(deep=False)
+            out.data = data
+            return out
+        return data
 
     @property
     def data(self) -> Variable:
