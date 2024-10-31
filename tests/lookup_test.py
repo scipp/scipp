@@ -172,3 +172,17 @@ def test_promotes_to_dtype_of_events(op, dtype):
     hist = sc.DataArray(weight, coords={'x': edges})
     result = op(da.bins, sc.lookup(func=hist, dim='x'))
     assert result.bins.constituents['data'].dtype == dtype
+
+
+def test_lookup_2d_coord():
+    edges = sc.array(dims=['x', 'y'], values=[[0.0, 1.0, 2.0], [1.0, 2.0, 3.0]])
+    da = sc.DataArray(
+        sc.array(dims=['x', 'y'], values=[[10.0, 11.0], [12.0, 13.0]]),
+        coords={'y': edges},
+    )
+
+    expected = sc.array(
+        dims=['x', 'y'], values=[[10.0, 11.0, np.nan], [12.0, 13.0, np.nan]]
+    )
+
+    assert sc.identical(sc.lookup(da, dim='y')[edges + 0.1], expected, equal_nan=True)
