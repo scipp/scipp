@@ -198,8 +198,6 @@ exclude = [
     'scipp/core/__init__\.py',
     'scipp/core/bin_remapping\.py',
     'scipp/core/binning\.py',
-    'scipp/core/bins\.py',
-    'scipp/core/operations\.py',
     'scipp/curve_fit\.py',
     'scipp/data/__init__\.py',
     'scipp/format/formatter\.py',

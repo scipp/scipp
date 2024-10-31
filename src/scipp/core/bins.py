@@ -31,7 +31,7 @@ class Lookup:
 
     def __init__(
         self,
-        op: Callable,
+        op: Callable[[DataArray, Variable, str, Variable | None], Variable],
         func: DataArray,
         dim: str,
         fill_value: Variable | None = None,

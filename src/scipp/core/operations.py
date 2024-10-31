@@ -13,10 +13,11 @@ from .cpp_classes import DataArray, Dataset, DatasetError, Variable
 from .data_group import DataGroup
 from .unary import to_unit
 
-_T = TypeVar('_T', Variable, DataGroup)
-_VarDaDg = TypeVar('_VarDaDg', Variable, DataArray, DataGroup)
+_T = TypeVar('_T', Variable, DataGroup[object])
 _VarDa = TypeVar('_VarDa', Variable, DataArray)
-_DsDg = TypeVar('_DsDg', Dataset, DataGroup)
+_DsDg = TypeVar('_DsDg', Dataset, DataGroup[object])
+_E1 = TypeVar('_E1')
+_E2 = TypeVar('_E2')
 
 
 def islinspace(x: _T, dim: str | None = None) -> _T:
@@ -82,15 +83,17 @@ def allsorted(
 
 @overload
 def allsorted(
-    x: DataGroup, dim: str, order: Literal['ascending', 'descending'] = 'ascending'
-) -> DataGroup: ...
+    x: DataGroup[object],
+    dim: str,
+    order: Literal['ascending', 'descending'] = 'ascending',
+) -> DataGroup[object]: ...
 
 
 def allsorted(
-    x: Variable | DataGroup,
+    x: Variable | DataGroup[object],
     dim: str,
     order: Literal['ascending', 'descending'] = 'ascending',
-) -> bool | DataGroup:
+) -> bool | DataGroup[object]:
     """Check if all values of a variable are sorted.
 
     - If ``order`` is 'ascending',
@@ -354,11 +357,11 @@ def _generic_identical(a: Any, b: Any) -> bool:
         try:
             return array_equal(a, b)
         except TypeError:
-            return a == b
+            return a == b  # type: ignore[no-any-return]
 
 
-def _merge_data_group(lhs: DataGroup, rhs: DataGroup) -> DataGroup:
-    res = DataGroup(dict(lhs))
+def _merge_data_group(lhs: DataGroup[_E1], rhs: DataGroup[_E2]) -> DataGroup[_E1 | _E2]:
+    res: DataGroup[_E1 | _E2] = DataGroup(dict(lhs))
     for k, v in rhs.items():
         if k in res and not _generic_identical(res[k], v):
             raise DatasetError(f"Cannot merge data groups. Mismatch in item {k}")
@@ -395,4 +398,4 @@ def label_based_index_to_positional_index(
 
 def as_const(x: _VarDa) -> _VarDa:
     """Return a copy with the readonly flag set."""
-    return _call_cpp_func(_cpp.as_const, x)
+    return _call_cpp_func(_cpp.as_const, x)  # type: ignore[return-value]
