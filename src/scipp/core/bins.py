@@ -108,7 +108,7 @@ def lookup(
     if dim is None:
         dim = func.dim
     func = DataArray(func.data, coords={dim: func.coords[dim]}, masks=func.masks)
-    if func.coords.is_edges(dim):
+    if func.coords.is_edges(dim, dim):
         if mode is not None:
             raise ValueError("Input is a histogram, 'mode' must not be set.")
         return Lookup(_cpp.buckets.map, func, dim, fill_value)
