@@ -20,7 +20,6 @@ include(scipp-conan)
 set(Python_FIND_IMPLEMENTATIONS CPython PyPy)
 
 find_package(benchmark REQUIRED)
-find_package(Boost REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Sanitizers REQUIRED)
 find_package(GTest CONFIG REQUIRED)
@@ -29,6 +28,7 @@ find_package(GTest CONFIG REQUIRED)
 find_package(Python 3.8 REQUIRED COMPONENTS Interpreter Development.Module)
 find_package(pybind11 CONFIG REQUIRED)
 find_package(LLNL-Units REQUIRED)
+find_package(Boost 1.86 REQUIRED)
 
 # Generate files for free scipp API functions
 include(scipp-functions)
