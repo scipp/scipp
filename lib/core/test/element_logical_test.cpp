@@ -50,7 +50,7 @@ TEST(LogicalTest, xor) {
   EXPECT_EQ(logical_xor(false, false), false);
 }
 
-TEST(LogicalTest, not ) {
+TEST(LogicalTest, not) {
   EXPECT_EQ(logical_not(true), false);
   EXPECT_EQ(logical_not(false), true);
 }
