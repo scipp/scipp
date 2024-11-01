@@ -6,7 +6,7 @@ channels:
   - conda-forge
 dependencies:
   - cmake=3.30.3
-  - conan=1.64.1
+  - conan=1.65.0
   - ninja=1.12.1
   - scipp::plopp=24.09.0
   - tbb=2021.12.0
