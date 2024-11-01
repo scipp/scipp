@@ -186,3 +186,19 @@ def test_lookup_2d_coord():
     )
 
     assert sc.identical(sc.lookup(da, dim='y')[edges + 0.1], expected, equal_nan=True)
+
+
+def test_lookup_2d_coord_outer_dim():
+    edges = sc.array(
+        dims=['x', 'y'], values=[[0.0, 1.0, 2.0], [1.0, 2.0, 3.0]]
+    ).transpose()
+    da = sc.DataArray(
+        sc.array(dims=['x', 'y'], values=[[10.0, 11.0], [12.0, 13.0]]).transpose(),
+        coords={'y': edges},
+    )
+
+    expected = sc.array(
+        dims=['x', 'y'], values=[[10.0, 11.0, np.nan], [12.0, 13.0, np.nan]]
+    ).transpose()
+
+    assert sc.identical(sc.lookup(da, dim='y')[edges + 0.1], expected, equal_nan=True)
