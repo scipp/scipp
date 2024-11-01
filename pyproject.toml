@@ -2,7 +2,8 @@
 requires = [
   "scikit-build-core",
   "pybind11",
-  "conan==1.65.0"
+  "conan==1.65.0",
+  "setuptools<75"
 ]
 build-backend = "scikit_build_core.build"
 
