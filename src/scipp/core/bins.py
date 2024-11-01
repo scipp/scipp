@@ -512,7 +512,7 @@ class Bins(Generic[_O]):
         """
         return _call_cpp_func(_cpp.bins_any, self._obj)  # type: ignore[return-value]
 
-    def size(self) -> Variable | DataArray:
+    def size(self) -> Variable:
         """Number of events or elements in a bin.
 
         Returns
@@ -539,6 +539,10 @@ class Bins(Generic[_O]):
         :
             All bins along `dim` concatenated into a single bin.
         """
+        if isinstance(self._obj, Dataset):
+            raise NotImplementedError(
+                "Concatenating bins is not implemented for datasets"
+            )
         return concat_bins(self._obj, dim)
 
     def concatenate(

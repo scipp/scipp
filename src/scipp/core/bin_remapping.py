@@ -4,17 +4,23 @@
 import itertools
 import uuid
 from math import prod
+from typing import TYPE_CHECKING, TypeVar
 
 from .._scipp import core as _cpp
-from ..typing import Dims, VariableLikeType
+from ..typing import Dims
 from .concepts import concrete_dims, irreducible_mask, rewrap_reduced_data
 from .cpp_classes import DataArray, Variable
 from .cumulative import cumsum
 from .operations import where
 from .variable import index
 
+if TYPE_CHECKING:
+    from .bins import Bins
 
-def hide_masked(da: DataArray, dim: Dims) -> DataArray:
+
+def hide_masked(da: DataArray, dim: Dims) -> Variable:
+    if da.bins is None:
+        raise ValueError("Input must be binned")
     if (mask := irreducible_mask(da, dim)) is not None:
         # Avoid using boolean indexing since it would result in (partial) content
         # buffer copy. Instead index just begin/end and reuse content buffer.
@@ -29,20 +35,20 @@ def hide_masked(da: DataArray, dim: Dims) -> DataArray:
             comps['end'] = comps['end'][select]
         else:
             comps['end'] = where(mask, comps['begin'], comps['end'])
-        return _cpp._bins_no_validate(**comps)
+        return _cpp._bins_no_validate(**comps)  # type: ignore[no-any-return]
     else:
         return da.data
 
 
-def _with_bin_sizes(var: Variable, sizes: Variable) -> Variable:
+def _with_bin_sizes(var: Variable | DataArray, sizes: Variable) -> Variable:
     end = cumsum(sizes)
     begin = end - sizes
     data = var if var.bins is None else var.bins.constituents['data']
     dim = var.dim if var.bins is None else var.bins.constituents['dim']
-    return _cpp._bins_no_validate(data=data, dim=dim, begin=begin, end=end)
+    return _cpp._bins_no_validate(data=data, dim=dim, begin=begin, end=end)  # type: ignore[no-any-return]
 
 
-def _concat_bins(var: Variable, dim: list[str]) -> Variable:
+def _concat_bins(var: Variable, dim: Dims) -> Variable:
     # To concat bins, two things need to happen:
     # 1. Data needs to be written to a contiguous chunk.
     # 2. New bin begin/end indices need to be setup.
@@ -55,7 +61,8 @@ def _concat_bins(var: Variable, dim: list[str]) -> Variable:
     # TODO It would be possible to support a copy=False parameter, to skip the copy if
     # the copy would not result in any moving or reordering.
     out = var.transpose(unchanged_dims + changed_dims).copy()
-    sizes = out.bins.size().sum(changed_dims)
+    out_bins: Bins[Variable] = out.bins  # type: ignore[assignment]
+    sizes = out_bins.size().sum(changed_dims)
     return _with_bin_sizes(out, sizes)
 
 
@@ -65,7 +72,7 @@ def _combine_bins(
     edges: list[Variable],
     groups: list[Variable],
     dim: Dims,
-) -> dict[str, Variable]:
+) -> Variable:
     from .binning import make_binned
 
     # Overview
@@ -93,9 +100,10 @@ def _combine_bins(
     # changed subspaces. make_binned below will thus only operate within each pseudo
     # bins, without mixing contents from different unchanged bins.
     var = var.transpose(unchanged_dims + changed_dims)
-    params = DataArray(var.bins.size(), coords=coords)
-    params.coords['begin'] = var.bins.constituents['begin'].copy()
-    params.coords['end'] = var.bins.constituents['end'].copy()
+    var_bins: Bins[Variable] = var.bins  # type: ignore[assignment]
+    params = DataArray(var_bins.size(), coords=coords)
+    params.coords['begin'] = var_bins.constituents['begin'].copy()
+    params.coords['end'] = var_bins.constituents['end'].copy()
 
     # Sizes and begin/end indices of changed subspace
     sub_sizes = index(changed_volume).broadcast(
@@ -104,16 +112,16 @@ def _combine_bins(
     params = params.flatten(to=uuid.uuid4().hex)
     # Setup pseudo binning for unchanged subspace. All further reordering (for grouping
     # and binning) will then occur *within* those pseudo bins (by splitting them).
-    params = _with_bin_sizes(params, sub_sizes)
+    params_data = _with_bin_sizes(params, sub_sizes)
     # Apply desired binning/grouping to sizes and begin/end, splitting the pseudo bins.
-    params = make_binned(params, edges=edges, groups=groups)
+    params = make_binned(params_data, edges=edges, groups=groups)
 
     # Setup view of source content with desired target bin order
     source = _cpp._bins_no_validate(
-        data=var.bins.constituents['data'],
-        dim=var.bins.constituents['dim'],
-        begin=params.bins.constituents['data'].coords['begin'],
-        end=params.bins.constituents['data'].coords['end'],
+        data=var_bins.constituents['data'],
+        dim=var_bins.constituents['dim'],
+        begin=params.bins.constituents['data'].coords['begin'],  # type: ignore[union-attr]
+        end=params.bins.constituents['data'].coords['end'],  # type: ignore[union-attr]
     )
     # Call `copy()` to reorder data. This is based on the underlying behavior of `copy`
     # for binned data: It computes a new contiguous and ordered mapping of bin contents
@@ -121,12 +129,17 @@ def _combine_bins(
     # copies of slices, but here we can leverage the same mechanism.
     # Then we call `_with_bin_sizes` to put in place new indices, "merging" the
     # reordered input bins to desired output bins.
-    return _with_bin_sizes(source.copy(), sizes=params.data.bins.sum())
+    return _with_bin_sizes(
+        source.copy(),
+        sizes=params.data.bins.sum(),  # type: ignore[arg-type, union-attr]
+    )
 
 
 def combine_bins(
     da: DataArray, edges: list[Variable], groups: list[Variable], dim: Dims
 ) -> DataArray:
+    if da.bins is None:
+        raise ValueError("Input must be binned")
     masked = hide_masked(da, dim)
     if len(edges) == 0 and len(groups) == 0:
         data = _concat_bins(masked, dim=dim)
@@ -140,7 +153,10 @@ def combine_bins(
     return out
 
 
-def concat_bins(obj: VariableLikeType, dim: Dims = None) -> VariableLikeType:
-    da = obj if isinstance(obj, DataArray) else DataArray(obj)
+_VarDa = TypeVar('_VarDa', Variable, DataArray)
+
+
+def concat_bins(obj: _VarDa, dim: Dims = None) -> _VarDa:
+    da = obj if isinstance(obj, DataArray) else DataArray(obj)  # type: ignore[arg-type, redundant-expr]
     out = combine_bins(da, edges=[], groups=[], dim=dim)
-    return out if isinstance(obj, DataArray) else out.data
+    return out if isinstance(obj, DataArray) else out.data  # type: ignore[redundant-expr]
