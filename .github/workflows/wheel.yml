@@ -27,7 +27,7 @@ jobs:
       env:
         CIBW_BEFORE_ALL: |
           echo "Installing miniforge to setup conda for cpp deps"
-          wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+          curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
           bash Miniforge3-$(uname)-$(uname -m).sh -b -p /opt/miniconda
           conda install -y --no-deps benchmark=1.6.1 gtest=1.15.2 gmock=1.15.2 libboost-headers=1.86.0 eigen=3.4.0 pybind11=2.13.6
         CIBW_BUILD: ${{ inputs.build }}-*
