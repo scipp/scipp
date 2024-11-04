@@ -355,10 +355,10 @@ private:
 };
 
 template <class... StridesArgs>
-MultiIndex(const Dimensions &,
-           const StridesArgs &...) -> MultiIndex<sizeof...(StridesArgs)>;
+MultiIndex(const Dimensions &, const StridesArgs &...)
+    -> MultiIndex<sizeof...(StridesArgs)>;
 template <class... Params>
-MultiIndex(const ElementArrayViewParams &,
-           const Params &...) -> MultiIndex<sizeof...(Params) + 1>;
+MultiIndex(const ElementArrayViewParams &, const Params &...)
+    -> MultiIndex<sizeof...(Params) + 1>;
 
 } // namespace scipp::core
