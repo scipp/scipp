@@ -18,12 +18,10 @@ jobs:
       matrix:
         variant:
           - {os: ubuntu-22.04, target: linux_64}
-        python-version: ["3.13"]
     uses: ./.github/workflows/conda.yml
     with:
       os: ${{ matrix.variant.os }}
       target: ${{ matrix.variant.target }}
-      python-version: ${{ matrix.python-version }}
 
   # build_wheels:
   #   strategy:

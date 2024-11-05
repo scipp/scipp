@@ -11,10 +11,6 @@ on:
         description: 'Conda target: linux_64, osx_64, osx_arm64, or win_64'
         required: true
         type: string
-      python-version:
-        description: 'Python version such as 3.11'
-        required: true
-        type: string
 
 defaults:
   run:
@@ -22,7 +18,7 @@ defaults:
 
 jobs:
   build_conda:
-    name: Package build (${{ inputs.target }}, py${{ inputs.python-version }})
+    name: Package build (${{ inputs.target }}
     runs-on: ${{ inputs.os }}
     steps:
       - uses: actions/checkout@v4
@@ -48,5 +44,5 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: conda-package-${{ inputs.target }}-py${{ inputs.python-version }}
+          name: conda-package-${{ inputs.target }}
           path: conda/package/*/scipp*.tar.bz2
