@@ -108,7 +108,18 @@ def lookup(
     if dim is None:
         dim = func.dim
     func = DataArray(func.data, coords={dim: func.coords[dim]}, masks=func.masks)
-    if func.coords.is_edges(dim):
+    if func.dims[-1] != dim:
+        # We automatically transpose the data so that `dim` is the inner dimension to
+        # ensure contiguous memory access.
+        dims = (*[d for d in func.dims if d != dim], dim)
+        func.data = func.data.transpose(dims).copy()
+        func.coords[dim] = func.coords[dim].transpose(dims).copy()
+        for key, mask in func.masks.items():
+            func.masks[key] = mask.transpose(
+                # Masks potentially have fewer dims than the data.
+                [d for d in dims if d in mask.dims] or None
+            ).copy()
+    if func.coords.is_edges(dim, dim):
         if mode is not None:
             raise ValueError("Input is a histogram, 'mode' must not be set.")
         return Lookup(_cpp.buckets.map, func, dim, fill_value)

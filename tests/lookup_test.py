@@ -172,3 +172,139 @@ def test_promotes_to_dtype_of_events(op, dtype):
     hist = sc.DataArray(weight, coords={'x': edges})
     result = op(da.bins, sc.lookup(func=hist, dim='x'))
     assert result.bins.constituents['data'].dtype == dtype
+
+
+def test_lookup_2d_coord():
+    edges = sc.array(dims=['x', 'y'], values=[[0.0, 1.0, 2.0], [1.0, 2.0, 3.0]])
+    da = sc.DataArray(
+        sc.array(dims=['x', 'y'], values=[[10.0, 11.0], [12.0, 13.0]]),
+        coords={'y': edges},
+    )
+
+    expected = sc.array(
+        dims=['x', 'y'], values=[[10.0, 11.0, np.nan], [12.0, 13.0, np.nan]]
+    )
+
+    assert sc.identical(sc.lookup(da, dim='y')[edges + 0.1], expected, equal_nan=True)
+
+
+def test_lookup_2d_coord_with_mask():
+    edges = sc.array(dims=['x', 'y'], values=[[0.0, 1.0, 2.0], [1.0, 2.0, 3.0]])
+    da = sc.DataArray(
+        sc.array(dims=['x', 'y'], values=[[10.0, 11.0], [12.0, 13.0]]),
+        coords={'y': edges},
+        masks={'m': sc.array(dims=['x', 'y'], values=[[False, False], [True, False]])},
+    )
+    fill = sc.scalar(99.0)
+
+    expected = sc.array(
+        dims=['x', 'y'],
+        values=[[10.0, 11.0, fill.value], [fill.value, 13.0, fill.value]],
+    )
+
+    assert sc.identical(
+        sc.lookup(da, dim='y', fill_value=fill)[edges + 0.1], expected, equal_nan=True
+    )
+
+
+def test_lookup_2d_coord_with_1d_mask():
+    edges = sc.array(dims=['x', 'y'], values=[[0.0, 1.0, 2.0], [1.0, 2.0, 3.0]])
+    da = sc.DataArray(
+        sc.array(dims=['x', 'y'], values=[[10.0, 11.0], [12.0, 13.0]]),
+        coords={'y': edges},
+        masks={'m': sc.array(dims=['y'], values=[True, False])},
+    )
+    fill = sc.scalar(99.0)
+
+    expected = sc.array(
+        dims=['x', 'y'],
+        values=[[fill.value, 11.0, fill.value], [fill.value, 13.0, fill.value]],
+    )
+
+    assert sc.identical(
+        sc.lookup(da, dim='y', fill_value=fill)[edges + 0.1], expected, equal_nan=True
+    )
+
+
+def test_lookup_2d_coord_outer_dim():
+    edges = (
+        sc.array(dims=['x', 'y'], values=[[0.0, 1.0, 2.0], [1.0, 2.0, 3.0]])
+        .transpose()
+        .copy()
+    )
+    da = sc.DataArray(
+        sc.array(dims=['x', 'y'], values=[[10.0, 11.0], [12.0, 13.0]])
+        .transpose()
+        .copy(),
+        coords={'y': edges},
+    )
+
+    expected = (
+        sc.array(dims=['x', 'y'], values=[[10.0, 11.0, np.nan], [12.0, 13.0, np.nan]])
+        .transpose()
+        .copy()
+    )
+
+    assert sc.identical(sc.lookup(da, dim='y')[edges + 0.1], expected, equal_nan=True)
+
+
+def test_lookup_2d_coord_outer_dim_with_mask():
+    edges = (
+        sc.array(dims=['x', 'y'], values=[[0.0, 1.0, 2.0], [1.0, 2.0, 3.0]])
+        .transpose()
+        .copy()
+    )
+    da = sc.DataArray(
+        sc.array(dims=['x', 'y'], values=[[10.0, 11.0], [12.0, 13.0]])
+        .transpose()
+        .copy(),
+        coords={'y': edges},
+        masks={
+            'm': sc.array(dims=['x', 'y'], values=[[False, False], [True, False]])
+            .transpose()
+            .copy()
+        },
+    )
+    fill = sc.scalar(99.0)
+
+    expected = (
+        sc.array(
+            dims=['x', 'y'],
+            values=[[10.0, 11.0, fill.value], [fill.value, 13.0, fill.value]],
+        )
+        .transpose()
+        .copy()
+    )
+
+    assert sc.identical(
+        sc.lookup(da, dim='y', fill_value=fill)[edges + 0.1], expected, equal_nan=True
+    )
+
+
+def test_lookup_2d_coord_outer_dim_with_1d_mask():
+    edges = (
+        sc.array(dims=['x', 'y'], values=[[0.0, 1.0, 2.0], [1.0, 2.0, 3.0]])
+        .transpose()
+        .copy()
+    )
+    da = sc.DataArray(
+        sc.array(dims=['x', 'y'], values=[[10.0, 11.0], [12.0, 13.0]])
+        .transpose()
+        .copy(),
+        coords={'y': edges},
+        masks={'m': sc.array(dims=['y'], values=[True, False])},
+    )
+    fill = sc.scalar(99.0)
+
+    expected = (
+        sc.array(
+            dims=['x', 'y'],
+            values=[[fill.value, 11.0, fill.value], [fill.value, 13.0, fill.value]],
+        )
+        .transpose()
+        .copy()
+    )
+
+    assert sc.identical(
+        sc.lookup(da, dim='y', fill_value=fill)[edges + 0.1], expected, equal_nan=True
+    )
