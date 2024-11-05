@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-import inspect
 import itertools
 import uuid
 from collections.abc import Sequence
@@ -1108,20 +1107,3 @@ def group(
     groups = [_make_groups(x, name) for name in args]
     erase = _find_replaced_dims(x, dims=[g.dim for g in groups], dim=dim)
     return make_binned(x, groups=groups, erase=erase)
-
-
-VARIABLE_BINNING_SIGNATURE = inspect.Signature(
-    parameters=[
-        inspect.Parameter(name='self', kind=inspect.Parameter.POSITIONAL_ONLY),
-        inspect.Parameter(
-            name='arg_dict',
-            kind=inspect.Parameter.POSITIONAL_ONLY,
-            annotation=dict[str, int | Variable] | None,
-            default=None,
-        ),
-        inspect.Parameter(
-            name='kwargs', kind=inspect.Parameter.VAR_KEYWORD, annotation=int | Variable
-        ),
-    ],
-    return_annotation=DataArray,
-)
