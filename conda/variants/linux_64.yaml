@@ -4,3 +4,5 @@ python_impl:
   - cpython
 target_platform:
   - linux-64
+python:
+  - 3.13.* *_cp313
