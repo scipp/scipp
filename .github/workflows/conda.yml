@@ -42,7 +42,6 @@ jobs:
           --channel conda-forge
           --variant-config-files=${CONDA_PREFIX}/conda_build_config.yaml
           --variant-config-files=${GITHUB_WORKSPACE}/conda/variants/${{ inputs.target }}.yaml
-          --python="${{ inputs.python-version }}.* *_cp313"
           --no-anaconda-upload
           --override-channels
           --output-folder conda/package conda
