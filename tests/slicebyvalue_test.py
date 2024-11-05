@@ -251,10 +251,14 @@ def test_label_based_index_to_positional_index_scalar(a):
 
 def test_label_based_index_to_positional_index_bin_edge_coord_with_scalar():
     da = sc.data.binned_x(8, 15)
-    assert ('x', 15) == label_based_index_to_positional_index(
-        da.sizes, da.coords['x'], sc.scalar(1, unit='m')
+    assert ('x', 6) == label_based_index_to_positional_index(
+        da.sizes, da.coords['x'], sc.scalar(0.5, unit='m')
     )
     with pytest.raises(IndexError):
         label_based_index_to_positional_index(
-            da.sizes, da.coords['x'], sc.scalar(-2, unit='m')
+            da.sizes, da.coords['x'], da.coords['x'].min() - sc.scalar(1, unit='m')
+        )
+    with pytest.raises(IndexError):
+        label_based_index_to_positional_index(
+            da.sizes, da.coords['x'], da.coords['x'].max() + sc.scalar(1, unit='m')
         )

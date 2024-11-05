@@ -380,11 +380,12 @@ def label_based_index_to_positional_index(
         coord,
         index,
     )
+    # Length of inds is 1 if index was a variable
     if len(inds) == 1:
-        if inds[0] < 0:
-            # If index was a variable and the coord is a bin-coord
-            # and the value was not contained in any of the bins
-            # the returned index is -1.
+        if inds[0] < 0 or sizes[dim] <= inds[0]:
+            # If index is a variable and the coord is a bin-edge coord
+            #   - if the index is less than any edge then inds[0] is -1
+            #   - if the index is greater than any edge then inds[0] is sizes[dim]
             raise IndexError(
                 f"Value {index} is not contained in the bin-edge coord {coord}"
             )
