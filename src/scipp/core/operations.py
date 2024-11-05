@@ -380,7 +380,16 @@ def label_based_index_to_positional_index(
         coord,
         index,
     )
-    return (dim, inds[0] if len(inds) == 1 else slice(*inds))
+    if len(inds) == 1:
+        if inds[0] < 0:
+            # If index was a variable and the coord is a bin-coord
+            # and the value was not contained in any of the bins
+            # the returned index is -1.
+            raise IndexError(
+                f"Value {index} is not contained in the bin-edge coord {coord}"
+            )
+        return (dim, inds[0])
+    return (dim, slice(*inds))
 
 
 def as_const(x: _VarDa) -> _VarDa:
