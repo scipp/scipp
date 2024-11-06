@@ -362,7 +362,7 @@ class Bins(Generic[_O]):
         """Constituents of binned data, as supported by :py:func:`sc.bins`."""
         return _call_cpp_func(_cpp.bins_constituents, self._data())  # type: ignore[return-value]
 
-    def sum(self) -> Variable | DataArray:
+    def sum(self) -> _O:
         """Sum of events in each bin.
 
         Returns
@@ -377,7 +377,7 @@ class Bins(Generic[_O]):
         """
         return _call_cpp_func(_cpp.bins_sum, self._obj)  # type: ignore[return-value]
 
-    def nansum(self) -> Variable | DataArray:
+    def nansum(self) -> _O:
         """Sum of events in each bin ignoring NaN's.
 
         Returns
@@ -392,7 +392,7 @@ class Bins(Generic[_O]):
         """
         return _call_cpp_func(_cpp.bins_nansum, self._obj)  # type: ignore[return-value]
 
-    def mean(self) -> Variable | DataArray:
+    def mean(self) -> _O:
         """Arithmetic mean of events in each bin.
 
         Returns
@@ -407,7 +407,7 @@ class Bins(Generic[_O]):
         """
         return _call_cpp_func(_cpp.bins_mean, self._obj)  # type: ignore[return-value]
 
-    def nanmean(self) -> Variable | DataArray:
+    def nanmean(self) -> _O:
         """Arithmetic mean of events in each bin ignoring NaN's.
 
         Returns
@@ -422,7 +422,7 @@ class Bins(Generic[_O]):
         """
         return _call_cpp_func(_cpp.bins_nanmean, self._obj)  # type: ignore[return-value]
 
-    def max(self) -> Variable | DataArray:
+    def max(self) -> _O:
         """Maximum of events in each bin.
 
         Returns
@@ -437,7 +437,7 @@ class Bins(Generic[_O]):
         """
         return _call_cpp_func(_cpp.bins_max, self._obj)  # type: ignore[return-value]
 
-    def nanmax(self) -> Variable | DataArray:
+    def nanmax(self) -> _O:
         """Maximum of events in each bin ignoring NaN's.
 
         Returns
@@ -452,7 +452,7 @@ class Bins(Generic[_O]):
         """
         return _call_cpp_func(_cpp.bins_nanmax, self._obj)  # type: ignore[return-value]
 
-    def min(self) -> Variable | DataArray:
+    def min(self) -> _O:
         """Minimum of events in each bin.
 
         Returns
@@ -467,7 +467,7 @@ class Bins(Generic[_O]):
         """
         return _call_cpp_func(_cpp.bins_min, self._obj)  # type: ignore[return-value]
 
-    def nanmin(self) -> Variable | DataArray:
+    def nanmin(self) -> _O:
         """Minimum of events in each bin ignoring NaN's.
 
         Returns
@@ -482,7 +482,7 @@ class Bins(Generic[_O]):
         """
         return _call_cpp_func(_cpp.bins_nanmin, self._obj)  # type: ignore[return-value]
 
-    def all(self) -> Variable | DataArray:
+    def all(self) -> _O:
         """Logical AND of events in each bin ignoring NaN's.
 
         Returns
@@ -497,7 +497,7 @@ class Bins(Generic[_O]):
         """
         return _call_cpp_func(_cpp.bins_all, self._obj)  # type: ignore[return-value]
 
-    def any(self) -> Variable | DataArray:
+    def any(self) -> _O:
         """Logical OR of events in each bin ignoring NaN's.
 
         Returns

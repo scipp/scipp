@@ -196,7 +196,6 @@ exclude = [
     'scipp/compat/xarray_compat\.py',
     'scipp/coords/',
     'scipp/core/__init__\.py',
-    'scipp/core/binning\.py',
     'scipp/curve_fit\.py',
     'scipp/data/__init__\.py',
     'scipp/format/formatter\.py',

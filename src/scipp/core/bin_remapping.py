@@ -3,6 +3,7 @@
 # @author Simon Heybrock
 import itertools
 import uuid
+from collections.abc import Sequence
 from math import prod
 from typing import TYPE_CHECKING, TypeVar
 
@@ -69,8 +70,8 @@ def _concat_bins(var: Variable, dim: Dims) -> Variable:
 def _combine_bins(
     var: Variable,
     coords: dict[str, Variable],
-    edges: list[Variable],
-    groups: list[Variable],
+    edges: Sequence[Variable],
+    groups: Sequence[Variable],
     dim: Dims,
 ) -> Variable:
     from .binning import make_binned
@@ -131,12 +132,12 @@ def _combine_bins(
     # reordered input bins to desired output bins.
     return _with_bin_sizes(
         source.copy(),
-        sizes=params.data.bins.sum(),  # type: ignore[arg-type, union-attr]
+        sizes=params.data.bins.sum(),  # type: ignore[union-attr]
     )
 
 
 def combine_bins(
-    da: DataArray, edges: list[Variable], groups: list[Variable], dim: Dims
+    da: DataArray, edges: Sequence[Variable], groups: Sequence[Variable], dim: Dims
 ) -> DataArray:
     if da.bins is None:
         raise ValueError("Input must be binned")

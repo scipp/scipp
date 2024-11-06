@@ -14,6 +14,7 @@ from typing import (
     Any,
     Literal,
     Optional,
+    SupportsIndex,
     TypeVar,
     Union,
     overload,
@@ -343,11 +344,11 @@ class DataArray:
     def attrs(self) -> Coords: ...
     def bin(
         self,
-        arg_dict: dict[str, int | Variable] | None = None,
+        arg_dict: dict[str, SupportsIndex | Variable] | None = None,
         /,
         *,
         dim: str | tuple[str, ...] | None = None,
-        **kwargs: int | Variable,
+        **kwargs: SupportsIndex | Variable,
     ) -> DataArray: ...
     @property
     def bins(self) -> Bins[DataArray] | None: ...
@@ -421,9 +422,9 @@ class DataArray:
     ) -> GroupByDataArray | GroupByDataset: ...
     def hist(
         self,
-        arg_dict: dict[str, int | Variable] | None = None,
+        arg_dict: dict[str, SupportsIndex | Variable] | None = None,
         /,
-        **kwargs: int | Variable,
+        **kwargs: SupportsIndex | Variable,
     ) -> DataArray: ...
     @property
     def masks(self) -> Masks: ...
@@ -439,9 +440,9 @@ class DataArray:
     def name(self, arg1: str) -> None: ...
     def nanhist(
         self,
-        arg_dict: dict[str, int | Variable] | None = None,
+        arg_dict: dict[str, SupportsIndex | Variable] | None = None,
         /,
-        **kwargs: int | Variable,
+        **kwargs: SupportsIndex | Variable,
     ) -> DataArray: ...
     def nanmax(self, dim: str | None = None) -> DataArray: ...
     def nanmean(self, dim: str | None = None) -> DataArray: ...
@@ -676,11 +677,11 @@ class Dataset(Mapping[str, DataArray]):
     ) -> GroupByDataArray | GroupByDataset: ...
     def hist(
         self,
-        arg_dict: dict[str, int | Variable] | None = None,
+        arg_dict: dict[str, SupportsIndex | Variable] | None = None,
         /,
         *,
         dim: str | tuple[str, ...] | None = None,
-        **kwargs: int | Variable,
+        **kwargs: SupportsIndex | Variable,
     ) -> Dataset: ...
     def items(self) -> ItemsView[str, DataArray]: ...
     def keys(self) -> KeysView[str]: ...
@@ -1016,8 +1017,10 @@ class Variable:
     def astype(self, type: Any, *, copy: bool = True) -> Variable: ...
     def bin(
         self,
-        arg_dict: dict[str, int | Variable] | None = None,
+        arg_dict: dict[str, SupportsIndex | Variable] | None = None,
         /,
+        *,
+        dim: str | tuple[str, ...] | None = None,
         **kwargs: int | Variable,
     ) -> DataArray: ...
     @property
@@ -1073,9 +1076,9 @@ class Variable:
     ) -> Variable: ...
     def hist(
         self,
-        arg_dict: dict[str, int | Variable] | None = None,
+        arg_dict: dict[str, SupportsIndex | Variable] | None = None,
         /,
-        **kwargs: int | Variable,
+        **kwargs: SupportsIndex | Variable,
     ) -> DataArray: ...
     def max(self, dim: str | None = None) -> Variable: ...
     def mean(self, dim: str | None = None) -> Variable: ...
@@ -1083,11 +1086,11 @@ class Variable:
     def min(self, dim: str | None = None) -> Variable: ...
     def nanhist(
         self,
-        arg_dict: dict[str, int | Variable] | None = None,
+        arg_dict: dict[str, SupportsIndex | Variable] | None = None,
         /,
         *,
         dim: str | tuple[str, ...] | None = None,
-        **kwargs: int | Variable,
+        **kwargs: SupportsIndex | Variable,
     ) -> DataArray: ...
     def nanmax(self, dim: str | None = None) -> Variable: ...
     def nanmean(self, dim: str | None = None) -> Variable: ...
