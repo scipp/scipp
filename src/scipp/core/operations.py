@@ -241,12 +241,12 @@ def where(condition: Variable, x: Variable, y: Variable) -> Variable:
 
 
 def to(
-    var: _VarDaDg,
+    var: Variable,
     *,
     unit: _cpp.Unit | str | None = None,
     dtype: Any | None = None,
     copy: bool = True,
-) -> _VarDaDg:
+) -> Variable:
     """Converts a Variable or DataArray to a different dtype and/or a different unit.
 
     If the dtype and unit are both unchanged and ``copy`` is `False`,
@@ -369,13 +369,9 @@ def _merge_data_group(lhs: DataGroup[_E1], rhs: DataGroup[_E2]) -> DataGroup[_E1
     return res
 
 
-def label_based_index_to_positional_index(
-    sizes: dict[str, int],
-    coord: Variable,
-    index: slice | Variable,
-) -> ScippIndex:
-    """Returns the positional index equivalent to label based indexing
-    the coord with values."""
+def _raw_positional_index(
+    sizes: dict[str, int], coord: Variable, index: slice | Variable
+) -> tuple[str, list[int | Variable]]:
     dim, *inds = _call_cpp_func(
         _cpp.label_based_index_to_positional_index,
         list(sizes.keys()),
@@ -383,6 +379,17 @@ def label_based_index_to_positional_index(
         coord,
         index,
     )
+    return dim, inds  # type: ignore[return-value]
+
+
+def label_based_index_to_positional_index(
+    sizes: dict[str, int],
+    coord: Variable,
+    index: slice | Variable,
+) -> ScippIndex:
+    """Returns the positional index equivalent to label based indexing
+    the coord with values."""
+    dim, inds = _raw_positional_index(sizes, coord, index)
     # Length of inds is 1 if index was a variable
     if len(inds) == 1:
         if inds[0] < 0 or sizes[dim] <= inds[0]:
