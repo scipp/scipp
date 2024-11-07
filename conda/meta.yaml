@@ -56,7 +56,7 @@ test:
     - h5py
     - hypothesis
     - ipykernel
-    # - numba # Not available on Python 3.13 yet and is optional for tests
+    - numba # [not py313]
     - numpy
     - pandas
     - pytest
