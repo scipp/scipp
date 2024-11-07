@@ -1,4 +1,2 @@
-numpy:
-  - "1.22"
 target_platform:
   - linux-64
