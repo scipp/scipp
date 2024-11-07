@@ -31,14 +31,18 @@ jobs:
           fetch-depth: 0 # history required so cmake can determine version
 
       - uses: conda-incubator/setup-miniconda@v3
-      - name: Create Python variant file for conda build
+      - name: Create variant file for conda build
         run: |
-          echo "python:" > python_var.yaml
+          echo "python:" > dynamic_var.yaml
           if [ "${{ inputs.python-version }}" == "3.13" ]; then
-            echo "- 3.13.* *_cp313" >> python_var.yaml
+            echo "- 3.13.* *_cp313" >> dynamic_var.yaml
           else
-            echo "- ${{ inputs.python-version }}.* *_cpython" >> python_var.yaml
+            echo "- ${{ inputs.python-version }}.* *_cpython" >> dynamic_var.yaml
           fi
+          echo "numpy:" >> dynamic_var.yaml
+          echo "- '2'" >> dynamic_var.yaml
+          echo "python_impl:" >> dynamic_var.yaml
+          echo "- cpython" >> dynamic_var.yaml
       - run: >
           conda install
           --channel conda-forge
@@ -50,7 +54,7 @@ jobs:
           --channel conda-forge
           --variant-config-files=${CONDA_PREFIX}/conda_build_config.yaml
           --variant-config-files=${GITHUB_WORKSPACE}/conda/variants/${{ inputs.target }}.yaml
-          --variant-config-files=python_var.yaml
+          --variant-config-files=dynamic_var.yaml
           --no-anaconda-upload
           --override-channels
           --output-folder conda/package conda
