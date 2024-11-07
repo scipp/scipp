@@ -8,7 +8,7 @@ from __future__ import annotations
 import warnings
 from collections.abc import Iterable, Sequence
 from contextlib import contextmanager
-from typing import Any, Generator, TypeVar
+from typing import Any, Generator, SupportsIndex, TypeVar
 
 import numpy as _np
 from numpy.typing import ArrayLike
@@ -580,7 +580,7 @@ def linspace(
     dim: str,
     start: NumberOrVar,
     stop: NumberOrVar,
-    num: int,
+    num: SupportsIndex,
     *,
     endpoint: bool = True,
     unit: Unit | str | DefaultUnit | None = default_unit,
