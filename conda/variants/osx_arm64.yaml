@@ -1,7 +1,3 @@
-numpy:
-  - '1.22'
-python_impl:
-  - cpython
 target_platform:
   - osx-arm64
 # TODO: Compiler pinning is required because conan does not support >17

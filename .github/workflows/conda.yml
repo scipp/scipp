@@ -4,21 +4,21 @@ on:
   workflow_call:
     inputs:
       os:
-        description: 'Operating system: ubuntu-22.04, macos-14-large, or windows-2022'
+        description: "Operating system: ubuntu-22.04, macos-14-large, or windows-2022"
         required: true
         type: string
       target:
-        description: 'Conda target: linux_64, osx_64, osx_arm64, or win_64'
+        description: "Conda target: linux_64, osx_64, osx_arm64, or win_64"
         required: true
         type: string
       python-version:
-        description: 'Python version such as 3.11'
+        description: "Python version such as 3.11"
         required: true
         type: string
 
 defaults:
   run:
-    shell: bash -l {0}  # required for conda env
+    shell: bash -l {0} # required for conda env
 
 jobs:
   build_conda:
@@ -28,9 +28,22 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-          fetch-depth: 0  # history required so cmake can determine version
+          fetch-depth: 0 # history required so cmake can determine version
 
       - uses: conda-incubator/setup-miniconda@v3
+      - name: Create variant file for conda build
+        run: |
+          echo "python:" > dynamic_var.yaml
+          if [ "${{ inputs.python-version }}" == "3.13" ]; then
+            echo "- 3.13.* *_cp313" >> dynamic_var.yaml
+          else
+            echo "- ${{ inputs.python-version }}.* *_cpython" >> dynamic_var.yaml
+          fi
+          echo "numpy:" >> dynamic_var.yaml
+          echo "- '2'" >> dynamic_var.yaml
+          echo "python_impl:" >> dynamic_var.yaml
+          echo "- cpython" >> dynamic_var.yaml
+      - run: cat dynamic_var.yaml
       - run: >
           conda install
           --channel conda-forge
@@ -42,7 +55,7 @@ jobs:
           --channel conda-forge
           --variant-config-files=${CONDA_PREFIX}/conda_build_config.yaml
           --variant-config-files=${GITHUB_WORKSPACE}/conda/variants/${{ inputs.target }}.yaml
-          --python="${{ inputs.python-version }}.* *_cpython"
+          --variant-config-files=dynamic_var.yaml
           --no-anaconda-upload
           --override-channels
           --output-folder conda/package conda

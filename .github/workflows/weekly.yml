@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - '.github/workflows/weekly.yml'
+      - ".github/workflows/weekly.yml"
   schedule:
     - cron: "0 0 * * 6" # every Saturday at midnight
 
 defaults:
   run:
-    shell: bash -l {0}  # required for conda env
+    shell: bash -l {0} # required for conda env
 
 jobs:
   build_conda:
@@ -18,7 +18,10 @@ jobs:
       matrix:
         variant:
           - {os: ubuntu-22.04, target: linux_64}
-        python-version: ["3.10", "3.11"]
+          - {os: macos-13, target: osx_64}
+          - {os: macos-14, target: osx_arm64}
+          - {os: windows-2022, target: win_64}
+        python-version: ["3.10", "3.13"]
     uses: ./.github/workflows/conda.yml
     with:
       os: ${{ matrix.variant.os }}

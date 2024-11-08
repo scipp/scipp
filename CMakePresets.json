@@ -86,7 +86,7 @@
       "name": "package-win-64",
       "inherits": "package",
       "description": "Windows options for package build",
-      "generator": "Visual Studio 16 2019"
+      "generator": "Visual Studio 17 2022"
     },
     {
       "name": "debug",
