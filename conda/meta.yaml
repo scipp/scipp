@@ -27,12 +27,12 @@ requirements:
   build:
     - {{ compiler('cxx') }}
     - cross-python_{{ target_platform }}  # [build_platform != target_platform]
+    - python                              # [build_platform != target_platform]
     - cmake
     - conan==1.64.1
     - cppcheck [linux64]
     - git
     - ninja
-    - python
   host:
     - python
     - tbb-devel {{ tbb_devel }}
@@ -79,7 +79,7 @@ build:
   number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
   script:
     # Passing Python_EXECUTABLE ensures that cmake sees the host interpreter instead of build.
-    - cmake --preset package-{{ target_platform }} -DPython_EXECUTABLE="%PYTHON%"
+    - cmake --preset package-{{ target_platform }} -DPython_EXECUTABLE="%PYTHON%" # [win]
     - cmake --build --preset build
     - ctest --preset test  # [build_platform == target_platform]
 
