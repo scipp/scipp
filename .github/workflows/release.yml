@@ -33,7 +33,7 @@ jobs:
           - {os: macos-13, target: osx_64}
           - {os: macos-14, target: osx_arm64}
           - {os: windows-2022, target: win_64}
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     uses: ./.github/workflows/conda.yml
     with:
       os: ${{ matrix.variant.os }}
