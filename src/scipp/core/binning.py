@@ -198,7 +198,7 @@ def make_binned(
             erase = ()
         elif len(dense_edges) + len(dense_groups) < len(edges) + len(groups):
             x = make_binned(x, edges=dense_edges, groups=dense_groups, erase=erase)
-            b: Bins[DataArray] = x  # type: ignore[assignment]
+            b: Bins[DataArray] = x.bins  # type: ignore[assignment]
             edges = [var for var in edges if var.dims[-1] in b.coords]
             groups = [var for var in groups if var.dims[-1] in b.coords]
             erase = ()
