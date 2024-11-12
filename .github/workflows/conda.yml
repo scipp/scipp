@@ -30,7 +30,16 @@ jobs:
           submodules: true
           fetch-depth: 0 # history required so cmake can determine version
 
-      - uses: conda-incubator/setup-miniconda@v3
+      - name: Setup conda environment
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          micromamba-version: 1.5.6-0
+          environment-name: build-env
+          create-args: >-
+            boa
+            conda-build
+            conda-forge-pinning
+            python=${{ inputs.python-version }}
       - name: Create variant file for conda build
         run: |
           echo "python:" > dynamic_var.yaml
@@ -44,14 +53,8 @@ jobs:
           echo "python_impl:" >> dynamic_var.yaml
           echo "- cpython" >> dynamic_var.yaml
       - run: cat dynamic_var.yaml
-      - run: >
-          conda install
-          --channel conda-forge
-          --channel nodefaults
-          --yes
-          conda-build conda-forge-pinning
-      - run: >
-          conda build
+      - run: |
+          conda mambabuild
           --channel conda-forge
           --variant-config-files=${CONDA_PREFIX}/conda_build_config.yaml
           --variant-config-files=${GITHUB_WORKSPACE}/conda/variants/${{ inputs.target }}.yaml
