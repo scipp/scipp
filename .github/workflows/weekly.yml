@@ -2,9 +2,12 @@ name: Weekly package builds
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - ".github/workflows/weekly.yml"
+  # It seems that the push trigger below makes the weekly workflow run on every push
+  # to `main` and on every tag creation. We remove it for now. To debug the weekly
+  # workflow in a PR, temporarily uncomment the push trigger below.
+  # push:
+  #   paths:
+  #     - ".github/workflows/weekly.yml"
   schedule:
     - cron: "0 0 * * 6" # every Saturday at midnight
 
