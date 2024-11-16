@@ -212,6 +212,13 @@ def test_bins_view_coords_drop():
     assert set(var.bins.coords) == {'time'}
 
 
+def test_bins_view_coords_assign():
+    var = make_binned()
+    assert set(var.bins.coords) == {'time'}
+    new = var.bins.assign_coords(('time',))
+    assert set(new.bins.coords) == set()
+    assert set(var.bins.coords) == {'time'}
+
 def test_bins_view_masks_iterators():
     var = make_binned()
     assert set(var.bins.masks) == {'mask'}
@@ -259,6 +266,13 @@ def test_bins_view_masks_drop():
     var = make_binned()
     assert set(var.bins.masks) == {'mask'}
     new = var.bins.drop_masks(('mask',))
+    assert set(new.bins.masks) == set()
+    assert set(var.bins.masks) == {'mask'}
+
+def test_bins_view_masks_assign():
+    var = make_binned()
+    assert set(var.bins.masks) == {'mask'}
+    new = var.bins.assign_masks(('mask',))
     assert set(new.bins.masks) == set()
     assert set(var.bins.masks) == {'mask'}
 
