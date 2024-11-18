@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 import os
+import pickle
 from collections.abc import Callable, Mapping, Sequence
 from functools import partial
 from inspect import getfullargspec, isfunction
@@ -631,6 +632,17 @@ def curve_fit(
 
     pardim = None
     if workers > 1 and len(map_over) > 0:
+        try:
+            pickle.dumps(f)
+        except AttributeError as err:
+            raise ValueError(
+                'The provided fit function is not pickleable and can not be used '
+                'with the multiprocessing module. '
+                'Either provide a function that is compatible with pickle '
+                'or explicitly disable multiprocess parallelism by passing '
+                'workers=1.'
+            ) from err
+
         max_size = max((da.sizes[dim] for dim in map_over))
         max_size_dim = next((dim for dim in map_over if da.sizes[dim] == max_size))
         pardim = max_size_dim if max_size > 1 else None
