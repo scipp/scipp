@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
-import os
 import pickle
 from collections.abc import Callable, Mapping, Sequence
 from functools import partial
@@ -9,6 +8,7 @@ from multiprocessing import Pool
 from numbers import Real
 
 import numpy as np
+import psutil
 
 from .core import (
     BinEdgeError,
@@ -643,12 +643,7 @@ def curve_fit(
     # Only parallelize if the user did not explicitly ask for a single worker
     # and a suitable dimension for parallelization was found.
     if workers != 1 and pardim is not None:
-        workers = (
-            # process_cpu_count added in 3.13
-            getattr(os, 'process_cpu_count', os.cpu_count)()
-            if workers is None
-            else workers
-        )
+        workers = psutil.cpu_count(logical=False) if workers is None else workers
         try:
             pickle.dumps(f)
         except (AttributeError, pickle.PicklingError) as err:

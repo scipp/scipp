@@ -11,25 +11,29 @@ asv==0.6.4
     # via -r asv.in
 asv-runner==0.2.1
     # via asv
-build==1.2.2
+build==1.2.2.post1
     # via asv
-distlib==0.3.8
+distlib==0.3.9
     # via virtualenv
-filelock==3.16.0
+filelock==3.16.1
     # via virtualenv
 importlib-metadata==8.5.0
     # via asv-runner
-json5==0.9.25
+json5==0.9.28
     # via asv
 pympler==1.1
     # via asv
-pyproject-hooks==1.1.0
+pyproject-hooks==1.2.0
     # via build
 pyyaml==6.0.2
     # via asv
 tabulate==0.9.0
     # via asv
-virtualenv==20.26.4
+tomli==2.1.0
+    # via
+    #   asv
+    #   build
+virtualenv==20.27.1
     # via asv
-zipp==3.20.2
+zipp==3.21.0
     # via importlib-metadata
