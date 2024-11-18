@@ -457,7 +457,7 @@ def curve_fit(
         expected to be a Numpy array.
     workers:
         Number of worker processes to use when fitting many curves.
-        Defaults to ``io.cpu_count`` or ``io.process_cpu_count``.
+        Defaults to ``io.process_cpu_count``.
 
     Returns
     -------
@@ -537,15 +537,16 @@ def curve_fit(
 
       >>> x = sc.linspace(dim='xx', start=0.0, stop=0.4, num=50, unit='m')
       >>> z = sc.linspace(dim='zz', start=0.0, stop=1, num=10)
-      >>> # Note that parameter a is z-dependent.
+      >>> # Parameter a is z-dependent.
       >>> y = func(x, a=z, b=17/sc.Unit('m'))
       >>> y.values += 0.01 * rng.normal(size=500).reshape(10, 50)
       >>> da = sc.DataArray(y, coords={'x': x, 'z': z})
 
       >>> popt, _ = curve_fit(
-      ...    ['x'], func, da,
-      ...     p0 = {'b': 1.0 / sc.Unit('m')})
-      >>> # Note that approximately a = z
+      ...     ['x'], func, da,
+      ...     p0 = {'b': 1.0 / sc.Unit('m')},
+      ...     workers=1)
+      >>> # Note that a = z
       >>> round(sc.values(popt['a']), 2),
       (<scipp.DataArray>
        Dimensions: Sizes[zz:10, ]
@@ -582,7 +583,7 @@ def curve_fit(
                              float64  [dimensionless]  ()  0.0021
        )
 
-      Note that the variance is about 10x lower in this example than in the
+      The variance is about 10x lower in this example than in the
       first 1D example. That is because in this example 50x10 points are used
       in the fit while in the first example only 50 points were used in the fit.
 
