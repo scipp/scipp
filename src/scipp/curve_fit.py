@@ -634,7 +634,7 @@ def curve_fit(
     if workers > 1 and len(map_over) > 0:
         try:
             pickle.dumps(f)
-        except AttributeError as err:
+        except (AttributeError, pickle.PicklingError) as err:
             raise ValueError(
                 'The provided fit function is not pickleable and can not be used '
                 'with the multiprocessing module. '
