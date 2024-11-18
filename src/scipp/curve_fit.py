@@ -626,13 +626,29 @@ def curve_fit(
     p0 = _make_defaults(f, coords.keys(), p0)
     bounds = _parse_bounds(bounds, p0)
 
-    workers = (
-        # process_cpu_count added in 3.13
-        getattr(os, 'process_cpu_count', os.cpu_count)() if workers is None else workers
-    )
-
     pardim = None
-    if workers > 1 and len(map_over) > 0:
+    if len(map_over) > 0:
+        fit_size = np.prod([da.sizes[dim] for dim in da.dims if dim not in map_over])
+        # Heuristic: if the fit size is above 10_000
+        # the multiprocessing likely does no good.
+        if workers is None and fit_size >= 10_000:
+            workers = 1
+
+        max_size = max((da.sizes[dim] for dim in map_over))
+        max_size_dim = next((dim for dim in map_over if da.sizes[dim] == max_size))
+        # Parallelize over longest dim because that is most likely
+        # to give us a balanced workload over the workers.
+        pardim = max_size_dim if max_size > 1 else None
+
+    # Only parallelize if the user did not explicitly ask for a single worker
+    # and a suitable dimension for parallelization was found.
+    if workers != 1 and pardim is not None:
+        workers = (
+            # process_cpu_count added in 3.13
+            getattr(os, 'process_cpu_count', os.cpu_count)()
+            if workers is None
+            else workers
+        )
         try:
             pickle.dumps(f)
         except (AttributeError, pickle.PicklingError) as err:
@@ -644,11 +660,6 @@ def curve_fit(
                 'workers=1.'
             ) from err
 
-        max_size = max((da.sizes[dim] for dim in map_over))
-        max_size_dim = next((dim for dim in map_over if da.sizes[dim] == max_size))
-        pardim = max_size_dim if max_size > 1 else None
-
-    if pardim is not None:
         chunksize = (da.sizes[pardim] // workers) + 1
         args = []
         for i in range(workers):
