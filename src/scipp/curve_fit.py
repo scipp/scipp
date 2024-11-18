@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
-
+import os
 from collections.abc import Callable, Mapping, Sequence
 from functools import partial
 from inspect import getfullargspec, isfunction
+from multiprocessing import Pool
 from numbers import Real
 
 import numpy as np
@@ -176,6 +177,70 @@ def _reshape_bounds(bounds):
     return left, right
 
 
+def _select_data_params_and_bounds(sel, da, p0, bounds):
+    dim, i = sel
+    return (
+        da[dim, i],
+        {k: v[dim, i] if dim in v.dims else v for k, v in p0.items()},
+        {
+            k: (
+                le[dim, i] if dim in le.dims else le,
+                ri[dim, i] if dim in ri.dims else ri,
+            )
+            for k, (le, ri) in bounds.items()
+        },
+    )
+
+
+def _serialize_variable(v):
+    return (v.dims, v.values, v.variances, str(v.unit) if v.unit is not None else None)
+
+
+def _serialize_mapping(v):
+    return (tuple(v.keys()), tuple(map(_serialize_variable, v.values())))
+
+
+def _serialize_bounds(v):
+    return (
+        tuple(v.keys()),
+        tuple(tuple(map(_serialize_variable, pair)) for pair in v.values()),
+    )
+
+
+def _serialize_data_array(da):
+    return (
+        _serialize_variable(da.data),
+        _serialize_mapping(da.coords),
+        _serialize_mapping(da.masks),
+    )
+
+
+def _deserialize_variable(t):
+    return array(dims=t[0], values=t[1], variances=t[2], unit=t[3])
+
+
+def _deserialize_data_array(t):
+    return DataArray(
+        _deserialize_variable(t[0]),
+        coords=_deserialize_mapping(t[1]),
+        masks=_deserialize_mapping(t[2]),
+    )
+
+
+def _deserialize_mapping(t):
+    return dict(zip(t[0], map(_deserialize_variable, t[1]), strict=True))
+
+
+def _deserialize_bounds(t):
+    return dict(
+        zip(
+            t[0],
+            (tuple(map(_deserialize_variable, pair)) for pair in t[1]),
+            strict=True,
+        )
+    )
+
+
 def _curve_fit(
     f,
     da,
@@ -193,15 +258,7 @@ def _curve_fit(
         for i in range(da.sizes[dim]):
             _curve_fit(
                 f,
-                da[dim, i],
-                {k: v[dim, i] if dim in v.dims else v for k, v in p0.items()},
-                {
-                    k: (
-                        le[dim, i] if dim in le.dims else le,
-                        ri[dim, i] if dim in ri.dims else ri,
-                    )
-                    for k, (le, ri) in bounds.items()
-                },
+                *_select_data_params_and_bounds((dim, i), da, p0, bounds),
                 map_over[1:],
                 unsafe_numpy_f,
                 (dg[i], dgcov[i]),
@@ -267,6 +324,45 @@ def _curve_fit(
     dgcov[:] = pcov
 
 
+def _curve_fit_chunk(
+    coords,
+    f,
+    da,
+    p0,
+    bounds,
+    map_over,
+    unsafe_numpy_f,
+    kwargs,
+):
+    coords = coords if isinstance(coords, dict) else _deserialize_mapping(coords)
+    da = da if isinstance(da, DataArray) else _deserialize_data_array(da)
+    p0 = p0 if isinstance(p0, dict) else _deserialize_mapping(p0)
+    bounds = bounds if isinstance(bounds, dict) else _deserialize_bounds(bounds)
+
+    f = (
+        _wrap_scipp_func(f, p0)
+        if not unsafe_numpy_f
+        else _wrap_numpy_func(f, p0, coords.keys())
+    )
+
+    # Create a dataarray with only the participating coords
+    _da = DataArray(da.data, coords=coords, masks=da.masks)
+
+    out = _prepare_numpy_outputs(da, p0, map_over)
+
+    _curve_fit(
+        f,
+        _da,
+        p0,
+        bounds,
+        map_over,
+        unsafe_numpy_f,
+        out,
+        **kwargs,
+    )
+    return out
+
+
 def curve_fit(
     coords: Sequence[str] | Mapping[str, str | Variable],
     f: Callable,
@@ -276,6 +372,7 @@ def curve_fit(
     bounds: dict[str, tuple[Variable, Variable] | tuple[Real, Real]] | None = None,
     reduce_dims: Sequence[str] = (),
     unsafe_numpy_f: bool = False,
+    workers: int | None = None,
     **kwargs,
 ) -> tuple[DataGroup, DataGroup]:
     """Use non-linear least squares to fit a function, f, to data.
@@ -357,6 +454,9 @@ def curve_fit(
         If ``unsafe_numpy_f`` is set to ``True`` then the arguments passed to ``f``
         will be Numpy arrays instead of scipp Variables and the output of ``f`` is
         expected to be a Numpy array.
+    workers:
+        Number of worker processes to use when fitting many curves.
+        Defaults to ``io.cpu_count`` or ``io.process_cpu_count``.
 
     Returns
     -------
@@ -486,7 +586,6 @@ def curve_fit(
       in the fit while in the first example only 50 points were used in the fit.
 
     """
-
     if 'jac' in kwargs:
         raise NotImplementedError(
             "The 'jac' argument is not yet supported. "
@@ -516,37 +615,65 @@ def curve_fit(
         for arg, coord in coords.items()
     }
 
-    p0 = _make_defaults(f, coords.keys(), p0)
-
-    f = (
-        _wrap_scipp_func(f, p0)
-        if not unsafe_numpy_f
-        else _wrap_numpy_func(f, p0, coords.keys())
-    )
-
     map_over = tuple(
         d
         for d in da.dims
         if d not in reduce_dims and not any(d in c.dims for c in coords.values())
     )
 
-    # Create a dataarray with only the participating coords
-    _da = DataArray(da.data, coords=coords, masks=da.masks)
+    p0 = _make_defaults(f, coords.keys(), p0)
+    bounds = _parse_bounds(bounds, p0)
 
-    out = _prepare_numpy_outputs(da, p0, map_over)
-
-    _curve_fit(
-        f,
-        _da,
-        p0,
-        _parse_bounds(bounds, p0),
-        map_over,
-        unsafe_numpy_f,
-        out,
-        **kwargs,
+    workers = (
+        # process_cpu_count added in 3.13
+        getattr(os, 'process_cpu_count', os.cpu_count)() if workers is None else workers
     )
 
-    return _datagroup_outputs(da, p0, map_over, *out)
+    pardim = None
+    if workers > 1 and len(map_over) > 0:
+        max_size = max((da.sizes[dim] for dim in map_over))
+        max_size_dim = next((dim for dim in map_over if da.sizes[dim] == max_size))
+        pardim = max_size_dim if max_size > 1 else None
+
+    if pardim is not None:
+        chunksize = (da.sizes[pardim] // workers) + 1
+        args = []
+        for i in range(workers):
+            _da, _p0, _bounds = _select_data_params_and_bounds(
+                (pardim, slice(i * chunksize, (i + 1) * chunksize)), da, p0, bounds
+            )
+            args.append(
+                (
+                    _serialize_mapping(coords),
+                    f,
+                    _serialize_data_array(_da),
+                    _serialize_mapping(_p0),
+                    _serialize_bounds(_bounds),
+                    map_over,
+                    unsafe_numpy_f,
+                    kwargs,
+                )
+            )
+
+        with Pool(workers) as pool:
+            par, cov = zip(*pool.starmap(_curve_fit_chunk, args), strict=True)
+            concat_axis = map_over.index(pardim)
+            par = np.concatenate(par, axis=concat_axis)
+            cov = np.concatenate(cov, axis=concat_axis)
+    else:
+        par, cov = _curve_fit_chunk(
+            coords,
+            f,
+            da,
+            p0,
+            bounds,
+            map_over,
+            unsafe_numpy_f,
+            kwargs,
+        )
+
+    par, cov = _datagroup_outputs(da, p0, map_over, par, cov)
+    return par, cov
 
 
 __all__ = ['curve_fit']
