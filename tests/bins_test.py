@@ -211,13 +211,18 @@ def test_bins_view_coords_drop():
     assert set(new.bins.coords) == set()
     assert set(var.bins.coords) == {'time'}
 
-
+    
 def test_bins_view_coords_assign():
     var = make_binned()
     assert set(var.bins.coords) == {'time'}
-    new = var.bins.assign_coords(('time',))
-    assert set(new.bins.coords) == set()
+    new_coords = ('time', 'latitude')
+    new_values = ([1, 2, 3], [10, 20, 30])
+    new = var.bins.assign_coords(new_coords, new_values)
+    assert set(new.bins.coords) == {'time', 'latitude'}
+    assert new.bins.coords['latitude'] == [10, 20, 30]
     assert set(var.bins.coords) == {'time'}
+    assert 'latitude' not in var.bins.coords
+
 
 def test_bins_view_masks_iterators():
     var = make_binned()
@@ -270,11 +275,15 @@ def test_bins_view_masks_drop():
     assert set(var.bins.masks) == {'mask'}
 
 def test_bins_view_masks_assign():
-    var = make_binned()
-    assert set(var.bins.masks) == {'mask'}
-    new = var.bins.assign_masks(('mask',))
-    assert set(new.bins.masks) == set()
-    assert set(var.bins.masks) == {'mask'}
+    var = make_binned() 
+    assert set(var.bins.masks) == {'mask'} 
+    new_masks = ('mask', 'ocean')
+    new_values = ([True, False, True], [False, True, False]) 
+    new = var.bins.assign_masks(new_masks, new_values)
+    assert set(new.bins.masks) == {'mask', 'ocean'} 
+    assert new.bins.masks['ocean'] == [False, True, False]
+    assert set(var.bins.masks) == {'mask'} 
+    assert 'ocean' not in var.bins.masks 
 
 
 @pytest.mark.parametrize('param', [(get_coords, 'time'), (get_masks, 'mask')])

@@ -281,22 +281,24 @@ class Bins(Generic[_O]):
     
     @property
     def coords(self) -> MetaDataMap:
-        """Coords of the bins"""
-        return _cpp._bins_view(self._data()).coords  # type: ignore[no-any-return]
-
-    def assign_coords(self, coords: str | Sequence[str]) -> _O:
-        """Assign coords to bin content"""
-        if isinstance(self._obj, Dataset):
-            raise NotImplementedError("bins.assign_coords does not support datasets")
+        """Return updated coords of the bins after assigning new coordinates."""
         content = self.constituents
-        content['data'] = content['data'].assign_coords(coords)  # type: ignore[union-attr]
-        data: Variable = _cpp._bins_no_validate(**content)
-        if isinstance(self._obj, DataArray):
-           out = self._obj.copy(deep=False)
-           out.data = data
-           return out
-        return data
-        
+        updated_coords = content['data'].coords
+        return updated_coords
+
+    def assign_coords(self, coords: str | Sequence[str], values: Sequence) -> DataArray:
+        """Assign new coords to bin content"""
+        content = self.constituents
+        if isinstance(coords, str):
+            coords = [coords]
+        if len(coords) != len(values):
+            raise ValueError("The length of `coords` must match the length of `values`.")
+        for coord, value in zip(coords, values):
+            content['data'] = content['data'].assign_coords({coord: value})
+            out = self._obj.copy(deep=False)
+            out.data = _cpp._bins_no_validate(**content)
+            return out
+
     @property
     def meta(self) -> MetaDataMap:
         """Coords and attrs of the bins
@@ -347,22 +349,22 @@ class Bins(Generic[_O]):
     
     @property
     def masks(self) -> MetaDataMap:
-       """Masks of the bins"""
+        """Masks of the bins"""
         return _cpp._bins_view(self._data()).masks  # type: ignore[no-any-return]
-
-    def assign_masks(self, masks: str | Sequence[str]) -> _O:
-        """Assign masks to bin content"""
+    
+    def assign_masks(self, masks: str | Sequence[str], values: Sequence) -> DataArray:
+        """Assign new masks to bin content"""
         if isinstance(self._obj, Dataset):
             raise NotImplementedError("bins.assign_masks does not support datasets")
-    
         content = self.constituents
-        content['data'] = content['data'].assign_masks(masks)  # type: ignore[union-attr]
-        data: Variable = _cpp._bins_no_validate(**content)
-        if isinstance(self._obj, DataArray):
-            out = self._obj.copy(deep=False)
-            out.data = data
+        if isinstance(masks, str):
+            masks = [masks]
+            for mask, value in zip(masks, values):
+                content['data'] = content['data'].assign_masks({mask: value})
+                out = self._obj.copy(deep=False)
+                out.data = _cpp._bins_no_validate(**content)
             return out
-        return data
+
     @property
     def data(self) -> Variable:
         """Data of the bins"""
