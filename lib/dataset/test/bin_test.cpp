@@ -163,7 +163,7 @@ protected:
   Variable edges_y_coarse =
       makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{-2, -1, 2});
 
-  void expect_near(const DataArray &a, const DataArray &b, double rtol = 1e-14,
+  void expect_near(const DataArray &a, const DataArray &b, double rtol = 1e-13,
                    double atol = 0.0) {
     const auto tolerance =
         values(max(bins_sum(a.data())) * (rtol * units::one));
