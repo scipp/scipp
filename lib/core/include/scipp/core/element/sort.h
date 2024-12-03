@@ -43,7 +43,7 @@ template <class Compare> constexpr auto make_sort(Compare compare) {
 }
 } // namespace
 
-auto sort_nonascending = make_sort(greater);
-auto sort_nondescending = make_sort(less);
+static const auto sort_nonascending = make_sort(greater);
+static const auto sort_nondescending = make_sort(less);
 
 } // namespace scipp::core::element
