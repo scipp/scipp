@@ -80,3 +80,21 @@ def test_load_csv_parse_units():
         },
     )
     assert_identical(loaded, expected)
+
+
+def test_load_csv_kwargs():
+    csv = '''# First line of header
+# Second line of header
+x,y,z
+1.2,3.4,5.6
+0.8,0.6,0.4'''
+
+    loaded = sc.io.load_csv(StringIO(csv), header=2)
+    expected = sc.Dataset(
+        {
+            'x': sc.array(dims=['row'], values=[1.2, 0.8]),
+            'y': sc.array(dims=['row'], values=[3.4, 0.6]),
+            'z': sc.array(dims=['row'], values=[5.6, 0.4]),
+        },
+    )
+    assert_identical(loaded, expected)

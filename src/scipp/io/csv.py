@@ -35,6 +35,7 @@ from ..core import Dataset
 def _load_dataframe(
     filepath_or_buffer: str | PathLike[str] | StringIO | BytesIO,
     sep: str | None,
+    **kwargs: Any,
 ) -> Any:
     try:
         import pandas as pd
@@ -44,7 +45,7 @@ def _load_dataframe(
             "Install it with `pip install pandas` or "
             "`conda install -c conda-forge pandas`."
         ) from None
-    return pd.read_csv(filepath_or_buffer, sep=sep)
+    return pd.read_csv(filepath_or_buffer, sep=sep, **kwargs)
 
 
 def load_csv(
@@ -53,6 +54,7 @@ def load_csv(
     sep: str | None = ',',
     data_columns: str | Iterable[str] | None = None,
     header_parser: HeaderParserArg = None,
+    **kwargs: Any,
 ) -> Dataset:
     """Load a CSV file as a dataset.
 
@@ -83,6 +85,8 @@ def load_csv(
     header_parser:
         Parser for column headers.
         See :func:`scipp.compat.pandas_compat.from_pandas` for details.
+    **kwargs:
+        Additional keyword arguments passed to :func:`pandas.read_csv`.
 
     Returns
     -------
@@ -136,7 +140,7 @@ def load_csv(
        Data:
          a                           int64              [m]  (row)  [1, 2, 3, 4]
     """
-    df = _load_dataframe(filename, sep=sep)
+    df = _load_dataframe(filename, sep=sep, **kwargs)
     return from_pandas_dataframe(
         df,
         data_columns=data_columns,
