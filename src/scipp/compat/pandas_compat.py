@@ -70,16 +70,16 @@ def from_pandas_dataframe(
         )
         for column_name in df.axes[1]
     )
-    coords = {da.name: da for da in columns}
+    data_arrays = {da.name: da for da in columns}
 
     if data_columns is None:
-        data = coords
+        data = data_arrays
         coords = {}
     else:
         if isinstance(data_columns, str):
             data_columns = (data_columns,)
-        data = {name: coords.pop(name) for name in data_columns}
-        coords = {name: coord.data for name, coord in coords.items()}
+        data = {name: data_arrays.pop(name) for name in data_columns}
+        coords = {name: coord.data for name, coord in data_arrays.items()}
 
     return Dataset(data, coords=coords)
 

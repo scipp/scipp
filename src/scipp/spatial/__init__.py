@@ -168,7 +168,7 @@ def scalings_from_vectors(
     """
     identity = linear_transform(value=np.identity(3))
     matrices = identity.broadcast(
-        dims=dims,  # type: ignore[arg-type]  # shortcoming of annotations of broadcast
+        dims=dims,
         shape=(len(values),),
     ).copy()
     for field_name, index in (("xx", 0), ("yy", 1), ("zz", 2)):

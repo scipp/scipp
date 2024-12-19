@@ -67,7 +67,7 @@ def rhessi_flares() -> str:
     return get_path('rhessi_flares.h5')
 
 
-def vulcan_steel_strain_data() -> DataGroup:
+def vulcan_steel_strain_data() -> DataGroup[Any]:
     return load_hdf5(get_path('VULCAN_221040_processed.h5'))  # type: ignore[return-value]
 
 
