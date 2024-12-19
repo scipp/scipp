@@ -460,17 +460,17 @@ def inv(var: Variable) -> Variable:
 
 
 __all__ = [
+    'affine_transform',
+    'affine_transforms',
+    'inv',
+    'linear_transform',
+    'linear_transforms',
     'rotation',
+    'rotation_as_rotvec',
     'rotations',
     'rotations_from_rotvecs',
-    'rotation_as_rotvec',
     'scaling_from_vector',
     'scalings_from_vectors',
     'translation',
     'translations',
-    'affine_transform',
-    'affine_transforms',
-    'linear_transform',
-    'linear_transforms',
-    'inv',
 ]

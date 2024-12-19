@@ -323,14 +323,14 @@ def dataarrays(
 
 
 __all__ = [
-    'dims',
-    'sizes_dicts',
-    'units',
-    'integer_dtypes',
-    'floating_dtypes',
-    'scalar_numeric_dtypes',
-    'variables',
-    'n_variables',
     'coord_dicts',
     'dataarrays',
+    'dims',
+    'floating_dtypes',
+    'integer_dtypes',
+    'n_variables',
+    'scalar_numeric_dtypes',
+    'sizes_dicts',
+    'units',
+    'variables',
 ]

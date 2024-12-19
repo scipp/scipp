@@ -220,7 +220,6 @@ del (
 )
 
 __all__ = [
-    '__version__',
     'BinEdgeError',
     'BinnedDataError',
     'Bins',
@@ -244,6 +243,7 @@ __all__ = [
     'Variable',
     'VariableError',
     'VariancesError',
+    '__version__',
     'abs',
     'acos',
     'acosh',

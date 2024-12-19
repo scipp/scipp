@@ -8,4 +8,4 @@ See also the `testing <../../reference/testing.rst>`_ reference.
 
 from .assertions import assert_allclose, assert_identical
 
-__all__ = ['assert_identical', 'assert_allclose']
+__all__ = ['assert_allclose', 'assert_identical']
