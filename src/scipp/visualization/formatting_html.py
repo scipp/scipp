@@ -445,7 +445,7 @@ def collapsible_section(
 
 
 def _mapping_section(
-    mapping: DataArray | Mapping[str, Variable],
+    mapping: DataArray | Mapping[str, Variable] | Dataset | Mapping[str, DataArray],
     *extra_details_func_args: Any,
     name: str,
     max_items_collapse: int,

@@ -79,7 +79,7 @@ def to_xarray(obj: VariableLike) -> xr.Variable | xr.DataArray | xr.Dataset:
         raise ValueError(f"to_xarray: cannot convert type '{type(obj)}'")
 
 
-def _from_xarray_variable(xr_obj: xr.Coordinate | xr.DataArray) -> Variable:
+def _from_xarray_variable(xr_obj: xr.Variable | xr.DataArray) -> Variable:
     """Converts an xarray Coordinate or the data in a DataArray to a scipp.Variable."""
     unit = xr_obj.attrs.get('units', None)
     return Variable(
@@ -156,7 +156,7 @@ def _from_xarray_dataset(ds: xr.Dataset) -> Dataset:
             "conversion.",
             stacklevel=3,
         )
-    sc_data = {k: _from_xarray_dataarray(v) for k, v in ds.items()}
+    sc_data = {str(k): _from_xarray_dataarray(v) for k, v in ds.items()}
     # The non-indexed coordinates of items also show up as global coordinates in an
     # Xarray dataset, so we make sure we exclude those when we add the remaining coords,
     # after creating the dataset from the individual data arrays.
@@ -166,7 +166,7 @@ def _from_xarray_dataset(ds: xr.Dataset) -> Dataset:
     return Dataset(
         data=sc_data,
         coords={
-            key: _from_xarray_variable(ds.coords[key])
+            str(key): _from_xarray_variable(ds.coords[key])
             for key in (set(ds.coords.keys()) - set(coords_in_data_arrays))
         },
     )
