@@ -132,6 +132,8 @@ class VariableDrawer:
         # Rough estimate of vertical space taken by depiction of events buffer
         if isinstance(events, Variable):
             return 1
+        elif isinstance(events, Dataset):
+            raise ValueError("Cannot visualize Dataset events")
         else:
             return 1 + 1.3 * (len(events.deprecated_meta) + len(events.masks))
 
