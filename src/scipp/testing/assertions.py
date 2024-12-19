@@ -305,4 +305,4 @@ def _add_note(loc: str, *args: str) -> Iterator[None]:
         raise
 
 
-__all__ = ['assert_identical', 'assert_allclose']
+__all__ = ['assert_allclose', 'assert_identical']
