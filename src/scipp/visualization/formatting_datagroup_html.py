@@ -23,7 +23,7 @@ from .resources import (
 
 
 def _format_shape(
-    var: Variable | DataArray | Dataset | DataGroup, br_at: int = 30
+    var: Variable | DataArray | Dataset | DataGroup[Any], br_at: int = 30
 ) -> str:
     """Return HTML Component that represents the shape of ``var``"""
     shape_list = [f"{escape(str(dim))}: {size}" for dim, size in var.sizes.items()]
@@ -120,7 +120,9 @@ def _summarize_atomic_variable(var: Any, name: str, depth: int = 0) -> str:
     )
 
 
-def _collapsible_summary(var: DataGroup, name: str, name_spaces: list[object]) -> str:
+def _collapsible_summary(
+    var: DataGroup[Any], name: str, name_spaces: list[object]
+) -> str:
     parent_type = "scipp"
     objtype = type(var).__name__
     shape_repr = _format_shape(var)
@@ -141,7 +143,9 @@ def _collapsible_summary(var: DataGroup, name: str, name_spaces: list[object]) -
     )
 
 
-def _datagroup_detail(dg: DataGroup, name_spaces: list[object] | None = None) -> str:
+def _datagroup_detail(
+    dg: DataGroup[Any], name_spaces: list[object] | None = None
+) -> str:
     name_spaces = name_spaces or []
     summary_rows = []
     for name, item in dg.items():
@@ -157,7 +161,7 @@ def _datagroup_detail(dg: DataGroup, name_spaces: list[object] | None = None) ->
     return dg_detail_tpl.substitute(summary_rows=''.join(summary_rows))
 
 
-def datagroup_repr(dg: DataGroup) -> str:
+def datagroup_repr(dg: DataGroup[Any]) -> str:
     """Return HTML Component containing details of ``dg``"""
     obj_type = f"scipp.{type(dg).__name__} "
     checkbox_status = "checked" if len(dg) < 15 else ''

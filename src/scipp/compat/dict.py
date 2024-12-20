@@ -5,8 +5,11 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Callable
+from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 
 from ..core import (
     DataArray,
@@ -20,7 +23,7 @@ from ..spatial import linear_transform, linear_transforms
 from ..typing import VariableLike
 
 
-def to_dict(scipp_obj: VariableLike) -> dict:
+def to_dict(scipp_obj: VariableLike) -> dict[str, Any]:
     """Convert a Scipp object (Variable, DataArray or Dataset)
     to a Python :class:`dict`.
 
@@ -52,17 +55,19 @@ def to_dict(scipp_obj: VariableLike) -> dict:
         for name, item in scipp_obj.items():
             out[name] = _data_array_to_dict(item)
         return out
+    else:
+        raise NotImplementedError("Unsupported type for to_dict")
 
 
-def _vec_parser(x, shp):
+def _vec_parser(x: Any, shp: object) -> npt.NDArray[Any]:
     """Parse vector_3_float to 2D NumPy array."""
     return np.array(x)
 
 
-def _variable_to_dict(v):
+def _variable_to_dict(v: Variable) -> dict[str, Any]:
     """Convert a Scipp Variable to a python dict."""
-    out = {
-        "dims": _dims_to_strings(v.dims),
+    out: dict[str, Any] = {
+        "dims": v.dims,
         "shape": v.shape,
         "unit": v.unit,
         "dtype": v.dtype,
@@ -71,7 +76,7 @@ def _variable_to_dict(v):
         out["aligned"] = False
 
     # Use defaultdict to return the raw values/variances by default
-    dtype_parser = defaultdict(lambda: lambda x, y: x)
+    dtype_parser: dict[str, Callable[..., Any]] = defaultdict(lambda: lambda x, y: x)
     # Using raw dtypes as dict keys doesn't appear to work, so we need to
     # convert to strings.
     dtype_parser.update(
@@ -94,9 +99,9 @@ def _variable_to_dict(v):
     return out
 
 
-def _data_array_to_dict(da):
+def _data_array_to_dict(da: DataArray) -> dict[str, Any]:
     """Convert a Scipp DataArray to a python dict."""
-    out = {"coords": {}, "masks": {}, "attrs": {}}
+    out: dict[str, Any] = {"coords": {}, "masks": {}, "attrs": {}}
     for key in out.keys():
         for name, item in getattr(da, key).items():
             out[key][str(name)] = _variable_to_dict(item)
@@ -106,12 +111,7 @@ def _data_array_to_dict(da):
     return out
 
 
-def _dims_to_strings(dims):
-    """Convert dims that may or may not be strings to strings."""
-    return tuple(str(dim) for dim in dims)
-
-
-def from_dict(dict_obj: dict) -> VariableLike:
+def from_dict(dict_obj: dict[str, Any]) -> VariableLike:
     """Convert a Python dict to a Scipp Variable, DataArray or Dataset.
 
     If the input keys contain both `'coords'` and `'data'`, then a DataArray is
@@ -151,7 +151,7 @@ def from_dict(dict_obj: dict) -> VariableLike:
         return out
 
 
-def _dict_to_variable(d):
+def _dict_to_variable(d: dict[str, Any]) -> Variable:
     """Convert a Python dict to a Scipp Variable."""
     d = dict(d)
     # The Variable constructor does not accept both `shape` and `values`. If
@@ -168,7 +168,10 @@ def _dict_to_variable(d):
             out[key] = d[key]
     # Hack for types that cannot be directly constructed using Variable()
     if out['dims']:
-        init = {'vector3': vectors, 'linear_transform3': linear_transforms}
+        init: dict[str, Callable[..., Variable]] = {
+            'vector3': vectors,
+            'linear_transform3': linear_transforms,
+        }
     else:
         init = {'vector3': vector, 'linear_transform3': linear_transform}
     make_var = init.get(str(out.get('dtype', None)), Variable)
@@ -184,7 +187,7 @@ def _dict_to_variable(d):
     return var
 
 
-def _dict_to_data_array(d):
+def _dict_to_data_array(d: dict[str, Any]) -> DataArray:
     """Convert a Python dict to a Scipp DataArray."""
     d = dict(d)
     if "data" not in d:
@@ -192,10 +195,10 @@ def _dict_to_data_array(d):
             "To create a DataArray, the supplied dict must contain "
             f"'data'. Got {d.keys()}."
         )
-    out = {"coords": {}, "masks": {}, "attrs": {}}
-    for key in out.keys():
+    meta: dict[str, dict[str, Variable]] = {"coords": {}, "masks": {}, "attrs": {}}
+    for key in meta.keys():
         if key in d:
             for name, item in d[key].items():
-                out[key][name] = _dict_to_variable(item)
-    out["data"] = _dict_to_variable(d["data"])
-    return DataArray(**out)
+                meta[key][name] = _dict_to_variable(item)
+    data = _dict_to_variable(d["data"])
+    return DataArray(data, **meta)  # type: ignore[arg-type]
