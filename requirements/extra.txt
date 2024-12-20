@@ -6,15 +6,15 @@
 #    pip-compile-multi
 #
 -r base.txt
-asttokens==2.4.1
+asttokens==3.0.0
     # via stack-data
-certifi==2024.8.30
+certifi==2024.12.14
     # via requests
 charset-normalizer==3.4.0
     # via requests
 comm==0.2.2
     # via ipykernel
-debugpy==1.8.8
+debugpy==1.8.11
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -30,7 +30,7 @@ idna==3.10
     # via requests
 ipykernel==6.29.5
     # via -r extra.in
-ipython==8.29.0
+ipython==8.30.0
     # via ipykernel
 jedi==0.19.2
     # via ipython
@@ -91,13 +91,11 @@ requests==2.32.3
     # via pooch
 scipy==1.14.1
     # via -r extra.in
-six==1.16.0
-    # via
-    #   asttokens
-    #   python-dateutil
+six==1.17.0
+    # via python-dateutil
 stack-data==0.6.3
     # via ipython
-tornado==6.4.1
+tornado==6.4.2
     # via
     #   ipykernel
     #   jupyter-client
@@ -117,5 +115,5 @@ urllib3==2.2.3
     # via requests
 wcwidth==0.2.13
     # via prompt-toolkit
-xarray==2024.10.0
+xarray==2024.11.0
     # via -r extra.in

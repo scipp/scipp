@@ -11,7 +11,7 @@ accessible-pygments==0.0.5
     # via pydata-sphinx-theme
 alabaster==1.0.0
     # via sphinx
-attrs==24.2.0
+attrs==24.3.0
     # via
     #   hypothesis
     #   jsonschema
@@ -38,24 +38,22 @@ docutils==0.21.2
     #   nbsphinx
     #   pydata-sphinx-theme
     #   sphinx
-fastjsonschema==2.20.0
+fastjsonschema==2.21.1
     # via nbformat
-fonttools==4.55.0
+fonttools==4.55.3
     # via matplotlib
 gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
     # via -r docs.in
-hypothesis==6.119.3
+hypothesis==6.122.4
     # via -r docs.in
 imagesize==1.4.1
     # via sphinx
 ipydatawidgets==4.3.5
     # via pythreejs
-ipympl==0.9.4
+ipympl==0.9.5
     # via -r docs.in
-ipython-genutils==0.2.0
-    # via ipympl
 ipywidgets==8.1.5
     # via
     #   -r docs.in
@@ -86,7 +84,7 @@ markupsafe==3.0.2
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.9.2
+matplotlib==3.10.0
     # via
     #   ipympl
     #   plopp
@@ -98,7 +96,7 @@ mistune==3.0.2
     # via nbconvert
 myst-parser==4.0.0
     # via -r docs.in
-nbclient==0.10.0
+nbclient==0.10.2
     # via nbconvert
 nbconvert==7.16.4
     # via nbsphinx
@@ -117,7 +115,7 @@ pillow==11.0.0
     #   matplotlib
 plopp==24.10.0
     # via -r docs.in
-pydata-sphinx-theme==0.16.0
+pydata-sphinx-theme==0.16.1
     # via -r docs.in
 pyparsing==3.2.0
     # via matplotlib
@@ -129,7 +127,7 @@ referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
-rpds-py==0.21.0
+rpds-py==0.22.3
     # via
     #   jsonschema
     #   referencing
@@ -167,7 +165,7 @@ sphinxcontrib-serializinghtml==2.0.0
     # via sphinx
 tinycss2==1.4.0
     # via nbconvert
-tomli==2.1.0
+tomli==2.2.1
     # via sphinx
 traittypes==0.2.1
     # via ipydatawidgets

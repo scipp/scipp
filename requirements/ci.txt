@@ -7,7 +7,7 @@
 #
 cachetools==5.5.0
     # via tox
-certifi==2024.8.30
+certifi==2024.12.14
     # via requests
 chardet==5.2.0
     # via tox
@@ -44,7 +44,7 @@ requests==2.32.3
     # via -r ci.in
 smmap==5.0.1
     # via gitdb
-tomli==2.1.0
+tomli==2.2.1
     # via
     #   pyproject-api
     #   tox
@@ -54,5 +54,5 @@ typing-extensions==4.12.2
     # via tox
 urllib3==2.2.3
     # via requests
-virtualenv==20.27.1
+virtualenv==20.28.0
     # via tox
