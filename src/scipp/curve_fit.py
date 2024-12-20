@@ -8,7 +8,6 @@ from multiprocessing import Pool
 from numbers import Real
 
 import numpy as np
-import psutil
 
 from .core import (
     BinEdgeError,
@@ -373,7 +372,7 @@ def curve_fit(
     bounds: dict[str, tuple[Variable, Variable] | tuple[Real, Real]] | None = None,
     reduce_dims: Sequence[str] = (),
     unsafe_numpy_f: bool = False,
-    workers: int | None = None,
+    workers: int = 1,
     **kwargs,
 ) -> tuple[DataGroup, DataGroup]:
     """Use non-linear least squares to fit a function, f, to data.
@@ -457,7 +456,7 @@ def curve_fit(
         expected to be a Numpy array.
     workers:
         Number of worker processes to use when fitting many curves.
-        Defaults to ``io.process_cpu_count``.
+        Defaults to ``1``.
 
     Returns
     -------
@@ -628,22 +627,15 @@ def curve_fit(
 
     pardim = None
     if len(map_over) > 0:
-        fit_size = np.prod([da.sizes[dim] for dim in da.dims if dim not in map_over])
-        # Heuristic: if the fit size is above 10_000
-        # the multiprocessing likely does no good.
-        if workers is None and fit_size >= 10_000:
-            workers = 1
-
         max_size = max((da.sizes[dim] for dim in map_over))
         max_size_dim = next((dim for dim in map_over if da.sizes[dim] == max_size))
         # Parallelize over longest dim because that is most likely
         # to give us a balanced workload over the workers.
         pardim = max_size_dim if max_size > 1 else None
 
-    # Only parallelize if the user did not explicitly ask for a single worker
+    # Only parallelize if the user asked for more than one worker
     # and a suitable dimension for parallelization was found.
     if workers != 1 and pardim is not None:
-        workers = psutil.cpu_count(logical=False) if workers is None else workers
         try:
             pickle.dumps(f)
         except (AttributeError, pickle.PicklingError) as err:

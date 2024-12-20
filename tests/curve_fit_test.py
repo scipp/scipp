@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
+import time
 from functools import partial
 
 import numpy as np
@@ -182,7 +183,7 @@ def test_compare_to_curve_fit_xarray(dims, coords, reduce_dims, p0, params, boun
         {'t': 5, 'x': 8, 'y': 7},
     ],
 )
-@pytest.mark.parametrize('workers', [None, 1, 2])
+@pytest.mark.parametrize('workers', [1, 2])
 def test_compare_to_curve_fit_xarray_multiple_curves(dims, p0, params, bounds, workers):
     _ = pytest.importorskip('xarray')
     da = array(
@@ -767,13 +768,34 @@ def test_with_nonpickle_function():
     def local_function(x, a, b):
         return func(x, a, b)
 
-    with pytest.raises(ValueError, match='The provided fit function is not'):
-        curve_fit(['x'], local_function, da)
-
-    with pytest.raises(ValueError, match='The provided fit function is not'):
-        curve_fit(['x'], lambda x, a, b: func(x, a, b), da)
-
-    # Explicitly disabling multiprocessing lets you use a local function
+    # Running without multiprocessing lets you use a local function
     curve_fit(['x'], local_function, da, workers=1)
-    # Function in __main__ scope works
+    with pytest.raises(ValueError, match='The provided fit function is not'):
+        # Running with multiprocessing fails if the function is not pickleable
+        curve_fit(['x'], local_function, da, workers=2)
+
+    # Function in __main__ scope works with multiprocessing
+    curve_fit(['x'], func, da, workers=2)
+
+
+def test_multiprocessing_used_if_several_workers_requested():
+    da = array2d(a=1.2, b=1.3, noise_scale=0.01)
+
+    # The point of this test is to verify that
+    # the "workers" argument actually does what we expect.
+    start = time.perf_counter()
     curve_fit(['x'], func, da)
+    end = time.perf_counter()
+    without_mp = end - start
+
+    start = time.perf_counter()
+    curve_fit(['x'], func, da, workers=100)
+    end = time.perf_counter()
+    with_mp = end - start
+
+    # It looks weird that we're asserting it's much slower with multiprocessing.
+    # Isn't the point to **improve** performance?
+    # But here the array is so small that it doesn't make any sense to parallelize,
+    # and we're requesting too many workers, so it should be very slow
+    # if the "workers" argument is respected.
+    assert with_mp > 10 * without_mp
