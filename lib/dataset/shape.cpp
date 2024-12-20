@@ -121,9 +121,6 @@ DataArray concat(const scipp::span<const DataArray> das, const Dim dim) {
                                   [&d = d](auto &_) { return _.contains(d); }));
     out.coords().set(d, std::move(coord));
   }
-  for (auto &&[d, attr] : concat_maps(map(das, get_attrs), dim)) {
-    out.attrs().set(d, std::move(attr));
-  }
   return out;
 }
 
@@ -281,8 +278,7 @@ DataArray flatten(const DataArray &a,
                   const Dim to_dim) {
   const auto &labels = from_labels.value_or(a.dims().labels());
   if (from_labels.has_value() && labels.empty())
-    return DataArray(flatten(a.data(), labels, to_dim), a.coords(), a.masks(),
-                     a.attrs());
+    return DataArray(flatten(a.data(), labels, to_dim), a.coords(), a.masks());
   expect_dimension_subset(a.dims(), labels);
   return dataset::transform(a, [&](const auto &in) {
     auto var = (&in == &a.data()) ? in : maybe_broadcast(in, labels, a.dims());
@@ -301,8 +297,7 @@ DataArray flatten(const DataArray &a,
 }
 
 DataArray transpose(const DataArray &a, const scipp::span<const Dim> dims) {
-  return {transpose(a.data(), dims), a.coords(), a.masks(), a.attrs(),
-          a.name()};
+  return {transpose(a.data(), dims), a.coords(), a.masks(), a.name()};
 }
 
 Dataset transpose(const Dataset &d, const scipp::span<const Dim> dims) {

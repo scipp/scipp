@@ -19,8 +19,6 @@ template <class Key, class Value> class SizedDict;
 using Coords = SizedDict<Dim, variable::Variable>;
 /// Dict of masks of DataArray and Dataset.
 using Masks = SizedDict<std::string, variable::Variable>;
-/// Dict of attributes of DataArray and Dataset.
-using Attrs = SizedDict<Dim, variable::Variable>;
 
 [[nodiscard]] SCIPP_DATASET_EXPORT Coords copy(const Coords &coords);
 [[nodiscard]] SCIPP_DATASET_EXPORT Masks copy(const Masks &masks);

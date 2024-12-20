@@ -12,23 +12,17 @@
 
 namespace scipp::dataset {
 
-/// Policies for attribute propagation in operations with data arrays or
-/// dataset.
-enum class AttrPolicy { Keep, Drop };
-
-/// Data array, a variable with coordinates, masks, and attributes.
+/// Data array, a variable with coordinates and masks.
 class SCIPP_DATASET_EXPORT DataArray {
 public:
   DataArray() = default;
-  DataArray(const DataArray &other, AttrPolicy attrPolicy);
   DataArray(const DataArray &other);
   DataArray(DataArray &&other) = default;
 
-  DataArray(Variable data, Coords coords, Masks masks, Attrs attrs,
+  DataArray(Variable data, Coords coords, Masks masks,
             std::string_view name = "");
   explicit DataArray(Variable data, typename Coords::holder_type coords = {},
                      typename Masks::holder_type masks = {},
-                     typename Attrs::holder_type attrs = {},
                      std::string_view name = "");
 
   DataArray &operator=(const DataArray &other);
@@ -50,13 +44,6 @@ public:
   Masks &masks() { return *m_masks; }
 
   DataArray drop_masks(const scipp::span<const std::string> mask_names) const;
-
-  const Attrs &attrs() const { return *m_attrs; }
-  Attrs &attrs() { return *m_attrs; }
-
-  DataArray drop_attrs(const scipp::span<const Dim> attr_names) const;
-
-  Coords meta() const;
 
   [[nodiscard]] const Dimensions &dims() const { return m_data->dims(); }
   [[nodiscard]] Dim dim() const { return m_data->dim(); }
@@ -118,7 +105,6 @@ private:
   std::shared_ptr<Variable> m_data;
   std::shared_ptr<Coords> m_coords;
   std::shared_ptr<Masks> m_masks;
-  std::shared_ptr<Attrs> m_attrs;
   bool m_readonly{false};
 };
 
@@ -126,7 +112,7 @@ SCIPP_DATASET_EXPORT bool operator==(const DataArray &a, const DataArray &b);
 SCIPP_DATASET_EXPORT bool operator!=(const DataArray &a, const DataArray &b);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
-copy(const DataArray &array, AttrPolicy attrPolicy = AttrPolicy::Keep);
+copy(const DataArray &array);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT bool equals_nan(const DataArray &a,
                                                    const DataArray &b);

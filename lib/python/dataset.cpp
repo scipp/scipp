@@ -46,12 +46,6 @@ void bind_dataset_coord_properties(py::class_<T, Ignored...> &c) {
       "coords", [](T &self) -> decltype(auto) { return self.coords(); },
       R"(
       Dict of coordinates.)");
-  // Metadata for dataset is same as `coords` since dataset cannot have attrs
-  // (unaligned coords).
-  c.def_property_readonly(
-      "meta", [](T &self) -> decltype(auto) { return self.meta(); },
-      R"(
-      Dict of coordinates.)");
 }
 
 template <class... Ignored>
@@ -181,30 +175,29 @@ void init_dataset(py::module &m) {
   bind_helper_view<values_view, Masks>(m, "Masks");
 
   bind_mutable_view_no_dim<Coords>(m, "Coords",
-                                   R"(dict-like collection of meta data
+                                   R"(dict-like collection of coordinates.
 
-Returned by :py:func:`DataArray.coords`, :py:func:`DataArray.attrs`, :py:func:`DataArray.meta`,
-and the corresponding properties of :py:class:`Dataset`.)");
+Returned by :py:meth:`DataArray.coords` and :py:meth:`Dataset.coords`.)");
   bind_mutable_view<Masks>(m, "Masks", R"(dict-like collection of masks.
 
 Returned by :py:func:`DataArray.masks`)");
 
   py::class_<DataArray> dataArray(m, "DataArray", R"(
-    Named variable with associated coords, masks, and attributes.)");
+    Named variable with associated coords and masks.)");
   py::options options;
   options.disable_function_signatures();
   dataArray.def(
       py::init([](const Variable &data, const py::object &coords,
-                  const py::object &masks, const py::object &attrs,
+                  const py::object &masks,
                   const std::string &name) {
         return DataArray{data, to_cpp_dict<Dim, Variable>(coords),
                          to_cpp_dict<std::string, Variable>(masks),
-                         to_cpp_dict<Dim, Variable>(attrs), name};
+                          name};
       }),
       py::arg("data"), py::kw_only(), py::arg("coords") = py::dict(),
-      py::arg("masks") = py::dict(), py::arg("attrs") = py::dict(),
+      py::arg("masks") = py::dict(),
       py::arg("name") = std::string{},
-      R"doc(__init__(self, data: Variable, coords: Union[Mapping[str, Variable], Iterable[tuple[str, Variable]]] = {}, masks: Union[Mapping[str, Variable], Iterable[tuple[str, Variable]]] = {}, attrs: Union[Mapping[str, Variable], Iterable[tuple[str, Variable]]] = {}, name: str = '') -> None
+      R"doc(__init__(self, data: Variable, coords: Union[Mapping[str, Variable], Iterable[tuple[str, Variable]]] = {}, masks: Union[Mapping[str, Variable], Iterable[tuple[str, Variable]]] = {}, name: str = '') -> None
 
           DataArray initializer.
 
@@ -216,8 +209,6 @@ Returned by :py:func:`DataArray.masks`)");
               Coordinates referenced by dimension.
           masks:
               Masks referenced by name.
-          attrs:
-              Attributes referenced by dimension.
           name:
               Name of the data array.
           )doc");

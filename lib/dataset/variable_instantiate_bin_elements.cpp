@@ -65,8 +65,6 @@ std::string Formatter<core::bin<DataArray>>::format(const Variable &var) const {
     s << ",\n" << dict_to_compact_string(buffer.coords(), "coords", margin);
   if (!buffer.masks().empty())
     s << ",\n" << dict_to_compact_string(buffer.masks(), "masks", margin);
-  if (!buffer.attrs().empty())
-    s << ",\n" << dict_to_compact_string(buffer.attrs(), "attrs", margin);
   return s.str() + ')';
 }
 
@@ -110,7 +108,7 @@ private:
     if (source.dims() == Dimensions{dim, dims.volume()} &&
         indices == parent.bin_indices()) {
       auto buffer = DataArray(std::move(data_buffer), copy(source.coords()),
-                              copy(source.masks()), copy(source.attrs()));
+                              copy(source.masks()));
       return make_bins_no_validate(indices, dim, std::move(buffer));
     } else {
       auto buffer = resize_default_init(source, dim, dims.volume());
