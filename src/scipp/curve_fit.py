@@ -305,10 +305,10 @@ def _curve_fit(
 
     try:
         popt, pcov = opt.curve_fit(
-            f,
-            X,
-            fda.data.values,
-            [v.value for v in p0.values()],
+            f=f,
+            xdata=X,
+            ydata=fda.data.values,
+            p0=[v.value for v in p0.values()],
             sigma=_get_sigma(fda),
             bounds=_reshape_bounds(bounds),
             **kwargs,
@@ -351,13 +351,13 @@ def _curve_fit_chunk(
     out = _prepare_numpy_outputs(da, p0, map_over)
 
     _curve_fit(
-        f,
-        _da,
-        p0,
-        bounds,
-        map_over,
-        unsafe_numpy_f,
-        out,
+        f=f,
+        da=_da,
+        p0=p0,
+        bounds=bounds,
+        map_over=map_over,
+        unsafe_numpy_f=unsafe_numpy_f,
+        out=out,
         **kwargs,
     )
     return out
@@ -673,14 +673,14 @@ def curve_fit(
             cov = np.concatenate(cov, axis=concat_axis)
     else:
         par, cov = _curve_fit_chunk(
-            coords,
-            f,
-            da,
-            p0,
-            bounds,
-            map_over,
-            unsafe_numpy_f,
-            kwargs,
+            coords=coords,
+            f=f,
+            da=da,
+            p0=p0,
+            bounds=bounds,
+            map_over=map_over,
+            unsafe_numpy_f=unsafe_numpy_f,
+            kwargs=kwargs,
         )
 
     return _datagroup_outputs(da, p0, map_over, par, cov)
