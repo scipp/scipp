@@ -203,7 +203,6 @@ def test_data_array_to_dict():
         masks={
             "amask": sc.Variable(dims=["y"], values=[True, True, False, True, False])
         },
-        attrs={"attr1": sc.Variable(dims=["x"], values=np.random.random(10))},
         data=sc.Variable(dims=["y", "x"], values=np.random.random([5, 10])),
     )
     da.coords.set_aligned("y", False)
@@ -218,7 +217,6 @@ def test_data_array_to_dict():
     assert sc.identical(sc.from_dict(da_dict["coords"]["y"]), da.coords["y"])
     assert not da_dict["coords"]["y"]["aligned"]
     assert sc.identical(sc.from_dict(da_dict["masks"]["amask"]), da.masks["amask"])
-    assert sc.identical(sc.from_dict(da_dict["attrs"]["attr1"]), da.attrs["attr1"])
 
 
 def test_data_array_from_dict():
@@ -228,7 +226,6 @@ def test_data_array_from_dict():
             "y": {"dims": ["y"], "values": np.arange(5), "unit": sc.units.m},
         },
         "masks": {"amask": {"dims": ["y"], "values": [True, True, False, True, False]}},
-        "attrs": {"attr1": {"dims": ["x"], "values": np.random.random(10)}},
         "data": {"dims": ["y", "x"], "values": np.random.random([5, 10])},
     }
     da = sc.from_dict(da_dict)
@@ -237,7 +234,6 @@ def test_data_array_from_dict():
     assert sc.identical(da.coords["y"], sc.from_dict(da_dict["coords"]["y"]))
     assert da.coords["y"].aligned
     assert sc.identical(da.masks["amask"], sc.from_dict(da_dict["masks"]["amask"]))
-    assert sc.identical(da.attrs["attr1"], sc.from_dict(da_dict["attrs"]["attr1"]))
     assert sc.identical(da.data, sc.from_dict(da_dict["data"]))
 
 

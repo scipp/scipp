@@ -65,7 +65,6 @@ array_1d = sc.DataArray(
         'mask.1': sc.less(x, 1.5 * sc.units.m),
         'mask.2': sc.less(x, 2.5 * sc.units.m),
     },
-    attrs={'attr1': x, 'attr2': 1.2 * sc.units.K},
 )
 array_2d = sc.DataArray(
     data=xy,
@@ -74,7 +73,6 @@ array_2d = sc.DataArray(
         'mask1': sc.less(x, 1.5 * sc.units.m),
         'mask2': sc.less(xy, 0.5 * sc.units.kg),
     },
-    attrs={'attr1': xy, 'attr2': 1.2 * sc.units.K},
 )
 
 
@@ -224,10 +222,6 @@ def test_data_array_unsupported_PyObject_coord():
     b = roundtrip(a)
     assert not sc.identical(a, b)
     del a.coords['obj']
-    assert sc.identical(a, b)
-    a.attrs['obj'] = obj
-    assert not sc.identical(a, b)
-    del a.attrs['obj']
     assert sc.identical(a, b)
 
 

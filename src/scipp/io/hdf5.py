@@ -365,11 +365,11 @@ class _DataArrayIO:
         group.attrs['name'] = data.name
         if _VariableIO.write(group.create_group('data'), var=data.data) is None:
             return None
-        views = [data.coords, data.masks, data.attrs]
+        views = [data.coords, data.masks]
         # Note that we write aligned and unaligned coords into the same group.
         # Distinction is via an attribute, which is more natural than having
         # 2 separate groups.
-        for view_name, view in zip(['coords', 'masks', 'attrs'], views, strict=True):
+        for view_name, view in zip(['coords', 'masks'], views, strict=True):
             subgroup = group.create_group(view_name)
             _write_mapping(subgroup, view, override.get(view_name))
         return group
@@ -382,7 +382,7 @@ class _DataArrayIO:
         contents = {}
         contents['name'] = group.attrs['name']
         contents['data'] = _VariableIO.read(group['data'])
-        for category in ['coords', 'masks', 'attrs']:
+        for category in ['coords', 'masks']:
             contents[category] = _read_mapping(group[category], override.get(category))
         return DataArray(**contents)
 

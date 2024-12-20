@@ -65,7 +65,6 @@ def assert_readonly_data_array(da, readonly_data: bool):
         da.data = var  # slice is readonly
     assert_dict_readonly(da.coords)
     assert_dict_readonly(da.masks)
-    assert_dict_readonly(da.attrs)
     if readonly_data:
         assert_variable_readonly(da.data)
         assert_variable_readonly(da.copy(deep=False).data)
@@ -104,7 +103,6 @@ def _make_data_array():
         data=var.copy(),
         coords={'x': var.copy()},
         masks={'m': var.copy()},
-        attrs={'a': var.copy()},
     )
 
 
@@ -120,11 +118,9 @@ def test_readonly_metadata():
     da = _make_data_array()
     assert_dict_readonly(da['x', 1:2].coords)
     assert_dict_readonly(da['x', 1:2].masks)
-    assert_dict_readonly(da['x', 1:2].attrs)
     # Shallow copy makes dict writable
     assert_dict_writable(da['x', 1:2].copy(deep=False).coords)
     assert_dict_writable(da['x', 1:2].copy(deep=False).masks)
-    assert_dict_writable(da['x', 1:2].copy(deep=False).attrs)
 
 
 def test_readonly_metadata_broadcast_sets_readonly_flag():
@@ -132,15 +128,12 @@ def test_readonly_metadata_broadcast_sets_readonly_flag():
     da = sc.concat([da, da], 'y')
     assert_variable_readonly(da['y', 1].coords['x'])
     assert_variable_readonly(da['y', 1].masks['m'])
-    assert_variable_readonly(da['y', 1].attrs['a'])
     # Shallow copy makes dict writable but not the items (buffers)
     assert_variable_readonly(da['y', 1].copy(deep=False).coords['x'])
     assert_variable_readonly(da['y', 1].copy(deep=False).masks['m'])
-    assert_variable_readonly(da['y', 1].copy(deep=False).attrs['a'])
     # Deep copy copies buffers
     assert_variable_writable(da['y', 1].copy().coords['x'])
     assert_variable_writable(da['y', 1].copy().masks['m'])
-    assert_variable_writable(da['y', 1].copy().attrs['a'])
 
 
 def test_dataset_readonly_metadata_dicts():
@@ -148,7 +141,6 @@ def test_dataset_readonly_metadata_dicts():
     # Coords dicts are shared and thus readonly
     assert_dict_readonly(ds['a'].coords)
     assert_dict_writable(ds['a'].masks)
-    assert_dict_writable(ds['a'].attrs)
 
 
 def test_dataset_readonly_metadata_items():
@@ -156,7 +148,6 @@ def test_dataset_readonly_metadata_items():
     # Coords are shared and thus readonly
     assert_variable_readonly(ds['a'].coords['x'])
     assert_variable_writable(ds['a'].masks['m'])
-    assert_variable_writable(ds['a'].attrs['a'])
 
 
 def test_readonly_dataset_slice():
