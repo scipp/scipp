@@ -691,8 +691,7 @@ def curve_fit(
             kwargs,
         )
 
-    par, cov = _datagroup_outputs(da, p0, map_over, par, cov)
-    return par, cov
+    return _datagroup_outputs(da, p0, map_over, par, cov)
 
 
 __all__ = ['curve_fit']
