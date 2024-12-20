@@ -14,7 +14,8 @@ protected:
       Dims{Dim::X}, Shape{2}, Values{std::pair{0, 2}, std::pair{2, 5}});
   Variable m_data = makeVariable<double>(Dims{Dim::Event}, Shape{5}, units::m,
                                          Values{1, 2, 3, 4, 5});
-  DataArray m_buffer = DataArray(m_data, {{Dim::X, m_data}}, {{"mask", m_data}});
+  DataArray m_buffer =
+      DataArray(m_data, {{Dim::X, m_data}}, {{"mask", m_data}});
   Variable m_var = make_bins(m_indices, Dim::Event, m_buffer);
 
   void check(const Variable &var) const {

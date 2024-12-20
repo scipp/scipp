@@ -111,8 +111,7 @@ private:
 SCIPP_DATASET_EXPORT bool operator==(const DataArray &a, const DataArray &b);
 SCIPP_DATASET_EXPORT bool operator!=(const DataArray &a, const DataArray &b);
 
-[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
-copy(const DataArray &array);
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray copy(const DataArray &array);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT bool equals_nan(const DataArray &a,
                                                    const DataArray &b);

@@ -188,15 +188,12 @@ Returned by :py:func:`DataArray.masks`)");
   options.disable_function_signatures();
   dataArray.def(
       py::init([](const Variable &data, const py::object &coords,
-                  const py::object &masks,
-                  const std::string &name) {
+                  const py::object &masks, const std::string &name) {
         return DataArray{data, to_cpp_dict<Dim, Variable>(coords),
-                         to_cpp_dict<std::string, Variable>(masks),
-                          name};
+                         to_cpp_dict<std::string, Variable>(masks), name};
       }),
       py::arg("data"), py::kw_only(), py::arg("coords") = py::dict(),
-      py::arg("masks") = py::dict(),
-      py::arg("name") = std::string{},
+      py::arg("masks") = py::dict(), py::arg("name") = std::string{},
       R"doc(__init__(self, data: Variable, coords: Union[Mapping[str, Variable], Iterable[tuple[str, Variable]]] = {}, masks: Union[Mapping[str, Variable], Iterable[tuple[str, Variable]]] = {}, name: str = '') -> None
 
           DataArray initializer.

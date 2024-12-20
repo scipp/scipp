@@ -33,8 +33,7 @@ protected:
   Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       dims, Values{std::pair{0, 2}, std::pair{2, 4}});
   Variable data = makeVariable<double>(Dims{Dim::X}, Shape{4});
-  DataArray buffer =
-      DataArray(data, {{Dim::X, data + data}}, {});
+  DataArray buffer = DataArray(data, {{Dim::X, data + data}}, {});
   Variable var = make_bins(indices, Dim::X, buffer);
 
   const scipp::index object_size =
@@ -264,8 +263,7 @@ TEST(SizeOf, data_array) {
       makeVariable<int64_t>(Dims{Dim::X}, Shape{3}, Values{0, 1, 2});
   const DataArray da(data, {{Dim::X, coord}});
   const auto object_size = sizeof(DataArray) + sizeof(dataset::Coords) +
-                            sizeof(dataset::Masks) +
-                           da.coords().capacity() +
+                           sizeof(dataset::Masks) + da.coords().capacity() +
                            da.masks().capacity();
   EXPECT_EQ(size_of(da, SizeofTag::ViewOnly),
             size_of(data, SizeofTag::ViewOnly) +

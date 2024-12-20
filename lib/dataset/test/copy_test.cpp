@@ -11,8 +11,7 @@ using namespace scipp;
 using namespace scipp::dataset;
 
 struct CopyTest : public ::testing::Test {
-  CopyTest() : dataset(factory.make("data")), array(copy(dataset["data"])) {
-  }
+  CopyTest() : dataset(factory.make("data")), array(copy(dataset["data"])) {}
 
 protected:
   DatasetFactory factory;

@@ -236,17 +236,16 @@ private:
   bool m_valid{true};
 };
 
-[[nodiscard]] SCIPP_DATASET_EXPORT Dataset
-copy(const Dataset &dataset);
+[[nodiscard]] SCIPP_DATASET_EXPORT Dataset copy(const Dataset &dataset);
 
-[[maybe_unused]] SCIPP_DATASET_EXPORT DataArray &
-copy(const DataArray &array, DataArray &out);
-[[maybe_unused]] SCIPP_DATASET_EXPORT DataArray
-copy(const DataArray &array, DataArray &&out);
-[[maybe_unused]] SCIPP_DATASET_EXPORT Dataset &
-copy(const Dataset &dataset, Dataset &out);
-[[maybe_unused]] SCIPP_DATASET_EXPORT Dataset
-copy(const Dataset &dataset, Dataset &&out);
+[[maybe_unused]] SCIPP_DATASET_EXPORT DataArray &copy(const DataArray &array,
+                                                      DataArray &out);
+[[maybe_unused]] SCIPP_DATASET_EXPORT DataArray copy(const DataArray &array,
+                                                     DataArray &&out);
+[[maybe_unused]] SCIPP_DATASET_EXPORT Dataset &copy(const Dataset &dataset,
+                                                    Dataset &out);
+[[maybe_unused]] SCIPP_DATASET_EXPORT Dataset copy(const Dataset &dataset,
+                                                   Dataset &&out);
 
 SCIPP_DATASET_EXPORT Dataset operator+(const Dataset &lhs, const Dataset &rhs);
 SCIPP_DATASET_EXPORT Dataset operator+(const Dataset &lhs,

@@ -40,8 +40,8 @@ size_of_impl(const DataArray &da, const SizeofTag tag,
              const std::optional<std::pair<Dim, double>> &scale_in_dim,
              bool include_coords = true) {
   auto size = static_cast<scipp::index>(
-      sizeof(DataArray) + sizeof(dataset::Coords) +
-      sizeof(dataset::Masks) + da.coords().capacity() + da.masks().capacity());
+      sizeof(DataArray) + sizeof(dataset::Coords) + sizeof(dataset::Masks) +
+      da.coords().capacity() + da.masks().capacity());
   size += size_of_impl(da.data(), tag, scale_in_dim);
   for (const auto &mask : da.masks()) {
     size += size_of_impl(mask.second, tag, scale_in_dim);

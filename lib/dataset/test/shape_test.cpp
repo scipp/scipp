@@ -301,7 +301,6 @@ TEST(ReshapeTest, round_trip_binedges) {
             a);
 }
 
-
 TEST(ReshapeTest, fold_x_with_2d_coord) {
   const auto var = fold(arange(Dim::X, 24), Dim::X, {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
