@@ -3,13 +3,13 @@
 # @author Simon Heybrock
 from __future__ import annotations
 
-import itertools
 from collections.abc import Callable
 from typing import Generic, Literal, Sequence, TypedDict, TypeVar
 
 from .._scipp import core as _cpp
 from ..typing import Dims, MetaDataMap, VariableLike
 from ._cpp_wrapper_util import call_func as _call_cpp_func
+from .argument_handlers import combine_dict_args
 from .bin_remapping import concat_bins
 from .cpp_classes import DataArray, Dataset, DType, Unit, Variable
 from .data_group import DataGroup
@@ -272,10 +272,9 @@ class Bins(Generic[_O]):
         self, coords: dict[str, Variable] | None = None, /, **coords_kwargs: Variable
     ) -> _O:
         """Return a new object with coords assigned to bin content."""
-        coords = coords or {}
         # Shallow copy constituents
         out = self._map_constituents_data(lambda data: data)
-        for name, coord in itertools.chain(coords.items(), coords_kwargs.items()):
+        for name, coord in combine_dict_args(coords, coords_kwargs).items():
             out.bins.coords[name] = coord  # type: ignore[union-attr]  # we know that out has bins
         return out
 
@@ -324,10 +323,9 @@ class Bins(Generic[_O]):
         self, masks: dict[str, Variable] | None = None, /, **masks_kwargs: Variable
     ) -> _O:
         """Return a new object with masks assigned to bin content."""
-        masks = masks or {}
         # Shallow copy constituents
         out = self._map_constituents_data(lambda data: data)
-        for name, coord in itertools.chain(masks.items(), masks_kwargs.items()):
+        for name, coord in combine_dict_args(masks, masks_kwargs).items():
             out.bins.masks[name] = coord  # type: ignore[union-attr]  # we know that out has bins
         return out
 
