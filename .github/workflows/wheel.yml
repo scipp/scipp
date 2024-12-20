@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       os:
-        description: 'Operating system: ubuntu-22.04, macos-14, or windows-2022'
+        description: 'Operating system: ubuntu-24.04, macos-14, or windows-2022'
         required: true
         type: string
       build:
@@ -23,7 +23,7 @@ jobs:
         submodules: true
         fetch-depth: 0  # history required so cmake can determine version
 
-    - uses: pypa/cibuildwheel@v2.21.3
+    - uses: pypa/cibuildwheel@v2.22.0
       env:
         CIBW_BUILD: ${{ inputs.build }}-*
         MACOSX_DEPLOYMENT_TARGET: "11.0"

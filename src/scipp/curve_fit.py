@@ -536,7 +536,7 @@ def curve_fit(
 
       >>> x = sc.linspace(dim='xx', start=0.0, stop=0.4, num=50, unit='m')
       >>> z = sc.linspace(dim='zz', start=0.0, stop=1, num=10)
-      >>> # Parameter a is z-dependent.
+      >>> # Parameter `a` is `z`-dependent.
       >>> y = func(x, a=z, b=17/sc.Unit('m'))
       >>> y.values += 0.01 * rng.normal(size=500).reshape(10, 50)
       >>> da = sc.DataArray(y, coords={'x': x, 'z': z})
