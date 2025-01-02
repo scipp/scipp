@@ -700,3 +700,15 @@ def test_ignores_default_arguments():
         ['x'], lambda x, a, *, b=1.3: func(x, a, b=b), da, p0={'b': sc.scalar(1.3)}
     )
     assert 'b' in res
+
+
+def test_with_callable_class():
+    da = array1d(a=1.2, b=1.3, noise_scale=0.01)
+
+    class Model:
+        def __call__(self, x, a, b):
+            return func(x, a, b)
+
+    popt, _ = curve_fit(['x'], Model(), da)
+    assert sc.allclose(popt['a'].data, sc.scalar(1.2), rtol=sc.scalar(2.0 * 0.01))
+    assert sc.allclose(popt['b'].data, sc.scalar(1.3), rtol=sc.scalar(2.0 * 0.01))

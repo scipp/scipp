@@ -2,7 +2,7 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from string import Template
 from typing import Any
 
@@ -23,7 +23,7 @@ from .resources import (
 
 
 def _format_shape(
-    var: Variable | DataArray | Dataset | DataGroup, br_at: int = 30
+    var: Variable | DataArray | Dataset | DataGroup[Any], br_at: int = 30
 ) -> str:
     """Return HTML Component that represents the shape of ``var``"""
     shape_list = [f"{escape(str(dim))}: {size}" for dim, size in var.sizes.items()]
@@ -83,9 +83,15 @@ def _summarize_atomic_variable(var: Any, name: str, depth: int = 0) -> str:
     preview = ''
     parent_obj_str = ''
     objtype_str = type(var).__name__
-    if isinstance(var, Dataset | DataArray | Variable):
-        parent_obj_str = "scipp"
-        shape_repr = _format_shape(var)
+    if hasattr(var, '__module__'):
+        parent_obj_str = var.__module__.partition('.')[0]
+    if hasattr(var, 'sizes') and isinstance(var.sizes, Mapping):
+        try:
+            shape_repr = _format_shape(var)
+        except Exception:  # noqa: S110
+            # We don't want the rendering to fail because some
+            # object did not behave the way we expected here
+            pass
     if isinstance(var, DataArray | Variable):
         preview = inline_variable_repr(var)
         dtype_str = str(var.dtype)
@@ -114,7 +120,9 @@ def _summarize_atomic_variable(var: Any, name: str, depth: int = 0) -> str:
     )
 
 
-def _collapsible_summary(var: DataGroup, name: str, name_spaces: list[object]) -> str:
+def _collapsible_summary(
+    var: DataGroup[Any], name: str, name_spaces: list[object]
+) -> str:
     parent_type = "scipp"
     objtype = type(var).__name__
     shape_repr = _format_shape(var)
@@ -135,7 +143,9 @@ def _collapsible_summary(var: DataGroup, name: str, name_spaces: list[object]) -
     )
 
 
-def _datagroup_detail(dg: DataGroup, name_spaces: list[object] | None = None) -> str:
+def _datagroup_detail(
+    dg: DataGroup[Any], name_spaces: list[object] | None = None
+) -> str:
     name_spaces = name_spaces or []
     summary_rows = []
     for name, item in dg.items():
@@ -151,7 +161,7 @@ def _datagroup_detail(dg: DataGroup, name_spaces: list[object] | None = None) ->
     return dg_detail_tpl.substitute(summary_rows=''.join(summary_rows))
 
 
-def datagroup_repr(dg: DataGroup) -> str:
+def datagroup_repr(dg: DataGroup[Any]) -> str:
     """Return HTML Component containing details of ``dg``"""
     obj_type = f"scipp.{type(dg).__name__} "
     checkbox_status = "checked" if len(dg) < 15 else ''

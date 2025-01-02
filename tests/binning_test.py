@@ -344,6 +344,20 @@ def test_bin_by_2d_dimension_coord_erases_extra_dim():
     assert da.bin(xy=20).dims == ('xy',)
 
 
+def test_bin_by_top_level_group_coord_while_binning_other_coord():
+    table = sc.data.table_xyz(1000, coord_max=10)
+    table.coords['lab'] = table.coords['x'].to(dtype='int64')
+    grouped = table.group('lab').bin(x=3).bin(y=3)
+    grouped.coords['lab2'] = 2 * grouped.coords['lab']
+
+    da = grouped.bin(lab2=5, x=2)
+
+    assert da.sizes == {'lab2': 5, 'x': 2, 'y': 3}
+    assert da.coords.is_edges('lab2')
+    assert da.coords.is_edges('x')
+    assert da.coords.is_edges('y')
+
+
 def test_hist_on_dense_data_without_edges_raisesTypeError():
     table = sc.data.table_xyz(10)
     with pytest.raises(TypeError):

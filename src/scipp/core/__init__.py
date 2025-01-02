@@ -3,7 +3,7 @@
 # @author Simon Heybrock
 
 # ruff: noqa: E402, F401, F403, F821
-from .._scipp import _debug_
+from .._scipp import _debug_  # type: ignore[attr-defined]
 
 if _debug_:
     import warnings
@@ -16,7 +16,11 @@ if _debug_:
     del warnings
 del _debug_
 
-from .._scipp import __version__
+from .._scipp import __version__ as _core_version  # type: ignore[attr-defined]
+
+__version__: str = _core_version
+del _core_version
+
 from .cpp_classes import (
     Coords,
     DataArray,
@@ -57,27 +61,27 @@ from .dimensions import (
 
 from .deprecation import _deprecated_attrs, _deprecated_meta, _deprecated_drop_attrs
 
-DataArray.attrs = property(_deprecated_attrs)
-DataArray.meta = property(_deprecated_meta)
-DataArray.drop_attrs = _deprecated_drop_attrs
+DataArray.attrs = property(_deprecated_attrs)  # type: ignore[assignment, method-assign]
+DataArray.meta = property(_deprecated_meta)  # type: ignore[assignment, method-assign]
+DataArray.drop_attrs = _deprecated_drop_attrs  # type: ignore[assignment, method-assign]
 del _deprecated_attrs, _deprecated_meta, _deprecated_drop_attrs
 
 for cls in (Variable, DataArray, Dataset):
-    cls.rename_dims = _rename_dims
-Variable.rename = _rename_variable
-DataArray.rename = _rename_data_array
-Dataset.rename = _rename_dataset
+    cls.rename_dims = _rename_dims  # type: ignore[method-assign]
+Variable.rename = _rename_variable  # type: ignore[method-assign]
+DataArray.rename = _rename_data_array  # type: ignore[method-assign]
+Dataset.rename = _rename_dataset  # type: ignore[method-assign]
 del _rename_dims, _rename_variable, _rename_data_array, _rename_dataset, cls
 
 from .bins import _bins, _set_bins
 
-Variable.bins = property(_bins, _set_bins)
-DataArray.bins = property(_bins, _set_bins)
-Dataset.bins = property(_bins, _set_bins)
+Variable.bins = property(_bins, _set_bins)  # type: ignore[assignment, method-assign]
+DataArray.bins = property(_bins, _set_bins)  # type: ignore[assignment, method-assign]
+Dataset.bins = property(_bins, _set_bins)  # type: ignore[assignment, method-assign]
 
 from .structured import _fields
 
-Variable.fields = property(
+Variable.fields = property(  # type: ignore[assignment, method-assign]
     _fields,
     doc='Provides access to fields of structured types such as vectors or matrices.',
 )
@@ -90,7 +94,7 @@ from .bins import Bins
 # variables. The most difficult part is probably mapping the ufunc to scipp
 # functions.
 for _cls in (Variable, DataArray, Dataset):
-    _cls.__array_ufunc__ = None
+    _cls.__array_ufunc__ = None  # type: ignore[union-attr]
 del _cls
 
 
@@ -189,38 +193,37 @@ from .like import zeros_like, ones_like, empty_like, full_like
 
 from .assignments import assign_coords, assign_masks, assign_attrs
 
-Dataset.assign_coords = assign_coords
-DataArray.assign_coords = assign_coords
-DataArray.assign_masks = assign_masks
-DataArray.assign_attrs = assign_attrs
+Dataset.assign_coords = assign_coords  # type: ignore[method-assign]
+DataArray.assign_coords = assign_coords  # type: ignore[method-assign]
+DataArray.assign_masks = assign_masks  # type: ignore[method-assign]
+DataArray.assign_attrs = assign_attrs  # type: ignore[method-assign]
 del assign_coords, assign_masks, assign_attrs
 
 # Remove submodules to reduce clutter
 del (
-    arithmetic,
-    assignments,
-    binning,
-    comparison,
-    counts,
-    cpp_classes,
-    cumulative,
-    dataset,
-    data_group,
-    dimensions,
-    like,
-    logical,
-    math,
-    operations,
-    reduction,
-    shape,
-    structured,
-    trigonometry,
-    unary,
-    variable,
+    arithmetic,  # type: ignore[name-defined]
+    assignments,  # type: ignore[name-defined]
+    binning,  # type: ignore[name-defined]
+    comparison,  # type: ignore[name-defined]
+    counts,  # type: ignore[name-defined]
+    cpp_classes,  # type: ignore[name-defined]
+    cumulative,  # type: ignore[name-defined]
+    dataset,  # type: ignore[name-defined]
+    data_group,  # type: ignore[name-defined]
+    dimensions,  # type: ignore[name-defined]
+    like,  # type: ignore[name-defined]
+    logical,  # type: ignore[name-defined]
+    math,  # type: ignore[name-defined]
+    operations,  # type: ignore[name-defined]
+    reduction,  # type: ignore[name-defined]
+    shape,  # type: ignore[name-defined]
+    structured,  # type: ignore[name-defined]
+    trigonometry,  # type: ignore[name-defined]
+    unary,  # type: ignore[name-defined]
+    variable,  # type: ignore[name-defined]
 )
 
 __all__ = [
-    '__version__',
     'BinEdgeError',
     'BinnedDataError',
     'Bins',
@@ -244,6 +247,7 @@ __all__ = [
     'Variable',
     'VariableError',
     'VariancesError',
+    '__version__',
     'abs',
     'acos',
     'acosh',

@@ -13,10 +13,11 @@ from .cpp_classes import DataArray, Dataset, DatasetError, Variable
 from .data_group import DataGroup
 from .unary import to_unit
 
-_T = TypeVar('_T', Variable, DataGroup)
-_VarDaDg = TypeVar('_VarDaDg', Variable, DataArray, DataGroup)
+_T = TypeVar('_T', Variable, DataGroup[object])
 _VarDa = TypeVar('_VarDa', Variable, DataArray)
-_DsDg = TypeVar('_DsDg', Dataset, DataGroup)
+_DsDg = TypeVar('_DsDg', Dataset, DataGroup[object])
+_E1 = TypeVar('_E1')
+_E2 = TypeVar('_E2')
 
 
 def islinspace(x: _T, dim: str | None = None) -> _T:
@@ -82,15 +83,17 @@ def allsorted(
 
 @overload
 def allsorted(
-    x: DataGroup, dim: str, order: Literal['ascending', 'descending'] = 'ascending'
-) -> DataGroup: ...
+    x: DataGroup[object],
+    dim: str,
+    order: Literal['ascending', 'descending'] = 'ascending',
+) -> DataGroup[object]: ...
 
 
 def allsorted(
-    x: Variable | DataGroup,
+    x: Variable | DataGroup[object],
     dim: str,
     order: Literal['ascending', 'descending'] = 'ascending',
-) -> bool | DataGroup:
+) -> bool | DataGroup[object]:
     """Check if all values of a variable are sorted.
 
     - If ``order`` is 'ascending',
@@ -238,12 +241,12 @@ def where(condition: Variable, x: Variable, y: Variable) -> Variable:
 
 
 def to(
-    var: _VarDaDg,
+    var: Variable,
     *,
     unit: _cpp.Unit | str | None = None,
     dtype: Any | None = None,
     copy: bool = True,
-) -> _VarDaDg:
+) -> Variable:
     """Converts a Variable or DataArray to a different dtype and/or a different unit.
 
     If the dtype and unit are both unchanged and ``copy`` is `False`,
@@ -354,16 +357,29 @@ def _generic_identical(a: Any, b: Any) -> bool:
         try:
             return array_equal(a, b)
         except TypeError:
-            return a == b
+            return a == b  # type: ignore[no-any-return]
 
 
-def _merge_data_group(lhs: DataGroup, rhs: DataGroup) -> DataGroup:
-    res = DataGroup(dict(lhs))
+def _merge_data_group(lhs: DataGroup[_E1], rhs: DataGroup[_E2]) -> DataGroup[_E1 | _E2]:
+    res: DataGroup[_E1 | _E2] = DataGroup(dict(lhs))
     for k, v in rhs.items():
         if k in res and not _generic_identical(res[k], v):
             raise DatasetError(f"Cannot merge data groups. Mismatch in item {k}")
         res[k] = v
     return res
+
+
+def _raw_positional_index(
+    sizes: dict[str, int], coord: Variable, index: slice | Variable
+) -> tuple[str, list[int | Variable]]:
+    dim, *inds = _call_cpp_func(
+        _cpp.label_based_index_to_positional_index,
+        list(sizes.keys()),
+        list(sizes.values()),
+        coord,
+        index,
+    )
+    return dim, inds  # type: ignore[return-value]
 
 
 def label_based_index_to_positional_index(
@@ -373,16 +389,20 @@ def label_based_index_to_positional_index(
 ) -> ScippIndex:
     """Returns the positional index equivalent to label based indexing
     the coord with values."""
-    dim, *inds = _call_cpp_func(
-        _cpp.label_based_index_to_positional_index,
-        list(sizes.keys()),
-        list(sizes.values()),
-        coord,
-        index,
-    )
-    return (dim, inds[0] if len(inds) == 1 else slice(*inds))
+    dim, inds = _raw_positional_index(sizes, coord, index)
+    # Length of inds is 1 if index was a variable
+    if len(inds) == 1:
+        if inds[0] < 0 or sizes[dim] <= inds[0]:
+            # If index is a variable and the coord is a bin-edge coord
+            #   - if the index is less than any edge then inds[0] is -1
+            #   - if the index is greater than any edge then inds[0] is sizes[dim]
+            raise IndexError(
+                f"Value {index} is not contained in the bin-edge coord {coord}"
+            )
+        return (dim, inds[0])
+    return (dim, slice(*inds))
 
 
 def as_const(x: _VarDa) -> _VarDa:
     """Return a copy with the readonly flag set."""
-    return _call_cpp_func(_cpp.as_const, x)
+    return _call_cpp_func(_cpp.as_const, x)  # type: ignore[return-value]

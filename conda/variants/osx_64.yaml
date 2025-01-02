@@ -1,4 +1,5 @@
-numpy:
-  - '1.22'
 target_platform:
   - osx-64
+# TODO: Compiler pinning is required because conan does not support >17
+cxx_compiler_version:
+  - 17

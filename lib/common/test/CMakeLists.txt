@@ -18,5 +18,7 @@ set_property(
 set_property(
   TARGET ${TARGET_NAME} PROPERTY EXCLUDE_FROM_ALL $<NOT:$<BOOL:${FULL_BUILD}>>
 )
-add_sanitizers(${TARGET_NAME})
+if(SANITIZERS)
+  add_sanitizers(${TARGET_NAME})
+endif()
 scipp_test(${TARGET_NAME} common)

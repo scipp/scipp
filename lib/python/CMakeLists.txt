@@ -59,7 +59,9 @@ if(PRECOMPILED_HEADERS)
   target_precompile_headers(_scipp PRIVATE pybind11.h)
 endif()
 
-add_sanitizers(_scipp)
+if(SANITIZERS)
+  add_sanitizers(_scipp)
+endif()
 
 install(TARGETS _scipp DESTINATION ${PYTHONDIR})
 

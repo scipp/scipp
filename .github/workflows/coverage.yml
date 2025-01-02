@@ -12,7 +12,7 @@ defaults:
 
 jobs:
   coverage:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Install dependencies
         run: |
@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 0  # history required so cmake can determine version
 
       - name: Disable TBB for much faster compilation.
-        run: cat .buildconfig/ci-linux.yml | grep -v 'gxx\|tbb' > env.yml
+        run: grep -v 'gxx\|tbb' .buildconfig/ci-linux.yml > env.yml
 
       - name: Setup conda environment
         uses: mamba-org/setup-micromamba@v2
@@ -61,7 +61,7 @@ jobs:
         run: mv tools/scipp-coverage-index.html coverage_html/index.html
 
       # - name: Deploy
-      #   uses: JamesIves/github-pages-deploy-action@v4.6.8
+      #   uses: JamesIves/github-pages-deploy-action@v4.7.2
       #   with:
       #     repository-name: scipp/scipp-coverage
       #     branch: main
