@@ -204,6 +204,20 @@ def test_bins_view_coords_iterators():
     assert sc.identical(value, var.bins.coords['time'])
 
 
+def test_bins_view_coords_assign():
+    var = make_binned()
+    assert set(var.bins.coords) == {'time'}
+    new = var.bins.assign_coords(
+        {'a': var.bins.coords['time'] * 2.0}, b=var.bins.coords['time'] * 3.0
+    )
+    assert set(new.bins.coords) == {'time', 'a', 'b'}
+    assert set(var.bins.coords) == {'time'}
+
+    assert sc.identical(new.bins.coords['time'], var.bins.coords['time'])
+    assert sc.identical(new.bins.coords['a'], var.bins.coords['time'] * 2.0)
+    assert sc.identical(new.bins.coords['b'], var.bins.coords['time'] * 3.0)
+
+
 def test_bins_view_coords_drop():
     var = make_binned()
     assert set(var.bins.coords) == {'time'}
@@ -253,6 +267,20 @@ def test_bins_view_masks_update():
     assert set(var.bins.masks) == {'mask', 'extra'}
     assert sc.identical(var.bins.masks['mask'], make_binned().bins.masks['mask'])
     assert sc.identical(var.bins.masks['extra'], ~make_binned().bins.masks['mask'])
+
+
+def test_bins_view_masks_assign():
+    var = make_binned()
+    assert set(var.bins.masks) == {'mask'}
+    new = var.bins.assign_masks(
+        {'a': ~var.bins.masks['mask']}, b=var.bins.masks['mask']
+    )
+    assert set(new.bins.masks) == {'mask', 'a', 'b'}
+    assert set(var.bins.masks) == {'mask'}
+
+    assert sc.identical(new.bins.masks['mask'], var.bins.masks['mask'])
+    assert sc.identical(new.bins.masks['a'], ~var.bins.masks['mask'])
+    assert sc.identical(new.bins.masks['b'], var.bins.masks['mask'])
 
 
 def test_bins_view_masks_drop():
