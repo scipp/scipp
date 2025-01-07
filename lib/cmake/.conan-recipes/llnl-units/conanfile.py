@@ -5,13 +5,13 @@ from conans import CMake, ConanFile, tools
 CMAKE_PROJECT_STR = """project(
     ${UNITS_CMAKE_PROJECT_NAME}
     LANGUAGES C CXX
-    VERSION 0.11.0
+    VERSION 0.12.0
 )"""
 
 
 class UnitsConan(ConanFile):
     name = "LLNL-Units"
-    version = "0.11.0"
+    version = "0.12.0"
     license = "BSD-3"
     url = "https://github.com/llnl/units"
     homepage = "https://units.readthedocs.io"
