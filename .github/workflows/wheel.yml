@@ -43,8 +43,7 @@ jobs:
       env:
         CIBW_BUILD: ${{ inputs.build }}-*
         MACOSX_DEPLOYMENT_TARGET: "11.0"
-        CIBW_BUILD_FRONTEND: 'pip; args: --global-option=build_ext --global-option=-I"/home/runner/micromamba/envs/build/include" --global-option=-L"/home/runner/micromamba/envs/build/lib"'
-
+        CIBW_CONFIG_SETTINGS: '--global-option=build_ext --global-option=-I"/home/runner/micromamba/envs/build/include" --global-option=-L"/home/runner/micromamba/envs/build/lib"'
     - name: Verify clean directory
       run: git diff --exit-code
       shell: bash
