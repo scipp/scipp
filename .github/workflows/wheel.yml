@@ -22,28 +22,13 @@ jobs:
       with:
         submodules: true
         fetch-depth: 0  # history required so cmake can determine version
-    - uses: actions/setup-python@v5
-      name: Install Python
-      with:
-        python-version: "3.10"
 
-    - name: Setup Micromamba Python 3.10
-      uses: mamba-org/setup-micromamba@v1
-      with:
-        environment-name: build
-        init-shell: bash
-        create-args: >-
-          python=3.10 benchmark=1.6.1 gtest=1.15.2 gmock=1.15.2 eigen=3.4.0 libboost-headers=1.86.0 --channel conda-forge
-
-    - name: Install cibuildwheel
-      run: |
-        python -m pip install --upgrade cibuildwheel delvewheel
-    - name: Build Wheels
-      run: cibuildwheel --output-dir wheelhouse
+    - uses: pypa/cibuildwheel@v2.22.0
       env:
+        CIBW_BEFORE_ALL_LINUX: yum install -y eigen3-devel boost-devel google-benchmark gtest
         CIBW_BUILD: ${{ inputs.build }}-*
         MACOSX_DEPLOYMENT_TARGET: "11.0"
-        CIBW_CONFIG_SETTINGS: '--global-option=build_ext --global-option=-I"/home/runner/micromamba/envs/build/include" --global-option=-L"/home/runner/micromamba/envs/build/lib"'
+
     - name: Verify clean directory
       run: git diff --exit-code
       shell: bash
