@@ -4,6 +4,7 @@
 # @author Simon Heybrock
 import os
 import tempfile
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -16,7 +17,7 @@ h5py = pytest.importorskip('h5py')
 
 def roundtrip(obj):
     with tempfile.TemporaryDirectory() as path:
-        name = f'{path}/test.hdf5'
+        name = Path(path, 'test.hdf5')
         obj.save_hdf5(filename=name)
         return sc.io.load_hdf5(filename=name)
 
@@ -158,7 +159,7 @@ def test_variable_legacy_str_unit():
     var = x.copy()
     var.unit = 'm/s*kg^2'
     with tempfile.TemporaryDirectory() as path:
-        name = f'{path}/test.hdf5'
+        name = Path(path, 'test.hdf5')
         var.save_hdf5(filename=name)
         with h5py.File(name, 'a') as f:
             f['values'].attrs['unit'] = str(var.unit)
@@ -246,7 +247,7 @@ def test_dataset():
 def test_dataset_item_can_be_read_as_data_array():
     ds = sc.Dataset(data={'a': array_1d})
     with tempfile.TemporaryDirectory() as path:
-        name = f'{path}/test.hdf5'
+        name = Path(path, 'test.hdf5')
         ds.save_hdf5(filename=name)
         loaded = {}
         with h5py.File(name, 'r') as f:
@@ -268,8 +269,8 @@ def test_dataset_with_many_coords():
     ds1 = sc.Dataset({'a': a}, coords=coords)
     ds2 = sc.Dataset({'a': a, 'b': b}, coords=coords)
     with tempfile.TemporaryDirectory() as path:
-        name1 = f'{path}/test1.hdf5'
-        name2 = f'{path}/test2.hdf5'
+        name1 = Path(path, 'test1.hdf5')
+        name2 = Path(path, 'test2.hdf5')
         ds1.save_hdf5(filename=name1)
         ds2.save_hdf5(filename=name2)
         size1 = os.path.getsize(name1)
