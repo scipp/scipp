@@ -36,6 +36,12 @@ requirements:
   host:
     - python
     - tbb-devel {{ tbb_devel }}
+    - libboost-headers=1.86.0
+    - eigen=3.4.0
+    - pybind11=2.13.6
+    - benchmark=1.6.1
+    - gmock=1.15.2
+    - gtest=1.15.2
   run:
     - numpy
     - python
