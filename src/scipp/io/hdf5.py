@@ -384,7 +384,26 @@ class _DataArrayIO:
         contents['data'] = _VariableIO.read(group['data'])
         for category in ['coords', 'masks']:
             contents[category] = _read_mapping(group[category], override.get(category))
+        _DataArrayIO._read_legacy_attrs_into(contents, group, override)
         return DataArray(**contents)
+
+    @staticmethod
+    def _read_legacy_attrs_into(
+        contents: dict[str, Any], group: h5.Group, override: Mapping[str, h5.Group]
+    ) -> None:
+        """Load attributes as coordinates.
+
+        Attributes were removed in https://github.com/scipp/scipp/pull/3626
+        but old files that contain attributes remain.
+        """
+        if (attrs_group := group.get('attrs')) is not None:
+            attrs = _read_mapping(attrs_group, override.get('attrs'))
+            if intersection := contents['coords'].keys() & attrs.keys():
+                raise ValueError(
+                    f"Data array '{contents['name']}' contains legacy attributes "
+                    f'{intersection} which also exist as coordinates.'
+                )
+            contents['coords'].update(attrs)
 
 
 class _DatasetIO:

@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 
 import scipp as sc
+import scipp.testing
 from scipp.io.hdf5 import _collection_element_name
 
 h5py = pytest.importorskip('h5py')
@@ -231,6 +232,42 @@ def test_data_array_coord_alignment():
     a.coords.set_aligned('y', False)
     b = roundtrip(a)
     assert sc.identical(a, b)
+
+
+# Attributes where removed in https://github.com/scipp/scipp/pull/3626
+# But the loader can still load attrs from files and assigns them as coords
+# as per https://github.com/scipp/scipp/pull/3626#discussion_r1906966229
+def test_data_array_loads_legacy_attributes():
+    a = sc.ones(sizes=array_1d.sizes, dtype='float64')
+    µ = sc.array(dims=array_1d.dims, values=[f'a{i}' for i in range(len(array_1d))])
+    with_attrs_as_coords = array_1d.assign_coords({'a': a, 'µ': µ})
+    with_attrs_as_coords.coords.set_aligned('a', False)
+    with_attrs_as_coords.coords.set_aligned('µ', False)
+
+    with tempfile.TemporaryDirectory() as path:
+        name = Path(path, 'test.hdf5')
+        with_attrs_as_coords.save_hdf5(filename=name)
+        with h5py.File(name, 'r+') as f:
+            # Move new coords to attrs
+            f.move(source='coords/elem_002_a', dest='attrs/elem_000_a')
+            f.move(source='coords/elem_003_&#181;', dest='attrs/elem_001_&#181;')
+
+        loaded = sc.io.load_hdf5(filename=name)
+    sc.testing.assert_identical(with_attrs_as_coords, loaded)
+
+
+def test_data_array_raises_with_clashing_attr_and_coord():
+    initial = array_1d
+
+    with tempfile.TemporaryDirectory() as path:
+        name = Path(path, 'test.hdf5')
+        initial.save_hdf5(filename=name)
+        with h5py.File(name, 'r+') as f:
+            # Copy coord into attr to create clash
+            f.copy(source='coords/elem_000_x', dest='attrs/elem_000_x')
+
+        with pytest.raises(ValueError, match="attributes {'x'}"):
+            sc.io.load_hdf5(filename=name)
 
 
 def test_variable_binned_data_array_coord_alignment():
