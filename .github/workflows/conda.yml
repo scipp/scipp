@@ -43,6 +43,8 @@ jobs:
           echo "- '2'" >> dynamic_var.yaml
           echo "python_impl:" >> dynamic_var.yaml
           echo "- cpython" >> dynamic_var.yaml
+          echp "is_python_min:" >> dynamic_var.yaml
+          echo "- false" >> dynamic_var.yaml
       - run: cat dynamic_var.yaml
       - run: >
           conda install
