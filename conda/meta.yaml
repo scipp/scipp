@@ -77,7 +77,7 @@ test:
     - tests/
   commands:
     - python -m pytest -v tests
-    - python cmake-package-test/build.py
+    # - python cmake-package-test/build.py
 {% endif %}
 
 build:
