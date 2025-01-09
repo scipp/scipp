@@ -8,6 +8,8 @@
 using namespace scipp;
 using namespace scipp::core::element;
 
+class LogicalTest : public ::testing::Test {};
+
 TEST(LogicalTest, accepts_only_bool) {
   static_assert(std::is_same_v<decltype(logical)::types, std::tuple<bool>>);
   static_assert(
