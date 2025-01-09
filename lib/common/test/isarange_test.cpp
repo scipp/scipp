@@ -49,7 +49,7 @@ TEST(IsArangeTest, std_iota) {
 
 TEST(IsArangeTest, generate_addition) {
   std::vector<int32_t> range;
-  double current = 345;
+  int32_t current = 345;
   std::generate_n(std::back_inserter(range), 2ul << 16ul, [&current]() {
     const int32_t step = 1;
     current += step;
