@@ -20,7 +20,7 @@ add_executable(
   element_geometric_operations_test.cpp
   element_histogram_test.cpp
   element_hyperbolic_test.cpp
-  # element_logical_test.cpp
+  element_logical_test.cpp
   element_map_to_bins_test.cpp
   element_math_test.cpp
   element_special_values_test.cpp
