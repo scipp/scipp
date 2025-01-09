@@ -8,7 +8,7 @@
 using namespace scipp;
 using namespace scipp::core::element;
 
-template <typename T> class LogicalTest : public ::testing::Test {};
+class LogicalTest : public ::testing::Test {};
 
 TEST_F(LogicalTest, accepts_only_bool) {
   static_assert(std::is_same_v<decltype(logical)::types, std::tuple<bool>>);
