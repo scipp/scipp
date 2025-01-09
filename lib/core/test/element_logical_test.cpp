@@ -29,55 +29,55 @@ TEST(LogicalTest, logical_inplace_unit) {
   EXPECT_THROW(logical_inplace(u, units::m), except::UnitError);
 }
 
-// TEST_F(LogicalTest, and) {
-//   EXPECT_EQ(logical_and(true, true), true);
-//   EXPECT_EQ(logical_and(true, false), false);
-//   EXPECT_EQ(logical_and(false, true), false);
-//   EXPECT_EQ(logical_and(false, false), false);
-// }
+TEST(LogicalTest, logical_and_op) {
+  EXPECT_EQ(logical_and(true, true), true);
+  EXPECT_EQ(logical_and(true, false), false);
+  EXPECT_EQ(logical_and(false, true), false);
+  EXPECT_EQ(logical_and(false, false), false);
+}
 
-// TEST_F(LogicalTest, or) {
-//   EXPECT_EQ(logical_or(true, true), true);
-//   EXPECT_EQ(logical_or(true, false), true);
-//   EXPECT_EQ(logical_or(false, true), true);
-//   EXPECT_EQ(logical_or(false, false), false);
-// }
+TEST(LogicalTest, logical_or_op) {
+  EXPECT_EQ(logical_or(true, true), true);
+  EXPECT_EQ(logical_or(true, false), true);
+  EXPECT_EQ(logical_or(false, true), true);
+  EXPECT_EQ(logical_or(false, false), false);
+}
 
-// TEST_F(LogicalTest, xor) {
-//   EXPECT_EQ(logical_xor(true, true), false);
-//   EXPECT_EQ(logical_xor(true, false), true);
-//   EXPECT_EQ(logical_xor(false, true), true);
-//   EXPECT_EQ(logical_xor(false, false), false);
-// }
+TEST(LogicalTest, logical_xor_op) {
+  EXPECT_EQ(logical_xor(true, true), false);
+  EXPECT_EQ(logical_xor(true, false), true);
+  EXPECT_EQ(logical_xor(false, true), true);
+  EXPECT_EQ(logical_xor(false, false), false);
+}
 
 TEST(LogicalTest, logical_not_op) {
   EXPECT_EQ(logical_not(true), false);
   EXPECT_EQ(logical_not(false), true);
 }
 
-// TEST_F(LogicalTest, and_equals) {
-//   for (const auto &a : {true, false})
-//     for (const auto &b : {true, false}) {
-//       bool x = a;
-//       logical_and_equals(x, b);
-//       EXPECT_EQ(x, logical_and(a, b));
-//     }
-// }
+TEST(LogicalTest, and_equals) {
+  for (const auto &a : {true, false})
+    for (const auto &b : {true, false}) {
+      bool x = a;
+      logical_and_equals(x, b);
+      EXPECT_EQ(x, logical_and(a, b));
+    }
+}
 
-// TEST_F(LogicalTest, or_equals) {
-//   for (const auto &a : {true, false})
-//     for (const auto &b : {true, false}) {
-//       bool x = a;
-//       logical_or_equals(x, b);
-//       EXPECT_EQ(x, logical_or(a, b));
-//     }
-// }
+TEST(LogicalTest, or_equals) {
+  for (const auto &a : {true, false})
+    for (const auto &b : {true, false}) {
+      bool x = a;
+      logical_or_equals(x, b);
+      EXPECT_EQ(x, logical_or(a, b));
+    }
+}
 
-// TEST_F(LogicalTest, xor_equals) {
-//   for (const auto &a : {true, false})
-//     for (const auto &b : {true, false}) {
-//       bool x = a;
-//       logical_xor_equals(x, b);
-//       EXPECT_EQ(x, logical_xor(a, b));
-//     }
-// }
+TEST(LogicalTest, xor_equals) {
+  for (const auto &a : {true, false})
+    for (const auto &b : {true, false}) {
+      bool x = a;
+      logical_xor_equals(x, b);
+      EXPECT_EQ(x, logical_xor(a, b));
+    }
+}
