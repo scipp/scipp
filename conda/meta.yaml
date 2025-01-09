@@ -70,6 +70,12 @@ test:
     - scipy>=1.7.0
     - tbb-devel=2022.0.0
     - xarray
+    - libboost-headers=1.86.0
+    - eigen=3.4.0
+    - pybind11=2.13.6
+    - benchmark=1.6.1
+    - gmock=1.15.2
+    - gtest=1.15.2
   files:
     - cmake-package-test/
   source_files:
