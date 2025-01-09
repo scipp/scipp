@@ -52,10 +52,10 @@ TEST_F(LogicalTest, logical_inplace_unit) {
 //   EXPECT_EQ(logical_xor(false, false), false);
 // }
 
-// TEST_F(LogicalTest, not) {
-//   EXPECT_EQ(logical_not(true), false);
-//   EXPECT_EQ(logical_not(false), true);
-// }
+TEST_F(LogicalTest, not) {
+  EXPECT_EQ(logical_not(true), false);
+  EXPECT_EQ(logical_not(false), true);
+}
 
 // TEST_F(LogicalTest, and_equals) {
 //   for (const auto &a : {true, false})
