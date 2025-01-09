@@ -49,7 +49,7 @@ TEST(VariableSliceTest, negative_stride_throws) {
   // sanity check since Variable::slice needs modifications if class Slice
   // started to support this. See DISABLED tests below.
   const auto var = make_range();
-  ASSERT_ANY_THROW(var.slice({Dim::X, 0, 10, -1}));
+  ASSERT_ANY_THROW(static_cast<void>(var.slice({Dim::X, 0, 10, -1})));
 }
 
 TEST(VariableSliceTest,

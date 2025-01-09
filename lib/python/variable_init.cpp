@@ -280,25 +280,26 @@ void bind_init(py::class_<Variable> &cls) {
         const auto [scipp_dtype, actual_unit] =
             cast_dtype_and_unit(dtype, unit);
 
-        auto var = [&, scipp_dtype = scipp_dtype, actual_unit = actual_unit]() {
-          if (scipp_dtype == ::dtype<Eigen::Vector3d>)
+        auto var = [&, c_scipp_dtype = scipp_dtype,
+                    c_actual_unit = actual_unit]() {
+          if (c_scipp_dtype == ::dtype<Eigen::Vector3d>)
             return make_structured_variable<Eigen::Vector3d, double, 3>(
-                dim_labels, values, variances, actual_unit);
-          if (scipp_dtype == ::dtype<Eigen::Matrix3d>)
+                dim_labels, values, variances, c_actual_unit);
+          if (c_scipp_dtype == ::dtype<Eigen::Matrix3d>)
             return make_structured_variable<Eigen::Matrix3d, double, 3, 3>(
-                dim_labels, values, variances, actual_unit);
-          if (scipp_dtype == ::dtype<Eigen::Affine3d>)
+                dim_labels, values, variances, c_actual_unit);
+          if (c_scipp_dtype == ::dtype<Eigen::Affine3d>)
             return make_structured_variable<Eigen::Affine3d, double, 4, 4>(
-                dim_labels, values, variances, actual_unit);
-          if (scipp_dtype == ::dtype<core::Quaternion>)
+                dim_labels, values, variances, c_actual_unit);
+          if (c_scipp_dtype == ::dtype<core::Quaternion>)
             return make_structured_variable<core::Quaternion, double, 4>(
-                dim_labels, values, variances, actual_unit);
-          if (scipp_dtype == ::dtype<core::Translation>)
+                dim_labels, values, variances, c_actual_unit);
+          if (c_scipp_dtype == ::dtype<core::Translation>)
             return make_structured_variable<core::Translation, double, 3>(
-                dim_labels, values, variances, actual_unit);
+                dim_labels, values, variances, c_actual_unit);
 
-          return make_variable(dim_labels, values, variances, actual_unit,
-                               scipp_dtype);
+          return make_variable(dim_labels, values, variances, c_actual_unit,
+                               c_scipp_dtype);
         }();
 
         var.set_aligned(aligned);

@@ -120,6 +120,6 @@ TEST_F(GeneratedBinaryDataArrayTest, non_bool_masks_with_same_names) {
       makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1, 2});
   auto mask = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0.1, 0.1});
   a = DataArray(data, {{Dim::X, coord}}, {{"mask", mask}});
-  ASSERT_THROW(less(a, a), except::TypeError);
-  ASSERT_THROW(a += a, except::TypeError);
+  ASSERT_THROW(static_cast<void>(less(a, a)), except::TypeError);
+  ASSERT_THROW(static_cast<void>(a += a), except::TypeError);
 }

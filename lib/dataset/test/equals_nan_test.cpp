@@ -38,8 +38,8 @@ protected:
     check_equal(make_bins(indices, Dim::X, ds));
     da.masks().erase("mask");
     ds["a"].masks().erase("mask");
-    ASSERT_NO_THROW(da + da);
-    ASSERT_NO_THROW(da + copy(da));
+    ASSERT_NO_THROW(static_cast<void>(da + da));
+    ASSERT_NO_THROW(static_cast<void>(da + copy(da)));
     ASSERT_NO_THROW(ds + ds);
     ASSERT_NO_THROW(ds + copy(ds));
     ASSERT_NO_THROW(ds.setData("b", da));

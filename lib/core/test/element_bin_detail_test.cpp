@@ -15,7 +15,7 @@ using CoordEdgeTypePairs =
                      std::pair<double, int32_t>, std::pair<double, int64_t>,
                      std::pair<float, double>, std::pair<float, float>,
                      std::pair<float, int32_t>, std::pair<float, int64_t>>;
-TYPED_TEST_SUITE(ElementBinUtilTest, CoordEdgeTypePairs);
+TYPED_TEST_SUITE(ElementBinUtilTest, CoordEdgeTypePairs, );
 
 TYPED_TEST(ElementBinUtilTest, begin_edge) {
   typedef typename TypeParam::first_type CoordType;
