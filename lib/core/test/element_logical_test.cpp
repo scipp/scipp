@@ -8,20 +8,20 @@
 using namespace scipp;
 using namespace scipp::core::element;
 
-class LogicalTest : public ::testing::Test {};
+template <typename T> class LogicalTest : public ::testing::Test {};
 
-TEST(LogicalTest, accepts_only_bool) {
+TEST_F(LogicalTest, accepts_only_bool) {
   static_assert(std::is_same_v<decltype(logical)::types, std::tuple<bool>>);
   static_assert(
       std::is_same_v<decltype(logical_inplace)::types, std::tuple<bool>>);
 }
 
-TEST(LogicalTest, logical_unit) {
+TEST_F(LogicalTest, logical_unit) {
   EXPECT_EQ(logical(units::none), units::none);
   EXPECT_THROW(logical(units::m), except::UnitError);
 }
 
-TEST(LogicalTest, logical_inplace_unit) {
+TEST_F(LogicalTest, logical_inplace_unit) {
   auto u = units::none;
   EXPECT_NO_THROW(logical_inplace(u, units::none));
   EXPECT_EQ(u, units::none);
@@ -31,33 +31,33 @@ TEST(LogicalTest, logical_inplace_unit) {
   EXPECT_THROW(logical_inplace(u, units::m), except::UnitError);
 }
 
-TEST(LogicalTest, and) {
+TEST_F(LogicalTest, and) {
   EXPECT_EQ(logical_and(true, true), true);
   EXPECT_EQ(logical_and(true, false), false);
   EXPECT_EQ(logical_and(false, true), false);
   EXPECT_EQ(logical_and(false, false), false);
 }
 
-TEST(LogicalTest, or) {
+TEST_F(LogicalTest, or) {
   EXPECT_EQ(logical_or(true, true), true);
   EXPECT_EQ(logical_or(true, false), true);
   EXPECT_EQ(logical_or(false, true), true);
   EXPECT_EQ(logical_or(false, false), false);
 }
 
-TEST(LogicalTest, xor) {
+TEST_F(LogicalTest, xor) {
   EXPECT_EQ(logical_xor(true, true), false);
   EXPECT_EQ(logical_xor(true, false), true);
   EXPECT_EQ(logical_xor(false, true), true);
   EXPECT_EQ(logical_xor(false, false), false);
 }
 
-TEST(LogicalTest, not) {
+TEST_F(LogicalTest, not) {
   EXPECT_EQ(logical_not(true), false);
   EXPECT_EQ(logical_not(false), true);
 }
 
-TEST(LogicalTest, and_equals) {
+TEST_F(LogicalTest, and_equals) {
   for (const auto &a : {true, false})
     for (const auto &b : {true, false}) {
       bool x = a;
@@ -66,7 +66,7 @@ TEST(LogicalTest, and_equals) {
     }
 }
 
-TEST(LogicalTest, or_equals) {
+TEST_F(LogicalTest, or_equals) {
   for (const auto &a : {true, false})
     for (const auto &b : {true, false}) {
       bool x = a;
@@ -75,7 +75,7 @@ TEST(LogicalTest, or_equals) {
     }
 }
 
-TEST(LogicalTest, xor_equals) {
+TEST_F(LogicalTest, xor_equals) {
   for (const auto &a : {true, false})
     for (const auto &b : {true, false}) {
       bool x = a;
