@@ -52,7 +52,7 @@ TEST_F(LogicalTest, logical_inplace_unit) {
 //   EXPECT_EQ(logical_xor(false, false), false);
 // }
 
-TEST_F(LogicalTest, not) {
+TEST_F(LogicalTest, logical_not_op) {
   EXPECT_EQ(logical_not(true), false);
   EXPECT_EQ(logical_not(false), true);
 }
