@@ -1,7 +1,7 @@
 name: Weekly package builds
 
 on:
-  # pull_request:
+  pull_request:
   workflow_dispatch:
   # It seems that the push trigger below makes the weekly workflow run on every push
   # to `main` and on every tag creation. We remove it for now. To debug the weekly
@@ -32,12 +32,12 @@ jobs:
       target: ${{ matrix.variant.target }}
       python-version: ${{ matrix.python-version }}
 
-  # build_wheels:
-  #   strategy:
-  #     matrix:
-  #       os: [ubuntu-24.04]
-  #       build: [cp310]
-  #   uses: ./.github/workflows/wheel.yml
-  #   with:
-  #     os: ${{ matrix.os }}
-  #     build: ${{ matrix.build }}
+  build_wheels:
+    strategy:
+      matrix:
+        os: [ubuntu-24.04]
+        build: [cp310, cp313]
+    uses: ./.github/workflows/wheel.yml
+    with:
+      os: ${{ matrix.os }}
+      build: ${{ matrix.build }}

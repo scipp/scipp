@@ -28,18 +28,41 @@ include(${CMAKE_CURRENT_BINARY_DIR}/conan.cmake)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_BINARY_DIR})
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_BINARY_DIR})
 
-conan_cmake_configure(
-  REQUIRES
-  LLNL-Units/0.9.1
-  OPTIONS
-  LLNL-Units:shared=False
-  LLNL-Units:fPIC=True
-  LLNL-Units:base_type=uint64_t
-  LLNL-Units:namespace=llnl::units
-  GENERATORS
-  cmake_find_package_multi
-  ${CONAN_DEPLOY}
-)
+if(SKBUILD)
+  conan_cmake_configure(
+    REQUIRES
+    benchmark/1.6.1
+    boost/1.86.0
+    eigen/3.4.0
+    gtest/1.11.0
+    LLNL-Units/0.9.1
+    pybind11/2.13.5
+    onetbb/2021.12.0
+    OPTIONS
+    benchmark:shared=False
+    boost:header_only=True
+    gtest:shared=False
+    LLNL-Units:shared=False
+    LLNL-Units:fPIC=True
+    LLNL-Units:base_type=uint64_t
+    LLNL-Units:namespace=llnl::units
+    GENERATORS
+    cmake_find_package_multi
+    deploy
+  )
+else()
+  conan_cmake_configure(
+    REQUIRES
+    LLNL-Units/0.9.1
+    OPTIONS
+    LLNL-Units:shared=False
+    LLNL-Units:fPIC=True
+    LLNL-Units:base_type=uint64_t
+    LLNL-Units:namespace=llnl::units
+    GENERATORS
+    cmake_find_package_multi
+  )
+endif()
 
 conan_cmake_autodetect(conan_settings)
 if(DEFINED CMAKE_OSX_ARCHITECTURES)

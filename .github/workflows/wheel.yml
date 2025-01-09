@@ -25,7 +25,6 @@ jobs:
 
     - uses: pypa/cibuildwheel@v2.22.0
       env:
-        CIBW_BEFORE_ALL_LINUX: yum install -y eigen3-devel boost-devel google-benchmark gtest
         CIBW_BUILD: ${{ inputs.build }}-*
         MACOSX_DEPLOYMENT_TARGET: "11.0"
 
