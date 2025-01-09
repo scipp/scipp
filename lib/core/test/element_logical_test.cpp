@@ -8,20 +8,18 @@
 using namespace scipp;
 using namespace scipp::core::element;
 
-class LogicalTest : public ::testing::Test {};
-
-TEST_F(LogicalTest, accepts_only_bool) {
+TEST(LogicalTest, accepts_only_bool) {
   static_assert(std::is_same_v<decltype(logical)::types, std::tuple<bool>>);
   static_assert(
       std::is_same_v<decltype(logical_inplace)::types, std::tuple<bool>>);
 }
 
-TEST_F(LogicalTest, logical_unit) {
+TEST(LogicalTest, logical_unit) {
   EXPECT_EQ(logical(units::none), units::none);
   EXPECT_THROW(logical(units::m), except::UnitError);
 }
 
-TEST_F(LogicalTest, logical_inplace_unit) {
+TEST(LogicalTest, logical_inplace_unit) {
   auto u = units::none;
   EXPECT_NO_THROW(logical_inplace(u, units::none));
   EXPECT_EQ(u, units::none);
@@ -52,7 +50,7 @@ TEST_F(LogicalTest, logical_inplace_unit) {
 //   EXPECT_EQ(logical_xor(false, false), false);
 // }
 
-TEST_F(LogicalTest, logical_not_op) {
+TEST(LogicalTest, logical_not_op) {
   EXPECT_EQ(logical_not(true), false);
   EXPECT_EQ(logical_not(false), true);
 }
