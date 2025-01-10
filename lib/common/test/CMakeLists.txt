@@ -9,7 +9,7 @@ add_executable(
                  numeric_test.cpp
 )
 target_link_libraries(
-  ${TARGET_NAME} LINK_PRIVATE scipp-common scipp_test_helpers GTest::GTest
+  ${TARGET_NAME} LINK_PRIVATE scipp-common scipp_test_helpers GTest::gtest_main
 )
 set_property(
   TARGET ${TARGET_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION

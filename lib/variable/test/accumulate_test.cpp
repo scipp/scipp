@@ -54,7 +54,8 @@ TEST_F(AccumulateTest, broadcast) {
 }
 
 TEST_F(AccumulateTest, readonly) {
-  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
+  const auto var =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
   scipp::index size = 10000; // exceed current lower multi-threading limit
   const auto readonly = broadcast(var, Dimensions({Dim::Y, Dim::X}, {size, 2}));
   auto result = makeVariable<double>(Dims{Dim::X}, Shape{2});

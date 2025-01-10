@@ -11,7 +11,7 @@ using scipp::core::element_array;
 using scipp::core::init_for_overwrite;
 
 static auto make_element_array() {
-  std::vector<double> v{1.1, 2.2, 3.3};
+  std::vector<float> v{1.1f, 2.2f, 3.3f};
   return element_array<float>(v.begin(), v.end());
 }
 
