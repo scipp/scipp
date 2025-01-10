@@ -16,8 +16,6 @@ TEST(MergeTest, simple) {
       {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3})},
        {Dim("label_1"),
         makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{9, 8, 7})}});
-  a["data_1"].attrs().set(Dim("attr_1"), makeVariable<int>(Values{42}));
-  a["data_1"].attrs().set(Dim("attr_2"), makeVariable<int>(Values{495}));
 
   Dataset b(
       {{"data_2",
@@ -25,7 +23,6 @@ TEST(MergeTest, simple) {
       {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3})},
        {Dim("label_2"),
         makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{9, 8, 9})}});
-  b["data_2"].attrs().set(Dim("attr_2"), makeVariable<int>(Values{495}));
 
   const auto d = merge(a, b);
 
@@ -36,11 +33,6 @@ TEST(MergeTest, simple) {
 
   EXPECT_EQ(a.coords()[Dim("label_1")], d.coords()[Dim("label_1")]);
   EXPECT_EQ(b.coords()[Dim("label_2")], d.coords()[Dim("label_2")]);
-
-  EXPECT_EQ(a["data_1"].attrs()[Dim("attr_1")],
-            d["data_1"].attrs()[Dim("attr_1")]);
-  EXPECT_EQ(b["data_2"].attrs()[Dim("attr_2")],
-            d["data_2"].attrs()[Dim("attr_2")]);
 }
 
 TEST(MergeTest, non_matching_dense_data) {

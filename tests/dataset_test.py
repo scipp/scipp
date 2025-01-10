@@ -641,14 +641,10 @@ def test_is_edges():
     da = sc.DataArray(
         sc.zeros(sizes={'a': 2, 'b': 3}),
         coords={'coord': sc.zeros(sizes={'a': 3})},
-        attrs={'attr': sc.zeros(sizes={'a': 2, 'b': 4})},
         masks={'mask': sc.zeros(sizes={'b': 3})},
     )
     assert da.coords.is_edges('coord')
     assert da.coords.is_edges('coord', 'a')
-    assert da.meta.is_edges('coord')
-    assert not da.attrs.is_edges('attr', 'a')
-    assert da.attrs.is_edges('attr', 'b')
     assert not da.masks.is_edges('mask', 'b')
 
 

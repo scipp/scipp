@@ -17,7 +17,6 @@ TEST(ResizeTest, data_array_1d) {
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
   DataArray a(var);
   a.coords().set(Dim::X, var);
-  a.attrs().set(Dim::Y, var);
   a.masks().set("mask", var);
   DataArray expected(makeVariable<double>(Dims{Dim::X}, Shape{3}));
   EXPECT_EQ(resize(a, Dim::X, 3), expected);
@@ -31,14 +30,11 @@ TEST(ResizeTest, data_array_2d) {
   DataArray a(var);
   a.coords().set(Dim::X, x);
   a.coords().set(Dim::Y, y);
-  a.attrs().set(Dim("unaligned-x"), x);
-  a.attrs().set(Dim("unaligned-y"), y);
   a.masks().set("mask-x", x);
   a.masks().set("mask-y", y);
 
   DataArray expected(makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{1, 2}));
   expected.coords().set(Dim::X, x);
-  expected.attrs().set(Dim("unaligned-x"), x);
   expected.masks().set("mask-x", x);
 
   EXPECT_EQ(resize(a, Dim::Y, 1), expected);
@@ -305,67 +301,6 @@ TEST(ReshapeTest, round_trip_binedges) {
             a);
 }
 
-TEST(ReshapeTest, fold_x_with_attrs) {
-  const auto var = fold(arange(Dim::X, 24), Dim::X, {{Dim::X, 6}, {Dim::Y, 4}});
-  DataArray a(var);
-  a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
-  a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
-  a.attrs().set(Dim("attr_x"), arange(Dim::X, 6) + 0.3 * units::one);
-  a.attrs().set(Dim("attr_y"), arange(Dim::Y, 4) + 0.4 * units::one);
-
-  const auto rshp = fold(arange(Dim::X, 24), Dim::X,
-                         {{Dim::Row, 2}, {Dim::Time, 3}, {Dim::Y, 4}});
-  DataArray expected(rshp);
-  expected.coords().set(
-      Dim::X, fold(arange(Dim::X, 6), Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}}) +
-                  0.1 * units::one);
-  expected.coords().set(Dim::Y, a.coords()[Dim::Y]);
-  expected.attrs().set(Dim("attr_x"), fold(arange(Dim::X, 6), Dim::X,
-                                           {{Dim::Row, 2}, {Dim::Time, 3}}) +
-                                          0.3 * units::one);
-  expected.attrs().set(Dim("attr_y"), a.attrs()[Dim("attr_y")]);
-
-  EXPECT_EQ(fold(a, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}}), expected);
-}
-
-TEST(ReshapeTest, flatten_with_attrs) {
-  const auto var = fold(arange(Dim::X, 24), Dim::X, {{Dim::X, 6}, {Dim::Y, 4}});
-  DataArray a(var);
-  a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
-  a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
-  a.attrs().set(Dim("attr_x"), arange(Dim::X, 6) + 0.3 * units::one);
-  a.attrs().set(Dim("attr_y"), arange(Dim::Y, 4) + 0.4 * units::one);
-
-  const auto rshp = arange(Dim::Z, 24);
-  DataArray expected(rshp);
-  expected.coords().set(
-      Dim::X,
-      makeVariable<double>(Dims{Dim::Z}, Shape{24},
-                           Values{0.1, 0.1, 0.1, 0.1, 1.1, 1.1, 1.1, 1.1,
-                                  2.1, 2.1, 2.1, 2.1, 3.1, 3.1, 3.1, 3.1,
-                                  4.1, 4.1, 4.1, 4.1, 5.1, 5.1, 5.1, 5.1}));
-  expected.coords().set(
-      Dim::Y,
-      makeVariable<double>(Dims{Dim::Z}, Shape{24},
-                           Values{0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2,
-                                  0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2,
-                                  0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2}));
-  expected.attrs().set(
-      Dim("attr_x"),
-      makeVariable<double>(Dims{Dim::Z}, Shape{24},
-                           Values{0.3, 0.3, 0.3, 0.3, 1.3, 1.3, 1.3, 1.3,
-                                  2.3, 2.3, 2.3, 2.3, 3.3, 3.3, 3.3, 3.3,
-                                  4.3, 4.3, 4.3, 4.3, 5.3, 5.3, 5.3, 5.3}));
-  expected.attrs().set(
-      Dim("attr_y"),
-      makeVariable<double>(Dims{Dim::Z}, Shape{24},
-                           Values{0.4, 1.4, 2.4, 3.4, 0.4, 1.4, 2.4, 3.4,
-                                  0.4, 1.4, 2.4, 3.4, 0.4, 1.4, 2.4, 3.4,
-                                  0.4, 1.4, 2.4, 3.4, 0.4, 1.4, 2.4, 3.4}));
-
-  EXPECT_EQ(flatten(a, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z), expected);
-}
-
 TEST(ReshapeTest, fold_x_with_2d_coord) {
   const auto var = fold(arange(Dim::X, 24), Dim::X, {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
@@ -515,8 +450,6 @@ TEST(ReshapeTest, round_trip_with_all) {
   a.coords().set(Dim::Z,
                  fold(arange(Dim::X, 24), Dim::X, {{Dim::X, 6}, {Dim::Y, 4}}) +
                      0.5 * units::one);
-  a.attrs().set(Dim("attr_x"), arange(Dim::X, 6) + 0.3 * units::one);
-  a.attrs().set(Dim("attr_y"), arange(Dim::Y, 4) + 0.4 * units::one);
   a.masks().set("mask_x", makeVariable<bool>(
                               Dims{Dim::X}, Shape{6},
                               Values{true, true, true, false, false, false}));
@@ -567,7 +500,6 @@ TEST_F(TransposeTest, data_array_2d_meta_data) {
   // not right now.
   a.coords().set(Dim("edges"), edges);
   a.masks().set("mask", xy);
-  a.attrs().set(Dim("attr"), xy);
   auto transposed = transpose(a);
   EXPECT_EQ(transposed.data(), transpose(a.data()));
   transposed.setData(a.data());
@@ -601,7 +533,6 @@ protected:
     a.masks().set("mask-x", x);
     a.masks().set("mask-z", z);
     a.masks().set("mask-xyz", xyz);
-    a.attrs().set(Dim{"attr-x"}, x);
   }
   Variable xyz = makeVariable<double>(Dims{Dim::X, Dim::Y, Dim::Z},
                                       Shape{1, 1, 2}, Values{1, 2});
@@ -623,7 +554,6 @@ TEST_F(SqueezeTest, data_array_3d_outer) {
   EXPECT_EQ(squeezed.masks()["mask-x"], makeVariable<double>(Values{10}));
   EXPECT_EQ(squeezed.masks()["mask-z"], z);
   EXPECT_EQ(squeezed.masks()["mask-xyz"], squeeze(xyz, dims));
-  EXPECT_EQ(squeezed.attrs()[Dim{"attr-x"}], makeVariable<double>(Values{10}));
 }
 
 TEST_F(SqueezeTest, data_array_3d_center) {
@@ -638,7 +568,6 @@ TEST_F(SqueezeTest, data_array_3d_center) {
   EXPECT_EQ(squeezed.masks()["mask-x"], x);
   EXPECT_EQ(squeezed.masks()["mask-z"], z);
   EXPECT_EQ(squeezed.masks()["mask-xyz"], squeeze(xyz, dims));
-  EXPECT_EQ(squeezed.attrs()[Dim{"attr-x"}], x);
 }
 
 TEST_F(SqueezeTest, data_array_3d_inner_and_center) {
@@ -654,7 +583,6 @@ TEST_F(SqueezeTest, data_array_3d_inner_and_center) {
   EXPECT_EQ(squeezed.masks()["mask-x"], makeVariable<double>(Values{10}));
   EXPECT_EQ(squeezed.masks()["mask-z"], z);
   EXPECT_EQ(squeezed.masks()["mask-xyz"], squeeze(xyz, dims));
-  EXPECT_EQ(squeezed.attrs()[Dim{"attr-x"}], makeVariable<double>(Values{10}));
 }
 
 TEST_F(SqueezeTest, data_array_3d_outer_bin_edge) {
@@ -672,7 +600,6 @@ TEST_F(SqueezeTest, data_array_3d_outer_bin_edge) {
   EXPECT_EQ(squeezed.masks()["mask-x"], makeVariable<double>(Values{10}));
   EXPECT_EQ(squeezed.masks()["mask-z"], z);
   EXPECT_EQ(squeezed.masks()["mask-xyz"], squeeze(xyz, dims));
-  EXPECT_EQ(squeezed.attrs()[Dim{"attr-x"}], makeVariable<double>(Values{10}));
 }
 
 TEST_F(SqueezeTest, data_array_3d_all) {

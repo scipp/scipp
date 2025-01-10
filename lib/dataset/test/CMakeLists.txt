@@ -7,7 +7,6 @@ add_dependencies(all-tests ${TARGET_NAME})
 add_executable(
   ${TARGET_NAME}
   astype_test.cpp
-  attributes_test.cpp
   binned_arithmetic_test.cpp
   binned_creation_test.cpp
   bins_test.cpp

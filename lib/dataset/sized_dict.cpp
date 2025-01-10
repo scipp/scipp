@@ -340,7 +340,7 @@ SizedDict<Key, Value> SizedDict<Key, Value>::rename_dims(
   auto out(*this);
   out.m_sizes = out.m_sizes.rename_dims(names, fail_on_unknown);
   for (auto &&item : out.m_items) {
-    // DataArray coords/attrs support the special case of length-2 items with a
+    // DataArray coords support the special case of length-2 items with a
     // dim that is not contained in the data array dims. This occurs, e.g., when
     // slicing along a dim that has a bin edge coord. We must prevent renaming
     // to such dims. This is the reason for calling with `names` that may
@@ -387,12 +387,6 @@ SizedDict<Key, Value>::merge_from(const SizedDict &other) const {
   auto out(*this);
   out.m_readonly = false;
   for (const auto &[key, value] : other) {
-    if (out.contains(key))
-      throw except::DataArrayError(
-          "Coord '" + to_string(key) +
-          "' shadows attr of the same name. Remove the attr if you are slicing "
-          "an array or use the `coords` and `attrs` properties instead of "
-          "`meta`.");
     out.set(key, value);
   }
   out.m_readonly = m_readonly;

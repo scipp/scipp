@@ -279,9 +279,9 @@ def flatten(
     If the input has a bin-edge coordinate that cannot be joined together it will not
     be included in the output.
 
-    If the input is a DataArray then coords, masks, and attrs that contain at least one
+    If the input is a DataArray then coords and masks that contain at least one
     of the flattened dimensions will also be flattened. This implies that when
-    flattening all dims, i.e., when ``dims=None``, all coords, masks, and attrs that
+    flattening all dims, i.e., when ``dims=None``, all coords and masks that
     share *some or all* dimensions with the data will be flattened.
 
     Parameters

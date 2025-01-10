@@ -58,14 +58,6 @@ from .dimensions import (
     _rename_dataset,
 )
 
-
-from .deprecation import _deprecated_attrs, _deprecated_meta, _deprecated_drop_attrs
-
-DataArray.attrs = property(_deprecated_attrs)  # type: ignore[assignment, method-assign]
-DataArray.meta = property(_deprecated_meta)  # type: ignore[assignment, method-assign]
-DataArray.drop_attrs = _deprecated_drop_attrs  # type: ignore[assignment, method-assign]
-del _deprecated_attrs, _deprecated_meta, _deprecated_drop_attrs
-
 for cls in (Variable, DataArray, Dataset):
     cls.rename_dims = _rename_dims  # type: ignore[method-assign]
 Variable.rename = _rename_variable  # type: ignore[method-assign]
@@ -191,13 +183,12 @@ from .variable import (
 )
 from .like import zeros_like, ones_like, empty_like, full_like
 
-from .assignments import assign_coords, assign_masks, assign_attrs
+from .assignments import assign_coords, assign_masks
 
 Dataset.assign_coords = assign_coords  # type: ignore[method-assign]
 DataArray.assign_coords = assign_coords  # type: ignore[method-assign]
 DataArray.assign_masks = assign_masks  # type: ignore[method-assign]
-DataArray.assign_attrs = assign_attrs  # type: ignore[method-assign]
-del assign_coords, assign_masks, assign_attrs
+del assign_coords, assign_masks
 
 # Remove submodules to reduce clutter
 del (

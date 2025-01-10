@@ -26,8 +26,6 @@ def test_from_xarray_empty_attrs_dataarray():
 
     sc_da = from_xarray(xr_da)
 
-    assert len(sc_da.attrs) == 0
-
     assert len(sc_da.dims) == 1
     assert "x" in sc_da.dims
 
@@ -46,9 +44,7 @@ def test_from_xarray_attrs_dataarray_warns_if_attrs_dropped():
     )
 
     with pytest.warns(UserWarning):
-        sc_da = from_xarray(xr_da)
-
-    assert len(sc_da.attrs) == 0
+        _ = from_xarray(xr_da)
 
 
 def test_from_xarray_converts_names_to_strings_in_dataarray():

@@ -85,7 +85,7 @@ DataArray sort(const DataArray &array, const Variable &key,
 
 /// Return a DataArray sorted based on coordinate.
 DataArray sort(const DataArray &array, const Dim &key, const SortOrder order) {
-  return sort(array, array.meta()[key], order);
+  return sort(array, array.coords()[key], order);
 }
 
 /// Return a Dataset sorted based on key.

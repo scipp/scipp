@@ -24,13 +24,11 @@ def test_broadcast_data_array():
     N = 6
     d = sc.linspace('x', 2.0, 10.0, N)
     x = sc.arange('x', float(N))
-    a = sc.arange('x', float(N)) + 3.0
     m = x < 3.0
-    da = sc.DataArray(d, coords={'x': x}, attrs={'a': a}, masks={'m': m})
+    da = sc.DataArray(d, coords={'x': x}, masks={'m': m})
     expected = sc.DataArray(
         sc.broadcast(d, sizes={'x': 6, 'y': 3}),
         coords={'x': x},
-        attrs={'a': a},
         masks={'m': m},
     )
     assert sc.identical(sc.broadcast(da, sizes={'x': 6, 'y': 3}), expected)

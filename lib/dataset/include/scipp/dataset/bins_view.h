@@ -131,9 +131,7 @@ public:
   void setData(const Variable &var) {
     this->buffer().setData(this->check_and_get_buf(var));
   }
-  auto meta() const { return BinsMapView(*this, get_meta); }
   auto coords() const { return BinsMapView(*this, get_coords); }
-  auto attrs() const { return BinsMapView(*this, get_attrs); }
   auto masks() const { return BinsMapView(*this, get_masks); }
   auto &name() const { return this->buffer().name(); }
   auto drop_coords(const scipp::span<const Dim> coord_names) const {
@@ -145,11 +143,6 @@ public:
     auto result = *this;
     for (const auto &name : mask_names)
       result.masks().erase(name);
-  }
-  auto drop_attrs(const scipp::span<const Dim> attr_names) const {
-    auto result = *this;
-    for (const auto &name : attr_names)
-      result.attrs().erase(name);
   }
 };
 } // namespace bins_view_detail

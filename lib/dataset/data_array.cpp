@@ -21,37 +21,27 @@ template <class T> auto copy_shared(const std::shared_ptr<T> &obj) {
 }
 } // namespace
 
-DataArray::DataArray(const DataArray &other, const AttrPolicy attrPolicy)
+DataArray::DataArray(const DataArray &other)
     : m_name(other.m_name), m_data(copy_shared(other.m_data)),
       m_coords(copy_shared(other.m_coords)),
-      m_masks(copy_shared(other.m_masks)),
-      m_attrs(attrPolicy == AttrPolicy::Keep ? copy_shared(other.m_attrs)
-                                             : std::make_shared<Attrs>()),
-      m_readonly(false) {}
+      m_masks(copy_shared(other.m_masks)), m_readonly(false) {}
 
-DataArray::DataArray(const DataArray &other)
-    : DataArray(other, AttrPolicy::Keep) {}
-
-DataArray::DataArray(Variable data, Coords coords, Masks masks, Attrs attrs,
+DataArray::DataArray(Variable data, Coords coords, Masks masks,
                      const std::string_view name)
     : m_name(name), m_data(std::make_shared<Variable>(std::move(data))),
       m_coords(std::make_shared<Coords>(std::move(coords))),
-      m_masks(std::make_shared<Masks>(std::move(masks))),
-      m_attrs(std::make_shared<Attrs>(std::move(attrs))) {
+      m_masks(std::make_shared<Masks>(std::move(masks))) {
   const Sizes sizes(dims());
   m_coords->setSizes(sizes);
   m_masks->setSizes(sizes);
-  m_attrs->setSizes(sizes);
 }
 
 DataArray::DataArray(Variable data, typename Coords::holder_type coords,
                      typename Masks::holder_type masks,
-                     typename Attrs::holder_type attrs,
                      const std::string_view name)
     : m_name(name), m_data(std::make_shared<Variable>(std::move(data))),
       m_coords(std::make_shared<Coords>(dims(), std::move(coords))),
-      m_masks(std::make_shared<Masks>(dims(), std::move(masks))),
-      m_attrs(std::make_shared<Attrs>(dims(), std::move(attrs))) {}
+      m_masks(std::make_shared<Masks>(dims(), std::move(masks))) {}
 
 DataArray &DataArray::operator=(const DataArray &other) {
   if (this == &other) {
@@ -70,7 +60,6 @@ DataArray &DataArray::operator=(DataArray &&other) {
   m_data = std::move(other.m_data);
   m_coords = std::move(other.m_coords);
   m_masks = std::move(other.m_masks);
-  m_attrs = std::move(other.m_attrs);
   m_readonly = other.m_readonly;
   return *this;
 }
@@ -93,8 +82,6 @@ bool operator==(const DataArray &a, const DataArray &b) {
     return false;
   if (a.masks() != b.masks())
     return false;
-  if (a.attrs() != b.attrs())
-    return false;
   return a.data() == b.data();
 }
 
@@ -107,8 +94,6 @@ bool equals_nan(const DataArray &a, const DataArray &b) {
     return false;
   if (!equals_nan(a.masks(), b.masks()))
     return false;
-  if (!equals_nan(a.attrs(), b.attrs()))
-    return false;
   return equals_nan(a.data(), b.data());
 }
 
@@ -120,15 +105,9 @@ const std::string &DataArray::name() const { return m_name; }
 
 void DataArray::setName(const std::string_view name) { m_name = name; }
 
-Coords DataArray::meta() const {
-  auto out = attrs().merge_from(coords());
-  out.set_readonly();
-  return out;
-}
-
 DataArray DataArray::slice(const Slice &s) const {
   auto out = DataArray{m_data->slice(s), m_coords->slice_coords(s),
-                       m_masks->slice(s), m_attrs->slice(s), m_name};
+                       m_masks->slice(s), m_name};
   out.m_readonly = true;
   return out;
 }
@@ -158,7 +137,6 @@ DataArray DataArray::view() const {
   out.m_data = m_data;     // share data
   out.m_coords = m_coords; // share coords
   out.m_masks = m_masks;   // share masks
-  out.m_attrs = m_attrs;   // share attrs
   out.m_name = m_name;
   return out;
 }
@@ -177,7 +155,6 @@ DataArray DataArray::view_with_coords(const Coords &coords,
   out.m_coords =
       std::make_shared<Coords>(sizes, std::move(selected), readonly_coords);
   out.m_masks = m_masks; // share masks
-  out.m_attrs = m_attrs; // share attrs
   out.m_name = name;
   out.m_readonly = readonly;
   return out;
@@ -199,24 +176,16 @@ DataArray::drop_masks(const scipp::span<const std::string> mask_names) const {
   return result;
 }
 
-DataArray DataArray::drop_attrs(const scipp::span<const Dim> attr_names) const {
-  DataArray result = *this;
-  for (const auto &name : attr_names)
-    result.attrs().erase(name);
-  return result;
-}
-
 DataArray DataArray::rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
                                  const bool fail_on_unknown) const {
   return DataArray(m_data->rename_dims(names, fail_on_unknown),
                    m_coords->rename_dims(names, false),
-                   m_masks->rename_dims(names, false),
-                   m_attrs->rename_dims(names, false));
+                   m_masks->rename_dims(names, false));
 }
 
 DataArray DataArray::as_const() const {
   auto out = DataArray(data().as_const(), coords().as_const(),
-                       masks().as_const(), attrs().as_const(), name());
+                       masks().as_const(), name());
   out.m_readonly = true;
   return out;
 }

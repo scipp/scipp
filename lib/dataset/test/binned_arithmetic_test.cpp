@@ -62,8 +62,7 @@ TEST_F(BinnedArithmeticTest, fail_array_and_array) {
   const auto binned = make_bins(indices, Dim::Event, array);
   // In principle the operation could be allowed in this case since the coords
   // match, but at this point our implementation is not sophisticated enough to
-  // support coord, mask, and attr handling for binned data in such binary
-  // operations.
+  // support coord and mask handling for binned data in such binary operations.
   EXPECT_THROW_DISCARD(binned + binned, except::BinnedDataError);
 }
 

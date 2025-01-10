@@ -13,7 +13,6 @@ from .argument_handlers import combine_dict_args
 from .bin_remapping import concat_bins
 from .cpp_classes import DataArray, Dataset, DType, Unit, Variable
 from .data_group import DataGroup
-from .deprecation import _warn_attr_removal
 from .domains import merge_equal_adjacent
 from .math import midpoints
 from .operations import islinspace
@@ -283,36 +282,6 @@ class Bins(Generic[_O]):
         if isinstance(self._obj, Dataset):
             raise NotImplementedError("bins.drop_coords does not support datasets")
         return self._map_constituents_data(lambda data: data.drop_coords(coords))
-
-    @property
-    def meta(self) -> MetaDataMap:
-        """Coords and attrs of the bins
-
-        .. deprecated:: 23.9.0
-           Use :py:attr:`coords` with unset alignment flag instead, or
-           store attributes in higher-level data structures.
-        """
-        _warn_attr_removal()
-        return self.deprecated_meta
-
-    @property
-    def attrs(self) -> MetaDataMap:
-        """Attrs of the bins
-
-        .. deprecated:: 23.9.0
-           Use :py:attr:`coords` with unset alignment flag instead, or
-           store attributes in higher-level data structures.
-        """
-        _warn_attr_removal()
-        return self.deprecated_attrs
-
-    @property
-    def deprecated_meta(self) -> MetaDataMap:
-        return _cpp._bins_view(self._data()).deprecated_meta  # type: ignore[no-any-return]
-
-    @property
-    def deprecated_attrs(self) -> MetaDataMap:
-        return _cpp._bins_view(self._data()).deprecated_attrs  # type: ignore[no-any-return]
 
     @property
     def masks(self) -> MetaDataMap:
