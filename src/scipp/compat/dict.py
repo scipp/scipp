@@ -101,7 +101,7 @@ def _variable_to_dict(v: Variable) -> dict[str, Any]:
 
 def _data_array_to_dict(da: DataArray) -> dict[str, Any]:
     """Convert a Scipp DataArray to a python dict."""
-    out: dict[str, Any] = {"coords": {}, "masks": {}, "attrs": {}}
+    out: dict[str, Any] = {"coords": {}, "masks": {}}
     for key in out.keys():
         for name, item in getattr(da, key).items():
             out[key][str(name)] = _variable_to_dict(item)
@@ -195,7 +195,7 @@ def _dict_to_data_array(d: dict[str, Any]) -> DataArray:
             "To create a DataArray, the supplied dict must contain "
             f"'data'. Got {d.keys()}."
         )
-    meta: dict[str, dict[str, Variable]] = {"coords": {}, "masks": {}, "attrs": {}}
+    meta: dict[str, dict[str, Variable]] = {"coords": {}, "masks": {}}
     for key in meta.keys():
         if key in d:
             for name, item in d[key].items():

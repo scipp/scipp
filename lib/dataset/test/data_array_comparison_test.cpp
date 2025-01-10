@@ -90,16 +90,6 @@ auto make_1_mask(const std::string &name, const Dimensions &dims,
 }
 
 template <class T, class T2>
-auto make_1_attr(const std::string &name, const Dimensions &dims,
-                 const units::Unit unit,
-                 const std::initializer_list<T2> &data) {
-  auto a = make_values<T>(dims);
-  a.attrs().set(Dim(name), makeVariable<T>(Dimensions(dims), units::Unit(unit),
-                                           Values(data)));
-  return a;
-}
-
-template <class T, class T2>
 auto make_values(const std::string &name, const Dimensions &dims,
                  const units::Unit unit,
                  const std::initializer_list<T2> &data) {
@@ -165,18 +155,6 @@ TEST_F(DataArray_comparison_operators, single_mask) {
       a, make_1_mask<bool>("a", {Dim::X, 3}, units::m, {false, false, false}));
 }
 
-TEST_F(DataArray_comparison_operators, single_attr) {
-  auto a = make_1_attr<double>("a", {Dim::X, 3}, units::m, {1, 2, 3});
-  expect_eq(a, a);
-  expect_ne(a, make_values<double>({Dim::X, 3}));
-  expect_ne(a, make_1_attr<float>("a", {Dim::X, 3}, units::m, {1, 2, 3}));
-  expect_ne(a, make_1_attr<double>("b", {Dim::X, 3}, units::m, {1, 2, 3}));
-  expect_ne(a, make_1_attr<double>("a", {Dim::Y, 3}, units::m, {1, 2, 3}));
-  expect_ne(a, make_1_attr<double>("a", {Dim::X, 2}, units::m, {1, 2}));
-  expect_ne(a, make_1_attr<double>("a", {Dim::X, 3}, units::s, {1, 2, 3}));
-  expect_ne(a, make_1_attr<double>("a", {Dim::X, 3}, units::m, {1, 2, 4}));
-}
-
 TEST_F(DataArray_comparison_operators, single_values) {
   auto a = make_values<double>("a", {Dim::X, 3}, units::m, {1, 2, 3});
   expect_eq(a, a);
@@ -231,12 +209,6 @@ TEST_F(DataArray_comparison_operators, extra_mask) {
   expect_ne(extra, da);
 }
 
-TEST_F(DataArray_comparison_operators, extra_attr) {
-  auto extra = da;
-  extra.attrs().set(Dim("extra"), makeVariable<double>(Values{0.0}));
-  expect_ne(extra, da);
-}
-
 TEST_F(DataArray_comparison_operators, extra_variance) {
   auto extra = copy(da);
   da.data().setVariances(makeVariable<double>(da.dims()));
@@ -251,17 +223,6 @@ TEST_F(DataArray_comparison_operators, different_coord_insertion_order) {
   a.coords().set(Dim::Y, da.coords()[Dim::Y]);
   b.coords().set(Dim::Y, da.coords()[Dim::Y]);
   b.coords().set(Dim::X, da.coords()[Dim::X]);
-  expect_eq(a, b);
-}
-
-TEST_F(DataArray_comparison_operators, different_attr_insertion_order) {
-  const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 4});
-  auto a = DataArray(var);
-  auto b = DataArray(var);
-  a.attrs().set(Dim::X, da.coords()[Dim::X]);
-  a.attrs().set(Dim::Y, da.coords()[Dim::Y]);
-  b.attrs().set(Dim::Y, da.coords()[Dim::Y]);
-  b.attrs().set(Dim::X, da.coords()[Dim::X]);
   expect_eq(a, b);
 }
 

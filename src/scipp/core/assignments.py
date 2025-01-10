@@ -13,7 +13,7 @@ _T = TypeVar('_T', Dataset, DataArray)
 
 def _assign(
     obj: _T,
-    name: Literal['coords', 'masks', 'attrs'],
+    name: Literal['coords', 'masks'],
     obj_attrs: dict[str, Variable] | None = None,
     /,
     **kw_obj_attrs: Variable,
@@ -70,28 +70,3 @@ def assign_masks(
 
     """
     return _assign(self, 'masks', masks, **masks_kwargs)
-
-
-def assign_attrs(
-    self: DataArray,
-    attrs: dict[str, Variable] | None = None,
-    /,
-    **attrs_kwargs: Variable,
-) -> DataArray:
-    """Return new object with updated or inserted attrs.
-
-    Parameters
-    ----------
-    attrs :
-        New attrs.
-
-    attrs_kwargs :
-        Keyword arguments form of ``attrs``.
-
-    Returns
-    -------
-    :
-        ``scipp.DataArray`` with updated attributes.
-
-    """
-    return _assign(self, 'attrs', attrs, **attrs_kwargs)

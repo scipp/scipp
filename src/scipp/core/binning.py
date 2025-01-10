@@ -301,8 +301,8 @@ def _get_coord(x: Variable | DataArray | Dataset, name: str) -> Variable:
             cmax = c.max() if cmax is None else max(cmin, c.max())  # type: ignore[call-overload]
         coord = concat([cmin, cmax], dim='dummy')  # type: ignore[type-var]
     else:
-        event_coord = x.bins.deprecated_meta.get(name) if x.bins is not None else None
-        coord = x.deprecated_meta.get(name, event_coord)
+        event_coord = x.bins.coords.get(name) if x.bins is not None else None
+        coord = x.coords.get(name, event_coord)
     _require_coord(name, coord)
     return coord  # type: ignore[return-value]
 

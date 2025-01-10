@@ -17,7 +17,6 @@ def make_dataarray(dim1='x', dim2='y', seed=None):
             dim2: sc.Variable(dims=[dim2], values=np.arange(3.0), unit=sc.units.m),
             'aux': sc.Variable(dims=[dim2], values=np.random.rand(3)),
         },
-        attrs={'meta': sc.Variable(dims=[dim2], values=np.arange(3))},
     )
 
 
@@ -44,12 +43,9 @@ def test_init():
             'x': sc.Variable(dims=['x'], values=np.arange(3), unit=sc.units.m),
             'lib1': sc.Variable(dims=['x'], values=np.random.rand(3)),
         },
-        attrs={'met1': sc.Variable(dims=['x'], values=np.arange(3))},
         masks={'mask1': sc.Variable(dims=['x'], values=np.ones(3, dtype=bool))},
     )
-    assert len(d.meta) == 3
     assert len(d.coords) == 2
-    assert len(d.attrs) == 1
     assert len(d.masks) == 1
     assert d.ndim == 1
 
@@ -64,13 +60,11 @@ def test_init_from_variable_views():
     a = sc.DataArray(
         data=var,
         coords={'x': var},
-        attrs={'meta': var},
         masks={'mask1': sc.less(var, sc.scalar(3))},
     )
     b = sc.DataArray(
         data=a.data,
         coords={'x': a.coords['x']},
-        attrs={'meta': a.attrs['meta']},
         masks={'mask1': a.masks['mask1']},
     )
     assert sc.identical(a, b)
@@ -79,7 +73,6 @@ def test_init_from_variable_views():
     c = sc.DataArray(
         data=a.data,
         coords={'x': var},
-        attrs={'meta': a.attrs['meta']},
         masks={'mask1': a.masks['mask1']},
     )
 
@@ -93,21 +86,16 @@ def test_init_from_existing_metadata(coords_wrapper, attrs_wrapper, masks_wrappe
     da1 = sc.DataArray(
         sc.arange('x', 4),
         coords={'x': sc.arange('x', 5, unit='m'), 'y': sc.scalar(12.34)},
-        attrs={'a': sc.arange('x', 4, unit='s'), 'b': sc.scalar('attr-b')},
         masks={'m': sc.array(dims=['x'], values=[False, True, True, False, False])},
     )
     da2 = sc.DataArray(
         -sc.arange('x', 4),
         coords=coords_wrapper(da1.coords),
-        attrs=attrs_wrapper(da1.attrs),
         masks=masks_wrapper(da1.masks),
     )
     assert set(da2.coords.keys()) == {'x', 'y'}
     assert sc.identical(da2.coords['x'], da1.coords['x'])
     assert sc.identical(da2.coords['y'], da1.coords['y'])
-    assert set(da2.attrs.keys()) == {'a', 'b'}
-    assert sc.identical(da2.attrs['a'], da1.attrs['a'])
-    assert sc.identical(da2.attrs['b'], da1.attrs['b'])
     assert set(da2.masks.keys()) == {'m'}
     assert sc.identical(da2.masks['m'], da1.masks['m'])
 
@@ -116,7 +104,6 @@ def test_init_from_iterable_of_tuples():
     da = sc.DataArray(
         sc.arange('x', 4),
         coords=[('x', sc.arange('x', 5, unit='m')), ('y', sc.scalar(12.34))],
-        attrs=(('a', sc.arange('x', 4, unit='s')), ('b', sc.scalar('attr-b'))),
         masks={
             'm': sc.array(dims=['x'], values=[False, True, True, False, False])
         }.items(),
@@ -124,9 +111,6 @@ def test_init_from_iterable_of_tuples():
     assert set(da.coords.keys()) == {'x', 'y'}
     assert sc.identical(da.coords['x'], sc.arange('x', 5, unit='m'))
     assert sc.identical(da.coords['y'], sc.scalar(12.34))
-    assert set(da.attrs.keys()) == {'a', 'b'}
-    assert sc.identical(da.attrs['a'], sc.arange('x', 4, unit='s'))
-    assert sc.identical(da.attrs['b'], sc.scalar('attr-b'))
     assert set(da.masks.keys()) == {'m'}
     assert sc.identical(
         da.masks['m'], sc.array(dims=['x'], values=[False, True, True, False, False])
@@ -147,14 +131,10 @@ def test_builtin_len(make):
 
 def test_coords():
     da = make_dataarray()
-    assert len(dict(da.meta)) == len(da.meta) == 4
     assert len(dict(da.coords)) == len(da.coords) == 3
-    assert len(dict(da.attrs)) == len(da.attrs) == 1
     assert 'x' in da.coords
     assert 'y' in da.coords
     assert 'aux' in da.coords
-    assert 'meta' in da.meta
-    assert 'meta' in da.attrs
 
 
 def test_masks():
@@ -182,8 +162,6 @@ def test_ipython_key_completion():
     mask = sc.Variable(dims=['x'], values=np.array([False, True], dtype=bool))
     da.masks['mask1'] = mask
     assert set(da.coords._ipython_key_completions_()) == set(da.coords.keys())
-    assert set(da.attrs._ipython_key_completions_()) == set(da.attrs.keys())
-    assert set(da.meta._ipython_key_completions_()) == set(da.meta.keys())
     assert set(da.masks._ipython_key_completions_()) == set(da.masks.keys())
 
 
@@ -449,28 +427,6 @@ def test_drop_masks():
     assert 'mask2' in da.drop_masks(['mask0', 'mask1']).masks
 
 
-def test_drop_attrs():
-    data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
-    attr0 = sc.scalar('attribute_0')
-    attr1 = sc.linspace('y', start=0.2, stop=1.61, num=4)
-    attr2 = sc.linspace('z', start=-10, stop=10, num=5)
-    da = sc.DataArray(data, attrs={'attr0': attr0, 'attr1': attr1, 'attr2': attr2})
-
-    assert 'attr0' not in da.drop_attrs('attr0').attrs
-    assert 'attr1' in da.drop_attrs('attr0').attrs
-    assert 'attr2' in da.drop_attrs(['attr0']).attrs
-    assert 'attr0' not in da.drop_attrs(['attr0', 'attr1']).attrs
-    assert 'attr1' not in da.drop_attrs(['attr0', 'attr1']).attrs
-    assert 'attr2' in da.drop_attrs(['attr0', 'attr1']).attrs
-
-
-def test_attrs_update_from_dict_adds_items():
-    da = sc.DataArray(sc.scalar(0.0), attrs={'a': sc.scalar(1.0)})
-    da.attrs.update({'b': sc.scalar(2.0)})
-    assert sc.identical(da.attrs['a'], sc.scalar(1.0))
-    assert sc.identical(da.attrs['b'], sc.scalar(2.0))
-
-
 def test_masks_update_from_dict_adds_items():
     da = sc.DataArray(sc.scalar(0.0), masks={'a': sc.scalar(True)})
     da.masks.update({'b': sc.scalar(False)})
@@ -573,79 +529,6 @@ def test_assign_update_masks():
     assert sc.identical(
         da_n, sc.DataArray(data, masks={'mask0': mask0_n, 'mask1': mask1_n})
     )
-
-
-def test_assign_attrs():
-    data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
-    attr0 = sc.scalar('attribute_0')
-    attr1 = sc.linspace('y', start=0.2, stop=1.61, num=4)
-    da_o = sc.DataArray(data)
-    da_n = da_o.assign_attrs({'attr0': attr0, 'attr1': attr1})
-    assert sc.identical(da_o, sc.DataArray(data))
-    assert sc.identical(
-        da_n, sc.DataArray(data, attrs={'attr0': attr0, 'attr1': attr1})
-    )
-
-
-def test_assign_attrs_kwargs():
-    data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
-    attr0 = sc.scalar('attribute_0')
-    attr1 = sc.linspace('y', start=0.2, stop=1.61, num=4)
-    da_o = sc.DataArray(data)
-    da_n = da_o.assign_attrs(attr0=attr0, attr1=attr1)
-    assert sc.identical(da_o, sc.DataArray(data))
-    assert sc.identical(
-        da_n, sc.DataArray(data, attrs={'attr0': attr0, 'attr1': attr1})
-    )
-
-
-def test_assign_attrs_overlapping_names():
-    data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
-    attr0 = sc.scalar('attribute_0')
-    da = sc.DataArray(data)
-    with pytest.raises(ValueError, match='names .* distinct'):
-        da.assign_attrs({'attr0': attr0}, attr0=attr0)
-
-
-def test_assign_update_attrs():
-    data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
-    attr0_o = sc.scalar('attribute_0')
-    attr1_o = sc.linspace('y', start=0.2, stop=1.61, num=4)
-    da_o = sc.DataArray(data, attrs={'attr0': attr0_o, 'attr1': attr1_o})
-
-    attr0_n = sc.scalar('attribute_new')
-    attr1_n = sc.linspace('y', start=-1.61, stop=0.2, num=4)
-    da_n = da_o.assign_attrs({"attr0": attr0_n, "attr1": attr1_n})
-    assert sc.identical(
-        da_o, sc.DataArray(data, attrs={'attr0': attr0_o, 'attr1': attr1_o})
-    )
-    assert sc.identical(
-        da_n, sc.DataArray(data, attrs={'attr0': attr0_n, 'attr1': attr1_n})
-    )
-
-
-def test_accessing_attrs_property_warns_about_deprecation():
-    da = sc.DataArray(sc.arange('x', 4))
-    with pytest.warns(sc.VisibleDeprecationWarning):
-        da.attrs
-
-
-def test_accessing_meta_property_warns_about_deprecation():
-    da = sc.DataArray(sc.arange('x', 4))
-    with pytest.warns(sc.VisibleDeprecationWarning):
-        da.meta
-
-
-def test_accessing_attrs_property_of_bins_warns_about_deprecation():
-    da = sc.data.binned_x(1, 1)
-    with pytest.warns(sc.VisibleDeprecationWarning):
-        da.bins.attrs
-
-
-def test_accessing_meta_property_of_bins_warns_about_deprecation():
-    da = sc.data.binned_x(1, 1)
-    with pytest.warns(sc.VisibleDeprecationWarning):
-        da.bins.meta
 
 
 def test_setting_binned_var_as_coord_or_mask_raises():

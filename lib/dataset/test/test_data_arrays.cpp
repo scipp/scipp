@@ -24,8 +24,5 @@ DataArray make_data_array_1d(const int64_t seed) {
   return DataArray(
       data, {{Dim::X, coord}, {Dim("scalar"), scalar_coord}},
       {{"mask", mask}, {"mask" + name, mask}, {"scalar_mask", scalar_mask}},
-      {{Dim("attr"), coord + coord},
-       {Dim("attr" + name), coord + seed * units::m},
-       {Dim("scalar_attr"), scalar_coord + scalar_coord}},
       "array" + name);
 }

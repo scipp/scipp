@@ -25,8 +25,7 @@ protected:
   Variable data =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
   DataArray da =
-      DataArray(data, {{Dim::X, data + data}}, {{"mask", data + data}},
-                {{Dim("attr"), data + data}});
+      DataArray(data, {{Dim::X, data + data}}, {{"mask", data + data}});
   Variable nan = makeVariable<double>(Dims{Dim::X}, Shape{4},
                                       Values{1.0f, 2.0f, NAN, 4.0f});
   Dataset ds;
@@ -64,13 +63,6 @@ TEST_F(EqualsNanTest, nan_mask) {
   check();
 }
 
-TEST_F(EqualsNanTest, nan_attr) {
-  da.attrs()[Dim("attr")] += nan;
-  check();
-  const auto out = da + copy(da);
-  ASSERT_TRUE(out.attrs().contains(Dim("attr")));
-}
-
 TEST_F(EqualsNanTest, concat_nan_coord) {
   da.coords()[Dim::X] += nan;
   const auto out = dataset::concat(std::vector{da, copy(da)}, Dim::Y);
@@ -81,12 +73,6 @@ TEST_F(EqualsNanTest, concat_nan_mask) {
   da.masks()["mask"] += nan;
   const auto out = dataset::concat(std::vector{da, copy(da)}, Dim::Y);
   ASSERT_TRUE(equals_nan(out.masks()["mask"], da.masks()["mask"]));
-}
-
-TEST_F(EqualsNanTest, concat_nan_attr) {
-  da.attrs()[Dim("attr")] += nan;
-  const auto out = dataset::concat(std::vector{da, copy(da)}, Dim::Y);
-  ASSERT_TRUE(equals_nan(out.attrs()[Dim("attr")], da.attrs()[Dim("attr")]));
 }
 
 TEST_F(EqualsNanTest, concat_nan_item) {
@@ -108,6 +94,5 @@ TEST_F(EqualsNanTest, dataset_item_self_assign) {
   da += nan;
   da.coords()[Dim::X] += nan;
   da.masks()["mask"] += nan;
-  da.attrs()[Dim("attr")] += nan;
   ds.slice({Dim::X, 0}).setData("a", item);
 }

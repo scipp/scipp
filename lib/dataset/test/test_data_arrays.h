@@ -6,7 +6,7 @@
 
 #include "scipp/dataset/data_array.h"
 
-/// Create a data array with coord, masks, and attrs.
+/// Create a data array with coord and masks.
 ///
 /// Different but compatible arrays can be created using different seeds. The
 /// seed does not affect coords to ensure that the produced arrays can be

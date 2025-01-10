@@ -365,11 +365,11 @@ class _DataArrayIO:
         group.attrs['name'] = data.name
         if _VariableIO.write(group.create_group('data'), var=data.data) is None:
             return None
-        views = [data.coords, data.masks, data.attrs]
+        views = [data.coords, data.masks]
         # Note that we write aligned and unaligned coords into the same group.
         # Distinction is via an attribute, which is more natural than having
         # 2 separate groups.
-        for view_name, view in zip(['coords', 'masks', 'attrs'], views, strict=True):
+        for view_name, view in zip(['coords', 'masks'], views, strict=True):
             subgroup = group.create_group(view_name)
             _write_mapping(subgroup, view, override.get(view_name))
         return group
@@ -382,9 +382,28 @@ class _DataArrayIO:
         contents = {}
         contents['name'] = group.attrs['name']
         contents['data'] = _VariableIO.read(group['data'])
-        for category in ['coords', 'masks', 'attrs']:
+        for category in ['coords', 'masks']:
             contents[category] = _read_mapping(group[category], override.get(category))
+        _DataArrayIO._read_legacy_attrs_into(contents, group, override)
         return DataArray(**contents)
+
+    @staticmethod
+    def _read_legacy_attrs_into(
+        contents: dict[str, Any], group: h5.Group, override: Mapping[str, h5.Group]
+    ) -> None:
+        """Load attributes as coordinates.
+
+        Attributes were removed in https://github.com/scipp/scipp/pull/3626
+        but old files that contain attributes remain.
+        """
+        if (attrs_group := group.get('attrs')) is not None:
+            attrs = _read_mapping(attrs_group, override.get('attrs'))
+            if intersection := contents['coords'].keys() & attrs.keys():
+                raise ValueError(
+                    f"Data array '{contents['name']}' contains legacy attributes "
+                    f'{intersection} which also exist as coordinates.'
+                )
+            contents['coords'].update(attrs)
 
 
 class _DatasetIO:

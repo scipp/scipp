@@ -173,15 +173,10 @@ def test_assert_similar_variable_presence_of_variances(
     [
         sc.DataArray(sc.scalar(91, unit='F')),
         sc.DataArray(sc.scalar(6.4), coords={'g': sc.scalar(4)}),
-        sc.DataArray(sc.scalar(6.4), attrs={'rat': sc.scalar(0.01)}),
         sc.DataArray(sc.scalar(6.4), masks={'m': sc.scalar(False)}),
         sc.DataArray(
             sc.arange('y', 6.1, unit='mm'),
             coords={'y': sc.arange('y', 6.1, unit='s') * 3, 'e': sc.arange('y', 8)},
-            attrs={
-                'w': sc.scalar('wws'),
-                'qkk': sc.array(dims=['t'], values=[1.0, 2.0], variances=[0.0, 0.1]),
-            },
             masks={'1': sc.arange('y', 7) < 4},
         ),
     ],
@@ -266,44 +261,6 @@ def test_assert_similar_data_array_extra_coord(
 
 
 @pytest_mark_parameterize_assert_similar
-def test_assert_similar_data_array_attrs_key_mismatch(
-    assert_similar,
-):
-    a = sc.DataArray(sc.scalar(-8), attrs={'a': sc.scalar(33)})
-    b = sc.DataArray(sc.scalar(-8), attrs={'n': sc.scalar(33)})
-    with pytest.raises(AssertionError):
-        assert_similar(a, b)
-    with pytest.raises(AssertionError):
-        assert_similar(b, a)
-
-    a = sc.DataArray(sc.scalar(-8), attrs={'a': sc.scalar(33)})
-    b = sc.DataArray(sc.scalar(-8), attrs={'a': sc.scalar(33), 't': sc.scalar(3)})
-    with pytest.raises(AssertionError):
-        assert_similar(a, b)
-    with pytest.raises(AssertionError):
-        assert_similar(b, a)
-
-
-@pytest_mark_parameterize_assert_similar
-def test_assert_similar_data_array_attrs_value_mismatch(
-    assert_similar,
-):
-    a = sc.DataArray(sc.scalar(-8), attrs={'a': sc.scalar(82.0)})
-    b = sc.DataArray(sc.scalar(-8), attrs={'a': sc.scalar(82)})
-    with pytest.raises(AssertionError):
-        assert_similar(a, b)
-    with pytest.raises(AssertionError):
-        assert_similar(b, a)
-
-    a = sc.DataArray(sc.scalar(-8), attrs={'a': sc.scalar(33), 't': sc.scalar('yrr')})
-    b = sc.DataArray(sc.scalar(-8), attrs={'a': sc.scalar(33), 't': sc.scalar('yra')})
-    with pytest.raises(AssertionError):
-        assert_similar(a, b)
-    with pytest.raises(AssertionError):
-        assert_similar(b, a)
-
-
-@pytest_mark_parameterize_assert_similar
 def test_assert_similar_data_array_masks_key_mismatch(
     assert_similar,
 ):
@@ -351,7 +308,6 @@ def test_assert_similar_data_array_masks_value_mismatch(
             {
                 'yy': sc.DataArray(
                     sc.arange('w', 15).fold('w', sizes={'i': 3, 'yy': 5}),
-                    attrs={'a': sc.scalar([2, 3])},
                     masks={'m': sc.arange('yy', 5) < 2},
                 ),
             },
