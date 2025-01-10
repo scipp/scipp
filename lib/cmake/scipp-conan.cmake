@@ -29,6 +29,10 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_BINARY_DIR})
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_BINARY_DIR})
 
 if(SKBUILD)
+  # The deploy generator is used to install dependencies into a know location.
+  # The RUNTIME_DEPENDENCIES DIRECTORIES install option is then used to find the
+  # dependencies. This is actually required only for Windows, since on Linux and
+  # OSX cmake finds the files anyway, based on the target's rpath.
   set(CONAN_RUNTIME_DEPENDENCIES "tbb")
   conan_cmake_configure(
     REQUIRES
