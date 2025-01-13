@@ -217,19 +217,19 @@ aliases = UnitAliases()
 
 __all__ = [
     'DefaultUnit',
+    'K',
     'angstrom',
     'counts',
     'default_unit',
     'deg',
     'dimensionless',
     'kg',
-    'K',
-    'meV',
     'm',
+    'meV',
+    'mm',
+    'ns',
     'one',
     'rad',
     's',
     'us',
-    'ns',
-    'mm',
 ]

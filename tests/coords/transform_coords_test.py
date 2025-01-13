@@ -550,10 +550,10 @@ def test_not_keep_inputs_binned(binned_in_a_b, keep_aliases, keep_intermediate):
         keep_inputs=False,
         keep_intermediate=keep_intermediate,
     )
-    assert 'a' not in da.meta
-    assert 'a' not in da.bins.meta
-    assert 'b' not in da.meta
-    assert 'b' not in da.bins.meta
+    assert 'a' not in da.coords
+    assert 'a' not in da.bins.coords
+    assert 'b' not in da.coords
+    assert 'b' not in da.bins.coords
 
     # Requesting input as target preserves it.
     da = binned_in_a_b.transform_coords(
@@ -565,8 +565,8 @@ def test_not_keep_inputs_binned(binned_in_a_b, keep_aliases, keep_intermediate):
     )
     assert 'a' in da.coords
     assert 'a' in da.bins.coords
-    assert 'b' not in da.meta
-    assert 'b' not in da.bins.meta
+    assert 'b' not in da.coords
+    assert 'b' not in da.bins.coords
 
 
 @pytest.mark.parametrize('keep_aliases', [True, False])
@@ -683,8 +683,8 @@ def test_binned_does_not_modify_inputs(binned_in_a_b):
     _ = binned_in_a_b.transform_coords(['b2'], graph={'b2': 'b'})
     assert 'b' in binned_in_a_b.coords
     assert 'b' in binned_in_a_b.bins.coords
-    assert 'b2' not in binned_in_a_b.meta
-    assert 'b2' not in binned_in_a_b.bins.meta
+    assert 'b2' not in binned_in_a_b.coords
+    assert 'b2' not in binned_in_a_b.bins.coords
 
 
 def test_binned_with_range_slice_does_not_modify_inputs(binned_in_a_b):
@@ -693,8 +693,8 @@ def test_binned_with_range_slice_does_not_modify_inputs(binned_in_a_b):
     _ = original.transform_coords(['b2'], graph={'b2': 'b'})
     assert 'b' in original.coords
     assert 'b' in original.bins.coords
-    assert 'b2' not in original.meta
-    assert 'b2' not in original.bins.meta
+    assert 'b2' not in original.coords
+    assert 'b2' not in original.bins.coords
 
 
 def test_binned_with_range_slice_does_not_modify_inputs_copy(binned_in_a_b):
@@ -704,8 +704,8 @@ def test_binned_with_range_slice_does_not_modify_inputs_copy(binned_in_a_b):
     _ = original.transform_coords(['b2'], graph={'b2': lambda b: b.copy()})
     assert 'b' in original.coords
     assert 'b' in original.bins.coords
-    assert 'b2' not in original.meta
-    assert 'b2' not in original.bins.meta
+    assert 'b2' not in original.coords
+    assert 'b2' not in original.bins.coords
 
 
 def test_binned_with_point_slice_does_not_modify_inputs(binned_in_a_b):
@@ -714,8 +714,8 @@ def test_binned_with_point_slice_does_not_modify_inputs(binned_in_a_b):
     _ = original.transform_coords(['b2'], graph={'b2': 'b'})
     assert 'b' in original.coords
     assert 'b' in original.bins.coords
-    assert 'b2' not in original.meta
-    assert 'b2' not in original.bins.meta
+    assert 'b2' not in original.coords
+    assert 'b2' not in original.bins.coords
 
 
 def test_binned_computes_correct_results(binned_in_a_b):
@@ -727,13 +727,16 @@ def test_binned_computes_correct_results(binned_in_a_b):
     renamed = binned_in_a_b.rename_dims({'a': 'a2'})
 
     # `a` was renamed to `a2`
-    assert sc.identical(converted.meta['a2'], renamed.meta['a'])
-    assert sc.identical(converted.bins.meta['a2'], renamed.bins.meta['a'])
+    assert sc.identical(converted.coords['a2'], renamed.coords['a'])
+    assert sc.identical(converted.bins.coords['a2'], renamed.bins.coords['a'])
 
     # `a*b` is indeed the product of `a` and `b`
-    assert sc.identical(converted.coords['a*b'], renamed.meta['a'] * renamed.meta['b'])
     assert sc.identical(
-        converted.bins.coords['a*b'], renamed.bins.meta['a'] * renamed.bins.meta['b']
+        converted.coords['a*b'], renamed.coords['a'] * renamed.coords['b']
+    )
+    assert sc.identical(
+        converted.bins.coords['a*b'],
+        renamed.bins.coords['a'] * renamed.bins.coords['b'],
     )
 
 
@@ -761,11 +764,12 @@ def test_binned_without_bin_coord_computes_correct_results(binned_in_a_b):
     renamed = binned_in_a_b.rename_dims({'b': 'b2'})
 
     # `b` was renamed to `b2`
-    assert sc.identical(converted.bins.meta['b2'], renamed.bins.meta['b'])
+    assert sc.identical(converted.bins.coords['b2'], renamed.bins.coords['b'])
 
     # `a*b` is indeed the product of `a` and `b`
     assert sc.identical(
-        converted.bins.coords['a*b'], renamed.bins.meta['a'] * renamed.bins.meta['b']
+        converted.bins.coords['a*b'],
+        renamed.bins.coords['a'] * renamed.bins.coords['b'],
     )
 
 
@@ -779,10 +783,12 @@ def test_binned_without_event_coord_computes_correct_results(binned_in_a_b):
     renamed = binned_in_a_b.rename_dims({'b': 'b2'})
 
     # `b` was renamed to `b2`
-    assert sc.identical(converted.meta['b2'], renamed.meta['b'])
+    assert sc.identical(converted.coords['b2'], renamed.coords['b'])
 
     # `a*b` is indeed the product of `a` and `b`
-    assert sc.identical(converted.coords['a*b'], renamed.meta['a'] * renamed.meta['b'])
+    assert sc.identical(
+        converted.coords['a*b'], renamed.coords['a'] * renamed.coords['b']
+    )
 
 
 def make_binned():
@@ -822,7 +828,7 @@ def test_only_outputs_in_graph_are_stored(a):
     original = sc.DataArray(data=a, coords={'a': a})
     graph = {'b': split}
     da = original.transform_coords(['b'], graph=graph)
-    assert 'c' not in da.meta  # c is not stored
+    assert 'c' not in da.coords  # c is not stored
     with pytest.raises(KeyError):
         # c is not computable
         original.transform_coords(['c'], graph=graph)
@@ -973,16 +979,6 @@ def test_duplicate_output_keys(a):
     graph = {'b': to_bd, 'c': to_bc}
     da = original.transform_coords(['b'], graph=graph)
     assert 'b' in da.coords
-
-
-def test_does_not_use_attrs_as_inputs():
-    def f(x, a):
-        return x - a
-
-    da = sc.data.table_xyz(nrow=10)
-    da.attrs['a'] = sc.scalar(1)
-    with pytest.raises(KeyError):
-        da.transform_coords(['b'], graph={'b': f})
 
 
 def test_keyword_syntax_equivalent_to_explicit_syntax():

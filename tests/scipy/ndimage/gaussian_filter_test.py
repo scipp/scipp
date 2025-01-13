@@ -143,14 +143,6 @@ def test_sigma_is_equivalent_to_scipy_sigma(sigma):
     assert sc.identical(result, reference)
 
 
-def test_attributes_are_propagated():
-    da = make_histogram2d()
-    da.attrs['attr'] = sc.scalar(1.2)
-    result = gaussian_filter(da, sigma=3.4)
-    assert set(result.attrs) == {'attr'}
-    assert sc.identical(result.attrs['attr'], da.attrs['attr'])
-
-
 def test_coordinates_are_propagated():
     da = make_histogram2d()
     result = gaussian_filter(da, sigma=3.4)

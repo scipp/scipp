@@ -6,10 +6,9 @@ import pytest
 import scipp as sc
 
 
-@pytest.mark.parametrize("mapping", ["coords", "attrs", "meta", "masks"])
+@pytest.mark.parametrize("mapping", ["coords", "masks"])
 def test_data_array_mapping_repr_does_not_raise(mapping):
     da = sc.data.table_xyz(10)
-    da.attrs['a'] = da.coords['x']
     da.masks['m'] = da.coords['x'] > sc.scalar(0.5, unit='m')
     repr(getattr(da, mapping))
     repr(getattr(da, mapping).keys())
@@ -17,7 +16,7 @@ def test_data_array_mapping_repr_does_not_raise(mapping):
     repr(getattr(da, mapping).items())
 
 
-@pytest.mark.parametrize("mapping", ["coords", "attrs", "meta", "masks"])
+@pytest.mark.parametrize("mapping", ["coords", "masks"])
 def test_data_array_empty_mapping_repr_does_not_raise(mapping):
     da = sc.DataArray(data=sc.arange('x', 10))
     repr(getattr(da, mapping))
@@ -74,10 +73,9 @@ def test_data_group_repr_includes_items():
     assert idx1 < idx2
 
 
-@pytest.mark.parametrize("mapping", ["coords", "attrs", "meta", "masks"])
+@pytest.mark.parametrize("mapping", ["coords", "masks"])
 def test_data_array_mapping_str_does_not_raise(mapping):
     da = sc.data.table_xyz(10)
-    da.attrs['a'] = da.coords['x']
     da.masks['m'] = da.coords['x'] > sc.scalar(0.5, unit='m')
     str(getattr(da, mapping))
     str(getattr(da, mapping).keys())
@@ -85,7 +83,7 @@ def test_data_array_mapping_str_does_not_raise(mapping):
     str(getattr(da, mapping).items())
 
 
-@pytest.mark.parametrize("mapping", ["coords", "attrs", "meta", "masks"])
+@pytest.mark.parametrize("mapping", ["coords", "masks"])
 def test_data_array_empty_mapping_str_does_not_raise(mapping):
     da = sc.DataArray(data=sc.arange('x', 10))
     str(getattr(da, mapping))

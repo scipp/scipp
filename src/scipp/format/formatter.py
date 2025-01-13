@@ -95,7 +95,7 @@ def _format_array_flat_scipp_objects(data: npt.ArrayLike) -> str:
     return str(data)
 
 
-def _format_data_group_element(data: scipp.DataGroup) -> str:
+def _format_data_group_element(data: scipp.DataGroup[object]) -> str:
     return f'[{data}]'
 
 

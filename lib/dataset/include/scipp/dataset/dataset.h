@@ -95,7 +95,7 @@ public:
 
   /// Return the number of data items in the dataset.
   ///
-  /// This does not include coordinates or attributes, but only all named
+  /// This does not include coordinates and masks, but only all named
   /// entities (which can consist of various combinations of values, variances,
   /// and events coordinates).
   index size() const noexcept { return scipp::size(m_data); }
@@ -112,11 +112,6 @@ public:
   Dataset drop_coords(const scipp::span<const Dim> coord_names) const;
 
   Dataset drop_masks(const scipp::span<const std::string> mask_names) const;
-
-  Dataset drop_attrs(const scipp::span<const Dim> attr_names) const;
-
-  const Coords &meta() const noexcept;
-  Coords &meta() noexcept;
 
   bool contains(const std::string &name) const noexcept;
 
@@ -185,11 +180,9 @@ public:
   auto keys_end() & noexcept { return m_data.keys_end(); }
 
   void setCoord(const Dim dim, Variable coord);
-  void setData(const std::string &name, Variable data,
-               const AttrPolicy attrPolicy = AttrPolicy::Drop);
+  void setData(const std::string &name, Variable data);
   void setData(const std::string &name, const DataArray &data);
-  void setDataInit(const std::string &name, Variable data,
-                   const AttrPolicy attrPolicy = AttrPolicy::Drop);
+  void setDataInit(const std::string &name, Variable data);
   void setDataInit(const std::string &name, const DataArray &data);
 
   Dataset slice(const Slice &s) const;
@@ -243,21 +236,16 @@ private:
   bool m_valid{true};
 };
 
-[[nodiscard]] SCIPP_DATASET_EXPORT Dataset
-copy(const Dataset &dataset, const AttrPolicy attrPolicy = AttrPolicy::Keep);
+[[nodiscard]] SCIPP_DATASET_EXPORT Dataset copy(const Dataset &dataset);
 
-[[maybe_unused]] SCIPP_DATASET_EXPORT DataArray &
-copy(const DataArray &array, DataArray &out,
-     const AttrPolicy attrPolicy = AttrPolicy::Keep);
-[[maybe_unused]] SCIPP_DATASET_EXPORT DataArray
-copy(const DataArray &array, DataArray &&out,
-     const AttrPolicy attrPolicy = AttrPolicy::Keep);
-[[maybe_unused]] SCIPP_DATASET_EXPORT Dataset &
-copy(const Dataset &dataset, Dataset &out,
-     const AttrPolicy attrPolicy = AttrPolicy::Keep);
-[[maybe_unused]] SCIPP_DATASET_EXPORT Dataset
-copy(const Dataset &dataset, Dataset &&out,
-     const AttrPolicy attrPolicy = AttrPolicy::Keep);
+[[maybe_unused]] SCIPP_DATASET_EXPORT DataArray &copy(const DataArray &array,
+                                                      DataArray &out);
+[[maybe_unused]] SCIPP_DATASET_EXPORT DataArray copy(const DataArray &array,
+                                                     DataArray &&out);
+[[maybe_unused]] SCIPP_DATASET_EXPORT Dataset &copy(const Dataset &dataset,
+                                                    Dataset &out);
+[[maybe_unused]] SCIPP_DATASET_EXPORT Dataset copy(const Dataset &dataset,
+                                                   Dataset &&out);
 
 SCIPP_DATASET_EXPORT Dataset operator+(const Dataset &lhs, const Dataset &rhs);
 SCIPP_DATASET_EXPORT Dataset operator+(const Dataset &lhs,

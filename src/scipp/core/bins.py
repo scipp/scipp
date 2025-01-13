@@ -9,10 +9,10 @@ from typing import Generic, Literal, Sequence, TypedDict, TypeVar
 from .._scipp import core as _cpp
 from ..typing import Dims, MetaDataMap, VariableLike
 from ._cpp_wrapper_util import call_func as _call_cpp_func
+from .argument_handlers import combine_dict_args
 from .bin_remapping import concat_bins
 from .cpp_classes import DataArray, Dataset, DType, Unit, Variable
 from .data_group import DataGroup
-from .deprecation import _warn_attr_removal
 from .domains import merge_equal_adjacent
 from .math import midpoints
 from .operations import islinspace
@@ -151,6 +151,7 @@ class Constituents(TypedDict):
 
 
 _O = TypeVar("_O", Variable, DataArray, Dataset)
+_T = TypeVar("_T", bound=Variable | DataArray | Dataset)
 
 
 class Bins(Generic[_O]):
@@ -266,66 +267,42 @@ class Bins(Generic[_O]):
         """Coords of the bins"""
         return _cpp._bins_view(self._data()).coords  # type: ignore[no-any-return]
 
+    def assign_coords(
+        self, coords: dict[str, Variable] | None = None, /, **coords_kwargs: Variable
+    ) -> _O:
+        """Return a new object with coords assigned to bin content."""
+        # Shallow copy constituents
+        out = self._map_constituents_data(lambda data: data)
+        for name, coord in combine_dict_args(coords, coords_kwargs).items():
+            out.bins.coords[name] = coord  # type: ignore[union-attr]  # we know that out has bins
+        return out
+
     def drop_coords(self, coords: str | Sequence[str]) -> _O:
-        """Drop coords from bin content"""
+        """Return a new object with coords dropped from bin content."""
         if isinstance(self._obj, Dataset):
             raise NotImplementedError("bins.drop_coords does not support datasets")
-        content = self.constituents
-        content['data'] = content['data'].drop_coords(coords)  # type: ignore[union-attr]
-        data: Variable = _cpp._bins_no_validate(**content)
-        if isinstance(self._obj, DataArray):
-            out = self._obj.copy(deep=False)
-            out.data = data
-            return out
-        return data
-
-    @property
-    def meta(self) -> MetaDataMap:
-        """Coords and attrs of the bins
-
-        .. deprecated:: 23.9.0
-           Use :py:attr:`coords` with unset alignment flag instead, or
-           store attributes in higher-level data structures.
-        """
-        _warn_attr_removal()
-        return self.deprecated_meta
-
-    @property
-    def attrs(self) -> MetaDataMap:
-        """Attrs of the bins
-
-        .. deprecated:: 23.9.0
-           Use :py:attr:`coords` with unset alignment flag instead, or
-           store attributes in higher-level data structures.
-        """
-        _warn_attr_removal()
-        return self.deprecated_attrs
-
-    @property
-    def deprecated_meta(self) -> MetaDataMap:
-        return _cpp._bins_view(self._data()).deprecated_meta  # type: ignore[no-any-return]
-
-    @property
-    def deprecated_attrs(self) -> MetaDataMap:
-        return _cpp._bins_view(self._data()).deprecated_attrs  # type: ignore[no-any-return]
+        return self._map_constituents_data(lambda data: data.drop_coords(coords))
 
     @property
     def masks(self) -> MetaDataMap:
         """Masks of the bins"""
         return _cpp._bins_view(self._data()).masks  # type: ignore[no-any-return]
 
+    def assign_masks(
+        self, masks: dict[str, Variable] | None = None, /, **masks_kwargs: Variable
+    ) -> _O:
+        """Return a new object with masks assigned to bin content."""
+        # Shallow copy constituents
+        out = self._map_constituents_data(lambda data: data)
+        for name, coord in combine_dict_args(masks, masks_kwargs).items():
+            out.bins.masks[name] = coord  # type: ignore[union-attr]  # we know that out has bins
+        return out
+
     def drop_masks(self, masks: str | Sequence[str]) -> _O:
-        """Drop masks from bin content"""
+        """Return a new object with masks dropped from bin content."""
         if isinstance(self._obj, Dataset):
             raise NotImplementedError("bins.drop_masks does not support datasets")
-        content = self.constituents
-        content['data'] = content['data'].drop_masks(masks)  # type: ignore[union-attr]
-        data: Variable = _cpp._bins_no_validate(**content)
-        if isinstance(self._obj, DataArray):
-            out = self._obj.copy(deep=False)
-            out.data = data
-            return out
-        return data
+        return self._map_constituents_data(lambda data: data.drop_masks(masks))
 
     @property
     def data(self) -> Variable:
@@ -581,6 +558,18 @@ class Bins(Generic[_O]):
             else:
                 out = _call_cpp_func(_cpp.buckets.concatenate, self._obj, other)  # type: ignore[assignment]
             return out
+
+    def _map_constituents_data(self, f: Callable[[_T], _T]) -> _O:
+        content = self.constituents
+        content['data'] = f(content['data'])  # type: ignore[arg-type]
+        data: Variable = _cpp._bins_no_validate(**content)
+        if isinstance(self._obj, DataArray):
+            out = self._obj.copy(deep=False)
+            out.data = data
+            return out
+        elif isinstance(self._obj, Dataset):
+            raise NotImplementedError("Dataset events not supported")
+        return data
 
 
 def _bins(obj: _O) -> Bins[_O] | None:

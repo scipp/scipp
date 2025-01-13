@@ -4,11 +4,13 @@
 # @author Simon Heybrock
 import os
 import tempfile
+from pathlib import Path
 
 import numpy as np
 import pytest
 
 import scipp as sc
+import scipp.testing
 from scipp.io.hdf5 import _collection_element_name
 
 h5py = pytest.importorskip('h5py')
@@ -16,7 +18,7 @@ h5py = pytest.importorskip('h5py')
 
 def roundtrip(obj):
     with tempfile.TemporaryDirectory() as path:
-        name = f'{path}/test.hdf5'
+        name = Path(path, 'test.hdf5')
         obj.save_hdf5(filename=name)
         return sc.io.load_hdf5(filename=name)
 
@@ -65,7 +67,6 @@ array_1d = sc.DataArray(
         'mask.1': sc.less(x, 1.5 * sc.units.m),
         'mask.2': sc.less(x, 2.5 * sc.units.m),
     },
-    attrs={'attr1': x, 'attr2': 1.2 * sc.units.K},
 )
 array_2d = sc.DataArray(
     data=xy,
@@ -74,7 +75,6 @@ array_2d = sc.DataArray(
         'mask1': sc.less(x, 1.5 * sc.units.m),
         'mask2': sc.less(xy, 0.5 * sc.units.kg),
     },
-    attrs={'attr1': xy, 'attr2': 1.2 * sc.units.K},
 )
 
 
@@ -160,7 +160,7 @@ def test_variable_legacy_str_unit():
     var = x.copy()
     var.unit = 'm/s*kg^2'
     with tempfile.TemporaryDirectory() as path:
-        name = f'{path}/test.hdf5'
+        name = Path(path, 'test.hdf5')
         var.save_hdf5(filename=name)
         with h5py.File(name, 'a') as f:
             f['values'].attrs['unit'] = str(var.unit)
@@ -225,10 +225,6 @@ def test_data_array_unsupported_PyObject_coord():
     assert not sc.identical(a, b)
     del a.coords['obj']
     assert sc.identical(a, b)
-    a.attrs['obj'] = obj
-    assert not sc.identical(a, b)
-    del a.attrs['obj']
-    assert sc.identical(a, b)
 
 
 def test_data_array_coord_alignment():
@@ -236,6 +232,42 @@ def test_data_array_coord_alignment():
     a.coords.set_aligned('y', False)
     b = roundtrip(a)
     assert sc.identical(a, b)
+
+
+# Attributes where removed in https://github.com/scipp/scipp/pull/3626
+# But the loader can still load attrs from files and assigns them as coords
+# as per https://github.com/scipp/scipp/pull/3626#discussion_r1906966229
+def test_data_array_loads_legacy_attributes():
+    a = sc.ones(sizes=array_1d.sizes, dtype='float64')
+    µ = sc.array(dims=array_1d.dims, values=[f'a{i}' for i in range(len(array_1d))])
+    with_attrs_as_coords = array_1d.assign_coords({'a': a, 'µ': µ})
+    with_attrs_as_coords.coords.set_aligned('a', False)
+    with_attrs_as_coords.coords.set_aligned('µ', False)
+
+    with tempfile.TemporaryDirectory() as path:
+        name = Path(path, 'test.hdf5')
+        with_attrs_as_coords.save_hdf5(filename=name)
+        with h5py.File(name, 'r+') as f:
+            # Move new coords to attrs
+            f.move(source='coords/elem_002_a', dest='attrs/elem_000_a')
+            f.move(source='coords/elem_003_&#181;', dest='attrs/elem_001_&#181;')
+
+        loaded = sc.io.load_hdf5(filename=name)
+    sc.testing.assert_identical(with_attrs_as_coords, loaded)
+
+
+def test_data_array_raises_with_clashing_attr_and_coord():
+    initial = array_1d
+
+    with tempfile.TemporaryDirectory() as path:
+        name = Path(path, 'test.hdf5')
+        initial.save_hdf5(filename=name)
+        with h5py.File(name, 'r+') as f:
+            # Copy coord into attr to create clash
+            f.copy(source='coords/elem_000_x', dest='attrs/elem_000_x')
+
+        with pytest.raises(ValueError, match="attributes {'x'}"):
+            sc.io.load_hdf5(filename=name)
 
 
 def test_variable_binned_data_array_coord_alignment():
@@ -252,7 +284,7 @@ def test_dataset():
 def test_dataset_item_can_be_read_as_data_array():
     ds = sc.Dataset(data={'a': array_1d})
     with tempfile.TemporaryDirectory() as path:
-        name = f'{path}/test.hdf5'
+        name = Path(path, 'test.hdf5')
         ds.save_hdf5(filename=name)
         loaded = {}
         with h5py.File(name, 'r') as f:
@@ -274,8 +306,8 @@ def test_dataset_with_many_coords():
     ds1 = sc.Dataset({'a': a}, coords=coords)
     ds2 = sc.Dataset({'a': a, 'b': b}, coords=coords)
     with tempfile.TemporaryDirectory() as path:
-        name1 = f'{path}/test1.hdf5'
-        name2 = f'{path}/test2.hdf5'
+        name1 = Path(path, 'test1.hdf5')
+        name2 = Path(path, 'test2.hdf5')
         ds1.save_hdf5(filename=name1)
         ds2.save_hdf5(filename=name2)
         size1 = os.path.getsize(name1)

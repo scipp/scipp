@@ -62,12 +62,10 @@ def test_output_properties_match_input_properties():
     dim = da.dim
     da = sc.concat([da, da + da], 'extra_dim')
     da.coords['extra_dim'] = sc.array(dims=['new_dim'], values=[1, 2])
-    da.attrs['attr'] = sc.scalar(1)
     sos = butter(da.coords[dim], N=4, Wn=4 / da.coords[dim].unit)
     out = sosfiltfilt(da, dim, sos=sos)
     assert out.dims == da.dims
     assert out.unit == da.unit
-    assert out.attrs == da.attrs
     assert out.coords == da.coords
 
 

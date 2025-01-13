@@ -26,7 +26,6 @@ def rewrap_output_data(prototype: _VarOrDa, data: Variable) -> _VarOrDa:
         return DataArray(
             data=data,
             coords=prototype.coords,
-            attrs=prototype.deprecated_attrs,
             masks=_copied(prototype.masks),
         )
     else:
@@ -38,7 +37,6 @@ def rewrap_reduced_data(prototype: DataArray, data: Variable, dim: Dims) -> Data
         data,
         coords=reduced_coords(prototype, dim),
         masks=reduced_masks(prototype, dim),
-        attrs=reduced_attrs(prototype, dim),
     )
 
 
@@ -69,10 +67,6 @@ def concrete_dims(obj: VariableLikeType, dim: Dims) -> tuple[str, ...]:
 
 def reduced_coords(da: DataArray, dim: Dims) -> dict[str, Variable]:
     return _reduced(da.coords, concrete_dims(da, dim))
-
-
-def reduced_attrs(da: DataArray, dim: Dims) -> dict[str, Variable]:
-    return _reduced(da.deprecated_attrs, concrete_dims(da, dim))
 
 
 def reduced_masks(da: DataArray, dim: Dims) -> dict[str, Variable]:

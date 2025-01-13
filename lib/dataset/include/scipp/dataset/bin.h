@@ -13,9 +13,9 @@ SCIPP_DATASET_EXPORT DataArray bin(const DataArray &array,
                                    const std::vector<Variable> &groups = {},
                                    const std::vector<Dim> &erase = {});
 
-template <class Coords, class Masks, class Attrs>
+template <class Coords, class Masks>
 SCIPP_DATASET_EXPORT DataArray bin(const Variable &data, const Coords &coords,
-                                   const Masks &masks, const Attrs &attrs,
+                                   const Masks &masks,
                                    const std::vector<Variable> &edges,
                                    const std::vector<Variable> &groups = {},
                                    const std::vector<Dim> &erase = {});

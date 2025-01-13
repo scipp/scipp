@@ -31,9 +31,6 @@ def make_array():
     mask = y.copy()
     mask.unit = ''
     da.masks['yy'] = mask < mask**2
-    da.deprecated_attrs['xx'] = x
-    da.deprecated_attrs['yy'] = y
-    da.deprecated_attrs['scalar'] = x[0]
     return da
 
 
@@ -44,8 +41,6 @@ def check_metadata(out, da, x):
     assert sc.identical(out.coords['yy'], da.coords['yy'])
     assert sc.identical(out.coords['scalar'], da.coords['scalar'])
     assert sc.identical(out.masks['yy'], da.masks['yy'])
-    assert sc.identical(out.attrs['yy'], da.attrs['yy'])
-    assert sc.identical(out.attrs['scalar'], da.attrs['scalar'])
     out.masks['yy'] ^= out.masks['yy']
     assert not sc.identical(out.masks['yy'], da.masks['yy'])
 

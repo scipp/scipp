@@ -12,20 +12,18 @@ namespace scipp::dataset {
 DataArray @NAME@(const DataArray &a, const DataArray &b) {
   auto coords = union_(a.coords(), b.coords(), "@OPNAME@");
   auto masks = union_or(a.masks(), b.masks());
-  auto attrs = intersection(a.attrs(), b.attrs());
   return DataArray(
       @NAME@(a.data(), b.data()),
       std::move(coords),
-      std::move(masks),
-      std::move(attrs));
+      std::move(masks));
 }
 
 DataArray @NAME@(const DataArray &a, const Variable &b) {
-  return DataArray(@NAME@(a.data(), b), a.coords(), copy(a.masks()), a.attrs());
+  return DataArray(@NAME@(a.data(), b), a.coords(), copy(a.masks()));
 }
 
 DataArray @NAME@(const Variable &a, const DataArray &b) {
-  return DataArray(@NAME@(a, b.data()), b.coords(), copy(b.masks()), b.attrs());
+  return DataArray(@NAME@(a, b.data()), b.coords(), copy(b.masks()));
 }
 
 } // namespace scipp::dataset

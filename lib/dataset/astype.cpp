@@ -15,6 +15,6 @@ DataArray astype(const DataArray &array, const DType type,
                        ? array.masks()
                        : dataset::copy(array.masks());
   return DataArray(std::move(new_data), array.coords(), std::move(new_masks),
-                   array.attrs(), array.name());
+                   array.name());
 }
 } // namespace scipp::dataset

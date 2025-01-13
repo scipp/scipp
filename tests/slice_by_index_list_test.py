@@ -84,7 +84,7 @@ def test_reversing_twice_gives_original(sliceable):
 
 
 @pytest.mark.parametrize("sliceable", [make_array(), make_dataset()])
-@pytest.mark.parametrize("what", ["coords", "masks", "attrs"])
+@pytest.mark.parametrize("what", ["coords", "masks"])
 def test_bin_edges_are_dropped(sliceable, what):
     sliceable = sliceable.copy()
     base = sliceable.copy()
