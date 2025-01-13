@@ -177,7 +177,12 @@ def _reshape_bounds(bounds):
     return left, right
 
 
-def _select_data_params_and_bounds(sel, da, p0, bounds):
+def _select_data_params_and_bounds(
+    sel: tuple[str, int | slice],
+    da: DataArray,
+    p0: Mapping[str, Variable],
+    bounds: Mapping[str, tuple[Variable, Variable]],
+) -> tuple[DataArray, dict[str, Variable], dict[str, tuple[Variable, Variable]]]:
     dim, i = sel
     return (
         da[dim, i],
@@ -192,22 +197,39 @@ def _select_data_params_and_bounds(sel, da, p0, bounds):
     )
 
 
-def _serialize_variable(v):
+SerializedVariable = tuple[tuple[str, ...], np.ndarray, np.ndarray, str | None]
+
+
+def _serialize_variable(v: Variable) -> SerializedVariable:
     return (v.dims, v.values, v.variances, str(v.unit) if v.unit is not None else None)
 
 
-def _serialize_mapping(v):
+SerializedMapping = tuple[tuple[str, ...], tuple[SerializedVariable, ...]]
+
+
+def _serialize_mapping(v: Mapping[str, Variable]) -> SerializedMapping:
     return (tuple(v.keys()), tuple(map(_serialize_variable, v.values())))
 
 
-def _serialize_bounds(v):
+SerializedBounds = tuple[
+    tuple[str, ...], tuple[tuple[SerializedVariable, SerializedVariable], ...]
+]
+
+
+def _serialize_bounds(v: Mapping[str, tuple[Variable, Variable]]) -> SerializedBounds:
     return (
         tuple(v.keys()),
-        tuple(tuple(map(_serialize_variable, pair)) for pair in v.values()),
+        tuple(
+            (_serialize_variable(l), _serialize_variable(r))
+            for (l, r) in v.values()  # noqa: E741
+        ),
     )
 
 
-def _serialize_data_array(da):
+SerializedDataArray = tuple[SerializedVariable, SerializedMapping, SerializedMapping]
+
+
+def _serialize_data_array(da: DataArray) -> SerializedDataArray:
     return (
         _serialize_variable(da.data),
         _serialize_mapping(da.coords),
@@ -215,11 +237,11 @@ def _serialize_data_array(da):
     )
 
 
-def _deserialize_variable(t):
+def _deserialize_variable(t: SerializedVariable) -> Variable:
     return array(dims=t[0], values=t[1], variances=t[2], unit=t[3])
 
 
-def _deserialize_data_array(t):
+def _deserialize_data_array(t: SerializedDataArray) -> DataArray:
     return DataArray(
         _deserialize_variable(t[0]),
         coords=_deserialize_mapping(t[1]),
@@ -227,15 +249,15 @@ def _deserialize_data_array(t):
     )
 
 
-def _deserialize_mapping(t):
+def _deserialize_mapping(t: SerializedMapping) -> dict[str, Variable]:
     return dict(zip(t[0], map(_deserialize_variable, t[1]), strict=True))
 
 
-def _deserialize_bounds(t):
+def _deserialize_bounds(t: SerializedBounds) -> dict[str, tuple[Variable, Variable]]:
     return dict(
         zip(
             t[0],
-            (tuple(map(_deserialize_variable, pair)) for pair in t[1]),
+            ((_deserialize_variable(l), _deserialize_variable(r)) for (l, r) in t[1]),  # noqa: E741
             strict=True,
         )
     )
@@ -325,14 +347,14 @@ def _curve_fit(
 
 
 def _curve_fit_chunk(
-    coords,
-    f,
-    da,
-    p0,
-    bounds,
-    map_over,
-    unsafe_numpy_f,
-    kwargs,
+    coords: dict[str, Variable] | SerializedMapping,
+    f: Callable,
+    da: DataArray | SerializedDataArray,
+    p0: dict[str, Variable] | SerializedMapping,
+    bounds: dict[str, tuple[Variable, Variable]] | SerializedBounds,
+    map_over: Sequence[str],
+    unsafe_numpy_f: bool,
+    kwargs: dict,
 ):
     coords = coords if isinstance(coords, dict) else _deserialize_mapping(coords)
     da = da if isinstance(da, DataArray) else _deserialize_data_array(da)
