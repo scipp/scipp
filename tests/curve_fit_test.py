@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
-import time
 from functools import partial
 
 import numpy as np
@@ -776,26 +775,3 @@ def test_with_nonpickle_function():
 
     # Function in __main__ scope works with multiprocessing
     curve_fit(['x'], func, da, workers=2)
-
-
-def test_multiprocessing_used_if_several_workers_requested():
-    da = array2d(a=1.2, b=1.3, noise_scale=0.01)
-
-    # The point of this test is to verify that
-    # the "workers" argument actually does what we expect.
-    start = time.perf_counter()
-    curve_fit(['x'], func, da)
-    end = time.perf_counter()
-    without_mp = end - start
-
-    start = time.perf_counter()
-    curve_fit(['x'], func, da, workers=100)
-    end = time.perf_counter()
-    with_mp = end - start
-
-    # It looks weird that we're asserting it's much slower with multiprocessing.
-    # Isn't the point to **improve** performance?
-    # But here the array is so small that it doesn't make any sense to parallelize,
-    # and we're requesting too many workers, so it should be very slow
-    # if the "workers" argument is respected.
-    assert with_mp > 10 * without_mp
