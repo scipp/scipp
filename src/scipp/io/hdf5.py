@@ -299,7 +299,7 @@ class _VariableIO:
         return group
 
     @classmethod
-    def read(cls, group: h5.Group) -> Variable:
+    def read(cls, group: h5.Group, aligned: bool | None = None) -> Variable:
         _check_scipp_header(group, 'Variable')
         values = group['values']
         contents = {key: values.attrs[key] for key in ['dims', 'shape']}
@@ -309,7 +309,10 @@ class _VariableIO:
         else:
             contents['unit'] = None  # essential, otherwise default unit is used
         contents['with_variances'] = 'variances' in group
-        contents['aligned'] = values.attrs.get('aligned', True)
+        if aligned is not None:
+            contents['aligned'] = aligned
+        else:
+            contents['aligned'] = values.attrs.get('aligned', True)
         if contents['dtype'] in [
             DType.VariableView,
             DType.DataArrayView,
@@ -344,14 +347,16 @@ def _write_mapping(
 
 
 def _read_mapping(
-    group: h5.Group, override: Mapping[str, h5.Group] | None = None
+    group: h5.Group,
+    override: Mapping[str, h5.Group] | None = None,
+    aligned: bool | None = None,
 ) -> VariableLike:
     if override is None:
         override = {}
     return {
         g.attrs['name']: override[g.attrs['name']]
         if g.attrs['name'] in override
-        else _HDF5IO.read(g)
+        else _HDF5IO.read(g, aligned=aligned)
         for g in group.values()
     }
 
@@ -397,7 +402,7 @@ class _DataArrayIO:
         but old files that contain attributes remain.
         """
         if (attrs_group := group.get('attrs')) is not None:
-            attrs = _read_mapping(attrs_group, override.get('attrs'))
+            attrs = _read_mapping(attrs_group, override.get('attrs'), aligned=False)
             if intersection := contents['coords'].keys() & attrs.keys():
                 raise ValueError(
                     f"Data array '{contents['name']}' contains legacy attributes "
