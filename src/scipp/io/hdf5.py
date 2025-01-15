@@ -299,7 +299,7 @@ class _VariableIO:
         return group
 
     @classmethod
-    def read(cls, group: h5.Group, aligned: bool | None = None) -> Variable:
+    def read(cls, group: h5.Group) -> Variable:
         _check_scipp_header(group, 'Variable')
         values = group['values']
         contents = {key: values.attrs[key] for key in ['dims', 'shape']}
@@ -309,10 +309,7 @@ class _VariableIO:
         else:
             contents['unit'] = None  # essential, otherwise default unit is used
         contents['with_variances'] = 'variances' in group
-        if aligned is not None:
-            contents['aligned'] = aligned
-        else:
-            contents['aligned'] = values.attrs.get('aligned', True)
+        contents['aligned'] = values.attrs.get('aligned', True)
         if contents['dtype'] in [
             DType.VariableView,
             DType.DataArrayView,
@@ -349,14 +346,13 @@ def _write_mapping(
 def _read_mapping(
     group: h5.Group,
     override: Mapping[str, h5.Group] | None = None,
-    aligned: bool | None = None,
 ) -> VariableLike:
     if override is None:
         override = {}
     return {
         g.attrs['name']: override[g.attrs['name']]
         if g.attrs['name'] in override
-        else _HDF5IO.read(g, aligned=aligned)
+        else _HDF5IO.read(g)
         for g in group.values()
     }
 
@@ -389,26 +385,30 @@ class _DataArrayIO:
         contents['data'] = _VariableIO.read(group['data'])
         for category in ['coords', 'masks']:
             contents[category] = _read_mapping(group[category], override.get(category))
-        _DataArrayIO._read_legacy_attrs_into(contents, group, override)
-        return DataArray(**contents)
+        da = DataArray(**contents)
+        da = _DataArrayIO._read_legacy_attrs_into(da, group, override)
+        return da
 
     @staticmethod
     def _read_legacy_attrs_into(
-        contents: dict[str, Any], group: h5.Group, override: Mapping[str, h5.Group]
-    ) -> None:
+        da: DataArray, group: h5.Group, override: Mapping[str, h5.Group]
+    ) -> DataArray:
         """Load attributes as coordinates.
 
         Attributes were removed in https://github.com/scipp/scipp/pull/3626
         but old files that contain attributes remain.
         """
         if (attrs_group := group.get('attrs')) is not None:
-            attrs = _read_mapping(attrs_group, override.get('attrs'), aligned=False)
-            if intersection := contents['coords'].keys() & attrs.keys():
+            attrs = _read_mapping(attrs_group, override.get('attrs'))
+            if intersection := da.coords.keys() & attrs.keys():
                 raise ValueError(
-                    f"Data array '{contents['name']}' contains legacy attributes "
+                    f"Data array '{da.name}' contains legacy attributes "
                     f'{intersection} which also exist as coordinates.'
                 )
-            contents['coords'].update(attrs)
+            da = da.assign_coords(attrs)
+            for name in attrs:
+                da.coords.set_aligned(name, False)
+        return da
 
 
 class _DatasetIO:
