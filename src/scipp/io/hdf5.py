@@ -344,7 +344,8 @@ def _write_mapping(
 
 
 def _read_mapping(
-    group: h5.Group, override: Mapping[str, h5.Group] | None = None
+    group: h5.Group,
+    override: Mapping[str, h5.Group] | None = None,
 ) -> VariableLike:
     if override is None:
         override = {}
@@ -384,13 +385,14 @@ class _DataArrayIO:
         contents['data'] = _VariableIO.read(group['data'])
         for category in ['coords', 'masks']:
             contents[category] = _read_mapping(group[category], override.get(category))
-        _DataArrayIO._read_legacy_attrs_into(contents, group, override)
-        return DataArray(**contents)
+        da = DataArray(**contents)
+        da = _DataArrayIO._read_legacy_attrs_into(da, group, override)
+        return da
 
     @staticmethod
     def _read_legacy_attrs_into(
-        contents: dict[str, Any], group: h5.Group, override: Mapping[str, h5.Group]
-    ) -> None:
+        da: DataArray, group: h5.Group, override: Mapping[str, h5.Group]
+    ) -> DataArray:
         """Load attributes as coordinates.
 
         Attributes were removed in https://github.com/scipp/scipp/pull/3626
@@ -398,12 +400,15 @@ class _DataArrayIO:
         """
         if (attrs_group := group.get('attrs')) is not None:
             attrs = _read_mapping(attrs_group, override.get('attrs'))
-            if intersection := contents['coords'].keys() & attrs.keys():
+            if intersection := da.coords.keys() & attrs.keys():
                 raise ValueError(
-                    f"Data array '{contents['name']}' contains legacy attributes "
+                    f"Data array '{da.name}' contains legacy attributes "
                     f'{intersection} which also exist as coordinates.'
                 )
-            contents['coords'].update(attrs)
+            da = da.assign_coords(attrs)
+            for name in attrs:
+                da.coords.set_aligned(name, False)
+        return da
 
 
 class _DatasetIO:

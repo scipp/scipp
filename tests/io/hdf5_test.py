@@ -241,8 +241,6 @@ def test_data_array_loads_legacy_attributes():
     a = sc.ones(sizes=array_1d.sizes, dtype='float64')
     µ = sc.array(dims=array_1d.dims, values=[f'a{i}' for i in range(len(array_1d))])
     with_attrs_as_coords = array_1d.assign_coords({'a': a, 'µ': µ})
-    with_attrs_as_coords.coords.set_aligned('a', False)
-    with_attrs_as_coords.coords.set_aligned('µ', False)
 
     with tempfile.TemporaryDirectory() as path:
         name = Path(path, 'test.hdf5')
@@ -253,6 +251,8 @@ def test_data_array_loads_legacy_attributes():
             f.move(source='coords/elem_003_&#181;', dest='attrs/elem_001_&#181;')
 
         loaded = sc.io.load_hdf5(filename=name)
+    with_attrs_as_coords.coords.set_aligned('a', False)
+    with_attrs_as_coords.coords.set_aligned('µ', False)
     sc.testing.assert_identical(with_attrs_as_coords, loaded)
 
 
