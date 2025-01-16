@@ -9,6 +9,7 @@
 #include "scipp/variable/reciprocal.h"
 
 #include "test_data_arrays.h"
+#include "test_macros.h"
 
 using namespace scipp;
 
@@ -106,6 +107,6 @@ TEST_F(GeneratedBinaryDataArrayTest, non_bool_masks_with_same_names) {
       makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1, 2});
   auto mask = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0.1, 0.1});
   a = DataArray(data, {{Dim::X, coord}}, {{"mask", mask}});
-  ASSERT_THROW(less(a, a), except::TypeError);
-  ASSERT_THROW(a += a, except::TypeError);
+  ASSERT_THROW_DISCARD(less(a, a), except::TypeError);
+  ASSERT_THROW_DISCARD(a += a, except::TypeError);
 }

@@ -5,6 +5,8 @@
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/shape.h"
 
+#include "test_macros.h"
+
 using namespace scipp;
 
 template <class T> void check_equal(const T &var) {
@@ -37,8 +39,8 @@ protected:
     check_equal(make_bins(indices, Dim::X, ds));
     da.masks().erase("mask");
     ds["a"].masks().erase("mask");
-    ASSERT_NO_THROW(da + da);
-    ASSERT_NO_THROW(da + copy(da));
+    ASSERT_NO_THROW_DISCARD(da + da);
+    ASSERT_NO_THROW_DISCARD(da + copy(da));
     ASSERT_NO_THROW(ds + ds);
     ASSERT_NO_THROW(ds + copy(ds));
     ASSERT_NO_THROW(ds.setData("b", da));
