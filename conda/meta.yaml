@@ -35,11 +35,17 @@ requirements:
     - ninja
   host:
     - python
-    - tbb-devel {{ tbb_devel }}
+    - tbb-devel=2022.0.0
+    - libboost-headers=1.86.0
+    - eigen=3.4.0
+    - pybind11=2.13.6
+    - benchmark=1.6.1
+    - gmock=1.15.2
+    - gtest=1.15.2
   run:
     - numpy
     - python
-    - tbb {{ tbb }}
+    - tbb=2022.0.0
 
 # Only the cmake-package-test works when cross compiling.
 # But it is not very important at the moment and
@@ -62,8 +68,14 @@ test:
     - pytest
     - python-graphviz
     - scipy>=1.7.0
-    - tbb-devel {{ tbb_devel }}
+    - tbb-devel=2022.0.0
     - xarray
+    - libboost-headers=1.86.0
+    - eigen=3.4.0
+    - pybind11=2.13.6
+    - benchmark=1.6.1
+    - gmock=1.15.2
+    - gtest=1.15.2
   files:
     - cmake-package-test/
   source_files:

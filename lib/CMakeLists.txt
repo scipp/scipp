@@ -19,7 +19,7 @@ include(scipp-conan)
 
 set(Python_FIND_IMPLEMENTATIONS CPython PyPy)
 
-find_package(Benchmark)
+find_package(benchmark)
 find_package(Boost 1.67 REQUIRED)
 find_package(Eigen3 REQUIRED)
 option(SANITIZERS "Enable sanitizers" OFF)
