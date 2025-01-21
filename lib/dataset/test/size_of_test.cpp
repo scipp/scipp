@@ -105,7 +105,7 @@ TEST(SizeOf, variable_of_vector3) {
 
 namespace {
 auto short_string_size([[maybe_unused]] const std::string &str) {
-#if defined(_MSC_VER) || defined(__aarch64__)
+#if defined(_MSC_VER) || (defined(__APPLE__) && defined(__aarch64__))
   // MSVC and MacOS arm64 do not use short string optimization.
   return sizeof(std::string) + str.size();
 #else
