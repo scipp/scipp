@@ -67,7 +67,7 @@
       "description": "Linux options for package build for x86_64"
     },
     {
-      "name": "package-linux-arm64",
+      "name": "package-linux-aarch64",
       "inherits": "package",
       "description": "Linux options for package build for arm64"
     },
