@@ -335,6 +335,8 @@ TEST(Variable, dot_of_vector) {
       Values{element::dot(v1, v1), element::dot(v2, v2), element::dot(v3, v3)});
   auto var = makeVariable<Eigen::Vector3d>(
       Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{v1, v2, v3});
+  auto diff = dot(var, var) - reference;
+  std::cout << "diff: " << diff << "\n";
   EXPECT_EQ(dot(var, var), reference);
 }
 
