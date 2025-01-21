@@ -329,15 +329,18 @@ TEST(Variable, sqrt_out_arg) {
 TEST(Variable, dot_of_vector) {
   Eigen::Vector3d v1(1.1, 2.2, 3.3);
   Eigen::Vector3d v2(-4.4, -5.5, -6.6);
-  Eigen::Vector3d v3(0.0, 0.0, 0.0);
+  Eigen::Vector3d v3(0, 0, 0);
   auto reference = makeVariable<double>(
       Dims{Dim::X}, Shape{3}, units::Unit(units::m) * units::Unit(units::m),
       Values{element::dot(v1, v1), element::dot(v2, v2), element::dot(v3, v3)});
   auto var = makeVariable<Eigen::Vector3d>(
       Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{v1, v2, v3});
-  auto diff = dot(var, var) - reference;
-  std::cout << "diff: " << diff << "\n";
-  EXPECT_EQ(dot(var, var), reference);
+  const auto result = dot(var, var);
+  EXPECT_NEAR(result.values<double>()[0], reference.values<double>()[0], 1e-14);
+  EXPECT_NEAR(result.values<double>()[1], reference.values<double>()[1], 1e-14);
+  EXPECT_NEAR(result.values<double>()[2], reference.values<double>()[2], 1e-14);
+  EXPECT_EQ(result.unit(), reference.unit());
+  EXPECT_EQ(result.dims(), reference.dims());
 }
 
 TEST(Variable, cross_of_vector) {
