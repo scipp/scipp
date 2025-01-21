@@ -67,6 +67,11 @@
       "description": "Linux options for package build for x86_64"
     },
     {
+      "name": "package-linux-arm64",
+      "inherits": "package",
+      "description": "Linux options for package build for arm64"
+    },
+    {
       "name": "package-osx-64",
       "inherits": "package",
       "description": "MacOS options for package build for x86_64",
