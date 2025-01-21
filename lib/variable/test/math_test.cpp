@@ -329,7 +329,7 @@ TEST(Variable, sqrt_out_arg) {
 TEST(Variable, dot_of_vector) {
   Eigen::Vector3d v1(1.1, 2.2, 3.3);
   Eigen::Vector3d v2(-4.4, -5.5, -6.6);
-  Eigen::Vector3d v3(0, 0, 0);
+  Eigen::Vector3d v3(0.0, 0.0, 0.0);
   auto reference = makeVariable<double>(
       Dims{Dim::X}, Shape{3}, units::Unit(units::m) * units::Unit(units::m),
       Values{element::dot(v1, v1), element::dot(v2, v2), element::dot(v3, v3)});
