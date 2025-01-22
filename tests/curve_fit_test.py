@@ -761,17 +761,19 @@ def test_with_callable_class():
     assert sc.allclose(popt['b'].data, sc.scalar(1.3), rtol=sc.scalar(2.0 * 0.01))
 
 
-def test_with_nonpickle_function():
-    da = array2d(a=1.2, b=1.3, noise_scale=0.01)
+# TODO: https://github.com/pytest-dev/pytest/issues/10965
+# Pool on Windows/macOS hangs on github action runners
+# def test_with_nonpickle_function():
+#     da = array2d(a=1.2, b=1.3, noise_scale=0.01)
 
-    def local_function(x, a, b):
-        return func(x, a, b)
+#     def local_function(x, a, b):
+#         return func(x, a, b)
 
-    # Running without multiprocessing lets you use a local function
-    curve_fit(['x'], local_function, da, workers=1)
-    with pytest.raises(ValueError, match='The provided fit function is not'):
-        # Running with multiprocessing fails if the function is not pickleable
-        curve_fit(['x'], local_function, da, workers=2)
+#     # Running without multiprocessing lets you use a local function
+#     curve_fit(['x'], local_function, da, workers=1)
+#     with pytest.raises(ValueError, match='The provided fit function is not'):
+#         # Running with multiprocessing fails if the function is not pickleable
+#         curve_fit(['x'], local_function, da, workers=2)
 
-    # Function in __main__ scope works with multiprocessing
-    curve_fit(['x'], func, da, workers=2)
+#     # Function in __main__ scope works with multiprocessing
+#     curve_fit(['x'], func, da, workers=2)
