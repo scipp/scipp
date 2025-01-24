@@ -3,7 +3,7 @@
 # @author Jan-Lukas Wynen
 
 import dataclasses
-from collections.abc import Iterable
+from collections.abc import Generator, Iterable
 
 from .coord import Coord
 from .options import Options
@@ -19,7 +19,7 @@ class CoordTable:
     """
 
     def __init__(self, rules: list[Rule], targets: set[str], options: Options):
-        self._coords = {}
+        self._coords: dict[str, Coord] = {}
         self._total_usages = _apply_keep_options(
             _count_usages(rules), rules, targets, options
         )
@@ -27,7 +27,7 @@ class CoordTable:
         for name in targets:
             self._total_usages[name] = -1
 
-    def add(self, name: str, coord: Coord):
+    def add(self, name: str, coord: Coord) -> None:
         self._coords[name] = dataclasses.replace(coord, usages=self.total_usages(name))
 
     def consume(self, name: str) -> Coord:
@@ -48,7 +48,7 @@ class CoordTable:
 
 
 def _count_usages(rules: list[Rule]) -> dict[str, int]:
-    usages = {}
+    usages: dict[str, int] = {}
     for rule in rules:
         for name in rule.dependencies:
             usages.setdefault(name, 0)
@@ -59,12 +59,12 @@ def _count_usages(rules: list[Rule]) -> dict[str, int]:
 def _apply_keep_options(
     usages: dict[str, int], rules: list[Rule], targets: set[str], options: Options
 ) -> dict[str, int]:
-    def out_names(rule_type):
+    def out_names(rule_type: type) -> Generator[str, None, None]:
         yield from filter(
             lambda name: name not in targets, rule_output_names(rules, rule_type)
         )
 
-    def handle_in(names):
+    def handle_in(names: set[str]) -> None:
         for name in names:
             usages[name] = -1
 

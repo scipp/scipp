@@ -7,10 +7,19 @@ from __future__ import annotations
 import collections
 from collections.abc import Iterable
 from graphlib import TopologicalSorter
+from typing import TYPE_CHECKING, Any
 
 from ..core import DataArray
 from ..utils.graph import make_graphviz_digraph
 from .rule import ComputeRule, FetchRule, Kernel, RenameRule, Rule
+
+if TYPE_CHECKING:
+    try:
+        from graphviz import Digraph
+    except ImportError:
+        Digraph = Any
+else:
+    Digraph = object
 
 GraphDict = dict[str | tuple[str, ...], str | Kernel]
 
@@ -20,11 +29,11 @@ class Graph:
         if not isinstance(graph, collections.abc.Mapping):
             raise TypeError("'graph' must be a dict")
         if not graph:
-            self._rules = {}
+            self._rules: dict[str, Rule] = {}
         elif isinstance(next(iter(graph.values())), Rule):
-            self._rules: dict[str, Rule] = graph
+            self._rules = graph  # type: ignore[assignment]
         else:
-            self._rules: dict[str, Rule] = _convert_to_rule_graph(graph)
+            self._rules = _convert_to_rule_graph(graph)  # type: ignore[arg-type]
 
     def __getitem__(self, name: str) -> Rule:
         return self._rules[name]
@@ -81,7 +90,7 @@ class Graph:
                 "and no rule has been provided to compute it."
             ) from None
 
-    def show(self, size=None, simplified=False):
+    def show(self, size: str | None = None, simplified: bool = False) -> Digraph:
         dot = make_graphviz_digraph(strict=True)
         dot.attr('node', shape='box', height='0.1')
         dot.attr(size=size)
@@ -120,7 +129,7 @@ def rule_sequence(rules: Graph) -> list[Rule]:
     return result
 
 
-def _make_rule(products, producer) -> Rule:
+def _make_rule(products: tuple[str, ...], producer: str | Kernel) -> Rule:
     if isinstance(producer, str):
         return RenameRule(products, producer)
     return ComputeRule(products, producer)

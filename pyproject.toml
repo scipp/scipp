@@ -189,7 +189,6 @@ plugins = "numpy.typing.mypy_plugin"
 # This list should only shrink, never grow.
 exclude = [
     'scipp/__init__\.py',
-    'scipp/coords/',
     'scipp/curve_fit\.py',
     'scipp/io/hdf5\.py',
     'scipp/testing/strategies\.py',

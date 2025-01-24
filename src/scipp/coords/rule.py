@@ -13,27 +13,18 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable, Mapping
 from copy import copy
 from functools import partial
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from ..core import Variable
 from .coord import Coord
 
 if TYPE_CHECKING:
-    from typing import Protocol as _Protocol
-
-    # Importing CoordTable from coord_table.py would result in an import
-    # cycle because that module imports rule.py
-    # CoordTable is only needed for type annotations here,
-    # so a protocol is enough.
-    class _CoordProvider(_Protocol):
-        def consume(self, name: str) -> Coord:
-            pass
-
+    from coord_table import CoordTable
 else:
-    _Protocol = object
-    _CoordProvider = Any
+    CoordTable = Any
 
 Kernel = Callable[..., Variable]
+_T = TypeVar('_T')
 
 
 class Rule(ABC):
@@ -41,15 +32,15 @@ class Rule(ABC):
         self.out_names = out_names
 
     @abstractmethod
-    def __call__(self, coords: _CoordProvider) -> dict[str, Coord]:
+    def __call__(self, coords: CoordTable) -> dict[str, Coord]:
         """Evaluate the rule."""
 
     @property
     @abstractmethod
-    def dependencies(self) -> tuple[str]:
+    def dependencies(self) -> tuple[str, ...]:
         """Return names of coords that this rule needs as inputs."""
 
-    def _format_out_names(self):
+    def _format_out_names(self) -> str:
         return f'({", ".join(self.out_names)})'
 
 
@@ -70,7 +61,7 @@ class FetchRule(Rule):
         self._dense_sources = dense_sources
         self._event_sources = event_sources
 
-    def __call__(self, coords: _CoordProvider) -> dict[str, Coord]:
+    def __call__(self, coords: CoordTable) -> dict[str, Coord]:
         return {
             out_name: Coord(
                 dense=self._dense_sources.get(out_name, None),
@@ -84,7 +75,7 @@ class FetchRule(Rule):
     def dependencies(self) -> tuple[str, ...]:
         return ()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'Input   {self._format_out_names()}'
 
 
@@ -97,7 +88,7 @@ class RenameRule(Rule):
         super().__init__(out_names)
         self._in_name = in_name
 
-    def __call__(self, coords: _CoordProvider) -> dict[str, Coord]:
+    def __call__(self, coords: CoordTable) -> dict[str, Coord]:
         # Shallow copy the _Coord object to allow the alias to have
         # a different alignment and usage count than the original.
         return {
@@ -108,7 +99,7 @@ class RenameRule(Rule):
     def dependencies(self) -> tuple[str, ...]:
         return (self._in_name,)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'Rename  {self._format_out_names()} <- {self._in_name}'
 
 
@@ -122,7 +113,7 @@ class ComputeRule(Rule):
         self._func = func
         self._arg_names = _arg_names(func)
 
-    def __call__(self, coords: _CoordProvider) -> dict[str, Coord]:
+    def __call__(self, coords: CoordTable) -> dict[str, Coord]:
         inputs = {
             name: coords.consume(coord) for coord, name in self._arg_names.items()
         }
@@ -136,17 +127,20 @@ class ComputeRule(Rule):
             else:
                 for name, coord in dense_outputs.items():
                     outputs[name].dense = coord.dense
+        if outputs is None:
+            raise RuntimeError(f"{self._func} produced no outputs")
         return self._without_unrequested(outputs)
 
-    def _compute_pure_dense(self, inputs):
-        outputs = self._func(**{name: coord.dense for name, coord in inputs.items()})
-        outputs = self._to_dict(outputs)
+    def _compute_pure_dense(self, inputs: dict[str, Coord]) -> dict[str, Coord]:
+        outputs = self._to_dict(
+            self._func(**{name: coord.dense for name, coord in inputs.items()})
+        )
         return {
             name: Coord(dense=var, event=None, aligned=True)
             for name, var in outputs.items()
         }
 
-    def _compute_with_events(self, inputs):
+    def _compute_with_events(self, inputs: dict[str, Coord]) -> dict[str, Coord]:
         args = {
             name: coord.event if coord.has_event else coord.dense
             for name, coord in inputs.items()
@@ -154,7 +148,7 @@ class ComputeRule(Rule):
         outputs = self._to_dict(self._func(**args))
         # Dense outputs may be produced as side effects of processing event
         # coords.
-        outputs = {
+        return {
             name: Coord(
                 dense=var if var.bins is None else None,
                 event=var if var.bins is not None else None,
@@ -162,9 +156,8 @@ class ComputeRule(Rule):
             )
             for name, var in outputs.items()
         }
-        return outputs
 
-    def _without_unrequested(self, d: dict[str, Any]) -> dict[str, Any]:
+    def _without_unrequested(self, d: dict[str, _T]) -> dict[str, _T]:
         missing_outputs = [key for key in self.out_names if key not in d]
         if missing_outputs:
             raise TypeError(
@@ -174,7 +167,7 @@ class ComputeRule(Rule):
             )
         return {key: d[key] for key in self.out_names}
 
-    def _to_dict(self, output) -> dict[str, Variable]:
+    def _to_dict(self, output: dict[str, Variable] | Variable) -> dict[str, Variable]:
         if not isinstance(output, dict):
             if len(self.out_names) != 1:
                 raise TypeError(
@@ -192,7 +185,7 @@ class ComputeRule(Rule):
     def func_name(self) -> str:
         return self._func.__name__
 
-    def __str__(self):
+    def __str__(self) -> str:
         # Class instances defining __call__ as well as objects created with
         # functools.partial may/do not define __name__.
         name = getattr(self._func, '__name__', repr(self._func))
@@ -211,14 +204,14 @@ def rule_output_names(rules: list[Rule], rule_type: type) -> Iterable[str]:
         yield from rule.out_names
 
 
-def _arg_names(func) -> dict[str, str]:
+def _arg_names(func: Kernel) -> dict[str, str]:
     spec = inspect.getfullargspec(func)
     if spec.varargs is not None or spec.varkw is not None:
         raise ValueError(
             'Function with variable arguments not allowed in '
             f'conversion graph: `{func.__name__}`.'
         )
-    if inspect.isfunction(func) or func.__class__ == partial:
+    if inspect.isfunction(func) or getattr(func, '__class__', None) == partial:
         args = spec.args
     else:
         # Strip off the 'self'. Objects returned by functools.partial are not
