@@ -195,7 +195,6 @@ exclude = [
     'scipp/io/hdf5\.py',
     'scipp/logging\.py',
     'scipp/object_list\.py',
-    'scipp/operations\.py',
     'scipp/reduction\.py',
     'scipp/scipy/integrate/__init__\.py',
     'scipp/scipy/optimize/__init__\.py',
