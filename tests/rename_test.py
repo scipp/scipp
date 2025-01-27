@@ -49,15 +49,6 @@ def test_rename_kwargs():
     assert sc.identical(renamed, make_dataarray('y', 'x'))
 
 
-def test_rename_with_attr():
-    da = make_dataarray('x', 'y')
-    da.attrs['y'] = da.coords.pop('y')
-    renamed = da.rename({'y': 'z'})
-    expected = make_dataarray('x', 'z')
-    expected.attrs['z'] = expected.coords.pop('z')
-    assert sc.identical(renamed, expected)
-
-
 def test_rename_fails_when_coord_already_exists():
     da = make_dataarray('x', 'y')
     da.coords['z'] = da.coords['x'].copy()
@@ -65,52 +56,31 @@ def test_rename_fails_when_coord_already_exists():
         da.rename({'x': 'z'})
 
 
-def test_rename_fails_when_attr_already_exists():
-    da = make_dataarray('x', 'y')
-    da.attrs['y'] = da.coords.pop('y')
-    da.attrs['z'] = da.attrs['y'].copy()
-    with pytest.raises(sc.CoordError):
-        da.rename({'y': 'z'})
-
-
-def test_rename_fails_when_attr_with_same_name_already_exists():
-    da = make_dataarray('x', 'y')
-    da.attrs['meta'] = sc.scalar(5)
-    with pytest.raises(sc.CoordError):
-        da.rename({'x': 'meta'})
-
-
 def test_rename_fails_when_coord_with_same_name_already_exists():
     da = make_dataarray('x', 'y')
-    da.attrs['aux'] = sc.scalar(5)
-    da.attrs['y'] = da.coords.pop('y')
+    da.coords['aux'] = sc.scalar(5)
+    da.coords['y'] = da.coords.pop('y')
     with pytest.raises(sc.CoordError):
         da.rename({'y': 'aux'})
 
 
-def test_rename_renames_bins_coords_and_attrs():
+def test_rename_renames_bins_coords():
     table = sc.data.table_xyz(10)
-    table.attrs['y'] = table.coords.pop('y')
     da = table.bin(x=2, y=2)
     renamed = da.rename(x='x2', y='y2')
     assert 'x' not in renamed.bins.coords
-    assert 'y' not in renamed.bins.attrs
     assert 'x2' in renamed.bins.coords
-    assert 'y2' in renamed.bins.attrs
 
 
-def test_rename_of_bins_coords_and_attrs_does_not_affect_input():
+def test_rename_of_bins_coords__does_not_affect_input():
     table = sc.data.table_xyz(10)
-    table.attrs['y'] = table.coords.pop('y')
     da = table.bin(x=2, y=2)
     _ = da.rename(x='x2', y='y2')
     assert 'x' in da.bins.coords
-    assert 'y' in da.bins.attrs
 
 
-def test_rename_raises_DimensionError_if_only_bins_coords_or_attrs():
+def test_rename_raises_DimensionError_if_only_bins_coords():
     table = sc.data.table_xyz(10)
-    table.attrs['z'] = table.coords.pop('z')
     da = table.bin(x=2)
     with pytest.raises(sc.DimensionError):
         da.rename(y='y2', z='z2')

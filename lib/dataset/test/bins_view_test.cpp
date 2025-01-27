@@ -48,8 +48,6 @@ TEST_F(BinsViewTest, DISABLED_slice_readonly) {
   // EXPECT_TRUE(view.is_readonly());
   // EXPECT_TRUE(view.coords().is_readonly());
   // EXPECT_TRUE(view.masks().is_readonly());
-  // EXPECT_TRUE(view.attrs().is_readonly());
-  // EXPECT_TRUE(view.meta().is_readonly());
   EXPECT_FALSE(view.data().is_readonly());
   EXPECT_FALSE(view.coords()[Dim::X].is_readonly());
   const auto copied(view);
@@ -59,8 +57,6 @@ TEST_F(BinsViewTest, DISABLED_slice_readonly) {
   // EXPECT_TRUE(view.is_readonly());
   // EXPECT_TRUE(view.coords().is_readonly());
   // EXPECT_TRUE(view.masks().is_readonly());
-  // EXPECT_TRUE(view.attrs().is_readonly());
-  // EXPECT_TRUE(view.meta().is_readonly());
   EXPECT_FALSE(copied.data().is_readonly());
   EXPECT_FALSE(copied.coords()[Dim::X].is_readonly());
 }

@@ -120,7 +120,7 @@ ignore = [
     # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
     "COM812", "COM819", "D206", "D300", "E111", "E114", "E117", "ISC001", "ISC002", "Q000", "Q001", "Q002", "Q003", "W191",
 ]
-fixable = ["B010", "I001", "PT001"]
+fixable = ["B010", "I001", "PT001", "RUF022"]
 isort.known-first-party = ["scipp"]
 pydocstyle.convention = "numpy"
 
@@ -170,7 +170,6 @@ filterwarnings = [
   "ignore:The 'asyncio_mode' default value will change to 'strict' in future:DeprecationWarning",
   'ignore::scipy.optimize._optimize.OptimizeWarning',
   'ignore:Support for mapping types has been deprecated and will be dropped in a future release.:DeprecationWarning',
-  'ignore:sc.DataArray.attrs has been deprecated:scipp.VisibleDeprecationWarning',
   # Triggered by h5py
   'ignore:`product` is deprecated as of NumPy 1.25.0:DeprecationWarning'
 ]
@@ -190,33 +189,18 @@ plugins = "numpy.typing.mypy_plugin"
 # This list should only shrink, never grow.
 exclude = [
     'scipp/__init__\.py',
-    'scipp/compat/dict\.py',
-    'scipp/compat/pandas_compat\.py',
-    'scipp/compat/wrapping\.py',
-    'scipp/compat/xarray_compat\.py',
     'scipp/coords/',
-    'scipp/core/__init__\.py',
-    'scipp/core/bin_remapping\.py',
-    'scipp/core/binning\.py',
-    'scipp/core/bins\.py',
-    'scipp/core/operations\.py',
     'scipp/curve_fit\.py',
-    'scipp/data/__init__\.py',
     'scipp/format/formatter\.py',
     'scipp/io/hdf5\.py',
     'scipp/logging\.py',
     'scipp/object_list\.py',
     'scipp/operations\.py',
     'scipp/reduction\.py',
-    'scipp/spatial/__init__\.py',
     'scipp/scipy/integrate/__init__\.py',
     'scipp/scipy/optimize/__init__\.py',
     'scipp/testing/strategies\.py',
     'scipp/utils/profile\.py',
-    'scipp/utils/collapse_and_slices\.py',
-    'scipp/visualization/formatting_html\.py',
-    'scipp/visualization/formatting_datagroup_html\.py',
-    'scipp/visualization/show\.py',
 
     '^benchmarks/',
     '^docs/',

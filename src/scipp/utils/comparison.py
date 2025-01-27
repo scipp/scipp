@@ -13,7 +13,6 @@ def isnear(
     y: DataArray,
     rtol: Variable | None = None,
     atol: Variable | None = None,
-    include_attrs: bool = True,
     include_data: bool = True,
     equal_nan: bool = True,
 ) -> bool:
@@ -43,9 +42,6 @@ def isnear(
         absolute tolerance
     include_data:
         Compare data element-wise between x, and y
-    include_attrs:
-        Compare all meta (coords and attrs) between x and y,
-        otherwise only compare coordinates from meta
     equal_nan:
         If ``True``, consider NaNs or infs to be equal
         providing that they match in location and, for infs,
@@ -67,19 +63,15 @@ def isnear(
         if include_data
         else True
     )
-    same_len = (
-        len(x.deprecated_meta) == len(y.deprecated_meta)
-        if include_attrs
-        else len(x.coords) == len(y.coords)
-    )
+    same_len = len(x.coords) == len(y.coords)
     if not same_len:
         return False
-    for key, val in x.deprecated_meta.items() if include_attrs else x.coords.items():
-        a = x.deprecated_meta[key] if include_attrs else x.coords[key]
-        b = y.deprecated_meta[key] if include_attrs else y.coords[key]
+    for key, val in x.coords.items():
+        a = x.coords[key]
+        b = y.coords[key]
         if a.shape != b.shape:
             raise CoordError(
-                f'Coord (or attr) with key {key} have different'
+                f'Coords with key {key} have different'
                 f' shapes. For x, shape is {a.shape}. For y, shape = {b.shape}'
             )
         if val.dtype in [DType.float64, DType.float32]:

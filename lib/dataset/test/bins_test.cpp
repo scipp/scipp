@@ -213,7 +213,7 @@ protected:
 };
 
 TEST_F(DataArrayBinsMapTest, map) {
-  const auto &coord = bins_view<DataArray>(buckets).meta()[Dim::Z];
+  const auto &coord = bins_view<DataArray>(buckets).coords()[Dim::Z];
   auto fill_value = makeVariable<double>(units::K, Values{1234});
   const auto out = buckets::map(histogram, coord, Dim::Z, fill_value);
   // event coords 1,2,3,4
@@ -241,14 +241,14 @@ TEST_F(DataArrayBinsMapTest, map) {
 }
 
 TEST_F(DataArrayBinsMapTest, fail_no_bin_edges) {
-  const auto &coord = bins_view<DataArray>(buckets).meta()[Dim::Z];
+  const auto &coord = bins_view<DataArray>(buckets).coords()[Dim::Z];
   histogram.coords().set(Dim::Z, bin_edges.slice({Dim::Z, 1, 4}));
   EXPECT_THROW_DISCARD(buckets::map(histogram, coord, Dim::Z),
                        except::BinEdgeError);
 }
 
 TEST_F(DataArrayBinsMapTest, map_masked_values_replaced_by_fill_value) {
-  const auto &coord = bins_view<DataArray>(buckets).meta()[Dim::Z];
+  const auto &coord = bins_view<DataArray>(buckets).coords()[Dim::Z];
   histogram.masks().set(
       "mask", makeVariable<bool>(histogram.dims(), Values{false, true, false}));
   const auto fill_value = makeVariable<double>(units::K, Values{1234});
@@ -481,10 +481,6 @@ TEST_F(DatasetBinsTest, concatenate) {
   buffer0["a"].masks().set("mask", column);
   check_fail(buffer0, buffer1);
   buffer1["a"].masks().set("mask", column);
-  check(buffer0, buffer1);
-  buffer0["b"].attrs().set(Dim("attr"), column);
-  check_fail(buffer0, buffer1);
-  buffer1["b"].attrs().set(Dim("attr"), column);
   check(buffer0, buffer1);
   buffer0.coords().set(Dim("scalar"), 1.0 * units::m);
   check_fail(buffer0, buffer1);

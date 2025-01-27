@@ -58,7 +58,6 @@ void check_nested_in_assign(const L &lhs, const R &rhs) {
     check_nested_in_assign(lhs, item.data());
     check_nested_in_assign(lhs, item.coords());
     check_nested_in_assign(lhs, item.masks());
-    check_nested_in_assign(lhs, item.attrs());
   };
 
   if constexpr (std::is_same_v<std::decay_t<R>, DataArray>) {

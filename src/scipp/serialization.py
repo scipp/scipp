@@ -41,4 +41,4 @@ try:
     register_serialization(Dataset, serialize, deserialize)
 except ImportError:
     pass
-__all__ = ['serialize', 'deserialize']
+__all__ = ['deserialize', 'serialize']

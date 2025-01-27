@@ -1,6 +1,2 @@
-numpy:
-  - '1.22'
-python_impl:
-  - cpython
 target_platform:
   - linux-64

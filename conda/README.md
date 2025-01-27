@@ -8,6 +8,9 @@ To build, from the root of the repository run `conda-build ./conda`.
 A list of packages that are created will be shown at the end of the build process.
 These can be installed locally or uploaded to Anaconda Cloud.
 
+The conda package build process is set up to use github actions which dynamically
+generates the required variants config. To build locally check `.github/workflows/conda.yml` first.
+
 ## Version numbering
 
 Conda packages have a version number and build number.

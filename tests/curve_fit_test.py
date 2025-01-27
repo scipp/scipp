@@ -166,6 +166,53 @@ def test_compare_to_curve_fit_xarray(dims, coords, reduce_dims, p0, params, boun
         )
 
 
+@pytest.mark.parametrize(
+    ('p0', 'params', 'bounds'),
+    [
+        (None, {'a': 1.2, 'b': 1.3}, None),
+        ({'a': 3, 'b': 2}, {'a': 1.2, 'b': 1.3}, None),
+        ({'a': 0.2, 'b': -1}, {'a': 1.2, 'b': 1.3}, {'a': (-3, 3), 'b': (-2, 2)}),
+        ({'a': 0.2, 'b': -1}, {'a': 1.2, 'b': 1.3}, {'a': (-3, 1.1), 'b': (-2, 1.1)}),
+    ],
+)
+@pytest.mark.parametrize(
+    "dims",
+    [
+        {'x': 10, 't': 6, 'y': 3},
+        {'t': 5, 'x': 8, 'y': 7},
+    ],
+)
+@pytest.mark.parametrize('workers', [1, 2])
+def test_compare_to_curve_fit_xarray_multiple_curves(dims, p0, params, bounds, workers):
+    _ = pytest.importorskip('xarray')
+    da = array(
+        {c: {'start': 1, 'stop': 3, 'num': n} for c, n in dims.items()},
+        partial(func3d, **params),
+        noise_scale=0.0,
+    )
+    result, _ = curve_fit(
+        ['x'],
+        func,
+        da,
+        p0=p0,
+        bounds=bounds,
+        workers=workers,
+    )
+    xresult = from_xarray(
+        to_xarray(da).curvefit(
+            ['x'],
+            func_np,
+            p0=p0,
+            bounds=bounds,
+        )['curvefit_coefficients']
+    )
+    for param_name in result:
+        assert sc.allclose(
+            result[param_name].data,
+            xresult['param', sc.scalar(param_name)].data,
+        )
+
+
 def test_dimensions_present_in_reduce_dims_argument_are_not_present_in_output():
     popt, _ = curve_fit(['x'], func3d, array3d())
     assert 'tt' in popt['a'].dims
@@ -700,3 +747,33 @@ def test_ignores_default_arguments():
         ['x'], lambda x, a, *, b=1.3: func(x, a, b=b), da, p0={'b': sc.scalar(1.3)}
     )
     assert 'b' in res
+
+
+def test_with_callable_class():
+    da = array1d(a=1.2, b=1.3, noise_scale=0.01)
+
+    class Model:
+        def __call__(self, x, a, b):
+            return func(x, a, b)
+
+    popt, _ = curve_fit(['x'], Model(), da)
+    assert sc.allclose(popt['a'].data, sc.scalar(1.2), rtol=sc.scalar(2.0 * 0.01))
+    assert sc.allclose(popt['b'].data, sc.scalar(1.3), rtol=sc.scalar(2.0 * 0.01))
+
+
+# TODO: https://github.com/pytest-dev/pytest/issues/10965
+# Pool on Windows/macOS hangs on github action runners
+# def test_with_nonpickle_function():
+#     da = array2d(a=1.2, b=1.3, noise_scale=0.01)
+
+#     def local_function(x, a, b):
+#         return func(x, a, b)
+
+#     # Running without multiprocessing lets you use a local function
+#     curve_fit(['x'], local_function, da, workers=1)
+#     with pytest.raises(ValueError, match='The provided fit function is not'):
+#         # Running with multiprocessing fails if the function is not pickleable
+#         curve_fit(['x'], local_function, da, workers=2)
+
+#     # Function in __main__ scope works with multiprocessing
+#     curve_fit(['x'], func, da, workers=2)
