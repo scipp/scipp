@@ -35,7 +35,9 @@ template <class T>
 Variable bins_from_sizes(T &&content, const Variable &bin_sizes) {
   const auto end = cumsum(bin_sizes);
   const auto buffer_dim = content.dims().inner();
-  return make_bins_no_validate(zip(end - bin_sizes, end), buffer_dim,
+  auto indices = zip(end, end);
+  indices.elements<scipp::index_pair>("begin") -= bin_sizes;
+  return make_bins_no_validate(std::move(indices), buffer_dim,
                                std::forward<T>(content));
 }
 
