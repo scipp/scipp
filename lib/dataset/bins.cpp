@@ -219,8 +219,10 @@ Variable lookup_previous(const DataArray &function, const Variable &x, Dim dim,
 Variable pretend_bins_for_threading(const DataArray &da, Dim bin_dim) {
   const auto dim = da.dims().inner();
   const auto size = std::max(scipp::index(1), da.dims()[dim]);
-  const auto nthread = size > 10000000  ? 24
-                       : size > 1000000 ? 4
+  const auto nthread = size > 8000000   ? 24
+                       : size > 4000000 ? 16
+                       : size > 1000000 ? 8
+                       : size > 200000  ? 4
                        : size > 100000  ? 2
                                         : 1;
 
