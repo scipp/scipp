@@ -17,7 +17,8 @@
         "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
         "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
         "FULL_BUILD": "ON",
-        "BENCHMARK": "ON"
+        "BENCHMARK": "ON",
+        "SANITIZERS": "ON"
       }
     },
     {
@@ -56,13 +57,19 @@
       "cacheVariables": {
         "CMAKE_INSTALL_PREFIX": "$env{PREFIX}",
         "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON",
-        "BENCHMARK": "OFF"
+        "BENCHMARK": "OFF",
+        "SANITIZERS": "OFF"
       }
     },
     {
       "name": "package-linux-64",
       "inherits": "package",
       "description": "Linux options for package build for x86_64"
+    },
+    {
+      "name": "package-linux-aarch64",
+      "inherits": "package",
+      "description": "Linux options for package build for arm64"
     },
     {
       "name": "package-osx-64",
@@ -86,7 +93,7 @@
       "name": "package-win-64",
       "inherits": "package",
       "description": "Windows options for package build",
-      "generator": "Visual Studio 16 2019"
+      "generator": "Visual Studio 17 2022"
     },
     {
       "name": "debug",

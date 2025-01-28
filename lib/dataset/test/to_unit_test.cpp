@@ -11,8 +11,7 @@ using namespace scipp;
 auto make_array() {
   return DataArray(makeVariable<double>(Values{2.0}, units::m),
                    {{Dim("coord"), makeVariable<int>(Values{4}, units::s)}},
-                   {{"mask1", makeVariable<bool>(Values{true})}},
-                   {{Dim("attr"), makeVariable<int>(Values{7}, units::kg)}});
+                   {{"mask1", makeVariable<bool>(Values{true})}});
 }
 
 class ToUnitTest
@@ -105,15 +104,4 @@ TEST_P(ToUnitTest, does_not_affect_coords) {
   EXPECT_EQ(converted.coords()[Dim::X], makeVariable<int>(Values{4}, units::s));
   EXPECT_EQ(converted.coords(), da.coords());
   EXPECT_TRUE(converted.coords()[Dim::X].is_same(da.coords()[Dim::X]));
-}
-
-TEST_P(ToUnitTest, does_not_affect_attrs) {
-  da.attrs().set(Dim::X, makeVariable<int>(Values{4}, units::s));
-
-  const auto [unit, policy] = GetParam();
-  const auto converted = to_unit(da, unit, policy);
-
-  EXPECT_EQ(converted.attrs()[Dim::X], makeVariable<int>(Values{4}, units::s));
-  EXPECT_EQ(converted.attrs(), da.attrs());
-  EXPECT_TRUE(converted.attrs()[Dim::X].is_same(da.attrs()[Dim::X]));
 }

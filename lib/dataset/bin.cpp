@@ -263,10 +263,10 @@ auto extract_unbinned(T &array, Mapping &map) {
 ///   meaningless. Note that rebinned masks have been applied before the binning
 ///   step.
 /// - If rebinning, existing meta data along unchanged dimensions is preserved.
-template <class Coords, class Masks, class Attrs>
+template <class Coords, class Masks>
 DataArray add_metadata(const Variable &data, std::unique_ptr<Mapper> mapper,
                        const Coords &coords, const Masks &masks,
-                       const Attrs &attrs, const std::vector<Variable> &edges,
+                       const std::vector<Variable> &edges,
                        const std::vector<Variable> &groups,
                        const std::vector<Dim> &erase) {
   auto buffer = mapper->template apply<DataArray>(data);
@@ -293,14 +293,9 @@ DataArray add_metadata(const Variable &data, std::unique_ptr<Mapper> mapper,
   for (const auto &[name, mask] : masks)
     if (!rebinned(mask))
       out_masks.insert_or_assign(name, copy(mask));
-  auto out_attrs = extract_unbinned(buffer, buffer.attrs());
-  for (const auto &[dim_, coord] : attrs)
-    if (!rebinned(coord) && !out_coords.contains(dim_))
-      out_attrs.insert_or_assign(dim_, coord);
   auto bin_indices = squeeze(mapper->bin_indices(), erase);
   return DataArray{bins_from_indices(std::move(buffer), std::move(bin_indices)),
-                   std::move(out_coords), std::move(out_masks),
-                   std::move(out_attrs)};
+                   std::move(out_coords), std::move(out_masks)};
 }
 
 class TargetBinBuilder {
@@ -569,10 +564,10 @@ DataArray groupby_concat_bins(const DataArray &array, const Variable &edges,
   builder.erase(reductionDim);
   const auto dims = array.dims();
   for (const auto &dim : dims.labels())
-    if (array.meta().contains(dim)) {
-      if (array.meta()[dim].dims().ndim() != 1 &&
-          array.meta()[dim].dims().contains(reductionDim))
-        builder.join(dim, array.meta()[dim]);
+    if (array.coords().contains(dim)) {
+      if (array.coords()[dim].dims().ndim() != 1 &&
+          array.coords()[dim].dims().contains(reductionDim))
+        builder.join(dim, array.coords()[dim]);
       else if (dim != reductionDim)
         builder.existing(dim, array.dims()[dim]);
     }
@@ -580,13 +575,13 @@ DataArray groupby_concat_bins(const DataArray &array, const Variable &edges,
   const auto masked =
       hide_masked(array.data(), array.masks(), builder.dims().labels());
   TargetBins<DataArray> target_bins(masked, builder.dims());
-  builder.build(*target_bins, array.meta());
+  builder.build(*target_bins, array.coords());
   // Note: Unlike in the other cases below we do not call
   // `drop_grouped_event_coords` here. Grouping is based on a bin-coord rather
   // than event-coord so we do not touch the latter.
   return add_metadata(masked, make_mapper(target_bins.release(), builder),
-                      array.coords(), array.masks(), array.attrs(),
-                      builder.edges(), builder.groups(), {reductionDim});
+                      array.coords(), array.masks(), builder.edges(),
+                      builder.groups(), {reductionDim});
 }
 
 namespace {
@@ -635,11 +630,9 @@ DataArray bin(const DataArray &array, const std::vector<Variable> &edges,
   validate_bin_args(array, edges, groups);
   const auto &data = array.data();
   const auto &coords = array.coords();
-  const auto &meta = array.meta();
   const auto &masks = array.masks();
-  const auto &attrs = array.attrs();
   if (data.dtype() == dtype<core::bin<DataArray>>) {
-    return bin(data, coords, masks, attrs, edges, groups, erase);
+    return bin(data, coords, masks, edges, groups, erase);
   } else {
     // Pretend existing binning along outermost binning dim to enable threading
     const auto tmp = pretend_bins_for_threading(
@@ -649,13 +642,13 @@ DataArray bin(const DataArray &array, const std::vector<Variable> &edges,
         (data.dims().volume() > std::numeric_limits<int32_t>::max())
             ? makeVariable<int64_t>(data.dims(), units::none)
             : makeVariable<int32_t>(data.dims(), units::none);
-    auto builder = axis_actions(data, meta, edges, groups, erase);
-    builder.build(target_bins_buffer, meta);
+    auto builder = axis_actions(data, coords, edges, groups, erase);
+    builder.build(target_bins_buffer, coords);
     auto target_bins = make_bins_no_validate(
         tmp.bin_indices(), data.dims().inner(), target_bins_buffer);
     return add_metadata(drop_grouped_event_coords(tmp, groups),
                         make_mapper(std::move(target_bins), builder), coords,
-                        masks, attrs, builder.edges(), builder.groups(), erase);
+                        masks, builder.edges(), builder.groups(), erase);
   }
 }
 
@@ -672,19 +665,18 @@ DataArray bin(const DataArray &array, const std::vector<Variable> &edges,
 ///        bin_sizes = count(bin_index) // number of events per target bin
 ///        bin_offset = cumsum(bin_sizes) - bin_sizes
 /// 3. Copy from input to output bin, based on offset
-template <class Coords, class Masks, class Attrs>
+template <class Coords, class Masks>
 DataArray bin(const Variable &data, const Coords &coords, const Masks &masks,
-              const Attrs &attrs, const std::vector<Variable> &edges,
+              const std::vector<Variable> &edges,
               const std::vector<Variable> &groups,
               const std::vector<Dim> &erase) {
-  const auto meta = attrs.merge_from(coords);
-  auto builder = axis_actions(data, meta, edges, groups, erase);
+  auto builder = axis_actions(data, coords, edges, groups, erase);
   const auto masked = hide_masked(data, masks, builder.dims().labels());
   TargetBins<DataArray> target_bins(masked, builder.dims());
-  builder.build(*target_bins, bins_view<DataArray>(masked).meta(), meta);
+  builder.build(*target_bins, bins_view<DataArray>(masked).coords(), coords);
   return add_metadata(drop_grouped_event_coords(masked, groups),
                       make_mapper(target_bins.release(), builder), coords,
-                      masks, attrs, builder.edges(), builder.groups(), erase);
+                      masks, builder.edges(), builder.groups(), erase);
 }
 
 } // namespace scipp::dataset

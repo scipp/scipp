@@ -17,10 +17,8 @@ _dict_likes = [
     (core.Dataset, core.DataArray),
     (core.Coords, core.Variable),
     (core.Masks, core.Variable),
-    (core._BinsMeta, core.Variable),
     (core._BinsCoords, core.Variable),
     (core._BinsMasks, core.Variable),
-    (core._BinsAttrs, core.Variable),
 ]
 
 

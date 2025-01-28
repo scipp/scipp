@@ -226,24 +226,6 @@ def summarize_masks(masks: Masks, ds: DataArray | Dataset | None = None) -> str:
     return f"<ul class='sc-var-list'>{vars_li}</ul>"
 
 
-def summarize_attrs(
-    attrs: Coords, embedded_in: DataArray | Dataset | None = None
-) -> str:
-    attrs_li = "".join(
-        "<li class='sc-var-item'>{}</li>".format(
-            summarize_variable(
-                name,
-                var,
-                has_attrs=False,
-                embedded_in=embedded_in,
-                is_aligned=False,
-            )
-        )
-        for name, var in _ordered_dict(attrs).items()
-    )
-    return f"<ul class='sc-var-list'>{attrs_li}</ul>"
-
-
 def _find_bin_edges(var: Variable | DataArray, ds: DataArray | Dataset) -> list[str]:
     """
     Checks if the coordinate contains bin-edges.
@@ -254,7 +236,7 @@ def _find_bin_edges(var: Variable | DataArray, ds: DataArray | Dataset) -> list[
 
 
 def _make_inline_attributes(
-    var: Variable | DataArray, has_attrs: bool, embedded_in: DataArray | Dataset | None
+    var: Variable | DataArray, has_attrs: bool
 ) -> tuple[str, str]:
     disabled = "disabled"
     attrs_ul = ""
@@ -263,11 +245,6 @@ def _make_inline_attributes(
     if has_attrs and hasattr(var, "masks"):
         if len(var.masks) > 0:
             attrs_sections.append(mask_section(var.masks))
-            disabled = ""
-
-    if has_attrs and hasattr(var, "deprecated_attrs"):
-        if len(var.deprecated_attrs) > 0:
-            attrs_sections.append(attr_section(var.deprecated_attrs, embedded_in))
             disabled = ""
 
     if len(attrs_sections) > 0:
@@ -347,7 +324,7 @@ def summarize_variable(
     else:
         unit = '𝟙' if var.unit == sc.units.dimensionless else str(var.unit)  # noqa: RUF001
 
-    disabled, attrs_ul = _make_inline_attributes(var, has_attrs, embedded_in)
+    disabled, attrs_ul = _make_inline_attributes(var, has_attrs)
 
     preview = _make_row(inline_variable_repr(var))
     data_repr = short_data_repr_html(var)
@@ -445,7 +422,7 @@ def collapsible_section(
 
 
 def _mapping_section(
-    mapping: DataArray | Mapping[str, Variable],
+    mapping: DataArray | Mapping[str, Variable] | Dataset | Mapping[str, DataArray],
     *extra_details_func_args: Any,
     name: str,
     max_items_collapse: int,
@@ -503,13 +480,6 @@ data_section = partial(
     max_items_collapse=15,
 )
 
-attr_section = partial(
-    _mapping_section,
-    name="Attributes",
-    details_func=summarize_attrs,
-    max_items_collapse=10,
-)
-
 
 def _obj_repr(header_components: Iterable[str], sections: Iterable[str]) -> str:
     header = f"<div class='sc-header'>" f"{''.join(h for h in header_components)}</div>"
@@ -555,8 +525,6 @@ def data_array_dataset_repr(ds: DataArray | Dataset) -> str:
     if not isinstance(ds, Dataset):
         if len(ds.masks) > 0:
             sections.append(mask_section(ds.masks, ds))
-        if len(ds.deprecated_attrs) > 0:
-            sections.append(attr_section(ds.deprecated_attrs, ds))
 
     return _obj_repr(header_components, sections)
 

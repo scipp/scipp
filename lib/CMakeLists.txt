@@ -19,10 +19,13 @@ include(scipp-conan)
 
 set(Python_FIND_IMPLEMENTATIONS CPython PyPy)
 
-find_package(Benchmark)
+find_package(benchmark)
 find_package(Boost 1.67 REQUIRED)
 find_package(Eigen3 REQUIRED)
-find_package(Sanitizers REQUIRED)
+option(SANITIZERS "Enable sanitizers" OFF)
+if(SANITIZERS)
+  find_package(Sanitizers REQUIRED)
+endif()
 find_package(GTest CONFIG REQUIRED)
 # libpython is not available on `manylinux` images, use `Development.Module`
 # instead of `Development`

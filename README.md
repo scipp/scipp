@@ -14,7 +14,7 @@ For general discussions, or questions about how to achieve something with Scipp,
 
 ## Development
 
-If you are interested in developing Scipp, please see the [developer getting started guide](https://scipp.github.io/reference/developer/getting-started.html).
+If you are interested in developing Scipp, please see the [developer getting started guide](https://scipp.github.io/development/getting-started.html).
 
 ### Links
 

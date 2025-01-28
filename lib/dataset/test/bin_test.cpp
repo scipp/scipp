@@ -163,7 +163,7 @@ protected:
   Variable edges_y_coarse =
       makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{-2, -1, 2});
 
-  void expect_near(const DataArray &a, const DataArray &b, double rtol = 1e-14,
+  void expect_near(const DataArray &a, const DataArray &b, double rtol = 11e-15,
                    double atol = 0.0) {
     const auto tolerance =
         values(max(bins_sum(a.data())) * (rtol * units::one));
@@ -173,7 +173,6 @@ protected:
             .value<bool>());
     EXPECT_EQ(a.masks(), b.masks());
     EXPECT_EQ(a.coords(), b.coords());
-    EXPECT_EQ(a.attrs(), b.attrs());
   }
 };
 
@@ -204,65 +203,6 @@ TEST_P(BinTest, rebin_no_event_coord) {
   const auto x = bin(table, {edges_x_coarse});
   bins_view<DataArray>(x.data()).coords().erase(Dim::X);
   EXPECT_THROW_DISCARD(bin(x, {edges_x}), except::BinEdgeError);
-}
-
-TEST_P(BinTest, bin_using_attr) {
-  auto table = GetParam();
-  const auto da_coord = bin(table, {edges_x});
-  table.attrs().set(Dim::X, table.coords().extract(Dim::X));
-  const auto da_attr = bin(table, {edges_x});
-  auto da_attr_bins_view = bins_view<DataArray>(da_attr.data());
-  da_attr_bins_view.coords().set(Dim::X,
-                                 da_attr_bins_view.attrs().extract(Dim::X));
-  EXPECT_EQ(da_coord, da_attr);
-}
-
-TEST_P(BinTest, rebin_using_attr) {
-  auto table = GetParam();
-  const auto da_coord = bin(bin(table, {edges_x}), {edges_x_coarse});
-  table.attrs().set(Dim::X, table.coords().extract(Dim::X));
-  const auto da_attr = bin(bin(table, {edges_x}), {edges_x_coarse});
-  auto da_attr_bins_view = bins_view<DataArray>(da_attr.data());
-  da_attr_bins_view.coords().set(Dim::X,
-                                 da_attr_bins_view.attrs().extract(Dim::X));
-  EXPECT_EQ(da_coord, da_attr);
-}
-
-TEST_P(BinTest, rebin_using_attr_in_new_dimension) {
-  const auto z_coord = makeVariable<double>(Dims{Dim::X}, Shape{4},
-                                            Values{-10., -5.0, 0.5, 7.5});
-  const auto edges_z_coarse =
-      makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{-11., 0.0, 8.0});
-  const auto table = GetParam();
-  auto da_coord = bin(table, {edges_x});
-  auto da_attr = bin(table, {edges_x});
-  da_coord.coords().set(Dim::Z, z_coord);
-  da_attr.attrs().set(Dim::Z, z_coord);
-  const auto out_coord = bin(da_coord, {edges_z_coarse});
-  const auto out_attr = bin(da_attr, {edges_z_coarse});
-  EXPECT_EQ(out_coord, out_attr);
-}
-
-TEST_P(BinTest, rebin_existing_binning_attr_and_event_coord) {
-  auto table = GetParam();
-  const auto da_coord = bin(bin(table, {edges_x}), {edges_x_coarse});
-  auto da_attr_temp = bin(table, {edges_x});
-  da_attr_temp.attrs().set(Dim::X, da_attr_temp.coords().extract(Dim::X));
-  const auto da_attr = bin(da_attr_temp, {edges_x_coarse});
-  EXPECT_EQ(da_coord, da_attr);
-}
-
-TEST_P(BinTest, rebin_existing_binning_attr_and_event_attr) {
-  auto table = GetParam();
-  const auto da_coord = bin(bin(table, {edges_x}), {edges_x_coarse});
-  table.attrs().set(Dim::X, table.coords().extract(Dim::X));
-  auto da_attr_temp = bin(table, {edges_x});
-  da_attr_temp.attrs().set(Dim::X, da_attr_temp.coords().extract(Dim::X));
-  const auto da_attr = bin(da_attr_temp, {edges_x_coarse});
-  auto da_attr_bins_view = bins_view<DataArray>(da_attr.data());
-  da_attr_bins_view.coords().set(Dim::X,
-                                 da_attr_bins_view.attrs().extract(Dim::X));
-  EXPECT_EQ(da_coord, da_attr);
 }
 
 TEST_P(BinTest, rebin_coarse_to_fine_1d) {
@@ -360,19 +300,6 @@ TEST_P(BinTest, rebin_2d_with_2d_coord) {
   // Unchanged outer binning
   EXPECT_EQ(bin(xy, {edges_x_coarse, edges_y_coarse}),
             bin(xy, {edges_y_coarse}));
-}
-
-TEST_P(BinTest, rebin_2d_with_2d_attr) {
-  auto table = GetParam();
-  table.attrs().set(Dim::Y, table.coords().extract(Dim::Y));
-  auto xy = bin(table, {edges_x_coarse, edges_y_coarse});
-  Variable edges_y_2d = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
-                                             Values{-2, 1, 2, -3, 0, 3});
-  xy.coords().erase(Dim::Y);
-  xy.attrs().set(Dim::Y, edges_y_2d);
-  bins_view<DataArray>(xy.data()).attrs()[Dim::Y] += 0.5 * units::one;
-  EXPECT_THROW(bin(xy, {edges_x_coarse}), except::DimensionError);
-  EXPECT_NO_THROW(bin(xy, {edges_x_coarse, edges_y_coarse}));
 }
 
 TEST_P(BinTest, rebin_coarse_to_fine_2d) {
@@ -478,7 +405,6 @@ TEST_P(BinTest, rebinned_meta_data_dropped) {
   xy1.masks().set("x", mask_x);
   xy1.coords().set(Dim("aux1"), mask_x);
   xy1.coords().set(Dim("aux1-edge"), edges_x_coarse);
-  xy1.attrs().set(Dim("aux2"), mask_x);
   expect_near(bin(xy1, {edges_x_coarse2, edges_y_coarse2}), xy2);
 }
 

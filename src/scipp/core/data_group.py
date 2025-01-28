@@ -253,7 +253,7 @@ class DataGroup(MutableMapping[str, _V]):
         return f'DataGroup(sizes={self.sizes}, keys={list(self.keys())})'
 
     @property
-    def bins(self) -> DataGroup[Bins | None]:
+    def bins(self) -> DataGroup[DataGroup[Any] | Bins[Any] | None]:
         # TODO Returning a regular DataGroup here may be wrong, since the `bins`
         # property provides a different set of attrs and methods.
         return self.apply(operator.attrgetter('bins'))
@@ -307,7 +307,7 @@ class DataGroup(MutableMapping[str, _V]):
             if dim is None:
                 return reduce_all(v)
             if isinstance(dim, str):
-                dims_to_reduce = dim if dim in child_dims else ()
+                dims_to_reduce: tuple[str, ...] | str = dim if dim in child_dims else ()
             else:
                 dims_to_reduce = tuple(d for d in dim if d in child_dims)
             if dims_to_reduce == () and binned:

@@ -96,11 +96,6 @@ Dataset Dataset::drop_coords(const scipp::span<const Dim> coord_names) const {
   return result;
 }
 
-/// Alias for coords().
-const Coords &Dataset::meta() const noexcept { return coords(); }
-/// Alias for coords().
-Coords &Dataset::meta() noexcept { return coords(); }
-
 bool Dataset::contains(const std::string &name) const noexcept {
   return m_data.contains(name);
 }
@@ -139,30 +134,21 @@ void Dataset::setCoord(const Dim dim, Variable coord) {
 /// Set (insert or replace) data (values, optional variances) with given name.
 ///
 /// Throws if the provided values bring the dataset into an inconsistent state
-/// (mismatching dimensions). The default is to drop existing attributes, unless
-/// AttrPolicy::Keep is specified.
-void Dataset::setData(const std::string &name, Variable data,
-                      const AttrPolicy attrPolicy) {
+/// (mismatching dimensions).
+void Dataset::setData(const std::string &name, Variable data) {
   expect_writable(*this);
   expect_valid(*this);
   expect_matching_item_dims(*this, name, data);
-  const auto replace = contains(name);
-  if (replace && attrPolicy == AttrPolicy::Keep)
-    m_data.insert_or_assign(
-        name, DataArray(std::move(data), {}, m_data[name].masks().items(),
-                        m_data[name].attrs().items(), name));
-  else
-    m_data.insert_or_assign(name, DataArray(std::move(data)));
+  m_data.insert_or_assign(name, DataArray(std::move(data)));
 }
 
 // See docs of overload for data arrays.
-void Dataset::setDataInit(const std::string &name, Variable data,
-                          const AttrPolicy attrPolicy) {
+void Dataset::setDataInit(const std::string &name, Variable data) {
   if (!is_valid()) {
     m_coords.setSizes(data.dims());
     m_valid = true;
   }
-  setData(name, std::move(data), attrPolicy);
+  setData(name, std::move(data));
 }
 
 namespace {
@@ -182,15 +168,15 @@ auto coords_to_skip(const Dataset &dst, const DataArray &src) {
 
 /// Set (insert or replace) data from a DataArray with a given name.
 ///
-/// Coordinates, masks, and attributes of the data array are added to the
-/// dataset. Throws if there are existing but mismatching coords, masks, or
-/// attributes. Throws if the provided data brings the dataset into an
+/// Coordinates and masks of the data array are added to the dataset.
+/// Throws if there are existing but mismatching coords or masks.
+/// Throws if the provided data brings the dataset into an
 /// inconsistent state (mismatching dimensions).
 void Dataset::setData(const std::string &name, const DataArray &data) {
   // Return early on self assign to avoid exceptions from Python inplace ops
   if (const auto it = find(name); it != end()) {
     if (it->data().is_same(data.data()) && it->masks() == data.masks() &&
-        it->attrs() == data.attrs() && it->coords() == data.coords())
+        it->coords() == data.coords())
       return;
   }
   const auto to_skip = coords_to_skip(*this, data);
@@ -201,10 +187,6 @@ void Dataset::setData(const std::string &name, const DataArray &data) {
     if (m_coords.find(dim) == m_coords.end() &&
         std::find(to_skip.begin(), to_skip.end(), dim) == to_skip.end())
       setCoord(dim, coord);
-  // Attrs might be shadowed by a coord, but this cannot be prevented in
-  // general, so instead of failing here we proceed (and may fail later if
-  // meta() is called).
-  item.attrs() = data.attrs();
   item.masks() = data.masks();
 }
 
