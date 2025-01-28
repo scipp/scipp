@@ -16,7 +16,7 @@ DataArray to_unit(const DataArray &array, const units::Unit &unit,
                        ? array.masks()
                        : dataset::copy(array.masks());
   return DataArray(std::move(new_data), array.coords(), std::move(new_masks),
-                   array.attrs(), array.name());
+                   array.name());
 }
 
 } // namespace scipp::dataset

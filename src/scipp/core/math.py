@@ -6,7 +6,7 @@ from __future__ import annotations
 from numbers import Real
 
 from .._scipp import core as _cpp
-from ..typing import VariableLike
+from ..typing import VariableLike, VariableLikeType
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from .variable import scalar
 
@@ -286,7 +286,9 @@ def log10(x: VariableLike, *, out: VariableLike | None = None) -> VariableLike:
     return _call_cpp_func(_cpp.log10, x, out=out)
 
 
-def round(x: VariableLike, *, out: VariableLike | None = None) -> VariableLike:
+def round(
+    x: VariableLikeType, *, out: VariableLikeType | None = None
+) -> VariableLikeType:
     """
     Round to the nearest integer of all values passed in x.
 
@@ -306,7 +308,7 @@ def round(x: VariableLike, *, out: VariableLike | None = None) -> VariableLike:
     :
         Rounded version of the data passed to the nearest integer.
     """
-    return _call_cpp_func(_cpp.rint, x, out=out)
+    return _call_cpp_func(_cpp.rint, x, out=out)  # type: ignore[return-value]
 
 
 def floor(x: VariableLike, *, out: VariableLike | None = None) -> VariableLike:

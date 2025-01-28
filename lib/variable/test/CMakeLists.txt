@@ -50,7 +50,8 @@ add_executable(
   variable_test.cpp
 )
 target_link_libraries(
-  ${TARGET_NAME} LINK_PRIVATE scipp-variable scipp_test_helpers GTest::GTest
+  ${TARGET_NAME} LINK_PRIVATE scipp-variable scipp_test_helpers
+  GTest::gtest_main
 )
 
 if(WIN32)
@@ -64,5 +65,7 @@ set_property(
 set_property(
   TARGET ${TARGET_NAME} PROPERTY EXCLUDE_FROM_ALL $<NOT:$<BOOL:${FULL_BUILD}>>
 )
-add_sanitizers(${TARGET_NAME})
+if(SANITIZERS)
+  add_sanitizers(${TARGET_NAME})
+endif()
 scipp_test(${TARGET_NAME} variable)

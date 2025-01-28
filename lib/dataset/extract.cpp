@@ -15,8 +15,7 @@ namespace scipp {
 
 namespace {
 
-/// Transform data of data array or dataset, coord, masks, and and attrs are
-/// shallow-copied.
+/// Transform data of data array or dataset, coord and masks are shallow-copied.
 ///
 /// Beware of the mask-copy behavior, which is not suitable for data returned to
 /// the user.
@@ -29,8 +28,7 @@ T transform_data(const T &obj, Func func, const Ts &...other) {
     out.setData(func(obj.data(), other.data()...));
   } else {
     for (const auto &item : obj)
-      out.setData(item.name(), func(item.data(), other[item.name()].data()...),
-                  dataset::AttrPolicy::Keep);
+      out.setData(item.name(), func(item.data(), other[item.name()].data()...));
   }
   return out;
 }

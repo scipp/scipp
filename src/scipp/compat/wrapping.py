@@ -111,16 +111,13 @@ def _postprocess(
         masks = _validated_masks(input_da, dim)
     if keep_coords:
         coords: Mapping[str, Variable] = input_da.coords
-        attrs: Mapping[str, Variable] = input_da.deprecated_attrs
     else:
         coords = _remove_columns_in_dim(input_da.coords, dim)
-        attrs = _remove_columns_in_dim(input_da.deprecated_attrs, dim)
 
     def add_observing_metadata(da: DataArray) -> DataArray:
         # operates in-place!
         da.coords.update(coords)
         da.masks.update((key, mask.copy()) for key, mask in masks.items())
-        da.deprecated_attrs.update(attrs)
         return da
 
     if is_partial:  # corresponds to `not isinstance(out_da, DataArray)`

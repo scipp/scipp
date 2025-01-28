@@ -29,7 +29,6 @@ struct GroupbyTest : public ::testing::Test {
                                                  units::m, Values{1, 2, 3})},
            {Dim("labels2"), makeVariable<double>(Dimensions{Dim::X, 3},
                                                  units::m, Values{1, 1, 3})}}) {
-    d["a"].attrs().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
   }
 
   Dataset d;
@@ -71,7 +70,6 @@ TEST_F(GroupbyTest, dataset_1d_and_2d) {
                                   Variances{9.0 / 4, 6.0, 9.0 / 4, 6.0})},
        {"c", makeVariable<double>(Dims{Dim(Dim::Z), dim}, Shape{2, 2}, units::s,
                                   Values{1.5, 3.0, 4.5, 6.0})}});
-  expected["a"].attrs().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
   expected.setCoord(
       dim, makeVariable<double>(Dims{dim}, Shape{2}, units::m, Values{1, 3}));
 
@@ -106,22 +104,12 @@ TEST_F(GroupbyTest, array_variable) {
   EXPECT_THROW(groupby(arr, var_bad, bins), except::DimensionError);
 }
 
-TEST_F(GroupbyTest, by_attr) {
-  auto da = copy(d["a"]);
-  const auto key = Dim("labels1");
-  const auto grouped_coord = groupby(da, key).sum(Dim::X);
-  da.attrs().set(key, da.coords().extract(key));
-  const auto grouped_attr = groupby(da, key).sum(Dim::X);
-  EXPECT_EQ(grouped_coord, grouped_attr);
-}
-
 struct GroupbyReductionTest : public ::testing::Test {
   GroupbyReductionTest()
       : d({{"a", makeVariable<double>(Dimensions{{Dim::Z, 2}, {Dim::X, 3}},
                                       units::m, Values{1, 2, 3, 1, 2, 3})},
            {"c", makeVariable<double>(Dimensions{{Dim::Z, 2}, {Dim::X, 3}},
                                       units::s, Values{1, 2, 3, 4, 5, 6})}}) {
-    d["a"].attrs().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
     d.setCoord(Dim("labels1"), makeVariable<double>(Dimensions{Dim::X, 3},
                                                     units::m, Values{1, 2, 3}));
     d.setCoord(Dim("labels2"), makeVariable<double>(Dimensions{Dim::X, 3},
@@ -144,7 +132,6 @@ TEST_F(GroupbyReductionTest, sum_groups_with_multiple_elements) {
                                                units::m, Values{3, 3, 3, 3})},
                     {"c", makeVariable<double>(Dims{Dim::Z, dim}, Shape{2, 2},
                                                units::s, Values{3, 3, 9, 6})}});
-  expected["a"].attrs().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
   expected.setCoord(
       dim, makeVariable<double>(Dims{dim}, units::m, Shape{2}, Values{1, 3}));
   EXPECT_EQ(groupby(d, dim).sum(Dim::X), expected);
@@ -163,7 +150,6 @@ TEST_F(GroupbyReductionTest, max_groups_with_multiple_elements) {
                                                units::m, Values{2, 3, 2, 3})},
                     {"c", makeVariable<double>(Dims{Dim::Z, dim}, Shape{2, 2},
                                                units::s, Values{2, 3, 5, 6})}});
-  expected["a"].attrs().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
   expected.setCoord(
       dim, makeVariable<double>(Dims{dim}, units::m, Shape{2}, Values{1, 3}));
   EXPECT_EQ(groupby(d, dim).max(Dim::X), expected);
@@ -219,7 +205,6 @@ TEST_F(GroupbyMaskedTest, sum) {
                                   Values{1, 3, 4, 6})}},
       {{dim,
         makeVariable<double>(Dimensions{dim, 2}, units::m, Values{1, 3})}});
-  expected["a"].attrs().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
   for (const auto &item : {"a", "c"})
     expected[item].masks().set(
         "mask_z",
@@ -241,7 +226,6 @@ TEST_F(GroupbyMaskedTest, sum_irrelevant_mask) {
                                   Values{3, 3, 9, 6})}},
       {{dim,
         makeVariable<double>(Dimensions{dim, 2}, units::m, Values{1, 3})}});
-  expected["a"].attrs().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
   for (const auto &item : {"a", "c"})
     expected[item].masks().set(
         "mask_z",
@@ -273,7 +257,6 @@ TEST_F(GroupbyMaskedTest, mean_mask_ignores_values_properly) {
                                   Values{1, 3, 4, 6})}},
       {{dim,
         makeVariable<double>(Dimensions{dim, 2}, units::m, Values{1, 3})}});
-  expected["a"].attrs().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
   for (const auto &item : {"a", "c"})
     expected[item].masks().set(
         "mask_z",
@@ -390,7 +373,6 @@ struct GroupbyWithBinsTest : public ::testing::Test {
   GroupbyWithBinsTest()
       : d({{"a", makeVariable<double>(Dimensions{Dim::X, 5}, units::s,
                                       Values{0.1, 0.2, 0.3, 0.4, 0.5})}}) {
-    d["a"].attrs().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
     d.setCoord(Dim("labels1"),
                makeVariable<double>(Dimensions{Dim::X, 5}, units::m,
                                     Values{1, 2, 3, 4, 5}));
@@ -409,7 +391,6 @@ TEST_F(GroupbyWithBinsTest, bins) {
   Dataset expected({{"a", makeVariable<double>(Dims{Dim::Z}, Shape{3}, units::s,
                                                Values{0.0, 0.8, 0.3})}},
                    {{Dim::Z, bins}});
-  expected["a"].attrs().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
 
   EXPECT_EQ(groupby(d, Dim("labels2"), bins).sum(Dim::X), expected);
   EXPECT_EQ(groupby(d["a"], Dim("labels2"), bins).sum(Dim::X), expected["a"]);
@@ -519,16 +500,14 @@ struct GroupbyBinnedTest : public ::testing::Test {
       {{Dim("0-d"), makeVariable<double>(Values{1.2})},
        {Dim("labels"), makeVariable<int64_t>(Dims{Dim::Y}, Shape{3}, units::m,
                                              Values{1, 1, 3})}},
-      {},
-      {{Dim("scalar_attr"), makeVariable<double>(Values{1.2})}}};
+      {}};
 
   DataArray expected{
       make_events_out(),
       {{Dim("0-d"), makeVariable<double>(Values{1.2})},
        {Dim("labels"), makeVariable<int64_t>(Dims{Dim("labels")}, Shape{2},
                                              units::m, Values{1, 3})}},
-      {},
-      {{Dim("scalar_attr"), makeVariable<double>(Values{1.2})}}};
+      {}};
 };
 
 TEST_F(GroupbyBinnedTest, min_data_array) {
@@ -564,14 +543,6 @@ TEST_F(GroupbyBinnedTest, sum_with_event_mask) {
 
 TEST_F(GroupbyBinnedTest, concatenate_data_array) {
   EXPECT_EQ(groupby(a, Dim("labels")).concat(Dim::Y), expected);
-}
-
-TEST_F(GroupbyBinnedTest, concatenate_by_attr) {
-  const auto key = Dim("labels");
-  const auto grouped_coord = groupby(a, key).concat(Dim::Y);
-  a.attrs().set(key, a.coords().extract(key));
-  const auto grouped_attr = groupby(a, key).concat(Dim::Y);
-  EXPECT_EQ(grouped_coord, grouped_attr);
 }
 
 TEST_F(GroupbyBinnedTest, concatenate_data_array_2d) {

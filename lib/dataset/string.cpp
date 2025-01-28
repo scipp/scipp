@@ -60,11 +60,6 @@ auto format_data_view(const Key &name, const DataArray &data,
     for (const auto &[key, var] : sorted(data.masks()))
       s << data_shift << format_variable(key, var, datasetSizes);
   }
-  if (!data.attrs().empty()) {
-    s << header_shift << "Attributes:\n";
-    for (const auto &[key, var] : sorted(data.attrs()))
-      s << data_shift << format_variable(key, var, datasetSizes);
-  }
   return s.str();
 }
 

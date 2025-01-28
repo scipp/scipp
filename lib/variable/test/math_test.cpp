@@ -11,7 +11,9 @@
 #include "scipp/core/element/math.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bins.h"
+#include "scipp/variable/comparison.h"
 #include "scipp/variable/pow.h"
+#include "scipp/variable/reduction.h"
 #include "scipp/variable/variable.h"
 
 using namespace scipp;
@@ -331,11 +333,15 @@ TEST(Variable, dot_of_vector) {
   Eigen::Vector3d v2(-4.4, -5.5, -6.6);
   Eigen::Vector3d v3(0, 0, 0);
   auto reference = makeVariable<double>(
-      Dims{Dim::X}, Shape{3}, units::Unit(units::m) * units::Unit(units::m),
+      Dims{Dim::X}, Shape{3}, units::m * units::m,
       Values{element::dot(v1, v1), element::dot(v2, v2), element::dot(v3, v3)});
-  auto var = makeVariable<Eigen::Vector3d>(
-      Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{v1, v2, v3});
-  EXPECT_EQ(dot(var, var), reference);
+  auto var = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{3}, units::m,
+                                           Values{v1, v2, v3});
+  const auto result = dot(var, var);
+  EXPECT_TRUE(
+      all(isclose(result, reference, 1e-14 * units::one,
+                  makeVariable<double>(Values{0.0}, units::m * units::m)))
+          .value<bool>());
 }
 
 TEST(Variable, cross_of_vector) {

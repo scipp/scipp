@@ -82,10 +82,10 @@ auto make_fill(const DataArray &function,
 void copy_slices(const DataArray &src, DataArray dst, const Dim dim,
                  const Variable &srcIndices, const Variable &dstIndices) {
   copy_slices(src.data(), dst.data(), dim, srcIndices, dstIndices);
-  expect_matching_keys(src.meta(), dst.meta());
+  expect_matching_keys(src.coords(), dst.coords());
   expect_matching_keys(src.masks(), dst.masks());
-  for (const auto &[name, coord] : src.meta())
-    copy_or_match(coord, dst.meta()[name], dim, srcIndices, dstIndices);
+  for (const auto &[name, coord] : src.coords())
+    copy_or_match(coord, dst.coords()[name], dim, srcIndices, dstIndices);
   for (const auto &[name, mask] : src.masks())
     copy_or_match(mask, dst.masks()[name], dim, srcIndices, dstIndices);
 }
@@ -98,13 +98,10 @@ void copy_slices(const Dataset &src, Dataset dst, const Dim dim,
   expect_matching_keys(src, dst);
   for (const auto &item : src) {
     const auto &dst_ = dst[item.name()];
-    expect_matching_keys(item.attrs(), dst_.attrs());
     expect_matching_keys(item.masks(), dst_.masks());
     copy_or_match(item.data(), dst_.data(), dim, srcIndices, dstIndices);
     for (const auto &[name, var] : item.masks())
       copy_or_match(var, dst_.masks()[name], dim, srcIndices, dstIndices);
-    for (const auto &[name, var] : item.attrs())
-      copy_or_match(var, dst_.attrs()[name], dim, srcIndices, dstIndices);
   }
 }
 
@@ -133,8 +130,6 @@ DataArray resize_default_init(const DataArray &parent, const Dim dim,
     buffer.coords().set(name, copy_or_resize(var, dim, size));
   for (const auto &[name, var] : parent.masks())
     buffer.masks().set(name, copy_or_resize(var, dim, size));
-  for (const auto &[name, var] : parent.attrs())
-    buffer.attrs().set(name, copy_or_resize(var, dim, size));
   return buffer;
 }
 
@@ -151,8 +146,6 @@ Dataset resize_default_init(const Dataset &parent, const Dim dim,
     buffer.setData(item.name(), copy_or_resize(item.data(), dim, size));
     for (const auto &[name, var] : item.masks())
       buffer[item.name()].masks().set(name, copy_or_resize(var, dim, size));
-    for (const auto &[name, var] : item.attrs())
-      buffer[item.name()].attrs().set(name, copy_or_resize(var, dim, size));
   }
   return buffer;
 }
@@ -203,7 +196,7 @@ bool is_bins(const Dataset &dataset) {
 Variable lookup_previous(const DataArray &function, const Variable &x, Dim dim,
                          const std::optional<Variable> &fill_value) {
   const auto fill = make_fill(function, fill_value);
-  const auto &coord = function.meta()[dim];
+  const auto &coord = function.coords()[dim];
   const auto data = masked_data(function, dim, fill);
   const auto weights = subspan_view(data, dim);
   if (!allsorted(coord, dim))
@@ -281,8 +274,7 @@ Variable concatenate(const Variable &var0, const Variable &var1) {
 DataArray concatenate(const DataArray &a, const DataArray &b) {
   return DataArray{buckets::concatenate(a.data(), b.data()),
                    union_(a.coords(), b.coords(), "concatenate"),
-                   union_or(a.masks(), b.masks()),
-                   intersection(a.attrs(), b.attrs())};
+                   union_or(a.masks(), b.masks())};
 }
 
 /// Reduce a dimension by concatenating all elements along the dimension.
@@ -349,7 +341,7 @@ Variable histogram(const Variable &data, const Variable &binEdges) {
   }
 
   const auto masked = masked_data(buffer, dim);
-  const auto coord = buffer.meta()[hist_dim];
+  const auto coord = buffer.coords()[hist_dim];
   const auto dt = common_type(binEdges, coord);
   const auto promoted_coord = astype(coord, dt, CopyPolicy::TryAvoid);
   const auto promoted_edges = astype(binEdges, dt, CopyPolicy::TryAvoid);
@@ -369,7 +361,7 @@ Variable map(const DataArray &function, const Variable &x, Dim dim,
   const auto fill = make_fill(function, fill_value);
   if (dim == Dim::Invalid)
     dim = edge_dimension(function);
-  const auto &edges = function.meta()[dim];
+  const auto &edges = function.coords()[dim];
   if (!is_edges(function.dims(), edges.dims(), dim))
     throw except::BinEdgeError(
         "Function used as lookup table in map operation must be a histogram");
@@ -394,8 +386,8 @@ void scale(DataArray &array, const DataArray &histogram, Dim dim) {
   // scale applies masks along dim but others are kept
   union_or_in_place(array.masks(), histogram.slice({dim, 0}).masks());
   auto data = bins_view<DataArray>(array.data()).data();
-  const auto &coord = bins_view<DataArray>(array.data()).meta()[dim];
-  const auto &edges = histogram.meta()[dim];
+  const auto &coord = bins_view<DataArray>(array.data()).coords()[dim];
+  const auto &edges = histogram.coords()[dim];
   const auto masked = masked_data(histogram, dim);
   const auto weights = subspan_view(masked, dim);
   if (all(islinspace(edges, dim)).value<bool>()) {
