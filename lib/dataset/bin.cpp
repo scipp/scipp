@@ -275,9 +275,7 @@ DataArray add_metadata(const Variable &data, std::unique_ptr<Mapper> mapper,
                        const Attrs &attrs, const std::vector<Variable> &edges,
                        const std::vector<Variable> &groups,
                        const std::vector<Dim> &erase) {
-  auto bin_sizes = mapper->bin_sizes();
   auto buffer = mapper->template apply<DataArray>(data);
-  bin_sizes = squeeze(bin_sizes, erase);
   const auto buffer_dim = buffer.dims().inner();
   std::set<Dim> dims(erase.begin(), erase.end());
   const auto rebinned = [&](const auto &var) {
@@ -305,6 +303,7 @@ DataArray add_metadata(const Variable &data, std::unique_ptr<Mapper> mapper,
   for (const auto &[dim_, coord] : attrs)
     if (!rebinned(coord) && !out_coords.contains(dim_))
       out_attrs.insert_or_assign(dim_, coord);
+  auto bin_sizes = squeeze(mapper->bin_sizes(), erase);
   return DataArray{bins_from_sizes(std::move(buffer), bin_sizes),
                    std::move(out_coords), std::move(out_masks),
                    std::move(out_attrs)};
