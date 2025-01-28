@@ -143,9 +143,16 @@ public:
     // same bin index ranges as input. Now setup the desired final bin indices.
     const auto dims = dims_override.value_or(m_dims);
     auto output_dims = merge(m_output_bin_sizes.dims(), dims);
-    return makeVariable<scipp::index>(
-        output_dims, units::none,
-        Values(flatten_subbin_sizes(m_output_bin_sizes, dims.volume())));
+    auto sizes = variable::empty(output_dims, units::none, dtype<scipp::index>);
+    auto sizes_v = sizes.values<scipp::index>().as_span();
+    auto it = sizes_v.begin();
+    const auto length = dims.volume();
+    for (const auto &sub :
+         m_output_bin_sizes.values<core::SubbinSizes>().as_span()) {
+      std::copy_n(sub.sizes().begin(), sub.sizes().size(), it + sub.offset());
+      it += length;
+    }
+    return sizes;
   }
 
   Dimensions m_dims;
