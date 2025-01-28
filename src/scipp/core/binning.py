@@ -1,37 +1,38 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-import inspect
 import itertools
 import uuid
-from collections.abc import Sequence
-from numbers import Integral
-from typing import TypeVar, overload
+from collections.abc import Iterable, Sequence
+from typing import Any, SupportsIndex, TypeVar, overload
 
 from .._scipp import core as _cpp
 from .bin_remapping import combine_bins
+from .bins import Bins
 from .cpp_classes import BinEdgeError, CoordError, DataArray, Dataset, DType, Variable
 from .data_group import DataGroup, data_group_overload
 from .math import round as round_
 from .shape import concat
 from .variable import arange, array, epoch, linspace, scalar
 
-_T = TypeVar('_T')
+_DaDs = TypeVar('_DaDs', bound=DataArray | Dataset)
 
 
 @overload
 def make_histogrammed(
-    x: Variable | DataArray, *, edges: Variable, erase: Sequence[str] = ()
+    x: Variable | DataArray, *, edges: Variable, erase: Iterable[str] = ()
 ) -> DataArray: ...
 
 
 @overload
 def make_histogrammed(
-    x: Dataset, *, edges: Variable, erase: Sequence[str] = ()
+    x: Dataset, *, edges: Variable, erase: Iterable[str] = ()
 ) -> Dataset: ...
 
 
-def make_histogrammed(x, *, edges, erase: Sequence[str] = ()):
+def make_histogrammed(
+    x: Variable | DataArray | Dataset, *, edges: Variable, erase: Iterable[str] = ()
+) -> DataArray | Dataset:
     """Create dense data by histogramming data into given bins.
 
     If the input is binned data, then existing binning dimensions are preserved.
@@ -46,6 +47,8 @@ def make_histogrammed(x, *, edges, erase: Sequence[str] = ()):
     edges:
         Bin edges. If these have more than one dimension, binning occurs along
         the inner dimension.
+    erase:
+        Names of dimensions to erase from the input.
 
     Returns
     -------
@@ -83,23 +86,26 @@ def make_histogrammed(x, *, edges, erase: Sequence[str] = ()):
     if to_flatten:
         x = _drop_coords_for_hist(x, to_flatten, keep=(hist_dim,))
         x = _transpose_and_flatten_for_hist(x, to_flatten, to=hist_dim)
-    return _cpp.histogram(x, edges)
+    return _cpp.histogram(x, edges)  # type: ignore[no-any-return]
 
 
-def _drop_coords_for_hist(x, dims: Sequence[str], keep: Sequence[str]) -> DataArray:
+def _drop_coords_for_hist(x: _DaDs, dims: Iterable[str], keep: Iterable[str]) -> _DaDs:
     """Drop unnecessary coords from a DataArray making flatten/bin expensive."""
-    x = x if x.bins is None else x.bins
+    data = x if x.bins is None else x.bins
     to_drop = []
-    for name, coord in x.coords.items():
+    for name, coord in data.coords.items():
         if (name not in keep) and (set(coord.dims) & set(dims)):
             to_drop.append(name)
-    return x.drop_coords(to_drop)
+    return data.drop_coords(to_drop)  # type: ignore[return-value]
 
 
-def _transpose_and_flatten_for_hist(x, dims: Sequence[str], to: str) -> DataArray:
+def _transpose_and_flatten_for_hist(x: _DaDs, dims: Sequence[str], to: str) -> _DaDs:
     """Transpose and flatten a DataArray to prepare for histogram."""
-    new_order = [dim for dim in x.dims if dim not in dims] + dims
-    return x.transpose(new_order).flatten(dims=dims, to=to)
+    new_order = [*(dim for dim in x.dims if dim not in dims), *dims]
+    # `make_histogrammed` does not fully support `Dataset`.
+    # This needs to be fixed, but for now, we just ignore the type error here.
+    transposed = x.transpose(new_order)  # type: ignore[union-attr]
+    return transposed.flatten(dims=dims, to=to)  # type: ignore[return-value]
 
 
 def make_binned(
@@ -107,7 +113,7 @@ def make_binned(
     *,
     edges: Sequence[Variable] | None = None,
     groups: Sequence[Variable] | None = None,
-    erase: Sequence[str] | None = None,
+    erase: Sequence[str] = (),
 ) -> DataArray:
     """Create binned data by binning input along all dimensions given by edges or
     groups.
@@ -161,8 +167,6 @@ def make_binned(
     scipp.bins:
         For creating binned data based on explicitly given index ranges.
     """
-    if erase is None:
-        erase = []
     if groups is None:
         groups = []
     if edges is None:
@@ -194,17 +198,18 @@ def make_binned(
             erase = ()
         elif len(dense_edges) + len(dense_groups) < len(edges) + len(groups):
             x = make_binned(x, edges=dense_edges, groups=dense_groups, erase=erase)
-            edges = [var for var in edges if var.dims[-1] in x.bins.coords]
-            groups = [var for var in groups if var.dims[-1] in x.bins.coords]
+            b: Bins[DataArray] = x.bins  # type: ignore[assignment]
+            edges = [var for var in edges if var.dims[-1] in b.coords]
+            groups = [var for var in groups if var.dims[-1] in b.coords]
             erase = ()
         if x.ndim == 0:
-            return (
+            return (  # type: ignore[no-any-return]
                 _cpp.bin(x.value, edges, groups, erase)
                 .assign_coords(x.coords)
                 .assign_masks(x.masks)
             )
     x = _prepare_multi_dim_dense(x, *edges, *groups)
-    return _cpp.bin(x, edges, groups, erase)
+    return _cpp.bin(x, edges, groups, erase)  # type: ignore[no-any-return]
 
 
 def _prepare_multi_dim_dense(x: DataArray, *edges_or_groups: Variable) -> DataArray:
@@ -245,9 +250,9 @@ def _prepare_multi_dim_dense(x: DataArray, *edges_or_groups: Variable) -> DataAr
 
 
 def _check_erase_dimension_clash(
-    erase: Sequence[str], *edges_or_groups: Variable
+    erase: Iterable[str], *edges_or_groups: Variable
 ) -> None:
-    new_dims = set()
+    new_dims: set[str] = set()
     for var in edges_or_groups:
         new_dims.update(var.dims)
     if set(erase) & new_dims:
@@ -257,10 +262,15 @@ def _check_erase_dimension_clash(
         )
 
 
-def _can_operate_on_bins(x, edges, groups, erase) -> bool:
+def _can_operate_on_bins(
+    x: DataArray,
+    edges: Iterable[Variable],
+    groups: Iterable[Variable],
+    erase: Iterable[str],
+) -> bool:
     if x.bins is None:
         return False
-    dims = []
+    dims: set[str] = set()
     for coord in itertools.chain(edges, groups):
         if coord.ndim != 1:
             return False
@@ -268,31 +278,33 @@ def _can_operate_on_bins(x, edges, groups, erase) -> bool:
             return False
         if coord.dim not in x.coords:
             return False
-        dims += x.coords[coord.dim].dims
-    return set(dims) <= set(erase)
+        dims.update(x.coords[coord.dim].dims)
+    return dims <= set(erase)
 
 
-def _require_coord(name, coord):
+def _require_coord(name: str, coord: object) -> None:
     if coord is None:
         raise CoordError(f"Coordinate '{name}' not found.")
 
 
-def _get_coord(x, name):
+def _get_coord(x: Variable | DataArray | Dataset, name: str) -> Variable:
     if isinstance(x, Variable):
         return x
     if isinstance(x, Dataset):
-        cmin = None
-        cmax = None
+        if not x.values():
+            raise ValueError("Dataset is empty")
+        cmin: Variable | None = None
+        cmax: Variable | None = None
         for da in x.values():
             c = _get_coord(da, name)
-            cmin = c.min() if cmin is None else min(cmin, c.min())
-            cmax = c.max() if cmax is None else max(cmin, c.max())
-        coord = concat([cmin, cmax], dim='dummy')
+            cmin = c.min() if cmin is None else min(cmin, c.min())  # type: ignore[call-overload]
+            cmax = c.max() if cmax is None else max(cmin, c.max())  # type: ignore[call-overload]
+        coord = concat([cmin, cmax], dim='dummy')  # type: ignore[type-var]
     else:
-        event_coord = x.bins.deprecated_meta.get(name) if x.bins is not None else None
-        coord = x.deprecated_meta.get(name, event_coord)
+        event_coord = x.bins.coords.get(name) if x.bins is not None else None
+        coord = x.coords.get(name, event_coord)
     _require_coord(name, coord)
-    return coord
+    return coord  # type: ignore[return-value]
 
 
 def _upper_bound(x: Variable) -> Variable:
@@ -309,7 +321,7 @@ def _upper_bound(x: Variable) -> Variable:
 
 
 def _parse_coords_arg(
-    x: Variable | DataArray | Dataset, name: str, arg: int | Variable
+    x: Variable | DataArray | Dataset, name: str, arg: SupportsIndex | Variable
 ) -> Variable:
     if isinstance(arg, Variable) and name in arg.dims:
         return arg
@@ -328,13 +340,13 @@ def _parse_coords_arg(
             'Empty data range, cannot automatically determine bounds. '
             'Must provide concrete bin edges.'
         )
-    if isinstance(arg, Integral):
+    if not isinstance(arg, Variable):
         if start.dtype == DType.datetime64:
             base = epoch(unit=start.unit)
             return base + round_(
-                linspace(name, start - base, stop - base, num=arg + 1)
+                linspace(name, start - base, stop - base, num=arg.__index__() + 1)
             ).to(dtype='int64')
-        return linspace(name, start, stop, num=arg + 1).to(
+        return linspace(name, start, stop, num=arg.__index__() + 1).to(
             dtype=start.dtype, copy=False
         )
     step = arg.to(dtype=start.dtype, unit=start.unit)
@@ -345,8 +357,8 @@ def _parse_coords_arg(
 
 def _make_edges(
     x: Variable | DataArray | Dataset,
-    arg_dict: dict[str, int | Variable] | None,
-    kwargs: dict[str, int | Variable],
+    arg_dict: dict[str, SupportsIndex | Variable] | None,
+    kwargs: dict[str, SupportsIndex | Variable],
 ) -> dict[str, Variable]:
     if arg_dict is not None:
         kwargs = dict(**arg_dict, **kwargs)
@@ -356,56 +368,63 @@ def _make_edges(
 def _find_replaced_dims(
     x: Variable | DataArray | Dataset,
     *,
-    dims: Sequence[str],
+    dims: Iterable[str],
     dim: str | tuple[str, ...] | None,
 ) -> list[str]:
     if isinstance(x, Variable):
-        replaced = x.dims
+        replaced = set(x.dims)
     elif dim is None:
         replaced = set()
         for name in dims:
             if name in x.coords:
                 replaced.update(x.coords[name].dims)
     else:
-        replaced = (dim,) if isinstance(dim, str) else dim
-    return [d for d in x.dims if d in (set(replaced) - set(dims))]
+        replaced = {dim} if isinstance(dim, str) else set(dim)
+    return [d for d in x.dims if d in (replaced - set(dims))]
 
 
 @overload
 def hist(
     x: Variable | DataArray,
-    arg_dict: dict[str, int | Variable] | None = None,
+    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
-    **kwargs: int | Variable,
-) -> DataArray: ...
+    **kwargs: SupportsIndex | Variable,
+) -> Variable | DataArray: ...
 
 
 @overload
 def hist(
     x: Dataset,
-    arg_dict: dict[str, int | Variable] | None = None,
+    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
-    **kwargs: int | Variable,
+    **kwargs: SupportsIndex | Variable,
 ) -> Dataset: ...
 
 
 @overload
 def hist(
-    x: DataGroup,
-    arg_dict: dict[str, int | Variable] | None = None,
+    x: DataGroup[Any],
+    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
-    **kwargs: int | Variable,
-) -> DataGroup: ...
+    **kwargs: SupportsIndex | Variable,
+) -> DataGroup[Any]: ...
 
 
 @data_group_overload
-def hist(x, arg_dict=None, /, *, dim=None, **kwargs):
+def hist(
+    x: Variable | DataArray | Dataset | DataGroup[Any],
+    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+    /,
+    *,
+    dim: str | tuple[str, ...] | None = None,
+    **kwargs: SupportsIndex | Variable,
+) -> Variable | DataArray | Dataset | DataGroup[Any]:
     """Compute a histogram.
 
     Bin edges can be specified in three ways:
@@ -536,6 +555,10 @@ def hist(x, arg_dict=None, /, *, dim=None, **kwargs):
       >>> xyz.hist(t=4, dim='y').sizes
       {'x': 4, 'z': 6, 't': 4}
     """  # noqa: E501
+    if isinstance(x, DataGroup):
+        # Only to make mypy happy because we have `DataGroup` in annotation of `x`
+        # so that Sphinx shows it.
+        raise TypeError("Internal error: input should not be a DataGroup")
     edges = _make_edges(x, arg_dict, kwargs)
     erase = _find_replaced_dims(x, dims=edges, dim=dim)
     if isinstance(x, Variable) and len(edges) != 1:
@@ -562,18 +585,22 @@ def hist(x, arg_dict=None, /, *, dim=None, **kwargs):
                     for k, v in x.items()
                 }
             )
-        edges = list(edges.values())
+        edge_values = list(edges.values())
         # If histogramming by the final edges needs to use a non-event coord then we
         # must not erase that dim, since it removes the coord required for histogramming
         remaining_erase = set(erase)
         if isinstance(x, DataArray) and x.bins is not None:
-            hist_dim = edges[-1].dims[-1]
+            hist_dim = edge_values[-1].dims[-1]
             if hist_dim not in x.bins.coords:
                 erase = [e for e in erase if e not in x.coords[hist_dim].dims]
         remaining_erase -= set(erase)
         out = make_histogrammed(
-            make_binned(x, edges=edges[:-1], erase=erase),
-            edges=edges[-1],
+            make_binned(
+                x,  # type: ignore[arg-type]
+                edges=edge_values[:-1],
+                erase=erase,
+            ),
+            edges=edge_values[-1],
             erase=remaining_erase,
         )
     return out
@@ -588,34 +615,45 @@ def _get_op_dims(x: DataArray, *edges_or_groups: Variable) -> set[str]:
 @overload
 def nanhist(
     x: Variable | DataArray,
-    arg_dict: dict[str, int | Variable] | None = None,
+    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
-    **kwargs: int | Variable,
-) -> DataArray: ...
+    **kwargs: SupportsIndex | Variable,
+) -> Variable | DataArray: ...
 
 
 @overload
 def nanhist(
-    x: DataGroup,
-    arg_dict: dict[str, int | Variable] | None = None,
+    x: Dataset,
+    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
-    **kwargs: int | Variable,
-) -> DataGroup: ...
+    **kwargs: SupportsIndex | Variable,
+) -> Dataset: ...
+
+
+@overload
+def nanhist(
+    x: DataGroup[Any],
+    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+    /,
+    *,
+    dim: str | tuple[str, ...] | None = None,
+    **kwargs: SupportsIndex | Variable,
+) -> DataGroup[Any]: ...
 
 
 @data_group_overload
 def nanhist(
-    x: DataArray,
-    arg_dict: dict[str, int | Variable] | None = None,
+    x: Variable | DataArray | Dataset | DataGroup[Any],
+    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
-    **kwargs: int | Variable,
-) -> DataArray:
+    **kwargs: SupportsIndex | Variable,
+) -> Variable | DataArray | Dataset | DataGroup[Any]:
     """Compute a histogram, skipping NaN values.
 
     Like :py:func:`scipp.hist`, but NaN values are skipped. See there for details and
@@ -638,9 +676,13 @@ def nanhist(
     :
         Histogrammed data.
     """
-    edges = _make_edges(x, arg_dict, kwargs)
+    if isinstance(x, DataGroup):
+        # Only to make mypy happy because we have `DataGroup` in annotation of `x`
+        # so that Sphinx shows it.
+        raise TypeError("Internal error: input should not be a DataGroup")
+    edges: dict[str, SupportsIndex | Variable] = _make_edges(x, arg_dict, kwargs)  # type: ignore[assignment]
     if len(edges) > 0:
-        x = x.bin(edges, dim=dim)
+        x = x.bin(edges, dim=dim)  # type: ignore[union-attr]
     if x.bins is None:
         raise TypeError("Data is not binned so bin edges must be provided.")
     return x.bins.nansum()
@@ -649,34 +691,34 @@ def nanhist(
 @overload
 def bin(
     x: Variable | DataArray,
-    arg_dict: dict[str, int | Variable] | None = None,
+    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
-    **kwargs: int | Variable,
+    **kwargs: SupportsIndex | Variable,
 ) -> DataArray: ...
 
 
 @overload
 def bin(
-    x: DataGroup,
-    arg_dict: dict[str, int | Variable] | None = None,
+    x: DataGroup[Any],
+    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
-    **kwargs: int | Variable,
-) -> DataGroup: ...
+    **kwargs: SupportsIndex | Variable,
+) -> DataGroup[Any]: ...
 
 
 @data_group_overload
 def bin(
-    x: Variable | DataArray,
-    arg_dict: dict[str, int | Variable] | None = None,
+    x: Variable | DataArray | DataGroup[Any],
+    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
-    **kwargs: int | Variable,
-) -> DataArray:
+    **kwargs: SupportsIndex | Variable,
+) -> DataArray | DataGroup[Any]:
     """Create binned data by binning input along all dimensions given by edges.
 
     Bin edges can be specified in three ways:
@@ -815,6 +857,10 @@ def bin(
     Note that this is generally only useful if the input is binned data with a binned
     t-coordinate.
     """
+    if isinstance(x, DataGroup):
+        # Only to make mypy happy because we have `DataGroup` in annotation of `x`
+        # so that Sphinx shows it.
+        raise TypeError("Internal error: input should not be a DataGroup")
     edges = _make_edges(x, arg_dict, kwargs)
     erase = _find_replaced_dims(x, dims=edges, dim=dim)
     return make_binned(x, edges=list(edges.values()), erase=erase)
@@ -822,38 +868,38 @@ def bin(
 
 @overload
 def rebin(
-    x: DataArray,
-    arg_dict: dict[str, int | Variable] | None = None,
+    x: Variable | DataArray,
+    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
     /,
-    **kwargs: int | Variable,
+    **kwargs: SupportsIndex | Variable,
 ) -> DataArray: ...
 
 
 @overload
 def rebin(
     x: Dataset,
-    arg_dict: dict[str, int | Variable] | None = None,
+    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
     /,
-    **kwargs: int | Variable,
+    **kwargs: SupportsIndex | Variable,
 ) -> Dataset: ...
 
 
 @overload
 def rebin(
-    x: DataGroup,
-    arg_dict: dict[str, int | Variable] | None = None,
+    x: DataGroup[Any],
+    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
     /,
-    **kwargs: int | Variable,
-) -> DataGroup: ...
+    **kwargs: SupportsIndex | Variable,
+) -> DataGroup[Any]: ...
 
 
 @data_group_overload
 def rebin(
-    x: _T,
-    arg_dict: dict[str, int | Variable] | None = None,
+    x: Variable | DataArray | Dataset | DataGroup[Any],
+    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
     /,
-    **kwargs: int | Variable,
-) -> _T:
+    **kwargs: SupportsIndex | Variable,
+) -> Variable | DataArray | Dataset | DataGroup[Any]:
     """Rebin a data array or dataset.
 
     The coordinate of the input for the dimension to be rebinned must contain bin edges,
@@ -912,6 +958,10 @@ def rebin(
       >>> da.rebin(x=4, y=6).sizes
       {'x': 4, 'y': 6}
     """
+    if isinstance(x, DataGroup):
+        # Only to make mypy happy because we have `DataGroup` in annotation of `x`
+        # so that Sphinx shows it.
+        raise TypeError("Internal error: input should not be a DataGroup")
     edges = _make_edges(x, arg_dict, kwargs)
     out = x
     for dim, edge in edges.items():
@@ -919,17 +969,17 @@ def rebin(
     return out
 
 
-def _make_groups(x, arg):
+def _make_groups(x: DataArray, arg: str | Variable) -> Variable:
     import numpy as np
 
     if isinstance(arg, Variable):
         return arg
-    coord = x.bins.coords.get(arg) if x.bins is not None else None
+    coord: Variable | None = x.bins.coords.get(arg) if x.bins is not None else None
     if coord is None:
         coord = x.coords.get(arg)
     _require_coord(arg, coord)
     if coord.bins is not None:
-        coord = coord.copy().bins.constituents['data']
+        coord = coord.copy().bins.constituents['data']  # type: ignore[assignment, union-attr]
 
     if 0 in coord.shape:
         unique = coord.values[0:0]
@@ -961,20 +1011,20 @@ def group(
 
 @overload
 def group(
-    x: DataGroup,
+    x: DataGroup[Any],
     /,
     *args: str | Variable,
     dim: str | tuple[str, ...] | None = None,
-) -> DataGroup: ...
+) -> DataGroup[Any]: ...
 
 
 @data_group_overload
 def group(
-    x: DataArray,
+    x: DataArray | DataGroup[Any],
     /,
     *args: str | Variable,
     dim: str | tuple[str, ...] | None = None,
-) -> DataArray:
+) -> DataArray | DataGroup[Any]:
     """Create binned data by grouping input by one or more coordinates.
 
     Grouping can be specified in two ways: (1) When a string is provided the unique
@@ -1105,23 +1155,10 @@ def group(
     Note that this is generally only useful if the input is binned data with a binned
     t-coordinate.
     """
+    if isinstance(x, DataGroup):
+        # Only to make mypy happy because we have `DataGroup` in annotation of `x`
+        # so that Sphinx shows it.
+        raise TypeError("Internal error: input should not be a DataGroup")
     groups = [_make_groups(x, name) for name in args]
     erase = _find_replaced_dims(x, dims=[g.dim for g in groups], dim=dim)
     return make_binned(x, groups=groups, erase=erase)
-
-
-VARIABLE_BINNING_SIGNATURE = inspect.Signature(
-    parameters=[
-        inspect.Parameter(name='self', kind=inspect.Parameter.POSITIONAL_ONLY),
-        inspect.Parameter(
-            name='arg_dict',
-            kind=inspect.Parameter.POSITIONAL_ONLY,
-            annotation=dict[str, int | Variable] | None,
-            default=None,
-        ),
-        inspect.Parameter(
-            name='kwargs', kind=inspect.Parameter.VAR_KEYWORD, annotation=int | Variable
-        ),
-    ],
-    return_annotation=DataArray,
-)

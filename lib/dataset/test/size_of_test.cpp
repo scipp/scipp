@@ -33,9 +33,7 @@ protected:
   Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       dims, Values{std::pair{0, 2}, std::pair{2, 4}});
   Variable data = makeVariable<double>(Dims{Dim::X}, Shape{4});
-  DataArray buffer =
-      DataArray(data, {{Dim::X, data + data}}, {},
-                {{Dim::Z, makeVariable<int>(Dims{}, Values{1})}});
+  DataArray buffer = DataArray(data, {{Dim::X, data + data}}, {});
   Variable var = make_bins(indices, Dim::X, buffer);
 
   const scipp::index object_size =
@@ -107,7 +105,7 @@ TEST(SizeOf, variable_of_vector3) {
 
 namespace {
 auto short_string_size([[maybe_unused]] const std::string &str) {
-#if defined(_MSC_VER) || defined(__aarch64__)
+#if defined(_MSC_VER) || (defined(__APPLE__) && defined(__aarch64__))
   // MSVC and MacOS arm64 do not use short string optimization.
   return sizeof(std::string) + str.size();
 #else
@@ -265,8 +263,7 @@ TEST(SizeOf, data_array) {
       makeVariable<int64_t>(Dims{Dim::X}, Shape{3}, Values{0, 1, 2});
   const DataArray da(data, {{Dim::X, coord}});
   const auto object_size = sizeof(DataArray) + sizeof(dataset::Coords) +
-                           sizeof(dataset::Attrs) + sizeof(dataset::Masks) +
-                           da.coords().capacity() + da.attrs().capacity() +
+                           sizeof(dataset::Masks) + da.coords().capacity() +
                            da.masks().capacity();
   EXPECT_EQ(size_of(da, SizeofTag::ViewOnly),
             size_of(data, SizeofTag::ViewOnly) +

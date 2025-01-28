@@ -9,6 +9,7 @@
 #include "scipp/variable/reciprocal.h"
 
 #include "test_data_arrays.h"
+#include "test_macros.h"
 
 using namespace scipp;
 
@@ -17,15 +18,12 @@ void check_meta(const DataArray &out, const DataArray &a) {
   EXPECT_FALSE(out.data().is_same(a.data()));
   EXPECT_EQ(out.coords(), a.coords());
   EXPECT_EQ(out.masks(), a.masks());
-  EXPECT_EQ(out.attrs(), a.attrs());
   // Meta data may be shallow-copied but dicts are not shared
   EXPECT_NE(&out.coords(), &a.coords());
   EXPECT_NE(&out.masks(), &a.masks());
-  EXPECT_NE(&out.attrs(), &a.attrs());
   EXPECT_TRUE(out.coords()[Dim::X].is_same(a.coords()[Dim::X]));
   // Masks are NOT shallow-copied, just like data
   EXPECT_FALSE(out.masks()["mask"].is_same(a.masks()["mask"]));
-  EXPECT_TRUE(out.attrs()[Dim("attr")].is_same(a.attrs()[Dim("attr")]));
 }
 } // namespace
 
@@ -74,11 +72,9 @@ TEST_F(GeneratedBinaryDataArrayTest, DataArray_DataArray) {
   EXPECT_EQ(out.data(), less(a.data(), b.data()));
   EXPECT_EQ(out.coords(), a.coords()); // because both inputs have same coords
   EXPECT_NE(out.masks(), a.masks());
-  EXPECT_NE(out.attrs(), a.attrs());
   // Meta data may be shallow-copied but dicts are not shared
   EXPECT_NE(&out.coords(), &a.coords());
   EXPECT_NE(&out.masks(), &a.masks());
-  EXPECT_NE(&out.attrs(), &a.attrs());
 }
 
 TEST_F(GeneratedBinaryDataArrayTest, coord_union) {
@@ -105,21 +101,12 @@ TEST_F(GeneratedBinaryDataArrayTest, mask_is_deep_copied_even_if_same) {
   EXPECT_FALSE(less(a, a).masks()["mask"].is_same(a.masks()["mask"]));
 }
 
-TEST_F(GeneratedBinaryDataArrayTest, attr_intersection) {
-  EXPECT_TRUE(a.attrs().contains(Dim("attr1")));
-  EXPECT_TRUE(b.attrs().contains(Dim("attr2")));
-  // Attrs are shared
-  EXPECT_TRUE(out.attrs()[Dim("attr")].is_same(a.attrs()[Dim("attr")]));
-  EXPECT_FALSE(out.attrs().contains(Dim("attr1")));
-  EXPECT_FALSE(out.attrs().contains(Dim("attr2")));
-}
-
 TEST_F(GeneratedBinaryDataArrayTest, non_bool_masks_with_same_names) {
   auto data = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0.1, 0.2});
   auto coord =
       makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1, 2});
   auto mask = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0.1, 0.1});
   a = DataArray(data, {{Dim::X, coord}}, {{"mask", mask}});
-  ASSERT_THROW(less(a, a), except::TypeError);
-  ASSERT_THROW(a += a, except::TypeError);
+  ASSERT_THROW_DISCARD(less(a, a), except::TypeError);
+  ASSERT_THROW_DISCARD(a += a, except::TypeError);
 }

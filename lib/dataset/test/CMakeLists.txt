@@ -7,7 +7,6 @@ add_dependencies(all-tests ${TARGET_NAME})
 add_executable(
   ${TARGET_NAME}
   astype_test.cpp
-  attributes_test.cpp
   binned_arithmetic_test.cpp
   binned_creation_test.cpp
   bins_test.cpp
@@ -53,7 +52,8 @@ add_executable(
   to_unit_test.cpp
 )
 target_link_libraries(
-  ${TARGET_NAME} LINK_PRIVATE scipp-dataset scipp_test_helpers GTest::GTest
+  ${TARGET_NAME} LINK_PRIVATE scipp-dataset scipp_test_helpers
+  GTest::gtest_main
 )
 
 if(WIN32)
@@ -67,5 +67,7 @@ set_property(
 set_property(
   TARGET ${TARGET_NAME} PROPERTY EXCLUDE_FROM_ALL $<NOT:$<BOOL:${FULL_BUILD}>>
 )
-add_sanitizers(${TARGET_NAME})
+if(SANITIZERS)
+  add_sanitizers(${TARGET_NAME})
+endif()
 scipp_test(${TARGET_NAME} dataset)

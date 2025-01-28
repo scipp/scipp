@@ -29,28 +29,28 @@ TEST(LogicalTest, logical_inplace_unit) {
   EXPECT_THROW(logical_inplace(u, units::m), except::UnitError);
 }
 
-TEST(LogicalTest, and) {
+TEST(LogicalTest, logical_and_op) {
   EXPECT_EQ(logical_and(true, true), true);
   EXPECT_EQ(logical_and(true, false), false);
   EXPECT_EQ(logical_and(false, true), false);
   EXPECT_EQ(logical_and(false, false), false);
 }
 
-TEST(LogicalTest, or) {
+TEST(LogicalTest, logical_or_op) {
   EXPECT_EQ(logical_or(true, true), true);
   EXPECT_EQ(logical_or(true, false), true);
   EXPECT_EQ(logical_or(false, true), true);
   EXPECT_EQ(logical_or(false, false), false);
 }
 
-TEST(LogicalTest, xor) {
+TEST(LogicalTest, logical_xor_op) {
   EXPECT_EQ(logical_xor(true, true), false);
   EXPECT_EQ(logical_xor(true, false), true);
   EXPECT_EQ(logical_xor(false, true), true);
   EXPECT_EQ(logical_xor(false, false), false);
 }
 
-TEST(LogicalTest, not ) {
+TEST(LogicalTest, logical_not_op) {
   EXPECT_EQ(logical_not(true), false);
   EXPECT_EQ(logical_not(false), true);
 }

@@ -213,14 +213,6 @@ def test_size_is_equivalent_to_scipy_size(size):
     assert sc.identical(result, reference)
 
 
-def test_attributes_are_propagated(simple_filter_func):
-    da = make_histogram2d()
-    da.attrs['attr'] = sc.scalar(1.2)
-    result = simple_filter_func(da, size=2)
-    assert set(result.attrs) == {'attr'}
-    assert sc.identical(result.attrs['attr'], da.attrs['attr'])
-
-
 def test_coordinates_are_propagated(simple_filter_func):
     da = make_histogram2d()
     result = simple_filter_func(da, size=2)

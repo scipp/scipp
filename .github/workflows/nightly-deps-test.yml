@@ -16,9 +16,9 @@ jobs:
       fail-fast: false
       matrix:
         variant:
-        - {os: ubuntu-22.04, cmake-preset: ci-linux}
+        - {os: ubuntu-24.04, cmake-preset: ci-linux}
         - {os: macos-14, cmake-preset: ci-macos}
-        - {os: windows-2019, cmake-preset: ci-windows}
+        - {os: windows-2022, cmake-preset: ci-windows}
         python-version: ["3.10"]
 
     steps:
@@ -38,15 +38,15 @@ jobs:
           create-args: python=${{ matrix.python-version }}
 
       - name: ccache
-        uses: hendrikmuhs/ccache-action@v1.2.14
+        uses: hendrikmuhs/ccache-action@v1.2.16
         with:
           key: ${{ matrix.variant.os }}
 
       - name: Cache conan setup
         id: conan-cache-key
         run: |
-          echo "key=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
-          echo "path=$(conan config home)" >> $GITHUB_OUTPUT
+          echo "key=$(/bin/date -u "+%Y%m%d")" >> "$GITHUB_OUTPUT"
+          echo "path=$(conan config home)" >> "$GITHUB_OUTPUT"
       - name: Cache conan
         uses: actions/cache@v4
         with:

@@ -19,7 +19,6 @@ PARAMS = [
     [
         (make_data_array, "coords"),
         (make_data_array, "masks"),
-        (make_data_array, "attrs"),
         (make_dataset, "coords"),
     ],
 ]

@@ -2,23 +2,30 @@ name: Weekly package builds
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - '.github/workflows/weekly.yml'
+  # It seems that the push trigger below makes the weekly workflow run on every push
+  # to `main` and on every tag creation. We remove it for now. To debug the weekly
+  # workflow in a PR, temporarily uncomment the push trigger below.
+  # push:
+  #   paths:
+  #     - ".github/workflows/weekly.yml"
   schedule:
     - cron: "0 0 * * 6" # every Saturday at midnight
 
 defaults:
   run:
-    shell: bash -l {0}  # required for conda env
+    shell: bash -l {0} # required for conda env
 
 jobs:
   build_conda:
     strategy:
       matrix:
         variant:
-          - {os: ubuntu-22.04, target: linux_64}
-        python-version: ["3.10", "3.11"]
+          - {os: ubuntu-24.04, target: linux_64}
+          - {os: macos-13, target: osx_64}
+          - {os: macos-14, target: osx_arm64}
+          - {os: windows-2022, target: win_64}
+          - {os: ubuntu-24.04-arm, target: linux_arm64}
+        python-version: ["3.10", "3.13"]
     uses: ./.github/workflows/conda.yml
     with:
       os: ${{ matrix.variant.os }}
@@ -28,7 +35,7 @@ jobs:
   build_wheels:
     strategy:
       matrix:
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04, macos-13, macos-14, windows-2022, ubuntu-24.04-arm]
         build: [cp310, cp313]
     uses: ./.github/workflows/wheel.yml
     with:

@@ -48,66 +48,56 @@ Coords copy(const Coords &coords) { return {coords.sizes(), copy_map(coords)}; }
 Masks copy(const Masks &masks) { return {masks.sizes(), copy_map(masks)}; }
 
 /// Return a deep copy of a DataArray.
-DataArray copy(const DataArray &array, const AttrPolicy attrPolicy) {
+DataArray copy(const DataArray &array) {
   // When data is copied we generally need to copy masks, since masks are
   // typically modified when data is modified.
-  return DataArray(
-      copy(array.data()), copy(array.coords()), copy(array.masks()),
-      attrPolicy == AttrPolicy::Keep ? copy(array.attrs()) : Attrs{},
-      array.name());
+  return DataArray(copy(array.data()), copy(array.coords()),
+                   copy(array.masks()), array.name());
 }
 
 /// Return a deep copy of a Dataset.
-Dataset copy(const Dataset &dataset, const AttrPolicy attrPolicy) {
+Dataset copy(const Dataset &dataset) {
   Dataset out{{}, copy(dataset.coords())};
   for (const auto &item : dataset) {
-    out.setData(item.name(), copy(item, attrPolicy));
+    out.setData(item.name(), copy(item));
   }
   return out;
 }
 
 namespace {
-template <class T>
-void copy_item(const DataArray &from, T &&to, const AttrPolicy attrPolicy) {
+template <class T> void copy_item(const DataArray &from, T &&to) {
   for (const auto &[name, mask] : from.masks())
     copy(mask, to.masks()[name]);
-  if (attrPolicy == AttrPolicy::Keep)
-    for (const auto &[dim, attr] : from.attrs())
-      copy(attr, to.attrs()[dim]);
   copy(from.data(), to.data());
 }
 } // namespace
 
 /// Copy data array to output data array
-DataArray &copy(const DataArray &array, DataArray &out,
-                const AttrPolicy attrPolicy) {
+DataArray &copy(const DataArray &array, DataArray &out) {
   for (const auto &[dim, coord] : array.coords())
     copy(coord, out.coords()[dim]);
-  copy_item(array, out, attrPolicy);
+  copy_item(array, out);
   return out;
 }
 
 /// Copy data array to output data array
-DataArray copy(const DataArray &array, DataArray &&out,
-               const AttrPolicy attrPolicy) {
-  copy(array, out, attrPolicy);
+DataArray copy(const DataArray &array, DataArray &&out) {
+  copy(array, out);
   return std::move(out);
 }
 
 /// Copy dataset to output dataset
-Dataset &copy(const Dataset &dataset, Dataset &out,
-              const AttrPolicy attrPolicy) {
+Dataset &copy(const Dataset &dataset, Dataset &out) {
   for (const auto &[dim, coord] : dataset.coords())
     copy(coord, out.coords()[dim]);
   for (const auto &array : dataset)
-    copy_item(array, out[array.name()], attrPolicy);
+    copy_item(array, out[array.name()]);
   return out;
 }
 
 /// Copy dataset to output dataset
-Dataset copy(const Dataset &dataset, Dataset &&out,
-             const AttrPolicy attrPolicy) {
-  copy(dataset, out, attrPolicy);
+Dataset copy(const Dataset &dataset, Dataset &&out) {
+  copy(dataset, out);
   return std::move(out);
 }
 
@@ -137,8 +127,7 @@ template <class Dict> auto strip_(const Dict &dict, const Dim dim) {
 } // namespace
 
 DataArray strip_if_broadcast_along(const DataArray &a, const Dim dim) {
-  return {a.data(), strip_(a.coords(), dim), strip_(a.masks(), dim),
-          strip_(a.attrs(), dim), a.name()};
+  return {a.data(), strip_(a.coords(), dim), strip_(a.masks(), dim), a.name()};
 }
 
 Dataset strip_if_broadcast_along(const Dataset &d, const Dim dim) {

@@ -21,13 +21,25 @@ if(SKBUILD)
   add_definitions(-DSCIPP_VERSION="${SKBUILD_PROJECT_VERSION_FULL}")
   message(STATUS "Got version from SKBUILD: ${SKBUILD_PROJECT_VERSION_FULL}")
 else()
-  execute_process(
-    COMMAND git describe --tags --exclude nightly
-    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-    RESULT_VARIABLE HAVE_GIT_VERSION_INFO
-    OUTPUT_VARIABLE GIT_VERSION_INFO
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
+  # Set GIT_VERSION_INFO from conda recipe as conda-forge doesn't like using git
+  # repos during the build process. The recipe links to the tar archive from a
+  # github release.
+  if(CONDA_FORGE_BUILD)
+    set(GIT_VERSION_INFO $ENV{GIT_VERSION_INFO})
+    set(HAVE_GIT_VERSION_INFO 0)
+    message(
+      STATUS
+        "Got version from environment inside conda-forge build: $ENV{GIT_VERSION_INFO}"
+    )
+  else()
+    execute_process(
+      COMMAND git describe --tags --exclude nightly
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+      RESULT_VARIABLE HAVE_GIT_VERSION_INFO
+      OUTPUT_VARIABLE GIT_VERSION_INFO
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+  endif()
   # We get something like 23.08.0-266-g068b161fe, remove the -g<hash> part
   string(REGEX REPLACE "-g[0-9a-f]+$" "" GIT_VERSION_INFO ${GIT_VERSION_INFO})
   # Replace '-' with '.dev' for PEP440 compatibility

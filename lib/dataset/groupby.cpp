@@ -197,8 +197,7 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   if constexpr (std::is_same_v<T, Dataset>) {
     for (auto &&item : out) {
       if (is_int(item.data().dtype()))
-        out.setData(item.name(), item.data() * get_scale(m_data[item.name()]),
-                    AttrPolicy::Keep);
+        out.setData(item.name(), item.data() * get_scale(m_data[item.name()]));
       else
         item *= get_scale(m_data[item.name()]);
     }
@@ -334,7 +333,7 @@ GroupBy<T> call_groupby(const T &array, const Variable &key, const Dim &dim) {
 /// Grouping will create a new coordinate for the dimension of the grouping
 /// coord in a later apply/combine step.
 GroupBy<DataArray> groupby(const DataArray &array, const Dim dim) {
-  const auto &key = array.meta()[dim];
+  const auto &key = array.coords()[dim];
   return call_groupby(array, key, dim);
 }
 
@@ -345,7 +344,7 @@ GroupBy<DataArray> groupby(const DataArray &array, const Dim dim) {
 /// new coordinate to the output in a later apply/combine step.
 GroupBy<DataArray> groupby(const DataArray &array, const Dim dim,
                            const Variable &bins) {
-  const auto &key = array.meta()[dim];
+  const auto &key = array.coords()[dim];
   return groupby(array, key, bins);
 }
 
@@ -368,7 +367,7 @@ GroupBy<DataArray> groupby(const DataArray &array, const Variable &key,
 /// Grouping will create a new coordinate for the dimension of the grouping
 /// coord in a later apply/combine step.
 GroupBy<Dataset> groupby(const Dataset &dataset, const Dim dim) {
-  const auto &key = dataset.meta()[dim];
+  const auto &key = dataset.coords()[dim];
   return call_groupby(dataset, key, dim);
 }
 
@@ -379,7 +378,7 @@ GroupBy<Dataset> groupby(const Dataset &dataset, const Dim dim) {
 /// new coordinate to the output in a later apply/combine step.
 GroupBy<Dataset> groupby(const Dataset &dataset, const Dim dim,
                          const Variable &bins) {
-  const auto &key = dataset.meta()[dim];
+  const auto &key = dataset.coords()[dim];
   return groupby(dataset, key, bins);
 }
 

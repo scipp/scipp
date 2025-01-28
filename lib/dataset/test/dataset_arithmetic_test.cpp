@@ -736,7 +736,7 @@ TEST(DatasetInPlaceStrongExceptionGuarantee, events) {
                            Values{1, 2, 3, 4}, Variances{5, 6, 7, 8});
   Variable good = make_bins(indicesGood, Dim::Event, table);
   Variable bad = make_bins(indicesBad, Dim::Event, table);
-  DataArray good_array(good, {}, {});
+  DataArray good_array(good);
   Dataset good_dataset({{"a", good}, {"b", good}});
 
   // We have no control over the iteration order in the implementation of binary

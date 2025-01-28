@@ -72,33 +72,25 @@ def test_bins_works_with_int32_begin():
 
 def test_bins_constituents():
     var = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
-    data = sc.DataArray(
-        data=var, coords={'coord': var}, masks={'mask': var}, attrs={'attr': var}
-    )
+    data = sc.DataArray(data=var, coords={'coord': var}, masks={'mask': var})
     begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64, unit=None)
     end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.DType.int64, unit=None)
     binned = sc.bins(begin=begin, end=end, dim='x', data=data)
     events = binned.bins.constituents['data']
     assert 'coord' in events.coords
     assert 'mask' in events.masks
-    assert 'attr' in events.attrs
     del events.coords['coord']
     del events.masks['mask']
-    del events.attrs['attr']
     # sc.bins makes a (shallow) copy of `data`
     assert 'coord' in data.coords
     assert 'mask' in data.masks
-    assert 'attr' in data.attrs
     # ... but when buffer is accessed we can insert/delete meta data
     assert 'coord' not in events.coords
     assert 'mask' not in events.masks
-    assert 'attr' not in events.attrs
     events.coords['coord'] = var
     events.masks['mask'] = var
-    events.attrs['attr'] = var
     assert 'coord' in events.coords
     assert 'mask' in events.masks
-    assert 'attr' in events.attrs
 
 
 def test_bins():
@@ -136,7 +128,6 @@ def make_binned():
     table = sc.DataArray(
         data=col,
         coords={'time': col * 2.2},
-        attrs={'attr': col * 3.3},
         masks={'mask': col == col},
     )
     begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64, unit=None)
@@ -147,9 +138,6 @@ def make_binned():
 def test_bins_view():
     var = make_binned()
     assert 'time' in var.bins.coords
-    assert 'time' in var.bins.meta
-    assert 'attr' in var.bins.meta
-    assert 'attr' in var.bins.attrs
     assert 'mask' in var.bins.masks
     col = sc.Variable(dims=['event'], values=[1, 2, 3, 4])
     with pytest.raises(sc.DTypeError):
@@ -204,6 +192,20 @@ def test_bins_view_coords_iterators():
     assert sc.identical(value, var.bins.coords['time'])
 
 
+def test_bins_view_coords_assign():
+    var = make_binned()
+    assert set(var.bins.coords) == {'time'}
+    new = var.bins.assign_coords(
+        {'a': var.bins.coords['time'] * 2.0}, b=var.bins.coords['time'] * 3.0
+    )
+    assert set(new.bins.coords) == {'time', 'a', 'b'}
+    assert set(var.bins.coords) == {'time'}
+
+    assert sc.identical(new.bins.coords['time'], var.bins.coords['time'])
+    assert sc.identical(new.bins.coords['a'], var.bins.coords['time'] * 2.0)
+    assert sc.identical(new.bins.coords['b'], var.bins.coords['time'] * 3.0)
+
+
 def test_bins_view_coords_drop():
     var = make_binned()
     assert set(var.bins.coords) == {'time'}
@@ -253,6 +255,20 @@ def test_bins_view_masks_update():
     assert set(var.bins.masks) == {'mask', 'extra'}
     assert sc.identical(var.bins.masks['mask'], make_binned().bins.masks['mask'])
     assert sc.identical(var.bins.masks['extra'], ~make_binned().bins.masks['mask'])
+
+
+def test_bins_view_masks_assign():
+    var = make_binned()
+    assert set(var.bins.masks) == {'mask'}
+    new = var.bins.assign_masks(
+        {'a': ~var.bins.masks['mask']}, b=var.bins.masks['mask']
+    )
+    assert set(new.bins.masks) == {'mask', 'a', 'b'}
+    assert set(var.bins.masks) == {'mask'}
+
+    assert sc.identical(new.bins.masks['mask'], var.bins.masks['mask'])
+    assert sc.identical(new.bins.masks['a'], ~var.bins.masks['mask'])
+    assert sc.identical(new.bins.masks['b'], var.bins.masks['mask'])
 
 
 def test_bins_view_masks_drop():

@@ -189,11 +189,9 @@ core::Dict<Key, Value> intersection(const SizedDict<Key, Value> &a,
 
 constexpr auto get_data = [](auto &&a) -> decltype(auto) { return a.data(); };
 constexpr auto get_sizes = [](auto &&a) -> decltype(auto) { return a.sizes(); };
-constexpr auto get_meta = [](auto &&a) -> decltype(auto) { return a.meta(); };
 constexpr auto get_coords = [](auto &&a) -> decltype(auto) {
   return a.coords();
 };
-constexpr auto get_attrs = [](auto &&a) -> decltype(auto) { return a.attrs(); };
 constexpr auto get_masks = [](auto &&a) -> decltype(auto) { return a.masks(); };
 
 } // namespace scipp::dataset

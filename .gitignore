@@ -38,6 +38,7 @@ src/include/
 src/lib/
 src/scipp/_scipp.cpython*
 src/scipp/_scipp.so
+*.so
 
 # Created by setuptools_scm for wheel builds
 src/scipp/_version.py

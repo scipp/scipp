@@ -2,19 +2,25 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-# Other imports
+from typing import TypeVar
+
 import numpy as np
 
+from ..core import DataArray, Dataset
 
-def _to_slices(scipp_obj, slice_dims, slice_shape, volume):
-    # Create container to collect all 1D slices as 1D variables
-    all_slices = {}
+_T = TypeVar('_T', bound=DataArray | Dataset)
 
+
+def _to_slices(
+    scipp_obj: _T,
+    slice_sizes: dict[str, int],
+    volume: int,
+) -> dict[str, _T]:
     # Go through the dims that need to be collapsed, and create an array that
     # holds the range of indices for each dimension
     # Say we have [Y, 5], and [Z, 3], then dim_list will contain
     # [[0, 1, 2, 3, 4], [0, 1, 2]]
-    dim_list = [np.arange(slice_shape[dim], dtype=np.int32) for dim in slice_dims]
+    dim_list = [np.arange(size, dtype=np.int32) for dim, size in slice_sizes.items()]
     # Next create a grid of indices
     # grid will contain
     # [ [[0, 1, 2, 3, 4], [0, 1, 2, 3, 4], [0, 1, 2, 3, 4]],
@@ -23,14 +29,14 @@ def _to_slices(scipp_obj, slice_dims, slice_shape, volume):
     # Reshape the grid to have a 2D array of length volume, i.e.
     # [ [0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4],
     #   [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2] ]
-    res = np.reshape(grid, (len(slice_dims), volume))
+    res = np.reshape(grid, (len(slice_sizes), volume))
     # Now make a master array which also includes the dimension labels, i.e.
     # [ [Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y],
     #   [0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4],
     #   [Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z],
     #   [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2] ]
     slice_list = []
-    for i, dim in enumerate(slice_dims):
+    for i, dim in enumerate(slice_sizes):
         slice_list.append([dim] * volume)
         slice_list.append(res[i])
     # Finally reshape the master array to look like
@@ -41,24 +47,25 @@ def _to_slices(scipp_obj, slice_dims, slice_shape, volume):
     #   [[Y, 3], [Z, 1]],
     # ...
     # ]
-    slice_list = np.reshape(
+    slice_lines = np.reshape(
         np.transpose(np.array(slice_list, dtype=np.dtype('O'))),
-        (volume, len(slice_dims), 2),
+        (volume, len(slice_sizes), 2),
     )
 
     # Extract each entry from the slice_list
-    for line in slice_list:
+    all_slices = {}
+    for line in slice_lines:
         vslice = scipp_obj
         key = ""
         for s in line:
-            vslice = vslice[s[0], s[1]]
+            vslice = vslice[s[0], s[1]]  # type: ignore[assignment]
             key += f"{s[0]}:{s[1]}-"
         all_slices[key[:-1]] = vslice
 
     return all_slices
 
 
-def collapse(scipp_obj, keep):
+def collapse(scipp_obj: _T, keep: str) -> dict[str, _T]:
     """
     Slice down the input object until only the supplied `keep` dimension is
     left (effectively 'collapsing' all but one dimension), and return a
@@ -67,44 +74,51 @@ def collapse(scipp_obj, keep):
     contains a strong signal. The `plot` function accepts a `dict` of data
     arrays.
 
-    :param [scipp_obj]: Dataset or DataArray to be split into slices.
-    :type [scipp_obj]: Dataset or DataArray
-    :param [keep]: Dimension to be preserved.
-    :type [dim]: str
-    :return: A dictionary holding 1D slices of the input object.
-    :rtype: dict
+    Parameters
+    ----------
+    scipp_obj:
+        Dataset or DataArray to be split into slices.
+    keep:
+        Dimension to be preserved.
+
+    Returns
+    -------
+    :
+        A dictionary holding 1D slices of the input object.
     """
 
     dims = scipp_obj.dims
     shape = scipp_obj.shape
 
     # Gather list of dimensions that are to be collapsed
-    slice_dims = []
     volume = 1
-    slice_shape = {}
+    slice_sizes = {}
     for d, size in zip(dims, shape, strict=True):
         if d != keep:
-            slice_dims.append(d)
-            slice_shape[d] = size
+            slice_sizes[d] = size
             volume *= size
 
-    return _to_slices(scipp_obj, slice_dims, slice_shape, volume)
+    return _to_slices(scipp_obj, slice_sizes, volume)
 
 
-def slices(scipp_obj, dim):
+def slices(scipp_obj: _T, dim: str) -> dict[str, _T]:
     """
     Slice input along given dim, and return all the slices in a `dict`.
 
-    :param [scipp_obj]: Dataset or DataArray to be split into slices.
-    :type [scipp_obj]: Dataset or DataArray
-    :param [dim]: Dimension along which to slice.
-    :type [dim]: str
-    :return: A dictionary holding slices of the input object.
-    :rtype: dict
+    Parameters
+    ----------
+    scipp_obj:
+        Dataset or DataArray to be split into slices.
+    dim:
+        Dimension along which to slice.
+
+    Returns
+    -------
+    :
+        A dictionary holding slices of the input object.
     """
 
-    slice_dims = [dim]
     volume = scipp_obj.shape[scipp_obj.dims.index(dim)]
-    slice_shape = {dim: volume}
+    slice_sizes = {dim: volume}
 
-    return _to_slices(scipp_obj, slice_dims, slice_shape, volume)
+    return _to_slices(scipp_obj, slice_sizes, volume)

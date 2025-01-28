@@ -30,15 +30,9 @@ protected:
             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{14, 15, 16})}},
           {{Dim::X,
             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{4, 5, 6})}}) {
-    a["data_1"].attrs().set(
-        Dim("label_1"),
-        makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
     a["data_1"].masks().set(
         "mask_1",
         makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false}));
-    b["data_1"].attrs().set(
-        Dim("label_1"),
-        makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{24, 25, 26}));
     b["data_1"].masks().set(
         "mask_1",
         makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false}));
@@ -56,9 +50,6 @@ TEST_F(Concatenate1DTest, simple_1d) {
   EXPECT_EQ(d["data_1"].data(),
             makeVariable<int>(Dims{Dim::X}, Shape{6},
                               Values{11, 12, 13, 14, 15, 16}));
-  EXPECT_EQ(d["data_1"].attrs()[Dim("label_1")],
-            makeVariable<int>(Dims{Dim::X}, Shape{6},
-                              Values{21, 22, 23, 24, 25, 26}));
   EXPECT_EQ(d["data_1"].masks()["mask_1"],
             makeVariable<bool>(Dims{Dim::X}, Shape{6},
                                Values{false, true, false, false, true, false}));
@@ -157,20 +148,8 @@ protected:
             makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{13, 14})}},
           {{Dim::X,
             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{3, 4, 5})}}) {
-    a["data_1"].attrs().set(
-        Dim("edge_labels"),
-        makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
-    a["data_1"].attrs().set(
-        Dim("labels"),
-        makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{21, 22}));
     a["data_1"].masks().set("masks", makeVariable<bool>(Dims{Dim::X}, Shape{2},
                                                         Values{false, true}));
-    b["data_1"].attrs().set(
-        Dim("edge_labels"),
-        makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{23, 24, 25}));
-    b["data_1"].attrs().set(
-        Dim("labels"),
-        makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{24, 25}));
     b["data_1"].masks().set("masks", makeVariable<bool>(Dims{Dim::X}, Shape{2},
                                                         Values{false, true}));
   }
@@ -184,12 +163,6 @@ TEST_F(Concatenate1DHistogramTest, simple_1d) {
                                                  Values{11, 12, 13, 14})}},
                    {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{5},
                                                Values{1, 2, 3, 4, 5})}});
-  expected["data_1"].attrs().set(
-      Dim("edge_labels"),
-      makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{21, 22, 23, 24, 25}));
-  expected["data_1"].attrs().set(
-      Dim("labels"),
-      makeVariable<int>(Dims{Dim::X}, Shape{4}, Values{21, 22, 24, 25}));
   expected["data_1"].masks().set(
       "masks", makeVariable<bool>(Dims{Dim::X}, Shape{4},
                                   Values{false, true, false, true}));
@@ -455,8 +428,6 @@ TEST_F(ConcatenateBinnedTest, mismatching_buffer) {
        {buffer * (1.0 * units::m),
         DataArray(data, {{Dim::X, data + data}}, {{"mask", 1.0 * units::one}},
                   {}),
-        DataArray(data, {{Dim::X, data + data}}, {},
-                  {{Dim("attr"), 1.0 * units::one}}),
         DataArray(data, {{Dim::Y, data + data}, {Dim::X, data + data}}),
         DataArray(data, {})}) {
     auto var2 = make_bins(indices, Dim::Event, buffer2);

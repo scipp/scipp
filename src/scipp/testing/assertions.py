@@ -21,7 +21,7 @@ import numpy as np
 from ..core import DataArray, DataGroup, Dataset, Variable
 
 # Exception notes are formatted as 'PREPOSITION {loc}',
-# where 'loc' is set by the concrete assertion functions to indicate coords, attrs, etc.
+# where 'loc' is set by the concrete assertion functions to indicate coords and masks.
 # 'PREPOSITION' is replaced at the top level to produce exception messages like:
 #
 # [...]
@@ -164,7 +164,6 @@ def _assert_identical_variable_structure(a: Variable, b: Variable) -> None:
 
 def _assert_identical_data_array_structure(a: DataArray, b: DataArray) -> None:
     _assert_mapping_eq(a.coords, b.coords, 'coord')
-    _assert_mapping_eq(a.deprecated_attrs, b.deprecated_attrs, 'attr')
     _assert_mapping_eq(a.masks, b.masks, 'mask')
 
 
@@ -305,4 +304,4 @@ def _add_note(loc: str, *args: str) -> Iterator[None]:
         raise
 
 
-__all__ = ['assert_identical', 'assert_allclose']
+__all__ = ['assert_allclose', 'assert_identical']
