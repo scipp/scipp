@@ -5,10 +5,13 @@
 #include <numeric>
 #include <set>
 
+#include "scipp/core/subbin_sizes.h"
+
 #include "scipp/variable/astype.h"
 #include "scipp/variable/bin_detail.h"
 #include "scipp/variable/bin_util.h"
 #include "scipp/variable/bins.h"
+#include "scipp/variable/creation.h"
 #include "scipp/variable/cumulative.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
@@ -33,10 +36,16 @@ namespace {
 
 template <class T>
 Variable bins_from_sizes(T &&content, const Variable &bin_sizes) {
-  const auto end = cumsum(bin_sizes);
+  auto indices =
+      variable::empty(bin_sizes.dims(), units::none, dtype<scipp::index_pair>);
+  auto indices_v = indices.template values<scipp::index_pair>().as_span();
+  auto bin_sizes_v = bin_sizes.values<scipp::index>().as_span();
+  auto begin = 0;
+  for (scipp::index i = 0; i < bin_sizes_v.size(); ++i) {
+    indices_v[i] = std::pair(begin, begin + bin_sizes_v[i]);
+    begin += bin_sizes_v[i];
+  }
   const auto buffer_dim = content.dims().inner();
-  auto indices = zip(end, end);
-  indices.elements<scipp::index_pair>("begin") -= bin_sizes;
   return make_bins_no_validate(std::move(indices), buffer_dim,
                                std::forward<T>(content));
 }
