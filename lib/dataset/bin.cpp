@@ -5,10 +5,13 @@
 #include <numeric>
 #include <set>
 
+#include "scipp/core/subbin_sizes.h"
+
 #include "scipp/variable/astype.h"
 #include "scipp/variable/bin_detail.h"
 #include "scipp/variable/bin_util.h"
 #include "scipp/variable/bins.h"
+#include "scipp/variable/creation.h"
 #include "scipp/variable/cumulative.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
@@ -31,12 +34,8 @@ namespace scipp::dataset {
 
 namespace {
 
-template <class T>
-Variable bins_from_sizes(T &&content, const Variable &bin_sizes) {
-  const auto end = cumsum(bin_sizes);
+template <class T> Variable bins_from_indices(T &&content, Variable &&indices) {
   const auto buffer_dim = content.dims().inner();
-  auto indices = zip(end, end);
-  indices.elements<scipp::index_pair>("begin") -= bin_sizes;
   return make_bins_no_validate(std::move(indices), buffer_dim,
                                std::forward<T>(content));
 }
@@ -62,7 +61,7 @@ public:
       return dataset::transform(bins_view<T>(data), maybe_bin);
   }
 
-  virtual Variable bin_sizes(
+  virtual Variable bin_indices(
       const std::optional<Dimensions> &dims_override = std::nullopt) const = 0;
   virtual Variable apply_to_variable(const Variable &var,
                                      Variable &&out = {}) const = 0;
@@ -128,15 +127,25 @@ public:
     return out;
   }
 
-  Variable bin_sizes(const std::optional<Dimensions> &dims_override =
-                         std::nullopt) const override {
+  Variable bin_indices(const std::optional<Dimensions> &dims_override =
+                           std::nullopt) const override {
     // During mapping of values to the output layout, the output was viewed with
     // same bin index ranges as input. Now setup the desired final bin indices.
     const auto dims = dims_override.value_or(m_dims);
     auto output_dims = merge(m_output_bin_sizes.dims(), dims);
-    return makeVariable<scipp::index>(
-        output_dims, units::none,
-        Values(flatten_subbin_sizes(m_output_bin_sizes, dims.volume())));
+    auto indices =
+        variable::empty(output_dims, units::none, dtype<scipp::index_pair>);
+    auto indices_v = indices.template values<scipp::index_pair>().as_span();
+    scipp::index begin = 0;
+    scipp::index i = 0;
+    for (const auto &sub :
+         m_output_bin_sizes.values<core::SubbinSizes>().as_span()) {
+      for (const auto &size : sub.sizes()) {
+        indices_v[i++] = std::pair(begin, begin + size);
+        begin += size;
+      }
+    }
+    return indices;
   }
 
   Dimensions m_dims;
@@ -172,11 +181,11 @@ public:
         make_bins_no_validate(indices, m_buffer.dims().inner(), m_buffer));
   }
 
-  Variable bin_sizes(const std::optional<Dimensions> &dims_override =
-                         std::nullopt) const override {
+  Variable bin_indices(const std::optional<Dimensions> &dims_override =
+                           std::nullopt) const override {
     const auto dims = dims_override.value_or(m_stage1_mapper.m_dims);
     return fold(
-        flatten(m_stage2_mapper.bin_sizes(),
+        flatten(m_stage2_mapper.bin_indices(),
                 std::vector<Dim>{Dim::InternalBinCoarse, Dim::InternalBinFine},
                 Dim::InternalSubbin)
             .slice({Dim::InternalSubbin, 0, dims.volume()}),
@@ -213,8 +222,9 @@ std::unique_ptr<Mapper> make_mapper(Variable &&indices,
     SingleStageMapper stage1_mapper(dims, indices_, output_bin_sizes);
 
     Dimensions stage1_out_dims(Dim::InternalBinCoarse, n_coarse_bin);
-    fine_indices = bins_from_sizes(stage1_mapper.apply<Variable>(fine_indices),
-                                   stage1_mapper.bin_sizes(stage1_out_dims));
+    fine_indices =
+        bins_from_indices(stage1_mapper.apply<Variable>(fine_indices),
+                          stage1_mapper.bin_indices(stage1_out_dims));
     Dimensions fine_dims(Dim::InternalBinFine, chunk_size);
     const auto fine_output_bin_sizes =
         bin_detail::bin_sizes(fine_indices, scipp::index{0} * units::none,
@@ -259,9 +269,7 @@ DataArray add_metadata(const Variable &data, std::unique_ptr<Mapper> mapper,
                        const std::vector<Variable> &edges,
                        const std::vector<Variable> &groups,
                        const std::vector<Dim> &erase) {
-  auto bin_sizes = mapper->bin_sizes();
   auto buffer = mapper->template apply<DataArray>(data);
-  bin_sizes = squeeze(bin_sizes, erase);
   const auto buffer_dim = buffer.dims().inner();
   std::set<Dim> dims(erase.begin(), erase.end());
   const auto rebinned = [&](const auto &var) {
@@ -285,7 +293,8 @@ DataArray add_metadata(const Variable &data, std::unique_ptr<Mapper> mapper,
   for (const auto &[name, mask] : masks)
     if (!rebinned(mask))
       out_masks.insert_or_assign(name, copy(mask));
-  return DataArray{bins_from_sizes(std::move(buffer), bin_sizes),
+  auto bin_indices = squeeze(mapper->bin_indices(), erase);
+  return DataArray{bins_from_indices(std::move(buffer), std::move(bin_indices)),
                    std::move(out_coords), std::move(out_masks)};
 }
 
@@ -533,9 +542,8 @@ template <class T> Variable concat_bins(const Variable &var, const Dim dim) {
   builder.build(*target_bins, std::map<Dim, Variable>{});
   auto mapper = make_mapper(target_bins.release(), builder);
   auto buffer = mapper->template apply<T>(var);
-  auto bin_sizes = mapper->bin_sizes();
-  bin_sizes = squeeze(bin_sizes, scipp::span{&dim, 1});
-  return bins_from_sizes(std::move(buffer), bin_sizes);
+  auto bin_indices = squeeze(mapper->bin_indices(), scipp::span{&dim, 1});
+  return bins_from_indices(std::move(buffer), std::move(bin_indices));
 }
 template Variable concat_bins<Variable>(const Variable &, const Dim);
 template Variable concat_bins<DataArray>(const Variable &, const Dim);

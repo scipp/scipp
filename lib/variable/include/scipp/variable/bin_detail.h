@@ -18,8 +18,6 @@ SCIPP_VARIABLE_EXPORT Variable
 cumsum_exclusive_subbin_sizes(const Variable &var);
 SCIPP_VARIABLE_EXPORT Variable sum_subbin_sizes(const Variable &var);
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT std::vector<scipp::index>
-flatten_subbin_sizes(const Variable &var, const scipp::index length);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 subbin_sizes_cumsum_exclusive(const Variable &var, const Dim dim);
 SCIPP_VARIABLE_EXPORT void subbin_sizes_add_intersection(Variable &a,
