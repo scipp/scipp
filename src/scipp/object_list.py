@@ -5,15 +5,15 @@
 from .visualization import make_html
 
 
-def _repr_html_():
+def _repr_html_() -> None:
     import inspect
 
     # Is there a better way to get the scope? The `7` is hard-coded for the
     # current IPython stack when calling _repr_html_ so this is bound to break.
     scope = inspect.stack()[7][0].f_globals
-    from IPython import get_ipython
+    from IPython import get_ipython  # type: ignore[attr-defined]
 
-    ipython = get_ipython()
+    ipython = get_ipython()  # type: ignore[no-untyped-call]
     out = ''
     for category in ['Variable', 'DataArray', 'Dataset', 'DataGroup']:
         names = ipython.magic(f"who_ls {category}")
@@ -29,4 +29,4 @@ def _repr_html_():
         out += "</details>"
     from IPython.core.display import HTML, display
 
-    display(HTML(out))
+    display(HTML(out))  # type: ignore[no-untyped-call]

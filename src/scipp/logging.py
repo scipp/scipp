@@ -10,11 +10,13 @@ See the https://scipp.github.io/reference/logging.html for an overview.
 import html
 import logging
 import time
+from collections.abc import Iterable
 from copy import copy
 from dataclasses import dataclass
 from typing import Any
 
 from .core import DataArray, Dataset, Variable
+from .typing import VariableLike
 from .utils import running_in_jupyter
 from .visualization import make_html
 from .visualization.resources import load_style
@@ -39,7 +41,7 @@ class WidgetLogRecord:
     message: str
 
 
-def make_log_widget(**widget_kwargs):
+def make_log_widget(**widget_kwargs: object) -> object:
     if not running_in_jupyter():
         raise RuntimeError(
             'Cannot create a logging widget because '
@@ -48,14 +50,14 @@ def make_log_widget(**widget_kwargs):
 
     from ipywidgets import HTML
 
-    class LogWidget(HTML):
+    class LogWidget(HTML):  # type: ignore[misc]
         """
         Widget that displays log messages in a table.
 
         :seealso: :py:class:`scipp.logging.WidgetHandler`
         """
 
-        def __init__(self, **kwargs):
+        def __init__(self, **kwargs: object) -> None:
             super().__init__(**kwargs)
             self._rows_str = ''
             self._update()
@@ -98,7 +100,7 @@ def make_log_widget(**widget_kwargs):
     return LogWidget(**widget_kwargs)
 
 
-def get_log_widget():
+def get_log_widget() -> object:
     """
     Return the log widget used by the Scipp logger.
     If multiple widget handlers are installed, only the first one is returned.
@@ -124,7 +126,7 @@ def display_logs() -> None:
     from IPython.display import display
     from ipywidgets import HTML, VBox
 
-    display(VBox([HTML(value=load_style()), widget]).add_class('sc-log-wrap'))
+    display(VBox([HTML(value=load_style()), widget]).add_class('sc-log-wrap'))  # type: ignore[no-untyped-call]
 
 
 def clear_log_widget() -> None:
@@ -135,14 +137,14 @@ def clear_log_widget() -> None:
     widget = get_log_widget()
     if widget is None:
         return
-    widget.clear()
+    widget.clear()  # type: ignore[attr-defined]
 
 
-def _has_html_repr(x: Any) -> bool:
+def _has_html_repr(x: object) -> bool:
     return isinstance(x, DataArray | Dataset | Variable)
 
 
-def _make_html(x) -> str:
+def _make_html(x: VariableLike) -> str:
     return f'<div class="sc-log-html-payload">{make_html(x)}</div>'
 
 
@@ -152,19 +154,21 @@ def _make_html(x) -> str:
 class _ReplacementPattern:
     _PATTERN = '$__SCIPP_HTML_REPLACEMENT_{:02d}__'
 
-    def __init__(self, i: int, arg: Any):
+    def __init__(self, i: int, arg: Any) -> None:
         self._i = i
         self._arg = arg
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self._PATTERN.format(self._i)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self._arg)
 
 
-def _preprocess_format_args(args) -> tuple[tuple, dict[str, Any]]:
-    format_args = []
+def _preprocess_format_args(
+    args: Iterable[object],
+) -> tuple[tuple[object, ...], dict[str, object]]:
+    format_args: list[object] = []
     replacements = {}
     for i, arg in enumerate(args):
         if _has_html_repr(arg):
@@ -176,13 +180,16 @@ def _preprocess_format_args(args) -> tuple[tuple, dict[str, Any]]:
     return tuple(format_args), replacements
 
 
-def _replace_html_repr(message: str, replacements: dict[str, str]) -> str:
+def _replace_html_repr(message: str, replacements: dict[str, object]) -> str:
     # Do separate check `key in message` in order to avoid calling
     # _make_html unnecessarily. Linear string searches are likely less
     # expensive than HTML formatting.
     for key, repl in replacements.items():
         if key in message:
-            message = message.replace(key, _make_html(repl))
+            if isinstance(repl, Variable | DataArray | Dataset):
+                message = message.replace(key, _make_html(repl))
+            else:
+                message = message.replace(key, str(repl))
     return message
 
 
@@ -199,15 +206,12 @@ class WidgetHandler(logging.Handler):
     repr using ``str(x)`` and ``repr(x)`` is inaccessible.
     """
 
-    def __init__(self, level: int, widget):
+    def __init__(self, level: int, widget: object) -> None:
         super().__init__(level)
-        self.widget = widget
-        self._rows = []
+        self.widget: Any = widget  # The type is not nameable here.
 
-    def format(self, record: logging.LogRecord) -> WidgetLogRecord:
-        """
-        Format the specified record for consumption by a ``LogWidget``.
-        """
+    def _format_record(self, record: logging.LogRecord) -> WidgetLogRecord:
+        """Format the specified record for consumption by a ``LogWidget``."""
         message = (
             self._format_html(record)
             if _has_html_repr(record.msg)
@@ -223,7 +227,13 @@ class WidgetHandler(logging.Handler):
         )
 
     def _format_text(self, record: logging.LogRecord) -> str:
-        args, replacements = _preprocess_format_args(record.args)
+        if record.args is None:
+            record_args: Iterable[object] = ()
+        elif isinstance(record.args, tuple):
+            record_args = record.args
+        else:
+            record_args = record.args.values()
+        args, replacements = _preprocess_format_args(record_args)
         record = copy(record)
         record.args = tuple(args)
         message = html.escape(super().format(record))
@@ -233,13 +243,13 @@ class WidgetHandler(logging.Handler):
     def _format_html(record: logging.LogRecord) -> str:
         if record.args:
             raise TypeError('not all arguments converted during string formatting')
-        return _make_html(record.msg)
+        return _make_html(record.msg)  # type: ignore[arg-type]
 
     def emit(self, record: logging.LogRecord) -> None:
         """
         Send the formatted record to the widget.
         """
-        self.widget.add_message(self.format(record))
+        self.widget.add_message(self._format_record(record))
 
 
 def make_widget_handler() -> WidgetHandler:

@@ -22,7 +22,7 @@ class Coord:
     def has_event(self) -> bool:
         return self.event is not None
 
-    def use(self):
+    def use(self) -> None:
         if self.usages > 0:
             self.usages -= 1
 
@@ -31,4 +31,8 @@ class Coord:
         return self.usages == 0
 
     def has_dim(self, dim: str) -> bool:
-        return dim in (self.dense.dims if self.has_dense else self.event.dims)
+        if self.dense is not None:
+            return dim in self.dense.dims
+        if self.event is not None:
+            return dim in self.event.dims
+        return False
