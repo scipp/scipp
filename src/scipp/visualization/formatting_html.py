@@ -319,10 +319,16 @@ def summarize_variable(
             add_dim_size,
         )
     )
-    if var.unit is None:
+    if var.bins is not None and isinstance(var.bins.constituents['data'], sc.Dataset):
+        # Could print as a tuple of column units and dtypes, but we don't for now.
         unit = ''
+        dtype = ''
+    elif var.unit is None:
+        unit = ''
+        dtype = var.dtype
     else:
         unit = '𝟙' if var.unit == sc.units.dimensionless else str(var.unit)  # noqa: RUF001
+        dtype = var.dtype
 
     disabled, attrs_ul = _make_inline_attributes(var, has_attrs)
 
@@ -352,7 +358,7 @@ def summarize_variable(
             f"<div class='sc-var-dims'>{escape(dims_str)}</div>",
         ]
     html += [
-        f"<div class='sc-var-dtype'>{escape(str(var.dtype))}</div>",
+        f"<div class='sc-var-dtype'>{escape(str(dtype))}</div>",
         f"<div class='sc-var-unit'>{escape(unit)}</div>",
         f"<div class='sc-value-preview sc-preview'><span>{preview}</span>",
         "{}</div>".format(
