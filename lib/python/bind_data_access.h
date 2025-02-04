@@ -493,50 +493,39 @@ void bind_common_data_properties(pybind11::class_<T, Ignored...> &c) {
       py::return_value_policy::move);
 }
 
+namespace {
+template <class T>
+Variable get_data_variable(const T &self, const std::string &property_name) {
+  Variable var;
+  if constexpr (std::is_same_v<T, DataArray>)
+    var = self.data();
+  else
+    var = self;
+  const auto dt = var.dtype();
+  if (dt == dtype<bucket<Variable>>) {
+    var = var.template bin_buffer<Variable>();
+  } else if (dt == dtype<bucket<DataArray>>) {
+    var = var.template bin_buffer<DataArray>().data();
+  } else if (dt == dtype<bucket<Dataset>>) {
+    throw std::runtime_error("Binned data with content of type Dataset "
+                             "does not have a well-defined " +
+                             property_name + ".");
+  }
+  return var;
+}
+} // namespace
+
 template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
   bind_common_data_properties(c);
   c.def_property_readonly(
       "dtype",
-      [](const T &self) {
-        Variable var;
-        if constexpr (std::is_same_v<T, DataArray>)
-          var = self.data();
-        else
-          var = self;
-        const auto dt = var.dtype();
-        if (dt == dtype<bucket<Variable>>) {
-          auto &&[indices, dim, buffer] = var.constituents<Variable>();
-          var = buffer;
-        } else if (dt == dtype<bucket<DataArray>>) {
-          auto &&[indices, dim, buffer] = var.constituents<DataArray>();
-          var = buffer.data();
-        } else if (dt == dtype<bucket<Dataset>>) {
-          throw std::runtime_error("Binned data with content of type Dataset "
-                                   "does not have a well-defined dtype.");
-        }
-        return var.dtype();
-      },
+      [](const T &self) { return get_data_variable(self, "dtype").dtype(); },
       "Data type contained in the variable.");
   c.def_property(
       "unit",
       [](const T &self) {
-        Variable var;
-        if constexpr (std::is_same_v<T, DataArray>)
-          var = self.data();
-        else
-          var = self;
-        const auto dt = var.dtype();
-        if (dt == dtype<bucket<Variable>>) {
-          auto &&[indices, dim, buffer] = var.constituents<Variable>();
-          var = buffer;
-        } else if (dt == dtype<bucket<DataArray>>) {
-          auto &&[indices, dim, buffer] = var.constituents<DataArray>();
-          var = buffer.data();
-        } else if (dt == dtype<bucket<Dataset>>) {
-          throw std::runtime_error("Binned data with content of type Dataset "
-                                   "does not have a well-defined unit.");
-        }
+        const auto &var = get_data_variable(self, "unit");
         return var.unit() == units::none ? std::optional<units::Unit>()
                                          : var.unit();
       },
