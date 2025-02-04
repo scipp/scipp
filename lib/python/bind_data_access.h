@@ -497,13 +497,48 @@ template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
   bind_common_data_properties(c);
   c.def_property_readonly(
-      "dtype", [](const T &self) { return self.dtype(); },
+      "dtype",
+      [](const T &self) {
+        Variable var;
+        if constexpr (std::is_same_v<T, DataArray>)
+          var = self.data();
+        else
+          var = self;
+        const auto dt = var.dtype();
+        if (dt == dtype<bucket<Variable>>) {
+          auto &&[indices, dim, buffer] = var.constituents<Variable>();
+          var = buffer;
+        } else if (dt == dtype<bucket<DataArray>>) {
+          auto &&[indices, dim, buffer] = var.constituents<DataArray>();
+          var = buffer.data();
+        } else if (dt == dtype<bucket<Dataset>>) {
+          throw std::runtime_error("Binned data with content of type Dataset "
+                                   "does not have a well-defined dtype.");
+        }
+        return var.dtype();
+      },
       "Data type contained in the variable.");
   c.def_property(
       "unit",
       [](const T &self) {
-        return self.unit() == units::none ? std::optional<units::Unit>()
-                                          : self.unit();
+        Variable var;
+        if constexpr (std::is_same_v<T, DataArray>)
+          var = self.data();
+        else
+          var = self;
+        const auto dt = var.dtype();
+        if (dt == dtype<bucket<Variable>>) {
+          auto &&[indices, dim, buffer] = var.constituents<Variable>();
+          var = buffer;
+        } else if (dt == dtype<bucket<DataArray>>) {
+          auto &&[indices, dim, buffer] = var.constituents<DataArray>();
+          var = buffer.data();
+        } else if (dt == dtype<bucket<Dataset>>) {
+          throw std::runtime_error("Binned data with content of type Dataset "
+                                   "does not have a well-defined unit.");
+        }
+        return var.unit() == units::none ? std::optional<units::Unit>()
+                                         : var.unit();
       },
       [](T &self, const ProtoUnit &unit) {
         self.setUnit(unit_or_default(unit, self.dtype()));
