@@ -1,7 +1,7 @@
 # ADR 0019: Binned data `unit` and `dtype` properties should return element unit and dtype.
 
--   Status: proposed
--   Deciders:
+-   Status: accepted
+-   Deciders: Jan-Lukas, Neil, Simon
 -   Date: 2025-02-04
 
 ## Context
