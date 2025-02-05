@@ -24,9 +24,10 @@ At the same time, the current `unit` and `dtype` properties are not useful for b
 ### Proposed solution
 
 1. For binned variables, change the `unit` and `dtype` properties of `DataArray` and `Variable` to return the unit and dtype of the bin elements.
-2. Make this change only in the Python bindings, not in the C++ core.
+2. The `unit` setter should set the unit of the bin elements.
 3. For the case of `Dataset` bin content, a unique unit and dtype are not defined.
    We should raise an exception in this case.
+4. Make this change only in the Python bindings, not in the C++ core.
 
 ### Alternatives
 
