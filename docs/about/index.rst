@@ -7,5 +7,4 @@ About
    about
    roadmap
    contributing
-   release-notes
    migration-notes
