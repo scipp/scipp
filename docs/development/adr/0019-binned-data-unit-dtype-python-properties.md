@@ -26,17 +26,20 @@ At the same time, the current `unit` and `dtype` properties are not useful for b
 1. For binned variables, change the `unit` and `dtype` properties of `DataArray` and `Variable` to return the unit and dtype of the bin elements.
 2. Make this change only in the Python bindings, not in the C++ core.
 3. For the case of `Dataset` bin content, a unique unit and dtype are not defined.
-   We should return `None` (or equivalent) in this case.
+   We should raise an exception in this case.
 
 ### Alternatives
 
-Add `elem_unit` and `elem_dtype` helper functions or properties to `DataArray` and `Variable` classes.
-This only solves parts of the problem, and makes the API larger and harder to use.
+- Add `elem_unit` and `elem_dtype` helper functions or properties to `DataArray` and `Variable` classes.
+  This only solves parts of the problem, and makes the API larger and harder to use.
+- For the proposed solution, in the case of `Dataset` bin content, it was considered to return `None` or a tuple of units/dtypes instead.
+  This would be problematic for `mypy` and we have therefore decided against it.
+  With the proposed solution of raising an exception we should still be in a position to revert this decision if it turns out to be insufficient.
 
 ## Decision
 
 Binned data `unit` and `dtype` properties should return the element unit and dtype.
-In the case of `Dataset` bin content, `None` should be returned.
+In the case of `Dataset` bin content, an exception should be raised.
 
 ## Consequences
 
