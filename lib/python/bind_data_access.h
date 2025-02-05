@@ -529,7 +529,7 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
         return var.unit() == units::none ? std::optional<units::Unit>()
                                          : var.unit();
       },
-      [](T &self, const ProtoUnit &unit) {
+      [](const T &self, const ProtoUnit &unit) {
         auto var = get_data_variable(self, "unit");
         var.setUnit(unit_or_default(unit, var.dtype()));
       },
