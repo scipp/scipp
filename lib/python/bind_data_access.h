@@ -530,7 +530,8 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
                                          : var.unit();
       },
       [](T &self, const ProtoUnit &unit) {
-        self.setUnit(unit_or_default(unit, self.dtype()));
+        auto var = get_data_variable(self, "unit");
+        var.setUnit(unit_or_default(unit, var.dtype()));
       },
       "Physical unit of the data.");
   c.def_property("values", &as_ElementArrayView::values<T>,
