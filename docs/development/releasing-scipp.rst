@@ -14,11 +14,9 @@ Release steps
    We typically keep information on the "What's New" page for approximately two to four past releases.
    The concrete duration is decided case-by-case, based on the relevance of a particular topic, e.g., how critical it is that users do not miss the change, and based on the frequency of releases.
 
-2. Update ``docs/about/release-notes.rst`` to mention the release month.
+2. Commit and merge the changes on GitHub.
 
-3. Commit and merge the changes on GitHub.
-
-4. Create a release in GitHub.
+3. Create a release in GitHub.
    This triggers workflows to create conda packages and wheels.
    They are automatically uploaded to conda-forge and PyPI, respectively.
    This will also publish the new documentation.
