@@ -37,8 +37,6 @@ Please make sure you have checked the list below before you start:
   Using the recommended ``pre-commit`` setup and running tests locally will ensure that the builds will pass for your pull request.
 - Reference the issue when you open a pull request.
   If the issue would be resolved by merging the pull request then use one of GitHub's keywords to do so automatically, such as ``Fixes #12345``.
-- If applicable, make sure to add an item in ``docs/about/release-notes.rst`` and link to the pull request.
-  Do this in particular for new features, breaking changes, or bugfixes.
 
 Security
 --------
