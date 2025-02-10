@@ -57,6 +57,10 @@ jobs:
         run: |
           curl --silent "https://api.anaconda.org/package/scipp-nightly-wheels/scipp" | jq -r '.releases[] | select(.version | contains("dev")) | .full_name' > dev_wheels.txt
           cat dev_wheels.txt
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - run: python .github/workflows/rename_nightly_wheel.py
       - name: Upload wheel to pypi.anaconda.org/scipp-nightly-wheels/simple
         uses: scientific-python/upload-nightly-action@82396a2ed4269ba06c6b2988bb4fd568ef3c3d6b # 0.6.1
         with:
