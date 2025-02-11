@@ -27,6 +27,24 @@ jobs:
         submodules: true
         fetch-depth: 0  # history required so cmake can determine version
 
+    - name: Set setuptools_scm pretend version variable
+      if: ${{ inputs.nightly && inputs.os != 'windows-2022' }}
+      run: |
+        SETUPTOOLS_SCM_PRETEND_VERSION="$(git describe --tags `git rev-list --tags --max-count=1` | awk -F. '{print $1"."$2"."$3+1}').dev0"
+        echo "SETUPTOOLS_SCM_PRETEND_VERSION=$SETUPTOOLS_SCM_PRETEND_VERSION" >> $GITHUB_ENV
+
+    - name: Set setuptools_scm pretend version variable on windows
+      if: ${{ inputs.nightly && inputs.os == 'windows-2022' }}
+      shell: pwsh
+      run: |
+        $latestTag = git describe --tags $(git rev-list --tags --max-count=1)
+        $versionParts = $latestTag -split '\.'
+        $major = $versionParts[0]
+        $minor = $versionParts[1]
+        $patch = [int]$versionParts[2] + 1
+        $SETUPTOOLS_SCM_PRETEND_VERSION = "$major.$minor.$patch.dev0"
+        echo "SETUPTOOLS_SCM_PRETEND_VERSION=$SETUPTOOLS_SCM_PRETEND_VERSION" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
+
     - uses: pypa/cibuildwheel@v2.22.0
       if: ${{ inputs.nightly == false }}
       env:
@@ -38,7 +56,7 @@ jobs:
       env:
         CIBW_BUILD: ${{ inputs.build }}-*
         MACOSX_DEPLOYMENT_TARGET: "11.0"
-        CIBW_ENVIRONMENT: SETUPTOOLS_SCM_PRETEND_VERSION="$(git describe --tags `git rev-list --tags --max-count=1`).dev0"
+        CIBW_ENVIRONMENT: SETUPTOOLS_SCM_PRETEND_VERSION=${{ env.SETUPTOOLS_SCM_PRETEND_VERSION }}
 
     - name: Verify clean directory
       run: git diff --exit-code
