@@ -7,38 +7,25 @@ cmake_minimum_required(VERSION 3.21)
 cmake_policy(SET CMP0091 NEW)
 
 if(SKBUILD)
-  project(
-    ${SKBUILD_PROJECT_NAME}
-    VERSION ${SKBUILD_PROJECT_VERSION}
-    LANGUAGES CXX
-  )
-  # AppleClang 15 changed linking order
-  # https://developer.apple.com/documentation/xcode-release-notes/xcode-15-release-notes#Linking
-  if(APPLE AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.0)
-    message(STATUS "Building on macOS with Clang 15 or newer")
-    add_link_options("-ld_classic")
-  endif()
-  add_definitions(-DSCIPP_VERSION="${SKBUILD_PROJECT_VERSION_FULL}")
+  set(SCIPP_VERSION_PEP440 "${SKBUILD_PROJECT_VERSION_FULL}")
+  set(SCIPP_VERSION_CMAKE "${SKBUILD_PROJECT_VERSION}")
   message(STATUS "Got version from SKBUILD: ${SKBUILD_PROJECT_VERSION_FULL}")
+elseif(CONDA_FORGE_BUILD)
+  set(SCIPP_VERSION_PEP440 "$ENV{GIT_VERSION_INFO}")
+  set(SCIPP_VERSION_CMAKE "$ENV{GIT_VERSION_INFO}")
+  message(
+    STATUS "Got version from env var from conda-forge: ${SCIPP_VERSION_PEP440}"
+  )
 else()
-  # Set GIT_VERSION_INFO from conda recipe as conda-forge doesn't like using git
-  # repos during the build process. The recipe links to the tar archive from a
-  # github release.
-  if(CONDA_FORGE_BUILD)
-    set(GIT_VERSION_INFO $ENV{GIT_VERSION_INFO})
-    set(HAVE_GIT_VERSION_INFO 0)
-    message(
-      STATUS
-        "Got version from environment inside conda-forge build: $ENV{GIT_VERSION_INFO}"
-    )
-  else()
-    execute_process(
-      COMMAND git describe --tags --exclude nightly
-      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-      RESULT_VARIABLE HAVE_GIT_VERSION_INFO
-      OUTPUT_VARIABLE GIT_VERSION_INFO
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
+  execute_process(
+    COMMAND git describe --tags --exclude nightly
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    RESULT_VARIABLE HAVE_GIT_VERSION_INFO
+    OUTPUT_VARIABLE GIT_VERSION_INFO
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  if(NOT HAVE_GIT_VERSION_INFO EQUAL 0)
+    message(WARNING "Failed to get package version")
   endif()
   # We get something like 23.08.0-266-g068b161fe, remove the -g<hash> part
   string(REGEX REPLACE "-g[0-9a-f]+$" "" GIT_VERSION_INFO ${GIT_VERSION_INFO})
@@ -46,15 +33,23 @@ else()
   string(REGEX REPLACE "-" ".dev" SCIPP_VERSION_PEP440 ${GIT_VERSION_INFO})
   # Cmake does not like letters, remove the dev, will act as "tweak" number
   string(REGEX REPLACE "-" "" SCIPP_VERSION_CMAKE ${GIT_VERSION_INFO})
+  unset(HAVE_GIT_VERSION_INFO, GIT_VERSION_INFO)
+  message(STATUS "Got version from git: ${SCIPP_VERSION_PEP440}")
+endif()
 
-  project(
-    scipp
-    VERSION ${SCIPP_VERSION_CMAKE}
-    LANGUAGES CXX
-  )
-  if(${HAVE_GIT_VERSION_INFO} EQUAL 0)
-    message(STATUS "Got version from Git: ${GIT_VERSION_INFO}")
-    add_definitions(-DSCIPP_VERSION="${SCIPP_VERSION_PEP440}")
+project(
+  scipp
+  VERSION ${SCIPP_VERSION_CMAKE}
+  LANGUAGES CXX
+)
+add_definitions(-DSCIPP_VERSION="${SCIPP_VERSION_PEP440}")
+
+if(SKBUILD)
+  # AppleClang 15 changed linking order
+  # https://developer.apple.com/documentation/xcode-release-notes/xcode-15-release-notes#Linking
+  if(APPLE AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.0)
+    message(STATUS "Building on macOS with Clang 15 or newer")
+    add_link_options("-ld_classic")
   endif()
 endif()
 
