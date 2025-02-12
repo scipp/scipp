@@ -33,7 +33,8 @@ else()
   string(REGEX REPLACE "-" ".dev" SCIPP_VERSION_PEP440 ${GIT_VERSION_INFO})
   # Cmake does not like letters, remove the dev, will act as "tweak" number
   string(REGEX REPLACE "-" "" SCIPP_VERSION_CMAKE ${GIT_VERSION_INFO})
-  unset(HAVE_GIT_VERSION_INFO, GIT_VERSION_INFO)
+  unset(HAVE_GIT_VERSION_INFO)
+  unset(GIT_VERSION_INFO)
   message(STATUS "Got version from git: ${SCIPP_VERSION_PEP440}")
 endif()
 
