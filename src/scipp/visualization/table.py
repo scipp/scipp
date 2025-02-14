@@ -33,7 +33,10 @@ def _string_in_cell(v: Variable) -> str:
 
 def _var_name_with_unit(name: str, var: Variable) -> str:
     out = f'<span style="font-weight: bold;">{name}</span>'
-    unit = var.bins.unit if var.bins is not None else var.unit
+    try:
+        unit = var.unit
+    except RuntimeError:  # binned variable with Dataset content
+        unit = None
     if unit is not None:
         out += ' [𝟙]' if unit == 'dimensionless' else f' [{unit}]'  # noqa: RUF001
     return out

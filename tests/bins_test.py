@@ -165,18 +165,18 @@ def test_bins_view():
 
 def test_bins_view_data_array_unit():
     var = make_binned()
-    with pytest.raises(sc.UnitError):
-        var.unit = 'K'
-    assert var.bins.unit == ''
+    var.unit = 'mK'
+    assert var.unit == 'mK'
+    assert var.bins.unit == 'mK'
     var.bins.unit = 'K'
+    assert var.unit == 'K'
     assert var.bins.unit == 'K'
 
 
 def test_bins_view_coord_unit():
     var = make_binned()
-    with pytest.raises(sc.UnitError):
-        var.bins.coords['time'].unit = 'K'
-    assert var.bins.coords['time'].bins.unit == ''
+    var.bins.coords['time'].unit = 'mK'
+    assert var.bins.coords['time'].bins.unit == 'mK'
     var.bins.coords['time'].bins.unit = 'K'
     assert var.bins.coords['time'].bins.unit == 'K'
 
@@ -289,9 +289,8 @@ def test_bins_view_mapping_pop(param):
 
 def test_bins_view_data_unit():
     var = make_binned()
-    with pytest.raises(sc.UnitError):
-        var.bins.data.unit = 'K'
-    assert var.bins.data.bins.unit == ''
+    var.bins.data.unit = 'mK'
+    assert var.bins.data.bins.unit == 'mK'
     var.bins.data.bins.unit = 'K'
     assert var.bins.data.bins.unit == 'K'
 
