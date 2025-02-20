@@ -355,7 +355,8 @@ TEST_F(DataArrayBinsScaleTest, events_times_histogram_without_variances) {
 TEST_F(DataArrayBinsScaleTest, events_times_histogram_drops_applied_mask) {
   const auto events = make_events();
   auto hist = make_histogram_no_variance();
-  hist.masks().set("mask", makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, false}));
+  hist.masks().set(
+      "mask", makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, false}));
   auto buckets = make_buckets(events);
   buckets::scale(buckets, hist);
 
@@ -376,7 +377,8 @@ TEST_F(DataArrayBinsScaleTest, events_times_histogram_drops_applied_mask) {
 TEST_F(DataArrayBinsScaleTest, events_times_histogram_keeps_non_edge_mask) {
   const auto events = make_events();
   auto hist = make_histogram_no_variance();
-  hist.masks().set("mask", makeVariable<bool>(Dims{Dim::Y}, Shape{2}, Values{true, false}));
+  hist.masks().set(
+      "mask", makeVariable<bool>(Dims{Dim::Y}, Shape{2}, Values{true, false}));
   auto buckets = make_buckets(events);
   buckets::scale(buckets, hist);
 

@@ -388,7 +388,7 @@ Masks masks_not_in_dim(const Masks &all_masks, const Dim dim) {
   }
   return results;
 }
-}
+} // namespace
 
 void scale(DataArray &array, const DataArray &histogram, Dim dim) {
   if (dim == Dim::Invalid)
