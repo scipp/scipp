@@ -344,7 +344,7 @@ TEST_F(DataArrayBinsScaleTest, events_times_histogram_without_variances) {
   // Last event is out of bounds and scaled to 0.0
   expected_weights *= makeVariable<double>(
       Dims{Dim("event")}, Shape{7}, Values{2.0, 3.0, 3.0, 2.0, 2.0, 3.0, 0.0});
-  auto expected_events = events;
+  auto expected_events = make_events();
   copy(expected_weights, expected_events.data());
 
   EXPECT_EQ(buckets, make_buckets(expected_events));
