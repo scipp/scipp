@@ -276,4 +276,7 @@ linkcheck_ignore = [
     'https://physics.nist.gov/cuu/Constants/',
     # This link works but is very slow and causes a timeout.
     'https://anaconda.org/conda-forge',
+    # Linkcheck seems to be denied access by some DOI resolvers.
+    # Since DOIs are supposed to be permanent, we don't need to check them.'
+    r'https://doi\.org/',
 ]

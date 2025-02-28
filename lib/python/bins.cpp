@@ -124,15 +124,11 @@ template <class T> void bind_bins_view(py::module &m) {
 
   py::class_<decltype(dataset::bins_view<T>(Variable{}))> c(
       m, "_BinsViewDataArray");
-  bind_bins_map_view<decltype(dataset::bins_view<T>(Variable{}).meta())>(
-      m, "_BinsMeta");
   bind_mutable_view_no_dim<
       decltype(dataset::bins_view<T>(Variable{}).coords())>(
       m, "_BinsCoords", "Dict of event coords.");
   bind_mutable_view<decltype(dataset::bins_view<T>(Variable{}).masks())>(
       m, "_BinsMasks", "Dict of event masks.");
-  bind_bins_map_view<decltype(dataset::bins_view<T>(Variable{}).attrs())>(
-      m, "_BinsAttrs");
   bind_data_array_properties(c);
   m.def("_bins_view",
         [](const Variable &var) { return dataset::bins_view<T>(var); });

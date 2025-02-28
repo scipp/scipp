@@ -38,7 +38,6 @@ dynamic = ["version"]
 "Documentation" = "https://scipp.github.io/"
 "Source" = "https://github.com/scipp/scipp"
 "Bug Tracker" = "https://github.com/scipp/scipp/issues"
-"Changelog" = "https://scipp.github.io/about/release-notes.html"
 
 [project.optional-dependencies]
 test = [
@@ -170,7 +169,6 @@ filterwarnings = [
   "ignore:The 'asyncio_mode' default value will change to 'strict' in future:DeprecationWarning",
   'ignore::scipy.optimize._optimize.OptimizeWarning',
   'ignore:Support for mapping types has been deprecated and will be dropped in a future release.:DeprecationWarning',
-  'ignore:sc.DataArray.attrs has been deprecated:scipp.VisibleDeprecationWarning',
   # Triggered by h5py
   'ignore:`product` is deprecated as of NumPy 1.25.0:DeprecationWarning'
 ]
@@ -190,18 +188,9 @@ plugins = "numpy.typing.mypy_plugin"
 # This list should only shrink, never grow.
 exclude = [
     'scipp/__init__\.py',
-    'scipp/coords/',
     'scipp/curve_fit\.py',
-    'scipp/format/formatter\.py',
     'scipp/io/hdf5\.py',
-    'scipp/logging\.py',
-    'scipp/object_list\.py',
-    'scipp/operations\.py',
-    'scipp/reduction\.py',
-    'scipp/scipy/integrate/__init__\.py',
-    'scipp/scipy/optimize/__init__\.py',
     'scipp/testing/strategies\.py',
-    'scipp/utils/profile\.py',
 
     '^benchmarks/',
     '^docs/',

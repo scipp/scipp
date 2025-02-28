@@ -33,6 +33,7 @@ jobs:
           - {os: macos-13, target: osx_64}
           - {os: macos-14, target: osx_arm64}
           - {os: windows-2022, target: win_64}
+          - {os: ubuntu-24.04-arm, target: linux_arm64}
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     uses: ./.github/workflows/conda.yml
     with:
@@ -67,7 +68,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-13, macos-14, windows-2022]
+        os: [ubuntu-24.04, macos-13, macos-14, windows-2022, ubuntu-24.04-arm]
         build: [cp310, cp311, cp312, cp313]
     uses: ./.github/workflows/wheel.yml
     with:
@@ -89,7 +90,7 @@ jobs:
           path: dist
           merge-multiple: true
           pattern: 'dist*'
-      - uses: pypa/gh-action-pypi-publish@v1.12.3
+      - uses: pypa/gh-action-pypi-publish@v1.12.4
 
   upload_conda:
     name: Deploy Conda Forge
@@ -105,7 +106,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: conda install -c conda-forge --yes anaconda-client
-      - run: anaconda --token ${{ secrets.ANACONDATOKEN }} upload --user scipp --label main $(find . -type f -name "*.tar.bz2")
+      - run: anaconda --token ${{ secrets.ANACONDATOKEN }} upload --user scipp --label main $(find . -type f -name "*.conda")
 
   manage-versions:
     name: Manage Versions

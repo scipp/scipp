@@ -38,19 +38,15 @@ size_of_impl(const Variable &var, const SizeofTag tag,
 scipp::index
 size_of_impl(const DataArray &da, const SizeofTag tag,
              const std::optional<std::pair<Dim, double>> &scale_in_dim,
-             bool include_aligned_coords = true) {
+             bool include_coords = true) {
   auto size = static_cast<scipp::index>(
-      sizeof(DataArray) + sizeof(dataset::Coords) + sizeof(dataset::Attrs) +
-      sizeof(dataset::Masks) + da.coords().capacity() + da.attrs().capacity() +
-      da.masks().capacity());
+      sizeof(DataArray) + sizeof(dataset::Coords) + sizeof(dataset::Masks) +
+      da.coords().capacity() + da.masks().capacity());
   size += size_of_impl(da.data(), tag, scale_in_dim);
-  for (const auto &coord : da.attrs()) {
-    size += size_of_impl(coord.second, tag, scale_in_dim);
-  }
   for (const auto &mask : da.masks()) {
     size += size_of_impl(mask.second, tag, scale_in_dim);
   }
-  if (include_aligned_coords) {
+  if (include_coords) {
     for (const auto &coord : da.coords()) {
       size += size_of_impl(coord.second, tag, scale_in_dim);
     }
@@ -194,9 +190,6 @@ DataArray strip_edges_along(const DataArray &da, const Dim dim) {
   for (const auto &[name, var] : da.masks())
     if (core::is_edges(da.dims(), var.dims(), dim))
       out.masks().erase(name);
-  for (const auto &[name, var] : da.attrs())
-    if (core::is_edges(da.dims(), var.dims(), dim))
-      out.attrs().erase(name);
   return out;
 }
 

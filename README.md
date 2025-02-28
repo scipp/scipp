@@ -28,4 +28,4 @@ The following organizations have made major contributions to the development of 
 * [European Spallation Source ERIC](https://europeanspallationsource.se/), Sweden
 * [Science and Technology Facilities Council](https://www.ukri.org/councils/stfc/), UK
 
-See individual [release notes](https://scipp.github.io/about/release-notes.html) for the individual contributors to each release.
+See individual [releases](https://github.com/scipp/scipp/releases) for the individual contributors to each release.

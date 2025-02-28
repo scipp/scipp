@@ -10,7 +10,7 @@ This subpackage provides wrappers for a subset of functions from
 from collections.abc import Callable, Iterable
 from inspect import getfullargspec
 from numbers import Real
-from typing import Any
+from typing import Any, TypeVar
 
 import numpy as np
 import numpy.typing as npt
@@ -27,6 +27,8 @@ from ...core import (
 from ...typing import VariableLike
 from ...units import default_unit, dimensionless
 from ..interpolate import _drop_masked
+
+_VarDa = TypeVar('_VarDa', Variable, DataArray)
 
 
 def _as_scalar(obj: Any, unit: Unit | DefaultUnit | None) -> Any:
@@ -53,7 +55,7 @@ def _wrap_func(
 
 
 def _get_sigma(
-    da: Variable | DataArray,
+    da: _VarDa,
 ) -> npt.NDArray[np.float64 | np.float32] | None:
     if da.variances is None:
         return None
@@ -71,7 +73,7 @@ def _get_sigma(
 def _covariance_with_units(
     p_names: list[str],
     pcov_values: npt.NDArray[np.float64 | np.float32],
-    units: list[Unit | DefaultUnit],
+    units: list[Unit | DefaultUnit | None],
 ) -> dict[str, dict[str, Variable | Real]]:
     pcov: dict[str, dict[str, Variable | Real]] = {}
     for i, row in enumerate(pcov_values):
@@ -83,7 +85,7 @@ def _covariance_with_units(
             if u == default_unit:
                 u = uj
             elif uj != default_unit:
-                u = ui * uj  # type: ignore[operator]  # neither operand is DefaultUnit
+                u = ui * uj  # type: ignore[assignment, operator]  # neither operand is DefaultUnit
             pcov[p_names[i]][p_names[j]] = _as_scalar(elem, u)
     return pcov
 

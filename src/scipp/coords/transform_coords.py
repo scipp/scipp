@@ -4,17 +4,38 @@
 from collections.abc import Iterable, Mapping
 from dataclasses import fields
 from fractions import Fraction
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
-from ..core import DataArray, Dataset, DimensionError, VariableError, bins, empty
+from ..core import (
+    Bins,
+    DataArray,
+    Dataset,
+    DimensionError,
+    Variable,
+    VariableError,
+    bins,
+    empty,
+)
 from ..logging import get_logger
-from .coord_table import Coord, CoordTable
+from .coord import Coord
+from .coord_table import CoordTable
 from .graph import Graph, GraphDict, rule_sequence
 from .options import Options
 from .rule import ComputeRule, FetchRule, Kernel, RenameRule, Rule, rule_output_names
 
+if TYPE_CHECKING:
+    try:
+        from graphviz import Digraph
+    except ImportError:
+        Digraph = Any
+else:
+    Digraph = object
+
+_T = TypeVar('_T', DataArray, Dataset)
+
 
 def transform_coords(
-    x: DataArray | Dataset,
+    x: _T,
     targets: str | Iterable[str] | None = None,
     /,
     graph: GraphDict | None = None,
@@ -25,7 +46,7 @@ def transform_coords(
     keep_inputs: bool = True,
     quiet: bool = False,
     **kwargs: Kernel,
-) -> DataArray | Dataset:
+) -> _T:
     """Compute new coords based on transformations of input coords.
 
     See the section in the user guide on
@@ -34,7 +55,7 @@ def transform_coords(
 
     Parameters
     ----------
-    x:
+    x: DataArray | Dataset
         Input object with coords.
     targets:
         Name or list of names of desired output coords.
@@ -77,7 +98,7 @@ def transform_coords(
 
     Returns
     -------
-    :
+    : Same type as input
         New object with desired coords. Existing data and meta-data is shallow-copied.
 
     Examples
@@ -136,15 +157,18 @@ def transform_coords(
 
     if targets is None:
         targets = set(kwargs)
-        graph = kwargs
+        actual_graph: GraphDict = kwargs  # type: ignore[assignment]  # because dict iss invariant
     else:
         targets = {targets} if isinstance(targets, str) else set(targets)
+        actual_graph = cast(GraphDict, graph)
 
-    _transform = _transform_dataset if isinstance(x, Dataset) else _transform_data_array
-    return _transform(x, targets=targets, graph=Graph(graph), options=options)
+    _transform = _transform_dataset if isinstance(x, Dataset) else _transform_data_array  # type: ignore[redundant-expr]
+    return _transform(x, targets=targets, graph=Graph(actual_graph), options=options)
 
 
-def show_graph(graph: GraphDict, size: str | None = None, simplified: bool = False):
+def show_graph(
+    graph: GraphDict, size: str | None = None, simplified: bool = False
+) -> Digraph:
     """Show graphical representation of a graph as required by
     :py:func:`transform_coords`
 
@@ -269,27 +293,27 @@ def _log_transform(
 
 
 def _store_coord(da: DataArray, name: str, coord: Coord) -> None:
-    def try_del():
+    def try_del() -> None:
         da.coords.pop(name, None)
         if da.bins is not None:
             da.bins.coords.pop(name, None)
 
-    def store(x, c):
+    def store(x: DataArray | Bins[DataArray], c: Variable) -> None:
         x.coords[name] = c
         x.coords.set_aligned(name, coord.aligned)
 
     if coord.usages == 0:
         try_del()
     else:
-        if coord.has_dense:
+        if coord.dense is not None:
             store(da, coord.dense)
-        if coord.has_event:
+        if coord.event is not None:
             try:
-                store(da.bins, coord.event)
+                store(da.bins, coord.event)  # type: ignore[arg-type]  # da is binned if we get here
             except (DimensionError, VariableError):
                 # Thrown on mismatching bin indices, e.g. slice
                 da.data = da.data.copy()
-                store(da.bins, coord.event)
+                store(da.bins, coord.event)  # type: ignore[arg-type]
 
 
 def _store_results(da: DataArray, coords: CoordTable, targets: set[str]) -> DataArray:

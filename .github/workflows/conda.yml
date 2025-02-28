@@ -43,6 +43,8 @@ jobs:
           echo "- '2'" >> dynamic_var.yaml
           echo "python_impl:" >> dynamic_var.yaml
           echo "- cpython" >> dynamic_var.yaml
+          echo "is_python_min:" >> dynamic_var.yaml
+          echo "- false" >> dynamic_var.yaml
       - run: cat dynamic_var.yaml
       - run: >
           conda install
@@ -63,4 +65,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: conda-package-${{ inputs.target }}-py${{ inputs.python-version }}
-          path: conda/package/*/scipp*.tar.bz2
+          path: conda/package/*/scipp*.conda

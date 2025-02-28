@@ -48,9 +48,6 @@ def _dtype_lut() -> dict[str, DType]:
         DType.Variable,
         DType.DataArray,
         DType.Dataset,
-        DType.VariableView,
-        DType.DataArrayView,
-        DType.DatasetView,
         DType.vector3,
         DType.linear_transform3,
         DType.affine_transform3,
@@ -234,14 +231,6 @@ def _array_data_io_lut() -> dict[str, _ArrayDataIO]:
     return handler
 
 
-def _data_writer_lut() -> dict[str, _DataWriter]:
-    # Unpack and repack dict to cast to the correct value type.
-    handler: dict[str, _DataWriter] = {**_array_data_io_lut()}
-    for dtype in [DType.VariableView, DType.DataArrayView, DType.DatasetView]:
-        handler[str(dtype)] = _BinDataIO
-    return handler
-
-
 def _serialize_unit(unit: Unit) -> npt.NDArray[Any]:
     unit_dict = unit.to_dict()
     dtype: list[tuple[str, Any]] = [('__version__', int), ('multiplier', float)]
@@ -266,10 +255,17 @@ def _read_unit_attr(ds: h5.Dataset) -> Unit:
     return Unit.from_dict(unit_dict)
 
 
+_binned_dtype_lut = {
+    'Variable': str(DType.VariableView),
+    'DataArray': str(DType.DataArrayView),
+    'Dataset': str(DType.DatasetView),
+}
+
+
 class _VariableIO:
     _dtypes = _dtype_lut()
     _array_data_readers = _array_data_io_lut()
-    _data_writers = _data_writer_lut()
+    _data_writers = _array_data_io_lut()
 
     @classmethod
     def _write_data(cls, group: h5.Group, data: Variable) -> h5.Dataset | h5.Group:
@@ -281,7 +277,7 @@ class _VariableIO:
 
     @classmethod
     def write(cls, group: h5.Group, var: Variable) -> h5.Group | None:
-        if var.dtype not in cls._dtypes.values():
+        if var.bins is None and var.dtype not in cls._dtypes.values():
             # In practice this may make the file unreadable, e.g., if values
             # have unsupported dtype.
             get_logger().warning(
@@ -289,12 +285,16 @@ class _VariableIO:
             )
             return None
         _write_scipp_header(group, 'Variable')
-        dset = cls._write_data(group, var)
+        if var.bins is None:
+            dset = cls._write_data(group, var)
+            dset.attrs['dtype'] = str(var.dtype)
+            if var.unit is not None:
+                dset.attrs['unit'] = _serialize_unit(var.unit)
+        else:
+            dset = _BinDataIO.write(group, var)
+            dset.attrs['dtype'] = _binned_dtype_lut[dset['data'].attrs['scipp-type']]
         dset.attrs['dims'] = [str(dim) for dim in var.dims]
         dset.attrs['shape'] = var.shape
-        dset.attrs['dtype'] = str(var.dtype)
-        if var.unit is not None:
-            dset.attrs['unit'] = _serialize_unit(var.unit)
         dset.attrs['aligned'] = var.aligned
         return group
 
@@ -302,23 +302,19 @@ class _VariableIO:
     def read(cls, group: h5.Group) -> Variable:
         _check_scipp_header(group, 'Variable')
         values = group['values']
+        dtype_str = values.attrs['dtype']
+        if dtype_str in _binned_dtype_lut.values():
+            return _BinDataIO.read(group)
         contents = {key: values.attrs[key] for key in ['dims', 'shape']}
-        contents['dtype'] = cls._dtypes[values.attrs['dtype']]
+        contents['dtype'] = cls._dtypes[dtype_str]
         if 'unit' in values.attrs:
             contents['unit'] = _read_unit_attr(values)
         else:
             contents['unit'] = None  # essential, otherwise default unit is used
         contents['with_variances'] = 'variances' in group
         contents['aligned'] = values.attrs.get('aligned', True)
-        if contents['dtype'] in [
-            DType.VariableView,
-            DType.DataArrayView,
-            DType.DatasetView,
-        ]:
-            var = _BinDataIO.read(group)
-        else:
-            var = _cpp.empty(**contents)
-            cls._read_array_data(group, var)
+        var = _cpp.empty(**contents)
+        cls._read_array_data(group, var)
         return var
 
 
@@ -344,7 +340,8 @@ def _write_mapping(
 
 
 def _read_mapping(
-    group: h5.Group, override: Mapping[str, h5.Group] | None = None
+    group: h5.Group,
+    override: Mapping[str, h5.Group] | None = None,
 ) -> VariableLike:
     if override is None:
         override = {}
@@ -365,11 +362,11 @@ class _DataArrayIO:
         group.attrs['name'] = data.name
         if _VariableIO.write(group.create_group('data'), var=data.data) is None:
             return None
-        views = [data.coords, data.masks, data.attrs]
+        views = [data.coords, data.masks]
         # Note that we write aligned and unaligned coords into the same group.
         # Distinction is via an attribute, which is more natural than having
         # 2 separate groups.
-        for view_name, view in zip(['coords', 'masks', 'attrs'], views, strict=True):
+        for view_name, view in zip(['coords', 'masks'], views, strict=True):
             subgroup = group.create_group(view_name)
             _write_mapping(subgroup, view, override.get(view_name))
         return group
@@ -382,9 +379,32 @@ class _DataArrayIO:
         contents = {}
         contents['name'] = group.attrs['name']
         contents['data'] = _VariableIO.read(group['data'])
-        for category in ['coords', 'masks', 'attrs']:
+        for category in ['coords', 'masks']:
             contents[category] = _read_mapping(group[category], override.get(category))
-        return DataArray(**contents)
+        da = DataArray(**contents)
+        da = _DataArrayIO._read_legacy_attrs_into(da, group, override)
+        return da
+
+    @staticmethod
+    def _read_legacy_attrs_into(
+        da: DataArray, group: h5.Group, override: Mapping[str, h5.Group]
+    ) -> DataArray:
+        """Load attributes as coordinates.
+
+        Attributes were removed in https://github.com/scipp/scipp/pull/3626
+        but old files that contain attributes remain.
+        """
+        if (attrs_group := group.get('attrs')) is not None:
+            attrs = _read_mapping(attrs_group, override.get('attrs'))
+            if intersection := da.coords.keys() & attrs.keys():
+                raise ValueError(
+                    f"Data array '{da.name}' contains legacy attributes "
+                    f'{intersection} which also exist as coordinates.'
+                )
+            da = da.assign_coords(attrs)
+            for name in attrs:
+                da.coords.set_aligned(name, False)
+        return da
 
 
 class _DatasetIO:

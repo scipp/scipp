@@ -21,16 +21,14 @@ DataArray apply_or_copy_dim_impl(const DataArray &da, Func func, const Dim dim,
     return out;
   };
   auto coords = copy_independent(da.coords(), true);
-  auto attrs = copy_independent(da.attrs(), true);
   auto masks = copy_independent(da.masks(), false);
 
   if constexpr (ApplyToData) {
     return DataArray(func(da.data(), dim, args...), std::move(coords),
-                     std::move(masks), std::move(attrs), da.name());
+                     std::move(masks), da.name());
   } else {
     return DataArray(func(da, dim, std::forward<Args>(args)...),
-                     std::move(coords), std::move(masks), std::move(attrs),
-                     da.name());
+                     std::move(coords), std::move(masks), da.name());
   }
 }
 
@@ -39,7 +37,7 @@ DataArray apply_or_copy_dim_impl(const DataArray &da, Func func, const Dim dim,
 ///
 /// Examples are mostly reduction operations such as `sum` (dropping a
 /// dimension), or `resize` (altering a dimension extent). Creates new data
-/// array by applying `func` to data and dropping coords/masks/attrs depending
+/// array by applying `func` to data and dropping coords/masks depending
 /// on dim.
 template <class Func, class... Args>
 DataArray apply_to_data_and_drop_dim(const DataArray &a, Func func,
@@ -64,14 +62,6 @@ DataArray apply_and_drop_dim(const DataArray &a, Func func, const Dim dim,
 template <class Func, class... Args>
 DataArray apply_to_items(const DataArray &d, Func func, Args &&...args) {
   return func(d, std::forward<Args>(args)...);
-}
-
-template <class... Args>
-bool copy_attr(const Variable &attr, const Dim dim, const Args &...) {
-  return !attr.dims().contains(dim);
-}
-template <class... Args> bool copy_attr(const Variable &, const Args &...) {
-  return true;
 }
 
 template <class Func, class... Args>
@@ -102,8 +92,7 @@ template <class T, class Func> DataArray transform(const T &a, Func func) {
   return DataArray(
       func(a.data()),
       transform_map<typename Coords::holder_type>(a.coords(), func),
-      transform_map<typename Masks::holder_type>(a.masks(), func),
-      transform_map<typename Attrs::holder_type>(a.attrs(), func), a.name());
+      transform_map<typename Masks::holder_type>(a.masks(), func));
 }
 
 [[nodiscard]] DataArray strip_if_broadcast_along(const DataArray &a,

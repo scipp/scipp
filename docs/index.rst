@@ -35,22 +35,6 @@ Generic functionality of Scipp is provided in the **scipp** Python package.
 In addition, more specific functionality is made available in other packages.
 Examples for this are `Plopp <https://scipp.github.io/plopp>`_ for data visualization, `ScippNexus <https://scipp.github.io/scippnexus>`_ for loading NeXus files, and `ScippNeutron <https://scipp.github.io/scippneutron>`_ for handling data from neutron-scattering experiments.
 
-News
-----
-
-- [|SCIPP_RELEASE_MONTH|] scipp-|SCIPP_VERSION| `has been released <about/release-notes.rst>`_.
-- [December 2023] Scipp dropped support for Python 3.8. Scipp for Python 3.12 is available via ``pip``, ``conda`` remains limited to 3.11 for now.
-- [August 2023] Writing workflows or data pipelines?
-  Checkout our new project `Sciline <https://scipp.github.io/sciline>`_.
-- [August 2023] `Plopp <https://scipp.github.io/plopp>`_ is now the only supported plotting backend.
-  Plopp must be installed as a separate dependency.
-  See `Plotting <user-guide/plotting.ipynb>`_ for details.
-- [January 2023] Scipp now comes with a **new data structure**, `DataGroup <user-guide/data-structures/data-structures.ipynb#DataGroup>`_, a ``dict``-like container with Scipp functionality.
-- [November 2022] Scipp switched to "Calendar Versioning".
-  See `Version numbers and deprecation policy <about/about.rst#Version-numbers-and-deprecation-policy>`_ for details.
-- Is your data stored in NeXus files?
-  Checkout our new project `ScippNexus <https://scipp.github.io/scippnexus>`_, a h5py-like utility for conveniently loading NeXus classes into Scipp data structures.
-
 Lost? New to Scipp? Start Here!
 -------------------------------
 

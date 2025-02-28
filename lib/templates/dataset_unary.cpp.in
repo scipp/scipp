@@ -10,7 +10,7 @@
 namespace scipp::dataset {
 
 DataArray @NAME@(const DataArray &a) {
-  return DataArray(@NAME@(a.data()), a.coords(), copy(a.masks()), a.attrs(), a.name());
+  return DataArray(@NAME@(a.data()), a.coords(), copy(a.masks()), a.name());
 }
 
 Dataset @NAME@(const Dataset &ds) {

@@ -13,7 +13,7 @@ from typing import Any
 import numpy.typing as npt
 
 from ...compat.wrapping import wrap1d
-from ...core import DataArray, array
+from ...core import DataArray, Unit, array
 
 
 def _integrate(
@@ -26,7 +26,7 @@ def _integrate(
         )
     integral = func(x=da.coords[dim].values, y=da.values, **kwargs)
     dims = [d for d in da.dims if d != dim]
-    unit = da.unit * da.coords[dim].unit  # type: ignore[operator]  # from unit = None
+    unit: Unit = da.unit * da.coords[dim].unit  # type: ignore[assignment, operator]  # from unit = None
     return DataArray(data=array(dims=dims, values=integral, unit=unit))
 
 

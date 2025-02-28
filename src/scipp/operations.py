@@ -4,12 +4,13 @@
 import functools
 from collections.abc import Callable
 from inspect import signature
+from typing import Any
 
 from ._scipp.core import transform as cpp_transform
-from .core import Variable
+from .core import Unit, Variable
 
 
-def _as_numba_cfunc(function, unit_func=None):
+def _as_numba_cfunc(function: Any, unit_func: Any = None) -> Any:
     import numba
 
     dtype = 'double'
@@ -21,12 +22,12 @@ def _as_numba_cfunc(function, unit_func=None):
 
 
 def elemwise_func(
-    func: Callable | None = None,
+    func: Callable[..., object] | None = None,
     *,
-    unit_func: Callable | None = None,
+    unit_func: Callable[..., Unit] | None = None,
     dtype: str = 'float64',
     auto_convert_dtypes: bool = False,
-) -> Callable:
+) -> Callable[..., Any]:
     """
     Create a function for transforming input variables based on element-wise operation.
 
@@ -72,16 +73,18 @@ def elemwise_func(
     a potentially large intermediate allocation for the result of "a * b".
     """
 
-    def decorator(f):
+    def decorator(
+        f: Callable[..., object],
+    ) -> Callable[[Callable[..., object]], Callable[..., Any]]:
         cfunc = _as_numba_cfunc(f, unit_func=unit_func)
 
         @functools.wraps(f)
         def transform_custom(*args: Variable) -> Variable:
             if auto_convert_dtypes:
-                args = [arg.to(dtype='float64', copy=False) for arg in args]
-            return cpp_transform(cfunc, *args)
+                args = tuple(arg.to(dtype='float64', copy=False) for arg in args)
+            return cpp_transform(cfunc, *args)  # type: ignore[no-any-return]
 
-        return transform_custom
+        return transform_custom  # type: ignore[return-value]
 
     if func is None:
         return decorator

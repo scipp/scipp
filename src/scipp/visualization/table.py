@@ -33,7 +33,10 @@ def _string_in_cell(v: Variable) -> str:
 
 def _var_name_with_unit(name: str, var: Variable) -> str:
     out = f'<span style="font-weight: bold;">{name}</span>'
-    unit = var.bins.unit if var.bins is not None else var.unit
+    try:
+        unit = var.unit
+    except RuntimeError:  # binned variable with Dataset content
+        unit = None
     if unit is not None:
         out += ' [𝟙]' if unit == 'dimensionless' else f' [{unit}]'  # noqa: RUF001
     return out
@@ -98,17 +101,6 @@ def _make_data_array_table(
             )
         )
 
-    for name, var in sorted(da.deprecated_attrs.items()):
-        out.append(
-            _make_variable_column(
-                name=name,
-                var=var,
-                indices=indices,
-                need_bin_edge=bin_edges,
-                is_bin_edge=da.deprecated_attrs.is_edges(name),
-            )
-        )
-
     return out
 
 
@@ -117,7 +109,7 @@ def _make_entries_header(ds: Dataset) -> str:
     if ds.coords:
         out += f'<th colspan="{len(ds.coords)}"></th>'
     for name, da in sorted(ds.items()):
-        ncols = 1 + len(da.masks) + len(da.deprecated_attrs)
+        ncols = 1 + len(da.masks)
         out += f'<th style="{CENTER}" colspan="{ncols}">{name}</th>'
     out += '</tr>'
     return out
@@ -132,11 +124,6 @@ def _make_sections_header(ds: Dataset) -> str:
         out += f'<th style="{CENTER + border}">Data</th>'
         if da.masks:
             out += f'<th style="{CENTER}" colspan="{len(da.masks)}">Masks</th>'
-        if da.deprecated_attrs:
-            out += (
-                f'<th style="{CENTER}" '
-                f'colspan="{len(da.deprecated_attrs)}">Attributes</th>'
-            )
     out += '</tr>'
     return out
 
@@ -155,10 +142,6 @@ def _find_bin_edges(ds: Dataset) -> bool:
     for key in ds.coords:
         if ds.coords.is_edges(key):
             return True
-    for da in ds.values():
-        for key in da.deprecated_attrs:
-            if da.deprecated_attrs.is_edges(key):
-                return True
     return False
 
 
@@ -169,11 +152,6 @@ def _strip_scalars_and_broadcast_masks(ds: Dataset) -> Dataset:
             data=da.data,
             coords={
                 key: var for key, var in da.coords.items() if var.dims == da.data.dims
-            },
-            attrs={
-                key: var
-                for key, var in da.deprecated_attrs.items()
-                if var.dims == da.data.dims
             },
             masks={key: var.broadcast(sizes=da.sizes) for key, var in da.masks.items()},
         )

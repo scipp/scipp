@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
+#include <cmath>
+
 #include <gtest/gtest.h>
 
 #include "test_macros.h"
@@ -213,7 +215,7 @@ protected:
 };
 
 TEST_F(DataArrayBinsMapTest, map) {
-  const auto &coord = bins_view<DataArray>(buckets).meta()[Dim::Z];
+  const auto &coord = bins_view<DataArray>(buckets).coords()[Dim::Z];
   auto fill_value = makeVariable<double>(units::K, Values{1234});
   const auto out = buckets::map(histogram, coord, Dim::Z, fill_value);
   // event coords 1,2,3,4
@@ -241,14 +243,14 @@ TEST_F(DataArrayBinsMapTest, map) {
 }
 
 TEST_F(DataArrayBinsMapTest, fail_no_bin_edges) {
-  const auto &coord = bins_view<DataArray>(buckets).meta()[Dim::Z];
+  const auto &coord = bins_view<DataArray>(buckets).coords()[Dim::Z];
   histogram.coords().set(Dim::Z, bin_edges.slice({Dim::Z, 1, 4}));
   EXPECT_THROW_DISCARD(buckets::map(histogram, coord, Dim::Z),
                        except::BinEdgeError);
 }
 
 TEST_F(DataArrayBinsMapTest, map_masked_values_replaced_by_fill_value) {
-  const auto &coord = bins_view<DataArray>(buckets).meta()[Dim::Z];
+  const auto &coord = bins_view<DataArray>(buckets).coords()[Dim::Z];
   histogram.masks().set(
       "mask", makeVariable<bool>(histogram.dims(), Values{false, true, false}));
   const auto fill_value = makeVariable<double>(units::K, Values{1234});
@@ -344,10 +346,55 @@ TEST_F(DataArrayBinsScaleTest, events_times_histogram_without_variances) {
   // Last event is out of bounds and scaled to 0.0
   expected_weights *= makeVariable<double>(
       Dims{Dim("event")}, Shape{7}, Values{2.0, 3.0, 3.0, 2.0, 2.0, 3.0, 0.0});
-  auto expected_events = events;
+  auto expected_events = make_events();
   copy(expected_weights, expected_events.data());
 
   EXPECT_EQ(buckets, make_buckets(expected_events));
+}
+
+TEST_F(DataArrayBinsScaleTest, events_times_histogram_drops_applied_mask) {
+  const auto events = make_events();
+  auto hist = make_histogram_no_variance();
+  hist.masks().set(
+      "mask", makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, false}));
+  auto buckets = make_buckets(events);
+  buckets::scale(buckets, hist);
+
+  auto expected_weights = makeVariable<double>(
+      Dims{Dim("event")}, Shape{7}, units::us, Values{1, 2, 1, 3, 1, 1, 1},
+      Variances{1, 3, 1, 2, 1, 1, 1});
+  // Masked events are zeroed.
+  // Last event is out of bounds and scaled to 0.0
+  expected_weights *= makeVariable<double>(
+      Dims{Dim("event")}, Shape{7}, Values{0.0, 3.0, 3.0, 0.0, 0.0, 3.0, 0.0});
+  auto expected_events = make_events();
+  copy(expected_weights, expected_events.data());
+
+  EXPECT_TRUE(buckets.masks().empty());
+  EXPECT_EQ(buckets, make_buckets(expected_events));
+}
+
+TEST_F(DataArrayBinsScaleTest, events_times_histogram_keeps_non_edge_mask) {
+  const auto events = make_events();
+  auto hist = make_histogram_no_variance();
+  hist.masks().set(
+      "mask", makeVariable<bool>(Dims{Dim::Y}, Shape{2}, Values{true, false}));
+  auto buckets = make_buckets(events);
+  buckets::scale(buckets, hist);
+
+  auto expected_weights = makeVariable<double>(
+      Dims{Dim("event")}, Shape{7}, units::us, Values{1, 2, 1, 3, 1, 1, 1},
+      Variances{1, 3, 1, 2, 1, 1, 1});
+  // No mask has been applied.
+  // Last event is out of bounds and scaled to 0.0
+  expected_weights *= makeVariable<double>(
+      Dims{Dim("event")}, Shape{7}, Values{2.0, 3.0, 3.0, 2.0, 2.0, 3.0, 0.0});
+  auto expected_events = make_events();
+  copy(expected_weights, expected_events.data());
+  auto expected_buckets = make_buckets(expected_events);
+  expected_buckets.masks().set("mask", hist.masks()["mask"]);
+
+  EXPECT_EQ(buckets, expected_buckets);
 }
 
 TEST_F(DataArrayBinsScaleTest,
@@ -481,10 +528,6 @@ TEST_F(DatasetBinsTest, concatenate) {
   buffer0["a"].masks().set("mask", column);
   check_fail(buffer0, buffer1);
   buffer1["a"].masks().set("mask", column);
-  check(buffer0, buffer1);
-  buffer0["b"].attrs().set(Dim("attr"), column);
-  check_fail(buffer0, buffer1);
-  buffer1["b"].attrs().set(Dim("attr"), column);
   check(buffer0, buffer1);
   buffer0.coords().set(Dim("scalar"), 1.0 * units::m);
   check_fail(buffer0, buffer1);

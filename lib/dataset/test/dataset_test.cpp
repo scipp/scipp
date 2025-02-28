@@ -14,6 +14,7 @@
 
 #include "dataset_test_common.h"
 #include "test_data_arrays.h"
+#include "test_macros.h"
 
 using namespace scipp;
 
@@ -447,8 +448,6 @@ void check_array_shared(Dataset &ds, const std::string &name,
   EXPECT_EQ(ds[name].coords()[Dim::X].is_same(array.coords()[Dim::X]),
             shared_coord);
   EXPECT_TRUE(ds[name].masks()["mask"].is_same(array.masks()["mask"]));
-  EXPECT_TRUE(
-      ds[name].attrs()[Dim("attr")].is_same(array.attrs()[Dim("attr")]));
   // Metadata *dicts* are not shared
   ds.coords().erase(Dim::X);
   EXPECT_NE(ds[name].coords(), array.coords());
@@ -456,9 +455,6 @@ void check_array_shared(Dataset &ds, const std::string &name,
   ds[name].masks().erase("mask");
   EXPECT_NE(ds[name].masks(), array.masks());
   EXPECT_TRUE(array.masks().contains("mask"));
-  ds[name].attrs().erase(Dim("attr"));
-  EXPECT_NE(ds[name].attrs(), array.attrs());
-  EXPECT_TRUE(array.attrs().contains(Dim("attr")));
 }
 
 TEST(DatasetTest, setData_from_DataArray) {
@@ -529,26 +525,6 @@ TEST(DatasetTest, setData_sets_sizes) {
   ASSERT_EQ(d.dims(), Dimensions({{Dim::X, 4}, {Dim::Y, 3}}));
   d.setCoord(Dim::X, x); // can insert coord because setData set the dims.
   ASSERT_EQ(d.coords()[Dim::X], x);
-}
-
-TEST(DatasetTest, setData_clears_attributes) {
-  const auto var = makeVariable<double>(Values{1});
-  Dataset d({{"x", var}});
-  d["x"].attrs().set(Dim("attr"), var);
-
-  EXPECT_TRUE(d["x"].attrs().contains(Dim("attr")));
-  d.setData("x", var);
-  EXPECT_FALSE(d["x"].attrs().contains(Dim("attr")));
-}
-
-TEST(DatasetTest, setData_keep_attributes) {
-  const auto var = makeVariable<double>(Values{1});
-  Dataset d({{"x", var}});
-  d["x"].attrs().set(Dim("attr"), var);
-
-  EXPECT_TRUE(d["x"].attrs().contains(Dim("attr")));
-  d.setData("x", var, AttrPolicy::Keep);
-  EXPECT_TRUE(d["x"].attrs().contains(Dim("attr")));
 }
 
 TEST(DatasetTest, setData_with_mismatched_dims) {
@@ -725,16 +701,6 @@ TEST(DatasetTest, item_coord_cannot_change_coord) {
   ASSERT_EQ(ds.coords()[Dim::X], original);
 }
 
-TEST(DatasetTest, set_erase_item_attr) {
-  DatasetFactory factory;
-  auto ds = factory.make("data");
-  const auto attr = makeVariable<double>(Values{1.0});
-  ds["data"].attrs().set(Dim("item-attr"), attr);
-  EXPECT_TRUE(ds["data"].attrs().contains(Dim("item-attr")));
-  ds["data"].attrs().erase(Dim("item-attr"));
-  EXPECT_FALSE(ds["data"].attrs().contains(Dim("item-attr")));
-}
-
 TEST(DatasetTest, set_erase_item_mask) {
   DatasetFactory factory;
   auto ds = factory.make("data");
@@ -791,7 +757,8 @@ protected:
 };
 
 TEST_F(DatasetRenameTest, fail_duplicate_dim) {
-  ASSERT_THROW(d.rename_dims({{Dim::X, Dim::Y}}), except::DimensionError);
+  ASSERT_THROW_DISCARD(d.rename_dims({{Dim::X, Dim::Y}}),
+                       except::DimensionError);
   ASSERT_EQ(d, original);
 }
 
@@ -799,28 +766,14 @@ TEST_F(DatasetRenameTest, fail_duplicate_in_edge_dim_of_coord) {
   auto ds = copy(d);
   const Dim dim{"edge"};
   ds.setCoord(dim, makeVariable<double>(Dims{dim}, Shape{2}));
-  ASSERT_THROW(ds.rename_dims({{Dim::X, dim}}), except::DimensionError);
-}
-
-TEST_F(DatasetRenameTest, fail_duplicate_in_edge_dim_of_item_attr) {
-  auto ds = copy(d);
-  const Dim dim{"edge"};
-  ds["data_xy"].attrs().set(dim, makeVariable<double>(Dims{dim}, Shape{2}));
-  ASSERT_THROW(ds.rename_dims({{Dim::X, dim}}), except::DimensionError);
+  ASSERT_THROW_DISCARD(ds.rename_dims({{Dim::X, dim}}), except::DimensionError);
 }
 
 TEST_F(DatasetRenameTest, fail_duplicate_in_edge_dim_in_data_array_coord) {
   auto da = copy(d["data_xy"]);
   const Dim dim{"edge"};
   da.coords().set(dim, makeVariable<double>(Dims{dim}, Shape{2}));
-  ASSERT_THROW(da.rename_dims({{Dim::X, dim}}), except::DimensionError);
-}
-
-TEST_F(DatasetRenameTest, fail_duplicate_in_edge_dim_in_data_array_attr) {
-  auto da = copy(d["data_xy"]);
-  const Dim dim{"edge"};
-  da.attrs().set(dim, makeVariable<double>(Dims{dim}, Shape{2}));
-  ASSERT_THROW(da.rename_dims({{Dim::X, dim}}), except::DimensionError);
+  ASSERT_THROW_DISCARD(da.rename_dims({{Dim::X, dim}}), except::DimensionError);
 }
 
 TEST_F(DatasetRenameTest, existing) {

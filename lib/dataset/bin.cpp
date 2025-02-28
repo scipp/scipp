@@ -5,10 +5,13 @@
 #include <numeric>
 #include <set>
 
+#include "scipp/core/subbin_sizes.h"
+
 #include "scipp/variable/astype.h"
 #include "scipp/variable/bin_detail.h"
 #include "scipp/variable/bin_util.h"
 #include "scipp/variable/bins.h"
+#include "scipp/variable/creation.h"
 #include "scipp/variable/cumulative.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
@@ -31,12 +34,10 @@ namespace scipp::dataset {
 
 namespace {
 
-template <class T>
-Variable bins_from_sizes(T &&content, const Variable &bin_sizes) {
-  const auto end = cumsum(bin_sizes);
+template <class T> Variable bins_from_indices(T &&content, Variable &&indices) {
   const auto buffer_dim = content.dims().inner();
-  return make_bins(zip(end - bin_sizes, end), buffer_dim,
-                   std::forward<T>(content));
+  return make_bins_no_validate(std::move(indices), buffer_dim,
+                               std::forward<T>(content));
 }
 
 template <class Builder> bool use_two_stage_remap(const Builder &bld) {
@@ -60,7 +61,7 @@ public:
       return dataset::transform(bins_view<T>(data), maybe_bin);
   }
 
-  virtual Variable bin_sizes(
+  virtual Variable bin_indices(
       const std::optional<Dimensions> &dims_override = std::nullopt) const = 0;
   virtual Variable apply_to_variable(const Variable &var,
                                      Variable &&out = {}) const = 0;
@@ -126,15 +127,25 @@ public:
     return out;
   }
 
-  Variable bin_sizes(const std::optional<Dimensions> &dims_override =
-                         std::nullopt) const override {
+  Variable bin_indices(const std::optional<Dimensions> &dims_override =
+                           std::nullopt) const override {
     // During mapping of values to the output layout, the output was viewed with
     // same bin index ranges as input. Now setup the desired final bin indices.
     const auto dims = dims_override.value_or(m_dims);
     auto output_dims = merge(m_output_bin_sizes.dims(), dims);
-    return makeVariable<scipp::index>(
-        output_dims, units::none,
-        Values(flatten_subbin_sizes(m_output_bin_sizes, dims.volume())));
+    auto indices =
+        variable::empty(output_dims, units::none, dtype<scipp::index_pair>);
+    auto indices_v = indices.template values<scipp::index_pair>().as_span();
+    scipp::index begin = 0;
+    scipp::index i = 0;
+    for (const auto &sub :
+         m_output_bin_sizes.values<core::SubbinSizes>().as_span()) {
+      for (const auto &size : sub.sizes()) {
+        indices_v[i++] = std::pair(begin, begin + size);
+        begin += size;
+      }
+    }
+    return indices;
   }
 
   Dimensions m_dims;
@@ -170,11 +181,11 @@ public:
         make_bins_no_validate(indices, m_buffer.dims().inner(), m_buffer));
   }
 
-  Variable bin_sizes(const std::optional<Dimensions> &dims_override =
-                         std::nullopt) const override {
+  Variable bin_indices(const std::optional<Dimensions> &dims_override =
+                           std::nullopt) const override {
     const auto dims = dims_override.value_or(m_stage1_mapper.m_dims);
     return fold(
-        flatten(m_stage2_mapper.bin_sizes(),
+        flatten(m_stage2_mapper.bin_indices(),
                 std::vector<Dim>{Dim::InternalBinCoarse, Dim::InternalBinFine},
                 Dim::InternalSubbin)
             .slice({Dim::InternalSubbin, 0, dims.volume()}),
@@ -211,8 +222,9 @@ std::unique_ptr<Mapper> make_mapper(Variable &&indices,
     SingleStageMapper stage1_mapper(dims, indices_, output_bin_sizes);
 
     Dimensions stage1_out_dims(Dim::InternalBinCoarse, n_coarse_bin);
-    fine_indices = bins_from_sizes(stage1_mapper.apply<Variable>(fine_indices),
-                                   stage1_mapper.bin_sizes(stage1_out_dims));
+    fine_indices =
+        bins_from_indices(stage1_mapper.apply<Variable>(fine_indices),
+                          stage1_mapper.bin_indices(stage1_out_dims));
     Dimensions fine_dims(Dim::InternalBinFine, chunk_size);
     const auto fine_output_bin_sizes =
         bin_detail::bin_sizes(fine_indices, scipp::index{0} * units::none,
@@ -251,15 +263,13 @@ auto extract_unbinned(T &array, Mapping &map) {
 ///   meaningless. Note that rebinned masks have been applied before the binning
 ///   step.
 /// - If rebinning, existing meta data along unchanged dimensions is preserved.
-template <class Coords, class Masks, class Attrs>
+template <class Coords, class Masks>
 DataArray add_metadata(const Variable &data, std::unique_ptr<Mapper> mapper,
                        const Coords &coords, const Masks &masks,
-                       const Attrs &attrs, const std::vector<Variable> &edges,
+                       const std::vector<Variable> &edges,
                        const std::vector<Variable> &groups,
                        const std::vector<Dim> &erase) {
-  auto bin_sizes = mapper->bin_sizes();
   auto buffer = mapper->template apply<DataArray>(data);
-  bin_sizes = squeeze(bin_sizes, erase);
   const auto buffer_dim = buffer.dims().inner();
   std::set<Dim> dims(erase.begin(), erase.end());
   const auto rebinned = [&](const auto &var) {
@@ -283,13 +293,9 @@ DataArray add_metadata(const Variable &data, std::unique_ptr<Mapper> mapper,
   for (const auto &[name, mask] : masks)
     if (!rebinned(mask))
       out_masks.insert_or_assign(name, copy(mask));
-  auto out_attrs = extract_unbinned(buffer, buffer.attrs());
-  for (const auto &[dim_, coord] : attrs)
-    if (!rebinned(coord) && !out_coords.contains(dim_))
-      out_attrs.insert_or_assign(dim_, coord);
-  return DataArray{bins_from_sizes(std::move(buffer), bin_sizes),
-                   std::move(out_coords), std::move(out_masks),
-                   std::move(out_attrs)};
+  auto bin_indices = squeeze(mapper->bin_indices(), erase);
+  return DataArray{bins_from_indices(std::move(buffer), std::move(bin_indices)),
+                   std::move(out_coords), std::move(out_masks)};
 }
 
 class TargetBinBuilder {
@@ -536,9 +542,8 @@ template <class T> Variable concat_bins(const Variable &var, const Dim dim) {
   builder.build(*target_bins, std::map<Dim, Variable>{});
   auto mapper = make_mapper(target_bins.release(), builder);
   auto buffer = mapper->template apply<T>(var);
-  auto bin_sizes = mapper->bin_sizes();
-  bin_sizes = squeeze(bin_sizes, scipp::span{&dim, 1});
-  return bins_from_sizes(std::move(buffer), bin_sizes);
+  auto bin_indices = squeeze(mapper->bin_indices(), scipp::span{&dim, 1});
+  return bins_from_indices(std::move(buffer), std::move(bin_indices));
 }
 template Variable concat_bins<Variable>(const Variable &, const Dim);
 template Variable concat_bins<DataArray>(const Variable &, const Dim);
@@ -559,10 +564,10 @@ DataArray groupby_concat_bins(const DataArray &array, const Variable &edges,
   builder.erase(reductionDim);
   const auto dims = array.dims();
   for (const auto &dim : dims.labels())
-    if (array.meta().contains(dim)) {
-      if (array.meta()[dim].dims().ndim() != 1 &&
-          array.meta()[dim].dims().contains(reductionDim))
-        builder.join(dim, array.meta()[dim]);
+    if (array.coords().contains(dim)) {
+      if (array.coords()[dim].dims().ndim() != 1 &&
+          array.coords()[dim].dims().contains(reductionDim))
+        builder.join(dim, array.coords()[dim]);
       else if (dim != reductionDim)
         builder.existing(dim, array.dims()[dim]);
     }
@@ -570,13 +575,13 @@ DataArray groupby_concat_bins(const DataArray &array, const Variable &edges,
   const auto masked =
       hide_masked(array.data(), array.masks(), builder.dims().labels());
   TargetBins<DataArray> target_bins(masked, builder.dims());
-  builder.build(*target_bins, array.meta());
+  builder.build(*target_bins, array.coords());
   // Note: Unlike in the other cases below we do not call
   // `drop_grouped_event_coords` here. Grouping is based on a bin-coord rather
   // than event-coord so we do not touch the latter.
   return add_metadata(masked, make_mapper(target_bins.release(), builder),
-                      array.coords(), array.masks(), array.attrs(),
-                      builder.edges(), builder.groups(), {reductionDim});
+                      array.coords(), array.masks(), builder.edges(),
+                      builder.groups(), {reductionDim});
 }
 
 namespace {
@@ -625,11 +630,9 @@ DataArray bin(const DataArray &array, const std::vector<Variable> &edges,
   validate_bin_args(array, edges, groups);
   const auto &data = array.data();
   const auto &coords = array.coords();
-  const auto &meta = array.meta();
   const auto &masks = array.masks();
-  const auto &attrs = array.attrs();
   if (data.dtype() == dtype<core::bin<DataArray>>) {
-    return bin(data, coords, masks, attrs, edges, groups, erase);
+    return bin(data, coords, masks, edges, groups, erase);
   } else {
     // Pretend existing binning along outermost binning dim to enable threading
     const auto tmp = pretend_bins_for_threading(
@@ -639,13 +642,13 @@ DataArray bin(const DataArray &array, const std::vector<Variable> &edges,
         (data.dims().volume() > std::numeric_limits<int32_t>::max())
             ? makeVariable<int64_t>(data.dims(), units::none)
             : makeVariable<int32_t>(data.dims(), units::none);
-    auto builder = axis_actions(data, meta, edges, groups, erase);
-    builder.build(target_bins_buffer, meta);
+    auto builder = axis_actions(data, coords, edges, groups, erase);
+    builder.build(target_bins_buffer, coords);
     auto target_bins = make_bins_no_validate(
         tmp.bin_indices(), data.dims().inner(), target_bins_buffer);
     return add_metadata(drop_grouped_event_coords(tmp, groups),
                         make_mapper(std::move(target_bins), builder), coords,
-                        masks, attrs, builder.edges(), builder.groups(), erase);
+                        masks, builder.edges(), builder.groups(), erase);
   }
 }
 
@@ -662,19 +665,18 @@ DataArray bin(const DataArray &array, const std::vector<Variable> &edges,
 ///        bin_sizes = count(bin_index) // number of events per target bin
 ///        bin_offset = cumsum(bin_sizes) - bin_sizes
 /// 3. Copy from input to output bin, based on offset
-template <class Coords, class Masks, class Attrs>
+template <class Coords, class Masks>
 DataArray bin(const Variable &data, const Coords &coords, const Masks &masks,
-              const Attrs &attrs, const std::vector<Variable> &edges,
+              const std::vector<Variable> &edges,
               const std::vector<Variable> &groups,
               const std::vector<Dim> &erase) {
-  const auto meta = attrs.merge_from(coords);
-  auto builder = axis_actions(data, meta, edges, groups, erase);
+  auto builder = axis_actions(data, coords, edges, groups, erase);
   const auto masked = hide_masked(data, masks, builder.dims().labels());
   TargetBins<DataArray> target_bins(masked, builder.dims());
-  builder.build(*target_bins, bins_view<DataArray>(masked).meta(), meta);
+  builder.build(*target_bins, bins_view<DataArray>(masked).coords(), coords);
   return add_metadata(drop_grouped_event_coords(masked, groups),
                       make_mapper(target_bins.release(), builder), coords,
-                      masks, attrs, builder.edges(), builder.groups(), erase);
+                      masks, builder.edges(), builder.groups(), erase);
 }
 
 } // namespace scipp::dataset

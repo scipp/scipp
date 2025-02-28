@@ -135,7 +135,7 @@ class VariableDrawer:
         elif isinstance(events, Dataset):
             raise ValueError("Cannot visualize Dataset events")
         else:
-            return 1 + 1.3 * (len(events.deprecated_meta) + len(events.masks))
+            return 1 + 1.3 * (len(events.coords) + len(events.masks))
 
     def size(self) -> tuple[float, float]:
         """Return the size (width and height) of the rendered output"""
@@ -406,7 +406,7 @@ class DatasetDrawer:
         dims = self._dataset.dims
         if isinstance(self._dataset, DataArray):
             # Handle, e.g., bin edges of a slice, where data lacks the edge dim
-            for item in self._dataset.deprecated_meta.values():
+            for item in self._dataset.coords.values():
                 for dim in item.dims:
                     if dim not in dims:
                         dims = (dim, *dims)
@@ -471,8 +471,8 @@ class DatasetDrawer:
         ds = self._dataset
         if isinstance(ds, DataArray):
             categories = zip(
-                ['coords', 'masks', 'attrs'],
-                [ds.coords, ds.masks, ds.deprecated_attrs],
+                ['coords', 'masks'],
+                [ds.coords, ds.masks],
                 strict=True,
             )
         else:
