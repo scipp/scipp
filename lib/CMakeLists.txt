@@ -219,6 +219,10 @@ endif(DYNAMIC_LIB)
 include(scipp-install)
 include(scipp-test)
 
+if(DEFINED ENV{CONDA_BUILD})
+  scipp_write_dist_info(VERSION "${SCIPP_VERSION_PEP440}")
+endif()
+
 option(FULL_BUILD
        "Enable full build where the 'all' target includes tests and benchmarks."
        OFF
