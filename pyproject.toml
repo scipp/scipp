@@ -189,7 +189,6 @@ plugins = "numpy.typing.mypy_plugin"
 exclude = [
     'scipp/__init__\.py',
     'scipp/curve_fit\.py',
-    'scipp/io/hdf5\.py',
     'scipp/testing/strategies\.py',
 
     '^benchmarks/',
