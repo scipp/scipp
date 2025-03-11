@@ -279,4 +279,6 @@ linkcheck_ignore = [
     # Linkcheck seems to be denied access by some DOI resolvers.
     # Since DOIs are supposed to be permanent, we don't need to check them.'
     r'https://doi\.org/',
+    # Website denies access to linkcheck.
+    'https://content.iospress.com/articles/journal-of-neutron-research/jnr190131',
 ]
