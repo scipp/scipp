@@ -38,7 +38,7 @@ There are two solutions (as described in the IPython `Output caching system <htt
 
       c.InteractiveShell.cache_size = 0
 
-   See `Python configuration files <https://ipython.readthedocs.io/en/stable/config/intro.html#python-configuration-files>`_ and `InteractiveShell.cache_size <https://ipython.readthedocs.io/en/stable/config/options/kernel.html#configtrait-InteractiveShell.cache_size>`_ in the IPython documentation for details.
+   See `Python configuration files <https://ipython.readthedocs.io/en/stable/config/intro.html#python-configuration-files>`_ and `InteractiveShell.cache_size <https://ipython.readthedocs.io/en/stable/config/options/index.html#configtrait-InteractiveShell.cache_size>`_ in the IPython documentation for details.
 
 Where does Scipp's behavior differ from Xarray's behavior?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
