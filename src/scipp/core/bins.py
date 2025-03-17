@@ -612,6 +612,7 @@ def bins(
     dim: str,
     begin: Variable | None = None,
     end: Variable | None = None,
+    validate_indices: bool = True,
 ) -> Variable:
     """Create a binned variable from bin indices.
 
@@ -640,6 +641,14 @@ def bins(
         any given bin.
     data:
         A variable, data array, or dataset containing combined data of all bins.
+    validate_indices:
+        If True (default), validates that all indices are within bounds of the data and
+        that bins are not overlapping.
+        If False, skips validation for better performance but may cause undefined
+        behavior if indices are out of bounds or overlapping.
+        USE WITH EXTREME CAUTION and only if you know what you are doing!
+        An example of safe usage of this option is reconstruction of binned data from
+        the result of a `obj.bins.constituents` call.
 
     Returns
     -------
@@ -654,7 +663,9 @@ def bins(
     """
     if any(isinstance(x, DataGroup) for x in [begin, end, data]):
         raise ValueError("`scipp.bins` does not support DataGroup arguments.")
-    return _call_cpp_func(_cpp.bins, begin, end, dim, data)  # type: ignore[return-value]
+
+    bin_func = _cpp.bins if validate_indices else _cpp._bins_no_validate
+    return _call_cpp_func(bin_func, begin, end, dim, data)  # type: ignore[return-value]
 
 
 def bins_like(x: VariableLike, fill_value: Variable) -> Variable:
