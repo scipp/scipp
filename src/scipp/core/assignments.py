@@ -25,8 +25,8 @@ def _assign(
     return out
 
 
-def assign_data(self: _T, data: Variable) -> _T:
-    """Return new object with updated data.
+def assign_data(self: DataArray, data: Variable) -> DataArray:
+    """Return new data array with updated data.
 
     Parameters
     ----------

@@ -278,7 +278,7 @@ class Bins(Generic[_O]):
         if isinstance(self._obj, Dataset):
             raise NotImplementedError("bins.assign does not support datasets")
         out = self._map_constituents_data(lambda data: data)
-        out.bins.data = data
+        out.bins.data = data  # type: ignore[union-attr]  # we know that out has bins
         return out
 
     @property
