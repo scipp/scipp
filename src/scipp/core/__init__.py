@@ -183,12 +183,13 @@ from .variable import (
 )
 from .like import zeros_like, ones_like, empty_like, full_like
 
-from .assignments import assign_coords, assign_masks
+from .assignments import assign_coords, assign_data, assign_masks
 
 Dataset.assign_coords = assign_coords  # type: ignore[method-assign]
+DataArray.assign = assign_data  # type: ignore[method-assign]
 DataArray.assign_coords = assign_coords  # type: ignore[method-assign]
 DataArray.assign_masks = assign_masks  # type: ignore[method-assign]
-del assign_coords, assign_masks
+del assign_coords, assign_data, assign_masks
 
 # Remove submodules to reduce clutter
 del (

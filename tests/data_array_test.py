@@ -434,6 +434,15 @@ def test_masks_update_from_dict_adds_items():
     assert sc.identical(da.masks['b'], sc.scalar(False))
 
 
+def test_assign():
+    data = sc.array(dims=['x', 'y'], values=np.random.rand(4, 3))
+    coord = sc.linspace('x', start=0.2, stop=1.61, num=4)
+    da_o = sc.DataArray(data.copy(), coords={'x': coord})
+    da_n = da_o.assign(2 * data)
+    assert sc.identical(da_o, sc.DataArray(data, coords={'x': coord}))
+    assert sc.identical(da_n, sc.DataArray(2 * data, coords={'x': coord}))
+
+
 def test_assign_coords():
     data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
     da_o = sc.DataArray(data)

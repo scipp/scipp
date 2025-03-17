@@ -206,6 +206,20 @@ def test_bins_view_coords_assign():
     assert sc.identical(new.bins.coords['b'], var.bins.coords['time'] * 3.0)
 
 
+def test_data_array_bins_view_coords_assign():
+    da = sc.DataArray(make_binned())
+    assert set(da.bins.coords) == {'time'}
+    new = da.bins.assign_coords(
+        {'a': da.bins.coords['time'] * 2.0}, b=da.bins.coords['time'] * 3.0
+    )
+    assert set(new.bins.coords) == {'time', 'a', 'b'}
+    assert set(da.bins.coords) == {'time'}
+
+    assert sc.identical(new.bins.coords['time'], da.bins.coords['time'])
+    assert sc.identical(new.bins.coords['a'], da.bins.coords['time'] * 2.0)
+    assert sc.identical(new.bins.coords['b'], da.bins.coords['time'] * 3.0)
+
+
 def test_bins_view_coords_drop():
     var = make_binned()
     assert set(var.bins.coords) == {'time'}
