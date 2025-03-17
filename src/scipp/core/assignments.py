@@ -25,6 +25,24 @@ def _assign(
     return out
 
 
+def assign_data(self: DataArray, data: Variable) -> DataArray:
+    """Return new data array with updated data.
+
+    Parameters
+    ----------
+    data:
+        New data.
+
+    Returns
+    -------
+    :
+        ``scipp.DataArray`` with updated data.
+    """
+    out = self.copy(deep=False)
+    out.data = data
+    return out
+
+
 def assign_coords(
     self: _T, coords: dict[str, Variable] | None = None, /, **coords_kwargs: Variable
 ) -> _T:

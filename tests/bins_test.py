@@ -173,6 +173,23 @@ def test_bins_view_data_array_unit():
     assert var.bins.unit == 'K'
 
 
+def test_variable_bins_data_assign():
+    var = make_binned()
+    assert set(var.bins.coords) == {'time'}
+    new = var.bins.assign(var.bins.data * 2.0)
+    assert sc.identical(new.bins.data, var.bins.data * 2.0)
+    assert sc.identical(new.bins.coords['time'], var.bins.coords['time'])
+
+
+def test_data_array_bins_data_assign():
+    da = sc.DataArray(make_binned(), coords={'x': sc.scalar(0.1)})
+    assert set(da.bins.coords) == {'time'}
+    new = da.bins.assign(da.bins.data * 2.0)
+    assert sc.identical(new.bins.data, da.bins.data * 2.0)
+    assert sc.identical(new.bins.coords['time'], da.bins.coords['time'])
+    assert sc.identical(new.coords['x'], da.coords['x'])
+
+
 def test_bins_view_coord_unit():
     var = make_binned()
     var.bins.coords['time'].unit = 'mK'
@@ -204,6 +221,20 @@ def test_bins_view_coords_assign():
     assert sc.identical(new.bins.coords['time'], var.bins.coords['time'])
     assert sc.identical(new.bins.coords['a'], var.bins.coords['time'] * 2.0)
     assert sc.identical(new.bins.coords['b'], var.bins.coords['time'] * 3.0)
+
+
+def test_data_array_bins_view_coords_assign():
+    da = sc.DataArray(make_binned())
+    assert set(da.bins.coords) == {'time'}
+    new = da.bins.assign_coords(
+        {'a': da.bins.coords['time'] * 2.0}, b=da.bins.coords['time'] * 3.0
+    )
+    assert set(new.bins.coords) == {'time', 'a', 'b'}
+    assert set(da.bins.coords) == {'time'}
+
+    assert sc.identical(new.bins.coords['time'], da.bins.coords['time'])
+    assert sc.identical(new.bins.coords['a'], da.bins.coords['time'] * 2.0)
+    assert sc.identical(new.bins.coords['b'], da.bins.coords['time'] * 3.0)
 
 
 def test_bins_view_coords_drop():

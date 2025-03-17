@@ -262,6 +262,25 @@ class Bins(Generic[_O]):
             "and stop given by a 0-D variable."
         )
 
+    def assign(self, data: Variable) -> _O:
+        """Assign data variable to bins, if content is a DataArray.
+
+        Parameters
+        ----------
+        data:
+            Data to assign to the bins content.
+
+        Returns
+        -------
+        :
+            The input with the new data assigned.
+        """
+        if isinstance(self._obj, Dataset):
+            raise NotImplementedError("bins.assign does not support datasets")
+        out = self._map_constituents_data(lambda data: data)
+        out.bins.data = data  # type: ignore[union-attr]  # we know that out has bins
+        return out
+
     @property
     def coords(self) -> Coords:
         """Coords of the bins"""
@@ -564,9 +583,7 @@ class Bins(Generic[_O]):
         content['data'] = f(content['data'])  # type: ignore[arg-type]
         data: Variable = _cpp._bins_no_validate(**content)
         if isinstance(self._obj, DataArray):
-            out = self._obj.copy(deep=False)
-            out.data = data
-            return out
+            return self._obj.assign(data)
         elif isinstance(self._obj, Dataset):
             raise NotImplementedError("Dataset events not supported")
         return data
