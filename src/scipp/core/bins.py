@@ -275,6 +275,8 @@ class Bins(Generic[_O]):
         :
             The input with the new data assigned.
         """
+        if isinstance(self._obj, Dataset):
+            raise NotImplementedError("bins.assign does not support datasets")
         out = self._map_constituents_data(lambda data: data)
         out.bins.data = data
         return out
