@@ -107,9 +107,7 @@ def configure(case, build_dir, install_dir):
             cwd=build_dir,
         )
     except subprocess.CalledProcessError as err:
-        print(
-            f"Configuring build '{case.name}' " f"failed:\n{err.stdout}\n{err.stderr}"
-        )
+        print(f"Configuring build '{case.name}' failed:\n{err.stdout}\n{err.stderr}")
         sys.exit(1)
 
 

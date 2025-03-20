@@ -7,11 +7,11 @@
 #
 bottle==0.12.25
     # via conan
-certifi==2024.12.14
+certifi==2025.1.31
     # via requests
-charset-normalizer==3.4.0
+charset-normalizer==3.4.1
     # via requests
-cmake==3.31.2
+cmake==3.31.6
     # via -r build.in
 colorama==0.4.6
     # via conan
@@ -23,7 +23,7 @@ fasteners==0.19
     # via conan
 idna==3.10
     # via requests
-jinja2==3.1.4
+jinja2==3.1.6
     # via conan
 markupsafe==3.0.2
     # via jinja2
@@ -35,7 +35,7 @@ patch-ng==1.17.4
     # via conan
 pluginbase==1.0.1
     # via conan
-pygments==2.18.0
+pygments==2.19.1
     # via conan
 pyjwt==2.10.1
     # via conan

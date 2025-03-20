@@ -184,7 +184,7 @@ def format_dims(
     dims_li = "".join(
         f"<li><span{dim_css_map[dim]}>"
         f"{escape(str(dim))}</span>: "
-        f"{size if size is not None else 'Events' }</li>"
+        f"{size if size is not None else 'Events'}</li>"
         for dim, size in zip(dims, sizes, strict=True)
     )
 
@@ -212,7 +212,7 @@ def summarize_mask(
 
 def summarize_coords(coords: Coords, ds: DataArray | Dataset | None = None) -> str:
     vars_li = "".join(
-        "<li class='sc-var-item'>" f"{summarize_coord(dim, var, ds)}" "</span></li>"
+        f"<li class='sc-var-item'>{summarize_coord(dim, var, ds)}</span></li>"
         for dim, var in _ordered_dict(coords).items()
     )
     return f"<ul class='sc-var-list'>{vars_li}</ul>"
@@ -220,7 +220,7 @@ def summarize_coords(coords: Coords, ds: DataArray | Dataset | None = None) -> s
 
 def summarize_masks(masks: Masks, ds: DataArray | Dataset | None = None) -> str:
     vars_li = "".join(
-        "<li class='sc-var-item'>" f"{summarize_mask(dim, var, ds)}" "</span></li>"
+        f"<li class='sc-var-item'>{summarize_mask(dim, var, ds)}</span></li>"
         for dim, var in _ordered_dict(masks).items()
     )
     return f"<ul class='sc-var-list'>{vars_li}</ul>"
@@ -488,7 +488,7 @@ data_section = partial(
 
 
 def _obj_repr(header_components: Iterable[str], sections: Iterable[str]) -> str:
-    header = f"<div class='sc-header'>" f"{''.join(h for h in header_components)}</div>"
+    header = f"<div class='sc-header'>{''.join(h for h in header_components)}</div>"
     sections = "".join(f"<li class='sc-section-item'>{s}</li>" for s in sections)
 
     return (
@@ -549,10 +549,10 @@ def variable_repr(var: Variable) -> str:
 
 def human_readable_size(size_in_bytes: int) -> str:
     if size_in_bytes / (1024 * 1024 * 1024) > 1:
-        return f'{size_in_bytes/(1024*1024*1024):.2f} GB'
+        return f'{size_in_bytes / (1024 * 1024 * 1024):.2f} GB'
     if size_in_bytes / (1024 * 1024) > 1:
-        return f'{size_in_bytes/(1024*1024):.2f} MB'
+        return f'{size_in_bytes / (1024 * 1024):.2f} MB'
     if size_in_bytes / (1024) > 1:
-        return f'{size_in_bytes/(1024):.2f} KB'
+        return f'{size_in_bytes / (1024):.2f} KB'
 
     return f'{size_in_bytes} Bytes'

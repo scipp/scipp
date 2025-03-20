@@ -8,29 +8,29 @@
 -r base.txt
 asttokens==3.0.0
     # via stack-data
-certifi==2024.12.14
+certifi==2025.1.31
     # via requests
-charset-normalizer==3.4.0
+charset-normalizer==3.4.1
     # via requests
 comm==0.2.2
     # via ipykernel
-debugpy==1.8.11
+debugpy==1.8.13
     # via ipykernel
-decorator==5.1.1
+decorator==5.2.1
     # via ipython
 exceptiongroup==1.2.2
     # via ipython
-executing==2.1.0
+executing==2.2.0
     # via stack-data
 graphviz==0.20.3
     # via -r extra.in
-h5py==3.12.1
+h5py==3.13.0
     # via -r extra.in
 idna==3.10
     # via requests
 ipykernel==6.29.5
     # via -r extra.in
-ipython==8.30.0
+ipython==8.34.0
     # via ipykernel
 jedi==0.19.2
     # via ipython
@@ -40,7 +40,7 @@ jupyter-core==5.7.2
     # via
     #   ipykernel
     #   jupyter-client
-llvmlite==0.43.0
+llvmlite==0.44.0
     # via numba
 matplotlib-inline==0.1.7
     # via
@@ -48,7 +48,7 @@ matplotlib-inline==0.1.7
     #   ipython
 nest-asyncio==1.6.0
     # via ipykernel
-numba==0.60.0
+numba==0.61.0
     # via -r extra.in
 packaging==24.2
     # via
@@ -63,33 +63,33 @@ parso==0.8.4
     # via jedi
 pexpect==4.9.0
     # via ipython
-platformdirs==4.3.6
+platformdirs==4.3.7
     # via
     #   jupyter-core
     #   pooch
 pooch==1.8.2
     # via -r extra.in
-prompt-toolkit==3.0.48
+prompt-toolkit==3.0.50
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.3
     # via stack-data
-pygments==2.18.0
+pygments==2.19.1
     # via ipython
 python-dateutil==2.9.0.post0
     # via
     #   jupyter-client
     #   pandas
-pytz==2024.2
+pytz==2025.1
     # via pandas
-pyzmq==26.2.0
+pyzmq==26.3.0
     # via
     #   ipykernel
     #   jupyter-client
 requests==2.32.3
     # via pooch
-scipy==1.14.1
+scipy==1.15.2
     # via -r extra.in
 six==1.17.0
     # via python-dateutil
@@ -109,11 +109,11 @@ traitlets==5.14.3
     #   matplotlib-inline
 typing-extensions==4.12.2
     # via ipython
-tzdata==2024.2
+tzdata==2025.1
     # via pandas
-urllib3==2.2.3
+urllib3==2.3.0
     # via requests
 wcwidth==0.2.13
     # via prompt-toolkit
-xarray==2024.11.0
+xarray==2025.3.0
     # via -r extra.in

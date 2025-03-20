@@ -533,7 +533,7 @@ def _expect_no_variances(args: dict[str, Variable | None]) -> None:
     ]
     if has_variances:
         raise _cpp.VariancesError(
-            'Arguments cannot have variances. ' f'Passed variances in {has_variances}'
+            f'Arguments cannot have variances. Passed variances in {has_variances}'
         )
 
 
