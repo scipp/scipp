@@ -7,7 +7,7 @@
 #
 -r docs.txt
 -r test.txt
-mypy==1.13.0
+mypy==1.15.0
     # via -r mypy.in
 mypy-extensions==1.0.0
     # via mypy

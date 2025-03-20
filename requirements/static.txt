@@ -9,17 +9,17 @@ cfgv==3.4.0
     # via pre-commit
 distlib==0.3.9
     # via virtualenv
-filelock==3.16.1
+filelock==3.18.0
     # via virtualenv
-identify==2.6.3
+identify==2.6.9
     # via pre-commit
 nodeenv==1.9.1
     # via pre-commit
-platformdirs==4.3.6
+platformdirs==4.3.7
     # via virtualenv
-pre-commit==4.0.1
+pre-commit==4.2.0
     # via -r static.in
 pyyaml==6.0.2
     # via pre-commit
-virtualenv==20.28.0
+virtualenv==20.29.3
     # via pre-commit
