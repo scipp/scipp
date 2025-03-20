@@ -158,6 +158,6 @@ _VarDa = TypeVar('_VarDa', Variable, DataArray)
 
 
 def concat_bins(obj: _VarDa, dim: Dims = None) -> _VarDa:
-    da = obj if isinstance(obj, DataArray) else DataArray(obj)  # type: ignore[arg-type, redundant-expr]
+    da = obj if isinstance(obj, DataArray) else DataArray(obj)  # type: ignore[redundant-expr]
     out = combine_bins(da, edges=[], groups=[], dim=dim)
     return out if isinstance(obj, DataArray) else out.data  # type: ignore[redundant-expr]
