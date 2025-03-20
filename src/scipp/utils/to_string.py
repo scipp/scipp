@@ -12,7 +12,7 @@ def value_to_string(val: Any, precision: int = 3, max_str_len: int = 80) -> str:
     if (not isinstance(val, float)) or (val == 0):
         raw_text = str(val)
         if len(raw_text) > max_str_len:
-            text = f"{raw_text[:max_str_len-3]}..."
+            text = f"{raw_text[: max_str_len - 3]}..."
         else:
             text = raw_text
     elif (abs(val) >= 10.0 ** (precision + 1)) or (

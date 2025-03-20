@@ -181,8 +181,7 @@ def _dict_to_variable(d: dict[str, Any]) -> Variable:
             del out['values']
             del out['dims']
         for key in ['dtype', 'variance', 'variances']:
-            if key in out:
-                del out[key]
+            out.pop(key, None)
     var = make_var(**out)
     return var
 
