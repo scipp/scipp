@@ -31,6 +31,8 @@ jobs:
           fetch-depth: 0 # history required so cmake can determine version
 
       - uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
       - name: Create variant file for conda build
         run: |
           echo "python:" > dynamic_var.yaml
@@ -49,7 +51,6 @@ jobs:
       - run: >
           conda install
           --channel conda-forge
-          --channel nodefaults
           --yes
           conda-build conda-forge-pinning
       - run: >
