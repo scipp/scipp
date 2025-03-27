@@ -634,8 +634,7 @@ def sum(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
         Input data.
     dim:
         Dimension(s) along which to calculate the sum.
-        If not given, the sum over all
-        dimensions is calculated.
+        If not given, the sum over all dimensions is calculated.
 
     Returns
     -------
