@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-  "setuptools>=68",
+  "setuptools>=77",
   "conan==1.64.1",
   "scikit-build-core"
 ]
@@ -10,11 +10,11 @@ build-backend = "scikit_build_core.build"
 name = "scipp"
 description = "Multi-dimensional data arrays with labeled dimensions"
 readme = "README.md"
-license = { "file" = "LICENSE" }
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
 authors = [{ name = "Scipp contributors (https://github.com/scipp)" }]
 classifiers = [
   "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: BSD License",
   "Natural Language :: English",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
