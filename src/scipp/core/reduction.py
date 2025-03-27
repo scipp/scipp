@@ -27,7 +27,19 @@ from .data_group import DataGroup, data_group_nary
 from .variable import array
 
 
-def mean(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
+def _apply_op(
+    x: VariableLike, dim: Dims, func: Callable[..., VariableLike]
+) -> VariableLike:
+    if dim is None:
+        return _call_cpp_func(func, x)
+    elif isinstance(dim, str):
+        return _call_cpp_func(func, x, dim=dim)
+    for d in dim:
+        x = _call_cpp_func(func, x, dim=d)
+    return x
+
+
+def mean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     """Arithmetic mean of elements in the input.
 
     If the input has variances, the variances stored in the output are based on
@@ -44,8 +56,8 @@ def mean(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     x: scipp.typing.VariableLike
         Input data.
     dim:
-        Dimension along which to calculate the mean. If not
-        given, the mean over all dimensions is calculated.
+        Dimension(s) along which to calculate the mean.
+        If not given, the mean over all dimensions is calculated.
 
     Returns
     -------
@@ -61,13 +73,10 @@ def mean(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     scipp.nanmean:
         Ignore NaN's when calculating the mean.
     """
-    if dim is None:
-        return _call_cpp_func(_cpp.mean, x)  # type: ignore[return-value]
-    else:
-        return _call_cpp_func(_cpp.mean, x, dim=dim)  # type: ignore[return-value]
+    return _apply_op(x, dim, _cpp.mean)  # type: ignore[return-value]
 
 
-def nanmean(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
+def nanmean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     """Arithmetic mean of elements in the input ignoring NaN's.
 
     If the input has variances, the variances stored in the output are based on
@@ -84,8 +93,8 @@ def nanmean(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     x: scipp.typing.VariableLike
         Input data.
     dim:
-        Dimension along which to calculate the mean. If not
-        given, the nanmean over all dimensions is calculated.
+        Dimension(s) along which to calculate the mean.
+        If not given, the mean over all dimensions is calculated.
 
     Returns
     -------
@@ -101,10 +110,7 @@ def nanmean(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     scipp.mean:
         Compute the mean without special handling of NaN.
     """
-    if dim is None:
-        return _call_cpp_func(_cpp.nanmean, x)  # type: ignore[return-value]
-    else:
-        return _call_cpp_func(_cpp.nanmean, x, dim=dim)  # type: ignore[return-value]
+    return _apply_op(x, dim, _cpp.nanmean)  # type: ignore[return-value]
 
 
 def median(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
@@ -627,8 +633,8 @@ def sum(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     x: scipp.typing.VariableLike
         Input data.
     dim:
-        Optional dimension along which to calculate the sum. If not
-        given, the sum over all dimensions is calculated.
+        Dimension(s) along which to calculate the sum.
+        If not given, the sum over all dimensions is calculated.
 
     Returns
     -------
@@ -640,16 +646,10 @@ def sum(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     scipp.nansum:
         Ignore NaN's when calculating the sum.
     """
-    if dim is None:
-        return _call_cpp_func(_cpp.sum, x)  # type: ignore[return-value]
-    elif isinstance(dim, str):
-        return _call_cpp_func(_cpp.sum, x, dim=dim)  # type: ignore[return-value]
-    for d in dim:
-        x = _call_cpp_func(_cpp.sum, x, d)  # type: ignore[assignment]
-    return x
+    return _apply_op(x, dim, _cpp.sum)  # type: ignore[return-value]
 
 
-def nansum(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
+def nansum(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     """Sum of elements in the input ignoring NaN's.
 
     See :py:func:`scipp.sum` on how rounding errors for float32 inputs are handled.
@@ -659,8 +659,8 @@ def nansum(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     x: scipp.typing.VariableLike
         Input data.
     dim:
-        Optional dimension along which to calculate the sum. If not
-        given, the sum over all dimensions is calculated.
+        Dimension(s) along which to calculate the sum.
+        If not given, the sum over all dimensions is calculated.
 
     Returns
     -------
@@ -672,13 +672,10 @@ def nansum(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     scipp.sum:
        Compute the sum without special handling of NaN.
     """
-    if dim is None:
-        return _call_cpp_func(_cpp.nansum, x)  # type: ignore[return-value]
-    else:
-        return _call_cpp_func(_cpp.nansum, x, dim=dim)  # type: ignore[return-value]
+    return _apply_op(x, dim, _cpp.nansum)  # type: ignore[return-value]
 
 
-def min(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
+def min(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     """Minimum of elements in the input.
 
     Warning
@@ -694,8 +691,8 @@ def min(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     x: scipp.typing.VariableLike
         Input data.
     dim:
-        Optional dimension along which to calculate the min. If not
-        given, the min over all dimensions is calculated.
+        Dimension(s) along which to calculate the min.
+        If not given, the min over all dimensions is calculated.
 
     Returns
     -------
@@ -711,13 +708,10 @@ def min(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     scipp.nanmax:
         Same as max but ignoring NaN's.
     """
-    if dim is None:
-        return _call_cpp_func(_cpp.min, x)  # type: ignore[return-value]
-    else:
-        return _call_cpp_func(_cpp.min, x, dim=dim)  # type: ignore[return-value]
+    return _apply_op(x, dim, _cpp.min)  # type: ignore[return-value]
 
 
-def max(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
+def max(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     """Maximum of elements in the input.
 
     Warning
@@ -733,8 +727,8 @@ def max(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     x: scipp.typing.VariableLike
         Input data.
     dim:
-        Optional dimension along which to calculate the max. If not
-        given, the max over all dimensions is calculated.
+        Dimension(s) along which to calculate the max.
+        If not given, the max over all dimensions is calculated.
 
     Returns
     -------
@@ -750,13 +744,10 @@ def max(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     scipp.nanmax:
         Same as max but ignoring NaN's.
     """
-    if dim is None:
-        return _call_cpp_func(_cpp.max, x)  # type: ignore[return-value]
-    else:
-        return _call_cpp_func(_cpp.max, x, dim=dim)  # type: ignore[return-value]
+    return _apply_op(x, dim, _cpp.max)  # type: ignore[return-value]
 
 
-def nanmin(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
+def nanmin(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     """Minimum of elements in the input ignoring NaN's.
 
     Warning
@@ -772,8 +763,8 @@ def nanmin(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     x: scipp.typing.VariableLike
         Input data.
     dim:
-        Optional dimension along which to calculate the min. If not
-        given, the min over all dimensions is calculated.
+        Dimension(s) along which to calculate the min.
+        If not given, the min over all dimensions is calculated.
 
     Returns
     -------
@@ -789,13 +780,10 @@ def nanmin(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     scipp.nanmax:
         Same as max but ignoring NaN's.
     """
-    if dim is None:
-        return _call_cpp_func(_cpp.nanmin, x)  # type: ignore[return-value]
-    else:
-        return _call_cpp_func(_cpp.nanmin, x, dim=dim)  # type: ignore[return-value]
+    return _apply_op(x, dim, _cpp.nanmin)  # type: ignore[return-value]
 
 
-def nanmax(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
+def nanmax(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     """Maximum of elements in the input ignoring NaN's.
 
     Warning
@@ -811,8 +799,8 @@ def nanmax(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     x: scipp.typing.VariableLike
         Input data.
     dim:
-        Optional dimension along which to calculate the max. If not
-        given, the max over all dimensions is calculated.
+        Dimension(s) along which to calculate the max.
+        If not given, the max over all dimensions is calculated.
 
     Returns
     -------
@@ -828,13 +816,10 @@ def nanmax(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     scipp.nanmin:
         Same as min but ignoring NaN's.
     """
-    if dim is None:
-        return _call_cpp_func(_cpp.nanmax, x)  # type: ignore[return-value]
-    else:
-        return _call_cpp_func(_cpp.nanmax, x, dim=dim)  # type: ignore[return-value]
+    return _apply_op(x, dim, _cpp.nanmax)  # type: ignore[return-value]
 
 
-def all(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
+def all(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     """Logical AND over input values.
 
     Parameters
@@ -842,8 +827,8 @@ def all(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     x: scipp.typing.VariableLike
         Input data.
     dim:
-        Optional dimension along which to calculate the AND. If not
-        given, the AND over all dimensions is calculated.
+        Dimension(s) along which to calculate the AND.
+        If not given, the AND over all dimensions is calculated.
 
     Returns
     -------
@@ -856,13 +841,10 @@ def all(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     scipp.any:
         Logical OR.
     """
-    if dim is None:
-        return _call_cpp_func(_cpp.all, x)  # type: ignore[return-value]
-    else:
-        return _call_cpp_func(_cpp.all, x, dim=dim)  # type: ignore[return-value]
+    return _apply_op(x, dim, _cpp.all)  # type: ignore[return-value]
 
 
-def any(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
+def any(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     """Logical OR over input values.
 
     Parameters
@@ -870,8 +852,8 @@ def any(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     x: scipp.typing.VariableLike
         Input data.
     dim:
-        Optional dimension along which to calculate the OR. If not
-        given, the OR over all dimensions is calculated.
+        Dimension(s) along which to calculate the OR.
+        If not given, the OR over all dimensions is calculated.
 
     Returns
     -------
@@ -884,10 +866,7 @@ def any(x: VariableLikeType, dim: str | None = None) -> VariableLikeType:
     scipp.all:
         Logical AND.
     """
-    if dim is None:
-        return _call_cpp_func(_cpp.any, x)  # type: ignore[return-value]
-    else:
-        return _call_cpp_func(_cpp.any, x, dim=dim)  # type: ignore[return-value]
+    return _apply_op(x, dim, _cpp.any)  # type: ignore[return-value]
 
 
 # Note: When passing `sc_func`, make sure to disassociate type vars of that function
