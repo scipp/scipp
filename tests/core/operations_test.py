@@ -38,7 +38,7 @@ def test_where_with_da_da_v() -> None:
     y = sc.array(dims=['a'], values=[-13, -11, -12], unit='m')
     result = sc.where(condition, x, y)
     expected = sc.DataArray(
-        sc.array(dims=['a'], values=[1, -11, -12], unit='m'), coords=x.coords
+        sc.array(dims=['a'], values=[1, -11, -12], unit='m'), coords=condition.coords
     )
     assert sc.identical(result, expected)
 
@@ -55,7 +55,7 @@ def test_where_with_da_v_da() -> None:
     )
     result = sc.where(condition, x, y)
     expected = sc.DataArray(
-        sc.array(dims=['a'], values=[1, -11, -12], unit='m'), coords=y.coords
+        sc.array(dims=['a'], values=[1, -11, -12], unit='m'), coords=condition.coords
     )
     assert sc.identical(result, expected)
 
@@ -75,7 +75,7 @@ def test_where_with_da_da_da() -> None:
     )
     result = sc.where(condition, x, y)
     expected = sc.DataArray(
-        sc.array(dims=['a'], values=[1, -11, -12], unit='m'), coords=x.coords
+        sc.array(dims=['a'], values=[1, -11, -12], unit='m'), coords=condition.coords
     )
     assert sc.identical(result, expected)
 
@@ -97,10 +97,10 @@ def test_where_with_v_da_da() -> None:
     assert sc.identical(result, expected)
 
 
-def test_where_condition_coords_must_be_superset_of_others() -> None:
+def test_where_condition_coords_must_be_compatible_with_others() -> None:
     condition = sc.DataArray(
         sc.array(dims=['a'], values=[True, False, False]),
-        coords={'a': sc.arange('a', 3)},
+        coords={'a': -sc.arange('a', 3)},
     )
     x = sc.DataArray(
         sc.array(dims=['a'], values=[1, 2, 3], unit='m'),
@@ -111,14 +111,7 @@ def test_where_condition_coords_must_be_superset_of_others() -> None:
         coords={'a': sc.arange('a', 3), 'b': sc.arange('a', 4)},
     )
 
-    # condition is missing coord
-    with pytest.raises(sc.DatasetError):
-        sc.where(condition, x, y)
-
-    # condition has differing coord value
-    condition.coords['b'] = x.coords['b']
-    condition.coords['a'][0] = -1
-    with pytest.raises(sc.DatasetError):
+    with pytest.raises(sc.DatasetError, match="Mismatch in coordinate 'a'"):
         sc.where(condition, x, y)
 
 

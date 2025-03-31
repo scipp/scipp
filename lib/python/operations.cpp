@@ -95,21 +95,10 @@ extract_where_argument(const py::object &arg) {
   return {da.data(), std::optional(da.coords())};
 }
 
-Variable apply_where(const Variable &c_data, const Variable &x_data,
-                     const Variable &y_data,
-                     const std::optional<Coords> &c_coords,
-                     const std::optional<Coords> &x_coords,
-                     const std::optional<Coords> &y_coords) {
-  py::gil_scoped_release _release;
-
-  if (c_coords.has_value() && x_coords.has_value()) {
-    dataset::expect::coords_are_superset(c_coords.value(), x_coords.value(),
-                                         "where (condition and x)");
-  }
-  if (c_coords.has_value() && y_coords.has_value()) {
-    dataset::expect::coords_are_superset(c_coords.value(), y_coords.value(),
-                                         "where (condition and y)");
-  }
+std::optional<Coords>
+combine_coords_for_where(const std::optional<Coords> &c_coords,
+                         std::optional<Coords> &x_coords,
+                         const std::optional<Coords> &y_coords) {
   if (x_coords.has_value() && y_coords.has_value()) {
     if (x_coords.value() != y_coords.value()) {
       throw except::CoordMismatchError(
@@ -117,7 +106,21 @@ Variable apply_where(const Variable &c_data, const Variable &x_data,
     }
   }
 
-  return where(c_data, x_data, y_data);
+  if (x_coords.has_value()) {
+    if (c_coords.has_value()) {
+      return Coords{AutoSizeTag{},
+                    union_(c_coords.value(), x_coords.value(), "where")};
+    }
+    return x_coords.value();
+  }
+  if (y_coords.has_value()) {
+    if (c_coords.has_value()) {
+      return Coords{AutoSizeTag{},
+                    union_(c_coords.value(), y_coords.value(), "where")};
+    }
+    return y_coords.value();
+  }
+  return std::nullopt;
 }
 
 void bind_where(py::module &m) {
@@ -128,16 +131,14 @@ void bind_where(py::module &m) {
         auto [c_data, c_coords] = extract_where_argument(condition);
         auto [x_data, x_coords] = extract_where_argument(x);
         auto [y_data, y_coords] = extract_where_argument(y);
-        const Variable new_data =
-            apply_where(c_data, x_data, y_data, c_coords, x_coords, y_coords);
+        auto coords = combine_coords_for_where(c_coords, x_coords, y_coords);
+        Variable new_data = where(c_data, x_data, y_data);
 
-        if (x_coords.has_value()) {
-          return py::cast(DataArray(new_data, x_coords.value(), {}));
+        if (coords.has_value()) {
+          return py::cast(
+              DataArray(std::move(new_data), std::move(coords.value()), {}));
         }
-        if (y_coords.has_value()) {
-          return py::cast(DataArray(new_data, y_coords.value(), {}));
-        }
-        return py::cast(new_data);
+        return py::cast(std::move(new_data));
       },
       py::arg("condition"), py::arg("x"), py::arg("y"));
 }
