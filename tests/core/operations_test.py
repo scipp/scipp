@@ -130,10 +130,6 @@ def test_where_value_coords_must_match() -> None:
     with pytest.raises(sc.DatasetError):
         sc.where(condition, x, y)
 
-    # differing values
-    with pytest.raises(sc.DatasetError):
-        sc.where(condition, x, y)
-
     # alignment differs
     y.coords['a'] = x.coords['a']
     x.coords.set_aligned('a', False)
