@@ -7,6 +7,7 @@
 #include "slice_utils.h"
 
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/except.h"
 #include "scipp/dataset/sort.h"
 #include "scipp/variable/math.h"
 #include "scipp/variable/operations.h"
@@ -82,6 +83,66 @@ void bind_midpoints(py::module &m) {
   });
 }
 
+std::tuple<Variable, std::optional<Coords>>
+extract_where_argument(const py::object &arg) {
+  if (py::isinstance<Variable>(arg)) {
+    return {arg.cast<Variable>(), std::nullopt};
+  }
+  auto da = arg.cast<DataArray>();
+  if (!da.masks().empty()) {
+    throw std::invalid_argument("Arguments of 'where' must not have masks");
+  }
+  return {da.data(), std::optional(da.coords())};
+}
+
+std::optional<Coords>
+combine_coords_for_where(const std::optional<Coords> &c_coords,
+                         std::optional<Coords> &x_coords,
+                         const std::optional<Coords> &y_coords) {
+  if (x_coords.has_value() && y_coords.has_value()) {
+    if (x_coords.value() != y_coords.value()) {
+      throw except::CoordMismatchError(
+          "Expected coords of x and y to match in 'where' operation");
+    }
+  }
+
+  if (x_coords.has_value()) {
+    if (c_coords.has_value()) {
+      return Coords{AutoSizeTag{},
+                    union_(c_coords.value(), x_coords.value(), "where")};
+    }
+    return x_coords.value();
+  }
+  if (y_coords.has_value()) {
+    if (c_coords.has_value()) {
+      return Coords{AutoSizeTag{},
+                    union_(c_coords.value(), y_coords.value(), "where")};
+    }
+    return y_coords.value();
+  }
+  return std::nullopt;
+}
+
+void bind_where(py::module &m) {
+  m.def(
+      "where",
+      [](const py::object &condition, const py::object &x,
+         const py::object &y) {
+        auto [c_data, c_coords] = extract_where_argument(condition);
+        auto [x_data, x_coords] = extract_where_argument(x);
+        auto [y_data, y_coords] = extract_where_argument(y);
+        auto coords = combine_coords_for_where(c_coords, x_coords, y_coords);
+        Variable new_data = where(c_data, x_data, y_data);
+
+        if (coords.has_value()) {
+          return py::cast(
+              DataArray(std::move(new_data), std::move(coords.value()), {}));
+        }
+        return py::cast(std::move(new_data));
+      },
+      py::arg("condition"), py::arg("x"), py::arg("y"));
+}
+
 void init_operations(py::module &m) {
   bind_dot<Variable>(m);
 
@@ -94,6 +155,7 @@ void init_operations(py::module &m) {
   bind_issorted(m);
   bind_allsorted(m);
   bind_midpoints(m);
+  bind_where(m);
 
   m.def(
       "label_based_index_to_positional_index",
@@ -119,7 +181,4 @@ void init_operations(py::module &m) {
                 "Value based slice must contain variables.");
           }
         });
-
-  m.def("where", &variable::where, py::arg("condition"), py::arg("x"),
-        py::arg("y"), py::call_guard<py::gil_scoped_release>());
 }
