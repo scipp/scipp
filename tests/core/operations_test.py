@@ -127,7 +127,9 @@ def test_where_value_coords_must_match() -> None:
     )
 
     # differing values
-    with pytest.raises(sc.DatasetError):
+    with pytest.raises(
+        sc.DatasetError, match="Expected coords of x and y to match in 'where'"
+    ):
         sc.where(condition, x, y)
 
     # alignment differs
