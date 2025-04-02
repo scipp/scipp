@@ -45,3 +45,43 @@ function(scipp_install_component)
     endif()
   endif(DYNAMIC_LIB)
 endfunction()
+
+# Conda build does not create a dist-info folder like setuptools / scikit-build.
+# This function creates a minimal dist-info to satisfy
+# https://packaging.python.org/en/latest/specifications/recording-installed-packages/
+# There is no need to call this function when building with setuptools.
+function(scipp_write_dist_info)
+  set(oneValueArgs VERSION)
+  cmake_parse_arguments(
+    PARSE_ARGV 0 SCIPP_WRITE_DIST_INFO "" "${oneValueArgs}" ""
+  )
+
+  set(dist_info_dir ${CMAKE_CURRENT_BINARY_DIR}/dist-info)
+  if(DEFINED ENV{SP_DIR}) # conda build
+    set(target_dist_info_dir
+        "$ENV{SP_DIR}/scipp-${SCIPP_WRITE_DIST_INFO_VERSION}.dist-info"
+    )
+  else() # fallback, this function should not really be called in this case
+    set(target_dist_info_dir
+        "${CMAKE_INSTALL_PREFIX}/scipp-${SCIPP_WRITE_DIST_INFO_VERSION}.dist-info"
+    )
+  endif()
+  message(STATUS "Writing dist-info during build to ${dist_info_dir}")
+  message(STATUS "dist-info will be installed to ${target_dist_info_dir}")
+
+  set(metadata_file ${dist_info_dir}/METADATA)
+  file(
+    WRITE ${metadata_file}
+    "Metadata-Version: 2.4
+Name: ${PROJECT_NAME}
+Version: ${SCIPP_WRITE_DIST_INFO_VERSION}
+License-Expression: Bsd-3-Clause
+License-File: LICENSE
+"
+  )
+  install(FILES "${metadata_file}" DESTINATION "${target_dist_info_dir}")
+
+  install(FILES "${CMAKE_SOURCE_DIR}/LICENSE"
+          DESTINATION "${target_dist_info_dir}/licenses"
+  )
+endfunction()
