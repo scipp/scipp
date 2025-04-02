@@ -20,32 +20,6 @@ jobs:
       build: ${{ matrix.build }}
       nightly: ${{ matrix.nightly }}
 
-  release:
-    name: Make Release on GitHub
-    needs: build_wheels
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-      - uses: actions/download-artifact@v4
-        with:
-          path: dist
-          merge-multiple: true
-      - run: python .github/workflows/rename-dev-wheels.py
-      - uses: ncipollo/release-action@v1
-        with:
-          allowUpdates: true
-          artifacts: 'dist/*.whl'
-          body: 'Nightly release for testing of downstream projects.'
-          makeLatest: false
-          prerelease: true
-          removeArtifacts: true
-          tag: 'nightly'
-
   release_pypi:
     name: Make Release on pypi.anaconda.org
     needs: build_wheels
@@ -60,7 +34,7 @@ jobs:
           curl --silent "https://api.anaconda.org/package/scipp-nightly-wheels/scipp" | jq -r '.releases[] | select(.version | contains("dev")) | .full_name' > dev_wheels.txt
           cat dev_wheels.txt
       - name: Upload wheel to pypi.anaconda.org/scipp-nightly-wheels/simple
-        uses: scientific-python/upload-nightly-action@82396a2ed4269ba06c6b2988bb4fd568ef3c3d6b # 0.6.1
+        uses: scientific-python/upload-nightly-action@b36e8c0c10dbcfd2e05bf95f17ef8c14fd708dbf # 0.6.2
         with:
           artifacts_path: dist
           anaconda_nightly_upload_organization: scipp-nightly-wheels
