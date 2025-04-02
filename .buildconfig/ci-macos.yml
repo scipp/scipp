@@ -5,8 +5,8 @@ name: macos-latest
 channels:
   - conda-forge
 dependencies:
-  - cmake=3.31.6
-  - conan=1.64.1
+  - cmake=4.0.0
+  - conan=1.66.0
   - ninja=1.12.1
   - scipp::plopp=25.3.0
   - tbb=2022.0.0
