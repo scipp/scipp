@@ -89,15 +89,24 @@ units::Unit from_dict(const UnitDict &dict) {
   assert_dict_version_supported(dict);
 
   const py::dict powers = dict.contains("powers") ? dict["powers"] : py::dict();
-  return units::Unit(llnl::units::precise_unit(
-      llnl::units::detail::unit_data{
-          get(powers, "m"), get(powers, "kg"), get(powers, "s"),
-          get(powers, "A"), get(powers, "K"), get(powers, "mol"),
-          get(powers, "cd"), get(powers, "$"), get(powers, "counts"),
-          get(powers, "rad"), get<bool>(dict, "per_unit"),
-          get<bool>(dict, "i_flag"), get<bool>(dict, "e_flag"),
-          get<bool>(dict, "equation")},
-      dict["multiplier"].cast<double>()));
+  const double multiplier = dict["multiplier"].cast<double>();
+  const auto unit_data =
+      llnl::units::detail::unit_data{get(powers, "m"),
+                                     get(powers, "kg"),
+                                     get(powers, "s"),
+                                     get(powers, "A"),
+                                     get(powers, "K"),
+                                     get(powers, "mol"),
+                                     get(powers, "cd"),
+                                     get(powers, "$"),
+                                     get(powers, "counts"),
+                                     get(powers, "rad"),
+                                     get<bool>(dict, "per_unit"),
+                                     get<bool>(dict, "i_flag"),
+                                     get<bool>(dict, "e_flag"),
+                                     get<bool>(dict, "equation")};
+  const auto precise_u = llnl::units::precise_unit(multiplier, unit_data);
+  return units::Unit(precise_u);
 }
 
 std::string repr(const units::Unit &unit) {

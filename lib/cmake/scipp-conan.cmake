@@ -40,7 +40,7 @@ if(SKBUILD)
     boost/1.86.0
     eigen/3.4.0
     gtest/1.11.0
-    LLNL-Units/0.9.1
+    LLNL-Units/0.12.3
     pybind11/2.13.5
     onetbb/2021.12.0
     OPTIONS
@@ -58,7 +58,7 @@ if(SKBUILD)
 else()
   conan_cmake_configure(
     REQUIRES
-    LLNL-Units/0.9.1
+    LLNL-Units/0.12.3
     OPTIONS
     LLNL-Units:shared=False
     LLNL-Units:fPIC=True
