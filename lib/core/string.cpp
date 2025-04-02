@@ -144,7 +144,7 @@ std::string to_iso_date(const scipp::core::time_point &item,
     return to_string(std::chrono::microseconds{item.time_since_epoch()});
   } else if (unit == units::Unit(llnl::units::precise::ms)) {
     return to_string(std::chrono::milliseconds{item.time_since_epoch()});
-  } else if (unit == units::Unit(llnl::units::precise::min)) {
+  } else if (unit == units::Unit(llnl::units::precise::minute)) {
     return to_string(std::chrono::minutes{item.time_since_epoch()});
   } else if (unit == units::Unit(llnl::units::precise::hr)) {
     return to_string(std::chrono::hours{item.time_since_epoch()});

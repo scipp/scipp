@@ -1,7 +1,7 @@
 [build-system]
 requires = [
   "setuptools>=68",
-  "conan==1.64.1",
+  "conan==1.66.0",
   "scikit-build-core"
 ]
 build-backend = "scikit_build_core.build"
