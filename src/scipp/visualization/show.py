@@ -565,6 +565,6 @@ def show(container: Variable | DataArray | Dataset) -> None:
     `Representations and Tables <../../user-guide/representations-and-tables.rst>`_
     for details.
     """
-    from IPython.core.display import HTML, display
+    from IPython.display import HTML, display
 
     display(HTML(make_svg(container)))  # type: ignore[no-untyped-call]
