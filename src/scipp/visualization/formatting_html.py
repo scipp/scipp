@@ -184,7 +184,7 @@ def format_dims(
     dims_li = "".join(
         f"<li><span{dim_css_map[dim]}>"
         f"{escape(str(dim))}</span>: "
-        f"{size if size is not None else 'Events' }</li>"
+        f"{size if size is not None else 'Events'}</li>"
         for dim, size in zip(dims, sizes, strict=True)
     )
 
@@ -212,7 +212,7 @@ def summarize_mask(
 
 def summarize_coords(coords: Coords, ds: DataArray | Dataset | None = None) -> str:
     vars_li = "".join(
-        "<li class='sc-var-item'>" f"{summarize_coord(dim, var, ds)}" "</span></li>"
+        f"<li class='sc-var-item'>{summarize_coord(dim, var, ds)}</span></li>"
         for dim, var in _ordered_dict(coords).items()
     )
     return f"<ul class='sc-var-list'>{vars_li}</ul>"
@@ -220,7 +220,7 @@ def summarize_coords(coords: Coords, ds: DataArray | Dataset | None = None) -> s
 
 def summarize_masks(masks: Masks, ds: DataArray | Dataset | None = None) -> str:
     vars_li = "".join(
-        "<li class='sc-var-item'>" f"{summarize_mask(dim, var, ds)}" "</span></li>"
+        f"<li class='sc-var-item'>{summarize_mask(dim, var, ds)}</span></li>"
         for dim, var in _ordered_dict(masks).items()
     )
     return f"<ul class='sc-var-list'>{vars_li}</ul>"
@@ -319,10 +319,16 @@ def summarize_variable(
             add_dim_size,
         )
     )
-    if var.unit is None:
+    if var.bins is not None and isinstance(var.bins.constituents['data'], sc.Dataset):
+        # Could print as a tuple of column units and dtypes, but we don't for now.
         unit = ''
+        dtype = ''
+    elif var.unit is None:
+        unit = ''
+        dtype = str(var.dtype)
     else:
         unit = '𝟙' if var.unit == sc.units.dimensionless else str(var.unit)  # noqa: RUF001
+        dtype = str(var.dtype)
 
     disabled, attrs_ul = _make_inline_attributes(var, has_attrs)
 
@@ -352,7 +358,7 @@ def summarize_variable(
             f"<div class='sc-var-dims'>{escape(dims_str)}</div>",
         ]
     html += [
-        f"<div class='sc-var-dtype'>{escape(str(var.dtype))}</div>",
+        f"<div class='sc-var-dtype'>{escape(dtype)}</div>",
         f"<div class='sc-var-unit'>{escape(unit)}</div>",
         f"<div class='sc-value-preview sc-preview'><span>{preview}</span>",
         "{}</div>".format(
@@ -482,7 +488,7 @@ data_section = partial(
 
 
 def _obj_repr(header_components: Iterable[str], sections: Iterable[str]) -> str:
-    header = f"<div class='sc-header'>" f"{''.join(h for h in header_components)}</div>"
+    header = f"<div class='sc-header'>{''.join(h for h in header_components)}</div>"
     sections = "".join(f"<li class='sc-section-item'>{s}</li>" for s in sections)
 
     return (
@@ -543,10 +549,10 @@ def variable_repr(var: Variable) -> str:
 
 def human_readable_size(size_in_bytes: int) -> str:
     if size_in_bytes / (1024 * 1024 * 1024) > 1:
-        return f'{size_in_bytes/(1024*1024*1024):.2f} GB'
+        return f'{size_in_bytes / (1024 * 1024 * 1024):.2f} GB'
     if size_in_bytes / (1024 * 1024) > 1:
-        return f'{size_in_bytes/(1024*1024):.2f} MB'
+        return f'{size_in_bytes / (1024 * 1024):.2f} MB'
     if size_in_bytes / (1024) > 1:
-        return f'{size_in_bytes/(1024):.2f} KB'
+        return f'{size_in_bytes / (1024):.2f} KB'
 
     return f'{size_in_bytes} Bytes'

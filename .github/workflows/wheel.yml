@@ -11,6 +11,10 @@ on:
         description: "Wheel build variant such as cp312"
         required: true
         type: string
+      nightly:
+        description: "Whether to build a nightly version"
+        type: boolean
+        default: false
 
 jobs:
   build_wheels:
@@ -23,10 +27,21 @@ jobs:
         submodules: true
         fetch-depth: 0  # history required so cmake can determine version
 
-    - uses: pypa/cibuildwheel@v2.22.0
+    - uses: pypa/cibuildwheel@v2.23.2
+      if: ${{ inputs.nightly == false }}
       env:
         CIBW_BUILD: ${{ inputs.build }}-*
         MACOSX_DEPLOYMENT_TARGET: "11.0"
+
+    # For nightly tests with downstream packages we package scipp
+    # with 100.0.0.dev0 as the version number. A stable 100.0.0.dev0
+    # version will fetch the latest nightly build for downstream tests.
+    - uses: pypa/cibuildwheel@v2.23.2
+      if: ${{ inputs.nightly }}
+      env:
+        CIBW_BUILD: ${{ inputs.build }}-*
+        MACOSX_DEPLOYMENT_TARGET: "11.0"
+        CIBW_ENVIRONMENT: SETUPTOOLS_SCM_PRETEND_VERSION="100.0.0.dev0"
 
     - name: Verify clean directory
       run: git diff --exit-code

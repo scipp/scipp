@@ -40,7 +40,7 @@ jobs:
           create-args: python=3.10
 
       - name: ccache
-        uses: hendrikmuhs/ccache-action@v1.2.16
+        uses: hendrikmuhs/ccache-action@v1.2.17
         with:
           key: coverage
 
@@ -60,7 +60,7 @@ jobs:
         run: mv tools/scipp-coverage-index.html coverage_html/index.html
 
       - name: Deploy
-        uses: JamesIves/github-pages-deploy-action@v4.7.2
+        uses: JamesIves/github-pages-deploy-action@v4.7.3
         with:
           repository-name: scipp/scipp-coverage
           branch: main

@@ -4,12 +4,10 @@
 
 from typing import Any
 
-from .core import DataArray, DataGroup, Dataset, Variable
+from .core import DataArray, Dataset, Variable
 
 
-def serialize(
-    var: Variable | DataArray | Dataset | DataGroup[Any],
-) -> tuple[dict[str, Any], list[bytes]]:
+def serialize(obj: object) -> tuple[dict[str, Any], list[bytes]]:
     """Serialize Scipp object."""
     from io import BytesIO
 
@@ -17,14 +15,12 @@ def serialize(
 
     header: dict[str, Any] = {}
     buf = BytesIO()
-    save_hdf5(var, buf)
+    save_hdf5(obj, buf)
     frames = [buf.getvalue()]
     return header, frames
 
 
-def deserialize(
-    header: dict[str, Any], frames: list[bytes]
-) -> Variable | DataArray | Dataset | DataGroup[Any]:
+def deserialize(header: dict[str, Any], frames: list[bytes]) -> object:
     """Deserialize Scipp object."""
     from io import BytesIO
 

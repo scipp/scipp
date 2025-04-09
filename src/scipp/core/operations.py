@@ -219,22 +219,40 @@ def stddevs(x: VariableLikeType) -> VariableLikeType:
     return _call_cpp_func(_cpp.stddevs, x)  # type: ignore[return-value]
 
 
-def where(condition: Variable, x: Variable, y: Variable) -> Variable:
+@overload
+def where(
+    condition: Variable | DataArray, x: DataArray, y: Variable | DataArray
+) -> DataArray: ...
+
+
+@overload
+def where(
+    condition: Variable | DataArray, x: Variable | DataArray, y: DataArray
+) -> DataArray: ...
+
+
+@overload
+def where(condition: Variable | DataArray, x: Variable, y: Variable) -> Variable: ...
+
+
+def where(
+    condition: Variable | DataArray, x: Variable | DataArray, y: Variable | DataArray
+) -> Variable | DataArray:
     """Return elements chosen from x or y depending on condition.
 
     Parameters
     ----------
     condition:
-        Variable with dtype=bool.
+        Array with dtype=bool.
     x:
-        Variable with values from which to choose.
+        Array with values from which to choose.
     y:
-        Variable with values from which to choose.
+        Array with values from which to choose.
 
     Returns
     -------
     :
-        Variable with elements from x where condition is True
+        Array with elements from x where condition is True
         and elements from y elsewhere.
     """
     return _call_cpp_func(_cpp.where, condition, x, y)  # type: ignore[return-value]

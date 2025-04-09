@@ -165,18 +165,35 @@ def test_bins_view():
 
 def test_bins_view_data_array_unit():
     var = make_binned()
-    with pytest.raises(sc.UnitError):
-        var.unit = 'K'
-    assert var.bins.unit == ''
+    var.unit = 'mK'
+    assert var.unit == 'mK'
+    assert var.bins.unit == 'mK'
     var.bins.unit = 'K'
+    assert var.unit == 'K'
     assert var.bins.unit == 'K'
+
+
+def test_variable_bins_data_assign():
+    var = make_binned()
+    assert set(var.bins.coords) == {'time'}
+    new = var.bins.assign(var.bins.data * 2.0)
+    assert sc.identical(new.bins.data, var.bins.data * 2.0)
+    assert sc.identical(new.bins.coords['time'], var.bins.coords['time'])
+
+
+def test_data_array_bins_data_assign():
+    da = sc.DataArray(make_binned(), coords={'x': sc.scalar(0.1)})
+    assert set(da.bins.coords) == {'time'}
+    new = da.bins.assign(da.bins.data * 2.0)
+    assert sc.identical(new.bins.data, da.bins.data * 2.0)
+    assert sc.identical(new.bins.coords['time'], da.bins.coords['time'])
+    assert sc.identical(new.coords['x'], da.coords['x'])
 
 
 def test_bins_view_coord_unit():
     var = make_binned()
-    with pytest.raises(sc.UnitError):
-        var.bins.coords['time'].unit = 'K'
-    assert var.bins.coords['time'].bins.unit == ''
+    var.bins.coords['time'].unit = 'mK'
+    assert var.bins.coords['time'].bins.unit == 'mK'
     var.bins.coords['time'].bins.unit = 'K'
     assert var.bins.coords['time'].bins.unit == 'K'
 
@@ -204,6 +221,20 @@ def test_bins_view_coords_assign():
     assert sc.identical(new.bins.coords['time'], var.bins.coords['time'])
     assert sc.identical(new.bins.coords['a'], var.bins.coords['time'] * 2.0)
     assert sc.identical(new.bins.coords['b'], var.bins.coords['time'] * 3.0)
+
+
+def test_data_array_bins_view_coords_assign():
+    da = sc.DataArray(make_binned())
+    assert set(da.bins.coords) == {'time'}
+    new = da.bins.assign_coords(
+        {'a': da.bins.coords['time'] * 2.0}, b=da.bins.coords['time'] * 3.0
+    )
+    assert set(new.bins.coords) == {'time', 'a', 'b'}
+    assert set(da.bins.coords) == {'time'}
+
+    assert sc.identical(new.bins.coords['time'], da.bins.coords['time'])
+    assert sc.identical(new.bins.coords['a'], da.bins.coords['time'] * 2.0)
+    assert sc.identical(new.bins.coords['b'], da.bins.coords['time'] * 3.0)
 
 
 def test_bins_view_coords_drop():
@@ -289,9 +320,8 @@ def test_bins_view_mapping_pop(param):
 
 def test_bins_view_data_unit():
     var = make_binned()
-    with pytest.raises(sc.UnitError):
-        var.bins.data.unit = 'K'
-    assert var.bins.data.bins.unit == ''
+    var.bins.data.unit = 'mK'
+    assert var.bins.data.bins.unit == 'mK'
     var.bins.data.bins.unit = 'K'
     assert var.bins.data.bins.unit == 'K'
 
@@ -696,3 +726,54 @@ def test_bin_outer_and_inner_of_2d_without_event_coord():
     da.bins.coords['ynew'] = sc.bins_like(da, y)
     table = da.bins.constituents['data']
     assert sc.identical(result.hist(), table.hist(xnew=xnew, ynew=ynew))
+
+
+def test_bins_validate_indices_true():
+    """Test that sc.bins validates indices when validate_indices=True."""
+    data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
+    begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64, unit=None)
+    end = sc.Variable(dims=['y'], values=[2, 5], dtype=sc.DType.int64, unit=None)
+    # End index 5 is out of bounds for data with size 4
+    with pytest.raises(IndexError):
+        sc.bins(begin=begin, end=end, dim='x', data=data, validate_indices=True)
+
+
+def test_bins_validate_indices_false():
+    """Test that sc.bins skips validation when validate_indices=False."""
+    data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
+    begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64, unit=None)
+    end = sc.Variable(dims=['y'], values=[2, 5], dtype=sc.DType.int64, unit=None)
+    # No exception with validate_indices=False, even with out-of-bounds indices
+    var = sc.bins(begin=begin, end=end, dim='x', data=data, validate_indices=False)
+    # The first bin should work correctly
+    assert sc.identical(var['y', 0].value, data['x', 0:2])
+    # The second bin has an out-of-bounds index, so accessing it may cause undefined
+    # behavior
+
+
+def test_bins_validate_indices_default():
+    """Test that sc.bins validates indices by default."""
+    data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
+    begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64, unit=None)
+    end = sc.Variable(dims=['y'], values=[2, 5], dtype=sc.DType.int64, unit=None)
+    # By default, validate_indices=True, so this should raise an exception
+    with pytest.raises(IndexError):
+        sc.bins(begin=begin, end=end, dim='x', data=data)
+
+
+def test_bins_validate_indices_with_valid_indices():
+    """Test that both validation modes work with valid indices."""
+    data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
+    begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64, unit=None)
+    end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.DType.int64, unit=None)
+
+    # Both should work with valid indices
+    var1 = sc.bins(begin=begin, end=end, dim='x', data=data, validate_indices=True)
+    var2 = sc.bins(begin=begin, end=end, dim='x', data=data, validate_indices=False)
+
+    # Results should be identical
+    assert sc.identical(var1, var2)
+    assert sc.identical(var1['y', 0].value, data['x', 0:2])
+    assert sc.identical(var1['y', 1].value, data['x', 2:4])
+    assert sc.identical(var2['y', 0].value, data['x', 0:2])
+    assert sc.identical(var2['y', 1].value, data['x', 2:4])

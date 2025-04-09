@@ -46,7 +46,7 @@ def main():
     with open(sys.argv[1], 'w') as outf:
         outf.write('// SPDX-License-Identifier: BSD-3-Clause\n')
         outf.write(
-            '// Copyright (c) 2022 Scipp contributors ' '(https://github.com/scipp)\n'
+            '// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)\n'
         )
         outf.write('// clang-format off\n')
         outf.write('/*\n')

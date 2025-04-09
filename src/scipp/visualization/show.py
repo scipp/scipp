@@ -275,8 +275,8 @@ class VariableDrawer:
         y0 = 2 * self._margin + 0.3 * self._extents()[-3]
         height = self._events_height()
         style = 'class="sc-inset-line"'
-        svg += f'<line x1={x0} y1={y0+0} x2={x0+2} y2={y0-1} {style}/>'
-        svg += f'<line x1={x0} y1={y0+1} x2={x0+2} y2={y0+height} {style}/>'
+        svg += f'<line x1={x0} y1={y0 + 0} x2={x0 + 2} y2={y0 - 1} {style}/>'
+        svg += f'<line x1={x0} y1={y0 + 1} x2={x0 + 2} y2={y0 + height} {style}/>'
         svg += '<g transform="translate({},{}) scale(0.5)">{}</g>'.format(
             self.size()[0] + 1,
             0,

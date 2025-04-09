@@ -262,6 +262,25 @@ class Bins(Generic[_O]):
             "and stop given by a 0-D variable."
         )
 
+    def assign(self, data: Variable) -> _O:
+        """Assign data variable to bins, if content is a DataArray.
+
+        Parameters
+        ----------
+        data:
+            Data to assign to the bins content.
+
+        Returns
+        -------
+        :
+            The input with the new data assigned.
+        """
+        if isinstance(self._obj, Dataset):
+            raise NotImplementedError("bins.assign does not support datasets")
+        out = self._map_constituents_data(lambda data: data)
+        out.bins.data = data  # type: ignore[union-attr]  # we know that out has bins
+        return out
+
     @property
     def coords(self) -> Coords:
         """Coords of the bins"""
@@ -564,9 +583,7 @@ class Bins(Generic[_O]):
         content['data'] = f(content['data'])  # type: ignore[arg-type]
         data: Variable = _cpp._bins_no_validate(**content)
         if isinstance(self._obj, DataArray):
-            out = self._obj.copy(deep=False)
-            out.data = data
-            return out
+            return self._obj.assign(data)
         elif isinstance(self._obj, Dataset):
             raise NotImplementedError("Dataset events not supported")
         return data
@@ -595,6 +612,7 @@ def bins(
     dim: str,
     begin: Variable | None = None,
     end: Variable | None = None,
+    validate_indices: bool = True,
 ) -> Variable:
     """Create a binned variable from bin indices.
 
@@ -623,6 +641,14 @@ def bins(
         any given bin.
     data:
         A variable, data array, or dataset containing combined data of all bins.
+    validate_indices:
+        If True (default), validates that all indices are within bounds of the data and
+        that bins are not overlapping.
+        If False, skips validation for better performance but may cause undefined
+        behavior if indices are out of bounds or overlapping.
+        USE WITH EXTREME CAUTION and only if you know what you are doing!
+        An example of safe usage of this option is reconstruction of binned data from
+        the result of a `obj.bins.constituents` call.
 
     Returns
     -------
@@ -637,7 +663,9 @@ def bins(
     """
     if any(isinstance(x, DataGroup) for x in [begin, end, data]):
         raise ValueError("`scipp.bins` does not support DataGroup arguments.")
-    return _call_cpp_func(_cpp.bins, begin, end, dim, data)  # type: ignore[return-value]
+
+    bin_func = _cpp.bins if validate_indices else _cpp._bins_no_validate
+    return _call_cpp_func(bin_func, begin, end, dim, data)  # type: ignore[return-value]
 
 
 def bins_like(x: VariableLike, fill_value: Variable) -> Variable:

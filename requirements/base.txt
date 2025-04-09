@@ -7,5 +7,5 @@
 #
 numpy==2.0.2
     # via -r base.in
-psutil==6.1.1
+psutil==7.0.0
     # via -r base.in

@@ -5,15 +5,14 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping, MutableMapping
 from io import BytesIO, StringIO
 from os import PathLike
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeVar, cast
 
 import numpy as np
 import numpy.typing as npt
 
-from .._scipp import core as _cpp
 from ..core import (
     DataArray,
     DataGroup,
@@ -23,6 +22,7 @@ from ..core import (
     Unit,
     Variable,
     bins,
+    empty,
 )
 from ..logging import get_logger
 from ..typing import VariableLike
@@ -31,6 +31,29 @@ if TYPE_CHECKING:
     import h5py as h5
 else:
     h5 = Any
+
+
+_ObjectType = TypeVar('_ObjectType')
+
+
+class _ObjectIO(Protocol[_ObjectType]):
+    """Reader and writer for a top-level object represented as an HDF5 group."""
+
+    @staticmethod
+    def write(group: h5.Group, data: _ObjectType) -> h5.Group | None: ...
+
+    @staticmethod
+    def read(group: h5.Group) -> _ObjectType | None: ...
+
+
+class _VariableDataIO(Protocol):
+    """Reader and writer for a Scipp variable's data."""
+
+    @staticmethod
+    def write(group: h5.Group, data: Variable) -> h5.Dataset | h5.Group: ...
+
+    @staticmethod
+    def read(group: h5.Group, data: Variable) -> None: ...
 
 
 def _dtype_lut() -> dict[str, DType]:
@@ -48,9 +71,6 @@ def _dtype_lut() -> dict[str, DType]:
         DType.Variable,
         DType.DataArray,
         DType.Dataset,
-        DType.VariableView,
-        DType.DataArrayView,
-        DType.DatasetView,
         DType.vector3,
         DType.linear_transform3,
         DType.affine_transform3,
@@ -78,19 +98,6 @@ def _collection_element_name(name: str, index: int) -> str:
         .decode('ascii')
     )
     return f'elem_{index:03d}_{ascii_name}'
-
-
-class _DataWriter(Protocol):
-    @staticmethod
-    def write(group: h5.Group, data: Variable) -> h5.Dataset | h5.Group: ...
-
-
-# All readers are writers and have the same interface for writing.
-# But readers for array variables expect a `data` argument that is
-# absent in other readers.
-class _ArrayDataIO(_DataWriter, Protocol):
-    @staticmethod
-    def read(group: h5.Group, data: Variable) -> None: ...
 
 
 class _NumpyDataIO:
@@ -144,7 +151,7 @@ class _BinDataIO:
         begin = _VariableIO.read(values['begin'])
         end = _VariableIO.read(values['end'])
         dim = values['data'].attrs['dim']
-        data = _HDF5IO.read(values['data'])
+        data = cast(Variable | DataArray, _HDF5IO.read(values['data']))
         return bins(begin=begin, end=end, dim=dim, data=data)
 
 
@@ -211,8 +218,8 @@ def _check_scipp_header(group: h5.Group, what: str) -> None:
         )
 
 
-def _array_data_io_lut() -> dict[str, _ArrayDataIO]:
-    handler: dict[str, _ArrayDataIO] = {}
+def _array_data_io_lut() -> dict[str, _VariableDataIO]:
+    handler: dict[str, _VariableDataIO] = {}
     for dtype in [
         DType.float64,
         DType.float32,
@@ -234,16 +241,8 @@ def _array_data_io_lut() -> dict[str, _ArrayDataIO]:
     return handler
 
 
-def _data_writer_lut() -> dict[str, _DataWriter]:
-    # Unpack and repack dict to cast to the correct value type.
-    handler: dict[str, _DataWriter] = {**_array_data_io_lut()}
-    for dtype in [DType.VariableView, DType.DataArrayView, DType.DatasetView]:
-        handler[str(dtype)] = _BinDataIO
-    return handler
-
-
 def _serialize_unit(unit: Unit) -> npt.NDArray[Any]:
-    unit_dict = unit.to_dict()
+    unit_dict: Any = unit.to_dict()
     dtype: list[tuple[str, Any]] = [('__version__', int), ('multiplier', float)]
     vals = [unit_dict['__version__'], unit_dict['multiplier']]
     if 'powers' in unit_dict:
@@ -266,10 +265,17 @@ def _read_unit_attr(ds: h5.Dataset) -> Unit:
     return Unit.from_dict(unit_dict)
 
 
+_binned_dtype_lut = {
+    'Variable': str(DType.VariableView),
+    'DataArray': str(DType.DataArrayView),
+    'Dataset': str(DType.DatasetView),
+}
+
+
 class _VariableIO:
     _dtypes = _dtype_lut()
     _array_data_readers = _array_data_io_lut()
-    _data_writers = _data_writer_lut()
+    _data_writers = _array_data_io_lut()
 
     @classmethod
     def _write_data(cls, group: h5.Group, data: Variable) -> h5.Dataset | h5.Group:
@@ -281,7 +287,7 @@ class _VariableIO:
 
     @classmethod
     def write(cls, group: h5.Group, var: Variable) -> h5.Group | None:
-        if var.dtype not in cls._dtypes.values():
+        if var.bins is None and var.dtype not in cls._dtypes.values():
             # In practice this may make the file unreadable, e.g., if values
             # have unsupported dtype.
             get_logger().warning(
@@ -289,12 +295,16 @@ class _VariableIO:
             )
             return None
         _write_scipp_header(group, 'Variable')
-        dset = cls._write_data(group, var)
+        if var.bins is None:
+            dset = cls._write_data(group, var)
+            dset.attrs['dtype'] = str(var.dtype)
+            if var.unit is not None:
+                dset.attrs['unit'] = _serialize_unit(var.unit)
+        else:
+            dset = _BinDataIO.write(group, var)
+            dset.attrs['dtype'] = _binned_dtype_lut[dset['data'].attrs['scipp-type']]
         dset.attrs['dims'] = [str(dim) for dim in var.dims]
         dset.attrs['shape'] = var.shape
-        dset.attrs['dtype'] = str(var.dtype)
-        if var.unit is not None:
-            dset.attrs['unit'] = _serialize_unit(var.unit)
         dset.attrs['aligned'] = var.aligned
         return group
 
@@ -302,29 +312,25 @@ class _VariableIO:
     def read(cls, group: h5.Group) -> Variable:
         _check_scipp_header(group, 'Variable')
         values = group['values']
+        dtype_str = values.attrs['dtype']
+        if dtype_str in _binned_dtype_lut.values():
+            return _BinDataIO.read(group)
         contents = {key: values.attrs[key] for key in ['dims', 'shape']}
-        contents['dtype'] = cls._dtypes[values.attrs['dtype']]
+        contents['dtype'] = cls._dtypes[dtype_str]
         if 'unit' in values.attrs:
             contents['unit'] = _read_unit_attr(values)
         else:
             contents['unit'] = None  # essential, otherwise default unit is used
         contents['with_variances'] = 'variances' in group
         contents['aligned'] = values.attrs.get('aligned', True)
-        if contents['dtype'] in [
-            DType.VariableView,
-            DType.DataArrayView,
-            DType.DatasetView,
-        ]:
-            var = _BinDataIO.read(group)
-        else:
-            var = _cpp.empty(**contents)
-            cls._read_array_data(group, var)
+        var = empty(**contents)
+        cls._read_array_data(group, var)
         return var
 
 
 def _write_mapping(
     parent: h5.Group,
-    mapping: Mapping[str, VariableLike],
+    mapping: Mapping[str, object],
     override: Mapping[str, h5.Group] | None = None,
 ) -> None:
     if override is None:
@@ -345,8 +351,8 @@ def _write_mapping(
 
 def _read_mapping(
     group: h5.Group,
-    override: Mapping[str, h5.Group] | None = None,
-) -> VariableLike:
+    override: Mapping[str, object] | None = None,
+) -> Mapping[str, object]:
     if override is None:
         override = {}
     return {
@@ -359,7 +365,11 @@ def _read_mapping(
 
 class _DataArrayIO:
     @staticmethod
-    def write(group: h5.Group, data, override=None):
+    def write(
+        group: h5.Group,
+        data: DataArray,
+        override: Mapping[str, Mapping[str, h5.Group]] | None = None,
+    ) -> h5.Group | None:
         if override is None:
             override = {}
         _write_scipp_header(group, 'DataArray')
@@ -376,7 +386,10 @@ class _DataArrayIO:
         return group
 
     @staticmethod
-    def read(group: h5.Group, override=None):
+    def read(
+        group: h5.Group,
+        override: Mapping[str, Mapping[str, VariableLike]] | None = None,
+    ) -> DataArray:
         _check_scipp_header(group, 'DataArray')
         if override is None:
             override = {}
@@ -391,7 +404,7 @@ class _DataArrayIO:
 
     @staticmethod
     def _read_legacy_attrs_into(
-        da: DataArray, group: h5.Group, override: Mapping[str, h5.Group]
+        da: DataArray, group: h5.Group, override: Mapping[str, Mapping[str, h5.Group]]
     ) -> DataArray:
         """Load attributes as coordinates.
 
@@ -405,7 +418,7 @@ class _DataArrayIO:
                     f"Data array '{da.name}' contains legacy attributes "
                     f'{intersection} which also exist as coordinates.'
                 )
-            da = da.assign_coords(attrs)
+            da = da.assign_coords(cast(dict[str, Variable], attrs))
             for name in attrs:
                 da.coords.set_aligned(name, False)
         return da
@@ -413,7 +426,7 @@ class _DataArrayIO:
 
 class _DatasetIO:
     @staticmethod
-    def write(group: h5.Group, data):
+    def write(group: h5.Group, data: Dataset) -> h5.Group:
         _write_scipp_header(group, 'Dataset')
         coords = group.create_group('coords')
         _write_mapping(coords, data.coords)
@@ -423,7 +436,7 @@ class _DatasetIO:
         # is not sufficient.
         coords = {v.attrs['name']: v for v in coords.values()}
         for i, (name, da) in enumerate(data.items()):
-            _HDF5IO.write(
+            _DataArrayIO.write(
                 entries.create_group(_collection_element_name(name, i)),
                 da,
                 override={'coords': coords},
@@ -431,30 +444,37 @@ class _DatasetIO:
         return group
 
     @staticmethod
-    def read(group: h5.Group):
+    def read(group: h5.Group) -> Dataset:
         _check_scipp_header(group, 'Dataset')
-        coords = _read_mapping(group['coords'])
-        return Dataset(
-            coords=coords,
-            data=_read_mapping(group['entries'], override={'coords': coords}),
-        )
+        coords = cast(dict[str, Variable], _read_mapping(group['coords']))
+        override = {'coords': coords}
+        data: MutableMapping[str, Variable | DataArray] = {}
+        for g in group['entries'].values():
+            name = g.attrs['name']
+            if g.attrs['scipp-type'] == 'DataArray':
+                data[name] = _DataArrayIO.read(g, override=override)
+            else:
+                data[name] = _VariableIO.read(g)
+        return Dataset(coords=coords, data=data)
 
 
 class _DataGroupIO:
     @staticmethod
-    def write(group: h5.Group, data):
+    def write(group: h5.Group, data: DataGroup[object]) -> h5.Group:
         _write_scipp_header(group, 'DataGroup')
         entries = group.create_group('entries')
         _write_mapping(entries, data)
         return group
 
     @staticmethod
-    def read(group: h5.Group):
+    def read(group: h5.Group) -> DataGroup[Any]:
         _check_scipp_header(group, 'DataGroup')
         return DataGroup(_read_mapping(group['entries']))
 
 
-def _direct_io(cls, convert=None):
+def _direct_io(
+    cls: type[_ObjectType], convert: Callable[[Any], _ObjectType] | None = None
+) -> _ObjectIO[_ObjectType]:
     # Use fully qualified name for numpy.bool to avoid confusion with builtin bool."
     # Numpy bools have different names in 1.x and 2.x
     # TODO: This should be fixed once we drop support for numpy<2
@@ -462,26 +482,25 @@ def _direct_io(cls, convert=None):
         type_name = 'numpy.bool'
     else:
         type_name = cls.__name__
-    if convert is None:
-        convert = cls
+    convert_fn: Callable[[Any], _ObjectType] = cls if convert is None else convert
 
     class GenericIO:
         @staticmethod
-        def write(group, data):
+        def write(group: h5.Group, data: _ObjectType) -> h5.Group:
             _write_scipp_header(group, type_name)
             group['entry'] = data
             return group
 
         @staticmethod
-        def read(group):
+        def read(group: h5.Group) -> _ObjectType:
             _check_scipp_header(group, type_name)
-            return convert(group['entry'][()])
+            return convert_fn(group['entry'][()])
 
     return GenericIO
 
 
 class _HDF5IO:
-    _handlers: ClassVar[dict[str, Any]] = {
+    _handlers: ClassVar[dict[str, _ObjectIO[Any]]] = {
         'Variable': _VariableIO,
         'DataArray': _DataArrayIO,
         'Dataset': _DatasetIO,
@@ -507,7 +526,7 @@ class _HDF5IO:
     }
 
     @classmethod
-    def write(cls, group: h5.Group, data, **kwargs):
+    def write(cls, group: h5.Group, data: object) -> h5.Group | None:
         data_cls = data.__class__
         # Numpy bools have different names in 1.x and 2.x
         # TODO: This should be fixed once we drop support for numpy<2
@@ -522,22 +541,22 @@ class _HDF5IO:
                 "Writing type '%s' to HDF5 not implemented, skipping.", type(data)
             )
             return None
-        return handler.write(group, data, **kwargs)
+        return handler.write(group, data)
 
     @classmethod
-    def read(cls, group: h5.Group, **kwargs):
-        return cls._handlers[group.attrs['scipp-type']].read(group, **kwargs)
+    def read(cls, group: h5.Group) -> object:
+        return cls._handlers[group.attrs['scipp-type']].read(group)
 
 
 def save_hdf5(
-    obj: VariableLike,
+    obj: object,
     filename: str | PathLike[str] | StringIO | BytesIO | h5.Group,
 ) -> None:
     """Write an object out to file in HDF5 format."""
     import h5py
 
     if isinstance(filename, h5py.Group):
-        return _HDF5IO.write(filename, obj)
+        _HDF5IO.write(filename, obj)
 
     with h5py.File(filename, 'w') as f:
         _HDF5IO.write(f, obj)
@@ -545,7 +564,7 @@ def save_hdf5(
 
 def load_hdf5(
     filename: str | PathLike[str] | StringIO | BytesIO | h5.Group,
-) -> VariableLike:
+) -> object:
     """Load a Scipp-HDF5 file."""
     import h5py
 

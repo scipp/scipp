@@ -378,13 +378,25 @@ Variable map(const DataArray &function, const Variable &x, Dim dim,
   }
 }
 
+namespace {
+Masks masks_not_in_dim(const Masks &all_masks, const Dim dim) {
+  Masks results;
+  for (auto [name, mask] : all_masks) {
+    if (!mask.dims().contains(dim)) {
+      results.set(name, mask);
+    }
+  }
+  return results;
+}
+} // namespace
+
 void scale(DataArray &array, const DataArray &histogram, Dim dim) {
   if (dim == Dim::Invalid)
     dim = edge_dimension(histogram);
   // Coords along dim are ignored since "binning" is dynamic for buckets.
   expect::coords_are_superset(array, histogram.slice({dim, 0}), "bins.scale");
   // scale applies masks along dim but others are kept
-  union_or_in_place(array.masks(), histogram.slice({dim, 0}).masks());
+  union_or_in_place(array.masks(), masks_not_in_dim(histogram.masks(), dim));
   auto data = bins_view<DataArray>(array.data()).data();
   const auto &coord = bins_view<DataArray>(array.data()).coords()[dim];
   const auto &edges = histogram.coords()[dim];

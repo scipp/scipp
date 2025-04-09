@@ -9,7 +9,7 @@ Conda
 -----
 
 The easiest way to install Scipp is using `conda <https://docs.conda.io>`_.
-Packages from `Anaconda Cloud <https://conda.anaconda.org/scipp>`_ are available for Linux, macOS, and Windows.
+Packages from `conda-forge <https://anaconda.org/conda-forge/scipp>`_ (or from `Anaconda Cloud <https://anaconda.org/scipp/scipp>`_) are available for Linux, macOS, and Windows.
 It is recommended to create an environment rather than installing individual packages.
 
 With the provided environment file

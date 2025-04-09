@@ -951,3 +951,43 @@ def test_variance_reductions_require_ddof_param(opname):
     meth = getattr(data, opname)
     with pytest.raises(TypeError, match='ddof'):
         meth()
+
+
+@pytest.mark.parametrize(
+    'opname',
+    [
+        'mean',
+        'nanmean',
+        'median',
+        'nanmedian',
+        'sum',
+        'nansum',
+        'min',
+        'nanmin',
+        'max',
+        'nanmax',
+    ],
+)
+def test_reduce_two_dims(container, opname):
+    x = container(
+        sc.array(
+            dims=['xx', 'yy', 'zz'],
+            values=[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
+            dtype='int64',
+            unit='m',
+        )
+    )
+    func = getattr(sc, opname)
+    possibles = (['xx', 'yy', 'zz'], ['yy', 'zz', 'xx'], ['zz', 'xx', 'yy'])
+    for dims in possibles:
+        res = func(x, dims[:2])
+        last = dims[-1]
+        for i in range(x.sizes[last]):
+            assert sc.identical(res[last, i], func(x[last, i]))
+
+    meth = getattr(x, opname)
+    for dims in possibles:
+        res = meth(dims[:2])
+        last = dims[-1]
+        for i in range(x.sizes[last]):
+            assert sc.identical(res[last, i], getattr(x[last, i], opname)())
