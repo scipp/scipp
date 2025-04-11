@@ -125,7 +125,7 @@ def test_scale_binned_via_lookup_with_variances_raises() -> None:
     hist.variances = hist.values
     func = sc.lookup(func=hist, dim='x')
     with pytest.raises(sc.VariancesError):
-        da.bins /= func
+        da.bins /= func  # type: ignore[assignment, operator]
 
 
 def test_lookup_with_variances_raises() -> None:

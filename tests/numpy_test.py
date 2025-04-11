@@ -79,14 +79,14 @@ ds = sc.Dataset(data={'a': arr})
 
 
 @pytest.mark.parametrize("obj", [var, var['x', :], arr, arr['x', :], ds, ds['x', :]])
-def test__array_ufunc___disabled(obj) -> None:
+def test__array_ufunc___disabled(obj: sc.Variable | sc.DataArray | sc.Dataset) -> None:
     with pytest.raises(TypeError, match="does not support ufuncs"):
-        obj + a
+        obj + a  # type: ignore[operator]
     with pytest.raises(TypeError, match="unsupported operand type"):
-        a * obj
+        a * obj  # type: ignore[operator]
     with pytest.raises(TypeError, match="does not support ufuncs"):
-        obj += a
+        obj += a  # type: ignore[operator]
 
     b = np.arange(2)
     with pytest.raises(TypeError, match="does not support ufuncs"):
-        b += obj
+        b += obj  # type: ignore[arg-type]

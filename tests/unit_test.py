@@ -3,6 +3,7 @@
 # @file
 # @author Simon Heybrock
 import copy
+from collections.abc import Generator
 
 import pytest
 
@@ -11,7 +12,7 @@ from scipp._scipp.core import units_identical as units_identical
 
 
 @pytest.fixture(autouse=True)
-def _clean_unit_aliases():
+def _clean_unit_aliases() -> Generator[None, None, None]:
     sc.units.aliases.clear()
     yield
     sc.units.aliases.clear()
@@ -19,7 +20,7 @@ def _clean_unit_aliases():
 
 def test_cannot_construct_unit_without_arguments() -> None:
     with pytest.raises(TypeError):
-        sc.Unit()
+        sc.Unit()  # type: ignore[call-arg]
 
 
 def test_default_unit() -> None:
@@ -46,7 +47,7 @@ def test_constructor_raises_with_bad_input() -> None:
     with pytest.raises(sc.UnitError):
         sc.Unit('abcdef')  # does not parse
     with pytest.raises(TypeError):
-        sc.Unit(5)  # type: ignore[call-arg] # neither str nor Unit
+        sc.Unit(5)  # type: ignore[arg-type] # neither str nor Unit
 
 
 def test_unit_str_format() -> None:
@@ -55,7 +56,7 @@ def test_unit_str_format() -> None:
 
 
 @pytest.mark.parametrize('u', [sc.units.angstrom, sc.Unit('angstrom')])
-def test_angstrom_str_format(u) -> None:
+def test_angstrom_str_format(u: sc.Unit) -> None:
     assert str(u) in ('\u212b', '\u00c5')
 
 
@@ -84,7 +85,7 @@ def test_degC_square() -> None:
 @pytest.mark.parametrize(
     'u', ['m', 'kg', 's', 'A', 'cd', 'K', 'mol', 'counts', '$', 'rad']
 )
-def test_unit_repr_uses_all_bases(u) -> None:
+def test_unit_repr_uses_all_bases(u: str) -> None:
     assert repr(sc.Unit(u)) == f'Unit({u})'
     assert repr(sc.Unit(u) ** 2) == f'Unit({u}**2)'
 
@@ -127,13 +128,13 @@ def test_default_unit_for_string_is_none() -> None:
         'degC',
     ],
 )
-def test_dict_roundtrip(u_str) -> None:
+def test_dict_roundtrip(u_str: str) -> None:
     u = sc.Unit(u_str)
     assert units_identical(sc.Unit.from_dict(u.to_dict()), u)
 
 
 @pytest.mark.parametrize('unit_type', [str, sc.Unit])
-def test_unit_alias_overrides_str_formatting(unit_type) -> None:
+def test_unit_alias_overrides_str_formatting(unit_type: type) -> None:
     sc.units.aliases['clucks'] = unit_type('19.3 m*A')
     clucks = sc.Unit('19.3 m*A')
     assert str(clucks) == 'clucks'

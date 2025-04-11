@@ -1,14 +1,16 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Jan-Lukas Wynen
+from collections.abc import Callable
 from copy import copy, deepcopy
+from typing import Any
 
 import pytest
 
 import scipp as sc
 
 
-def data_array_components():
+def data_array_components() -> tuple[sc.Variable, sc.Variable, sc.Variable]:
     v = sc.array(dims=['x'], values=[10, 20], unit='m')
     c = sc.array(dims=['x'], values=[1, 2], unit='s')
     m = sc.array(dims=['x'], values=[True, False])
@@ -23,8 +25,10 @@ def data_array_components():
     ),
     ids=['dict', 'iterator', 'Coords'],
 )
-def coords_arg_wrapper(request):
-    return request.param
+def coords_arg_wrapper(
+    request: pytest.FixtureRequest,
+) -> Callable[[str, sc.Variable], Any]:
+    return request.param  # type: ignore[no-any-return]
 
 
 @pytest.fixture(
@@ -35,8 +39,10 @@ def coords_arg_wrapper(request):
     ),
     ids=['dict', 'iterator', 'Coords'],
 )
-def attrs_arg_wrapper(request):
-    return request.param
+def attrs_arg_wrapper(
+    request: pytest.FixtureRequest,
+) -> Callable[[str, sc.Variable], Any]:
+    return request.param  # type: ignore[no-any-return]
 
 
 @pytest.fixture(
@@ -47,12 +53,18 @@ def attrs_arg_wrapper(request):
     ),
     ids=['dict', 'iterator', 'Masks'],
 )
-def masks_arg_wrapper(request):
-    return request.param
+def masks_arg_wrapper(
+    request: pytest.FixtureRequest,
+) -> Callable[[str, sc.Variable], Any]:
+    return request.param  # type: ignore[no-any-return]
 
 
 @pytest.fixture
-def data_array_and_components(coords_arg_wrapper, attrs_arg_wrapper, masks_arg_wrapper):
+def data_array_and_components(
+    coords_arg_wrapper: Callable[[str, sc.Variable], Any],
+    attrs_arg_wrapper: Callable[[str, sc.Variable], Any],
+    masks_arg_wrapper: Callable[[str, sc.Variable], Any],
+) -> tuple[sc.DataArray, sc.Variable, sc.Variable, sc.Variable]:
     v, c, m = data_array_components()
     da = sc.DataArray(
         v,
@@ -62,13 +74,17 @@ def data_array_and_components(coords_arg_wrapper, attrs_arg_wrapper, masks_arg_w
     return da, v, c, m
 
 
-def make_data_array():
+def make_data_array() -> tuple[sc.DataArray, sc.Variable, sc.Variable, sc.Variable]:
     v, c, m = data_array_components()
     da = sc.DataArray(v, coords={'x': c}, masks={'m': m})
     return da, v, c, m
 
 
-def test_own_darr_set(data_array_and_components) -> None:
+def test_own_darr_set(
+    data_array_and_components: tuple[
+        sc.DataArray, sc.Variable, sc.Variable, sc.Variable
+    ],
+) -> None:
     # Data and metadata are shared
     da, v, c, m = data_array_and_components
     da['x', 0] = -10
@@ -188,7 +204,7 @@ def test_own_darr_copy() -> None:
     [lambda k, v: {k: v}, lambda k, v: {k: v}.items(), lambda k, v: sc.Dataset({k: v})],
     ids=['dict', 'iterator', 'Dataset'],
 )
-def test_own_dset_init(data_array_wrapper) -> None:
+def test_own_dset_init(data_array_wrapper: Callable[[str, sc.Variable], Any]) -> None:
     da, *_ = make_data_array()
     dset = sc.Dataset(data_array_wrapper('da1', da))
 

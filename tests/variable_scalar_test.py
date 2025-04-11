@@ -35,12 +35,12 @@ def test_scalar_Variable_values_property_PyObject() -> None:
 @pytest.mark.parametrize(
     'var', [sc.scalar(3.1), sc.scalar(-2), sc.scalar('abc'), sc.scalar([1, 2])]
 )
-def test_scalar_Variable_value_is_same_as_values(var) -> None:
+def test_scalar_Variable_value_is_same_as_values(var: sc.Variable) -> None:
     assert var.value == var.values
 
 
 @pytest.mark.parametrize('var', [sc.scalar(4), sc.scalar(4.61), sc.scalar('4')])
-def test_scalar_Variable_conversion_to_builtin_int(var) -> None:
+def test_scalar_Variable_conversion_to_builtin_int(var: sc.Variable) -> None:
     assert int(var) == 4
 
 
@@ -69,7 +69,7 @@ def test_conversion_to_builtin_int_fails_with_array() -> None:
 
 
 @pytest.mark.parametrize('var', [sc.scalar(-3), sc.scalar(-3.0), sc.scalar('-3.0')])
-def test_scalar_Variable_conversion_to_builtin_float(var) -> None:
+def test_scalar_Variable_conversion_to_builtin_float(var: sc.Variable) -> None:
     assert float(var) == -3.0
 
 

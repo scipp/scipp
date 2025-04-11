@@ -11,7 +11,7 @@ def test_slice_bins_by_int_label() -> None:
     table.coords['param'] = (table.coords.pop('y') * 10).to(dtype='int64')
     da = table.bin(x=10)
     param = sc.scalar(4, unit='m')
-    result = da.bins['param', param]
+    result = da.bins['param', param]  # type: ignore[index]
     assert result.dims == da.dims
     assert sc.identical(result.coords['param'], param)
     assert not result.coords['param'].aligned
@@ -29,14 +29,16 @@ def test_slice_bins_by_int_label_range() -> None:
     da = table.bin(x=10)
     start = sc.scalar(4, unit='s')
     stop = sc.scalar(6, unit='s')
-    result = da.bins['param', start:stop]
+    result = da.bins['param', start:stop]  # type: ignore[index]
     assert result.dims == da.dims
     assert sc.identical(
         result.coords['param'],
         sc.array(dims=['param'], values=[4, 6], unit='s', dtype='int64'),
     )
     assert not result.coords['param'].aligned
-    assert result.bins.size().sum().value == 20  # 2x10 events
+    assert (
+        result.bins.size().sum().value == 20
+    )  # 2x10 events  # type: ignore[index, union-attr]
     assert sc.identical(
         result,
         da.bin(
@@ -64,7 +66,7 @@ def test_slice_bins_by_float_label_range() -> None:
 def test_slice_bins_by_open_range_includes_everything() -> None:
     table = sc.data.table_xyz(100)
     da = table.bin(x=10)
-    result = da.bins['z', :]
+    result = da.bins['z', :]  # type: ignore[index]
     assert result.bins.size().sum().value == 100
 
 
@@ -72,9 +74,9 @@ def test_slice_bins_by_half_open_float_range_splits_without_duplication() -> Non
     table = sc.data.table_xyz(100)
     da = table.bin(x=10)
     split = sc.scalar(0.4, unit='m')
-    left = da.bins['z', :split]
-    right = da.bins['z', split:]
-    assert left.bins.size().sum().value + right.bins.size().sum().value == 100
+    left = da.bins['z', :split]  # type: ignore[index]
+    right = da.bins['z', split:]  # type: ignore[index]
+    assert left.bins.size().sum().value + right.bins.size().sum().value == 100  # type: ignore[index]
     assert sc.identical(
         left.coords['z'], sc.concat([da.bins.coords['z'].min(), split], 'z')
     )

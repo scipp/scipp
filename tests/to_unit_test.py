@@ -18,7 +18,7 @@ def test_to_unit() -> None:
 
 @pytest.mark.parametrize('year', [1800, 1911, 1956, 1984, 2001, 2022, 2036, 2100, 2467])
 def test_datetime64_with_explicit_ns_unit_is_consistent_irrespective_of_decimals(
-    year,
+    year: int,
 ) -> None:
     assert sc.identical(
         sc.datetime(f'{year}-01-01T12:00:00', unit='ns'),
@@ -35,7 +35,7 @@ def test_datetime64_with_explicit_ns_unit_is_consistent_irrespective_of_decimals
 
 
 @pytest.mark.parametrize('year', [1800, 1911, 1956, 1984, 2001, 2022, 2036, 2100, 2467])
-def test_datetime64_to_ns_is_precise(year) -> None:
+def test_datetime64_to_ns_is_precise(year: int) -> None:
     assert sc.identical(
         sc.datetime(f'{year}-01-01T12:00:00', unit='s').to(unit='ns'),
         sc.datetime(f'{year}-01-01T12:00:00.000000000', unit='ns'),

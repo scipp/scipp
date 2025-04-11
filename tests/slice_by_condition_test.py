@@ -7,7 +7,7 @@ import pytest
 import scipp as sc
 
 
-def make_var(xx=4) -> sc.Variable:
+def make_var(xx: int = 4) -> sc.Variable:
     return sc.arange('dummy', 12, dtype='int64').fold(
         dim='dummy', sizes={'xx': xx, 'yy': 3}
     )
@@ -29,7 +29,7 @@ def make_binned_array() -> sc.DataArray:
 
 def make_binned_array_variable_buffer() -> sc.DataArray:
     da = make_binned_array()
-    da.data = da.bins.data
+    da.data = da.bins.data  # type: ignore[union-attr]
     return da
 
 
@@ -39,7 +39,7 @@ def make_dataset() -> sc.Dataset:
 
 def make_binned_dataset() -> sc.Dataset:
     return sc.Dataset(
-        {
+        {  # type: ignore[arg-type]
             'xy': make_array().data,
             'binned': make_binned_array(),
             'binned-variable': make_binned_array_variable_buffer(),
@@ -65,16 +65,22 @@ def make_binned_dataset() -> sc.Dataset:
         'binned-dataset',
     ],
 )
-def sliceable(request):
-    return request.param
+def sliceable(
+    request: pytest.FixtureRequest,
+) -> sc.Variable | sc.DataArray | sc.Dataset:
+    return request.param  # type: ignore[no-any-return]
 
 
-def test_all_false_gives_empty_slice(sliceable) -> None:
+def test_all_false_gives_empty_slice(
+    sliceable: sc.Variable | sc.DataArray | sc.Dataset,
+) -> None:
     condition = sc.array(dims=['xx'], values=[False, False, False, False])
     assert sc.identical(sliceable[condition], sliceable['xx', 0:0])
 
 
-def test_all_true_gives_copy(sliceable) -> None:
+def test_all_true_gives_copy(
+    sliceable: sc.Variable | sc.DataArray | sc.Dataset,
+) -> None:
     condition = sc.array(dims=['xx'], values=[True, True, True, True])
     original = sliceable.copy()
     sliced = sliceable[condition]
@@ -83,10 +89,13 @@ def test_all_true_gives_copy(sliceable) -> None:
     assert sc.identical(sliceable, original)
 
 
-def test_true_and_false_concats_slices(sliceable) -> None:
+def test_true_and_false_concats_slices(
+    sliceable: sc.Variable | sc.DataArray | sc.Dataset,
+) -> None:
     condition = sc.array(dims=['xx'], values=[True, False, True, True])
     assert sc.identical(
-        sliceable[condition], sc.concat([sliceable['xx', 0], sliceable['xx', 2:]], 'xx')
+        sliceable[condition],
+        sc.concat([sliceable['xx', 0], sliceable['xx', 2:]], 'xx'),  # type: ignore[type-var]
     )
 
 

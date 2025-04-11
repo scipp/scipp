@@ -37,7 +37,7 @@ def test_4_inputs() -> None:
     assert sc.identical(f(a, b, c, d), a + b + c + d)
 
 
-def fmadd(a, b, c):
+def fmadd(a: sc.Variable, b: sc.Variable, c: sc.Variable) -> sc.Variable:
     return a * b + c
 
 
@@ -50,7 +50,7 @@ def test_handles_unit_using_same_kernel() -> None:
 
 
 def test_custom_unit_func_is_used() -> None:
-    def unit_func(a, b, c):
+    def unit_func(a: sc.Unit, b: sc.Unit, c: sc.Unit) -> str:
         return 'K'
 
     f = sc.elemwise_func(fmadd, unit_func=unit_func)
@@ -79,7 +79,7 @@ def test_auto_convert_dtype_handles_dtype_mismatch() -> None:
 
 def test_usable_as_decorator() -> None:
     @sc.elemwise_func(unit_func=lambda u: u)
-    def add1(a):
+    def add1(a: sc.Variable) -> sc.Variable:
         return a + 1
 
     assert sc.identical(add1(sc.scalar(1.0)), sc.scalar(2.0))

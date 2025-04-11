@@ -38,11 +38,11 @@ def test_broadcast_data_array() -> None:
 def test_broadcast_fails_with_bad_inputs() -> None:
     x = sc.array(dims=['x'], values=np.arange(6.0))
     with pytest.raises(ValueError, match='dims and shape must both be None'):
-        _ = sc.broadcast(x, sizes={'x': 6, 'y': 3}, dims=['x', 'y'], shape=[6, 3])
+        _ = sc.broadcast(x, sizes={'x': 6, 'y': 3}, dims=['x', 'y'], shape=[6, 3])  # type: ignore[call-overload]
     with pytest.raises(ValueError, match='dims and shape must both be None'):
-        _ = sc.broadcast(x, sizes={'x': 6, 'y': 3}, dims=['x', 'y'])
+        _ = sc.broadcast(x, sizes={'x': 6, 'y': 3}, dims=['x', 'y'])  # type: ignore[call-overload]
     with pytest.raises(ValueError, match='dims and shape must both be None'):
-        _ = sc.broadcast(x, sizes={'x': 6, 'y': 3}, shape=[6, 3])
+        _ = sc.broadcast(x, sizes={'x': 6, 'y': 3}, shape=[6, 3])  # type: ignore[call-overload]
 
 
 def test_concat() -> None:

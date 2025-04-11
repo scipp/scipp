@@ -9,7 +9,7 @@ import pytest
 import scipp as sc
 
 
-def make_containers():
+def make_containers() -> tuple[sc.Variable, sc.DataArray]:
     rng = np.random.default_rng(87325)
     var = sc.array(dims=['x', 'y'], values=rng.uniform(-5, 5, (4, 3)))
     da = sc.DataArray(
@@ -22,14 +22,14 @@ def make_containers():
     'func_name',
     ['cumsum', 'max', 'mean', 'min', 'nanmax', 'nanmean', 'nanmin', 'nansum', 'sum'],
 )
-def test_bound_methods_reduction_variable(func_name) -> None:
+def test_bound_methods_reduction_variable(func_name: str) -> None:
     var, _ = make_containers()
     func = getattr(sc, func_name)
     assert sc.identical(getattr(var, func_name)(), func(var))
 
 
 @pytest.mark.parametrize('func_name', ['any', 'all'])
-def test_bound_methods_reduction_variable_bool(func_name) -> None:
+def test_bound_methods_reduction_variable_bool(func_name: str) -> None:
     rng = np.random.default_rng(87415)
     var = sc.array(dims=['x', 'y'], values=rng.choice([True, False], (4, 3)))
     func = getattr(sc, func_name)
@@ -37,7 +37,7 @@ def test_bound_methods_reduction_variable_bool(func_name) -> None:
 
 
 @pytest.mark.parametrize('func_name', ['mean', 'nanmean', 'nansum', 'sum'])
-def test_bound_methods_reduction_dataarray(func_name) -> None:
+def test_bound_methods_reduction_dataarray(func_name: str) -> None:
     _, da = make_containers()
     func = getattr(sc, func_name)
     assert sc.identical(getattr(da, func_name)(), func(da))
@@ -53,7 +53,7 @@ def test_bound_methods_shape() -> None:
     for obj in (var, da):
         assert sc.identical(
             obj.flatten(dims=['x', 'y'], to='z'),
-            sc.flatten(obj, dims=['x', 'y'], to='z'),
+            sc.flatten(obj, dims=['x', 'y'], to='z'),  # type: ignore[type-var]
         )
         assert sc.identical(
             obj.fold(dim='x', sizes={'a': 2, 'b': 2}),

@@ -9,17 +9,17 @@ import scipp as sc
 
 
 @pytest.mark.parametrize('dt', [sc.DType.int32, sc.DType.float64, sc.DType.string])
-def test_dtype_comparison_equal(dt) -> None:
+def test_dtype_comparison_equal(dt: sc.DType) -> None:
     assert dt == dt
 
 
 @pytest.mark.parametrize('other', [sc.DType.int32, sc.DType.float64, sc.DType.string])
-def test_dtype_comparison_not_equal(other) -> None:
+def test_dtype_comparison_not_equal(other: sc.DType) -> None:
     assert sc.DType.int64 != other
 
 
 @pytest.mark.parametrize('name', ['int64', 'float32', 'str'])
-def test_dtype_comparison_str(name) -> None:
+def test_dtype_comparison_str(name: str) -> None:
     assert sc.DType(name) == name
     assert name == sc.DType(name)
     assert sc.DType(name) != 'bool'
@@ -45,7 +45,7 @@ def test_numpy_comparison() -> None:
     assert sc.DType.int32 != np.dtype(np.int64)
 
 
-def check_numpy_version_for_comaprison():
+def check_numpy_version_for_comparison() -> bool:
     major, minor, *_ = np.__version__.split('.')
     if int(major) == 1 and int(minor) < 21:
         return True
@@ -53,7 +53,7 @@ def check_numpy_version_for_comaprison():
 
 
 @pytest.mark.skipif(
-    check_numpy_version_for_comaprison(), reason='at least numpy 1.21 required'
+    check_numpy_version_for_comparison(), reason='at least numpy 1.21 required'
 )
 def test_numpy_comparison_numpy_on_lhs() -> None:
     assert np.dtype(np.int32) == sc.DType.int32

@@ -6,7 +6,7 @@ import pytest
 import scipp as sc
 
 
-def make_dataarray(dim1, dim2) -> sc.DataArray:
+def make_dataarray(dim1: str, dim2: str) -> sc.DataArray:
     from numpy.random import default_rng
 
     rng = default_rng(seed=1234)
@@ -68,15 +68,15 @@ def test_rename_renames_bins_coords() -> None:
     table = sc.data.table_xyz(10)
     da = table.bin(x=2, y=2)
     renamed = da.rename(x='x2', y='y2')
-    assert 'x' not in renamed.bins.coords
-    assert 'x2' in renamed.bins.coords
+    assert 'x' not in renamed.bins.coords  # type: ignore[union-attr]
+    assert 'x2' in renamed.bins.coords  # type: ignore[union-attr]
 
 
 def test_rename_of_bins_coords__does_not_affect_input() -> None:
     table = sc.data.table_xyz(10)
     da = table.bin(x=2, y=2)
     _ = da.rename(x='x2', y='y2')
-    assert 'x' in da.bins.coords
+    assert 'x' in da.bins.coords  # type: ignore[union-attr]
 
 
 def test_rename_raises_DimensionError_if_only_bins_coords() -> None:

@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+from collections.abc import Callable, Sequence
+from typing import Any
+
 import numpy as np
+import numpy.typing as npt
 import pytest
 
 import scipp as sc
@@ -13,7 +17,7 @@ raise_np_datetime = (
 )
 
 
-def _compare_properties(a, b):
+def _compare_properties(a: sc.Variable, b: sc.Variable) -> None:
     assert a.dims == b.dims
     assert a.shape == b.shape
     assert a.unit == b.unit
@@ -21,7 +25,12 @@ def _compare_properties(a, b):
     assert (a.variances is None) == (b.variances is None)
 
 
-def make_dummy(dims, shape, with_variances=False, **kwargs):
+def make_dummy(
+    dims: Sequence[str],
+    shape: Sequence[int],
+    with_variances: bool = False,
+    **kwargs: Any,
+) -> sc.Variable:
     # Not using empty to avoid a copy from uninitialized memory in `expected`.
     if with_variances:
         return sc.Variable(
@@ -320,7 +329,7 @@ def test_array_empty_dims() -> None:
         sc.array(dims=[], values=[1]), sc.scalar([1], dtype=sc.DType.PyObject)
     )
     a = np.asarray(1.1)
-    assert sc.identical(sc.array(dims=None, values=a), sc.scalar(1.1))
+    assert sc.identical(sc.array(dims=None, values=a), sc.scalar(1.1))  # type: ignore[arg-type]
     assert sc.identical(sc.array(dims=[], values=a), sc.scalar(1.1))
     assert sc.identical(
         sc.array(dims=[], values=a, variances=a), sc.scalar(1.1, variance=1.1)
@@ -328,7 +337,7 @@ def test_array_empty_dims() -> None:
 
 
 @pytest.mark.parametrize('ndim', range(9))
-def test_array_nd_contiguous_c_layout(ndim) -> None:
+def test_array_nd_contiguous_c_layout(ndim: int) -> None:
     shape = list(range(2, ndim + 2))
     values = np.arange(np.prod(shape)).reshape(shape)
     var = sc.array(dims=[f'dim_{d}' for d in range(ndim)], values=values)
@@ -339,7 +348,7 @@ def test_array_nd_contiguous_c_layout(ndim) -> None:
 
 # ndim=0 doesn't work because np.asfortranarray(values) produces a 1d array
 @pytest.mark.parametrize('ndim', range(1, 7))
-def test_array_nd_contiguous_fortran_layout(ndim) -> None:
+def test_array_nd_contiguous_fortran_layout(ndim: int) -> None:
     shape = list(range(2, ndim + 2))
     values = np.arange(np.prod(shape)).reshape(shape)
     values = np.asfortranarray(values)
@@ -349,7 +358,9 @@ def test_array_nd_contiguous_fortran_layout(ndim) -> None:
     np.testing.assert_array_equal(var.values, values)
 
 
-def slice_array_in_dim(array, dim, step):
+def slice_array_in_dim(
+    array: npt.NDArray[Any], dim: int, step: int
+) -> npt.NDArray[Any]:
     # We cannot use numpy.take here because we don't want to
     # copy the output but get a sliced array with corresponding strides.
     if dim == 0:
@@ -375,7 +386,9 @@ def slice_array_in_dim(array, dim, step):
     [(ndim, slice_dim) for ndim in range(1, 7) for slice_dim in range(ndim)],
 )
 @pytest.mark.parametrize('step', [2, -1, -2])
-def test_array_nd_sliced_c_layout(ndim_and_slice_dim, step) -> None:
+def test_array_nd_sliced_c_layout(
+    ndim_and_slice_dim: tuple[int, int], step: int
+) -> None:
     ndim, slice_dim = ndim_and_slice_dim
     shape = list(range(2, ndim + 2))
     values = np.arange(np.prod(shape)).reshape(shape)
@@ -396,7 +409,9 @@ def test_array_nd_sliced_c_layout(ndim_and_slice_dim, step) -> None:
     ],
 )
 @pytest.mark.parametrize('step', [2, -1, -2])
-def test_array_nd_sliced_twice_c_layout(ndim_and_slice_dims, step) -> None:
+def test_array_nd_sliced_twice_c_layout(
+    ndim_and_slice_dims: tuple[int, int, int], step: int
+) -> None:
     ndim, slice_dim0, slice_dim1 = ndim_and_slice_dims
     shape = list(range(2, ndim + 2))
     values = np.arange(np.prod(shape)).reshape(shape)
@@ -414,7 +429,9 @@ def test_array_nd_sliced_twice_c_layout(ndim_and_slice_dims, step) -> None:
     [(ndim, slice_dim) for ndim in range(1, 7) for slice_dim in range(ndim)],
 )
 @pytest.mark.parametrize('step', [2, -1, -2])
-def test_array_nd_sliced_fortran_layout(ndim_and_slice_dim, step) -> None:
+def test_array_nd_sliced_fortran_layout(
+    ndim_and_slice_dim: tuple[int, int], step: int
+) -> None:
     ndim, slice_dim = ndim_and_slice_dim
     shape = list(range(2, ndim + 2))
     values = np.arange(np.prod(shape)).reshape(shape)
@@ -436,7 +453,9 @@ def test_array_nd_sliced_fortran_layout(ndim_and_slice_dim, step) -> None:
     ],
 )
 @pytest.mark.parametrize('step', [2, -1, -2])
-def test_array_nd_sliced_twice_fortran_layout(ndim_and_slice_dims, step) -> None:
+def test_array_nd_sliced_twice_fortran_layout(
+    ndim_and_slice_dims: tuple[int, int, int], step: int
+) -> None:
     ndim, slice_dim0, slice_dim1 = ndim_and_slice_dims
     shape = list(range(2, ndim + 2))
     values = np.arange(np.prod(shape)).reshape(shape)
@@ -451,7 +470,7 @@ def test_array_nd_sliced_twice_fortran_layout(ndim_and_slice_dims, step) -> None
 
 
 @pytest.mark.parametrize('ndim', range(7, 9))
-def test_array_nd_high_dim_sliced_begin_c_layout(ndim) -> None:
+def test_array_nd_high_dim_sliced_begin_c_layout(ndim: int) -> None:
     shape = list(range(2, ndim + 2))
     values = np.arange(np.prod(shape)).reshape(shape)
     values = values[1:]
@@ -462,7 +481,7 @@ def test_array_nd_high_dim_sliced_begin_c_layout(ndim) -> None:
 
 
 @pytest.mark.parametrize('ndim', range(7, 9))
-def test_array_nd_high_dim_sliced_end_c_layout(ndim) -> None:
+def test_array_nd_high_dim_sliced_end_c_layout(ndim: int) -> None:
     shape = list(range(2, ndim + 2))
     values = np.arange(np.prod(shape)).reshape(shape)
     values = values[:-1]
@@ -574,7 +593,9 @@ def test_linspace_none_unit() -> None:
     ],
     ids=('linspace', 'geomspace', 'logspace'),
 )
-def test_xyzspace_with_variables(range_fns) -> None:
+def test_xyzspace_with_variables(
+    range_fns: tuple[Callable[..., sc.Variable], Callable[..., npt.NDArray[Any]]],
+) -> None:
     sc_fn, np_fn = range_fns
     var = sc_fn('x', sc.scalar(1.0), sc.scalar(5.0), 4)
     values = np_fn(1.0, 5.0, 4)
@@ -586,7 +607,9 @@ def test_xyzspace_with_variables(range_fns) -> None:
     [(sc.linspace, np.linspace), (sc.geomspace, np.geomspace)],
     ids=('linspace', 'geomspace'),
 )
-def test_xyzspace_with_variables_set_unit(range_fns) -> None:
+def test_xyzspace_with_variables_set_unit(
+    range_fns: tuple[Callable[..., sc.Variable], Callable[..., npt.NDArray[Any]]],
+) -> None:
     sc_fn, np_fn = range_fns
     var = sc_fn(
         'x', sc.scalar(1.0, unit='m'), sc.scalar(5000.0, unit='mm'), 4, unit='m'
@@ -603,7 +626,9 @@ def test_logspace_with_variables_set_unit() -> None:
 
 
 @pytest.mark.parametrize('unit', [sc.units.default_unit, 'one', 'm'])
-def test_logspace_with_variables_input_must_be_dimensionless(unit) -> None:
+def test_logspace_with_variables_input_must_be_dimensionless(
+    unit: sc.Unit | str,
+) -> None:
     with pytest.raises(sc.UnitError):
         sc.logspace('x', sc.scalar(1.0), sc.scalar(3.0, unit='m'), 4, unit=unit)
     with pytest.raises(sc.UnitError):
@@ -619,7 +644,9 @@ def test_logspace_with_variables_input_must_be_dimensionless(unit) -> None:
     [sc.linspace, sc.geomspace, sc.logspace],
     ids=('linspace', 'geomspace', 'logspace'),
 )
-def test_xyzspace_with_variables_num_cannot_be_variable(range_fn) -> None:
+def test_xyzspace_with_variables_num_cannot_be_variable(
+    range_fn: Callable[..., sc.Variable],
+) -> None:
     start = sc.scalar(1)
     stop = sc.scalar(3)
     with pytest.raises(TypeError):
@@ -719,7 +746,7 @@ def test_arange_datetime_from_scipp_datetime() -> None:
 
 
 @pytest.mark.parametrize('unit', ['one', sc.units.default_unit])
-def test_arange_with_variables(unit) -> None:
+def test_arange_with_variables(unit: str | sc.Unit) -> None:
     start = sc.scalar(1)
     stop = sc.scalar(4)
     step = sc.scalar(1)
@@ -864,7 +891,7 @@ def test_arange_with_variables_mixed_dtype() -> None:
 
 @pytest.mark.parametrize('dtype', [np.int32, np.int64, np.float32, np.float64])
 def test_arange_with_uniform_numpy_arg_dtype_creates_array_with_same_dtype(
-    dtype,
+    dtype: type,
 ) -> None:
     assert sc.identical(
         sc.arange('x', dtype(2)), sc.array(dims=['x'], values=[0, 1], dtype=dtype)
@@ -881,7 +908,7 @@ def test_arange_with_uniform_numpy_arg_dtype_creates_array_with_same_dtype(
 
 @pytest.mark.parametrize('dtype', [np.int32, np.int64, np.float32, np.float64])
 def test_arange_with_uniform_scipp_arg_dtype_creates_array_with_same_dtype(
-    dtype,
+    dtype: type,
 ) -> None:
     assert sc.identical(
         sc.arange('x', sc.scalar(2, dtype=dtype)),
@@ -912,8 +939,8 @@ def test_arange_with_uniform_scipp_arg_dtype_creates_array_with_same_dtype(
     ],
 )
 def test_arange_with_non_uniform_arg_dtype_creates_array_with_larger_dtype(
-    dtype, larger
-):
+    dtype: type, larger: type
+) -> None:
     assert sc.identical(
         sc.arange('x', dtype(2), larger(4)),
         sc.array(dims=['x'], values=[2, 3], dtype=larger),
@@ -970,13 +997,13 @@ def test_empty_sizes() -> None:
 
 
 @pytest.mark.parametrize('timezone', ['Z', '-05:00', '+02'])
-def test_datetime_raises_given_string_with_timezone(timezone) -> None:
+def test_datetime_raises_given_string_with_timezone(timezone: str) -> None:
     with pytest.raises(raise_np_datetime, match='timezone'):
         sc.datetime(f'2152-11-25T13:13:46{timezone}')
 
 
 @pytest.mark.parametrize('timezone', ['Z', '-05:00', '+02'])
-def test_datetimes_raises_given_string_with_timezone(timezone) -> None:
+def test_datetimes_raises_given_string_with_timezone(timezone: str) -> None:
     with pytest.raises(raise_np_datetime, match='timezone'):
         sc.datetimes(dims=['time'], values=[f'2152-11-25T13:13:46{timezone}'], unit='s')
 

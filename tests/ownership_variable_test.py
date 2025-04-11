@@ -2,13 +2,14 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Jan-Lukas Wynen
 from copy import copy, deepcopy
+from typing import Any
 
 import numpy as np
 
 import scipp as sc
 
 
-def make_variable(data, variances=None, **kwargs):
+def make_variable(data: Any, variances: Any = None, **kwargs: Any) -> sc.Variable:
     """
     Make a Variable with default dimensions from data
     while avoiding copies beyond what sc.Variable does.

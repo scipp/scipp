@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+from collections.abc import Callable
 from operator import mul, truediv
+from typing import Any, Literal
 
 import numpy as np
 import pytest
@@ -10,14 +12,16 @@ import scipp as sc
 
 
 @pytest.mark.parametrize('mode', ['nearest', 'previous'])
-def test_raises_with_histogram_if_mode_set(mode) -> None:
+def test_raises_with_histogram_if_mode_set(
+    mode: Literal['nearest', 'previous'],
+) -> None:
     da = sc.DataArray(sc.arange('x', 4), coords={'x': sc.arange('x', 5)})
     with pytest.raises(ValueError, match='Input is a histogram'):
         sc.lookup(da, mode=mode)
 
 
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
-def test_histogram(dtype) -> None:
+def test_histogram(dtype: str) -> None:
     x_lin = sc.linspace(dim='xx', start=0, stop=1, num=4)
     x = x_lin.copy()
     x.values[0] -= 0.01
@@ -33,7 +37,7 @@ def test_histogram(dtype) -> None:
 
 
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
-def test_values_in_masked_bins_replaced_by_fill_value(dtype) -> None:
+def test_values_in_masked_bins_replaced_by_fill_value(dtype: str) -> None:
     x_lin = sc.linspace(dim='xx', start=0, stop=1, num=4)
     x = x_lin.copy()
     x.values[0] -= 0.01
@@ -53,7 +57,7 @@ def test_values_in_masked_bins_replaced_by_fill_value(dtype) -> None:
 
 
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
-def test_previous(dtype) -> None:
+def test_previous(dtype: str) -> None:
     x = sc.linspace(dim='xx', start=0, stop=1, num=4)
     data = sc.array(dims=['xx'], values=[0, 1, 0, 2], dtype=dtype)
     da = sc.DataArray(data=data, coords={'xx': x})
@@ -64,7 +68,7 @@ def test_previous(dtype) -> None:
 
 
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
-def test_nearest(dtype) -> None:
+def test_nearest(dtype: str) -> None:
     x = sc.linspace(dim='xx', start=0, stop=1, num=5)
     data = sc.array(dims=['xx'], values=[0, 1, 0, 2, 2], dtype=dtype)
     da = sc.DataArray(data=data, coords={'xx': x})
@@ -75,7 +79,7 @@ def test_nearest(dtype) -> None:
 
 
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
-def test_previous_masked_points_replaced_by_fill_value(dtype) -> None:
+def test_previous_masked_points_replaced_by_fill_value(dtype: str) -> None:
     x = sc.linspace(dim='xx', start=0, stop=1, num=4)
     data = sc.array(dims=['xx'], values=[0, 1, 0, 2], dtype=dtype)
     da = sc.DataArray(data=data, coords={'xx': x})
@@ -87,7 +91,7 @@ def test_previous_masked_points_replaced_by_fill_value(dtype) -> None:
 
 
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
-def test_nearest_masked_points_replaced_by_fill_value(dtype) -> None:
+def test_nearest_masked_points_replaced_by_fill_value(dtype: str) -> None:
     x = sc.linspace(dim='xx', start=0, stop=1, num=5)
     data = sc.array(dims=['xx'], values=[0, 1, 0, 2, 2], dtype=dtype)
     da = sc.DataArray(data=data, coords={'xx': x})
@@ -98,7 +102,7 @@ def test_nearest_masked_points_replaced_by_fill_value(dtype) -> None:
     assert sc.identical(sc.lookup(da, mode='nearest', fill_value=fill)(var), expected)
 
 
-def outofbounds(dtype):
+def outofbounds(dtype: str) -> float:
     if dtype in ['float32', 'float64']:
         return np.nan
     return 0
@@ -106,7 +110,9 @@ def outofbounds(dtype):
 
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
 @pytest.mark.parametrize("mode", ['nearest', 'previous'])
-def test_function_with_no_value_gives_fill_value(mode, dtype) -> None:
+def test_function_with_no_value_gives_fill_value(
+    mode: Literal['nearest', 'previous'], dtype: str
+) -> None:
     x = sc.array(dims=['xx'], values=[])
     data = sc.array(dims=['xx'], values=[], dtype=dtype)
     da = sc.DataArray(data=data, coords={'xx': x})
@@ -117,7 +123,7 @@ def test_function_with_no_value_gives_fill_value(mode, dtype) -> None:
 
 
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
-def test_previous_single_value(dtype) -> None:
+def test_previous_single_value(dtype: str) -> None:
     x = sc.array(dims=['xx'], values=[0.5])
     data = sc.array(dims=['xx'], values=[11], dtype=dtype)
     da = sc.DataArray(data=data, coords={'xx': x})
@@ -129,7 +135,7 @@ def test_previous_single_value(dtype) -> None:
 
 
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
-def test_nearest_single_value(dtype) -> None:
+def test_nearest_single_value(dtype: str) -> None:
     x = sc.array(dims=['xx'], values=[0.5])
     data = sc.array(dims=['xx'], values=[11], dtype=dtype)
     da = sc.DataArray(data=data, coords={'xx': x})
@@ -147,14 +153,14 @@ def test_ignores_unrelated_coords() -> None:
         coords={'x': sc.Variable(dims=['x'], values=[1.0, 3.0, 5.0])},
     )
     hist.coords['scalar'] = sc.scalar(1.2)
-    result = binned.bins * sc.lookup(func=hist, dim='x')
+    result = binned.bins * sc.lookup(func=hist, dim='x')  # type: ignore[operator]
     assert 'scalar' not in result.coords
-    assert 'scalar' not in result.bins.coords
+    assert 'scalar' not in result.bins.coords  # type: ignore[union-attr]
 
 
 @pytest.mark.parametrize("dtype", ['float32', 'float64'])
 @pytest.mark.parametrize("op", [mul, truediv])
-def test_promotes_to_dtype_of_lut(op, dtype) -> None:
+def test_promotes_to_dtype_of_lut(op: Callable[[Any, Any], Any], dtype: str) -> None:
     da = sc.data.table_xyz(10).to(dtype='float32').bin(x=2)
     edges = sc.array(dims=['x'], unit='m', values=[0.0, 0.5, 1.0])
     weight = sc.array(dims=['x'], values=[10.0, 3.0], dtype=dtype)
@@ -165,7 +171,7 @@ def test_promotes_to_dtype_of_lut(op, dtype) -> None:
 
 @pytest.mark.parametrize("dtype", ['float32', 'float64'])
 @pytest.mark.parametrize("op", [mul, truediv])
-def test_promotes_to_dtype_of_events(op, dtype) -> None:
+def test_promotes_to_dtype_of_events(op: Callable[[Any, Any], Any], dtype: str) -> None:
     da = sc.data.table_xyz(10).to(dtype=dtype).bin(x=2)
     edges = sc.array(dims=['x'], unit='m', values=[0.0, 0.5, 1.0])
     weight = sc.array(dims=['x'], values=[10.0, 3.0], dtype='float32')

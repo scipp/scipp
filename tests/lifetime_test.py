@@ -4,6 +4,8 @@
 """This file contains tests specific to pybind11 lifetime issues, in particular
 py::return_value_policy and py::keep_alive."""
 
+from collections.abc import Callable
+
 import numpy as np
 import pytest
 
@@ -146,21 +148,23 @@ def test_lifetime_string_array() -> None:
 
 
 @pytest.mark.parametrize("func", [sc.abs, sc.sqrt, sc.reciprocal, sc.nan_to_num])
-def test_lifetime_out_arg(func) -> None:
+def test_lifetime_out_arg(func: Callable[..., sc.Variable]) -> None:
     var = 1.0 * sc.units.one
     var = func(var, out=var)
     var *= 1.0  # var would be an invalid view is keep_alive not correct
 
 
 @pytest.mark.parametrize("func", [sc.sin, sc.cos, sc.tan])
-def test_lifetime_trigonometry_out_arg(func) -> None:
+def test_lifetime_trigonometry_out_arg(func: Callable[..., sc.Variable]) -> None:
     var = 1.0 * sc.units.rad
     var = func(var, out=var)
     var *= 1.0  # var would be an invalid view is keep_alive not correct
 
 
 @pytest.mark.parametrize("func", [sc.asin, sc.acos, sc.atan])
-def test_lifetime_inverse_trigonometry_out_arg(func) -> None:
+def test_lifetime_inverse_trigonometry_out_arg(
+    func: Callable[..., sc.Variable],
+) -> None:
     var = 1.0 * sc.units.one
     var = func(var, out=var)
     var *= 1.0  # var would be an invalid view is keep_alive not correct

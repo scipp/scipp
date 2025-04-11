@@ -52,7 +52,7 @@ ds = sc.Dataset(data={'a': xx, 'b': xx + 1})
 
 
 @pytest.mark.parametrize("obj", [xx.copy(), ds['a'].copy(), ds.copy()])
-def test_slice_implicit_dim(obj) -> None:
+def test_slice_implicit_dim(obj: sc.Variable | sc.DataArray | sc.Dataset) -> None:
     assert sc.identical(obj[1], obj['xx', 1])
     assert sc.identical(obj[1:3], obj['xx', 1:3])
     obj[1] = obj[0]

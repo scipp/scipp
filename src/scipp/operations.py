@@ -24,7 +24,7 @@ def _as_numba_cfunc(function: Any, unit_func: Any = None) -> Any:
 def elemwise_func(
     func: Callable[..., object] | None = None,
     *,
-    unit_func: Callable[..., Unit] | None = None,
+    unit_func: Callable[..., Unit | str | None] | None = None,
     dtype: str = 'float64',
     auto_convert_dtypes: bool = False,
 ) -> Callable[..., Any]:

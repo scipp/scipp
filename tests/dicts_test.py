@@ -1,16 +1,19 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
+from collections.abc import Callable, Generator
+from typing import Any
+
 import numpy as np
 import pytest
 
 import scipp as sc
 
 
-def make_data_array(var, **kwargs):
+def make_data_array(var: sc.Variable, **kwargs: Any) -> sc.DataArray:
     return sc.DataArray(data=var, **kwargs)
 
 
-def make_dataset(var, **kwargs):
+def make_dataset(var: sc.Variable, **kwargs: Any) -> sc.Dataset:
     return sc.Dataset(data={'a': var}, **kwargs)
 
 
@@ -24,8 +27,8 @@ PARAMS = [
 ]
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_setitem(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_setitem(make: Callable[..., sc.DataArray | sc.Dataset], mapping: str) -> None:
     var = sc.array(dims=['x'], values=np.arange(4))
     d = make(var)
     mapview = getattr(d, mapping)
@@ -38,8 +41,8 @@ def test_setitem(make, mapping) -> None:
     assert sc.identical(mapview['y'], sc.scalar(1.0))
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_contains(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_contains(make: Callable[..., sc.DataArray | sc.Dataset], mapping: str) -> None:
     var = sc.array(dims=['x'], values=np.arange(4.0), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
@@ -48,8 +51,8 @@ def test_contains(make, mapping) -> None:
     assert 'x' in mapview
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_get(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_get(make: Callable[..., sc.DataArray | sc.Dataset], mapping: str) -> None:
     var = sc.array(dims=['x'], values=np.arange(4.0), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
@@ -60,8 +63,8 @@ def test_get(make, mapping) -> None:
     assert mapview.get('z') is None
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_pop(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_pop(make: Callable[..., sc.DataArray | sc.Dataset], mapping: str) -> None:
     var = sc.array(dims=['x'], values=np.arange(4.0), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
@@ -75,8 +78,8 @@ def test_pop(make, mapping) -> None:
     assert len(list(mapview.keys())) == 0
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_clear(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_clear(make: Callable[..., sc.DataArray | sc.Dataset], mapping: str) -> None:
     var = sc.array(dims=['x'], values=np.arange(4.0), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
@@ -88,8 +91,10 @@ def test_clear(make, mapping) -> None:
     assert len(mapview) == 0
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_update_from_dict_adds_items(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_update_from_dict_adds_items(
+    make: Callable[..., sc.DataArray | sc.Dataset], mapping: str
+) -> None:
     var = sc.array(dims=['x'], values=np.arange(4.0), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
@@ -99,8 +104,10 @@ def test_update_from_dict_adds_items(make, mapping) -> None:
     assert sc.identical(mapview['b'], sc.scalar(2.0))
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_update_from_mapping_adds_items(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_update_from_mapping_adds_items(
+    make: Callable[..., sc.DataArray | sc.Dataset], mapping: str
+) -> None:
     var = sc.array(dims=['x'], values=np.arange(4.0), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
@@ -113,8 +120,10 @@ def test_update_from_mapping_adds_items(make, mapping) -> None:
     assert sc.identical(mapview['c'], sc.scalar(4.0))
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_update_from_sequence_of_tuples_adds_items(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_update_from_sequence_of_tuples_adds_items(
+    make: Callable[..., sc.DataArray | sc.Dataset], mapping: str
+) -> None:
     var = sc.array(dims=['x'], values=np.arange(4.0), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
@@ -126,9 +135,11 @@ def test_update_from_sequence_of_tuples_adds_items(make, mapping) -> None:
     assert sc.identical(mapview['c'], sc.scalar(4.0))
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_update_from_iterable_of_tuples_adds_items(make, mapping) -> None:
-    def extra_items():
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_update_from_iterable_of_tuples_adds_items(
+    make: Callable[..., sc.DataArray | sc.Dataset], mapping: str
+) -> None:
+    def extra_items() -> Generator[tuple[str, sc.Variable], None, None]:
         yield 'b', sc.scalar(3.0)
         yield 'c', sc.scalar(4.0)
 
@@ -143,8 +154,10 @@ def test_update_from_iterable_of_tuples_adds_items(make, mapping) -> None:
     assert sc.identical(mapview['c'], sc.scalar(4.0))
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_update_from_kwargs_adds_items(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_update_from_kwargs_adds_items(
+    make: Callable[..., sc.DataArray | sc.Dataset], mapping: str
+) -> None:
     var = sc.array(dims=['x'], values=np.arange(4.0), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
@@ -156,8 +169,10 @@ def test_update_from_kwargs_adds_items(make, mapping) -> None:
     assert sc.identical(mapview['c'], sc.scalar(4.0))
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_update_from_kwargs_overwrites_other_dict(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_update_from_kwargs_overwrites_other_dict(
+    make: Callable[..., sc.DataArray | sc.Dataset], mapping: str
+) -> None:
     var = sc.array(dims=['x'], values=np.arange(4.0), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
@@ -167,8 +182,10 @@ def test_update_from_kwargs_overwrites_other_dict(make, mapping) -> None:
     assert sc.identical(mapview['b'], sc.scalar(3.0))
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_update_without_args_does_nothing(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_update_without_args_does_nothing(
+    make: Callable[..., sc.DataArray | sc.Dataset], mapping: str
+) -> None:
     var = sc.array(dims=['x'], values=np.arange(4.0), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
@@ -179,8 +196,10 @@ def test_update_without_args_does_nothing(make, mapping) -> None:
     assert sc.identical(mapview['b'], sc.scalar(2.0))
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_view_comparison_operators(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_view_comparison_operators(
+    make: Callable[..., sc.DataArray | sc.Dataset], mapping: str
+) -> None:
     var = sc.array(dims=['x'], values=np.arange(10.0), unit='m')
     d1 = make(var)
     getattr(d1, mapping)['x'] = sc.array(dims=['x'], values=np.arange(10.0))
@@ -189,8 +208,10 @@ def test_view_comparison_operators(make, mapping) -> None:
     assert getattr(d1, mapping) == getattr(d2, mapping)
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_delitem_mapping(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_delitem_mapping(
+    make: Callable[..., sc.DataArray | sc.Dataset], mapping: str
+) -> None:
     var = sc.Variable(dims=['x'], values=np.arange(4))
     d = make(var)
     mapview = getattr(d, mapping)
@@ -202,8 +223,10 @@ def test_delitem_mapping(make, mapping) -> None:
     assert sc.identical(dref, d)
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_delitem_mappings(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_delitem_mappings(
+    make: Callable[..., sc.DataArray | sc.Dataset], mapping: str
+) -> None:
     var = sc.Variable(dims=['x'], values=np.arange(4))
     d = make(var)
     mapview = getattr(d, mapping)
@@ -217,8 +240,10 @@ def test_delitem_mappings(make, mapping) -> None:
     assert sc.identical(d, dref)
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_copy_shallow(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_copy_shallow(
+    make: Callable[..., sc.DataArray | sc.Dataset], mapping: str
+) -> None:
     var = sc.Variable(dims=['x'], values=np.arange(4), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
@@ -233,8 +258,10 @@ def test_copy_shallow(make, mapping) -> None:
     assert new_mapping['x'].unit == 's'
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_copy_deep(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_copy_deep(
+    make: Callable[..., sc.DataArray | sc.Dataset], mapping: str
+) -> None:
     var = sc.Variable(dims=['x'], values=np.arange(4), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
@@ -249,8 +276,8 @@ def test_copy_deep(make, mapping) -> None:
     assert new_mapping['x'].unit == 'm'
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_popitem(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_popitem(make: Callable[..., sc.DataArray | sc.Dataset], mapping: str) -> None:
     var = sc.array(dims=['x'], values=np.arange(4.0), unit='m')
     d = make(var)
     mapview = getattr(d, mapping)
@@ -266,8 +293,10 @@ def test_popitem(make, mapping) -> None:
     assert len(list(mapview.keys())) == 0
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_views_len(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_views_len(
+    make: Callable[..., sc.DataArray | sc.Dataset], mapping: str
+) -> None:
     d = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
     mapview = getattr(d, mapping)
     assert len(mapview.keys()) == 0
@@ -285,8 +314,10 @@ def test_views_len(make, mapping) -> None:
     assert len(mapview.items()) == 2
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_views_convert_to_bool(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_views_convert_to_bool(
+    make: Callable[..., sc.DataArray | sc.Dataset], mapping: str
+) -> None:
     d = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
     mapview = getattr(d, mapping)
     assert not mapview.keys()
@@ -299,8 +330,10 @@ def test_views_convert_to_bool(make, mapping) -> None:
     assert mapview.items()
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_keys_elements(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_keys_elements(
+    make: Callable[..., sc.DataArray | sc.Dataset], mapping: str
+) -> None:
     d = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
     mapview = getattr(d, mapping)
     assert list(mapview.keys()) == []
@@ -312,8 +345,10 @@ def test_keys_elements(make, mapping) -> None:
     assert list(mapview.keys()) == ['x', 'a']
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_values_elements(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_values_elements(
+    make: Callable[..., sc.DataArray | sc.Dataset], mapping: str
+) -> None:
     d = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
     mapview = getattr(d, mapping)
     assert list(mapview.values()) == []
@@ -325,8 +360,10 @@ def test_values_elements(make, mapping) -> None:
     assert list(mapview.values()) == [sc.scalar(1.0), sc.scalar(2.0)]
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_items_elements(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_items_elements(
+    make: Callable[..., sc.DataArray | sc.Dataset], mapping: str
+) -> None:
     d = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
     mapview = getattr(d, mapping)
     assert list(mapview.items()) == []
@@ -338,8 +375,10 @@ def test_items_elements(make, mapping) -> None:
     assert list(mapview.items()) == [('x', sc.scalar(1.0)), ('a', sc.scalar(2.0))]
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_keys_equality(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_keys_equality(
+    make: Callable[..., sc.DataArray | sc.Dataset], mapping: str
+) -> None:
     d0 = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
     d1 = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
     mapview0 = getattr(d0, mapping)
@@ -369,8 +408,10 @@ def test_keys_equality(make, mapping) -> None:
     assert mapview0.keys() == mapview1.keys()
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_values_equality(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_values_equality(
+    make: Callable[..., sc.DataArray | sc.Dataset], mapping: str
+) -> None:
     d0 = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
     d1 = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
     mapview0 = getattr(d0, mapping)
@@ -389,8 +430,8 @@ def test_values_equality(make, mapping) -> None:
     assert mapview0.values() != mapview1.values()
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_equality(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_equality(make: Callable[..., sc.DataArray | sc.Dataset], mapping: str) -> None:
     d0 = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
     d1 = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
     mapview0 = getattr(d0, mapping)
@@ -426,8 +467,10 @@ def test_equality(make, mapping) -> None:
     assert mapview0 == mapview1
 
 
-@pytest.mark.parametrize(*PARAMS)
-def test_items_equality(make, mapping) -> None:
+@pytest.mark.parametrize(*PARAMS)  # type: ignore[arg-type]
+def test_items_equality(
+    make: Callable[..., sc.DataArray | sc.Dataset], mapping: str
+) -> None:
     d0 = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
     d1 = make(sc.array(dims=['x'], values=np.arange(4.0), unit='m'))
     mapview0 = getattr(d0, mapping)
@@ -470,7 +513,9 @@ def test_items_equality(make, mapping) -> None:
         (make_dataset, "coords"),
     ],
 )
-def test_set_aligned(make, mapping) -> None:
+def test_set_aligned(
+    make: Callable[..., sc.DataArray | sc.Dataset], mapping: str
+) -> None:
     d = make(sc.arange('x', 4.0, unit='m'))
     mapview = getattr(d, mapping)
     mapview['x'] = sc.scalar(1.0)

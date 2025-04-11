@@ -5,12 +5,15 @@
 import os
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 
 import scipp as sc
 
 
-def make_variables():
+def make_variables() -> tuple[
+    sc.Variable, sc.Variable, sc.Variable, sc.Variable, npt.NDArray[np.float64]
+]:
     data = np.arange(1, 4, dtype=float)
     a = sc.Variable(dims=['x'], values=data)
     b = sc.Variable(dims=['x'], values=data)
@@ -119,7 +122,7 @@ def test_0D_scalar_access() -> None:
         ('bool', bool),
     ],
 )
-def test_0d_scalar_access_dtype(dtypes) -> None:
+def test_0d_scalar_access_dtype(dtypes: tuple[str, type]) -> None:
     dtype, expected = dtypes
     assert isinstance(sc.scalar(7, unit='s', dtype=dtype).value, expected)
 
@@ -154,7 +157,7 @@ def test_1D_access() -> None:
 
 
 @pytest.mark.parametrize('dtype', ['int32', 'int64', 'float32', 'float64'])
-def test_1d_access_dtype(dtype) -> None:
+def test_1d_access_dtype(dtype: str) -> None:
     assert sc.array(dims=['xx'], values=[-9], dtype=dtype).values.dtype == dtype
 
 
@@ -342,13 +345,13 @@ def test_1d_variance_access() -> None:
 
 
 @pytest.mark.parametrize('dtypes', [('float32', np.float32), ('float64', np.float64)])
-def test_0d_scalar_variance_access_dtype(dtypes) -> None:
+def test_0d_scalar_variance_access_dtype(dtypes: tuple[str, type]) -> None:
     dtype, expected = dtypes
     assert isinstance(sc.scalar(4.1, variance=4.9, dtype=dtype).variance, expected)
 
 
 @pytest.mark.parametrize('dtype', ['float32', 'float64'])
-def test_1d_variance_access_dtype(dtype) -> None:
+def test_1d_variance_access_dtype(dtype: str) -> None:
     assert (
         sc.array(
             dims=['xx'], values=[2.13], variances=[0.4], dtype=dtype
@@ -628,14 +631,14 @@ def test_allsorted() -> None:
 
 
 @pytest.mark.parametrize('dtype', ['float64', 'float32', 'int64', 'int32'])
-def test_islinspace_true(dtype) -> None:
+def test_islinspace_true(dtype: str) -> None:
     x = sc.Variable(dims=['x'], values=np.arange(5.0), unit=sc.units.m, dtype=dtype)
     assert sc.islinspace(x, 'x').value
     assert sc.islinspace(x).value
 
 
 @pytest.mark.parametrize('dtype', ['float64', 'float32', 'int64', 'int32'])
-def test_islinspace_false(dtype) -> None:
+def test_islinspace_false(dtype: str) -> None:
     x = sc.Variable(dims=['x'], values=(1, 1.5, 4), unit=sc.units.m, dtype=dtype)
     assert not sc.islinspace(x, 'x').value
     assert not sc.islinspace(x).value
@@ -749,4 +752,4 @@ def test_cannot_set_aligned_flag() -> None:
     # returns a copy of the variable.
     var = sc.scalar(1)
     with pytest.raises(AttributeError):
-        var.aligned = False
+        var.aligned = False  # type: ignore[misc]

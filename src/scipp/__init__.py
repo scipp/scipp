@@ -286,6 +286,7 @@ __all__ = [
     'VariableError',
     'VariancesError',
     'VisibleDeprecationWarning',
+    '__version__',
     'abs',
     'acos',
     'acosh',

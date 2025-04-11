@@ -10,7 +10,7 @@ dim = 'yy'
 var = sc.array(dims=[dim, 'xx'], values=np.random.rand(4, 12), unit='m')
 
 
-def _slices(obj):
+def _slices(obj: sc.Variable) -> list[sc.Variable]:
     return [obj[dim, i] for i in range(obj.sizes[dim])]
 
 
@@ -44,6 +44,6 @@ def test_reduce_nan() -> None:
 
 
 def test_reduce_bins() -> None:
-    var = sc.data.binned_x(100, 10).rename_dims({'x': dim})
+    var = sc.data.binned_x(100, 10).rename_dims({'x': dim}).data
     args = _slices(var)
-    assert sc.identical(sc.reduce(args).bins.concat(), var.bins.concat(dim))
+    assert sc.identical(sc.reduce(args).bins.concat(), var.bins.concat(dim))  # type: ignore[union-attr]
