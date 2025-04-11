@@ -69,12 +69,12 @@ def sliceable(request):
     return request.param
 
 
-def test_all_false_gives_empty_slice(sliceable):
+def test_all_false_gives_empty_slice(sliceable) -> None:
     condition = sc.array(dims=['xx'], values=[False, False, False, False])
     assert sc.identical(sliceable[condition], sliceable['xx', 0:0])
 
 
-def test_all_true_gives_copy(sliceable):
+def test_all_true_gives_copy(sliceable) -> None:
     condition = sc.array(dims=['xx'], values=[True, True, True, True])
     original = sliceable.copy()
     sliced = sliceable[condition]
@@ -83,14 +83,14 @@ def test_all_true_gives_copy(sliceable):
     assert sc.identical(sliceable, original)
 
 
-def test_true_and_false_concats_slices(sliceable):
+def test_true_and_false_concats_slices(sliceable) -> None:
     condition = sc.array(dims=['xx'], values=[True, False, True, True])
     assert sc.identical(
         sliceable[condition], sc.concat([sliceable['xx', 0], sliceable['xx', 2:]], 'xx')
     )
 
 
-def test_non_dimension_coords_are_preserved():
+def test_non_dimension_coords_are_preserved() -> None:
     da = make_array()
     da.coords['xx2'] = da.coords['xx']
     condition = sc.array(dims=['xx'], values=[True, False, True, True])
@@ -100,7 +100,7 @@ def test_non_dimension_coords_are_preserved():
     )
 
 
-def test_bin_edges_are_dropped():
+def test_bin_edges_are_dropped() -> None:
     da = make_array()
     base = da.copy()
     da.coords['edges'] = sc.concat([da.coords['xx'], da.coords['xx'][-1] + 1], 'xx')
@@ -108,63 +108,63 @@ def test_bin_edges_are_dropped():
     assert sc.identical(da[condition], sc.concat([base['xx', 0], base['xx', 2:]], 'xx'))
 
 
-def test_non_boolean_condition_raises_DTypeError():
+def test_non_boolean_condition_raises_DTypeError() -> None:
     var = make_var()
     condition = (var < 3).to(dtype='int32')
     with pytest.raises(sc.DTypeError):
         var[condition]
 
 
-def test_all_false_condition_with_wrong_dims_raises_DimensionError():
+def test_all_false_condition_with_wrong_dims_raises_DimensionError() -> None:
     var = make_var()
     condition = sc.array(dims=['not-in-var'], values=[False, False, False])
     with pytest.raises(sc.DimensionError):
         var[condition]
 
 
-def test_all_true_condition_with_wrong_dims_raises_DimensionError():
+def test_all_true_condition_with_wrong_dims_raises_DimensionError() -> None:
     var = make_var()
     condition = sc.array(dims=['not-in-var'], values=[True, True, True])
     with pytest.raises(sc.DimensionError):
         var[condition]
 
 
-def test_condition_with_wrong_dims_raises_DimensionError():
+def test_condition_with_wrong_dims_raises_DimensionError() -> None:
     var = make_var()
     condition = sc.array(dims=['not-in-var'], values=[True, False, True])
     with pytest.raises(sc.DimensionError):
         var[condition]
 
 
-def test_all_false_condition_with_wrong_shape_raises_DimensionError():
+def test_all_false_condition_with_wrong_shape_raises_DimensionError() -> None:
     var = make_var(xx=4)
     condition = sc.array(dims=['xx'], values=[False, False, False])
     with pytest.raises(sc.DimensionError):
         var[condition]
 
 
-def test_all_true_condition_with_wrong_shape_raises_DimensionError():
+def test_all_true_condition_with_wrong_shape_raises_DimensionError() -> None:
     var = make_var(xx=4)
     condition = sc.array(dims=['xx'], values=[True, True, True])
     with pytest.raises(sc.DimensionError):
         var[condition]
 
 
-def test_condition_with_wrong_shape_raises_DimensionError():
+def test_condition_with_wrong_shape_raises_DimensionError() -> None:
     var = make_var(xx=4)
     condition = sc.array(dims=['xx'], values=[False, True, False])
     with pytest.raises(sc.DimensionError):
         var[condition]
 
 
-def test_all_false_2d_condition_raises_DimensionError():
+def test_all_false_2d_condition_raises_DimensionError() -> None:
     var = make_var()
     condition = var != var
     with pytest.raises(sc.DimensionError):
         var[condition]
 
 
-def test_all_true_2d_condition_raises_DimensionError():
+def test_all_true_2d_condition_raises_DimensionError() -> None:
     # Strictly speaking this could be supported, but having this odd special case
     # work would likely add more confusion and bugs surfacing at surprising times.
     var = make_var()
@@ -173,21 +173,21 @@ def test_all_true_2d_condition_raises_DimensionError():
         var[condition]
 
 
-def test_2d_condition_raises_DimensionError():
+def test_2d_condition_raises_DimensionError() -> None:
     var = make_var()
     condition = var < 3
     with pytest.raises(sc.DimensionError):
         var[condition]
 
 
-def test_0d_false_condition_raises_DimensionError():
+def test_0d_false_condition_raises_DimensionError() -> None:
     var = make_var()
     condition = sc.scalar(False)
     with pytest.raises(sc.DimensionError):
         var[condition]
 
 
-def test_0d_true_condition_raises_DimensionError():
+def test_0d_true_condition_raises_DimensionError() -> None:
     # Strictly speaking this could be supported, but having this odd special case
     # work would likely add more confusion and bugs surfacing at surprising times.
     var = make_var()

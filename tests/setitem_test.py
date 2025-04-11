@@ -5,7 +5,7 @@
 import scipp as sc
 
 
-def test_setitem_required_for_inplace_ops():
+def test_setitem_required_for_inplace_ops() -> None:
     # Test that all required __setitem__ overloads for in-place operations
     # are available.
 
@@ -28,7 +28,7 @@ def test_setitem_required_for_inplace_ops():
     d['x', 1:]['y', 1:] *= 1.5  # DatasetView.__setitem__(slice)
 
 
-def test_setitem_coords_required_for_inplace_ops():
+def test_setitem_coords_required_for_inplace_ops() -> None:
     var = sc.zeros(dims=['x'], shape=(4,), dtype=sc.DType.int64)
     da = sc.DataArray(data=var)
     da.coords['x'] = var

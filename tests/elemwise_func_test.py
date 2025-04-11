@@ -7,20 +7,20 @@ import scipp as sc
 _ = pytest.importorskip('numba')
 
 
-def test_unary():
+def test_unary() -> None:
     f = sc.elemwise_func(lambda x: x + x)
     var = sc.array(dims=['x'], values=[1.0, 2.0])
     assert sc.identical(f(var), var + var)
 
 
-def test_binary():
+def test_binary() -> None:
     f = sc.elemwise_func(lambda x, y: x + y)
     a = sc.array(dims=['x'], values=[1.0, 2.0])
     b = sc.array(dims=['x'], values=[2.0, 3.0])
     assert sc.identical(f(a, b), a + b)
 
 
-def test_ternary():
+def test_ternary() -> None:
     f = sc.elemwise_func(lambda x, y, z: x + y + z)
     a = sc.array(dims=['x'], values=[1.0, 2.0])
     b = sc.array(dims=['x'], values=[2.0, 3.0])
@@ -28,7 +28,7 @@ def test_ternary():
     assert sc.identical(f(a, b, c), a + b + c)
 
 
-def test_4_inputs():
+def test_4_inputs() -> None:
     f = sc.elemwise_func(lambda x, y, z, t: x + y + z + t)
     a = sc.array(dims=['x'], values=[1.0, 2.0])
     b = sc.array(dims=['x'], values=[2.0, 3.0])
@@ -41,7 +41,7 @@ def fmadd(a, b, c):
     return a * b + c
 
 
-def test_handles_unit_using_same_kernel():
+def test_handles_unit_using_same_kernel() -> None:
     f = sc.elemwise_func(fmadd)
     a = 2.0 * sc.Unit('m')
     b = 3.0 * sc.Unit('s')
@@ -49,7 +49,7 @@ def test_handles_unit_using_same_kernel():
     assert f(a, b, c).unit == 'm*s'
 
 
-def test_custom_unit_func_is_used():
+def test_custom_unit_func_is_used() -> None:
     def unit_func(a, b, c):
         return 'K'
 
@@ -60,7 +60,7 @@ def test_custom_unit_func_is_used():
     assert f(a, b, c).unit == 'K'
 
 
-def test_raises_on_dtype_mismatch():
+def test_raises_on_dtype_mismatch() -> None:
     a = sc.ones(dims=['x'], shape=[10])
     b = sc.ones(dims=['x'], shape=[10])
     c = sc.ones(dims=['x'], shape=[10])
@@ -69,7 +69,7 @@ def test_raises_on_dtype_mismatch():
         f(a, b, c.to(dtype='int64'))
 
 
-def test_auto_convert_dtype_handles_dtype_mismatch():
+def test_auto_convert_dtype_handles_dtype_mismatch() -> None:
     a = 2.0 * sc.Unit('m')
     b = 3.0 * sc.Unit('s')
     c = 4.0 * sc.Unit('m*s')
@@ -77,7 +77,7 @@ def test_auto_convert_dtype_handles_dtype_mismatch():
     assert sc.identical(f(a, b, c.to(dtype='int64')), a * b + c)
 
 
-def test_usable_as_decorator():
+def test_usable_as_decorator() -> None:
     @sc.elemwise_func(unit_func=lambda u: u)
     def add1(a):
         return a + 1

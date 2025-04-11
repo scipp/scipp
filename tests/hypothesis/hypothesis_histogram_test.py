@@ -17,7 +17,7 @@ float_args = {
 
 
 @given(st.floats(**float_args), st.floats(**float_args))
-def test_histogram_linspace_bounds(a, b):
+def test_histogram_linspace_bounds(a, b) -> None:
     x = sc.array(dims=['row'], values=[a, b])
     table = sc.DataArray(sc.ones(dims=['row'], shape=[2]))
     table.coords['x'] = x

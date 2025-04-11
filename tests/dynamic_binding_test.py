@@ -22,14 +22,14 @@ def make_containers():
     'func_name',
     ['cumsum', 'max', 'mean', 'min', 'nanmax', 'nanmean', 'nanmin', 'nansum', 'sum'],
 )
-def test_bound_methods_reduction_variable(func_name):
+def test_bound_methods_reduction_variable(func_name) -> None:
     var, _ = make_containers()
     func = getattr(sc, func_name)
     assert sc.identical(getattr(var, func_name)(), func(var))
 
 
 @pytest.mark.parametrize('func_name', ['any', 'all'])
-def test_bound_methods_reduction_variable_bool(func_name):
+def test_bound_methods_reduction_variable_bool(func_name) -> None:
     rng = np.random.default_rng(87415)
     var = sc.array(dims=['x', 'y'], values=rng.choice([True, False], (4, 3)))
     func = getattr(sc, func_name)
@@ -37,13 +37,13 @@ def test_bound_methods_reduction_variable_bool(func_name):
 
 
 @pytest.mark.parametrize('func_name', ['mean', 'nanmean', 'nansum', 'sum'])
-def test_bound_methods_reduction_dataarray(func_name):
+def test_bound_methods_reduction_dataarray(func_name) -> None:
     _, da = make_containers()
     func = getattr(sc, func_name)
     assert sc.identical(getattr(da, func_name)(), func(da))
 
 
-def test_bound_methods_shape():
+def test_bound_methods_shape() -> None:
     var, da = make_containers()
     assert sc.identical(
         var.broadcast(dims=['x', 'y', 'z'], shape=[4, 3, 2]),
@@ -61,7 +61,7 @@ def test_bound_methods_shape():
         )
 
 
-def test_bound_methods_groupby():
+def test_bound_methods_groupby() -> None:
     rng = np.random.default_rng(1491)
     _, da = make_containers()
     da.coords['x'] = sc.array(

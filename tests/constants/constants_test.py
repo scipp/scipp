@@ -8,14 +8,14 @@ import scipp.constants as ours
 
 
 @pytest.mark.parametrize("name", dir(ours))
-def test_constant(name):
+def test_constant(name) -> None:
     var = getattr(ours, name)
     if not isinstance(var, sc.Variable):
         pytest.skip()
     assert var.value == getattr(theirs, name)
 
 
-def test_physical_constants():
+def test_physical_constants() -> None:
     v, u, e = theirs.physical_constants['speed of light in vacuum']
     var = ours.physical_constants('speed of light in vacuum')
     assert var.value == v
@@ -28,7 +28,7 @@ def test_physical_constants():
 @pytest.mark.parametrize(
     "var", [ours.m_e, ours.physical_constants('speed of light in vacuum')]
 )
-def test_constants_cannot_be_modified(var):
+def test_constants_cannot_be_modified(var) -> None:
     original = var.copy()
     with pytest.raises(sc.VariableError):
         var *= 2.0

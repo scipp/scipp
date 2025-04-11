@@ -8,7 +8,7 @@ import pytest
 import scipp as sc
 
 
-def test_broadcast_variable():
+def test_broadcast_variable() -> None:
     x = sc.arange('x', 3)
     assert sc.identical(
         sc.broadcast(x, sizes={'x': 3, 'y': 2}),
@@ -20,7 +20,7 @@ def test_broadcast_variable():
     )
 
 
-def test_broadcast_data_array():
+def test_broadcast_data_array() -> None:
     N = 6
     d = sc.linspace('x', 2.0, 10.0, N)
     x = sc.arange('x', float(N))
@@ -35,7 +35,7 @@ def test_broadcast_data_array():
     assert sc.identical(sc.broadcast(da, dims=['x', 'y'], shape=[6, 3]), expected)
 
 
-def test_broadcast_fails_with_bad_inputs():
+def test_broadcast_fails_with_bad_inputs() -> None:
     x = sc.array(dims=['x'], values=np.arange(6.0))
     with pytest.raises(ValueError, match='dims and shape must both be None'):
         _ = sc.broadcast(x, sizes={'x': 6, 'y': 3}, dims=['x', 'y'], shape=[6, 3])
@@ -45,7 +45,7 @@ def test_broadcast_fails_with_bad_inputs():
         _ = sc.broadcast(x, sizes={'x': 6, 'y': 3}, shape=[6, 3])
 
 
-def test_concat():
+def test_concat() -> None:
     var = sc.scalar(1.0)
     assert sc.identical(
         sc.concat([var, var + var, 3 * var], 'x'),
@@ -53,7 +53,7 @@ def test_concat():
     )
 
 
-def test_concat_data_group():
+def test_concat_data_group() -> None:
     var = sc.scalar(1.0)
     dg = sc.DataGroup({'a': var})
     result = sc.concat([dg, dg + dg], 'x')
@@ -61,7 +61,7 @@ def test_concat_data_group():
     assert sc.identical(result['a'], sc.array(dims=['x'], values=[1.0, 2.0]))
 
 
-def test_fold_variable():
+def test_fold_variable() -> None:
     var = sc.arange('f', 6)
     assert sc.identical(
         sc.fold(var, dim='f', sizes={'g': 2, 'h': 3}),
@@ -73,7 +73,7 @@ def test_fold_variable():
     )
 
 
-def test_fold_data_array():
+def test_fold_data_array() -> None:
     da = sc.DataArray(sc.arange('f', 6))
     assert sc.identical(
         sc.fold(da, dim='f', sizes={'g': 2, 'h': 3}),
@@ -85,7 +85,7 @@ def test_fold_data_array():
     )
 
 
-def test_fold_size_minus_1_variable():
+def test_fold_size_minus_1_variable() -> None:
     x = sc.array(dims=['x'], values=np.arange(6.0))
     assert sc.identical(
         sc.fold(x, dim='x', sizes={'x': 2, 'y': 3}),
@@ -97,7 +97,7 @@ def test_fold_size_minus_1_variable():
     )
 
 
-def test_fold_size_minus_1_data_array():
+def test_fold_size_minus_1_data_array() -> None:
     x = sc.array(dims=['x'], values=np.arange(6.0))
     da = sc.DataArray(x)
     assert sc.identical(
@@ -110,7 +110,7 @@ def test_fold_size_minus_1_data_array():
     )
 
 
-def test_fold_raises_two_minus_1():
+def test_fold_raises_two_minus_1() -> None:
     x = sc.array(dims=['x'], values=np.arange(6.0))
     da = sc.DataArray(x)
     with pytest.raises(sc.DimensionError):
@@ -119,7 +119,7 @@ def test_fold_raises_two_minus_1():
         sc.fold(da, dim='x', sizes={'x': -1, 'y': -1})
 
 
-def test_fold_raises_non_divisible():
+def test_fold_raises_non_divisible() -> None:
     x = sc.array(dims=['x'], values=np.arange(10.0))
     da = sc.DataArray(x)
     with pytest.raises(ValueError, match=r'original shape \d+ cannot be divided by'):
@@ -128,13 +128,13 @@ def test_fold_raises_non_divisible():
         sc.fold(da, dim='x', sizes={'x': -1, 'y': 3})
 
 
-def test_flatten_variable():
+def test_flatten_variable() -> None:
     var = sc.arange('r', 6).fold('r', sizes={'a': 2, 'b': 3})
     assert sc.identical(sc.flatten(var, dims=['a', 'b'], to='f'), sc.arange('f', 6))
     assert sc.identical(sc.flatten(var, to='f'), sc.arange('f', 6))
 
 
-def test_flatten_data_array():
+def test_flatten_data_array() -> None:
     da = sc.DataArray(sc.arange('r', 6).fold('r', sizes={'a': 2, 'b': 3}))
     assert sc.identical(
         sc.flatten(da, dims=['a', 'b'], to='f'), sc.DataArray(sc.arange('f', 6))
@@ -142,7 +142,7 @@ def test_flatten_data_array():
     assert sc.identical(sc.flatten(da, to='f'), sc.DataArray(sc.arange('f', 6)))
 
 
-def test_squeeze():
+def test_squeeze() -> None:
     xy = sc.arange('a', 2).fold('a', sizes={'x': 1, 'y': 2})
     assert sc.identical(sc.squeeze(xy, dim='x'), sc.arange('y', 2))
     assert sc.identical(sc.squeeze(xy, dim=['x']), sc.arange('y', 2))

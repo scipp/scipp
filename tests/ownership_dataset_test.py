@@ -68,7 +68,7 @@ def make_data_array():
     return da, v, c, m
 
 
-def test_own_darr_set(data_array_and_components):
+def test_own_darr_set(data_array_and_components) -> None:
     # Data and metadata are shared
     da, v, c, m = data_array_and_components
     da['x', 0] = -10
@@ -110,7 +110,7 @@ def test_own_darr_set(data_array_and_components):
     assert sc.identical(m, sc.array(dims=['x'], values=[False, True]))
 
 
-def test_own_darr_get():
+def test_own_darr_get() -> None:
     # Data and metadata are shared.
     da = make_data_array()[0]
     v = da.data
@@ -155,7 +155,7 @@ def test_own_darr_get():
     assert sc.identical(m, sc.array(dims=['x'], values=[False, True]))
 
 
-def test_own_darr_copy():
+def test_own_darr_copy() -> None:
     # Depth of copy can be controlled.
     da, _, c, m = make_data_array()
     da_copy = copy(da)
@@ -188,7 +188,7 @@ def test_own_darr_copy():
     [lambda k, v: {k: v}, lambda k, v: {k: v}.items(), lambda k, v: sc.Dataset({k: v})],
     ids=['dict', 'iterator', 'Dataset'],
 )
-def test_own_dset_init(data_array_wrapper):
+def test_own_dset_init(data_array_wrapper) -> None:
     da, *_ = make_data_array()
     dset = sc.Dataset(data_array_wrapper('da1', da))
 
@@ -208,7 +208,7 @@ def test_own_dset_init(data_array_wrapper):
     assert sc.identical(da, expected)
 
 
-def test_own_dset_set_access_through_dataarray():
+def test_own_dset_set_access_through_dataarray() -> None:
     # The DataArray is shared.
     da, *_ = make_data_array()
     dset = sc.Dataset({'da1': da})
@@ -229,7 +229,7 @@ def test_own_dset_set_access_through_dataarray():
     assert sc.identical(da, expected)
 
 
-def test_own_dset_set_access_through_scalar_slice():
+def test_own_dset_set_access_through_scalar_slice() -> None:
     # The DataArray is shared.
     da, *_ = make_data_array()
     dset = sc.Dataset({'da1': da})
@@ -250,7 +250,7 @@ def test_own_dset_set_access_through_scalar_slice():
     assert sc.identical(da, expected)
 
 
-def test_own_dset_set_access_through_range_slice():
+def test_own_dset_set_access_through_range_slice() -> None:
     # The DataArray is shared.
     da, *_ = make_data_array()
     dset = sc.Dataset({'da1': da})
@@ -268,7 +268,7 @@ def test_own_dset_set_access_through_range_slice():
     assert sc.identical(da, expected)
 
 
-def test_own_dset_set_access_through_coords():
+def test_own_dset_set_access_through_coords() -> None:
     # The DataArray is shared.
     da, *_ = make_data_array()
     dset = sc.Dataset({'da1': da})
@@ -280,7 +280,7 @@ def test_own_dset_set_access_through_coords():
     assert sc.identical(da, expected)
 
 
-def test_own_dset_set_access_through_range_slice_coords():
+def test_own_dset_set_access_through_range_slice_coords() -> None:
     # The DataArray is shared.
     da, *_ = make_data_array()
     dset = sc.Dataset({'da1': da})

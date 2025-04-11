@@ -10,14 +10,14 @@ import scipp as sc
 
 
 @pytest.mark.parametrize('mode', ['nearest', 'previous'])
-def test_raises_with_histogram_if_mode_set(mode):
+def test_raises_with_histogram_if_mode_set(mode) -> None:
     da = sc.DataArray(sc.arange('x', 4), coords={'x': sc.arange('x', 5)})
     with pytest.raises(ValueError, match='Input is a histogram'):
         sc.lookup(da, mode=mode)
 
 
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
-def test_histogram(dtype):
+def test_histogram(dtype) -> None:
     x_lin = sc.linspace(dim='xx', start=0, stop=1, num=4)
     x = x_lin.copy()
     x.values[0] -= 0.01
@@ -33,7 +33,7 @@ def test_histogram(dtype):
 
 
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
-def test_values_in_masked_bins_replaced_by_fill_value(dtype):
+def test_values_in_masked_bins_replaced_by_fill_value(dtype) -> None:
     x_lin = sc.linspace(dim='xx', start=0, stop=1, num=4)
     x = x_lin.copy()
     x.values[0] -= 0.01
@@ -53,7 +53,7 @@ def test_values_in_masked_bins_replaced_by_fill_value(dtype):
 
 
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
-def test_previous(dtype):
+def test_previous(dtype) -> None:
     x = sc.linspace(dim='xx', start=0, stop=1, num=4)
     data = sc.array(dims=['xx'], values=[0, 1, 0, 2], dtype=dtype)
     da = sc.DataArray(data=data, coords={'xx': x})
@@ -64,7 +64,7 @@ def test_previous(dtype):
 
 
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
-def test_nearest(dtype):
+def test_nearest(dtype) -> None:
     x = sc.linspace(dim='xx', start=0, stop=1, num=5)
     data = sc.array(dims=['xx'], values=[0, 1, 0, 2, 2], dtype=dtype)
     da = sc.DataArray(data=data, coords={'xx': x})
@@ -75,7 +75,7 @@ def test_nearest(dtype):
 
 
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
-def test_previous_masked_points_replaced_by_fill_value(dtype):
+def test_previous_masked_points_replaced_by_fill_value(dtype) -> None:
     x = sc.linspace(dim='xx', start=0, stop=1, num=4)
     data = sc.array(dims=['xx'], values=[0, 1, 0, 2], dtype=dtype)
     da = sc.DataArray(data=data, coords={'xx': x})
@@ -87,7 +87,7 @@ def test_previous_masked_points_replaced_by_fill_value(dtype):
 
 
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
-def test_nearest_masked_points_replaced_by_fill_value(dtype):
+def test_nearest_masked_points_replaced_by_fill_value(dtype) -> None:
     x = sc.linspace(dim='xx', start=0, stop=1, num=5)
     data = sc.array(dims=['xx'], values=[0, 1, 0, 2, 2], dtype=dtype)
     da = sc.DataArray(data=data, coords={'xx': x})
@@ -106,7 +106,7 @@ def outofbounds(dtype):
 
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
 @pytest.mark.parametrize("mode", ['nearest', 'previous'])
-def test_function_with_no_value_gives_fill_value(mode, dtype):
+def test_function_with_no_value_gives_fill_value(mode, dtype) -> None:
     x = sc.array(dims=['xx'], values=[])
     data = sc.array(dims=['xx'], values=[], dtype=dtype)
     da = sc.DataArray(data=data, coords={'xx': x})
@@ -117,7 +117,7 @@ def test_function_with_no_value_gives_fill_value(mode, dtype):
 
 
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
-def test_previous_single_value(dtype):
+def test_previous_single_value(dtype) -> None:
     x = sc.array(dims=['xx'], values=[0.5])
     data = sc.array(dims=['xx'], values=[11], dtype=dtype)
     da = sc.DataArray(data=data, coords={'xx': x})
@@ -129,7 +129,7 @@ def test_previous_single_value(dtype):
 
 
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
-def test_nearest_single_value(dtype):
+def test_nearest_single_value(dtype) -> None:
     x = sc.array(dims=['xx'], values=[0.5])
     data = sc.array(dims=['xx'], values=[11], dtype=dtype)
     da = sc.DataArray(data=data, coords={'xx': x})
@@ -138,7 +138,7 @@ def test_nearest_single_value(dtype):
     assert sc.identical(sc.lookup(da, mode='nearest')(var), expected)
 
 
-def test_ignores_unrelated_coords():
+def test_ignores_unrelated_coords() -> None:
     var = sc.Variable(dims=['event'], values=[1.0, 2.0, 3.0, 4.0])
     table = sc.DataArray(var, coords={'x': var})
     binned = table.bin(x=sc.array(dims=['x'], values=[1.0, 5.0]))
@@ -154,7 +154,7 @@ def test_ignores_unrelated_coords():
 
 @pytest.mark.parametrize("dtype", ['float32', 'float64'])
 @pytest.mark.parametrize("op", [mul, truediv])
-def test_promotes_to_dtype_of_lut(op, dtype):
+def test_promotes_to_dtype_of_lut(op, dtype) -> None:
     da = sc.data.table_xyz(10).to(dtype='float32').bin(x=2)
     edges = sc.array(dims=['x'], unit='m', values=[0.0, 0.5, 1.0])
     weight = sc.array(dims=['x'], values=[10.0, 3.0], dtype=dtype)
@@ -165,7 +165,7 @@ def test_promotes_to_dtype_of_lut(op, dtype):
 
 @pytest.mark.parametrize("dtype", ['float32', 'float64'])
 @pytest.mark.parametrize("op", [mul, truediv])
-def test_promotes_to_dtype_of_events(op, dtype):
+def test_promotes_to_dtype_of_events(op, dtype) -> None:
     da = sc.data.table_xyz(10).to(dtype=dtype).bin(x=2)
     edges = sc.array(dims=['x'], unit='m', values=[0.0, 0.5, 1.0])
     weight = sc.array(dims=['x'], values=[10.0, 3.0], dtype='float32')
@@ -174,7 +174,7 @@ def test_promotes_to_dtype_of_events(op, dtype):
     assert result.bins.constituents['data'].dtype == dtype
 
 
-def test_lookup_2d_coord():
+def test_lookup_2d_coord() -> None:
     edges = sc.array(dims=['x', 'y'], values=[[0.0, 1.0, 2.0], [1.0, 2.0, 3.0]])
     da = sc.DataArray(
         sc.array(dims=['x', 'y'], values=[[10.0, 11.0], [12.0, 13.0]]),
@@ -188,7 +188,7 @@ def test_lookup_2d_coord():
     assert sc.identical(sc.lookup(da, dim='y')[edges + 0.1], expected, equal_nan=True)
 
 
-def test_lookup_2d_coord_with_mask():
+def test_lookup_2d_coord_with_mask() -> None:
     edges = sc.array(dims=['x', 'y'], values=[[0.0, 1.0, 2.0], [1.0, 2.0, 3.0]])
     da = sc.DataArray(
         sc.array(dims=['x', 'y'], values=[[10.0, 11.0], [12.0, 13.0]]),
@@ -207,7 +207,7 @@ def test_lookup_2d_coord_with_mask():
     )
 
 
-def test_lookup_2d_coord_with_1d_mask():
+def test_lookup_2d_coord_with_1d_mask() -> None:
     edges = sc.array(dims=['x', 'y'], values=[[0.0, 1.0, 2.0], [1.0, 2.0, 3.0]])
     da = sc.DataArray(
         sc.array(dims=['x', 'y'], values=[[10.0, 11.0], [12.0, 13.0]]),
@@ -226,7 +226,7 @@ def test_lookup_2d_coord_with_1d_mask():
     )
 
 
-def test_lookup_2d_coord_outer_dim():
+def test_lookup_2d_coord_outer_dim() -> None:
     edges = (
         sc.array(dims=['x', 'y'], values=[[0.0, 1.0, 2.0], [1.0, 2.0, 3.0]])
         .transpose()
@@ -248,7 +248,7 @@ def test_lookup_2d_coord_outer_dim():
     assert sc.identical(sc.lookup(da, dim='y')[edges + 0.1], expected, equal_nan=True)
 
 
-def test_lookup_2d_coord_outer_dim_with_mask():
+def test_lookup_2d_coord_outer_dim_with_mask() -> None:
     edges = (
         sc.array(dims=['x', 'y'], values=[[0.0, 1.0, 2.0], [1.0, 2.0, 3.0]])
         .transpose()
@@ -281,7 +281,7 @@ def test_lookup_2d_coord_outer_dim_with_mask():
     )
 
 
-def test_lookup_2d_coord_outer_dim_with_1d_mask():
+def test_lookup_2d_coord_outer_dim_with_1d_mask() -> None:
     edges = (
         sc.array(dims=['x', 'y'], values=[[0.0, 1.0, 2.0], [1.0, 2.0, 3.0]])
         .transpose()

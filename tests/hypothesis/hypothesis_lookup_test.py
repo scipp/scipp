@@ -17,7 +17,7 @@ float_args = {
 
 
 @given(st.floats(**float_args), st.floats(**float_args))
-def test_lookup_linspace_bounds(a, b):
+def test_lookup_linspace_bounds(a, b) -> None:
     x = sc.array(dims=['row'], values=[a, b])
     upper = x.max()
     upper.value = np.nextafter(upper.value, np.inf)
@@ -31,7 +31,7 @@ def test_lookup_linspace_bounds(a, b):
 
 
 @given(st.floats(**float_args), st.floats(**float_args))
-def test_lookup_scale_linspace_bounds(a, b):
+def test_lookup_scale_linspace_bounds(a, b) -> None:
     x = sc.array(dims=['row'], values=[a, b])
     upper = x.max()
     upper.value = np.nextafter(upper.value, np.inf)

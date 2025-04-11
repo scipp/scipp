@@ -8,27 +8,27 @@ from scipp.core.domains import merge_equal_adjacent
 x = sc.arange(dim='x', start=0, stop=10)
 
 
-def test_merge_equal_adjacent_fail_not_1d():
+def test_merge_equal_adjacent_fail_not_1d() -> None:
     data = sc.ones(dims=['y', 'x'], shape=[2, 9], dtype='int64')
     da = sc.DataArray(data=data, coords={'x': sc.concat([x, x], 'y')})
     with pytest.raises(sc.DimensionError):
         merge_equal_adjacent(da)
 
 
-def test_merge_equal_adjacent_fail_no_edges():
+def test_merge_equal_adjacent_fail_no_edges() -> None:
     data = sc.ones(dims=['x'], shape=[9], dtype='int64')
     da = sc.DataArray(data=data, coords={'x': x['x', 1:]})
     with pytest.raises(sc.DimensionError):
         merge_equal_adjacent(da)
 
 
-def test_merge_equal_adjacent_length_1():
+def test_merge_equal_adjacent_length_1() -> None:
     data = sc.ones(dims=['x'], shape=[1], dtype='int64')
     da = sc.DataArray(data=data, coords={'x': sc.array(dims=['x'], values=[0, 2])})
     assert sc.identical(merge_equal_adjacent(da), da)
 
 
-def test_merge_equal_adjacent_length_2():
+def test_merge_equal_adjacent_length_2() -> None:
     data = sc.ones(dims=['x'], shape=[2], dtype='int64')
     da = sc.DataArray(data=data, coords={'x': sc.array(dims=['x'], values=[0, 1, 2])})
     expected = sc.DataArray(
@@ -38,13 +38,13 @@ def test_merge_equal_adjacent_length_2():
     assert sc.identical(merge_equal_adjacent(da), expected)
 
 
-def test_merge_equal_adjacent_2_domains_length_2():
+def test_merge_equal_adjacent_2_domains_length_2() -> None:
     data = sc.array(dims=['x'], values=[1, 0])
     da = sc.DataArray(data=data, coords={'x': sc.array(dims=['x'], values=[0, 1, 2])})
     assert sc.identical(merge_equal_adjacent(da), da)
 
 
-def test_merge_equal_adjacent_constant():
+def test_merge_equal_adjacent_constant() -> None:
     data = sc.ones(dims=['x'], shape=[9], dtype='int64')
     da = sc.DataArray(data=data, coords={'x': x})
 
@@ -55,7 +55,7 @@ def test_merge_equal_adjacent_constant():
     assert sc.identical(merge_equal_adjacent(da), expected)
 
 
-def test_merge_equal_adjacent_2_domains():
+def test_merge_equal_adjacent_2_domains() -> None:
     data = sc.ones(dims=['x'], shape=[9], dtype='int64')
     da = sc.DataArray(data=data, coords={'x': x})
     expected = sc.DataArray(data=sc.array(dims=['x'], values=[0, 1]))
@@ -73,7 +73,7 @@ def test_merge_equal_adjacent_2_domains():
     assert sc.identical(merge_equal_adjacent(da), expected)
 
 
-def test_merge_equal_adjacent_3_domains():
+def test_merge_equal_adjacent_3_domains() -> None:
     data = sc.ones(dims=['x'], shape=[9], dtype='int64')
     da = sc.DataArray(data=data, coords={'x': x})
     expected = sc.DataArray(data=sc.array(dims=['x'], values=[0, 1, 0]))
@@ -95,7 +95,7 @@ def test_merge_equal_adjacent_3_domains():
     assert sc.identical(merge_equal_adjacent(da), expected)
 
 
-def test_merge_equal_adjacent_4_domains():
+def test_merge_equal_adjacent_4_domains() -> None:
     data = sc.ones(dims=['x'], shape=[9], dtype='int64')
     da = sc.DataArray(data=data, coords={'x': x})
     expected = sc.DataArray(data=sc.array(dims=['x'], values=[0, 1, 0, 1]))
@@ -109,7 +109,7 @@ def test_merge_equal_adjacent_4_domains():
     assert sc.identical(merge_equal_adjacent(da), expected)
 
 
-def test_merge_equal_adjacent_multicolor():
+def test_merge_equal_adjacent_multicolor() -> None:
     data = sc.ones(dims=['x'], shape=[9], dtype='int64')
     da = sc.DataArray(data=data, coords={'x': x})
     expected = sc.DataArray(data=sc.array(dims=['x'], values=[0, 1, 2, 1]))

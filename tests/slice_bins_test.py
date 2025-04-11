@@ -6,7 +6,7 @@ import pytest
 import scipp as sc
 
 
-def test_slice_bins_by_int_label():
+def test_slice_bins_by_int_label() -> None:
     table = sc.data.table_xyz(100)
     table.coords['param'] = (table.coords.pop('y') * 10).to(dtype='int64')
     da = table.bin(x=10)
@@ -23,7 +23,7 @@ def test_slice_bins_by_int_label():
     )
 
 
-def test_slice_bins_by_int_label_range():
+def test_slice_bins_by_int_label_range() -> None:
     table = sc.data.table_xyz(100)
     table.coords['param'] = sc.arange(dim='row', start=0, stop=100, unit='s') // 10
     da = table.bin(x=10)
@@ -45,7 +45,7 @@ def test_slice_bins_by_int_label_range():
     )
 
 
-def test_slice_bins_by_float_label_range():
+def test_slice_bins_by_float_label_range() -> None:
     table = sc.data.table_xyz(100)
     da = table.bin(x=10)
     start = sc.scalar(0.1, unit='m')
@@ -61,14 +61,14 @@ def test_slice_bins_by_float_label_range():
     )
 
 
-def test_slice_bins_by_open_range_includes_everything():
+def test_slice_bins_by_open_range_includes_everything() -> None:
     table = sc.data.table_xyz(100)
     da = table.bin(x=10)
     result = da.bins['z', :]
     assert result.bins.size().sum().value == 100
 
 
-def test_slice_bins_by_half_open_float_range_splits_without_duplication():
+def test_slice_bins_by_half_open_float_range_splits_without_duplication() -> None:
     table = sc.data.table_xyz(100)
     da = table.bin(x=10)
     split = sc.scalar(0.4, unit='m')
@@ -84,7 +84,7 @@ def test_slice_bins_by_half_open_float_range_splits_without_duplication():
     assert sc.identical(right.coords['z'], sc.concat([split, expected_stop], 'z'))
 
 
-def test_slice_bins_by_half_open_int_range_splits_without_duplication():
+def test_slice_bins_by_half_open_int_range_splits_without_duplication() -> None:
     table = sc.data.table_xyz(100)
     table.coords['param'] = sc.arange(dim='row', start=0, stop=100, unit='s') // 10
     da = table.bin(x=10)
@@ -101,7 +101,7 @@ def test_slice_bins_by_half_open_int_range_splits_without_duplication():
     )
 
 
-def test_slice_bins_with_step_raises():
+def test_slice_bins_with_step_raises() -> None:
     da = sc.data.table_xyz(100).bin(x=10)
     start = sc.scalar(0.1, unit='m')
     stop = sc.scalar(0.4, unit='m')
@@ -110,7 +110,7 @@ def test_slice_bins_with_step_raises():
         da.bins['z', start:stop:step]
 
 
-def test_slice_bins_with_int_index_raises():
+def test_slice_bins_with_int_index_raises() -> None:
     da = sc.data.table_xyz(100).bin(x=10)
     with pytest.raises(
         ValueError, match='Bins can only by sliced using label-based indexing'
@@ -120,7 +120,7 @@ def test_slice_bins_with_int_index_raises():
         da.bins['z', 1]
 
 
-def test_bins_slicing_open_start_too_small_stop_given():
+def test_bins_slicing_open_start_too_small_stop_given() -> None:
     table = sc.data.table_xyz(nrow=100)
     da = table.bin(x=7)
     too_small_stop = da.bins.coords['x'].min() - 0.001 * sc.Unit('m')
@@ -131,7 +131,7 @@ def test_bins_slicing_open_start_too_small_stop_given():
     )
 
 
-def test_bins_slicing_open_stop_too_big_stop_given():
+def test_bins_slicing_open_stop_too_big_stop_given() -> None:
     table = sc.data.table_xyz(nrow=100)
     da = table.bin(x=7)
     too_big_start = da.bins.coords['x'].max() + 0.001 * sc.Unit('m')

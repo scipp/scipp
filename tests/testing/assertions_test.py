@@ -24,13 +24,13 @@ pytest_mark_parameterize_assert_similar = pytest.mark.parametrize(
 
 
 @pytest.mark.parametrize('a', [3, -1.2, 'hjh wed', [], {4}])
-def test_assert_similar_builtin_equal(a):
+def test_assert_similar_builtin_equal(a) -> None:
     assert_identical(deepcopy(a), deepcopy(a))
 
 
 @pytest.mark.parametrize('a', [3, -1.2, 'hjh wed', [], {4}])
 @pytest.mark.parametrize('b', [1, 0.2, 'll', [7], {}])
-def test_assert_similar_builtin_mismatch(a, b):
+def test_assert_similar_builtin_mismatch(a, b) -> None:
     with pytest.raises(AssertionError):
         assert_identical(a, b)
 
@@ -47,7 +47,7 @@ def test_assert_similar_builtin_mismatch(a, b):
         sc.array(dims=['ww', 'gas'], values=[[np.nan], [3]]),
     ],
 )
-def test_assert_similar_variable_equal(assert_similar, a):
+def test_assert_similar_variable_equal(assert_similar, a) -> None:
     assert_similar(deepcopy(a), deepcopy(a))
 
 
@@ -181,7 +181,7 @@ def test_assert_similar_variable_presence_of_variances(
         ),
     ],
 )
-def test_assert_similar_data_arrays_equal(assert_similar, a):
+def test_assert_similar_data_arrays_equal(assert_similar, a) -> None:
     assert_similar(deepcopy(a), deepcopy(a))
 
 
@@ -315,11 +315,11 @@ def test_assert_similar_data_array_masks_value_mismatch(
         ),
     ],
 )
-def test_assert_similar_datasets_equal(a):
+def test_assert_similar_datasets_equal(a) -> None:
     assert_identical(deepcopy(a), deepcopy(a))
 
 
-def test_assert_similar_dataset_data_key_mismatch():
+def test_assert_similar_dataset_data_key_mismatch() -> None:
     a = sc.Dataset({'a': sc.arange('t', 3)})
     b = sc.Dataset({'b': sc.arange('t', 3)})
     with pytest.raises(AssertionError):
@@ -328,7 +328,7 @@ def test_assert_similar_dataset_data_key_mismatch():
         assert_identical(b, a)
 
 
-def test_assert_similar_dataset_data_value_mismatch():
+def test_assert_similar_dataset_data_value_mismatch() -> None:
     a = sc.Dataset({'a': sc.arange('t', 3)})
     b = sc.Dataset({'a': -sc.arange('t', 3)})
     with pytest.raises(AssertionError):
@@ -337,7 +337,7 @@ def test_assert_similar_dataset_data_value_mismatch():
         assert_identical(b, a)
 
 
-def test_assert_similar_dataset_coords_key_mismatch():
+def test_assert_similar_dataset_coords_key_mismatch() -> None:
     a = sc.Dataset({'a': sc.arange('t', 3)}, coords={'t': sc.scalar(2)})
     b = sc.Dataset({'a': sc.arange('t', 3)}, coords={'j': sc.scalar(2)})
     with pytest.raises(AssertionError):
@@ -356,11 +356,11 @@ def test_assert_similar_dataset_coords_key_mismatch():
         sc.DataGroup({'q': sc.DataGroup({'ik': sc.arange('ik', 2)})}),
     ],
 )
-def test_assert_similar_data_group_equal(a):
+def test_assert_similar_data_group_equal(a) -> None:
     assert_identical(deepcopy(a), deepcopy(a))
 
 
-def test_assert_similar_data_group_keys_mismatch():
+def test_assert_similar_data_group_keys_mismatch() -> None:
     a = sc.DataGroup({'a': sc.arange('ook', 9)})
     b = sc.DataGroup({'b': sc.arange('ook', 9)})
     with pytest.raises(AssertionError):
@@ -369,7 +369,7 @@ def test_assert_similar_data_group_keys_mismatch():
         assert_identical(b, a)
 
 
-def test_assert_similar_data_group_values_mismatch_variable():
+def test_assert_similar_data_group_values_mismatch_variable() -> None:
     a = sc.DataGroup({'a': sc.arange('ook', 9)})
     b = sc.DataGroup({'a': sc.arange('wak', 9)})
     with pytest.raises(AssertionError):
@@ -378,7 +378,7 @@ def test_assert_similar_data_group_values_mismatch_variable():
         assert_identical(b, a)
 
 
-def test_assert_similar_data_group_values_mismatch_builtin():
+def test_assert_similar_data_group_values_mismatch_builtin() -> None:
     a = sc.DataGroup({'a': sc.arange('ook', 9), 'gg': 'well'})
     b = sc.DataGroup({'a': sc.arange('ook', 9), 'gg': 'done'})
     with pytest.raises(AssertionError):
@@ -387,7 +387,7 @@ def test_assert_similar_data_group_values_mismatch_builtin():
         assert_identical(b, a)
 
 
-def test_assert_similar_data_group_values_mismatch_nested():
+def test_assert_similar_data_group_values_mismatch_nested() -> None:
     a = sc.DataGroup({'a': sc.DataGroup({'rz': sc.arange('rz', 4)})})
     b = sc.DataGroup({'a': sc.DataGroup({'rz': -sc.arange('rz', 4)})})
     with pytest.raises(AssertionError):
@@ -414,7 +414,7 @@ def test_assert_similar_data_group_values_mismatch_nested():
         sc.array(dims=['l we'], values=[], dtype='int64', unit=None),
     ],
 )
-def test_assert_similar_binned_variable_equal(assert_similar, buffer, indices):
+def test_assert_similar_binned_variable_equal(assert_similar, buffer, indices) -> None:
     begin, end = indices[:-1], indices[1:]
     a = sc.bins(data=buffer, dim=buffer.dim, begin=begin, end=end)
     assert_similar(deepcopy(a), deepcopy(a))
@@ -445,7 +445,9 @@ def test_assert_similar_binned_data_array_equal(
         sc.array(dims=['l we'], values=[], dtype='int64', unit=None),
     ],
 )
-def test_assert_similar_binned_variable_unit_mismatch(assert_similar, buffer, indices):
+def test_assert_similar_binned_variable_unit_mismatch(
+    assert_similar, buffer, indices
+) -> None:
     begin, end = indices[:-1], indices[1:]
     a = sc.bins(data=buffer, dim=buffer.dim, begin=begin, end=end)
     buffer = deepcopy(buffer)
@@ -475,7 +477,9 @@ def test_assert_similar_binned_variable_unit_mismatch(assert_similar, buffer, in
         sc.array(dims=['l we'], values=[2, 6], dtype='int64', unit=None),
     ],
 )
-def test_assert_similar_binned_variable_value_mismatch(assert_similar, buffer, indices):
+def test_assert_similar_binned_variable_value_mismatch(
+    assert_similar, buffer, indices
+) -> None:
     begin, end = indices[:-1], indices[1:]
     a = sc.bins(data=buffer, dim=buffer.dim, begin=begin, end=end)
     buffer = deepcopy(buffer)
@@ -498,7 +502,7 @@ def test_assert_similar_binned_variable_value_mismatch(assert_similar, buffer, i
         sc.array(dims=['l we'], values=[1, 6], dtype='int64', unit=None),
     ],
 )
-def test_assert_similar_binned_variable_coord_mismatch(assert_similar, indices):
+def test_assert_similar_binned_variable_coord_mismatch(assert_similar, indices) -> None:
     buffer = sc.DataArray(
         sc.zeros(sizes={'bm': 10}), coords={'bm': sc.arange('bm', 10)}
     )
@@ -588,7 +592,7 @@ def difference_exceeding_tolerance(a, b, rtol):
     ],
 )
 @pytest.mark.parametrize('rtol', [1e-8, 1e-5, 1e-3, 1e-1])
-def test_allclose_different_tolerances(rtol, a):
+def test_allclose_different_tolerances(rtol, a) -> None:
     np.random.seed(321)
     rtol = sc.scalar(rtol, unit='dimensionless')
     b = a.copy()
@@ -599,7 +603,7 @@ def test_allclose_different_tolerances(rtol, a):
         assert_allclose(a, b, rtol=rtol)
 
 
-def test_allclose_variances():
+def test_allclose_variances() -> None:
     np.random.seed(321)
     a = sc.array(
         dims=['x'],
@@ -615,7 +619,7 @@ def test_allclose_variances():
         assert_allclose(a, b, rtol=rtol)
 
 
-def test_identical_with_close_values():
+def test_identical_with_close_values() -> None:
     a = sc.array(dims=['x'], values=np.clip(np.random.randn(10), -10, 10))
     b = a.copy()
     b.values += 1e-15

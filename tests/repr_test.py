@@ -7,7 +7,7 @@ import scipp as sc
 
 
 @pytest.mark.parametrize("mapping", ["coords", "masks"])
-def test_data_array_mapping_repr_does_not_raise(mapping):
+def test_data_array_mapping_repr_does_not_raise(mapping) -> None:
     da = sc.data.table_xyz(10)
     da.masks['m'] = da.coords['x'] > sc.scalar(0.5, unit='m')
     repr(getattr(da, mapping))
@@ -17,7 +17,7 @@ def test_data_array_mapping_repr_does_not_raise(mapping):
 
 
 @pytest.mark.parametrize("mapping", ["coords", "masks"])
-def test_data_array_empty_mapping_repr_does_not_raise(mapping):
+def test_data_array_empty_mapping_repr_does_not_raise(mapping) -> None:
     da = sc.DataArray(data=sc.arange('x', 10))
     repr(getattr(da, mapping))
     repr(getattr(da, mapping).keys())
@@ -25,7 +25,7 @@ def test_data_array_empty_mapping_repr_does_not_raise(mapping):
     repr(getattr(da, mapping).items())
 
 
-def test_dataset_coords_repr_does_not_raise():
+def test_dataset_coords_repr_does_not_raise() -> None:
     ds = sc.Dataset({'a': sc.data.table_xyz(10), 'b': sc.data.table_xyz(10).data})
     repr(ds.coords)
     repr(ds.coords.keys())
@@ -33,14 +33,14 @@ def test_dataset_coords_repr_does_not_raise():
     repr(ds.coords.items())
 
 
-def test_dataset_iterators_repr_does_not_raise():
+def test_dataset_iterators_repr_does_not_raise() -> None:
     ds = sc.Dataset({'a': sc.data.table_xyz(10), 'b': sc.data.table_xyz(10).data})
     repr(ds.keys())
     repr(ds.values())
     repr(ds.items())
 
 
-def test_data_group_repr_does_not_raise():
+def test_data_group_repr_does_not_raise() -> None:
     dg = sc.DataGroup(
         {
             'a': sc.data.table_xyz(10),
@@ -57,7 +57,7 @@ def test_data_group_repr_does_not_raise():
     repr(dg)
 
 
-def test_data_group_repr_includes_items():
+def test_data_group_repr_includes_items() -> None:
     dg = sc.DataGroup(
         {
             'item 1': 'a string',
@@ -74,7 +74,7 @@ def test_data_group_repr_includes_items():
 
 
 @pytest.mark.parametrize("mapping", ["coords", "masks"])
-def test_data_array_mapping_str_does_not_raise(mapping):
+def test_data_array_mapping_str_does_not_raise(mapping) -> None:
     da = sc.data.table_xyz(10)
     da.masks['m'] = da.coords['x'] > sc.scalar(0.5, unit='m')
     str(getattr(da, mapping))
@@ -84,7 +84,7 @@ def test_data_array_mapping_str_does_not_raise(mapping):
 
 
 @pytest.mark.parametrize("mapping", ["coords", "masks"])
-def test_data_array_empty_mapping_str_does_not_raise(mapping):
+def test_data_array_empty_mapping_str_does_not_raise(mapping) -> None:
     da = sc.DataArray(data=sc.arange('x', 10))
     str(getattr(da, mapping))
     str(getattr(da, mapping).keys())
@@ -92,7 +92,7 @@ def test_data_array_empty_mapping_str_does_not_raise(mapping):
     str(getattr(da, mapping).items())
 
 
-def test_dataset_coords_str_does_not_raise():
+def test_dataset_coords_str_does_not_raise() -> None:
     ds = sc.Dataset({'a': sc.data.table_xyz(10), 'b': sc.data.table_xyz(10).data})
     str(ds.coords)
     str(ds.coords.keys())
@@ -100,14 +100,14 @@ def test_dataset_coords_str_does_not_raise():
     str(ds.coords.items())
 
 
-def test_dataset_iterators_str_does_not_raise():
+def test_dataset_iterators_str_does_not_raise() -> None:
     ds = sc.Dataset({'a': sc.data.table_xyz(10), 'b': sc.data.table_xyz(10).data})
     str(ds.keys())
     str(ds.values())
     str(ds.items())
 
 
-def test_data_group_str_does_not_raise():
+def test_data_group_str_does_not_raise() -> None:
     dg = sc.DataGroup(
         {
             'a': sc.data.table_xyz(10),
@@ -124,7 +124,7 @@ def test_data_group_str_does_not_raise():
     str(dg)
 
 
-def test_data_group_str_includes_items():
+def test_data_group_str_includes_items() -> None:
     dg = sc.DataGroup(
         {
             'item 1': 'a string',
