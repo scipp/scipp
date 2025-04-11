@@ -5,14 +5,14 @@ import scipp as sc
 import scipp.utils as su
 
 
-def test_wont_match_when_coord_size_unequal():
+def test_wont_match_when_coord_size_unequal() -> None:
     point = sc.scalar(value=1.0)
     a = sc.DataArray(data=point, coords={'x': point})
     b = sc.DataArray(data=point)
     assert not su.isnear(a, b, rtol=0 * sc.units.one, atol=1.0 * sc.units.one)
 
 
-def test_wont_match_when_coord_keys_unequal():
+def test_wont_match_when_coord_keys_unequal() -> None:
     point = sc.scalar(value=1.0)
     a = sc.DataArray(data=point, coords={'x': point})
     b = sc.DataArray(data=point, coords={'y': point})
@@ -20,7 +20,7 @@ def test_wont_match_when_coord_keys_unequal():
         su.isnear(a, b, rtol=0 * sc.units.one, atol=1.0 * sc.units.one)
 
 
-def test_wont_match_when_coord_sizes_unequal():
+def test_wont_match_when_coord_sizes_unequal() -> None:
     point = sc.scalar(value=1.0)
     a = sc.DataArray(data=point, coords={'x': point})
     b = sc.DataArray(
@@ -30,7 +30,7 @@ def test_wont_match_when_coord_sizes_unequal():
         su.isnear(a, b, rtol=0 * sc.units.one, atol=1.0 * sc.units.one)
 
 
-def test_data_scalar_no_coords():
+def test_data_scalar_no_coords() -> None:
     a = sc.DataArray(data=sc.scalar(value=1.0))
     assert su.isnear(a, a, rtol=0 * sc.units.one, atol=1e-14 * sc.units.one)
     b = a + 1.0 * sc.units.one
@@ -39,7 +39,7 @@ def test_data_scalar_no_coords():
     assert not su.isnear(a, b, rtol=0 * sc.units.one, atol=0.9999 * sc.units.one)
 
 
-def test_data_scalar_no_coords_no_data():
+def test_data_scalar_no_coords_no_data() -> None:
     a = sc.DataArray(data=sc.scalar(value=1))
     b = a.copy()
     assert su.isnear(
@@ -47,7 +47,7 @@ def test_data_scalar_no_coords_no_data():
     )  # Should compare equal
 
 
-def test_scalar_with_coord():
+def test_scalar_with_coord() -> None:
     point = sc.scalar(value=1.0)
     a = sc.DataArray(data=point, coords={'x': point})
     assert su.isnear(a, a, rtol=0.0 * sc.units.one, atol=1e-14 * sc.units.one)
@@ -56,7 +56,7 @@ def test_scalar_with_coord():
     assert not su.isnear(a, b, rtol=0.0 * sc.units.one, atol=0.9999 * sc.units.one)
 
 
-def test_with_many_coords():
+def test_with_many_coords() -> None:
     x = sc.array(dims=['x'], values=np.arange(10.0))
     xx = sc.array(dims=['x'], values=np.arange(1, 11.0))
     a = sc.DataArray(data=x, coords={'a': x, 'b': x})

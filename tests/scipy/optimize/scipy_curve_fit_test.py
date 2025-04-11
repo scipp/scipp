@@ -36,11 +36,15 @@ def array1d_from_vars(*, a, b, noise_scale=0.1, size=50):
     return sc.DataArray(y, coords={'xx': x})
 
 
-def test_should_not_raise_given_function_with_dimensionless_params_and_1d_array():
+def test_should_not_raise_given_function_with_dimensionless_params_and_1d_array() -> (
+    None
+):
     curve_fit(func, array1d())
 
 
-def test_should_not_raise_given_function_with_dimensionful_params_and_1d_array():
+def test_should_not_raise_given_function_with_dimensionful_params_and_1d_array() -> (
+    None
+):
     data = array1d_from_vars(a=sc.scalar(1.2, unit='s'), b=sc.scalar(100.0, unit='m'))
     curve_fit(
         func_with_vars,
@@ -49,22 +53,22 @@ def test_should_not_raise_given_function_with_dimensionful_params_and_1d_array()
     )
 
 
-def test_should_raise_TypeError_when_xdata_given_as_param():
+def test_should_raise_TypeError_when_xdata_given_as_param() -> None:
     with pytest.raises(TypeError):
         curve_fit(func, array1d(), xdata=np.arange(4))
 
 
-def test_should_raise_TypeError_when_ydata_given_as_param():
+def test_should_raise_TypeError_when_ydata_given_as_param() -> None:
     with pytest.raises(TypeError):
         curve_fit(func, array1d(), ydata=np.arange(4))
 
 
-def test_should_raise_TypeError_when_sigma_given_as_param():
+def test_should_raise_TypeError_when_sigma_given_as_param() -> None:
     with pytest.raises(TypeError):
         curve_fit(func, array1d(), sigma=np.arange(4))
 
 
-def test_should_raise_ValueError_when_sigma_contains_zeros():
+def test_should_raise_ValueError_when_sigma_contains_zeros() -> None:
     da = array1d(size=50)
     da.variances = np.random.default_rng().normal(0.0, 0.1, size=50) ** 2
     da['xx', 21].variance = 0.0
@@ -72,7 +76,7 @@ def test_should_raise_ValueError_when_sigma_contains_zeros():
         curve_fit(func, da)
 
 
-def test_does_not_raise_when_sigma_contains_zeros_that_is_masked():
+def test_does_not_raise_when_sigma_contains_zeros_that_is_masked() -> None:
     da = array1d(size=50)
     da.variances = np.random.default_rng().normal(0.0, 0.1, size=50) ** 2
     da.masks['m'] = sc.full(value=False, sizes=da.sizes)
@@ -81,14 +85,14 @@ def test_does_not_raise_when_sigma_contains_zeros_that_is_masked():
     curve_fit(func, da)
 
 
-def test_should_raise_KeyError_when_data_array_has_no_coord():
+def test_should_raise_KeyError_when_data_array_has_no_coord() -> None:
     da = array1d()
     del da.coords[da.dim]
     with pytest.raises(KeyError):
         curve_fit(func, da)
 
 
-def test_should_raise_BinEdgeError_when_data_array_is_histogram():
+def test_should_raise_BinEdgeError_when_data_array_is_histogram() -> None:
     da = array1d()
     hist = da[1:].copy()
     hist.coords[hist.dim] = da.coords[hist.dim]
@@ -96,13 +100,13 @@ def test_should_raise_BinEdgeError_when_data_array_is_histogram():
         curve_fit(func, hist)
 
 
-def test_should_raise_DimensionError_when_data_array_is_not_1d():
+def test_should_raise_DimensionError_when_data_array_is_not_1d() -> None:
     da = sc.concat([array1d(), array1d()], 'extra_dim')
     with pytest.raises(sc.DimensionError):
         curve_fit(func, da)
 
 
-def test_masks_are_not_ignored():
+def test_masks_are_not_ignored() -> None:
     da = array1d(size=20)
     unmasked, _ = curve_fit(func, da)
     da.masks['mask'] = sc.zeros(sizes=da.sizes, dtype=bool)
@@ -113,13 +117,15 @@ def test_masks_are_not_ignored():
 
 
 @pytest.mark.parametrize("noise_scale", [1e-1, 1e-2, 1e-3, 1e-6, 1e-9])
-def test_optimized_params_approach_real_params_as_data_noise_decreases(noise_scale):
+def test_optimized_params_approach_real_params_as_data_noise_decreases(
+    noise_scale,
+) -> None:
     popt, _ = curve_fit(func, array1d(a=1.7, b=1.5, noise_scale=noise_scale))
     assert sc.allclose(popt['a'], sc.scalar(1.7), rtol=sc.scalar(2.0 * noise_scale))
     assert sc.allclose(popt['b'], sc.scalar(1.5), rtol=sc.scalar(2.0 * noise_scale))
 
 
-def test_optimized_params_variances_are_diag_of_covariance_matrix():
+def test_optimized_params_variances_are_diag_of_covariance_matrix() -> None:
     popt, pcov = curve_fit(func, array1d(a=1.7, b=1.5))
     assert popt['a'].variance == pcov['a']['a']
     assert popt['b'].variance == pcov['b']['b']
@@ -127,7 +133,7 @@ def test_optimized_params_variances_are_diag_of_covariance_matrix():
 
 @pytest.mark.parametrize("mask_pos", [0, 1, -3])
 @pytest.mark.parametrize("mask_size", [1, 2])
-def test_masked_points_are_treated_as_if_they_were_removed(mask_pos, mask_size):
+def test_masked_points_are_treated_as_if_they_were_removed(mask_pos, mask_size) -> None:
     da = array1d(size=10)
     da.masks['mask'] = sc.zeros(sizes=da.sizes, dtype=bool)
     da.masks['mask'][mask_pos : mask_pos + mask_size] = sc.scalar(True)
@@ -144,7 +150,7 @@ def test_masked_points_are_treated_as_if_they_were_removed(mask_pos, mask_size):
     [(1e9, 1.0), (1, 2.0), (1 / 3, 3.0), (1e-9, 5.0)],
     ids=['disabled', 'equal', 'high', 'dominant'],
 )
-def test_variances_determine_weights(variance, expected):
+def test_variances_determine_weights(variance, expected) -> None:
     x = sc.array(dims=['x'], values=[1, 2, 3, 4])
     y = sc.array(
         dims=['x'], values=[1.0, 5.0, 1.0, 1.0], variances=[1.0, 1.0, 1.0, 1.0]
@@ -156,7 +162,9 @@ def test_variances_determine_weights(variance, expected):
     assert popt['a'].value == pytest.approx(expected)
 
 
-def test_fit_function_with_dimensionful_params_raises_UnitError_when_no_p0_given():
+def test_fit_function_with_dimensionful_params_raises_UnitError_when_no_p0_given() -> (
+    None
+):
     def f(x, *, a, b):
         return a * sc.exp(-b * x)
 
@@ -164,7 +172,7 @@ def test_fit_function_with_dimensionful_params_raises_UnitError_when_no_p0_given
         curve_fit(f, array1d())
 
 
-def test_fit_function_with_dimensionful_params_yields_outputs_with_units():
+def test_fit_function_with_dimensionful_params_yields_outputs_with_units() -> None:
     def f(x, *, a, b):
         return a * sc.exp(-b * x)
 
@@ -179,7 +187,7 @@ def test_fit_function_with_dimensionful_params_yields_outputs_with_units():
     assert pcov['b']['b'].unit == sc.Unit('1/m**2')
 
 
-def test_default_params_are_not_used_for_fit():
+def test_default_params_are_not_used_for_fit() -> None:
     noise_scale = 1e-3
     popt, _ = curve_fit(
         partial(func, b=1.5), array1d(a=1.7, b=1.5, noise_scale=noise_scale)
@@ -188,7 +196,7 @@ def test_default_params_are_not_used_for_fit():
     assert sc.allclose(popt['a'], sc.scalar(1.7), rtol=sc.scalar(2.0 * noise_scale))
 
 
-def test_default_params_with_initial_guess_are_used_for_fit():
+def test_default_params_with_initial_guess_are_used_for_fit() -> None:
     noise_scale = 1e-3
     popt, _ = curve_fit(
         partial(func, b=1.5),
@@ -199,7 +207,7 @@ def test_default_params_with_initial_guess_are_used_for_fit():
     assert sc.allclose(popt['b'], sc.scalar(1.5), rtol=sc.scalar(2.0 * noise_scale))
 
 
-def test_bounds_limit_param_range_without_units():
+def test_bounds_limit_param_range_without_units() -> None:
     data = array1d(a=40.0, b=30.0)
     unconstrained, _ = curve_fit(func, data, p0={'a': 1.0, 'b': 1.0})
     # Fit approaches correct value more closely than with the bound below.
@@ -216,7 +224,7 @@ def test_bounds_limit_param_range_without_units():
     assert sc.abs(constrained['b']).value < 2.0
 
 
-def test_bounds_limit_param_range_with_units():
+def test_bounds_limit_param_range_with_units() -> None:
     data = array1d_from_vars(a=sc.scalar(20.0, unit='s'), b=sc.scalar(10.0, unit='m'))
     unconstrained, _ = curve_fit(
         func_with_vars,
@@ -241,7 +249,7 @@ def test_bounds_limit_param_range_with_units():
     assert (abs(constrained['b']) < sc.scalar(2.0, unit='m')).value
 
 
-def test_bounds_limit_only_given_parameters_param_range():
+def test_bounds_limit_only_given_parameters_param_range() -> None:
     data = array1d_from_vars(a=sc.scalar(20.0, unit='s'), b=sc.scalar(10.0, unit='m'))
     unconstrained, _ = curve_fit(
         func_with_vars,
@@ -263,7 +271,7 @@ def test_bounds_limit_only_given_parameters_param_range():
     assert (abs(constrained['b']) < sc.scalar(2.0, unit='m')).value
 
 
-def test_bounds_must_have_unit_convertable_to_param_unit():
+def test_bounds_must_have_unit_convertable_to_param_unit() -> None:
     data = array1d_from_vars(a=sc.scalar(1.2, unit='s'), b=sc.scalar(10.0, unit='m'))
     with pytest.raises(sc.UnitError):
         curve_fit(
@@ -274,13 +282,13 @@ def test_bounds_must_have_unit_convertable_to_param_unit():
         )
 
 
-def test_jac_is_not_implemented():
+def test_jac_is_not_implemented() -> None:
     # replace this with an actual test once jac is implemented
     with pytest.raises(NotImplementedError):
         curve_fit(func, array1d(), jac=np.array([[1, 2], [3, 4]]))
 
 
-def test_can_pass_extra_kwargs():
+def test_can_pass_extra_kwargs() -> None:
     data = array1d()
 
     # Does not raise

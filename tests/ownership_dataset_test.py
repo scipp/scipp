@@ -1,14 +1,16 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Jan-Lukas Wynen
+from collections.abc import Callable
 from copy import copy, deepcopy
+from typing import Any
 
 import pytest
 
 import scipp as sc
 
 
-def data_array_components():
+def data_array_components() -> tuple[sc.Variable, sc.Variable, sc.Variable]:
     v = sc.array(dims=['x'], values=[10, 20], unit='m')
     c = sc.array(dims=['x'], values=[1, 2], unit='s')
     m = sc.array(dims=['x'], values=[True, False])
@@ -23,8 +25,10 @@ def data_array_components():
     ),
     ids=['dict', 'iterator', 'Coords'],
 )
-def coords_arg_wrapper(request):
-    return request.param
+def coords_arg_wrapper(
+    request: pytest.FixtureRequest,
+) -> Callable[[str, sc.Variable], Any]:
+    return request.param  # type: ignore[no-any-return]
 
 
 @pytest.fixture(
@@ -35,8 +39,10 @@ def coords_arg_wrapper(request):
     ),
     ids=['dict', 'iterator', 'Coords'],
 )
-def attrs_arg_wrapper(request):
-    return request.param
+def attrs_arg_wrapper(
+    request: pytest.FixtureRequest,
+) -> Callable[[str, sc.Variable], Any]:
+    return request.param  # type: ignore[no-any-return]
 
 
 @pytest.fixture(
@@ -47,12 +53,18 @@ def attrs_arg_wrapper(request):
     ),
     ids=['dict', 'iterator', 'Masks'],
 )
-def masks_arg_wrapper(request):
-    return request.param
+def masks_arg_wrapper(
+    request: pytest.FixtureRequest,
+) -> Callable[[str, sc.Variable], Any]:
+    return request.param  # type: ignore[no-any-return]
 
 
 @pytest.fixture
-def data_array_and_components(coords_arg_wrapper, attrs_arg_wrapper, masks_arg_wrapper):
+def data_array_and_components(
+    coords_arg_wrapper: Callable[[str, sc.Variable], Any],
+    attrs_arg_wrapper: Callable[[str, sc.Variable], Any],
+    masks_arg_wrapper: Callable[[str, sc.Variable], Any],
+) -> tuple[sc.DataArray, sc.Variable, sc.Variable, sc.Variable]:
     v, c, m = data_array_components()
     da = sc.DataArray(
         v,
@@ -62,13 +74,17 @@ def data_array_and_components(coords_arg_wrapper, attrs_arg_wrapper, masks_arg_w
     return da, v, c, m
 
 
-def make_data_array():
+def make_data_array() -> tuple[sc.DataArray, sc.Variable, sc.Variable, sc.Variable]:
     v, c, m = data_array_components()
     da = sc.DataArray(v, coords={'x': c}, masks={'m': m})
     return da, v, c, m
 
 
-def test_own_darr_set(data_array_and_components):
+def test_own_darr_set(
+    data_array_and_components: tuple[
+        sc.DataArray, sc.Variable, sc.Variable, sc.Variable
+    ],
+) -> None:
     # Data and metadata are shared
     da, v, c, m = data_array_and_components
     da['x', 0] = -10
@@ -110,7 +126,7 @@ def test_own_darr_set(data_array_and_components):
     assert sc.identical(m, sc.array(dims=['x'], values=[False, True]))
 
 
-def test_own_darr_get():
+def test_own_darr_get() -> None:
     # Data and metadata are shared.
     da = make_data_array()[0]
     v = da.data
@@ -155,7 +171,7 @@ def test_own_darr_get():
     assert sc.identical(m, sc.array(dims=['x'], values=[False, True]))
 
 
-def test_own_darr_copy():
+def test_own_darr_copy() -> None:
     # Depth of copy can be controlled.
     da, _, c, m = make_data_array()
     da_copy = copy(da)
@@ -188,7 +204,7 @@ def test_own_darr_copy():
     [lambda k, v: {k: v}, lambda k, v: {k: v}.items(), lambda k, v: sc.Dataset({k: v})],
     ids=['dict', 'iterator', 'Dataset'],
 )
-def test_own_dset_init(data_array_wrapper):
+def test_own_dset_init(data_array_wrapper: Callable[[str, sc.Variable], Any]) -> None:
     da, *_ = make_data_array()
     dset = sc.Dataset(data_array_wrapper('da1', da))
 
@@ -208,7 +224,7 @@ def test_own_dset_init(data_array_wrapper):
     assert sc.identical(da, expected)
 
 
-def test_own_dset_set_access_through_dataarray():
+def test_own_dset_set_access_through_dataarray() -> None:
     # The DataArray is shared.
     da, *_ = make_data_array()
     dset = sc.Dataset({'da1': da})
@@ -229,7 +245,7 @@ def test_own_dset_set_access_through_dataarray():
     assert sc.identical(da, expected)
 
 
-def test_own_dset_set_access_through_scalar_slice():
+def test_own_dset_set_access_through_scalar_slice() -> None:
     # The DataArray is shared.
     da, *_ = make_data_array()
     dset = sc.Dataset({'da1': da})
@@ -250,7 +266,7 @@ def test_own_dset_set_access_through_scalar_slice():
     assert sc.identical(da, expected)
 
 
-def test_own_dset_set_access_through_range_slice():
+def test_own_dset_set_access_through_range_slice() -> None:
     # The DataArray is shared.
     da, *_ = make_data_array()
     dset = sc.Dataset({'da1': da})
@@ -268,7 +284,7 @@ def test_own_dset_set_access_through_range_slice():
     assert sc.identical(da, expected)
 
 
-def test_own_dset_set_access_through_coords():
+def test_own_dset_set_access_through_coords() -> None:
     # The DataArray is shared.
     da, *_ = make_data_array()
     dset = sc.Dataset({'da1': da})
@@ -280,7 +296,7 @@ def test_own_dset_set_access_through_coords():
     assert sc.identical(da, expected)
 
 
-def test_own_dset_set_access_through_range_slice_coords():
+def test_own_dset_set_access_through_range_slice_coords() -> None:
     # The DataArray is shared.
     da, *_ = make_data_array()
     dset = sc.Dataset({'da1': da})

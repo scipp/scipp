@@ -41,7 +41,7 @@ def _make_datetimes(units, num):
 
 
 @pytest.mark.parametrize("unit", _UNIT_STRINGS)
-def test_construct_0d_datetime(unit):
+def test_construct_0d_datetime(unit) -> None:
     dtype = f'datetime64[{unit}]'
     value = _make_datetimes(unit, 1)
     # with value
@@ -57,7 +57,7 @@ def test_construct_0d_datetime(unit):
         assert var.value == value
 
 
-def test_construct_0d_datetime_array():
+def test_construct_0d_datetime_array() -> None:
     var = sc.Variable(dims=(), values=np.array(np.datetime64(123, 's')))
     assert var.dtype == sc.DType.datetime64
     assert var.unit == sc.units.s
@@ -65,7 +65,7 @@ def test_construct_0d_datetime_array():
 
 
 @pytest.mark.parametrize("unit", _UNIT_STRINGS)
-def test_construct_0d_datetime_from_int(unit):
+def test_construct_0d_datetime_from_int(unit) -> None:
     value = np.random.randint(0, 1000)
     var = sc.Variable(dims=(), dtype=sc.DType.datetime64, unit=unit, values=value)
     assert var.dtype == sc.DType.datetime64
@@ -75,13 +75,13 @@ def test_construct_0d_datetime_from_int(unit):
 
 
 @pytest.mark.parametrize(('unit1', 'unit2'), _mismatch_pairs(_UNIT_STRINGS))
-def test_construct_0d_datetime_mismatch(unit1, unit2):
+def test_construct_0d_datetime_mismatch(unit1, unit2) -> None:
     with pytest.raises(ValueError, match='unit encoded in the dtype'):
         sc.scalar(1, unit=unit1, dtype=f'datetime64[{unit2}]')
 
 
 @pytest.mark.parametrize(('unit1', 'unit2'), _mismatch_pairs(('s', 'ms', 'us', 'ns')))
-def test_construct_0d_datetime_unit_conversion(unit1, unit2):
+def test_construct_0d_datetime_unit_conversion(unit1, unit2) -> None:
     value = np.datetime64(2315169201, unit1)
     expected = sc.to_unit(sc.Variable(dims=(), values=value), unit2)
     assert sc.identical(sc.Variable(dims=(), values=value, unit=unit2), expected)
@@ -90,7 +90,7 @@ def test_construct_0d_datetime_unit_conversion(unit1, unit2):
     )
 
 
-def test_construct_0d_datetime_nounit():
+def test_construct_0d_datetime_nounit() -> None:
     # Can make a datetime variable without unit but cannot do anything
     # with it except set its unit.
     var = sc.Variable(dims=(), values=1, dtype=sc.DType.datetime64)
@@ -108,7 +108,7 @@ def test_construct_0d_datetime_nounit():
 
 
 @pytest.mark.parametrize("unit", _UNIT_STRINGS)
-def test_0d_datetime_setter(unit):
+def test_0d_datetime_setter(unit) -> None:
     initial, replacement = _make_datetimes(unit, 2)
     var = sc.Variable(dims=(), values=initial)
     var.value = replacement
@@ -116,7 +116,7 @@ def test_0d_datetime_setter(unit):
 
 
 @pytest.mark.parametrize(('unit1', 'unit2'), _mismatch_pairs(_UNIT_STRINGS))
-def test_0d_datetime_setter_mismatch(unit1, unit2):
+def test_0d_datetime_setter_mismatch(unit1, unit2) -> None:
     initial, replacement = _make_datetimes((unit1, unit2), 2)
     var1 = sc.Variable(dims=(), values=initial)
     with pytest.raises(ValueError, match='unit'):
@@ -124,7 +124,7 @@ def test_0d_datetime_setter_mismatch(unit1, unit2):
 
 
 @pytest.mark.parametrize("unit", _UNIT_STRINGS)
-def test_construct_datetime(unit):
+def test_construct_datetime(unit) -> None:
     dtype = f'datetime64[{unit}]'
     values = _make_arrays(unit, 1)
     # with values
@@ -142,7 +142,7 @@ def test_construct_datetime(unit):
 
 
 @pytest.mark.parametrize("unit", _UNIT_STRINGS)
-def test_construct_datetime_from_int(unit):
+def test_construct_datetime_from_int(unit) -> None:
     values = np.random.randint(0, 1000, np.random.randint(5, 100))
     var = sc.Variable(dims=['x'], dtype=sc.DType.datetime64, unit=unit, values=values)
     dtype_str = f'datetime64[{unit}]'
@@ -153,13 +153,13 @@ def test_construct_datetime_from_int(unit):
 
 
 @pytest.mark.parametrize(('unit1', 'unit2'), _mismatch_pairs(_UNIT_STRINGS))
-def test_construct_datetime_mismatch(unit1, unit2):
+def test_construct_datetime_mismatch(unit1, unit2) -> None:
     with pytest.raises(ValueError, match='unit encoded in the dtype'):
         sc.array(dims=['x'], values=[1], unit=unit1, dtype=f'datetime64[{unit2}]')
 
 
 @pytest.mark.parametrize(('unit1', 'unit2'), _mismatch_pairs(('s', 'ms', 'us', 'ns')))
-def test_construct_datetime_unit_conversion(unit1, unit2):
+def test_construct_datetime_unit_conversion(unit1, unit2) -> None:
     values = _make_arrays(unit1, 1)
     expected = sc.to_unit(sc.Variable(dims=['x'], values=values), unit2)
     assert sc.identical(sc.Variable(dims=['x'], values=values, unit=unit2), expected)
@@ -168,7 +168,7 @@ def test_construct_datetime_unit_conversion(unit1, unit2):
     )
 
 
-def test_construct_datetime_nounit():
+def test_construct_datetime_nounit() -> None:
     # Can make a datetime variable without unit but cannot do anything
     # with it except set its unit.
     var = sc.Variable(dims=['x'], values=[1, 2], dtype=sc.DType.datetime64)
@@ -186,7 +186,7 @@ def test_construct_datetime_nounit():
 
 
 @pytest.mark.parametrize("unit", _UNIT_STRINGS)
-def test_datetime_setter(unit):
+def test_datetime_setter(unit) -> None:
     initial, replacement = _make_arrays(unit, 2)
     var = sc.Variable(dims=['x'], values=initial)
     var.values = replacement
@@ -195,7 +195,7 @@ def test_datetime_setter(unit):
 
 
 @pytest.mark.parametrize(('unit1', 'unit2'), _mismatch_pairs(_UNIT_STRINGS))
-def test_datetime_setter_mismatch(unit1, unit2):
+def test_datetime_setter_mismatch(unit1, unit2) -> None:
     initial, replacement = _make_arrays((unit1, unit2), 2)
     var1 = sc.Variable(dims=['x'], values=initial)
     with pytest.raises(ValueError, match='unit'):
@@ -203,7 +203,7 @@ def test_datetime_setter_mismatch(unit1, unit2):
 
 
 @pytest.mark.parametrize("unit", _UNIT_STRINGS)
-def test_datetime_slicing(unit):
+def test_datetime_slicing(unit) -> None:
     values1, values2 = _make_arrays(unit, 2, minsize=4)
     var = sc.Variable(dims=['x'], values=values1)
     for i in range(len(values1)):
@@ -223,7 +223,7 @@ def test_datetime_slicing(unit):
     assert sc.identical(var, sc.Variable(dims=['x'], values=values2))
 
 
-def test_datetime_operations():
+def test_datetime_operations() -> None:
     dt = np.datetime64('now', 'ns')
     values = np.array([dt, dt + 123456789])
     var = sc.Variable(dims=['x'], values=values)
@@ -240,7 +240,7 @@ def test_datetime_operations():
     np.testing.assert_array_equal(res.values, shift)
 
 
-def test_datetime_operations_mismatch():
+def test_datetime_operations_mismatch() -> None:
     dt = np.datetime64('now', 'ns')
     values = np.array([dt, dt + 123456789])
     var = sc.Variable(dims=['x'], values=values)
@@ -261,7 +261,7 @@ def fmt(time_point, unit):
     return match[0]
 
 
-def test_datetime_formatting():
+def test_datetime_formatting() -> None:
     dt = np.datetime64('1991-08-16T12:23:45.678901', 'us')
     assert fmt(dt, 'us') == '1991-08-16T12:23:45.678901'
     assert fmt(dt, 'ms') == '1991-08-16T12:23:45.678'
@@ -271,7 +271,7 @@ def test_datetime_formatting():
 
 
 @pytest.mark.skip(reason="Requires std::chrono from C++20")
-def test_datetime_formatting_day_month_year():
+def test_datetime_formatting_day_month_year() -> None:
     dt = np.datetime64('1991-08-16T12:23:45.678901', 'us')
     assert fmt(dt, 'D') == '1991-08-16'
     assert fmt(dt, 'M') == '1991-08'

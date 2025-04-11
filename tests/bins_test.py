@@ -18,12 +18,12 @@ def get_masks(x):
     return x.masks
 
 
-def test_dense_data_properties_are_none():
+def test_dense_data_properties_are_none() -> None:
     var = sc.scalar(1)
     assert var.bins is None
 
 
-def test_bins_default_begin_end():
+def test_bins_default_begin_end() -> None:
     data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
     var = sc.bins(dim='x', data=data)
     assert var.dims == data.dims
@@ -32,7 +32,7 @@ def test_bins_default_begin_end():
         assert sc.identical(var['x', i].value, data['x', i : i + 1])
 
 
-def test_bins_default_end_uses_begin_as_offsets():
+def test_bins_default_end_uses_begin_as_offsets() -> None:
     data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
     begin = sc.Variable(dims=['y'], values=[1, 3], dtype=sc.DType.int64, unit=None)
     var = sc.bins(begin=begin, dim='x', data=data)
@@ -42,7 +42,7 @@ def test_bins_default_end_uses_begin_as_offsets():
     assert sc.identical(var['y', 1].value, data['x', 3:4])
 
 
-def test_bins_fail_only_end():
+def test_bins_fail_only_end() -> None:
     data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
     end = sc.Variable(dims=['y'], values=[1, 3], dtype=sc.DType.int64, unit=None)
     with pytest.raises(RuntimeError):
@@ -51,7 +51,7 @@ def test_bins_fail_only_end():
 
 @pytest.mark.parametrize('begin_dtype', [sc.DType.int32, sc.DType.int64])
 @pytest.mark.parametrize('end_dtype', [sc.DType.int32, sc.DType.int64])
-def test_bins_works_with_int32_begin_end(begin_dtype, end_dtype):
+def test_bins_works_with_int32_begin_end(begin_dtype, end_dtype) -> None:
     data = sc.array(dims=['x'], values=[1, 2, 3, 4])
     begin = sc.Variable(dims=['y'], values=[1, 3], dtype=begin_dtype, unit=None)
     end = sc.Variable(dims=['y'], values=[3, 4], dtype=end_dtype, unit=None)
@@ -61,7 +61,7 @@ def test_bins_works_with_int32_begin_end(begin_dtype, end_dtype):
     assert sc.identical(var['y', 1].value, data['x', 3:4])
 
 
-def test_bins_works_with_int32_begin():
+def test_bins_works_with_int32_begin() -> None:
     data = sc.array(dims=['x'], values=[1, 2, 3, 4])
     begin = sc.Variable(dims=['y'], values=[1, 3], dtype=sc.DType.int32, unit=None)
     var = sc.bins(begin=begin, dim='x', data=data)
@@ -70,7 +70,7 @@ def test_bins_works_with_int32_begin():
     assert sc.identical(var['y', 1].value, data['x', 3:4])
 
 
-def test_bins_constituents():
+def test_bins_constituents() -> None:
     var = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
     data = sc.DataArray(data=var, coords={'coord': var}, masks={'mask': var})
     begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64, unit=None)
@@ -93,7 +93,7 @@ def test_bins_constituents():
     assert 'mask' in events.masks
 
 
-def test_bins():
+def test_bins() -> None:
     data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
     begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64, unit=None)
     end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.DType.int64, unit=None)
@@ -104,7 +104,7 @@ def test_bins():
     assert sc.identical(var['y', 1].value, data['x', 2:4])
 
 
-def test_bins_raises_when_DataGroup_given():
+def test_bins_raises_when_DataGroup_given() -> None:
     data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
     begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64, unit=None)
     end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.DType.int64, unit=None)
@@ -113,7 +113,7 @@ def test_bins_raises_when_DataGroup_given():
         sc.bins(begin=begin, end=end, dim='x', data=dg)
 
 
-def test_bins_of_transpose():
+def test_bins_of_transpose() -> None:
     data = sc.Variable(dims=['row'], values=[1, 2, 3, 4])
     begin = sc.Variable(
         dims=['x', 'y'], values=[[0, 1], [2, 3]], dtype=sc.DType.int64, unit=None
@@ -135,7 +135,7 @@ def make_binned():
     return sc.bins(begin=begin, end=end, dim='event', data=table)
 
 
-def test_bins_view():
+def test_bins_view() -> None:
     var = make_binned()
     assert 'time' in var.bins.coords
     assert 'mask' in var.bins.masks
@@ -163,7 +163,7 @@ def test_bins_view():
     assert 'time3' not in var.bins.coords
 
 
-def test_bins_view_data_array_unit():
+def test_bins_view_data_array_unit() -> None:
     var = make_binned()
     var.unit = 'mK'
     assert var.unit == 'mK'
@@ -173,7 +173,7 @@ def test_bins_view_data_array_unit():
     assert var.bins.unit == 'K'
 
 
-def test_variable_bins_data_assign():
+def test_variable_bins_data_assign() -> None:
     var = make_binned()
     assert set(var.bins.coords) == {'time'}
     new = var.bins.assign(var.bins.data * 2.0)
@@ -181,7 +181,7 @@ def test_variable_bins_data_assign():
     assert sc.identical(new.bins.coords['time'], var.bins.coords['time'])
 
 
-def test_data_array_bins_data_assign():
+def test_data_array_bins_data_assign() -> None:
     da = sc.DataArray(make_binned(), coords={'x': sc.scalar(0.1)})
     assert set(da.bins.coords) == {'time'}
     new = da.bins.assign(da.bins.data * 2.0)
@@ -190,7 +190,7 @@ def test_data_array_bins_data_assign():
     assert sc.identical(new.coords['x'], da.coords['x'])
 
 
-def test_bins_view_coord_unit():
+def test_bins_view_coord_unit() -> None:
     var = make_binned()
     var.bins.coords['time'].unit = 'mK'
     assert var.bins.coords['time'].bins.unit == 'mK'
@@ -198,7 +198,7 @@ def test_bins_view_coord_unit():
     assert var.bins.coords['time'].bins.unit == 'K'
 
 
-def test_bins_view_coords_iterators():
+def test_bins_view_coords_iterators() -> None:
     var = make_binned()
     assert set(var.bins.coords) == {'time'}
     assert set(var.bins.coords.keys()) == {'time'}
@@ -209,7 +209,7 @@ def test_bins_view_coords_iterators():
     assert sc.identical(value, var.bins.coords['time'])
 
 
-def test_bins_view_coords_assign():
+def test_bins_view_coords_assign() -> None:
     var = make_binned()
     assert set(var.bins.coords) == {'time'}
     new = var.bins.assign_coords(
@@ -223,7 +223,7 @@ def test_bins_view_coords_assign():
     assert sc.identical(new.bins.coords['b'], var.bins.coords['time'] * 3.0)
 
 
-def test_data_array_bins_view_coords_assign():
+def test_data_array_bins_view_coords_assign() -> None:
     da = sc.DataArray(make_binned())
     assert set(da.bins.coords) == {'time'}
     new = da.bins.assign_coords(
@@ -237,7 +237,7 @@ def test_data_array_bins_view_coords_assign():
     assert sc.identical(new.bins.coords['b'], da.bins.coords['time'] * 3.0)
 
 
-def test_bins_view_coords_drop():
+def test_bins_view_coords_drop() -> None:
     var = make_binned()
     assert set(var.bins.coords) == {'time'}
     new = var.bins.drop_coords(('time',))
@@ -245,7 +245,7 @@ def test_bins_view_coords_drop():
     assert set(var.bins.coords) == {'time'}
 
 
-def test_bins_view_masks_iterators():
+def test_bins_view_masks_iterators() -> None:
     var = make_binned()
     assert set(var.bins.masks) == {'mask'}
     assert set(var.bins.masks.keys()) == {'mask'}
@@ -257,7 +257,7 @@ def test_bins_view_masks_iterators():
 
 
 @pytest.mark.parametrize('get', [get_coords, get_masks])
-def test_bins_view_mapping_clear(get):
+def test_bins_view_mapping_clear(get) -> None:
     var = make_binned()
     assert len(get(var.bins)) == 1
     get(var.bins).clear()
@@ -265,14 +265,14 @@ def test_bins_view_mapping_clear(get):
 
 
 @pytest.mark.parametrize('param', [(get_coords, 'time'), (get_masks, 'mask')])
-def test_bins_view_mapping_delitem(param):
+def test_bins_view_mapping_delitem(param) -> None:
     get, name = param
     var = make_binned()
     del get(var.bins)[name]
     assert len(get(var.bins)) == 0
 
 
-def test_bins_view_coords_update():
+def test_bins_view_coords_update() -> None:
     var = make_binned()
     var.bins.coords.update({'extra': 2 * var.bins.coords['time']})
     assert set(var.bins.coords) == {'time', 'extra'}
@@ -280,7 +280,7 @@ def test_bins_view_coords_update():
     assert sc.identical(var.bins.coords['extra'], 2 * make_binned().bins.coords['time'])
 
 
-def test_bins_view_masks_update():
+def test_bins_view_masks_update() -> None:
     var = make_binned()
     var.bins.masks.update({'extra': ~var.bins.masks['mask']})
     assert set(var.bins.masks) == {'mask', 'extra'}
@@ -288,7 +288,7 @@ def test_bins_view_masks_update():
     assert sc.identical(var.bins.masks['extra'], ~make_binned().bins.masks['mask'])
 
 
-def test_bins_view_masks_assign():
+def test_bins_view_masks_assign() -> None:
     var = make_binned()
     assert set(var.bins.masks) == {'mask'}
     new = var.bins.assign_masks(
@@ -302,7 +302,7 @@ def test_bins_view_masks_assign():
     assert sc.identical(new.bins.masks['b'], var.bins.masks['mask'])
 
 
-def test_bins_view_masks_drop():
+def test_bins_view_masks_drop() -> None:
     var = make_binned()
     assert set(var.bins.masks) == {'mask'}
     new = var.bins.drop_masks(('mask',))
@@ -311,14 +311,14 @@ def test_bins_view_masks_drop():
 
 
 @pytest.mark.parametrize('param', [(get_coords, 'time'), (get_masks, 'mask')])
-def test_bins_view_mapping_pop(param):
+def test_bins_view_mapping_pop(param) -> None:
     get, name = param
     var = make_binned()
     x = get(var.bins).pop(name)
     assert sc.identical(x, get(make_binned().bins)[name])
 
 
-def test_bins_view_data_unit():
+def test_bins_view_data_unit() -> None:
     var = make_binned()
     var.bins.data.unit = 'mK'
     assert var.bins.data.bins.unit == 'mK'
@@ -326,7 +326,7 @@ def test_bins_view_data_unit():
     assert var.bins.data.bins.unit == 'K'
 
 
-def test_bins_arithmetic():
+def test_bins_arithmetic() -> None:
     var = sc.Variable(dims=['event'], values=[1.0, 2.0, 3.0, 4.0])
     table = sc.DataArray(var, coords={'x': var})
     binned = table.bin(x=sc.array(dims=['x'], values=[1.0, 5.0]))
@@ -341,7 +341,7 @@ def test_bins_arithmetic():
     )
 
 
-def test_bins_sum_with_masked_buffer():
+def test_bins_sum_with_masked_buffer() -> None:
     N = 5
     values = np.ones(N)
     data = sc.DataArray(
@@ -366,7 +366,7 @@ def test_bins_sum_with_masked_buffer():
     assert binned.bins.sum().values[0] == 2
 
 
-def test_bins_mean():
+def test_bins_mean() -> None:
     data = sc.DataArray(
         data=sc.Variable(
             dims=['position'], unit=sc.units.counts, values=[0.1, 0.2, 0.3, 0.4, 0.5]
@@ -392,7 +392,7 @@ def test_bins_mean():
     assert binned.bins.mean().unit == sc.units.counts
 
 
-def test_bins_mean_with_masks():
+def test_bins_mean_with_masks() -> None:
     data = sc.DataArray(
         data=sc.Variable(
             dims=['position'], unit=sc.units.counts, values=[0.1, 0.2, 0.3, 0.4, 0.5]
@@ -423,7 +423,7 @@ def test_bins_mean_with_masks():
     assert binned.bins.mean().unit == sc.units.counts
 
 
-def test_bins_mean_using_bins():
+def test_bins_mean_using_bins() -> None:
     # Call to sc.bins gives different data structure compared to sc.bin
 
     buffer = sc.arange('event', 5, unit=sc.units.ns, dtype=sc.DType.float64)
@@ -438,7 +438,7 @@ def test_bins_mean_using_bins():
     )
 
 
-def test_bins_nanmean():
+def test_bins_nanmean() -> None:
     data = sc.DataArray(
         data=sc.array(dims=['position'], values=[1.0, 2.0, -np.nan, 5.0, np.nan]),
         coords={'group': sc.array(dims=['position'], values=[0, 1, 1, 0, 2])},
@@ -453,7 +453,7 @@ def test_bins_nanmean():
     assert isnan(binned.bins.nanmean().values[2])
 
 
-def test_bins_nansum():
+def test_bins_nansum() -> None:
     data = sc.DataArray(
         data=sc.array(dims=['position'], values=[1.0, 2.0, -np.nan, 5.0, np.nan]),
         coords={'group': sc.array(dims=['position'], values=[0, 1, 1, 0, 2])},
@@ -466,7 +466,7 @@ def test_bins_nansum():
     assert sc.identical(binned.bins.nansum(), expected)
 
 
-def test_bins_max():
+def test_bins_max() -> None:
     data = sc.DataArray(
         data=sc.array(dims=['position'], values=[1.0, 2.0, 3.0, 5.0, 6.0]),
         coords={'group': sc.array(dims=['position'], values=[0, 1, 1, 0, 2])},
@@ -479,7 +479,7 @@ def test_bins_max():
     assert sc.identical(binned.bins.max(), expected)
 
 
-def test_bins_nanmax():
+def test_bins_nanmax() -> None:
     data = sc.DataArray(
         data=sc.array(dims=['position'], values=[1.0, 2.0, -np.nan, 5.0, 6.0]),
         coords={'group': sc.array(dims=['position'], values=[0, 1, 1, 0, 2])},
@@ -492,7 +492,7 @@ def test_bins_nanmax():
     assert sc.identical(binned.bins.nanmax(), expected)
 
 
-def test_bins_min():
+def test_bins_min() -> None:
     data = sc.DataArray(
         data=sc.array(dims=['position'], values=[1.0, 2.0, 3.0, 5.0, 6.0]),
         coords={'group': sc.array(dims=['position'], values=[0, 1, 1, 0, 2])},
@@ -505,7 +505,7 @@ def test_bins_min():
     assert sc.identical(binned.bins.min(), expected)
 
 
-def test_bins_nanmin():
+def test_bins_nanmin() -> None:
     data = sc.DataArray(
         data=sc.array(dims=['position'], values=[1.0, 2.0, -np.nan, 5.0, 6.0]),
         coords={'group': sc.array(dims=['position'], values=[0, 1, 1, 0, 2])},
@@ -518,7 +518,7 @@ def test_bins_nanmin():
     assert sc.identical(binned.bins.nanmin(), expected)
 
 
-def test_bins_all():
+def test_bins_all() -> None:
     data = sc.DataArray(
         data=sc.array(dims=['position'], values=[True, False, True, True, True]),
         coords={'group': sc.array(dims=['position'], values=[0, 1, 1, 0, 2])},
@@ -531,7 +531,7 @@ def test_bins_all():
     assert sc.identical(binned.bins.all(), expected)
 
 
-def test_bins_any():
+def test_bins_any() -> None:
     data = sc.DataArray(
         data=sc.array(dims=['position'], values=[False, False, True, False, False]),
         coords={'group': sc.array(dims=['position'], values=[0, 1, 1, 0, 2])},
@@ -544,7 +544,7 @@ def test_bins_any():
     assert sc.identical(binned.bins.any(), expected)
 
 
-def test_bins_like():
+def test_bins_like() -> None:
     data = sc.array(dims=['row'], values=[1, 2, 3, 4])
     begin = sc.array(dims=['x'], values=[0, 3], dtype=sc.DType.int64, unit=None)
     end = sc.array(dims=['x'], values=[3, 4], dtype=sc.DType.int64, unit=None)
@@ -566,14 +566,14 @@ def test_bins_like():
         (sc.bins_like(binned, dense),)
 
 
-def test_bins_like_raises_when_given_data_group():
+def test_bins_like_raises_when_given_data_group() -> None:
     binned = sc.data.binned_x(100, 10)
     dg = sc.DataGroup(a=binned.data)
     with pytest.raises(ValueError, match='DataGroup argument'):
         sc.bins_like(dg, sc.scalar(0.1))
 
 
-def test_bins_concat():
+def test_bins_concat() -> None:
     table = sc.data.table_xyz(nrow=100)
     table.data = sc.arange('row', 100, dtype='float64')
     da = table.bin(x=4, y=5)
@@ -582,14 +582,14 @@ def test_bins_concat():
     assert sc.identical(da.bins.concat().hist(), table.sum())
 
 
-def test_bins_concat_variable():
+def test_bins_concat_variable() -> None:
     table = sc.data.table_xyz(nrow=100)
     table.data = sc.arange('row', 100, dtype='float64')
     da = table.bin(x=4, y=5)
     assert sc.identical(da.data.bins.concat('x'), da.bins.concat('x').data)
 
 
-def test_bins_concat_content_variable():
+def test_bins_concat_content_variable() -> None:
     table = sc.data.table_xyz(nrow=100)
     table.data = sc.arange('row', 100, dtype='float64')
     da = table.bin(x=4, y=5)
@@ -597,7 +597,7 @@ def test_bins_concat_content_variable():
 
 
 @pytest.mark.skip(reason="Need fix in Variable::setSlice")
-def test_bins_concat_content_dataset():
+def test_bins_concat_content_dataset() -> None:
     table = sc.data.table_xyz(nrow=100)
     table.data = sc.arange('row', 100, dtype='float64')
     da = table.bin(x=4, y=5)
@@ -607,7 +607,7 @@ def test_bins_concat_content_dataset():
     assert sc.identical(binned.bins.concat('x').bins['a'], da.bins.concat('x'))
 
 
-def test_bins_concat_along_outer_length_1_dim_equivalent_to_squeeze():
+def test_bins_concat_along_outer_length_1_dim_equivalent_to_squeeze() -> None:
     table = sc.data.table_xyz(nrow=100)
     da = table.bin(x=1, y=5, z=7)
     expected = da.squeeze()
@@ -615,7 +615,7 @@ def test_bins_concat_along_outer_length_1_dim_equivalent_to_squeeze():
     assert sc.identical(da.bins.concat('x'), expected)
 
 
-def test_bins_concat_along_middle_length_1_dim_equivalent_to_squeeze():
+def test_bins_concat_along_middle_length_1_dim_equivalent_to_squeeze() -> None:
     table = sc.data.table_xyz(nrow=100)
     da = table.bin(x=5, y=1, z=7)
     expected = da.squeeze()
@@ -623,7 +623,7 @@ def test_bins_concat_along_middle_length_1_dim_equivalent_to_squeeze():
     assert sc.identical(da.bins.concat('y'), expected)
 
 
-def test_bins_concat_along_inner_length_1_dim_equivalent_to_squeeze():
+def test_bins_concat_along_inner_length_1_dim_equivalent_to_squeeze() -> None:
     table = sc.data.table_xyz(nrow=100)
     da = table.bin(x=5, y=7, z=1)
     expected = da.squeeze()
@@ -631,13 +631,13 @@ def test_bins_concat_along_inner_length_1_dim_equivalent_to_squeeze():
     assert sc.identical(da.bins.concat('z'), expected)
 
 
-def test_bins_concat_gives_same_result_on_transposed():
+def test_bins_concat_gives_same_result_on_transposed() -> None:
     table = sc.data.table_xyz(nrow=100)
     da = table.bin(x=5, y=13)
     assert sc.identical(da.bins.concat('x'), da.transpose().bins.concat('x'))
 
 
-def test_bins_concat_preserves_unrelated_mask():
+def test_bins_concat_preserves_unrelated_mask() -> None:
     table = sc.data.table_xyz(nrow=100)
     da = table.bin(x=5, y=13)
     da.masks['masky'] = sc.zeros(dims=['y'], shape=[13], dtype=bool)
@@ -645,7 +645,7 @@ def test_bins_concat_preserves_unrelated_mask():
     assert 'masky' in result.masks
 
 
-def test_bins_concat_applies_irreducible_masks():
+def test_bins_concat_applies_irreducible_masks() -> None:
     table = sc.data.table_xyz(nrow=10)
     da = table.bin(x=5, y=13)
     da.masks['maskx'] = sc.array(dims=['x'], values=[False, False, False, False, True])
@@ -653,7 +653,7 @@ def test_bins_concat_applies_irreducible_masks():
 
 
 @pytest.mark.parametrize('aligned', [True, False])
-def test_bin_1d_by_coord_without_event_coord(aligned: bool):
+def test_bin_1d_by_coord_without_event_coord(aligned: bool) -> None:
     table = sc.data.table_xyz(nrow=1000)
     da = table.bin(x=100)
     rng = default_rng(seed=1234)
@@ -670,7 +670,7 @@ def test_bin_1d_by_coord_without_event_coord(aligned: bool):
     assert sc.identical(result.hist(), table.hist(param=edges))
 
 
-def test_bin_outer_of_2d_without_event_coord():
+def test_bin_outer_of_2d_without_event_coord() -> None:
     table = sc.data.table_xyz(nrow=1000)
     table.data = sc.arange('row', 1000, dtype='float64')
     da = table.bin(x=7, y=3)
@@ -687,7 +687,7 @@ def test_bin_outer_of_2d_without_event_coord():
     assert sc.identical(result.hist(), table.hist(y=3, param=edges))
 
 
-def test_bin_combined_outer_and_inner_of_2d_without_event_coord():
+def test_bin_combined_outer_and_inner_of_2d_without_event_coord() -> None:
     table = sc.data.table_xyz(nrow=1000)
     table.data = sc.arange('row', 1000, dtype='float64')
     da = table.bin(x=7, y=3)
@@ -707,7 +707,7 @@ def test_bin_combined_outer_and_inner_of_2d_without_event_coord():
     assert sc.identical(result_xy.hist(), table.hist(param=edges))
 
 
-def test_bin_outer_and_inner_of_2d_without_event_coord():
+def test_bin_outer_and_inner_of_2d_without_event_coord() -> None:
     table = sc.data.table_xyz(nrow=1000)
     table.data = sc.arange('row', 1000, dtype='float64')
     da = table.bin(x=7, y=3)
@@ -728,7 +728,7 @@ def test_bin_outer_and_inner_of_2d_without_event_coord():
     assert sc.identical(result.hist(), table.hist(xnew=xnew, ynew=ynew))
 
 
-def test_bins_validate_indices_true():
+def test_bins_validate_indices_true() -> None:
     """Test that sc.bins validates indices when validate_indices=True."""
     data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
     begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64, unit=None)
@@ -738,7 +738,7 @@ def test_bins_validate_indices_true():
         sc.bins(begin=begin, end=end, dim='x', data=data, validate_indices=True)
 
 
-def test_bins_validate_indices_false():
+def test_bins_validate_indices_false() -> None:
     """Test that sc.bins skips validation when validate_indices=False."""
     data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
     begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64, unit=None)
@@ -751,7 +751,7 @@ def test_bins_validate_indices_false():
     # behavior
 
 
-def test_bins_validate_indices_default():
+def test_bins_validate_indices_default() -> None:
     """Test that sc.bins validates indices by default."""
     data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
     begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64, unit=None)
@@ -761,7 +761,7 @@ def test_bins_validate_indices_default():
         sc.bins(begin=begin, end=end, dim='x', data=data)
 
 
-def test_bins_validate_indices_with_valid_indices():
+def test_bins_validate_indices_with_valid_indices() -> None:
     """Test that both validation modes work with valid indices."""
     data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
     begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64, unit=None)

@@ -1,19 +1,22 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 import pickle
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import partial
 from inspect import getfullargspec, isfunction
 from multiprocessing import Pool
 from numbers import Real
+from typing import Any, Sized, TypeAlias, TypeVar
 
 import numpy as np
+import numpy.typing as npt
 
 from .core import (
     BinEdgeError,
     DataArray,
     DataGroup,
     DimensionError,
+    Unit,
     Variable,
     array,
     scalar,
@@ -21,20 +24,41 @@ from .core import (
     zeros,
 )
 
+_Shape = TypeVar('_Shape')
+_DType = TypeVar('_DType', bound=np.generic)
+_Float = TypeVar('_Float', np.float64, np.float32)
 
-def _wrap_scipp_func(f, p0):
+Bounds: TypeAlias = Mapping[
+    str,
+    tuple[Variable, Variable]
+    | tuple[Variable, None]
+    | tuple[None, Variable]
+    | tuple[Real, Real]
+    | tuple[Real, None]
+    | tuple[None, Real]
+    | tuple[None, None],
+]
+
+
+def _wrap_scipp_func(
+    f: Callable[..., Variable], p0: Mapping[str, Variable]
+) -> Callable[..., npt.NDArray[Any]]:
     p = {k: scalar(0.0, unit=v.unit) for k, v in p0.items()}
 
-    def func(x, *args):
+    def func(x: Mapping[str, Any], *args: Any) -> npt.NDArray[Any]:
         for k, v in zip(p, args, strict=True):
             p[k].value = v
-        return f(**x, **p).values
+        return f(**x, **p).values  # type: ignore[no-any-return]
 
     return func
 
 
-def _wrap_numpy_func(f, param_names, coord_names):
-    def func(x, *args):
+def _wrap_numpy_func(
+    f: Callable[..., np.ndarray[_Shape, np.dtype[_DType]]],
+    param_names: Iterable[str],
+    coord_names: Iterable[str],
+) -> Callable[..., np.ndarray[_Shape, np.dtype[_DType]]]:
+    def func(x: npt.NDArray[Any], *args: Any) -> np.ndarray[_Shape, np.dtype[_DType]]:
         # If there is only one predictor variable x might be a 1D array.
         # Make x 2D for consistency.
         if len(x.shape) == 1:
@@ -46,7 +70,7 @@ def _wrap_numpy_func(f, param_names, coord_names):
     return func
 
 
-def _get_sigma(da):
+def _get_sigma(da: DataArray) -> npt.NDArray[_Float] | None:
     if da.variances is None:
         return None
 
@@ -57,10 +81,16 @@ def _get_sigma(da):
             'Mask the offending elements, remove them, or assign a meaningful '
             'variance if possible before calling curve_fit.'
         )
-    return sigma
+    return sigma  # type: ignore[no-any-return]
 
 
-def _datagroup_outputs(da, p0, map_over, pdata, covdata):
+def _datagroup_outputs(
+    da: DataArray,
+    p0: Mapping[str, Variable],
+    map_over: Iterable[str],
+    pdata: npt.NDArray[Any],
+    covdata: npt.NDArray[Any],
+) -> tuple[DataGroup[DataArray], DataGroup[DataGroup[DataArray]]]:
     variances = np.diagonal(covdata, axis1=-2, axis2=-1)
     dg = DataGroup(
         {
@@ -85,7 +115,7 @@ def _datagroup_outputs(da, p0, map_over, pdata, covdata):
                             values=covdata[..., i, j]
                             if covdata.ndim > 2
                             else covdata[i, j],
-                            unit=v0.unit * u0.unit,
+                            unit=v0.unit * u0.unit,  # type: ignore[arg-type, operator]
                         ),
                     )
                     for j, (q, u0) in enumerate(p0.items())
@@ -110,14 +140,20 @@ def _datagroup_outputs(da, p0, map_over, pdata, covdata):
     return dg, dgcov
 
 
-def _prepare_numpy_outputs(da, p0, map_over):
+def _prepare_numpy_outputs(
+    da: DataArray, p0: Sized, map_over: Iterable[str]
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     shape = [da.sizes[d] for d in map_over]
     dg = np.empty([*shape, len(p0)])
     dgcov = np.empty(shape + 2 * [len(p0)])
     return dg, dgcov
 
 
-def _make_defaults(f, coords, p0):
+def _make_defaults(
+    f: Callable[..., object],
+    coords: Iterable[str],
+    p0: Mapping[str, Variable | float] | None,
+) -> Mapping[str, Variable]:
     spec = getfullargspec(f)
     non_default_args = (
         spec.args[: -len(spec.defaults)] if spec.defaults is not None else spec.args
@@ -138,7 +174,11 @@ def _make_defaults(f, coords, p0):
     }
 
 
-def _get_specific_bounds(bounds, name, unit):
+def _get_specific_bounds(
+    bounds: Bounds,
+    name: str,
+    unit: Unit | None,
+) -> tuple[Variable, Variable]:
     if name not in bounds:
         return -scalar(np.inf, unit=unit), scalar(np.inf, unit=unit)
     b = bounds[name]
@@ -165,13 +205,17 @@ def _get_specific_bounds(bounds, name, unit):
     return le, ri
 
 
-def _parse_bounds(bounds, p0):
+def _parse_bounds(
+    bounds: Bounds | None, p0: Mapping[str, Variable]
+) -> dict[str, tuple[Variable, Variable]]:
     return {k: _get_specific_bounds(bounds or {}, k, v.unit) for k, v in p0.items()}
 
 
-def _reshape_bounds(bounds):
-    left, right = zip(*bounds.values(), strict=True)
-    left, right = [le.value for le in left], [ri.value for ri in right]
+def _reshape_bounds(
+    bounds: Mapping[str, tuple[Variable, Variable]],
+) -> tuple[list[Any], list[Any]] | tuple[float, float]:
+    left_vars, right_vars = zip(*bounds.values(), strict=True)
+    left, right = [le.value for le in left_vars], [ri.value for ri in right_vars]
     if all(le == -np.inf and ri == np.inf for le, ri in zip(left, right, strict=True)):
         return -np.inf, np.inf
     return left, right
@@ -197,11 +241,13 @@ def _select_data_params_and_bounds(
     )
 
 
-SerializedVariable = tuple[tuple[str, ...], np.ndarray, np.ndarray, str | None]
+SerializedVariable: TypeAlias = tuple[
+    tuple[str, ...], npt.NDArray[Any], npt.NDArray[Any], str | None
+]
 
 
 def _serialize_variable(v: Variable) -> SerializedVariable:
-    return (v.dims, v.values, v.variances, str(v.unit) if v.unit is not None else None)
+    return v.dims, v.values, v.variances, str(v.unit) if v.unit is not None else None
 
 
 SerializedMapping = tuple[tuple[str, ...], tuple[SerializedVariable, ...]]
@@ -264,16 +310,16 @@ def _deserialize_bounds(t: SerializedBounds) -> dict[str, tuple[Variable, Variab
 
 
 def _curve_fit(
-    f,
-    da,
-    p0,
-    bounds,
-    map_over,
-    unsafe_numpy_f,
-    out,
-    **kwargs,
-):
-    dg, dgcov = out
+    f: Callable[..., npt.NDArray[_Float]],
+    da: DataArray,
+    p0: Mapping[str, Variable],
+    bounds: Mapping[str, tuple[Variable, Variable]],
+    map_over: Sequence[str],
+    unsafe_numpy_f: bool,
+    out: tuple[npt.NDArray[_Float], npt.NDArray[_Float]],
+    **kwargs: object,
+) -> None:
+    out_values, out_cov = out
 
     if len(map_over) > 0:
         dim = map_over[0]
@@ -281,10 +327,10 @@ def _curve_fit(
             _curve_fit(
                 f,
                 *_select_data_params_and_bounds((dim, i), da, p0, bounds),
-                map_over[1:],
-                unsafe_numpy_f,
-                (dg[i], dgcov[i]),
-                **kwargs,
+                map_over=map_over[1:],
+                unsafe_numpy_f=unsafe_numpy_f,
+                out=(out_values[i], out_cov[i]),
+                **kwargs,  # type: ignore[arg-type]
             )
 
         return
@@ -313,16 +359,16 @@ def _curve_fit(
     if not unsafe_numpy_f:
         # Making the coords into a dict improves runtime,
         # probably because of pybind overhead.
-        X = dict(fda.coords)
+        X: dict[str, Variable] | npt.NDArray[np.float64] = dict(fda.coords)
     else:
         X = np.vstack([c.values for c in fda.coords.values()], dtype='float')
 
     import scipy.optimize as opt
 
-    if len(fda) < len(dg):
+    if len(fda) < len(out_values):
         # More parameters than data points, unable to fit, abort.
-        dg[:] = np.nan
-        dgcov[:] = np.nan
+        out_values[:] = np.nan
+        out_cov[:] = np.nan
         return
 
     try:
@@ -342,29 +388,29 @@ def _curve_fit(
         else:
             raise err
 
-    dg[:] = popt
-    dgcov[:] = pcov
+    out_values[:] = popt
+    out_cov[:] = pcov
 
 
 def _curve_fit_chunk(
-    coords: dict[str, Variable] | SerializedMapping,
-    f: Callable,
+    coords: Mapping[str, Variable] | SerializedMapping,
+    f: Callable[..., Variable] | Callable[..., npt.NDArray[_Float]],
     da: DataArray | SerializedDataArray,
-    p0: dict[str, Variable] | SerializedMapping,
-    bounds: dict[str, tuple[Variable, Variable]] | SerializedBounds,
+    p0: Mapping[str, Variable] | SerializedMapping,
+    bounds: Mapping[str, tuple[Variable, Variable]] | SerializedBounds,
     map_over: Sequence[str],
     unsafe_numpy_f: bool,
-    kwargs: dict,
-):
-    coords = coords if isinstance(coords, dict) else _deserialize_mapping(coords)
+    kwargs: dict[str, object],
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    coords = coords if isinstance(coords, Mapping) else _deserialize_mapping(coords)
     da = da if isinstance(da, DataArray) else _deserialize_data_array(da)
-    p0 = p0 if isinstance(p0, dict) else _deserialize_mapping(p0)
-    bounds = bounds if isinstance(bounds, dict) else _deserialize_bounds(bounds)
+    p0 = p0 if isinstance(p0, Mapping) else _deserialize_mapping(p0)
+    bounds = bounds if isinstance(bounds, Mapping) else _deserialize_bounds(bounds)
 
     f = (
-        _wrap_scipp_func(f, p0)
+        _wrap_scipp_func(f, p0)  # type: ignore[arg-type]
         if not unsafe_numpy_f
-        else _wrap_numpy_func(f, p0, coords.keys())
+        else _wrap_numpy_func(f, p0, coords.keys())  # type: ignore[arg-type]
     )
 
     # Create a dataarray with only the participating coords
@@ -387,16 +433,16 @@ def _curve_fit_chunk(
 
 def curve_fit(
     coords: Sequence[str] | Mapping[str, str | Variable],
-    f: Callable,
+    f: Callable[..., Variable],
     da: DataArray,
     *,
-    p0: dict[str, Variable | Real] | None = None,
-    bounds: dict[str, tuple[Variable, Variable] | tuple[Real, Real]] | None = None,
+    p0: dict[str, Variable | float] | None = None,
+    bounds: Bounds | None = None,
     reduce_dims: Sequence[str] = (),
     unsafe_numpy_f: bool = False,
     workers: int = 1,
-    **kwargs,
-) -> tuple[DataGroup, DataGroup]:
+    **kwargs: object,
+) -> tuple[DataGroup[DataArray], DataGroup[DataGroup[DataArray]]]:
     """Use non-linear least squares to fit a function, f, to data.
     The function interface is similar to that of :py:func:`xarray.DataArray.curvefit`.
 
@@ -633,7 +679,7 @@ def curve_fit(
         coords = {c: c for c in coords}
 
     # Mapping from function argument names to fit variables
-    coords = {
+    coord_vars = {
         arg: da.coords[coord] if isinstance(coord, str) else coord
         for arg, coord in coords.items()
     }
@@ -641,11 +687,11 @@ def curve_fit(
     map_over = tuple(
         d
         for d in da.dims
-        if d not in reduce_dims and not any(d in c.dims for c in coords.values())
+        if d not in reduce_dims and not any(d in c.dims for c in coord_vars.values())
     )
 
-    p0 = _make_defaults(f, coords.keys(), p0)
-    bounds = _parse_bounds(bounds, p0)
+    p0_vars = _make_defaults(f, coord_vars.keys(), p0)
+    bounds = _parse_bounds(bounds, p0_vars)
 
     pardim = None
     if len(map_over) > 0:
@@ -657,7 +703,18 @@ def curve_fit(
 
     # Only parallelize if the user asked for more than one worker
     # and a suitable dimension for parallelization was found.
-    if workers != 1 and pardim is not None:
+    if workers == 1 or pardim is None:
+        par, cov = _curve_fit_chunk(
+            coords=coord_vars,
+            f=f,
+            da=da,
+            p0=p0_vars,
+            bounds=bounds,
+            map_over=map_over,
+            unsafe_numpy_f=unsafe_numpy_f,
+            kwargs=kwargs,
+        )
+    else:
         try:
             pickle.dumps(f)
         except (AttributeError, pickle.PicklingError) as err:
@@ -673,11 +730,11 @@ def curve_fit(
         args = []
         for i in range(workers):
             _da, _p0, _bounds = _select_data_params_and_bounds(
-                (pardim, slice(i * chunksize, (i + 1) * chunksize)), da, p0, bounds
+                (pardim, slice(i * chunksize, (i + 1) * chunksize)), da, p0_vars, bounds
             )
             args.append(
                 (
-                    _serialize_mapping(coords),
+                    _serialize_mapping(coord_vars),
                     f,
                     _serialize_data_array(_da),
                     _serialize_mapping(_p0),
@@ -689,23 +746,12 @@ def curve_fit(
             )
 
         with Pool(workers) as pool:
-            par, cov = zip(*pool.starmap(_curve_fit_chunk, args), strict=True)
+            par, cov = zip(*pool.starmap(_curve_fit_chunk, args), strict=True)  # type: ignore[assignment]
             concat_axis = map_over.index(pardim)
             par = np.concatenate(par, axis=concat_axis)
             cov = np.concatenate(cov, axis=concat_axis)
-    else:
-        par, cov = _curve_fit_chunk(
-            coords=coords,
-            f=f,
-            da=da,
-            p0=p0,
-            bounds=bounds,
-            map_over=map_over,
-            unsafe_numpy_f=unsafe_numpy_f,
-            kwargs=kwargs,
-        )
 
-    return _datagroup_outputs(da, p0, map_over, par, cov)
+    return _datagroup_outputs(da, p0_vars, map_over, par, cov)
 
 
 __all__ = ['curve_fit']

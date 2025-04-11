@@ -58,39 +58,39 @@ def simple_filter_func(request):
     return request.param
 
 
-def test_raises_TypeError_when_output_arg_given(filter_func):
+def test_raises_TypeError_when_output_arg_given(filter_func) -> None:
     da = make_histogram2d()
     with pytest.raises(TypeError):
         filter_func(da, size=2, output=da.values)
 
 
-def test_raises_VariancesError_when_data_has_variances(filter_func):
+def test_raises_VariancesError_when_data_has_variances(filter_func) -> None:
     da = make_histogram2d()
     da.variances = da.values
     with pytest.raises(sc.VariancesError):
         filter_func(da, size=2)
 
 
-def test_raises_ValueError_when_data_has_masks(filter_func):
+def test_raises_ValueError_when_data_has_masks(filter_func) -> None:
     da = make_histogram2d()
     da.masks['mask'] = da.coords['x'] == da.coords['x']
     with pytest.raises(ValueError, match='mask'):
         filter_func(da, size=2)
 
 
-def test_raises_TypeError_if_size_given_as_array_like(filter_func):
+def test_raises_TypeError_if_size_given_as_array_like(filter_func) -> None:
     da = make_histogram2d()
     with pytest.raises(TypeError):
         filter_func(da, size=[2, 3])
 
 
-def test_raises_TypeError_if_origin_given_as_array_like(filter_func):
+def test_raises_TypeError_if_origin_given_as_array_like(filter_func) -> None:
     da = make_histogram2d()
     with pytest.raises(TypeError):
         filter_func(da, size=[2, 3])
 
 
-def test_raises_TypeError_if_size_is_not_integral(filter_func):
+def test_raises_TypeError_if_size_is_not_integral(filter_func) -> None:
     da = make_histogram2d()
     with pytest.raises(TypeError):
         filter_func(da, size=1.5)
@@ -98,7 +98,7 @@ def test_raises_TypeError_if_size_is_not_integral(filter_func):
         filter_func(da, size={'x': 2.5, 'y': 3.5})
 
 
-def test_raises_TypeError_if_origin_is_not_integral(filter_func):
+def test_raises_TypeError_if_origin_is_not_integral(filter_func) -> None:
     da = make_histogram2d()
     with pytest.raises(TypeError):
         filter_func(da, size=3, origin=1.5)
@@ -106,25 +106,25 @@ def test_raises_TypeError_if_origin_is_not_integral(filter_func):
         filter_func(da, size=3, origin={'x': 1.5, 'y': 0.5})
 
 
-def test_raises_KeyError_if_size_has_missing_labels(filter_func):
+def test_raises_KeyError_if_size_has_missing_labels(filter_func) -> None:
     da = make_histogram2d()
     with pytest.raises(KeyError):
         filter_func(da, size={'x': 4})
 
 
-def test_raises_KeyError_if_size_has_extra_labels(filter_func):
+def test_raises_KeyError_if_size_has_extra_labels(filter_func) -> None:
     da = make_histogram2d()
     with pytest.raises(KeyError):
         filter_func(da, size={'x': 4, 'y': 4, 'z': 4})
 
 
-def test_raises_KeyError_if_origin_has_missing_labels(filter_func):
+def test_raises_KeyError_if_origin_has_missing_labels(filter_func) -> None:
     da = make_histogram2d()
     with pytest.raises(KeyError):
         filter_func(da, size=4, origin={'x': -1})
 
 
-def test_raises_KeyError_if_origin_has_extra_labels(filter_func):
+def test_raises_KeyError_if_origin_has_extra_labels(filter_func) -> None:
     da = make_histogram2d()
     with pytest.raises(KeyError):
         filter_func(da, size=4, origin={'x': -1, 'y': -1, 'z': -1})
@@ -141,7 +141,7 @@ def test_raises_CoordError_with_label_based_size_or_origin_if_coord_not_linspace
         filter_func(da, size=2, origin=sc.scalar(1.2, unit='mm'))
 
 
-def test_raises_KeyError_with_label_based_size_if_coord_missing(filter_func):
+def test_raises_KeyError_with_label_based_size_if_coord_missing(filter_func) -> None:
     da = make_histogram2d()
     del da.coords['y']
     with pytest.raises(KeyError):
@@ -158,13 +158,17 @@ def test_input_with_non_linspace_coord_accepted_if_size_is_positional(
     simple_filter_func(da, size=3)
 
 
-def test_input_with_missing_coord_accepted_if_size_is_positional(simple_filter_func):
+def test_input_with_missing_coord_accepted_if_size_is_positional(
+    simple_filter_func,
+) -> None:
     da = make_histogram2d()
     del da.coords['x']
     simple_filter_func(da, size=3)
 
 
-def test_size_accepts_mixed_label_based_and_positional_param(simple_filter_func):
+def test_size_accepts_mixed_label_based_and_positional_param(
+    simple_filter_func,
+) -> None:
     da = make_histogram2d()
     simple_filter_func(da, size={'x': sc.scalar(1.5, unit='mm'), 'y': 2})
 
@@ -180,7 +184,7 @@ def test_label_based_size_equivalent_to_positional_size_given_bin_edge_coord(
     assert sc.identical(result, reference)
 
 
-def test_label_based_size_equivalent_to_positional_size(simple_filter_func):
+def test_label_based_size_equivalent_to_positional_size(simple_filter_func) -> None:
     da = make_data2d()
     result = simple_filter_func(
         da, size={'x': sc.scalar(1.0, unit='mm'), 'y': sc.scalar(5.0, unit='mm')}
@@ -190,7 +194,7 @@ def test_label_based_size_equivalent_to_positional_size(simple_filter_func):
 
 
 @pytest.mark.parametrize('origin', [0, 1, -1, {'x': 0, 'y': 1}])
-def test_origin_is_equivalent_to_scipy_origin(origin):
+def test_origin_is_equivalent_to_scipy_origin(origin) -> None:
     da = make_histogram2d()
     result = median_filter(da, size=4, origin=origin)
     reference = da.copy()
@@ -203,7 +207,7 @@ def test_origin_is_equivalent_to_scipy_origin(origin):
 
 
 @pytest.mark.parametrize('size', [2, 3, {'x': 2, 'y': 1}])
-def test_size_is_equivalent_to_scipy_size(size):
+def test_size_is_equivalent_to_scipy_size(size) -> None:
     da = make_histogram2d()
     result = median_filter(da, size=size)
     reference = da.copy()
@@ -213,7 +217,7 @@ def test_size_is_equivalent_to_scipy_size(size):
     assert sc.identical(result, reference)
 
 
-def test_coordinates_are_propagated(simple_filter_func):
+def test_coordinates_are_propagated(simple_filter_func) -> None:
     da = make_histogram2d()
     result = simple_filter_func(da, size=2)
     assert set(result.coords) == {'x', 'y'}
@@ -221,7 +225,7 @@ def test_coordinates_are_propagated(simple_filter_func):
     assert sc.identical(result.coords['y'], da.coords['y'])
 
 
-def test_input_is_not_modified(simple_filter_func):
+def test_input_is_not_modified(simple_filter_func) -> None:
     original = make_histogram2d()
     da = original.copy()
     simple_filter_func(da, size=2)

@@ -38,42 +38,42 @@ def settings(**kwargs):
 
 @given(var=scst.variables(ndim=0))
 @settings()
-def test_html_repr_scalar(var):
+def test_html_repr_scalar(var) -> None:
     sc.make_html(var)
 
 
 @given(var=scst.variables(ndim=st.integers(min_value=1, max_value=4)))
 @settings(max_examples=100)
-def test_html_repr_variable(var):
+def test_html_repr_variable(var) -> None:
     sc.make_html(var)
     sc.make_html(var[var.dims[0], 1:10])
 
 
-def test_html_repr_variable_strings():
+def test_html_repr_variable_strings() -> None:
     sc.make_html(sc.array(dims=['x'], values=list(map(chr, range(97, 123)))))
 
 
-def test_html_repr_variable_vector():
+def test_html_repr_variable_vector() -> None:
     sc.make_html(sc.vectors(dims=['x'], values=np.arange(30.0).reshape(10, 3)))
 
 
 @given(da=scst.dataarrays(data_args={'ndim': 0}))
 @settings()
-def test_html_repr_data_array_scalar(da):
+def test_html_repr_data_array_scalar(da) -> None:
     da.coords['c'] = sc.array(dims=['w'], values=[4, 5])
     sc.make_html(da)
 
 
 @given(da=scst.dataarrays(data_args={'ndim': st.integers(min_value=1, max_value=4)}))
 @settings()
-def test_html_repr_data_array(da):
+def test_html_repr_data_array(da) -> None:
     sc.make_html(da)
     sc.make_html(da[da.dims[0], 1:10])
 
 
 @given(da=scst.dataarrays(data_args={'ndim': st.integers(min_value=2, max_value=4)}))
 @settings()
-def test_html_repr_data_array_nd_coord(da):
+def test_html_repr_data_array_nd_coord(da) -> None:
     volume = reduce(lambda a, b: a * b, da.shape)
     da.coords['nd'] = sc.arange('aux', volume).fold(dim='aux', sizes=da.sizes)
     sc.make_html(da)
@@ -84,7 +84,7 @@ def test_html_repr_data_array_nd_coord(da):
     coord_sizes=scst.sizes_dicts(ndim=st.integers(min_value=1, max_value=1)),
 )
 @settings()
-def test_html_repr_binned_data_array(buffer, coord_sizes):
+def test_html_repr_binned_data_array(buffer, coord_sizes) -> None:
     dim = next(iter(coord_sizes))
     assume(coord_sizes[dim] > 1)  # need at least length=2 to slice below
     for i, key in enumerate(coord_sizes, 1):
@@ -98,7 +98,7 @@ def test_html_repr_binned_data_array(buffer, coord_sizes):
 
 @given(da=scst.dataarrays(data_args={'ndim': st.integers(min_value=1, max_value=4)}))
 @settings()
-def test_html_repr_dataset(da):
+def test_html_repr_dataset(da) -> None:
     ds = sc.Dataset({'a': da, 'b': 2 * da})
     sc.make_html(ds)
     sc.make_html(ds[da.dims[0], 1:10])
@@ -109,7 +109,7 @@ def test_html_repr_dataset(da):
     var=scst.variables(),
 )
 @settings()
-def test_html_repr_dense_datagroup(da, var):
+def test_html_repr_dense_datagroup(da, var) -> None:
     dg = sc.DataGroup(
         {
             'a': da,
@@ -131,7 +131,7 @@ def test_html_repr_dense_datagroup(da, var):
     assert bool(html_parser.find('div', class_='dg-detail-box'))
 
 
-def test_html_repr_deep_datagroup():
+def test_html_repr_deep_datagroup() -> None:
     dg = sc.DataGroup({'x': sc.scalar(6.2)})
     for i in range(10):
         dg = sc.DataGroup({f'group-{i}': dg})

@@ -1,13 +1,15 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+from collections.abc import MutableMapping
+
 import numpy as np
 import pytest
 
 import scipp as sc
 
 
-def assert_variable_writable(var):
+def assert_variable_writable(var: sc.Variable) -> None:
     assert var.values.flags['WRITEABLE']
     if var.variances is not None:
         assert var.variances.flags['WRITEABLE']
@@ -22,7 +24,7 @@ def assert_variable_writable(var):
     assert sc.identical(var['x', 1], var['x', 0])
 
 
-def assert_variable_readonly(var):
+def assert_variable_readonly(var: sc.Variable) -> None:
     original = var.copy()
     assert not var.values.flags['WRITEABLE']
     if var.variances is not None:
@@ -39,7 +41,7 @@ def assert_variable_readonly(var):
     assert sc.identical(var, original)
 
 
-def assert_dict_writable(d):
+def assert_dict_writable(d: MutableMapping[str, sc.Variable]) -> None:
     key = next(iter(d.keys()))
     del d[key]
     assert key not in d
@@ -47,7 +49,9 @@ def assert_dict_writable(d):
     assert 'new' in d
 
 
-def assert_dict_readonly(d, error=sc.DataArrayError):
+def assert_dict_readonly(
+    d: MutableMapping[str, sc.Variable], error: type[RuntimeError] = sc.DataArrayError
+) -> None:
     with pytest.raises(error):
         d['new'] = sc.scalar(4)
     assert 'new' not in d
@@ -57,7 +61,7 @@ def assert_dict_readonly(d, error=sc.DataArrayError):
     assert key in d
 
 
-def assert_readonly_data_array(da, readonly_data: bool):
+def assert_readonly_data_array(da: sc.DataArray, readonly_data: bool) -> None:
     N = da.sizes['x']
     da2 = da.copy(deep=False)
     var = sc.array(dims=['x'], values=np.arange(N))
@@ -85,19 +89,19 @@ def assert_readonly_data_array(da, readonly_data: bool):
     assert not sc.identical(da2.data, da.data)
 
 
-def test_readonly_variable_unit_and_variances():
+def test_readonly_variable_unit_and_variances() -> None:
     var = sc.array(dims=['x'], values=np.arange(4.0), variances=np.arange(4.0))
     assert_variable_writable(var)
 
 
-def test_readonly_variable():
+def test_readonly_variable() -> None:
     var = sc.broadcast(sc.scalar(value=1.0, variance=1.0), dims=['x'], shape=[4])
     assert_variable_readonly(var)
     assert_variable_readonly(var.copy(deep=False))
     assert_variable_writable(var.copy())
 
 
-def _make_data_array():
+def _make_data_array() -> sc.DataArray:
     var = sc.array(dims=['x'], values=np.arange(4))
     return sc.DataArray(
         data=var.copy(),
@@ -106,15 +110,15 @@ def _make_data_array():
     )
 
 
-def _make_dataset():
+def _make_dataset() -> sc.Dataset:
     return sc.Dataset(data={'a': _make_data_array()})
 
 
-def test_readonly_data_array_slice():
+def test_readonly_data_array_slice() -> None:
     assert_readonly_data_array(_make_data_array()['x', 1:4], readonly_data=False)
 
 
-def test_readonly_metadata():
+def test_readonly_metadata() -> None:
     da = _make_data_array()
     assert_dict_readonly(da['x', 1:2].coords)
     assert_dict_readonly(da['x', 1:2].masks)
@@ -123,7 +127,7 @@ def test_readonly_metadata():
     assert_dict_writable(da['x', 1:2].copy(deep=False).masks)
 
 
-def test_readonly_metadata_broadcast_sets_readonly_flag():
+def test_readonly_metadata_broadcast_sets_readonly_flag() -> None:
     da = _make_data_array()
     da = sc.concat([da, da], 'y')
     assert_variable_readonly(da['y', 1].coords['x'])
@@ -136,27 +140,27 @@ def test_readonly_metadata_broadcast_sets_readonly_flag():
     assert_variable_writable(da['y', 1].copy().masks['m'])
 
 
-def test_dataset_readonly_metadata_dicts():
+def test_dataset_readonly_metadata_dicts() -> None:
     ds = _make_dataset()
     # Coords dicts are shared and thus readonly
     assert_dict_readonly(ds['a'].coords)
     assert_dict_writable(ds['a'].masks)
 
 
-def test_dataset_readonly_metadata_items():
+def test_dataset_readonly_metadata_items() -> None:
     ds = _make_dataset()
     # Coords are shared and thus readonly
     assert_variable_readonly(ds['a'].coords['x'])
     assert_variable_writable(ds['a'].masks['m'])
 
 
-def test_readonly_dataset_slice():
+def test_readonly_dataset_slice() -> None:
     ds = _make_dataset()
     assert_dict_readonly(ds['x', 0], sc.DatasetError)
     assert_dict_writable(ds['x', 0].copy(deep=False))
 
 
-def test_readonly_dataset_slice_items():
+def test_readonly_dataset_slice_items() -> None:
     ds = sc.Dataset(
         {
             key: val.broadcast(dims=['x', 'y'], shape=[4, 3])

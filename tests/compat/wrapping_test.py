@@ -48,7 +48,7 @@ def check_metadata(out, da, x):
 @pytest.mark.parametrize(
     "da", [make_array(), make_array().transpose(), make_array().transpose().copy()]
 )
-def test_wrap1d_metadata_factory1d(da):
+def test_wrap1d_metadata_factory1d(da) -> None:
     f = factory1d(da, 'xx')
     x = sc.linspace(dim='xx', start=0.1, stop=0.4, num=2, unit='rad')
     check_metadata(f(x), da, x)
@@ -57,18 +57,18 @@ def test_wrap1d_metadata_factory1d(da):
 @pytest.mark.parametrize(
     "da", [make_array(), make_array().transpose(), make_array().transpose().copy()]
 )
-def test_wrap1d_metadata_func1d(da):
+def test_wrap1d_metadata_func1d(da) -> None:
     check_metadata(func1d(da, dim='xx'), da, x=None)
 
 
 @pytest.mark.parametrize('func', [factory1d, func1d])
-def test_wrap1d_fail_axis_given(func):
+def test_wrap1d_fail_axis_given(func) -> None:
     with pytest.raises(ValueError, match='dim.*axis'):
         func(make_array(), axis=0, dim='xx')
 
 
 @pytest.mark.parametrize('func', [factory1d, func1d])
-def test_wrap1d_fail_variances(func):
+def test_wrap1d_fail_variances(func) -> None:
     da = make_array()
     da.variances = da.values
     with pytest.raises(sc.VariancesError):
@@ -76,7 +76,7 @@ def test_wrap1d_fail_variances(func):
 
 
 @pytest.mark.parametrize('func', [factory1d, func1d])
-def test_wrap1d_fail_bin_edges(func):
+def test_wrap1d_fail_bin_edges(func) -> None:
     tmp = make_array()
     da = tmp['xx', 1:].copy()
     da.coords['xx'] = tmp.coords['xx']
@@ -85,7 +85,7 @@ def test_wrap1d_fail_bin_edges(func):
 
 
 @pytest.mark.parametrize('func', [factory1d, func1d])
-def test_wrap1d_fail_conflicting_mask(func):
+def test_wrap1d_fail_conflicting_mask(func) -> None:
     da = make_array()
     da.masks['xx'] = da.coords['xx'] != da.coords['xx']
     with pytest.raises(sc.DimensionError):
@@ -99,7 +99,7 @@ def func1d_with_mask(da, dim, **kwargs):
     return da[dim, 1:3].copy()
 
 
-def test_wrap1d_accept_masks():
+def test_wrap1d_accept_masks() -> None:
     da = make_array()
     da.masks['xx'] = da.coords['xx'] != da.coords['xx']
     result = func1d_with_mask(da, 'xx')

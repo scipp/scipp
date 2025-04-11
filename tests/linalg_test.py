@@ -9,21 +9,21 @@ import pytest
 import scipp as sc
 
 
-def test_variable_0D_vector3_from_list():
+def test_variable_0D_vector3_from_list() -> None:
     var = sc.vector(value=[1, 2, 3], unit=sc.units.m)
     np.testing.assert_array_equal(var.value, [1, 2, 3])
     assert var.dtype == sc.DType.vector3
     assert var.unit == sc.units.m
 
 
-def test_variable_0D_vector3_from_numpy():
+def test_variable_0D_vector3_from_numpy() -> None:
     var = sc.vector(value=np.array([1, 2, 3]), unit=sc.units.m)
     np.testing.assert_array_equal(var.value, [1, 2, 3])
     assert var.dtype == sc.DType.vector3
     assert var.unit == sc.units.m
 
 
-def test_variable_1D_vector3_from_list():
+def test_variable_1D_vector3_from_list() -> None:
     var = sc.vectors(dims=['x'], values=[[1, 2, 3], [4, 5, 6]], unit=sc.units.m)
     assert len(var.values) == 2
     np.testing.assert_array_equal(var.values[0], [1, 2, 3])
@@ -33,7 +33,7 @@ def test_variable_1D_vector3_from_list():
     assert var.unit == sc.units.m
 
 
-def test_variable_1D_vector3_from_numpy():
+def test_variable_1D_vector3_from_numpy() -> None:
     var = sc.vectors(
         dims=['x'], values=np.array([[1, 2, 3], [4, 5, 6]]), unit=sc.units.m
     )
@@ -45,7 +45,7 @@ def test_variable_1D_vector3_from_numpy():
     assert var.unit == sc.units.m
 
 
-def test_set_vector_value():
+def test_set_vector_value() -> None:
     var = sc.vector(value=np.array([1, 2, 3]), unit=sc.units.m)
     value = np.array([3, 2, 1])
     ref = sc.vector(value=value, unit=sc.units.m)
@@ -53,7 +53,7 @@ def test_set_vector_value():
     assert sc.identical(var, ref)
 
 
-def test_set_vectors_values():
+def test_set_vectors_values() -> None:
     var = sc.vectors(
         dims=['x'], values=np.array([[1, 2, 3], [4, 5, 6]]), unit=sc.units.m
     )
@@ -63,7 +63,7 @@ def test_set_vectors_values():
     assert sc.identical(var, ref)
 
 
-def test_vector_elements():
+def test_vector_elements() -> None:
     var = sc.vectors(
         dims=['x'], values=np.array([[1, 2, 3], [4, 5, 6]]), unit=sc.units.m
     )
@@ -78,7 +78,7 @@ def test_vector_elements():
     )
 
 
-def test_vector_elements_setter():
+def test_vector_elements_setter() -> None:
     var = sc.vectors(
         dims=['x'], values=np.array([[1, 2, 3], [4, 5, 6]]), unit=sc.units.m
     )
@@ -104,7 +104,7 @@ def test_vector_elements_setter():
     assert sc.identical(var, expected)
 
 
-def test_vector_readonly_elements():
+def test_vector_readonly_elements() -> None:
     vec = sc.vector(value=[1, 2, 3], unit=sc.units.m)
     var = sc.broadcast(vec, dims=['x'], shape=[2])
     with pytest.raises(sc.VariableError):
@@ -115,7 +115,7 @@ def test_vector_readonly_elements():
     assert not var.fields.x.values.flags['WRITEABLE']
 
 
-def test_elements_binned():
+def test_elements_binned() -> None:
     data = sc.array(dims=['x'], values=[1, 2, 3, 4])
     var = sc.bins(dim='x', data=data)
     assert var.fields is None
@@ -127,15 +127,15 @@ def test_elements_binned():
     assert sc.identical(var.fields.y, y)
 
 
-def test_vectors_None_unit_yields_variable_with_None_unit():
+def test_vectors_None_unit_yields_variable_with_None_unit() -> None:
     assert sc.vectors(dims=['x'], values=np.ones(shape=(2, 3)), unit=None).unit is None
 
 
-def test_vector_default_unit_is_dimensionless():
+def test_vector_default_unit_is_dimensionless() -> None:
     var = sc.vector(value=np.ones(shape=(3,)))
     assert var.unit == sc.units.one
 
 
-def test_vectors_default_unit_is_dimensionless():
+def test_vectors_default_unit_is_dimensionless() -> None:
     var = sc.vectors(dims=['x'], values=np.ones(shape=(2, 3)))
     assert var.unit == sc.units.one

@@ -19,42 +19,42 @@ def make_variables():
 # e.g., __iadd__ does an in-place modification, updating `b`, but then the
 # return value is assigned to `a`, which could break the connection unless
 # the correct Python object is returned.
-def test_iadd_returns_original_object():
+def test_iadd_returns_original_object() -> None:
     a = sc.scalar(1.2)
     b = a
     a += 1.0
     assert sc.identical(a, b)
 
 
-def test_isub_returns_original_object():
+def test_isub_returns_original_object() -> None:
     a = sc.scalar(1.2)
     b = a
     a -= 1.0
     assert sc.identical(a, b)
 
 
-def test_imul_returns_original_object():
+def test_imul_returns_original_object() -> None:
     a = sc.scalar(1.2)
     b = a
     a *= 1.0
     assert sc.identical(a, b)
 
 
-def test_itruediv_returns_original_object():
+def test_itruediv_returns_original_object() -> None:
     a = sc.scalar(1.2)
     b = a
     a /= 1.0
     assert sc.identical(a, b)
 
 
-def test_ifloordiv_returns_original_object():
+def test_ifloordiv_returns_original_object() -> None:
     a = sc.scalar(1.2)
     b = a
     a //= 1.0
     assert sc.identical(a, b)
 
 
-def test_add_variable():
+def test_add_variable() -> None:
     a, b, a_slice, b_slice, data = make_variables()
     c = a + b
     assert np.array_equal(c.values, data + data)
@@ -70,7 +70,7 @@ def test_add_variable():
     assert np.array_equal(c.values, data + data + data + data + 3.5)
 
 
-def test_sub_variable():
+def test_sub_variable() -> None:
     a, b, a_slice, b_slice, data = make_variables()
     c = a - b
     assert np.array_equal(c.values, data - data)
@@ -86,7 +86,7 @@ def test_sub_variable():
     assert np.array_equal(c.values, 3.5 - data + data + data + data)
 
 
-def test_mul_variable():
+def test_mul_variable() -> None:
     a, b, a_slice, b_slice, data = make_variables()
     c = a * b
     assert np.array_equal(c.values, data * data)
@@ -102,7 +102,7 @@ def test_mul_variable():
     assert np.array_equal(c.values, data * data * data * data * 3.5)
 
 
-def test_truediv_variable():
+def test_truediv_variable() -> None:
     a, b, a_slice, b_slice, data = make_variables()
     c = a / b
     assert np.array_equal(c.values, data / data)
@@ -118,7 +118,7 @@ def test_truediv_variable():
     assert np.array_equal(c.values, 2.0 / data)
 
 
-def test_pow_variable():
+def test_pow_variable() -> None:
     a, b, a_slice, b_slice, data = make_variables()
     c = a**b
     assert np.array_equal(c.values, data**data)
@@ -142,42 +142,42 @@ def test_pow_variable():
     assert np.array_equal(c.values, 2.0**data)
 
 
-def test_iadd_variable_with_scalar():
+def test_iadd_variable_with_scalar() -> None:
     v = sc.Variable(dims=['x'], values=[10.0])
     expected = sc.Variable(dims=['x'], values=[12.0])
     v += 2
     assert sc.identical(v, expected)
 
 
-def test_isub_variable_with_scalar():
+def test_isub_variable_with_scalar() -> None:
     v = sc.Variable(dims=['x'], values=[10.0])
     expected = sc.Variable(dims=['x'], values=[9.0])
     v -= 1
     assert sc.identical(v, expected)
 
 
-def test_imul_variable_with_scalar():
+def test_imul_variable_with_scalar() -> None:
     v = sc.Variable(dims=['x'], values=[10.0])
     expected = sc.Variable(dims=['x'], values=[30.0])
     v *= 3
     assert sc.identical(v, expected)
 
 
-def test_itruediv_variable_with_scalar():
+def test_itruediv_variable_with_scalar() -> None:
     v = sc.Variable(dims=['x'], values=[10.0])
     expected = sc.Variable(dims=['x'], values=[5.0])
     v /= 2
     assert sc.identical(v, expected)
 
 
-def test_ifloordiv_variable_with_scalar():
+def test_ifloordiv_variable_with_scalar() -> None:
     v = sc.Variable(dims=['x'], values=[10.0, 7.0])
     expected = sc.Variable(dims=['x'], values=[5.0, 3.0])
     v //= 2
     assert sc.identical(v, expected)
 
 
-def test_add_dataarray_with_dataarray():
+def test_add_dataarray_with_dataarray() -> None:
     da = sc.DataArray(
         sc.arange('x', 1.0, 10.0), coords={'x': sc.arange('x', 10.0, 20.0)}
     )
@@ -186,7 +186,7 @@ def test_add_dataarray_with_dataarray():
     assert sc.identical(da + da, expected)
 
 
-def test_sub_dataarray_with_dataarray():
+def test_sub_dataarray_with_dataarray() -> None:
     da = sc.DataArray(
         sc.arange('x', 1.0, 10.0), coords={'x': sc.arange('x', 10.0, 20.0)}
     )
@@ -194,7 +194,7 @@ def test_sub_dataarray_with_dataarray():
     assert sc.identical(da - da, expected)
 
 
-def test_mul_dataarray_with_dataarray():
+def test_mul_dataarray_with_dataarray() -> None:
     da = sc.DataArray(
         sc.arange('x', 1.0, 10.0), coords={'x': sc.arange('x', 10.0, 20.0)}
     )
@@ -203,7 +203,7 @@ def test_mul_dataarray_with_dataarray():
     assert sc.identical(da * da, expected)
 
 
-def test_truediv_dataarray_with_dataarray():
+def test_truediv_dataarray_with_dataarray() -> None:
     da = sc.DataArray(
         sc.arange('x', 1.0, 10.0), coords={'x': sc.arange('x', 10.0, 20.0)}
     )
@@ -211,7 +211,7 @@ def test_truediv_dataarray_with_dataarray():
     assert sc.identical(da / da, expected)
 
 
-def test_add_dataarray_with_variable():
+def test_add_dataarray_with_variable() -> None:
     da = sc.DataArray(
         sc.arange('x', 1.0, 10.0), coords={'x': sc.arange('x', 10.0, 20.0)}
     )
@@ -221,7 +221,7 @@ def test_add_dataarray_with_variable():
     assert sc.identical(da.data + da, expected)
 
 
-def test_sub_dataarray_with_variable():
+def test_sub_dataarray_with_variable() -> None:
     da = sc.DataArray(
         sc.arange('x', 1.0, 10.0), coords={'x': sc.arange('x', 10.0, 20.0)}
     )
@@ -230,7 +230,7 @@ def test_sub_dataarray_with_variable():
     assert sc.identical(da.data - da, expected)
 
 
-def test_mul_dataarray_with_variable():
+def test_mul_dataarray_with_variable() -> None:
     da = sc.DataArray(
         sc.arange('x', 1.0, 10.0), coords={'x': sc.arange('x', 10.0, 20.0)}
     )
@@ -240,7 +240,7 @@ def test_mul_dataarray_with_variable():
     assert sc.identical(da.data * da, expected)
 
 
-def test_truediv_dataarray_with_variable():
+def test_truediv_dataarray_with_variable() -> None:
     da = sc.DataArray(
         sc.arange('x', 1.0, 10.0), coords={'x': sc.arange('x', 10.0, 20.0)}
     )
@@ -249,7 +249,7 @@ def test_truediv_dataarray_with_variable():
     assert sc.identical(da.data / da, expected)
 
 
-def test_add_dataarray_with_scalar():
+def test_add_dataarray_with_scalar() -> None:
     da = sc.DataArray(
         sc.arange('x', 1.0, 10.0), coords={'x': sc.arange('x', 10.0, 20.0)}
     )
@@ -259,7 +259,7 @@ def test_add_dataarray_with_scalar():
     assert sc.identical(2.0 + da, expected)
 
 
-def test_sub_dataarray_with_scalar():
+def test_sub_dataarray_with_scalar() -> None:
     da = sc.DataArray(
         sc.arange('x', 1.0, 10.0), coords={'x': sc.arange('x', 10.0, 20.0)}
     )
@@ -270,7 +270,7 @@ def test_sub_dataarray_with_scalar():
     assert sc.identical(2.0 - da, expected)
 
 
-def test_mul_dataarray_with_scalar():
+def test_mul_dataarray_with_scalar() -> None:
     da = sc.DataArray(
         sc.arange('x', 1.0, 10.0), coords={'x': sc.arange('x', 10.0, 20.0)}
     )
@@ -280,7 +280,7 @@ def test_mul_dataarray_with_scalar():
     assert sc.identical(2.0 * da, expected)
 
 
-def test_truediv_dataarray_with_scalar():
+def test_truediv_dataarray_with_scalar() -> None:
     da = sc.DataArray(
         sc.arange('x', 1.0, 10.0), coords={'x': sc.arange('x', 10.0, 20.0)}
     )
@@ -291,7 +291,7 @@ def test_truediv_dataarray_with_scalar():
     assert sc.identical(2.0 / da, expected)
 
 
-def test_iadd_dataset_with_dataarray():
+def test_iadd_dataset_with_dataarray() -> None:
     da = sc.DataArray(
         sc.arange('x', 1.0, 10.0), coords={'x': sc.arange('x', 10.0, 20.0)}
     )
@@ -301,7 +301,7 @@ def test_iadd_dataset_with_dataarray():
     assert sc.identical(ds, expected)
 
 
-def test_isub_dataset_with_dataarray():
+def test_isub_dataset_with_dataarray() -> None:
     da = sc.DataArray(
         sc.arange('x', 1.0, 10.0), coords={'x': sc.arange('x', 10.0, 20.0)}
     )
@@ -311,7 +311,7 @@ def test_isub_dataset_with_dataarray():
     assert sc.identical(ds, expected)
 
 
-def test_imul_dataset_with_dataarray():
+def test_imul_dataset_with_dataarray() -> None:
     da = sc.DataArray(
         sc.arange('x', 1.0, 10.0), coords={'x': sc.arange('x', 10.0, 20.0)}
     )
@@ -321,7 +321,7 @@ def test_imul_dataset_with_dataarray():
     assert sc.identical(ds, expected)
 
 
-def test_itruediv_dataset_with_dataarray():
+def test_itruediv_dataset_with_dataarray() -> None:
     da = sc.DataArray(
         sc.arange('x', 1.0, 10.0), coords={'x': sc.arange('x', 10.0, 20.0)}
     )
@@ -331,7 +331,7 @@ def test_itruediv_dataset_with_dataarray():
     assert sc.identical(ds, expected)
 
 
-def test_iadd_dataset_with_scalar():
+def test_iadd_dataset_with_scalar() -> None:
     ds = sc.Dataset(
         data={'data': sc.arange('x', 10.0)}, coords={'x': sc.arange('x', 10.0, 20.0)}
     )
@@ -342,7 +342,7 @@ def test_iadd_dataset_with_scalar():
     assert sc.identical(ds, expected)
 
 
-def test_isub_dataset_with_scalar():
+def test_isub_dataset_with_scalar() -> None:
     ds = sc.Dataset(
         data={'data': sc.arange('x', 10.0)}, coords={'x': sc.arange('x', 10.0, 20.0)}
     )
@@ -353,7 +353,7 @@ def test_isub_dataset_with_scalar():
     assert sc.identical(ds, expected)
 
 
-def test_imul_dataset_with_scalar():
+def test_imul_dataset_with_scalar() -> None:
     ds = sc.Dataset(
         data={'data': sc.arange('x', 10.0)}, coords={'x': sc.arange('x', 10.0, 20.0)}
     )
@@ -364,7 +364,7 @@ def test_imul_dataset_with_scalar():
     assert sc.identical(ds, expected)
 
 
-def test_itruediv_dataset_with_scalar():
+def test_itruediv_dataset_with_scalar() -> None:
     ds = sc.Dataset(
         data={'data': sc.arange('x', 10.0)}, coords={'x': sc.arange('x', 10.0, 20.0)}
     )
@@ -375,7 +375,7 @@ def test_itruediv_dataset_with_scalar():
     assert sc.identical(ds, expected)
 
 
-def test_isub_dataset_with_dataset_broadcast():
+def test_isub_dataset_with_dataset_broadcast() -> None:
     ds = sc.Dataset(
         data={'data': sc.arange('x', 10.0)}, coords={'x': sc.arange('x', 10.0, 20.0)}
     )
@@ -384,29 +384,29 @@ def test_isub_dataset_with_dataset_broadcast():
     assert sc.identical(ds, expected)
 
 
-def test_add_function():
+def test_add_function() -> None:
     assert sc.identical(sc.add(sc.scalar(3), sc.scalar(2)), sc.scalar(5))
 
 
-def test_divide_function():
+def test_divide_function() -> None:
     assert sc.identical(sc.divide(sc.scalar(6), sc.scalar(2)), sc.scalar(3.0))
 
 
-def test_floor_divide_function():
+def test_floor_divide_function() -> None:
     assert sc.identical(sc.floor_divide(sc.scalar(6), sc.scalar(2.5)), sc.scalar(2.0))
 
 
-def test_mod_function():
+def test_mod_function() -> None:
     assert sc.identical(sc.mod(sc.scalar(3), sc.scalar(2)), sc.scalar(1))
 
 
-def test_multipy_function():
+def test_multipy_function() -> None:
     assert sc.identical(sc.multiply(sc.scalar(3), sc.scalar(2)), sc.scalar(6))
 
 
-def test_subtract_function():
+def test_subtract_function() -> None:
     assert sc.identical(sc.subtract(sc.scalar(3), sc.scalar(2)), sc.scalar(1))
 
 
-def test_negative_function():
+def test_negative_function() -> None:
     assert sc.identical(sc.negative(sc.scalar(3)), sc.scalar(-3))

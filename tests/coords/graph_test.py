@@ -138,7 +138,7 @@ def make_data(coords, dims=('x',)):
     )
 
 
-def test_children_of():
+def test_children_of() -> None:
     graph = graph_0()
     assert set(graph.children_of('a')) == {'d', 'e'}
     assert set(graph.children_of('b')) == {'d', 'e'}
@@ -149,7 +149,7 @@ def test_children_of():
     assert set(graph.children_of('g')) == set()
 
 
-def test_parents_of():
+def test_parents_of() -> None:
     graph = graph_0()
     assert set(graph.parents_of('a')) == set()
     assert set(graph.parents_of('b')) == set()
@@ -166,7 +166,7 @@ def assert_rule(graph, node, rule_type, dependencies):
     assert set(rule.dependencies) == dependencies
 
 
-def test_graph_for_graph_0():
+def test_graph_for_graph_0() -> None:
     base_graph = graph_0()
     da = make_data(('a', 'b', 'c'))
 
@@ -190,7 +190,7 @@ def test_graph_for_graph_0():
     assert_rule(graph, 'g', RenameRule, {'e'})
 
 
-def test_graph_for_graph_0_finds_intermediates():
+def test_graph_for_graph_0_finds_intermediates() -> None:
     base_graph = graph_0()
     da = make_data(('c', 'd'))
 
@@ -202,7 +202,7 @@ def test_graph_for_graph_0_finds_intermediates():
     assert 'b' not in graph.nodes()
 
 
-def test_graph_for_graph_1():
+def test_graph_for_graph_1() -> None:
     base_graph = graph_1()
     da = make_data(('a',))
 
@@ -217,7 +217,7 @@ def test_graph_for_graph_1():
     assert_rule(graph, 'd', ComputeRule, {'b', 'c'})
 
 
-def test_graph_for_graph_3():
+def test_graph_for_graph_3() -> None:
     base_graph = graph_3()
     da = make_data(('a', 'e'))
 

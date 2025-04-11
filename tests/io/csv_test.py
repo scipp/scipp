@@ -11,7 +11,7 @@ from scipp.testing import assert_identical
 _ = pytest.importorskip('pandas')
 
 
-def test_load_csv_dataset_default_sep():
+def test_load_csv_dataset_default_sep() -> None:
     csv = '''x,y,z
 1,2,3
 4,5,6
@@ -30,7 +30,7 @@ def test_load_csv_dataset_default_sep():
 
 
 @pytest.mark.parametrize('sep', ['\t', '/'])
-def test_load_csv_dataset_choose_separator(sep):
+def test_load_csv_dataset_choose_separator(sep) -> None:
     csv = '''x,y,z
 1,2,3
 4,5,6
@@ -48,7 +48,7 @@ def test_load_csv_dataset_choose_separator(sep):
     assert_identical(loaded, expected)
 
 
-def test_load_csv_dataset_select_data():
+def test_load_csv_dataset_select_data() -> None:
     csv = '''abc,xyz,foo
 1.2,3.4,5.6
 0.8,0.6,0.4'''
@@ -66,7 +66,7 @@ def test_load_csv_dataset_select_data():
     assert_identical(loaded, expected)
 
 
-def test_load_csv_parse_units():
+def test_load_csv_parse_units() -> None:
     csv = '''abc [m], [kg/s], foo
 1.2,3.4,5.6
 0.8,0.6,0.4'''
@@ -82,7 +82,7 @@ def test_load_csv_parse_units():
     assert_identical(loaded, expected)
 
 
-def test_load_csv_kwargs():
+def test_load_csv_kwargs() -> None:
     csv = '''# First line of header
 # Second line of header
 x,y,z

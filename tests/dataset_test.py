@@ -8,12 +8,12 @@ import pytest
 import scipp as sc
 
 
-def test_init_default():
+def test_init_default() -> None:
     with pytest.raises(TypeError):
         sc.Dataset()
 
 
-def test_init_empty():
+def test_init_empty() -> None:
     ds = sc.Dataset({})
     assert ds.sizes == {}
     assert len(ds) == 0
@@ -27,13 +27,13 @@ def test_init_empty():
     assert len(ds) == 0
 
 
-def test_init_dict_of_variables():
+def test_init_dict_of_variables() -> None:
     d = sc.Dataset({'a': sc.arange('x', 5), 'b': sc.arange('x', 5, 10, unit='m')})
     assert sc.identical(d['a'], sc.DataArray(sc.arange('x', 5)))
     assert sc.identical(d['b'], sc.DataArray(sc.arange('x', 5, 10, unit='m')))
 
 
-def test_init_dict_of_dataarrays():
+def test_init_dict_of_dataarrays() -> None:
     d = sc.Dataset(
         {
             'a': sc.DataArray(sc.arange('x', 5)),
@@ -53,7 +53,7 @@ def test_init_dict_of_dataarrays():
     )
 
 
-def test_init_dict_of_dataarray_and_variable():
+def test_init_dict_of_dataarray_and_variable() -> None:
     d = sc.Dataset(
         {
             'a': sc.arange('x', 5),
@@ -73,7 +73,7 @@ def test_init_dict_of_dataarray_and_variable():
     )
 
 
-def test_init_data_from_dataset():
+def test_init_data_from_dataset() -> None:
     d1 = sc.Dataset(
         {
             'a': sc.arange('x', 5),
@@ -94,7 +94,7 @@ def test_init_data_from_dataset():
     )
 
 
-def test_init_iterator_of_tuples():
+def test_init_iterator_of_tuples() -> None:
     d = sc.Dataset(
         {'a': sc.arange('x', 5), 'b': sc.arange('x', 5, 10, unit='m')}.items()
     )
@@ -102,7 +102,7 @@ def test_init_iterator_of_tuples():
     assert sc.identical(d['b'], sc.DataArray(sc.arange('x', 5, 10, unit='m')))
 
 
-def test_init_extra_coords_from_dict():
+def test_init_extra_coords_from_dict() -> None:
     d = sc.Dataset(
         {'a': sc.arange('x', 5), 'b': sc.arange('x', 5, 10, unit='m')},
         coords={'x': sc.arange('x', 5), 'y': sc.arange('x', 6)},
@@ -122,7 +122,7 @@ def test_init_extra_coords_from_dict():
     )
 
 
-def test_init_extra_coords_from_coords_object():
+def test_init_extra_coords_from_coords_object() -> None:
     da = sc.DataArray(
         sc.arange('x', 5), coords={'x': sc.arange('x', 5), 'z': sc.scalar('zz')}
     )
@@ -144,7 +144,7 @@ def test_init_extra_coords_from_coords_object():
     )
 
 
-def test_init_extra_coords_from_iterator_of_tuples():
+def test_init_extra_coords_from_iterator_of_tuples() -> None:
     d = sc.Dataset(
         {'a': sc.arange('x', 5), 'b': sc.arange('x', 5, 10, unit='m')},
         coords={'x': sc.arange('x', 5), 'y': sc.arange('x', 5, 11)}.items(),
@@ -165,7 +165,7 @@ def test_init_extra_coords_from_iterator_of_tuples():
     )
 
 
-def test_init_coords_only():
+def test_init_coords_only() -> None:
     d = sc.Dataset(coords={'x': sc.arange('x', 5), 'y': sc.arange('x', 5, 11)})
     assert len(d) == 0
     assert len(d.coords) == 2
@@ -173,7 +173,7 @@ def test_init_coords_only():
     assert sc.identical(d.coords['y'], sc.arange('x', 5, 11))
 
 
-def test_dims():
+def test_dims() -> None:
     a = sc.scalar(1)
     d = sc.Dataset(data={'a': a})
     assert d.dims == ()
@@ -182,7 +182,7 @@ def test_dims():
     assert set(d.dims) == {'x', 'y'}
 
 
-def test_shape():
+def test_shape() -> None:
     a = sc.scalar(1)
     d = sc.Dataset(data={'a': a})
     assert d.shape == ()
@@ -191,7 +191,7 @@ def test_shape():
     assert set(d.shape) == {2, 3}
 
 
-def test_sizes():
+def test_sizes() -> None:
     d = sc.Dataset(data={'a': sc.scalar(value=1)})
     assert d.sizes == {}
     a = sc.empty(dims=['y', 'x'], shape=[3, 2])
@@ -199,34 +199,34 @@ def test_sizes():
     assert d.sizes == {'x': 2, 'y': 3}
 
 
-def test_clear():
+def test_clear() -> None:
     d = sc.Dataset({'a': sc.Variable(dims=['x'], values=np.arange(3))})
     assert 'a' in d
     d.clear()
     assert len(d) == 0
 
 
-def test_setitem():
+def test_setitem() -> None:
     d = sc.Dataset({'a': sc.scalar(1.0)})
     assert len(d) == 1
     assert sc.identical(d['a'].data, sc.scalar(1.0))
     assert len(d.coords) == 0
 
 
-def test_del_item():
+def test_del_item() -> None:
     d = sc.Dataset({'a': sc.scalar(1.0)})
     assert 'a' in d
     del d['a']
     assert 'a' not in d
 
 
-def test_del_item_missing():
+def test_del_item_missing() -> None:
     d = sc.Dataset({'a': sc.scalar(1.0)})
     with pytest.raises(KeyError):
         del d['not an item']
 
 
-def test_update_from_dict_adds_items():
+def test_update_from_dict_adds_items() -> None:
     a = sc.DataArray(sc.scalar(1.0))
     b = sc.DataArray(sc.scalar(2.0))
     b2 = sc.DataArray(sc.scalar(3.0))
@@ -238,7 +238,7 @@ def test_update_from_dict_adds_items():
     assert sc.identical(d['c'], c)
 
 
-def test_update_from_dataset_adds_items():
+def test_update_from_dataset_adds_items() -> None:
     a = sc.DataArray(sc.scalar(1.0))
     b = sc.DataArray(sc.scalar(2.0))
     b2 = sc.DataArray(sc.scalar(3.0))
@@ -250,7 +250,7 @@ def test_update_from_dataset_adds_items():
     assert sc.identical(d['c'], c)
 
 
-def test_update_from_sequence_of_tuples_adds_items():
+def test_update_from_sequence_of_tuples_adds_items() -> None:
     a = sc.DataArray(sc.scalar(1.0))
     b = sc.DataArray(sc.scalar(2.0))
     b2 = sc.DataArray(sc.scalar(3.0))
@@ -262,7 +262,7 @@ def test_update_from_sequence_of_tuples_adds_items():
     assert sc.identical(d['c'], c)
 
 
-def test_update_from_iterable_of_tuples_adds_items():
+def test_update_from_iterable_of_tuples_adds_items() -> None:
     a = sc.DataArray(sc.scalar(1.0))
     b = sc.DataArray(sc.scalar(2.0))
     b2 = sc.DataArray(sc.scalar(3.0))
@@ -279,7 +279,7 @@ def test_update_from_iterable_of_tuples_adds_items():
     assert sc.identical(d['c'], c)
 
 
-def test_update_from_kwargs_adds_items():
+def test_update_from_kwargs_adds_items() -> None:
     a = sc.DataArray(sc.scalar(1.0))
     b = sc.DataArray(sc.scalar(2.0))
     b2 = sc.DataArray(sc.scalar(3.0))
@@ -291,7 +291,7 @@ def test_update_from_kwargs_adds_items():
     assert sc.identical(d['c'], c)
 
 
-def test_update_from_kwargs_overwrites_other_dict():
+def test_update_from_kwargs_overwrites_other_dict() -> None:
     a = sc.DataArray(sc.scalar(1.0))
     b = sc.DataArray(sc.scalar(2.0))
     b2 = sc.DataArray(sc.scalar(3.0))
@@ -301,26 +301,26 @@ def test_update_from_kwargs_overwrites_other_dict():
     assert sc.identical(d['b'], b2)
 
 
-def test_ipython_key_completion():
+def test_ipython_key_completion() -> None:
     var = sc.Variable(dims=['x'], values=np.arange(4))
     da = sc.DataArray(data=var, coords={'x': var, 'aux': var})
     ds = sc.Dataset(data={'array 1': da, 'array 2': da})
     assert set(ds._ipython_key_completions_()) == set(ds.keys())
 
 
-def test_slice_item():
+def test_slice_item() -> None:
     d = sc.Dataset({'a': sc.arange('x', 4)}, coords={'x': sc.arange('x', 4, 8)})
     assert sc.identical(d['a']['x', 2:4].data, sc.arange('x', 2, 4))
     assert sc.identical(d['a']['x', 2:4].coords['x'], sc.arange('x', 6, 8))
 
 
-def test_set_item_slice_from_numpy():
+def test_set_item_slice_from_numpy() -> None:
     d = sc.Dataset({'a': sc.arange('x', 4)}, coords={'x': sc.arange('x', 4, 8)})
     d['a']['x', 2:4] = np.arange(2)
     assert sc.identical(d['a'].data, sc.array(dims=['x'], values=[0, 1, 0, 1]))
 
 
-def test_set_item_slice_with_variances_from_numpy():
+def test_set_item_slice_with_variances_from_numpy() -> None:
     d = sc.Dataset(
         {'a': sc.array(dims=['x'], values=np.arange(4.0), variances=np.arange(4.0))},
         coords={'x': sc.arange('x', 4, 8)},
@@ -331,13 +331,13 @@ def test_set_item_slice_with_variances_from_numpy():
     assert np.array_equal(d['a'].variances, np.array([0.0, 1.0, 2.0, 3.0]))
 
 
-def test_iadd_slice():
+def test_iadd_slice() -> None:
     d = sc.Dataset({'a': sc.arange('x', 4)}, coords={'x': sc.arange('x', 4, 8)})
     d['a']['x', 1] += d['a']['x', 2]
     assert sc.identical(d['a'].data, sc.array(dims=['x'], values=[0, 3, 2, 3]))
 
 
-def test_iadd_range():
+def test_iadd_range() -> None:
     d = sc.Dataset({'a': sc.arange('x', 4)}, coords={'x': sc.arange('x', 4, 8)})
     with pytest.raises(RuntimeError):
         d['a']['x', 2:4] += d['a']['x', 1:3]
@@ -345,7 +345,7 @@ def test_iadd_range():
     assert sc.identical(d['a'].data, sc.array(dims=['x'], values=[0, 1, 4, 6]))
 
 
-def test_contains():
+def test_contains() -> None:
     d = sc.Dataset({'a': sc.scalar(1.0)})
     assert 'a' in d
     assert 'b' not in d
@@ -354,7 +354,7 @@ def test_contains():
     assert 'b' in d
 
 
-def test_slice():
+def test_slice() -> None:
     d = sc.Dataset(
         data={
             'a': sc.arange('x', 10.0),
@@ -370,7 +370,7 @@ def test_slice():
     assert sc.identical(d['x', 1], expected)
 
 
-def test_chained_slicing():
+def test_chained_slicing() -> None:
     x = sc.arange('x', 11.0)
     y = sc.arange('y', 11.0)
     z = sc.arange('z', 11.0)
@@ -393,7 +393,7 @@ def test_chained_slicing():
     assert sc.identical(d['x', 1]['z', 5], expected)
 
 
-def test_dataset_merge():
+def test_dataset_merge() -> None:
     a = sc.Dataset(data={'d1': sc.Variable(dims=['x'], values=np.array([1, 2, 3]))})
     b = sc.Dataset(data={'d2': sc.Variable(dims=['x'], values=np.array([4, 5, 6]))})
     c = sc.merge(a, b)
@@ -401,7 +401,7 @@ def test_dataset_merge():
     assert sc.identical(b['d2'], c['d2'])
 
 
-def test_dataset_concat():
+def test_dataset_concat() -> None:
     a = sc.Dataset(
         data={'data': sc.Variable(dims=['x'], values=np.array([11, 12]))},
         coords={'x': sc.Variable(dims=['x'], values=np.array([1, 2]))},
@@ -417,7 +417,7 @@ def test_dataset_concat():
     assert np.array_equal(c['data'].values, np.array([11, 12, 13, 14]))
 
 
-def test_dataset_set_data():
+def test_dataset_set_data() -> None:
     d1 = sc.Dataset(
         data={
             'a': sc.array(dims=['x', 'y'], values=np.random.rand(2, 3)),
@@ -468,7 +468,7 @@ def test_dataset_set_data():
     assert sc.identical(d2, expected)
 
 
-def test_add_sum_of_columns():
+def test_add_sum_of_columns() -> None:
     d = sc.Dataset(
         data={
             'a': sc.Variable(dims=['x'], values=np.arange(10.0)),
@@ -480,7 +480,7 @@ def test_add_sum_of_columns():
     assert sc.identical(d['sum'], d['a'])
 
 
-def test_name():
+def test_name() -> None:
     d = sc.Dataset(
         data={
             'a': sc.Variable(dims=['x'], values=np.arange(10.0)),
@@ -511,7 +511,7 @@ def make_simple_dataset(dim1='x', dim2='y', seed=None):
     )
 
 
-def test_dataset_view_set_variance():
+def test_dataset_view_set_variance() -> None:
     d = make_simple_dataset()
     variances = np.arange(6).reshape(2, 3)
     assert d['a'].variances is None
@@ -522,7 +522,7 @@ def test_dataset_view_set_variance():
     assert d['a'].variances is None
 
 
-def test_sort():
+def test_sort() -> None:
     d = sc.Dataset(
         data={
             'a': sc.array(dims=['x', 'y'], values=np.arange(6).reshape(2, 3)),
@@ -548,7 +548,7 @@ def test_sort():
     assert sc.identical(sc.sort(d, sc.array(dims=['x'], values=['b', 'a'])), expected)
 
 
-def test_rename_dims():
+def test_rename_dims() -> None:
     d = make_simple_dataset('x', 'y', seed=0)
     original = d.copy()
     renamed = d.rename_dims({'y': 'z'})
@@ -563,7 +563,7 @@ def test_rename_dims():
     assert sc.identical(renamed, make_simple_dataset('y', 'x', seed=0))
 
 
-def test_rename():
+def test_rename() -> None:
     d = make_simple_dataset('x', 'y', seed=0)
     original = d.copy()
     renamed = d.rename({'y': 'z'})
@@ -573,7 +573,7 @@ def test_rename():
     assert sc.identical(renamed, make_simple_dataset('y', 'x', seed=0))
 
 
-def test_rename_kwargs():
+def test_rename_kwargs() -> None:
     d = make_simple_dataset('x', 'y', seed=0)
     renamed = d.rename(y='z')
     assert sc.identical(renamed, make_simple_dataset('x', 'z', seed=0))
@@ -581,7 +581,7 @@ def test_rename_kwargs():
     assert sc.identical(renamed, make_simple_dataset('y', 'x', seed=0))
 
 
-def test_replace():
+def test_replace() -> None:
     v1 = sc.Variable(dims=['x'], values=np.array([1, 2, 3]))
     d = sc.Dataset(data={'a': v1})
     assert sc.identical(d['a'].data, v1)
@@ -590,7 +590,7 @@ def test_replace():
     assert sc.identical(d['a'].data, v2)
 
 
-def test_rebin():
+def test_rebin() -> None:
     dataset = sc.Dataset(
         {
             'data': sc.array(
@@ -619,7 +619,7 @@ def _is_deep_copy_of(orig, copy):
     assert not sc.identical(orig, copy)
 
 
-def test_copy():
+def test_copy() -> None:
     import copy
 
     a = sc.Dataset({'x': sc.scalar(1)})
@@ -629,7 +629,7 @@ def test_copy():
     _is_deep_copy_of(a, copy.deepcopy(a))
 
 
-def test_iteration():
+def test_iteration() -> None:
     var = sc.scalar(1)
     d = sc.Dataset(data={'a': var, 'b': var})
     expected = ['a', 'b']
@@ -637,7 +637,7 @@ def test_iteration():
         assert k in expected
 
 
-def test_is_edges():
+def test_is_edges() -> None:
     da = sc.DataArray(
         sc.zeros(sizes={'a': 2, 'b': 3}),
         coords={'coord': sc.zeros(sizes={'a': 3})},
@@ -648,7 +648,7 @@ def test_is_edges():
     assert not da.masks.is_edges('mask', 'b')
 
 
-def test_drop_coords():
+def test_drop_coords() -> None:
     coord0 = sc.linspace('x', start=0.2, stop=1.61, num=4)
     coord1 = sc.linspace('y', start=1, stop=4, num=3)
     coord2 = sc.linspace('z', start=-12, stop=0, num=5)
@@ -671,7 +671,7 @@ def test_drop_coords():
     assert sc.identical(ds.drop_coords('coord1'), expected_ds)
 
 
-def test_assign_coords():
+def test_assign_coords() -> None:
     data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
     ds_o = sc.Dataset(data={'data': data})
 
@@ -692,7 +692,7 @@ def test_assign_coords():
     )
 
 
-def test_assign_coords_kwargs():
+def test_assign_coords_kwargs() -> None:
     data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
     ds_o = sc.Dataset(data={'data': data})
 
@@ -713,7 +713,7 @@ def test_assign_coords_kwargs():
     )
 
 
-def test_assign_coords_overlapping_names():
+def test_assign_coords_overlapping_names() -> None:
     data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
     ds = sc.Dataset(data={'data0': data})
     coord0 = sc.linspace('x', start=0.2, stop=1.61, num=4)
@@ -722,7 +722,7 @@ def test_assign_coords_overlapping_names():
         ds.assign_coords({'coord0': coord0}, coord0=coord0)
 
 
-def test_assign_update_coords():
+def test_assign_update_coords() -> None:
     data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
     coord0_o = sc.linspace('x', start=0.2, stop=1.61, num=4)
     coord1_o = sc.linspace('y', start=1, stop=4, num=3)

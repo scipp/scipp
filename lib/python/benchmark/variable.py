@@ -1,21 +1,19 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
-# @file
 import time
 
 import numpy as np
 
 import scipp as sc
-from scipp import Dim
 
 
-def assign_from_numpy_1d(size):
+def assign_from_numpy_1d(size: int) -> dict[str, object]:
     a = np.arange(size, dtype=np.float64)
 
-    v = sc.Variable(dims=[Dim.X], values=a)
+    v = sc.Variable(dims=['x'], values=a)
 
     n_iterations = 10
-    total_time = 0
+    total_time = 0.0
 
     for _ in range(n_iterations):
         start_time = time.perf_counter()

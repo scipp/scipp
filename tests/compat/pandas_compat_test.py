@@ -31,7 +31,7 @@ def _make_nd_reference_ds(row_name, row_coords, data, dtype="int64"):
     )
 
 
-def test_series():
+def test_series() -> None:
     pd_df = pandas.Series(data=[1, 2, 3])
 
     sc_ds = from_pandas(pd_df)
@@ -41,7 +41,7 @@ def test_series():
     assert sc.identical(sc_ds, reference_da)
 
 
-def test_series_with_named_axis():
+def test_series_with_named_axis() -> None:
     pd_df = pandas.Series(data=[1, 2, 3])
     pd_df.rename_axis("row-name", inplace=True)
 
@@ -52,7 +52,7 @@ def test_series_with_named_axis():
     assert sc.identical(sc_ds, reference_da)
 
 
-def test_series_with_named_axis_non_str():
+def test_series_with_named_axis_non_str() -> None:
     pd_df = pandas.Series(data=[1, 2, 3])
     pd_df.rename_axis(987, inplace=True)
 
@@ -63,7 +63,7 @@ def test_series_with_named_axis_non_str():
     assert sc.identical(sc_ds, reference_da)
 
 
-def test_series_with_named_series():
+def test_series_with_named_series() -> None:
     pd_df = pandas.Series(data=[1, 2, 3])
     pd_df.name = "the name"
 
@@ -75,7 +75,7 @@ def test_series_with_named_series():
     assert sc.identical(sc_ds, reference_da)
 
 
-def test_series_with_named_series_no_str():
+def test_series_with_named_series_no_str() -> None:
     pd_df = pandas.Series(data=[1, 2, 3])
     pd_df.name = 8461
 
@@ -87,7 +87,7 @@ def test_series_with_named_series_no_str():
     assert sc.identical(sc_ds, reference_da)
 
 
-def test_series_with_named_series_and_named_axis():
+def test_series_with_named_series_and_named_axis() -> None:
     pd_df = pandas.Series(data=[1, 2, 3])
     pd_df.rename_axis("axis-name", inplace=True)
     pd_df.name = "series-name"
@@ -100,7 +100,7 @@ def test_series_with_named_series_and_named_axis():
     assert sc.identical(sc_ds, reference_da)
 
 
-def test_series_with_trivial_index_coord():
+def test_series_with_trivial_index_coord() -> None:
     pd_df = pandas.Series(data=[1, 2, 3])
 
     sc_ds = from_pandas(pd_df, include_trivial_index=True)
@@ -112,7 +112,7 @@ def test_series_with_trivial_index_coord():
 
 
 @pytest.mark.parametrize('include_trivial_index', [True, False])
-def test_series_with_nontrivial_index_coord(include_trivial_index):
+def test_series_with_nontrivial_index_coord(include_trivial_index) -> None:
     pd_df = pandas.Series(data=[1, 2, 3], index=[-1, -2, -3])
 
     sc_ds = from_pandas(pd_df, include_trivial_index=include_trivial_index)
@@ -123,7 +123,7 @@ def test_series_with_nontrivial_index_coord(include_trivial_index):
     assert sc.identical(sc_ds, reference_da)
 
 
-def test_series_without_name_parse_bracket_header():
+def test_series_without_name_parse_bracket_header() -> None:
     pd_df = pandas.Series(data=[1, 2, 3])
 
     sc_ds = from_pandas(pd_df, header_parser="bracket")
@@ -134,7 +134,7 @@ def test_series_without_name_parse_bracket_header():
     assert sc.identical(sc_ds, reference_da)
 
 
-def test_1d_dataframe():
+def test_1d_dataframe() -> None:
     pd_df = pandas.DataFrame(data=[1, 2, 3])
 
     sc_ds = from_pandas(pd_df)
@@ -144,7 +144,7 @@ def test_1d_dataframe():
     assert sc.identical(sc_ds, reference_ds)
 
 
-def test_1d_dataframe_with_named_axis():
+def test_1d_dataframe_with_named_axis() -> None:
     pd_df = pandas.DataFrame(data={"my-column": [1, 2, 3]})
     pd_df.rename_axis("1d_df", inplace=True)
 
@@ -155,7 +155,7 @@ def test_1d_dataframe_with_named_axis():
     assert sc.identical(sc_ds, reference_ds)
 
 
-def test_1d_dataframe_with_trivial_index_coord():
+def test_1d_dataframe_with_trivial_index_coord() -> None:
     pd_df = pandas.DataFrame(data=[1, 2, 3])
 
     sc_ds = from_pandas(pd_df, include_trivial_index=True)
@@ -167,7 +167,7 @@ def test_1d_dataframe_with_trivial_index_coord():
 
 
 @pytest.mark.parametrize('include_trivial_index', [True, False])
-def test_1d_dataframe_with_nontrivial_index_coord(include_trivial_index):
+def test_1d_dataframe_with_nontrivial_index_coord(include_trivial_index) -> None:
     pd_df = pandas.DataFrame(data=[1, 2, 3], index=[-1, -2, -3])
 
     sc_ds = from_pandas(pd_df, include_trivial_index=include_trivial_index)
@@ -178,7 +178,7 @@ def test_1d_dataframe_with_nontrivial_index_coord(include_trivial_index):
     assert sc.identical(sc_ds, reference_ds)
 
 
-def test_2d_dataframe():
+def test_2d_dataframe() -> None:
     pd_df = pandas.DataFrame(data={"col1": (2, 3), "col2": (5, 6)})
 
     sc_ds = from_pandas(pd_df)
@@ -190,7 +190,7 @@ def test_2d_dataframe():
     assert sc.identical(sc_ds, reference_ds)
 
 
-def test_2d_dataframe_with_named_axes():
+def test_2d_dataframe_with_named_axes() -> None:
     pd_df = pandas.DataFrame(data={"col1": (2, 3), "col2": (5, 6)})
     pd_df.rename_axis("my-name-for-rows", inplace=True)
 
@@ -203,7 +203,7 @@ def test_2d_dataframe_with_named_axes():
     assert sc.identical(sc_ds, reference_ds)
 
 
-def test_dataframe_select_single_data():
+def test_dataframe_select_single_data() -> None:
     pd_df = pandas.DataFrame(data={"col1": (1, 2), "col2": (6, 3), "col3": (4, 0)})
 
     sc_ds = from_pandas(pd_df, data_columns="col2")
@@ -223,7 +223,7 @@ def test_dataframe_select_single_data():
     assert_identical(sc_ds, reference_ds)
 
 
-def test_dataframe_select_multiple_data():
+def test_dataframe_select_multiple_data() -> None:
     pd_df = pandas.DataFrame(data={"col1": (1, 2), "col2": (6, 3), "col3": (4, 0)})
 
     sc_ds = from_pandas(pd_df, data_columns=["col3", "col1"])
@@ -234,7 +234,7 @@ def test_dataframe_select_multiple_data():
     assert_identical(sc_ds, reference_ds)
 
 
-def test_dataframe_select_no_data():
+def test_dataframe_select_no_data() -> None:
     pd_df = pandas.DataFrame(data={"col1": (1, 2), "col2": (6, 3), "col3": (4, 0)})
 
     sc_ds = from_pandas(pd_df, data_columns=[])
@@ -247,14 +247,14 @@ def test_dataframe_select_no_data():
     assert_identical(sc_ds, reference_ds)
 
 
-def test_dataframe_select_undefined_raises():
+def test_dataframe_select_undefined_raises() -> None:
     pd_df = pandas.DataFrame(data={"col1": (1, 2), "col2": (6, 3), "col3": (4, 0)})
 
     with pytest.raises(KeyError):
         _ = from_pandas(pd_df, data_columns=["unknown"])
 
 
-def test_2d_dataframe_does_not_parse_units_by_default():
+def test_2d_dataframe_does_not_parse_units_by_default() -> None:
     pd_df = pandas.DataFrame(data={"col1 [m]": (1, 2), "col2 [one]": (6, 3)})
 
     sc_ds = from_pandas(pd_df)
@@ -266,7 +266,7 @@ def test_2d_dataframe_does_not_parse_units_by_default():
     assert_identical(sc_ds, reference_ds)
 
 
-def test_2d_dataframe_parse_units_brackets():
+def test_2d_dataframe_parse_units_brackets() -> None:
     pd_df = pandas.DataFrame(data={"col1 [m]": (1, 2), "col2 [one]": (6, 3)})
 
     sc_ds = from_pandas(pd_df, header_parser="bracket")
@@ -280,7 +280,7 @@ def test_2d_dataframe_parse_units_brackets():
     assert_identical(sc_ds, reference_ds)
 
 
-def test_2d_dataframe_parse_units_brackets_string_dtype():
+def test_2d_dataframe_parse_units_brackets_string_dtype() -> None:
     pd_df = pandas.DataFrame(
         data={"col1 [m]": ("a", "b"), "col2": ("c", "d")}, dtype="string"
     )
@@ -299,7 +299,7 @@ def test_2d_dataframe_parse_units_brackets_string_dtype():
     assert_identical(sc_ds, reference_ds)
 
 
-def test_parse_bracket_header_whitespace():
+def test_parse_bracket_header_whitespace() -> None:
     name, unit = parse_bracket_header("")
     assert name == ""
     assert unit is None
@@ -309,7 +309,7 @@ def test_parse_bracket_header_whitespace():
     assert unit is None
 
 
-def test_parse_bracket_header_only_name():
+def test_parse_bracket_header_only_name() -> None:
     name, unit = parse_bracket_header("a name 123")
     assert name == "a name 123"
     assert unit is None
@@ -319,7 +319,7 @@ def test_parse_bracket_header_only_name():
     assert unit is None
 
 
-def test_parse_bracket_header_only_unit():
+def test_parse_bracket_header_only_unit() -> None:
     name, unit = parse_bracket_header("[m]")
     assert name == ""
     assert unit == "m"
@@ -329,7 +329,7 @@ def test_parse_bracket_header_only_unit():
     assert unit == "kg"
 
 
-def test_parse_bracket_header_name_and_unit():
+def test_parse_bracket_header_name_and_unit() -> None:
     name, unit = parse_bracket_header("the name [s]")
     assert name == "the name"
     assert unit == "s"
@@ -339,13 +339,13 @@ def test_parse_bracket_header_name_and_unit():
     assert unit == "A"
 
 
-def test_parse_bracket_header_empty_unit():
+def test_parse_bracket_header_empty_unit() -> None:
     name, unit = parse_bracket_header("name []")
     assert name == "name"
     assert unit == sc.units.default_unit
 
 
-def test_parse_bracket_header_dimensionless():
+def test_parse_bracket_header_dimensionless() -> None:
     name, unit = parse_bracket_header("name [one]")
     assert name == "name"
     assert unit == "one"
@@ -355,19 +355,19 @@ def test_parse_bracket_header_dimensionless():
     assert unit == "one"
 
 
-def test_parse_bracket_header_complex_unit():
+def test_parse_bracket_header_complex_unit() -> None:
     name, unit = parse_bracket_header("name [m / s**2]")
     assert name == "name"
     assert unit == "m/s**2"
 
 
-def test_parse_bracket_header_bad_string():
+def test_parse_bracket_header_bad_string() -> None:
     name, unit = parse_bracket_header("too [many] [brackets]")
     assert name == "too [many] [brackets]"
     assert unit is None
 
 
-def test_parse_bracket_header_bad_unit():
+def test_parse_bracket_header_bad_unit() -> None:
     name, unit = parse_bracket_header("label [bogus]")
     assert name == "label [bogus]"
     assert unit is None

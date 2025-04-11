@@ -22,7 +22,7 @@ import scipp as sc
         sc.array(dims=['e'], values=[512, 1662], unit='s'),
     ],
 )
-def test_variable_default(var):
+def test_variable_default(var) -> None:
     assert f'{var}' == str(var)
     assert f'{var:}' == str(var)
     assert f'{var::}' == str(var)
@@ -30,7 +30,7 @@ def test_variable_default(var):
 
 
 @pytest.mark.parametrize('s', ['^', ''])
-def test_variable_default_length_central(s):
+def test_variable_default_length_central(s) -> None:
     var = sc.arange('x', 10)
     assert '[0, 1, ..., 8, 9]' in f'{var:{s}}'
     assert '[0, 1, ..., 8, 9]' in f'{var:{s}#4}'
@@ -57,7 +57,7 @@ def test_variable_default_length_central(s):
     assert '...' in f'{var:{s}#0}'
 
 
-def test_variable_default_length_left():
+def test_variable_default_length_left() -> None:
     var = sc.arange('x', 10)
     assert '[0, 1, 2, 3, ...]' in f'{var:<}'
     assert '[0, 1, 2, 3, ...]' in f'{var:<#4}'
@@ -84,7 +84,7 @@ def test_variable_default_length_left():
     assert '...' in f'{var:<#0}'
 
 
-def test_variable_default_length_right():
+def test_variable_default_length_right() -> None:
     var = sc.arange('x', 10)
     assert '[..., 6, 7, 8, 9]' in f'{var:>}'
     assert '[..., 6, 7, 8, 9]' in f'{var:>#4}'
@@ -111,7 +111,7 @@ def test_variable_default_length_right():
     assert '...' in f'{var:>#0}'
 
 
-def test_variable_default_variances():
+def test_variable_default_variances() -> None:
     var = sc.arange('x', 10.0)
     var.variances = var.values
     var.values *= -1
@@ -121,14 +121,14 @@ def test_variable_default_variances():
     assert '[0, 1, 2, 3, 4, ...]' in f'{var:<#5}'
 
 
-def test_variable_default_nested_exponential():
+def test_variable_default_nested_exponential() -> None:
     var = sc.array(dims=['ys'], values=[1.2345, 654.98], unit='kg')
     res = f'{var::.2e}'
     assert f'{1.2345:.2e}' in res
     assert f'{654.98:.2e}' in res
 
 
-def test_variable_default_forwards_to_nested_scalar():
+def test_variable_default_forwards_to_nested_scalar() -> None:
     class C:
         def __format__(self, format_spec: str) -> str:
             return f'NESTED-{format_spec}'
@@ -137,12 +137,12 @@ def test_variable_default_forwards_to_nested_scalar():
     assert 'NESTED-abcd#0' in f'{var::abcd#0}'
 
 
-def test_variable_compact_scalar_no_variance():
+def test_variable_compact_scalar_no_variance() -> None:
     var = sc.scalar(100, unit='s')
     assert f'{var:c}' == '100 s'
 
 
-def test_variable_compact_scalar_with_variance():
+def test_variable_compact_scalar_with_variance() -> None:
     scalar_variables = [
         (100.0, 1.0, 'm', '100.0(10) m'),
         (100.0, 2.0, '1', '100(2)'),
@@ -165,12 +165,12 @@ def test_variable_compact_scalar_with_variance():
         assert f'{var:c}' == expected
 
 
-def test_variable_compact_array_no_variance():
+def test_variable_compact_array_no_variance() -> None:
     var = sc.array(dims=['fg'], values=[100, 20, 3], unit='s')
     assert f'{var:c}' == '100, 20, 3 s'
 
 
-def test_variable_compact_array_with_variance():
+def test_variable_compact_array_with_variance() -> None:
     array_variables = [
         ([100.0, 20.0], [1.0, 2.0], 'm', '100.0(10), 20(2) m'),
         (
@@ -188,7 +188,7 @@ def test_variable_compact_array_with_variance():
         assert f'{var:c}' == expected
 
 
-def test_variable_compact_raises_for_length():
+def test_variable_compact_raises_for_length() -> None:
     var = sc.scalar(2)
     with pytest.raises(ValueError, match='Invalid format spec'):
         f'{var:#3c}'
@@ -198,7 +198,7 @@ def test_variable_compact_raises_for_length():
         f'{var:#6c}'
 
 
-def test_variable_compact_raises_for_selection():
+def test_variable_compact_raises_for_selection() -> None:
     var = sc.scalar(2)
     with pytest.raises(ValueError, match='Invalid format spec'):
         f'{var:<c}'
@@ -208,13 +208,13 @@ def test_variable_compact_raises_for_selection():
         f'{var:^c}'
 
 
-def test_variable_compact_raises_for_nested():
+def test_variable_compact_raises_for_nested() -> None:
     var = sc.scalar(2)
     with pytest.raises(ValueError, match='Invalid format spec'):
         f'{var:c:f}'
 
 
-def test_variable_compact_only_supports_numeric_dtype():
+def test_variable_compact_only_supports_numeric_dtype() -> None:
     var = sc.scalar('a string')
     with pytest.raises(ValueError, match='Compact formatting.*string'):
         f'{var:c}'

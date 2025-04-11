@@ -102,7 +102,7 @@ def _concrete_args(
     draw: st.DrawFn, args: dict[str, st.SearchStrategy | Any]
 ) -> dict[str, Any]:
     def _draw(x: st.SearchStrategy[Ex] | Ex) -> Ex:
-        return draw(x) if isinstance(x, st.SearchStrategy) else x  # type:ignore[no-any-return]
+        return draw(x) if isinstance(x, st.SearchStrategy) else x
 
     concrete = {key: _draw(val) for key, val in args.items()}
     if isinstance(concrete['with_variances'], _ConditionallyWithVariances):

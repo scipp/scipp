@@ -2,13 +2,14 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Jan-Lukas Wynen
 from copy import copy, deepcopy
+from typing import Any
 
 import numpy as np
 
 import scipp as sc
 
 
-def make_variable(data, variances=None, **kwargs):
+def make_variable(data: Any, variances: Any = None, **kwargs: Any) -> sc.Variable:
     """
     Make a Variable with default dimensions from data
     while avoiding copies beyond what sc.Variable does.
@@ -23,7 +24,7 @@ def make_variable(data, variances=None, **kwargs):
     return sc.scalar(data, **kwargs)
 
 
-def test_own_var_scalar_fundamental():
+def test_own_var_scalar_fundamental() -> None:
     # Python does not allow for any sharing with fundamental types.
     x = 1
     s = sc.scalar(x)
@@ -32,7 +33,7 @@ def test_own_var_scalar_fundamental():
     assert x == 1
 
 
-def test_own_var_scalar_copy():
+def test_own_var_scalar_copy() -> None:
     # Depth of copies of variables can be controlled.
     v = make_variable(1.0, variance=10.0, unit='m')
     v_copy = copy(v)
@@ -50,7 +51,7 @@ def test_own_var_scalar_copy():
     assert sc.identical(v_methdeepcopy, make_variable(1.0, variance=10.0, unit='m'))
 
 
-def test_own_var_scalar_pyobj_set():
+def test_own_var_scalar_pyobj_set() -> None:
     # Input data is shared.
     x = {'num': 1, 'list': [2, 3]}
     s = make_variable(x)
@@ -60,7 +61,7 @@ def test_own_var_scalar_pyobj_set():
     assert x == {'num': -1, 'list': [-2, 3]}
 
 
-def test_own_var_scalar_pyobj_get():
+def test_own_var_scalar_pyobj_get() -> None:
     # .value getter shares ownership of the object.
     s = make_variable({'num': 1, 'list': [2, 3]})
     x = s.value
@@ -71,7 +72,7 @@ def test_own_var_scalar_pyobj_get():
     assert x == expected
 
 
-def test_own_var_scalar_pyobj_copy():
+def test_own_var_scalar_pyobj_copy() -> None:
     # Depth of copies of variables can be controlled.
     data = {'num': 1, 'list': [2, 3]}
     s = make_variable(deepcopy(data))
@@ -90,7 +91,7 @@ def test_own_var_scalar_pyobj_copy():
     assert sc.identical(s_methdeepcopy, make_variable(data))
 
 
-def test_own_var_scalar_str_get():
+def test_own_var_scalar_str_get() -> None:
     # Python strings are immutable, no references are shared.
     s = make_variable('abc')
     x = s.value
@@ -99,7 +100,7 @@ def test_own_var_scalar_str_get():
     assert x == 'abc'
 
 
-def test_own_var_scalar_str_copy():
+def test_own_var_scalar_str_copy() -> None:
     # Depth of copies of variables can be controlled.
     s = make_variable('abc')
     s_copy = copy(s)
@@ -115,7 +116,7 @@ def test_own_var_scalar_str_copy():
     assert sc.identical(s_methdeepcopy, make_variable('abc'))
 
 
-def test_own_var_scalar_nested_set():
+def test_own_var_scalar_nested_set() -> None:
     # Variables are shared when nested.
     a = np.arange(5)
     inner = make_variable(a, unit='m')
@@ -144,7 +145,7 @@ def test_own_var_scalar_nested_set():
     # assert sc.identical(outer, outer.value)
 
 
-def test_own_var_scalar_nested_get():
+def test_own_var_scalar_nested_get() -> None:
     # Variables are shared when nested.
     outer = make_variable(make_variable(np.arange(5)))
     inner = outer.value
@@ -168,7 +169,7 @@ def test_own_var_scalar_nested_get():
     np.testing.assert_array_equal(a, [-1, -2, -3, -4, 4])
 
 
-def test_own_var_scalar_nested_copy():
+def test_own_var_scalar_nested_copy() -> None:
     # Depth of copies of variables can be controlled.
     outer = make_variable(make_variable(np.arange(5)))
     inner = outer.value
@@ -191,7 +192,7 @@ def test_own_var_scalar_nested_copy():
     assert sc.identical(outer_methdeepcopy, original)
 
 
-def test_own_var_scalar_nested_str_get():
+def test_own_var_scalar_nested_str_get() -> None:
     # Variables are shared when nested.
     outer = make_variable(make_variable(np.array(['abc', 'def'])))
     inner = outer.value
@@ -207,7 +208,7 @@ def test_own_var_scalar_nested_str_get():
     np.testing.assert_array_equal(a, ['abc', 'def'])
 
 
-def test_own_var_1d_set():
+def test_own_var_1d_set() -> None:
     # Input arrays are not shared.
     a = np.arange(5)
     v = make_variable(a)
@@ -219,7 +220,7 @@ def test_own_var_1d_set():
     np.testing.assert_array_equal(a, np.array([0, 1, -3, 3, 4]))
 
 
-def test_own_var_1d_get():
+def test_own_var_1d_get() -> None:
     # .values getter shares ownership of the array.
     v = make_variable(np.arange(5))
     a = v.values
@@ -232,7 +233,7 @@ def test_own_var_1d_get():
     np.testing.assert_array_equal(a, expected)
 
 
-def test_own_var_1d_copy():
+def test_own_var_1d_copy() -> None:
     # Depth of copies of variables can be controlled.
     v = make_variable(np.arange(5.0), unit='m')
     v_copy = copy(v)
@@ -279,7 +280,7 @@ def test_own_var_1d_copy():
     assert sc.identical(v_methdeepcopy, original)
 
 
-def test_own_var_1d_pyobj_set():
+def test_own_var_1d_pyobj_set() -> None:
     # Input data is deep-copied.
     x = {'num': 1, 'list': [2, 3]}
     y = {'num': 4, 'list': [5, 6]}
@@ -301,7 +302,7 @@ def test_own_var_1d_pyobj_set():
     assert y == {'num': -4, 'list': [5, 6]}
 
 
-def test_own_var_1d_pyobj_get():
+def test_own_var_1d_pyobj_get() -> None:
     # .values getter shares ownership of the array.
     v = sc.concat(
         [
@@ -325,7 +326,7 @@ def test_own_var_1d_pyobj_get():
     assert y == y_expected
 
 
-def test_own_var_1d_pyobj_copy():
+def test_own_var_1d_pyobj_copy() -> None:
     # Depth of copies of variables can be controlled.
     x = make_variable({'num': 1, 'list': [2, 3]})
     y = make_variable({'num': 4, 'list': [5, 6]})
@@ -346,7 +347,7 @@ def test_own_var_1d_pyobj_copy():
     assert sc.identical(v_methdeepcopy, original)
 
 
-def test_own_var_1d_str_set():
+def test_own_var_1d_str_set() -> None:
     # Input arrays are not shared.
     a = np.array(['abc', 'def'])
     v = make_variable(a)
@@ -355,7 +356,7 @@ def test_own_var_1d_str_set():
     np.testing.assert_array_equal(a, np.array(['abc', 'def']))
 
 
-def test_own_var_1d_str_get():
+def test_own_var_1d_str_get() -> None:
     # .values getter shares ownership of the array.
     v = make_variable(np.array(['abc', 'def']))
     a = v.values
@@ -370,7 +371,7 @@ def test_own_var_1d_str_get():
     np.testing.assert_array_equal(a, ['asd', 'qwe'])
 
 
-def test_own_var_1d_str_copy():
+def test_own_var_1d_str_copy() -> None:
     # Depth of copies of variables can be controlled.
     v = make_variable(np.array(['abc', 'def']))
     v_copy = copy(v)
@@ -387,7 +388,7 @@ def test_own_var_1d_str_copy():
     assert sc.identical(v_methdeepcopy, make_variable(np.array(['abc', 'def'])))
 
 
-def test_own_var_1d_bin_set():
+def test_own_var_1d_bin_set() -> None:
     # The buffer is shared.
     a_buffer = np.arange(5)
     a_indices = np.array([0, 2, 5], dtype=np.int64)
@@ -443,7 +444,7 @@ def test_own_var_1d_bin_set():
     )
 
 
-def test_own_var_1d_bin_get():
+def test_own_var_1d_bin_get() -> None:
     # The buffer is shared.
     indices = make_variable(np.array([0, 2, 5]), dtype=sc.DType.int64, unit=None)
     binned = sc.bins(
@@ -460,7 +461,7 @@ def test_own_var_1d_bin_get():
     assert sc.identical(buffer, make_variable([-1, -2, -3, 3, 4], unit='s'))
 
 
-def test_own_var_1d_bin_copy():
+def test_own_var_1d_bin_copy() -> None:
     # Depth of copies of variables can be controlled.
     indices = make_variable(np.array([0, 2, 5]), dtype=sc.DType.int64, unit=None)
     binned = sc.bins(
@@ -498,7 +499,7 @@ def test_own_var_1d_bin_copy():
     assert sc.identical(binned_methdeepcopy, original)
 
 
-def test_own_var_2d_set():
+def test_own_var_2d_set() -> None:
     # Input arrays are not shared.
     a = np.arange(10).reshape(2, 5)
     v = make_variable(a)
@@ -512,7 +513,7 @@ def test_own_var_2d_set():
     np.testing.assert_array_equal(a, [[-100, 1, 2, 3, 4], [5, 6, 7, 8, 9]])
 
 
-def test_own_var_2d_get():
+def test_own_var_2d_get() -> None:
     # .values getter shares ownership of the array.
     v = make_variable(np.arange(10).reshape(2, 5))
     a = v.values
@@ -525,7 +526,7 @@ def test_own_var_2d_get():
     np.testing.assert_array_equal(a, expected)
 
 
-def test_own_var_2d_copy():
+def test_own_var_2d_copy() -> None:
     # Depth of copies of variables can be controlled.
     v = make_variable(np.arange(6).reshape(2, 3), unit='m')
     v_copy = copy(v)

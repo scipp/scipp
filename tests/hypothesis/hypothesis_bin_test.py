@@ -20,7 +20,7 @@ float_args = {
 
 
 @given(st.floats(**float_args), st.floats(**float_args))
-def test_bin_2d_linspace_bounds(a, b):
+def test_bin_2d_linspace_bounds(a, b) -> None:
     x = sc.array(dims=['row'], values=[a, b])
     table = sc.DataArray(sc.ones(dims=['row'], shape=[2]))
     table.coords['x'] = x
@@ -39,7 +39,7 @@ def test_bin_2d_linspace_bounds(a, b):
     st.integers(min_value=0, max_value=1234),
     st.integers(min_value=0, max_value=1234),
 )
-def test_automatic_grouping_optimization(nrow, i, j):
+def test_automatic_grouping_optimization(nrow, i, j) -> None:
     base = sc.DataArray(sc.ones(dims=['row'], shape=[nrow]))
     base.coords['label'] = sc.arange('row', 0, nrow, dtype='int64')
     # Use overlapping or non-overlapping sections to simulate labels with duplicates as
@@ -56,7 +56,7 @@ def test_automatic_grouping_optimization(nrow, i, j):
     st.integers(min_value=1, max_value=12345),
     scst.variables(dtype=bool, ndim=st.integers(min_value=1, max_value=3)),
 )
-def test_bins_concat_masking(nevent, mask):
+def test_bins_concat_masking(nevent, mask) -> None:
     from numpy.random import default_rng
 
     rng = default_rng(seed=1234)
