@@ -189,7 +189,6 @@ plugins = "numpy.typing.mypy_plugin"
 exclude = [
     '^benchmarks/',
     '^docs/',
-    '^lib/',
     '^tests/',
     '^tools/',
 ]
