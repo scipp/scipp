@@ -2,6 +2,8 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 # ruff: noqa: E402, F401, F821
+# Suppress errors from assigning methods, MyPy gets the correct types from the stub.
+# mypy: disable-error-code="assignment, method-assign"
 """Multi-dimensional data arrays with labeled dimensions.
 
 Scipp provides
@@ -45,7 +47,7 @@ from .visualization import show, make_svg, to_html, make_html, table
 Variable._repr_html_ = make_html
 DataArray._repr_html_ = make_html
 Dataset._repr_html_ = make_html
-del visualization
+del visualization  # type: ignore[name-defined]
 
 from .io.hdf5 import save_hdf5 as _save_hdf5
 
@@ -70,7 +72,7 @@ from .compat.dict import to_dict, from_dict
 from .object_list import _repr_html_
 from .utils import collapse, slices
 
-del object_list, utils
+del object_list, utils  # type: ignore[name-defined]
 
 from .coords import transform_coords, show_graph
 
@@ -173,7 +175,7 @@ from .logging import display_logs, get_logger
 
 from .reduction import reduce
 
-del reduction
+del reduction  # type: ignore[name-defined]
 
 # Mainly imported for docs
 from .core import Bins, Coords, GroupByDataset, GroupByDataArray, Masks
@@ -245,18 +247,18 @@ from . import data
 from . import spatial
 from .operations import elemwise_func
 
-del operations
+del operations  # type: ignore[name-defined]
 
 from .plotting import plot
 
 Variable.plot = plot
 DataArray.plot = plot
 Dataset.plot = plot
-del plotting
+del plotting  # type: ignore[name-defined]
 
 from .core.util import VisibleDeprecationWarning
 
-del core
+del core  # type: ignore[name-defined]
 
 from .curve_fit import curve_fit
 

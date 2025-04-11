@@ -187,8 +187,6 @@ plugins = "numpy.typing.mypy_plugin"
 # Exclude files that have not yet been updated / fixed to pass type checks.
 # This list should only shrink, never grow.
 exclude = [
-    'scipp/__init__\.py',
-
     '^benchmarks/',
     '^docs/',
     '^lib/',
