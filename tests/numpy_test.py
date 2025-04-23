@@ -7,42 +7,42 @@ import pytest
 import scipp as sc
 
 
-def test_numpy_self_assign_shift():
+def test_numpy_self_assign_shift() -> None:
     var = sc.Variable(dims=['x'], values=np.arange(8))
     expected = sc.Variable(dims=['x'], values=[0, 1, 0, 1, 2, 3, 6, 7])
     var['x', 2:6].values = var['x', 0:4].values
     assert sc.identical(var, expected)
 
 
-def test_numpy_self_assign_1d_flip():
+def test_numpy_self_assign_1d_flip() -> None:
     var = sc.Variable(dims=['x'], values=np.arange(100))
     expected = sc.Variable(dims=['x'], values=np.flip(var.values))
     var.values = np.flip(var.values)
     assert sc.identical(var, expected)
 
 
-def test_numpy_self_assign_2d_flip_both():
+def test_numpy_self_assign_2d_flip_both() -> None:
     var = sc.Variable(dims=['y', 'x'], values=np.arange(100).reshape(10, 10))
     expected = sc.Variable(dims=['y', 'x'], values=np.flip(var.values))
     var.values = np.flip(var.values)
     assert sc.identical(var, expected)
 
 
-def test_numpy_self_assign_2d_flip_first():
+def test_numpy_self_assign_2d_flip_first() -> None:
     var = sc.Variable(dims=['y', 'x'], values=np.arange(100).reshape(10, 10))
     expected = sc.Variable(dims=['y', 'x'], values=np.flip(var.values, axis=0))
     var.values = np.flip(var.values, axis=0)
     assert sc.identical(var, expected)
 
 
-def test_numpy_self_assign_2d_flip_second():
+def test_numpy_self_assign_2d_flip_second() -> None:
     var = sc.Variable(dims=['y', 'x'], values=np.arange(100).reshape(10, 10))
     expected = sc.Variable(dims=['y', 'x'], values=np.flip(var.values, axis=1))
     var.values = np.flip(var.values, axis=1)
     assert sc.identical(var, expected)
 
 
-def test_numpy_self_assign_shift_2d_flip_both():
+def test_numpy_self_assign_shift_2d_flip_both() -> None:
     var = sc.Variable(dims=['y', 'x'], values=np.arange(9).reshape(3, 3))
     expected = sc.Variable(
         dims=['y', 'x'], values=np.array([[0, 1, 2], [3, 4, 3], [6, 1, 0]])
@@ -51,7 +51,7 @@ def test_numpy_self_assign_shift_2d_flip_both():
     assert sc.identical(var, expected)
 
 
-def test_numpy_self_assign_shift_2d_flip_first():
+def test_numpy_self_assign_shift_2d_flip_first() -> None:
     # Special case of shift combined with negative stride: Essentially we walk
     # backwards from "begin", but away from "end" since the outer dim has a
     # positive stride, so a naive range check based does not catch this case.
@@ -63,7 +63,7 @@ def test_numpy_self_assign_shift_2d_flip_first():
     assert sc.identical(var, expected)
 
 
-def test_numpy_self_assign_shift_2d_flip_second():
+def test_numpy_self_assign_shift_2d_flip_second() -> None:
     var = sc.Variable(dims=['y', 'x'], values=np.arange(9).reshape(3, 3))
     expected = sc.Variable(
         dims=['y', 'x'], values=np.array([[0, 1, 2], [3, 1, 0], [6, 4, 3]])
@@ -79,14 +79,14 @@ ds = sc.Dataset(data={'a': arr})
 
 
 @pytest.mark.parametrize("obj", [var, var['x', :], arr, arr['x', :], ds, ds['x', :]])
-def test__array_ufunc___disabled(obj):
+def test__array_ufunc___disabled(obj: sc.Variable | sc.DataArray | sc.Dataset) -> None:
     with pytest.raises(TypeError, match="does not support ufuncs"):
-        obj + a
+        obj + a  # type: ignore[operator]
     with pytest.raises(TypeError, match="unsupported operand type"):
-        a * obj
+        a * obj  # type: ignore[operator]
     with pytest.raises(TypeError, match="does not support ufuncs"):
-        obj += a
+        obj += a  # type: ignore[operator]
 
     b = np.arange(2)
     with pytest.raises(TypeError, match="does not support ufuncs"):
-        b += obj
+        b += obj  # type: ignore[arg-type]

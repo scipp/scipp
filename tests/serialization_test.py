@@ -8,7 +8,7 @@ from scipp.serialization import deserialize, serialize
 _ = pytest.importorskip('h5py')
 
 
-def test_serialize_roundtrip():
+def test_serialize_roundtrip() -> None:
     # No detailed testing since this is currently just using HDF5IO internally
     da = sc.data.binned_x(nevent=10, nbin=2)
     ds = sc.Dataset(data={'a': da})

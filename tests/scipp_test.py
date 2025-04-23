@@ -4,5 +4,5 @@
 import scipp as sc
 
 
-def test_version():
+def test_version() -> None:
     assert len(sc.__version__) > 0

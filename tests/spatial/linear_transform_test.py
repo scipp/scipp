@@ -8,7 +8,7 @@ import scipp.testing
 from scipp.spatial import inv, linear_transform, linear_transforms
 
 
-def test_linear_transform_numpy():
+def test_linear_transform_numpy() -> None:
     matrix = np.array([[1, 2, 3], [7, 8, 9], [4, 5, 6]])
     trans = linear_transform(value=matrix, unit='s')
     assert trans.unit == 's'
@@ -19,7 +19,7 @@ def test_linear_transform_numpy():
     assert res.unit == 's m'
 
 
-def test_linear_transform_list():
+def test_linear_transform_list() -> None:
     matrix = [[1, 2, 3], [7, 8, 9], [4, 5, 6]]
     trans = linear_transform(value=matrix, unit='s')
     assert trans.unit == 's'
@@ -30,7 +30,7 @@ def test_linear_transform_list():
     assert res.unit == 's m'
 
 
-def test_linear_transforms_numpy():
+def test_linear_transforms_numpy() -> None:
     matrix = np.array(
         [[[1, 2, 3], [7, 8, 9], [4, 5, 6]], [[-1, 3, -2], [0, 9, -5], [7, 7, -4]]]
     )
@@ -44,7 +44,7 @@ def test_linear_transforms_numpy():
     assert res.dims == ('lin',)
 
 
-def test_linear_transforms_list():
+def test_linear_transforms_list() -> None:
     matrix = [[[1, 2, 3], [7, 8, 9], [4, 5, 6]], [[-1, 3, -2], [0, 9, -5], [7, 7, -4]]]
     trans = linear_transforms(dims=['lin'], values=matrix, unit='s')
     assert trans.unit == 's'
@@ -56,25 +56,25 @@ def test_linear_transforms_list():
     assert res.dims == ('lin',)
 
 
-def test_linear_transform_default_unit_is_dimensionless():
+def test_linear_transform_default_unit_is_dimensionless() -> None:
     matrix = [[1, 2, 3], [7, 8, 9], [4, 5, 6]]
     trans = linear_transform(value=matrix)
     assert trans.unit == 'one'
 
 
-def test_linear_transforms_default_unit_is_dimensionless():
+def test_linear_transforms_default_unit_is_dimensionless() -> None:
     matrix = [[[1, 2, 3], [7, 8, 9], [4, 5, 6]]]
     trans = linear_transforms(dims=['x'], values=matrix)
     assert trans.unit == 'one'
 
 
-def test_linear_transform_value():
+def test_linear_transform_value() -> None:
     matrix = np.array([[1, 2, 3], [7, 8, 9], [4, 5, 6]])
     trans = linear_transform(value=matrix)
     np.testing.assert_array_equal(trans.value, matrix)
 
 
-def test_linear_transforms_values():
+def test_linear_transforms_values() -> None:
     matrix = np.array(
         [[[1, 2, 3], [7, 8, 9], [4, 5, 6]], [[-1, 3, -2], [0, 9, -5], [7, 7, -4]]]
     )
@@ -82,14 +82,14 @@ def test_linear_transforms_values():
     np.testing.assert_array_equal(trans.values, matrix)
 
 
-def test_linear_transform_set_value():
+def test_linear_transform_set_value() -> None:
     trans = linear_transform(value=np.ones((3, 3)))
     matrix = np.array([[1, 2, 3], [7, 8, 9], [4, 5, 6]])
     trans.value = matrix
     np.testing.assert_array_equal(trans.value, matrix)
 
 
-def test_linear_transform_get_elements():
+def test_linear_transform_get_elements() -> None:
     matrix = np.array([[1, 2, 3], [7, 8, 9], [4, 5, 6]])
     trans = linear_transform(value=matrix)
     assert trans.fields.xx == 1
@@ -103,7 +103,7 @@ def test_linear_transform_get_elements():
     assert trans.fields.zz == 6
 
 
-def test_linear_transform_set_elements():
+def test_linear_transform_set_elements() -> None:
     matrix = np.array([[1, 2, 3], [7, 8, 9], [4, 5, 6]])
     trans = linear_transform(value=matrix, unit='m')
     trans.fields.xx = sc.scalar(10.0, unit='m')
@@ -114,7 +114,7 @@ def test_linear_transform_set_elements():
     np.testing.assert_array_equal(trans.values, [[10, 2, 3], [7, 8, -6], [0.4, 5, 6]])
 
 
-def test_linear_transforms_get_elements():
+def test_linear_transforms_get_elements() -> None:
     matrix = np.array(
         [[[1, 2, 3], [7, 8, 9], [4, 5, 6]], [[-1, 3, -2], [0, 9, -5], [7, 7, -4]]]
     )
@@ -148,7 +148,7 @@ def test_linear_transforms_get_elements():
     )
 
 
-def test_linear_transforms_set_elements():
+def test_linear_transforms_set_elements() -> None:
     matrix = np.array(
         [[[1, 2, 3], [7, 8, 9], [4, 5, 6]], [[-1, 3, -2], [0, 9, -5], [7, 7, -4]]]
     )
@@ -176,7 +176,7 @@ def test_linear_transforms_set_elements():
     )
 
 
-def test_linear_transform_inv():
+def test_linear_transform_inv() -> None:
     matrix = np.array([[1, -2, 3], [7, 8, 9], [4, 5, 6]])
     trans = linear_transform(value=matrix, unit='s')
     vec = sc.vector([6.2, 4.21, 3.0], unit='kg')
@@ -184,7 +184,7 @@ def test_linear_transform_inv():
     assert sc.allclose(inv(trans) * trans * vec, vec)
 
 
-def test_linear_transforms_inv():
+def test_linear_transforms_inv() -> None:
     matrix = [[[1, -2, 3], [7, 8, 9], [4, 5, 6]], [[-1, 3, -2], [0, 9, -5], [7, 7, -4]]]
     trans = linear_transforms(dims=['lin'], values=matrix, unit='s')
     vec = sc.vector([6.2, 4.21, 3.0], unit='kg')

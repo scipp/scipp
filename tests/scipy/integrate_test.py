@@ -16,7 +16,7 @@ def make_array():
 
 
 @pytest.mark.parametrize('integ', [trapezoid, simpson])
-def test_fail_variances(integ):
+def test_fail_variances(integ) -> None:
     da = make_array()
     da.variances = da.values
     with pytest.raises(sc.VariancesError):
@@ -24,7 +24,7 @@ def test_fail_variances(integ):
 
 
 @pytest.mark.parametrize('integ', [trapezoid, simpson])
-def test_fail_bin_edges(integ):
+def test_fail_bin_edges(integ) -> None:
     tmp = make_array()
     da = tmp['xx', 1:].copy()
     da.coords['xx'] = tmp.coords['xx']
@@ -33,7 +33,7 @@ def test_fail_bin_edges(integ):
 
 
 @pytest.mark.parametrize('integ', [trapezoid, simpson])
-def test_unit(integ):
+def test_unit(integ) -> None:
     da = make_array()
     assert integ(da, 'xx').unit == da.unit * da.coords['xx'].unit
     assert integ(da, 'yy').unit == da.unit * da.coords['yy'].unit
@@ -47,7 +47,7 @@ def make_periodic():
 
 @pytest.mark.parametrize('integ1', [trapezoid, simpson])
 @pytest.mark.parametrize('integ2', [trapezoid, simpson])
-def test_zero_integral(integ1, integ2):
+def test_zero_integral(integ1, integ2) -> None:
     da = make_periodic()
     assert sc.allclose(
         integ1(integ2(da, 'xx'), 'yy').data,
@@ -57,7 +57,7 @@ def test_zero_integral(integ1, integ2):
 
 
 @pytest.mark.parametrize('integ', [trapezoid, simpson])
-def test_constant(integ):
+def test_constant(integ) -> None:
     x = sc.array(dims=['xx'], values=[2.0, 5.0])
     da = sc.DataArray(data=sc.full_like(x, 1.2), coords={'xx': x})
     expected = da['xx', 0].copy()
@@ -67,7 +67,7 @@ def test_constant(integ):
 
 
 @pytest.mark.parametrize('split', range(1, 9))
-def test_trapzoid_sections(split):
+def test_trapzoid_sections(split) -> None:
     da = make_periodic()
     assert sc.allclose(
         trapezoid(da['xx', : split + 1], 'xx').data

@@ -676,6 +676,10 @@ class DataGroup(MutableMapping[str, _V]):
         """Return the element-wise ``or`` of items."""
         return self.apply(operator.invert)  # type: ignore[arg-type]
 
+    def save_hdf5(self, filename: object) -> None:
+        # Stub for type checking, overridden at runtime in __init__.py
+        pass
+
 
 def data_group_nary(
     func: Callable[..., _R], *args: Any, **kwargs: Any

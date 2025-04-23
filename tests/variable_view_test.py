@@ -3,20 +3,23 @@
 # @file
 # @author Simon Heybrock
 import operator
+from collections.abc import Callable
+from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 
 import scipp as sc
 
 
-def test_type():
+def test_type() -> None:
     variable_slice = sc.Variable(dims=['x'], values=np.arange(1, 10, dtype=float))[
         'x', :
     ]
     assert type(variable_slice) is sc.Variable
 
 
-def test_astype():
+def test_astype() -> None:
     variable_slice = sc.Variable(dims=['x'], values=np.arange(1, 10, dtype=np.int64))[
         'x', :
     ]
@@ -26,14 +29,19 @@ def test_astype():
     assert var_as_float.dtype == sc.DType.float32
 
 
-def apply_test_op(op, a, b, data):
+def apply_inplace_binary_operator(
+    op: Callable[..., None],
+    a: sc.Variable,
+    b: sc.Variable,
+    data: npt.NDArray[Any],
+) -> None:
     op(a, b)
     # Assume numpy operations are correct as comparator
     op(data, b.values)
     assert np.array_equal(a.values, data)
 
 
-def test_binary_operations():
+def test_binary_operations() -> None:
     _a = sc.Variable(dims=['x'], values=np.arange(1, 10, dtype=float))
     _b = sc.Variable(dims=['x'], values=np.arange(1, 10, dtype=float))
     a = _a['x', :]
@@ -50,13 +58,13 @@ def test_binary_operations():
     c = a / b
     assert np.array_equal(c.values, data / data)
 
-    apply_test_op(operator.iadd, a, b, data)
-    apply_test_op(operator.isub, a, b, data)
-    apply_test_op(operator.imul, a, b, data)
-    apply_test_op(operator.itruediv, a, b, data)
+    apply_inplace_binary_operator(operator.iadd, a, b, data)
+    apply_inplace_binary_operator(operator.isub, a, b, data)
+    apply_inplace_binary_operator(operator.imul, a, b, data)
+    apply_inplace_binary_operator(operator.itruediv, a, b, data)
 
 
-def test_binary_float_operations():
+def test_binary_float_operations() -> None:
     _a = sc.Variable(dims=['x'], values=np.arange(1, 10, dtype=float))
     a = _a['x', :]
     data = np.copy(a.values)
@@ -76,7 +84,7 @@ def test_binary_float_operations():
     assert np.array_equal(c.values, data * 2.0)
 
 
-def test_equal_not_equal():
+def test_equal_not_equal() -> None:
     _a = sc.Variable(dims=['x'], values=np.arange(1, 10, dtype=float))
     _b = sc.Variable(dims=['x'], values=np.arange(1, 10, dtype=float))
     a = _a['x', :]
@@ -88,9 +96,9 @@ def test_equal_not_equal():
     assert not sc.identical(c, a)
 
 
-def test_correct_temporaries():
+def test_correct_temporaries() -> None:
     v = sc.Variable(dims=['x'], values=np.arange(100.0))
     b = sc.sqrt(v)['x', 0:10]
-    assert len(b.values) == 10
+    assert len(b.values) == 10  # type: ignore[arg-type]
     b = b['x', 2:5]
-    assert len(b.values) == 3
+    assert len(b.values) == 3  # type: ignore[arg-type]
