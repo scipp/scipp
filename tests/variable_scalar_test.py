@@ -5,6 +5,7 @@
 import pytest
 
 import scipp as sc
+import scipp.testing
 
 
 def test_scalar_Variable_values_property_float() -> None:
@@ -133,3 +134,44 @@ def test_conversion_to_builtin_bool_fails_with_size_1_array() -> None:
     var = sc.array(dims=['x'], values=[True])
     with pytest.raises(sc.DimensionError):
         bool(var)
+
+
+def test_scalar_Variable_conversion_to_builtin_index() -> None:
+    var = sc.scalar(4)
+    assert var.__index__() == 4
+
+
+@pytest.mark.parametrize(
+    'var', [sc.vector(value=[1, 2, 3]), sc.scalar(4.61), sc.scalar('4')]
+)
+def test_scalar_Variable_conversion_to_builtin_index_bad_dtype(
+    var: sc.Variable,
+) -> None:
+    with pytest.raises(TypeError):
+        var.__index__()
+
+
+def test_scalar_Variable_conversion_to_builtin_index_bad_unit() -> None:
+    var = sc.scalar(7, unit='m')
+    with pytest.raises(sc.UnitError):
+        var.__index__()
+
+
+def test_scalar_Variable_conversion_to_builtin_index_with_variance() -> None:
+    var = sc.scalar(7.0, variance=2.0)
+    with pytest.raises(sc.VariancesError):
+        var.__index__()
+
+
+def test_conversion_to_builtin_index_fails_with_array() -> None:
+    var = sc.array(dims=['x'], values=[1])
+    with pytest.raises(sc.DimensionError):
+        var.__index__()
+
+
+# This test is mainly about ensuring that mypy accepts a variable as part of a slice.
+def test_can_use_variable_as_index() -> None:
+    index = sc.scalar(12.0)
+    da = sc.DataArray(sc.arange('x', 4), coords={'x': sc.arange('x', 10, 14)})
+    sliced = da['x', :index]  # There should be no type error here
+    sc.testing.assert_identical(sliced, da['x', :2])
