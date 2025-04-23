@@ -87,36 +87,36 @@ def bind_get() -> None:
         cls.get = method
 
 
-def _expect_dimensionless_or_unitless(x: Variable | DataArray) -> None:
+def _expect_dimensionless_or_unitless(x: Variable) -> None:
     if x.unit is not None and x.unit != dimensionless:
         raise UnitError(f'Expected unit dimensionless or no unit, got {x.unit}.')
 
 
-def _expect_no_variance(x: Variable | DataArray) -> None:
+def _expect_no_variance(x: Variable) -> None:
     if x.variance is not None:
         raise VariancesError('Expected input without variances.')
 
 
-def _expect_integer(x: Variable | DataArray) -> None:
+def _expect_integer(x: Variable) -> None:
     if x.dtype not in (DType.int64, DType.int32):
         raise DTypeError(
             f'Only integer dtypes can be converted to index, got {x.dtype}'
         )
 
 
-def _int_dunder(self: Variable | DataArray) -> int:
+def _int_dunder(self: Variable) -> int:
     _expect_dimensionless_or_unitless(self)
     _expect_no_variance(self)
     return int(self.value)
 
 
-def _float_dunder(self: Variable | DataArray) -> float:
+def _float_dunder(self: Variable) -> float:
     _expect_dimensionless_or_unitless(self)
     _expect_no_variance(self)
     return float(self.value)
 
 
-def _index_dunder(self: Variable | DataArray) -> int:
+def _index_dunder(self: Variable) -> int:
     """Convert self to an integer.
 
     Requires that ``self``
