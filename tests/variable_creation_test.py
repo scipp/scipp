@@ -640,17 +640,37 @@ def test_logspace_with_variables_input_must_be_dimensionless(
 
 
 @pytest.mark.parametrize(
+    'range_fns',
+    [
+        (sc.linspace, np.linspace),
+        (sc.geomspace, np.geomspace),
+        (sc.logspace, np.logspace),
+    ],
+    ids=('linspace', 'geomspace', 'logspace'),
+)
+def test_xyzspace_with_variables_num_can_be_int_variable(
+    range_fns: tuple[Callable[..., sc.Variable], Callable[..., npt.NDArray[Any]]],
+) -> None:
+    sc_fn, np_fn = range_fns
+    var = sc_fn('x', sc.scalar(1.0), sc.scalar(5.0), sc.scalar(4))
+    values = np_fn(1.0, 5.0, 4)
+    assert sc.identical(var, sc.array(dims=['x'], values=values))
+
+
+@pytest.mark.parametrize(
     'range_fn',
     [sc.linspace, sc.geomspace, sc.logspace],
     ids=('linspace', 'geomspace', 'logspace'),
 )
-def test_xyzspace_with_variables_num_cannot_be_variable(
+@pytest.mark.parametrize('num', [3.0, sc.scalar(3.0)])
+def test_xyzspace_with_variables_num_cannot_be_float_variable(
     range_fn: Callable[..., sc.Variable],
+    num: float | sc.Variable,
 ) -> None:
     start = sc.scalar(1)
     stop = sc.scalar(3)
     with pytest.raises(TypeError):
-        range_fn('x', start, stop, sc.scalar(3))
+        range_fn('x', start, stop, num)
 
 
 def test_logspace() -> None:
