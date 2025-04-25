@@ -126,15 +126,21 @@ TEST_F(Concatenate1DTest, alignment_flag) {
 
   a.coords().set_aligned(Dim::X, false);
   const auto d2 = concat2(a, b, Dim::X);
-  EXPECT_FALSE(d2.coords()[Dim::X].is_aligned());
+  EXPECT_TRUE(d2.coords()[Dim::X].is_aligned());
 
   b.coords().set_aligned(Dim::X, false);
   const auto d3 = concat2(a, b, Dim::X);
-  EXPECT_FALSE(d3.coords()[Dim::X].is_aligned());
+  EXPECT_TRUE(d3.coords()[Dim::X].is_aligned());
 
   a.coords().set_aligned(Dim::X, true);
   const auto d4 = concat2(a, b, Dim::X);
-  EXPECT_FALSE(d4.coords()[Dim::X].is_aligned());
+  EXPECT_TRUE(d4.coords()[Dim::X].is_aligned());
+
+  a.setCoord(Dim("label_0d"), makeVariable<int>(Values{1}));
+  b.setCoord(Dim("label_0d"), makeVariable<int>(Values{2}));
+  a.coords().set_aligned(Dim("label_0d"), false);
+  const auto d5 = concat2(a, b, Dim::X);
+  EXPECT_FALSE(d5.coords()[Dim("label_0d")].is_aligned());
 }
 
 class Concatenate1DHistogramTest : public ::testing::Test {
