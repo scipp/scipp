@@ -10,7 +10,7 @@ import scipp as sc
 var = sc.vector(value=np.array([1, 2, 3]), unit=sc.units.m)
 
 
-def test_structured_fields_dict_like():
+def test_structured_fields_dict_like() -> None:
     assert 'x' in var.fields
     assert 'y' in var.fields
     assert 'z' in var.fields
@@ -26,7 +26,7 @@ def test_structured_fields_dict_like():
     assert sc.identical(var2, sc.vector(value=np.array([2, 2, 3]), unit=sc.units.m))
 
 
-def test_structured_fields_keys_values():
+def test_structured_fields_keys_values() -> None:
     keys = list(var.fields.keys())
     values = list(var.fields.values())
     for items in [dict(zip(keys, values, strict=True)), dict(var.fields.items())]:

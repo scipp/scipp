@@ -14,13 +14,13 @@ from scipp.scipy.signal import butter
         sc.geomspace(dim='xx', start=1.0, stop=100.0, num=100),
     ],
 )
-def test_raises_CoordError_if_not_linspace(coord):
+def test_raises_CoordError_if_not_linspace(coord) -> None:
     with pytest.raises(sc.CoordError):
         butter(coord, N=4, Wn=sc.scalar(4.0))
 
 
 @pytest.mark.parametrize("unit", ['m', 's'])
-def test_raises_UnitError_if_Wn_unit_incompatible(unit):
+def test_raises_UnitError_if_Wn_unit_incompatible(unit) -> None:
     coord = sc.linspace(dim='xx', start=-0.1, stop=4.0, num=100, unit=unit)
     butter(coord, N=4, Wn=sc.scalar(4.0, unit=sc.units.one / unit))
     with pytest.raises(sc.UnitError):
@@ -29,7 +29,7 @@ def test_raises_UnitError_if_Wn_unit_incompatible(unit):
         butter(coord, N=4, Wn=sc.scalar(4.0, unit='kg'))
 
 
-def test_compatible_Wn_units_are_converted():
+def test_compatible_Wn_units_are_converted() -> None:
     coord = sc.linspace(dim='xx', start=-0.1, stop=4.0, num=100, unit='ms')
     sos1 = butter(coord, N=4, Wn=sc.scalar(4000.0, unit='1/s'))
     sos2 = butter(coord, N=4, Wn=sc.scalar(4.0, unit='1/ms'))

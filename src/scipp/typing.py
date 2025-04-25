@@ -5,7 +5,9 @@
 from __future__ import annotations
 
 import typing as _std_typing
+from collections.abc import Sequence
 
+import numpy as np
 import numpy.typing as npt
 
 from ._scipp import core as sc
@@ -108,10 +110,16 @@ else:
 ScippIndex: _std_typing.TypeAlias = (
     ellipsis
     | int
-    | tuple[int, ...]
     | slice
-    | list[int]
-    | npt.NDArray[_std_typing.Any]
-    | tuple[str, int | slice | list[int] | npt.NDArray[_std_typing.Any] | Variable]
+    | Sequence[int]
+    | npt.NDArray[np.integer[_std_typing.Any]]
+    | tuple[
+        str,
+        int
+        | slice
+        | Sequence[int]
+        | npt.NDArray[np.integer[_std_typing.Any]]
+        | Variable,
+    ]
     | Variable
 )

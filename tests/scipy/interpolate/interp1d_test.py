@@ -24,21 +24,21 @@ def check_metadata(out, da, x):
 @pytest.mark.parametrize(
     "da", [make_array(), make_array().transpose(), make_array().transpose().copy()]
 )
-def test_metadata(da):
+def test_metadata(da) -> None:
     f = interp1d(da, 'xx')
     x = sc.linspace(dim='xx', start=0.1, stop=0.4, num=10, unit='rad')
     check_metadata(f(x), da, x)
     check_metadata(f(x[:5]), da, x[:5])
 
 
-def test_fail_variances():
+def test_fail_variances() -> None:
     da = make_array()
     da.variances = da.values
     with pytest.raises(sc.VariancesError):
         interp1d(da, 'xx')
 
 
-def test_fail_bin_edges():
+def test_fail_bin_edges() -> None:
     tmp = make_array()
     da = tmp['xx', 1:].copy()
     da.coords['xx'] = tmp.coords['xx']
@@ -46,7 +46,7 @@ def test_fail_bin_edges():
         interp1d(da, 'xx')
 
 
-def test_fail_new_coord_unit():
+def test_fail_new_coord_unit() -> None:
     da = make_array()
     f = interp1d(da, 'xx')
     x = sc.linspace(dim='xx', start=0.1, stop=0.4, num=10, unit='deg')
@@ -54,7 +54,7 @@ def test_fail_new_coord_unit():
         f(x)
 
 
-def test_fail_new_coord_wrong_dim():
+def test_fail_new_coord_wrong_dim() -> None:
     da = make_array()
     f = interp1d(da, 'xx')
     x = sc.linspace(dim='x', start=0.1, stop=0.4, num=10, unit='rad')
@@ -65,7 +65,7 @@ def test_fail_new_coord_wrong_dim():
         f(x)
 
 
-def test_data():
+def test_data() -> None:
     da = make_array()
     x = sc.linspace(dim='xx', start=0.1, stop=0.4, num=20, unit='rad')
     out = interp1d(da, 'xx')(x)
@@ -87,7 +87,7 @@ def test_data():
     )
 
 
-def test_data_datetime():
+def test_data_datetime() -> None:
     da = make_array().rename_dims({'xx': 'time'})
     x = sc.arange(
         dim='time', start=0, stop=da.sizes['time'], step=1, unit='s', dtype='datetime64'
@@ -102,7 +102,7 @@ def test_data_datetime():
     )
 
 
-def test_close():
+def test_close() -> None:
     # Sanity check: are we using interp1d correctly? Remove points and interpolate
     da = make_array()
     da_missing_points = sc.concat([da['xx', :3], da['xx', 5:]], 'xx')
@@ -110,14 +110,14 @@ def test_close():
     assert sc.allclose(da.data, out.data, rtol=sc.scalar(1e-3))
 
 
-def test_fail_multidim_mask():
+def test_fail_multidim_mask() -> None:
     da = make_array()
     da.masks['mask'] = da.data != da.data
     with pytest.raises(sc.DimensionError):
         interp1d(da, 'xx')
 
 
-def test_masked():
+def test_masked() -> None:
     x = sc.linspace(dim='xx', start=0.0, stop=3.0, num=20, unit='rad')
     da = sc.DataArray(sc.sin(x), coords={'xx': x})
     da.masks['mask'] = da.data > sc.scalar(0.9)
@@ -128,7 +128,7 @@ def test_masked():
     assert sc.allclose(result.data, da.data, rtol=sc.scalar(2e-2))
 
 
-def test_midpoints():
+def test_midpoints() -> None:
     da = make_array()
     x = sc.linspace(dim='xx', start=0.1, stop=0.4, num=10, unit='rad')
     out = interp1d(da, 'xx')(x, midpoints=True)
@@ -139,7 +139,7 @@ def test_midpoints():
     )
 
 
-def test_midpoints_datetime():
+def test_midpoints_datetime() -> None:
     da = make_array().rename_dims({'xx': 'time'})
     x = sc.arange(
         dim='time', start=0, stop=da.sizes['time'], step=1, unit='s', dtype='datetime64'
@@ -158,7 +158,7 @@ def test_midpoints_datetime():
 
 @pytest.mark.parametrize("kind", ['nearest', 'quadratic', 'cubic'])
 @pytest.mark.parametrize("fill_value", [0.0, 'extrapolate'])
-def test_options(kind, fill_value):
+def test_options(kind, fill_value) -> None:
     da = make_array()
     x = sc.linspace(dim='xx', start=0.1, stop=0.4, num=10, unit='rad')
     out = interp1d(da, 'xx', kind=kind, fill_value=fill_value)(x)
@@ -174,7 +174,7 @@ def test_options(kind, fill_value):
     )
 
 
-def test_structured_dtype_interpolation_interpolates_elements():
+def test_structured_dtype_interpolation_interpolates_elements() -> None:
     x = sc.array(dims=['x'], values=[1, 3])
     da = sc.DataArray(
         data=sc.vectors(dims=['x'], values=[[1, 2, 3], [5, 4, 3]], unit='m'),
