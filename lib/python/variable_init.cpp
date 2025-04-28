@@ -320,7 +320,7 @@ Attention
 ---------
 This constructor is meant primarily for internal use.
 Use one of the Specialized
-:doc:`creation functions <scipp:reference/creation-functions>`_ instead.
+:ref:`creation functions <scipp:reference/creation-functions>`_ instead.
 See in particular :py:func:`scipp.array` and :py:func:`scipp.scalar`.
 
 Parameters
