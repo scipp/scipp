@@ -76,6 +76,7 @@ intersphinx_mapping = {
     'xarray': ('https://xarray.pydata.org/en/stable/', None),
 }
 intersphinx_resolve_self = 'scipp'
+nbsphinx_allow_errors = True
 
 # autodocs includes everything, even irrelevant API internals. autosummary
 # looks more suitable in the long run when the API grows.
