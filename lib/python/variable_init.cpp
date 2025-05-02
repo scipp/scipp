@@ -318,7 +318,7 @@ Attention
 ---------
 This constructor is meant primarily for internal use.
 Use one of the Specialized
-`creation functions <../../reference/creation-functions.rst>`_ instead.
+`creation functions <https://scipp.github.io/reference/creation-functions.html>`_ instead.
 See in particular :py:func:`scipp.array` and :py:func:`scipp.scalar`.
 
 Parameters
