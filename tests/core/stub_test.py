@@ -7,6 +7,7 @@ A combination of runtime tests and mypy should catch bad stub signatures.
 
 import ast
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -44,9 +45,10 @@ def _attr_names_from_ast(class_node: ast.ClassDef) -> set[str]:
     }
     # Assignments are, e.g., `DType.float64`.
     assignments = {
-        attr.target.id
+        cast(ast.Name, attr.target).id
         for attr in class_node.body
-        if isinstance(attr, ast.AnnAssign) and _name_participates(attr.target.id)
+        if isinstance(attr, ast.AnnAssign)
+        and _name_participates(cast(ast.Name, attr.target).id)
     }
     return methods | assignments
 
