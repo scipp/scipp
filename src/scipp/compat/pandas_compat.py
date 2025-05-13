@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from typing import TYPE_CHECKING, Literal, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 from ..core import DataArray, Dataset, Unit, UnitError, array
 from ..units import default_unit
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     import pandas as pd
 
 
-def _index_is_trivial(index: pd.Index, n_rows: int) -> bool:
+def _index_is_trivial(index: pd.Index[int], n_rows: int) -> bool:
     from pandas import RangeIndex
 
     return (
@@ -25,7 +25,7 @@ def _index_is_trivial(index: pd.Index, n_rows: int) -> bool:
 
 
 def from_pandas_series(
-    se: pd.Series,
+    se: pd.Series[Any],
     *,
     include_trivial_index: bool = False,
     header_parser: HeaderParserArg = None,
@@ -96,7 +96,7 @@ def from_pandas(
 
 @overload
 def from_pandas(
-    pd_obj: pd.Series,
+    pd_obj: pd.Series[Any],
     *,
     data_columns: str | Iterable[str] | None = None,
     include_trivial_index: bool = False,
@@ -105,7 +105,7 @@ def from_pandas(
 
 
 def from_pandas(
-    pd_obj: pd.DataFrame | pd.Series,
+    pd_obj: pd.DataFrame | pd.Series[Any],
     *,
     data_columns: str | Iterable[str] | None = None,
     include_trivial_index: bool = False,
