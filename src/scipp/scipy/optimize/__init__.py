@@ -78,7 +78,7 @@ def _covariance_with_units(
     pcov: dict[str, dict[str, Variable | Real]] = {}
     for i, row in enumerate(pcov_values):
         pcov[p_names[i]] = {}
-        for j, elem in enumerate(row):  # type: ignore[arg-type, var-annotated]
+        for j, elem in enumerate(row):
             ui = units[i]
             uj = units[j]
             u = ui
