@@ -1,3 +1,9 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2025 Scipp contributors (https://github.com/scipp)
+
+from collections.abc import Mapping
+
+import numpy.typing as npt
 import pytest
 
 import scipp as sc
@@ -8,7 +14,9 @@ from scipp.testing import assert_identical
 pandas = pytest.importorskip('pandas')
 
 
-def _make_reference_da(row_name, row_coords, values, dtype="int64"):
+def _make_reference_da(
+    row_name: str, values: npt.ArrayLike, dtype: str = "int64"
+) -> sc.DataArray:
     return sc.DataArray(
         data=sc.array(dims=[row_name], values=values, dtype=dtype),
         coords={},
@@ -16,16 +24,20 @@ def _make_reference_da(row_name, row_coords, values, dtype="int64"):
     )
 
 
-def _make_1d_reference_ds(row_name, data_name, values, coords, dtype="int64"):
+def _make_1d_reference_ds(
+    row_name: str, data_name: str, values: npt.ArrayLike, dtype: str = "int64"
+) -> sc.Dataset:
     return sc.Dataset(
-        data={data_name: _make_reference_da(row_name, coords, values, dtype)},
+        data={data_name: _make_reference_da(row_name, values, dtype)},
     )
 
 
-def _make_nd_reference_ds(row_name, row_coords, data, dtype="int64"):
+def _make_nd_reference_ds(
+    row_name: str, data: Mapping[str, npt.ArrayLike], dtype: str = "int64"
+) -> sc.Dataset:
     return sc.Dataset(
         data={
-            key: _make_reference_da(row_name, row_coords, value, dtype)
+            key: _make_reference_da(row_name, value, dtype)
             for key, value in data.items()
         },
     )
@@ -36,7 +48,7 @@ def test_series() -> None:
 
     sc_ds = from_pandas(pd_df)
 
-    reference_da = _make_reference_da("row", [0, 1, 2], [1, 2, 3])
+    reference_da = _make_reference_da("row", [1, 2, 3])
 
     assert sc.identical(sc_ds, reference_da)
 
@@ -47,7 +59,7 @@ def test_series_with_named_axis() -> None:
 
     sc_ds = from_pandas(pd_df)
 
-    reference_da = _make_reference_da("row-name", [0, 1, 2], [1, 2, 3])
+    reference_da = _make_reference_da("row-name", [1, 2, 3])
 
     assert sc.identical(sc_ds, reference_da)
 
@@ -58,7 +70,7 @@ def test_series_with_named_axis_non_str() -> None:
 
     sc_ds = from_pandas(pd_df)
 
-    reference_da = _make_reference_da("987", [0, 1, 2], [1, 2, 3])
+    reference_da = _make_reference_da("987", [1, 2, 3])
 
     assert sc.identical(sc_ds, reference_da)
 
@@ -69,7 +81,7 @@ def test_series_with_named_series() -> None:
 
     sc_ds = from_pandas(pd_df)
 
-    reference_da = _make_reference_da("row", [0, 1, 2], [1, 2, 3])
+    reference_da = _make_reference_da("row", [1, 2, 3])
     reference_da.name = "the name"
 
     assert sc.identical(sc_ds, reference_da)
@@ -81,7 +93,7 @@ def test_series_with_named_series_no_str() -> None:
 
     sc_ds = from_pandas(pd_df)
 
-    reference_da = _make_reference_da("row", [0, 1, 2], [1, 2, 3])
+    reference_da = _make_reference_da("row", [1, 2, 3])
     reference_da.name = "8461"
 
     assert sc.identical(sc_ds, reference_da)
@@ -94,7 +106,7 @@ def test_series_with_named_series_and_named_axis() -> None:
 
     sc_ds = from_pandas(pd_df)
 
-    reference_da = _make_reference_da("axis-name", [0, 1, 2], [1, 2, 3])
+    reference_da = _make_reference_da("axis-name", [1, 2, 3])
     reference_da.name = "series-name"
 
     assert sc.identical(sc_ds, reference_da)
@@ -105,19 +117,19 @@ def test_series_with_trivial_index_coord() -> None:
 
     sc_ds = from_pandas(pd_df, include_trivial_index=True)
 
-    reference_da = _make_reference_da("row", [0, 1, 2], [1, 2, 3])
+    reference_da = _make_reference_da("row", [1, 2, 3])
     reference_da.coords["row"] = sc.arange("row", 3, dtype='int64')
 
     assert sc.identical(sc_ds, reference_da)
 
 
 @pytest.mark.parametrize('include_trivial_index', [True, False])
-def test_series_with_nontrivial_index_coord(include_trivial_index) -> None:
+def test_series_with_nontrivial_index_coord(include_trivial_index: bool) -> None:
     pd_df = pandas.Series(data=[1, 2, 3], index=[-1, -2, -3])
 
     sc_ds = from_pandas(pd_df, include_trivial_index=include_trivial_index)
 
-    reference_da = _make_reference_da("row", [0, 1, 2], [1, 2, 3])
+    reference_da = _make_reference_da("row", [1, 2, 3])
     reference_da.coords["row"] = sc.arange("row", -1, -4, -1, dtype="int64")
 
     assert sc.identical(sc_ds, reference_da)
@@ -128,7 +140,7 @@ def test_series_without_name_parse_bracket_header() -> None:
 
     sc_ds = from_pandas(pd_df, header_parser="bracket")
 
-    reference_da = _make_reference_da("row", [0, 1, 2], [1, 2, 3])
+    reference_da = _make_reference_da("row", [1, 2, 3])
     reference_da.unit = None
 
     assert sc.identical(sc_ds, reference_da)
@@ -139,7 +151,7 @@ def test_1d_dataframe() -> None:
 
     sc_ds = from_pandas(pd_df)
 
-    reference_ds = _make_1d_reference_ds("row", "0", [1, 2, 3], [0, 1, 2])
+    reference_ds = _make_1d_reference_ds("row", "0", [1, 2, 3])
 
     assert sc.identical(sc_ds, reference_ds)
 
@@ -150,7 +162,7 @@ def test_1d_dataframe_with_named_axis() -> None:
 
     sc_ds = from_pandas(pd_df)
 
-    reference_ds = _make_1d_reference_ds("1d_df", "my-column", [1, 2, 3], [0, 1, 2])
+    reference_ds = _make_1d_reference_ds("1d_df", "my-column", [1, 2, 3])
 
     assert sc.identical(sc_ds, reference_ds)
 
@@ -160,19 +172,19 @@ def test_1d_dataframe_with_trivial_index_coord() -> None:
 
     sc_ds = from_pandas(pd_df, include_trivial_index=True)
 
-    reference_ds = _make_1d_reference_ds("row", "0", [1, 2, 3], [0, 1, 2])
+    reference_ds = _make_1d_reference_ds("row", "0", [1, 2, 3])
     reference_ds.coords["row"] = sc.arange("row", 3, dtype="int64")
 
     assert sc.identical(sc_ds, reference_ds)
 
 
 @pytest.mark.parametrize('include_trivial_index', [True, False])
-def test_1d_dataframe_with_nontrivial_index_coord(include_trivial_index) -> None:
+def test_1d_dataframe_with_nontrivial_index_coord(include_trivial_index: bool) -> None:
     pd_df = pandas.DataFrame(data=[1, 2, 3], index=[-1, -2, -3])
 
     sc_ds = from_pandas(pd_df, include_trivial_index=include_trivial_index)
 
-    reference_ds = _make_1d_reference_ds("row", "0", [1, 2, 3], [0, 1, 2])
+    reference_ds = _make_1d_reference_ds("row", "0", [1, 2, 3])
     reference_ds.coords["row"] = sc.arange("row", -1, -4, -1, dtype="int64")
 
     assert sc.identical(sc_ds, reference_ds)
@@ -183,9 +195,7 @@ def test_2d_dataframe() -> None:
 
     sc_ds = from_pandas(pd_df)
 
-    reference_ds = _make_nd_reference_ds(
-        "row", [0, 1], data={"col1": (2, 3), "col2": (5, 6)}
-    )
+    reference_ds = _make_nd_reference_ds("row", data={"col1": (2, 3), "col2": (5, 6)})
 
     assert sc.identical(sc_ds, reference_ds)
 
@@ -197,7 +207,7 @@ def test_2d_dataframe_with_named_axes() -> None:
     sc_ds = from_pandas(pd_df)
 
     reference_ds = _make_nd_reference_ds(
-        "my-name-for-rows", [0, 1], data={"col1": (2, 3), "col2": (5, 6)}
+        "my-name-for-rows", data={"col1": (2, 3), "col2": (5, 6)}
     )
 
     assert sc.identical(sc_ds, reference_ds)
@@ -208,7 +218,7 @@ def test_dataframe_select_single_data() -> None:
 
     sc_ds = from_pandas(pd_df, data_columns="col2")
     reference_ds = _make_nd_reference_ds(
-        "row", [0, 1], data={"col1": (1, 2), "col2": (6, 3), "col3": (4, 0)}
+        "row", data={"col1": (1, 2), "col2": (6, 3), "col3": (4, 0)}
     )
     reference_ds.coords["col1"] = reference_ds.pop("col1").data
     reference_ds.coords["col3"] = reference_ds.pop("col3").data
@@ -216,7 +226,7 @@ def test_dataframe_select_single_data() -> None:
 
     sc_ds = from_pandas(pd_df, data_columns=["col1"])
     reference_ds = _make_nd_reference_ds(
-        "row", [0, 1], data={"col1": (1, 2), "col2": (6, 3), "col3": (4, 0)}
+        "row", data={"col1": (1, 2), "col2": (6, 3), "col3": (4, 0)}
     )
     reference_ds.coords["col2"] = reference_ds.pop("col2").data
     reference_ds.coords["col3"] = reference_ds.pop("col3").data
@@ -228,7 +238,7 @@ def test_dataframe_select_multiple_data() -> None:
 
     sc_ds = from_pandas(pd_df, data_columns=["col3", "col1"])
     reference_ds = _make_nd_reference_ds(
-        "row", [0, 1], data={"col1": (1, 2), "col2": (6, 3), "col3": (4, 0)}
+        "row", data={"col1": (1, 2), "col2": (6, 3), "col3": (4, 0)}
     )
     reference_ds.coords["col2"] = reference_ds.pop("col2").data
     assert_identical(sc_ds, reference_ds)
@@ -239,7 +249,7 @@ def test_dataframe_select_no_data() -> None:
 
     sc_ds = from_pandas(pd_df, data_columns=[])
     reference_ds = _make_nd_reference_ds(
-        "row", [0, 1], data={"col1": (1, 2), "col2": (6, 3), "col3": (4, 0)}
+        "row", data={"col1": (1, 2), "col2": (6, 3), "col3": (4, 0)}
     )
     reference_ds.coords["col1"] = reference_ds.pop("col1").data
     reference_ds.coords["col2"] = reference_ds.pop("col2").data
@@ -260,7 +270,7 @@ def test_2d_dataframe_does_not_parse_units_by_default() -> None:
     sc_ds = from_pandas(pd_df)
 
     reference_ds = _make_nd_reference_ds(
-        "row", [0, 1], data={"col1 [m]": (1, 2), "col2 [one]": (6, 3)}
+        "row", data={"col1 [m]": (1, 2), "col2 [one]": (6, 3)}
     )
 
     assert_identical(sc_ds, reference_ds)
@@ -271,11 +281,9 @@ def test_2d_dataframe_parse_units_brackets() -> None:
 
     sc_ds = from_pandas(pd_df, header_parser="bracket")
 
-    reference_ds = _make_nd_reference_ds(
-        "row", [0, 1], data={"col1": (1, 2), "col2": (6, 3)}
-    )
-    reference_ds["col1"].unit = "m"
-    reference_ds["col2"].unit = "one"
+    reference_ds = _make_nd_reference_ds("row", data={"col1": (1, 2), "col2": (6, 3)})
+    reference_ds["col1"].unit = "m"  # type: ignore[assignment]
+    reference_ds["col2"].unit = "one"  # type: ignore[assignment]
 
     assert_identical(sc_ds, reference_ds)
 
@@ -289,11 +297,10 @@ def test_2d_dataframe_parse_units_brackets_string_dtype() -> None:
 
     reference_ds = _make_nd_reference_ds(
         "row",
-        [0, 1],
         data={"col1": ("a", "b"), "col2": ("c", "d")},
         dtype="str",
     )
-    reference_ds["col1"].unit = "m"
+    reference_ds["col1"].unit = "m"  # type: ignore[assignment]
     reference_ds["col2"].unit = None
 
     assert_identical(sc_ds, reference_ds)
