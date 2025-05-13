@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, overload
 
 from ..core import DataArray, Dataset, Unit, UnitError, array
 from ..units import default_unit
@@ -82,6 +82,26 @@ def from_pandas_dataframe(
         coords = {name: coord.data for name, coord in data_arrays.items()}
 
     return Dataset(data, coords=coords)
+
+
+@overload
+def from_pandas(
+    pd_obj: pd.DataFrame,
+    *,
+    data_columns: str | Iterable[str] | None = None,
+    include_trivial_index: bool = False,
+    header_parser: HeaderParserArg = None,
+) -> Dataset: ...
+
+
+@overload
+def from_pandas(
+    pd_obj: pd.Series,
+    *,
+    data_columns: str | Iterable[str] | None = None,
+    include_trivial_index: bool = False,
+    header_parser: HeaderParserArg = None,
+) -> DataArray: ...
 
 
 def from_pandas(
