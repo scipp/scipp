@@ -187,9 +187,10 @@ plugins = "numpy.typing.mypy_plugin"
 # Exclude files that have not yet been updated / fixed to pass type checks.
 # This list should only shrink, never grow.
 exclude = [
-    '^benchmarks/',
-    '^docs/',
     '^tests/',
+    # Docs should not be cluttered with type hints.
+    '^docs/',
+    # Tools for internal use and only need to work in a concrete use case.
     '^tools/',
 ]
 
