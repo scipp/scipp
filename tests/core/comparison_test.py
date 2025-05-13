@@ -2,6 +2,8 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
+from collections.abc import Callable
+
 import numpy as np
 import pytest
 
@@ -91,7 +93,9 @@ def test_allclose_no_unit() -> None:
 @pytest.mark.parametrize(
     't', [lambda x: x, sc.DataArray, lambda x: sc.Dataset({'a': x})]
 )
-def test_identical(t) -> None:
+def test_identical(
+    t: Callable[[sc.Variable], sc.Variable | sc.DataArray | sc.Dataset],
+) -> None:
     assert sc.identical(t(sc.scalar(1.23)), t(sc.scalar(1.23)))
     assert not sc.identical(t(sc.scalar(1.23)), t(sc.scalar(1.23, unit='m')))
     assert not sc.identical(t(sc.scalar(1.23)), t(sc.scalar(5.2)))
@@ -236,21 +240,21 @@ def test_identical_raises_TypeError_when_comparing_datagroup_to_Dataset() -> Non
 
 
 @pytest.fixture
-def small():
+def small() -> sc.Variable:
     return sc.scalar(1.0)
 
 
 @pytest.fixture
-def medium():
+def medium() -> sc.Variable:
     return sc.scalar(2.0)
 
 
 @pytest.fixture
-def large():
+def large() -> sc.Variable:
     return sc.scalar(3.0)
 
 
-def test_eq(small, medium, large) -> None:
+def test_eq(small: sc.Variable, medium: sc.Variable, large: sc.Variable) -> None:
     assert not (small == medium).value
     assert not (small == medium.value).value
     assert not (small.values == medium).value
@@ -264,7 +268,7 @@ def test_eq(small, medium, large) -> None:
     assert not (large.value == medium).value
 
 
-def test_ne(small, medium, large) -> None:
+def test_ne(small: sc.Variable, medium: sc.Variable, large: sc.Variable) -> None:
     assert (small != medium).value
     assert (small != medium.value).value
     assert (small.values != medium).value
@@ -278,7 +282,7 @@ def test_ne(small, medium, large) -> None:
     assert (large.value != medium).value
 
 
-def test_lt(small, medium, large) -> None:
+def test_lt(small: sc.Variable, medium: sc.Variable, large: sc.Variable) -> None:
     assert (small < medium).value
     assert (small < medium.value).value
     assert (small.values < medium).value
@@ -292,7 +296,7 @@ def test_lt(small, medium, large) -> None:
     assert not (large.value < medium).value
 
 
-def test_le(small, medium, large) -> None:
+def test_le(small: sc.Variable, medium: sc.Variable, large: sc.Variable) -> None:
     assert (small <= medium).value
     assert (small <= medium.value).value
     assert (small.values <= medium).value
@@ -306,7 +310,7 @@ def test_le(small, medium, large) -> None:
     assert not (large.value <= medium).value
 
 
-def test_gt(small, medium, large) -> None:
+def test_gt(small: sc.Variable, medium: sc.Variable, large: sc.Variable) -> None:
     assert not (small > medium).value
     assert not (small > medium.value).value
     assert not (small.values > medium).value
@@ -320,7 +324,7 @@ def test_gt(small, medium, large) -> None:
     assert (large.value > medium).value
 
 
-def test_ge(small, medium, large) -> None:
+def test_ge(small: sc.Variable, medium: sc.Variable, large: sc.Variable) -> None:
     assert not (small >= medium).value
     assert not (small >= medium.value).value
     assert not (small.values >= medium).value
@@ -334,8 +338,8 @@ def test_ge(small, medium, large) -> None:
     assert (large.value >= medium).value
 
 
-def test_comparison_with_str(medium) -> None:
+def test_comparison_with_str(medium: sc.Variable) -> None:
     assert (sc.scalar('a string') == sc.scalar('a string')).value
     assert not (medium == 'a string')
     with pytest.raises(TypeError):
-        _ = medium < 'a string'
+        _ = medium < 'a string'  # type: ignore[operator]
