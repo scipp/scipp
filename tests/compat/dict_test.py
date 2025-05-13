@@ -3,6 +3,8 @@
 # @file
 # @author Neil Vaytet
 
+from typing import Any
+
 import numpy as np
 
 import scipp as sc
@@ -82,16 +84,18 @@ def test_variable_from_dict() -> None:
         "variances": np.random.random(10),
     }
     var = sc.from_dict(var_dict)
+    assert isinstance(var, sc.Variable)
     assert var.dims == var_dict["dims"]
     assert var.shape == (10,)
-    assert np.array_equal(var.values, var_dict["values"])
-    assert np.array_equal(var.variances, var_dict["variances"])
+    assert np.array_equal(var.values, var_dict["values"])  # type: ignore[arg-type]
+    assert np.array_equal(var.variances, var_dict["variances"])  # type: ignore[arg-type]
     assert var.unit == sc.units.one
 
 
 def test_variable_0D_from_dict() -> None:
     var_dict = {"dims": (), "values": 17.0, "variances": 0.2}
     var = sc.from_dict(var_dict)
+    assert isinstance(var, sc.Variable)
     assert var.dims == ()
     assert var.shape == ()
     assert var.value == 17.0
@@ -106,6 +110,7 @@ def test_variable_vector_from_dict() -> None:
         "dtype": "vector3",
     }
     var = sc.from_dict(var_dict)
+    assert isinstance(var, sc.Variable)
     assert var.dims == var_dict["dims"]
     assert var.shape == (2,)
     assert np.array_equal(np.array(var.values), [[0, 1, 2], [3, 4, 5]])
@@ -116,6 +121,7 @@ def test_variable_vector_from_dict() -> None:
 def test_variable_0D_vector_from_dict() -> None:
     var_dict = {"dims": (), "values": [1, 2, 3], "dtype": "vector3"}
     var = sc.from_dict(var_dict)
+    assert isinstance(var, sc.Variable)
     assert var.dims == ()
     assert var.shape == ()
     assert np.array_equal(np.array(var.values), [1, 2, 3])
@@ -130,9 +136,10 @@ def test_variable_linear_transform_from_dict() -> None:
         "dtype": "linear_transform3",
     }
     var = sc.from_dict(var_dict)
+    assert isinstance(var, sc.Variable)
     assert var.dims == var_dict["dims"]
     assert var.shape == (2,)
-    assert np.array_equal(np.array(var.values), var_dict["values"])
+    assert np.array_equal(np.array(var.values), var_dict["values"])  # type: ignore[arg-type]
     assert var.unit == sc.units.one
     assert var.dtype == sc.DType.linear_transform3
 
@@ -144,9 +151,10 @@ def test_variable_0D_linear_transform_from_dict() -> None:
         "dtype": "linear_transform3",
     }
     var = sc.from_dict(var_dict)
+    assert isinstance(var, sc.Variable)
     assert var.dims == ()
     assert var.shape == ()
-    assert np.array_equal(np.array(var.value), var_dict["values"])
+    assert np.array_equal(np.array(var.value), var_dict["values"])  # type: ignore[arg-type]
     assert var.unit == sc.units.one
     assert var.dtype == sc.DType.linear_transform3
 
@@ -220,7 +228,7 @@ def test_data_array_to_dict() -> None:
 
 
 def test_data_array_from_dict() -> None:
-    da_dict = {
+    da_dict: dict[str, Any] = {
         "coords": {
             "x": {"dims": ["x"], "values": np.arange(10), "aligned": False},
             "y": {"dims": ["y"], "values": np.arange(5), "unit": sc.units.m},
@@ -229,6 +237,7 @@ def test_data_array_from_dict() -> None:
         "data": {"dims": ["y", "x"], "values": np.random.random([5, 10])},
     }
     da = sc.from_dict(da_dict)
+    assert isinstance(da, sc.DataArray)
     assert sc.identical(da.coords["x"], sc.from_dict(da_dict["coords"]["x"]))
     assert not da.coords["x"].aligned
     assert sc.identical(da.coords["y"], sc.from_dict(da_dict["coords"]["y"]))
@@ -306,6 +315,7 @@ def test_dataset_from_dict() -> None:
         },
     }
     ds = sc.from_dict(ds_dict)
+    assert isinstance(ds, sc.Dataset)
     assert sc.identical(ds["a"], sc.from_dict(ds_dict["a"]))
     assert sc.identical(ds["b"], sc.from_dict(ds_dict["b"]))
 
