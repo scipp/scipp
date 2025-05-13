@@ -3,7 +3,9 @@
 # @file
 # @author Neil Vaytet
 
+from collections.abc import Callable, Mapping
 from functools import reduce
+from typing import Any
 
 import hypothesis
 import numpy as np
@@ -27,8 +29,8 @@ import scipp.testing.strategies as scst
 # For now, we are just checking that creating the repr does not throw.
 
 
-def settings(**kwargs):
-    def impl(func):
+def settings(**kwargs: Any) -> Callable[..., Any]:
+    def impl(func: Callable[..., Any]) -> Callable[..., Any]:
         return hypothesis.settings(**{'max_examples': 10, 'deadline': 1000, **kwargs})(
             func
         )
@@ -38,13 +40,13 @@ def settings(**kwargs):
 
 @given(var=scst.variables(ndim=0))
 @settings()
-def test_html_repr_scalar(var) -> None:
+def test_html_repr_scalar(var: sc.Variable) -> None:
     sc.make_html(var)
 
 
 @given(var=scst.variables(ndim=st.integers(min_value=1, max_value=4)))
 @settings(max_examples=100)
-def test_html_repr_variable(var) -> None:
+def test_html_repr_variable(var: sc.Variable) -> None:
     sc.make_html(var)
     sc.make_html(var[var.dims[0], 1:10])
 
@@ -59,21 +61,21 @@ def test_html_repr_variable_vector() -> None:
 
 @given(da=scst.dataarrays(data_args={'ndim': 0}))
 @settings()
-def test_html_repr_data_array_scalar(da) -> None:
+def test_html_repr_data_array_scalar(da: sc.DataArray) -> None:
     da.coords['c'] = sc.array(dims=['w'], values=[4, 5])
     sc.make_html(da)
 
 
 @given(da=scst.dataarrays(data_args={'ndim': st.integers(min_value=1, max_value=4)}))
 @settings()
-def test_html_repr_data_array(da) -> None:
+def test_html_repr_data_array(da: sc.DataArray) -> None:
     sc.make_html(da)
     sc.make_html(da[da.dims[0], 1:10])
 
 
 @given(da=scst.dataarrays(data_args={'ndim': st.integers(min_value=2, max_value=4)}))
 @settings()
-def test_html_repr_data_array_nd_coord(da) -> None:
+def test_html_repr_data_array_nd_coord(da: sc.DataArray) -> None:
     volume = reduce(lambda a, b: a * b, da.shape)
     da.coords['nd'] = sc.arange('aux', volume).fold(dim='aux', sizes=da.sizes)
     sc.make_html(da)
@@ -84,7 +86,9 @@ def test_html_repr_data_array_nd_coord(da) -> None:
     coord_sizes=scst.sizes_dicts(ndim=st.integers(min_value=1, max_value=1)),
 )
 @settings()
-def test_html_repr_binned_data_array(buffer, coord_sizes) -> None:
+def test_html_repr_binned_data_array(
+    buffer: sc.DataArray, coord_sizes: Mapping[str, int]
+) -> None:
     dim = next(iter(coord_sizes))
     assume(coord_sizes[dim] > 1)  # need at least length=2 to slice below
     for i, key in enumerate(coord_sizes, 1):
@@ -93,12 +97,12 @@ def test_html_repr_binned_data_array(buffer, coord_sizes) -> None:
     sc.make_html(binned)
     sc.make_html(binned[dim, 1:3])
     sc.make_html(binned[dim, 1])
-    sc.make_html(binned[dim, 1].bins.data)
+    sc.make_html(binned[dim, 1].bins.data)  # type: ignore[union-attr]
 
 
 @given(da=scst.dataarrays(data_args={'ndim': st.integers(min_value=1, max_value=4)}))
 @settings()
-def test_html_repr_dataset(da) -> None:
+def test_html_repr_dataset(da: sc.DataArray) -> None:
     ds = sc.Dataset({'a': da, 'b': 2 * da})
     sc.make_html(ds)
     sc.make_html(ds[da.dims[0], 1:10])
@@ -109,7 +113,7 @@ def test_html_repr_dataset(da) -> None:
     var=scst.variables(),
 )
 @settings()
-def test_html_repr_dense_datagroup(da, var) -> None:
+def test_html_repr_dense_datagroup(da: sc.DataArray, var: sc.Variable) -> None:
     dg = sc.DataGroup(
         {
             'a': da,
@@ -126,7 +130,7 @@ def test_html_repr_dense_datagroup(da, var) -> None:
     from bs4 import BeautifulSoup
 
     html_parser = BeautifulSoup(dg_repr_html, "html.parser")
-    assert (type(dg).__name__) in html_parser.find('div', class_='sc-obj-type').text
+    assert type(dg).__name__ in html_parser.find('div', class_='sc-obj-type').text  # type: ignore[union-attr]
     assert bool(html_parser.find('div', class_='dg-root'))
     assert bool(html_parser.find('div', class_='dg-detail-box'))
 
@@ -134,12 +138,12 @@ def test_html_repr_dense_datagroup(da, var) -> None:
 def test_html_repr_deep_datagroup() -> None:
     dg = sc.DataGroup({'x': sc.scalar(6.2)})
     for i in range(10):
-        dg = sc.DataGroup({f'group-{i}': dg})
+        dg = sc.DataGroup[Any]({f'group-{i}': dg})
 
     dg_repr_html = sc.make_html(dg)
     from bs4 import BeautifulSoup
 
     html_parser = BeautifulSoup(dg_repr_html, "html.parser")
-    assert (type(dg).__name__) in html_parser.find('div', class_='sc-obj-type').text
+    assert type(dg).__name__ in html_parser.find('div', class_='sc-obj-type').text  # type: ignore[union-attr]
     assert bool(html_parser.find('div', class_='dg-root'))
     assert bool(html_parser.find('div', class_='dg-detail-box'))
