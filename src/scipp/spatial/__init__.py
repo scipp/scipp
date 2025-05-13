@@ -413,7 +413,8 @@ def linear_transforms(
     *,
     dims: Sequence[str],
     unit: Unit | str = units.dimensionless,
-    values: npt.NDArray[_Float] | Sequence[Any],
+    values: npt.NDArray[np.floating[_Precision] | np.integer[_Precision]]
+    | Sequence[Any],
 ) -> Variable:
     """Constructs a :class:`Variable` with given dimensions holding an array
     of 3x3 matrices.
