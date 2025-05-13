@@ -24,7 +24,7 @@ from .core import (
     zeros,
 )
 
-_Shape = TypeVar('_Shape')
+_Shape = TypeVar('_Shape', bound=tuple[int, ...])
 _DType = TypeVar('_DType', bound=np.generic)
 _Float = TypeVar('_Float', np.float64, np.float32)
 
