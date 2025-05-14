@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
+from collections.abc import Iterable
+
 import pytest
 import scipy.constants as theirs
 
@@ -7,12 +9,17 @@ import scipp as sc
 import scipp.constants as ours
 
 
-@pytest.mark.parametrize("name", dir(ours))
+def constant_names() -> Iterable[str]:
+    return filter(
+        lambda name: not name.startswith('_')
+        and isinstance(getattr(ours, name), sc.Variable),
+        dir(ours),
+    )
+
+
+@pytest.mark.parametrize("name", constant_names())
 def test_constant(name) -> None:
-    var = getattr(ours, name)
-    if not isinstance(var, sc.Variable):
-        pytest.skip()
-    assert var.value == getattr(theirs, name)
+    assert getattr(ours, name).value == getattr(theirs, name)
 
 
 def test_physical_constants() -> None:
