@@ -33,6 +33,8 @@ from ..core._cpp_wrapper_util import call_func as _call_cpp_func
 # we use `Sequence[Any]` as a simple but incomplete solution for nested lists.
 _Float = TypeVar('_Float', bound=np.float64 | np.float32, covariant=True)
 
+_Precision = TypeVar('_Precision', bound=npt.NBitBase)
+
 
 def _to_eigen_layout(a: npt.NDArray[_Float] | Sequence[Any]) -> npt.NDArray[_Float]:
     # Numpy and scipp use row-major, but Eigen matrices use column-major,
@@ -382,7 +384,8 @@ def affine_transforms(
 def linear_transform(
     *,
     unit: Unit | str = units.dimensionless,
-    value: npt.NDArray[_Float] | Sequence[_Float],
+    value: npt.NDArray[np.floating[_Precision] | np.integer[_Precision]]
+    | Sequence[np.floating[_Precision] | np.integer[_Precision]],
 ) -> Variable:
     """Constructs a zero dimensional :class:`Variable` holding a single 3x3
     matrix.
@@ -410,7 +413,8 @@ def linear_transforms(
     *,
     dims: Sequence[str],
     unit: Unit | str = units.dimensionless,
-    values: npt.NDArray[_Float] | Sequence[Any],
+    values: npt.NDArray[np.floating[_Precision] | np.integer[_Precision]]
+    | Sequence[Any],
 ) -> Variable:
     """Constructs a :class:`Variable` with given dimensions holding an array
     of 3x3 matrices.

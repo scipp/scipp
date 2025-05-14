@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 
+from collections.abc import Callable
+from typing import Any
+
 import hypothesis
 import numpy as np
 import pytest
@@ -13,8 +16,8 @@ import scipp.testing.strategies as scst
 # For now,  we are just checking that creating the repr does not throw.
 
 
-def settings(**kwargs):
-    def impl(func):
+def settings(**kwargs: Any) -> Callable[..., Any]:
+    def impl(func: Callable[..., Any]) -> Callable[..., Any]:
         return hypothesis.settings(**{'max_examples': 10, 'deadline': 1000, **kwargs})(
             func
         )
@@ -24,7 +27,7 @@ def settings(**kwargs):
 
 @given(var=scst.variables(ndim=1))
 @settings()
-def test_table_variable(var) -> None:
+def test_table_variable(var: sc.Variable) -> None:
     sc.table(var)
     sc.table(var[var.dim, 1:10])
 
@@ -51,14 +54,14 @@ def test_table_variable_datetime() -> None:
 
 @given(da=scst.dataarrays(data_args={'ndim': 1}))
 @settings()
-def test_table_data_array(da) -> None:
+def test_table_data_array(da: sc.DataArray) -> None:
     sc.table(da)
     sc.table(da[da.dim, 1:10])
 
 
 @given(buffer=scst.dataarrays(data_args={'ndim': 1}))
 @settings()
-def test_table_binned_data_array(buffer) -> None:
+def test_table_binned_data_array(buffer: sc.DataArray) -> None:
     buffer.coords['xx'] = sc.arange(buffer.dim, len(buffer))
     binned = buffer.bin(xx=5)
     sc.table(binned)
@@ -67,14 +70,14 @@ def test_table_binned_data_array(buffer) -> None:
 
 @given(da=scst.dataarrays(data_args={'ndim': 1}))
 @settings()
-def test_table_dataset(da) -> None:
+def test_table_dataset(da: sc.DataArray) -> None:
     ds = sc.Dataset({'a': da, 'b': 3 * da})
     sc.table(ds)
     sc.table(ds[da.dim, 1:10])
 
 
 @pytest.mark.parametrize('ndim', [0, 2, 4])
-def test_table_raises_with_none_1d_variable(ndim) -> None:
+def test_table_raises_with_none_1d_variable(ndim: int) -> None:
     var = sc.ones(sizes={f'dim{i}': 4 for i in range(ndim)})
     with pytest.raises(ValueError, match='one-dimensional'):
         sc.table(var)
@@ -82,7 +85,7 @@ def test_table_raises_with_none_1d_variable(ndim) -> None:
 
 @given(da=scst.dataarrays(data_args={'ndim': 2}))
 @settings()
-def test_table_raises_with_2d_dataset(da) -> None:
+def test_table_raises_with_2d_dataset(da: sc.DataArray) -> None:
     ds = sc.Dataset({'a': da, 'b': 3 * da})
     with pytest.raises(ValueError, match='one-dimensional'):
         sc.table(ds)

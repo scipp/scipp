@@ -29,7 +29,7 @@ from ..core import DataArray, DataGroup, Dataset, Variable
 # of data group item 'b'
 # of data group item 'a'
 
-_T = TypeVar('_T', Variable, DataArray)
+_T = TypeVar('_T', Variable, DataArray, Dataset)
 
 
 def assert_allclose(

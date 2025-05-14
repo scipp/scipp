@@ -22,7 +22,7 @@ import scipp as sc
         sc.array(dims=['e'], values=[512, 1662], unit='s'),
     ],
 )
-def test_variable_default(var) -> None:
+def test_variable_default(var: sc.Variable) -> None:
     assert f'{var}' == str(var)
     assert f'{var:}' == str(var)
     assert f'{var::}' == str(var)
@@ -30,7 +30,7 @@ def test_variable_default(var) -> None:
 
 
 @pytest.mark.parametrize('s', ['^', ''])
-def test_variable_default_length_central(s) -> None:
+def test_variable_default_length_central(s: str) -> None:
     var = sc.arange('x', 10)
     assert '[0, 1, ..., 8, 9]' in f'{var:{s}}'
     assert '[0, 1, ..., 8, 9]' in f'{var:{s}#4}'

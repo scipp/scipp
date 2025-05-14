@@ -9,11 +9,18 @@ import scipp as sc
 from scipp.scipy.optimize import curve_fit
 
 
-def func(x, *, a, b):
-    return a * sc.exp(-(b / x.unit) * x)
+def func(x: sc.Variable, *, a: sc.Variable | float, b: float) -> sc.Variable:
+    b_var = b / x.unit  # type: ignore[operator]
+    return a * sc.exp(-b_var * x)
 
 
-def array1d(*, a=1.2, b=1.3, noise_scale=0.1, size=50):
+def array1d(
+    *,
+    a: sc.Variable | float = 1.2,
+    b: float = 1.3,
+    noise_scale: float = 0.1,
+    size: int = 50,
+) -> sc.DataArray:
     x = sc.linspace(dim='xx', start=-0.1, stop=4.0, num=size, unit='m')
     y = func(x, a=a, b=b)
     rng = np.random.default_rng()
@@ -23,11 +30,19 @@ def array1d(*, a=1.2, b=1.3, noise_scale=0.1, size=50):
 
 
 # This function can handle a and b specified as dimensionful Variables.
-def func_with_vars(x, *, a, b):
+def func_with_vars(
+    x: sc.Variable, *, a: sc.Variable | float, b: sc.Variable | float
+) -> sc.Variable:
     return a * sc.sqrt(b / x)
 
 
-def array1d_from_vars(*, a, b, noise_scale=0.1, size=50):
+def array1d_from_vars(
+    *,
+    a: sc.Variable | float,
+    b: sc.Variable | float,
+    noise_scale: float = 0.1,
+    size: int = 50,
+) -> sc.DataArray:
     x = sc.linspace(dim='xx', start=0.1, stop=4.0, num=size, unit='m')
     y = func_with_vars(x, a=a, b=b)
     rng = np.random.default_rng()

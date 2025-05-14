@@ -2,11 +2,14 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Jan-Lukas Wynen
 import numpy as np
+import numpy.typing as npt
 
 import scipp as sc
 
 
-def make_variables():
+def make_variables() -> tuple[
+    sc.Variable, sc.Variable, sc.Variable, sc.Variable, npt.NDArray[np.float64]
+]:
     data = np.arange(1, 4, dtype=float)
     a = sc.Variable(dims=['x'], values=data)
     b = sc.Variable(dims=['x'], values=data)
