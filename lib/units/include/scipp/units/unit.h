@@ -117,8 +117,8 @@ constexpr Unit counts{llnl::units::precise::count};
 constexpr Unit angstrom{llnl::units::precise::distance::angstrom};
 constexpr Unit meV{llnl::units::precise::milli *
                    llnl::units::precise::energy::eV};
-constexpr Unit c{
-    {llnl::units::precise::m / llnl::units::precise::s, 299792458}};
+constexpr Unit c{llnl::units::precise_unit{
+    299792458, llnl::units::precise::m / llnl::units::precise::s}};
 
 } // namespace scipp::units
 

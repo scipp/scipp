@@ -8,7 +8,7 @@ import numpy as np
 import scipp as sc
 
 
-def test_variable_to_dict():
+def test_variable_to_dict() -> None:
     var = sc.Variable(
         dims=["x"],
         values=np.arange(10.0),
@@ -24,7 +24,7 @@ def test_variable_to_dict():
     assert var_dict["dtype"] == var.dtype
 
 
-def test_variable_0D_to_dict():
+def test_variable_0D_to_dict() -> None:
     var = 12.0 * sc.units.one
     var_dict = sc.to_dict(var)
     assert var_dict["dims"] == ()
@@ -32,7 +32,7 @@ def test_variable_0D_to_dict():
     assert var_dict["values"] == 12.0
 
 
-def test_variable_vector_to_dict():
+def test_variable_vector_to_dict() -> None:
     var = sc.vectors(dims=['x'], values=np.random.random([10, 3]))
     var_dict = sc.to_dict(var)
     assert var_dict["dims"] == ('x',)
@@ -41,7 +41,7 @@ def test_variable_vector_to_dict():
     assert var_dict["dtype"] == sc.DType.vector3
 
 
-def test_variable_0D_vector_to_dict():
+def test_variable_0D_vector_to_dict() -> None:
     var = sc.vector(value=[1, 2, 3])
     var_dict = sc.to_dict(var)
     assert var_dict["dims"] == ()
@@ -50,7 +50,7 @@ def test_variable_0D_vector_to_dict():
     assert var_dict["dtype"] == sc.DType.vector3
 
 
-def test_variable_linear_transform_to_dict():
+def test_variable_linear_transform_to_dict() -> None:
     data = np.array(
         [
             np.arange(9.0).reshape(3, 3),
@@ -66,7 +66,7 @@ def test_variable_linear_transform_to_dict():
     assert var_dict["dtype"] == sc.DType.linear_transform3
 
 
-def test_variable_0D_linear_transform_to_dict():
+def test_variable_0D_linear_transform_to_dict() -> None:
     var = sc.spatial.linear_transform(value=np.arange(1, 10).reshape(3, 3))
     var_dict = sc.to_dict(var)
     assert var_dict["dims"] == ()
@@ -75,7 +75,7 @@ def test_variable_0D_linear_transform_to_dict():
     assert var_dict["dtype"] == sc.DType.linear_transform3
 
 
-def test_variable_from_dict():
+def test_variable_from_dict() -> None:
     var_dict = {
         "dims": ('x',),
         "values": np.random.random(10),
@@ -89,7 +89,7 @@ def test_variable_from_dict():
     assert var.unit == sc.units.one
 
 
-def test_variable_0D_from_dict():
+def test_variable_0D_from_dict() -> None:
     var_dict = {"dims": (), "values": 17.0, "variances": 0.2}
     var = sc.from_dict(var_dict)
     assert var.dims == ()
@@ -99,7 +99,7 @@ def test_variable_0D_from_dict():
     assert var.unit == sc.units.one
 
 
-def test_variable_vector_from_dict():
+def test_variable_vector_from_dict() -> None:
     var_dict = {
         "dims": ('x',),
         "values": np.arange(6).reshape(2, 3),
@@ -113,7 +113,7 @@ def test_variable_vector_from_dict():
     assert var.dtype == sc.DType.vector3
 
 
-def test_variable_0D_vector_from_dict():
+def test_variable_0D_vector_from_dict() -> None:
     var_dict = {"dims": (), "values": [1, 2, 3], "dtype": "vector3"}
     var = sc.from_dict(var_dict)
     assert var.dims == ()
@@ -123,7 +123,7 @@ def test_variable_0D_vector_from_dict():
     assert var.dtype == sc.DType.vector3
 
 
-def test_variable_linear_transform_from_dict():
+def test_variable_linear_transform_from_dict() -> None:
     var_dict = {
         "dims": ('x',),
         "values": np.arange(18).reshape(2, 3, 3),
@@ -137,7 +137,7 @@ def test_variable_linear_transform_from_dict():
     assert var.dtype == sc.DType.linear_transform3
 
 
-def test_variable_0D_linear_transform_from_dict():
+def test_variable_0D_linear_transform_from_dict() -> None:
     var_dict = {
         "dims": (),
         "values": np.arange(9).reshape(3, 3),
@@ -151,7 +151,7 @@ def test_variable_0D_linear_transform_from_dict():
     assert var.dtype == sc.DType.linear_transform3
 
 
-def test_variable_round_trip():
+def test_variable_round_trip() -> None:
     var = sc.Variable(
         dims=["x"],
         values=np.arange(10.0),
@@ -161,22 +161,22 @@ def test_variable_round_trip():
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 
-def test_variable_0D_round_trip():
+def test_variable_0D_round_trip() -> None:
     var = 12.0 * sc.units.one
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 
-def test_variable_vector_round_trip():
+def test_variable_vector_round_trip() -> None:
     var = sc.vectors(dims=['x'], values=np.random.random([10, 3]))
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 
-def test_variable_0D_vector_round_trip():
+def test_variable_0D_vector_round_trip() -> None:
     var = sc.vector(value=[1, 2, 3])
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 
-def test_variable_linear_transform_round_trip():
+def test_variable_linear_transform_round_trip() -> None:
     data = np.array(
         [
             np.arange(9.0).reshape(3, 3),
@@ -189,12 +189,12 @@ def test_variable_linear_transform_round_trip():
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 
-def test_variable_0D_matrix_round_trip():
+def test_variable_0D_matrix_round_trip() -> None:
     var = sc.spatial.linear_transform(value=np.arange(1, 10).reshape(3, 3))
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 
-def test_data_array_to_dict():
+def test_data_array_to_dict() -> None:
     da = sc.DataArray(
         coords={
             "x": sc.Variable(dims=["x"], values=np.arange(10.0)),
@@ -219,7 +219,7 @@ def test_data_array_to_dict():
     assert sc.identical(sc.from_dict(da_dict["masks"]["amask"]), da.masks["amask"])
 
 
-def test_data_array_from_dict():
+def test_data_array_from_dict() -> None:
     da_dict = {
         "coords": {
             "x": {"dims": ["x"], "values": np.arange(10), "aligned": False},
@@ -237,7 +237,7 @@ def test_data_array_from_dict():
     assert sc.identical(da.data, sc.from_dict(da_dict["data"]))
 
 
-def test_data_array_round_trip():
+def test_data_array_round_trip() -> None:
     da = sc.DataArray(
         coords={
             "x": sc.Variable(dims=["x"], values=np.arange(10.0)),
@@ -251,7 +251,7 @@ def test_data_array_round_trip():
     assert sc.identical(da, sc.from_dict(sc.to_dict(da)))
 
 
-def test_dataset_to_dict():
+def test_dataset_to_dict() -> None:
     ds = sc.Dataset(
         {
             'a': sc.array(dims=["y", "x"], values=np.random.random([5, 10])),
@@ -278,7 +278,7 @@ def test_dataset_to_dict():
     assert sc.identical(sc.from_dict(ds_dict["b"]), ds["b"])
 
 
-def test_dataset_from_dict():
+def test_dataset_from_dict() -> None:
     ds_dict = {
         "a": {
             "coords": {
@@ -310,7 +310,7 @@ def test_dataset_from_dict():
     assert sc.identical(ds["b"], sc.from_dict(ds_dict["b"]))
 
 
-def test_dataset_round_trip():
+def test_dataset_round_trip() -> None:
     ds = sc.Dataset(
         {
             "a": sc.array(dims=["y", "x"], values=np.random.random([5, 10])),

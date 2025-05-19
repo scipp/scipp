@@ -27,7 +27,7 @@ jobs:
         submodules: true
         fetch-depth: 0  # history required so cmake can determine version
 
-    - uses: pypa/cibuildwheel@v2.23.1
+    - uses: pypa/cibuildwheel@v2.23.3
       if: ${{ inputs.nightly == false }}
       env:
         CIBW_BUILD: ${{ inputs.build }}-*
@@ -36,7 +36,7 @@ jobs:
     # For nightly tests with downstream packages we package scipp
     # with 100.0.0.dev0 as the version number. A stable 100.0.0.dev0
     # version will fetch the latest nightly build for downstream tests.
-    - uses: pypa/cibuildwheel@v2.23.1
+    - uses: pypa/cibuildwheel@v2.23.3
       if: ${{ inputs.nightly }}
       env:
         CIBW_BUILD: ${{ inputs.build }}-*

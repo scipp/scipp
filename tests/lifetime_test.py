@@ -4,30 +4,32 @@
 """This file contains tests specific to pybind11 lifetime issues, in particular
 py::return_value_policy and py::keep_alive."""
 
+from collections.abc import Callable
+
 import numpy as np
 import pytest
 
 import scipp as sc
 
 
-def test_lifetime_values_of_py_array_t_item():
+def test_lifetime_values_of_py_array_t_item() -> None:
     d = sc.Dataset(data={'a': sc.Variable(dims=['x'], values=np.arange(10))})
     assert d['a'].values[-1] == 9
 
 
-def test_lifetime_values_of_py_array_t_item_of_temporary():
+def test_lifetime_values_of_py_array_t_item_of_temporary() -> None:
     d = sc.Dataset(data={'a': sc.Variable(dims=['x'], values=np.arange(10))})
     vals = (d + d)['a'].values
     d + d  # do something allocating memory to trigger potential segfault
     assert vals[-1] == 2 * 9
 
 
-def test_lifetime_values_of_item():
+def test_lifetime_values_of_item() -> None:
     d = sc.Dataset(data={'a': sc.Variable(dims=['x'], values=["aa", "bb", "cc"])})
     assert d['a'].values[2] == "cc"
 
 
-def test_lifetime_values_of_item_of_temporary():
+def test_lifetime_values_of_item_of_temporary() -> None:
     d = sc.Dataset(
         data={'a': sc.Variable(dims=['x'], values=np.arange(3))},
         coords={'x': sc.Variable(dims=['x'], values=["aa", "bb", "cc"])},
@@ -37,7 +39,7 @@ def test_lifetime_values_of_item_of_temporary():
     assert vals[2] == "cc"
 
 
-def test_lifetime_coords_of_temporary():
+def test_lifetime_coords_of_temporary() -> None:
     var = sc.Variable(dims=['x'], values=np.arange(10))
     d = sc.Dataset(data={'a': var}, coords={'x': var, 'aux': var})
     assert d.coords['x'].values[-1] == 9
@@ -47,7 +49,7 @@ def test_lifetime_coords_of_temporary():
     assert (d + d).coords['aux'].values[-1] == 9
 
 
-def test_lifetime_items_iter():
+def test_lifetime_items_iter() -> None:
     var = sc.Variable(dims=['x'], values=np.arange(10))
     d = sc.Dataset(data={'a': var}, coords={'x': var, 'aux': var})
     for _, item in (d + d).items():  # noqa: PERF102
@@ -64,14 +66,14 @@ def test_lifetime_items_iter():
         assert sc.identical(coord, var['x', 1:5])
 
 
-def test_lifetime_single_value():
+def test_lifetime_single_value() -> None:
     d = sc.Dataset(data={'a': sc.Variable(dims=['x'], values=np.arange(10))})
     var = sc.scalar(d)
     assert var.value['a'].values[-1] == 9
     assert var.copy().values['a'].values[-1] == 9
 
 
-def test_lifetime_coord_values():
+def test_lifetime_coord_values() -> None:
     var = sc.arange('x', 10)
     d = sc.Dataset({'a': var}, coords={'x': var})
     values = d.coords['x'].values
@@ -79,7 +81,7 @@ def test_lifetime_coord_values():
     assert np.array_equal(values, var.values)
 
 
-def test_lifetime_scalar_py_object():
+def test_lifetime_scalar_py_object() -> None:
     var = sc.scalar([1] * 100000)
     assert var.dtype == sc.DType.PyObject
     val = var.copy().value
@@ -90,7 +92,7 @@ def test_lifetime_scalar_py_object():
     assert val[-1] == 1
 
 
-def test_lifetime_scalar_nested():
+def test_lifetime_scalar_nested() -> None:
     var = sc.scalar(sc.array(dims=['x'], values=np.array([0, 1])))
     arr = var.value.values
     var.value = sc.array(dims=['x'], values=np.array([2, 3]))
@@ -100,7 +102,7 @@ def test_lifetime_scalar_nested():
     np.testing.assert_array_equal(arr, [0, 1])
 
 
-def test_lifetime_scalar_nested_string():
+def test_lifetime_scalar_nested_string() -> None:
     var = sc.scalar(sc.array(dims=['x'], values=np.array(['abc', 'def'])))
     arr = var.value.values
     var.value = sc.array(dims=['x'], values=np.array(['ghi', 'jkl']))
@@ -110,7 +112,7 @@ def test_lifetime_scalar_nested_string():
     np.testing.assert_array_equal(arr, ['abc', 'def'])
 
 
-def test_lifetime_scalar():
+def test_lifetime_scalar() -> None:
     elem = sc.Variable(dims=['x'], values=np.arange(100000))
     var = sc.scalar(elem)
     assert sc.identical(var.values, elem)
@@ -122,7 +124,7 @@ def test_lifetime_scalar():
     assert sc.identical(vals, elem)
 
 
-def test_lifetime_array():
+def test_lifetime_array() -> None:
     var = sc.Variable(dims=['x'], values=np.arange(5))
     array = var.values
     del var
@@ -134,7 +136,7 @@ def test_lifetime_array():
     assert np.array_equal(array, np.arange(5))
 
 
-def test_lifetime_string_array():
+def test_lifetime_string_array() -> None:
     var = sc.Variable(dims=['x'], values=['ab', 'c'] * 100000)
     assert var.values[100000] == 'ab'
     vals = var.copy().values
@@ -146,27 +148,29 @@ def test_lifetime_string_array():
 
 
 @pytest.mark.parametrize("func", [sc.abs, sc.sqrt, sc.reciprocal, sc.nan_to_num])
-def test_lifetime_out_arg(func):
+def test_lifetime_out_arg(func: Callable[..., sc.Variable]) -> None:
     var = 1.0 * sc.units.one
     var = func(var, out=var)
     var *= 1.0  # var would be an invalid view is keep_alive not correct
 
 
 @pytest.mark.parametrize("func", [sc.sin, sc.cos, sc.tan])
-def test_lifetime_trigonometry_out_arg(func):
+def test_lifetime_trigonometry_out_arg(func: Callable[..., sc.Variable]) -> None:
     var = 1.0 * sc.units.rad
     var = func(var, out=var)
     var *= 1.0  # var would be an invalid view is keep_alive not correct
 
 
 @pytest.mark.parametrize("func", [sc.asin, sc.acos, sc.atan])
-def test_lifetime_inverse_trigonometry_out_arg(func):
+def test_lifetime_inverse_trigonometry_out_arg(
+    func: Callable[..., sc.Variable],
+) -> None:
     var = 1.0 * sc.units.one
     var = func(var, out=var)
     var *= 1.0  # var would be an invalid view is keep_alive not correct
 
 
-def test_lifetime_atan2_out_arg():
+def test_lifetime_atan2_out_arg() -> None:
     var = 1.0 * sc.units.one
     var = sc.atan2(y=var, x=var, out=var)
     var *= 1.0  # var would be an invalid view is keep_alive not correct

@@ -1,7 +1,7 @@
 [build-system]
 requires = [
   "setuptools>=77",
-  "conan==1.64.1",
+  "conan==1.66.0",
   "scikit-build-core"
 ]
 build-backend = "scikit_build_core.build"
@@ -187,13 +187,8 @@ plugins = "numpy.typing.mypy_plugin"
 # Exclude files that have not yet been updated / fixed to pass type checks.
 # This list should only shrink, never grow.
 exclude = [
-    'scipp/__init__\.py',
-    'scipp/curve_fit\.py',
-    'scipp/testing/strategies\.py',
-
     '^benchmarks/',
     '^docs/',
-    '^lib/',
     '^tests/',
     '^tools/',
 ]

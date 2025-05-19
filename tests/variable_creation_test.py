@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+from collections.abc import Callable, Sequence
+from typing import Any
+
 import numpy as np
+import numpy.typing as npt
 import pytest
 
 import scipp as sc
@@ -13,7 +17,7 @@ raise_np_datetime = (
 )
 
 
-def _compare_properties(a, b):
+def _compare_properties(a: sc.Variable, b: sc.Variable) -> None:
     assert a.dims == b.dims
     assert a.shape == b.shape
     assert a.unit == b.unit
@@ -21,7 +25,12 @@ def _compare_properties(a, b):
     assert (a.variances is None) == (b.variances is None)
 
 
-def make_dummy(dims, shape, with_variances=False, **kwargs):
+def make_dummy(
+    dims: Sequence[str],
+    shape: Sequence[int],
+    with_variances: bool = False,
+    **kwargs: Any,
+) -> sc.Variable:
     # Not using empty to avoid a copy from uninitialized memory in `expected`.
     if with_variances:
         return sc.Variable(
@@ -33,7 +42,7 @@ def make_dummy(dims, shape, with_variances=False, **kwargs):
     return sc.Variable(dims=dims, values=np.full(shape, 81.0), **kwargs)
 
 
-def test_scalar_with_dtype():
+def test_scalar_with_dtype() -> None:
     value = 1.0
     variance = 5.0
     unit = sc.units.m
@@ -45,32 +54,32 @@ def test_scalar_with_dtype():
     assert sc.identical(var, expected)
 
 
-def test_scalar_float_default_unit_is_dimensionless():
+def test_scalar_float_default_unit_is_dimensionless() -> None:
     assert sc.scalar(value=1.2).unit == sc.units.one
 
 
-def test_scalar_string_default_unit_is_None():
+def test_scalar_string_default_unit_is_None() -> None:
     assert sc.scalar(value='abc').unit is None
 
 
-def test_scalar_without_dtype():
+def test_scalar_without_dtype() -> None:
     value = 'temp'
     var = sc.scalar(value)
     expected = sc.Variable(dims=(), values=value)
     assert sc.identical(var, expected)
 
 
-def test_scalar_throws_if_wrong_dtype_provided_for_str_types():
+def test_scalar_throws_if_wrong_dtype_provided_for_str_types() -> None:
     with pytest.raises(ValueError, match='Cannot convert values'):
         sc.scalar(value='temp', unit=sc.units.one, dtype=sc.DType.float64)
 
 
-def test_scalar_throws_UnitError_if_not_parsable():
+def test_scalar_throws_UnitError_if_not_parsable() -> None:
     with pytest.raises(sc.UnitError):
         sc.scalar(value=1, unit='abcdef')
 
 
-def test_scalar_of_numpy_array():
+def test_scalar_of_numpy_array() -> None:
     value = np.array([1, 2, 3])
     with pytest.raises(sc.DimensionError):
         sc.scalar(value)
@@ -79,30 +88,30 @@ def test_scalar_of_numpy_array():
     np.testing.assert_array_equal(var.value, value)
 
 
-def test_index_is_same_as_scalar_with_explicit_none_unit():
+def test_index_is_same_as_scalar_with_explicit_none_unit() -> None:
     assert sc.identical(sc.index(5), sc.scalar(5, unit=None))
     assert sc.identical(
         sc.index(6, dtype='int32'), sc.scalar(6, dtype='int32', unit=None)
     )
 
 
-def test_index_unit_is_none():
+def test_index_unit_is_none() -> None:
     i = sc.index(5)
     assert i.unit is None
 
 
-def test_index_raises_if_unit_given():
+def test_index_raises_if_unit_given() -> None:
     with pytest.raises(TypeError, match='unexpected keyword argument'):
         sc.index(5, unit='')  # type: ignore[call-arg]
 
 
-def test_zeros_creates_variable_with_correct_dims_and_shape():
+def test_zeros_creates_variable_with_correct_dims_and_shape() -> None:
     var = sc.zeros(dims=['x', 'y', 'z'], shape=[1, 2, 3])
     expected = sc.Variable(dims=['x', 'y', 'z'], values=np.zeros([1, 2, 3]))
     assert sc.identical(var, expected)
 
 
-def test_zeros_with_variances():
+def test_zeros_with_variances() -> None:
     shape = [1, 2, 3]
     var = sc.zeros(dims=['x', 'y', 'z'], shape=shape, with_variances=True)
     a = np.zeros(shape)
@@ -110,7 +119,7 @@ def test_zeros_with_variances():
     assert sc.identical(var, expected)
 
 
-def test_zeros_with_dtype_and_unit():
+def test_zeros_with_dtype_and_unit() -> None:
     var = sc.zeros(
         dims=['x', 'y', 'z'], shape=[1, 2, 3], dtype=sc.DType.int32, unit='m'
     )
@@ -118,7 +127,7 @@ def test_zeros_with_dtype_and_unit():
     assert var.unit == 'm'
 
 
-def test_zeros_dtypes():
+def test_zeros_dtypes() -> None:
     for dtype in (int, float, bool):
         assert sc.zeros(dims=(), shape=(), dtype=dtype).value == dtype(0)
     assert sc.zeros(
@@ -134,28 +143,28 @@ def test_zeros_dtypes():
     )
 
 
-def test_zeros_float_default_unit_is_dimensionless():
+def test_zeros_float_default_unit_is_dimensionless() -> None:
     var = sc.zeros(dtype=float, dims=(), shape=())
     assert var.unit == sc.units.one
 
 
-def test_zeros_string_default_unit_is_None():
+def test_zeros_string_default_unit_is_None() -> None:
     var = sc.zeros(dtype=str, dims=(), shape=())
     assert var.unit is None
 
 
-def test_ones_float_default_unit_is_dimensionless():
+def test_ones_float_default_unit_is_dimensionless() -> None:
     var = sc.ones(dtype=float, dims=(), shape=())
     assert var.unit == sc.units.one
 
 
-def test_ones_creates_variable_with_correct_dims_and_shape():
+def test_ones_creates_variable_with_correct_dims_and_shape() -> None:
     var = sc.ones(dims=['x', 'y', 'z'], shape=[1, 2, 3])
     expected = sc.Variable(dims=['x', 'y', 'z'], values=np.ones([1, 2, 3]))
     assert sc.identical(var, expected)
 
 
-def test_ones_with_variances():
+def test_ones_with_variances() -> None:
     var = sc.ones(dims=['x', 'y', 'z'], shape=[1, 2, 3], with_variances=True)
     expected = sc.Variable(
         dims=['x', 'y', 'z'], values=np.ones([1, 2, 3]), variances=np.ones([1, 2, 3])
@@ -163,13 +172,13 @@ def test_ones_with_variances():
     assert sc.identical(var, expected)
 
 
-def test_ones_with_dtype_and_unit():
+def test_ones_with_dtype_and_unit() -> None:
     var = sc.ones(dims=['x', 'y', 'z'], shape=[1, 2, 3], dtype=sc.DType.int64, unit='s')
     assert var.dtype == sc.DType.int64
     assert var.unit == 's'
 
 
-def test_ones_dtypes():
+def test_ones_dtypes() -> None:
     for dtype in (int, float, bool):
         assert sc.ones(dims=(), shape=(), dtype=dtype).value == dtype(1)
     assert sc.ones(
@@ -179,23 +188,23 @@ def test_ones_dtypes():
         sc.ones(dims=(), shape=(), dtype=str)
 
 
-def test_full_float_default_unit_is_dimensionless():
+def test_full_float_default_unit_is_dimensionless() -> None:
     var = sc.full(dims=(), shape=(), value=1.2)
     assert var.unit == sc.units.one
 
 
-def test_full_string_default_unit_is_None():
+def test_full_string_default_unit_is_None() -> None:
     var = sc.full(dims=(), shape=(), value='abc')
     assert var.unit is None
 
 
-def test_full_creates_variable_with_correct_dims_and_shape():
+def test_full_creates_variable_with_correct_dims_and_shape() -> None:
     var = sc.full(dims=['x', 'y', 'z'], shape=[1, 2, 3], value=12.34)
     expected = sc.Variable(dims=['x', 'y', 'z'], values=np.full([1, 2, 3], 12.34))
     assert sc.identical(var, expected)
 
 
-def test_full_with_variances():
+def test_full_with_variances() -> None:
     var = sc.full(dims=['x', 'y', 'z'], shape=[1, 2, 3], value=12.34, variance=56.78)
     expected = sc.Variable(
         dims=['x', 'y', 'z'],
@@ -205,7 +214,7 @@ def test_full_with_variances():
     assert sc.identical(var, expected)
 
 
-def test_full_with_dtype_and_unit():
+def test_full_with_dtype_and_unit() -> None:
     var = sc.full(
         dims=['x', 'y', 'z'], shape=[1, 2, 3], dtype=sc.DType.int64, unit='s', value=1
     )
@@ -213,31 +222,31 @@ def test_full_with_dtype_and_unit():
     assert var.unit == 's'
 
 
-def test_full_with_int_value_gives_int64_dtype():
+def test_full_with_int_value_gives_int64_dtype() -> None:
     var = sc.full(dims=(), shape=(), value=3)
     assert var.dtype == sc.DType.int64
 
 
-def test_full_with_string_value_gives_string_dtype():
+def test_full_with_string_value_gives_string_dtype() -> None:
     var = sc.full(dims=(), shape=(), value='abc')
     assert var.dtype == str
 
 
-def test_full_and_ones_equivalent():
+def test_full_and_ones_equivalent() -> None:
     assert sc.identical(
         sc.full(dims=["x", "y"], shape=(2, 2), unit="m", value=1.0),
         sc.ones(dims=["x", "y"], shape=(2, 2), unit="m"),
     )
 
 
-def test_full_and_zeros_equivalent():
+def test_full_and_zeros_equivalent() -> None:
     assert sc.identical(
         sc.full(dims=["x", "y"], shape=(2, 2), unit="m", value=0.0),
         sc.zeros(dims=["x", "y"], shape=(2, 2), unit="m"),
     )
 
 
-def test_full_like():
+def test_full_like() -> None:
     to_copy = sc.zeros(dims=["x", "y"], shape=(2, 2))
 
     assert sc.identical(
@@ -246,7 +255,7 @@ def test_full_like():
     )
 
 
-def test_full_like_with_variance():
+def test_full_like_with_variance() -> None:
     to_copy = sc.zeros(dims=["x", "y"], shape=(2, 2))
 
     assert sc.identical(
@@ -255,19 +264,19 @@ def test_full_like_with_variance():
     )
 
 
-def test_empty_creates_variable_with_correct_dims_and_shape():
+def test_empty_creates_variable_with_correct_dims_and_shape() -> None:
     var = sc.empty(dims=['x', 'y', 'z'], shape=[1, 2, 3])
     expected = make_dummy(dims=['x', 'y', 'z'], shape=[1, 2, 3])
     _compare_properties(var, expected)
 
 
-def test_empty_with_variances():
+def test_empty_with_variances() -> None:
     var = sc.empty(dims=['x', 'y', 'z'], shape=[1, 2, 3], with_variances=True)
     expected = make_dummy(dims=['x', 'y', 'z'], shape=[1, 2, 3], with_variances=True)
     _compare_properties(var, expected)
 
 
-def test_empty_with_dtype_and_unit():
+def test_empty_with_dtype_and_unit() -> None:
     var = sc.empty(
         dims=['x', 'y', 'z'], shape=[1, 2, 3], dtype=sc.DType.int32, unit='s'
     )
@@ -275,7 +284,7 @@ def test_empty_with_dtype_and_unit():
     assert var.unit == 's'
 
 
-def test_empty_dtypes():
+def test_empty_dtypes() -> None:
     for dtype in (int, float, bool):
         var = sc.empty(dims=['x', 'y', 'z'], shape=[1, 2, 3], dtype=dtype)
         expected = make_dummy(dims=['x', 'y', 'z'], shape=[1, 2, 3], dtype=dtype)
@@ -287,7 +296,7 @@ def test_empty_dtypes():
     _compare_properties(var, expected)
 
 
-def test_array_creates_correct_variable():
+def test_array_creates_correct_variable() -> None:
     dims = ['x']
     values = [1, 2, 3]
     variances = [4, 5, 6]
@@ -303,24 +312,24 @@ def test_array_creates_correct_variable():
     assert sc.identical(var, expected)
 
 
-def test_array_with_unit_None_gives_variable_with_unit_None():
+def test_array_with_unit_None_gives_variable_with_unit_None() -> None:
     assert sc.array(dims=['x'], values=[1.2], unit=None).unit is None
 
 
-def test_array_from_float_default_unit_is_dimensionless():
+def test_array_from_float_default_unit_is_dimensionless() -> None:
     assert sc.array(dims=['x'], values=[1.2]).unit == sc.units.one
 
 
-def test_array_from_string_default_unit_is_None():
+def test_array_from_string_default_unit_is_None() -> None:
     assert sc.array(dims=['x'], values=['abc']).unit is None
 
 
-def test_array_empty_dims():
+def test_array_empty_dims() -> None:
     assert sc.identical(
         sc.array(dims=[], values=[1]), sc.scalar([1], dtype=sc.DType.PyObject)
     )
     a = np.asarray(1.1)
-    assert sc.identical(sc.array(dims=None, values=a), sc.scalar(1.1))
+    assert sc.identical(sc.array(dims=None, values=a), sc.scalar(1.1))  # type: ignore[arg-type]
     assert sc.identical(sc.array(dims=[], values=a), sc.scalar(1.1))
     assert sc.identical(
         sc.array(dims=[], values=a, variances=a), sc.scalar(1.1, variance=1.1)
@@ -328,7 +337,7 @@ def test_array_empty_dims():
 
 
 @pytest.mark.parametrize('ndim', range(9))
-def test_array_nd_contiguous_c_layout(ndim):
+def test_array_nd_contiguous_c_layout(ndim: int) -> None:
     shape = list(range(2, ndim + 2))
     values = np.arange(np.prod(shape)).reshape(shape)
     var = sc.array(dims=[f'dim_{d}' for d in range(ndim)], values=values)
@@ -339,7 +348,7 @@ def test_array_nd_contiguous_c_layout(ndim):
 
 # ndim=0 doesn't work because np.asfortranarray(values) produces a 1d array
 @pytest.mark.parametrize('ndim', range(1, 7))
-def test_array_nd_contiguous_fortran_layout(ndim):
+def test_array_nd_contiguous_fortran_layout(ndim: int) -> None:
     shape = list(range(2, ndim + 2))
     values = np.arange(np.prod(shape)).reshape(shape)
     values = np.asfortranarray(values)
@@ -349,7 +358,9 @@ def test_array_nd_contiguous_fortran_layout(ndim):
     np.testing.assert_array_equal(var.values, values)
 
 
-def slice_array_in_dim(array, dim, step):
+def slice_array_in_dim(
+    array: npt.NDArray[Any], dim: int, step: int
+) -> npt.NDArray[Any]:
     # We cannot use numpy.take here because we don't want to
     # copy the output but get a sliced array with corresponding strides.
     if dim == 0:
@@ -375,7 +386,9 @@ def slice_array_in_dim(array, dim, step):
     [(ndim, slice_dim) for ndim in range(1, 7) for slice_dim in range(ndim)],
 )
 @pytest.mark.parametrize('step', [2, -1, -2])
-def test_array_nd_sliced_c_layout(ndim_and_slice_dim, step):
+def test_array_nd_sliced_c_layout(
+    ndim_and_slice_dim: tuple[int, int], step: int
+) -> None:
     ndim, slice_dim = ndim_and_slice_dim
     shape = list(range(2, ndim + 2))
     values = np.arange(np.prod(shape)).reshape(shape)
@@ -396,7 +409,9 @@ def test_array_nd_sliced_c_layout(ndim_and_slice_dim, step):
     ],
 )
 @pytest.mark.parametrize('step', [2, -1, -2])
-def test_array_nd_sliced_twice_c_layout(ndim_and_slice_dims, step):
+def test_array_nd_sliced_twice_c_layout(
+    ndim_and_slice_dims: tuple[int, int, int], step: int
+) -> None:
     ndim, slice_dim0, slice_dim1 = ndim_and_slice_dims
     shape = list(range(2, ndim + 2))
     values = np.arange(np.prod(shape)).reshape(shape)
@@ -414,7 +429,9 @@ def test_array_nd_sliced_twice_c_layout(ndim_and_slice_dims, step):
     [(ndim, slice_dim) for ndim in range(1, 7) for slice_dim in range(ndim)],
 )
 @pytest.mark.parametrize('step', [2, -1, -2])
-def test_array_nd_sliced_fortran_layout(ndim_and_slice_dim, step):
+def test_array_nd_sliced_fortran_layout(
+    ndim_and_slice_dim: tuple[int, int], step: int
+) -> None:
     ndim, slice_dim = ndim_and_slice_dim
     shape = list(range(2, ndim + 2))
     values = np.arange(np.prod(shape)).reshape(shape)
@@ -436,7 +453,9 @@ def test_array_nd_sliced_fortran_layout(ndim_and_slice_dim, step):
     ],
 )
 @pytest.mark.parametrize('step', [2, -1, -2])
-def test_array_nd_sliced_twice_fortran_layout(ndim_and_slice_dims, step):
+def test_array_nd_sliced_twice_fortran_layout(
+    ndim_and_slice_dims: tuple[int, int, int], step: int
+) -> None:
     ndim, slice_dim0, slice_dim1 = ndim_and_slice_dims
     shape = list(range(2, ndim + 2))
     values = np.arange(np.prod(shape)).reshape(shape)
@@ -451,7 +470,7 @@ def test_array_nd_sliced_twice_fortran_layout(ndim_and_slice_dims, step):
 
 
 @pytest.mark.parametrize('ndim', range(7, 9))
-def test_array_nd_high_dim_sliced_begin_c_layout(ndim):
+def test_array_nd_high_dim_sliced_begin_c_layout(ndim: int) -> None:
     shape = list(range(2, ndim + 2))
     values = np.arange(np.prod(shape)).reshape(shape)
     values = values[1:]
@@ -462,7 +481,7 @@ def test_array_nd_high_dim_sliced_begin_c_layout(ndim):
 
 
 @pytest.mark.parametrize('ndim', range(7, 9))
-def test_array_nd_high_dim_sliced_end_c_layout(ndim):
+def test_array_nd_high_dim_sliced_end_c_layout(ndim: int) -> None:
     shape = list(range(2, ndim + 2))
     values = np.arange(np.prod(shape)).reshape(shape)
     values = values[:-1]
@@ -472,7 +491,7 @@ def test_array_nd_high_dim_sliced_end_c_layout(ndim):
     np.testing.assert_array_equal(var.values, values)
 
 
-def test_zeros_like():
+def test_zeros_like() -> None:
     var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
     expected = sc.zeros(dims=['x', 'y', 'z'], shape=[1, 2, 3])
     zeros = sc.zeros_like(var)
@@ -480,7 +499,7 @@ def test_zeros_like():
     np.testing.assert_array_equal(zeros.values, 0)
 
 
-def test_zeros_like_with_variances():
+def test_zeros_like_with_variances() -> None:
     var = sc.Variable(
         dims=['x', 'y', 'z'],
         values=np.random.random([1, 2, 3]),
@@ -501,7 +520,7 @@ def test_zeros_like_with_variances():
     np.testing.assert_array_equal(zeros.variances, 0)
 
 
-def test_ones_like():
+def test_ones_like() -> None:
     var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
     expected = sc.ones(dims=['x', 'y', 'z'], shape=[1, 2, 3])
     ones = sc.ones_like(var)
@@ -509,7 +528,7 @@ def test_ones_like():
     np.testing.assert_array_equal(ones.values, 1)
 
 
-def test_ones_like_with_variances():
+def test_ones_like_with_variances() -> None:
     var = sc.Variable(
         dims=['x', 'y', 'z'],
         values=np.random.random([1, 2, 3]),
@@ -530,13 +549,13 @@ def test_ones_like_with_variances():
     np.testing.assert_array_equal(ones.variances, 1)
 
 
-def test_empty_like():
+def test_empty_like() -> None:
     var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
     expected = make_dummy(dims=['x', 'y', 'z'], shape=[1, 2, 3])
     _compare_properties(sc.empty_like(var), expected)
 
 
-def test_empty_like_with_variances():
+def test_empty_like_with_variances() -> None:
     var = sc.Variable(
         dims=['x', 'y', 'z'],
         values=np.random.random([1, 2, 3]),
@@ -554,14 +573,14 @@ def test_empty_like_with_variances():
     _compare_properties(sc.empty_like(var), expected)
 
 
-def test_linspace():
+def test_linspace() -> None:
     values = np.linspace(1.2, 103.0, 51)
     var = sc.linspace('x', 1.2, 103.0, 51, unit='m', dtype=sc.DType.float32)
     expected = sc.Variable(dims=['x'], values=values, unit='m', dtype=sc.DType.float32)
     assert sc.identical(var, expected)
 
 
-def test_linspace_none_unit():
+def test_linspace_none_unit() -> None:
     assert sc.linspace('x', 1.2, 103.0, 51, unit=None).unit is None
 
 
@@ -574,7 +593,9 @@ def test_linspace_none_unit():
     ],
     ids=('linspace', 'geomspace', 'logspace'),
 )
-def test_xyzspace_with_variables(range_fns):
+def test_xyzspace_with_variables(
+    range_fns: tuple[Callable[..., sc.Variable], Callable[..., npt.NDArray[Any]]],
+) -> None:
     sc_fn, np_fn = range_fns
     var = sc_fn('x', sc.scalar(1.0), sc.scalar(5.0), 4)
     values = np_fn(1.0, 5.0, 4)
@@ -586,7 +607,9 @@ def test_xyzspace_with_variables(range_fns):
     [(sc.linspace, np.linspace), (sc.geomspace, np.geomspace)],
     ids=('linspace', 'geomspace'),
 )
-def test_xyzspace_with_variables_set_unit(range_fns):
+def test_xyzspace_with_variables_set_unit(
+    range_fns: tuple[Callable[..., sc.Variable], Callable[..., npt.NDArray[Any]]],
+) -> None:
     sc_fn, np_fn = range_fns
     var = sc_fn(
         'x', sc.scalar(1.0, unit='m'), sc.scalar(5000.0, unit='mm'), 4, unit='m'
@@ -595,7 +618,7 @@ def test_xyzspace_with_variables_set_unit(range_fns):
     assert sc.identical(var, sc.array(dims=['x'], values=values, unit='m'))
 
 
-def test_logspace_with_variables_set_unit():
+def test_logspace_with_variables_set_unit() -> None:
     assert sc.identical(
         sc.logspace('x', sc.scalar(1.0), sc.scalar(3.0), 3, unit='m'),
         sc.array(dims=['x'], values=[10.0, 100.0, 1000.0], unit='m'),
@@ -603,7 +626,9 @@ def test_logspace_with_variables_set_unit():
 
 
 @pytest.mark.parametrize('unit', [sc.units.default_unit, 'one', 'm'])
-def test_logspace_with_variables_input_must_be_dimensionless(unit):
+def test_logspace_with_variables_input_must_be_dimensionless(
+    unit: sc.Unit | str,
+) -> None:
     with pytest.raises(sc.UnitError):
         sc.logspace('x', sc.scalar(1.0), sc.scalar(3.0, unit='m'), 4, unit=unit)
     with pytest.raises(sc.UnitError):
@@ -615,32 +640,54 @@ def test_logspace_with_variables_input_must_be_dimensionless(unit):
 
 
 @pytest.mark.parametrize(
+    'range_fns',
+    [
+        (sc.linspace, np.linspace),
+        (sc.geomspace, np.geomspace),
+        (sc.logspace, np.logspace),
+    ],
+    ids=('linspace', 'geomspace', 'logspace'),
+)
+def test_xyzspace_with_variables_num_can_be_int_variable(
+    range_fns: tuple[Callable[..., sc.Variable], Callable[..., npt.NDArray[Any]]],
+) -> None:
+    sc_fn, np_fn = range_fns
+    var = sc_fn('x', sc.scalar(1.0), sc.scalar(5.0), sc.scalar(4))
+    values = np_fn(1.0, 5.0, 4)
+    assert sc.identical(var, sc.array(dims=['x'], values=values))
+
+
+@pytest.mark.parametrize(
     'range_fn',
     [sc.linspace, sc.geomspace, sc.logspace],
     ids=('linspace', 'geomspace', 'logspace'),
 )
-def test_xyzspace_with_variables_num_cannot_be_variable(range_fn):
+@pytest.mark.parametrize('num', [3.0, sc.scalar(3.0)])
+def test_xyzspace_with_variables_num_cannot_be_float_variable(
+    range_fn: Callable[..., sc.Variable],
+    num: float | sc.Variable,
+) -> None:
     start = sc.scalar(1)
     stop = sc.scalar(3)
     with pytest.raises(TypeError):
-        range_fn('x', start, stop, sc.scalar(3))
+        range_fn('x', start, stop, num)
 
 
-def test_logspace():
+def test_logspace() -> None:
     values = np.logspace(2.0, 3.0, num=4)
     var = sc.logspace('y', 2.0, 3.0, num=4, unit='s')
     expected = sc.Variable(dims=['y'], values=values, unit='s', dtype=sc.DType.float64)
     assert sc.identical(var, expected)
 
 
-def test_geomspace():
+def test_geomspace() -> None:
     values = np.geomspace(1, 1000, num=4)
     var = sc.geomspace('z', 1, 1000, num=4)
     expected = sc.Variable(dims=['z'], values=values, dtype=sc.DType.float64)
     assert sc.identical(var, expected)
 
 
-def test_arange():
+def test_arange() -> None:
     values = np.arange(21)
     var = sc.arange('x', 21, unit='m', dtype=sc.DType.int32)
     expected = sc.Variable(dims=['x'], values=values, unit='m', dtype=sc.DType.int32)
@@ -651,13 +698,13 @@ def test_arange():
     assert sc.identical(var, expected)
 
 
-def test_arange_datetime_from_int():
+def test_arange_datetime_from_int() -> None:
     var = sc.arange('t', 14, 65, 21, unit='s', dtype='datetime64')
     expected = sc.datetimes(dims=['t'], values=[14, 35, 56], unit='s')
     assert sc.identical(var, expected)
 
 
-def test_arange_datetime_from_np_datetime64():
+def test_arange_datetime_from_np_datetime64() -> None:
     var = sc.arange(
         't', np.datetime64('2022-08-02T11:18'), np.datetime64('2022-08-02T11:52'), 15
     )
@@ -669,14 +716,14 @@ def test_arange_datetime_from_np_datetime64():
     assert sc.identical(var, expected)
 
 
-def test_arange_datetime_from_str_raises_if_step_has_no_unit():
+def test_arange_datetime_from_str_raises_if_step_has_no_unit() -> None:
     with pytest.raises(TypeError):
         sc.arange(
             't', '2022-08-02T06:42:45', '2022-08-02T06:43:33', 16, dtype='datetime64'
         )
 
 
-def test_arange_datetime_from_str_raises_given_string_with_timezone():
+def test_arange_datetime_from_str_raises_given_string_with_timezone() -> None:
     with pytest.raises(raise_np_datetime, match='timezone'):
         sc.arange(
             't',
@@ -687,7 +734,7 @@ def test_arange_datetime_from_str_raises_given_string_with_timezone():
         )
 
 
-def test_arange_datetime_from_str():
+def test_arange_datetime_from_str() -> None:
     var = sc.arange(
         't',
         '2022-08-02T06:42:45',
@@ -703,7 +750,7 @@ def test_arange_datetime_from_str():
     assert sc.identical(var, expected)
 
 
-def test_arange_datetime_from_scipp_datetime():
+def test_arange_datetime_from_scipp_datetime() -> None:
     var = sc.arange(
         't',
         sc.datetime('2013-04-25T14:09:11'),
@@ -719,7 +766,7 @@ def test_arange_datetime_from_scipp_datetime():
 
 
 @pytest.mark.parametrize('unit', ['one', sc.units.default_unit])
-def test_arange_with_variables(unit):
+def test_arange_with_variables(unit: str | sc.Unit) -> None:
     start = sc.scalar(1)
     stop = sc.scalar(4)
     step = sc.scalar(1)
@@ -737,7 +784,7 @@ def test_arange_with_variables(unit):
     )
 
 
-def test_arange_with_variables_uses_units_of_args():
+def test_arange_with_variables_uses_units_of_args() -> None:
     start = sc.scalar(10.0, unit='s')
     stop = sc.scalar(33.0, unit='s')
     step = sc.scalar(10.0, unit='s')
@@ -754,7 +801,7 @@ def test_arange_with_variables_uses_units_of_args():
     )
 
 
-def test_arange_with_variables_without_unit_arg_requires_same_unit():
+def test_arange_with_variables_without_unit_arg_requires_same_unit() -> None:
     start = sc.scalar(1, unit='m')
     stop = sc.scalar(4, unit='m')
     step = sc.scalar(1, unit='m')
@@ -766,7 +813,7 @@ def test_arange_with_variables_without_unit_arg_requires_same_unit():
         sc.arange('x', sc.scalar(0.001, unit='km'), stop, step)
 
 
-def test_arange_with_variables_set_unit():
+def test_arange_with_variables_set_unit() -> None:
     start = sc.scalar(1, unit='m')
     stop = sc.scalar(4, unit='m')
     step = sc.scalar(1, unit='m')
@@ -809,7 +856,7 @@ def test_arange_with_variables_set_unit():
     )
 
 
-def test_arange_with_variables_set_unit_must_be_convertible():
+def test_arange_with_variables_set_unit_must_be_convertible() -> None:
     start = sc.scalar(1, unit='m')
     stop = sc.scalar(4, unit='m')
     step = sc.scalar(1, unit='m')
@@ -821,7 +868,7 @@ def test_arange_with_variables_set_unit_must_be_convertible():
         sc.arange('x', stop, unit='kg')
 
 
-def test_arange_with_variables_mixed_types_not_allowed():
+def test_arange_with_variables_mixed_types_not_allowed() -> None:
     start = sc.scalar(1, unit='m')
     stop = 4
     step = sc.scalar(1, unit='m')
@@ -832,14 +879,14 @@ def test_arange_with_variables_mixed_types_not_allowed():
         sc.arange('x', start, stop, step, unit=unit)  # type: ignore[type-var]
 
 
-def test_arange_with_variables_requires_scalar():
+def test_arange_with_variables_requires_scalar() -> None:
     with pytest.raises(sc.DimensionError):
         sc.arange('x', sc.array(dims=['x'], values=[1, 2]))
     with pytest.raises(sc.DimensionError):
         sc.arange('x', sc.scalar(1), sc.array(dims=['x'], values=[1, 2]))
 
 
-def test_arange_with_variables_does_not_allow_variances():
+def test_arange_with_variables_does_not_allow_variances() -> None:
     start = sc.scalar(1)
     stop = sc.scalar(4)
     step = sc.scalar(1)
@@ -851,7 +898,7 @@ def test_arange_with_variables_does_not_allow_variances():
         sc.arange('x', sc.scalar(1.0, variance=0.1), stop, step)
 
 
-def test_arange_with_variables_mixed_dtype():
+def test_arange_with_variables_mixed_dtype() -> None:
     assert sc.identical(
         sc.arange('x', sc.scalar(1), sc.scalar(4.0), sc.scalar(1)),
         sc.array(dims=['x'], values=[1.0, 2.0, 3.0], dtype='float64'),
@@ -863,7 +910,9 @@ def test_arange_with_variables_mixed_dtype():
 
 
 @pytest.mark.parametrize('dtype', [np.int32, np.int64, np.float32, np.float64])
-def test_arange_with_uniform_numpy_arg_dtype_creates_array_with_same_dtype(dtype):
+def test_arange_with_uniform_numpy_arg_dtype_creates_array_with_same_dtype(
+    dtype: type,
+) -> None:
     assert sc.identical(
         sc.arange('x', dtype(2)), sc.array(dims=['x'], values=[0, 1], dtype=dtype)
     )
@@ -878,7 +927,9 @@ def test_arange_with_uniform_numpy_arg_dtype_creates_array_with_same_dtype(dtype
 
 
 @pytest.mark.parametrize('dtype', [np.int32, np.int64, np.float32, np.float64])
-def test_arange_with_uniform_scipp_arg_dtype_creates_array_with_same_dtype(dtype):
+def test_arange_with_uniform_scipp_arg_dtype_creates_array_with_same_dtype(
+    dtype: type,
+) -> None:
     assert sc.identical(
         sc.arange('x', sc.scalar(2, dtype=dtype)),
         sc.array(dims=['x'], values=[0, 1], dtype=dtype),
@@ -908,8 +959,8 @@ def test_arange_with_uniform_scipp_arg_dtype_creates_array_with_same_dtype(dtype
     ],
 )
 def test_arange_with_non_uniform_arg_dtype_creates_array_with_larger_dtype(
-    dtype, larger
-):
+    dtype: type, larger: type
+) -> None:
     assert sc.identical(
         sc.arange('x', dtype(2), larger(4)),
         sc.array(dims=['x'], values=[2, 3], dtype=larger),
@@ -932,7 +983,7 @@ def test_arange_with_non_uniform_arg_dtype_creates_array_with_larger_dtype(
     )
 
 
-def test_zeros_sizes():
+def test_zeros_sizes() -> None:
     dims = ['x', 'y', 'z']
     shape = [2, 3, 4]
     assert sc.identical(
@@ -943,7 +994,7 @@ def test_zeros_sizes():
         sc.zeros(dims=dims, shape=shape, sizes=dict(zip(dims, shape, strict=True)))
 
 
-def test_ones_sizes():
+def test_ones_sizes() -> None:
     dims = ['x', 'y', 'z']
     shape = [2, 3, 4]
     assert sc.identical(
@@ -954,7 +1005,7 @@ def test_ones_sizes():
         sc.ones(dims=dims, shape=shape, sizes=dict(zip(dims, shape, strict=True)))
 
 
-def test_empty_sizes():
+def test_empty_sizes() -> None:
     dims = ['x', 'y', 'z']
     shape = [2, 3, 4]
     _compare_properties(
@@ -966,18 +1017,18 @@ def test_empty_sizes():
 
 
 @pytest.mark.parametrize('timezone', ['Z', '-05:00', '+02'])
-def test_datetime_raises_given_string_with_timezone(timezone):
+def test_datetime_raises_given_string_with_timezone(timezone: str) -> None:
     with pytest.raises(raise_np_datetime, match='timezone'):
         sc.datetime(f'2152-11-25T13:13:46{timezone}')
 
 
 @pytest.mark.parametrize('timezone', ['Z', '-05:00', '+02'])
-def test_datetimes_raises_given_string_with_timezone(timezone):
+def test_datetimes_raises_given_string_with_timezone(timezone: str) -> None:
     with pytest.raises(raise_np_datetime, match='timezone'):
         sc.datetimes(dims=['time'], values=[f'2152-11-25T13:13:46{timezone}'], unit='s')
 
 
-def test_datetime():
+def test_datetime() -> None:
     assert sc.identical(
         sc.datetime('1970', unit='Y'), sc.scalar(np.datetime64('1970', 'Y'))
     )
@@ -1019,7 +1070,7 @@ def test_datetime():
     )
 
 
-def test_datetimes():
+def test_datetimes() -> None:
     assert sc.identical(
         sc.datetimes(dims=['t'], values=['1970', '2021'], unit='Y'),
         sc.array(
@@ -1068,7 +1119,7 @@ def test_datetimes():
     )
 
 
-def test_datetimes_raises_if_given_invalid_unit_string():
+def test_datetimes_raises_if_given_invalid_unit_string() -> None:
     with pytest.raises(sc.UnitError):
         sc.datetimes(
             dims=['t'],
@@ -1077,12 +1128,12 @@ def test_datetimes_raises_if_given_invalid_unit_string():
         )
 
 
-def test_datetime_raises_if_given_invalid_unit_string():
+def test_datetime_raises_if_given_invalid_unit_string() -> None:
     with pytest.raises(sc.UnitError):
         sc.datetime('2022-08-02T11:18', unit='not-a-valid-unit')
 
 
-def test_datetimes_raises_if_given_unit_m():
+def test_datetimes_raises_if_given_unit_m() -> None:
     # This one is special because in NumPy, 'm' means minute.
     with pytest.raises(sc.UnitError):
         sc.datetimes(
@@ -1090,13 +1141,13 @@ def test_datetimes_raises_if_given_unit_m():
         )
 
 
-def test_datetime_raises_if_given_unit_m():
+def test_datetime_raises_if_given_unit_m() -> None:
     # This one is special because in NumPy, 'm' means minute.
     with pytest.raises(sc.UnitError):
         sc.datetime('2022-08-02T11:18', unit='m')
 
 
-def test_datetime_epoch():
+def test_datetime_epoch() -> None:
     assert sc.identical(
         sc.epoch(unit='s'), sc.scalar(np.datetime64('1970-01-01T00:00:00', 's'))
     )

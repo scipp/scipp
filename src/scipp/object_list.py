@@ -25,6 +25,6 @@ def _repr_html_() -> None:
                 f"{name}</summary>{html}</details>"
             )
         out += "</details>"
-    from IPython.core.display import HTML, display
+    from IPython.display import HTML, display
 
     display(HTML(out))  # type: ignore[no-untyped-call]

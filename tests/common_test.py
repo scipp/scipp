@@ -6,7 +6,7 @@ import pytest
 import scipp as sc
 
 
-def test_bool_raises():
+def test_bool_raises() -> None:
     # Truth values of arrays are undefined
     var = sc.scalar(True)
     # For Variable __bool__ is (conditionally) supported. See detailed tests there.

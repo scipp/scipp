@@ -8,17 +8,28 @@ import types
 from collections.abc import Iterable, Mapping
 from typing import Any, TypeVar
 
-from ._scipp import core
-from .core.cpp_classes import DataArray, Variable
+from ._scipp.core import _BinsCoords, _BinsMasks
+from .core.cpp_classes import (
+    Coords,
+    DataArray,
+    Dataset,
+    DType,
+    DTypeError,
+    Masks,
+    UnitError,
+    Variable,
+    VariancesError,
+)
+from .units import dimensionless
 
 _T = TypeVar('_T')
 
 _dict_likes = [
-    (core.Dataset, core.DataArray),
-    (core.Coords, core.Variable),
-    (core.Masks, core.Variable),
-    (core._BinsCoords, core.Variable),
-    (core._BinsMasks, core.Variable),
+    (Dataset, DataArray),
+    (Coords, Variable),
+    (Masks, Variable),
+    (_BinsCoords, Variable),
+    (_BinsMasks, Variable),
 ]
 
 
@@ -76,31 +87,65 @@ def bind_get() -> None:
         cls.get = method
 
 
-def _expect_dimensionless_or_unitless(x: Variable | DataArray) -> None:
-    if x.unit is not None and x.unit != core.units.dimensionless:
-        raise core.UnitError(f'Expected unit dimensionless or no unit, got {x.unit}.')
+def _expect_dimensionless_or_unitless(x: Variable) -> None:
+    if x.unit is not None and x.unit != dimensionless:
+        raise UnitError(f'Expected unit dimensionless or no unit, got {x.unit}.')
 
 
-def _expect_no_variance(x: Variable | DataArray) -> None:
+def _expect_no_variance(x: Variable) -> None:
     if x.variance is not None:
-        raise core.VariancesError('Expected input without variances.')
+        raise VariancesError('Expected input without variances.')
 
 
-def _int_dunder(self: Variable | DataArray) -> int:
+def _expect_integer(x: Variable) -> None:
+    if x.dtype not in (DType.int64, DType.int32):
+        raise DTypeError(
+            f'Only integer dtypes can be converted to index, got {x.dtype}'
+        )
+
+
+def _int_dunder(self: Variable) -> int:
     _expect_dimensionless_or_unitless(self)
     _expect_no_variance(self)
     return int(self.value)
 
 
-def _float_dunder(self: Variable | DataArray) -> float:
+def _float_dunder(self: Variable) -> float:
     _expect_dimensionless_or_unitless(self)
     _expect_no_variance(self)
     return float(self.value)
 
 
+def _index_dunder(self: Variable) -> int:
+    """Convert self to an integer.
+
+    Requires that ``self``
+
+    - has integer dtype,
+    - is dimensionless,
+    - is a scalar,
+    - has no variance.
+
+    This method exists primarily for the benefit of type-checking label-based indexing.
+    Note that label-based indices may have a float dtype even though ``__index__``
+    does not allow it.
+    """
+    _expect_dimensionless_or_unitless(self)
+    _expect_no_variance(self)
+    _expect_integer(self)
+    return int(self.value)
+
+
 def bind_conversion_to_builtin(cls: Any) -> None:
-    cls.__int__ = _convert_to_method(name='__int__', func=_int_dunder)
-    cls.__float__ = _convert_to_method(name='__float__', func=_float_dunder)
+    cls.__int__ = _convert_to_method(
+        name='__int__', func=_int_dunder, abbreviate_doc=False
+    )
+    cls.__float__ = _convert_to_method(
+        name='__float__', func=_float_dunder, abbreviate_doc=False
+    )
+    cls.__index__ = _convert_to_method(
+        name='__index__', func=_index_dunder, abbreviate_doc=False
+    )
 
 
 class _NoDefaultType:
