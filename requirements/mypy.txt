@@ -13,5 +13,5 @@ mypy-extensions==1.1.0
     # via mypy
 pandas-stubs==2.2.3.250308
     # via -r mypy.in
-types-pytz==2025.2.0.20250326
+types-pytz==2025.2.0.20250516
     # via pandas-stubs

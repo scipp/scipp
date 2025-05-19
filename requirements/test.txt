@@ -17,11 +17,11 @@ bs4==0.0.2
     # via -r test.in
 execnet==2.1.1
     # via pytest-xdist
-hypothesis==6.131.16
+hypothesis==6.131.18
     # via -r test.in
 iniconfig==2.1.0
     # via pytest
-pluggy==1.5.0
+pluggy==1.6.0
     # via pytest
 pytest==8.3.5
     # via
