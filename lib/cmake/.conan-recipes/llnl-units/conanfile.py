@@ -5,13 +5,13 @@ from conans import CMake, ConanFile, tools
 CMAKE_PROJECT_STR = """project(
     ${UNITS_CMAKE_PROJECT_NAME}
     LANGUAGES C CXX
-    VERSION 0.12.3
+    VERSION 0.13.1
 )"""
 
 
 class UnitsConan(ConanFile):
     name = "LLNL-Units"
-    version = "0.12.3"
+    version = "0.13.1"
     license = "BSD-3"
     url = "https://github.com/llnl/units"
     homepage = "https://units.readthedocs.io"
@@ -62,16 +62,6 @@ class UnitsConan(ConanFile):
             + """
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()""",
-        )
-        tools.replace_in_file(
-            "units/units/r20_conv.cpp",
-            "namespace units {",
-            "namespace UNITS_NAMESPACE {"
-        )
-        tools.replace_in_file(
-            "units/units/r20_conv.cpp",
-            "}  // namespace units",
-            "}  // namespace UNITS_NAMESPACE"
         )
 
     def build(self):
