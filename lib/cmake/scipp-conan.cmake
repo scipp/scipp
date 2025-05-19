@@ -42,7 +42,7 @@ if(SKBUILD)
     gtest/1.15.0
     LLNL-Units/0.13.1
     pybind11/2.13.6
-    onetbb/2022.0.0
+    onetbb/2021.13.0
     OPTIONS
     benchmark:shared=False
     boost:header_only=True
