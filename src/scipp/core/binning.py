@@ -63,7 +63,9 @@ def make_histogrammed(
     scipp.bin:
         For binning data.
     """
-    if isinstance(x, Variable):
+    if isinstance(x, Variable) and x.bins is not None:
+        x = DataArray(x)
+    elif isinstance(x, Variable):
         data = scalar(1.0, unit='counts').broadcast(sizes=x.sizes)
         x = DataArray(data, coords={edges.dim: x})
     elif isinstance(x, DataArray) and x.bins is not None:
@@ -289,7 +291,7 @@ def _require_coord(name: str, coord: object) -> None:
 
 def _get_coord(x: Variable | DataArray | Dataset, name: str) -> Variable:
     if isinstance(x, Variable):
-        return x
+        return x if x.bins is None else x.bins.coords[name]
     if isinstance(x, Dataset):
         if not x.values():
             raise ValueError("Dataset is empty")
