@@ -1318,3 +1318,25 @@ def test_bin_binned_with_explicit_dim_arg_equivalent_to_manual_rename_dims_and_b
     assert_identical(
         xy.bin(z=z, dim='y'), xy.drop_coords(drop).rename_dims(y='z').bin(z=z, dim=())
     )
+
+
+def test_bin_rebin_existing_edge_cases() -> None:
+    n_event = 4
+    events = sc.DataArray(
+        sc.ones(sizes={"e": n_event}), coords={'x': sc.linspace('e', 0, 1, num=n_event)}
+    )
+    binned = events.bin(x=2)
+
+    # Bins after existing end
+    result = binned.bin(x=sc.linspace('x', 0.0, 2.0, num=10))
+    assert_identical(
+        result.bins.constituents['begin'],
+        sc.array(dims=['x'], values=[0, 1, 2, 2, 3, 4, 4, 4, 4], unit=None),
+    )
+
+    # Bins before existing start
+    result = binned.bin(x=sc.linspace('x', -1.0, 1.0, num=10))
+    assert_identical(
+        result.bins.constituents['begin'],
+        sc.array(dims=['x'], values=[0, 0, 0, 0, 0, 1, 1, 2, 3], unit=None),
+    )

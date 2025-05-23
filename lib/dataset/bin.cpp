@@ -145,6 +145,11 @@ public:
         begin += size;
       }
     }
+    // Ensure the sparse input->output mapping implemented by SubbinSizes does
+    // not lead to uninitialized output bin indices.
+    while (i < scipp::index(indices_v.size())) {
+      indices_v[i++] = std::pair(begin, begin);
+    }
     return indices;
   }
 
