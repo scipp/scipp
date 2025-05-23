@@ -20,7 +20,11 @@ target_compile_definitions(
   ${TARGET_NAME} PUBLIC SCIPP_UNITS_${SCIPP_UNITS_SYSTEM}
 )
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
-target_link_libraries(${TARGET_NAME} PUBLIC scipp-common LLNL-Units::LLNL-Units)
+if(USE_CONAN)
+  target_link_libraries(${TARGET_NAME} PUBLIC scipp-common LLNL-Units::LLNL-Units)
+else()
+  target_link_libraries(${TARGET_NAME} PUBLIC scipp-common units::units)
+endif()
 target_include_directories(
   ${TARGET_NAME}
   PUBLIC $<INSTALL_INTERFACE:include>
