@@ -334,7 +334,7 @@ class DataGroup(MutableMapping[str, _V]):
 
     def bin(
         self,
-        arg_dict: dict[str, int | Variable] | None = None,
+        arg_dict: Mapping[str, int | Variable] | None = None,
         /,
         **kwargs: int | Variable,
     ) -> DataGroup[_V]:

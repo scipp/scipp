@@ -3,7 +3,7 @@
 # @author Simon Heybrock
 import itertools
 import uuid
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, SupportsIndex, TypeVar, overload
 
 from .._scipp import core as _cpp
@@ -359,8 +359,8 @@ def _parse_coords_arg(
 
 def _make_edges(
     x: Variable | DataArray | Dataset,
-    arg_dict: dict[str, SupportsIndex | Variable] | None,
-    kwargs: dict[str, SupportsIndex | Variable],
+    arg_dict: Mapping[str, SupportsIndex | Variable] | None,
+    kwargs: Mapping[str, SupportsIndex | Variable],
 ) -> dict[str, Variable]:
     if arg_dict is not None:
         kwargs = dict(**arg_dict, **kwargs)
@@ -693,7 +693,7 @@ def nanhist(
 @overload
 def bin(
     x: Variable | DataArray,
-    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+    arg_dict: Mapping[str, SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
@@ -704,7 +704,7 @@ def bin(
 @overload
 def bin(
     x: DataGroup[Any],
-    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+    arg_dict: Mapping[str, SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
@@ -715,7 +715,7 @@ def bin(
 @data_group_overload
 def bin(
     x: Variable | DataArray | DataGroup[Any],
-    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+    arg_dict: Mapping[str, SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
