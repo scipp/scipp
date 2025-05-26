@@ -116,7 +116,7 @@ protected:
 TEST_F(DataArrayBoolBinsReductionTest, sum) {
   EXPECT_EQ(bins_sum(binned_da),
             DataArray(makeVariable<int64_t>(indices.dims(), Values{1, 0, 0, 2},
-                                            units::none)));
+                                            sc_units::none)));
 }
 
 TEST_F(DataArrayBoolBinsReductionTest, max) {

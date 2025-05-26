@@ -110,7 +110,7 @@ private:
   virtual Variable call_make_bins(const Variable &parent,
                                   const Variable &indices, const Dim dim,
                                   const DType type, const Dimensions &dims,
-                                  const units::Unit &unit,
+                                  const sc_units::Unit &unit,
                                   const bool variances) const = 0;
 
 protected:
@@ -124,7 +124,7 @@ protected:
 
 public:
   Variable create(const DType elem_dtype, const Dimensions &dims,
-                  const units::Unit &unit, const bool variances,
+                  const sc_units::Unit &unit, const bool variances,
                   const typename AbstractVariableMaker::parent_list &parents)
       const override {
     const Variable &parent = bin_parent(parents);
@@ -143,16 +143,16 @@ public:
   DType elem_dtype(const Variable &var) const override {
     return std::get<2>(var.constituents<T>()).dtype();
   }
-  units::Unit elem_unit(const Variable &var) const override {
+  sc_units::Unit elem_unit(const Variable &var) const override {
     return std::get<2>(var.constituents<T>()).unit();
   }
   void expect_can_set_elem_unit(const Variable &var,
-                                const units::Unit &u) const override {
+                                const sc_units::Unit &u) const override {
     if (elem_unit(var) != u && var.is_slice())
       throw except::UnitError("Partial view on data of variable cannot be "
                               "used to change the unit.");
   }
-  void set_elem_unit(Variable &var, const units::Unit &u) const override {
+  void set_elem_unit(Variable &var, const sc_units::Unit &u) const override {
     std::get<2>(var.constituents<T>()).setUnit(u);
   }
   bool has_masks(const Variable &var) const override {

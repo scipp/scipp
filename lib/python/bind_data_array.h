@@ -266,7 +266,7 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name,
   py::class_<T> view(m, name.c_str(), docs.c_str());
   bind_common_mutable_view_operators(view);
   bind_inequality_to_operator<T>(view);
-  bind_dict_update(view, [](T &self, const units::Dim &key,
+  bind_dict_update(view, [](T &self, const sc_units::Dim &key,
                             const Variable &value) { self.set(key, value); });
   bind_pop(view);
   bind_set_aligned(view);

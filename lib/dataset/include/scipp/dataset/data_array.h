@@ -52,9 +52,9 @@ public:
     return m_data->strides();
   }
   [[nodiscard]] DType dtype() const { return m_data->dtype(); }
-  [[nodiscard]] units::Unit unit() const { return m_data->unit(); }
+  [[nodiscard]] sc_units::Unit unit() const { return m_data->unit(); }
 
-  void setUnit(const units::Unit unit) { m_data->setUnit(unit); }
+  void setUnit(const sc_units::Unit unit) { m_data->setUnit(unit); }
 
   /// Return true if the data array contains data variances.
   bool has_variances() const { return m_data->has_variances(); }

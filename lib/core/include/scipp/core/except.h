@@ -121,7 +121,7 @@ void sizeMatches(const T &range, const Ts &...other) {
 inline auto to_string(const std::string &s) { return s; }
 
 template <class T>
-void unit(const T &object, const units::Unit &unit,
+void unit(const T &object, const sc_units::Unit &unit,
           std::string optional_message = "") {
   expect::equals(object.unit(), unit, optional_message);
 }

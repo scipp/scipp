@@ -20,9 +20,10 @@ auto make_table(const scipp::index size) {
 }
 
 auto make_edges(const Dim dim, const scipp::index size) {
-  return cumsum(broadcast((4.0 / size) * units::one, Dimensions(dim, size + 1)),
-                CumSumMode::Exclusive) -
-         (2.0 * units::one);
+  return cumsum(
+             broadcast((4.0 / size) * sc_units::one, Dimensions(dim, size + 1)),
+             CumSumMode::Exclusive) -
+         (2.0 * sc_units::one);
 }
 
 static void BM_bin_table(benchmark::State &state) {

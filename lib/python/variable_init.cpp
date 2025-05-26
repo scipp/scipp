@@ -147,7 +147,7 @@ void ensure_is_scalar(const py::buffer &array) {
 }
 
 template <class T>
-T extract_scalar(const py::object &obj, const units::Unit unit) {
+T extract_scalar(const py::object &obj, const sc_units::Unit unit) {
   using TM = ElementTypeMap<T>;
   using PyType = typename TM::PyType;
   TM::check_assignable(obj, unit);
@@ -161,7 +161,7 @@ T extract_scalar(const py::object &obj, const units::Unit unit) {
 
 template <>
 core::time_point extract_scalar<core::time_point>(const py::object &obj,
-                                                  const units::Unit unit) {
+                                                  const sc_units::Unit unit) {
   using TM = ElementTypeMap<core::time_point>;
   using PyType = typename TM::PyType;
   TM::check_assignable(obj, unit);
@@ -177,7 +177,7 @@ core::time_point extract_scalar<core::time_point>(const py::object &obj,
 
 template <>
 python::PyObject extract_scalar<python::PyObject>(const py::object &obj,
-                                                  const units::Unit unit) {
+                                                  const sc_units::Unit unit) {
   using TM = ElementTypeMap<python::PyObject>;
   TM::check_assignable(obj, unit);
   return obj;
@@ -185,7 +185,7 @@ python::PyObject extract_scalar<python::PyObject>(const py::object &obj,
 
 template <class T>
 auto make_element_array(const Dimensions &dims, const py::object &source,
-                        const units::Unit unit) {
+                        const sc_units::Unit unit) {
   if (source.is_none()) {
     return element_array<T>();
   } else if (dims.ndim() == 0) {
@@ -199,7 +199,8 @@ auto make_element_array(const Dimensions &dims, const py::object &source,
 
 template <class T> struct MakeVariable {
   static Variable apply(const Dimensions &dims, const py::object &values,
-                        const py::object &variances, const units::Unit unit) {
+                        const py::object &variances,
+                        const sc_units::Unit unit) {
     const auto [values_unit, final_unit] = common_unit<T>(values, unit);
     auto values_array =
         Values(make_element_array<T>(dims, values, values_unit));
@@ -216,7 +217,8 @@ template <class T> struct MakeVariable {
 
 Variable make_variable(const py::object &dim_labels, const py::object &values,
                        const py::object &variances,
-                       const std::optional<units::Unit> &unit_, DType dtype) {
+                       const std::optional<sc_units::Unit> &unit_,
+                       DType dtype) {
   const auto converted_values = parse_data_sequence(dim_labels, values);
   const auto converted_variances = parse_data_sequence(dim_labels, variances);
   dtype = common_dtype(converted_values, converted_variances, dtype);
@@ -247,7 +249,7 @@ template <class T, class Elem, int... N>
 Variable make_structured_variable(const py::object &dim_labels,
                                   const py::object &values_,
                                   const py::object &variances,
-                                  const std::optional<units::Unit> &unit_) {
+                                  const std::optional<sc_units::Unit> &unit_) {
   if (!variances.is_none())
     throw except::VariancesError("Variances not supported for dtype " +
                                  to_string(dtype<Elem>));

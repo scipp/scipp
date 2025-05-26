@@ -12,8 +12,8 @@
 using namespace scipp;
 
 TEST(RebinTest, inner) {
-  const auto base = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::counts,
-                                         Values{1.0, 2.0});
+  const auto base = makeVariable<double>(Dims{Dim::X}, Shape{2},
+                                         sc_units::counts, Values{1.0, 2.0});
   const auto oldEdge =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1.0, 2.0, 3.0});
   const auto newEdge =
@@ -21,7 +21,7 @@ TEST(RebinTest, inner) {
   for (const auto &var :
        {base, astype(base, dtype<int64_t>), astype(base, dtype<int32_t>)}) {
     EXPECT_EQ(rebin(var, Dim::X, oldEdge, newEdge),
-              makeVariable<double>(Dims{Dim::X}, Shape{1}, units::counts,
+              makeVariable<double>(Dims{Dim::X}, Shape{1}, sc_units::counts,
                                    Values{3.0}));
   }
 }
@@ -30,7 +30,7 @@ TEST(RebinTest, inner_descending) {
   auto var = makeVariable<double>(
       Dims{Dim::X}, Shape{10},
       Values{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0});
-  var.setUnit(units::counts);
+  var.setUnit(sc_units::counts);
   const auto oldEdge = makeVariable<double>(
       Dims{Dim::X}, Shape{11},
       Values{10.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0});
@@ -40,15 +40,15 @@ TEST(RebinTest, inner_descending) {
 
   auto expected = makeVariable<double>(Dims{Dim::X}, Shape{5},
                                        Values{4.5, 5.5, 8.0, 18.0, 19.0});
-  expected.setUnit(units::counts);
+  expected.setUnit(sc_units::counts);
 
   ASSERT_EQ(rebinned, expected);
 }
 
 TEST(RebinTest, outer) {
-  auto base =
-      makeVariable<double>(Dimensions{{Dim::Y, 6}, {Dim::X, 2}}, units::counts,
-                           Values{1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6});
+  auto base = makeVariable<double>(Dimensions{{Dim::Y, 6}, {Dim::X, 2}},
+                                   sc_units::counts,
+                                   Values{1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6});
   const auto oldEdge =
       makeVariable<double>(Dims{Dim::Y}, Shape{7}, Values{1, 2, 3, 4, 5, 6, 7});
   const auto newEdge =
@@ -59,7 +59,7 @@ TEST(RebinTest, outer) {
     EXPECT_EQ(rebin(var, Dim::Y, oldEdge, newEdge),
 
               makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}},
-                                   units::counts, Values{4, 6, 14, 18}));
+                                   sc_units::counts, Values{4, 6, 14, 18}));
   }
 }
 
@@ -68,7 +68,7 @@ TEST(RebinTest, outer) {
 // for stride[rebin_dim] == 1.
 TEST(RebinTest, outer_increasing_1_inner) {
   const auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{4, 1},
-                                        Values{1, 2, 3, 4}, units::counts);
+                                        Values{1, 2, 3, 4}, sc_units::counts);
   constexpr auto varY = [](const auto... vals) {
     return makeVariable<double>(Dims{Dim::Y}, Shape{sizeof...(vals)},
                                 Values{vals...});
@@ -76,7 +76,7 @@ TEST(RebinTest, outer_increasing_1_inner) {
   const auto oldY = varY(0, 1, 2, 3, 4);
   constexpr auto var1x1 = [](const double value) {
     return makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{1, 1},
-                                Values{value}, units::counts);
+                                Values{value}, sc_units::counts);
   };
   // full range
   EXPECT_EQ(rebin(var, Dim::Y, oldY, oldY), var);
@@ -107,7 +107,7 @@ TEST(RebinTest, outer_increasing_1_inner) {
 TEST(RebinTest, outer_increasing_2_inner) {
   const auto var =
       makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{4, 2},
-                           Values{1, 2, 2, 4, 3, 6, 4, 8}, units::counts);
+                           Values{1, 2, 2, 4, 3, 6, 4, 8}, sc_units::counts);
   constexpr auto varY = [](const auto... vals) {
     return makeVariable<double>(Dims{Dim::Y}, Shape{sizeof...(vals)},
                                 Values{vals...});
@@ -115,7 +115,7 @@ TEST(RebinTest, outer_increasing_2_inner) {
   const auto oldY = varY(0, 1, 2, 3, 4);
   constexpr auto var1x2 = [](const double value) {
     return makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{1, 2},
-                                Values{value, 2 * value}, units::counts);
+                                Values{value, 2 * value}, sc_units::counts);
   };
   // full range
   EXPECT_EQ(rebin(var, Dim::Y, oldY, oldY), var);
@@ -145,7 +145,7 @@ TEST(RebinTest, outer_increasing_2_inner) {
 
 TEST(RebinTest, outer_decreasing_1_inner) {
   const auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{4, 1},
-                                        Values{4, 3, 2, 1}, units::counts);
+                                        Values{4, 3, 2, 1}, sc_units::counts);
   constexpr auto varY = [](const auto... vals) {
     return makeVariable<double>(Dims{Dim::Y}, Shape{sizeof...(vals)},
                                 Values{vals...});
@@ -153,7 +153,7 @@ TEST(RebinTest, outer_decreasing_1_inner) {
   const auto oldY = varY(4, 3, 2, 1, 0);
   constexpr auto var1x1 = [](const double value) {
     return makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{1, 1},
-                                Values{value}, units::counts);
+                                Values{value}, sc_units::counts);
   };
   // full range
   EXPECT_EQ(rebin(var, Dim::Y, oldY, oldY), var);
@@ -184,7 +184,7 @@ TEST(RebinTest, outer_decreasing_1_inner) {
 TEST(RebinTest, outer_decreasing_2_inner) {
   const auto var =
       makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{4, 2},
-                           Values{4, 8, 3, 6, 2, 4, 1, 2}, units::counts);
+                           Values{4, 8, 3, 6, 2, 4, 1, 2}, sc_units::counts);
   constexpr auto varY = [](const auto... vals) {
     return makeVariable<double>(Dims{Dim::Y}, Shape{sizeof...(vals)},
                                 Values{vals...});
@@ -192,7 +192,7 @@ TEST(RebinTest, outer_decreasing_2_inner) {
   const auto oldY = varY(4, 3, 2, 1, 0);
   constexpr auto var1x2 = [](const double value) {
     return makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{1, 2},
-                                Values{value, 2 * value}, units::counts);
+                                Values{value, 2 * value}, sc_units::counts);
   };
   // full range
   EXPECT_EQ(rebin(var, Dim::Y, oldY, oldY), var);
@@ -234,7 +234,7 @@ TEST_F(RebinBool1DTest, without_fractional_overlap_yields_ones_and_zeros) {
   const auto edges =
       makeVariable<double>(Dimensions{Dim::X, 5}, Values{1, 3, 5, 7, 10});
   const auto expected = makeVariable<double>(
-      Dimensions{Dim::X, 4}, Values{0.0, 1.0, 0.0, 0.0}, units::none);
+      Dimensions{Dim::X, 4}, Values{0.0, 1.0, 0.0, 0.0}, sc_units::none);
 
   const auto result = rebin(mask, Dim::X, x, edges);
 
@@ -245,7 +245,7 @@ TEST_F(RebinBool1DTest, with_fractional_overlap_yields_fractions) {
   const auto edges = makeVariable<double>(Dimensions{Dim::X, 5},
                                           Values{1.0, 3.5, 5.5, 7.0, 10.0});
   const auto expected = makeVariable<double>(
-      Dimensions{Dim::X, 4}, Values{0.5, 0.5, 0.0, 0.0}, units::none);
+      Dimensions{Dim::X, 4}, Values{0.5, 0.5, 0.0, 0.0}, sc_units::none);
 
   const auto result = rebin(mask, Dim::X, x, edges);
 
@@ -264,7 +264,7 @@ TEST(RebinBool2DTest, inner) {
                                           Values{1.0, 3.0, 4.0, 5.5, 6.0});
   const auto expected = makeVariable<double>(
       Dimensions{{Dim::Y, 2}, {Dim::X, 4}},
-      Values{1.0, 0.0, 0.5, 0.5, 0.0, 1.0, 0.0, 0.0}, units::none);
+      Values{1.0, 0.0, 0.5, 0.5, 0.0, 1.0, 0.0, 0.0}, sc_units::none);
 
   const auto result = rebin(mask, Dim::X, x, edges);
 
@@ -282,9 +282,9 @@ TEST(RebinBool2DTest, outer) {
 
   const auto newEdge =
       makeVariable<double>(Dimensions{Dim::Y, 4}, Values{0.0, 2.0, 3.5, 6.5});
-  const auto expected =
-      makeVariable<double>(Dimensions{{Dim::Y, 3}, {Dim::X, 2}},
-                           Values{0.0, 1.0, 0.5, 0.0, 0.5, 1.0}, units::none);
+  const auto expected = makeVariable<double>(
+      Dimensions{{Dim::Y, 3}, {Dim::X, 2}},
+      Values{0.0, 1.0, 0.5, 0.0, 0.5, 1.0}, sc_units::none);
 
   const auto result = rebin(mask, Dim::Y, oldEdge, newEdge);
 
@@ -302,7 +302,7 @@ TEST(RebinBool2DTest, outer_single) {
   const auto newEdge =
       makeVariable<double>(Dimensions{Dim::Y, 2}, Values{0.0, 6.5});
   const auto expected = makeVariable<double>(
-      Dimensions{{Dim::Y, 1}, {Dim::X, 2}}, Values{0.0, 1.0}, units::none);
+      Dimensions{{Dim::Y, 1}, {Dim::X, 2}}, Values{0.0, 1.0}, sc_units::none);
 
   const auto result = rebin(mask, Dim::Y, oldEdge, newEdge);
 

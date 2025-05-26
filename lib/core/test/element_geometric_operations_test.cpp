@@ -13,8 +13,8 @@ using namespace scipp;
 using namespace scipp::core::element;
 
 TEST(ElementPositionTest, unit_in) {
-  const units::Unit m(units::m);
-  const units::Unit s(units::s); // Not supported
+  const sc_units::Unit m(sc_units::m);
+  const sc_units::Unit s(sc_units::s); // Not supported
   EXPECT_THROW(geometry::position(s, m, m), except::UnitError);
   EXPECT_THROW(geometry::position(m, s, m), except::UnitError);
   EXPECT_THROW(geometry::position(m, m, s), except::UnitError);
@@ -23,7 +23,7 @@ TEST(ElementPositionTest, unit_in) {
 }
 
 TEST(ElementPositionTest, unit_out) {
-  const units::Unit m(units::m);
+  const sc_units::Unit m(sc_units::m);
   EXPECT_EQ(geometry::position(m, m, m), m);
 }
 
@@ -36,7 +36,7 @@ TEST(ElementPositionNTest, unzip_position) {
   EXPECT_EQ(geometry::x(a), a[0]);
   EXPECT_EQ(geometry::y(a), a[1]);
   EXPECT_EQ(geometry::z(a), a[2]);
-  EXPECT_EQ(geometry::x(units::m), units::m);
-  EXPECT_EQ(geometry::y(units::m), units::m);
-  EXPECT_EQ(geometry::z(units::m), units::m);
+  EXPECT_EQ(geometry::x(sc_units::m), sc_units::m);
+  EXPECT_EQ(geometry::y(sc_units::m), sc_units::m);
+  EXPECT_EQ(geometry::z(sc_units::m), sc_units::m);
 }

@@ -46,9 +46,9 @@ static constexpr auto end_edge =
 constexpr auto subbin_sizes_exclusive_scan = overloaded{
     arg_list<SubbinSizes>, [](auto &sum, auto &x) { sum.exclusive_scan(x); }};
 
-constexpr auto subbin_sizes_add_intersection =
-    overloaded{arg_list<SubbinSizes>,
-               overloaded{[](units::Unit &a, const units::Unit &b) { a += b; },
-                          [](auto &a, auto &b) { a.add_intersection(b); }}};
+constexpr auto subbin_sizes_add_intersection = overloaded{
+    arg_list<SubbinSizes>,
+    overloaded{[](sc_units::Unit &a, const sc_units::Unit &b) { a += b; },
+               [](auto &a, auto &b) { a.add_intersection(b); }}};
 
 } // namespace scipp::core::element

@@ -22,22 +22,24 @@ TEST(ElementHistogramTest, variance_flags) {
 TEST(ElementHistogramTest, unit) {
   // Note that this is an operator for `transform_subspan`, so the overload for
   // units has one argument fewer than the one for data.
-  EXPECT_EQ(element::histogram(units::m, units::counts, units::m),
-            units::counts);
+  EXPECT_EQ(element::histogram(sc_units::m, sc_units::counts, sc_units::m),
+            sc_units::counts);
 }
 
 TEST(ElementHistogramTest, event_and_edge_unit_must_match) {
-  EXPECT_NO_THROW(element::histogram(units::m, units::counts, units::m));
-  EXPECT_NO_THROW(element::histogram(units::s, units::counts, units::s));
-  EXPECT_THROW(element::histogram(units::m, units::counts, units::s),
+  EXPECT_NO_THROW(
+      element::histogram(sc_units::m, sc_units::counts, sc_units::m));
+  EXPECT_NO_THROW(
+      element::histogram(sc_units::s, sc_units::counts, sc_units::s));
+  EXPECT_THROW(element::histogram(sc_units::m, sc_units::counts, sc_units::s),
                except::UnitError);
-  EXPECT_THROW(element::histogram(units::s, units::counts, units::m),
+  EXPECT_THROW(element::histogram(sc_units::s, sc_units::counts, sc_units::m),
                except::UnitError);
 }
 
 TEST(ElementHistogramTest, weight_unit_propagates) {
-  for (const auto &unit : {units::m, units::counts, units::one})
-    EXPECT_EQ(element::histogram(units::m, unit, units::m), unit);
+  for (const auto &unit : {sc_units::m, sc_units::counts, sc_units::one})
+    EXPECT_EQ(element::histogram(sc_units::m, unit, sc_units::m), unit);
 }
 
 TEST(ElementHistogramTest, values) {

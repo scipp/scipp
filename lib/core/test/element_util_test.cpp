@@ -22,21 +22,22 @@ TEST(ElementUtilTest, where) {
 }
 
 TEST(ElementUtilTest, where_unit_preserved) {
-  for (const auto &unit : {units::m, units::one, units::s}) {
-    EXPECT_EQ(where(units::none, unit, unit), unit);
+  for (const auto &unit : {sc_units::m, sc_units::one, sc_units::s}) {
+    EXPECT_EQ(where(sc_units::none, unit, unit), unit);
   }
 }
 
 TEST(ElementUtilTest, where_unit_mismatch_fail) {
-  for (const auto &unit : {units::m, units::one, units::s}) {
-    EXPECT_THROW(where(units::none, unit, units::kg), except::UnitError);
+  for (const auto &unit : {sc_units::m, sc_units::one, sc_units::s}) {
+    EXPECT_THROW(where(sc_units::none, unit, sc_units::kg), except::UnitError);
   }
 }
 
 TEST(ElementUtilTest, where_rejects_condition_with_unit) {
-  EXPECT_NO_THROW_DISCARD(where(units::none, units::m, units::m));
-  for (const auto &unit : {units::m, units::kg, units::s, units::one}) {
-    EXPECT_THROW(where(unit, units::m, units::m), except::UnitError);
+  EXPECT_NO_THROW_DISCARD(where(sc_units::none, sc_units::m, sc_units::m));
+  for (const auto &unit :
+       {sc_units::m, sc_units::kg, sc_units::s, sc_units::one}) {
+    EXPECT_THROW(where(unit, sc_units::m, sc_units::m), except::UnitError);
   }
 }
 
@@ -56,13 +57,13 @@ TEST(ElementUtilTest, where_accepts_all_types) {
 
 TEST(ElementUtilTest, values_variances_stddev) {
   ValueAndVariance x{1.0, 2.0};
-  EXPECT_EQ(values(units::m), units::m);
+  EXPECT_EQ(values(sc_units::m), sc_units::m);
   EXPECT_EQ(values(x), 1.0);
   EXPECT_EQ(values(1.2), 1.2);
-  EXPECT_EQ(variances(units::m), units::m * units::m);
+  EXPECT_EQ(variances(sc_units::m), sc_units::m * sc_units::m);
   EXPECT_EQ(variances(x), 2.0);
-  EXPECT_EQ(stddevs(units::m), units::m);
-  EXPECT_EQ(stddevs(units::counts), units::counts);
+  EXPECT_EQ(stddevs(sc_units::m), sc_units::m);
+  EXPECT_EQ(stddevs(sc_units::counts), sc_units::counts);
   EXPECT_EQ(stddevs(x), sqrt(2.0));
 }
 
@@ -81,10 +82,10 @@ constexpr auto test_issorted = [](const auto sorted, const bool order) {
   expect_sorted_eq(2.0, 1.0, !order);
   expect_sorted_eq(1.0, -1.0, !order);
   expect_sorted_eq(-1.0, -2.0, !order);
-  units::Unit unit = units::one;
-  sorted(unit, units::m, units::m);
-  EXPECT_EQ(unit, units::none);
-  EXPECT_THROW(sorted(unit, units::m, units::s), except::UnitError);
+  sc_units::Unit unit = sc_units::one;
+  sorted(unit, sc_units::m, sc_units::m);
+  EXPECT_EQ(unit, sc_units::none);
+  EXPECT_THROW(sorted(unit, sc_units::m, sc_units::s), except::UnitError);
 };
 } // namespace
 
@@ -119,9 +120,9 @@ TEST(ElementUtilTest, islinspace_time_point) {
 TEST(ElementUtilTest, zip) {
   EXPECT_EQ(zip(1, 2), (std::pair{1, 2}));
   EXPECT_EQ(zip(3, 4), (std::pair{3, 4}));
-  EXPECT_EQ(zip(units::m, units::m), units::m);
-  EXPECT_EQ(zip(units::s, units::s), units::s);
-  EXPECT_THROW(zip(units::m, units::s), except::UnitError);
+  EXPECT_EQ(zip(sc_units::m, sc_units::m), sc_units::m);
+  EXPECT_EQ(zip(sc_units::s, sc_units::s), sc_units::s);
+  EXPECT_THROW(zip(sc_units::m, sc_units::s), except::UnitError);
 }
 
 TEST(ElementUtilTest, get) {
@@ -129,17 +130,17 @@ TEST(ElementUtilTest, get) {
   EXPECT_EQ(core::element::get<1>(std::pair{1, 2}), 2);
   EXPECT_EQ(core::element::get<0>(std::pair{3, 4}), 3);
   EXPECT_EQ(core::element::get<1>(std::pair{3, 4}), 4);
-  EXPECT_EQ(core::element::get<0>(units::m), units::m);
-  EXPECT_EQ(core::element::get<0>(units::s), units::s);
-  EXPECT_EQ(core::element::get<1>(units::m), units::m);
-  EXPECT_EQ(core::element::get<1>(units::s), units::s);
+  EXPECT_EQ(core::element::get<0>(sc_units::m), sc_units::m);
+  EXPECT_EQ(core::element::get<0>(sc_units::s), sc_units::s);
+  EXPECT_EQ(core::element::get<1>(sc_units::m), sc_units::m);
+  EXPECT_EQ(core::element::get<1>(sc_units::s), sc_units::s);
 }
 
 TEST(ElementUtilTest, fill) {
   double f64;
   float f32;
   ValueAndVariance x{1.0, 2.0};
-  units::Unit u;
+  sc_units::Unit u;
   fill(f64, 4.5);
   EXPECT_EQ(f64, 4.5);
   fill(f32, 4.5);
@@ -148,18 +149,18 @@ TEST(ElementUtilTest, fill) {
   EXPECT_EQ(x, (ValueAndVariance{4.5, 0.0}));
   fill(x, ValueAndVariance{1.2, 3.4});
   EXPECT_EQ(x, (ValueAndVariance{1.2, 3.4}));
-  fill(u, units::m);
-  EXPECT_EQ(u, units::m);
+  fill(u, sc_units::m);
+  EXPECT_EQ(u, sc_units::m);
 }
 
 TEST(ElementUtilTest, fill_zeros) {
   double x = 1.2;
   ValueAndVariance y{1.0, 2.0};
-  units::Unit u = units::m;
+  sc_units::Unit u = sc_units::m;
   fill_zeros(x);
   EXPECT_EQ(x, 0.0);
   fill_zeros(y);
   EXPECT_EQ(y, (ValueAndVariance{0.0, 0.0}));
   fill_zeros(u);
-  EXPECT_EQ(u, units::m); // unchanged
+  EXPECT_EQ(u, sc_units::m); // unchanged
 }
