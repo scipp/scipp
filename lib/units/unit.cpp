@@ -12,7 +12,7 @@
 #include "scipp/units/except.h"
 #include "scipp/units/unit.h"
 
-namespace scipp::units {
+namespace scipp::sc_units {
 
 namespace {
 std::string map_unit_string(const std::string &unit) {
@@ -26,8 +26,8 @@ std::string map_unit_string(const std::string &unit) {
                                           : unit;
 }
 
-bool is_special_unit(const llnl::units::precise_unit &unit) {
-  using namespace llnl::units::precise::custom;
+bool is_special_unit(const units::precise_unit &unit) {
+  using namespace units::precise::custom;
   const auto &base = unit.base_units();
 
   // Allowing custom_count_unit_number == 1 because that is 'arbitrary unit'
@@ -38,8 +38,7 @@ bool is_special_unit(const llnl::units::precise_unit &unit) {
 } // namespace
 
 Unit::Unit(const std::string &unit)
-    : Unit(llnl::units::unit_from_string(map_unit_string(unit),
-                                         llnl::units::strict_si)) {
+    : Unit(units::unit_from_string(map_unit_string(unit), units::strict_si)) {
   if (const auto &u = m_unit.value(); is_special_unit(u) || !is_valid(u))
     throw except::UnitError("Failed to convert string `" + unit +
                             "` to valid unit.");
@@ -111,7 +110,7 @@ Unit operator*(const Unit &a, const Unit &b) {
     return none;
   expect_not_none(a, "multiply");
   expect_not_none(b, "multiply");
-  if (llnl::units::times_overflows(a.underlying(), b.underlying()))
+  if (units::times_overflows(a.underlying(), b.underlying()))
     throw except::UnitError("Unsupported unit as result of multiplication: (" +
                             a.name() + ") * (" + b.name() + ')');
   return Unit{a.underlying() * b.underlying()};
@@ -122,7 +121,7 @@ Unit operator/(const Unit &a, const Unit &b) {
     return none;
   expect_not_none(a, "divide");
   expect_not_none(b, "divide");
-  if (llnl::units::divides_overflows(a.underlying(), b.underlying()))
+  if (units::divides_overflows(a.underlying(), b.underlying()))
     throw except::UnitError("Unsupported unit as result of division: (" +
                             a.name() + ") / (" + b.name() + ')');
   return Unit{a.underlying() / b.underlying()};
@@ -148,7 +147,7 @@ Unit rint(const Unit &a) { return a; }
 Unit sqrt(const Unit &a) {
   if (a == none)
     return a;
-  if (llnl::units::is_error(sqrt(a.underlying())))
+  if (units::is_error(sqrt(a.underlying())))
     throw except::UnitError("Unsupported unit as result of sqrt: sqrt(" +
                             a.name() + ").");
   return Unit{sqrt(a.underlying())};
@@ -157,22 +156,22 @@ Unit sqrt(const Unit &a) {
 Unit pow(const Unit &a, const int64_t power) {
   if (a == none)
     return a;
-  if (llnl::units::pow_overflows(a.underlying(), static_cast<int>(power)))
+  if (units::pow_overflows(a.underlying(), static_cast<int>(power)))
     throw except::UnitError("Unsupported unit as result of pow: pow(" +
                             a.name() + ", " + std::to_string(power) + ").");
   return Unit{a.underlying().pow(static_cast<int>(power))};
 }
 
 Unit trigonometric(const Unit &a) {
-  if (a == units::rad || a == units::deg)
-    return units::dimensionless;
+  if (a == sc_units::rad || a == sc_units::deg)
+    return sc_units::dimensionless;
   throw except::UnitError(
       "Trigonometric function requires rad or deg unit, got " + a.name() + ".");
 }
 
 Unit inverse_trigonometric(const Unit &a) {
-  if (a == units::dimensionless)
-    return units::rad;
+  if (a == sc_units::dimensionless)
+    return sc_units::rad;
   throw except::UnitError(
       "Inverse trigonometric function requires dimensionless unit, got " +
       a.name() + ".");
@@ -188,15 +187,15 @@ Unit atan2(const Unit &y, const Unit &x) {
   expect_not_none(x, "atan2");
   expect_not_none(y, "atan2");
   if (x == y)
-    return units::rad;
+    return sc_units::rad;
   throw except::UnitError(
       "atan2 function requires matching units for input, got a " + x.name() +
       " b " + y.name() + ".");
 }
 
 Unit hyperbolic(const Unit &a) {
-  if (a == units::dimensionless)
-    return units::dimensionless;
+  if (a == sc_units::dimensionless)
+    return sc_units::dimensionless;
   throw except::UnitError(
       "Hyperbolic function requires dimensionless input, got " + a.name() +
       ".");
@@ -215,9 +214,9 @@ bool identical(const Unit &a, const Unit &b) {
 }
 
 void add_unit_alias(const std::string &name, const Unit &unit) {
-  llnl::units::addUserDefinedUnit(name, unit.underlying());
+  units::addUserDefinedUnit(name, unit.underlying());
 }
 
-void clear_unit_aliases() { llnl::units::clearUserDefinedUnits(); }
+void clear_unit_aliases() { units::clearUserDefinedUnits(); }
 
-} // namespace scipp::units
+} // namespace scipp::sc_units

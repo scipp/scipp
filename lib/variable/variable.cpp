@@ -29,10 +29,10 @@ bool is_default_dimensionless(DType type, std::tuple<Ts...>) {
 }
 } // namespace
 
-units::Unit default_unit_for(const DType type) {
+sc_units::Unit default_unit_for(const DType type) {
   return is_default_dimensionless(type, default_dimensionless_dtypes)
-             ? units::dimensionless
-             : units::none;
+             ? sc_units::dimensionless
+             : sc_units::none;
 }
 
 /// Construct from parent with same dtype, unit, and has_variances but new dims.
@@ -46,8 +46,8 @@ Variable::Variable(const Variable &parent, const Dimensions &dims)
 Variable::Variable(const Dimensions &dims, VariableConceptHandle data)
     : m_dims(dims), m_strides(dims), m_object(std::move(data)) {}
 
-Variable::Variable(const llnl::units::precise_measurement &m)
-    : Variable(m.value() * units::Unit(m.units())) {}
+Variable::Variable(const units::precise_measurement &m)
+    : Variable(m.value() * sc_units::Unit(m.units())) {}
 
 namespace {
 void check_nested_in_assign(const Variable &lhs, const Variable &rhs) {
@@ -105,15 +105,15 @@ DType Variable::dtype() const { return data().dtype(); }
 
 bool Variable::has_variances() const { return data().has_variances(); }
 
-void Variable::expect_can_set_unit(const units::Unit &unit) const {
+void Variable::expect_can_set_unit(const sc_units::Unit &unit) const {
   if (this->unit() != unit && is_slice())
     throw except::UnitError("Partial view on data of variable cannot be used "
                             "to change the unit.");
 }
 
-const units::Unit &Variable::unit() const { return m_object->unit(); }
+const sc_units::Unit &Variable::unit() const { return m_object->unit(); }
 
-void Variable::setUnit(const units::Unit &unit) {
+void Variable::setUnit(const sc_units::Unit &unit) {
   expect_writable();
   expect_can_set_unit(unit);
   m_object->setUnit(unit);

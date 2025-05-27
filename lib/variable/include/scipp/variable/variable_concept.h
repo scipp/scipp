@@ -32,7 +32,7 @@ using VariableConceptHandle = std::shared_ptr<VariableConcept>;
 /// - BinArrayModel for "arrays" of bins, i.e., event data.
 class SCIPP_VARIABLE_EXPORT VariableConcept {
 public:
-  VariableConcept(const units::Unit &unit);
+  VariableConcept(const sc_units::Unit &unit);
   virtual ~VariableConcept() = default;
 
   virtual VariableConceptHandle clone() const = 0;
@@ -42,10 +42,10 @@ public:
   makeDefaultFromParent(const Variable &shape) const = 0;
 
   virtual DType dtype() const noexcept = 0;
-  virtual const units::Unit &unit() const { return m_unit; }
+  virtual const sc_units::Unit &unit() const { return m_unit; }
   virtual scipp::index size() const = 0;
 
-  virtual void setUnit(const units::Unit &unit) { m_unit = unit; }
+  virtual void setUnit(const sc_units::Unit &unit) { m_unit = unit; }
 
   virtual bool has_variances() const noexcept = 0;
   virtual void setVariances(const Variable &variances) = 0;
@@ -63,7 +63,7 @@ public:
   friend class Variable;
 
 private:
-  units::Unit m_unit;
+  sc_units::Unit m_unit;
 };
 
 } // namespace scipp::variable

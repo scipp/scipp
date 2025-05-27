@@ -50,7 +50,6 @@ if(SKBUILD)
     LLNL-Units:shared=False
     LLNL-Units:fPIC=True
     LLNL-Units:base_type=uint64_t
-    LLNL-Units:namespace=llnl::units
     GENERATORS
     cmake_find_package_multi
     deploy
@@ -63,7 +62,6 @@ else()
     LLNL-Units:shared=False
     LLNL-Units:fPIC=True
     LLNL-Units:base_type=uint64_t
-    LLNL-Units:namespace=llnl::units
     GENERATORS
     cmake_find_package_multi
   )

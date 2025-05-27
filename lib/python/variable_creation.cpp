@@ -18,7 +18,7 @@ namespace py = pybind11;
 template <class T> struct MakeZeros {
   static variable::Variable apply(const std::vector<std::string> &dims,
                                   const std::vector<scipp::index> &shape,
-                                  const units::Unit &unit,
+                                  const sc_units::Unit &unit,
                                   const bool with_variances) {
     return with_variances
                ? makeVariable<T>(make_dims(dims, shape), unit, Values{},

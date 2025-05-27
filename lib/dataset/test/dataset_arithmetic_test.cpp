@@ -240,10 +240,10 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, return_value) {
     ASSERT_EQ(&result, &a);
   }
 
-  ASSERT_TRUE((std::is_same_v<decltype(TestFixture::op(a, 5.0 * units::one)),
+  ASSERT_TRUE((std::is_same_v<decltype(TestFixture::op(a, 5.0 * sc_units::one)),
                               Dataset &>));
   {
-    const auto &result = TestFixture::op(a, 5.0 * units::one);
+    const auto &result = TestFixture::op(a, 5.0 * sc_units::one);
     ASSERT_EQ(&result, &a);
   }
 }
@@ -607,7 +607,7 @@ TYPED_TEST(DatasetBinaryOpTest, broadcast) {
 
 TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_scalar_rhs) {
   const auto dataset = std::get<0>(generateBinaryOpTestCase());
-  const auto scalar = 4.5 * units::one;
+  const auto scalar = 4.5 * sc_units::one;
 
   const auto res = TestFixture::op(dataset, scalar);
 
@@ -623,7 +623,7 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_scalar_rhs) {
 
 TYPED_TEST(DatasetBinaryOpTest, scalar_lhs_dataset_rhs) {
   const auto dataset = std::get<0>(generateBinaryOpTestCase());
-  const auto scalar = 4.5 * units::one;
+  const auto scalar = 4.5 * sc_units::one;
 
   const auto res = TestFixture::op(scalar, dataset);
 
@@ -640,7 +640,7 @@ TYPED_TEST(DatasetBinaryOpTest, scalar_lhs_dataset_rhs) {
 TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_scalar_rhs_empty_operand) {
   auto dataset = std::get<1>(generateBinaryOpTestCase());
   dataset.erase("data_a");
-  const auto scalar = 4.5 * units::one;
+  const auto scalar = 4.5 * sc_units::one;
 
   const auto res = TestFixture::op(dataset, scalar);
   EXPECT_TRUE(res.is_valid());
@@ -732,7 +732,7 @@ TEST(DatasetInPlaceStrongExceptionGuarantee, events) {
   Variable indicesBad = makeVariable<std::pair<scipp::index, scipp::index>>(
       Dims{Dim::X}, Shape{2}, Values{std::pair{0, 2}, std::pair{2, 4}});
   Variable table =
-      makeVariable<double>(Dims{Dim::Event}, Shape{4}, units::m,
+      makeVariable<double>(Dims{Dim::Event}, Shape{4}, sc_units::m,
                            Values{1, 2, 3, 4}, Variances{5, 6, 7, 8});
   Variable good = make_bins(indicesGood, Dim::Event, table);
   Variable bad = make_bins(indicesBad, Dim::Event, table);
@@ -766,7 +766,7 @@ TEST(DatasetInPlaceStrongExceptionGuarantee, events) {
 
 TEST(DataArrayMasks, can_contain_any_type_but_only_OR_bools) {
   DataArray a(makeVariable<double>(Values{1}));
-  a.masks().set("double", makeVariable<double>(units::none, Values{1}));
+  a.masks().set("double", makeVariable<double>(sc_units::none, Values{1}));
   ASSERT_THROW(a += a, except::TypeError);
   ASSERT_THROW_DISCARD(a + a, except::TypeError);
   a.masks().set("bool", makeVariable<bool>(Values{false}));

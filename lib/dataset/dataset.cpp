@@ -306,8 +306,8 @@ typename Masks::holder_type union_or(const Masks &currentMasks,
                out[key].dtype() != core::dtype<bool>) {
       throw except::TypeError(" Cannot combine non-boolean mask '" + key +
                               "' in operation");
-    } else if (item.unit() != scipp::units::none ||
-               out[key].unit() != scipp::units::none) {
+    } else if (item.unit() != scipp::sc_units::none ||
+               out[key].unit() != scipp::sc_units::none) {
       throw except::UnitError(" Cannot combine a unit-specified mask '" + key +
                               "' in operation");
     } else if (out[key].dims().includes(item.dims())) {
@@ -321,7 +321,7 @@ typename Masks::holder_type union_or(const Masks &currentMasks,
 
 void union_or_in_place(Masks &currentMasks, const Masks &otherMasks) {
   using core::to_string;
-  using units::to_string;
+  using sc_units::to_string;
 
   for (const auto &[key, item] : otherMasks) {
     const auto it = currentMasks.find(key);
@@ -339,8 +339,8 @@ void union_or_in_place(Masks &currentMasks, const Masks &otherMasks) {
       throw except::TypeError(" Cannot combine non-boolean mask '" + key +
                               "' in operation");
     } else if (it != currentMasks.end() &&
-               (item.unit() != scipp::units::none ||
-                currentMasks[key].unit() != scipp::units::none)) {
+               (item.unit() != scipp::sc_units::none ||
+                currentMasks[key].unit() != scipp::sc_units::none)) {
       throw except::UnitError(" Cannot combine a unit-specified mask '" + key +
                               "' in operation");
     }

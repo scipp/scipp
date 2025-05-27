@@ -84,8 +84,9 @@ DataArray make_1d_events_default_weights() {
       Dims{Dim::Event}, Shape{22},
       Values{1.5, 2.5, 3.5, 4.5, 5.5, 3.5, 4.5, 5.5, 6.5, 7.5, -1.0,
              0.0, 0.0, 1.0, 1.0, 2.0, 2.0, 2.0, 4.0, 4.0, 4.0, 6.0});
-  const auto weights = copy(broadcast(
-      makeVariable<double>(units::counts, Values{1}, Variances{1}), y.dims()));
+  const auto weights = copy(
+      broadcast(makeVariable<double>(sc_units::counts, Values{1}, Variances{1}),
+                y.dims()));
   const DataArray table(weights, {{Dim::Y, y}});
   const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       Dims{Dim::X}, Shape{3},
@@ -105,8 +106,9 @@ TEST(HistogramTest, fail_edges_not_sorted) {
 auto make_single_events() {
   const auto x =
       makeVariable<double>(Dims{Dim::Event}, Shape{5}, Values{0, 1, 1, 2, 3});
-  const auto weights = copy(broadcast(
-      makeVariable<double>(units::counts, Values{1}, Variances{1}), x.dims()));
+  const auto weights = copy(
+      broadcast(makeVariable<double>(sc_units::counts, Values{1}, Variances{1}),
+                x.dims()));
   const DataArray table(weights, {{Dim::X, x}});
   const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       Values{std::pair{0, 5}});
@@ -126,10 +128,10 @@ TEST(HistogramTest, below) {
   auto edges =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{-2.0, -1.0, 0.0});
   auto hist = dataset::histogram(events["events"], edges);
-  auto expected =
-      make_expected(makeVariable<double>(Dims{Dim::X}, Shape{2}, units::counts,
-                                         Values{0, 0}, Variances{0, 0}),
-                    edges);
+  auto expected = make_expected(
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, sc_units::counts,
+                           Values{0, 0}, Variances{0, 0}),
+      edges);
   EXPECT_EQ(hist, expected);
 }
 
@@ -138,10 +140,10 @@ TEST(HistogramTest, between) {
   auto edges =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1.5, 1.6, 1.7});
   auto hist = dataset::histogram(events["events"], edges);
-  auto expected =
-      make_expected(makeVariable<double>(Dims{Dim::X}, Shape{2}, units::counts,
-                                         Values{0, 0}, Variances{0, 0}),
-                    edges);
+  auto expected = make_expected(
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, sc_units::counts,
+                           Values{0, 0}, Variances{0, 0}),
+      edges);
   EXPECT_EQ(hist, expected);
 }
 
@@ -150,10 +152,10 @@ TEST(HistogramTest, above) {
   auto edges =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{3.5, 4.5, 5.5});
   auto hist = dataset::histogram(events["events"], edges);
-  auto expected =
-      make_expected(makeVariable<double>(Dims{Dim::X}, Shape{2}, units::counts,
-                                         Values{0, 0}, Variances{0, 0}),
-                    edges);
+  auto expected = make_expected(
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, sc_units::counts,
+                           Values{0, 0}, Variances{0, 0}),
+      edges);
   EXPECT_EQ(hist, expected);
 }
 
@@ -164,7 +166,7 @@ TEST(HistogramTest, data_view) {
       makeVariable<double>(Dims{Dim::Y}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
   auto hist = dataset::histogram(events, edges);
   auto expected = make_expected(
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 5}, units::counts,
+      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 5}, sc_units::counts,
                            Values(ref.begin(), ref.end()),
                            Variances(ref.begin(), ref.end())),
       edges);
@@ -212,7 +214,7 @@ DataArray make_1d_events() {
       Values{1.5, 2.5, 3.5, 4.5, 5.5, 3.5, 4.5, 5.5, 6.5, 7.5, -1.0,
              0.0, 0.0, 1.0, 1.0, 2.0, 2.0, 2.0, 4.0, 4.0, 4.0, 6.0});
   const auto weights = makeVariable<double>(
-      y.dims(), units::counts,
+      y.dims(), sc_units::counts,
       Values{1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
       Variances{1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1,
                 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
@@ -230,7 +232,7 @@ TEST(HistogramTest, weight_lists) {
       makeVariable<double>(Dims{Dim::Y}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
   std::vector<double> ref{1, 1, 1, 2, 2, 0, 0, 2, 2, 2, 2, 3, 0, 3, 0};
   auto expected = make_expected(
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 5}, units::counts,
+      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 5}, sc_units::counts,
                            Values(ref.begin(), ref.end()),
                            Variances(ref.begin(), ref.end())),
       edges);
@@ -239,7 +241,7 @@ TEST(HistogramTest, weight_lists) {
 
 TEST(HistogramTest, non_finite_values) {
   const auto data = makeVariable<double>(
-      Dims{Dim::Event}, Shape{6}, units::counts,
+      Dims{Dim::Event}, Shape{6}, sc_units::counts,
       Values{1.0, 2.0, 3.0, std::numeric_limits<double>::quiet_NaN(), 4.0,
              std::numeric_limits<double>::infinity()});
   const auto coord = makeVariable<double>(Dims{Dim::Event}, Shape{6},
@@ -250,10 +252,10 @@ TEST(HistogramTest, non_finite_values) {
   const DataArray events{data, {{Dim::X, coord}}, {{"m", mask}}};
   const auto edges =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{0.0, 2.0, 4.0, 6.0});
-  const auto expected =
-      make_expected(makeVariable<double>(Dims{Dim::X}, Shape{3}, units::counts,
-                                         Values{1.0, 3.0, 4.0}),
-                    edges);
+  const auto expected = make_expected(
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, sc_units::counts,
+                           Values{1.0, 3.0, 4.0}),
+      edges);
   EXPECT_EQ(dataset::histogram(events, edges), expected);
 }
 
@@ -263,7 +265,7 @@ TEST(HistogramTest, dense_vs_binned) {
   table_no_variance.data().setVariances(Variable{});
   for (auto table :
        {make_table(0), make_table(100), make_table(1000), table_no_variance}) {
-    table.setUnit(units::counts);
+    table.setUnit(sc_units::counts);
     const auto binned_x =
         bin(table, {makeVariable<double>(Dims{Dim::X}, Shape{5},
                                          Values{-2, -1, 0, 1, 2})});
@@ -283,7 +285,7 @@ TEST(HistogramTest, binned_with_mismatching_coord_and_edge_dtype) {
   using testdata::make_table;
   auto table = make_table(100);
   EXPECT_EQ(table.coords()[Dim::X].dtype(), dtype<double>);
-  table.setUnit(units::counts);
+  table.setUnit(sc_units::counts);
   const auto old_edges =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{-2, 0, 2});
   const auto new_edges =
@@ -306,11 +308,11 @@ TEST(HistogramTest, binned_with_mismatching_coord_and_edge_dtype) {
 struct Histogram1DTest : public ::testing::Test {
 protected:
   Histogram1DTest() {
-    data = makeVariable<double>(Dims{Dim::X}, Shape{10}, units::counts,
+    data = makeVariable<double>(Dims{Dim::X}, Shape{10}, sc_units::counts,
                                 Values{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
     coord = makeVariable<double>(Dims{Dim::X}, Shape{10},
                                  Values{1, 2, 1, 2, 3, 4, 3, 2, 1, 1});
-    mask = less(data, 4.0 * units::counts);
+    mask = less(data, 4.0 * sc_units::counts);
   }
   Variable data;
   Variable coord;
@@ -322,7 +324,7 @@ TEST_F(Histogram1DTest, coord_name_matches_dim) {
   const auto edges =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
   EXPECT_EQ(histogram(da, edges).data(),
-            makeVariable<double>(Dims{Dim::X}, Shape{3}, units::counts,
+            makeVariable<double>(Dims{Dim::X}, Shape{3}, sc_units::counts,
                                  Values{19, 12, 12}));
 }
 
@@ -332,7 +334,7 @@ TEST_F(Histogram1DTest, coord_name_differs_dim) {
   const auto edges =
       makeVariable<double>(Dims{Dim::Y}, Shape{4}, Values{1, 2, 3, 4});
   EXPECT_EQ(histogram(da, edges).data(),
-            makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::counts,
+            makeVariable<double>(Dims{Dim::Y}, Shape{3}, sc_units::counts,
                                  Values{19, 12, 12}));
 }
 
@@ -342,14 +344,14 @@ TEST_F(Histogram1DTest, int64_weights) {
   const auto edges =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
   EXPECT_EQ(histogram(da, edges).data(),
-            makeVariable<int64_t>(Dims{Dim::X}, Shape{3}, units::counts,
+            makeVariable<int64_t>(Dims{Dim::X}, Shape{3}, sc_units::counts,
                                   Values{19, 12, 12}));
 }
 
 TEST_F(Histogram1DTest, mismatching_coord_and_edge_dtype) {
   const auto coord_dtype = dtype<double>;
   const auto expected_data = makeVariable<int64_t>(
-      Dims{Dim::X}, Shape{3}, units::counts, Values{19, 12, 12});
+      Dims{Dim::X}, Shape{3}, sc_units::counts, Values{19, 12, 12});
   DataArray da(astype(data, dtype<int64_t>),
                {{Dim::X, astype(coord, coord_dtype)}}, {{"mask", mask}});
 
@@ -368,7 +370,7 @@ struct Histogram2DTest : public ::testing::Test {
 protected:
   Histogram2DTest() {
     data = makeVariable<double>(
-        Dims{Dim::Y, Dim::X}, Shape{3, 4}, units::counts,
+        Dims{Dim::Y, Dim::X}, Shape{3, 4}, sc_units::counts,
         Values{11, 12, 13, 14, 21, 22, 23, 24, 31, 32, 33, 34});
     coord = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 4},
                                  Values{1, 2, 1, 2, 3, 4, 3, 2, 1, 1, 2, 3});
@@ -388,7 +390,7 @@ TEST_F(Histogram2DTest, outer_1d_coord) {
       makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1.0, 2.5, 5.0});
   EXPECT_EQ(histogram(da, edges).data(),
             makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 2},
-                                 units::counts,
+                                 sc_units::counts,
                                  Values{42, 21, 44, 22, 46, 23, 48, 24}));
 }
 
@@ -406,7 +408,7 @@ TEST_F(Histogram2DTest, outer_2d_coord) {
       makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1.0, 2.5, 5.0});
   EXPECT_EQ(histogram(da, edges).data(),
             makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 2},
-                                 units::counts,
+                                 sc_units::counts,
                                  Values{42, 21, 44, 22, 46, 23, 38, 34}));
 }
 

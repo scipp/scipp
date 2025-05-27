@@ -15,9 +15,9 @@ using element::event::map_linspace;
 using element::event::map_sorted_edges;
 
 TEST(ElementEventMapTest, unit) {
-  units::Unit kg(units::kg);
-  units::Unit m(units::m);
-  units::Unit s(units::s);
+  sc_units::Unit kg(sc_units::kg);
+  sc_units::Unit m(sc_units::m);
+  sc_units::Unit s(sc_units::s);
   EXPECT_EQ(element::event::map(m, m, s, s), s);
   EXPECT_EQ(element::event::map(m, m, kg, kg), kg);
   EXPECT_THROW(element::event::map(m, s, s, s), except::UnitError);
@@ -27,9 +27,9 @@ TEST(ElementEventMapTest, unit) {
 }
 
 TEST(ElementEventMapTest, fill_unit_must_match_weight_unit) {
-  units::Unit kg(units::kg);
-  units::Unit m(units::m);
-  units::Unit s(units::s);
+  sc_units::Unit kg(sc_units::kg);
+  sc_units::Unit m(sc_units::m);
+  sc_units::Unit s(sc_units::s);
   EXPECT_EQ(element::event::map(m, m, kg, kg), kg);
   EXPECT_THROW(element::event::map(m, m, kg, s), except::UnitError);
 }

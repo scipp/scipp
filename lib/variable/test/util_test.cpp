@@ -14,29 +14,32 @@ using namespace scipp;
 
 TEST(LinspaceTest, dim_mismatch) {
   EXPECT_THROW_DISCARD(
-      linspace(1.0 * units::one,
-               makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::one), Dim::X,
-               4),
+      linspace(1.0 * sc_units::one,
+               makeVariable<double>(Dims{Dim::Y}, Shape{2}, sc_units::one),
+               Dim::X, 4),
       except::DimensionError);
 }
 
 TEST(LinspaceTest, unit_mismatch) {
-  EXPECT_THROW_DISCARD(linspace(1.0 * units::one, 4.0 * units::m, Dim::X, 4),
-                       except::UnitError);
+  EXPECT_THROW_DISCARD(
+      linspace(1.0 * sc_units::one, 4.0 * sc_units::m, Dim::X, 4),
+      except::UnitError);
 }
 
 TEST(LinspaceTest, dtype_mismatch) {
-  EXPECT_THROW_DISCARD(linspace(1.0 * units::one, 4.0f * units::one, Dim::X, 4),
-                       except::TypeError);
+  EXPECT_THROW_DISCARD(
+      linspace(1.0 * sc_units::one, 4.0f * sc_units::one, Dim::X, 4),
+      except::TypeError);
 }
 
 TEST(LinspaceTest, non_float_fail) {
-  EXPECT_THROW_DISCARD(linspace(1 * units::one, 4 * units::one, Dim::X, 4),
-                       except::TypeError);
+  EXPECT_THROW_DISCARD(
+      linspace(1 * sc_units::one, 4 * sc_units::one, Dim::X, 4),
+      except::TypeError);
 }
 
 TEST(LinspaceTest, variances_fail) {
-  const auto a = 1.0 * units::one;
+  const auto a = 1.0 * sc_units::one;
   const auto b = makeVariable<double>(Values{1}, Variances{1});
   EXPECT_THROW_DISCARD(linspace(a, b, Dim::X, 4), except::VariancesError);
   EXPECT_THROW_DISCARD(linspace(b, a, Dim::X, 4), except::VariancesError);
@@ -46,32 +49,37 @@ TEST(LinspaceTest, variances_fail) {
 TEST(LinspaceTest, increasing) {
   const auto expected =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
-  EXPECT_EQ(linspace(1.0 * units::one, 4.0 * units::one, Dim::X, 4), expected);
+  EXPECT_EQ(linspace(1.0 * sc_units::one, 4.0 * sc_units::one, Dim::X, 4),
+            expected);
 }
 
 TEST(LinspaceTest, increasing_float) {
   const auto expected =
       makeVariable<float>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
-  EXPECT_EQ(linspace(1.0f * units::one, 4.0f * units::one, Dim::X, 4),
+  EXPECT_EQ(linspace(1.0f * sc_units::one, 4.0f * sc_units::one, Dim::X, 4),
             expected);
 }
 
 TEST(LinspaceTest, with_unit) {
-  const auto expected = makeVariable<double>(Dims{Dim::X}, Shape{4}, units::m,
-                                             Values{1, 2, 3, 4});
-  EXPECT_EQ(linspace(1.0 * units::m, 4.0 * units::m, Dim::X, 4), expected);
+  const auto expected = makeVariable<double>(Dims{Dim::X}, Shape{4},
+                                             sc_units::m, Values{1, 2, 3, 4});
+  EXPECT_EQ(linspace(1.0 * sc_units::m, 4.0 * sc_units::m, Dim::X, 4),
+            expected);
 }
 
 TEST(LinspaceTest, fractional) {
-  const auto expected = makeVariable<double>(
-      Dims{Dim::X}, Shape{4}, units::m, Values{0.1, 0.1 + 0.1, 0.1 + 0.2, 0.4});
-  EXPECT_EQ(linspace(0.1 * units::m, 0.4 * units::m, Dim::X, 4), expected);
+  const auto expected =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, sc_units::m,
+                           Values{0.1, 0.1 + 0.1, 0.1 + 0.2, 0.4});
+  EXPECT_EQ(linspace(0.1 * sc_units::m, 0.4 * sc_units::m, Dim::X, 4),
+            expected);
 }
 
 TEST(LinspaceTest, decreasing) {
   const auto expected =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{4, 3, 2, 1});
-  EXPECT_EQ(linspace(4.0 * units::one, 1.0 * units::one, Dim::X, 4), expected);
+  EXPECT_EQ(linspace(4.0 * sc_units::one, 1.0 * sc_units::one, Dim::X, 4),
+            expected);
 }
 
 TEST(LinspaceTest, increasing_2d) {
@@ -83,9 +91,9 @@ TEST(LinspaceTest, increasing_2d) {
 }
 
 TEST(UtilTest, values_variances) {
-  const auto var = makeVariable<double>(Values{1}, Variances{2}, units::m);
-  EXPECT_EQ(values(var), 1.0 * units::m);
-  EXPECT_EQ(variances(var), 2.0 * (units::m * units::m));
+  const auto var = makeVariable<double>(Values{1}, Variances{2}, sc_units::m);
+  EXPECT_EQ(values(var), 1.0 * sc_units::m);
+  EXPECT_EQ(variances(var), 2.0 * (sc_units::m * sc_units::m));
 }
 
 TEST(UtilTest, issorted_unknown_dim) {
@@ -98,8 +106,9 @@ TEST(UtilTest, issorted_unknown_dim) {
 }
 
 TEST(UtilTest, issorted) {
-  auto var = makeVariable<float>(Dimensions{{Dim::X, 3}, {Dim::Y, 3}}, units::m,
-                                 Values{1, 2, 3, 1, 3, 2, 2, 2, 2});
+  auto var =
+      makeVariable<float>(Dimensions{{Dim::X, 3}, {Dim::Y, 3}}, sc_units::m,
+                          Values{1, 2, 3, 1, 3, 2, 2, 2, 2});
   EXPECT_EQ(issorted(var.slice({Dim::Y, 1, 1}), Dim::X, SortOrder::Ascending),
             makeVariable<bool>(Dimensions{{Dim::Y, 0}}, Values{}));
   EXPECT_EQ(
@@ -117,8 +126,8 @@ TEST(UtilTest, issorted) {
 }
 
 TEST(UtilTest, issorted_small_dimensions) {
-  auto var = makeVariable<float>(Dimensions{{Dim::X, 1}, {Dim::Y, 1}}, units::m,
-                                 Values{1});
+  auto var = makeVariable<float>(Dimensions{{Dim::X, 1}, {Dim::Y, 1}},
+                                 sc_units::m, Values{1});
   EXPECT_EQ(issorted(var, Dim::X, SortOrder::Ascending),
             makeVariable<bool>(Dimensions{{Dim::Y, 1}}, Values{true}));
   EXPECT_EQ(issorted(var, Dim::X, SortOrder::Descending),
@@ -151,11 +160,11 @@ TEST(UtilTest, allsorted_multidimensional) {
 }
 
 TEST(VariableTest, where) {
-  auto var =
-      makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{1, 2, 3});
+  auto var = makeVariable<double>(Dims{Dim::X}, Shape{3}, sc_units::m,
+                                  Values{1, 2, 3});
   auto mask =
       makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{true, false, true});
-  auto expected_var =
-      makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{1, 4, 3});
+  auto expected_var = makeVariable<double>(Dims{Dim::X}, Shape{3}, sc_units::m,
+                                           Values{1, 4, 3});
   EXPECT_EQ(where(mask, var, var + var), expected_var);
 }

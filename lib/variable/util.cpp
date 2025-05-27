@@ -35,7 +35,7 @@ Variable linspace(const Variable &start, const Variable &stop, const Dim dim,
   Variable out(start, dims);
   const auto range = stop - start;
   for (scipp::index i = 0; i < num - 1; ++i)
-    copy(start + astype(static_cast<double>(i) / (num - 1) * units::one,
+    copy(start + astype(static_cast<double>(i) / (num - 1) * sc_units::one,
                         start.dtype()) *
                      range,
          out.slice({dim, i}));
@@ -60,7 +60,7 @@ Variable isarange(const Variable &var, const Dim dim) {
 Variable issorted(const Variable &x, const Dim dim, const SortOrder order) {
   auto dims = x.dims();
   dims.erase(dim);
-  auto out = variable::ones(dims, units::none, dtype<bool>);
+  auto out = variable::ones(dims, sc_units::none, dtype<bool>);
   const auto size = x.dims()[dim];
   if (size < 2)
     return out;

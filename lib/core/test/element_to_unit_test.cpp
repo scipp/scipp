@@ -12,7 +12,7 @@ using scipp::core::element::to_unit;
 
 TEST(ElementToUnitTest, unit) {
   // Unit is simply replaced, not multiplied
-  EXPECT_EQ(to_unit(units::s, units::us), units::us);
+  EXPECT_EQ(to_unit(sc_units::s, sc_units::us), sc_units::us);
 }
 
 TEST(ElementToUnitTest, type_preserved) {

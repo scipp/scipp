@@ -25,7 +25,7 @@ auto make_subspans(T *base, const Variable &indices,
   return variable::transform<scipp::index_pair>(
       indices,
       overloaded{core::transform_flags::expect_no_variance_arg<0>,
-                 [](const units::Unit &) { return units::one; },
+                 [](const sc_units::Unit &) { return sc_units::one; },
                  [base, stride](const auto &offset) {
                    return scipp::span(base + stride * offset.first,
                                       base + stride * offset.second);
@@ -70,19 +70,19 @@ Variable subspan_view_impl(Var &var, const Dim dim, Args &&...args) {
 
 auto make_range(const scipp::index num, const scipp::index stride,
                 const Dim dim) {
-  return cumsum(broadcast(stride * units::one, {dim, num}), dim,
+  return cumsum(broadcast(stride * sc_units::one, {dim, num}), dim,
                 CumSumMode::Exclusive);
 }
 
 Variable make_indices(const Variable &var, const Dim dim) {
   auto dims = var.dims();
   dims.erase(dim);
-  auto start = scipp::index(0) * units::one;
+  auto start = scipp::index(0) * sc_units::one;
   for (const auto &label : dims) {
     const auto stride = var.stride(label);
     start = start + make_range(dims[label], stride, label);
   }
-  return zip(start, start + var.dims()[dim] * units::one);
+  return zip(start, start + var.dims()[dim] * sc_units::one);
 }
 
 } // namespace

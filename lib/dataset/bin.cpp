@@ -134,7 +134,7 @@ public:
     const auto dims = dims_override.value_or(m_dims);
     auto output_dims = merge(m_output_bin_sizes.dims(), dims);
     auto indices =
-        variable::empty(output_dims, units::none, dtype<scipp::index_pair>);
+        variable::empty(output_dims, sc_units::none, dtype<scipp::index_pair>);
     auto indices_v = indices.template values<scipp::index_pair>().as_span();
     scipp::index begin = 0;
     scipp::index i = 0;
@@ -215,7 +215,7 @@ std::unique_ptr<Mapper> make_mapper(Variable &&indices,
     // but has proven to be faster in practice.
     scipp::index chunk_size =
         floor(sqrt(builder.nbin().template value<scipp::index>()));
-    const auto chunk = astype(scipp::index{chunk_size} * units::none,
+    const auto chunk = astype(scipp::index{chunk_size} * sc_units::none,
                               indices.bin_buffer<Variable>().dtype());
     Variable fine_indices(std::move(indices));
     auto indices_ = floor_divide(fine_indices, chunk);
@@ -223,7 +223,7 @@ std::unique_ptr<Mapper> make_mapper(Variable &&indices,
     const auto n_coarse_bin = dims.volume() / chunk_size + 1;
 
     Variable output_bin_sizes = bin_detail::bin_sizes(
-        indices_, builder.offsets(), n_coarse_bin * units::none);
+        indices_, builder.offsets(), n_coarse_bin * sc_units::none);
     SingleStageMapper stage1_mapper(dims, indices_, output_bin_sizes);
 
     Dimensions stage1_out_dims(Dim::InternalBinCoarse, n_coarse_bin);
@@ -232,8 +232,8 @@ std::unique_ptr<Mapper> make_mapper(Variable &&indices,
                           stage1_mapper.bin_indices(stage1_out_dims));
     Dimensions fine_dims(Dim::InternalBinFine, chunk_size);
     const auto fine_output_bin_sizes =
-        bin_detail::bin_sizes(fine_indices, scipp::index{0} * units::none,
-                              fine_dims.volume() * units::none);
+        bin_detail::bin_sizes(fine_indices, scipp::index{0} * sc_units::none,
+                              fine_dims.volume() * sc_units::none);
     SingleStageMapper stage2_mapper(fine_dims, fine_indices,
                                     fine_output_bin_sizes);
 
@@ -319,8 +319,8 @@ public:
     const auto get_coord = [&](const Dim dim) {
       return coords.count(dim) ? coords[dim] : bin_coords.at(dim);
     };
-    m_offsets = makeVariable<scipp::index>(Values{0}, units::none);
-    m_nbin = dims().volume() * units::none;
+    m_offsets = makeVariable<scipp::index>(Values{0}, sc_units::none);
+    m_nbin = dims().volume() * sc_units::none;
     for (const auto &[action, dim, key] : m_actions) {
       if (action == AxisAction::Group)
         update_indices_by_grouping(indices, get_coord(dim), key);
@@ -361,16 +361,17 @@ public:
           auto begin =
               begin_edge(histogram ? left_edge(bin_coord) : bin_coord, key);
           auto end = histogram ? end_edge(right_edge(bin_coord), key)
-                               : begin + 2 * units::none;
+                               : begin + 2 * sc_units::none;
           // When we have bin edges (of length 2) for a dimension that is not
           // a dimension of the input it needs to be squeezed to avoid problems
           // in various places later on.
           begin = squeeze(begin, std::nullopt);
           end = squeeze(end, std::nullopt);
           const auto indices_ = zip(begin, end);
-          const auto inner_volume = dims().volume() / dims()[dim] * units::none;
+          const auto inner_volume =
+              dims().volume() / dims()[dim] * sc_units::none;
           // Number of non-zero entries (per "row" above)
-          m_nbin = (end - begin - 1 * units::none) * inner_volume;
+          m_nbin = (end - begin - 1 * sc_units::none) * inner_volume;
           // Offset to first non-zero entry (in "row" above)
           m_offsets = begin * inner_volume;
           // Mask out any output bin edges that need not be considered since
@@ -390,7 +391,7 @@ public:
         // no other actions affecting output dimensions.
         if (m_offsets.dims().empty() && m_dims[dim] == m_dims.volume()) {
           // Offset to output bin tracked using base offset for input bins
-          m_nbin = scipp::index{1} * units::none;
+          m_nbin = scipp::index{1} * sc_units::none;
           m_offsets = make_range(0, m_dims[dim], 1, dim);
         } else {
           // Offset to output bin tracked in indices for individual events
@@ -521,8 +522,8 @@ public:
     const auto &[begin_end, dim, buffer] = var.constituents<T>();
     m_target_bins_buffer =
         (dims.volume() > std::numeric_limits<int32_t>::max())
-            ? makeVariable<int64_t>(buffer.dims(), units::none)
-            : makeVariable<int32_t>(buffer.dims(), units::none);
+            ? makeVariable<int64_t>(buffer.dims(), sc_units::none)
+            : makeVariable<int32_t>(buffer.dims(), sc_units::none);
     m_target_bins = make_bins_no_validate(begin_end, dim, m_target_bins_buffer);
   }
   auto &operator*() noexcept { return m_target_bins; }
@@ -645,8 +646,8 @@ DataArray bin(const DataArray &array, const std::vector<Variable> &edges,
                               : groups.front().dims().inner());
     auto target_bins_buffer =
         (data.dims().volume() > std::numeric_limits<int32_t>::max())
-            ? makeVariable<int64_t>(data.dims(), units::none)
-            : makeVariable<int32_t>(data.dims(), units::none);
+            ? makeVariable<int64_t>(data.dims(), sc_units::none)
+            : makeVariable<int32_t>(data.dims(), sc_units::none);
     auto builder = axis_actions(data, coords, edges, groups, erase);
     builder.build(target_bins_buffer, coords);
     auto target_bins = make_bins_no_validate(

@@ -56,7 +56,7 @@ constexpr auto abs =
 
 constexpr auto norm = overloaded{arg_list<Eigen::Vector3d>,
                                  [](const auto &x) { return x.norm(); },
-                                 [](const units::Unit &x) { return x; }};
+                                 [](const sc_units::Unit &x) { return x; }};
 
 constexpr auto pow = overloaded{
     arg_list<std::tuple<double, double>, std::tuple<double, float>,
@@ -95,17 +95,17 @@ constexpr auto sqrt = overloaded{arg_list<double, float>, [](const auto x) {
 constexpr auto dot = overloaded{
     arg_list<Eigen::Vector3d>,
     [](const auto &a, const auto &b) { return a.dot(b); },
-    [](const units::Unit &a, const units::Unit &b) { return a * b; }};
+    [](const sc_units::Unit &a, const sc_units::Unit &b) { return a * b; }};
 
 constexpr auto cross = overloaded{
     arg_list<Eigen::Vector3d>,
     [](const auto &a, const auto &b) { return a.cross(b); },
-    [](const units::Unit &a, const units::Unit &b) { return a * b; }};
+    [](const sc_units::Unit &a, const sc_units::Unit &b) { return a * b; }};
 
 constexpr auto reciprocal = overloaded{
     arg_list<double, float>,
     [](const auto &x) { return static_cast<std::decay_t<decltype(x)>>(1) / x; },
-    [](const units::Unit &unit) { return units::one / unit; }};
+    [](const sc_units::Unit &unit) { return sc_units::one / unit; }};
 
 constexpr auto exp =
     overloaded{arg_list<double, float>, dimensionless_unit_check_return,
@@ -179,7 +179,7 @@ constexpr auto midpoint = overloaded{
     arg_list<double, float, int64_t, int32_t, time_point>,
     transform_flags::expect_no_variance_arg<0>,
     transform_flags::expect_no_variance_arg<1>,
-    [](const units::Unit &a, const units::Unit &b) {
+    [](const sc_units::Unit &a, const sc_units::Unit &b) {
       expect::equals(a, b);
       return a;
     },

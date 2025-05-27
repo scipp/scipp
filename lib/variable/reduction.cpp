@@ -130,9 +130,9 @@ Variable unmasked_events(const Variable &data) {
 template <class... Dim> Variable count(const Variable &var, Dim &&...dim) {
   if (!is_bins(var)) {
     if constexpr (sizeof...(dim) == 0)
-      return var.dims().volume() * units::none;
+      return var.dims().volume() * sc_units::none;
     else
-      return ((var.dims()[dim] * units::none) * ...);
+      return ((var.dims()[dim] * sc_units::none) * ...);
   }
   if (const auto unmasked = unmasked_events(var); unmasked.is_valid()) {
     return sum(unmasked, dim...);

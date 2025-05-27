@@ -9,7 +9,7 @@
 
 #include "scipp-units_export.h"
 
-namespace scipp::units {
+namespace scipp::sc_units {
 
 class SCIPP_UNITS_EXPORT Dim {
 public:
@@ -87,17 +87,17 @@ private:
 
 SCIPP_UNITS_EXPORT std::string to_string(const Dim dim);
 
-} // namespace scipp::units
+} // namespace scipp::sc_units
 
 // Hashing required temporarily while we use Dim as a key for the coord dict.
 namespace std {
-template <> struct hash<scipp::units::Dim> {
-  std::size_t operator()(const scipp::units::Dim &k) const {
-    return hash<scipp::units::Dim::Id>()(k.id());
+template <> struct hash<scipp::sc_units::Dim> {
+  std::size_t operator()(const scipp::sc_units::Dim &k) const {
+    return hash<scipp::sc_units::Dim::Id>()(k.id());
   }
 };
 } // namespace std
 
 namespace scipp {
-using scipp::units::Dim;
+using scipp::sc_units::Dim;
 }

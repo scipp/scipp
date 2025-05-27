@@ -23,7 +23,7 @@
 
 #include "scipp/variable/variable_keyword_arg_constructor.h"
 
-namespace llnl::units {
+namespace units {
 class precise_measurement;
 }
 
@@ -33,7 +33,7 @@ class VariableConcept;
 using VariableConceptHandle = std::shared_ptr<VariableConcept>;
 
 /// Return the default unit (dimensionless or none) for a given dtype.
-[[nodiscard]] SCIPP_VARIABLE_EXPORT units::Unit
+[[nodiscard]] SCIPP_VARIABLE_EXPORT sc_units::Unit
 default_unit_for(const DType type);
 
 /// Variable is a type-erased handle to any data structure representing a
@@ -45,9 +45,9 @@ public:
   Variable(const Variable &parent, const Dimensions &dims);
   Variable(const Dimensions &dims, VariableConceptHandle data);
   template <class T>
-  Variable(const std::optional<units::Unit> &unit, const Dimensions &dimensions,
-           T values, std::optional<T> variances);
-  explicit Variable(const llnl::units::precise_measurement &m);
+  Variable(const std::optional<sc_units::Unit> &unit,
+           const Dimensions &dimensions, T values, std::optional<T> variances);
+  explicit Variable(const units::precise_measurement &m);
 
   /// Keyword-argument constructor.
   ///
@@ -64,9 +64,9 @@ public:
 
   ~Variable() noexcept = default;
 
-  [[nodiscard]] const units::Unit &unit() const;
-  void setUnit(const units::Unit &unit);
-  void expect_can_set_unit(const units::Unit &unit) const;
+  [[nodiscard]] const sc_units::Unit &unit() const;
+  void setUnit(const sc_units::Unit &unit);
+  void expect_can_set_unit(const sc_units::Unit &unit) const;
 
   [[nodiscard]] const Dimensions &dims() const;
   [[nodiscard]] Dim dim() const;
