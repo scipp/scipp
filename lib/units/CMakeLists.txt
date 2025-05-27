@@ -21,7 +21,9 @@ target_compile_definitions(
 )
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
 if(USE_CONAN)
-  target_link_libraries(${TARGET_NAME} PUBLIC scipp-common LLNL-Units::LLNL-Units)
+  target_link_libraries(
+    ${TARGET_NAME} PUBLIC scipp-common LLNL-Units::LLNL-Units
+  )
 else()
   target_link_libraries(${TARGET_NAME} PUBLIC scipp-common units::units)
 endif()
