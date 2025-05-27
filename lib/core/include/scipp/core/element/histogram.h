@@ -79,8 +79,8 @@ static constexpr auto histogram = overloaded{
         }
       }
     },
-    [](const units::Unit &events_unit, const units::Unit &weights_unit,
-       const units::Unit &edge_unit) {
+    [](const sc_units::Unit &events_unit, const sc_units::Unit &weights_unit,
+       const sc_units::Unit &edge_unit) {
       if (events_unit != edge_unit)
         throw except::UnitError(
             "Bin edges must have same unit as the input coordinate.");

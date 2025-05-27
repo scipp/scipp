@@ -12,10 +12,10 @@ using namespace scipp;
 
 class SubspanViewTest : public ::testing::Test {
 protected:
-  Variable var{makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3}, units::m,
-                                    Values{1, 2, 3, 4, 5, 6})};
+  Variable var{makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                                    sc_units::m, Values{1, 2, 3, 4, 5, 6})};
   Variable var_with_errors{makeVariable<double>(
-      Dims{Dim::Y, Dim::X}, Shape{2, 3}, units::m, Values{1, 2, 3, 4, 5, 6},
+      Dims{Dim::Y, Dim::X}, Shape{2, 3}, sc_units::m, Values{1, 2, 3, 4, 5, 6},
       Variances{7, 8, 9, 10, 11, 12})};
 };
 
@@ -27,7 +27,7 @@ TEST_F(SubspanViewTest, fail_not_inner) {
 TEST_F(SubspanViewTest, values) {
   auto view = subspan_view(var, Dim::X);
   EXPECT_EQ(view.dims(), Dimensions({Dim::Y, 2}));
-  EXPECT_EQ(view.unit(), units::m);
+  EXPECT_EQ(view.unit(), sc_units::m);
   EXPECT_TRUE(equals(view.values<scipp::span<double>>()[0], {1, 2, 3}));
   EXPECT_TRUE(equals(view.values<scipp::span<double>>()[1], {4, 5, 6}));
   EXPECT_FALSE(view.has_variances());
@@ -36,7 +36,7 @@ TEST_F(SubspanViewTest, values) {
 TEST_F(SubspanViewTest, values_length_0) {
   auto view = subspan_view(var.slice({Dim::X, 0, 0}), Dim::X);
   EXPECT_EQ(view.dims(), Dimensions({Dim::Y, 2}));
-  EXPECT_EQ(view.unit(), units::m);
+  EXPECT_EQ(view.unit(), sc_units::m);
   // Note the `const` here: Temporary returned by `slice()` uses `const Variable
   // &` overload.
   EXPECT_TRUE(view.values<scipp::span<const double>>()[0].empty());
@@ -47,7 +47,7 @@ TEST_F(SubspanViewTest, values_length_0) {
 TEST_F(SubspanViewTest, values_and_errors) {
   auto view = subspan_view(var_with_errors, Dim::X);
   EXPECT_EQ(view.dims(), Dimensions({Dim::Y, 2}));
-  EXPECT_EQ(view.unit(), units::m);
+  EXPECT_EQ(view.unit(), sc_units::m);
   EXPECT_TRUE(equals(view.values<scipp::span<double>>()[0], {1, 2, 3}));
   EXPECT_TRUE(equals(view.values<scipp::span<double>>()[1], {4, 5, 6}));
   EXPECT_TRUE(equals(view.variances<scipp::span<double>>()[0], {7, 8, 9}));
@@ -57,7 +57,7 @@ TEST_F(SubspanViewTest, values_and_errors) {
 TEST_F(SubspanViewTest, values_and_errors_length_0) {
   auto view = subspan_view(var_with_errors.slice({Dim::X, 0, 0}), Dim::X);
   EXPECT_EQ(view.dims(), Dimensions({Dim::Y, 2}));
-  EXPECT_EQ(view.unit(), units::m);
+  EXPECT_EQ(view.unit(), sc_units::m);
   EXPECT_TRUE(view.values<scipp::span<const double>>()[0].empty());
   EXPECT_TRUE(view.values<scipp::span<const double>>()[1].empty());
   EXPECT_TRUE(view.variances<scipp::span<const double>>()[0].empty());
@@ -74,7 +74,7 @@ TEST_F(SubspanViewTest, broadcast) {
   const auto &broadcasted = broadcast(var.slice({Dim::Y, 0}), var.dims());
   auto view = subspan_view(broadcasted, Dim::X);
   EXPECT_EQ(view.dims(), Dimensions({Dim::Y, 2}));
-  EXPECT_EQ(view.unit(), units::m);
+  EXPECT_EQ(view.unit(), sc_units::m);
   EXPECT_TRUE(equals(view.values<scipp::span<const double>>()[0], {1, 2, 3}));
   EXPECT_TRUE(equals(view.values<scipp::span<const double>>()[1], {1, 2, 3}));
 }
@@ -91,7 +91,7 @@ TEST_F(SubspanViewTest, broadcast_mutable_fails) {
 class SubspanViewOfSliceTest : public ::testing::Test {
 protected:
   Variable var{makeVariable<double>(
-      Dims{Dim::Z, Dim::Y, Dim::X}, Shape{3, 3, 3}, units::m,
+      Dims{Dim::Z, Dim::Y, Dim::X}, Shape{3, 3, 3}, sc_units::m,
       Values{1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14,
              15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27})};
 };

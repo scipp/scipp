@@ -31,7 +31,7 @@ void bind_common_operators(pybind11::class_<T, Ignored...> &c) {
   c.def("__repr__", [](const T &self) { return to_string(self); });
   c.def("__bool__", [](const T &self) {
     if constexpr (std::is_same_v<T, scipp::Variable>) {
-      if (self.unit() != scipp::units::none)
+      if (self.unit() != scipp::sc_units::none)
         throw scipp::except::UnitError(
             "The truth value of a variable with unit is undefined.");
       return self.template value<bool>() == true;
@@ -98,7 +98,7 @@ void bind_astype(py::class_<T, Ignored...> &c) {
         const auto [scipp_dtype, dtype_unit] =
             cast_dtype_and_unit(type, DefaultUnit{});
         if (dtype_unit.has_value() &&
-            (dtype_unit != scipp::units::one && dtype_unit != self.unit())) {
+            (dtype_unit != scipp::sc_units::one && dtype_unit != self.unit())) {
           throw scipp::except::UnitError(scipp::python::format(
               "Conversion of units via the dtype is not allowed. Occurred when "
               "trying to change dtype from ",
@@ -142,7 +142,7 @@ struct Identity {
 };
 struct ScalarToVariable {
   template <class T> scipp::Variable operator()(const T &x) const noexcept {
-    return x * scipp::units::one;
+    return x * scipp::sc_units::one;
   }
 };
 

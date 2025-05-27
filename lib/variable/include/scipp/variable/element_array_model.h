@@ -63,7 +63,7 @@ public:
   static_assert(!core::is_structured(core::template dtype<T>));
   using value_type = T;
 
-  ElementArrayModel(const scipp::index size, const units::Unit &unit,
+  ElementArrayModel(const scipp::index size, const sc_units::Unit &unit,
                     element_array<T> model,
                     std::optional<element_array<T>> variances = std::nullopt);
 

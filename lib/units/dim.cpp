@@ -11,7 +11,7 @@
 #include "scipp/common/index.h"
 #include "scipp/units/dim.h"
 
-namespace scipp::units {
+namespace scipp::sc_units {
 
 namespace {
 const auto &builtin_ids() {
@@ -80,4 +80,4 @@ std::string Dim::name() const {
 
 std::string to_string(const Dim dim) { return dim.name(); }
 
-} // namespace scipp::units
+} // namespace scipp::sc_units

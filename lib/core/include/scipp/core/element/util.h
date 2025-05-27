@@ -52,7 +52,7 @@ constexpr auto variances =
                  else
                    return x; // unreachable but required for instantiation
                },
-               [](const units::Unit &u) { return u * u; }};
+               [](const sc_units::Unit &u) { return u * u; }};
 
 constexpr auto stddevs =
     overloaded{transform_flags::no_out_variance,
@@ -66,7 +66,7 @@ constexpr auto stddevs =
                  else
                    return sqrt(x); // unreachable but required for instantiation
                },
-               [](const units::Unit &u) { return u; }};
+               [](const sc_units::Unit &u) { return u; }};
 
 constexpr auto issorted_common = overloaded{
     core::element::arg_list<
@@ -75,9 +75,10 @@ constexpr auto issorted_common = overloaded{
         std::tuple<bool, std::string, std::string>,
         std::tuple<bool, time_point, time_point>>,
     transform_flags::expect_no_variance_arg<1>,
-    [](units::Unit &out, const units::Unit &left, const units::Unit &right) {
+    [](sc_units::Unit &out, const sc_units::Unit &left,
+       const sc_units::Unit &right) {
       core::expect::equals(left, right);
-      out = units::none;
+      out = sc_units::none;
     }};
 
 constexpr auto issorted_nondescending = overloaded{
@@ -95,19 +96,19 @@ constexpr auto islinspace =
                         scipp::span<const int64_t>, scipp::span<const int32_t>,
                         scipp::span<const time_point>>,
                transform_flags::expect_no_variance_arg<0>,
-               [](const units::Unit &) { return units::none; },
+               [](const sc_units::Unit &) { return sc_units::none; },
                [](const auto &range) { return numeric::islinspace(range); }};
 
 constexpr auto isarange =
     overloaded{arg_list<scipp::span<const int64_t>, scipp::span<const int32_t>>,
                transform_flags::expect_no_variance_arg<0>,
-               [](const units::Unit &) { return units::none; },
+               [](const sc_units::Unit &) { return sc_units::none; },
                [](const auto &range) { return numeric::isarange(range); }};
 
 constexpr auto zip =
     overloaded{arg_list<int64_t>, transform_flags::expect_no_variance_arg<0>,
                transform_flags::expect_no_variance_arg<1>,
-               [](const units::Unit &first, const units::Unit &second) {
+               [](const sc_units::Unit &first, const sc_units::Unit &second) {
                  expect::equals(first, second);
                  return first;
                },
@@ -119,7 +120,7 @@ template <int N>
 constexpr auto get = overloaded{arg_list<std::pair<scipp::index, scipp::index>>,
                                 transform_flags::expect_no_variance_arg<0>,
                                 [](const auto &x) { return std::get<N>(x); },
-                                [](const units::Unit &u) { return u; }};
+                                [](const sc_units::Unit &u) { return u; }};
 
 constexpr auto fill =
     overloaded{arg_list<double, float, std::tuple<float, double>>,
@@ -127,7 +128,7 @@ constexpr auto fill =
 
 constexpr auto fill_zeros =
     overloaded{arg_list<double, float, int64_t, int32_t, SubbinSizes>,
-               [](units::Unit &) {}, [](auto &x) { x = 0; }};
+               [](sc_units::Unit &) {}, [](auto &x) { x = 0; }};
 
 template <class... Ts>
 constexpr arg_list_t<std::tuple<bool, Ts, Ts>...> where_arg_list{};
@@ -140,9 +141,9 @@ constexpr auto where = overloaded{
     [](const auto &condition, const auto &x, const auto &y) {
       return condition ? x : y;
     },
-    [](const units::Unit &condition, const units::Unit &x,
-       const units::Unit &y) {
-      expect::equals(units::none, condition);
+    [](const sc_units::Unit &condition, const sc_units::Unit &x,
+       const sc_units::Unit &y) {
+      expect::equals(sc_units::none, condition);
       expect::equals(x, y);
       return x;
     }};

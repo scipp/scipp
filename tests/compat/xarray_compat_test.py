@@ -15,6 +15,7 @@ def test_from_xarray_variable() -> None:
     )
     sc_var = from_xarray(xr_var)
 
+    assert isinstance(sc_var, sc.Variable)
     assert sc_var.sizes == {"x": 3, "y": 4}
     assert sc_var.unit == "m"
     assert np.array_equal(sc_var.values, xr_var.values)
@@ -26,9 +27,9 @@ def test_from_xarray_empty_attrs_dataarray() -> None:
 
     sc_da = from_xarray(xr_da)
 
+    assert isinstance(sc_da, sc.DataArray)
     assert len(sc_da.dims) == 1
     assert "x" in sc_da.dims
-
     assert len(sc_da.masks) == 0
 
 
@@ -55,6 +56,7 @@ def test_from_xarray_converts_names_to_strings_in_dataarray() -> None:
 
     sc_da = from_xarray(xr_da)
 
+    assert isinstance(sc_da, sc.DataArray)
     assert np.array_equal(sc_da.coords["0"].values, np.arange(4.0))
 
 
@@ -63,6 +65,7 @@ def test_from_xarray_named_dataarray() -> None:
 
     sc_da = from_xarray(xr_da)
 
+    assert isinstance(sc_da, sc.DataArray)
     assert sc_da.name == "my-test-dataarray"
 
 
@@ -71,6 +74,7 @@ def test_from_xarray_1d_1_element_dataarray() -> None:
 
     sc_da = from_xarray(xr_da)
 
+    assert isinstance(sc_da, sc.DataArray)
     assert sc.identical(sc_da, sc.DataArray(data=sc.zeros(dims=["x"], shape=(1,))))
 
 
@@ -79,6 +83,7 @@ def test_from_xarray_1d_100_element_dataarray() -> None:
 
     sc_da = from_xarray(xr_da)
 
+    assert isinstance(sc_da, sc.DataArray)
     assert sc.identical(sc_da, sc.DataArray(data=sc.zeros(dims=["x"], shape=(100,))))
 
 
@@ -232,6 +237,8 @@ def test_from_xarray_dataset_with_attrs_warns() -> None:
     )
     with pytest.warns(UserWarning):
         sc_ds = from_xarray(xr_ds)
+
+    assert isinstance(sc_ds, sc.Dataset)
     assert len(sc_ds) == 1
     assert len(sc_ds.coords) == 1
 
@@ -240,6 +247,8 @@ def test_from_xarray_dataset_with_attrs_warns() -> None:
 def test_from_xarray_dataset_with_only_attrs() -> None:
     xr_ds = xr.Dataset(attrs={'a': 1, 'b': 2})
     sc_ds = from_xarray(xr_ds)
+
+    assert isinstance(sc_ds, sc.Dataset)
     assert len(sc_ds) == 0
     assert sc_ds.sizes == {}
 
@@ -299,7 +308,7 @@ def test_to_xarray_dataarray_2d_coord() -> None:
 
 
 @pytest.mark.parametrize('coord', ['xx', 'yy'])
-def test_to_xarray_dataarray_with_unaligned_coords(coord) -> None:
+def test_to_xarray_dataarray_with_unaligned_coords(coord: str) -> None:
     sc_da = sc.DataArray(
         sc.arange('aux', 0.0, 90, 2, unit='counts').fold(
             'aux', sizes={'yy': 9, 'xx': 5}

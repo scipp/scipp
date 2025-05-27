@@ -23,7 +23,7 @@ template <class T> T normalize_impl(const T &numerator, T denominator) {
   // This approach would be wrong if we supported vectors of float
   const auto type =
       numerator.dtype() == dtype<float> ? dtype<float> : dtype<double>;
-  denominator.setUnit(units::one);
+  denominator.setUnit(sc_units::one);
   return numerator *
          reciprocal(astype(denominator, type, CopyPolicy::TryAvoid));
 }

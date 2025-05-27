@@ -15,7 +15,7 @@ using namespace scipp::dataset;
 
 TEST(DatasetOperationsTest, sum_over_dim) {
   auto ds = make_1_values_and_variances<float>(
-      "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
+      "a", {Dim::X, 3}, sc_units::dimensionless, {1, 2, 3}, {12, 15, 18});
   EXPECT_EQ(sum(ds, Dim::X)["a"].data(),
             makeVariable<float>(Values{6}, Variances{45}));
   EXPECT_EQ(sum(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
@@ -33,7 +33,7 @@ TEST(DatasetOperationsTest, sum_all_dims) {
 
 TEST(DatasetOperationsTest, sum_over_dim_empty_dataset) {
   auto ds = make_1_values_and_variances<float>(
-      "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
+      "a", {Dim::X, 3}, sc_units::dimensionless, {1, 2, 3}, {12, 15, 18});
   ds.erase("a");
   auto res = sum(ds, Dim::X);
   EXPECT_TRUE(res.is_valid());
@@ -42,7 +42,7 @@ TEST(DatasetOperationsTest, sum_over_dim_empty_dataset) {
 
 TEST(DatasetOperationsTest, nansum_over_dim) {
   auto ds = make_1_values_and_variances<double>(
-      "a", {Dim::X, 3}, units::dimensionless, {1.0, 2.0, double(NAN)},
+      "a", {Dim::X, 3}, sc_units::dimensionless, {1.0, 2.0, double(NAN)},
       {2.0, 5.0, 6.0});
   EXPECT_EQ(nansum(ds, Dim::X)["a"].data(),
             makeVariable<double>(Values{3}, Variances{7}));
@@ -59,7 +59,7 @@ TEST(DatasetOperationsTest, nansum_all_dims) {
 
 TEST(DatasetOperationsTest, nansum_over_dim_empty_dataset) {
   auto ds = make_1_values_and_variances<float>(
-      "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
+      "a", {Dim::X, 3}, sc_units::dimensionless, {1, 2, 3}, {12, 15, 18});
   ds.erase("a");
   auto res = nansum(ds, Dim::X);
   EXPECT_TRUE(res.is_valid());

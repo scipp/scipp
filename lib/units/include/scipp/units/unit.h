@@ -13,13 +13,12 @@
 
 #include "scipp-units_export.h"
 
-namespace scipp::units {
+namespace scipp::sc_units {
 
 class SCIPP_UNITS_EXPORT Unit {
 public:
   constexpr Unit() = default;
-  constexpr explicit Unit(const llnl::units::precise_unit &u) noexcept
-      : m_unit(u) {}
+  constexpr explicit Unit(const units::precise_unit &u) noexcept : m_unit(u) {}
   explicit Unit(const std::string &unit);
 
   [[nodiscard]] constexpr bool has_value() const noexcept {
@@ -66,7 +65,7 @@ public:
   }
 
 private:
-  std::optional<llnl::units::precise_unit> m_unit;
+  std::optional<units::precise_unit> m_unit;
 };
 
 SCIPP_UNITS_EXPORT Unit operator+(const Unit &a, const Unit &b);
@@ -102,30 +101,29 @@ SCIPP_UNITS_EXPORT void add_unit_alias(const std::string &name,
 SCIPP_UNITS_EXPORT void clear_unit_aliases();
 
 constexpr Unit none{};
-constexpr Unit dimensionless{llnl::units::precise::one};
-constexpr Unit one{llnl::units::precise::one}; /// alias for dimensionless
-constexpr Unit m{llnl::units::precise::meter};
-constexpr Unit s{llnl::units::precise::second};
-constexpr Unit kg{llnl::units::precise::kg};
-constexpr Unit K{llnl::units::precise::K};
-constexpr Unit rad{llnl::units::precise::rad};
-constexpr Unit deg{llnl::units::precise::deg};
-constexpr Unit us{llnl::units::precise::micro * llnl::units::precise::second};
-constexpr Unit ns{llnl::units::precise::ns};
-constexpr Unit mm{llnl::units::precise::mm};
-constexpr Unit counts{llnl::units::precise::count};
-constexpr Unit angstrom{llnl::units::precise::distance::angstrom};
-constexpr Unit meV{llnl::units::precise::milli *
-                   llnl::units::precise::energy::eV};
-constexpr Unit c{llnl::units::precise_unit{
-    299792458, llnl::units::precise::m / llnl::units::precise::s}};
+constexpr Unit dimensionless{units::precise::one};
+constexpr Unit one{units::precise::one}; /// alias for dimensionless
+constexpr Unit m{units::precise::meter};
+constexpr Unit s{units::precise::second};
+constexpr Unit kg{units::precise::kg};
+constexpr Unit K{units::precise::K};
+constexpr Unit rad{units::precise::rad};
+constexpr Unit deg{units::precise::deg};
+constexpr Unit us{units::precise::micro * units::precise::second};
+constexpr Unit ns{units::precise::ns};
+constexpr Unit mm{units::precise::mm};
+constexpr Unit counts{units::precise::count};
+constexpr Unit angstrom{units::precise::distance::angstrom};
+constexpr Unit meV{units::precise::milli * units::precise::energy::eV};
+constexpr Unit c{
+    units::precise_unit{299792458, units::precise::m / units::precise::s}};
 
-} // namespace scipp::units
+} // namespace scipp::sc_units
 
 namespace std {
-template <> struct hash<scipp::units::Unit> {
-  std::size_t operator()(const scipp::units::Unit &u) const {
-    return hash<llnl::units::precise_unit>()(u.underlying());
+template <> struct hash<scipp::sc_units::Unit> {
+  std::size_t operator()(const scipp::sc_units::Unit &u) const {
+    return hash<units::precise_unit>()(u.underlying());
   }
 };
 } // namespace std

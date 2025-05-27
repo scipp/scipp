@@ -12,7 +12,7 @@
 namespace scipp::dataset {
 
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
-to_unit(const DataArray &array, const units::Unit &unit,
+to_unit(const DataArray &array, const sc_units::Unit &unit,
         CopyPolicy copy = CopyPolicy::Always);
 
 } // namespace scipp::dataset

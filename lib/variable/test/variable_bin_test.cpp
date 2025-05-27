@@ -21,7 +21,7 @@ protected:
 };
 
 TEST_F(VariableBinsTest, default_unit_of_bins_is_none) {
-  EXPECT_EQ(make_bins(indices, Dim::X, buffer).unit(), units::none);
+  EXPECT_EQ(make_bins(indices, Dim::X, buffer).unit(), sc_units::none);
 }
 
 TEST_F(VariableBinsTest, make_bins_from_slice) {
@@ -88,13 +88,13 @@ TEST_F(VariableBinsTest, copy_slice) {
 }
 
 TEST_F(VariableBinsTest, cannot_set_unit) {
-  EXPECT_EQ(var.unit(), units::none);
-  EXPECT_THROW(var.setUnit(units::m), except::UnitError);
-  EXPECT_EQ(var.unit(), units::none);
+  EXPECT_EQ(var.unit(), sc_units::none);
+  EXPECT_THROW(var.setUnit(sc_units::m), except::UnitError);
+  EXPECT_EQ(var.unit(), sc_units::none);
 }
 
 TEST_F(VariableBinsTest, basics) {
-  EXPECT_EQ(var.unit(), units::none);
+  EXPECT_EQ(var.unit(), sc_units::none);
   EXPECT_EQ(var.dims(), dims);
   const auto vals = var.values<bucket<Variable>>();
   EXPECT_EQ(vals.size(), 2);
@@ -243,7 +243,7 @@ protected:
 };
 
 TEST_F(VariableBinnedStructuredTest, copy_vector) {
-  Variable buffer = variable::make_vectors(Dimensions(Dim::X, 3), units::m,
+  Variable buffer = variable::make_vectors(Dimensions(Dim::X, 3), sc_units::m,
                                            {1, 2, 3, 4, 5, 6, 7, 8, 9});
   Variable var = make_bins(indices, Dim::X, buffer);
   ASSERT_EQ(copy(var), var);
@@ -251,26 +251,28 @@ TEST_F(VariableBinnedStructuredTest, copy_vector) {
 
 TEST_F(VariableBinnedStructuredTest, copy_translation) {
   auto translations = variable::make_translations(
-      Dimensions(Dim::X, 3), units::m, {1, 2, 3, 4, 5, 6, 7, 8, 9});
+      Dimensions(Dim::X, 3), sc_units::m, {1, 2, 3, 4, 5, 6, 7, 8, 9});
   auto binned = make_bins(indices, Dim::X, translations);
   ASSERT_EQ(copy(binned), binned);
 }
 
 TEST_F(VariableBinnedStructuredTest, copy_rotations) {
-  auto rotations = variable::make_rotations(
-      Dimensions(Dim::X, 3), units::m, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+  auto rotations =
+      variable::make_rotations(Dimensions(Dim::X, 3), sc_units::m,
+                               {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
   auto binned = make_bins(indices, Dim::X, rotations);
   ASSERT_EQ(copy(binned), binned);
 }
 
 TEST_F(VariableBinnedStructuredTest, copy_vector_field) {
-  Variable buffer = variable::make_vectors(Dimensions(Dim::X, 3), units::m,
+  Variable buffer = variable::make_vectors(Dimensions(Dim::X, 3), sc_units::m,
                                            {1, 2, 3, 4, 5, 6, 7, 8, 9});
   Variable var = make_bins(indices, Dim::X, buffer);
   const auto &elem = var.elements<Eigen::Vector3d>("x");
   ASSERT_EQ(copy(elem), elem);
-  const auto expected = make_bins(
-      indices, Dim::X,
-      makeVariable<double>(Dimensions(Dim::X, 3), units::m, Values{1, 4, 7}));
+  const auto expected =
+      make_bins(indices, Dim::X,
+                makeVariable<double>(Dimensions(Dim::X, 3), sc_units::m,
+                                     Values{1, 4, 7}));
   ASSERT_EQ(copy(elem), expected);
 }

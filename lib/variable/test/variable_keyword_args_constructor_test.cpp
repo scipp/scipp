@@ -77,20 +77,20 @@ TEST(CreateVariableTest, from_vector) {
 
 TEST(VariableUniversalConstructorTest, dimensions_unit_basic) {
   auto variable =
-      Variable(dtype<float>, Dims{Dim::X, Dim::Y}, Shape{2, 3}, units::kg);
+      Variable(dtype<float>, Dims{Dim::X, Dim::Y}, Shape{2, 3}, sc_units::kg);
 
   EXPECT_EQ(variable.dims(), (Dimensions{{Dim::X, Dim::Y}, {2, 3}}));
-  EXPECT_EQ(variable.unit(), units::kg);
+  EXPECT_EQ(variable.unit(), sc_units::kg);
   EXPECT_EQ(variable.values<float>().size(), 6);
   EXPECT_FALSE(variable.has_variances());
 
   auto otherVariable =
       Variable(dtype<float>, Dims{Dim::X, Dim::Y}, Shape{2, 3});
-  variable.setUnit(units::one);
+  variable.setUnit(sc_units::one);
   EXPECT_EQ(variable, otherVariable);
 
   auto oneMore =
-      Variable(dtype<float>, units::one, Dims{Dim::X, Dim::Y}, Shape{2, 3});
+      Variable(dtype<float>, sc_units::one, Dims{Dim::X, Dim::Y}, Shape{2, 3});
   EXPECT_EQ(oneMore, variable);
 }
 
@@ -100,7 +100,7 @@ TEST(VariableUniversalConstructorTest, type_constructors_mix) {
                      Values(flt.begin(), flt.end()), Variances{2.0, 3.0});
   auto v2 = Variable(dtype<float>, Dims{Dim::X, Dim::Y}, Shape{2, 1},
                      Values{1.5, 3.6}, Variances{2, 3});
-  auto v3 = Variable(dtype<float>, units::one, Dims{Dim::X, Dim::Y},
+  auto v3 = Variable(dtype<float>, sc_units::one, Dims{Dim::X, Dim::Y},
                      Shape{2, 1}, Values{1.5f, 3.6f});
   v3.setVariances(
       makeVariable<float>(Dims{Dim::X, Dim::Y}, Shape{2, 1}, Values{2, 3}));
@@ -122,7 +122,7 @@ TEST(VariableUniversalConstructorTest, no_copy_on_matched_types) {
   auto varAddr = variances.data();
 
   auto variable = Variable(dtype<double>, Dims{Dim::X, Dim::Y}, Shape{2, 3},
-                           Values(std::move(values)), units::kg,
+                           Values(std::move(values)), sc_units::kg,
                            Variances(std::move(variances)));
 
   auto vval = variable.values<double>();
@@ -140,7 +140,7 @@ TEST(VariableUniversalConstructorTest, convertable_types) {
   std::transform(data.begin(), data.end(), float_data.begin(),
                  [](const double x) { return static_cast<float>(x); });
   auto variable = Variable(dtype<float>, Dims{Dim::X, Dim::Y}, Shape{2, 3},
-                           Values(data), units::kg, Variances(data));
+                           Values(data), sc_units::kg, Variances(data));
 
   EXPECT_EQ(variable.dtype(), dtype<float>);
   EXPECT_TRUE(equals(variable.values<float>(), float_data));

@@ -42,6 +42,7 @@ target_include_directories(
   _scipp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
 )
 target_link_libraries(_scipp LINK_PRIVATE scipp-dataset pybind11::headers)
+target_compile_definitions(_scipp PUBLIC PYBIND11_DETAILED_ERROR_MESSAGES)
 
 # SCIPP_EXPORT is used in macros defined in variable/
 target_compile_definitions(_scipp PRIVATE SCIPP_EXPORT=)

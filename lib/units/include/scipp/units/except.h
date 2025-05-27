@@ -11,13 +11,14 @@
 
 namespace scipp::except {
 
-struct SCIPP_UNITS_EXPORT UnitError : public Error<units::Unit> {
+struct SCIPP_UNITS_EXPORT UnitError : public Error<sc_units::Unit> {
   explicit UnitError(const std::string &msg);
 };
 
 template <>
 [[noreturn]] SCIPP_UNITS_EXPORT void
-throw_mismatch_error(const units::Unit &expected, const units::Unit &actual,
+throw_mismatch_error(const sc_units::Unit &expected,
+                     const sc_units::Unit &actual,
                      const std::string &optional_message);
 
 } // namespace scipp::except

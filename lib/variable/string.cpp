@@ -78,7 +78,7 @@ auto apply(const DType dtype, Args &&...args) {
 
 std::string format_variable_compact(const Variable &variable) {
   const auto s = to_string(variable.dtype());
-  if (variable.unit() == units::none)
+  if (variable.unit() == sc_units::none)
     return s;
   else
     return s + '[' + variable.unit().name() + ']';
@@ -93,7 +93,7 @@ std::string format_variable(const Variable &variable,
   if (!datasetSizes)
     s << to_string(variable.dims()) << colSep;
   s << std::setw(9) << to_string(variable.dtype());
-  if (variable.unit() == units::none)
+  if (variable.unit() == sc_units::none)
     s << colSep << std::setw(15) << "<no unit>";
   else
     s << colSep << std::setw(15) << '[' + variable.unit().name() + ']';
@@ -111,7 +111,7 @@ std::string to_string(const Variable &variable) {
 }
 
 std::string to_string(const std::pair<Dim, Variable> &coord) {
-  using units::to_string;
+  using sc_units::to_string;
   return to_string(coord.first) + ":\n" + to_string(coord.second);
 }
 
