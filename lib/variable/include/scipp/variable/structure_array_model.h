@@ -28,14 +28,14 @@ public:
   static constexpr scipp::index element_count = sizeof(T) / sizeof(Elem);
   static_assert(sizeof(Elem) * element_count == sizeof(T));
 
-  StructureArrayModel(const scipp::index size, const units::Unit &unit,
+  StructureArrayModel(const scipp::index size, const sc_units::Unit &unit,
                       element_array<Elem> model)
-      : VariableConcept(units::one), // unit ignored
+      : VariableConcept(sc_units::one), // unit ignored
         m_elements(std::make_shared<ElementArrayModel<Elem>>(
             size * element_count, unit, std::move(model))) {}
 
   StructureArrayModel(VariableConceptHandle &&elements)
-      : VariableConcept(units::one), // unit ignored
+      : VariableConcept(sc_units::one), // unit ignored
         m_elements(std::move(elements)) {}
 
   ~StructureArrayModel() override;
@@ -46,8 +46,10 @@ public:
     return m_elements->size() / element_count;
   }
 
-  const units::Unit &unit() const override { return m_elements->unit(); }
-  void setUnit(const units::Unit &unit) override { m_elements->setUnit(unit); }
+  const sc_units::Unit &unit() const override { return m_elements->unit(); }
+  void setUnit(const sc_units::Unit &unit) override {
+    m_elements->setUnit(unit);
+  }
 
   VariableConceptHandle
   makeDefaultFromParent(const scipp::index size) const override;

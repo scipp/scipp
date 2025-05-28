@@ -39,24 +39,24 @@ using arithmetic_type_pairs_with_bool =
     pair_product_t<float, double, int32_t, int64_t, bool>;
 
 static constexpr auto keep_unit =
-    overloaded{[](const units::Unit &) {},
-               [](const units::Unit &, const units::Unit &) {}};
+    overloaded{[](const sc_units::Unit &) {},
+               [](const sc_units::Unit &, const sc_units::Unit &) {}};
 
 static constexpr auto dimensionless_unit_check =
-    [](units::Unit &varUnit, const units::Unit &otherUnit) {
-      expect::equals(units::one, varUnit);
-      expect::equals(units::one, otherUnit);
+    [](sc_units::Unit &varUnit, const sc_units::Unit &otherUnit) {
+      expect::equals(sc_units::one, varUnit);
+      expect::equals(sc_units::one, otherUnit);
     };
 
 static constexpr auto dimensionless_unit_check_return =
-    overloaded{[](const units::Unit &a) {
-                 expect::equals(units::one, a);
-                 return units::one;
+    overloaded{[](const sc_units::Unit &a) {
+                 expect::equals(sc_units::one, a);
+                 return sc_units::one;
                },
-               [](const units::Unit &a, const units::Unit &b) {
-                 expect::equals(units::one, a);
-                 expect::equals(units::one, b);
-                 return units::one;
+               [](const sc_units::Unit &a, const sc_units::Unit &b) {
+                 expect::equals(sc_units::one, a);
+                 expect::equals(sc_units::one, b);
+                 return sc_units::one;
                }};
 
 template <typename Op> struct assign_unary : Op {

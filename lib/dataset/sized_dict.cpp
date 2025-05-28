@@ -302,7 +302,7 @@ template <class Key, class Value>
 void SizedDict<Key, Value>::validateSlice(const Slice &s,
                                           const SizedDict &dict) const {
   using core::to_string;
-  using units::to_string;
+  using sc_units::to_string;
   for (const auto &[key, item] : dict) {
     const auto it = find(key);
     if (it == end()) {
@@ -350,7 +350,7 @@ SizedDict<Key, Value> SizedDict<Key, Value>::rename_dims(
       if (!m_sizes.contains(rename.second) &&
           item.second.dims().contains(rename.second))
         throw except::DimensionError("Duplicate dimension " +
-                                     units::to_string(rename.second) + ".");
+                                     sc_units::to_string(rename.second) + ".");
     item.second = item.second.rename_dims(names, false);
   }
   return out;
@@ -382,7 +382,7 @@ template <class Key, class Value>
 SizedDict<Key, Value>
 SizedDict<Key, Value>::merge_from(const SizedDict &other) const {
   using core::to_string;
-  using units::to_string;
+  using sc_units::to_string;
 
   auto out(*this);
   out.m_readonly = false;

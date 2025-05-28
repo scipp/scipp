@@ -22,35 +22,35 @@ protected:
 
 TEST_F(ISODateTest, ns) {
   const auto t = get_time<chrono::nanoseconds>();
-  EXPECT_EQ(to_iso_date(t, units::ns), "2020-07-27T10:41:11.123456789");
+  EXPECT_EQ(to_iso_date(t, sc_units::ns), "2020-07-27T10:41:11.123456789");
 }
 
 TEST_F(ISODateTest, us) {
   const auto t = get_time<chrono::microseconds>();
-  EXPECT_EQ(to_iso_date(t, units::us), "2020-07-27T10:41:11.123456");
+  EXPECT_EQ(to_iso_date(t, sc_units::us), "2020-07-27T10:41:11.123456");
 }
 
 TEST_F(ISODateTest, ms) {
   const auto t = get_time<chrono::milliseconds>();
-  EXPECT_EQ(to_iso_date(t, units::Unit{"ms"}), "2020-07-27T10:41:11.123");
+  EXPECT_EQ(to_iso_date(t, sc_units::Unit{"ms"}), "2020-07-27T10:41:11.123");
 }
 
 TEST_F(ISODateTest, s) {
   const auto t = get_time<chrono::seconds>();
-  EXPECT_EQ(to_iso_date(t, units::s), "2020-07-27T10:41:11");
+  EXPECT_EQ(to_iso_date(t, sc_units::s), "2020-07-27T10:41:11");
 }
 
 TEST_F(ISODateTest, min) {
   const auto t = get_time<chrono::minutes>();
-  EXPECT_EQ(to_iso_date(t, units::Unit{"min"}), "2020-07-27T10:41:00");
+  EXPECT_EQ(to_iso_date(t, sc_units::Unit{"min"}), "2020-07-27T10:41:00");
 }
 
 TEST_F(ISODateTest, h) {
   const auto t = get_time<chrono::hours>();
-  EXPECT_EQ(to_iso_date(t, units::Unit{"h"}), "2020-07-27T10:00:00");
+  EXPECT_EQ(to_iso_date(t, sc_units::Unit{"h"}), "2020-07-27T10:00:00");
 }
 
 TEST_F(ISODateTest, invalid_unit) {
-  EXPECT_THROW(to_iso_date(get_time<chrono::minutes>(), units::m),
+  EXPECT_THROW(to_iso_date(get_time<chrono::minutes>(), sc_units::m),
                scipp::except::UnitError);
 }

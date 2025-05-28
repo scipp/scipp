@@ -27,7 +27,7 @@ constexpr auto isnan =
                  using numeric::isnan;
                  return isnan(x);
                },
-               [](const units::Unit &) { return units::none; }};
+               [](const sc_units::Unit &) { return sc_units::none; }};
 
 constexpr auto isinf =
     overloaded{special_value_args<Eigen::Vector3d>,
@@ -35,7 +35,7 @@ constexpr auto isinf =
                  using numeric::isinf;
                  return isinf(x);
                },
-               [](const units::Unit &) { return units::none; }};
+               [](const sc_units::Unit &) { return sc_units::none; }};
 
 constexpr auto isfinite =
     overloaded{special_value_args<Eigen::Vector3d>,
@@ -43,7 +43,7 @@ constexpr auto isfinite =
                  using numeric::isfinite;
                  return isfinite(x);
                },
-               [](const units::Unit &) { return units::none; }};
+               [](const sc_units::Unit &) { return sc_units::none; }};
 
 namespace detail {
 template <typename T> auto isposinf(T x) {
@@ -61,7 +61,7 @@ constexpr auto isposinf =
                  using detail::isposinf;
                  return isposinf(x);
                },
-               [](const units::Unit &) { return units::none; }};
+               [](const sc_units::Unit &) { return sc_units::none; }};
 
 constexpr auto isneginf =
     overloaded{special_value_args<>,
@@ -69,12 +69,12 @@ constexpr auto isneginf =
                  using detail::isneginf;
                  return isneginf(x);
                },
-               [](const units::Unit &) { return units::none; }};
+               [](const sc_units::Unit &) { return sc_units::none; }};
 
 constexpr auto replace_special = overloaded{
     arg_list<double, float>, transform_flags::expect_all_or_none_have_variance,
     transform_flags::force_variance_broadcast,
-    [](const units::Unit &x, const units::Unit &repl) {
+    [](const sc_units::Unit &x, const sc_units::Unit &repl) {
       expect::equals(x, repl);
       return x;
     }};
@@ -82,7 +82,7 @@ constexpr auto replace_special = overloaded{
 constexpr auto replace_special_out_arg = overloaded{
     arg_list<double, float>, transform_flags::expect_all_or_none_have_variance,
     transform_flags::force_variance_broadcast,
-    [](units::Unit &a, const units::Unit &b, const units::Unit &repl) {
+    [](sc_units::Unit &a, const sc_units::Unit &b, const sc_units::Unit &repl) {
       expect::equals(b, repl);
       a = b;
     }};

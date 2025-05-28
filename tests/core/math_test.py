@@ -1,11 +1,17 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Jan-Lukas Wynen
+from collections.abc import Callable
+from typing import TypeAlias
+
 import numpy as np
 import pytest
 import scipy
 
 import scipp as sc
+
+UnaryNumpyFunc: TypeAlias = Callable[[float], float]
+UnaryScippFunc: TypeAlias = Callable[[sc.Variable], sc.Variable]
 
 
 @pytest.mark.parametrize(
@@ -24,7 +30,9 @@ import scipp as sc
         (sc.atanh, np.arctanh),
     ],
 )
-def test_unary_math_compare_to_numpy_dimensionless(funcs) -> None:
+def test_unary_math_compare_to_numpy_dimensionless(
+    funcs: tuple[UnaryScippFunc, UnaryNumpyFunc],
+) -> None:
     sc_f, ref = funcs
     assert sc.allclose(sc_f(sc.scalar(0.512)), sc.scalar(ref(0.512)))
 
@@ -35,7 +43,7 @@ def test_unary_math_compare_to_numpy_dimensionless_acosh() -> None:
 
 
 @pytest.mark.parametrize('func', [sc.exp, sc.log, sc.log10, sc.sqrt, sc.sinh])
-def test_unary_math_out(func) -> None:
+def test_unary_math_out(func: Callable[..., sc.Variable]) -> None:
     out = sc.scalar(np.nan)
     func(sc.scalar(0.932), out=out)
     assert sc.identical(out, func(sc.scalar(0.932)))
@@ -44,13 +52,17 @@ def test_unary_math_out(func) -> None:
 @pytest.mark.parametrize(
     'funcs', [(sc.sin, np.sin), (sc.cos, np.cos), (sc.tan, np.tan)]
 )
-def test_compare_unary_math_to_numpy_trigonometry(funcs) -> None:
+def test_compare_unary_math_to_numpy_trigonometry(
+    funcs: tuple[UnaryScippFunc, UnaryNumpyFunc],
+) -> None:
     sc_f, ref = funcs
     assert sc.allclose(sc_f(sc.scalar(0.512, unit='rad')), sc.scalar(ref(0.512)))
 
 
 @pytest.mark.parametrize('func', [sc.sin, sc.cos, sc.tan])
-def test_unary_math_trigonometry_out(func) -> None:
+def test_unary_math_trigonometry_out(
+    func: Callable[..., sc.Variable],
+) -> None:
     out = sc.scalar(np.nan)
     func(sc.scalar(0.932, unit='rad'), out=out)
     assert sc.identical(out, func(sc.scalar(0.932, unit='rad')))
@@ -59,26 +71,31 @@ def test_unary_math_trigonometry_out(func) -> None:
 @pytest.mark.parametrize(
     'funcs', [(sc.asin, np.arcsin), (sc.acos, np.arccos), (sc.atan, np.arctan)]
 )
-def test_compare_unary_math_to_numpy_inv_trigonometry(funcs) -> None:
+def test_compare_unary_math_to_numpy_inv_trigonometry(
+    funcs: tuple[UnaryScippFunc, UnaryNumpyFunc],
+) -> None:
     sc_f, ref = funcs
     assert sc.allclose(sc_f(sc.scalar(0.512)), sc.scalar(ref(0.512), unit='rad'))
 
 
 @pytest.mark.parametrize('func', [sc.asin, sc.acos, sc.atan])
-def test_unary_math_inv_trigonometry_out(func) -> None:
+def test_unary_math_inv_trigonometry_out(
+    func: Callable[..., sc.Variable],
+) -> None:
     out = sc.scalar(np.nan, unit='rad')
     func(sc.scalar(0.932), out=out)
     assert sc.identical(out, func(sc.scalar(0.932)))
 
 
 @pytest.mark.parametrize(
-    'args',
+    ('func', 'inp', 'expected'),
     [
         (sc.sqrt, sc.Unit('m^2'), sc.Unit('m')),
     ],
 )
-def test_unary_math_unit(args) -> None:
-    func, inp, expected = args
+def test_unary_math_unit(
+    func: Callable[[sc.Unit], sc.Unit], inp: sc.Unit, expected: sc.Unit
+) -> None:
     assert func(inp) == expected
 
 

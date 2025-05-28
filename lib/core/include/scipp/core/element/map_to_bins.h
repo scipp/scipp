@@ -108,8 +108,8 @@ static constexpr auto bin = overloaded{
         bin_arg<std::string, int64_t>, bin_arg<std::string, int32_t>,
         bin_arg<time_point, int64_t>, bin_arg<time_point, int32_t>>,
     transform_flags::expect_in_variance_if_out_variance,
-    [](units::Unit &binned, const units::Unit &, const units::Unit &data,
-       const units::Unit &) { binned = data; },
+    [](sc_units::Unit &binned, const sc_units::Unit &,
+       const sc_units::Unit &data, const sc_units::Unit &) { binned = data; },
     [](const auto &binned, const auto &offsets, const auto &data,
        const auto &bin_indices) {
       auto bins(offsets.sizes());

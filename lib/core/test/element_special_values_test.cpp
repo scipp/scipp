@@ -31,8 +31,8 @@ template <typename T> class ElementIsnanTest : public ::testing::Test {};
 TYPED_TEST_SUITE(ElementIsnanTest, ElementSpecialValuesTestTypes);
 
 TEST(ElementIsnanTest, unit) {
-  for (const auto &u : {units::dimensionless, units::m, units::meV}) {
-    EXPECT_EQ(element::isnan(u), units::none);
+  for (const auto &u : {sc_units::dimensionless, sc_units::m, sc_units::meV}) {
+    EXPECT_EQ(element::isnan(u), sc_units::none);
   }
 }
 
@@ -57,8 +57,8 @@ template <typename T> class ElementIsinfTest : public ::testing::Test {};
 TYPED_TEST_SUITE(ElementIsinfTest, ElementSpecialValuesTestTypes);
 
 TEST(ElementIsinfTest, unit) {
-  for (const auto &u : {units::dimensionless, units::m, units::meV}) {
-    EXPECT_EQ(element::isinf(u), units::none);
+  for (const auto &u : {sc_units::dimensionless, sc_units::m, sc_units::meV}) {
+    EXPECT_EQ(element::isinf(u), sc_units::none);
   }
 }
 
@@ -83,8 +83,8 @@ template <typename T> class ElementIsfiniteTest : public ::testing::Test {};
 TYPED_TEST_SUITE(ElementIsfiniteTest, ElementSpecialValuesTestTypes);
 
 TEST(ElementIsfiniteTest, unit) {
-  for (const auto &u : {units::dimensionless, units::m, units::meV}) {
-    EXPECT_EQ(element::isfinite(u), units::none);
+  for (const auto &u : {sc_units::dimensionless, sc_units::m, sc_units::meV}) {
+    EXPECT_EQ(element::isfinite(u), sc_units::none);
   }
 }
 
@@ -110,9 +110,9 @@ template <typename T> class ElementIssignedinfTest : public ::testing::Test {};
 TYPED_TEST_SUITE(ElementIssignedinfTest, ElementSpecialValuesTestTypes);
 
 TEST(ElementIssignedinfTest, unit) {
-  for (const auto &u : {units::dimensionless, units::m, units::meV}) {
-    EXPECT_EQ(element::isposinf(u), units::none);
-    EXPECT_EQ(element::isneginf(u), units::none);
+  for (const auto &u : {sc_units::dimensionless, sc_units::m, sc_units::meV}) {
+    EXPECT_EQ(element::isposinf(u), sc_units::none);
+    EXPECT_EQ(element::isneginf(u), sc_units::none);
   }
 }
 
@@ -160,18 +160,18 @@ void targetted_replacement_out_arg_test(Op op, T &out, const T &replaceable,
 }
 
 template <typename Op> void targetted_unit_test(Op op) {
-  units::Unit m(units::m);
+  sc_units::Unit m(sc_units::m);
   EXPECT_EQ(m, op(m, m));
-  units::Unit s(units::s);
+  sc_units::Unit s(sc_units::s);
   EXPECT_THROW(op(s, m), except::UnitError);
 }
 
 template <typename Op> void targetted_unit_test_out(Op op) {
-  units::Unit m(units::m);
-  units::Unit u;
+  sc_units::Unit m(sc_units::m);
+  sc_units::Unit u;
   op(u, m, m);
   EXPECT_EQ(m, u);
-  units::Unit s(units::s);
+  sc_units::Unit s(sc_units::s);
   EXPECT_THROW(op(u, s, m), except::UnitError);
 }
 

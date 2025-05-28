@@ -20,9 +20,9 @@ bool is_transform_with_translation(const Variable &var) {
 }
 
 auto make_factor(const Variable &prototype, const double value) {
-  const auto unit = variableFactory().elem_unit(prototype) == units::none
-                        ? units::none
-                        : units::one;
+  const auto unit = variableFactory().elem_unit(prototype) == sc_units::none
+                        ? sc_units::none
+                        : sc_units::one;
   return astype(makeVariable<double>(Values{value}, unit),
                 variableFactory().elem_dtype(prototype));
 }

@@ -168,7 +168,7 @@ TEST_F(SetSliceTest, set_dataarray_slice_with_different_data_units_forbidden) {
   auto da = make_example_dataarray("mask", Dim::X);
   auto original = copy(da);
   auto other = copy(da);
-  other.setUnit(scipp::units::K); // slice to use now had different unit
+  other.setUnit(scipp::sc_units::K); // slice to use now had different unit
   other = other.slice({Dim::X, 1}).slice({Dim::Y, 1});
   EXPECT_THROW_DISCARD(da.setSlice(Slice{Dim::X, 0}, other), except::UnitError);
   // We test for a partially-applied modification as a result of an aborted

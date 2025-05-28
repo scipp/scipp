@@ -122,7 +122,7 @@ protected:
       makeVariable<index_pair>(Dims{Dim::Y, Dim::Z}, Shape{2, 2},
                                Values{std::pair{0, 2}, std::pair{2, 2},
                                       std::pair{2, 5}, std::pair{5, 6}});
-  Variable buffer = makeVariable<double>(Dims{Dim::X}, Shape{6}, units::m,
+  Variable buffer = makeVariable<double>(Dims{Dim::X}, Shape{6}, sc_units::m,
                                          Values{1, 2, 3, 4, 5, 6},
                                          Variances{1, 2, 3, 4, 5, 6});
   Variable binned = make_bins(indices, Dim::X, buffer);
@@ -144,10 +144,10 @@ TEST_F(ReduceBinnedTest, all_dims_of_0d) {
 
 TEST_F(ReduceBinnedTest, one_dim) {
   EXPECT_EQ(sum(binned, Dim::Y),
-            makeVariable<double>(Dims{Dim::Z}, Shape{2}, units::m,
+            makeVariable<double>(Dims{Dim::Z}, Shape{2}, sc_units::m,
                                  Values{15, 6}, Variances{15, 6}));
   EXPECT_EQ(sum(binned, Dim::Z),
-            makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m,
+            makeVariable<double>(Dims{Dim::Y}, Shape{2}, sc_units::m,
                                  Values{3, 18}, Variances{3, 18}));
   EXPECT_EQ(mean(binned), mean(buffer));
 }

@@ -11,8 +11,8 @@ using namespace scipp;
 using namespace scipp::core;
 
 TEST(ElementAbsTest, unit) {
-  units::Unit m(units::m);
-  EXPECT_EQ(element::abs(m), units::abs(m));
+  sc_units::Unit m(sc_units::m);
+  EXPECT_EQ(element::abs(m), sc_units::abs(m));
 }
 
 TEST(ElementAbsTest, value) {
@@ -32,9 +32,9 @@ TEST(ElementAbsTest, supported_types) {
 }
 
 TEST(ElementNormTest, unit) {
-  const units::Unit s(units::s);
-  const units::Unit m2(units::m * units::m);
-  const units::Unit dimless(units::dimensionless);
+  const sc_units::Unit s(sc_units::s);
+  const sc_units::Unit m2(sc_units::m * sc_units::m);
+  const sc_units::Unit dimless(sc_units::dimensionless);
   EXPECT_EQ(element::norm(m2), m2);
   EXPECT_EQ(element::norm(s), s);
   EXPECT_EQ(element::norm(dimless), dimless);
@@ -51,10 +51,13 @@ TEST(ElementPowTest, unit) {
   // element::pow cannot handle units itself as that requires the *value* of the
   // exponent and not its unit. This does not fit into the usual transform
   // framework.
-  EXPECT_EQ(element::pow(units::one, units::one), units::one);
-  EXPECT_THROW_DISCARD(element::pow(units::one, units::m), except::UnitError);
-  EXPECT_THROW_DISCARD(element::pow(units::s, units::one), except::UnitError);
-  EXPECT_THROW_DISCARD(element::pow(units::K, units::kg), except::UnitError);
+  EXPECT_EQ(element::pow(sc_units::one, sc_units::one), sc_units::one);
+  EXPECT_THROW_DISCARD(element::pow(sc_units::one, sc_units::m),
+                       except::UnitError);
+  EXPECT_THROW_DISCARD(element::pow(sc_units::s, sc_units::one),
+                       except::UnitError);
+  EXPECT_THROW_DISCARD(element::pow(sc_units::K, sc_units::kg),
+                       except::UnitError);
 }
 
 TEST(ElementPowTest, value) {
@@ -70,8 +73,8 @@ TEST(ElementPowTest, value_and_variance) {
 }
 
 TEST(ElementSqrtTest, unit) {
-  const units::Unit m2(units::m * units::m);
-  EXPECT_EQ(element::sqrt(m2), units::sqrt(m2));
+  const sc_units::Unit m2(sc_units::m * sc_units::m);
+  EXPECT_EQ(element::sqrt(m2), sc_units::sqrt(m2));
 }
 
 TEST(ElementSqrtTest, value) {
@@ -91,9 +94,9 @@ TEST(ElementSqrtTest, supported_types) {
 }
 
 template <class T> void element_vector_op_units_test(T op) {
-  const units::Unit m(units::m);
-  const units::Unit m2(units::m * units::m);
-  const units::Unit dimless(units::dimensionless);
+  const sc_units::Unit m(sc_units::m);
+  const sc_units::Unit m2(sc_units::m * sc_units::m);
+  const sc_units::Unit dimless(sc_units::dimensionless);
   EXPECT_EQ(op(m, m), m2);
   EXPECT_EQ(op(dimless, dimless), dimless);
 }
@@ -118,10 +121,10 @@ TEST(ElementCrossTest, value) {
 }
 
 TEST(ElementReciprocalTest, unit) {
-  const units::Unit one_over_m(units::one / units::m);
-  EXPECT_EQ(element::reciprocal(one_over_m), units::m);
-  const units::Unit one_over_s(units::one / units::s);
-  EXPECT_EQ(element::reciprocal(units::s), one_over_s);
+  const sc_units::Unit one_over_m(sc_units::one / sc_units::m);
+  EXPECT_EQ(element::reciprocal(one_over_m), sc_units::m);
+  const sc_units::Unit one_over_s(sc_units::one / sc_units::s);
+  EXPECT_EQ(element::reciprocal(sc_units::s), one_over_s);
 }
 
 TEST(ElementReciprocalTest, value) {
@@ -140,10 +143,10 @@ TEST(ElementExpTest, value) {
 }
 
 TEST(ElementExpTest, unit) {
-  EXPECT_EQ(element::exp(units::dimensionless), units::dimensionless);
+  EXPECT_EQ(element::exp(sc_units::dimensionless), sc_units::dimensionless);
 }
 
-TEST(ElementExpTest, bad_unit) { EXPECT_ANY_THROW(element::exp(units::m)); }
+TEST(ElementExpTest, bad_unit) { EXPECT_ANY_THROW(element::exp(sc_units::m)); }
 
 TEST(ElementLogTest, value) {
   EXPECT_EQ(element::log(1.23), std::log(1.23));
@@ -151,10 +154,10 @@ TEST(ElementLogTest, value) {
 }
 
 TEST(ElementLogTest, unit) {
-  EXPECT_EQ(element::log(units::dimensionless), units::dimensionless);
+  EXPECT_EQ(element::log(sc_units::dimensionless), sc_units::dimensionless);
 }
 
-TEST(ElementLogTest, bad_unit) { EXPECT_ANY_THROW(element::log(units::m)); }
+TEST(ElementLogTest, bad_unit) { EXPECT_ANY_THROW(element::log(sc_units::m)); }
 
 TEST(ElementLog10Test, value) {
   EXPECT_EQ(element::log10(1.23), std::log10(1.23));
@@ -162,10 +165,12 @@ TEST(ElementLog10Test, value) {
 }
 
 TEST(ElementLog10Test, unit) {
-  EXPECT_EQ(element::log10(units::dimensionless), units::dimensionless);
+  EXPECT_EQ(element::log10(sc_units::dimensionless), sc_units::dimensionless);
 }
 
-TEST(ElementLog10Test, bad_unit) { EXPECT_ANY_THROW(element::log10(units::m)); }
+TEST(ElementLog10Test, bad_unit) {
+  EXPECT_ANY_THROW(element::log10(sc_units::m));
+}
 
 namespace {
 template <class T>
@@ -195,14 +200,14 @@ TEST(ElementRoundingTest, rint) {
 
 TEST(ElementMathTest, erf) {
   EXPECT_EQ(element::erf(1.1), std::erf(1.1));
-  EXPECT_EQ(element::erf(units::one), units::one);
-  EXPECT_THROW_DISCARD(element::erf(units::m), except::UnitError);
+  EXPECT_EQ(element::erf(sc_units::one), sc_units::one);
+  EXPECT_THROW_DISCARD(element::erf(sc_units::m), except::UnitError);
 }
 
 TEST(ElementMathTest, erfc) {
   EXPECT_EQ(element::erfc(1.1), std::erfc(1.1));
-  EXPECT_EQ(element::erfc(units::one), units::one);
-  EXPECT_THROW_DISCARD(element::erfc(units::m), except::UnitError);
+  EXPECT_EQ(element::erfc(sc_units::one), sc_units::one);
+  EXPECT_THROW_DISCARD(element::erfc(sc_units::m), except::UnitError);
 }
 
 TEST(ElementMathTest, midpoint_of_medium_sized_int) {
@@ -240,7 +245,7 @@ TEST(ElementMathTest, midpoint_of_time_point_uses_underlying_int) {
 }
 
 TEST(ElementMathTest, midpoint_units_must_be_equal) {
-  EXPECT_EQ(element::midpoint(units::m, units::m), units::m);
-  EXPECT_THROW_DISCARD(element::midpoint(units::m, units::one),
+  EXPECT_EQ(element::midpoint(sc_units::m, sc_units::m), sc_units::m);
+  EXPECT_THROW_DISCARD(element::midpoint(sc_units::m, sc_units::one),
                        except::UnitError);
 }

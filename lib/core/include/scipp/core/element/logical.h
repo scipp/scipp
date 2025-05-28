@@ -12,14 +12,14 @@ namespace scipp::core::element {
 
 constexpr auto logical =
     overloaded{arg_list<bool>,
-               [](const units::Unit &a) {
-                 expect::equals(units::none, a);
+               [](const sc_units::Unit &a) {
+                 expect::equals(sc_units::none, a);
                  return a;
                },
-               [](const units::Unit &a, const units::Unit &b) {
-                 expect::equals(units::none, a);
-                 expect::equals(units::none, b);
-                 return units::none;
+               [](const sc_units::Unit &a, const sc_units::Unit &b) {
+                 expect::equals(sc_units::none, a);
+                 expect::equals(sc_units::none, b);
+                 return sc_units::none;
                }};
 
 constexpr auto logical_and =
@@ -31,11 +31,11 @@ constexpr auto logical_xor =
 constexpr auto logical_not =
     overloaded{logical, [](const auto &x) { return !x; }};
 
-constexpr auto logical_inplace =
-    overloaded{arg_list<bool>, [](units::Unit &var, const units::Unit &other) {
-                 expect::equals(units::none, var);
-                 expect::equals(units::none, other);
-               }};
+constexpr auto logical_inplace = overloaded{
+    arg_list<bool>, [](sc_units::Unit &var, const sc_units::Unit &other) {
+      expect::equals(sc_units::none, var);
+      expect::equals(sc_units::none, other);
+    }};
 
 constexpr auto logical_and_equals =
     overloaded{logical_inplace, [](auto &&a, const auto &b) { a = a && b; }};
