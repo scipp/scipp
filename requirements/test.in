@@ -1,6 +1,5 @@
 -r extra.in
 -r base.in
-bs4
 hypothesis
 pytest
 pytest-xdist

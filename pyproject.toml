@@ -42,7 +42,7 @@ dynamic = ["version"]
 test = [
   "pytest",
   "matplotlib",
-  "bs4",
+  "beautifulsoup4",
   "ipython",
 ]
 extra = [

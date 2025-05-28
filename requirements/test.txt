@@ -10,10 +10,6 @@
 attrs==25.3.0
     # via hypothesis
 beautifulsoup4==4.13.4
-    # via
-    #   -r test.in
-    #   bs4
-bs4==0.0.2
     # via -r test.in
 execnet==2.1.1
     # via pytest-xdist
