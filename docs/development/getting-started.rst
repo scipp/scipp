@@ -304,3 +304,14 @@ Generating coverage reports
 - Run ``cmake`` with options ``-DCOVERAGE=On -DCMAKE_BUILD_TYPE=Debug``.
 - Run ``cmake --build . --target coverage`` from your build directory.
 - Open ``coverage/index.html`` in a browser.
+
+Build a wheel without conan
+---------------------------
+
+If you want to build a wheel without pulling in dependencies from conan, you can set the ``SKIP_CONAN``
+environment variable to ``true`` and it will use the system installed dependencies to build the wheels.
+This is useful if you want to avoid network calls to conan and build the wheels locally.
+
+.. code-block:: bash
+
+  SKIP_CONAN=true python -m build
