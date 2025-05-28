@@ -71,7 +71,7 @@ cmake.version = ">=3.21"
 wheel.install-dir = "scipp"
 
 [[tool.scikit-build.overrides]]
-if.env.USE_CONAN = false
+if.env.SKIP_CONAN = false
 build.requires = ["conan<2"]
 
 [tool.setuptools_scm]

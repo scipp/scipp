@@ -14,9 +14,6 @@ set(CMAKE_MODULE_PATH
 )
 
 option(BENCHMARK "Enable benchmarks" OFF)
-if(USE_CONAN)
-  include(scipp-conan)
-endif()
 
 set(Python_FIND_IMPLEMENTATIONS CPython PyPy)
 
@@ -32,10 +29,11 @@ find_package(GTest CONFIG REQUIRED)
 # instead of `Development`
 find_package(Python 3.8 REQUIRED COMPONENTS Interpreter Development.Module)
 find_package(pybind11 CONFIG REQUIRED)
-if(USE_CONAN)
-  find_package(LLNL-Units REQUIRED)
-else()
+if(SKIP_CONAN)
   find_package(units REQUIRED)
+else()
+  include(scipp-conan)
+  find_package(LLNL-Units REQUIRED)
 endif()
 
 # Generate files for free scipp API functions
