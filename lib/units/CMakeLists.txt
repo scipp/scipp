@@ -20,7 +20,14 @@ target_compile_definitions(
   ${TARGET_NAME} PUBLIC SCIPP_UNITS_${SCIPP_UNITS_SYSTEM}
 )
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
-target_link_libraries(${TARGET_NAME} PUBLIC scipp-common LLNL-Units::LLNL-Units)
+if(SKIP_CONAN)
+  # This assumes there is LLNL Units installed on the system already
+  target_link_libraries(${TARGET_NAME} PUBLIC scipp-common units::units)
+else()
+  target_link_libraries(
+    ${TARGET_NAME} PUBLIC scipp-common LLNL-Units::LLNL-Units
+  )
+endif()
 target_include_directories(
   ${TARGET_NAME}
   PUBLIC $<INSTALL_INTERFACE:include>
