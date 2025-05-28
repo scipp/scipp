@@ -217,7 +217,7 @@ Additional build options
 3. ``-DPRECOMPILED_HEADERS`` toggle usage of precompiled headers. ``OFF`` by default.
 4. ``-DCPPCHECK`` toggle run of cppcheck during compilation. ``OFF`` by default.
 5. ``-DCTEST_DISCOVER_TESTS`` toggle discovery of individual tests for better (but much slower) integration with ``ctest``. ``OFF`` by default.
-
+6. ``-DSKIP_CONAN`` skip usage of conan to fetch and build c++ dependencies. ``OFF`` by default. All the dependencies should be installed on the system already.
 
 Running the unit tests
 ----------------------
