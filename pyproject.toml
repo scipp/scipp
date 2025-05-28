@@ -1,7 +1,6 @@
 [build-system]
 requires = [
   "setuptools>=68",
-  "conan==1.66.0",
   "scikit-build-core"
 ]
 build-backend = "scikit_build_core.build"
@@ -70,6 +69,15 @@ all = [
 metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
 cmake.version = ">=3.21"
 wheel.install-dir = "scipp"
+
+[[tool.scikit-build.overrides]]
+if.env.SKIP_CONAN = true
+inherit.cmake.define = "append"
+cmake.define.SKIP_CONAN = "ON"
+
+[[tool.scikit-build.overrides]]
+if.env.SKIP_CONAN = false
+build.requires = ["conan<2"]
 
 [tool.setuptools_scm]
 version_file = "src/scipp/_version.py"
