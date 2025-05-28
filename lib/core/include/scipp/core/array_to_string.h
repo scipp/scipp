@@ -20,12 +20,12 @@ namespace scipp::core {
 template <class T>
 std::string
 array_to_string(const T &arr,
-                const std::optional<units::Unit> &unit = std::nullopt);
+                const std::optional<sc_units::Unit> &unit = std::nullopt);
 
 template <class T>
 std::string
 element_to_string(const T &item,
-                  const std::optional<units::Unit> &unit = std::nullopt) {
+                  const std::optional<sc_units::Unit> &unit = std::nullopt) {
   using core::to_string;
   using std::to_string;
   if constexpr (std::is_same_v<T, std::string>) {
@@ -65,14 +65,14 @@ element_to_string(const T &item,
 
 template <class T>
 std::string scalar_array_to_string(const T &arr,
-                                   const std::optional<units::Unit> &unit) {
+                                   const std::optional<sc_units::Unit> &unit) {
   auto s = element_to_string(arr[0], unit);
   return s.substr(0, s.size() - 2);
 }
 
 template <class T>
 std::string array_to_string(const T &arr,
-                            const std::optional<units::Unit> &unit) {
+                            const std::optional<sc_units::Unit> &unit) {
   const auto size = scipp::size(arr);
   if (size == 0)
     return "[]";

@@ -22,7 +22,7 @@ template <class T> class BinVariableMakerVariable : public BinVariableMaker<T> {
 private:
   Variable call_make_bins(const Variable &, const Variable &indices,
                           const Dim dim, const DType type,
-                          const Dimensions &dims, const units::Unit &unit,
+                          const Dimensions &dims, const sc_units::Unit &unit,
                           const bool variances) const override {
     // Buffer contains only variable, which is created with new dtype, no
     // information to copy from parent.
@@ -37,7 +37,7 @@ private:
 
 void expect_valid_bin_indices(const Variable &indices, const Dim dim,
                               const Sizes &buffer_sizes) {
-  core::expect::equals(units::none, indices.unit());
+  core::expect::equals(sc_units::none, indices.unit());
   auto var = copy(indices);
   const auto vals = var.values<scipp::index_pair>().as_span();
   std::sort(vals.begin(), vals.end());

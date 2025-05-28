@@ -21,7 +21,7 @@ template <class Compare> constexpr auto make_sort(Compare compare) {
                               scipp::span<double>, scipp::span<float>,
                               scipp::span<std::string>,
                               scipp::span<time_point>>,
-      [](units::Unit &) {},
+      [](sc_units::Unit &) {},
       [compare](auto &range) {
         using T = std::decay_t<decltype(range)>;
         constexpr bool vars = is_ValueAndVariance_v<T>;

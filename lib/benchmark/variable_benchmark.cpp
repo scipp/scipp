@@ -196,8 +196,8 @@ BENCHMARK(BM_VariableView_assign_1d)
     ->Arg(1e9);
 
 static void BM_Variable_sin_rad(benchmark::State &state) {
-  const auto a =
-      makeVariable<double>(Dims{Dim::X}, Shape{1000}, units::Unit{units::rad});
+  const auto a = makeVariable<double>(Dims{Dim::X}, Shape{1000},
+                                      sc_units::Unit{sc_units::rad});
 
   for (auto _ : state) {
     benchmark::DoNotOptimize(sin(a));
@@ -206,8 +206,8 @@ static void BM_Variable_sin_rad(benchmark::State &state) {
 BENCHMARK(BM_Variable_sin_rad);
 
 static void BM_Variable_sin_deg(benchmark::State &state) {
-  const auto a =
-      makeVariable<double>(Dims{Dim::X}, Shape{1000}, units::Unit{units::deg});
+  const auto a = makeVariable<double>(Dims{Dim::X}, Shape{1000},
+                                      sc_units::Unit{sc_units::deg});
 
   for (auto _ : state) {
     benchmark::DoNotOptimize(sin(a));

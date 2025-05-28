@@ -22,8 +22,8 @@ constexpr auto flatten = overloaded{
       if (mask)
         a.insert(a.end(), b.begin(), b.end());
     },
-    [](units::Unit &a, const units::Unit &b, const units::Unit &mask) {
-      core::expect::equals(units::one, mask);
+    [](sc_units::Unit &a, const sc_units::Unit &b, const sc_units::Unit &mask) {
+      core::expect::equals(sc_units::one, mask);
       core::expect::equals(a, b);
     }};
 

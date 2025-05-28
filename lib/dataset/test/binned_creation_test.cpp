@@ -12,8 +12,8 @@ class BinnedCreationTest : public ::testing::Test {
 protected:
   Variable m_indices = makeVariable<scipp::index_pair>(
       Dims{Dim::X}, Shape{2}, Values{std::pair{0, 2}, std::pair{2, 5}});
-  Variable m_data = makeVariable<double>(Dims{Dim::Event}, Shape{5}, units::m,
-                                         Values{1, 2, 3, 4, 5});
+  Variable m_data = makeVariable<double>(Dims{Dim::Event}, Shape{5},
+                                         sc_units::m, Values{1, 2, 3, 4, 5});
   DataArray m_buffer =
       DataArray(m_data, {{Dim::X, m_data}}, {{"mask", m_data}});
   Variable m_var = make_bins(m_indices, Dim::Event, m_buffer);
@@ -22,7 +22,7 @@ protected:
     const auto [indices, dim, buf] = var.constituents<DataArray>();
     static_cast<void>(indices);
     static_cast<void>(dim);
-    EXPECT_EQ(buf.unit(), units::m);
+    EXPECT_EQ(buf.unit(), sc_units::m);
     EXPECT_TRUE(buf.masks().contains("mask"));
     EXPECT_TRUE(buf.coords().contains(Dim::X));
   }
@@ -49,8 +49,9 @@ TEST_F(BinnedCreationTest, empty_like_slice_default_shape) {
 }
 
 TEST_F(BinnedCreationTest, empty_like) {
-  Variable shape = makeVariable<scipp::index>(
-      Dims{Dim::X, Dim::Y}, Shape{2, 3}, units::none, Values{1, 2, 5, 6, 3, 4});
+  Variable shape =
+      makeVariable<scipp::index>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
+                                 sc_units::none, Values{1, 2, 5, 6, 3, 4});
   const auto empty = empty_like(m_var, {}, shape);
   EXPECT_EQ(empty.dims(), shape.dims());
   const auto [indices, dim, buf] = empty.constituents<DataArray>();

@@ -31,12 +31,12 @@ protected:
 
   Variable data =
       makeVariable<double>(Dims{Dim::Event}, Shape{4}, Values{1, 2, 3, 4},
-                           Variances{1, 3, 2, 4}, units::m);
+                           Variances{1, 3, 2, 4}, sc_units::m);
   Variable x = make_coord<0>(Dim::Event, 3, 2, 4, 1);
   Variable y = make_coord<1>(Dim::Event, 1, 2, 1, 2);
   Variable mask = makeVariable<bool>(Dims{Dim::Event}, Shape{4},
                                      Values{true, false, false, false});
-  Variable scalar = makeVariable<double>(Values{1.1}, units::kg);
+  Variable scalar = makeVariable<double>(Values{1.1}, sc_units::kg);
   DataArray table =
       DataArray(data, {{Dim::X, x}, {Dim("scalar"), scalar}}, {{"mask", mask}});
   Variable edges_x = make_coord<0>(Dim::X, 0, 2, 4);
@@ -54,7 +54,7 @@ TYPED_TEST_SUITE(DataArrayBinTest, DataArrayBinTestTypes);
 TYPED_TEST(DataArrayBinTest, 1d) {
   Variable sorted_data =
       makeVariable<double>(Dims{Dim::Event}, Shape{3}, Values{4, 1, 2},
-                           Variances{4, 1, 3}, units::m);
+                           Variances{4, 1, 3}, sc_units::m);
   Variable sorted_x = this->template make_coord<0>(Dim::Event, 1, 3, 2);
   Variable sorted_mask = makeVariable<bool>(Dims{Dim::Event}, Shape{3},
                                             Values{false, true, false});
@@ -76,7 +76,7 @@ TYPED_TEST(DataArrayBinTest, 2d) {
   this->table.coords().set(Dim::Y, this->y);
   Variable sorted_data =
       makeVariable<double>(Dims{Dim::Event}, Shape{3}, Values{4, 1, 2},
-                           Variances{4, 1, 3}, units::m);
+                           Variances{4, 1, 3}, sc_units::m);
   Variable sorted_x = this->template make_coord<0>(Dim::Event, 1, 3, 2);
   Variable sorted_y = this->template make_coord<1>(Dim::Event, 2, 1, 2);
   Variable sorted_mask = makeVariable<bool>(Dims{Dim::Event}, Shape{3},
@@ -166,10 +166,10 @@ protected:
   void expect_near(const DataArray &a, const DataArray &b, double rtol = 11e-15,
                    double atol = 0.0) {
     const auto tolerance =
-        values(max(bins_sum(a.data())) * (rtol * units::one));
+        values(max(bins_sum(a.data())) * (rtol * sc_units::one));
     EXPECT_TRUE(
         all(isclose(values(bins_sum(a.data())), values(bins_sum(b.data())),
-                    atol * units::one, tolerance))
+                    atol * sc_units::one, tolerance))
             .value<bool>());
     EXPECT_EQ(a.masks(), b.masks());
     EXPECT_EQ(a.coords(), b.coords());
@@ -284,7 +284,7 @@ TEST_P(BinTest, rebin_2d_with_2d_coord) {
   Variable edges_y_2d = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
                                              Values{-2, 1, 2, -3, 0, 3});
   xy.coords().set(Dim::Y, edges_y_2d);
-  bins_view<DataArray>(xy.data()).coords()[Dim::Y] += 0.5 * units::one;
+  bins_view<DataArray>(xy.data()).coords()[Dim::Y] += 0.5 * sc_units::one;
   EXPECT_THROW(bin(xy, {edges_x_coarse}), except::DimensionError);
   if (table.dims().volume() > 0) {
     EXPECT_NE(bin(xy, {edges_x_coarse, edges_y_coarse}),
@@ -292,7 +292,7 @@ TEST_P(BinTest, rebin_2d_with_2d_coord) {
     EXPECT_NE(bin(xy, {edges_x, edges_y_coarse}),
               bin(table, {edges_x, edges_y_coarse}));
   }
-  table.coords()[Dim::Y] += 0.5 * units::one;
+  table.coords()[Dim::Y] += 0.5 * sc_units::one;
   expect_near(bin(xy, {edges_x_coarse, edges_y_coarse}),
               bin(table, {edges_x_coarse, edges_y_coarse}));
   expect_near(bin(xy, {edges_x, edges_y_coarse}),
@@ -366,7 +366,7 @@ TEST_P(BinTest, group_and_bin) {
 
 TEST_P(BinTest, rebin_masked) {
   auto table = GetParam();
-  table.setUnit(units::counts); // we want to use `histogram` for comparison
+  table.setUnit(sc_units::counts); // we want to use `histogram` for comparison
   auto binned = bin(table, {edges_x_coarse});
   binned.masks().set("x-mask", makeVariable<bool>(Dims{Dim::X}, Shape{2},
                                                   Values{false, true}));
@@ -425,7 +425,7 @@ TEST_P(BinTest, bin_by_group) {
 TEST_P(BinTest, rebin_various_edges_1d) {
   // Trying to cover potential edge case in the bin sizes setup logic. No assert
   // since in general it is hard to come up with the expected result.
-  using units::one;
+  using sc_units::one;
   std::vector<Variable> edges;
   edges.emplace_back(linspace(-2.0 * one, 1.2 * one, Dim::X, 2));
   edges.emplace_back(linspace(-2.0 * one, 1.2 * one, Dim::X, 4));
@@ -626,11 +626,11 @@ TEST(BinLinspaceTest, many_events_many_bins) {
   Random rand(0.0, 1.0);
   rand.seed(0);
   const Dimensions dims(Dim::Row, 9000000);
-  const auto data = variable::ones(dims, units::one, dtype<double>);
+  const auto data = variable::ones(dims, sc_units::one, dtype<double>);
   const auto x = makeVariable<double>(dims, Values(rand(dims.volume())));
   auto da = DataArray(data, {{Dim::X, x}});
   const auto edges =
-      linspace(0.0 * units::one, 1.0 * units::one, Dim::X, 70000);
+      linspace(0.0 * sc_units::one, 1.0 * sc_units::one, Dim::X, 70000);
   EXPECT_EQ(sum(bin(da, {edges}).data()), sum(da.data()));
 }
 

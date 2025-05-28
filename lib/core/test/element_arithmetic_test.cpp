@@ -198,10 +198,10 @@ TYPED_TEST(ElementArithmeticDivisionTest, remainder) {
 }
 
 TEST(ElementArithmeticDivisionTest, units) {
-  EXPECT_EQ(divide(units::m, units::s), units::m / units::s);
-  EXPECT_EQ(floor_divide(units::m, units::s), units::m / units::s);
-  EXPECT_EQ(mod(units::m, units::m), units::m);
-  EXPECT_THROW(mod(units::m, units::s), except::UnitError);
+  EXPECT_EQ(divide(sc_units::m, sc_units::s), sc_units::m / sc_units::s);
+  EXPECT_EQ(floor_divide(sc_units::m, sc_units::s), sc_units::m / sc_units::s);
+  EXPECT_EQ(mod(sc_units::m, sc_units::m), sc_units::m);
+  EXPECT_THROW(mod(sc_units::m, sc_units::s), except::UnitError);
 }
 
 class ElementNanArithmeticTest : public ::testing::Test {

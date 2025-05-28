@@ -34,8 +34,8 @@ Variable pow_do_transform(V &&base, const Variable &exponent,
 }
 
 template <class T> struct PowUnit {
-  static units::Unit apply(const units::Unit base_unit,
-                           const Variable &exponent) {
+  static sc_units::Unit apply(const sc_units::Unit base_unit,
+                              const Variable &exponent) {
     const auto exp_val = exponent.value<T>();
     if constexpr (std::is_floating_point_v<T>) {
       if (static_cast<T>(static_cast<int64_t>(exp_val)) != exp_val) {
@@ -52,13 +52,13 @@ template <class V>
 Variable pow_handle_unit(V &&base, const Variable &exponent,
                          const bool in_place) {
   if (const auto exp_unit = variableFactory().elem_unit(exponent);
-      exp_unit != units::one) {
+      exp_unit != sc_units::one) {
     throw except::UnitError("Powers must be dimensionless, got exponent.unit=" +
                             to_string(exp_unit) + ".");
   }
 
   const auto base_unit = variableFactory().elem_unit(base);
-  if (base_unit == units::one) {
+  if (base_unit == sc_units::one) {
     return pow_do_transform(std::forward<V>(base), exponent, in_place);
   }
   if (exponent.dims().ndim() != 0) {
@@ -69,7 +69,7 @@ Variable pow_handle_unit(V &&base, const Variable &exponent,
   }
 
   Variable res = in_place ? std::forward<V>(base) : copy(std::forward<V>(base));
-  variableFactory().set_elem_unit(res, units::one);
+  variableFactory().set_elem_unit(res, sc_units::one);
   pow_do_transform(res, exponent, true);
   variableFactory().set_elem_unit(
       res, core::CallDType<double, float, int64_t, int32_t>::apply<PowUnit>(

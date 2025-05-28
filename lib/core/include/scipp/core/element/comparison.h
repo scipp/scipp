@@ -25,11 +25,12 @@ using isclose_types_t = arg_list_t<
     std::tuple<int32_t, int32_t, int64_t>,
     std::tuple<int32_t, int64_t, int64_t>>;
 
-constexpr auto isclose_units = [](const units::Unit &x, const units::Unit &y,
-                                  const units::Unit &t) {
+constexpr auto isclose_units = [](const sc_units::Unit &x,
+                                  const sc_units::Unit &y,
+                                  const sc_units::Unit &t) {
   expect::equals(x, y);
   expect::equals(x, t);
-  return units::none;
+  return sc_units::none;
 };
 
 constexpr auto isclose = overloaded{
@@ -74,9 +75,9 @@ struct equality_types_t {
 // See issue #3266
 constexpr auto comparison = overloaded{
     transform_flags::no_out_variance, transform_flags::force_variance_broadcast,
-    [](const units::Unit &x, const units::Unit &y) {
+    [](const sc_units::Unit &x, const sc_units::Unit &y) {
       expect::equals(x, y);
-      return units::none;
+      return sc_units::none;
     }};
 
 constexpr auto inequality = overloaded{comparison_types_t{}, comparison};

@@ -54,7 +54,7 @@ template <int I, class T> decltype(auto) get(T &&t) {
 }
 
 template <class T>
-auto make_model(const units::Unit unit, const Dimensions &dimensions,
+auto make_model(const sc_units::Unit unit, const Dimensions &dimensions,
                 element_array<T> values,
                 std::optional<element_array<T>> variances) {
   if constexpr (std::is_same_v<model_t<T>, ElementArrayModel<T>>) {
@@ -77,7 +77,7 @@ auto make_model(const units::Unit unit, const Dimensions &dimensions,
 
 /// See also default_unit_for, for similar runtime functionality.
 template <class T>
-units::Unit unit_for_dtype(const std::optional<units::Unit> &unit) {
+sc_units::Unit unit_for_dtype(const std::optional<sc_units::Unit> &unit) {
   if (unit.has_value())
     return *unit;
   return default_unit_for(dtype<T>);
@@ -86,7 +86,7 @@ units::Unit unit_for_dtype(const std::optional<units::Unit> &unit) {
 } // namespace
 
 template <class T>
-Variable::Variable(const std::optional<units::Unit> &unit,
+Variable::Variable(const std::optional<sc_units::Unit> &unit,
                    const Dimensions &dimensions, T values_,
                    std::optional<T> variances_)
     : m_dims(dimensions), m_strides(dimensions),

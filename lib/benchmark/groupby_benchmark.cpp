@@ -50,7 +50,7 @@ template <class T> static void BM_groupby_concat(benchmark::State &state) {
                                      Values(group_.begin(), group_.end()));
   events.coords().set(
       Dim("group"),
-      astype(group / (nHist / nGroup * units::one), dtype<int64_t>));
+      astype(group / (nHist / nGroup * sc_units::one), dtype<int64_t>));
   for (auto _ : state) {
     auto flat = groupby(events, Dim("group")).concat(Dim::X);
     state.PauseTiming();
@@ -93,8 +93,8 @@ static void BM_groupby_large_table(benchmark::State &state) {
   d["a"].masks().set("mask", makeVariable<bool>(Dims{Dim::X}, Shape{nRow}));
   auto group = makeVariable<int64_t>(Dims{Dim::X}, Shape{nRow},
                                      Values(group_.begin(), group_.end()));
-  d.coords().set(Dim("group"),
-                 astype(group / (nRow / nGroup * units::one), dtype<int64_t>));
+  d.coords().set(Dim("group"), astype(group / (nRow / nGroup * sc_units::one),
+                                      dtype<int64_t>));
   for (auto _ : state) {
     auto grouped = groupby(d, Dim("group")).sum(Dim::X);
     state.PauseTiming();

@@ -13,7 +13,7 @@
 
 using namespace scipp;
 using namespace scipp::variable;
-using namespace scipp::units;
+using namespace scipp::sc_units;
 
 TEST(VariableHyperbolicTest, sinh) {
   const auto input = makeVariable<double>(Dims{}, Values{0.5});
