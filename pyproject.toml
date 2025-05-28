@@ -67,8 +67,13 @@ all = [
 
 [tool.scikit-build]
 metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
-cmake.version = ">=3.21"
+cmake.version = ">=4"
 wheel.install-dir = "scipp"
+
+[[tool.scikit-build.overrides]]
+if.env.SKIP_CONAN = true
+inherit.cmake.define = "append"
+cmake.define.SKIP_CONAN = "ON"
 
 [[tool.scikit-build.overrides]]
 if.env.SKIP_CONAN = false

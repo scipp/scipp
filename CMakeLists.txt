@@ -44,7 +44,6 @@ project(
   LANGUAGES CXX
 )
 add_definitions(-DSCIPP_VERSION="${SCIPP_VERSION_PEP440}")
-option(SKIP_CONAN "Skip conan to fetch and build dependencies" OFF)
 
 if(SKBUILD)
   # AppleClang 15 changed linking order
