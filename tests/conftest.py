@@ -4,6 +4,7 @@
 import os
 from typing import Any
 
+import hypothesis
 import pytest
 
 import scipp as sc
@@ -20,3 +21,14 @@ def pytest_assertrepr_compare(op: str, left: Any, right: Any) -> list[str] | Non
     if isinstance(left, sc.DType) or isinstance(right, sc.DType):
         return [f'{left!r} {op} {right!r}']
     return None
+
+
+hypothesis.settings.register_profile(
+    "ci",
+    # Disable the time limit, see
+    # https://github.com/scipp/scipp/issues/3721
+    # https://github.com/astropy/astropy/issues/17649
+    deadline=None,
+    # Print the random seed blob for reproducibility:
+    print_blob=True,
+)
