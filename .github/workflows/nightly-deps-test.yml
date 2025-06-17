@@ -56,4 +56,4 @@ jobs:
       - run: cmake --preset ${{ matrix.variant.cmake-preset }}
       - run: cmake --build --preset build
       - run: ctest --preset test
-      - run: tox -e nightlydeps -vvv -- --hypothesis-profile=ci
+      - run: tox -e nightlydeps -vvv

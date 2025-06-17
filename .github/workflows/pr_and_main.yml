@@ -79,7 +79,7 @@ jobs:
       - run: ctest --preset test
 
       - run: tox -e import-minimal
-      - run: tox -e test -- --hypothesis-profile=ci
+      - run: tox -e test
 
       - run: tox -e mypy
         if: ${{ contains(matrix.variant.os, 'ubuntu') }}
