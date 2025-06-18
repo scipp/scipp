@@ -134,12 +134,12 @@ public:
   auto coords() const { return BinsMapView(*this, get_coords); }
   auto masks() const { return BinsMapView(*this, get_masks); }
   auto &name() const { return this->buffer().name(); }
-  auto drop_coords(const scipp::span<const Dim> coord_names) const {
+  auto drop_coords(const std::span<const Dim> coord_names) const {
     auto result = *this;
     for (const auto &name : coord_names)
       result.coords().erase(name);
   }
-  auto drop_masks(const scipp::span<const std::string> mask_names) const {
+  auto drop_masks(const std::span<const std::string> mask_names) const {
     auto result = *this;
     for (const auto &name : mask_names)
       result.masks().erase(name);

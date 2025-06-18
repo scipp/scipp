@@ -139,7 +139,7 @@ void increment(std::array<scipp::index, sizeof...(Strides)> &indices) noexcept {
 
 template <size_t N>
 void increment(std::array<scipp::index, N> &indices,
-               const scipp::span<const scipp::index> strides) noexcept {
+               const std::span<const scipp::index> strides) noexcept {
   for (size_t i = 0; i < N; ++i) {
     indices[i] += strides[i];
   }
@@ -211,7 +211,7 @@ static void inner_loop(Op &&op,
 template <bool in_place, class Op, class... Operands>
 static void inner_loop(Op &&op,
                        std::array<scipp::index, sizeof...(Operands)> indices,
-                       const scipp::span<const scipp::index> strides,
+                       const std::span<const scipp::index> strides,
                        const scipp::index n, Operands &&...operands) {
   for (scipp::index i = 0; i < n; ++i) {
     if constexpr (in_place) {
@@ -226,7 +226,7 @@ static void inner_loop(Op &&op,
 template <bool in_place, size_t I = 0, class Op, class... Operands>
 static void dispatch_inner_loop(
     Op &&op, const std::array<scipp::index, sizeof...(Operands)> &indices,
-    const scipp::span<const scipp::index> inner_strides, const scipp::index n,
+    const std::span<const scipp::index> inner_strides, const scipp::index n,
     Operands &&...operands) {
   constexpr auto N_Operands = sizeof...(Operands);
   if constexpr (I ==

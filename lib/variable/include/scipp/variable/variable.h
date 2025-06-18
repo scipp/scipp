@@ -74,7 +74,7 @@ public:
 
   [[nodiscard]] DType dtype() const;
 
-  [[nodiscard]] scipp::span<const scipp::index> strides() const;
+  [[nodiscard]] std::span<const scipp::index> strides() const;
   [[nodiscard]] scipp::index stride(const Dim dim) const;
   [[nodiscard]] scipp::index offset() const;
 
@@ -136,7 +136,7 @@ public:
 
   [[nodiscard]] Variable broadcast(const Dimensions &target) const;
   [[nodiscard]] Variable fold(const Dim dim, const Dimensions &target) const;
-  [[nodiscard]] Variable transpose(scipp::span<const Dim> order) const;
+  [[nodiscard]] Variable transpose(std::span<const Dim> order) const;
 
   [[nodiscard]] bool is_valid() const noexcept;
   [[nodiscard]] bool is_slice() const;

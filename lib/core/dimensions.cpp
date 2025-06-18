@@ -11,8 +11,8 @@
 #include "scipp/core/sizes.h"
 
 namespace scipp::core {
-Dimensions::Dimensions(const scipp::span<const Dim> labels,
-                       const scipp::span<const scipp::index> shape) {
+Dimensions::Dimensions(const std::span<const Dim> labels,
+                       const std::span<const scipp::index> shape) {
   if (labels.size() != shape.size())
     throw except::DimensionError(
         "Constructing Dimensions: Number of dimensions "
@@ -115,7 +115,7 @@ Dimensions intersection(const Dimensions &a, const Dimensions &b) {
 
 namespace {
 Dimensions transpose_impl(const Dimensions &dims,
-                          const scipp::span<const Dim> labels) {
+                          const std::span<const Dim> labels) {
   if (scipp::size(labels) != dims.ndim())
     throw except::DimensionError("Cannot transpose: Requested new dimension "
                                  "order contains different number of labels.");
@@ -127,7 +127,7 @@ Dimensions transpose_impl(const Dimensions &dims,
 } // namespace
 
 Dimensions transpose(const Dimensions &dims,
-                     const scipp::span<const Dim> labels) {
+                     const std::span<const Dim> labels) {
   if (labels.empty()) {
     std::vector<Dim> default_labels{dims.labels().rbegin(),
                                     dims.labels().rend()};

@@ -4,10 +4,9 @@
 #pragma once
 
 #include <cmath>
+#include <span>
 
 #include "scipp/common/numeric.h"
-#include "scipp/common/span.h"
-#include "scipp/core/dtype.h"
 
 namespace scipp::core {
 
@@ -313,8 +312,8 @@ template <class T1, class T2>
 ValueAndVariance(const T1 &val, const T2 &var)
     -> ValueAndVariance<decltype(T1() + T2())>;
 template <class T>
-ValueAndVariance(const scipp::span<T> &val, const scipp::span<T> &var)
-    -> ValueAndVariance<scipp::span<T>>;
+ValueAndVariance(const std::span<T> &val, const std::span<T> &var)
+    -> ValueAndVariance<std::span<T>>;
 
 template <class T> struct is_ValueAndVariance : std::false_type {};
 template <class T>
