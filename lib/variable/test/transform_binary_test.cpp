@@ -372,7 +372,8 @@ void check_binned_with_dense(Variable &binned, const Variable &dense,
   const auto dense_binned = transform<double>(dense, binned, op, name);
 
   for (scipp::index i = 0; i < indices.dims().volume(); ++i) {
-    const auto &[begin, end] = indices.values<index_pair>()[i];
+    const auto values = indices.values<index_pair>();
+    const auto &[begin, end] = values[i];
     const auto bin_dim = buffer.dims().label(bin_dim_index);
     const auto bin = buffer.slice(Slice{bin_dim, begin, end});
     const auto dense_slice = element_as_scalar(dense, i);
