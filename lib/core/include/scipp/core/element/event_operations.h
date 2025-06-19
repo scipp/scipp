@@ -26,8 +26,8 @@ constexpr auto get = [](const auto &x, const scipp::index i) {
 
 namespace map_detail {
 template <class Coord, class Edge, class Weight>
-using args = std::tuple<Coord, scipp::span<const Edge>,
-                        scipp::span<const Weight>, Weight>;
+using args =
+    std::tuple<Coord, std::span<const Edge>, std::span<const Weight>, Weight>;
 } // namespace map_detail
 
 constexpr auto map = overloaded{
@@ -111,7 +111,7 @@ constexpr auto lookup_previous =
 namespace map_and_mul_detail {
 template <class Data, class Coord, class Edge, class Weight>
 using args =
-    std::tuple<Data, Coord, scipp::span<const Edge>, scipp::span<const Weight>>;
+    std::tuple<Data, Coord, std::span<const Edge>, std::span<const Weight>>;
 } // namespace map_and_mul_detail
 
 constexpr auto map_and_mul = overloaded{

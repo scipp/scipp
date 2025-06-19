@@ -27,8 +27,8 @@ auto make_subspans(T *base, const Variable &indices,
       overloaded{core::transform_flags::expect_no_variance_arg<0>,
                  [](const sc_units::Unit &) { return sc_units::one; },
                  [base, stride](const auto &offset) {
-                   return scipp::span(base + stride * offset.first,
-                                      base + stride * offset.second);
+                   return std::span(base + stride * offset.first,
+                                    base + stride * offset.second);
                  }},
       "make_subspans");
 }

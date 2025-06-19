@@ -14,7 +14,7 @@ namespace scipp::variable {
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable broadcast(const Variable &var,
                                                        const Dimensions &dims);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-concat(const scipp::span<const Variable> vars, const Dim dim);
+concat(const std::span<const Variable> vars, const Dim dim);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 resize(const Variable &var, const Dim dim, const scipp::index size,
        const FillValue fill = FillValue::Default);
@@ -24,16 +24,16 @@ resize(const Variable &var, const Dim dim, const scipp::index size,
                                                   const Dim from_dim,
                                                   const Dimensions &to_dims);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-flatten(const Variable &view, const scipp::span<const Dim> &from_labels,
+flatten(const Variable &view, const std::span<const Dim> &from_labels,
         const Dim to_dim);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-transpose(const Variable &var, scipp::span<const Dim> dims = {});
+transpose(const Variable &var, std::span<const Dim> dims = {});
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT std::vector<scipp::Dim>
 dims_for_squeezing(const core::Sizes &data_dims,
-                   std::optional<scipp::span<const Dim>> selected_dims);
+                   std::optional<std::span<const Dim>> selected_dims);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-squeeze(const Variable &var, std::optional<scipp::span<const Dim>> dims);
+squeeze(const Variable &var, std::optional<std::span<const Dim>> dims);
 
 } // namespace scipp::variable

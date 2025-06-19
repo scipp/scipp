@@ -26,7 +26,7 @@ namespace scipp::core {
 class SCIPP_CORE_EXPORT Strides {
 public:
   Strides() = default;
-  explicit Strides(const scipp::span<const scipp::index> &strides);
+  explicit Strides(const std::span<const scipp::index> &strides);
   Strides(std::initializer_list<scipp::index> strides);
   explicit Strides(const Dimensions &dims);
 
@@ -57,7 +57,7 @@ private:
 };
 
 Strides SCIPP_CORE_EXPORT transpose(const Strides &strides, Dimensions from,
-                                    scipp::span<const Dim> order);
+                                    std::span<const Dim> order);
 
 } // namespace scipp::core
 

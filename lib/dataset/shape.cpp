@@ -30,7 +30,7 @@ template <class T, class Op> auto map(const T &items, Op op) {
 ///
 /// Checks that the last edges in `a` match the first edges in `b`. The
 /// Concatenates the input edges, removing duplicate bin edges.
-Variable join_edges(const scipp::span<const Variable> vars, const Dim dim) {
+Variable join_edges(const std::span<const Variable> vars, const Dim dim) {
   std::vector<Variable> tmp;
   tmp.reserve(vars.size());
   for (const auto &var : vars) {
@@ -112,7 +112,7 @@ template <class Maps> auto concat_maps(const Maps &maps, const Dim dim) {
 
 } // namespace
 
-DataArray concat(const scipp::span<const DataArray> das, const Dim dim) {
+DataArray concat(const std::span<const DataArray> das, const Dim dim) {
   auto out = DataArray(concat(map(das, get_data), dim), {},
                        concat_maps(map(das, get_masks), dim));
   const auto &coords = map(das, get_coords);
@@ -127,7 +127,7 @@ DataArray concat(const scipp::span<const DataArray> das, const Dim dim) {
   return out;
 }
 
-Dataset concat(const scipp::span<const Dataset> dss, const Dim dim) {
+Dataset concat(const std::span<const Dataset> dss, const Dim dim) {
   if (dss.empty())
     throw std::invalid_argument("Cannot concat empty list.");
   Dataset result;
@@ -177,7 +177,7 @@ namespace {
 ///    variable's dims, broadcast
 /// 3. If none of the variables's dimensions are contained, no broadcast
 Variable maybe_broadcast(const Variable &var,
-                         const scipp::span<const Dim> &from_labels,
+                         const std::span<const Dim> &from_labels,
                          const Dimensions &data_dims) {
   const auto &var_dims = var.dims();
   Dimensions broadcast_dims;
@@ -211,7 +211,7 @@ Variable fold_bin_edge(const Variable &var, const Dim from_dim,
 
 /// Special handling for flattening coord along a dim that contains bin edges.
 Variable flatten_bin_edge(const Variable &var,
-                          const scipp::span<const Dim> &from_labels,
+                          const std::span<const Dim> &from_labels,
                           const Dim to_dim, const Dim bin_edge_dim) {
   const auto data_shape = var.dims()[bin_edge_dim] - 1;
 
@@ -239,7 +239,7 @@ Variable flatten_bin_edge(const Variable &var,
 
 /// Check if one of the from_labels is a bin edge
 Dim bin_edge_in_from_labels(const Variable &var, const Dimensions &array_dims,
-                            const scipp::span<const Dim> &from_labels) {
+                            const std::span<const Dim> &from_labels) {
   for (const auto &dim : from_labels)
     if (is_edges(array_dims, var.dims(), dim))
       return dim;
@@ -264,7 +264,7 @@ DataArray fold(const DataArray &a, const Dim from_dim,
 
 namespace {
 void expect_dimension_subset(const core::Dimensions &full_set,
-                             const scipp::span<const Dim> &subset) {
+                             const std::span<const Dim> &subset) {
   for (const auto &dim : subset) {
     if (!full_set.contains(dim)) {
       throw except::DimensionError{"Expected dimension " + to_string(dim) +
@@ -277,7 +277,7 @@ void expect_dimension_subset(const core::Dimensions &full_set,
 /// Flatten multiple dimensions into a single dimension:
 /// ['y', 'z'] -> ['x']
 DataArray flatten(const DataArray &a,
-                  const std::optional<scipp::span<const Dim>> &from_labels,
+                  const std::optional<std::span<const Dim>> &from_labels,
                   const Dim to_dim) {
   const auto &labels = from_labels.value_or(a.dims().labels());
   if (from_labels.has_value() && labels.empty())
@@ -299,17 +299,17 @@ DataArray flatten(const DataArray &a,
   });
 }
 
-DataArray transpose(const DataArray &a, const scipp::span<const Dim> dims) {
+DataArray transpose(const DataArray &a, const std::span<const Dim> dims) {
   return {transpose(a.data(), dims), a.coords(), a.masks(), a.name()};
 }
 
-Dataset transpose(const Dataset &d, const scipp::span<const Dim> dims) {
+Dataset transpose(const Dataset &d, const std::span<const Dim> dims) {
   return apply_to_items(d, [](auto &&..._) { return transpose(_...); }, dims);
 }
 
 namespace {
 template <class T>
-T squeeze_impl(const T &x, const std::optional<scipp::span<const Dim>> dims) {
+T squeeze_impl(const T &x, const std::optional<std::span<const Dim>> dims) {
   auto squeezed = x;
   for (const auto &dim : dims_for_squeezing(x.dims(), dims)) {
     squeezed = squeezed.slice({dim, 0});
@@ -320,12 +320,12 @@ T squeeze_impl(const T &x, const std::optional<scipp::span<const Dim>> dims) {
 }
 } // namespace
 DataArray squeeze(const DataArray &a,
-                  const std::optional<scipp::span<const Dim>> dims) {
+                  const std::optional<std::span<const Dim>> dims) {
   return squeeze_impl(a, dims);
 }
 
 Dataset squeeze(const Dataset &d,
-                const std::optional<scipp::span<const Dim>> dims) {
+                const std::optional<std::span<const Dim>> dims) {
   return squeeze_impl(d, dims);
 }
 

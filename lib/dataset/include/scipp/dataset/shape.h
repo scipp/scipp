@@ -11,9 +11,9 @@
 namespace scipp::dataset {
 
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
-concat(const scipp::span<const DataArray> das, const Dim dim);
+concat(const std::span<const DataArray> das, const Dim dim);
 [[nodiscard]] SCIPP_DATASET_EXPORT Dataset
-concat(const scipp::span<const Dataset> dss, const Dim dim);
+concat(const std::span<const Dataset> dss, const Dim dim);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
 resize(const DataArray &a, const Dim dim, const scipp::index size,
@@ -33,16 +33,16 @@ resize(const Dataset &d, const Dim dim, const scipp::index size,
                                                   const Dim from_dim,
                                                   const Dimensions &to_dims);
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray flatten(
-    const DataArray &a,
-    const std::optional<scipp::span<const Dim>> &from_labels, const Dim to_dim);
+    const DataArray &a, const std::optional<std::span<const Dim>> &from_labels,
+    const Dim to_dim);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
-transpose(const DataArray &a, scipp::span<const Dim> dims = {});
+transpose(const DataArray &a, std::span<const Dim> dims = {});
 [[nodiscard]] SCIPP_DATASET_EXPORT Dataset
-transpose(const Dataset &d, scipp::span<const Dim> dims = {});
+transpose(const Dataset &d, std::span<const Dim> dims = {});
 
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
-squeeze(const DataArray &a, std::optional<scipp::span<const Dim>> dims);
+squeeze(const DataArray &a, std::optional<std::span<const Dim>> dims);
 [[nodiscard]] SCIPP_DATASET_EXPORT Dataset
-squeeze(const Dataset &a, std::optional<scipp::span<const Dim>> dims);
+squeeze(const Dataset &a, std::optional<std::span<const Dim>> dims);
 } // namespace scipp::dataset

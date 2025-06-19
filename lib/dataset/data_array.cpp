@@ -160,8 +160,7 @@ DataArray DataArray::view_with_coords(const Coords &coords,
   return out;
 }
 
-DataArray
-DataArray::drop_coords(const scipp::span<const Dim> coord_names) const {
+DataArray DataArray::drop_coords(const std::span<const Dim> coord_names) const {
   DataArray result = *this;
   for (const auto &name : coord_names)
     result.coords().erase(name);
@@ -169,7 +168,7 @@ DataArray::drop_coords(const scipp::span<const Dim> coord_names) const {
 }
 
 DataArray
-DataArray::drop_masks(const scipp::span<const std::string> mask_names) const {
+DataArray::drop_masks(const std::span<const std::string> mask_names) const {
   DataArray result = *this;
   for (const auto &name : mask_names)
     result.masks().erase(name);

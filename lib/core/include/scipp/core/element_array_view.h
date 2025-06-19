@@ -132,12 +132,12 @@ public:
 
   auto as_span() const {
     requireContiguous();
-    return scipp::span(data(), data() + size());
+    return std::span(data(), data() + size());
   }
 
   auto as_span() {
     requireContiguous();
-    return scipp::span(data(), data() + size());
+    return std::span(data(), data() + size());
   }
 
   bool operator==(const ElementArrayView<T> &other) const {

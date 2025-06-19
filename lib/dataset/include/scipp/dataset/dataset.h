@@ -109,9 +109,9 @@ public:
   const Coords &coords() const noexcept;
   Coords &coords() noexcept;
 
-  Dataset drop_coords(const scipp::span<const Dim> coord_names) const;
+  Dataset drop_coords(const std::span<const Dim> coord_names) const;
 
-  Dataset drop_masks(const scipp::span<const std::string> mask_names) const;
+  Dataset drop_masks(const std::span<const std::string> mask_names) const;
 
   bool contains(const std::string &name) const noexcept;
 

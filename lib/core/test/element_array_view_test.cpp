@@ -142,8 +142,7 @@ TEST(ElementArrayViewTest, broadcast_inner_and_outer) {
              {0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1}));
 }
 
-Strides transposed_strides(Dimensions &from,
-                           const scipp::span<const Dim> order) {
+Strides transposed_strides(Dimensions &from, const std::span<const Dim> order) {
   return core::transpose(Strides{from}, from, order);
 }
 

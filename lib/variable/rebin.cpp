@@ -70,8 +70,8 @@ void rebin_non_inner(const Dim dim, const Variable &oldT,
 
 namespace {
 template <class Out, class OutEdge, class In, class InEdge>
-using args = std::tuple<scipp::span<Out>, scipp::span<const OutEdge>,
-                        scipp::span<const In>, scipp::span<const InEdge>>;
+using args = std::tuple<std::span<Out>, std::span<const OutEdge>,
+                        std::span<const In>, std::span<const InEdge>>;
 
 struct Greater {
   template <class A, class B>

@@ -39,10 +39,9 @@ DataArray histogram(const DataArray &events, const Variable &binEdges) {
         events,
         [](const DataArray &events_, const Dim dim_,
            const Variable &binEdges_) {
-          return buckets::histogram(
-              hide_masked(events_.data(), events_.masks(),
-                          scipp::span<const Dim>{&dim_, 1}),
-              binEdges_);
+          return buckets::histogram(hide_masked(events_.data(), events_.masks(),
+                                                std::span<const Dim>{&dim_, 1}),
+                                    binEdges_);
         },
         dim, con_bin_edges);
   } else if (!is_histogram(events, dim)) {

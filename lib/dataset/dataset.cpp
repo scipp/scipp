@@ -89,7 +89,7 @@ const Coords &Dataset::coords() const noexcept { return m_coords; }
 Coords &Dataset::coords() noexcept { return m_coords; }
 
 /// Return a Dataset without the given coordinate names.
-Dataset Dataset::drop_coords(const scipp::span<const Dim> coord_names) const {
+Dataset Dataset::drop_coords(const std::span<const Dim> coord_names) const {
   Dataset result = *this;
   for (const auto &name : coord_names)
     result.coords().erase(name);

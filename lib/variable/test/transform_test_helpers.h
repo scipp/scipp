@@ -28,10 +28,10 @@ Variable make_regular_bin_indices(scipp::index size, const scipp::Shape &shape,
 scipp::index index_volume(const Variable &indices);
 
 std::vector<std::vector<Slice>>
-make_slice_combinations(const scipp::span<const scipp::index> &shape,
+make_slice_combinations(const std::span<const scipp::index> &shape,
                         const std::initializer_list<Dim> dim_labels);
 
-Variable slice(Variable var, scipp::span<const Slice> slices);
+Variable slice(Variable var, std::span<const Slice> slices);
 
 template <class T>
 scipp::variable::Variable

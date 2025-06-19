@@ -35,7 +35,7 @@ const std::vector<std::vector<sc_units::Dim>> dim_combinations{
     {Dim::X, Dim::Y, Dim::Z}};
 
 std::optional<Variable> slice_to_scalar(Variable var,
-                                        scipp::span<const sc_units::Dim> dims) {
+                                        std::span<const sc_units::Dim> dims) {
   for (const auto &dim : dims) {
     if (!var.dims().contains(dim) || var.dims().at(dim) == 0) {
       return std::nullopt;
@@ -372,7 +372,8 @@ void check_binned_with_dense(Variable &binned, const Variable &dense,
   const auto dense_binned = transform<double>(dense, binned, op, name);
 
   for (scipp::index i = 0; i < indices.dims().volume(); ++i) {
-    const auto &[begin, end] = indices.values<index_pair>()[i];
+    const auto values = indices.values<index_pair>();
+    const auto &[begin, end] = values[i];
     const auto bin_dim = buffer.dims().label(bin_dim_index);
     const auto bin = buffer.slice(Slice{bin_dim, begin, end});
     const auto dense_slice = element_as_scalar(dense, i);
