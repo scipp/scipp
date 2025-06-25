@@ -167,8 +167,15 @@ def find_peaks(da: ArrayLike, **kwargs: Any) -> ArrayLike:
        >>> x = sc.linspace('x', -3.14, 3.14, 101, unit='rad')
        >>> y = sc.DataArray(sc.cos(5 * x), coords={'x': x})
        >>> find_peaks(y)
+       <scipp.DataArray>
+       Dimensions: Sizes[x:5, ]
+       Coordinates:
+       * x                         float64            [rad]  (x)  [-2.512, -1.256, ..., 1.256, 2.512]
+       Data:
+                                   float64  [dimensionless]  (x)  [0.99998, 0.999995, ..., 0.999995, 0.99998]
 
-    """
+
+    """  # noqa: E501
 
     from scipy.signal import find_peaks
 
