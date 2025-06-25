@@ -151,4 +151,44 @@ def sosfiltfilt(
     return _sosfiltfilt(da, dim=dim, sos=sos, **kwargs)
 
 
-__all__ = ['butter', 'sosfiltfilt']
+def find_peaks(da: Variable | DataArray, **kwargs):
+    """
+    A routine that locates "peaks" in a 1D signal.
+
+    This is a wrapper around :py:funct:`scipy.signal.find_peaks. See there for a
+    complete description of parameters.
+
+    Examples:
+
+       >>> from scipp.scipy.signal import find_peaks
+       >>> x = sc.linspace('x', -3.14, 3.14, 101, unit='rad')
+       >>> y = sc.DataArray(sc.cos(5 * x), coords={'x': x})
+       >>> find_peaks(y)
+
+    """
+
+    from scipy.signal import find_peaks
+
+    if da.ndim != 1 or not isinstance(da, DataArray | Variable) or da.bins is not None:
+        raise ValueError('Can only find peaks in 1D arrays.')
+
+    peaks, _ = find_peaks(da.data.values if isinstance(da, DataArray) else da.values if isinstance(da, Variable) else None, **kwargs)
+
+    if isinstance(da, DataArray):
+        return DataArray(
+            array(dims=(da.dim,), values=da.data.values[peaks], unit=da.data.unit, dtype=da.data.dtype),
+            coords={
+                name: (
+                    array(dims=(da.dim,), values=value.values[peaks], unit=value.unit, dtype=value.dtype)
+                    if value.dims == da.dims
+                    else value
+                )
+                for name, value in da.coords.items()
+            }
+        )
+
+    if isinstance(da, Variable):
+        return array(dims=da.dims, values=da.values[peaks], unit=da.unit, dtype=da.dtype)
+
+
+__all__ = ['butter', 'sosfiltfilt', 'find_peaks']
