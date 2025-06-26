@@ -7,7 +7,6 @@
 #include "scipp/core/eigen.h"
 #include "scipp/core/element_array_view.h"
 #include "scipp/core/except.h"
-#include "scipp/core/has_eval.h"
 #include "scipp/units/unit.h"
 #include "scipp/variable/element_array_model.h"
 #include "scipp/variable/except.h"
@@ -42,7 +41,7 @@ template <class T> auto &cast(Variable &var) {
 template <int I, class T> decltype(auto) get(T &&t) {
   if constexpr (std::is_same_v<std::decay_t<T>, Eigen::Affine3d>) {
     return t.matrix().operator()(I);
-  } else if constexpr (core::has_eval_v<std::decay_t<T>> ||
+  } else if constexpr (requires(T x){ x.eval(); } ||
                        std::is_same_v<std::decay_t<T>,
                                       scipp::core::Quaternion> ||
                        std::is_same_v<std::decay_t<T>,

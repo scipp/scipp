@@ -36,7 +36,6 @@
 
 #include "scipp/common/overloaded.h"
 
-#include "scipp/core/has_eval.h"
 #include "scipp/core/multi_index.h"
 #include "scipp/core/parallel.h"
 #include "scipp/core/transform_common.h"
@@ -278,11 +277,11 @@ static void transform_elements(Op op, Out &&out, Ts &&...other) {
                                run_parallel);
 }
 
-template <class T> static constexpr auto maybe_eval(T &&_) {
-  if constexpr (core::has_eval_v<std::decay_t<T>>)
-    return _.eval();
+template <class T> static constexpr auto maybe_eval(T &&x) {
+  if constexpr (requires { x.eval(); })
+    return x.eval();
   else
-    return std::forward<T>(_);
+    return std::forward<T>(x);
 }
 
 template <class Op, class... Args>
@@ -446,7 +445,7 @@ struct tuple_cat<C<Ts1...>, C<Ts2...>, Ts3...>
 template <class Op> struct wrap_eigen : Op {
   const Op &base_op() const noexcept { return *this; }
   template <class... Ts> constexpr auto operator()(Ts &&...args) const {
-    if constexpr ((core::has_eval_v<std::decay_t<Ts>> || ...))
+    if constexpr ((requires { args.eval(); } || ...))
       // WARNING! The explicit specification of the template arguments of
       // operator() is EXTREMELY IMPORTANT. It ensures that Eigen types are
       // passed BY REFERENCE and NOT BY VALUE. Passing by value leads to
