@@ -106,11 +106,11 @@ SCIPP_CORE_EXPORT bool is_span(DType tp);
 
 template <class T> constexpr bool canHaveVariances() noexcept {
   using U = std::remove_const_t<T>;
-  return std::is_same_v<U, double> || std::is_same_v<U, float> ||
-         std::is_same_v<U, std::span<const double>> ||
-         std::is_same_v<U, std::span<const float>> ||
-         std::is_same_v<U, std::span<double>> ||
-         std::is_same_v<U, std::span<float>>;
+  return std::disjunction<std::is_same<U, double>, std::is_same<U, float>,
+                          std::is_same<U, std::span<const double>>,
+                          std::is_same<U, std::span<const float>>,
+                          std::is_same<U, std::span<double>>,
+                          std::is_same<U, std::span<float>>>{};
 }
 
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,

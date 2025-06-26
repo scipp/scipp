@@ -288,11 +288,12 @@ template <class T> static constexpr auto maybe_eval(T &&x) {
 }
 
 template <class Op, class... Args>
-constexpr bool check_all_or_none_variances =
-    std::is_base_of_v<core::transform_flags::expect_all_or_none_have_variance_t,
-                      Op> &&
-    !std::conjunction_v<is_ValuesAndVariances<std::decay_t<Args>>...> &&
-    std::disjunction_v<is_ValuesAndVariances<std::decay_t<Args>>...>;
+constexpr bool check_all_or_none_variances = std::conjunction<
+    std::is_base_of<core::transform_flags::expect_all_or_none_have_variance_t,
+                    Op>,
+    std::negation<
+        std::conjunction<is_ValuesAndVariances<std::decay_t<Args>>...>>,
+    std::disjunction<is_ValuesAndVariances<std::decay_t<Args>>...>>{};
 
 /// Recursion endpoint for do_transform.
 ///
@@ -302,8 +303,8 @@ template <class Op, class Out, class Tuple>
 static void do_transform(Op op, Out &&out, Tuple &&processed) {
   auto out_val = out.values();
   std::apply(
-      [&op, &out, &out_val](auto &&...args) {
-        if constexpr (check_all_or_none_variances<Op, decltype(args)...>) {
+      [&op, &out, &out_val]<class... Args>(Args &&...args) {
+        if constexpr (check_all_or_none_variances<Op, Args...>) {
           throw except::VariancesError(
               "Expected either all or none of inputs to have variances.");
         } else if constexpr (
@@ -312,10 +313,9 @@ static void do_transform(Op op, Out &&out, Tuple &&processed) {
             (is_ValuesAndVariances_v<std::decay_t<decltype(args)>> || ...)) {
           auto out_var = out.variances();
           transform_elements(op, ValuesAndVariances{out_val, out_var},
-                             std::forward<decltype(args)>(args)...);
+                             std::forward<Args>(args)...);
         } else {
-          transform_elements(op, out_val,
-                             std::forward<decltype(args)>(args)...);
+          transform_elements(op, out_val, std::forward<Args>(args)...);
         }
       },
       std::forward<Tuple>(processed));
