@@ -145,13 +145,15 @@ void increment(std::array<scipp::index, N> &indices,
 }
 
 template <class Op, class... Args, size_t... I>
-static constexpr auto call_impl(Op &&op, const std::array<index, sizeof...(I)+1> &indices,
-                                std::index_sequence<I...>, Args &&...args) {
+static constexpr auto
+call_impl(Op &&op, const std::array<index, sizeof...(I) + 1> &indices,
+          std::index_sequence<I...>, Args &&...args) {
   return op(value_maybe_variance(args, indices[I + 1])...);
 }
 template <class Op, class Out, class... Args>
-static constexpr void call(Op &&op, const std::array<index, sizeof...(Args)+1> &indices, Out &&out,
-                           Args &&...args) {
+static constexpr void
+call(Op &&op, const std::array<index, sizeof...(Args) + 1> &indices, Out &&out,
+     Args &&...args) {
   const auto i = indices.front();
   auto &&out_ = value_maybe_variance(out, i);
   out_ = call_impl(std::forward<Op>(op), indices,
@@ -164,26 +166,23 @@ static constexpr void call(Op &&op, const std::array<index, sizeof...(Args)+1> &
 }
 
 template <class Op, class Arg, class... Args, size_t... I>
-static constexpr void call_in_place_impl(Op &&op,
-                                         const std::array<index, sizeof...(I)+1> &indices,
-                                         std::index_sequence<I...>, Arg &&arg,
-                                         Args &&...args) {
+static constexpr void
+call_in_place_impl(Op &&op, const std::array<index, sizeof...(I) + 1> &indices,
+                   std::index_sequence<I...>, Arg &&arg, Args &&...args) {
   static_assert(std::is_same_v<decltype(op(arg, value_maybe_variance(
                                                     args, indices[I + 1])...)),
                                void>);
   op(arg, value_maybe_variance(args, indices[I + 1])...);
 }
 template <class Op, class Arg, class... Args>
-static constexpr void call_in_place(Op &&op,
-                                    const std::array<index, sizeof...(Args)+1> &indices,
-                                    Arg &&arg,
-                                    Args &&...args) {
+static constexpr void
+call_in_place(Op &&op, const std::array<index, sizeof...(Args) + 1> &indices,
+              Arg &&arg, Args &&...args) {
   const auto i = indices.front();
   // For dense data we conditionally create ValueAndVariance, which performs an
   // element copy, so the result may have to be updated after the call to `op`.
   auto &&arg_ = value_maybe_variance(arg, i);
-  call_in_place_impl(std::forward<Op>(op),
-                     indices,
+  call_in_place_impl(std::forward<Op>(op), indices,
                      std::make_index_sequence<sizeof...(Args)>{},
                      std::forward<decltype(arg_)>(arg_),
                      std::forward<Args>(args)...);
@@ -474,14 +473,6 @@ static constexpr auto type_tuples(Op) noexcept {
     return std::tuple<Ts...>{};
 }
 
-constexpr auto overlaps = [](const auto &a, const auto &b) {
-  if constexpr (std::is_same_v<typename std::decay_t<decltype(a)>::value_type,
-                               typename std::decay_t<decltype(b)>::value_type>)
-    return a.values().overlaps(b.values());
-  else
-    return false;
-};
-
 /// Helper class wrapping functions for in-place transform.
 ///
 /// The dry_run template argument can be used to disable any actual modification
@@ -617,7 +608,7 @@ template <bool dry_run> struct in_place {
       using namespace detail;
       // If there is an overlap between lhs and rhs we copy the rhs before
       // applying the operation.
-      if ((overlaps(out, handles) || ...)) {
+      if ((out.values().overlaps(handles.values()) || ...)) {
         if constexpr (sizeof...(Ts) == 1) {
           auto copy = (handles.clone(), ...);
           return operator()(std::forward<T>(out), Ts(copy)...);

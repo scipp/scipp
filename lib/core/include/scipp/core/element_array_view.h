@@ -147,10 +147,22 @@ public:
   }
 
   template <class T2> bool overlaps(const ElementArrayView<T2> &other) const {
-    if (buffer() && buffer() == other.buffer())
-      return ElementArrayViewParams::overlaps(other);
-    return false;
+    if constexpr (requires { buffer() == other.buffer(); }) {
+      if (buffer() && buffer() == other.buffer())
+        return ElementArrayViewParams::overlaps(other);
+      return false;
+    } else {
+      // Arrays of different types cannot overlap.
+      return false;
+    }
   }
+  // template <class T2> requires requires{std::is_same<std::decay<T>,
+  // std::decay<T2>>{};} bool overlaps(const ElementArrayView<T2> &other) const
+  // {
+  //   if (buffer() && buffer() == other.buffer())
+  //     return ElementArrayViewParams::overlaps(other);
+  //   return false;
+  // }
 
   constexpr T *buffer() const noexcept { return m_buffer; }
 
