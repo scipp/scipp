@@ -144,13 +144,13 @@ void increment(std::array<scipp::index, N> &indices,
   }
 }
 
-template <class Op, class Indices, class... Args, size_t... I>
-static constexpr auto call_impl(Op &&op, const Indices &indices,
+template <class Op, class... Args, size_t... I>
+static constexpr auto call_impl(Op &&op, const std::array<index, sizeof...(I)+1> &indices,
                                 std::index_sequence<I...>, Args &&...args) {
   return op(value_maybe_variance(args, indices[I + 1])...);
 }
-template <class Op, class Indices, class Out, class... Args>
-static constexpr void call(Op &&op, const Indices &indices, Out &&out,
+template <class Op, class Out, class... Args>
+static constexpr void call(Op &&op, const std::array<index, sizeof...(Args)+1> &indices, Out &&out,
                            Args &&...args) {
   const auto i = indices.front();
   auto &&out_ = value_maybe_variance(out, i);
@@ -163,8 +163,9 @@ static constexpr void call(Op &&op, const Indices &indices, Out &&out,
   }
 }
 
-template <class Op, class Indices, class Arg, class... Args, size_t... I>
-static constexpr void call_in_place_impl(Op &&op, const Indices &indices,
+template <class Op, class Arg, class... Args, size_t... I>
+static constexpr void call_in_place_impl(Op &&op,
+                                         const std::array<index, sizeof...(I)+1> &indices,
                                          std::index_sequence<I...>, Arg &&arg,
                                          Args &&...args) {
   static_assert(std::is_same_v<decltype(op(arg, value_maybe_variance(
@@ -172,14 +173,17 @@ static constexpr void call_in_place_impl(Op &&op, const Indices &indices,
                                void>);
   op(arg, value_maybe_variance(args, indices[I + 1])...);
 }
-template <class Op, class Indices, class Arg, class... Args>
-static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
+template <class Op, class Arg, class... Args>
+static constexpr void call_in_place(Op &&op,
+                                    const std::array<index, sizeof...(Args)+1> &indices,
+                                    Arg &&arg,
                                     Args &&...args) {
   const auto i = indices.front();
   // For dense data we conditionally create ValueAndVariance, which performs an
   // element copy, so the result may have to be updated after the call to `op`.
   auto &&arg_ = value_maybe_variance(arg, i);
-  call_in_place_impl(std::forward<Op>(op), indices,
+  call_in_place_impl(std::forward<Op>(op),
+                     indices,
                      std::make_index_sequence<sizeof...(Args)>{},
                      std::forward<decltype(arg_)>(arg_),
                      std::forward<Args>(args)...);
