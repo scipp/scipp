@@ -20,6 +20,12 @@ namespace scipp::variable {
 namespace detail {
 template <class U> struct vector {
   std::vector<U> data;
+  vector() noexcept = default;
+  vector(vector &other) = default;
+  vector(const vector &other) = default;
+  vector(vector &&other) noexcept = default;
+  vector &operator=(const vector &other) = default;
+  vector &operator=(vector &&other) noexcept = default;
   template <class... Args>
   vector(Args &&...args) : data(std::forward<Args>(args)...) {}
   template <class A, class B> // avoid use of vector(size, value)

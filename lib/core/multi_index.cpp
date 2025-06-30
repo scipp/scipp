@@ -60,8 +60,8 @@ auto get_slice_dim(const T &param, const Ts &...params) {
 
 template <class T>
 [[nodiscard]] auto make_span(T &&array, const scipp::index begin) {
-  return scipp::span{array.data() + begin,
-                     static_cast<size_t>(NDIM_OP_MAX - begin)};
+  return std::span{array.data() + begin,
+                   static_cast<size_t>(NDIM_OP_MAX - begin)};
 }
 
 template <class StridesArg>
@@ -88,9 +88,9 @@ bool can_be_flattened(
 // But the inner dimensions always have the same layout.
 template <class... StridesArgs>
 [[nodiscard]] scipp::index
-flatten_dims(const scipp::span<std::array<scipp::index, sizeof...(StridesArgs)>>
+flatten_dims(const std::span<std::array<scipp::index, sizeof...(StridesArgs)>>
                  &out_strides,
-             const scipp::span<scipp::index> &out_shape, const Dimensions &dims,
+             const std::span<scipp::index> &out_shape, const Dimensions &dims,
              const scipp::index non_flattenable_dim,
              const StridesArgs &...strides) {
   constexpr scipp::index N = sizeof...(StridesArgs);
