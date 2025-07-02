@@ -35,5 +35,5 @@ tomli==2.2.1
     #   build
 virtualenv==20.31.2
     # via asv
-zipp==3.21.0
+zipp==3.23.0
     # via importlib-metadata

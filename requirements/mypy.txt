@@ -7,11 +7,13 @@
 #
 -r docs.txt
 -r test.txt
-mypy==1.15.0
+mypy==1.16.1
     # via -r mypy.in
 mypy-extensions==1.1.0
     # via mypy
-pandas-stubs==2.2.3.250308
+pandas-stubs==2.2.3.250527
     # via -r mypy.in
+pathspec==0.12.1
+    # via mypy
 types-pytz==2025.2.0.20250516
     # via pandas-stubs
