@@ -179,7 +179,7 @@ Sizes concat2(const Sizes &a, const Sizes &b, const Dim dim) {
 }
 } // namespace
 
-Sizes concat(const scipp::span<const Sizes> sizes, const Dim dim) {
+Sizes concat(const std::span<const Sizes> sizes, const Dim dim) {
   auto out = sizes.front();
   for (scipp::index i = 1; i < scipp::size(sizes); ++i)
     out = concat2(out, sizes[i], dim);

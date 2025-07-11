@@ -6,7 +6,7 @@
 
 namespace scipp::core {
 
-Strides::Strides(const scipp::span<const scipp::index> &strides)
+Strides::Strides(const std::span<const scipp::index> &strides)
     : m_strides(strides.begin(), strides.end()) {}
 
 Strides::Strides(const std::initializer_list<scipp::index> strides)
@@ -40,7 +40,7 @@ void Strides::erase(const scipp::index i) {
 }
 
 Strides transpose(const Strides &strides, Dimensions from,
-                  const scipp::span<const Dim> order) {
+                  const std::span<const Dim> order) {
   scipp::index i = 0;
   for (const auto &dim : from)
     from.resize(dim, strides[i++]);

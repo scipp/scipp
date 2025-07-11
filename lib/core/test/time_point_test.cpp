@@ -4,7 +4,6 @@
 #include <type_traits>
 
 #include "scipp/core/time_point.h"
-#include "scipp/units/except.h"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -51,5 +50,6 @@ TEST(TimePointTypeTest, is_pod) {
   // such as sc.empty are fast and do not call constructors and initialize
   // memory --- in particular since this is also used internally for
   // initialization the output in the implementation of many operations.
-  ASSERT_TRUE(std::is_pod_v<time_point>);
+  ASSERT_TRUE(std::is_trivial_v<time_point>);
+  ASSERT_TRUE(std::is_standard_layout_v<time_point>);
 }
