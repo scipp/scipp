@@ -154,7 +154,14 @@ def sosfiltfilt(
 ArrayLike = TypeVar('ArrayLike', DataArray, Variable)
 
 
-def find_peaks(da: ArrayLike, **kwargs: Any) -> ArrayLike:
+def find_peaks(
+    da: ArrayLike,
+    *,
+    height: Variable | None = None,
+    threshold: Variable | None = None,
+    rel_height: Variable | None = None,
+    **kwargs: Any,
+) -> ArrayLike:
     """
     A routine that locates "peaks" in a 1D signal.
 
@@ -180,8 +187,15 @@ def find_peaks(da: ArrayLike, **kwargs: Any) -> ArrayLike:
 
     from scipy.signal import find_peaks
 
-    if da.ndim != 1 or not isinstance(da, DataArray | Variable) or da.bins is not None:  # type: ignore[redundant-expr]
+    if da.ndim != 1 or da.bins is not None:
         raise ValueError('Can only find peaks in 1D arrays.')
+
+    if height is not None:
+        kwargs['height'] = height.to(unit=da.unit, dtype=da.dtype).values
+    if threshold is not None:
+        kwargs['threshold'] = threshold.to(unit=da.unit, dtype=da.dtype).values
+    if rel_height is not None:
+        kwargs['rel_height'] = rel_height.to(unit='dimensionless').values
 
     peaks, _ = find_peaks(da.values, **kwargs)
 
