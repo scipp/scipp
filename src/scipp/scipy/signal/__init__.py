@@ -161,7 +161,8 @@ def find_peaks(da: ArrayLike, **kwargs: Any) -> ArrayLike:
     This is a wrapper around :py:func:`scipy.signal.find_peaks. See there for a
     complete description of parameters.
 
-    Examples:
+    Examples
+    --------
 
        >>> from scipp.scipy.signal import find_peaks
        >>> x = sc.linspace('x', -3.14, 3.14, 101, unit='rad')
