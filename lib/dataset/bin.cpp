@@ -138,8 +138,9 @@ public:
     auto indices_v = indices.template values<scipp::index_pair>().as_span();
     scipp::index begin = 0;
     scipp::index i = 0;
-    for (const auto &sub :
-         m_output_bin_sizes.values<core::SubbinSizes>().as_span()) {
+    auto output_bin_sizes_values =
+        m_output_bin_sizes.values<core::SubbinSizes>();
+    for (const auto &sub : output_bin_sizes_values.as_span()) {
       for (const auto &size : sub.sizes()) {
         indices_v[i++] = std::pair(begin, begin + size);
         begin += size;
@@ -548,7 +549,7 @@ template <class T> Variable concat_bins(const Variable &var, const Dim dim) {
   builder.build(*target_bins, std::map<Dim, Variable>{});
   auto mapper = make_mapper(target_bins.release(), builder);
   auto buffer = mapper->template apply<T>(var);
-  auto bin_indices = squeeze(mapper->bin_indices(), scipp::span{&dim, 1});
+  auto bin_indices = squeeze(mapper->bin_indices(), std::span{&dim, 1});
   return bins_from_indices(std::move(buffer), std::move(bin_indices));
 }
 template Variable concat_bins<Variable>(const Variable &, const Dim);

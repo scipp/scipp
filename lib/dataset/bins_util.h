@@ -12,7 +12,7 @@ namespace scipp::dataset {
 
 template <class Masks>
 Variable hide_masked(const Variable &data, const Masks &masks,
-                     const scipp::span<const Dim> dims) {
+                     const std::span<const Dim> dims) {
   const auto empty_range = makeVariable<scipp::index_pair>(
       Values{std::pair<scipp::index, scipp::index>(0, 0)});
   const auto &[begin_end, buffer_dim, buffer] = data.constituents<DataArray>();

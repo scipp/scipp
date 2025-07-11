@@ -10,7 +10,7 @@
 #include "scipp/core/dimensions.h"
 #include "scipp/units/dim.h"
 
-inline auto to_dim_type(const scipp::span<const std::string> dim_strings) {
+inline auto to_dim_type(const std::span<const std::string> dim_strings) {
   std::vector<scipp::Dim> dims;
   dims.reserve(dim_strings.size());
   std::transform(begin(dim_strings), end(dim_strings), std::back_inserter(dims),
@@ -19,8 +19,8 @@ inline auto to_dim_type(const scipp::span<const std::string> dim_strings) {
 }
 
 inline scipp::core::Dimensions
-make_dims(const scipp::span<const std::string> dim_strings,
-          scipp::span<const scipp::index> shape) {
+make_dims(const std::span<const std::string> dim_strings,
+          std::span<const scipp::index> shape) {
   const auto dims = to_dim_type(dim_strings);
   return scipp::core::Dimensions{dims, shape};
 }
