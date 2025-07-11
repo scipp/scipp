@@ -7,6 +7,7 @@ This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.signal`.
 """
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, TypeVar
 
@@ -157,8 +158,8 @@ ArrayLike = TypeVar('ArrayLike', DataArray, Variable)
 def find_peaks(
     da: ArrayLike,
     *,
-    height: Variable | None = None,
-    threshold: Variable | None = None,
+    height: tuple[Variable, Variable] | Variable | None = None,
+    threshold: tuple[Variable, Variable] | Variable | None = None,
     rel_height: Variable | None = None,
     **kwargs: Any,
 ) -> ArrayLike:
@@ -190,10 +191,25 @@ def find_peaks(
     if da.ndim != 1 or da.bins is not None:
         raise ValueError('Can only find peaks in 1D arrays.')
 
+    def to_numpy(v: Variable):
+        return v.value if v.ndim == 0 else v.values
+
     if height is not None:
-        kwargs['height'] = height.to(unit=da.unit, dtype=da.dtype).values
+        if isinstance(height, Sequence) and len(height) == 2:
+            kwargs['height'] = [
+                to_numpy(h.to(unit=da.unit, dtype=da.dtype)) for h in height
+            ]
+        else:
+            kwargs['height'] = to_numpy(height.to(unit=da.unit, dtype=da.dtype))
+
     if threshold is not None:
-        kwargs['threshold'] = threshold.to(unit=da.unit, dtype=da.dtype).values
+        if isinstance(threshold, Sequence) and len(threshold) == 2:
+            kwargs['threshold'] = [
+                to_numpy(t.to(unit=da.unit, dtype=da.dtype)) for t in threshold
+            ]
+        else:
+            kwargs['threshold'] = to_numpy(threshold.to(unit=da.unit, dtype=da.dtype))
+
     if rel_height is not None:
         kwargs['rel_height'] = rel_height.to(unit='dimensionless').values
 
