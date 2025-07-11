@@ -183,14 +183,7 @@ def find_peaks(da: ArrayLike, **kwargs: Any) -> ArrayLike:
     if da.ndim != 1 or not isinstance(da, DataArray | Variable) or da.bins is not None:  # type: ignore[redundant-expr]
         raise ValueError('Can only find peaks in 1D arrays.')
 
-    peaks, _ = find_peaks(
-        da.data.values
-        if isinstance(da, DataArray)  # type: ignore[redundant-expr]
-        else da.values
-        if isinstance(da, Variable)  # type: ignore[redundant-expr]
-        else None,
-        **kwargs,
-    )
+    peaks, _ = find_peaks(da.values, **kwargs)
 
     if isinstance(da, DataArray):
         return DataArray(
