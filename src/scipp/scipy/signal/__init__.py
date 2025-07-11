@@ -185,33 +185,7 @@ def find_peaks(da: ArrayLike, **kwargs: Any) -> ArrayLike:
 
     peaks, _ = find_peaks(da.values, **kwargs)
 
-    if isinstance(da, DataArray):
-        return DataArray(
-            array(
-                dims=(da.dim,),
-                values=da.data.values[peaks],
-                unit=da.data.unit,
-                dtype=da.data.dtype,
-            ),
-            coords={
-                name: (
-                    array(
-                        dims=(da.dim,),
-                        values=value.values[peaks],
-                        unit=value.unit,
-                        dtype=value.dtype,
-                    )
-                    if value.dims == da.dims
-                    else value
-                )
-                for name, value in da.coords.items()
-            },
-        )
-
-    if isinstance(da, Variable):
-        return array(
-            dims=da.dims, values=da.values[peaks], unit=da.unit, dtype=da.dtype
-        )
+    return da[peaks]
 
 
 __all__ = ['butter', 'find_peaks', 'sosfiltfilt']
