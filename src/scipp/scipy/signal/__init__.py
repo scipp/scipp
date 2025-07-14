@@ -9,7 +9,6 @@ This subpackage provides wrappers for a subset of functions from
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from numbers import Number
 from typing import Any, TypeVar
 
 import numpy.typing as npt
@@ -192,7 +191,7 @@ def find_peaks(
     if da.ndim != 1 or da.bins is not None:
         raise ValueError('Can only find peaks in 1D arrays.')
 
-    def to_numpy(v: Variable) -> npt.NDArray | Number:
+    def to_numpy(v: Variable) -> Any:
         return v.value if v.ndim == 0 else v.values
 
     if height is not None:
