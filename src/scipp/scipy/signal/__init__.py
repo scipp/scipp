@@ -169,6 +169,13 @@ def find_peaks(
     This is a wrapper around :py:func:`scipy.signal.find_peaks. See there for a
     complete description of parameters.
 
+    Returns
+    --------
+    :
+        A slice of the input dataarray or a variable that contains the peaks
+        in the signal.
+
+
     Examples
     --------
 
