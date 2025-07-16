@@ -32,6 +32,7 @@ requirements:
     - cppcheck [linux64]
     - git
     - ninja
+    - make # [unix]
   host:
     - python
     - tbb-devel=2022.0.0
