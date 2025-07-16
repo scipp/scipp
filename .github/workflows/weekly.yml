@@ -19,6 +19,7 @@ defaults:
 jobs:
   build_conda:
     strategy:
+      fail-fast: false
       matrix:
         variant:
           - {os: ubuntu-24.04, target: linux_64}
