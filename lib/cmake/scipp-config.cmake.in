@@ -14,7 +14,6 @@ if(scipp_FIND_COMPONENTS)
       message(FATAL_ERROR "bad")
     endif()
   endforeach()
-  include("${CMAKE_CURRENT_LIST_DIR}/scipp-conan.cmake")
 else()
   include("${CMAKE_CURRENT_LIST_DIR}/scipp-targets.cmake")
 

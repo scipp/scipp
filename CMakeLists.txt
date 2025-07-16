@@ -10,6 +10,20 @@ if(SKBUILD)
   set(SCIPP_VERSION_PEP440 "${SKBUILD_PROJECT_VERSION_FULL}")
   set(SCIPP_VERSION_CMAKE "${SKBUILD_PROJECT_VERSION}")
   message(STATUS "Got version from SKBUILD: ${SKBUILD_PROJECT_VERSION_FULL}")
+  if(NOT EXISTS "conan_provider.cmake")
+    message(
+      STATUS
+        "Downloading conan_provider.cmake from https://github.com/conan-io/cmake-conan"
+    )
+    file(
+      DOWNLOAD
+      "https://raw.githubusercontent.com/conan-io/cmake-conan/b0e4d1ec08edb35ef31033938567d621f6643c17/conan_provider.cmake"
+      "conan_provider.cmake"
+      EXPECTED_HASH
+        SHA256=be192227ccda53c64b95fbde99069e698f22829f59c7f045ecbd1f092f1a329d
+      TLS_VERIFY ON
+    )
+  endif()
 elseif(CONDA_FORGE_BUILD)
   set(SCIPP_VERSION_PEP440 "$ENV{GIT_VERSION_INFO}")
   set(SCIPP_VERSION_CMAKE "$ENV{GIT_VERSION_INFO}")

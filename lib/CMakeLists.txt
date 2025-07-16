@@ -16,14 +16,11 @@ set(CMAKE_MODULE_PATH
 option(BENCHMARK "Enable benchmarks" OFF)
 
 set(Python_FIND_IMPLEMENTATIONS CPython PyPy)
-if(SKIP_CONAN)
-  find_package(units REQUIRED)
-else()
-  # scipp-conan installs all the system deps with conan
-  include(scipp-conan)
+if(NOT SKIP_CONAN)
+  # skipping conan also skips cpm
   include(scipp-cpm)
-  find_package(units REQUIRED)
 endif()
+find_package(units REQUIRED)
 find_package(benchmark)
 find_package(Boost 1.67 REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -212,7 +209,6 @@ if(DYNAMIC_LIB)
   install(
     FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
           "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
-          "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}-conan.cmake"
     DESTINATION lib/cmake/${PROJECT_NAME}
   )
 endif(DYNAMIC_LIB)

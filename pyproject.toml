@@ -77,7 +77,9 @@ cmake.define.SKIP_CONAN = "ON"
 
 [[tool.scikit-build.overrides]]
 if.env.SKIP_CONAN = false
-build.requires = ["conan<2"]
+build.requires = ["conan>2"]
+inherit.cmake.define = "append"
+cmake.define.CMAKE_PROJECT_TOP_LEVEL_INCLUDES = "conan_provider.cmake"
 
 [tool.setuptools_scm]
 version_file = "src/scipp/_version.py"
