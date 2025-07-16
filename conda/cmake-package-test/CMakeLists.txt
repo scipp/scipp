@@ -24,7 +24,6 @@ set(PKG_VERSION
     "undefined"
     CACHE STRING "Package version to require."
 )
-find_package(scipp ${PKG_VERSION} REQUIRED COMPONENTS conan-config)
 find_package(scipp ${PKG_VERSION} REQUIRED)
 
 add_executable(test main.cpp)
