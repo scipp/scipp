@@ -21,7 +21,8 @@ if(SKIP_CONAN)
 else()
   # scipp-conan installs all the system deps with conan
   include(scipp-conan)
-  find_package(LLNL-Units REQUIRED)
+  include(scipp-cpm)
+  find_package(units REQUIRED)
 endif()
 find_package(benchmark)
 find_package(Boost 1.67 REQUIRED)
@@ -213,9 +214,6 @@ if(DYNAMIC_LIB)
           "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
           "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}-conan.cmake"
     DESTINATION lib/cmake/${PROJECT_NAME}
-  )
-  install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cmake/.conan-recipes"
-          DESTINATION lib/cmake/${PROJECT_NAME}
   )
 endif(DYNAMIC_LIB)
 

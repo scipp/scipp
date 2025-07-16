@@ -1,0 +1,37 @@
+# ~~~
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2025 Scipp contributors (https://github.com/scipp)
+# ~~~
+
+# download CPM.cmake
+file(
+  DOWNLOAD
+  https://github.com/cpm-cmake/CPM.cmake/releases/download/v0.42.0/CPM.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake
+  EXPECTED_HASH
+    SHA256=2020b4fc42dba44817983e06342e682ecfc3d2f484a581f11cc5731fbe4dce8a
+)
+
+include(${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake)
+
+cpmfindpackage(
+  NAME
+  units
+  GITHUB_REPOSITORY
+  llnl/units
+  VERSION
+  0.13.1
+  OPTIONS
+  "UNITS_PROJECT_NAME units"
+  "SKBUILD OFF"
+  "UNITS_INSTALL ON"
+  "BUILD_SHARED_LIBS OFF"
+  "UNITS_BUILD_STATIC_LIBRARY ON"
+  "UNITS_BUILD_SHARED_LIBRARY OFF"
+  "UNITS_BUILD_OBJECT_LIBRARY OFF"
+  "UNITS_BUILD_CONVERTER_APP OFF"
+  "UNITS_BUILD_WEBSERVER OFF"
+  "UNITS_BASE_TYPE uint64_t"
+  "UNITS_ENABLE_TESTS OFF"
+  "CMAKE_CXX_STANDARD 23"
+)
