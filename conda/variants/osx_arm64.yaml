@@ -1,5 +1,2 @@
 target_platform:
   - osx-arm64
-# TODO: Compiler pinning is required because conan does not support >17
-cxx_compiler_version:
-  - 17
