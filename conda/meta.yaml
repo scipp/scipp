@@ -33,6 +33,7 @@ requirements:
     - git
     - ninja
     - make # [unix]
+    - clang-tools  # [unix]
   host:
     - python
     - tbb-devel=2022.0.0
