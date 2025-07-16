@@ -6,7 +6,6 @@ channels:
   - conda-forge
 dependencies:
   - cmake=4.0.0
-  - conan=1.66.0
   - cppcheck=2.18.0
   - graphviz=12.0.0
   - gxx_linux-64=13.2.*
