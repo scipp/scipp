@@ -18,7 +18,10 @@
         "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
         "FULL_BUILD": "ON",
         "BENCHMARK": "ON",
-        "SANITIZERS": "ON"
+        "SANITIZERS": "ON",
+        "CMAKE_CXX_SCAN_FOR_MODULES": "OFF",
+        "CMAKE_CXX_COMPILER_AR": "$env{AR}",
+        "CMAKE_CXX_COMPILER_RANLIB": "$env{RANLIB}"
       }
     },
     {

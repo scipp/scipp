@@ -90,8 +90,7 @@ build:
   script:
     # Passing Python_EXECUTABLE ensures that cmake sees the host interpreter instead of build.
     - cmake --preset package-{{ target_platform }} -DPython_EXECUTABLE="%PYTHON%" # [win]
-    - cmake --preset package-{{ target_platform }} -DPython_EXECUTABLE=$PYTHON # [linux]
-    - cmake --preset package-{{ target_platform }} -DPython_EXECUTABLE=$PYTHON -DCMAKE_CXX_SCAN_FOR_MODULES=OFF # [osx]
+    - cmake --preset package-{{ target_platform }} -DPython_EXECUTABLE=$PYTHON # [unix]
     - cmake --build --preset build
     - ctest --preset test  # [build_platform == target_platform]
 
