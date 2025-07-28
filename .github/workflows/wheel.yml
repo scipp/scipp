@@ -27,6 +27,9 @@ jobs:
         submodules: true
         fetch-depth: 0  # history required so cmake can determine version
 
+    - name: Ensure Conan profile is set
+      run: conan profile detect --force
+
     - uses: pypa/cibuildwheel@v3.0.1
       if: ${{ inputs.nightly == false }}
       env:
