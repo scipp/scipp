@@ -21,7 +21,7 @@ else()
   check_required_components(scipp-targets)
 
   include(CMakeFindDependencyMacro)
-  find_dependency(Boost 1.69)
+  find_dependency(Boost 1.67)
   find_dependency(Eigen3)
   find_dependency(units)
   find_dependency(TBB)

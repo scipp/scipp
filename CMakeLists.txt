@@ -18,7 +18,7 @@ if(SKBUILD)
     file(
       DOWNLOAD
       "https://raw.githubusercontent.com/conan-io/cmake-conan/b0e4d1ec08edb35ef31033938567d621f6643c17/conan_provider.cmake"
-      "conan_provider.cmake"
+      "lib/cmake/conan_provider.cmake"
       EXPECTED_HASH
         SHA256=be192227ccda53c64b95fbde99069e698f22829f59c7f045ecbd1f092f1a329d
       TLS_VERIFY ON
