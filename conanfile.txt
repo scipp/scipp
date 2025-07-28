@@ -1,6 +1,6 @@
 [requires]
 benchmark/1.6.1
-boost/1.86.0
+boost/1.88.0
 eigen/3.4.0
 gtest/1.15.0
 pybind11/2.13.6
@@ -8,6 +8,7 @@ onetbb/2022.2.0
 
 [generators]
 CMakeDeps
+CMakeToolchain
 
 [options]
 benchmark/*:shared=False
