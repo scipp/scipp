@@ -86,6 +86,7 @@ version_file = "src/scipp/_version.py"
 
 [tool.cibuildwheel]
 archs = ["auto64"]
+before-build = "conan profile detect --force"
 test-requires = ["scipy", "graphviz", "pooch", "hypothesis"]
 test-extras = ["test"]
 test-command = "pytest --ignore {project}/tests/plotting --ignore {project}/tests/hypothesis/ --ignore {project}/tests/experimental/ {project}/tests"

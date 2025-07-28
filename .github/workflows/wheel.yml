@@ -30,7 +30,6 @@ jobs:
     - uses: pypa/cibuildwheel@v3.0.1
       if: ${{ inputs.nightly == false }}
       env:
-        CIBW_BEFORE_ALL: conan profile detect --force
         CIBW_BUILD: ${{ inputs.build }}-*
         MACOSX_DEPLOYMENT_TARGET: "11.0"
 
