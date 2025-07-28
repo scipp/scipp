@@ -3,8 +3,6 @@ requires = [
   "setuptools>=77",
   "scikit-build-core",
   "pybind11",
-  "tbb",
-  "tbb-devel"
 ]
 build-backend = "scikit_build_core.build"
 
