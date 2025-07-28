@@ -38,7 +38,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-13, macos-14, windows-2022, ubuntu-24.04-arm]
+        os: [ubuntu-24.04, macos-13, macos-14, windows-2022]
         build: [cp310, cp313]
     uses: ./.github/workflows/wheel.yml
     with:
