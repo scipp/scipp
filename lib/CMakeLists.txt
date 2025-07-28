@@ -210,7 +210,6 @@ if(DYNAMIC_LIB)
     FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
           "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
           "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}-cpm.cmake"
-          "${CMAKE_CURRENT_SOURCE_DIR}/cmake/conanfile.txt"
     DESTINATION lib/cmake/${PROJECT_NAME}
   )
 endif(DYNAMIC_LIB)
