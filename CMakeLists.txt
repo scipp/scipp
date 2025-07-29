@@ -117,7 +117,6 @@ if(SKBUILD)
   # Note that we do not install src/scipp when making a `pip` package. It will
   # simply use the source directory directly. C++ libraries get installed into
   # the source dir.
-  set(CONAN_RUNTIME_DEPENDENCIES "tbb")
 else()
   install(DIRECTORY "src/scipp/" DESTINATION ${PYTHONDIR})
   set(RELATIVE_LIB "..")
