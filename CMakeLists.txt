@@ -23,11 +23,14 @@ if(SKBUILD)
         SHA256=be192227ccda53c64b95fbde99069e698f22829f59c7f045ecbd1f092f1a329d
       TLS_VERIFY ON
     )
-    # Force cmake-conan to not use default, use the auto detected profile
-    set(CONAN_BUILD_PROFILE
-        "auto-cmake"
-        CACHE STRING "Conan build profile"
-    )
+    if(NOT WIN32)
+      # Force cmake-conan to not use default, use the auto detected profile
+      # Windows build doesn't like it.
+      set(CONAN_BUILD_PROFILE
+          "auto-cmake"
+          CACHE STRING "Conan build profile"
+      )
+    endif()
   endif()
 elseif(CONDA_FORGE_BUILD)
   set(SCIPP_VERSION_PEP440 "$ENV{GIT_VERSION_INFO}")
