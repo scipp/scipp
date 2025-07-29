@@ -7,8 +7,9 @@ This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.signal`.
 """
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, TypeVar
 
 import numpy.typing as npt
 
@@ -151,4 +152,77 @@ def sosfiltfilt(
     return _sosfiltfilt(da, dim=dim, sos=sos, **kwargs)
 
 
-__all__ = ['butter', 'sosfiltfilt']
+ArrayLike = TypeVar('ArrayLike', DataArray, Variable)
+
+
+def find_peaks(
+    da: ArrayLike,
+    *,
+    height: tuple[Variable, Variable] | Variable | None = None,
+    threshold: tuple[Variable, Variable] | Variable | None = None,
+    rel_height: Variable | None = None,
+    **kwargs: Any,
+) -> ArrayLike:
+    """
+    A routine that locates "peaks" in a 1D signal.
+
+    This is a wrapper around :py:func:`scipy.signal.find_peaks. See there for a
+    complete description of parameters.
+
+    Returns
+    --------
+    :
+        A slice of the input dataarray or a variable that contains the peaks
+        in the signal.
+
+
+    Examples
+    --------
+
+       >>> from scipp.scipy.signal import find_peaks
+       >>> x = sc.linspace('x', -3.14, 3.14, 101, unit='rad')
+       >>> y = sc.DataArray(sc.cos(5 * x), coords={'x': x})
+       >>> find_peaks(y)
+       <scipp.DataArray>
+       Dimensions: Sizes[x:5, ]
+       Coordinates:
+       * x                         float64            [rad]  (x)  [-2.512, -1.256, ..., 1.256, 2.512]
+       Data:
+                                   float64  [dimensionless]  (x)  [0.99998, 0.999995, ..., 0.999995, 0.99998]
+
+
+    """  # noqa: E501
+
+    from scipy.signal import find_peaks
+
+    if da.ndim != 1 or da.bins is not None:
+        raise ValueError('Can only find peaks in 1D arrays.')
+
+    def to_numpy(v: Variable) -> Any:
+        return v.value if v.ndim == 0 else v.values
+
+    if height is not None:
+        if isinstance(height, Sequence) and len(height) == 2:
+            kwargs['height'] = [
+                to_numpy(h.to(unit=da.unit, dtype=da.dtype)) for h in height
+            ]
+        else:
+            kwargs['height'] = to_numpy(height.to(unit=da.unit, dtype=da.dtype))
+
+    if threshold is not None:
+        if isinstance(threshold, Sequence) and len(threshold) == 2:
+            kwargs['threshold'] = [
+                to_numpy(t.to(unit=da.unit, dtype=da.dtype)) for t in threshold
+            ]
+        else:
+            kwargs['threshold'] = to_numpy(threshold.to(unit=da.unit, dtype=da.dtype))
+
+    if rel_height is not None:
+        kwargs['rel_height'] = rel_height.to(unit='dimensionless').values
+
+    peaks, _ = find_peaks(da.values, **kwargs)
+
+    return da[peaks]
+
+
+__all__ = ['butter', 'find_peaks', 'sosfiltfilt']
