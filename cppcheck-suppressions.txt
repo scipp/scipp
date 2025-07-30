@@ -44,3 +44,4 @@ returnByReference
 constParameterReference
 constStatement
 normalCheckLevelMaxBranches
+constVariableReference
