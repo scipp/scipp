@@ -35,3 +35,6 @@ useInitializationList
 // We have no control over constness in this case.
 // Generally, non-const callbacks should be fine.
 constParameterCallback
+
+uninitMemberVar
+passedByValue
