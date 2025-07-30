@@ -48,3 +48,4 @@ constVariableReference
 missingReturn
 passedByValueCallback
 unreadVariable
+accessMoved
