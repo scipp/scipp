@@ -81,7 +81,7 @@ if.env.SKIP_CONAN = false
 build.requires = ["conan>2"]
 inherit.cmake.define = "append"
 cmake.define.CMAKE_PROJECT_TOP_LEVEL_INCLUDES = "lib/cmake/conan_provider.cmake"
-cmake.args = ["-DCONAN_INSTALL_ARGS=--deployer=full_deploy;--build=missing", "-DCMAKE_BUILD_TYPE=Release"]
+cmake.args = ["-DCONAN_INSTALL_ARGS=--deployer=full_deploy;--build=missing"]
 
 [tool.setuptools_scm]
 version_file = "src/scipp/_version.py"
