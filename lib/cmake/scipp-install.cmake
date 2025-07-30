@@ -12,6 +12,7 @@ function(scipp_install_component)
     add_sanitizers(${SCIPP_INSTALL_COMPONENT_TARGET})
   endif()
   if(DYNAMIC_LIB)
+    set(CONAN_RUNTIME_DEPENDENCIES "tbb")
     install(
       TARGETS ${SCIPP_INSTALL_COMPONENT_TARGET}
       EXPORT ${EXPORT_NAME}

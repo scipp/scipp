@@ -17,28 +17,29 @@ defaults:
     shell: bash -l {0} # required for conda env
 
 jobs:
-  build_conda:
-    strategy:
-      fail-fast: false
-      matrix:
-        variant:
-          - {os: ubuntu-24.04, target: linux_64}
-          - {os: macos-13, target: osx_64}
-          - {os: macos-14, target: osx_arm64}
-          - {os: windows-2022, target: win_64}
-          - {os: ubuntu-24.04-arm, target: linux_arm64}
-        python-version: ["3.10", "3.13"]
-    uses: ./.github/workflows/conda.yml
-    with:
-      os: ${{ matrix.variant.os }}
-      target: ${{ matrix.variant.target }}
-      python-version: ${{ matrix.python-version }}
+  # build_conda:
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       variant:
+  #         - {os: ubuntu-24.04, target: linux_64}
+  #         - {os: macos-13, target: osx_64}
+  #         - {os: macos-14, target: osx_arm64}
+  #         - {os: windows-2022, target: win_64}
+  #         - {os: ubuntu-24.04-arm, target: linux_arm64}
+  #       python-version: ["3.10", "3.13"]
+  #   uses: ./.github/workflows/conda.yml
+  #   with:
+  #     os: ${{ matrix.variant.os }}
+  #     target: ${{ matrix.variant.target }}
+  #     python-version: ${{ matrix.python-version }}
 
   build_wheels:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-13, macos-14, windows-2022, ubuntu-24.04-arm]
+        # os: [ubuntu-24.04, macos-13, macos-14, windows-2022, ubuntu-24.04-arm]
+        os: [windows-2022]
         build: [cp310, cp313]
     uses: ./.github/workflows/wheel.yml
     with:
