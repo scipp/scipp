@@ -49,3 +49,4 @@ missingReturn
 passedByValueCallback
 unreadVariable
 accessMoved
+unusedStructMember
