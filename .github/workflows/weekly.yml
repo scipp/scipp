@@ -40,7 +40,7 @@ jobs:
       matrix:
         # os: [ubuntu-24.04, macos-13, macos-14, windows-2022, ubuntu-24.04-arm]
         os: [windows-2022]
-        build: [cp310, cp313]
+        build: [cp310]
     uses: ./.github/workflows/wheel.yml
     with:
       os: ${{ matrix.os }}
