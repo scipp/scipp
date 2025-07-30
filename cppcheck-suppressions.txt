@@ -39,3 +39,4 @@ constParameterCallback
 uninitMemberVar
 passedByValue
 duplInheritedMember
+throwInNoexceptFunction
