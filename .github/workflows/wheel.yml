@@ -22,6 +22,7 @@ jobs:
     runs-on: ${{ inputs.os }}
 
     steps:
+    - uses: ilammy/msvc-dev-cmd@v1
     - uses: actions/checkout@v4
       with:
         submodules: true
@@ -30,6 +31,7 @@ jobs:
     - uses: pypa/cibuildwheel@v3.1.1
       if: ${{ inputs.nightly == false }}
       env:
+        CMAKE_GENERATOR: "Ninja"
         CIBW_BUILD: ${{ inputs.build }}-*
         MACOSX_DEPLOYMENT_TARGET: "11.0"
 
