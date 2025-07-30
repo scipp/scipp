@@ -46,3 +46,4 @@ constStatement
 normalCheckLevelMaxBranches
 constVariableReference
 missingReturn
+passedByValueCallback
