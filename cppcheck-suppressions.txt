@@ -41,3 +41,4 @@ passedByValue
 duplInheritedMember
 throwInNoexceptFunction
 returnByReference
+constParameterReference
