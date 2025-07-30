@@ -45,3 +45,4 @@ constParameterReference
 constStatement
 normalCheckLevelMaxBranches
 constVariableReference
+missingReturn
