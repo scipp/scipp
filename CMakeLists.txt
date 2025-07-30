@@ -6,6 +6,16 @@ cmake_minimum_required(VERSION 3.21)
 
 cmake_policy(SET CMP0091 NEW)
 
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE
+      "Release"
+      CACHE
+        STRING
+        "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel."
+        FORCE
+  )
+endif()
+
 if(SKBUILD)
   set(SCIPP_VERSION_PEP440 "${SKBUILD_PROJECT_VERSION_FULL}")
   set(SCIPP_VERSION_CMAKE "${SKBUILD_PROJECT_VERSION}")
@@ -30,10 +40,6 @@ if(SKBUILD)
       set(CONAN_BUILD_PROFILE
           "auto-cmake"
           CACHE STRING "Conan build profile"
-      )
-      set(CONAN_HOST_PROFILE
-          "auto-cmake"
-          CACHE STRING "Conan host profile"
       )
     endif()
   endif()
@@ -79,16 +85,6 @@ if(SKBUILD)
     message(STATUS "Building on macOS with Clang 15 or newer")
     add_link_options("-ld_classic")
   endif()
-endif()
-
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE
-      "Release"
-      CACHE
-        STRING
-        "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel."
-        FORCE
-  )
 endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
