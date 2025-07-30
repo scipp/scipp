@@ -47,3 +47,4 @@ normalCheckLevelMaxBranches
 constVariableReference
 missingReturn
 passedByValueCallback
+unreadVariable
