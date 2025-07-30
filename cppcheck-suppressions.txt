@@ -40,3 +40,4 @@ uninitMemberVar
 passedByValue
 duplInheritedMember
 throwInNoexceptFunction
+returnByReference
