@@ -3,11 +3,14 @@ benchmark/1.6.1
 boost/1.88.0
 eigen/3.4.0
 gtest/1.15.0
-onetbb/2022.0.0
+onetbb/2022.2.0
 
 [generators]
 CMakeDeps
 CMakeToolchain
+
+[layout]
+cmake_layout
 
 [options]
 benchmark/*:shared=False

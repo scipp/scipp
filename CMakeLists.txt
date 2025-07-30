@@ -23,6 +23,7 @@ if(SKBUILD)
         SHA256=be192227ccda53c64b95fbde99069e698f22829f59c7f045ecbd1f092f1a329d
       TLS_VERIFY ON
     )
+    set(CONAN_RUNTIME_DEPENDENCIES "tbb")
     if(NOT WIN32)
       # Force cmake-conan to not use default, use the auto detected profile
       # Windows build doesn't like it.
