@@ -42,14 +42,6 @@ if(SKBUILD)
       TLS_VERIFY ON
     )
     set(CONAN_RUNTIME_DEPENDENCIES "tbb")
-    if(NOT WIN32)
-      # Force cmake-conan to not use default, use the auto detected profile
-      # Windows build doesn't like it.
-      set(CONAN_BUILD_PROFILE
-          "auto-cmake"
-          CACHE STRING "Conan build profile"
-      )
-    endif()
   endif()
 elseif(CONDA_FORGE_BUILD)
   set(SCIPP_VERSION_PEP440 "$ENV{GIT_VERSION_INFO}")
