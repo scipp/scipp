@@ -37,7 +37,7 @@ jobs:
           micromamba-version: 1.5.6-0
           environment-file: env.yml
           cache-environment: true
-          create-args: python=3.10
+          create-args: python=3.11
 
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.18
