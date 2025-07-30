@@ -4,6 +4,7 @@ boost/1.88.0
 eigen/3.4.0
 gtest/1.15.0
 onetbb/2022.2.0
+pybind11/2.13.6
 
 [generators]
 CMakeDeps
