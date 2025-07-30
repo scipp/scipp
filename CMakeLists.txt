@@ -31,6 +31,10 @@ if(SKBUILD)
           "auto-cmake"
           CACHE STRING "Conan build profile"
       )
+      set(CONAN_HOST_PROFILE
+          "auto-cmake"
+          CACHE STRING "Conan host profile"
+      )
     endif()
   endif()
 elseif(CONDA_FORGE_BUILD)
