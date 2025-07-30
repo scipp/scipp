@@ -16,18 +16,11 @@ if(NOT CMAKE_BUILD_TYPE)
   )
 endif()
 
-message(STATUS "CMAKE_BUILD_TYPE is set to ${CMAKE_BUILD_TYPE}")
-message(
-  STATUS "CMAKE_CONFIGURATION_TYPES is set to ${CMAKE_CONFIGURATION_TYPES}"
-)
-message(
-  STATUS "GENERATOR_IS_MULTI_CONFIG is set to ${GENERATOR_IS_MULTI_CONFIG}"
-)
-
 if(SKBUILD)
   set(SCIPP_VERSION_PEP440 "${SKBUILD_PROJECT_VERSION_FULL}")
   set(SCIPP_VERSION_CMAKE "${SKBUILD_PROJECT_VERSION}")
   message(STATUS "Got version from SKBUILD: ${SKBUILD_PROJECT_VERSION_FULL}")
+  set(CONAN_RUNTIME_DEPENDENCIES "tbb")
   if(NOT EXISTS "conan_provider.cmake")
     message(
       STATUS
@@ -41,7 +34,14 @@ if(SKBUILD)
         SHA256=be192227ccda53c64b95fbde99069e698f22829f59c7f045ecbd1f092f1a329d
       TLS_VERIFY ON
     )
-    set(CONAN_RUNTIME_DEPENDENCIES "tbb")
+    if(NOT WIN32)
+      # Force cmake-conan to not use default, use the auto detected profile
+      # Windows build doesn't like it.
+      set(CONAN_BUILD_PROFILE
+          "auto-cmake"
+          CACHE STRING "Conan build profile"
+      )
+    endif()
   endif()
 elseif(CONDA_FORGE_BUILD)
   set(SCIPP_VERSION_PEP440 "$ENV{GIT_VERSION_INFO}")
@@ -70,13 +70,6 @@ else()
   unset(GIT_VERSION_INFO)
   message(STATUS "Got version from git: ${SCIPP_VERSION_PEP440}")
 endif()
-message(STATUS "CMAKE_BUILD_TYPE is set to ${CMAKE_BUILD_TYPE}")
-message(
-  STATUS "CMAKE_CONFIGURATION_TYPES is set to ${CMAKE_CONFIGURATION_TYPES}"
-)
-message(
-  STATUS "GENERATOR_IS_MULTI_CONFIG is set to ${GENERATOR_IS_MULTI_CONFIG}"
-)
 
 project(
   scipp
