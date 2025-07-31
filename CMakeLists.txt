@@ -6,10 +6,43 @@ cmake_minimum_required(VERSION 3.21)
 
 cmake_policy(SET CMP0091 NEW)
 
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE
+      "Release"
+      CACHE
+        STRING
+        "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel."
+        FORCE
+  )
+endif()
+
 if(SKBUILD)
   set(SCIPP_VERSION_PEP440 "${SKBUILD_PROJECT_VERSION_FULL}")
   set(SCIPP_VERSION_CMAKE "${SKBUILD_PROJECT_VERSION}")
   message(STATUS "Got version from SKBUILD: ${SKBUILD_PROJECT_VERSION_FULL}")
+  set(CONAN_RUNTIME_DEPENDENCIES "tbb")
+  if(NOT EXISTS "conan_provider.cmake")
+    message(
+      STATUS
+        "Downloading conan_provider.cmake from https://github.com/conan-io/cmake-conan"
+    )
+    file(
+      DOWNLOAD
+      "https://raw.githubusercontent.com/conan-io/cmake-conan/b0e4d1ec08edb35ef31033938567d621f6643c17/conan_provider.cmake"
+      "lib/cmake/conan_provider.cmake"
+      EXPECTED_HASH
+        SHA256=be192227ccda53c64b95fbde99069e698f22829f59c7f045ecbd1f092f1a329d
+      TLS_VERIFY ON
+    )
+    if(NOT WIN32)
+      # Force cmake-conan to not use default, use the auto detected profile
+      # Windows build doesn't like it.
+      set(CONAN_BUILD_PROFILE
+          "auto-cmake"
+          CACHE STRING "Conan build profile"
+      )
+    endif()
+  endif()
 elseif(CONDA_FORGE_BUILD)
   set(SCIPP_VERSION_PEP440 "$ENV{GIT_VERSION_INFO}")
   set(SCIPP_VERSION_CMAKE "$ENV{GIT_VERSION_INFO}")
@@ -52,16 +85,6 @@ if(SKBUILD)
     message(STATUS "Building on macOS with Clang 15 or newer")
     add_link_options("-ld_classic")
   endif()
-endif()
-
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE
-      "Release"
-      CACHE
-        STRING
-        "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel."
-        FORCE
-  )
 endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")

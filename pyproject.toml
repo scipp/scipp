@@ -1,7 +1,9 @@
 [build-system]
 requires = [
   "setuptools>=77",
-  "scikit-build-core"
+  "scikit-build-core",
+  "tbb",
+  "tbb-devel",
 ]
 build-backend = "scikit_build_core.build"
 
@@ -69,6 +71,7 @@ all = [
 metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
 cmake.version = ">=3.21"
 wheel.install-dir = "scipp"
+# cmake.build-type = "Release"
 
 [[tool.scikit-build.overrides]]
 if.env.SKIP_CONAN = true
@@ -77,7 +80,10 @@ cmake.define.SKIP_CONAN = "ON"
 
 [[tool.scikit-build.overrides]]
 if.env.SKIP_CONAN = false
-build.requires = ["conan<2"]
+build.requires = ["conan>2"]
+inherit.cmake.define = "append"
+cmake.define.CMAKE_PROJECT_TOP_LEVEL_INCLUDES = "lib/cmake/conan_provider.cmake"
+cmake.args = ["-DCONAN_INSTALL_ARGS=--deployer=runtime_deploy;--build=missing"]
 
 [tool.setuptools_scm]
 version_file = "src/scipp/_version.py"

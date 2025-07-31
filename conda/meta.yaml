@@ -29,13 +29,12 @@ requirements:
     - cross-python_{{ target_platform }}  # [build_platform != target_platform]
     - python                              # [build_platform != target_platform]
     - cmake
-    - conan==1.64.1
     - cppcheck [linux64]
     - git
     - ninja
   host:
     - python
-    - tbb-devel=2022.0.0
+    - tbb-devel=2022.2.0
     - libboost-headers=1.86.0
     - eigen=3.4.0
     - pybind11=2.13.6
@@ -45,7 +44,7 @@ requirements:
   run:
     - numpy
     - python
-    - tbb=2022.0.0
+    - tbb=2022.2.0
 
 # Only the cmake-package-test works when cross compiling.
 # But it is not very important at the moment and
@@ -58,7 +57,6 @@ test:
     - {{ compiler('cxx') }}
     - beautifulsoup4
     - cmake
-    - conan==1.64.1
     - h5py
     - hypothesis
     - ipykernel
@@ -68,7 +66,7 @@ test:
     - pytest
     - python-graphviz
     - scipy>=1.7.0
-    - tbb-devel=2022.0.0
+    - tbb-devel=2022.2.0
     - xarray
     - libboost-headers=1.86.0
     - eigen=3.4.0
