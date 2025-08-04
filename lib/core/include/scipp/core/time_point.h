@@ -13,7 +13,10 @@ namespace scipp::core {
 /// The unit is determined by the Variable the time_point is stored in.
 class time_point {
 public:
+  // This check raises a false-positive for m_duration not being initialized:
+  // cppcheck-suppress uninitMemberVar
   time_point() = default;
+
   explicit time_point(int64_t duration) noexcept : m_duration{duration} {}
 
   [[nodiscard]] int64_t time_since_epoch() const noexcept {
