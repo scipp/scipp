@@ -21,7 +21,7 @@ jobs:
       matrix:
         variant:
           - {os: ubuntu-24.04, target: linux_64}
-          - {os: macos-13, target: osx_64}
+          - {os: macos-15-large, target: osx_64}
           - {os: macos-15, target: osx_arm64}
           - {os: windows-2022, target: win_64}
           - {os: ubuntu-24.04-arm, target: linux_arm64}
@@ -35,7 +35,7 @@ jobs:
   build_wheels:
     strategy:
       matrix:
-        os: [ubuntu-24.04, macos-13, macos-15, windows-2022, ubuntu-24.04-arm]
+        os: [ubuntu-24.04, macos-15-large, macos-15, windows-2022, ubuntu-24.04-arm]
         build: [cp310, cp313]
     uses: ./.github/workflows/wheel.yml
     with:
