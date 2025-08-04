@@ -43,7 +43,6 @@ duplInheritedMember
 // It is unclear how relevant they are at this point.
 passedByValue
 
-constVariableReference
 missingReturn
 passedByValueCallback
 unreadVariable
