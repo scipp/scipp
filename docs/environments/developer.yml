@@ -29,11 +29,11 @@ dependencies:
   - pre-commit
   - pybind11=2.13.6
   - pytest
-  - python=3.10
+  - python=3.11
   - python-graphviz
   - pythreejs
   - pyyaml
-  - scipp::plopp
+  - plopp
   - scipy>=1.7.0
   - tbb=2022.0.0
   - tbb-devel=2022.0.0

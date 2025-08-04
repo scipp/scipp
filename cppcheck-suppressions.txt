@@ -35,3 +35,18 @@ useInitializationList
 // We have no control over constness in this case.
 // Generally, non-const callbacks should be fine.
 constParameterCallback
+
+uninitMemberVar
+passedByValue
+duplInheritedMember
+throwInNoexceptFunction
+returnByReference
+constParameterReference
+constStatement
+normalCheckLevelMaxBranches
+constVariableReference
+missingReturn
+passedByValueCallback
+unreadVariable
+accessMoved
+unusedStructMember
