@@ -37,7 +37,7 @@ template <class T> std::string format_dims(const T &dims) {
 } // namespace
 
 template <>
-void throw_mismatch_error(const core::Sizes &expected,
+[[noreturn]] void throw_mismatch_error(const core::Sizes &expected,
                           const core::Sizes &actual,
                           const std::string &optional_message) {
   throw DimensionError("Expected " + format_dims(expected) + ", got " +
@@ -45,14 +45,14 @@ void throw_mismatch_error(const core::Sizes &expected,
 }
 
 template <>
-void throw_mismatch_error(const core::Dimensions &expected,
+[[noreturn]] void throw_mismatch_error(const core::Dimensions &expected,
                           const core::Dimensions &actual,
                           const std::string &optional_message) {
   throw DimensionError("Expected " + format_dims(expected) + ", got " +
                        format_dims(actual) + '.' + optional_message);
 }
 
-void throw_dimension_length_error(const core::Dimensions &expected, Dim actual,
+[[noreturn]] void throw_dimension_length_error(const core::Dimensions &expected, Dim actual,
                                   index length) {
   throw DimensionError{"Expected dimension to be in " + to_string(expected) +
                        ", got " + to_string(actual) +
@@ -60,7 +60,7 @@ void throw_dimension_length_error(const core::Dimensions &expected, Dim actual,
                        '.'};
 }
 
-void throw_cannot_have_variances(const DType type) {
+[[noreturn]] void throw_cannot_have_variances(const DType type) {
   throw except::VariancesError("Variances for dtype=" + to_string(type) +
                                " not supported.");
 }
