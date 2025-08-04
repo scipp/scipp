@@ -36,9 +36,13 @@ useInitializationList
 // Generally, non-const callbacks should be fine.
 constParameterCallback
 
-uninitMemberVar
-passedByValue
+// This is a style issue, we allow redefining members in subclasses.
 duplInheritedMember
+
+// This finds some performance issues.
+// It is unclear how relevant they are at this point.
+passedByValue
+
 throwInNoexceptFunction
 returnByReference
 constParameterReference
