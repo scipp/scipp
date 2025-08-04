@@ -237,7 +237,7 @@ BinArrayModel<T>::index_values(const core::ElementArrayViewParams &base) const {
 template <class T>
 Variable make_bins_impl(Variable indices, const Dim dim, T &&buffer) {
   indices.setDataHandle(std::make_unique<variable::BinArrayModel<T>>(
-      indices.data_handle(), dim, std::move(buffer)));
+      indices.data_handle(), dim, std::forward<T>(buffer)));
   return indices;
 }
 
