@@ -38,22 +38,22 @@ template <class T> std::string format_dims(const T &dims) {
 
 template <>
 [[noreturn]] void throw_mismatch_error(const core::Sizes &expected,
-                          const core::Sizes &actual,
-                          const std::string &optional_message) {
+                                       const core::Sizes &actual,
+                                       const std::string &optional_message) {
   throw DimensionError("Expected " + format_dims(expected) + ", got " +
                        format_dims(actual) + '.' + optional_message);
 }
 
 template <>
 [[noreturn]] void throw_mismatch_error(const core::Dimensions &expected,
-                          const core::Dimensions &actual,
-                          const std::string &optional_message) {
+                                       const core::Dimensions &actual,
+                                       const std::string &optional_message) {
   throw DimensionError("Expected " + format_dims(expected) + ", got " +
                        format_dims(actual) + '.' + optional_message);
 }
 
-[[noreturn]] void throw_dimension_length_error(const core::Dimensions &expected, Dim actual,
-                                  index length) {
+[[noreturn]] void throw_dimension_length_error(const core::Dimensions &expected,
+                                               Dim actual, index length) {
   throw DimensionError{"Expected dimension to be in " + to_string(expected) +
                        ", got " + to_string(actual) +
                        " with mismatching length " + std::to_string(length) +

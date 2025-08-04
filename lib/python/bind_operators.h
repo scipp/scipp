@@ -294,16 +294,19 @@ template <class RHSSetup> struct OpBinder {
         "__eq__", [](const T &a, Other &b) { return equal(a, RHSSetup{}(b)); },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
-        "__ne__", [](const T &a, Other &b) { return not_equal(a, RHSSetup{}(b)); },
+        "__ne__",
+        [](const T &a, Other &b) { return not_equal(a, RHSSetup{}(b)); },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
         "__lt__", [](const T &a, Other &b) { return less(a, RHSSetup{}(b)); },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
-        "__gt__", [](const T &a, Other &b) { return greater(a, RHSSetup{}(b)); },
+        "__gt__",
+        [](const T &a, Other &b) { return greater(a, RHSSetup{}(b)); },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
-        "__le__", [](const T &a, Other &b) { return less_equal(a, RHSSetup{}(b)); },
+        "__le__",
+        [](const T &a, Other &b) { return less_equal(a, RHSSetup{}(b)); },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
         "__ge__",

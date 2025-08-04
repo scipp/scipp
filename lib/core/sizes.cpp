@@ -40,8 +40,8 @@ bool small_stable_map<Key, Value, Capacity>::operator==(
   if (size() != other.size())
     return false;
   for (const auto &[key, value] : std::views::zip(m_keys, m_values)) {
-      if (!other.contains(key) || other[key] != value)
-          return false;
+    if (!other.contains(key) || other[key] != value)
+      return false;
   }
   return true;
 }
