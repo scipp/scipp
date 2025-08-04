@@ -131,6 +131,7 @@ if(CMAKE_CXX_CPPCHECK)
     "--suppressions-list=${CMAKE_SOURCE_DIR}/cppcheck-suppressions.txt"
     "--cppcheck-build-dir=${CMAKE_BINARY_DIR}/cppcheck"
     "--error-exitcode=2"
+    "--check-level=exhaustive"
   )
 endif()
 
