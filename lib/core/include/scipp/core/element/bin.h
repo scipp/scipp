@@ -43,6 +43,8 @@ static constexpr auto update_indices_by_binning = overloaded{
                       update_indices_by_binning_arg<int32_t, double, float>,
                       update_indices_by_binning_arg<int64_t, int32_t, int64_t>,
                       update_indices_by_binning_arg<int32_t, int32_t, int64_t>>,
+    // `indices` must be non-const so `auto &index` overloads below don't match.
+    // cppcheck-suppress constParameterReference
     [](sc_units::Unit &indices, const sc_units::Unit &coord,
        const sc_units::Unit &groups) {
       expect::equals(coord, groups);
@@ -127,6 +129,8 @@ static constexpr auto update_indices_by_grouping = overloaded{
                       update_indices_by_grouping_arg<int32_t, std::string>,
                       update_indices_by_grouping_arg<int32_t, time_point>,
                       update_indices_by_grouping_arg<int64_t, time_point>>,
+    // `indices` must be non-const so `auto &index` overloads below don't match.
+    // cppcheck-suppress constParameterReference
     [](sc_units::Unit &indices, const sc_units::Unit &coord,
        const sc_units::Unit &groups) {
       expect::equals(coord, groups);
@@ -157,6 +161,8 @@ static constexpr auto update_indices_by_grouping_contiguous = overloaded{
         update_indices_by_grouping_contiguous_arg<int64_t, int32_t>,
         update_indices_by_grouping_contiguous_arg<int32_t, int32_t>,
         update_indices_by_grouping_contiguous_arg<int32_t, int32_t, int64_t>>,
+    // `indices` must be non-const so `auto &index` overloads below don't match.
+    // cppcheck-suppress constParameterReference
     [](sc_units::Unit &indices, const sc_units::Unit &coord,
        const sc_units::Unit &ngroup, const sc_units::Unit &offset) {
       expect::equals(coord, offset);

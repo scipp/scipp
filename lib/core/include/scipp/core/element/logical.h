@@ -32,7 +32,10 @@ constexpr auto logical_not =
     overloaded{logical, [](const auto &x) { return !x; }};
 
 constexpr auto logical_inplace = overloaded{
-    arg_list<bool>, [](sc_units::Unit &var, const sc_units::Unit &other) {
+    arg_list<bool>,
+    // `var` must be non-const so `auto &&a` overloads below don't match.
+    // cppcheck-suppress constParameterReference
+    [](sc_units::Unit &var, const sc_units::Unit &other) {
       expect::equals(sc_units::none, var);
       expect::equals(sc_units::none, other);
     }};
