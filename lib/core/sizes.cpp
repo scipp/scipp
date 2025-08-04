@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include <algorithm>
+#include <ranges>
 
 #include "rename.h"
 #include "scipp/core/except.h"
@@ -38,9 +39,10 @@ bool small_stable_map<Key, Value, Capacity>::operator==(
     const small_stable_map &other) const noexcept {
   if (size() != other.size())
     return false;
-  for (const auto &key : *this)
-    if (!other.contains(key) || at(key) != other.at(key))
-      return false;
+  for (const auto &[key, value] : std::views::zip(m_keys, m_values)) {
+      if (!other.contains(key) || other[key] != value)
+          return false;
+  }
   return true;
 }
 
