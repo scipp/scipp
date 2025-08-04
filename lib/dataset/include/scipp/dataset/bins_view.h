@@ -59,8 +59,8 @@ template <class T, class MapGetter> class BinsMapView : public BinsCommon<T> {
 public:
   using key_type = typename MapView::key_type;
   using mapped_type = typename MapView::mapped_type;
-  BinsMapView(const BinsCommon<T> base, MapGetter map)
-      : BinsCommon<T>(base), m_map(map) {}
+  BinsMapView(BinsCommon<T> base, MapGetter map)
+      : BinsCommon<T>(std::move(base)), m_map(std::move(map)) {}
   scipp::index size() const noexcept { return mapView().size(); }
   auto operator[](const key_type &key) const {
     return this->make(mapView()[key]);
