@@ -119,6 +119,7 @@ TEST(ElementArrayTest, construct_move) {
   const auto ptr = x.data();
   auto y(std::move(x));
   ASSERT_EQ(y.data(), ptr);
+  // cppcheck-suppress accessMoved
   check_null_element_array(x);
   check_element_array(y);
 }
@@ -136,6 +137,7 @@ TEST(ElementArrayTest, assign_move) {
   element_array<float> y;
   y = std::move(x);
   ASSERT_EQ(y.data(), ptr);
+  // cppcheck-suppress accessMoved
   check_null_element_array(x);
   check_element_array(y);
 }
