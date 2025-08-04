@@ -105,12 +105,14 @@ constexpr auto greater_equal =
 constexpr auto equal = overloaded{
     equality,
     [](const auto &x, const auto &y) {
+      // cppcheck-suppress constStatement
       using numeric::operator==;
       return x == y;
     },
 };
 constexpr auto not_equal =
     overloaded{equality, [](const auto &x, const auto &y) {
+                 // cppcheck-suppress constStatement
                  using numeric::operator!=;
                  return x != y;
                }};
