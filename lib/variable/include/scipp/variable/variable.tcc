@@ -102,12 +102,14 @@ template <class T> ElementArrayView<T> Variable::values() {
 }
 template <class T> ElementArrayView<const T> Variable::variances() const {
   if constexpr (!core::canHaveVariances<T>())
+    // cppcheck-suppress missingReturn
     except::throw_cannot_have_variances(core::dtype<T>);
   else
     return cast<T>(*this).variances(array_params());
 }
 template <class T> ElementArrayView<T> Variable::variances() {
   if constexpr (!core::canHaveVariances<T>())
+    // cppcheck-suppress missingReturn
     except::throw_cannot_have_variances(core::dtype<T>);
   else
     return cast<T>(*this).variances(array_params());

@@ -43,7 +43,7 @@ static constexpr auto keep_unit =
                [](const sc_units::Unit &, const sc_units::Unit &) {}};
 
 static constexpr auto dimensionless_unit_check =
-    [](sc_units::Unit &varUnit, const sc_units::Unit &otherUnit) {
+    [](const sc_units::Unit &varUnit, const sc_units::Unit &otherUnit) {
       expect::equals(sc_units::one, varUnit);
       expect::equals(sc_units::one, otherUnit);
     };

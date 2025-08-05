@@ -36,17 +36,12 @@ useInitializationList
 // Generally, non-const callbacks should be fine.
 constParameterCallback
 
-uninitMemberVar
-passedByValue
+// This is a style issue, we allow redefining members in subclasses.
 duplInheritedMember
-throwInNoexceptFunction
-returnByReference
-constParameterReference
-constStatement
-normalCheckLevelMaxBranches
-constVariableReference
-missingReturn
-passedByValueCallback
-unreadVariable
-accessMoved
+
+// This finds some performance issues.
+// It is unclear how relevant they are at this point.
+passedByValue
+
+// A lot of false-positives in test fixtures.
 unusedStructMember
