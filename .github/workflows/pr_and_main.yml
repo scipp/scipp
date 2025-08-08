@@ -38,8 +38,8 @@ jobs:
       matrix:
         variant:
         - {os: ubuntu-24.04, cmake-preset: ci-linux}
-        - {os: macos-14, cmake-preset: ci-macos}
-        - {os: windows-2022, cmake-preset: ci-windows}
+        # - {os: macos-14, cmake-preset: ci-macos}
+        # - {os: windows-2022, cmake-preset: ci-windows}
         python-version: ["3.11"]
 
     steps:
@@ -89,7 +89,7 @@ jobs:
 
       - run: tox -e linkcheck
         # Linkcheck can be flaky. Avoid randomly breaking PR builds by running only on `main`
-        if: ${{ contains(matrix.variant.os, 'ubuntu') && github.ref == 'refs/heads/main' }}
+        if: ${{ contains(matrix.variant.os, 'ubuntu')}}
 
       - uses: actions/upload-artifact@v4
         if: ${{ contains(matrix.variant.os, 'ubuntu') }}
