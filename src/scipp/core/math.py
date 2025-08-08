@@ -3,17 +3,30 @@
 # @author Simon Heybrock
 from __future__ import annotations
 
-from numbers import Real
+from typing import TypeVar, overload
 
 from .._scipp import core as _cpp
 from ..typing import VariableLike, VariableLikeType
 from ._cpp_wrapper_util import call_func as _call_cpp_func
+from .cpp_classes import Unit, Variable
 from .variable import scalar
 
+_T = TypeVar("_T")
 
-def abs(
-    x: VariableLike | _cpp.Unit, *, out: _cpp.Variable | None = None
-) -> VariableLike | _cpp.Unit:
+
+@overload
+def abs(x: Variable, *, out: Variable | None = None) -> Variable: ...
+
+
+@overload
+def abs(x: VariableLikeType) -> VariableLikeType: ...
+
+
+@overload
+def abs(x: Unit) -> Unit: ...
+
+
+def abs(x: _T, *, out: Variable | None = None) -> _T:
     """Element-wise absolute value.
 
     Parameters
@@ -37,10 +50,10 @@ def abs(
     --------
     scipp.norm
     """
-    return _call_cpp_func(_cpp.abs, x, out=out)
+    return _call_cpp_func(_cpp.abs, x, out=out)  # type: ignore[return-value]
 
 
-def cross(x: VariableLike, y: VariableLike) -> VariableLike:
+def cross(x: VariableLikeType, y: VariableLikeType) -> VariableLikeType:
     """Element-wise cross product.
 
     Parameters
@@ -60,10 +73,10 @@ def cross(x: VariableLike, y: VariableLike) -> VariableLike:
     :
         The cross product of the input vectors.
     """
-    return _call_cpp_func(_cpp.cross, x, y)
+    return _call_cpp_func(_cpp.cross, x, y)  # type: ignore[return-value]
 
 
-def dot(x: VariableLike, y: VariableLike) -> VariableLike:
+def dot(x: VariableLikeType, y: VariableLikeType) -> VariableLikeType:
     """Element-wise dot product.
 
     Parameters
@@ -83,17 +96,17 @@ def dot(x: VariableLike, y: VariableLike) -> VariableLike:
     :
         The dot product of the input vectors.
     """
-    return _call_cpp_func(_cpp.dot, x, y)
+    return _call_cpp_func(_cpp.dot, x, y)  # type: ignore[return-value]
 
 
 def nan_to_num(
-    x: _cpp.Variable,
+    x: Variable,
     *,
-    nan: _cpp.Variable = None,
-    posinf: _cpp.Variable = None,
-    neginf: _cpp.Variable = None,
-    out: _cpp.Variable = None,
-) -> _cpp.Variable:
+    nan: Variable | None = None,
+    posinf: Variable | None = None,
+    neginf: Variable | None = None,
+    out: Variable | None = None,
+) -> Variable:
     """Element-wise special value replacement.
 
     All elements in the output are identical to input except in the presence
@@ -126,12 +139,12 @@ def nan_to_num(
     :
         Input with specified substitutions.
     """
-    return _call_cpp_func(
+    return _call_cpp_func(  # type: ignore[return-value]
         _cpp.nan_to_num, x, nan=nan, posinf=posinf, neginf=neginf, out=out
     )
 
 
-def norm(x: VariableLike) -> VariableLike:
+def norm(x: VariableLikeType) -> VariableLikeType:
     """Element-wise norm.
 
     Parameters
@@ -149,12 +162,22 @@ def norm(x: VariableLike) -> VariableLike:
     :
         Scalar elements computed as the norm values of the input elements.
     """
-    return _call_cpp_func(_cpp.norm, x, out=None)
+    return _call_cpp_func(_cpp.norm, x, out=None)  # type: ignore[return-value]
 
 
-def reciprocal(
-    x: VariableLike | _cpp.Unit, *, out: _cpp.Variable | None = None
-) -> VariableLike | _cpp.Unit:
+@overload
+def reciprocal(x: Variable, *, out: Variable | None = None) -> Variable: ...
+
+
+@overload
+def reciprocal(x: VariableLikeType) -> VariableLikeType: ...
+
+
+@overload
+def reciprocal(x: Unit) -> Unit: ...
+
+
+def reciprocal(x: _T, *, out: Variable | None = None) -> _T:
     """Element-wise reciprocal.
 
     Parameters
@@ -174,12 +197,20 @@ def reciprocal(
     :
         The reciprocal values of the input.
     """
-    return _call_cpp_func(_cpp.reciprocal, x, out=out)
+    return _call_cpp_func(_cpp.reciprocal, x, out=out)  # type: ignore[return-value]
 
 
+@overload
 def pow(
-    base: VariableLike | _cpp.Unit, exponent: VariableLike | Real
-) -> VariableLike | _cpp.Unit:
+    base: VariableLikeType, exponent: VariableLikeType | float
+) -> VariableLikeType: ...
+
+
+@overload
+def pow(base: Unit, exponent: Variable | float) -> Unit: ...
+
+
+def pow(base: _T, exponent: VariableLike | float) -> _T:
     """Element-wise power.
 
     If the base has a unit, the exponent must be scalar in order to get
@@ -202,14 +233,24 @@ def pow(
     :
         ``base`` raised to the power of ``exp``.
     """
-    if not isinstance(base, _cpp.Unit) and isinstance(exponent, Real):
+    if not isinstance(base, _cpp.Unit) and isinstance(exponent, float | int):
         exponent = scalar(exponent)
-    return _call_cpp_func(_cpp.pow, base, exponent)
+    return _call_cpp_func(_cpp.pow, base, exponent)  # type: ignore[return-value]
 
 
-def sqrt(
-    x: VariableLike | _cpp.Unit, *, out: _cpp.Variable | None = None
-) -> VariableLike | _cpp.Unit:
+@overload
+def sqrt(x: Variable, *, out: Variable | None = None) -> Variable: ...
+
+
+@overload
+def sqrt(x: VariableLikeType) -> VariableLikeType: ...
+
+
+@overload
+def sqrt(x: Unit) -> Unit: ...
+
+
+def sqrt(x: _T, *, out: Variable | None = None) -> _T:
     """Element-wise square-root.
 
     Parameters
@@ -229,10 +270,18 @@ def sqrt(
     :
         The square-root values of the input.
     """
-    return _call_cpp_func(_cpp.sqrt, x, out=out)
+    return _call_cpp_func(_cpp.sqrt, x, out=out)  # type: ignore[return-value]
 
 
-def exp(x: VariableLike, *, out: VariableLike | None = None) -> VariableLike:
+@overload
+def exp(x: Variable, *, out: Variable | None = None) -> Variable: ...
+
+
+@overload
+def exp(x: VariableLikeType) -> VariableLikeType: ...
+
+
+def exp(x: _T, *, out: Variable | None = None) -> _T:
     """Element-wise exponential.
 
     Parameters
@@ -247,10 +296,18 @@ def exp(x: VariableLike, *, out: VariableLike | None = None) -> VariableLike:
     :
         e raised to the power of the input.
     """
-    return _call_cpp_func(_cpp.exp, x, out=out)
+    return _call_cpp_func(_cpp.exp, x, out=out)  # type: ignore[return-value]
 
 
-def log(x: VariableLike, *, out: VariableLike | None = None) -> VariableLike:
+@overload
+def log(x: Variable, *, out: Variable | None = None) -> Variable: ...
+
+
+@overload
+def log(x: VariableLikeType) -> VariableLikeType: ...
+
+
+def log(x: _T, *, out: Variable | None = None) -> _T:
     """Element-wise natural logarithm.
 
     Parameters
@@ -265,10 +322,18 @@ def log(x: VariableLike, *, out: VariableLike | None = None) -> VariableLike:
     :
         Base e logarithm of the input.
     """
-    return _call_cpp_func(_cpp.log, x, out=out)
+    return _call_cpp_func(_cpp.log, x, out=out)  # type: ignore[return-value]
 
 
-def log10(x: VariableLike, *, out: VariableLike | None = None) -> VariableLike:
+@overload
+def log10(x: Variable, *, out: Variable | None = None) -> Variable: ...
+
+
+@overload
+def log10(x: VariableLikeType) -> VariableLikeType: ...
+
+
+def log10(x: _T, *, out: Variable | None = None) -> _T:
     """Element-wise base 10 logarithm.
 
     Parameters
@@ -283,12 +348,18 @@ def log10(x: VariableLike, *, out: VariableLike | None = None) -> VariableLike:
     :
         Base 10 logarithm of the input.
     """
-    return _call_cpp_func(_cpp.log10, x, out=out)
+    return _call_cpp_func(_cpp.log10, x, out=out)  # type: ignore[return-value]
 
 
-def round(
-    x: VariableLikeType, *, out: VariableLikeType | None = None
-) -> VariableLikeType:
+@overload
+def round(x: Variable, *, out: Variable | None = None) -> Variable: ...
+
+
+@overload
+def round(x: VariableLikeType) -> VariableLikeType: ...
+
+
+def round(x: _T, *, out: Variable | None = None) -> _T:
     """
     Round to the nearest integer of all values passed in x.
 
@@ -311,7 +382,15 @@ def round(
     return _call_cpp_func(_cpp.rint, x, out=out)  # type: ignore[return-value]
 
 
-def floor(x: VariableLike, *, out: VariableLike | None = None) -> VariableLike:
+@overload
+def floor(x: Variable, *, out: Variable | None = None) -> Variable: ...
+
+
+@overload
+def floor(x: VariableLikeType) -> VariableLikeType: ...
+
+
+def floor(x: _T, *, out: Variable | None = None) -> _T:
     """
     Round down to the nearest integer of all values passed in x.
 
@@ -327,10 +406,18 @@ def floor(x: VariableLike, *, out: VariableLike | None = None) -> VariableLike:
     :
         Rounded down version of the data passed.
     """
-    return _call_cpp_func(_cpp.floor, x, out=out)
+    return _call_cpp_func(_cpp.floor, x, out=out)  # type: ignore[return-value]
 
 
-def ceil(x: VariableLike, *, out: VariableLike | None = None) -> VariableLike:
+@overload
+def ceil(x: Variable, *, out: Variable | None = None) -> Variable: ...
+
+
+@overload
+def ceil(x: VariableLikeType) -> VariableLikeType: ...
+
+
+def ceil(x: _T, *, out: Variable | None = None) -> _T:
     """
     Round up to the nearest integer of all values passed in x.
 
@@ -346,10 +433,10 @@ def ceil(x: VariableLike, *, out: VariableLike | None = None) -> VariableLike:
     :
         Rounded up version of the data passed.
     """
-    return _call_cpp_func(_cpp.ceil, x, out=out)
+    return _call_cpp_func(_cpp.ceil, x, out=out)  # type: ignore[return-value]
 
 
-def erf(x: VariableLike) -> VariableLike:
+def erf(x: VariableLikeType) -> VariableLikeType:
     """
     Computes the error function.
 
@@ -358,10 +445,10 @@ def erf(x: VariableLike) -> VariableLike:
     x:
         Input data.
     """
-    return _call_cpp_func(_cpp.erf, x)
+    return _call_cpp_func(_cpp.erf, x)  # type: ignore[return-value]
 
 
-def erfc(x: VariableLike) -> VariableLike:
+def erfc(x: VariableLikeType) -> VariableLikeType:
     """
     Computes the complementary error function.
 
@@ -370,10 +457,10 @@ def erfc(x: VariableLike) -> VariableLike:
     x:
         Input data.
     """
-    return _call_cpp_func(_cpp.erfc, x)
+    return _call_cpp_func(_cpp.erfc, x)  # type: ignore[return-value]
 
 
-def midpoints(x: _cpp.Variable, dim: str | None = None) -> _cpp.Variable:
+def midpoints(x: Variable, dim: str | None = None) -> Variable:
     """
     Computes the points in the middle of adjacent elements of x.
 
@@ -427,4 +514,4 @@ def midpoints(x: _cpp.Variable, dim: str | None = None) -> _cpp.Variable:
       array([[2, 4],
              [4, 8]])
     """
-    return _cpp.midpoints(x, dim)
+    return _cpp.midpoints(x, dim)  # type: ignore[no-any-return]

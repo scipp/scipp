@@ -13,7 +13,7 @@
 
 using namespace scipp;
 using namespace scipp::variable;
-using namespace scipp::units;
+using namespace scipp::sc_units;
 
 class VariableTrigonometryTest : public ::testing::Test {
 protected:
@@ -22,11 +22,11 @@ protected:
                                 Values{0.0, pi<double> / 2.0, pi<double>,
                                        -pi<double> * 3.0 / 2.0,
                                        2.0 * pi<double>, -0.123, 1.654},
-                                Unit{units::rad});
+                                Unit{sc_units::rad});
   }
 
   [[nodiscard]] static Variable input_in_deg() {
-    return to_unit(input_in_rad(), units::deg);
+    return to_unit(input_in_rad(), sc_units::deg);
   }
 
   [[nodiscard]] static Variable expected_for_op(double (*op)(const double)) {
@@ -139,7 +139,7 @@ TEST_F(VariableTrigonometryTest, tan_out_arg_deg) {
 TEST_F(VariableTrigonometryTest, asin) {
   const auto var = makeVariable<double>(Values{1.0});
   EXPECT_EQ(asin(var),
-            makeVariable<double>(Values{std::asin(1.0)}, Unit{units::rad}));
+            makeVariable<double>(Values{std::asin(1.0)}, Unit{sc_units::rad}));
 }
 
 TEST_F(VariableTrigonometryTest, asin_out_arg) {
@@ -148,14 +148,14 @@ TEST_F(VariableTrigonometryTest, asin_out_arg) {
   auto &view = asin(x.slice({Dim::X, 0}), out);
 
   EXPECT_EQ(out,
-            makeVariable<double>(Values{std::asin(1.0)}, Unit{units::rad}));
+            makeVariable<double>(Values{std::asin(1.0)}, Unit{sc_units::rad}));
   EXPECT_EQ(&view, &out);
 }
 
 TEST_F(VariableTrigonometryTest, acos) {
   const auto var = makeVariable<double>(Values{1.0});
   EXPECT_EQ(acos(var),
-            makeVariable<double>(Values{std::acos(1.0)}, Unit{units::rad}));
+            makeVariable<double>(Values{std::acos(1.0)}, Unit{sc_units::rad}));
 }
 
 TEST_F(VariableTrigonometryTest, acos_out_arg) {
@@ -164,14 +164,14 @@ TEST_F(VariableTrigonometryTest, acos_out_arg) {
   auto &view = acos(x.slice({Dim::X, 0}), out);
 
   EXPECT_EQ(out,
-            makeVariable<double>(Values{std::acos(1.0)}, Unit{units::rad}));
+            makeVariable<double>(Values{std::acos(1.0)}, Unit{sc_units::rad}));
   EXPECT_EQ(&view, &out);
 }
 
 TEST_F(VariableTrigonometryTest, atan) {
   const auto var = makeVariable<double>(Values{1.0});
   EXPECT_EQ(atan(var),
-            makeVariable<double>(Values{std::atan(1.0)}, Unit{units::rad}));
+            makeVariable<double>(Values{std::atan(1.0)}, Unit{sc_units::rad}));
 }
 
 TEST_F(VariableTrigonometryTest, atan_out_arg) {
@@ -180,23 +180,23 @@ TEST_F(VariableTrigonometryTest, atan_out_arg) {
   auto &view = atan(x.slice({Dim::X, 0}), out);
 
   EXPECT_EQ(out,
-            makeVariable<double>(Values{std::atan(1.0)}, Unit{units::rad}));
+            makeVariable<double>(Values{std::atan(1.0)}, Unit{sc_units::rad}));
   EXPECT_EQ(&view, &out);
 }
 
 TEST_F(VariableTrigonometryTest, atan2) {
-  auto x = makeVariable<double>(units::m, Values{1.0});
+  auto x = makeVariable<double>(sc_units::m, Values{1.0});
   auto y = x;
   auto expected =
-      makeVariable<double>(units::rad, Values{scipp::pi<double> / 4});
+      makeVariable<double>(sc_units::rad, Values{scipp::pi<double> / 4});
   EXPECT_EQ(atan2(y, x), expected);
 }
 
 TEST_F(VariableTrigonometryTest, atan2_out_arg) {
-  auto x = makeVariable<double>(units::m, Values{1.0});
+  auto x = makeVariable<double>(sc_units::m, Values{1.0});
   auto y = x;
   auto expected =
-      makeVariable<double>(units::rad, Values{scipp::pi<double> / 4});
+      makeVariable<double>(sc_units::rad, Values{scipp::pi<double> / 4});
   auto out = atan2(y, x, y);
   EXPECT_EQ(out, expected);
   EXPECT_EQ(y, expected);
@@ -204,7 +204,7 @@ TEST_F(VariableTrigonometryTest, atan2_out_arg) {
 
 TEST_P(BinnedVariablesTest, trigonometry) {
   const auto var = GetParam();
-  if (variableFactory().elem_unit(var) == units::one) {
+  if (variableFactory().elem_unit(var) == sc_units::one) {
     EXPECT_NO_THROW_DISCARD(sin(asin(var)));
     EXPECT_NO_THROW_DISCARD((acos(var)));
     EXPECT_NO_THROW_DISCARD(tan(atan(var)));

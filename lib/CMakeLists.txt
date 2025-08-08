@@ -3,7 +3,7 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # ~~~
 if(NOT DEFINED CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD 23)
 endif(NOT DEFINED CMAKE_CXX_STANDARD)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -15,10 +15,14 @@ set(CMAKE_MODULE_PATH
 
 option(BENCHMARK "Enable benchmarks" OFF)
 
-include(scipp-conan)
-
 set(Python_FIND_IMPLEMENTATIONS CPython PyPy)
-
+if(SKIP_CONAN)
+  find_package(units REQUIRED)
+else()
+  # scipp-conan installs all the system deps with conan
+  include(scipp-conan)
+  find_package(LLNL-Units REQUIRED)
+endif()
 find_package(benchmark)
 find_package(Boost 1.67 REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -31,7 +35,6 @@ find_package(GTest CONFIG REQUIRED)
 # instead of `Development`
 find_package(Python 3.8 REQUIRED COMPONENTS Interpreter Development.Module)
 find_package(pybind11 CONFIG REQUIRED)
-find_package(LLNL-Units REQUIRED)
 
 # Generate files for free scipp API functions
 include(scipp-functions)
@@ -121,16 +124,14 @@ if(CMAKE_CXX_CPPCHECK)
   list(
     APPEND
     CMAKE_CXX_CPPCHECK
-    "--std=c++20"
+    "--std=c++23"
     "--quiet"
     "--enable=style"
     "--inline-suppr"
     "--suppressions-list=${CMAKE_SOURCE_DIR}/cppcheck-suppressions.txt"
     "--cppcheck-build-dir=${CMAKE_BINARY_DIR}/cppcheck"
-    # Suppress warnings from 3rd party span header. This needs an absolute path
-    # can can therefore not be done in the suppressions file.
-    "--suppress=*:${CMAKE_SOURCE_DIR}/lib/common/include/scipp/common/span.hpp.in"
     "--error-exitcode=2"
+    "--check-level=exhaustive"
   )
 endif()
 

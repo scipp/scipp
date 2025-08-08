@@ -24,7 +24,7 @@ Variable broadcast(const Variable &var, const Dimensions &dims) {
 }
 
 namespace {
-auto get_bin_sizes(const scipp::span<const Variable> vars) {
+auto get_bin_sizes(const std::span<const Variable> vars) {
   std::vector<Variable> sizes;
   sizes.reserve(vars.size());
   for (const auto &var : vars)
@@ -33,7 +33,7 @@ auto get_bin_sizes(const scipp::span<const Variable> vars) {
 }
 } // namespace
 
-Variable concat(const scipp::span<const Variable> vars, const Dim dim) {
+Variable concat(const std::span<const Variable> vars, const Dim dim) {
   if (vars.empty())
     throw std::invalid_argument("Cannot concat empty list.");
   const auto it =
@@ -99,8 +99,8 @@ Variable fold(const Variable &view, const Dim from_dim,
   return view.fold(from_dim, to_dims);
 }
 
-Variable flatten(const Variable &view,
-                 const scipp::span<const Dim> &from_labels, const Dim to_dim) {
+Variable flatten(const Variable &view, const std::span<const Dim> &from_labels,
+                 const Dim to_dim) {
   if (from_labels.empty()) {
     auto out(view);
     out.unchecked_dims().addInner(to_dim, 1);
@@ -131,13 +131,13 @@ Variable flatten(const Variable &view,
   return out;
 }
 
-Variable transpose(const Variable &var, const scipp::span<const Dim> dims) {
+Variable transpose(const Variable &var, const std::span<const Dim> dims) {
   return var.transpose(dims);
 }
 
 std::vector<scipp::Dim>
 dims_for_squeezing(const core::Sizes &data_dims,
-                   const std::optional<scipp::span<const Dim>> selected_dims) {
+                   const std::optional<std::span<const Dim>> selected_dims) {
   if (selected_dims.has_value()) {
     for (const auto &dim : *selected_dims) {
       if (const auto size = data_dims[dim]; size != 1)
@@ -159,7 +159,7 @@ dims_for_squeezing(const core::Sizes &data_dims,
 }
 
 Variable squeeze(const Variable &var,
-                 const std::optional<scipp::span<const Dim>> dims) {
+                 const std::optional<std::span<const Dim>> dims) {
   auto squeezed = var;
   for (const auto &dim : dims_for_squeezing(var.dims(), dims)) {
     squeezed = squeezed.slice({dim, 0});

@@ -24,8 +24,9 @@ void map_to_bins(Variable &out, const Variable &var, const Variable &offsets,
 
 Variable make_range(const scipp::index begin, const scipp::index end,
                     const scipp::index stride, const Dim dim) {
-  return cumsum(broadcast(stride * units::none, {dim, (end - begin) / stride}),
-                dim, CumSumMode::Exclusive);
+  return cumsum(
+      broadcast(stride * sc_units::none, {dim, (end - begin) / stride}), dim,
+      CumSumMode::Exclusive);
 }
 
 void update_indices_by_binning(Variable &indices, const Variable &key,
@@ -84,7 +85,7 @@ void update_indices_by_grouping(Variable &indices, const Variable &key,
       // lookup would result in frequent cache misses.
       && isarange(con_groups, con_groups.dim()).value<bool>()) {
     const auto ngroup = makeVariable<scipp::index>(
-        Values{con_groups.dims().volume()}, units::none);
+        Values{con_groups.dims().volume()}, sc_units::none);
     const auto offset = con_groups.slice({con_groups.dim(), 0});
     variable::transform_in_place(
         indices, key, ngroup, offset,
@@ -104,7 +105,7 @@ void update_indices_by_grouping(Variable &indices, const Variable &key,
 void update_indices_from_existing(Variable &indices, const Dim dim) {
   const scipp::index nbin = indices.dims()[dim];
   const auto index = make_range(0, nbin, 1, dim);
-  variable::transform_in_place(indices, index, nbin * units::none,
+  variable::transform_in_place(indices, index, nbin * sc_units::none,
                                core::element::update_indices_from_existing,
                                "scipp.bin.update_indices_from_existing");
 }

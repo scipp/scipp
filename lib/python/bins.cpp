@@ -45,7 +45,7 @@ auto call_make_bins(const std::optional<Variable> &begin_arg,
       }
     }
   } else if (!end_arg.has_value()) {
-    const auto one = scipp::index{1} * units::none;
+    const auto one = scipp::index{1} * sc_units::none;
     const auto ones = broadcast(one, {dim, data.dims()[dim]});
     const auto begin = cumsum(ones, dim, CumSumMode::Exclusive);
     indices = zip(begin, begin + one);

@@ -11,12 +11,12 @@
 #include "scipp/units/dim.h"
 #include "scipp/units/unit.h"
 
-namespace scipp::units {
+namespace scipp::sc_units {
 
 SCIPP_UNITS_EXPORT std::ostream &operator<<(std::ostream &os, const Dim dim);
 SCIPP_UNITS_EXPORT std::ostream &operator<<(std::ostream &os, const Unit unit);
 
-SCIPP_UNITS_EXPORT std::string to_string(const units::Unit &unit);
+SCIPP_UNITS_EXPORT std::string to_string(const sc_units::Unit &unit);
 template <class T> std::string to_string(const std::initializer_list<T> items);
 
-} // namespace scipp::units
+} // namespace scipp::sc_units

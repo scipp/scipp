@@ -57,8 +57,8 @@ TYPED_TEST(DataArrayViewTest, dtype) {
 TYPED_TEST(DataArrayViewTest, unit) {
   Dataset d = testdata::make_dataset_x();
   typename TestFixture::dataset_type &d_ref(d);
-  EXPECT_EQ(d_ref["a"].unit(), units::kg);
-  EXPECT_EQ(d_ref["b"].unit(), units::s);
+  EXPECT_EQ(d_ref["a"].unit(), sc_units::kg);
+  EXPECT_EQ(d_ref["b"].unit(), sc_units::s);
 }
 
 TYPED_TEST(DataArrayViewTest, coords) {

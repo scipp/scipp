@@ -25,7 +25,7 @@ std::vector<bool> make_bools(const scipp::index size, bool pattern) {
 DatasetFactory::DatasetFactory()
     : DatasetFactory(Dimensions{{Dim::X, 4}, {Dim::Y, 3}, {Dim::Z, 5}}) {}
 
-DatasetFactory::DatasetFactory(const scipp::units::Dim dim,
+DatasetFactory::DatasetFactory(const scipp::sc_units::Dim dim,
                                const scipp::index length)
     : DatasetFactory(Dimensions({{dim, length}})) {}
 
@@ -95,14 +95,14 @@ Dataset make_1d_masked() {
 namespace scipp::testdata {
 
 Dataset make_dataset_x() {
-  return Dataset({{"a", makeVariable<double>(Dims{Dim::X}, units::kg, Shape{3},
-                                             Values{4, 5, 6})},
-                  {"b", makeVariable<int32_t>(Dims{Dim::X}, units::s, Shape{3},
-                                              Values{7, 8, 9})}},
-                 {{Dim("scalar"), 1.2 * units::K},
-                  {Dim::X, makeVariable<double>(Dims{Dim::X}, units::m,
+  return Dataset({{"a", makeVariable<double>(Dims{Dim::X}, sc_units::kg,
+                                             Shape{3}, Values{4, 5, 6})},
+                  {"b", makeVariable<int32_t>(Dims{Dim::X}, sc_units::s,
+                                              Shape{3}, Values{7, 8, 9})}},
+                 {{Dim("scalar"), 1.2 * sc_units::K},
+                  {Dim::X, makeVariable<double>(Dims{Dim::X}, sc_units::m,
                                                 Shape{3}, Values{1, 2, 4})},
-                  {Dim::Y, makeVariable<double>(Dims{Dim::X}, units::m,
+                  {Dim::Y, makeVariable<double>(Dims{Dim::X}, sc_units::m,
                                                 Shape{3}, Values{1, 2, 3})}});
 }
 

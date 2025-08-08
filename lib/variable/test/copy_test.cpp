@@ -26,7 +26,7 @@ protected:
   }
 
   Variable xy =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 3}, units::m,
+      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 3}, sc_units::m,
                            Values{1, 2, 3, 4, 5, 6, 7, 8, 9},
                            Variances{10, 11, 12, 13, 14, 15, 16, 17, 18});
 };
@@ -56,7 +56,7 @@ TEST_F(CopyTest, slice) {
 }
 
 TEST_F(CopyTest, broadcast) {
-  const auto var = broadcast(1.2 * units::m, Dimensions(Dim::X, 3));
+  const auto var = broadcast(1.2 * sc_units::m, Dimensions(Dim::X, 3));
   const auto copied = copy(var);
   check_copied(copied, var);
   EXPECT_FALSE(equals(copied.strides(), var.strides()));

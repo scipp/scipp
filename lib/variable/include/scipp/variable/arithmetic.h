@@ -35,20 +35,20 @@ SCIPP_VARIABLE_EXPORT Variable floor_divide_equals(Variable &&a,
 
 } // namespace scipp::variable
 
-namespace scipp::units {
+namespace scipp::sc_units {
 template <typename T>
 std::enable_if_t<std::is_arithmetic_v<T> ||
                      std::is_same_v<T, scipp::core::time_point>,
                  Variable>
-operator*(T v, const units::Unit &unit) {
-  return makeVariable<T>(units::Unit{unit}, Values{v});
+operator*(T v, const sc_units::Unit &unit) {
+  return makeVariable<T>(sc_units::Unit{unit}, Values{v});
 }
 
 template <typename T>
 std::enable_if_t<std::is_arithmetic_v<T> ||
                      std::is_same_v<T, scipp::core::time_point>,
                  Variable>
-operator/(T v, const units::Unit &unit) {
-  return makeVariable<T>(units::one / unit, Values{v});
+operator/(T v, const sc_units::Unit &unit) {
+  return makeVariable<T>(sc_units::one / unit, Values{v});
 }
-} // namespace scipp::units
+} // namespace scipp::sc_units

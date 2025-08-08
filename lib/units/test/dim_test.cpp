@@ -9,7 +9,7 @@
 #include "scipp/common/index.h"
 #include "scipp/units/dim.h"
 
-using namespace scipp::units;
+using namespace scipp::sc_units;
 
 TEST(DimTest, basics) {
   EXPECT_EQ(Dim(), Dim(Dim::Invalid));

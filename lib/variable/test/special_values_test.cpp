@@ -31,41 +31,43 @@ TYPED_TEST_SUITE(VariableSpecialValueTest, FloatTypes);
 
 TYPED_TEST(VariableSpecialValueTest, isnan) {
   for (TypeParam x : values_for_special_value_tests<TypeParam>()) {
-    EXPECT_EQ(variable::isnan(x * units::m), element::isnan(x) * units::none);
+    EXPECT_EQ(variable::isnan(x * sc_units::m),
+              element::isnan(x) * sc_units::none);
   }
 }
 
 TYPED_TEST(VariableSpecialValueTest, isinf) {
   for (TypeParam x : values_for_special_value_tests<TypeParam>()) {
-    EXPECT_EQ(variable::isinf(x * units::m), element::isinf(x) * units::none);
+    EXPECT_EQ(variable::isinf(x * sc_units::m),
+              element::isinf(x) * sc_units::none);
   }
 }
 
 TYPED_TEST(VariableSpecialValueTest, isfinite) {
   for (TypeParam x : values_for_special_value_tests<TypeParam>()) {
-    EXPECT_EQ(variable::isfinite(x * units::m),
-              element::isfinite(x) * units::none);
+    EXPECT_EQ(variable::isfinite(x * sc_units::m),
+              element::isfinite(x) * sc_units::none);
   }
-  EXPECT_EQ(variable::isfinite(1 * units::dimensionless),
-            element::isfinite(1) * units::none);
+  EXPECT_EQ(variable::isfinite(1 * sc_units::dimensionless),
+            element::isfinite(1) * sc_units::none);
 }
 
 TYPED_TEST(VariableSpecialValueTest, isposinf) {
   for (TypeParam x : values_for_special_value_tests<TypeParam>()) {
-    EXPECT_EQ(variable::isposinf(x * units::m),
-              element::isposinf(x) * units::none);
+    EXPECT_EQ(variable::isposinf(x * sc_units::m),
+              element::isposinf(x) * sc_units::none);
   }
 }
 
 TYPED_TEST(VariableSpecialValueTest, isneginf) {
   for (TypeParam x : values_for_special_value_tests<TypeParam>()) {
-    EXPECT_EQ(variable::isneginf(x * units::m),
-              element::isneginf(x) * units::none);
+    EXPECT_EQ(variable::isneginf(x * sc_units::m),
+              element::isneginf(x) * sc_units::none);
   }
 }
 
 template <typename Op> void check_no_out_variances(Op op) {
-  const auto var = makeVariable<double>(Dimensions{Dim::Z, 2}, units::m,
+  const auto var = makeVariable<double>(Dimensions{Dim::Z, 2}, sc_units::m,
                                         Values{1.0, 2.0}, Variances{1.0, 2.0});
   const Variable applied = op(var);
   EXPECT_FALSE(applied.has_variances());

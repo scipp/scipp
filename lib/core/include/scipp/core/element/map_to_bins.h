@@ -95,8 +95,8 @@ auto map_to_bins_chunkwise = [](auto &binned, auto &bins, const auto &data,
 // - `offsets` Start indices of the output bins
 // - `bin_indices` Target output bin index (within input bin)
 template <class T, class Index>
-using bin_arg = std::tuple<scipp::span<T>, SubbinSizes, scipp::span<const T>,
-                           scipp::span<const Index>>;
+using bin_arg = std::tuple<std::span<T>, SubbinSizes, std::span<const T>,
+                           std::span<const Index>>;
 static constexpr auto bin = overloaded{
     element::arg_list<
         bin_arg<double, int64_t>, bin_arg<double, int32_t>,
@@ -108,8 +108,8 @@ static constexpr auto bin = overloaded{
         bin_arg<std::string, int64_t>, bin_arg<std::string, int32_t>,
         bin_arg<time_point, int64_t>, bin_arg<time_point, int32_t>>,
     transform_flags::expect_in_variance_if_out_variance,
-    [](units::Unit &binned, const units::Unit &, const units::Unit &data,
-       const units::Unit &) { binned = data; },
+    [](sc_units::Unit &binned, const sc_units::Unit &,
+       const sc_units::Unit &data, const sc_units::Unit &) { binned = data; },
     [](const auto &binned, const auto &offsets, const auto &data,
        const auto &bin_indices) {
       auto bins(offsets.sizes());

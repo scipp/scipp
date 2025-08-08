@@ -670,6 +670,45 @@ def test_variable_bin_equivalent_to_bin_of_data_array_with_counts() -> None:
     assert sc.identical(coord.bin(x=3), da.bin(x=3))
 
 
+def test_binned_variable_hist_uses_binned_coord_to_determine_edges() -> None:
+    var = sc.bins(
+        data=sc.DataArray(sc.ones(sizes={'e': 4}), coords={'x': sc.arange('e', 4.0)}),
+        dim='e',
+        begin=sc.array(dims=['x'], values=[0, 1, 3], unit=None),
+    )
+    result = var.hist(x=3)
+    assert result.sum().value == 4
+    assert sc.identical(
+        result.coords['x'], sc.linspace('x', 0.0, np.nextafter(3.0, 4), num=4)
+    )
+
+
+def test_binned_variable_nanhist_uses_binned_coord_to_determine_edges() -> None:
+    var = sc.bins(
+        data=sc.DataArray(sc.ones(sizes={'e': 4}), coords={'x': sc.arange('e', 4.0)}),
+        dim='e',
+        begin=sc.array(dims=['x'], values=[0, 1, 3], unit=None),
+    )
+    result = var.nanhist(x=3)
+    assert result.sum().value == 4
+    assert sc.identical(
+        result.coords['x'], sc.linspace('x', 0.0, np.nextafter(3.0, 4), num=4)
+    )
+
+
+def test_binned_variable_bin_uses_binned_coord_to_determine_edges() -> None:
+    var = sc.bins(
+        data=sc.DataArray(sc.ones(sizes={'e': 4}), coords={'x': sc.arange('e', 4.0)}),
+        dim='e',
+        begin=sc.array(dims=['x'], values=[0, 1, 3], unit=None),
+    )
+    result = var.bin(x=3)
+    assert result.bins.size().sum().value == 4
+    assert sc.identical(
+        result.coords['x'], sc.linspace('x', 0.0, np.nextafter(3.0, 4), num=4)
+    )
+
+
 def test_group_many_to_many_uses_optimized_codepath() -> None:
     size = 512
     table = sc.data.table_xyz(int(1e3))
@@ -1278,4 +1317,26 @@ def test_bin_binned_with_explicit_dim_arg_equivalent_to_manual_rename_dims_and_b
     # different.
     assert_identical(
         xy.bin(z=z, dim='y'), xy.drop_coords(drop).rename_dims(y='z').bin(z=z, dim=())
+    )
+
+
+def test_bin_rebin_existing_edge_cases() -> None:
+    n_event = 4
+    events = sc.DataArray(
+        sc.ones(sizes={"e": n_event}), coords={'x': sc.linspace('e', 0, 1, num=n_event)}
+    )
+    binned = events.bin(x=2)
+
+    # Bins after existing end
+    result = binned.bin(x=sc.linspace('x', 0.0, 2.0, num=10))
+    assert_identical(
+        result.bins.constituents['begin'],
+        sc.array(dims=['x'], values=[0, 1, 2, 2, 3, 4, 4, 4, 4], unit=None),
+    )
+
+    # Bins before existing start
+    result = binned.bin(x=sc.linspace('x', -1.0, 1.0, num=10))
+    assert_identical(
+        result.bins.constituents['begin'],
+        sc.array(dims=['x'], values=[0, 0, 0, 0, 0, 1, 1, 2, 3], unit=None),
     )

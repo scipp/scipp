@@ -17,7 +17,7 @@ std::vector<Variable> getBinWidths(const Coords &c,
   std::vector<Variable> binWidths;
   for (const auto &dim : dims) {
     const auto &coord = c[dim];
-    if (coord.unit() == units::dimensionless)
+    if (coord.unit() == sc_units::dimensionless)
       throw std::runtime_error("Dimensionless axis cannot be used for "
                                "conversion from or to density");
     binWidths.emplace_back(coord.slice({dim, 1, coord.dims()[dim]}) -

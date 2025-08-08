@@ -26,14 +26,14 @@ public:
   virtual ~AbstractVariableMaker() = default;
   virtual bool is_bins() const = 0;
   virtual Variable create(const DType elem_dtype, const Dimensions &dims,
-                          const units::Unit &unit, const bool variances,
+                          const sc_units::Unit &unit, const bool variances,
                           const parent_list &parents) const = 0;
   virtual Dim elem_dim(const Variable &var) const = 0;
   virtual DType elem_dtype(const Variable &var) const = 0;
-  virtual units::Unit elem_unit(const Variable &var) const = 0;
+  virtual sc_units::Unit elem_unit(const Variable &var) const = 0;
   virtual void expect_can_set_elem_unit(const Variable &var,
-                                        const units::Unit &u) const = 0;
-  virtual void set_elem_unit(Variable &var, const units::Unit &u) const = 0;
+                                        const sc_units::Unit &u) const = 0;
+  virtual void set_elem_unit(Variable &var, const sc_units::Unit &u) const = 0;
   virtual bool has_masks(const Variable &) const { return false; }
   virtual bool has_variances(const Variable &var) const = 0;
   virtual const Variable &data(const Variable &) const { throw unreachable(); }
@@ -77,7 +77,7 @@ public:
   bool is_bins(const Variable &var) const;
   template <class... Parents>
   Variable create(const DType elem_dtype, const Dimensions &dims,
-                  const units::Unit &unit, const bool with_variances,
+                  const sc_units::Unit &unit, const bool with_variances,
                   const Parents &...parents) const {
     const auto parents_ = parent_list{parents...};
     const auto key = bin_dtype(parents_);
@@ -86,10 +86,10 @@ public:
   }
   Dim elem_dim(const Variable &var) const;
   DType elem_dtype(const Variable &var) const;
-  units::Unit elem_unit(const Variable &var) const;
+  sc_units::Unit elem_unit(const Variable &var) const;
   void expect_can_set_elem_unit(const Variable &var,
-                                const units::Unit &u) const;
-  void set_elem_unit(Variable &var, const units::Unit &u) const;
+                                const sc_units::Unit &u) const;
+  void set_elem_unit(Variable &var, const sc_units::Unit &u) const;
   bool has_masks(const Variable &var) const;
   bool has_variances(const Variable &var) const;
   template <class T, class Var> auto values(Var &&var) const {

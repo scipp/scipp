@@ -41,40 +41,42 @@ private:
 };
 
 template <class T, class T2>
-auto make_1_coord(const Dim dim, const Dimensions &dims, const units::Unit unit,
+auto make_1_coord(const Dim dim, const Dimensions &dims,
+                  const sc_units::Unit unit,
                   const std::initializer_list<T2> &data) {
-  return Dataset({{"a", makeVariable<T>(Dimensions(dims), units::Unit(unit),
+  return Dataset({{"a", makeVariable<T>(Dimensions(dims), sc_units::Unit(unit),
                                         Values(data))}},
-                 {{dim, makeVariable<T>(Dimensions(dims), units::Unit(unit),
+                 {{dim, makeVariable<T>(Dimensions(dims), sc_units::Unit(unit),
                                         Values(data))}});
 }
 
 template <class T, class T2>
 auto make_1_labels(const std::string &name, const Dimensions &dims,
-                   const units::Unit unit,
+                   const sc_units::Unit unit,
                    const std::initializer_list<T2> &data) {
   return Dataset(
       {{"a",
-        makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data))}},
-      {{Dim(name),
-        makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data))}});
+        makeVariable<T>(Dimensions(dims), sc_units::Unit(unit), Values(data))}},
+      {{Dim(name), makeVariable<T>(Dimensions(dims), sc_units::Unit(unit),
+                                   Values(data))}});
 }
 
 template <class T, class T2>
 auto make_1_values(const std::string &name, const Dimensions &dims,
-                   const units::Unit unit,
+                   const sc_units::Unit unit,
                    const std::initializer_list<T2> &data) {
-  return Dataset({{name, makeVariable<T>(Dimensions(dims), units::Unit(unit),
+  return Dataset({{name, makeVariable<T>(Dimensions(dims), sc_units::Unit(unit),
                                          Values(data))}});
 }
 
 template <class T, class T2>
 auto make_1_values_and_variances(const std::string &name,
-                                 const Dimensions &dims, const units::Unit unit,
+                                 const Dimensions &dims,
+                                 const sc_units::Unit unit,
                                  const std::initializer_list<T2> &values,
                                  const std::initializer_list<T2> &variances) {
   return Dataset(
-      {{name, makeVariable<T>(Dimensions(dims), units::Unit(unit),
+      {{name, makeVariable<T>(Dimensions(dims), sc_units::Unit(unit),
                               Values(values), Variances(variances))}});
 }
 

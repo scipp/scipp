@@ -325,7 +325,7 @@ class DataArray:
     def astype(self, type: Any, *, copy: bool = True) -> DataArray: ...
     def bin(
         self,
-        arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+        arg_dict: Mapping[str, SupportsIndex | Variable] | None = None,
         /,
         *,
         dim: str | tuple[str, ...] | None = None,
@@ -958,7 +958,7 @@ class Variable:
     def astype(self, type: Any, *, copy: bool = True) -> Variable: ...
     def bin(
         self,
-        arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+        arg_dict: Mapping[str, SupportsIndex | Variable] | None = None,
         /,
         *,
         dim: str | tuple[str, ...] | None = None,

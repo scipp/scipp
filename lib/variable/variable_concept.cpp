@@ -3,6 +3,6 @@
 
 namespace scipp::variable {
 
-VariableConcept::VariableConcept(const units::Unit &unit) : m_unit(unit) {}
+VariableConcept::VariableConcept(const sc_units::Unit &unit) : m_unit(unit) {}
 
 } // namespace scipp::variable

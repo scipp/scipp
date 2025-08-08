@@ -59,8 +59,8 @@ template <class T, class MapGetter> class BinsMapView : public BinsCommon<T> {
 public:
   using key_type = typename MapView::key_type;
   using mapped_type = typename MapView::mapped_type;
-  BinsMapView(const BinsCommon<T> base, MapGetter map)
-      : BinsCommon<T>(base), m_map(map) {}
+  BinsMapView(BinsCommon<T> base, MapGetter map)
+      : BinsCommon<T>(std::move(base)), m_map(std::move(map)) {}
   scipp::index size() const noexcept { return mapView().size(); }
   auto operator[](const key_type &key) const {
     return this->make(mapView()[key]);
@@ -134,12 +134,12 @@ public:
   auto coords() const { return BinsMapView(*this, get_coords); }
   auto masks() const { return BinsMapView(*this, get_masks); }
   auto &name() const { return this->buffer().name(); }
-  auto drop_coords(const scipp::span<const Dim> coord_names) const {
+  auto drop_coords(const std::span<const Dim> coord_names) const {
     auto result = *this;
     for (const auto &name : coord_names)
       result.coords().erase(name);
   }
-  auto drop_masks(const scipp::span<const std::string> mask_names) const {
+  auto drop_masks(const std::span<const std::string> mask_names) const {
     auto result = *this;
     for (const auto &name : mask_names)
       result.masks().erase(name);

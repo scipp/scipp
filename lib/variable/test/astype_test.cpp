@@ -30,10 +30,10 @@ TYPED_TEST(AsTypeTest, dense) {
   var1 = makeVariable<T1>(Values{1});
   var2 = makeVariable<T2>(Values{1});
   ASSERT_EQ(astype(var1, core::dtype<T2>), var2);
-  var1 =
-      makeVariable<T1>(Dims{Dim::X}, Shape{3}, units::m, Values{1.0, 2.0, 3.0});
-  var2 =
-      makeVariable<T2>(Dims{Dim::X}, Shape{3}, units::m, Values{1.0, 2.0, 3.0});
+  var1 = makeVariable<T1>(Dims{Dim::X}, Shape{3}, sc_units::m,
+                          Values{1.0, 2.0, 3.0});
+  var2 = makeVariable<T2>(Dims{Dim::X}, Shape{3}, sc_units::m,
+                          Values{1.0, 2.0, 3.0});
 
   ASSERT_EQ(astype(var1, core::dtype<T2>), var2);
   ASSERT_FALSE(astype(var1, core::dtype<T2>, CopyPolicy::Always).is_same(var1));
@@ -44,10 +44,10 @@ TYPED_TEST(AsTypeTest, dense) {
 TYPED_TEST(AsTypeTest, binned) {
   using T1 = typename TypeParam::first_type;
   using T2 = typename TypeParam::second_type;
-  auto var1 =
-      makeVariable<T1>(Dims{Dim::X}, Shape{3}, units::m, Values{1.0, 2.0, 3.0});
-  auto var2 =
-      makeVariable<T2>(Dims{Dim::X}, Shape{3}, units::m, Values{1.0, 2.0, 3.0});
+  auto var1 = makeVariable<T1>(Dims{Dim::X}, Shape{3}, sc_units::m,
+                               Values{1.0, 2.0, 3.0});
+  auto var2 = makeVariable<T2>(Dims{Dim::X}, Shape{3}, sc_units::m,
+                               Values{1.0, 2.0, 3.0});
   auto indices =
       makeVariable<scipp::index_pair>(Values{scipp::index_pair{0, 3}});
   auto binned1 = make_bins(indices, Dim::X, var1);

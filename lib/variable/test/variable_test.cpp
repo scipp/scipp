@@ -37,7 +37,7 @@ TEST(Variable, many_dims_works_or_fails_gracefully) {
   EXPECT_EQ(var.ndim(), 15);
   EXPECT_EQ(copy(var), var);
   EXPECT_EQ(var + var, makeVariable<double>(dims, Values{2}));
-  EXPECT_EQ(var + 1.0 * units::one, makeVariable<double>(dims, Values{2}));
+  EXPECT_EQ(var + 1.0 * sc_units::one, makeVariable<double>(dims, Values{2}));
   // TODO In principle we should be able to support all of the below with
   // flattening, but the current implementation dos not handle this.
   ASSERT_THROW(var +=
@@ -52,42 +52,44 @@ TEST(Variable, many_dims_works_or_fails_gracefully) {
 }
 
 TEST(Variable, default_unit_of_numeric_is_dimensionless) {
-  EXPECT_EQ(makeVariable<double>(Dimensions{}).unit(), units::one);
-  EXPECT_EQ(makeVariable<float>(Dimensions{}).unit(), units::one);
-  EXPECT_EQ(makeVariable<int64_t>(Dimensions{}).unit(), units::one);
-  EXPECT_EQ(makeVariable<int32_t>(Dimensions{}).unit(), units::one);
+  EXPECT_EQ(makeVariable<double>(Dimensions{}).unit(), sc_units::one);
+  EXPECT_EQ(makeVariable<float>(Dimensions{}).unit(), sc_units::one);
+  EXPECT_EQ(makeVariable<int64_t>(Dimensions{}).unit(), sc_units::one);
+  EXPECT_EQ(makeVariable<int32_t>(Dimensions{}).unit(), sc_units::one);
 }
 
 TEST(Variable, default_unit_of_bool_is_none) {
-  EXPECT_EQ(makeVariable<bool>(Dimensions{}).unit(), units::none);
+  EXPECT_EQ(makeVariable<bool>(Dimensions{}).unit(), sc_units::none);
 }
 
 TEST(Variable, default_unit_of_time_point_is_dimensionless) {
-  EXPECT_EQ(makeVariable<core::time_point>(Dimensions{}).unit(), units::one);
+  EXPECT_EQ(makeVariable<core::time_point>(Dimensions{}).unit(), sc_units::one);
 }
 
 TEST(Variable, default_unit_of_spatial_types_is_dimensionless) {
-  EXPECT_EQ(makeVariable<Eigen::Vector3d>(Dimensions{}).unit(), units::one);
-  EXPECT_EQ(makeVariable<Eigen::Matrix3d>(Dimensions{}).unit(), units::one);
-  EXPECT_EQ(makeVariable<Eigen::Affine3d>(Dimensions{}).unit(), units::one);
-  EXPECT_EQ(makeVariable<core::Translation>(Dimensions{}).unit(), units::one);
-  EXPECT_EQ(makeVariable<core::Quaternion>(Dimensions{}).unit(), units::one);
+  EXPECT_EQ(makeVariable<Eigen::Vector3d>(Dimensions{}).unit(), sc_units::one);
+  EXPECT_EQ(makeVariable<Eigen::Matrix3d>(Dimensions{}).unit(), sc_units::one);
+  EXPECT_EQ(makeVariable<Eigen::Affine3d>(Dimensions{}).unit(), sc_units::one);
+  EXPECT_EQ(makeVariable<core::Translation>(Dimensions{}).unit(),
+            sc_units::one);
+  EXPECT_EQ(makeVariable<core::Quaternion>(Dimensions{}).unit(), sc_units::one);
 }
 
 TEST(Variable, default_unit_of_index_pair_is_none) {
-  EXPECT_EQ(makeVariable<scipp::index_pair>(Dimensions{}).unit(), units::none);
+  EXPECT_EQ(makeVariable<scipp::index_pair>(Dimensions{}).unit(),
+            sc_units::none);
 }
 
 TEST(Variable, default_unit_of_string_is_none) {
-  EXPECT_EQ(makeVariable<std::string>(Dimensions{}).unit(), units::none);
+  EXPECT_EQ(makeVariable<std::string>(Dimensions{}).unit(), sc_units::none);
 }
 
 TEST(Variable, construct_llnl_units_quantity) {
-  EXPECT_EQ(Variable(1.2 * llnl::units::precise::meter),
-            makeVariable<double>(Values{1.2}, units::m));
+  EXPECT_EQ(Variable(1.2 * units::precise::meter),
+            makeVariable<double>(Values{1.2}, sc_units::m));
   // llnl measurement is always double
-  EXPECT_EQ(Variable(1.0f * llnl::units::precise::meter),
-            makeVariable<double>(Values{1.0}, units::m));
+  EXPECT_EQ(Variable(1.0f * units::precise::meter),
+            makeVariable<double>(Values{1.0}, sc_units::m));
 }
 
 TEST(Variable, construct_fail) {
@@ -262,10 +264,10 @@ TEST(Variable, span_references_Variable) {
 
 TEST(VariableTest, copy_and_move) {
   const auto reference =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 1}, units::m,
+      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 1}, sc_units::m,
                            Values{1.1, 2.2}, Variances{0.1, 0.2});
   const auto var =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 1}, units::m,
+      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 1}, sc_units::m,
                            Values{1.1, 2.2}, Variances{0.1, 0.2});
 
   const Variable shallow(var);
@@ -314,9 +316,9 @@ TEST(Variable, copy_slice) {
 
 TEST(Variable, copy_slice_unit_checks) {
   const auto parent =
-      makeVariable<double>(Dims(), Shape(), units::m, Values{1});
+      makeVariable<double>(Dims(), Shape(), sc_units::m, Values{1});
   auto dimensionless = makeVariable<double>(Dims{Dim::X}, Shape{4});
-  auto m = makeVariable<double>(Dims{Dim::X}, Shape{4}, units::m);
+  auto m = makeVariable<double>(Dims{Dim::X}, Shape{4}, sc_units::m);
 
   EXPECT_THROW(copy(parent, dimensionless.slice({Dim::X, 1})),
                except::UnitError);
@@ -342,7 +344,7 @@ TEST(Variable, copy_slice_variance_checks) {
 class VariableTest_3d : public ::testing::Test {
 protected:
   const Variable parent{makeVariable<double>(
-      Dims{Dim::X, Dim::Y, Dim::Z}, Shape{4, 2, 3}, units::m,
+      Dims{Dim::X, Dim::Y, Dim::Z}, Shape{4, 2, 3}, sc_units::m,
       Values{1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12,
              13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24},
       Variances{25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
@@ -398,43 +400,43 @@ protected:
 TEST_F(VariableTest_3d, slice_single) {
   Dimensions dims_no_x{{Dim::Y, 2}, {Dim::Z, 3}};
   EXPECT_EQ(parent.slice({Dim::X, 0}),
-            makeVariable<double>(Dimensions(dims_no_x), units::m,
+            makeVariable<double>(Dimensions(dims_no_x), sc_units::m,
                                  Values(vals_x0.begin(), vals_x0.end()),
                                  Variances(vars_x0.begin(), vars_x0.end())));
   EXPECT_EQ(parent.slice({Dim::X, 1}),
-            makeVariable<double>(Dimensions(dims_no_x), units::m,
+            makeVariable<double>(Dimensions(dims_no_x), sc_units::m,
                                  Values(vals_x1.begin(), vals_x1.end()),
                                  Variances(vars_x1.begin(), vars_x1.end())));
   EXPECT_EQ(parent.slice({Dim::X, 2}),
-            makeVariable<double>(Dimensions(dims_no_x), units::m,
+            makeVariable<double>(Dimensions(dims_no_x), sc_units::m,
                                  Values(vals_x2.begin(), vals_x2.end()),
                                  Variances(vars_x2.begin(), vars_x2.end())));
   EXPECT_EQ(parent.slice({Dim::X, 3}),
-            makeVariable<double>(Dimensions(dims_no_x), units::m,
+            makeVariable<double>(Dimensions(dims_no_x), sc_units::m,
                                  Values(vals_x3.begin(), vals_x3.end()),
                                  Variances(vars_x3.begin(), vars_x3.end())));
 
   Dimensions dims_no_y{{Dim::X, 4}, {Dim::Z, 3}};
   EXPECT_EQ(parent.slice({Dim::Y, 0}),
-            makeVariable<double>(Dimensions(dims_no_y), units::m,
+            makeVariable<double>(Dimensions(dims_no_y), sc_units::m,
                                  Values(vals_y0.begin(), vals_y0.end()),
                                  Variances(vars_y0.begin(), vars_y0.end())));
   EXPECT_EQ(parent.slice({Dim::Y, 1}),
-            makeVariable<double>(Dimensions(dims_no_y), units::m,
+            makeVariable<double>(Dimensions(dims_no_y), sc_units::m,
                                  Values(vals_y1.begin(), vals_y1.end()),
                                  Variances(vars_y1.begin(), vars_y1.end())));
 
   Dimensions dims_no_z{{Dim::X, 4}, {Dim::Y, 2}};
   EXPECT_EQ(parent.slice({Dim::Z, 0}),
-            makeVariable<double>(Dimensions(dims_no_z), units::m,
+            makeVariable<double>(Dimensions(dims_no_z), sc_units::m,
                                  Values(vals_z0.begin(), vals_z0.end()),
                                  Variances(vars_z0.begin(), vars_z0.end())));
   EXPECT_EQ(parent.slice({Dim::Z, 1}),
-            makeVariable<double>(Dimensions(dims_no_z), units::m,
+            makeVariable<double>(Dimensions(dims_no_z), sc_units::m,
                                  Values(vals_z1.begin(), vals_z1.end()),
                                  Variances(vars_z1.begin(), vars_z1.end())));
   EXPECT_EQ(parent.slice({Dim::Z, 2}),
-            makeVariable<double>(Dimensions(dims_no_z), units::m,
+            makeVariable<double>(Dimensions(dims_no_z), sc_units::m,
                                  Values(vals_z2.begin(), vals_z2.end()),
                                  Variances(vars_z2.begin(), vars_z2.end())));
 }
@@ -443,58 +445,58 @@ TEST_F(VariableTest_3d, slice_range) {
   // Length 1 slice
   Dimensions dims_x1{{Dim::X, 1}, {Dim::Y, 2}, {Dim::Z, 3}};
   EXPECT_EQ(parent.slice({Dim::X, 0, 1}),
-            makeVariable<double>(Dimensions(dims_x1), units::m,
+            makeVariable<double>(Dimensions(dims_x1), sc_units::m,
                                  Values(vals_x0.begin(), vals_x0.end()),
                                  Variances(vars_x0.begin(), vars_x0.end())));
   EXPECT_EQ(parent.slice({Dim::X, 1, 2}),
-            makeVariable<double>(Dimensions(dims_x1), units::m,
+            makeVariable<double>(Dimensions(dims_x1), sc_units::m,
                                  Values(vals_x1.begin(), vals_x1.end()),
                                  Variances(vars_x1.begin(), vars_x1.end())));
   EXPECT_EQ(parent.slice({Dim::X, 2, 3}),
-            makeVariable<double>(Dimensions(dims_x1), units::m,
+            makeVariable<double>(Dimensions(dims_x1), sc_units::m,
                                  Values(vals_x2.begin(), vals_x2.end()),
                                  Variances(vars_x2.begin(), vars_x2.end())));
   EXPECT_EQ(parent.slice({Dim::X, 3, 4}),
-            makeVariable<double>(Dimensions(dims_x1), units::m,
+            makeVariable<double>(Dimensions(dims_x1), sc_units::m,
                                  Values(vals_x3.begin(), vals_x3.end()),
                                  Variances(vars_x3.begin(), vars_x3.end())));
 
   Dimensions dims_y1{{Dim::X, 4}, {Dim::Y, 1}, {Dim::Z, 3}};
   EXPECT_EQ(parent.slice({Dim::Y, 0, 1}),
-            makeVariable<double>(Dimensions(dims_y1), units::m,
+            makeVariable<double>(Dimensions(dims_y1), sc_units::m,
                                  Values(vals_y0.begin(), vals_y0.end()),
                                  Variances(vars_y0.begin(), vars_y0.end())));
   EXPECT_EQ(parent.slice({Dim::Y, 1, 2}),
-            makeVariable<double>(Dimensions(dims_y1), units::m,
+            makeVariable<double>(Dimensions(dims_y1), sc_units::m,
                                  Values(vals_y1.begin(), vals_y1.end()),
                                  Variances(vars_y1.begin(), vars_y1.end())));
 
   Dimensions dims_z1{{Dim::X, 4}, {Dim::Y, 2}, {Dim::Z, 1}};
   EXPECT_EQ(parent.slice({Dim::Z, 0, 1}),
-            makeVariable<double>(Dimensions(dims_z1), units::m,
+            makeVariable<double>(Dimensions(dims_z1), sc_units::m,
                                  Values(vals_z0.begin(), vals_z0.end()),
                                  Variances(vars_z0.begin(), vars_z0.end())));
   EXPECT_EQ(parent.slice({Dim::Z, 1, 2}),
-            makeVariable<double>(Dimensions(dims_z1), units::m,
+            makeVariable<double>(Dimensions(dims_z1), sc_units::m,
                                  Values(vals_z1.begin(), vals_z1.end()),
                                  Variances(vars_z1.begin(), vars_z1.end())));
   EXPECT_EQ(parent.slice({Dim::Z, 2, 3}),
-            makeVariable<double>(Dimensions(dims_z1), units::m,
+            makeVariable<double>(Dimensions(dims_z1), sc_units::m,
                                  Values(vals_z2.begin(), vals_z2.end()),
                                  Variances(vars_z2.begin(), vars_z2.end())));
 
   // Length 2 slice
   Dimensions dims_x2{{Dim::X, 2}, {Dim::Y, 2}, {Dim::Z, 3}};
   EXPECT_EQ(parent.slice({Dim::X, 0, 2}),
-            makeVariable<double>(Dimensions(dims_x2), units::m,
+            makeVariable<double>(Dimensions(dims_x2), sc_units::m,
                                  Values(vals_x02.begin(), vals_x02.end()),
                                  Variances(vars_x02.begin(), vars_x02.end())));
   EXPECT_EQ(parent.slice({Dim::X, 1, 3}),
-            makeVariable<double>(Dimensions(dims_x2), units::m,
+            makeVariable<double>(Dimensions(dims_x2), sc_units::m,
                                  Values(vals_x13.begin(), vals_x13.end()),
                                  Variances(vars_x13.begin(), vars_x13.end())));
   EXPECT_EQ(parent.slice({Dim::X, 2, 4}),
-            makeVariable<double>(Dimensions(dims_x2), units::m,
+            makeVariable<double>(Dimensions(dims_x2), sc_units::m,
                                  Values(vals_x24.begin(), vals_x24.end()),
                                  Variances(vars_x24.begin(), vars_x24.end())));
 
@@ -502,11 +504,11 @@ TEST_F(VariableTest_3d, slice_range) {
 
   Dimensions dims_z2{{Dim::X, 4}, {Dim::Y, 2}, {Dim::Z, 2}};
   EXPECT_EQ(parent.slice({Dim::Z, 0, 2}),
-            makeVariable<double>(Dimensions(dims_z2), units::m,
+            makeVariable<double>(Dimensions(dims_z2), sc_units::m,
                                  Values(vals_z02.begin(), vals_z02.end()),
                                  Variances(vars_z02.begin(), vars_z02.end())));
   EXPECT_EQ(parent.slice({Dim::Z, 1, 3}),
-            makeVariable<double>(Dimensions(dims_z2), units::m,
+            makeVariable<double>(Dimensions(dims_z2), sc_units::m,
                                  Values(vals_z13.begin(), vals_z13.end()),
                                  Variances(vars_z13.begin(), vars_z13.end())));
 }
@@ -570,28 +572,28 @@ TEST(VariableView, slicing_does_not_transpose) {
 
 TEST(VariableView, variable_copy_from_slice) {
   const auto source =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3}, units::m,
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3}, sc_units::m,
                            Values{11, 12, 13, 21, 22, 23, 31, 32, 33},
                            Variances{44, 45, 46, 54, 55, 56, 64, 65, 66});
 
   const Dimensions dims({{Dim::Y, 2}, {Dim::X, 2}});
   EXPECT_EQ(copy(source.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2})),
-            makeVariable<double>(Dimensions(dims), units::m,
+            makeVariable<double>(Dimensions(dims), sc_units::m,
                                  Values{11, 12, 21, 22},
                                  Variances{44, 45, 54, 55}));
 
   EXPECT_EQ(copy(source.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2})),
-            makeVariable<double>(Dimensions(dims), units::m,
+            makeVariable<double>(Dimensions(dims), sc_units::m,
                                  Values{12, 13, 22, 23},
                                  Variances{45, 46, 55, 56}));
 
   EXPECT_EQ(copy(source.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3})),
-            makeVariable<double>(Dimensions(dims), units::m,
+            makeVariable<double>(Dimensions(dims), sc_units::m,
                                  Values{21, 22, 31, 32},
                                  Variances{54, 55, 64, 65}));
 
   EXPECT_EQ(copy(source.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3})),
-            makeVariable<double>(Dimensions(dims), units::m,
+            makeVariable<double>(Dimensions(dims), sc_units::m,
                                  Values{22, 23, 32, 33},
                                  Variances{55, 56, 65, 66}));
 }
@@ -602,27 +604,27 @@ TEST(VariableView, variable_assign_from_slice) {
   auto target = makeVariable<double>(Dimensions(dims), Values{1, 2, 3, 4},
                                      Variances{1, 2, 3, 4});
   const auto source =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3}, units::m,
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3}, sc_units::m,
                            Values{11, 12, 13, 21, 22, 23, 31, 32, 33},
                            Variances{44, 45, 46, 54, 55, 56, 64, 65, 66});
 
   copy(source.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2}), target);
-  EXPECT_EQ(target, makeVariable<double>(Dimensions(dims), units::m,
+  EXPECT_EQ(target, makeVariable<double>(Dimensions(dims), sc_units::m,
                                          Values{11, 12, 21, 22},
                                          Variances{44, 45, 54, 55}));
 
   copy(source.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2}), target);
-  EXPECT_EQ(target, makeVariable<double>(Dimensions(dims), units::m,
+  EXPECT_EQ(target, makeVariable<double>(Dimensions(dims), sc_units::m,
                                          Values{12, 13, 22, 23},
                                          Variances{45, 46, 55, 56}));
 
   copy(source.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3}), target);
-  EXPECT_EQ(target, makeVariable<double>(Dimensions(dims), units::m,
+  EXPECT_EQ(target, makeVariable<double>(Dimensions(dims), sc_units::m,
                                          Values{21, 22, 31, 32},
                                          Variances{54, 55, 64, 65}));
 
   copy(source.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3}), target);
-  EXPECT_EQ(target, makeVariable<double>(Dimensions(dims), units::m,
+  EXPECT_EQ(target, makeVariable<double>(Dimensions(dims), sc_units::m,
                                          Values{22, 23, 32, 33},
                                          Variances{55, 56, 65, 66}));
 }
@@ -632,11 +634,11 @@ TEST(VariableView, variable_assign_from_slice_clears_variances) {
   auto target = makeVariable<double>(Dimensions(dims), Values{1, 2, 3, 4},
                                      Variances{5, 6, 7, 8});
   const auto source =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3}, units::m,
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3}, sc_units::m,
                            Values{11, 12, 13, 21, 22, 23, 31, 32, 33});
 
   target = source.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2});
-  EXPECT_EQ(target, makeVariable<double>(Dimensions(dims), units::m,
+  EXPECT_EQ(target, makeVariable<double>(Dimensions(dims), sc_units::m,
                                          Values{11, 12, 21, 22}));
 }
 
@@ -662,10 +664,10 @@ TEST(VariableView, variable_self_assign_via_slice) {
 }
 
 TEST(VariableView, slice_copy_from_variable_unit_fail) {
-  const auto source = makeVariable<double>(Dims{Dim::X}, Shape{1}, units::m);
+  const auto source = makeVariable<double>(Dims{Dim::X}, Shape{1}, sc_units::m);
   auto target = makeVariable<double>(Dims{Dim::X}, Shape{2});
   EXPECT_THROW(copy(source, target.slice({Dim::X, 1, 2})), except::UnitError);
-  target = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m);
+  target = makeVariable<double>(Dims{Dim::X}, Shape{2}, sc_units::m);
   EXPECT_NO_THROW(copy(source, target.slice({Dim::X, 1, 2})));
 }
 
@@ -677,7 +679,7 @@ TEST(VariableView, slice_copy_from_variable_dimension_fail) {
 }
 
 TEST(VariableView, slice_copy_from_variable_full_slice_can_change_unit) {
-  const auto source = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m);
+  const auto source = makeVariable<double>(Dims{Dim::X}, Shape{2}, sc_units::m);
   auto target = makeVariable<double>(Dims{Dim::X}, Shape{2});
   copy(source, target.slice({Dim::X, 0, 2}));
   EXPECT_NO_THROW(copy(source, target.slice({Dim::X, 0, 2})));
@@ -749,8 +751,8 @@ TEST(VariableTest, rename_dims) {
 
 TEST(VariableTest, create_with_variance) {
   ASSERT_NO_THROW(makeVariable<double>(Values{1.0}, Variances{0.1}));
-  ASSERT_NO_THROW(makeVariable<double>(Dims(), Shape(), units::m, Values{1.0},
-                                       Variances{0.1}));
+  ASSERT_NO_THROW(makeVariable<double>(Dims(), Shape(), sc_units::m,
+                                       Values{1.0}, Variances{0.1}));
 }
 
 TEST(VariableTest, has_variances) {
@@ -758,7 +760,7 @@ TEST(VariableTest, has_variances) {
   ASSERT_FALSE(makeVariable<double>(Values{1.0}).has_variances());
   ASSERT_TRUE(
       makeVariable<double>(Values{1.0}, Variances{0.1}).has_variances());
-  ASSERT_TRUE(makeVariable<double>(Dims(), Shape(), units::m, Values{1.0},
+  ASSERT_TRUE(makeVariable<double>(Dims(), Shape(), sc_units::m, Values{1.0},
                                    Variances{0.1})
                   .has_variances());
 }
@@ -772,11 +774,11 @@ TEST(VariableTest, values_variances) {
 }
 
 template <typename Var> void test_set_variances(Var &var) {
-  const auto v = var * (2.0 * units::one);
+  const auto v = var * (2.0 * sc_units::one);
   var.setVariances(Variable(var));
   ASSERT_TRUE(equals(var.template variances<double>(), {1.0, 2.0, 3.0}));
   // Fail because `var` has variances (setVariances uses only the values)
-  EXPECT_THROW(var.setVariances(var * (2.0 * units::one)),
+  EXPECT_THROW(var.setVariances(var * (2.0 * sc_units::one)),
                except::VariancesError);
   var.setVariances(v);
   ASSERT_TRUE(equals(var.template variances<double>(), {2.0, 4.0, 6.0}));
@@ -785,14 +787,14 @@ template <typename Var> void test_set_variances(Var &var) {
   EXPECT_THROW(var.setVariances(bad_dims), except::DimensionError);
 
   Variable bad_unit = copy(v);
-  bad_unit.setUnit(units::s);
+  bad_unit.setUnit(sc_units::s);
   EXPECT_THROW(var.setVariances(bad_unit), except::UnitError);
 
   EXPECT_THROW(var.setVariances(astype(v, dtype<float>)), except::TypeError);
 }
 
 TEST(VariableTest, set_variances) {
-  Variable var = makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m,
+  Variable var = makeVariable<double>(Dims{Dim::X}, Shape{3}, sc_units::m,
                                       Values{1.0, 2.0, 3.0});
   test_set_variances(var);
 }
@@ -818,7 +820,7 @@ TEST(VariableTest, set_variances_remove_int) {
 }
 
 TEST(VariableViewTest, set_variances) {
-  Variable var = makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m,
+  Variable var = makeVariable<double>(Dims{Dim::X}, Shape{3}, sc_units::m,
                                       Values{1.0, 2.0, 3.0});
   auto view(var);
   test_set_variances(view);
@@ -860,12 +862,12 @@ TEST(VariableTest, construct_view_dims) {
 }
 
 TEST(VariableTest, construct_mult_dev_unit) {
-  Variable refDiv =
-      makeVariable<float>(Dims(), Shape(), units::one / units::m, Values{1.0f});
+  Variable refDiv = makeVariable<float>(
+      Dims(), Shape(), sc_units::one / sc_units::m, Values{1.0f});
   Variable refMult =
-      makeVariable<int32_t>(Dims(), Shape(), units::kg, Values{1});
-  EXPECT_EQ(1.0f / units::m, refDiv);
-  EXPECT_EQ(int32_t(1) * units::kg, refMult);
+      makeVariable<int32_t>(Dims(), Shape(), sc_units::kg, Values{1});
+  EXPECT_EQ(1.0f / sc_units::m, refDiv);
+  EXPECT_EQ(int32_t(1) * sc_units::kg, refMult);
 }
 
 TEST(VariableTest, datetime_dtype) {
@@ -876,8 +878,8 @@ TEST(VariableTest, datetime_dtype) {
 
 TEST(VariableTest, construct_time_unit) {
   Variable refMult =
-      makeVariable<int64_t>(Dims(), Shape(), units::ns, Values{1000});
-  EXPECT_EQ(int64_t(1000) * units::ns, refMult);
+      makeVariable<int64_t>(Dims(), Shape(), sc_units::ns, Values{1000});
+  EXPECT_EQ(int64_t(1000) * sc_units::ns, refMult);
 }
 
 TEST(VariableTest, array_params) {

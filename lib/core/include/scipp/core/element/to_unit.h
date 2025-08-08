@@ -46,7 +46,7 @@ constexpr auto to_unit = overloaded{
              std::tuple<Eigen::Affine3d, double>,
              std::tuple<Translation, double>>,
     transform_flags::expect_no_variance_arg<1>,
-    [](const units::Unit &, const units::Unit &target) { return target; },
+    [](const sc_units::Unit &, const sc_units::Unit &target) { return target; },
     [](const time_point &x, const auto &scale) {
       return time_point{round<int64_t>(x.time_since_epoch() * scale)};
     },

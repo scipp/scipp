@@ -62,8 +62,8 @@ static constexpr auto rebin = overloaded{
         }
       }
     },
-    [](const units::Unit &target_edges, const units::Unit &data,
-       const units::Unit &edges) {
+    [](const sc_units::Unit &target_edges, const sc_units::Unit &data,
+       const sc_units::Unit &edges) {
       if (target_edges != edges)
         throw except::UnitError(
             "Input and output bin edges must have the same unit.");

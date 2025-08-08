@@ -24,8 +24,8 @@ protected:
 };
 
 TEST_F(AccumulateTest, in_place) {
-  const auto var =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1.0, 2.0});
+  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, sc_units::m,
+                                        Values{1.0, 2.0});
   const auto expected = makeVariable<double>(Values{3.0});
   // Note how accumulate is ignoring the unit.
   auto result = makeVariable<double>(Values{double{}});
@@ -35,7 +35,7 @@ TEST_F(AccumulateTest, in_place) {
 
 TEST_F(AccumulateTest, bad_dims) {
   const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
-                                        units::m, Values{1, 2, 3, 4, 5, 6});
+                                        sc_units::m, Values{1, 2, 3, 4, 5, 6});
   auto result = makeVariable<double>(Dims{Dim::X}, Shape{3});
   const auto orig = copy(result);
   EXPECT_THROW(accumulate_in_place<pair_self_t<double>>(result, var, op, name),
@@ -44,8 +44,8 @@ TEST_F(AccumulateTest, bad_dims) {
 }
 
 TEST_F(AccumulateTest, broadcast) {
-  const auto var =
-      makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::m, Values{1, 2, 3});
+  const auto var = makeVariable<double>(Dims{Dim::Y}, Shape{3}, sc_units::m,
+                                        Values{1, 2, 3});
   const auto expected =
       makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{6, 6});
   auto result = makeVariable<double>(Dims{Dim::X}, Shape{2});
@@ -168,6 +168,6 @@ TEST_F(AccumulateTest, 1d_to_scalar_non_idempotent_init) {
     accumulate_in_place<pair_self_t<int64_t>>(result, var, op, name);
     EXPECT_EQ(result, expected) << i;
     accumulate_in_place<pair_self_t<int64_t>>(result, var, op, name);
-    EXPECT_EQ(result, 2 * units::one * expected) << i;
+    EXPECT_EQ(result, 2 * sc_units::one * expected) << i;
   }
 }

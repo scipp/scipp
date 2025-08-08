@@ -9,29 +9,29 @@ using namespace scipp;
 using namespace scipp::dataset;
 
 TEST(SortTest, variable_1d) {
-  const auto var = makeVariable<float>(Dims{Dim::X}, Shape{3}, units::m,
+  const auto var = makeVariable<float>(Dims{Dim::X}, Shape{3}, sc_units::m,
                                        Values{1, 2, 3}, Variances{4, 5, 6});
   const auto key =
       makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{10, 20, -1});
   const auto expected = makeVariable<float>(
-      Dims{Dim::X}, Shape{3}, units::m, Values{3, 1, 2}, Variances{6, 4, 5});
+      Dims{Dim::X}, Shape{3}, sc_units::m, Values{3, 1, 2}, Variances{6, 4, 5});
 
   EXPECT_EQ(sort(var, key), expected);
 }
 
 TEST(SortTest, variable_1d_descending) {
-  const auto var = makeVariable<float>(Dims{Dim::X}, Shape{3}, units::m,
+  const auto var = makeVariable<float>(Dims{Dim::X}, Shape{3}, sc_units::m,
                                        Values{1, 2, 3}, Variances{4, 5, 6});
   const auto key =
       makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{10, 20, -1});
   const auto expected = makeVariable<float>(
-      Dims{Dim::X}, Shape{3}, units::m, Values{2, 1, 3}, Variances{5, 4, 6});
+      Dims{Dim::X}, Shape{3}, sc_units::m, Values{2, 1, 3}, Variances{5, 4, 6});
 
   EXPECT_EQ(sort(var, key, SortOrder::Descending), expected);
 }
 
 TEST(SortTest, variable_1d_bad_key_shape_throws) {
-  const auto var = makeVariable<float>(Dims{Dim::X}, Shape{3}, units::m,
+  const auto var = makeVariable<float>(Dims{Dim::X}, Shape{3}, sc_units::m,
                                        Values{1, 2, 3}, Variances{4, 5, 6});
   const auto key =
       makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{10, 20, -1, 5, 3});
@@ -40,16 +40,16 @@ TEST(SortTest, variable_1d_bad_key_shape_throws) {
 
 TEST(SortTest, variable_2d) {
   const auto var = makeVariable<int>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                                     units::m, Values{1, 2, 3, 4, 5, 6});
+                                     sc_units::m, Values{1, 2, 3, 4, 5, 6});
 
   const auto keyX =
       makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{10, 20, -1});
-  const auto expectedX = makeVariable<int>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                                           units::m, Values{3, 1, 2, 6, 4, 5});
+  const auto expectedX = makeVariable<int>(
+      Dims{Dim::Y, Dim::X}, Shape{2, 3}, sc_units::m, Values{3, 1, 2, 6, 4, 5});
 
   const auto keyY = makeVariable<int>(Dims{Dim::Y}, Shape{2}, Values{1, 0});
-  const auto expectedY = makeVariable<int>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                                           units::m, Values{4, 5, 6, 1, 2, 3});
+  const auto expectedY = makeVariable<int>(
+      Dims{Dim::Y, Dim::X}, Shape{2, 3}, sc_units::m, Values{4, 5, 6, 1, 2, 3});
 
   EXPECT_EQ(sort(var, keyX), expectedX);
   EXPECT_EQ(sort(var, keyY), expectedY);
@@ -146,19 +146,19 @@ TEST(SortTest, data_array_bin_edge_coord_throws) {
 }
 
 TEST(SortTest, dataset_1d) {
-  Dataset d({{"a", makeVariable<float>(Dims{Dim::X}, Shape{3}, units::m,
+  Dataset d({{"a", makeVariable<float>(Dims{Dim::X}, Shape{3}, sc_units::m,
                                        Values{1, 2, 3}, Variances{4, 5, 6})},
-             {"b", makeVariable<double>(Dims{Dim::X}, Shape{3}, units::s,
+             {"b", makeVariable<double>(Dims{Dim::X}, Shape{3}, sc_units::s,
                                         Values{0.1, 0.2, 0.3})}},
-            {{Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m,
+            {{Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3}, sc_units::m,
                                            Values{1, 2, 3})}});
 
   Dataset expected(
-      {{"a", makeVariable<float>(Dims{Dim::X}, Shape{3}, units::m,
+      {{"a", makeVariable<float>(Dims{Dim::X}, Shape{3}, sc_units::m,
                                  Values{3, 1, 2}, Variances{6, 4, 5})},
-       {"b", makeVariable<double>(Dims{Dim::X}, Shape{3}, units::s,
+       {"b", makeVariable<double>(Dims{Dim::X}, Shape{3}, sc_units::s,
                                   Values{0.3, 0.1, 0.2})}},
-      {{Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m,
+      {{Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3}, sc_units::m,
                                      Values{3, 1, 2})}});
 
   const auto key =
@@ -168,19 +168,19 @@ TEST(SortTest, dataset_1d) {
 }
 
 TEST(SortTest, dataset_1d_descending) {
-  Dataset d({{"a", makeVariable<float>(Dims{Dim::X}, Shape{3}, units::m,
+  Dataset d({{"a", makeVariable<float>(Dims{Dim::X}, Shape{3}, sc_units::m,
                                        Values{1, 2, 3}, Variances{4, 5, 6})},
-             {"b", makeVariable<double>(Dims{Dim::X}, Shape{3}, units::s,
+             {"b", makeVariable<double>(Dims{Dim::X}, Shape{3}, sc_units::s,
                                         Values{0.1, 0.2, 0.3})}},
-            {{Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m,
+            {{Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3}, sc_units::m,
                                            Values{1, 2, 3})}});
 
   Dataset expected(
-      {{"a", makeVariable<float>(Dims{Dim::X}, Shape{3}, units::m,
+      {{"a", makeVariable<float>(Dims{Dim::X}, Shape{3}, sc_units::m,
                                  Values{2, 1, 3}, Variances{5, 4, 6})},
-       {"b", makeVariable<double>(Dims{Dim::X}, Shape{3}, units::s,
+       {"b", makeVariable<double>(Dims{Dim::X}, Shape{3}, sc_units::s,
                                   Values{0.2, 0.1, 0.3})}},
-      {{Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m,
+      {{Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3}, sc_units::m,
                                      Values{2, 1, 3})}});
 
   const auto key =

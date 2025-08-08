@@ -15,9 +15,9 @@ using element::event::map_linspace;
 using element::event::map_sorted_edges;
 
 TEST(ElementEventMapTest, unit) {
-  units::Unit kg(units::kg);
-  units::Unit m(units::m);
-  units::Unit s(units::s);
+  sc_units::Unit kg(sc_units::kg);
+  sc_units::Unit m(sc_units::m);
+  sc_units::Unit s(sc_units::s);
   EXPECT_EQ(element::event::map(m, m, s, s), s);
   EXPECT_EQ(element::event::map(m, m, kg, kg), kg);
   EXPECT_THROW(element::event::map(m, s, s, s), except::UnitError);
@@ -27,9 +27,9 @@ TEST(ElementEventMapTest, unit) {
 }
 
 TEST(ElementEventMapTest, fill_unit_must_match_weight_unit) {
-  units::Unit kg(units::kg);
-  units::Unit m(units::m);
-  units::Unit s(units::s);
+  sc_units::Unit kg(sc_units::kg);
+  sc_units::Unit m(sc_units::m);
+  sc_units::Unit s(sc_units::s);
   EXPECT_EQ(element::event::map(m, m, kg, kg), kg);
   EXPECT_THROW(element::event::map(m, m, kg, s), except::UnitError);
 }
@@ -67,8 +67,8 @@ TYPED_TEST(ElementEventMapTest, variances_constant_bin_width) {
   std::vector<TypeParam> edges{0, 2, 4};
   std::vector<float> values{2, 4};
   std::vector<float> variances{3, 5};
-  ValueAndVariance weights{scipp::span<const float>(values),
-                           scipp::span<const float>(variances)};
+  ValueAndVariance weights{std::span<const float>(values),
+                           std::span<const float>(variances)};
   ValueAndVariance<float> fill(66, 0);
   EXPECT_EQ(map_linspace(TypeParam{0}, edges, weights, fill),
             ValueAndVariance<float>(2, 3));
@@ -88,8 +88,8 @@ TYPED_TEST(ElementEventMapTest, variances_variable_bin_width) {
   std::vector<TypeParam> edges{1, 2, 4};
   std::vector<float> values{2, 4};
   std::vector<float> variances{3, 5};
-  ValueAndVariance weights{scipp::span<const float>(values),
-                           scipp::span<const float>(variances)};
+  ValueAndVariance weights{std::span<const float>(values),
+                           std::span<const float>(variances)};
   ValueAndVariance<float> fill(66, 0);
   EXPECT_EQ(map_sorted_edges(TypeParam{0}, edges, weights, fill),
             ValueAndVariance<float>(66, 0));

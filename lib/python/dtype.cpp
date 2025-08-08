@@ -196,14 +196,14 @@ bool is_default(const ProtoUnit &unit) {
 }
 } // namespace
 
-std::tuple<scipp::core::DType, std::optional<scipp::units::Unit>>
+std::tuple<scipp::core::DType, std::optional<scipp::sc_units::Unit>>
 cast_dtype_and_unit(const pybind11::object &dtype, const ProtoUnit &unit) {
   const auto scipp_dtype = ::scipp_dtype(dtype);
   if (scipp_dtype == core::dtype<core::time_point>) {
-    units::Unit deduced_unit = parse_datetime_dtype(dtype);
+    sc_units::Unit deduced_unit = parse_datetime_dtype(dtype);
     if (!is_default(unit)) {
       const auto unit_ = unit_or_default(unit, scipp_dtype);
-      if (deduced_unit != units::one && unit_ != deduced_unit) {
+      if (deduced_unit != sc_units::one && unit_ != deduced_unit) {
         throw std::invalid_argument(
             python::format("The unit encoded in the dtype (", deduced_unit,
                            ") conflicts with the given unit (", unit_, ")."));
@@ -216,7 +216,7 @@ cast_dtype_and_unit(const pybind11::object &dtype, const ProtoUnit &unit) {
     // Concrete dtype not known at this point so we cannot determine the default
     // unit here. Therefore nullopt is returned.
     return std::tuple{scipp_dtype, is_default(unit)
-                                       ? std::optional<scipp::units::Unit>()
+                                       ? std::optional<scipp::sc_units::Unit>()
                                        : unit_or_default(unit)};
   }
 }
@@ -276,7 +276,7 @@ bool has_datetime_dtype(const py::object &obj) {
   }
 }
 
-[[nodiscard]] scipp::units::Unit
+[[nodiscard]] scipp::sc_units::Unit
 parse_datetime_dtype(const std::string &dtype_name) {
   static std::regex datetime_regex{R"(datetime64(\[(\w+)\])?)",
                                    std::regex_constants::optimize};
@@ -289,20 +289,20 @@ parse_datetime_dtype(const std::string &dtype_name) {
   }
 
   if (match.length(unit_idx) == 0) {
-    return scipp::units::dimensionless;
+    return scipp::sc_units::dimensionless;
   } else if (match[unit_idx] == "s") {
-    return scipp::units::s;
+    return scipp::sc_units::s;
   } else if (match[unit_idx] == "us") {
-    return scipp::units::us;
+    return scipp::sc_units::us;
   } else if (match[unit_idx] == "ns") {
-    return scipp::units::ns;
+    return scipp::sc_units::ns;
   } else if (match[unit_idx] == "m") {
     // In np.datetime64, m means minute.
-    return units::Unit("min");
+    return sc_units::Unit("min");
   } else {
     for (const char *name : {"ms", "h", "D", "M", "Y"}) {
       if (match[unit_idx] == name) {
-        return units::Unit(name);
+        return sc_units::Unit(name);
       }
     }
   }
@@ -311,11 +311,11 @@ parse_datetime_dtype(const std::string &dtype_name) {
                               std::string(match[unit_idx]));
 }
 
-[[nodiscard]] scipp::units::Unit
+[[nodiscard]] scipp::sc_units::Unit
 parse_datetime_dtype(const pybind11::object &dtype) {
   if (py::isinstance<py::type>(dtype)) {
     // This handles dtype=np.datetime64, i.e. passing the class.
-    return units::one;
+    return sc_units::one;
   } else if (py::hasattr(dtype, "dtype")) {
     return parse_datetime_dtype(dtype.attr("dtype"));
   } else if (py::hasattr(dtype, "name")) {

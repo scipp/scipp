@@ -116,7 +116,7 @@ TEST_F(BucketModelTest, values) {
   core::ElementArrayViewParams params(0, indices.dims(), Strides{1}, {});
   EXPECT_EQ(*(model.values(params).begin() + 0), buffer.slice({Dim::X, 0, 2}));
   EXPECT_EQ(*(model.values(params).begin() + 1), buffer.slice({Dim::X, 2, 4}));
-  (*model.values(params).begin()) += 2.0 * units::one;
+  (*model.values(params).begin()) += 2.0 * sc_units::one;
   EXPECT_EQ(*(model.values(params).begin() + 0), buffer.slice({Dim::X, 2, 4}));
 }
 

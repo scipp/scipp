@@ -8,7 +8,7 @@ set(convert_to_rad
     "#include \"scipp/variable/to_unit.h\"
 namespace {
 decltype(auto) preprocess(const scipp::variable::Variable &var) {
-  return to_unit(var, scipp::units::rad)\;
+  return to_unit(var, scipp::sc_units::rad)\;
 }
 }"
 )

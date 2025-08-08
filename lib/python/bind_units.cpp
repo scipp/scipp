@@ -22,14 +22,14 @@ using UnitDict = py::typing::Dict<py::str, UnitDictValue>;
 
 namespace {
 
-bool is_supported_unit(const units::Unit &unit) {
+bool is_supported_unit(const sc_units::Unit &unit) {
   return unit.underlying().commodity() == 0;
 }
 
 // We only support units where we are confident that we can encode them using
 // a different unit library, in order to ensure that we can switch
 // implementations in the future if necessary.
-void assert_supported_unit_for_dict(const units::Unit &unit) {
+void assert_supported_unit_for_dict(const sc_units::Unit &unit) {
   if (!is_supported_unit(unit)) {
     throw std::invalid_argument("Unit cannot be converted to dict: '" +
                                 to_string(unit) +
@@ -37,7 +37,7 @@ void assert_supported_unit_for_dict(const units::Unit &unit) {
   }
 }
 
-auto to_dict(const units::Unit &unit) {
+auto to_dict(const sc_units::Unit &unit) {
   assert_supported_unit_for_dict(unit);
 
   UnitDict dict;
@@ -85,31 +85,30 @@ void assert_dict_version_supported(const py::dict &dict) {
   }
 }
 
-units::Unit from_dict(const UnitDict &dict) {
+sc_units::Unit from_dict(const UnitDict &dict) {
   assert_dict_version_supported(dict);
 
   const py::dict powers = dict.contains("powers") ? dict["powers"] : py::dict();
   const double multiplier = dict["multiplier"].cast<double>();
-  const auto unit_data =
-      llnl::units::detail::unit_data{get(powers, "m"),
-                                     get(powers, "kg"),
-                                     get(powers, "s"),
-                                     get(powers, "A"),
-                                     get(powers, "K"),
-                                     get(powers, "mol"),
-                                     get(powers, "cd"),
-                                     get(powers, "$"),
-                                     get(powers, "counts"),
-                                     get(powers, "rad"),
-                                     get<bool>(dict, "per_unit"),
-                                     get<bool>(dict, "i_flag"),
-                                     get<bool>(dict, "e_flag"),
-                                     get<bool>(dict, "equation")};
-  const auto precise_u = llnl::units::precise_unit(multiplier, unit_data);
-  return units::Unit(precise_u);
+  const auto unit_data = units::detail::unit_data{get(powers, "m"),
+                                                  get(powers, "kg"),
+                                                  get(powers, "s"),
+                                                  get(powers, "A"),
+                                                  get(powers, "K"),
+                                                  get(powers, "mol"),
+                                                  get(powers, "cd"),
+                                                  get(powers, "$"),
+                                                  get(powers, "counts"),
+                                                  get(powers, "rad"),
+                                                  get<bool>(dict, "per_unit"),
+                                                  get<bool>(dict, "i_flag"),
+                                                  get<bool>(dict, "e_flag"),
+                                                  get<bool>(dict, "equation")};
+  const auto precise_u = units::precise_unit(multiplier, unit_data);
+  return sc_units::Unit(precise_u);
 }
 
-std::string repr(const units::Unit &unit) {
+std::string repr(const sc_units::Unit &unit) {
   if (!is_supported_unit(unit)) {
     return "<unsupported unit: " + to_string(unit) + '>';
   }
@@ -147,7 +146,7 @@ std::string repr(const units::Unit &unit) {
   return oss.str();
 }
 
-std::string repr_html(const units::Unit &unit) {
+std::string repr_html(const sc_units::Unit &unit) {
   // Regular string output is in a div with data-mime-type="text/plain"
   // But html output is in a div with data-mime-type="text/html"
   // Jupyter applies different padding to those, so hack the inner pre element
@@ -156,7 +155,7 @@ std::string repr_html(const units::Unit &unit) {
          unit.name() + "</pre>";
 }
 
-void repr_pretty(const units::Unit &unit, py::object &p,
+void repr_pretty(const sc_units::Unit &unit, py::object &p,
                  [[maybe_unused]] const bool cycle) {
   p.attr("text")(unit.name());
 }
@@ -167,13 +166,13 @@ void init_units(py::module &m) {
   py::class_<DefaultUnit>(m, "DefaultUnit")
       .def("__repr__",
            [](const DefaultUnit &) { return "<automatically deduced unit>"; });
-  py::class_<units::Unit>(m, "Unit", "A physical unit.")
+  py::class_<sc_units::Unit>(m, "Unit", "A physical unit.")
       .def(py::init<const std::string &>())
-      .def("__str__", [](const units::Unit &u) { return u.name(); })
+      .def("__str__", [](const sc_units::Unit &u) { return u.name(); })
       .def("__repr__", repr)
       .def("_repr_html_", repr_html)
       .def("_repr_pretty_", repr_pretty)
-      .def_property_readonly("name", &units::Unit::name,
+      .def_property_readonly("name", &sc_units::Unit::name,
                              "A read-only string describing the "
                              "type of unit.")
       .def(py::self + py::self)
@@ -181,9 +180,9 @@ void init_units(py::module &m) {
       .def(py::self * py::self)
       // cppcheck-suppress duplicateExpression
       .def(py::self / py::self)
-      .def("__pow__", [](const units::Unit &self,
+      .def("__pow__", [](const sc_units::Unit &self,
                          const int64_t power) { return pow(self, power); })
-      .def("__abs__", [](const units::Unit &self) { return abs(self); })
+      .def("__abs__", [](const sc_units::Unit &self) { return abs(self); })
       .def(py::self == py::self)
       .def(py::self != py::self)
       .def(hash(py::self))
@@ -200,33 +199,35 @@ void init_units(py::module &m) {
            "Deserialize a unit from a dict.\n\nThis function is meant to be "
            "used in combination with :meth:`scipp.Unit.to_dict`.");
 
-  m.def("abs", [](const units::Unit &u) { return abs(u); });
-  m.def("pow", [](const units::Unit &u, const int64_t power) {
+  m.def("abs", [](const sc_units::Unit &u) { return abs(u); });
+  m.def("pow", [](const sc_units::Unit &u, const int64_t power) {
     return pow(u, power);
   });
-  m.def("pow",
-        [](const units::Unit &u, const double power) { return pow(u, power); });
-  m.def("reciprocal", [](const units::Unit &u) { return units::one / u; });
-  m.def("sqrt", [](const units::Unit &u) { return sqrt(u); });
+  m.def("pow", [](const sc_units::Unit &u, const double power) {
+    return pow(u, power);
+  });
+  m.def("reciprocal",
+        [](const sc_units::Unit &u) { return sc_units::one / u; });
+  m.def("sqrt", [](const sc_units::Unit &u) { return sqrt(u); });
 
-  py::implicitly_convertible<std::string, units::Unit>();
+  py::implicitly_convertible<std::string, sc_units::Unit>();
 
   auto units = m.def_submodule("units");
-  units.attr("angstrom") = units::angstrom;
-  units.attr("counts") = units::counts;
-  units.attr("deg") = units::deg;
-  units.attr("dimensionless") = units::dimensionless;
-  units.attr("kg") = units::kg;
-  units.attr("K") = units::K;
-  units.attr("meV") = units::meV;
-  units.attr("m") = units::m;
+  units.attr("angstrom") = sc_units::angstrom;
+  units.attr("counts") = sc_units::counts;
+  units.attr("deg") = sc_units::deg;
+  units.attr("dimensionless") = sc_units::dimensionless;
+  units.attr("kg") = sc_units::kg;
+  units.attr("K") = sc_units::K;
+  units.attr("meV") = sc_units::meV;
+  units.attr("m") = sc_units::m;
   // Note: No binding to units::none here, use None in Python!
-  units.attr("one") = units::one;
-  units.attr("rad") = units::rad;
-  units.attr("s") = units::s;
-  units.attr("us") = units::us;
-  units.attr("ns") = units::ns;
-  units.attr("mm") = units::mm;
+  units.attr("one") = sc_units::one;
+  units.attr("rad") = sc_units::rad;
+  units.attr("s") = sc_units::s;
+  units.attr("us") = sc_units::us;
+  units.attr("ns") = sc_units::ns;
+  units.attr("mm") = sc_units::mm;
 
   units.attr("default_unit") = DefaultUnit{};
 
@@ -234,14 +235,14 @@ void init_units(py::module &m) {
         py::overload_cast<const ProtoUnit &>(to_numpy_time_string))
       .def(
           "units_identical",
-          [](const units::Unit &a, const units::Unit &b) {
+          [](const sc_units::Unit &a, const sc_units::Unit &b) {
             return identical(a, b);
           },
           "Check if two units are numerically identical.\n\n"
           "The regular equality operator allows for small differences "
           "in the unit's floating point multiplier. ``units_identical`` "
           "checks for exact identity.")
-      .def("add_unit_alias", scipp::units::add_unit_alias, py::kw_only(),
+      .def("add_unit_alias", scipp::sc_units::add_unit_alias, py::kw_only(),
            py::arg("name"), py::arg("unit"))
-      .def("clear_unit_aliases", scipp::units::clear_unit_aliases);
+      .def("clear_unit_aliases", scipp::sc_units::clear_unit_aliases);
 }

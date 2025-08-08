@@ -45,7 +45,7 @@ template <class T> void init_variances(T &obj) {
 /// Add element size as factor to strides.
 template <class T>
 std::vector<scipp::index>
-numpy_strides(const scipp::span<const scipp::index> &s) {
+numpy_strides(const std::span<const scipp::index> &s) {
   std::vector<scipp::index> strides(s.size());
   for (size_t i = 0; i < strides.size(); ++i) {
     strides[i] = sizeof(T) * s[i];
@@ -181,7 +181,7 @@ template <class... Ts> class as_ElementArrayViewImpl {
   }
 
   template <class View>
-  static void set(const Dimensions &dims, const units::Unit unit,
+  static void set(const Dimensions &dims, const sc_units::Unit unit,
                   const View &view, const py::object &obj) {
     std::visit(
         [&dims, &unit, &obj](const auto &view_) {
@@ -526,8 +526,8 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
       "unit",
       [](const T &self) {
         const auto &var = get_data_variable(self, "unit");
-        return var.unit() == units::none ? std::optional<units::Unit>()
-                                         : var.unit();
+        return var.unit() == sc_units::none ? std::optional<sc_units::Unit>()
+                                            : var.unit();
       },
       [](const T &self, const ProtoUnit &unit) {
         auto var = get_data_variable(self, "unit");

@@ -14,7 +14,7 @@ using namespace scipp;
 
 TEST(DatasetTest, sum_and_mean) {
   Dataset ds(
-      {{"a", makeVariable<float>(Dimensions{Dim::X, 3}, units::one,
+      {{"a", makeVariable<float>(Dimensions{Dim::X, 3}, sc_units::one,
                                  Values{1, 2, 3}, Variances{12, 15, 18})}});
   EXPECT_EQ(sum(ds, Dim::X)["a"].data(),
             makeVariable<float>(Values{6}, Variances{45}));
@@ -34,32 +34,33 @@ TYPED_TEST_SUITE(MeanTest, MeanTestTypes);
 
 template <class T, class T2>
 auto make_one_item_dataset(const std::string &name, const Dimensions &dims,
-                           const units::Unit unit,
+                           const sc_units::Unit unit,
                            const std::initializer_list<T2> &values,
                            const std::initializer_list<T2> &variances) {
   return Dataset(
-      {{name, makeVariable<T>(Dimensions(dims), units::Unit(unit),
+      {{name, makeVariable<T>(Dimensions(dims), sc_units::Unit(unit),
                               Values(values), Variances(variances))}});
 }
 template <class T, class T2>
 auto make_one_item_dataset(const std::string &name, const Dimensions &dims,
-                           const units::Unit unit,
+                           const sc_units::Unit unit,
                            const std::initializer_list<T2> &values) {
-  return Dataset({{name, makeVariable<T>(Dimensions(dims), units::Unit(unit),
+  return Dataset({{name, makeVariable<T>(Dimensions(dims), sc_units::Unit(unit),
                                          Values(values))}});
 }
 
 template <typename Op> void test_masked_data_array_1_mask(Op op) {
-  const auto var = makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}},
-                                        units::m, Values{1.0, 2.0, 3.0, 4.0});
+  const auto var =
+      makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}}, sc_units::m,
+                           Values{1.0, 2.0, 3.0, 4.0});
   const auto mask =
       makeVariable<bool>(Dimensions{Dim::X, 2}, Values{false, true});
   DataArray a(var);
   a.masks().set("mask", mask);
-  const auto meanX =
-      makeVariable<double>(Dimensions{Dim::Y, 2}, units::m, Values{1.0, 3.0});
-  const auto meanY =
-      makeVariable<double>(Dimensions{Dim::X, 2}, units::m, Values{2.0, 3.0});
+  const auto meanX = makeVariable<double>(Dimensions{Dim::Y, 2}, sc_units::m,
+                                          Values{1.0, 3.0});
+  const auto meanY = makeVariable<double>(Dimensions{Dim::X, 2}, sc_units::m,
+                                          Values{2.0, 3.0});
   EXPECT_EQ(op(a, Dim::X).data(), meanX);
   EXPECT_EQ(op(a, Dim::Y).data(), meanY);
   EXPECT_FALSE(op(a, Dim::X).masks().contains("mask"));
@@ -67,8 +68,9 @@ template <typename Op> void test_masked_data_array_1_mask(Op op) {
 }
 
 template <typename Op> void test_masked_data_array_2_masks(Op op) {
-  const auto var = makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}},
-                                        units::m, Values{1.0, 2.0, 3.0, 4.0});
+  const auto var =
+      makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}}, sc_units::m,
+                           Values{1.0, 2.0, 3.0, 4.0});
   const auto maskX =
       makeVariable<bool>(Dimensions{Dim::X, 2}, Values{false, true});
   const auto maskY =
@@ -76,10 +78,10 @@ template <typename Op> void test_masked_data_array_2_masks(Op op) {
   DataArray a(var);
   a.masks().set("x", maskX);
   a.masks().set("y", maskY);
-  const auto meanX =
-      makeVariable<double>(Dimensions{Dim::Y, 2}, units::m, Values{1.0, 3.0});
-  const auto meanY =
-      makeVariable<double>(Dimensions{Dim::X, 2}, units::m, Values{1.0, 2.0});
+  const auto meanX = makeVariable<double>(Dimensions{Dim::Y, 2}, sc_units::m,
+                                          Values{1.0, 3.0});
+  const auto meanY = makeVariable<double>(Dimensions{Dim::X, 2}, sc_units::m,
+                                          Values{1.0, 2.0});
   EXPECT_EQ(op(a, Dim::X).data(), meanX);
   EXPECT_EQ(op(a, Dim::Y).data(), meanY);
   EXPECT_FALSE(op(a, Dim::X).masks().contains("x"));
@@ -89,20 +91,21 @@ template <typename Op> void test_masked_data_array_2_masks(Op op) {
 }
 
 template <typename Op> void test_masked_data_array_nd_mask(Op op) {
-  const auto var = makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}},
-                                        units::m, Values{1.0, 2.0, 3.0, 4.0});
+  const auto var =
+      makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}}, sc_units::m,
+                           Values{1.0, 2.0, 3.0, 4.0});
   // Just a single masked element
   const auto mask = makeVariable<bool>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}},
                                        Values{false, true, false, false});
   DataArray a(var);
   a.masks().set("mask", mask);
   const auto meanX =
-      makeVariable<double>(Dimensions{Dim::Y, 2}, units::m,
+      makeVariable<double>(Dimensions{Dim::Y, 2}, sc_units::m,
                            Values{(1.0 + 0.0) / 1, (3.0 + 4.0) / 2});
   const auto meanY =
-      makeVariable<double>(Dimensions{Dim::X, 2}, units::m,
+      makeVariable<double>(Dimensions{Dim::X, 2}, sc_units::m,
                            Values{(1.0 + 3.0) / 2, (0.0 + 4.0) / 1});
-  const auto mean = makeVariable<double>(units::m, Shape{1},
+  const auto mean = makeVariable<double>(sc_units::m, Shape{1},
                                          Values{(1.0 + 0.0 + 3.0 + 4.0) / 3});
   EXPECT_EQ(op(a, Dim::X).data(), meanX);
   EXPECT_EQ(op(a, Dim::Y).data(), meanY);
@@ -145,9 +148,9 @@ TYPED_TEST(MeanTest, nanmean_masked_data_with_nans) {
         "Test skipped for non-FP types"); // If type does not support nans skip
   else {
     // Two Nans
-    const auto var =
-        makeVariable<TypeParam>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}}, units::m,
-                                Values{double(NAN), double(NAN), 3.0, 4.0});
+    const auto var = makeVariable<TypeParam>(
+        Dimensions{{Dim::Y, 2}, {Dim::X, 2}}, sc_units::m,
+        Values{double(NAN), double(NAN), 3.0, 4.0});
     // Two masked element
     const auto mask = makeVariable<bool>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}},
                                          Values{false, true, true, false});
@@ -156,7 +159,7 @@ TYPED_TEST(MeanTest, nanmean_masked_data_with_nans) {
     // First element NaN, second NaN AND masked, third masked, forth non-masked
     // finite number
     const auto mean = makeVariable<typename TestFixture::ReturnType>(
-        units::m, Values{(0.0 + 0.0 + 0.0 + 4.0) / 1});
+        sc_units::m, Values{(0.0 + 0.0 + 0.0 + 4.0) / 1});
     EXPECT_EQ(nanmean(a).data(), mean);
   }
 }
@@ -165,14 +168,14 @@ TYPED_TEST(MeanTest, mean_over_dim) {
   if constexpr (TestFixture::TestVariances) {
     // Test with variances
     auto ds = make_one_item_dataset<TypeParam>(
-        "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
+        "a", {Dim::X, 3}, sc_units::dimensionless, {1, 2, 3}, {12, 15, 18});
     EXPECT_EQ(mean(ds, Dim::X)["a"].data(),
               makeVariable<TypeParam>(Values{2}, Variances{5.0}));
     EXPECT_EQ(mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
               makeVariable<TypeParam>(Values{1.5}, Variances{6.75}));
   } else {
-    auto ds = make_one_item_dataset<TypeParam>("a", {Dim::X, 3},
-                                               units::dimensionless, {1, 2, 3});
+    auto ds = make_one_item_dataset<TypeParam>(
+        "a", {Dim::X, 3}, sc_units::dimensionless, {1, 2, 3});
     EXPECT_EQ(mean(ds, Dim::X)["a"].data(), makeVariable<double>(Values{2}));
     EXPECT_EQ(mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
               makeVariable<double>(Values{1.5}));
@@ -197,7 +200,7 @@ TYPED_TEST(MeanTest, nanmean_over_dim) {
   if constexpr (TestFixture::TestVariances) {
     // Test variances and values
     auto ds = make_one_item_dataset<TypeParam>(
-        "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
+        "a", {Dim::X, 3}, sc_units::dimensionless, {1, 2, 3}, {12, 15, 18});
     EXPECT_EQ(nanmean(ds, Dim::X)["a"].data(),
               makeVariable<TypeParam>(Values{2}, Variances{5.0}));
     EXPECT_EQ(nanmean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
@@ -209,8 +212,8 @@ TYPED_TEST(MeanTest, nanmean_over_dim) {
     EXPECT_EQ(nanmean(ds["a"], Dim::X).data(),
               makeVariable<TypeParam>(Values{1.5}, Variances{6.75}));
   } else {
-    auto ds = make_one_item_dataset<TypeParam>("a", {Dim::X, 3},
-                                               units::dimensionless, {1, 2, 3});
+    auto ds = make_one_item_dataset<TypeParam>(
+        "a", {Dim::X, 3}, sc_units::dimensionless, {1, 2, 3});
     EXPECT_EQ(nanmean(ds, Dim::X)["a"].data(), makeVariable<double>(Values{2}));
     EXPECT_EQ(nanmean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
               makeVariable<double>(Values{1.5}));

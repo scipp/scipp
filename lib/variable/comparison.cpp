@@ -35,8 +35,9 @@ try_isclose_spatial(const Variable &a, const Variable &b, const Variable &rtol,
 
 void expect_rtol_unit_dimensionless_or_none(const Variable &rtol,
                                             const Variable &ref) {
-  const auto expected = ref.unit() == units::none ? scipp::units::none
-                                                  : scipp::units::dimensionless;
+  const auto expected = ref.unit() == sc_units::none
+                            ? scipp::sc_units::none
+                            : scipp::sc_units::dimensionless;
   core::expect::equals(expected, rtol.unit(), " For rtol arg");
 }
 } // namespace

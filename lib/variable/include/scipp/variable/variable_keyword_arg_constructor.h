@@ -20,6 +20,12 @@ namespace scipp::variable {
 namespace detail {
 template <class U> struct vector {
   std::vector<U> data;
+  vector() noexcept = default;
+  vector(vector &other) = default;
+  vector(const vector &other) = default;
+  vector(vector &&other) noexcept = default;
+  vector &operator=(const vector &other) = default;
+  vector &operator=(vector &&other) noexcept = default;
   template <class... Args>
   vector(Args &&...args) : data(std::forward<Args>(args)...) {}
   template <class A, class B> // avoid use of vector(size, value)
@@ -69,14 +75,14 @@ throw_keyword_arg_constructor_bad_dtype(const DType dtype);
 ///
 /// This is an implementation detail of `makeVariable`.
 template <class ElemT> struct ArgParser {
-  std::tuple<std::optional<units::Unit>, Dimensions, element_array<ElemT>,
+  std::tuple<std::optional<sc_units::Unit>, Dimensions, element_array<ElemT>,
              std::optional<element_array<ElemT>>>
       args;
   Dims dims;
   Shape shape;
 
-  void parse(const units::Unit &arg) {
-    std::get<std::optional<units::Unit>>(args) = arg;
+  void parse(const sc_units::Unit &arg) {
+    std::get<std::optional<sc_units::Unit>>(args) = arg;
   }
 
   void parse(const Dimensions &arg) { std::get<Dimensions>(args) = arg; }

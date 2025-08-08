@@ -36,7 +36,7 @@ TEST(EqualsNanTest, nested) {
 
 TEST(EqualsNanTest, structured) {
   auto var =
-      variable::make_vectors(Dimensions(Dim::X, 1), units::m, {1, 2, NAN});
+      variable::make_vectors(Dimensions(Dim::X, 1), sc_units::m, {1, 2, NAN});
   check_equal(var, var);
 }
 

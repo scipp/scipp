@@ -36,7 +36,7 @@ Variable bin_sizes(const Variable &var) {
     const auto [begin, end] = unzip(var.bin_indices());
     return end - begin;
   }
-  return makeVariable<scipp::index>(var.dims(), units::none);
+  return makeVariable<scipp::index>(var.dims(), sc_units::none);
 }
 
 void copy_slices(const Variable &src, Variable dst, const Dim dim,

@@ -25,7 +25,7 @@ using namespace scipp::testing;
 namespace {
 const char *name = "transform_test";
 
-const std::vector<std::vector<units::Dim>> dim_combinations{
+const std::vector<std::vector<sc_units::Dim>> dim_combinations{
     {Dim::X},
     {Dim::Y},
     {Dim::Z},
@@ -35,7 +35,7 @@ const std::vector<std::vector<units::Dim>> dim_combinations{
     {Dim::X, Dim::Y, Dim::Z}};
 
 std::optional<Variable> slice_to_scalar(Variable var,
-                                        scipp::span<const units::Dim> dims) {
+                                        std::span<const sc_units::Dim> dims) {
   for (const auto &dim : dims) {
     if (!var.dims().contains(dim) || var.dims().at(dim) == 0) {
       return std::nullopt;
@@ -296,11 +296,11 @@ TEST_F(TransformBinaryTest, in_place_self_overlap_with_variance) {
 }
 
 TEST_F(TransformBinaryTest, in_place_unit_change) {
-  const auto var =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1.0, 2.0});
-  const auto expected =
-      makeVariable<double>(Dims{Dim::X}, Shape{2},
-                           units::Unit(units::m * units::m), Values{1.0, 4.0});
+  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, sc_units::m,
+                                        Values{1.0, 2.0});
+  const auto expected = makeVariable<double>(
+      Dims{Dim::X}, Shape{2}, sc_units::Unit(sc_units::m * sc_units::m),
+      Values{1.0, 4.0});
   auto op_ = [](auto &&a, auto &&b) { a *= b; };
   Variable result;
 
@@ -321,20 +321,21 @@ TEST(TransformTest, binary_dtype_bool) {
 
   EXPECT_EQ(transform<pair_self_t<bool>>(
                 var, var,
-                overloaded{
-                    [](const units::Unit &a, const units::Unit &) { return a; },
-                    [](const auto x, const auto y) { return !x || y; }},
+                overloaded{[](const sc_units::Unit &a, const sc_units::Unit &) {
+                             return a;
+                           },
+                           [](const auto x, const auto y) { return !x || y; }},
                 name),
             makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, true}));
 
   transform_in_place<bool>(
-      var, overloaded{[](units::Unit &) {}, [](auto &x) { x = !x; }}, name);
+      var, overloaded{[](sc_units::Unit &) {}, [](auto &x) { x = !x; }}, name);
   EXPECT_EQ(var,
             makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, true}));
 
   transform_in_place<pair_self_t<bool>>(
       var, var,
-      overloaded{[](units::Unit &, const units::Unit &) {},
+      overloaded{[](sc_units::Unit &, const sc_units::Unit &) {},
                  [](auto &x, const auto &y) { x = !x || y; }},
       name);
   EXPECT_EQ(var,
@@ -371,7 +372,8 @@ void check_binned_with_dense(Variable &binned, const Variable &dense,
   const auto dense_binned = transform<double>(dense, binned, op, name);
 
   for (scipp::index i = 0; i < indices.dims().volume(); ++i) {
-    const auto &[begin, end] = indices.values<index_pair>()[i];
+    const auto values = indices.values<index_pair>();
+    const auto &[begin, end] = values[i];
     const auto bin_dim = buffer.dims().label(bin_dim_index);
     const auto bin = buffer.slice(Slice{bin_dim, begin, end});
     const auto dense_slice = element_as_scalar(dense, i);

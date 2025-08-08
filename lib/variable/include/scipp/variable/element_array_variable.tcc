@@ -8,7 +8,7 @@
 namespace scipp::variable {
 
 template <class T>
-Variable make_default_init(const Dimensions &dims, const units::Unit &unit,
+Variable make_default_init(const Dimensions &dims, const sc_units::Unit &unit,
                            const bool variances) {
   if (variances && !core::canHaveVariances<T>())
     throw except::VariancesError("This data type cannot have variances.");
@@ -35,20 +35,20 @@ Variable make_default_init(const Dimensions &dims, const units::Unit &unit,
 template <class T> class VariableMaker : public AbstractVariableMaker {
   using AbstractVariableMaker::create;
   bool is_bins() const override { return false; }
-  Variable create(const DType, const Dimensions &dims, const units::Unit &unit,
+  Variable create(const DType, const Dimensions &dims, const sc_units::Unit &unit,
                   const bool variances, const parent_list &) const override {
     return make_default_init<T>(dims, unit, variances);
   }
   Dim elem_dim(const Variable &) const override { return Dim::Invalid; }
   DType elem_dtype(const Variable &var) const override { return var.dtype(); }
-  units::Unit elem_unit(const Variable &var) const override {
+  sc_units::Unit elem_unit(const Variable &var) const override {
     return var.unit();
   }
   void expect_can_set_elem_unit(const Variable &var,
-                                const units::Unit &u) const override {
+                                const sc_units::Unit &u) const override {
     var.expect_can_set_unit(u);
   }
-  void set_elem_unit(Variable &var, const units::Unit &u) const override {
+  void set_elem_unit(Variable &var, const sc_units::Unit &u) const override {
     var.setUnit(u);
   }
   bool has_variances(const Variable &var) const override {
@@ -67,7 +67,7 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
 
 template <class T>
 ElementArrayModel<T>::ElementArrayModel(
-    const scipp::index size, const units::Unit &unit, element_array<T> model,
+    const scipp::index size, const sc_units::Unit &unit, element_array<T> model,
     std::optional<element_array<T>> variances)
     : VariableConcept(unit),
       m_values(model ? std::move(model)
@@ -141,7 +141,7 @@ void ElementArrayModel<T>::setVariances(const Variable &variances) {
 
 #define INSTANTIATE_ELEMENT_ARRAY_VARIABLE_BASE(name, ...)                     \
   template SCIPP_EXPORT Variable variable::make_default_init<__VA_ARGS__>(     \
-      const Dimensions &, const units::Unit &, const bool);                    \
+      const Dimensions &, const sc_units::Unit &, const bool);                 \
   INSTANTIATE_VARIABLE_BASE(name, __VA_ARGS__)                                 \
   namespace {                                                                  \
   auto register_variable_maker_##name((                                        \
@@ -150,7 +150,7 @@ void ElementArrayModel<T>::setVariances(const Variable &variances) {
       0));                                                                     \
   }                                                                            \
   template SCIPP_EXPORT Variable::Variable(                                    \
-      const std::optional<units::Unit> &, const Dimensions &,                  \
+      const std::optional<sc_units::Unit> &, const Dimensions &,               \
       element_array<__VA_ARGS__>, std::optional<element_array<__VA_ARGS__>>);  \
   template SCIPP_EXPORT ElementArrayView<const __VA_ARGS__>                    \
   Variable::variances() const;                                                 \

@@ -13,9 +13,9 @@ using namespace scipp;
 using namespace scipp::core;
 
 TEST(ElementSinOutArgTest, unit_rad) {
-  EXPECT_EQ(element::sin(units::rad), units::sin(units::rad));
-  EXPECT_EQ(element::sin(units::deg), units::sin(units::deg));
-  EXPECT_THROW_DISCARD(element::sin(units::one), except::UnitError);
+  EXPECT_EQ(element::sin(sc_units::rad), sc_units::sin(sc_units::rad));
+  EXPECT_EQ(element::sin(sc_units::deg), sc_units::sin(sc_units::deg));
+  EXPECT_THROW_DISCARD(element::sin(sc_units::one), except::UnitError);
 }
 
 TEST(ElementSinOutArgTest, value_double) {
@@ -33,9 +33,9 @@ TEST(ElementSinOutArgTest, supported_types) {
 }
 
 TEST(ElementCosOutArgTest, unit_rad) {
-  EXPECT_EQ(element::cos(units::rad), units::cos(units::rad));
-  EXPECT_EQ(element::cos(units::deg), units::cos(units::deg));
-  EXPECT_THROW_DISCARD(element::cos(units::one), except::UnitError);
+  EXPECT_EQ(element::cos(sc_units::rad), sc_units::cos(sc_units::rad));
+  EXPECT_EQ(element::cos(sc_units::deg), sc_units::cos(sc_units::deg));
+  EXPECT_THROW_DISCARD(element::cos(sc_units::one), except::UnitError);
 }
 
 TEST(ElementCosOutArgTest, value_double) {
@@ -53,9 +53,9 @@ TEST(ElementCosOutArgTest, supported_types) {
 }
 
 TEST(ElementTanOutArgTest, unit_rad) {
-  EXPECT_EQ(element::tan(units::rad), units::tan(units::rad));
-  EXPECT_EQ(element::tan(units::deg), units::tan(units::deg));
-  EXPECT_THROW_DISCARD(element::tan(units::one), except::UnitError);
+  EXPECT_EQ(element::tan(sc_units::rad), sc_units::tan(sc_units::rad));
+  EXPECT_EQ(element::tan(sc_units::deg), sc_units::tan(sc_units::deg));
+  EXPECT_THROW_DISCARD(element::tan(sc_units::one), except::UnitError);
 }
 
 TEST(ElementTanOutArgTest, value_double) {
@@ -73,9 +73,9 @@ TEST(ElementTanOutArgTest, supported_types) {
 }
 
 TEST(ElementAsinTest, unit) {
-  const units::Unit dimensionless(units::dimensionless);
-  EXPECT_EQ(element::asin(dimensionless), units::asin(dimensionless));
-  const units::Unit rad(units::rad);
+  const sc_units::Unit dimensionless(sc_units::dimensionless);
+  EXPECT_EQ(element::asin(dimensionless), sc_units::asin(dimensionless));
+  const sc_units::Unit rad(sc_units::rad);
   EXPECT_THROW(element::asin(rad), except::UnitError);
 }
 
@@ -87,8 +87,8 @@ TEST(ElementAsinTest, value) {
 }
 
 TEST(ElementAsinOutArgTest, unit) {
-  const units::Unit dimensionless(units::dimensionless);
-  EXPECT_EQ(element::asin(dimensionless), units::asin(dimensionless));
+  const sc_units::Unit dimensionless(sc_units::dimensionless);
+  EXPECT_EQ(element::asin(dimensionless), sc_units::asin(dimensionless));
 }
 
 TEST(ElementAsinOutArgTest, value_double) {
@@ -106,9 +106,9 @@ TEST(ElementAsinOutArgTest, supported_types) {
 }
 
 TEST(ElementAcosTest, unit) {
-  const units::Unit dimensionless(units::dimensionless);
-  EXPECT_EQ(element::acos(dimensionless), units::acos(dimensionless));
-  const units::Unit rad(units::rad);
+  const sc_units::Unit dimensionless(sc_units::dimensionless);
+  EXPECT_EQ(element::acos(dimensionless), sc_units::acos(dimensionless));
+  const sc_units::Unit rad(sc_units::rad);
   EXPECT_THROW(element::acos(rad), except::UnitError);
 }
 
@@ -120,8 +120,8 @@ TEST(ElementAcosTest, value) {
 }
 
 TEST(ElementAcosOutArgTest, unit) {
-  const units::Unit dimensionless(units::dimensionless);
-  EXPECT_EQ(element::acos(dimensionless), units::acos(dimensionless));
+  const sc_units::Unit dimensionless(sc_units::dimensionless);
+  EXPECT_EQ(element::acos(dimensionless), sc_units::acos(dimensionless));
 }
 
 TEST(ElementAcosOutArgTest, value_double) {
@@ -139,9 +139,9 @@ TEST(ElementAcosOutArgTest, supported_types) {
 }
 
 TEST(ElementAtanTest, unit) {
-  const units::Unit dimensionless(units::dimensionless);
-  EXPECT_EQ(element::atan(dimensionless), units::atan(dimensionless));
-  const units::Unit rad(units::rad);
+  const sc_units::Unit dimensionless(sc_units::dimensionless);
+  EXPECT_EQ(element::atan(dimensionless), sc_units::atan(dimensionless));
+  const sc_units::Unit rad(sc_units::rad);
   EXPECT_THROW(element::atan(rad), except::UnitError);
 }
 
@@ -151,8 +151,8 @@ TEST(ElementAtanTest, value) {
 }
 
 TEST(ElementAtanOutArgTest, unit) {
-  const units::Unit dimensionless(units::dimensionless);
-  EXPECT_EQ(element::atan(dimensionless), units::atan(dimensionless));
+  const sc_units::Unit dimensionless(sc_units::dimensionless);
+  EXPECT_EQ(element::atan(dimensionless), sc_units::atan(dimensionless));
 }
 
 TEST(ElementAtanOutArgTest, value_double) {
@@ -174,9 +174,9 @@ using ElementAtan2TestTypes = ::testing::Types<double, float>;
 TYPED_TEST_SUITE(ElementAtan2Test, ElementAtan2TestTypes);
 
 TYPED_TEST(ElementAtan2Test, unit) {
-  const units::Unit m(units::m);
-  EXPECT_EQ(element::atan2(m, m), units::atan2(m, m));
-  const units::Unit rad(units::rad);
+  const sc_units::Unit m(sc_units::m);
+  EXPECT_EQ(element::atan2(m, m), sc_units::atan2(m, m));
+  const sc_units::Unit rad(sc_units::rad);
   EXPECT_THROW(element::atan2(rad, m), except::UnitError);
 }
 
@@ -200,9 +200,9 @@ TYPED_TEST(ElementAtan2Test, value_only_arguments) {
 }
 
 TYPED_TEST(ElementAtan2Test, unit_out) {
-  const units::Unit m(units::m);
-  const units::Unit s(units::s);
-  EXPECT_EQ(element::atan2(m, m), units::atan2(m, m));
+  const sc_units::Unit m(sc_units::m);
+  const sc_units::Unit s(sc_units::s);
+  EXPECT_EQ(element::atan2(m, m), sc_units::atan2(m, m));
   EXPECT_THROW(element::atan2(m, s), except::UnitError);
   EXPECT_THROW(element::atan2(s, m), except::UnitError);
 }

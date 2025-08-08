@@ -12,12 +12,12 @@ using namespace scipp;
 class ConcatTest : public ::testing::Test {
 protected:
   Variable base = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
-                                       units::m, Values{1, 2, 3, 4});
+                                       sc_units::m, Values{1, 2, 3, 4});
 };
 
 TEST_F(ConcatTest, unit_mismatch) {
   auto other = copy(base);
-  other.setUnit(units::s);
+  other.setUnit(sc_units::s);
   EXPECT_THROW_DISCARD(concat(std::vector{base, other}, Dim::X),
                        except::UnitError);
 }
@@ -62,42 +62,42 @@ TEST_F(ConcatTest, new_dim_strided_inputs) {
 
 TEST_F(ConcatTest, existing_outer_dim) {
   auto expected =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 2}, units::m,
+      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 2}, sc_units::m,
                            Values{1, 2, 3, 4, 2, 4, 6, 8});
   EXPECT_EQ(concat(std::vector{base, base + base}, Dim::X), expected);
 }
 
 TEST_F(ConcatTest, existing_inner_dim) {
   auto expected =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 4}, units::m,
+      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 4}, sc_units::m,
                            Values{1, 2, 2, 4, 3, 4, 6, 8});
   EXPECT_EQ(concat(std::vector{base, base + base}, Dim::Y), expected);
 }
 
 TEST_F(ConcatTest, existing_outer_transposed_other) {
   auto expected =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 2}, units::m,
+      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 2}, sc_units::m,
                            Values{1, 2, 3, 4, 1, 2, 3, 4});
   EXPECT_EQ(concat(std::vector{base, copy(transpose(base))}, Dim::X), expected);
 }
 
 TEST_F(ConcatTest, existing_inner_transposed_other) {
   auto expected =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 4}, units::m,
+      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 4}, sc_units::m,
                            Values{1, 2, 1, 2, 3, 4, 3, 4});
   EXPECT_EQ(concat(std::vector{base, copy(transpose(base))}, Dim::Y), expected);
 }
 
 TEST_F(ConcatTest, existing_outer_dim_and_new_dim) {
   auto expected = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
-                                       units::m, Values{1, 2, 3, 4, 3, 4});
+                                       sc_units::m, Values{1, 2, 3, 4, 3, 4});
   EXPECT_EQ(concat(std::vector{base, base.slice({Dim::X, 1})}, Dim::X),
             expected);
 }
 
 TEST_F(ConcatTest, new_dim_and_existing_outer_dim) {
   auto expected = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
-                                       units::m, Values{3, 4, 1, 2, 3, 4});
+                                       sc_units::m, Values{3, 4, 1, 2, 3, 4});
   EXPECT_EQ(concat(std::vector{base.slice({Dim::X, 1}), base}, Dim::X),
             expected);
 }

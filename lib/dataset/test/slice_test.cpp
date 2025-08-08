@@ -35,7 +35,7 @@ protected:
   Dataset3DTest() : dataset(factory.make("data_xyz")) {}
 
   Dataset
-  datasetWithEdges(const std::initializer_list<units::Dim::Id> &edgeDims) {
+  datasetWithEdges(const std::initializer_list<sc_units::Dim::Id> &edgeDims) {
     auto d = dataset;
     for (const auto dim : edgeDims) {
       auto dims = dataset.coords()[dim].dims();

@@ -162,7 +162,7 @@ constexpr auto apply_spatial_transformation = overloaded{
     apply_spatial_transformation_t{},
     transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
     [](const auto a, const auto b) { return a * b; },
-    [](const units::Unit &a, const units::Unit &b) {
+    [](const sc_units::Unit &a, const sc_units::Unit &b) {
       if (a != b)
         throw except::UnitError(
             "Cannot apply spatial transform as the units of the transformation "
@@ -176,21 +176,21 @@ constexpr auto divide = overloaded{
     true_divide_types_t{},
     transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
     [](const auto &a, const auto &b) { return numeric::true_divide(a, b); },
-    [](const units::Unit &a, const units::Unit &b) { return a / b; }};
+    [](const sc_units::Unit &a, const sc_units::Unit &b) { return a / b; }};
 
 // floordiv defined as in Python. Complementary to mod.
 constexpr auto floor_divide = overloaded{
     floor_divide_types_t{}, transform_flags::expect_no_variance_arg<0>,
     transform_flags::expect_no_variance_arg<1>,
     [](const auto a, const auto b) { return numeric::floor_divide(a, b); },
-    [](const units::Unit &a, const units::Unit &b) { return a / b; }};
+    [](const sc_units::Unit &a, const sc_units::Unit &b) { return a / b; }};
 
 // remainder defined as in Python
 constexpr auto mod = overloaded{
     remainder_types_t{}, transform_flags::expect_no_variance_arg<0>,
     transform_flags::expect_no_variance_arg<1>,
     [](const auto a, const auto b) { return numeric::remainder(a, b); },
-    [](const units::Unit &a, const units::Unit &b) { return a % b; }};
+    [](const sc_units::Unit &a, const sc_units::Unit &b) { return a % b; }};
 
 constexpr auto remainder_inplace_types =
     arg_list<double, float, int64_t, int32_t, std::tuple<double, float>,
@@ -202,7 +202,7 @@ constexpr auto remainder_inplace_types =
 constexpr auto mod_equals = overloaded{
     remainder_inplace_types, transform_flags::expect_no_variance_arg<0>,
     transform_flags::expect_no_variance_arg<1>,
-    [](units::Unit &a, const units::Unit &b) { a %= b; },
+    [](sc_units::Unit &a, const sc_units::Unit &b) { a %= b; },
     [](auto &&a, const auto &b) { a = mod(a, b); }};
 
 constexpr auto negative =

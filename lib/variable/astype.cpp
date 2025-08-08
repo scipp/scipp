@@ -44,7 +44,7 @@ struct MakeVariableWithType {
       return transform<SourceTypes...>(
           parent,
           overloaded{
-              expect_input_variances, [](const units::Unit &x) { return x; },
+              expect_input_variances, [](const sc_units::Unit &x) { return x; },
               [](const auto &x) {
                 if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
                   return ValueAndVariance<T>{static_cast<T>(x.value),

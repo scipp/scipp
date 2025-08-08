@@ -88,7 +88,7 @@ TEST(DataArrayBins2dTest, concatenate_dim_2d) {
 }
 
 TEST_F(DataArrayBinsTest, concatenate) {
-  const auto result = buckets::concatenate(var, var * (3.0 * units::one));
+  const auto result = buckets::concatenate(var, var * (3.0 * sc_units::one));
   Variable out_indices = makeVariable<scipp::index_pair>(
       dims, Values{std::pair{0, 4}, std::pair{4, 8}});
   Variable out_data = makeVariable<double>(Dims{Dim::X}, Shape{8},
@@ -99,14 +99,14 @@ TEST_F(DataArrayBinsTest, concatenate) {
   EXPECT_EQ(result, make_bins(out_indices, Dim::X, out_buffer));
 
   // "in-place" append gives same as concatenate
-  buckets::append(var, var * (3.0 * units::one));
+  buckets::append(var, var * (3.0 * sc_units::one));
   EXPECT_EQ(result, var);
   buckets::append(var, -var);
 }
 
 TEST_F(DataArrayBinsTest, concatenate_with_broadcast) {
   auto var2 = copy(var).rename_dims({{Dim::Y, Dim::Z}});
-  var2 *= 3.0 * units::one;
+  var2 *= 3.0 * sc_units::one;
   const auto result = buckets::concatenate(var, var2);
   Variable out_indices = makeVariable<scipp::index_pair>(
       Dims{Dim::Y, Dim::Z}, Shape{2, 2},
@@ -127,7 +127,7 @@ TEST_F(DataArrayBinsTest, concatenate_with_broadcast) {
 
 TEST_F(DataArrayBinsTest, histogram) {
   Variable weights =
-      makeVariable<double>(Dims{Dim::X}, Shape{4}, units::counts,
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, sc_units::counts,
                            Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
   DataArray events = DataArray(weights, {{Dim::Z, data}});
   Variable buckets = make_bins(indices, Dim::X, events);
@@ -136,13 +136,13 @@ TEST_F(DataArrayBinsTest, histogram) {
       makeVariable<double>(Dims{Dim::Z}, Shape{4}, Values{0, 1, 2, 4});
   EXPECT_EQ(buckets::histogram(buckets, bin_edges),
             makeVariable<double>(Dims{Dim::Y, Dim::Z}, Shape{2, 3},
-                                 units::counts, Values{0, 1, 2, 0, 0, 3},
+                                 sc_units::counts, Values{0, 1, 2, 0, 0, 3},
                                  Variances{0, 1, 2, 0, 0, 3}));
 }
 
 TEST_F(DataArrayBinsTest, histogram_masked) {
   Variable weights =
-      makeVariable<double>(Dims{Dim::X}, Shape{4}, units::counts,
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, sc_units::counts,
                            Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
   Variable mask = makeVariable<bool>(Dims{Dim::X}, Shape{4},
                                      Values{false, false, true, false});
@@ -153,13 +153,13 @@ TEST_F(DataArrayBinsTest, histogram_masked) {
       makeVariable<double>(Dims{Dim::Z}, Shape{4}, Values{0, 1, 2, 4});
   EXPECT_EQ(buckets::histogram(buckets, bin_edges),
             makeVariable<double>(Dims{Dim::Y, Dim::Z}, Shape{2, 3},
-                                 units::counts, Values{0, 1, 2, 0, 0, 0},
+                                 sc_units::counts, Values{0, 1, 2, 0, 0, 0},
                                  Variances{0, 1, 2, 0, 0, 0}));
 }
 
 TEST_F(DataArrayBinsTest, histogram_existing_dim) {
   Variable weights =
-      makeVariable<double>(Dims{Dim::X}, Shape{4}, units::counts,
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, sc_units::counts,
                            Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
   DataArray events = DataArray(weights, {{Dim::Y, data}});
   Variable buckets = make_bins(indices, Dim::X, events);
@@ -167,7 +167,7 @@ TEST_F(DataArrayBinsTest, histogram_existing_dim) {
   const auto bin_edges =
       makeVariable<double>(Dims{Dim::Y}, Shape{4}, Values{0, 1, 2, 4});
   const auto expected =
-      makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::counts,
+      makeVariable<double>(Dims{Dim::Y}, Shape{3}, sc_units::counts,
                            Values{0, 1, 5}, Variances{0, 1, 5});
   EXPECT_EQ(buckets::histogram(buckets, bin_edges), expected);
 
@@ -180,7 +180,7 @@ TEST_F(DataArrayBinsTest, histogram_existing_dim) {
       "mask", makeVariable<bool>(Dims{Dim::Y}, Shape{2}, Values{false, true}));
   EXPECT_EQ(
       histogram(a, bin_edges),
-      DataArray(makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::counts,
+      DataArray(makeVariable<double>(Dims{Dim::Y}, Shape{3}, sc_units::counts,
                                      Values{0, 1, 2}, Variances{0, 1, 2}),
                 {{Dim::Y, bin_edges}}));
 }
@@ -192,7 +192,7 @@ TEST_F(DataArrayBinsTest, operations_on_empty) {
 
   EXPECT_EQ(abs(binned), binned);
   EXPECT_EQ(binned, binned * binned);
-  EXPECT_EQ(binned, binned * (2 * units::one));
+  EXPECT_EQ(binned, binned * (2 * sc_units::one));
 }
 
 class DataArrayBinsMapTest : public ::testing::Test {
@@ -209,21 +209,22 @@ protected:
   // `buckets` *does not* depend on the histogramming dimension
   Variable bin_edges =
       makeVariable<double>(Dims{Dim::Z}, Shape{4}, Values{0, 1, 2, 4});
-  DataArray histogram = DataArray(
-      makeVariable<double>(Dims{Dim::Z}, Shape{3}, units::K, Values{1, 2, 4}),
-      {{Dim::Z, bin_edges}});
+  DataArray histogram =
+      DataArray(makeVariable<double>(Dims{Dim::Z}, Shape{3}, sc_units::K,
+                                     Values{1, 2, 4}),
+                {{Dim::Z, bin_edges}});
 };
 
 TEST_F(DataArrayBinsMapTest, map) {
   const auto &coord = bins_view<DataArray>(buckets).coords()[Dim::Z];
-  auto fill_value = makeVariable<double>(units::K, Values{1234});
+  auto fill_value = makeVariable<double>(sc_units::K, Values{1234});
   const auto out = buckets::map(histogram, coord, Dim::Z, fill_value);
   // event coords 1,2,3,4
   // histogram:
   // | 1 | 2 | 4 |
   // 0   1   2   4
   const auto expected_scale = makeVariable<double>(
-      Dims{Dim::X}, Shape{4}, units::K, Values{2, 4, 4, 1234});
+      Dims{Dim::X}, Shape{4}, sc_units::K, Values{2, 4, 4, 1234});
   EXPECT_EQ(out, make_bins(indices, Dim::X, expected_scale));
 
   // Mapping result can be used to scale
@@ -232,13 +233,13 @@ TEST_F(DataArrayBinsMapTest, map) {
   EXPECT_EQ(scaled, expected);
 
   // Mapping and scaling also works for slices
-  histogram.setUnit(units::one); // cannot change unit of slice
-  fill_value.setUnit(units::one);
+  histogram.setUnit(sc_units::one); // cannot change unit of slice
+  fill_value.setUnit(sc_units::one);
   auto partial = buckets;
   for (auto s : {Slice(Dim::Y, 0), Slice(Dim::Y, 1)})
     partial.slice(s) *=
         buckets::map(histogram, coord.slice(s), Dim::Z, fill_value);
-  variable::variableFactory().set_elem_unit(partial, units::K);
+  variable::variableFactory().set_elem_unit(partial, sc_units::K);
   EXPECT_EQ(partial, expected);
 }
 
@@ -253,10 +254,10 @@ TEST_F(DataArrayBinsMapTest, map_masked_values_replaced_by_fill_value) {
   const auto &coord = bins_view<DataArray>(buckets).coords()[Dim::Z];
   histogram.masks().set(
       "mask", makeVariable<bool>(histogram.dims(), Values{false, true, false}));
-  const auto fill_value = makeVariable<double>(units::K, Values{1234});
+  const auto fill_value = makeVariable<double>(sc_units::K, Values{1234});
   const auto out = buckets::map(histogram, coord, Dim::Z, fill_value);
   const auto expected_scale = makeVariable<double>(
-      Dims{Dim::X}, Shape{4}, units::K, Values{1234, 4, 4, 1234});
+      Dims{Dim::X}, Shape{4}, sc_units::K, Values{1234, 4, 4, 1234});
   EXPECT_EQ(out, make_bins(indices, Dim::X, expected_scale));
 }
 
@@ -268,18 +269,18 @@ protected:
         Values{std::pair{0, 3}, std::pair{3, 7}});
   }
   auto make_events() const {
-    auto weights = makeVariable<double>(Dims{Dim("event")}, Shape{7}, units::us,
-                                        Values{1, 2, 1, 3, 1, 1, 1},
-                                        Variances{1, 3, 1, 2, 1, 1, 1});
+    auto weights = makeVariable<double>(
+        Dims{Dim("event")}, Shape{7}, sc_units::us, Values{1, 2, 1, 3, 1, 1, 1},
+        Variances{1, 3, 1, 2, 1, 1, 1});
     auto coord =
-        makeVariable<double>(Dims{Dim("event")}, Shape{7}, units::us,
+        makeVariable<double>(Dims{Dim("event")}, Shape{7}, sc_units::us,
                              Values{1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 5.5});
     return DataArray(weights, {{Dim::X, coord}});
   }
 
   auto make_histogram() const {
     auto edges = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                                      units::us, Values{0, 2, 4, 1, 3, 5});
+                                      sc_units::us, Values{0, 2, 4, 1, 3, 5});
     auto data = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                      Values{2.0, 3.0, 2.0, 3.0},
                                      Variances{0.3, 0.4, 0.3, 0.4});
@@ -288,7 +289,7 @@ protected:
 
   auto make_histogram_no_variance() const {
     auto edges = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                                      units::us, Values{0, 2, 4, 1, 3, 5});
+                                      sc_units::us, Values{0, 2, 4, 1, 3, 5});
     auto data = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                      Values{2.0, 3.0, 2.0, 3.0});
     return DataArray(data, {{Dim::X, edges}});
@@ -306,7 +307,7 @@ protected:
 TEST_F(DataArrayBinsScaleTest, fail_events_op_non_histogram) {
   const auto events = make_events();
   auto coord = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                    units::us, Values{0, 2, 1, 3});
+                                    sc_units::us, Values{0, 2, 1, 3});
   auto data = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                    Values{2.0, 3.0, 2.0, 3.0},
                                    Variances{0.3, 0.4, 0.3, 0.4});
@@ -341,7 +342,7 @@ TEST_F(DataArrayBinsScaleTest, events_times_histogram_without_variances) {
   buckets::scale(buckets, hist);
 
   auto expected_weights = makeVariable<double>(
-      Dims{Dim("event")}, Shape{7}, units::us, Values{1, 2, 1, 3, 1, 1, 1},
+      Dims{Dim("event")}, Shape{7}, sc_units::us, Values{1, 2, 1, 3, 1, 1, 1},
       Variances{1, 3, 1, 2, 1, 1, 1});
   // Last event is out of bounds and scaled to 0.0
   expected_weights *= makeVariable<double>(
@@ -361,7 +362,7 @@ TEST_F(DataArrayBinsScaleTest, events_times_histogram_drops_applied_mask) {
   buckets::scale(buckets, hist);
 
   auto expected_weights = makeVariable<double>(
-      Dims{Dim("event")}, Shape{7}, units::us, Values{1, 2, 1, 3, 1, 1, 1},
+      Dims{Dim("event")}, Shape{7}, sc_units::us, Values{1, 2, 1, 3, 1, 1, 1},
       Variances{1, 3, 1, 2, 1, 1, 1});
   // Masked events are zeroed.
   // Last event is out of bounds and scaled to 0.0
@@ -383,7 +384,7 @@ TEST_F(DataArrayBinsScaleTest, events_times_histogram_keeps_non_edge_mask) {
   buckets::scale(buckets, hist);
 
   auto expected_weights = makeVariable<double>(
-      Dims{Dim("event")}, Shape{7}, units::us, Values{1, 2, 1, 3, 1, 1, 1},
+      Dims{Dim("event")}, Shape{7}, sc_units::us, Values{1, 2, 1, 3, 1, 1, 1},
       Variances{1, 3, 1, 2, 1, 1, 1});
   // No mask has been applied.
   // Last event is out of bounds and scaled to 0.0
@@ -417,10 +418,10 @@ class DataArrayBinsPlusMinusTest : public ::testing::Test {
 protected:
   auto make_events() const {
     auto weights = makeVariable<double>(
-        Dims{Dim("event")}, Shape{7}, units::counts,
+        Dims{Dim("event")}, Shape{7}, sc_units::counts,
         Values{1, 2, 1, 3, 1, 1, 1}, Variances{1, 3, 1, 2, 1, 1, 1});
     auto coord =
-        makeVariable<double>(Dims{Dim("event")}, Shape{7}, units::us,
+        makeVariable<double>(Dims{Dim("event")}, Shape{7}, sc_units::us,
                              Values{1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 5.5});
     return DataArray(weights, {{Dim::X, coord}});
   }
@@ -428,9 +429,9 @@ protected:
   DataArrayBinsPlusMinusTest() {
     eventsA = make_events();
     eventsB = copy(eventsA);
-    eventsB.coords()[Dim::X] += 0.01 * units::us;
+    eventsB.coords()[Dim::X] += 0.01 * sc_units::us;
     eventsB = concat(std::vector{eventsB, eventsA}, Dim("event"));
-    eventsB.coords()[Dim::X] += 0.02 * units::us;
+    eventsB.coords()[Dim::X] += 0.02 * sc_units::us;
     a = DataArray(make_bins(makeVariable<scipp::index_pair>(
                                 Dims{Dim::Y, Dim::X}, Shape{2, 1},
                                 Values{std::pair{0, 3}, std::pair{3, 7}}),
@@ -443,7 +444,7 @@ protected:
 
   DataArray eventsA;
   DataArray eventsB;
-  Variable edges = makeVariable<double>(Dims{Dim::X}, Shape{4}, units::us,
+  Variable edges = makeVariable<double>(Dims{Dim::X}, Shape{4}, sc_units::us,
                                         Values{0, 2, 4, 6});
   DataArray a;
   DataArray b;
@@ -455,8 +456,8 @@ TEST_F(DataArrayBinsPlusMinusTest, plus) {
 
 TEST_F(DataArrayBinsPlusMinusTest, minus) {
   auto tmp = -b;
-  EXPECT_EQ(b.unit(), units::none);
-  EXPECT_EQ(tmp.unit(), units::none);
+  EXPECT_EQ(b.unit(), sc_units::none);
+  EXPECT_EQ(tmp.unit(), sc_units::none);
   EXPECT_EQ(bins_sum(buckets::concatenate(a, -b)), bins_sum(a) - bins_sum(b));
 }
 
@@ -529,10 +530,10 @@ TEST_F(DatasetBinsTest, concatenate) {
   check_fail(buffer0, buffer1);
   buffer1["a"].masks().set("mask", column);
   check(buffer0, buffer1);
-  buffer0.coords().set(Dim("scalar"), 1.0 * units::m);
+  buffer0.coords().set(Dim("scalar"), 1.0 * sc_units::m);
   check_fail(buffer0, buffer1);
-  buffer1.coords().set(Dim("scalar"), 1.0 * units::m);
+  buffer1.coords().set(Dim("scalar"), 1.0 * sc_units::m);
   check(buffer0, buffer1);
-  buffer1.coords().set(Dim("scalar2"), 1.0 * units::m);
+  buffer1.coords().set(Dim("scalar2"), 1.0 * sc_units::m);
   check_fail(buffer0, buffer1);
 }

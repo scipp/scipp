@@ -38,19 +38,19 @@ template <class T> std::tuple<Variable, Dim, T> Variable::to_constituents() {
   Variable tmp;
   std::swap(*this, tmp);
   // cppcheck-suppress constVariable # Deduced by auto.
-  auto &model = requireT<BinArrayModel<T>>(tmp.data());
+  const auto &model = requireT<BinArrayModel<T>>(tmp.data());
   return {tmp.bin_indices(), model.bin_dim(), std::move(model.buffer())};
 }
 
 template <class T> std::tuple<Variable, Dim, T> Variable::constituents() const {
   // cppcheck-suppress constVariable # Deduced by auto.
-  auto &model = requireT<const BinArrayModel<T>>(data());
+  const auto &model = requireT<const BinArrayModel<T>>(data());
   return {bin_indices(), model.bin_dim(), model.buffer()};
 }
 
 template <class T> std::tuple<Variable, Dim, T> Variable::constituents() {
   // cppcheck-suppress constVariable # Deduced by auto.
-  auto &model = requireT<BinArrayModel<T>>(data());
+  const auto &model = requireT<BinArrayModel<T>>(data());
   return {bin_indices(), model.bin_dim(), model.buffer()};
 }
 
@@ -110,7 +110,7 @@ private:
   virtual Variable call_make_bins(const Variable &parent,
                                   const Variable &indices, const Dim dim,
                                   const DType type, const Dimensions &dims,
-                                  const units::Unit &unit,
+                                  const sc_units::Unit &unit,
                                   const bool variances) const = 0;
 
 protected:
@@ -124,7 +124,7 @@ protected:
 
 public:
   Variable create(const DType elem_dtype, const Dimensions &dims,
-                  const units::Unit &unit, const bool variances,
+                  const sc_units::Unit &unit, const bool variances,
                   const typename AbstractVariableMaker::parent_list &parents)
       const override {
     const Variable &parent = bin_parent(parents);
@@ -143,16 +143,16 @@ public:
   DType elem_dtype(const Variable &var) const override {
     return std::get<2>(var.constituents<T>()).dtype();
   }
-  units::Unit elem_unit(const Variable &var) const override {
+  sc_units::Unit elem_unit(const Variable &var) const override {
     return std::get<2>(var.constituents<T>()).unit();
   }
   void expect_can_set_elem_unit(const Variable &var,
-                                const units::Unit &u) const override {
+                                const sc_units::Unit &u) const override {
     if (elem_unit(var) != u && var.is_slice())
       throw except::UnitError("Partial view on data of variable cannot be "
                               "used to change the unit.");
   }
-  void set_elem_unit(Variable &var, const units::Unit &u) const override {
+  void set_elem_unit(Variable &var, const sc_units::Unit &u) const override {
     std::get<2>(var.constituents<T>()).setUnit(u);
   }
   bool has_masks(const Variable &var) const override {
@@ -237,7 +237,7 @@ BinArrayModel<T>::index_values(const core::ElementArrayViewParams &base) const {
 template <class T>
 Variable make_bins_impl(Variable indices, const Dim dim, T &&buffer) {
   indices.setDataHandle(std::make_unique<variable::BinArrayModel<T>>(
-      indices.data_handle(), dim, std::move(buffer)));
+      indices.data_handle(), dim, std::forward<T>(buffer)));
   return indices;
 }
 

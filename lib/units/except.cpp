@@ -8,8 +8,8 @@ namespace scipp::except {
 UnitError::UnitError(const std::string &msg) : Error{msg} {}
 
 template <>
-void throw_mismatch_error(const units::Unit &expected,
-                          const units::Unit &actual,
+void throw_mismatch_error(const sc_units::Unit &expected,
+                          const sc_units::Unit &actual,
                           const std::string &optional_message) {
   throw UnitError("Expected unit " + to_string(expected) + ", got " +
                   to_string(actual) + '.' + optional_message);

@@ -38,23 +38,23 @@ public:
   // here
   Coords &coords() { return *m_coords; }
 
-  DataArray drop_coords(const scipp::span<const Dim> coord_names) const;
+  DataArray drop_coords(const std::span<const Dim> coord_names) const;
 
   const Masks &masks() const { return *m_masks; }
   Masks &masks() { return *m_masks; }
 
-  DataArray drop_masks(const scipp::span<const std::string> mask_names) const;
+  DataArray drop_masks(const std::span<const std::string> mask_names) const;
 
   [[nodiscard]] const Dimensions &dims() const { return m_data->dims(); }
   [[nodiscard]] Dim dim() const { return m_data->dim(); }
   [[nodiscard]] scipp::index ndim() const { return m_data->ndim(); }
-  [[nodiscard]] scipp::span<const scipp::index> strides() const {
+  [[nodiscard]] std::span<const scipp::index> strides() const {
     return m_data->strides();
   }
   [[nodiscard]] DType dtype() const { return m_data->dtype(); }
-  [[nodiscard]] units::Unit unit() const { return m_data->unit(); }
+  [[nodiscard]] sc_units::Unit unit() const { return m_data->unit(); }
 
-  void setUnit(const units::Unit unit) { m_data->setUnit(unit); }
+  void setUnit(const sc_units::Unit unit) { m_data->setUnit(unit); }
 
   /// Return true if the data array contains data variances.
   bool has_variances() const { return m_data->has_variances(); }

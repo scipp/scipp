@@ -12,7 +12,7 @@
 namespace scipp::variable {
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-to_unit(const Variable &var, const units::Unit &unit,
+to_unit(const Variable &var, const sc_units::Unit &unit,
         CopyPolicy copy = CopyPolicy::Always);
 
 } // namespace scipp::variable

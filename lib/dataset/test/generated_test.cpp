@@ -104,7 +104,7 @@ TEST_F(GeneratedBinaryDataArrayTest, mask_is_deep_copied_even_if_same) {
 TEST_F(GeneratedBinaryDataArrayTest, non_bool_masks_with_same_names) {
   auto data = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0.1, 0.2});
   auto coord =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1, 2});
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, sc_units::m, Values{1, 2});
   auto mask = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0.1, 0.1});
   a = DataArray(data, {{Dim::X, coord}}, {{"mask", mask}});
   ASSERT_THROW_DISCARD(less(a, a), except::TypeError);

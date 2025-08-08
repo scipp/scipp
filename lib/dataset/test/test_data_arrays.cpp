@@ -11,11 +11,11 @@
 using namespace scipp;
 
 DataArray make_data_array_1d(const int64_t seed) {
-  auto data = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::counts,
+  auto data = makeVariable<double>(Dims{Dim::X}, Shape{2}, sc_units::counts,
                                    Values{seed + 1, seed + 2},
                                    Variances{seed + 3, seed + 4});
   auto coord =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1, 2});
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, sc_units::m, Values{1, 2});
   auto mask =
       makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{seed % 2 == 0, false});
   const auto name = std::to_string(seed);

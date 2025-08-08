@@ -4,9 +4,8 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <cmath>
-#include <limits>
 #include <numeric>
+#include <span>
 
 #include "scipp/common/overloaded.h"
 #include "scipp/core/eigen.h"
@@ -21,7 +20,7 @@ namespace scipp::core::element {
 
 template <class Index, class Coord, class Edges = Coord>
 using update_indices_by_binning_arg =
-    std::tuple<Index, Coord, scipp::span<const Edges>>;
+    std::tuple<Index, Coord, std::span<const Edges>>;
 
 static constexpr auto update_indices_by_binning = overloaded{
     element::arg_list<update_indices_by_binning_arg<int64_t, double>,
@@ -44,10 +43,12 @@ static constexpr auto update_indices_by_binning = overloaded{
                       update_indices_by_binning_arg<int32_t, double, float>,
                       update_indices_by_binning_arg<int64_t, int32_t, int64_t>,
                       update_indices_by_binning_arg<int32_t, int32_t, int64_t>>,
-    [](units::Unit &indices, const units::Unit &coord,
-       const units::Unit &groups) {
+    // `indices` must be non-const so `auto &index` overloads below don't match.
+    // cppcheck-suppress constParameterReference
+    [](sc_units::Unit &indices, const sc_units::Unit &coord,
+       const sc_units::Unit &groups) {
       expect::equals(coord, groups);
-      expect::equals(units::none, indices);
+      expect::equals(sc_units::none, indices);
     },
     transform_flags::expect_no_variance_arg<1>,
     transform_flags::expect_no_variance_arg<2>};
@@ -84,12 +85,12 @@ static constexpr auto update_indices_by_binning_sorted_edges =
 
 template <class Index>
 static constexpr auto groups_to_map = overloaded{
-    element::arg_list<scipp::span<const double>, scipp::span<const float>,
-                      scipp::span<const int64_t>, scipp::span<const int32_t>,
-                      scipp::span<const bool>, scipp::span<const std::string>,
-                      scipp::span<const time_point>>,
+    element::arg_list<std::span<const double>, std::span<const float>,
+                      std::span<const int64_t>, std::span<const int32_t>,
+                      std::span<const bool>, std::span<const std::string>,
+                      std::span<const time_point>>,
     transform_flags::expect_no_variance_arg<0>,
-    [](const units::Unit &u) { return u; },
+    [](const sc_units::Unit &u) { return u; },
     [](const auto &groups) {
       std::unordered_map<typename std::decay_t<decltype(groups)>::value_type,
                          Index>
@@ -128,10 +129,12 @@ static constexpr auto update_indices_by_grouping = overloaded{
                       update_indices_by_grouping_arg<int32_t, std::string>,
                       update_indices_by_grouping_arg<int32_t, time_point>,
                       update_indices_by_grouping_arg<int64_t, time_point>>,
-    [](units::Unit &indices, const units::Unit &coord,
-       const units::Unit &groups) {
+    // `indices` must be non-const so `auto &index` overloads below don't match.
+    // cppcheck-suppress constParameterReference
+    [](sc_units::Unit &indices, const sc_units::Unit &coord,
+       const sc_units::Unit &groups) {
       expect::equals(coord, groups);
-      expect::equals(units::none, indices);
+      expect::equals(sc_units::none, indices);
     },
     [](auto &index, const auto &x, const auto &groups) {
       if (index == -1)
@@ -158,11 +161,13 @@ static constexpr auto update_indices_by_grouping_contiguous = overloaded{
         update_indices_by_grouping_contiguous_arg<int64_t, int32_t>,
         update_indices_by_grouping_contiguous_arg<int32_t, int32_t>,
         update_indices_by_grouping_contiguous_arg<int32_t, int32_t, int64_t>>,
-    [](units::Unit &indices, const units::Unit &coord,
-       const units::Unit &ngroup, const units::Unit &offset) {
+    // `indices` must be non-const so `auto &index` overloads below don't match.
+    // cppcheck-suppress constParameterReference
+    [](sc_units::Unit &indices, const sc_units::Unit &coord,
+       const sc_units::Unit &ngroup, const sc_units::Unit &offset) {
       expect::equals(coord, offset);
-      expect::equals(units::none, ngroup);
-      expect::equals(units::none, indices);
+      expect::equals(sc_units::none, ngroup);
+      expect::equals(sc_units::none, indices);
     },
     [](auto &index, const auto &x, const auto &ngroup, const auto &offset) {
       if (index == -1)
@@ -175,7 +180,7 @@ static constexpr auto update_indices_by_grouping_contiguous = overloaded{
 static constexpr auto update_indices_from_existing = overloaded{
     element::arg_list<std::tuple<int64_t, scipp::index, scipp::index>,
                       std::tuple<int32_t, scipp::index, scipp::index>>,
-    [](units::Unit &, const units::Unit &, const units::Unit &) {},
+    [](sc_units::Unit &, const sc_units::Unit &, const sc_units::Unit &) {},
     [](auto &index, const auto bin_index, const auto nbin) {
       if (index == -1)
         return;
@@ -185,13 +190,13 @@ static constexpr auto update_indices_from_existing = overloaded{
 
 static constexpr auto count_indices = overloaded{
     element::arg_list<
-        std::tuple<scipp::span<const int64_t>, scipp::index, scipp::index>,
-        std::tuple<scipp::span<const int32_t>, scipp::index, scipp::index>>,
-    [](const units::Unit &indices, const auto &offset, const auto &nbin) {
-      expect::equals(units::none, indices);
-      expect::equals(units::none, offset);
-      expect::equals(units::none, nbin);
-      return units::none;
+        std::tuple<std::span<const int64_t>, scipp::index, scipp::index>,
+        std::tuple<std::span<const int32_t>, scipp::index, scipp::index>>,
+    [](const sc_units::Unit &indices, const auto &offset, const auto &nbin) {
+      expect::equals(sc_units::none, indices);
+      expect::equals(sc_units::none, offset);
+      expect::equals(sc_units::none, nbin);
+      return sc_units::none;
     },
     [](const auto &indices, const auto offset, const auto nbin) {
       typename SubbinSizes::container_type counts(nbin);

@@ -221,7 +221,7 @@ Variable pretend_bins_for_threading(const DataArray &da, Dim bin_dim) {
 
   const auto stride = std::max(scipp::index(1), size / nthread);
   auto begin = bin_detail::make_range(0, size, stride, bin_dim);
-  auto end = begin + stride * units::none;
+  auto end = begin + stride * sc_units::none;
   end.values<scipp::index>().as_span().back() = da.dims()[dim];
   const auto indices = zip(begin, end);
   return make_bins_no_validate(indices, dim, da);

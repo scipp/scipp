@@ -20,9 +20,10 @@ auto make_table(const scipp::index size) {
 }
 
 auto make_edges(const Dim dim, const scipp::index size) {
-  return cumsum(broadcast((4.0 / size) * units::one, Dimensions(dim, size + 1)),
-                CumSumMode::Exclusive) -
-         (2.0 * units::one);
+  return cumsum(
+             broadcast((4.0 / size) * sc_units::one, Dimensions(dim, size + 1)),
+             CumSumMode::Exclusive) -
+         (2.0 * sc_units::one);
 }
 
 static void BM_bin_table(benchmark::State &state) {
@@ -33,6 +34,7 @@ static void BM_bin_table(benchmark::State &state) {
   auto edges_y = make_edges(Dim::Y, 4);
 
   for (auto _ : state) {
+    // cppcheck-suppress unreadVariable
     auto a = dataset::bin(table, {edges_x, edges_y});
   }
   state.SetItemsProcessed(state.iterations() * nEvent);
@@ -54,6 +56,7 @@ static void BM_rebin_outer(benchmark::State &state) {
   auto binned = dataset::bin(table, {make_edges(Dim::X, 1e4), edges_y});
 
   for (auto _ : state) {
+    // cppcheck-suppress unreadVariable
     auto a = dataset::bin(binned, {edges_x, edges_y});
   }
   state.SetItemsProcessed(state.iterations() * nEvent);

@@ -10,10 +10,10 @@ using namespace scipp;
 
 class VariableStructureTest : public ::testing::Test {
 protected:
-  Variable vectors = variable::make_vectors(Dimensions(Dim::Y, 2), units::m,
+  Variable vectors = variable::make_vectors(Dimensions(Dim::Y, 2), sc_units::m,
                                             {1, 2, 3, 4, 5, 6});
   Variable matrices = variable::make_matrices(
-      Dimensions(Dim::Y, 2), units::m,
+      Dimensions(Dim::Y, 2), sc_units::m,
       {1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19});
 };
 
@@ -32,7 +32,7 @@ TEST_F(VariableStructureTest, copy) {
 
 TEST_F(VariableStructureTest, elem_access) {
   Variable elems = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                                        units::m, Values{1, 2, 3, 4, 5, 6});
+                                        sc_units::m, Values{1, 2, 3, 4, 5, 6});
   for (auto i : {0, 1, 2}) {
     EXPECT_EQ(vectors.elements<Eigen::Vector3d>().slice(
                   {Dim::InternalStructureComponent, i}),
@@ -47,22 +47,22 @@ TEST_F(VariableStructureTest, matrices_elem_access) {
   // storage order is column-major
   EXPECT_EQ(
       matrices.elements<Eigen::Matrix3d>("xy"),
-      makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m, Values{4, 14}));
+      makeVariable<double>(Dims{Dim::Y}, Shape{2}, sc_units::m, Values{4, 14}));
   EXPECT_EQ(
       matrices.elements<Eigen::Matrix3d>("yx"),
-      makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m, Values{2, 12}));
+      makeVariable<double>(Dims{Dim::Y}, Shape{2}, sc_units::m, Values{2, 12}));
 }
 
 TEST_F(VariableStructureTest, elem_access_unit_overwrite) {
   auto elems = vectors.elements<Eigen::Vector3d>();
-  EXPECT_EQ(vectors.unit(), units::m);
-  EXPECT_EQ(elems.unit(), units::m);
-  vectors.setUnit(units::kg);
-  EXPECT_EQ(vectors.unit(), units::kg);
-  EXPECT_EQ(elems.unit(), units::kg);
-  elems.setUnit(units::s);
-  EXPECT_EQ(vectors.unit(), units::s);
-  EXPECT_EQ(elems.unit(), units::s);
+  EXPECT_EQ(vectors.unit(), sc_units::m);
+  EXPECT_EQ(elems.unit(), sc_units::m);
+  vectors.setUnit(sc_units::kg);
+  EXPECT_EQ(vectors.unit(), sc_units::kg);
+  EXPECT_EQ(elems.unit(), sc_units::kg);
+  elems.setUnit(sc_units::s);
+  EXPECT_EQ(vectors.unit(), sc_units::s);
+  EXPECT_EQ(elems.unit(), sc_units::s);
 }
 
 TEST_F(VariableStructureTest, readonly) {
@@ -75,7 +75,7 @@ TEST_F(VariableStructureTest, binned) {
       Dimensions(Dim::X, 2), Values{std::pair{0, 1}, std::pair{1, 2}});
   Variable var = make_bins(indices, Dim::Y, vectors);
   Variable elems = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                                        units::m, Values{1, 2, 3, 4, 5, 6});
+                                        sc_units::m, Values{1, 2, 3, 4, 5, 6});
   for (auto x : {0, 1}) {
     for (auto i : {0, 1, 2}) {
       EXPECT_EQ(var.elements<Eigen::Vector3d>()

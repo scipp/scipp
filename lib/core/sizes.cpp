@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include <algorithm>
+#include <ranges>
 
 #include "rename.h"
 #include "scipp/core/except.h"
@@ -38,9 +39,10 @@ bool small_stable_map<Key, Value, Capacity>::operator==(
     const small_stable_map &other) const noexcept {
   if (size() != other.size())
     return false;
-  for (const auto &key : *this)
-    if (!other.contains(key) || at(key) != other.at(key))
+  for (const auto &[key, value] : std::views::zip(m_keys, m_values)) {
+    if (!other.contains(key) || other[key] != value)
       return false;
+  }
   return true;
 }
 
@@ -179,7 +181,7 @@ Sizes concat2(const Sizes &a, const Sizes &b, const Dim dim) {
 }
 } // namespace
 
-Sizes concat(const scipp::span<const Sizes> sizes, const Dim dim) {
+Sizes concat(const std::span<const Sizes> sizes, const Dim dim) {
   auto out = sizes.front();
   for (scipp::index i = 1; i < scipp::size(sizes); ++i)
     out = concat2(out, sizes[i], dim);

@@ -11,14 +11,14 @@ using namespace scipp::variable;
 
 TEST(CreationTest, empty) {
   const auto dims = Dimensions(Dim::X, 2);
-  const auto var1 = variable::empty(dims, units::m, dtype<double>, true);
+  const auto var1 = variable::empty(dims, sc_units::m, dtype<double>, true);
   EXPECT_EQ(var1.dims(), dims);
-  EXPECT_EQ(var1.unit(), units::m);
+  EXPECT_EQ(var1.unit(), sc_units::m);
   EXPECT_EQ(var1.dtype(), dtype<double>);
   EXPECT_EQ(var1.has_variances(), true);
-  const auto var2 = variable::empty(dims, units::s, dtype<int32_t>);
+  const auto var2 = variable::empty(dims, sc_units::s, dtype<int32_t>);
   EXPECT_EQ(var2.dims(), dims);
-  EXPECT_EQ(var2.unit(), units::s);
+  EXPECT_EQ(var2.unit(), sc_units::s);
   EXPECT_EQ(var2.dtype(), dtype<int32_t>);
   EXPECT_EQ(var2.has_variances(), false);
 }
@@ -26,13 +26,13 @@ TEST(CreationTest, empty) {
 TEST(CreationTest, ones) {
   const auto dims = Dimensions(Dim::X, 2);
   EXPECT_EQ(
-      variable::ones(dims, units::m, dtype<double>, true),
-      makeVariable<double>(dims, units::m, Values{1, 1}, Variances{1, 1}));
-  EXPECT_EQ(variable::ones(dims, units::s, dtype<int32_t>),
-            makeVariable<int32_t>(dims, units::s, Values{1, 1}));
+      variable::ones(dims, sc_units::m, dtype<double>, true),
+      makeVariable<double>(dims, sc_units::m, Values{1, 1}, Variances{1, 1}));
+  EXPECT_EQ(variable::ones(dims, sc_units::s, dtype<int32_t>),
+            makeVariable<int32_t>(dims, sc_units::s, Values{1, 1}));
   // Not a broadcast of a scalar
   EXPECT_FALSE(
-      variable::ones(dims, units::m, dtype<double>, true).is_readonly());
+      variable::ones(dims, sc_units::m, dtype<double>, true).is_readonly());
 }
 
 TEST_P(DenseVariablesTest, empty_like_fail_if_sizes) {
@@ -73,7 +73,7 @@ TEST_P(DenseVariablesTest, empty_like) {
 }
 
 TEST(CreationTest, special_like_double) {
-  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m,
+  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, sc_units::m,
                                         Values{1, 2}, Variances{3, 4});
   EXPECT_EQ(special_like(var, FillValue::Default),
             makeVariable<double>(var.dims(), var.unit(), Values{0, 0},
@@ -99,7 +99,7 @@ TEST(CreationTest, special_like_double) {
 
 TEST(CreationTest, special_like_int) {
   const auto var =
-      makeVariable<int64_t>(Dims{Dim::X}, Shape{2}, units::m, Values{1, 2});
+      makeVariable<int64_t>(Dims{Dim::X}, Shape{2}, sc_units::m, Values{1, 2});
   EXPECT_EQ(special_like(var, FillValue::Default),
             makeVariable<int64_t>(var.dims(), var.unit(), Values{0, 0}));
   EXPECT_EQ(special_like(var, FillValue::ZeroNotBool),
@@ -120,8 +120,8 @@ TEST(CreationTest, special_like_int) {
 }
 
 TEST(CreationTest, special_like_bool) {
-  const auto var =
-      makeVariable<bool>(Dims{Dim::X}, Shape{2}, units::m, Values{true, false});
+  const auto var = makeVariable<bool>(Dims{Dim::X}, Shape{2}, sc_units::m,
+                                      Values{true, false});
   EXPECT_EQ(special_like(var, FillValue::Default),
             makeVariable<bool>(var.dims(), var.unit(), Values{false, false}));
   EXPECT_EQ(special_like(var, FillValue::ZeroNotBool),
@@ -138,21 +138,22 @@ TEST(CreationTest, special_like_bool) {
 
 TEST(CreationTest, special_like_time_point) {
   using core::time_point;
-  const auto var = makeVariable<time_point>(units::ns, Values{time_point(1)});
+  const auto var =
+      makeVariable<time_point>(sc_units::ns, Values{time_point(1)});
   EXPECT_EQ(special_like(var, FillValue::Default),
-            makeVariable<time_point>(units::ns, Values{time_point(0)}));
+            makeVariable<time_point>(sc_units::ns, Values{time_point(0)}));
   EXPECT_EQ(special_like(var, FillValue::ZeroNotBool),
-            makeVariable<time_point>(units::ns, Values{time_point(0)}));
+            makeVariable<time_point>(sc_units::ns, Values{time_point(0)}));
   EXPECT_EQ(special_like(var, FillValue::True),
-            makeVariable<bool>(units::ns, Values{true}));
+            makeVariable<bool>(sc_units::ns, Values{true}));
   EXPECT_EQ(special_like(var, FillValue::False),
-            makeVariable<bool>(units::ns, Values{false}));
-  EXPECT_EQ(
-      special_like(var, FillValue::Max),
-      makeVariable<time_point>(
-          units::ns, Values{time_point(std::numeric_limits<int64_t>::max())}));
+            makeVariable<bool>(sc_units::ns, Values{false}));
+  EXPECT_EQ(special_like(var, FillValue::Max),
+            makeVariable<time_point>(
+                sc_units::ns,
+                Values{time_point(std::numeric_limits<int64_t>::max())}));
   EXPECT_EQ(special_like(var, FillValue::Lowest),
             makeVariable<time_point>(
-                units::ns,
+                sc_units::ns,
                 Values{time_point(std::numeric_limits<int64_t>::lowest())}));
 }

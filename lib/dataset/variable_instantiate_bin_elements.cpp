@@ -89,7 +89,7 @@ class BinVariableMakerDataArray : public variable::BinVariableMaker<DataArray> {
 private:
   Variable call_make_bins(const Variable &parent, const Variable &indices,
                           const Dim dim, const DType type,
-                          const Dimensions &dims, const units::Unit &unit,
+                          const Dimensions &dims, const sc_units::Unit &unit,
                           const bool variances) const override {
     const auto &source = buffer(parent);
     if (parent.dims() !=
@@ -146,7 +146,7 @@ private:
 /// This is currently a dummy implemented just to make `is_bins` work.
 class BinVariableMakerDataset
     : public variable::BinVariableMakerCommon<Dataset> {
-  Variable create(const DType, const Dimensions &, const units::Unit &,
+  Variable create(const DType, const Dimensions &, const sc_units::Unit &,
                   const bool, const parent_list &) const override {
     throw std::runtime_error("not implemented");
   }
@@ -156,14 +156,14 @@ class BinVariableMakerDataset
   DType elem_dtype(const Variable &) const override {
     throw std::runtime_error("undefined");
   }
-  units::Unit elem_unit(const Variable &) const override {
+  sc_units::Unit elem_unit(const Variable &) const override {
     throw std::runtime_error("undefined");
   }
   void expect_can_set_elem_unit(const Variable &,
-                                const units::Unit &) const override {
+                                const sc_units::Unit &) const override {
     throw std::runtime_error("undefined");
   }
-  void set_elem_unit(Variable &, const units::Unit &) const override {
+  void set_elem_unit(Variable &, const sc_units::Unit &) const override {
     throw std::runtime_error("undefined");
   }
   bool has_variances(const Variable &) const override {

@@ -11,7 +11,7 @@ using namespace scipp;
 
 class LinalgVectorTest : public ::testing::Test {
 protected:
-  Variable vectors = variable::make_vectors(Dimensions(Dim::Y, 2), units::m,
+  Variable vectors = variable::make_vectors(Dimensions(Dim::Y, 2), sc_units::m,
                                             {1, 2, 3, 4, 5, 6});
 };
 
@@ -23,7 +23,7 @@ TEST_F(LinalgVectorTest, basics) {
 
 TEST_F(LinalgVectorTest, elem_access) {
   Variable elems = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                                        units::m, Values{1, 2, 3, 4, 5, 6});
+                                        sc_units::m, Values{1, 2, 3, 4, 5, 6});
   for (auto i : {0, 1, 2}) {
     EXPECT_EQ(vectors.elements<Eigen::Vector3d>().slice(
                   {Dim::InternalStructureComponent, i}),
@@ -39,7 +39,7 @@ TEST_F(LinalgVectorTest, elem_access) {
 class LinalgMatrixTest : public ::testing::Test {
 protected:
   Variable matrices = variable::make_matrices(
-      Dimensions(Dim::X, 2), units::m,
+      Dimensions(Dim::X, 2), sc_units::m,
       {1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19});
 };
 

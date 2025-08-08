@@ -18,39 +18,43 @@ using MeanTestTypes = testing::Types<int32_t, int64_t, float, double>;
 TYPED_TEST_SUITE(MeanTest, MeanTestTypes);
 
 template <typename Op> void unknown_dim_fail(Op op) {
-  const auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                        units::m, Values{1.0, 2.0, 3.0, 4.0});
+  const auto var =
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2}, sc_units::m,
+                           Values{1.0, 2.0, 3.0, 4.0});
   EXPECT_THROW(const auto view = op(var, Dim::Z), except::DimensionError);
 }
 
 template <typename TestFixture, typename Op> void basic(Op op) {
   const auto var = makeVariable<typename TestFixture::TestType>(
-      Dims{Dim::Y, Dim::X}, Shape{2, 2}, units::m, Values{1.0, 2.0, 3.0, 4.0});
+      Dims{Dim::Y, Dim::X}, Shape{2, 2}, sc_units::m,
+      Values{1.0, 2.0, 3.0, 4.0});
   using RetType = typename TestFixture::ReturnType;
-  const auto meanX =
-      makeVariable<RetType>(Dims{Dim::Y}, Shape{2}, units::m, Values{1.5, 3.5});
-  const auto meanY =
-      makeVariable<RetType>(Dims{Dim::X}, Shape{2}, units::m, Values{2.0, 3.0});
+  const auto meanX = makeVariable<RetType>(Dims{Dim::Y}, Shape{2}, sc_units::m,
+                                           Values{1.5, 3.5});
+  const auto meanY = makeVariable<RetType>(Dims{Dim::X}, Shape{2}, sc_units::m,
+                                           Values{2.0, 3.0});
   EXPECT_EQ(op(var, Dim::X), meanX);
   EXPECT_EQ(op(var, Dim::Y), meanY);
 }
 
 template <typename TestFixture, typename Op> void basic_all_dims(Op op) {
   const auto var = makeVariable<typename TestFixture::TestType>(
-      Dims{Dim::Y, Dim::X}, Shape{2, 2}, units::m, Values{1.0, 2.0, 3.0, 4.0});
+      Dims{Dim::Y, Dim::X}, Shape{2, 2}, sc_units::m,
+      Values{1.0, 2.0, 3.0, 4.0});
   const auto meanAll =
-      makeVariable<typename TestFixture::ReturnType>(units::m, Values{2.5});
+      makeVariable<typename TestFixture::ReturnType>(sc_units::m, Values{2.5});
   EXPECT_EQ(op(var), meanAll);
 }
 
 template <typename TestFixture, typename Op> void dtype_preservation(Op op) {
   const auto var = makeVariable<typename TestFixture::TestType>(
-      Dims{Dim::Y, Dim::X}, Shape{2, 2}, units::m, Values{1.0, 2.0, 3.0, 4.0});
+      Dims{Dim::Y, Dim::X}, Shape{2, 2}, sc_units::m,
+      Values{1.0, 2.0, 3.0, 4.0});
   using RetType = typename TestFixture::ReturnType;
-  const auto meanX =
-      makeVariable<RetType>(Dims{Dim::Y}, Shape{2}, units::m, Values{1.5, 3.5});
-  const auto meanY =
-      makeVariable<RetType>(Dims{Dim::X}, Shape{2}, units::m, Values{2.0, 3.0});
+  const auto meanX = makeVariable<RetType>(Dims{Dim::Y}, Shape{2}, sc_units::m,
+                                           Values{1.5, 3.5});
+  const auto meanY = makeVariable<RetType>(Dims{Dim::X}, Shape{2}, sc_units::m,
+                                           Values{2.0, 3.0});
   EXPECT_EQ(op(var, Dim::X), meanX);
   EXPECT_EQ(op(var, Dim::Y), meanY);
 }
@@ -59,15 +63,15 @@ template <typename TestFixture, typename Op>
 void variances_as_standard_deviation_of_the_mean([[maybe_unused]] Op op) {
   if constexpr (TestFixture::TestVariances) {
     const auto var = makeVariable<typename TestFixture::TestType>(
-        Dims{Dim::Y, Dim::X}, Shape{2, 2}, units::m, Values{1.0, 2.0, 3.0, 4.0},
-        Variances{5.0, 6.0, 7.0, 8.0});
+        Dims{Dim::Y, Dim::X}, Shape{2, 2}, sc_units::m,
+        Values{1.0, 2.0, 3.0, 4.0}, Variances{5.0, 6.0, 7.0, 8.0});
 
     using RetType = typename TestFixture::ReturnType;
-    const auto meanX = makeVariable<RetType>(Dims{Dim::Y}, Shape{2}, units::m,
-                                             Values{1.5, 3.5},
+    const auto meanX = makeVariable<RetType>(Dims{Dim::Y}, Shape{2},
+                                             sc_units::m, Values{1.5, 3.5},
                                              Variances{0.5 * 5.5, 0.5 * 7.5});
-    const auto meanY = makeVariable<RetType>(Dims{Dim::X}, Shape{2}, units::m,
-                                             Values{2.0, 3.0},
+    const auto meanY = makeVariable<RetType>(Dims{Dim::X}, Shape{2},
+                                             sc_units::m, Values{2.0, 3.0},
                                              Variances{0.5 * 6.0, 0.5 * 7.0});
     EXPECT_EQ(op(var, Dim::X), meanX);
     EXPECT_EQ(op(var, Dim::Y), meanY);
@@ -115,23 +119,23 @@ TYPED_TEST(MeanTest, variances_as_standard_deviation_of_the_mean) {
 
 TYPED_TEST(MeanTest, nanmean_basic) {
   auto var = makeVariable<TypeParam>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                     units::m, Values{1, 2, 3, 4});
+                                     sc_units::m, Values{1, 2, 3, 4});
   using RetType = typename TestFixture::ReturnType;
-  const auto meanX =
-      makeVariable<RetType>(Dims{Dim::Y}, Shape{2}, units::m, Values{1.5, 3.5});
-  const auto meanY =
-      makeVariable<RetType>(Dims{Dim::X}, Shape{2}, units::m, Values{2.0, 3.0});
+  const auto meanX = makeVariable<RetType>(Dims{Dim::Y}, Shape{2}, sc_units::m,
+                                           Values{1.5, 3.5});
+  const auto meanY = makeVariable<RetType>(Dims{Dim::X}, Shape{2}, sc_units::m,
+                                           Values{2.0, 3.0});
   EXPECT_EQ(nanmean(var, Dim::X), meanX);
   EXPECT_EQ(nanmean(var, Dim::Y), meanY);
   if constexpr (TestFixture::TestNans) {
     var.template values<TypeParam>().data()[3] = TypeParam{NAN};
     EXPECT_EQ(nanmean(var, Dim::X),
-              makeVariable<RetType>(Dims{Dim::Y}, Shape{2}, units::m,
+              makeVariable<RetType>(Dims{Dim::Y}, Shape{2}, sc_units::m,
                                     Values{1.5, 3.0}));
     EXPECT_EQ(nanmean(var, Dim::Y),
-              makeVariable<RetType>(Dims{Dim::X}, Shape{2}, units::m,
+              makeVariable<RetType>(Dims{Dim::X}, Shape{2}, sc_units::m,
                                     Values{2.0, 2.0}));
-    EXPECT_EQ(nanmean(var), makeVariable<RetType>(units::m, Values{2.0}));
+    EXPECT_EQ(nanmean(var), makeVariable<RetType>(sc_units::m, Values{2.0}));
   }
 }
 

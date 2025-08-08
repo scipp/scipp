@@ -61,60 +61,65 @@ protected:
 // comparison of Variable, but it ensures that the content is actually compared
 // and thus serves as a baseline for the follow-up tests.
 TEST_F(Dataset_comparison_operators, single_coord) {
-  auto d = make_1_coord<double>(Dim::X, {Dim::X, 3}, units::m, {1, 2, 3});
+  auto d = make_1_coord<double>(Dim::X, {Dim::X, 3}, sc_units::m, {1, 2, 3});
   expect_eq(d, d);
   expect_ne(d, Dataset{});
-  expect_ne(d, make_1_coord<float>(Dim::X, {Dim::X, 3}, units::m, {1, 2, 3}));
-  expect_ne(d, make_1_coord<double>(Dim::Y, {Dim::X, 3}, units::m, {1, 2, 3}));
-  expect_ne(d, make_1_coord<double>(Dim::X, {Dim::Y, 3}, units::m, {1, 2, 3}));
-  expect_ne(d, make_1_coord<double>(Dim::X, {Dim::X, 2}, units::m, {1, 2}));
-  expect_ne(d, make_1_coord<double>(Dim::X, {Dim::X, 3}, units::s, {1, 2, 3}));
-  expect_ne(d, make_1_coord<double>(Dim::X, {Dim::X, 3}, units::m, {1, 2, 4}));
+  expect_ne(d,
+            make_1_coord<float>(Dim::X, {Dim::X, 3}, sc_units::m, {1, 2, 3}));
+  expect_ne(d,
+            make_1_coord<double>(Dim::Y, {Dim::X, 3}, sc_units::m, {1, 2, 3}));
+  expect_ne(d,
+            make_1_coord<double>(Dim::X, {Dim::Y, 3}, sc_units::m, {1, 2, 3}));
+  expect_ne(d, make_1_coord<double>(Dim::X, {Dim::X, 2}, sc_units::m, {1, 2}));
+  expect_ne(d,
+            make_1_coord<double>(Dim::X, {Dim::X, 3}, sc_units::s, {1, 2, 3}));
+  expect_ne(d,
+            make_1_coord<double>(Dim::X, {Dim::X, 3}, sc_units::m, {1, 2, 4}));
 }
 
 TEST_F(Dataset_comparison_operators, single_labels) {
-  auto d = make_1_labels<double>("a", {Dim::X, 3}, units::m, {1, 2, 3});
+  auto d = make_1_labels<double>("a", {Dim::X, 3}, sc_units::m, {1, 2, 3});
   expect_eq(d, d);
   expect_ne(d, Dataset{});
-  expect_ne(d, make_1_labels<float>("a", {Dim::X, 3}, units::m, {1, 2, 3}));
-  expect_ne(d, make_1_labels<double>("b", {Dim::X, 3}, units::m, {1, 2, 3}));
-  expect_ne(d, make_1_labels<double>("a", {Dim::Y, 3}, units::m, {1, 2, 3}));
-  expect_ne(d, make_1_labels<double>("a", {Dim::X, 2}, units::m, {1, 2}));
-  expect_ne(d, make_1_labels<double>("a", {Dim::X, 3}, units::s, {1, 2, 3}));
-  expect_ne(d, make_1_labels<double>("a", {Dim::X, 3}, units::m, {1, 2, 4}));
+  expect_ne(d, make_1_labels<float>("a", {Dim::X, 3}, sc_units::m, {1, 2, 3}));
+  expect_ne(d, make_1_labels<double>("b", {Dim::X, 3}, sc_units::m, {1, 2, 3}));
+  expect_ne(d, make_1_labels<double>("a", {Dim::Y, 3}, sc_units::m, {1, 2, 3}));
+  expect_ne(d, make_1_labels<double>("a", {Dim::X, 2}, sc_units::m, {1, 2}));
+  expect_ne(d, make_1_labels<double>("a", {Dim::X, 3}, sc_units::s, {1, 2, 3}));
+  expect_ne(d, make_1_labels<double>("a", {Dim::X, 3}, sc_units::m, {1, 2, 4}));
 }
 
 TEST_F(Dataset_comparison_operators, single_values) {
-  auto d = make_1_values<double>("a", {Dim::X, 3}, units::m, {1, 2, 3});
+  auto d = make_1_values<double>("a", {Dim::X, 3}, sc_units::m, {1, 2, 3});
   expect_eq(d, d);
   expect_ne(d, Dataset{});
-  expect_ne(d, make_1_values<float>("a", {Dim::X, 3}, units::m, {1, 2, 3}));
-  expect_ne(d, make_1_values<double>("b", {Dim::X, 3}, units::m, {1, 2, 3}));
-  expect_ne(d, make_1_values<double>("a", {Dim::Y, 3}, units::m, {1, 2, 3}));
-  expect_ne(d, make_1_values<double>("a", {Dim::X, 2}, units::m, {1, 2}));
-  expect_ne(d, make_1_values<double>("a", {Dim::X, 3}, units::s, {1, 2, 3}));
-  expect_ne(d, make_1_values<double>("a", {Dim::X, 3}, units::m, {1, 2, 4}));
+  expect_ne(d, make_1_values<float>("a", {Dim::X, 3}, sc_units::m, {1, 2, 3}));
+  expect_ne(d, make_1_values<double>("b", {Dim::X, 3}, sc_units::m, {1, 2, 3}));
+  expect_ne(d, make_1_values<double>("a", {Dim::Y, 3}, sc_units::m, {1, 2, 3}));
+  expect_ne(d, make_1_values<double>("a", {Dim::X, 2}, sc_units::m, {1, 2}));
+  expect_ne(d, make_1_values<double>("a", {Dim::X, 3}, sc_units::s, {1, 2, 3}));
+  expect_ne(d, make_1_values<double>("a", {Dim::X, 3}, sc_units::m, {1, 2, 4}));
 }
 
 TEST_F(Dataset_comparison_operators, single_values_and_variances) {
-  auto d = make_1_values_and_variances<double>("a", {Dim::X, 3}, units::m,
+  auto d = make_1_values_and_variances<double>("a", {Dim::X, 3}, sc_units::m,
                                                {1, 2, 3}, {4, 5, 6});
   expect_eq(d, d);
   expect_ne(d, Dataset{});
-  expect_ne(d, make_1_values_and_variances<float>("a", {Dim::X, 3}, units::m,
+  expect_ne(d, make_1_values_and_variances<float>("a", {Dim::X, 3}, sc_units::m,
                                                   {1, 2, 3}, {4, 5, 6}));
-  expect_ne(d, make_1_values_and_variances<double>("b", {Dim::X, 3}, units::m,
-                                                   {1, 2, 3}, {4, 5, 6}));
-  expect_ne(d, make_1_values_and_variances<double>("a", {Dim::Y, 3}, units::m,
-                                                   {1, 2, 3}, {4, 5, 6}));
-  expect_ne(d, make_1_values_and_variances<double>("a", {Dim::X, 2}, units::m,
-                                                   {1, 2}, {4, 5}));
-  expect_ne(d, make_1_values_and_variances<double>("a", {Dim::X, 3}, units::s,
-                                                   {1, 2, 3}, {4, 5, 6}));
-  expect_ne(d, make_1_values_and_variances<double>("a", {Dim::X, 3}, units::m,
-                                                   {1, 2, 4}, {4, 5, 6}));
-  expect_ne(d, make_1_values_and_variances<double>("a", {Dim::X, 3}, units::m,
-                                                   {1, 2, 3}, {4, 5, 7}));
+  expect_ne(d, make_1_values_and_variances<double>(
+                   "b", {Dim::X, 3}, sc_units::m, {1, 2, 3}, {4, 5, 6}));
+  expect_ne(d, make_1_values_and_variances<double>(
+                   "a", {Dim::Y, 3}, sc_units::m, {1, 2, 3}, {4, 5, 6}));
+  expect_ne(d, make_1_values_and_variances<double>(
+                   "a", {Dim::X, 2}, sc_units::m, {1, 2}, {4, 5}));
+  expect_ne(d, make_1_values_and_variances<double>(
+                   "a", {Dim::X, 3}, sc_units::s, {1, 2, 3}, {4, 5, 6}));
+  expect_ne(d, make_1_values_and_variances<double>(
+                   "a", {Dim::X, 3}, sc_units::m, {1, 2, 4}, {4, 5, 6}));
+  expect_ne(d, make_1_values_and_variances<double>(
+                   "a", {Dim::X, 3}, sc_units::m, {1, 2, 3}, {4, 5, 7}));
 }
 // End baseline checks.
 

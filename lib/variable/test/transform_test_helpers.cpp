@@ -109,8 +109,8 @@ scipp::index index_volume(const Variable &indices) {
 
 namespace {
 auto make_slices_in(const scipp::index dim,
-                    const scipp::span<const scipp::index> &shape,
-                    const scipp::span<const Dim> dim_labels) {
+                    const std::span<const scipp::index> &shape,
+                    const std::span<const Dim> dim_labels) {
   std::vector<Slice> out;
   if (scipp::size(shape) > dim && shape[dim] > 1) {
     out.emplace_back(dim_labels[dim], 0, shape[dim] - 1);
@@ -124,8 +124,8 @@ auto make_slices_in(const scipp::index dim,
 void push_slices_in(const scipp::index dim,
                     std::vector<std::vector<Slice>> &out,
                     std::vector<Slice> slices,
-                    const scipp::span<const scipp::index> &shape,
-                    const scipp::span<const Dim> dim_labels) {
+                    const std::span<const scipp::index> &shape,
+                    const std::span<const Dim> dim_labels) {
   if (dim >= scipp::size(shape))
     return;
 
@@ -140,7 +140,7 @@ void push_slices_in(const scipp::index dim,
 } // namespace
 
 std::vector<std::vector<Slice>>
-make_slice_combinations(const scipp::span<const scipp::index> &shape,
+make_slice_combinations(const std::span<const scipp::index> &shape,
                         const std::initializer_list<Dim> dim_labels) {
   std::vector<std::vector<Slice>> out;
   out.reserve(512); // Should be enough.
@@ -150,7 +150,7 @@ make_slice_combinations(const scipp::span<const scipp::index> &shape,
   return out;
 }
 
-Variable slice(Variable var, const scipp::span<const Slice> slices) {
+Variable slice(Variable var, const std::span<const Slice> slices) {
   for (const auto &slice : slices) {
     var = var.slice(slice);
   }

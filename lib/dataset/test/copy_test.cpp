@@ -42,7 +42,7 @@ TEST_F(CopyTest, dataset_with_bin_edge_coord) {
 
 struct CopyOutArgTest : public CopyTest {
   CopyOutArgTest() : dataset_copy(copy(dataset)), array_copy(copy(array)) {
-    const auto one = 1.0 * units::one;
+    const auto one = 1.0 * sc_units::one;
     array_copy.data() += one;
     array_copy.coords()[Dim::X] += one;
     array_copy.coords()[Dim::Y] += one;

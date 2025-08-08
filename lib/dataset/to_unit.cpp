@@ -9,7 +9,7 @@
 
 namespace scipp::dataset {
 
-DataArray to_unit(const DataArray &array, const units::Unit &unit,
+DataArray to_unit(const DataArray &array, const sc_units::Unit &unit,
                   const CopyPolicy copy) {
   auto new_data = to_unit(array.data(), unit, copy);
   auto new_masks = new_data.is_same(array.data())

@@ -1,7 +1,6 @@
 [build-system]
 requires = [
-  "setuptools>=68",
-  "conan==1.66.0",
+  "setuptools>=77",
   "scikit-build-core"
 ]
 build-backend = "scikit_build_core.build"
@@ -10,15 +9,14 @@ build-backend = "scikit_build_core.build"
 name = "scipp"
 description = "Multi-dimensional data arrays with labeled dimensions"
 readme = "README.md"
-license = { "file" = "LICENSE" }
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
 authors = [{ name = "Scipp contributors (https://github.com/scipp)" }]
 classifiers = [
   "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: BSD License",
   "Natural Language :: English",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
@@ -28,7 +26,7 @@ classifiers = [
   "Topic :: Scientific/Engineering",
   "Typing :: Typed",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
   "numpy >= 1.20",
 ]
@@ -43,7 +41,7 @@ dynamic = ["version"]
 test = [
   "pytest",
   "matplotlib",
-  "bs4",
+  "beautifulsoup4",
   "ipython",
 ]
 extra = [
@@ -70,6 +68,15 @@ all = [
 metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
 cmake.version = ">=3.21"
 wheel.install-dir = "scipp"
+
+[[tool.scikit-build.overrides]]
+if.env.SKIP_CONAN = true
+inherit.cmake.define = "append"
+cmake.define.SKIP_CONAN = "ON"
+
+[[tool.scikit-build.overrides]]
+if.env.SKIP_CONAN = false
+build.requires = ["conan<2"]
 
 [tool.setuptools_scm]
 version_file = "src/scipp/_version.py"
@@ -187,9 +194,10 @@ plugins = "numpy.typing.mypy_plugin"
 # Exclude files that have not yet been updated / fixed to pass type checks.
 # This list should only shrink, never grow.
 exclude = [
-    '^benchmarks/',
-    '^docs/',
     '^tests/',
+    # Docs should not be cluttered with type hints.
+    '^docs/',
+    # Tools for internal use and only need to work in a concrete use case.
     '^tools/',
 ]
 

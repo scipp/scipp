@@ -5,13 +5,13 @@ from conans import CMake, ConanFile, tools
 CMAKE_PROJECT_STR = """project(
     ${UNITS_CMAKE_PROJECT_NAME}
     LANGUAGES C CXX
-    VERSION 0.12.3
+    VERSION 0.13.1
 )"""
 
 
 class UnitsConan(ConanFile):
     name = "LLNL-Units"
-    version = "0.12.3"
+    version = "0.13.1"
     license = "BSD-3"
     url = "https://github.com/llnl/units"
     homepage = "https://units.readthedocs.io"
@@ -63,30 +63,14 @@ class UnitsConan(ConanFile):
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()""",
         )
-        tools.replace_in_file(
-            "units/units/r20_conv.cpp",
-            "namespace units {",
-            "namespace UNITS_NAMESPACE {"
-        )
-        tools.replace_in_file(
-            "units/units/r20_conv.cpp",
-            "}  // namespace units",
-            "}  // namespace UNITS_NAMESPACE"
-        )
 
     def build(self):
         cmake = CMake(self)
-        units_namespace = self.options.get_safe("namespace")
         cmake.definitions["UNITS_ENABLE_TESTS"] = "OFF"
         cmake.definitions["UNITS_BASE_TYPE"] = self.options.base_type
-        if units_namespace:
-            cmake.definitions["UNITS_NAMESPACE"] = units_namespace
         if self.options["shared"]:
             cmake.definitions["UNITS_BUILD_SHARED_LIBRARY"] = "ON"
             cmake.definitions["UNITS_BUILD_STATIC_LIBRARY"] = "OFF"
-        # The library uses C++14, but we want to set the namespace
-        # to llnl::units which requires C++17.
-        cmake.definitions["CMAKE_CXX_STANDARD"] = "17"
         cmake.configure(source_folder="units")
         cmake.build(target="units")
 
@@ -100,7 +84,4 @@ conan_basic_setup()""",
 
     def package_info(self):
         self.cpp_info.libs = ["units"]
-        units_namespace = self.options.get_safe("namespace")
         self.cpp_info.defines = [f"UNITS_BASE_TYPE={self.options.base_type}"]
-        if units_namespace:
-            self.cpp_info.defines.append(f"UNITS_NAMESPACE={units_namespace}")

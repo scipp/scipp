@@ -20,7 +20,7 @@ constexpr auto special_like =
     overloaded{arg_list<double, float, int64_t, int32_t, bool, SubbinSizes,
                         time_point, Eigen::Vector3d>,
                transform_flags::force_variance_broadcast,
-               [](const units::Unit &u) { return u; }};
+               [](const sc_units::Unit &u) { return u; }};
 
 constexpr auto zeros_not_bool_like =
     overloaded{special_like, [](const auto &x) {

@@ -3,7 +3,7 @@
 # @author Simon Heybrock
 import itertools
 import uuid
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, SupportsIndex, TypeVar, overload
 
 from .._scipp import core as _cpp
@@ -63,7 +63,9 @@ def make_histogrammed(
     scipp.bin:
         For binning data.
     """
-    if isinstance(x, Variable):
+    if isinstance(x, Variable) and x.bins is not None:
+        x = DataArray(x)
+    elif isinstance(x, Variable):
         data = scalar(1.0, unit='counts').broadcast(sizes=x.sizes)
         x = DataArray(data, coords={edges.dim: x})
     elif isinstance(x, DataArray) and x.bins is not None:
@@ -289,7 +291,7 @@ def _require_coord(name: str, coord: object) -> None:
 
 def _get_coord(x: Variable | DataArray | Dataset, name: str) -> Variable:
     if isinstance(x, Variable):
-        return x
+        return x if x.bins is None else x.bins.coords[name]
     if isinstance(x, Dataset):
         if not x.values():
             raise ValueError("Dataset is empty")
@@ -357,8 +359,8 @@ def _parse_coords_arg(
 
 def _make_edges(
     x: Variable | DataArray | Dataset,
-    arg_dict: dict[str, SupportsIndex | Variable] | None,
-    kwargs: dict[str, SupportsIndex | Variable],
+    arg_dict: Mapping[str, SupportsIndex | Variable] | None,
+    kwargs: Mapping[str, SupportsIndex | Variable],
 ) -> dict[str, Variable]:
     if arg_dict is not None:
         kwargs = dict(**arg_dict, **kwargs)
@@ -691,7 +693,7 @@ def nanhist(
 @overload
 def bin(
     x: Variable | DataArray,
-    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+    arg_dict: Mapping[str, SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
@@ -702,7 +704,7 @@ def bin(
 @overload
 def bin(
     x: DataGroup[Any],
-    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+    arg_dict: Mapping[str, SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
@@ -713,7 +715,7 @@ def bin(
 @data_group_overload
 def bin(
     x: Variable | DataArray | DataGroup[Any],
-    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+    arg_dict: Mapping[str, SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,

@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Jan-Lukas Wynen
+from collections.abc import Callable
+from typing import Any
+
 import numpy as np
 import pytest
 
@@ -17,11 +20,11 @@ import scipp.testing
     ],
     ids=['Variable', 'DataArray', 'Dataset', 'DataGroup'],
 )
-def container(request):
-    return request.param
+def container(request: pytest.FixtureRequest) -> Callable[[object], Any]:
+    return request.param  # type: ignore[no-any-return]
 
 
-def test_sum(container) -> None:
+def test_sum(container: Callable[[object], Any]) -> None:
     x = container(
         sc.array(
             dims=['xx', 'yy'], values=[[1, 2, 3], [4, 5, 6]], unit='m', dtype='int64'
@@ -31,7 +34,7 @@ def test_sum(container) -> None:
     assert sc.identical(x.sum(), container(sc.scalar(21, unit='m', dtype='int64')))
 
 
-def test_sum_single_dim(container) -> None:
+def test_sum_single_dim(container: Callable[[object], Any]) -> None:
     var = container(
         sc.array(dims=['xx', 'yy'], values=[[1, 2, 3], [4, 5, 6]], unit='m')
     )
@@ -88,7 +91,7 @@ def test_sum_masked() -> None:
     assert sc.identical(result, d_ref['a'])
 
 
-def test_nansum(container) -> None:
+def test_nansum(container: Callable[[object], Any]) -> None:
     x = container(
         sc.array(dims=['xx', 'yy'], values=[[1, np.nan, 3], [4, 5, np.nan]], unit='m')
     )
@@ -96,7 +99,7 @@ def test_nansum(container) -> None:
     assert sc.identical(x.nansum(), container(sc.scalar(13.0, unit='m')))
 
 
-def test_nansum_single_dim(container) -> None:
+def test_nansum_single_dim(container: Callable[[object], Any]) -> None:
     var = container(
         sc.array(dims=['xx', 'yy'], values=[[1, np.nan, 3], [4, 5, np.nan]], unit='m')
     )
@@ -136,13 +139,13 @@ def test_nansum_masked() -> None:
     assert sc.identical(result, d_ref['a'])
 
 
-def test_mean(container) -> None:
+def test_mean(container: Callable[[object], Any]) -> None:
     x = container(sc.array(dims=['xx', 'yy'], values=[[1, 2, 3], [4, 5, 6]], unit='m'))
     assert sc.identical(sc.mean(x), container(sc.scalar(3.5, unit='m')))
     assert sc.identical(x.mean(), container(sc.scalar(3.5, unit='m')))
 
 
-def test_mean_single_dim(container) -> None:
+def test_mean_single_dim(container: Callable[[object], Any]) -> None:
     var = container(
         sc.array(dims=['xx', 'yy'], values=[[1, 2, 3], [4, 5, 6]], unit='m')
     )
@@ -205,7 +208,7 @@ def test_mean_masked() -> None:
     assert sc.identical(sc.nanmean(d, 'x')['a'], d_ref['a'])
 
 
-def test_nanmean(container) -> None:
+def test_nanmean(container: Callable[[object], Any]) -> None:
     x = container(
         sc.array(dims=['xx', 'yy'], values=[[1, np.nan, 3], [4, 5, np.nan]], unit='m')
     )
@@ -213,7 +216,7 @@ def test_nanmean(container) -> None:
     assert sc.identical(x.nanmean(), container(sc.scalar(3.25, unit='m')))
 
 
-def test_nanmean_single_dim(container) -> None:
+def test_nanmean_single_dim(container: Callable[[object], Any]) -> None:
     var = container(
         sc.array(dims=['xx', 'yy'], values=[[1, np.nan, 3], [4, 5, np.nan]], unit='m')
     )
@@ -236,7 +239,7 @@ def test_nanmean_single_dim(container) -> None:
     )
 
 
-def test_median_even(container) -> None:
+def test_median_even(container: Callable[[object], Any]) -> None:
     x = container(sc.array(dims=['xx', 'yy'], values=[[6, 3, 2], [4, 5, 1]], unit='m'))
     sc.testing.assert_identical(sc.median(x), container(sc.scalar(3.5, unit='m')))
     sc.testing.assert_identical(x.median(), container(sc.scalar(3.5, unit='m')))
@@ -254,7 +257,7 @@ def test_median_even(container) -> None:
     )
 
 
-def test_median_odd(container) -> None:
+def test_median_odd(container: Callable[[object], Any]) -> None:
     x = container(sc.array(dims=['xx'], values=[7, 4, 5, 2, 1], unit='m'))
     sc.testing.assert_identical(sc.median(x), container(sc.scalar(4.0, unit='m')))
     sc.testing.assert_identical(x.median(), container(sc.scalar(4.0, unit='m')))
@@ -266,7 +269,7 @@ def test_median_odd(container) -> None:
     )
 
 
-def test_median_single_dim(container) -> None:
+def test_median_single_dim(container: Callable[[object], Any]) -> None:
     x = container(sc.array(dims=['xx', 'yy'], values=[[6, 3, 2], [4, 5, 1]], unit='m'))
     sc.testing.assert_identical(
         sc.median(x, dim='xx'),
@@ -302,7 +305,7 @@ def test_median_single_dim(container) -> None:
     )
 
 
-def test_median_raises_for_variances(container) -> None:
+def test_median_raises_for_variances(container: Callable[[object], Any]) -> None:
     x = container(sc.array(dims=['x'], values=[1.2, 3.4], variances=[0.1, 1.3]))
     with pytest.raises(sc.VariancesError):
         sc.median(x)
@@ -424,7 +427,7 @@ def test_median_binned_not_supported() -> None:
         da.median()
 
 
-def test_nanmedian_even(container) -> None:
+def test_nanmedian_even(container: Callable[[object], Any]) -> None:
     x = container(
         sc.array(dims=['xx', 'yy'], values=[[np.nan, 3, 2], [4, np.nan, 1]], unit='m')
     )
@@ -444,7 +447,7 @@ def test_nanmedian_even(container) -> None:
     )
 
 
-def test_nanmedian_odd(container) -> None:
+def test_nanmedian_odd(container: Callable[[object], Any]) -> None:
     x = container(sc.array(dims=['xx'], values=[7, np.nan, 5, np.nan, 1], unit='m'))
     sc.testing.assert_identical(sc.nanmedian(x), container(sc.scalar(5.0, unit='m')))
     sc.testing.assert_identical(x.nanmedian(), container(sc.scalar(5.0, unit='m')))
@@ -456,7 +459,7 @@ def test_nanmedian_odd(container) -> None:
     )
 
 
-def test_nanmedian_single_dim(container) -> None:
+def test_nanmedian_single_dim(container: Callable[[object], Any]) -> None:
     x = container(
         sc.array(dims=['xx', 'yy'], values=[[6, np.nan, 2], [np.nan, 5, 1]], unit='m')
     )
@@ -495,7 +498,7 @@ def test_nanmedian_single_dim(container) -> None:
     )
 
 
-def test_var(container) -> None:
+def test_var(container: Callable[[object], Any]) -> None:
     x = container(sc.array(dims=['xx', 'yy'], values=[[2, 5, 3], [2, 2, 4]], unit='m'))
     # Yes, using identical with floats.
     # It works and allclose doesn't support datasets and data groups.
@@ -522,7 +525,7 @@ def test_var(container) -> None:
     )
 
 
-def test_var_single_dim(container) -> None:
+def test_var_single_dim(container: Callable[[object], Any]) -> None:
     x = container(sc.array(dims=['xx', 'yy'], values=[[2, 5, 3], [2, 2, 4]], unit='m'))
     # Yes, using identical with floats.
     # It works and allclose doesn't support datasets and data groups.
@@ -561,7 +564,7 @@ def test_var_single_dim(container) -> None:
     )
 
 
-def test_nanvar(container) -> None:
+def test_nanvar(container: Callable[[object], Any]) -> None:
     x = container(
         sc.array(dims=['xx', 'yy'], values=[[2, np.nan, 3], [2, 2, np.nan]], unit='m')
     )
@@ -582,7 +585,7 @@ def test_nanvar(container) -> None:
     )
 
 
-def test_nanvar_single_dim(container) -> None:
+def test_nanvar_single_dim(container: Callable[[object], Any]) -> None:
     x = container(
         sc.array(dims=['xx', 'yy'], values=[[2, np.nan, 3], [2, 2, np.nan]], unit='m')
     )
@@ -667,7 +670,7 @@ def test_std_data_group() -> None:
     )
 
 
-def test_std_single_dim(container) -> None:
+def test_std_single_dim(container: Callable[[object], Any]) -> None:
     x = container(sc.array(dims=['xx', 'yy'], values=[[2, 5, 3], [2, 2, 4]], unit='m'))
     # Yes, using identical with floats.
     # It works and allclose doesn't support datasets and data groups.
@@ -710,7 +713,7 @@ def test_std_single_dim_variable() -> None:
     )
 
 
-def test_nanstd(container) -> None:
+def test_nanstd(container: Callable[[object], Any]) -> None:
     x = container(
         sc.array(dims=['xx', 'yy'], values=[[2, np.nan, 3], [2, 3, np.nan]], unit='m')
     )
@@ -728,7 +731,7 @@ def test_nanstd(container) -> None:
     )
 
 
-def test_test_nanstd_single_dim(container) -> None:
+def test_test_nanstd_single_dim(container: Callable[[object], Any]) -> None:
     x = container(
         sc.array(dims=['xx', 'yy'], values=[[2, np.nan, 3], [2, 2, np.nan]], unit='m')
     )
@@ -752,7 +755,7 @@ def test_test_nanstd_single_dim(container) -> None:
     )
 
 
-def test_max(container) -> None:
+def test_max(container: Callable[[object], Any]) -> None:
     x = container(
         sc.array(
             dims=['xx', 'yy'], values=[[1, 2, 3], [4, 5, 6]], unit='m', dtype='int64'
@@ -762,7 +765,7 @@ def test_max(container) -> None:
     assert sc.identical(x.max(), container(sc.scalar(6, unit='m', dtype='int64')))
 
 
-def test_max_single_dim(container) -> None:
+def test_max_single_dim(container: Callable[[object], Any]) -> None:
     var = container(
         sc.array(dims=['xx', 'yy'], values=[[1, 2, 3], [4, 5, 6]], unit='m')
     )
@@ -782,7 +785,7 @@ def test_max_single_dim(container) -> None:
     )
 
 
-def test_nanmax(container) -> None:
+def test_nanmax(container: Callable[[object], Any]) -> None:
     x = container(
         sc.array(dims=['xx', 'yy'], values=[[1, np.nan, 3], [4, 5, np.nan]], unit='m')
     )
@@ -790,7 +793,7 @@ def test_nanmax(container) -> None:
     assert sc.identical(x.nanmax(), container(sc.scalar(5.0, unit='m')))
 
 
-def test_nanmax_single_dim(container) -> None:
+def test_nanmax_single_dim(container: Callable[[object], Any]) -> None:
     var = container(
         sc.array(dims=['xx', 'yy'], values=[[1, np.nan, 3], [4, 5, np.nan]], unit='m')
     )
@@ -812,7 +815,7 @@ def test_nanmax_single_dim(container) -> None:
     )
 
 
-def test_min(container) -> None:
+def test_min(container: Callable[[object], Any]) -> None:
     x = container(
         sc.array(
             dims=['xx', 'yy'], values=[[1, 2, 3], [4, 5, 6]], unit='m', dtype='int64'
@@ -822,7 +825,7 @@ def test_min(container) -> None:
     assert sc.identical(x.min(), container(sc.scalar(1, unit='m', dtype='int64')))
 
 
-def test_min_single_dim(container) -> None:
+def test_min_single_dim(container: Callable[[object], Any]) -> None:
     var = container(
         sc.array(dims=['xx', 'yy'], values=[[1, 2, 3], [4, 5, 6]], unit='m')
     )
@@ -842,7 +845,7 @@ def test_min_single_dim(container) -> None:
     )
 
 
-def test_nanmin(container) -> None:
+def test_nanmin(container: Callable[[object], Any]) -> None:
     x = container(
         sc.array(dims=['xx', 'yy'], values=[[1, np.nan, 3], [4, 5, np.nan]], unit='m')
     )
@@ -850,7 +853,7 @@ def test_nanmin(container) -> None:
     assert sc.identical(x.nanmin(), container(sc.scalar(1.0, unit='m')))
 
 
-def test_nanmin_single_dim(container) -> None:
+def test_nanmin_single_dim(container: Callable[[object], Any]) -> None:
     var = container(
         sc.array(dims=['xx', 'yy'], values=[[1, np.nan, 3], [4, 5, np.nan]], unit='m')
     )
@@ -872,7 +875,7 @@ def test_nanmin_single_dim(container) -> None:
     )
 
 
-def test_all(container) -> None:
+def test_all(container: Callable[[object], Any]) -> None:
     x = container(
         sc.array(dims=['xx', 'yy'], values=[[True, False, False], [True, True, False]])
     )
@@ -881,7 +884,7 @@ def test_all(container) -> None:
     assert sc.identical(x.all(), container(sc.scalar(False)))
 
 
-def test_all_single_dim(container) -> None:
+def test_all_single_dim(container: Callable[[object], Any]) -> None:
     x = container(
         sc.array(dims=['xx', 'yy'], values=[[True, False, False], [True, True, False]])
     )
@@ -901,7 +904,7 @@ def test_all_single_dim(container) -> None:
     )
 
 
-def test_any(container) -> None:
+def test_any(container: Callable[[object], Any]) -> None:
     x = container(
         sc.array(dims=['xx', 'yy'], values=[[True, False, False], [True, True, False]])
     )
@@ -910,7 +913,7 @@ def test_any(container) -> None:
     assert sc.identical(x.any(), container(sc.scalar(True)))
 
 
-def test_any_single_dim(container) -> None:
+def test_any_single_dim(container: Callable[[object], Any]) -> None:
     x = container(
         sc.array(dims=['xx', 'yy'], values=[[True, False, False], [True, True, False]])
     )
@@ -941,7 +944,7 @@ def test_reduction_with_mask_works_with_vectors() -> None:
 # This test exists to prevent accidental or intentional but not thoroughly
 # thought-out changes.
 @pytest.mark.parametrize('opname', ['var', 'nanvar', 'std', 'nanstd'])
-def test_variance_reductions_require_ddof_param(opname) -> None:
+def test_variance_reductions_require_ddof_param(opname: str) -> None:
     data = sc.zeros(sizes={'x': 2})
 
     func = getattr(sc, opname)
@@ -968,7 +971,7 @@ def test_variance_reductions_require_ddof_param(opname) -> None:
         'nanmax',
     ],
 )
-def test_reduce_two_dims(container, opname) -> None:
+def test_reduce_two_dims(container: Callable[[object], Any], opname: str) -> None:
     x = container(
         sc.array(
             dims=['xx', 'yy', 'zz'],

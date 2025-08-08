@@ -5,7 +5,7 @@
 #include "scipp/units/string.h"
 #include <sstream>
 
-namespace scipp::units {
+namespace scipp::sc_units {
 
 std::ostream &operator<<(std::ostream &os, const Dim dim) {
   return os << to_string(dim);
@@ -15,7 +15,7 @@ std::ostream &operator<<(std::ostream &os, const Unit unit) {
   return os << to_string(unit);
 }
 
-std::string to_string(const units::Unit &unit) { return unit.name(); }
+std::string to_string(const sc_units::Unit &unit) { return unit.name(); }
 
 template <class T> std::string to_string(const std::initializer_list<T> items) {
   std::stringstream ss;
@@ -27,7 +27,7 @@ template <class T> std::string to_string(const std::initializer_list<T> items) {
   return ss.str();
 }
 
-template SCIPP_UNITS_EXPORT std::string to_string<scipp::units::Unit>(
-    const std::initializer_list<scipp::units::Unit> items);
+template SCIPP_UNITS_EXPORT std::string to_string<scipp::sc_units::Unit>(
+    const std::initializer_list<scipp::sc_units::Unit> items);
 
-} // namespace scipp::units
+} // namespace scipp::sc_units

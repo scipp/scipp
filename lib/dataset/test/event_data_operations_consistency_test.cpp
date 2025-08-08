@@ -13,10 +13,10 @@ using namespace scipp::dataset;
 static auto make_events() {
   Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       Dims{Dim::Y}, Shape{2}, Values{std::pair{0, 3}, std::pair{3, 7}});
-  auto weights = makeVariable<double>(Dims{Dim::Event}, Shape{7}, units::counts,
-                                      Values{1, 1, 1, 1, 1, 1, 1},
-                                      Variances{1, 1, 1, 1, 1, 1, 1});
-  auto x = makeVariable<double>(Dims{Dim::Event}, Shape{7}, units::us,
+  auto weights = makeVariable<double>(
+      Dims{Dim::Event}, Shape{7}, sc_units::counts, Values{1, 1, 1, 1, 1, 1, 1},
+      Variances{1, 1, 1, 1, 1, 1, 1});
+  auto x = makeVariable<double>(Dims{Dim::Event}, Shape{7}, sc_units::us,
                                 Values{1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 5.5});
   DataArray buf(weights, {{Dim::X, x}});
   return make_bins(indices, Dim::Event, buf);
@@ -29,7 +29,7 @@ static auto make_events_array_default_weights() {
 
 static auto make_histogram() {
   auto edges = makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 3}},
-                                    units::us, Values{0, 2, 4, 1, 3, 5});
+                                    sc_units::us, Values{0, 2, 4, 1, 3, 5});
   auto data = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                    Values{2.0, 3.0, 2.0, 3.0});
 
@@ -41,7 +41,7 @@ TEST(EventsDataOperationsConsistencyTest, multiply) {
   // it would broadcast), the order of operations does not matter. We can either
   // first multiply and then histogram, or first histogram and then multiply.
   const auto events = make_events_array_default_weights();
-  auto edges = makeVariable<double>(Dimensions{Dim::X, 4}, units::us,
+  auto edges = makeVariable<double>(Dimensions{Dim::X, 4}, sc_units::us,
                                     Values{1, 2, 3, 4});
   auto data =
       makeVariable<double>(Dimensions{Dim::X, 3}, Values{2.0, 3.0, 4.0});
@@ -68,16 +68,16 @@ TEST(EventsDataOperationsConsistencyTest, multiply) {
 
 TEST(EventsDataOperationsConsistencyTest, concatenate_sum) {
   const auto events = make_events_array_default_weights();
-  auto edges =
-      makeVariable<double>(Dimensions{Dim::X, 3}, units::us, Values{1, 3, 6});
+  auto edges = makeVariable<double>(Dimensions{Dim::X, 3}, sc_units::us,
+                                    Values{1, 3, 6});
   EXPECT_EQ(sum(histogram(events, edges), Dim::Y),
             histogram(buckets::concatenate(events, Dim::Y), edges));
 }
 
 TEST(EventsDataOperationsConsistencyTest, concatenate_multiply_sum) {
   const auto events = make_events_array_default_weights();
-  auto edges =
-      makeVariable<double>(Dimensions{Dim::X, 3}, units::us, Values{1, 3, 5});
+  auto edges = makeVariable<double>(Dimensions{Dim::X, 3}, sc_units::us,
+                                    Values{1, 3, 5});
   auto data = makeVariable<double>(Dimensions{Dim::X, 2}, Values{2.0, 3.0});
   auto hist = DataArray(data, {{Dim::X, edges}});
 

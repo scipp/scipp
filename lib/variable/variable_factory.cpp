@@ -49,16 +49,17 @@ DType VariableFactory::elem_dtype(const Variable &var) const {
   return m_makers.at(var.dtype())->elem_dtype(var);
 }
 
-units::Unit VariableFactory::elem_unit(const Variable &var) const {
+sc_units::Unit VariableFactory::elem_unit(const Variable &var) const {
   return m_makers.at(var.dtype())->elem_unit(var);
 }
 
 void VariableFactory::expect_can_set_elem_unit(const Variable &var,
-                                               const units::Unit &u) const {
+                                               const sc_units::Unit &u) const {
   m_makers.at(var.dtype())->expect_can_set_elem_unit(var, u);
 }
 
-void VariableFactory::set_elem_unit(Variable &var, const units::Unit &u) const {
+void VariableFactory::set_elem_unit(Variable &var,
+                                    const sc_units::Unit &u) const {
   m_makers.at(var.dtype())->set_elem_unit(var, u);
 }
 

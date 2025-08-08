@@ -20,7 +20,7 @@ namespace scipp::variable::bin_detail {
 /// 0 if the coord is less than the first edge, nbin-1 if greater or equal last
 /// edge. Assumes both `edges` and `coord` are sorted.
 Variable begin_edge(const Variable &coord, const Variable &edges) {
-  auto indices = makeVariable<scipp::index>(coord.dims(), units::none);
+  auto indices = makeVariable<scipp::index>(coord.dims(), sc_units::none);
   const auto dim = edges.dims().inner();
   if (indices.dims()[dim] == 0)
     return indices;
@@ -36,7 +36,7 @@ Variable begin_edge(const Variable &coord, const Variable &edges) {
 /// nbin if the coord is greater than the last edge. Assumes both `edges` and
 /// `coord` are sorted.
 Variable end_edge(const Variable &coord, const Variable &edges) {
-  auto indices = makeVariable<scipp::index>(coord.dims(), units::none);
+  auto indices = makeVariable<scipp::index>(coord.dims(), sc_units::none);
   const auto dim = edges.dims().inner();
   if (indices.dims()[dim] == 0)
     return indices;
@@ -49,7 +49,7 @@ Variable end_edge(const Variable &coord, const Variable &edges) {
 Variable cumsum_exclusive_subbin_sizes(const Variable &var) {
   return transform<core::SubbinSizes>(
       var,
-      overloaded{[](const units::Unit &u) { return u; },
+      overloaded{[](const sc_units::Unit &u) { return u; },
                  [](const auto &sizes) { return sizes.cumsum_exclusive(); }},
       "scipp.bin.cumsum_exclusive");
 }
@@ -57,7 +57,7 @@ Variable cumsum_exclusive_subbin_sizes(const Variable &var) {
 Variable sum_subbin_sizes(const Variable &var) {
   return transform<core::SubbinSizes>(
       var,
-      overloaded{[](const units::Unit &u) { return u; },
+      overloaded{[](const sc_units::Unit &u) { return u; },
                  [](const auto &sizes) { return sizes.sum(); }},
       "scipp.bin.sum_subbin_sizes");
 }

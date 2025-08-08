@@ -41,7 +41,7 @@ SCIPP_CORE_EXPORT std::string labels_to_string(const Dimensions &dims);
 // No timezone conversion is performed and the result does not show a
 // timezone offset.
 SCIPP_CORE_EXPORT std::string to_iso_date(const scipp::core::time_point &item,
-                                          const units::Unit &unit);
+                                          const sc_units::Unit &unit);
 
 /// Return the global dtype name registry instance
 SCIPP_CORE_EXPORT std::map<DType, std::string> &dtypeNameRegistry();

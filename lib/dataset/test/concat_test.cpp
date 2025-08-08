@@ -270,8 +270,8 @@ TEST(ConcatenateTest, concat_2d_coord) {
 
   Dataset b = copy(a);
   EXPECT_EQ(a, b);
-  b.coords()[Dim::X] += 3 * units::one;
-  b["data_1"].data() += 100 * units::one;
+  b.coords()[Dim::X] += 3 * sc_units::one;
+  b["data_1"].data() += 100 * sc_units::one;
 
   Dataset expected(
       {{"data_1", makeVariable<int>(Dims{Dim::Y, Dim::X}, Shape{4, 3},
@@ -293,9 +293,9 @@ TEST(ConcatenateTest, concat_2d_coord) {
 }
 
 TEST(ConcatenateTest, broadcast_coord) {
-  DataArray a(1.0 * units::one, {{Dim::X, 1.0 * units::one}});
+  DataArray a(1.0 * sc_units::one, {{Dim::X, 1.0 * sc_units::one}});
   DataArray b(makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2, 3}),
-              {{Dim::X, 2.0 * units::one}});
+              {{Dim::X, 2.0 * sc_units::one}});
   EXPECT_EQ(
       concat2(a, b, Dim::X),
       DataArray(makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}),
@@ -435,9 +435,9 @@ protected:
 
 TEST_F(ConcatenateBinnedTest, mismatching_buffer) {
   for (const auto &buffer2 :
-       {buffer * (1.0 * units::m),
-        DataArray(data, {{Dim::X, data + data}}, {{"mask", 1.0 * units::one}},
-                  {}),
+       {buffer * (1.0 * sc_units::m),
+        DataArray(data, {{Dim::X, data + data}},
+                  {{"mask", 1.0 * sc_units::one}}, {}),
         DataArray(data, {{Dim::Y, data + data}, {Dim::X, data + data}}),
         DataArray(data, {})}) {
     auto var2 = make_bins(indices, Dim::Event, buffer2);
@@ -452,8 +452,8 @@ TEST_F(ConcatenateBinnedTest, existing_dim) {
   auto out = concat2(var, var, Dim::X);
   EXPECT_EQ(out.slice({Dim::X, 0, 2}), var);
   EXPECT_EQ(out.slice({Dim::X, 2, 4}), var);
-  out = concat2(var + 1.2 * units::one, out, Dim::X);
-  EXPECT_EQ(out.slice({Dim::X, 0, 2}), var + 1.2 * units::one);
+  out = concat2(var + 1.2 * sc_units::one, out, Dim::X);
+  EXPECT_EQ(out.slice({Dim::X, 0, 2}), var + 1.2 * sc_units::one);
   EXPECT_EQ(out.slice({Dim::X, 2, 4}), var);
   EXPECT_EQ(out.slice({Dim::X, 4, 6}), var);
 }
@@ -462,8 +462,8 @@ TEST_F(ConcatenateBinnedTest, new_dim) {
   auto out = concat2(var, var, Dim::Y);
   EXPECT_EQ(out.slice({Dim::Y, 0}), var);
   EXPECT_EQ(out.slice({Dim::Y, 1}), var);
-  out = concat2(var + 1.2 * units::one, out, Dim::Y);
-  EXPECT_EQ(out.slice({Dim::Y, 0}), var + 1.2 * units::one);
+  out = concat2(var + 1.2 * sc_units::one, out, Dim::Y);
+  EXPECT_EQ(out.slice({Dim::Y, 0}), var + 1.2 * sc_units::one);
   EXPECT_EQ(out.slice({Dim::Y, 1}), var);
   EXPECT_EQ(out.slice({Dim::Y, 2}), var);
 }

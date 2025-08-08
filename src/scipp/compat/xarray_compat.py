@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, overload
 from warnings import warn
 
 from ..core import DataArray, Dataset, Unit, Variable
@@ -12,6 +12,18 @@ from ..units import default_unit
 
 if TYPE_CHECKING:
     import xarray as xr
+
+
+@overload
+def from_xarray(obj: xr.Variable) -> Variable: ...
+
+
+@overload
+def from_xarray(obj: xr.DataArray) -> DataArray: ...
+
+
+@overload
+def from_xarray(obj: xr.Dataset) -> Dataset: ...
 
 
 def from_xarray(obj: xr.Variable | xr.DataArray | xr.Dataset) -> VariableLike:
@@ -44,6 +56,18 @@ def from_xarray(obj: xr.Variable | xr.DataArray | xr.Dataset) -> VariableLike:
         return _from_xarray_dataset(obj)
     else:
         raise ValueError(f"from_xarray: cannot convert type '{type(obj)}'")
+
+
+@overload
+def to_xarray(obj: Variable) -> xr.Variable: ...
+
+
+@overload
+def to_xarray(obj: DataArray) -> xr.DataArray: ...
+
+
+@overload
+def to_xarray(obj: Dataset) -> xr.Dataset: ...
 
 
 def to_xarray(obj: VariableLike) -> xr.Variable | xr.DataArray | xr.Dataset:

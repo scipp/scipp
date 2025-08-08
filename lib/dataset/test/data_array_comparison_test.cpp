@@ -62,49 +62,51 @@ template <class T> auto make_values(const Dimensions &dims) {
 }
 
 template <class T, class T2>
-auto make_1_coord(const Dim dim, const Dimensions &dims, const units::Unit unit,
+auto make_1_coord(const Dim dim, const Dimensions &dims,
+                  const sc_units::Unit unit,
                   const std::initializer_list<T2> &data) {
   auto a = make_values<T>(dims);
-  a.coords().set(dim, makeVariable<T>(dims, units::Unit(unit), Values(data)));
+  a.coords().set(dim,
+                 makeVariable<T>(dims, sc_units::Unit(unit), Values(data)));
   return a;
 }
 
 template <class T, class T2>
 auto make_1_labels(const std::string &name, const Dimensions &dims,
-                   const units::Unit unit,
+                   const sc_units::Unit unit,
                    const std::initializer_list<T2> &data) {
   auto a = make_values<T>(dims);
   a.coords().set(Dim(name),
-                 makeVariable<T>(dims, units::Unit(unit), Values(data)));
+                 makeVariable<T>(dims, sc_units::Unit(unit), Values(data)));
   return a;
 }
 
 template <class T, class T2>
 auto make_1_mask(const std::string &name, const Dimensions &dims,
-                 const units::Unit unit,
+                 const sc_units::Unit unit,
                  const std::initializer_list<T2> &data) {
   auto a = make_values<T>(dims);
-  a.masks().set(
-      name, makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
+  a.masks().set(name, makeVariable<T>(Dimensions(dims), sc_units::Unit(unit),
+                                      Values(data)));
   return a;
 }
 
 template <class T, class T2>
 auto make_values(const std::string &name, const Dimensions &dims,
-                 const units::Unit unit,
+                 const sc_units::Unit unit,
                  const std::initializer_list<T2> &data) {
   DataArray da(
-      makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
+      makeVariable<T>(Dimensions(dims), sc_units::Unit(unit), Values(data)));
   da.setName(name);
   return da;
 }
 
 template <class T, class T2>
 auto make_values_and_variances(const std::string &name, const Dimensions &dims,
-                               const units::Unit unit,
+                               const sc_units::Unit unit,
                                const std::initializer_list<T2> &values,
                                const std::initializer_list<T2> &variances) {
-  DataArray da(makeVariable<T>(Dimensions(dims), units::Unit(unit),
+  DataArray da(makeVariable<T>(Dimensions(dims), sc_units::Unit(unit),
                                Values(values), Variances(variances)));
   da.setName(name);
   return da;
@@ -116,76 +118,82 @@ auto make_values_and_variances(const std::string &name, const Dimensions &dims,
 // comparison of Variable, but it ensures that the content is actually compared
 // and thus serves as a baseline for the follow-up tests.
 TEST_F(DataArray_comparison_operators, single_coord) {
-  auto a =
-      make_1_coord<double>(Dim::X, {Dim::X, 3}, units::m, {false, true, false});
+  auto a = make_1_coord<double>(Dim::X, {Dim::X, 3}, sc_units::m,
+                                {false, true, false});
   expect_eq(a, a);
   expect_ne(a, make_values<double>({Dim::X, 3}));
-  expect_ne(a, make_1_coord<float>(Dim::X, {Dim::X, 3}, units::m, {1, 2, 3}));
-  expect_ne(a, make_1_coord<double>(Dim::Y, {Dim::X, 3}, units::m, {1, 2, 3}));
-  expect_ne(a, make_1_coord<double>(Dim::X, {Dim::Y, 3}, units::m, {1, 2, 3}));
-  expect_ne(a, make_1_coord<double>(Dim::X, {Dim::X, 2}, units::m, {1, 2}));
-  expect_ne(a, make_1_coord<double>(Dim::X, {Dim::X, 3}, units::s, {1, 2, 3}));
-  expect_ne(a, make_1_coord<double>(Dim::X, {Dim::X, 3}, units::m, {1, 2, 4}));
+  expect_ne(a,
+            make_1_coord<float>(Dim::X, {Dim::X, 3}, sc_units::m, {1, 2, 3}));
+  expect_ne(a,
+            make_1_coord<double>(Dim::Y, {Dim::X, 3}, sc_units::m, {1, 2, 3}));
+  expect_ne(a,
+            make_1_coord<double>(Dim::X, {Dim::Y, 3}, sc_units::m, {1, 2, 3}));
+  expect_ne(a, make_1_coord<double>(Dim::X, {Dim::X, 2}, sc_units::m, {1, 2}));
+  expect_ne(a,
+            make_1_coord<double>(Dim::X, {Dim::X, 3}, sc_units::s, {1, 2, 3}));
+  expect_ne(a,
+            make_1_coord<double>(Dim::X, {Dim::X, 3}, sc_units::m, {1, 2, 4}));
 }
 
 TEST_F(DataArray_comparison_operators, single_labels) {
-  auto a = make_1_labels<double>("a", {Dim::X, 3}, units::m, {1, 2, 3});
+  auto a = make_1_labels<double>("a", {Dim::X, 3}, sc_units::m, {1, 2, 3});
   expect_eq(a, a);
   expect_ne(a, make_values<double>({Dim::X, 3}));
-  expect_ne(a, make_1_labels<float>("a", {Dim::X, 3}, units::m, {1, 2, 3}));
-  expect_ne(a, make_1_labels<double>("b", {Dim::X, 3}, units::m, {1, 2, 3}));
-  expect_ne(a, make_1_labels<double>("a", {Dim::Y, 3}, units::m, {1, 2, 3}));
-  expect_ne(a, make_1_labels<double>("a", {Dim::X, 2}, units::m, {1, 2}));
-  expect_ne(a, make_1_labels<double>("a", {Dim::X, 3}, units::s, {1, 2, 3}));
-  expect_ne(a, make_1_labels<double>("a", {Dim::X, 3}, units::m, {1, 2, 4}));
+  expect_ne(a, make_1_labels<float>("a", {Dim::X, 3}, sc_units::m, {1, 2, 3}));
+  expect_ne(a, make_1_labels<double>("b", {Dim::X, 3}, sc_units::m, {1, 2, 3}));
+  expect_ne(a, make_1_labels<double>("a", {Dim::Y, 3}, sc_units::m, {1, 2, 3}));
+  expect_ne(a, make_1_labels<double>("a", {Dim::X, 2}, sc_units::m, {1, 2}));
+  expect_ne(a, make_1_labels<double>("a", {Dim::X, 3}, sc_units::s, {1, 2, 3}));
+  expect_ne(a, make_1_labels<double>("a", {Dim::X, 3}, sc_units::m, {1, 2, 4}));
 }
 
 TEST_F(DataArray_comparison_operators, single_mask) {
-  auto a = make_1_mask<bool>("a", {Dim::X, 3}, units::m, {true, false, true});
+  auto a =
+      make_1_mask<bool>("a", {Dim::X, 3}, sc_units::m, {true, false, true});
   expect_eq(a, a);
   expect_ne(a, make_values<bool>({Dim::X, 3}));
-  expect_ne(a,
-            make_1_mask<bool>("b", {Dim::X, 3}, units::m, {true, false, true}));
-  expect_ne(a,
-            make_1_mask<bool>("a", {Dim::Y, 3}, units::m, {true, false, true}));
-  expect_ne(a, make_1_mask<bool>("a", {Dim::X, 2}, units::m, {true, false}));
-  expect_ne(a,
-            make_1_mask<bool>("a", {Dim::X, 3}, units::s, {true, false, true}));
   expect_ne(
-      a, make_1_mask<bool>("a", {Dim::X, 3}, units::m, {false, false, false}));
+      a, make_1_mask<bool>("b", {Dim::X, 3}, sc_units::m, {true, false, true}));
+  expect_ne(
+      a, make_1_mask<bool>("a", {Dim::Y, 3}, sc_units::m, {true, false, true}));
+  expect_ne(a, make_1_mask<bool>("a", {Dim::X, 2}, sc_units::m, {true, false}));
+  expect_ne(
+      a, make_1_mask<bool>("a", {Dim::X, 3}, sc_units::s, {true, false, true}));
+  expect_ne(a, make_1_mask<bool>("a", {Dim::X, 3}, sc_units::m,
+                                 {false, false, false}));
 }
 
 TEST_F(DataArray_comparison_operators, single_values) {
-  auto a = make_values<double>("a", {Dim::X, 3}, units::m, {1, 2, 3});
+  auto a = make_values<double>("a", {Dim::X, 3}, sc_units::m, {1, 2, 3});
   expect_eq(a, a);
   // Name of DataArray is ignored in comparison.
-  expect_eq(a, make_values<double>("b", {Dim::X, 3}, units::m, {1, 2, 3}));
+  expect_eq(a, make_values<double>("b", {Dim::X, 3}, sc_units::m, {1, 2, 3}));
   expect_ne(a, make_values<double>({Dim::X, 3}));
-  expect_ne(a, make_values<float>("a", {Dim::X, 3}, units::m, {1, 2, 3}));
-  expect_ne(a, make_values<double>("a", {Dim::Y, 3}, units::m, {1, 2, 3}));
-  expect_ne(a, make_values<double>("a", {Dim::X, 2}, units::m, {1, 2}));
-  expect_ne(a, make_values<double>("a", {Dim::X, 3}, units::s, {1, 2, 3}));
-  expect_ne(a, make_values<double>("a", {Dim::X, 3}, units::m, {1, 2, 4}));
+  expect_ne(a, make_values<float>("a", {Dim::X, 3}, sc_units::m, {1, 2, 3}));
+  expect_ne(a, make_values<double>("a", {Dim::Y, 3}, sc_units::m, {1, 2, 3}));
+  expect_ne(a, make_values<double>("a", {Dim::X, 2}, sc_units::m, {1, 2}));
+  expect_ne(a, make_values<double>("a", {Dim::X, 3}, sc_units::s, {1, 2, 3}));
+  expect_ne(a, make_values<double>("a", {Dim::X, 3}, sc_units::m, {1, 2, 4}));
 }
 
 TEST_F(DataArray_comparison_operators, single_values_and_variances) {
-  auto a = make_values_and_variances<double>("a", {Dim::X, 3}, units::m,
+  auto a = make_values_and_variances<double>("a", {Dim::X, 3}, sc_units::m,
                                              {1, 2, 3}, {4, 5, 6});
   expect_eq(a, a);
   // Name of DataArray is ignored in comparison.
-  expect_eq(a, make_values_and_variances<double>("b", {Dim::X, 3}, units::m,
+  expect_eq(a, make_values_and_variances<double>("b", {Dim::X, 3}, sc_units::m,
                                                  {1, 2, 3}, {4, 5, 6}));
-  expect_ne(a, make_values_and_variances<float>("a", {Dim::X, 3}, units::m,
+  expect_ne(a, make_values_and_variances<float>("a", {Dim::X, 3}, sc_units::m,
                                                 {1, 2, 3}, {4, 5, 6}));
-  expect_ne(a, make_values_and_variances<double>("a", {Dim::Y, 3}, units::m,
+  expect_ne(a, make_values_and_variances<double>("a", {Dim::Y, 3}, sc_units::m,
                                                  {1, 2, 3}, {4, 5, 6}));
-  expect_ne(a, make_values_and_variances<double>("a", {Dim::X, 2}, units::m,
+  expect_ne(a, make_values_and_variances<double>("a", {Dim::X, 2}, sc_units::m,
                                                  {1, 2}, {4, 5}));
-  expect_ne(a, make_values_and_variances<double>("a", {Dim::X, 3}, units::s,
+  expect_ne(a, make_values_and_variances<double>("a", {Dim::X, 3}, sc_units::s,
                                                  {1, 2, 3}, {4, 5, 6}));
-  expect_ne(a, make_values_and_variances<double>("a", {Dim::X, 3}, units::m,
+  expect_ne(a, make_values_and_variances<double>("a", {Dim::X, 3}, sc_units::m,
                                                  {1, 2, 4}, {4, 5, 6}));
-  expect_ne(a, make_values_and_variances<double>("a", {Dim::X, 3}, units::m,
+  expect_ne(a, make_values_and_variances<double>("a", {Dim::X, 3}, sc_units::m,
                                                  {1, 2, 3}, {4, 5, 7}));
 }
 // End baseline checks.

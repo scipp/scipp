@@ -11,7 +11,7 @@
 
 namespace scipp::variable {
 
-Variable empty(const Dimensions &dims, const units::Unit &unit,
+Variable empty(const Dimensions &dims, const sc_units::Unit &unit,
                const DType type, const bool with_variances,
                const bool aligned) {
   auto var = variableFactory().create(type, dims, unit, with_variances);
@@ -19,8 +19,8 @@ Variable empty(const Dimensions &dims, const units::Unit &unit,
   return var;
 }
 
-Variable ones(const Dimensions &dims, const units::Unit &unit, const DType type,
-              const bool with_variances) {
+Variable ones(const Dimensions &dims, const sc_units::Unit &unit,
+              const DType type, const bool with_variances) {
   const auto make_prototype = [&](auto &&one) {
     return with_variances
                ? Variable{type, Dimensions{}, unit, Values{one}, Variances{one}}

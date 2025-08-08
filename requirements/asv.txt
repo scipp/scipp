@@ -29,7 +29,11 @@ pyyaml==6.0.2
     # via asv
 tabulate==0.9.0
     # via asv
-virtualenv==20.30.0
+tomli==2.2.1
+    # via
+    #   asv
+    #   build
+virtualenv==20.31.2
     # via asv
 zipp==3.21.0
     # via importlib-metadata

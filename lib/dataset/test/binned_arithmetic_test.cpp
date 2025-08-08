@@ -19,36 +19,38 @@ class BinnedArithmeticTest : public ::testing::Test {
 protected:
   Variable indices = makeVariable<scipp::index_pair>(
       Dims{Dim::X}, Shape{2}, Values{std::pair{0, 2}, std::pair{2, 5}});
-  Variable var = makeVariable<double>(Dims{Dim::Event}, Shape{5}, units::m,
+  Variable var = makeVariable<double>(Dims{Dim::Event}, Shape{5}, sc_units::m,
                                       Values{1, 2, 3, 4, 5});
-  Variable expected = makeVariable<double>(Dims{Dim::Event}, Shape{5}, units::m,
-                                           Values{1, 2, 6, 8, 10});
+  Variable expected = makeVariable<double>(Dims{Dim::Event}, Shape{5},
+                                           sc_units::m, Values{1, 2, 6, 8, 10});
   DataArray array = DataArray(copy(var), {{Dim::X, var + var}});
 };
 
 TEST_F(BinnedArithmeticTest, fail_modify_slice_inplace_var) {
   Variable binned = make_bins(indices, Dim::Event, var);
-  EXPECT_THROW(binned.slice({Dim::X, 1}) *= 2.0 * units::m, except::UnitError);
+  EXPECT_THROW(binned.slice({Dim::X, 1}) *= 2.0 * sc_units::m,
+               except::UnitError);
   // unchanged
   EXPECT_EQ(binned, make_bins(indices, Dim::Event, var));
 }
 
 TEST_F(BinnedArithmeticTest, fail_modify_slice_inplace_array) {
   Variable binned = make_bins(indices, Dim::Event, array);
-  EXPECT_THROW(binned.slice({Dim::X, 1}) *= 2.0 * units::m, except::UnitError);
+  EXPECT_THROW(binned.slice({Dim::X, 1}) *= 2.0 * sc_units::m,
+               except::UnitError);
   // unchanged
   EXPECT_EQ(binned, make_bins(indices, Dim::Event, array));
 }
 
 TEST_F(BinnedArithmeticTest, modify_slice_inplace_var) {
   Variable binned = make_bins(indices, Dim::Event, var);
-  binned.slice({Dim::X, 1}) *= 2.0 * units::one;
+  binned.slice({Dim::X, 1}) *= 2.0 * sc_units::one;
   EXPECT_EQ(binned, make_bins(indices, Dim::Event, expected));
 }
 
 TEST_F(BinnedArithmeticTest, modify_slice_inplace_array) {
   Variable binned = make_bins(indices, Dim::Event, array);
-  binned.slice({Dim::X, 1}) *= 2.0 * units::one;
+  binned.slice({Dim::X, 1}) *= 2.0 * sc_units::one;
   DataArray expected_array = DataArray(expected, {{Dim::X, var + var}});
   EXPECT_EQ(binned, make_bins(indices, Dim::Event, expected_array));
 }

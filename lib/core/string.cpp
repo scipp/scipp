@@ -135,21 +135,22 @@ std::string to_string(const std::chrono::duration<Rep, Period> &duration) {
 } // namespace
 
 std::string to_iso_date(const scipp::core::time_point &item,
-                        const units::Unit &unit) {
-  if (unit == units::ns) {
+                        const sc_units::Unit &unit) {
+  if (unit == sc_units::ns) {
     return to_string(std::chrono::nanoseconds{item.time_since_epoch()});
-  } else if (unit == units::s) {
+  } else if (unit == sc_units::s) {
     return to_string(std::chrono::seconds{item.time_since_epoch()});
-  } else if (unit == units::us) {
+  } else if (unit == sc_units::us) {
     return to_string(std::chrono::microseconds{item.time_since_epoch()});
-  } else if (unit == units::Unit(llnl::units::precise::ms)) {
+  } else if (unit == sc_units::Unit(units::precise::ms)) {
     return to_string(std::chrono::milliseconds{item.time_since_epoch()});
-  } else if (unit == units::Unit(llnl::units::precise::minute)) {
+  } else if (unit == sc_units::Unit(units::precise::minute)) {
     return to_string(std::chrono::minutes{item.time_since_epoch()});
-  } else if (unit == units::Unit(llnl::units::precise::hr)) {
+  } else if (unit == sc_units::Unit(units::precise::hr)) {
     return to_string(std::chrono::hours{item.time_since_epoch()});
-  } else if (unit == units::Unit(llnl::units::precise::day) ||
-             unit == units::Unit("month") || unit == units::Unit("year")) {
+  } else if (unit == sc_units::Unit(units::precise::day) ||
+             unit == sc_units::Unit("month") ||
+             unit == sc_units::Unit("year")) {
     throw except::UnitError("Printing of time points with units greater than "
                             "hours is not yet implemented.");
   }

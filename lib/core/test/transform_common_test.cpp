@@ -34,11 +34,11 @@ TEST(TransformCommonTest, assign_unary_value) {
 
 TEST(TransformCommonTest, assign_unary_unit) {
   auto aop = assign_unary{core::element::sqrt};
-  units::Unit res;
-  aop(res, units::m * units::m);
-  EXPECT_EQ(res, units::m);
+  sc_units::Unit res;
+  aop(res, sc_units::m * sc_units::m);
+  EXPECT_EQ(res, sc_units::m);
 
-  EXPECT_THROW(aop(res, units::kg), except::UnitError);
+  EXPECT_THROW(aop(res, sc_units::kg), except::UnitError);
 }
 
 TEST(TransformCommontest, assign_unary_value_and_variance) {

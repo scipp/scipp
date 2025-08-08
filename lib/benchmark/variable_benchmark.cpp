@@ -69,6 +69,7 @@ template <class Gen> static void BM_Variable_copy(benchmark::State &state) {
   for (auto _ : state) {
     Variable copied = copy(var);
     state.PauseTiming();
+    // cppcheck-suppress unreadVariable
     copied = Variable();
     state.ResumeTiming();
   }
@@ -118,6 +119,7 @@ static void BM_Variable_trivial_slice(benchmark::State &state) {
       makeVariable<double>(Dims{Dim::Z, Dim::Y, Dim::X}, Shape{10, 20, 30});
 
   for (auto _ : state) {
+    // cppcheck-suppress unreadVariable
     Variable copied = copy(var);
   }
 }
@@ -196,8 +198,8 @@ BENCHMARK(BM_VariableView_assign_1d)
     ->Arg(1e9);
 
 static void BM_Variable_sin_rad(benchmark::State &state) {
-  const auto a =
-      makeVariable<double>(Dims{Dim::X}, Shape{1000}, units::Unit{units::rad});
+  const auto a = makeVariable<double>(Dims{Dim::X}, Shape{1000},
+                                      sc_units::Unit{sc_units::rad});
 
   for (auto _ : state) {
     benchmark::DoNotOptimize(sin(a));
@@ -206,8 +208,8 @@ static void BM_Variable_sin_rad(benchmark::State &state) {
 BENCHMARK(BM_Variable_sin_rad);
 
 static void BM_Variable_sin_deg(benchmark::State &state) {
-  const auto a =
-      makeVariable<double>(Dims{Dim::X}, Shape{1000}, units::Unit{units::deg});
+  const auto a = makeVariable<double>(Dims{Dim::X}, Shape{1000},
+                                      sc_units::Unit{sc_units::deg});
 
   for (auto _ : state) {
     benchmark::DoNotOptimize(sin(a));

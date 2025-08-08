@@ -26,8 +26,8 @@ constexpr auto get = [](const auto &x, const scipp::index i) {
 
 namespace map_detail {
 template <class Coord, class Edge, class Weight>
-using args = std::tuple<Coord, scipp::span<const Edge>,
-                        scipp::span<const Weight>, Weight>;
+using args =
+    std::tuple<Coord, std::span<const Edge>, std::span<const Weight>, Weight>;
 } // namespace map_detail
 
 constexpr auto map = overloaded{
@@ -77,8 +77,8 @@ constexpr auto map = overloaded{
                       map_detail::args<double, float, bool>>,
     transform_flags::expect_no_variance_arg<0>,
     transform_flags::expect_no_variance_arg<1>,
-    [](const units::Unit &x, const units::Unit &edges,
-       const units::Unit &weights, const units::Unit &fill) {
+    [](const sc_units::Unit &x, const sc_units::Unit &edges,
+       const sc_units::Unit &weights, const sc_units::Unit &fill) {
       expect::equals(x, edges);
       expect::equals(weights, fill);
       return weights;
@@ -111,7 +111,7 @@ constexpr auto lookup_previous =
 namespace map_and_mul_detail {
 template <class Data, class Coord, class Edge, class Weight>
 using args =
-    std::tuple<Data, Coord, scipp::span<const Edge>, scipp::span<const Weight>>;
+    std::tuple<Data, Coord, std::span<const Edge>, std::span<const Weight>>;
 } // namespace map_and_mul_detail
 
 constexpr auto map_and_mul = overloaded{
@@ -130,8 +130,8 @@ constexpr auto map_and_mul = overloaded{
     transform_flags::expect_no_variance_arg<3>, // caught in transform anyway,
                                                 // but adding this should save
                                                 // binary size and compile time
-    [](units::Unit &data, const units::Unit &x, const units::Unit &edges,
-       const units::Unit &weights) {
+    [](sc_units::Unit &data, const sc_units::Unit &x,
+       const sc_units::Unit &edges, const sc_units::Unit &weights) {
       expect::equals(x, edges);
       data *= weights;
     }};

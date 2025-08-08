@@ -19,7 +19,7 @@ scipp::core::DType dtype_of(const pybind11::object &x);
 
 scipp::core::DType scipp_dtype(const pybind11::object &type);
 
-std::tuple<scipp::core::DType, std::optional<scipp::units::Unit>>
+std::tuple<scipp::core::DType, std::optional<scipp::sc_units::Unit>>
 cast_dtype_and_unit(const pybind11::object &dtype, const ProtoUnit &unit);
 
 void ensure_conversion_possible(scipp::core::DType from, scipp::core::DType to,
@@ -52,7 +52,7 @@ common_dtype(const pybind11::object &values, const pybind11::object &variances,
 
 bool has_datetime_dtype(const pybind11::object &obj);
 
-[[nodiscard]] scipp::units::Unit
+[[nodiscard]] scipp::sc_units::Unit
 parse_datetime_dtype(const std::string &dtype_name);
-[[nodiscard]] scipp::units::Unit
+[[nodiscard]] scipp::sc_units::Unit
 parse_datetime_dtype(const pybind11::object &dtype);

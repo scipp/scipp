@@ -22,12 +22,12 @@ namespace scipp::variable {
 template <class Indices> class BinModelBase : public VariableConcept {
 public:
   BinModelBase(const VariableConceptHandle &indices, const Dim dim)
-      : VariableConcept(units::none), m_indices(indices), m_dim(dim) {}
+      : VariableConcept(sc_units::none), m_indices(indices), m_dim(dim) {}
 
   scipp::index size() const override { return indices()->size(); }
 
-  void setUnit(const units::Unit &unit) override {
-    if (unit != units::none)
+  void setUnit(const sc_units::Unit &unit) override {
+    if (unit != sc_units::none)
       throw except::UnitError(
           "Bins cannot have a unit. Did you mean to set the unit of the bin "
           "elements? This can be set with `array.bins.unit = 'm'`.");

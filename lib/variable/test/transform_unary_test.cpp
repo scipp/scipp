@@ -28,10 +28,10 @@ const char *name = "transform_test";
 class TransformUnaryTest : public ::testing::Test {
 protected:
   static constexpr auto op_in_place{
-      overloaded{[](auto &x) { x *= 2.0; }, [](units::Unit &) {}}};
+      overloaded{[](auto &x) { x *= 2.0; }, [](sc_units::Unit &) {}}};
   static constexpr auto op{
       overloaded{[](const auto x) { return x * 2.0; },
-                 [](const units::Unit &unit) { return unit; }}};
+                 [](const sc_units::Unit &unit) { return unit; }}};
 
   template <typename T>
   static auto op_manual_values(const ElementArrayView<T> &values) {
@@ -234,11 +234,11 @@ TEST_P(TransformUnaryIrregularBinsTest, elements_of_bins) {
 }
 
 TEST(TransformUnaryTest, in_place_unit_change) {
-  const auto var =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1.0, 2.0});
-  const auto expected =
-      makeVariable<double>(Dims{Dim::X}, Shape{2},
-                           units::Unit(units::m * units::m), Values{1.0, 4.0});
+  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, sc_units::m,
+                                        Values{1.0, 2.0});
+  const auto expected = makeVariable<double>(
+      Dims{Dim::X}, Shape{2}, sc_units::Unit(sc_units::m * sc_units::m),
+      Values{1.0, 4.0});
   auto op_ = [](auto &&a) { a *= a; };
   Variable result;
 
@@ -257,7 +257,7 @@ TEST(TransformUnaryTest, drop_variances_when_not_supported_on_out_type) {
                                   Variances{1.1, 2.2});
   const auto result = transform<double>(
       var,
-      overloaded{[](const units::Unit &) { return units::none; },
+      overloaded{[](const sc_units::Unit &) { return sc_units::none; },
                  [](const auto) { return true; }},
       name);
   EXPECT_EQ(result,
@@ -268,11 +268,11 @@ TEST(TransformUnaryTest, apply_implicit_conversion) {
   const auto var =
       makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
   // The functor returns double, so the output type is also double.
-  auto out =
-      transform<float>(var,
-                       overloaded{[](const auto x) { return -1.0 * x; },
-                                  [](const units::Unit &unit) { return unit; }},
-                       name);
+  auto out = transform<float>(
+      var,
+      overloaded{[](const auto x) { return -1.0 * x; },
+                 [](const sc_units::Unit &unit) { return unit; }},
+      name);
   EXPECT_TRUE(equals(out.values<double>(), {-1.1f, -2.2f}));
 }
 
@@ -292,9 +292,10 @@ TEST(TransformUnaryTest, apply_dtype_preserved) {
 TEST(TransformUnaryTest, dtype_bool) {
   auto var = makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, false});
 
-  EXPECT_EQ(transform<bool>(var,
-                            overloaded{[](const units::Unit &u) { return u; },
-                                       [](const auto x) { return !x; }},
-                            name),
-            makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, true}));
+  EXPECT_EQ(
+      transform<bool>(var,
+                      overloaded{[](const sc_units::Unit &u) { return u; },
+                                 [](const auto x) { return !x; }},
+                      name),
+      makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, true}));
 }

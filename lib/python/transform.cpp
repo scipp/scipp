@@ -22,9 +22,9 @@ template <class T, class... Ts> void bind_transform(py::module &m) {
                    core::transform_flags::expect_no_variance_arg<1>,
                    core::transform_flags::expect_no_variance_arg<2>,
                    core::transform_flags::expect_no_variance_arg<3>,
-                   [&kernel](const units::Unit &u, const auto &...us) {
+                   [&kernel](const sc_units::Unit &u, const auto &...us) {
                      py::gil_scoped_acquire acquire;
-                     return py::cast<units::Unit>(
+                     return py::cast<sc_units::Unit>(
                          kernel.attr("unit_func")(u, us...));
                    },
                    [fptr](const auto &...args) { return fptr(args...); }},

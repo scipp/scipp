@@ -3,3 +3,4 @@
 -r docs.in
 
 mypy
+pandas-stubs

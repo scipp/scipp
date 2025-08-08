@@ -17,10 +17,10 @@ constexpr auto inv =
                core::transform_flags::expect_no_variance_arg<0>,
                core::transform_flags::expect_no_variance_arg<1>,
                [](const auto &transform) { return transform.inverse(); },
-               [](const units::Unit &) {
+               [](const sc_units::Unit &) {
                  // The resulting unit depends on the dtype;
                  // the calling code assigns it.
-                 return units::none;
+                 return sc_units::none;
                }};
 } // namespace element
 
@@ -37,7 +37,7 @@ bool is_transform_with_translation(const Variable &var) {
 //            in case the user sets one manually.
 auto result_unit(const Variable &var) {
   return is_transform_with_translation(var) ? var.unit()
-                                            : units::one / var.unit();
+                                            : sc_units::one / var.unit();
 }
 
 } // namespace

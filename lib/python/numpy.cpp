@@ -8,7 +8,7 @@
 #include "dtype.h"
 
 void ElementTypeMap<scipp::core::time_point>::check_assignable(
-    const py::object &obj, const units::Unit unit) {
+    const py::object &obj, const sc_units::Unit unit) {
   const auto &dtype = obj.cast<py::array>().dtype();
   if (dtype.attr("kind").cast<char>() == 'i') {
     return; // just assume we can assign from int

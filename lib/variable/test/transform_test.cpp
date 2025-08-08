@@ -111,17 +111,17 @@ constexpr auto user_op(const double) { return 123.0; }
 constexpr auto user_op(const ValueAndVariance<double>) {
   return ValueAndVariance<double>{123.0, 456.0};
 }
-constexpr auto user_op(const units::Unit &) { return units::s; }
+constexpr auto user_op(const sc_units::Unit &) { return sc_units::s; }
 
 TEST(TransformTest, user_op_with_variances) {
-  auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m,
+  auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, sc_units::m,
                                   Values{1.1, 2.2}, Variances{1.1, 3.0});
 
   const auto result =
       transform<double>(var, [](auto x) { return user_op(x); }, name);
   transform_in_place<double>(var, [](auto &x) { x = user_op(x); }, name);
 
-  auto expected = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::s,
+  auto expected = makeVariable<double>(Dims{Dim::X}, Shape{2}, sc_units::s,
                                        Values{123, 123}, Variances{456, 456});
   EXPECT_EQ(result, expected);
   EXPECT_EQ(result, var);
@@ -137,7 +137,7 @@ protected:
 // without dry-run, transform_in_place should not touch the data if there is a
 // failure. Maybe this should be a parametrized test?
 TEST_F(TransformInPlaceDryRunTest, unit_fail) {
-  auto a = makeVariable<double>(Dims(), Shape(), units::m);
+  auto a = makeVariable<double>(Dims(), Shape(), sc_units::m);
   const auto original(a);
 
   EXPECT_THROW(dry_run::transform_in_place<double>(
@@ -151,7 +151,7 @@ TEST_F(TransformInPlaceDryRunTest, unit_fail) {
 }
 
 TEST_F(TransformInPlaceDryRunTest, slice_unit_fail) {
-  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m);
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, sc_units::m);
   const auto original = copy(a);
 
   EXPECT_THROW(
@@ -165,8 +165,8 @@ TEST_F(TransformInPlaceDryRunTest, slice_unit_fail) {
 }
 
 TEST_F(TransformInPlaceDryRunTest, dimensions_fail) {
-  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m);
-  auto b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m);
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, sc_units::m);
+  auto b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, sc_units::m);
   const auto original = copy(a);
 
   EXPECT_THROW(
@@ -176,8 +176,8 @@ TEST_F(TransformInPlaceDryRunTest, dimensions_fail) {
 }
 
 TEST_F(TransformInPlaceDryRunTest, variances_fail) {
-  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m);
-  auto b = makeVariable<double>(Dimensions{Dim::X, 2}, units::m, Values{},
+  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, sc_units::m);
+  auto b = makeVariable<double>(Dimensions{Dim::X, 2}, sc_units::m, Values{},
                                 Variances{});
   const auto original = copy(a);
 
@@ -194,10 +194,10 @@ protected:
   Variable indicesB = makeVariable<std::pair<scipp::index, scipp::index>>(
       Dims{Dim::X}, Shape{2}, Values{std::pair{0, 3}, std::pair{3, 5}});
   Variable tableA =
-      makeVariable<double>(Dims{Dim::Event}, Shape{4}, units::m,
+      makeVariable<double>(Dims{Dim::Event}, Shape{4}, sc_units::m,
                            Values{1, 2, 3, 4}, Variances{5, 6, 7, 8});
   Variable tableB =
-      makeVariable<double>(Dims{Dim::Event}, Shape{5}, units::m,
+      makeVariable<double>(Dims{Dim::Event}, Shape{5}, sc_units::m,
                            Values{1, 2, 3, 4, 5}, Variances{5, 6, 7, 8, 9});
   Variable a = make_bins(indicesA, Dim::Event, tableA);
   Variable b = make_bins(indicesB, Dim::Event, tableB);
@@ -335,9 +335,9 @@ TEST(TransformFlagsTest, no_out_variance) {
   constexpr auto op =
       overloaded{transform_flags::no_out_variance, element::arg_list<double>,
                  [](const auto) { return true; },
-                 [](const units::Unit &) { return units::one; }};
+                 [](const sc_units::Unit &) { return sc_units::one; }};
   const auto var = makeVariable<double>(Values{1.0}, Variances{1.0});
-  EXPECT_EQ(transform(var, op, name), true * units::one);
+  EXPECT_EQ(transform(var, op, name), true * sc_units::one);
 }
 
 TEST(TransformFlagsTest, variance_on_arg_in_place) {
@@ -426,7 +426,7 @@ TEST(TransformFlagsTest, expect_no_in_variance_if_out_cannot_have_variance) {
   constexpr auto op_has_flags = scipp::overloaded{
       element::arg_list<double>,
       transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
-      unary_op, [](const units::Unit &) { return units::one; }};
+      unary_op, [](const sc_units::Unit &) { return sc_units::one; }};
   Variable out;
   EXPECT_THROW(out = transform(var_with_variance, op_has_flags, name),
                except::VariancesError);

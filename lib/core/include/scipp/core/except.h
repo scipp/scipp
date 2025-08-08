@@ -107,7 +107,7 @@ SCIPP_CORE_EXPORT void includes(const core::Dimensions &a,
 
 namespace scipp::core::expect {
 template <class A, class B>
-void equals(const A &a, const B &b, std::string optional_message = "") {
+void equals(const A &a, const B &b, const std::string &optional_message = "") {
   if (a != b)
     scipp::except::throw_mismatch_error(a, b, optional_message);
 }
@@ -121,8 +121,8 @@ void sizeMatches(const T &range, const Ts &...other) {
 inline auto to_string(const std::string &s) { return s; }
 
 template <class T>
-void unit(const T &object, const units::Unit &unit,
-          std::string optional_message = "") {
+void unit(const T &object, const sc_units::Unit &unit,
+          const std::string &optional_message = "") {
   expect::equals(object.unit(), unit, optional_message);
 }
 

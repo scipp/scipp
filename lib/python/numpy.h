@@ -24,27 +24,27 @@ template <class T> struct ElementTypeMap {
   using PyType = T;
   constexpr static bool convert = false;
 
-  static void check_assignable(const py::object &, const units::Unit &) {}
+  static void check_assignable(const py::object &, const sc_units::Unit &) {}
 };
 
 template <> struct ElementTypeMap<scipp::core::time_point> {
   using PyType = int64_t;
   constexpr static bool convert = true;
 
-  static void check_assignable(const py::object &obj, units::Unit unit);
+  static void check_assignable(const py::object &obj, sc_units::Unit unit);
 };
 
 template <> struct ElementTypeMap<scipp::python::PyObject> {
   using PyType = py::object;
   constexpr static bool convert = true;
 
-  static void check_assignable(const py::object &, const units::Unit &) {}
+  static void check_assignable(const py::object &, const sc_units::Unit &) {}
 };
 
 /// Cast a py::object referring to an array to py::array_t<auto> if supported.
 /// Otherwise, copies the contents into a std::vector<auto>.
 template <class T>
-auto cast_to_array_like(const py::object &obj, const units::Unit unit) {
+auto cast_to_array_like(const py::object &obj, const sc_units::Unit unit) {
   using TM = ElementTypeMap<T>;
   using PyType = typename TM::PyType;
   TM::check_assignable(obj, unit);
