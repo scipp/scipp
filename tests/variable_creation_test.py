@@ -277,6 +277,16 @@ def test_full_like_with_dims_shape(dims, shape):
     )
 
 
+@pytest.mark.parametrize('sizes', [{'x': 1}, {'x': 2, 'y': 3}])
+def test_full_like_with_sizes(sizes) -> None:
+    to_copy = sc.zeros(sizes=sizes)
+
+    assert sc.identical(
+        sc.full_like(to_copy, value=123.45, sizes=sizes),
+        sc.full(sizes=sizes, value=123.45),
+    )
+
+
 @pytest.mark.parametrize('unit', [None, '', 'm'])
 def test_full_like_with_unit(unit):
     to_copy = sc.zeros(dims=["x", "y"], shape=(2, 2))
@@ -551,6 +561,15 @@ def test_zeros_like_with_dims_shape(dims, shape) -> None:
     np.testing.assert_array_equal(zeros.values, 0)
 
 
+@pytest.mark.parametrize('sizes', [{'x': 1}, {'x': 2, 'y': 3}])
+def test_zeros_like_with_sizes(sizes) -> None:
+    var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
+    expected = sc.zeros(sizes=sizes)
+    zeros = sc.zeros_like(var, sizes=sizes)
+    _compare_properties(zeros, expected)
+    np.testing.assert_array_equal(zeros.values, 0)
+
+
 @pytest.mark.parametrize('unit', [None, '', 'm'])
 def test_zeros_like_with_unit(unit) -> None:
     var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
@@ -618,6 +637,15 @@ def test_ones_like_with_dims_shape(dims, shape) -> None:
     np.testing.assert_array_equal(ones.values, 1)
 
 
+@pytest.mark.parametrize('sizes', [{'x': 1}, {'x': 2, 'y': 3}])
+def test_ones_like_with_sizes(sizes) -> None:
+    var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
+    expected = sc.ones(sizes=sizes)
+    ones = sc.ones_like(var, sizes=sizes)
+    _compare_properties(ones, expected)
+    np.testing.assert_array_equal(ones.values, 1)
+
+
 @pytest.mark.parametrize('unit', [None, '', 'm'])
 def test_ones_like_with_unit(unit) -> None:
     var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
@@ -678,6 +706,14 @@ def test_empty_like_with_dims_shape(dims, shape) -> None:
     var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
     expected = sc.empty(dims=dims, shape=shape)
     empty = sc.ones_like(var, dims=dims, shape=shape)
+    _compare_properties(empty, expected)
+
+
+@pytest.mark.parametrize('sizes', [{'x': 1}, {'x': 2, 'y': 3}])
+def test_empty_like_with_sizes(sizes) -> None:
+    var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
+    expected = sc.empty(sizes=sizes)
+    empty = sc.empty_like(var, sizes=sizes)
     _compare_properties(empty, expected)
 
 

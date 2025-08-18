@@ -41,13 +41,14 @@ def zeros_like(obj: _T, **kwargs: Any) -> _T:
     scipp.empty_like:
         Create an object with uninitialized elements.
     """
-    default = dict(  # noqa: C408
-        dims=obj.dims,
-        shape=obj.shape,
-        unit=obj.unit,
-        dtype=obj.dtype,
-        with_variances=obj.variances is not None,
-    )
+    default = {
+        'unit': obj.unit,
+        'dtype': obj.dtype,
+        'with_variances': obj.variances is not None,
+    }
+    if 'sizes' not in kwargs:
+        default.setdefault('dims', obj.dims)
+        default.setdefault('shape', obj.shape)
     new_values = zeros(**(default | kwargs))
     return rewrap_output_data(obj, new_values)
 
@@ -83,13 +84,14 @@ def ones_like(obj: _T, **kwargs: Any) -> _T:
     scipp.empty_like:
         Create an object with uninitialized elements.
     """
-    default = dict(  # noqa: C408
-        dims=obj.dims,
-        shape=obj.shape,
-        unit=obj.unit,
-        dtype=obj.dtype,
-        with_variances=obj.variances is not None,
-    )
+    default = {
+        'unit': obj.unit,
+        'dtype': obj.dtype,
+        'with_variances': obj.variances is not None,
+    }
+    if 'sizes' not in kwargs:
+        default.setdefault('dims', obj.dims)
+        default.setdefault('shape', obj.shape)
     new_values = ones(**(default | kwargs))
     return rewrap_output_data(obj, new_values)
 
@@ -129,13 +131,14 @@ def empty_like(obj: _T, **kwargs: Any) -> _T:
     scipp.full_like:
         Create an object filled with a given value.
     """
-    default = dict(  # noqa: C408
-        dims=obj.dims,
-        shape=obj.shape,
-        unit=obj.unit,
-        dtype=obj.dtype,
-        with_variances=obj.variances is not None,
-    )
+    default = {
+        'unit': obj.unit,
+        'dtype': obj.dtype,
+        'with_variances': obj.variances is not None,
+    }
+    if 'sizes' not in kwargs:
+        default.setdefault('dims', obj.dims)
+        default.setdefault('shape', obj.shape)
     new_values = empty(**(default | kwargs))
     return rewrap_output_data(obj, new_values)
 
@@ -175,13 +178,14 @@ def full_like(obj: _T, /, value: Any, *, variance: Any = None, **kwargs: Any) ->
     scipp.empty_like:
         Create an object with uninitialized elements.
     """
-    default = dict(  # noqa: C408
-        dims=obj.dims,
-        shape=obj.shape,
-        unit=obj.unit,
-        dtype=obj.dtype,
-        value=value,
-        variance=variance,
-    )
+    default = {
+        'unit': obj.unit,
+        'dtype': obj.dtype,
+        'value': value,
+        'variance': variance,
+    }
+    if 'sizes' not in kwargs:
+        default.setdefault('dims', obj.dims)
+        default.setdefault('shape', obj.shape)
     new_values = full(**(default | kwargs))
     return rewrap_output_data(obj, new_values)
