@@ -10,7 +10,7 @@ from .variable import empty, full, ones, zeros
 _T = TypeVar('_T', Variable, DataArray)
 
 
-def zeros_like(obj: _T, /) -> _T:
+def zeros_like(obj: _T, **kwargs) -> _T:
     """Return a new object with the same dims, shape, unit,
     and dtype as the input and all elements initialized to 0.
 
@@ -39,17 +39,18 @@ def zeros_like(obj: _T, /) -> _T:
     scipp.empty_like:
         Create an object with uninitialized elements.
     """
-    new_values = zeros(
+    default = dict(  # noqa: C408
         dims=obj.dims,
         shape=obj.shape,
         unit=obj.unit,
         dtype=obj.dtype,
         with_variances=obj.variances is not None,
     )
+    new_values = zeros(**(default | kwargs))
     return rewrap_output_data(obj, new_values)
 
 
-def ones_like(obj: _T, /) -> _T:
+def ones_like(obj: _T, **kwargs) -> _T:
     """Return a new object with the same dims, shape, unit,
     and dtype as the input and all elements initialized to 1.
 
@@ -78,17 +79,18 @@ def ones_like(obj: _T, /) -> _T:
     scipp.empty_like:
         Create an object with uninitialized elements.
     """
-    new_values = ones(
+    default = dict(  # noqa: C408
         dims=obj.dims,
         shape=obj.shape,
         unit=obj.unit,
         dtype=obj.dtype,
         with_variances=obj.variances is not None,
     )
+    new_values = ones(**(default | kwargs))
     return rewrap_output_data(obj, new_values)
 
 
-def empty_like(obj: _T, /) -> _T:
+def empty_like(obj: _T, **kwargs) -> _T:
     """Return a new object with the same dims, shape, unit,
     and dtype as the input and all elements uninitialized.
 
@@ -121,17 +123,18 @@ def empty_like(obj: _T, /) -> _T:
     scipp.full_like:
         Create an object filled with a given value.
     """
-    new_values = empty(
+    default = dict(  # noqa: C408
         dims=obj.dims,
         shape=obj.shape,
         unit=obj.unit,
         dtype=obj.dtype,
         with_variances=obj.variances is not None,
     )
+    new_values = empty(**(default | kwargs))
     return rewrap_output_data(obj, new_values)
 
 
-def full_like(obj: _T, /, value: Any, *, variance: Any = None) -> _T:
+def full_like(obj: _T, /, value: Any, *, variance: Any = None, **kwargs) -> _T:
     """Return a new object with the same dims, shape, unit,
     and dtype as the input and all elements initialized to the given value.
 
@@ -164,7 +167,7 @@ def full_like(obj: _T, /, value: Any, *, variance: Any = None) -> _T:
     scipp.empty_like:
         Create an object with uninitialized elements.
     """
-    new_values = full(
+    default = dict(  # noqa: C408
         dims=obj.dims,
         shape=obj.shape,
         unit=obj.unit,
@@ -172,4 +175,5 @@ def full_like(obj: _T, /, value: Any, *, variance: Any = None) -> _T:
         value=value,
         variance=variance,
     )
+    new_values = full(**(default | kwargs))
     return rewrap_output_data(obj, new_values)
