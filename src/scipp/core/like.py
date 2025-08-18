@@ -11,7 +11,7 @@ _T = TypeVar('_T', Variable, DataArray)
 
 
 def _init_args_from_obj_and_kwargs(obj: _T, kwargs: dict[str, Any]) -> dict[str, Any]:
-    default = {
+    default: dict[str, Any] = {
         'unit': obj.unit,
         'dtype': obj.dtype,
     }
