@@ -269,21 +269,21 @@ def test_full_like_with_dtype(dtype):
 
 @pytest.mark.parametrize(('dims', 'shape'), [(['x'], (1,)), (['x', 'y'], (2, 3))])
 def test_full_like_with_dims_shape(dims, shape):
-    to_copy = sc.zeros(dims=["x", "y"], shape=(2, 2))
+    to_copy = sc.zeros(dims=["x", "y"], shape=(2, 2), unit='m')
 
     assert sc.identical(
         sc.full_like(to_copy, value=123.45, dims=dims, shape=shape),
-        sc.full(dims=dims, shape=shape, value=123.45),
+        sc.full(dims=dims, shape=shape, value=123.45, unit='m'),
     )
 
 
 @pytest.mark.parametrize('sizes', [{'x': 1}, {'x': 2, 'y': 3}])
 def test_full_like_with_sizes(sizes) -> None:
-    to_copy = sc.zeros(sizes=sizes)
+    to_copy = sc.zeros(sizes=sizes, unit='m')
 
     assert sc.identical(
         sc.full_like(to_copy, value=123.45, sizes=sizes),
-        sc.full(sizes=sizes, value=123.45),
+        sc.full(sizes=sizes, value=123.45, unit='m'),
     )
 
 
