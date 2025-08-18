@@ -53,7 +53,7 @@ def zeros_like(obj: _T, **kwargs: Any) -> _T:
         Create an object with uninitialized elements.
     """
     kw = _init_args_from_obj_and_kwargs(obj, kwargs)
-    kw['with_variances'] = obj.variances is not None
+    kw.setdefault('with_variances', obj.variances is not None)
     new_values = zeros(**kw)
     return rewrap_output_data(obj, new_values)
 
@@ -90,7 +90,7 @@ def ones_like(obj: _T, **kwargs: Any) -> _T:
         Create an object with uninitialized elements.
     """
     kw = _init_args_from_obj_and_kwargs(obj, kwargs)
-    kw['with_variances'] = obj.variances is not None
+    kw.setdefault('with_variances', obj.variances is not None)
     new_values = ones(**kw)
     return rewrap_output_data(obj, new_values)
 
@@ -131,7 +131,7 @@ def empty_like(obj: _T, **kwargs: Any) -> _T:
         Create an object filled with a given value.
     """
     kw = _init_args_from_obj_and_kwargs(obj, kwargs)
-    kw['with_variances'] = obj.variances is not None
+    kw.setdefault('with_variances', obj.variances is not None)
     new_values = empty(**kw)
     return rewrap_output_data(obj, new_values)
 
