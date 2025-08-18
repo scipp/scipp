@@ -10,7 +10,7 @@ from .variable import empty, full, ones, zeros
 _T = TypeVar('_T', Variable, DataArray)
 
 
-def zeros_like(obj: _T, **kwargs) -> _T:
+def zeros_like(obj: _T, **kwargs: Any) -> _T:
     """Return a new object with the same dims, shape, unit,
     and dtype as the input and all elements initialized to 0.
 
@@ -22,6 +22,8 @@ def zeros_like(obj: _T, **kwargs) -> _T:
     ----------
     obj: scipp.Variable | scipp.DataArray
         Input object defining dims, shape, unit, and dtype of the output.
+    kwargs:
+        Override arguments passed to ``scipp.zeros``.
 
     Returns
     -------
@@ -50,7 +52,7 @@ def zeros_like(obj: _T, **kwargs) -> _T:
     return rewrap_output_data(obj, new_values)
 
 
-def ones_like(obj: _T, **kwargs) -> _T:
+def ones_like(obj: _T, **kwargs: Any) -> _T:
     """Return a new object with the same dims, shape, unit,
     and dtype as the input and all elements initialized to 1.
 
@@ -62,6 +64,8 @@ def ones_like(obj: _T, **kwargs) -> _T:
     ----------
     obj: scipp.Variable | scipp.DataArray
         Input object defining dims, shape, unit, and dtype of the output.
+    kwargs:
+        Override arguments passed to ``scipp.ones``.
 
     Returns
     -------
@@ -90,7 +94,7 @@ def ones_like(obj: _T, **kwargs) -> _T:
     return rewrap_output_data(obj, new_values)
 
 
-def empty_like(obj: _T, **kwargs) -> _T:
+def empty_like(obj: _T, **kwargs: Any) -> _T:
     """Return a new object with the same dims, shape, unit,
     and dtype as the input and all elements uninitialized.
 
@@ -106,6 +110,8 @@ def empty_like(obj: _T, **kwargs) -> _T:
     ----------
     obj: scipp.Variable | scipp.DataArray
         Input object defining dims, shape, unit, and dtype of the output
+    kwargs:
+        Override arguments passed to ``scipp.empty``.
 
     Returns
     -------
@@ -134,7 +140,7 @@ def empty_like(obj: _T, **kwargs) -> _T:
     return rewrap_output_data(obj, new_values)
 
 
-def full_like(obj: _T, /, value: Any, *, variance: Any = None, **kwargs) -> _T:
+def full_like(obj: _T, /, value: Any, *, variance: Any = None, **kwargs: Any) -> _T:
     """Return a new object with the same dims, shape, unit,
     and dtype as the input and all elements initialized to the given value.
 
@@ -150,6 +156,8 @@ def full_like(obj: _T, /, value: Any, *, variance: Any = None, **kwargs) -> _T:
     variance:
         The variance to fill the Variable with. If None
         or not provided, the variances will not be set.
+    kwargs:
+        Override arguments passed to ``scipp.full``.
 
     Returns
     -------
