@@ -112,7 +112,7 @@ def empty_like(obj: _T, **kwargs: Any) -> _T:
     obj: scipp.Variable | scipp.DataArray
         Input object defining dims, shape, unit, and dtype of the output
     kwargs:
-        Override arguments passed to ``scipp.empty``.
+        Override arguments passed to :func:`scipp.empty`.
 
     Returns
     -------
