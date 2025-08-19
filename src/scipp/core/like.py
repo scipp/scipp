@@ -153,7 +153,7 @@ def full_like(obj: _T, /, value: Any, *, variance: Any = None, **kwargs: Any) ->
         The variance to fill the Variable with. If None
         or not provided, the variances will not be set.
     kwargs:
-        Override arguments passed to ``scipp.full``.
+        Override arguments passed to :func:`scipp.full`.
 
     Returns
     -------
