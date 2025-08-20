@@ -2,7 +2,6 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import itertools
-import uuid
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, SupportsIndex, TypeVar, overload
 
@@ -11,6 +10,7 @@ from .bin_remapping import combine_bins
 from .bins import Bins
 from .cpp_classes import BinEdgeError, CoordError, DataArray, Dataset, DType, Variable
 from .data_group import DataGroup, data_group_overload
+from .dimensions import new_dim_for
 from .math import round as round_
 from .shape import concat
 from .variable import arange, array, epoch, linspace, scalar
@@ -244,7 +244,7 @@ def _prepare_multi_dim_dense(x: DataArray, *edges_or_groups: Variable) -> DataAr
     helper_coords = {dim: arange(dim, x.sizes[dim]) for dim in extra}
     return (
         x.assign_coords(helper_coords)
-        .flatten(to=str(uuid.uuid4()))
+        .flatten(to=new_dim_for(x))
         .group(*helper_coords.values())
         .drop_coords(tuple(extra))
         .assign_coords(original_coords)

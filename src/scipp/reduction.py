@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-import uuid
 from collections.abc import Iterable, Sequence
 from typing import Generic, TypeVar
 
 from .core import DataArray, Dataset, Variable, concat, reduction
+from .core.dimensions import new_dim_for
 
 _O = TypeVar("_O", Variable, DataArray, Dataset)
 
@@ -24,7 +24,7 @@ class BinsReducer(Generic[_O]):
 
 class Reducer(Generic[_O]):
     def __init__(self, x: Sequence[_O]) -> None:
-        self._dim = uuid.uuid4().hex
+        self._dim = new_dim_for(*x)
         # concat in init avoids repeated costly step in case of multiple reductions
         self._obj: _O = concat(x, dim=self._dim)
 

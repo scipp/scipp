@@ -2,6 +2,7 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 
+import uuid
 from typing import TypeVar
 
 from .._scipp.core import CoordError, DataArray, Dataset, Variable
@@ -172,3 +173,23 @@ def _rename_dataset(
         scalar(0).broadcast(dims=ds.dims, shape=ds.shape), coords=ds.coords
     )
     return Dataset(coords=_rename_data_array(dummy, dims_dict).coords)
+
+
+_USED_AUX_DIMS: list[str] = []
+
+
+def new_dim_for(*data: Variable | DataArray) -> str:
+    """Return a dimension label that is not in the input's dimensions.
+
+    The returned label is intended for temporarily reshaping an array and should
+    not become visible to users.
+    The label is guaranteed to not be present in the input, but it may be used in
+    other variables.
+    """
+    used = {*(x.dims for x in data)}
+    for dim in _USED_AUX_DIMS:
+        if dim not in used:
+            return dim
+    dim = uuid.uuid4().hex
+    _USED_AUX_DIMS.append(dim)
+    return dim

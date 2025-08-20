@@ -2,7 +2,6 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import itertools
-import uuid
 from collections.abc import Sequence
 from math import prod
 from typing import TYPE_CHECKING, TypeVar
@@ -12,6 +11,7 @@ from ..typing import Dims
 from .concepts import concrete_dims, irreducible_mask, rewrap_reduced_data
 from .cpp_classes import DataArray, Variable
 from .cumulative import cumsum
+from .dimensions import new_dim_for
 from .operations import where
 from .variable import index
 
@@ -110,7 +110,7 @@ def _combine_bins(
     sub_sizes = index(changed_volume).broadcast(
         dims=unchanged_dims, shape=unchanged_shape
     )
-    params = params.flatten(to=uuid.uuid4().hex)
+    params = params.flatten(to=new_dim_for(params))
     # Setup pseudo binning for unchanged subspace. All further reordering (for grouping
     # and binning) will then occur *within* those pseudo bins (by splitting them).
     params_data = _with_bin_sizes(params, sub_sizes)
