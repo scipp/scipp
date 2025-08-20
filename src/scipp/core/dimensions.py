@@ -7,7 +7,6 @@ from typing import TypeVar
 
 from .._scipp.core import CoordError, DataArray, Dataset, Variable
 from .argument_handlers import combine_dict_args
-from .bins import bins
 from .variable import scalar
 
 _T = TypeVar('_T', Variable, DataArray, Dataset)
@@ -115,6 +114,8 @@ def _rename_data_array(
     renaming_dict = combine_dict_args(dims_dict, names)
     out = da.rename_dims(renaming_dict)
     if out.bins is not None:
+        from .bins import bins
+
         out.data = bins(**out.bins.constituents)
     for old, new in renaming_dict.items():
         if new in out.coords:
