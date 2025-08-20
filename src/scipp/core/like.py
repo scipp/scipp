@@ -84,7 +84,7 @@ def zeros_like(
     }
     kwargs = _init_args_from_obj_and_kwargs(obj, kwargs)
     kwargs.setdefault('with_variances', obj.variances is not None)
-    new_values = zeros(**kwargs)
+    new_values = zeros(**kwargs)  # type: ignore[arg-type]
     return rewrap_output_data(obj, new_values)
 
 
@@ -141,7 +141,7 @@ def ones_like(
     }
     kwargs = _init_args_from_obj_and_kwargs(obj, kwargs)
     kwargs.setdefault('with_variances', obj.variances is not None)
-    new_values = ones(**kwargs)
+    new_values = ones(**kwargs)  # type: ignore[arg-type]
     return rewrap_output_data(obj, new_values)
 
 
@@ -202,7 +202,7 @@ def empty_like(
     }
     kwargs = _init_args_from_obj_and_kwargs(obj, kwargs)
     kwargs.setdefault('with_variances', obj.variances is not None)
-    new_values = empty(**kwargs)
+    new_values = empty(**kwargs)  # type: ignore[arg-type]
     return rewrap_output_data(obj, new_values)
 
 
@@ -263,7 +263,7 @@ def full_like(
         )
         if not isinstance(v, _NoArgProvided)
     }
-    kw = _init_args_from_obj_and_kwargs(obj, kwargs)
-    kw['value'] = value
-    new_values = full(**kw)
+    kwargs = _init_args_from_obj_and_kwargs(obj, kwargs)
+    kwargs['value'] = value
+    new_values = full(**kwargs)
     return rewrap_output_data(obj, new_values)
