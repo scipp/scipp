@@ -56,6 +56,7 @@ from .dimensions import (
     _rename_variable,
     _rename_data_array,
     _rename_dataset,
+    new_dim_for,
 )
 
 for cls in (Variable, DataArray, Dataset):
@@ -332,6 +333,7 @@ __all__ = [
     'nansum',
     'nanvar',
     'negative',
+    'new_dim_for',
     'norm',
     'not_equal',
     'ones',

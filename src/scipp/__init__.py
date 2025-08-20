@@ -142,7 +142,7 @@ from .core import (
     all,
     any,
 )
-from .core import broadcast, concat, fold, flatten, squeeze, transpose
+from .core import broadcast, concat, fold, flatten, squeeze, transpose, new_dim_for
 from .core import sinh, cosh, tanh, asinh, acosh, atanh
 from .core import sin, cos, tan, asin, acos, atan, atan2
 from .core import isnan, isinf, isfinite, isposinf, isneginf, to_unit
@@ -392,6 +392,7 @@ __all__ = [
     'nansum',
     'nanvar',
     'negative',
+    'new_dim_for',
     'norm',
     'not_equal',
     'ones',

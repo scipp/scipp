@@ -186,6 +186,16 @@ def new_dim_for(*data: Variable | DataArray) -> str:
     not become visible to users.
     The label is guaranteed to not be present in the input, but it may be used in
     other variables.
+
+    Parameters
+    ----------
+    data:
+        A number of variables or data arrays.
+
+    Returns
+    -------
+    :
+        A dimension label that is not in any variable or data array in ``data``.
     """
     used = {*(x.dims for x in data)}
     for dim in _USED_AUX_DIMS:
