@@ -3,6 +3,7 @@
 # @author Simon Heybrock
 
 import uuid
+from itertools import chain
 from typing import TypeVar
 
 from .._scipp.core import CoordError, DataArray, Dataset, Variable
@@ -197,7 +198,7 @@ def new_dim_for(*data: Variable | DataArray) -> str:
     :
         A dimension label that is not in any variable or data array in ``data``.
     """
-    used = {*(x.dims for x in data)}
+    used: set[str] = set(chain(*(x.dims for x in data)))
     for dim in _USED_AUX_DIMS:
         if dim not in used:
             return dim
