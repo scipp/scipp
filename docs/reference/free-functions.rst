@@ -25,6 +25,7 @@ General
    nanhist
    merge
    midpoints
+   new_dim_for
    rebin
    reduce
    slices
