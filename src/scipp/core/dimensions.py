@@ -183,10 +183,35 @@ _USED_AUX_DIMS: list[str] = []
 def new_dim_for(*data: Variable | DataArray) -> str:
     """Return a dimension label that is not in the input's dimensions.
 
-    The returned label is intended for temporarily reshaping an array and should
-    not become visible to users.
-    The label is guaranteed to not be present in the input, but it may be used in
-    other variables.
+    Sometimes, it is useful to add temporary dimensions to arrays in intermediate
+    operations. For example, to stack arrays in a new dimension and then reduce
+    over that new dimension. A simple, but bad solution is to generate a new
+    dimension label every time. E.g.,
+
+    >>> import uuid
+    >>> # Make some fake data:
+    >>> arrays = [sc.arange('x', 4), 2 * sc.arange('x', 4)]
+    >>> dim = uuid.uuid4().hex
+    >>> stacked = sc.concat(arrays, dim=dim)
+    >>> reduced = sc.sum(stacked, dim=dim)
+
+    However, Scipp encodes dimension labels as 16-bit integers internally.
+    This means that there can be a maximum of ``2**16`` different dimension labels.
+    Further, labels are not freed up after use.
+    So it is better to not generate many temporary labels but instead reuse labels
+    as much as possible.
+    ``new_dim_for`` does exactly that.
+    Similarly to the code above, it generates dimension labels using ``uuid4``.
+    However, it reuses generated labels whenever possible and so is very unlikely
+    to hit the ``2**16`` limit.
+
+    So a better solution to the code above is:
+
+    >>> # Make some fake data:
+    >>> arrays = [sc.arange('x', 4), 2 * sc.arange('x', 4)]
+    >>> dim = sc.new_dim_for(*arrays)
+    >>> stacked = sc.concat(arrays, dim=dim)
+    >>> reduced = sc.sum(stacked, dim=dim)
 
     Parameters
     ----------
