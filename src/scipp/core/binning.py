@@ -2,7 +2,6 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import itertools
-import uuid
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, SupportsIndex, TypeVar, overload
 
@@ -244,7 +243,7 @@ def _prepare_multi_dim_dense(x: DataArray, *edges_or_groups: Variable) -> DataAr
     helper_coords = {dim: arange(dim, x.sizes[dim]) for dim in extra}
     return (
         x.assign_coords(helper_coords)
-        .flatten(to=str(uuid.uuid4()))
+        .flatten(to='__aux__')
         .group(*helper_coords.values())
         .drop_coords(tuple(extra))
         .assign_coords(original_coords)
