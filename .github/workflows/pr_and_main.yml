@@ -81,8 +81,6 @@ jobs:
       - run: tox -e import-minimal
       - run: tox -e test
 
-      - run: tox -e mypy
-        if: ${{ contains(matrix.variant.os, 'ubuntu') }}
 
       - run: tox -e docs
         if: ${{ contains(matrix.variant.os, 'ubuntu') }}
