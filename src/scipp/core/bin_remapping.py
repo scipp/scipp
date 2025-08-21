@@ -2,7 +2,6 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import itertools
-import uuid
 from collections.abc import Sequence
 from math import prod
 from typing import TYPE_CHECKING, TypeVar
@@ -110,7 +109,7 @@ def _combine_bins(
     sub_sizes = index(changed_volume).broadcast(
         dims=unchanged_dims, shape=unchanged_shape
     )
-    params = params.flatten(to=uuid.uuid4().hex)
+    params = params.flatten(to="_combine_bins.flat_dim")
     # Setup pseudo binning for unchanged subspace. All further reordering (for grouping
     # and binning) will then occur *within* those pseudo bins (by splitting them).
     params_data = _with_bin_sizes(params, sub_sizes)

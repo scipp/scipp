@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-import uuid
 from collections.abc import Iterable, Sequence
+from itertools import chain
 from typing import Generic, TypeVar
 
 from .core import DataArray, Dataset, Variable, concat, reduction
@@ -24,7 +24,7 @@ class BinsReducer(Generic[_O]):
 
 class Reducer(Generic[_O]):
     def __init__(self, x: Sequence[_O]) -> None:
-        self._dim = uuid.uuid4().hex
+        self._dim = _make_extra_dim(x)
         # concat in init avoids repeated costly step in case of multiple reductions
         self._obj: _O = concat(x, dim=self._dim)
 
@@ -71,6 +71,16 @@ class Reducer(Generic[_O]):
     def nanmean(self) -> _O:
         """Element-wise 'nanmean' across inputs passed to :py:func:`scipp.reduce`."""
         return reduction.nanmean(self._obj, self._dim)
+
+
+def _make_extra_dim(avoid: Sequence[_O]) -> str:
+    used = set(chain(*(x.dims for x in avoid)))
+    for i in range(1000):
+        dim = f"_reduce.dim_{i}"
+        if dim not in used:
+            return dim
+    # Realistically, this will never happen:
+    raise RuntimeError("Could not find extra dimension")
 
 
 def reduce(x: Iterable[_O]) -> Reducer[_O]:
