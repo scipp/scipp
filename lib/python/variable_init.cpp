@@ -319,8 +319,7 @@ if you want to preallocate memory to fill later, use :py:func:`scipp.empty`.
 Attention
 ---------
 This constructor is meant primarily for internal use.
-Use one of the Specialized
-:ref:`creation functions <scipp:reference/creation-functions>`_ instead.
+Use one of the Specialized :ref:`scipp:creation-functions` instead.
 See in particular :py:func:`scipp.array` and :py:func:`scipp.scalar`.
 
 Parameters
