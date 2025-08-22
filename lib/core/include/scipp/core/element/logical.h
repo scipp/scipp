@@ -31,11 +31,14 @@ constexpr auto logical_xor =
 constexpr auto logical_not =
     overloaded{logical, [](const auto &x) { return !x; }};
 
-constexpr auto logical_inplace = overloaded{
-    arg_list<bool>, [](sc_units::Unit &var, const sc_units::Unit &other) {
-      expect::equals(sc_units::none, var);
-      expect::equals(sc_units::none, other);
-    }};
+constexpr auto logical_inplace =
+    overloaded{arg_list<bool>,
+               // `var` must be non-const so the overloads below don't match.
+               // cppcheck-suppress constParameterReference
+               [](sc_units::Unit &var, const sc_units::Unit &other) {
+                 expect::equals(sc_units::none, var);
+                 expect::equals(sc_units::none, other);
+               }};
 
 constexpr auto logical_and_equals =
     overloaded{logical_inplace, [](auto &&a, const auto &b) { a = a && b; }};

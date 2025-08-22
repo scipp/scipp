@@ -291,23 +291,26 @@ template <class RHSSetup> struct OpBinder {
   template <class Other, class T, class... Ignored>
   static void comparison(pybind11::class_<T, Ignored...> &c) {
     c.def(
-        "__eq__", [](T &a, Other &b) { return equal(a, RHSSetup{}(b)); },
+        "__eq__", [](const T &a, Other &b) { return equal(a, RHSSetup{}(b)); },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
-        "__ne__", [](T &a, Other &b) { return not_equal(a, RHSSetup{}(b)); },
+        "__ne__",
+        [](const T &a, Other &b) { return not_equal(a, RHSSetup{}(b)); },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
-        "__lt__", [](T &a, Other &b) { return less(a, RHSSetup{}(b)); },
+        "__lt__", [](const T &a, Other &b) { return less(a, RHSSetup{}(b)); },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
-        "__gt__", [](T &a, Other &b) { return greater(a, RHSSetup{}(b)); },
+        "__gt__",
+        [](const T &a, Other &b) { return greater(a, RHSSetup{}(b)); },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
-        "__le__", [](T &a, Other &b) { return less_equal(a, RHSSetup{}(b)); },
+        "__le__",
+        [](const T &a, Other &b) { return less_equal(a, RHSSetup{}(b)); },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
         "__ge__",
-        [](T &a, Other &b) { return greater_equal(a, RHSSetup{}(b)); },
+        [](const T &a, Other &b) { return greater_equal(a, RHSSetup{}(b)); },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
   }
 };

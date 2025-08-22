@@ -35,3 +35,13 @@ useInitializationList
 // We have no control over constness in this case.
 // Generally, non-const callbacks should be fine.
 constParameterCallback
+
+// This is a style issue, we allow redefining members in subclasses.
+duplInheritedMember
+
+// This finds some performance issues.
+// It is unclear how relevant they are at this point.
+passedByValue
+
+// A lot of false-positives in test fixtures.
+unusedStructMember
