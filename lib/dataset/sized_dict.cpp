@@ -405,6 +405,12 @@ template <class Key, class Value>
 bool SizedDict<Key, Value>::is_edges(const Key &key,
                                      const std::optional<Dim> dim) const {
   const auto &val = this->at(key);
+  if (!dim.has_value() && val.dims().size() > 1) {
+    throw except::DimensionError(
+        "Coord has multiple dimensions, but no dimension was specified. Use "
+        "the second argument to specify what dimension to check for "
+        "bin-edges.");
+  }
   return core::is_edges(m_sizes, val.dims(),
                         dim.has_value() ? *dim : val.dim());
 }
