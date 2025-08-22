@@ -407,7 +407,8 @@ bool SizedDict<Key, Value>::is_edges(const Key &key,
   const auto &val = this->at(key);
   if (!dim.has_value() && val.dims().ndim() > 1) {
     throw except::DimensionError(
-        "Expected 1d coordinate or a dimension name in the second argument. "
+        "Expected 1d coordinate, or a dimension name in the second argument. "
+        "But coord is multi-dimensional, and no dimension name was specified. "
         "Use the second argument to specify what dimension to check for "
         "bin-edges.");
   }
