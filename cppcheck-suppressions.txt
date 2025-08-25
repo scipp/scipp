@@ -45,3 +45,4 @@ passedByValue
 
 // A lot of false-positives in test fixtures.
 unusedStructMember
+
