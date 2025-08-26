@@ -162,7 +162,7 @@ def find_peaks(
     threshold: tuple[Variable, Variable] | Variable | None = None,
     rel_height: Variable | None = None,
     **kwargs: Any,
-) -> ArrayLike:
+) -> Variable:
     """
     A routine that locates "peaks" in a 1D signal.
 
@@ -172,9 +172,7 @@ def find_peaks(
     Returns
     --------
     :
-        A slice of the input dataarray or a variable that contains the peaks
-        in the signal.
-
+        Indices of peaks in the signal that satisfy all given conditions.
 
     Examples
     --------
@@ -222,7 +220,7 @@ def find_peaks(
 
     peaks, _ = find_peaks(da.values, **kwargs)
 
-    return da[peaks]
+    return array(dims=da.dims, values=peaks, unit=None)
 
 
 __all__ = ['butter', 'find_peaks', 'sosfiltfilt']
