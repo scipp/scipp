@@ -23,54 +23,55 @@ class BinsReducer(Generic[_O]):
 
 
 class Reducer(Generic[_O]):
+    _DIM = uuid.uuid4().hex
+
     def __init__(self, x: Sequence[_O]) -> None:
-        self._dim = uuid.uuid4().hex
         # concat in init avoids repeated costly step in case of multiple reductions
-        self._obj: _O = concat(x, dim=self._dim)
+        self._obj: _O = concat(x, dim=self._DIM)
 
     @property
     def bins(self) -> BinsReducer[_O]:
-        return BinsReducer(self._obj, self._dim)
+        return BinsReducer(self._obj, self._DIM)
 
     def all(self) -> _O:
         """Element-wise 'all' across inputs passed to :py:func:`scipp.reduce`."""
-        return reduction.all(self._obj, self._dim)
+        return reduction.all(self._obj, self._DIM)
 
     def any(self) -> _O:
         """Element-wise 'any' across inputs passed to :py:func:`scipp.reduce`."""
-        return reduction.any(self._obj, self._dim)
+        return reduction.any(self._obj, self._DIM)
 
     def max(self) -> _O:
         """Element-wise 'max' across inputs passed to :py:func:`scipp.reduce`."""
-        return reduction.max(self._obj, self._dim)
+        return reduction.max(self._obj, self._DIM)
 
     def min(self) -> _O:
         """Element-wise 'min' across inputs passed to :py:func:`scipp.reduce`."""
-        return reduction.min(self._obj, self._dim)
+        return reduction.min(self._obj, self._DIM)
 
     def sum(self) -> _O:
         """Element-wise 'sum' across inputs passed to :py:func:`scipp.reduce`."""
-        return reduction.sum(self._obj, self._dim)
+        return reduction.sum(self._obj, self._DIM)
 
     def mean(self) -> _O:
         """Element-wise 'mean' across inputs passed to :py:func:`scipp.reduce`."""
-        return reduction.mean(self._obj, self._dim)
+        return reduction.mean(self._obj, self._DIM)
 
     def nanmax(self) -> _O:
         """Element-wise 'nanmax' across inputs passed to :py:func:`scipp.reduce`."""
-        return reduction.nanmax(self._obj, self._dim)
+        return reduction.nanmax(self._obj, self._DIM)
 
     def nanmin(self) -> _O:
         """Element-wise 'nanmin' across inputs passed to :py:func:`scipp.reduce`."""
-        return reduction.nanmin(self._obj, self._dim)
+        return reduction.nanmin(self._obj, self._DIM)
 
     def nansum(self) -> _O:
         """Element-wise 'nansum' across inputs passed to :py:func:`scipp.reduce`."""
-        return reduction.nansum(self._obj, self._dim)
+        return reduction.nansum(self._obj, self._DIM)
 
     def nanmean(self) -> _O:
         """Element-wise 'nanmean' across inputs passed to :py:func:`scipp.reduce`."""
-        return reduction.nanmean(self._obj, self._dim)
+        return reduction.nanmean(self._obj, self._DIM)
 
 
 def reduce(x: Iterable[_O]) -> Reducer[_O]:

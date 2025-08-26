@@ -255,6 +255,48 @@ def test_full_like() -> None:
     )
 
 
+@pytest.mark.parametrize('dtype', ['float64', 'int', 'bool'])
+def test_full_like_with_dtype(dtype):
+    to_copy = sc.zeros(dims=["x", "y"], shape=(2, 2))
+
+    assert sc.identical(
+        sc.full_like(to_copy, value=123.45, dtype=dtype),
+        sc.full(
+            dims=["x", "y"], shape=(2, 2), value=123.45, dtype=dtype, unit=to_copy.unit
+        ),
+    )
+
+
+@pytest.mark.parametrize(('dims', 'shape'), [(['x'], (1,)), (['x', 'y'], (2, 3))])
+def test_full_like_with_dims_shape(dims, shape):
+    to_copy = sc.zeros(dims=["x", "y"], shape=(2, 2), unit='m')
+
+    assert sc.identical(
+        sc.full_like(to_copy, value=123.45, dims=dims, shape=shape),
+        sc.full(dims=dims, shape=shape, value=123.45, unit='m'),
+    )
+
+
+@pytest.mark.parametrize('sizes', [{'x': 1}, {'x': 2, 'y': 3}])
+def test_full_like_with_sizes(sizes) -> None:
+    to_copy = sc.zeros(sizes=sizes, unit='m')
+
+    assert sc.identical(
+        sc.full_like(to_copy, value=123.45, sizes=sizes),
+        sc.full(sizes=sizes, value=123.45, unit='m'),
+    )
+
+
+@pytest.mark.parametrize('unit', [None, '', 'm'])
+def test_full_like_with_unit(unit):
+    to_copy = sc.zeros(dims=["x", "y"], shape=(2, 2))
+
+    assert sc.identical(
+        sc.full_like(to_copy, value=123.45, unit=unit),
+        sc.full(dims=["x", "y"], shape=(2, 2), value=123.45, unit=unit),
+    )
+
+
 def test_full_like_with_variance() -> None:
     to_copy = sc.zeros(dims=["x", "y"], shape=(2, 2))
 
@@ -499,6 +541,53 @@ def test_zeros_like() -> None:
     np.testing.assert_array_equal(zeros.values, 0)
 
 
+@pytest.mark.parametrize('dtype', ['float64', 'int', 'bool'])
+def test_zeros_like_with_dtype(dtype) -> None:
+    var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
+    expected = sc.zeros(
+        dims=['x', 'y', 'z'], shape=[1, 2, 3], dtype=dtype, unit=var.unit
+    )
+    zeros = sc.zeros_like(var, dtype=dtype)
+    _compare_properties(zeros, expected)
+    np.testing.assert_array_equal(zeros.values, 0)
+
+
+@pytest.mark.parametrize(('dims', 'shape'), [(['x'], (1,)), (['x', 'y'], (2, 3))])
+def test_zeros_like_with_dims_shape(dims, shape) -> None:
+    var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
+    expected = sc.zeros(dims=dims, shape=shape)
+    zeros = sc.zeros_like(var, dims=dims, shape=shape)
+    _compare_properties(zeros, expected)
+    np.testing.assert_array_equal(zeros.values, 0)
+
+
+@pytest.mark.parametrize('sizes', [{'x': 1}, {'x': 2, 'y': 3}])
+def test_zeros_like_with_sizes(sizes) -> None:
+    var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
+    expected = sc.zeros(sizes=sizes)
+    zeros = sc.zeros_like(var, sizes=sizes)
+    _compare_properties(zeros, expected)
+    np.testing.assert_array_equal(zeros.values, 0)
+
+
+@pytest.mark.parametrize('unit', [None, '', 'm'])
+def test_zeros_like_with_unit(unit) -> None:
+    var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
+    expected = sc.zeros(dims=['x', 'y', 'z'], shape=[1, 2, 3], unit=unit)
+    zeros = sc.zeros_like(var, unit=unit)
+    _compare_properties(zeros, expected)
+    np.testing.assert_array_equal(zeros.values, 0)
+
+
+def test_zeros_like_with_variances_kwarg() -> None:
+    var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
+    expected = sc.zeros(dims=['x', 'y', 'z'], shape=[1, 2, 3], with_variances=True)
+    zeros = sc.zeros_like(var, with_variances=True)
+    _compare_properties(zeros, expected)
+    np.testing.assert_array_equal(zeros.values, 0)
+    np.testing.assert_array_equal(zeros.variances, 0)
+
+
 def test_zeros_like_with_variances() -> None:
     var = sc.Variable(
         dims=['x', 'y', 'z'],
@@ -528,6 +617,53 @@ def test_ones_like() -> None:
     np.testing.assert_array_equal(ones.values, 1)
 
 
+@pytest.mark.parametrize('dtype', ['float64', 'int', 'bool'])
+def test_ones_like_with_dtype(dtype) -> None:
+    var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
+    expected = sc.ones(
+        dims=['x', 'y', 'z'], shape=[1, 2, 3], dtype=dtype, unit=var.unit
+    )
+    ones = sc.ones_like(var, dtype=dtype)
+    _compare_properties(ones, expected)
+    np.testing.assert_array_equal(ones.values, 1)
+
+
+@pytest.mark.parametrize(('dims', 'shape'), [(['x'], (1,)), (['x', 'y'], (2, 3))])
+def test_ones_like_with_dims_shape(dims, shape) -> None:
+    var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
+    expected = sc.ones(dims=dims, shape=shape)
+    ones = sc.ones_like(var, dims=dims, shape=shape)
+    _compare_properties(ones, expected)
+    np.testing.assert_array_equal(ones.values, 1)
+
+
+@pytest.mark.parametrize('sizes', [{'x': 1}, {'x': 2, 'y': 3}])
+def test_ones_like_with_sizes(sizes) -> None:
+    var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
+    expected = sc.ones(sizes=sizes)
+    ones = sc.ones_like(var, sizes=sizes)
+    _compare_properties(ones, expected)
+    np.testing.assert_array_equal(ones.values, 1)
+
+
+@pytest.mark.parametrize('unit', [None, '', 'm'])
+def test_ones_like_with_unit(unit) -> None:
+    var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
+    expected = sc.ones(dims=['x', 'y', 'z'], shape=[1, 2, 3], unit=unit)
+    ones = sc.ones_like(var, unit=unit)
+    _compare_properties(ones, expected)
+    np.testing.assert_array_equal(ones.values, 1)
+
+
+def test_ones_like_with_variances_kwarg() -> None:
+    var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
+    expected = sc.ones(dims=['x', 'y', 'z'], shape=[1, 2, 3], with_variances=True)
+    ones = sc.ones_like(var, with_variances=True)
+    _compare_properties(ones, expected)
+    np.testing.assert_array_equal(ones.values, 1)
+    np.testing.assert_array_equal(ones.variances, 1)
+
+
 def test_ones_like_with_variances() -> None:
     var = sc.Variable(
         dims=['x', 'y', 'z'],
@@ -553,6 +689,47 @@ def test_empty_like() -> None:
     var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
     expected = make_dummy(dims=['x', 'y', 'z'], shape=[1, 2, 3])
     _compare_properties(sc.empty_like(var), expected)
+
+
+@pytest.mark.parametrize('dtype', ['float64', 'int', 'bool'])
+def test_empty_like_with_dtype(dtype) -> None:
+    var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
+    expected = sc.empty(
+        dims=['x', 'y', 'z'], shape=[1, 2, 3], dtype=dtype, unit=var.unit
+    )
+    empty = sc.ones_like(var, dtype=dtype)
+    _compare_properties(empty, expected)
+
+
+@pytest.mark.parametrize(('dims', 'shape'), [(['x'], (1,)), (['x', 'y'], (2, 3))])
+def test_empty_like_with_dims_shape(dims, shape) -> None:
+    var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
+    expected = sc.empty(dims=dims, shape=shape)
+    empty = sc.ones_like(var, dims=dims, shape=shape)
+    _compare_properties(empty, expected)
+
+
+@pytest.mark.parametrize('sizes', [{'x': 1}, {'x': 2, 'y': 3}])
+def test_empty_like_with_sizes(sizes) -> None:
+    var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
+    expected = sc.empty(sizes=sizes)
+    empty = sc.empty_like(var, sizes=sizes)
+    _compare_properties(empty, expected)
+
+
+@pytest.mark.parametrize('unit', [None, '', 'm'])
+def test_empty_like_with_unit(unit) -> None:
+    var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
+    expected = sc.empty(dims=['x', 'y', 'z'], shape=[1, 2, 3], unit=unit)
+    empty = sc.ones_like(var, unit=unit)
+    _compare_properties(empty, expected)
+
+
+def test_empty_like_with_variances_kwarg() -> None:
+    var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
+    expected = sc.empty(dims=['x', 'y', 'z'], shape=[1, 2, 3], with_variances=True)
+    empty = sc.ones_like(var, with_variances=True)
+    _compare_properties(empty, expected)
 
 
 def test_empty_like_with_variances() -> None:
