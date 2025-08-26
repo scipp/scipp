@@ -99,6 +99,7 @@ static void BM_groupby_large_table(benchmark::State &state) {
     auto grouped = groupby(d, Dim("group")).sum(Dim::X);
     state.PauseTiming();
     // cppcheck-suppress redundantInitialization  # Used to modify shared_ptr.
+    // cppcheck-suppress unreadVariable
     grouped = Dataset();
     state.ResumeTiming();
   }

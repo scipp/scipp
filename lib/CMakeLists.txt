@@ -124,16 +124,14 @@ if(CMAKE_CXX_CPPCHECK)
   list(
     APPEND
     CMAKE_CXX_CPPCHECK
-    "--std=c++20"
+    "--std=c++23"
     "--quiet"
     "--enable=style"
     "--inline-suppr"
     "--suppressions-list=${CMAKE_SOURCE_DIR}/cppcheck-suppressions.txt"
     "--cppcheck-build-dir=${CMAKE_BINARY_DIR}/cppcheck"
-    # Suppress warnings from 3rd party span header. This needs an absolute path
-    # can can therefore not be done in the suppressions file.
-    "--suppress=*:${CMAKE_SOURCE_DIR}/lib/common/include/scipp/common/span.hpp.in"
     "--error-exitcode=2"
+    "--check-level=exhaustive"
   )
 endif()
 

@@ -34,6 +34,7 @@ static void BM_bin_table(benchmark::State &state) {
   auto edges_y = make_edges(Dim::Y, 4);
 
   for (auto _ : state) {
+    // cppcheck-suppress unreadVariable
     auto a = dataset::bin(table, {edges_x, edges_y});
   }
   state.SetItemsProcessed(state.iterations() * nEvent);
@@ -55,6 +56,7 @@ static void BM_rebin_outer(benchmark::State &state) {
   auto binned = dataset::bin(table, {make_edges(Dim::X, 1e4), edges_y});
 
   for (auto _ : state) {
+    // cppcheck-suppress unreadVariable
     auto a = dataset::bin(binned, {edges_x, edges_y});
   }
   state.SetItemsProcessed(state.iterations() * nEvent);

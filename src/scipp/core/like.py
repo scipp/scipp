@@ -1,16 +1,45 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
+from typing import Any, Sequence, TypeVar
 
-from typing import Any, TypeVar
-
+from ..typing import DTypeLike
+from ..units import DefaultUnit
 from .concepts import rewrap_output_data
-from .cpp_classes import DataArray, Variable
+from .cpp_classes import DataArray, Unit, Variable
 from .variable import empty, full, ones, zeros
 
 _T = TypeVar('_T', Variable, DataArray)
 
 
-def zeros_like(obj: _T, /) -> _T:
+def _init_args_from_obj_and_kwargs(obj: _T, kwargs: dict[str, Any]) -> dict[str, Any]:
+    default: dict[str, Any] = {
+        'unit': obj.unit,
+        'dtype': obj.dtype,
+    }
+    if 'sizes' not in kwargs:
+        default.setdefault('dims', obj.dims)
+        default.setdefault('shape', obj.shape)
+    return default | kwargs
+
+
+class _NoArgProvided:
+    '''Dummy type to indicate that no argument was passed to the function.'''
+
+    pass
+
+
+_no_arg_provided = _NoArgProvided()
+
+
+def zeros_like(
+    obj: _T,
+    dims: Sequence[str] | None | _NoArgProvided = _no_arg_provided,
+    shape: Sequence[int] | None | _NoArgProvided = _no_arg_provided,
+    sizes: dict[str, int] | None | _NoArgProvided = _no_arg_provided,
+    unit: Unit | str | DefaultUnit | _NoArgProvided = _no_arg_provided,
+    dtype: DTypeLike | _NoArgProvided = _no_arg_provided,
+    with_variances: bool | _NoArgProvided = _no_arg_provided,
+) -> _T:
     """Return a new object with the same dims, shape, unit,
     and dtype as the input and all elements initialized to 0.
 
@@ -22,6 +51,8 @@ def zeros_like(obj: _T, /) -> _T:
     ----------
     obj: scipp.Variable | scipp.DataArray
         Input object defining dims, shape, unit, and dtype of the output.
+    kwargs:
+        Override arguments passed to :func:`scipp.zeros`.
 
     Returns
     -------
@@ -39,17 +70,33 @@ def zeros_like(obj: _T, /) -> _T:
     scipp.empty_like:
         Create an object with uninitialized elements.
     """
-    new_values = zeros(
-        dims=obj.dims,
-        shape=obj.shape,
-        unit=obj.unit,
-        dtype=obj.dtype,
-        with_variances=obj.variances is not None,
-    )
+    kwargs = {
+        k: v
+        for k, v in (
+            ('dims', dims),
+            ('shape', shape),
+            ('sizes', sizes),
+            ('dtype', dtype),
+            ('unit', unit),
+            ('with_variances', with_variances),
+        )
+        if v is not _no_arg_provided
+    }
+    kwargs = _init_args_from_obj_and_kwargs(obj, kwargs)
+    kwargs.setdefault('with_variances', obj.variances is not None)
+    new_values = zeros(**kwargs)  # type: ignore[arg-type]
     return rewrap_output_data(obj, new_values)
 
 
-def ones_like(obj: _T, /) -> _T:
+def ones_like(
+    obj: _T,
+    dims: Sequence[str] | None | _NoArgProvided = _no_arg_provided,
+    shape: Sequence[int] | None | _NoArgProvided = _no_arg_provided,
+    sizes: dict[str, int] | None | _NoArgProvided = _no_arg_provided,
+    unit: Unit | str | DefaultUnit | _NoArgProvided = _no_arg_provided,
+    dtype: DTypeLike | _NoArgProvided = _no_arg_provided,
+    with_variances: bool | _NoArgProvided = _no_arg_provided,
+) -> _T:
     """Return a new object with the same dims, shape, unit,
     and dtype as the input and all elements initialized to 1.
 
@@ -61,6 +108,8 @@ def ones_like(obj: _T, /) -> _T:
     ----------
     obj: scipp.Variable | scipp.DataArray
         Input object defining dims, shape, unit, and dtype of the output.
+    kwargs:
+        Override arguments passed to :func:`scipp.ones`.
 
     Returns
     -------
@@ -78,17 +127,33 @@ def ones_like(obj: _T, /) -> _T:
     scipp.empty_like:
         Create an object with uninitialized elements.
     """
-    new_values = ones(
-        dims=obj.dims,
-        shape=obj.shape,
-        unit=obj.unit,
-        dtype=obj.dtype,
-        with_variances=obj.variances is not None,
-    )
+    kwargs = {
+        k: v
+        for k, v in (
+            ('dims', dims),
+            ('shape', shape),
+            ('sizes', sizes),
+            ('dtype', dtype),
+            ('unit', unit),
+            ('with_variances', with_variances),
+        )
+        if v is not _no_arg_provided
+    }
+    kwargs = _init_args_from_obj_and_kwargs(obj, kwargs)
+    kwargs.setdefault('with_variances', obj.variances is not None)
+    new_values = ones(**kwargs)  # type: ignore[arg-type]
     return rewrap_output_data(obj, new_values)
 
 
-def empty_like(obj: _T, /) -> _T:
+def empty_like(
+    obj: _T,
+    dims: Sequence[str] | None | _NoArgProvided = _no_arg_provided,
+    shape: Sequence[int] | None | _NoArgProvided = _no_arg_provided,
+    sizes: dict[str, int] | None | _NoArgProvided = _no_arg_provided,
+    unit: Unit | str | DefaultUnit | _NoArgProvided = _no_arg_provided,
+    dtype: DTypeLike | _NoArgProvided = _no_arg_provided,
+    with_variances: bool | _NoArgProvided = _no_arg_provided,
+) -> _T:
     """Return a new object with the same dims, shape, unit,
     and dtype as the input and all elements uninitialized.
 
@@ -104,6 +169,8 @@ def empty_like(obj: _T, /) -> _T:
     ----------
     obj: scipp.Variable | scipp.DataArray
         Input object defining dims, shape, unit, and dtype of the output
+    kwargs:
+        Override arguments passed to :func:`scipp.empty`.
 
     Returns
     -------
@@ -121,17 +188,35 @@ def empty_like(obj: _T, /) -> _T:
     scipp.full_like:
         Create an object filled with a given value.
     """
-    new_values = empty(
-        dims=obj.dims,
-        shape=obj.shape,
-        unit=obj.unit,
-        dtype=obj.dtype,
-        with_variances=obj.variances is not None,
-    )
+    kwargs = {
+        k: v
+        for k, v in (
+            ('dims', dims),
+            ('shape', shape),
+            ('sizes', sizes),
+            ('dtype', dtype),
+            ('unit', unit),
+            ('with_variances', with_variances),
+        )
+        if v is not _no_arg_provided
+    }
+    kwargs = _init_args_from_obj_and_kwargs(obj, kwargs)
+    kwargs.setdefault('with_variances', obj.variances is not None)
+    new_values = empty(**kwargs)  # type: ignore[arg-type]
     return rewrap_output_data(obj, new_values)
 
 
-def full_like(obj: _T, /, value: Any, *, variance: Any = None) -> _T:
+def full_like(
+    obj: _T,
+    /,
+    value: Any,
+    variance: Any = _no_arg_provided,
+    dims: Sequence[str] | None | _NoArgProvided = _no_arg_provided,
+    shape: Sequence[int] | None | _NoArgProvided = _no_arg_provided,
+    sizes: dict[str, int] | None | _NoArgProvided = _no_arg_provided,
+    unit: Unit | str | DefaultUnit | _NoArgProvided = _no_arg_provided,
+    dtype: DTypeLike | _NoArgProvided = _no_arg_provided,
+) -> _T:
     """Return a new object with the same dims, shape, unit,
     and dtype as the input and all elements initialized to the given value.
 
@@ -147,6 +232,8 @@ def full_like(obj: _T, /, value: Any, *, variance: Any = None) -> _T:
     variance:
         The variance to fill the Variable with. If None
         or not provided, the variances will not be set.
+    kwargs:
+        Override arguments passed to :func:`scipp.full`.
 
     Returns
     -------
@@ -164,12 +251,19 @@ def full_like(obj: _T, /, value: Any, *, variance: Any = None) -> _T:
     scipp.empty_like:
         Create an object with uninitialized elements.
     """
-    new_values = full(
-        dims=obj.dims,
-        shape=obj.shape,
-        unit=obj.unit,
-        dtype=obj.dtype,
-        value=value,
-        variance=variance,
-    )
+    kwargs = {
+        k: v
+        for k, v in (
+            ('dims', dims),
+            ('shape', shape),
+            ('sizes', sizes),
+            ('dtype', dtype),
+            ('unit', unit),
+            ('variance', variance),
+        )
+        if v is not _no_arg_provided
+    }
+    kwargs = _init_args_from_obj_and_kwargs(obj, kwargs)
+    kwargs['value'] = value
+    new_values = full(**kwargs)
     return rewrap_output_data(obj, new_values)

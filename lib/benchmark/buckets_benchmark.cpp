@@ -69,6 +69,7 @@ static void BM_bucketby(benchmark::State &state) {
       makeVariable<double>(Dims{Dim::Y}, Shape{5}, Values{-2, -1, 0, 1, 2});
 
   for (auto _ : state) {
+    // cppcheck-suppress unreadVariable
     auto a = dataset::bin(table, {edges_x, edges_y});
   }
   state.SetItemsProcessed(state.iterations() * nEvent);

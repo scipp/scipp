@@ -69,6 +69,7 @@ template <class Gen> static void BM_Variable_copy(benchmark::State &state) {
   for (auto _ : state) {
     Variable copied = copy(var);
     state.PauseTiming();
+    // cppcheck-suppress unreadVariable
     copied = Variable();
     state.ResumeTiming();
   }
@@ -118,6 +119,7 @@ static void BM_Variable_trivial_slice(benchmark::State &state) {
       makeVariable<double>(Dims{Dim::Z, Dim::Y, Dim::X}, Shape{10, 20, 30});
 
   for (auto _ : state) {
+    // cppcheck-suppress unreadVariable
     Variable copied = copy(var);
   }
 }
