@@ -2,11 +2,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # ~~~
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.28)
 
 cmake_policy(SET CMP0091 NEW)
-
-set(CMAKE_CXX_SCAN_FOR_MODULES 0)
 
 if(SKBUILD)
   set(SCIPP_VERSION_PEP440 "${SKBUILD_PROJECT_VERSION_FULL}")
