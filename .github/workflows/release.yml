@@ -92,22 +92,6 @@ jobs:
           pattern: 'dist*'
       - uses: pypa/gh-action-pypi-publish@v1.12.4
 
-  upload_conda:
-    name: Deploy Conda Forge
-    needs: [build_wheels, build_sdist, build_conda]
-    runs-on: ubuntu-24.04
-    if: github.event_name == 'release' && github.event.action == 'published'
-
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: 'conda*'
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          python-version: '3.12'
-      - run: conda install -c conda-forge --yes anaconda-client
-      - run: anaconda --token ${{ secrets.ANACONDATOKEN }} upload --user scipp --label main $(find . -type f -name "*.conda")
-
   manage-versions:
     name: Manage Versions
     needs: check_release
@@ -131,7 +115,7 @@ jobs:
           echo "replaced=$(python docs/version.py --version=${GITHUB_REF_NAME} --action=get-replaced)" >> $GITHUB_OUTPUT
 
   docs:
-    needs: [upload_conda, upload_pypi, manage-versions]
+    needs: [upload_pypi, manage-versions]
     uses: ./.github/workflows/docs.yml
     with:
       publish: ${{ github.event_name == 'release' && github.event.action == 'published' }}
