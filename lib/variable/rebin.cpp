@@ -20,7 +20,7 @@ namespace scipp::variable {
 template <typename T, class Less>
 void rebin_non_inner(const Dim dim, const Variable &oldT,
                      // cppcheck-suppress constParameter # bug in cppcheck
-                     Variable &newT, const Variable &oldCoord,
+                     const Variable &newT, const Variable &oldCoord,
                      const Variable &newCoord) {
   if (oldCoord.ndim() != 1 || newCoord.ndim() != 1)
     throw std::invalid_argument(

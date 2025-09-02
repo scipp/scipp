@@ -38,19 +38,19 @@ template <class T> std::tuple<Variable, Dim, T> Variable::to_constituents() {
   Variable tmp;
   std::swap(*this, tmp);
   // cppcheck-suppress constVariable # Deduced by auto.
-  auto &model = requireT<BinArrayModel<T>>(tmp.data());
+  const auto &model = requireT<BinArrayModel<T>>(tmp.data());
   return {tmp.bin_indices(), model.bin_dim(), std::move(model.buffer())};
 }
 
 template <class T> std::tuple<Variable, Dim, T> Variable::constituents() const {
   // cppcheck-suppress constVariable # Deduced by auto.
-  auto &model = requireT<const BinArrayModel<T>>(data());
+  const auto &model = requireT<const BinArrayModel<T>>(data());
   return {bin_indices(), model.bin_dim(), model.buffer()};
 }
 
 template <class T> std::tuple<Variable, Dim, T> Variable::constituents() {
   // cppcheck-suppress constVariable # Deduced by auto.
-  auto &model = requireT<BinArrayModel<T>>(data());
+  const auto &model = requireT<BinArrayModel<T>>(data());
   return {bin_indices(), model.bin_dim(), model.buffer()};
 }
 
@@ -237,7 +237,7 @@ BinArrayModel<T>::index_values(const core::ElementArrayViewParams &base) const {
 template <class T>
 Variable make_bins_impl(Variable indices, const Dim dim, T &&buffer) {
   indices.setDataHandle(std::make_unique<variable::BinArrayModel<T>>(
-      indices.data_handle(), dim, std::move(buffer)));
+      indices.data_handle(), dim, std::forward<T>(buffer)));
   return indices;
 }
 

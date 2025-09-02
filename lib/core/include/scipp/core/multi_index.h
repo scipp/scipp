@@ -128,7 +128,7 @@ public:
     }
   }
 
-  [[nodiscard]] constexpr auto get() const noexcept { return m_data_index; }
+  [[nodiscard]] constexpr auto &get() const noexcept { return m_data_index; }
 
   bool operator==(const MultiIndex &other) const noexcept {
     // Assuming the number dimensions match to make the check cheaper.
