@@ -135,6 +135,13 @@ def test_midpoints() -> None:
     )
 
 
+def test_midpoints_vector() -> None:
+    assert sc.allclose(
+        sc.midpoints(sc.vectors(dims=['xy'], values=[[2, 2, 3], [5, 6, 7]])),
+        sc.vectors(dims=['xy'], values=[[3.5, 4, 5]]),
+    )
+
+
 def test_norm() -> None:
     assert sc.allclose(sc.norm(sc.vector([1.0, 2.0, 0.0])), sc.scalar(np.sqrt(1 + 4)))
 
