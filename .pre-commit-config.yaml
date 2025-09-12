@@ -29,7 +29,7 @@ repos:
       - id: nbstripout
         types: [ "jupyter" ]
         args: [ "--drop-empty-cells",
-                "--extra-keys 'metadata.language_info.version cell.metadata.jp-MarkdownHeadingCollapsed cell.metadata.pycharm'" ]
+                "--extra-keys=metadata.language_info.version cell.metadata.jp-MarkdownHeadingCollapsed cell.metadata.pycharm" ]
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.11.0
     hooks:

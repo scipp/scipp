@@ -143,7 +143,7 @@ constexpr auto erfc = overloaded{special, [](const auto &x) {
  * that is, neighboring outputs are 50% correlated.
  */
 constexpr auto midpoint = overloaded{
-    arg_list<double, float, int64_t, int32_t, time_point>,
+    arg_list<double, float, int64_t, int32_t, time_point, Eigen::Vector3d>,
     transform_flags::expect_no_variance_arg<0>,
     transform_flags::expect_no_variance_arg<1>,
     [](const sc_units::Unit &a, const sc_units::Unit &b) {
@@ -154,6 +154,13 @@ constexpr auto midpoint = overloaded{
       if constexpr (std::is_same_v<std::decay_t<decltype(a)>, time_point>) {
         return time_point{
             std::midpoint(a.time_since_epoch(), b.time_since_epoch())};
+      } else if constexpr (std::is_same_v<std::decay_t<decltype(a)>,
+                                          Eigen::Vector3d>) {
+        Eigen::Vector3d mid;
+        for (int i = 0; i < 3; ++i) {
+          mid[i] = std::midpoint(a[i], b[i]);
+        }
+        return mid;
       } else {
         return std::midpoint(a, b);
       }
