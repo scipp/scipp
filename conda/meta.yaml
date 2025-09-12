@@ -29,10 +29,10 @@ requirements:
     - cross-python_{{ target_platform }}  # [build_platform != target_platform]
     - python                              # [build_platform != target_platform]
     - cmake
-    - conan==1.64.1
     - cppcheck [linux64]
     - git
     - ninja
+    - clang-tools
   host:
     - python
     - tbb-devel=2022.0.0
@@ -58,7 +58,6 @@ test:
     - {{ compiler('cxx') }}
     - beautifulsoup4
     - cmake
-    - conan==1.64.1
     - h5py
     - hypothesis
     - ipykernel
