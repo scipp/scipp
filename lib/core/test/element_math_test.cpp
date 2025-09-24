@@ -241,7 +241,7 @@ TEST(ElementMathTest, midpoint_of_small_int_works) {
 TEST(ElementMathTest, midpoint_of_time_point_uses_underlying_int) {
   const time_point a{123};
   const time_point b{732};
-  EXPECT_EQ(element::midpoint(a, b), time_point{element::midpoint(123, 732)});
+  EXPECT_EQ(element::midpoint(a, b), time_point{std::midpoint(123, 732)});
 }
 
 TEST(ElementMathTest, midpoint_units_must_be_equal) {
