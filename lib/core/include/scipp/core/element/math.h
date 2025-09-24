@@ -154,15 +154,14 @@ constexpr auto midpoint = overloaded{
       if constexpr (std::is_same_v<std::decay_t<decltype(a)>, time_point>) {
         return time_point{
             std::midpoint(a.time_since_epoch(), b.time_since_epoch())};
-      } else if constexpr (std::is_same_v<std::decay_t<decltype(a)>,
-                                          Eigen::Vector3d>) {
-        Eigen::Vector3d mid;
-        for (int i = 0; i < 3; ++i) {
-          mid[i] = std::midpoint(a[i], b[i]);
-        }
-        return mid;
+      } else if constexpr (std::is_same_v < std::decay_t<decltype(a)>,
+                           int32_t) {
+        return (static_cast<float>(a) + static_cast<float>(b)) / 2;
+      } else if constexpr (std::is_same_v < std::decay_t<decltype(a)>,
+                           int64_t) {
+        return (static_cast<double>(a) + static_cast<double>(b)) / 2;
       } else {
-        return std::midpoint(a, b);
+        return (a + b) / 2;
       }
     }};
 
