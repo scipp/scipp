@@ -526,7 +526,7 @@ TEST(Variable, midpoints_1d_many_elements) {
   const auto var = makeVariable<int64_t>(Dims{Dim::X}, Shape{7},
                                          Values{-3, -1, 0, 1, 1, 3, 6});
   const auto expected = makeVariable<double>(
-      Dims{Dim::X}, Shape{6}, Values{-2., -0.5, 0., 1., 2., 4.5});
+      Dims{Dim::X}, Shape{6}, Values{-2., -0.5, 0.5, 1., 2., 4.5});
   EXPECT_EQ(midpoints(var), expected);
 }
 
