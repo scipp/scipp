@@ -525,8 +525,8 @@ TEST(Variable, midpoints_1d_2_elements) {
 TEST(Variable, midpoints_1d_many_elements) {
   const auto var = makeVariable<int64_t>(Dims{Dim::X}, Shape{7},
                                          Values{-3, -1, 0, 1, 1, 3, 6});
-  const auto expected = makeVariable<double>(Dims{Dim::X}, Shape{6},
-                                             Values{-2, -0.5, 0, 1, 2, 4.5});
+  const auto expected = makeVariable<double>(
+      Dims{Dim::X}, Shape{6}, Values{-2., -0.5, 0., 1., 2., 4.5});
   EXPECT_EQ(midpoints(var), expected);
 }
 
@@ -540,7 +540,7 @@ TEST(Variable, midpoints_2d_many_elements_inner) {
   const auto var = makeVariable<int64_t>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
                                          Values{5, 1, -2, 3, 1, 1});
   const auto expected = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
-                                             Values{3, -0.5, 2, 1});
+                                             Values{3., -0.5, 2., 1.});
   EXPECT_EQ(midpoints(var, Dim::Y), expected);
 }
 
@@ -548,6 +548,6 @@ TEST(Variable, midpoints_2d_2_elements_outer) {
   const auto var = makeVariable<int64_t>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
                                          Values{5, 1, -2, 3, 1, 1});
   const auto expected = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{1, 3},
-                                             Values{4, 1, -0.5});
+                                             Values{4., 1., -0.5});
   EXPECT_EQ(midpoints(var, Dim::X), expected);
 }
