@@ -490,16 +490,15 @@ def midpoints(x: Variable, dim: str | None = None) -> Variable:
       >>> x
       <scipp.Variable> (x: 4)      int64  [dimensionless]  [-2, 0, 4, 2]
       >>> sc.midpoints(x)
-      <scipp.Variable> (x: 3)      int64  [dimensionless]  [-1, 2, 3]
+      <scipp.Variable> (x: 3)      float64  [dimensionless]  [-1, 2, 3]
 
-    For integers, when the difference of adjacent elements is odd,
-    `midpoints` rounds towards the number that comes first in the array:
+    `midpoints` casts integers to float before computing the midpoints:
 
       >>> x = sc.array(dims=['x'], values=[0, 3, 0])
       >>> x
       <scipp.Variable> (x: 3)      int64  [dimensionless]  [0, 3, 0]
       >>> sc.midpoints(x)
-      <scipp.Variable> (x: 2)      int64  [dimensionless]  [1, 2]
+      <scipp.Variable> (x: 2)      float64  [dimensionless]  [1.5, 1.5]
 
     With multidimensional variables, `midpoints` is only applied
     to the specified dimension:
@@ -509,7 +508,7 @@ def midpoints(x: Variable, dim: str | None = None) -> Variable:
       array([[ 1,  3,  5],
              [ 2,  6, 10]])
       >>> sc.midpoints(xy, dim='x').values
-      array([[1, 4, 7]])
+      array([[1.5, 4, 7.5]])
       >>> sc.midpoints(xy, dim='y').values
       array([[2, 4],
              [4, 8]])
