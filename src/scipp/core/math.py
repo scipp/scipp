@@ -508,9 +508,9 @@ def midpoints(x: Variable, dim: str | None = None) -> Variable:
       array([[ 1,  3,  5],
              [ 2,  6, 10]])
       >>> sc.midpoints(xy, dim='x').values
-      array([[1.5, 4, 7.5]])
+      array([[1.5, 4.5, 7.5]])
       >>> sc.midpoints(xy, dim='y').values
-      array([[2, 4],
-             [4, 8]])
+      array([[2., 4.],
+             [4., 8.]])
     """
     return _cpp.midpoints(x, dim)  # type: ignore[no-any-return]
