@@ -12,6 +12,6 @@ plopp
 pydata-sphinx-theme>=0.14
 pythreejs
 requests
-sphinx
+sphinx>=8.2
 sphinx-autodoc-typehints
 sphinx-copybutton
