@@ -161,6 +161,10 @@ constexpr auto midpoint = overloaded{
           mid[i] = std::midpoint(a[i], b[i]);
         }
         return mid;
+      } else if constexpr (std::is_same_v<std::decay_t<decltype(a)>, int32_t>) {
+        return std::midpoint(static_cast<double>(a), static_cast<double>(b));
+      } else if constexpr (std::is_same_v<std::decay_t<decltype(a)>, int64_t>) {
+        return std::midpoint(static_cast<double>(a), static_cast<double>(b));
       } else {
         return std::midpoint(a, b);
       }

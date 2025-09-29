@@ -224,11 +224,12 @@ TEST(ElementMathTest, midpoint_of_medium_sized_double) {
   EXPECT_EQ(element::midpoint(6.0, -7.0), -0.5);
 }
 
-TEST(ElementMathTest, midpoint_of_medium_sized_values_rounds_towards_first) {
-  EXPECT_EQ(element::midpoint(4, 1), 3);
-  EXPECT_EQ(element::midpoint(2, 7), 4);
-  EXPECT_EQ(element::midpoint(-3, -8), -5);
-  EXPECT_EQ(element::midpoint(6, -7), 0);
+TEST(ElementMathTest,
+     midpoint_of_medium_sized_values_does_not_round_towards_first) {
+  EXPECT_EQ(element::midpoint(4, 1), 2.5);
+  EXPECT_EQ(element::midpoint(2, 7), 4.5);
+  EXPECT_EQ(element::midpoint(-3, -8), -5.5);
+  EXPECT_EQ(element::midpoint(6, -7), -0.5);
 }
 
 TEST(ElementMathTest, midpoint_of_small_int_works) {
@@ -241,7 +242,7 @@ TEST(ElementMathTest, midpoint_of_small_int_works) {
 TEST(ElementMathTest, midpoint_of_time_point_uses_underlying_int) {
   const time_point a{123};
   const time_point b{732};
-  EXPECT_EQ(element::midpoint(a, b), time_point{element::midpoint(123, 732)});
+  EXPECT_EQ(element::midpoint(a, b), time_point{std::midpoint(123, 732)});
 }
 
 TEST(ElementMathTest, midpoint_units_must_be_equal) {
