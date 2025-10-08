@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
       - run: python -m pip install --upgrade pip
@@ -40,7 +40,7 @@ jobs:
         - {os: ubuntu-24.04, cmake-preset: ci-linux}
         - {os: macos-14, cmake-preset: ci-macos}
         - {os: windows-2022, cmake-preset: ci-windows}
-        python-version: ["3.11"]
+        python-version: ["3.14"]
 
     steps:
       - uses: actions/checkout@v4
