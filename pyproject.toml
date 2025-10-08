@@ -83,8 +83,6 @@ version_file = "src/scipp/_version.py"
 
 [tool.cibuildwheel]
 archs = ["auto64"]
-# Patch Conan 1.66 to support Apple Clang 17.0
-before-build = "python {project}/tools/patch_conan.py"
 test-requires = ["scipy", "graphviz", "pooch", "hypothesis"]
 test-extras = ["test"]
 test-command = "pytest --ignore {project}/tests/plotting --ignore {project}/tests/hypothesis/ --ignore {project}/tests/experimental/ {project}/tests"
