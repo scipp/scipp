@@ -328,11 +328,13 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
         });
   c.def("__setitem__", [](T &self, std::tuple<std::string, scipp::index> index,
                           const py::object &data) {
-    slicer<T>::template set(self, to_dim_type(std::move(index)), data);
+    slicer<T>::template set<std::tuple<Dim, scipp::index>>(
+        self, to_dim_type(std::move(index)), data);
   });
   c.def("__setitem__", [](T &self, std::tuple<std::string, py::slice> index,
                           const py::object &data) {
-    slicer<T>::template set(self, to_dim_type(std::move(index)), data);
+    slicer<T>::template set<std::tuple<Dim, py::slice>>(
+        self, to_dim_type(std::move(index)), data);
   });
   c.def("__setitem__", &slicer<T>::template set<py::ellipsis>);
   c.def(

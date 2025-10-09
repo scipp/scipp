@@ -51,6 +51,13 @@ if(SKBUILD)
   if(APPLE AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.0)
     message(STATUS "Building on macOS with Clang 15 or newer")
     add_link_options("-ld_classic")
+    # Run patch_conan.py to patch Conan for AppleClang 17 support on
+    # macos-15-intel runners
+    execute_process(
+      COMMAND "${CMAKE_COMMAND}" -E env python
+              "${CMAKE_SOURCE_DIR}/tools/patch_conan.py"
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    )
   endif()
 endif()
 
