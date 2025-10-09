@@ -648,6 +648,15 @@ def test_is_edges() -> None:
     assert not da.masks.is_edges('mask', 'b')
 
 
+def test_is_edges_raises_for_2d_suggests_using_second_arg() -> None:
+    da = sc.DataArray(
+        sc.zeros(sizes={'a': 2, 'b': 3}),
+        coords={'coord': sc.zeros(sizes={'a': 3, 'b': 3})},
+    )
+    with pytest.raises(sc.DimensionError, match=r'.*Use the second argument.*'):
+        assert da.coords.is_edges('coord')
+
+
 def test_drop_coords() -> None:
     coord0 = sc.linspace('x', start=0.2, stop=1.61, num=4)
     coord1 = sc.linspace('y', start=1, stop=4, num=3)

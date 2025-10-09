@@ -1,6 +1,0 @@
-{
-    "cmake.configureOnOpen": false,
-    "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true,
-    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
-}
