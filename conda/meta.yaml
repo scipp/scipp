@@ -62,7 +62,7 @@ test:
     - h5py
     - hypothesis
     - ipykernel
-    - numba # [py<313]
+    - numba
     - numpy
     - pandas
     - pytest
@@ -83,7 +83,7 @@ test:
     - tests/
   commands:
     - python -m pytest -v tests
-    - python cmake-package-test/build.py
+    - python cmake-package-test/build.py  # [linux]
 {% endif %}
 
 build:
