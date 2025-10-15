@@ -127,13 +127,12 @@ def _ordered_dict(
 
 
 def inline_variable_repr(var: Variable | DataArray, has_variances: bool = False) -> str:
-    if var.bins is None:
-        if isinstance(var, DataArray):
-            return _format_non_events(var.data, has_variances)
-        else:
-            return _format_non_events(var, has_variances)
-    else:
+    if var.is_binned:
         return _format_events(var, has_variances)
+    if isinstance(var, DataArray):
+        return _format_non_events(var.data, has_variances)
+    else:
+        return _format_non_events(var, has_variances)
 
 
 def retrieve(
@@ -162,7 +161,7 @@ def _short_data_repr_html_events(var: Variable | DataArray) -> str:
 
 def short_data_repr_html(var: Variable | DataArray, has_variances: bool = False) -> str:
     """Format "data" for DataArray and Variable."""
-    if var.bins is not None:
+    if var.is_binned:
         data_repr = _short_data_repr_html_events(var)
     else:
         data_repr = _short_data_repr_html_non_events(var, has_variances)
@@ -319,7 +318,7 @@ def summarize_variable(
             add_dim_size,
         )
     )
-    if var.bins is not None and isinstance(var.bins.constituents['data'], sc.Dataset):
+    if var.is_binned and isinstance(var.bins.constituents['data'], sc.Dataset):
         # Could print as a tuple of column units and dtypes, but we don't for now.
         unit = ''
         dtype = ''
@@ -334,7 +333,7 @@ def summarize_variable(
 
     preview = _make_row(inline_variable_repr(var))
     data_repr = short_data_repr_html(var)
-    if var.bins is None:
+    if not var.is_binned:
         data_repr = "Values:<br>" + data_repr
     variances_preview = None
     if var.variances is not None:

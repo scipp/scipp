@@ -295,7 +295,7 @@ def _log_transform(
 def _store_coord(da: DataArray, name: str, coord: Coord) -> None:
     def try_del() -> None:
         da.coords.pop(name, None)
-        if da.bins is not None:
+        if da.is_binned:
             da.bins.coords.pop(name, None)
 
     def store(x: DataArray | Bins[DataArray], c: Variable) -> None:
@@ -319,7 +319,7 @@ def _store_coord(da: DataArray, name: str, coord: Coord) -> None:
 def _store_results(da: DataArray, coords: CoordTable, targets: set[str]) -> DataArray:
     da = da.copy(deep=False)
     # See #2773 for why this is necessary.
-    if da.bins is not None:
+    if da.is_binned:
         da.data = bins(**da.bins.constituents)
     for name, coord in coords.items():
         if name in targets:

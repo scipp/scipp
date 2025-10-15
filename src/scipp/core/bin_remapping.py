@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 
 def hide_masked(da: DataArray, dim: Dims) -> Variable:
-    if da.bins is None:
+    if not da.is_binned:
         raise ValueError("Input must be binned")
     if (mask := irreducible_mask(da, dim)) is not None:
         # Avoid using boolean indexing since it would result in (partial) content
@@ -43,8 +43,8 @@ def hide_masked(da: DataArray, dim: Dims) -> Variable:
 def _with_bin_sizes(var: Variable | DataArray, sizes: Variable) -> Variable:
     end = cumsum(sizes)
     begin = end - sizes
-    data = var if var.bins is None else var.bins.constituents['data']
-    dim = var.dim if var.bins is None else var.bins.constituents['dim']
+    data = var.bins.constituents['data'] if var.is_binned else var
+    dim = var.bins.constituents['dim'] if var.is_binned else var.dim
     return _cpp._bins_no_validate(data=data, dim=dim, begin=begin, end=end)  # type: ignore[no-any-return]
 
 
@@ -138,7 +138,7 @@ def _combine_bins(
 def combine_bins(
     da: DataArray, edges: Sequence[Variable], groups: Sequence[Variable], dim: Dims
 ) -> DataArray:
-    if da.bins is None:
+    if not da.is_binned:
         raise ValueError("Input must be binned")
     masked = hide_masked(da, dim)
     if len(edges) == 0 and len(groups) == 0:

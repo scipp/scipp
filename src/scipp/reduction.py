@@ -17,7 +17,7 @@ class BinsReducer(Generic[_O]):
 
     def concat(self) -> _O:
         """Element-wise 'concat' across bins of inputs passed to :py:func:`scipp.reduce`."""  # noqa: E501
-        if self._obj.bins is None:
+        if not self._obj.is_binned:
             raise ValueError("Input must be binned")
         return self._obj.bins.concat(self._dim)
 

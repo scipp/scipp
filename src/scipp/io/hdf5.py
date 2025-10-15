@@ -125,7 +125,7 @@ class _NumpyDataIO:
 class _BinDataIO:
     @staticmethod
     def write(group: h5.Group, data: Variable) -> h5.Group:
-        if data.bins is None:
+        if not data.is_binned:
             raise DTypeError("Expected binned data")
         bins = data.bins.constituents
         buffer_len = bins['data'].sizes[bins['dim']]
@@ -287,7 +287,7 @@ class _VariableIO:
 
     @classmethod
     def write(cls, group: h5.Group, var: Variable) -> h5.Group | None:
-        if var.bins is None and var.dtype not in cls._dtypes.values():
+        if not var.is_binned and var.dtype not in cls._dtypes.values():
             # In practice this may make the file unreadable, e.g., if values
             # have unsupported dtype.
             get_logger().warning(
@@ -295,14 +295,14 @@ class _VariableIO:
             )
             return None
         _write_scipp_header(group, 'Variable')
-        if var.bins is None:
+        if var.is_binned:
+            dset = _BinDataIO.write(group, var)
+            dset.attrs['dtype'] = _binned_dtype_lut[dset['data'].attrs['scipp-type']]
+        else:
             dset = cls._write_data(group, var)
             dset.attrs['dtype'] = str(var.dtype)
             if var.unit is not None:
                 dset.attrs['unit'] = _serialize_unit(var.unit)
-        else:
-            dset = _BinDataIO.write(group, var)
-            dset.attrs['dtype'] = _binned_dtype_lut[dset['data'].attrs['scipp-type']]
         dset.attrs['dims'] = [str(dim) for dim in var.dims]
         dset.attrs['shape'] = var.shape
         dset.attrs['aligned'] = var.aligned
