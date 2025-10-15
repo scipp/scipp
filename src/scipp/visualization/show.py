@@ -128,7 +128,7 @@ class VariableDrawer:
     def _events_height(self) -> float:
         if not self._variable.is_binned:
             return 0
-        events = self._variable.bins.constituents['data']
+        events = self._variable.bins.constituents['data']  # type: ignore[union-attr]
         # Rough estimate of vertical space taken by depiction of events buffer
         if isinstance(events, Variable):
             return 1
@@ -280,7 +280,7 @@ class VariableDrawer:
         svg += '<g transform="translate({},{}) scale(0.5)">{}</g>'.format(
             self.size()[0] + 1,
             0,
-            make_svg(self._variable.bins.constituents['data'], content_only=True),
+            make_svg(self._variable.bins.constituents['data'], content_only=True),  # type: ignore[union-attr]
         )
         return svg
 

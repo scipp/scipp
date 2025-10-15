@@ -150,4 +150,4 @@ def _convert_to_rule_graph(graph: GraphDict) -> dict[str, Rule]:
 
 
 def _is_in_coords(name: str, da: DataArray) -> bool:
-    return name in da.coords or (da.is_binned and name in da.bins.coords)
+    return name in da.coords or (da.is_binned and name in da.bins.coords)  # type: ignore[union-attr]

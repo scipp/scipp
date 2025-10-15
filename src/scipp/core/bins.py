@@ -591,7 +591,7 @@ class Bins(Generic[_O]):
 
 def _is_binned(obj: _O) -> bool:
     """Return True if the object is binned."""
-    return _cpp.is_bins(obj)
+    return _cpp.is_bins(obj)  # type: ignore[no-any-return]
 
 
 def _bins(obj: _O) -> Bins[_O] | None:

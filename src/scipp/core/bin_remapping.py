@@ -24,7 +24,7 @@ def hide_masked(da: DataArray, dim: Dims) -> Variable:
     if (mask := irreducible_mask(da, dim)) is not None:
         # Avoid using boolean indexing since it would result in (partial) content
         # buffer copy. Instead index just begin/end and reuse content buffer.
-        comps = da.bins.constituents
+        comps = da.bins.constituents  # type: ignore[union-attr]
         # If the mask is 1-D we can drop entire "rows" or "columns". This can
         # drastically reduce the number of bins to handle in some cases for better
         # performance. For 2-D or higher masks we fall back to making bins "empty" by
@@ -43,8 +43,8 @@ def hide_masked(da: DataArray, dim: Dims) -> Variable:
 def _with_bin_sizes(var: Variable | DataArray, sizes: Variable) -> Variable:
     end = cumsum(sizes)
     begin = end - sizes
-    data = var.bins.constituents['data'] if var.is_binned else var
-    dim = var.bins.constituents['dim'] if var.is_binned else var.dim
+    data = var.bins.constituents['data'] if var.is_binned else var  # type: ignore[union-attr]
+    dim = var.bins.constituents['dim'] if var.is_binned else var.dim  # type: ignore[union-attr]
     return _cpp._bins_no_validate(data=data, dim=dim, begin=begin, end=end)  # type: ignore[no-any-return]
 
 

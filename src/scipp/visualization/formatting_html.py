@@ -318,7 +318,7 @@ def summarize_variable(
             add_dim_size,
         )
     )
-    if var.is_binned and isinstance(var.bins.constituents['data'], sc.Dataset):
+    if var.is_binned and isinstance(var.bins.constituents['data'], sc.Dataset):  # type: ignore[union-attr]
         # Could print as a tuple of column units and dtypes, but we don't for now.
         unit = ''
         dtype = ''
