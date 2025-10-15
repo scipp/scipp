@@ -154,7 +154,7 @@ def _assert_identical_variable_structure(a: Variable, b: Variable) -> None:
     assert a.is_binned == b.is_binned
     if a.is_binned:
         assert b.is_binned
-        assert a.bins.unit == b.bins.unit  # type: ignore[union-attr]
+        assert a.bins.unit == b.bins.unit
     else:
         if a.variances is not None:
             assert b.variances is not None, 'a has variances but b does not'
@@ -232,7 +232,7 @@ def _assert_identical_dense_variable_data(a: Variable, b: Variable) -> None:
 def _assert_identical_binned_variable_data(a: Variable, b: Variable) -> None:
     assert a.is_binned
     assert b.is_binned
-    _assert_identical_impl(a.bins.concat().value, b.bins.concat().value)  # type: ignore[union-attr]
+    _assert_identical_impl(a.bins.concat().value, b.bins.concat().value)
 
 
 def _assert_allclose_data(
@@ -290,7 +290,7 @@ def _assert_allclose_binned_variable_data(
 ) -> None:
     assert a.is_binned
     assert b.is_binned
-    _assert_allclose_impl(a.bins.concat().value, b.bins.concat().value, **kwargs)  # type: ignore[union-attr]
+    _assert_allclose_impl(a.bins.concat().value, b.bins.concat().value, **kwargs)
 
 
 @contextmanager

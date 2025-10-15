@@ -4,7 +4,7 @@
 import itertools
 from collections.abc import Sequence
 from math import prod
-from typing import TYPE_CHECKING, TypeVar
+from typing import TypeVar
 
 from .._scipp import core as _cpp
 from ..typing import Dims
@@ -14,9 +14,6 @@ from .cumulative import cumsum
 from .operations import where
 from .variable import index
 
-if TYPE_CHECKING:
-    from .bins import Bins
-
 
 def hide_masked(da: DataArray, dim: Dims) -> Variable:
     if not da.is_binned:
@@ -24,7 +21,7 @@ def hide_masked(da: DataArray, dim: Dims) -> Variable:
     if (mask := irreducible_mask(da, dim)) is not None:
         # Avoid using boolean indexing since it would result in (partial) content
         # buffer copy. Instead index just begin/end and reuse content buffer.
-        comps = da.bins.constituents  # type: ignore[union-attr]
+        comps = da.bins.constituents
         # If the mask is 1-D we can drop entire "rows" or "columns". This can
         # drastically reduce the number of bins to handle in some cases for better
         # performance. For 2-D or higher masks we fall back to making bins "empty" by
@@ -43,8 +40,8 @@ def hide_masked(da: DataArray, dim: Dims) -> Variable:
 def _with_bin_sizes(var: Variable | DataArray, sizes: Variable) -> Variable:
     end = cumsum(sizes)
     begin = end - sizes
-    data = var.bins.constituents['data'] if var.is_binned else var  # type: ignore[union-attr]
-    dim = var.bins.constituents['dim'] if var.is_binned else var.dim  # type: ignore[union-attr]
+    data = var.bins.constituents['data'] if var.is_binned else var
+    dim = var.bins.constituents['dim'] if var.is_binned else var.dim
     return _cpp._bins_no_validate(data=data, dim=dim, begin=begin, end=end)  # type: ignore[no-any-return]
 
 
@@ -61,7 +58,7 @@ def _concat_bins(var: Variable, dim: Dims) -> Variable:
     # TODO It would be possible to support a copy=False parameter, to skip the copy if
     # the copy would not result in any moving or reordering.
     out = var.transpose(unchanged_dims + changed_dims).copy()
-    out_bins: Bins[Variable] = out.bins  # type: ignore[assignment]
+    out_bins = out.bins
     sizes = out_bins.size().sum(changed_dims)
     return _with_bin_sizes(out, sizes)
 
@@ -100,7 +97,7 @@ def _combine_bins(
     # changed subspaces. make_binned below will thus only operate within each pseudo
     # bins, without mixing contents from different unchanged bins.
     var = var.transpose(unchanged_dims + changed_dims)
-    var_bins: Bins[Variable] = var.bins  # type: ignore[assignment]
+    var_bins = var.bins
     params = DataArray(var_bins.size(), coords=coords)
     params.coords['begin'] = var_bins.constituents['begin'].copy()
     params.coords['end'] = var_bins.constituents['end'].copy()
@@ -129,10 +126,7 @@ def _combine_bins(
     # copies of slices, but here we can leverage the same mechanism.
     # Then we call `_with_bin_sizes` to put in place new indices, "merging" the
     # reordered input bins to desired output bins.
-    return _with_bin_sizes(
-        source.copy(),
-        sizes=params.data.bins.sum(),  # type: ignore[union-attr]
-    )
+    return _with_bin_sizes(source.copy(), sizes=params.data.bins.sum())
 
 
 def combine_bins(

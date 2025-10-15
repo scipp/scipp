@@ -278,7 +278,7 @@ class Bins(Generic[_O]):
         if isinstance(self._obj, Dataset):
             raise NotImplementedError("bins.assign does not support datasets")
         out = self._map_constituents_data(lambda data: data)
-        out.bins.data = data  # type: ignore[union-attr]  # we know that out has bins
+        out.bins.data = data
         return out
 
     @property
@@ -293,7 +293,7 @@ class Bins(Generic[_O]):
         # Shallow copy constituents
         out = self._map_constituents_data(lambda data: data)
         for name, coord in combine_dict_args(coords, coords_kwargs).items():
-            out.bins.coords[name] = coord  # type: ignore[union-attr]  # we know that out has bins
+            out.bins.coords[name] = coord
         return out
 
     def drop_coords(self, coords: str | Sequence[str]) -> _O:
@@ -314,7 +314,7 @@ class Bins(Generic[_O]):
         # Shallow copy constituents
         out = self._map_constituents_data(lambda data: data)
         for name, coord in combine_dict_args(masks, masks_kwargs).items():
-            out.bins.masks[name] = coord  # type: ignore[union-attr]  # we know that out has bins
+            out.bins.masks[name] = coord
         return out
 
     def drop_masks(self, masks: str | Sequence[str]) -> _O:
@@ -594,7 +594,7 @@ def _is_binned(obj: _O) -> bool:
     return _cpp.is_bins(obj)  # type: ignore[no-any-return]
 
 
-def _bins(obj: _O) -> Bins[_O] | None:
+def _bins(obj: _O) -> Bins[_O]:
     """
     Returns helper :py:class:`scipp.Bins` allowing bin-wise operations
     to be performed or `None` if not binned data.
@@ -602,7 +602,7 @@ def _bins(obj: _O) -> Bins[_O] | None:
     if _cpp.is_bins(obj):
         return Bins(obj)
     else:
-        return None
+        return None  # type: ignore[return-value]
 
 
 def _set_bins(obj: _O, bins: Bins[_O]) -> None:

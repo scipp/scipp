@@ -21,7 +21,7 @@ def _prop(key: str) -> property:
 def is_structured(obj: Variable | DataArray) -> bool:
     """Check whether a variable has a structured dtype."""
     if obj.is_binned:
-        data = obj.bins.constituents['data']  # type: ignore[union-attr]
+        data = obj.bins.constituents['data']
         if isinstance(data, Dataset):
             raise DTypeError(
                 "Datasets cannot have a structured dtype, "

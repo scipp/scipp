@@ -85,7 +85,7 @@ def _repr_item(bin_dim: int, item: Variable) -> str:
 def _get_events(
     var: Variable | DataArray, has_variances: bool, ellipsis_after: int
 ) -> list[str]:
-    constituents = var.bins.constituents  # type: ignore[union-attr]
+    constituents = var.bins.constituents
     dim = constituents['dim']
     dims = constituents['data'].dims
     bin_dim = dict(zip(dims, range(len(dims)), strict=True))[dim]
@@ -152,7 +152,7 @@ def _short_data_repr_html_non_events(
 
 def _short_data_repr_html_events(var: Variable | DataArray) -> str:
     string = str(var.data) if isinstance(var, DataArray) else str(var)
-    if isinstance(var.bins.constituents['data'], Dataset):  # type: ignore[union-attr]
+    if isinstance(var.bins.constituents['data'], Dataset):
         return string
     start = 'binned data: '
     ind = string.find(start) + len(start)
@@ -318,7 +318,7 @@ def summarize_variable(
             add_dim_size,
         )
     )
-    if var.is_binned and isinstance(var.bins.constituents['data'], sc.Dataset):  # type: ignore[union-attr]
+    if var.is_binned and isinstance(var.bins.constituents['data'], sc.Dataset):
         # Could print as a tuple of column units and dtypes, but we don't for now.
         unit = ''
         dtype = ''

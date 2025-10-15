@@ -296,7 +296,7 @@ def _store_coord(da: DataArray, name: str, coord: Coord) -> None:
     def try_del() -> None:
         da.coords.pop(name, None)
         if da.is_binned:
-            da.bins.coords.pop(name, None)  # type: ignore[union-attr]
+            da.bins.coords.pop(name, None)
 
     def store(x: DataArray | Bins[DataArray], c: Variable) -> None:
         x.coords[name] = c
@@ -309,18 +309,18 @@ def _store_coord(da: DataArray, name: str, coord: Coord) -> None:
             store(da, coord.dense)
         if coord.event is not None:
             try:
-                store(da.bins, coord.event)  # type: ignore[arg-type]  # da is binned if we get here
+                store(da.bins, coord.event)
             except (DimensionError, VariableError):
                 # Thrown on mismatching bin indices, e.g. slice
                 da.data = da.data.copy()
-                store(da.bins, coord.event)  # type: ignore[arg-type]
+                store(da.bins, coord.event)
 
 
 def _store_results(da: DataArray, coords: CoordTable, targets: set[str]) -> DataArray:
     da = da.copy(deep=False)
     # See #2773 for why this is necessary.
     if da.is_binned:
-        da.data = bins(**da.bins.constituents)  # type: ignore[union-attr]
+        da.data = bins(**da.bins.constituents)
     for name, coord in coords.items():
         if name in targets:
             coord.aligned = True

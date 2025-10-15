@@ -81,7 +81,9 @@ class Graph:
 
     def _rule_for(self, out_name: str, da: DataArray) -> Rule:
         if _is_in_coords(out_name, da):
-            return FetchRule((out_name,), da.coords, da.bins.coords if da.bins else {})
+            return FetchRule(
+                (out_name,), da.coords, da.bins.coords if da.is_binned else {}
+            )
         try:
             return self._rules[out_name]
         except KeyError:
@@ -150,4 +152,4 @@ def _convert_to_rule_graph(graph: GraphDict) -> dict[str, Rule]:
 
 
 def _is_in_coords(name: str, da: DataArray) -> bool:
-    return name in da.coords or (da.is_binned and name in da.bins.coords)  # type: ignore[union-attr]
+    return name in da.coords or (da.is_binned and name in da.bins.coords)
