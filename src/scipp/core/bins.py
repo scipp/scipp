@@ -589,6 +589,11 @@ class Bins(Generic[_O]):
         return data
 
 
+def _is_binned(obj: _O) -> bool:
+    """Return True if the object is binned."""
+    return _cpp.is_bins(obj)
+
+
 def _bins(obj: _O) -> Bins[_O] | None:
     """
     Returns helper :py:class:`scipp.Bins` allowing bin-wise operations
