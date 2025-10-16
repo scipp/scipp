@@ -45,3 +45,6 @@ passedByValue
 
 // A lot of false-positives in test fixtures.
 unusedStructMember
+
+// Suppress checks on external deps like units
+*:*build/_deps/*
