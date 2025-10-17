@@ -113,7 +113,7 @@ def _rename_data_array(
     """
     renaming_dict = combine_dict_args(dims_dict, names)
     out = da.rename_dims(renaming_dict)
-    if out.bins is not None:
+    if out.is_binned:
         out.data = bins(**out.bins.constituents)
     for old, new in renaming_dict.items():
         if new in out.coords:
@@ -123,7 +123,7 @@ def _rename_data_array(
             )
         if old in out.coords:
             out.coords[new] = out.coords.pop(old)
-        if out.bins is not None:
+        if out.is_binned:
             if old in out.bins.coords:
                 out.bins.coords[new] = out.bins.coords.pop(old)
     return out

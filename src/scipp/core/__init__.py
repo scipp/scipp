@@ -65,11 +65,17 @@ DataArray.rename = _rename_data_array  # type: ignore[method-assign]
 Dataset.rename = _rename_dataset  # type: ignore[method-assign]
 del _rename_dims, _rename_variable, _rename_data_array, _rename_dataset, cls
 
-from .bins import _bins, _set_bins
+from .bins import _bins, _set_bins, _is_binned
+
+Variable.is_binned = property(_is_binned)  # type: ignore[assignment, method-assign]
+DataArray.is_binned = property(_is_binned)  # type: ignore[assignment, method-assign]
+Dataset.is_binned = property(_is_binned)  # type: ignore[assignment, method-assign]
 
 Variable.bins = property(_bins, _set_bins)  # type: ignore[assignment, method-assign]
 DataArray.bins = property(_bins, _set_bins)  # type: ignore[assignment, method-assign]
 Dataset.bins = property(_bins, _set_bins)  # type: ignore[assignment, method-assign]
+
+del _bins, _is_binned, _set_bins
 
 from .structured import _fields
 

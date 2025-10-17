@@ -150,8 +150,8 @@ class ComputeRule(Rule):
         # coords.
         return {
             name: Coord(
-                dense=var if var.bins is None else None,
-                event=var if var.bins is not None else None,
+                dense=None if var.is_binned else var,
+                event=var if var.is_binned else None,
                 aligned=True,
             )
             for name, var in outputs.items()

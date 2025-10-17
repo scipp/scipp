@@ -126,7 +126,7 @@ class VariableDrawer:
         return [1] * (3 - len(e)) + e
 
     def _events_height(self) -> float:
-        if self._variable.bins is None:
+        if not self._variable.is_binned:
             return 0
         events = self._variable.bins.constituents['data']
         # Rough estimate of vertical space taken by depiction of events buffer
@@ -268,7 +268,7 @@ class VariableDrawer:
         return svg
 
     def _draw_bins_buffer(self) -> str:
-        if self._variable.bins is None:
+        if not self._variable.is_binned:
             return ''
         svg = ''
         x0 = self._margin + self._extents()[-1]
@@ -308,7 +308,7 @@ class VariableDrawer:
                     offset[0] + (len(items) - i - 1) * self._variance_offset(),
                     offset[1] + i * self._variance_offset(),
                 ),
-                events=self._variable.bins is not None,
+                events=self._variable.is_binned,
             )
             svg += '</g>'
             svg += self._draw_labels(offset=offset)

@@ -187,7 +187,7 @@ def find_peaks(
 
     from scipy.signal import find_peaks
 
-    if da.ndim != 1 or da.bins is not None:
+    if da.ndim != 1 or da.is_binned:
         raise ValueError('Can only find peaks in 1D arrays.')
 
     def to_numpy(v: Variable) -> Any:
