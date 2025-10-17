@@ -597,13 +597,12 @@ def _is_binned(obj: _O) -> bool:
 def _bins(obj: _O) -> Bins[_O]:
     """Returns helper :class:`scipp.Bins` for bin-wise operations.
 
-    .. attention::
-
-    ``bins`` currently returns ``None`` if the object is not binned.
-    In the future, this will change and ``bins`` will raise a
-    :class:`scipp.BinnedDataError` instead.
-    Use ``x.is_binned`` instead of ``x.bins is not None`` to check
-    if ``x`` contains binned data.
+    .. deprecated:: 25.11.0
+       ``bins`` currently returns ``None`` if the object is not binned.
+       In the future, this will change and ``bins`` will raise a
+       :class:`scipp.BinnedDataError` instead.
+       Use ``x.is_binned`` instead of ``x.bins is not None`` to check
+       if ``x`` contains binned data.
     """
     if _cpp.is_bins(obj):
         return Bins(obj)
