@@ -3,7 +3,7 @@ requires = [
   "setuptools>=77",
   "scikit-build-core",
   "pybind11==2.13.6",
-  "pgm-build-dependencies@https://github.com/PowerGridModel/pgm-build-dependencies/releases/latest/download/pgm_build_dependencies-0.1.0-py3-none-any.whl"
+  # "pgm-build-dependencies@https://github.com/PowerGridModel/pgm-build-dependencies/releases/latest/download/pgm_build_dependencies-0.1.0-py3-none-any.whl"
 ]
 build-backend = "scikit_build_core.build"
 
@@ -84,6 +84,10 @@ test-command = "pytest --ignore {project}/tests/plotting --ignore {project}/test
 skip = ["pp*", "*musllinux*"]
 build-verbosity = 1
 
+[tool.cibuildwheel.macos]
+before-all = """
+    brew install eigen tbb boost google-benchmark googletest
+"""
 [tool.bandit.assert_used]
 skips = [
   "*/*_test.py",
