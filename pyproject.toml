@@ -199,6 +199,8 @@ exclude = [
     '^docs/',
     # Tools for internal use and only need to work in a concrete use case.
     '^tools/',
+    # Exclude build because it contains files from llnl-units python package.
+    '^build/',
 ]
 
 [[tool.mypy.overrides]]

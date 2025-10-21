@@ -29,10 +29,10 @@ requirements:
     - cross-python_{{ target_platform }}  # [build_platform != target_platform]
     - python                              # [build_platform != target_platform]
     - cmake
-    - conan==1.66.0
     - cppcheck [linux64]
     - git
     - ninja
+
   host:
     - python
     - tbb-devel=2022.0.0
@@ -58,7 +58,6 @@ test:
     - {{ compiler('cxx') }}
     - beautifulsoup4
     - cmake
-    - conan==1.66.0
     - h5py
     - hypothesis
     - ipykernel
@@ -92,7 +91,7 @@ build:
   script:
     # Passing Python_EXECUTABLE ensures that cmake sees the host interpreter instead of build.
     - cmake --preset package-{{ target_platform }} -DPython_EXECUTABLE="%PYTHON%" # [win]
-    - cmake --preset package-{{ target_platform }} -DPython_EXECUTABLE=$PYTHON # [unix]
+    - cmake --preset package-{{ target_platform }} -DPython_EXECUTABLE=$PYTHON ${CMAKE_ARGS} # [unix]
     - cmake --build --preset build
     - ctest --preset test  # [build_platform == target_platform]
 

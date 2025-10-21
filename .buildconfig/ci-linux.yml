@@ -6,13 +6,12 @@ channels:
   - conda-forge
 dependencies:
   - cmake=4.0.0
-  - conan=1.66.0
   - cppcheck=2.18.0
   - graphviz=12.0.0
   - gxx_linux-64=13.2.*
   - ninja=1.12.1
   - pandoc=3.4
-  - scipp::plopp=25.3.0
+  - plopp=25.10.0
   - tbb=2022.0.0
   - tbb-devel=2022.0.0
   - tox=4.24.2

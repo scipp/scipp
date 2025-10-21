@@ -2,12 +2,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # ~~~
-execute_process(
-  COMMAND conan export .
-  WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/.conan-recipes/llnl-units"
-                    COMMAND_ECHO STDOUT
-)
-
 # Conan dependencies
 if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake")
   message(
@@ -40,30 +34,15 @@ if(SKBUILD)
     boost/1.86.0
     eigen/3.4.0
     gtest/1.15.0
-    LLNL-Units/0.13.1
     pybind11/2.13.6
     onetbb/2021.12.0
     OPTIONS
     benchmark:shared=False
     boost:header_only=True
     gtest:shared=False
-    LLNL-Units:shared=False
-    LLNL-Units:fPIC=True
-    LLNL-Units:base_type=uint64_t
     GENERATORS
     cmake_find_package_multi
     deploy
-  )
-else()
-  conan_cmake_configure(
-    REQUIRES
-    LLNL-Units/0.13.1
-    OPTIONS
-    LLNL-Units:shared=False
-    LLNL-Units:fPIC=True
-    LLNL-Units:base_type=uint64_t
-    GENERATORS
-    cmake_find_package_multi
   )
 endif()
 
@@ -74,7 +53,9 @@ if(DEFINED CMAKE_OSX_ARCHITECTURES)
     set(conan_settings "${conan_settings};arch=armv8")
   endif()
 endif()
-conan_cmake_install(
-  PATH_OR_REFERENCE ${CMAKE_CURRENT_BINARY_DIR} SETTINGS ${conan_settings}
-  BUILD outdated
-)
+if(SKBUILD)
+  conan_cmake_install(
+    PATH_OR_REFERENCE ${CMAKE_CURRENT_BINARY_DIR} SETTINGS ${conan_settings}
+    BUILD outdated
+  )
+endif()
