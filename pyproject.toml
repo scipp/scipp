@@ -1,7 +1,9 @@
 [build-system]
 requires = [
   "setuptools>=77",
-  "scikit-build-core"
+  "scikit-build-core",
+  "pybind11==2.13.6",
+  "pgm-build-dependencies@https://github.com/PowerGridModel/pgm-build-dependencies/releases/latest/download/pgm_build_dependencies-0.1.0-py3-none-any.whl"
 ]
 build-backend = "scikit_build_core.build"
 
@@ -68,15 +70,6 @@ all = [
 metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
 cmake.version = ">=3.21"
 wheel.install-dir = "scipp"
-
-[[tool.scikit-build.overrides]]
-if.env.SKIP_CONAN = true
-inherit.cmake.define = "append"
-cmake.define.SKIP_CONAN = "ON"
-
-[[tool.scikit-build.overrides]]
-if.env.SKIP_CONAN = false
-build.requires = ["conan<2"]
 
 [tool.setuptools_scm]
 version_file = "src/scipp/_version.py"

@@ -48,3 +48,43 @@ cpmaddpackage(
   "UNITS_ENABLE_TESTS OFF"
   "CMAKE_CXX_STANDARD 20"
 )
+
+if(SKBUILD)
+  # Add cpp deps while building wheel
+  cpmaddpackage(
+    NAME
+    benchmark
+    GITHUB_REPOSITORY
+    google/benchmark
+    VERSION
+    1.6.1
+    OPTIONS
+    "BENCHMARK_ENABLE_TESTING Off"
+  )
+  cpmaddpackage(
+    NAME
+    googletest
+    GITHUB_REPOSITORY
+    google/googletest
+    VERSION
+    1.15.0
+    OPTIONS
+    "INSTALL_GTEST OFF"
+    "gtest_force_shared_crt"
+  )
+  # Build TBB statically to avoid delocate issues on macOS
+  cpmaddpackage(
+    NAME
+    TBB
+    GITHUB_REPOSITORY
+    uxlfoundation/oneTBB
+    VERSION
+    2021.12.0
+    OPTIONS
+    "BUILD_SHARED_LIBS OFF"
+    "TBB_BUILD_SHARED OFF"
+    "TBB_BUILD_STATIC ON"
+    "TBB_TEST OFF"
+  )
+
+endif()

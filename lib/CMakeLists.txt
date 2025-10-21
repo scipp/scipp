@@ -17,8 +17,6 @@ option(BENCHMARK "Enable benchmarks" OFF)
 
 set(Python_FIND_IMPLEMENTATIONS CPython PyPy)
 if(NOT SKIP_CONAN)
-  # scipp-conan installs all the system deps with conan for wheels
-  include(scipp-conan)
   # cpm installs llnl units for conda and wheels both
   include(scipp-cpm)
 endif()
@@ -162,7 +160,6 @@ if(COVERAGE)
       "${CMAKE_CURRENT_BINARY_DIR}/dataset/*.cpp"
       "${CMAKE_CURRENT_BINARY_DIR}/python/*.cpp"
       "/usr/*"
-      "/*conan/data*"
       "/*miniconda*"
       "/*micromamba*"
   )
@@ -209,7 +206,6 @@ if(DYNAMIC_LIB)
   install(
     FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
           "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
-          "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}-conan.cmake"
           "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}-cpm.cmake"
     DESTINATION lib/cmake/${PROJECT_NAME}
   )

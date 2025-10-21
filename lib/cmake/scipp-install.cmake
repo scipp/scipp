@@ -17,7 +17,6 @@ function(scipp_install_component)
       EXPORT ${EXPORT_NAME}
       RUNTIME_DEPENDENCIES
       PRE_INCLUDE_REGEXES
-      ${CONAN_RUNTIME_DEPENDENCIES}
       PRE_EXCLUDE_REGEXES
       ".*"
       # Required for Windows. Other platforms search rpath

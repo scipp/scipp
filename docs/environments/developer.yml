@@ -6,7 +6,6 @@ channels:
 dependencies:
   - benchmark=1.6.1
   - cmake=3.30.3
-  - conan=1.64.1
   - conda-build
   - cppcheck=2.18.0
   - eigen=3.4.0
