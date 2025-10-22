@@ -1,9 +1,28 @@
 {
   "dependencies": [
-    {"name": "benchmark", "version>=": "1.6.1"},
-    {"name": "eigen3", "version>=": "3.4.0"},
-    {"name": "gtest", "version>=": "1.15.2"},
-    {"name": "tbb", "version>=": "2022.0.0"},
-    {"name": "boost-container", "version>=": "1.86.0"}
+    {
+      "name": "benchmark",
+      "version>=": "1.6.1"
+    },
+    {
+      "name": "boost-container",
+      "version>=": "1.86.0"
+    },
+    {
+      "name": "eigen3",
+      "version>=": "3.4.0"
+    },
+    {
+      "name": "gtest",
+      "version>=": "1.15.2"
+    },
+    {
+      "name": "tbb",
+      "version>=": "2022.0.0"
+    },
+    {
+      "name": "boost-iterator",
+      "version>=": "1.86.0"
+    }
   ]
 }
