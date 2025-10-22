@@ -3,26 +3,27 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # ~~~
 # Conan dependencies
-if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake")
-  message(
-    STATUS
-      "Downloading conan.cmake from https://github.com/conan-io/cmake-conan"
-  )
-  file(
-    DOWNLOAD
-    "https://raw.githubusercontent.com/conan-io/cmake-conan/6e5369d13720f22e07e31bb6b9018dbe60529fea/conan.cmake"
-    "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake"
-    EXPECTED_HASH
-      SHA256=6abed7382c98a76b447675b30baff6a0b2f5d263041f6eb2fb682b80adaa2555
-    TLS_VERIFY ON
-  )
-endif()
-
-include(${CMAKE_CURRENT_BINARY_DIR}/conan.cmake)
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_BINARY_DIR})
-list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_BINARY_DIR})
 
 if(SKBUILD)
+  if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake")
+    message(
+      STATUS
+        "Downloading conan.cmake from https://github.com/conan-io/cmake-conan"
+    )
+    file(
+      DOWNLOAD
+      "https://raw.githubusercontent.com/conan-io/cmake-conan/6e5369d13720f22e07e31bb6b9018dbe60529fea/conan.cmake"
+      "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake"
+      EXPECTED_HASH
+        SHA256=6abed7382c98a76b447675b30baff6a0b2f5d263041f6eb2fb682b80adaa2555
+      TLS_VERIFY ON
+    )
+  endif()
+
+  include(${CMAKE_CURRENT_BINARY_DIR}/conan.cmake)
+  list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_BINARY_DIR})
+  list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_BINARY_DIR})
+
   # The deploy generator is used to install dependencies into a know location.
   # The RUNTIME_DEPENDENCIES DIRECTORIES install option is then used to find the
   # dependencies. This is actually required only for Windows, since on Linux and
@@ -44,16 +45,14 @@ if(SKBUILD)
     cmake_find_package_multi
     deploy
   )
-endif()
 
-conan_cmake_autodetect(conan_settings)
-if(DEFINED CMAKE_OSX_ARCHITECTURES)
-  if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "arm64")
-    # For Apple M1
-    set(conan_settings "${conan_settings};arch=armv8")
+  conan_cmake_autodetect(conan_settings)
+  if(DEFINED CMAKE_OSX_ARCHITECTURES)
+    if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "arm64")
+      # For Apple M1
+      set(conan_settings "${conan_settings};arch=armv8")
+    endif()
   endif()
-endif()
-if(SKBUILD)
   conan_cmake_install(
     PATH_OR_REFERENCE ${CMAKE_CURRENT_BINARY_DIR} SETTINGS ${conan_settings}
     BUILD outdated
