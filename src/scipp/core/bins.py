@@ -130,6 +130,8 @@ def lookup(
     elif mode not in ['previous', 'nearest']:
         raise ValueError(f"Mode must be one of ['previous', 'nearest'], got '{mode}'")
     if mode == 'nearest' and func.sizes[dim] != 0:
+        if func.coords[dim].dtype in [DType.bool, DType.int32, DType.int64]:
+            raise ValueError("For mode='nearest' the lookup coordinate must be float.")
         coord = func.coords[dim]
         lowest = coord[dim, 0:0].max()  # trick to get lowest representable value
         parts = [lowest] if coord.sizes[dim] < 2 else [lowest, midpoints(coord, dim)]
