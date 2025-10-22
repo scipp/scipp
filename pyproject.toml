@@ -75,6 +75,10 @@ wheel.install-dir = "scipp"
 version_file = "src/scipp/_version.py"
 
 [tool.cibuildwheel]
+before-all = """
+    # vcpkg comes preinstalled on github actions runners
+    vcpkg install eigen3 tbb boost-headers gtest
+"""
 archs = ["auto64"]
 test-requires = ["scipy", "graphviz", "pooch", "hypothesis"]
 test-extras = ["test"]
@@ -84,10 +88,6 @@ test-command = "pytest --ignore {project}/tests/plotting --ignore {project}/test
 skip = ["pp*", "*musllinux*"]
 build-verbosity = 1
 
-[tool.cibuildwheel.macos]
-before-all = """
-    brew install eigen tbb boost google-benchmark googletest
-"""
 [tool.bandit.assert_used]
 skips = [
   "*/*_test.py",
