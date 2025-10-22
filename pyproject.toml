@@ -70,6 +70,9 @@ all = [
 metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
 cmake.version = ">=3.21"
 wheel.install-dir = "scipp"
+cmake.args = [
+    "-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake",
+]
 
 [tool.setuptools_scm]
 version_file = "src/scipp/_version.py"
@@ -84,13 +87,6 @@ test-command = "pytest --ignore {project}/tests/plotting --ignore {project}/test
 skip = ["pp*", "*musllinux*"]
 build-verbosity = 1
 
-# [tool.cibuildwheel.linux]
-# before-all = [
-#     "export VCPKG_ROOT=$HOME/vcpkg",
-#     "git clone https://github.com/microsoft/vcpkg.git $VCPKG_ROOT",
-#     "vcpkg install",
-#     "export PATH=$VCPKG_ROOT\\scripts:$PATH",
-# ]
 
 [tool.cibuildwheel.macos]
 before-all = [

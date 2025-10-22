@@ -18,8 +18,7 @@
         "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
         "FULL_BUILD": "ON",
         "BENCHMARK": "ON",
-        "SANITIZERS": "ON",
-        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+        "SANITIZERS": "ON"
       }
     },
     {
