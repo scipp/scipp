@@ -74,21 +74,7 @@ wheel.install-dir = "scipp"
 [tool.setuptools_scm]
 version_file = "src/scipp/_version.py"
 
-[tool.cibuildwheel.linux]
-before-all = [
-    "dnf install -y vcpkg",
-    "export VCPKG_ROOT=$HOME/.local/share/vcpkg",
-    "git clone https://github.com/microsoft/vcpkg.git $VCPKG_ROOT",
-    "vcpkg install eigen3 tbb gtest benchmark",
-]
-
-[tool.cibuildwheel.macos]
-before-all = "vcpkg install"
-
-[tool.cibuildwheel.windows]
-before-all = "C:\\vcpkg\\vcpkg install"
-# before-all = "C:\\vcpkg install eigen3 tbb boost-container boost-cmake gtest benchmark"
-
+[tool.cibuildwheel]
 archs = ["auto64"]
 test-requires = ["scipy", "graphviz", "pooch", "hypothesis"]
 test-extras = ["test"]
@@ -97,6 +83,32 @@ test-command = "pytest --ignore {project}/tests/plotting --ignore {project}/test
 # tbb-devel not available for musllinux
 skip = ["pp*", "*musllinux*"]
 build-verbosity = 1
+
+# [tool.cibuildwheel.linux]
+# before-all = [
+#     "export VCPKG_ROOT=$HOME/vcpkg",
+#     "git clone https://github.com/microsoft/vcpkg.git $VCPKG_ROOT",
+#     "vcpkg install",
+#     "export PATH=$VCPKG_ROOT\\scripts:$PATH",
+# ]
+
+[tool.cibuildwheel.macos]
+before-all = [
+    "export VCPKG_ROOT=$HOME/.local/share/vcpkg",
+    "git clone https://github.com/microsoft/vcpkg.git $VCPKG_ROOT",
+    "vcpkg install",
+]
+
+[tool.cibuildwheel.windows]
+before-all = [
+    "C:\\vcpkg\\vcpkg install",
+    "export VCPKG_ROOT=C:\\vcpkg",
+    "export PATH=$VCPKG_ROOT\\scripts:$PATH",
+]
+
+
+
+
 
 [tool.bandit.assert_used]
 skips = [
