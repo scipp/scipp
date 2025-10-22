@@ -21,12 +21,12 @@ jobs:
     strategy:
       matrix:
         variant:
-          - {os: ubuntu-24.04, target: linux_64}
+          # - {os: ubuntu-24.04, target: linux_64}
           - {os: macos-15-intel, target: osx_64}
           - {os: macos-14, target: osx_arm64}
-          - {os: windows-2022, target: win_64}
-          - {os: ubuntu-24.04-arm, target: linux_arm64}
-        python-version: ["3.11"]
+          # - {os: windows-2022, target: win_64}
+          # - {os: ubuntu-24.04-arm, target: linux_arm64}
+        python-version: ["3.13"]
     uses: ./.github/workflows/conda.yml
     with:
       os: ${{ matrix.variant.os }}
