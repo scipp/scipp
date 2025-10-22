@@ -75,10 +75,10 @@ wheel.install-dir = "scipp"
 version_file = "src/scipp/_version.py"
 
 [tool.cibuildwheel.macos]
-before-all = "vcpkg install eigen3 tbb boost gtest benchmark"
+before-all = "vcpkg install eigen3 tbb boost-container boost-cmake gtest benchmark"
 
-[tool.cibuildwheel.windows]
-before-all = "C:\\vcpkg install eigen3 tbb boost gtest benchmark"
+# [tool.cibuildwheel.windows]
+# before-all = "C:\\vcpkg install eigen3 tbb boost-container boost-cmake gtest benchmark"
 
 archs = ["auto64"]
 test-requires = ["scipy", "graphviz", "pooch", "hypothesis"]
