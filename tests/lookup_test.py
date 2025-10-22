@@ -78,6 +78,22 @@ def test_nearest(dtype: str) -> None:
     assert sc.identical(sc.lookup(da, mode='nearest', fill_value=fill)(var), expected)
 
 
+@pytest.mark.parametrize("coord_dtype", ['int32', 'int64'])
+def test_nearest_integer_coord(coord_dtype: str) -> None:
+    x = sc.arange(dim='xx', start=0, stop=4, dtype=coord_dtype)
+    data = sc.array(dims=['xx'], values=[0, 1, 0, 2])
+    da = sc.DataArray(data=data, coords={'xx': x})
+    var = sc.array(dims=['event'], values=[0, 2, 0, 2, 3, 6, 1, -1], dtype=coord_dtype)
+    expected = sc.array(dims=['event'], values=[0, 0, 0, 0, 2, 2, 1, 0])
+    fill = sc.scalar(666)
+    with pytest.raises(
+        ValueError, match="For mode='nearest' the lookup coordinate must be float."
+    ):
+        assert sc.identical(
+            sc.lookup(da, mode='nearest', fill_value=fill)(var), expected
+        )
+
+
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
 def test_previous_masked_points_replaced_by_fill_value(dtype: str) -> None:
     x = sc.linspace(dim='xx', start=0, stop=1, num=4)
