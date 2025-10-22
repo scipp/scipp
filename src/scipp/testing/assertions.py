@@ -151,9 +151,9 @@ def _assert_identical_variable_structure(a: Variable, b: Variable) -> None:
     assert a.sizes == b.sizes
     assert a.unit == b.unit
     assert a.dtype == b.dtype
-    assert (a.bins is None) == (b.bins is None)
-    if a.bins is not None:
-        assert b.bins is not None
+    assert a.is_binned == b.is_binned
+    if a.is_binned:
+        assert b.is_binned
         assert a.bins.unit == b.bins.unit
     else:
         if a.variances is not None:
@@ -211,10 +211,10 @@ def _assert_identical_data(
 
 
 def _assert_identical_variable_data(a: Variable, b: Variable) -> None:
-    if a.bins is None:
-        _assert_identical_dense_variable_data(a, b)
-    else:
+    if a.is_binned:
         _assert_identical_binned_variable_data(a, b)
+    else:
+        _assert_identical_dense_variable_data(a, b)
 
 
 def _assert_identical_dense_variable_data(a: Variable, b: Variable) -> None:
@@ -230,8 +230,8 @@ def _assert_identical_dense_variable_data(a: Variable, b: Variable) -> None:
 
 
 def _assert_identical_binned_variable_data(a: Variable, b: Variable) -> None:
-    assert a.bins is not None
-    assert b.bins is not None
+    assert a.is_binned
+    assert b.is_binned
     _assert_identical_impl(a.bins.concat().value, b.bins.concat().value)
 
 
@@ -249,10 +249,10 @@ def _assert_allclose_data(
 
 
 def _assert_allclose_variable_data(a: Variable, b: Variable, **kwargs: Any) -> None:
-    if a.bins is None:
-        _assert_allclose_dense_variable_data(a, b, **kwargs)
-    else:
+    if a.is_binned:
         _assert_allclose_binned_variable_data(a, b, **kwargs)
+    else:
+        _assert_allclose_dense_variable_data(a, b, **kwargs)
 
 
 def _assert_allclose_dense_variable_data(
@@ -288,8 +288,8 @@ def _assert_allclose_dense_variable_data(
 def _assert_allclose_binned_variable_data(
     a: Variable, b: Variable, **kwargs: Any
 ) -> None:
-    assert a.bins is not None
-    assert b.bins is not None
+    assert a.is_binned
+    assert b.is_binned
     _assert_allclose_impl(a.bins.concat().value, b.bins.concat().value, **kwargs)
 
 
