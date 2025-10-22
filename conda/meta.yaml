@@ -45,7 +45,7 @@ requirements:
   run:
     - numpy
     - python
-    - tbb=2022.0.0
+    - tbb=2022.2.0
 
 # Only the cmake-package-test works when cross compiling.
 # But it is not very important at the moment and
