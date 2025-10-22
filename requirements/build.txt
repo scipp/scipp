@@ -7,27 +7,25 @@
 #
 bottle==0.12.25
     # via conan
-certifi==2025.4.26
+certifi==2025.10.5
     # via requests
-charset-normalizer==3.4.2
+charset-normalizer==3.4.4
     # via requests
-cmake==4.0.2
+cmake==4.1.0
     # via -r build.in
 colorama==0.4.6
     # via conan
 conan==1.64.1
     # via -r build.in
-distro==1.8.0
+fasteners==0.20
     # via conan
-fasteners==0.19
-    # via conan
-idna==3.10
+idna==3.11
     # via requests
 jinja2==3.1.6
     # via conan
-markupsafe==3.0.2
+markupsafe==3.0.3
     # via jinja2
-ninja==1.11.1.4
+ninja==1.13.0
     # via -r build.in
 node-semver==0.6.1
     # via conan
@@ -35,15 +33,15 @@ patch-ng==1.17.4
     # via conan
 pluginbase==1.0.1
     # via conan
-pygments==2.19.1
+pygments==2.19.2
     # via conan
 pyjwt==2.10.1
     # via conan
 python-dateutil==2.9.0.post0
     # via conan
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via conan
-requests==2.32.3
+requests==2.32.5
     # via conan
 six==1.16.0
     # via
