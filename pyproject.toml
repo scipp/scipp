@@ -83,9 +83,10 @@ before-all = [
 ]
 
 [tool.cibuildwheel.macos]
-before-all = "vcpkg install eigen3 tbb gtest benchmark"
+before-all = "vcpkg install"
 
-# [tool.cibuildwheel.windows]
+[tool.cibuildwheel.windows]
+before-all = "C:\\vcpkg\\vcpkg install"
 # before-all = "C:\\vcpkg install eigen3 tbb boost-container boost-cmake gtest benchmark"
 
 archs = ["auto64"]

@@ -1,0 +1,9 @@
+{
+  "dependencies": [
+    "benchmark",
+    "eigen3",
+    "gtest",
+    "tbb",
+    "boost-container"
+  ]
+}
