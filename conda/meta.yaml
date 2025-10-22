@@ -35,8 +35,8 @@ requirements:
 
   host:
     - python
-    - tbb-devel=2022.0.0
-    - libboost-headers=1.89.0
+    - tbb-devel=2022.2.0
+    - libboost-headers=1.86.0
     - eigen=3.4.0
     - pybind11=2.13.6
     - benchmark=1.6.1
@@ -67,9 +67,9 @@ test:
     - pytest
     - python-graphviz
     - scipy>=1.7.0
-    - tbb-devel=2022.0.0
+    - tbb-devel=2022.2.0
     - xarray
-    - libboost-headers=1.89.0
+    - libboost-headers=1.86.0
     - eigen=3.4.0
     - pybind11=2.13.6
     - benchmark=1.6.1
