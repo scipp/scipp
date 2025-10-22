@@ -76,7 +76,6 @@ version_file = "src/scipp/_version.py"
 
 [tool.cibuildwheel]
 before-all = """
-    # vcpkg comes preinstalled on github actions runners
     vcpkg install eigen3 tbb boost-headers gtest
 """
 archs = ["auto64"]
