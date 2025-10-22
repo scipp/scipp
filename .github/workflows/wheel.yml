@@ -31,7 +31,7 @@ jobs:
       if: ${{ inputs.nightly == false }}
       env:
         CIBW_BUILD: ${{ inputs.build }}-*
-        MACOSX_DEPLOYMENT_TARGET: "11.0"
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
 
     # For nightly tests with downstream packages we package scipp
     # with 100.0.0.dev0 as the version number. A stable 100.0.0.dev0
@@ -40,7 +40,7 @@ jobs:
       if: ${{ inputs.nightly }}
       env:
         CIBW_BUILD: ${{ inputs.build }}-*
-        MACOSX_DEPLOYMENT_TARGET: "11.0"
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
         CIBW_ENVIRONMENT: SETUPTOOLS_SCM_PRETEND_VERSION="100.0.0.dev0"
 
     - name: Verify clean directory
