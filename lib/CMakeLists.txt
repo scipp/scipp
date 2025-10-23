@@ -16,7 +16,7 @@ set(CMAKE_MODULE_PATH
 option(BENCHMARK "Enable benchmarks" OFF)
 
 set(Python_FIND_IMPLEMENTATIONS CPython PyPy)
-if(NOT SKIP_CONAN)
+if(NOT SKIP_REMOTE_SOURCES)
   # scipp-conan installs all the system deps with conan for wheels
   include(scipp-conan)
   # cpm installs llnl units for conda and wheels both

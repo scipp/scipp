@@ -70,12 +70,12 @@ cmake.version = ">=3.21"
 wheel.install-dir = "scipp"
 
 [[tool.scikit-build.overrides]]
-if.env.SKIP_CONAN = true
+if.env.SKIP_REMOTE_SOURCES = true
 inherit.cmake.define = "append"
-cmake.define.SKIP_CONAN = "ON"
+cmake.define.SKIP_REMOTE_SOURCES = "ON"
 
 [[tool.scikit-build.overrides]]
-if.env.SKIP_CONAN = false
+if.env.SKIP_REMOTE_SOURCES = false
 build.requires = ["conan<2"]
 
 [tool.setuptools_scm]
