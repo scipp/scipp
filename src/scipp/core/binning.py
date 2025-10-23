@@ -298,8 +298,8 @@ def _get_coord(x: Variable | DataArray | Dataset, name: str) -> Variable:
         cmax: Variable | None = None
         for da in x.values():
             c = _get_coord(da, name)
-            cmin = c.min() if cmin is None else min(cmin, c.min())  # type: ignore[call-overload]
-            cmax = c.max() if cmax is None else max(cmin, c.max())  # type: ignore[call-overload]
+            cmin = c.min() if cmin is None else min(cmin, c.min())
+            cmax = c.max() if cmax is None else max(cmin, c.max())
         coord = concat([cmin, cmax], dim='dummy')  # type: ignore[type-var]
     else:
         event_coord = x.bins.coords.get(name) if x.is_binned else None

@@ -7,33 +7,31 @@
 #
 -r base.txt
 -r extra.txt
-asv==0.6.4
+asv==0.6.5
     # via -r asv.in
 asv-runner==0.2.1
     # via asv
-build==1.2.2.post1
+build==1.3.0
     # via asv
-distlib==0.3.9
+distlib==0.4.0
     # via virtualenv
-filelock==3.18.0
+filelock==3.20.0
     # via virtualenv
 importlib-metadata==8.7.0
-    # via asv-runner
-json5==0.12.0
+    # via
+    #   asv
+    #   asv-runner
+json5==0.12.1
     # via asv
 pympler==1.1
     # via asv
 pyproject-hooks==1.2.0
     # via build
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via asv
 tabulate==0.9.0
     # via asv
-tomli==2.2.1
-    # via
-    #   asv
-    #   build
-virtualenv==20.31.2
+virtualenv==20.35.3
     # via asv
-zipp==3.21.0
+zipp==3.23.0
     # via importlib-metadata

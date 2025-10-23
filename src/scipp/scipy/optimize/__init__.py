@@ -153,7 +153,7 @@ def curve_fit(
     p0: dict[str, Variable | float] | None = None,
     bounds: dict[str, tuple[Variable, Variable] | tuple[float, float]] | None = None,
     **kwargs: Any,
-) -> tuple[dict[str, Variable | float], dict[str, dict[str, Variable | float]]]:
+) -> tuple[dict[Any, Any], dict[str, dict[str, Variable | Real]]]:
     """Use non-linear least squares to fit a function, f, to data.
 
     This is a wrapper around :py:func:`scipy.optimize.curve_fit`. See there for a
