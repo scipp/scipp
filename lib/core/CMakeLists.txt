@@ -64,7 +64,7 @@ generate_export_header(${TARGET_NAME})
 target_link_libraries(
   ${TARGET_NAME} PUBLIC scipp-common scipp-units Boost::headers Eigen3::Eigen
 )
-if(TBB_FOUND)
+if(THREADING)
   target_link_libraries(${TARGET_NAME} PUBLIC TBB::tbb)
 endif()
 
