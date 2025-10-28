@@ -370,7 +370,7 @@ def test_data_array_ne_with_scalar() -> None:
 
 def test_data_array_comparison_operators_with_scalar() -> None:
     da = sc.DataArray(sc.scalar(2.0))
-    
+
     assert (da < 3.0).data.value is True
     assert (da < 2.0).data.value is False
     assert (da <= 2.0).data.value is True
@@ -404,7 +404,7 @@ def test_dataset_ne_with_scalar() -> None:
 
 def test_dataset_comparison_operators_with_scalar() -> None:
     ds = sc.Dataset({'a': sc.scalar(2.0)})
-    
+
     assert (ds < 3.0)['a'].data.value is True
     assert (ds < 2.0)['a'].data.value is False
     assert (ds <= 2.0)['a'].data.value is True
