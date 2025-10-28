@@ -343,3 +343,71 @@ def test_comparison_with_str(medium: sc.Variable) -> None:
     assert not (medium == 'a string')
     with pytest.raises(TypeError):
         _ = medium < 'a string'  # type: ignore[operator]
+
+
+def test_data_array_eq_with_scalar() -> None:
+    # Test that DataArray supports comparison with scalar numbers
+    da = sc.DataArray(sc.scalar(2))
+    result = da == 2
+    assert isinstance(result, sc.DataArray)
+    assert result.data.value is True
+    
+    result = da == 3
+    assert isinstance(result, sc.DataArray)
+    assert result.data.value is False
+
+
+def test_data_array_ne_with_scalar() -> None:
+    da = sc.DataArray(sc.scalar(2))
+    result = da != 2
+    assert isinstance(result, sc.DataArray)
+    assert result.data.value is False
+    
+    result = da != 3
+    assert isinstance(result, sc.DataArray)
+    assert result.data.value is True
+
+
+def test_data_array_comparison_operators_with_scalar() -> None:
+    da = sc.DataArray(sc.scalar(2.0))
+    
+    assert (da < 3.0).data.value is True
+    assert (da < 2.0).data.value is False
+    assert (da <= 2.0).data.value is True
+    assert (da > 1.0).data.value is True
+    assert (da > 2.0).data.value is False
+    assert (da >= 2.0).data.value is True
+
+
+def test_dataset_eq_with_scalar() -> None:
+    # Test that Dataset supports comparison with scalar numbers
+    ds = sc.Dataset({'a': sc.scalar(2)})
+    result = ds == 2
+    assert isinstance(result, sc.Dataset)
+    assert result['a'].data.value is True
+    
+    result = ds == 3
+    assert isinstance(result, sc.Dataset)
+    assert result['a'].data.value is False
+
+
+def test_dataset_ne_with_scalar() -> None:
+    ds = sc.Dataset({'a': sc.scalar(2)})
+    result = ds != 2
+    assert isinstance(result, sc.Dataset)
+    assert result['a'].data.value is False
+    
+    result = ds != 3
+    assert isinstance(result, sc.Dataset)
+    assert result['a'].data.value is True
+
+
+def test_dataset_comparison_operators_with_scalar() -> None:
+    ds = sc.Dataset({'a': sc.scalar(2.0)})
+    
+    assert (ds < 3.0)['a'].data.value is True
+    assert (ds < 2.0)['a'].data.value is False
+    assert (ds <= 2.0)['a'].data.value is True
+    assert (ds > 1.0)['a'].data.value is True
+    assert (ds > 2.0)['a'].data.value is False
+    assert (ds >= 2.0)['a'].data.value is True
