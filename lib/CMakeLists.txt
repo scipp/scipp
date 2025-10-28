@@ -58,7 +58,7 @@ include(GenerateExportHeader)
 
 option(THREADING "Build with multi-threading" ON)
 if(THREADING)
-  if(NOT SKBUILD)
+  if(NOT SKBUILD AND NOT TARGET TBB::tbb)
     find_package(TBB CONFIG REQUIRED)
   endif()
   configure_file(

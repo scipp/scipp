@@ -49,42 +49,44 @@ cpmaddpackage(
   "CMAKE_CXX_STANDARD 20"
 )
 
-cpmaddpackage(
-  NAME
-  gtest
-  GITHUB_REPOSITORY
-  google/googletest
-  GIT_TAG
-  v1.15.0
-  VERSION
-  1.15.0
-  OPTIONS
-  "INSTALL_GTEST OFF"
-  "gtest_force_shared_crt ON"
-)
+if(SKBUILD)
+  cpmaddpackage(
+    NAME
+    gtest
+    GITHUB_REPOSITORY
+    google/googletest
+    GIT_TAG
+    v1.15.0
+    VERSION
+    1.15.0
+    OPTIONS
+    "INSTALL_GTEST OFF"
+    "gtest_force_shared_crt ON"
+  )
 
-cpmaddpackage(
-  NAME
-  oneTBB
-  GITHUB_REPOSITORY
-  uxlfoundation/oneTBB
-  GIT_TAG
-  v2021.13.0
-  VERSION
-  2021.13.0
-  OPTIONS
-  "TBB_TEST OFF"
-  "TBB_STRICT OFF"
-  "TBBMALLOC_BUILD OFF"
-)
+  cpmaddpackage(
+    NAME
+    oneTBB
+    GITHUB_REPOSITORY
+    uxlfoundation/oneTBB
+    GIT_TAG
+    v2021.13.0
+    VERSION
+    2021.13.0
+    OPTIONS
+    "TBB_TEST OFF"
+    "TBB_STRICT OFF"
+    "TBBMALLOC_BUILD OFF"
+  )
 
-cpmaddpackage(
-  NAME
-  benchmark
-  GITHUB_REPOSITORY
-  google/benchmark
-  VERSION
-  1.6.1
-  OPTIONS
-  "BENCHMARK_ENABLE_TESTING Off"
-)
+  cpmaddpackage(
+    NAME
+    benchmark
+    GITHUB_REPOSITORY
+    google/benchmark
+    VERSION
+    1.6.1
+    OPTIONS
+    "BENCHMARK_ENABLE_TESTING Off"
+  )
+endif()
