@@ -1,7 +1,9 @@
 [build-system]
 requires = [
   "setuptools>=77",
-  "scikit-build-core"
+  "scikit-build-core",
+  "pybind11<3",
+  "pgm-build-dependencies@git+https://github.com/PowerGridModel/pgm-build-dependencies.git",
 ]
 build-backend = "scikit_build_core.build"
 
@@ -76,7 +78,6 @@ cmake.define.SKIP_REMOTE_SOURCES = "ON"
 
 [[tool.scikit-build.overrides]]
 if.env.SKIP_REMOTE_SOURCES = false
-build.requires = ["conan<2"]
 
 [tool.setuptools_scm]
 version_file = "src/scipp/_version.py"

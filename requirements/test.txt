@@ -13,7 +13,7 @@ beautifulsoup4==4.14.2
     # via -r test.in
 execnet==2.1.1
     # via pytest-xdist
-hypothesis==6.142.2
+hypothesis==6.142.4
     # via -r test.in
 iniconfig==2.3.0
     # via pytest

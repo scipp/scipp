@@ -28,7 +28,7 @@ h5py==3.15.1
     # via -r extra.in
 idna==3.11
     # via requests
-ipykernel==7.0.1
+ipykernel==7.1.0
     # via -r extra.in
 ipython==9.6.0
     # via ipykernel
@@ -44,7 +44,7 @@ jupyter-core==5.9.1
     #   jupyter-client
 llvmlite==0.45.1
     # via numba
-matplotlib-inline==0.1.7
+matplotlib-inline==0.2.1
     # via
     #   ipykernel
     #   ipython

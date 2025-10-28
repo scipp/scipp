@@ -17,18 +17,18 @@ option(BENCHMARK "Enable benchmarks" OFF)
 
 set(Python_FIND_IMPLEMENTATIONS CPython PyPy)
 if(NOT SKIP_REMOTE_SOURCES)
-  # scipp-conan installs all the system deps with conan for wheels
-  include(scipp-conan)
   # cpm installs llnl units for conda and wheels both
   include(scipp-cpm)
 endif()
 find_package(units REQUIRED)
-find_package(benchmark)
 find_package(Boost 1.67 REQUIRED)
 find_package(Eigen3 REQUIRED)
 option(SANITIZERS "Enable sanitizers" OFF)
 if(SANITIZERS)
   find_package(Sanitizers REQUIRED)
+endif()
+if(BENCHMARK)
+  find_package(benchmark)
 endif()
 find_package(GTest CONFIG REQUIRED)
 # libpython is not available on `manylinux` images, use `Development.Module`
@@ -58,11 +58,39 @@ include(GenerateExportHeader)
 
 option(THREADING "Build with multi-threading" ON)
 if(THREADING)
-  find_package(TBB CONFIG REQUIRED)
+  if(NOT SKBUILD AND NOT TARGET TBB::tbb)
+    find_package(TBB CONFIG REQUIRED)
+  endif()
   configure_file(
     core/include/scipp/core/parallel-tbb.h core/include/scipp/core/parallel.h
     COPYONLY
   )
+  # Set TBB runtime directory for Windows DLL copying
+  if(SKBUILD)
+    # When using CPM (SKBUILD), TBB is in _deps
+    set(TBB_RUNTIME_DIR "${CMAKE_BINARY_DIR}/_deps/onetbb-build")
+  else()
+    # When using find_package, try to get the TBB location from imported
+    # location
+    if(TARGET TBB::tbb)
+      get_target_property(
+        TBB_IMPORTED_LOCATION TBB::tbb IMPORTED_LOCATION_RELEASE
+      )
+      if(NOT TBB_IMPORTED_LOCATION)
+        get_target_property(TBB_IMPORTED_LOCATION TBB::tbb IMPORTED_LOCATION)
+      endif()
+      if(TBB_IMPORTED_LOCATION)
+        get_filename_component(
+          TBB_RUNTIME_DIR "${TBB_IMPORTED_LOCATION}" DIRECTORY
+        )
+      endif()
+    endif()
+  endif()
+  if(DEFINED TBB_RUNTIME_DIR)
+    message(STATUS "TBB runtime directory set to: ${TBB_RUNTIME_DIR}")
+  else()
+    message(STATUS "TBB runtime directory not set")
+  endif()
 else()
   configure_file(
     core/include/scipp/core/parallel-fallback.h
@@ -162,7 +190,6 @@ if(COVERAGE)
       "${CMAKE_CURRENT_BINARY_DIR}/dataset/*.cpp"
       "${CMAKE_CURRENT_BINARY_DIR}/python/*.cpp"
       "/usr/*"
-      "/*conan/data*"
       "/*miniconda*"
       "/*micromamba*"
   )
@@ -209,7 +236,6 @@ if(DYNAMIC_LIB)
   install(
     FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
           "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
-          "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}-conan.cmake"
           "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}-cpm.cmake"
     DESTINATION lib/cmake/${PROJECT_NAME}
   )

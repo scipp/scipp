@@ -12,6 +12,26 @@ function(scipp_install_component)
     add_sanitizers(${SCIPP_INSTALL_COMPONENT_TARGET})
   endif()
   if(DYNAMIC_LIB)
+    # Build list of directories for runtime dependencies (Windows DLLs)
+    set(RUNTIME_DEP_DIRECTORIES)
+    if(DEFINED TBB_RUNTIME_DIR)
+      list(APPEND RUNTIME_DEP_DIRECTORIES "${TBB_RUNTIME_DIR}"
+           "${TBB_RUNTIME_DIR}/bin" "${TBB_RUNTIME_DIR}/lib"
+      )
+    endif()
+    # Legacy paths for backward compatibility
+    if(EXISTS "${CMAKE_BINARY_DIR}/lib/onetbb")
+      list(APPEND RUNTIME_DEP_DIRECTORIES "${CMAKE_BINARY_DIR}/lib/onetbb/lib"
+           "${CMAKE_BINARY_DIR}/lib/onetbb/bin"
+      )
+    endif()
+    if(RUNTIME_DEP_DIRECTORIES)
+      message(
+        STATUS
+          "Runtime dependency directories for ${SCIPP_INSTALL_COMPONENT_TARGET}: ${RUNTIME_DEP_DIRECTORIES}"
+      )
+    endif()
+
     install(
       TARGETS ${SCIPP_INSTALL_COMPONENT_TARGET}
       EXPORT ${EXPORT_NAME}
@@ -22,8 +42,7 @@ function(scipp_install_component)
       ".*"
       # Required for Windows. Other platforms search rpath
       DIRECTORIES
-      ${CMAKE_BINARY_DIR}/lib/onetbb/lib
-      ${CMAKE_BINARY_DIR}/lib/onetbb/bin
+      ${RUNTIME_DEP_DIRECTORIES}
       RUNTIME DESTINATION ${PYTHONDIR}
       ARCHIVE DESTINATION ${ARCHIVEDIR}
       FRAMEWORK DESTINATION ${ARCHIVEDIR}
