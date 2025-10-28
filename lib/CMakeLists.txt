@@ -65,6 +65,32 @@ if(THREADING)
     core/include/scipp/core/parallel-tbb.h core/include/scipp/core/parallel.h
     COPYONLY
   )
+  # Set TBB runtime directory for Windows DLL copying
+  if(SKBUILD)
+    # When using CPM (SKBUILD), TBB is in _deps
+    set(TBB_RUNTIME_DIR "${CMAKE_BINARY_DIR}/_deps/onetbb-build")
+  else()
+    # When using find_package, try to get the TBB location from imported
+    # location
+    if(TARGET TBB::tbb)
+      get_target_property(
+        TBB_IMPORTED_LOCATION TBB::tbb IMPORTED_LOCATION_RELEASE
+      )
+      if(NOT TBB_IMPORTED_LOCATION)
+        get_target_property(TBB_IMPORTED_LOCATION TBB::tbb IMPORTED_LOCATION)
+      endif()
+      if(TBB_IMPORTED_LOCATION)
+        get_filename_component(
+          TBB_RUNTIME_DIR "${TBB_IMPORTED_LOCATION}" DIRECTORY
+        )
+      endif()
+    endif()
+  endif()
+  if(DEFINED TBB_RUNTIME_DIR)
+    message(STATUS "TBB runtime directory set to: ${TBB_RUNTIME_DIR}")
+  else()
+    message(STATUS "TBB runtime directory not set")
+  endif()
 else()
   configure_file(
     core/include/scipp/core/parallel-fallback.h
