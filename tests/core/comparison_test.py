@@ -351,7 +351,7 @@ def test_data_array_eq_with_scalar() -> None:
     result = da == 2
     assert isinstance(result, sc.DataArray)
     assert result.data.value is True
-    
+
     result = da == 3
     assert isinstance(result, sc.DataArray)
     assert result.data.value is False
@@ -362,7 +362,7 @@ def test_data_array_ne_with_scalar() -> None:
     result = da != 2
     assert isinstance(result, sc.DataArray)
     assert result.data.value is False
-    
+
     result = da != 3
     assert isinstance(result, sc.DataArray)
     assert result.data.value is True
@@ -385,7 +385,7 @@ def test_dataset_eq_with_scalar() -> None:
     result = ds == 2
     assert isinstance(result, sc.Dataset)
     assert result['a'].data.value is True
-    
+
     result = ds == 3
     assert isinstance(result, sc.Dataset)
     assert result['a'].data.value is False
@@ -396,7 +396,7 @@ def test_dataset_ne_with_scalar() -> None:
     result = ds != 2
     assert isinstance(result, sc.Dataset)
     assert result['a'].data.value is False
-    
+
     result = ds != 3
     assert isinstance(result, sc.Dataset)
     assert result['a'].data.value is True
