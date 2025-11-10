@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 else:
     CoordTable = Any
 
-Kernel = Callable[..., Variable]
+Kernel = Callable[..., Variable | dict[str, Variable]]
 _T = TypeVar('_T')
 
 
