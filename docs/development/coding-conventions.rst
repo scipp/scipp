@@ -6,7 +6,7 @@ Integer types
 
 * Do not use unsigned integers, including ``size_t``.
   Instead, use ``scipp::index`` which is a typedef for ``int64_t``.
-  See `ES.107 <https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#Res-subscripts>`_ for details.
+  See `ES.107 <https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#res-subscripts>`_ for details.
   The free function ``scipp::size`` is provided as a free helper function to obtain a signed index for standard containers such as ``std::vector`` where the ``size`` method returns a forbidden ``size_t``.
 * Do not use variable-width integers such as ``int`` or ``long``.
   These may be 32 bit or 64 bit depending on platform and compiler.
