@@ -108,6 +108,7 @@ void bind_data_array(py::class_<T, Ignored...> &c) {
   bind_reverse_binary_scalars(c);
   bind_comparison<DataArray>(c);
   bind_comparison<Variable>(c);
+  bind_comparison_scalars(c);
   bind_unary(c);
   bind_logical<DataArray>(c);
   bind_logical<Variable>(c);
@@ -275,6 +276,11 @@ Returned by :py:func:`DataArray.masks`)");
   bind_binary<DataArray>(dataset);
   bind_binary<Variable>(dataset);
   bind_binary_scalars(dataset);
+
+  bind_comparison<Dataset>(dataset);
+  bind_comparison<DataArray>(dataset);
+  bind_comparison<Variable>(dataset);
+  bind_comparison_scalars(dataset);
 
   dataArray.def("_rename_dims", &rename_dims<DataArray>);
   dataset.def("_rename_dims", &rename_dims<Dataset>);
