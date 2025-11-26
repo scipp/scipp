@@ -483,8 +483,8 @@ class DataGroup(MutableMapping[str, _V]):
     ) -> DataGroup[_V]:
         return self.apply(operator.methodcaller('rename_dims', dims_dict, **names))
 
-    def round(self) -> DataGroup[_V]:
-        return self.apply(operator.methodcaller('round'))
+    def round(self, *, decimals: int = 0) -> DataGroup[_V]:
+        return self.apply(operator.methodcaller('round', decimals=decimals))
 
     def squeeze(self, dim: str | Sequence[str] | None = None) -> DataGroup[_V]:
         return self._reduce('squeeze', dim)

@@ -352,18 +352,20 @@ def log10(x: _T, *, out: Variable | None = None) -> _T:
 
 
 @overload
-def round(x: Variable, *, out: Variable | None = None) -> Variable: ...
+def round(
+    x: Variable, *, decimals: int = 0, out: Variable | None = None
+) -> Variable: ...
 
 
 @overload
-def round(x: VariableLikeType) -> VariableLikeType: ...
+def round(x: VariableLikeType, *, decimals: int = 0) -> VariableLikeType: ...
 
 
-def round(x: _T, *, out: Variable | None = None) -> _T:
+def round(x: _T, *, decimals: int = 0, out: Variable | None = None) -> _T:
     """
-    Round to the nearest integer of all values passed in x.
+    Round to the given number of decimals.
 
-    Note: if the number being rounded is halfway between two integers it will
+    Note: if the number being rounded is halfway between two numbers it will
     round to the nearest even number. For example 1.5 and 2.5 will both round
     to 2.0, -0.5 and 0.5 will both round to 0.0.
 
@@ -371,15 +373,45 @@ def round(x: _T, *, out: Variable | None = None) -> _T:
     ----------
     x:
         Input data.
+    decimals:
+        Number of decimal places to round to (default: 0).
+        If decimals is negative, it specifies the number of positions
+        to the left of the decimal point.
     out:
         Optional output buffer.
 
     Returns
     -------
     :
-        Rounded version of the data passed to the nearest integer.
+        Rounded version of the data passed.
+
+    See Also
+    --------
+    scipp.ceil, scipp.floor
+
+    Examples
+    --------
+
+      >>> sc.round(sc.scalar(1.5))
+      <scipp.Variable> ()    float64  [dimensionless]  2
+      >>> sc.round(sc.scalar(1.567), decimals=2)
+      <scipp.Variable> ()    float64  [dimensionless]  1.57
+      >>> sc.round(sc.scalar(12345.0), decimals=-2)
+      <scipp.Variable> ()    float64  [dimensionless]  12300
     """
-    return _call_cpp_func(_cpp.rint, x, out=out)  # type: ignore[return-value]
+    if decimals == 0:
+        return _call_cpp_func(_cpp.rint, x, out=out)  # type: ignore[return-value]
+    factor = 10**decimals
+    if out is None:
+        return _call_cpp_func(_cpp.rint, factor * x) / factor  # type: ignore[return-value]
+    # When out is provided, we need to be careful about the order of operations
+    # to avoid creating intermediate variables that would overwrite out
+    out *= 0  # Clear out
+    out += x
+    out *= factor
+    _call_cpp_func(_cpp.rint, out, out=out)
+    out /= factor
+    return out  # type: ignore[return-value]
 
 
 @overload
