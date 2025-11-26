@@ -33,6 +33,9 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v3
         with:
           miniforge-version: latest
+          conda-remove-defaults: true
+          auto-activate: true
+
       - name: Create variant file for conda build
         run: |
           echo "python:" > dynamic_var.yaml
