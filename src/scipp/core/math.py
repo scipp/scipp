@@ -402,16 +402,11 @@ def round(x: _T, *, decimals: int = 0, out: Variable | None = None) -> _T:
     if decimals == 0:
         return _call_cpp_func(_cpp.rint, x, out=out)  # type: ignore[return-value]
     factor = 10**decimals
-    if out is None:
-        return _call_cpp_func(_cpp.rint, factor * x) / factor  # type: ignore[return-value]
-    # When out is provided, we need to be careful about the order of operations
-    # to avoid creating intermediate variables that would overwrite out
-    out *= 0  # Clear out
-    out += x
-    out *= factor
-    _call_cpp_func(_cpp.rint, out, out=out)
-    out /= factor
-    return out  # type: ignore[return-value]
+    result = _call_cpp_func(_cpp.rint, factor * x) / factor
+    if out is not None:
+        out[...] = result
+        return out  # type: ignore[return-value]
+    return result  # type: ignore[return-value]
 
 
 @overload
