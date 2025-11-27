@@ -223,3 +223,11 @@ def test_clip_preserves_variances() -> None:
         unit='m',
     )
     assert sc.identical(result, expected)
+
+
+def test_clip_with_min_greater_than_max() -> None:
+    # When min > max, all values are clipped to max (matching numpy.clip behavior)
+    x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0, 4.0, 5.0])
+    result = sc.clip(x, min=sc.scalar(4.0), max=sc.scalar(2.0))
+    expected = sc.array(dims=['x'], values=[2.0, 2.0, 2.0, 2.0, 2.0])
+    assert sc.identical(result, expected)
