@@ -411,7 +411,7 @@ def round(x: _T, *, decimals: int = 0, out: Variable | None = None) -> _T:
     if out is not None:
         out[...] = result
         return out  # type: ignore[return-value]
-    return result  # type: ignore[return-value]
+    return result  # type: ignore[no-any-return]
 
 
 @overload
