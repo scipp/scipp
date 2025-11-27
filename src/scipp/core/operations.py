@@ -258,6 +258,78 @@ def where(
     return _call_cpp_func(_cpp.where, condition, x, y)  # type: ignore[return-value]
 
 
+@overload
+def clip(x: Variable, *, min: Variable, max: Variable) -> Variable: ...
+
+
+@overload
+def clip(x: Variable, *, min: Variable, max: None = ...) -> Variable: ...
+
+
+@overload
+def clip(x: Variable, *, min: None = ..., max: Variable) -> Variable: ...
+
+
+@overload
+def clip(x: DataArray, *, min: Variable, max: Variable) -> DataArray: ...
+
+
+@overload
+def clip(x: DataArray, *, min: Variable, max: None = ...) -> DataArray: ...
+
+
+@overload
+def clip(x: DataArray, *, min: None = ..., max: Variable) -> DataArray: ...
+
+
+def clip(
+    x: Variable | DataArray,
+    *,
+    min: Variable | None = None,
+    max: Variable | None = None,
+) -> Variable | DataArray:
+    """Clip (limit) the values in an array to a given range.
+
+    Given an interval, values outside the interval are clipped to the
+    interval edges.
+
+    Parameters
+    ----------
+    x:
+        Input array with values to be clipped.
+    min:
+        Minimum value. If ``None``, no clipping is performed on lower bound.
+        Must be provided as a keyword argument.
+    max:
+        Maximum value. If ``None``, no clipping is performed on upper bound.
+        Must be provided as a keyword argument.
+
+    Returns
+    -------
+    :
+        Array with elements clipped to the range [min, max].
+
+    Raises
+    ------
+    ValueError:
+        If both min and max are None.
+
+    Examples
+    --------
+        >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0, 4.0, 5.0])
+        >>> sc.clip(x, min=sc.scalar(2.0), max=sc.scalar(4.0))
+        <scipp.Variable> (x: 5)    float64  [dimensionless]  [2, 2, 3, 4, 4]
+    """
+    if min is None and max is None:
+        raise ValueError("At least one of 'min' or 'max' must be provided")
+    result = x
+    if min is not None:
+        result = where(result < min, min, result)
+    if max is not None:
+        result = where(result > max, max, result)
+    return result
+
+
 def to(
     var: Variable,
     *,

@@ -162,3 +162,64 @@ def test_where_does_not_allow_masks(argument: str) -> None:
     locals()[argument].masks['m'] = sc.array(dims=['a'], values=[True, False, True])
     with pytest.raises(ValueError, match="must not have masks"):
         sc.where(condition, x, y)
+
+
+def test_clip_with_min_and_max() -> None:
+    x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0, 4.0, 5.0], unit='m')
+    result = sc.clip(x, min=sc.scalar(2.0, unit='m'), max=sc.scalar(4.0, unit='m'))
+    expected = sc.array(dims=['x'], values=[2.0, 2.0, 3.0, 4.0, 4.0], unit='m')
+    assert sc.identical(result, expected)
+
+
+def test_clip_with_only_min() -> None:
+    x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0, 4.0, 5.0], unit='m')
+    result = sc.clip(x, min=sc.scalar(2.0, unit='m'))
+    expected = sc.array(dims=['x'], values=[2.0, 2.0, 3.0, 4.0, 5.0], unit='m')
+    assert sc.identical(result, expected)
+
+
+def test_clip_with_only_max() -> None:
+    x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0, 4.0, 5.0], unit='m')
+    result = sc.clip(x, max=sc.scalar(4.0, unit='m'))
+    expected = sc.array(dims=['x'], values=[1.0, 2.0, 3.0, 4.0, 4.0], unit='m')
+    assert sc.identical(result, expected)
+
+
+def test_clip_raises_when_both_none() -> None:
+    x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0, 4.0, 5.0])
+    with pytest.raises(
+        ValueError, match="At least one of 'min' or 'max' must be provided"
+    ):
+        sc.clip(x)
+
+
+def test_clip_with_data_array() -> None:
+    x = sc.DataArray(
+        sc.array(dims=['x'], values=[1.0, 2.0, 3.0, 4.0, 5.0], unit='m'),
+        coords={'x': sc.arange('x', 5)},
+    )
+    result = sc.clip(x, min=sc.scalar(2.0, unit='m'), max=sc.scalar(4.0, unit='m'))
+    expected = sc.DataArray(
+        sc.array(dims=['x'], values=[2.0, 2.0, 3.0, 4.0, 4.0], unit='m'),
+        coords={'x': sc.arange('x', 5)},
+    )
+    assert sc.identical(result, expected)
+
+
+def test_clip_preserves_variances() -> None:
+    x = sc.array(
+        dims=['x'],
+        values=[1.0, 2.0, 3.0, 4.0, 5.0],
+        variances=[0.1, 0.2, 0.3, 0.4, 0.5],
+        unit='m',
+    )
+    result = sc.clip(x, min=sc.scalar(2.0, unit='m'), max=sc.scalar(4.0, unit='m'))
+    # Clipped values get variance from the scalar (which has no variance, so 0)
+    # Non-clipped values keep their original variance
+    expected = sc.array(
+        dims=['x'],
+        values=[2.0, 2.0, 3.0, 4.0, 4.0],
+        variances=[0.0, 0.2, 0.3, 0.4, 0.0],
+        unit='m',
+    )
+    assert sc.identical(result, expected)
