@@ -31,22 +31,25 @@ function(scipp_install_component)
           "Runtime dependency directories for ${SCIPP_INSTALL_COMPONENT_TARGET}: ${RUNTIME_DEP_DIRECTORIES}"
       )
     endif()
-
-    install(
-      TARGETS ${SCIPP_INSTALL_COMPONENT_TARGET}
-      EXPORT ${EXPORT_NAME}
-      RUNTIME_DEPENDENCIES
-      PRE_INCLUDE_REGEXES
-      ${CONAN_RUNTIME_DEPENDENCIES}
-      PRE_EXCLUDE_REGEXES
-      ".*"
-      # Required for Windows. Other platforms search rpath
-      DIRECTORIES
-      ${RUNTIME_DEP_DIRECTORIES}
-      RUNTIME DESTINATION ${PYTHONDIR}
-      ARCHIVE DESTINATION ${ARCHIVEDIR}
-      FRAMEWORK DESTINATION ${ARCHIVEDIR}
-    )
+    if(WIN32)
+      install(
+        TARGETS ${SCIPP_INSTALL_COMPONENT_TARGET}
+        EXPORT ${EXPORT_NAME}
+        RUNTIME_DEPENDENCIES
+        PRE_INCLUDE_REGEXES
+        ${CONAN_RUNTIME_DEPENDENCIES}
+        PRE_EXCLUDE_REGEXES
+        ".*"
+        # Required for Windows. Other platforms search rpath
+        DIRECTORIES
+        ${RUNTIME_DEP_DIRECTORIES}
+        RUNTIME DESTINATION ${PYTHONDIR}
+        ARCHIVE DESTINATION ${ARCHIVEDIR}
+        FRAMEWORK DESTINATION ${ARCHIVEDIR}
+      )
+    else()
+      install(TARGETS ${SCIPP_INSTALL_COMPONENT_TARGET} EXPORT ${EXPORT_NAME})
+    endif()
     if(NOT SKBUILD)
       install(DIRECTORY include/ DESTINATION ${INCLUDEDIR})
       if(${SCIPP_INSTALL_COMPONENT_INSTALL_GENERATED})
