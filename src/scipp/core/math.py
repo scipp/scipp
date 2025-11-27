@@ -369,6 +369,11 @@ def round(x: _T, *, decimals: int = 0, out: Variable | None = None) -> _T:
     round to the nearest even number. For example 1.5 and 2.5 will both round
     to 2.0, -0.5 and 0.5 will both round to 0.0.
 
+    For non-zero ``decimals``, the implementation uses
+    ``rint(x * 10**decimals) / 10**decimals``, which can overflow for very
+    large values of ``x`` combined with large positive ``decimals``.
+    This is the same algorithm and limitation as :py:func:`numpy.round`.
+
     Parameters
     ----------
     x:
