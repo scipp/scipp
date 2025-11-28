@@ -298,12 +298,16 @@ def clip(
     """
     if min is None and max is None:
         raise ValueError("At least one of 'min' or 'max' must be provided")
-    result = x
-    if min is not None:
-        result = where(result < min, min, result)
-    if max is not None:
-        result = where(result > max, max, result)
-    return result
+    if min is not None and max is not None:
+        # When both bounds provided: compute conditions on original x,
+        # then chain the where calls. This ensures we compare against
+        # the original data rather than intermediate results.
+        result = where(x < min, min, x)
+        return where(result > max, max, result)
+    elif min is not None:
+        return where(x < min, min, x)
+    else:
+        return where(x > max, max, x)  # type: ignore[operator]
 
 
 def to(
