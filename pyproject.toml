@@ -86,9 +86,8 @@ archs = ["auto64"]
 test-requires = ["scipy", "graphviz", "pooch", "hypothesis"]
 test-extras = ["test"]
 test-command = "pytest --ignore {project}/tests/plotting --ignore {project}/tests/hypothesis/ --ignore {project}/tests/experimental/ {project}/tests"
-# PyPy builds fail with an error about ninja, probably https://github.com/pypa/setuptools/issues/2912
 # tbb-devel not available for musllinux
-skip = ["pp*", "*musllinux*"]
+skip = ["*musllinux*"]
 build-verbosity = 1
 
 [tool.bandit.assert_used]
