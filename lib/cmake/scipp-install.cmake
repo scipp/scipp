@@ -25,6 +25,23 @@ function(scipp_install_component)
            "${CMAKE_BINARY_DIR}/lib/onetbb/bin"
       )
     endif()
+    # Add CPM-built dependencies directories (used when SKBUILD is ON) Note:
+    # These paths are added unconditionally because CPM downloads during build,
+    # not configure. The install command ignores non-existent directories.
+    if(SKBUILD)
+      list(
+        APPEND
+        RUNTIME_DEP_DIRECTORIES
+        "${CMAKE_BINARY_DIR}/_deps/onetbb-build"
+        "${CMAKE_BINARY_DIR}/_deps/onetbb-build/gnu"
+        # MSVC puts DLLs in Release/Debug subdirectories
+        "${CMAKE_BINARY_DIR}/_deps/onetbb-build/${CMAKE_BUILD_TYPE}"
+        "${CMAKE_BINARY_DIR}/_deps/onetbb-build/Release"
+        "${CMAKE_BINARY_DIR}/_deps/units-build"
+        "${CMAKE_BINARY_DIR}/_deps/units-build/${CMAKE_BUILD_TYPE}"
+        "${CMAKE_BINARY_DIR}/_deps/units-build/Release"
+      )
+    endif()
     if(RUNTIME_DEP_DIRECTORIES)
       message(
         STATUS
@@ -32,12 +49,14 @@ function(scipp_install_component)
       )
     endif()
     if(WIN32)
+      # Regex patterns for DLLs to include (TBB and units library)
+      set(SCIPP_RUNTIME_DEPENDENCIES "tbb.*\\.dll$" "units.*\\.dll$")
       install(
         TARGETS ${SCIPP_INSTALL_COMPONENT_TARGET}
         EXPORT ${EXPORT_NAME}
         RUNTIME_DEPENDENCIES
         PRE_INCLUDE_REGEXES
-        ${CONAN_RUNTIME_DEPENDENCIES}
+        ${SCIPP_RUNTIME_DEPENDENCIES}
         PRE_EXCLUDE_REGEXES
         ".*"
         # Required for Windows. Other platforms search rpath
