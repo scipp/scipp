@@ -25,23 +25,8 @@ function(scipp_install_component)
            "${CMAKE_BINARY_DIR}/lib/onetbb/bin"
       )
     endif()
-    # Add CPM-built dependencies directories (used when SKBUILD is ON) Note:
-    # These paths are added unconditionally because CPM downloads during build,
-    # not configure. The install command ignores non-existent directories.
-    if(SKBUILD)
-      list(
-        APPEND
-        RUNTIME_DEP_DIRECTORIES
-        "${CMAKE_BINARY_DIR}/_deps/onetbb-build"
-        "${CMAKE_BINARY_DIR}/_deps/onetbb-build/gnu"
-        # MSVC puts DLLs in Release/Debug subdirectories
-        "${CMAKE_BINARY_DIR}/_deps/onetbb-build/${CMAKE_BUILD_TYPE}"
-        "${CMAKE_BINARY_DIR}/_deps/onetbb-build/Release"
-        "${CMAKE_BINARY_DIR}/_deps/units-build"
-        "${CMAKE_BINARY_DIR}/_deps/units-build/${CMAKE_BUILD_TYPE}"
-        "${CMAKE_BINARY_DIR}/_deps/units-build/Release"
-      )
-    endif()
+    # Note: TBB DLL is explicitly installed in lib/python/CMakeLists.txt since
+    # TBB uses a custom output directory that's hard to predict.
     if(RUNTIME_DEP_DIRECTORIES)
       message(
         STATUS

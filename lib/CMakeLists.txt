@@ -65,24 +65,31 @@ if(THREADING)
     core/include/scipp/core/parallel-tbb.h core/include/scipp/core/parallel.h
     COPYONLY
   )
-  # Set TBB runtime directory for Windows DLL copying
-  if(SKBUILD)
-    # When using CPM (SKBUILD), TBB is in _deps
-    set(TBB_RUNTIME_DIR "${CMAKE_BINARY_DIR}/_deps/onetbb-build")
-  else()
-    # When using find_package, try to get the TBB location from imported
-    # location
-    if(TARGET TBB::tbb)
+  # Set TBB runtime directory for Windows DLL copying Get the TBB location from
+  # target properties (works for both CPM and find_package)
+  if(TARGET TBB::tbb)
+    get_target_property(
+      TBB_IMPORTED_LOCATION TBB::tbb IMPORTED_LOCATION_RELEASE
+    )
+    if(NOT TBB_IMPORTED_LOCATION)
+      get_target_property(TBB_IMPORTED_LOCATION TBB::tbb IMPORTED_LOCATION)
+    endif()
+    # For MSVC builds via CPM, TBB uses LIBRARY_OUTPUT_DIRECTORY
+    if(NOT TBB_IMPORTED_LOCATION)
       get_target_property(
-        TBB_IMPORTED_LOCATION TBB::tbb IMPORTED_LOCATION_RELEASE
+        TBB_IMPORTED_LOCATION TBB::tbb LIBRARY_OUTPUT_DIRECTORY
       )
-      if(NOT TBB_IMPORTED_LOCATION)
-        get_target_property(TBB_IMPORTED_LOCATION TBB::tbb IMPORTED_LOCATION)
-      endif()
-      if(TBB_IMPORTED_LOCATION)
+    endif()
+    if(TBB_IMPORTED_LOCATION)
+      # If it's a file path, get the directory
+      if(EXISTS "${TBB_IMPORTED_LOCATION}" AND NOT IS_DIRECTORY
+                                               "${TBB_IMPORTED_LOCATION}"
+      )
         get_filename_component(
           TBB_RUNTIME_DIR "${TBB_IMPORTED_LOCATION}" DIRECTORY
         )
+      else()
+        set(TBB_RUNTIME_DIR "${TBB_IMPORTED_LOCATION}")
       endif()
     endif()
   endif()
