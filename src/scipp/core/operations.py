@@ -258,36 +258,12 @@ def where(
     return _call_cpp_func(_cpp.where, condition, x, y)  # type: ignore[return-value]
 
 
-@overload
-def clip(x: Variable, *, min: Variable, max: Variable) -> Variable: ...
-
-
-@overload
-def clip(x: Variable, *, min: Variable, max: None = ...) -> Variable: ...
-
-
-@overload
-def clip(x: Variable, *, min: None = ..., max: Variable) -> Variable: ...
-
-
-@overload
-def clip(x: DataArray, *, min: Variable, max: Variable) -> DataArray: ...
-
-
-@overload
-def clip(x: DataArray, *, min: Variable, max: None = ...) -> DataArray: ...
-
-
-@overload
-def clip(x: DataArray, *, min: None = ..., max: Variable) -> DataArray: ...
-
-
 def clip(
-    x: Variable | DataArray,
+    x: _VarDa,
     *,
     min: Variable | None = None,
     max: Variable | None = None,
-) -> Variable | DataArray:
+) -> _VarDa:
     """Clip (limit) the values in an array to a given range.
 
     Given an interval, values outside the interval are clipped to the
