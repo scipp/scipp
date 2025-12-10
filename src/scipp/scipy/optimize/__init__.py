@@ -7,7 +7,7 @@ This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.optimize`.
 """
 
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from inspect import getfullargspec
 from numbers import Real
 from typing import Any, TypeVar
@@ -91,7 +91,7 @@ def _covariance_with_units(
 
 
 def _make_defaults(
-    f: Callable[..., Any], p0: dict[str, Variable | float] | None
+    f: Callable[..., Any], p0: Mapping[str, Variable | float] | None
 ) -> dict[str, Any]:
     spec = getfullargspec(f)
     if len(spec.args) != 1 or spec.varargs is not None:
@@ -106,7 +106,7 @@ def _make_defaults(
 
 
 def _get_specific_bounds(
-    bounds: dict[str, tuple[Variable, Variable] | tuple[float, float]],
+    bounds: Mapping[str, tuple[Variable, Variable] | tuple[float, float]],
     name: str,
     unit: Unit | None,
 ) -> tuple[float, float]:
@@ -127,8 +127,8 @@ def _get_specific_bounds(
 
 
 def _parse_bounds(
-    bounds: dict[str, tuple[Variable, Variable] | tuple[float, float]] | None,
-    params: dict[str, Any],
+    bounds: Mapping[str, tuple[Variable, Variable] | tuple[float, float]] | None,
+    params: Mapping[str, Any],
 ) -> (
     tuple[float, float]
     | tuple[npt.NDArray[np.float64 | np.float32], npt.NDArray[np.float64 | np.float32]]
@@ -150,10 +150,10 @@ def curve_fit(
     f: Callable[..., Variable | DataArray],
     da: DataArray,
     *,
-    p0: dict[str, Variable | float] | None = None,
-    bounds: dict[str, tuple[Variable, Variable] | tuple[float, float]] | None = None,
+    p0: Mapping[str, Variable | float] | None = None,
+    bounds: Mapping[str, tuple[Variable, Variable] | tuple[float, float]] | None = None,
     **kwargs: Any,
-) -> tuple[dict[str, Variable | float], dict[str, dict[str, Variable | float]]]:
+) -> tuple[dict[Any, Any], dict[str, dict[str, Variable | Real]]]:
     """Use non-linear least squares to fit a function, f, to data.
 
     This is a wrapper around :py:func:`scipy.optimize.curve_fit`. See there for a

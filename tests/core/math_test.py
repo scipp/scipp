@@ -187,6 +187,38 @@ def test_round() -> None:
     assert sc.identical(x_out, expected)
 
 
+def test_round_decimals() -> None:
+    # Test positive decimals
+    x = sc.array(dims=['x'], values=(1.567, 2.345, 3.899))
+    expected_2 = sc.array(dims=['x'], values=(1.57, 2.35, 3.90))
+    assert sc.identical(sc.round(x, decimals=2), expected_2)
+
+    expected_1 = sc.array(dims=['x'], values=(1.6, 2.3, 3.9))
+    assert sc.identical(sc.round(x, decimals=1), expected_1)
+
+    # Test decimals=0 is equivalent to default
+    expected_0 = sc.array(dims=['x'], values=(2.0, 2.0, 4.0))
+    assert sc.identical(sc.round(x, decimals=0), expected_0)
+
+    # Test negative decimals
+    y = sc.array(dims=['x'], values=(12345.0, 67890.0))
+    expected_neg2 = sc.array(dims=['x'], values=(12300.0, 67900.0))
+    assert sc.identical(sc.round(y, decimals=-2), expected_neg2)
+
+    # Test scalar
+    s = sc.scalar(1.567)
+    assert sc.identical(sc.round(s, decimals=2), sc.scalar(1.57))
+
+
+def test_round_decimals_out() -> None:
+    x = sc.array(dims=['x'], values=(1.567, 2.345, 3.899))
+    expected = sc.array(dims=['x'], values=(1.57, 2.35, 3.90))
+
+    x_out = sc.zeros_like(x)
+    sc.round(x, decimals=2, out=x_out)
+    assert sc.identical(x_out, expected)
+
+
 def test_ceil() -> None:
     x = sc.array(dims=['x'], values=(1.1, 1.5, 2.5, 4.7))
     expected = sc.array(dims=['x'], values=(2.0, 2.0, 3.0, 5.0))

@@ -30,9 +30,12 @@ jobs:
           submodules: true
           fetch-depth: 0 # history required so cmake can determine version
 
-      - uses: conda-incubator/setup-miniconda@v3
+      - uses: conda-incubator/setup-miniconda@d398943fa11a5a1bb09f7cf3907142cf0a600d37 # Use the main branch to get auto-activate
         with:
           miniforge-version: latest
+          conda-remove-defaults: true
+          auto-activate: true
+
       - name: Create variant file for conda build
         run: |
           echo "python:" > dynamic_var.yaml

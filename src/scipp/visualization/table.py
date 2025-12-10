@@ -14,7 +14,7 @@ BOTTOM_BORDER = 'border-bottom:2px solid #a9a9a9;'
 
 
 def _string_in_cell(v: Variable) -> str:
-    if v.bins is not None:
+    if v.is_binned:
         return f'len={v.value.shape}'
     if v.dtype not in (DType.float32, DType.float64):
         return str(v.value)

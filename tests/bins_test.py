@@ -20,7 +20,7 @@ def get_masks(x):
 
 def test_dense_data_properties_are_none() -> None:
     var = sc.scalar(1)
-    assert var.bins is None
+    assert not var.is_binned
 
 
 def test_bins_default_begin_end() -> None:

@@ -119,7 +119,7 @@ def _to_xarray_variable(var: Variable) -> xr.Variable:
     """
     import xarray as xr
 
-    if var.bins is not None:
+    if var.is_binned:
         raise ValueError("Xarray does not support binned data.")
     if var.variances is not None:
         warn(

@@ -2,9 +2,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # ~~~
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.28)
 
 cmake_policy(SET CMP0091 NEW)
+
+# Dont scan for modules, we aren't using them right now and compilers for osx on
+# conda don't seem to play well with this.
+set(CMAKE_CXX_SCAN_FOR_MODULES 0)
 
 if(SKBUILD)
   set(SCIPP_VERSION_PEP440 "${SKBUILD_PROJECT_VERSION_FULL}")
@@ -51,6 +55,13 @@ if(SKBUILD)
   if(APPLE AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.0)
     message(STATUS "Building on macOS with Clang 15 or newer")
     add_link_options("-ld_classic")
+    # Run patch_conan.py to patch Conan for AppleClang 17 support on
+    # macos-15-intel runners
+    execute_process(
+      COMMAND "${CMAKE_COMMAND}" -E env python
+              "${CMAKE_SOURCE_DIR}/tools/patch_conan.py"
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    )
   endif()
 endif()
 

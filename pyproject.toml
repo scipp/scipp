@@ -70,12 +70,12 @@ cmake.version = ">=3.21"
 wheel.install-dir = "scipp"
 
 [[tool.scikit-build.overrides]]
-if.env.SKIP_CONAN = true
+if.env.SKIP_REMOTE_SOURCES = true
 inherit.cmake.define = "append"
-cmake.define.SKIP_CONAN = "ON"
+cmake.define.SKIP_REMOTE_SOURCES = "ON"
 
 [[tool.scikit-build.overrides]]
-if.env.SKIP_CONAN = false
+if.env.SKIP_REMOTE_SOURCES = false
 build.requires = ["conan<2"]
 
 [tool.setuptools_scm]
@@ -86,9 +86,8 @@ archs = ["auto64"]
 test-requires = ["scipy", "graphviz", "pooch", "hypothesis"]
 test-extras = ["test"]
 test-command = "pytest --ignore {project}/tests/plotting --ignore {project}/tests/hypothesis/ --ignore {project}/tests/experimental/ {project}/tests"
-# PyPy builds fail with an error about ninja, probably https://github.com/pypa/setuptools/issues/2912
 # tbb-devel not available for musllinux
-skip = ["pp*", "*musllinux*"]
+skip = ["*musllinux*"]
 build-verbosity = 1
 
 [tool.bandit.assert_used]
@@ -199,6 +198,8 @@ exclude = [
     '^docs/',
     # Tools for internal use and only need to work in a concrete use case.
     '^tools/',
+    # Exclude build because it contains files from llnl-units python package.
+    '^build/',
 ]
 
 [[tool.mypy.overrides]]

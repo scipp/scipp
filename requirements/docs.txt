@@ -11,7 +11,7 @@ accessible-pygments==0.0.5
     # via pydata-sphinx-theme
 alabaster==1.0.0
     # via sphinx
-attrs==25.3.0
+attrs==25.4.0
     # via
     #   hypothesis
     #   jsonschema
@@ -20,13 +20,13 @@ babel==2.17.0
     # via
     #   pydata-sphinx-theme
     #   sphinx
-beautifulsoup4==4.13.4
+beautifulsoup4==4.14.2
     # via
     #   nbconvert
     #   pydata-sphinx-theme
 bleach[css]==6.2.0
     # via nbconvert
-contourpy==1.3.2
+contourpy==1.3.3
     # via matplotlib
 cycler==0.12.1
     # via matplotlib
@@ -38,21 +38,21 @@ docutils==0.21.2
     #   nbsphinx
     #   pydata-sphinx-theme
     #   sphinx
-fastjsonschema==2.21.1
+fastjsonschema==2.21.2
     # via nbformat
-fonttools==4.58.0
+fonttools==4.60.1
     # via matplotlib
 gitdb==4.0.12
     # via gitpython
-gitpython==3.1.44
+gitpython==3.1.45
     # via -r docs.in
-hypothesis==6.131.18
+hypothesis==6.142.2
     # via -r docs.in
 imagesize==1.4.1
     # via sphinx
 ipydatawidgets==4.3.5
     # via pythreejs
-ipympl==0.9.7
+ipympl==0.9.8
     # via -r docs.in
 ipywidgets==8.1.7
     # via
@@ -66,15 +66,15 @@ jinja2==3.1.6
     #   nbconvert
     #   nbsphinx
     #   sphinx
-jsonschema==4.23.0
+jsonschema==4.25.1
     # via nbformat
-jsonschema-specifications==2025.4.1
+jsonschema-specifications==2025.9.1
     # via jsonschema
 jupyterlab-pygments==0.3.0
     # via nbconvert
 jupyterlab-widgets==3.0.15
     # via ipywidgets
-kiwisolver==1.4.8
+kiwisolver==1.4.9
     # via matplotlib
 lazy-loader==0.4
     # via plopp
@@ -82,19 +82,19 @@ markdown-it-py==3.0.0
     # via
     #   mdit-py-plugins
     #   myst-parser
-markupsafe==3.0.2
+markupsafe==3.0.3
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.10.3
+matplotlib==3.10.7
     # via
     #   ipympl
     #   plopp
-mdit-py-plugins==0.4.2
+mdit-py-plugins==0.5.0
     # via myst-parser
 mdurl==0.1.2
     # via markdown-it-py
-mistune==3.1.3
+mistune==3.1.4
     # via nbconvert
 myst-parser==4.0.1
     # via -r docs.in
@@ -111,25 +111,25 @@ nbsphinx==0.9.7
     # via -r docs.in
 pandocfilters==1.5.1
     # via nbconvert
-pillow==11.2.1
+pillow==12.0.0
     # via
     #   ipympl
     #   matplotlib
-plopp==25.5.0
+plopp==25.10.0
     # via -r docs.in
 pydata-sphinx-theme==0.16.1
     # via -r docs.in
-pyparsing==3.2.3
+pyparsing==3.2.5
     # via matplotlib
 pythreejs==2.4.2
     # via -r docs.in
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via myst-parser
-referencing==0.36.2
+referencing==0.37.0
     # via
     #   jsonschema
     #   jsonschema-specifications
-rpds-py==0.25.0
+rpds-py==0.27.1
     # via
     #   jsonschema
     #   referencing
@@ -139,7 +139,7 @@ snowballstemmer==3.0.1
     # via sphinx
 sortedcontainers==2.4.0
     # via hypothesis
-soupsieve==2.7
+soupsieve==2.8
     # via beautifulsoup4
 sphinx==8.1.3
     # via
@@ -167,9 +167,7 @@ sphinxcontrib-serializinghtml==2.0.0
     # via sphinx
 tinycss2==1.4.0
     # via bleach
-tomli==2.2.1
-    # via sphinx
-traittypes==0.2.1
+traittypes==0.2.3
     # via ipydatawidgets
 webencodings==0.5.1
     # via

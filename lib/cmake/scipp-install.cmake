@@ -12,22 +12,26 @@ function(scipp_install_component)
     add_sanitizers(${SCIPP_INSTALL_COMPONENT_TARGET})
   endif()
   if(DYNAMIC_LIB)
-    install(
-      TARGETS ${SCIPP_INSTALL_COMPONENT_TARGET}
-      EXPORT ${EXPORT_NAME}
-      RUNTIME_DEPENDENCIES
-      PRE_INCLUDE_REGEXES
-      ${CONAN_RUNTIME_DEPENDENCIES}
-      PRE_EXCLUDE_REGEXES
-      ".*"
-      # Required for Windows. Other platforms search rpath
-      DIRECTORIES
-      ${CMAKE_BINARY_DIR}/lib/onetbb/lib
-      ${CMAKE_BINARY_DIR}/lib/onetbb/bin
-      RUNTIME DESTINATION ${PYTHONDIR}
-      ARCHIVE DESTINATION ${ARCHIVEDIR}
-      FRAMEWORK DESTINATION ${ARCHIVEDIR}
-    )
+    if(WIN32)
+      install(
+        TARGETS ${SCIPP_INSTALL_COMPONENT_TARGET}
+        EXPORT ${EXPORT_NAME}
+        RUNTIME_DEPENDENCIES
+        PRE_INCLUDE_REGEXES
+        ${CONAN_RUNTIME_DEPENDENCIES}
+        PRE_EXCLUDE_REGEXES
+        ".*"
+        # Required for Windows. Other platforms search rpath
+        DIRECTORIES
+        ${CMAKE_BINARY_DIR}/lib/onetbb/lib
+        ${CMAKE_BINARY_DIR}/lib/onetbb/bin
+        RUNTIME DESTINATION ${PYTHONDIR}
+        ARCHIVE DESTINATION ${ARCHIVEDIR}
+        FRAMEWORK DESTINATION ${ARCHIVEDIR}
+      )
+    else()
+      install(TARGETS ${SCIPP_INSTALL_COMPONENT_TARGET} EXPORT ${EXPORT_NAME})
+    endif()
     if(NOT SKBUILD)
       install(DIRECTORY include/ DESTINATION ${INCLUDEDIR})
       if(${SCIPP_INSTALL_COMPONENT_INSTALL_GENERATED})

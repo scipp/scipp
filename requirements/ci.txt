@@ -5,54 +5,48 @@
 #
 #    requirements upgrade
 #
-cachetools==5.5.2
+cachetools==6.2.1
     # via tox
-certifi==2025.4.26
+certifi==2025.10.5
     # via requests
 chardet==5.2.0
     # via tox
-charset-normalizer==3.4.2
+charset-normalizer==3.4.4
     # via requests
 colorama==0.4.6
     # via tox
-distlib==0.3.9
+distlib==0.4.0
     # via virtualenv
-filelock==3.18.0
+filelock==3.20.0
     # via
     #   tox
     #   virtualenv
 gitdb==4.0.12
     # via gitpython
-gitpython==3.1.44
+gitpython==3.1.45
     # via -r ci.in
-idna==3.10
+idna==3.11
     # via requests
 packaging==25.0
     # via
     #   -r ci.in
     #   pyproject-api
     #   tox
-platformdirs==4.3.8
+platformdirs==4.5.0
     # via
     #   tox
     #   virtualenv
 pluggy==1.6.0
     # via tox
-pyproject-api==1.9.1
+pyproject-api==1.10.0
     # via tox
-requests==2.32.3
+requests==2.32.5
     # via -r ci.in
 smmap==5.0.2
     # via gitdb
-tomli==2.2.1
-    # via
-    #   pyproject-api
-    #   tox
-tox==4.26.0
+tox==4.31.0
     # via -r ci.in
-typing-extensions==4.13.2
-    # via tox
-urllib3==2.4.0
+urllib3==2.5.0
     # via requests
-virtualenv==20.31.2
+virtualenv==20.35.3
     # via tox
