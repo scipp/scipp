@@ -473,7 +473,7 @@ def test_assign_coords_overlapping_names() -> None:
     data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
     da = sc.DataArray(data)
     coord0 = sc.linspace('x', start=0.2, stop=1.61, num=4)
-    with pytest.raises(ValueError, match='names .* distinct'):
+    with pytest.raises(TypeError, match='names .* distinct'):
         da.assign_coords({'coord0': coord0}, coord0=coord0)
 
 
@@ -521,7 +521,7 @@ def test_assign_masks_overlapping_names() -> None:
     data = sc.array(dims=['x', 'y', 'z'], values=np.random.rand(4, 3, 5))
     da = sc.DataArray(data)
     mask0 = sc.array(dims=['x'], values=[False, True, True, False])
-    with pytest.raises(ValueError, match='names .* distinct'):
+    with pytest.raises(TypeError, match='names .* distinct'):
         da.assign_masks({'mask0': mask0}, mask0=mask0)
 
 

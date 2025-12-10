@@ -5,7 +5,7 @@
 from typing import TypeVar
 
 from .._scipp.core import CoordError, DataArray, Dataset, Variable
-from .argument_handlers import combine_dict_args
+from .argument_handlers import IntoStrDict, combine_dict_args
 from .bins import bins
 from .variable import scalar
 
@@ -13,7 +13,7 @@ _T = TypeVar('_T', Variable, DataArray, Dataset)
 
 
 def _rename_dims(
-    self: _T, dims_dict: dict[str, str] | None = None, /, **names: str
+    self: _T, dims_dict: IntoStrDict[str] | None = None, /, **names: str
 ) -> _T:
     """Rename dimensions.
 
@@ -33,7 +33,7 @@ def _rename_dims(
     Parameters
     ----------
     dims_dict:
-        Dictionary mapping old to new names.
+        Dictionary or items iterator mapping old to new names.
     names:
         Mapping of old to new names as keyword arguments.
 
@@ -46,7 +46,7 @@ def _rename_dims(
 
 
 def _rename_variable(
-    var: Variable, dims_dict: dict[str, str] | None = None, /, **names: str
+    var: Variable, dims_dict: IntoStrDict[str] | None = None, /, **names: str
 ) -> Variable:
     """Rename dimension labels.
 
@@ -62,7 +62,7 @@ def _rename_variable(
     Parameters
     ----------
     dims_dict:
-        Dictionary mapping old to new names.
+        Dictionary or items iterator mapping old to new names.
     names:
         Mapping of old to new names as keyword arguments.
 
@@ -80,7 +80,7 @@ def _rename_variable(
 
 
 def _rename_data_array(
-    da: DataArray, dims_dict: dict[str, str] | None = None, /, **names: str
+    da: DataArray, dims_dict: IntoStrDict[str] | None = None, /, **names: str
 ) -> DataArray:
     """Rename the dimensions, coordinates, and attributes.
 
@@ -96,7 +96,7 @@ def _rename_data_array(
     Parameters
     ----------
     dims_dict:
-        Dictionary mapping old to new names.
+        Dictionary or items iterator mapping old to new names.
     names:
         Mapping of old to new names as keyword arguments.
 
@@ -130,7 +130,7 @@ def _rename_data_array(
 
 
 def _rename_dataset(
-    ds: Dataset, dims_dict: dict[str, str] | None = None, /, **names: str
+    ds: Dataset, dims_dict: IntoStrDict[str] | None = None, /, **names: str
 ) -> Dataset:
     """Rename the dimensions, coordinates and attributes of all the items.
 
@@ -146,7 +146,7 @@ def _rename_dataset(
     Parameters
     ----------
     dims_dict:
-        Dictionary mapping old to new names.
+        Dictionary or items iterator mapping old to new names.
     names:
         Mapping of old to new names as keyword arguments.
 

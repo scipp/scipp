@@ -22,11 +22,12 @@ from typing import (
 import numpy as np
 import numpy.typing as npt
 
+from ..argument_handlers import IntoStrDict
 from ..coords.graph import GraphDict
 from ..typing import Dims, VariableLike
 from ..units import default_unit
-from .bins import Bins
 from ..typing import ScippIndex
+from .bins import Bins
 
 try:
     import h5py as h5
@@ -317,15 +318,15 @@ class DataArray:
     def any(self, dim: Dims = None) -> DataArray: ...
     def assign(self, data: Variable) -> DataArray: ...
     def assign_coords(
-        self, coords: dict[str, Variable] | None = None, /, **coords_kwargs: Variable
+        self, coords: IntoStrDict[Variable] | None = None, /, **coords_kwargs: Variable
     ) -> DataArray: ...
     def assign_masks(
-        self, masks: dict[str, Variable] | None = None, /, **masks_kwargs: Variable
+        self, masks: IntoStrDict[Variable] | None = None, /, **masks_kwargs: Variable
     ) -> DataArray: ...
     def astype(self, type: Any, *, copy: bool = True) -> DataArray: ...
     def bin(
         self,
-        arg_dict: Mapping[str, SupportsIndex | Variable] | None = None,
+        arg_dict: IntoStrDict[SupportsIndex | Variable] | None = None,
         /,
         *,
         dim: str | tuple[str, ...] | None = None,
@@ -394,7 +395,7 @@ class DataArray:
     ) -> GroupByDataArray | GroupByDataset: ...
     def hist(
         self,
-        arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+        arg_dict: IntoStrDict[SupportsIndex | Variable] | None = None,
         /,
         **kwargs: SupportsIndex | Variable,
     ) -> DataArray: ...
@@ -412,7 +413,7 @@ class DataArray:
     def name(self, arg1: str) -> None: ...
     def nanhist(
         self,
-        arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+        arg_dict: IntoStrDict[SupportsIndex | Variable] | None = None,
         /,
         **kwargs: SupportsIndex | Variable,
     ) -> DataArray: ...
@@ -428,15 +429,15 @@ class DataArray:
     def plot(*args: Any, **kwargs: Any) -> Any: ...
     def rebin(
         self,
-        arg_dict: dict[str, int | Variable] | None = None,
+        arg_dict: IntoStrDict[int | Variable] | None = None,
         /,
         **kwargs: int | Variable,
     ) -> DataArray: ...
     def rename(
-        self, dims_dict: dict[str, str] | None = None, /, **names: str
+        self, dims_dict: IntoStrDict[str] | None = None, /, **names: str
     ) -> DataArray: ...
     def rename_dims(
-        self, dims_dict: dict[str, str] | None = None, /, **names: str
+        self, dims_dict: IntoStrDict[str] | None = None, /, **names: str
     ) -> DataArray: ...
     def round(
         self, *, decimals: int = 0, out: VariableLike | None = None
@@ -611,7 +612,7 @@ class Dataset(Mapping[str, DataArray]):
     def all(self, dim: Dims = None) -> Dataset: ...
     def any(self, dim: Dims = None) -> Dataset: ...
     def assign_coords(
-        self, coords: dict[str, Variable] | None = None, /, **coords_kwargs: Variable
+        self, coords: IntoStrDict[Variable] | None = None, /, **coords_kwargs: Variable
     ) -> Dataset: ...
     @property
     def bins(self) -> Bins[Dataset]: ...
@@ -635,7 +636,7 @@ class Dataset(Mapping[str, DataArray]):
     ) -> GroupByDataArray | GroupByDataset: ...
     def hist(
         self,
-        arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+        arg_dict: IntoStrDict[SupportsIndex | Variable] | None = None,
         /,
         *,
         dim: str | tuple[str, ...] | None = None,
@@ -665,15 +666,15 @@ class Dataset(Mapping[str, DataArray]):
     def pop(self, key: str, default: DataArray | _T) -> DataArray | _T: ...
     def rebin(
         self,
-        arg_dict: dict[str, int | Variable] | None = None,
+        arg_dict: IntoStrDict[int | Variable] | None = None,
         /,
         **kwargs: int | Variable,
     ) -> Dataset: ...
     def rename(
-        self, dims_dict: dict[str, str] | None = None, /, **names: str
+        self, dims_dict: IntoStrDict[str] | None = None, /, **names: str
     ) -> Dataset: ...
     def rename_dims(
-        self, dims_dict: dict[str, str] | None = None, /, **names: str
+        self, dims_dict: IntoStrDict[str] | None = None, /, **names: str
     ) -> Dataset: ...
     def save_hdf5(
         self, filename: str | PathLike[str] | StringIO | BytesIO | h5.Group
@@ -964,7 +965,7 @@ class Variable:
     def astype(self, type: Any, *, copy: bool = True) -> Variable: ...
     def bin(
         self,
-        arg_dict: Mapping[str, SupportsIndex | Variable] | None = None,
+        arg_dict: IntoStrDict[SupportsIndex | Variable] | None = None,
         /,
         *,
         dim: str | tuple[str, ...] | None = None,
@@ -1023,7 +1024,7 @@ class Variable:
     ) -> Variable: ...
     def hist(
         self,
-        arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+        arg_dict: IntoStrDict[SupportsIndex | Variable] | None = None,
         /,
         **kwargs: SupportsIndex | Variable,
     ) -> DataArray: ...
@@ -1035,7 +1036,7 @@ class Variable:
     def min(self, dim: Dims = None) -> Variable: ...
     def nanhist(
         self,
-        arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+        arg_dict: IntoStrDict[SupportsIndex | Variable] | None = None,
         /,
         *,
         dim: str | tuple[str, ...] | None = None,
@@ -1052,10 +1053,10 @@ class Variable:
     def ndim(self) -> int: ...
     def plot(*args: Any, **kwargs: Any) -> Any: ...
     def rename(
-        self, dims_dict: dict[str, str] | None = None, /, **names: str
+        self, dims_dict: IntoStrDict[str] | None = None, /, **names: str
     ) -> Variable: ...
     def rename_dims(
-        self, dims_dict: dict[str, str] | None = None, /, **names: str
+        self, dims_dict: IntoStrDict[str] | None = None, /, **names: str
     ) -> Variable: ...
     def round(
         self, *, decimals: int = 0, out: VariableLike | None = None
