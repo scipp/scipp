@@ -330,3 +330,27 @@ def test_lookup_2d_coord_outer_dim_with_1d_mask() -> None:
     assert sc.identical(
         sc.lookup(da, dim='y', fill_value=fill)[edges + 0.1], expected, equal_nan=True
     )
+
+
+def test_lookup_2d_data_outer_dim() -> None:
+    x = sc.arange('xx', 0.0, 4.0)
+    y = sc.arange('yy', 4.0, 7.0)
+    data = sc.arange('aux', 3 * 2).fold('aux', sizes={'xx': 3, 'yy': 2})
+    hist = sc.DataArray(data=data, coords={'xx': x, 'yy': y})
+
+    var = sc.array(dims=['out'], values=[1.4, 0.7, 0.2, 2.0])
+    lut = sc.lookup(hist, 'xx')
+    expected = sc.array(dims=['out', 'yy'], values=[[2, 3], [0, 1], [0, 1], [4, 5]])
+    assert sc.identical(lut[var], expected)
+
+
+def test_lookup_2d_data_inner_dim() -> None:
+    x = sc.arange('xx', 0.0, 4.0)
+    y = sc.arange('yy', 4.0, 7.0)
+    data = sc.arange('aux', 3 * 2).fold('aux', sizes={'xx': 3, 'yy': 2})
+    hist = sc.DataArray(data=data, coords={'xx': x, 'yy': y})
+
+    var = sc.array(dims=['out'], values=[4.8, 5.9, 5.2])
+    lut = sc.lookup(hist, 'yy')
+    expected = sc.array(dims=['out', 'xx'], values=[[0, 2, 4], [1, 3, 5], [1, 3, 5]])
+    assert sc.identical(lut[var], expected)
