@@ -4,17 +4,7 @@
 # ~~~
 @PACKAGE_INIT@
 
-# Call find_package(scipp ... COMPONENTS conan-config) to use conan for
-# install of dependencies. Then call a second time without COMPONENTS to
-# get the actual package, with dependencies. If system dependencies should
-# be used instead the call with "conan-config" can be omitted.
 if(scipp_FIND_COMPONENTS)
-  foreach(_comp ${scipp_FIND_COMPONENTS})
-    if (NOT _comp STREQUAL "conan-config")
-      message(FATAL_ERROR "bad")
-    endif()
-  endforeach()
-  include("${CMAKE_CURRENT_LIST_DIR}/scipp-conan.cmake")
   include("${CMAKE_CURRENT_LIST_DIR}/scipp-cpm.cmake")
 else()
   include("${CMAKE_CURRENT_LIST_DIR}/scipp-targets.cmake")

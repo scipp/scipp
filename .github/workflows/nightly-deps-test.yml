@@ -42,17 +42,6 @@ jobs:
         with:
           key: ${{ matrix.variant.os }}
 
-      - name: Cache conan setup
-        id: conan-cache-key
-        run: |
-          echo "key=$(/bin/date -u "+%Y%m%d")" >> "$GITHUB_OUTPUT"
-          echo "path=$(conan config home)" >> "$GITHUB_OUTPUT"
-      - name: Cache conan
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.conan-cache-key.outputs.path }}
-          key: conan-${{ matrix.variant.os }}-${{ steps.conan-cache-key.outputs.key }}
-
       - run: cmake --preset ${{ matrix.variant.cmake-preset }}
       - run: cmake --build --preset build
       - run: ctest --preset test

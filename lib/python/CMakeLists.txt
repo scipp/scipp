@@ -66,6 +66,13 @@ endif()
 
 install(TARGETS _scipp DESTINATION ${PYTHONDIR})
 
+# On Windows, explicitly install TBB DLL next to _scipp.pyd This is needed
+# because TBB's install puts the DLL in bin/, but _scipp.pyd needs it in the
+# same directory to find it at runtime.
+if(WIN32 AND TARGET TBB::tbb)
+  install(FILES $<TARGET_FILE:TBB::tbb> DESTINATION ${PYTHONDIR})
+endif()
+
 if(COVERAGE)
   append_coverage_compiler_flags()
 endif()
