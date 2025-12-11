@@ -6,6 +6,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, SupportsIndex, TypeVar, overload
 
 from .._scipp import core as _cpp
+from .argument_handlers import IntoStrDict, combine_dict_args
 from .bin_remapping import combine_bins
 from .bins import Bins
 from .cpp_classes import BinEdgeError, CoordError, DataArray, Dataset, DType, Variable
@@ -358,12 +359,13 @@ def _parse_coords_arg(
 
 def _make_edges(
     x: Variable | DataArray | Dataset,
-    arg_dict: Mapping[str, SupportsIndex | Variable] | None,
+    arg_dict: IntoStrDict[SupportsIndex | Variable] | None,
     kwargs: Mapping[str, SupportsIndex | Variable],
 ) -> dict[str, Variable]:
-    if arg_dict is not None:
-        kwargs = dict(**arg_dict, **kwargs)
-    return {name: _parse_coords_arg(x, name, arg) for name, arg in kwargs.items()}
+    return {
+        name: _parse_coords_arg(x, name, arg)
+        for name, arg in combine_dict_args(arg_dict, kwargs).items()
+    }
 
 
 def _find_replaced_dims(
@@ -387,7 +389,7 @@ def _find_replaced_dims(
 @overload
 def hist(
     x: Variable | DataArray,
-    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+    arg_dict: IntoStrDict[SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
@@ -398,7 +400,7 @@ def hist(
 @overload
 def hist(
     x: Dataset,
-    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+    arg_dict: IntoStrDict[SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
@@ -409,7 +411,7 @@ def hist(
 @overload
 def hist(
     x: DataGroup[Any],
-    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+    arg_dict: IntoStrDict[SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
@@ -420,7 +422,7 @@ def hist(
 @data_group_overload
 def hist(
     x: Variable | DataArray | Dataset | DataGroup[Any],
-    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+    arg_dict: IntoStrDict[SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
@@ -616,7 +618,7 @@ def _get_op_dims(x: DataArray, *edges_or_groups: Variable) -> set[str]:
 @overload
 def nanhist(
     x: Variable | DataArray,
-    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+    arg_dict: IntoStrDict[SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
@@ -627,7 +629,7 @@ def nanhist(
 @overload
 def nanhist(
     x: Dataset,
-    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+    arg_dict: IntoStrDict[SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
@@ -638,7 +640,7 @@ def nanhist(
 @overload
 def nanhist(
     x: DataGroup[Any],
-    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+    arg_dict: IntoStrDict[SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
@@ -649,7 +651,7 @@ def nanhist(
 @data_group_overload
 def nanhist(
     x: Variable | DataArray | Dataset | DataGroup[Any],
-    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+    arg_dict: IntoStrDict[SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
@@ -692,7 +694,7 @@ def nanhist(
 @overload
 def bin(
     x: Variable | DataArray,
-    arg_dict: Mapping[str, SupportsIndex | Variable] | None = None,
+    arg_dict: IntoStrDict[SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
@@ -703,7 +705,7 @@ def bin(
 @overload
 def bin(
     x: DataGroup[Any],
-    arg_dict: Mapping[str, SupportsIndex | Variable] | None = None,
+    arg_dict: IntoStrDict[SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
@@ -714,7 +716,7 @@ def bin(
 @data_group_overload
 def bin(
     x: Variable | DataArray | DataGroup[Any],
-    arg_dict: Mapping[str, SupportsIndex | Variable] | None = None,
+    arg_dict: IntoStrDict[SupportsIndex | Variable] | None = None,
     /,
     *,
     dim: str | tuple[str, ...] | None = None,
@@ -870,7 +872,7 @@ def bin(
 @overload
 def rebin(
     x: Variable | DataArray,
-    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+    arg_dict: IntoStrDict[SupportsIndex | Variable] | None = None,
     /,
     **kwargs: SupportsIndex | Variable,
 ) -> DataArray: ...
@@ -879,7 +881,7 @@ def rebin(
 @overload
 def rebin(
     x: Dataset,
-    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+    arg_dict: IntoStrDict[SupportsIndex | Variable] | None = None,
     /,
     **kwargs: SupportsIndex | Variable,
 ) -> Dataset: ...
@@ -888,7 +890,7 @@ def rebin(
 @overload
 def rebin(
     x: DataGroup[Any],
-    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+    arg_dict: IntoStrDict[SupportsIndex | Variable] | None = None,
     /,
     **kwargs: SupportsIndex | Variable,
 ) -> DataGroup[Any]: ...
@@ -897,7 +899,7 @@ def rebin(
 @data_group_overload
 def rebin(
     x: Variable | DataArray | Dataset | DataGroup[Any],
-    arg_dict: dict[str, SupportsIndex | Variable] | None = None,
+    arg_dict: IntoStrDict[SupportsIndex | Variable] | None = None,
     /,
     **kwargs: SupportsIndex | Variable,
 ) -> Variable | DataArray | Dataset | DataGroup[Any]:

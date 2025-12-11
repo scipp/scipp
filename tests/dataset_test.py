@@ -727,7 +727,7 @@ def test_assign_coords_overlapping_names() -> None:
     ds = sc.Dataset(data={'data0': data})
     coord0 = sc.linspace('x', start=0.2, stop=1.61, num=4)
 
-    with pytest.raises(ValueError, match='names .* distinct'):
+    with pytest.raises(TypeError, match='names .* distinct'):
         ds.assign_coords({'coord0': coord0}, coord0=coord0)
 
 

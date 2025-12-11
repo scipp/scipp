@@ -443,7 +443,7 @@ def test_rename_dims_dict_and_kwargs_must_be_distinct() -> None:
     values = np.arange(6).reshape(2, 3)
     xy = sc.Variable(dims=['x', 'y'], values=values)
     with pytest.raises(
-        ValueError, match='The names passed in the dict and as keyword arguments'
+        TypeError, match='The names passed in the dict and as keyword arguments'
     ):
         xy.rename_dims({'x': 'w'}, x='z')
 
@@ -472,7 +472,7 @@ def test_rename_dict_and_kwargs_must_be_distinct() -> None:
     values = np.arange(6).reshape(2, 3)
     xy = sc.Variable(dims=['x', 'y'], values=values)
     with pytest.raises(
-        ValueError, match='The names passed in the dict and as keyword arguments'
+        TypeError, match='The names passed in the dict and as keyword arguments'
     ):
         xy.rename({'x': 'w'}, x='z')
 

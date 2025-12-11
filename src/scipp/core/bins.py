@@ -9,7 +9,7 @@ from typing import Generic, Literal, Sequence, TypedDict, TypeVar
 from .._scipp import core as _cpp
 from ..typing import Dims, MetaDataMap, VariableLike
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .argument_handlers import combine_dict_args
+from .argument_handlers import IntoStrDict, combine_dict_args
 from .bin_remapping import concat_bins
 from .cpp_classes import Coords, DataArray, Dataset, DType, Unit, Variable
 from .data_group import DataGroup
@@ -289,7 +289,7 @@ class Bins(Generic[_O]):
         return _cpp._bins_view(self._data()).coords  # type: ignore[no-any-return]
 
     def assign_coords(
-        self, coords: dict[str, Variable] | None = None, /, **coords_kwargs: Variable
+        self, coords: IntoStrDict[Variable] | None = None, /, **coords_kwargs: Variable
     ) -> _O:
         """Return a new object with coords assigned to bin content."""
         # Shallow copy constituents
@@ -310,7 +310,7 @@ class Bins(Generic[_O]):
         return _cpp._bins_view(self._data()).masks  # type: ignore[no-any-return]
 
     def assign_masks(
-        self, masks: dict[str, Variable] | None = None, /, **masks_kwargs: Variable
+        self, masks: IntoStrDict[Variable] | None = None, /, **masks_kwargs: Variable
     ) -> _O:
         """Return a new object with masks assigned to bin content."""
         # Shallow copy constituents
