@@ -115,7 +115,11 @@ def lookup(
         # ensure contiguous memory access.
         dims = (*[d for d in func.dims if d != dim], dim)
         func.data = func.data.transpose(dims).copy()
-        func.coords[dim] = func.coords[dim].transpose(dims).copy()
+        func.coords[dim] = (
+            func.coords[dim]
+            .transpose([d for d in dims if d in func.coords[dim].dims])
+            .copy()
+        )
         for key, mask in func.masks.items():
             func.masks[key] = mask.transpose(
                 # Masks potentially have fewer dims than the data.
