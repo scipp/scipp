@@ -10,15 +10,6 @@ import pytest
 import scipp as sc
 
 
-def test_comparison_operators() -> None:
-    assert not sc.scalar(5) < sc.scalar(3)
-    assert not sc.scalar(5) <= sc.scalar(3)
-    assert sc.scalar(5) > sc.scalar(3)
-    assert sc.scalar(5) >= sc.scalar(3)
-    assert not sc.scalar(5) == sc.scalar(3)
-    assert sc.scalar(5) != sc.scalar(3)
-
-
 def test_comparison_functions() -> None:
     assert sc.less(sc.scalar(1), sc.scalar(2))
     assert sc.less_equal(sc.scalar(1), sc.scalar(2))
@@ -239,107 +230,108 @@ def test_identical_raises_TypeError_when_comparing_datagroup_to_Dataset() -> Non
         sc.identical(ds, dg)
 
 
-@pytest.fixture
-def small() -> sc.Variable:
-    return sc.scalar(1.0)
+@pytest.fixture(params=['var', 'da'])
+def small(request: pytest.FixtureRequest) -> sc.DataArray:
+    data = sc.scalar(1.0)
+    if request.param == 'var':
+        return data
+    return sc.DataArray(data, coords={'x': sc.scalar(-5)})
 
 
-@pytest.fixture
-def medium() -> sc.Variable:
-    return sc.scalar(2.0)
+@pytest.fixture(params=['var', 'da'])
+def large(request: pytest.FixtureRequest) -> sc.DataArray:
+    data = sc.scalar(3.0)
+    if request.param == 'var':
+        return data
+    return sc.DataArray(data, coords={'x': sc.scalar(-5)})
 
 
-@pytest.fixture
-def large() -> sc.Variable:
-    return sc.scalar(3.0)
+def test_eq(small: sc.DataArray, large: sc.DataArray) -> None:
+    assert not (small == large).value
+    assert not (small == large.value).value
+    assert not (small.values == large).value
+
+    assert (small == small).value
+    assert (small == small.value).value
+    assert (small.value == small).value
+
+    assert not (large == small).value
+    assert not (large == small.value).value
+    assert not (large.value == small).value
 
 
-def test_eq(small: sc.Variable, medium: sc.Variable, large: sc.Variable) -> None:
-    assert not (small == medium).value
-    assert not (small == medium.value).value
-    assert not (small.values == medium).value
+def test_ne(small: sc.Variable, large: sc.Variable) -> None:
+    assert (small != large).value
+    assert (small != large.value).value
+    assert (small.values != large).value
 
-    assert (medium == medium).value
-    assert (medium == medium.value).value
-    assert (medium.value == medium).value
+    assert not (small != small).value
+    assert not (small != small.value).value
+    assert not (small.value != small).value
 
-    assert not (large == medium).value
-    assert not (large == medium.value).value
-    assert not (large.value == medium).value
-
-
-def test_ne(small: sc.Variable, medium: sc.Variable, large: sc.Variable) -> None:
-    assert (small != medium).value
-    assert (small != medium.value).value
-    assert (small.values != medium).value
-
-    assert not (medium != medium).value
-    assert not (medium != medium.value).value
-    assert not (medium.value != medium).value
-
-    assert (large != medium).value
-    assert (large != medium.value).value
-    assert (large.value != medium).value
+    assert (large != small).value
+    assert (large != small.value).value
+    assert (large.value != small).value
 
 
-def test_lt(small: sc.Variable, medium: sc.Variable, large: sc.Variable) -> None:
-    assert (small < medium).value
-    assert (small < medium.value).value
-    assert (small.values < medium).value
+def test_lt(small: sc.Variable, large: sc.Variable) -> None:
+    assert (small < large).value
+    assert (small < large.value).value
+    assert (small.values < large).value
 
-    assert not (medium < medium).value
-    assert not (medium < medium.value).value
-    assert not (medium.value < medium).value
+    assert not (small < small).value
+    assert not (small < small.value).value
+    assert not (small.value < small).value
 
-    assert not (large < medium).value
-    assert not (large < medium.value).value
-    assert not (large.value < medium).value
-
-
-def test_le(small: sc.Variable, medium: sc.Variable, large: sc.Variable) -> None:
-    assert (small <= medium).value
-    assert (small <= medium.value).value
-    assert (small.values <= medium).value
-
-    assert (medium <= medium).value
-    assert (medium <= medium.value).value
-    assert (medium.value <= medium).value
-
-    assert not (large <= medium).value
-    assert not (large <= medium.value).value
-    assert not (large.value <= medium).value
+    assert not (large < small).value
+    assert not (large < small.value).value
+    assert not (large.value < small).value
 
 
-def test_gt(small: sc.Variable, medium: sc.Variable, large: sc.Variable) -> None:
-    assert not (small > medium).value
-    assert not (small > medium.value).value
-    assert not (small.values > medium).value
+def test_le(small: sc.Variable, large: sc.Variable) -> None:
+    assert (small <= large).value
+    assert (small <= large.value).value
+    assert (small.values <= large).value
 
-    assert not (medium > medium).value
-    assert not (medium > medium.value).value
-    assert not (medium.value > medium).value
+    assert (small <= small).value
+    assert (small <= small.value).value
+    assert (small.value <= small).value
 
-    assert (large > medium).value
-    assert (large > medium.value).value
-    assert (large.value > medium).value
-
-
-def test_ge(small: sc.Variable, medium: sc.Variable, large: sc.Variable) -> None:
-    assert not (small >= medium).value
-    assert not (small >= medium.value).value
-    assert not (small.values >= medium).value
-
-    assert (medium >= medium).value
-    assert (medium >= medium.value).value
-    assert (medium.value >= medium).value
-
-    assert (large >= medium).value
-    assert (large >= medium.value).value
-    assert (large.value >= medium).value
+    assert not (large <= small).value
+    assert not (large <= small.value).value
+    assert not (large.value <= small).value
 
 
-def test_comparison_with_str(medium: sc.Variable) -> None:
+def test_gt(small: sc.Variable, large: sc.Variable) -> None:
+    assert not (small > large).value
+    assert not (small > large.value).value
+    assert not (small.values > large).value
+
+    assert not (small > small).value
+    assert not (small > small.value).value
+    assert not (small.value > small).value
+
+    assert (large > small).value
+    assert (large > small.value).value
+    assert (large.value > small).value
+
+
+def test_ge(small: sc.Variable, large: sc.Variable) -> None:
+    assert not (small >= large).value
+    assert not (small >= large.value).value
+    assert not (small.values >= large).value
+
+    assert (small >= small).value
+    assert (small >= small.value).value
+    assert (small.value >= small).value
+
+    assert (large >= small).value
+    assert (large >= small.value).value
+    assert (large.value >= small).value
+
+
+def test_comparison_with_str(small: sc.Variable) -> None:
     assert (sc.scalar('a string') == sc.scalar('a string')).value
-    assert not (medium == 'a string')
+    assert not (small == 'a string')
     with pytest.raises(TypeError):
-        _ = medium < 'a string'  # type: ignore[operator]
+        _ = small < 'a string'  # type: ignore[operator]
