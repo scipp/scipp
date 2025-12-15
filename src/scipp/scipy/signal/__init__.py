@@ -166,7 +166,7 @@ def find_peaks(
     """
     A routine that locates "peaks" in a 1D signal.
 
-    This is a wrapper around :py:func:`scipy.signal.find_peaks. See there for a
+    This is a wrapper around :py:func:`scipy.signal.find_peaks`. See there for a
     complete description of parameters.
 
     Returns
