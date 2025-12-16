@@ -16,7 +16,7 @@ charset-normalizer==3.4.4
     # via requests
 comm==0.2.3
     # via ipykernel
-debugpy==1.8.17
+debugpy==1.8.19
     # via ipykernel
 decorator==5.2.1
     # via ipython
@@ -99,7 +99,7 @@ six==1.17.0
     # via python-dateutil
 stack-data==0.6.3
     # via ipython
-tornado==6.5.2
+tornado==6.5.4
     # via
     #   ipykernel
     #   jupyter-client
@@ -112,9 +112,9 @@ traitlets==5.14.3
     #   matplotlib-inline
 typing-extensions==4.15.0
     # via ipython
-tzdata==2025.2
+tzdata==2025.3
     # via pandas
-urllib3==2.6.1
+urllib3==2.6.2
     # via requests
 wcwidth==0.2.14
     # via prompt-toolkit

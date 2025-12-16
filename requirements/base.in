@@ -1,2 +1,2 @@
-numpy>=1.20, <2.1 # numba 0.60 has a upper pin.
+numpy>=2.3
 psutil

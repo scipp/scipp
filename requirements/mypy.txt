@@ -7,9 +7,9 @@
 #
 -r docs.txt
 -r test.txt
-librt==0.7.3
+librt==0.7.4
     # via mypy
-mypy==1.19.0
+mypy==1.19.1
     # via -r mypy.in
 mypy-extensions==1.1.0
     # via mypy

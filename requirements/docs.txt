@@ -39,7 +39,7 @@ docutils==0.21.2
     #   sphinx
 fastjsonschema==2.21.2
     # via nbformat
-fonttools==4.61.0
+fonttools==4.61.1
     # via matplotlib
 gitdb==4.0.12
     # via gitpython
@@ -85,7 +85,7 @@ markupsafe==3.0.3
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.10.7
+matplotlib==3.10.8
     # via
     #   ipympl
     #   plopp
@@ -128,7 +128,9 @@ referencing==0.37.0
     # via
     #   jsonschema
     #   jsonschema-specifications
-roman-numerals-py==3.1.0
+roman-numerals==4.0.0
+    # via roman-numerals-py
+roman-numerals-py==4.0.0
     # via sphinx
 rpds-py==0.30.0
     # via
