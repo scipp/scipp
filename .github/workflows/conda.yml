@@ -39,7 +39,7 @@ jobs:
       - name: Create variant file for conda build
         run: |
           echo "python:" > dynamic_var.yaml
-            if [[ "${{ inputs.python-version }}" == "3.13" || "${{ inputs.python-version }}" == "3.14" ]]; then
+          if [[ "${{ inputs.python-version }}" == "3.13" || "${{ inputs.python-version }}" == "3.14" ]]; then
             echo "- ${{ inputs.python-version }}.* *_cp$(echo ${{ inputs.python-version }} | tr -d '.')" >> dynamic_var.yaml
           else
             echo "- ${{ inputs.python-version }}.* *_cpython" >> dynamic_var.yaml
