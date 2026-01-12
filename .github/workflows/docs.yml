@@ -60,7 +60,7 @@ jobs:
           name: html
           path: html/
 
-      - uses: JamesIves/github-pages-deploy-action@v4.7.6
+      - uses: JamesIves/github-pages-deploy-action@v4.8.0
         if: ${{ inputs.publish }}
         with:
           repository-name: scipp/scipp.github.io
