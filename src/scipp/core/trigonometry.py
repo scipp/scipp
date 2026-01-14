@@ -28,6 +28,22 @@ def sin(
     -------
     : Same type as input
         The sine values of the input.
+
+    Examples
+    --------
+    Compute sine of angles in radians:
+
+      >>> import scipp as sc
+      >>> import numpy as np
+      >>> angle = sc.array(dims=['x'], values=[0.0, np.pi/6, np.pi/4, np.pi/3, np.pi/2], unit='rad')
+      >>> sc.sin(angle)
+      <scipp.Variable> (x: 5)    float64  [dimensionless]  [0, 0.5, ..., 0.866025, 1]
+
+    The input must have angle units (rad or deg):
+
+      >>> angle_deg = sc.array(dims=['x'], values=[0.0, 30.0, 45.0, 60.0, 90.0], unit='deg')
+      >>> sc.sin(angle_deg)
+      <scipp.Variable> (x: 5)    float64  [dimensionless]  [0, 0.5, ..., 0.866025, 1]
     """
     return _call_cpp_func(_cpp.sin, x, out=out)  # type: ignore[return-value]
 
@@ -50,6 +66,18 @@ def cos(
     -------
     : Same type as input
         The cosine values of the input.
+
+    Examples
+    --------
+    Compute cosine of angles in radians:
+
+      >>> import scipp as sc
+      >>> import numpy as np
+      >>> angle = sc.array(dims=['x'], values=[0.0, np.pi/6, np.pi/3, np.pi/2], unit='rad')
+      >>> sc.cos(angle)
+      <scipp.Variable> (x: 4)    float64  [dimensionless]  [1, 0.866025, 0.5, ...]
+
+    The output is dimensionless.
     """
     return _call_cpp_func(_cpp.cos, x, out=out)  # type: ignore[return-value]
 
@@ -72,6 +100,18 @@ def tan(
     -------
     : Same type as input
         The tangent values of the input.
+
+    Examples
+    --------
+    Compute tangent of angles:
+
+      >>> import scipp as sc
+      >>> angle = sc.array(dims=['x'], values=[0.0, 30.0, 45.0], unit='deg')
+      >>> sc.tan(angle)
+      <scipp.Variable> (x: 3)    float64  [dimensionless]  [0, 0.57735, 1]
+
+    The input must have angle units (rad or deg).
+    The output is dimensionless.
     """
     return _call_cpp_func(_cpp.tan, x, out=out)  # type: ignore[return-value]
 

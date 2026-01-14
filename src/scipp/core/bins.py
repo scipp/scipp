@@ -100,12 +100,31 @@ def lookup(
 
     Examples
     --------
+    Create a lookup table from a histogram (bin-edge coordinates):
 
+      >>> import scipp as sc
       >>> x = sc.linspace(dim='x', start=0.0, stop=1.0, num=4)
       >>> vals = sc.array(dims=['x'], values=[3, 2, 1])
       >>> hist = sc.DataArray(data=vals, coords={'x': x})
-      >>> sc.lookup(hist, 'x')[sc.array(dims=['event'], values=[0.1,0.4,0.1,0.6,0.9])]
-      <scipp.Variable> (event: 5)      int64  [dimensionless]  [3, 2, ..., 2, 1]
+      >>> lut = sc.lookup(hist, 'x')
+      >>> lut[sc.array(dims=['event'], values=[0.1, 0.4, 0.6, 0.9])]
+      <scipp.Variable> (event: 4)      int64  [dimensionless]  [3, 2, 2, 1]
+
+    For point data (non-histogram), use ``mode='previous'`` for step-like lookup:
+
+      >>> x_points = sc.array(dims=['x'], values=[0.0, 0.25, 0.5, 0.75, 1.0], unit='s')
+      >>> vals_points = sc.array(dims=['x'], values=[10, 20, 30, 40, 50])
+      >>> timeseries = sc.DataArray(data=vals_points, coords={'x': x_points})
+      >>> lut_prev = sc.lookup(timeseries, 'x', mode='previous')
+      >>> query = sc.array(dims=['time'], values=[0.1, 0.3, 0.6, 0.9], unit='s')
+      >>> lut_prev[query]
+      <scipp.Variable> (time: 4)      int64  [dimensionless]  [10, 20, 30, 40]
+
+    Or use ``mode='nearest'`` for nearest-neighbor interpolation:
+
+      >>> lut_nearest = sc.lookup(timeseries, 'x', mode='nearest')
+      >>> lut_nearest[query]
+      <scipp.Variable> (time: 4)      int64  [dimensionless]  [10, 20, 30, 50]
     """
     if dim is None:
         dim = func.dim
@@ -169,6 +188,19 @@ class Bins(Generic[_O]):
     ``Bins`` is generic over the parent type, *not* the event type.
     That is, ``Variable.bins`` always returns ``Bins[Variable]`` regardless of whether
     the event list is a variable or data array.
+
+    Examples
+    --------
+    Check if data is binned:
+
+      >>> import scipp as sc
+      >>> binned = sc.data.binned_x(100, 4)
+      >>> binned.bins is not None
+      True
+
+      >>> regular = sc.array(dims=['x'], values=[1, 2, 3])
+      >>> regular.bins is None
+      True
     """
 
     def __init__(self, obj: _O) -> None:
@@ -289,7 +321,26 @@ class Bins(Generic[_O]):
 
     @property
     def coords(self) -> Coords:
-        """Coords of the bins"""
+        """Coords of the bins.
+
+        Examples
+        --------
+        Access event coordinates from binned data:
+
+          >>> import scipp as sc
+          >>> table = sc.data.table_xyz(20)
+          >>> binned = table.bin(x=3)
+          >>> binned.bins.coords  # doctest: +SKIP
+          <scipp.Dict>
+            x: <scipp.Variable> (row: 20)    float64              [m]  [...]
+            y: <scipp.Variable> (row: 20)    float64              [m]  [...]
+            z: <scipp.Variable> (row: 20)    float64              [m]  [...]
+
+        Access a specific event coordinate:
+
+          >>> 'x' in binned.bins.coords
+          True
+        """
         return _cpp._bins_view(self._data()).coords  # type: ignore[no-any-return]
 
     def assign_coords(
@@ -331,7 +382,26 @@ class Bins(Generic[_O]):
 
     @property
     def data(self) -> Variable:
-        """Data of the bins"""
+        """Data of the bins.
+
+        Examples
+        --------
+        Access event data from binned data:
+
+          >>> import scipp as sc
+          >>> binned = sc.data.binned_x(50, 3)
+          >>> binned.bins.data
+          <scipp.Variable> (x: 3)  VariableView        <no unit>  binned data: dim='row', content=Variable(dims=(row: 50), dtype=float64, unit=K)
+
+        Modify event data:
+
+          >>> modified = binned.copy()
+          >>> modified.bins.data = modified.bins.data * 2.0
+          >>> modified.bins.sum()
+          <scipp.DataArray>
+          Dimensions: Sizes[x:3, ]
+          ...
+        """
         return _cpp._bins_view(self._data()).data  # type: ignore[no-any-return]
 
     @data.setter
@@ -376,6 +446,28 @@ class Bins(Generic[_O]):
         --------
         scipp.sum:
             For summing non-bin data or summing bins.
+
+        Examples
+        --------
+        Sum events within each bin:
+
+          >>> import scipp as sc
+          >>> binned = sc.data.binned_x(100, 4)
+          >>> binned.bins.sum()
+          <scipp.DataArray>
+          Dimensions: Sizes[x:4, ]
+          Coordinates:
+          * x                         float64              [m]  (x [bin-edge])  [0.00313229, 0.250414, ..., 0.744977, 0.992259]
+          Data:
+                                    float64              [K]  (x)  [26.2165, 29.6565, 18.8663, 30.3569]
+
+        Works with multidimensional binned data:
+
+          >>> binned_2d = sc.data.binned_xy(100, 3, 2)
+          >>> binned_2d.bins.sum()
+          <scipp.DataArray>
+          Dimensions: Sizes[x:3, y:2, ]
+          ...
         """
         return _call_cpp_func(_cpp.bins_sum, self._obj)  # type: ignore[return-value]
 
@@ -406,6 +498,20 @@ class Bins(Generic[_O]):
         --------
         scipp.mean:
             For calculating the mean of non-bin data or across bins.
+
+        Examples
+        --------
+        Compute the mean of events within each bin:
+
+          >>> import scipp as sc
+          >>> binned = sc.data.binned_x(100, 4)
+          >>> binned.bins.mean()
+          <scipp.DataArray>
+          Dimensions: Sizes[x:4, ]
+          Coordinates:
+          * x                         float64              [m]  (x [bin-edge])  [0.00313229, 0.250414, ..., 0.744977, 0.992259]
+          Data:
+                                    float64              [K]  (x)  [1.04866, 1.05916, 1.04813, 1.04679]
         """
         return _call_cpp_func(_cpp.bins_mean, self._obj)  # type: ignore[return-value]
 
@@ -521,6 +627,22 @@ class Bins(Generic[_O]):
         -------
         :
             The number of elements in each of the input bins.
+
+        Examples
+        --------
+        Count the number of events in each bin:
+
+          >>> import scipp as sc
+          >>> binned = sc.data.binned_x(100, 4)
+          >>> sizes = binned.bins.size()
+          >>> sizes.dims
+          ('x',)
+          >>> sizes.data.dtype == sc.DType.int64
+          True
+
+        This is useful for checking bin populations or filtering empty bins:
+
+          >>> non_empty = binned[sizes.data > 0]
         """
         return _call_cpp_func(_cpp.bin_sizes, self._obj)  # type: ignore[return-value]
 
@@ -540,6 +662,28 @@ class Bins(Generic[_O]):
         -------
         :
             All bins along `dim` concatenated into a single bin.
+
+        Examples
+        --------
+        Concatenate all bins along a dimension:
+
+          >>> import scipp as sc
+          >>> binned = sc.data.binned_x(100, 4)
+          >>> binned.bins.size()
+          <scipp.DataArray>
+          Dimensions: Sizes[x:4, ]
+          ...
+          Data:
+                                      int64        <no unit>  (x)  [25, 28, 18, 29]
+
+          >>> concatenated = binned.bins.concat('x')
+          >>> concatenated.bins.size()
+          <scipp.DataArray>
+          Dimensions: Sizes[]
+          Data:
+                                      int64        <no unit>  ()  100
+
+        This produces a scalar result with all events in a single bin.
         """
         if isinstance(self._obj, Dataset):
             raise NotImplementedError(
@@ -574,6 +718,29 @@ class Bins(Generic[_O]):
         ------
         scipp.DTypeError
             If `other` is not binned data.
+
+        Examples
+        --------
+        Concatenate corresponding bins from two arrays element-wise:
+
+          >>> import scipp as sc
+          >>> table1 = sc.data.table_xyz(30)
+          >>> table2 = sc.data.table_xyz(20)
+          >>> x_edges = sc.linspace('x', 0.0, 1.0, 3, unit='m')
+          >>> binned1 = table1.bin(x=x_edges)
+          >>> binned2 = table2.bin(x=x_edges)
+          >>> binned1.bins.size().values
+          array([15, 15])
+          >>> binned2.bins.size().values
+          array([10, 10])
+
+        Merge bins element-wise:
+
+          >>> result = binned1.bins.concatenate(binned2)
+          >>> result.bins.size().values
+          array([25, 25])
+
+        Each bin in the result contains events from the corresponding bins in both inputs.
         """
         if out is None:
             return _call_cpp_func(_cpp.buckets.concatenate, self._obj, other)  # type: ignore[return-value]

@@ -209,6 +209,20 @@ Returned by :py:func:`DataArray.masks`)");
               Masks referenced by name.
           name:
               Name of the data array.
+
+          Examples
+          --------
+          Create a DataArray with data and a coordinate:
+
+            >>> import scipp as sc
+            >>> da = sc.DataArray(
+            ...     data=sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='K'),
+            ...     coords={'x': sc.array(dims=['x'], values=[0.1, 0.2, 0.3], unit='m')},
+            ... )
+            >>> da.dims, da.shape
+            (('x',), (3,))
+            >>> da.unit == sc.Unit('K')
+            True
           )doc");
   options.enable_function_signatures();
 
@@ -239,6 +253,25 @@ Returned by :py:func:`DataArray.masks`)");
           Dictionary of name and data pairs.
       coords:
           Dictionary of name and coord pairs.
+
+      Examples
+      --------
+      Create a Dataset with two data arrays and a shared coordinate:
+
+        >>> import scipp as sc
+        >>> ds = sc.Dataset(
+        ...     data={
+        ...         'a': sc.array(dims=['x'], values=[1, 2, 3]),
+        ...         'b': sc.array(dims=['x'], values=[4, 5, 6]),
+        ...     },
+        ...     coords={'x': sc.array(dims=['x'], values=[0.1, 0.2, 0.3], unit='m')},
+        ... )
+        >>> 'a' in ds
+        True
+        >>> ds['a'].dims
+        ('x',)
+        >>> ds.coords['x'].unit == sc.Unit('m')
+        True
       )doc");
   options.enable_function_signatures();
 

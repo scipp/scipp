@@ -45,6 +45,27 @@ def from_xarray(obj: xr.Variable | xr.DataArray | xr.Dataset) -> VariableLike:
     See Also
     --------
     scipp.compat.to_xarray
+
+    Examples
+    --------
+    Convert an xarray DataArray to a scipp DataArray:
+
+      >>> import scipp as sc
+      >>> import xarray as xr
+      >>> xr_da = xr.DataArray(
+      ...     [[1, 2, 3], [4, 5, 6]],
+      ...     dims=['x', 'y'],
+      ...     coords={'x': [10, 20], 'y': [0.1, 0.2, 0.3]},
+      ...     attrs={'units': 'm'}
+      ... )
+      >>> sc.compat.from_xarray(xr_da)  # doctest: +SKIP
+      <scipp.DataArray>
+      Dimensions: Sizes[x:2, y:3, ]
+      Coordinates:
+      * x                           int64  [dimensionless]  (x)  [10, 20]
+      * y                         float64  [dimensionless]  (y)  [0.1, 0.2, 0.3]
+      Data:
+                                    int64              [m]  (x, y)  [1, 2, ..., 5, 6]
     """
     import xarray as xr
 
@@ -91,6 +112,39 @@ def to_xarray(obj: VariableLike) -> xr.Variable | xr.DataArray | xr.Dataset:
     See Also
     --------
     scipp.compat.from_xarray
+
+    Examples
+    --------
+    Convert a scipp DataArray to an xarray DataArray:
+
+      >>> import scipp as sc
+      >>> sc_da = sc.DataArray(
+      ...     data=sc.array(dims=['x', 'y'], values=[[1, 2], [3, 4]], unit='K'),
+      ...     coords={'x': sc.array(dims=['x'], values=[0.0, 1.0], unit='m'),
+      ...             'y': sc.array(dims=['y'], values=[10, 20])}
+      ... )
+      >>> xr_da = sc.compat.to_xarray(sc_da)
+      >>> xr_da  # doctest: +SKIP
+      <xarray.DataArray (x: 2, y: 2)>
+      array([[1, 2],
+             [3, 4]])
+      Coordinates:
+        * x        (x) float64 0.0 1.0
+        * y        (y) int64 10 20
+      Attributes:
+          units:    K
+
+    Round-trip conversion preserves data:
+
+      >>> roundtrip = sc.compat.from_xarray(sc.compat.to_xarray(sc_da))  # doctest: +SKIP
+      >>> roundtrip  # doctest: +SKIP
+      <scipp.DataArray>
+      Dimensions: Sizes[x:2, y:2, ]
+      Coordinates:
+      * x                         float64              [m]  (x)  [0, 1]
+      * y                           int64  [dimensionless]  (y)  [10, 20]
+      Data:
+                                    int64              [K]  (x, y)  [1, 2, 3, 4]
     """
 
     if isinstance(obj, Variable):

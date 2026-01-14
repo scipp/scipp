@@ -33,6 +33,7 @@ public:
   Docstring &rtype(const std::string &s, const bool append = false);
   Docstring &param(const std::string &name, const std::string &about,
                    const std::string &type);
+  Docstring &examples(const std::string &s, const bool append = false);
 
   template <class T> Docstring &rtype() { return rtype(type_to_string<T>()); }
 
@@ -49,6 +50,7 @@ private:
   std::string m_seealso;
   std::string m_returns;
   std::string m_rtype;
+  std::string m_examples;
   std::string m_output;
   std::vector<std::string> m_order;
   std::map<std::string, std::pair<std::string, std::string>> m_params;

@@ -69,6 +69,31 @@ def broadcast(
     -------
     : Same type as input
         New Variable or DataArray with requested dimension labels and shape.
+
+    Examples
+    --------
+    Broadcast a scalar to an array:
+
+      >>> import scipp as sc
+      >>> x = sc.scalar(5, unit='m')
+      >>> sc.broadcast(x, sizes={'x': 3})
+      <scipp.Variable> (x: 3)      int64              [m]  [5, 5, 5]
+
+    Broadcast a 1-D array to 2-D:
+
+      >>> x = sc.array(dims=['x'], values=[1, 2, 3], unit='m')
+      >>> result = sc.broadcast(x, sizes={'x': 3, 'y': 2})
+      >>> result
+      <scipp.Variable> (x: 3, y: 2)      int64              [m]  [1, 1, ..., 3, 3]
+      >>> result.values
+      array([[1, 1],
+             [2, 2],
+             [3, 3]])
+
+    Using ``dims`` and ``shape`` instead of ``sizes``:
+
+      >>> sc.broadcast(x, dims=['x', 'y'], shape=[3, 2])
+      <scipp.Variable> (x: 3, y: 2)      int64              [m]  [1, 1, ..., 3, 3]
     """
     dims_and_shape = _parse_dims_shape_sizes(dims=dims, shape=shape, sizes=sizes)
     dims = dims_and_shape["dims"]
@@ -385,6 +410,50 @@ def transpose(
     ------
     scipp.DimensionError
         If ``dims`` are incompatible with the input data.
+
+    Examples
+    --------
+    Reverse the dimensions of a 2-D array:
+
+      >>> import scipp as sc
+      >>> data = sc.array(dims=['x', 'y'], values=[[1, 2, 3], [4, 5, 6]])
+      >>> data
+      <scipp.Variable> (x: 2, y: 3)      int64  [dimensionless]  [1, 2, ..., 5, 6]
+      >>> data.values
+      array([[1, 2, 3],
+             [4, 5, 6]])
+      >>> sc.transpose(data)
+      <scipp.Variable> (y: 3, x: 2)      int64  [dimensionless]  [1, 4, ..., 3, 6]
+      >>> sc.transpose(data).values
+      array([[1, 4],
+             [2, 5],
+             [3, 6]])
+
+    Specify the order of dimensions explicitly:
+
+      >>> data3d = sc.array(dims=['x', 'y', 'z'], values=sc.arange('t', 24).values.reshape(2, 3, 4))
+      >>> data3d.sizes
+      {'x': 2, 'y': 3, 'z': 4}
+      >>> sc.transpose(data3d, dims=['z', 'x', 'y']).sizes
+      {'z': 4, 'x': 2, 'y': 3}
+
+    With a DataArray, coordinates are preserved:
+
+      >>> da = sc.DataArray(
+      ...     data=sc.array(dims=['x', 'y'], values=[[1, 2], [3, 4]], unit='K'),
+      ...     coords={
+      ...         'x': sc.array(dims=['x'], values=[0.0, 1.0], unit='m'),
+      ...         'y': sc.array(dims=['y'], values=[10, 20], unit='s')
+      ...     }
+      ... )
+      >>> sc.transpose(da)
+      <scipp.DataArray>
+      Dimensions: Sizes[y:2, x:2, ]
+      Coordinates:
+      * x                         float64              [m]  (x)  [0, 1]
+      * y                           int64              [s]  (y)  [10, 20]
+      Data:
+                                    int64              [K]  (y, x)  [1, 3, 2, 4]
     """
     return _call_cpp_func(_cpp.transpose, x, dims if dims is not None else [])  # type: ignore[return-value]
 
