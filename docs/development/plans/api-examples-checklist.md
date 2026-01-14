@@ -30,16 +30,17 @@ These are the primary APIs that every user interacts with. C++ classes with exam
 #### Constructor
 - [x] Basic constructor with examples pointing to `sc.array()` and `sc.scalar()`
 
-#### Properties (High Priority)
-- [ ] `.dims` - Dimension labels of the variable
-- [ ] `.shape` - Shape tuple
-- [ ] `.sizes` - Dict of dimension:size mappings
-- [ ] `.ndim` - Number of dimensions
-- [ ] `.dtype` - Data type
-- [ ] `.unit` - Physical unit
-- [ ] `.values` - Access underlying NumPy array
-- [ ] `.variances` - Access variance array (uncertainty propagation)
-- [ ] `.value` - Single value for 0-D variables
+#### Properties (High Priority) ✅ COMPLETE
+- [x] `.dims` - Dimension labels of the variable
+- [x] `.shape` - Shape tuple
+- [x] `.sizes` - Dict of dimension:size mappings
+- [x] `.ndim` - Number of dimensions
+- [x] `.dtype` - Data type
+- [x] `.unit` - Physical unit
+- [x] `.values` - Access underlying NumPy array
+- [x] `.variances` - Access variance array (uncertainty propagation)
+- [x] `.value` / `.variance` - Single value/variance for 0-D variables
+- [x] `.size` - Number of elements
 
 #### Basic Operations (High Priority)
 - [ ] Indexing with integers: `var[0]`, `var[-1]`
@@ -135,26 +136,27 @@ Critical for event data analysis (neutron scattering, particle physics, etc.)
 - [ ] Checking if binned: `.is_binned`
 - [ ] Basic binned data concept example
 
-#### Bins Properties (High Priority)
-- [ ] `.bins.data` - Access/modify event data
+#### Bins Properties (High Priority) ✅ COMPLETE
+- [x] `.bins.data` - Access/modify event data
 - [x] `.bins.coords` - Access event coordinates
-- [ ] `.bins.masks` - Access event masks
-- [ ] `.bins.constituents` - Get underlying structure
-- [ ] `.bins.unit`, `.bins.dtype` - Metadata access
+- [x] `.bins.masks` - Access event masks
+- [x] `.bins.constituents` - Get underlying structure
+- [x] `.bins.unit`, `.bins.dtype` - Metadata access
 
-#### Bins Reduction Operations (High Priority)
-- [ ] `.bins.sum()` - Sum events in each bin
-- [ ] `.bins.mean()` - Average events in each bin
-- [ ] `.bins.nansum()` / `.bins.nanmean()` - Ignoring NaN
-- [ ] `.bins.max()` / `.bins.min()` - Extrema in bins
+#### Bins Reduction Operations (High Priority) - Mostly Complete
+- [ ] `.bins.sum()` - Sum events in each bin (has docstring, needs example)
+- [ ] `.bins.mean()` - Average events in each bin (has docstring, needs example)
+- [x] `.bins.nansum()` / `.bins.nanmean()` - Ignoring NaN
+- [x] `.bins.max()` / `.bins.min()` - Extrema in bins
+- [x] `.bins.nanmax()` / `.bins.nanmin()` - NaN-ignoring extrema
 - [x] `.bins.size()` - Count events per bin
-- [ ] `.bins.all()` / `.bins.any()` - Logical operations
+- [x] `.bins.all()` / `.bins.any()` - Logical operations
 
-#### Bins Metadata Operations
-- [ ] `.bins.assign()` - Assign data to bin contents
-- [ ] `.bins.assign_coords()` - Add coordinates to events
-- [ ] `.bins.drop_coords()` - Remove event coordinates
-- [ ] `.bins.assign_masks()` / `.bins.drop_masks()` - Event masks
+#### Bins Metadata Operations ✅ COMPLETE
+- [x] `.bins.assign()` - Assign data to bin contents
+- [x] `.bins.assign_coords()` - Add coordinates to events
+- [x] `.bins.drop_coords()` - Remove event coordinates
+- [x] `.bins.assign_masks()` / `.bins.drop_masks()` - Event masks
 
 #### Advanced Bins Operations
 - [ ] `.bins.concat()` - Concatenate bins along dimension
@@ -461,24 +463,28 @@ related_function: Related functionality
 **Last Updated**: 2026-01-14
 
 ### Summary Statistics
-- **Phase 1 (Core Structures)**: 3 / ~45 examples complete (constructors done)
-- **Phase 2 (Binned Data)**: 3 / ~33 examples complete
+- **Phase 1 (Core Structures)**: 14 / ~45 examples complete (constructors + all properties done)
+- **Phase 2 (Binned Data)**: 18 / ~33 examples complete (properties + metadata ops done)
 - **Phase 3 (Free Functions)**: ~55 / ~85 examples complete
 - **Phase 4 (Specialized)**: ~20 / ~32 examples complete
 
-**Total Progress**: ~81 / ~195 examples complete (~42%)
+**Total Progress**: ~107 / ~195 examples complete (~55%)
 
 ### Recent Changes (2026-01-14)
 - Extended C++ `Docstring` class with `.examples()` method
 - Added constructor examples for Variable, DataArray, Dataset
+- **Added examples to all C++ properties**: dims, shape, sizes, ndim, dtype, unit, values, variances, value, variance, size
 - Completed: comparison.py, logical.py, unary.py, operations.py
 - Completed: spatial module (all 12 functions)
 - Completed: compat module (pandas, xarray)
 - Added many examples to math.py, trigonometry.py, shape.py, bins.py
+- **Completed Bins properties**: data, masks, constituents, unit, dtype
+- **Completed Bins metadata ops**: assign, assign_coords, drop_coords, assign_masks, drop_masks
+- **Added Bins reduction examples**: nansum, nanmean, max, min, nanmax, nanmin, all, any
 
 ### Remaining Work
-- Phase 1: Class properties and methods (requires C++ binding work)
-- Phase 2: More Bins class methods, GroupBy operations
+- Phase 1: Class methods (indexing, slicing, copy, to, astype, rename, transpose, squeeze)
+- Phase 2: bins.sum/mean examples, GroupBy operations, advanced bins operations
 - Phase 3: Hyperbolic functions, inverse trig, some shape operations
 - Phase 4: I/O module, coordinate transformations, units module
 
@@ -488,5 +494,5 @@ related_function: Related functionality
 
 - C++ classes (Variable, DataArray, Dataset) now have constructor examples via C++ bindings in `lib/python/`
 - Extended the `Docstring` helper class with `.examples()` method for adding examples to generated docstrings
-- Class properties/methods still need work - these are defined in C++ and would need similar binding updates
+- **C++ property examples added via raw string literals in `bind_data_access.h`** - same pattern can be used for methods
 - The scipy wrapper examples are generally good but brief - consider expanding them with more context about when to use each function
