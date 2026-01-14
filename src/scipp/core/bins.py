@@ -312,6 +312,24 @@ class Bins(Generic[_O]):
         -------
         :
             The input with the new data assigned.
+
+        Examples
+        --------
+        Replace the data in bins with new values:
+
+          >>> import scipp as sc
+          >>> var = sc.array(dims=['event'], values=[1.0, 2.0, 3.0, 4.0], unit='K')
+          >>> table = sc.DataArray(var, coords={'x': sc.array(dims=['event'], values=[0.1, 0.3, 0.5, 0.9], unit='m')})
+          >>> binned = table.bin(x=2)
+          >>> binned.bins.sum().data
+          <scipp.Variable> (x: 2)    float64              [K]  [6, 4]
+
+        Assign scaled data:
+
+          >>> new_data = binned.bins.data * 10.0
+          >>> result = binned.bins.assign(new_data)
+          >>> result.bins.sum().data
+          <scipp.Variable> (x: 2)    float64              [K]  [60, 40]
         """
         if isinstance(self._obj, Dataset):
             raise NotImplementedError("bins.assign does not support datasets")
@@ -346,7 +364,35 @@ class Bins(Generic[_O]):
     def assign_coords(
         self, coords: IntoStrDict[Variable] | None = None, /, **coords_kwargs: Variable
     ) -> _O:
-        """Return a new object with coords assigned to bin content."""
+        """Return a new object with coords assigned to bin content.
+
+        Parameters
+        ----------
+        coords:
+            Dict of coordinates to assign.
+        **coords_kwargs:
+            Coordinates as keyword arguments.
+
+        Returns
+        -------
+        :
+            New object with the coordinates assigned.
+
+        Examples
+        --------
+        Add a derived coordinate to event data:
+
+          >>> import scipp as sc
+          >>> var = sc.array(dims=['event'], values=[1.0, 2.0, 3.0, 4.0], unit='K')
+          >>> table = sc.DataArray(var, coords={'x': sc.array(dims=['event'], values=[0.1, 0.3, 0.5, 0.9], unit='m')})
+          >>> binned = table.bin(x=2)
+          >>> new_coord = binned.bins.coords['x'] * 2.0
+          >>> result = binned.bins.assign_coords(x_doubled=new_coord)
+          >>> result.bins.coords
+          <scipp.Dict>
+            x: <scipp.Variable> (event: 4)    float64              [m]  [0.1, 0.3, 0.5, 0.9]
+            x_doubled: <scipp.Variable> (event: 4)    float64              [m]  [0.2, 0.6, 1, 1.8]
+        """
         # Shallow copy constituents
         out = self._map_constituents_data(lambda data: data)
         for name, coord in combine_dict_args(coords, coords_kwargs).items():
@@ -354,20 +400,92 @@ class Bins(Generic[_O]):
         return out
 
     def drop_coords(self, coords: str | Sequence[str]) -> _O:
-        """Return a new object with coords dropped from bin content."""
+        """Return a new object with coords dropped from bin content.
+
+        Parameters
+        ----------
+        coords:
+            Name or names of coordinates to drop.
+
+        Returns
+        -------
+        :
+            New object with the coordinates dropped.
+
+        Examples
+        --------
+        Remove an event coordinate:
+
+          >>> import scipp as sc
+          >>> var = sc.array(dims=['event'], values=[1.0, 2.0, 3.0, 4.0], unit='K')
+          >>> table = sc.DataArray(var, coords={'x': sc.array(dims=['event'], values=[0.1, 0.3, 0.5, 0.9], unit='m')})
+          >>> binned = table.bin(x=2)
+          >>> 'x' in binned.bins.coords
+          True
+
+          >>> result = binned.bins.drop_coords('x')
+          >>> 'x' in result.bins.coords
+          False
+        """
         if isinstance(self._obj, Dataset):
             raise NotImplementedError("bins.drop_coords does not support datasets")
         return self._map_constituents_data(lambda data: data.drop_coords(coords))
 
     @property
     def masks(self) -> MetaDataMap:
-        """Masks of the bins"""
+        """Masks of the bins.
+
+        Examples
+        --------
+        Access event masks from binned data:
+
+          >>> import scipp as sc
+          >>> var = sc.array(dims=['event'], values=[1.0, 2.0, 3.0, 4.0], unit='K')
+          >>> table = sc.DataArray(var, coords={'x': sc.array(dims=['event'], values=[0.1, 0.3, 0.5, 0.9], unit='m')})
+          >>> table.masks['quality'] = sc.array(dims=['event'], values=[False, True, False, False])
+          >>> binned = table.bin(x=2)
+          >>> binned.bins.masks
+          <scipp.Dict>
+            quality: <scipp.Variable> (event: 4)       bool        <no unit>  [False, True, False, False]
+
+        Check if an event mask exists:
+
+          >>> 'quality' in binned.bins.masks
+          True
+        """
         return _cpp._bins_view(self._data()).masks  # type: ignore[no-any-return]
 
     def assign_masks(
         self, masks: IntoStrDict[Variable] | None = None, /, **masks_kwargs: Variable
     ) -> _O:
-        """Return a new object with masks assigned to bin content."""
+        """Return a new object with masks assigned to bin content.
+
+        Parameters
+        ----------
+        masks:
+            Dict of masks to assign.
+        **masks_kwargs:
+            Masks as keyword arguments.
+
+        Returns
+        -------
+        :
+            New object with the masks assigned.
+
+        Examples
+        --------
+        Add a mask to event data based on coordinate values:
+
+          >>> import scipp as sc
+          >>> var = sc.array(dims=['event'], values=[1.0, 2.0, 3.0, 4.0], unit='K')
+          >>> table = sc.DataArray(var, coords={'x': sc.array(dims=['event'], values=[0.1, 0.3, 0.5, 0.9], unit='m')})
+          >>> binned = table.bin(x=2)
+          >>> mask = binned.bins.coords['x'] > sc.scalar(0.5, unit='m')
+          >>> result = binned.bins.assign_masks(high_x=mask)
+          >>> result.bins.masks
+          <scipp.Dict>
+            high_x: <scipp.Variable> (event: 4)       bool        <no unit>  [False, False, False, True]
+        """
         # Shallow copy constituents
         out = self._map_constituents_data(lambda data: data)
         for name, coord in combine_dict_args(masks, masks_kwargs).items():
@@ -375,7 +493,35 @@ class Bins(Generic[_O]):
         return out
 
     def drop_masks(self, masks: str | Sequence[str]) -> _O:
-        """Return a new object with masks dropped from bin content."""
+        """Return a new object with masks dropped from bin content.
+
+        Parameters
+        ----------
+        masks:
+            Name or names of masks to drop.
+
+        Returns
+        -------
+        :
+            New object with the masks dropped.
+
+        Examples
+        --------
+        Remove an event mask:
+
+          >>> import scipp as sc
+          >>> var = sc.array(dims=['event'], values=[1.0, 2.0, 3.0, 4.0], unit='K')
+          >>> table = sc.DataArray(var, coords={'x': sc.array(dims=['event'], values=[0.1, 0.3, 0.5, 0.9], unit='m')})
+          >>> table.masks['quality'] = sc.array(dims=['event'], values=[False, True, False, False])
+          >>> binned = table.bin(x=2)
+          >>> binned.bins.masks
+          <scipp.Dict>
+            quality: <scipp.Variable> (event: 4)       bool        <no unit>  [False, True, False, False]
+
+          >>> result = binned.bins.drop_masks('quality')
+          >>> result.bins.masks
+          <scipp.Dict>
+        """
         if isinstance(self._obj, Dataset):
             raise NotImplementedError("bins.drop_masks does not support datasets")
         return self._map_constituents_data(lambda data: data.drop_masks(masks))
@@ -411,7 +557,19 @@ class Bins(Generic[_O]):
 
     @property
     def unit(self) -> Unit | None:
-        """Unit of the bin elements"""
+        """Unit of the bin elements.
+
+        Examples
+        --------
+        Get the unit of the data in the bins:
+
+          >>> import scipp as sc
+          >>> var = sc.array(dims=['event'], values=[1.0, 2.0, 3.0, 4.0], unit='K')
+          >>> table = sc.DataArray(var, coords={'x': sc.array(dims=['event'], values=[0.1, 0.3, 0.5, 0.9], unit='m')})
+          >>> binned = table.bin(x=2)
+          >>> binned.bins.unit
+          Unit(K)
+        """
         return self.constituents['data'].unit  # type: ignore[union-attr]
 
     @unit.setter
@@ -421,7 +579,27 @@ class Bins(Generic[_O]):
 
     @property
     def dtype(self) -> DType:
-        """Data type of the bin elements."""
+        """Data type of the bin elements.
+
+        Examples
+        --------
+        Get the data type of the bin contents:
+
+          >>> import scipp as sc
+          >>> var = sc.array(dims=['event'], values=[1.0, 2.0, 3.0, 4.0], unit='K')
+          >>> table = sc.DataArray(var, coords={'x': sc.array(dims=['event'], values=[0.1, 0.3, 0.5, 0.9], unit='m')})
+          >>> binned = table.bin(x=2)
+          >>> binned.bins.dtype
+          DType('float64')
+
+        Integer data:
+
+          >>> int_var = sc.array(dims=['event'], values=[1, 2, 3, 4])
+          >>> int_table = sc.DataArray(int_var, coords={'x': sc.array(dims=['event'], values=[0.1, 0.3, 0.5, 0.9], unit='m')})
+          >>> int_binned = int_table.bin(x=2)
+          >>> int_binned.bins.dtype
+          DType('int64')
+        """
         return self.constituents['data'].dtype  # type: ignore[union-attr]
 
     @property
@@ -431,7 +609,40 @@ class Bins(Generic[_O]):
 
     @property
     def constituents(self) -> Constituents:
-        """Constituents of binned data, as supported by :py:func:`sc.bins`."""
+        """Constituents of binned data, as supported by :py:func:`sc.bins`.
+
+        Returns a dict containing:
+        - 'data': The underlying event data (Variable/DataArray)
+        - 'begin': Variable with bin start indices
+        - 'end': Variable with bin end indices
+        - 'dim': Dimension name that the binning applies to
+
+        Examples
+        --------
+        Access the underlying structure of binned data:
+
+          >>> import scipp as sc
+          >>> var = sc.array(dims=['event'], values=[1.0, 2.0, 3.0, 4.0], unit='K')
+          >>> table = sc.DataArray(var, coords={'x': sc.array(dims=['event'], values=[0.1, 0.3, 0.5, 0.9], unit='m')})
+          >>> binned = table.bin(x=2)
+          >>> parts = binned.bins.constituents
+          >>> parts['dim']
+          'event'
+          >>> parts['begin']
+          <scipp.Variable> (x: 2)      int64        <no unit>  [0, 3]
+          >>> parts['end']
+          <scipp.Variable> (x: 2)      int64        <no unit>  [3, 4]
+          >>> parts['data']
+          <scipp.DataArray>
+          Dimensions: Sizes[event:4, ]
+          ...
+
+        Reconstruct binned data from constituents:
+
+          >>> reconstructed = sc.bins(**parts)
+          >>> sc.identical(binned.data, reconstructed)
+          True
+        """
         return _call_cpp_func(_cpp.bins_constituents, self._data())  # type: ignore[return-value]
 
     def sum(self) -> _O:
@@ -483,6 +694,35 @@ class Bins(Generic[_O]):
         --------
         scipp.nansum:
             For summing non-bin data or summing bins.
+
+        Examples
+        --------
+        With NaN values in the data, ``sum`` propagates NaN while ``nansum`` ignores them:
+
+          >>> import scipp as sc
+          >>> import numpy as np
+          >>> from numpy.random import default_rng
+          >>> rng = default_rng(seed=1234)
+          >>> x = sc.array(dims=['row'], values=rng.random(50), unit='m')
+          >>> data = sc.array(dims=['row'], values=rng.random(50), unit='K')
+          >>> data.values[0] = np.nan  # inject NaN values
+          >>> data.values[10] = np.nan
+          >>> table = sc.DataArray(data, coords={'x': x})
+          >>> binned = table.bin(x=3)
+
+        Regular sum produces NaN where bins contain NaN values:
+
+          >>> binned.bins.sum()
+          <scipp.DataArray>
+          Dimensions: Sizes[x:3, ]
+          ...
+
+        Using nansum ignores NaN values:
+
+          >>> binned.bins.nansum()
+          <scipp.DataArray>
+          Dimensions: Sizes[x:3, ]
+          ...
         """
         return _call_cpp_func(_cpp.bins_nansum, self._obj)  # type: ignore[return-value]
 
@@ -527,6 +767,35 @@ class Bins(Generic[_O]):
         --------
         scipp.nanmean:
             For calculating the mean of non-bin data or across bins.
+
+        Examples
+        --------
+        With NaN values in the data, ``mean`` propagates NaN while ``nanmean`` ignores them:
+
+          >>> import scipp as sc
+          >>> import numpy as np
+          >>> from numpy.random import default_rng
+          >>> rng = default_rng(seed=1234)
+          >>> x = sc.array(dims=['row'], values=rng.random(50), unit='m')
+          >>> data = sc.array(dims=['row'], values=rng.random(50), unit='K')
+          >>> data.values[0] = np.nan  # inject NaN values
+          >>> data.values[10] = np.nan
+          >>> table = sc.DataArray(data, coords={'x': x})
+          >>> binned = table.bin(x=3)
+
+        Regular mean produces NaN where bins contain NaN values:
+
+          >>> binned.bins.mean()
+          <scipp.DataArray>
+          Dimensions: Sizes[x:3, ]
+          ...
+
+        Using nanmean ignores NaN values:
+
+          >>> binned.bins.nanmean()
+          <scipp.DataArray>
+          Dimensions: Sizes[x:3, ]
+          ...
         """
         return _call_cpp_func(_cpp.bins_nanmean, self._obj)  # type: ignore[return-value]
 
@@ -542,6 +811,17 @@ class Bins(Generic[_O]):
         --------
         scipp.max:
             For calculating the maximum of non-bin data or across bins.
+
+        Examples
+        --------
+        Find the maximum event value within each bin:
+
+          >>> import scipp as sc
+          >>> binned = sc.data.binned_x(100, 4)
+          >>> binned.bins.max()
+          <scipp.DataArray>
+          Dimensions: Sizes[x:4, ]
+          ...
         """
         return _call_cpp_func(_cpp.bins_max, self._obj)  # type: ignore[return-value]
 
@@ -557,6 +837,24 @@ class Bins(Generic[_O]):
         --------
         scipp.nanmax:
             For calculating the maximum of non-bin data or across bins.
+
+        Examples
+        --------
+        With NaN values, ``max`` propagates NaN while ``nanmax`` ignores them:
+
+          >>> import scipp as sc
+          >>> import numpy as np
+          >>> from numpy.random import default_rng
+          >>> rng = default_rng(seed=1234)
+          >>> x = sc.array(dims=['row'], values=rng.random(50), unit='m')
+          >>> data = sc.array(dims=['row'], values=rng.random(50), unit='K')
+          >>> data.values[0] = np.nan
+          >>> table = sc.DataArray(data, coords={'x': x})
+          >>> binned = table.bin(x=3)
+          >>> binned.bins.nanmax()
+          <scipp.DataArray>
+          Dimensions: Sizes[x:3, ]
+          ...
         """
         return _call_cpp_func(_cpp.bins_nanmax, self._obj)  # type: ignore[return-value]
 
@@ -572,6 +870,17 @@ class Bins(Generic[_O]):
         --------
         scipp.min:
             For calculating the minimum of non-bin data or across bins.
+
+        Examples
+        --------
+        Find the minimum event value within each bin:
+
+          >>> import scipp as sc
+          >>> binned = sc.data.binned_x(100, 4)
+          >>> binned.bins.min()
+          <scipp.DataArray>
+          Dimensions: Sizes[x:4, ]
+          ...
         """
         return _call_cpp_func(_cpp.bins_min, self._obj)  # type: ignore[return-value]
 
@@ -587,6 +896,24 @@ class Bins(Generic[_O]):
         --------
         scipp.nanmin:
             For calculating the minimum of non-bin data or across bins.
+
+        Examples
+        --------
+        With NaN values, ``min`` propagates NaN while ``nanmin`` ignores them:
+
+          >>> import scipp as sc
+          >>> import numpy as np
+          >>> from numpy.random import default_rng
+          >>> rng = default_rng(seed=1234)
+          >>> x = sc.array(dims=['row'], values=rng.random(50), unit='m')
+          >>> data = sc.array(dims=['row'], values=rng.random(50), unit='K')
+          >>> data.values[0] = np.nan
+          >>> table = sc.DataArray(data, coords={'x': x})
+          >>> binned = table.bin(x=3)
+          >>> binned.bins.nanmin()
+          <scipp.DataArray>
+          Dimensions: Sizes[x:3, ]
+          ...
         """
         return _call_cpp_func(_cpp.bins_nanmin, self._obj)  # type: ignore[return-value]
 
@@ -602,6 +929,26 @@ class Bins(Generic[_O]):
         --------
         scipp.all:
             For performing an AND of non-bin data or across bins.
+
+        Examples
+        --------
+        Check if all events in each bin satisfy a condition:
+
+          >>> import scipp as sc
+          >>> x = sc.array(dims=['row'], values=[0.1, 0.15, 0.2, 0.4, 0.5, 0.6,
+          ...                                     0.7, 0.8, 0.9], unit='m')
+          >>> data = sc.array(dims=['row'], values=[True, True, True,
+          ...                                        True, False, True,
+          ...                                        False, False, False])
+          >>> table = sc.DataArray(data, coords={'x': x})
+          >>> binned = table.bin(x=3)
+          >>> binned.bins.all()
+          <scipp.DataArray>
+          Dimensions: Sizes[x:3, ]
+          Coordinates:
+          * x                         float64              [m]  (x [bin-edge])  [0.1, 0.366667, 0.633333, 0.9]
+          Data:
+                                         bool        <no unit>  (x)  [True, False, False]
         """
         return _call_cpp_func(_cpp.bins_all, self._obj)  # type: ignore[return-value]
 
@@ -615,8 +962,28 @@ class Bins(Generic[_O]):
 
         See Also
         --------
-        scipp.all:
+        scipp.any:
             For performing an OR of non-bin data or across bins.
+
+        Examples
+        --------
+        Check if any event in each bin satisfies a condition:
+
+          >>> import scipp as sc
+          >>> x = sc.array(dims=['row'], values=[0.1, 0.15, 0.2, 0.4, 0.5, 0.6,
+          ...                                     0.7, 0.8, 0.9], unit='m')
+          >>> data = sc.array(dims=['row'], values=[True, True, True,
+          ...                                        True, False, True,
+          ...                                        False, False, False])
+          >>> table = sc.DataArray(data, coords={'x': x})
+          >>> binned = table.bin(x=3)
+          >>> binned.bins.any()
+          <scipp.DataArray>
+          Dimensions: Sizes[x:3, ]
+          Coordinates:
+          * x                         float64              [m]  (x [bin-edge])  [0.1, 0.366667, 0.633333, 0.9]
+          Data:
+                                         bool        <no unit>  (x)  [True, True, False]
         """
         return _call_cpp_func(_cpp.bins_any, self._obj)  # type: ignore[return-value]
 
@@ -640,9 +1007,10 @@ class Bins(Generic[_O]):
           >>> sizes.data.dtype == sc.DType.int64
           True
 
-        This is useful for checking bin populations or filtering empty bins:
+        This is useful for checking bin populations, for example to filter empty bins:
 
-          >>> non_empty = binned[sizes.data > 0]
+          >>> mask = sc.array(dims=sizes.dims, values=sizes.values > 0)
+          >>> non_empty = binned[mask]
         """
         return _call_cpp_func(_cpp.bin_sizes, self._obj)  # type: ignore[return-value]
 

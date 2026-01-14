@@ -455,15 +455,58 @@ void bind_common_data_properties(pybind11::class_<T, Ignored...> &c) {
         }
         return dims;
       },
-      "Dimension labels of the data (read-only).",
+      R"(Dimension labels of the data (read-only).
+
+Examples
+--------
+
+  >>> import scipp as sc
+  >>> var = sc.array(dims=['x', 'y'], values=[[1, 2], [3, 4]])
+  >>> var.dims
+  ('x', 'y')
+
+  >>> da = sc.DataArray(
+  ...     sc.array(dims=['x', 'y'], values=[[1.0, 2.0], [3.0, 4.0]]),
+  ...     coords={'x': sc.array(dims=['x'], values=[0.0, 1.0], unit='m')}
+  ... )
+  >>> da.dims
+  ('x', 'y')
+)",
       py::return_value_policy::move);
   c.def_property_readonly(
       "dim", [](const T &self) { return self.dim().name(); },
-      "The only dimension label for 1-dimensional data, raising an exception "
-      "if the data is not 1-dimensional.");
+      R"(The only dimension label for 1-dimensional data, raising an exception
+if the data is not 1-dimensional.
+
+Examples
+--------
+
+  >>> import scipp as sc
+  >>> var = sc.array(dims=['x'], values=[1, 2, 3], unit='m')
+  >>> var.dim
+  'x'
+
+  >>> da = sc.DataArray(sc.array(dims=['time'], values=[1.0, 2.0, 3.0], unit='K'))
+  >>> da.dim
+  'time'
+)");
   c.def_property_readonly(
       "ndim", [](const T &self) { return self.ndim(); },
-      "Number of dimensions of the data (read-only).",
+      R"(Number of dimensions of the data (read-only).
+
+Examples
+--------
+
+  >>> import scipp as sc
+  >>> sc.scalar(1.0).ndim
+  0
+
+  >>> sc.array(dims=['x'], values=[1, 2, 3]).ndim
+  1
+
+  >>> sc.array(dims=['x', 'y'], values=[[1, 2], [3, 4]]).ndim
+  2
+)",
       py::return_value_policy::move);
   c.def_property_readonly(
       "shape",
@@ -476,7 +519,20 @@ void bind_common_data_properties(pybind11::class_<T, Ignored...> &c) {
         }
         return shape;
       },
-      "Shape of the data (read-only).", py::return_value_policy::move);
+      R"(Shape of the data (read-only).
+
+Examples
+--------
+
+  >>> import scipp as sc
+  >>> var = sc.array(dims=['x', 'y'], values=[[1, 2, 3], [4, 5, 6]])
+  >>> var.shape
+  (2, 3)
+
+  >>> sc.scalar(1.0).shape
+  ()
+)",
+      py::return_value_policy::move);
   c.def_property_readonly(
       "sizes",
       [](const T &self) {
@@ -489,7 +545,22 @@ void bind_common_data_properties(pybind11::class_<T, Ignored...> &c) {
         }
         return sizes;
       },
-      "dict mapping dimension labels to dimension sizes (read-only).",
+      R"(dict mapping dimension labels to dimension sizes (read-only).
+
+Examples
+--------
+
+  >>> import scipp as sc
+  >>> var = sc.array(dims=['x', 'y'], values=[[1, 2, 3], [4, 5, 6]])
+  >>> var.sizes
+  {'x': 2, 'y': 3}
+
+  >>> da = sc.DataArray(
+  ...     sc.array(dims=['time', 'channel'], values=[[1, 2], [3, 4], [5, 6]])
+  ... )
+  >>> da.sizes
+  {'time': 3, 'channel': 2}
+)",
       py::return_value_policy::move);
 }
 
@@ -521,7 +592,19 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
   c.def_property_readonly(
       "dtype",
       [](const T &self) { return get_data_variable(self, "dtype").dtype(); },
-      "Data type contained in the variable.");
+      R"(Data type contained in the variable.
+
+Examples
+--------
+
+  >>> import scipp as sc
+  >>> sc.array(dims=['x'], values=[1, 2, 3]).dtype
+  DType('int64')
+  >>> sc.array(dims=['x'], values=[1.0, 2.0, 3.0]).dtype
+  DType('float64')
+  >>> sc.array(dims=['x'], values=['a', 'b', 'c']).dtype
+  DType('string')
+)");
   c.def_property(
       "unit",
       [](const T &self) {
@@ -533,27 +616,150 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
         auto var = get_data_variable(self, "unit");
         var.setUnit(unit_or_default(unit, var.dtype()));
       },
-      "Physical unit of the data.");
+      R"(Physical unit of the data.
+
+Examples
+--------
+
+  >>> import scipp as sc
+  >>> var = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='m')
+  >>> var.unit
+  Unit(m)
+  >>> var.unit = 'cm'
+  >>> var
+  <scipp.Variable> (x: 3)    float64             [cm]  [1, 2, 3]
+
+Note: Changing the unit does not convert the values.
+)");
   c.def_property("values", &as_ElementArrayView::values<T>,
                  &as_ElementArrayView::set_values<T>,
-                 "Array of values of the data.");
+                 R"(Array of values of the data.
+
+Returns a NumPy array that shares memory with the variable's data buffer.
+Modifications to the array will affect the variable and vice versa.
+
+Examples
+--------
+
+  >>> import scipp as sc
+  >>> var = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='m')
+  >>> var.values
+  array([1., 2., 3.])
+  >>> type(var.values)
+  <class 'numpy.ndarray'>
+
+Values can be modified in place:
+
+  >>> var.values[0] = 10.0
+  >>> var
+  <scipp.Variable> (x: 3)    float64              [m]  [10, 2, 3]
+
+Or replaced entirely:
+
+  >>> var.values = [4.0, 5.0, 6.0]
+  >>> var
+  <scipp.Variable> (x: 3)    float64              [m]  [4, 5, 6]
+)");
   c.def_property("variances", &as_ElementArrayView::variances<T>,
                  &as_ElementArrayView::set_variances<T>,
-                 "Array of variances of the data.");
+                 R"(Array of variances of the data.
+
+Returns a NumPy array that shares memory with the variable's variance buffer,
+or None if the variable has no variances.
+
+Examples
+--------
+
+  >>> import scipp as sc
+  >>> var = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], variances=[0.1, 0.2, 0.3])
+  >>> var.variances
+  array([0.1, 0.2, 0.3])
+
+Variables without variances return None:
+
+  >>> var_no_var = sc.array(dims=['x'], values=[1.0, 2.0, 3.0])
+  >>> var_no_var.variances is None
+  True
+
+Variances can be set or removed:
+
+  >>> var_no_var.variances = [0.01, 0.02, 0.03]
+  >>> var_no_var.variances
+  array([0.01, 0.02, 0.03])
+  >>> var_no_var.variances = None
+  >>> var_no_var.variances is None
+  True
+)");
   c.def_property(
       "value", &as_ElementArrayView::value<T>,
       &as_ElementArrayView::set_value<T>,
-      "The only value for 0-dimensional data, raising an exception if the data "
-      "is not 0-dimensional.");
+      R"(The only value for 0-dimensional data, raising an exception if the data
+is not 0-dimensional.
+
+Use this property to access or modify the single value of a scalar (0-D) variable.
+For multi-dimensional data, use :py:attr:`values` instead.
+
+Examples
+--------
+
+  >>> import scipp as sc
+  >>> scalar = sc.scalar(3.14, unit='rad')
+  >>> scalar.value
+  np.float64(3.14)
+  >>> scalar.value = 2.0
+  >>> scalar
+  <scipp.Variable> ()    float64            [rad]  2
+
+Integer scalars return numpy scalar types:
+
+  >>> int_scalar = sc.scalar(42)
+  >>> int_scalar.value
+  np.int64(42)
+)");
   c.def_property(
       "variance", &as_ElementArrayView::variance<T>,
       &as_ElementArrayView::set_variance<T>,
-      "The only variance for 0-dimensional data, raising an exception if the "
-      "data is not 0-dimensional.");
+      R"(The only variance for 0-dimensional data, raising an exception if the
+data is not 0-dimensional.
+
+Use this property to access or modify the single variance of a scalar (0-D) variable.
+Returns None if the variable has no variances.
+For multi-dimensional data, use :py:attr:`variances` instead.
+
+Examples
+--------
+
+  >>> import scipp as sc
+  >>> scalar = sc.scalar(5.0, variance=0.5)
+  >>> scalar.variance
+  np.float64(0.5)
+  >>> scalar.variance = 0.1
+  >>> scalar
+  <scipp.Variable> ()    float64  [dimensionless]  5  0.1
+
+Scalars without variance return None:
+
+  >>> sc.scalar(5.0).variance is None
+  True
+)");
   if constexpr (std::is_same_v<T, DataArray> || std::is_same_v<T, Variable>) {
     c.def_property_readonly(
         "size", [](const T &self) { return self.dims().volume(); },
-        "Number of elements in the data (read-only).",
+        R"(Number of elements in the data (read-only).
+
+This is the product of all dimension sizes.
+
+Examples
+--------
+
+  >>> import scipp as sc
+  >>> sc.array(dims=['x'], values=[1, 2, 3]).size
+  3
+  >>> sc.array(dims=['x', 'y'], values=[[1, 2, 3], [4, 5, 6]]).size
+  6
+  >>> sc.scalar(1.0).size
+  1
+)",
         py::return_value_policy::move);
   }
 }
