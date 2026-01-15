@@ -159,8 +159,6 @@ def from_pandas(
       Dimensions: Sizes[row:3, ]
       Data:
         temperature               float64              [K]  (row)  [1, 2, 3]
-      <BLANKLINE>
-      <BLANKLINE>
 
     Convert a pandas DataFrame to a Dataset, with all columns as data:
 
@@ -177,8 +175,6 @@ def from_pandas(
         temperature               float64              [K]  (row)  [273, 274, 275]
         x                         float64              [m]  (row)  [1, 2, 3]
         y                         float64              [m]  (row)  [4, 5, 6]
-      <BLANKLINE>
-      <BLANKLINE>
 
     Specify which columns should be data vs coordinates:
 
@@ -191,8 +187,6 @@ def from_pandas(
       * y                         float64              [m]  (row)  [4, 5, 6]
       Data:
         temperature               float64              [K]  (row)  [273, 274, 275]
-      <BLANKLINE>
-      <BLANKLINE>
     """  # noqa: E501
     import pandas as pd
 

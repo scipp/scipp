@@ -60,8 +60,7 @@ def groupby(
       * label                      string        <no unit>  (label)  ["a", "b"]
       Data:
                                   float64              [K]  (label)  [3, 4]
-      <BLANKLINE>
-      <BLANKLINE>
+
       >>> grouped.sum('x')
       <scipp.DataArray>
       Dimensions: Sizes[label:2, ]
@@ -69,8 +68,6 @@ def groupby(
       * label                      string        <no unit>  (label)  ["a", "b"]
       Data:
                                   float64              [K]  (label)  [9, 12]
-      <BLANKLINE>
-      <BLANKLINE>
 
     Group continuous values into bins and compute the sum:
 
@@ -86,8 +83,6 @@ def groupby(
       * x                         float64              [m]  (x [bin-edge])  [0, 1, 2, 3]
       Data:
                                   float64              [K]  (x)  [3, 7, 5]
-      <BLANKLINE>
-      <BLANKLINE>
 
     Coordinates not used for grouping are dropped if they depend on the reduced
     dimension:
