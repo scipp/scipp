@@ -351,7 +351,50 @@ scipp.Variable, scipp.Dataset
   bind_data_array(dataArray);
 
   py::class_<Dataset> dataset(m, "Dataset", R"(
-  Dict of data arrays with aligned dimensions.)");
+  Dict of data arrays with aligned dimensions.
+
+A Dataset groups multiple DataArrays that share common coordinates. Operations
+on a Dataset apply to all contained DataArrays, and slicing preserves shared
+coordinates.
+
+Examples
+--------
+Create a Dataset with shared coordinates:
+
+  >>> import scipp as sc
+  >>> ds = sc.Dataset(
+  ...     data={
+  ...         'temperature': sc.array(dims=['x'], values=[20.0, 21.0, 22.0], unit='K'),
+  ...         'pressure': sc.array(dims=['x'], values=[1.0, 1.1, 1.2], unit='bar'),
+  ...     },
+  ...     coords={'x': sc.array(dims=['x'], values=[0.0, 1.0, 2.0], unit='m')},
+  ... )
+
+Slice a Dataset by dimension (applies to all data arrays):
+
+  >>> ds['x', 0]
+  <scipp.Dataset>
+  ...
+
+  >>> ds['x', 1:3]
+  <scipp.Dataset>
+  Dimensions: Sizes[x:2, ]
+  Coordinates:
+  * x                         float64              [m]  (x)  [1, 2]
+  Data:
+    pressure                  float64            [bar]  (x)  [1.1, 1.2]
+    temperature               float64              [K]  (x)  [21, 22]
+
+Broadcasting operations across all data arrays:
+
+  >>> result = ds + ds  # adds corresponding arrays
+  >>> result['temperature'].values
+  array([40., 42., 44.])
+
+See Also
+--------
+scipp.DataArray, scipp.Variable
+)")
   options.disable_function_signatures();
   dataset.def(
       py::init([](const py::object &data, const py::object &coords) {
