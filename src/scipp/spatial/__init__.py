@@ -362,8 +362,9 @@ def rotations(
       >>> import scipp as sc
       >>> q_array = np.array([[0, 0, 0, 1], [0, 0, 1, 0]])
       >>> rots = sc.spatial.rotations(dims=['rot'], values=q_array)
-      >>> rots
-      <scipp.Variable> (rot: 2)  rotation3  [dimensionless]  [(1+0i+0j+0k), (0+0i+0j+1k)]
+      >>> rots  # doctest: +NORMALIZE_WHITESPACE
+      <scipp.Variable> (rot: 2)  rotation3  [dimensionless]
+      [(1+0i+0j+0k), (0+0i+0j+1k)]
     """
     values = np.asarray(values)
     if values.shape[-1] != 4:
