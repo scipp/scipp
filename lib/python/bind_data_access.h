@@ -703,6 +703,7 @@ Examples
 --------
 
   >>> import scipp as sc
+  >>> import numpy as np
   >>> scalar = sc.scalar(3.14, unit='rad')
   >>> scalar.value
   np.float64(3.14)
@@ -730,6 +731,7 @@ Examples
 --------
 
   >>> import scipp as sc
+  >>> import numpy as np
   >>> scalar = sc.scalar(5.0, variance=0.5)
   >>> scalar.variance
   np.float64(0.5)

@@ -50,6 +50,13 @@ def less(x: VariableLike, y: VariableLike) -> VariableLike:
       >>> y = sc.array(dims=['x'], values=[2.0, 2.0, 2.0], unit='m')
       >>> sc.less(x, y)
       <scipp.Variable> (x: 3)       bool        <no unit>  [True, False, False]
+
+    Variances are ignored in comparisons (only values are compared):
+
+      >>> a = sc.array(dims=['x'], values=[1.0, 2.0], variances=[0.1, 0.1])
+      >>> b = sc.array(dims=['x'], values=[1.0, 2.0], variances=[999.0, 999.0])
+      >>> sc.less(a, b)  # Same values, different variances -> all False
+      <scipp.Variable> (x: 2)       bool        <no unit>  [False, False]
     """
     return _call_cpp_func(_cpp.less, x, y)
 

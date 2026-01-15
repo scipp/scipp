@@ -83,6 +83,23 @@ def groupby(
       * x                         float64              [m]  (x [bin-edge])  [0, 1, 2, 3]
       Data:
                                   float64              [K]  (x)  [3, 7, 5]
+
+    Coordinates not used for grouping are dropped if they depend on the reduced
+    dimension:
+
+      >>> data = sc.DataArray(
+      ...     sc.array(dims=['x'], values=[1.0, 2.0, 3.0, 4.0], unit='K'),
+      ...     coords={
+      ...         'x': sc.arange('x', 4),
+      ...         'label': sc.array(dims=['x'], values=['a', 'b', 'a', 'b']),
+      ...         'aux': sc.array(dims=['x'], values=[10, 20, 30, 40])
+      ...     }
+      ... )
+      >>> result = sc.groupby(data, 'label').mean('x')
+      >>> 'aux' in result.coords  # 'aux' depends on 'x' which is reduced
+      False
+      >>> 'label' in result.coords  # 'label' becomes a dimension coord
+      True
     """
     if bins is None:
         return _cpp.groupby(data, group)

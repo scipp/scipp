@@ -94,6 +94,14 @@ def broadcast(
 
       >>> sc.broadcast(x, dims=['x', 'y'], shape=[3, 2])
       <scipp.Variable> (x: 3, y: 2)      int64              [m]  [1, 1, ..., 3, 3]
+
+    Broadcasting fails if the target size conflicts with an existing dimension:
+
+      >>> x = sc.array(dims=['x'], values=[1, 2, 3])
+      >>> sc.broadcast(x, sizes={'x': 5})  # doctest: +IGNORE_EXCEPTION_DETAIL
+      Traceback (most recent call last):
+          ...
+      scipp.core.DimensionError: Cannot broadcast existing dimension 'x' ...
     """
     dims_and_shape = _parse_dims_shape_sizes(dims=dims, shape=shape, sizes=sizes)
     dims = dims_and_shape["dims"]

@@ -88,6 +88,16 @@ def mean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
 
     >>> sc.mean(x, 'x')
     <scipp.Variable> (y: 3)    float64  [dimensionless]  [2.5, 3.5, 4.5]
+
+    With variances, the output variance is based on the standard error of the mean:
+
+    >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0, 4.0],
+    ...              variances=[0.1, 0.1, 0.1, 0.1], unit='m')
+    >>> result = sc.mean(x)
+    >>> result
+    <scipp.Variable> ()    float64              [m]  2.5  0.025
+    >>> result.variances is not None  # variance decreases by factor of N
+    True
     """
     return _apply_op(x, dim, _cpp.mean)  # type: ignore[return-value]
 
@@ -133,6 +143,12 @@ def nanmean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     >>> x = sc.array(dims=['x'], values=[1.0, np.nan, 3.0, 4.0])
     >>> sc.nanmean(x)
     <scipp.Variable> ()    float64  [dimensionless]  2.66667
+
+    If all values are NaN, the result is NaN:
+
+    >>> x = sc.array(dims=['x'], values=[np.nan, np.nan, np.nan])
+    >>> sc.nanmean(x)
+    <scipp.Variable> ()    float64  [dimensionless]  nan
     """
     return _apply_op(x, dim, _cpp.nanmean)  # type: ignore[return-value]
 
@@ -205,6 +221,15 @@ def median(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
         Dimensions: Sizes[]
         Data:
                                     float64  [dimensionless]  ()  4
+
+    Data with variances is not supported:
+
+        >>> import scipp as sc
+        >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], variances=[0.1, 0.1, 0.1])
+        >>> sc.median(x)  # doctest: +IGNORE_EXCEPTION_DETAIL
+        Traceback (most recent call last):
+            ...
+        scipp.core.VariancesError: 'median' does not support variances
     """
     r = _reduce_with_numpy(
         x,
