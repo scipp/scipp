@@ -105,9 +105,40 @@ Examples
   a: ('x',)
   b: ('x',)
 )");
-  c.def("__getitem__", [](const Dataset &self, const std::string &name) {
-    return self[name];
-  });
+  c.def(
+      "__getitem__",
+      [](const Dataset &self, const std::string &name) { return self[name]; },
+      py::arg("name"),
+      R"(Access a data item by name.
+
+Parameters
+----------
+name:
+    Name of the data item to access.
+
+Returns
+-------
+:
+    The DataArray with the given name.
+
+Examples
+--------
+Access a data item in the dataset:
+
+  >>> import scipp as sc
+  >>> ds = sc.Dataset({
+  ...     'a': sc.array(dims=['x'], values=[1, 2, 3]),
+  ...     'b': sc.array(dims=['x'], values=[4.0, 5.0, 6.0], unit='m')
+  ... })
+  >>> ds['a']
+  <scipp.DataArray>
+  Dimensions: Sizes[x:3, ]
+  Data:
+    a                           int64  [dimensionless]  (x)  [1, 2, 3]
+
+  >>> ds['b'].unit
+  m
+)");
   c.def("__contains__", [](const Dataset &self, const py::handle &key) {
     try {
       return self.contains(key.cast<std::string>());
@@ -310,14 +341,51 @@ Returned by :py:func:`DataArray.masks`)");
   options.enable_function_signatures();
 
   dataset
-      .def("__setitem__",
-           [](Dataset &self, const std::string &name, const Variable &data) {
-             self.setData(name, data);
-           })
-      .def("__setitem__",
-           [](Dataset &self, const std::string &name, const DataArray &data) {
-             self.setData(name, data);
-           })
+      .def(
+          "__setitem__",
+          [](Dataset &self, const std::string &name, const Variable &data) {
+            self.setData(name, data);
+          },
+          py::arg("name"), py::arg("data"),
+          R"(Set or add a data item in the dataset.
+
+Parameters
+----------
+name:
+    Name of the data item.
+data:
+    Variable or DataArray to set.
+
+Examples
+--------
+Add a new item to the dataset:
+
+  >>> import scipp as sc
+  >>> ds = sc.Dataset({'a': sc.array(dims=['x'], values=[1, 2, 3])})
+  >>> ds['b'] = sc.array(dims=['x'], values=[4.0, 5.0, 6.0])
+  >>> list(ds.keys())
+  ['a', 'b']
+
+Overwrite an existing item:
+
+  >>> ds['a'] = sc.array(dims=['x'], values=[10, 20, 30])
+  >>> ds['a'].values
+  array([10, 20, 30])
+
+Add a DataArray with coordinates:
+
+  >>> da = sc.DataArray(
+  ...     sc.array(dims=['x'], values=[7, 8, 9]),
+  ...     coords={'x': sc.arange('x', 3)}
+  ... )
+  >>> ds['c'] = da
+)")
+      .def(
+          "__setitem__",
+          [](Dataset &self, const std::string &name, const DataArray &data) {
+            self.setData(name, data);
+          },
+          py::arg("name"), py::arg("data"))
       .def("__delitem__", &Dataset::erase,
            py::call_guard<py::gil_scoped_release>())
       .def("clear", &Dataset::clear,

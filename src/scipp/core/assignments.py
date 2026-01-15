@@ -37,6 +37,24 @@ def assign_data(self: DataArray, data: Variable) -> DataArray:
     -------
     :
         ``scipp.DataArray`` with updated data.
+
+    Examples
+    --------
+    Replace the data in a DataArray while preserving coordinates:
+
+      >>> import scipp as sc
+      >>> da = sc.DataArray(
+      ...     sc.array(dims=['x'], values=[1.0, 2.0, 3.0]),
+      ...     coords={'x': sc.arange('x', 3)}
+      ... )
+      >>> new_data = sc.array(dims=['x'], values=[10.0, 20.0, 30.0], unit='m')
+      >>> da.assign(new_data)
+      <scipp.DataArray>
+      Dimensions: Sizes[x:3, ]
+      Coordinates:
+      * x                           int64  [dimensionless]  (x)  [0, 1, 2]
+      Data:
+                                  float64              [m]  (x)  [10, 20, 30]
     """
     out = self.copy(deep=False)
     out.data = data
@@ -60,6 +78,34 @@ def assign_coords(
     -------
     :
         ``scipp.DataArray`` or ``scipp.Dataset`` with updated coordinates.
+
+    Examples
+    --------
+    Add a new coordinate using keyword arguments:
+
+      >>> import scipp as sc
+      >>> da = sc.DataArray(
+      ...     sc.array(dims=['x'], values=[1.0, 2.0, 3.0]),
+      ...     coords={'x': sc.arange('x', 3)}
+      ... )
+      >>> da.assign_coords(y=sc.array(dims=['x'], values=[10, 20, 30]))
+      <scipp.DataArray>
+      Dimensions: Sizes[x:3, ]
+      Coordinates:
+      * x                           int64  [dimensionless]  (x)  [0, 1, 2]
+      * y                           int64  [dimensionless]  (x)  [10, 20, 30]
+      Data:
+                                  float64  [dimensionless]  (x)  [1, 2, 3]
+
+    Update an existing coordinate using a dict:
+
+      >>> da.assign_coords({'x': sc.arange('x', 3.0, unit='m')})
+      <scipp.DataArray>
+      Dimensions: Sizes[x:3, ]
+      Coordinates:
+      * x                         float64              [m]  (x)  [0, 1, 2]
+      Data:
+                                  float64  [dimensionless]  (x)  [1, 2, 3]
 
     """
     return _assign(self, 'coords', coords, **coords_kwargs)
@@ -85,6 +131,41 @@ def assign_masks(
     -------
     :
         ``scipp.DataArray`` with updated masks.
+
+    Examples
+    --------
+    Add a new mask using keyword arguments:
+
+      >>> import scipp as sc
+      >>> da = sc.DataArray(
+      ...     sc.array(dims=['x'], values=[1.0, 2.0, 3.0]),
+      ...     coords={'x': sc.arange('x', 3)}
+      ... )
+      >>> da.assign_masks(mask=sc.array(dims=['x'], values=[False, True, False]))
+      <scipp.DataArray>
+      Dimensions: Sizes[x:3, ]
+      Coordinates:
+      * x                           int64  [dimensionless]  (x)  [0, 1, 2]
+      Data:
+                                  float64  [dimensionless]  (x)  [1, 2, 3]
+      Masks:
+        mask                         bool        <no unit>  (x)  [False, True, False]
+
+    Add multiple masks using a dict:
+
+      >>> da.assign_masks({
+      ...     'low': da.data < sc.scalar(2.0),
+      ...     'high': da.data > sc.scalar(2.0),
+      ... })
+      <scipp.DataArray>
+      Dimensions: Sizes[x:3, ]
+      Coordinates:
+      * x                           int64  [dimensionless]  (x)  [0, 1, 2]
+      Data:
+                                  float64  [dimensionless]  (x)  [1, 2, 3]
+      Masks:
+        high                         bool        <no unit>  (x)  [False, False, True]
+        low                          bool        <no unit>  (x)  [True, False, False]
 
     """
     return _assign(self, 'masks', masks, **masks_kwargs)

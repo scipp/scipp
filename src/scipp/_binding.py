@@ -78,9 +78,26 @@ def _get(self, key, default=None):  # type: ignore[no-untyped-def]
 def bind_get() -> None:
     for cls, value_type in _dict_likes:
         method = _convert_to_method(name='get', func=_get, abbreviate_doc=False)
-        method.__doc__ = (
-            "Get the value associated with the provided key or the default value."
-        )
+        method.__doc__ = """Get the value associated with the provided key or the default value.
+
+Examples
+--------
+Access a coordinate with a default value:
+
+  >>> import scipp as sc
+  >>> da = sc.DataArray(sc.array(dims=['x'], values=[1, 2, 3]))
+  >>> da.coords.get('x')  # returns None if 'x' does not exist
+  >>> da.coords['x'] = sc.arange('x', 3)
+  >>> da.coords.get('x')
+  <scipp.Variable> (x: 3)      int64  [dimensionless]  [0, 1, 2]
+
+Access a Dataset item with a default value:
+
+  >>> ds = sc.Dataset({'a': sc.array(dims=['x'], values=[1, 2, 3])})
+  >>> ds.get('b', sc.DataArray(sc.zeros(dims=['x'], shape=[3])))
+  <scipp.DataArray>
+  ...
+"""
         method.__signature__ = _make_dict_accessor_signature(  # type: ignore[attr-defined]
             value_type
         )
@@ -161,6 +178,35 @@ def _pop(self, key, default=_NoDefault):  # type: ignore[no-untyped-def]  # see 
     Remove and return an element.
 
     If key is not found, default is returned if given, otherwise KeyError is raised.
+
+    Examples
+    --------
+    Remove a coordinate from a DataArray:
+
+      >>> import scipp as sc
+      >>> da = sc.DataArray(
+      ...     sc.array(dims=['x'], values=[1.0, 2.0, 3.0]),
+      ...     coords={'x': sc.arange('x', 3), 'y': sc.arange('x', 3) * 10}
+      ... )
+      >>> da.coords.pop('y')
+      <scipp.Variable> (x: 3)      int64  [dimensionless]  [0, 10, 20]
+      >>> 'y' in da.coords
+      False
+
+    Pop with default value for missing key:
+
+      >>> da.coords.pop('z', sc.scalar(0))
+      <scipp.Variable> ()      int64  [dimensionless]  0
+
+    Remove an item from a Dataset:
+
+      >>> ds = sc.Dataset({'a': sc.array(dims=['x'], values=[1, 2, 3]),
+      ...                  'b': sc.array(dims=['x'], values=[4, 5, 6])})
+      >>> ds.pop('b')
+      <scipp.DataArray>
+      ...
+      >>> list(ds.keys())
+      ['a']
     """
     if key not in self and default is not _NoDefault:
         return default

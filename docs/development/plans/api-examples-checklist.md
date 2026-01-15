@@ -70,11 +70,12 @@ These are the primary APIs that every user interacts with. C++ classes with exam
 - [x] `.masks` - Access mask dict
 - [x] `.name` - Data array name
 
-#### Coordinate and Mask Operations (High Priority)
-- [ ] `.assign_coords()` - Add/update coordinates
-- [ ] `.assign_masks()` - Add/update masks
-- [ ] `.drop_coords()` - Remove coordinates
-- [ ] `.drop_masks()` - Remove masks
+#### Coordinate and Mask Operations (High Priority) ✅ COMPLETE
+- [x] `.assign_coords()` - Add/update coordinates
+- [x] `.assign_masks()` - Add/update masks
+- [x] `.assign()` (assign_data) - Replace data variable
+- [x] `.drop_coords()` - Remove coordinates
+- [x] `.drop_masks()` - Remove masks
 - [ ] Working with bin-edge coordinates
 
 #### Indexing and Slicing (Critical)
@@ -98,12 +99,12 @@ These are the primary APIs that every user interacts with. C++ classes with exam
 - [x] Basic constructor: `Dataset(data={...}, coords={...})`
 - [ ] Building incrementally with dict operations
 
-#### Dict-like Interface (High Priority)
-- [ ] Accessing items: `ds['item_name']`
-- [ ] Setting items: `ds['new_item'] = data_array`
+#### Dict-like Interface (High Priority) ✅ COMPLETE
+- [x] Accessing items: `ds['item_name']`
+- [x] Setting items: `ds['new_item'] = data_array`
 - [x] `.keys()`, `.values()`, `.items()` iteration
-- [ ] `.get()` with default values
-- [ ] `.pop()` - Remove and return item
+- [x] `.get()` with default values
+- [x] `.pop()` - Remove and return item
 
 #### Operations
 - [ ] Shared coordinates across data items
@@ -183,14 +184,14 @@ Critical for event data analysis (neutron scattering, particle physics, etc.)
 - [x] Lookup with mode='nearest' for nearest-neighbor interpolation
 - [x] Handling out-of-range values with fill_value
 
-### GroupBy Operations (Mostly Complete)
+### GroupBy Operations ✅ COMPLETE
 
 **Location**: `src/scipp/core/groupby.py` for `sc.groupby()` function, C++ for class methods
 
 - [x] Basic `sc.groupby()` usage
 - [x] GroupBy with bins parameter
 - [x] Reduction operations on grouped data: `.mean()`, `.sum()`
-- [ ] `.concat()` to undo grouping (requires binned data)
+- [x] `.concat()` to concatenate bins within groups (requires binned data)
 - [ ] Working with multi-dimensional groups
 
 ---
@@ -473,14 +474,19 @@ related_function: Related functionality
 **Last Updated**: 2026-01-15
 
 ### Summary Statistics
-- **Phase 1 (Core Structures)**: 25 / ~45 examples complete (constructors, properties, Coords/Masks done)
-- **Phase 2 (Binned Data)**: 31 / ~33 examples complete (all bins operations, groupby mostly done)
+- **Phase 1 (Core Structures)**: 36 / ~45 examples complete (coord/mask operations done, dict-like done)
+- **Phase 2 (Binned Data)**: 32 / ~33 examples complete (all bins operations, groupby done)
 - **Phase 3 (Free Functions)**: ~85 / ~85 examples complete ✅
 - **Phase 4 (Specialized)**: ~25 / ~32 examples complete
 
-**Total Progress**: ~166 / ~195 examples complete (~85%)
+**Total Progress**: ~178 / ~195 examples complete (~91%)
 
-### Recent Changes (2026-01-15, Session 3)
+### Recent Changes (2026-01-15, Session 4)
+- **Completed DataArray coord/mask operations**: Added examples to `.assign_coords()`, `.assign_masks()`, `.assign()`, `.drop_coords()`, `.drop_masks()`
+- **Completed Dataset dict-like operations**: Added examples to `__getitem__`, `__setitem__`, `.get()`, `.pop()`
+- **Completed GroupBy concat**: Added example showing concatenation of binned data within groups
+
+### Changes (2026-01-15, Session 3)
 - **Completed DataArray properties**: Added examples to `.data`, `.coords`, `.masks`, `.name`
 - **Completed Coords & Masks classes**: Added examples to `.is_edges()`, `.set_aligned()`
 - **Completed Dataset dict-like interface**: Added examples to `.keys()`, `.values()`, `.items()`
@@ -516,9 +522,9 @@ related_function: Related functionality
 
 ### Remaining Work
 - Phase 1: Variable methods (indexing, slicing, copy, to, astype, rename, transpose, squeeze)
-- Phase 1: DataArray methods (assign_coords, assign_masks, drop_coords, drop_masks, indexing, slicing, groupby, bin, hist, rebin)
-- Phase 1: Dataset operations (accessing/setting items, shared coords, broadcasting, indexing)
-- Phase 2: GroupBy concat (requires binned data), multi-dimensional groups
+- Phase 1: DataArray methods (indexing, slicing, bin-edge coordinates, groupby, bin, hist, rebin)
+- Phase 1: Dataset operations (shared coords, broadcasting, indexing)
+- Phase 2: GroupBy multi-dimensional groups
 - Phase 4: Coordinate transformations, units module (predefined units and arithmetic)
 
 ---

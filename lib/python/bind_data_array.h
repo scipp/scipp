@@ -488,22 +488,121 @@ Masked values are excluded from reductions:
   <scipp.DataArray>
   ...
 )");
-  c.def("drop_coords", [](T &self, const std::string &coord_name) {
-    std::vector<scipp::Dim> coord_names_c = {scipp::Dim{coord_name}};
-    return self.drop_coords(coord_names_c);
-  });
-  c.def("drop_coords",
-        [](T &self, const std::vector<std::string> &coord_names) {
-          std::vector<scipp::Dim> coord_names_c;
-          std::transform(coord_names.begin(), coord_names.end(),
-                         std::back_inserter(coord_names_c),
-                         [](const auto &name) { return scipp::Dim{name}; });
-          return self.drop_coords(coord_names_c);
-        });
-  c.def("drop_masks", [](T &self, const std::string &mask_name) {
-    return self.drop_masks(std::vector({mask_name}));
-  });
-  c.def("drop_masks", [](T &self, std::vector<std::string> &mask_names) {
-    return self.drop_masks(mask_names);
-  });
+  c.def(
+      "drop_coords",
+      [](T &self, const std::string &coord_name) {
+        std::vector<scipp::Dim> coord_names_c = {scipp::Dim{coord_name}};
+        return self.drop_coords(coord_names_c);
+      },
+      py::arg("coord_names"),
+      R"(Return new object with specified coordinate(s) removed.
+
+Parameters
+----------
+coord_names:
+    Name of the coordinate to remove, or a list of names.
+
+Returns
+-------
+:
+    New DataArray without the specified coordinate(s).
+
+Examples
+--------
+Remove a single coordinate:
+
+  >>> import scipp as sc
+  >>> da = sc.DataArray(
+  ...     sc.array(dims=['x'], values=[1.0, 2.0, 3.0]),
+  ...     coords={
+  ...         'x': sc.arange('x', 3),
+  ...         'y': sc.array(dims=['x'], values=[10, 20, 30])
+  ...     }
+  ... )
+  >>> da.drop_coords('y')
+  <scipp.DataArray>
+  Dimensions: Sizes[x:3, ]
+  Coordinates:
+  * x                           int64  [dimensionless]  (x)  [0, 1, 2]
+  Data:
+                              float64  [dimensionless]  (x)  [1, 2, 3]
+
+Remove multiple coordinates:
+
+  >>> da.coords['z'] = sc.array(dims=['x'], values=[100, 200, 300])
+  >>> da.drop_coords(['y', 'z'])
+  <scipp.DataArray>
+  Dimensions: Sizes[x:3, ]
+  Coordinates:
+  * x                           int64  [dimensionless]  (x)  [0, 1, 2]
+  Data:
+                              float64  [dimensionless]  (x)  [1, 2, 3]
+)");
+  c.def(
+      "drop_coords",
+      [](T &self, const std::vector<std::string> &coord_names) {
+        std::vector<scipp::Dim> coord_names_c;
+        std::transform(coord_names.begin(), coord_names.end(),
+                       std::back_inserter(coord_names_c),
+                       [](const auto &name) { return scipp::Dim{name}; });
+        return self.drop_coords(coord_names_c);
+      },
+      py::arg("coord_names"));
+  c.def(
+      "drop_masks",
+      [](T &self, const std::string &mask_name) {
+        return self.drop_masks(std::vector({mask_name}));
+      },
+      py::arg("mask_names"),
+      R"(Return new object with specified mask(s) removed.
+
+Parameters
+----------
+mask_names:
+    Name of the mask to remove, or a list of names.
+
+Returns
+-------
+:
+    New DataArray without the specified mask(s).
+
+Examples
+--------
+Remove a single mask:
+
+  >>> import scipp as sc
+  >>> da = sc.DataArray(
+  ...     sc.array(dims=['x'], values=[1.0, 2.0, 3.0]),
+  ...     coords={'x': sc.arange('x', 3)},
+  ...     masks={
+  ...         'm1': sc.array(dims=['x'], values=[False, True, False]),
+  ...         'm2': sc.array(dims=['x'], values=[True, False, False])
+  ...     }
+  ... )
+  >>> da.drop_masks('m1')
+  <scipp.DataArray>
+  Dimensions: Sizes[x:3, ]
+  Coordinates:
+  * x                           int64  [dimensionless]  (x)  [0, 1, 2]
+  Data:
+                              float64  [dimensionless]  (x)  [1, 2, 3]
+  Masks:
+    m2                           bool        <no unit>  (x)  [True, False, False]
+
+Remove multiple masks:
+
+  >>> da.drop_masks(['m1', 'm2'])
+  <scipp.DataArray>
+  Dimensions: Sizes[x:3, ]
+  Coordinates:
+  * x                           int64  [dimensionless]  (x)  [0, 1, 2]
+  Data:
+                              float64  [dimensionless]  (x)  [1, 2, 3]
+)");
+  c.def(
+      "drop_masks",
+      [](T &self, std::vector<std::string> &mask_names) {
+        return self.drop_masks(mask_names);
+      },
+      py::arg("mask_names"));
 }

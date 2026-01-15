@@ -71,7 +71,44 @@ template <class T> void bind_groupby(py::module &m, const std::string &name) {
   BIND_GROUPBY_OP(groupBy, nanmin);
   BIND_GROUPBY_OP(groupBy, max);
   BIND_GROUPBY_OP(groupBy, nanmax);
-  BIND_GROUPBY_OP(groupBy, concat);
+  groupBy.def(
+      "concat",
+      [](const GroupBy<T> &self, const std::string &dim) {
+        return self.concat(Dim{dim});
+      },
+      py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+      R"(Concatenate bins within each group.
+
+This operation is used with binned data to combine events from different
+bins that belong to the same group. The dimension being reduced (specified
+by the dim argument) is removed, and the events from all bins along that
+dimension within each group are concatenated.
+
+Parameters
+----------
+dim:
+    Dimension to reduce by concatenating bins.
+
+Returns
+-------
+:
+    A DataArray or Dataset with concatenated binned data for each group.
+
+Examples
+--------
+Concatenate binned data within groups:
+
+  >>> import scipp as sc
+  >>> table = sc.data.table_xyz(100)
+  >>> binned = table.bin(x=4)
+  >>> binned.coords['group'] = sc.array(dims=['x'], values=['A', 'B', 'A', 'B'])
+  >>> grouped = binned.groupby('group').concat('x')
+  >>> grouped.sizes
+  {'group': 2}
+
+The result contains binned data where events from bins 0 and 2 (group 'A')
+are combined, and events from bins 1 and 3 (group 'B') are combined.
+)");
 }
 
 void init_groupby(py::module &m) {
