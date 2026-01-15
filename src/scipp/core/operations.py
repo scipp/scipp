@@ -455,6 +455,27 @@ def to(
     See Also
     --------
     scipp.to_unit, scipp.DataArray.astype, scipp.Variable.astype
+
+    Examples
+    --------
+    Convert units only:
+
+      >>> import scipp as sc
+      >>> var = sc.array(dims=['x'], values=[1000.0, 2000.0], unit='m')
+      >>> var.to(unit='km')
+      <scipp.Variable> (x: 2)    float64             [km]  [1, 2]
+
+    Convert dtype only:
+
+      >>> var_int = sc.array(dims=['x'], values=[1, 2, 3])
+      >>> var_int.to(dtype='float64')
+      <scipp.Variable> (x: 3)    float64  [dimensionless]  [1, 2, 3]
+
+    Convert both unit and dtype:
+
+      >>> var_m = sc.array(dims=['x'], values=[1000, 2000, 3000], unit='m')
+      >>> var_m.to(unit='km', dtype='float32')
+      <scipp.Variable> (x: 3)    float32             [km]  [1, 2, 3]
     """
     if unit is None and dtype is None:
         raise ValueError("Must provide dtype or unit or both")

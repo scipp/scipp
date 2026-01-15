@@ -78,7 +78,49 @@ void init_variable(py::module &m) {
   py::class_<Variable> variable(m, "Variable", py::dynamic_attr(),
                                 R"(
 Array of values with dimension labels and a unit, optionally including an array
-of variances.)");
+of variances.
+
+Variables support NumPy-like indexing and slicing with dimension labels:
+
+Examples
+--------
+Create a variable and access elements:
+
+  >>> import scipp as sc
+  >>> var = sc.array(dims=['x'], values=[1.0, 2.0, 3.0, 4.0], unit='m')
+
+Integer indexing for 1-D variables (implicit dimension):
+
+  >>> var[0]
+  <scipp.Variable> ()    float64              [m]  1
+  >>> var[-1]
+  <scipp.Variable> ()    float64              [m]  4
+
+Slicing:
+
+  >>> var[1:3]
+  <scipp.Variable> (x: 2)    float64              [m]  [2, 3]
+  >>> var[::2]
+  <scipp.Variable> (x: 2)    float64              [m]  [1, 3]
+
+For multi-dimensional variables, use explicit dimension labels:
+
+  >>> var2d = sc.array(dims=['x', 'y'], values=[[1, 2, 3], [4, 5, 6]])
+  >>> var2d['x', 0]
+  <scipp.Variable> (y: 3)      int64  [dimensionless]  [1, 2, 3]
+  >>> var2d['y', 1:3].sizes
+  {'x': 2, 'y': 2}
+
+Setting values via indexing:
+
+  >>> var['x', 0] = sc.scalar(10.0, unit='m')
+  >>> var
+  <scipp.Variable> (x: 4)    float64              [m]  [10, 2, 3, 4]
+
+See Also
+--------
+scipp.array, scipp.scalar
+)");
 
   bind_init(variable);
   variable.def("_rename_dims", &rename_dims<Variable>)

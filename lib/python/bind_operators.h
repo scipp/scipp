@@ -48,7 +48,27 @@ void bind_common_operators(pybind11::class_<T, Ignored...> &c) {
 
       If `deep=True` (the default), a deep copy is made. Otherwise, a shallow
       copy is made, and the returned data (and meta data) values are new views
-      of the data and meta data values of this object.)");
+      of the data and meta data values of this object.
+
+      Examples
+      --------
+
+        >>> import scipp as sc
+        >>> var = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='m')
+        >>> var_deep = var.copy()
+        >>> var_deep.values[0] = 999.0
+        >>> var
+        <scipp.Variable> (x: 3)    float64              [m]  [1, 2, 3]
+
+      Changes to deep copy do not affect the original. With shallow copy:
+
+        >>> var_shallow = var.copy(deep=False)
+        >>> var_shallow.values[0] = 999.0
+        >>> var
+        <scipp.Variable> (x: 3)    float64              [m]  [999, 2, 3]
+
+      The shallow copy shares data with the original.
+)");
   c.def(
       "__copy__", [](const T &self) { return self; },
       py::call_guard<py::gil_scoped_release>(), "Return a (shallow) copy.");
@@ -122,7 +142,31 @@ void bind_astype(py::class_<T, Ignored...> &c) {
                      If `True`, the function always returns a new object.
         :raises: If the data cannot be converted to the requested dtype.
         :return: New variable or data array with specified dtype.
-        :rtype: Union[scipp.Variable, scipp.DataArray])");
+        :rtype: Union[scipp.Variable, scipp.DataArray]
+
+        Examples
+        --------
+
+        Convert integers to floating-point:
+
+          >>> import scipp as sc
+          >>> var = sc.array(dims=['x'], values=[1, 2, 3])
+          >>> var.dtype
+          DType('int64')
+          >>> var.astype('float64')
+          <scipp.Variable> (x: 3)    float64  [dimensionless]  [1, 2, 3]
+
+        Convert floats to integers (truncates toward zero):
+
+          >>> sc.array(dims=['x'], values=[1.7, 2.3, -0.8]).astype('int64')
+          <scipp.Variable> (x: 3)      int64  [dimensionless]  [1, 2, 0]
+
+        With ``copy=False``, avoid unnecessary copies when dtype is unchanged:
+
+          >>> var_f64 = sc.array(dims=['x'], values=[1.0, 2.0], dtype='float64')
+          >>> var_f64.astype('float64', copy=False).dtype
+          DType('float64')
+)");
 }
 
 template <class Other, class T, class... Ignored>

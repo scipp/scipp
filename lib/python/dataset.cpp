@@ -137,7 +137,7 @@ Access a data item in the dataset:
     a                           int64  [dimensionless]  (x)  [1, 2, 3]
 
   >>> ds['b'].unit
-  m
+  Unit(m)
 )");
   c.def("__contains__", [](const Dataset &self, const py::handle &key) {
     try {
@@ -249,7 +249,64 @@ Returned by :py:meth:`DataArray.coords` and :py:meth:`Dataset.coords`.)");
 Returned by :py:func:`DataArray.masks`)");
 
   py::class_<DataArray> dataArray(m, "DataArray", R"(
-    Named variable with associated coords and masks.)");
+Named variable with associated coords and masks.
+
+DataArrays support rich indexing with dimension labels and coordinate values:
+
+Examples
+--------
+Create a data array and access elements:
+
+  >>> import scipp as sc
+  >>> da = sc.DataArray(
+  ...     sc.array(dims=['x'], values=[1.0, 2.0, 3.0, 4.0], unit='K'),
+  ...     coords={'x': sc.array(dims=['x'], values=[0.0, 1.0, 2.0, 3.0], unit='m')},
+  ... )
+
+Integer indexing with explicit dimension:
+
+  >>> da['x', 0]
+  <scipp.DataArray>
+  Dimensions: Sizes[]
+  Coordinates:
+  ...
+
+Slicing preserves coordinates:
+
+  >>> da['x', 1:3]
+  <scipp.DataArray>
+  Dimensions: Sizes[x:2, ]
+  Coordinates:
+  * x                         float64              [m]  (x)  [1, 2]
+  Data:
+                              float64              [K]  (x)  [2, 3]
+
+Label-based indexing with a scalar value:
+
+  >>> da['x', sc.scalar(1.0, unit='m')]
+  <scipp.DataArray>
+  Dimensions: Sizes[]
+  ...
+
+Label-based slicing with a range:
+
+  >>> da['x', sc.scalar(0.5, unit='m'):sc.scalar(2.5, unit='m')]
+  <scipp.DataArray>
+  Dimensions: Sizes[x:2, ]
+  ...
+
+Boolean masking:
+
+  >>> condition = da.coords['x'] > sc.scalar(1.0, unit='m')
+  >>> da[condition]
+  <scipp.DataArray>
+  Dimensions: Sizes[x:2, ]
+  ...
+
+See Also
+--------
+scipp.Variable, scipp.Dataset
+)");
   py::options options;
   options.disable_function_signatures();
   dataArray.def(
