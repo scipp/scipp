@@ -223,6 +223,56 @@ class Bins(Generic[_O]):
             return self._obj
 
     def __mul__(self, lut: Lookup) -> _O:
+        """
+        Scale event data using a lookup table.
+
+        Multiplies event values by the corresponding lookup table value based on
+        the event's coordinate. This is commonly used for applying corrections,
+        normalization factors, or efficiency curves to event data.
+
+        Parameters
+        ----------
+        lut:
+            Lookup table created with :py:func:`scipp.lookup`.
+
+        Returns
+        -------
+        :
+            Copy with scaled event values.
+
+        See Also
+        --------
+        scipp.lookup:
+            Create lookup tables from histograms or point data.
+
+        Examples
+        --------
+        Apply bin-dependent correction factors to event data:
+
+          >>> import scipp as sc
+          >>> table = sc.data.table_xyz(100)
+          >>> binned = table.bin(x=4)
+          >>> binned.bins.sum()
+          <scipp.DataArray>
+          Dimensions: Sizes[x:4, ]
+          ...
+
+        Create correction factors (one per bin):
+
+          >>> correction = sc.DataArray(
+          ...     data=sc.array(dims=['x'], values=[1.0, 2.0, 3.0, 4.0]),
+          ...     coords={'x': binned.coords['x']}
+          ... )
+          >>> lut = sc.lookup(correction, 'x')
+
+        Apply corrections - each event is scaled by the lookup value for its x coordinate:
+
+          >>> scaled = binned.bins * lut
+          >>> scaled.bins.sum()
+          <scipp.DataArray>
+          Dimensions: Sizes[x:4, ]
+          ...
+        """
         if isinstance(self._obj, Dataset):
             raise NotImplementedError(
                 "Multiplication of events in a dataset is not implemented"
@@ -261,6 +311,40 @@ class Bins(Generic[_O]):
         This is similar to regular label-based indexing, but considers the event-coords,
         i.e., the coord values of individual bin entries. Unlike normal label-based
         indexing this returns a copy, as a subset of events is extracted.
+
+        Parameters
+        ----------
+        key:
+            A tuple of (dimension label, selection). The selection can be:
+
+            - A 0-D Variable: selects events matching that exact label value
+            - A slice with Variable start/stop: selects events in that range
+
+        Returns
+        -------
+        :
+            DataArray with events matching the selection.
+
+        Examples
+        --------
+        Slice events by coordinate range:
+
+          >>> import scipp as sc
+          >>> binned = sc.data.binned_x(100, 4)
+          >>> binned.bins.size()
+          <scipp.DataArray>
+          Dimensions: Sizes[x:4, ]
+          ...
+
+        Extract events where x is between 0.2 and 0.5 m:
+
+          >>> start = sc.scalar(0.2, unit='m')
+          >>> stop = sc.scalar(0.5, unit='m')
+          >>> sliced = binned.bins['x', start:stop]
+          >>> sliced.bins.size()
+          <scipp.DataArray>
+          Dimensions: Sizes[]
+          ...
         """
         if isinstance(self._obj, Dataset):
             raise NotImplementedError(

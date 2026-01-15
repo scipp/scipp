@@ -158,11 +158,11 @@ Critical for event data analysis (neutron scattering, particle physics, etc.)
 - [x] `.bins.drop_coords()` - Remove event coordinates
 - [x] `.bins.assign_masks()` / `.bins.drop_masks()` - Event masks
 
-#### Advanced Bins Operations (Partially Complete)
+#### Advanced Bins Operations ✅ COMPLETE
 - [x] `.bins.concat()` - Concatenate bins along dimension
 - [x] `.bins.concatenate()` - Element-wise bin concatenation
-- [ ] Slicing bins by event coordinates: `da.bins['time', start:stop]`
-- [ ] Scaling events with lookup tables: `da.bins * lookup_table`
+- [x] Slicing bins by event coordinates: `da.bins['time', start:stop]`
+- [x] Scaling events with lookup tables: `da.bins * lookup_table`
 
 ### Binning Functions (Mostly Complete)
 
@@ -183,14 +183,14 @@ Critical for event data analysis (neutron scattering, particle physics, etc.)
 - [x] Lookup with mode='nearest' for nearest-neighbor interpolation
 - [x] Handling out-of-range values with fill_value
 
-### GroupBy Operations (~5 examples needed)
+### GroupBy Operations (Mostly Complete)
 
-**Location**: C++ classes, no examples
+**Location**: `src/scipp/core/groupby.py` for `sc.groupby()` function, C++ for class methods
 
-- [ ] Basic `.groupby()` usage
-- [ ] GroupBy with bins parameter
-- [ ] Reduction operations on grouped data: `.mean()`, `.sum()`
-- [ ] `.concat()` to undo grouping
+- [x] Basic `sc.groupby()` usage
+- [x] GroupBy with bins parameter
+- [x] Reduction operations on grouped data: `.mean()`, `.sum()`
+- [ ] `.concat()` to undo grouping (requires binned data)
 - [ ] Working with multi-dimensional groups
 
 ---
@@ -464,13 +464,17 @@ related_function: Related functionality
 
 ### Summary Statistics
 - **Phase 1 (Core Structures)**: 14 / ~45 examples complete (constructors + all properties done)
-- **Phase 2 (Binned Data)**: 25 / ~33 examples complete (properties, metadata, reductions, binning funcs done)
+- **Phase 2 (Binned Data)**: 31 / ~33 examples complete (all bins operations, groupby mostly done)
 - **Phase 3 (Free Functions)**: ~65 / ~85 examples complete
 - **Phase 4 (Specialized)**: ~20 / ~32 examples complete
 
-**Total Progress**: ~124 / ~195 examples complete (~64%)
+**Total Progress**: ~130 / ~195 examples complete (~67%)
 
 ### Recent Changes (2026-01-15)
+- **Completed `sc.groupby()` function**: Added examples for basic usage and bins parameter
+- **Completed advanced bins operations**: Added examples for:
+  - `Bins.__getitem__` (slicing by event coordinates)
+  - `Bins.__mul__` (scaling events with lookup tables)
 - **Completed trigonometry.py**: Added examples to asin, acos, atan, atan2
 - **Completed hyperbolic.py**: Added examples to sinh, cosh, tanh, asinh, acosh, atanh
 - **Completed Lookup class**: Added fill_value example (modes already covered)
@@ -490,7 +494,7 @@ related_function: Related functionality
 
 ### Remaining Work
 - Phase 1: Class methods (indexing, slicing, copy, to, astype, rename, transpose, squeeze)
-- Phase 2: GroupBy operations, advanced bins operations (concat, concatenate, slicing)
+- Phase 2: GroupBy concat (requires binned data), multi-dimensional groups
 - Phase 4: I/O module, coordinate transformations, units module
 
 ---
