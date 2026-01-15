@@ -1220,6 +1220,31 @@ def bins(
     scipp.bin:
         For creating DataArrays based on binning of coord value
         instead of explicitly given index ranges.
+
+    Examples
+    --------
+    Create bins where each element becomes its own bin (no explicit indices):
+
+      >>> import scipp as sc
+      >>> data = sc.arange('row', 5, unit='m')
+      >>> sc.bins(data=data, dim='row')
+      <scipp.Variable> (row: 5)  VariableView        <no unit>  binned data: dim='row', content=...
+
+    Create bins with explicit begin indices. Each bin contains elements from
+    its begin index up to (but not including) the next bin's begin index:
+
+      >>> data = sc.arange('row', 10, unit='m')
+      >>> begin = sc.Variable(dims=['bin'], values=[0, 3, 7], dtype='int64', unit=None)
+      >>> sc.bins(data=data, dim='row', begin=begin)
+      <scipp.Variable> (bin: 3)  VariableView        <no unit>  binned data: dim='row', content=...
+
+    Create bins with explicit begin and end indices for full control:
+
+      >>> begin = sc.Variable(dims=['bin'], values=[0, 3, 7], dtype='int64', unit=None)
+      >>> end = sc.Variable(dims=['bin'], values=[3, 7, 10], dtype='int64', unit=None)
+      >>> binned = sc.bins(data=data, dim='row', begin=begin, end=end)
+      >>> binned.sizes
+      {'bin': 3}
     """
     if any(isinstance(x, DataGroup) for x in [begin, end, data]):
         raise ValueError("`scipp.bins` does not support DataGroup arguments.")
@@ -1246,6 +1271,25 @@ def bins_like(x: VariableLike, fill_value: Variable) -> Variable:
     -------
     :
         Variable containing fill value in bins.
+
+    Examples
+    --------
+    Create bins with constant fill values matching the structure of existing binned data:
+
+      >>> import scipp as sc
+      >>> binned = sc.data.binned_x(20, 3)
+      >>> binned.bins.size()
+      <scipp.DataArray>
+      Dimensions: Sizes[x:3, ]
+      ...
+
+    Fill each bin with a different value:
+
+      >>> fill = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='K')
+      >>> sc.bins_like(binned.data, fill)
+      <scipp.Variable> (x: 3)  VariableView        <no unit>  binned data: dim='row', content=...
+
+    This is useful for initializing binned data structures with known values.
     """
     if isinstance(x, DataGroup) or isinstance(fill_value, DataGroup):  # type: ignore[unreachable]
         raise ValueError("`scipp.bins_like` does not support DataGroup arguments.")

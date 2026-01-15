@@ -164,15 +164,15 @@ Critical for event data analysis (neutron scattering, particle physics, etc.)
 - [ ] Slicing bins by event coordinates: `da.bins['time', start:stop]`
 - [ ] Scaling events with lookup tables: `da.bins * lookup_table`
 
-### Binning Functions (~5 examples needed)
+### Binning Functions (Mostly Complete)
 
-**Location**: Various, some already have examples
+**Location**: Various, most already have examples
 
-- [ ] `sc.bin()` - Create binned data from coordinates (has 4 examples - check coverage)
-- [ ] `sc.bins()` - Create binned data from indices (has docstring - add examples)
-- [ ] `sc.bins_like()` - Create bins with fill values (has docstring - add examples)
-- [ ] `sc.hist()` - Histogram data (has examples - verify completeness)
-- [ ] `sc.group()` - Group by integer labels
+- [x] `sc.bin()` - Create binned data from coordinates (has 4 examples)
+- [x] `sc.bins()` - Create binned data from indices
+- [x] `sc.bins_like()` - Create bins with fill values
+- [x] `sc.hist()` - Histogram data (has examples)
+- [x] `sc.group()` - Group by integer labels (has examples)
 
 ### Lookup Class ✅ COMPLETE
 
@@ -464,16 +464,17 @@ related_function: Related functionality
 
 ### Summary Statistics
 - **Phase 1 (Core Structures)**: 14 / ~45 examples complete (constructors + all properties done)
-- **Phase 2 (Binned Data)**: 20 / ~33 examples complete (properties + metadata ops + reductions done)
+- **Phase 2 (Binned Data)**: 25 / ~33 examples complete (properties, metadata, reductions, binning funcs done)
 - **Phase 3 (Free Functions)**: ~65 / ~85 examples complete
 - **Phase 4 (Specialized)**: ~20 / ~32 examples complete
 
-**Total Progress**: ~119 / ~195 examples complete (~61%)
+**Total Progress**: ~124 / ~195 examples complete (~64%)
 
 ### Recent Changes (2026-01-15)
 - **Completed trigonometry.py**: Added examples to asin, acos, atan, atan2
 - **Completed hyperbolic.py**: Added examples to sinh, cosh, tanh, asinh, acosh, atanh
 - **Completed Lookup class**: Added fill_value example (modes already covered)
+- **Completed binning functions**: Added examples to sc.bins() and sc.bins_like()
 
 ### Changes (2026-01-14)
 - Extended C++ `Docstring` class with `.examples()` method
