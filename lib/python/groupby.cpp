@@ -23,8 +23,32 @@ template <class T> Docstring docstring_groupby(const std::string &op) {
                " over each group, combined along "
                "the dimension specified when calling :py:func:`scipp.groupby`.")
       .rtype<T>()
-      .param("dim", "Dimension to reduce when computing the " + op + ".",
-             "Dim");
+      .param("dim", "Dimension to reduce when computing the " + op + ".", "Dim")
+      .examples(R"(
+Group by label coordinate:
+
+  >>> import scipp as sc
+  >>> da = sc.DataArray(
+  ...     sc.array(dims=['x'], values=[1.0, 2.0, 3.0, 4.0]),
+  ...     coords={'label': sc.array(dims=['x'], values=['a', 'b', 'a', 'b'])}
+  ... )
+  >>> grouped = da.groupby('label').)" +
+                op + R"(('x')
+  >>> grouped.sizes
+  {'label': 2}
+
+Group by bin edges:
+
+  >>> da = sc.DataArray(
+  ...     sc.array(dims=['x'], values=[1.0, 2.0, 3.0, 4.0]),
+  ...     coords={'x': sc.array(dims=['x'], values=[0.5, 1.5, 2.5, 3.5])}
+  ... )
+  >>> bins = sc.array(dims=['x'], values=[0.0, 2.0, 4.0])
+  >>> grouped = da.groupby('x', bins=bins).)" +
+                op + R"(('x')
+  >>> grouped.sizes
+  {'x': 2}
+)");
 }
 
 #define STRINGIFY(x) #x

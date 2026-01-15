@@ -450,10 +450,10 @@ Access individual coordinates:
   >>> da.coords['x']
   <scipp.Variable> (x: 2)    float64              [m]  [0, 1]
 
-Iterate over coordinate names:
+List coordinate names:
 
-  >>> list(da.coords)
-  ['x', 'y']
+  >>> da.coords.keys()
+  <scipp.Dict.keys {x, y}>
 )");
   c.def_property_readonly(
       "masks", [](T &self) -> decltype(auto) { return self.masks(); },
@@ -484,9 +484,8 @@ Access a mask:
 
 Masked values are excluded from reductions:
 
-  >>> da.sum()
-  <scipp.DataArray>
-  ...
+  >>> da.sum().value  # third element (3.0) is masked out
+  7.0
 )");
   c.def(
       "drop_coords",
