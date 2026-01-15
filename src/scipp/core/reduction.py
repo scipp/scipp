@@ -148,7 +148,7 @@ def nanmean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
 
     >>> x = sc.array(dims=['x'], values=[np.nan, np.nan, np.nan])
     >>> sc.nanmean(x)
-    <scipp.Variable> ()    float64  [dimensionless]  nan
+    <scipp.Variable> ()    float64  [dimensionless]  ...nan
     """
     return _apply_op(x, dim, _cpp.nanmean)  # type: ignore[return-value]
 

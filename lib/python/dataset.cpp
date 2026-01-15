@@ -394,7 +394,8 @@ Broadcasting operations across all data arrays:
 See Also
 --------
 scipp.DataArray, scipp.Variable
-)") options.disable_function_signatures();
+)");
+  options.disable_function_signatures();
   dataset.def(
       py::init([](const py::object &data, const py::object &coords) {
         if (data.is_none() && coords.is_none())
