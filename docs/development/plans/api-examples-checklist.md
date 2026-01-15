@@ -143,9 +143,9 @@ Critical for event data analysis (neutron scattering, particle physics, etc.)
 - [x] `.bins.constituents` - Get underlying structure
 - [x] `.bins.unit`, `.bins.dtype` - Metadata access
 
-#### Bins Reduction Operations (High Priority) - Mostly Complete
-- [ ] `.bins.sum()` - Sum events in each bin (has docstring, needs example)
-- [ ] `.bins.mean()` - Average events in each bin (has docstring, needs example)
+#### Bins Reduction Operations ✅ COMPLETE
+- [x] `.bins.sum()` - Sum events in each bin
+- [x] `.bins.mean()` - Average events in each bin
 - [x] `.bins.nansum()` / `.bins.nanmean()` - Ignoring NaN
 - [x] `.bins.max()` / `.bins.min()` - Extrema in bins
 - [x] `.bins.nanmax()` / `.bins.nanmin()` - NaN-ignoring extrema
@@ -158,9 +158,9 @@ Critical for event data analysis (neutron scattering, particle physics, etc.)
 - [x] `.bins.drop_coords()` - Remove event coordinates
 - [x] `.bins.assign_masks()` / `.bins.drop_masks()` - Event masks
 
-#### Advanced Bins Operations
-- [ ] `.bins.concat()` - Concatenate bins along dimension
-- [ ] `.bins.concatenate()` - Element-wise bin concatenation
+#### Advanced Bins Operations (Partially Complete)
+- [x] `.bins.concat()` - Concatenate bins along dimension
+- [x] `.bins.concatenate()` - Element-wise bin concatenation
 - [ ] Slicing bins by event coordinates: `da.bins['time', start:stop]`
 - [ ] Scaling events with lookup tables: `da.bins * lookup_table`
 
@@ -174,14 +174,14 @@ Critical for event data analysis (neutron scattering, particle physics, etc.)
 - [ ] `sc.hist()` - Histogram data (has examples - verify completeness)
 - [ ] `sc.group()` - Group by integer labels
 
-### Lookup Class (~3 examples needed)
+### Lookup Class ✅ COMPLETE
 
-**Location**: `src/scipp/core/bins.py` - Has 1 example
+**Location**: `src/scipp/core/bins.py`
 
-- [x] Basic `sc.lookup()` usage (has 1 example)
-- [ ] Using lookup with bins: `da.bins * lookup_table`
-- [ ] Lookup with mode='previous' vs mode='nearest'
-- [ ] Handling out-of-range values with fill_value
+- [x] Basic `sc.lookup()` usage (histogram bin-edge coordinates)
+- [x] Lookup with mode='previous' for step-like lookup
+- [x] Lookup with mode='nearest' for nearest-neighbor interpolation
+- [x] Handling out-of-range values with fill_value
 
 ### GroupBy Operations (~5 examples needed)
 
@@ -218,7 +218,7 @@ Critical for event data analysis (neutron scattering, particle physics, etc.)
 - [x] `sc.logical_not()` - Element-wise NOT
 - [x] `sc.logical_xor()` - Element-wise XOR
 
-### Mathematical Functions (Mostly Complete)
+### Mathematical Functions ✅ COMPLETE
 
 **Location**: `src/scipp/core/math.py`
 
@@ -229,14 +229,14 @@ Critical for event data analysis (neutron scattering, particle physics, etc.)
 - [x] `sc.exp()` / `sc.log()` / `sc.log10()`
 - [x] `sc.reciprocal()` - 1/x
 
-#### Trigonometric Functions ✅
+#### Trigonometric Functions ✅ COMPLETE
 - [x] `sc.sin()` / `sc.cos()` / `sc.tan()` (in trigonometry.py)
-- [ ] `sc.asin()` / `sc.acos()` / `sc.atan()` / `sc.atan2()`
+- [x] `sc.asin()` / `sc.acos()` / `sc.atan()` / `sc.atan2()`
 - [x] Unit requirements demonstrated (rad/deg)
 
-#### Hyperbolic Functions
-- [ ] `sc.sinh()` / `sc.cosh()` / `sc.tanh()`
-- [ ] `sc.asinh()` / `sc.acosh()` / `sc.atanh()`
+#### Hyperbolic Functions ✅ COMPLETE
+- [x] `sc.sinh()` / `sc.cosh()` / `sc.tanh()`
+- [x] `sc.asinh()` / `sc.acosh()` / `sc.atanh()`
 
 #### Vector Operations ✅
 - [x] `sc.norm()` - Vector magnitude
@@ -460,17 +460,22 @@ related_function: Related functionality
 
 ## Progress Tracking
 
-**Last Updated**: 2026-01-14
+**Last Updated**: 2026-01-15
 
 ### Summary Statistics
 - **Phase 1 (Core Structures)**: 14 / ~45 examples complete (constructors + all properties done)
-- **Phase 2 (Binned Data)**: 18 / ~33 examples complete (properties + metadata ops done)
-- **Phase 3 (Free Functions)**: ~55 / ~85 examples complete
+- **Phase 2 (Binned Data)**: 20 / ~33 examples complete (properties + metadata ops + reductions done)
+- **Phase 3 (Free Functions)**: ~65 / ~85 examples complete
 - **Phase 4 (Specialized)**: ~20 / ~32 examples complete
 
-**Total Progress**: ~107 / ~195 examples complete (~55%)
+**Total Progress**: ~119 / ~195 examples complete (~61%)
 
-### Recent Changes (2026-01-14)
+### Recent Changes (2026-01-15)
+- **Completed trigonometry.py**: Added examples to asin, acos, atan, atan2
+- **Completed hyperbolic.py**: Added examples to sinh, cosh, tanh, asinh, acosh, atanh
+- **Completed Lookup class**: Added fill_value example (modes already covered)
+
+### Changes (2026-01-14)
 - Extended C++ `Docstring` class with `.examples()` method
 - Added constructor examples for Variable, DataArray, Dataset
 - **Added examples to all C++ properties**: dims, shape, sizes, ndim, dtype, unit, values, variances, value, variance, size
@@ -484,8 +489,7 @@ related_function: Related functionality
 
 ### Remaining Work
 - Phase 1: Class methods (indexing, slicing, copy, to, astype, rename, transpose, squeeze)
-- Phase 2: bins.sum/mean examples, GroupBy operations, advanced bins operations
-- Phase 3: Hyperbolic functions, inverse trig, some shape operations
+- Phase 2: GroupBy operations, advanced bins operations (concat, concatenate, slicing)
 - Phase 4: I/O module, coordinate transformations, units module
 
 ---

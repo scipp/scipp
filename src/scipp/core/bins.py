@@ -125,6 +125,15 @@ def lookup(
       >>> lut_nearest = sc.lookup(timeseries, 'x', mode='nearest')
       >>> lut_nearest[query]
       <scipp.Variable> (time: 4)      int64  [dimensionless]  [10, 20, 30, 50]
+
+    Use ``fill_value`` to specify the value for out-of-range points:
+
+      >>> x = sc.linspace(dim='x', start=0.0, stop=1.0, num=4)
+      >>> vals = sc.array(dims=['x'], values=[3.0, 2.0, 1.0])
+      >>> hist = sc.DataArray(data=vals, coords={'x': x})
+      >>> lut = sc.lookup(hist, 'x', fill_value=sc.scalar(-1.0))
+      >>> lut[sc.array(dims=['event'], values=[-0.5, 0.5, 1.5])]
+      <scipp.Variable> (event: 3)    float64  [dimensionless]  [-1, 2, -1]
     """
     if dim is None:
         dim = func.dim
