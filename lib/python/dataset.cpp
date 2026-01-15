@@ -62,15 +62,49 @@ void bind_dataset_view_methods(py::class_<Dataset, Ignored...> &c) {
   c.def(
       "keys", [](Dataset &self) { return keys_view(self); },
       py::return_value_policy::move, py::keep_alive<0, 1>(),
-      R"(view on self's keys)");
+      R"(View of the Dataset's data array names.
+
+Examples
+--------
+
+  >>> import scipp as sc
+  >>> ds = sc.Dataset({'a': sc.array(dims=['x'], values=[1, 2]),
+  ...                  'b': sc.array(dims=['x'], values=[3, 4])})
+  >>> list(ds.keys())
+  ['a', 'b']
+)");
   c.def(
       "values", [](Dataset &self) { return values_view(self); },
       py::return_value_policy::move, py::keep_alive<0, 1>(),
-      R"(view on self's values)");
+      R"(View of the Dataset's data arrays.
+
+Examples
+--------
+
+  >>> import scipp as sc
+  >>> ds = sc.Dataset({'a': sc.array(dims=['x'], values=[1, 2]),
+  ...                  'b': sc.array(dims=['x'], values=[3, 4])})
+  >>> for da in ds.values():
+  ...     print(da.dims)
+  ('x',)
+  ('x',)
+)");
   c.def(
       "items", [](Dataset &self) { return items_view(self); },
       py::return_value_policy::move, py::keep_alive<0, 1>(),
-      R"(view on self's items)");
+      R"(View of the Dataset's (name, data array) pairs.
+
+Examples
+--------
+
+  >>> import scipp as sc
+  >>> ds = sc.Dataset({'a': sc.array(dims=['x'], values=[1, 2]),
+  ...                  'b': sc.array(dims=['x'], values=[3, 4])})
+  >>> for name, da in ds.items():
+  ...     print(f'{name}: {da.dims}')
+  a: ('x',)
+  b: ('x',)
+)");
   c.def("__getitem__", [](const Dataset &self, const std::string &name) {
     return self[name];
   });

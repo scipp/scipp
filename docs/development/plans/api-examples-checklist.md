@@ -64,11 +64,11 @@ These are the primary APIs that every user interacts with. C++ classes with exam
 - [ ] From Variable with coordinates
 - [ ] Adding metadata after creation
 
-#### Properties (High Priority)
-- [ ] `.data` - Access/modify data variable
-- [ ] `.coords` - Access coordinate dict
-- [ ] `.masks` - Access mask dict
-- [ ] `.name` - Data array name
+#### Properties (High Priority) ✅ COMPLETE
+- [x] `.data` - Access/modify data variable
+- [x] `.coords` - Access coordinate dict
+- [x] `.masks` - Access mask dict
+- [x] `.name` - Data array name
 
 #### Coordinate and Mask Operations (High Priority)
 - [ ] `.assign_coords()` - Add/update coordinates
@@ -101,7 +101,7 @@ These are the primary APIs that every user interacts with. C++ classes with exam
 #### Dict-like Interface (High Priority)
 - [ ] Accessing items: `ds['item_name']`
 - [ ] Setting items: `ds['new_item'] = data_array`
-- [ ] `.keys()`, `.values()`, `.items()` iteration
+- [x] `.keys()`, `.values()`, `.items()` iteration
 - [ ] `.get()` with default values
 - [ ] `.pop()` - Remove and return item
 
@@ -110,16 +110,16 @@ These are the primary APIs that every user interacts with. C++ classes with exam
 - [ ] Operations that broadcast across items
 - [ ] Indexing/slicing datasets
 
-### Coords & Masks Classes (~5 examples needed)
+### Coords & Masks Classes ✅ COMPLETE
 
-**Location**: `src/scipp/core/cpp_classes.pyi` (C++ classes)
+**Location**: `lib/python/bind_data_array.h` (C++ classes)
 
-- [ ] Accessing coords: `da.coords['x']`
-- [ ] Setting coords: `da.coords['x'] = ...`
-- [ ] Checking for coordinates: `'x' in da.coords`
-- [ ] `.is_edges()` - Check if coord is bin edges
-- [ ] `.set_aligned()` - Set coordinate alignment flag
-- [ ] Similar operations for masks
+- [x] Accessing coords: `da.coords['x']` (in DataArray.coords examples)
+- [x] Setting coords: `da.coords['x'] = ...` (in DataArray.masks examples)
+- [x] Checking for coordinates: `'x' in da.coords` (in DataArray.masks examples)
+- [x] `.is_edges()` - Check if coord is bin edges
+- [x] `.set_aligned()` - Set coordinate alignment flag
+- [x] Similar operations for masks (in DataArray.masks examples)
 
 ---
 
@@ -473,14 +473,19 @@ related_function: Related functionality
 **Last Updated**: 2026-01-15
 
 ### Summary Statistics
-- **Phase 1 (Core Structures)**: 14 / ~45 examples complete (constructors + all properties done)
+- **Phase 1 (Core Structures)**: 25 / ~45 examples complete (constructors, properties, Coords/Masks done)
 - **Phase 2 (Binned Data)**: 31 / ~33 examples complete (all bins operations, groupby mostly done)
 - **Phase 3 (Free Functions)**: ~85 / ~85 examples complete ✅
 - **Phase 4 (Specialized)**: ~25 / ~32 examples complete
 
-**Total Progress**: ~155 / ~195 examples complete (~79%)
+**Total Progress**: ~166 / ~195 examples complete (~85%)
 
-### Recent Changes (2026-01-15, Session 2)
+### Recent Changes (2026-01-15, Session 3)
+- **Completed DataArray properties**: Added examples to `.data`, `.coords`, `.masks`, `.name`
+- **Completed Coords & Masks classes**: Added examples to `.is_edges()`, `.set_aligned()`
+- **Completed Dataset dict-like interface**: Added examples to `.keys()`, `.values()`, `.items()`
+
+### Changes (2026-01-15, Session 2)
 - **Completed I/O module**: Added examples to `sc.io.save_hdf5()` and `sc.io.load_hdf5()`
 - **Completed arithmetic.py**: Added examples to `sc.add()`, `sc.multiply()`, `sc.negative()`, `sc.subtract()`
 - **Completed reduction.py**: Added examples to `sc.sum()`, `sc.nansum()`, `sc.mean()`, `sc.nanmean()`, `sc.min()`, `sc.max()`, `sc.nanmin()`, `sc.nanmax()`, `sc.all()`, `sc.any()`
@@ -510,7 +515,9 @@ related_function: Related functionality
 - **Added Bins reduction examples**: nansum, nanmean, max, min, nanmax, nanmin, all, any
 
 ### Remaining Work
-- Phase 1: Class methods (indexing, slicing, copy, to, astype, rename, transpose, squeeze)
+- Phase 1: Variable methods (indexing, slicing, copy, to, astype, rename, transpose, squeeze)
+- Phase 1: DataArray methods (assign_coords, assign_masks, drop_coords, drop_masks, indexing, slicing, groupby, bin, hist, rebin)
+- Phase 1: Dataset operations (accessing/setting items, shared coords, broadcasting, indexing)
 - Phase 2: GroupBy concat (requires binned data), multi-dimensional groups
 - Phase 4: Coordinate transformations, units module (predefined units and arithmetic)
 
