@@ -265,11 +265,8 @@ Create a data array and access elements:
 
 Integer indexing with explicit dimension:
 
-  >>> da['x', 0]
-  <scipp.DataArray>
-  Dimensions: Sizes[]
-  Coordinates:
-  ...
+  >>> da['x', 0].value
+  1.0
 
 Slicing preserves coordinates:
 
@@ -283,25 +280,19 @@ Slicing preserves coordinates:
 
 Label-based indexing with a scalar value:
 
-  >>> da['x', sc.scalar(1.0, unit='m')]
-  <scipp.DataArray>
-  Dimensions: Sizes[]
-  ...
+  >>> da['x', sc.scalar(1.0, unit='m')].value
+  2.0
 
 Label-based slicing with a range:
 
-  >>> da['x', sc.scalar(0.5, unit='m'):sc.scalar(2.5, unit='m')]
-  <scipp.DataArray>
-  Dimensions: Sizes[x:2, ]
-  ...
+  >>> da['x', sc.scalar(0.5, unit='m'):sc.scalar(2.5, unit='m')].sizes
+  {'x': 2}
 
 Boolean masking:
 
   >>> condition = da.coords['x'] > sc.scalar(1.0, unit='m')
-  >>> da[condition]
-  <scipp.DataArray>
-  Dimensions: Sizes[x:2, ]
-  ...
+  >>> da[condition].sizes
+  {'x': 2}
 
 See Also
 --------
@@ -372,9 +363,8 @@ Create a Dataset with shared coordinates:
 
 Slice a Dataset by dimension (applies to all data arrays):
 
-  >>> ds['x', 0]
-  <scipp.Dataset>
-  ...
+  >>> ds['x', 0].sizes
+  {}
 
   >>> ds['x', 1:3]
   <scipp.Dataset>

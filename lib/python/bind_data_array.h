@@ -441,10 +441,6 @@ Examples
   ...         'y': sc.array(dims=['y'], values=[10.0, 20.0], unit='s')
   ...     }
   ... )
-  >>> da.coords
-  <scipp.Dict>
-  ...
-
 Access individual coordinates:
 
   >>> da.coords['x']
@@ -468,9 +464,6 @@ Examples
   >>> import scipp as sc
   >>> da = sc.DataArray(sc.array(dims=['x'], values=[1.0, 2.0, 3.0, 4.0]))
   >>> da.masks['outliers'] = sc.array(dims=['x'], values=[False, False, True, False])
-  >>> da.masks
-  <scipp.Dict>
-  ...
 
 Check if a mask exists:
 

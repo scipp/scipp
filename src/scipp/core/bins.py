@@ -252,10 +252,8 @@ class Bins(Generic[_O]):
           >>> import scipp as sc
           >>> table = sc.data.table_xyz(100)
           >>> binned = table.bin(x=4)
-          >>> binned.bins.sum()
-          <scipp.DataArray>
-          Dimensions: Sizes[x:4, ]
-          ...
+          >>> binned.bins.sum().sizes
+          {'x': 4}
 
         Create correction factors (one per bin):
 
@@ -268,10 +266,8 @@ class Bins(Generic[_O]):
         Apply corrections - each event is scaled by the lookup value for its x coordinate:
 
           >>> scaled = binned.bins * lut
-          >>> scaled.bins.sum()
-          <scipp.DataArray>
-          Dimensions: Sizes[x:4, ]
-          ...
+          >>> scaled.bins.sum().sizes
+          {'x': 4}
         """  # noqa: E501
         if isinstance(self._obj, Dataset):
             raise NotImplementedError(
@@ -331,20 +327,16 @@ class Bins(Generic[_O]):
 
           >>> import scipp as sc
           >>> binned = sc.data.binned_x(100, 4)
-          >>> binned.bins.size()
-          <scipp.DataArray>
-          Dimensions: Sizes[x:4, ]
-          ...
+          >>> binned.bins.size().sizes
+          {'x': 4}
 
         Extract events where x is between 0.2 and 0.5 m:
 
           >>> start = sc.scalar(0.2, unit='m')
           >>> stop = sc.scalar(0.5, unit='m')
           >>> sliced = binned.bins['x', start:stop]
-          >>> sliced.bins.size()
-          <scipp.DataArray>
-          Dimensions: Sizes[]
-          ...
+          >>> sliced.bins.size().sizes
+          {}
         """
         if isinstance(self._obj, Dataset):
             raise NotImplementedError(
@@ -636,10 +628,8 @@ class Bins(Generic[_O]):
 
           >>> modified = binned.copy()
           >>> modified.bins.data = modified.bins.data * 2.0
-          >>> modified.bins.sum()
-          <scipp.DataArray>
-          Dimensions: Sizes[x:3, ]
-          ...
+          >>> modified.bins.sum().sizes
+          {'x': 3}
         """  # noqa: E501
         return _cpp._bins_view(self._data()).data  # type: ignore[no-any-return]
 
@@ -725,10 +715,8 @@ class Bins(Generic[_O]):
           <scipp.Variable> (x: 2)      int64        <no unit>  [0, 3]
           >>> parts['end']
           <scipp.Variable> (x: 2)      int64        <no unit>  [3, 4]
-          >>> parts['data']
-          <scipp.DataArray>
-          Dimensions: Sizes[event:4, ]
-          ...
+          >>> parts['data'].sizes
+          {'event': 4}
 
         Reconstruct binned data from constituents:
 
@@ -768,10 +756,8 @@ class Bins(Generic[_O]):
         Works with multidimensional binned data:
 
           >>> binned_2d = sc.data.binned_xy(100, 3, 2)
-          >>> binned_2d.bins.sum()
-          <scipp.DataArray>
-          Dimensions: Sizes[x:3, y:2, ]
-          ...
+          >>> binned_2d.bins.sum().sizes
+          {'x': 3, 'y': 2}
         """  # noqa: E501
         return _call_cpp_func(_cpp.bins_sum, self._obj)  # type: ignore[return-value]
 
@@ -805,17 +791,13 @@ class Bins(Generic[_O]):
 
         Regular sum produces NaN where bins contain NaN values:
 
-          >>> binned.bins.sum()
-          <scipp.DataArray>
-          Dimensions: Sizes[x:3, ]
-          ...
+          >>> binned.bins.sum().sizes
+          {'x': 3}
 
         Using nansum ignores NaN values:
 
-          >>> binned.bins.nansum()
-          <scipp.DataArray>
-          Dimensions: Sizes[x:3, ]
-          ...
+          >>> binned.bins.nansum().sizes
+          {'x': 3}
         """  # noqa: E501
         return _call_cpp_func(_cpp.bins_nansum, self._obj)  # type: ignore[return-value]
 
@@ -878,17 +860,13 @@ class Bins(Generic[_O]):
 
         Regular mean produces NaN where bins contain NaN values:
 
-          >>> binned.bins.mean()
-          <scipp.DataArray>
-          Dimensions: Sizes[x:3, ]
-          ...
+          >>> binned.bins.mean().sizes
+          {'x': 3}
 
         Using nanmean ignores NaN values:
 
-          >>> binned.bins.nanmean()
-          <scipp.DataArray>
-          Dimensions: Sizes[x:3, ]
-          ...
+          >>> binned.bins.nanmean().sizes
+          {'x': 3}
         """  # noqa: E501
         return _call_cpp_func(_cpp.bins_nanmean, self._obj)  # type: ignore[return-value]
 
@@ -911,10 +889,8 @@ class Bins(Generic[_O]):
 
           >>> import scipp as sc
           >>> binned = sc.data.binned_x(100, 4)
-          >>> binned.bins.max()
-          <scipp.DataArray>
-          Dimensions: Sizes[x:4, ]
-          ...
+          >>> binned.bins.max().sizes
+          {'x': 4}
         """
         return _call_cpp_func(_cpp.bins_max, self._obj)  # type: ignore[return-value]
 
@@ -944,10 +920,8 @@ class Bins(Generic[_O]):
           >>> data.values[0] = np.nan
           >>> table = sc.DataArray(data, coords={'x': x})
           >>> binned = table.bin(x=3)
-          >>> binned.bins.nanmax()
-          <scipp.DataArray>
-          Dimensions: Sizes[x:3, ]
-          ...
+          >>> binned.bins.nanmax().sizes
+          {'x': 3}
         """
         return _call_cpp_func(_cpp.bins_nanmax, self._obj)  # type: ignore[return-value]
 
@@ -970,10 +944,8 @@ class Bins(Generic[_O]):
 
           >>> import scipp as sc
           >>> binned = sc.data.binned_x(100, 4)
-          >>> binned.bins.min()
-          <scipp.DataArray>
-          Dimensions: Sizes[x:4, ]
-          ...
+          >>> binned.bins.min().sizes
+          {'x': 4}
         """
         return _call_cpp_func(_cpp.bins_min, self._obj)  # type: ignore[return-value]
 
@@ -1003,10 +975,8 @@ class Bins(Generic[_O]):
           >>> data.values[0] = np.nan
           >>> table = sc.DataArray(data, coords={'x': x})
           >>> binned = table.bin(x=3)
-          >>> binned.bins.nanmin()
-          <scipp.DataArray>
-          Dimensions: Sizes[x:3, ]
-          ...
+          >>> binned.bins.nanmin().sizes
+          {'x': 3}
         """
         return _call_cpp_func(_cpp.bins_nanmin, self._obj)  # type: ignore[return-value]
 
@@ -1130,19 +1100,12 @@ class Bins(Generic[_O]):
 
           >>> import scipp as sc
           >>> binned = sc.data.binned_x(100, 4)
-          >>> binned.bins.size()
-          <scipp.DataArray>
-          Dimensions: Sizes[x:4, ]
-          ...
-          Data:
-                                      int64        <no unit>  (x)  [25, 28, 18, 29]
+          >>> binned.bins.size().sizes
+          {'x': 4}
 
           >>> concatenated = binned.bins.concat('x')
-          >>> concatenated.bins.size()
-          <scipp.DataArray>
-          Dimensions: Sizes[]
-          Data:
-                                      int64        <no unit>  ()  100
+          >>> concatenated.bins.size().sizes
+          {}
 
         This produces a scalar result with all events in a single bin.
         """
@@ -1362,10 +1325,8 @@ def bins_like(x: VariableLike, fill_value: Variable) -> Variable:
 
       >>> import scipp as sc
       >>> binned = sc.data.binned_x(20, 3)
-      >>> binned.bins.size()
-      <scipp.DataArray>
-      Dimensions: Sizes[x:3, ]
-      ...
+      >>> binned.bins.size().sizes
+      {'x': 3}
 
     Fill each bin with a different value:
 
