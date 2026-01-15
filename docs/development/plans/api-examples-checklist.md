@@ -248,22 +248,32 @@ Critical for event data analysis (neutron scattering, particle physics, etc.)
 - [x] `sc.midpoints()` - Bin edge to center conversion
 - [x] `sc.nan_to_num()` - Replace NaN/inf values
 
-### Arithmetic Operations (~3 examples needed)
+### Arithmetic Operations ✅ COMPLETE
 
-**Location**: `src/scipp/core/arithmetic.py` - Has **3 examples**, verify coverage
+**Location**: `src/scipp/core/arithmetic.py`
 
-- [x] Basic arithmetic examples exist
-- [ ] Verify unit arithmetic examples
-- [ ] Verify variance propagation examples
+- [x] `sc.add()` - Element-wise addition with unit example
+- [x] `sc.subtract()` - Element-wise subtraction
+- [x] `sc.multiply()` - Element-wise multiplication with unit example
+- [x] `sc.negative()` - Element-wise negation
+- [x] `sc.divide()` - True division (was already done)
+- [x] `sc.floor_divide()` - Floor division (was already done)
+- [x] `sc.mod()` - Modulo operation (was already done)
 
-### Reduction Operations (~6 examples needed)
+### Reduction Operations ✅ COMPLETE
 
-**Location**: `src/scipp/core/reduction.py` - Has **6 examples**
+**Location**: `src/scipp/core/reduction.py`
 
-- [x] Basic reductions covered
-- [ ] Verify multi-dimensional reduction examples
-- [ ] Verify ddof parameter examples for std/var
-- [ ] Check median examples
+- [x] `sc.sum()` - Sum with dimension examples
+- [x] `sc.nansum()` - Sum ignoring NaN
+- [x] `sc.mean()` - Mean with dimension examples
+- [x] `sc.nanmean()` - Mean ignoring NaN
+- [x] `sc.min()` / `sc.max()` - Min/max with dimension examples
+- [x] `sc.nanmin()` / `sc.nanmax()` - Min/max ignoring NaN
+- [x] `sc.all()` / `sc.any()` - Logical reductions with dimension examples
+- [x] `sc.median()` / `sc.nanmedian()` - Median (was already done)
+- [x] `sc.var()` / `sc.nanvar()` - Variance with ddof examples (was already done)
+- [x] `sc.std()` / `sc.nanstd()` - Standard deviation with ddof examples (was already done)
 
 ### Unary Operations ✅ COMPLETE
 
@@ -274,7 +284,7 @@ Critical for event data analysis (neutron scattering, particle physics, etc.)
 - [x] `sc.isfinite()` - Check for finite values
 - [x] `sc.to_unit()` - Unit conversion
 
-### Shape Operations (Partially Complete)
+### Shape Operations ✅ COMPLETE
 
 **Location**: `src/scipp/core/shape.py`
 
@@ -282,7 +292,7 @@ Critical for event data analysis (neutron scattering, particle physics, etc.)
 - [x] `sc.concat()` - Concatenate along dimension
 - [x] `sc.fold()` - Reshape by folding dimension
 - [x] `sc.flatten()` - Reshape by flattening dimensions
-- [ ] `sc.squeeze()` - Remove size-1 dimensions
+- [x] `sc.squeeze()` - Remove size-1 dimensions (with DataArray coord example)
 - [x] `sc.transpose()` - Permute dimensions
 
 ### Operations Module ✅ COMPLETE
@@ -299,20 +309,19 @@ Critical for event data analysis (neutron scattering, particle physics, etc.)
 - [x] `sc.to()` - Conversion function
 - [x] `sc.reduce()` - General reduction
 
-### Variable Construction (~15 examples needed)
+### Variable Construction ✅ COMPLETE
 
-**Location**: `src/scipp/core/variable.py` - Has **16 examples**, verify coverage
+**Location**: `src/scipp/core/variable.py`
 
-Most constructors already documented, but verify:
-- [x] `sc.scalar()` - Has examples
-- [x] `sc.array()` - Has examples
-- [x] `sc.zeros()` / `sc.ones()` / `sc.empty()` - Have examples
-- [x] `sc.linspace()` / `sc.arange()` / `sc.geomspace()` / `sc.logspace()` - Have examples
-- [ ] Verify dimension labels in all examples
-- [ ] Verify unit parameter usage
-- [ ] Verify dtype parameter usage
-- [ ] `sc.vector()` / `sc.vectors()` - 3D vector construction
-- [ ] `sc.datetime()` / `sc.datetimes()` / `sc.epoch()` - Datetime handling
+All constructors have comprehensive examples:
+- [x] `sc.scalar()` - With type inference and unit/dtype examples
+- [x] `sc.array()` - With multi-dim, dtype, unit, and variance examples
+- [x] `sc.zeros()` / `sc.ones()` / `sc.empty()` - All parameters shown
+- [x] `sc.full()` - Fill value with variance example
+- [x] `sc.linspace()` / `sc.arange()` / `sc.geomspace()` / `sc.logspace()` - Complete
+- [x] `sc.index()` - Unitless scalar example
+- [x] `sc.vector()` / `sc.vectors()` - 3D vector construction with units
+- [x] `sc.datetime()` / `sc.datetimes()` / `sc.epoch()` - Datetime handling
 
 ---
 
@@ -349,18 +358,19 @@ All functions now have examples:
 #### Operations ✅
 - [x] `sc.spatial.inv()` - Invert transformations
 
-### I/O Operations (~5 examples needed)
+### I/O Operations ✅ COMPLETE
 
-**Location**: `src/scipp/io/` - Minimal examples
+**Location**: `src/scipp/io/`
 
-#### HDF5
-- [ ] `sc.io.load_hdf5()` - Load from HDF5
-- [ ] `sc.io.save_hdf5()` - Save to HDF5
-- [ ] Round-trip example with complex data
+#### HDF5 ✅
+- [x] `sc.io.save_hdf5()` - Save Variable/DataArray to HDF5
+- [x] `sc.io.load_hdf5()` - Load from HDF5
+- [x] Round-trip example showing Variable and DataArray with coords
 
-#### CSV
-- [ ] `sc.io.load_csv()` - Load from CSV (has 1 example - verify)
-- [ ] Handling headers and column types
+#### CSV ✅
+- [x] `sc.io.load_csv()` - Load from CSV with comprehensive examples
+- [x] Header parsing with `header_parser='bracket'`
+- [x] Data column selection with `data_columns`
 
 ### Compat Module ✅ COMPLETE
 
@@ -465,12 +475,19 @@ related_function: Related functionality
 ### Summary Statistics
 - **Phase 1 (Core Structures)**: 14 / ~45 examples complete (constructors + all properties done)
 - **Phase 2 (Binned Data)**: 31 / ~33 examples complete (all bins operations, groupby mostly done)
-- **Phase 3 (Free Functions)**: ~65 / ~85 examples complete
-- **Phase 4 (Specialized)**: ~20 / ~32 examples complete
+- **Phase 3 (Free Functions)**: ~85 / ~85 examples complete ✅
+- **Phase 4 (Specialized)**: ~25 / ~32 examples complete
 
-**Total Progress**: ~130 / ~195 examples complete (~67%)
+**Total Progress**: ~155 / ~195 examples complete (~79%)
 
-### Recent Changes (2026-01-15)
+### Recent Changes (2026-01-15, Session 2)
+- **Completed I/O module**: Added examples to `sc.io.save_hdf5()` and `sc.io.load_hdf5()`
+- **Completed arithmetic.py**: Added examples to `sc.add()`, `sc.multiply()`, `sc.negative()`, `sc.subtract()`
+- **Completed reduction.py**: Added examples to `sc.sum()`, `sc.nansum()`, `sc.mean()`, `sc.nanmean()`, `sc.min()`, `sc.max()`, `sc.nanmin()`, `sc.nanmax()`, `sc.all()`, `sc.any()`
+- **Verified shape.py**: `sc.squeeze()` already had comprehensive examples (marked as complete)
+- **Verified variable.py**: `sc.vector()`, `sc.vectors()`, `sc.datetime()`, `sc.datetimes()`, `sc.epoch()` all have examples
+
+### Changes (2026-01-15, Session 1)
 - **Completed `sc.groupby()` function**: Added examples for basic usage and bins parameter
 - **Completed advanced bins operations**: Added examples for:
   - `Bins.__getitem__` (slicing by event coordinates)
@@ -495,7 +512,7 @@ related_function: Related functionality
 ### Remaining Work
 - Phase 1: Class methods (indexing, slicing, copy, to, astype, rename, transpose, squeeze)
 - Phase 2: GroupBy concat (requires binned data), multi-dimensional groups
-- Phase 4: I/O module, coordinate transformations, units module
+- Phase 4: Coordinate transformations, units module (predefined units and arithmetic)
 
 ---
 

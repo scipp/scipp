@@ -29,6 +29,24 @@ def add(a: VariableLike, b: VariableLike) -> VariableLike:
     :
         Sum of ``a`` and ``b``.
 
+    Examples
+    --------
+    >>> import scipp as sc
+    >>> a = sc.array(dims=['x'], values=[1, 2, 3], unit='m')
+    >>> b = sc.array(dims=['x'], values=[10, 20, 30], unit='m')
+    >>> sc.add(a, b)
+    <scipp.Variable> (x: 3)      int64              [m]  [11, 22, 33]
+
+    Or equivalently in operator notation:
+
+    >>> a + b
+    <scipp.Variable> (x: 3)      int64              [m]  [11, 22, 33]
+
+    Units must be compatible (use ``sc.to_unit`` to convert if needed):
+
+    >>> sc.add(sc.scalar(1.0, unit='m'), sc.to_unit(sc.scalar(100.0, unit='cm'), 'm'))
+    <scipp.Variable> ()    float64              [m]  2
+
     Note
     ----
     See the guide on `computation <../../user-guide/computation.rst>`_ for
@@ -208,6 +226,24 @@ def multiply(left: VariableLike, right: VariableLike) -> VariableLike:
     :
         Product of ``left`` and ``right``.
 
+    Examples
+    --------
+    >>> import scipp as sc
+    >>> a = sc.array(dims=['x'], values=[2, 3, 4])
+    >>> b = sc.array(dims=['x'], values=[5, 6, 7])
+    >>> sc.multiply(a, b)
+    <scipp.Variable> (x: 3)      int64  [dimensionless]  [10, 18, 28]
+
+    Or equivalently in operator notation:
+
+    >>> a * b
+    <scipp.Variable> (x: 3)      int64  [dimensionless]  [10, 18, 28]
+
+    Units are multiplied:
+
+    >>> sc.multiply(sc.scalar(2.0, unit='m'), sc.scalar(3.0, unit='s'))
+    <scipp.Variable> ()    float64            [m*s]  6
+
     Note
     ----
     See the guide on `computation <../../user-guide/computation.rst>`_ for
@@ -232,6 +268,18 @@ def negative(a: VariableLikeType) -> VariableLikeType:
     -------
     :
         ``a`` with flipped signs.
+
+    Examples
+    --------
+    >>> import scipp as sc
+    >>> a = sc.array(dims=['x'], values=[1, -2, 3], unit='m')
+    >>> sc.negative(a)
+    <scipp.Variable> (x: 3)      int64              [m]  [-1, 2, -3]
+
+    Or equivalently in operator notation:
+
+    >>> -a
+    <scipp.Variable> (x: 3)      int64              [m]  [-1, 2, -3]
     """
     return _call_cpp_func(_cpp.negative, a)  # type: ignore[return-value]
 
@@ -254,6 +302,19 @@ def subtract(minuend: VariableLike, subtrahend: VariableLike) -> VariableLike:
     -------
     :
         ``subtrahend`` subtracted from ``minuend``.
+
+    Examples
+    --------
+    >>> import scipp as sc
+    >>> a = sc.array(dims=['x'], values=[10, 20, 30], unit='m')
+    >>> b = sc.array(dims=['x'], values=[1, 2, 3], unit='m')
+    >>> sc.subtract(a, b)
+    <scipp.Variable> (x: 3)      int64              [m]  [9, 18, 27]
+
+    Or equivalently in operator notation:
+
+    >>> a - b
+    <scipp.Variable> (x: 3)      int64              [m]  [9, 18, 27]
 
     Notes
     -----
