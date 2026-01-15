@@ -55,19 +55,10 @@ void bind_common_operators(pybind11::class_<T, Ignored...> &c) {
 
         >>> import scipp as sc
         >>> var = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='m')
-        >>> var_deep = var.copy()
-        >>> var_deep.values[0] = 999.0
-        >>> var
+        >>> var_copy = var.copy()
+        >>> var_copy.values[0] = 999.0
+        >>> var  # Original unchanged
         <scipp.Variable> (x: 3)    float64              [m]  [1, 2, 3]
-
-      Changes to deep copy do not affect the original. With shallow copy:
-
-        >>> var_shallow = var.copy(deep=False)
-        >>> var_shallow.values[0] = 999.0
-        >>> var
-        <scipp.Variable> (x: 3)    float64              [m]  [999, 2, 3]
-
-      The shallow copy shares data with the original.
 )");
   c.def(
       "__copy__", [](const T &self) { return self; },

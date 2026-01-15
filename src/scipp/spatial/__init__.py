@@ -269,10 +269,10 @@ def rotation(*, value: npt.NDArray[_Float] | Sequence[_Float]) -> Variable:
     Attention
     ---------
     The quaternion must be normalized in order to represent a rotation.
-    You can use, e.g.
+    You can use, e.g.::
 
-        >>> q = np.array([1, 2, 3, 4])
-        >>> rot = sc.spatial.rotation(value=q / np.linalg.norm(q))
+        q = np.array([1, 2, 3, 4])
+        rot = sc.spatial.rotation(value=q / np.linalg.norm(q))
 
     Parameters
     ----------
@@ -301,14 +301,12 @@ def rotation(*, value: npt.NDArray[_Float] | Sequence[_Float]) -> Variable:
       >>> rot
       <scipp.Variable> ()  rotation3  [dimensionless]  (1+0i+0j+0k)
 
-    Create a 90 degree rotation around the z-axis and apply it to a vector:
+    Create a 180 degree rotation around the z-axis and apply it to a vector:
 
-      >>> import numpy as np
-      >>> q = np.array([0, 0, 1, 1])
-      >>> rot_90z = sc.spatial.rotation(value=q / np.linalg.norm(q))
+      >>> rot_180z = sc.spatial.rotation(value=[0, 0, 1, 0])
       >>> vec_x = sc.vector(value=[1, 0, 0])
-      >>> rot_90z * vec_x
-      <scipp.Variable> ()    vector3  [dimensionless]  (..., 1, 0)
+      >>> rot_180z * vec_x
+      <scipp.Variable> ()    vector3  [dimensionless]  (-1, 0, 0)
     """
     return rotations(dims=(), values=value)
 
@@ -329,12 +327,12 @@ def rotations(
     Attention
     ---------
     The quaternions must be normalized in order to represent a rotation.
-    You can use, e.g.
+    You can use, e.g.::
 
-        >>> q = np.array([[1, 2, 3, 4], [-1, -2, -3, -4]])
-        >>> rot = sc.spatial.rotations(
-        ...     dims=['x'],
-        ...     values=q / np.linalg.norm(q, axis=1)[:, np.newaxis])
+        q = np.array([[1, 2, 3, 4], [-1, -2, -3, -4]])
+        rot = sc.spatial.rotations(
+            dims=['x'],
+            values=q / np.linalg.norm(q, axis=1)[:, np.newaxis])
 
     Parameters
     ----------
@@ -358,18 +356,15 @@ def rotations(
 
     Examples
     --------
-    Create multiple rotations from normalized quaternions:
+    Create multiple rotations from quaternions (identity and 180 deg around z):
 
       >>> import numpy as np
       >>> import scipp as sc
-      >>> q_array = np.array([[0, 0, 0, 1], [0, 0, 1, 1], [1, 0, 0, 1]])
-      >>> rots = sc.spatial.rotations(
-      ...     dims=['rot'],
-      ...     values=q_array / np.linalg.norm(q_array, axis=1)[:, np.newaxis]
-      ... )
+      >>> q_array = np.array([[0, 0, 0, 1], [0, 0, 1, 0]])
+      >>> rots = sc.spatial.rotations(dims=['rot'], values=q_array)
       >>> rots
-      <scipp.Variable> (rot: 3)  rotation3  [dimensionless]  [(1+0i+0j+0k), (...), (...)]
-    """  # noqa: E501
+      <scipp.Variable> (rot: 2)  rotation3  [dimensionless]  [(1+0i+0j+0k), (0+0i+0j+1k)]
+    """
     values = np.asarray(values)
     if values.shape[-1] != 4:
         raise ValueError(
@@ -409,18 +404,19 @@ def rotations_from_rotvecs(rotation_vectors: Variable) -> Variable:
 
     Examples
     --------
-    Create rotations from rotation vectors:
+    Create rotations from rotation vectors (90 degrees around z and x axes):
 
       >>> import numpy as np
       >>> import scipp as sc
       >>> rotvecs = sc.vectors(
       ...     dims=['rot'],
-      ...     values=[[0, 0, np.pi/2], [0, np.pi/2, 0], [np.pi/2, 0, 0]],
+      ...     values=[[0, 0, np.pi/2], [np.pi/2, 0, 0]],
       ...     unit='rad'
       ... )
       >>> rots = sc.spatial.rotations_from_rotvecs(rotvecs)
-      >>> rots
-      <scipp.Variable> (rot: 3)  rotation3  [dimensionless]  [(...), (...), (...)]
+      >>> rots  # doctest: +NORMALIZE_WHITESPACE
+      <scipp.Variable> (rot: 2)  rotation3  [dimensionless]
+      [(0.707107+0i+0j+0.707107k), (0.707107+0.707107i+0j+0k)]
     """
     from scipy.spatial.transform import Rotation as R
 
