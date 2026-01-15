@@ -100,7 +100,7 @@ def cross(x: VariableLikeType, y: VariableLikeType) -> VariableLikeType:
 
     The cross product of two vectors is perpendicular to both input vectors.
     Units are multiplied in the result.
-    """
+    """  # noqa: E501
     return _call_cpp_func(_cpp.cross, x, y)  # type: ignore[return-value]
 
 
@@ -136,7 +136,7 @@ def dot(x: VariableLikeType, y: VariableLikeType) -> VariableLikeType:
 
     The result is a scalar for each pair of vectors.
     Units are multiplied in the result.
-    """
+    """  # noqa: E501
     return _call_cpp_func(_cpp.dot, x, y)  # type: ignore[return-value]
 
 
@@ -195,7 +195,7 @@ def nan_to_num(
       >>> y = sc.array(dims=['x'], values=[1.0, np.nan, 2.0])
       >>> sc.nan_to_num(y, nan=sc.scalar(-1.0))
       <scipp.Variable> (x: 3)    float64  [dimensionless]  [1, -1, 2]
-    """
+    """  # noqa: E501
     return _call_cpp_func(  # type: ignore[return-value]
         _cpp.nan_to_num, x, nan=nan, posinf=posinf, neginf=neginf, out=out
     )
@@ -617,7 +617,7 @@ def erf(x: VariableLikeType) -> VariableLikeType:
       <scipp.Variable> (x: 5)    float64  [dimensionless]  [-0.995322, -0.842701, ..., 0.842701, 0.995322]
 
     The error function is odd symmetric: erf(-x) = -erf(x).
-    """
+    """  # noqa: E501
     return _call_cpp_func(_cpp.erf, x)  # type: ignore[return-value]
 
 
@@ -645,7 +645,7 @@ def erfc(x: VariableLikeType) -> VariableLikeType:
       <scipp.Variable> (x: 5)    float64  [dimensionless]  [1.99532, 1.8427, ..., 0.157299, 0.00467773]
 
     The complementary error function is defined as erfc(x) = 1 - erf(x).
-    """
+    """  # noqa: E501
     return _call_cpp_func(_cpp.erfc, x)  # type: ignore[return-value]
 
 

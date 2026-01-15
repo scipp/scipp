@@ -272,7 +272,7 @@ class Bins(Generic[_O]):
           <scipp.DataArray>
           Dimensions: Sizes[x:4, ]
           ...
-        """
+        """  # noqa: E501
         if isinstance(self._obj, Dataset):
             raise NotImplementedError(
                 "Multiplication of events in a dataset is not implemented"
@@ -423,7 +423,7 @@ class Bins(Generic[_O]):
           >>> result = binned.bins.assign(new_data)
           >>> result.bins.sum().data
           <scipp.Variable> (x: 2)    float64              [K]  [60, 40]
-        """
+        """  # noqa: E501
         if isinstance(self._obj, Dataset):
             raise NotImplementedError("bins.assign does not support datasets")
         out = self._map_constituents_data(lambda data: data)
@@ -485,7 +485,7 @@ class Bins(Generic[_O]):
           <scipp.Dict>
             x: <scipp.Variable> (event: 4)    float64              [m]  [0.1, 0.3, 0.5, 0.9]
             x_doubled: <scipp.Variable> (event: 4)    float64              [m]  [0.2, 0.6, 1, 1.8]
-        """
+        """  # noqa: E501
         # Shallow copy constituents
         out = self._map_constituents_data(lambda data: data)
         for name, coord in combine_dict_args(coords, coords_kwargs).items():
@@ -519,7 +519,7 @@ class Bins(Generic[_O]):
           >>> result = binned.bins.drop_coords('x')
           >>> 'x' in result.bins.coords
           False
-        """
+        """  # noqa: E501
         if isinstance(self._obj, Dataset):
             raise NotImplementedError("bins.drop_coords does not support datasets")
         return self._map_constituents_data(lambda data: data.drop_coords(coords))
@@ -545,7 +545,7 @@ class Bins(Generic[_O]):
 
           >>> 'quality' in binned.bins.masks
           True
-        """
+        """  # noqa: E501
         return _cpp._bins_view(self._data()).masks  # type: ignore[no-any-return]
 
     def assign_masks(
@@ -578,7 +578,7 @@ class Bins(Generic[_O]):
           >>> result.bins.masks
           <scipp.Dict>
             high_x: <scipp.Variable> (event: 4)       bool        <no unit>  [False, False, False, True]
-        """
+        """  # noqa: E501
         # Shallow copy constituents
         out = self._map_constituents_data(lambda data: data)
         for name, coord in combine_dict_args(masks, masks_kwargs).items():
@@ -614,7 +614,7 @@ class Bins(Generic[_O]):
           >>> result = binned.bins.drop_masks('quality')
           >>> result.bins.masks
           <scipp.Dict>
-        """
+        """  # noqa: E501
         if isinstance(self._obj, Dataset):
             raise NotImplementedError("bins.drop_masks does not support datasets")
         return self._map_constituents_data(lambda data: data.drop_masks(masks))
@@ -640,7 +640,7 @@ class Bins(Generic[_O]):
           <scipp.DataArray>
           Dimensions: Sizes[x:3, ]
           ...
-        """
+        """  # noqa: E501
         return _cpp._bins_view(self._data()).data  # type: ignore[no-any-return]
 
     @data.setter
@@ -662,7 +662,7 @@ class Bins(Generic[_O]):
           >>> binned = table.bin(x=2)
           >>> binned.bins.unit
           Unit(K)
-        """
+        """  # noqa: E501
         return self.constituents['data'].unit  # type: ignore[union-attr]
 
     @unit.setter
@@ -692,7 +692,7 @@ class Bins(Generic[_O]):
           >>> int_binned = int_table.bin(x=2)
           >>> int_binned.bins.dtype
           DType('int64')
-        """
+        """  # noqa: E501
         return self.constituents['data'].dtype  # type: ignore[union-attr]
 
     @property
@@ -735,7 +735,7 @@ class Bins(Generic[_O]):
           >>> reconstructed = sc.bins(**parts)
           >>> sc.identical(binned.data, reconstructed)
           True
-        """
+        """  # noqa: E501
         return _call_cpp_func(_cpp.bins_constituents, self._data())  # type: ignore[return-value]
 
     def sum(self) -> _O:
@@ -772,7 +772,7 @@ class Bins(Generic[_O]):
           <scipp.DataArray>
           Dimensions: Sizes[x:3, y:2, ]
           ...
-        """
+        """  # noqa: E501
         return _call_cpp_func(_cpp.bins_sum, self._obj)  # type: ignore[return-value]
 
     def nansum(self) -> _O:
@@ -816,7 +816,7 @@ class Bins(Generic[_O]):
           <scipp.DataArray>
           Dimensions: Sizes[x:3, ]
           ...
-        """
+        """  # noqa: E501
         return _call_cpp_func(_cpp.bins_nansum, self._obj)  # type: ignore[return-value]
 
     def mean(self) -> _O:
@@ -845,7 +845,7 @@ class Bins(Generic[_O]):
           * x                         float64              [m]  (x [bin-edge])  [0.00313229, 0.250414, ..., 0.744977, 0.992259]
           Data:
                                     float64              [K]  (x)  [1.04866, 1.05916, 1.04813, 1.04679]
-        """
+        """  # noqa: E501
         return _call_cpp_func(_cpp.bins_mean, self._obj)  # type: ignore[return-value]
 
     def nanmean(self) -> _O:
@@ -889,7 +889,7 @@ class Bins(Generic[_O]):
           <scipp.DataArray>
           Dimensions: Sizes[x:3, ]
           ...
-        """
+        """  # noqa: E501
         return _call_cpp_func(_cpp.bins_nanmean, self._obj)  # type: ignore[return-value]
 
     def max(self) -> _O:
@@ -1042,7 +1042,7 @@ class Bins(Generic[_O]):
           * x                         float64              [m]  (x [bin-edge])  [0.1, 0.366667, 0.633333, 0.9]
           Data:
                                          bool        <no unit>  (x)  [True, False, False]
-        """
+        """  # noqa: E501
         return _call_cpp_func(_cpp.bins_all, self._obj)  # type: ignore[return-value]
 
     def any(self) -> _O:
@@ -1077,7 +1077,7 @@ class Bins(Generic[_O]):
           * x                         float64              [m]  (x [bin-edge])  [0.1, 0.366667, 0.633333, 0.9]
           Data:
                                          bool        <no unit>  (x)  [True, True, False]
-        """
+        """  # noqa: E501
         return _call_cpp_func(_cpp.bins_any, self._obj)  # type: ignore[return-value]
 
     def size(self) -> Variable:
@@ -1202,7 +1202,7 @@ class Bins(Generic[_O]):
           array([25, 25])
 
         Each bin in the result contains events from the corresponding bins in both inputs.
-        """
+        """  # noqa: E501
         if out is None:
             return _call_cpp_func(_cpp.buckets.concatenate, self._obj, other)  # type: ignore[return-value]
         else:
@@ -1329,7 +1329,7 @@ def bins(
       >>> binned = sc.bins(data=data, dim='row', begin=begin, end=end)
       >>> binned.sizes
       {'bin': 3}
-    """
+    """  # noqa: E501
     if any(isinstance(x, DataGroup) for x in [begin, end, data]):
         raise ValueError("`scipp.bins` does not support DataGroup arguments.")
 
@@ -1374,7 +1374,7 @@ def bins_like(x: VariableLike, fill_value: Variable) -> Variable:
       <scipp.Variable> (x: 3)  VariableView        <no unit>  binned data: dim='row', content=...
 
     This is useful for initializing binned data structures with known values.
-    """
+    """  # noqa: E501
     if isinstance(x, DataGroup) or isinstance(fill_value, DataGroup):  # type: ignore[unreachable]
         raise ValueError("`scipp.bins_like` does not support DataGroup arguments.")
     if isinstance(x, Dataset) or isinstance(fill_value, Dataset):  # type: ignore[unreachable]

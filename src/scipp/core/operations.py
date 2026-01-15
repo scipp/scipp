@@ -271,7 +271,7 @@ def values(x: VariableLikeType) -> VariableLikeType:
       <scipp.Variable> (x: 3)    float64              [m]  [1, 2, 3]  [0.1, 0.2, 0.3]
       >>> sc.values(x)
       <scipp.Variable> (x: 3)    float64              [m]  [1, 2, 3]
-    """
+    """  # noqa: E501
     return _call_cpp_func(_cpp.values, x)  # type: ignore[return-value]
 
 
@@ -301,7 +301,7 @@ def variances(x: VariableLikeType) -> VariableLikeType:
       >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], variances=[0.1, 0.2, 0.3], unit='m')
       >>> sc.variances(x)
       <scipp.Variable> (x: 3)    float64            [m^2]  [0.1, 0.2, 0.3]
-    """
+    """  # noqa: E501
     return _call_cpp_func(_cpp.variances, x)  # type: ignore[return-value]
 
 
@@ -331,7 +331,7 @@ def stddevs(x: VariableLikeType) -> VariableLikeType:
       >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], variances=[0.1, 0.2, 0.3], unit='m')
       >>> sc.stddevs(x)
       <scipp.Variable> (x: 3)    float64              [m]  [0.316228, 0.447214, 0.547723]
-    """
+    """  # noqa: E501
     return _call_cpp_func(_cpp.stddevs, x)  # type: ignore[return-value]
 
 
@@ -403,7 +403,7 @@ def where(
       * x                           int64              [m]  (x)  [0, 1, 2]
       Data:
                                     int64              [K]  (x)  [1, 20, 3]
-    """
+    """  # noqa: E501
     return _call_cpp_func(_cpp.where, condition, x, y)  # type: ignore[return-value]
 
 
@@ -556,7 +556,7 @@ def merge(lhs: _DsDg, rhs: _DsDg) -> _DsDg:
         a                           int64              [m]  ()  1
         b                           int64              [s]  ()  2
         e                           int64              [A]  ()  5
-    """
+    """  # noqa: E501
     # Check both arguments to make `_cpp.merge` raise TypeError on mismatch.
     if isinstance(lhs, Dataset) or isinstance(rhs, Dataset):  # type: ignore[redundant-expr]
         return _call_cpp_func(_cpp.merge, lhs, rhs)  # type: ignore[return-value]

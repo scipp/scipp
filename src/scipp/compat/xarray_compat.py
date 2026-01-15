@@ -145,7 +145,7 @@ def to_xarray(obj: VariableLike) -> xr.Variable | xr.DataArray | xr.Dataset:
       * y                           int64  [dimensionless]  (y)  [10, 20]
       Data:
                                     int64              [K]  (x, y)  [1, 2, 3, 4]
-    """
+    """  # noqa: E501
 
     if isinstance(obj, Variable):
         return _to_xarray_variable(obj)

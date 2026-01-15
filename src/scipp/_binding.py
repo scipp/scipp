@@ -97,7 +97,7 @@ Access a Dataset item with a default value:
   >>> ds.get('b', sc.DataArray(sc.zeros(dims=['x'], shape=[3])))
   <scipp.DataArray>
   ...
-"""
+"""  # noqa: E501
         method.__signature__ = _make_dict_accessor_signature(  # type: ignore[attr-defined]
             value_type
         )

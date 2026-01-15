@@ -193,7 +193,7 @@ def from_pandas(
         temperature               float64              [K]  (row)  [273, 274, 275]
       <BLANKLINE>
       <BLANKLINE>
-    """
+    """  # noqa: E501
     import pandas as pd
 
     if isinstance(pd_obj, pd.DataFrame):

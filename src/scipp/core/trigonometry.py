@@ -44,7 +44,7 @@ def sin(
       >>> angle_deg = sc.array(dims=['x'], values=[0.0, 30.0, 45.0, 60.0, 90.0], unit='deg')
       >>> sc.sin(angle_deg)
       <scipp.Variable> (x: 5)    float64  [dimensionless]  [0, 0.5, ..., 0.866025, 1]
-    """
+    """  # noqa: E501
     return _call_cpp_func(_cpp.sin, x, out=out)  # type: ignore[return-value]
 
 
@@ -78,7 +78,7 @@ def cos(
       <scipp.Variable> (x: 4)    float64  [dimensionless]  [1, 0.866025, 0.5, ...]
 
     The output is dimensionless.
-    """
+    """  # noqa: E501
     return _call_cpp_func(_cpp.cos, x, out=out)  # type: ignore[return-value]
 
 

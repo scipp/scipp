@@ -165,7 +165,7 @@ def translations(
       ... )
       >>> trans
       <scipp.Variable> (x: 3)  translation3              [m]  [(1, 0, 0), (0, 1, 0), (0, 0, 1)]
-    """
+    """  # noqa: E501
     return Variable(dims=dims, unit=unit, values=values, dtype=DType.translation3)
 
 
@@ -203,7 +203,7 @@ def scaling_from_vector(*, value: npt.NDArray[_Float] | Sequence[_Float]) -> Var
       >>> vec = sc.vector(value=[1, 1, 1], unit='m')
       >>> scale * vec
       <scipp.Variable> ()    vector3              [m]  (2, 3, 4)
-    """
+    """  # noqa: E501
     return linear_transforms(dims=[], values=np.diag(value))
 
 
@@ -242,7 +242,7 @@ def scalings_from_vectors(
       ... )
       >>> scales
       <scipp.Variable> (scale: 3)  linear_transform3  [dimensionless]  [(...), (...), (...)]
-    """
+    """  # noqa: E501
     identity = linear_transform(value=np.identity(3))
     matrices = identity.broadcast(
         dims=dims,
@@ -369,7 +369,7 @@ def rotations(
       ... )
       >>> rots
       <scipp.Variable> (rot: 3)  rotation3  [dimensionless]  [(1+0i+0j+0k), (...), (...)]
-    """
+    """  # noqa: E501
     values = np.asarray(values)
     if values.shape[-1] != 4:
         raise ValueError(
@@ -558,7 +558,7 @@ def affine_transforms(
       >>> affines = sc.spatial.affine_transforms(dims=['affine'], values=affine_matrices, unit='m')
       >>> affines
       <scipp.Variable> (affine: 2)  affine_transform3              [m]  [...]
-    """
+    """  # noqa: E501
     return Variable(
         dims=dims,
         unit=unit,
@@ -609,7 +609,7 @@ def linear_transform(
       >>> linear_rot = sc.spatial.linear_transform(value=rot_matrix)
       >>> linear_rot
       <scipp.Variable> ()  linear_transform3  [dimensionless]  ((0, -1, 0), , (1, 0, 0), , (0, 0, 1), )
-    """
+    """  # noqa: E501
     return linear_transforms(
         dims=(),
         unit=unit,
@@ -659,7 +659,7 @@ def linear_transforms(
       >>> linear_array = sc.spatial.linear_transforms(dims=['transform'], values=matrices)
       >>> linear_array
       <scipp.Variable> (transform: 2)  linear_transform3  [dimensionless]  [(...), (...)]
-    """
+    """  # noqa: E501
     return Variable(
         dims=dims,
         unit=unit,
@@ -711,7 +711,7 @@ def inv(var: Variable) -> Variable:
       >>> inv_scale = sc.spatial.inv(scale)
       >>> inv_scale
       <scipp.Variable> ()  linear_transform3  [dimensionless]  ((0.5, 0, 0), , (0, 0.333333, 0), , (0, 0, 0.25), )
-    """
+    """  # noqa: E501
     return _call_cpp_func(_core_cpp.inv, var)  # type: ignore[return-value]
 
 

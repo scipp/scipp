@@ -100,7 +100,7 @@ def groupby(
       False
       >>> 'label' in result.coords  # 'label' becomes a dimension coord
       True
-    """
+    """  # noqa: E501
     if bins is None:
         return _cpp.groupby(data, group)
     else:

@@ -84,7 +84,7 @@ def isfinite(x: VariableLikeType) -> VariableLikeType:
       <scipp.Variable> (x: 5)    float64              [K]  [1, inf, ..., -inf, 5]
       >>> sc.isfinite(x)
       <scipp.Variable> (x: 5)       bool        <no unit>  [True, False, ..., False, True]
-    """
+    """  # noqa: E501
     return _call_cpp_func(_cpp.isfinite, x)  # type: ignore[return-value]
 
 
