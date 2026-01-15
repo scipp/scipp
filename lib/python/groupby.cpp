@@ -14,7 +14,7 @@ using namespace scipp::dataset;
 
 namespace py = pybind11;
 
-template <class T> Docstring docstring_groupby(const std::string &op) {
+template <class T> Docstring docstring_groupby_numeric(const std::string &op) {
   return Docstring()
       .description("Element-wise " + op +
                    " over the specified dimension "
@@ -51,16 +51,62 @@ Group by bin edges:
 )");
 }
 
+template <class T> Docstring docstring_groupby_bool(const std::string &op) {
+  return Docstring()
+      .description("Element-wise " + op +
+                   " over the specified dimension "
+                   "within a group.")
+      .returns("The computed " + op +
+               " over each group, combined along "
+               "the dimension specified when calling :py:func:`scipp.groupby`.")
+      .rtype<T>()
+      .param("dim", "Dimension to reduce when computing the " + op + ".", "Dim")
+      .examples(R"(
+Group by label coordinate:
+
+  >>> import scipp as sc
+  >>> da = sc.DataArray(
+  ...     sc.array(dims=['x'], values=[True, False, True, True]),
+  ...     coords={'label': sc.array(dims=['x'], values=['a', 'b', 'a', 'b'])}
+  ... )
+  >>> grouped = da.groupby('label').)" +
+                op + R"(('x')
+  >>> grouped.sizes
+  {'label': 2}
+
+Group by bin edges:
+
+  >>> da = sc.DataArray(
+  ...     sc.array(dims=['x'], values=[True, False, True, True]),
+  ...     coords={'x': sc.array(dims=['x'], values=[0.5, 1.5, 2.5, 3.5])}
+  ... )
+  >>> bins = sc.array(dims=['x'], values=[0.0, 2.0, 4.0])
+  >>> grouped = da.groupby('x', bins=bins).)" +
+                op + R"(('x')
+  >>> grouped.sizes
+  {'x': 2}
+)");
+}
+
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
-#define BIND_GROUPBY_OP(CLS, NAME)                                             \
+#define BIND_GROUPBY_OP_NUMERIC(CLS, NAME)                                     \
   CLS.def(                                                                     \
       TOSTRING(NAME),                                                          \
       [](const GroupBy<T> &self, const std::string &dim) {                     \
         return self.NAME(Dim{dim});                                            \
       },                                                                       \
       py::arg("dim"), py::call_guard<py::gil_scoped_release>(),                \
-      docstring_groupby<T>(TOSTRING(NAME)).c_str());
+      docstring_groupby_numeric<T>(TOSTRING(NAME)).c_str());
+
+#define BIND_GROUPBY_OP_BOOL(CLS, NAME)                                        \
+  CLS.def(                                                                     \
+      TOSTRING(NAME),                                                          \
+      [](const GroupBy<T> &self, const std::string &dim) {                     \
+        return self.NAME(Dim{dim});                                            \
+      },                                                                       \
+      py::arg("dim"), py::call_guard<py::gil_scoped_release>(),                \
+      docstring_groupby_bool<T>(TOSTRING(NAME)).c_str());
 
 template <class T> void bind_groupby(py::module &m, const std::string &name) {
   m.def(
@@ -86,15 +132,15 @@ template <class T> void bind_groupby(py::module &m, const std::string &name) {
   py::class_<GroupBy<T>> groupBy(m, name.c_str(), R"(
     GroupBy object implementing split-apply-combine mechanism.)");
 
-  BIND_GROUPBY_OP(groupBy, mean);
-  BIND_GROUPBY_OP(groupBy, sum);
-  BIND_GROUPBY_OP(groupBy, nansum);
-  BIND_GROUPBY_OP(groupBy, all);
-  BIND_GROUPBY_OP(groupBy, any);
-  BIND_GROUPBY_OP(groupBy, min);
-  BIND_GROUPBY_OP(groupBy, nanmin);
-  BIND_GROUPBY_OP(groupBy, max);
-  BIND_GROUPBY_OP(groupBy, nanmax);
+  BIND_GROUPBY_OP_NUMERIC(groupBy, mean);
+  BIND_GROUPBY_OP_NUMERIC(groupBy, sum);
+  BIND_GROUPBY_OP_NUMERIC(groupBy, nansum);
+  BIND_GROUPBY_OP_BOOL(groupBy, all);
+  BIND_GROUPBY_OP_BOOL(groupBy, any);
+  BIND_GROUPBY_OP_NUMERIC(groupBy, min);
+  BIND_GROUPBY_OP_NUMERIC(groupBy, nanmin);
+  BIND_GROUPBY_OP_NUMERIC(groupBy, max);
+  BIND_GROUPBY_OP_NUMERIC(groupBy, nanmax);
   groupBy.def(
       "concat",
       [](const GroupBy<T> &self, const std::string &dim) {
@@ -131,7 +177,8 @@ Concatenate binned data within groups:
   {'group': 2}
 
 The result contains binned data where events from bins 0 and 2 (group 'A')
-are combined, and events from bins 1 and 3 (group 'B') are combined.
+are concatenated into one bin, and events from bins 1 and 3 (group 'B')
+are concatenated into another bin.
 )");
 }
 

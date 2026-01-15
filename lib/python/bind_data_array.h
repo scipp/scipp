@@ -485,7 +485,7 @@ Access a mask:
 
 Masked values are excluded from reductions:
 
-  >>> da.sum().value  # third element (3.0) is masked out
+  >>> float(da.sum().value)  # third element (3.0) is masked out
   7.0
 )");
   c.def(
