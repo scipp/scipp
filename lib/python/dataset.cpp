@@ -265,8 +265,13 @@ Create a data array and access elements:
 
 Integer indexing with explicit dimension:
 
-  >>> da['x', 0].value
-  1.0
+  >>> da['x', 0]
+  <scipp.DataArray>
+  Dimensions: Sizes[]
+  Coordinates:
+    x                         float64              [m]  ()  0
+  Data:
+                              float64              [K]  ()  1
 
 Slicing preserves coordinates:
 
@@ -280,19 +285,34 @@ Slicing preserves coordinates:
 
 Label-based indexing with a scalar value:
 
-  >>> da['x', sc.scalar(1.0, unit='m')].value
-  2.0
+  >>> da['x', sc.scalar(1.0, unit='m')]
+  <scipp.DataArray>
+  Dimensions: Sizes[]
+  Coordinates:
+    x                         float64              [m]  ()  1
+  Data:
+                              float64              [K]  ()  2
 
 Label-based slicing with a range:
 
-  >>> da['x', sc.scalar(0.5, unit='m'):sc.scalar(2.5, unit='m')].sizes
-  {'x': 2}
+  >>> da['x', sc.scalar(0.5, unit='m'):sc.scalar(2.5, unit='m')]
+  <scipp.DataArray>
+  Dimensions: Sizes[x:2, ]
+  Coordinates:
+  * x                         float64              [m]  (x)  [1, 2]
+  Data:
+                              float64              [K]  (x)  [2, 3]
 
 Boolean masking:
 
   >>> condition = da.coords['x'] > sc.scalar(1.0, unit='m')
-  >>> da[condition].sizes
-  {'x': 2}
+  >>> da[condition]
+  <scipp.DataArray>
+  Dimensions: Sizes[x:2, ]
+  Coordinates:
+  * x                         float64              [m]  (x)  [2, 3]
+  Data:
+                              float64              [K]  (x)  [3, 4]
 
 See Also
 --------
@@ -363,8 +383,14 @@ Create a Dataset with shared coordinates:
 
 Slice a Dataset by dimension (applies to all data arrays):
 
-  >>> ds['x', 0].sizes
-  {}
+  >>> ds['x', 0]
+  <scipp.Dataset>
+  Dimensions: Sizes[]
+  Coordinates:
+    x                         float64              [m]  ()  0
+  Data:
+    pressure                  float64            [bar]  ()  1
+    temperature               float64              [K]  ()  20
 
   >>> ds['x', 1:3]
   <scipp.Dataset>

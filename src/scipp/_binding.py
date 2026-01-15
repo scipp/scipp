@@ -94,8 +94,11 @@ Access a coordinate with a default value:
 Access a Dataset item with a default value:
 
   >>> ds = sc.Dataset({'a': sc.array(dims=['x'], values=[1, 2, 3])})
-  >>> ds.get('b', sc.DataArray(sc.zeros(dims=['x'], shape=[3]))).sizes
-  {'x': 3}
+  >>> ds.get('b', sc.DataArray(sc.zeros(dims=['x'], shape=[3])))
+  <scipp.DataArray>
+  Dimensions: Sizes[x:3, ]
+  Data:
+                              float64  [dimensionless]  (x)  [0, 0, 0]
 """  # noqa: E501
         method.__signature__ = _make_dict_accessor_signature(  # type: ignore[attr-defined]
             value_type
