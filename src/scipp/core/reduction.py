@@ -129,6 +129,7 @@ def nanmean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     Examples
     --------
     >>> import scipp as sc
+    >>> import numpy as np
     >>> x = sc.array(dims=['x'], values=[1.0, np.nan, 3.0, 4.0])
     >>> sc.nanmean(x)
     <scipp.Variable> ()    float64  [dimensionless]  2.66667
@@ -259,6 +260,8 @@ def nanmedian(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     --------
     ``nanmedian`` is available as a method:
 
+        >>> import scipp as sc
+        >>> import numpy as np
         >>> x = sc.array(dims=['x'], values=[2, 5, 1, np.nan, 8, 4])
         >>> x.nanmedian()
         <scipp.Variable> ()    float64  [dimensionless]  4
@@ -436,6 +439,8 @@ def nanvar(x: VariableLikeType, dim: Dims = None, *, ddof: int) -> VariableLikeT
     --------
     ``nanvar`` is available as a method:
 
+        >>> import scipp as sc
+        >>> import numpy as np
         >>> x = sc.array(dims=['x'], values=[np.nan, 5, 2, 3])
         >>> x.nanvar(ddof=0)
         <scipp.Variable> ()    float64  [dimensionless]  1.55556
@@ -617,6 +622,8 @@ def nanstd(x: VariableLikeType, dim: Dims = None, *, ddof: int) -> VariableLikeT
     --------
     ``nanstd`` is available as a method:
 
+        >>> import scipp as sc
+        >>> import numpy as np
         >>> x = sc.array(dims=['x'], values=[np.nan, 5, 2, 3])
         >>> x.nanstd(ddof=0)
         <scipp.Variable> ()    float64  [dimensionless]  1.24722
@@ -713,6 +720,7 @@ def nansum(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     Examples
     --------
     >>> import scipp as sc
+    >>> import numpy as np
     >>> x = sc.array(dims=['x'], values=[1.0, np.nan, 3.0, 4.0])
     >>> sc.nansum(x)
     <scipp.Variable> ()    float64  [dimensionless]  8
@@ -854,6 +862,7 @@ def nanmin(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     Examples
     --------
     >>> import scipp as sc
+    >>> import numpy as np
     >>> x = sc.array(dims=['x'], values=[3.0, np.nan, 1.0, 4.0])
     >>> sc.nanmin(x)
     <scipp.Variable> ()    float64  [dimensionless]  1
@@ -897,6 +906,7 @@ def nanmax(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     Examples
     --------
     >>> import scipp as sc
+    >>> import numpy as np
     >>> x = sc.array(dims=['x'], values=[3.0, np.nan, 1.0, 5.0])
     >>> sc.nanmax(x)
     <scipp.Variable> ()    float64  [dimensionless]  5
