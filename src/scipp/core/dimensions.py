@@ -41,6 +41,24 @@ def _rename_dims(
     -------
     :
         A new object with renamed dimensions.
+
+    Examples
+    --------
+
+      >>> import scipp as sc
+      >>> var = sc.array(dims=['x', 'y'], values=[[1, 2], [3, 4]])
+      >>> var.rename_dims({'x': 'row', 'y': 'col'}).sizes
+      {'row': 2, 'col': 2}
+
+    Using keyword arguments:
+
+      >>> var.rename_dims(x='a', y='b').dims
+      ('a', 'b')
+
+    Only specified dimensions are renamed:
+
+      >>> var.rename_dims(x='i').dims
+      ('i', 'y')
     """
     return self._rename_dims(combine_dict_args(dims_dict, names))
 
@@ -75,6 +93,18 @@ def _rename_variable(
     --------
     scipp.Variable.rename_dims:
         Equivalent for ``Variable`` but differs for ``DataArray`` and ``Dataset``.
+
+    Examples
+    --------
+    For Variables, ``rename`` is equivalent to ``rename_dims``:
+
+      >>> import scipp as sc
+      >>> var = sc.array(dims=['x'], values=[1, 2, 3], unit='m')
+      >>> var.rename(x='distance')
+      <scipp.Variable> (distance: 3)      int64              [m]  [1, 2, 3]
+
+      >>> var.rename({'x': 'position'})
+      <scipp.Variable> (position: 3)      int64              [m]  [1, 2, 3]
     """
     return var.rename_dims(combine_dict_args(dims_dict, names))
 

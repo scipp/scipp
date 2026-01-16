@@ -35,6 +35,28 @@ def less(x: VariableLike, y: VariableLike) -> VariableLike:
     -------
     :
         Booleans that are true where `a < b`.
+
+    Examples
+    --------
+    Compare an array with a scalar:
+
+      >>> import scipp as sc
+      >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='m')
+      >>> sc.less(x, sc.scalar(2.0, unit='m'))
+      <scipp.Variable> (x: 3)       bool        <no unit>  [True, False, False]
+
+    Compare two arrays element-wise:
+
+      >>> y = sc.array(dims=['x'], values=[2.0, 2.0, 2.0], unit='m')
+      >>> sc.less(x, y)
+      <scipp.Variable> (x: 3)       bool        <no unit>  [True, False, False]
+
+    Variances are ignored in comparisons (only values are compared):
+
+      >>> a = sc.array(dims=['x'], values=[1.0, 2.0], variances=[0.1, 0.1])
+      >>> b = sc.array(dims=['x'], values=[1.0, 2.0], variances=[999.0, 999.0])
+      >>> sc.less(a, b)  # Same values, different variances -> all False
+      <scipp.Variable> (x: 2)       bool        <no unit>  [False, False]
     """
     return _call_cpp_func(_cpp.less, x, y)
 
@@ -57,6 +79,15 @@ def greater(x: VariableLike, y: VariableLike) -> VariableLike:
     -------
     :
         Booleans that are true where `a > b`.
+
+    Examples
+    --------
+    Compare an array with a scalar:
+
+      >>> import scipp as sc
+      >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='m')
+      >>> sc.greater(x, sc.scalar(2.0, unit='m'))
+      <scipp.Variable> (x: 3)       bool        <no unit>  [False, False, True]
     """
     return _call_cpp_func(_cpp.greater, x, y)
 
@@ -79,6 +110,15 @@ def less_equal(x: VariableLike, y: VariableLike) -> VariableLike:
     -------
     :
         Booleans that are true where `a <= b`.
+
+    Examples
+    --------
+    Compare an array with a scalar:
+
+      >>> import scipp as sc
+      >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='m')
+      >>> sc.less_equal(x, sc.scalar(2.0, unit='m'))
+      <scipp.Variable> (x: 3)       bool        <no unit>  [True, True, False]
     """
     return _call_cpp_func(_cpp.less_equal, x, y)
 
@@ -101,6 +141,15 @@ def greater_equal(x: VariableLike, y: VariableLike) -> VariableLike:
     -------
     :
         Booleans that are true where `a >= b`.
+
+    Examples
+    --------
+    Compare an array with a scalar:
+
+      >>> import scipp as sc
+      >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='m')
+      >>> sc.greater_equal(x, sc.scalar(2.0, unit='m'))
+      <scipp.Variable> (x: 3)       bool        <no unit>  [False, True, True]
     """
     return _call_cpp_func(_cpp.greater_equal, x, y)
 
@@ -123,6 +172,15 @@ def equal(x: VariableLike, y: VariableLike) -> VariableLike:
     -------
     :
         Booleans that are true where `a == b`.
+
+    Examples
+    --------
+    Compare an array with a scalar:
+
+      >>> import scipp as sc
+      >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='m')
+      >>> sc.equal(x, sc.scalar(2.0, unit='m'))
+      <scipp.Variable> (x: 3)       bool        <no unit>  [False, True, False]
     """
     return _call_cpp_func(_cpp.equal, x, y)
 
@@ -145,6 +203,15 @@ def not_equal(x: VariableLike, y: VariableLike) -> VariableLike:
     -------
     :
         Booleans that are true where `a != b`.
+
+    Examples
+    --------
+    Compare an array with a scalar:
+
+      >>> import scipp as sc
+      >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='m')
+      >>> sc.not_equal(x, sc.scalar(2.0, unit='m'))
+      <scipp.Variable> (x: 3)       bool        <no unit>  [True, False, True]
     """
     return _call_cpp_func(_cpp.not_equal, x, y)
 
@@ -186,6 +253,22 @@ def identical(x: VariableLike, y: VariableLike, *, equal_nan: bool = False) -> b
     :
         True if x and y have identical values, variances, dtypes, units,
         dims, shapes, coords, and masks. Else False.
+
+    Examples
+    --------
+    Compare two identical arrays:
+
+      >>> import scipp as sc
+      >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='m')
+      >>> y = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='m')
+      >>> sc.identical(x, y)
+      True
+
+    Arrays with different units are not identical:
+
+      >>> z = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='cm')
+      >>> sc.identical(x, z)
+      False
     """
     if isinstance(x, data_group.DataGroup):
         if not isinstance(y, data_group.DataGroup):
@@ -257,6 +340,21 @@ def isclose(
     --------
     scipp.allclose:
         Equivalent of ``sc.all(sc.isclose(...)).value``.
+
+    Examples
+    --------
+    Compare with default tolerances:
+
+      >>> import scipp as sc
+      >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='m')
+      >>> y = sc.array(dims=['x'], values=[1.0001, 2.0, 2.999], unit='m')
+      >>> sc.isclose(x, y)
+      <scipp.Variable> (x: 3)       bool        <no unit>  [False, True, False]
+
+    With custom tolerances:
+
+      >>> sc.isclose(x, y, rtol=sc.scalar(1e-3), atol=sc.scalar(1e-3, unit='m'))
+      <scipp.Variable> (x: 3)       bool        <no unit>  [True, True, True]
     """
     if atol is None:
         atol = scalar(1e-8, unit=y.unit)
@@ -324,6 +422,22 @@ def allclose(
     --------
     scipp.isclose:
         Compares element-wise with specified tolerances.
+
+    Examples
+    --------
+    Arrays that are close within default tolerances:
+
+      >>> import scipp as sc
+      >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='m')
+      >>> y = sc.array(dims=['x'], values=[1.0001, 2.0, 3.0001], unit='m')
+      >>> sc.allclose(x, y)
+      False
+
+    Arrays with larger differences:
+
+      >>> z = sc.array(dims=['x'], values=[1.1, 2.0, 3.0], unit='m')
+      >>> sc.allclose(x, z)
+      False
     """
     return _call_cpp_func(  # type:ignore[no-any-return]
         _cpp.all, isclose(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan)

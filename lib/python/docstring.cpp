@@ -37,6 +37,11 @@ Docstring &Docstring::rtype(const std::string &s, const bool append) {
   return *this;
 }
 
+Docstring &Docstring::examples(const std::string &s, const bool append) {
+  update(m_examples, s, append);
+  return *this;
+}
+
 Docstring &Docstring::param(const std::string &name, const std::string &about,
                             const std::string &type) {
   if (m_params.find(name) == m_params.end()) {
@@ -61,6 +66,8 @@ const char *Docstring::c_str() {
   if (m_returns.size() > 0)
     m_output += ":return: " + m_returns + "\n";
   if (m_rtype.size() > 0)
-    m_output += ":rtype: " + m_rtype;
+    m_output += ":rtype: " + m_rtype + "\n";
+  if (m_examples.size() > 0)
+    m_output += "\n.. rubric:: Examples\n\n" + m_examples;
   return m_output.c_str();
 }

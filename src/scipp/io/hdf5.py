@@ -552,7 +552,53 @@ def save_hdf5(
     obj: object,
     filename: str | PathLike[str] | StringIO | BytesIO | h5.Group,
 ) -> None:
-    """Write an object out to file in HDF5 format."""
+    """Write an object out to file in HDF5 format.
+
+    Supported types include :class:`Variable`, :class:`DataArray`,
+    :class:`Dataset`, and :class:`DataGroup`. Nested structures are supported.
+
+    Parameters
+    ----------
+    obj:
+        The object to save. Can be a Variable, DataArray, Dataset, or DataGroup.
+    filename:
+        Path to the output file or an open HDF5 group.
+
+    See Also
+    --------
+    scipp.io.load_hdf5:
+        Load data from HDF5 files.
+
+    Examples
+    --------
+    Save and load a Variable:
+
+      >>> import scipp as sc
+      >>> import tempfile
+      >>> var = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='m')
+      >>> with tempfile.NamedTemporaryFile(suffix='.h5') as f:
+      ...     sc.io.save_hdf5(var, f.name)
+      ...     loaded = sc.io.load_hdf5(f.name)
+      >>> loaded
+      <scipp.Variable> (x: 3)    float64              [m]  [1, 2, 3]
+
+    Save and load a DataArray with coordinates:
+
+      >>> da = sc.DataArray(
+      ...     sc.array(dims=['x'], values=[10, 20, 30], unit='counts'),
+      ...     coords={'x': sc.array(dims=['x'], values=[0.1, 0.2, 0.3], unit='m')}
+      ... )
+      >>> with tempfile.NamedTemporaryFile(suffix='.h5') as f:
+      ...     sc.io.save_hdf5(da, f.name)
+      ...     loaded = sc.io.load_hdf5(f.name)
+      >>> loaded
+      <scipp.DataArray>
+      Dimensions: Sizes[x:3, ]
+      Coordinates:
+      * x                         float64              [m]  (x)  [0.1, 0.2, 0.3]
+      Data:
+                                    int64         [counts]  (x)  [10, 20, 30]
+    """
     import h5py
 
     if isinstance(filename, h5py.Group):
@@ -565,7 +611,30 @@ def save_hdf5(
 def load_hdf5(
     filename: str | PathLike[str] | StringIO | BytesIO | h5.Group,
 ) -> object:
-    """Load a Scipp-HDF5 file."""
+    """Load a Scipp-HDF5 file.
+
+    The file must have been written by :func:`scipp.io.save_hdf5` or be
+    compatible with Scipp's HDF5 format.
+
+    Parameters
+    ----------
+    filename:
+        Path to the input file or an open HDF5 group.
+
+    Returns
+    -------
+    :
+        The loaded object (Variable, DataArray, Dataset, or DataGroup).
+
+    See Also
+    --------
+    scipp.io.save_hdf5:
+        Save data to HDF5 files.
+
+    Examples
+    --------
+    See :func:`scipp.io.save_hdf5` for examples of saving and loading data.
+    """
     import h5py
 
     if isinstance(filename, h5py.Group):

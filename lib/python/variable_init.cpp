@@ -339,5 +339,18 @@ dtype:
    possible.
 aligned:
    Initial value for the alignment flag.
+
+Examples
+--------
+Use :py:func:`scipp.array` for 1-D or higher-dimensional data:
+
+  >>> import scipp as sc
+  >>> sc.array(dims=['x'], values=[1, 2, 3], unit='m')
+  <scipp.Variable> (x: 3)      int64  [m]  [1, 2, 3]
+
+Use :py:func:`scipp.scalar` for 0-D (scalar) data:
+
+  >>> sc.scalar(value=3.14, unit='rad')
+  <scipp.Variable> ()    float64  [rad]  3.14
 )raw");
 }

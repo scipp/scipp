@@ -72,6 +72,32 @@ def mean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
         Compute the standard deviation.
     scipp.nanmean:
         Ignore NaN's when calculating the mean.
+
+    Examples
+    --------
+    >>> import scipp as sc
+    >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0, 4.0], unit='m')
+    >>> sc.mean(x)
+    <scipp.Variable> ()    float64              [m]  2.5
+
+    Calculate mean along a specific dimension:
+
+    >>> x = sc.array(dims=['x', 'y'], values=[[1, 2, 3], [4, 5, 6]])
+    >>> sc.mean(x, 'y')
+    <scipp.Variable> (x: 2)    float64  [dimensionless]  [2, 5]
+
+    >>> sc.mean(x, 'x')
+    <scipp.Variable> (y: 3)    float64  [dimensionless]  [2.5, 3.5, 4.5]
+
+    With variances, the output variance is based on the standard error of the mean:
+
+    >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0, 4.0],
+    ...              variances=[0.1, 0.1, 0.1, 0.1], unit='m')
+    >>> result = sc.mean(x)
+    >>> result
+    <scipp.Variable> ()    float64              [m]  2.5  0.025
+    >>> result.variances is not None  # variance decreases by factor of N
+    True
     """
     return _apply_op(x, dim, _cpp.mean)  # type: ignore[return-value]
 
@@ -109,6 +135,20 @@ def nanmean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
         Compute the standard deviation, ignoring NaN's.
     scipp.mean:
         Compute the mean without special handling of NaN.
+
+    Examples
+    --------
+    >>> import scipp as sc
+    >>> import numpy as np
+    >>> x = sc.array(dims=['x'], values=[1.0, np.nan, 3.0, 4.0])
+    >>> sc.nanmean(x)
+    <scipp.Variable> ()    float64  [dimensionless]  2.66667
+
+    If all values are NaN, the result is NaN:
+
+    >>> x = sc.array(dims=['x'], values=[np.nan, np.nan, np.nan])
+    >>> sc.nanmean(x)
+    <scipp.Variable> ()    float64  [dimensionless]  ...nan
     """
     return _apply_op(x, dim, _cpp.nanmean)  # type: ignore[return-value]
 
@@ -181,6 +221,15 @@ def median(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
         Dimensions: Sizes[]
         Data:
                                     float64  [dimensionless]  ()  4
+
+    Data with variances is not supported:
+
+        >>> import scipp as sc
+        >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], variances=[0.1, 0.1, 0.1])
+        >>> sc.median(x)  # doctest: +IGNORE_EXCEPTION_DETAIL
+        Traceback (most recent call last):
+            ...
+        scipp.core.VariancesError: 'median' does not support variances
     """
     r = _reduce_with_numpy(
         x,
@@ -236,6 +285,8 @@ def nanmedian(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     --------
     ``nanmedian`` is available as a method:
 
+        >>> import scipp as sc
+        >>> import numpy as np
         >>> x = sc.array(dims=['x'], values=[2, 5, 1, np.nan, 8, 4])
         >>> x.nanmedian()
         <scipp.Variable> ()    float64  [dimensionless]  4
@@ -413,6 +464,8 @@ def nanvar(x: VariableLikeType, dim: Dims = None, *, ddof: int) -> VariableLikeT
     --------
     ``nanvar`` is available as a method:
 
+        >>> import scipp as sc
+        >>> import numpy as np
         >>> x = sc.array(dims=['x'], values=[np.nan, 5, 2, 3])
         >>> x.nanvar(ddof=0)
         <scipp.Variable> ()    float64  [dimensionless]  1.55556
@@ -594,6 +647,8 @@ def nanstd(x: VariableLikeType, dim: Dims = None, *, ddof: int) -> VariableLikeT
     --------
     ``nanstd`` is available as a method:
 
+        >>> import scipp as sc
+        >>> import numpy as np
         >>> x = sc.array(dims=['x'], values=[np.nan, 5, 2, 3])
         >>> x.nanstd(ddof=0)
         <scipp.Variable> ()    float64  [dimensionless]  1.24722
@@ -645,6 +700,21 @@ def sum(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     --------
     scipp.nansum:
         Ignore NaN's when calculating the sum.
+
+    Examples
+    --------
+    >>> import scipp as sc
+    >>> x = sc.array(dims=['x'], values=[1, 2, 3, 4], unit='m')
+    >>> sc.sum(x)
+    <scipp.Variable> ()      int64              [m]  10
+
+    Sum along a specific dimension:
+
+    >>> x = sc.array(dims=['x', 'y'], values=[[1, 2, 3], [4, 5, 6]])
+    >>> sc.sum(x, 'y')
+    <scipp.Variable> (x: 2)      int64  [dimensionless]  [6, 15]
+    >>> sc.sum(x, 'x')
+    <scipp.Variable> (y: 3)      int64  [dimensionless]  [5, 7, 9]
     """
     return _apply_op(x, dim, _cpp.sum)  # type: ignore[return-value]
 
@@ -671,6 +741,14 @@ def nansum(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     --------
     scipp.sum:
        Compute the sum without special handling of NaN.
+
+    Examples
+    --------
+    >>> import scipp as sc
+    >>> import numpy as np
+    >>> x = sc.array(dims=['x'], values=[1.0, np.nan, 3.0, 4.0])
+    >>> sc.nansum(x)
+    <scipp.Variable> ()    float64  [dimensionless]  8
     """
     return _apply_op(x, dim, _cpp.nansum)  # type: ignore[return-value]
 
@@ -707,6 +785,19 @@ def min(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
         Same as min but ignoring NaN's.
     scipp.nanmax:
         Same as max but ignoring NaN's.
+
+    Examples
+    --------
+    >>> import scipp as sc
+    >>> x = sc.array(dims=['x'], values=[3, 1, 4, 1, 5])
+    >>> sc.min(x)
+    <scipp.Variable> ()      int64  [dimensionless]  1
+
+    Minimum along a specific dimension:
+
+    >>> x = sc.array(dims=['x', 'y'], values=[[3, 1, 4], [1, 5, 9]])
+    >>> sc.min(x, 'y')
+    <scipp.Variable> (x: 2)      int64  [dimensionless]  [1, 1]
     """
     return _apply_op(x, dim, _cpp.min)  # type: ignore[return-value]
 
@@ -743,6 +834,19 @@ def max(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
         Same as min but ignoring NaN's.
     scipp.nanmax:
         Same as max but ignoring NaN's.
+
+    Examples
+    --------
+    >>> import scipp as sc
+    >>> x = sc.array(dims=['x'], values=[3, 1, 4, 1, 5])
+    >>> sc.max(x)
+    <scipp.Variable> ()      int64  [dimensionless]  5
+
+    Maximum along a specific dimension:
+
+    >>> x = sc.array(dims=['x', 'y'], values=[[3, 1, 4], [1, 5, 9]])
+    >>> sc.max(x, 'y')
+    <scipp.Variable> (x: 2)      int64  [dimensionless]  [4, 9]
     """
     return _apply_op(x, dim, _cpp.max)  # type: ignore[return-value]
 
@@ -779,6 +883,14 @@ def nanmin(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
         Element-wise maximum without special handling for NaN.
     scipp.nanmax:
         Same as max but ignoring NaN's.
+
+    Examples
+    --------
+    >>> import scipp as sc
+    >>> import numpy as np
+    >>> x = sc.array(dims=['x'], values=[3.0, np.nan, 1.0, 4.0])
+    >>> sc.nanmin(x)
+    <scipp.Variable> ()    float64  [dimensionless]  1
     """
     return _apply_op(x, dim, _cpp.nanmin)  # type: ignore[return-value]
 
@@ -815,6 +927,14 @@ def nanmax(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
         Element-wise minimum without special handling for NaN.
     scipp.nanmin:
         Same as min but ignoring NaN's.
+
+    Examples
+    --------
+    >>> import scipp as sc
+    >>> import numpy as np
+    >>> x = sc.array(dims=['x'], values=[3.0, np.nan, 1.0, 5.0])
+    >>> sc.nanmax(x)
+    <scipp.Variable> ()    float64  [dimensionless]  5
     """
     return _apply_op(x, dim, _cpp.nanmax)  # type: ignore[return-value]
 
@@ -840,6 +960,22 @@ def all(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     --------
     scipp.any:
         Logical OR.
+
+    Examples
+    --------
+    >>> import scipp as sc
+    >>> x = sc.array(dims=['x'], values=[True, True, True])
+    >>> sc.all(x)
+    <scipp.Variable> ()       bool        <no unit>  True
+    >>> y = sc.array(dims=['x'], values=[True, False, True])
+    >>> sc.all(y)
+    <scipp.Variable> ()       bool        <no unit>  False
+
+    Along a dimension:
+
+    >>> x = sc.array(dims=['x', 'y'], values=[[True, False], [True, True]])
+    >>> sc.all(x, 'y')
+    <scipp.Variable> (x: 2)       bool        <no unit>  [False, True]
     """
     return _apply_op(x, dim, _cpp.all)  # type: ignore[return-value]
 
@@ -865,6 +1001,22 @@ def any(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     --------
     scipp.all:
         Logical AND.
+
+    Examples
+    --------
+    >>> import scipp as sc
+    >>> x = sc.array(dims=['x'], values=[False, False, False])
+    >>> sc.any(x)
+    <scipp.Variable> ()       bool        <no unit>  False
+    >>> y = sc.array(dims=['x'], values=[False, True, False])
+    >>> sc.any(y)
+    <scipp.Variable> ()       bool        <no unit>  True
+
+    Along a dimension:
+
+    >>> x = sc.array(dims=['x', 'y'], values=[[False, True], [False, False]])
+    >>> sc.any(x, 'y')
+    <scipp.Variable> (x: 2)       bool        <no unit>  [True, False]
     """
     return _apply_op(x, dim, _cpp.any)  # type: ignore[return-value]
 

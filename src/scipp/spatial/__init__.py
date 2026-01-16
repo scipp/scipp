@@ -101,6 +101,26 @@ def translation(
     -------
     :
         A scalar variable of dtype ``translation3``.
+
+    See Also
+    --------
+    scipp.spatial.translations:
+        Create multiple translation transformations.
+
+    Examples
+    --------
+    Create a translation by 1 meter in x, 2 meters in y, and 3 meters in z:
+
+      >>> import scipp as sc
+      >>> trans = sc.spatial.translation(value=[1, 2, 3], unit='m')
+      >>> trans
+      <scipp.Variable> ()  translation3              [m]  (1, 2, 3)
+
+    Apply the translation to a vector:
+
+      >>> vec = sc.vector(value=[10, 20, 30], unit='m')
+      >>> trans * vec
+      <scipp.Variable> ()    vector3              [m]  (11, 22, 33)
     """
     return translations(dims=(), unit=unit, values=value)
 
@@ -127,7 +147,25 @@ def translations(
     -------
     :
         An array variable of dtype ``translation3``.
-    """
+
+    See Also
+    --------
+    scipp.spatial.translation:
+        Create a single translation transformation.
+
+    Examples
+    --------
+    Create multiple translations along different axes:
+
+      >>> import scipp as sc
+      >>> trans = sc.spatial.translations(
+      ...     dims=['x'],
+      ...     values=[[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+      ...     unit='m'
+      ... )
+      >>> trans
+      <scipp.Variable> (x: 3)  translation3              [m]  [(1, 0, 0), (0, 1, 0), (0, 0, 1)]
+    """  # noqa: E501
     return Variable(dims=dims, unit=unit, values=values, dtype=DType.translation3)
 
 
@@ -145,7 +183,27 @@ def scaling_from_vector(*, value: npt.NDArray[_Float] | Sequence[_Float]) -> Var
     -------
     :
        A scalar variable of dtype ``linear_transform3``.
-    """
+
+    See Also
+    --------
+    scipp.spatial.scalings_from_vectors:
+        Create multiple scaling transformations.
+
+    Examples
+    --------
+    Create a scaling transformation:
+
+      >>> import scipp as sc
+      >>> scale = sc.spatial.scaling_from_vector(value=[2, 3, 4])
+      >>> scale
+      <scipp.Variable> ()  linear_transform3  [dimensionless]  ((2, 0, 0), , (0, 3, 0), , (0, 0, 4), )
+
+    Apply the scaling to a vector:
+
+      >>> vec = sc.vector(value=[1, 1, 1], unit='m')
+      >>> scale * vec
+      <scipp.Variable> ()    vector3              [m]  (2, 3, 4)
+    """  # noqa: E501
     return linear_transforms(dims=[], values=np.diag(value))
 
 
@@ -167,7 +225,24 @@ def scalings_from_vectors(
     -------
     :
         An array variable of dtype ``linear_transform3``.
-    """
+
+    See Also
+    --------
+    scipp.spatial.scaling_from_vector:
+        Create a single scaling transformation.
+
+    Examples
+    --------
+    Create multiple scaling transformations:
+
+      >>> import scipp as sc
+      >>> scales = sc.spatial.scalings_from_vectors(
+      ...     dims=['scale'],
+      ...     values=[[1, 1, 1], [2, 2, 2], [0.5, 0.5, 0.5]]
+      ... )
+      >>> scales
+      <scipp.Variable> (scale: 3)  linear_transform3  [dimensionless]  [(...), (...), (...)]
+    """  # noqa: E501
     identity = linear_transform(value=np.identity(3))
     matrices = identity.broadcast(
         dims=dims,
@@ -194,10 +269,10 @@ def rotation(*, value: npt.NDArray[_Float] | Sequence[_Float]) -> Variable:
     Attention
     ---------
     The quaternion must be normalized in order to represent a rotation.
-    You can use, e.g.
+    You can use, e.g.::
 
-        >>> q = np.array([1, 2, 3, 4])
-        >>> rot = sc.spatial.rotation(value=q / np.linalg.norm(q))
+        q = np.array([1, 2, 3, 4])
+        rot = sc.spatial.rotation(value=q / np.linalg.norm(q))
 
     Parameters
     ----------
@@ -209,6 +284,29 @@ def rotation(*, value: npt.NDArray[_Float] | Sequence[_Float]) -> Variable:
     -------
     :
         A scalar variable of dtype ``rotation3``.
+
+    See Also
+    --------
+    scipp.spatial.rotations:
+        Create multiple rotation transformations.
+    scipp.spatial.rotations_from_rotvecs:
+        Create rotations from rotation vectors.
+
+    Examples
+    --------
+    Create an identity rotation (no rotation):
+
+      >>> import scipp as sc
+      >>> rot = sc.spatial.rotation(value=[0, 0, 0, 1])
+      >>> rot
+      <scipp.Variable> ()  rotation3  [dimensionless]  (1+0i+0j+0k)
+
+    Create a 180 degree rotation around the z-axis and apply it to a vector:
+
+      >>> rot_180z = sc.spatial.rotation(value=[0, 0, 1, 0])
+      >>> vec_x = sc.vector(value=[1, 0, 0])
+      >>> rot_180z * vec_x
+      <scipp.Variable> ()    vector3  [dimensionless]  (-1, 0, 0)
     """
     return rotations(dims=(), values=value)
 
@@ -229,12 +327,12 @@ def rotations(
     Attention
     ---------
     The quaternions must be normalized in order to represent a rotation.
-    You can use, e.g.
+    You can use, e.g.::
 
-        >>> q = np.array([[1, 2, 3, 4], [-1, -2, -3, -4]])
-        >>> rot = sc.spatial.rotations(
-        ...     dims=['x'],
-        ...     values=q / np.linalg.norm(q, axis=1)[:, np.newaxis])
+        q = np.array([[1, 2, 3, 4], [-1, -2, -3, -4]])
+        rot = sc.spatial.rotations(
+            dims=['x'],
+            values=q / np.linalg.norm(q, axis=1)[:, np.newaxis])
 
     Parameters
     ----------
@@ -248,6 +346,25 @@ def rotations(
     -------
     :
         An array variable of dtype ``rotation3``.
+
+    See Also
+    --------
+    scipp.spatial.rotation:
+        Create a single rotation transformation.
+    scipp.spatial.rotations_from_rotvecs:
+        Create rotations from rotation vectors.
+
+    Examples
+    --------
+    Create multiple rotations from quaternions (identity and 180 deg around z):
+
+      >>> import numpy as np
+      >>> import scipp as sc
+      >>> q_array = np.array([[0, 0, 0, 1], [0, 0, 1, 0]])
+      >>> rots = sc.spatial.rotations(dims=['rot'], values=q_array)
+      >>> rots  # doctest: +NORMALIZE_WHITESPACE
+      <scipp.Variable> (rot: 2)  rotation3  [dimensionless]
+      [(1+0i+0j+0k), (0+0i+0j+1k)]
     """
     values = np.asarray(values)
     if values.shape[-1] != 4:
@@ -278,6 +395,29 @@ def rotations_from_rotvecs(rotation_vectors: Variable) -> Variable:
     -------
     :
         An array variable of dtype ``rotation3``.
+
+    See Also
+    --------
+    scipp.spatial.rotation:
+        Create a single rotation from quaternion coefficients.
+    scipp.spatial.rotations:
+        Create multiple rotations from quaternion coefficients.
+
+    Examples
+    --------
+    Create rotations from rotation vectors (90 degrees around z and x axes):
+
+      >>> import numpy as np
+      >>> import scipp as sc
+      >>> rotvecs = sc.vectors(
+      ...     dims=['rot'],
+      ...     values=[[0, 0, np.pi/2], [np.pi/2, 0, 0]],
+      ...     unit='rad'
+      ... )
+      >>> rots = sc.spatial.rotations_from_rotvecs(rotvecs)
+      >>> rots  # doctest: +NORMALIZE_WHITESPACE
+      <scipp.Variable> (rot: 2)  rotation3  [dimensionless]
+      [(0.707107+0i+0j+0.707107k), (0.707107+0.707107i+0j+0k)]
     """
     from scipy.spatial.transform import Rotation as R
 
@@ -345,6 +485,30 @@ def affine_transform(
     -------
     :
         A scalar variable of dtype ``affine_transform3``.
+
+    See Also
+    --------
+    scipp.spatial.affine_transforms:
+        Create multiple affine transformations.
+
+    Examples
+    --------
+    Create an affine transformation combining identity rotation and translation:
+
+      >>> import numpy as np
+      >>> import scipp as sc
+      >>> affine_matrix = np.array([
+      ...     [1, 0, 0, 5],
+      ...     [0, 1, 0, 10],
+      ...     [0, 0, 1, 15],
+      ...     [0, 0, 0, 1]
+      ... ])
+      >>> affine = sc.spatial.affine_transform(value=affine_matrix, unit='m')
+      >>> affine
+      <scipp.Variable> ()  affine_transform3              [m]   1  0  0  5
+       0  1  0 10
+       0  0  1 15
+       0  0  0  1
     """
     return affine_transforms(dims=[], unit=unit, values=value)
 
@@ -372,7 +536,26 @@ def affine_transforms(
     -------
     :
         An array variable of dtype ``affine_transform3``.
-    """
+
+    See Also
+    --------
+    scipp.spatial.affine_transform:
+        Create a single affine transformation.
+
+    Examples
+    --------
+    Create multiple affine transformations:
+
+      >>> import numpy as np
+      >>> import scipp as sc
+      >>> affine_matrices = np.array([
+      ...     [[1, 0, 0, 1], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]],
+      ...     [[1, 0, 0, 0], [0, 1, 0, 2], [0, 0, 1, 0], [0, 0, 0, 1]]
+      ... ])
+      >>> affines = sc.spatial.affine_transforms(dims=['affine'], values=affine_matrices, unit='m')
+      >>> affines
+      <scipp.Variable> (affine: 2)  affine_transform3              [m]  [...]
+    """  # noqa: E501
     return Variable(
         dims=dims,
         unit=unit,
@@ -401,7 +584,29 @@ def linear_transform(
     -------
     :
         A scalar variable of dtype ``linear_transform3``.
-    """
+
+    See Also
+    --------
+    scipp.spatial.linear_transforms:
+        Create multiple linear transformations.
+
+    Examples
+    --------
+    Create an identity transformation:
+
+      >>> import numpy as np
+      >>> import scipp as sc
+      >>> identity = sc.spatial.linear_transform(value=np.identity(3))
+      >>> identity
+      <scipp.Variable> ()  linear_transform3  [dimensionless]  ((1, 0, 0), , (0, 1, 0), , (0, 0, 1), )
+
+    Create a rotation matrix (90 degrees around z-axis):
+
+      >>> rot_matrix = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
+      >>> linear_rot = sc.spatial.linear_transform(value=rot_matrix)
+      >>> linear_rot
+      <scipp.Variable> ()  linear_transform3  [dimensionless]  ((0, -1, 0), , (1, 0, 0), , (0, 0, 1), )
+    """  # noqa: E501
     return linear_transforms(
         dims=(),
         unit=unit,
@@ -432,7 +637,26 @@ def linear_transforms(
     -------
     :
         An array variable of dtype ``linear_transform3``.
-    """
+
+    See Also
+    --------
+    scipp.spatial.linear_transform:
+        Create a single linear transformation.
+
+    Examples
+    --------
+    Create multiple linear transformations:
+
+      >>> import numpy as np
+      >>> import scipp as sc
+      >>> matrices = np.array([
+      ...     [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+      ...     [[2, 0, 0], [0, 2, 0], [0, 0, 2]]
+      ... ])
+      >>> linear_array = sc.spatial.linear_transforms(dims=['transform'], values=matrices)
+      >>> linear_array
+      <scipp.Variable> (transform: 2)  linear_transform3  [dimensionless]  [(...), (...)]
+    """  # noqa: E501
     return Variable(
         dims=dims,
         unit=unit,
@@ -459,7 +683,32 @@ def inv(var: Variable) -> Variable:
     -------
     :
         A variable holding the inverse transformation to ``var``.
-    """
+
+    Examples
+    --------
+    Inverse of a translation:
+
+      >>> import scipp as sc
+      >>> trans = sc.spatial.translation(value=[1, 2, 3], unit='m')
+      >>> inv_trans = sc.spatial.inv(trans)
+      >>> inv_trans
+      <scipp.Variable> ()  translation3              [m]  (-1, -2, -3)
+
+    Inverse of a rotation:
+
+      >>> import numpy as np
+      >>> rot = sc.spatial.rotation(value=[0, 0, 1/np.sqrt(2), 1/np.sqrt(2)])
+      >>> inv_rot = sc.spatial.inv(rot)
+      >>> inv_rot
+      <scipp.Variable> ()  rotation3  [dimensionless]  (...-0.707107k)
+
+    Inverse of a scaling transformation:
+
+      >>> scale = sc.spatial.scaling_from_vector(value=[2, 3, 4])
+      >>> inv_scale = sc.spatial.inv(scale)
+      >>> inv_scale
+      <scipp.Variable> ()  linear_transform3  [dimensionless]  ((0.5, 0, 0), , (0, 0.333333, 0), , (0, 0, 0.25), )
+    """  # noqa: E501
     return _call_cpp_func(_core_cpp.inv, var)  # type: ignore[return-value]
 
 

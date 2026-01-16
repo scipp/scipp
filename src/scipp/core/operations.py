@@ -35,6 +35,23 @@ def islinspace(x: _T, dim: str | None = None) -> _T:
     :
         Variable of value True if the variable contains regularly
         spaced values, variable of value False otherwise.
+
+    Examples
+    --------
+    Check if values are evenly spaced:
+
+      >>> import scipp as sc
+      >>> x = sc.linspace('x', 0.0, 1.0, num=5, unit='m')
+      >>> x
+      <scipp.Variable> (x: 5)    float64              [m]  [0, 0.25, ..., 0.75, 1]
+      >>> sc.islinspace(x)
+      <scipp.Variable> ()       bool        <no unit>  True
+
+    Non-evenly spaced values return False:
+
+      >>> x_nonlin = sc.array(dims=['x'], values=[0.0, 1.0, 3.0, 4.0], unit='m')
+      >>> sc.islinspace(x_nonlin)
+      <scipp.Variable> ()       bool        <no unit>  False
     """
     if dim is None:
         return _call_cpp_func(_cpp.islinspace, x)  # type: ignore[return-value]
@@ -71,6 +88,27 @@ def issorted(
     See Also
     --------
     scipp.allsorted
+
+    Examples
+    --------
+    Check if a 1-D variable is sorted:
+
+      >>> import scipp as sc
+      >>> x = sc.array(dims=['x'], values=[1, 2, 3, 4, 5])
+      >>> sc.issorted(x, 'x')
+      <scipp.Variable> ()       bool        <no unit>  True
+
+    Not sorted values return False:
+
+      >>> x_unsorted = sc.array(dims=['x'], values=[1, 3, 2, 4, 5])
+      >>> sc.issorted(x_unsorted, 'x')
+      <scipp.Variable> ()       bool        <no unit>  False
+
+    For multi-dimensional data, returns a result with one less dimension:
+
+      >>> data_2d = sc.array(dims=['x', 'y'], values=[[1, 2, 3], [4, 5, 6]])
+      >>> sc.issorted(data_2d, 'y')
+      <scipp.Variable> (x: 2)       bool        <no unit>  [True, True]
     """
     return _call_cpp_func(_cpp.issorted, x, dim, order)  # type: ignore[return-value]
 
@@ -119,6 +157,27 @@ def allsorted(
     See Also
     --------
     scipp.issorted
+
+    Examples
+    --------
+    Check if all values are sorted in ascending order:
+
+      >>> import scipp as sc
+      >>> x = sc.array(dims=['x'], values=[1, 2, 3, 4, 5])
+      >>> sc.allsorted(x, 'x')
+      True
+
+    Unsorted values return False:
+
+      >>> x_unsorted = sc.array(dims=['x'], values=[1, 3, 2, 4, 5])
+      >>> sc.allsorted(x_unsorted, 'x')
+      False
+
+    Check descending order:
+
+      >>> x_desc = sc.array(dims=['x'], values=[5, 4, 3, 2, 1])
+      >>> sc.allsorted(x_desc, 'x', order='descending')
+      True
     """
     return _call_cpp_func(_cpp.allsorted, x, dim, order)
 
@@ -153,6 +212,34 @@ def sort(
     ------
     scipp.DimensionError
         If the key is a Variable that does not have exactly 1 dimension.
+
+    Examples
+    --------
+    Sort a variable by its own values:
+
+      >>> import scipp as sc
+      >>> x = sc.array(dims=['x'], values=[3, 1, 4, 1, 5], unit='m')
+      >>> sc.sort(x, key='x')
+      <scipp.Variable> (x: 5)      int64              [m]  [1, 1, ..., 4, 5]
+
+    Sort a DataArray by a coordinate:
+
+      >>> da = sc.DataArray(
+      ...     data=sc.array(dims=['x'], values=[10, 20, 30, 40], unit='K'),
+      ...     coords={'x': sc.array(dims=['x'], values=[3.0, 1.0, 4.0, 2.0], unit='m')}
+      ... )
+      >>> sc.sort(da, key='x')
+      <scipp.DataArray>
+      Dimensions: Sizes[x:4, ]
+      Coordinates:
+      * x                         float64              [m]  (x)  [1, 2, 3, 4]
+      Data:
+                                    int64              [K]  (x)  [20, 40, 10, 30]
+
+    Sort in descending order:
+
+      >>> sc.sort(x, key='x', order='descending')
+      <scipp.Variable> (x: 5)      int64              [m]  [5, 4, ..., 1, 1]
     """
     return _call_cpp_func(_cpp.sort, x, key, order)  # type: ignore[return-value]
 
@@ -173,7 +260,18 @@ def values(x: VariableLikeType) -> VariableLikeType:
     See Also
     --------
     scipp.variances, scipp.stddevs
-    """
+
+    Examples
+    --------
+    Extract values from a variable with variances:
+
+      >>> import scipp as sc
+      >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], variances=[0.1, 0.2, 0.3], unit='m')
+      >>> x
+      <scipp.Variable> (x: 3)    float64              [m]  [1, 2, 3]  [0.1, 0.2, 0.3]
+      >>> sc.values(x)
+      <scipp.Variable> (x: 3)    float64              [m]  [1, 2, 3]
+    """  # noqa: E501
     return _call_cpp_func(_cpp.values, x)  # type: ignore[return-value]
 
 
@@ -194,7 +292,16 @@ def variances(x: VariableLikeType) -> VariableLikeType:
     See Also
     --------
     scipp.values, scipp.stddevs
-    """
+
+    Examples
+    --------
+    Extract variances as values:
+
+      >>> import scipp as sc
+      >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], variances=[0.1, 0.2, 0.3], unit='m')
+      >>> sc.variances(x)
+      <scipp.Variable> (x: 3)    float64            [m^2]  [0.1, 0.2, 0.3]
+    """  # noqa: E501
     return _call_cpp_func(_cpp.variances, x)  # type: ignore[return-value]
 
 
@@ -215,7 +322,16 @@ def stddevs(x: VariableLikeType) -> VariableLikeType:
     See Also
     --------
     scipp.values, scipp.variances
-    """
+
+    Examples
+    --------
+    Extract standard deviations (square root of variances) as values:
+
+      >>> import scipp as sc
+      >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], variances=[0.1, 0.2, 0.3], unit='m')
+      >>> sc.stddevs(x)
+      <scipp.Variable> (x: 3)    float64              [m]  [0.316228, 0.447214, 0.547723]
+    """  # noqa: E501
     return _call_cpp_func(_cpp.stddevs, x)  # type: ignore[return-value]
 
 
@@ -254,7 +370,40 @@ def where(
     :
         Array with elements from x where condition is True
         and elements from y elsewhere.
-    """
+
+    Examples
+    --------
+    Select values based on a condition:
+
+      >>> import scipp as sc
+      >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0, 4.0, 5.0], unit='m')
+      >>> condition = x > sc.scalar(3.0, unit='m')
+      >>> condition
+      <scipp.Variable> (x: 5)       bool        <no unit>  [False, False, ..., True, True]
+      >>> y = sc.array(dims=['x'], values=[10.0, 20.0, 30.0, 40.0, 50.0], unit='m')
+      >>> z = sc.array(dims=['x'], values=[100.0, 200.0, 300.0, 400.0, 500.0], unit='m')
+      >>> sc.where(condition, y, z)
+      <scipp.Variable> (x: 5)    float64              [m]  [100, 200, ..., 40, 50]
+
+    With a DataArray, coordinates are preserved:
+
+      >>> da1 = sc.DataArray(
+      ...     data=sc.array(dims=['x'], values=[1, 2, 3], unit='K'),
+      ...     coords={'x': sc.arange('x', 3, unit='m')}
+      ... )
+      >>> da2 = sc.DataArray(
+      ...     data=sc.array(dims=['x'], values=[10, 20, 30], unit='K'),
+      ...     coords={'x': sc.arange('x', 3, unit='m')}
+      ... )
+      >>> cond = sc.array(dims=['x'], values=[True, False, True])
+      >>> sc.where(cond, da1, da2)
+      <scipp.DataArray>
+      Dimensions: Sizes[x:3, ]
+      Coordinates:
+      * x                           int64              [m]  (x)  [0, 1, 2]
+      Data:
+                                    int64              [K]  (x)  [1, 20, 3]
+    """  # noqa: E501
     return _call_cpp_func(_cpp.where, condition, x, y)  # type: ignore[return-value]
 
 
@@ -306,6 +455,27 @@ def to(
     See Also
     --------
     scipp.to_unit, scipp.DataArray.astype, scipp.Variable.astype
+
+    Examples
+    --------
+    Convert units only:
+
+      >>> import scipp as sc
+      >>> var = sc.array(dims=['x'], values=[1000.0, 2000.0], unit='m')
+      >>> var.to(unit='km')
+      <scipp.Variable> (x: 2)    float64             [km]  [1, 2]
+
+    Convert dtype only:
+
+      >>> var_int = sc.array(dims=['x'], values=[1, 2, 3])
+      >>> var_int.to(dtype='float64')
+      <scipp.Variable> (x: 3)    float64  [dimensionless]  [1, 2, 3]
+
+    Convert both unit and dtype:
+
+      >>> var_m = sc.array(dims=['x'], values=[1000, 2000, 3000], unit='m')
+      >>> var_m.to(unit='km', dtype='float32')
+      <scipp.Variable> (x: 3)    float32             [km]  [1, 2, 3]
     """
     if unit is None and dtype is None:
         raise ValueError("Must provide dtype or unit or both")
@@ -359,7 +529,34 @@ def merge(lhs: _DsDg, rhs: _DsDg) -> _DsDg:
     ------
     scipp.DatasetError
         If there are conflicting items with different content.
-    """
+
+    Examples
+    --------
+    Merge two datasets with different data items:
+
+      >>> import scipp as sc
+      >>> ds1 = sc.Dataset(data={'a': sc.scalar(1, unit='m'), 'b': sc.scalar(2, unit='s')})
+      >>> ds2 = sc.Dataset(data={'c': sc.scalar(3, unit='K'), 'd': sc.scalar(4, unit='kg')})
+      >>> sc.merge(ds1, ds2)
+      <scipp.Dataset>
+      Dimensions: Sizes[]
+      Data:
+        a                           int64              [m]  ()  1
+        b                           int64              [s]  ()  2
+        c                           int64              [K]  ()  3
+        d                           int64             [kg]  ()  4
+
+    Identical items in both inputs are allowed:
+
+      >>> ds3 = sc.Dataset(data={'a': sc.scalar(1, unit='m'), 'e': sc.scalar(5, unit='A')})
+      >>> sc.merge(ds1, ds3)
+      <scipp.Dataset>
+      Dimensions: Sizes[]
+      Data:
+        a                           int64              [m]  ()  1
+        b                           int64              [s]  ()  2
+        e                           int64              [A]  ()  5
+    """  # noqa: E501
     # Check both arguments to make `_cpp.merge` raise TypeError on mismatch.
     if isinstance(lhs, Dataset) or isinstance(rhs, Dataset):  # type: ignore[redundant-expr]
         return _call_cpp_func(_cpp.merge, lhs, rhs)  # type: ignore[return-value]

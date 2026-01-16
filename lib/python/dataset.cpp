@@ -62,18 +62,83 @@ void bind_dataset_view_methods(py::class_<Dataset, Ignored...> &c) {
   c.def(
       "keys", [](Dataset &self) { return keys_view(self); },
       py::return_value_policy::move, py::keep_alive<0, 1>(),
-      R"(view on self's keys)");
+      R"(View of the Dataset's data array names.
+
+Examples
+--------
+
+  >>> import scipp as sc
+  >>> ds = sc.Dataset({'a': sc.array(dims=['x'], values=[1, 2]),
+  ...                  'b': sc.array(dims=['x'], values=[3, 4])})
+  >>> list(ds.keys())
+  ['a', 'b']
+)");
   c.def(
       "values", [](Dataset &self) { return values_view(self); },
       py::return_value_policy::move, py::keep_alive<0, 1>(),
-      R"(view on self's values)");
+      R"(View of the Dataset's data arrays.
+
+Examples
+--------
+
+  >>> import scipp as sc
+  >>> ds = sc.Dataset({'a': sc.array(dims=['x'], values=[1, 2]),
+  ...                  'b': sc.array(dims=['x'], values=[3, 4])})
+  >>> for da in ds.values():
+  ...     print(da.dims)
+  ('x',)
+  ('x',)
+)");
   c.def(
       "items", [](Dataset &self) { return items_view(self); },
       py::return_value_policy::move, py::keep_alive<0, 1>(),
-      R"(view on self's items)");
-  c.def("__getitem__", [](const Dataset &self, const std::string &name) {
-    return self[name];
-  });
+      R"(View of the Dataset's (name, data array) pairs.
+
+Examples
+--------
+
+  >>> import scipp as sc
+  >>> ds = sc.Dataset({'a': sc.array(dims=['x'], values=[1, 2]),
+  ...                  'b': sc.array(dims=['x'], values=[3, 4])})
+  >>> for name, da in ds.items():
+  ...     print(f'{name}: {da.dims}')
+  a: ('x',)
+  b: ('x',)
+)");
+  c.def(
+      "__getitem__",
+      [](const Dataset &self, const std::string &name) { return self[name]; },
+      py::arg("name"),
+      R"(Access a data item by name.
+
+Parameters
+----------
+name:
+    Name of the data item to access.
+
+Returns
+-------
+:
+    The DataArray with the given name.
+
+Examples
+--------
+Access a data item in the dataset:
+
+  >>> import scipp as sc
+  >>> ds = sc.Dataset({
+  ...     'a': sc.array(dims=['x'], values=[1, 2, 3]),
+  ...     'b': sc.array(dims=['x'], values=[4.0, 5.0, 6.0], unit='m')
+  ... })
+  >>> ds['a']
+  <scipp.DataArray>
+  Dimensions: Sizes[x:3, ]
+  Data:
+    a                           int64  [dimensionless]  (x)  [1, 2, 3]
+
+  >>> ds['b'].unit
+  Unit(m)
+)");
   c.def("__contains__", [](const Dataset &self, const py::handle &key) {
     try {
       return self.contains(key.cast<std::string>());
@@ -184,7 +249,75 @@ Returned by :py:meth:`DataArray.coords` and :py:meth:`Dataset.coords`.)");
 Returned by :py:func:`DataArray.masks`)");
 
   py::class_<DataArray> dataArray(m, "DataArray", R"(
-    Named variable with associated coords and masks.)");
+Named variable with associated coords and masks.
+
+DataArrays support rich indexing with dimension labels and coordinate values:
+
+Examples
+--------
+Create a data array and access elements:
+
+  >>> import scipp as sc
+  >>> da = sc.DataArray(
+  ...     sc.array(dims=['x'], values=[1.0, 2.0, 3.0, 4.0], unit='K'),
+  ...     coords={'x': sc.array(dims=['x'], values=[0.0, 1.0, 2.0, 3.0], unit='m')},
+  ... )
+
+Integer indexing with explicit dimension:
+
+  >>> da['x', 0]
+  <scipp.DataArray>
+  Dimensions: Sizes[]
+  Coordinates:
+    x                         float64              [m]  ()  0
+  Data:
+                              float64              [K]  ()  1
+
+Slicing preserves coordinates:
+
+  >>> da['x', 1:3]
+  <scipp.DataArray>
+  Dimensions: Sizes[x:2, ]
+  Coordinates:
+  * x                         float64              [m]  (x)  [1, 2]
+  Data:
+                              float64              [K]  (x)  [2, 3]
+
+Label-based indexing with a scalar value:
+
+  >>> da['x', sc.scalar(1.0, unit='m')]
+  <scipp.DataArray>
+  Dimensions: Sizes[]
+  Coordinates:
+    x                         float64              [m]  ()  1
+  Data:
+                              float64              [K]  ()  2
+
+Label-based slicing with a range:
+
+  >>> da['x', sc.scalar(0.5, unit='m'):sc.scalar(2.5, unit='m')]
+  <scipp.DataArray>
+  Dimensions: Sizes[x:2, ]
+  Coordinates:
+  * x                         float64              [m]  (x)  [1, 2]
+  Data:
+                              float64              [K]  (x)  [2, 3]
+
+Boolean masking:
+
+  >>> condition = da.coords['x'] > sc.scalar(1.0, unit='m')
+  >>> da[condition]
+  <scipp.DataArray>
+  Dimensions: Sizes[x:2, ]
+  Coordinates:
+  * x                         float64              [m]  (x)  [2, 3]
+  Data:
+                              float64              [K]  (x)  [3, 4]
+
+See Also
+--------
+scipp.Variable, scipp.Dataset
+)");
   py::options options;
   options.disable_function_signatures();
   dataArray.def(
@@ -209,13 +342,75 @@ Returned by :py:func:`DataArray.masks`)");
               Masks referenced by name.
           name:
               Name of the data array.
+
+          Examples
+          --------
+          Create a DataArray with data and a coordinate:
+
+            >>> import scipp as sc
+            >>> da = sc.DataArray(
+            ...     data=sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='K'),
+            ...     coords={'x': sc.array(dims=['x'], values=[0.1, 0.2, 0.3], unit='m')},
+            ... )
+            >>> da.dims, da.shape
+            (('x',), (3,))
+            >>> da.unit == sc.Unit('K')
+            True
           )doc");
   options.enable_function_signatures();
 
   bind_data_array(dataArray);
 
   py::class_<Dataset> dataset(m, "Dataset", R"(
-  Dict of data arrays with aligned dimensions.)");
+  Dict of data arrays with aligned dimensions.
+
+A Dataset groups multiple DataArrays that share common coordinates. Operations
+on a Dataset apply to all contained DataArrays, and slicing preserves shared
+coordinates.
+
+Examples
+--------
+Create a Dataset with shared coordinates:
+
+  >>> import scipp as sc
+  >>> ds = sc.Dataset(
+  ...     data={
+  ...         'temperature': sc.array(dims=['x'], values=[20.0, 21.0, 22.0], unit='K'),
+  ...         'pressure': sc.array(dims=['x'], values=[1.0, 1.1, 1.2], unit='bar'),
+  ...     },
+  ...     coords={'x': sc.array(dims=['x'], values=[0.0, 1.0, 2.0], unit='m')},
+  ... )
+
+Slice a Dataset by dimension (applies to all data arrays):
+
+  >>> ds['x', 0]
+  <scipp.Dataset>
+  Dimensions: Sizes[]
+  Coordinates:
+    x                         float64              [m]  ()  0
+  Data:
+    pressure                  float64            [bar]  ()  1
+    temperature               float64              [K]  ()  20
+
+  >>> ds['x', 1:3]
+  <scipp.Dataset>
+  Dimensions: Sizes[x:2, ]
+  Coordinates:
+  * x                         float64              [m]  (x)  [1, 2]
+  Data:
+    pressure                  float64            [bar]  (x)  [1.1, 1.2]
+    temperature               float64              [K]  (x)  [21, 22]
+
+Broadcasting operations across all data arrays:
+
+  >>> result = ds + ds  # adds corresponding arrays
+  >>> result['temperature'].values
+  array([40., 42., 44.])
+
+See Also
+--------
+scipp.DataArray, scipp.Variable
+)");
   options.disable_function_signatures();
   dataset.def(
       py::init([](const py::object &data, const py::object &coords) {
@@ -239,18 +434,74 @@ Returned by :py:func:`DataArray.masks`)");
           Dictionary of name and data pairs.
       coords:
           Dictionary of name and coord pairs.
+
+      Examples
+      --------
+      Create a Dataset with two data arrays and a shared coordinate:
+
+        >>> import scipp as sc
+        >>> ds = sc.Dataset(
+        ...     data={
+        ...         'a': sc.array(dims=['x'], values=[1, 2, 3]),
+        ...         'b': sc.array(dims=['x'], values=[4, 5, 6]),
+        ...     },
+        ...     coords={'x': sc.array(dims=['x'], values=[0.1, 0.2, 0.3], unit='m')},
+        ... )
+        >>> 'a' in ds
+        True
+        >>> ds['a'].dims
+        ('x',)
+        >>> ds.coords['x'].unit == sc.Unit('m')
+        True
       )doc");
   options.enable_function_signatures();
 
   dataset
-      .def("__setitem__",
-           [](Dataset &self, const std::string &name, const Variable &data) {
-             self.setData(name, data);
-           })
-      .def("__setitem__",
-           [](Dataset &self, const std::string &name, const DataArray &data) {
-             self.setData(name, data);
-           })
+      .def(
+          "__setitem__",
+          [](Dataset &self, const std::string &name, const Variable &data) {
+            self.setData(name, data);
+          },
+          py::arg("name"), py::arg("data"),
+          R"(Set or add a data item in the dataset.
+
+Parameters
+----------
+name:
+    Name of the data item.
+data:
+    Variable or DataArray to set.
+
+Examples
+--------
+Add a new item to the dataset:
+
+  >>> import scipp as sc
+  >>> ds = sc.Dataset({'a': sc.array(dims=['x'], values=[1, 2, 3])})
+  >>> ds['b'] = sc.array(dims=['x'], values=[4.0, 5.0, 6.0])
+  >>> list(ds.keys())
+  ['a', 'b']
+
+Overwrite an existing item:
+
+  >>> ds['a'] = sc.array(dims=['x'], values=[10, 20, 30])
+  >>> ds['a'].values
+  array([10, 20, 30])
+
+Add a DataArray with coordinates:
+
+  >>> da = sc.DataArray(
+  ...     sc.array(dims=['x'], values=[7, 8, 9]),
+  ...     coords={'x': sc.arange('x', 3)}
+  ... )
+  >>> ds['c'] = da
+)")
+      .def(
+          "__setitem__",
+          [](Dataset &self, const std::string &name, const DataArray &data) {
+            self.setData(name, data);
+          },
+          py::arg("name"), py::arg("data"))
       .def("__delitem__", &Dataset::erase,
            py::call_guard<py::gil_scoped_release>())
       .def("clear", &Dataset::clear,

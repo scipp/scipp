@@ -49,6 +49,21 @@ def abs(x: _T, *, out: Variable | None = None) -> _T:
     See Also
     --------
     scipp.norm
+
+    Examples
+    --------
+    Basic usage with negative values:
+
+      >>> import scipp as sc
+      >>> x = sc.array(dims=['x'], values=[-2.0, -1.0, 0.0, 1.0, 2.0], unit='m')
+      >>> sc.abs(x)
+      <scipp.Variable> (x: 5)    float64              [m]  [2, 1, ..., 1, 2]
+
+    Units are preserved in the output:
+
+      >>> x = sc.array(dims=['x'], values=[-5.0, -3.0, 3.0], unit='kg')
+      >>> sc.abs(x)
+      <scipp.Variable> (x: 3)    float64             [kg]  [5, 3, 3]
     """
     return _call_cpp_func(_cpp.abs, x, out=out)  # type: ignore[return-value]
 
@@ -72,7 +87,20 @@ def cross(x: VariableLikeType, y: VariableLikeType) -> VariableLikeType:
     -------
     :
         The cross product of the input vectors.
-    """
+
+    Examples
+    --------
+    Compute cross product of 3D vectors:
+
+      >>> import scipp as sc
+      >>> v1 = sc.vectors(dims=['x'], values=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], unit='m')
+      >>> v2 = sc.vectors(dims=['x'], values=[[0.0, 1.0, 0.0], [0.0, 0.0, 1.0]], unit='m')
+      >>> sc.cross(v1, v2)
+      <scipp.Variable> (x: 2)    vector3            [m^2]  [(0, 0, 1), (1, 0, 0)]
+
+    The cross product of two vectors is perpendicular to both input vectors.
+    Units are multiplied in the result.
+    """  # noqa: E501
     return _call_cpp_func(_cpp.cross, x, y)  # type: ignore[return-value]
 
 
@@ -95,7 +123,20 @@ def dot(x: VariableLikeType, y: VariableLikeType) -> VariableLikeType:
     -------
     :
         The dot product of the input vectors.
-    """
+
+    Examples
+    --------
+    Compute dot product of 3D vectors:
+
+      >>> import scipp as sc
+      >>> v1 = sc.vectors(dims=['x'], values=[[1.0, 0.0, 0.0], [1.0, 1.0, 0.0]], unit='m')
+      >>> v2 = sc.vectors(dims=['x'], values=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], unit='m')
+      >>> sc.dot(v1, v2)
+      <scipp.Variable> (x: 2)    float64            [m^2]  [1, 1]
+
+    The result is a scalar for each pair of vectors.
+    Units are multiplied in the result.
+    """  # noqa: E501
     return _call_cpp_func(_cpp.dot, x, y)  # type: ignore[return-value]
 
 
@@ -138,7 +179,23 @@ def nan_to_num(
     -------
     :
         Input with specified substitutions.
-    """
+
+    Examples
+    --------
+    Replace special values with custom values:
+
+      >>> import scipp as sc
+      >>> import numpy as np
+      >>> x = sc.array(dims=['x'], values=[1.0, np.nan, np.inf, -np.inf, 2.0])
+      >>> sc.nan_to_num(x, nan=sc.scalar(0.0), posinf=sc.scalar(999.0), neginf=sc.scalar(-999.0))
+      <scipp.Variable> (x: 5)    float64  [dimensionless]  [1, 0, ..., -999, 2]
+
+    Replace only NaN values, leaving infinities unchanged:
+
+      >>> y = sc.array(dims=['x'], values=[1.0, np.nan, 2.0])
+      >>> sc.nan_to_num(y, nan=sc.scalar(-1.0))
+      <scipp.Variable> (x: 3)    float64  [dimensionless]  [1, -1, 2]
+    """  # noqa: E501
     return _call_cpp_func(  # type: ignore[return-value]
         _cpp.nan_to_num, x, nan=nan, posinf=posinf, neginf=neginf, out=out
     )
@@ -196,6 +253,21 @@ def reciprocal(x: _T, *, out: Variable | None = None) -> _T:
     -------
     :
         The reciprocal values of the input.
+
+    Examples
+    --------
+    Compute reciprocal (1/x):
+
+      >>> import scipp as sc
+      >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 4.0], unit='m')
+      >>> sc.reciprocal(x)
+      <scipp.Variable> (x: 3)    float64            [1/m]  [1, 0.5, 0.25]
+
+    Units are inverted in the result:
+
+      >>> x = sc.array(dims=['x'], values=[2.0, 5.0], unit='s')
+      >>> sc.reciprocal(x)
+      <scipp.Variable> (x: 2)    float64             [Hz]  [0.5, 0.2]
     """
     return _call_cpp_func(_cpp.reciprocal, x, out=out)  # type: ignore[return-value]
 
@@ -232,6 +304,24 @@ def pow(base: _T, exponent: VariableLike | float) -> _T:
     -------
     :
         ``base`` raised to the power of ``exp``.
+
+    Examples
+    --------
+    Raise values to a scalar power:
+
+      >>> import scipp as sc
+      >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='m')
+      >>> sc.pow(x, 2)
+      <scipp.Variable> (x: 3)    float64            [m^2]  [1, 4, 9]
+
+    Element-wise power with array exponents (base must be dimensionless):
+
+      >>> x = sc.array(dims=['x'], values=[2.0, 4.0, 8.0])
+      >>> y = sc.array(dims=['x'], values=[1.0, 2.0, 3.0])
+      >>> sc.pow(x, y)
+      <scipp.Variable> (x: 3)    float64  [dimensionless]  [2, 16, 512]
+
+    Units are raised to the power in the result.
     """
     if not isinstance(base, _cpp.Unit) and isinstance(exponent, float | int):
         exponent = scalar(exponent)
@@ -295,6 +385,17 @@ def exp(x: _T, *, out: Variable | None = None) -> _T:
     -------
     :
         e raised to the power of the input.
+
+    Examples
+    --------
+    Compute exponential function:
+
+      >>> import scipp as sc
+      >>> x = sc.array(dims=['x'], values=[0.0, 1.0, 2.0])
+      >>> sc.exp(x)
+      <scipp.Variable> (x: 3)    float64  [dimensionless]  [1, 2.71828, 7.38906]
+
+    The input must be dimensionless.
     """
     return _call_cpp_func(_cpp.exp, x, out=out)  # type: ignore[return-value]
 
@@ -321,6 +422,17 @@ def log(x: _T, *, out: Variable | None = None) -> _T:
     -------
     :
         Base e logarithm of the input.
+
+    Examples
+    --------
+    Compute natural logarithm:
+
+      >>> import scipp as sc
+      >>> x = sc.array(dims=['x'], values=[1.0, 2.718, 7.389])
+      >>> sc.log(x)
+      <scipp.Variable> (x: 3)    float64  [dimensionless]  [0, 0.999896, 1.99999]
+
+    The input must be dimensionless and positive.
     """
     return _call_cpp_func(_cpp.log, x, out=out)  # type: ignore[return-value]
 
@@ -347,6 +459,17 @@ def log10(x: _T, *, out: Variable | None = None) -> _T:
     -------
     :
         Base 10 logarithm of the input.
+
+    Examples
+    --------
+    Compute base 10 logarithm:
+
+      >>> import scipp as sc
+      >>> x = sc.array(dims=['x'], values=[1.0, 10.0, 100.0, 1000.0])
+      >>> sc.log10(x)
+      <scipp.Variable> (x: 4)    float64  [dimensionless]  [0, 1, 2, 3]
+
+    The input must be dimensionless and positive.
     """
     return _call_cpp_func(_cpp.log10, x, out=out)  # type: ignore[return-value]
 
@@ -396,7 +519,9 @@ def round(x: _T, *, decimals: int = 0, out: Variable | None = None) -> _T:
 
     Examples
     --------
+    Round to the nearest integer:
 
+      >>> import scipp as sc
       >>> sc.round(sc.scalar(1.5))
       <scipp.Variable> ()    float64  [dimensionless]  2
       >>> sc.round(sc.scalar(1.567), decimals=2)
@@ -476,7 +601,23 @@ def erf(x: VariableLikeType) -> VariableLikeType:
     ----------
     x:
         Input data.
-    """
+
+    Returns
+    -------
+    :
+        Error function values of the input.
+
+    Examples
+    --------
+    Compute error function:
+
+      >>> import scipp as sc
+      >>> x = sc.array(dims=['x'], values=[-2.0, -1.0, 0.0, 1.0, 2.0])
+      >>> sc.erf(x)
+      <scipp.Variable> (x: 5)    float64  [dimensionless]  [-0.995322, -0.842701, ..., 0.842701, 0.995322]
+
+    The error function is odd symmetric: erf(-x) = -erf(x).
+    """  # noqa: E501
     return _call_cpp_func(_cpp.erf, x)  # type: ignore[return-value]
 
 
@@ -488,7 +629,23 @@ def erfc(x: VariableLikeType) -> VariableLikeType:
     ----------
     x:
         Input data.
-    """
+
+    Returns
+    -------
+    :
+        Complementary error function values of the input.
+
+    Examples
+    --------
+    Compute complementary error function:
+
+      >>> import scipp as sc
+      >>> x = sc.array(dims=['x'], values=[-2.0, -1.0, 0.0, 1.0, 2.0])
+      >>> sc.erfc(x)
+      <scipp.Variable> (x: 5)    float64  [dimensionless]  [1.99532, 1.8427, ..., 0.157299, 0.00467773]
+
+    The complementary error function is defined as erfc(x) = 1 - erf(x).
+    """  # noqa: E501
     return _call_cpp_func(_cpp.erfc, x)  # type: ignore[return-value]
 
 
@@ -517,7 +674,9 @@ def midpoints(x: Variable, dim: str | None = None) -> Variable:
 
     Examples
     --------
+    Compute midpoints along a dimension:
 
+      >>> import scipp as sc
       >>> x = sc.array(dims=['x'], values=[-2, 0, 4, 2])
       >>> x
       <scipp.Variable> (x: 4)      int64  [dimensionless]  [-2, 0, 4, 2]

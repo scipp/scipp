@@ -146,7 +146,48 @@ def from_pandas(
     -------
     :
         The converted scipp object.
-    """
+
+    Examples
+    --------
+    Convert a pandas Series to a DataArray:
+
+      >>> import scipp as sc
+      >>> import pandas as pd
+      >>> series = pd.Series([1.0, 2.0, 3.0], name='temperature [K]')
+      >>> sc.compat.from_pandas(series, header_parser='bracket')
+      <scipp.DataArray>
+      Dimensions: Sizes[row:3, ]
+      Data:
+        temperature               float64              [K]  (row)  [1, 2, 3]
+
+    Convert a pandas DataFrame to a Dataset, with all columns as data:
+
+      >>> df = pd.DataFrame({
+      ...     'x [m]': [1.0, 2.0, 3.0],
+      ...     'y [m]': [4.0, 5.0, 6.0],
+      ...     'temperature [K]': [273.0, 274.0, 275.0]
+      ... })
+      >>> ds = sc.compat.from_pandas(df, header_parser='bracket')
+      >>> ds
+      <scipp.Dataset>
+      Dimensions: Sizes[row:3, ]
+      Data:
+        temperature               float64              [K]  (row)  [273, 274, 275]
+        x                         float64              [m]  (row)  [1, 2, 3]
+        y                         float64              [m]  (row)  [4, 5, 6]
+
+    Specify which columns should be data vs coordinates:
+
+      >>> ds = sc.compat.from_pandas(df, data_columns='temperature', header_parser='bracket')
+      >>> ds
+      <scipp.Dataset>
+      Dimensions: Sizes[row:3, ]
+      Coordinates:
+      * x                         float64              [m]  (row)  [1, 2, 3]
+      * y                         float64              [m]  (row)  [4, 5, 6]
+      Data:
+        temperature               float64              [K]  (row)  [273, 274, 275]
+    """  # noqa: E501
     import pandas as pd
 
     if isinstance(pd_obj, pd.DataFrame):

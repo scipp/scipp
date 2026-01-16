@@ -28,6 +28,35 @@ Special:
 
 .. seealso::
     :py:class:`scipp.Unit` to construct other units.
+
+Examples
+--------
+Using predefined units when creating variables:
+
+  >>> import scipp as sc
+  >>> distance = sc.scalar(5.0, unit=sc.units.m)
+  >>> distance
+  <scipp.Variable> ()    float64              [m]  5
+
+Unit arithmetic creates new units:
+
+  >>> velocity_unit = sc.units.m / sc.units.s
+  >>> velocity = sc.scalar(10.0, unit=velocity_unit)
+  >>> velocity
+  <scipp.Variable> ()    float64            [m/s]  10
+
+Common unit operations:
+
+  >>> area_unit = sc.units.m * sc.units.m
+  >>> area_unit == sc.Unit('m**2')
+  True
+
+Comparing units:
+
+  >>> sc.units.m == sc.Unit('m')
+  True
+  >>> sc.units.one == sc.units.dimensionless
+  True
 """
 
 from collections.abc import Generator, Iterator

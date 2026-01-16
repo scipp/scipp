@@ -144,7 +144,35 @@ void bind_set_aligned(pybind11::class_<T, Ignored...> &view) {
       [](T &self, const std::string &key, const bool aligned) {
         self.set_aligned(typename T::key_type{key}, aligned);
       },
-      py::arg("key"), py::arg("aligned"));
+      py::arg("key"), py::arg("aligned"),
+      R"(Set the alignment flag for a coordinate.
+
+Aligned coordinates (the default) are compared in binary operations and
+must match. Unaligned coordinates are not compared and are dropped if
+they do not match.
+
+Parameters
+----------
+key:
+    Name of the coordinate.
+aligned:
+    True to mark as aligned, False to mark as unaligned.
+
+Examples
+--------
+
+  >>> import scipp as sc
+  >>> da = sc.DataArray(
+  ...     sc.array(dims=['x'], values=[1.0, 2.0, 3.0]),
+  ...     coords={'x': sc.arange('x', 3, unit='m')}
+  ... )
+
+Mark a coordinate as unaligned:
+
+  >>> da.coords.set_aligned('x', False)
+
+Unaligned coordinates are shown without the '*' prefix in the repr.
+)");
 }
 
 template <class T, class... Ignored>
@@ -214,7 +242,44 @@ void bind_is_edges(py::class_<T, Ignored...> &view) {
                                              : std::optional<Dim>{});
       },
       py::arg("key"), py::arg("dim") = std::nullopt,
-      R"(Return True if the given key contains bin-edges in the given dim.)");
+      R"(Return True if the given key contains bin-edges in the given dim.
+
+Bin-edge coordinates have one more element than the corresponding dimension
+size. They define the boundaries of histogram bins.
+
+Parameters
+----------
+key:
+    Name of the coordinate to check.
+dim:
+    Dimension to check against. If not provided, checks the coordinate's
+    single dimension.
+
+Returns
+-------
+:
+    True if the coordinate is a bin-edge coordinate.
+
+Examples
+--------
+
+  >>> import scipp as sc
+  >>> da = sc.DataArray(
+  ...     sc.array(dims=['x'], values=[1.0, 2.0, 3.0]),
+  ...     coords={'x': sc.array(dims=['x'], values=[0.0, 1.0, 2.0, 3.0])}
+  ... )
+  >>> da.coords.is_edges('x')
+  True
+
+Point coordinates have the same size as the dimension:
+
+  >>> da2 = sc.DataArray(
+  ...     sc.array(dims=['x'], values=[1.0, 2.0, 3.0]),
+  ...     coords={'x': sc.array(dims=['x'], values=[0.5, 1.5, 2.5])}
+  ... )
+  >>> da2.coords.is_edges('x')
+  False
+)");
 }
 
 template <class T>
@@ -309,7 +374,25 @@ template <class T, class... Ignored>
 void bind_data_array_properties(py::class_<T, Ignored...> &c) {
   if constexpr (std::is_same_v<T, DataArray>)
     c.def_property("name", &T::name, &T::setName,
-                   R"(The name of the held data.)");
+                   R"(The name of the held data.
+
+Examples
+--------
+
+  >>> import scipp as sc
+  >>> da = sc.DataArray(sc.array(dims=['x'], values=[1.0, 2.0, 3.0]))
+  >>> da.name
+  ''
+  >>> da.name = 'temperature'
+  >>> da.name
+  'temperature'
+
+The name is preserved through operations:
+
+  >>> summed = da.sum()
+  >>> summed.name
+  'temperature'
+)");
   else
     c.def_property_readonly("name", &T::name, R"(The name of the held data.)");
   c.def_property(
@@ -317,29 +400,209 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
       py::cpp_function([](T &self) { return self.data(); },
                        py::return_value_policy::copy),
       [](T &self, const Variable &data) { self.setData(data); },
-      R"(Underlying data item.)");
+      R"(Underlying data Variable.
+
+The data property provides access to the data values of a DataArray as a
+Variable, without the coordinates and masks.
+
+Examples
+--------
+
+  >>> import scipp as sc
+  >>> da = sc.DataArray(
+  ...     sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='m'),
+  ...     coords={'x': sc.arange('x', 3, unit='s')}
+  ... )
+  >>> da.data
+  <scipp.Variable> (x: 3)    float64              [m]  [1, 2, 3]
+
+The data can be replaced entirely:
+
+  >>> da.data = sc.array(dims=['x'], values=[10.0, 20.0, 30.0], unit='m')
+  >>> da.data
+  <scipp.Variable> (x: 3)    float64              [m]  [10, 20, 30]
+)");
   c.def_property_readonly(
       "coords", [](T &self) -> decltype(auto) { return self.coords(); },
-      R"(Dict of coords.)");
+      R"(Dict of coordinates.
+
+Coordinates define the axis labels for each dimension. They can be
+point-coordinates (one value per data point) or bin-edge coordinates
+(one more value than data points).
+
+Examples
+--------
+
+  >>> import scipp as sc
+  >>> da = sc.DataArray(
+  ...     sc.array(dims=['x', 'y'], values=[[1, 2], [3, 4]]),
+  ...     coords={
+  ...         'x': sc.array(dims=['x'], values=[0.0, 1.0], unit='m'),
+  ...         'y': sc.array(dims=['y'], values=[10.0, 20.0], unit='s')
+  ...     }
+  ... )
+  >>> da.coords
+  <scipp.Dict>
+    x: <scipp.Variable> (x: 2)    float64              [m]  [0, 1]
+    y: <scipp.Variable> (y: 2)    float64              [s]  [10, 20]
+
+Access individual coordinates:
+
+  >>> da.coords['x']
+  <scipp.Variable> (x: 2)    float64              [m]  [0, 1]
+
+List coordinate names:
+
+  >>> da.coords.keys()
+  <scipp.Dict.keys {x, y}>
+)");
   c.def_property_readonly(
       "masks", [](T &self) -> decltype(auto) { return self.masks(); },
-      R"(Dict of masks.)");
-  c.def("drop_coords", [](T &self, const std::string &coord_name) {
-    std::vector<scipp::Dim> coord_names_c = {scipp::Dim{coord_name}};
-    return self.drop_coords(coord_names_c);
-  });
-  c.def("drop_coords",
-        [](T &self, const std::vector<std::string> &coord_names) {
-          std::vector<scipp::Dim> coord_names_c;
-          std::transform(coord_names.begin(), coord_names.end(),
-                         std::back_inserter(coord_names_c),
-                         [](const auto &name) { return scipp::Dim{name}; });
-          return self.drop_coords(coord_names_c);
-        });
-  c.def("drop_masks", [](T &self, const std::string &mask_name) {
-    return self.drop_masks(std::vector({mask_name}));
-  });
-  c.def("drop_masks", [](T &self, std::vector<std::string> &mask_names) {
-    return self.drop_masks(mask_names);
-  });
+      R"(Dict of masks.
+
+Masks are boolean Variables that mark data points as valid (False) or
+invalid (True). Masked data is excluded from most operations.
+
+Examples
+--------
+
+  >>> import scipp as sc
+  >>> da = sc.DataArray(sc.array(dims=['x'], values=[1.0, 2.0, 3.0, 4.0]))
+  >>> da.masks['outliers'] = sc.array(dims=['x'], values=[False, False, True, False])
+  >>> da.masks
+  <scipp.Dict>
+    outliers: <scipp.Variable> (x: 4)       bool        <no unit>  [False, False, True, False]
+
+Check if a mask exists:
+
+  >>> 'outliers' in da.masks
+  True
+
+Access a mask:
+
+  >>> da.masks['outliers']
+  <scipp.Variable> (x: 4)       bool        <no unit>  [False, False, True, False]
+
+Masked values are excluded from reductions:
+
+  >>> float(da.sum().value)  # third element (3.0) is masked out
+  7.0
+)");
+  c.def(
+      "drop_coords",
+      [](T &self, const std::string &coord_name) {
+        std::vector<scipp::Dim> coord_names_c = {scipp::Dim{coord_name}};
+        return self.drop_coords(coord_names_c);
+      },
+      py::arg("coord_names"),
+      R"(Return new object with specified coordinate(s) removed.
+
+Parameters
+----------
+coord_names:
+    Name of the coordinate to remove, or a list of names.
+
+Returns
+-------
+:
+    New DataArray without the specified coordinate(s).
+
+Examples
+--------
+Remove a single coordinate:
+
+  >>> import scipp as sc
+  >>> da = sc.DataArray(
+  ...     sc.array(dims=['x'], values=[1.0, 2.0, 3.0]),
+  ...     coords={
+  ...         'x': sc.arange('x', 3),
+  ...         'y': sc.array(dims=['x'], values=[10, 20, 30])
+  ...     }
+  ... )
+  >>> da.drop_coords('y')
+  <scipp.DataArray>
+  Dimensions: Sizes[x:3, ]
+  Coordinates:
+  * x                           int64  [dimensionless]  (x)  [0, 1, 2]
+  Data:
+                              float64  [dimensionless]  (x)  [1, 2, 3]
+
+Remove multiple coordinates:
+
+  >>> da.coords['z'] = sc.array(dims=['x'], values=[100, 200, 300])
+  >>> da.drop_coords(['y', 'z'])
+  <scipp.DataArray>
+  Dimensions: Sizes[x:3, ]
+  Coordinates:
+  * x                           int64  [dimensionless]  (x)  [0, 1, 2]
+  Data:
+                              float64  [dimensionless]  (x)  [1, 2, 3]
+)");
+  c.def(
+      "drop_coords",
+      [](T &self, const std::vector<std::string> &coord_names) {
+        std::vector<scipp::Dim> coord_names_c;
+        std::transform(coord_names.begin(), coord_names.end(),
+                       std::back_inserter(coord_names_c),
+                       [](const auto &name) { return scipp::Dim{name}; });
+        return self.drop_coords(coord_names_c);
+      },
+      py::arg("coord_names"));
+  c.def(
+      "drop_masks",
+      [](T &self, const std::string &mask_name) {
+        return self.drop_masks(std::vector({mask_name}));
+      },
+      py::arg("mask_names"),
+      R"(Return new object with specified mask(s) removed.
+
+Parameters
+----------
+mask_names:
+    Name of the mask to remove, or a list of names.
+
+Returns
+-------
+:
+    New DataArray without the specified mask(s).
+
+Examples
+--------
+Remove a single mask:
+
+  >>> import scipp as sc
+  >>> da = sc.DataArray(
+  ...     sc.array(dims=['x'], values=[1.0, 2.0, 3.0]),
+  ...     coords={'x': sc.arange('x', 3)},
+  ...     masks={
+  ...         'm1': sc.array(dims=['x'], values=[False, True, False]),
+  ...         'm2': sc.array(dims=['x'], values=[True, False, False])
+  ...     }
+  ... )
+  >>> da.drop_masks('m1')
+  <scipp.DataArray>
+  Dimensions: Sizes[x:3, ]
+  Coordinates:
+  * x                           int64  [dimensionless]  (x)  [0, 1, 2]
+  Data:
+                              float64  [dimensionless]  (x)  [1, 2, 3]
+  Masks:
+    m2                           bool        <no unit>  (x)  [True, False, False]
+
+Remove multiple masks:
+
+  >>> da.drop_masks(['m1', 'm2'])
+  <scipp.DataArray>
+  Dimensions: Sizes[x:3, ]
+  Coordinates:
+  * x                           int64  [dimensionless]  (x)  [0, 1, 2]
+  Data:
+                              float64  [dimensionless]  (x)  [1, 2, 3]
+)");
+  c.def(
+      "drop_masks",
+      [](T &self, std::vector<std::string> &mask_names) {
+        return self.drop_masks(mask_names);
+      },
+      py::arg("mask_names"));
 }
