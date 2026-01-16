@@ -197,19 +197,6 @@ class Bins(Generic[_O]):
     ``Bins`` is generic over the parent type, *not* the event type.
     That is, ``Variable.bins`` always returns ``Bins[Variable]`` regardless of whether
     the event list is a variable or data array.
-
-    Examples
-    --------
-    Check if data is binned:
-
-      >>> import scipp as sc
-      >>> binned = sc.data.binned_x(100, 4)
-      >>> binned.bins is not None
-      True
-
-      >>> regular = sc.array(dims=['x'], values=[1, 2, 3])
-      >>> regular.bins is None
-      True
     """
 
     def __init__(self, obj: _O) -> None:
