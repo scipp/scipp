@@ -19,10 +19,10 @@ jobs:
         - {os: ubuntu-24.04, cmake-preset: ci-linux}
         - {os: macos-14, cmake-preset: ci-macos}
         - {os: windows-2022, cmake-preset: ci-windows}
-        python-version: ["3.10"]
+        python-version: ["3.11"]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: true
           fetch-depth: 0  # history required so cmake can determine version
@@ -32,7 +32,6 @@ jobs:
       - name: Setup conda environment
         uses: mamba-org/setup-micromamba@v2
         with:
-          micromamba-version: 1.5.6-0
           environment-file: .buildconfig/${{ matrix.variant.cmake-preset }}.yml
           cache-environment: true
           create-args: python=${{ matrix.python-version }}
@@ -41,17 +40,6 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2.20
         with:
           key: ${{ matrix.variant.os }}
-
-      - name: Cache conan setup
-        id: conan-cache-key
-        run: |
-          echo "key=$(/bin/date -u "+%Y%m%d")" >> "$GITHUB_OUTPUT"
-          echo "path=$(conan config home)" >> "$GITHUB_OUTPUT"
-      - name: Cache conan
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.conan-cache-key.outputs.path }}
-          key: conan-${{ matrix.variant.os }}-${{ steps.conan-cache-key.outputs.key }}
 
       - run: cmake --preset ${{ matrix.variant.cmake-preset }}
       - run: cmake --build --preset build
