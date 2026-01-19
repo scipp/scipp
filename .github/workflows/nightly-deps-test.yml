@@ -46,7 +46,11 @@ jobs:
         id: conan-cache-key
         run: |
           echo "key=$(/bin/date -u "+%Y%m%d")" >> "$GITHUB_OUTPUT"
-          echo "path=$(conan config home)" >> "$GITHUB_OUTPUT"
+          CONAN_PATH=$(conan config home)
+          if [ -z "$CONAN_PATH" ]; then
+            echo "Error: conan config home returned empty"
+            exit 1
+          echo "path=$CONAN_PATH" >> "$GITHUB_OUTPUT"
       - name: Cache conan
         uses: actions/cache@v5
         with:
