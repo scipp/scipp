@@ -119,7 +119,7 @@ def test_0D_scalar_access() -> None:
         ('float32', np.float32),
         ('float64', np.float64),
         ('datetime64', np.datetime64),
-        ('bool', bool),
+        ('bool', np.bool_),
     ],
 )
 def test_0d_scalar_access_dtype(dtypes: tuple[str, type]) -> None:

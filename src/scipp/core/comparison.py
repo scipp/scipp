@@ -431,13 +431,13 @@ def allclose(
       >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0], unit='m')
       >>> y = sc.array(dims=['x'], values=[1.0001, 2.0, 3.0001], unit='m')
       >>> sc.allclose(x, y)
-      False
+      np.False_
 
     Arrays with larger differences:
 
       >>> z = sc.array(dims=['x'], values=[1.1, 2.0, 3.0], unit='m')
       >>> sc.allclose(x, z)
-      False
+      np.False_
     """
     return _call_cpp_func(  # type:ignore[no-any-return]
         _cpp.all, isclose(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan)

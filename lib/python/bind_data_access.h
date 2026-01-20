@@ -310,8 +310,8 @@ private:
   }
 
   template <class Scalar, class View>
-  static auto make_scalar(Scalar &&scalar, py::object parent,
-                          const View &view) {
+  static py::object make_scalar(Scalar &&scalar, py::object parent,
+                                const View &view) {
     if constexpr (std::is_same_v<std::decay_t<Scalar>,
                                  scipp::python::PyObject>) {
       // Returning PyObject. This increments the reference counter of
@@ -323,14 +323,8 @@ private:
       const auto np_datetime64 = numpy_attr("datetime64");
       return np_datetime64(scalar.time_since_epoch(),
                            to_numpy_time_string(view.unit()));
-    } else if constexpr (std::is_same_v<std::decay_t<Scalar>, int32_t>) {
-      return numpy_attr("int32")(scalar);
-    } else if constexpr (std::is_same_v<std::decay_t<Scalar>, int64_t>) {
-      return numpy_attr("int64")(scalar);
-    } else if constexpr (std::is_same_v<std::decay_t<Scalar>, float>) {
-      return numpy_attr("float32")(scalar);
-    } else if constexpr (std::is_same_v<std::decay_t<Scalar>, double>) {
-      return numpy_attr("float64")(scalar);
+    } else if constexpr (std::is_arithmetic_v<std::decay_t<Scalar>>) {
+      return py::cast(py::make_scalar(scalar));
     } else if constexpr (!std::is_reference_v<Scalar>) {
       // Views such as slices of data arrays for binned data are
       // returned by value and require separate handling to avoid the
