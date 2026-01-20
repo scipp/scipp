@@ -1,3 +1,2 @@
 cmake>=3.21
-conan<2
 ninja

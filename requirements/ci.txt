@@ -7,7 +7,7 @@
 #
 cachetools==6.2.4
     # via tox
-certifi==2025.11.12
+certifi==2026.1.4
     # via requests
 chardet==5.2.0
     # via tox
@@ -17,13 +17,13 @@ colorama==0.4.6
     # via tox
 distlib==0.4.0
     # via virtualenv
-filelock==3.20.1
+filelock==3.20.3
     # via
     #   tox
     #   virtualenv
 gitdb==4.0.12
     # via gitpython
-gitpython==3.1.45
+gitpython==3.1.46
     # via -r ci.in
 idna==3.11
     # via requests
@@ -44,9 +44,9 @@ requests==2.32.5
     # via -r ci.in
 smmap==5.0.2
     # via gitdb
-tox==4.32.0
+tox==4.34.1
     # via -r ci.in
-urllib3==2.6.2
+urllib3==2.6.3
     # via requests
-virtualenv==20.35.4
+virtualenv==20.36.1
     # via tox

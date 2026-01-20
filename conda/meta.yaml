@@ -75,14 +75,11 @@ test:
     - benchmark=1.6.1
     - gmock=1.15.2
     - gtest=1.15.2
-  files:
-    - cmake-package-test/
   source_files:
     - pyproject.toml
     - tests/
   commands:
     - python -m pytest -v tests
-    - python cmake-package-test/build.py  # [linux]
 {% endif %}
 
 build:
