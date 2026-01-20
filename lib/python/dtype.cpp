@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include "dtype.h"
 
+#include <iostream>
 #include <regex>
 
 #include "scipp/core/eigen.h"
@@ -167,6 +168,23 @@ scipp::core::DType dtype_from_scipp_class(const py::object &type) {
   }
 }
 
+namespace {
+py::dtype to_np_dtype(const py::object &type) {
+  try {
+    return py::dtype::from_args(type);
+  } catch (py::error_already_set &error) {
+    // NumPy normally raises a TypeError, but for Variable, DataArray, it raises
+    // ValueError because it sees the `.dtype` attribute and thinks that it is a
+    // compatible np.dtype object. For some reason that triggers a different
+    // error.
+    if (error.matches(PyExc_ValueError)) {
+      throw py::type_error(error.what());
+    }
+    throw;
+  }
+}
+} // namespace
+
 scipp::core::DType scipp_dtype(const py::object &type) {
   // Check None first, then native scipp Dtype, then numpy.dtype
   if (type.is_none())
@@ -178,8 +196,7 @@ scipp::core::DType scipp_dtype(const py::object &type) {
         type.attr("__module__").cast<std::string>() == "scipp._scipp.core") {
       return dtype_from_scipp_class(type);
     }
-
-    auto np_dtype = py::dtype::from_args(type);
+    const auto np_dtype = to_np_dtype(type);
     if (np_dtype.kind() == DTypeKind::RawData) {
       throw std::invalid_argument(
           "Unsupported numpy dtype: raw data. This can happen when you pass a "

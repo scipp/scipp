@@ -35,7 +35,7 @@ if(SKBUILD)
     boost/1.86.0
     eigen/3.4.0
     gtest/1.15.0
-    pybind11/2.13.6
+    pybind11/3.0.1
     onetbb/2021.12.0
     OPTIONS
     benchmark:shared=False

@@ -181,7 +181,7 @@ template <class T> struct slicer {
       return set_from_numpy(getitem(self, index), data);
 
     std::ostringstream oss;
-    oss << "Cannot to assign a " << py::str(data.get_type())
+    oss << "Cannot to assign a " << py::str(py::type::of(data))
         << " to a slice of a " << py::type_id<T>();
     throw py::type_error(oss.str());
   }
