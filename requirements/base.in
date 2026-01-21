@@ -1,2 +1,2 @@
-numpy>=2
+numpy>=2,<2.4
 psutil

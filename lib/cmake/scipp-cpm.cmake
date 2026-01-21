@@ -48,3 +48,81 @@ cpmaddpackage(
   "UNITS_ENABLE_TESTS OFF"
   "CMAKE_CXX_STANDARD 20"
 )
+
+if(SKBUILD)
+  cpmaddpackage(
+    NAME
+    gtest
+    GITHUB_REPOSITORY
+    google/googletest
+    GIT_TAG
+    v1.15.0
+    VERSION
+    1.15.0
+    OPTIONS
+    "INSTALL_GTEST OFF"
+    "gtest_force_shared_crt ON"
+  )
+
+  cpmaddpackage(
+    NAME
+    oneTBB
+    GITHUB_REPOSITORY
+    uxlfoundation/oneTBB
+    GIT_TAG
+    v2022.3.0
+    VERSION
+    2022.3.0
+    SYSTEM
+    YES
+    OPTIONS
+    "TBB_TEST OFF"
+    "TBB_STRICT OFF"
+    "TBBMALLOC_BUILD OFF"
+  )
+
+  cpmaddpackage(
+    NAME
+    benchmark
+    GITHUB_REPOSITORY
+    google/benchmark
+    VERSION
+    1.6.1
+    OPTIONS
+    "BENCHMARK_ENABLE_TESTING Off"
+  )
+
+  # Boost headers (only container and iterator are used)
+  set(BOOST_INCLUDE_LIBRARIES container iterator)
+  cpmaddpackage(
+    NAME
+    Boost
+    VERSION
+    1.90.0
+    URL
+    https://github.com/boostorg/boost/releases/download/boost-1.90.0/boost-1.90.0-cmake.tar.xz
+    URL_HASH
+    SHA256=aca59f889f0f32028ad88ba6764582b63c916ce5f77b31289ad19421a96c555f
+    SYSTEM
+    YES
+    OPTIONS
+    "BOOST_SKIP_INSTALL_RULES OFF"
+  )
+
+  cpmaddpackage(
+    NAME
+    Eigen3
+    VERSION
+    3.4.0
+    URL
+    https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
+    URL_HASH
+    SHA256=8586084f71f9bde545ee7fa6d00288b264a2b7ac3607b974e54d13e7162c1c72
+    SYSTEM
+    YES
+    OPTIONS
+    "EIGEN_BUILD_DOC OFF"
+    "BUILD_TESTING OFF"
+    "EIGEN_BUILD_PKGCONFIG OFF"
+  )
+endif()
