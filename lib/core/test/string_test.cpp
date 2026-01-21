@@ -50,6 +50,21 @@ TEST_F(ISODateTest, h) {
   EXPECT_EQ(to_iso_date(t, sc_units::Unit{"h"}), "2020-07-27T10:00:00");
 }
 
+TEST_F(ISODateTest, day) {
+  const auto t = get_time<chrono::days>();
+  EXPECT_EQ(to_iso_date(t, sc_units::Unit{"day"}), "2020-07-27");
+}
+
+TEST_F(ISODateTest, month) {
+  const auto t = get_time<chrono::months>();
+  EXPECT_EQ(to_iso_date(t, sc_units::Unit{"month"}), "2020-07-01");
+}
+
+TEST_F(ISODateTest, year) {
+  const auto t = get_time<chrono::years>();
+  EXPECT_EQ(to_iso_date(t, sc_units::Unit{"year"}), "2020-01-01");
+}
+
 TEST_F(ISODateTest, invalid_unit) {
   EXPECT_THROW(to_iso_date(get_time<chrono::minutes>(), sc_units::m),
                scipp::except::UnitError);

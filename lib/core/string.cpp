@@ -110,6 +110,10 @@ void put_time(std::ostream &os, const std::time_t time_point,
 template <class Rep, class Period>
 std::string to_string(const std::chrono::duration<Rep, Period> &duration) {
   using Clock = std::chrono::system_clock;
+  // Trying to include the time when formatting with Period >= days uses
+  // some bogus values for the time. So only show the date in that case.
+  constexpr bool include_time =
+      std::ratio_less_v<Period, std::chrono::days::period>;
 
   std::ostringstream oss;
 
@@ -125,7 +129,7 @@ std::string to_string(const std::chrono::duration<Rep, Period> &duration) {
   put_time(oss,
            Clock::to_time_t(Clock::time_point{
                std::chrono::duration_cast<std::chrono::seconds>(duration)}),
-           true);
+           include_time);
   if constexpr (std::ratio_less_v<Period, std::ratio<1, 1>>) {
     oss << '.' << std::setw(num_digits<Period>()) << std::setfill('0')
         << (duration.count() % (Period::den / Period::num));
@@ -148,11 +152,12 @@ std::string to_iso_date(const scipp::core::time_point &item,
     return to_string(std::chrono::minutes{item.time_since_epoch()});
   } else if (unit == sc_units::Unit(units::precise::hr)) {
     return to_string(std::chrono::hours{item.time_since_epoch()});
-  } else if (unit == sc_units::Unit(units::precise::day) ||
-             unit == sc_units::Unit("month") ||
-             unit == sc_units::Unit("year")) {
-    throw except::UnitError("Printing of time points with units greater than "
-                            "hours is not yet implemented.");
+  } else if (unit == sc_units::Unit(units::precise::day)) {
+    return to_string(std::chrono::days{item.time_since_epoch()});
+  } else if (unit == sc_units::Unit("month")) {
+    return to_string(std::chrono::months{item.time_since_epoch()});
+  } else if (unit == sc_units::Unit("year")) {
+    return to_string(std::chrono::years{item.time_since_epoch()});
   }
   throw except::UnitError("Cannot display time point, unsupported unit: " +
                           to_string(unit));
