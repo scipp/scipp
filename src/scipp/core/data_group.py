@@ -50,7 +50,6 @@ if TYPE_CHECKING:
     from ..typing import ScippIndex
     from .bins import Bins
 
-
 _T = TypeVar("_T")  # Any type
 _V = TypeVar("_V")  # Value type of self
 _R = TypeVar("_R")  # Return type of a callable
@@ -684,10 +683,12 @@ class DataGroup(MutableMapping[str, _V]):
 def data_group_nary(
     func: Callable[..., _R], *args: Any, **kwargs: Any
 ) -> DataGroup[_R]:
-    dgs = filter(
-        lambda x: isinstance(x, DataGroup), itertools.chain(args, kwargs.values())
-    )
-    keys = functools.reduce(operator.and_, [dg.keys() for dg in dgs])
+    dgs = [
+        arg
+        for arg in itertools.chain(args, kwargs.values())
+        if isinstance(arg, DataGroup)
+    ]
+    keys = _key_intersection(dgs)
 
     def elem(x: Any, key: str) -> Any:
         return x[key] if isinstance(x, DataGroup) else x
@@ -706,10 +707,20 @@ def data_group_nary(
 def apply_to_items(
     func: Callable[..., _R], dgs: Iterable[DataGroup[Any]], *args: Any, **kwargs: Any
 ) -> DataGroup[_R]:
-    keys = functools.reduce(operator.and_, [dg.keys() for dg in dgs])
+    keys = _key_intersection(list(dgs))
     return DataGroup(
         {key: func([dg[key] for dg in dgs], *args, **kwargs) for key in keys}
     )
+
+
+def _key_intersection(dgs: list[DataGroup[Any]]) -> list[str]:
+    return [
+        key
+        # Use the keys in the order of the first argument
+        for key in dgs[0].keys()
+        # if the key is in all DataGroups
+        if key in functools.reduce(operator.and_, (dg.keys() for dg in dgs))
+    ]
 
 
 def data_group_overload(
