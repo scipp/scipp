@@ -61,10 +61,17 @@ endif(DYNAMIC_LIB)
 
 add_library(${TARGET_NAME} ${LINK_TYPE} ${INC_FILES} ${SRC_FILES})
 generate_export_header(${TARGET_NAME})
+# Boost linking: SKBUILD uses CPM-fetched component targets, conda uses system
+# Boost::headers
+if(SKBUILD)
+  set(BOOST_TARGETS Boost::container Boost::iterator)
+else()
+  set(BOOST_TARGETS Boost::headers)
+endif()
 target_link_libraries(
-  ${TARGET_NAME} PUBLIC scipp-common scipp-units Boost::headers Eigen3::Eigen
+  ${TARGET_NAME} PUBLIC scipp-common scipp-units ${BOOST_TARGETS} Eigen3::Eigen
 )
-if(TBB_FOUND)
+if(TARGET TBB::tbb)
   target_link_libraries(${TARGET_NAME} PUBLIC TBB::tbb)
 endif()
 

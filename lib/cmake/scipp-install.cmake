@@ -12,19 +12,35 @@ function(scipp_install_component)
     add_sanitizers(${SCIPP_INSTALL_COMPONENT_TARGET})
   endif()
   if(DYNAMIC_LIB)
+    # Build list of directories for runtime dependencies (Windows DLLs)
+    set(RUNTIME_DEP_DIRECTORIES)
+    if(DEFINED TBB_RUNTIME_DIR)
+      list(APPEND RUNTIME_DEP_DIRECTORIES "${TBB_RUNTIME_DIR}"
+           "${TBB_RUNTIME_DIR}/bin" "${TBB_RUNTIME_DIR}/lib"
+      )
+    endif()
+    # Note: TBB DLL is explicitly installed in lib/python/CMakeLists.txt since
+    # TBB uses a custom output directory that's hard to predict.
+    if(RUNTIME_DEP_DIRECTORIES)
+      message(
+        STATUS
+          "Runtime dependency directories for ${SCIPP_INSTALL_COMPONENT_TARGET}: ${RUNTIME_DEP_DIRECTORIES}"
+      )
+    endif()
     if(WIN32)
+      # Regex patterns for DLLs to include (TBB and units library)
+      set(SCIPP_RUNTIME_DEPENDENCIES "tbb.*\\.dll$" "units.*\\.dll$")
       install(
         TARGETS ${SCIPP_INSTALL_COMPONENT_TARGET}
         EXPORT ${EXPORT_NAME}
         RUNTIME_DEPENDENCIES
         PRE_INCLUDE_REGEXES
-        ${CONAN_RUNTIME_DEPENDENCIES}
+        ${SCIPP_RUNTIME_DEPENDENCIES}
         PRE_EXCLUDE_REGEXES
         ".*"
         # Required for Windows. Other platforms search rpath
         DIRECTORIES
-        ${CMAKE_BINARY_DIR}/lib/onetbb/lib
-        ${CMAKE_BINARY_DIR}/lib/onetbb/bin
+        ${RUNTIME_DEP_DIRECTORIES}
         RUNTIME DESTINATION ${PYTHONDIR}
         ARCHIVE DESTINATION ${ARCHIVEDIR}
         FRAMEWORK DESTINATION ${ARCHIVEDIR}

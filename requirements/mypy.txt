@@ -7,15 +7,15 @@
 #
 -r docs.txt
 -r test.txt
-librt==0.7.4
+librt==0.7.8
     # via mypy
 mypy==1.19.1
     # via -r mypy.in
 mypy-extensions==1.1.0
     # via mypy
-pandas-stubs==2.3.3.251201
+pandas-stubs==2.3.3.260113
     # via -r mypy.in
-pathspec==0.12.1
+pathspec==1.0.3
     # via mypy
 types-pytz==2025.2.0.20251108
     # via pandas-stubs
