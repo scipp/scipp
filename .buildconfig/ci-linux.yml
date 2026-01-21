@@ -9,6 +9,7 @@ dependencies:
   - cppcheck=2.18.3
   - graphviz=14.1.1
   - ninja=1.13.2
+  - pandoc=3.8.3
   - scipp::plopp=25.3.0
   - tbb=2022.3.0
   - tbb-devel=2022.3.0
