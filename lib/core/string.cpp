@@ -3,9 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include <chrono>
-#include <iomanip>
-#include <mutex>
-#include <sstream>
+#include <format>
 
 #include "scipp/units/unit.h"
 
@@ -83,58 +81,43 @@ std::map<DType, std::string> &dtypeNameRegistry() {
 }
 
 namespace {
-template <class Ratio> constexpr int64_t num_digits() {
-  static_assert(Ratio::num == 1 || Ratio::num % 10 == 0);
-  static_assert(Ratio::den == 1 || Ratio::den % 10 == 0);
-  static_assert(Ratio::den > Ratio::num);
-  int64_t result = 0;
-  for (std::size_t i = Ratio::num; i < Ratio::den; i *= 10) {
-    ++result;
-  }
-  return result;
-}
-
-// For synchronizing access to gmtime because its return value is shared.
-std::mutex gmtime_mutex;
-
-void put_time(std::ostream &os, const std::time_t time_point,
-              const bool include_time) {
-  std::lock_guard guard_{gmtime_mutex};
-  const std::tm *tm = std::gmtime(&time_point);
-  if (include_time)
-    os << std::put_time(tm, "%FT%T");
-  else
-    os << std::put_time(tm, "%F");
-}
-
 template <class Rep, class Period>
-std::string to_string(const std::chrono::duration<Rep, Period> &duration) {
+std::string to_string(const std::chrono::duration<Rep, Period> &since_epoch) {
   using Clock = std::chrono::system_clock;
-  // Trying to include the time when formatting with Period >= days uses
-  // some bogus values for the time. So only show the date in that case.
-  constexpr bool include_time =
-      std::ratio_less_v<Period, std::chrono::days::period>;
-
-  std::ostringstream oss;
+  using Duration = std::chrono::duration<Rep, Period>;
 
 #ifdef _WIN32
   // Windows' time functions (e.g. gmtime) don't support datetimes before 1970.
-  if (duration < std::chrono::duration<Rep, Period>::zero()) {
+  if (since_epoch < std::chrono::duration<Rep, Period>::zero()) {
     return "(datetime before 1970, cannot format)";
   }
 #endif
 
-  // Cast to seconds to be independent of clock precision.
-  // Sub-second digits are formatted manually.
-  put_time(oss,
-           Clock::to_time_t(Clock::time_point{
-               std::chrono::duration_cast<std::chrono::seconds>(duration)}),
-           include_time);
-  if constexpr (std::ratio_less_v<Period, std::ratio<1, 1>>) {
-    oss << '.' << std::setw(num_digits<Period>()) << std::setfill('0')
-        << (duration.count() % (Period::den / Period::num));
+  if constexpr (std::ratio_less_equal_v<Period, std::chrono::seconds::period>) {
+    // Cast to as narrow a type as possible to get the
+    // correct number of subsecond digits.
+    // (%S always formats as many digits as the time point allows.)
+    const auto point =
+        std::chrono::time_point_cast<Duration>(Clock::time_point{since_epoch});
+    return std::format("{:%Y-%m-%dT%H:%M:%S}", point);
+  } else {
+    // std::format does not support time points with large units, so use the
+    // lowest possible unit here and use concrete format strings.
+    const auto point = std::chrono::time_point_cast<std::chrono::minutes>(
+        Clock::time_point{since_epoch});
+
+    if constexpr (std::is_same_v<Duration, std::chrono::minutes>) {
+      return std::format("{:%Y-%m-%dT%H:%M}", point);
+    } else if constexpr (std::is_same_v<Duration, std::chrono::hours>) {
+      return std::format("{:%Y-%m-%dT%H}", point);
+    } else if constexpr (std::is_same_v<Duration, std::chrono::days>) {
+      return std::format("{:%Y-%m-%d}", point);
+    } else if constexpr (std::is_same_v<Duration, std::chrono::months>) {
+      return std::format("{:%Y-%m}", point);
+    } else /* years */ {
+      return std::format("{:%Y}", point);
+    }
   }
-  return oss.str();
 }
 } // namespace
 
