@@ -32,6 +32,7 @@ conda/package
 # Files from editable installs
 src/include/
 src/lib/
+src/lib64/
 src/scipp/_scipp.cpython*
 src/scipp/_scipp.so
 *.so
