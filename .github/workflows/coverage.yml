@@ -34,7 +34,7 @@ jobs:
       - name: Setup conda environment
         uses: mamba-org/setup-micromamba@v2
         with:
-          micromamba-version: 1.5.6-0
+          micromamba-version: 2.5.0-1
           environment-file: env.yml
           cache-environment: true
           create-args: python=3.11
