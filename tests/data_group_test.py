@@ -397,6 +397,21 @@ def test_binary_data_group_with_data_group(op) -> None:
 @pytest.mark.parametrize(
     'op', BINARY_NUMBER_OPERATIONS, ids=BINARY_NUMBER_OPERATION_NAMES
 )
+def test_binary_data_group_with_data_group_preserves_key_order(op) -> None:
+    x = sc.arange('x', 1, 5, unit='m')
+    dg1 = sc.DataGroup({'a': 3 * x, 'x': x, 'b': -x})
+    dg2 = sc.DataGroup({'b': x, 'x': 2 * x})
+
+    result = op(dg1, dg2)
+    assert list(result.keys()) == ['x', 'b']
+
+    result = op(dg2, dg1)
+    assert list(result.keys()) == ['b', 'x']
+
+
+@pytest.mark.parametrize(
+    'op', BINARY_NUMBER_OPERATIONS, ids=BINARY_NUMBER_OPERATION_NAMES
+)
 def test_binary_data_group_with_nested_data_group(op) -> None:
     x = sc.arange('x', 1, 5, unit='m')
     dg1 = sc.DataGroup({'a': x})
