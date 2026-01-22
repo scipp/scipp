@@ -120,6 +120,8 @@ std::string to_string(const std::chrono::duration<Rep, Period> &since_epoch) {
   }
 }
 
+using Clock = std::chrono::system_clock;
+
 /*
  * Format a time point based on a duration since epoch.
  * The unit of the duration is given by the `Duration` type.
@@ -129,13 +131,11 @@ std::string to_string(const std::chrono::duration<Rep, Period> &since_epoch) {
  */
 template <class Duration, class FormatDuration = Duration>
 std::string format_time(
-    const std::format_string<
-        std::chrono::time_point<std::chrono::system_clock, FormatDuration>>
+    const std::format_string<std::chrono::time_point<Clock, FormatDuration>>
         fmt,
     const std::int64_t raw_since_epoch) {
-  return std::format(fmt, std::chrono::time_point_cast<FormatDuration>(
-                              std::chrono::system_clock::time_point{
-                                  Duration{raw_since_epoch}}));
+  const std::chrono::time_point<Clock, Duration> p{Duration{raw_since_epoch}};
+  return std::format(fmt, std::chrono::time_point_cast<FormatDuration>(p));
 }
 
 } // namespace
