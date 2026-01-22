@@ -63,7 +63,6 @@ Overview
 --------
 
 We provide a Conda environment file with developer dependencies in our Git repository.
-Other build dependencies are installed automatically through Conan when running CMake.
 See `Tooling <tooling.rst>`_ for compilers and other required tools.
 
 Getting the code
@@ -186,7 +185,7 @@ We have configured ``tox`` for this purpose:
 
 .. code-block:: bash
 
-  cmake --preset base -DCONAN_TBB=ON
+  cmake --preset base
   cmake --build --preset build
   tox -e editable
   conda develop src
@@ -217,7 +216,7 @@ Additional build options
 3. ``-DPRECOMPILED_HEADERS`` toggle usage of precompiled headers. ``OFF`` by default.
 4. ``-DCPPCHECK`` toggle run of cppcheck during compilation. ``OFF`` by default.
 5. ``-DCTEST_DISCOVER_TESTS`` toggle discovery of individual tests for better (but much slower) integration with ``ctest``. ``OFF`` by default.
-6. ``-DSKIP_REMOTE_SOURCES`` skip usage of conan to fetch and build c++ dependencies. ``OFF`` by default. All the dependencies should be installed on the system already.
+6. ``-DSKIP_REMOTE_SOURCES`` skip fetching C++ dependencies from remote sources. ``OFF`` by default. All dependencies should be installed on the system already.
 
 Running the unit tests
 ----------------------
@@ -282,7 +281,6 @@ In your ``CMakeLists.txt``:
 .. code-block:: cmake
 
   # replace 23.01 with required version
-  find_package(scipp 23.01 REQUIRED COMPONENTS conan-config)
   find_package(scipp 23.01 REQUIRED)
 
   target_link_libraries(mytarget PUBLIC scipp::dataset)

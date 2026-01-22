@@ -26,12 +26,6 @@ Places that define dependencies
   This should be run regularly, e.g., before a release.
   Create a PR with the results and *verify the changes*.
   This must include manual verification that the documentation is ok (download the artifact and inspect locally), since we have several Sphinx-related dependencies that have previously led to silently "broken" documentation pages.
-- C++ library dependencies are installed using ``conan``.
-  Versions are pinned in `lib/cmake/scipp-conan.cmake <https://github.com/scipp/scipp/blob/main/lib/cmake/scipp-conan.cmake>`_ in the ``conan_cmake_configure`` call.
-  Known problem:
-  We have not frozen the *recipe* versions.
-  New recipe versions can be incompatible with older conan versions, such as the one we have frozen.
-  We are therefore considering freezing these as well, see `#2770 <https://github.com/scipp/scipp/issues/2770>`_.
 - C++ conda build dependencies used in CI (non-release) builds are defined in `.buildconfig/ <https://github.com/scipp/scipp/tree/main/.buildconfig>`_ in files such as ``ci-linux.yml``.
   These need to be updated manually.
 - `conda/meta.yaml <https://github.com/scipp/scipp/blob/main/conda/meta.yaml>`_ defines conda package build and runtime dependencies.
@@ -55,10 +49,6 @@ This list is incomplete, but attempts to aid in better understanding how many th
      - Release
      - Comment
    * - `<https://github.com>`_
-     - x
-     - x
-     -
-   * - `<https://conan.io>`_
      - x
      - x
      -
