@@ -5,10 +5,9 @@ channels:
 
 dependencies:
   - benchmark=1.6.1
-  - cmake=3.30.3
-  - conan=1.64.1
+  - cmake=4.1.2
   - conda-build
-  - cppcheck=2.18.0
+  - cppcheck=2.18.3
   - eigen=3.4.0
   - gmock=1.15.2
   - gtest=1.15.2
@@ -18,7 +17,7 @@ dependencies:
   - ipywidgets
   - jupyterlab
   - jupyterlab_code_formatter
-  - libboost-headers=1.86.0
+  - libboost-headers=1.88.0
   - matplotlib-base
   - ninja
   - numba
@@ -27,7 +26,7 @@ dependencies:
   - pip
   - pooch
   - pre-commit
-  - pybind11=2.13.6
+  - pybind11=3.0.1
   - pytest
   - python=3.11
   - python-graphviz
@@ -35,7 +34,7 @@ dependencies:
   - pyyaml
   - plopp
   - scipy>=1.7.0
-  - tbb=2022.0.0
-  - tbb-devel=2022.0.0
-  - tox
+  - tbb=2022.3.0
+  - tbb-devel=2022.3.0
+  - tox=4.34.1
   - xarray
