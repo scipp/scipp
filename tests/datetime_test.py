@@ -266,13 +266,8 @@ def test_datetime_formatting() -> None:
     assert fmt(dt, 'us') == '1991-08-16T12:23:45.678901'
     assert fmt(dt, 'ms') == '1991-08-16T12:23:45.678'
     assert fmt(dt, 's') == '1991-08-16T12:23:45'
-    assert fmt(dt, 'min') == '1991-08-16T12:23:00'
-    assert fmt(dt, 'h') == '1991-08-16T12:00:00'
-
-
-@pytest.mark.skip(reason="Requires std::chrono from C++20")
-def test_datetime_formatting_day_month_year() -> None:
-    dt = np.datetime64('1991-08-16T12:23:45.678901', 'us')
+    assert fmt(dt, 'min') == '1991-08-16T12:23'
+    assert fmt(dt, 'h') == '1991-08-16T12'
     assert fmt(dt, 'D') == '1991-08-16'
     assert fmt(dt, 'M') == '1991-08'
     assert fmt(dt, 'Y') == '1991'
