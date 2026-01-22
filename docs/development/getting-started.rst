@@ -302,3 +302,16 @@ Generating coverage reports
 - Run ``cmake`` with options ``-DCOVERAGE=On -DCMAKE_BUILD_TYPE=Debug``.
 - Run ``cmake --build . --target coverage`` from your build directory.
 - Open ``coverage/index.html`` in a browser.
+
+Build a wheel without CPM
+-------------------------
+
+If you want to build a wheel without pulling in C++ dependencies from remote sources via CPM, you can set the ``SKIP_REMOTE_SOURCES``
+environment variable to ``true`` and it will use the system installed dependencies to build the wheels.
+This is useful if you want to avoid network calls to CPM and build the wheels locally.
+
+.. code-block:: bash
+
+  SKIP_REMOTE_SOURCES=true python -m build
+
+Note that setting this environment variable will automatically add the ``-DSKIP_REMOTE_SOURCES=ON`` CMake flag mentioned in `Additional build options`_.
