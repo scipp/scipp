@@ -30,7 +30,7 @@ jobs:
           submodules: true
           fetch-depth: 0 # history required so cmake can determine version
 
-      - uses: conda-incubator/setup-miniconda@671a2a25885a9e2b0e4f988b135c33aa02072e3d # Use the main branch to get auto-activate
+      - uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # Use the main branch to get auto-activate
         with:
           miniforge-version: latest
           conda-remove-defaults: true
