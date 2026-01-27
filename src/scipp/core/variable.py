@@ -984,7 +984,7 @@ def datetimes(
       <scipp.Variable> (t: 2)  datetime64              [s]  [2021-01-10T01:23:45, 2021-01-11T01:23:45]
       >>> sc.datetimes(dims=['t'], values=['2021-01-10T01:23:45',
       ...                                  '2021-01-11T01:23:45'], unit='h')
-      <scipp.Variable> (t: 2)  datetime64              [h]  [2021-01-10T01:00:00, 2021-01-11T01:00:00]
+      <scipp.Variable> (t: 2)  datetime64              [h]  [2021-01-10T01, 2021-01-11T01]
       >>> sc.datetimes(dims=['t'], values=[0, 1610288175], unit='s')
       <scipp.Variable> (t: 2)  datetime64              [s]  [1970-01-01T00:00:00, 2021-01-10T14:16:15]
     """

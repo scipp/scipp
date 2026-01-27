@@ -3,9 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include <chrono>
-#include <iomanip>
-#include <mutex>
-#include <sstream>
+#include <format>
 
 #include "scipp/units/unit.h"
 
@@ -83,76 +81,109 @@ std::map<DType, std::string> &dtypeNameRegistry() {
 }
 
 namespace {
-template <class Ratio> constexpr int64_t num_digits() {
-  static_assert(Ratio::num == 1 || Ratio::num % 10 == 0);
-  static_assert(Ratio::den == 1 || Ratio::den % 10 == 0);
-  static_assert(Ratio::den > Ratio::num);
-  int64_t result = 0;
-  for (std::size_t i = Ratio::num; i < Ratio::den; i *= 10) {
-    ++result;
-  }
-  return result;
-}
-
-// For synchronizing access to gmtime because its return value is shared.
-std::mutex gmtime_mutex;
-
-void put_time(std::ostream &os, const std::time_t time_point,
-              const bool include_time) {
-  std::lock_guard guard_{gmtime_mutex};
-  const std::tm *tm = std::gmtime(&time_point);
-  if (include_time)
-    os << std::put_time(tm, "%FT%T");
-  else
-    os << std::put_time(tm, "%F");
-}
-
 template <class Rep, class Period>
-std::string to_string(const std::chrono::duration<Rep, Period> &duration) {
+std::string to_string(const std::chrono::duration<Rep, Period> &since_epoch) {
   using Clock = std::chrono::system_clock;
-
-  std::ostringstream oss;
+  using Duration = std::chrono::duration<Rep, Period>;
 
 #ifdef _WIN32
   // Windows' time functions (e.g. gmtime) don't support datetimes before 1970.
-  if (duration < std::chrono::duration<Rep, Period>::zero()) {
+  if (since_epoch < std::chrono::duration<Rep, Period>::zero()) {
     return "(datetime before 1970, cannot format)";
   }
 #endif
 
-  // Cast to seconds to be independent of clock precision.
-  // Sub-second digits are formatted manually.
-  put_time(oss,
-           Clock::to_time_t(Clock::time_point{
-               std::chrono::duration_cast<std::chrono::seconds>(duration)}),
-           true);
-  if constexpr (std::ratio_less_v<Period, std::ratio<1, 1>>) {
-    oss << '.' << std::setw(num_digits<Period>()) << std::setfill('0')
-        << (duration.count() % (Period::den / Period::num));
+  if constexpr (std::ratio_less_equal_v<Period, std::chrono::seconds::period>) {
+    // Cast to as narrow a type as possible to get the
+    // correct number of subsecond digits.
+    // (%S always formats as many digits as the time point allows.)
+    const auto point =
+        std::chrono::time_point_cast<Duration>(Clock::time_point{since_epoch});
+    return std::format("{:%Y-%m-%dT%H:%M:%S}", point);
+  } else {
+    // std::format does not support time points with large units, so use the
+    // lowest possible unit here and use concrete format strings.
+    const auto point = std::chrono::time_point_cast<std::chrono::minutes>(
+        Clock::time_point{since_epoch});
+
+    if constexpr (std::is_same_v<Duration, std::chrono::minutes>) {
+      return std::format("{:%Y-%m-%dT%H:%M}", point);
+    } else if constexpr (std::is_same_v<Duration, std::chrono::hours>) {
+      return std::format("{:%Y-%m-%dT%H}", point);
+    } else if constexpr (std::is_same_v<Duration, std::chrono::days>) {
+      return std::format("{:%Y-%m-%d}", point);
+    } else if constexpr (std::is_same_v<Duration, std::chrono::months>) {
+      return std::format("{:%Y-%m}", point);
+    } else /* years */ {
+      return std::format("{:%Y}", point);
+    }
   }
-  return oss.str();
 }
+
+using Clock = std::chrono::system_clock;
+
+/*
+ * Format a time point based on a duration since epoch.
+ * The unit of the duration is given by the `Duration` type.
+ *
+ * The time point is first converted to the unit of `FormatDuration` because
+ * `std::format` does not support all units (not month, year).
+ */
+template <class Duration, class FormatDuration = Duration>
+std::string format_time(
+    const std::format_string<std::chrono::time_point<Clock, FormatDuration>>
+        fmt,
+    const std::int64_t raw_since_epoch) {
+  const std::chrono::time_point<Clock, Duration> p{Duration{raw_since_epoch}};
+  return std::format(fmt, std::chrono::time_point_cast<FormatDuration>(p));
+}
+
 } // namespace
 
 std::string to_iso_date(const scipp::core::time_point &item,
                         const sc_units::Unit &unit) {
+#ifdef _WIN32
+  // Windows' time functions (e.g. gmtime) don't support datetimes before 1970.
+  if (item.time_since_epoch() < 0) {
+    return "(datetime before 1970, cannot format)";
+  }
+#endif
+
   if (unit == sc_units::ns) {
-    return to_string(std::chrono::nanoseconds{item.time_since_epoch()});
-  } else if (unit == sc_units::s) {
-    return to_string(std::chrono::seconds{item.time_since_epoch()});
-  } else if (unit == sc_units::us) {
-    return to_string(std::chrono::microseconds{item.time_since_epoch()});
-  } else if (unit == sc_units::Unit(units::precise::ms)) {
-    return to_string(std::chrono::milliseconds{item.time_since_epoch()});
-  } else if (unit == sc_units::Unit(units::precise::minute)) {
-    return to_string(std::chrono::minutes{item.time_since_epoch()});
-  } else if (unit == sc_units::Unit(units::precise::hr)) {
-    return to_string(std::chrono::hours{item.time_since_epoch()});
-  } else if (unit == sc_units::Unit(units::precise::day) ||
-             unit == sc_units::Unit("month") ||
-             unit == sc_units::Unit("year")) {
-    throw except::UnitError("Printing of time points with units greater than "
-                            "hours is not yet implemented.");
+    return format_time<std::chrono::nanoseconds>("{:%Y-%m-%dT%H:%M:%S}",
+                                                 item.time_since_epoch());
+  }
+  if (unit == sc_units::s) {
+    return format_time<std::chrono::seconds>("{:%Y-%m-%dT%H:%M:%S}",
+                                             item.time_since_epoch());
+  }
+  if (unit == sc_units::us) {
+    return format_time<std::chrono::microseconds>("{:%Y-%m-%dT%H:%M:%S}",
+                                                  item.time_since_epoch());
+  }
+  if (unit == sc_units::Unit(units::precise::ms)) {
+    return format_time<std::chrono::milliseconds>("{:%Y-%m-%dT%H:%M:%S}",
+                                                  item.time_since_epoch());
+  }
+  if (unit == sc_units::Unit(units::precise::minute)) {
+    return format_time<std::chrono::minutes>("{:%Y-%m-%dT%H:%M}",
+                                             item.time_since_epoch());
+  }
+  if (unit == sc_units::Unit(units::precise::hr)) {
+    return format_time<std::chrono::hours>("{:%Y-%m-%dT%H}",
+                                           item.time_since_epoch());
+  }
+  if (unit == sc_units::Unit(units::precise::day)) {
+    return format_time<std::chrono::days>("{:%Y-%m-%d}",
+                                          item.time_since_epoch());
+  }
+  if (unit == sc_units::Unit("month")) {
+    return format_time<std::chrono::months, std::chrono::minutes>(
+        "{:%Y-%m}", item.time_since_epoch());
+  }
+  if (unit == sc_units::Unit("year")) {
+    return format_time<std::chrono::years, std::chrono::minutes>(
+        "{:%Y}", item.time_since_epoch());
   }
   throw except::UnitError("Cannot display time point, unsupported unit: " +
                           to_string(unit));
