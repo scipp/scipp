@@ -407,6 +407,58 @@ def where(
     return _call_cpp_func(_cpp.where, condition, x, y)  # type: ignore[return-value]
 
 
+def clip(
+    x: _VarDa,
+    *,
+    min: Variable | None = None,
+    max: Variable | None = None,
+) -> _VarDa:
+    """Clip (limit) the values in an array to a given range.
+
+    Given an interval, values outside the interval are clipped to the
+    interval edges.
+
+    Parameters
+    ----------
+    x:
+        Input array with values to be clipped.
+    min:
+        Minimum value. If ``None``, no clipping is performed on lower bound.
+        Must be provided as a keyword argument.
+    max:
+        Maximum value. If ``None``, no clipping is performed on upper bound.
+        Must be provided as a keyword argument.
+
+    Returns
+    -------
+    :
+        Array with elements clipped to the range [min, max].
+
+    Raises
+    ------
+    ValueError:
+        If both min and max are None.
+
+    Examples
+    --------
+        >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0, 4.0, 5.0])
+        >>> sc.clip(x, min=sc.scalar(2.0), max=sc.scalar(4.0))
+        <scipp.Variable> (x: 5)    float64  [dimensionless]  [2, 2, 3, 4, 4]
+    """
+    if min is None and max is None:
+        raise ValueError("At least one of 'min' or 'max' must be provided")
+    if min is not None and max is not None:
+        # When both bounds provided: compute conditions on original x,
+        # then chain the where calls. This ensures we compare against
+        # the original data rather than intermediate results.
+        result = where(x < min, min, x)
+        return where(result > max, max, result)
+    elif min is not None:
+        return where(x < min, min, x)
+    else:
+        return where(x > max, max, x)  # type: ignore[operator]
+
+
 def to(
     var: Variable,
     *,
