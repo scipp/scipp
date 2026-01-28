@@ -21,7 +21,7 @@ if(NOT SKIP_REMOTE_SOURCES)
   include(scipp-cpm)
 endif()
 find_package(units REQUIRED)
-find_package(Boost 1.67 REQUIRED)
+find_package(Boost 1.90 REQUIRED)
 find_package(Eigen3 REQUIRED)
 option(SANITIZERS "Enable sanitizers" OFF)
 if(SANITIZERS)
@@ -33,7 +33,7 @@ endif()
 find_package(GTest CONFIG REQUIRED)
 # libpython is not available on `manylinux` images, use `Development.Module`
 # instead of `Development`
-find_package(Python 3.8 REQUIRED COMPONENTS Interpreter Development.Module)
+find_package(Python 3.11 REQUIRED COMPONENTS Interpreter Development.Module)
 find_package(pybind11 CONFIG REQUIRED)
 
 # Generate files for free scipp API functions
