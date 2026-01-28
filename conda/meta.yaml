@@ -36,7 +36,7 @@ requirements:
   host:
     - python
     - tbb-devel
-    - libboost-headers
+    - libboost-headers >= 1.90.0
     - eigen
     - pybind11
     - benchmark
@@ -69,7 +69,7 @@ test:
     - scipy>=1.7.0
     - tbb-devel
     - xarray
-    - libboost-headers
+    - libboost-headers >= 1.90.0
     - eigen
     - pybind11
     - benchmark
