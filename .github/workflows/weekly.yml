@@ -1,7 +1,6 @@
 name: Weekly package builds
 
 on:
-  pull_request:
   workflow_dispatch:
   # It seems that the push trigger below makes the weekly workflow run on every push
   # to `main` and on every tag creation. We remove it for now. To debug the weekly
@@ -19,14 +18,13 @@ defaults:
 jobs:
   build_conda:
     strategy:
-      fail-fast: false
       matrix:
         variant:
-          # - {os: ubuntu-24.04, target: linux_64}
+          - {os: ubuntu-24.04, target: linux_64}
           - {os: macos-15-intel, target: osx_64}
           - {os: macos-15, target: osx_arm64}
-          # - {os: windows-2022, target: win_64}
-          # - {os: ubuntu-24.04-arm, target: linux_arm64}
+          - {os: windows-2022, target: win_64}
+          - {os: ubuntu-24.04-arm, target: linux_arm64}
         python-version: ["3.11", "3.14"]
     uses: ./.github/workflows/conda.yml
     with:
@@ -34,13 +32,12 @@ jobs:
       target: ${{ matrix.variant.target }}
       python-version: ${{ matrix.python-version }}
 
-  # build_wheels:
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       os: [ubuntu-24.04, macos-15-intel, macos-15, windows-2022, ubuntu-24.04-arm]
-  #       build: [cp311, cp314]
-  #   uses: ./.github/workflows/wheel.yml
-  #   with:
-  #     os: ${{ matrix.os }}
-  #     build: ${{ matrix.build }}
+  build_wheels:
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, macos-15-intel, macos-15, windows-2022, ubuntu-24.04-arm]
+        build: [cp311, cp314]
+    uses: ./.github/workflows/wheel.yml
+    with:
+      os: ${{ matrix.os }}
+      build: ${{ matrix.build }}
