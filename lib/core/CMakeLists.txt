@@ -63,7 +63,7 @@ add_library(${TARGET_NAME} ${LINK_TYPE} ${INC_FILES} ${SRC_FILES})
 generate_export_header(${TARGET_NAME})
 # Boost linking: SKBUILD uses CPM-fetched component targets, conda uses system
 # Boost::headers
-if(SKBUILD)
+if(SKBUILD AND NOT SKIP_REMOTE_SOURCES)
   set(BOOST_TARGETS Boost::container Boost::iterator)
 else()
   set(BOOST_TARGETS Boost::headers)
