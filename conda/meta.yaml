@@ -35,17 +35,17 @@ requirements:
 
   host:
     - python
-    - tbb-devel=2022.0.0
-    - libboost-headers=1.86.0
-    - eigen=3.4.0
-    - pybind11=2.13.6
-    - benchmark=1.6.1
+    - tbb-devel
+    - libboost-headers=1.90.0
+    - eigen
+    - pybind11
+    - benchmark
     - gmock=1.15.2
     - gtest=1.15.2
   run:
     - numpy
     - python
-    - tbb=2022.0.0
+    - tbb
 
 # Only the cmake-package-test works when cross compiling.
 # But it is not very important at the moment and
@@ -67,12 +67,12 @@ test:
     - pytest
     - python-graphviz
     - scipy>=1.7.0
-    - tbb-devel=2022.0.0
+    - tbb-devel
     - xarray
-    - libboost-headers=1.86.0
-    - eigen=3.4.0
-    - pybind11=2.13.6
-    - benchmark=1.6.1
+    - libboost-headers=1.90.0
+    - eigen
+    - pybind11
+    - benchmark
     - gmock=1.15.2
     - gtest=1.15.2
   source_files:
