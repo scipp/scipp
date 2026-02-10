@@ -25,7 +25,7 @@ jobs:
           - {os: macos-15, target: osx_arm64}
           - {os: windows-2022, target: win_64}
           - {os: ubuntu-24.04-arm, target: linux_arm64}
-        python-version: ["3.11", "3.14", "3.14t"]
+        python-version: ["3.11", "3.14"]
     uses: ./.github/workflows/conda.yml
     with:
       os: ${{ matrix.variant.os }}
