@@ -203,7 +203,8 @@ def make_binned(
         if rebinning_dims:
             extended_erase = tuple(set(erase) | set(rebinning_dims))
             if _can_operate_on_bins(x, edges, groups, extended_erase):
-                return combine_bins(x, edges=edges, groups=groups, dim=extended_erase)
+                result = combine_bins(x, edges=edges, groups=groups, dim=extended_erase)
+                return result.transpose(x.dims)
     # Many-to-many mapping is expensive, concat first is generally cheaper,
     # despite extra copies. If some coords are dense, perform binning in two steps,
     # since concat is not possible then (without mapping dense coords to binned coords,
