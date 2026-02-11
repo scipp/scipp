@@ -191,7 +191,7 @@ def make_binned(
     # Re-binning along an existing dimension: the dim is absent from erase
     # because _find_replaced_dims cancels it out. Detect and route to combine_bins
     # which handles this in O(N) instead of O(N^2) in the unchanged dimensions.
-    if isinstance(x, DataArray) and x.is_binned:
+    if x.is_binned:
         rebinning_dims = [
             e.dim
             for e in edges
