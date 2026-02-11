@@ -140,6 +140,16 @@ def combine_bins(
     else:
         names = [coord.dim for coord in itertools.chain(edges, groups)]
         coords = {name: da.coords[name] for name in names}
+        # 1-D masking in hide_masked may have dropped rows, reducing a dimension.
+        # Filter coords to match the masked data shape.
+        if masked.shape != da.data.shape:
+            mask = irreducible_mask(da, dim)
+            if mask is not None and mask.ndim == 1:
+                select = ~mask
+                coords = {
+                    name: coord[select] if mask.dim in coord.dims else coord
+                    for name, coord in coords.items()
+                }
         data = _combine_bins(masked, coords=coords, edges=edges, groups=groups, dim=dim)
     out = rewrap_reduced_data(da, data, dim=dim)
     for coord in itertools.chain(edges, groups):

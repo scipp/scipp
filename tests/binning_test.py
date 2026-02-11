@@ -1320,6 +1320,341 @@ def test_bin_binned_with_explicit_dim_arg_equivalent_to_manual_rename_dims_and_b
     )
 
 
+def _make_pixel_binned_2d(n_events=10000, n_pixels=100, nx=10, ny=8, seed=42):
+    """Create 2D binned data where x is outer-only (not an event coord).
+
+    This simulates the real-world pattern of pixel-based data: events have a y
+    coordinate but NOT x. x is a pixel-level coordinate only. After binning into
+    2D, x is an outer coord with no event-level counterpart.
+    """
+    rng_ = default_rng(seed)
+    table = sc.DataArray(
+        data=sc.array(dims=['event'], values=rng_.random(n_events), unit='counts'),
+        coords={
+            'y': sc.array(
+                dims=['event'], values=rng_.uniform(0, 10, n_events), unit='m'
+            ),
+        },
+    )
+    per_pixel = n_events // n_pixels
+    begin = sc.arange('pixel', 0, n_events, per_pixel, unit=None)
+    end = sc.arange('pixel', per_pixel, n_events + 1, per_pixel, unit=None)
+    pixel_data = sc.DataArray(
+        data=sc.bins(data=table, dim='event', begin=begin, end=end),
+        coords={'x': sc.linspace('pixel', 0.0, 10.0, n_pixels, unit='m')},
+    )
+    y_edges = sc.linspace('y', 0.0, 10.0, ny + 1, unit='m')
+    binned_2d = pixel_data.bin(x=nx, y=y_edges)
+    binned_2d.coords['x'] = sc.midpoints(binned_2d.coords['x'])
+    return binned_2d
+
+
+def test_rebin_2d_outer_coord_preserves_event_count() -> None:
+    binned_2d = _make_pixel_binned_2d()
+    original_count = binned_2d.bins.size().sum().value
+    result = binned_2d.bin(x=5)
+    assert result.bins.size().sum().value == original_count
+
+
+def test_rebin_2d_outer_coord_histogram_matches_independent_reference() -> None:
+    binned_2d = _make_pixel_binned_2d(nx=10, ny=8)
+    x_mids = binned_2d.coords['x']
+    y_edges = binned_2d.coords['y']
+
+    # Re-bin from 10 to 5 x-bins with explicit edges
+    new_x_edges = sc.linspace('x', 0.0, 10.0, 6, unit='m')
+    result = binned_2d.bin(x=new_x_edges)
+    result_hist = result.hist()
+
+    # Independently compute expected histogram:
+    # For each new x-bin, select old x-bins whose midpoints fall in range,
+    # histogram them over y, and sum along x.
+    for i in range(5):
+        lo = new_x_edges['x', i].value
+        hi = new_x_edges['x', i + 1].value
+        # Find which old x-bins have midpoints in [lo, hi)
+        indices = []
+        for j in range(len(x_mids)):
+            mid = x_mids['x', j].value
+            if lo <= mid < hi:
+                indices.append(j)
+        if indices:
+            slices = [binned_2d['x', j].hist(y=y_edges) for j in indices]
+            expected_slice = sc.concat(slices, dim='x').sum('x')
+        else:
+            expected_slice = sc.zeros_like(result_hist['x', 0])
+        # Use allclose due to floating-point summation order differences
+        assert sc.allclose(result_hist['x', i].data, expected_slice.data)
+
+
+def test_rebin_2d_outer_coord_to_coarser_bins() -> None:
+    binned_2d = _make_pixel_binned_2d(nx=12, ny=6)
+    # Coarsen: 12 -> 4 x-bins (each new bin combines 3 old bins)
+    new_x_edges = sc.linspace('x', 0.0, 10.0, 5, unit='m')
+    result = binned_2d.bin(x=new_x_edges)
+    assert result.sizes == {'x': 4, 'y': 6}
+    assert result.bins.size().sum().value == binned_2d.bins.size().sum().value
+    # Histogramming must give consistent totals per y-bin
+    assert sc.allclose(result.hist().sum('x').data, binned_2d.hist().sum('x').data)
+
+
+def test_rebin_2d_outer_coord_to_finer_bins() -> None:
+    binned_2d = _make_pixel_binned_2d(nx=5, ny=4)
+    # Refine: 5 -> 20 x-bins (most new bins will be empty)
+    new_x_edges = sc.linspace('x', 0.0, 10.0, 21, unit='m')
+    result = binned_2d.bin(x=new_x_edges)
+    assert result.sizes == {'x': 20, 'y': 4}
+    assert result.bins.size().sum().value == binned_2d.bins.size().sum().value
+    assert sc.allclose(result.hist().sum('x').data, binned_2d.hist().sum('x').data)
+
+
+def test_rebin_3d_outer_coord_preserves_data() -> None:
+    """3D data: x is outer-only, y and z are event coords."""
+    rng_ = default_rng(123)
+    n_events, n_pixels = 5000, 50
+    table = sc.DataArray(
+        data=sc.array(dims=['event'], values=rng_.random(n_events), unit='counts'),
+        coords={
+            'y': sc.array(
+                dims=['event'], values=rng_.uniform(0, 10, n_events), unit='m'
+            ),
+            'z': sc.array(
+                dims=['event'], values=rng_.uniform(0, 10, n_events), unit='m'
+            ),
+        },
+    )
+    per_pixel = n_events // n_pixels
+    begin = sc.arange('pixel', 0, n_events, per_pixel, unit=None)
+    end = sc.arange('pixel', per_pixel, n_events + 1, per_pixel, unit=None)
+    pixel_data = sc.DataArray(
+        data=sc.bins(data=table, dim='event', begin=begin, end=end),
+        coords={'x': sc.linspace('pixel', 0.0, 10.0, n_pixels, unit='m')},
+    )
+    binned_3d = pixel_data.bin(x=10, y=5, z=4)
+    binned_3d.coords['x'] = sc.midpoints(binned_3d.coords['x'])
+
+    result = binned_3d.bin(x=5)
+    assert result.dims == ('x', 'y', 'z')
+    assert result.sizes['x'] == 5
+    assert result.bins.size().sum().value == binned_3d.bins.size().sum().value
+    assert sc.allclose(result.hist().sum('x').data, binned_3d.hist().sum('x').data)
+
+
+def test_rebin_2d_outer_coord_with_mask() -> None:
+    binned_2d = _make_pixel_binned_2d(nx=6, ny=4)
+    binned_2d.masks['x_mask'] = sc.array(
+        dims=['x'], values=[False, True, False, False, True, False]
+    )
+    result = binned_2d.bin(x=3)
+    assert result.sizes == {'x': 3, 'y': 4}
+    # Per docstring of make_binned: "masked bins are treated as empty", so
+    # events from masked bins should be discarded.
+    select = sc.array(dims=['x'], values=[True, False, True, True, False, True])
+    unmasked = binned_2d.copy()
+    del unmasked.masks['x_mask']
+    expected_count = unmasked[select].bins.size().sum().value
+    assert result.bins.size().sum().value == expected_count
+
+
+def test_rebin_2d_both_outer_dims() -> None:
+    """Both x and y are outer-only coords, re-bin both simultaneously."""
+    rng_ = default_rng(99)
+    n_events, n_pixels = 5000, 50
+    table = sc.DataArray(
+        data=sc.array(dims=['event'], values=rng_.random(n_events), unit='counts'),
+        coords={
+            'z': sc.array(
+                dims=['event'], values=rng_.uniform(0, 10, n_events), unit='m'
+            ),
+        },
+    )
+    per_pixel = n_events // n_pixels
+    begin = sc.arange('pixel', 0, n_events, per_pixel, unit=None)
+    end = sc.arange('pixel', per_pixel, n_events + 1, per_pixel, unit=None)
+    pixel_data = sc.DataArray(
+        data=sc.bins(data=table, dim='event', begin=begin, end=end),
+        coords={
+            'x': sc.linspace('pixel', 0.0, 10.0, n_pixels, unit='m'),
+            'y': sc.linspace('pixel', 0.0, 5.0, n_pixels, unit='m'),
+        },
+    )
+    binned_2d = pixel_data.bin(x=10, y=8, z=4)
+    binned_2d.coords['x'] = sc.midpoints(binned_2d.coords['x'])
+    binned_2d.coords['y'] = sc.midpoints(binned_2d.coords['y'])
+
+    result = binned_2d.bin(x=5, y=4)
+    assert result.sizes['x'] == 5
+    assert result.sizes['y'] == 4
+    assert result.sizes['z'] == 4
+    assert result.bins.size().sum().value == binned_2d.bins.size().sum().value
+
+
+def test_rebin_2d_outer_coord_preserves_event_data_values() -> None:
+    binned_2d = _make_pixel_binned_2d(n_events=1000, n_pixels=20, nx=10, ny=4)
+    result = binned_2d.bin(x=5)
+    # Sum of all event data values must be preserved (compare as float)
+    original_data_sum = binned_2d.bins.sum().sum().value
+    result_data_sum = result.bins.sum().sum().value
+    assert original_data_sum == pytest.approx(result_data_sum)
+
+
+def test_rebin_2d_with_2d_outer_coord_collapses_dims() -> None:
+    """Re-binning with a 2-D outer coord must collapse dims, not use fast path."""
+    binned_2d = _make_pixel_binned_2d(nx=10, ny=8)
+    # Make x coord 2-D (varying per y), so re-binning x collapses both dims
+    binned_2d.coords['x'] = binned_2d.coords['x'] * sc.linspace(
+        'y', 1.0, 2.0, 8, unit='dimensionless'
+    )
+    result = binned_2d.bin(x=5)
+    assert result.dims == ('x',)
+    assert result.sizes == {'x': 5}
+    assert result.bins.size().sum().value == binned_2d.bins.size().sum().value
+
+
+def _make_pixel_grouped_2d(n_events=10000, n_pixels=100, n_groups=10, ny=8, seed=42):
+    """Create 2D binned data where 'cat' is an outer-only group coord.
+
+    Events have a y coordinate but NOT cat. cat is a pixel-level coordinate
+    only. After grouping into 2D, cat is an outer coord with no event-level
+    counterpart — the group analogue of _make_pixel_binned_2d.
+    """
+    rng_ = default_rng(seed)
+    per_pixel = n_events // n_pixels
+    table = sc.DataArray(
+        data=sc.array(dims=['event'], values=rng_.random(n_events), unit='counts'),
+        coords={
+            'y': sc.array(
+                dims=['event'], values=rng_.uniform(0, 10, n_events), unit='m'
+            ),
+        },
+    )
+    begin = sc.arange('pixel', 0, n_events, per_pixel, unit=None)
+    end = sc.arange('pixel', per_pixel, n_events + 1, per_pixel, unit=None)
+    cats = rng_.integers(0, n_groups, n_pixels)
+    pixel_data = sc.DataArray(
+        data=sc.bins(data=table, dim='event', begin=begin, end=end),
+        coords={'cat': sc.array(dims=['pixel'], values=cats, dtype='int64')},
+    )
+    y_edges = sc.linspace('y', 0.0, 10.0, ny + 1, unit='m')
+    return pixel_data.group('cat').bin(y=y_edges)
+
+
+def test_regroup_2d_outer_coord_preserves_event_count() -> None:
+    binned_2d = _make_pixel_grouped_2d(n_groups=10)
+    all_groups = binned_2d.coords['cat']
+    # Re-group to a subset of the existing groups
+    subset = all_groups['cat', ::2]
+    result = binned_2d.group(subset)
+    # Only events from the selected groups should be present
+    select = sc.array(
+        dims=['cat'],
+        values=[v in subset.values for v in all_groups.values],
+    )
+    expected_count = binned_2d[select].bins.size().sum().value
+    assert result.bins.size().sum().value == expected_count
+
+
+def test_regroup_2d_outer_coord_histogram_matches_reference() -> None:
+    binned_2d = _make_pixel_grouped_2d(n_groups=10, ny=6)
+    all_cats = binned_2d.coords['cat']
+    y_edges = binned_2d.coords['y']
+    subset = all_cats['cat', ::2]
+    result = binned_2d.group(subset)
+    result_hist = result.hist()
+
+    for i in range(len(subset)):
+        cat_val = subset.values[i]
+        # Find original index for this category
+        orig_idx = [j for j, v in enumerate(all_cats.values) if v == cat_val]
+        if orig_idx:
+            slices = [binned_2d['cat', j].hist(y=y_edges) for j in orig_idx]
+            expected_slice = sc.concat(slices, dim='cat').sum('cat')
+        else:
+            expected_slice = sc.zeros_like(result_hist['cat', 0])
+        assert sc.allclose(result_hist['cat', i].data, expected_slice.data)
+
+
+def test_regroup_2d_outer_coord_dims_and_sizes() -> None:
+    binned_2d = _make_pixel_grouped_2d(n_groups=8, ny=5)
+    subset = sc.array(dims=['cat'], values=[0, 2, 4], dtype='int64')
+    result = binned_2d.group(subset)
+    assert result.dims == ('cat', 'y')
+    assert result.sizes == {'cat': 3, 'y': 5}
+
+
+def test_regroup_3d_outer_coord_preserves_data() -> None:
+    """3D data: cat is outer-only, y and z are event coords."""
+    rng_ = default_rng(123)
+    n_events, n_pixels = 5000, 50
+    per_pixel = n_events // n_pixels
+    table = sc.DataArray(
+        data=sc.array(dims=['event'], values=rng_.random(n_events), unit='counts'),
+        coords={
+            'y': sc.array(
+                dims=['event'], values=rng_.uniform(0, 10, n_events), unit='m'
+            ),
+            'z': sc.array(
+                dims=['event'], values=rng_.uniform(0, 10, n_events), unit='m'
+            ),
+        },
+    )
+    begin = sc.arange('pixel', 0, n_events, per_pixel, unit=None)
+    end = sc.arange('pixel', per_pixel, n_events + 1, per_pixel, unit=None)
+    cats = rng_.integers(0, 10, n_pixels)
+    pixel_data = sc.DataArray(
+        data=sc.bins(data=table, dim='event', begin=begin, end=end),
+        coords={'cat': sc.array(dims=['pixel'], values=cats, dtype='int64')},
+    )
+    binned_3d = pixel_data.group('cat').bin(y=5, z=4)
+    all_cats = binned_3d.coords['cat']
+    subset = all_cats['cat', ::2]
+
+    result = binned_3d.group(subset)
+    assert result.dims == ('cat', 'y', 'z')
+    assert result.sizes['cat'] == len(subset)
+    select = sc.array(
+        dims=['cat'],
+        values=[v in subset.values for v in all_cats.values],
+    )
+    assert result.bins.size().sum().value == binned_3d[select].bins.size().sum().value
+    assert sc.allclose(
+        result.hist().sum('cat').data, binned_3d[select].hist().sum('cat').data
+    )
+
+
+def test_regroup_2d_outer_coord_with_mask() -> None:
+    binned_2d = _make_pixel_grouped_2d(n_groups=6, ny=4)
+    mask_vals = [False, True, False, False, True, False]
+    binned_2d.masks['cat_mask'] = sc.array(dims=['cat'], values=mask_vals)
+    all_cats = binned_2d.coords['cat']
+    subset = all_cats['cat', ::2]
+    result = binned_2d.group(subset)
+    assert result.sizes['cat'] == len(subset)
+    # Masked bins should be treated as empty
+    unmasked = binned_2d.copy()
+    del unmasked.masks['cat_mask']
+    not_masked = sc.array(dims=['cat'], values=[not m for m in mask_vals])
+    keep = sc.array(
+        dims=['cat'],
+        values=[
+            (v in subset.values) and nm
+            for v, nm in zip(all_cats.values, not_masked.values, strict=True)
+        ],
+    )
+    expected_count = unmasked[keep].bins.size().sum().value
+    assert result.bins.size().sum().value == expected_count
+
+
+def test_regroup_2d_outer_coord_preserves_event_data_values() -> None:
+    binned_2d = _make_pixel_grouped_2d(n_events=1000, n_pixels=20, n_groups=10, ny=4)
+    all_cats = binned_2d.coords['cat']
+    # Re-group keeping all existing groups — should preserve all events exactly
+    result = binned_2d.group(all_cats)
+    original_data_sum = binned_2d.bins.sum().sum().value
+    result_data_sum = result.bins.sum().sum().value
+    assert original_data_sum == pytest.approx(result_data_sum)
+
+
 def test_bin_rebin_existing_edge_cases() -> None:
     n_event = 4
     events = sc.DataArray(

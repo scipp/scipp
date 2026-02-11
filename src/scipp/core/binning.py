@@ -188,6 +188,24 @@ def make_binned(
         x = DataArray(data, coords={coords[0].dim: x})
     if _can_operate_on_bins(x, edges, groups, erase):
         return combine_bins(x, edges=edges, groups=groups, dim=erase)
+    # Re-binning along an existing dimension: the dim is absent from erase
+    # because _find_replaced_dims cancels it out. Detect and route to combine_bins
+    # which handles this in O(N) instead of O(N^2) in the unchanged dimensions.
+    if x.is_binned:
+        rebinning_dims = [
+            coord.dim
+            for coord in itertools.chain(edges, groups)
+            if coord.ndim == 1
+            and coord.dim in x.dims
+            and coord.dim not in x.bins.coords
+            and coord.dim in x.coords
+            and x.coords[coord.dim].dims == (coord.dim,)
+        ]
+        if rebinning_dims:
+            extended_erase = tuple(set(erase) | set(rebinning_dims))
+            if _can_operate_on_bins(x, edges, groups, extended_erase):
+                result = combine_bins(x, edges=edges, groups=groups, dim=extended_erase)
+                return result.transpose(x.dims)
     # Many-to-many mapping is expensive, concat first is generally cheaper,
     # despite extra copies. If some coords are dense, perform binning in two steps,
     # since concat is not possible then (without mapping dense coords to binned coords,
