@@ -1498,6 +1498,163 @@ def test_rebin_2d_outer_coord_preserves_event_data_values() -> None:
     assert original_data_sum == pytest.approx(result_data_sum)
 
 
+def test_rebin_2d_with_2d_outer_coord_collapses_dims() -> None:
+    """Re-binning with a 2-D outer coord must collapse dims, not use fast path."""
+    binned_2d = _make_pixel_binned_2d(nx=10, ny=8)
+    # Make x coord 2-D (varying per y), so re-binning x collapses both dims
+    binned_2d.coords['x'] = binned_2d.coords['x'] * sc.linspace(
+        'y', 1.0, 2.0, 8, unit='dimensionless'
+    )
+    result = binned_2d.bin(x=5)
+    assert result.dims == ('x',)
+    assert result.sizes == {'x': 5}
+    assert result.bins.size().sum().value == binned_2d.bins.size().sum().value
+
+
+def _make_pixel_grouped_2d(n_events=10000, n_pixels=100, n_groups=10, ny=8, seed=42):
+    """Create 2D binned data where 'cat' is an outer-only group coord.
+
+    Events have a y coordinate but NOT cat. cat is a pixel-level coordinate
+    only. After grouping into 2D, cat is an outer coord with no event-level
+    counterpart — the group analogue of _make_pixel_binned_2d.
+    """
+    rng_ = default_rng(seed)
+    per_pixel = n_events // n_pixels
+    table = sc.DataArray(
+        data=sc.array(dims=['event'], values=rng_.random(n_events), unit='counts'),
+        coords={
+            'y': sc.array(
+                dims=['event'], values=rng_.uniform(0, 10, n_events), unit='m'
+            ),
+        },
+    )
+    begin = sc.arange('pixel', 0, n_events, per_pixel, unit=None)
+    end = sc.arange('pixel', per_pixel, n_events + 1, per_pixel, unit=None)
+    cats = rng_.integers(0, n_groups, n_pixels)
+    pixel_data = sc.DataArray(
+        data=sc.bins(data=table, dim='event', begin=begin, end=end),
+        coords={'cat': sc.array(dims=['pixel'], values=cats, dtype='int64')},
+    )
+    y_edges = sc.linspace('y', 0.0, 10.0, ny + 1, unit='m')
+    return pixel_data.group('cat').bin(y=y_edges)
+
+
+def test_regroup_2d_outer_coord_preserves_event_count() -> None:
+    binned_2d = _make_pixel_grouped_2d(n_groups=10)
+    all_groups = binned_2d.coords['cat']
+    # Re-group to a subset of the existing groups
+    subset = all_groups['cat', ::2]
+    result = binned_2d.group(subset)
+    # Only events from the selected groups should be present
+    select = sc.array(
+        dims=['cat'],
+        values=[v in subset.values for v in all_groups.values],
+    )
+    expected_count = binned_2d[select].bins.size().sum().value
+    assert result.bins.size().sum().value == expected_count
+
+
+def test_regroup_2d_outer_coord_histogram_matches_reference() -> None:
+    binned_2d = _make_pixel_grouped_2d(n_groups=10, ny=6)
+    all_cats = binned_2d.coords['cat']
+    y_edges = binned_2d.coords['y']
+    subset = all_cats['cat', ::2]
+    result = binned_2d.group(subset)
+    result_hist = result.hist()
+
+    for i in range(len(subset)):
+        cat_val = subset.values[i]
+        # Find original index for this category
+        orig_idx = [j for j, v in enumerate(all_cats.values) if v == cat_val]
+        if orig_idx:
+            slices = [binned_2d['cat', j].hist(y=y_edges) for j in orig_idx]
+            expected_slice = sc.concat(slices, dim='cat').sum('cat')
+        else:
+            expected_slice = sc.zeros_like(result_hist['cat', 0])
+        assert sc.allclose(result_hist['cat', i].data, expected_slice.data)
+
+
+def test_regroup_2d_outer_coord_dims_and_sizes() -> None:
+    binned_2d = _make_pixel_grouped_2d(n_groups=8, ny=5)
+    subset = sc.array(dims=['cat'], values=[0, 2, 4], dtype='int64')
+    result = binned_2d.group(subset)
+    assert result.dims == ('cat', 'y')
+    assert result.sizes == {'cat': 3, 'y': 5}
+
+
+def test_regroup_3d_outer_coord_preserves_data() -> None:
+    """3D data: cat is outer-only, y and z are event coords."""
+    rng_ = default_rng(123)
+    n_events, n_pixels = 5000, 50
+    per_pixel = n_events // n_pixels
+    table = sc.DataArray(
+        data=sc.array(dims=['event'], values=rng_.random(n_events), unit='counts'),
+        coords={
+            'y': sc.array(
+                dims=['event'], values=rng_.uniform(0, 10, n_events), unit='m'
+            ),
+            'z': sc.array(
+                dims=['event'], values=rng_.uniform(0, 10, n_events), unit='m'
+            ),
+        },
+    )
+    begin = sc.arange('pixel', 0, n_events, per_pixel, unit=None)
+    end = sc.arange('pixel', per_pixel, n_events + 1, per_pixel, unit=None)
+    cats = rng_.integers(0, 10, n_pixels)
+    pixel_data = sc.DataArray(
+        data=sc.bins(data=table, dim='event', begin=begin, end=end),
+        coords={'cat': sc.array(dims=['pixel'], values=cats, dtype='int64')},
+    )
+    binned_3d = pixel_data.group('cat').bin(y=5, z=4)
+    all_cats = binned_3d.coords['cat']
+    subset = all_cats['cat', ::2]
+
+    result = binned_3d.group(subset)
+    assert result.dims == ('cat', 'y', 'z')
+    assert result.sizes['cat'] == len(subset)
+    select = sc.array(
+        dims=['cat'],
+        values=[v in subset.values for v in all_cats.values],
+    )
+    assert result.bins.size().sum().value == binned_3d[select].bins.size().sum().value
+    assert sc.allclose(
+        result.hist().sum('cat').data, binned_3d[select].hist().sum('cat').data
+    )
+
+
+def test_regroup_2d_outer_coord_with_mask() -> None:
+    binned_2d = _make_pixel_grouped_2d(n_groups=6, ny=4)
+    mask_vals = [False, True, False, False, True, False]
+    binned_2d.masks['cat_mask'] = sc.array(dims=['cat'], values=mask_vals)
+    all_cats = binned_2d.coords['cat']
+    subset = all_cats['cat', ::2]
+    result = binned_2d.group(subset)
+    assert result.sizes['cat'] == len(subset)
+    # Masked bins should be treated as empty
+    unmasked = binned_2d.copy()
+    del unmasked.masks['cat_mask']
+    not_masked = sc.array(dims=['cat'], values=[not m for m in mask_vals])
+    keep = sc.array(
+        dims=['cat'],
+        values=[
+            (v in subset.values) and nm
+            for v, nm in zip(all_cats.values, not_masked.values, strict=True)
+        ],
+    )
+    expected_count = unmasked[keep].bins.size().sum().value
+    assert result.bins.size().sum().value == expected_count
+
+
+def test_regroup_2d_outer_coord_preserves_event_data_values() -> None:
+    binned_2d = _make_pixel_grouped_2d(n_events=1000, n_pixels=20, n_groups=10, ny=4)
+    all_cats = binned_2d.coords['cat']
+    # Re-group keeping all existing groups — should preserve all events exactly
+    result = binned_2d.group(all_cats)
+    original_data_sum = binned_2d.bins.sum().sum().value
+    result_data_sum = result.bins.sum().sum().value
+    assert original_data_sum == pytest.approx(result_data_sum)
+
+
 def test_bin_rebin_existing_edge_cases() -> None:
     n_event = 4
     events = sc.DataArray(

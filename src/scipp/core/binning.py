@@ -193,12 +193,13 @@ def make_binned(
     # which handles this in O(N) instead of O(N^2) in the unchanged dimensions.
     if x.is_binned:
         rebinning_dims = [
-            e.dim
-            for e in edges
-            if e.ndim == 1
-            and e.dim in x.dims
-            and e.dim not in x.bins.coords
-            and e.dim in x.coords
+            coord.dim
+            for coord in itertools.chain(edges, groups)
+            if coord.ndim == 1
+            and coord.dim in x.dims
+            and coord.dim not in x.bins.coords
+            and coord.dim in x.coords
+            and x.coords[coord.dim].dims == (coord.dim,)
         ]
         if rebinning_dims:
             extended_erase = tuple(set(erase) | set(rebinning_dims))
