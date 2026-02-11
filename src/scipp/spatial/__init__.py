@@ -196,7 +196,7 @@ def scaling_from_vector(*, value: npt.NDArray[_Float] | Sequence[_Float]) -> Var
       >>> import scipp as sc
       >>> scale = sc.spatial.scaling_from_vector(value=[2, 3, 4])
       >>> scale
-      <scipp.Variable> ()  linear_transform3  [dimensionless]  ((2, 0, 0), , (0, 3, 0), , (0, 0, 4), )
+      <scipp.Variable> ()  linear_transform3  [dimensionless]  ((2, 0, 0), (0, 3, 0), (0, 0, 4))
 
     Apply the scaling to a vector:
 
@@ -598,14 +598,14 @@ def linear_transform(
       >>> import scipp as sc
       >>> identity = sc.spatial.linear_transform(value=np.identity(3))
       >>> identity
-      <scipp.Variable> ()  linear_transform3  [dimensionless]  ((1, 0, 0), , (0, 1, 0), , (0, 0, 1), )
+      <scipp.Variable> ()  linear_transform3  [dimensionless]  ((1, 0, 0), (0, 1, 0), (0, 0, 1))
 
     Create a rotation matrix (90 degrees around z-axis):
 
       >>> rot_matrix = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
       >>> linear_rot = sc.spatial.linear_transform(value=rot_matrix)
       >>> linear_rot
-      <scipp.Variable> ()  linear_transform3  [dimensionless]  ((0, -1, 0), , (1, 0, 0), , (0, 0, 1), )
+      <scipp.Variable> ()  linear_transform3  [dimensionless]  ((0, -1, 0), (1, 0, 0), (0, 0, 1))
     """  # noqa: E501
     return linear_transforms(
         dims=(),
@@ -707,7 +707,7 @@ def inv(var: Variable) -> Variable:
       >>> scale = sc.spatial.scaling_from_vector(value=[2, 3, 4])
       >>> inv_scale = sc.spatial.inv(scale)
       >>> inv_scale
-      <scipp.Variable> ()  linear_transform3  [dimensionless]  ((0.5, 0, 0), , (0, 0.333333, 0), , (0, 0, 0.25), )
+      <scipp.Variable> ()  linear_transform3  [dimensionless]  ((0.5, 0, 0), (0, 0.333333, 0), (0, 0, 0.25))
     """  # noqa: E501
     return _call_cpp_func(_core_cpp.inv, var)  # type: ignore[return-value]
 
