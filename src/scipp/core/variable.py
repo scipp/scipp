@@ -559,7 +559,7 @@ def _ensure_same_unit(
 def _dtype_from_var_args(dtype: DTypeLike | None, *args: Any) -> DTypeLike | None:
     if dtype is None:
         for arg in args:
-            if isinstance(arg, _cpp.Variable):
+            if isinstance(arg, Variable):
                 return arg.dtype
     return dtype
 
