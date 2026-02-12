@@ -556,6 +556,14 @@ def _ensure_same_unit(
 
 
 # Process arguments of arange, linspace, etc and return them as plain numbers or None.
+def _dtype_from_var_args(dtype: DTypeLike | None, *args: Any) -> DTypeLike | None:
+    if dtype is None:
+        for arg in args:
+            if isinstance(arg, _cpp.Variable):
+                return arg.dtype
+    return dtype
+
+
 def _normalize_range_args(
     *, unit: Unit | str | DefaultUnit | None, **kwargs: Any
 ) -> tuple[dict[str, Any], Unit | str | DefaultUnit | None]:
@@ -605,7 +613,8 @@ def linspace(
     unit:
         Unit of contents.
     dtype: scipp.typing.DTypeLike
-        Type of underlying data. By default, inferred from `value` argument.
+        Type of underlying data. By default, inferred from the `start`
+        and `stop` arguments.
 
     Returns
     -------
@@ -627,6 +636,7 @@ def linspace(
       >>> sc.linspace('x', 1.5, 3.0, num=4, unit='m')
       <scipp.Variable> (x: 4)    float64              [m]  [1.5, 2, 2.5, 3]
     """
+    dtype = _dtype_from_var_args(dtype, start, stop)
     range_args, unit = _normalize_range_args(unit=unit, start=start, stop=stop)
     return array(
         dims=[dim],
@@ -669,12 +679,13 @@ def geomspace(
     unit:
         Unit of contents.
     dtype: scipp.typing.DTypeLike
-        Type of underlying data. By default, inferred from `value` argument.
+        Type of underlying data. By default, inferred from the `start`
+        and `stop` arguments.
 
     Returns
     -------
     :
-        A variable of evenly spaced values on a logscale.
+        A variable of evenly spaced values on a log scale.
 
     See Also
     --------
@@ -691,6 +702,7 @@ def geomspace(
       >>> sc.geomspace('x', 1.0, 100.0, num=3, unit='s')
       <scipp.Variable> (x: 3)    float64              [s]  [1, 10, 100]
     """
+    dtype = _dtype_from_var_args(dtype, start, stop)
     range_args, unit = _normalize_range_args(unit=unit, start=start, stop=stop)
     return array(
         dims=[dim],
@@ -734,7 +746,7 @@ def logspace(
     unit:
         Unit of contents.
     dtype: scipp.typing.DTypeLike
-        Type of underlying data. By default, inferred from `value` argument.
+        Type of underlying data.
 
     Returns
     -------
@@ -816,7 +828,8 @@ def arange(
     unit:
         Unit of contents.
     dtype: scipp.typing.DTypeLike
-        Type of underlying data. By default, inferred from `value` argument.
+        Type of underlying data. By default, inferred from the `start`
+        and `stop` arguments.
 
     Returns
     -------

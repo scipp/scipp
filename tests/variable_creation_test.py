@@ -850,6 +850,26 @@ def test_xyzspace_with_variables_num_cannot_be_float_variable(
         range_fn('x', start, stop, num)
 
 
+def test_linspace_infers_dtype_from_vector_variables() -> None:
+    start = sc.vector([0, 1, 0.0], unit='m')
+    stop = sc.vector([0, 0, 1.0], unit='m')
+    result = sc.linspace('x', start, stop, num=5)
+    assert result.dtype == sc.DType.vector3
+    assert result.unit == sc.units.m
+    assert result.sizes == {'x': 5}
+    assert sc.identical(result['x', 0], start)
+    assert sc.identical(result['x', -1], stop)
+
+
+def test_geomspace_infers_dtype_from_vector_variables() -> None:
+    start = sc.vector([1, 1, 1.0], unit='m')
+    stop = sc.vector([1000, 1000, 1000.0], unit='m')
+    result = sc.geomspace('x', start, stop, num=4)
+    assert result.dtype == sc.DType.vector3
+    assert result.unit == sc.units.m
+    assert result.sizes == {'x': 4}
+
+
 def test_logspace() -> None:
     values = np.logspace(2.0, 3.0, num=4)
     var = sc.logspace('y', 2.0, 3.0, num=4, unit='s')
