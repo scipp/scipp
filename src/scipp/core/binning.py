@@ -363,9 +363,10 @@ def _parse_coords_arg(
     if not isinstance(arg, Variable):
         if start.dtype == DType.datetime64:
             base = epoch(unit=start.unit)
-            return base + round_(
-                linspace(name, start - base, stop - base, num=arg.__index__() + 1)
-            ).to(dtype='int64')
+            edges = linspace(name, start - base, stop - base, num=arg.__index__() + 1)
+            if edges.dtype not in (DType.int32, DType.int64):
+                edges = round_(edges)
+            return base + edges.to(dtype='int64')
         return linspace(name, start, stop, num=arg.__index__() + 1).to(
             dtype=start.dtype, copy=False
         )
