@@ -74,7 +74,7 @@ void init_core(py::module &m) {
   init_generated_special_values(core);
 }
 
-PYBIND11_MODULE(_scipp, m) {
+PYBIND11_MODULE(_scipp, m, py::mod_gil_not_used()) {
 #ifdef SCIPP_VERSION
   m.attr("__version__") = py::str(SCIPP_VERSION);
 #else
