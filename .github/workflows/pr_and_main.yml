@@ -16,12 +16,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: prefix-dev/setup-pixi@v0.9.4
         with:
-          python-version: "3.11"
-      - run: python -m pip install --upgrade pip
-      - run: python -m pip install -r requirements/ci.txt
-      - run: tox -e static
+          environments: lint
+          cache: true
+          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+      - run: pixi run -e lint static
       - uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: Apply automatic formatting
@@ -30,9 +30,6 @@ jobs:
     needs: formatting
     name: build and test ${{ matrix.variant.os }}, py${{ matrix.python-version }}
     runs-on: ${{ matrix.variant.os }}
-    defaults:
-      run:
-        shell: bash -l {0} # required for conda env
     strategy:
       fail-fast: false
       matrix:
@@ -50,33 +47,30 @@ jobs:
 
       - uses: ilammy/msvc-dev-cmd@v1 # Required to set up MSVC dev environment for Ninja builds.
 
-      - name: Setup conda environment
-        uses: mamba-org/setup-micromamba@v2
+      - uses: prefix-dev/setup-pixi@v0.9.4
         with:
-          micromamba-version: 2.5.0-1
-          environment-file: .buildconfig/${{ matrix.variant.cmake-preset }}.yml
-          cache-environment: true
-          create-args: python=${{ matrix.python-version }}
+          environments: test docs type-check
+          cache: true
+          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
 
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.20
         with:
           key: ${{ matrix.variant.os }}
 
-      - run: cmake --preset ${{ matrix.variant.cmake-preset }}
-      - run: cmake --build --preset build
-      - run: ctest --preset test
+      - run: pixi run -e test configure ${{ matrix.variant.cmake-preset }}
+      - run: pixi run -e test cpp-test
 
-      - run: tox -e import-minimal
-      - run: tox -e test
+      - run: pixi run -e test import-minimal
+      - run: pixi run -e test test
 
-      - run: tox -e mypy
+      - run: pixi run -e type-check mypy
         if: ${{ contains(matrix.variant.os, 'ubuntu') }}
 
-      - run: tox -e docs
+      - run: pixi run -e docs docs
         if: ${{ contains(matrix.variant.os, 'ubuntu') }}
 
-      - run: tox -e linkcheck
+      - run: pixi run -e docs linkcheck
         # Linkcheck can be flaky. Avoid randomly breaking PR builds by running only on `main`
         if: ${{ contains(matrix.variant.os, 'ubuntu') && github.ref == 'refs/heads/main' }}
 

@@ -9,9 +9,6 @@ jobs:
   build_and_test:
     name: build and test ${{ matrix.variant.os }}, py${{ matrix.python-version }}
     runs-on: ${{ matrix.variant.os }}
-    defaults:
-      run:
-        shell: bash -l {0}  # required for conda env
     strategy:
       fail-fast: false
       matrix:
@@ -29,19 +26,23 @@ jobs:
 
       - uses: ilammy/msvc-dev-cmd@v1  # Required to set up MSVC dev environment for Ninja builds.
 
-      - name: Setup conda environment
-        uses: mamba-org/setup-micromamba@v2
+      - uses: prefix-dev/setup-pixi@v0.9.4
         with:
-          environment-file: .buildconfig/${{ matrix.variant.cmake-preset }}.yml
-          cache-environment: true
-          create-args: python=${{ matrix.python-version }}
+          environments: test
+          cache: true
 
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.20
         with:
           key: ${{ matrix.variant.os }}
 
-      - run: cmake --preset ${{ matrix.variant.cmake-preset }}
-      - run: cmake --build --preset build
-      - run: ctest --preset test
-      - run: tox -e nightlydeps -vvv
+      - run: pixi run -e test configure ${{ matrix.variant.cmake-preset }}
+      - run: pixi run -e test cpp-test
+
+      - name: Install nightly dependencies and run tests
+        run: |
+          pixi run -e test pip install --pre --index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple --extra-index-url https://pypi.org/simple numpy scipy h5py pandas xarray
+          pixi run -e test python -X PYTHONWARNDEFAULTENCODING -m pytest -n auto -v tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}/install
+          JUPYTER_PLATFORM_DIRS: "1"
