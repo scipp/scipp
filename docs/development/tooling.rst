@@ -9,8 +9,7 @@ Third Party
 Compilers
 ~~~~~~~~~
 
-All compilers can be installed through conda.
-See ``conda/meta.yaml``.
+All compilers are provided by the system or can be installed through conda-forge.
 
 - GCC [Linux]
 - XCode [macOS]
@@ -19,14 +18,14 @@ See ``conda/meta.yaml``.
 Static Analysis and Formatters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We use ``tox`` and ``pre-commit`` to do auto formatting and static analysis.
+We use ``pixi`` tasks and ``pre-commit`` to do auto formatting and static analysis.
 See in particular ``pre-commit-config.yaml`` for the list of used tools and versions.
 
 Misc
 ~~~~
 
-- CMake >= 3.21
-- Conda
+- CMake >= 3.28
+- `pixi <https://pixi.sh>`_ (manages the full developer environment)
 
 Note: Ubuntu users can use the `Kitware Repo <https://apt.kitware.com/>`_ to obtain the latest version.
 
