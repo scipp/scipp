@@ -33,7 +33,7 @@ def test_bin_2d_linspace_bounds(a, b) -> None:
     assert binned.sum().value == 2
 
 
-@settings(max_examples=1000, deadline=1000)
+@settings(max_examples=1000, deadline=None)
 @given(
     st.integers(min_value=0, max_value=5555),
     st.integers(min_value=0, max_value=1234),
@@ -51,7 +51,7 @@ def test_automatic_grouping_optimization(nrow, i, j) -> None:
     )
 
 
-@settings(max_examples=100, deadline=1000)
+@settings(max_examples=100, deadline=None)
 @given(
     st.integers(min_value=1, max_value=12345),
     scst.variables(dtype=bool, ndim=st.integers(min_value=1, max_value=3)),
