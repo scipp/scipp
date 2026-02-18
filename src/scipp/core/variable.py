@@ -613,8 +613,8 @@ def linspace(
     unit:
         Unit of contents.
     dtype: scipp.typing.DTypeLike
-        Type of underlying data. By default, inferred from the `start`
-        and `stop` arguments.
+        Type of underlying data. By default, inferred from the ``start``
+        and ``stop`` arguments.
 
     Returns
     -------
@@ -679,8 +679,8 @@ def geomspace(
     unit:
         Unit of contents.
     dtype: scipp.typing.DTypeLike
-        Type of underlying data. By default, inferred from the `start`
-        and `stop` arguments.
+        Type of underlying data. By default, inferred from the ``start``
+        and ``stop`` arguments.
 
     Returns
     -------
@@ -746,7 +746,8 @@ def logspace(
     unit:
         Unit of contents.
     dtype: scipp.typing.DTypeLike
-        Type of underlying data.
+        Type of underlying data. By default, inferred from the ``start``
+        and ``stop`` arguments.
 
     Returns
     -------
@@ -776,6 +777,7 @@ def logspace(
       <scipp.Variable> (x: 3)    float64              [m]  [10, 100, 1000]
     """
     # Passing unit='one' enforces that start and stop are dimensionless.
+    dtype = _dtype_from_var_args(dtype, start, stop)
     range_args, _ = _normalize_range_args(unit='one', start=start, stop=stop)
     return array(
         dims=[dim],
@@ -828,8 +830,8 @@ def arange(
     unit:
         Unit of contents.
     dtype: scipp.typing.DTypeLike
-        Type of underlying data. By default, inferred from the `start`
-        and `stop` arguments.
+        Type of underlying data. By default, inferred from the ``start``,
+        ``stop``, and ``step`` arguments.
 
     Returns
     -------
