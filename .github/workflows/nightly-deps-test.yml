@@ -1,8 +1,9 @@
 name: Run tests against nightly dependencies
 
 on:
+  pull_request:
   schedule:
-    - cron: '0 0 * * 0'
+    - cron: "0 0 * * 0"
   workflow_dispatch:
 
 jobs:
@@ -13,18 +14,18 @@ jobs:
       fail-fast: false
       matrix:
         variant:
-        - {os: ubuntu-24.04, cmake-preset: ci-linux}
-        - {os: macos-15, cmake-preset: ci-macos}
-        - {os: windows-2022, cmake-preset: ci-windows}
+          - { os: ubuntu-24.04, cmake-preset: ci-linux }
+          - { os: macos-15, cmake-preset: ci-macos }
+          - { os: windows-2022, cmake-preset: ci-windows }
         python-version: ["3.11"]
 
     steps:
       - uses: actions/checkout@v6
         with:
           submodules: true
-          fetch-depth: 0  # history required so cmake can determine version
+          fetch-depth: 0 # history required so cmake can determine version
 
-      - uses: ilammy/msvc-dev-cmd@v1  # Required to set up MSVC dev environment for Ninja builds.
+      - uses: ilammy/msvc-dev-cmd@v1 # Required to set up MSVC dev environment for Ninja builds.
 
       - uses: prefix-dev/setup-pixi@v0.9.4
         with:
