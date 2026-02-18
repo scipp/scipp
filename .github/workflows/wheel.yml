@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       os:
-        description: 'Operating system: ubuntu-24.04, macos-15, or windows-2022'
+        description: "Operating system: ubuntu-24.04, macos-15, or windows-2022"
         required: true
         type: string
       build:
@@ -22,10 +22,10 @@ jobs:
     runs-on: ${{ inputs.os }}
 
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-        fetch-depth: 0  # history required so cmake can determine version
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0 # history required so cmake can determine version
 
     - uses: pypa/cibuildwheel@v3.4.0
       if: ${{ inputs.nightly == false }}
@@ -43,12 +43,12 @@ jobs:
         MACOSX_DEPLOYMENT_TARGET: "14.0"
         CIBW_ENVIRONMENT: SETUPTOOLS_SCM_PRETEND_VERSION="100.0.0.dev0"
 
-    - name: Verify clean directory
-      run: git diff --exit-code
-      shell: bash
+      - name: Verify clean directory
+        run: git diff --exit-code
+        shell: bash
 
-    - name: Upload wheels
-      uses: actions/upload-artifact@v4
-      with:
-        name: dist-${{ inputs.os }}-${{ inputs.build }}
-        path: wheelhouse/*.whl
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ inputs.os }}-${{ inputs.build }}
+          path: wheelhouse/*.whl
