@@ -1,13 +1,10 @@
 name: C++ and Python coverage
 
 on:
+  pull_request:
   schedule:
-    - cron: '0 0 * * 0'
+    - cron: "0 0 * * 0"
   workflow_dispatch:
-
-defaults:
-  run:
-    shell: bash -l {0}  # required for conda env
 
 jobs:
   coverage:
@@ -26,18 +23,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-          fetch-depth: 0  # history required so cmake can determine version
+          fetch-depth: 0 # history required so cmake can determine version
 
-      - name: Disable TBB for much faster compilation.
-        run: grep -v 'gxx\|tbb' .buildconfig/ci-linux.yml > env.yml
-
-      - name: Setup conda environment
-        uses: mamba-org/setup-micromamba@v2
+      - uses: prefix-dev/setup-pixi@v0.9.4
         with:
-          micromamba-version: 2.5.0-1
-          environment-file: env.yml
-          cache-environment: true
-          create-args: python=3.11
+          environments: test
+          cache: true
 
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.20
@@ -47,13 +38,13 @@ jobs:
       - name: C++ coverage
         run: |
           mkdir coverage_html
-          cmake --preset coverage
-          cmake --build --preset coverage
+          pixi run -e test -- cmake --preset coverage
+          pixi run -e test -- cmake --build --preset coverage
           mv build/coverage coverage_html/cpp
 
       - name: Python coverage
         run: |
-          tox -e coverage
+          pixi run -e test coverage
           rm -f coverage_html/python/.gitignore
 
       - name: Setup HTML
