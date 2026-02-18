@@ -9,11 +9,16 @@ python = "3.11.*"
 numpy = ">=2"
 
 [activation.env]
-PYTHONPATH = "$PIXI_PROJECT_ROOT/install"
 JUPYTER_PLATFORM_DIRS = "1"
+
+[target.unix.activation.env]
+PYTHONPATH = "$PIXI_PROJECT_ROOT/install"
 
 [target.linux-64.activation.env]
 LD_LIBRARY_PATH = "$CONDA_PREFIX/lib"
+
+[target.win-64.activation.env]
+PYTHONPATH = "%PIXI_PROJECT_ROOT%\\install"
 
 # ---------------------------------------------------------------------------
 # Features
