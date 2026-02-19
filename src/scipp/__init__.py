@@ -69,10 +69,9 @@ del extend_units
 
 from .compat.dict import to_dict, from_dict
 
-from .object_list import _repr_html_
 from .utils import collapse, slices
 
-del object_list, utils  # type: ignore[name-defined]
+del utils  # type: ignore[name-defined]
 
 from .coords import transform_coords, show_graph
 

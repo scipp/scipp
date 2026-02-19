@@ -41,11 +41,14 @@ element_to_string(const T &item,
     std::stringstream ss;
     ss << "(" << item[0] << ", " << item[1] << ", " << item[2] << "), ";
     return ss.str();
-  } else if constexpr (std::is_same_v<T, Eigen::Matrix3d>)
-    return {"(" + element_to_string(Eigen::Vector3d(item.row(0))) + ", " +
-            element_to_string(Eigen::Vector3d(item.row(1))) + ", " +
-            element_to_string(Eigen::Vector3d(item.row(2))) + "), "};
-  else if constexpr (std::is_same_v<T, Eigen::Affine3d>) {
+  } else if constexpr (std::is_same_v<T, Eigen::Matrix3d>) {
+    auto r0 = element_to_string(Eigen::Vector3d(item.row(0)));
+    auto r1 = element_to_string(Eigen::Vector3d(item.row(1)));
+    auto r2 = element_to_string(Eigen::Vector3d(item.row(2)));
+    // Strip trailing ", " from last row; other rows use it as separator.
+    r2.resize(r2.size() - 2);
+    return "(" + r0 + r1 + r2 + "), ";
+  } else if constexpr (std::is_same_v<T, Eigen::Affine3d>) {
     return element_to_string(item.matrix());
   } else if constexpr (std::is_same_v<T, scipp::core::Quaternion>) {
     std::stringstream ss;
