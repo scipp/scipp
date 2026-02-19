@@ -1,13 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 
-from collections.abc import Callable
-from typing import Any
-
-import hypothesis
 import numpy as np
 import pytest
-from hypothesis import given
+from hypothesis import given, settings
 
 import scipp as sc
 import scipp.testing.strategies as scst
@@ -16,17 +12,8 @@ import scipp.testing.strategies as scst
 # For now,  we are just checking that creating the repr does not throw.
 
 
-def settings(**kwargs: Any) -> Callable[..., Any]:
-    def impl(func: Callable[..., Any]) -> Callable[..., Any]:
-        return hypothesis.settings(**{'max_examples': 10, 'deadline': 1000, **kwargs})(
-            func
-        )
-
-    return impl
-
-
 @given(var=scst.variables(ndim=1))
-@settings()
+@settings(max_examples=10, deadline=10000)
 def test_table_variable(var: sc.Variable) -> None:
     sc.table(var)
     sc.table(var[var.dim, 1:10])
