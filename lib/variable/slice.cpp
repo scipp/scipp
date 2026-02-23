@@ -47,10 +47,13 @@ auto get_coord(const Variable &coord, const Dim dim) {
     return std::tuple(coord, true);
   default:
     const bool ascending = allsorted(coord, dim, SortOrder::Ascending);
-    const bool descending = allsorted(coord, dim, SortOrder::Descending);
-    if (!(ascending ^ descending))
-      throw std::runtime_error("Coordinate must be monotonically increasing or "
-                               "decreasing for label-based indexing.");
+    if (!ascending) { // avoid O(N) `allsorted` below if possible
+      const bool descending = allsorted(coord, dim, SortOrder::Descending);
+      if (!(ascending ^ descending))
+        throw std::runtime_error(
+            "Coordinate must be monotonically increasing or "
+            "decreasing for label-based indexing.");
+    }
     return std::tuple(coord, ascending);
   }
 }
