@@ -40,15 +40,19 @@ const Variable &get_1d_coord(const Variable &coord) {
 
 auto get_coord(const Variable &coord, const Dim dim) {
   get_1d_coord(coord);
-  if (coord.dims()[dim] == 1)
+  switch (coord.dims()[dim]) {
+  case 0:
+  case 1:
     // Need this because issorted returns false for length-1 variables.
     return std::tuple(coord, true);
-  const bool ascending = allsorted(coord, dim, SortOrder::Ascending);
-  const bool descending = allsorted(coord, dim, SortOrder::Descending);
-  if (!(ascending ^ descending))
-    throw std::runtime_error("Coordinate must be monotonically increasing or "
-                             "decreasing for label-based indexing.");
-  return std::tuple(coord, ascending);
+  default:
+    const bool ascending = allsorted(coord, dim, SortOrder::Ascending);
+    const bool descending = allsorted(coord, dim, SortOrder::Descending);
+    if (!(ascending ^ descending))
+      throw std::runtime_error("Coordinate must be monotonically increasing or "
+                               "decreasing for label-based indexing.");
+    return std::tuple(coord, ascending);
+  }
 }
 
 void expect_same_unit(const Variable &coord, const Variable &value,
