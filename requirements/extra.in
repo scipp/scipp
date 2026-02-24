@@ -1,9 +1,0 @@
--r base.in
-graphviz
-h5py
-ipykernel
-numba
-pandas
-pooch
-scipy>=1.7.0
-xarray

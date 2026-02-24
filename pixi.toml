@@ -1,0 +1,114 @@
+[workspace]
+channels = ["conda-forge"]
+name = "scipp"
+platforms = ["linux-64", "osx-arm64", "win-64"]
+
+# Shared across all environments
+[dependencies]
+python = "3.11.*"
+numpy = ">=2"
+
+[activation.env]
+JUPYTER_PLATFORM_DIRS = "1"
+
+[target.unix.activation.env]
+PYTHONPATH = "$PIXI_PROJECT_ROOT/install"
+
+[target.linux-64.activation.env]
+LD_LIBRARY_PATH = "$CONDA_PREFIX/lib"
+
+[target.win-64.activation.env]
+PYTHONPATH = "%PIXI_PROJECT_ROOT%\\install"
+
+# ---------------------------------------------------------------------------
+# Features
+# ---------------------------------------------------------------------------
+
+[feature.build.dependencies]
+# C++ build tools
+cmake = ">=3.28"
+ninja = "*"
+cppcheck = ">=2.18"
+# C++ libraries
+eigen = "3.4.*"
+libboost-headers = ">=1.88"
+pybind11 = "3.0.*"
+tbb = "2022.3.*"
+tbb-devel = "2022.3.*"
+benchmark = "1.6.*"
+gmock = "1.15.*"
+gtest = "1.15.*"
+
+[feature.build.tasks]
+configure = { cmd = "cmake --preset {{ preset }}", args = [{ arg = "preset", default = "base" }] }
+build = "cmake --build --preset build"
+cpp-test = { cmd = "ctest --preset test", depends-on = ["build"] }
+configure-debug = { cmd = "cmake --preset {{ preset }}", args = [{ arg = "preset", default = "debug" }] }
+build-debug = "cmake --build --preset build-debug"
+editable = { cmd = "sh -c 'find install/scipp -type f -name \"_scipp*.so\" -exec ln -sf ../../{} -t src/scipp \\; && [ -e src/lib ] || ln -sf ../install/lib/ -t src'", depends-on = ["build"] }
+
+[feature.test.dependencies]
+pytest = "*"
+pytest-xdist = "*"
+pytest-cov = "*"
+hypothesis = "*"
+beautifulsoup4 = "*"
+matplotlib-base = "*"
+# Scientific deps exercised by tests
+scipy = ">=1.7.0"
+h5py = "*"
+numba = "*"
+pooch = "*"
+python-graphviz = "*"
+plopp = "*"
+pandas = "*"
+xarray = "*"
+ipython = "*"
+ipywidgets = "*"
+ipykernel = "*"
+
+[feature.test.tasks]
+import-minimal = "python -c 'import scipp'"
+test = "python -X PYTHONWARNDEFAULTENCODING -m pytest -n auto -v tests"
+coverage = "python -m pytest --cov=scipp --cov-report html:coverage_html/python ."
+
+[feature.docs.dependencies]
+sphinx = "*"
+nbsphinx = "*"
+pydata-sphinx-theme = ">=0.14"
+sphinx-autodoc-typehints = "*"
+sphinx-copybutton = "*"
+myst-parser = "*"
+graphviz = "*"
+pandoc = "*"
+
+[feature.docs.tasks]
+docs = "python -m sphinx -v -b html -d doctrees docs html && python -m sphinx -v -b doctest -d doctrees docs html"
+docs-clean = { cmd = "sh -c 'rm -rf doctrees html docs/generated && python -m sphinx -v -b html -d doctrees docs html -E && python -m sphinx -v -b doctest -d doctrees docs html -E'" }
+linkcheck = "python -m sphinx -j4 -v -b linkcheck -d doctrees docs html"
+
+[feature.lint.dependencies]
+pre-commit = "*"
+
+[feature.lint.tasks]
+static = { cmd = "sh -c 'pre-commit run -a || (echo && pre-commit run -a)'" }
+check-release = { cmd = "sh -c '! git grep -rl RELEASE_PLACEHOLDER docs/ src/scipp'" }
+
+[feature.type-check.dependencies]
+mypy = "*"
+pandas-stubs = "*"
+
+[feature.type-check.tasks]
+mypy = "python -m mypy . --exclude '^src/'"
+
+# ---------------------------------------------------------------------------
+# Environments
+# ---------------------------------------------------------------------------
+
+[environments]
+default = { features = ["build", "test", "docs", "lint", "type-check"], solve-group = "default" }
+build = { features = ["build"], solve-group = "default" }
+test = { features = ["build", "test"], solve-group = "default" }
+docs = { features = ["build", "test", "docs"], solve-group = "default" }
+lint = { features = ["lint"], solve-group = "default" }
+type-check = { features = ["build", "test", "docs", "type-check"], solve-group = "default" }

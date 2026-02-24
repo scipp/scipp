@@ -23,7 +23,6 @@ CMakeSettings.json
 .pytest_cache
 .mypy_cache
 src/scipp.egg-info
-.tox
 conda/package
 
 ### VisualStudioCode ###
@@ -39,3 +38,6 @@ src/scipp/_scipp.so
 
 # Created by setuptools_scm for wheel builds
 src/scipp/_version.py
+# pixi environments
+.pixi/*
+!.pixi/config.toml
