@@ -9,8 +9,8 @@ dependencies:
   - conda-build
   - cppcheck=2.18.3
   - eigen=3.4.0
-  - gmock=1.15.2
-  - gtest=1.15.2
+  - gmock
+  - gtest
   - h5py
   - hypothesis
   - ipympl
