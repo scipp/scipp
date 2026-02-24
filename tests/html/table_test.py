@@ -13,7 +13,7 @@ import scipp.testing.strategies as scst
 
 
 @given(var=scst.variables(ndim=1))
-@settings(max_examples=10, deadline=None)
+@settings(max_examples=10, deadline=10000)
 def test_table_variable(var: sc.Variable) -> None:
     sc.table(var)
     sc.table(var[var.dim, 1:10])

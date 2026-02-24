@@ -850,6 +850,20 @@ def test_xyzspace_with_variables_num_cannot_be_float_variable(
         range_fn('x', start, stop, num)
 
 
+@pytest.mark.parametrize(
+    'range_fn',
+    [sc.linspace, sc.geomspace, sc.logspace],
+    ids=('linspace', 'geomspace', 'logspace'),
+)
+def test_xyzspace_infers_dtype_from_vector_variables(
+    range_fn: Callable[..., sc.Variable],
+) -> None:
+    start = sc.vector([1, 1, 1.0])
+    stop = sc.vector([3, 3, 3.0])
+    result = range_fn('x', start, stop, num=5)
+    assert result.dtype == sc.DType.vector3
+
+
 def test_logspace() -> None:
     values = np.logspace(2.0, 3.0, num=4)
     var = sc.logspace('y', 2.0, 3.0, num=4, unit='s')
