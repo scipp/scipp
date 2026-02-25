@@ -4,7 +4,7 @@
 # ~~~
 function(scipp_function template category function_name)
   set(options SKIP_VARIABLE SKIP_DATASET SKIP_PYTHON OUT)
-  set(oneValueArgs OP PREPROCESS_VARIABLE BASE_INCLUDE)
+  set(oneValueArgs OP BASE_INCLUDE)
   cmake_parse_arguments(
     PARSE_ARGV 3 SCIPP_FUNCTION "${options}" "${oneValueArgs}" ""
   )
@@ -26,9 +26,6 @@ function(scipp_function template category function_name)
     set(BASE_INCLUDE ${SCIPP_FUNCTION_BASE_INCLUDE})
   else()
     set(BASE_INCLUDE variable/${OPNAME}.h)
-  endif()
-  if(DEFINED SCIPP_FUNCTION_PREPROCESS_VARIABLE)
-    set(PREPROCESS_VARIABLE ${SCIPP_FUNCTION_PREPROCESS_VARIABLE})
   endif()
   set(src ${OPNAME}.cpp)
 

@@ -105,6 +105,25 @@ constexpr auto log10(const ValueAndVariance<T> a) noexcept {
   return ValueAndVariance(log10(a.value), a.variance / (x * x));
 }
 
+template <typename T> constexpr auto sin(const ValueAndVariance<T> a) noexcept {
+  using std::sin, std::cos;
+  const auto cos_a = cos(a.value);
+  return ValueAndVariance(sin(a.value), a.variance * cos_a * cos_a);
+}
+
+template <typename T> constexpr auto cos(const ValueAndVariance<T> a) noexcept {
+  using std::sin, std::cos;
+  const auto sin_a = sin(a.value);
+  return ValueAndVariance(cos(a.value), a.variance * sin_a * sin_a);
+}
+
+template <typename T> constexpr auto tan(const ValueAndVariance<T> a) noexcept {
+  using std::cos, std::tan;
+  const auto cos_a = cos(a.value);
+  return ValueAndVariance(tan(a.value),
+                          a.variance / (cos_a * cos_a * cos_a * cos_a));
+}
+
 template <class T> constexpr auto isnan(const ValueAndVariance<T> a) noexcept {
   using numeric::isnan;
   return isnan(a.value);

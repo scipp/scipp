@@ -34,5 +34,17 @@ An overview for key operations is:
     +---------------------+-------------------------------------------------------------------------+
     |:math:`\log_{10}(a)` |:math:`\sigma^{2}_{a} \log^{2}(10) / a^{2}`                              |
     +---------------------+-------------------------------------------------------------------------+
+    |:math:`sin(a)`[#f1]_ |:math:`\sigma^{2}_{a} cos^{2}(a)`                                        |
+    +---------------------+-------------------------------------------------------------------------+
+    |:math:`cos(a)`[#f1]_ |:math:`\sigma^{2}_{a} sin^{2}(a)`                                        |
+    +---------------------+-------------------------------------------------------------------------+
+    |:math:`tan(a)`[#f1]_ |:math:`\sigma^{2}_{a} \left(\frac{1}{cos^{2}(a)}\right)^{2}`             |
+    +---------------------+-------------------------------------------------------------------------+
 
 The expression for division is derived from :math:`(\frac{\sigma_{a/b}}{a/b})^{2} = (\frac{\sigma_{a}}{a})^{2} + (\frac{\sigma_{b}}{b})^{2}`.
+
+.. rubric:: Footnotes
+
+.. [#f1] The input to trigonometric functions is converted to radians before propagating the uncertainties.
+         This means that, e.g., the uncertainty of the sine function for an input in degrees is
+         :math:`\sigma^{2}_{a} (\pi/180 cos(a)0^{2}`.
