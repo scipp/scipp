@@ -1,12 +1,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2025 Scipp contributors (https://github.com/scipp)
+#include <numbers>
+
 #include <gtest/gtest.h>
 
 #include "scipp/common/constants.h"
+#include "scipp/units/unit.h"
 #include "scipp/variable/creation.h"
 #include "scipp/variable/to_unit.h"
 #include "scipp/variable/trigonometry.h"
+#include "scipp/variable/values.h"
 #include "scipp/variable/variable_factory.h"
+#include "scipp/variable/variances.h"
 
 #include "test_macros.h"
 #include "test_variables.h"
@@ -17,16 +22,22 @@ using namespace scipp::sc_units;
 
 class VariableTrigonometryTest : public ::testing::Test {
 protected:
-  [[nodiscard]] static Variable input_in_rad() {
-    return makeVariable<double>(Dims{Dim::X}, Shape{7},
-                                Values{0.0, pi<double> / 2.0, pi<double>,
-                                       -pi<double> * 3.0 / 2.0,
-                                       2.0 * pi<double>, -0.123, 1.654},
-                                Unit{sc_units::rad});
+  [[nodiscard]] static Variable input_in_rad(const bool variances = false) {
+    auto variable = makeVariable<double>(
+        Dims{Dim::X}, Shape{7},
+        Values{0.0, pi<double> / 2.0, pi<double>, -pi<double> * 3.0 / 2.0,
+               2.0 * pi<double>, -0.123, 1.654},
+        Unit{sc_units::rad});
+    if (variances) {
+      auto var = variable * variable;
+      var.setUnit(rad);
+      variable.setVariances(var);
+    }
+    return variable;
   }
 
-  [[nodiscard]] static Variable input_in_deg() {
-    return to_unit(input_in_rad(), sc_units::deg);
+  [[nodiscard]] static Variable input_in_deg(const bool variances = false) {
+    return to_unit(input_in_rad(variances), sc_units::deg);
   }
 
   [[nodiscard]] static Variable expected_for_op(double (*op)(const double)) {
@@ -50,6 +61,35 @@ TEST_F(VariableTrigonometryTest, sin_deg) {
   const auto var = copy(input_in_deg());
   EXPECT_EQ(sin(var), expected_for_op(std::sin));
   EXPECT_EQ(var, input_in_deg());
+}
+
+TEST_F(VariableTrigonometryTest, sin_rad_variances) {
+  const auto var = copy(input_in_rad(true));
+
+  const auto vals = values(var);
+  auto expected_variances = variances(var) * cos(vals) * cos(vals);
+  expected_variances.setUnit(dimensionless); // above op is incorrect for units
+  auto expected = sin(vals);
+  expected.setVariances(expected_variances);
+
+  EXPECT_EQ(sin(var), expected);
+  EXPECT_EQ(var, input_in_rad(true));
+}
+
+TEST_F(VariableTrigonometryTest, sin_deg_variances) {
+  const auto var = copy(input_in_deg(true));
+
+  const auto vals = values(var);
+  const auto prefactor =
+      makeVariable<double>(Values{std::numbers::pi_v<double> / 180.0});
+  auto expected_variances =
+      prefactor * prefactor * variances(var) * cos(vals) * cos(vals);
+  expected_variances.setUnit(dimensionless); // above op is incorrect for units
+  auto expected = sin(vals);
+  expected.setVariances(expected_variances);
+
+  EXPECT_EQ(sin(var), expected);
+  EXPECT_EQ(var, input_in_deg(true));
 }
 
 TEST_F(VariableTrigonometryTest, sin_out_arg_rad) {
@@ -84,6 +124,35 @@ TEST_F(VariableTrigonometryTest, cos_deg) {
   EXPECT_EQ(var, input_in_deg());
 }
 
+TEST_F(VariableTrigonometryTest, cos_rad_variances) {
+  const auto var = copy(input_in_rad(true));
+
+  const auto vals = values(var);
+  auto expected_variances = variances(var) * sin(vals) * sin(vals);
+  expected_variances.setUnit(dimensionless); // above op is incorrect for units
+  auto expected = cos(vals);
+  expected.setVariances(expected_variances);
+
+  EXPECT_EQ(cos(var), expected);
+  EXPECT_EQ(var, input_in_rad(true));
+}
+
+TEST_F(VariableTrigonometryTest, cos_deg_variances) {
+  const auto var = copy(input_in_deg(true));
+
+  const auto vals = values(var);
+  const auto prefactor =
+      makeVariable<double>(Values{std::numbers::pi_v<double> / 180.0});
+  auto expected_variances =
+      prefactor * prefactor * variances(var) * sin(vals) * sin(vals);
+  expected_variances.setUnit(dimensionless); // above op is incorrect for units
+  auto expected = cos(vals);
+  expected.setVariances(expected_variances);
+
+  EXPECT_EQ(cos(var), expected);
+  EXPECT_EQ(var, input_in_deg(true));
+}
+
 TEST_F(VariableTrigonometryTest, cos_out_arg_rad) {
   const auto in = copy(input_in_rad());
   auto out = special_like(in, FillValue::ZeroNotBool);
@@ -114,6 +183,36 @@ TEST_F(VariableTrigonometryTest, tan_deg) {
   const auto var = copy(input_in_deg());
   EXPECT_EQ(tan(var), expected_for_op(std::tan));
   EXPECT_EQ(var, input_in_deg());
+}
+
+TEST_F(VariableTrigonometryTest, tan_rad_variances) {
+  const auto var = copy(input_in_rad(true));
+
+  const auto vals = values(var);
+  auto expected_variances =
+      variances(var) / cos(vals) / cos(vals) / cos(vals) / cos(vals);
+  expected_variances.setUnit(dimensionless); // above op is incorrect for units
+  auto expected = tan(vals);
+  expected.setVariances(expected_variances);
+
+  EXPECT_EQ(tan(var), expected);
+  EXPECT_EQ(var, input_in_rad(true));
+}
+
+TEST_F(VariableTrigonometryTest, tan_deg_variances) {
+  const auto var = copy(input_in_deg(true));
+
+  const auto vals = values(var);
+  const auto prefactor =
+      makeVariable<double>(Values{std::numbers::pi_v<double> / 180.0});
+  auto expected_variances = prefactor * prefactor * variances(var) / cos(vals) /
+                            cos(vals) / cos(vals) / cos(vals);
+  expected_variances.setUnit(dimensionless); // above op is incorrect for units
+  auto expected = tan(vals);
+  expected.setVariances(expected_variances);
+
+  EXPECT_EQ(tan(var), expected);
+  EXPECT_EQ(var, input_in_deg(true));
 }
 
 TEST_F(VariableTrigonometryTest, tan_out_arg_rad) {
