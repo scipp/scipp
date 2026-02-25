@@ -9,9 +9,7 @@
 #include "scipp/core/transform_common.h"
 
 namespace scipp::core::element {
-constexpr auto hyperbolic = overloaded{
-    arg_list<double, float>, transform_flags::expect_no_variance_arg<0>,
-    transform_flags::expect_no_variance_arg<1>};
+constexpr auto hyperbolic = overloaded{arg_list<double, float>};
 
 constexpr auto sinh = overloaded{hyperbolic, [](const auto &x) {
                                    using std::sinh;
