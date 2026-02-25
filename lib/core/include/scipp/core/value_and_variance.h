@@ -124,6 +124,26 @@ template <typename T> constexpr auto tan(const ValueAndVariance<T> a) noexcept {
                           a.variance / (cos_a * cos_a * cos_a * cos_a));
 }
 
+template <typename T>
+constexpr auto asin(const ValueAndVariance<T> a) noexcept {
+  using std::asin;
+  return ValueAndVariance(asin(a.value), a.variance / (1 - a.value * a.value));
+}
+
+template <typename T>
+constexpr auto acos(const ValueAndVariance<T> a) noexcept {
+  using std::acos;
+  return ValueAndVariance(acos(a.value), a.variance / (1 - a.value * a.value));
+}
+
+template <typename T>
+constexpr auto atan(const ValueAndVariance<T> a) noexcept {
+  using std::atan;
+  const auto denominator = 1 - a.value * a.value;
+  return ValueAndVariance(atan(a.value),
+                          a.variance / (denominator * denominator));
+}
+
 template <class T> constexpr auto isnan(const ValueAndVariance<T> a) noexcept {
   using numeric::isnan;
   return isnan(a.value);

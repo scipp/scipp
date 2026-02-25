@@ -76,31 +76,27 @@ constexpr auto tan_deg =
                },
                [](const sc_units::Unit &x) { return sc_units::tan(x); }};
 
-// TODO
-constexpr auto trig_no_variance = overloaded{
-    arg_list<double, float>, transform_flags::expect_no_variance_arg<0>,
-    transform_flags::expect_no_variance_arg<1>,
-    transform_flags::expect_no_variance_arg<2>};
-
-constexpr auto asin = overloaded{trig_no_variance, [](const auto x) {
+constexpr auto asin = overloaded{trig, [](const auto x) {
                                    using std::asin;
                                    return asin(x);
                                  }};
 
-constexpr auto acos = overloaded{trig_no_variance, [](const auto x) {
+constexpr auto acos = overloaded{trig, [](const auto x) {
                                    using std::acos;
                                    return acos(x);
                                  }};
 
-constexpr auto atan = overloaded{trig_no_variance, [](const auto x) {
+constexpr auto atan = overloaded{trig, [](const auto x) {
                                    using std::atan;
                                    return atan(x);
                                  }};
 
-constexpr auto atan2 =
-    overloaded{trig_no_variance, [](const auto y, const auto x) {
-                 using std::atan2;
-                 return atan2(y, x);
-               }};
+constexpr auto atan2 = overloaded{
+    trig, transform_flags::expect_no_variance_arg<0>,
+    transform_flags::expect_no_variance_arg<1>,
+    transform_flags::expect_no_variance_arg<2>, [](const auto y, const auto x) {
+      using std::atan2;
+      return atan2(y, x);
+    }};
 
 } // namespace scipp::core::element
