@@ -144,6 +144,48 @@ constexpr auto atan(const ValueAndVariance<T> a) noexcept {
                           a.variance / (denominator * denominator));
 }
 
+template <typename T>
+constexpr auto sinh(const ValueAndVariance<T> a) noexcept {
+  using std::sinh, std::cosh;
+  const auto cosh_a = cosh(a.value);
+  return ValueAndVariance(sinh(a.value), a.variance * cosh_a * cosh_a);
+}
+
+template <typename T>
+constexpr auto cosh(const ValueAndVariance<T> a) noexcept {
+  using std::sinh, std::cosh;
+  const auto sinh_a = sinh(a.value);
+  return ValueAndVariance(cosh(a.value), a.variance * sinh_a * sinh_a);
+}
+
+template <typename T>
+constexpr auto tanh(const ValueAndVariance<T> a) noexcept {
+  using std::cosh, std::tanh;
+  const auto cosh_a = cosh(a.value);
+  return ValueAndVariance(tanh(a.value),
+                          a.variance / (cosh_a * cosh_a * cosh_a * cosh_a));
+}
+
+template <typename T>
+constexpr auto asinh(const ValueAndVariance<T> a) noexcept {
+  using std::asinh;
+  return ValueAndVariance(asinh(a.value), a.variance / (a.value * a.value + 1));
+}
+
+template <typename T>
+constexpr auto acosh(const ValueAndVariance<T> a) noexcept {
+  using std::acosh;
+  return ValueAndVariance(acosh(a.value), a.variance / (a.value * a.value - 1));
+}
+
+template <typename T>
+constexpr auto atanh(const ValueAndVariance<T> a) noexcept {
+  using std::atanh;
+  const auto denominator = 1 - a.value * a.value;
+  return ValueAndVariance(atanh(a.value),
+                          a.variance / (denominator * denominator));
+}
+
 template <class T> constexpr auto isnan(const ValueAndVariance<T> a) noexcept {
   using numeric::isnan;
   return isnan(a.value);
