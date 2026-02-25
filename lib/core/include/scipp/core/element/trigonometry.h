@@ -34,10 +34,13 @@ inline ValueAndVariance<float> deg_to_rad(const ValueAndVariance<float> x) {
 
 constexpr auto trig = overloaded{arg_list<double, float>};
 
-constexpr auto sin = overloaded{trig, [](const auto &x) {
-                                  using std::sin;
-                                  return sin(x);
-                                }};
+constexpr auto sin = overloaded{
+    trig,
+    [](const auto &x) {
+      using std::sin;
+      return sin(x);
+    },
+};
 
 constexpr auto sin_deg =
     overloaded{trig,

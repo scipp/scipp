@@ -5,12 +5,8 @@
 #include <string_view>
 
 #include "scipp/core/element/trigonometry.h"
-#include "scipp/core/flags.h"
 #include "scipp/core/transform_common.h"
-#include "scipp/units/except.h"
-#include "scipp/units/string.h"
 #include "scipp/units/unit.h"
-#include "scipp/variable/to_unit.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/trigonometry.h"
 #include "scipp/variable/variable.h"
@@ -24,10 +20,20 @@ Variable trig(const Variable &var, auto op, auto op_deg,
   if (var.unit() == sc_units::deg) {
     return transform(var, op_deg, name);
   }
-
   // Rely on the element function to detect bad units. The following should only
   // succeed for rad and deg (which is filtered out above)
   return transform(var, op, name);
+}
+
+void trig_in_place(const Variable &var, Variable &out, auto op, auto op_deg,
+                   const std::string_view &name) {
+  if (var.unit() == sc_units::deg) {
+    transform_in_place(out, var, assign_unary{op_deg}, name);
+  } else {
+    // Rely on the element function to detect bad units. The following should
+    // only succeed for rad and deg (which is filtered out above)
+    transform_in_place(out, var, assign_unary{op}, name);
+  }
 }
 } // namespace
 
@@ -36,8 +42,7 @@ Variable sin(const Variable &var) {
 }
 
 Variable &sin(const Variable &var, Variable &out) {
-  transform_in_place(out, var, assign_unary{element::sin},
-                     std::string_view("sin"));
+  trig_in_place(var, out, element::sin, element::sin_deg, "sin");
   return out;
 }
 
@@ -46,8 +51,7 @@ Variable cos(const Variable &var) {
 }
 
 Variable &cos(const Variable &var, Variable &out) {
-  transform_in_place(out, var, assign_unary{element::cos},
-                     std::string_view("cos"));
+  trig_in_place(var, out, element::cos, element::cos_deg, "cos");
   return out;
 }
 
@@ -56,8 +60,7 @@ Variable tan(const Variable &var) {
 }
 
 Variable &tan(const Variable &var, Variable &out) {
-  transform_in_place(out, var, assign_unary{element::tan},
-                     std::string_view("tan"));
+  trig_in_place(var, out, element::tan, element::tan_deg, "tan");
   return out;
 }
 } // namespace scipp::variable

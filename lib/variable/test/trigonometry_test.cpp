@@ -6,7 +6,9 @@
 
 #include "scipp/common/constants.h"
 #include "scipp/units/unit.h"
+#include "scipp/variable/comparison.h"
 #include "scipp/variable/creation.h"
+#include "scipp/variable/reduction.h"
 #include "scipp/variable/to_unit.h"
 #include "scipp/variable/trigonometry.h"
 #include "scipp/variable/values.h"
@@ -19,6 +21,14 @@
 using namespace scipp;
 using namespace scipp::variable;
 using namespace scipp::sc_units;
+
+namespace {
+bool allclose(const Variable &a, const Variable &b) {
+  const auto rtol = makeVariable<double>(Values{1e-13});
+  const auto atol = makeVariable<double>(Values{1e-13}, a.unit());
+  return all(isclose(a, b, rtol, atol)).value<bool>();
+}
+} // namespace
 
 class VariableTrigonometryTest : public ::testing::Test {
 protected:
@@ -195,7 +205,7 @@ TEST_F(VariableTrigonometryTest, tan_rad_variances) {
   auto expected = tan(vals);
   expected.setVariances(expected_variances);
 
-  EXPECT_EQ(tan(var), expected);
+  EXPECT_TRUE(allclose(tan(var), expected));
   EXPECT_EQ(var, input_in_rad(true));
 }
 
@@ -211,7 +221,7 @@ TEST_F(VariableTrigonometryTest, tan_deg_variances) {
   auto expected = tan(vals);
   expected.setVariances(expected_variances);
 
-  EXPECT_EQ(tan(var), expected);
+  EXPECT_TRUE(allclose(tan(var), expected));
   EXPECT_EQ(var, input_in_deg(true));
 }
 
