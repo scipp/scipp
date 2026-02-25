@@ -23,6 +23,16 @@ TEST(VariableHyperbolicTest, sinh) {
   EXPECT_EQ(var, input);
 }
 
+TEST(VariableHyperbolicTest, sinh_variance) {
+  const auto input = makeVariable<double>(Dims{}, Values{0.5}, Variances{0.3});
+  const auto var = copy(input);
+  const auto expected =
+      makeVariable<double>(Dims{}, Values{std::sinh(0.5)},
+                           Variances{0.3 * std::cosh(0.5) * std::cosh(0.5)});
+  EXPECT_EQ(sinh(var), expected);
+  EXPECT_EQ(var, input);
+}
+
 TEST(VariableHyperbolicTest, sinh_out_arg) {
   const auto input = makeVariable<double>(Dims{}, Values{0.5});
   const auto var = copy(input);
@@ -39,6 +49,15 @@ TEST(VariableHyperbolicTest, acosh) {
   const auto input = makeVariable<double>(Dims{}, Values{1.5});
   const auto var = copy(input);
   const auto expected = makeVariable<double>(Dims{}, Values{std::acosh(1.5)});
+  EXPECT_EQ(acosh(var), expected);
+  EXPECT_EQ(var, input);
+}
+
+TEST(VariableHyperbolicTest, acosh_variance) {
+  const auto input = makeVariable<double>(Dims{}, Values{1.5}, Variances{0.8});
+  const auto var = copy(input);
+  const auto expected = makeVariable<double>(Dims{}, Values{std::acosh(1.5)},
+                                             Variances{0.8 / (1.5 * 1.5 - 1)});
   EXPECT_EQ(acosh(var), expected);
   EXPECT_EQ(var, input);
 }

@@ -36,9 +36,15 @@ scipp_unary(util variances)
 scipp_unary(util stddevs)
 setup_scipp_category(util)
 
-scipp_unary(trigonometry sin PREPROCESS_VARIABLE "${convert_to_rad}" OUT)
-scipp_unary(trigonometry cos PREPROCESS_VARIABLE "${convert_to_rad}" OUT)
-scipp_unary(trigonometry tan PREPROCESS_VARIABLE "${convert_to_rad}" OUT)
+scipp_unary(
+  trigonometry sin SKIP_VARIABLE OUT BASE_INCLUDE variable/trigonometry.h
+)
+scipp_unary(
+  trigonometry cos SKIP_VARIABLE OUT BASE_INCLUDE variable/trigonometry.h
+)
+scipp_unary(
+  trigonometry tan SKIP_VARIABLE OUT BASE_INCLUDE variable/trigonometry.h
+)
 scipp_unary(trigonometry asin OUT)
 scipp_unary(trigonometry acos OUT)
 scipp_unary(trigonometry atan OUT)
