@@ -182,61 +182,45 @@ struct ScalarToVariable {
 };
 
 template <class RHSSetup> struct OpBinder {
+  // Returns a callable for use with pybind11's c.def() that implements an
+  // in-place operator. The returned lambda:
+  // 1. Extracts the C++ reference from the py::object while the Python thread
+  //    state is still attached (required for free-threaded Python, where
+  //    a.cast<T &>() may trigger PyCriticalSection_Begin).
+  // 2. Releases the GIL around the pure C++ operation.
+  // 3. Returns py::object& (not by value) to avoid incrementing the reference
+  //    count, which would be incorrect after releasing the GIL.
+  template <class T, class Other, class Op> static auto inplace_op(Op op) {
+    return [op](py::object &a, Other &b) -> py::object & {
+      auto &self = a.cast<T &>();
+      {
+        py::gil_scoped_release release;
+        op(self, RHSSetup{}(b));
+      }
+      return a;
+    };
+  }
+
   template <class Other, class T, class... Ignored>
   static void in_place_binary(pybind11::class_<T, Ignored...> &c) {
     using namespace scipp;
-    // In-place operators return py::object due to the way in-place operators
-    // work in Python (assigning return value to this). This avoids extra
-    // copies, and additionally ensures that all references to the object keep
-    // referencing the same object after the operation.
-    // WARNING: It is crucial to explicitly return 'py::object &' here.
-    // Otherwise the py::object is returned by value, which increments the
-    // reference count, which is not only suboptimal but also incorrect since
-    // we have released the GIL via py::gil_scoped_release.
-    c.def(
-        "__iadd__",
-        [](py::object &a, Other &b) -> py::object & {
-          a.cast<T &>() += RHSSetup{}(b);
-          return a;
-        },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
-    c.def(
-        "__isub__",
-        [](py::object &a, Other &b) -> py::object & {
-          a.cast<T &>() -= RHSSetup{}(b);
-          return a;
-        },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
-    c.def(
-        "__imul__",
-        [](py::object &a, Other &b) -> py::object & {
-          a.cast<T &>() *= RHSSetup{}(b);
-          return a;
-        },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
-    c.def(
-        "__itruediv__",
-        [](py::object &a, Other &b) -> py::object & {
-          a.cast<T &>() /= RHSSetup{}(b);
-          return a;
-        },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+    c.def("__iadd__", inplace_op<T, Other>([](auto &a, auto &&b) { a += b; }),
+          py::is_operator());
+    c.def("__isub__", inplace_op<T, Other>([](auto &a, auto &&b) { a -= b; }),
+          py::is_operator());
+    c.def("__imul__", inplace_op<T, Other>([](auto &a, auto &&b) { a *= b; }),
+          py::is_operator());
+    c.def("__itruediv__",
+          inplace_op<T, Other>([](auto &a, auto &&b) { a /= b; }),
+          py::is_operator());
     if constexpr (!(std::is_same_v<T, Dataset> ||
                     std::is_same_v<Other, Dataset>)) {
-      c.def(
-          "__imod__",
-          [](py::object &a, Other &b) -> py::object & {
-            a.cast<T &>() %= RHSSetup{}(b);
-            return a;
-          },
-          py::is_operator(), py::call_guard<py::gil_scoped_release>());
-      c.def(
-          "__ifloordiv__",
-          [](py::object &a, Other &b) -> py::object & {
-            floor_divide_equals(a.cast<T &>(), RHSSetup{}(b));
-            return a;
-          },
-          py::is_operator(), py::call_guard<py::gil_scoped_release>());
+      c.def("__imod__", inplace_op<T, Other>([](auto &a, auto &&b) { a %= b; }),
+            py::is_operator());
+      c.def("__ifloordiv__", inplace_op<T, Other>([](auto &a, auto &&b) {
+              floor_divide_equals(a, b);
+            }),
+            py::is_operator());
       if constexpr (!(std::is_same_v<T, DataArray> ||
                       std::is_same_v<Other, DataArray>)) {
         c.def(
@@ -416,25 +400,21 @@ void bind_logical(pybind11::class_<T, Ignored...> &c) {
   c.def(
       "__and__", [](const T1 &a, const T2 &b) { return a & b; },
       py::is_operator(), py::call_guard<py::gil_scoped_release>());
-  c.def(
-      "__ior__",
-      [](const py::object &a, const T2 &b) -> const py::object & {
-        a.cast<T &>() |= b;
-        return a;
-      },
-      py::is_operator(), py::call_guard<py::gil_scoped_release>());
-  c.def(
-      "__ixor__",
-      [](const py::object &a, const T2 &b) -> const py::object & {
-        a.cast<T &>() ^= b;
-        return a;
-      },
-      py::is_operator(), py::call_guard<py::gil_scoped_release>());
-  c.def(
-      "__iand__",
-      [](const py::object &a, const T2 &b) -> const py::object & {
-        a.cast<T &>() &= b;
-        return a;
-      },
-      py::is_operator(), py::call_guard<py::gil_scoped_release>());
+  // Same pattern as OpBinder::inplace_op: cast before releasing GIL.
+  auto inplace_logical = [&c](const char *name, auto op) {
+    c.def(
+        name,
+        [op](const py::object &a, const T2 &b) -> const py::object & {
+          auto &self = a.cast<T &>();
+          {
+            py::gil_scoped_release release;
+            op(self, b);
+          }
+          return a;
+        },
+        py::is_operator());
+  };
+  inplace_logical("__ior__", [](auto &a, const auto &b) { a |= b; });
+  inplace_logical("__ixor__", [](auto &a, const auto &b) { a ^= b; });
+  inplace_logical("__iand__", [](auto &a, const auto &b) { a &= b; });
 }
