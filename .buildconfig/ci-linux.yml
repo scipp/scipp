@@ -18,5 +18,5 @@ dependencies:
   - eigen=3.4.0
   - pybind11=3.0.1
   - benchmark=1.6.1
-  - gmock=1.15.2
-  - gtest=1.15.2
+  - gmock
+  - gtest

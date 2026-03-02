@@ -40,8 +40,8 @@ requirements:
     - eigen
     - pybind11
     - benchmark
-    - gmock=1.15.2
-    - gtest=1.15.2
+    - gmock
+    - gtest
   run:
     - numpy
     - python
@@ -73,8 +73,8 @@ test:
     - eigen
     - pybind11
     - benchmark
-    - gmock=1.15.2
-    - gtest=1.15.2
+    - gmock
+    - gtest
   source_files:
     - pyproject.toml
     - tests/
