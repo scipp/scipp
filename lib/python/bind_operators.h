@@ -400,21 +400,14 @@ void bind_logical(pybind11::class_<T, Ignored...> &c) {
   c.def(
       "__and__", [](const T1 &a, const T2 &b) { return a & b; },
       py::is_operator(), py::call_guard<py::gil_scoped_release>());
-  // Same pattern as OpBinder::inplace_op: cast before releasing GIL.
-  auto inplace_logical = [&c](const char *name, auto op) {
-    c.def(
-        name,
-        [op](const py::object &a, const T2 &b) -> const py::object & {
-          auto &self = a.cast<T &>();
-          {
-            py::gil_scoped_release release;
-            op(self, b);
-          }
-          return a;
-        },
+  using InplaceOp = OpBinder<Identity>;
+  c.def("__ior__",
+        InplaceOp::inplace_op<T, T2>([](auto &a, auto &&b) { a |= b; }),
         py::is_operator());
-  };
-  inplace_logical("__ior__", [](auto &a, const auto &b) { a |= b; });
-  inplace_logical("__ixor__", [](auto &a, const auto &b) { a ^= b; });
-  inplace_logical("__iand__", [](auto &a, const auto &b) { a &= b; });
+  c.def("__ixor__",
+        InplaceOp::inplace_op<T, T2>([](auto &a, auto &&b) { a ^= b; }),
+        py::is_operator());
+  c.def("__iand__",
+        InplaceOp::inplace_op<T, T2>([](auto &a, auto &&b) { a &= b; }),
+        py::is_operator());
 }
