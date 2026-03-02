@@ -236,6 +236,28 @@ TEST(SliceByValueTest, test_slice_range_on_edge_coord_1D_descending) {
   test(Dataset{da});
 }
 
+TEST(SliceByValueTest, test_slice_range_on_empty) {
+  const auto da = make_points(/* empty */);
+  const auto test = [](const auto &sliceable) {
+    auto out = slice(sliceable, Dim::X, 3.0 * sc_units::s, 12.0 * sc_units::s);
+    EXPECT_EQ(out, sliceable);
+    out = slice(sliceable, Dim::X, 4.0 * sc_units::s, 4.0 * sc_units::s);
+    EXPECT_EQ(out, sliceable);
+  };
+  test(da);
+  test(Dataset{da});
+}
+
+TEST(SliceByValueTest, test_slice_on_point_on_empty_raises) {
+  const auto da = make_points(/* empty */);
+  const auto test = [](const auto &sliceable) {
+    EXPECT_THROW(auto out = slice(sliceable, Dim::X, 3.0 * sc_units::s),
+                 except::SliceError);
+  };
+  test(da);
+  test(Dataset{da});
+}
+
 TEST(SliceByValueTest, test_point_on_point_coord_1D) {
   auto da = make_points(1, 3, 5, 4, 2);
   const auto test = [](const auto &sliceable) {
