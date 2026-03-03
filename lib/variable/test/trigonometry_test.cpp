@@ -258,6 +258,14 @@ TEST_F(VariableTrigonometryTest, asin_variance) {
                                             Unit{sc_units::rad}));
 }
 
+TEST_F(VariableTrigonometryTest, asin_out_of_domain) {
+  const auto var = makeVariable<double>(Values{1.2}, Variances{0.9});
+  const auto out = asin(var);
+  EXPECT_TRUE(std::isnan(out.value<double>()));
+  EXPECT_TRUE(std::isnan(out.variance<double>()));
+  EXPECT_EQ(out.unit(), Unit{sc_units::rad});
+}
+
 TEST_F(VariableTrigonometryTest, asin_out_arg) {
   auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 0.0});
   auto out = makeVariable<double>(Values{0.0});
@@ -279,6 +287,14 @@ TEST_F(VariableTrigonometryTest, acos_variance) {
   EXPECT_EQ(acos(var), makeVariable<double>(Values{std::acos(0.5)},
                                             Variances{0.2 / (1.0 - 0.5 * 0.5)},
                                             Unit{sc_units::rad}));
+}
+
+TEST_F(VariableTrigonometryTest, acos_out_of_domain) {
+  const auto var = makeVariable<double>(Values{1.2}, Variances{0.9});
+  const auto out = acos(var);
+  EXPECT_TRUE(std::isnan(out.value<double>()));
+  EXPECT_TRUE(std::isnan(out.variance<double>()));
+  EXPECT_EQ(out.unit(), Unit{sc_units::rad});
 }
 
 TEST_F(VariableTrigonometryTest, acos_out_arg) {

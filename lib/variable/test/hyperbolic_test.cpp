@@ -62,6 +62,14 @@ TEST(VariableHyperbolicTest, acosh_variance) {
   EXPECT_EQ(var, input);
 }
 
+TEST(VariableHyperbolicTest, acosh_out_of_domain) {
+  const auto var = makeVariable<double>(Values{0.5}, Variances{0.2});
+  const auto out = acosh(var);
+  EXPECT_TRUE(std::isnan(out.value<double>()));
+  EXPECT_TRUE(std::isnan(out.variance<double>()));
+  EXPECT_EQ(out.unit(), Unit{sc_units::dimensionless});
+}
+
 TEST(VariableHyperbolicTest, acosh_out_arg) {
   const auto input = makeVariable<double>(Dims{}, Values{1.5});
   const auto var = copy(input);
@@ -72,4 +80,12 @@ TEST(VariableHyperbolicTest, acosh_out_arg) {
   EXPECT_EQ(output, expected);
   EXPECT_EQ(&view, &output);
   EXPECT_EQ(var, input);
+}
+
+TEST(VariableHyperbolicTest, atanh_out_of_domain) {
+  const auto var = makeVariable<double>(Values{-2.3}, Variances{1.7});
+  const auto out = atanh(var);
+  EXPECT_TRUE(std::isnan(out.value<double>()));
+  EXPECT_TRUE(std::isnan(out.variance<double>()));
+  EXPECT_EQ(out.unit(), Unit{sc_units::dimensionless});
 }

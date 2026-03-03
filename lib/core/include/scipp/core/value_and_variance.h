@@ -124,16 +124,29 @@ template <typename T> constexpr auto tan(const ValueAndVariance<T> a) noexcept {
                           a.variance / (cos_a * cos_a * cos_a * cos_a));
 }
 
+namespace detail {
+template <typename T>
+T arc_trig_variance(const ValueAndVariance<T> a, T out_value) {
+  using numeric::isnan;
+  return isnan(out_value) ? std::numeric_limits<T>::quiet_NaN()
+                          : a.variance / (1 - a.value * a.value);
+}
+} // namespace detail
+
 template <typename T>
 constexpr auto asin(const ValueAndVariance<T> a) noexcept {
   using std::asin;
-  return ValueAndVariance(asin(a.value), a.variance / (1 - a.value * a.value));
+  const auto value = asin(a.value);
+  const auto variance = detail::arc_trig_variance(a, value);
+  return ValueAndVariance(value, variance);
 }
 
 template <typename T>
 constexpr auto acos(const ValueAndVariance<T> a) noexcept {
   using std::acos;
-  return ValueAndVariance(acos(a.value), a.variance / (1 - a.value * a.value));
+  const auto value = acos(a.value);
+  const auto variance = detail::arc_trig_variance(a, value);
+  return ValueAndVariance(value, variance);
 }
 
 template <typename T>
@@ -174,16 +187,23 @@ constexpr auto asinh(const ValueAndVariance<T> a) noexcept {
 
 template <typename T>
 constexpr auto acosh(const ValueAndVariance<T> a) noexcept {
+  using numeric::isnan;
   using std::acosh;
-  return ValueAndVariance(acosh(a.value), a.variance / (a.value * a.value - 1));
+  const auto value = acosh(a.value);
+  const auto variance = isnan(value) ? std::numeric_limits<T>::quiet_NaN()
+                                     : a.variance / (a.value * a.value - 1);
+  return ValueAndVariance(value, variance);
 }
 
 template <typename T>
 constexpr auto atanh(const ValueAndVariance<T> a) noexcept {
+  using numeric::isnan;
   using std::atanh;
+  const auto value = atanh(a.value);
   const auto denominator = 1 - a.value * a.value;
-  return ValueAndVariance(atanh(a.value),
-                          a.variance / (denominator * denominator));
+  const auto variance = isnan(value) ? std::numeric_limits<T>::quiet_NaN()
+                                     : a.variance / (denominator * denominator);
+  return ValueAndVariance(value, variance);
 }
 
 template <class T> constexpr auto isnan(const ValueAndVariance<T> a) noexcept {
