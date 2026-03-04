@@ -84,6 +84,7 @@ SCIPP_UNITS_EXPORT Unit asin(const Unit &a);
 SCIPP_UNITS_EXPORT Unit acos(const Unit &a);
 SCIPP_UNITS_EXPORT Unit atan(const Unit &a);
 SCIPP_UNITS_EXPORT Unit atan2(const Unit &y, const Unit &x);
+SCIPP_UNITS_EXPORT Unit sinc(const Unit &a);
 SCIPP_UNITS_EXPORT Unit sinh(const Unit &a);
 SCIPP_UNITS_EXPORT Unit cosh(const Unit &a);
 SCIPP_UNITS_EXPORT Unit tanh(const Unit &a);

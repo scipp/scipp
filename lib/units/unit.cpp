@@ -162,6 +162,7 @@ Unit pow(const Unit &a, const int64_t power) {
   return Unit{a.underlying().pow(static_cast<int>(power))};
 }
 
+namespace {
 Unit trigonometric(const Unit &a) {
   if (a == sc_units::rad || a == sc_units::deg)
     return sc_units::dimensionless;
@@ -176,6 +177,7 @@ Unit inverse_trigonometric(const Unit &a) {
       "Inverse trigonometric function requires dimensionless unit, got " +
       a.name() + ".");
 }
+} // namespace
 
 Unit sin(const Unit &a) { return trigonometric(a); }
 Unit cos(const Unit &a) { return trigonometric(a); }
@@ -193,6 +195,14 @@ Unit atan2(const Unit &y, const Unit &x) {
       " b " + y.name() + ".");
 }
 
+Unit sinc(const Unit &a) {
+  if (a == rad || a == dimensionless)
+    return dimensionless;
+  throw except::UnitError("sinc requires rad or dimensionless unit, got " +
+                          a.name() + ".");
+}
+
+namespace {
 Unit hyperbolic(const Unit &a) {
   if (a == sc_units::dimensionless)
     return sc_units::dimensionless;
@@ -200,6 +210,7 @@ Unit hyperbolic(const Unit &a) {
       "Hyperbolic function requires dimensionless input, got " + a.name() +
       ".");
 }
+} // namespace
 
 Unit sinh(const Unit &a) { return hyperbolic(a); }
 Unit cosh(const Unit &a) { return hyperbolic(a); }

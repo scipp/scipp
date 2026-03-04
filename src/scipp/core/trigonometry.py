@@ -275,3 +275,54 @@ def atan2(*, y: Variable, x: Variable, out: Variable | None = None) -> Variable:
       <scipp.Variable> (point: 2)    float64            [deg]  [135, -135]
     """
     return _call_cpp_func(_cpp.atan2, y=y, x=x, out=out)  # type: ignore[return-value]
+
+
+def sinc(
+    x: VariableLikeType, *, out: VariableLikeType | None = None
+) -> VariableLikeType:
+    """Element-wise sine cardinal.
+
+    This function is defined as
+
+    .. math::
+
+        \\text{sinc}(x) = \\begin{cases}
+            1&x = 0,\\\\
+            \\frac{\\sin(x)}{x}&x \\neq 0
+        \\end{cases}
+
+    Note
+    ----
+    NumPy uses a different definition for :func:`numpy.sinc`:
+    :math:`\\text{sinc}(x) = \\sin(\\pi x) / (\\pi x)`
+    Scipp uses the definition that is more common in mathematics and physics
+    while NumPy uses the definition from signal processing.
+    To get the NumPy convention in Scipp, use ``sc.sinc(np.pi * x)``.
+
+
+    The input must have unit ``rad`` or be dimensionless.
+    In either case, the output is dimensionless.
+
+    Parameters
+    ----------
+    x: scipp.typing.VariableLike
+        Input data.
+    out:
+        Optional output buffer.
+
+    Returns
+    -------
+    : Same type as input
+        The sine cardinal values of the input.
+
+    Examples
+    --------
+    Compute sinc:
+
+      >>> import scipp as sc
+      >>> import numpy as np
+      >>> x = sc.array(dims=['x'], values=[-1.0, 0.0, 1.0], unit='rad')
+      >>> sc.sinc(x)
+      <scipp.Variable> (x: 3)    float64  [dimensionless]  [0.841471, 1, 0.841471]
+    """
+    return _call_cpp_func(_cpp.sinc, x, out=out)  # type: ignore[return-value]

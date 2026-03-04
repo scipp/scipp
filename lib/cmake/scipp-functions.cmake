@@ -49,6 +49,7 @@ scipp_unary(trigonometry asin OUT)
 scipp_unary(trigonometry acos OUT)
 scipp_unary(trigonometry atan OUT)
 scipp_binary(trigonometry atan2 OUT)
+scipp_unary(trigonometry sinc OUT)
 setup_scipp_category(trigonometry OUT)
 
 scipp_unary(hyperbolic sinh OUT)

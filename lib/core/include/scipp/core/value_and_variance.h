@@ -158,6 +158,20 @@ constexpr auto atan(const ValueAndVariance<T> a) noexcept {
 }
 
 template <typename T>
+constexpr auto sinc(const ValueAndVariance<T> a) noexcept {
+  using std::sin, std::cos;
+  if (a.value == 0) {
+    // multiply by 0 in case a.variance is NaN or inf
+    return ValueAndVariance(1, a.variance * 0);
+  }
+  const auto sin_a = sin(a.value);
+  const auto value = sin_a / a.value;
+  const auto derivative = (cos(a.value) - value) / a.value;
+  const auto variance = a.variance * derivative * derivative;
+  return ValueAndVariance(value, variance);
+}
+
+template <typename T>
 constexpr auto sinh(const ValueAndVariance<T> a) noexcept {
   using std::sinh, std::cosh;
   const auto cosh_a = cosh(a.value);

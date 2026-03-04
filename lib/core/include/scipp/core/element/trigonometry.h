@@ -99,4 +99,9 @@ constexpr auto atan2 = overloaded{
       return atan2(y, x);
     }};
 
+constexpr auto sinc = overloaded{
+    trig, []<class T>(const ValueAndVariance<T> a) { return core::sinc(a); },
+    [](const auto x) { return x == 0 ? 1 : sin(x) / x; },
+    [](const sc_units::Unit &unit) { return sc_units::sinc(unit); }};
+
 } // namespace scipp::core::element
