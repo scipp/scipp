@@ -9,6 +9,7 @@
 
 #include "scipp/units/unit.h"
 
+#include "scipp/core/eigen.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/time_point.h"
@@ -56,6 +57,7 @@ constexpr auto map = overloaded{
                       map_detail::args<time_point, time_point, int64_t>,
                       map_detail::args<time_point, time_point, int32_t>,
                       map_detail::args<time_point, time_point, bool>,
+                      map_detail::args<time_point, time_point, Eigen::Vector3d>,
                       map_detail::args<double, double, double>,
                       map_detail::args<double, double, float>,
                       map_detail::args<double, double, int64_t>,
