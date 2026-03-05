@@ -143,7 +143,7 @@ from .core import (
 )
 from .core import broadcast, concat, fold, flatten, squeeze, transpose
 from .core import sinh, cosh, tanh, asinh, acosh, atanh
-from .core import sin, cos, tan, asin, acos, atan, atan2
+from .core import sin, cos, tan, asin, acos, atan, atan2, sinc
 from .core import isnan, isinf, isfinite, isposinf, isneginf, to_unit
 from .core import (
     scalar,
@@ -406,6 +406,7 @@ __all__ = [
     'show',
     'show_graph',
     'sin',
+    'sinc',
     'sinh',
     'slices',
     'sort',

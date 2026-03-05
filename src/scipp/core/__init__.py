@@ -167,7 +167,7 @@ from .reduction import (
     any,
 )
 from .shape import broadcast, concat, fold, flatten, squeeze, transpose
-from .trigonometry import sin, cos, tan, asin, acos, atan, atan2
+from .trigonometry import sin, cos, tan, asin, acos, atan, atan2, sinc
 from .unary import isnan, isinf, isfinite, isposinf, isneginf, to_unit
 from .variable import (
     scalar,
@@ -348,6 +348,7 @@ __all__ = [
     'round',
     'scalar',
     'sin',
+    'sinc',
     'sinh',
     'sort',
     'sqrt',

@@ -349,6 +349,37 @@ TEST_F(VariableTrigonometryTest, atan2_out_arg) {
   EXPECT_EQ(y, expected);
 }
 
+TEST_F(VariableTrigonometryTest, sinc) {
+  const auto x =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{-0.5, 1.0, 0.0}, rad);
+  const auto y = sinc(x);
+  const auto expected = makeVariable<double>(
+      Dims{Dim::X}, Shape{3}, Values{sin(-0.5) / -0.5, sin(1.0), 1.0});
+  EXPECT_TRUE(allclose(y, expected));
+}
+
+TEST_F(VariableTrigonometryTest, sinc_variances) {
+  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2.1, 0.0},
+                                      Variances{1.3, 0.5}, rad);
+  const auto y = sinc(x);
+  const auto nonzero_derivative = cos(2.1) / 2.1 - sin(2.1) / 2.1 / 2.1;
+  const auto expected = makeVariable<double>(
+      Dims{Dim::X}, Shape{2}, Values{sin(2.1) / 2.1, 1.0},
+      Variances{1.3 * nonzero_derivative * nonzero_derivative, 0.0});
+  EXPECT_TRUE(allclose(y, expected));
+}
+
+TEST_F(VariableTrigonometryTest, sinc_out_arg) {
+  const auto x =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{-0.5, 1.0, 0.0}, rad);
+  auto y = x;
+  auto out = sinc(x, y);
+  const auto expected = makeVariable<double>(
+      Dims{Dim::X}, Shape{3}, Values{sin(-0.5) / -0.5, sin(1.0), 1.0});
+  EXPECT_TRUE(allclose(y, expected));
+  EXPECT_TRUE(allclose(out, expected));
+}
+
 TEST_P(BinnedVariablesTest, trigonometry) {
   const auto var = GetParam();
   if (variableFactory().elem_unit(var) == sc_units::one) {

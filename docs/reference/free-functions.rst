@@ -154,6 +154,7 @@ Trigonometric
    acos
    atan
    atan2
+   sinc
 
 Hyperbolic
 ~~~~~~~~~~
