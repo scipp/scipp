@@ -208,6 +208,30 @@ def test_mean_masked() -> None:
     assert sc.identical(sc.nanmean(d, 'x')['a'], d_ref['a'])
 
 
+def test_mean_two_dims() -> None:
+    da = sc.DataArray(
+        sc.array(
+            dims=['x', 'y'], values=[[1.0, 1.0, 1.0, 1.0], [0.0, np.inf, 0.0, 1.0]]
+        ),
+        masks={
+            'mask': sc.array(
+                dims=['x', 'y'],
+                values=[[False, False, False, False], [False, True, False, False]],
+            )
+        },
+    )
+
+    expected = sc.scalar(5 / 7)
+    tol = sc.scalar(1e-14)
+    sc.testing.assert_allclose(sc.mean(da).data, expected, rtol=tol, atol=tol)
+    sc.testing.assert_allclose(
+        sc.mean(da, dim=['x', 'y']).data, expected, rtol=tol, atol=tol
+    )
+    sc.testing.assert_allclose(
+        sc.mean(da, dim=['y', 'x']).data, expected, rtol=tol, atol=tol
+    )
+
+
 def test_nanmean(container: Callable[[object], Any]) -> None:
     x = container(
         sc.array(dims=['xx', 'yy'], values=[[1, np.nan, 3], [4, 5, np.nan]], unit='m')
@@ -236,6 +260,24 @@ def test_nanmean_single_dim(container: Callable[[object], Any]) -> None:
     )
     assert sc.identical(
         var.nanmean('yy'), container(sc.array(dims=['xx'], values=[2.0, 4.5], unit='m'))
+    )
+
+
+def test_nanmean_two_dims() -> None:
+    da = sc.DataArray(
+        sc.array(
+            dims=['x', 'y'], values=[[1.0, 1.0, 1.0, 1.0], [0.0, np.nan, 0.0, 1.0]]
+        ),
+    )
+
+    expected = sc.scalar(5 / 7)
+    tol = sc.scalar(1e-14)
+    sc.testing.assert_allclose(sc.nanmean(da).data, expected, rtol=tol, atol=tol)
+    sc.testing.assert_allclose(
+        sc.nanmean(da, dim=['x', 'y']).data, expected, rtol=tol, atol=tol
+    )
+    sc.testing.assert_allclose(
+        sc.nanmean(da, dim=['y', 'x']).data, expected, rtol=tol, atol=tol
     )
 
 

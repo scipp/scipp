@@ -104,7 +104,11 @@ def mean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     if dim is None:
         out = _apply_op(x, dim, _cpp.mean)
     else:
-        out = _apply_op(x, dim, _cpp.sum) / ones_like(x).sum(dim)
+        if isinstance(x, (Dataset, DataGroup)):
+            den = x.__class__({k: ones_like(v, unit="").sum(dim) for k, v in x.items()})
+        else:
+            den = ones_like(x, unit="").sum(dim)
+        out = _apply_op(x, dim, _cpp.sum) / den
     return out  # type: ignore[return-value]
 
 
@@ -159,7 +163,17 @@ def nanmean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     if dim is None:
         out = _apply_op(x, dim, _cpp.nanmean)
     else:
-        out = _apply_op(x, dim, _cpp.nansum) / isnan(x).sum(dim)
+        if isinstance(x, (Dataset, DataGroup)):
+            den = {}
+            for k, v in x.items():
+                div = (~isnan(v)).sum(dim)
+                div.unit = ""
+                den[k] = div
+            den = x.__class__(den)
+        else:
+            den = (~isnan(x)).sum(dim)
+            den.unit = ""
+        out = _apply_op(x, dim, _cpp.nansum) / den
     return out  # type: ignore[return-value]
 
 
