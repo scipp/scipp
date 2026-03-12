@@ -24,6 +24,8 @@ from .cpp_classes import (
     VariancesError,
 )
 from .data_group import DataGroup, data_group_nary
+from .like import ones_like
+from .unary import isnan
 from .variable import array
 
 
@@ -99,7 +101,11 @@ def mean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     >>> result.variances is not None  # variance decreases by factor of N
     True
     """
-    return _apply_op(x, dim, _cpp.mean)  # type: ignore[return-value]
+    if dim is None:
+        out = _apply_op(x, dim, _cpp.mean)
+    else:
+        out = _apply_op(x, dim, _cpp.sum) / ones_like(x).sum(dim)
+    return out  # type: ignore[return-value]
 
 
 def nanmean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
@@ -150,7 +156,11 @@ def nanmean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     >>> sc.nanmean(x)
     <scipp.Variable> ()    float64  [dimensionless]  ...nan
     """
-    return _apply_op(x, dim, _cpp.nanmean)  # type: ignore[return-value]
+    if dim is None:
+        out = _apply_op(x, dim, _cpp.nanmean)
+    else:
+        out = _apply_op(x, dim, _cpp.nansum) / isnan(x).sum(dim)
+    return out  # type: ignore[return-value]
 
 
 def median(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
