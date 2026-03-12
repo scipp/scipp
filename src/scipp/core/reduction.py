@@ -103,7 +103,7 @@ def mean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     """
     if isinstance(dim, str):
         dim = [dim]
-    if (dim is None) or (len(dim) < 2):
+    if (dim is None) or (len(list(dim)) < 2):
         out = _apply_op(x, dim, _cpp.mean)
     else:
         # In the case of more than one dim passed, we cannot use _apply_op because it
@@ -113,7 +113,7 @@ def mean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
             den = x.__class__({k: ones_like(v, unit="").sum(dim) for k, v in x.items()})
         else:
             den = ones_like(x, unit="" if x.unit is not None else None).sum(dim)
-        out = _apply_op(x, dim, _cpp.sum) / den
+        out = _apply_op(x, dim, _cpp.sum) / den  # type: ignore[operator]
     return out  # type: ignore[return-value]
 
 
@@ -167,24 +167,24 @@ def nanmean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     """
     if isinstance(dim, str):
         dim = [dim]
-    if (dim is None) or (len(dim) < 2):
+    if (dim is None) or (len(list(dim)) < 2):
         out = _apply_op(x, dim, _cpp.nanmean)
     else:
         # In the case of more than one dim passed, we cannot use _apply_op because it
         # applies the reduction one dimension at a time, and this gives wrong results
         # with the mean operation in some cases. Instead, we manually compute the mean.
         if isinstance(x, (Dataset, DataGroup)):
-            den = {}
+            items = {}
             for k, v in x.items():
                 div = (~isnan(v)).sum(dim)
                 div.unit = ""
-                den[k] = div
-            den = x.__class__(den)
+                items[k] = div
+            den = x.__class__(items)
         else:
             den = (~isnan(x)).sum(dim)
             if x.unit is not None:
                 den.unit = ""
-        out = _apply_op(x, dim, _cpp.nansum) / den
+        out = _apply_op(x, dim, _cpp.nansum) / den  # type: ignore[operator]
     return out  # type: ignore[return-value]
 
 
