@@ -232,6 +232,32 @@ def test_mean_two_dims() -> None:
     )
 
 
+def test_mean_two_dims_unit_none() -> None:
+    da = sc.DataArray(
+        sc.array(
+            dims=['x', 'y'],
+            values=[[1.0, 1.0, 1.0, 1.0], [0.0, np.inf, 0.0, 1.0]],
+            unit=None,
+        ),
+        masks={
+            'mask': sc.array(
+                dims=['x', 'y'],
+                values=[[False, False, False, False], [False, True, False, False]],
+            )
+        },
+    )
+
+    expected = sc.scalar(5 / 7, unit=None)
+    tol = sc.scalar(1e-14, unit=None)
+    sc.testing.assert_allclose(sc.mean(da).data, expected, rtol=tol, atol=tol)
+    sc.testing.assert_allclose(
+        sc.mean(da, dim=['x', 'y']).data, expected, rtol=tol, atol=tol
+    )
+    sc.testing.assert_allclose(
+        sc.mean(da, dim=['y', 'x']).data, expected, rtol=tol, atol=tol
+    )
+
+
 def test_nanmean(container: Callable[[object], Any]) -> None:
     x = container(
         sc.array(dims=['xx', 'yy'], values=[[1, np.nan, 3], [4, 5, np.nan]], unit='m')

@@ -101,13 +101,18 @@ def mean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     >>> result.variances is not None  # variance decreases by factor of N
     True
     """
-    if dim is None:
+    if isinstance(dim, str):
+        dim = [dim]
+    if (dim is None) or (len(dim) < 2):
         out = _apply_op(x, dim, _cpp.mean)
     else:
+        # In the case of more than one dim passed, we cannot use _apply_op because it
+        # applies the reduction one dimension at a time, and this gives wrong results
+        # with the mean operation in some cases. Instead, we manually compute the mean.
         if isinstance(x, (Dataset, DataGroup)):
             den = x.__class__({k: ones_like(v, unit="").sum(dim) for k, v in x.items()})
         else:
-            den = ones_like(x, unit="").sum(dim)
+            den = ones_like(x, unit="" if x.unit is not None else None).sum(dim)
         out = _apply_op(x, dim, _cpp.sum) / den
     return out  # type: ignore[return-value]
 
@@ -160,9 +165,14 @@ def nanmean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     >>> sc.nanmean(x)
     <scipp.Variable> ()    float64  [dimensionless]  ...nan
     """
-    if dim is None:
+    if isinstance(dim, str):
+        dim = [dim]
+    if (dim is None) or (len(dim) < 2):
         out = _apply_op(x, dim, _cpp.nanmean)
     else:
+        # In the case of more than one dim passed, we cannot use _apply_op because it
+        # applies the reduction one dimension at a time, and this gives wrong results
+        # with the mean operation in some cases. Instead, we manually compute the mean.
         if isinstance(x, (Dataset, DataGroup)):
             den = {}
             for k, v in x.items():
@@ -172,7 +182,8 @@ def nanmean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
             den = x.__class__(den)
         else:
             den = (~isnan(x)).sum(dim)
-            den.unit = ""
+            if x.unit is not None:
+                den.unit = ""
         out = _apply_op(x, dim, _cpp.nansum) / den
     return out  # type: ignore[return-value]
 
