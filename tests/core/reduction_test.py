@@ -248,14 +248,10 @@ def test_mean_two_dims_unit_none() -> None:
     )
 
     expected = sc.scalar(5 / 7, unit=None)
-    tol = sc.scalar(1e-14, unit=None)
-    sc.testing.assert_allclose(sc.mean(da).data, expected, rtol=tol, atol=tol)
-    sc.testing.assert_allclose(
-        sc.mean(da, dim=['x', 'y']).data, expected, rtol=tol, atol=tol
-    )
-    sc.testing.assert_allclose(
-        sc.mean(da, dim=['y', 'x']).data, expected, rtol=tol, atol=tol
-    )
+    tol = sc.scalar(1e-14)
+    sc.testing.assert_allclose(sc.mean(da).data, expected, rtol=tol)
+    sc.testing.assert_allclose(sc.mean(da, dim=['x', 'y']).data, expected, rtol=tol)
+    sc.testing.assert_allclose(sc.mean(da, dim=['y', 'x']).data, expected, rtol=tol)
 
 
 def test_nanmean(container: Callable[[object], Any]) -> None:
@@ -293,7 +289,7 @@ def test_nanmean_two_dims() -> None:
     da = sc.DataArray(
         sc.array(
             dims=['x', 'y'], values=[[1.0, 1.0, 1.0, 1.0], [0.0, np.nan, 0.0, 1.0]]
-        ),
+        )
     )
 
     expected = sc.scalar(5 / 7)
@@ -305,6 +301,22 @@ def test_nanmean_two_dims() -> None:
     sc.testing.assert_allclose(
         sc.nanmean(da, dim=['y', 'x']).data, expected, rtol=tol, atol=tol
     )
+
+
+def test_nanmean_two_dims_unit_none() -> None:
+    da = sc.DataArray(
+        sc.array(
+            dims=['x', 'y'],
+            values=[[1.0, 1.0, 1.0, 1.0], [0.0, np.nan, 0.0, 1.0]],
+            unit=None,
+        )
+    )
+
+    expected = sc.scalar(5 / 7, unit=None)
+    tol = sc.scalar(1e-14)
+    sc.testing.assert_allclose(sc.nanmean(da).data, expected, rtol=tol)
+    sc.testing.assert_allclose(sc.nanmean(da, dim=['x', 'y']).data, expected, rtol=tol)
+    sc.testing.assert_allclose(sc.nanmean(da, dim=['y', 'x']).data, expected, rtol=tol)
 
 
 def test_median_even(container: Callable[[object], Any]) -> None:
