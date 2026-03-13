@@ -5,7 +5,7 @@
 #
 #    requirements upgrade
 #
-cmake==4.2.1
+cmake==4.2.3
     # via -r build.in
 ninja==1.13.0
     # via -r build.in

@@ -6,17 +6,15 @@
 #    requirements upgrade
 #
 -r base.txt
-appnope==0.1.4
-    # via ipykernel
 asttokens==3.0.1
     # via stack-data
-certifi==2026.1.4
+certifi==2026.2.25
     # via requests
-charset-normalizer==3.4.4
+charset-normalizer==3.4.5
     # via requests
 comm==0.2.3
     # via ipykernel
-debugpy==1.8.19
+debugpy==1.8.20
     # via ipykernel
 decorator==5.2.1
     # via ipython
@@ -24,13 +22,13 @@ executing==2.2.1
     # via stack-data
 graphviz==0.21
     # via -r extra.in
-h5py==3.15.1
+h5py==3.16.0
     # via -r extra.in
 idna==3.11
     # via requests
-ipykernel==7.1.0
+ipykernel==7.2.0
     # via -r extra.in
-ipython==9.9.0
+ipython==9.10.0
     # via ipykernel
 ipython-pygments-lexers==1.1.1
     # via ipython
@@ -50,26 +48,26 @@ matplotlib-inline==0.2.1
     #   ipython
 nest-asyncio==1.6.0
     # via ipykernel
-numba==0.63.1
+numba==0.64.0
     # via -r extra.in
-packaging==25.0
+packaging==26.0
     # via
     #   ipykernel
     #   pooch
     #   xarray
-pandas==2.3.3
+pandas==3.0.1
     # via
     #   -r extra.in
     #   xarray
-parso==0.8.5
+parso==0.8.6
     # via jedi
 pexpect==4.9.0
     # via ipython
-platformdirs==4.5.1
+platformdirs==4.9.4
     # via
     #   jupyter-core
     #   pooch
-pooch==1.8.2
+pooch==1.9.0
     # via -r extra.in
 prompt-toolkit==3.0.52
     # via ipython
@@ -85,21 +83,19 @@ python-dateutil==2.9.0.post0
     # via
     #   jupyter-client
     #   pandas
-pytz==2025.2
-    # via pandas
 pyzmq==27.1.0
     # via
     #   ipykernel
     #   jupyter-client
 requests==2.32.5
     # via pooch
-scipy==1.17.0
+scipy==1.17.1
     # via -r extra.in
 six==1.17.0
     # via python-dateutil
 stack-data==0.6.3
     # via ipython
-tornado==6.5.4
+tornado==6.5.5
     # via
     #   ipykernel
     #   jupyter-client
@@ -112,11 +108,9 @@ traitlets==5.14.3
     #   matplotlib-inline
 typing-extensions==4.15.0
     # via ipython
-tzdata==2025.3
-    # via pandas
 urllib3==2.6.3
     # via requests
-wcwidth==0.2.14
+wcwidth==0.6.0
     # via prompt-toolkit
-xarray==2025.12.0
+xarray==2026.2.0
     # via -r extra.in

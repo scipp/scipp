@@ -15,7 +15,7 @@ attrs==25.4.0
     # via
     #   jsonschema
     #   referencing
-babel==2.17.0
+babel==2.18.0
     # via
     #   pydata-sphinx-theme
     #   sphinx
@@ -39,19 +39,19 @@ docutils==0.22.4
     #   sphinx
 fastjsonschema==2.21.2
     # via nbformat
-fonttools==4.61.1
+fonttools==4.62.0
     # via matplotlib
 gitdb==4.0.12
     # via gitpython
 gitpython==3.1.46
     # via -r docs.in
-hypothesis==6.150.2
+hypothesis==6.151.9
     # via -r docs.in
-imagesize==1.4.1
+imagesize==2.0.0
     # via sphinx
 ipydatawidgets==4.3.5
     # via pythreejs
-ipympl==0.9.8
+ipympl==0.10.0
     # via -r docs.in
 ipywidgets==8.1.8
     # via
@@ -73,9 +73,9 @@ jupyterlab-pygments==0.3.0
     # via nbconvert
 jupyterlab-widgets==3.0.16
     # via ipywidgets
-kiwisolver==1.4.9
+kiwisolver==1.5.0
     # via matplotlib
-lazy-loader==0.4
+lazy-loader==0.5
     # via plopp
 markdown-it-py==4.0.0
     # via
@@ -99,7 +99,7 @@ myst-parser==5.0.0
     # via -r docs.in
 nbclient==0.10.4
     # via nbconvert
-nbconvert==7.16.6
+nbconvert==7.17.0
     # via nbsphinx
 nbformat==5.10.4
     # via
@@ -110,15 +110,15 @@ nbsphinx==0.9.8
     # via -r docs.in
 pandocfilters==1.5.1
     # via nbconvert
-pillow==12.1.0
+pillow==12.1.1
     # via
     #   ipympl
     #   matplotlib
-plopp==25.11.0
+plopp==26.3.1
     # via -r docs.in
 pydata-sphinx-theme==0.16.1
     # via -r docs.in
-pyparsing==3.3.1
+pyparsing==3.3.2
     # via matplotlib
 pythreejs==2.4.2
     # via -r docs.in
@@ -134,7 +134,7 @@ rpds-py==0.30.0
     # via
     #   jsonschema
     #   referencing
-smmap==5.0.2
+smmap==5.0.3
     # via gitdb
 snowballstemmer==3.0.1
     # via sphinx
