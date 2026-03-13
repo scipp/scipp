@@ -106,7 +106,7 @@ ignore-words-list = [
     # Let's not modify it if we don't have to.
     "socio-economic",
 ]
-skip = "./.git,./install,./build,./cmake-build*,./lib/cmake/sanitizers-cmake,./.tox,*/*_cache,*/.virtual_documents,*/.ipynb_checkpoints,*.pdf,*.svg"
+skip = "./.git,./install,./build,./cmake-build*,./lib/cmake/sanitizers-cmake,*/*_cache,*/.virtual_documents,*/.ipynb_checkpoints,*.pdf,*.svg"
 
 [tool.ruff]
 line-length = 88

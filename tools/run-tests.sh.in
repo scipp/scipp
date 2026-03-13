@@ -7,4 +7,4 @@ cd "$1"
 ./scipp-variable-test
 ./scipp-dataset-test
 cd "$2"
-tox -e test
+pixi run -e test test
