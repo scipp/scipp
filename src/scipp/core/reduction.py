@@ -107,8 +107,12 @@ def mean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
         out = _apply_op(x, dim, _cpp.mean)
     else:
         # In the case of more than one dim passed, we cannot use _apply_op because it
-        # applies the reduction one dimension at a time, and this gives wrong results
-        # with the mean operation in some cases. Instead, we manually compute the mean.
+        # applies the reduction one dimension at a time. This can lead to wrong results
+        # when masks are present. A 2D mask on a 2D array removes masked values from
+        # the denominator of the mean, so each intermediate mean can be computed over
+        # a different number of elements. When we then average those means again over
+        # the next dimension, values are treated as equally weighted, which changes
+        # the result.
         if isinstance(x, (Dataset, DataGroup)):
             den = x.__class__({k: ones_like(v, unit="").sum(dim) for k, v in x.items()})
         else:
@@ -171,8 +175,12 @@ def nanmean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
         out = _apply_op(x, dim, _cpp.nanmean)
     else:
         # In the case of more than one dim passed, we cannot use _apply_op because it
-        # applies the reduction one dimension at a time, and this gives wrong results
-        # with the mean operation in some cases. Instead, we manually compute the mean.
+        # applies the reduction one dimension at a time. This can lead to wrong results
+        # when masks are present. A 2D mask on a 2D array removes masked values from
+        # the denominator of the mean, so each intermediate mean can be computed over
+        # a different number of elements. When we then average those means again over
+        # the next dimension, values are treated as equally weighted, which changes
+        # the result.
         if isinstance(x, (Dataset, DataGroup)):
             items = {}
             for k, v in x.items():
