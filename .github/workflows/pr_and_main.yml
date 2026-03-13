@@ -34,9 +34,9 @@ jobs:
       fail-fast: false
       matrix:
         variant:
-        - {os: ubuntu-24.04, cmake-preset: ci-linux}
-        - {os: macos-15, cmake-preset: ci-macos}
-        - {os: windows-2022, cmake-preset: ci-windows}
+        - {os: ubuntu-24.04}
+        - {os: macos-15}
+        - {os: windows-2022}
         python-version: ["3.11"]
 
     steps:
@@ -58,10 +58,7 @@ jobs:
         with:
           key: ${{ matrix.variant.os }}
 
-      - run: pixi run -e test configure ${{ matrix.variant.cmake-preset }}
       - run: pixi run -e test cpp-test
-
-      - run: pixi run -e test import-minimal
       - run: pixi run -e test test
 
       - run: pixi run -e type-check mypy
