@@ -140,10 +140,10 @@ python = "3.14.*"
 [environments]
 default = { features = ["build", "cppcheck", "test", "docs", "lint", "type-check", "py311"], solve-group = "default" }
 build = { features = ["build", "cppcheck", "py311"], solve-group = "default" }
-test = { features = ["build", "test", "py311"], solve-group = "default" }
-test-py312 = ["build", "test", "py312"]
-test-py313 = ["build", "test", "py313"]
-test-py314 = ["build", "test", "py314"]
+test = { features = ["build", "cppcheck", "test", "py311"], solve-group = "default" }
+test-py312 = ["build", "cppcheck", "test", "py312"]
+test-py313 = ["build", "cppcheck", "test", "py313"]
+test-py314 = ["build", "cppcheck", "test", "py314"]
 docs = { features = ["build", "test", "docs", "py311"], solve-group = "default" }
 lint = { features = ["lint"], no-default-feature = true }
 type-check = { features = ["build", "test", "docs", "type-check", "py311"], solve-group = "default" }
