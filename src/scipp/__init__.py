@@ -122,6 +122,7 @@ from .core import (
     variances,
     stddevs,
     where,
+    clip,
 )
 from .core import (
     mean,
@@ -307,6 +308,7 @@ __all__ = [
     'bins_like',
     'broadcast',
     'ceil',
+    'clip',
     'collapse',
     'compat',
     'concat',
