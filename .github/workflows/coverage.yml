@@ -27,6 +27,7 @@ jobs:
       - uses: prefix-dev/setup-pixi@v0.9.4
         with:
           environments: dev test
+          frozen: true
           cache: true
 
       - name: ccache

@@ -19,6 +19,7 @@ jobs:
       - uses: prefix-dev/setup-pixi@v0.9.4
         with:
           environments: lint
+          frozen: true
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
       - run: pixi run -e lint static
@@ -54,12 +55,14 @@ jobs:
         if: ${{ contains(matrix.variant.os, 'windows') }}
         with:
           environments: dev
+          frozen: true
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
       - uses: prefix-dev/setup-pixi@v0.9.4
         if: ${{ !contains(matrix.variant.os, 'windows') }}
         with:
           environments: dev test docs type-check
+          frozen: true
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
 
