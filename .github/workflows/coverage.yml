@@ -27,7 +27,7 @@ jobs:
 
       - uses: prefix-dev/setup-pixi@v0.9.4
         with:
-          environments: test
+          environments: dev test
           cache: true
 
       - name: ccache
@@ -38,8 +38,8 @@ jobs:
       - name: C++ coverage
         run: |
           mkdir coverage_html
-          pixi run -e test -- cmake --preset coverage
-          pixi run -e test -- cmake --build --preset coverage
+          pixi run -e dev -- cmake --preset coverage
+          pixi run -e dev -- cmake --build --preset coverage
           mv build/coverage coverage_html/cpp
 
       - name: Python coverage

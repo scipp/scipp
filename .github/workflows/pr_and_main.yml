@@ -49,7 +49,7 @@ jobs:
 
       - uses: prefix-dev/setup-pixi@v0.9.4
         with:
-          environments: test docs type-check
+          environments: dev test docs type-check
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
 
@@ -58,7 +58,7 @@ jobs:
         with:
           key: ${{ matrix.variant.os }}
 
-      - run: pixi run -e test cpp-test
+      - run: pixi run -e dev cpp-test
       - run: pixi run -e test test
 
       - run: pixi run -e type-check mypy

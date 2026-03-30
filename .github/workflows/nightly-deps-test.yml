@@ -14,9 +14,9 @@ jobs:
       fail-fast: false
       matrix:
         variant:
-          - { os: ubuntu-24.04, cmake-preset: ci-linux }
-          - { os: macos-15, cmake-preset: ci-macos }
-          - { os: windows-2022, cmake-preset: ci-windows }
+          - { os: ubuntu-24.04 }
+          - { os: macos-15 }
+          - { os: windows-2022 }
         python-version: ["3.11"]
 
     steps:
@@ -29,7 +29,7 @@ jobs:
 
       - uses: prefix-dev/setup-pixi@v0.9.4
         with:
-          environments: test
+          environments: dev test
           cache: true
 
       - name: ccache
@@ -37,13 +37,9 @@ jobs:
         with:
           key: ${{ matrix.variant.os }}
 
-      - run: pixi run -e test configure ${{ matrix.variant.cmake-preset }}
-      - run: pixi run -e test cpp-test
+      - run: pixi run -e dev cpp-test
 
       - name: Install nightly dependencies and run tests
         run: |
           pixi run -e test pip install --pre --index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple --extra-index-url https://pypi.org/simple numpy scipy h5py pandas xarray
-          pixi run -e test python -X PYTHONWARNDEFAULTENCODING -m pytest -n auto -v tests
-        env:
-          PYTHONPATH: ${{ github.workspace }}/install
-          JUPYTER_PLATFORM_DIRS: "1"
+          pixi run -e test test
