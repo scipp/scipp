@@ -26,7 +26,15 @@ jobs:
 
       - uses: ilammy/msvc-dev-cmd@v1 # Required to set up MSVC dev environment for Ninja builds.
 
+      # On Windows, only install the dev environment to avoid pixi-build-cmake
+      # cmd.exe line-length limit issue.
       - uses: prefix-dev/setup-pixi@v0.9.4
+        if: ${{ contains(matrix.variant.os, 'windows') }}
+        with:
+          environments: dev
+          cache: true
+      - uses: prefix-dev/setup-pixi@v0.9.4
+        if: ${{ !contains(matrix.variant.os, 'windows') }}
         with:
           environments: dev test
           cache: true
@@ -38,7 +46,14 @@ jobs:
 
       - run: pixi run -e dev cpp-test
 
-      - name: Install nightly dependencies and run tests
+      - name: Install nightly dependencies and run tests (Unix)
+        if: ${{ !contains(matrix.variant.os, 'windows') }}
         run: |
           pixi run -e test pip install --pre --index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple --extra-index-url https://pypi.org/simple numpy scipy h5py pandas xarray
           pixi run -e test test
+
+      - name: Install nightly dependencies and run tests (Windows)
+        if: ${{ contains(matrix.variant.os, 'windows') }}
+        run: |
+          pixi run -e dev pip install --pre --index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple --extra-index-url https://pypi.org/simple numpy scipy h5py pandas xarray
+          pixi run -e dev test

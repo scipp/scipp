@@ -59,6 +59,8 @@ JUPYTER_PLATFORM_DIRS = "1"
 # ---------------------------------------------------------------------------
 
 [feature.dev.dependencies]
+python = ">=3.11"
+numpy = ">=2"
 cmake = ">=3.28"
 ninja = "*"
 eigen = "3.4.*"
@@ -203,8 +205,10 @@ python = "3.14.*"
 # Default environment: includes all features for `pixi run <task>` convenience
 default = { features = ["test", "docs", "lint", "type-check", "py311"], solve-group = "default" }
 
-# Dev environment: manual cmake builds with incremental compilation
-dev = { features = ["dev", "test", "docs", "type-check", "py311"], solve-group = "default" }
+# Dev environment: manual cmake builds with incremental compilation.
+# Uses no-default-feature to avoid pixi-build-cmake (uses manual cmake + PYTHONPATH instead).
+# This also works around a Windows cmd.exe line-length limit in pixi-build-cmake's build_env.bat.
+dev = { features = ["dev", "test", "docs", "type-check", "py311"], no-default-feature = true, solve-group = "default" }
 
 # CI/test environments: pixi-build-cmake builds the package automatically
 test = { features = ["test", "py311"], solve-group = "default" }
