@@ -14,55 +14,54 @@ Standard setup
   git submodule init
   git submodule update
 
-  # Setup dev env
-  mamba env create -f docs/environments/developer.yml
-  conda activate scipp-dev
-  pre-commit install
-  pre-commit run --all-files
+  # Install pixi (if not already installed)
+  curl -fsSL https://pixi.sh/install.sh | bash
 
-  # Build, install, and run C++ tests
-  cmake --preset base
-  cmake --build --preset build
-  ctest --preset test
+  # Install pre-commit hooks
+  pixi run -e lint static
 
-  # Setup editable install and run Python tests
-  tox -e editable
-  conda develop src
-  python -m pytest
+  # Build and run tests
+  pixi run test
 
-You should now also be able to run ``python -c 'import scipp as sc'``.
+You should now also be able to run ``pixi run import-minimal``.
 
 Common tasks
 ~~~~~~~~~~~~
 
 All of the below assume that the standard setup outlined above was performed.
 
+Run the Python tests:
+
+.. code-block:: bash
+
+   pixi run test
+
 Build the docs:
 
 .. code-block:: bash
 
-   tox -e docs
+   pixi run docs
 
    # To clean and build all docs
+   pixi run docs-clean
 
-   tox -e docs-clean
-
-Update the pip requirements via ``pip-compile-multi``:
-
-.. code-block:: bash
-
-   tox -e deps
-
-Prepare a release (make sure to give the desired release instead):
+Run type checking:
 
 .. code-block:: bash
 
-   tox -e prepare-release -- 23.01.0
+   pixi run mypy
+
+Run pre-commit checks:
+
+.. code-block:: bash
+
+   pixi run static
 
 Overview
 --------
 
-We provide a Conda environment file with developer dependencies in our Git repository.
+We use `pixi <https://pixi.sh>`_ to manage all development dependencies and tasks.
+A single ``pixi.toml`` file defines all environments, dependencies, and tasks.
 See `Tooling <tooling.rst>`_ for compilers and other required tools.
 
 Getting the code
@@ -79,10 +78,6 @@ Clone the git repository (either via SSH or HTTPS) from `GitHub <https://github.
   git submodule init
   git submodule update
 
-  # Create Conda environment with dependencies and development tools
-  mamba env create -f docs/environments/developer.yml
-  conda activate scipp-dev
-
 Pre-commit Hooks
 ----------------
 
@@ -98,114 +93,38 @@ In the source directory run:
 Building Scipp
 --------------
 
-As big parts of Scipp are written in C++, we use CMake for building.
-This assumes you will end up with a directory structure similar to the following.
-If you want something different be sure to modify paths as appropriate:
+For most development tasks, pixi handles building automatically.
+When you run ``pixi run test`` or ``pixi run docs``, pixi-build-cmake builds the C++ extension
+and installs it as a conda package in the environment.
 
-.. code-block::
-
-  |-- /home/user/scipp (source code)
-  |   |-- build (build directory)
-  |   |-- install (Python library installation)
-  |   |-- ...
-  |-- ...
-
-To build and install the library:
+For **incremental C++ development** (editing C++ code and rebuilding quickly), use the ``dev`` environment:
 
 .. code-block:: bash
 
-  # Create build and library install directories
-  mkdir build
-  mkdir install
-  cd build
+  # Configure, build, and run C++ tests
+  pixi run -e dev cpp-test
 
-If you are running on Windows, you need to use a visual studio developer command prompt for the following steps. This can be opened manually from the start menu, or programmatically by calling the appropriate vcvars script, for example:
+  # Or step by step:
+  pixi run -e dev configure
+  pixi run -e dev build
 
-.. code-block:: bash
+The dev environment uses cmake presets (``ci-linux``, ``ci-macos``, ``ci-windows``) and installs
+into per-environment directories under ``install/``.
 
-  "C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvars64.bat"
-
-If you wish to build using the Visual Studio CMake generators instead, there is a ``windows-msbuild`` CMake preset for this purpose.
-
-To build a debug version of the library:
+To use the ``scipp`` Python module from a dev build:
 
 .. code-block:: bash
 
-  cmake \
-    -GNinja \
-    -DCMAKE_BUILD_TYPE=Debug \
-    -DPython_EXECUTABLE=$(command -v python3) \
-    -DCMAKE_INSTALL_PREFIX=../install \
-    -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
-    -DDYNAMIC_LIB=ON \
-    ..
+  pixi shell -e dev
+  python -c 'import scipp as sc'
 
-  # C++ unit tests
-  cmake --build . --target all-tests
+The dev environment sets ``PYTHONPATH`` to the install directory automatically.
 
-  # Benchmarks
-  cmake --build . --target all-benchmarks
-
-  # Install Python library
-  cmake --build . --target install
-
-Alternatively, to build a release version with all optimizations enabled:
+When making changes to the C++ side of Scipp, rebuild with:
 
 .. code-block:: bash
 
-  cmake \
-    -GNinja \
-    -DPython_EXECUTABLE=$(command -v python3) \
-    -DCMAKE_INSTALL_PREFIX=../install \
-    -DCMAKE_BUILD_TYPE=Release \
-    ..
-
-  cmake --build . --target all-tests
-  cmake --build . --target all-benchmarks
-  cmake --build . --target install
-
-
-To use the ``scipp`` Python module:
-
-.. code-block:: bash
-
-  conda develop /home/user/scipp/install
-
-In Python:
-
-.. code-block:: python
-
-  import scipp as sc
-
-Some developers may prefer an "editable" install, i.e., with changes to Python files in the ``src`` directly becoming visible without reinstalling.
-This is commonly done via ``pip install -e .``.
-However, Scipp uses ``scikit-build``, which currently does not fully support this directly.
-Therefore, we need to call ``cmake`` manually in this case and install into the Python source directory, or create symlinks.
-We have configured ``tox`` for this purpose:
-
-.. code-block:: bash
-
-  cmake --preset base
-  cmake --build --preset build
-  tox -e editable
-  conda develop src
-
-Here ``conda develop src`` can also be replaced by ``pip install -e .``.
-Above we used some of the ``cmake`` presets, but you may also call ``cmake`` without those for more control of the options.
-We can also use tox instead of the first two lines:
-
-.. code-block:: bash
-
-  tox -e lib
-  tox -e editable
-  conda develop src
-
-You can now use the editable install as usual, i.e., changes to Python files of Scipp are directly visible when importing Scipp, without the need for a new install.
-When making changes to the C++ side of Scipp, you will need to re-run the ``install`` target using ``cmake``, e.g.,
-
-.. code-block:: bash
-
-  cmake --build --preset build
+  pixi run -e dev build
 
 
 Additional build options
@@ -221,40 +140,25 @@ Additional build options
 Running the unit tests
 ----------------------
 
-After editing C++ code or tests, make sure to update the build/install:
+C++ tests (requires the ``dev`` environment):
 
 .. code-block:: bash
 
-  cmake --build --preset build
+  pixi run -e dev cpp-test
 
-Alternatively, the ``all-tests`` CMake target can be used to build all tests.
-
-There are two ways of running C++ tests.
-Executables for the unit tests can be found in the build directory as ``build/bin/scipp-XYZ-test``, where ``XYZ`` is the Scipp component under test (e.g. ``core``).
-These use ``google-test`` and provide full control over options, e.g., to filter tests:
+Python tests:
 
 .. code-block:: bash
 
-   ./build/bin/scipp-common-test
-   ./build/bin/scipp-core-test
-   ./build/bin/scipp-units-test
-   ./build/bin/scipp-variable-test
-   ./build/bin/scipp-dataset-test
+  pixi run test
 
-Alternatively, use ``ctest``:
+Multi-Python version testing:
 
 .. code-block:: bash
 
-  ctest --preset test
-
-If only Python code or tests have been updated, there is no need to rebuild or reinstall, provided that you use an editable install (using ``conda develop src`` as described earlier).
-
-To run the Python tests, run (in the top-level directory):
-
-.. code-block:: bash
-
-  python -m pytest tests
-
+  pixi run -e test-py312 test
+  pixi run -e test-py313 test
+  pixi run -e test-py314 test
 
 Building Documentation
 ----------------------
@@ -263,12 +167,11 @@ Run
 
 .. code-block:: bash
 
-  tox -e lib  # omit if using cmake, or install is up-to-date
-  tox -e docs
+  pixi run docs
 
 
 This will build the HTML documentation and put it in a folder named ``html``.
-If you want to build all docs after cleaning ``html`` and ``doctrees`` folders, please use ``tox -e docs-clean``.
+If you want to build all docs after cleaning ``html`` and ``doctrees`` folders, use ``pixi run docs-clean``.
 
 
 Using Scipp as a C++ library
