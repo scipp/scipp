@@ -58,6 +58,9 @@ The data types ``VariableView``, ``DataArrayView``, and ``DatasetView`` are used
 objects containing binned data. They cannot be used directly to create arrays of bins.
 )");
   PyDType.def(py::init([](const py::object &x) { return scipp_dtype(x); }))
+      .def("__copy__", [](const DType &self) { return self; })
+      .def("__deepcopy__",
+           [](const DType &self, const py::dict &) { return self; })
       .def("__eq__",
            [](const DType &self, const py::object &other) {
              return self == scipp_dtype(other);

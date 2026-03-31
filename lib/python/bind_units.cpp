@@ -168,6 +168,9 @@ void init_units(py::module &m) {
            [](const DefaultUnit &) { return "<automatically deduced unit>"; });
   py::class_<sc_units::Unit>(m, "Unit", "A physical unit.")
       .def(py::init<const std::string &>())
+      .def("__copy__", [](const sc_units::Unit &self) { return self; })
+      .def("__deepcopy__",
+           [](const sc_units::Unit &self, const py::dict &) { return self; })
       .def("__str__", [](const sc_units::Unit &u) { return u.name(); })
       .def("__repr__", repr)
       .def("_repr_html_", repr_html)
