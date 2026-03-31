@@ -102,14 +102,14 @@ def test_predefined_dtypes_are_read_only() -> None:
         sc.DType.int64 = sc.DType('str')
 
 
-def test_dtype_copy_returns_self() -> None:
+def test_dtype_copy() -> None:
     dtype = sc.DType.float64
     copied = copy.copy(dtype)
     assert copied is not dtype
     assert copied == dtype
 
 
-def test_dtype_deepcopy_returns_self() -> None:
+def test_dtype_deepcopy() -> None:
     dtype = sc.DType.float64
     copied = copy.deepcopy(dtype)
     assert copied is not dtype

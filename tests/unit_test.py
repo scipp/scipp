@@ -72,14 +72,14 @@ def test_unit_repr() -> None:
     )
 
 
-def test_unit_copy_returns_self() -> None:
+def test_unit_copy() -> None:
     unit = sc.Unit('m')
     copied = copy.copy(unit)
     assert copied is not unit
     assert copied == unit
 
 
-def test_unit_deepcopy_returns_self() -> None:
+def test_unit_deepcopy() -> None:
     unit = sc.Unit('m')
     copied = copy.deepcopy(unit)
     assert copied is not unit
