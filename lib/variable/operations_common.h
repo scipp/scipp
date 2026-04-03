@@ -24,8 +24,10 @@ template <class T> T normalize_impl(const T &numerator, T denominator) {
   const auto type =
       numerator.dtype() == dtype<float> ? dtype<float> : dtype<double>;
   denominator.setUnit(sc_units::one);
-  return numerator *
-         reciprocal(astype(denominator, type, CopyPolicy::TryAvoid));
+  auto div = reciprocal(astype(denominator, type, CopyPolicy::TryAvoid));
+  div.setUnit(numerator.unit() == sc_units::none ? sc_units::none
+                                                 : sc_units::one);
+  return numerator * div;
 }
 
 SCIPP_VARIABLE_EXPORT void expect_valid_bin_indices(const Variable &indices,
