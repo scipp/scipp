@@ -2,6 +2,8 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
+import copy
+
 import numpy as np
 import pytest
 
@@ -98,3 +100,17 @@ def test_str() -> None:
 def test_predefined_dtypes_are_read_only() -> None:
     with pytest.raises(AttributeError):
         sc.DType.int64 = sc.DType('str')
+
+
+def test_dtype_copy() -> None:
+    dtype = sc.DType.float64
+    copied = copy.copy(dtype)
+    assert copied is not dtype
+    assert copied == dtype
+
+
+def test_dtype_deepcopy() -> None:
+    dtype = sc.DType.float64
+    copied = copy.deepcopy(dtype)
+    assert copied is not dtype
+    assert copied == dtype
