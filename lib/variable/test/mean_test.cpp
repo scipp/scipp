@@ -162,3 +162,11 @@ TEST(MeanTest, vector) {
   EXPECT_EQ(mean(var, Dim::Y), meanY);
   EXPECT_EQ(nanmean(var, Dim::Y), meanY);
 }
+
+TEST(MeanTest, unit_none) {
+  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{5}, sc_units::none,
+                                        Values{1, 2, 3, 4, 5});
+  const auto expected = makeVariable<double>(sc_units::none, Values{3.0});
+  EXPECT_EQ(mean(var), expected);
+  EXPECT_EQ(mean(var, Dim::X), expected);
+}
