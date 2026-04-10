@@ -13,15 +13,11 @@ namespace scipp::core {
 /// The unit is determined by the Variable the time_point is stored in.
 class time_point {
 public:
-  // This check raises a false-positive for m_duration not being initialized:
-  // cppcheck-suppress uninitMemberVar
   time_point() = default;
 
-  explicit time_point(int64_t duration) noexcept : m_duration{duration} {}
+  explicit time_point(const int64_t duration) noexcept : m_duration{duration} {}
 
-  [[nodiscard]] int64_t time_since_epoch() const noexcept {
-    return m_duration;
-  };
+  [[nodiscard]] int64_t time_since_epoch() const noexcept { return m_duration; }
 
   friend time_point operator+(const time_point a, const int64_t b) {
     return time_point{a.time_since_epoch() + b};
@@ -40,12 +36,12 @@ public:
   time_point &operator+=(const int64_t duration) {
     m_duration += duration;
     return *this;
-  };
+  }
 
   time_point &operator-=(const int64_t duration) {
     m_duration -= duration;
     return *this;
-  };
+  }
 
   bool operator==(const time_point &time) const noexcept {
     return m_duration == time.time_since_epoch();
@@ -67,7 +63,7 @@ public:
   }
 
 private:
-  int64_t m_duration;
+  int64_t m_duration = 0;
 };
 
 } // namespace scipp::core
