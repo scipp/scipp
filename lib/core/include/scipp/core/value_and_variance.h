@@ -151,10 +151,13 @@ constexpr auto acos(const ValueAndVariance<T> a) noexcept {
 
 template <typename T>
 constexpr auto atan(const ValueAndVariance<T> a) noexcept {
+  using numeric::isnan;
   using std::atan;
-  const auto denominator = 1 - a.value * a.value;
-  return ValueAndVariance(atan(a.value),
-                          a.variance / (denominator * denominator));
+  const auto value = atan(a.value);
+  const auto denominator = 1 + a.value * a.value;
+  const auto variance = isnan(value) ? std::numeric_limits<T>::quiet_NaN()
+                                     : a.variance / (denominator * denominator);
+  return ValueAndVariance(value, variance);
 }
 
 template <typename T>
