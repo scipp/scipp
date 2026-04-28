@@ -62,7 +62,10 @@ constexpr auto expect_matching_keys = [](const auto &a, const auto &b) {
 
 auto make_fill(const DataArray &function,
                const std::optional<Variable> &fill_value) {
-  Variable fill = fill_value.value_or(zero_like(function.data()));
+  Variable fill =
+      fill_value
+          .or_else([&] { return std::optional{zero_like(function.data())}; })
+          .value();
   if (fill_value) {
     if (fill.dtype() != function.dtype())
       throw except::TypeError(
@@ -73,6 +76,15 @@ auto make_fill(const DataArray &function,
     fill.value<double>() = std::numeric_limits<double>::quiet_NaN();
   } else if (fill.dtype() == dtype<float>) {
     fill.value<float>() = std::numeric_limits<float>::quiet_NaN();
+  } else if (fill.dtype() == dtype<Eigen::Vector3d>) {
+    fill.value<Eigen::Vector3d>().fill(
+        std::numeric_limits<double>::quiet_NaN());
+  } else if (fill.dtype() == dtype<Eigen::Matrix3d>) {
+    fill.value<Eigen::Matrix3d>().fill(
+        std::numeric_limits<double>::quiet_NaN());
+  } else if (fill.dtype() == dtype<Eigen::Affine3d>) {
+    fill.value<Eigen::Affine3d>().matrix().fill(
+        std::numeric_limits<double>::quiet_NaN());
   }
   return fill;
 }
