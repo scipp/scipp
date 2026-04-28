@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 
 import scipp as sc
+import scipp.testing
 
 
 @pytest.mark.parametrize('mode', ['nearest', 'previous'])
@@ -34,6 +35,29 @@ def test_histogram(dtype: str) -> None:
     assert sc.identical(lut(var), expected)
     lut = sc.lookup(hist_lin, 'xx')
     assert sc.identical(lut(var), expected)
+
+
+@pytest.mark.parametrize(
+    ("dtype", "fill"),
+    [
+        ('bool', False),
+        ('int64', 0),
+        ('int32', 0),
+        ('float64', np.nan),
+        ('float32', np.nan),
+        (sc.DType.vector3, np.nan),
+    ],
+    ids=['bool', 'int64', 'int32', 'float64', 'float32', 'vector3'],
+)
+def test_histogram_default_fill_value(dtype: str | sc.DType, fill: Any) -> None:
+    x = sc.linspace(dim='xx', start=0, stop=1, num=4)
+    data = sc.zeros(dims=['xx'], shape=[3], dtype=dtype)
+    da = sc.DataArray(data=data, coords={'xx': x})
+
+    var = sc.array(dims=['event'], values=[-1, 2])
+    expected = sc.empty(dims=['event'], shape=[2], dtype=dtype)
+    expected.values[...] = fill  # sc.full does not work for vector3
+    sc.testing.assert_identical(sc.lookup(da)(var), expected)
 
 
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
@@ -65,6 +89,29 @@ def test_previous(dtype: str) -> None:
     expected = sc.array(dims=['event'], values=[0, 1, 0, 1, 0, 2, 0, 666], dtype=dtype)
     fill = sc.scalar(666, dtype=dtype)
     assert sc.identical(sc.lookup(da, mode='previous', fill_value=fill)(var), expected)
+
+
+def test_previous_vector() -> None:
+    x = sc.linspace(dim='xx', start=0, stop=1, num=4)
+    data = sc.vectors(dims=['xx'], values=[[0, 1, 0], [2, 2, 3], [-2, 3, 0], [1, 1, 1]])
+    da = sc.DataArray(data=data, coords={'xx': x})
+    var = sc.array(dims=['event'], values=[0.1, 0.4, 0.1, 0.9, 1.1, 0.2, -0.1])
+    expected = sc.vectors(
+        dims=['event'],
+        values=[
+            [0, 1, 0],
+            [2, 2, 3],
+            [0, 1, 0],
+            [-2, 3, 0],
+            [1, 1, 1],
+            [0, 1, 0],
+            [666, 555, -222],
+        ],
+    )
+    fill = sc.vector([666, 555, -222])
+    sc.testing.assert_identical(
+        sc.lookup(da, mode='previous', fill_value=fill)(var), expected
+    )
 
 
 @pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
