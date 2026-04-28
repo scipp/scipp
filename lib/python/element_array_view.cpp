@@ -40,12 +40,10 @@ void declare_ElementArrayView(py::module &m, const std::string &suffix) {
   view.def(
           "__repr__",
           [](const ElementArrayView<T> &self) { return array_to_string(self); })
-      .def(
-          "__getitem__",
-          [](const ElementArrayView<T> &self, const scipp::index i) {
-            return to_python_object(self[i]);
-          },
-          py::return_value_policy::reference)
+      .def("__getitem__",
+           [](const ElementArrayView<T> &self, const scipp::index i) {
+             return to_python_object(self[i]);
+           })
       .def("__len__", &ElementArrayView<T>::size)
       .def("__iter__", [](const ElementArrayView<T> &self) {
         return py::make_iterator(self.begin(), self.end());
