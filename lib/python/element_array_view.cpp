@@ -45,9 +45,12 @@ void declare_ElementArrayView(py::module &m, const std::string &suffix) {
              return to_python_object(self[i]);
            })
       .def("__len__", &ElementArrayView<T>::size)
-      .def("__iter__", [](const ElementArrayView<T> &self) {
-        return py::make_iterator(self.begin(), self.end());
-      });
+      .def(
+          "__iter__",
+          [](const ElementArrayView<T> &self) {
+            return py::make_iterator(self.begin(), self.end());
+          },
+          py::keep_alive<0, 1>());
   if constexpr (std::is_same_v<std::remove_const_t<std::remove_reference_t<T>>,
                                scipp::python::PyObject>) {
     view.def("__setitem__", [](ElementArrayView<T> &self,
