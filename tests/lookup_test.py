@@ -40,28 +40,23 @@ def test_histogram(dtype: str) -> None:
 @pytest.mark.parametrize(
     ("dtype", "fill"),
     [
-        ('float32', np.nan),
-        ('float64', np.nan),
+        ('bool', False),
         ('int64', 0),
         ('int32', 0),
-        ('bool', False),
+        ('float64', np.nan),
+        ('float32', np.nan),
+        (sc.DType.vector3, np.nan),
     ],
+    ids=['bool', 'int64', 'int32', 'float64', 'float32', 'vector3'],
 )
-def test_histogram_default_fill_value(dtype: str, fill: Any) -> None:
+def test_histogram_default_fill_value(dtype: str | sc.DType, fill: Any) -> None:
     x = sc.linspace(dim='xx', start=0, stop=1, num=4)
     data = sc.zeros(dims=['xx'], shape=[3], dtype=dtype)
     da = sc.DataArray(data=data, coords={'xx': x})
-    var = sc.array(dims=['event'], values=[-1, 2])
-    expected = sc.full(value=fill, dims=['event'], shape=[2], dtype=dtype)
-    sc.testing.assert_identical(sc.lookup(da)(var), expected)
 
-
-def test_histogram_default_fill_value_vector() -> None:
-    x = sc.linspace(dim='xx', start=0, stop=1, num=4)
-    data = sc.zeros(dims=['xx'], shape=[3], dtype=sc.DType.vector3)
-    da = sc.DataArray(data=data, coords={'xx': x})
     var = sc.array(dims=['event'], values=[-1, 2])
-    expected = sc.vectors(dims=['event'], values=[[np.nan] * 3, [np.nan] * 3])
+    expected = sc.empty(dims=['event'], shape=[2], dtype=dtype)
+    expected.values[...] = fill  # sc.full does not work for vector3
     sc.testing.assert_identical(sc.lookup(da)(var), expected)
 
 
