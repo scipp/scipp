@@ -24,6 +24,8 @@ from .cpp_classes import (
     VariancesError,
 )
 from .data_group import DataGroup, data_group_nary
+from .like import ones_like
+from .unary import isnan
 from .variable import array
 
 
@@ -99,7 +101,24 @@ def mean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     >>> result.variances is not None  # variance decreases by factor of N
     True
     """
-    return _apply_op(x, dim, _cpp.mean)  # type: ignore[return-value]
+    if isinstance(dim, str):
+        dim = [dim]
+    if (dim is None) or (len(list(dim)) < 2):
+        out = _apply_op(x, dim, _cpp.mean)
+    else:
+        # In the case of more than one dim passed, we cannot use _apply_op because it
+        # applies the reduction one dimension at a time. This can lead to wrong results
+        # when masks are present. A 2D mask on a 2D array removes masked values from
+        # the denominator of the mean, so each intermediate mean can be computed over
+        # a different number of elements. When we then average those means again over
+        # the next dimension, values are treated as equally weighted, which changes
+        # the result.
+        if isinstance(x, (Dataset, DataGroup)):
+            den = x.__class__({k: ones_like(v, unit="").sum(dim) for k, v in x.items()})
+        else:
+            den = ones_like(x, unit="" if x.unit is not None else None).sum(dim)
+        out = _apply_op(x, dim, _cpp.sum) / den  # type: ignore[operator]
+    return out  # type: ignore[return-value]
 
 
 def nanmean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
@@ -150,7 +169,31 @@ def nanmean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     >>> sc.nanmean(x)
     <scipp.Variable> ()    float64  [dimensionless]  ...nan
     """
-    return _apply_op(x, dim, _cpp.nanmean)  # type: ignore[return-value]
+    if isinstance(dim, str):
+        dim = [dim]
+    if (dim is None) or (len(list(dim)) < 2):
+        out = _apply_op(x, dim, _cpp.nanmean)
+    else:
+        # In the case of more than one dim passed, we cannot use _apply_op because it
+        # applies the reduction one dimension at a time. This can lead to wrong results
+        # when masks are present. A 2D mask on a 2D array removes masked values from
+        # the denominator of the mean, so each intermediate mean can be computed over
+        # a different number of elements. When we then average those means again over
+        # the next dimension, values are treated as equally weighted, which changes
+        # the result.
+        if isinstance(x, (Dataset, DataGroup)):
+            items = {}
+            for k, v in x.items():
+                div = (~isnan(v)).sum(dim)
+                div.unit = ""
+                items[k] = div
+            den = x.__class__(items)
+        else:
+            den = (~isnan(x)).sum(dim)
+            if x.unit is not None:
+                den.unit = ""
+        out = _apply_op(x, dim, _cpp.nansum) / den  # type: ignore[operator]
+    return out  # type: ignore[return-value]
 
 
 def median(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
