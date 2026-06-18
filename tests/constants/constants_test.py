@@ -10,10 +10,12 @@ import scipp.constants as ours
 
 
 def constant_names() -> Iterable[str]:
-    return filter(
-        lambda name: not name.startswith('_')
-        and isinstance(getattr(ours, name), sc.Variable),
-        dir(ours),
+    return list(
+        filter(
+            lambda name: not name.startswith('_')
+            and isinstance(getattr(ours, name), sc.Variable),
+            dir(ours),
+        )
     )
 
 
