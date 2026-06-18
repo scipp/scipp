@@ -15,7 +15,7 @@ _UNIT_STRINGS = ('s', 'ms', 'us', 'ns', 'D', 'M', 'Y')
 
 
 def _mismatch_pairs(units):
-    yield from filter(lambda t: t[0] != t[1], itertools.product(units, units))
+    return list(filter(lambda t: t[0] != t[1], itertools.product(units, units)))
 
 
 def _make_arrays(units, num_arrays, minsize=1):
