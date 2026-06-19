@@ -36,7 +36,7 @@ def zeros_like(
     dims: Sequence[str] | None | _NoArgProvided = _no_arg_provided,
     shape: Sequence[int] | None | _NoArgProvided = _no_arg_provided,
     sizes: dict[str, int] | None | _NoArgProvided = _no_arg_provided,
-    unit: Unit | str | DefaultUnit | _NoArgProvided = _no_arg_provided,
+    unit: Unit | str | DefaultUnit | None | _NoArgProvided = _no_arg_provided,
     dtype: DTypeLike | _NoArgProvided = _no_arg_provided,
     with_variances: bool | _NoArgProvided = _no_arg_provided,
 ) -> _T:
@@ -93,7 +93,7 @@ def ones_like(
     dims: Sequence[str] | None | _NoArgProvided = _no_arg_provided,
     shape: Sequence[int] | None | _NoArgProvided = _no_arg_provided,
     sizes: dict[str, int] | None | _NoArgProvided = _no_arg_provided,
-    unit: Unit | str | DefaultUnit | _NoArgProvided = _no_arg_provided,
+    unit: Unit | str | DefaultUnit | None | _NoArgProvided = _no_arg_provided,
     dtype: DTypeLike | _NoArgProvided = _no_arg_provided,
     with_variances: bool | _NoArgProvided = _no_arg_provided,
 ) -> _T:
@@ -150,7 +150,7 @@ def empty_like(
     dims: Sequence[str] | None | _NoArgProvided = _no_arg_provided,
     shape: Sequence[int] | None | _NoArgProvided = _no_arg_provided,
     sizes: dict[str, int] | None | _NoArgProvided = _no_arg_provided,
-    unit: Unit | str | DefaultUnit | _NoArgProvided = _no_arg_provided,
+    unit: Unit | str | DefaultUnit | None | _NoArgProvided = _no_arg_provided,
     dtype: DTypeLike | _NoArgProvided = _no_arg_provided,
     with_variances: bool | _NoArgProvided = _no_arg_provided,
 ) -> _T:
@@ -214,7 +214,7 @@ def full_like(
     dims: Sequence[str] | None | _NoArgProvided = _no_arg_provided,
     shape: Sequence[int] | None | _NoArgProvided = _no_arg_provided,
     sizes: dict[str, int] | None | _NoArgProvided = _no_arg_provided,
-    unit: Unit | str | DefaultUnit | _NoArgProvided = _no_arg_provided,
+    unit: Unit | str | DefaultUnit | None | _NoArgProvided = _no_arg_provided,
     dtype: DTypeLike | _NoArgProvided = _no_arg_provided,
 ) -> _T:
     """Return a new object with the same dims, shape, unit,
