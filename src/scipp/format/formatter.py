@@ -99,34 +99,34 @@ def _format_data_group_element(data: scipp.DataGroup[object]) -> str:
     return f'[{data}]'
 
 
-def _element_ranges(spec: FormatSpec) -> tuple[slice, slice]:
+def _element_ranges(spec: FormatSpec) -> tuple[range, range]:
     match spec.selection:
         case Selection.edges:
-            return slice(None, spec.length // 2), slice(-spec.length // 2, None)
+            return range(0, spec.length // 2), range(-spec.length // 2, 0)
         case Selection.begin:
-            return slice(None, spec.length), slice(0, 0)
+            return range(0, spec.length), range(0, 0)
         case Selection.end:
-            return slice(0, 0), slice(-spec.length, None)
+            return range(0, 0), range(-spec.length, 0)
 
 
 def _format_array_flat_regular(
     data: Sequence[Any], *, dtype: DType, spec: FormatSpec
 ) -> str:
-    def _format_all_in(d: Sequence[Any]) -> list[str]:
-        return [_format_element(e, dtype=dtype, spec=spec.nested) for e in d]
+    def _format_all_in(d: Sequence[Any], indices: range) -> list[str]:
+        return [_format_element(d[i], dtype=dtype, spec=spec.nested) for i in indices]
 
     if len(data) <= spec.length:
-        elements = _format_all_in(data)
+        elements = _format_all_in(data, range(len(data)))
     elif spec.length == 0:
         elements = ['...']
     else:
         left, right = _element_ranges(spec)
         elements = []
-        if left != slice(0, 0):
-            elements.extend(_format_all_in(data[left]))
+        if left != range(0, 0):
+            elements.extend(_format_all_in(data, left))
         elements.append('...')
-        if right != slice(0, 0):
-            elements.extend(_format_all_in(data[right]))
+        if right != range(0, 0):
+            elements.extend(_format_all_in(data, right))
     return f'[{", ".join(elements)}]'
 
 
