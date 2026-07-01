@@ -225,13 +225,13 @@ def test_datetime_slicing(unit) -> None:
 
 def test_datetime_operations() -> None:
     dt = np.datetime64('now', 'ns')
-    values = np.array([dt, dt + 123456789])
+    values = np.array([dt, dt + np.timedelta64(123456789, 'ns')])
     var = sc.Variable(dims=['x'], values=values)
 
     res = var + 1 * sc.Unit('ns')
     assert str(res.dtype) == 'datetime64'
     assert res.unit == sc.units.ns
-    np.testing.assert_array_equal(res.values, values + 1)
+    np.testing.assert_array_equal(res.values, values + np.timedelta64(1, 'ns'))
 
     shift = np.random.randint(0, 100, len(values))
     res = var - (var - sc.Variable(dims=['x'], values=shift, unit=sc.units.ns))
@@ -242,7 +242,7 @@ def test_datetime_operations() -> None:
 
 def test_datetime_operations_mismatch() -> None:
     dt = np.datetime64('now', 'ns')
-    values = np.array([dt, dt + 123456789])
+    values = np.array([dt, dt + np.timedelta64(123456789, 'ns')])
     var = sc.Variable(dims=['x'], values=values)
 
     with pytest.raises(RuntimeError):

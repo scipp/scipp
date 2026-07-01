@@ -897,7 +897,10 @@ def test_arange_datetime_from_int() -> None:
 
 def test_arange_datetime_from_np_datetime64() -> None:
     var = sc.arange(
-        't', np.datetime64('2022-08-02T11:18'), np.datetime64('2022-08-02T11:52'), 15
+        't',
+        np.datetime64('2022-08-02T11:18'),
+        np.datetime64('2022-08-02T11:52'),
+        np.timedelta64(15, 'm'),
     )
     expected = sc.datetimes(
         dims=['t'],
