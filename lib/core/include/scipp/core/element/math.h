@@ -72,7 +72,11 @@ constexpr auto cross = overloaded{
 constexpr auto reciprocal = overloaded{
     arg_list<double, float>,
     [](const auto &x) { return static_cast<std::decay_t<decltype(x)>>(1) / x; },
-    [](const sc_units::Unit &unit) { return sc_units::one / unit; }};
+    [](const sc_units::Unit &unit) {
+      if (!unit.has_value())
+        return sc_units::none;
+      return sc_units::one / unit;
+    }};
 
 constexpr auto exp =
     overloaded{arg_list<double, float>, dimensionless_unit_check_return,

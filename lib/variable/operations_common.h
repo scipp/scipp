@@ -23,16 +23,10 @@ template <class T> T normalize_impl(const T &numerator, T denominator) {
   // This approach would be wrong if we supported vectors of float
   const auto type =
       numerator.dtype() == dtype<float> ? dtype<float> : dtype<double>;
-  const auto original_unit = numerator.unit();
-  denominator.setUnit(sc_units::one);
-  auto num = numerator;
-  if (!original_unit.has_value())
-    // temporarily make the unit dimensionless for the math
-    num.setUnit(sc_units::one);
-  auto result =
-      num * reciprocal(astype(denominator, type, CopyPolicy::TryAvoid));
-  result.setUnit(original_unit); // restore None if needed
-  return result;
+  denominator.setUnit(numerator.unit().has_value() ? sc_units::one
+                                                   : sc_units::none);
+  return numerator *
+         reciprocal(astype(denominator, type, CopyPolicy::TryAvoid));
 }
 
 SCIPP_VARIABLE_EXPORT void expect_valid_bin_indices(const Variable &indices,
