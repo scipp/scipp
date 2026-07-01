@@ -4,195 +4,17 @@
 * tag with different style id.
 */
 
-.dg-root {
-  white-space: normal;
-  font-size: 14px;
-  min-width: 300px;
-  max-width: 1200px;
-}
-
-.dg-root * {
-  box-sizing: border-box;
-}
-
-.sc-header > label,
-.sc-header > label > div,
-.sc-header > label > div > ul {
-  display: inline;
-  margin-bottom: 0;
-}
-
-.dg-header-in {
-  display: none;
-}
-
-.dg-header-in + .sc-header > label:before {
-  display: inline-block;
-  font-size: 11px;
-  text-align: left;
-  content: '►';
-}
-
-.dg-header-in:checked + .sc-header > label:before {
-  content: '▼';
-}
-
-.dg-header-in ~ .dg-detail-box {
-  display: none;
-}
-
-.dg-header-in:checked ~ .dg-detail-box {
-  display: grid;
-}
-
-.dg-detail-box {
-  margin-top: 5px;
-  margin-bottom: 5px;
-  column-gap: 0 !important;
-  display: grid;
-  grid-template-columns:  max-content max-content max-content max-content max-content max-content max-content;
-  grid-template-areas:   "name        parent      object-type shape       dtype       unit        preview";
-}
-
-.dg-detail-box * {
-  margin-top: 0;
-  margin-bottom: 0;
-}
-
-.dg-detail-list {
-  display: contents;
-}
-
-.dg-detail-item {
-  display: contents;
-  list-style-type: none;
-}
-
-.dg-detail-item-in {
-  display: none;
-}
-
-.dg-detail-item-in + .dg-detail-name > label:before {
-  display: inline-block;
-  font-size: 14px;
-  text-align: left;
-  content: '►';
-}
-
-.dg-detail-item-in:checked + .dg-detail-name > label:before {
-  content: '▼';
-}
-
-.dg-detail-item div,
-.dg-detail-item span,
-.dg-detail-item label {
-  word-break: break-all;
-  min-width: 1em;
-  max-width: 20em;
-  width: 100%;
-}
-
-.dg-detail-item > div {
-  display: contents;
-}
-
-.dg-detail-item > div > div > div {
-  width: 100%;
-}
-
-.dg-detail-item:hover > div > div {
-  background-color: var(--sc-background-color2) !important;
-}
-
-.dg-detail-item > div span {
-  padding-left: 10px;
-  padding-right: 10px;
-}
-
-.dg-detail-item > div > div:first-of-type {
-  grid-column-start: 1;
-}
-
-.dg-detail-item-subsection {
-  display: none;
-}
-
-.dg-detail-item-in {
-  margin: 0;
-}
-
-.dg-detail-item-in:checked ~ .dg-detail-item-subsection {
-  display: contents;
-}
-
-.dg-detail-item .dg-detail-name {
-  grid-area: "name";
-  min-width: 5em;
-}
-
-.dg-detail-name {
-  padding-left: calc(var(--depth)*2em);
-}
-
-.dg-detail-name > label {
-  padding-left: 8px;
-}
-
-.dg-detail-name > label > span {
-  padding-left: 0.1em;
-}
-
-.dg-detail-item .dg-detail-parent {
-  grid-area: "parent";
-  text-align: right;
-}
-
-.dg-detail-item .dg-detail-objtype {
-  grid-area: "objtype";
-  text-align: left;
-}
-
-.dg-detail-item .dg-detail-shape {
-  max-width: 30em;
-  grid-area: "shape";
-  text-align: left;
-}
-
-.sc-header .dg-detail-shape {
-  margin-left: 1em;
-  text-align: left;
-}
-
-.dg-detail-item .dg-detail-dtype {
-  grid-area: "dtype";
-  text-align: left;
-}
-
-.dg-detail-item .dg-detail-unit {
-  grid-area: "unit";
-  text-align: center;
-}
-
-.dg-detail-item .dg-detail-preview {
-  grid-area: "preview";
-  min-width: 15em;
-  max-width: 100em !important;
-  text-align: left;
-}
-
-.dg-detail-preview .sc-preview span,
-.dg-detail-shape span {
-  padding: 0 !important;
-}
-
 /*
 Keep the DataGroup repr layout stable inside documentation themes that define
 generic ul, li, label, input, and span styles with higher specificity.
 */
 @scope (.dg-root) {
   :scope {
-    box-sizing: border-box !important;
     white-space: normal !important;
+    font-size: 14px;
+    min-width: 300px;
+    max-width: 1200px;
+    box-sizing: border-box !important;
   }
 
   :scope * {
@@ -206,15 +28,19 @@ generic ul, li, label, input, and span styles with higher specificity.
     margin-bottom: 0 !important;
   }
 
-  :scope input.dg-header-in,
-  :scope input.dg-detail-item-in {
+  :scope input.dg-header-in {
     display: none !important;
   }
 
-  :scope .dg-header-in + .sc-header > label:before,
-  :scope .dg-detail-item-in + .dg-detail-name > label:before {
+  :scope .dg-header-in + .sc-header > label:before {
     display: inline-block !important;
+    font-size: 11px;
     text-align: left !important;
+    content: '►';
+  }
+
+  :scope .dg-header-in:checked + .sc-header > label:before {
+    content: '▼';
   }
 
   :scope .dg-header-in ~ .dg-detail-box {
@@ -226,14 +52,14 @@ generic ul, li, label, input, and span styles with higher specificity.
   }
 
   :scope .dg-detail-box {
+    margin-top: 5px !important;
+    margin-bottom: 5px !important;
     column-gap: 0 !important;
     display: grid !important;
-    grid-template-areas: "name parent objtype shape dtype unit preview" !important;
     grid-template-columns:
       max-content max-content max-content max-content max-content max-content
       max-content !important;
-    margin-top: 5px !important;
-    margin-bottom: 5px !important;
+    grid-template-areas: "name parent objtype shape dtype unit preview" !important;
   }
 
   :scope .dg-detail-box * {
@@ -241,7 +67,13 @@ generic ul, li, label, input, and span styles with higher specificity.
     margin-bottom: 0 !important;
   }
 
-  :scope ul.dg-detail-list,
+  :scope ul.dg-detail-list {
+    display: contents !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+  }
+
   :scope li.dg-detail-item {
     display: contents !important;
     margin: 0 !important;
@@ -249,22 +81,41 @@ generic ul, li, label, input, and span styles with higher specificity.
     list-style: none !important;
   }
 
+  :scope input.dg-detail-item-in {
+    display: none !important;
+    margin: 0 !important;
+  }
+
+  :scope .dg-detail-item-in + .dg-detail-name > label:before {
+    display: inline-block !important;
+    font-size: 14px;
+    text-align: left !important;
+    content: '►';
+  }
+
+  :scope .dg-detail-item-in:checked + .dg-detail-name > label:before {
+    content: '▼';
+  }
+
   :scope .dg-detail-item div,
   :scope .dg-detail-item span,
   :scope .dg-detail-item label {
-    max-width: 20em !important;
-    min-width: 1em !important;
-    width: 100% !important;
     word-break: break-all !important;
+    min-width: 1em !important;
+    max-width: 20em !important;
+    width: 100% !important;
   }
 
-  :scope .dg-detail-item > div,
-  :scope .dg-detail-item-in:checked ~ .dg-detail-item-subsection {
+  :scope .dg-detail-item > div {
     display: contents !important;
   }
 
   :scope .dg-detail-item > div > div > div {
     width: 100% !important;
+  }
+
+  :scope .dg-detail-item:hover > div > div {
+    background-color: var(--sc-background-color2) !important;
   }
 
   :scope .dg-detail-item > div span {
@@ -281,6 +132,10 @@ generic ul, li, label, input, and span styles with higher specificity.
     margin: 0 !important;
     padding: 0 !important;
     list-style: none !important;
+  }
+
+  :scope .dg-detail-item-in:checked ~ .dg-detail-item-subsection {
+    display: contents !important;
   }
 
   :scope .dg-detail-item .dg-detail-name {
@@ -311,8 +166,8 @@ generic ul, li, label, input, and span styles with higher specificity.
   }
 
   :scope .dg-detail-item .dg-detail-shape {
-    grid-area: shape !important;
     max-width: 30em !important;
+    grid-area: shape !important;
     text-align: left !important;
   }
 
@@ -333,8 +188,8 @@ generic ul, li, label, input, and span styles with higher specificity.
 
   :scope .dg-detail-item .dg-detail-preview {
     grid-area: preview !important;
-    max-width: 100em !important;
     min-width: 15em !important;
+    max-width: 100em !important;
     text-align: left !important;
   }
 
