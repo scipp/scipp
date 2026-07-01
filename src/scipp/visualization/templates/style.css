@@ -340,7 +340,8 @@ dl.sc-attrs {
   grid-template-columns: 125px auto;
 }
 
-.sc-attrs dt, dd {
+.sc-attrs dt,
+.sc-attrs dd {
   padding: 0;
   margin: 0;
   float: left;
@@ -492,4 +493,295 @@ tr.sc-log-critical td.sc-log-level {
   text-align: right;
   white-space: pre-wrap;
   color: var(--sc-font-color3);
+}
+
+/*
+Component-scoped overrides for static HTML exports.
+
+Documentation themes often apply higher-specificity rules to generic elements
+such as ul, li, pre, label, and svg. These properties define the structure and
+collapsed state of the Scipp repr, so keep them protected within .sc-root.
+The unscoped rules above remain as a fallback for browsers without @scope.
+*/
+@scope (.sc-root) {
+  :scope ul.sc-sections {
+    display: grid !important;
+    grid-template-columns: 150px auto auto auto 1fr 20px 20px !important;
+    margin: 0 !important;
+    padding-left: 0 !important;
+    list-style: none !important;
+  }
+
+  :scope li.sc-section-item {
+    display: contents !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+  }
+
+  :scope .sc-section-item input,
+  :scope input.sc-section-summary-in,
+  :scope input.sc-array-in,
+  :scope input.sc-var-attrs-in,
+  :scope input.sc-var-data-in {
+    display: none !important;
+  }
+
+  :scope label.sc-section-summary {
+    grid-column: 1 !important;
+    margin: 0 !important;
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+
+  :scope .sc-section-summary > span {
+    display: inline-block !important;
+    padding-left: 0.5em !important;
+  }
+
+  :scope .sc-section-summary-in + label:before {
+    display: inline-block !important;
+    width: 15px !important;
+    text-align: center !important;
+  }
+
+  :scope .sc-section-summary-in:disabled + label:before {
+    display: none !important;
+  }
+
+  :scope .sc-section-summary-in:checked + label > span {
+    display: none !important;
+  }
+
+  :scope .sc-section-inline-details {
+    grid-column: 2 / 6 !important;
+    margin: 0 !important;
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+
+  :scope .sc-section-details {
+    display: none !important;
+    grid-column: 1 / -1 !important;
+    margin: 0 0 5px 0 !important;
+  }
+
+  :scope .sc-section-summary-in:checked ~ .sc-section-details {
+    display: contents !important;
+  }
+
+  :scope .sc-array-wrap {
+    display: grid !important;
+    grid-column: 1 / -1 !important;
+    grid-template-columns: 20px auto !important;
+  }
+
+  :scope .sc-array-wrap > label {
+    grid-column: 1 !important;
+  }
+
+  :scope .sc-array-preview,
+  :scope .sc-array-data {
+    grid-column: 2 !important;
+    padding: 0 5px !important;
+  }
+
+  :scope .sc-array-data,
+  :scope .sc-array-in:checked ~ .sc-array-preview {
+    display: none !important;
+  }
+
+  :scope .sc-array-in:checked ~ .sc-array-data,
+  :scope .sc-array-preview {
+    display: inline-block !important;
+  }
+
+  :scope ul.sc-dim-list {
+    display: inline-block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+  }
+
+  :scope ul.sc-dim-list > li {
+    display: inline-block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+  }
+
+  :scope .sc-dim-list li span,
+  :scope .sc-standalone-var-name > span span,
+  :scope .sc-var-name > span span {
+    padding: 0 !important;
+  }
+
+  :scope ul.sc-var-list,
+  :scope li.sc-var-item {
+    display: contents !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+  }
+
+  :scope .sc-var-name {
+    grid-column: 1 !important;
+  }
+
+  :scope .sc-var-dims {
+    grid-column: 2 !important;
+  }
+
+  :scope .sc-var-dtype {
+    grid-column: 3 !important;
+    text-align: right !important;
+  }
+
+  :scope .sc-var-unit {
+    grid-column: 4 !important;
+    max-width: 50pt !important;
+    text-align: left !important;
+  }
+
+  :scope .sc-value-preview {
+    grid-column: 5 !important;
+  }
+
+  :scope .sc-var-preview-variances {
+    text-align: right !important;
+  }
+
+  :scope .sc-var-item > div,
+  :scope .sc-var-item label,
+  :scope .sc-var-item > .sc-var-name span,
+  :scope .sc-section-summary,
+  :scope .sc-section-inline-details {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  :scope .sc-var-name,
+  :scope .sc-var-dims,
+  :scope .sc-var-dtype,
+  :scope .sc-var-unit,
+  :scope .sc-preview,
+  :scope .sc-attrs dt {
+    overflow: hidden !important;
+    padding-right: 10px !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  :scope .sc-var-name:hover,
+  :scope .sc-var-dims:hover,
+  :scope .sc-var-dtype:hover,
+  :scope .sc-var-unit:hover,
+  :scope .sc-attrs dt:hover {
+    overflow: visible !important;
+    width: auto !important;
+    z-index: 1 !important;
+  }
+
+  :scope .sc-var-attrs {
+    display: block !important;
+  }
+
+  :scope pre.sc-var-data {
+    display: none !important;
+    grid-column: 1 / -1 !important;
+    margin: 0 !important;
+    padding-left: 25px !important;
+    padding-bottom: 5px !important;
+    white-space: pre-wrap !important;
+  }
+
+  :scope .sc-var-attrs-in:checked ~ .sc-var-attrs {
+    display: none !important;
+  }
+
+  :scope .sc-var-data-in:checked ~ pre.sc-var-data {
+    display: block !important;
+  }
+
+  :scope .sc-var-data > table {
+    float: right !important;
+  }
+
+  :scope .sc-var-name span,
+  :scope .sc-var-data {
+    padding-left: 25px !important;
+  }
+
+  :scope dl.sc-attrs {
+    display: grid !important;
+    grid-template-columns: 125px auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  :scope .sc-attrs dt,
+  :scope .sc-attrs dd {
+    float: left !important;
+    margin: 0 !important;
+    padding: 0 10px 0 0 !important;
+    width: auto !important;
+  }
+
+  :scope .sc-attrs dt {
+    grid-column: 1 !important;
+  }
+
+  :scope .sc-attrs dd {
+    grid-column: 2 !important;
+    white-space: pre-wrap !important;
+    word-break: break-all !important;
+  }
+
+  :scope .sc-icon-database,
+  :scope .sc-icon-file-text2 {
+    display: inline-block !important;
+    height: 1.5em !important;
+    max-width: none !important;
+    vertical-align: middle !important;
+    width: 1em !important;
+  }
+
+  :scope label.sc-hide-icon svg {
+    opacity: 0 !important;
+  }
+
+  :scope .sc-standalone-var-name {
+    grid-column: 1 / 3 !important;
+  }
+
+  :scope .sc-standalone-var-name span {
+    padding-left: 25px !important;
+    padding-right: 10px !important;
+  }
+
+  :scope .sc-log-wrap {
+    display: flex !important;
+    flex-direction: column-reverse !important;
+    overflow-y: scroll !important;
+  }
+
+  :scope table.sc-log {
+    border-collapse: collapse !important;
+    table-layout: auto !important;
+  }
+
+  :scope .sc-log-message {
+    white-space: pre-wrap !important;
+    width: 100% !important;
+  }
+
+  :scope .sc-log-html-payload {
+    white-space: normal !important;
+  }
+
+  :scope .sc-log-name {
+    padding-right: 0.5em !important;
+    text-align: right !important;
+    white-space: pre-wrap !important;
+  }
 }
