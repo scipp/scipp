@@ -164,7 +164,8 @@ def _weighted_mean(
     When ``x`` has variances and ``weights`` does not, the variances of the
     result are the propagated ("internal") variances of the weighted mean.
     """
-    return (weights * x).sum(dim) / weights.sum(dim)
+    dims = dim if dim is None or isinstance(dim, str) else tuple(dim)
+    return (weights * x).sum(dims) / weights.sum(dims)
 
 
 def inverse_variance_mean(
