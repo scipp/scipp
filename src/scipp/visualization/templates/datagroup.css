@@ -17,41 +17,41 @@ generic ul, li, label, input, and span styles with higher specificity.
     box-sizing: border-box !important;
   }
 
-  :scope * {
+  * {
     box-sizing: border-box !important;
   }
 
-  :scope .sc-header > label,
-  :scope .sc-header > label > div,
-  :scope .sc-header > label > div > ul {
+  .sc-header > label,
+  .sc-header > label > div,
+  .sc-header > label > div > ul {
     display: inline !important;
     margin-bottom: 0 !important;
   }
 
-  :scope input.dg-header-in {
+  input.dg-header-in {
     display: none !important;
   }
 
-  :scope .dg-header-in + .sc-header > label:before {
+  .dg-header-in + .sc-header > label:before {
     display: inline-block !important;
     font-size: 11px;
     text-align: left !important;
     content: '►';
   }
 
-  :scope .dg-header-in:checked + .sc-header > label:before {
+  .dg-header-in:checked + .sc-header > label:before {
     content: '▼';
   }
 
-  :scope .dg-header-in ~ .dg-detail-box {
+  .dg-header-in ~ .dg-detail-box {
     display: none !important;
   }
 
-  :scope .dg-header-in:checked ~ .dg-detail-box {
+  .dg-header-in:checked ~ .dg-detail-box {
     display: grid !important;
   }
 
-  :scope .dg-detail-box {
+  .dg-detail-box {
     margin-top: 5px !important;
     margin-bottom: 5px !important;
     column-gap: 0 !important;
@@ -59,142 +59,134 @@ generic ul, li, label, input, and span styles with higher specificity.
     grid-template-columns:
       max-content max-content max-content max-content max-content max-content
       max-content !important;
-    grid-template-areas: "name parent objtype shape dtype unit preview" !important;
   }
 
-  :scope .dg-detail-box * {
+  .dg-detail-box * {
     margin-top: 0 !important;
     margin-bottom: 0 !important;
   }
 
-  :scope ul.dg-detail-list {
+  ul.dg-detail-list {
     display: contents !important;
     margin: 0 !important;
     padding: 0 !important;
     list-style: none !important;
   }
 
-  :scope li.dg-detail-item {
+  li.dg-detail-item {
     display: contents !important;
     margin: 0 !important;
     padding: 0 !important;
     list-style: none !important;
   }
 
-  :scope input.dg-detail-item-in {
+  input.dg-detail-item-in {
     display: none !important;
     margin: 0 !important;
   }
 
-  :scope .dg-detail-item-in + .dg-detail-name > label:before {
+  .dg-detail-item-in + .dg-detail-name > label:before {
     display: inline-block !important;
     font-size: 14px;
     text-align: left !important;
     content: '►';
   }
 
-  :scope .dg-detail-item-in:checked + .dg-detail-name > label:before {
+  .dg-detail-item-in:checked + .dg-detail-name > label:before {
     content: '▼';
   }
 
-  :scope .dg-detail-item div,
-  :scope .dg-detail-item span,
-  :scope .dg-detail-item label {
+  .dg-detail-item div,
+  .dg-detail-item span,
+  .dg-detail-item label {
     word-break: break-all !important;
     min-width: 1em !important;
     max-width: 20em !important;
     width: 100% !important;
   }
 
-  :scope .dg-detail-item > div {
+  .dg-detail-item > div {
     display: contents !important;
   }
 
-  :scope .dg-detail-item > div > div > div {
+  .dg-detail-item > div > div > div {
     width: 100% !important;
   }
 
-  :scope .dg-detail-item:hover > div > div {
+  .dg-detail-item:hover > div > div {
     background-color: var(--sc-background-color2) !important;
   }
 
-  :scope .dg-detail-item > div span {
+  .dg-detail-item > div span {
     padding-left: 10px !important;
     padding-right: 10px !important;
   }
 
-  :scope .dg-detail-item > div > div:first-of-type {
+  .dg-detail-item > div > div:first-of-type {
     grid-column-start: 1 !important;
   }
 
-  :scope ul.dg-detail-item-subsection {
+  ul.dg-detail-item-subsection {
     display: none !important;
     margin: 0 !important;
     padding: 0 !important;
     list-style: none !important;
   }
 
-  :scope .dg-detail-item-in:checked ~ .dg-detail-item-subsection {
+  .dg-detail-item-in:checked ~ .dg-detail-item-subsection {
     display: contents !important;
   }
 
-  :scope .dg-detail-item .dg-detail-name {
-    grid-area: name !important;
+  .dg-detail-item .dg-detail-name {
     min-width: 5em !important;
   }
 
-  :scope .dg-detail-name {
+  .dg-detail-name {
     padding-left: calc(var(--depth) * 2em) !important;
   }
 
-  :scope .dg-detail-name > label {
+  .dg-detail-name > label {
     padding-left: 8px !important;
   }
 
-  :scope .dg-detail-name > label > span {
+  .dg-detail-name > label > span {
     padding-left: 0.1em !important;
   }
 
-  :scope .dg-detail-item .dg-detail-parent {
-    grid-area: parent !important;
+  .dg-detail-item .dg-detail-parent {
     text-align: right !important;
   }
 
-  :scope .dg-detail-item .dg-detail-objtype {
-    grid-area: objtype !important;
+  .dg-detail-item .dg-detail-objtype {
     text-align: left !important;
   }
 
-  :scope .dg-detail-item .dg-detail-shape {
+  .dg-detail-item .dg-detail-shape {
     max-width: 30em !important;
-    grid-area: shape !important;
     text-align: left !important;
   }
 
-  :scope .sc-header .dg-detail-shape {
+  .sc-header .dg-detail-shape {
     margin-left: 1em !important;
     text-align: left !important;
   }
 
-  :scope .dg-detail-item .dg-detail-dtype {
-    grid-area: dtype !important;
+  .dg-detail-item .dg-detail-dtype {
     text-align: left !important;
   }
 
-  :scope .dg-detail-item .dg-detail-unit {
-    grid-area: unit !important;
+  .dg-detail-item .dg-detail-unit {
     text-align: center !important;
   }
 
-  :scope .dg-detail-item .dg-detail-preview {
-    grid-area: preview !important;
+  .dg-detail-item .dg-detail-preview {
     min-width: 15em !important;
     max-width: 100em !important;
     text-align: left !important;
   }
 
-  :scope .dg-detail-preview .sc-preview span,
-  :scope .dg-detail-shape span {
+  .dg-detail-preview .sc-preview span,
+  .dg-detail-shape span {
     padding: 0 !important;
   }
 }

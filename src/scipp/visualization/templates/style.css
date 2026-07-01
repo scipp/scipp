@@ -35,89 +35,88 @@ limited to structural properties that must not be overwritten by the host page.
 */
 @scope (.sc-root) {
   :scope.sc-wrap,
-  :scope .sc-wrap {
+  .sc-wrap {
     font-size: 14px;
     min-width: 300px;
     max-width: 800px;
   }
 
   /* The CSS styling for the inline attributes table */
-  :scope .sc-var-attrs .sc-wrap {
+  .sc-var-attrs .sc-wrap {
     padding-left: 3em !important;
   }
 
-  :scope .sc-header {
+  .sc-header {
     padding-top: 6px !important;
     padding-bottom: 6px !important;
     margin-bottom: 4px !important;
     border-bottom: solid 1px #ddd;
   }
 
-  :scope .sc-header > div,
-  :scope .sc-header > ul {
+  .sc-header > div,
+  .sc-header > ul {
     display: inline !important;
     margin-top: 0 !important;
     margin-bottom: 0 !important;
   }
 
-  :scope .sc-obj-type,
-  :scope .sc-array-name {
+  .sc-obj-type,
+  .sc-array-name {
     margin-left: 2px !important;
     margin-right: 10px !important;
   }
 
-  :scope .sc-obj-type {
+  .sc-obj-type {
     color: var(--sc-font-color1);
   }
 
-  :scope .sc-underlying-size {
+  .sc-underlying-size {
     color: var(--sc-font-color2);
   }
 
-  :scope ul.sc-sections {
+  ul.sc-sections {
     padding-left: 0 !important;
-    margin: 0 !important;
     list-style: none !important;
     display: grid !important;
     grid-template-columns: 150px auto auto auto 1fr 20px 20px !important;
   }
 
-  :scope li.sc-section-item {
+  li.sc-section-item {
     display: contents !important;
     padding: 0 !important;
     margin: 0 !important;
     list-style: none !important;
   }
 
-  :scope .sc-section-item input {
+  .sc-section-item input {
     display: none !important;
   }
 
-  :scope .sc-section-item input:enabled + label {
+  .sc-section-item input:enabled + label {
     cursor: pointer;
     color: var(--sc-font-color1);
   }
 
-  :scope .sc-section-item input:enabled + label:hover {
+  .sc-section-item input:enabled + label:hover {
     color: var(--sc-font-color0);
   }
 
-  :scope label.sc-section-summary {
+  label.sc-section-summary {
     grid-column: 1 !important;
     font-weight: 500;
     margin: 0 !important;
   }
 
-  :scope .sc-section-summary > span {
+  .sc-section-summary > span {
     display: inline-block !important;
     padding-left: 0.5em !important;
   }
 
-  :scope .sc-section-summary-in:disabled + label {
+  .sc-section-summary-in:disabled + label {
     color: var(--sc-font-color1);
   }
 
-  :scope .sc-section-summary-in + label:before {
+  .sc-section-summary-in + label:before {
     display: inline-block !important;
     content: '►';
     font-size: 11px;
@@ -125,93 +124,93 @@ limited to structural properties that must not be overwritten by the host page.
     text-align: center !important;
   }
 
-  :scope .sc-section-summary-in:disabled + label:before {
+  .sc-section-summary-in:disabled + label:before {
     display: none !important;
   }
 
-  :scope .sc-section-summary-in:checked + label:before {
+  .sc-section-summary-in:checked + label:before {
     content: '▼';
   }
 
-  :scope .sc-section-summary-in:checked + label > span {
+  .sc-section-summary-in:checked + label > span {
     display: none !important;
   }
 
-  :scope .sc-section-summary,
-  :scope .sc-section-inline-details {
+  .sc-section-summary,
+  .sc-section-inline-details {
     padding-top: 4px !important;
     padding-bottom: 4px !important;
   }
 
-  :scope .sc-section-inline-details {
+  .sc-section-inline-details {
     grid-column: 2 / 6 !important;
     margin: 0 !important;
   }
 
-  :scope .sc-section-details {
+  .sc-section-details {
     display: none !important;
     grid-column: 1 / -1 !important;
     margin: 0 0 5px 0 !important;
   }
 
-  :scope .sc-section-summary-in:checked ~ .sc-section-details {
+  .sc-section-summary-in:checked ~ .sc-section-details {
     display: contents !important;
   }
 
-  :scope .sc-array-wrap {
+  .sc-array-wrap {
     grid-column: 1 / -1 !important;
     display: grid !important;
     grid-template-columns: 20px auto !important;
   }
 
-  :scope .sc-array-wrap > label {
+  .sc-array-wrap > label {
     grid-column: 1 !important;
     vertical-align: top !important;
   }
 
-  :scope .sc-preview {
+  .sc-preview {
     color: var(--sc-font-color2);
   }
 
-  :scope .sc-array-preview,
-  :scope .sc-array-data {
+  .sc-array-preview,
+  .sc-array-data {
     padding: 0 5px !important;
     grid-column: 2 !important;
   }
 
-  :scope .sc-array-data,
-  :scope .sc-array-in:checked ~ .sc-array-preview {
+  .sc-array-data,
+  .sc-array-in:checked ~ .sc-array-preview {
     display: none !important;
   }
 
-  :scope .sc-array-in:checked ~ .sc-array-data,
-  :scope .sc-array-preview {
+  .sc-array-in:checked ~ .sc-array-data,
+  .sc-array-preview {
     display: inline-block !important;
   }
 
-  :scope ul.sc-dim-list {
+  ul.sc-dim-list {
     display: inline-block !important;
     list-style: none !important;
     padding: 0 !important;
     margin: 0 !important;
   }
 
-  :scope ul.sc-dim-list > li {
+  ul.sc-dim-list > li {
     display: inline-block !important;
     padding: 0 !important;
     margin: 0 !important;
     list-style: none !important;
   }
 
-  :scope .sc-dim-list:before {
+  .sc-dim-list:before {
     content: '(';
   }
 
-  :scope .sc-dim-list:after {
+  .sc-dim-list:after {
     content: ')';
   }
 
-  :scope .sc-dim-list li:not(:last-child):after {
+  .sc-dim-list li:not(:last-child):after {
     content: ',';
     padding-right: 5px !important;
   }
@@ -220,56 +219,56 @@ limited to structural properties that must not be overwritten by the host page.
   This selector is for avoiding unexpected extra padding
   caused by <span> tag wrapping around the dollar-sign in the Jupyter notebook.
   */
-  :scope .sc-dim-list li span,
-  :scope .sc-standalone-var-name > span span,
-  :scope .sc-var-name > span span {
+  .sc-dim-list li span,
+  .sc-standalone-var-name > span span,
+  .sc-var-name > span span {
     padding: 0 !important;
   }
 
-  :scope .sc-aligned {
+  .sc-aligned {
     font-weight: bold;
   }
 
-  :scope ul.sc-var-list,
-  :scope li.sc-var-item {
+  ul.sc-var-list,
+  li.sc-var-item {
     display: contents !important;
     padding: 0 !important;
     margin: 0 !important;
     list-style: none !important;
   }
 
-  :scope .sc-var-item > div,
-  :scope .sc-var-item label,
-  :scope .sc-var-item > .sc-var-name span {
+  .sc-var-item > div,
+  .sc-var-item label,
+  .sc-var-item > .sc-var-name span {
     background-color: var(--sc-background-color1);
     margin-bottom: 0 !important;
   }
 
-  :scope .sc-var-item > .sc-var-name:hover span {
+  .sc-var-item > .sc-var-name:hover span {
     padding-right: 5px !important;
   }
 
-  :scope .sc-var-list > li:nth-child(odd) > div,
-  :scope .sc-var-list > li:nth-child(odd) > label,
-  :scope .sc-var-list > li:nth-child(odd) > .sc-var-name span {
+  .sc-var-list > li:nth-child(odd) > div,
+  .sc-var-list > li:nth-child(odd) > label,
+  .sc-var-list > li:nth-child(odd) > .sc-var-name span {
     background-color: var(--sc-background-color2);
   }
 
-  :scope .sc-var-name {
+  .sc-var-name {
     grid-column: 1 !important;
   }
 
-  :scope .sc-var-dims {
+  .sc-var-dims {
     grid-column: 2 !important;
   }
 
-  :scope .sc-var-dtype {
+  .sc-var-dtype {
     grid-column: 3 !important;
     text-align: right !important;
     color: var(--sc-font-color2);
   }
 
-  :scope .sc-var-unit {
+  .sc-var-unit {
     grid-column: 4 !important;
     text-align: left !important;
     color: var(--sc-font-color1);
@@ -277,115 +276,115 @@ limited to structural properties that must not be overwritten by the host page.
     text-overflow: ellipsis;
   }
 
-  :scope .sc-value-preview {
+  .sc-value-preview {
     grid-column: 5 !important;
   }
 
-  :scope .sc-var-preview-variances {
+  .sc-var-preview-variances {
     text-align: right !important;
   }
 
-  :scope .sc-sections .sc-section-item .sc-section-summary,
-  :scope .sc-sections .sc-section-item .sc-section-inline-details,
-  :scope .sc-section-item .sc-var-list .sc-var-item > div,
-  :scope .sc-section-item .sc-var-list .sc-var-item > label,
-  :scope .sc-section-details .sc-var-list .sc-var-item > div,
-  :scope .sc-section-details .sc-var-list .sc-var-item > label {
+  .sc-sections .sc-section-item .sc-section-summary,
+  .sc-sections .sc-section-item .sc-section-inline-details,
+  .sc-section-item .sc-var-list .sc-var-item > div,
+  .sc-section-item .sc-var-list .sc-var-item > label,
+  .sc-section-details .sc-var-list .sc-var-item > div,
+  .sc-section-details .sc-var-list .sc-var-item > label {
     margin-top: 0 !important;
     margin-bottom: 0 !important;
   }
 
-  :scope .sc-var-name,
-  :scope .sc-var-dims,
-  :scope .sc-var-dtype,
-  :scope .sc-var-unit,
-  :scope .sc-preview,
-  :scope .sc-attrs dt {
+  .sc-var-name,
+  .sc-var-dims,
+  .sc-var-dtype,
+  .sc-var-unit,
+  .sc-preview,
+  .sc-attrs dt {
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     padding-right: 10px !important;
   }
 
-  :scope .sc-var-name:hover,
-  :scope .sc-var-dims:hover,
-  :scope .sc-var-dtype:hover,
-  :scope .sc-var-unit:hover,
-  :scope .sc-attrs dt:hover {
+  .sc-var-name:hover,
+  .sc-var-dims:hover,
+  .sc-var-dtype:hover,
+  .sc-var-unit:hover,
+  .sc-attrs dt:hover {
     overflow: visible !important;
     width: auto !important;
     z-index: 1 !important;
   }
 
-  :scope .sc-var-attrs {
+  .sc-var-attrs {
     display: block !important;
   }
 
-  :scope pre.sc-var-data {
+  pre.sc-var-data {
     display: none !important;
   }
 
-  :scope .sc-var-attrs,
-  :scope pre.sc-var-data {
+  .sc-var-attrs,
+  pre.sc-var-data {
     background-color: var(--sc-background-color0) !important;
     padding-bottom: 5px !important;
   }
 
-  :scope .sc-var-attrs-in:checked ~ .sc-var-attrs {
+  .sc-var-attrs-in:checked ~ .sc-var-attrs {
     display: none !important;
   }
 
-  :scope .sc-var-data-in:checked ~ pre.sc-var-data {
+  .sc-var-data-in:checked ~ pre.sc-var-data {
     display: block !important;
   }
 
-  :scope .sc-var-data > table {
+  .sc-var-data > table {
     float: right !important;
   }
 
-  :scope .sc-var-name span,
-  :scope pre.sc-var-data {
+  .sc-var-name span,
+  pre.sc-var-data {
     padding-left: 25px !important;
   }
 
-  :scope .sc-var-attrs,
-  :scope pre.sc-var-data {
+  .sc-var-attrs,
+  pre.sc-var-data {
     grid-column: 1 / -1 !important;
   }
 
-  :scope dl.sc-attrs {
+  dl.sc-attrs {
     padding: 0 !important;
     margin: 0 !important;
     display: grid !important;
     grid-template-columns: 125px auto !important;
   }
 
-  :scope .sc-attrs dt,
-  :scope .sc-attrs dd {
+  .sc-attrs dt,
+  .sc-attrs dd {
     padding: 0 10px 0 0 !important;
     margin: 0 !important;
     float: left !important;
     width: auto !important;
   }
 
-  :scope .sc-attrs dt {
+  .sc-attrs dt {
     font-weight: normal;
     grid-column: 1 !important;
   }
 
-  :scope .sc-attrs dt:hover span {
+  .sc-attrs dt:hover span {
     display: inline-block !important;
     padding-right: 10px !important;
   }
 
-  :scope .sc-attrs dd {
+  .sc-attrs dd {
     grid-column: 2 !important;
     white-space: pre-wrap !important;
     word-break: break-all !important;
   }
 
-  :scope .sc-icon-database,
-  :scope .sc-icon-file-text2 {
+  .sc-icon-database,
+  .sc-icon-file-text2 {
     display: inline-block !important;
     vertical-align: middle !important;
     width: 1em !important;
@@ -396,25 +395,25 @@ limited to structural properties that must not be overwritten by the host page.
     fill: currentColor;
   }
 
-  :scope label.sc-hide-icon svg {
+  label.sc-hide-icon svg {
     opacity: 0 !important;
   }
 
-  :scope .sc-standalone-var-name {
+  .sc-standalone-var-name {
     grid-column: 1 / 3 !important;
   }
 
-  :scope .sc-standalone-var-name span {
+  .sc-standalone-var-name span {
     padding-left: 25px !important;
     padding-right: 10px !important;
   }
 
-  :scope .sc-title {
+  .sc-title {
     font-weight: bold;
     font-size: 1.5em;
   }
 
-  :scope .sc-subtitle {
+  .sc-subtitle {
     font-weight: normal;
     font-style: italic;
     text-align: left !important;
@@ -422,16 +421,16 @@ limited to structural properties that must not be overwritten by the host page.
     padding: 1px !important;
   }
 
-  :scope .sc-label {
+  .sc-label {
     fill: var(--sc-font-color0, #444444);
     text-anchor: middle;
   }
 
-  :scope .sc-name {
+  .sc-name {
     fill: var(--sc-font-color0, #111111);
   }
 
-  :scope .sc-inset-line {
+  .sc-inset-line {
     stroke: var(--sc-font-color1);
     stroke-width: 0.05;
     stroke-dasharray: 0.2, 0.2;
