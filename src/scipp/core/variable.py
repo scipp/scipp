@@ -791,7 +791,7 @@ def arange(
     dim: str,
     start: NumberOrVar | _np.datetime64 | str,
     stop: NumberOrVar | _np.datetime64 | str | None = None,
-    step: NumberOrVar | None = None,
+    step: NumberOrVar | _np.timedelta64 | None = None,
     *,
     unit: Unit | str | DefaultUnit | None = default_unit,
     dtype: DTypeLike | None = None,

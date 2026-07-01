@@ -10,7 +10,6 @@ dependencies:
   - graphviz=14.1.1
   - ninja=1.13.2
   - pandoc=3.8.3
-  - plopp=25.11.0
   - tbb=2022.3.0
   - tbb-devel=2022.3.0
   - tox=4.34.1
