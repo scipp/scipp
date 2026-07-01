@@ -126,6 +126,7 @@ from .core import (
 from .core import (
     mean,
     nanmean,
+    inverse_variance_mean,
     median,
     nanmedian,
     std,
@@ -223,6 +224,7 @@ for _cls in (Variable, DataArray):
             'floor',
             'ceil',
             'round',
+            'inverse_variance_mean',
         ),
     )
     _binding.bind_function_as_method(cls=_cls, name='to', func=to, abbreviate_doc=False)
@@ -350,6 +352,7 @@ __all__ = [
     'histogram',
     'identical',
     'index',
+    'inverse_variance_mean',
     'io',
     'isclose',
     'isfinite',
