@@ -78,8 +78,10 @@ constexpr auto pow(const ValueAndVariance<B> base, const E exponent) noexcept {
 
 template <class T> constexpr auto sqrt(const ValueAndVariance<T> a) noexcept {
   using std::sqrt;
-  return ValueAndVariance{sqrt(a.value),
-                          static_cast<T>(0.25 * (a.variance / a.value))};
+  // Avoid 0/0 but allow x/0=inf as the limiting case for a.value -> 0
+  const auto variance =
+      a.variance == 0 ? 0 : static_cast<T>(0.25 * (a.variance / a.value));
+  return ValueAndVariance{sqrt(a.value), variance};
 }
 
 template <class T> constexpr auto abs(const ValueAndVariance<T> a) noexcept {
@@ -151,10 +153,13 @@ constexpr auto acos(const ValueAndVariance<T> a) noexcept {
 
 template <typename T>
 constexpr auto atan(const ValueAndVariance<T> a) noexcept {
+  using numeric::isnan;
   using std::atan;
-  const auto denominator = 1 - a.value * a.value;
-  return ValueAndVariance(atan(a.value),
-                          a.variance / (denominator * denominator));
+  const auto value = atan(a.value);
+  const auto denominator = 1 + a.value * a.value;
+  const auto variance = isnan(value) ? std::numeric_limits<T>::quiet_NaN()
+                                     : a.variance / (denominator * denominator);
+  return ValueAndVariance(value, variance);
 }
 
 template <typename T>

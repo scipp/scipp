@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include <limits>
 #include <mutex>
+#include <optional>
 #include <shared_mutex>
 #include <stdexcept>
 #include <unordered_map>
@@ -15,7 +16,7 @@ namespace scipp::sc_units {
 
 namespace {
 const auto &builtin_ids() {
-  static std::unordered_map<std::string, Dim::Id> ids{
+  static const std::unordered_map<std::string, Dim::Id> ids{
       {"<invalid>", Dim::Invalid},
       {"<none>", Dim::None},
       {"<internal_structure_component>", Dim::InternalStructureComponent},
@@ -51,13 +52,21 @@ Dim::Dim(const std::string &label) {
     m_id = it->second;
     return;
   }
+
   std::shared_lock read_lock(mutex);
   if (const auto it = custom_ids().find(label); it != custom_ids().end()) {
     m_id = it->second;
     return;
   }
   read_lock.unlock();
+
   const std::unique_lock write_lock(mutex);
+  // Check if the id has been inserted between read_lock.unlock() and
+  // write_lock:
+  if (const auto it = custom_ids().find(label); it != custom_ids().end()) {
+    m_id = it->second;
+    return;
+  }
   const auto id = scipp::size(custom_ids()) + 1000;
   if (id > std::numeric_limits<std::underlying_type<Id>::type>::max())
     throw std::runtime_error(

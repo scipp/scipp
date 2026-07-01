@@ -316,8 +316,8 @@ TEST_F(VariableTrigonometryTest, atan) {
 TEST_F(VariableTrigonometryTest, atan_variance) {
   const auto var = makeVariable<double>(Values{0.5}, Variances{0.2});
   EXPECT_EQ(atan(var), makeVariable<double>(Values{std::atan(0.5)},
-                                            Variances{0.2 / (1.0 - 0.5 * 0.5) /
-                                                      (1.0 - 0.5 * 0.5)},
+                                            Variances{0.2 / (1.0 + 0.5 * 0.5) /
+                                                      (1.0 + 0.5 * 0.5)},
                                             Unit{sc_units::rad}));
 }
 

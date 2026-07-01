@@ -54,6 +54,50 @@ TEST(ValueAndVarianceTest, unary_log10) {
             a.variance / a.value / a.value / std::log(10.0) / std::log(10.0));
 }
 
+TEST(ValueAndVarianceTest, unary_sin) {
+  const ValueAndVariance a{2.0, 1.2};
+  const auto b = sin(a);
+  EXPECT_EQ(b.value, std::sin(a.value));
+  EXPECT_EQ(b.variance, a.variance * std::cos(a.value) * std::cos(a.value));
+}
+
+TEST(ValueAndVarianceTest, unary_cos) {
+  const ValueAndVariance a{2.0, 1.2};
+  const auto b = cos(a);
+  EXPECT_EQ(b.value, std::cos(a.value));
+  EXPECT_EQ(b.variance, a.variance * std::sin(a.value) * std::sin(a.value));
+}
+
+TEST(ValueAndVarianceTest, unary_tan) {
+  const ValueAndVariance a{2.0, 1.2};
+  const auto b = tan(a);
+  EXPECT_EQ(b.value, std::tan(a.value));
+  EXPECT_EQ(b.variance, a.variance / (std::cos(a.value) * std::cos(a.value) *
+                                      std::cos(a.value) * std::cos(a.value)));
+}
+
+TEST(ValueAndVarianceTest, unary_asin) {
+  const ValueAndVariance a{0.3, 0.1};
+  const auto b = asin(a);
+  EXPECT_EQ(b.value, std::asin(a.value));
+  EXPECT_EQ(b.variance, a.variance / (1 - a.value * a.value));
+}
+
+TEST(ValueAndVarianceTest, unary_acos) {
+  const ValueAndVariance a{0.3, 0.1};
+  const auto b = acos(a);
+  EXPECT_EQ(b.value, std::acos(a.value));
+  EXPECT_EQ(b.variance, a.variance / (1 - a.value * a.value));
+}
+
+TEST(ValueAndVarianceTest, unary_atan) {
+  const ValueAndVariance a{0.3, 0.1};
+  const auto b = atan(a);
+  EXPECT_EQ(b.value, std::atan(a.value));
+  EXPECT_EQ(b.variance,
+            a.variance / (1 + a.value * a.value) / (1 + a.value * a.value));
+}
+
 TEST(ValueAndVarianceTest, binary_plus) {
   const ValueAndVariance lhs{5.0, 1.0};
   const ValueAndVariance rhs{8.0, 2.0};

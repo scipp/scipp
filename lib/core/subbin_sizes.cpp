@@ -100,6 +100,12 @@ void SubbinSizes::exclusive_scan(SubbinSizes &x) {
   const scipp::index osize = scipp::size(sizes());
   const scipp::index size = scipp::size(x.sizes());
   const auto delta = x.offset() - offset();
+  // Negative delta would cause out-of-bounds reads below. In practice this
+  // cannot happen: varying offsets only arise when the binning pipeline detects
+  // sorted input coordinates, which guarantees non-decreasing offsets along the
+  // accumulation dimension.
+  if (delta < 0)
+    throw std::logic_error("SubbinSizes::exclusive_scan: negative index");
   m_sizes.reserve(size);
   m_offset = x.m_offset;
   for (scipp::index i = 0; i < size; ++i) {
