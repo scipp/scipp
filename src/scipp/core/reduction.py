@@ -215,12 +215,25 @@ def inverse_variance_mean(
 
         where :math:`N` is the number of (non-masked) contributing elements.
         This reduces to the ordinary standard error of the mean
-        :math:`s^2 / N` when all weights are equal. It is the reduced-:math:`\chi^2`
-        (Birge-ratio) scatter estimate used, e.g., by the Particle Data Group.
+        :math:`s^2 / N` when all weights are equal. Equivalently it inflates the
+        internal variance by the reduced :math:`\chi^2`,
 
-        Note that the result is reported *unclamped*: unlike the PDG procedure,
-        the external variance is not floored at the internal variance, so it may
-        come out smaller when the data agree better than their error bars imply.
+        .. math::
+
+            \mathrm{Var}_\mathrm{external}(\bar{x}) = S^2\,
+            \mathrm{Var}_\mathrm{internal}(\bar{x}),
+            \quad S = \sqrt{\chi^2 / (N - 1)},
+
+        where :math:`S` is the Birge ratio, or Particle Data Group "scale factor".
+
+        The PDG applies this scaling only when :math:`S > 1`, i.e. it floors the
+        scale factor at :math:`S = 1` and never *reduces* the uncertainty below
+        the internal one. This function does **not** apply that floor: the raw
+        external variance is returned, so it may come out smaller than the
+        internal variance when the data agree better than their error bars imply
+        (:math:`S < 1`). See the Particle Data Group, Review of Particle Physics,
+        Introduction (section "Unconstrained averaging"),
+        https://pdg.lbl.gov/2019/reviews/rpp2019-rev-rpp-intro.pdf.
 
     Note
     ----
