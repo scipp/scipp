@@ -350,4 +350,33 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
         return slice_by_list<T>(self, to_dim_type(std::move(indices)));
       },
       py::call_guard<py::gil_scoped_release>());
+  // Dict-based indexing: obj[{'x': 0, 'y': 1:3}] is equivalent to
+  // obj['x', 0]['y', 1:3], applying each (dim, index) pair in insertion order.
+  c.def("__getitem__", [](T &self, const py::dict &index) -> py::object {
+    py::object result = py::cast(self);
+    for (const auto &item : index) {
+      result = result.attr("__getitem__")(
+          py::make_tuple(item.first, item.second));
+    }
+    return result;
+  });
+  c.def("__setitem__", [](T &self, const py::dict &index, const py::object &data) {
+    std::vector<std::pair<py::object, py::object>> items;
+    items.reserve(index.size());
+    for (const auto &item : index) {
+      items.emplace_back(py::reinterpret_borrow<py::object>(item.first),
+                         py::reinterpret_borrow<py::object>(item.second));
+    }
+    py::object target = py::cast(self);
+    for (std::size_t i = 0; i + 1 < items.size(); ++i) {
+      target = target.attr("__getitem__")(
+          py::make_tuple(items[i].first, items[i].second));
+    }
+    if (!items.empty()) {
+      target.attr("__setitem__")(
+          py::make_tuple(items.back().first, items.back().second), data);
+    } else {
+      target.attr("__setitem__")(py::ellipsis{}, data);
+    }
+  });
 }
