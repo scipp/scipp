@@ -28,14 +28,10 @@ template <class T> auto to_dim_type(std::tuple<std::string, T> &&t) {
 }
 
 template <class T> auto dim_extent(const T &object, const Dim dim) {
-  if constexpr (std::is_same_v<T, Dataset>) {
-    scipp::index extent = -1;
-    if (object.sizes().contains(dim))
-      extent = object.sizes().at(dim);
-    return extent;
-  } else {
+  if constexpr (std::is_same_v<T, Dataset>)
+    return object.sizes()[dim];
+  else
     return object.dims()[dim];
-  }
 }
 
 template <class T>
