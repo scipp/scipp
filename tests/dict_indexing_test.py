@@ -80,3 +80,25 @@ def test_setitem_with_dict(make_obj, index_dict, expected_dims):
     fill = obj[index_dict] * 2.0
     obj[index_dict] = fill
     assert sc.identical(obj[index_dict], fill)
+
+
+@pytest.mark.parametrize('make_obj', _make_obj_params)
+def test_getitem_empty_dict(make_obj):
+    obj = make_obj()
+    result = obj[{}]
+    assert sc.identical(result, obj)
+    assert result is not obj
+
+
+@pytest.mark.parametrize('make_obj', _make_obj_params)
+def test_getitem_bad_dim_label(make_obj):
+    obj = make_obj()
+    with pytest.raises(sc.DimensionError):
+        _ = obj[{'nonexistent': 0}]
+
+
+@pytest.mark.parametrize('make_obj', _make_obj_params)
+def test_getitem_bad_index(make_obj):
+    obj = make_obj()
+    with pytest.raises(IndexError):
+        _ = obj[{'n': 999}]
