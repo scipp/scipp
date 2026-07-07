@@ -244,6 +244,56 @@ T slice_by_list(const T &obj,
 }
 } // namespace
 
+inline auto dict_to_items(const py::dict &index) {
+  std::vector<std::pair<std::string, py::object>> items;
+  items.reserve(index.size());
+  for (const auto &item : index) {
+    items.emplace_back(py::cast<std::string>(item.first),
+                       py::reinterpret_borrow<py::object>(item.second));
+  }
+  return items;
+}
+
+template <class T>
+T apply_dim_getitem(T obj, const std::string &dim_str, const py::object &val) {
+  const Dim dim{dim_str};
+  if (py::isinstance<py::int_>(val))
+    return obj.slice(get_slice(obj, {dim, py::cast<scipp::index>(val)}));
+  if (py::isinstance<py::slice>(val))
+    return obj.slice(get_slice_range(obj, {dim, py::cast<py::slice>(val)}));
+  if constexpr (!std::is_same_v<T, Variable>)
+    if (py::isinstance<Variable>(val))
+      return slice(obj, dim, py::cast<Variable>(val));
+  return slice_by_list(obj, {dim, py::cast<std::vector<scipp::index>>(val)});
+}
+
+template <class T>
+void apply_dim_setitem(T &obj, const std::string &dim_str,
+                       const py::object &val, const py::object &data) {
+  const Dim dim{dim_str};
+  if (py::isinstance<py::int_>(val))
+    return slicer<T>::set(obj, std::tuple{dim, py::cast<scipp::index>(val)}, data);
+  if (py::isinstance<py::slice>(val))
+    return slicer<T>::set(obj, std::tuple{dim, py::cast<py::slice>(val)}, data);
+  if constexpr (!std::is_same_v<T, Variable>) {
+    if (py::isinstance<Variable>(val)) {
+      const auto label = py::cast<Variable>(val);
+      const auto key = std::tuple<std::string, Variable>{dim_str, label};
+      if constexpr (std::is_same_v<T, Dataset>) {
+        if (py::isinstance<Dataset>(data))
+          return slicer<T>::set_by_value(obj, key, py::cast<Dataset>(data));
+      } else {
+        if (py::isinstance<DataArray>(data))
+          return slicer<T>::set_by_value(obj, key, py::cast<DataArray>(data));
+        if (py::isinstance<Variable>(data))
+          return slicer<T>::set_by_value(obj, key, py::cast<Variable>(data));
+      }
+      throw py::type_error("Cannot assign this type via label-based dict indexing");
+    }
+  }
+  throw py::type_error("Unsupported index type for dict-based __setitem__");
+}
+
 template <class T, class... Ignored>
 void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
   // Slice with implicit dim possible only if there is exactly one dimension. We
@@ -346,33 +396,23 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
         return slice_by_list<T>(self, to_dim_type(std::move(indices)));
       },
       py::call_guard<py::gil_scoped_release>());
-  // Dict-based indexing: obj[{'x': 0, 'y': 1:3}] is equivalent to
-  // obj['x', 0]['y', 1:3], applying each (dim, index) pair in insertion order.
-  c.def("__getitem__", [](T &self, const py::dict &index) -> py::object {
-    py::object result = py::cast(self);
-    for (const auto &item : index) {
-      result = result.attr("__getitem__")(
-          py::make_tuple(item.first, item.second));
-    }
+  // Dict-based indexing: obj[{'x': 0, 'y': 1:3}] applies each (dim, index)
+  // pair in insertion order, equivalent to obj['x', 0]['y', 1:3].
+  c.def("__getitem__", [](T &self, const py::dict &index) {
+    auto items = dict_to_items(index);
+    T result = self;
+    for (const auto &[dim, val] : items)
+      result = apply_dim_getitem(result, dim, val);
     return result;
   });
   c.def("__setitem__", [](T &self, const py::dict &index, const py::object &data) {
-    std::vector<std::pair<py::object, py::object>> items;
-    items.reserve(index.size());
-    for (const auto &item : index) {
-      items.emplace_back(py::reinterpret_borrow<py::object>(item.first),
-                         py::reinterpret_borrow<py::object>(item.second));
-    }
-    py::object target = py::cast(self);
-    for (std::size_t i = 0; i + 1 < items.size(); ++i) {
-      target = target.attr("__getitem__")(
-          py::make_tuple(items[i].first, items[i].second));
-    }
-    if (!items.empty()) {
-      target.attr("__setitem__")(
-          py::make_tuple(items.back().first, items.back().second), data);
-    } else {
-      target.attr("__setitem__")(py::ellipsis{}, data);
-    }
+    auto items = dict_to_items(index);
+    T target = self;
+    for (std::size_t i = 0; i + 1 < items.size(); ++i)
+      target = apply_dim_getitem(target, items[i].first, items[i].second);
+    if (items.empty())
+      slicer<T>::set(self, py::ellipsis{}, data);
+    else
+      apply_dim_setitem(target, items.back().first, items.back().second, data);
   });
 }
