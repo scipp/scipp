@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
+import itertools
+
 import numpy as np
 import pytest
 import scipp as sc
@@ -10,11 +12,11 @@ _DIMS = ('n', 'm', 'k', 'l', 's')
 _SHAPE = (_N, _M, _K, _L, _S)
 
 
+_VALUES = np.arange(np.prod(_SHAPE), dtype=float).reshape(_SHAPE)
+
+
 def _make_variable() -> sc.Variable:
-    return sc.array(
-        dims=list(_DIMS),
-        values=np.arange(np.prod(_SHAPE), dtype=float).reshape(_SHAPE),
-    )
+    return sc.array(dims=list(_DIMS), values=_VALUES)
 
 
 def _make_data_array() -> sc.DataArray:
@@ -102,3 +104,99 @@ def test_getitem_bad_index(make_obj):
     obj = make_obj()
     with pytest.raises(IndexError):
         _ = obj[{'n': 999}]
+
+
+# --- Label-based (coordinate-value) dict indexing ---
+# Variable has no coordinates so is excluded from these tests.
+
+# Needed both for DATA['float']['coords'] and DATA['float']['label_index']
+# so defined here to avoid a forward-reference inside the class body dict literal.
+_float_coord_values = {d: np.linspace(0.1, 0.9, s) for d, s in zip(_DIMS, _SHAPE)}
+
+
+class TestSliceByLabelDict:
+    # All per-variant data is nested under 'float'/'str' so that label_variants can
+    # be built with a comprehension over DATA.items() — the comprehension body only
+    # has access to loop variables, not bare class-attribute names.
+    DATA = {
+        'float': {
+            'coords': {
+                d: sc.array(dims=[d], values=v, unit='m')
+                for d, v in _float_coord_values.items()
+            },
+            'label_index': {
+                'n': sc.scalar(_float_coord_values['n'][0], unit='m'),
+                'm': sc.scalar(_float_coord_values['m'][1], unit='m'),
+                's': sc.scalar(_float_coord_values['s'][4], unit='m'),
+            },
+            'expected_values': _VALUES[0, 1, :, :, 4],
+        },
+        'str': {
+            'coords': {
+                d: sc.array(dims=[d], values=list('abcdefghijklmnopqrstuvwxyz')[:s])
+                for d, s in zip(_DIMS, _SHAPE)
+            },
+            'label_index': {
+                'n': sc.scalar('b'),
+                'm': sc.scalar('c'),
+                's': sc.scalar('e'),
+            },
+            'expected_values': _VALUES[1, 2, :, :, 4],
+        },
+    }
+
+    # lambda coords=data['coords'] captures the per-iteration coords dict via default
+    # argument: without it, all lambdas would share a closure over the loop variable and
+    # see the last iteration's value after the comprehension finishes.
+    label_variants = {
+        coord_type: {
+            'make': {
+                'DataArray': (
+                    lambda coords=data['coords']: sc.DataArray(
+                        _make_variable(),
+                        coords=coords,
+                    )
+                ),
+                'Dataset': (
+                    lambda coords=data['coords']: sc.Dataset({'a': sc.DataArray(
+                        _make_variable(),
+                        coords=coords,
+                    )}
+                )),
+            },
+            'label_index': data['label_index'],
+            'expected_values': data['expected_values'],
+        }
+        for coord_type, data in DATA.items()
+    }
+
+    label_index_params = [
+        pytest.param(
+            variant['make'][obj_type],
+            variant['label_index'],
+            variant['expected_values'],
+            id=f'{obj_type}-{coord_type}',
+        )
+        for (coord_type, variant), obj_type in itertools.product(
+            label_variants.items(), ['DataArray', 'Dataset']
+        )
+    ]
+
+    @staticmethod
+    def _extract_values(obj):
+        return obj['a'].values if isinstance(obj, sc.Dataset) else obj.values
+
+    @pytest.mark.parametrize(('make_obj', 'label_index', 'expected_values'), label_index_params)
+    def test_getitem_scalar_label_dict(self, make_obj, label_index, expected_values):
+        obj = make_obj()
+        result = obj[label_index]
+        assert result.dims == ('k', 'l')
+        assert np.array_equal(self._extract_values(result), expected_values)
+
+    @pytest.mark.parametrize(('make_obj', 'label_index', 'expected_values'), label_index_params)
+    def test_setitem_scalar_label_dict(self, make_obj, label_index, expected_values):
+        obj = make_obj()
+        obj[label_index] = obj[label_index] * 0.0
+        values = self._extract_values(obj[label_index])
+        assert values.shape == (_K, _L)
+        assert np.all(values == 0.0)
