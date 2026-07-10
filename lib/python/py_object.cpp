@@ -4,24 +4,24 @@
 /// @author Simon Heybrock
 #include "py_object.h"
 
-namespace py = pybind11;
+namespace nb = nanobind;
 
 namespace scipp::python {
 
 PyObject::~PyObject() {
-  py::gil_scoped_acquire acquire;
-  m_object = py::object();
+  nb::gil_scoped_acquire acquire;
+  m_object = nb::object();
 }
 
-PyObject::PyObject(const py::object &object) {
-  py::gil_scoped_acquire acquire;
+PyObject::PyObject(const nb::object &object) {
+  nb::gil_scoped_acquire acquire;
   m_object = object; // NOLINT(cppcoreguidelines-prefer-member-initializer)
 }
 
 bool PyObject::operator==(const PyObject &other) const {
   // Similar to above, re-acquiring GIL here due to segfault in Python C API
   // (PyObject_RichCompare).
-  py::gil_scoped_acquire acquire;
+  nb::gil_scoped_acquire acquire;
   return to_pybind().equal(other.to_pybind());
 }
 
@@ -33,9 +33,9 @@ PyObject copy(const PyObject &obj) {
     // copy operation is called by anything that copies variables, this includes
     // almost every C++ function with Python bindings because we typically do
     // release the GIL everywhere.
-    py::gil_scoped_acquire acquire;
-    py::module copy = py::module::import("copy");
-    py::object deepcopy = copy.attr("deepcopy");
+    nb::gil_scoped_acquire acquire;
+    nb::module_ copy = nb::module_::import_("copy");
+    nb::object deepcopy = copy.attr("deepcopy");
     return {deepcopy(object)};
   } else {
     return {object};
@@ -47,8 +47,8 @@ std::ostream &operator<<(std::ostream &os, const PyObject &obj) {
 }
 
 std::string to_string(const PyObject &obj) {
-  py::gil_scoped_acquire gil_{};
-  return py::str(obj.to_pybind());
+  nb::gil_scoped_acquire gil_{};
+  return nb::cast<std::string>(nb::str(obj.to_pybind()));
 }
 
 } // namespace scipp::python

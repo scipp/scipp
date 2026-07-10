@@ -13,13 +13,13 @@
 #include "scipp/variable/variable.h"
 
 #include "format.h"
+#include "nanobind.h"
 #include "py_object.h"
-#include "pybind11.h"
 
 using namespace scipp;
 using namespace scipp::core;
 
-namespace py = pybind11;
+namespace nb = nanobind;
 
 namespace {
 /// 'kind' character codes for numpy dtypes
@@ -49,20 +49,22 @@ constexpr bool operator==(const scipp::index a, const DTypeSize b) {
 }
 } // namespace
 
-void init_dtype(py::module &m) {
-  py::class_<DType> PyDType(m, "DType", R"(
+void init_dtype(nb::module_ &m) {
+  nb::class_<DType> PyDType(m, "DType", R"(
 Representation of a data type of a Variable in Scipp.
 See https://scipp.github.io/reference/dtype.html for details.
 
 The data types ``VariableView``, ``DataArrayView``, and ``DatasetView`` are used for
 objects containing binned data. They cannot be used directly to create arrays of bins.
 )");
-  PyDType.def(py::init([](const py::object &x) { return scipp_dtype(x); }))
+  PyDType
+      .def(nb::new_([](const nb::object &x) { return scipp_dtype(x); }),
+           nb::arg("x"))
       .def("__copy__", [](const DType &self) { return self; })
       .def("__deepcopy__",
-           [](const DType &self, const py::dict &) { return self; })
+           [](const DType &self, const nb::dict &) { return self; })
       .def("__eq__",
-           [](const DType &self, const py::object &other) {
+           [](const DType &self, const nb::object &other) {
              return self == scipp_dtype(other);
            })
       .def("__str__", [](const DType &self) { return to_string(self); })
@@ -93,78 +95,80 @@ objects containing binned data. They cannot be used directly to create arrays of
            dtype<core::bin<Dataset>>,
            dtype<python::PyObject>,
        })
-    PyDType.def_property_readonly_static(
-        core::dtypeNameRegistry().at(t).c_str(),
-        [t](const py::object &) { return t; });
+    PyDType.def_prop_ro_static(core::dtypeNameRegistry().at(t).c_str(),
+                               [t](const nb::object &) { return t; });
 }
 
-DType dtype_of(const py::object &x) {
+DType dtype_of(const nb::object &x) {
   if (x.is_none()) {
     return dtype<void>;
-  } else if (py::isinstance<py::buffer>(x)) {
+  } else if (is_buffer_like(x)) {
     // Cannot use hasattr(x, "dtype") as that would catch Variables as well.
     return scipp_dtype(x.attr("dtype"));
-  } else if (py::isinstance<py::bool_>(x)) {
+  } else if (nb::isinstance<nb::bool_>(x)) {
     // bool needs to come before int because bools are instances of int.
     return core::dtype<bool>;
-  } else if (py::isinstance<py::float_>(x)) {
+  } else if (nb::isinstance<nb::float_>(x)) {
     return core::dtype<double>;
-  } else if (py::isinstance<py::int_>(x)) {
+  } else if (nb::isinstance<nb::int_>(x)) {
     return core::dtype<int64_t>;
-  } else if (py::isinstance<py::str>(x)) {
+  } else if (nb::isinstance<nb::str>(x)) {
     return core::dtype<std::string>;
-  } else if (py::isinstance<variable::Variable>(x)) {
+  } else if (nb::isinstance<variable::Variable>(x)) {
     return core::dtype<variable::Variable>;
-  } else if (py::isinstance<dataset::DataArray>(x)) {
+  } else if (nb::isinstance<dataset::DataArray>(x)) {
     return core::dtype<dataset::DataArray>;
-  } else if (py::isinstance<dataset::Dataset>(x)) {
+  } else if (nb::isinstance<dataset::Dataset>(x)) {
     return core::dtype<dataset::Dataset>;
   } else {
     return core::dtype<python::PyObject>;
   }
 }
 
-scipp::core::DType scipp_dtype(const py::dtype &type) {
-  switch (type.normalized_num()) {
-  case py::dtype::num_of<double>():
-    return scipp::core::dtype<double>;
-  case py::dtype::num_of<float>():
-    return scipp::core::dtype<float>;
-  case py::dtype::num_of<std::int64_t>():
-    return scipp::core::dtype<std::int64_t>;
-  case py::dtype::num_of<std::int32_t>():
-    return scipp::core::dtype<std::int32_t>;
-  case py::dtype::num_of<bool>():
+namespace {
+/// Map an instance of numpy.dtype to a scipp DType. Uses the 'kind' and
+/// 'itemsize' attributes, which normalize platform-dependent aliases such as
+/// long vs longlong.
+scipp::core::DType scipp_dtype_from_np(const nb::object &type) {
+  const auto kind = nb::cast<char>(type.attr("kind"));
+  const auto itemsize = nb::cast<scipp::index>(type.attr("itemsize"));
+  if (kind == DTypeKind::Float) {
+    if (itemsize == DTypeSize::Float64)
+      return scipp::core::dtype<double>;
+    if (itemsize == DTypeSize::Float32)
+      return scipp::core::dtype<float>;
+  } else if (kind == DTypeKind::Int) {
+    if (itemsize == DTypeSize::Int64)
+      return scipp::core::dtype<std::int64_t>;
+    if (itemsize == DTypeSize::Int32)
+      return scipp::core::dtype<std::int32_t>;
+  } else if (kind == DTypeKind::Bool) {
     return scipp::core::dtype<bool>;
-  case py::dtype::num_of<py::object>():
+  } else if (kind == DTypeKind::Object) {
     return scipp::core::dtype<python::PyObject>;
-  default:
-    break;
-  }
-  // These cannot be handled with the above switch:
-  if (type.kind() == DTypeKind::String)
+  } else if (kind == DTypeKind::String) {
     return scipp::core::dtype<std::string>;
-  if (type.kind() == DTypeKind::Datetime) {
+  } else if (kind == DTypeKind::Datetime) {
     return scipp::core::dtype<time_point>;
   }
   throw std::runtime_error(
-      "Unsupported numpy dtype: " +
-      py::str(static_cast<py::handle>(type)).cast<std::string>() +
+      "Unsupported numpy dtype: " + nb::cast<std::string>(nb::str(type)) +
       "\n"
       "Supported types are: bool, float32, float64,"
       " int32, int64, string, datetime64, and object");
 }
+} // namespace
 
-scipp::core::DType dtype_from_scipp_class(const py::object &type) {
+scipp::core::DType dtype_from_scipp_class(const nb::object &type) {
   // Using the __name__ because we would otherwise have to get a handle
   // to the Python classes for our C++ classes. And I don't know how
   // to do that. This approach can break if people (including us) pull
   // shenanigans with the classes in Python!
-  if (type.attr("__name__").cast<std::string>() == "Variable") {
+  if (nb::cast<std::string>(type.attr("__name__")) == "Variable") {
     return dtype<Variable>;
-  } else if (type.attr("__name__").cast<std::string>() == "DataArray") {
+  } else if (nb::cast<std::string>(type.attr("__name__")) == "DataArray") {
     return dtype<DataArray>;
-  } else if (type.attr("__name__").cast<std::string>() == "Dataset") {
+  } else if (nb::cast<std::string>(type.attr("__name__")) == "Dataset") {
     return dtype<Dataset>;
   } else {
     throw std::invalid_argument("Invalid dtype");
@@ -172,42 +176,41 @@ scipp::core::DType dtype_from_scipp_class(const py::object &type) {
 }
 
 namespace {
-py::dtype to_np_dtype(const py::object &type) {
+nb::object to_np_dtype(const nb::object &type) {
   try {
-    return py::dtype::from_args(type);
-  } catch (py::error_already_set &error) {
+    return nb::module_::import_("numpy").attr("dtype")(type);
+  } catch (nb::python_error &error) {
     // NumPy normally raises a TypeError, but for Variable, DataArray, it raises
     // ValueError because it sees the `.dtype` attribute and thinks that it is a
     // compatible np.dtype object. For some reason that triggers a different
     // error.
     if (error.matches(PyExc_ValueError)) {
-      throw py::type_error(error.what());
+      throw nb::type_error(error.what());
     }
     throw;
   }
 }
 } // namespace
 
-scipp::core::DType scipp_dtype(const py::object &type) {
+scipp::core::DType scipp_dtype(const nb::object &type) {
   // Check None first, then native scipp Dtype, then numpy.dtype
   if (type.is_none())
     return dtype<void>;
-  try {
-    return type.cast<DType>();
-  } catch (const py::cast_error &) {
-    if (py::isinstance<py::type>(type) &&
-        type.attr("__module__").cast<std::string>() == "scipp._scipp.core") {
-      return dtype_from_scipp_class(type);
-    }
-    const auto np_dtype = to_np_dtype(type);
-    if (np_dtype.kind() == DTypeKind::RawData) {
-      throw std::invalid_argument(
-          "Unsupported numpy dtype: raw data. This can happen when you pass a "
-          "Python object instead of a class. Got dtype=`" +
-          py::str(type).cast<std::string>() + '`');
-    }
-    return scipp_dtype(np_dtype);
+  if (DType out; nb::try_cast<DType>(type, out, false)) {
+    return out;
   }
+  if (nb::isinstance<nb::type_object>(type) &&
+      nb::cast<std::string>(type.attr("__module__")) == "scipp._scipp.core") {
+    return dtype_from_scipp_class(type);
+  }
+  const auto np_dtype = to_np_dtype(type);
+  if (nb::cast<char>(np_dtype.attr("kind")) == DTypeKind::RawData) {
+    throw std::invalid_argument(
+        "Unsupported numpy dtype: raw data. This can happen when you pass a "
+        "Python object instead of a class. Got dtype=`" +
+        nb::cast<std::string>(nb::str(type)) + '`');
+  }
+  return scipp_dtype_from_np(np_dtype);
 }
 
 namespace {
@@ -217,7 +220,7 @@ bool is_default(const ProtoUnit &unit) {
 } // namespace
 
 std::tuple<scipp::core::DType, std::optional<scipp::sc_units::Unit>>
-cast_dtype_and_unit(const pybind11::object &dtype, const ProtoUnit &unit) {
+cast_dtype_and_unit(const nanobind::object &dtype, const ProtoUnit &unit) {
   const auto scipp_dtype = ::scipp_dtype(dtype);
   if (scipp_dtype == core::dtype<core::time_point>) {
     sc_units::Unit deduced_unit = parse_datetime_dtype(dtype);
@@ -252,7 +255,7 @@ void ensure_conversion_possible(const DType from, const DType to,
                                              " from type ", from, " to ", to));
 }
 
-DType common_dtype(const py::object &values, const py::object &variances,
+DType common_dtype(const nb::object &values, const nb::object &variances,
                    const DType dtype, const DType default_dtype) {
   const DType values_dtype = dtype_of(values);
   const DType variances_dtype = dtype_of(variances);
@@ -286,9 +289,10 @@ DType common_dtype(const py::object &values, const py::object &variances,
   }
 }
 
-bool has_datetime_dtype(const py::object &obj) {
-  if (py::hasattr(obj, "dtype")) {
-    return obj.attr("dtype").attr("kind").cast<char>() == DTypeKind::Datetime;
+bool has_datetime_dtype(const nb::object &obj) {
+  if (nb::hasattr(obj, "dtype")) {
+    return nb::cast<char>(obj.attr("dtype").attr("kind")) ==
+           DTypeKind::Datetime;
   } else {
     // numpy.datetime64 and numpy.ndarray both have 'dtype' attributes.
     // Mark everything else as not-datetime.
@@ -332,15 +336,15 @@ parse_datetime_dtype(const std::string &dtype_name) {
 }
 
 [[nodiscard]] scipp::sc_units::Unit
-parse_datetime_dtype(const pybind11::object &dtype) {
-  if (py::isinstance<py::type>(dtype)) {
+parse_datetime_dtype(const nanobind::object &dtype) {
+  if (nb::isinstance<nb::type_object>(dtype)) {
     // This handles dtype=np.datetime64, i.e. passing the class.
     return sc_units::one;
-  } else if (py::hasattr(dtype, "dtype")) {
+  } else if (nb::hasattr(dtype, "dtype")) {
     return parse_datetime_dtype(dtype.attr("dtype"));
-  } else if (py::hasattr(dtype, "name")) {
-    return parse_datetime_dtype(dtype.attr("name").cast<std::string>());
+  } else if (nb::hasattr(dtype, "name")) {
+    return parse_datetime_dtype(nb::cast<std::string>(dtype.attr("name")));
   } else {
-    return parse_datetime_dtype(py::str(dtype).cast<std::string>());
+    return parse_datetime_dtype(nb::cast<std::string>(nb::str(dtype)));
   }
 }

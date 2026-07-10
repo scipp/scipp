@@ -15,7 +15,7 @@ def __rtruediv(self: _Unit, value: Any) -> Variable:
 def extend_units() -> None:
     # add magic python methods to Unit class
     # it is done here (on python side) because
-    # there is no proper way to do this in pybind11
+    # there is no proper way to do this in nanobind
     _Unit.__rtruediv__ = __rtruediv
     _Unit.__rmul__ = __rmul
 

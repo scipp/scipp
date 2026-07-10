@@ -7,7 +7,7 @@
 #include <sstream>
 #include <string>
 
-#include "pybind11.h"
+#include "nanobind.h"
 
 namespace scipp::python {
 /// Format a string from all arguments.

@@ -20,13 +20,13 @@
 #include "bind_operators.h"
 #include "bind_slice_methods.h"
 #include "dim.h"
-#include "pybind11.h"
+#include "nanobind.h"
 #include "rename.h"
 
 using namespace scipp;
 using namespace scipp::variable;
 
-namespace py = pybind11;
+namespace nb = nanobind;
 
 template <class T> struct GetElements {
   static Variable apply(Variable &var, const std::string &key) {
@@ -41,11 +41,11 @@ template <class T> struct SetElements {
   }
 };
 
-template <class T> void bind_alignment_functions(py::class_<T> &variable) {
+template <class T> void bind_alignment_functions(nb::class_<T> &variable) {
   // We use a separate setter instead of making the 'aligned' property writable
   // in order to reduce the chance of accidentally setting the flag on
   // temporary variables.
-  variable.def_property_readonly(
+  variable.def_prop_ro(
       "aligned", [](const Variable &self) { return self.is_aligned(); },
       R"(Alignment flag for coordinates.
 
@@ -67,15 +67,15 @@ The alignment w.r.t. the events can be queried via
 )");
 }
 
-void bind_init(py::class_<Variable> &cls);
+void bind_init(nb::class_<Variable> &cls);
 
-void init_variable(py::module &m) {
+void init_variable(nb::module_ &m) {
   // Needed to let numpy arrays keep alive the scipp buffers.
-  // VariableConcept must ALWAYS be passed to Python by its handle.
-  py::class_<VariableConcept, VariableConceptHandle> variable_concept(
-      m, "_VariableConcept");
+  // VariableConcept must ALWAYS be passed to Python by its handle
+  // (std::shared_ptr, supported via nanobind/stl/shared_ptr.h).
+  nb::class_<VariableConcept> variable_concept(m, "_VariableConcept");
 
-  py::class_<Variable> variable(m, "Variable", py::dynamic_attr(),
+  nb::class_<Variable> variable(m, "Variable", nb::dynamic_attr(),
                                 R"(
 Array of values with dimension labels and a unit, optionally including an array
 of variances.
@@ -124,7 +124,7 @@ scipp.array, scipp.scalar
 
   bind_init(variable);
   variable.def("_rename_dims", &rename_dims<Variable>)
-      .def_property_readonly("dtype", &Variable::dtype);
+      .def_prop_ro("dtype", &Variable::dtype);
 
   bind_common_operators(variable);
 
@@ -158,8 +158,8 @@ scipp.array, scipp.scalar
         return scipp::variable::islinspace(x, dim.has_value() ? Dim{*dim}
                                                               : x.dim());
       },
-      py::arg("x"), py::arg("dim") = py::none(),
-      py::call_guard<py::gil_scoped_release>());
+      nb::arg("x"), nb::arg("dim") = nb::none(),
+      nb::call_guard<nb::gil_scoped_release>());
 
   using structured_t =
       std::tuple<Eigen::Vector3d, Eigen::Matrix3d, Eigen::Affine3d,

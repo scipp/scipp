@@ -6,13 +6,13 @@
 
 #include "scipp/core/dtype.h"
 
-#include "pybind11.h"
+#include "nanobind.h"
 
-namespace py = pybind11;
+namespace nb = nanobind;
 
 namespace scipp::python {
 
-/// Wrapper around pybind11::object to provide deep copy and deep comparison.
+/// Wrapper around nanobind::object to provide deep copy and deep comparison.
 ///
 /// Whenever this class makes calls to Python it acquires the GIL first to
 /// ensure that it can be used as part of code that has a released GIL. Since
@@ -27,15 +27,15 @@ public:
   PyObject &operator=(const PyObject &other) { return *this = PyObject(other); }
   ~PyObject();
 
-  PyObject(const py::object &object);
+  PyObject(const nb::object &object);
 
-  const py::object &to_pybind() const noexcept { return m_object; }
-  py::object &to_pybind() noexcept { return m_object; }
+  const nb::object &to_pybind() const noexcept { return m_object; }
+  nb::object &to_pybind() noexcept { return m_object; }
 
   bool operator==(const PyObject &other) const;
 
 private:
-  py::object m_object;
+  nb::object m_object;
 };
 
 [[nodiscard]] PyObject copy(const PyObject &obj);

@@ -15,11 +15,11 @@
 
 #include "bind_data_array.h"
 #include "dim.h"
-#include "pybind11.h"
+#include "nanobind.h"
 
 using namespace scipp;
 
-namespace py = pybind11;
+namespace nb = nanobind;
 
 namespace {
 
@@ -59,7 +59,7 @@ auto call_make_bins(const std::optional<Variable> &begin_arg,
                                  std::forward<T>(data));
 }
 
-template <class T> void bind_bins(pybind11::module &m) {
+template <class T> void bind_bins(nanobind::module_ &m) {
   m.def(
       "bins",
       [](const std::optional<Variable> &begin,
@@ -67,8 +67,8 @@ template <class T> void bind_bins(pybind11::module &m) {
          const T &data) {
         return call_make_bins(begin, end, Dim{dim}, T(data));
       },
-      py::arg("begin") = py::none(), py::arg("end") = py::none(),
-      py::arg("dim"), py::arg("data")); // do not release GIL since using
+      nb::arg("begin") = nb::none(), nb::arg("end") = nb::none(),
+      nb::arg("dim"), nb::arg("data")); // do not release GIL since using
                                         // implicit conversions in functor
   m.def(
       "_bins_no_validate",
@@ -76,15 +76,15 @@ template <class T> void bind_bins(pybind11::module &m) {
          const T &data) {
         return call_make_bins(begin, end, Dim{dim}, T(data), false);
       },
-      py::arg("begin"), py::arg("end"), py::arg("dim"),
-      py::arg("data")); // do not release GIL since using
+      nb::arg("begin"), nb::arg("end"), nb::arg("dim"),
+      nb::arg("data")); // do not release GIL since using
                         // implicit conversions in functor
 }
 
-template <class T> py::dict bins_constituents(const Variable &var) {
+template <class T> nb::dict bins_constituents(const Variable &var) {
   auto &&[indices, dim, buffer] = var.constituents<T>();
   auto &&[begin, end] = unzip(indices);
-  py::dict out;
+  nb::dict out;
   out["begin"] = std::forward<decltype(begin)>(begin);
   out["end"] = std::forward<decltype(end)>(end);
   out["dim"] = std::string(dim.name());
@@ -93,8 +93,8 @@ template <class T> py::dict bins_constituents(const Variable &var) {
 }
 
 template <class T, bool HasAlignment = false>
-void bind_bins_map_view(py::module &m, const std::string &name) {
-  py::class_<T> c(m, name.c_str());
+void bind_bins_map_view(nb::module_ &m, const std::string &name) {
+  nb::class_<T> c(m, name.c_str());
   bind_common_mutable_view_operators(c);
   bind_pop(c);
   if constexpr (HasAlignment) {
@@ -102,7 +102,7 @@ void bind_bins_map_view(py::module &m, const std::string &name) {
   }
 }
 
-template <class T> void bind_bins_view(py::module &m) {
+template <class T> void bind_bins_view(nb::module_ &m) {
   bind_helper_view<str_items_view,
                    decltype(dataset::bins_view<T>(Variable{}).coords())>(
       m, "_BinsCoords");
@@ -122,7 +122,7 @@ template <class T> void bind_bins_view(py::module &m) {
                    decltype(dataset::bins_view<T>(Variable{}).masks())>(
       m, "_BinsMasks");
 
-  py::class_<decltype(dataset::bins_view<T>(Variable{}))> c(
+  nb::class_<decltype(dataset::bins_view<T>(Variable{}))> c(
       m, "_BinsViewDataArray");
   bind_mutable_view_no_dim<
       decltype(dataset::bins_view<T>(Variable{}).coords())>(
@@ -142,7 +142,7 @@ auto bins_like(const Variable &bins, const Data &data) {
   return out;
 }
 
-template <class Data> void bind_bins_like(py::module &m) {
+template <class Data> void bind_bins_like(nb::module_ &m) {
   m.def("bins_like", [](const Variable &bins, const Data &data) {
     if (bins.dtype() == dtype<bucket<Variable>>)
       return bins_like<Variable>(bins, data);
@@ -156,7 +156,7 @@ template <class Data> void bind_bins_like(py::module &m) {
 
 } // namespace
 
-void init_buckets(py::module &m) {
+void init_buckets(nb::module_ &m) {
   bind_bins<Variable>(m);
   bind_bins<DataArray>(m);
   bind_bins<Dataset>(m);
@@ -187,7 +187,7 @@ void init_buckets(py::module &m) {
          const std::optional<Variable> &fill_value) {
         return dataset::lookup_previous(function, x, Dim{dim}, fill_value);
       },
-      py::call_guard<py::gil_scoped_release>());
+      nb::call_guard<nb::gil_scoped_release>());
 
   auto buckets = m.def_submodule("buckets");
   buckets.def(
@@ -195,38 +195,38 @@ void init_buckets(py::module &m) {
       [](const Variable &a, const Variable &b) {
         return dataset::buckets::concatenate(a, b);
       },
-      py::call_guard<py::gil_scoped_release>());
+      nb::call_guard<nb::gil_scoped_release>());
   buckets.def(
       "concatenate",
       [](const DataArray &a, const DataArray &b) {
         return dataset::buckets::concatenate(a, b);
       },
-      py::call_guard<py::gil_scoped_release>());
+      nb::call_guard<nb::gil_scoped_release>());
   buckets.def(
       "append",
       [](Variable &a, const Variable &b) {
         return dataset::buckets::append(a, b);
       },
-      py::call_guard<py::gil_scoped_release>());
+      nb::call_guard<nb::gil_scoped_release>());
   buckets.def(
       "append",
       [](DataArray &a, const DataArray &b) {
         return dataset::buckets::append(a, b);
       },
-      py::call_guard<py::gil_scoped_release>());
+      nb::call_guard<nb::gil_scoped_release>());
   buckets.def(
       "map",
       [](const DataArray &function, const Variable &x, const std::string &dim,
          const std::optional<Variable> &fill_value) {
         return dataset::buckets::map(function, x, Dim{dim}, fill_value);
       },
-      py::call_guard<py::gil_scoped_release>());
+      nb::call_guard<nb::gil_scoped_release>());
   buckets.def(
       "scale",
       [](DataArray &array, const DataArray &histogram, const std::string &dim) {
         return dataset::buckets::scale(array, histogram, Dim{dim});
       },
-      py::call_guard<py::gil_scoped_release>());
+      nb::call_guard<nb::gil_scoped_release>());
 
   m.def(
       "bin",
@@ -235,10 +235,10 @@ void init_buckets(py::module &m) {
          const std::vector<std::string> &erase) {
         return dataset::bin(array, edges, groups, to_dim_type(erase));
       },
-      py::arg("array"), py::arg("edges"),
-      py::arg("groups") = std::vector<Variable>{},
-      py::arg("erase") = std::vector<std::string>{},
-      py::call_guard<py::gil_scoped_release>());
+      nb::arg("array"), nb::arg("edges"),
+      nb::arg("groups") = std::vector<Variable>{},
+      nb::arg("erase") = std::vector<std::string>{},
+      nb::call_guard<nb::gil_scoped_release>());
 
   bind_bins_view<DataArray>(m);
 }

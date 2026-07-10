@@ -2,7 +2,7 @@
 // Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "pybind11.h"
+#include "nanobind.h"
 #include "unit.h"
 
 #include "scipp/dataset/dataset.h"
@@ -14,16 +14,16 @@ using namespace scipp;
 using namespace scipp::variable;
 using namespace scipp::dataset;
 
-namespace py = pybind11;
+namespace nb = nanobind;
 
 namespace {
-template <typename T> void bind_norm(py::module &m) {
+template <typename T> void bind_norm(nb::module_ &m) {
   m.def(
-      "norm", [](const T &x) { return norm(x); }, py::arg("x"),
-      py::call_guard<py::gil_scoped_release>());
+      "norm", [](const T &x) { return norm(x); }, nb::arg("x"),
+      nb::call_guard<nb::gil_scoped_release>());
 }
 
-template <typename T> void bind_nan_to_num(py::module &m) {
+template <typename T> void bind_nan_to_num(nb::module_ &m) {
   m.def(
       "nan_to_num",
       [](const T &x, const std::optional<Variable> &nan,
@@ -38,10 +38,10 @@ template <typename T> void bind_nan_to_num(py::module &m) {
           negative_inf_to_num(out, *neginf, out);
         return out;
       },
-      py::arg("x"), py::kw_only(), py::arg("nan") = std::optional<Variable>(),
-      py::arg("posinf") = std::optional<Variable>(),
-      py::arg("neginf") = std::optional<Variable>(),
-      py::call_guard<py::gil_scoped_release>());
+      nb::arg("x"), nb::kw_only(), nb::arg("nan") = std::optional<Variable>(),
+      nb::arg("posinf") = std::optional<Variable>(),
+      nb::arg("neginf") = std::optional<Variable>(),
+      nb::call_guard<nb::gil_scoped_release>());
 
   m.def(
       "nan_to_num",
@@ -56,29 +56,29 @@ template <typename T> void bind_nan_to_num(py::module &m) {
           negative_inf_to_num(x, *neginf, out);
         return out;
       },
-      py::arg("x"), py::kw_only(), py::arg("nan") = std::optional<Variable>(),
-      py::arg("posinf") = std::optional<Variable>(),
-      py::arg("neginf") = std::optional<Variable>(), py::arg("out"),
-      py::call_guard<py::gil_scoped_release>());
+      nb::arg("x"), nb::kw_only(), nb::arg("nan") = std::optional<Variable>(),
+      nb::arg("posinf") = std::optional<Variable>(),
+      nb::arg("neginf") = std::optional<Variable>(), nb::arg("out"),
+      nb::call_guard<nb::gil_scoped_release>());
 }
 
-template <class T> void bind_to_unit(py::module &m) {
+template <class T> void bind_to_unit(nb::module_ &m) {
   m.def(
       "to_unit",
       [](const T &x, const ProtoUnit &unit, const bool copy) {
         return to_unit(x, unit_or_default(unit),
                        copy ? CopyPolicy::Always : CopyPolicy::TryAvoid);
       },
-      py::arg("x"), py::arg("unit"), py::arg("copy") = true,
-      py::call_guard<py::gil_scoped_release>());
+      nb::arg("x"), nb::arg("unit"), nb::arg("copy") = true,
+      nb::call_guard<nb::gil_scoped_release>());
 }
 
-template <class T> void bind_as_const(py::module &m) {
-  m.def("as_const", [](const T &x) { return x.as_const(); }, py::arg("x"));
+template <class T> void bind_as_const(nb::module_ &m) {
+  m.def("as_const", [](const T &x) { return x.as_const(); }, nb::arg("x"));
 }
 } // namespace
 
-void init_unary(py::module &m) {
+void init_unary(nb::module_ &m) {
   bind_norm<Variable>(m);
   bind_nan_to_num<Variable>(m);
   bind_to_unit<Variable>(m);

@@ -192,7 +192,8 @@ class _StringDataIO:
 
     @staticmethod
     def read(group: h5.Group, data: Variable) -> None:
-        values = group['values']
+        # asstr decodes the bytes returned by h5py; the C++ layer requires str.
+        values = group['values'].asstr()
         if len(data.shape) == 0:
             data.value = values[()]
         else:
@@ -322,7 +323,8 @@ class _VariableIO:
         else:
             contents['unit'] = None  # essential, otherwise default unit is used
         contents['with_variances'] = 'variances' in group
-        contents['aligned'] = values.attrs.get('aligned', True)
+        # h5py returns np.bool_ which the C++ layer does not accept for bool.
+        contents['aligned'] = bool(values.attrs.get('aligned', True))
         var = empty(**contents)
         cls._read_array_data(group, var)
         return var

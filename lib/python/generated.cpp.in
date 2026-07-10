@@ -2,10 +2,10 @@
 // Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "pybind11.h"
+#include "nanobind.h"
 
 @init_list_forward@
 
-void init_generated_@category@(pybind11::module &m) {
+void init_generated_@category@(nanobind::module_ &m) {
   @init_list@
 }

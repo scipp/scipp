@@ -7,12 +7,12 @@
 #include "scipp/dataset/dataset.h"
 
 #include "docstring.h"
-#include "pybind11.h"
+#include "nanobind.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
 
-namespace py = pybind11;
+namespace nb = nanobind;
 
 template <class T> Docstring docstring_groupby_numeric(const std::string &op) {
   return Docstring()
@@ -96,7 +96,7 @@ Group by bin edges:
       [](const GroupBy<T> &self, const std::string &dim) {                     \
         return self.NAME(Dim{dim});                                            \
       },                                                                       \
-      py::arg("dim"), py::call_guard<py::gil_scoped_release>(),                \
+      nb::arg("dim"), nb::call_guard<nb::gil_scoped_release>(),                \
       docstring_groupby_numeric<T>(TOSTRING(NAME)).c_str());
 
 #define BIND_GROUPBY_OP_BOOL(CLS, NAME)                                        \
@@ -105,31 +105,31 @@ Group by bin edges:
       [](const GroupBy<T> &self, const std::string &dim) {                     \
         return self.NAME(Dim{dim});                                            \
       },                                                                       \
-      py::arg("dim"), py::call_guard<py::gil_scoped_release>(),                \
+      nb::arg("dim"), nb::call_guard<nb::gil_scoped_release>(),                \
       docstring_groupby_bool<T>(TOSTRING(NAME)).c_str());
 
-template <class T> void bind_groupby(py::module &m, const std::string &name) {
+template <class T> void bind_groupby(nb::module_ &m, const std::string &name) {
   m.def(
       "groupby",
       [](const T &x, const std::string &dim) { return groupby(x, Dim{dim}); },
-      py::arg("data"), py::arg("group"),
-      py::call_guard<py::gil_scoped_release>());
+      nb::arg("data"), nb::arg("group"),
+      nb::call_guard<nb::gil_scoped_release>());
 
   m.def(
       "groupby",
       [](const T &x, const std::string &dim, const Variable &bins) {
         return groupby(x, Dim{dim}, bins);
       },
-      py::arg("data"), py::arg("group"), py::arg("bins"),
-      py::call_guard<py::gil_scoped_release>());
+      nb::arg("data"), nb::arg("group"), nb::arg("bins"),
+      nb::call_guard<nb::gil_scoped_release>());
 
   m.def("groupby",
-        py::overload_cast<const T &, const Variable &, const Variable &>(
+        nb::overload_cast<const T &, const Variable &, const Variable &>(
             &groupby),
-        py::arg("data"), py::arg("group"), py::arg("bins"),
-        py::call_guard<py::gil_scoped_release>());
+        nb::arg("data"), nb::arg("group"), nb::arg("bins"),
+        nb::call_guard<nb::gil_scoped_release>());
 
-  py::class_<GroupBy<T>> groupBy(m, name.c_str(), R"(
+  nb::class_<GroupBy<T>> groupBy(m, name.c_str(), R"(
     GroupBy object implementing split-apply-combine mechanism.)");
 
   BIND_GROUPBY_OP_NUMERIC(groupBy, mean);
@@ -146,7 +146,7 @@ template <class T> void bind_groupby(py::module &m, const std::string &name) {
       [](const GroupBy<T> &self, const std::string &dim) {
         return self.concat(Dim{dim});
       },
-      py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+      nb::arg("dim"), nb::call_guard<nb::gil_scoped_release>(),
       R"(Concatenate bins within each group.
 
 This operation is used with binned data to combine events from different
@@ -182,7 +182,7 @@ are concatenated into another bin.
 )");
 }
 
-void init_groupby(py::module &m) {
+void init_groupby(nb::module_ &m) {
   bind_groupby<DataArray>(m, "GroupByDataArray");
   bind_groupby<Dataset>(m, "GroupByDataset");
 }

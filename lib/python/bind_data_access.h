@@ -7,8 +7,6 @@
 #include <algorithm>
 #include <variant>
 
-#include <pybind11/typing.h>
-
 #include "scipp/core/dtype.h"
 #include "scipp/core/eigen.h"
 #include "scipp/core/spatial_transforms.h"
@@ -20,12 +18,12 @@
 #include "scipp/variable/variable_concept.h"
 
 #include "dtype.h"
+#include "nanobind.h"
 #include "numpy.h"
 #include "py_object.h"
-#include "pybind11.h"
 #include "unit.h"
 
-namespace py = pybind11;
+namespace nb = nanobind;
 using namespace scipp;
 
 template <class T> void remove_variances(T &obj) {
@@ -42,15 +40,10 @@ template <class T> void init_variances(T &obj) {
     obj.setVariances(Variable(obj));
 }
 
-/// Add element size as factor to strides.
-template <class T>
-std::vector<scipp::index>
-numpy_strides(const std::span<const scipp::index> &s) {
-  std::vector<scipp::index> strides(s.size());
-  for (size_t i = 0; i < strides.size(); ++i) {
-    strides[i] = sizeof(T) * s[i];
-  }
-  return strides;
+/// nb::ndarray uses element-based strides (not byte-based as numpy does).
+inline std::vector<int64_t>
+element_strides(const std::span<const scipp::index> &s) {
+  return {s.begin(), s.end()};
 }
 
 template <typename T> decltype(auto) get_data_variable(T &&x) {
@@ -61,10 +54,10 @@ template <typename T> decltype(auto) get_data_variable(T &&x) {
   }
 }
 
-/// Return a pybind11 handle to the VariableConcept of x.
+/// Return a Python handle to the VariableConcept of x.
 /// Refers to the data variable if T is a DataArray.
 template <typename T> auto get_data_variable_concept_handle(T &&x) {
-  return py::cast(get_data_variable(std::forward<T>(x)).data_handle());
+  return nb::cast(get_data_variable(std::forward<T>(x)).data_handle());
 }
 
 template <class... Ts> class as_ElementArrayViewImpl;
@@ -73,35 +66,39 @@ class DataAccessHelper {
   template <class... Ts> friend class as_ElementArrayViewImpl;
 
   template <class Getter, class T, class View>
-  static py::object as_py_array_t_impl(View &&view) {
-    const auto get_dtype = [&view]() {
-      if constexpr (std::is_same_v<T, scipp::core::time_point>) {
-        // Need a custom implementation because py::dtype::of only works with
-        // types supported by the buffer protocol.
-        return py::dtype("datetime64[" + to_numpy_time_string(view.unit()) +
-                         ']');
-      } else {
-        static_cast<void>(view);
-        return py::dtype::of<T>();
-      }
-    };
+  static nb::object as_py_array_t_impl(View &&view) {
+    // nb::ndarray cannot represent datetime64 (DLPack has no datetime type).
+    // Export the underlying int64 array and reinterpret it as datetime64 on
+    // the Python level. This preserves the zero-copy behavior and the
+    // owner (base object) chain.
+    using Elem = std::conditional_t<std::is_same_v<T, scipp::core::time_point>,
+                                    int64_t, T>;
     auto &&var = get_data_variable(view);
     const auto &dims = view.dims();
+    const auto &shape_index = dims.shape();
+    const std::vector<size_t> shape(shape_index.begin(), shape_index.end());
+    const auto strides = element_strides(var.strides());
+    const nb::object owner = get_data_variable_concept_handle(view);
+    nb::object array;
     if (var.is_readonly()) {
-      auto array =
-          py::array{get_dtype(), dims.shape(), numpy_strides<T>(var.strides()),
-                    Getter::template get<T>(std::as_const(view)).data(),
-                    get_data_variable_concept_handle(view)};
-      py::detail::array_proxy(array.ptr())->flags &=
-          ~py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
-      // no automatic move because of type mismatch
-      return py::object{std::move(array)};
+      const auto *data = reinterpret_cast<const Elem *>(
+          Getter::template get<T>(std::as_const(view)).data());
+      // A const data pointer produces a read-only numpy array.
+      array = nb::cast(nb::ndarray<nb::numpy, const Elem>(
+          data, shape.size(), shape.data(), owner, strides.data()));
     } else {
-      return py::array{get_dtype(), dims.shape(),
-                       numpy_strides<T>(var.strides()),
-                       Getter::template get<T>(view).data(),
-                       get_data_variable_concept_handle(view)};
+      // ElementArrayView::data is const; writability is governed by the
+      // is_readonly branch above (as it was with pybind11's py::array).
+      auto *data = reinterpret_cast<Elem *>(
+          const_cast<T *>(Getter::template get<T>(view).data()));
+      array = nb::cast(nb::ndarray<nb::numpy, Elem>(
+          data, shape.size(), shape.data(), owner, strides.data()));
     }
+    if constexpr (std::is_same_v<T, scipp::core::time_point>) {
+      array = array.attr("view")("datetime64[" +
+                                 to_numpy_time_string(view.unit()) + ']');
+    }
+    return array;
   }
 
   struct get_values {
@@ -182,7 +179,7 @@ template <class... Ts> class as_ElementArrayViewImpl {
 
   template <class View>
   static void set(const Dimensions &dims, const sc_units::Unit unit,
-                  const View &view, const py::object &obj) {
+                  const View &view, const nb::object &obj) {
     std::visit(
         [&dims, &unit, &obj](const auto &view_) {
           using T =
@@ -227,8 +224,8 @@ template <class... Ts> class as_ElementArrayViewImpl {
 
 public:
   template <class Getter, class View>
-  static py::object get_py_array_t(py::object &obj) {
-    auto &view = obj.cast<View &>();
+  static nb::object get_py_array_t(nb::object &obj) {
+    auto &view = nb::cast<View &>(obj);
     if (!std::is_const_v<View> && get_data_variable(view).is_readonly())
       return as_ElementArrayViewImpl<const Ts...>::template get_py_array_t<
           Getter, const View>(obj);
@@ -264,29 +261,30 @@ public:
           } else {
             // Returning view (span or ElementArrayView) by value. This
             // references data in variable, so it must be kept alive. There is
-            // no policy that supports this, so we use `keep_alive_impl`
+            // no policy that supports this, so we use `nb::detail::keep_alive`
             // manually.
-            auto ret = py::cast(data, py::return_value_policy::move);
-            pybind11::detail::keep_alive_impl(
-                ret, get_data_variable_concept_handle(view));
+            auto copy = data;
+            auto ret = nb::cast(std::move(copy), nb::rv_policy::move);
+            nb::detail::keep_alive(
+                ret.ptr(), get_data_variable_concept_handle(view).ptr());
             return ret;
           }
         },
         get<Getter>(view));
   }
 
-  template <class Var> static py::object values(py::object &object) {
+  template <class Var> static nb::object values(nb::object &object) {
     return get_py_array_t<get_values, Var>(object);
   }
 
-  template <class Var> static py::object variances(py::object &object) {
-    if (!object.cast<Var &>().has_variances())
-      return py::none();
+  template <class Var> static nb::object variances(nb::object &object) {
+    if (!nb::cast<Var &>(object).has_variances())
+      return nb::none();
     return get_py_array_t<get_variances, Var>(object);
   }
 
   template <class Var>
-  static void set_values(Var &view, const py::object &obj) {
+  static void set_values(Var &view, const nb::object &obj) {
     if (is_structured(view.dtype())) {
       auto elems = structure_elements(view);
       set_values(elems, obj);
@@ -296,7 +294,7 @@ public:
   }
 
   template <class Var>
-  static void set_variances(Var &view, const py::object &obj) {
+  static void set_variances(Var &view, const nb::object &obj) {
     if (obj.is_none())
       return remove_variances(view);
     if (!view.has_variances())
@@ -305,12 +303,27 @@ public:
   }
 
 private:
-  static auto numpy_attr(const char *const name) {
-    return py::module_::import("numpy").attr(name);
+  static nb::object numpy_attr(const char *const name) {
+    return nb::module_::import_("numpy").attr(name);
+  }
+
+  template <class T> static constexpr const char *numpy_scalar_type_name() {
+    if constexpr (std::is_same_v<T, double>)
+      return "float64";
+    else if constexpr (std::is_same_v<T, float>)
+      return "float32";
+    else if constexpr (std::is_same_v<T, int64_t>)
+      return "int64";
+    else if constexpr (std::is_same_v<T, int32_t>)
+      return "int32";
+    else if constexpr (std::is_same_v<T, bool>)
+      return "bool_";
+    else
+      static_assert(!sizeof(T), "No numpy scalar type known for this type.");
   }
 
   template <class Scalar, class View>
-  static py::object make_scalar(Scalar &&scalar, py::object parent,
+  static nb::object make_scalar(Scalar &&scalar, nb::object parent,
                                 const View &view) {
     if constexpr (std::is_same_v<std::decay_t<Scalar>,
                                  scipp::python::PyObject>) {
@@ -324,27 +337,27 @@ private:
       return np_datetime64(scalar.time_since_epoch(),
                            to_numpy_time_string(view.unit()));
     } else if constexpr (std::is_arithmetic_v<std::decay_t<Scalar>>) {
-      return py::cast(py::make_scalar(scalar));
+      // Return a numpy scalar (e.g. np.float64) instead of a Python scalar
+      // for consistency with the behavior of numpy indexing.
+      return numpy_attr(numpy_scalar_type_name<std::decay_t<Scalar>>())(scalar);
     } else if constexpr (!std::is_reference_v<Scalar>) {
       // Views such as slices of data arrays for binned data are
       // returned by value and require separate handling to avoid the
-      // py::return_value_policy::reference_internal in the default case
+      // nb::rv_policy::reference_internal in the default case
       // below.
-      return py::cast(scalar, py::return_value_policy::move);
+      return nb::cast(scalar, nb::rv_policy::move);
     } else {
       // Returning reference to element in variable. Return-policy
-      // reference_internal keeps alive `parent`. Note that an attempt to
-      // pass `keep_alive` as a call policy to `def_property` failed,
-      // resulting in exception from pybind11, so we have to handle it by
-      // hand here.
-      return py::cast(scalar, py::return_value_policy::reference_internal,
+      // reference_internal keeps alive `parent`, passed as the parent
+      // handle to nb::cast.
+      return nb::cast(scalar, nb::rv_policy::reference_internal,
                       std::move(parent));
     }
   }
 
   // Helper function object to get a scalar value or variance.
   template <class View> struct GetScalarVisitor {
-    py::object &self; // The object we're getting the value / variance from.
+    nb::object &self; // The object we're getting the value / variance from.
     std::remove_reference_t<View> &view; // self as a view.
 
     template <class Data> auto operator()(const Data &&data) const {
@@ -354,7 +367,7 @@ private:
 
   // Helper function object to set a scalar value or variance.
   template <class View> struct SetScalarVisitor {
-    const py::object &rhs;               // The object we are assigning.
+    const nb::object &rhs;               // The object we are assigning.
     std::remove_reference_t<View> &view; // View of self.
 
     template <class Data> auto operator()(Data &&data) const {
@@ -368,17 +381,17 @@ private:
           throw std::invalid_argument(
               "Conversion of time units is not implemented.");
         }
-        data[0] = make_time_point(rhs.template cast<py::buffer>());
+        data[0] = make_time_point(rhs);
       } else
-        data[0] = rhs.cast<T>();
+        data[0] = nb::cast<T>(rhs);
     }
   };
 
 public:
   // Return a scalar value from a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
-  template <class Var> static py::object value(py::object &obj) {
-    auto &view = obj.cast<Var &>();
+  template <class Var> static nb::object value(nb::object &obj) {
+    auto &view = nb::cast<Var &>(obj);
     if (!std::is_const_v<Var> && get_data_variable(view).is_readonly())
       return as_ElementArrayViewImpl<const Ts...>::template value<const Var>(
           obj);
@@ -392,20 +405,20 @@ public:
   }
   // Return a scalar variance from a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
-  template <class Var> static py::object variance(py::object &obj) {
-    auto &view = obj.cast<Var &>();
+  template <class Var> static nb::object variance(nb::object &obj) {
+    auto &view = nb::cast<Var &>(obj);
     if (!std::is_const_v<Var> && get_data_variable(view).is_readonly())
       return as_ElementArrayViewImpl<const Ts...>::template variance<const Var>(
           obj);
     expect_scalar(view.dims(), "variance");
     if (!view.has_variances())
-      return py::none();
+      return nb::none();
     return std::visit(GetScalarVisitor<decltype(view)>{obj, view},
                       get<get_variances>(view));
   }
   // Set a scalar value in a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
-  template <class Var> static void set_value(Var &view, const py::object &obj) {
+  template <class Var> static void set_value(Var &view, const nb::object &obj) {
     expect_scalar(view.dims(), "value");
     if (is_structured(view.dtype())) {
       auto elems = structure_elements(view);
@@ -418,7 +431,7 @@ public:
   // Set a scalar variance in a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
   template <class Var>
-  static void set_variance(Var &view, const py::object &obj) {
+  static void set_variance(Var &view, const nb::object &obj) {
     expect_scalar(view.dims(), "variance");
     if (obj.is_none())
       return remove_variances(view);
@@ -437,17 +450,18 @@ using as_ElementArrayView = as_ElementArrayViewImpl<
     Eigen::Affine3d, scipp::core::Quaternion, scipp::core::Translation>;
 
 template <class T, class... Ignored>
-void bind_common_data_properties(pybind11::class_<T, Ignored...> &c) {
-  c.def_property_readonly(
+void bind_common_data_properties(nanobind::class_<T, Ignored...> &c) {
+  c.def_prop_ro(
       "dims",
       [](const T &self) {
         const auto &labels = self.dims().labels();
         const auto ndim = static_cast<size_t>(self.ndim());
-        py::typing::Tuple<py::str, py::ellipsis> dims(ndim);
+        auto dims = nb::steal<nb::tuple>(PyTuple_New(ndim));
         for (size_t i = 0; i < ndim; ++i) {
-          dims[i] = labels[i].name();
+          PyTuple_SET_ITEM(dims.ptr(), static_cast<Py_ssize_t>(i),
+                           nb::cast(labels[i].name()).release().ptr());
         }
-        return dims;
+        return nb::typed<nb::tuple, nb::str, nb::ellipsis>(std::move(dims));
       },
       R"(Dimension labels of the data (read-only).
 
@@ -466,8 +480,8 @@ Examples
   >>> da.dims
   ('x', 'y')
 )",
-      py::return_value_policy::move);
-  c.def_property_readonly(
+      nb::rv_policy::move);
+  c.def_prop_ro(
       "dim", [](const T &self) { return self.dim().name(); },
       R"(The only dimension label for 1-dimensional data, raising an exception
 if the data is not 1-dimensional.
@@ -484,7 +498,7 @@ Examples
   >>> da.dim
   'time'
 )");
-  c.def_property_readonly(
+  c.def_prop_ro(
       "ndim", [](const T &self) { return self.ndim(); },
       R"(Number of dimensions of the data (read-only).
 
@@ -501,17 +515,18 @@ Examples
   >>> sc.array(dims=['x', 'y'], values=[[1, 2], [3, 4]]).ndim
   2
 )",
-      py::return_value_policy::move);
-  c.def_property_readonly(
+      nb::rv_policy::move);
+  c.def_prop_ro(
       "shape",
       [](const T &self) {
         const auto &sizes = self.dims().sizes();
         const auto ndim = static_cast<size_t>(self.ndim());
-        py::typing::Tuple<int, py::ellipsis> shape(ndim);
+        auto shape = nb::steal<nb::tuple>(PyTuple_New(ndim));
         for (size_t i = 0; i < ndim; ++i) {
-          shape[i] = sizes[i];
+          PyTuple_SET_ITEM(shape.ptr(), static_cast<Py_ssize_t>(i),
+                           nb::cast(sizes[i]).release().ptr());
         }
-        return shape;
+        return nb::typed<nb::tuple, int, nb::ellipsis>(std::move(shape));
       },
       R"(Shape of the data (read-only).
 
@@ -526,14 +541,14 @@ Examples
   >>> sc.scalar(1.0).shape
   ()
 )",
-      py::return_value_policy::move);
-  c.def_property_readonly(
+      nb::rv_policy::move);
+  c.def_prop_ro(
       "sizes",
       [](const T &self) {
         const auto &dims = self.dims();
-        // Use py::dict directly instead of std::map in order to guarantee
+        // Use nb::dict directly instead of std::map in order to guarantee
         // that items are stored in the order of insertion.
-        py::typing::Dict<py::str, int> sizes;
+        nb::typed<nb::dict, nb::str, int> sizes;
         for (const auto label : dims.labels()) {
           sizes[label.name().c_str()] = dims[label];
         }
@@ -555,7 +570,7 @@ Examples
   >>> da.sizes
   {'time': 3, 'channel': 2}
 )",
-      py::return_value_policy::move);
+      nb::rv_policy::move);
 }
 
 namespace {
@@ -581,9 +596,9 @@ Variable get_data_variable(const T &self, const std::string &property_name) {
 } // namespace
 
 template <class T, class... Ignored>
-void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
+void bind_data_properties(nanobind::class_<T, Ignored...> &c) {
   bind_common_data_properties(c);
-  c.def_property_readonly(
+  c.def_prop_ro(
       "dtype",
       [](const T &self) { return get_data_variable(self, "dtype").dtype(); },
       R"(Data type contained in the variable.
@@ -599,7 +614,7 @@ Examples
   >>> sc.array(dims=['x'], values=['a', 'b', 'c']).dtype
   DType('string')
 )");
-  c.def_property(
+  c.def_prop_rw(
       "unit",
       [](const T &self) {
         const auto &var = get_data_variable(self, "unit");
@@ -625,9 +640,9 @@ Examples
 
 Note: Changing the unit does not convert the values.
 )");
-  c.def_property("values", &as_ElementArrayView::values<T>,
-                 &as_ElementArrayView::set_values<T>,
-                 R"(Array of values of the data.
+  c.def_prop_rw("values", &as_ElementArrayView::values<T>,
+                &as_ElementArrayView::set_values<T>,
+                R"(Array of values of the data.
 
 Returns a NumPy array that shares memory with the variable's data buffer.
 Modifications to the array will affect the variable and vice versa.
@@ -654,9 +669,10 @@ Or replaced entirely:
   >>> var
   <scipp.Variable> (x: 3)    float64              [m]  [4, 5, 6]
 )");
-  c.def_property("variances", &as_ElementArrayView::variances<T>,
-                 &as_ElementArrayView::set_variances<T>,
-                 R"(Array of variances of the data.
+  c.def_prop_rw("variances", &as_ElementArrayView::variances<T>,
+                &as_ElementArrayView::set_variances<T>,
+                nb::for_setter(nb::arg().none()),
+                R"(Array of variances of the data.
 
 Returns a NumPy array that shares memory with the variable's variance buffer,
 or None if the variable has no variances.
@@ -684,7 +700,7 @@ Variances can be set or removed:
   >>> var_no_var.variances is None
   True
 )");
-  c.def_property(
+  c.def_prop_rw(
       "value", &as_ElementArrayView::value<T>,
       &as_ElementArrayView::set_value<T>,
       R"(The only value for 0-dimensional data, raising an exception if the data
@@ -711,9 +727,9 @@ Integer scalars return numpy scalar types:
   >>> int_scalar.value
   np.int64(42)
 )");
-  c.def_property(
+  c.def_prop_rw(
       "variance", &as_ElementArrayView::variance<T>,
-      &as_ElementArrayView::set_variance<T>,
+      &as_ElementArrayView::set_variance<T>, nb::for_setter(nb::arg().none()),
       R"(The only variance for 0-dimensional data, raising an exception if the
 data is not 0-dimensional.
 
@@ -739,7 +755,7 @@ Scalars without variance return None:
   True
 )");
   if constexpr (std::is_same_v<T, DataArray> || std::is_same_v<T, Variable>) {
-    c.def_property_readonly(
+    c.def_prop_ro(
         "size", [](const T &self) { return self.dims().volume(); },
         R"(Number of elements in the data (read-only).
 
@@ -756,6 +772,6 @@ Examples
   >>> sc.scalar(1.0).size
   1
 )",
-        py::return_value_policy::move);
+        nb::rv_policy::move);
   }
 }

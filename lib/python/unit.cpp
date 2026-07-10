@@ -14,7 +14,7 @@
 #include "dtype.h"
 
 using namespace scipp;
-namespace py = pybind11;
+namespace nb = nanobind;
 
 namespace {
 bool temporal_or_dimensionless(const sc_units::Unit unit) {
@@ -53,11 +53,11 @@ get_time_unit(const std::optional<scipp::sc_units::Unit> value_unit,
   return {actual_unit, 1};
 }
 
-std::tuple<sc_units::Unit, int64_t> get_time_unit(const py::buffer &value,
-                                                  const py::object &dtype,
+std::tuple<sc_units::Unit, int64_t> get_time_unit(const nb::object &value,
+                                                  const nb::object &dtype,
                                                   const sc_units::Unit unit) {
   return get_time_unit(
-      value.is_none() || value.attr("dtype").attr("kind").cast<char>() != 'M'
+      value.is_none() || nb::cast<char>(value.attr("dtype").attr("kind")) != 'M'
           ? std::optional<sc_units::Unit>{}
           : parse_datetime_dtype(value),
       dtype.is_none() ? std::optional<sc_units::Unit>{}
@@ -67,7 +67,7 @@ std::tuple<sc_units::Unit, int64_t> get_time_unit(const py::buffer &value,
 
 template <>
 std::tuple<scipp::sc_units::Unit, scipp::sc_units::Unit>
-common_unit<scipp::core::time_point>(const pybind11::object &values,
+common_unit<scipp::core::time_point>(const nanobind::object &values,
                                      const scipp::sc_units::Unit unit) {
   if (!temporal_or_dimensionless(unit)) {
     throw except::UnitError("Invalid unit for dtype=datetime64: " +
@@ -117,7 +117,7 @@ scipp::sc_units::Unit unit_or_default(const ProtoUnit &unit, const DType type) {
                          "Default unit requested but dtype unknown.");
                    return variable::default_unit_for(type);
                  },
-                 [](const py::none &) { return sc_units::none; },
+                 [](const std::monostate &) { return sc_units::none; },
                  [](const std::string &u) { return sc_units::Unit(u); },
                  [](const sc_units::Unit &u) { return u; }},
       unit);

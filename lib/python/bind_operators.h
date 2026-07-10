@@ -21,12 +21,12 @@
 
 #include "dtype.h"
 #include "format.h"
-#include "pybind11.h"
+#include "nanobind.h"
 
-namespace py = pybind11;
+namespace nb = nanobind;
 
 template <class T, class... Ignored>
-void bind_common_operators(pybind11::class_<T, Ignored...> &c) {
+void bind_common_operators(nanobind::class_<T, Ignored...> &c) {
   c.def("__abs__", [](const T &self) { return abs(self); });
   c.def("__repr__", [](const T &self) { return to_string(self); });
   c.def("__bool__", [](const T &self) {
@@ -42,7 +42,7 @@ void bind_common_operators(pybind11::class_<T, Ignored...> &c) {
   c.def(
       "copy",
       [](const T &self, const bool deep) { return deep ? copy(self) : self; },
-      py::arg("deep") = true, py::call_guard<py::gil_scoped_release>(),
+      nb::arg("deep") = true, nb::call_guard<nb::gil_scoped_release>(),
       R"(
       Return a (by default deep) copy.
 
@@ -62,13 +62,13 @@ void bind_common_operators(pybind11::class_<T, Ignored...> &c) {
 )");
   c.def(
       "__copy__", [](const T &self) { return self; },
-      py::call_guard<py::gil_scoped_release>(), "Return a (shallow) copy.");
+      nb::call_guard<nb::gil_scoped_release>(), "Return a (shallow) copy.");
   c.def(
        "__deepcopy__",
-       [](const T &self, const py::typing::Dict<py::object, py::object> &) {
+       [](const T &self, const nb::typed<nb::dict, nb::object, nb::object> &) {
          return copy(self);
        },
-       py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
+       nb::call_guard<nb::gil_scoped_release>(), "Return a (deep) copy.")
       .def(
           "__sizeof__",
           [](const T &self) {
@@ -102,10 +102,10 @@ This function includes all memory of the underlying buffers. Use
 }
 
 template <class T, class... Ignored>
-void bind_astype(py::class_<T, Ignored...> &c) {
+void bind_astype(nb::class_<T, Ignored...> &c) {
   c.def(
       "astype",
-      [](const T &self, const py::object &type, const bool copy) {
+      [](const T &self, const nb::object &type, const bool copy) {
         const auto [scipp_dtype, dtype_unit] =
             cast_dtype_and_unit(type, DefaultUnit{});
         if (dtype_unit.has_value() &&
@@ -116,12 +116,12 @@ void bind_astype(py::class_<T, Ignored...> &c) {
               self.dtype(), " to ", type,
               ". Use to_unit in combination with astype."));
         }
-        [[maybe_unused]] py::gil_scoped_release release;
+        [[maybe_unused]] nb::gil_scoped_release release;
         return astype(self, scipp_dtype,
                       copy ? scipp::CopyPolicy::Always
                            : scipp::CopyPolicy::TryAvoid);
       },
-      py::arg("type"), py::kw_only(), py::arg("copy") = true,
+      nb::arg("type"), nb::kw_only(), nb::arg("copy") = true,
       R"(
         Converts a Variable or DataArray to a different dtype.
 
@@ -161,13 +161,13 @@ void bind_astype(py::class_<T, Ignored...> &c) {
 }
 
 template <class Other, class T, class... Ignored>
-void bind_inequality_to_operator(pybind11::class_<T, Ignored...> &c) {
+void bind_inequality_to_operator(nanobind::class_<T, Ignored...> &c) {
   c.def(
       "__eq__", [](const T &a, const Other &b) { return a == b; },
-      py::is_operator(), py::call_guard<py::gil_scoped_release>());
+      nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
   c.def(
       "__ne__", [](const T &a, const Other &b) { return a != b; },
-      py::is_operator(), py::call_guard<py::gil_scoped_release>());
+      nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
 }
 
 struct Identity {
@@ -184,17 +184,17 @@ struct ScalarToVariable {
 template <class RHSSetup> struct OpBinder {
   // Returns a callable for use with pybind11's c.def() that implements an
   // in-place operator. The returned lambda:
-  // 1. Extracts the C++ reference from the py::object while the Python thread
+  // 1. Extracts the C++ reference from the nb::object while the Python thread
   //    state is still attached (required for free-threaded Python, where
-  //    a.cast<T &>() may trigger PyCriticalSection_Begin).
+  //    nb::cast<T &>(a) may trigger PyCriticalSection_Begin).
   // 2. Releases the GIL around the pure C++ operation.
-  // 3. Returns py::object& (not by value) to avoid incrementing the reference
+  // 3. Returns nb::object& (not by value) to avoid incrementing the reference
   //    count, which would be incorrect after releasing the GIL.
   template <class T, class Other, class Op> static auto inplace_op(Op op) {
-    return [op](py::object &a, Other &b) -> py::object & {
-      auto &self = a.cast<T &>();
+    return [op](nb::object &a, Other &b) -> nb::object & {
+      auto &self = nb::cast<T &>(a);
       {
-        py::gil_scoped_release release;
+        nb::gil_scoped_release release;
         op(self, RHSSetup{}(b));
       }
       return a;
@@ -202,25 +202,25 @@ template <class RHSSetup> struct OpBinder {
   }
 
   template <class Other, class T, class... Ignored>
-  static void in_place_binary(pybind11::class_<T, Ignored...> &c) {
+  static void in_place_binary(nanobind::class_<T, Ignored...> &c) {
     using namespace scipp;
     c.def("__iadd__", inplace_op<T, Other>([](auto &a, auto &&b) { a += b; }),
-          py::is_operator());
+          nb::is_operator());
     c.def("__isub__", inplace_op<T, Other>([](auto &a, auto &&b) { a -= b; }),
-          py::is_operator());
+          nb::is_operator());
     c.def("__imul__", inplace_op<T, Other>([](auto &a, auto &&b) { a *= b; }),
-          py::is_operator());
+          nb::is_operator());
     c.def("__itruediv__",
           inplace_op<T, Other>([](auto &a, auto &&b) { a /= b; }),
-          py::is_operator());
+          nb::is_operator());
     if constexpr (!(std::is_same_v<T, Dataset> ||
                     std::is_same_v<Other, Dataset>)) {
       c.def("__imod__", inplace_op<T, Other>([](auto &a, auto &&b) { a %= b; }),
-            py::is_operator());
+            nb::is_operator());
       c.def("__ifloordiv__", inplace_op<T, Other>([](auto &a, auto &&b) {
               floor_divide_equals(a, b);
             }),
-            py::is_operator());
+            nb::is_operator());
       if constexpr (!(std::is_same_v<T, DataArray> ||
                       std::is_same_v<Other, DataArray>)) {
         c.def(
@@ -228,27 +228,27 @@ template <class RHSSetup> struct OpBinder {
             [](T &base, Other &exponent) -> T & {
               return pow(base, RHSSetup{}(exponent), base);
             },
-            py::is_operator(), py::call_guard<py::gil_scoped_release>());
+            nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
       }
     }
   }
 
   template <class Other, class T, class... Ignored>
-  static void binary(pybind11::class_<T, Ignored...> &c) {
+  static void binary(nanobind::class_<T, Ignored...> &c) {
     using namespace scipp;
     c.def(
         "__add__", [](const T &a, const Other &b) { return a + RHSSetup{}(b); },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+        nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
     c.def(
         "__sub__", [](const T &a, const Other &b) { return a - RHSSetup{}(b); },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+        nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
     c.def(
         "__mul__", [](const T &a, const Other &b) { return a * RHSSetup{}(b); },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+        nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
     c.def(
         "__truediv__",
         [](const T &a, const Other &b) { return a / RHSSetup{}(b); },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+        nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
     if constexpr (!(std::is_same_v<T, Dataset> ||
                     std::is_same_v<Other, Dataset>)) {
       c.def(
@@ -256,36 +256,36 @@ template <class RHSSetup> struct OpBinder {
           [](const T &a, const Other &b) {
             return floor_divide(a, RHSSetup{}(b));
           },
-          py::is_operator(), py::call_guard<py::gil_scoped_release>());
+          nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
       c.def(
           "__mod__",
           [](const T &a, const Other &b) { return a % RHSSetup{}(b); },
-          py::is_operator(), py::call_guard<py::gil_scoped_release>());
+          nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
       c.def(
           "__pow__",
           [](const T &base, const Other &exponent) {
             return pow(base, RHSSetup{}(exponent));
           },
-          py::is_operator(), py::call_guard<py::gil_scoped_release>());
+          nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
     }
   }
 
   template <class Other, class T, class... Ignored>
-  static void reverse_binary(pybind11::class_<T, Ignored...> &c) {
+  static void reverse_binary(nanobind::class_<T, Ignored...> &c) {
     using namespace scipp;
     c.def(
         "__radd__", [](const T &a, const Other b) { return RHSSetup{}(b) + a; },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+        nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
     c.def(
         "__rsub__", [](const T &a, const Other b) { return RHSSetup{}(b)-a; },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+        nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
     c.def(
         "__rmul__", [](const T &a, const Other b) { return RHSSetup{}(b)*a; },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+        nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
     c.def(
         "__rtruediv__",
         [](const T &a, const Other b) { return RHSSetup{}(b) / a; },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+        nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
     if constexpr (!(std::is_same_v<T, Dataset> ||
                     std::is_same_v<Other, Dataset>)) {
       c.def(
@@ -293,121 +293,121 @@ template <class RHSSetup> struct OpBinder {
           [](const T &a, const Other &b) {
             return floor_divide(RHSSetup{}(b), a);
           },
-          py::is_operator(), py::call_guard<py::gil_scoped_release>());
+          nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
       c.def(
           "__rmod__",
           [](const T &a, const Other &b) { return RHSSetup{}(b) % a; },
-          py::is_operator(), py::call_guard<py::gil_scoped_release>());
+          nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
       c.def(
           "__rpow__",
           [](const T &exponent, const Other &base) {
             return pow(RHSSetup{}(base), exponent);
           },
-          py::is_operator(), py::call_guard<py::gil_scoped_release>());
+          nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
     }
   }
 
   template <class Other, class T, class... Ignored>
-  static void comparison(pybind11::class_<T, Ignored...> &c) {
+  static void comparison(nanobind::class_<T, Ignored...> &c) {
     c.def(
         "__eq__", [](const T &a, Other &b) { return equal(a, RHSSetup{}(b)); },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+        nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
     c.def(
         "__ne__",
         [](const T &a, Other &b) { return not_equal(a, RHSSetup{}(b)); },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+        nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
     c.def(
         "__lt__", [](const T &a, Other &b) { return less(a, RHSSetup{}(b)); },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+        nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
     c.def(
         "__gt__",
         [](const T &a, Other &b) { return greater(a, RHSSetup{}(b)); },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+        nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
     c.def(
         "__le__",
         [](const T &a, Other &b) { return less_equal(a, RHSSetup{}(b)); },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+        nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
     c.def(
         "__ge__",
         [](const T &a, Other &b) { return greater_equal(a, RHSSetup{}(b)); },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+        nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
   }
 };
 
 template <class Other, class T, class... Ignored>
-static void bind_in_place_binary(pybind11::class_<T, Ignored...> &c) {
+static void bind_in_place_binary(nanobind::class_<T, Ignored...> &c) {
   OpBinder<Identity>::in_place_binary<Other>(c);
 }
 
 template <class Other, class T, class... Ignored>
-static void bind_binary(pybind11::class_<T, Ignored...> &c) {
+static void bind_binary(nanobind::class_<T, Ignored...> &c) {
   OpBinder<Identity>::binary<Other>(c);
 }
 
 template <class Other, class T, class... Ignored>
-static void bind_comparison(pybind11::class_<T, Ignored...> &c) {
+static void bind_comparison(nanobind::class_<T, Ignored...> &c) {
   OpBinder<Identity>::comparison<Other>(c);
 }
 
 template <class T, class... Ignored>
-void bind_in_place_binary_scalars(pybind11::class_<T, Ignored...> &c) {
+void bind_in_place_binary_scalars(nanobind::class_<T, Ignored...> &c) {
   OpBinder<ScalarToVariable>::in_place_binary<double>(c);
   OpBinder<ScalarToVariable>::in_place_binary<int64_t>(c);
 }
 
 template <class T, class... Ignored>
-void bind_binary_scalars(pybind11::class_<T, Ignored...> &c) {
+void bind_binary_scalars(nanobind::class_<T, Ignored...> &c) {
   OpBinder<ScalarToVariable>::binary<double>(c);
   OpBinder<ScalarToVariable>::binary<int64_t>(c);
 }
 
 template <class T, class... Ignored>
-static void bind_reverse_binary_scalars(pybind11::class_<T, Ignored...> &c) {
+static void bind_reverse_binary_scalars(nanobind::class_<T, Ignored...> &c) {
   OpBinder<ScalarToVariable>::reverse_binary<double>(c);
   OpBinder<ScalarToVariable>::reverse_binary<int64_t>(c);
 }
 
 template <class T, class... Ignored>
-void bind_comparison_scalars(pybind11::class_<T, Ignored...> &c) {
+void bind_comparison_scalars(nanobind::class_<T, Ignored...> &c) {
   OpBinder<ScalarToVariable>::comparison<double>(c);
   OpBinder<ScalarToVariable>::comparison<int64_t>(c);
 }
 
 template <class T, class... Ignored>
-void bind_unary(pybind11::class_<T, Ignored...> &c) {
+void bind_unary(nanobind::class_<T, Ignored...> &c) {
   c.def(
-      "__neg__", [](const T &a) { return -a; }, py::is_operator(),
-      py::call_guard<py::gil_scoped_release>());
+      "__neg__", [](const T &a) { return -a; }, nb::is_operator(),
+      nb::call_guard<nb::gil_scoped_release>());
 }
 
 template <class T, class... Ignored>
-void bind_boolean_unary(pybind11::class_<T, Ignored...> &c) {
+void bind_boolean_unary(nanobind::class_<T, Ignored...> &c) {
   c.def(
-      "__invert__", [](const T &a) { return ~a; }, py::is_operator(),
-      py::call_guard<py::gil_scoped_release>());
+      "__invert__", [](const T &a) { return ~a; }, nb::is_operator(),
+      nb::call_guard<nb::gil_scoped_release>());
 }
 
 template <class Other, class T, class... Ignored>
-void bind_logical(pybind11::class_<T, Ignored...> &c) {
+void bind_logical(nanobind::class_<T, Ignored...> &c) {
   using T1 = const T;
   using T2 = const Other;
   c.def(
       "__or__", [](const T1 &a, const T2 &b) { return a | b; },
-      py::is_operator(), py::call_guard<py::gil_scoped_release>());
+      nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
   c.def(
       "__xor__", [](const T1 &a, const T2 &b) { return a ^ b; },
-      py::is_operator(), py::call_guard<py::gil_scoped_release>());
+      nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
   c.def(
       "__and__", [](const T1 &a, const T2 &b) { return a & b; },
-      py::is_operator(), py::call_guard<py::gil_scoped_release>());
+      nb::is_operator(), nb::call_guard<nb::gil_scoped_release>());
   using InplaceOp = OpBinder<Identity>;
   c.def("__ior__",
         InplaceOp::inplace_op<T, T2>([](auto &a, auto &&b) { a |= b; }),
-        py::is_operator());
+        nb::is_operator());
   c.def("__ixor__",
         InplaceOp::inplace_op<T, T2>([](auto &a, auto &&b) { a ^= b; }),
-        py::is_operator());
+        nb::is_operator());
   c.def("__iand__",
         InplaceOp::inplace_op<T, T2>([](auto &a, auto &&b) { a &= b; }),
-        py::is_operator());
+        nb::is_operator());
 }

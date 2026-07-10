@@ -8,51 +8,52 @@
 #include <scipp/core/dtype.h>
 #include <scipp/units/unit.h>
 
-#include "pybind11.h"
+#include "nanobind.h"
 #include "unit.h"
 
-namespace pybind11 {
-class dtype;
-}
+scipp::core::DType dtype_of(const nanobind::object &x);
 
-scipp::core::DType dtype_of(const pybind11::object &x);
-
-scipp::core::DType scipp_dtype(const pybind11::object &type);
+scipp::core::DType scipp_dtype(const nanobind::object &type);
 
 std::tuple<scipp::core::DType, std::optional<scipp::sc_units::Unit>>
-cast_dtype_and_unit(const pybind11::object &dtype, const ProtoUnit &unit);
+cast_dtype_and_unit(const nanobind::object &dtype, const ProtoUnit &unit);
 
 void ensure_conversion_possible(scipp::core::DType from, scipp::core::DType to,
                                 const std::string &data_name);
 
 template <class T, class = void> struct converting_cast {
-  static decltype(auto) cast(const pybind11::object &obj) {
-    return obj.cast<T>();
+  static decltype(auto) cast(const nanobind::object &obj) {
+    return nb::cast<T>(obj);
   }
 };
 
 template <class T>
 struct converting_cast<T, std::enable_if_t<std::is_integral_v<T>>> {
-  static decltype(auto) cast(const pybind11::object &obj) {
-    if (dtype_of(obj) == scipp::dtype<double>) {
-      // This conversion is not implemented in pybind11 v2.6.2
-      return obj.cast<pybind11::int_>().cast<T>();
+  static decltype(auto) cast(const nanobind::object &obj) {
+    if constexpr (std::is_same_v<T, bool>) {
+      // nanobind's bool caster does not convert from other types,
+      // pybind11's did.
+      return static_cast<bool>(nb::bool_(obj));
+    } else if (dtype_of(obj) == scipp::dtype<double>) {
+      // Explicit conversion because nb::cast does not convert
+      // floating point numbers to integers.
+      return nb::cast<T>(nb::int_(obj));
     } else {
-      // All other conversions are either supported by pybind11 or not
+      // All other conversions are either supported by nanobind or not
       // desired anyway.
-      return obj.cast<T>();
+      return nb::cast<T>(obj);
     }
   }
 };
 
 scipp::core::DType
-common_dtype(const pybind11::object &values, const pybind11::object &variances,
+common_dtype(const nanobind::object &values, const nanobind::object &variances,
              scipp::core::DType dtype,
              scipp::core::DType default_dtype = scipp::core::dtype<double>);
 
-bool has_datetime_dtype(const pybind11::object &obj);
+bool has_datetime_dtype(const nanobind::object &obj);
 
 [[nodiscard]] scipp::sc_units::Unit
 parse_datetime_dtype(const std::string &dtype_name);
 [[nodiscard]] scipp::sc_units::Unit
-parse_datetime_dtype(const pybind11::object &dtype);
+parse_datetime_dtype(const nanobind::object &dtype);
