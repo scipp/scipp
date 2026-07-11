@@ -3,11 +3,11 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # ~~~
 
-# nanobind_add_module avoids linking to libpython (it uses
-# Python::Module), which should be avoided on Linux and OSX. NB_STATIC
-# compiles the small nanobind runtime into the module instead of a shared
-# libnanobind. FREE_THREADED marks the module as safe for free-threaded
-# CPython; it is a no-op for GIL-enabled interpreters.
+# nanobind_add_module avoids linking to libpython (it uses Python::Module),
+# which should be avoided on Linux and OSX. NB_STATIC compiles the small
+# nanobind runtime into the module instead of a shared libnanobind.
+# FREE_THREADED marks the module as safe for free-threaded CPython; it is a
+# no-op for GIL-enabled interpreters.
 nanobind_add_module(
   _scipp
   NB_STATIC
