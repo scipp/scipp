@@ -12,13 +12,11 @@ void ElementTypeMap<scipp::core::time_point>::check_assignable(
   // Materialize as nb::object: with `auto` this would be a lazy attribute
   // accessor whose base (the temporary array) dies at the end of the
   // statement.
-  const nb::object dtype =
-      nb::module_::import_("numpy").attr("asarray")(obj).attr("dtype");
+  const nb::object dtype = np_asarray(obj).attr("dtype");
   if (nb::cast<std::string>(dtype.attr("kind")) == "i") {
     return; // just assume we can assign from int
   }
-  const auto np_unit =
-      parse_datetime_dtype(nb::cast<std::string>(dtype.attr("name")));
+  const auto np_unit = parse_datetime_dtype(dtype);
   if (np_unit != unit) {
     std::ostringstream oss;
     oss << "Unable to assign datetime with unit " << to_string(np_unit)

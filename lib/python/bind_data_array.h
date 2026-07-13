@@ -33,6 +33,10 @@ void bind_helper_view(nb::module_ &m, const std::string &name) {
           .def(
               "__iter__",
               [](const View<T> &self) {
+                // rv_policy::copy is required: the iterators dereference to
+                // (const) references to the stored objects, and nanobind's
+                // make_iterator with rv_policy::move would const_cast and
+                // genuinely move out of them, corrupting the underlying dict.
                 return nb::make_iterator<nb::rv_policy::copy>(
                     nb::type<View<T>>(), "iterator", self.begin(), self.end());
               },
@@ -76,13 +80,18 @@ void bind_common_mutable_view_operators(nanobind::class_<T, Ignored...> &view) {
             self.erase(typename T::key_type{key});
           },
           nb::call_guard<nb::gil_scoped_release>())
-      .def("__contains__", [](const T &self, const nb::handle &key) {
-        try {
-          return self.contains(cast_to_dict_key<T>(key));
-        } catch (nb::cast_error &) {
-          return false; // if `key` is not a string, it cannot be contained
-        }
-      });
+      .def(
+          "__contains__",
+          [](const T &self, const nb::handle &key) {
+            try {
+              return self.contains(cast_to_dict_key<T>(key));
+            } catch (nb::cast_error &) {
+              return false; // if `key` is not a string, it cannot be contained
+            }
+          },
+          // The `none` annotation lets None through to the cast_error
+          // handler so that `None in self` is False instead of a TypeError.
+          nb::arg("key").none());
 }
 
 template <class T, class... Ignored, class Set>
@@ -91,16 +100,9 @@ void bind_dict_update(nanobind::class_<T, Ignored...> &view, Set &&set_item) {
       "update",
       // `other` is positional-only (like dict.update) so that a key named
       // 'other' can be passed via kwargs. nanobind has no pos_only marker,
-      // hence the use of variadic positional arguments.
-      [set_item](T &self, const nb::args &pos_args, const nb::kwargs &kwargs) {
-        if (pos_args.size() > 1)
-          throw nb::type_error(
-              ("update expected at most 1 positional argument, got " +
-               std::to_string(pos_args.size()))
-                  .c_str());
-        nb::object other = nb::none();
-        if (pos_args.size() == 1)
-          other = pos_args[0];
+      // but an unnamed nb::arg() is positional-only: the dispatcher never
+      // matches keyword arguments against unnamed parameters.
+      [set_item](T &self, const nb::object &other, const nb::kwargs &kwargs) {
         // Piggyback on dict to implement argument handling.
         nb::dict args;
         if (!other.is_none()) {
@@ -131,7 +133,8 @@ In either case, this is followed by:
 See Also
 --------
 dict.update
-)doc");
+)doc",
+      nb::arg().none() = nb::none(), nb::arg("kwargs"));
 }
 
 template <class T, class... Ignored>

@@ -40,12 +40,6 @@ template <class T> void init_variances(T &obj) {
     obj.setVariances(Variable(obj));
 }
 
-/// nb::ndarray uses element-based strides (not byte-based as numpy does).
-inline std::vector<int64_t>
-element_strides(const std::span<const scipp::index> &s) {
-  return {s.begin(), s.end()};
-}
-
 template <typename T> decltype(auto) get_data_variable(T &&x) {
   if constexpr (std::is_same_v<std::decay_t<T>, scipp::Variable>) {
     return std::forward<T>(x);
@@ -77,7 +71,10 @@ class DataAccessHelper {
     const auto &dims = view.dims();
     const auto &shape_index = dims.shape();
     const std::vector<size_t> shape(shape_index.begin(), shape_index.end());
-    const auto strides = element_strides(var.strides());
+    // nb::ndarray uses element-based strides (not byte-based as numpy does),
+    // which is exactly what Variable::strides() provides.
+    const auto strides = var.strides();
+    static_assert(std::is_same_v<std::decay_t<decltype(strides[0])>, int64_t>);
     const nb::object owner = get_data_variable_concept_handle(view);
     nb::object array;
     if (var.is_readonly()) {
@@ -261,8 +258,10 @@ public:
           } else {
             // Returning view (span or ElementArrayView) by value. This
             // references data in variable, so it must be kept alive. There is
-            // no policy that supports this, so we use `nb::detail::keep_alive`
-            // manually.
+            // no policy that supports this (`reference_internal` requires a
+            // reference), so we use `nb::detail::keep_alive` manually. It is
+            // the same primitive that nanobind's public `nb::keep_alive<>`
+            // annotation dispatches to, so version risk is low.
             auto copy = data;
             auto ret = nb::cast(std::move(copy), nb::rv_policy::move);
             nb::detail::keep_alive(
@@ -303,23 +302,13 @@ public:
   }
 
 private:
-  static nb::object numpy_attr(const char *const name) {
-    return nb::module_::import_("numpy").attr(name);
-  }
-
-  template <class T> static constexpr const char *numpy_scalar_type_name() {
-    if constexpr (std::is_same_v<T, double>)
-      return "float64";
-    else if constexpr (std::is_same_v<T, float>)
-      return "float32";
-    else if constexpr (std::is_same_v<T, int64_t>)
-      return "int64";
-    else if constexpr (std::is_same_v<T, int32_t>)
-      return "int32";
-    else if constexpr (std::is_same_v<T, bool>)
-      return "bool_";
-    else
-      static_assert(!sizeof(T), "No numpy scalar type known for this type.");
+  /// Return the numpy scalar type (e.g. np.float64) for the C++ element type,
+  /// cached as an intentionally leaked handle since scalar access is a hot
+  /// path (see np_dtype_of).
+  template <class T> static nb::object numpy_scalar_type() {
+    static const nb::handle type =
+        nb::object(np_dtype_of<T>().attr("type")).release();
+    return nb::borrow<nb::object>(type);
   }
 
   template <class Scalar, class View>
@@ -333,13 +322,15 @@ private:
       return scalar.to_pybind();
     } else if constexpr (std::is_same_v<std::decay_t<Scalar>,
                                         core::time_point>) {
-      const auto np_datetime64 = numpy_attr("datetime64");
-      return np_datetime64(scalar.time_since_epoch(),
-                           to_numpy_time_string(view.unit()));
+      static const nb::handle np_datetime64 =
+          nb::object(nb::module_::import_("numpy").attr("datetime64"))
+              .release();
+      return nb::borrow<nb::object>(np_datetime64)(
+          scalar.time_since_epoch(), to_numpy_time_string(view.unit()));
     } else if constexpr (std::is_arithmetic_v<std::decay_t<Scalar>>) {
       // Return a numpy scalar (e.g. np.float64) instead of a Python scalar
       // for consistency with the behavior of numpy indexing.
-      return numpy_attr(numpy_scalar_type_name<std::decay_t<Scalar>>())(scalar);
+      return numpy_scalar_type<std::decay_t<Scalar>>()(scalar);
     } else if constexpr (!std::is_reference_v<Scalar>) {
       // Views such as slices of data arrays for binned data are
       // returned by value and require separate handling to avoid the
@@ -382,8 +373,22 @@ private:
               "Conversion of time units is not implemented.");
         }
         data[0] = make_time_point(rhs);
-      } else
-        data[0] = nb::cast<T>(rhs);
+      } else if constexpr (std::is_same_v<T, bool>) {
+        // nb::cast<bool> accepts only True/False; converting_cast also
+        // converts np.bool_ etc., like the array-values path (and pybind11).
+        data[0] = converting_cast<bool>::cast(rhs);
+      } else {
+        try {
+          data[0] = nb::cast<T>(rhs);
+        } catch (const nb::cast_error &) {
+          PyErr_Clear(); // the failed cast may leave the error indicator set
+          std::ostringstream oss;
+          oss << "Cannot convert "
+              << nb::cast<std::string>(rhs.type().attr("__name__")) << " to "
+              << scipp::core::dtype<T>;
+          throw std::invalid_argument(oss.str());
+        }
+      }
     }
   };
 
@@ -449,6 +454,16 @@ using as_ElementArrayView = as_ElementArrayViewImpl<
     bucket<Dataset>, Eigen::Vector3d, Eigen::Matrix3d, scipp::python::PyObject,
     Eigen::Affine3d, scipp::core::Quaternion, scipp::core::Translation>;
 
+/// Build a tuple of length n with elements produced by elem(i).
+template <class F> nb::tuple make_tuple_n(const size_t n, F &&elem) {
+  auto tuple = nb::steal<nb::tuple>(PyTuple_New(static_cast<Py_ssize_t>(n)));
+  for (size_t i = 0; i < n; ++i) {
+    PyTuple_SET_ITEM(tuple.ptr(), static_cast<Py_ssize_t>(i),
+                     nb::cast(elem(i)).release().ptr());
+  }
+  return tuple;
+}
+
 template <class T, class... Ignored>
 void bind_common_data_properties(nanobind::class_<T, Ignored...> &c) {
   c.def_prop_ro(
@@ -456,11 +471,8 @@ void bind_common_data_properties(nanobind::class_<T, Ignored...> &c) {
       [](const T &self) {
         const auto &labels = self.dims().labels();
         const auto ndim = static_cast<size_t>(self.ndim());
-        auto dims = nb::steal<nb::tuple>(PyTuple_New(ndim));
-        for (size_t i = 0; i < ndim; ++i) {
-          PyTuple_SET_ITEM(dims.ptr(), static_cast<Py_ssize_t>(i),
-                           nb::cast(labels[i].name()).release().ptr());
-        }
+        auto dims =
+            make_tuple_n(ndim, [&](const size_t i) { return labels[i].name(); });
         return nb::typed<nb::tuple, nb::str, nb::ellipsis>(std::move(dims));
       },
       R"(Dimension labels of the data (read-only).
@@ -521,11 +533,8 @@ Examples
       [](const T &self) {
         const auto &sizes = self.dims().sizes();
         const auto ndim = static_cast<size_t>(self.ndim());
-        auto shape = nb::steal<nb::tuple>(PyTuple_New(ndim));
-        for (size_t i = 0; i < ndim; ++i) {
-          PyTuple_SET_ITEM(shape.ptr(), static_cast<Py_ssize_t>(i),
-                           nb::cast(sizes[i]).release().ptr());
-        }
+        auto shape =
+            make_tuple_n(ndim, [&](const size_t i) { return sizes[i]; });
         return nb::typed<nb::tuple, int, nb::ellipsis>(std::move(shape));
       },
       R"(Shape of the data (read-only).
@@ -703,6 +712,9 @@ Variances can be set or removed:
   c.def_prop_rw(
       "value", &as_ElementArrayView::value<T>,
       &as_ElementArrayView::set_value<T>,
+      // None is a valid value for PyObject-dtype variables; other dtypes
+      // reject it in the setter.
+      nb::for_setter(nb::arg().none()),
       R"(The only value for 0-dimensional data, raising an exception if the data
 is not 0-dimensional.
 

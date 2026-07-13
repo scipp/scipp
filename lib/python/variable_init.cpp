@@ -138,7 +138,7 @@ nb::object parse_data_sequence(const nb::object &dim_labels,
   if (is_empty(dim_labels) || data.is_none()) {
     return data;
   } else {
-    return nb::module_::import_("numpy").attr("asarray")(data);
+    return np_asarray(data);
   }
 }
 
@@ -170,8 +170,7 @@ core::time_point extract_scalar<core::time_point>(const nb::object &obj,
   TM::check_assignable(obj, unit);
   if (is_buffer_like(obj)) {
     ensure_is_scalar(obj);
-    return core::time_point{nb::cast<PyType>(
-        obj.attr("astype")(np_dtype_of<PyType>()).attr("item")())};
+    return make_time_point(obj);
   } else {
     return core::time_point{nb::cast<PyType>(obj)};
   }
@@ -256,7 +255,7 @@ Variable make_structured_variable(const nb::object &dim_labels,
     throw except::VariancesError("Variances not supported for dtype " +
                                  to_string(dtype<Elem>));
 
-  const auto values = nb::module_::import_("numpy").attr("asarray")(values_);
+  const auto values = np_asarray(values_);
   const auto unit = unit_.value_or(variable::default_unit_for(dtype<Elem>));
   const auto dims =
       build_dimensions(dim_labels, values, nb::none(), sizeof...(N));

@@ -20,19 +20,27 @@ using namespace scipp;
 
 /// Return the numpy dtype object corresponding to the C++ element type.
 template <class T> nb::object np_dtype_of() {
-  auto np = nb::module_::import_("numpy");
-  if constexpr (std::is_same_v<T, double>)
-    return np.attr("dtype")("float64");
-  else if constexpr (std::is_same_v<T, float>)
-    return np.attr("dtype")("float32");
-  else if constexpr (std::is_same_v<T, int64_t>)
-    return np.attr("dtype")("int64");
-  else if constexpr (std::is_same_v<T, int32_t>)
-    return np.attr("dtype")("int32");
-  else if constexpr (std::is_same_v<T, bool>)
-    return np.attr("dtype")("bool");
-  else
-    static_assert(!sizeof(T), "No numpy dtype known for this type.");
+  constexpr const char *name = [] {
+    if constexpr (std::is_same_v<T, double>)
+      return "float64";
+    else if constexpr (std::is_same_v<T, float>)
+      return "float32";
+    else if constexpr (std::is_same_v<T, int64_t>)
+      return "int64";
+    else if constexpr (std::is_same_v<T, int32_t>)
+      return "int32";
+    else if constexpr (std::is_same_v<T, bool>)
+      return "bool";
+    else
+      static_assert(!sizeof(T), "No numpy dtype known for this type.");
+  }();
+  // Cached as an intentionally leaked handle: numpy dtype objects for builtin
+  // types are immortal singletons and this runs on every values/variances
+  // assignment. (A `static nb::object` would decref during static destruction,
+  // potentially after interpreter shutdown.)
+  static const nb::handle dt =
+      nb::module_::import_("numpy").attr("dtype")(name).release();
+  return nb::borrow<nb::object>(dt);
 }
 
 /// Wrapper around a numpy array of element type T. Provides the subset of the
@@ -41,9 +49,17 @@ template <class T> nb::object np_dtype_of() {
 /// nb::ndarray referencing its memory (nanobind uses *element* strides).
 template <class T> class py_array_t {
 public:
-  explicit py_array_t(nb::object obj)
-      : m_obj(std::move(obj)),
-        m_array(nb::cast<nb::ndarray<const T, nb::numpy>>(m_obj, false)) {}
+  explicit py_array_t(nb::object obj) : m_obj(std::move(obj)) {
+    if (!nb::try_cast(m_obj, m_array, false)) {
+      // nb::ndarray uses element strides and cannot represent arrays whose
+      // byte strides are not a multiple of the itemsize, e.g. field views
+      // into structured arrays. Fall back to a (contiguous) copy, like
+      // pybind11's forcecast did.
+      PyErr_Clear(); // the failed cast may leave the error indicator set
+      m_obj = m_obj.attr("copy")();
+      m_array = nb::cast<nb::ndarray<const T, nb::numpy>>(m_obj, false);
+    }
+  }
 
   [[nodiscard]] scipp::index ndim() const {
     return static_cast<scipp::index>(m_array.ndim());
@@ -113,14 +129,10 @@ auto cast_to_array_like(const nb::object &obj, const sc_units::Unit unit) {
     // needed because nb::ndarray cannot represent datetime64, and because
     // numpy.datetime64.__int__ delegates to datetime.datetime if the unit is
     // larger than ns and that cannot be converted to long.
-    const auto np = nb::module_::import_("numpy");
     return py_array_t<PyType>(
-        np.attr("asarray")(obj).attr("astype")(np_dtype_of<PyType>()));
+        np_asarray(obj).attr("astype")(np_dtype_of<PyType>()));
   } else if constexpr (std::is_standard_layout_v<T> && std::is_trivial_v<T>) {
-    // `asarray` applies all sorts of automatic conversions such as integer
-    // to double and packing of nested sequences, if required.
-    const auto np = nb::module_::import_("numpy");
-    return py_array_t<PyType>(np.attr("asarray")(obj, np_dtype_of<PyType>()));
+    return py_array_t<PyType>(np_asarray(obj, np_dtype_of<PyType>()));
   } else {
     // nb::ndarray only supports POD types. Use a simple but expensive
     // solution for other types.
@@ -129,9 +141,27 @@ auto cast_to_array_like(const nb::object &obj, const sc_units::Unit unit) {
     try {
       return nb::cast<const std::vector<PyType>>(obj);
     } catch (const nb::cast_error &) {
+      // The failed cast may leave the Python error indicator set, which
+      // would make the calls below fail; we are raising our own error anyway.
+      PyErr_Clear();
+      // `obj` may be a plain (nested, possibly ragged) sequence without a
+      // `dtype` attribute.
+      std::string dtype;
+      try {
+        nb::object array = obj;
+        if (!nb::hasattr(array, "dtype"))
+          array = np_asarray(array);
+        // Materialize as nb::object: passing the accessor to nb::str directly
+        // would convert via the str type caster (and throw) instead of
+        // calling str().
+        const nb::object dt = array.attr("dtype");
+        dtype = "dtype " + nb::cast<std::string>(nb::str(dt));
+      } catch (const std::exception &) {
+        dtype =
+            "type " + nb::cast<std::string>(obj.type().attr("__name__"));
+      }
       std::ostringstream oss;
-      oss << "Unable to assign object of dtype "
-          << nb::cast<std::string>(nb::str(obj.attr("dtype"))) << " to "
+      oss << "Unable to assign object of " << dtype << " to "
           << scipp::core::dtype<T>;
       throw std::invalid_argument(oss.str());
     }
@@ -143,7 +173,10 @@ namespace {
 constexpr static size_t grainsize_1d = 10000;
 
 template <class T> bool is_c_contiguous(const py_array_t<T> &array) {
-  // Dimensions of size 1 are ignored, mirroring PyBUF_C_CONTIGUOUS.
+  // Dimensions of size 1 are ignored, mirroring PyBUF_C_CONTIGUOUS (and
+  // nanobind's own c_contig check). Kept as a hand-rolled loop: obtaining
+  // the flag from nanobind would require a second ndarray cast per import,
+  // which is more expensive than this O(ndim) loop.
   scipp::index expected = 1;
   for (scipp::index i = array.ndim() - 1; i >= 0; --i) {
     if (array.shape(i) != 1 && array.stride(i) != expected)

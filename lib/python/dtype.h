@@ -31,8 +31,16 @@ template <class T>
 struct converting_cast<T, std::enable_if_t<std::is_integral_v<T>>> {
   static decltype(auto) cast(const nanobind::object &obj) {
     if constexpr (std::is_same_v<T, bool>) {
-      // nanobind's bool caster does not convert from other types,
-      // pybind11's did.
+      // nanobind's bool caster does not convert from other types, pybind11's
+      // did. Mirror pybind11's rule: only types implementing __bool__ via the
+      // nb_bool slot (bool, np.bool_, int, float, 0-d arrays) convert; types
+      // whose truthiness comes from len() (str, list, ...) are rejected
+      // instead of silently mapping to True/False.
+      const auto *as_number = Py_TYPE(obj.ptr())->tp_as_number;
+      if (as_number == nullptr || as_number->nb_bool == nullptr)
+        throw std::invalid_argument(
+            "Cannot convert " +
+            nb::cast<std::string>(obj.type().attr("__name__")) + " to bool.");
       return static_cast<bool>(nb::bool_(obj));
     } else if (dtype_of(obj) == scipp::dtype<double>) {
       // Explicit conversion because nb::cast does not convert

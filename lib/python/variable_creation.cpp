@@ -58,7 +58,10 @@ void init_creation(nb::module_ &m) {
                                                with_variances);
       },
       nb::arg("dims"), nb::arg("shape"), nb::arg("unit") = DefaultUnit{},
-      nb::arg("dtype") = nb::none(), nb::arg("with_variances") = std::nullopt);
+      // Note: a `std::nullopt` (i.e. None) default would not work with
+      // nanobind: its strict bool caster rejects None, making the argument
+      // effectively mandatory (pybind11 converted None to false).
+      nb::arg("dtype") = nb::none(), nb::arg("with_variances") = false);
   m.def(
       "ones",
       [](const std::vector<std::string> &dims,
@@ -71,5 +74,8 @@ void init_creation(nb::module_ &m) {
                               with_variances);
       },
       nb::arg("dims"), nb::arg("shape"), nb::arg("unit") = DefaultUnit{},
-      nb::arg("dtype") = nb::none(), nb::arg("with_variances") = std::nullopt);
+      // Note: a `std::nullopt` (i.e. None) default would not work with
+      // nanobind: its strict bool caster rejects None, making the argument
+      // effectively mandatory (pybind11 converted None to false).
+      nb::arg("dtype") = nb::none(), nb::arg("with_variances") = false);
 }

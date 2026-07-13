@@ -25,11 +25,11 @@ void init_geometry(nb::module_ &m) {
       nb::arg("x"), nb::arg("y"), nb::arg("z"),
       nb::call_guard<nb::gil_scoped_release>());
 
-  geom_m.def(
-      "rotation_matrix_from_quaternion_coeffs", [](const nb::object &value) {
-        const auto coeffs = nb::cast<std::vector<double>>(value);
-        if (coeffs.size() != 4)
-          throw std::runtime_error("Incompatible list size: expected size 4.");
-        return Eigen::Quaterniond(coeffs.data()).toRotationMatrix();
-      });
+  geom_m.def("rotation_matrix_from_quaternion_coeffs",
+             [](const std::vector<double> &coeffs) {
+               if (coeffs.size() != 4)
+                 throw std::runtime_error(
+                     "Incompatible list size: expected size 4.");
+               return Eigen::Quaterniond(coeffs.data()).toRotationMatrix();
+             });
 }

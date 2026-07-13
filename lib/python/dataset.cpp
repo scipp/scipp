@@ -39,9 +39,6 @@ void bind_dataset_properties(nb::class_<T, Ignored...> &c) {
 
 template <class T, class... Ignored>
 void bind_dataset_coord_properties(nb::class_<T, Ignored...> &c) {
-  // TODO does this comment still apply?
-  // For some reason the return value policy and/or keep-alive policy do not
-  // work unless we wrap things in nb::cpp_function.
   c.def_prop_ro(
       "coords", [](T &self) -> decltype(auto) { return self.coords(); },
       R"(
@@ -140,13 +137,18 @@ Access a data item in the dataset:
   >>> ds['b'].unit
   Unit(m)
 )");
-  c.def("__contains__", [](const Dataset &self, const nb::handle &key) {
-    try {
-      return self.contains(nb::cast<std::string>(key));
-    } catch (nb::cast_error &) {
-      return false; // if `key` is not a string, it cannot be contained
-    }
-  });
+  c.def(
+      "__contains__",
+      [](const Dataset &self, const nb::handle &key) {
+        try {
+          return self.contains(nb::cast<std::string>(key));
+        } catch (nb::cast_error &) {
+          return false; // if `key` is not a string, it cannot be contained
+        }
+      },
+      // The `none` annotation lets None through to the cast_error handler so
+      // that `None in self` is False instead of a TypeError.
+      nb::arg("key").none());
   c.def("_ipython_key_completions_", [](Dataset &self) {
     nb::typed<nb::list, nb::str> out;
     const auto end = self.keys_end();

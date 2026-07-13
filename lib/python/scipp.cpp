@@ -2,6 +2,8 @@
 // Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <cstdlib>
+
 #include "nanobind.h"
 
 namespace nb = nanobind;
@@ -78,8 +80,10 @@ NB_MODULE(_scipp, m) {
   // scipp's Python layer stores instances of bound types (DType, Unit, ...)
   // in module-level globals which are only released at interpreter shutdown,
   // after nanobind's leak check runs. Disable the resulting false-positive
-  // warnings.
-  nb::set_leak_warnings(false);
+  // warnings. The env var lets developers re-enable the check to hunt for
+  // genuine leaks (expect the known false positives from those globals).
+  if (std::getenv("SCIPP_NANOBIND_LEAK_WARNINGS") == nullptr)
+    nb::set_leak_warnings(false);
 #ifdef SCIPP_VERSION
   m.attr("__version__") = nb::str(SCIPP_VERSION);
 #else

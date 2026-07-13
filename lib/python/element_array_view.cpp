@@ -62,14 +62,18 @@ void declare_ElementArrayView(nb::module_ &m, const std::string &suffix) {
           nb::keep_alive<0, 1>());
   if constexpr (std::is_same_v<std::remove_const_t<std::remove_reference_t<T>>,
                                scipp::python::PyObject>) {
-    view.def("__setitem__", [](ElementArrayView<T> &self,
-                               [[maybe_unused]] const scipp::index i,
-                               [[maybe_unused]] const nb::object &value) {
-      if constexpr (is_bins<T>::value || std::is_const_v<T>)
-        throw std::invalid_argument("assignment destination is read-only");
-      else
-        to_python_object(self[i]) = value;
-    });
+    view.def(
+        "__setitem__",
+        [](ElementArrayView<T> &self, [[maybe_unused]] const scipp::index i,
+           [[maybe_unused]] const nb::object &value) {
+          if constexpr (is_bins<T>::value || std::is_const_v<T>)
+            throw std::invalid_argument("assignment destination is read-only");
+          else
+            to_python_object(self[i]) = value;
+        },
+        // PyObject elements can hold None; without the `none` annotation
+        // nanobind would reject it before the lambda runs.
+        nb::arg("i"), nb::arg("value").none());
   } else {
     view.def("__setitem__", [](ElementArrayView<T> &self,
                                [[maybe_unused]] const scipp::index i,

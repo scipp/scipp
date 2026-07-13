@@ -45,6 +45,17 @@ inline bool is_buffer_like(const nb::handle &obj) {
   return PyObject_CheckBuffer(obj.ptr()) != 0;
 }
 
+/// Convert to a numpy array via numpy.asarray, i.e. with all of numpy's
+/// automatic conversions such as integer to double and packing of nested
+/// sequences. Pass a numpy dtype object as `dtype` to force an element type.
+template <class... Dtype>
+nb::object np_asarray(const nb::object &obj, const Dtype &...dtype) {
+  static_assert(sizeof...(Dtype) <= 1);
+  static const nb::handle asarray =
+      nb::object(nb::module_::import_("numpy").attr("asarray")).release();
+  return asarray(obj, dtype...);
+}
+
 /// Convert a mapping or an iterable of key-value pairs to a Python dict,
 /// like Python's `dict(obj)`. None yields an empty dict.
 inline nb::dict as_pydict(const nb::object &obj) {
