@@ -157,8 +157,7 @@ auto cast_to_array_like(const nb::object &obj, const sc_units::Unit unit) {
         const nb::object dt = array.attr("dtype");
         dtype = "dtype " + nb::cast<std::string>(nb::str(dt));
       } catch (const std::exception &) {
-        dtype =
-            "type " + nb::cast<std::string>(obj.type().attr("__name__"));
+        dtype = "type " + nb::cast<std::string>(obj.type().attr("__name__"));
       }
       std::ostringstream oss;
       oss << "Unable to assign object of " << dtype << " to "

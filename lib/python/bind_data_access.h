@@ -471,8 +471,8 @@ void bind_common_data_properties(nanobind::class_<T, Ignored...> &c) {
       [](const T &self) {
         const auto &labels = self.dims().labels();
         const auto ndim = static_cast<size_t>(self.ndim());
-        auto dims =
-            make_tuple_n(ndim, [&](const size_t i) { return labels[i].name(); });
+        auto dims = make_tuple_n(
+            ndim, [&](const size_t i) { return labels[i].name(); });
         return nb::typed<nb::tuple, nb::str, nb::ellipsis>(std::move(dims));
       },
       R"(Dimension labels of the data (read-only).
