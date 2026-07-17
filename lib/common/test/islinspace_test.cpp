@@ -49,6 +49,11 @@ TEST(IsLinspaceTest, size_3) {
   ASSERT_TRUE(islinspace(std::vector<int32_t>({1, 2, 3})));
 }
 
+TEST(IsLinspaceTest, up_and_down) {
+  ASSERT_FALSE(islinspace(std::vector<double>({1.0, 3.0, 5.0, 3.0, 5.0, 7.0})));
+  ASSERT_FALSE(islinspace(std::vector<int32_t>({1, 3, 5, 3, 5, 7})));
+}
+
 TEST(IsLinspaceTest, negative_front) {
   ASSERT_TRUE(
       islinspace(std::vector<double>({-3.0, -2.0, -1.0, 0.0, 1.0, 2.0})));

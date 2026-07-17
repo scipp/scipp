@@ -46,7 +46,7 @@ template <class Range> bool isarange(const Range &range) {
     return false;
   return std::adjacent_find(range.begin(), range.end(),
                             [](const auto &a, const auto &b) {
-                              return std::abs(b - a) != 1;
+                              return b - a != 1;
                             }) == range.end();
 }
 
