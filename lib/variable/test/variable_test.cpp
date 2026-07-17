@@ -56,6 +56,7 @@ TEST(Variable, default_unit_of_numeric_is_dimensionless) {
   EXPECT_EQ(makeVariable<float>(Dimensions{}).unit(), sc_units::one);
   EXPECT_EQ(makeVariable<int64_t>(Dimensions{}).unit(), sc_units::one);
   EXPECT_EQ(makeVariable<int32_t>(Dimensions{}).unit(), sc_units::one);
+  EXPECT_EQ(makeVariable<uint64_t>(Dimensions{}).unit(), sc_units::one);
 }
 
 TEST(Variable, default_unit_of_bool_is_none) {

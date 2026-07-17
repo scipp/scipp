@@ -34,9 +34,10 @@ template <class... Ts>
 using pair_product_t = decltype(std::tuple_cat(
     typename pair_product<Ts...>::template type<Ts>{}...));
 
-using arithmetic_type_pairs = pair_product_t<float, double, int32_t, int64_t>;
+using arithmetic_type_pairs =
+    pair_product_t<float, double, int32_t, int64_t, uint64_t>;
 using arithmetic_type_pairs_with_bool =
-    pair_product_t<float, double, int32_t, int64_t, bool>;
+    pair_product_t<float, double, int32_t, int64_t, uint64_t, bool>;
 
 static constexpr auto keep_unit =
     overloaded{[](const sc_units::Unit &) {},

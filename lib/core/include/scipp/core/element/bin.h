@@ -31,6 +31,8 @@ static constexpr auto update_indices_by_binning = overloaded{
                       update_indices_by_binning_arg<int32_t, int64_t>,
                       update_indices_by_binning_arg<int64_t, int32_t>,
                       update_indices_by_binning_arg<int32_t, int32_t>,
+                      update_indices_by_binning_arg<int64_t, uint64_t>,
+                      update_indices_by_binning_arg<int32_t, uint64_t>,
                       update_indices_by_binning_arg<int64_t, time_point>,
                       update_indices_by_binning_arg<int32_t, time_point>,
                       update_indices_by_binning_arg<int64_t, int64_t, double>,
@@ -152,6 +154,8 @@ static constexpr auto update_indices_by_grouping_contiguous = overloaded{
     element::arg_list<
         update_indices_by_grouping_contiguous_arg<int64_t, int64_t>,
         update_indices_by_grouping_contiguous_arg<int32_t, int64_t>,
+        update_indices_by_grouping_contiguous_arg<int64_t, uint64_t>,
+        update_indices_by_grouping_contiguous_arg<int32_t, uint64_t>,
         // Given int32 target groups, select from int64. Note that
         // we do not support the reverse for now, since the
         // `groups.find(x)` below would then have to cast to a

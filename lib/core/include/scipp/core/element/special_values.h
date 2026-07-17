@@ -17,7 +17,7 @@ namespace scipp::core::element {
 
 template <class... Extra>
 constexpr auto special_value_args =
-    arg_list<int32_t, int64_t, double, float, Extra...>;
+    arg_list<int32_t, int64_t, uint64_t, double, float, Extra...>;
 
 // WARNING: When adding support for new spatial types (or other types containing
 // floating-point elements) you must specialize numeric::isnan and friends.

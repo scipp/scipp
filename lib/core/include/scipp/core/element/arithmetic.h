@@ -17,7 +17,7 @@ namespace scipp::core::element {
 
 template <class... Extra>
 constexpr auto add_inplace_types =
-    arg_list<double, float, int64_t, int32_t, Eigen::Vector3d,
+    arg_list<double, float, int64_t, int32_t, uint64_t, Eigen::Vector3d,
              std::tuple<scipp::core::time_point, int64_t>,
              std::tuple<scipp::core::time_point, int32_t>,
              std::tuple<double, float>, std::tuple<float, double>,
@@ -102,6 +102,7 @@ struct multiplies_types_t {
       std::declval<arithmetic_type_pairs_with_bool>(),
       std::tuple<std::tuple<double, Eigen::Vector3d>>(),
       std::tuple<std::tuple<float, Eigen::Vector3d>>(),
+      std::tuple<std::tuple<uint64_t, Eigen::Vector3d>>(),
       std::tuple<std::tuple<int64_t, Eigen::Vector3d>>(),
       std::tuple<std::tuple<int32_t, Eigen::Vector3d>>(),
       std::tuple<std::tuple<Eigen::Vector3d, double>>(),
@@ -135,6 +136,7 @@ struct true_divide_types_t {
       std::declval<arithmetic_type_pairs>(),
       std::tuple<std::tuple<Eigen::Vector3d, double>>(),
       std::tuple<std::tuple<Eigen::Vector3d, float>>(),
+      std::tuple<std::tuple<Eigen::Vector3d, uint64_t>>(),
       std::tuple<std::tuple<Eigen::Vector3d, int64_t>>(),
       std::tuple<std::tuple<Eigen::Vector3d, int32_t>>()));
 };
@@ -193,11 +195,13 @@ constexpr auto mod = overloaded{
     [](const sc_units::Unit &a, const sc_units::Unit &b) { return a % b; }};
 
 constexpr auto remainder_inplace_types =
-    arg_list<double, float, int64_t, int32_t, std::tuple<double, float>,
-             std::tuple<float, double>, std::tuple<double, int64_t>,
-             std::tuple<double, int32_t>, std::tuple<float, int64_t>,
-             std::tuple<float, int32_t>, std::tuple<int32_t, int64_t>,
-             std::tuple<int64_t, int32_t>>;
+    arg_list<double, float, int64_t, int32_t, uint64_t,
+             std::tuple<double, float>, std::tuple<float, double>,
+             std::tuple<double, int64_t>, std::tuple<double, int32_t>,
+             std::tuple<double, uint64_t>, std::tuple<float, int64_t>,
+             std::tuple<float, int32_t>, std::tuple<float, uint64_t>,
+             std::tuple<int32_t, int64_t>, std::tuple<int64_t, int32_t>,
+             std::tuple<int32_t, uint64_t>, std::tuple<int64_t, uint64_t>>;
 
 constexpr auto mod_equals = overloaded{
     remainder_inplace_types, transform_flags::expect_no_variance_arg<0>,

@@ -103,6 +103,7 @@ static constexpr auto bin = overloaded{
         bin_arg<float, int64_t>, bin_arg<float, int32_t>,
         bin_arg<int64_t, int64_t>, bin_arg<int64_t, int32_t>,
         bin_arg<int32_t, int64_t>, bin_arg<int32_t, int32_t>,
+        bin_arg<uint64_t, int64_t>, bin_arg<uint64_t, int32_t>,
         bin_arg<bool, int64_t>, bin_arg<bool, int32_t>,
         bin_arg<Eigen::Vector3d, int64_t>, bin_arg<Eigen::Vector3d, int32_t>,
         bin_arg<std::string, int64_t>, bin_arg<std::string, int32_t>,

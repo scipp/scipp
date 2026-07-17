@@ -18,7 +18,8 @@
 namespace scipp::variable {
 
 struct MakeVariableWithType {
-  using AllSourceTypes = std::tuple<double, float, int64_t, int32_t, bool>;
+  using AllSourceTypes =
+      std::tuple<double, float, int64_t, int32_t, uint64_t, bool>;
 
   template <class T> struct Maker {
     template <size_t I, class... Types> constexpr static auto source_types() {
@@ -61,8 +62,8 @@ struct MakeVariableWithType {
   };
 
   static Variable make(const Variable &var, DType type) {
-    return core::CallDType<double, float, int64_t, int32_t, bool>::apply<Maker>(
-        type, var);
+    return core::CallDType<double, float, int64_t, int32_t, uint64_t,
+                           bool>::apply<Maker>(type, var);
   }
 };
 

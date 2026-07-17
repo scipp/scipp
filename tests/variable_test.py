@@ -116,6 +116,7 @@ def test_0D_scalar_access() -> None:
     [
         ('int32', np.int32),
         ('int64', np.int64),
+        ('uint64', np.uint64),
         ('float32', np.float32),
         ('float64', np.float64),
         ('datetime64', np.datetime64),
@@ -156,9 +157,9 @@ def test_1D_access() -> None:
     assert var.values[1] == 1.2
 
 
-@pytest.mark.parametrize('dtype', ['int32', 'int64', 'float32', 'float64'])
+@pytest.mark.parametrize('dtype', ['int32', 'int64', 'uint64', 'float32', 'float64'])
 def test_1d_access_dtype(dtype: str) -> None:
-    assert sc.array(dims=['xx'], values=[-9], dtype=dtype).values.dtype == dtype
+    assert sc.array(dims=['xx'], values=[9], dtype=dtype).values.dtype == dtype
 
 
 def test_1D_set_from_list() -> None:
@@ -630,14 +631,14 @@ def test_allsorted() -> None:
     assert not sc.allsorted(sc.arange('i', 4), dim='i', order='descending')
 
 
-@pytest.mark.parametrize('dtype', ['float64', 'float32', 'int64', 'int32'])
+@pytest.mark.parametrize('dtype', ['float64', 'float32', 'int64', 'int32', 'uint64'])
 def test_islinspace_true(dtype: str) -> None:
     x = sc.Variable(dims=['x'], values=np.arange(5.0), unit=sc.units.m, dtype=dtype)
     assert sc.islinspace(x, 'x').value
     assert sc.islinspace(x).value
 
 
-@pytest.mark.parametrize('dtype', ['float64', 'float32', 'int64', 'int32'])
+@pytest.mark.parametrize('dtype', ['float64', 'float32', 'int64', 'int32', 'uint64'])
 def test_islinspace_false(dtype: str) -> None:
     x = sc.Variable(dims=['x'], values=(1, 1.5, 4), unit=sc.units.m, dtype=dtype)
     assert not sc.islinspace(x, 'x').value

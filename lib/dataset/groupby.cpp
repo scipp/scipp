@@ -313,16 +313,16 @@ template <class T> struct MakeBinGroups {
 template <class T>
 GroupBy<T> call_groupby(const T &array, const Variable &key,
                         const Variable &bins) {
-  return {
-      array,
-      core::CallDType<double, float, int64_t, int32_t>::apply<MakeBinGroups>(
-          key.dtype(), key, bins)};
+  return {array, core::CallDType<double, float, int64_t, int32_t,
+                                 uint64_t>::apply<MakeBinGroups>(key.dtype(),
+                                                                 key, bins)};
 }
 
 template <class T>
 GroupBy<T> call_groupby(const T &array, const Variable &key, const Dim &dim) {
   return {array,
-          core::CallDType<double, float, int64_t, int32_t, bool, std::string,
+          core::CallDType<double, float, int64_t, int32_t, uint64_t, bool,
+                          std::string,
                           core::time_point>::apply<MakeGroups>(key.dtype(), key,
                                                                dim)};
 }

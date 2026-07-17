@@ -29,6 +29,12 @@ template <class Range> bool islinspace(const Range &range) {
                               [epsilon, delta](const auto &a, const auto &b) {
                                 return std::abs(b - a - delta) > epsilon;
                               }) == range.end();
+  } else if constexpr (std::is_unsigned_v<T>) {
+    const auto delta = range[1] - range[0];
+    return std::adjacent_find(range.begin(), range.end(),
+                              [delta](const auto &a, const auto &b) {
+                                return b >= a && b - a != delta;
+                              }) == range.end();
   } else {
     const auto delta = range[1] - range[0];
     return std::adjacent_find(range.begin(), range.end(),
@@ -44,10 +50,14 @@ template <class Range> bool isarange(const Range &range) {
     return true;
   if (range.back() <= range.front())
     return false;
-  return std::adjacent_find(range.begin(), range.end(),
-                            [](const auto &a, const auto &b) {
-                              return b - a != 1;
-                            }) == range.end();
+  return std::adjacent_find(
+             range.begin(), range.end(), [](const auto &a, const auto &b) {
+               if constexpr (std::is_unsigned_v<typename Range::value_type>) {
+                 return b > a && b - a != 1;
+               } else {
+                 return b - a != 1;
+               }
+             }) == range.end();
 }
 
 // Division like Python's __truediv__

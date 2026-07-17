@@ -120,15 +120,33 @@ public:
     FloorQuotient remainder;
   };
 
-  const auto &params() const {
+  auto params() const {
     if constexpr (std::is_integral_v<Dividend> && std::is_integral_v<Divisor>) {
-      return division_params_int_int<Params>;
+      if constexpr (std::is_unsigned_v<Dividend> ||
+                    std::is_unsigned_v<Divisor>) {
+        return division_params_int_int_positive<Params>;
+      } else {
+        std::vector<Params> params;
+        for (const auto &p : division_params_int_int_positive<Params>)
+          params.push_back(p);
+        for (const auto &p : division_params_int_int_negative<Params>)
+          params.push_back(p);
+        return params;
+      }
     } else if constexpr (std::is_floating_point_v<Dividend> &&
                          std::is_integral_v<Divisor>) {
-      return division_params_float_int<Params>;
+      if constexpr (std::is_unsigned_v<Divisor>) {
+        return std::array<Params, 0>{};
+      } else {
+        return division_params_float_int<Params>;
+      }
     } else if constexpr (std::is_integral_v<Dividend> &&
                          std::is_floating_point_v<Divisor>) {
-      return division_params_int_float<Params>;
+      if constexpr (std::is_unsigned_v<Dividend>) {
+        return std::array<Params, 0>{};
+      } else {
+        return division_params_int_float<Params>;
+      }
     } else {
       return division_params_float_float<Params>;
     }

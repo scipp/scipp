@@ -331,7 +331,7 @@ def _upper_bound(x: Variable) -> Variable:
     import numpy as np
 
     bound = x.nanmax()
-    if bound.dtype in ('int32', 'int64'):
+    if bound.dtype in ('int32', 'int64', 'uint64'):
         bound.value += 1
     elif bound.dtype == 'datetime64':
         bound.value += np.timedelta64(1, np.datetime_data(bound.value))  # type: ignore[arg-type]

@@ -71,6 +71,7 @@ constexpr auto issorted_common = overloaded{
     core::element::arg_list<
         std::tuple<bool, double, double>, std::tuple<bool, float, float>,
         std::tuple<bool, int64_t, int64_t>, std::tuple<bool, int32_t, int32_t>,
+        std::tuple<bool, uint64_t, uint64_t>,
         std::tuple<bool, std::string, std::string>,
         std::tuple<bool, time_point, time_point>>,
     transform_flags::expect_no_variance_arg<1>,
@@ -93,13 +94,14 @@ constexpr auto issorted_nonascending = overloaded{
 constexpr auto islinspace =
     overloaded{arg_list<std::span<const double>, std::span<const float>,
                         std::span<const int64_t>, std::span<const int32_t>,
-                        std::span<const time_point>>,
+                        std::span<const uint64_t>, std::span<const time_point>>,
                transform_flags::expect_no_variance_arg<0>,
                [](const sc_units::Unit &) { return sc_units::none; },
                [](const auto &range) { return numeric::islinspace(range); }};
 
 constexpr auto isarange =
-    overloaded{arg_list<std::span<const int64_t>, std::span<const int32_t>>,
+    overloaded{arg_list<std::span<const int64_t>, std::span<const int32_t>,
+                        std::span<const uint64_t>>,
                transform_flags::expect_no_variance_arg<0>,
                [](const sc_units::Unit &) { return sc_units::none; },
                [](const auto &range) { return numeric::isarange(range); }};
@@ -126,7 +128,7 @@ constexpr auto fill =
                [](auto &x, const auto &value) { x = value; }};
 
 constexpr auto fill_zeros =
-    overloaded{arg_list<double, float, int64_t, int32_t, SubbinSizes>,
+    overloaded{arg_list<double, float, int64_t, int32_t, uint64_t, SubbinSizes>,
                [](sc_units::Unit &) {}, [](auto &x) { x = 0; }};
 
 template <class... Ts>

@@ -84,85 +84,106 @@ constexpr auto inequality = overloaded{comparison_types_t{}, comparison};
 
 constexpr auto equality = overloaded{equality_types_t{}, comparison};
 
+template <class Base, bool X_LESS_0, bool Y_LESS_0> struct Compare {
+  template <class X, class Y> static bool operator()(const X &x, const Y &y) {
+    if constexpr (std::is_arithmetic_v<X> && std::is_arithmetic_v<Y>) {
+      // Comparison of signed with unsigned numbers is unsafe and the compiler
+      // warns about it. This implementation handles that case explicitly and
+      // falls back to normal comparison otherwise.
+      if constexpr (std::is_unsigned_v<X> && !std::is_unsigned_v<Y>) {
+        return y < 0 ? X_LESS_0 : Base{}(x, static_cast<X>(y));
+      } else if constexpr (!std::is_unsigned_v<X> && std::is_unsigned_v<Y>) {
+        return x < 0 ? Y_LESS_0 : Base{}(static_cast<Y>(x), y);
+      } else {
+        return Base{}(x, y);
+      }
+    } else {
+      // Delegate to the implementation on other types for handling of
+      // signedness.
+      return Base{}(x, y);
+    }
+  }
+};
+
 constexpr auto less = overloaded{
     inequality,
-    [](const auto &x, const auto &y) { return x < y; },
-};
+    Compare<decltype([](const auto &x, const auto &y) { return x < y; }), false,
+            true>{}};
 
 constexpr auto greater = overloaded{
     inequality,
-    [](const auto &x, const auto &y) { return x > y; },
-};
+    Compare<decltype([](const auto &x, const auto &y) { return x > y; }), true,
+            false>{}};
 
 constexpr auto less_equal = overloaded{
     inequality,
-    [](const auto &x, const auto &y) { return x <= y; },
-};
+    Compare<decltype([](const auto &x, const auto &y) { return x <= y; }),
+            false, true>{}};
 
-constexpr auto greater_equal =
-    overloaded{inequality, [](const auto &x, const auto &y) { return x >= y; }};
+constexpr auto greater_equal = overloaded{
+    inequality,
+    Compare<decltype([](const auto &x, const auto &y) { return x >= y; }), true,
+            false>{}};
 
-constexpr auto equal = overloaded{
-    equality,
-    [](const auto &x, const auto &y) {
-      // cppcheck-suppress constStatement
-      using numeric::operator==;
-      return x == y;
-    },
-};
+constexpr auto equal =
+    overloaded{equality, Compare<decltype([](const auto &x, const auto &y) {
+                                   using numeric::operator==;
+                                   return x == y;
+                                 }),
+                                 false, false>{}};
 constexpr auto not_equal =
-    overloaded{equality, [](const auto &x, const auto &y) {
-                 // cppcheck-suppress constStatement
-                 using numeric::operator!=;
-                 return x != y;
-               }};
+    overloaded{equality, Compare<decltype([](const auto &x, const auto &y) {
+                                   using numeric::operator!=;
+                                   return x != y;
+                                 }),
+                                 true, true>{}};
 
-constexpr auto max_equals =
-    overloaded{arg_list<double, float, int64_t, int32_t, bool, time_point>,
-               transform_flags::expect_in_variance_if_out_variance,
-               [](auto &&a, const auto &b) {
-                 using numeric::isnan;
-                 using std::max;
-                 if (isnan(b))
-                   a = b;
-                 else if (!isnan(a))
-                   a = max(a, b);
-               }};
+constexpr auto max_equals = overloaded{
+    arg_list<double, float, int64_t, int32_t, uint64_t, bool, time_point>,
+    transform_flags::expect_in_variance_if_out_variance,
+    [](auto &&a, const auto &b) {
+      using numeric::isnan;
+      using std::max;
+      if (isnan(b))
+        a = b;
+      else if (!isnan(a))
+        a = max(a, b);
+    }};
 
-constexpr auto nanmax_equals =
-    overloaded{arg_list<double, float, int64_t, int32_t, bool, time_point>,
-               transform_flags::expect_in_variance_if_out_variance,
-               [](auto &&a, const auto &b) {
-                 using numeric::isnan;
-                 using std::max;
-                 if (isnan(a))
-                   a = b;
-                 if (!isnan(b))
-                   a = max(a, b);
-               }};
+constexpr auto nanmax_equals = overloaded{
+    arg_list<double, float, int64_t, int32_t, uint64_t, bool, time_point>,
+    transform_flags::expect_in_variance_if_out_variance,
+    [](auto &&a, const auto &b) {
+      using numeric::isnan;
+      using std::max;
+      if (isnan(a))
+        a = b;
+      if (!isnan(b))
+        a = max(a, b);
+    }};
 
-constexpr auto min_equals =
-    overloaded{arg_list<double, float, int64_t, int32_t, bool, time_point>,
-               transform_flags::expect_in_variance_if_out_variance,
-               [](auto &&a, const auto &b) {
-                 using numeric::isnan;
-                 using std::min;
-                 if (isnan(b))
-                   a = b;
-                 else if (!isnan(a))
-                   a = min(a, b);
-               }};
+constexpr auto min_equals = overloaded{
+    arg_list<double, float, int64_t, int32_t, uint64_t, bool, time_point>,
+    transform_flags::expect_in_variance_if_out_variance,
+    [](auto &&a, const auto &b) {
+      using numeric::isnan;
+      using std::min;
+      if (isnan(b))
+        a = b;
+      else if (!isnan(a))
+        a = min(a, b);
+    }};
 
-constexpr auto nanmin_equals =
-    overloaded{arg_list<double, float, int64_t, int32_t, bool, time_point>,
-               transform_flags::expect_in_variance_if_out_variance,
-               [](auto &&a, const auto &b) {
-                 using numeric::isnan;
-                 using std::min;
-                 if (isnan(a))
-                   a = b;
-                 if (!isnan(b))
-                   a = min(a, b);
-               }};
+constexpr auto nanmin_equals = overloaded{
+    arg_list<double, float, int64_t, int32_t, uint64_t, bool, time_point>,
+    transform_flags::expect_in_variance_if_out_variance,
+    [](auto &&a, const auto &b) {
+      using numeric::isnan;
+      using std::min;
+      if (isnan(a))
+        a = b;
+      if (!isnan(b))
+        a = min(a, b);
+    }};
 
 } // namespace scipp::core::element
