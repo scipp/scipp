@@ -42,11 +42,11 @@ nanobind_add_module(
   ${python_SRC_FILES}
 )
 
-# nanobind_add_module(... NB_STATIC ...) compiles nanobind's own runtime
-# sources (e.g. nb_internals.cpp) into a "nanobind-static" target in this
-# directory scope, so it inherits our strict warning flags (-Wall,
-# -Wold-style-cast, etc.) set in the parent CMakeLists.txt. That vendor code
-# is not under our control, so disable warnings for it explicitly.
+# nanobind_add_module(... NB_STATIC ...) compiles nanobind's own runtime sources
+# (e.g. nb_internals.cpp) into a "nanobind-static" target in this directory
+# scope, so it inherits our strict warning flags (-Wall, -Wold-style-cast, etc.)
+# set in the parent CMakeLists.txt. That vendor code is not under our control,
+# so disable warnings for it explicitly.
 if(TARGET nanobind-static)
   target_compile_options(
     nanobind-static PRIVATE $<$<NOT:$<PLATFORM_ID:Windows>>:-w>
