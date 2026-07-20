@@ -127,6 +127,7 @@ def test_dataset_set_slice_range() -> None:
 
 _nonexistent_dim_var = sc.linspace('x', 0.1, 0.9, num=5)
 
+
 # All of these objects should raise the same error when a nonexistent dimension
 # is used for indexing.
 @pytest.mark.parametrize(
