@@ -285,6 +285,9 @@ void bind_init(nb::class_<Variable> &cls) {
 
         auto var = [&, c_scipp_dtype = scipp_dtype,
                     c_actual_unit = actual_unit]() {
+          // cppcheck's AST builder fails on this comparison in this lambda
+          // (false positive, code is valid and compiles fine).
+          // cppcheck-suppress internalAstError
           if (c_scipp_dtype == ::dtype<Eigen::Vector3d>)
             return make_structured_variable<Eigen::Vector3d, double, 3>(
                 dim_labels, values, variances, c_actual_unit);

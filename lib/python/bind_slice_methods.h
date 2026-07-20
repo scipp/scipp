@@ -181,7 +181,8 @@ template <class T> struct slicer {
 
     std::ostringstream oss;
     oss << "Cannot to assign a "
-        << nb::cast<std::string>(nb::str(data.type().attr("__name__")))
+        << nb::cast<std::string>(
+               nb::str(nb::object(data.type().attr("__name__"))))
         << " to a slice of a " << to_string(scipp::core::dtype<T>);
     throw nb::type_error(oss.str().c_str());
   }

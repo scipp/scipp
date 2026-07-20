@@ -7,11 +7,14 @@
 # which should be avoided on Linux and OSX. NB_STATIC compiles the small
 # nanobind runtime into the module instead of a shared libnanobind.
 # FREE_THREADED marks the module as safe for free-threaded CPython; it is a
-# no-op for GIL-enabled interpreters.
+# no-op for GIL-enabled interpreters. NB_SUPPRESS_WARNINGS marks the Python and
+# nanobind include directories SYSTEM, so our strict warning flags and cppcheck
+# do not run against that vendored/system code.
 nanobind_add_module(
   _scipp
   NB_STATIC
   FREE_THREADED
+  NB_SUPPRESS_WARNINGS
   bind_units.cpp
   bins.cpp
   comparison.cpp

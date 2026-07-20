@@ -61,9 +61,6 @@ nb::object np_asarray(const nb::object &obj, const Dtype &...dtype) {
 inline nb::dict as_pydict(const nb::object &obj) {
   if (obj.is_none())
     return {};
-  PyObject *d = PyObject_CallOneArg(reinterpret_cast<PyObject *>(&PyDict_Type),
-                                    obj.ptr());
-  if (d == nullptr)
-    throw nb::python_error();
-  return nb::steal<nb::dict>(d);
+  nb::handle dict_type = reinterpret_cast<PyObject *>(&PyDict_Type);
+  return nb::steal<nb::dict>(dict_type(obj).release());
 }
