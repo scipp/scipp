@@ -48,3 +48,8 @@ unusedStructMember
 
 // Suppress checks on external deps like units
 *:*build/_deps/*
+
+// Suppress checks on nanobind's headers (including its bundled tsl::robin_map).
+// cppcheck's preprocessor does not fully evaluate the version macros there,
+// which can trip the library's own `#error` version check as a false positive.
+*:*/nanobind/*
