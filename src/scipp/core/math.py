@@ -697,7 +697,7 @@ def midpoints(x: Variable, dim: str | None = None) -> Variable:
       >>> xy = sc.array(dims=['x', 'y'], values=[[1, 3, 5], [2, 6, 10]])
       >>> xy.values
       array([[ 1,  3,  5],
-             [ 2,  6, 10]])
+             [ 2,  6, 10]], dtype=int64)
       >>> sc.midpoints(xy, dim='x').values
       array([[1.5, 4.5, 7.5]])
       >>> sc.midpoints(xy, dim='y').values

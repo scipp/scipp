@@ -125,7 +125,7 @@ def floor_divide(dividend: VariableLike, divisor: VariableLike) -> VariableLike:
     --------
 
     >>> sc.floor_divide(sc.arange('x', -2, 3), sc.scalar(2)).values
-    array([-1, -1,  0,  0,  1])
+    array([-1, -1,  0,  0,  1], dtype=int64)
     >>> sc.floor_divide(sc.arange('x', -2.0, 3.0), sc.scalar(2.0)).values
     array([-1., -1.,  0.,  0.,  1.])
 
@@ -183,14 +183,14 @@ def mod(dividend: VariableLike, divisor: VariableLike) -> VariableLike:
     --------
 
     >>> sc.mod(sc.arange('x', -3, 5), sc.scalar(3)).values
-    array([0, 1, 2, 0, 1, 2, 0, 1])
+    array([0, 1, 2, 0, 1, 2, 0, 1], dtype=int64)
     >>> sc.mod(sc.arange('x', -3, 5), sc.scalar(-3)).values
-    array([ 0, -2, -1,  0, -2, -1,  0, -2])
+    array([ 0, -2, -1,  0, -2, -1,  0, -2], dtype=int64)
 
     Or equivalently in operator notation
 
     >>> (sc.arange('x', -3, 5) % sc.scalar(3)).values
-    array([0, 1, 2, 0, 1, 2, 0, 1])
+    array([0, 1, 2, 0, 1, 2, 0, 1], dtype=int64)
 
     See Also
     --------

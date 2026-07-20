@@ -1235,15 +1235,15 @@ class Bins(Generic[_O]):
           >>> binned1 = table1.bin(x=x_edges)
           >>> binned2 = table2.bin(x=x_edges)
           >>> binned1.bins.size().values
-          array([15, 15])
+          array([15, 15], dtype=int64)
           >>> binned2.bins.size().values
-          array([10, 10])
+          array([10, 10], dtype=int64)
 
         Merge bins element-wise:
 
           >>> result = binned1.bins.concatenate(binned2)
           >>> result.bins.size().values
-          array([25, 25])
+          array([25, 25], dtype=int64)
 
         Each bin in the result contains events from the corresponding bins in both inputs.
         """  # noqa: E501

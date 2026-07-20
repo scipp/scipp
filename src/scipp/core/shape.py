@@ -88,7 +88,7 @@ def broadcast(
       >>> result.values
       array([[1, 1],
              [2, 2],
-             [3, 3]])
+             [3, 3]], dtype=int64)
 
     Using ``dims`` and ``shape`` instead of ``sizes``:
 
@@ -149,14 +149,14 @@ def concat(x: Sequence[VariableLikeType], dim: str) -> VariableLikeType:
       >>> c
       <scipp.Variable> (x: 6)      int64  [dimensionless]  [0, 1, ..., 100, 200]
       >>> c.values
-      array([  0,   1,   2,   0, 100, 200])
+      array([  0,   1,   2,   0, 100, 200], dtype=int64)
 
       >>> d = sc.concat([a, b], dim='y')
       >>> d
       <scipp.Variable> (y: 2, x: 3)      int64  [dimensionless]  [0, 1, ..., 100, 200]
       >>> d.values
       array([[  0,   1,   2],
-             [  0, 100, 200]])
+             [  0, 100, 200]], dtype=int64)
 
       >>> x = sc.DataArray(sc.arange('x', 3), coords={'x': sc.arange('x', 3)})
       >>> y = sc.DataArray(100 * sc.arange('x', 3), coords={'x': 100 * sc.arange('x', 3)})
@@ -169,7 +169,7 @@ def concat(x: Sequence[VariableLikeType], dim: str) -> VariableLikeType:
       Data:
                                     int64  [dimensionless]  (x)  [0, 1, ..., 100, 200]
       >>> z.values
-      array([  0,   1,   2,   0, 100, 200])
+      array([  0,   1,   2,   0, 100, 200], dtype=int64)
     """
     if x and isinstance(x[0], data_group.DataGroup):
         return data_group.apply_to_items(
@@ -248,7 +248,7 @@ def fold(
       <scipp.Variable> (y: 2, z: 3)      int64  [dimensionless]  [0, 1, ..., 4, 5]
       >>> sc.fold(v, dim='x', sizes={'y': 2, 'z': 3}).values
       array([[0, 1, 2],
-             [3, 4, 5]])
+             [3, 4, 5]], dtype=int64)
 
       >>> sc.fold(v, dim='x', dims=['y', 'z'], shape=[2, 3])
       <scipp.Variable> (y: 2, z: 3)      int64  [dimensionless]  [0, 1, ..., 4, 5]
@@ -269,7 +269,7 @@ def fold(
              [0.3, 0.4, 0.5]])
       >>> sc.fold(a, dim='x', sizes={'y': 2, 'z': 3}).coords['x'].values
       array([[0, 1, 2],
-             [3, 4, 5]])
+             [3, 4, 5]], dtype=int64)
     """
     dims_and_shape = _parse_dims_shape_sizes(dims=dims, shape=shape, sizes=sizes)
     dims = dims_and_shape["dims"]
@@ -429,13 +429,13 @@ def transpose(
       <scipp.Variable> (x: 2, y: 3)      int64  [dimensionless]  [1, 2, ..., 5, 6]
       >>> data.values
       array([[1, 2, 3],
-             [4, 5, 6]])
+             [4, 5, 6]], dtype=int64)
       >>> sc.transpose(data)
       <scipp.Variable> (y: 3, x: 2)      int64  [dimensionless]  [1, 4, ..., 3, 6]
       >>> sc.transpose(data).values
       array([[1, 4],
              [2, 5],
-             [3, 6]])
+             [3, 6]], dtype=int64)
 
     Specify the order of dimensions explicitly:
 
