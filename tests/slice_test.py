@@ -123,3 +123,21 @@ def test_dataset_set_slice_range() -> None:
     ds['xx', 2:4] = aa
     assert sc.identical(ds['a'].data, sc.array(dims=['xx'], values=[0, 1, -7, -4, 4]))
     assert sc.identical(ds['b'].data, sc.array(dims=['xx'], values=[5, 6, -7, -4, 9]))
+
+
+_nonexistent_dim_var = sc.linspace('x', 0.1, 0.9, num=5)
+
+
+# All of these objects should raise the same error when a nonexistent dimension
+# is used for indexing.
+@pytest.mark.parametrize(
+    'obj',
+    [
+        pytest.param(_nonexistent_dim_var, id='Variable'),
+        pytest.param(sc.DataArray(_nonexistent_dim_var), id='DataArray'),
+        pytest.param(sc.Dataset({'a': _nonexistent_dim_var}), id='Dataset'),
+    ],
+)
+def test_getitem_nonexistent_dim_raises_dimension_error(obj) -> None:
+    with pytest.raises(sc.DimensionError):
+        _ = obj['nonexistent', 0]
