@@ -18,6 +18,7 @@ import scipp as sc
         sc.array(dims=['x', 't'], values=np.ones((3, 4)), unit='kg/s'),
         sc.scalar('some string'),
         sc.array(dims=['s'], values=['str', '2']),
+        sc.array(dims=['s'], values=['stringy'] * 50),
         sc.scalar(6134, dtype='datetime64', unit='s'),
         sc.array(dims=['e'], values=[512, 1662], unit='s'),
     ],
