@@ -37,6 +37,10 @@ TEST(IsArangeTest, size_3) {
   ASSERT_TRUE(isarange(std::vector<int32_t>({1, 2, 3})));
 }
 
+TEST(IsArangeTest, up_and_down) {
+  ASSERT_FALSE(isarange(std::vector<int32_t>({2, 3, 4, 3, 2, 1, 2, 3})));
+}
+
 TEST(IsArangeTest, negative_front) {
   ASSERT_TRUE(isarange(std::vector<int32_t>({-3, -2, -1, 0, 1, 2})));
 }

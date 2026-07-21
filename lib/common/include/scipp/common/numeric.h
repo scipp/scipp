@@ -19,7 +19,7 @@ template <class Range> bool islinspace(const Range &range) {
   if (range.back() <= range.front())
     return false;
 
-  using T = typename Range::value_type;
+  using T = Range::value_type;
   if constexpr (std::is_floating_point_v<T>) {
     const T delta = (range.back() - range.front()) / (scipp::size(range) - 1);
     constexpr int32_t ulp = 4;
@@ -27,14 +27,13 @@ template <class Range> bool islinspace(const Range &range) {
                       (std::abs(range.front()) + std::abs(range.back())) * ulp;
     return std::adjacent_find(range.begin(), range.end(),
                               [epsilon, delta](const auto &a, const auto &b) {
-                                return std::abs(std::abs(b - a) - delta) >
-                                       epsilon;
+                                return std::abs(b - a - delta) > epsilon;
                               }) == range.end();
   } else {
     const auto delta = range[1] - range[0];
     return std::adjacent_find(range.begin(), range.end(),
                               [delta](const auto &a, const auto &b) {
-                                return std::abs(b - a) != delta;
+                                return b - a != delta;
                               }) == range.end();
   }
 }
@@ -47,7 +46,7 @@ template <class Range> bool isarange(const Range &range) {
     return false;
   return std::adjacent_find(range.begin(), range.end(),
                             [](const auto &a, const auto &b) {
-                              return std::abs(b - a) != 1;
+                              return b - a != 1;
                             }) == range.end();
 }
 
