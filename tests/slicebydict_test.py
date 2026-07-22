@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 import itertools
+from typing import ClassVar
 
 import numpy as np
 import pytest
@@ -111,14 +112,14 @@ def test_getitem_bad_index(make_obj):
 
 # Needed both for DATA['float']['coords'] and DATA['float']['label_index']
 # so defined here to avoid a forward-reference inside the class body dict literal.
-_float_coord_values = {d: np.linspace(0.1, 0.9, s) for d, s in zip(_DIMS, _SHAPE)}
+_float_coord_values = {d: np.linspace(0.1, 0.9, s) for d, s in zip(_DIMS, _SHAPE, strict=True)}
 
 
 class TestSliceByLabelDict:
     # All per-variant data is nested under 'float'/'str' so that label_variants can
     # be built with a comprehension over DATA.items() — the comprehension body only
     # has access to loop variables, not bare class-attribute names.
-    DATA = {
+    DATA: ClassVar[dict] = {
         'float': {
             'coords': {
                 d: sc.array(dims=[d], values=v, unit='m')
@@ -134,7 +135,7 @@ class TestSliceByLabelDict:
         'str': {
             'coords': {
                 d: sc.array(dims=[d], values=list('abcdefghijklmnopqrstuvwxyz')[:s])
-                for d, s in zip(_DIMS, _SHAPE)
+                for d, s in zip(_DIMS, _SHAPE, strict=True)
             },
             'label_index': {
                 'n': sc.scalar('b'),
@@ -148,7 +149,7 @@ class TestSliceByLabelDict:
     # lambda coords=data['coords'] captures the per-iteration coords dict via default
     # argument: without it, all lambdas would share a closure over the loop variable and
     # see the last iteration's value after the comprehension finishes.
-    label_variants = {
+    label_variants: ClassVar[dict] = {
         coord_type: {
             'make': {
                 'DataArray': (
@@ -170,7 +171,7 @@ class TestSliceByLabelDict:
         for coord_type, data in DATA.items()
     }
 
-    label_index_params = [
+    label_index_params: ClassVar[list] = [
         pytest.param(
             variant['make'][obj_type],
             variant['label_index'],
@@ -186,14 +187,20 @@ class TestSliceByLabelDict:
     def _extract_values(obj):
         return obj['a'].values if isinstance(obj, sc.Dataset) else obj.values
 
-    @pytest.mark.parametrize(('make_obj', 'label_index', 'expected_values'), label_index_params)
+    @pytest.mark.parametrize(
+        ('make_obj', 'label_index', 'expected_values'),
+        label_index_params
+    )
     def test_getitem_scalar_label_dict(self, make_obj, label_index, expected_values):
         obj = make_obj()
         result = obj[label_index]
         assert result.dims == ('k', 'l')
         assert np.array_equal(self._extract_values(result), expected_values)
 
-    @pytest.mark.parametrize(('make_obj', 'label_index', 'expected_values'), label_index_params)
+    @pytest.mark.parametrize(
+        ('make_obj', 'label_index', 'expected_values'),
+        label_index_params
+    )
     def test_setitem_scalar_label_dict(self, make_obj, label_index, expected_values):
         obj = make_obj()
         obj[label_index] = obj[label_index] * 0.0
