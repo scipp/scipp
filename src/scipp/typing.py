@@ -108,16 +108,9 @@ else:
     ellipsis = type(Ellipsis)
 
 _ScippDimIndex: _std_typing.TypeAlias = (
-    int
-    | slice
-    | Sequence[int]
-    | npt.NDArray[np.integer[_std_typing.Any]]
-    | Variable
+    int | slice | Sequence[int] | npt.NDArray[np.integer[_std_typing.Any]] | Variable
 )
 
 ScippIndex: _std_typing.TypeAlias = (
-    ellipsis
-    | _ScippDimIndex
-    | tuple[str, _ScippDimIndex]
-    | dict[str, _ScippDimIndex]
+    ellipsis | _ScippDimIndex | tuple[str, _ScippDimIndex] | dict[str, _ScippDimIndex]
 )
