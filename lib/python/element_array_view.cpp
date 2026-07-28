@@ -42,7 +42,14 @@ void declare_ElementArrayView(py::module &m, const std::string &suffix) {
           [](const ElementArrayView<T> &self) { return array_to_string(self); })
       .def("__getitem__",
            [](const ElementArrayView<T> &self, const scipp::index i) {
-             return to_python_object(self[i]);
+             const auto index = i >= 0 ? i : self.size() + i;
+             if (index >= self.size()) {
+               throw except::SliceError(
+                   std::to_string(index) +
+                   " is out of bounds for array with size " +
+                   std::to_string(self.size()));
+             }
+             return to_python_object(self[index]);
            })
       .def("__len__", &ElementArrayView<T>::size)
       .def(

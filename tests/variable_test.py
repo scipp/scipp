@@ -644,6 +644,16 @@ def test_islinspace_false(dtype: str) -> None:
     assert not sc.islinspace(x).value
 
 
+@pytest.mark.parametrize('dtype', ['float64', 'float32', 'int64', 'int32'])
+def test_islinspace_oscillating(dtype: str) -> None:
+    # All values have the same distance but go up and down.
+    x = sc.Variable(
+        dims=['x'], values=(1, 2, 3, 2, 3, 4, 5), unit=sc.units.m, dtype=dtype
+    )
+    assert not sc.islinspace(x, 'x').value
+    assert not sc.islinspace(x).value
+
+
 def test_to_int64_to_float64() -> None:
     # If unit conversion is done first followed by dtype conversion, this will be lossy.
     data = sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="m")

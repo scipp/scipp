@@ -26,394 +26,415 @@ body.vscode-dark .sc-root {
   --sc-background-color2: #313131;
 }
 
-.sc-wrap {
-  font-size: 14px;
-  min-width: 300px;
-  max-width: 800px;
-}
-
-/* The CSS styling for the inline attributes table */
-.sc-var-attrs .sc-wrap{
-  padding-left: 3em;
-}
-
-.sc-header {
-  padding-top: 6px;
-  padding-bottom: 6px;
-  margin-bottom: 4px;
-  border-bottom: solid 1px #ddd;
-}
-
-.sc-header > div,
-.sc-header > ul {
-  display: inline;
-  margin-top: 0;
-  margin-bottom: 0;
-}
-
-.sc-obj-type,
-.sc-array-name {
-  margin-left: 2px;
-  margin-right: 10px;
-}
-
-.sc-obj-type {
-  color: var(--sc-font-color1);
-}
-
-.sc-underlying-size {
-  color: var(--sc-font-color2);
-}
-
-/* Also override settings of reveal.js as introduced when
-   generating slides using the rise package.
-   There are selectors for `.reveal ul` and `.reveal ul ul`
-   which take precedence over ours and mess up the formatting.*/
-.sc-sections, .reveal .sc-sections {
-  padding-left: 0 !important;
-  display: grid;
-  grid-template-columns: 150px auto auto auto 1fr 20px 20px;
-}
-
-.sc-section-item {
-  display: contents;
-}
-
-.sc-section-item input {
-  display: none;
-}
-
-.sc-section-item input:enabled + label {
-  cursor: pointer;
-  color: var(--sc-font-color1);
-}
-
-.sc-section-item input:enabled + label:hover {
-  color: var(--sc-font-color0);
-}
-
-.sc-section-summary {
-  grid-column: 1 ;
-  font-weight: 500;
-}
-
-.sc-section-summary > span {
-  display: inline-block;
-  padding-left: 0.5em;
-}
-
-.sc-section-summary-in:disabled + label {
-  color: var(--sc-font-color1);
-}
-
-.sc-section-summary-in + label:before {
-  display: inline-block;
-  content: '►';
-  font-size: 11px;
-  width: 15px;
-  text-align: center;
-}
-
-.sc-section-summary-in:disabled + label:before {
-  display: none;
-}
-
-.sc-section-summary-in:checked + label:before {
-  content: '▼';
-}
-
-.sc-section-summary-in:checked + label > span {
-  display: none;
-}
-
-.sc-section-summary,
-.sc-section-inline-details {
-  padding-top: 4px;
-  padding-bottom: 4px;
-}
-
-.sc-section-inline-details {
-  grid-column: 2 / 6;
-}
-
-.sc-section-details {
-  display: none;
-  grid-column: 1 / -1;
-  margin-bottom: 5px;
-}
-
-.sc-section-summary-in:checked ~ .sc-section-details {
-  display: contents;
-}
-
-.sc-array-wrap {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: 20px auto;
-}
-
-.sc-array-wrap > label {
-  grid-column: 1;
-  vertical-align: top;
-}
-
-.sc-preview {
-  color: var(--sc-font-color2);
-}
-
-.sc-array-preview,
-.sc-array-data {
-  padding: 0 5px !important;
-  grid-column: 2;
-}
-
-.sc-array-data,
-.sc-array-in:checked ~ .sc-array-preview {
-  display: none;
-}
-
-.sc-array-in:checked ~ .sc-array-data,
-.sc-array-preview {
-  display: inline-block;
-}
-
-.sc-dim-list {
-  display: inline-block !important;
-  list-style: none;
-  padding: 0 !important;
-  margin: 0;
-}
-
-.sc-dim-list li {
-  display: inline-block;
-  padding: 0;
-  margin: 0!important;
-}
-
-.sc-dim-list:before {
-  content: '(';
-}
-
-.sc-dim-list:after {
-  content: ')';
-}
-
-.sc-dim-list li:not(:last-child):after {
-  content: ',';
-  padding-right: 5px;
-}
-
 /*
-This selector is for avoiding unexpected extra padding
-caused by <span> tag wrapping around the dollar-sign in the Jpyter notebook.
+Component-scoped styles for static HTML exports.
+
+Documentation themes often apply higher-specificity rules to generic elements
+such as ul, li, pre, label, and svg. The !important declarations below are
+limited to structural properties that must not be overwritten by the host page.
 */
-.sc-dim-list li span,
-.sc-standalone-var-name > span span,
-.sc-var-name > span span {
-  padding: 0 !important;
-}
+@scope (.sc-root) {
+  :scope.sc-wrap,
+  .sc-wrap {
+    font-size: 14px;
+    min-width: 300px;
+    max-width: 800px;
+  }
 
-.sc-aligned {
-  font-weight: bold;
-}
+  /* The CSS styling for the inline attributes table */
+  .sc-var-attrs .sc-wrap {
+    padding-left: 3em !important;
+  }
 
-.sc-var-list,
-.sc-var-item,
-.reveal .sc-var-list,
-.reveal .sc-var-item {
-  display: contents;
-}
+  .sc-header {
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+    margin-bottom: 4px !important;
+    border-bottom: solid 1px #ddd;
+  }
 
-.sc-var-item > div,
-.sc-var-item label,
-.sc-var-item > .sc-var-name span {
-  background-color: var(--sc-background-color1);
-  margin-bottom: 0;
-}
+  .sc-header > div,
+  .sc-header > ul {
+    display: inline !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
 
-.sc-var-item > .sc-var-name:hover span {
-  padding-right: 5px;
-}
+  .sc-obj-type,
+  .sc-array-name {
+    margin-left: 2px !important;
+    margin-right: 10px !important;
+  }
 
-.sc-var-list > li:nth-child(odd) > div,
-.sc-var-list > li:nth-child(odd) > label,
-.sc-var-list > li:nth-child(odd) > .sc-var-name span {
-  background-color: var(--sc-background-color2);
-}
+  .sc-obj-type {
+    color: var(--sc-font-color1);
+  }
 
-.sc-var-name {
-  grid-column: 1;
-}
+  .sc-underlying-size {
+    color: var(--sc-font-color2);
+  }
 
-.sc-var-dims {
-  grid-column: 2;
-}
+  ul.sc-sections {
+    padding-left: 0 !important;
+    list-style: none !important;
+    display: grid !important;
+    grid-template-columns: 150px auto auto auto 1fr 20px 20px !important;
+  }
 
-.sc-var-dtype {
-  grid-column: 3;
-  text-align: right;
-  color: var(--sc-font-color2);
-}
-.sc-var-unit{
-  grid-column: 4;
-  text-align: left;
-  color: var(--sc-font-color1);
-  max-width: 50pt;
-  text-overflow: ellipsis;
-}
-.sc-value-preview {
-  grid-column: 5;
-}
-.sc-var-preview-variances{
-  text-align:right;
-}
+  li.sc-section-item {
+    display: contents !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    list-style: none !important;
+  }
 
-.sc-sections .sc-section-item .sc-section-summary,
-.sc-sections .sc-section-item .sc-section-inline-details,
-.sc-section-item .sc-var-list .sc-var-item > div,
-.sc-section-item .sc-var-list .sc-var-item > label,
-.sc-section-details .sc-var-list .sc-var-item > div,
-.sc-section-details .sc-var-list .sc-var-item > label {
-  margin-top: 0;
-  margin-bottom: 0;
-}
+  .sc-section-item input {
+    display: none !important;
+  }
 
-.sc-var-name,
-.sc-var-dims,
-.sc-var-dtype,
-.sc-var-unit,
-.sc-preview,
-.sc-attrs dt {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding-right: 10px;
-}
+  .sc-section-item input:enabled + label {
+    cursor: pointer;
+    color: var(--sc-font-color1);
+  }
 
-.sc-var-name:hover,
-.sc-var-dims:hover,
-.sc-var-dtype:hover,
-.sc-var-unit:hover,
-.sc-attrs dt:hover {
-  overflow: visible;
-  width: auto;
-  z-index: 1;
-}
+  .sc-section-item input:enabled + label:hover {
+    color: var(--sc-font-color0);
+  }
 
-.sc-var-attrs {
-  display: block;
-}
-.sc-var-data, .reveal .sc-var-data {
-  display: none;
-}
-.sc-var-attrs,
-.sc-var-data {
-  background-color: var(--sc-background-color0) !important;
-  padding-bottom: 5px !important;
-}
+  label.sc-section-summary {
+    grid-column: 1 !important;
+    font-weight: 500;
+    margin: 0 !important;
+  }
 
-.sc-var-attrs-in:checked ~ .sc-var-attrs {
-  display: none;
-}
-.sc-var-data-in:checked ~ .sc-var-data {
-  display: block;
-}
+  .sc-section-summary > span {
+    display: inline-block !important;
+    padding-left: 0.5em !important;
+  }
 
-.sc-var-data > table {
-  float: right;
-}
+  .sc-section-summary-in:disabled + label {
+    color: var(--sc-font-color1);
+  }
 
-.sc-var-name span,
-.sc-var-data {
-  padding-left: 25px !important;
-}
+  .sc-section-summary-in + label:before {
+    display: inline-block !important;
+    content: '►';
+    font-size: 11px;
+    width: 15px !important;
+    text-align: center !important;
+  }
 
-.sc-var-attrs,
-.sc-var-data {
-  grid-column: 1 / -1;
-}
+  .sc-section-summary-in:disabled + label:before {
+    display: none !important;
+  }
 
-dl.sc-attrs {
-  padding: 0;
-  margin: 0;
-  display: grid;
-  grid-template-columns: 125px auto;
-}
+  .sc-section-summary-in:checked + label:before {
+    content: '▼';
+  }
 
-.sc-attrs dt, dd {
-  padding: 0;
-  margin: 0;
-  float: left;
-  padding-right: 10px;
-  width: auto;
-}
+  .sc-section-summary-in:checked + label > span {
+    display: none !important;
+  }
 
-.sc-attrs dt {
-  font-weight: normal;
-  grid-column: 1;
-}
+  .sc-section-summary,
+  .sc-section-inline-details {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
 
-.sc-attrs dt:hover span {
-  display: inline-block;
-  padding-right: 10px;
-}
+  .sc-section-inline-details {
+    grid-column: 2 / 6 !important;
+    margin: 0 !important;
+  }
 
-.sc-attrs dd {
-  grid-column: 2;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
+  .sc-section-details {
+    display: none !important;
+    grid-column: 1 / -1 !important;
+    margin: 0 0 5px 0 !important;
+  }
 
-.sc-icon-database,
-.sc-icon-file-text2 {
-  display: inline-block;
-  vertical-align: middle;
-  width: 1em;
-  height: 1.5em !important;
-  stroke-width: 0;
-  stroke: currentColor;
-  fill: currentColor;
-}
+  .sc-section-summary-in:checked ~ .sc-section-details {
+    display: contents !important;
+  }
 
-label.sc-hide-icon svg{
-  opacity: 0;
-}
+  .sc-array-wrap {
+    grid-column: 1 / -1 !important;
+    display: grid !important;
+    grid-template-columns: 20px auto !important;
+  }
 
-.sc-standalone-var-name{
-  grid-column: 1/3;
-}
+  .sc-array-wrap > label {
+    grid-column: 1 !important;
+    vertical-align: top !important;
+  }
 
-.sc-standalone-var-name span{
-  padding-left: 25px;
-  padding-right:10px;
-}
+  .sc-preview {
+    color: var(--sc-font-color2);
+  }
 
-.sc-title {
-  font-weight:bold;
-  font-size:1.5em;
-}
+  .sc-array-preview,
+  .sc-array-data {
+    padding: 0 5px !important;
+    grid-column: 2 !important;
+  }
 
-.sc-subtitle {
-  font-weight:normal;
-  font-style:italic;
-  text-align:left;
-  font-size:1.2em;
-  padding: 1px;
-}
+  .sc-array-data,
+  .sc-array-in:checked ~ .sc-array-preview {
+    display: none !important;
+  }
 
-.sc-label {
-  fill: var(--sc-font-color0, #444444);
-  text-anchor: middle;
-}
+  .sc-array-in:checked ~ .sc-array-data,
+  .sc-array-preview {
+    display: inline-block !important;
+  }
 
-.sc-name {
-  fill: var(--sc-font-color0, #111111);
-}
+  ul.sc-dim-list {
+    display: inline-block !important;
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
 
-.sc-inset-line {
-  stroke: var(--sc-font-color1);
-  stroke-width: 0.05;
-  stroke-dasharray: 0.2, 0.2;
+  ul.sc-dim-list > li {
+    display: inline-block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    list-style: none !important;
+  }
+
+  .sc-dim-list:before {
+    content: '(';
+  }
+
+  .sc-dim-list:after {
+    content: ')';
+  }
+
+  .sc-dim-list li:not(:last-child):after {
+    content: ',';
+    padding-right: 5px !important;
+  }
+
+  /*
+  This selector is for avoiding unexpected extra padding
+  caused by <span> tag wrapping around the dollar-sign in the Jupyter notebook.
+  */
+  .sc-dim-list li span,
+  .sc-standalone-var-name > span span,
+  .sc-var-name > span span {
+    padding: 0 !important;
+  }
+
+  .sc-aligned {
+    font-weight: bold;
+  }
+
+  ul.sc-var-list,
+  li.sc-var-item {
+    display: contents !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    list-style: none !important;
+  }
+
+  .sc-var-item > div,
+  .sc-var-item label,
+  .sc-var-item > .sc-var-name span {
+    background-color: var(--sc-background-color1);
+    margin-bottom: 0 !important;
+  }
+
+  .sc-var-item > .sc-var-name:hover span {
+    padding-right: 5px !important;
+  }
+
+  .sc-var-list > li:nth-child(odd) > div,
+  .sc-var-list > li:nth-child(odd) > label,
+  .sc-var-list > li:nth-child(odd) > .sc-var-name span {
+    background-color: var(--sc-background-color2);
+  }
+
+  .sc-var-name {
+    grid-column: 1 !important;
+  }
+
+  .sc-var-dims {
+    grid-column: 2 !important;
+  }
+
+  .sc-var-dtype {
+    grid-column: 3 !important;
+    text-align: right !important;
+    color: var(--sc-font-color2);
+  }
+
+  .sc-var-unit {
+    grid-column: 4 !important;
+    text-align: left !important;
+    color: var(--sc-font-color1);
+    max-width: 50pt !important;
+    text-overflow: ellipsis;
+  }
+
+  .sc-value-preview {
+    grid-column: 5 !important;
+  }
+
+  .sc-var-preview-variances {
+    text-align: right !important;
+  }
+
+  .sc-sections .sc-section-item .sc-section-summary,
+  .sc-sections .sc-section-item .sc-section-inline-details,
+  .sc-section-item .sc-var-list .sc-var-item > div,
+  .sc-section-item .sc-var-list .sc-var-item > label,
+  .sc-section-details .sc-var-list .sc-var-item > div,
+  .sc-section-details .sc-var-list .sc-var-item > label {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  .sc-var-name,
+  .sc-var-dims,
+  .sc-var-dtype,
+  .sc-var-unit,
+  .sc-preview,
+  .sc-attrs dt {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    padding-right: 10px !important;
+  }
+
+  .sc-var-name:hover,
+  .sc-var-dims:hover,
+  .sc-var-dtype:hover,
+  .sc-var-unit:hover,
+  .sc-attrs dt:hover {
+    overflow: visible !important;
+    width: auto !important;
+    z-index: 1 !important;
+  }
+
+  .sc-var-attrs {
+    display: block !important;
+  }
+
+  pre.sc-var-data {
+    display: none !important;
+  }
+
+  .sc-var-attrs,
+  pre.sc-var-data {
+    background-color: var(--sc-background-color0) !important;
+    padding-bottom: 5px !important;
+  }
+
+  .sc-var-attrs-in:checked ~ .sc-var-attrs {
+    display: none !important;
+  }
+
+  .sc-var-data-in:checked ~ pre.sc-var-data {
+    display: block !important;
+  }
+
+  .sc-var-data > table {
+    float: right !important;
+  }
+
+  .sc-var-name span,
+  pre.sc-var-data {
+    padding-left: 25px !important;
+  }
+
+  .sc-var-attrs,
+  pre.sc-var-data {
+    grid-column: 1 / -1 !important;
+  }
+
+  dl.sc-attrs {
+    padding: 0 !important;
+    margin: 0 !important;
+    display: grid !important;
+    grid-template-columns: 125px auto !important;
+  }
+
+  .sc-attrs dt,
+  .sc-attrs dd {
+    padding: 0 10px 0 0 !important;
+    margin: 0 !important;
+    float: left !important;
+    width: auto !important;
+  }
+
+  .sc-attrs dt {
+    font-weight: normal;
+    grid-column: 1 !important;
+  }
+
+  .sc-attrs dt:hover span {
+    display: inline-block !important;
+    padding-right: 10px !important;
+  }
+
+  .sc-attrs dd {
+    grid-column: 2 !important;
+    white-space: pre-wrap !important;
+    word-break: break-all !important;
+  }
+
+  .sc-icon-database,
+  .sc-icon-file-text2 {
+    display: inline-block !important;
+    vertical-align: middle !important;
+    width: 1em !important;
+    height: 1.5em !important;
+    max-width: none !important;
+    stroke-width: 0;
+    stroke: currentColor;
+    fill: currentColor;
+  }
+
+  label.sc-hide-icon svg {
+    opacity: 0 !important;
+  }
+
+  .sc-standalone-var-name {
+    grid-column: 1 / 3 !important;
+  }
+
+  .sc-standalone-var-name span {
+    padding-left: 25px !important;
+    padding-right: 10px !important;
+  }
+
+  .sc-title {
+    font-weight: bold;
+    font-size: 1.5em;
+  }
+
+  .sc-subtitle {
+    font-weight: normal;
+    font-style: italic;
+    text-align: left !important;
+    font-size: 1.2em;
+    padding: 1px !important;
+  }
+
+  .sc-label {
+    fill: var(--sc-font-color0, #444444);
+    text-anchor: middle;
+  }
+
+  .sc-name {
+    fill: var(--sc-font-color0, #111111);
+  }
+
+  .sc-inset-line {
+    stroke: var(--sc-font-color1);
+    stroke-width: 0.05;
+    stroke-dasharray: 0.2, 0.2;
+  }
 }
 
 .sc-log-wrap {

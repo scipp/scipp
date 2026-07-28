@@ -4,183 +4,189 @@
 * tag with different style id.
 */
 
-.dg-root {
-  white-space: normal;
-  font-size: 14px;
-  min-width: 300px;
-  max-width: 1200px;
-}
+/*
+Keep the DataGroup repr layout stable inside documentation themes that define
+generic ul, li, label, input, and span styles with higher specificity.
+*/
+@scope (.dg-root) {
+  :scope {
+    white-space: normal !important;
+    font-size: 14px;
+    min-width: 300px;
+    max-width: 1200px;
+    box-sizing: border-box !important;
+  }
 
-.dg-root * {
-  box-sizing: border-box;
-}
+  * {
+    box-sizing: border-box !important;
+  }
 
-.sc-header > label,
-.sc-header > label > div,
-.sc-header > label > div > ul {
-  display: inline;
-  margin-bottom: 0;
-}
+  .sc-header > label,
+  .sc-header > label > div,
+  .sc-header > label > div > ul {
+    display: inline !important;
+    margin-bottom: 0 !important;
+  }
 
-.dg-header-in {
-  display: none;
-}
+  input.dg-header-in {
+    display: none !important;
+  }
 
-.dg-header-in + .sc-header > label:before {
-  display: inline-block;
-  font-size: 11px;
-  text-align: left;
-  content: '►';
-}
+  .dg-header-in + .sc-header > label:before {
+    display: inline-block !important;
+    font-size: 11px;
+    text-align: left !important;
+    content: '►';
+  }
 
-.dg-header-in:checked + .sc-header > label:before {
-  content: '▼';
-}
+  .dg-header-in:checked + .sc-header > label:before {
+    content: '▼';
+  }
 
-.dg-header-in ~ .dg-detail-box {
-  display: none;
-}
+  .dg-header-in ~ .dg-detail-box {
+    display: none !important;
+  }
 
-.dg-header-in:checked ~ .dg-detail-box {
-  display: grid;
-}
+  .dg-header-in:checked ~ .dg-detail-box {
+    display: grid !important;
+  }
 
-.dg-detail-box {
-  margin-top: 5px;
-  margin-bottom: 5px;
-  column-gap: 0 !important;
-  display: grid;
-  grid-template-columns:  max-content max-content max-content max-content max-content max-content max-content;
-  grid-template-areas:   "name        parent      object-type shape       dtype       unit        preview";
-}
+  .dg-detail-box {
+    margin-top: 5px !important;
+    margin-bottom: 5px !important;
+    column-gap: 0 !important;
+    display: grid !important;
+    grid-template-columns:
+      max-content max-content max-content max-content max-content max-content
+      max-content !important;
+  }
 
-.dg-detail-box * {
-  margin-top: 0;
-  margin-bottom: 0;
-}
+  .dg-detail-box * {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
 
-.dg-detail-list {
-  display: contents;
-}
+  ul.dg-detail-list {
+    display: contents !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+  }
 
-.dg-detail-item {
-  display: contents;
-  list-style-type: none;
-}
+  li.dg-detail-item {
+    display: contents !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+  }
 
-.dg-detail-item-in {
-  display: none;
-}
+  input.dg-detail-item-in {
+    display: none !important;
+    margin: 0 !important;
+  }
 
-.dg-detail-item-in + .dg-detail-name > label:before {
-  display: inline-block;
-  font-size: 14px;
-  text-align: left;
-  content: '►';
-}
+  .dg-detail-item-in + .dg-detail-name > label:before {
+    display: inline-block !important;
+    font-size: 14px;
+    text-align: left !important;
+    content: '►';
+  }
 
-.dg-detail-item-in:checked + .dg-detail-name > label:before {
-  content: '▼';
-}
+  .dg-detail-item-in:checked + .dg-detail-name > label:before {
+    content: '▼';
+  }
 
-.dg-detail-item div,
-.dg-detail-item span,
-.dg-detail-item label {
-  word-break: break-all;
-  min-width: 1em;
-  max-width: 20em;
-  width: 100%;
-}
+  .dg-detail-item div,
+  .dg-detail-item span,
+  .dg-detail-item label {
+    word-break: break-all !important;
+    min-width: 1em !important;
+    max-width: 20em !important;
+    width: 100% !important;
+  }
 
-.dg-detail-item > div {
-  display: contents;
-}
+  .dg-detail-item > div {
+    display: contents !important;
+  }
 
-.dg-detail-item > div > div > div {
-  width: 100%;
-}
+  .dg-detail-item > div > div > div {
+    width: 100% !important;
+  }
 
-.dg-detail-item:hover > div > div {
-  background-color: var(--sc-background-color2) !important;
-}
+  .dg-detail-item:hover > div > div {
+    background-color: var(--sc-background-color2) !important;
+  }
 
-.dg-detail-item > div span {
-  padding-left: 10px;
-  padding-right: 10px;
-}
+  .dg-detail-item > div span {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
 
-.dg-detail-item > div > div:first-of-type {
-  grid-column-start: 1;
-}
+  .dg-detail-item > div > div:first-of-type {
+    grid-column-start: 1 !important;
+  }
 
-.dg-detail-item-subsection {
-  display: none;
-}
+  ul.dg-detail-item-subsection {
+    display: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+  }
 
-.dg-detail-item-in {
-  margin: 0;
-}
+  .dg-detail-item-in:checked ~ .dg-detail-item-subsection {
+    display: contents !important;
+  }
 
-.dg-detail-item-in:checked ~ .dg-detail-item-subsection {
-  display: contents;
-}
+  .dg-detail-item .dg-detail-name {
+    min-width: 5em !important;
+  }
 
-.dg-detail-item .dg-detail-name {
-  grid-area: "name";
-  min-width: 5em;
-}
+  .dg-detail-name {
+    padding-left: calc(var(--depth) * 2em) !important;
+  }
 
-.dg-detail-name {
-  padding-left: calc(var(--depth)*2em);
-}
+  .dg-detail-name > label {
+    padding-left: 8px !important;
+  }
 
-.dg-detail-name > label {
-  padding-left: 8px;
-}
+  .dg-detail-name > label > span {
+    padding-left: 0.1em !important;
+  }
 
-.dg-detail-name > label > span {
-  padding-left: 0.1em;
-}
+  .dg-detail-item .dg-detail-parent {
+    text-align: right !important;
+  }
 
-.dg-detail-item .dg-detail-parent {
-  grid-area: "parent";
-  text-align: right;
-}
+  .dg-detail-item .dg-detail-objtype {
+    text-align: left !important;
+  }
 
-.dg-detail-item .dg-detail-objtype {
-  grid-area: "objtype";
-  text-align: left;
-}
+  .dg-detail-item .dg-detail-shape {
+    max-width: 30em !important;
+    text-align: left !important;
+  }
 
-.dg-detail-item .dg-detail-shape {
-  max-width: 30em;
-  grid-area: "shape";
-  text-align: left;
-}
+  .sc-header .dg-detail-shape {
+    margin-left: 1em !important;
+    text-align: left !important;
+  }
 
-.sc-header .dg-detail-shape {
-  margin-left: 1em;
-  text-align: left;
-}
+  .dg-detail-item .dg-detail-dtype {
+    text-align: left !important;
+  }
 
-.dg-detail-item .dg-detail-dtype {
-  grid-area: "dtype";
-  text-align: left;
-}
+  .dg-detail-item .dg-detail-unit {
+    text-align: center !important;
+  }
 
-.dg-detail-item .dg-detail-unit {
-  grid-area: "unit";
-  text-align: center;
-}
+  .dg-detail-item .dg-detail-preview {
+    min-width: 15em !important;
+    max-width: 100em !important;
+    text-align: left !important;
+  }
 
-.dg-detail-item .dg-detail-preview {
-  grid-area: "preview";
-  min-width: 15em;
-  max-width: 100em !important;
-  text-align: left;
-}
-
-.dg-detail-preview .sc-preview span,
-.dg-detail-shape span {
-  padding: 0 !important;
+  .dg-detail-preview .sc-preview span,
+  .dg-detail-shape span {
+    padding: 0 !important;
+  }
 }
