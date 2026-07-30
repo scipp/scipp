@@ -8,6 +8,7 @@
 #include <memory>
 
 #include "scipp/common/index.h"
+#include "scipp/core/hugepage.h"
 #include "scipp/core/parallel.h"
 
 namespace scipp::core {
@@ -22,8 +23,11 @@ auto make_unique_for_overwrite_array(const scipp::index size) {
   // We add a size and sign check to avoid warnings about exceeding maximum
   // object size. See e.g.
   // https://gcc.gnu.org/bugzilla//show_bug.cgi?id=85783#c3
-  if ((size <= PTRDIFF_MAX) && (size >= 0))
-    return Ptr(new T[size]);
+  if ((size <= PTRDIFF_MAX) && (size >= 0)) {
+    auto ptr = Ptr(new T[size]);
+    madvise_hugepage(ptr.get(), static_cast<size_t>(size) * sizeof(T));
+    return ptr;
+  }
   throw std::runtime_error(
       "Allocation size is either negative or exceeds PTRDIFF_MAX");
 }

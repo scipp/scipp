@@ -11,6 +11,7 @@ set(INC_FILES
     include/scipp/core/element_array.h
     include/scipp/core/element_array_view.h
     include/scipp/core/histogram.h
+    include/scipp/core/hugepage.h
     include/scipp/core/memory_pool.h
     include/scipp/core/multi_index.h
     include/scipp/core/parallel-fallback.h
@@ -45,6 +46,7 @@ set(SRC_FILES
     dtype.cpp
     element_array_view.cpp
     except.cpp
+    hugepage.cpp
     multi_index.cpp
     sizes.cpp
     slice.cpp
