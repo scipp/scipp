@@ -1,6 +1,0 @@
--r extra.in
--r base.in
-hypothesis
-pytest
-pytest-xdist
-beautifulsoup4

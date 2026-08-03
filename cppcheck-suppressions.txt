@@ -46,5 +46,8 @@ passedByValue
 // A lot of false-positives in test fixtures.
 unusedStructMember
 
-// Suppress checks on external deps like units
-*:*build/_deps/*
+// Suppress checks on external deps like units (CPM/FetchContent _deps tree).
+// Match any `_deps` directory at any depth so it works regardless of the build
+// directory name (e.g. build/, build/dev, build/test). `**` crosses path
+// separators; a plain `*` does not under cppcheck >= 2.18.
+*:**/_deps/**
