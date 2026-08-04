@@ -8,14 +8,12 @@
 Keep the DataGroup repr layout stable inside documentation themes that define
 generic ul, li, label, input, and span styles with higher specificity.
 */
-@scope (.dg-root) {
-  :scope {
-    white-space: normal !important;
-    font-size: 14px;
-    min-width: 300px;
-    max-width: 1200px;
-    box-sizing: border-box !important;
-  }
+.dg-root {
+  white-space: normal !important;
+  font-size: 14px;
+  min-width: 300px;
+  max-width: 1200px;
+  box-sizing: border-box !important;
 
   * {
     box-sizing: border-box !important;

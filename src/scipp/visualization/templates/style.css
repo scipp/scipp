@@ -33,8 +33,8 @@ Documentation themes often apply higher-specificity rules to generic elements
 such as ul, li, pre, label, and svg. The !important declarations below are
 limited to structural properties that must not be overwritten by the host page.
 */
-@scope (.sc-root) {
-  :scope.sc-wrap,
+.sc-root {
+  &.sc-wrap,
   .sc-wrap {
     font-size: 14px;
     min-width: 300px;
