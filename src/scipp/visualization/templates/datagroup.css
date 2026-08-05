@@ -14,177 +14,177 @@ generic ul, li, label, input, and span styles with higher specificity.
   min-width: 300px;
   max-width: 1200px;
   box-sizing: border-box !important;
+}
 
-  * {
-    box-sizing: border-box !important;
-  }
+.dg-root * {
+  box-sizing: border-box !important;
+}
 
-  .sc-header > label,
-  .sc-header > label > div,
-  .sc-header > label > div > ul {
-    display: inline !important;
-    margin-bottom: 0 !important;
-  }
+.dg-root .sc-header > label,
+.dg-root .sc-header > label > div,
+.dg-root .sc-header > label > div > ul {
+  display: inline !important;
+  margin-bottom: 0 !important;
+}
 
-  input.dg-header-in {
-    display: none !important;
-  }
+.dg-root input.dg-header-in {
+  display: none !important;
+}
 
-  .dg-header-in + .sc-header > label:before {
-    display: inline-block !important;
-    font-size: 11px;
-    text-align: left !important;
-    content: '►';
-  }
+.dg-root .dg-header-in + .sc-header > label:before {
+  display: inline-block !important;
+  font-size: 11px;
+  text-align: left !important;
+  content: '►';
+}
 
-  .dg-header-in:checked + .sc-header > label:before {
-    content: '▼';
-  }
+.dg-root .dg-header-in:checked + .sc-header > label:before {
+  content: '▼';
+}
 
-  .dg-header-in ~ .dg-detail-box {
-    display: none !important;
-  }
+.dg-root .dg-header-in ~ .dg-detail-box {
+  display: none !important;
+}
 
-  .dg-header-in:checked ~ .dg-detail-box {
-    display: grid !important;
-  }
+.dg-root .dg-header-in:checked ~ .dg-detail-box {
+  display: grid !important;
+}
 
-  .dg-detail-box {
-    margin-top: 5px !important;
-    margin-bottom: 5px !important;
-    column-gap: 0 !important;
-    display: grid !important;
-    grid-template-columns:
-      max-content max-content max-content max-content max-content max-content
-      max-content !important;
-  }
+.dg-root .dg-detail-box {
+  margin-top: 5px !important;
+  margin-bottom: 5px !important;
+  column-gap: 0 !important;
+  display: grid !important;
+  grid-template-columns:
+    max-content max-content max-content max-content max-content max-content
+    max-content !important;
+}
 
-  .dg-detail-box * {
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-  }
+.dg-root .dg-detail-box * {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
 
-  ul.dg-detail-list {
-    display: contents !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    list-style: none !important;
-  }
+.dg-root ul.dg-detail-list {
+  display: contents !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
 
-  li.dg-detail-item {
-    display: contents !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    list-style: none !important;
-  }
+.dg-root li.dg-detail-item {
+  display: contents !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
 
-  input.dg-detail-item-in {
-    display: none !important;
-    margin: 0 !important;
-  }
+.dg-root input.dg-detail-item-in {
+  display: none !important;
+  margin: 0 !important;
+}
 
-  .dg-detail-item-in + .dg-detail-name > label:before {
-    display: inline-block !important;
-    font-size: 14px;
-    text-align: left !important;
-    content: '►';
-  }
+.dg-root .dg-detail-item-in + .dg-detail-name > label:before {
+  display: inline-block !important;
+  font-size: 14px;
+  text-align: left !important;
+  content: '►';
+}
 
-  .dg-detail-item-in:checked + .dg-detail-name > label:before {
-    content: '▼';
-  }
+.dg-root .dg-detail-item-in:checked + .dg-detail-name > label:before {
+  content: '▼';
+}
 
-  .dg-detail-item div,
-  .dg-detail-item span,
-  .dg-detail-item label {
-    word-break: break-all !important;
-    min-width: 1em !important;
-    max-width: 20em !important;
-    width: 100% !important;
-  }
+.dg-root .dg-detail-item div,
+.dg-root .dg-detail-item span,
+.dg-root .dg-detail-item label {
+  word-break: break-all !important;
+  min-width: 1em !important;
+  max-width: 20em !important;
+  width: 100% !important;
+}
 
-  .dg-detail-item > div {
-    display: contents !important;
-  }
+.dg-root .dg-detail-item > div {
+  display: contents !important;
+}
 
-  .dg-detail-item > div > div > div {
-    width: 100% !important;
-  }
+.dg-root .dg-detail-item > div > div > div {
+  width: 100% !important;
+}
 
-  .dg-detail-item:hover > div > div {
-    background-color: var(--sc-background-color2) !important;
-  }
+.dg-root .dg-detail-item:hover > div > div {
+  background-color: var(--sc-background-color2) !important;
+}
 
-  .dg-detail-item > div span {
-    padding-left: 10px !important;
-    padding-right: 10px !important;
-  }
+.dg-root .dg-detail-item > div span {
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+}
 
-  .dg-detail-item > div > div:first-of-type {
-    grid-column-start: 1 !important;
-  }
+.dg-root .dg-detail-item > div > div:first-of-type {
+  grid-column-start: 1 !important;
+}
 
-  ul.dg-detail-item-subsection {
-    display: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    list-style: none !important;
-  }
+.dg-root ul.dg-detail-item-subsection {
+  display: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
 
-  .dg-detail-item-in:checked ~ .dg-detail-item-subsection {
-    display: contents !important;
-  }
+.dg-root .dg-detail-item-in:checked ~ .dg-detail-item-subsection {
+  display: contents !important;
+}
 
-  .dg-detail-item .dg-detail-name {
-    min-width: 5em !important;
-  }
+.dg-root .dg-detail-item .dg-detail-name {
+  min-width: 5em !important;
+}
 
-  .dg-detail-name {
-    padding-left: calc(var(--depth) * 2em) !important;
-  }
+.dg-root .dg-detail-name {
+  padding-left: calc(var(--depth) * 2em) !important;
+}
 
-  .dg-detail-name > label {
-    padding-left: 8px !important;
-  }
+.dg-root .dg-detail-name > label {
+  padding-left: 8px !important;
+}
 
-  .dg-detail-name > label > span {
-    padding-left: 0.1em !important;
-  }
+.dg-root .dg-detail-name > label > span {
+  padding-left: 0.1em !important;
+}
 
-  .dg-detail-item .dg-detail-parent {
-    text-align: right !important;
-  }
+.dg-root .dg-detail-item .dg-detail-parent {
+  text-align: right !important;
+}
 
-  .dg-detail-item .dg-detail-objtype {
-    text-align: left !important;
-  }
+.dg-root .dg-detail-item .dg-detail-objtype {
+  text-align: left !important;
+}
 
-  .dg-detail-item .dg-detail-shape {
-    max-width: 30em !important;
-    text-align: left !important;
-  }
+.dg-root .dg-detail-item .dg-detail-shape {
+  max-width: 30em !important;
+  text-align: left !important;
+}
 
-  .sc-header .dg-detail-shape {
-    margin-left: 1em !important;
-    text-align: left !important;
-  }
+.dg-root .sc-header .dg-detail-shape {
+  margin-left: 1em !important;
+  text-align: left !important;
+}
 
-  .dg-detail-item .dg-detail-dtype {
-    text-align: left !important;
-  }
+.dg-root .dg-detail-item .dg-detail-dtype {
+  text-align: left !important;
+}
 
-  .dg-detail-item .dg-detail-unit {
-    text-align: center !important;
-  }
+.dg-root .dg-detail-item .dg-detail-unit {
+  text-align: center !important;
+}
 
-  .dg-detail-item .dg-detail-preview {
-    min-width: 15em !important;
-    max-width: 100em !important;
-    text-align: left !important;
-  }
+.dg-root .dg-detail-item .dg-detail-preview {
+  min-width: 15em !important;
+  max-width: 100em !important;
+  text-align: left !important;
+}
 
-  .dg-detail-preview .sc-preview span,
-  .dg-detail-shape span {
-    padding: 0 !important;
-  }
+.dg-root .dg-detail-preview .sc-preview span,
+.dg-root .dg-detail-shape span {
+  padding: 0 !important;
 }

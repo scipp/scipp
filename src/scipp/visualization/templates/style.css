@@ -33,408 +33,406 @@ Documentation themes often apply higher-specificity rules to generic elements
 such as ul, li, pre, label, and svg. The !important declarations below are
 limited to structural properties that must not be overwritten by the host page.
 */
-.sc-root {
-  &.sc-wrap,
-  .sc-wrap {
-    font-size: 14px;
-    min-width: 300px;
-    max-width: 800px;
-  }
-
-  /* The CSS styling for the inline attributes table */
-  .sc-var-attrs .sc-wrap {
-    padding-left: 3em !important;
-  }
-
-  .sc-header {
-    padding-top: 6px !important;
-    padding-bottom: 6px !important;
-    margin-bottom: 4px !important;
-    border-bottom: solid 1px #ddd;
-  }
-
-  .sc-header > div,
-  .sc-header > ul {
-    display: inline !important;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-  }
-
-  .sc-obj-type,
-  .sc-array-name {
-    margin-left: 2px !important;
-    margin-right: 10px !important;
-  }
-
-  .sc-obj-type {
-    color: var(--sc-font-color1);
-  }
-
-  .sc-underlying-size {
-    color: var(--sc-font-color2);
-  }
-
-  ul.sc-sections {
-    padding-left: 0 !important;
-    list-style: none !important;
-    display: grid !important;
-    grid-template-columns: 150px auto auto auto 1fr 20px 20px !important;
-  }
-
-  li.sc-section-item {
-    display: contents !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    list-style: none !important;
-  }
-
-  .sc-section-item input {
-    display: none !important;
-  }
-
-  .sc-section-item input:enabled + label {
-    cursor: pointer;
-    color: var(--sc-font-color1);
-  }
-
-  .sc-section-item input:enabled + label:hover {
-    color: var(--sc-font-color0);
-  }
-
-  label.sc-section-summary {
-    grid-column: 1 !important;
-    font-weight: 500;
-    margin: 0 !important;
-  }
-
-  .sc-section-summary > span {
-    display: inline-block !important;
-    padding-left: 0.5em !important;
-  }
-
-  .sc-section-summary-in:disabled + label {
-    color: var(--sc-font-color1);
-  }
-
-  .sc-section-summary-in + label:before {
-    display: inline-block !important;
-    content: '►';
-    font-size: 11px;
-    width: 15px !important;
-    text-align: center !important;
-  }
-
-  .sc-section-summary-in:disabled + label:before {
-    display: none !important;
-  }
-
-  .sc-section-summary-in:checked + label:before {
-    content: '▼';
-  }
-
-  .sc-section-summary-in:checked + label > span {
-    display: none !important;
-  }
-
-  .sc-section-summary,
-  .sc-section-inline-details {
-    padding-top: 4px !important;
-    padding-bottom: 4px !important;
-  }
-
-  .sc-section-inline-details {
-    grid-column: 2 / 6 !important;
-    margin: 0 !important;
-  }
-
-  .sc-section-details {
-    display: none !important;
-    grid-column: 1 / -1 !important;
-    margin: 0 0 5px 0 !important;
-  }
-
-  .sc-section-summary-in:checked ~ .sc-section-details {
-    display: contents !important;
-  }
-
-  .sc-array-wrap {
-    grid-column: 1 / -1 !important;
-    display: grid !important;
-    grid-template-columns: 20px auto !important;
-  }
-
-  .sc-array-wrap > label {
-    grid-column: 1 !important;
-    vertical-align: top !important;
-  }
-
-  .sc-preview {
-    color: var(--sc-font-color2);
-  }
-
-  .sc-array-preview,
-  .sc-array-data {
-    padding: 0 5px !important;
-    grid-column: 2 !important;
-  }
-
-  .sc-array-data,
-  .sc-array-in:checked ~ .sc-array-preview {
-    display: none !important;
-  }
-
-  .sc-array-in:checked ~ .sc-array-data,
-  .sc-array-preview {
-    display: inline-block !important;
-  }
-
-  ul.sc-dim-list {
-    display: inline-block !important;
-    list-style: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
-  ul.sc-dim-list > li {
-    display: inline-block !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    list-style: none !important;
-  }
-
-  .sc-dim-list:before {
-    content: '(';
-  }
-
-  .sc-dim-list:after {
-    content: ')';
-  }
-
-  .sc-dim-list li:not(:last-child):after {
-    content: ',';
-    padding-right: 5px !important;
-  }
-
-  /*
-  This selector is for avoiding unexpected extra padding
-  caused by <span> tag wrapping around the dollar-sign in the Jupyter notebook.
-  */
-  .sc-dim-list li span,
-  .sc-standalone-var-name > span span,
-  .sc-var-name > span span {
-    padding: 0 !important;
-  }
-
-  .sc-aligned {
-    font-weight: bold;
-  }
-
-  ul.sc-var-list,
-  li.sc-var-item {
-    display: contents !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    list-style: none !important;
-  }
-
-  .sc-var-item > div,
-  .sc-var-item label,
-  .sc-var-item > .sc-var-name span {
-    background-color: var(--sc-background-color1);
-    margin-bottom: 0 !important;
-  }
-
-  .sc-var-item > .sc-var-name:hover span {
-    padding-right: 5px !important;
-  }
-
-  .sc-var-list > li:nth-child(odd) > div,
-  .sc-var-list > li:nth-child(odd) > label,
-  .sc-var-list > li:nth-child(odd) > .sc-var-name span {
-    background-color: var(--sc-background-color2);
-  }
-
-  .sc-var-name {
-    grid-column: 1 !important;
-  }
-
-  .sc-var-dims {
-    grid-column: 2 !important;
-  }
-
-  .sc-var-dtype {
-    grid-column: 3 !important;
-    text-align: right !important;
-    color: var(--sc-font-color2);
-  }
-
-  .sc-var-unit {
-    grid-column: 4 !important;
-    text-align: left !important;
-    color: var(--sc-font-color1);
-    max-width: 50pt !important;
-    text-overflow: ellipsis;
-  }
-
-  .sc-value-preview {
-    grid-column: 5 !important;
-  }
-
-  .sc-var-preview-variances {
-    text-align: right !important;
-  }
-
-  .sc-sections .sc-section-item .sc-section-summary,
-  .sc-sections .sc-section-item .sc-section-inline-details,
-  .sc-section-item .sc-var-list .sc-var-item > div,
-  .sc-section-item .sc-var-list .sc-var-item > label,
-  .sc-section-details .sc-var-list .sc-var-item > div,
-  .sc-section-details .sc-var-list .sc-var-item > label {
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-  }
-
-  .sc-var-name,
-  .sc-var-dims,
-  .sc-var-dtype,
-  .sc-var-unit,
-  .sc-preview,
-  .sc-attrs dt {
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    padding-right: 10px !important;
-  }
-
-  .sc-var-name:hover,
-  .sc-var-dims:hover,
-  .sc-var-dtype:hover,
-  .sc-var-unit:hover,
-  .sc-attrs dt:hover {
-    overflow: visible !important;
-    width: auto !important;
-    z-index: 1 !important;
-  }
-
-  .sc-var-attrs {
-    display: block !important;
-  }
-
-  pre.sc-var-data {
-    display: none !important;
-  }
-
-  .sc-var-attrs,
-  pre.sc-var-data {
-    background-color: var(--sc-background-color0) !important;
-    padding-bottom: 5px !important;
-  }
-
-  .sc-var-attrs-in:checked ~ .sc-var-attrs {
-    display: none !important;
-  }
-
-  .sc-var-data-in:checked ~ pre.sc-var-data {
-    display: block !important;
-  }
-
-  .sc-var-data > table {
-    float: right !important;
-  }
-
-  .sc-var-name span,
-  pre.sc-var-data {
-    padding-left: 25px !important;
-  }
-
-  .sc-var-attrs,
-  pre.sc-var-data {
-    grid-column: 1 / -1 !important;
-  }
-
-  dl.sc-attrs {
-    padding: 0 !important;
-    margin: 0 !important;
-    display: grid !important;
-    grid-template-columns: 125px auto !important;
-  }
-
-  .sc-attrs dt,
-  .sc-attrs dd {
-    padding: 0 10px 0 0 !important;
-    margin: 0 !important;
-    float: left !important;
-    width: auto !important;
-  }
-
-  .sc-attrs dt {
-    font-weight: normal;
-    grid-column: 1 !important;
-  }
-
-  .sc-attrs dt:hover span {
-    display: inline-block !important;
-    padding-right: 10px !important;
-  }
-
-  .sc-attrs dd {
-    grid-column: 2 !important;
-    white-space: pre-wrap !important;
-    word-break: break-all !important;
-  }
-
-  .sc-icon-database,
-  .sc-icon-file-text2 {
-    display: inline-block !important;
-    vertical-align: middle !important;
-    width: 1em !important;
-    height: 1.5em !important;
-    max-width: none !important;
-    stroke-width: 0;
-    stroke: currentColor;
-    fill: currentColor;
-  }
-
-  label.sc-hide-icon svg {
-    opacity: 0 !important;
-  }
-
-  .sc-standalone-var-name {
-    grid-column: 1 / 3 !important;
-  }
-
-  .sc-standalone-var-name span {
-    padding-left: 25px !important;
-    padding-right: 10px !important;
-  }
-
-  .sc-title {
-    font-weight: bold;
-    font-size: 1.5em;
-  }
-
-  .sc-subtitle {
-    font-weight: normal;
-    font-style: italic;
-    text-align: left !important;
-    font-size: 1.2em;
-    padding: 1px !important;
-  }
-
-  .sc-label {
-    fill: var(--sc-font-color0, #444444);
-    text-anchor: middle;
-  }
-
-  .sc-name {
-    fill: var(--sc-font-color0, #111111);
-  }
-
-  .sc-inset-line {
-    stroke: var(--sc-font-color1);
-    stroke-width: 0.05;
-    stroke-dasharray: 0.2, 0.2;
-  }
+.sc-root.sc-wrap,
+.sc-root .sc-wrap {
+  font-size: 14px;
+  min-width: 300px;
+  max-width: 800px;
+}
+
+/* The CSS styling for the inline attributes table */
+.sc-root .sc-var-attrs .sc-wrap {
+  padding-left: 3em !important;
+}
+
+.sc-root .sc-header {
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+  margin-bottom: 4px !important;
+  border-bottom: solid 1px #ddd;
+}
+
+.sc-root .sc-header > div,
+.sc-root .sc-header > ul {
+  display: inline !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.sc-root .sc-obj-type,
+.sc-root .sc-array-name {
+  margin-left: 2px !important;
+  margin-right: 10px !important;
+}
+
+.sc-root .sc-obj-type {
+  color: var(--sc-font-color1);
+}
+
+.sc-root .sc-underlying-size {
+  color: var(--sc-font-color2);
+}
+
+.sc-root ul.sc-sections {
+  padding-left: 0 !important;
+  list-style: none !important;
+  display: grid !important;
+  grid-template-columns: 150px auto auto auto 1fr 20px 20px !important;
+}
+
+.sc-root li.sc-section-item {
+  display: contents !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  list-style: none !important;
+}
+
+.sc-root .sc-section-item input {
+  display: none !important;
+}
+
+.sc-root .sc-section-item input:enabled + label {
+  cursor: pointer;
+  color: var(--sc-font-color1);
+}
+
+.sc-root .sc-section-item input:enabled + label:hover {
+  color: var(--sc-font-color0);
+}
+
+.sc-root label.sc-section-summary {
+  grid-column: 1 !important;
+  font-weight: 500;
+  margin: 0 !important;
+}
+
+.sc-root .sc-section-summary > span {
+  display: inline-block !important;
+  padding-left: 0.5em !important;
+}
+
+.sc-root .sc-section-summary-in:disabled + label {
+  color: var(--sc-font-color1);
+}
+
+.sc-root .sc-section-summary-in + label:before {
+  display: inline-block !important;
+  content: '►';
+  font-size: 11px;
+  width: 15px !important;
+  text-align: center !important;
+}
+
+.sc-root .sc-section-summary-in:disabled + label:before {
+  display: none !important;
+}
+
+.sc-root .sc-section-summary-in:checked + label:before {
+  content: '▼';
+}
+
+.sc-root .sc-section-summary-in:checked + label > span {
+  display: none !important;
+}
+
+.sc-root .sc-section-summary,
+.sc-root .sc-section-inline-details {
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+.sc-root .sc-section-inline-details {
+  grid-column: 2 / 6 !important;
+  margin: 0 !important;
+}
+
+.sc-root .sc-section-details {
+  display: none !important;
+  grid-column: 1 / -1 !important;
+  margin: 0 0 5px 0 !important;
+}
+
+.sc-root .sc-section-summary-in:checked ~ .sc-section-details {
+  display: contents !important;
+}
+
+.sc-root .sc-array-wrap {
+  grid-column: 1 / -1 !important;
+  display: grid !important;
+  grid-template-columns: 20px auto !important;
+}
+
+.sc-root .sc-array-wrap > label {
+  grid-column: 1 !important;
+  vertical-align: top !important;
+}
+
+.sc-root .sc-preview {
+  color: var(--sc-font-color2);
+}
+
+.sc-root .sc-array-preview,
+.sc-root .sc-array-data {
+  padding: 0 5px !important;
+  grid-column: 2 !important;
+}
+
+.sc-root .sc-array-data,
+.sc-root .sc-array-in:checked ~ .sc-array-preview {
+  display: none !important;
+}
+
+.sc-root .sc-array-in:checked ~ .sc-array-data,
+.sc-root .sc-array-preview {
+  display: inline-block !important;
+}
+
+.sc-root ul.sc-dim-list {
+  display: inline-block !important;
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.sc-root ul.sc-dim-list > li {
+  display: inline-block !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  list-style: none !important;
+}
+
+.sc-root .sc-dim-list:before {
+  content: '(';
+}
+
+.sc-root .sc-dim-list:after {
+  content: ')';
+}
+
+.sc-root .sc-dim-list li:not(:last-child):after {
+  content: ',';
+  padding-right: 5px !important;
+}
+
+/*
+This selector is for avoiding unexpected extra padding
+caused by <span> tag wrapping around the dollar-sign in the Jupyter notebook.
+*/
+.sc-root .sc-dim-list li span,
+.sc-root .sc-standalone-var-name > span span,
+.sc-root .sc-var-name > span span {
+  padding: 0 !important;
+}
+
+.sc-root .sc-aligned {
+  font-weight: bold;
+}
+
+.sc-root ul.sc-var-list,
+.sc-root li.sc-var-item {
+  display: contents !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  list-style: none !important;
+}
+
+.sc-root .sc-var-item > div,
+.sc-root .sc-var-item label,
+.sc-root .sc-var-item > .sc-var-name span {
+  background-color: var(--sc-background-color1);
+  margin-bottom: 0 !important;
+}
+
+.sc-root .sc-var-item > .sc-var-name:hover span {
+  padding-right: 5px !important;
+}
+
+.sc-root .sc-var-list > li:nth-child(odd) > div,
+.sc-root .sc-var-list > li:nth-child(odd) > label,
+.sc-root .sc-var-list > li:nth-child(odd) > .sc-var-name span {
+  background-color: var(--sc-background-color2);
+}
+
+.sc-root .sc-var-name {
+  grid-column: 1 !important;
+}
+
+.sc-root .sc-var-dims {
+  grid-column: 2 !important;
+}
+
+.sc-root .sc-var-dtype {
+  grid-column: 3 !important;
+  text-align: right !important;
+  color: var(--sc-font-color2);
+}
+
+.sc-root .sc-var-unit {
+  grid-column: 4 !important;
+  text-align: left !important;
+  color: var(--sc-font-color1);
+  max-width: 50pt !important;
+  text-overflow: ellipsis;
+}
+
+.sc-root .sc-value-preview {
+  grid-column: 5 !important;
+}
+
+.sc-root .sc-var-preview-variances {
+  text-align: right !important;
+}
+
+.sc-root .sc-sections .sc-section-item .sc-section-summary,
+.sc-root .sc-sections .sc-section-item .sc-section-inline-details,
+.sc-root .sc-section-item .sc-var-list .sc-var-item > div,
+.sc-root .sc-section-item .sc-var-list .sc-var-item > label,
+.sc-root .sc-section-details .sc-var-list .sc-var-item > div,
+.sc-root .sc-section-details .sc-var-list .sc-var-item > label {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.sc-root .sc-var-name,
+.sc-root .sc-var-dims,
+.sc-root .sc-var-dtype,
+.sc-root .sc-var-unit,
+.sc-root .sc-preview,
+.sc-root .sc-attrs dt {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  padding-right: 10px !important;
+}
+
+.sc-root .sc-var-name:hover,
+.sc-root .sc-var-dims:hover,
+.sc-root .sc-var-dtype:hover,
+.sc-root .sc-var-unit:hover,
+.sc-root .sc-attrs dt:hover {
+  overflow: visible !important;
+  width: auto !important;
+  z-index: 1 !important;
+}
+
+.sc-root .sc-var-attrs {
+  display: block !important;
+}
+
+.sc-root pre.sc-var-data {
+  display: none !important;
+}
+
+.sc-root .sc-var-attrs,
+.sc-root pre.sc-var-data {
+  background-color: var(--sc-background-color0) !important;
+  padding-bottom: 5px !important;
+}
+
+.sc-root .sc-var-attrs-in:checked ~ .sc-var-attrs {
+  display: none !important;
+}
+
+.sc-root .sc-var-data-in:checked ~ pre.sc-var-data {
+  display: block !important;
+}
+
+.sc-root .sc-var-data > table {
+  float: right !important;
+}
+
+.sc-root .sc-var-name span,
+.sc-root pre.sc-var-data {
+  padding-left: 25px !important;
+}
+
+.sc-root .sc-var-attrs,
+.sc-root pre.sc-var-data {
+  grid-column: 1 / -1 !important;
+}
+
+.sc-root dl.sc-attrs {
+  padding: 0 !important;
+  margin: 0 !important;
+  display: grid !important;
+  grid-template-columns: 125px auto !important;
+}
+
+.sc-root .sc-attrs dt,
+.sc-root .sc-attrs dd {
+  padding: 0 10px 0 0 !important;
+  margin: 0 !important;
+  float: left !important;
+  width: auto !important;
+}
+
+.sc-root .sc-attrs dt {
+  font-weight: normal;
+  grid-column: 1 !important;
+}
+
+.sc-root .sc-attrs dt:hover span {
+  display: inline-block !important;
+  padding-right: 10px !important;
+}
+
+.sc-root .sc-attrs dd {
+  grid-column: 2 !important;
+  white-space: pre-wrap !important;
+  word-break: break-all !important;
+}
+
+.sc-root .sc-icon-database,
+.sc-root .sc-icon-file-text2 {
+  display: inline-block !important;
+  vertical-align: middle !important;
+  width: 1em !important;
+  height: 1.5em !important;
+  max-width: none !important;
+  stroke-width: 0;
+  stroke: currentColor;
+  fill: currentColor;
+}
+
+.sc-root label.sc-hide-icon svg {
+  opacity: 0 !important;
+}
+
+.sc-root .sc-standalone-var-name {
+  grid-column: 1 / 3 !important;
+}
+
+.sc-root .sc-standalone-var-name span {
+  padding-left: 25px !important;
+  padding-right: 10px !important;
+}
+
+.sc-root .sc-title {
+  font-weight: bold;
+  font-size: 1.5em;
+}
+
+.sc-root .sc-subtitle {
+  font-weight: normal;
+  font-style: italic;
+  text-align: left !important;
+  font-size: 1.2em;
+  padding: 1px !important;
+}
+
+.sc-root .sc-label {
+  fill: var(--sc-font-color0, #444444);
+  text-anchor: middle;
+}
+
+.sc-root .sc-name {
+  fill: var(--sc-font-color0, #111111);
+}
+
+.sc-root .sc-inset-line {
+  stroke: var(--sc-font-color1);
+  stroke-width: 0.05;
+  stroke-dasharray: 0.2, 0.2;
 }
 
 .sc-log-wrap {
