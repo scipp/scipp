@@ -49,12 +49,15 @@ backend = { name = "pixi-build-cmake", version = "0.*" }
 # `compilers = ["cxx"]` is the pixi-build-cmake default, so it is omitted here.
 extra-args = ["-DBENCHMARK=OFF", "-DSANITIZERS=OFF", "-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON"]
 
-# Platform-specific `env` MERGES with the base config (platform `extra-args`
-# would REPLACE the base list wholesale). CMake reads MACOSX_DEPLOYMENT_TARGET
-# as the default for CMAKE_OSX_DEPLOYMENT_TARGET. Keep in sync with the cmake
-# presets and conda/variants/osx_arm64.yaml.
-[package.build.target.osx-arm64.config.env]
-MACOSX_DEPLOYMENT_TARGET = "14.0"
+# The deployment target MUST be a cmake -D argument, not MACOSX_DEPLOYMENT_TARGET
+# via config `env`: conda-forge's macosx_deployment_target_osx-arm64 meta-package
+# (pulled in by the compiler) exports that variable during build-env activation,
+# clobbering any env-provided value (observed: 13.0 on CI, breaking C++23
+# std::to_chars which needs >= 13.3). A -D cache variable is immune. The base
+# extra-args are repeated because platform extra-args REPLACE the base list.
+# Keep the target in sync with the cmake presets and conda/variants/osx_arm64.yaml.
+[package.build.target.osx-arm64.config]
+extra-args = ["-DBENCHMARK=OFF", "-DSANITIZERS=OFF", "-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON", "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.0"]
 
 [package.host-dependencies]
 python = "*"
