@@ -25,6 +25,8 @@ CMakeSettings.json
 src/scipp.egg-info
 .pixi/
 conda/package
+# Generated python-variant selection for the conda-package task
+dynamic_var.yaml
 
 ### VisualStudioCode ###
 .vscode/*

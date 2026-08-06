@@ -1,7 +1,10 @@
 [workspace]
 channels = ["conda-forge"]
 name = "scipp"
-platforms = ["linux-64", "osx-arm64", "win-64"]
+# linux-aarch64 and osx-64 exist only for the `package` environment (weekly CI
+# builds conda packages on native arm-linux and intel-mac runners); the dev/CI
+# features below restrict all other environments to the first three platforms.
+platforms = ["linux-64", "osx-arm64", "win-64", "linux-aarch64", "osx-64"]
 preview = ["pixi-build"]
 # pixi-build is still a preview feature; older pixi versions have incompatible
 # source-package/lockfile behavior. Keep in sync with `pixi-version` in CI.
@@ -71,12 +74,18 @@ JUPYTER_PLATFORM_DIRS = "1"
 # a dedicated feature -- NOT the default feature -- so the `dev` environment
 # (manual incremental cmake builds) can omit it and avoid a slow full rebuild on
 # `pixi install -e dev`. Only environments listing `build` auto-build the extension.
+[feature.build]
+platforms = ["linux-64", "osx-arm64", "win-64"]
+
 [feature.build.dependencies]
 scipp = { path = "." }
 
 # ---------------------------------------------------------------------------
 # Dev feature (manual cmake builds for incremental development)
 # ---------------------------------------------------------------------------
+
+[feature.dev]
+platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [feature.dev.dependencies]
 # python/numpy come from the default feature (the dev env keeps it, see below).
@@ -189,6 +198,9 @@ linkcheck = { cmd = "python -m sphinx -j4 -v -b linkcheck -d doctrees docs html"
 # Lint feature
 # ---------------------------------------------------------------------------
 
+[feature.lint]
+platforms = ["linux-64", "osx-arm64", "win-64"]
+
 [feature.lint.dependencies]
 pre-commit = "*"
 
@@ -206,6 +218,27 @@ pandas-stubs = "*"
 
 [feature.type-check.tasks]
 mypy = { cmd = "python -m mypy . --exclude '^src/' --exclude '^install/'", description = "Run mypy type checking" }
+
+# ---------------------------------------------------------------------------
+# Package feature (conda packaging code-path test via rattler-build)
+# ---------------------------------------------------------------------------
+
+# Builds conda/recipe.yaml, which mirrors the conda-forge feedstock recipe
+# (https://github.com/conda-forge/scipp-feedstock -- where real releases are
+# made). This exists so CI catches conda-forge build breakage before a release.
+[feature.package.dependencies]
+rattler-build = "*"
+# Ships conda-forge's global pins as $CONDA_PREFIX/conda_build_config.yaml so
+# the test builds against the same versions the feedstock will use.
+conda-forge-pinning = "*"
+
+[feature.package.tasks]
+# Requires a dynamic_var.yaml in the workspace root selecting ONE python
+# version (generated in .github/workflows/conda.yml; without it the pinning
+# file would fan out a build per python version). Version/build number mirror
+# conda-build's GIT_DESCRIBE_TAG/GIT_DESCRIBE_NUMBER.
+# No --channel flag: conda-forge-pinning's config sets `channel_sources`.
+conda-package = { cmd = "export SCIPP_VERSION=$(git describe --tags --abbrev=0) && export SCIPP_BUILD_NUMBER=$(git rev-list --count $SCIPP_VERSION..HEAD) && rattler-build build --recipe conda/recipe.yaml --variant-config $CONDA_PREFIX/conda_build_config.yaml --variant-config conda/variants/{{ target }}.yaml --variant-config dynamic_var.yaml --output-dir conda/package", args = ["target"], description = "Build the conda package with rattler-build (feedstock code-path test)" }
 
 # ---------------------------------------------------------------------------
 # Plot feature (matplotlib / plopp)
@@ -284,3 +317,4 @@ test-py314t = ["build", "test", "py314t"]
 docs = { features = ["build", "test", "plot", "docs", "py311"], solve-group = "default" }
 type-check = { features = ["build", "test", "docs", "type-check", "py311"], solve-group = "default" }
 lint = { features = ["lint"], no-default-feature = true }
+package = { features = ["package"], no-default-feature = true }

@@ -11,7 +11,7 @@ Compilers
 
 The ``dev`` pixi environment provides the C++ toolchain (conda ``cxx-compiler``) automatically on Linux and macOS.
 On Windows, MSVC from Visual Studio is used (CI sets it up via ``vs-shell``).
-Release conda packages use the compilers from ``conda/meta.yaml``.
+Release conda packages are built by the `conda-forge feedstock <https://github.com/conda-forge/scipp-feedstock>`_ with conda-forge's compilers; ``conda/recipe.yaml`` mirrors that recipe for CI testing.
 
 - GCC (conda ``cxx-compiler``) [Linux]
 - Clang (conda ``cxx-compiler``) [macOS]

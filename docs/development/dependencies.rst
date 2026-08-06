@@ -25,7 +25,8 @@ Places that define dependencies
   ``pixi.lock`` pins resolved versions.
   Run ``pixi lock`` to update the lock file after changing ``pixi.toml`` and commit the result;
   CI verifies that the lock file is up to date.
-- `conda/meta.yaml <https://github.com/scipp/scipp/blob/main/conda/meta.yaml>`_ defines conda package build and runtime dependencies.
+- `conda/recipe.yaml <https://github.com/scipp/scipp/blob/main/conda/recipe.yaml>`_ defines conda package build and runtime dependencies.
+  It mirrors the `conda-forge feedstock <https://github.com/conda-forge/scipp-feedstock>`_ recipe (where actual releases are built) and is built in CI with ``rattler-build`` to catch feedstock breakage early; keep the two in sync.
   Files in `conda/variants/ <https://github.com/scipp/scipp/tree/main/conda/variants>`_ complement this and set specific versions.
 
 Services / Servers we depend on
