@@ -11,13 +11,11 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          # We use g++ from system instead of from conda, since we need to ensure that
-          # a matching gcov is used. Otherwise coverage results are incomplete/broken.
-          sudo apt install --yes lcov g++-11
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 100
-          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-11 100
-          sudo update-alternatives --set g++ "/usr/bin/g++-11"
-          sudo update-alternatives --set gcov "/usr/bin/gcov-11"
+          # Use the runner's default g++/gcov pair (g++-13 on ubuntu-24.04):
+          # they are version-matched by construction, which lcov requires for
+          # complete coverage data. (A previously hardcoded g++-11 broke when
+          # scipp started using C++23 std::views::zip, which needs GCC >= 13.)
+          sudo apt install --yes lcov
 
       - uses: actions/checkout@v4
         with:
