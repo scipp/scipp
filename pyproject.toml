@@ -2,7 +2,10 @@
 requires = [
   "setuptools>=77",
   "scikit-build-core",
-  "pybind11",
+  # Keep the major version in sync with the pybind11 pin in pixi.toml and the
+  # conda-forge feedstock, so wheels and conda packages build against the same
+  # pybind11 generation.
+  "pybind11>=3,<4",
 ]
 build-backend = "scikit_build_core.build"
 
@@ -43,7 +46,6 @@ dynamic = ["version"]
 [project.optional-dependencies]
 test = [
   "pytest",
-  "matplotlib",
   "beautifulsoup4",
   "ipython",
 ]
