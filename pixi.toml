@@ -172,6 +172,9 @@ pytest-xdist = "*"
 pytest-cov = "*"
 hypothesis = "*"
 beautifulsoup4 = "*"
+# conda-forge python does not bundle pip; nightly-deps-test.yml overlays
+# nightly wheels with `python -m pip install --pre ...`.
+pip = "*"
 # Scientific deps exercised by tests
 scipy = ">=1.7.0"
 h5py = "*"

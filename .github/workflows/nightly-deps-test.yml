@@ -41,6 +41,10 @@ jobs:
       - run: pixi run -e dev cpp-test
 
       - name: Install nightly dependencies and run tests
+        # `python -m pip` guarantees the environment's interpreter; a bare
+        # `pip` would fall through PATH to the runner's system pip and the
+        # nightlies would never reach the test environment.
         run: |
-          pixi run -e test pip install --pre --index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple --extra-index-url https://pypi.org/simple numpy scipy h5py pandas xarray
+          pixi run -e test python -m pip install --pre --index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple --extra-index-url https://pypi.org/simple numpy scipy h5py pandas xarray
+          pixi run -e test python -c 'import numpy, scipy, h5py, pandas, xarray; print("numpy", numpy.__version__, "scipy", scipy.__version__, "h5py", h5py.__version__, "pandas", pandas.__version__, "xarray", xarray.__version__)'
           pixi run -e test test
