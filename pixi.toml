@@ -15,6 +15,19 @@ requires-pixi = ">=0.74"
 # for the test-py314t environment.
 python = ["3.11.*", "3.12.*", "3.13.*", "3.14.*", "3.14.* *_cp314t"]
 
+# Shared C++ dependency pins, inherited via `{ workspace = true }` by both the
+# pixi-build package (host/run deps) and the dev feature -- so each version is
+# declared exactly once. Keep in sync with conda/recipe.yaml (conda-forge
+# pinning governs there) and lib/cmake/scipp-cpm.cmake (CPM pins for wheels).
+[workspace.dependencies]
+eigen = "3.4.*"
+libboost-headers = ">=1.88"
+pybind11 = "3.0.*"
+tbb = "2023.0.*"
+tbb-devel = "2023.0.*"
+gtest = "1.15.*"
+gmock = "1.15.*"
+
 # ---------------------------------------------------------------------------
 # Package definition (pixi-build-cmake)
 # ---------------------------------------------------------------------------
@@ -36,23 +49,27 @@ backend = { name = "pixi-build-cmake", version = "0.*" }
 # `compilers = ["cxx"]` is the pixi-build-cmake default, so it is omitted here.
 extra-args = ["-DBENCHMARK=OFF", "-DSANITIZERS=OFF", "-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON"]
 
-[package.build.target.osx-arm64.config]
-extra-args = ["-DBENCHMARK=OFF", "-DSANITIZERS=OFF", "-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON", "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.0"]
+# Platform-specific `env` MERGES with the base config (platform `extra-args`
+# would REPLACE the base list wholesale). CMake reads MACOSX_DEPLOYMENT_TARGET
+# as the default for CMAKE_OSX_DEPLOYMENT_TARGET. Keep in sync with the cmake
+# presets and conda/variants/osx_arm64.yaml.
+[package.build.target.osx-arm64.config.env]
+MACOSX_DEPLOYMENT_TARGET = "14.0"
 
 [package.host-dependencies]
 python = "*"
 numpy = ">=2"
-eigen = "3.4.*"
-libboost-headers = ">=1.88"
-pybind11 = "3.0.*"
-tbb-devel = "2023.0.*"
-gtest = "1.15.*"
-gmock = "1.15.*"
+eigen = { workspace = true }
+libboost-headers = { workspace = true }
+pybind11 = { workspace = true }
+tbb-devel = { workspace = true }
+gtest = { workspace = true }
+gmock = { workspace = true }
 
 [package.run-dependencies]
 python = "*"
 numpy = ">=2"
-tbb = "2023.0.*"
+tbb = { workspace = true }
 
 # ---------------------------------------------------------------------------
 # Workspace dependencies
@@ -91,14 +108,14 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 # python/numpy come from the default feature (the dev env keeps it, see below).
 cmake = ">=3.28"
 ninja = "*"
-eigen = "3.4.*"
-libboost-headers = ">=1.88"
-pybind11 = "3.0.*"
-tbb = "2023.0.*"
-tbb-devel = "2023.0.*"
+eigen = { workspace = true }
+libboost-headers = { workspace = true }
+pybind11 = { workspace = true }
+tbb = { workspace = true }
+tbb-devel = { workspace = true }
 benchmark = "1.6.*"
-gmock = "1.15.*"
-gtest = "1.15.*"
+gmock = { workspace = true }
+gtest = { workspace = true }
 
 # C++ toolchain: conda cxx-compiler on Linux (the CI runner's system g++ is too
 # old for the C++23 features scipp uses, e.g. std::views::zip) and macOS
@@ -191,7 +208,7 @@ requests = "*"
 
 [feature.docs.tasks]
 docs = { cmd = "python -m sphinx -v -b html -d doctrees docs html && python -m sphinx -v -b doctest -d doctrees docs html", description = "Build HTML docs and run doctests" }
-docs-clean = { cmd = "sh -c 'rm -rf doctrees html docs/generated && python -m sphinx -v -b html -d doctrees docs html -E && python -m sphinx -v -b doctest -d doctrees docs html -E'", description = "Clean and rebuild docs from scratch" }
+docs-clean = { cmd = "rm -rf doctrees html docs/generated && python -m sphinx -v -b html -d doctrees docs html -E && python -m sphinx -v -b doctest -d doctrees docs html -E", description = "Clean and rebuild docs from scratch" }
 linkcheck = { cmd = "python -m sphinx -j4 -v -b linkcheck -d doctrees docs html", description = "Check documentation links" }
 
 # ---------------------------------------------------------------------------
@@ -205,7 +222,9 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 pre-commit = "*"
 
 [feature.lint.tasks]
-static = { cmd = "sh -c 'pre-commit run -a || (echo && pre-commit run -a)'", description = "Run all pre-commit checks" }
+# Runs twice on failure so auto-fixed files leave the second run green.
+# (pixi's task shell handles `||` and subshells natively on all platforms.)
+static = { cmd = "pre-commit run -a || (echo && pre-commit run -a)", description = "Run all pre-commit checks" }
 check-release = { cmd = "sh -c '! git grep -rl RELEASE_PLACEHOLDER docs/ src/scipp'", description = "Check no release placeholders remain" }
 
 # ---------------------------------------------------------------------------
