@@ -254,7 +254,13 @@ mypy = "*"
 pandas-stubs = "*"
 
 [feature.type-check.tasks]
-mypy = { cmd = "python -m mypy . --exclude '^src/' --exclude '^install/'", description = "Run mypy type checking" }
+# Two invocations: `-p scipp` type-checks the INSTALLED package (like the old
+# tox setup, which pointed PYTHONPATH at the cmake install tree) and fails
+# loudly if the package is missing, so the check cannot silently collapse to
+# zero files. The `.` run covers repo-level python (benchmarks, tools) with
+# src/ excluded (duplicate of the installed package) and install/ excluded
+# (dev-environment cmake install tree).
+mypy = { cmd = "python -m mypy -p scipp && python -m mypy . --exclude '^src/' --exclude '^install/'", description = "Run mypy type checking" }
 
 # ---------------------------------------------------------------------------
 # Package feature (conda packaging code-path test via rattler-build)

@@ -159,6 +159,12 @@ extension automatically:
 The bare ``pixi run test`` runs the same Python tests in the default environment,
 which also auto-builds the extension via pixi-build-cmake.
 
+.. note::
+   pixi-build caches the built package in ``.pixi/artifacts-v0`` and does not
+   reliably rebuild after source edits. For iterative development use the
+   ``dev`` environment (above); to force the pixi-build environments to pick up
+   source changes, remove ``.pixi/artifacts-v0`` first.
+
 Multi-Python version testing:
 
 .. code-block:: bash
