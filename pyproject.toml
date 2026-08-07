@@ -2,10 +2,12 @@
 requires = [
   "setuptools>=77",
   "scikit-build-core",
-  # Keep the major version in sync with the pybind11 pin in pixi.toml and the
-  # conda-forge feedstock, so wheels and conda packages build against the same
-  # pybind11 generation.
-  "pybind11>=3,<4",
+  # Keep in sync with the pybind11 pin in pixi.toml and conda-forge's global
+  # pinning, so wheels and conda packages build against the same pybind11.
+  # ==3.0.* deliberately: pybind11 3.1.0 changed overload resolution such that
+  # python ints reach float64 operator overloads, breaking int-scalar
+  # arithmetic (adopting 3.1 needs its own PR).
+  "pybind11==3.0.*",
 ]
 build-backend = "scikit_build_core.build"
 
