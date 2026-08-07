@@ -10,6 +10,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.run_number || github.ref }}
   cancel-in-progress: true # cancel jobs from previous push
 
+env:
+  # setup-pixi's frozen option only covers its own install step; this makes
+  # every `pixi run` in the job frozen as well (no re-solving, no lock writes).
+  PIXI_FROZEN: "true"
+
 jobs:
   formatting:
     runs-on: ubuntu-24.04
@@ -44,6 +49,13 @@ jobs:
         - {os: windows-2022}
         python-version: ["3.11"]
 
+    env:
+      # Wire ccache into every cmake build in this job, including the
+      # pixi-build-cmake package build that happens during `setup-pixi`
+      # (environment variables propagate into the backend's build). Empty on
+      # Windows: ccache with the conda MSVC toolchain is unproven here.
+      CMAKE_CXX_COMPILER_LAUNCHER: ${{ contains(matrix.variant.os, 'windows') && '' || 'ccache' }}
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -51,6 +63,16 @@ jobs:
           fetch-depth: 0 # history required so cmake can determine version
 
       - uses: egor-tensin/vs-shell@v2 # MSVC dev environment for the dev env's Ninja C++ build.
+
+      # ccache must be installed and its cache restored BEFORE setup-pixi:
+      # installing the `test` environment triggers the pixi-build-cmake package
+      # build, which is the most expensive compile in the job.
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2.23
+        with:
+          key: ${{ matrix.variant.os }}
+          # Two full builds (dev + pixi-build package) do not fit the 500M default.
+          max-size: 1G
 
       # `dev` (manual cmake -> cpp-test) and `test` (pixi-build-cmake -> Python
       # tests) are needed on every platform; `docs`/`type-check` only run on
@@ -62,11 +84,6 @@ jobs:
           frozen: true
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
-
-      - name: ccache
-        uses: hendrikmuhs/ccache-action@v1.2.23
-        with:
-          key: ${{ matrix.variant.os }}
 
       # C++ tests via the dev env (manual cmake; pixi-build-cmake does not build
       # the C++ test suite). Python tests via the test env (pixi-build-cmake).

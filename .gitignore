@@ -7,7 +7,9 @@ html
 !tests/html/html_repr_test.py
 
 build/
+build-debug/
 install/
+install-debug/
 cmake-build-*
 _skbuild/
 tools/build-sanitizer/

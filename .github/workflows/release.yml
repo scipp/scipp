@@ -9,6 +9,9 @@ defaults:
   run:
     shell: bash
 
+env:
+  PIXI_FROZEN: "true"
+
 jobs:
   check_release:
     name: Check if package can be released
@@ -80,7 +83,6 @@ jobs:
     uses: ./.github/workflows/docs.yml
     with:
       publish: ${{ github.event_name == 'release' && github.event.action == 'published' }}
-      version: ${{ github.ref_name }}
     secrets: inherit
 
   assets:

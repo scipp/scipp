@@ -6,10 +6,6 @@ on:
       publish:
         default: false
         type: boolean
-      version:
-        default: ''
-        required: false
-        type: string
       branch:
         description: 'Branch/tag with documentation source. If not set, the current branch will be used.'
         default: ''
@@ -20,10 +16,6 @@ on:
       publish:
         default: false
         type: boolean
-      version:
-        default: ''
-        required: false
-        type: string
       branch:
         description: 'Branch/tag with documentation source. If not set, the current branch will be used.'
         default: ''
@@ -31,7 +23,7 @@ on:
         type: string
 
 env:
-  VERSION: ${{ inputs.version }}
+  PIXI_FROZEN: "true"
 
 jobs:
   docs:

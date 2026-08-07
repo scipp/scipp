@@ -108,8 +108,8 @@ For **incremental C++ development** (editing C++ code and rebuilding quickly), u
   pixi run -e dev configure
   pixi run -e dev build
 
-The dev environment uses cmake presets (``ci-linux``, ``ci-macos``, ``ci-windows``) and installs
-into per-environment directories under ``install/``.
+The dev environment uses cmake presets (``ci-linux``, ``ci-macos``, ``ci-windows``), builds
+in ``build/dev``, and installs into ``install/dev``.
 
 To use the ``scipp`` Python module from a dev build:
 

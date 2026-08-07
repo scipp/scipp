@@ -136,31 +136,34 @@ cppcheck = "2.18.3.*"
 cxx-compiler = "*"
 
 [feature.dev.tasks]
-build = { cmd = "cmake --build build/{{ pixi.environment.name }} --config Release --target install", depends-on = ["configure"], description = "Build scipp (Release)" }
-cpp-test = { cmd = "ctest --test-dir build/{{ pixi.environment.name }} -C Release --output-on-failure", depends-on = ["build"], description = "Run C++ tests" }
-build-debug = { cmd = "cmake --build build-debug/{{ pixi.environment.name }} --config Debug --target install", depends-on = ["configure-debug"], description = "Build scipp (Debug)" }
+# Directories are spelled out as build/dev, install/dev etc.: `dev` is the only
+# environment with these tasks, so templating on the environment name would
+# always expand to the same thing.
+build = { cmd = "cmake --build build/dev --config Release --target install", depends-on = ["configure"], description = "Build scipp (Release)" }
+cpp-test = { cmd = "ctest --test-dir build/dev -C Release --output-on-failure", depends-on = ["build"], description = "Run C++ tests" }
+build-debug = { cmd = "cmake --build build-debug/dev --config Debug --target install", depends-on = ["configure-debug"], description = "Build scipp (Debug)" }
 # Debug configure is platform-agnostic (uses the `debug` preset), so it lives
 # here rather than being repeated per target. The Release `configure` below is
 # per-target because it selects a platform-specific preset.
-configure-debug = { cmd = "cmake --preset debug -B build-debug/{{ pixi.environment.name }} -DCMAKE_INSTALL_PREFIX=install-debug/{{ pixi.environment.name }}", description = "Configure cmake (Debug)" }
+configure-debug = { cmd = "cmake --preset debug -B build-debug/dev -DCMAKE_INSTALL_PREFIX=install-debug/dev", description = "Configure cmake (Debug)" }
 
 [feature.dev.target.linux-64.tasks]
-configure = { cmd = "cmake --preset ci-linux -B build/{{ pixi.environment.name }} -DCMAKE_INSTALL_PREFIX=install/{{ pixi.environment.name }}", description = "Configure cmake (Linux)" }
+configure = { cmd = "cmake --preset ci-linux -B build/dev -DCMAKE_INSTALL_PREFIX=install/dev", description = "Configure cmake (Linux)" }
 
 [feature.dev.target.osx-arm64.tasks]
-configure = { cmd = "cmake --preset ci-macos -B build/{{ pixi.environment.name }} -DCMAKE_INSTALL_PREFIX=install/{{ pixi.environment.name }}", description = "Configure cmake (macOS)" }
+configure = { cmd = "cmake --preset ci-macos -B build/dev -DCMAKE_INSTALL_PREFIX=install/dev", description = "Configure cmake (macOS)" }
 
 [feature.dev.target.win-64.tasks]
-configure = { cmd = "cmake --preset ci-windows -B build/{{ pixi.environment.name }} -DCMAKE_INSTALL_PREFIX=install/{{ pixi.environment.name }}", description = "Configure cmake (Windows)" }
+configure = { cmd = "cmake --preset ci-windows -B build/dev -DCMAKE_INSTALL_PREFIX=install/dev", description = "Configure cmake (Windows)" }
 
 [feature.dev.activation.env]
-PYTHONPATH = "$PIXI_PROJECT_ROOT/install/$PIXI_ENVIRONMENT_NAME"
+PYTHONPATH = "$PIXI_PROJECT_ROOT/install/dev"
 
 [feature.dev.target.linux-64.activation.env]
 LD_LIBRARY_PATH = "$CONDA_PREFIX/lib"
 
 [feature.dev.target.win-64.activation.env]
-PYTHONPATH = "%PIXI_PROJECT_ROOT%\\install\\%PIXI_ENVIRONMENT_NAME%"
+PYTHONPATH = "%PIXI_PROJECT_ROOT%\\install\\dev"
 
 # ---------------------------------------------------------------------------
 # Test feature
@@ -213,8 +216,11 @@ packaging = "*"
 requests = "*"
 
 [feature.docs.tasks]
-docs = { cmd = "python -m sphinx -v -b html -d doctrees docs html && python -m sphinx -v -b doctest -d doctrees docs html", description = "Build HTML docs and run doctests" }
-docs-clean = { cmd = "rm -rf doctrees html docs/generated && python -m sphinx -v -b html -d doctrees docs html -E && python -m sphinx -v -b doctest -d doctrees docs html -E", description = "Clean and rebuild docs from scratch" }
+# The trailing python -c removes notebooks generated during the docs build --
+# they are not linked from anywhere and bloat the published site -- EXCEPT the
+# ones under _sources, which the download buttons link to.
+docs = { cmd = "python -m sphinx -v -b html -d doctrees docs html && python -m sphinx -v -b doctest -d doctrees docs html && python -c 'import pathlib; [p.unlink() for p in pathlib.Path(\"html\").rglob(\"*.ipynb\") if \"_sources\" not in p.parts]'", description = "Build HTML docs and run doctests" }
+docs-clean = { cmd = "rm -rf doctrees html docs/generated && python -m sphinx -v -b html -d doctrees docs html -E && python -m sphinx -v -b doctest -d doctrees docs html -E && python -c 'import pathlib; [p.unlink() for p in pathlib.Path(\"html\").rglob(\"*.ipynb\") if \"_sources\" not in p.parts]'", description = "Clean and rebuild docs from scratch" }
 linkcheck = { cmd = "python -m sphinx -j4 -v -b linkcheck -d doctrees docs html", description = "Check documentation links" }
 
 # ---------------------------------------------------------------------------

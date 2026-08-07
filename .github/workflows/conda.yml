@@ -20,6 +20,9 @@ defaults:
   run:
     shell: bash
 
+env:
+  PIXI_FROZEN: "true"
+
 # This workflow tests the conda packaging code path (conda/recipe.yaml, which
 # mirrors the conda-forge feedstock recipe) with rattler-build via pixi. Real
 # conda releases are made by https://github.com/conda-forge/scipp-feedstock.
