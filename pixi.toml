@@ -34,10 +34,12 @@ gmock = "1.15.*"
 
 [package]
 name = "scipp"
-# Only used as the conda package version for locally built dev packages; wheels
-# and release conda packages derive the real version from git via CMake.
-# Bump on release (latest tag).
-version = "26.7.0"
+# Deliberately inert: wheels and release conda packages derive the real version
+# from git via CMake; this value only names locally built dev packages, so it
+# is pinned high instead of tracking releases (which it would only do stalely).
+# It cannot be 0.0.0: other conda packages in the workspace constrain scipp
+# (e.g. plopp requires scipp >=25.11), and the source package must satisfy them.
+version = "9999.0.0"
 
 [package.build]
 # Bound to the 0.x series rather than "*": the backend version is not captured
@@ -84,6 +86,12 @@ numpy = ">=2"
 
 [activation.env]
 JUPYTER_PLATFORM_DIRS = "1"
+
+[tasks]
+# CI runs this in the dedicated minimal `import-minimal` environment (scipp +
+# python/numpy only) to catch scipp accidentally growing a hard import of an
+# optional dependency. Running it in a full environment only checks importability.
+import-minimal = { cmd = "python -c 'import scipp'", description = "Verify scipp can be imported" }
 
 # ---------------------------------------------------------------------------
 # Build feature (pixi-build-cmake source package)
@@ -190,7 +198,6 @@ ipython = "*"
 ipywidgets = "*"
 
 [feature.test.tasks]
-import-minimal = { cmd = "python -c 'import scipp'", description = "Verify scipp can be imported" }
 test = { cmd = "python -X PYTHONWARNDEFAULTENCODING -m pytest -n auto -v tests", description = "Run Python tests" }
 coverage = { cmd = "python -m pytest --cov=scipp --cov-report html:coverage_html/python tests", description = "Run tests with coverage report" }
 
@@ -332,6 +339,12 @@ default = { features = ["build", "test", "plot", "docs", "lint", "type-check", "
 #     conda-forge scipp into the env and shadow the dev build's libraries).
 # It keeps the default feature (python/numpy/activation).
 dev = { features = ["dev", "test", "docs", "type-check", "py311"], solve-group = "dev" }
+
+# Minimal import check: scipp plus ONLY the default feature (python/numpy) --
+# catches scipp accidentally requiring an optional dependency at import time
+# (mirrors the old tox import-minimal env). Shares the default solve group, so
+# it reuses the same scipp build as the test environments.
+import-minimal = { features = ["build", "py311"], solve-group = "default" }
 
 # CI/test environments: pixi-build-cmake builds the package automatically.
 # No `plot` feature -- the test suite doesn't use matplotlib/plopp.

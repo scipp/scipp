@@ -80,7 +80,7 @@ jobs:
       - uses: prefix-dev/setup-pixi@v0.10.0
         with:
           pixi-version: v0.76.0
-          environments: ${{ contains(matrix.variant.os, 'ubuntu') && 'dev test docs type-check' || 'dev test' }}
+          environments: ${{ contains(matrix.variant.os, 'ubuntu') && 'dev test import-minimal docs type-check' || 'dev test import-minimal' }}
           frozen: true
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
@@ -88,6 +88,10 @@ jobs:
       # C++ tests via the dev env (manual cmake; pixi-build-cmake does not build
       # the C++ test suite). Python tests via the test env (pixi-build-cmake).
       - run: pixi run -e dev cpp-test
+
+      # In the minimal env (scipp + numpy only): catches accidental hard
+      # imports of optional dependencies.
+      - run: pixi run -e import-minimal import-minimal
 
       - run: pixi run -e test test
 
