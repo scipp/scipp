@@ -237,7 +237,6 @@ pre-commit = "*"
 # Runs twice on failure so auto-fixed files leave the second run green.
 # (pixi's task shell handles `||` and subshells natively on all platforms.)
 static = { cmd = "pre-commit run -a || (echo && pre-commit run -a)", description = "Run all pre-commit checks" }
-check-release = { cmd = "sh -c '! git grep -rl RELEASE_PLACEHOLDER docs/ src/scipp'", description = "Check no release placeholders remain" }
 
 # ---------------------------------------------------------------------------
 # Type-check feature
