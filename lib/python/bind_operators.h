@@ -351,26 +351,26 @@ static void bind_comparison(pybind11::class_<T, Ignored...> &c) {
 
 template <class T, class... Ignored>
 void bind_in_place_binary_scalars(pybind11::class_<T, Ignored...> &c) {
-  OpBinder<ScalarToVariable>::in_place_binary<double>(c);
   OpBinder<ScalarToVariable>::in_place_binary<int64_t>(c);
+  OpBinder<ScalarToVariable>::in_place_binary<double>(c);
 }
 
 template <class T, class... Ignored>
 void bind_binary_scalars(pybind11::class_<T, Ignored...> &c) {
-  OpBinder<ScalarToVariable>::binary<double>(c);
   OpBinder<ScalarToVariable>::binary<int64_t>(c);
+  OpBinder<ScalarToVariable>::binary<double>(c);
 }
 
 template <class T, class... Ignored>
 static void bind_reverse_binary_scalars(pybind11::class_<T, Ignored...> &c) {
-  OpBinder<ScalarToVariable>::reverse_binary<double>(c);
   OpBinder<ScalarToVariable>::reverse_binary<int64_t>(c);
+  OpBinder<ScalarToVariable>::reverse_binary<double>(c);
 }
 
 template <class T, class... Ignored>
 void bind_comparison_scalars(pybind11::class_<T, Ignored...> &c) {
-  OpBinder<ScalarToVariable>::comparison<double>(c);
   OpBinder<ScalarToVariable>::comparison<int64_t>(c);
+  OpBinder<ScalarToVariable>::comparison<double>(c);
 }
 
 template <class T, class... Ignored>
