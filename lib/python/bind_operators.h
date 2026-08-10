@@ -202,25 +202,26 @@ template <class RHSSetup> struct OpBinder {
   }
 
   template <class Other, class T, class... Ignored>
-  static void in_place_binary(pybind11::class_<T, Ignored...> &c) {
+  static void in_place_binary(pybind11::class_<T, Ignored...> &c,
+                              const py::arg &other = py::arg()) {
     using namespace scipp;
     c.def("__iadd__", inplace_op<T, Other>([](auto &a, auto &&b) { a += b; }),
-          py::is_operator());
+          other, py::is_operator());
     c.def("__isub__", inplace_op<T, Other>([](auto &a, auto &&b) { a -= b; }),
-          py::is_operator());
+          other, py::is_operator());
     c.def("__imul__", inplace_op<T, Other>([](auto &a, auto &&b) { a *= b; }),
-          py::is_operator());
+          other, py::is_operator());
     c.def("__itruediv__",
-          inplace_op<T, Other>([](auto &a, auto &&b) { a /= b; }),
+          inplace_op<T, Other>([](auto &a, auto &&b) { a /= b; }), other,
           py::is_operator());
     if constexpr (!(std::is_same_v<T, Dataset> ||
                     std::is_same_v<Other, Dataset>)) {
       c.def("__imod__", inplace_op<T, Other>([](auto &a, auto &&b) { a %= b; }),
-            py::is_operator());
+            other, py::is_operator());
       c.def("__ifloordiv__", inplace_op<T, Other>([](auto &a, auto &&b) {
               floor_divide_equals(a, b);
             }),
-            py::is_operator());
+            other, py::is_operator());
       if constexpr (!(std::is_same_v<T, DataArray> ||
                       std::is_same_v<Other, DataArray>)) {
         c.def(
@@ -228,26 +229,27 @@ template <class RHSSetup> struct OpBinder {
             [](T &base, Other &exponent) -> T & {
               return pow(base, RHSSetup{}(exponent), base);
             },
-            py::is_operator(), py::call_guard<py::gil_scoped_release>());
+            other, py::is_operator(), py::call_guard<py::gil_scoped_release>());
       }
     }
   }
 
   template <class Other, class T, class... Ignored>
-  static void binary(pybind11::class_<T, Ignored...> &c) {
+  static void binary(pybind11::class_<T, Ignored...> &c,
+                     const py::arg &other = py::arg()) {
     using namespace scipp;
     c.def(
         "__add__", [](const T &a, const Other &b) { return a + RHSSetup{}(b); },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+        other, py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
         "__sub__", [](const T &a, const Other &b) { return a - RHSSetup{}(b); },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+        other, py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
         "__mul__", [](const T &a, const Other &b) { return a * RHSSetup{}(b); },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+        other, py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
         "__truediv__",
-        [](const T &a, const Other &b) { return a / RHSSetup{}(b); },
+        [](const T &a, const Other &b) { return a / RHSSetup{}(b); }, other,
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
     if constexpr (!(std::is_same_v<T, Dataset> ||
                     std::is_same_v<Other, Dataset>)) {
@@ -256,35 +258,36 @@ template <class RHSSetup> struct OpBinder {
           [](const T &a, const Other &b) {
             return floor_divide(a, RHSSetup{}(b));
           },
-          py::is_operator(), py::call_guard<py::gil_scoped_release>());
+          other, py::is_operator(), py::call_guard<py::gil_scoped_release>());
       c.def(
           "__mod__",
-          [](const T &a, const Other &b) { return a % RHSSetup{}(b); },
+          [](const T &a, const Other &b) { return a % RHSSetup{}(b); }, other,
           py::is_operator(), py::call_guard<py::gil_scoped_release>());
       c.def(
           "__pow__",
           [](const T &base, const Other &exponent) {
             return pow(base, RHSSetup{}(exponent));
           },
-          py::is_operator(), py::call_guard<py::gil_scoped_release>());
+          other, py::is_operator(), py::call_guard<py::gil_scoped_release>());
     }
   }
 
   template <class Other, class T, class... Ignored>
-  static void reverse_binary(pybind11::class_<T, Ignored...> &c) {
+  static void reverse_binary(pybind11::class_<T, Ignored...> &c,
+                             const py::arg &other = py::arg()) {
     using namespace scipp;
     c.def(
         "__radd__", [](const T &a, const Other b) { return RHSSetup{}(b) + a; },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+        other, py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
         "__rsub__", [](const T &a, const Other b) { return RHSSetup{}(b)-a; },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+        other, py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
         "__rmul__", [](const T &a, const Other b) { return RHSSetup{}(b)*a; },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+        other, py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
         "__rtruediv__",
-        [](const T &a, const Other b) { return RHSSetup{}(b) / a; },
+        [](const T &a, const Other b) { return RHSSetup{}(b) / a; }, other,
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
     if constexpr (!(std::is_same_v<T, Dataset> ||
                     std::is_same_v<Other, Dataset>)) {
@@ -293,44 +296,45 @@ template <class RHSSetup> struct OpBinder {
           [](const T &a, const Other &b) {
             return floor_divide(RHSSetup{}(b), a);
           },
-          py::is_operator(), py::call_guard<py::gil_scoped_release>());
+          other, py::is_operator(), py::call_guard<py::gil_scoped_release>());
       c.def(
           "__rmod__",
-          [](const T &a, const Other &b) { return RHSSetup{}(b) % a; },
+          [](const T &a, const Other &b) { return RHSSetup{}(b) % a; }, other,
           py::is_operator(), py::call_guard<py::gil_scoped_release>());
       c.def(
           "__rpow__",
           [](const T &exponent, const Other &base) {
             return pow(RHSSetup{}(base), exponent);
           },
-          py::is_operator(), py::call_guard<py::gil_scoped_release>());
+          other, py::is_operator(), py::call_guard<py::gil_scoped_release>());
     }
   }
 
   template <class Other, class T, class... Ignored>
-  static void comparison(pybind11::class_<T, Ignored...> &c) {
+  static void comparison(pybind11::class_<T, Ignored...> &c,
+                         const py::arg &other = py::arg()) {
     c.def(
         "__eq__", [](const T &a, Other &b) { return equal(a, RHSSetup{}(b)); },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+        other, py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
         "__ne__",
-        [](const T &a, Other &b) { return not_equal(a, RHSSetup{}(b)); },
+        [](const T &a, Other &b) { return not_equal(a, RHSSetup{}(b)); }, other,
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
         "__lt__", [](const T &a, Other &b) { return less(a, RHSSetup{}(b)); },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+        other, py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
         "__gt__",
-        [](const T &a, Other &b) { return greater(a, RHSSetup{}(b)); },
+        [](const T &a, Other &b) { return greater(a, RHSSetup{}(b)); }, other,
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
         "__le__",
         [](const T &a, Other &b) { return less_equal(a, RHSSetup{}(b)); },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+        other, py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
         "__ge__",
         [](const T &a, Other &b) { return greater_equal(a, RHSSetup{}(b)); },
-        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+        other, py::is_operator(), py::call_guard<py::gil_scoped_release>());
   }
 };
 
@@ -351,25 +355,26 @@ static void bind_comparison(pybind11::class_<T, Ignored...> &c) {
 
 template <class T, class... Ignored>
 void bind_in_place_binary_scalars(pybind11::class_<T, Ignored...> &c) {
-  OpBinder<ScalarToVariable>::in_place_binary<int64_t>(c);
+  OpBinder<ScalarToVariable>::in_place_binary<int64_t>(c,
+                                                       py::arg().noconvert());
   OpBinder<ScalarToVariable>::in_place_binary<double>(c);
 }
 
 template <class T, class... Ignored>
 void bind_binary_scalars(pybind11::class_<T, Ignored...> &c) {
-  OpBinder<ScalarToVariable>::binary<int64_t>(c);
+  OpBinder<ScalarToVariable>::binary<int64_t>(c, py::arg().noconvert());
   OpBinder<ScalarToVariable>::binary<double>(c);
 }
 
 template <class T, class... Ignored>
 static void bind_reverse_binary_scalars(pybind11::class_<T, Ignored...> &c) {
-  OpBinder<ScalarToVariable>::reverse_binary<int64_t>(c);
+  OpBinder<ScalarToVariable>::reverse_binary<int64_t>(c, py::arg().noconvert());
   OpBinder<ScalarToVariable>::reverse_binary<double>(c);
 }
 
 template <class T, class... Ignored>
 void bind_comparison_scalars(pybind11::class_<T, Ignored...> &c) {
-  OpBinder<ScalarToVariable>::comparison<int64_t>(c);
+  OpBinder<ScalarToVariable>::comparison<int64_t>(c, py::arg().noconvert());
   OpBinder<ScalarToVariable>::comparison<double>(c);
 }
 
