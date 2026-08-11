@@ -60,7 +60,7 @@ jobs:
       # Serves the dev env's manual cmake build only. The pixi-build-cmake
       # package build (inside setup-pixi) runs in a sandbox that neither sees
       # CI env vars nor may write outside its build tree, so its ccache use is
-      # not persisted -- making it cacheable is follow-up work.
+      # not persisted -- making it cacheable is follow-up work (#3946).
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.23
         with:

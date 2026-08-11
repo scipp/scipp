@@ -59,7 +59,7 @@ extra-args = ["-DBENCHMARK=OFF", "-DSANITIZERS=OFF"]
 # sandbox scrubs outer environment variables (CI's CCACHE_DIR never arrives),
 # and injecting CCACHE_DIR via `config.env` fails with "Read-only file system"
 # -- the sandbox denies writes outside the build tree. Making this build
-# cacheable is follow-up work, likely needing backend support.
+# cacheable is follow-up work, likely needing backend support -- see #3946.
 
 # The deployment target MUST be a cmake -D argument, not MACOSX_DEPLOYMENT_TARGET
 # via config `env`: conda-forge's macosx_deployment_target_osx-arm64 meta-package
