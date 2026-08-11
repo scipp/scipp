@@ -11,9 +11,6 @@ env:
 jobs:
   coverage:
     runs-on: ubuntu-24.04
-    env:
-      # See pr_and_main.yml: make the pixi-build package build ccache-able.
-      CMAKE_CXX_COMPILER_LAUNCHER: ccache
     steps:
       - name: Install dependencies
         run: |
@@ -28,7 +25,7 @@ jobs:
           submodules: true
           fetch-depth: 0 # history required so cmake can determine version
 
-      - name: ccache  # before setup-pixi, which builds the scipp package
+      - name: ccache  # serves the coverage cmake build; see pr_and_main.yml
         uses: hendrikmuhs/ccache-action@v1.2.23
         with:
           key: coverage

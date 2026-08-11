@@ -49,13 +49,6 @@ jobs:
         - {os: windows-2022}
         python-version: ["3.11"]
 
-    env:
-      # Wire ccache into every cmake build in this job, including the
-      # pixi-build-cmake package build that happens during `setup-pixi`
-      # (environment variables propagate into the backend's build). Empty on
-      # Windows: ccache with the conda MSVC toolchain is unproven here.
-      CMAKE_CXX_COMPILER_LAUNCHER: ${{ contains(matrix.variant.os, 'windows') && '' || 'ccache' }}
-
     steps:
       - uses: actions/checkout@v4
         with:
@@ -64,14 +57,15 @@ jobs:
 
       - uses: egor-tensin/vs-shell@v2 # MSVC dev environment for the dev env's Ninja C++ build.
 
-      # ccache must be installed and its cache restored BEFORE setup-pixi:
-      # installing the `test` environment triggers the pixi-build-cmake package
-      # build, which is the most expensive compile in the job.
+      # Serves the dev env's manual cmake build only. The pixi-build-cmake
+      # package build (inside setup-pixi) runs in a sandbox that neither sees
+      # CI env vars nor may write outside its build tree, so its ccache use is
+      # not persisted -- making it cacheable is follow-up work.
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.23
         with:
           key: ${{ matrix.variant.os }}
-          # Two full builds (dev + pixi-build package) do not fit the 500M default.
+          # The June runs showed the 500M default cache 100% full with 0% hits.
           max-size: 1G
 
       # `dev` (manual cmake -> cpp-test) and `test` (pixi-build-cmake -> Python

@@ -12,9 +12,6 @@ jobs:
   build_and_test:
     name: build and test ${{ matrix.variant.os }}, py${{ matrix.python-version }}
     runs-on: ${{ matrix.variant.os }}
-    env:
-      # See pr_and_main.yml: make the pixi-build package build ccache-able.
-      CMAKE_CXX_COMPILER_LAUNCHER: ${{ contains(matrix.variant.os, 'windows') && '' || 'ccache' }}
     strategy:
       fail-fast: false
       matrix:
@@ -32,7 +29,7 @@ jobs:
 
       - uses: egor-tensin/vs-shell@v2  # MSVC dev environment for the dev env's Ninja C++ build.
 
-      - name: ccache  # before setup-pixi, which builds the scipp package
+      - name: ccache  # serves the dev env build; see pr_and_main.yml
         uses: hendrikmuhs/ccache-action@v1.2.23
         with:
           key: ${{ matrix.variant.os }}

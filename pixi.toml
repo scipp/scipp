@@ -49,7 +49,17 @@ backend = { name = "pixi-build-cmake", version = "0.*" }
 
 [package.build.config]
 # `compilers = ["cxx"]` is the pixi-build-cmake default, so it is omitted here.
-extra-args = ["-DBENCHMARK=OFF", "-DSANITIZERS=OFF", "-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON"]
+# No IPO flag: check_ipo_supported() fails with the conda compilers (as on
+# main), and lib/cmake/IPO.cmake FORCE-overrides the cache variable to FALSE,
+# so requesting it here would be silently ignored.
+extra-args = ["-DBENCHMARK=OFF", "-DSANITIZERS=OFF"]
+
+# Note on ccache: the package build invokes ccache when it is on PATH (see
+# lib/CMakeLists.txt), but its cache is NOT persisted across CI runs. The build
+# sandbox scrubs outer environment variables (CI's CCACHE_DIR never arrives),
+# and injecting CCACHE_DIR via `config.env` fails with "Read-only file system"
+# -- the sandbox denies writes outside the build tree. Making this build
+# cacheable is follow-up work, likely needing backend support.
 
 # The deployment target MUST be a cmake -D argument, not MACOSX_DEPLOYMENT_TARGET
 # via config `env`: conda-forge's macosx_deployment_target_osx-arm64 meta-package
@@ -59,7 +69,7 @@ extra-args = ["-DBENCHMARK=OFF", "-DSANITIZERS=OFF", "-DCMAKE_INTERPROCEDURAL_OP
 # extra-args are repeated because platform extra-args REPLACE the base list.
 # Keep the target in sync with the cmake presets and conda/variants/osx_arm64.yaml.
 [package.build.target.osx-arm64.config]
-extra-args = ["-DBENCHMARK=OFF", "-DSANITIZERS=OFF", "-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON", "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.0"]
+extra-args = ["-DBENCHMARK=OFF", "-DSANITIZERS=OFF", "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.0"]
 
 [package.host-dependencies]
 python = "*"
