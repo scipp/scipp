@@ -56,6 +56,13 @@ _R = TypeVar("_R")  # Return type of a callable
 _P = ParamSpec('_P')
 
 
+class _NoUnitProvided:
+    """Sentinel type indicating that no unit argument was passed."""
+
+
+_no_unit_provided = _NoUnitProvided()
+
+
 def _item_dims(item: Any) -> tuple[str, ...]:
     return getattr(item, 'dims', ())
 
@@ -499,13 +506,14 @@ class DataGroup(MutableMapping[str, _V]):
     def to(
         self,
         *,
-        unit: Unit | str | None = None,
+        unit: Unit | str | None | _NoUnitProvided = _no_unit_provided,
         dtype: Any | None = None,
         copy: bool = True,
     ) -> DataGroup[_V]:
-        return self.apply(
-            operator.methodcaller('to', unit=unit, dtype=dtype, copy=copy)
-        )
+        kwargs = {'dtype': dtype, 'copy': copy}
+        if unit is not _no_unit_provided:
+            kwargs['unit'] = unit
+        return self.apply(operator.methodcaller('to', **kwargs))
 
     def transform_coords(
         self,

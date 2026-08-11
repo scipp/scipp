@@ -348,6 +348,12 @@ def test_to() -> None:
     )
 
 
+def test_to_with_unit_none() -> None:
+    da = sc.DataArray(data=sc.scalar(value=1, unit=None))
+
+    assert sc.identical(da.to(unit=None), da)
+
+
 def test_zeros_like() -> None:
     a = make_dataarray()
     a.masks['m'] = sc.array(dims=['x'], values=[True, False])

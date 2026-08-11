@@ -750,6 +750,21 @@ def test_transpose_leaves_numpy_array_unchanged() -> None:
     assert sc.identical(dg.transpose(), sc.DataGroup(a=np.ones(shape=(2, 3))))
 
 
+def test_to_with_unit_none() -> None:
+    dg = sc.DataGroup(a=sc.scalar(1, unit=None))
+
+    assert sc.identical(dg.to(unit=None), dg)
+
+
+def test_to_with_dtype_does_not_change_unit() -> None:
+    dg = sc.DataGroup(a=sc.scalar(1, unit='m'))
+
+    assert sc.identical(
+        dg.to(dtype='float64'),
+        sc.DataGroup(a=sc.scalar(1, dtype='float64', unit='m')),
+    )
+
+
 def test_transpose_ignores_python_objects() -> None:
     dg = sc.DataGroup(a=sc.ones(dims=['x', 'y'], shape=(2, 3)), b='abc')
     assert sc.identical(

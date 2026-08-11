@@ -732,6 +732,21 @@ def test_to_without_dtype() -> None:
     )
 
 
+def test_to_with_unit_none() -> None:
+    data = sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit=None)
+
+    assert sc.identical(data.to(unit=None), data)
+
+
+def test_to_with_unit_none_and_dtype() -> None:
+    data = sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit=None)
+
+    assert sc.identical(
+        data.to(unit=None, dtype="float64"),
+        sc.array(dims=["x"], values=[1, 2, 3], dtype="float64", unit=None),
+    )
+
+
 def test_to_without_any_arguments() -> None:
     data = sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="m")
 
