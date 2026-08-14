@@ -345,7 +345,7 @@ def _upper_bound(x: Variable) -> Variable:
 def _parse_coords_arg(
     x: Variable | DataArray | Dataset, name: str, arg: SupportsIndex | Variable
 ) -> Variable:
-    if isinstance(arg, Variable) and name in arg.dims:
+    if isinstance(arg, Variable) and arg.ndim > 0:
         return arg
     coord = _get_coord(x, name)
     start = coord.nanmin()

@@ -151,6 +151,13 @@ def test_hist_binned_custom_edges() -> None:
     assert sc.identical(histogrammed.coords['y'], y)
 
 
+def test_bin_edges_with_wrong_dim_reports_missing_coord() -> None:
+    da = sc.data.table_xyz(100)
+    edges = sc.linspace('t', -1.0, 1.0, num=10, unit='m')
+    with pytest.raises(KeyError, match="Expected 't'"):
+        da.bin(x=edges)
+
+
 def test_hist_x_and_edges_arg_are_position_only_and_are_ok_as_keyword_args() -> None:
     da = sc.data.table_xyz(100)
     da.coords['edges'] = da.coords['x']
