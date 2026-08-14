@@ -198,6 +198,15 @@ TEST_P(BinTest, edges_too_short) {
   EXPECT_THROW(bin(table, {edges}), except::BinEdgeError);
 }
 
+TEST_P(BinTest, descending_edges_error_mentions_required_order) {
+  const auto table = GetParam();
+  const auto edges =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{2, 1, 0});
+  EXPECT_THROW_MSG_DISCARD(
+      bin(table, {edges}), except::BinEdgeError,
+      "Bin edges in dim x must be sorted in ascending order.");
+}
+
 TEST_P(BinTest, rebin_no_event_coord) {
   const auto table = GetParam();
   const auto x = bin(table, {edges_x_coarse});
