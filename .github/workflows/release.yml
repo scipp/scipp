@@ -9,23 +9,12 @@ defaults:
   run:
     shell: bash
 
-jobs:
-  check_release:
-    name: Check if package can be released
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - run: python -m pip install --upgrade pip
-      - run: python -m pip install -r requirements/ci.txt
-      - run: tox -e check-release
-        if: github.event_name == 'release' && github.event.action == 'published'
+env:
+  PIXI_FROZEN: "true"
 
+jobs:
   build_sdist:
     name: Build SDist
-    needs: check_release
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
@@ -46,7 +35,6 @@ jobs:
 
   build_wheels:
     name: Wheels
-    needs: check_release
     strategy:
       fail-fast: false
       matrix:
@@ -74,34 +62,11 @@ jobs:
           pattern: 'dist*'
       - uses: pypa/gh-action-pypi-publish@v1.14.1
 
-  manage-versions:
-    name: Manage Versions
-    needs: check_release
-    runs-on: ubuntu-24.04
-    outputs:
-      version-new: ${{ steps.version.outputs.new }}
-      version-replaced: ${{ steps.version.outputs.replaced }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # history required so cmake can determine version
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - run: python -m pip install --upgrade pip
-      - run: python -m pip install -r requirements/ci.txt
-      - name: Set outputs
-        id: version
-        run: |
-          echo "new=$(python docs/version.py --version=${GITHUB_REF_NAME} --action=is-new)" >> $GITHUB_OUTPUT
-          echo "replaced=$(python docs/version.py --version=${GITHUB_REF_NAME} --action=get-replaced)" >> $GITHUB_OUTPUT
-
   docs:
-    needs: [upload_pypi, manage-versions]
+    needs: upload_pypi
     uses: ./.github/workflows/docs.yml
     with:
       publish: ${{ github.event_name == 'release' && github.event.action == 'published' }}
-      version: ${{ github.ref_name }}
     secrets: inherit
 
   assets:
