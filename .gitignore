@@ -7,7 +7,9 @@ html
 !tests/html/html_repr_test.py
 
 build/
+build-debug/
 install/
+install-debug/
 cmake-build-*
 _skbuild/
 tools/build-sanitizer/
@@ -23,8 +25,10 @@ CMakeSettings.json
 .pytest_cache
 .mypy_cache
 src/scipp.egg-info
-.tox
+.pixi/
 conda/package
+# Generated python-variant selection for the conda-package task
+dynamic_var.yaml
 
 ### VisualStudioCode ###
 .vscode/*

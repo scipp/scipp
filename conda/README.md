@@ -1,30 +1,40 @@
 # Conda packaging
 
-To package you will need `conda-build`, to publish you will need `anaconda`.
-Both can be installed using `conda install conda-build anaconda`.
-These should be installed in your root/base environment.
+Actual conda releases of scipp are built by the
+[conda-forge feedstock](https://github.com/conda-forge/scipp-feedstock).
+The recipe in this directory (`recipe.yaml`, rattler-build v1 format) mirrors
+the feedstock recipe and exists so CI can continuously test the conda packaging
+code path — catching breakage (new dependencies, CMake changes, pin conflicts
+with conda-forge's global pinning) *before* a release reaches the feedstock.
+Keep the dependencies here in sync with the feedstock recipe.
 
-To build, from the root of the repository run `conda-build ./conda`.
-A list of packages that are created will be shown at the end of the build process.
-These can be installed locally or uploaded to Anaconda Cloud.
+## Building locally
 
-The conda package build process is set up to use github actions which dynamically
-generates the required variants config. To build locally check `.github/workflows/conda.yml` first.
+The build runs through the pixi `package` environment, which provides
+`rattler-build` and `conda-forge-pinning` (the same global pins conda-forge
+uses). A `dynamic_var.yaml` in the repository root must select one python
+version (CI generates it; see `.github/workflows/conda.yml`), e.g.:
+
+```yaml
+python:
+- 3.11.* *_cpython
+```
+
+Then, from the root of the repository:
+
+```sh
+pixi run -e package conda-package <target>
+```
+
+where `<target>` is one of the variant files in `conda/variants/`
+(`linux_64`, `linux_arm64`, `osx_64`, `osx_arm64`, `win_64`) matching the
+machine you are building on. Packages are written to `conda/package/`.
 
 ## Version numbering
 
 Conda packages have a version number and build number.
 The version number is taken from the last Git tag.
 The build number is the number of commits since the last tag.
-See [the Conda documentation](https://docs.conda.io/projects/conda-build/en/latest/user-guide/environment-variables.html#git-environment-variables) for more information..
-
-## Development builds
-
-Commits to the `main` branch trigger a build and deploy of the Conda packages.
-These are published under the [`dev` label](https://anaconda.org/scipp/repo/files?type=all&label=dev).
-
-## Release builds
-
-Note that the release should be tagged in Git before creating the release package.
-
-TODO: complete this after version numbers are discussed
+Both are computed by the `conda-package` pixi task (mirroring conda-build's
+`GIT_DESCRIBE_TAG`/`GIT_DESCRIBE_NUMBER`), so the full git history and tags
+must be available (`fetch-depth: 0` in CI).

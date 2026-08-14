@@ -1,0 +1,379 @@
+[workspace]
+channels = ["conda-forge"]
+name = "scipp"
+# linux-aarch64 and osx-64 exist only for the `package` environment (weekly CI
+# builds conda packages on native arm-linux and intel-mac runners); the dev/CI
+# features below restrict all other environments to the first three platforms.
+platforms = ["linux-64", "osx-arm64", "win-64", "linux-aarch64", "osx-64"]
+preview = ["pixi-build"]
+# pixi-build is still a preview feature; older pixi versions have incompatible
+# source-package/lockfile behavior. Keep in sync with `pixi-version` in CI.
+requires-pixi = ">=0.74"
+
+[workspace.build-variants]
+# The last entry builds a variant against free-threaded CPython (cp314t ABI)
+# for the test-py314t environment.
+python = ["3.11.*", "3.12.*", "3.13.*", "3.14.*", "3.14.* *_cp314t"]
+
+# Shared C++ dependency pins, inherited via `{ workspace = true }` by both the
+# pixi-build package (host/run deps) and the dev feature -- so each version is
+# declared exactly once. Keep in sync with conda/recipe.yaml (conda-forge
+# pinning governs there) and lib/cmake/scipp-cpm.cmake (CPM pins for wheels).
+[workspace.dependencies]
+eigen = "3.4.*"
+libboost-headers = ">=1.88"
+pybind11 = "3.0.*"
+tbb = "2023.0.*"
+tbb-devel = "2023.0.*"
+gtest = "1.15.*"
+gmock = "1.15.*"
+
+# ---------------------------------------------------------------------------
+# Package definition (pixi-build-cmake)
+# ---------------------------------------------------------------------------
+
+[package]
+name = "scipp"
+# Deliberately inert: wheels and release conda packages derive the real version
+# from git via CMake; this value only names locally built dev packages, so it
+# is pinned high instead of tracking releases (which it would only do stalely).
+# It cannot be 0.0.0: other conda packages in the workspace constrain scipp
+# (e.g. plopp requires scipp >=25.11), and the source package must satisfy them.
+version = "9999.0.0"
+
+[package.build]
+# Bound to the 0.x series rather than "*": the backend version is not captured
+# in pixi.lock, so an unbounded spec could change build behavior between runs
+# while it is still a pre-1.0 preview backend.
+backend = { name = "pixi-build-cmake", version = "0.*" }
+
+[package.build.config]
+# `compilers = ["cxx"]` is the pixi-build-cmake default, so it is omitted here.
+# No IPO flag: check_ipo_supported() fails with the conda compilers (as on
+# main), and lib/cmake/IPO.cmake FORCE-overrides the cache variable to FALSE,
+# so requesting it here would be silently ignored.
+extra-args = ["-DBENCHMARK=OFF", "-DSANITIZERS=OFF"]
+
+# Note on ccache: the package build invokes ccache when it is on PATH (see
+# lib/CMakeLists.txt), but its cache is NOT persisted across CI runs. The build
+# sandbox scrubs outer environment variables (CI's CCACHE_DIR never arrives),
+# and injecting CCACHE_DIR via `config.env` fails with "Read-only file system"
+# -- the sandbox denies writes outside the build tree. Making this build
+# cacheable is follow-up work, likely needing backend support -- see #3946.
+
+# The deployment target MUST be a cmake -D argument, not MACOSX_DEPLOYMENT_TARGET
+# via config `env`: conda-forge's macosx_deployment_target_osx-arm64 meta-package
+# (pulled in by the compiler) exports that variable during build-env activation,
+# clobbering any env-provided value (observed: 13.0 on CI, breaking C++23
+# std::to_chars which needs >= 13.3). A -D cache variable is immune. The base
+# extra-args are repeated because platform extra-args REPLACE the base list.
+# Keep the target in sync with the cmake presets and conda/variants/osx_arm64.yaml.
+[package.build.target.osx-arm64.config]
+extra-args = ["-DBENCHMARK=OFF", "-DSANITIZERS=OFF", "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.0"]
+
+[package.host-dependencies]
+python = "*"
+numpy = ">=2"
+eigen = { workspace = true }
+libboost-headers = { workspace = true }
+pybind11 = { workspace = true }
+tbb-devel = { workspace = true }
+gtest = { workspace = true }
+gmock = { workspace = true }
+
+[package.run-dependencies]
+python = "*"
+numpy = ">=2"
+tbb = { workspace = true }
+
+# ---------------------------------------------------------------------------
+# Workspace dependencies
+# ---------------------------------------------------------------------------
+
+[dependencies]
+python = ">=3.11"
+numpy = ">=2"
+
+[activation.env]
+JUPYTER_PLATFORM_DIRS = "1"
+
+[tasks]
+# CI runs this in the dedicated minimal `import-minimal` environment (scipp +
+# python/numpy only) to catch scipp accidentally growing a hard import of an
+# optional dependency. Running it in a full environment only checks importability.
+import-minimal = { cmd = "python -c 'import scipp'", description = "Verify scipp can be imported" }
+
+# ---------------------------------------------------------------------------
+# Build feature (pixi-build-cmake source package)
+# ---------------------------------------------------------------------------
+
+# `scipp = { path = "." }` triggers pixi-build-cmake to build the C++ extension
+# and install it into the conda environment (no PYTHONPATH needed). It lives in
+# a dedicated feature -- NOT the default feature -- so the `dev` environment
+# (manual incremental cmake builds) can omit it and avoid a slow full rebuild on
+# `pixi install -e dev`. Only environments listing `build` auto-build the extension.
+[feature.build]
+platforms = ["linux-64", "osx-arm64", "win-64"]
+
+[feature.build.dependencies]
+scipp = { path = "." }
+
+# ---------------------------------------------------------------------------
+# Dev feature (manual cmake builds for incremental development)
+# ---------------------------------------------------------------------------
+
+[feature.dev]
+platforms = ["linux-64", "osx-arm64", "win-64"]
+
+[feature.dev.dependencies]
+# python/numpy come from the default feature (the dev env keeps it, see below).
+cmake = ">=3.28"
+ninja = "*"
+eigen = { workspace = true }
+libboost-headers = { workspace = true }
+pybind11 = { workspace = true }
+tbb = { workspace = true }
+tbb-devel = { workspace = true }
+benchmark = "1.6.*"
+gmock = { workspace = true }
+gtest = { workspace = true }
+
+# C++ toolchain: conda cxx-compiler on Linux (the CI runner's system g++ is too
+# old for the C++23 features scipp uses, e.g. std::views::zip) and macOS
+# (matches the modern clang the pixi-build-cmake package build uses). NOT on
+# Windows: the conda vs2022 activation clashes with the MSVC environment set up
+# by vs-shell in CI (configure fails with "CMAKE_CXX_COMPILER not set"), so
+# Windows uses MSVC from vs-shell / Visual Studio.
+[feature.dev.target.linux-64.dependencies]
+cxx-compiler = "*"
+# Exact pin matching CI history: 2.18.3 fixed cppcheck internalError crashes
+# ("failed to load ... from files.txt") in the whole-program analysis dir.
+cppcheck = "2.18.3.*"
+
+[feature.dev.target.osx-arm64.dependencies]
+cxx-compiler = "*"
+
+[feature.dev.tasks]
+# Directories are spelled out as build/dev, install/dev etc.: `dev` is the only
+# environment with these tasks, so templating on the environment name would
+# always expand to the same thing.
+build = { cmd = "cmake --build build/dev --config Release --target install", depends-on = ["configure"], description = "Build scipp (Release)" }
+cpp-test = { cmd = "ctest --test-dir build/dev -C Release --output-on-failure", depends-on = ["build"], description = "Run C++ tests" }
+build-debug = { cmd = "cmake --build build-debug/dev --config Debug --target install", depends-on = ["configure-debug"], description = "Build scipp (Debug)" }
+# Debug configure is platform-agnostic (uses the `debug` preset), so it lives
+# here rather than being repeated per target. The Release `configure` below is
+# per-target because it selects a platform-specific preset.
+configure-debug = { cmd = "cmake --preset debug -B build-debug/dev -DCMAKE_INSTALL_PREFIX=install-debug/dev", description = "Configure cmake (Debug)" }
+
+[feature.dev.target.linux-64.tasks]
+configure = { cmd = "cmake --preset ci-linux -B build/dev -DCMAKE_INSTALL_PREFIX=install/dev", description = "Configure cmake (Linux)" }
+
+[feature.dev.target.osx-arm64.tasks]
+configure = { cmd = "cmake --preset ci-macos -B build/dev -DCMAKE_INSTALL_PREFIX=install/dev", description = "Configure cmake (macOS)" }
+
+[feature.dev.target.win-64.tasks]
+configure = { cmd = "cmake --preset ci-windows -B build/dev -DCMAKE_INSTALL_PREFIX=install/dev", description = "Configure cmake (Windows)" }
+
+[feature.dev.activation.env]
+PYTHONPATH = "$PIXI_PROJECT_ROOT/install/dev"
+
+[feature.dev.target.linux-64.activation.env]
+LD_LIBRARY_PATH = "$CONDA_PREFIX/lib"
+
+[feature.dev.target.win-64.activation.env]
+PYTHONPATH = "%PIXI_PROJECT_ROOT%\\install\\dev"
+
+# ---------------------------------------------------------------------------
+# Test feature
+# ---------------------------------------------------------------------------
+
+[feature.test.dependencies]
+pytest = "*"
+pytest-xdist = "*"
+pytest-cov = "*"
+hypothesis = "*"
+beautifulsoup4 = "*"
+# conda-forge python does not bundle pip; nightly-deps-test.yml overlays
+# nightly wheels with `python -m pip install --pre ...`.
+pip = "*"
+# Scientific deps exercised by tests
+scipy = ">=1.7.0"
+h5py = "*"
+numba = "*"
+pooch = "*"
+python-graphviz = "*"
+pandas = "*"
+xarray = "*"
+ipython = "*"
+ipywidgets = "*"
+
+[feature.test.tasks]
+test = { cmd = "python -X PYTHONWARNDEFAULTENCODING -m pytest -n auto -v tests", description = "Run Python tests" }
+coverage = { cmd = "python -m pytest --cov=scipp --cov-report html:coverage_html/python tests", description = "Run tests with coverage report" }
+
+# ---------------------------------------------------------------------------
+# Docs feature
+# ---------------------------------------------------------------------------
+
+[feature.docs.dependencies]
+sphinx = "*"
+nbsphinx = "*"
+pydata-sphinx-theme = ">=0.14"
+sphinx-autodoc-typehints = "*"
+sphinx-copybutton = "*"
+myst-parser = "*"
+graphviz = "*"
+pandoc = "*"
+ipympl = "*"
+ipywidgets = "*"
+ipykernel = "*"  # nbsphinx executes notebooks, which needs a Jupyter kernel
+pythreejs = "*"
+gitpython = "*"
+packaging = "*"
+requests = "*"
+
+[feature.docs.tasks]
+# The trailing python -c removes notebooks generated during the docs build --
+# they are not linked from anywhere and bloat the published site -- EXCEPT the
+# ones under _sources, which the download buttons link to.
+docs = { cmd = "python -m sphinx -v -b html -d doctrees docs html && python -m sphinx -v -b doctest -d doctrees docs html && python -c 'import pathlib; [p.unlink() for p in pathlib.Path(\"html\").rglob(\"*.ipynb\") if \"_sources\" not in p.parts]'", description = "Build HTML docs and run doctests" }
+docs-clean = { cmd = "rm -rf doctrees html docs/generated && python -m sphinx -v -b html -d doctrees docs html -E && python -m sphinx -v -b doctest -d doctrees docs html -E && python -c 'import pathlib; [p.unlink() for p in pathlib.Path(\"html\").rglob(\"*.ipynb\") if \"_sources\" not in p.parts]'", description = "Clean and rebuild docs from scratch" }
+linkcheck = { cmd = "python -m sphinx -j4 -v -b linkcheck -d doctrees docs html", description = "Check documentation links" }
+
+# ---------------------------------------------------------------------------
+# Lint feature
+# ---------------------------------------------------------------------------
+
+[feature.lint]
+platforms = ["linux-64", "osx-arm64", "win-64"]
+
+[feature.lint.dependencies]
+pre-commit = "*"
+
+[feature.lint.tasks]
+# Runs twice on failure so auto-fixed files leave the second run green.
+# (pixi's task shell handles `||` and subshells natively on all platforms.)
+static = { cmd = "pre-commit run -a || (echo && pre-commit run -a)", description = "Run all pre-commit checks" }
+
+# ---------------------------------------------------------------------------
+# Type-check feature
+# ---------------------------------------------------------------------------
+
+[feature.type-check.dependencies]
+mypy = "*"
+pandas-stubs = "*"
+
+[feature.type-check.tasks]
+# Two invocations: `-p scipp` type-checks the INSTALLED package (like the old
+# tox setup, which pointed PYTHONPATH at the cmake install tree) and fails
+# loudly if the package is missing, so the check cannot silently collapse to
+# zero files. The `.` run covers repo-level python (benchmarks, tools) with
+# src/ excluded (duplicate of the installed package) and install/ excluded
+# (dev-environment cmake install tree).
+mypy = { cmd = "python -m mypy -p scipp && python -m mypy . --exclude '^src/' --exclude '^install/'", description = "Run mypy type checking" }
+
+# ---------------------------------------------------------------------------
+# Package feature (conda packaging code-path test via rattler-build)
+# ---------------------------------------------------------------------------
+
+# Builds conda/recipe.yaml, which mirrors the conda-forge feedstock recipe
+# (https://github.com/conda-forge/scipp-feedstock -- where real releases are
+# made). This exists so CI catches conda-forge build breakage before a release.
+[feature.package.dependencies]
+rattler-build = "*"
+# Ships conda-forge's global pins as $CONDA_PREFIX/conda_build_config.yaml so
+# the test builds against the same versions the feedstock will use.
+conda-forge-pinning = "*"
+
+[feature.package.tasks]
+# Requires a dynamic_var.yaml in the workspace root selecting ONE python
+# version (generated in .github/workflows/conda.yml; without it the pinning
+# file would fan out a build per python version). Version/build number mirror
+# conda-build's GIT_DESCRIBE_TAG/GIT_DESCRIBE_NUMBER.
+# No --channel flag: conda-forge-pinning's config sets `channel_sources`.
+conda-package = { cmd = "export SCIPP_VERSION=$(git describe --tags --abbrev=0) && export SCIPP_BUILD_NUMBER=$(git rev-list --count $SCIPP_VERSION..HEAD) && rattler-build build --recipe conda/recipe.yaml --variant-config $CONDA_PREFIX/conda_build_config.yaml --variant-config conda/variants/{{ target }}.yaml --variant-config dynamic_var.yaml --output-dir conda/package", args = ["target"], description = "Build the conda package with rattler-build (feedstock code-path test)" }
+
+# ---------------------------------------------------------------------------
+# Plot feature (matplotlib / plopp)
+# ---------------------------------------------------------------------------
+
+# Split out of `test` because scipp's own test suite does not import them, and
+# they have no cp314t conda-forge build yet (matplotlib-feedstock#409, the
+# free-threading PR, has been open since 2024). Included only in the interactive
+# and docs environments (default, docs) -- the test/type-check envs don't need
+# plotting, which also lets the free-threaded py314t env solve. MUST NOT be in
+# `dev`: plopp requires scipp, which would pull the published conda-forge scipp
+# into the env, and its libscipp-*.so/.dylib shadow the freshly built dev
+# libraries at runtime (conda compiler LDFLAGS put $CONDA_PREFIX/lib on the
+# rpath) -> "undefined symbol" crashes in the C++ tests.
+[feature.plot.dependencies]
+matplotlib-base = "*"
+plopp = "*"
+
+# ---------------------------------------------------------------------------
+# Python version features
+# ---------------------------------------------------------------------------
+
+[feature.py311.dependencies]
+python = "3.11.*"
+
+[feature.py312.dependencies]
+python = "3.12.*"
+
+[feature.py313.dependencies]
+python = "3.13.*"
+
+[feature.py314.dependencies]
+python = "3.14.*"
+
+# Free-threaded Python. py3.14t works on conda-forge for scipp's whole test stack
+# on all three platforms. The only cp314t gaps are matplotlib-base/plopp (so this
+# env omits the `plot` feature) and win-64 ipykernel -- but ipykernel lives in the
+# `docs` feature (nbsphinx needs it), which this env does not include, so win-64
+# is fine. py3.13t is not added -- numba/matplotlib/h5py/pandas/xarray lack cp313t.
+[feature.py314t.dependencies]
+python-freethreading = "*"
+python = "3.14.*"
+
+# ---------------------------------------------------------------------------
+# Environments
+# ---------------------------------------------------------------------------
+
+[environments]
+# Default environment: includes all features for `pixi run <task>` convenience.
+# Includes `build`, so the C++ extension is auto-built via pixi-build-cmake.
+default = { features = ["build", "test", "plot", "docs", "lint", "type-check", "py311"], solve-group = "default" }
+
+# Dev environment: fast incremental C++ development via manual cmake + Ninja
+# (pixi-build-cmake does full-package rebuilds and does not build the C++ test
+# suite). Builds run through the manual cmake tasks + PYTHONPATH. It:
+#   * omits the `build` feature, so `pixi install -e dev` does not trigger a slow
+#     full pixi-build-cmake rebuild of scipp, and
+#   * uses its OWN solve group (NOT "default"), so the shared "default" solve
+#     cannot inject the build envs' source package into dev's lockfile, and
+#   * omits the `plot` feature (see its comment: plopp would drag the published
+#     conda-forge scipp into the env and shadow the dev build's libraries).
+# It keeps the default feature (python/numpy/activation).
+dev = { features = ["dev", "test", "docs", "type-check", "py311"], solve-group = "dev" }
+
+# Minimal import check: scipp plus ONLY the default feature (python/numpy) --
+# catches scipp accidentally requiring an optional dependency at import time
+# (mirrors the old tox import-minimal env). Shares the default solve group, so
+# it reuses the same scipp build as the test environments.
+import-minimal = { features = ["build", "py311"], solve-group = "default" }
+
+# CI/test environments: pixi-build-cmake builds the package automatically.
+# No `plot` feature -- the test suite doesn't use matplotlib/plopp.
+test = { features = ["build", "test", "py311"], solve-group = "default" }
+test-py312 = ["build", "test", "py312"]
+test-py313 = ["build", "test", "py313"]
+test-py314 = ["build", "test", "py314"]
+
+# Free-threaded Python 3.14t. Omits `plot` (matplotlib-base/plopp have no cp314t
+# conda-forge builds yet; scipp's tests don't import them).
+test-py314t = ["build", "test", "py314t"]
+
+docs = { features = ["build", "test", "plot", "docs", "py311"], solve-group = "default" }
+type-check = { features = ["build", "test", "docs", "type-check", "py311"], solve-group = "default" }
+lint = { features = ["lint"], no-default-feature = true }
+package = { features = ["package"], no-default-feature = true }

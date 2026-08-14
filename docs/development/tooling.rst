@@ -9,26 +9,25 @@ Third Party
 Compilers
 ~~~~~~~~~
 
-All compilers can be installed through conda.
-See ``conda/meta.yaml``.
+The ``dev`` pixi environment provides the C++ toolchain (conda ``cxx-compiler``) automatically on Linux and macOS.
+On Windows, MSVC from Visual Studio is used (CI sets it up via ``vs-shell``).
+Release conda packages are built by the `conda-forge feedstock <https://github.com/conda-forge/scipp-feedstock>`_ with conda-forge's compilers; ``conda/recipe.yaml`` mirrors that recipe for CI testing.
 
-- GCC [Linux]
-- XCode [macOS]
+- GCC (conda ``cxx-compiler``) [Linux]
+- Clang (conda ``cxx-compiler``) [macOS]
 - MSVC [Windows]
 
 Static Analysis and Formatters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We use ``tox`` and ``pre-commit`` to do auto formatting and static analysis.
+We use ``pixi`` and ``pre-commit`` to do auto formatting and static analysis.
 See in particular ``pre-commit-config.yaml`` for the list of used tools and versions.
 
 Misc
 ~~~~
 
-- CMake >= 3.21
-- Conda
-
-Note: Ubuntu users can use the `Kitware Repo <https://apt.kitware.com/>`_ to obtain the latest version.
+- CMake >= 3.28 (provided by the ``dev`` pixi environment)
+- `Pixi <https://pixi.sh>`_
 
 First Party
 ^^^^^^^^^^^
