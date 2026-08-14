@@ -60,7 +60,7 @@ jobs:
           path: dist
           merge-multiple: true
           pattern: 'dist*'
-      - uses: pypa/gh-action-pypi-publish@v1.14.1
+      - uses: pypa/gh-action-pypi-publish@v1.14.2
 
   docs:
     needs: upload_pypi
