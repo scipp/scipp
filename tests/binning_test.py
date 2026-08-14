@@ -151,11 +151,27 @@ def test_hist_binned_custom_edges() -> None:
     assert sc.identical(histogrammed.coords['y'], y)
 
 
-def test_bin_edges_with_wrong_dim_reports_missing_coord() -> None:
+@pytest.mark.parametrize('op', ['bin', 'hist', 'nanhist', 'rebin'])
+def test_edges_with_wrong_dim_raises(op) -> None:
     da = sc.data.table_xyz(100)
+    da.coords['t'] = da.coords['x']
+    if op == 'rebin':
+        da = da.hist(x=4)
     edges = sc.linspace('t', -1.0, 1.0, num=10, unit='m')
-    with pytest.raises(KeyError, match="Expected 't'"):
-        da.bin(x=edges)
+    with pytest.raises(
+        sc.DimensionError,
+        match="Bin edges for 'x' must have dimension 'x', got 't'",
+    ):
+        getattr(da, op)(x=edges)
+
+
+def test_edges_with_wrong_dims_multidimensional_preserves_legacy_error() -> None:
+    da = sc.data.table_xyz(100)
+    edges = sc.ones(dims=['y', 't'], shape=[2, 10], unit='m')
+    with pytest.raises(
+        sc.DimensionError, match="'value' property cannot be used with non-scalar"
+    ):
+        da.hist(x=edges)
 
 
 def test_hist_x_and_edges_arg_are_position_only_and_are_ok_as_keyword_args() -> None:
