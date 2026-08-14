@@ -353,12 +353,13 @@ def _upper_bound(x: Variable) -> Variable:
 def _parse_coords_arg(
     x: Variable | DataArray | Dataset, name: str, arg: SupportsIndex | Variable
 ) -> Variable:
-    if isinstance(arg, Variable) and name in arg.dims:
+    if isinstance(arg, Variable) and arg.ndim > 0:
+        if arg.dims[-1] != name:
+            raise DimensionError(
+                f"Bin edges for '{name}' must have '{name}' as their innermost "
+                f"dimension, got '{arg.dims[-1]}'."
+            )
         return arg
-    if isinstance(arg, Variable) and arg.ndim == 1:
-        raise DimensionError(
-            f"Bin edges for '{name}' must have dimension '{name}', got '{arg.dim}'."
-        )
     coord = _get_coord(x, name)
     start = coord.nanmin()
     if (

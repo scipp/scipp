@@ -160,16 +160,18 @@ def test_edges_with_wrong_dim_raises(op) -> None:
     edges = sc.linspace('t', -1.0, 1.0, num=10, unit='m')
     with pytest.raises(
         sc.DimensionError,
-        match="Bin edges for 'x' must have dimension 'x', got 't'",
+        match="Bin edges for 'x' must have 'x' as their innermost dimension, got 't'",
     ):
         getattr(da, op)(x=edges)
 
 
-def test_edges_with_wrong_dims_multidimensional_preserves_legacy_error() -> None:
+@pytest.mark.parametrize('dims', [('y', 't'), ('x', 't')])
+def test_edges_with_wrong_innermost_dim_multidimensional_raises(dims) -> None:
     da = sc.data.table_xyz(100)
-    edges = sc.ones(dims=['y', 't'], shape=[2, 10], unit='m')
+    edges = sc.ones(dims=dims, shape=[2, 10], unit='m')
     with pytest.raises(
-        sc.DimensionError, match="'value' property cannot be used with non-scalar"
+        sc.DimensionError,
+        match="Bin edges for 'x' must have 'x' as their innermost dimension, got 't'",
     ):
         da.hist(x=edges)
 
