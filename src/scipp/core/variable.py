@@ -882,13 +882,20 @@ def arange(
         candidates = set(types)
         if len(candidates) == 1:
             dtype = next(iter(candidates))
+    numpy_dtype: _np.typing.DTypeLike | None
     if dtype is not None and dtype != 'datetime64':
         numpy_dtype = str(dtype) if isinstance(dtype, DType) else dtype
     else:
         numpy_dtype = None
     return array(
         dims=[dim],
-        values=_np.arange(**range_args, dtype=numpy_dtype),
+        # Positional args: numpy's stubs declare start/stop/step positional-only.
+        values=_np.arange(
+            range_args["start"],
+            range_args["stop"],
+            range_args["step"],
+            dtype=numpy_dtype,
+        ),
         unit=unit,
         dtype=dtype,
     )
