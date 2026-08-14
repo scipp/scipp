@@ -10,18 +10,28 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.run_number || github.ref }}
   cancel-in-progress: true # cancel jobs from previous push
 
+env:
+  # setup-pixi's frozen option only covers its own install step; this makes
+  # every `pixi run` in the job frozen as well (no re-solving, no lock writes).
+  PIXI_FROZEN: "true"
+
 jobs:
   formatting:
     runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: prefix-dev/setup-pixi@v0.10.0
         with:
-          python-version: "3.11"
-      - run: python -m pip install --upgrade pip
-      - run: python -m pip install -r requirements/ci.txt
-      - run: tox -e static
+          pixi-version: v0.76.0
+          environments: lint
+          frozen: true
+          cache: true
+          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+      # CI installs use `frozen: true` (no manifest<->lock consistency check),
+      # so verify here that pixi.lock is up to date with pixi.toml.
+      - run: pixi lock --check
+      - run: pixi run -e lint static
       - uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: Apply automatic formatting
@@ -30,16 +40,13 @@ jobs:
     needs: formatting
     name: build and test ${{ matrix.variant.os }}, py${{ matrix.python-version }}
     runs-on: ${{ matrix.variant.os }}
-    defaults:
-      run:
-        shell: bash -l {0} # required for conda env
     strategy:
       fail-fast: false
       matrix:
         variant:
-        - {os: ubuntu-24.04, cmake-preset: ci-linux}
-        - {os: macos-15, cmake-preset: ci-macos}
-        - {os: windows-2022, cmake-preset: ci-windows}
+        - {os: ubuntu-24.04}
+        - {os: macos-15}
+        - {os: windows-2022}
         python-version: ["3.11"]
 
     steps:
@@ -48,35 +55,47 @@ jobs:
           submodules: true
           fetch-depth: 0 # history required so cmake can determine version
 
-      - uses: egor-tensin/vs-shell@v2 # Required to set up MSVC dev environment for Ninja builds.
+      - uses: egor-tensin/vs-shell@v2 # MSVC dev environment for the dev env's Ninja C++ build.
 
-      - name: Setup conda environment
-        uses: mamba-org/setup-micromamba@v3
-        with:
-          micromamba-version: 2.5.0-1
-          environment-file: .buildconfig/${{ matrix.variant.cmake-preset }}.yml
-          cache-environment: true
-          create-args: python=${{ matrix.python-version }}
-
+      # Serves the dev env's manual cmake build only. The pixi-build-cmake
+      # package build (inside setup-pixi) runs in a sandbox that neither sees
+      # CI env vars nor may write outside its build tree, so its ccache use is
+      # not persisted -- making it cacheable is follow-up work (#3946).
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.23
         with:
           key: ${{ matrix.variant.os }}
+          # The June runs showed the 500M default cache 100% full with 0% hits.
+          max-size: 1G
 
-      - run: cmake --preset ${{ matrix.variant.cmake-preset }}
-      - run: cmake --build --preset build
-      - run: ctest --preset test
+      # `dev` (manual cmake -> cpp-test) and `test` (pixi-build-cmake -> Python
+      # tests) are needed on every platform; `docs`/`type-check` only run on
+      # Ubuntu, so they are installed there only.
+      - uses: prefix-dev/setup-pixi@v0.10.0
+        with:
+          pixi-version: v0.76.0
+          environments: ${{ contains(matrix.variant.os, 'ubuntu') && 'dev test import-minimal docs type-check' || 'dev test import-minimal' }}
+          frozen: true
+          cache: true
+          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
 
-      - run: tox -e import-minimal
-      - run: tox -e test
+      # C++ tests via the dev env (manual cmake; pixi-build-cmake does not build
+      # the C++ test suite). Python tests via the test env (pixi-build-cmake).
+      - run: pixi run -e dev cpp-test
 
-      - run: tox -e mypy
+      # In the minimal env (scipp + numpy only): catches accidental hard
+      # imports of optional dependencies.
+      - run: pixi run -e import-minimal import-minimal
+
+      - run: pixi run -e test test
+
+      - run: pixi run -e type-check mypy
         if: ${{ contains(matrix.variant.os, 'ubuntu') }}
 
-      - run: tox -e docs
+      - run: pixi run -e docs docs
         if: ${{ contains(matrix.variant.os, 'ubuntu') }}
 
-      - run: tox -e linkcheck
+      - run: pixi run -e docs linkcheck
         # Linkcheck can be flaky. Avoid randomly breaking PR builds by running only on `main`
         if: ${{ contains(matrix.variant.os, 'ubuntu') && github.ref == 'refs/heads/main' }}
 

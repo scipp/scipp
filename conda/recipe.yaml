@@ -1,0 +1,102 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
+
+# rattler-build (v1) recipe used ONLY to test the conda packaging code path in
+# CI, built via the pixi `package` environment (see the `conda-package` task in
+# pixi.toml and .github/workflows/conda.yml). The actual conda releases are made
+# by conda-forge from the separate recipe in
+# https://github.com/conda-forge/scipp-feedstock -- keep the dependencies here
+# in sync with that recipe so failures here predict feedstock failures.
+#
+# All CI targets build on native runners (including linux_arm64 and osx_64), so
+# this recipe has no cross-compilation support.
+#
+# Version and build number are computed by the `conda-package` pixi task:
+# version = latest git tag, build number = commits since that tag.
+
+schema_version: 1
+
+package:
+  name: scipp
+  version: ${{ env.get("SCIPP_VERSION", default="0.0.0") }}
+
+source:
+  path: ..
+
+build:
+  number: ${{ env.get("SCIPP_BUILD_NUMBER", default="0") }}
+  script:
+    # Passing Python_EXECUTABLE ensures that cmake sees the host interpreter.
+    - if: win
+      then:
+        - cmake --preset package-${{ target_platform }} -DPython_EXECUTABLE="%PYTHON%"
+      else:
+        - cmake --preset package-${{ target_platform }} -DPython_EXECUTABLE=$PYTHON ${CMAKE_ARGS}
+    - cmake --build --preset build
+    - ctest --preset test
+
+requirements:
+  build:
+    - ${{ compiler('cxx') }}
+    - cmake
+    - if: linux and x86_64
+      then: cppcheck
+    - git
+    - ninja
+  host:
+    - python
+    - tbb-devel
+    - libboost-headers 1.90.0.*
+    - eigen
+    - pybind11
+    - benchmark
+    - gmock
+    - gtest
+  run:
+    - numpy
+    - python
+    - tbb
+
+tests:
+  - python:
+      imports:
+        - scipp
+      # The package is installed by CMake, not pip, so there is no pip metadata.
+      pip_check: false
+  - files:
+      source:
+        - pyproject.toml
+        - tests/
+    requirements:
+      run:
+        - ${{ compiler('cxx') }}
+        - beautifulsoup4
+        - cmake
+        - h5py
+        - hypothesis
+        # No ipykernel (unlike the feedstock recipe): scipp's tests never
+        # import it, and it has no win-64 cp314t build, which would make the
+        # free-threaded Windows test environment unsolvable.
+        - numba
+        - numpy
+        - pandas
+        - pytest
+        - python-graphviz
+        - scipy >=1.7.0
+        - tbb-devel
+        - libboost-headers 1.90.0.*
+        - eigen
+        - pybind11
+        - benchmark
+        - gmock
+        - gtest
+    script:
+      - python -m pytest -v tests
+
+about:
+  homepage: https://scipp.github.io/
+  license: BSD-3-Clause
+  summary: Multi-dimensional data arrays with labeled dimensions
+  description: Multi-dimensional data arrays with labeled dimensions
+  repository: https://github.com/scipp/scipp
+  documentation: https://scipp.github.io/
