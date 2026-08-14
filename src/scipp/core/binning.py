@@ -623,10 +623,17 @@ def hist(
                 }
             )
         edge_values = list(edges.values())
-        # If histogramming by the final edges needs to use a non-event coord then we
-        # must not erase that dim, since it removes the coord required for histogramming
         remaining_erase = set(erase)
         if isinstance(x, DataArray) and x.is_binned:
+            # All but the final edges are applied by binning. Edges replacing an
+            # existing dim shrink that dim, whereas a dim not touched by the binning
+            # step survives at its original length. Applying the former first therefore
+            # avoids intermediate binned data with a bin count given by the product of
+            # the original and the new dim lengths.
+            edge_values.sort(key=lambda edge: edge.dims[-1] not in x.dims)
+            # If histogramming by the final edges needs to use a non-event coord then we
+            # must not erase that dim, since it removes the coord required for
+            # histogramming.
             hist_dim = edge_values[-1].dims[-1]
             if hist_dim not in x.bins.coords:
                 erase = [e for e in erase if e not in x.coords[hist_dim].dims]
@@ -640,7 +647,17 @@ def hist(
             edges=edge_values[-1],
             erase=remaining_erase,
         )
+        if isinstance(out, DataArray):
+            out = out.transpose(_restore_requested_dim_order(out.dims, edges))
     return out
+
+
+def _restore_requested_dim_order(
+    dims: tuple[str, ...], requested: Iterable[str]
+) -> list[str]:
+    """Reorder histogrammed dims as requested, leaving all other dims in place."""
+    order = iter([dim for dim in requested if dim in dims])
+    return [next(order) if dim in requested else dim for dim in dims]
 
 
 def _get_op_dims(x: DataArray, *edges_or_groups: Variable) -> set[str]:

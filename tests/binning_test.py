@@ -8,7 +8,7 @@ import pytest
 from numpy.random import default_rng
 
 import scipp as sc
-from scipp.testing import assert_identical
+from scipp.testing import assert_allclose, assert_identical
 
 
 @pytest.mark.parametrize('op', ['bin', 'hist', 'nanhist', 'rebin'])
@@ -1700,3 +1700,39 @@ def test_bin_rebin_existing_edge_cases() -> None:
         result.bins.constituents['begin'],
         sc.array(dims=['x'], values=[0, 0, 0, 0, 0, 1, 1, 2, 3], unit=None),
     )
+
+
+def test_hist_2d_is_independent_of_argument_order() -> None:
+    da = sc.data.binned_x(nevent=10000, nbin=137)
+    xy = da.hist(x=7, y=5, dim=da.dims)
+    yx = da.hist(y=5, x=7, dim=da.dims)
+    assert xy.dims == ('x', 'y')
+    assert yx.dims == ('y', 'x')
+    # Not identical since the summation order differs
+    assert_allclose(yx.transpose(xy.dims), xy)
+
+
+def test_hist_2d_is_independent_of_argument_order_with_outer_only_coord() -> None:
+    da = _make_pixel_binned_2d(n_events=10000, n_pixels=100, nx=37, ny=8)
+    xy = da.hist(x=7, y=5, dim=da.dims)
+    yx = da.hist(y=5, x=7, dim=da.dims)
+    assert xy.dims == ('x', 'y')
+    assert yx.dims == ('y', 'x')
+    assert_allclose(yx.transpose(xy.dims), xy)
+
+
+def test_hist_3d_preserves_requested_dim_order() -> None:
+    da = sc.data.binned_x(nevent=10000, nbin=137)
+    sizes = {'x': 7, 'y': 5, 'z': 3}
+    ref = da.hist(sizes, dim=da.dims)
+    for order in itertools.permutations(sizes):
+        out = da.hist({dim: sizes[dim] for dim in order}, dim=da.dims)
+        assert out.dims == order
+        assert_allclose(out.transpose(ref.dims), ref)
+
+
+def test_hist_rebinning_existing_dim_last_does_not_create_huge_intermediate() -> None:
+    # Binning by the event coord `y` first would keep the 1e6 bins of `x` alive,
+    # yielding an intermediate with 1e8 bins, requiring hundreds of GByte.
+    da = sc.data.binned_x(nevent=10000, nbin=1_000_000)
+    assert da.hist(y=100, x=100, dim=da.dims).sizes == {'y': 100, 'x': 100}
