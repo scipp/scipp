@@ -9,7 +9,15 @@ from .._scipp import core as _cpp
 from .argument_handlers import IntoStrDict, combine_dict_args
 from .bin_remapping import combine_bins
 from .bins import Bins
-from .cpp_classes import BinEdgeError, CoordError, DataArray, Dataset, DType, Variable
+from .cpp_classes import (
+    BinEdgeError,
+    CoordError,
+    DataArray,
+    Dataset,
+    DimensionError,
+    DType,
+    Variable,
+)
 from .data_group import DataGroup, data_group_overload
 from .math import round as round_
 from .shape import concat
@@ -345,7 +353,12 @@ def _upper_bound(x: Variable) -> Variable:
 def _parse_coords_arg(
     x: Variable | DataArray | Dataset, name: str, arg: SupportsIndex | Variable
 ) -> Variable:
-    if isinstance(arg, Variable) and name in arg.dims:
+    if isinstance(arg, Variable) and arg.ndim > 0:
+        if arg.dims[-1] != name:
+            raise DimensionError(
+                f"Bin edges for '{name}' must have '{name}' as their innermost "
+                f"dimension, got '{arg.dims[-1]}'."
+            )
         return arg
     coord = _get_coord(x, name)
     start = coord.nanmin()

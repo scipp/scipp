@@ -1051,7 +1051,7 @@ def _reduce_with_numpy(
         )
     if isinstance(x, DataArray):
         if (mask := concepts.irreducible_mask(x, dim)) is not None:
-            masked = np.ma.masked_where(  # type: ignore[no-untyped-call]
+            masked = np.ma.masked_where(
                 mask.broadcast(dims=x.dims, shape=x.shape).values, x.values
             )
             res = np_ma_func(masked, axis=axis, **kwargs)
