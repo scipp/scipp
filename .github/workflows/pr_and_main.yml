@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: prefix-dev/setup-pixi@v0.10.0
+      - uses: prefix-dev/setup-pixi@v0.10.1
         with:
           pixi-version: v0.76.0
           environments: lint
@@ -71,7 +71,7 @@ jobs:
       # `dev` (manual cmake -> cpp-test) and `test` (pixi-build-cmake -> Python
       # tests) are needed on every platform; `docs`/`type-check` only run on
       # Ubuntu, so they are installed there only.
-      - uses: prefix-dev/setup-pixi@v0.10.0
+      - uses: prefix-dev/setup-pixi@v0.10.1
         with:
           pixi-version: v0.76.0
           environments: ${{ contains(matrix.variant.os, 'ubuntu') && 'dev test import-minimal docs type-check' || 'dev test import-minimal' }}
