@@ -11,6 +11,8 @@ def test_to_unit() -> None:
     assert sc.to_unit(var, unit='mm').unit == sc.Unit('mm')
     assert sc.to_unit(var, unit=sc.Unit('mm')).unit == sc.Unit('mm')
     with pytest.raises(sc.UnitError):
+        sc.to_unit(var, unit=None)
+    with pytest.raises(sc.UnitError):
         sc.to_unit(var, unit='abcdef')  # does not parse
     with pytest.raises(TypeError):
         sc.to_unit(var, unit=5)  # neither str nor Unit
