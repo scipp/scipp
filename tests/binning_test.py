@@ -1736,3 +1736,64 @@ def test_hist_rebinning_existing_dim_last_does_not_create_huge_intermediate() ->
     # yielding an intermediate with 1e8 bins, requiring hundreds of GByte.
     da = sc.data.binned_x(nevent=10000, nbin=1_000_000)
     assert da.hist(y=100, x=100, dim=da.dims).sizes == {'y': 100, 'x': 100}
+
+
+def _with_event_coord(da: sc.DataArray, name: str) -> sc.DataArray:
+    """Broadcast an outer coord onto the events, for an independent reference."""
+    out = da.copy()
+    out.bins.coords[name] = sc.bins_like(out, out.coords[name])
+    return out
+
+
+def test_hist_with_coord_defined_on_rebinned_dim() -> None:
+    # Re-binning `x` drops `p`, so `x` must not be applied before `p`.
+    da = sc.data.binned_x(nevent=1000, nbin=12)
+    da.coords['p'] = sc.midpoints(da.coords['x'])
+    out = da.hist(y=4, p=3, x=4, dim=da.dims)
+    assert out.dims == ('y', 'p', 'x')
+    assert_allclose(out, da.hist(p=3, y=4, x=4, dim=da.dims).transpose(out.dims))
+
+
+def test_hist_2d_with_outer_point_coord_and_erased_dim() -> None:
+    da = sc.data.table_xyz(1000).bin(x=4, y=3)
+    del da.bins.coords['x']
+    da.coords['x'] = sc.midpoints(da.coords['x'])
+    zx = da.hist(z=2, x=2, dim=da.dims)
+    assert zx.dims == ('z', 'x')
+    assert_allclose(da.hist(x=2, z=2, dim=da.dims), zx.transpose(('x', 'z')))
+    reference = _with_event_coord(da, 'x').hist(z=2, x=2, dim=da.dims)
+    assert_allclose(zx, reference)
+
+
+def test_hist_with_outer_bin_edge_coord_raises_BinEdgeError() -> None:
+    da = sc.data.table_xyz(100).bin(x=2, y=3)
+    del da.bins.coords['y']
+    for edges in ({'z': 2, 'y': 2}, {'y': 2, 'z': 2}):
+        with pytest.raises(sc.BinEdgeError):
+            da.hist(edges, dim=da.dims)
+
+
+def test_hist_does_not_reorder_when_final_edges_would_use_outer_coord() -> None:
+    # Histogramming by an outer coord erases that coord's dims, so reordering would
+    # change which dims the result has, not just their order.
+    da = sc.data.table_xyz(1000).bin(x=5, y=4)
+    da.coords['p'] = sc.arange('x', 5, unit='s')
+    assert da.hist(p=3, y=3, dim=()).sizes == {'x': 5, 'p': 3, 'y': 3}
+
+
+def test_bin_along_existing_dim_with_outer_point_coord_and_erase() -> None:
+    da = sc.data.table_xyz(1000).bin(x=4, y=3)
+    del da.bins.coords['x']
+    da.coords['x'] = sc.midpoints(da.coords['x'])
+    out = da.bin(x=2, dim=da.dims)
+    assert out.dims == ('x',)
+    assert out.bins.size().sum().value == da.bins.size().sum().value
+    reference = _with_event_coord(da, 'x').bin(x=2, dim=da.dims)
+    assert_allclose(out.bins.sum(), reference.bins.sum())
+
+
+def test_bin_by_outer_bin_edge_coord_raises_BinEdgeError() -> None:
+    da = sc.data.table_xyz(100).bin(x=2, y=3)
+    del da.bins.coords['y']
+    with pytest.raises(sc.BinEdgeError):
+        da.bin(y=2, dim=da.dims)
