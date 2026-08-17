@@ -1800,8 +1800,8 @@ def test_bin_by_outer_bin_edge_coord_raises_BinEdgeError() -> None:
 
 
 @pytest.mark.xfail(
-    reason="Re-binning a dim drops coords defined over it, so hist depends on the "
-    "argument order here. Note that bin() handles both orders.",
+    reason="scipp/scipp#3952: Re-binning a dim drops coords defined over it, so hist "
+    "depends on the argument order here. Note that bin() handles both orders.",
     strict=True,
 )
 def test_hist_by_existing_dim_and_by_coord_on_that_dim_is_order_independent() -> None:
@@ -1812,7 +1812,8 @@ def test_hist_by_existing_dim_and_by_coord_on_that_dim_is_order_independent() ->
 
 
 @pytest.mark.xfail(
-    reason="hist by a 1-D and a 2-D outer coord depends on the argument order",
+    reason="scipp/scipp#3952: hist by a 1-D and a 2-D outer coord depends on the "
+    "argument order",
     strict=True,
 )
 def test_hist_by_1d_and_2d_outer_coords_is_order_independent() -> None:
