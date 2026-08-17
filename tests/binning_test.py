@@ -1797,3 +1797,27 @@ def test_bin_by_outer_bin_edge_coord_raises_BinEdgeError() -> None:
     del da.bins.coords['y']
     with pytest.raises(sc.BinEdgeError):
         da.bin(y=2, dim=da.dims)
+
+
+@pytest.mark.xfail(
+    reason="Re-binning a dim drops coords defined over it, so hist depends on the "
+    "argument order here. Note that bin() handles both orders.",
+    strict=True,
+)
+def test_hist_by_existing_dim_and_by_coord_on_that_dim_is_order_independent() -> None:
+    da = sc.data.binned_x(nevent=1000, nbin=12)
+    da.coords['p'] = sc.midpoints(da.coords['x'])
+    expected = da.hist(p=3, x=4)
+    assert_allclose(da.hist(x=4, p=3).transpose(expected.dims), expected)
+
+
+@pytest.mark.xfail(
+    reason="hist by a 1-D and a 2-D outer coord depends on the argument order",
+    strict=True,
+)
+def test_hist_by_1d_and_2d_outer_coords_is_order_independent() -> None:
+    da = sc.data.table_xyz(1000).bin(x=5, y=4)
+    da.coords['p'] = sc.arange('x', 5, unit='s')
+    da.coords['r'] = sc.arange('x', 5, unit='K') + 5 * sc.arange('y', 4, unit='K')
+    expected = da.hist(r=2, p=3, dim=())
+    assert_allclose(da.hist(p=3, r=2, dim=()).transpose(expected.dims), expected)
