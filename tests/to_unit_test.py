@@ -18,6 +18,12 @@ def test_to_unit() -> None:
         sc.to_unit(var, unit=5)  # neither str nor Unit
 
 
+def test_raises_unit_error_if_units_mismatch():
+    var = sc.scalar(1.0, unit='m')
+    with pytest.raises(sc.UnitError):
+        var.to(unit=None, dtype='float32')
+
+
 @pytest.mark.parametrize('year', [1800, 1911, 1956, 1984, 2001, 2022, 2036, 2100, 2467])
 def test_datetime64_with_explicit_ns_unit_is_consistent_irrespective_of_decimals(
     year: int,
