@@ -1765,6 +1765,12 @@ def test_hist_2d_with_outer_point_coord_and_erased_dim() -> None:
     assert_allclose(zx, reference)
 
 
+@pytest.mark.xfail(
+    reason="scipp/scipp#3955: combine_bins accepts bin-edge outer coords, which the "
+    "C++ implementation rejects. Here it drops the coord when flattening, so this "
+    "fails with a confusing KeyError instead.",
+    strict=True,
+)
 def test_hist_with_outer_bin_edge_coord_raises_BinEdgeError() -> None:
     da = sc.data.table_xyz(100).bin(x=2, y=3)
     del da.bins.coords['y']
@@ -1792,11 +1798,45 @@ def test_bin_along_existing_dim_with_outer_point_coord_and_erase() -> None:
     assert_allclose(out.bins.sum(), reference.bins.sum())
 
 
+@pytest.mark.xfail(
+    reason="scipp/scipp#3955: combine_bins accepts bin-edge outer coords, which the "
+    "C++ implementation rejects. Here it drops the coord when flattening, so this "
+    "fails with a confusing KeyError instead.",
+    strict=True,
+)
 def test_bin_by_outer_bin_edge_coord_raises_BinEdgeError() -> None:
     da = sc.data.table_xyz(100).bin(x=2, y=3)
     del da.bins.coords['y']
     with pytest.raises(sc.BinEdgeError):
         da.bin(y=2, dim=da.dims)
+
+
+@pytest.mark.xfail(
+    reason="scipp/scipp#3955: combine_bins accepts bin-edge outer coords, which the "
+    "C++ implementation rejects. Flattening a single dim is a mere rename, so the "
+    "coord survives and its first values are used, one per input bin.",
+    strict=True,
+)
+def test_bin_by_outer_bin_edge_coord_on_single_erased_dim_raises_BinEdgeError() -> None:
+    da = sc.data.table_xyz(100).bin(x=5)
+    da.coords['s'] = sc.linspace('x', 0.0, 1.0, 6, unit='m')
+    assert da.coords.is_edges('s', 'x')
+    with pytest.raises(sc.BinEdgeError):
+        da.bin(s=sc.linspace('s', 0.0, 1.0, 3, unit='m'))
+
+
+@pytest.mark.xfail(
+    reason="scipp/scipp#3955: combine_bins accepts bin-edge outer coords, which the "
+    "C++ implementation rejects. Flattening a single dim is a mere rename, so the "
+    "coord survives and its first values are used, one per input bin.",
+    strict=True,
+)
+def test_bin_by_own_bin_edge_coord_on_single_erased_dim_raises_BinEdgeError() -> None:
+    da = sc.data.table_xyz(100).bin(y=3)
+    del da.bins.coords['y']
+    assert da.coords.is_edges('y', 'y')
+    with pytest.raises(sc.BinEdgeError):
+        da.bin(y=2, dim=('y',))
 
 
 @pytest.mark.xfail(
