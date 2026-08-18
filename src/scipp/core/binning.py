@@ -309,6 +309,11 @@ def _can_operate_on_bins(
             return False
         if coord.dim not in x.coords:
             return False
+        # Combining bins requires a single coord value per input bin. The C++
+        # implementation rejects bin-edge coords, so fall through to it for a clear
+        # error instead of silently using a different definition here.
+        if any(x.coords.is_edges(coord.dim, dim) for dim in x.coords[coord.dim].dims):
+            return False
         dims.update(x.coords[coord.dim].dims)
     return dims <= set(erase)
 
