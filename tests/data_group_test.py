@@ -750,7 +750,7 @@ def test_transpose_leaves_numpy_array_unchanged() -> None:
     assert sc.identical(dg.transpose(), sc.DataGroup(a=np.ones(shape=(2, 3))))
 
 
-def test_to_with_unit_none() -> None:
+def test_to_with_unit_none_raises_if_unit_is_not_none() -> None:
     dg = sc.DataGroup(a=sc.scalar(1, unit=None))
 
     assert sc.identical(dg.to(unit=None), dg)
