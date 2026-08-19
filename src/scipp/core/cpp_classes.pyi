@@ -459,7 +459,7 @@ class DataArray:
     def to(
         self,
         *,
-        unit: Unit | str | None = None,
+        unit: Unit | str | None = ...,
         dtype: Any | None = None,
         copy: bool = True,
     ) -> DataArray: ...
@@ -1080,7 +1080,7 @@ class Variable:
     def to(
         self,
         *,
-        unit: Unit | str | None = None,
+        unit: Unit | str | None = ...,
         dtype: Any | None = None,
         copy: bool = True,
     ) -> Variable: ...
