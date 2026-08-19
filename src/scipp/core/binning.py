@@ -85,7 +85,12 @@ def make_histogrammed(
                     "Cannot histogram data with existing bin edges "
                     "unless event data coordinate for histogramming is available."
                 )
-            return make_histogrammed(x.bins.sum(), edges=edges, erase=erase)
+            if set(x.coords[dim].dims) <= set(erase):
+                return make_histogrammed(x.bins.sum(), edges=edges, erase=erase)
+            # Summing bins first would let the C++ implementation replace all dims of
+            # the coord by the new dim. Dims outside `erase` must be preserved, which
+            # binning does, at the cost of moving event data.
+            return make_binned(x, edges=[edges], erase=list(erase)).bins.sum()
     _check_erase_dimension_clash(erase, edges)
     # The C++ implementation uses an older heuristic histogramming a single dimension.
     # We therefore transpose and flatten the input to match this.
@@ -599,6 +604,11 @@ def hist(
 
       >>> xyz.hist(t=4, dim='y').sizes
       {'x': 4, 'z': 6, 't': 4}
+
+    Setting `dim=()` preserves all input dimensions and adds the new one:
+
+      >>> xyz.hist(t=3, dim=()).sizes
+      {'x': 4, 'y': 5, 'z': 6, 't': 3}
     """  # noqa: E501
     if isinstance(x, DataGroup):
         # Only to make mypy happy because we have `DataGroup` in annotation of `x`
@@ -676,12 +686,7 @@ def _order_edges_for_hist(
         (dims & set(x.coords[name].dims)) - {name} for name in edges if name in x.coords
     ):
         return values
-    ordered = sorted(values, key=lambda edge: not _replaces_existing_dim(x, edge))
-    # Histogramming by a non-event coord erases the dims of that coord, so which edges
-    # come last affects more than just the dim order of the result.
-    if ordered[-1].dims[-1] not in x.bins.coords:
-        return values
-    return ordered
+    return sorted(values, key=lambda edge: not _replaces_existing_dim(x, edge))
 
 
 def _replaces_existing_dim(x: DataArray, edge: Variable) -> bool:
