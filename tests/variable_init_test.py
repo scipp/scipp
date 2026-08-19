@@ -34,6 +34,7 @@ DTYPE_INPUT_TO_EXPECTED: tuple[
     (str, sc.DType.string, 'abc'),
     (sc.DType.int32, sc.DType.int32, 2),
     (sc.DType.int64, sc.DType.int64, 3),
+    (sc.DType.uint64, sc.DType.uint64, 4),
     (sc.DType.float32, sc.DType.float32, 4.5),
     (sc.DType.float64, sc.DType.float64, 5.6),
     (sc.DType.bool, sc.DType.bool, False),
@@ -42,6 +43,7 @@ DTYPE_INPUT_TO_EXPECTED: tuple[
     (sc.DType.PyObject, sc.DType.PyObject, {}),
     (np.int32, sc.DType.int32, 6),
     (np.int64, sc.DType.int64, 7),
+    (np.uint64, sc.DType.uint64, 8),
     (np.float32, sc.DType.float32, 8.9),
     (np.float64, sc.DType.float64, 9.1),
     (np.dtype(bool), sc.DType.bool, True),
@@ -201,6 +203,7 @@ def test_create_scalar_dtypes() -> None:
     [
         (np.int32(2), 'int32'),
         (np.int64(42), 'int64'),
+        (np.uint64(9000), 'uint64'),
         (np.float32(5.4), 'float32'),
         (np.float64(9.9), 'float64'),
         (np.bool_(True), 'bool'),
@@ -273,7 +276,9 @@ def test_create_scalar_value_must_be_convertible_to_dtype(dtype: type) -> None:
 
 
 @pytest.mark.parametrize('value', [1, 1.2, True])
-@pytest.mark.parametrize('dtype', [np.int32, np.int64, np.float32, np.float64, bool])
+@pytest.mark.parametrize(
+    'dtype', [np.int32, np.int64, np.uint64, np.float32, np.float64, bool]
+)
 def test_create_scalar_conversion(value: int | bool, dtype: type) -> None:
     converted: object = np.array(value, dtype=dtype).item()
     var = sc.Variable(dims=(), values=value, dtype=dtype)
@@ -290,7 +295,14 @@ def test_create_scalar_invalid_conversion_numeric(
 
 
 @pytest.mark.parametrize(
-    'dtype', [sc.DType.int32, sc.DType.int64, sc.DType.float64, sc.DType.Variable]
+    'dtype',
+    [
+        sc.DType.int32,
+        sc.DType.int64,
+        sc.DType.uint64,
+        sc.DType.float64,
+        sc.DType.Variable,
+    ],
 )
 def test_create_scalar_invalid_conversion_str(dtype: sc.DType) -> None:
     with pytest.raises(ValueError, match='Cannot convert values'):
@@ -341,6 +353,8 @@ def test_create_1d_dtype_precision() -> None:
     assert var.dtype == sc.DType.int64
     var = sc.Variable(dims=['x'], values=np.arange(4).astype(np.int32))
     assert var.dtype == sc.DType.int32
+    var = sc.Variable(dims=['x'], values=np.arange(4).astype(np.uint64))
+    assert var.dtype == sc.DType.uint64
     var = sc.Variable(dims=['x'], values=np.arange(4).astype(np.float64))
     assert var.dtype == sc.DType.float64
     var = sc.Variable(dims=['x'], values=np.arange(4).astype(np.float32))
@@ -353,6 +367,8 @@ def test_create_1d_dtype_precision() -> None:
     assert var.dtype == sc.DType.int64
     var = sc.Variable(dims=['x'], values=np.arange(4), dtype=np.dtype(np.int32))
     assert var.dtype == sc.DType.int32
+    var = sc.Variable(dims=['x'], values=np.arange(4), dtype=np.dtype(np.uint64))
+    assert var.dtype == sc.DType.uint64
 
 
 @pytest.mark.parametrize('values_type', [tuple, list, np.array])

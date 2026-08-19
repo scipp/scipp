@@ -116,6 +116,7 @@ def test_0D_scalar_access() -> None:
     [
         ('int32', np.int32),
         ('int64', np.int64),
+        ('uint64', np.uint64),
         ('float32', np.float32),
         ('float64', np.float64),
         ('datetime64', np.datetime64),
@@ -156,9 +157,9 @@ def test_1D_access() -> None:
     assert var.values[1] == 1.2
 
 
-@pytest.mark.parametrize('dtype', ['int32', 'int64', 'float32', 'float64'])
+@pytest.mark.parametrize('dtype', ['int32', 'int64', 'uint64', 'float32', 'float64'])
 def test_1d_access_dtype(dtype: str) -> None:
-    assert sc.array(dims=['xx'], values=[-9], dtype=dtype).values.dtype == dtype
+    assert sc.array(dims=['xx'], values=[9], dtype=dtype).values.dtype == dtype
 
 
 def test_1D_set_from_list() -> None:
