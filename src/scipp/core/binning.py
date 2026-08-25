@@ -213,7 +213,10 @@ def make_binned(
             extended_erase = tuple(set(erase) | set(rebinning_dims))
             if _can_operate_on_bins(x, edges, groups, extended_erase):
                 result = combine_bins(x, edges=edges, groups=groups, dim=extended_erase)
-                return result.transpose(x.dims)
+                # Erased dims are absent from the result, new dims are appended.
+                order = [dim for dim in x.dims if dim in result.dims]
+                order += [dim for dim in result.dims if dim not in x.dims]
+                return result.transpose(order)
     # Many-to-many mapping is expensive, concat first is generally cheaper,
     # despite extra copies. If some coords are dense, perform binning in two steps,
     # since concat is not possible then (without mapping dense coords to binned coords,
@@ -622,11 +625,12 @@ def hist(
                     for k, v in x.items()
                 }
             )
-        edge_values = list(edges.values())
-        # If histogramming by the final edges needs to use a non-event coord then we
-        # must not erase that dim, since it removes the coord required for histogramming
+        edge_values = _order_edges_for_hist(x, edges)
         remaining_erase = set(erase)
         if isinstance(x, DataArray) and x.is_binned:
+            # If histogramming by the final edges needs to use a non-event coord then we
+            # must not erase that dim, since it removes the coord required for
+            # histogramming.
             hist_dim = edge_values[-1].dims[-1]
             if hist_dim not in x.bins.coords:
                 erase = [e for e in erase if e not in x.coords[hist_dim].dims]
@@ -640,7 +644,60 @@ def hist(
             edges=edge_values[-1],
             erase=remaining_erase,
         )
+        if isinstance(out, DataArray):
+            out = out.transpose(_restore_requested_dim_order(out.dims, edges))
     return out
+
+
+def _order_edges_for_hist(
+    x: Variable | DataArray | Dataset, edges: Mapping[str, Variable]
+) -> list[Variable]:
+    """Order edges such that those replacing an existing dim are applied first.
+
+    :py:func:`hist` applies all but the final edges by binning. A dim replaced in that
+    step shrinks to the requested length, whereas a dim left untouched survives at its
+    original length, so that the intermediate holds the product of the two. Applying
+    the former first therefore avoids a potentially huge intermediate.
+
+    Re-binning a dim drops coords defined over it. If any edges are derived from such a
+    coord then the given order is preserved, since reordering could remove a coord that
+    is still required.
+    """
+    values = list(edges.values())
+    if not isinstance(x, DataArray) or not x.is_binned:
+        return values
+    dims = set(edges)
+    if any(
+        (dims & set(x.coords[name].dims)) - {name} for name in edges if name in x.coords
+    ):
+        return values
+    ordered = sorted(values, key=lambda edge: not _replaces_existing_dim(x, edge))
+    # Histogramming by a non-event coord erases the dims of that coord, so which edges
+    # come last affects more than just the dim order of the result.
+    if ordered[-1].dims[-1] not in x.bins.coords:
+        return values
+    return ordered
+
+
+def _replaces_existing_dim(x: DataArray, edge: Variable) -> bool:
+    """Return whether binning by ``edge`` replaces an existing dim of ``x``."""
+    dim = edge.dims[-1]
+    if dim not in x.dims:
+        return False
+    if dim in x.bins.coords:
+        return True
+    # Without an event coord, binning requires a coord with one value per bin.
+    return dim in x.coords and not any(
+        x.coords.is_edges(dim, d) for d in x.coords[dim].dims
+    )
+
+
+def _restore_requested_dim_order(
+    dims: tuple[str, ...], requested: Iterable[str]
+) -> list[str]:
+    """Reorder histogrammed dims as requested, leaving all other dims in place."""
+    order = iter([dim for dim in requested if dim in dims])
+    return [next(order) if dim in requested else dim for dim in dims]
 
 
 def _get_op_dims(x: DataArray, *edges_or_groups: Variable) -> set[str]:
