@@ -225,7 +225,7 @@ Variable make_variable(const py::object &dim_labels, const py::object &values,
   const auto dims =
       build_dimensions(dim_labels, converted_values, converted_variances);
   const auto unit = unit_.value_or(variable::default_unit_for(dtype));
-  return core::CallDType<double, float, int64_t, int32_t, bool,
+  return core::CallDType<double, float, int64_t, int32_t, uint64_t, bool,
                          scipp::core::time_point, std::string, Variable,
                          DataArray, Dataset,
                          python::PyObject>::apply<MakeVariable>(dtype, dims,

@@ -24,28 +24,19 @@ namespace py = pybind11;
 namespace {
 /// 'kind' character codes for numpy dtypes
 enum class DTypeKind : char {
-  Float = 'f',
-  Int = 'i',
-  Bool = 'b',
   Datetime = 'M',
-  Object = 'O',
   String = 'U',
   RawData = 'V',
+  // Unused but listed for completeness in case we need them later:
+  // Float = 'f',
+  // Int = 'i',
+  // Unsigned = 'u',
+  // Bool = 'b',
+  // Object = 'O',
 };
 
 constexpr bool operator==(const char a, const DTypeKind b) {
   return a == static_cast<char>(b);
-}
-
-enum class DTypeSize : scipp::index {
-  Float64 = 8,
-  Float32 = 4,
-  Int64 = 8,
-  Int32 = 4,
-};
-
-constexpr bool operator==(const scipp::index a, const DTypeSize b) {
-  return a == static_cast<scipp::index>(b);
 }
 } // namespace
 
@@ -76,6 +67,7 @@ objects containing binned data. They cannot be used directly to create arrays of
            dtype<bool>,
            dtype<int32_t>,
            dtype<int64_t>,
+           dtype<uint64_t>,
            dtype<float>,
            dtype<double>,
            dtype<std::string>,
@@ -134,6 +126,8 @@ scipp::core::DType scipp_dtype(const py::dtype &type) {
     return scipp::core::dtype<std::int64_t>;
   case py::dtype::num_of<std::int32_t>():
     return scipp::core::dtype<std::int32_t>;
+  case py::dtype::num_of<std::uint64_t>():
+    return scipp::core::dtype<std::uint64_t>;
   case py::dtype::num_of<bool>():
     return scipp::core::dtype<bool>;
   case py::dtype::num_of<py::object>():

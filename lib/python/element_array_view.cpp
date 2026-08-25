@@ -85,6 +85,7 @@ void init_element_array_view(py::module &m) {
   declare_ElementArrayView<float>(m, "float");
   declare_ElementArrayView<int64_t>(m, "int64");
   declare_ElementArrayView<int32_t>(m, "int32");
+  declare_ElementArrayView<uint64_t>(m, "uint64");
   declare_ElementArrayView<std::string>(m, "string");
   declare_ElementArrayView<bool>(m, "bool");
   declare_ElementArrayView<Variable>(m, "Variable");

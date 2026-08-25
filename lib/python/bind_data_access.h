@@ -146,6 +146,8 @@ template <class... Ts> class as_ElementArrayViewImpl {
         return {Getter::template get<int64_t>(view)};
       if (type == dtype<int32_t>)
         return {Getter::template get<int32_t>(view)};
+      if (type == dtype<uint64_t>)
+        return {Getter::template get<uint64_t>(view)};
       if (type == dtype<bool>)
         return {Getter::template get<bool>(view)};
       if (type == dtype<std::string>)
@@ -241,6 +243,8 @@ public:
       return DataAccessHelper::as_py_array_t_impl<Getter, int64_t>(view);
     if (type == dtype<int32_t>)
       return DataAccessHelper::as_py_array_t_impl<Getter, int32_t>(view);
+    if (type == dtype<uint64_t>)
+      return DataAccessHelper::as_py_array_t_impl<Getter, uint64_t>(view);
     if (type == dtype<bool>)
       return DataAccessHelper::as_py_array_t_impl<Getter, bool>(view);
     if (type == dtype<scipp::core::time_point>)
@@ -431,10 +435,11 @@ public:
 };
 
 using as_ElementArrayView = as_ElementArrayViewImpl<
-    double, float, int64_t, int32_t, bool, std::string, scipp::core::time_point,
-    Variable, DataArray, Dataset, bucket<Variable>, bucket<DataArray>,
-    bucket<Dataset>, Eigen::Vector3d, Eigen::Matrix3d, scipp::python::PyObject,
-    Eigen::Affine3d, scipp::core::Quaternion, scipp::core::Translation>;
+    double, float, int64_t, int32_t, uint64_t, bool, std::string,
+    scipp::core::time_point, Variable, DataArray, Dataset, bucket<Variable>,
+    bucket<DataArray>, bucket<Dataset>, Eigen::Vector3d, Eigen::Matrix3d,
+    scipp::python::PyObject, Eigen::Affine3d, scipp::core::Quaternion,
+    scipp::core::Translation>;
 
 template <class T, class... Ignored>
 void bind_common_data_properties(pybind11::class_<T, Ignored...> &c) {

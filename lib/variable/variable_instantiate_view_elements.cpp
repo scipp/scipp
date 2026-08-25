@@ -17,8 +17,11 @@ INSTANTIATE_ELEMENT_ARRAY_VARIABLE(span_float64, std::span<double>)
 INSTANTIATE_ELEMENT_ARRAY_VARIABLE(span_float32, std::span<float>)
 INSTANTIATE_ELEMENT_ARRAY_VARIABLE(span_const_int64, std::span<const int64_t>)
 INSTANTIATE_ELEMENT_ARRAY_VARIABLE(span_const_int32, std::span<const int32_t>)
+INSTANTIATE_ELEMENT_ARRAY_VARIABLE(span_const_uint64_t,
+                                   std::span<const uint64_t>)
 INSTANTIATE_ELEMENT_ARRAY_VARIABLE(span_int64, std::span<int64_t>)
 INSTANTIATE_ELEMENT_ARRAY_VARIABLE(span_int32, std::span<int32_t>)
+INSTANTIATE_ELEMENT_ARRAY_VARIABLE(span_uint64_t, std::span<uint64_t>)
 INSTANTIATE_ELEMENT_ARRAY_VARIABLE(span_const_bool, std::span<const bool>)
 INSTANTIATE_ELEMENT_ARRAY_VARIABLE(span_bool, std::span<bool>)
 INSTANTIATE_ELEMENT_ARRAY_VARIABLE(span_datetime64,
