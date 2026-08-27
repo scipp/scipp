@@ -195,7 +195,7 @@ def interp1d(
             raise UnitError(
                 f"Unit of interpolation points '{xnew.unit}' does not match unit "
                 f"'{da.coords[dim].unit}' of points defining the interpolation "
-                "function along dimension '{dim}'."
+                f"function along dimension '{dim}'."
             )
         if xnew.ndim == 0:
             if midpoints:

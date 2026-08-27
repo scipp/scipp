@@ -187,3 +187,16 @@ def test_structured_dtype_interpolation_interpolates_elements() -> None:
         coords={'x': xnew},
     )
     assert sc.identical(out, expected)
+
+def test_interp1d_with_scalar():
+    # refer issue: https://github.com/scipp/scipp/issues/3360
+    x = sc.linspace(dim='x', start=0.1, stop=1.4, num=4, unit='rad')
+    da = sc.DataArray(sc.sin(x), coords={'x': x})
+    f = interp1d(da, 'x')
+    
+    xnew = sc.scalar(0.333, unit='rad')
+    out = f(xnew)
+    expected = f(sc.array(dims=['x'], values=[0.333], unit='rad'))
+
+    assert out.ndim == 0
+    assert sc.identical(out, expected['x', 0])
