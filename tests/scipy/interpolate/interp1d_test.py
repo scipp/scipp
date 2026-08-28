@@ -188,11 +188,12 @@ def test_structured_dtype_interpolation_interpolates_elements() -> None:
     )
     assert sc.identical(out, expected)
 
+
 def test_interp1d_with_scalar():
     x = sc.linspace(dim='x', start=0.1, stop=1.4, num=4, unit='rad')
     da = sc.DataArray(sc.sin(x), coords={'x': x})
     f = interp1d(da, 'x')
-    
+
     xnew = sc.scalar(0.333, unit='rad')
     out = f(xnew)
     expected = f(sc.array(dims=['x'], values=[0.333], unit='rad'))
@@ -200,10 +201,13 @@ def test_interp1d_with_scalar():
     assert out.ndim == 0
     assert sc.identical(out, expected['x', 0])
 
+
 def test_interp1d_with_scalar_raises_with_midpoints():
     x = sc.linspace(dim='x', start=0.1, stop=1.4, num=4, unit='rad')
     da = sc.DataArray(sc.sin(x), coords={'x': x})
     f = interp1d(da, 'x')
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="midpoints=True requires at least two interpolation points"
+    ):
         f(sc.scalar(0.333, unit='rad'), midpoints=True)

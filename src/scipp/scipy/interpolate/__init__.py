@@ -199,7 +199,10 @@ def interp1d(
             )
         if xnew.ndim == 0:
             if midpoints:
-                raise ValueError("midpoints=True requires at least two interpolation points, but a scalar was given.")
+                raise ValueError(
+                    "midpoints=True requires at least two interpolation points, "
+                    "but a scalar was given."
+                )
             xnew_1d = broadcast(xnew, sizes={dim: 1}).copy()
             return func(xnew_1d)[dim, 0]
         if xnew.dim != dim:
