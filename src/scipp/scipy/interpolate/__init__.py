@@ -21,6 +21,7 @@ from ...core import (
     DType,
     UnitError,
     Variable,
+    broadcast,
     empty,
     epoch,
     irreducible_mask,
@@ -194,8 +195,16 @@ def interp1d(
             raise UnitError(
                 f"Unit of interpolation points '{xnew.unit}' does not match unit "
                 f"'{da.coords[dim].unit}' of points defining the interpolation "
-                "function along dimension '{dim}'."
+                f"function along dimension '{dim}'."
             )
+        if xnew.ndim == 0:
+            if midpoints:
+                raise ValueError(
+                    "midpoints=True requires at least two interpolation points, "
+                    "but a scalar was given."
+                )
+            xnew_1d = broadcast(xnew, sizes={dim: 1}).copy()
+            return func(xnew_1d)[dim, 0]
         if xnew.dim != dim:
             raise DimensionError(
                 f"Dimension of interpolation points '{xnew.dim}' does not match "
