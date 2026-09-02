@@ -153,6 +153,42 @@ def nanmean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     return _apply_op(x, dim, _cpp.nanmean)  # type: ignore[return-value]
 
 
+def average(x: VariableLikeType, dim: str | None = None, weights: VariableLikeType | None = None) -> VariableLikeType:
+    """(Weighted) average of the elements in the input. 
+
+    Where, `weights = None` this is equivalent to :py:func`scipp.mean`. 
+
+    Parameters
+    ----------
+    x: scipp.typing.VariableLike
+        Input data.
+    dim:
+        Dimension along which to calculate the mean. If not
+        given, the nanmean over all dimensions is calculated.
+
+    weights: scipp.typing.VariableLike
+        Array of weights for each value in `x`.
+
+    Returns
+    -------
+    : Same type as x
+        The (weighted) average of the input values.
+
+    See Also
+    --------
+    scipp.nanvar:
+        Compute the variance, ignoring NaN's.
+    scipp.nanstd:
+        Compute the standard deviation, ignoring NaN's.
+    scipp.mean:
+        Compute the mean without special handling of NaN.
+    """
+    if weights is None:
+        return mean(x=x, dim=dim)
+    else:
+        return (weights * x).sum() / weights.sum()
+
+
 def median(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     """Compute the median of the input values.
 
