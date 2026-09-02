@@ -994,3 +994,115 @@ def test_reduce_two_dims(container: Callable[[object], Any], opname: str) -> Non
         last = dims[-1]
         for i in range(x.sizes[last]):
             assert sc.identical(res[last, i], getattr(x[last, i], opname)())
+
+
+@pytest.fixture(
+    params=[lambda x: x, sc.DataArray],
+    ids=['Variable', 'DataArray'],
+)
+def va_container(request: pytest.FixtureRequest) -> Callable[[object], Any]:
+    return request.param  # type: ignore[no-any-return]
+
+
+def test_inverse_variance_mean_value_and_internal_variance(
+    va_container: Callable[[object], Any],
+) -> None:
+    x = va_container(
+        sc.array(
+            dims=['x'], values=[1.0, 2.0, 3.0, 4.0], variances=[0.25, 1.0, 1.0, 1.0]
+        )
+    )
+    result = sc.inverse_variance_mean(x)
+    weights = np.array([4.0, 1.0, 1.0, 1.0])
+    expected_value = np.sum(weights * [1.0, 2.0, 3.0, 4.0]) / np.sum(weights)
+    assert result.value == pytest.approx(expected_value)
+    # Internal (propagated) variance is 1 / sum(weights).
+    assert result.variance == pytest.approx(1.0 / np.sum(weights))
+
+
+def test_inverse_variance_mean_is_available_as_method() -> None:
+    x = sc.array(dims=['x'], values=[1.0, 2.0], variances=[1.0, 3.0])
+    assert sc.identical(x.inverse_variance_mean(), sc.inverse_variance_mean(x))
+
+
+def test_inverse_variance_mean_external_matches_scatter_formula() -> None:
+    values = np.array([1.0, 2.0, 3.0, 4.0])
+    variances = np.array([0.25, 1.0, 1.0, 1.0])
+    x = sc.array(dims=['x'], values=values, variances=variances)
+    w = 1.0 / variances
+    mean = np.sum(w * values) / np.sum(w)
+    n = len(values)
+    expected = np.sum(w * (values - mean) ** 2) / ((n - 1) * np.sum(w))
+    result = sc.inverse_variance_mean(x, method='external')
+    assert result.value == pytest.approx(mean)
+    assert result.variance == pytest.approx(expected)
+
+
+def test_inverse_variance_mean_external_equal_weights_gives_standard_error() -> None:
+    values = np.array([1.0, 2.0, 3.0, 4.0, 10.0])
+    x = sc.array(dims=['x'], values=values, variances=np.full(5, 2.0))
+    result = sc.inverse_variance_mean(x, method='external')
+    # Equal weights -> external variance is the ordinary standard error s^2 / N.
+    assert result.variance == pytest.approx(np.var(values, ddof=1) / len(values))
+
+
+def test_inverse_variance_mean_along_dim() -> None:
+    x = sc.array(
+        dims=['x', 'y'],
+        values=[[1.0, 2.0], [3.0, 4.0]],
+        variances=[[1.0, 1.0], [1.0, 1.0]],
+    )
+    # Equal variances -> weighted mean equals arithmetic mean along the dim.
+    result = sc.inverse_variance_mean(x, 'x')
+    assert result.values == pytest.approx([2.0, 3.0])
+
+
+def test_inverse_variance_mean_respects_masks() -> None:
+    da = sc.DataArray(
+        sc.array(
+            dims=['x'], values=[1.0, 2.0, 3.0, 4.0], variances=[0.25, 1.0, 1.0, 1.0]
+        ),
+        masks={'m': sc.array(dims=['x'], values=[False, False, True, False])},
+    )
+    result = sc.inverse_variance_mean(da)
+    w = np.array([4.0, 1.0, 1.0])  # index 2 masked out
+    vals = np.array([1.0, 2.0, 4.0])
+    assert result.value == pytest.approx(np.sum(w * vals) / np.sum(w))
+    assert result.variance == pytest.approx(1.0 / np.sum(w))
+
+
+def test_inverse_variance_mean_external_count_excludes_masked() -> None:
+    values = np.array([1.0, 2.0, 3.0, 4.0])
+    da = sc.DataArray(
+        sc.array(dims=['x'], values=values, variances=np.ones(4)),
+        masks={'m': sc.array(dims=['x'], values=[False, False, True, False])},
+    )
+    result = sc.inverse_variance_mean(da, method='external')
+    kept = np.array([1.0, 2.0, 4.0])
+    mean = kept.mean()
+    # N - 1 uses the count of non-masked elements (3 - 1), not the full length.
+    expected = np.sum((kept - mean) ** 2) / ((len(kept) - 1) * len(kept))
+    assert result.variance == pytest.approx(expected)
+
+
+def test_inverse_variance_mean_raises_without_variances(
+    va_container: Callable[[object], Any],
+) -> None:
+    x = va_container(sc.array(dims=['x'], values=[1.0, 2.0, 3.0]))
+    with pytest.raises(sc.VariancesError):
+        sc.inverse_variance_mean(x)
+
+
+def test_inverse_variance_mean_raises_for_invalid_method() -> None:
+    x = sc.array(dims=['x'], values=[1.0, 2.0], variances=[1.0, 1.0])
+    with pytest.raises(ValueError, match='method'):
+        sc.inverse_variance_mean(x, method='bogus')  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize('container', [sc.Dataset, sc.DataGroup])
+def test_inverse_variance_mean_raises_for_unsupported_container(
+    container: Callable[[object], Any],
+) -> None:
+    x = sc.array(dims=['x'], values=[1.0, 2.0], variances=[1.0, 1.0])
+    with pytest.raises(TypeError):
+        sc.inverse_variance_mean(container({'a': x}))
