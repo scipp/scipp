@@ -59,6 +59,7 @@ public:
   virtual scipp::index object_size() const = 0;
 
   virtual const VariableConceptHandle &bin_indices() const = 0;
+  virtual Sizes bin_dims() const = 0;
 
   friend class Variable;
 
