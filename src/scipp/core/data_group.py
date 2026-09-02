@@ -163,11 +163,19 @@ class DataGroup(MutableMapping[str, _V]):
         items contain the maximal index in the integer array. Boolean-variable indexing
         is only possible when the shape of all items is compatible with the boolean
         variable.
+
+        A dict index maps dimension names to indices, e.g., ``dg[{'x': 0, 'y': 1}]``
+        is equivalent to ``dg['x', 0]['y', 1]``.
         """
         from .bins import Bins
 
         if isinstance(name, str):
             return self._items[name]
+        if isinstance(name, dict):
+            out = DataGroup(self)
+            for dim, index in name.items():
+                out = out[dim, index]
+            return out
         if isinstance(name, tuple) and name == ():
             return cast(DataGroup[Any], self).apply(operator.itemgetter(name))
         if isinstance(name, Variable):  # boolean indexing

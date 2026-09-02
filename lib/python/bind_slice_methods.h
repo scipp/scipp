@@ -4,6 +4,8 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <optional>
+
 #include "numpy.h"
 #include "pybind11.h"
 #include "scipp/core/dtype.h"
@@ -242,6 +244,62 @@ T slice_by_list(const T &obj,
                             Dims{dim}, Shape{ranges.size()}, Values(ranges)),
                         obj, dim);
 }
+
+template <class C> std::optional<C> try_cast(const py::object &obj) {
+  try {
+    return py::cast<C>(obj);
+  } catch (const py::cast_error &) {
+    return std::nullopt;
+  }
+}
+
+// Parsed form of a dict index. Since each dimension occurs at most once (dict
+// keys are unique) the result is independent of application order, so
+// view-producing slices are applied before integer-array extractions (which
+// copy) to keep the copies as small as possible.
+struct ParsedDictIndex {
+  std::vector<Slice> slices;
+  std::vector<std::tuple<Dim, std::vector<scipp::index>>> int_arrays;
+};
+
+// All slice parameters are computed against `self`. This is valid because
+// each dimension is indexed at most once: slicing one dimension changes
+// neither the extent of the others nor the (1-D) coords used for label-based
+// lookup along them.
+template <class T>
+ParsedDictIndex parse_dict_index(T &self, const py::dict &index) {
+  ParsedDictIndex parsed;
+  for (const auto &item : index) {
+    if (!py::isinstance<py::str>(item.first))
+      throw except::TypeError(
+          "Dict-based indexing requires string keys (dimension labels).");
+    const Dim dim{py::cast<std::string>(item.first)};
+    const auto val = py::reinterpret_borrow<py::object>(item.second);
+    if (py::isinstance<py::int_>(val))
+      parsed.slices.push_back(
+          get_slice(self, {dim, py::cast<scipp::index>(val)}));
+    else if (py::isinstance<py::slice>(val))
+      parsed.slices.push_back(
+          get_slice_range(self, {dim, py::cast<py::slice>(val)}));
+    else if (py::isinstance<Variable>(val)) {
+      if constexpr (std::is_same_v<T, Variable>)
+        throw except::DimensionError(
+            "Label-based indexing requires coordinates and is not supported "
+            "for Variable. Use a DataArray or positional indices instead.");
+      else
+        parsed.slices.push_back(std::make_from_tuple<Slice>(
+            get_slice_params(self, dim, py::cast<Variable>(val))));
+    } else if (auto arr = try_cast<std::vector<scipp::index>>(val))
+      parsed.int_arrays.emplace_back(dim, std::move(*arr));
+    else if (auto i = try_cast<scipp::index>(val)) // e.g. numpy integers
+      parsed.slices.push_back(get_slice(self, {dim, *i}));
+    else
+      throw except::TypeError(
+          "Unsupported index value for dimension '" + dim.name() +
+          "': " + py::cast<std::string>(py::str(py::type::of(val))));
+  }
+  return parsed;
+}
 } // namespace
 
 template <class T, class... Ignored>
@@ -346,4 +404,30 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
         return slice_by_list<T>(self, to_dim_type(std::move(indices)));
       },
       py::call_guard<py::gil_scoped_release>());
+  // Dict-based indexing: obj[{'x': 0, 'y': 1:3}] is equivalent to
+  // obj['x', 0]['y', 1:3]. The result is independent of the dict's order.
+  c.def("__getitem__", [](T &self, const py::dict &index) {
+    const auto parsed = parse_dict_index(self, index);
+    const py::gil_scoped_release release;
+    T out = self.slice({});
+    for (const auto &s : parsed.slices)
+      out = out.slice(s);
+    for (const auto &arr : parsed.int_arrays)
+      out = slice_by_list(out, arr);
+    return out;
+  });
+  c.def("__setitem__",
+        [](T &self, const py::dict &index, const py::object &data) {
+          const auto parsed = parse_dict_index(self, index);
+          // Integer-array indexing returns a copy, so assigning through it
+          // would silently discard the values.
+          if (!parsed.int_arrays.empty())
+            throw except::TypeError(
+                "Integer-array indexing is not supported in dict-based "
+                "__setitem__.");
+          T target = self.slice({});
+          for (const auto &s : parsed.slices)
+            target = target.slice(s);
+          slicer<T>::set(target, py::ellipsis{}, data);
+        });
 }
