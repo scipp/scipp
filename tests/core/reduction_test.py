@@ -39,8 +39,9 @@ def test_sum_promotes_dtypes_that_cannot_hold_their_sum(
 ) -> None:
     x = container(sc.array(dims=['xx'], values=[1, 2, 3], unit='m', dtype='int32'))
     assert sc.identical(sc.sum(x), container(sc.scalar(6, unit='m', dtype='int64')))
+    # A bool array has unit None, which the sum preserves.
     b = container(sc.array(dims=['xx'], values=[True, False, True]))
-    assert sc.identical(sc.sum(b), container(sc.scalar(2, dtype='int64')))
+    assert sc.identical(sc.sum(b), container(sc.scalar(2, dtype='int64', unit=None)))
 
 
 @pytest.mark.parametrize('dtype', ['int64', 'float32', 'float64'])
