@@ -53,8 +53,8 @@ Variable special_like(const Variable &prototype, const FillValue &fill) {
   const char *name = "special_like";
   if (fill == FillValue::Default)
     return Variable(prototype, prototype.dims());
-  if (fill == FillValue::ZeroNotBool)
-    return transform(prototype, core::element::zeros_not_bool_like, name);
+  if (fill == FillValue::ZeroForSum)
+    return transform(prototype, core::element::zeros_for_sum_like, name);
   if (fill == FillValue::True)
     return transform(prototype, core::element::values_like<bool, true>, name);
   if (fill == FillValue::False)

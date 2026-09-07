@@ -683,6 +683,9 @@ def sum(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     to float32 after handling each dimension, i.e., the result is equivalent to what
     would be obtained from manually summing individual dimensions.
 
+    Inputs of dtype 'bool' or 'int32' cannot contain their own sum, so the result
+    has dtype 'int64'. Other dtypes are preserved.
+
     Parameters
     ----------
     x: scipp.typing.VariableLike

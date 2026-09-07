@@ -36,7 +36,7 @@ TEST(VariableHyperbolicTest, sinh_variance) {
 TEST(VariableHyperbolicTest, sinh_out_arg) {
   const auto input = makeVariable<double>(Dims{}, Values{0.5});
   const auto var = copy(input);
-  auto output = special_like(input, FillValue::ZeroNotBool);
+  auto output = special_like(input, FillValue::ZeroForSum);
   const auto expected = makeVariable<double>(Dims{}, Values{std::sinh(0.5)});
 
   auto &view = sinh(var, output);
@@ -73,7 +73,7 @@ TEST(VariableHyperbolicTest, acosh_out_of_domain) {
 TEST(VariableHyperbolicTest, acosh_out_arg) {
   const auto input = makeVariable<double>(Dims{}, Values{1.5});
   const auto var = copy(input);
-  auto output = special_like(input, FillValue::ZeroNotBool);
+  auto output = special_like(input, FillValue::ZeroForSum);
   const auto expected = makeVariable<double>(Dims{}, Values{std::acosh(1.5)});
 
   auto &view = acosh(var, output);

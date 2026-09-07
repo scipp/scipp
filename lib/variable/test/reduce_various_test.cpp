@@ -86,34 +86,65 @@ TEST(ReduceTest, all_any_all_dims) {
 }
 
 using NansumTypes = ::testing::Types<int32_t, int64_t, float, double>;
-template <typename T> struct NansumTest : public ::testing::Test {};
+template <typename T> struct NansumTest : public ::testing::Test {
+  // int32 cannot contain its own sum, so the result is int64.
+  using Result = std::conditional_t<std::is_same_v<T, int32_t>, int64_t, T>;
+};
 TYPED_TEST_SUITE(NansumTest, NansumTypes);
 
 TYPED_TEST(NansumTest, nansum_all_dims) {
+  using Result = typename TestFixture::Result;
   auto x = makeVariable<TypeParam>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
                                    Values{1, 1, 2, 1});
   if constexpr (std::is_floating_point_v<TypeParam>) {
     x.template values<TypeParam>()[2] = TypeParam(NAN);
-    const auto expected = makeVariable<TypeParam>(Values{3});
+    const auto expected = makeVariable<Result>(Values{3});
     EXPECT_EQ(nansum(x), expected);
   } else {
-    const auto expected = makeVariable<TypeParam>(Values{5});
+    const auto expected = makeVariable<Result>(Values{5});
     EXPECT_EQ(nansum(x), expected);
   }
 }
 TYPED_TEST(NansumTest, nansum_with_dim) {
+  using Result = typename TestFixture::Result;
   auto x = makeVariable<TypeParam>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
                                    Values{1.0, 2.0, 3.0, 4.0});
   if constexpr (std::is_floating_point_v<TypeParam>) {
     x.template values<TypeParam>()[2] = TypeParam(NAN);
     const auto expected =
-        makeVariable<TypeParam>(Dims{Dim::Y}, Shape{2}, Values{1, 6});
+        makeVariable<Result>(Dims{Dim::Y}, Shape{2}, Values{1, 6});
     EXPECT_EQ(nansum(x, Dim::X), expected);
   } else {
     const auto expected =
-        makeVariable<TypeParam>(Dims{Dim::Y}, Shape{2}, Values{4, 6});
+        makeVariable<Result>(Dims{Dim::Y}, Shape{2}, Values{4, 6});
     EXPECT_EQ(nansum(x, Dim::X), expected);
   }
+}
+
+TEST(ReduceTest, sum_int32_accumulates_in_int64) {
+  const auto var = makeVariable<int32_t>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
+                                         sc_units::m, Values{1, 2, 3, 4});
+  EXPECT_EQ(sum(var), makeVariable<int64_t>(sc_units::m, Values{10}));
+  EXPECT_EQ(sum(var, Dim::X), makeVariable<int64_t>(Dims{Dim::Y}, Shape{2},
+                                                    sc_units::m, Values{4, 6}));
+  EXPECT_EQ(nansum(var), makeVariable<int64_t>(sc_units::m, Values{10}));
+}
+
+TEST(ReduceTest, sum_int32_does_not_overflow) {
+  // Each value is within int32, their sum is not.
+  const auto big = std::numeric_limits<int32_t>::max();
+  const auto var =
+      makeVariable<int32_t>(Dims{Dim::X}, Shape{3}, Values{big, big, big});
+  EXPECT_EQ(sum(var), makeVariable<int64_t>(Values{3l * big}));
+}
+
+TEST(ReduceTest, sum_int64_and_float_keep_their_dtype) {
+  const auto i64 = makeVariable<int64_t>(Dims{Dim::X}, Shape{2}, Values{1, 2});
+  EXPECT_EQ(sum(i64).dtype(), dtype<int64_t>);
+  const auto f32 = makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{1, 2});
+  EXPECT_EQ(sum(f32).dtype(), dtype<float>);
+  const auto f64 = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
+  EXPECT_EQ(sum(f64).dtype(), dtype<double>);
 }
 
 class ReduceBinnedTest : public ::testing::Test {
