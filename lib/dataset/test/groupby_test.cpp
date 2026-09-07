@@ -327,7 +327,9 @@ TEST(GroupbyMaskedDataArrayTest, sum) {
 
   const Dim dim("labels");
   DataArray expected{
-      makeVariable<int>(Dimensions{{Dim::Y, 2}, {dim, 2}}, Values{1, 3, 4, 6}),
+      // int cannot contain its own sum, so the result is int64.
+      makeVariable<int64_t>(Dimensions{{Dim::Y, 2}, {dim, 2}},
+                            Values{1, 3, 4, 6}),
       {{Dim::Y, makeVariable<int>(Dimensions{Dim::Y, 2}, Values{1, 2})},
        {dim, makeVariable<double>(Dimensions{dim, 2}, Values{1, 3})}}};
 
@@ -783,6 +785,6 @@ TEST(GroupbySumPromotionTest, masked_bool) {
   da.masks().set("m", makeVariable<bool>(Dims{Dim::X}, Shape{4},
                                          Values{false, true, false, false}));
   const auto result = groupby(da, Dim("g")).sum(Dim::X);
-  EXPECT_EQ(result.data(),
-            makeVariable<int64_t>(Dims{Dim("g")}, Shape{2}, Values{1, 1}));
+  EXPECT_EQ(result.data(), makeVariable<int64_t>(Dims{Dim("g")}, Shape{2},
+                                                 sc_units::none, Values{1, 1}));
 }
