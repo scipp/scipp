@@ -135,7 +135,8 @@ TEST(ReduceTest, sum_int32_does_not_overflow) {
   const auto big = std::numeric_limits<int32_t>::max();
   const auto var =
       makeVariable<int32_t>(Dims{Dim::X}, Shape{3}, Values{big, big, big});
-  EXPECT_EQ(sum(var), makeVariable<int64_t>(Values{3l * big}));
+  EXPECT_EQ(sum(var),
+            makeVariable<int64_t>(Values{3 * static_cast<int64_t>(big)}));
 }
 
 TEST(ReduceTest, sum_int64_and_float_keep_their_dtype) {

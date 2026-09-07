@@ -83,10 +83,12 @@ using DataTypes = ::testing::Types<double, float, int64_t, int32_t>;
 TYPED_TEST_SUITE(DatasetShapeChangingOpTest, DataTypes);
 
 TYPED_TEST(DatasetShapeChangingOpTest, sum_masked) {
+  // int32 cannot contain its own sum, so the result is int64.
+  using Result = std::conditional_t<std::is_same_v<TypeParam, int32_t>, int64_t,
+                                    TypeParam>;
   const auto result = sum(this->ds, Dim::X);
 
-  ASSERT_EQ(result["data_x"].data(),
-            makeVariable<TypeParam>(Values{TypeParam{6}}));
+  ASSERT_EQ(result["data_x"].data(), makeVariable<Result>(Values{Result{6}}));
 }
 
 TYPED_TEST(DatasetShapeChangingOpTest, mean_masked) {
