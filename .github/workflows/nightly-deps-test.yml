@@ -30,7 +30,7 @@ jobs:
       - uses: egor-tensin/vs-shell@v2  # MSVC dev environment for the dev env's Ninja C++ build.
 
       - name: ccache  # serves the dev env build; see pr_and_main.yml
-        uses: hendrikmuhs/ccache-action@v1.2.23
+        uses: hendrikmuhs/ccache-action@v1.2.24
         with:
           key: ${{ matrix.variant.os }}
           max-size: 1G

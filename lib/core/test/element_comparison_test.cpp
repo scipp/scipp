@@ -22,8 +22,10 @@ TYPED_TEST_SUITE(ElementLessTest, ElementLessTestTypes);
 TYPED_TEST_SUITE(ElementGreaterTest, ElementLessTestTypes);
 TYPED_TEST_SUITE(ElementLessEqualTest, ElementLessTestTypes);
 TYPED_TEST_SUITE(ElementGreaterEqualTest, ElementLessTestTypes);
-TYPED_TEST_SUITE(ElementEqualTest, ElementLessTestTypes);
-TYPED_TEST_SUITE(ElementNotEqualTest, ElementLessTestTypes);
+using ElementEqualTestTypes =
+    ::testing::Types<double, float, int64_t, int32_t, uint64_t>;
+TYPED_TEST_SUITE(ElementEqualTest, ElementEqualTestTypes);
+TYPED_TEST_SUITE(ElementNotEqualTest, ElementEqualTestTypes);
 
 TEST(ElementComparisonTest, unit) {
   const sc_units::Unit m(sc_units::m);
