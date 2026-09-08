@@ -17,7 +17,7 @@ version (CI generates it; see `.github/workflows/conda.yml`), e.g.:
 
 ```yaml
 python:
-- 3.11.* *_cpython
+- 3.12.* *_cpython
 ```
 
 Then, from the root of the repository:

@@ -47,7 +47,7 @@ jobs:
         - {os: ubuntu-24.04}
         - {os: macos-15}
         - {os: windows-2022}
-        python-version: ["3.11"]
+        python-version: ["3.12"]
 
     steps:
       - uses: actions/checkout@v4
