@@ -64,10 +64,10 @@ struct comparison_types_t {
 struct equality_types_t {
   constexpr void operator()() const noexcept;
   using types = decltype(std::tuple_cat(
-      comparison_types_t::types{}, std::tuple<std::string>{},
-      std::tuple<Eigen::Vector3d>{}, std::tuple<Eigen::Matrix3d>{},
-      std::tuple<Eigen::Affine3d>{}, std::tuple<Quaternion>{},
-      std::tuple<Translation>{}));
+      comparison_types_t::types{}, std::tuple<uint64_t>{},
+      std::tuple<std::string>{}, std::tuple<Eigen::Vector3d>{},
+      std::tuple<Eigen::Matrix3d>{}, std::tuple<Eigen::Affine3d>{},
+      std::tuple<Quaternion>{}, std::tuple<Translation>{}));
 };
 
 // Allow variance broadcasts because we just want to check for numeric equality.

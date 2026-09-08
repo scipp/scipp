@@ -139,7 +139,7 @@ def isneginf(x: VariableLikeType) -> VariableLikeType:
 
 
 def to_unit(
-    x: VariableLikeType, unit: _cpp.Unit | str, *, copy: bool = True
+    x: VariableLikeType, unit: _cpp.Unit | str | None, *, copy: bool = True
 ) -> VariableLikeType:
     """Convert the variable to a different unit.
 

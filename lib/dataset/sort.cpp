@@ -55,7 +55,7 @@ template <class T> struct IndicesForSorting {
 
 Variable indices_for_sorting(const Variable &key, const SortOrder order) {
   return core::CallDType<
-      double, float, int64_t, int32_t, bool, std::string,
+      double, float, int64_t, int32_t, uint64_t, bool, std::string,
       core::time_point>::apply<IndicesForSorting>(key.dtype(), key, order);
 }
 

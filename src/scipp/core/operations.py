@@ -20,6 +20,13 @@ _E1 = TypeVar('_E1')
 _E2 = TypeVar('_E2')
 
 
+class _NoUnitProvided:
+    """Sentinel type indicating that no unit argument was passed."""
+
+
+_no_unit_provided = _NoUnitProvided()
+
+
 def islinspace(x: _T, dim: str | None = None) -> _T:
     """Check if the values of a variable are evenly spaced.
 
@@ -410,7 +417,7 @@ def where(
 def to(
     var: Variable,
     *,
-    unit: _cpp.Unit | str | None = None,
+    unit: _cpp.Unit | str | None | _NoUnitProvided = _no_unit_provided,
     dtype: Any | None = None,
     copy: bool = True,
 ) -> Variable:
@@ -433,7 +440,7 @@ def to(
     Parameters
     ----------
     unit:
-        Target unit. If ``None``, the unit is unchanged.
+        Target unit. If omitted, the unit is unchanged.
     dtype:
         Target dtype. If ``None``, the dtype is unchanged.
     copy:
@@ -477,14 +484,14 @@ def to(
       >>> var_m.to(unit='km', dtype='float32')
       <scipp.Variable> (x: 3)    float32             [km]  [1, 2, 3]
     """
-    if unit is None and dtype is None:
+    if isinstance(unit, _NoUnitProvided) and dtype is None:
         raise ValueError("Must provide dtype or unit or both")
+
+    if isinstance(unit, _NoUnitProvided):
+        return var.astype(dtype, copy=copy)
 
     if dtype is None:
         return to_unit(var, unit, copy=copy)
-
-    if unit is None:
-        return var.astype(dtype, copy=copy)
 
     if dtype == _cpp.DType.float64:
         convert_dtype_first = True
