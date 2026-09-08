@@ -119,6 +119,17 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 scipp = { path = "." }
 
 # ---------------------------------------------------------------------------
+# Benchmark feature (ASV)
+# ---------------------------------------------------------------------------
+
+[feature.benchmark.dependencies]
+asv = "0.6.*"
+
+[feature.benchmark.tasks]
+bench = { cmd = "asv run --environment existing:python --set-commit-hash HEAD --show-stderr", description = "Record ASV benchmarks for the current Scipp commit" }
+bench-smoke = { cmd = "asv run --environment existing:python --quick --dry-run --show-stderr", description = "Run ASV benchmarks once without saving results" }
+
+# ---------------------------------------------------------------------------
 # Dev feature (manual cmake builds for incremental development)
 # ---------------------------------------------------------------------------
 
@@ -358,6 +369,9 @@ dev = { features = ["dev", "test", "docs", "type-check", "py312"], solve-group =
 # (mirrors the old tox import-minimal env). Shares the default solve group, so
 # it reuses the same scipp build as the test environments.
 import-minimal = { features = ["build", "py312"], solve-group = "default" }
+
+# Keep measured dependencies independent of the test and documentation solves.
+benchmark = { features = ["build", "benchmark", "py312"], solve-group = "benchmark" }
 
 # CI/test environments: pixi-build-cmake builds the package automatically.
 # No `plot` feature -- the test suite doesn't use matplotlib/plopp.

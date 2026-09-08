@@ -174,6 +174,32 @@ Multi-Python version testing:
   pixi run -e test-py314 test
   pixi run -e test-py314t test   # free-threaded Python 3.14 (no plotting deps)
 
+Running performance benchmarks
+------------------------------
+
+The ``benchmark`` environment builds Scipp from source with Python 3.12 and runs
+the ASV benchmark suite. Register your machine once:
+
+.. code-block:: bash
+
+  pixi run --frozen -e benchmark asv machine --yes
+
+Run the benchmarks once to check that they execute, without saving timings:
+
+.. code-block:: bash
+
+  pixi run --frozen -e benchmark bench-smoke
+
+To select a subset, append ``--bench`` followed by a benchmark name or regular expression.
+To record measurements for the current commit, use a clean checkout and run:
+
+.. code-block:: bash
+
+  pixi run --frozen -e benchmark bench
+
+Results are saved under ``scipp-benchmarks/results`` as configured in ``asv.conf.json``.
+The ``scipp-benchmarks`` repository's workflow handles publishing.
+
 Building Documentation
 ----------------------
 
