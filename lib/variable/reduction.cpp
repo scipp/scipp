@@ -27,13 +27,7 @@ Variable reduce_to_dims(const Variable &var, const Dimensions &target_dims,
                         void (*const op)(Variable &, const Variable &),
                         const FillValue init) {
   auto accum = dense_special_like(var, target_dims, init);
-  // FillValue::ZeroForSum is not allowed here because it produces a different
-  // dtype from var (for bool and int32, which cannot hold their own sum).
-  // ZeroForSum and Default are semantically equivalent apart from the dtype
-  // change. So it can be substituted here.
-  op(accum,
-     variableFactory().apply_event_masks(
-         var, (init == FillValue::ZeroForSum) ? FillValue::Default : init));
+  op(accum, variableFactory().apply_event_masks(var, mask_fill_value(init)));
   return accum;
 }
 
@@ -54,14 +48,14 @@ Variable reduce_bins(const Variable &data,
 } // namespace
 
 Variable sum(const Variable &var, const Dim dim) {
-  // bool and int32 cannot contain their sum, so it is stored in an int64
-  // Variable. See element::zeros_for_sum_like.
+  // bool and int32 accumulate in an int64 Variable.
+  // See element::zeros_for_sum_like.
   return reduce_dim(var, dim, sum_into, FillValue::ZeroForSum);
 }
 
 Variable nansum(const Variable &var, const Dim dim) {
-  // bool and int32 cannot contain their sum, so it is stored in an int64
-  // Variable. See element::zeros_for_sum_like.
+  // bool and int32 accumulate in an int64 Variable.
+  // See element::zeros_for_sum_like.
   return reduce_dim(var, dim, nansum_into, FillValue::ZeroForSum);
 }
 

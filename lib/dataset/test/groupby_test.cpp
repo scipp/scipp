@@ -327,7 +327,7 @@ TEST(GroupbyMaskedDataArrayTest, sum) {
 
   const Dim dim("labels");
   DataArray expected{
-      // int cannot contain its own sum, so the result is int64.
+      // int32 accumulates in int64, so the result is int64.
       makeVariable<int64_t>(Dimensions{{Dim::Y, 2}, {dim, 2}},
                             Values{1, 3, 4, 6}),
       {{Dim::Y, makeVariable<int>(Dimensions{Dim::Y, 2}, Values{1, 2})},

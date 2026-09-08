@@ -22,17 +22,17 @@ constexpr auto special_like =
                transform_flags::force_variance_broadcast,
                [](const sc_units::Unit &u) { return u; }};
 
-/// Zero in a type that can hold a sum of the prototype's values.
+/// Zero for accumulating a sum of the prototype's values.
 ///
-/// bool and int32 cannot contain their own sum: a bool sum is a count, and an
-/// int32 sum overflows at 2**31, wrapping to a negative value with no
-/// indication. Both accumulate in int64 instead, which also becomes the dtype
-/// of the reduction's result. Floating-point types keep their own dtype: their
-/// range accommodates the sum, and only precision is at stake, which
-/// `sum_into` handles by accumulating float32 in double.
+/// bool and int32 accumulate in int64, which then also is the dtype of the
+/// reduction's result: a sum of bools is a count, and sums of int32 leave the
+/// int32 range after comparatively few elements, wrapping to a negative value
+/// with no indication. int64 sums can still overflow, just as silently, but
+/// there is no wider integer to promote to. Floating-point types keep their own
+/// dtype: their range accommodates the sum, and only precision is at stake,
+/// which `sum_into` handles by accumulating float32 in double.
 constexpr auto zeros_for_sum_like = overloaded{
-    special_like, [](const auto &x) {
-      using T = std::decay_t<decltype(x)>;
+    special_like, []<class T>(const T &) {
       if constexpr (std::is_same_v<T, bool> || std::is_same_v<T, int32_t>)
         return int64_t{0};
       else

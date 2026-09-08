@@ -72,14 +72,8 @@ template <class Op, class Groups>
 void reduce_(Op op, const Dim reductionDim, const Variable &out_data,
              const DataArray &data, const Dim dim, const Groups &groups,
              const FillValue fill) {
-  // The replacement is substituted into the data before `op` accumulates it,
-  // so it must match the dtype of the data, not that of the output. Only
-  // ZeroForSum differs between the two (for bool and int32, which cannot hold
-  // their own sum); it is otherwise the same zero as Default. Cf. the identical
-  // substitution in variable::reduce_to_dims.
   const auto mask_replacement =
-      special_like(Variable(data.data(), Dimensions{}),
-                   fill == FillValue::ZeroForSum ? FillValue::Default : fill);
+      special_like(Variable(data.data(), Dimensions{}), mask_fill_value(fill));
   auto mask = irreducible_mask(data.masks(), reductionDim);
   const auto process = [&](const auto &range) {
     // Apply to each group, storing result in output slice

@@ -83,12 +83,29 @@ using DataTypes = ::testing::Types<double, float, int64_t, int32_t>;
 TYPED_TEST_SUITE(DatasetShapeChangingOpTest, DataTypes);
 
 TYPED_TEST(DatasetShapeChangingOpTest, sum_masked) {
-  // int32 cannot contain its own sum, so the result is int64.
+  // int32 accumulates in int64, so the result is int64.
   using Result = std::conditional_t<std::is_same_v<TypeParam, int32_t>, int64_t,
                                     TypeParam>;
   const auto result = sum(this->ds, Dim::X);
 
   ASSERT_EQ(result["data_x"].data(), makeVariable<Result>(Values{Result{6}}));
+}
+
+TEST(DatasetOperationsTest, sum_masked_bool) {
+  // bool is not part of DatasetShapeChangingOpTest because the fixture's values
+  // and the expectations of its `mean` tests are not meaningful for it.
+  Dataset ds(
+      {{"data_x", makeVariable<bool>(Dims{Dim::X}, Shape{5},
+                                     Values{true, true, true, true, false})}});
+  ds["data_x"].masks().set(
+      "masks_x", makeVariable<bool>(Dims{Dim::X}, Shape{5},
+                                    Values{false, true, false, true, false}));
+
+  const auto result = sum(ds, Dim::X);
+
+  // A sum of bools counts the unmasked true values.
+  ASSERT_EQ(result["data_x"].data(),
+            makeVariable<int64_t>(sc_units::none, Values{int64_t{2}}));
 }
 
 TYPED_TEST(DatasetShapeChangingOpTest, mean_masked) {

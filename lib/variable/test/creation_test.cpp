@@ -124,7 +124,7 @@ TEST(CreationTest, special_like_int32) {
       makeVariable<int32_t>(Dims{Dim::X}, Shape{2}, sc_units::m, Values{1, 2});
   EXPECT_EQ(special_like(var, FillValue::Default),
             makeVariable<int32_t>(var.dims(), var.unit(), Values{0, 0}));
-  // int32 cannot contain its own sum, so the accumulator is int64.
+  // int32 accumulates in int64.
   EXPECT_EQ(special_like(var, FillValue::ZeroForSum),
             makeVariable<int64_t>(var.dims(), var.unit(), Values{0, 0}));
   EXPECT_EQ(special_like(var, FillValue::Max),

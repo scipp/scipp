@@ -87,7 +87,7 @@ TEST(ReduceTest, all_any_all_dims) {
 
 using NansumTypes = ::testing::Types<int32_t, int64_t, float, double>;
 template <typename T> struct NansumTest : public ::testing::Test {
-  // int32 cannot contain its own sum, so the result is int64.
+  // int32 accumulates in int64, so the result is int64.
   using Result = std::conditional_t<std::is_same_v<T, int32_t>, int64_t, T>;
 };
 TYPED_TEST_SUITE(NansumTest, NansumTypes);
@@ -119,15 +119,6 @@ TYPED_TEST(NansumTest, nansum_with_dim) {
         makeVariable<Result>(Dims{Dim::Y}, Shape{2}, Values{4, 6});
     EXPECT_EQ(nansum(x, Dim::X), expected);
   }
-}
-
-TEST(ReduceTest, sum_int32_accumulates_in_int64) {
-  const auto var = makeVariable<int32_t>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
-                                         sc_units::m, Values{1, 2, 3, 4});
-  EXPECT_EQ(sum(var), makeVariable<int64_t>(sc_units::m, Values{10}));
-  EXPECT_EQ(sum(var, Dim::X), makeVariable<int64_t>(Dims{Dim::Y}, Shape{2},
-                                                    sc_units::m, Values{4, 6}));
-  EXPECT_EQ(nansum(var), makeVariable<int64_t>(sc_units::m, Values{10}));
 }
 
 TEST(ReduceTest, sum_int32_does_not_overflow) {

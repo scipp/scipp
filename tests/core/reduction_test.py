@@ -34,7 +34,7 @@ def test_sum(container: Callable[[object], Any]) -> None:
     assert sc.identical(x.sum(), container(sc.scalar(21, unit='m', dtype='int64')))
 
 
-def test_sum_promotes_dtypes_that_cannot_hold_their_sum(
+def test_sum_promotes_bool_and_int32_to_int64(
     container: Callable[[object], Any],
 ) -> None:
     x = container(sc.array(dims=['xx'], values=[1, 2, 3], unit='m', dtype='int32'))
@@ -45,7 +45,7 @@ def test_sum_promotes_dtypes_that_cannot_hold_their_sum(
 
 
 @pytest.mark.parametrize('dtype', ['int64', 'float32', 'float64'])
-def test_sum_preserves_dtypes_that_can_hold_their_sum(dtype: str) -> None:
+def test_sum_preserves_int64_and_float_dtypes(dtype: str) -> None:
     x = sc.array(dims=['xx'], values=[1, 2, 3], unit='m', dtype=dtype)
     assert sc.sum(x).dtype == dtype
 
