@@ -11,9 +11,9 @@ preview = ["pixi-build"]
 requires-pixi = ">=0.74"
 
 [workspace.build-variants]
-# The last entry builds a variant against free-threaded CPython (cp314t ABI)
-# for the test-py314t environment.
-python = ["3.11.*", "3.12.*", "3.13.*", "3.14.*", "3.14.* *_cp314t"]
+# Pin both Python 3.14 ABIs so the regular and free-threaded environments
+# build distinct packages instead of both selecting cp314t.
+python = ["3.12.*", "3.13.*", "3.14.* *_cp314", "3.14.* *_cp314t"]
 
 # Shared C++ dependency pins, inherited via `{ workspace = true }` by both the
 # pixi-build package (host/run deps) and the dev feature -- so each version is
@@ -91,7 +91,7 @@ tbb = { workspace = true }
 # ---------------------------------------------------------------------------
 
 [dependencies]
-python = ">=3.11"
+python = ">=3.12"
 numpy = ">=2"
 
 [activation.env]
@@ -314,9 +314,6 @@ plopp = "*"
 # Python version features
 # ---------------------------------------------------------------------------
 
-[feature.py311.dependencies]
-python = "3.11.*"
-
 [feature.py312.dependencies]
 python = "3.12.*"
 
@@ -324,7 +321,7 @@ python = "3.12.*"
 python = "3.13.*"
 
 [feature.py314.dependencies]
-python = "3.14.*"
+python = { version = "3.14.*", build = "*_cp314" }
 
 # Free-threaded Python. py3.14t works on conda-forge for scipp's whole test stack
 # on all three platforms. The only cp314t gaps are matplotlib-base/plopp (so this
@@ -342,7 +339,7 @@ python = "3.14.*"
 [environments]
 # Default environment: includes all features for `pixi run <task>` convenience.
 # Includes `build`, so the C++ extension is auto-built via pixi-build-cmake.
-default = { features = ["build", "test", "plot", "docs", "lint", "type-check", "py311"], solve-group = "default" }
+default = { features = ["build", "test", "plot", "docs", "lint", "type-check", "py312"], solve-group = "default" }
 
 # Dev environment: fast incremental C++ development via manual cmake + Ninja
 # (pixi-build-cmake does full-package rebuilds and does not build the C++ test
@@ -354,18 +351,18 @@ default = { features = ["build", "test", "plot", "docs", "lint", "type-check", "
 #   * omits the `plot` feature (see its comment: plopp would drag the published
 #     conda-forge scipp into the env and shadow the dev build's libraries).
 # It keeps the default feature (python/numpy/activation).
-dev = { features = ["dev", "test", "docs", "type-check", "py311"], solve-group = "dev" }
+dev = { features = ["dev", "test", "docs", "type-check", "py312"], solve-group = "dev" }
 
 # Minimal import check: scipp plus ONLY the default feature (python/numpy) --
 # catches scipp accidentally requiring an optional dependency at import time
 # (mirrors the old tox import-minimal env). Shares the default solve group, so
 # it reuses the same scipp build as the test environments.
-import-minimal = { features = ["build", "py311"], solve-group = "default" }
+import-minimal = { features = ["build", "py312"], solve-group = "default" }
 
 # CI/test environments: pixi-build-cmake builds the package automatically.
 # No `plot` feature -- the test suite doesn't use matplotlib/plopp.
-test = { features = ["build", "test", "py311"], solve-group = "default" }
-test-py312 = ["build", "test", "py312"]
+test = { features = ["build", "test", "py312"], solve-group = "default" }
+test-py312 = { features = ["build", "test", "py312"], solve-group = "default" }
 test-py313 = ["build", "test", "py313"]
 test-py314 = ["build", "test", "py314"]
 
@@ -373,7 +370,7 @@ test-py314 = ["build", "test", "py314"]
 # conda-forge builds yet; scipp's tests don't import them).
 test-py314t = ["build", "test", "py314t"]
 
-docs = { features = ["build", "test", "plot", "docs", "py311"], solve-group = "default" }
-type-check = { features = ["build", "test", "docs", "type-check", "py311"], solve-group = "default" }
+docs = { features = ["build", "test", "plot", "docs", "py312"], solve-group = "default" }
+type-check = { features = ["build", "test", "docs", "type-check", "py312"], solve-group = "default" }
 lint = { features = ["lint"], no-default-feature = true }
 package = { features = ["package"], no-default-feature = true }
