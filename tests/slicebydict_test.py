@@ -88,6 +88,12 @@ def test_getitem_dict_with_numpy_integer(make_obj):
 
 
 @pytest.mark.parametrize('make_obj', make_obj_params)
+def test_getitem_dict_with_numpy_string_key(make_obj):
+    obj = make_obj()
+    assert sc.identical(obj[{np.str_('x'): 1}], obj['x', 1])
+
+
+@pytest.mark.parametrize('make_obj', make_obj_params)
 def test_getitem_dict_with_integer_array_returns_copy(make_obj):
     obj = make_obj()
     result = obj[{'y': [2, 0], 'x': 1}]
