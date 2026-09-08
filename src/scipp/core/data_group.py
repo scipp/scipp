@@ -60,6 +60,22 @@ def _item_dims(item: Any) -> tuple[str, ...]:
     return getattr(item, 'dims', ())
 
 
+def _getitem_by_dict(item: Any, index: dict[str, Any]) -> Any:
+    """Index a DataGroup item with a mapping from dimension label to index."""
+    from .bins import Bins
+
+    if isinstance(item, Bins):
+        # Bins supports only tuple-based indexing.
+        for dim, i in index.items():
+            item = item[dim, i]
+        return item
+    # Forwarding the whole dict keeps the semantics of dict-based indexing -- in
+    # particular that the result is independent of the key order -- defined in a
+    # single place, the item's __getitem__.
+    sub = {dim: i for dim, i in index.items() if dim in _item_dims(item)}
+    return item[sub] if sub else item
+
+
 def _is_binned(item: Any) -> bool:
     from .bins import Bins
 
@@ -157,18 +173,19 @@ class DataGroup(MutableMapping[str, _V]):
         is only possible when the shape of all items is compatible with the boolean
         variable.
 
-        A dict index maps dimension names to indices, e.g., ``dg[{'x': 0, 'y': 1}]``
-        is equivalent to ``dg['x', 0]['y', 1]``.
+        A dict index maps dimension names to indices, e.g., ``dg[{'x': 0, 'y': 1}]``.
+        It is forwarded to each item, restricted to the dims that the item has. All
+        indices are thus resolved against the unsliced item, so the result does not
+        depend on the order of the dict keys.
         """
         from .bins import Bins
 
         if isinstance(name, str):
             return self._items[name]
         if isinstance(name, dict):
-            out = DataGroup(self)
-            for dim, index in name.items():
-                out = out[dim, index]
-            return out
+            return DataGroup(
+                {key: _getitem_by_dict(var, name) for key, var in self.items()}
+            )
         if isinstance(name, tuple) and name == ():
             return cast(DataGroup[Any], self).apply(operator.itemgetter(name))
         if isinstance(name, Variable):  # boolean indexing

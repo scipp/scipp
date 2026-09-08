@@ -197,3 +197,31 @@ def test_datagroup_getitem_dict():
     result = dg[{'x': 0, 'y': slice(1, 3)}]
     assert sc.identical(result['v'], dg['v']['x', 0]['y', 1:3])
     assert sc.identical(result['da'], dg['da']['x', 0]['y', 1:3])
+
+
+def test_datagroup_getitem_dict_result_is_independent_of_dict_order():
+    dg = sc.DataGroup({'v': make_variable(), 'da': make_data_array()})
+    assert sc.identical(dg[{'x': 0, 'z': slice(1, 3)}], dg[{'z': slice(1, 3), 'x': 0}])
+
+
+def make_data_group_with_multi_dim_coord() -> sc.DataGroup:
+    da = sc.DataArray(
+        sc.ones(dims=['x', 'y'], shape=[2, 3]),
+        coords={'x': sc.ones(dims=['x', 'y'], shape=[2, 3], unit='m')},
+    )
+    return sc.DataGroup({'da': da})
+
+
+@pytest.mark.parametrize(
+    'index',
+    [
+        {'x': sc.scalar(1.0, unit='m'), 'y': 0},
+        {'y': 0, 'x': sc.scalar(1.0, unit='m')},
+    ],
+    ids=['label-first', 'label-last'],
+)
+def test_datagroup_getitem_dict_label_with_multi_dim_coord_raises(index):
+    # Slicing 'y' first would reduce the coord to 1-D, so this must not depend on
+    # the order of the dict keys.
+    with pytest.raises(sc.DimensionError):
+        make_data_group_with_multi_dim_coord()[index]
