@@ -49,9 +49,7 @@ backend = { name = "pixi-build-cmake", version = "0.*" }
 
 [package.build.config]
 # `compilers = ["cxx"]` is the pixi-build-cmake default, so it is omitted here.
-# No IPO flag: check_ipo_supported() fails with the conda compilers (as on
-# main), and lib/cmake/IPO.cmake FORCE-overrides the cache variable to FALSE,
-# so requesting it here would be silently ignored.
+# Leave IPO at its default: enabled when the C++ toolchain supports it.
 extra-args = ["-DBENCHMARK=OFF", "-DSANITIZERS=OFF"]
 
 # Note on ccache: the package build invokes ccache when it is on PATH (see
