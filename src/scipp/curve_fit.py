@@ -407,7 +407,9 @@ def _curve_fit_chunk(
     p0 = p0 if isinstance(p0, Mapping) else _deserialize_mapping(p0)
     bounds = bounds if isinstance(bounds, Mapping) else _deserialize_bounds(bounds)
 
-    f = (
+    # Annotated explicitly: the two wrappers' return types would otherwise
+    # form a union that cannot unify with _curve_fit's constrained type var.
+    fn: Callable[..., npt.NDArray[Any]] = (
         _wrap_scipp_func(f, p0)  # type: ignore[arg-type]
         if not unsafe_numpy_f
         else _wrap_numpy_func(f, p0, coords.keys())  # type: ignore[arg-type]
@@ -419,7 +421,7 @@ def _curve_fit_chunk(
     out = _prepare_numpy_outputs(da, p0, map_over)
 
     _curve_fit(
-        f=f,
+        f=fn,
         da=_da,
         p0=p0,
         bounds=bounds,

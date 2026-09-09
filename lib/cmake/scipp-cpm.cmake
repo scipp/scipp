@@ -70,9 +70,9 @@ if(SKBUILD)
     GITHUB_REPOSITORY
     uxlfoundation/oneTBB
     GIT_TAG
-    v2022.3.0
+    v2023.0.0
     VERSION
-    2022.3.0
+    2023.0.0
     SYSTEM
     YES
     OPTIONS

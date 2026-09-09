@@ -613,7 +613,7 @@ void validate_bin_args(const DataArray &array,
                                  to_string(dim) + ". Need at least 2.");
     if (!allsorted(edge, dim))
       throw except::BinEdgeError("Bin edges in dim " + to_string(dim) +
-                                 " must be sorted.");
+                                 " must be sorted in ascending order.");
   }
 }
 

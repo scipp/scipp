@@ -2,7 +2,7 @@
   "version": 2,
   "cmakeMinimumRequired": {
     "major": 3,
-    "minor": 16,
+    "minor": 28,
     "patch": 0
   },
   "configurePresets": [
@@ -42,13 +42,6 @@
       "inherits": "base",
       "description": "Windows options for CI build (PR and Main)",
       "generator": "Ninja"
-    },
-    {
-      "name": "windows-msbuild",
-      "inherits": "base",
-      "description": "Windows build using MSBuild (visual studio CMake generators)",
-      "generator": "Visual Studio 17 2022",
-      "architecture": "x64"
     },
     {
       "name": "package",

@@ -8,7 +8,7 @@ import pytest
 from numpy.random import default_rng
 
 import scipp as sc
-from scipp.testing import assert_identical
+from scipp.testing import assert_allclose, assert_identical
 
 
 @pytest.mark.parametrize('op', ['bin', 'hist', 'nanhist', 'rebin'])
@@ -149,6 +149,31 @@ def test_hist_binned_custom_edges() -> None:
     y = sc.linspace('y', 0.2, 0.6, num=3, unit='m')
     histogrammed = da.hist(y=y)
     assert sc.identical(histogrammed.coords['y'], y)
+
+
+@pytest.mark.parametrize('op', ['bin', 'hist', 'nanhist', 'rebin'])
+def test_edges_with_wrong_dim_raises(op) -> None:
+    da = sc.data.table_xyz(100)
+    da.coords['t'] = da.coords['x']
+    if op == 'rebin':
+        da = da.hist(x=4)
+    edges = sc.linspace('t', -1.0, 1.0, num=10, unit='m')
+    with pytest.raises(
+        sc.DimensionError,
+        match="Bin edges for 'x' must have 'x' as their innermost dimension, got 't'",
+    ):
+        getattr(da, op)(x=edges)
+
+
+@pytest.mark.parametrize('dims', [('y', 't'), ('x', 't')])
+def test_edges_with_wrong_innermost_dim_multidimensional_raises(dims) -> None:
+    da = sc.data.table_xyz(100)
+    edges = sc.ones(dims=dims, shape=[2, 10], unit='m')
+    with pytest.raises(
+        sc.DimensionError,
+        match="Bin edges for 'x' must have 'x' as their innermost dimension, got 't'",
+    ):
+        da.hist(x=edges)
 
 
 def test_hist_x_and_edges_arg_are_position_only_and_are_ok_as_keyword_args() -> None:
@@ -1260,6 +1285,32 @@ def test_op_on_binned_with_explicit_dim_arg_yields_expected_output_dims(z) -> No
     assert xy.nanhist(z=4, dim=()).dims == ('x', 'y', 'z')
 
 
+@pytest.mark.parametrize(
+    'z',
+    [
+        sc.linspace('x', 0, 1, 4, unit='m'),
+        sc.linspace('y', 0, 1, 6, unit='m'),
+        sc.linspace('x', 0, 1, 4, unit='m') + sc.linspace('y', 0, 1, 6, unit='m'),
+    ],
+)
+def test_op_on_binned_without_event_coord_yields_expected_output_dims(z) -> None:
+    xy = sc.data.table_xyz(1000).bin(x=4, y=6)
+    xy.coords['z'] = z
+    del xy.bins.coords['z']
+    assert xy.bin(z=4, dim=xy.dims).dims == ('z',)
+    assert xy.bin(z=4, dim='y').dims == ('x', 'z')
+    assert xy.bin(z=4, dim=()).dims == ('x', 'y', 'z')
+    assert xy.group('z', dim=xy.dims).dims == ('z',)
+    assert xy.group('z', dim='y').dims == ('x', 'z')
+    assert xy.group('z', dim=()).dims == ('x', 'y', 'z')
+    assert xy.hist(z=4, dim=xy.dims).dims == ('z',)
+    assert xy.hist(z=4, dim='y').dims == ('x', 'z')
+    assert xy.hist(z=4, dim=()).dims == ('x', 'y', 'z')
+    assert xy.nanhist(z=4, dim=xy.dims).dims == ('z',)
+    assert xy.nanhist(z=4, dim='y').dims == ('x', 'z')
+    assert xy.nanhist(z=4, dim=()).dims == ('x', 'y', 'z')
+
+
 @pytest.mark.parametrize('op', [sc.bin, sc.hist, sc.nanhist])
 def test_op_with_explicit_dim_arg_keeps_aux_coord(op) -> None:
     data = sc.ones(dims=['xyz'], shape=(60,))
@@ -1675,3 +1726,137 @@ def test_bin_rebin_existing_edge_cases() -> None:
         result.bins.constituents['begin'],
         sc.array(dims=['x'], values=[0, 0, 0, 0, 0, 1, 1, 2, 3], unit=None),
     )
+
+
+def test_hist_2d_is_independent_of_argument_order() -> None:
+    da = sc.data.binned_x(nevent=10000, nbin=137)
+    xy = da.hist(x=7, y=5, dim=da.dims)
+    yx = da.hist(y=5, x=7, dim=da.dims)
+    assert xy.dims == ('x', 'y')
+    assert yx.dims == ('y', 'x')
+    # Not identical since the summation order differs
+    assert_allclose(yx.transpose(xy.dims), xy)
+
+
+def test_hist_2d_is_independent_of_argument_order_with_outer_only_coord() -> None:
+    da = _make_pixel_binned_2d(n_events=10000, n_pixels=100, nx=37, ny=8)
+    xy = da.hist(x=7, y=5, dim=da.dims)
+    yx = da.hist(y=5, x=7, dim=da.dims)
+    assert xy.dims == ('x', 'y')
+    assert yx.dims == ('y', 'x')
+    assert_allclose(yx.transpose(xy.dims), xy)
+
+
+def test_hist_3d_preserves_requested_dim_order() -> None:
+    da = sc.data.binned_x(nevent=10000, nbin=137)
+    sizes = {'x': 7, 'y': 5, 'z': 3}
+    ref = da.hist(sizes, dim=da.dims)
+    for order in itertools.permutations(sizes):
+        out = da.hist({dim: sizes[dim] for dim in order}, dim=da.dims)
+        assert out.dims == order
+        assert_allclose(out.transpose(ref.dims), ref)
+
+
+def test_hist_rebinning_existing_dim_last_does_not_create_huge_intermediate() -> None:
+    # Binning by the event coord `y` first would keep the 1e6 bins of `x` alive,
+    # yielding an intermediate with 1e8 bins, requiring hundreds of GByte.
+    da = sc.data.binned_x(nevent=10000, nbin=1_000_000)
+    assert da.hist(y=100, x=100, dim=da.dims).sizes == {'y': 100, 'x': 100}
+
+
+def _with_event_coords(da: sc.DataArray, *names: str) -> sc.DataArray:
+    """Broadcast outer coords onto the events, for an independent reference."""
+    out = da.copy()
+    for name in names:
+        out.bins.coords[name] = sc.bins_like(out, out.coords[name])
+    return out
+
+
+def test_hist_with_coord_defined_on_rebinned_dim() -> None:
+    # Re-binning `x` drops `p`, so `x` must not be applied before `p`.
+    da = sc.data.binned_x(nevent=1000, nbin=12)
+    da.coords['p'] = sc.midpoints(da.coords['x'])
+    out = da.hist(y=4, p=3, x=4, dim=da.dims)
+    assert out.dims == ('y', 'p', 'x')
+    assert_allclose(out, da.hist(p=3, y=4, x=4, dim=da.dims).transpose(out.dims))
+
+
+def test_hist_2d_with_outer_point_coord_and_erased_dim() -> None:
+    da = sc.data.table_xyz(1000).bin(x=4, y=3)
+    del da.bins.coords['x']
+    da.coords['x'] = sc.midpoints(da.coords['x'])
+    zx = da.hist(z=2, x=2, dim=da.dims)
+    assert zx.dims == ('z', 'x')
+    assert_allclose(da.hist(x=2, z=2, dim=da.dims), zx.transpose(('x', 'z')))
+    reference = _with_event_coords(da, 'x').hist(z=2, x=2, dim=da.dims)
+    assert_allclose(zx, reference)
+
+
+def test_hist_with_outer_bin_edge_coord_raises_BinEdgeError() -> None:
+    da = sc.data.table_xyz(100).bin(x=2, y=3)
+    del da.bins.coords['y']
+    for edges in ({'z': 2, 'y': 2}, {'y': 2, 'z': 2}):
+        with pytest.raises(sc.BinEdgeError):
+            da.hist(edges, dim=da.dims)
+
+
+def test_hist_by_outer_and_event_coord_adds_dims_without_erasing() -> None:
+    da = sc.data.table_xyz(1000).bin(x=5, y=4)
+    da.coords['p'] = sc.arange('x', 5, unit='s')
+    assert da.hist(p=3, y=3, dim=()).sizes == {'x': 5, 'p': 3, 'y': 3}
+
+
+def test_bin_along_existing_dim_with_outer_point_coord_and_erase() -> None:
+    da = sc.data.table_xyz(1000).bin(x=4, y=3)
+    del da.bins.coords['x']
+    da.coords['x'] = sc.midpoints(da.coords['x'])
+    out = da.bin(x=2, dim=da.dims)
+    assert out.dims == ('x',)
+    assert out.bins.size().sum().value == da.bins.size().sum().value
+    reference = _with_event_coords(da, 'x').bin(x=2, dim=da.dims)
+    assert_allclose(out.bins.sum(), reference.bins.sum())
+
+
+def test_bin_by_outer_bin_edge_coord_raises_BinEdgeError() -> None:
+    da = sc.data.table_xyz(100).bin(x=2, y=3)
+    del da.bins.coords['y']
+    with pytest.raises(sc.BinEdgeError):
+        da.bin(y=2, dim=da.dims)
+
+
+def test_bin_by_outer_bin_edge_coord_on_single_erased_dim_raises_BinEdgeError() -> None:
+    da = sc.data.table_xyz(100).bin(x=5)
+    da.coords['s'] = sc.linspace('x', 0.0, 1.0, 6, unit='m')
+    assert da.coords.is_edges('s', 'x')
+    with pytest.raises(sc.BinEdgeError):
+        da.bin(s=sc.linspace('s', 0.0, 1.0, 3, unit='m'))
+
+
+def test_bin_by_own_bin_edge_coord_on_single_erased_dim_raises_BinEdgeError() -> None:
+    da = sc.data.table_xyz(100).bin(y=3)
+    del da.bins.coords['y']
+    assert da.coords.is_edges('y', 'y')
+    with pytest.raises(sc.BinEdgeError):
+        da.bin(y=2, dim=('y',))
+
+
+@pytest.mark.xfail(
+    reason="scipp/scipp#3952: Re-binning a dim drops coords defined over it, so hist "
+    "depends on the argument order here. Note that bin() handles both orders.",
+    strict=True,
+)
+def test_hist_by_existing_dim_and_by_coord_on_that_dim_is_order_independent() -> None:
+    da = sc.data.binned_x(nevent=1000, nbin=12)
+    da.coords['p'] = sc.midpoints(da.coords['x'])
+    expected = da.hist(p=3, x=4)
+    assert_allclose(da.hist(x=4, p=3).transpose(expected.dims), expected)
+
+
+def test_hist_by_1d_and_2d_outer_coords_is_order_independent() -> None:
+    da = sc.data.table_xyz(1000).bin(x=5, y=4)
+    da.coords['p'] = sc.arange('x', 5, unit='s')
+    da.coords['r'] = sc.arange('x', 5, unit='K') + 5 * sc.arange('y', 4, unit='K')
+    expected = _with_event_coords(da, 'p', 'r').hist(r=2, p=3, dim=())
+    assert expected.sizes == {'x': 5, 'y': 4, 'r': 2, 'p': 3}
+    for edges in ({'r': 2, 'p': 3}, {'p': 3, 'r': 2}):
+        assert_allclose(da.hist(edges, dim=()).transpose(expected.dims), expected)

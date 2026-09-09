@@ -116,6 +116,7 @@ def test_0D_scalar_access() -> None:
     [
         ('int32', np.int32),
         ('int64', np.int64),
+        ('uint64', np.uint64),
         ('float32', np.float32),
         ('float64', np.float64),
         ('datetime64', np.datetime64),
@@ -156,9 +157,9 @@ def test_1D_access() -> None:
     assert var.values[1] == 1.2
 
 
-@pytest.mark.parametrize('dtype', ['int32', 'int64', 'float32', 'float64'])
+@pytest.mark.parametrize('dtype', ['int32', 'int64', 'uint64', 'float32', 'float64'])
 def test_1d_access_dtype(dtype: str) -> None:
-    assert sc.array(dims=['xx'], values=[-9], dtype=dtype).values.dtype == dtype
+    assert sc.array(dims=['xx'], values=[9], dtype=dtype).values.dtype == dtype
 
 
 def test_1D_set_from_list() -> None:
@@ -729,6 +730,21 @@ def test_to_without_dtype() -> None:
     assert sc.identical(
         data.to(unit="mm"),
         sc.array(dims=["x"], values=[1000, 2000, 3000], dtype="int64", unit="mm"),
+    )
+
+
+def test_to_with_unit_none() -> None:
+    data = sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit=None)
+
+    assert sc.identical(data.to(unit=None), data)
+
+
+def test_to_with_unit_none_and_dtype() -> None:
+    data = sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit=None)
+
+    assert sc.identical(
+        data.to(unit=None, dtype="float64"),
+        sc.array(dims=["x"], values=[1, 2, 3], dtype="float64", unit=None),
     )
 
 

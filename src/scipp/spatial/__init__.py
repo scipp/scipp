@@ -204,7 +204,9 @@ def scaling_from_vector(*, value: npt.NDArray[_Float] | Sequence[_Float]) -> Var
       >>> scale * vec
       <scipp.Variable> ()    vector3              [m]  (2, 3, 4)
     """  # noqa: E501
-    return linear_transforms(dims=[], values=np.diag(value))
+    return linear_transforms(
+        dims=[], values=np.diag(np.asarray(value, dtype=np.float64))
+    )
 
 
 def scalings_from_vectors(

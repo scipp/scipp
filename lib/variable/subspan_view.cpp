@@ -63,7 +63,7 @@ Variable subspan_view_impl(Var &var, const Dim dim, Args &&...args) {
     throw except::DimensionError(
         "View over subspan can only be created for contiguous "
         "range of data.");
-  return invoke_subspan_view<double, float, int64_t, int32_t, bool,
+  return invoke_subspan_view<double, float, int64_t, int32_t, uint64_t, bool,
                              core::time_point, std::string, Eigen::Vector3d>(
       var.dtype(), var, dim, args...);
 }

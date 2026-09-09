@@ -15,7 +15,8 @@ def _as_numba_cfunc(function: Any, unit_func: Any = None) -> Any:
 
     dtype = 'double'
     narg = len(signature(function).parameters)
-    cfunc = numba.cfunc(dtype + '(' + ','.join([dtype] * narg) + ')')(function)
+    # Scipp attaches metadata to Numba's CFunc for the C++ transform implementation.
+    cfunc: Any = numba.cfunc(dtype + '(' + ','.join([dtype] * narg) + ')')(function)
     cfunc.unit_func = function if unit_func is None else unit_func
     cfunc.name = function.__name__
     return cfunc

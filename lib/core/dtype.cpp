@@ -10,7 +10,9 @@
 
 namespace scipp::core {
 
-bool is_int(DType tp) { return tp == dtype<int32_t> || tp == dtype<int64_t>; }
+bool is_int(DType tp) {
+  return tp == dtype<int32_t> || tp == dtype<int64_t> || tp == dtype<uint64_t>;
+}
 
 bool is_float(DType tp) { return tp == dtype<float> || tp == dtype<double>; }
 
