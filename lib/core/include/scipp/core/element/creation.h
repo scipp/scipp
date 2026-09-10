@@ -32,7 +32,8 @@ constexpr auto special_like =
 /// dtype: their range accommodates the sum, and only precision is at stake,
 /// which `sum_into` handles by accumulating float32 in double.
 constexpr auto zeros_for_sum_like = overloaded{
-    special_like, []<class T>(const T &) {
+    special_like, [](const auto &x) {
+      using T = std::decay_t<decltype(x)>;
       if constexpr (std::is_same_v<T, bool> || std::is_same_v<T, int32_t>)
         return int64_t{0};
       else
