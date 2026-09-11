@@ -26,12 +26,12 @@ jobs:
           fetch-depth: 0 # history required so cmake can determine version
 
       - name: ccache  # serves the coverage cmake build; see pr_and_main.yml
-        uses: hendrikmuhs/ccache-action@v1.2.23
+        uses: hendrikmuhs/ccache-action@v1.2.24
         with:
           key: coverage
           max-size: 1G
 
-      - uses: prefix-dev/setup-pixi@v0.10.0
+      - uses: prefix-dev/setup-pixi@v0.10.2
         with:
           pixi-version: v0.76.0
           environments: dev test
@@ -56,7 +56,7 @@ jobs:
         run: mv tools/scipp-coverage-index.html coverage_html/index.html
 
       - name: Deploy
-        uses: JamesIves/github-pages-deploy-action@v4.8.0
+        uses: JamesIves/github-pages-deploy-action@v4.9.0
         with:
           repository-name: scipp/scipp-coverage
           branch: main

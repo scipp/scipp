@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: prefix-dev/setup-pixi@v0.10.0
+      - uses: prefix-dev/setup-pixi@v0.10.2
         with:
           pixi-version: v0.76.0
           environments: lint
@@ -47,7 +47,7 @@ jobs:
         - {os: ubuntu-24.04}
         - {os: macos-15}
         - {os: windows-2022}
-        python-version: ["3.11"]
+        python-version: ["3.12"]
 
     steps:
       - uses: actions/checkout@v4
@@ -62,7 +62,7 @@ jobs:
       # CI env vars nor may write outside its build tree, so its ccache use is
       # not persisted -- making it cacheable is follow-up work (#3946).
       - name: ccache
-        uses: hendrikmuhs/ccache-action@v1.2.23
+        uses: hendrikmuhs/ccache-action@v1.2.24
         with:
           key: ${{ matrix.variant.os }}
           # The June runs showed the 500M default cache 100% full with 0% hits.
@@ -71,7 +71,7 @@ jobs:
       # `dev` (manual cmake -> cpp-test) and `test` (pixi-build-cmake -> Python
       # tests) are needed on every platform; `docs`/`type-check` only run on
       # Ubuntu, so they are installed there only.
-      - uses: prefix-dev/setup-pixi@v0.10.0
+      - uses: prefix-dev/setup-pixi@v0.10.2
         with:
           pixi-version: v0.76.0
           environments: ${{ contains(matrix.variant.os, 'ubuntu') && 'dev test import-minimal docs type-check' || 'dev test import-minimal' }}

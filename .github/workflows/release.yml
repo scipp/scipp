@@ -39,7 +39,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, macos-15-intel, macos-15, windows-2022, ubuntu-24.04-arm]
-        build: [cp311, cp312, cp313, cp314, cp314t]
+        build: [cp312, cp313, cp314, cp314t]
     uses: ./.github/workflows/wheel.yml
     with:
       os: ${{ matrix.os }}
@@ -60,7 +60,7 @@ jobs:
           path: dist
           merge-multiple: true
           pattern: 'dist*'
-      - uses: pypa/gh-action-pypi-publish@v1.14.1
+      - uses: pypa/gh-action-pypi-publish@v1.14.2
 
   docs:
     needs: upload_pypi

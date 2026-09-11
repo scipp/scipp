@@ -33,7 +33,7 @@ endif()
 find_package(GTest CONFIG REQUIRED)
 # libpython is not available on `manylinux` images, use `Development.Module`
 # instead of `Development`
-find_package(Python 3.11 REQUIRED COMPONENTS Interpreter Development.Module)
+find_package(Python 3.12 REQUIRED COMPONENTS Interpreter Development.Module)
 find_package(pybind11 CONFIG REQUIRED)
 
 # Generate files for free scipp API functions

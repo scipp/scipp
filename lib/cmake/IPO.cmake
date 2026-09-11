@@ -1,20 +1,29 @@
-include(CheckIPOSupported)
-check_ipo_supported(RESULT result OUTPUT output)
-if(result)
-  if(NOT DEFINED CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+if(NOT DEFINED CMAKE_INTERPROCEDURAL_OPTIMIZATION
+   OR CMAKE_INTERPROCEDURAL_OPTIMIZATION
+)
+  include(CheckIPOSupported)
+  # Dependencies may enable other languages; Scipp only requires C++ IPO.
+  check_ipo_supported(
+    RESULT result
+    OUTPUT output
+    LANGUAGES CXX
+  )
+  if(result)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION
         TRUE
-        CACHE BOOL "Link-time optimization: ON/OFF" FORCE
+        CACHE BOOL "Link-time optimization: ON/OFF"
     )
+  elseif(CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+    message(FATAL_ERROR "IPO was requested but is not supported: ${output}")
+  else()
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION
+        FALSE
+        CACHE BOOL "Link-time optimization: ON/OFF"
+    )
+    message(WARNING "IPO is not supported: ${output}")
   endif()
-  message(STATUS "IPO set to ${CMAKE_INTERPROCEDURAL_OPTIMIZATION}")
-else()
-  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION
-      FALSE
-      CACHE BOOL "Link-time optimization: ON/OFF" FORCE
-  )
-  message(WARNING "IPO is not supported: ${output}")
 endif()
+message(STATUS "IPO set to ${CMAKE_INTERPROCEDURAL_OPTIMIZATION}")
 
 if(MSVC)
   # CMake IPO does not include LTCG flag, causing the linker to restart
