@@ -78,7 +78,7 @@ TEST(CreationTest, special_like_double) {
   EXPECT_EQ(special_like(var, FillValue::Default),
             makeVariable<double>(var.dims(), var.unit(), Values{0, 0},
                                  Variances{0, 0}));
-  EXPECT_EQ(special_like(var, FillValue::ZeroNotBool),
+  EXPECT_EQ(special_like(var, FillValue::ZeroForSum),
             makeVariable<double>(var.dims(), var.unit(), Values{0, 0},
                                  Variances{0, 0}));
   EXPECT_EQ(special_like(var, FillValue::True),
@@ -102,7 +102,7 @@ TEST(CreationTest, special_like_int) {
       makeVariable<int64_t>(Dims{Dim::X}, Shape{2}, sc_units::m, Values{1, 2});
   EXPECT_EQ(special_like(var, FillValue::Default),
             makeVariable<int64_t>(var.dims(), var.unit(), Values{0, 0}));
-  EXPECT_EQ(special_like(var, FillValue::ZeroNotBool),
+  EXPECT_EQ(special_like(var, FillValue::ZeroForSum),
             makeVariable<int64_t>(var.dims(), var.unit(), Values{0, 0}));
   EXPECT_EQ(special_like(var, FillValue::True),
             makeVariable<bool>(var.dims(), var.unit(), Values{true, true}));
@@ -119,12 +119,31 @@ TEST(CreationTest, special_like_int) {
                                    std::numeric_limits<int64_t>::lowest()}));
 }
 
+TEST(CreationTest, special_like_int32) {
+  const auto var =
+      makeVariable<int32_t>(Dims{Dim::X}, Shape{2}, sc_units::m, Values{1, 2});
+  EXPECT_EQ(special_like(var, FillValue::Default),
+            makeVariable<int32_t>(var.dims(), var.unit(), Values{0, 0}));
+  // int32 accumulates in int64.
+  EXPECT_EQ(special_like(var, FillValue::ZeroForSum),
+            makeVariable<int64_t>(var.dims(), var.unit(), Values{0, 0}));
+  EXPECT_EQ(special_like(var, FillValue::Max),
+            makeVariable<int32_t>(var.dims(), var.unit(),
+                                  Values{std::numeric_limits<int32_t>::max(),
+                                         std::numeric_limits<int32_t>::max()}));
+  EXPECT_EQ(
+      special_like(var, FillValue::Lowest),
+      makeVariable<int32_t>(var.dims(), var.unit(),
+                            Values{std::numeric_limits<int32_t>::lowest(),
+                                   std::numeric_limits<int32_t>::lowest()}));
+}
+
 TEST(CreationTest, special_like_bool) {
   const auto var = makeVariable<bool>(Dims{Dim::X}, Shape{2}, sc_units::m,
                                       Values{true, false});
   EXPECT_EQ(special_like(var, FillValue::Default),
             makeVariable<bool>(var.dims(), var.unit(), Values{false, false}));
-  EXPECT_EQ(special_like(var, FillValue::ZeroNotBool),
+  EXPECT_EQ(special_like(var, FillValue::ZeroForSum),
             makeVariable<int64_t>(var.dims(), var.unit(), Values{0, 0}));
   EXPECT_EQ(special_like(var, FillValue::Max),
             makeVariable<bool>(var.dims(), var.unit(),
@@ -142,7 +161,7 @@ TEST(CreationTest, special_like_time_point) {
       makeVariable<time_point>(sc_units::ns, Values{time_point(1)});
   EXPECT_EQ(special_like(var, FillValue::Default),
             makeVariable<time_point>(sc_units::ns, Values{time_point(0)}));
-  EXPECT_EQ(special_like(var, FillValue::ZeroNotBool),
+  EXPECT_EQ(special_like(var, FillValue::ZeroForSum),
             makeVariable<time_point>(sc_units::ns, Values{time_point(0)}));
   EXPECT_EQ(special_like(var, FillValue::True),
             makeVariable<bool>(sc_units::ns, Values{true}));

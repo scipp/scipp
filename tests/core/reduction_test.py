@@ -34,6 +34,29 @@ def test_sum(container: Callable[[object], Any]) -> None:
     assert sc.identical(x.sum(), container(sc.scalar(21, unit='m', dtype='int64')))
 
 
+def test_sum_promotes_bool_and_int32_to_int64(
+    container: Callable[[object], Any],
+) -> None:
+    x = container(sc.array(dims=['xx'], values=[1, 2, 3], unit='m', dtype='int32'))
+    assert sc.identical(sc.sum(x), container(sc.scalar(6, unit='m', dtype='int64')))
+    # A bool array has unit None, which the sum preserves.
+    b = container(sc.array(dims=['xx'], values=[True, False, True]))
+    assert sc.identical(sc.sum(b), container(sc.scalar(2, dtype='int64', unit=None)))
+
+
+@pytest.mark.parametrize('dtype', ['int64', 'float32', 'float64'])
+def test_sum_preserves_int64_and_float_dtypes(dtype: str) -> None:
+    x = sc.array(dims=['xx'], values=[1, 2, 3], unit='m', dtype=dtype)
+    assert sc.sum(x).dtype == dtype
+
+
+def test_sum_of_int32_does_not_overflow() -> None:
+    # Each value fits in int32, their sum does not.
+    big = 2**31 - 1
+    x = sc.array(dims=['xx'], values=[big, big, big], dtype='int32')
+    assert sc.sum(x).value == 3 * big
+
+
 def test_sum_single_dim(container: Callable[[object], Any]) -> None:
     var = container(
         sc.array(dims=['xx', 'yy'], values=[[1, 2, 3], [4, 5, 6]], unit='m')

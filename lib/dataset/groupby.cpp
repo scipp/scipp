@@ -73,7 +73,7 @@ void reduce_(Op op, const Dim reductionDim, const Variable &out_data,
              const DataArray &data, const Dim dim, const Groups &groups,
              const FillValue fill) {
   const auto mask_replacement =
-      special_like(Variable(data.data(), Dimensions{}), fill);
+      special_like(Variable(data.data(), Dimensions{}), mask_fill_value(fill));
   auto mask = irreducible_mask(data.masks(), reductionDim);
   const auto process = [&](const auto &range) {
     // Apply to each group, storing result in output slice
@@ -127,12 +127,12 @@ template <class T> T GroupBy<T>::concat(const Dim reductionDim) const {
 
 /// Reduce each group using `sum` and return combined data.
 template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {
-  return reduce(variable::sum_into, reductionDim, FillValue::ZeroNotBool);
+  return reduce(variable::sum_into, reductionDim, FillValue::ZeroForSum);
 }
 
 /// Reduce each group using `nansum` and return combined data.
 template <class T> T GroupBy<T>::nansum(const Dim reductionDim) const {
-  return reduce(variable::nansum_into, reductionDim, FillValue::ZeroNotBool);
+  return reduce(variable::nansum_into, reductionDim, FillValue::ZeroForSum);
 }
 
 /// Reduce each group using `all` and return combined data.

@@ -104,7 +104,7 @@ TEST_F(VariableTrigonometryTest, sin_deg_variances) {
 
 TEST_F(VariableTrigonometryTest, sin_out_arg_rad) {
   const auto in = copy(input_in_rad());
-  auto out = special_like(in, FillValue::ZeroNotBool);
+  auto out = special_like(in, FillValue::ZeroForSum);
   auto &view = sin(in, out);
 
   EXPECT_EQ(out, expected_for_op(std::sin));
@@ -114,7 +114,7 @@ TEST_F(VariableTrigonometryTest, sin_out_arg_rad) {
 
 TEST_F(VariableTrigonometryTest, sin_out_arg_deg) {
   const auto in = copy(input_in_deg());
-  auto out = special_like(in, FillValue::ZeroNotBool);
+  auto out = special_like(in, FillValue::ZeroForSum);
   auto &view = sin(in, out);
 
   EXPECT_EQ(out, expected_for_op(std::sin));
@@ -165,7 +165,7 @@ TEST_F(VariableTrigonometryTest, cos_deg_variances) {
 
 TEST_F(VariableTrigonometryTest, cos_out_arg_rad) {
   const auto in = copy(input_in_rad());
-  auto out = special_like(in, FillValue::ZeroNotBool);
+  auto out = special_like(in, FillValue::ZeroForSum);
   auto &view = cos(in, out);
 
   EXPECT_EQ(out, expected_for_op(std::cos));
@@ -175,7 +175,7 @@ TEST_F(VariableTrigonometryTest, cos_out_arg_rad) {
 
 TEST_F(VariableTrigonometryTest, cos_out_arg_deg) {
   const auto in = copy(input_in_deg());
-  auto out = special_like(in, FillValue::ZeroNotBool);
+  auto out = special_like(in, FillValue::ZeroForSum);
   auto &view = cos(in, out);
 
   EXPECT_EQ(out, expected_for_op(std::cos));
@@ -227,7 +227,7 @@ TEST_F(VariableTrigonometryTest, tan_deg_variances) {
 
 TEST_F(VariableTrigonometryTest, tan_out_arg_rad) {
   const auto in = copy(input_in_rad());
-  auto out = special_like(in, FillValue::ZeroNotBool);
+  auto out = special_like(in, FillValue::ZeroForSum);
   auto &view = tan(in, out);
 
   EXPECT_EQ(out, expected_for_op(std::tan));
@@ -237,7 +237,7 @@ TEST_F(VariableTrigonometryTest, tan_out_arg_rad) {
 
 TEST_F(VariableTrigonometryTest, tan_out_arg_deg) {
   const auto in = copy(input_in_deg());
-  auto out = special_like(in, FillValue::ZeroNotBool);
+  auto out = special_like(in, FillValue::ZeroForSum);
   auto &view = tan(in, out);
 
   EXPECT_EQ(out, expected_for_op(std::tan));

@@ -327,7 +327,9 @@ TEST(GroupbyMaskedDataArrayTest, sum) {
 
   const Dim dim("labels");
   DataArray expected{
-      makeVariable<int>(Dimensions{{Dim::Y, 2}, {dim, 2}}, Values{1, 3, 4, 6}),
+      // int32 accumulates in int64, so the result is int64.
+      makeVariable<int64_t>(Dimensions{{Dim::Y, 2}, {dim, 2}},
+                            Values{1, 3, 4, 6}),
       {{Dim::Y, makeVariable<int>(Dimensions{Dim::Y, 2}, Values{1, 2})},
        {dim, makeVariable<double>(Dimensions{dim, 2}, Values{1, 3})}}};
 
@@ -761,4 +763,28 @@ TEST_F(GroupbyWithBinsTest, groupby_reference_prereserved) {
   auto grouped = groupby(d, Dim("labels2"), bins);
   EXPECT_EQ(&grouped.sum(Dim::X).coords()[Dim::Z].values<double>()[0],
             &bins.values<double>()[0]);
+}
+
+TEST(GroupbySumPromotionTest, masked_int32) {
+  DataArray da(makeVariable<int32_t>(Dims{Dim::X}, Shape{4}, sc_units::m,
+                                     Values{1, 2, 3, 4}));
+  da.coords().set(Dim("g"), makeVariable<int64_t>(Dims{Dim::X}, Shape{4},
+                                                  Values{0, 0, 1, 1}));
+  da.masks().set("m", makeVariable<bool>(Dims{Dim::X}, Shape{4},
+                                         Values{false, true, false, false}));
+  const auto result = groupby(da, Dim("g")).sum(Dim::X);
+  EXPECT_EQ(result.data(), makeVariable<int64_t>(Dims{Dim("g")}, Shape{2},
+                                                 sc_units::m, Values{1, 7}));
+}
+
+TEST(GroupbySumPromotionTest, masked_bool) {
+  DataArray da(makeVariable<bool>(Dims{Dim::X}, Shape{4},
+                                  Values{true, true, true, false}));
+  da.coords().set(Dim("g"), makeVariable<int64_t>(Dims{Dim::X}, Shape{4},
+                                                  Values{0, 0, 1, 1}));
+  da.masks().set("m", makeVariable<bool>(Dims{Dim::X}, Shape{4},
+                                         Values{false, true, false, false}));
+  const auto result = groupby(da, Dim("g")).sum(Dim::X);
+  EXPECT_EQ(result.data(), makeVariable<int64_t>(Dims{Dim("g")}, Shape{2},
+                                                 sc_units::none, Values{1, 1}));
 }
