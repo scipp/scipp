@@ -92,6 +92,9 @@ public:
   const VariableConceptHandle &bin_indices() const override {
     throw except::TypeError("This data type does not have bin indices.");
   }
+  Sizes bin_dims() const override {
+    throw except::TypeError("This data type does not have bin dim.");
+  }
 
   std::span<const T> values() const {
     return {get_values(), static_cast<size_t>(size())};

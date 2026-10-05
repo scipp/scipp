@@ -5,6 +5,7 @@
 #include "scipp/core/eigen.h"
 #include "scipp/core/element/arg_list.h"
 
+#include "scipp/variable/bin_array_model.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/reduction.h"
@@ -30,11 +31,33 @@ void copy_data(const Variable &src, Variable &dst) {
       dst, src, [](auto &a, const auto &b) { a = b; }, "copy");
 }
 
+namespace {
+index dim_volume_without_given(const Sizes &dims, const Dim &exclude) {
+  index volume = 1;
+  const auto labels = dims.labels();
+  const auto sizes = dims.sizes();
+  auto size = sizes.begin();
+  for (auto dim = labels.begin(); dim != labels.end(); ++dim, ++size) {
+    if (*dim != exclude) {
+      volume *= *size;
+    }
+  }
+  return volume;
+}
+} // namespace
+
 /// Computes the size of each bin, i.e. the number of elements inside each bin.
 Variable bin_sizes(const Variable &var) {
   if (is_bins(var)) {
+    const auto &model =
+        dynamic_cast<const BinModelBase<VariableConceptHandle> &>(var.data());
+    const auto volume_var = makeVariable<index>(
+        Dims{},
+        Values{dim_volume_without_given(var.bin_dims(), model.bin_dim())},
+        sc_units::none);
+    ;
     const auto [begin, end] = unzip(var.bin_indices());
-    return end - begin;
+    return (end - begin) * volume_var;
   }
   return makeVariable<scipp::index>(var.dims(), sc_units::none);
 }

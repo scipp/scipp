@@ -8,6 +8,7 @@ import pytest
 from numpy.random import default_rng
 
 import scipp as sc
+import scipp.testing
 
 
 def get_coords(x):
@@ -435,6 +436,38 @@ def test_bins_mean_using_bins() -> None:
     assert sc.identical(
         means,
         sc.array(dims=["x"], values=[0.5, 3], unit=sc.units.ns, dtype=sc.DType.float64),
+    )
+
+
+def test_bins_multi_dim_events() -> None:
+    buffer = sc.arange('event', 10, dtype=sc.DType.float64, unit=sc.units.kg).fold(
+        'event', sizes={'e1': 5, 'e2': 2}
+    )
+
+    begin = sc.array(dims=['x'], values=[0, 2], dtype=sc.DType.int64, unit=None)
+    end = sc.array(dims=['x'], values=[2, 5], dtype=sc.DType.int64, unit=None)
+    binned = sc.bins(data=buffer, dim='e1', begin=begin, end=end)
+    sc.testing.assert_identical(
+        binned.bins.mean(),
+        sc.array(
+            dims=['x'],
+            values=[(0 + 1 + 2 + 3) / 4, (4 + 5 + 6 + 7 + 8 + 9) / 6],
+            dtype=sc.DType.float64,
+            unit=sc.units.kg,
+        ),
+    )
+
+    begin = sc.array(dims=['x'], values=[0, 1], dtype=sc.DType.int64, unit=None)
+    end = sc.array(dims=['x'], values=[1, 2], dtype=sc.DType.int64, unit=None)
+    binned = sc.bins(data=buffer, dim='e2', begin=begin, end=end)
+    sc.testing.assert_identical(
+        binned.bins.mean(),
+        sc.array(
+            dims=['x'],
+            values=[(0 + 2 + 4 + 6 + 8) / 5, (1 + 3 + 5 + 7 + 9) / 5],
+            dtype=sc.DType.float64,
+            unit=sc.units.kg,
+        ),
     )
 
 

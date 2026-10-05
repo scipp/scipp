@@ -52,14 +52,6 @@ public:
     return sizes();
   }
 
-  /// Return the volume of the space defined by *this.
-  [[nodiscard]] scipp::index volume() const noexcept {
-    scipp::index volume{1};
-    for (const auto &length : shape())
-      volume *= length;
-    return volume;
-  }
-
   /// Return number of dims
   [[nodiscard]] scipp::index ndim() const noexcept { return Sizes::size(); }
 
