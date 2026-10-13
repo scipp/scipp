@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
+#include <limits>
 #include <vector>
 
 #include <units/units.hpp>
 
 #include "test_macros.h"
 
+#include "scipp/core/eigen.h"
 #include "scipp/core/except.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/operations.h"
@@ -227,4 +229,16 @@ TEST_F(Variable_comparison_operators, aligned) {
   EXPECT_TRUE(var.is_aligned());
   EXPECT_FALSE(unaligned.is_aligned());
   expect_eq(var, unaligned);
+}
+
+TEST_F(Variable_comparison_operators, same_view_with_nan) {
+  // NaN compares unequal, so a view containing NaN is unequal to itself.
+  constexpr double nan = std::numeric_limits<double>::quiet_NaN();
+  for (const auto &var :
+       {makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, nan}),
+        makeVariable<Eigen::Vector3d>(
+            Values{Eigen::Vector3d(1.0, nan, 0.0)})}) {
+    EXPECT_FALSE(var == var);
+    EXPECT_TRUE(equals_nan(var, var));
+  }
 }

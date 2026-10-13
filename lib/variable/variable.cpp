@@ -125,11 +125,21 @@ Dim Variable::dim() const {
 }
 
 namespace {
+/// True for dtypes whose elements cannot be NaN. Any other dtype may contain
+/// NaN, including those with floating-point elements such as vector3 or binned
+/// data.
+bool never_nan(const DType type) {
+  return core::is_int(type) || type == dtype<bool> ||
+         type == dtype<core::time_point> || type == dtype<std::string>;
+}
+
 bool compare(const Variable &a, const Variable &b, bool equal_nan) {
-  if (equal_nan && a.is_same(b))
-    return true;
   if (!a.is_valid() || !b.is_valid())
     return a.is_valid() == b.is_valid();
+  // A view of a buffer is equal to itself, unless it contains NaN and NaN
+  // compares unequal.
+  if (a.is_same(b) && (equal_nan || never_nan(a.dtype())))
+    return true;
   // Note: Not comparing strides
   if (a.unit() != b.unit())
     return false;
