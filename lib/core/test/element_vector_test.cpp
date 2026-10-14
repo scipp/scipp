@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026 Scipp contributors (https://github.com/scipp)
+#include <numbers>
+
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "scipp/core/element/vector.h"
@@ -54,4 +57,48 @@ TEST(ElementCrossTest, value) {
   const Eigen::Vector3d v2(1, 1, -1);
   EXPECT_EQ(element::dot(v1, v1), 25);
   EXPECT_EQ(element::dot(v2, v2), 3);
+  EXPECT_EQ(element::dot(v1, v2), 7);
+}
+
+TEST(ElementAngleBetweenTest, unit) {
+  const sc_units::Unit s(sc_units::s);
+  const sc_units::Unit m2(sc_units::m * sc_units::m);
+  const sc_units::Unit dimless(sc_units::dimensionless);
+  const sc_units::Unit rad(sc_units::rad);
+  EXPECT_EQ(element::angle_between(s, s), rad);
+  EXPECT_EQ(element::angle_between(s, m2), rad);
+  EXPECT_EQ(element::angle_between(dimless, dimless), rad);
+}
+
+TEST(ElementAngleBetweenTest, value_expected) {
+  using std::numbers::pi;
+
+  const Eigen::Vector3d v1(1.5, 0, 0);
+  const Eigen::Vector3d v2(1.3, 1.3, 0);
+  const Eigen::Vector3d v3(0.0, -7.5, 0);
+  const Eigen::Vector3d v4(-1.3, 1.3, 0);
+
+  EXPECT_EQ(element::angle_between(v1, v1), 0);
+  EXPECT_EQ(element::angle_between(v2, v2), 0);
+
+  EXPECT_EQ(element::angle_between(v1, -v1), pi);
+  EXPECT_EQ(element::angle_between(-v2, v2), pi);
+
+  EXPECT_EQ(element::angle_between(v1, v2), pi / 4);
+  EXPECT_EQ(element::angle_between(v2, v1), pi / 4);
+
+  EXPECT_EQ(element::angle_between(v1, v3), pi / 2);
+  EXPECT_EQ(element::angle_between(v3, v1), pi / 2);
+
+  EXPECT_EQ(element::angle_between(v1, v4), 3 * pi / 4);
+  EXPECT_EQ(element::angle_between(v4, v1), 3 * pi / 4);
+}
+
+TEST(ElementAngleBetweenTest, value_property) {
+  const Eigen::Vector3d v1(-0.3, 4.2, 2.9);
+  const Eigen::Vector3d v2(1.3, 0, -0.7);
+  const auto computed =
+      v1.norm() * v2.norm() * cos(element::angle_between(v1, v2));
+  const auto expected = v1.dot(v2);
+  EXPECT_THAT(computed, ::testing::NanSensitiveDoubleNear(expected, 1e-5f));
 }

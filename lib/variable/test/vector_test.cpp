@@ -2,6 +2,8 @@
 // Copyright (c) 2026 Scipp contributors (https://github.com/scipp)
 #include <scipp/variable/vector.h>
 
+#include <numbers>
+
 #include <gtest/gtest.h>
 
 #include "test_macros.h"
@@ -59,4 +61,20 @@ TEST(Variable, cross_of_vector) {
   auto var2 = makeVariable<Eigen::Vector3d>(
       Dims{Dim::X}, Shape{3}, sc_units::Unit(sc_units::m), Values{v2, v1, v2});
   EXPECT_EQ(cross(var1, var2), reference);
+}
+
+TEST(Variable, angle_between_vectors) {
+  const Eigen::Vector3d v1(4.7, 0, 0);
+  const Eigen::Vector3d v2(2.4, -2.4, 0);
+
+  using std::numbers::pi;
+  const auto reference = makeVariable<double>(Dims{Dim::X}, Shape{2},
+                                              sc_units::Unit(sc_units::rad),
+                                              Values{pi / 4, 3 * pi / 4});
+  const auto var1 = makeVariable<Eigen::Vector3d>(
+      Dims{Dim::X}, Shape{2}, sc_units::Unit(sc_units::m), Values{v1, v1});
+  const auto var2 = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{2},
+                                                  sc_units::Unit(sc_units::s),
+                                                  Values{v2, (-v2).eval()});
+  EXPECT_EQ(angle_between(var1, var2), reference);
 }

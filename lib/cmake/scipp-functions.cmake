@@ -28,9 +28,10 @@ scipp_unary(math inv SKIP_VARIABLE)
 scipp_binary(math pow SKIP_VARIABLE OUT)
 setup_scipp_category(math)
 
-scipp_unary(vector norm)
-scipp_binary(vector dot)
+scipp_binary(vector angle_between)
 scipp_binary(vector cross)
+scipp_binary(vector dot)
+scipp_unary(vector norm)
 setup_scipp_category(vector)
 
 scipp_unary(util values)

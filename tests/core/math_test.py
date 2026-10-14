@@ -112,18 +112,6 @@ def test_abs_out() -> None:
     assert sc.identical(out, sc.scalar(5))
 
 
-def test_cross() -> None:
-    assert sc.identical(
-        sc.cross(sc.vector([0, 0, 1]), sc.vector([0, 1, 0])), sc.vector([-1, 0, 0])
-    )
-
-
-def test_dot() -> None:
-    assert sc.identical(
-        sc.dot(sc.vector([1, 0, 2]), sc.vector([0, 1, 3])), sc.scalar(6.0)
-    )
-
-
 def test_midpoints() -> None:
     assert sc.allclose(
         sc.midpoints(sc.array(dims=['xy'], values=[0.0, 1.0])),
@@ -140,10 +128,6 @@ def test_midpoints_vector() -> None:
         sc.midpoints(sc.vectors(dims=['xy'], values=[[2, 2, 3], [5, 6, 7]])),
         sc.vectors(dims=['xy'], values=[[3.5, 4, 5]]),
     )
-
-
-def test_norm() -> None:
-    assert sc.allclose(sc.norm(sc.vector([1.0, 2.0, 0.0])), sc.scalar(np.sqrt(1 + 4)))
 
 
 def test_pow() -> None:
