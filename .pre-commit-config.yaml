@@ -1,3 +1,8 @@
+default_language_version:
+  # cmake-format does not support Python 3.15 yet.
+  # So pin to the version used for development.
+  python: python3.12
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
