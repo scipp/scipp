@@ -38,6 +38,7 @@ set(INC_FILES
     include/scipp/core/element/special_values.h
     include/scipp/core/element/trigonometry.h
     include/scipp/core/element/util.h
+    include/scipp/core/element/vector.h
 )
 
 set(SRC_FILES
