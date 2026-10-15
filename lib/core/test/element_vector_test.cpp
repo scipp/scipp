@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/element/vector.h"
+#include "scipp/units/except.h"
 #include "scipp/units/unit.h"
 #include "test_macros.h"
 
@@ -62,12 +63,26 @@ TEST(ElementCrossTest, value) {
 
 TEST(ElementAngleBetweenTest, unit) {
   const sc_units::Unit s(sc_units::s);
-  const sc_units::Unit m2(sc_units::m * sc_units::m);
+  const sc_units::Unit us(sc_units::us);
+  const sc_units::Unit s2(sc_units::s * sc_units::s);
+  const sc_units::Unit m(sc_units::m);
   const sc_units::Unit dimless(sc_units::dimensionless);
+  const sc_units::Unit none(sc_units::none);
   const sc_units::Unit rad(sc_units::rad);
   EXPECT_EQ(element::angle_between(s, s), rad);
-  EXPECT_EQ(element::angle_between(s, m2), rad);
+  EXPECT_EQ(element::angle_between(s2, s2), rad);
+  EXPECT_EQ(element::angle_between(us, s), rad);
+  EXPECT_EQ(element::angle_between(s, us), rad);
   EXPECT_EQ(element::angle_between(dimless, dimless), rad);
+  EXPECT_EQ(element::angle_between(none, none), rad);
+
+  EXPECT_THROW_DISCARD(element::angle_between(s, s2), except::UnitError);
+  EXPECT_THROW_DISCARD(element::angle_between(s2, s), except::UnitError);
+  EXPECT_THROW_DISCARD(element::angle_between(m, s), except::UnitError);
+  EXPECT_THROW_DISCARD(element::angle_between(m, s2), except::UnitError);
+  EXPECT_THROW_DISCARD(element::angle_between(dimless, s2), except::UnitError);
+  EXPECT_THROW_DISCARD(element::angle_between(none, m), except::UnitError);
+  EXPECT_THROW_DISCARD(element::angle_between(m, none), except::UnitError);
 }
 
 TEST(ElementAngleBetweenTest, value_expected) {

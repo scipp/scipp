@@ -6,6 +6,7 @@
 #include "scipp/core/eigen.h" // not used directly but needed downstream for DType<Eigen::Vector3d>
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/transform_common.h"
+#include "scipp/units/except.h"
 #include <Eigen/Geometry>
 
 namespace scipp::core::element {
@@ -39,10 +40,8 @@ constexpr auto angle_between =
                  const auto y = (a_normed - b_normed).norm();
                  return 2 * atan2(y, x);
                },
-               [](const sc_units::Unit &, const sc_units::Unit &) {
-                 // It does not make much sense to compute the angle between
-                 // vectors with different units. But since all vectors are
-                 // normalized, units do not impact the algorithm.
+               [](const sc_units::Unit &a, const sc_units::Unit &b) {
+                 except::expect_same_dimension(a, b, "angle_between");
                  return sc_units::rad;
                }};
 } // namespace scipp::core::element

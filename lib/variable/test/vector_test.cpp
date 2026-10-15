@@ -74,7 +74,7 @@ TEST(Variable, angle_between_vectors) {
   const auto var1 = makeVariable<Eigen::Vector3d>(
       Dims{Dim::X}, Shape{2}, sc_units::Unit(sc_units::m), Values{v1, v1});
   const auto var2 = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{2},
-                                                  sc_units::Unit(sc_units::s),
+                                                  sc_units::Unit(sc_units::m),
                                                   Values{v2, (-v2).eval()});
   EXPECT_EQ(angle_between(var1, var2), reference);
 }
