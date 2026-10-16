@@ -21,4 +21,8 @@ throw_mismatch_error(const sc_units::Unit &expected,
                      const sc_units::Unit &actual,
                      const std::string &optional_message);
 
+SCIPP_UNITS_EXPORT void expect_same_dimension(const sc_units::Unit &a,
+                                              const sc_units::Unit &b,
+                                              const char *op);
+
 } // namespace scipp::except

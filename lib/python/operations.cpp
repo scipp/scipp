@@ -14,6 +14,7 @@
 #include "scipp/variable/slice.h"
 #include "scipp/variable/sort.h"
 #include "scipp/variable/util.h"
+#include "scipp/variable/vector.h"
 
 using namespace scipp;
 using namespace scipp::variable;

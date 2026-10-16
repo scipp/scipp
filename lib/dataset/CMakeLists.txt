@@ -29,6 +29,7 @@ set(INC_FILES
     include/scipp/dataset/string.h
     include/scipp/dataset/to_unit.h
     include/scipp/dataset/util.h
+    include/scipp/dataset/vector.h
 )
 
 set(SRC_FILES

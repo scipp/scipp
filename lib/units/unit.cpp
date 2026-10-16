@@ -66,7 +66,8 @@ bool Unit::isCountDensity() const {
 }
 
 bool Unit::has_same_base(const Unit &other) const {
-  return has_value() && m_unit->has_same_base(other.underlying());
+  return has_value() && other.has_value() &&
+         m_unit->has_same_base(other.underlying());
 }
 
 bool Unit::operator==(const Unit &other) const {

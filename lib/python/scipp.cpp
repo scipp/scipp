@@ -36,6 +36,7 @@ void init_generated_reduction(py::module &);
 void init_generated_trigonometry(py::module &);
 void init_generated_util(py::module &);
 void init_generated_special_values(py::module &);
+void init_generated_vector(py::module &);
 
 void init_core(py::module &m) {
   auto core = m.def_submodule("core");
@@ -72,6 +73,7 @@ void init_core(py::module &m) {
   init_generated_trigonometry(core);
   init_generated_util(core);
   init_generated_special_values(core);
+  init_generated_vector(core);
 }
 
 PYBIND11_MODULE(_scipp, m, py::mod_gil_not_used()) {

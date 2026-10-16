@@ -12,3 +12,4 @@
 #include "scipp/variable/shape.h"
 #include "scipp/variable/special_values.h"
 #include "scipp/variable/trigonometry.h"
+#include "scipp/variable/vector.h"

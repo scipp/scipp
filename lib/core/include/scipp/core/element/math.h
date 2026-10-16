@@ -21,10 +21,6 @@ constexpr auto abs =
                  return abs(x);
                }};
 
-constexpr auto norm = overloaded{arg_list<Eigen::Vector3d>,
-                                 [](const auto &x) { return x.norm(); },
-                                 [](const sc_units::Unit &x) { return x; }};
-
 constexpr auto pow = overloaded{
     arg_list<std::tuple<double, double>, std::tuple<double, float>,
              std::tuple<double, int32_t>, std::tuple<double, int64_t>,
@@ -58,16 +54,6 @@ constexpr auto sqrt = overloaded{arg_list<double, float>, [](const auto x) {
                                    using std::sqrt;
                                    return sqrt(x);
                                  }};
-
-constexpr auto dot = overloaded{
-    arg_list<Eigen::Vector3d>,
-    [](const auto &a, const auto &b) { return a.dot(b); },
-    [](const sc_units::Unit &a, const sc_units::Unit &b) { return a * b; }};
-
-constexpr auto cross = overloaded{
-    arg_list<Eigen::Vector3d>,
-    [](const auto &a, const auto &b) { return a.cross(b); },
-    [](const sc_units::Unit &a, const sc_units::Unit &b) { return a * b; }};
 
 constexpr auto reciprocal = overloaded{
     arg_list<double, float>,

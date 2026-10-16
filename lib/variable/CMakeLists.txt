@@ -34,6 +34,7 @@ set(INC_FILES
     include/scipp/variable/variable.h
     include/scipp/variable/variable_keyword_arg_constructor.h
     include/scipp/variable/variable.tcc
+    include/scipp/variable/vector.h
     include/scipp/variable/visit.h
 )
 
