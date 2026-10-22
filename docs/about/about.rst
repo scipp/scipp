@@ -55,4 +55,4 @@ Scipp is available as open source under the `BSD-3 license <https://opensource.o
 Source code and development
 ---------------------------
 
-Scipp is hosted and developed `on GitHub <https://github.com/scipp/scipp/projects>`_.
+Scipp is hosted and developed `on GitHub <https://github.com/scipp/scipp>`_.
