@@ -33,7 +33,7 @@ jobs:
 
       - uses: prefix-dev/setup-pixi@v0.11.2
         with:
-          pixi-version: v0.76.0
+          pixi-version: v0.82.1
           environments: dev test
           frozen: true
           cache: true
