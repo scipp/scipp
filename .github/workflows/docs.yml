@@ -36,7 +36,7 @@ jobs:
           fetch-depth: 0  # history required so cmake can determine version
       - uses: prefix-dev/setup-pixi@v0.11.2
         with:
-          pixi-version: v0.76.0
+          pixi-version: v0.82.1
           environments: docs
           frozen: true
           cache: true
