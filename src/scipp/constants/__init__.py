@@ -49,12 +49,12 @@ Physical constants:
 ===========================  =============================================
 
 In addition to the above variables, :mod:`scipp.constants` also contains the
-2018 CODATA recommended values [CODATA2018]_ database containing more physical
+2022 CODATA recommended values [CODATA2022]_ database containing more physical
 constants.
 The database is accessed using :py:func:`scipp.constants.physical_constants`.
 
-.. [CODATA2018] CODATA Recommended Values of the Fundamental
-   Physical Constants 2018.
+.. [CODATA2022] CODATA Recommended Values of the Fundamental
+   Physical Constants 2022.
    https://physics.nist.gov/cuu/Constants/
 """
 

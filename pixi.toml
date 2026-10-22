@@ -206,7 +206,7 @@ beautifulsoup4 = "*"
 # nightly wheels with `python -m pip install --pre ...`.
 pip = "*"
 # Scientific deps exercised by tests
-scipy = ">=1.7.0"
+scipy = ">=1.15.0"
 h5py = "*"
 numba = "*"
 pooch = "*"

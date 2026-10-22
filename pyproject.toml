@@ -52,7 +52,7 @@ test = [
 ]
 extra = [
   "h5py",
-  "scipy>=1.7.0",
+  "scipy>=1.15.0",
   "graphviz",
   "pooch",
   "plopp",
