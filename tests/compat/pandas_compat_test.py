@@ -55,7 +55,7 @@ def test_series() -> None:
 
 def test_series_with_named_axis() -> None:
     pd_df = pandas.Series(data=[1, 2, 3])
-    pd_df.rename_axis("row-name", inplace=True)
+    pd_df = pd_df.rename_axis("row-name")
 
     sc_ds = from_pandas(pd_df)
 
@@ -66,7 +66,7 @@ def test_series_with_named_axis() -> None:
 
 def test_series_with_named_axis_non_str() -> None:
     pd_df = pandas.Series(data=[1, 2, 3])
-    pd_df.rename_axis(987, inplace=True)
+    pd_df = pd_df.rename_axis(987)
 
     sc_ds = from_pandas(pd_df)
 
@@ -101,7 +101,7 @@ def test_series_with_named_series_no_str() -> None:
 
 def test_series_with_named_series_and_named_axis() -> None:
     pd_df = pandas.Series(data=[1, 2, 3])
-    pd_df.rename_axis("axis-name", inplace=True)
+    pd_df = pd_df.rename_axis("axis-name")
     pd_df.name = "series-name"
 
     sc_ds = from_pandas(pd_df)
@@ -158,7 +158,7 @@ def test_1d_dataframe() -> None:
 
 def test_1d_dataframe_with_named_axis() -> None:
     pd_df = pandas.DataFrame(data={"my-column": [1, 2, 3]})
-    pd_df.rename_axis("1d_df", inplace=True)
+    pd_df = pd_df.rename_axis("1d_df")
 
     sc_ds = from_pandas(pd_df)
 
@@ -202,7 +202,7 @@ def test_2d_dataframe() -> None:
 
 def test_2d_dataframe_with_named_axes() -> None:
     pd_df = pandas.DataFrame(data={"col1": (2, 3), "col2": (5, 6)})
-    pd_df.rename_axis("my-name-for-rows", inplace=True)
+    pd_df = pd_df.rename_axis("my-name-for-rows")
 
     sc_ds = from_pandas(pd_df)
 
