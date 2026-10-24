@@ -48,7 +48,10 @@ requirements:
     - tbb-devel
     - libboost-headers 1.90.0.*
     - eigen
-    - pybind11
+    # Same pin as the feedstock recipe, pixi.toml and pyproject.toml; conda-forge's
+    # global pinning does not constrain pybind11. pybind11 3.1 lets python ints
+    # reach float64 operator overloads (see pyproject.toml).
+    - pybind11 3.0.*
     - benchmark
     - gmock
     - gtest
@@ -83,6 +86,7 @@ tests:
         - pytest
         - python-graphviz
         - scipy >=1.7.0
+        - xarray
         - tbb-devel
         - libboost-headers 1.90.0.*
         - eigen
