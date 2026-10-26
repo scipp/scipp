@@ -48,13 +48,19 @@ Physical constants:
 ``neutron_mass``             neutron mass
 ===========================  =============================================
 
-In addition to the above variables, :mod:`scipp.constants` also contains the
-2018 CODATA recommended values [CODATA2018]_ database containing more physical
-constants.
-The database is accessed using :py:func:`scipp.constants.physical_constants`.
+In addition to the above variables, :py:func:`scipp.constants.physical_constants` can be
+used to access any other constants that are available in
+:py:attr:`scipy.constants.physical_constants`.
 
-.. [CODATA2018] CODATA Recommended Values of the Fundamental
-   Physical Constants 2018.
+Values
+------
+
+Physical constants are taken from a CODATA database.
+Which version of the database that is depends on the installed SciPy version.
+As of SciPy 1.15, this is [CODATA2022]_.
+
+.. [CODATA2022] CODATA Recommended Values of the Fundamental
+   Physical Constants 2022.
    https://physics.nist.gov/cuu/Constants/
 """
 
