@@ -89,6 +89,16 @@
       "generator": "Visual Studio 17 2022"
     },
     {
+      "name": "package-win-arm64",
+      "inherits": "package",
+      "description": "Windows options for package build for arm64",
+      "generator": "Visual Studio 17 2022",
+      "architecture": {
+        "value": "ARM64",
+        "strategy": "set"
+      }
+    },
+    {
       "name": "debug",
       "description": "Options for debug build",
       "binaryDir": "${sourceDir}/build",
