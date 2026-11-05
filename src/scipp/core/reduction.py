@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, NoReturn, cast
+from typing import Any, Literal, NoReturn, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -24,6 +24,8 @@ from .cpp_classes import (
     VariancesError,
 )
 from .data_group import DataGroup, data_group_nary
+from .math import reciprocal
+from .operations import values, variances
 from .variable import array
 
 
@@ -151,6 +153,155 @@ def nanmean(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
     <scipp.Variable> ()    float64  [dimensionless]  ...nan
     """
     return _apply_op(x, dim, _cpp.nanmean)  # type: ignore[return-value]
+
+
+def _weighted_mean(
+    x: VariableLikeType, dim: Dims, weights: VariableLikeType
+) -> VariableLikeType:
+    """Weighted mean ``sum(w * x) / sum(w)`` along ``dim``.
+
+    Masks on ``x`` (and on ``weights``, if any) are respected by the reductions.
+    When ``x`` has variances and ``weights`` does not, the variances of the
+    result are the propagated ("internal") variances of the weighted mean.
+    """
+    dims = dim if dim is None or isinstance(dim, str) else tuple(dim)
+    return (weights * x).sum(dims) / weights.sum(dims)
+
+
+def inverse_variance_mean(
+    x: VariableLikeType,
+    dim: Dims = None,
+    *,
+    method: Literal['internal', 'external'] = 'internal',
+) -> VariableLikeType:
+    r"""Inverse-variance weighted mean of elements in the input.
+
+    Combines measurements with known uncertainties into a single estimate,
+    weighting each element by the inverse of its variance,
+    :math:`w_i = 1 / \sigma_i^2`:
+
+    .. math::
+
+        \bar{x} = \frac{\sum_i w_i x_i}{\sum_i w_i}
+
+    This is the maximum-likelihood combination of independent measurements with
+    Gaussian uncertainties and the "weighted average" of standard error-analysis
+    texts. Unlike :py:func:`scipp.mean`, elements are *not* weighted equally, and
+    unlike a general weighted average the weights are fixed to the inverse
+    variances rather than supplied by the caller.
+
+    The input must have variances; otherwise a :class:`scipp.VariancesError` is
+    raised (the weights are undefined without them).
+
+    The variances of the *result* are computed according to ``method``:
+
+    ``'internal'`` (default)
+        Propagated variance, assuming the input variances are correct:
+
+        .. math::
+
+            \mathrm{Var}(\bar{x}) = \frac{1}{\sum_i w_i}
+
+        This is the standard error of the inverse-variance weighted mean.
+
+    ``'external'``
+        Estimated from the scatter of the points about the weighted mean,
+        making no assumption that the input variances are correct:
+
+        .. math::
+
+            \mathrm{Var}(\bar{x})
+            = \frac{\sum_i w_i (x_i - \bar{x})^2}{(N - 1) \sum_i w_i}
+
+        where :math:`N` is the number of (non-masked) contributing elements.
+        This reduces to the ordinary standard error of the mean
+        :math:`s^2 / N` when all weights are equal. Equivalently it inflates the
+        internal variance by the reduced :math:`\chi^2`,
+
+        .. math::
+
+            \mathrm{Var}_\mathrm{external}(\bar{x}) = S^2\,
+            \mathrm{Var}_\mathrm{internal}(\bar{x}),
+            \quad S = \sqrt{\chi^2 / (N - 1)},
+
+        where :math:`S` is the Birge ratio, or Particle Data Group "scale factor".
+
+        The PDG applies this scaling only when :math:`S > 1`, i.e. it floors the
+        scale factor at :math:`S = 1` and never *reduces* the uncertainty below
+        the internal one. This function does **not** apply that floor: the raw
+        external variance is returned, so it may come out smaller than the
+        internal variance when the data agree better than their error bars imply
+        (:math:`S < 1`). See the Particle Data Group, Review of Particle Physics,
+        Introduction (section "Unconstrained averaging"),
+        https://pdg.lbl.gov/2019/reviews/rpp2019-rev-rpp-intro.pdf.
+
+    Note
+    ----
+    Masked elements are excluded. NaN values are *not* handled specially: a NaN
+    value with a finite variance still contributes a finite weight and will
+    poison the result. Mask such elements before calling.
+
+    Parameters
+    ----------
+    x: scipp.typing.VariableLike
+        Input data. Must have variances.
+    dim:
+        Dimension(s) along which to calculate the mean.
+        If not given, the mean over all dimensions is calculated.
+    method:
+        How to compute the variance of the result: ``'internal'`` (propagated)
+        or ``'external'`` (from the scatter of the points). See above.
+
+    Returns
+    -------
+    : Same type as x
+        The inverse-variance weighted mean of the input values.
+
+    Raises
+    ------
+    scipp.VariancesError
+        If the input has no variances.
+
+    See Also
+    --------
+    scipp.mean:
+        Arithmetic (equally weighted) mean.
+
+    Examples
+    --------
+    >>> import scipp as sc
+    >>> x = sc.array(dims=['x'], values=[1.0, 2.0, 3.0, 4.0],
+    ...              variances=[0.25, 1.0, 1.0, 1.0], unit='m')
+    >>> sc.inverse_variance_mean(x)
+    <scipp.Variable> ()    float64              [m]  1.85714  0.142857
+
+    Using the scatter of the points to estimate the uncertainty instead:
+
+    >>> sc.inverse_variance_mean(x, method='external')
+    <scipp.Variable> ()    float64              [m]  1.85714  0.421769
+    """
+    if not isinstance(x, Variable | DataArray):
+        raise TypeError(
+            "'inverse_variance_mean' supports only Variable and DataArray, "
+            f"got {type(x).__name__}."
+        )
+    if x.variances is None:
+        raise VariancesError(
+            "'inverse_variance_mean' requires input with variances to derive "
+            "inverse-variance weights."
+        )
+    weights = reciprocal(variances(x))
+    result = _weighted_mean(x, dim, weights)
+    if method == 'internal':
+        return result
+    if method == 'external':
+        residuals = values(x) - values(result)
+        scatter = (weights * residuals**2).sum(dim)
+        # Number of non-masked elements contributing along `dim`.
+        count = (weights / weights).sum(dim)
+        result.variances = (scatter / ((count - 1) * weights.sum(dim))).values
+        return result
+    raise ValueError(f"Invalid method '{method}', expected 'internal' or 'external'.")
 
 
 def median(x: VariableLikeType, dim: Dims = None) -> VariableLikeType:
