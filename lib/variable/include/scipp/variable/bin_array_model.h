@@ -104,6 +104,8 @@ public:
   }
   scipp::index object_size() const override { return sizeof(*this); }
 
+  Sizes bin_dims() const override { return m_buffer.dims(); }
+
   void setVariances(const Variable &) override {
     except::throw_cannot_have_variances(core::dtype<core::bin<T>>);
   }

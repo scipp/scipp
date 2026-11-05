@@ -129,6 +129,7 @@ public:
   [[nodiscard]] Variable bin_indices() const;
   template <class T> const T &bin_buffer() const;
   template <class T> T &bin_buffer();
+  [[nodiscard]] Sizes bin_dims() const;
 
   template <class T> std::tuple<Variable, Dim, T> constituents() const;
   template <class T> std::tuple<Variable, Dim, T> constituents();
