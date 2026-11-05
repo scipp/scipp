@@ -67,6 +67,11 @@ from ._extend_units import extend_units
 extend_units()
 del extend_units
 
+from ._pickle import _register
+
+_register()
+del _register
+
 from .compat.dict import to_dict, from_dict
 
 from .utils import collapse, slices
