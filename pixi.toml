@@ -217,8 +217,8 @@ ipython = "*"
 ipywidgets = "*"
 
 [feature.test.tasks]
-test = { cmd = "python -X PYTHONWARNDEFAULTENCODING -m pytest -n auto -v tests", description = "Run Python tests" }
-coverage = { cmd = "python -m pytest --cov=scipp --cov-report html:coverage_html/python tests", description = "Run tests with coverage report" }
+test = { cmd = "python -X PYTHONWARNDEFAULTENCODING -m pytest -n auto -v", description = "Run Python tests" }
+coverage = { cmd = "python -m pytest --cov=scipp --cov-report html:coverage_html/python", description = "Run tests with coverage report" }
 
 # ---------------------------------------------------------------------------
 # Docs feature
