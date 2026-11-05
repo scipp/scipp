@@ -67,10 +67,10 @@ from ._extend_units import extend_units
 extend_units()
 del extend_units
 
-from ._pickle import _register
+from ._pickle import _PickleHelper
 
-_register()
-del _register
+_PickleHelper.register()
+del _PickleHelper
 
 from .compat.dict import to_dict, from_dict
 
