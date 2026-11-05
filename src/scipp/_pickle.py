@@ -11,47 +11,144 @@ Caveats
 - This is NOT meant for persisting data; users are directed to either
   `scippnexus` or the HDF5-based scheme (`scipp.serialization`) for
   that purpose.
+- There is no special provision for subclasses.
 - The pickle serialization should be considered opaque; the schemas'
   consistency should NOT be relied upon, esp. between `scipp` versions.
 """
-from collections.abc import (  # noqa: F401
-    Callable, Mapping, Sequence,
-)
+from __future__ import annotations
+
+from collections.abc import Callable
 from copyreg import pickle
 from functools import partial
-from typing import Any, Concatenate
+from operator import methodcaller
+from typing import Any, ClassVar, final
 
-from . import __version__  # noqa: F401
-from .core import Variable, DataArray, Dataset, DType, Unit
+from . import __version__ as _scipp_version
+from .core import (  # noqa: F401
+    DataArray,
+    Dataset,
+    DType,
+    Unit,
+    Variable,
+)
 
 
-def _pickle_unit[U: Unit](u: U) -> tuple[Callable[[str], U], tuple[str]]:
-    return _reconstruct_unit, (type(u), u.to_dict())
+class VersionError(RuntimeError):
+    """Guard against unpickling potentially incompatible blobs.
 
-
-def _reconstruct_unit[U: Unit](
-    UnitClass: type[U], unit_dict: Mapping[str, Any],
-) -> U:
+    Our (de-)serialization implementaions make use of :func:`to_dict`
+    and :func:`from_dict`, which are not necessary consistent between
+    versions. Hence, fail loudly if the versions aren't consistent.
     """
-    Note
-    ----
-    This mostly exists to get around :meth:`Unit.from_dict`'s being
-    non-pickle-able.
-    """
-    return UnitClass.from_dict(unit_dict)
+    def __init__(
+        self, *_: Any, expected: Any = None, got: Any = None, **__: Any
+    ) -> None:
+        self.expected = expected
+        self.got = got
+        super().__init__(self.msg)
+
+    @property
+    def msg(self) -> str | None:
+        chunks: list[str] = []
+        if self.expected is not None:
+            chunks.append(f'expected version {self.expected}')
+        if self.got is not None:
+            chunks.append(f'got version {self.got}')
+        if chunks:
+            return '; '.join(chunks)
+        return None
 
 
-def _pickle_dtype[D: DType](d: D) -> (
-    tuple[Callable[[str], D], tuple[str]] | tuple[Callable[[], D], tuple[()]]
-):
-    name = str(d)
-    cls = type(d)
-    if getattr(cls, name, None) == d:
-        return partial(getattr, cls, name), ()
-    # Fallback
-    return cls, (name,)
+@final
+class _PickleHelper[T, S]:
+    cls: type[T]
+    _to_ser: Callable[[T], S] | None
+    _from_ser: Callable[[S], T] | None
+    _instances: ClassVar[dict[type[Any], _PickleHelper[Any, Any]]] = {}
+
+    def __new__(
+        cls_, cls: type[T], /, *_: Any, **__: Any
+    ) -> _PickleHelper[T, S]:
+        """Always return the same instance for the same ``cls``."""
+        return cls_._instances.setdefault(cls, object.__new__(cls_))
+
+    def __init__(
+        self,
+        cls: type[T],
+        /,
+        serializer: Callable[[T], S] | None = None,
+        deserializer: Callable[[S], T] | None = None,
+    ) -> None:
+        self.cls = cls
+        if serializer is not None:
+            self._to_ser = serializer
+        if deserializer is not None:
+            self._from_ser = deserializer
+
+    def __reduce__(self) -> tuple[
+        Callable[[Any, Any], _PickleHelper[T, S]], tuple[Any, Any],
+    ]:
+        # Note: since we overrode `.__new__()`, we need a bit of elbow
+        # grease to restore pickle-ability
+        return partial(type(self), self.cls), (self._to_ser, self._from_ser)
+
+    def deserialize(self, version: Any, serialization: S) -> T:
+        """Check the version info before actual deserialization."""
+        if version != _scipp_version:
+            raise VersionError(expected=_scipp_version, got=version)
+        if self._from_ser is None:
+            raise AssertionError(f'No deserializer for {self.cls!r}')
+        return self._from_ser(serialization)
+
+    def serialize(self, obj: T) -> tuple[Any, S]:
+        """Attach version info to the serialization."""
+        if self._to_ser is None:
+            raise AssertionError(f'No serializer for {self.cls!r}')
+        return _scipp_version, self._to_ser(obj)
+
+    def deserializer(self, impl: Callable[[S], T]) -> Callable[[S], T]:
+        """Decorator for the deserializer implementation."""
+        self._from_ser = impl
+        return impl
+
+    def serializer(self, impl: Callable[[T], S]) -> Callable[[T], S]:
+        """Decorator for the serializer implementation."""
+        self._to_ser = impl
+        return impl
+
+    def _get_reconstructor_and_args(self, obj: T) -> tuple[
+        Callable[[Any, S], T], tuple[Any, S],
+    ]:
+        """
+        Returns
+        -------
+        deserializer: Callable[[Any, S], T]
+            Callable for deserializing ``serialization``.
+        serialization: tuple[Any, S]
+            Serialization of ``obj`` as returned by :meth:`serialize`.
+        """
+        return self.deserialize, self.serialize(obj)
+
+    @classmethod
+    def register(cls) -> None:
+        for cls_, helper in cls._instances.items():
+            pickle(cls_, helper._get_reconstructor_and_args)
 
 
-def _register() -> None:
-    pickle(Unit, _pickle_unit)
-    pickle(DType, _pickle_dtype)
+@_PickleHelper[Unit, dict[str, Any]](
+    Unit, serializer=methodcaller('to_dict'),
+).deserializer
+def _unpickle_unit(u: dict[str, Any]) -> Unit:
+    # Note: this is a workaround for `Unit.from_dict()` being
+    # non-pickle-able.
+    return Unit.from_dict(u)
+
+
+@_PickleHelper[DType, str](
+    DType, deserializer=partial(getattr, DType),
+).serializer
+def _pickle_dtype(dt: DType) -> str:
+    name = str(dt)
+    if getattr(DType, name, None) != dt:
+        raise AssertionError(f'{dt=!r}: not a member on the DType class')
+    return name

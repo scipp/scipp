@@ -1,21 +1,24 @@
+# ruff: noqa: S301
+
 try:
     import _pickle as pickle
 except ImportError:
-    import pickle
+    import pickle  # type: ignore[no-redef]
+
+import re
 import subprocess
 import sys
 from collections.abc import Callable
 from operator import eq
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Literal
+from typing import Any, cast
 
 import numpy as np
 import pytest
+
 import scipp as sc
-
-# from scipp import Variable, DataArray, Dataset, DataGroup, DType, Unit
-
+from scipp._pickle import VersionError
 
 _64_BIT = sys.maxsize > (2 << 32)
 
@@ -26,28 +29,28 @@ def _roundtrip[T](
     """
     Test round-tripping ``obj`` via :mod:`pickle`.
 
-    Test:
+    Tests:
     - Round-tripping inside the process
     - Unpickling in a subprocess
     - Optionally, re-pickling in said subprocess, unpickling in this
       main process, and comparison with the ``obj`` via ``cmp`` (see
       below).
 
-    Note
-    ----
-    ``cmp=<callable>`` compares the two arguments (``obj`` and the
-    roundtripped object) and should return true(y) for success.
-    ``cmp=True`` is an alias for ``cmp=operator.eq``.
-    ``cmp=False`` skips re-pickling in the child process and the
-    subsequent comparison of the values, only checking that the child
-    can unpickle what this main process has pickled.
+    Notes
+    -----
+    - ``cmp=<callable>`` compares the two arguments (``obj`` and the
+      roundtripped object) and should return true(y) for success.
+    - ``cmp=True`` is an alias for ``cmp=operator.eq``.
+    - ``cmp=False`` skips re-pickling in the child process and the
+      subsequent comparison of the values, only checking that the child
+      can unpickle what this main process has pickled.
     """
     comparator: Callable[[T, T], bool]
     if cmp in (True, False):
         comparator = eq
         cross_proc_roundtrip = cmp
     else:
-        comparator, cross_proc_roundtrip = cmp, True
+        comparator, cross_proc_roundtrip = cast(Callable[..., bool], cmp), True
 
     # Test in-process roundtripping
     serialized = pickle.dumps(obj)
@@ -89,7 +92,7 @@ def _roundtrip[T](
             pickle.dump(deserialized, fobj)
         """)
     cmd = [sys.executable, '-c', python_script, str(obj), str(src), str(dest)]
-    subprocess.run(cmd, check=True)
+    subprocess.run(cmd, check=True)  # noqa: S603
 
     # Check the cross-process-roundtripped object, if necessary
     if comparator is not None:
@@ -124,7 +127,7 @@ def _roundtrip[T](
     ],
 )
 def test_pickling_dtypes(
-    tmp_path: Path, expected: str, dtypes: None | list[Any],
+    tmp_path: Path, expected: str, dtypes: list[Any] | None,
 ) -> None:
     """
     Test that :class:`DType`s can be roundtripped in- and cross-process.
@@ -164,11 +167,37 @@ def test_pickling_units(tmp_path: Path, unit: str) -> None:
     def cmp_units(u1: sc.Unit, u2: sc.Unit) -> bool:
         if u1 == u2:
             return True
-        mult1 = (d1 := u1.to_dict()).pop('multiplier', 1)
-        mult2 = (d2 := u2.to_dict()).pop('multiplier', 1)
+        # Assure the typechecker that the mults are numbers or it will
+        # complain about the `isnan()` calls
+        mult1 = cast(float, (d1 := u1.to_dict()).pop('multiplier', 1))
+        mult2 = cast(float, (d2 := u2.to_dict()).pop('multiplier', 1))
         if d1 != d2:
             return False
         # Coerce to Python bools to appease the typechecker
         return bool(np.isnan(mult1) and np.isnan(mult2))
 
     _roundtrip(tmp_path, sc.Unit(unit), cmp_units)
+
+
+def test_unpickling_wrong_scipp_version(tmp_path: Path) -> None:
+    """
+    Test that unpickling a pickled :mod:`scipp` object from the wrong
+    version results in an error.
+    """
+    version_at_pickling = sc.__version__
+    version_at_unpickling = sc.__version__ + '.patch'
+
+    unit = sc.Unit('5 m')
+    fname = tmp_path / 'unit.pkl'
+    with fname.open(mode='wb') as fobj:
+        pickle.dump(unit, fobj)
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr('scipp._pickle._scipp_version', version_at_unpickling)
+        msg = (
+            f'expected version {version_at_unpickling}; '
+            f'got version {version_at_pickling}'
+        )
+        with pytest.raises(VersionError, match=re.escape(msg)):
+            with fname.open(mode='rb') as fobj:
+                pickle.load(fobj)
