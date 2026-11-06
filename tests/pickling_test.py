@@ -1,0 +1,339 @@
+# ruff: noqa: S301
+
+try:
+    import _pickle as pickle
+except ImportError:
+    import pickle  # type: ignore[no-redef]
+
+import re
+import subprocess
+import sys
+from collections.abc import Callable
+from dataclasses import dataclass
+from operator import eq
+from pathlib import Path
+from textwrap import dedent
+from typing import Any, cast
+
+import numpy as np
+import pytest
+
+import scipp as sc
+from scipp._pickle import VersionError
+
+_64_BIT = sys.maxsize > (2 << 32)
+_DEFAULT_INT_TYPE = str(np.dtype(int))
+_DEFAULT_FLOAT_TYPE = str(np.dtype(float))
+
+
+@dataclass(eq=True)
+class Person:
+    """Dummy hashable class which is resolved to a ``PyObject``."""
+    name: str
+
+
+def _roundtrip[T](
+    tmpdir: Path, obj: T, cmp: Callable[[T, T], bool] | bool = True,
+) -> None:
+    """
+    Test round-tripping ``obj`` via :mod:`pickle`.
+
+    Tests:
+    - Round-tripping inside the process
+    - Unpickling in a subprocess
+    - Optionally, re-pickling in said subprocess, unpickling in this
+      main process, and comparison with the ``obj`` via ``cmp`` (see
+      below).
+
+    Notes
+    -----
+    - ``cmp=<callable>`` compares the two arguments (``obj`` and the
+      roundtripped object) and should return true(y) for success.
+    - ``cmp=True`` is an alias for ``cmp=operator.eq``.
+    - ``cmp=False`` skips re-pickling in the child process and the
+      subsequent comparison of the values, only checking that the child
+      can unpickle what this main process has pickled.
+    """
+    comparator: Callable[[T, T], bool]
+    if cmp in (True, False):
+        comparator = eq
+        cross_proc_roundtrip = cmp
+    else:
+        comparator, cross_proc_roundtrip = cast(Callable[..., bool], cmp), True
+
+    # Test in-process roundtripping
+    serialized = pickle.dumps(obj)
+    deserialized = pickle.loads(serialized)
+    assert deserialized is not obj
+    assert comparator(obj, deserialized)
+
+    cls = type(obj)
+    assert cls is getattr(sc, cls.__name__)
+
+    # Test that other processes using the same Python can also
+    # (de-)serialize it (i.e. the hooks are set up correctly on
+    # importing `scipp`)
+    src = tmpdir / 'src.pkl'
+    dest = tmpdir / 'dest.pkl'
+    src.write_bytes(serialized)
+    python_script = dedent(f"""
+    try:
+        import _pickle as pickle
+    except ImportError:
+        import pickle
+    import sys
+
+
+    obj, src, dest = sys.argv[-3:]
+    with open(src, mode='rb') as fobj:
+        deserialized = pickle.load(fobj)
+
+    # Defer import of `scipp` to see if the our hooks are set up
+    # automatically
+    from scipp import {cls.__name__}
+    assert isinstance(deserialized, {cls.__name__})
+    """)
+    if cross_proc_roundtrip:
+        python_script += '\n' + dedent("""
+        # Re-pickle the loaded object so that the calling process can
+        # reuse it for whatever (e.g. comparison)
+        with open(dest, mode='wb') as fobj:
+            pickle.dump(deserialized, fobj)
+        """)
+    cmd = [sys.executable, '-c', python_script, str(obj), str(src), str(dest)]
+    subprocess.run(cmd, check=True)  # noqa: S603
+
+    # Check the cross-process-roundtripped object, if necessary
+    if comparator is not None:
+        with open(dest, mode='rb') as fobj:
+            deserialized = pickle.load(fobj)
+        assert comparator(obj, deserialized)
+
+
+@pytest.mark.parametrize(
+    ('expected', 'dtypes'),
+    # XXX: will there ever possibly be `DType` objects that don't
+    # correspond to one of the class members?
+    [
+        ('int64', ['int64', np.int64]),
+        ('float64', ['float64', np.float64]),
+        ('int32', ['int32', np.int32]),
+        ('float32', ['float32', np.float32]),
+        ('int64' if _64_BIT else 'int32', [int]),
+        ('float64' if _64_BIT else 'float32', [float]),
+        ('bool', ['bool', np.bool_, bool]),
+        ('string', ['string', np.str_, str]),
+        ('datetime64', ['datetime64', np.datetime64]),
+        ('uint64', ['uint64', np.uint64]),
+    ]
+    + [
+        (dtype, None) for dtype in [
+            'DataArray', 'Dataset', 'PyObject', 'Variable',
+            'DataArrayView', 'DatasetView', 'VariableView',
+            'affine_transform3', 'linear_transform3',
+            'rotation3', 'translation3', 'vector3',
+        ]
+    ],
+)
+def test_pickling_dtypes(
+    tmp_path: Path, expected: str, dtypes: list[Any] | None,
+) -> None:
+    """
+    Test that :class:`DType`s can be roundtripped in- and cross-process.
+    """
+    # Set up the dtype
+    if dtypes is None:
+        dtypes = [expected]
+    for dtype in dtypes:
+        try:
+            dt = sc.DType(dtype)
+        except TypeError:
+            assert isinstance(dtype, str)
+            dt = getattr(sc.DType, dtype)
+        else:
+            assert dt == getattr(sc.DType, expected)
+        # Actual comparison
+        _roundtrip(tmp_path, dt)
+
+
+@pytest.mark.parametrize(
+    'unit',
+    [
+        'm',  # Simple unit
+        '3.14159 m',  # Unit + multiplier
+        'J*m*kg**-1',  # Composite unit
+        '6.022E23',  # Dimensionless
+        # Edge cases: infinities and nans
+        'inf N*m**-2',
+        '-inf s',
+        'nan m',
+    ]
+)
+def test_pickling_units(tmp_path: Path, unit: str) -> None:
+    """
+    Test that :class:`Unit`s can be roundtripped in- and cross-process.
+    """
+    def cmp_units(u1: sc.Unit, u2: sc.Unit) -> bool:
+        if u1 == u2:
+            return True
+        # Assure the typechecker that the mults are numbers or it will
+        # complain about the `isnan()` calls
+        mult1 = cast(float, (d1 := u1.to_dict()).pop('multiplier', 1))
+        mult2 = cast(float, (d2 := u2.to_dict()).pop('multiplier', 1))
+        if d1 != d2:
+            return False
+        # Coerce to Python bools to appease the typechecker
+        return bool(np.isnan(mult1) and np.isnan(mult2))
+
+    _roundtrip(tmp_path, sc.Unit(unit), cmp_units)
+
+
+@pytest.mark.parametrize(
+    'case',
+    [
+        # Scalars
+        'scalar-int',
+        'scalar-str',
+        'scalar-datetime',
+        'scalar-object',
+        'scalar-float-with-variance',
+        'scalar-vector-with-unit',
+        # Zero-entry arrays
+        'nothing-1D',
+        'nothing-2D',
+        'nothing-3D',
+        # N-D arrays
+        'ints-1D',
+        'ints-2D',
+        'ints-3D',
+        'ints-1D-folded',
+        'ints-2D-folded',
+        'ints-3D-folded',
+        'float32s-1D',
+        'float64s-1D',
+        'float64s-2D-with-variances',
+        'float64s-3D',
+        'vecs-1D',
+        'vecs-2D',
+        'vecs-3D',
+        'strs-1D',
+        'strs-2D-folded',
+        'strs-3D-folded',
+        'objs-1D',
+        'objs-2D-folded',
+        'objs-3D-folded',
+        # TODO: `linear_transform3` etc.
+    ],
+)
+def test_pickling_unbinned_variables(
+    tmp_path: Path, case: str,
+) -> None:
+    """
+    With handpicked examples, test that un-binned :class:`Variable`s can
+    be roundtripped in- and cross-process.
+    """
+    # Scalar test cases
+    if case == 'scalar-float-with-variance':
+        var = sc.scalar(value=5., variance=1.)
+        dtype = _DEFAULT_FLOAT_TYPE
+    elif case == 'scalar-vector-with-unit':
+        var, dtype = sc.vector([1, 2, 3], unit='m'), 'vector3'
+    elif case.startswith('scalar-'):
+        var_: Any
+        var_, dtype = {
+            'int': (5, _DEFAULT_INT_TYPE),
+            'str': ('foo', 'string'),
+            'datetime': (np.datetime64('1970-01-01T00:00:00'), 'datetime64'),
+            'object': (Person('someone'), 'PyObject'),
+        }[case.rpartition('-')[-1]]
+        var = sc.scalar(var_)
+
+    # Zero-entry test cases
+    elif case.startswith('nothing-'):
+        ndim = int(case.rpartition('-')[-1].rstrip('D'))
+        data = np.array([], dtype=float).reshape((2,) * (ndim - 1) + (0,))
+        var = sc.array(values=data, dims=['x', 'y', 'z'][:ndim])
+        dtype = _DEFAULT_FLOAT_TYPE
+        assert var.ndim == ndim
+
+    # N-D array test cases
+    elif case == 'float64s-2D-with-variances':
+        shape = (10, 10)
+        values_2d = np.random.random(shape)
+        variances_2d = np.random.random(shape)
+        var = sc.array(
+            values=values_2d, variances=variances_2d, dims=['x', 'y'],
+        )
+        dtype = _DEFAULT_FLOAT_TYPE
+
+    else:
+        if (fold := case.endswith('-folded')):
+            case, *_ = case.rpartition('-')
+        vartype, _, dims = case.rpartition('-')
+        ndim = int(dims.rstrip('D'))
+        length = 5
+        nentries = length ** ndim
+        if vartype == 'vecs':
+            data = np.random.random(nentries * 3)
+            data = data.reshape((length,) * ndim + (3,))
+            var = sc.vectors(values=data, dims=['x', 'y', 'z'][:ndim])
+            dtype = 'vector3'
+        else:
+            if vartype in ('strs', 'objs'):
+                strings = np.random.choice(
+                    ['foo', 'bar', 'baz', 'foobar'], nentries,
+                )
+                if vartype == 'objs':
+                    data = np.array([Person(s) for s in strings])
+                    dtype = 'PyObject'
+                else:
+                    data = strings
+                    dtype = 'string'
+            elif vartype == 'ints':
+                data = np.random.choice(range(50), nentries)
+                dtype = _DEFAULT_INT_TYPE
+            else:
+                assert vartype.startswith('float')
+                dtype = vartype.rstrip('s')
+                data = np.random.random(nentries).astype(dtype)
+
+            dtype_obj = getattr(sc.DType, dtype)
+            dims_seq = ['x', 'y', 'z'][:ndim]
+            if fold:
+                # Directly converting multi-dim numpy arrays of strings
+                # and non-native types can be problematic (see issues
+                # #3902 and #4003), so just `.fold()` a 1-D array
+                # (Also do so for some native types just to make sure
+                # everything is in order)
+                var = sc.array(values=data, dims=['_'], dtype=dtype_obj)
+                var = var.fold('_', dims=dims_seq, shape=[length] * ndim)
+            else:
+                data_nd = data.reshape((length,) * ndim)
+                var = sc.array(values=data_nd, dims=dims_seq, dtype=dtype_obj)
+
+    assert var.dtype == getattr(sc.DType, dtype)
+    _roundtrip(tmp_path, var, sc.identical)
+
+
+def test_unpickling_wrong_scipp_version(tmp_path: Path) -> None:
+    """
+    Test that unpickling a pickled :mod:`scipp` object from the wrong
+    version results in an error.
+    """
+    version_at_pickling = sc.__version__
+    version_at_unpickling = sc.__version__ + '.patch'
+
+    unit = sc.Unit('5 m')
+    fname = tmp_path / 'unit.pkl'
+    with fname.open(mode='wb') as fobj:
+        pickle.dump(unit, fobj)
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr('scipp._pickle._scipp_version', version_at_unpickling)
+        msg = (
+            f'expected version {version_at_unpickling}; '
+            f'got version {version_at_pickling}'
+        )
+        with pytest.raises(VersionError, match=re.escape(msg)):
+            with fname.open(mode='rb') as fobj:
+                pickle.load(fobj)
