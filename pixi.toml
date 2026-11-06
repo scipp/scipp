@@ -165,12 +165,9 @@ cxx-compiler = "*"
 ccache = "*"
 
 [feature.dev.tasks]
-# Directories are spelled out as build/dev, install/dev etc.: `dev` is the only
-# environment with these tasks, so templating on the environment name would
-# always expand to the same thing.
-build = { cmd = "cmake --build build/dev --config Release --target install", depends-on = ["configure"], description = "Build scipp (Release)" }
+build = { cmd = "cmake --build build/dev --config Release --target install", description = "Build scipp (Release)" }
 cpp-test = { cmd = "ctest --test-dir build/dev -C Release --output-on-failure", depends-on = ["build"], description = "Run C++ tests" }
-build-debug = { cmd = "cmake --build build-debug/dev --config Debug --target install", depends-on = ["configure-debug"], description = "Build scipp (Debug)" }
+build-debug = { cmd = "cmake --build build-debug/dev --config Debug --target install", description = "Build scipp (Debug)" }
 # Debug configure is platform-agnostic (uses the `debug` preset), so it lives
 # here rather than being repeated per target. The Release `configure` below is
 # per-target because it selects a platform-specific preset.
