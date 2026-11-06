@@ -155,12 +155,14 @@ gtest = { workspace = true }
 # Windows uses MSVC from vs-shell / Visual Studio.
 [feature.dev.target.linux-64.dependencies]
 cxx-compiler = "*"
+ccache = "*"
 # Exact pin matching CI history: 2.18.3 fixed cppcheck internalError crashes
 # ("failed to load ... from files.txt") in the whole-program analysis dir.
 cppcheck = "2.18.3.*"
 
 [feature.dev.target.osx-arm64.dependencies]
 cxx-compiler = "*"
+ccache = "*"
 
 [feature.dev.tasks]
 # Directories are spelled out as build/dev, install/dev etc.: `dev` is the only
