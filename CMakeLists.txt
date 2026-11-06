@@ -47,7 +47,6 @@ project(
   VERSION ${SCIPP_VERSION_CMAKE}
   LANGUAGES CXX
 )
-add_definitions(-DSCIPP_VERSION="${SCIPP_VERSION_PEP440}")
 
 if(SKBUILD)
   # AppleClang 15 changed linking order
