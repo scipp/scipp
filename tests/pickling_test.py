@@ -9,6 +9,7 @@ import re
 import subprocess
 import sys
 from collections.abc import Callable
+from dataclasses import dataclass
 from operator import eq
 from pathlib import Path
 from textwrap import dedent
@@ -21,6 +22,14 @@ import scipp as sc
 from scipp._pickle import VersionError
 
 _64_BIT = sys.maxsize > (2 << 32)
+_DEFAULT_INT_TYPE = str(np.dtype(int))
+_DEFAULT_FLOAT_TYPE = str(np.dtype(float))
+
+
+@dataclass(eq=True)
+class Person:
+    """Dummy hashable class which is resolved to a ``PyObject``."""
+    name: str
 
 
 def _roundtrip[T](
@@ -177,6 +186,133 @@ def test_pickling_units(tmp_path: Path, unit: str) -> None:
         return bool(np.isnan(mult1) and np.isnan(mult2))
 
     _roundtrip(tmp_path, sc.Unit(unit), cmp_units)
+
+
+@pytest.mark.parametrize(
+    'case',
+    [
+        # Scalars
+        'scalar-int',
+        'scalar-str',
+        'scalar-datetime',
+        'scalar-object',
+        'scalar-float-with-variance',
+        'scalar-vector-with-unit',
+        # Zero-entry arrays
+        'nothing-1D',
+        'nothing-2D',
+        'nothing-3D',
+        # N-D arrays
+        'ints-1D',
+        'ints-2D',
+        'ints-3D',
+        'ints-1D-folded',
+        'ints-2D-folded',
+        'ints-3D-folded',
+        'float32s-1D',
+        'float64s-1D',
+        'float64s-2D-with-variances',
+        'float64s-3D',
+        'vecs-1D',
+        'vecs-2D',
+        'vecs-3D',
+        'strs-1D',
+        'strs-2D-folded',
+        'strs-3D-folded',
+        'objs-1D',
+        'objs-2D-folded',
+        'objs-3D-folded',
+        # TODO: `linear_transform3` etc.
+    ],
+)
+def test_pickling_unbinned_variables(
+    tmp_path: Path, case: str,
+) -> None:
+    """
+    With handpicked examples, test that un-binned :class:`Variable`s can
+    be roundtripped in- and cross-process.
+    """
+    # Scalar test cases
+    if case == 'scalar-float-with-variance':
+        var = sc.scalar(value=5., variance=1.)
+        dtype = _DEFAULT_FLOAT_TYPE
+    elif case == 'scalar-vector-with-unit':
+        var, dtype = sc.vector([1, 2, 3], unit='m'), 'vector3'
+    elif case.startswith('scalar-'):
+        var_: Any
+        var_, dtype = {
+            'int': (5, _DEFAULT_INT_TYPE),
+            'str': ('foo', 'string'),
+            'datetime': (np.datetime64('1970-01-01T00:00:00'), 'datetime64'),
+            'object': (Person('someone'), 'PyObject'),
+        }[case.rpartition('-')[-1]]
+        var = sc.scalar(var_)
+
+    # Zero-entry test cases
+    elif case.startswith('nothing-'):
+        ndim = int(case.rpartition('-')[-1].rstrip('D'))
+        data = np.array([], dtype=float).reshape((2,) * (ndim - 1) + (0,))
+        var = sc.array(values=data, dims=['x', 'y', 'z'][:ndim])
+        dtype = _DEFAULT_FLOAT_TYPE
+        assert var.ndim == ndim
+
+    # N-D array test cases
+    elif case == 'float64s-2D-with-variances':
+        shape = (10, 10)
+        values_2d = np.random.random(shape)
+        variances_2d = np.random.random(shape)
+        var = sc.array(
+            values=values_2d, variances=variances_2d, dims=['x', 'y'],
+        )
+        dtype = _DEFAULT_FLOAT_TYPE
+
+    else:
+        if (fold := case.endswith('-folded')):
+            case, *_ = case.rpartition('-')
+        vartype, _, dims = case.rpartition('-')
+        ndim = int(dims.rstrip('D'))
+        length = 5
+        nentries = length ** ndim
+        if vartype == 'vecs':
+            data = np.random.random(nentries * 3)
+            data = data.reshape((length,) * ndim + (3,))
+            var = sc.vectors(values=data, dims=['x', 'y', 'z'][:ndim])
+            dtype = 'vector3'
+        else:
+            if vartype in ('strs', 'objs'):
+                strings = np.random.choice(
+                    ['foo', 'bar', 'baz', 'foobar'], nentries,
+                )
+                if vartype == 'objs':
+                    data = np.array([Person(s) for s in strings])
+                    dtype = 'PyObject'
+                else:
+                    data = strings
+                    dtype = 'string'
+            elif vartype == 'ints':
+                data = np.random.choice(range(50), nentries)
+                dtype = _DEFAULT_INT_TYPE
+            else:
+                assert vartype.startswith('float')
+                dtype = vartype.rstrip('s')
+                data = np.random.random(nentries).astype(dtype)
+
+            dtype_obj = getattr(sc.DType, dtype)
+            dims_seq = ['x', 'y', 'z'][:ndim]
+            if fold:
+                # Directly converting multi-dim numpy arrays of strings
+                # and non-native types can be problematic (see issues
+                # #3902 and #4003), so just `.fold()` a 1-D array
+                # (Also do so for some native types just to make sure
+                # everything is in order)
+                var = sc.array(values=data, dims=['_'], dtype=dtype_obj)
+                var = var.fold('_', dims=dims_seq, shape=[length] * ndim)
+            else:
+                data_nd = data.reshape((length,) * ndim)
+                var = sc.array(values=data_nd, dims=dims_seq, dtype=dtype_obj)
+
+    assert var.dtype == getattr(sc.DType, dtype)
+    _roundtrip(tmp_path, var, sc.identical)
 
 
 def test_unpickling_wrong_scipp_version(tmp_path: Path) -> None:

@@ -21,9 +21,12 @@ from collections.abc import Callable
 from copyreg import pickle
 from functools import partial
 from operator import methodcaller
-from typing import Any, ClassVar, final
+from typing import Any, ClassVar, cast, final
+
+import numpy as np
 
 from . import __version__ as _scipp_version
+from .compat.dict import from_dict, to_dict
 from .core import (  # noqa: F401
     DataArray,
     Dataset,
@@ -152,3 +155,37 @@ def _pickle_dtype(dt: DType) -> str:
     if getattr(DType, name, None) != dt:
         raise AssertionError(f'{dt=!r}: not a member on the DType class')
     return name
+
+
+_VAR_HELPER = _PickleHelper[
+    Variable, tuple[dict[str, Any], dict[str, Any] | None],
+](Variable)
+
+
+@_VAR_HELPER.serializer
+def _pickle_variable(v: Variable) -> tuple[
+    dict[str, Any], dict[str, Any] | None,
+]:
+    if v.is_binned:
+        raise NotImplementedError('FIXME: handle binned data')
+    serialization = to_dict(v)
+    values = serialization['values']
+    if (
+        serialization['dims']  # Not 0-D
+        and not isinstance(values, np.ndarray)  # `ElementArrayView_*`
+    ):
+        # Note: `ElementArrayView_*` only supports explicit indexing,
+        # and not iteration
+        length, *_ = v.shape
+        serialization['values'] = np.array([values[i] for i in range(length)])
+    return serialization, None
+
+
+@_VAR_HELPER.deserializer
+def _unpickle_variable(
+    serialization: tuple[dict[str, Any], dict[str, Any] | None],
+) -> Variable:
+    dct, bins = serialization
+    if bins is not None:
+        raise NotImplementedError('FIXME: handle binned data')
+    return cast(Variable, from_dict(dct))
