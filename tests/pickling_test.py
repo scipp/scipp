@@ -17,8 +17,10 @@ from typing import Any, cast
 
 import numpy as np
 import pytest
+from scipy.spatial.transform import Rotation
 
 import scipp as sc
+from scipp import spatial
 from scipp._pickle import VersionError
 
 _64_BIT = sys.maxsize > (2 << 32)
@@ -198,6 +200,11 @@ def test_pickling_units(tmp_path: Path, unit: str) -> None:
         'scalar-object',
         'scalar-float-with-variance',
         'scalar-vector-with-unit',
+        # Scalars (linalg types)
+        'scalar-translation',
+        'scalar-rotation',
+        'scalar-linear-transform',
+        'scalar-affine-transform',
         # Zero-entry arrays
         'nothing-1D',
         'nothing-2D',
@@ -222,7 +229,19 @@ def test_pickling_units(tmp_path: Path, unit: str) -> None:
         'objs-1D',
         'objs-2D-folded',
         'objs-3D-folded',
-        # TODO: `linear_transform3` etc.
+        # N-D arrays (linalg types)
+        'translation-1D',
+        'translation-2D',
+        'translation-3D',
+        'rotation-1D',
+        'rotation-2D',
+        'rotation-3D',
+        'lintr-1D',
+        'lintr-2D',
+        'lintr-3D',
+        'afftr-1D',
+        'afftr-2D',
+        'afftr-3D',
     ],
 )
 def test_pickling_unbinned_variables(
@@ -232,26 +251,57 @@ def test_pickling_unbinned_variables(
     With handpicked examples, test that un-binned :class:`Variable`s can
     be roundtripped in- and cross-process.
     """
+    rng = np.random.default_rng(42)
+    length = 5  # Size along multidim-array dimensions
+
     # Scalar test cases
     if case == 'scalar-float-with-variance':
         var = sc.scalar(value=5., variance=1.)
         dtype = _DEFAULT_FLOAT_TYPE
+        shape: tuple[int, ...] = ()
     elif case == 'scalar-vector-with-unit':
-        var, dtype = sc.vector([1, 2, 3], unit='m'), 'vector3'
+        var, dtype, shape = sc.vector([1, 2, 3], unit='m'), 'vector3', ()
+
+    elif case in (
+        'scalar-translation', 'scalar-rotation',
+        'scalar-affine-transform',
+    ):
+        # FIXME: direct instantiation from a `Sequence[int]` appears in
+        # the docs, but doesn't type-check because Python `float`s are
+        # neither numpy `float32`s nor `float64`s.
+        tr = spatial.translation(value=np.array([3., 2., 1.]), unit='m')
+        rot = spatial.rotation(
+            value=Rotation.from_rotvec([1., 2., 3.]).as_quat(),
+        )
+        var, dtype = {
+            'translation': (tr, 'translation3'),
+            'rotation': (rot, 'rotation3'),
+            'affine-transform': (tr * rot, 'affine_transform3'),
+        }[case.removeprefix('scalar-')]
+        shape = ()
     elif case.startswith('scalar-'):
-        var_: Any
-        var_, dtype = {
-            'int': (5, _DEFAULT_INT_TYPE),
-            'str': ('foo', 'string'),
-            'datetime': (np.datetime64('1970-01-01T00:00:00'), 'datetime64'),
-            'object': (Person('someone'), 'PyObject'),
-        }[case.rpartition('-')[-1]]
-        var = sc.scalar(var_)
+        value: Any
+        value, dtype, val_to_var = {
+            'int': (42, _DEFAULT_INT_TYPE, sc.scalar),
+            'str': ('foo', 'string', sc.scalar),
+            'datetime': (
+                np.datetime64('1970-01-01T00:00:00'), 'datetime64', sc.scalar,
+            ),
+            'object': (Person('someone'), 'PyObject', sc.scalar),
+            'linear-transform': (
+                [[-2, 1, 1], [1, -2, 1], [1, 1, -2]],
+                'linear_transform3',
+                spatial.linear_transform,
+            ),
+        }[case.removeprefix('scalar-')]
+        var = val_to_var(value=value)
+        shape = ()
 
     # Zero-entry test cases
     elif case.startswith('nothing-'):
         ndim = int(case.rpartition('-')[-1].rstrip('D'))
-        data = np.array([], dtype=float).reshape((2,) * (ndim - 1) + (0,))
+        shape = (2,) * (ndim - 1) + (0,)
+        data = np.array([], dtype=float).reshape(shape)
         var = sc.array(values=data, dims=['x', 'y', 'z'][:ndim])
         dtype = _DEFAULT_FLOAT_TYPE
         assert var.ndim == ndim
@@ -259,28 +309,57 @@ def test_pickling_unbinned_variables(
     # N-D array test cases
     elif case == 'float64s-2D-with-variances':
         shape = (10, 10)
-        values_2d = np.random.random(shape)
-        variances_2d = np.random.random(shape)
+        values_2d = rng.random(shape)
+        variances_2d = rng.random(shape)
         var = sc.array(
             values=values_2d, variances=variances_2d, dims=['x', 'y'],
         )
         dtype = _DEFAULT_FLOAT_TYPE
+
+    elif case.startswith(('translation-', 'rotation-', 'lintr-', 'afftr-')):
+        vartype, _, dims = case.rpartition('-')
+        ndim = int(dims.rstrip('D'))
+        shape = (length,) * ndim
+        values, dtype, vals_to_var = {
+            'translation': (
+                rng.random((*shape, 3)), 'translation3', spatial.translations,
+            ),
+            'rotation': (
+                Rotation.from_rotvec(rng.random((*shape, 3))).as_quat(),
+                'rotation3',
+                spatial.rotations,
+            ),
+            'lintr': (
+                rng.random((*shape, 3, 3)),
+                'linear_transform3',
+                spatial.linear_transforms,
+            ),
+            'afftr': (
+                rng.random((*shape, 4, 4)),
+                'affine_transform3',
+                spatial.affine_transforms,
+            ),
+        }[vartype]
+        # FIXME: why did we not need the cast in the scalar tests above?
+        var = cast(Callable[..., sc.Variable], vals_to_var)(
+            values=values, dims=['foo', 'bar', 'baz'][:ndim],
+        )
 
     else:
         if (fold := case.endswith('-folded')):
             case, *_ = case.rpartition('-')
         vartype, _, dims = case.rpartition('-')
         ndim = int(dims.rstrip('D'))
-        length = 5
         nentries = length ** ndim
+        shape = (length,) * ndim
         if vartype == 'vecs':
-            data = np.random.random(nentries * 3)
-            data = data.reshape((length,) * ndim + (3,))
+            data = rng.random(nentries * 3)
+            data = data.reshape((*shape, 3))
             var = sc.vectors(values=data, dims=['x', 'y', 'z'][:ndim])
             dtype = 'vector3'
         else:
             if vartype in ('strs', 'objs'):
-                strings = np.random.choice(
+                strings = rng.choice(
                     ['foo', 'bar', 'baz', 'foobar'], nentries,
                 )
                 if vartype == 'objs':
@@ -290,12 +369,12 @@ def test_pickling_unbinned_variables(
                     data = strings
                     dtype = 'string'
             elif vartype == 'ints':
-                data = np.random.choice(range(50), nentries)
+                data = rng.choice(range(50), nentries)
                 dtype = _DEFAULT_INT_TYPE
             else:
                 assert vartype.startswith('float')
                 dtype = vartype.rstrip('s')
-                data = np.random.random(nentries).astype(dtype)
+                data = rng.random(nentries).astype(dtype)
 
             dtype_obj = getattr(sc.DType, dtype)
             dims_seq = ['x', 'y', 'z'][:ndim]
@@ -306,12 +385,13 @@ def test_pickling_unbinned_variables(
                 # (Also do so for some native types just to make sure
                 # everything is in order)
                 var = sc.array(values=data, dims=['_'], dtype=dtype_obj)
-                var = var.fold('_', dims=dims_seq, shape=[length] * ndim)
+                var = var.fold('_', dims=dims_seq, shape=shape)
             else:
-                data_nd = data.reshape((length,) * ndim)
+                data_nd = data.reshape(shape)
                 var = sc.array(values=data_nd, dims=dims_seq, dtype=dtype_obj)
 
     assert var.dtype == getattr(sc.DType, dtype)
+    assert var.shape == shape
     _roundtrip(tmp_path, var, sc.identical)
 
 
