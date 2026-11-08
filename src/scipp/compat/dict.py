@@ -5,8 +5,9 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Callable
-from typing import Any
+from collections.abc import Callable, Sequence
+from functools import partial
+from typing import Any, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -16,6 +17,7 @@ from ..core import (
     Dataset,
     DType,
     Variable,
+    fold,
     vector,
     vectors,
 )
@@ -166,6 +168,21 @@ def _dict_to_variable(d: dict[str, Any]) -> Variable:
             out[key] = getattr(DType, d[key])
         else:
             out[key] = d[key]
+
+    # Note: N-D string/object variables are stored as 1-D arrays
+    # internally; recover the dimensionality info where appropriate
+    if (
+        out.get('dtype') in (DType.string, DType.PyObject)
+        and out.get('dims')
+        and len(cast(Sequence[str], out.get('dims'))) > 1
+    ):
+        massage_dims: Callable[[Variable], Variable] | None = partial(
+            fold, dim='_', dims=out.get('dims'), shape=d.get('shape'),
+        )
+        out['dims'] = ['_']
+    else:
+        massage_dims = None
+
     # Hack for types that cannot be directly constructed using Variable()
     if out['dims']:
         init: dict[str, Callable[..., Variable]] = {
@@ -183,6 +200,9 @@ def _dict_to_variable(d: dict[str, Any]) -> Variable:
         for key in ['dtype', 'variance', 'variances']:
             out.pop(key, None)
     var = make_var(**out)
+
+    if massage_dims is not None:
+        var = massage_dims(var)
     return var
 
 
