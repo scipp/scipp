@@ -3,20 +3,24 @@
 # @file
 # @author Neil Vaytet
 
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
+import pytest
 
 import scipp as sc
 
 
-def test_variable_to_dict() -> None:
+@pytest.mark.parametrize('ndim', [1, 2])
+def test_variable_to_dict(ndim: Literal[1, 2]) -> None:
     var = sc.Variable(
         dims=["x"],
         values=np.arange(10.0),
         variances=np.random.random(10),
         unit=sc.units.m,
     )
+    if ndim > 1:
+        var = var.fold('x', sizes={'x': 2, 'y': 5})
     var_dict = sc.to_dict(var)
     assert var_dict["dims"] == var.dims
     assert var_dict["shape"] == var.shape
@@ -34,12 +38,48 @@ def test_variable_0D_to_dict() -> None:
     assert var_dict["values"] == 12.0
 
 
-def test_variable_vector_to_dict() -> None:
-    var = sc.vectors(dims=['x'], values=np.random.random([10, 3]))
+@pytest.mark.parametrize('ndim', [1, 2])
+def test_variable_string_to_dict(ndim: Literal[1, 2]) -> None:
+    var = sc.Variable(
+        dims=('x',),
+        values=np.random.choice(['foo', 'bar'], 10),
+    )
+    if ndim > 1:
+        var = var.fold('x', sizes={'x': 2, 'y': 5})
+        dims: tuple[str, ...] = ('x', 'y')
+        shape: tuple[int, ...] = (2, 5)
+    else:
+        dims, shape = ('x',), (10,)
     var_dict = sc.to_dict(var)
-    assert var_dict["dims"] == ('x',)
-    assert var_dict["shape"] == (10,)
-    assert var_dict["values"].shape == (10, 3)
+    assert var_dict["dims"] == var.dims == dims
+    assert var_dict["shape"] == var.shape == shape
+    assert np.array_equal(var_dict["values"], var.values)
+    assert var_dict["dtype"] == var.dtype == sc.DType.string
+
+
+def test_variable_0D_string_to_dict() -> None:
+    var = sc.Variable(values='foo', dims=())
+    var_dict = sc.to_dict(var)
+    assert var_dict["dims"] == ()
+    assert var_dict["shape"] == ()
+    assert np.array_equal(var_dict["values"], 'foo')
+    assert var_dict["dtype"] == sc.DType.string
+
+
+@pytest.mark.parametrize('ndim', [1, 2])
+def test_variable_vector_to_dict(ndim: Literal[1, 2]) -> None:
+    var = sc.vectors(dims=['x'], values=np.random.random([10, 3]))
+    dims: tuple[str, ...]
+    shape: tuple[int, ...]
+    if ndim > 1:
+        var = var.fold("x", sizes={"x": 2, "y": 5})
+        dims, shape = ('x', 'y'), (2, 5)
+    else:
+        dims, shape = ('x',), (10,)
+    var_dict = sc.to_dict(var)
+    assert var_dict["dims"] == dims
+    assert var_dict["shape"] == shape
+    assert var_dict["values"].shape == (*shape, 3)
     assert var_dict["dtype"] == sc.DType.vector3
 
 
@@ -52,7 +92,8 @@ def test_variable_0D_vector_to_dict() -> None:
     assert var_dict["dtype"] == sc.DType.vector3
 
 
-def test_variable_linear_transform_to_dict() -> None:
+@pytest.mark.parametrize('ndim', [1, 2])
+def test_variable_linear_transform_to_dict(ndim: Literal[1, 2]) -> None:
     data = np.array(
         [
             np.arange(9.0).reshape(3, 3),
@@ -62,9 +103,14 @@ def test_variable_linear_transform_to_dict() -> None:
         ]
     )
     var = sc.spatial.linear_transforms(dims=['x'], values=data, unit=sc.units.m)
+    if ndim > 1:
+        var = var.fold('x', sizes={'x': 2, 'y': 2})
+        shape: tuple[int, ...] = (2, 2)
+    else:
+        shape = (4,)
     var_dict = sc.to_dict(var)
-    assert var_dict["shape"] == (4,)
-    assert var_dict["values"].shape == (4, 3, 3)
+    assert var_dict["shape"] == shape
+    assert var_dict["values"].shape == (*shape, 3, 3)
     assert var_dict["dtype"] == sc.DType.linear_transform3
 
 
@@ -77,16 +123,22 @@ def test_variable_0D_linear_transform_to_dict() -> None:
     assert var_dict["dtype"] == sc.DType.linear_transform3
 
 
-def test_variable_from_dict() -> None:
+@pytest.mark.parametrize('ndim', [1, 2])
+def test_variable_from_dict(ndim: Literal[1, 2]) -> None:
+    if ndim > 1:
+        dims: tuple[str, ...] = ('x', 'y')
+        shape: tuple[int, ...] = (2, 5)
+    else:
+        dims, shape = ('x',), (10,)
     var_dict = {
-        "dims": ('x',),
-        "values": np.random.random(10),
-        "variances": np.random.random(10),
+        "dims": dims,
+        "values": np.random.random(shape),
+        "variances": np.random.random(shape),
     }
     var = sc.from_dict(var_dict)
     assert isinstance(var, sc.Variable)
-    assert var.dims == var_dict["dims"]
-    assert var.shape == (10,)
+    assert var.dims == var_dict["dims"] == dims
+    assert var.shape == shape
     assert np.array_equal(var.values, var_dict["values"])  # type: ignore[arg-type]
     assert np.array_equal(var.variances, var_dict["variances"])  # type: ignore[arg-type]
     assert var.unit == sc.units.one
@@ -103,17 +155,58 @@ def test_variable_0D_from_dict() -> None:
     assert var.unit == sc.units.one
 
 
-def test_variable_vector_from_dict() -> None:
+@pytest.mark.parametrize('ndim', [1, 2])
+def test_variable_string_from_dict(ndim: Literal[1, 2]) -> None:
+    if ndim > 1:
+        dims: tuple[str, ...] = ('x', 'y')
+        shape: tuple[int, ...] = (2, 5)
+    else:
+        dims, shape = ('x',), (10,)
     var_dict = {
-        "dims": ('x',),
-        "values": np.arange(6).reshape(2, 3),
+        "dims": dims,
+        "shape": shape,
+        "values": np.random.choice(['foo', 'bar', 'baz'], np.prod(shape)),
+        "dtype": 'string',
+    }
+    var = sc.from_dict(var_dict)
+    assert isinstance(var, sc.Variable)
+    assert var.dims == var_dict["dims"] == dims
+    assert var.shape == shape
+    assert np.array_equal(var.values, var_dict["values"])  # type: ignore[arg-type]
+    assert var.dtype == sc.DType.string
+
+
+def test_variable_0D_string_from_dict() -> None:
+    var_dict = {"dims": (), "values": 'foo', "dtype": 'string'}
+    var = sc.from_dict(var_dict)
+    assert isinstance(var, sc.Variable)
+    assert var.dims == var_dict["dims"]
+    assert var.shape == ()
+    assert np.array_equal(np.array(var.values), np.array('foo'))
+    assert var.dtype == sc.DType.string
+
+
+@pytest.mark.parametrize('ndim', [1, 2])
+def test_variable_vector_from_dict(ndim: Literal[1, 2]) -> None:
+    if ndim > 1:
+        dims: tuple[str, ...] = ('x', 'y')
+        shape: tuple[int, ...] = (2, 2)
+        expected: list[Any] = [
+            [[0, 1, 2], [3, 4, 5]], [[6, 7, 8], [9, 10, 11]],
+        ]
+    else:
+        dims, shape = ('x',), (4,)
+        expected = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]]
+    var_dict = {
+        "dims": dims,
+        "values": np.arange(12).reshape((*shape, 3)),
         "dtype": "vector3",
     }
     var = sc.from_dict(var_dict)
     assert isinstance(var, sc.Variable)
-    assert var.dims == var_dict["dims"]
-    assert var.shape == (2,)
-    assert np.array_equal(np.array(var.values), [[0, 1, 2], [3, 4, 5]])
+    assert var.dims == var_dict["dims"] == dims
+    assert var.shape == shape
+    assert np.array_equal(np.array(var.values), expected)
     assert var.unit == sc.units.one
     assert var.dtype == sc.DType.vector3
 
@@ -129,16 +222,22 @@ def test_variable_0D_vector_from_dict() -> None:
     assert var.dtype == sc.DType.vector3
 
 
-def test_variable_linear_transform_from_dict() -> None:
+@pytest.mark.parametrize('ndim', [1, 2])
+def test_variable_linear_transform_from_dict(ndim: Literal[1, 2]) -> None:
+    if ndim > 1:
+        dims: tuple[str, ...] = ('x', 'y')
+        shape: tuple[int, ...] = (2, 2)
+    else:
+        dims, shape = ('x',), (4,)
     var_dict = {
-        "dims": ('x',),
-        "values": np.arange(18).reshape(2, 3, 3),
+        "dims": dims,
+        "values": np.arange(36).reshape((*shape, 3, 3)),
         "dtype": "linear_transform3",
     }
     var = sc.from_dict(var_dict)
     assert isinstance(var, sc.Variable)
     assert var.dims == var_dict["dims"]
-    assert var.shape == (2,)
+    assert var.shape == shape
     assert np.array_equal(np.array(var.values), var_dict["values"])  # type: ignore[arg-type]
     assert var.unit == sc.units.one
     assert var.dtype == sc.DType.linear_transform3
@@ -159,13 +258,16 @@ def test_variable_0D_linear_transform_from_dict() -> None:
     assert var.dtype == sc.DType.linear_transform3
 
 
-def test_variable_round_trip() -> None:
+@pytest.mark.parametrize('ndim', [1, 2])
+def test_variable_round_trip(ndim: Literal[1, 2]) -> None:
     var = sc.Variable(
         dims=["x"],
         values=np.arange(10.0),
         variances=np.random.random(10),
         unit=sc.units.m,
     )
+    if ndim > 1:
+        var = var.fold('x', sizes={'x': 2, 'y': 5})
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 
@@ -174,8 +276,27 @@ def test_variable_0D_round_trip() -> None:
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 
-def test_variable_vector_round_trip() -> None:
+@pytest.mark.parametrize('ndim', [1, 2])
+def test_variable_string_round_trip(ndim: Literal[1, 2]) -> None:
+    var = sc.Variable(
+        dims=('x',),
+        values=np.random.choice(['foo', 'bar', 'baz'], 10),
+    )
+    if ndim > 1:
+        var = var.fold('x', sizes={'x': 2, 'y': 5})
+    assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
+
+
+def test_variable_0D_string_round_trip() -> None:
+    var = sc.Variable(values='foo', dims=())
+    assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
+
+
+@pytest.mark.parametrize('ndim', [1, 2])
+def test_variable_vector_round_trip(ndim: Literal[1, 2]) -> None:
     var = sc.vectors(dims=['x'], values=np.random.random([10, 3]))
+    if ndim > 1:
+        var = var.fold('x', sizes={'x': 2, 'y': 5})
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 
@@ -184,7 +305,8 @@ def test_variable_0D_vector_round_trip() -> None:
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 
-def test_variable_linear_transform_round_trip() -> None:
+@pytest.mark.parametrize('ndim', [1, 2])
+def test_variable_linear_transform_round_trip(ndim: Literal[1, 2]) -> None:
     data = np.array(
         [
             np.arange(9.0).reshape(3, 3),
@@ -194,6 +316,8 @@ def test_variable_linear_transform_round_trip() -> None:
         ]
     )
     var = sc.spatial.linear_transforms(dims=['x'], values=data, unit=sc.units.m)
+    if ndim > 1:
+        var = var.fold('x', sizes={'x': 2, 'y': 2})
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 
