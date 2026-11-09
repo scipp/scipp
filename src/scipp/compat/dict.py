@@ -192,7 +192,10 @@ def _dict_to_variable(d: dict[str, Any]) -> Variable:
         and len(cast(Sequence[str], out.get('dims'))) > 1
     ):
         massage_dims: Callable[[Variable], Variable] | None = partial(
-            fold, dim='_', dims=out.get('dims'), shape=d.get('shape'),
+            fold,
+            dim='_',
+            dims=out.get('dims'),
+            shape=d.get('shape'),
         )
         out['dims'] = ['_']
     else:

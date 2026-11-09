@@ -47,7 +47,8 @@ def test_variable_0D_to_dict() -> None:
 @pytest.mark.parametrize('ndim', [1, 2])
 @pytest.mark.parametrize('dtype', ['string', 'PyObject'])
 def test_variable_nonnative_to_dict(
-    ndim: Literal[1, 2], dtype: Literal['string', 'PyObject'],
+    ndim: Literal[1, 2],
+    dtype: Literal['string', 'PyObject'],
 ) -> None:
     data = np.random.choice(['foo', 'bar'], 10)
     if dtype == 'PyObject':
@@ -109,7 +110,8 @@ def test_variable_0D_vector_to_dict() -> None:
 @pytest.mark.parametrize('ndim', [1, 2])
 @pytest.mark.parametrize('transform', ['linear', 'affine'])
 def test_variable_transform_to_dict(
-    ndim: Literal[1, 2], transform: Literal['linear', 'affine'],
+    ndim: Literal[1, 2],
+    transform: Literal['linear', 'affine'],
 ) -> None:
     data = np.array(
         [
@@ -151,7 +153,8 @@ def test_variable_0D_transform_to_dict(
     assert var_dict["dims"] == ()
     assert var_dict["shape"] == ()
     assert np.array_equal(
-        var_dict["values"][:3, :3], [[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+        var_dict["values"][:3, :3],
+        [[1, 2, 3], [4, 5, 6], [7, 8, 9]],
     )
     assert var_dict["dtype"] == dtype
 
@@ -191,7 +194,8 @@ def test_variable_0D_from_dict() -> None:
 @pytest.mark.parametrize('ndim', [1, 2])
 @pytest.mark.parametrize('dtype', ['string', 'PyObject'])
 def test_variable_nonnative_from_dict(
-    ndim: Literal[1, 2], dtype: Literal['string', 'PyObject'],
+    ndim: Literal[1, 2],
+    dtype: Literal['string', 'PyObject'],
 ) -> None:
     if ndim > 1:
         dims: tuple[str, ...] = ('x', 'y')
@@ -207,7 +211,8 @@ def test_variable_nonnative_from_dict(
     assert var.dims == var_dict["dims"] == dims
     assert var.shape == shape
     assert np.array_equal(
-        sc.to_dict(var)["values"], var_dict["values"],
+        sc.to_dict(var)["values"],
+        var_dict["values"],
     )
     assert var.dtype == getattr(sc.DType, dtype)
 
@@ -232,7 +237,8 @@ def test_variable_vector_from_dict(ndim: Literal[1, 2]) -> None:
         dims: tuple[str, ...] = ('x', 'y')
         shape: tuple[int, ...] = (2, 2)
         expected: list[Any] = [
-            [[0, 1, 2], [3, 4, 5]], [[6, 7, 8], [9, 10, 11]],
+            [[0, 1, 2], [3, 4, 5]],
+            [[6, 7, 8], [9, 10, 11]],
         ]
     else:
         dims, shape = ('x',), (4,)
@@ -265,7 +271,8 @@ def test_variable_0D_vector_from_dict() -> None:
 @pytest.mark.parametrize('ndim', [1, 2])
 @pytest.mark.parametrize('transform', ['linear', 'affine'])
 def test_variable_transform_from_dict(
-    ndim: Literal[1, 2], transform: Literal['linear', 'affine'],
+    ndim: Literal[1, 2],
+    transform: Literal['linear', 'affine'],
 ) -> None:
     if ndim > 1:
         dims: tuple[str, ...] = ('x', 'y')
@@ -335,7 +342,8 @@ def test_variable_0D_round_trip() -> None:
 @pytest.mark.parametrize('ndim', [1, 2])
 @pytest.mark.parametrize('dtype', ['string', 'PyObject'])
 def test_variable_nonnative_round_trip(
-    ndim: Literal[1, 2], dtype: Literal['string', 'PyObject'],
+    ndim: Literal[1, 2],
+    dtype: Literal['string', 'PyObject'],
 ) -> None:
     data = np.random.choice(['foo', 'bar', 'baz'], 10)
     if dtype == 'PyObject':
@@ -351,7 +359,8 @@ def test_variable_0D_nonnative_round_trip(
     dtype: Literal['string', 'PyObject'],
 ) -> None:
     var = sc.Variable(
-        values='foo' if dtype == 'string' else Object('foo'), dims=(),
+        values='foo' if dtype == 'string' else Object('foo'),
+        dims=(),
     )
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
@@ -372,7 +381,8 @@ def test_variable_0D_vector_round_trip() -> None:
 @pytest.mark.parametrize('ndim', [1, 2])
 @pytest.mark.parametrize('transform', ['linear', 'affine'])
 def test_variable_transform_round_trip(
-    ndim: Literal[1, 2], transform: Literal['linear', 'affine'],
+    ndim: Literal[1, 2],
+    transform: Literal['linear', 'affine'],
 ) -> None:
     data = np.array(
         [
