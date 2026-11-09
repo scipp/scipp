@@ -107,7 +107,10 @@ def test_variable_0D_vector_to_dict() -> None:
 
 
 @pytest.mark.parametrize('ndim', [1, 2])
-def test_variable_linear_transform_to_dict(ndim: Literal[1, 2]) -> None:
+@pytest.mark.parametrize('transform', ['linear', 'affine'])
+def test_variable_transform_to_dict(
+    ndim: Literal[1, 2], transform: Literal['linear', 'affine'],
+) -> None:
     data = np.array(
         [
             np.arange(9.0).reshape(3, 3),
@@ -117,6 +120,12 @@ def test_variable_linear_transform_to_dict(ndim: Literal[1, 2]) -> None:
         ]
     )
     var = sc.spatial.linear_transforms(dims=['x'], values=data, unit=sc.units.m)
+    if transform == 'affine':
+        var = var * sc.spatial.translation(value=np.array([3, 2, 1]), unit='m')
+        elem_shape, dtype = (4, 4), sc.DType.affine_transform3
+    else:
+        elem_shape, dtype = (3, 3), sc.DType.linear_transform3
+
     if ndim > 1:
         var = var.fold('x', sizes={'x': 2, 'y': 2})
         shape: tuple[int, ...] = (2, 2)
@@ -124,17 +133,27 @@ def test_variable_linear_transform_to_dict(ndim: Literal[1, 2]) -> None:
         shape = (4,)
     var_dict = sc.to_dict(var)
     assert var_dict["shape"] == shape
-    assert var_dict["values"].shape == (*shape, 3, 3)
-    assert var_dict["dtype"] == sc.DType.linear_transform3
+    assert var_dict["values"].shape == (*shape, *elem_shape)
+    assert var_dict["dtype"] == dtype
 
 
-def test_variable_0D_linear_transform_to_dict() -> None:
+@pytest.mark.parametrize('transform', ['linear', 'affine'])
+def test_variable_0D_transform_to_dict(
+    transform: Literal['linear', 'affine'],
+) -> None:
     var = sc.spatial.linear_transform(value=np.arange(1, 10).reshape(3, 3))
+    if transform == 'affine':
+        var = var * sc.spatial.translation(value=np.array([3, 2, 1]), unit='m')
+        dtype = sc.DType.affine_transform3
+    else:
+        dtype = sc.DType.linear_transform3
     var_dict = sc.to_dict(var)
     assert var_dict["dims"] == ()
     assert var_dict["shape"] == ()
-    assert np.array_equal(var_dict["values"], [[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-    assert var_dict["dtype"] == sc.DType.linear_transform3
+    assert np.array_equal(
+        var_dict["values"][:3, :3], [[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+    )
+    assert var_dict["dtype"] == dtype
 
 
 @pytest.mark.parametrize('ndim', [1, 2])
@@ -244,39 +263,55 @@ def test_variable_0D_vector_from_dict() -> None:
 
 
 @pytest.mark.parametrize('ndim', [1, 2])
-def test_variable_linear_transform_from_dict(ndim: Literal[1, 2]) -> None:
+@pytest.mark.parametrize('transform', ['linear', 'affine'])
+def test_variable_transform_from_dict(
+    ndim: Literal[1, 2], transform: Literal['linear', 'affine'],
+) -> None:
     if ndim > 1:
         dims: tuple[str, ...] = ('x', 'y')
         shape: tuple[int, ...] = (2, 2)
     else:
         dims, shape = ('x',), (4,)
-    var_dict = {
-        "dims": dims,
-        "values": np.arange(36).reshape((*shape, 3, 3)),
-        "dtype": "linear_transform3",
-    }
+
+    data = np.arange(36).reshape((*shape, 3, 3))
+    if transform == 'affine':
+        data, data_ = np.zeros((*shape, 4, 4), dtype=float), data
+        data[..., :-1, :-1] = data_
+        data[..., -1] = [3, 2, 1, 1]
+        dtype = 'affine_transform3'
+    else:
+        dtype = 'linear_transform3'
+
+    var_dict = {"dims": dims, "values": data, "dtype": dtype}
     var = sc.from_dict(var_dict)
     assert isinstance(var, sc.Variable)
     assert var.dims == var_dict["dims"]
     assert var.shape == shape
     assert np.array_equal(np.array(var.values), var_dict["values"])  # type: ignore[arg-type]
     assert var.unit == sc.units.one
-    assert var.dtype == sc.DType.linear_transform3
+    assert var.dtype == getattr(sc.DType, dtype)
 
 
-def test_variable_0D_linear_transform_from_dict() -> None:
-    var_dict = {
-        "dims": (),
-        "values": np.arange(9).reshape(3, 3),
-        "dtype": "linear_transform3",
-    }
+@pytest.mark.parametrize('transform', ['linear', 'affine'])
+def test_variable_0D_transform_from_dict(
+    transform: Literal['linear', 'affine'],
+) -> None:
+    data = np.arange(9).reshape(3, 3)
+    if transform == 'affine':
+        data, data_ = np.zeros((4, 4), dtype=float), data
+        data[:-1, :-1] = data_
+        data[-1] = [3, 2, 1, 1]
+        dtype = 'affine_transform3'
+    else:
+        dtype = 'linear_transform3'
+    var_dict = {"dims": (), "values": data, "dtype": dtype}
     var = sc.from_dict(var_dict)
     assert isinstance(var, sc.Variable)
     assert var.dims == ()
     assert var.shape == ()
     assert np.array_equal(np.array(var.value), var_dict["values"])  # type: ignore[arg-type]
     assert var.unit == sc.units.one
-    assert var.dtype == sc.DType.linear_transform3
+    assert var.dtype == getattr(sc.DType, dtype)
 
 
 @pytest.mark.parametrize('ndim', [1, 2])
@@ -335,7 +370,10 @@ def test_variable_0D_vector_round_trip() -> None:
 
 
 @pytest.mark.parametrize('ndim', [1, 2])
-def test_variable_linear_transform_round_trip(ndim: Literal[1, 2]) -> None:
+@pytest.mark.parametrize('transform', ['linear', 'affine'])
+def test_variable_transform_round_trip(
+    ndim: Literal[1, 2], transform: Literal['linear', 'affine'],
+) -> None:
     data = np.array(
         [
             np.arange(9.0).reshape(3, 3),
@@ -347,6 +385,8 @@ def test_variable_linear_transform_round_trip(ndim: Literal[1, 2]) -> None:
     var = sc.spatial.linear_transforms(dims=['x'], values=data, unit=sc.units.m)
     if ndim > 1:
         var = var.fold('x', sizes={'x': 2, 'y': 2})
+    if transform == 'affine':
+        var = var * sc.spatial.translation(value=np.array([3, 2, 1]), unit='m')
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 
