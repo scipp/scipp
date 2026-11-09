@@ -51,6 +51,16 @@ backend = { name = "pixi-build-cmake", version = "0.*" }
 # `compilers = ["cxx"]` is the pixi-build-cmake default, so it is omitted here.
 # Leave IPO at its default: enabled when the C++ toolchain supports it.
 extra-args = ["-DBENCHMARK=OFF", "-DSANITIZERS=OFF"]
+# CMake installs this tree with install(DIRECTORY), so these files are not
+# compiler inputs and are otherwise invisible to the backend's build cache.
+# Track package code, typing information, and runtime assets, but not tests,
+# docs, or generated __pycache__ files. Keep in sync with package_test.py.
+extra-input-globs = [
+  "src/scipp/**/*.py",
+  "src/scipp/**/*.pyi",
+  "src/scipp/py.typed",
+  "src/scipp/visualization/templates/**/*",
+]
 
 # Note on ccache: the package build invokes ccache when it is on PATH (see
 # lib/CMakeLists.txt), but its cache is NOT persisted across CI runs. The build
