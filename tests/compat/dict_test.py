@@ -3,12 +3,18 @@
 # @file
 # @author Neil Vaytet
 
+from dataclasses import dataclass
 from typing import Any, Literal
 
 import numpy as np
 import pytest
 
 import scipp as sc
+
+
+@dataclass(eq=True)
+class Object:
+    name: str
 
 
 @pytest.mark.parametrize('ndim', [1, 2])
@@ -39,11 +45,14 @@ def test_variable_0D_to_dict() -> None:
 
 
 @pytest.mark.parametrize('ndim', [1, 2])
-def test_variable_string_to_dict(ndim: Literal[1, 2]) -> None:
-    var = sc.Variable(
-        dims=('x',),
-        values=np.random.choice(['foo', 'bar'], 10),
-    )
+@pytest.mark.parametrize('dtype', ['string', 'PyObject'])
+def test_variable_nonnative_to_dict(
+    ndim: Literal[1, 2], dtype: Literal['string', 'PyObject'],
+) -> None:
+    data = np.random.choice(['foo', 'bar'], 10)
+    if dtype == 'PyObject':
+        data = np.array([Object(d) for d in data])
+    var = sc.Variable(dims=('x',), values=data)
     if ndim > 1:
         var = var.fold('x', sizes={'x': 2, 'y': 5})
         dims: tuple[str, ...] = ('x', 'y')
@@ -53,17 +62,22 @@ def test_variable_string_to_dict(ndim: Literal[1, 2]) -> None:
     var_dict = sc.to_dict(var)
     assert var_dict["dims"] == var.dims == dims
     assert var_dict["shape"] == var.shape == shape
-    assert np.array_equal(var_dict["values"], var.values)
-    assert var_dict["dtype"] == var.dtype == sc.DType.string
+    # Note: we've flattened the internal representation
+    assert np.array_equal(var_dict["values"], data)
+    assert var_dict["dtype"] == var.dtype == getattr(sc.DType, dtype)
 
 
-def test_variable_0D_string_to_dict() -> None:
-    var = sc.Variable(values='foo', dims=())
+@pytest.mark.parametrize('dtype', ['string', 'PyObject'])
+def test_variable_0D_nonnative_to_dict(
+    dtype: Literal['string', 'PyObject'],
+) -> None:
+    value: Any = 'foo' if dtype == 'string' else Object('object')
+    var = sc.Variable(values=value, dims=())
     var_dict = sc.to_dict(var)
     assert var_dict["dims"] == ()
     assert var_dict["shape"] == ()
-    assert np.array_equal(var_dict["values"], 'foo')
-    assert var_dict["dtype"] == sc.DType.string
+    assert np.array_equal(var_dict["values"], value)
+    assert var_dict["dtype"] == getattr(sc.DType, dtype)
 
 
 @pytest.mark.parametrize('ndim', [1, 2])
@@ -156,34 +170,41 @@ def test_variable_0D_from_dict() -> None:
 
 
 @pytest.mark.parametrize('ndim', [1, 2])
-def test_variable_string_from_dict(ndim: Literal[1, 2]) -> None:
+@pytest.mark.parametrize('dtype', ['string', 'PyObject'])
+def test_variable_nonnative_from_dict(
+    ndim: Literal[1, 2], dtype: Literal['string', 'PyObject'],
+) -> None:
     if ndim > 1:
         dims: tuple[str, ...] = ('x', 'y')
         shape: tuple[int, ...] = (2, 5)
     else:
         dims, shape = ('x',), (10,)
-    var_dict = {
-        "dims": dims,
-        "shape": shape,
-        "values": np.random.choice(['foo', 'bar', 'baz'], np.prod(shape)),
-        "dtype": 'string',
-    }
+    data = np.random.choice(['foo', 'bar', 'baz'], np.prod(shape))
+    if dtype == 'PyObject':
+        data = np.array([Object(d) for d in data])
+    var_dict = {"dims": dims, "shape": shape, "values": data, "dtype": dtype}
     var = sc.from_dict(var_dict)
     assert isinstance(var, sc.Variable)
     assert var.dims == var_dict["dims"] == dims
     assert var.shape == shape
-    assert np.array_equal(var.values, var_dict["values"])  # type: ignore[arg-type]
-    assert var.dtype == sc.DType.string
+    assert np.array_equal(
+        sc.to_dict(var)["values"], var_dict["values"],
+    )
+    assert var.dtype == getattr(sc.DType, dtype)
 
 
-def test_variable_0D_string_from_dict() -> None:
-    var_dict = {"dims": (), "values": 'foo', "dtype": 'string'}
+@pytest.mark.parametrize('dtype', ['string', 'PyObject'])
+def test_variable_0D_nonnative_from_dict(
+    dtype: Literal['string', 'PyObject'],
+) -> None:
+    value: Any = 'foo' if dtype == 'string' else Object('object')
+    var_dict = {"dims": (), "values": value, "dtype": dtype}
     var = sc.from_dict(var_dict)
     assert isinstance(var, sc.Variable)
     assert var.dims == var_dict["dims"]
     assert var.shape == ()
-    assert np.array_equal(np.array(var.values), np.array('foo'))
-    assert var.dtype == sc.DType.string
+    assert np.array_equal(np.array(var.values), np.array(value))
+    assert var.dtype == getattr(sc.DType, dtype)
 
 
 @pytest.mark.parametrize('ndim', [1, 2])
@@ -277,18 +298,26 @@ def test_variable_0D_round_trip() -> None:
 
 
 @pytest.mark.parametrize('ndim', [1, 2])
-def test_variable_string_round_trip(ndim: Literal[1, 2]) -> None:
-    var = sc.Variable(
-        dims=('x',),
-        values=np.random.choice(['foo', 'bar', 'baz'], 10),
-    )
+@pytest.mark.parametrize('dtype', ['string', 'PyObject'])
+def test_variable_nonnative_round_trip(
+    ndim: Literal[1, 2], dtype: Literal['string', 'PyObject'],
+) -> None:
+    data = np.random.choice(['foo', 'bar', 'baz'], 10)
+    if dtype == 'PyObject':
+        data = np.array([Object(d) for d in data])
+    var = sc.Variable(dims=('x',), values=data)
     if ndim > 1:
         var = var.fold('x', sizes={'x': 2, 'y': 5})
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 
-def test_variable_0D_string_round_trip() -> None:
-    var = sc.Variable(values='foo', dims=())
+@pytest.mark.parametrize('dtype', ['string', 'PyObject'])
+def test_variable_0D_nonnative_round_trip(
+    dtype: Literal['string', 'PyObject'],
+) -> None:
+    var = sc.Variable(
+        values='foo' if dtype == 'string' else Object('foo'), dims=(),
+    )
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 
