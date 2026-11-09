@@ -21,7 +21,12 @@ from ..core import (
     vector,
     vectors,
 )
-from ..spatial import linear_transform, linear_transforms
+from ..spatial import (
+    affine_transform,
+    affine_transforms,
+    linear_transform,
+    linear_transforms,
+)
 from ..typing import VariableLike
 
 
@@ -198,9 +203,18 @@ def _dict_to_variable(d: dict[str, Any]) -> Variable:
         init: dict[str, Callable[..., Variable]] = {
             'vector3': vectors,
             'linear_transform3': linear_transforms,
+            # Note: while one can technically directly construct a
+            # Variable of this .dtype, it is error prone due to the
+            # different data layouts in numpy/scipy and in the Eigen
+            # matrices, so just use the helper function
+            'affine_transform3': affine_transforms,
         }
     else:
-        init = {'vector3': vector, 'linear_transform3': linear_transform}
+        init = {
+            'vector3': vector,
+            'linear_transform3': linear_transform,
+            'affine_transform3': affine_transform,
+        }
     make_var = init.get(str(out.get('dtype', None)), Variable)
     if make_var != Variable:
         if not out['dims']:
