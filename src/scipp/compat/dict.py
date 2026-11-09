@@ -66,6 +66,15 @@ def _vec_parser(x: Any, shp: object) -> npt.NDArray[Any]:
     return np.array(x)
 
 
+def _obj_array_parser(x: Any, shp: object) -> npt.NDArray[Any]:
+    """Coerce ElementArrayView_PyObject into a flattened NumPy array."""
+    if not shp:
+        return np.array(x)
+    # Probably an ElementArrayView_PyObject, which cannot be iterated
+    # over normally (despite having an `.__iter__()`)
+    return np.array([x[i] for i in range(len(x))])
+
+
 def _variable_to_dict(v: Variable) -> dict[str, Any]:
     """Convert a Scipp Variable to a python dict."""
     out: dict[str, Any] = {
@@ -86,6 +95,7 @@ def _variable_to_dict(v: Variable) -> dict[str, Any]:
             str(DType.vector3): _vec_parser,
             str(DType.linear_transform3): _vec_parser,
             str(DType.string): _vec_parser,
+            str(DType.PyObject): _obj_array_parser,
         }
     )
 
