@@ -3,18 +3,12 @@
 # @file
 # @author Neil Vaytet
 
-from dataclasses import dataclass
 from typing import Any, Literal
 
 import numpy as np
 import pytest
 
 import scipp as sc
-
-
-@dataclass(eq=True)
-class Object:
-    name: str
 
 
 @pytest.mark.parametrize('ndim', [1, 2])
@@ -52,7 +46,7 @@ def test_variable_nonnative_to_dict(
 ) -> None:
     data = np.random.choice(['foo', 'bar'], 10)
     if dtype == 'PyObject':
-        data = np.array([Object(d) for d in data])
+        data = data.astype(object)
     var = sc.Variable(dims=('x',), values=data)
     if ndim > 1:
         var = var.fold('x', sizes={'x': 2, 'y': 5})
@@ -72,13 +66,13 @@ def test_variable_nonnative_to_dict(
 def test_variable_0D_nonnative_to_dict(
     dtype: Literal['string', 'PyObject'],
 ) -> None:
-    value: Any = 'foo' if dtype == 'string' else Object('object')
-    var = sc.Variable(values=value, dims=())
+    dtype_obj = getattr(sc.DType, dtype)
+    var = sc.Variable(values='foo', dims=(), dtype=dtype_obj)
     var_dict = sc.to_dict(var)
     assert var_dict["dims"] == ()
     assert var_dict["shape"] == ()
-    assert np.array_equal(var_dict["values"], value)
-    assert var_dict["dtype"] == getattr(sc.DType, dtype)
+    assert np.array_equal(var_dict["values"], 'foo')
+    assert var_dict["dtype"] == dtype_obj
 
 
 @pytest.mark.parametrize('ndim', [1, 2])
@@ -204,7 +198,7 @@ def test_variable_nonnative_from_dict(
         dims, shape = ('x',), (10,)
     data = np.random.choice(['foo', 'bar', 'baz'], np.prod(shape))
     if dtype == 'PyObject':
-        data = np.array([Object(d) for d in data])
+        data = data.astype(object)
     var_dict = {"dims": dims, "shape": shape, "values": data, "dtype": dtype}
     var = sc.from_dict(var_dict)
     assert isinstance(var, sc.Variable)
@@ -221,13 +215,12 @@ def test_variable_nonnative_from_dict(
 def test_variable_0D_nonnative_from_dict(
     dtype: Literal['string', 'PyObject'],
 ) -> None:
-    value: Any = 'foo' if dtype == 'string' else Object('object')
-    var_dict = {"dims": (), "values": value, "dtype": dtype}
+    var_dict = {"dims": (), "values": 'foo', "dtype": dtype}
     var = sc.from_dict(var_dict)
     assert isinstance(var, sc.Variable)
     assert var.dims == var_dict["dims"]
     assert var.shape == ()
-    assert np.array_equal(np.array(var.values), np.array(value))
+    assert np.array_equal(np.array(var.values), np.array('foo'))
     assert var.dtype == getattr(sc.DType, dtype)
 
 
@@ -347,7 +340,7 @@ def test_variable_nonnative_round_trip(
 ) -> None:
     data = np.random.choice(['foo', 'bar', 'baz'], 10)
     if dtype == 'PyObject':
-        data = np.array([Object(d) for d in data])
+        data = data.astype(object)
     var = sc.Variable(dims=('x',), values=data)
     if ndim > 1:
         var = var.fold('x', sizes={'x': 2, 'y': 5})
@@ -359,8 +352,9 @@ def test_variable_0D_nonnative_round_trip(
     dtype: Literal['string', 'PyObject'],
 ) -> None:
     var = sc.Variable(
-        values='foo' if dtype == 'string' else Object('foo'),
+        values='foo',
         dims=(),
+        dtype=str if dtype == 'string' else object,
     )
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 

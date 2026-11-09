@@ -6,7 +6,6 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Callable, Sequence
-from functools import partial
 from typing import Any, cast
 
 import numpy as np
@@ -17,7 +16,6 @@ from ..core import (
     Dataset,
     DType,
     Variable,
-    fold,
     vector,
     vectors,
 )
@@ -184,23 +182,6 @@ def _dict_to_variable(d: dict[str, Any]) -> Variable:
         else:
             out[key] = d[key]
 
-    # Note: N-D string/object variables are stored as 1-D arrays
-    # internally; recover the dimensionality info where appropriate
-    if (
-        out.get('dtype') in (DType.string, DType.PyObject)
-        and out.get('dims')
-        and len(cast(Sequence[str], out.get('dims'))) > 1
-    ):
-        massage_dims: Callable[[Variable], Variable] | None = partial(
-            fold,
-            dim='_',
-            dims=out.get('dims'),
-            shape=d.get('shape'),
-        )
-        out['dims'] = ['_']
-    else:
-        massage_dims = None
-
     # Hack for types that cannot be directly constructed using Variable()
     if out['dims']:
         init: dict[str, Callable[..., Variable]] = {
@@ -218,7 +199,7 @@ def _dict_to_variable(d: dict[str, Any]) -> Variable:
             'linear_transform3': linear_transform,
             'affine_transform3': affine_transform,
         }
-    make_var = init.get(str(out.get('dtype', None)), Variable)
+    make_var = init.get(dtype := str(out.get('dtype', None)), Variable)
     if make_var != Variable:
         if not out['dims']:
             out['value'] = out['values']
@@ -226,10 +207,20 @@ def _dict_to_variable(d: dict[str, Any]) -> Variable:
             del out['dims']
         for key in ['dtype', 'variance', 'variances']:
             out.pop(key, None)
-    var = make_var(**out)
 
-    if massage_dims is not None:
-        var = massage_dims(var)
+    # Note: N-D string/object variables are stored as 1-D arrays
+    # internally; recover the dimensionality info where appropriate
+    if (
+        dtype in ('string', 'PyObject')
+        and d.get('dims')
+        and len(cast(Sequence[str], d['dims'])) > 1
+        and d.get('shape') is not None
+    ):
+        var = make_var(**{**out, 'dims': ['_']}).fold(
+            '_', dims=d['dims'], shape=d['shape']
+        )
+    else:
+        var = make_var(**out)
     return var
 
 
