@@ -56,6 +56,13 @@ set_target_properties(
              "${CMAKE_INSTALL_RPATH}/${RELATIVE_LIB}/${CMAKE_INSTALL_LIBDIR}"
 )
 
+# Only scipp.cpp needs the version; keeping it off other TUs means a new git
+# commit doesn't change every compile command (full rebuild + ccache misses).
+set_source_files_properties(
+  scipp.cpp PROPERTIES COMPILE_DEFINITIONS
+                       "SCIPP_VERSION=\"${SCIPP_VERSION_PEP440}\""
+)
+
 if(PRECOMPILED_HEADERS)
   target_precompile_headers(_scipp PRIVATE pybind11.h)
 endif()
