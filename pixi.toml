@@ -164,6 +164,10 @@ cppcheck = "2.18.3.*"
 cxx-compiler = "*"
 ccache = "*"
 
+[feature.dev.target.win-64.dependencies]
+ccache = "*"
+
+
 [feature.dev.tasks]
 # Directories are spelled out as build/dev, install/dev etc.: `dev` is the only
 # environment with these tasks, so templating on the environment name would
