@@ -21,9 +21,7 @@ from collections.abc import Callable
 from copyreg import pickle
 from functools import partial
 from operator import methodcaller
-from typing import Any, ClassVar, cast, final
-
-import numpy as np
+from typing import Any, ClassVar, final
 
 from . import __version__ as _scipp_version
 from .compat.dict import from_dict, to_dict
@@ -157,35 +155,26 @@ def _pickle_dtype(dt: DType) -> str:
     return name
 
 
-_VAR_HELPER = _PickleHelper[
-    Variable, tuple[dict[str, Any], dict[str, Any] | None],
-](Variable)
-
-
-@_VAR_HELPER.serializer
-def _pickle_variable(v: Variable) -> tuple[
+def _pickle_data(data: DataArray | Variable) -> tuple[
     dict[str, Any], dict[str, Any] | None,
 ]:
-    if v.is_binned:
+    if data.is_binned:
         raise NotImplementedError('FIXME: handle binned data')
-    serialization = to_dict(v)
-    values = serialization['values']
-    if (
-        serialization['dims']  # Not 0-D
-        and not isinstance(values, np.ndarray)  # `ElementArrayView_*`
-    ):
-        # Note: `ElementArrayView_*` only supports explicit indexing,
-        # and not iteration
-        length, *_ = v.shape
-        serialization['values'] = np.array([values[i] for i in range(length)])
-    return serialization, None
+    return to_dict(data), None
 
 
-@_VAR_HELPER.deserializer
-def _unpickle_variable(
+def _unpickle_data(
     serialization: tuple[dict[str, Any], dict[str, Any] | None],
-) -> Variable:
+) -> Any:
     dct, bins = serialization
     if bins is not None:
         raise NotImplementedError('FIXME: handle binned data')
-    return cast(Variable, from_dict(dct))
+    return from_dict(dct)
+
+
+_VAR_HELPER = _PickleHelper[
+    Variable, tuple[dict[str, Any], dict[str, Any] | None],
+](Variable, _pickle_data, _unpickle_data)
+_DA_HELPER = _PickleHelper[
+    DataArray, tuple[dict[str, Any], dict[str, Any] | None],
+](DataArray, _pickle_data, _unpickle_data)

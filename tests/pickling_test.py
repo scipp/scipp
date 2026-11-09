@@ -8,7 +8,7 @@ except ImportError:
 import re
 import subprocess
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from operator import eq
 from pathlib import Path
@@ -16,6 +16,7 @@ from textwrap import dedent
 from typing import Any, cast
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 from scipy.spatial.transform import Rotation
 
@@ -393,6 +394,116 @@ def test_pickling_unbinned_variables(
     assert var.dtype == getattr(sc.DType, dtype)
     assert var.shape == shape
     _roundtrip(tmp_path, var, sc.identical)
+
+
+@pytest.mark.parametrize(
+    'case',
+    # Most of the machineries should be tested to be working via
+    # `test_pickling_unbinned_variables()`.
+    [
+        'int-1D',
+        'float-1D-with-name',
+        'float-2D-with-mask',
+        'vec-3D',
+        'string-2D',
+        'obj-2D',
+        'linear-transform-1D',
+    ],
+)
+def test_pickling_unbinned_data_arrays(
+    tmp_path: Path, case: str,
+) -> None:
+    """
+    With handpicked examples, test that un-binned :class:`DataArray`s
+    can be roundtripped in- and cross-process.
+    """
+    rng = np.random.default_rng(42)
+    length = 10
+    if case == 'float-1D-with-name':
+        da = sc.DataArray(
+            data=sc.Variable(
+                values=rng.random((length,)), dims=['t'], unit='J',
+            ),
+            coords={'t': sc.arange('t', 0, length, unit='s')},
+            name='name',
+        )
+        assert da.name == 'name'
+    elif case == 'float-2D-with-mask':
+        da = sc.DataArray(
+            data=sc.Variable(
+                values=rng.random((length, length)), dims=['x', 'y'], unit='J',
+            ),
+            coords={
+                xy: sc.arange(xy, 0, length, unit='m') for xy in ['x', 'y']
+            },
+            masks={
+                'x': sc.Variable(
+                    values=rng.choice([True, False], length).astype(bool),
+                    dims=['x'],
+                ),
+            },
+        )
+        assert da.masks
+    else:
+        assert case.endswith(('-1D', '-2D', '-3D'))
+        var_type, _, dim_ = case.rpartition('-')
+        ndim = int(dim_.rstrip('D'))
+        make_var: Callable[..., sc.Variable]
+        shape = (length,) * ndim
+        choices: Sequence[Any] | npt.NDArray[Any]
+        extra_shape: tuple[int, ...]
+        make_var, choices, dtype, extra_shape = {  # type: ignore[assignment]
+            'int': (sc.Variable, range(20), sc.DType(np.dtype(int)), ()),
+            'vec': (sc.vectors, np.linspace(0, 1), sc.DType.vector3, (3,)),
+            'string': (
+                sc.Variable, ['foo', 'bar', 'baz'], sc.DType.string, (),
+            ),
+            'obj': (
+                sc.Variable,
+                [Person('Alice'), Person('Bob'), Person('Chris')],
+                sc.DType.PyObject,
+                (),
+            ),
+            'linear-transform': (
+                spatial.linear_transforms,
+                np.linspace(0, 10),
+                sc.DType.linear_transform3,
+                (3, 3),
+            ),
+        }[var_type]
+
+        flat_data = rng.choice(choices, (np.prod(shape), *extra_shape))
+        var = make_var(
+            values=flat_data,  # type: ignore[arg-type]
+            dims=['_'],
+        ).fold('_', dims=['x', 'y', 'z'][:ndim], shape=(length,) * ndim)
+        da = sc.DataArray(
+            data=var,
+            coords={
+                xyz: sc.arange(xyz, 0, length, unit='m')
+                for xyz in ['x', 'y', 'z'][:ndim]
+            },
+        )
+        assert da.shape == shape
+        assert da.dtype == dtype
+    _roundtrip(tmp_path, da, sc.identical)
+
+
+@pytest.mark.xfail(
+    reason='TODO: handle binned data', raises=NotImplementedError,
+)
+def test_pickling_binned_data() -> None:
+    """
+    Test trying to pickle a binned :class:`DataArray`. At the moment
+    this should fail with a :class:`NotImplementedError`.
+    """
+    times = sc.array(
+        values=np.random.default_rng(42).random(100), dims=['t'], unit='ms',
+    )
+    events = sc.DataArray(
+        data=sc.ones(shape=[100], dims=['t']), coords={'t': times},
+    )
+    pickle.dumps(events.bin(t=10))  # FIXME: NotImplementedError
 
 
 def test_unpickling_wrong_scipp_version(tmp_path: Path) -> None:
