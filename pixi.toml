@@ -181,6 +181,7 @@ ccache = "*"
 [feature.dev.tasks]
 build = { cmd = "cmake --build build/dev --config Release --target install", description = "Build scipp (Release)" }
 cpp-test = { cmd = "ctest --test-dir build/dev -C Release --output-on-failure", depends-on = ["build"], description = "Run C++ tests" }
+cpp-test-debug = { cmd = "ctest --test-dir build-debug/dev -C Debug --output-on-failure", depends-on = ["build-debug"], description = "Run C++ tests in debug mode" }
 build-debug = { cmd = "cmake --build build-debug/dev --config Debug --target install", description = "Build scipp (Debug)" }
 # Debug configure is platform-agnostic (uses the `debug` preset), so it lives
 # here rather than being repeated per target. The Release `configure` below is
