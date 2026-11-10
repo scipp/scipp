@@ -179,28 +179,26 @@ ccache = "*"
 
 
 [feature.dev.tasks]
-# Directories are spelled out as build/dev, install/dev etc.: `dev` is the only
-# environment with these tasks, so templating on the environment name would
-# always expand to the same thing.
-build = { cmd = "cmake --build build/dev --config Release --target install", depends-on = ["configure"], description = "Build scipp (Release)" }
+build = { cmd = "cmake --build build/dev --config Release --target install", description = "Build scipp (Release)" }
 cpp-test = { cmd = "ctest --test-dir build/dev -C Release --output-on-failure", depends-on = ["build"], description = "Run C++ tests" }
-build-debug = { cmd = "cmake --build build-debug/dev --config Debug --target install", depends-on = ["configure-debug"], description = "Build scipp (Debug)" }
+cpp-test-debug = { cmd = "ctest --test-dir build-debug/dev -C Debug --output-on-failure", depends-on = ["build-debug"], description = "Run C++ tests in debug mode" }
+build-debug = { cmd = "cmake --build build-debug/dev --config Debug --target install", description = "Build scipp (Debug)" }
 # Debug configure is platform-agnostic (uses the `debug` preset), so it lives
 # here rather than being repeated per target. The Release `configure` below is
 # per-target because it selects a platform-specific preset.
-configure-debug = { cmd = "cmake --preset debug -B build-debug/dev -DCMAKE_INSTALL_PREFIX=install-debug/dev", description = "Configure cmake (Debug)" }
+configure-debug = { cmd = "cmake --preset debug -B build-debug/dev -DCMAKE_INSTALL_PREFIX=src", description = "Configure cmake (Debug)" }
 
 [feature.dev.target.linux-64.tasks]
-configure = { cmd = "cmake --preset ci-linux -B build/dev -DCMAKE_INSTALL_PREFIX=install/dev", description = "Configure cmake (Linux)" }
+configure = { cmd = "cmake --preset ci-linux -B build/dev -DCMAKE_INSTALL_PREFIX=src", description = "Configure cmake (Linux)" }
 
 [feature.dev.target.osx-arm64.tasks]
-configure = { cmd = "cmake --preset ci-macos -B build/dev -DCMAKE_INSTALL_PREFIX=install/dev", description = "Configure cmake (macOS)" }
+configure = { cmd = "cmake --preset ci-macos -B build/dev -DCMAKE_INSTALL_PREFIX=src", description = "Configure cmake (macOS)" }
 
 [feature.dev.target.win-64.tasks]
-configure = { cmd = "cmake --preset ci-windows -B build/dev -DCMAKE_INSTALL_PREFIX=install/dev", description = "Configure cmake (Windows)" }
+configure = { cmd = "cmake --preset ci-windows -B build/dev -DCMAKE_INSTALL_PREFIX=src", description = "Configure cmake (Windows)" }
 
 [feature.dev.activation.env]
-PYTHONPATH = "$PIXI_PROJECT_ROOT/install/dev"
+PYTHONPATH = "$PIXI_PROJECT_ROOT/src"
 
 [feature.dev.target.linux-64.activation.env]
 LD_LIBRARY_PATH = "$CONDA_PREFIX/lib"
@@ -289,13 +287,7 @@ mypy = "*"
 pandas-stubs = "*"
 
 [feature.type-check.tasks]
-# Two invocations: `-p scipp` type-checks the INSTALLED package (like the old
-# tox setup, which pointed PYTHONPATH at the cmake install tree) and fails
-# loudly if the package is missing, so the check cannot silently collapse to
-# zero files. The `.` run covers repo-level python (benchmarks, tools) with
-# src/ excluded (duplicate of the installed package) and install/ excluded
-# (dev-environment cmake install tree).
-mypy = { cmd = "python -m mypy -p scipp && python -m mypy . --exclude '^src/' --exclude '^install/'", description = "Run mypy type checking" }
+mypy = { cmd = "python -m mypy . --exclude '^build.*/'", description = "Run mypy type checking" }
 
 # ---------------------------------------------------------------------------
 # Package feature (conda packaging code-path test via rattler-build)
