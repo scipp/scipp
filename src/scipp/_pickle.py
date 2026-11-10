@@ -15,6 +15,7 @@ Caveats
 - The pickle serialization should be considered opaque; the schemas'
   consistency should NOT be relied upon, esp. between `scipp` versions.
 """
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -41,6 +42,7 @@ class VersionError(RuntimeError):
     and :func:`from_dict`, which are not necessary consistent between
     versions. Hence, fail loudly if the versions aren't consistent.
     """
+
     def __init__(
         self, *_: Any, expected: Any = None, got: Any = None, **__: Any
     ) -> None:
@@ -67,9 +69,7 @@ class _PickleHelper[T, S]:
     _from_ser: Callable[[S], T] | None
     _instances: ClassVar[dict[type[Any], _PickleHelper[Any, Any]]] = {}
 
-    def __new__(
-        cls_, cls: type[T], /, *_: Any, **__: Any
-    ) -> _PickleHelper[T, S]:
+    def __new__(cls_, cls: type[T], /, *_: Any, **__: Any) -> _PickleHelper[T, S]:
         """Always return the same instance for the same ``cls``."""
         return cls_._instances.setdefault(cls, object.__new__(cls_))
 
@@ -86,8 +86,11 @@ class _PickleHelper[T, S]:
         if deserializer is not None:
             self._from_ser = deserializer
 
-    def __reduce__(self) -> tuple[
-        Callable[[Any, Any], _PickleHelper[T, S]], tuple[Any, Any],
+    def __reduce__(
+        self,
+    ) -> tuple[
+        Callable[[Any, Any], _PickleHelper[T, S]],
+        tuple[Any, Any],
     ]:
         # Note: since we overrode `.__new__()`, we need a bit of elbow
         # grease to restore pickle-ability
@@ -117,8 +120,11 @@ class _PickleHelper[T, S]:
         self._to_ser = impl
         return impl
 
-    def _get_reconstructor_and_args(self, obj: T) -> tuple[
-        Callable[[Any, S], T], tuple[Any, S],
+    def _get_reconstructor_and_args(
+        self, obj: T
+    ) -> tuple[
+        Callable[[Any, S], T],
+        tuple[Any, S],
     ]:
         """
         Returns
@@ -137,7 +143,8 @@ class _PickleHelper[T, S]:
 
 
 @_PickleHelper[Unit, dict[str, Any]](
-    Unit, serializer=methodcaller('to_dict'),
+    Unit,
+    serializer=methodcaller('to_dict'),
 ).deserializer
 def _unpickle_unit(u: dict[str, Any]) -> Unit:
     # Note: this is a workaround for `Unit.from_dict()` being
@@ -146,7 +153,8 @@ def _unpickle_unit(u: dict[str, Any]) -> Unit:
 
 
 @_PickleHelper[DType, str](
-    DType, deserializer=partial(getattr, DType),
+    DType,
+    deserializer=partial(getattr, DType),
 ).serializer
 def _pickle_dtype(dt: DType) -> str:
     name = str(dt)
@@ -155,8 +163,11 @@ def _pickle_dtype(dt: DType) -> str:
     return name
 
 
-def _pickle_data(data: DataArray | Variable) -> tuple[
-    dict[str, Any], dict[str, Any] | None,
+def _pickle_data(
+    data: DataArray | Variable,
+) -> tuple[
+    dict[str, Any],
+    dict[str, Any] | None,
 ]:
     if data.is_binned:
         raise NotImplementedError('FIXME: handle binned data')
@@ -173,8 +184,10 @@ def _unpickle_data(
 
 
 _VAR_HELPER = _PickleHelper[
-    Variable, tuple[dict[str, Any], dict[str, Any] | None],
+    Variable,
+    tuple[dict[str, Any], dict[str, Any] | None],
 ](Variable, _pickle_data, _unpickle_data)
 _DA_HELPER = _PickleHelper[
-    DataArray, tuple[dict[str, Any], dict[str, Any] | None],
+    DataArray,
+    tuple[dict[str, Any], dict[str, Any] | None],
 ](DataArray, _pickle_data, _unpickle_data)

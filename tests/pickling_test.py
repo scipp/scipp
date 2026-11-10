@@ -32,11 +32,14 @@ _DEFAULT_FLOAT_TYPE = str(np.dtype(float))
 @dataclass(eq=True)
 class Person:
     """Dummy hashable class which is resolved to a ``PyObject``."""
+
     name: str
 
 
 def _roundtrip[T](
-    tmpdir: Path, obj: T, cmp: Callable[[T, T], bool] | bool = True,
+    tmpdir: Path,
+    obj: T,
+    cmp: Callable[[T, T], bool] | bool = True,
 ) -> None:
     """
     Test round-tripping ``obj`` via :mod:`pickle`.
@@ -130,16 +133,27 @@ def _roundtrip[T](
         ('uint64', ['uint64', np.uint64]),
     ]
     + [
-        (dtype, None) for dtype in [
-            'DataArray', 'Dataset', 'PyObject', 'Variable',
-            'DataArrayView', 'DatasetView', 'VariableView',
-            'affine_transform3', 'linear_transform3',
-            'rotation3', 'translation3', 'vector3',
+        (dtype, None)
+        for dtype in [
+            'DataArray',
+            'Dataset',
+            'PyObject',
+            'Variable',
+            'DataArrayView',
+            'DatasetView',
+            'VariableView',
+            'affine_transform3',
+            'linear_transform3',
+            'rotation3',
+            'translation3',
+            'vector3',
         ]
     ],
 )
 def test_pickling_dtypes(
-    tmp_path: Path, expected: str, dtypes: list[Any] | None,
+    tmp_path: Path,
+    expected: str,
+    dtypes: list[Any] | None,
 ) -> None:
     """
     Test that :class:`DType`s can be roundtripped in- and cross-process.
@@ -170,12 +184,13 @@ def test_pickling_dtypes(
         'inf N*m**-2',
         '-inf s',
         'nan m',
-    ]
+    ],
 )
 def test_pickling_units(tmp_path: Path, unit: str) -> None:
     """
     Test that :class:`Unit`s can be roundtripped in- and cross-process.
     """
+
     def cmp_units(u1: sc.Unit, u2: sc.Unit) -> bool:
         if u1 == u2:
             return True
@@ -207,9 +222,9 @@ def test_pickling_units(tmp_path: Path, unit: str) -> None:
         'scalar-linear-transform',
         'scalar-affine-transform',
         # Zero-entry arrays
-        'nothing-1D',
-        'nothing-2D',
-        'nothing-3D',
+        'nothing-0-float',
+        'nothing-10,0-affine-transform',
+        'nothing-0,0,0-obj',
         # N-D arrays
         'ints-1D',
         'ints-2D',
@@ -246,7 +261,8 @@ def test_pickling_units(tmp_path: Path, unit: str) -> None:
     ],
 )
 def test_pickling_unbinned_variables(
-    tmp_path: Path, case: str,
+    tmp_path: Path,
+    case: str,
 ) -> None:
     """
     With handpicked examples, test that un-binned :class:`Variable`s can
@@ -257,22 +273,23 @@ def test_pickling_unbinned_variables(
 
     # Scalar test cases
     if case == 'scalar-float-with-variance':
-        var = sc.scalar(value=5., variance=1.)
+        var = sc.scalar(value=5.0, variance=1.0)
         dtype = _DEFAULT_FLOAT_TYPE
         shape: tuple[int, ...] = ()
     elif case == 'scalar-vector-with-unit':
         var, dtype, shape = sc.vector([1, 2, 3], unit='m'), 'vector3', ()
 
     elif case in (
-        'scalar-translation', 'scalar-rotation',
+        'scalar-translation',
+        'scalar-rotation',
         'scalar-affine-transform',
     ):
         # FIXME: direct instantiation from a `Sequence[int]` appears in
         # the docs, but doesn't type-check because Python `float`s are
         # neither numpy `float32`s nor `float64`s.
-        tr = spatial.translation(value=np.array([3., 2., 1.]), unit='m')
+        tr = spatial.translation(value=np.array([3.0, 2.0, 1.0]), unit='m')
         rot = spatial.rotation(
-            value=Rotation.from_rotvec([1., 2., 3.]).as_quat(),
+            value=Rotation.from_rotvec([1.0, 2.0, 3.0]).as_quat(),
         )
         var, dtype = {
             'translation': (tr, 'translation3'),
@@ -286,7 +303,9 @@ def test_pickling_unbinned_variables(
             'int': (42, _DEFAULT_INT_TYPE, sc.scalar),
             'str': ('foo', 'string', sc.scalar),
             'datetime': (
-                np.datetime64('1970-01-01T00:00:00'), 'datetime64', sc.scalar,
+                np.datetime64('1970-01-01T00:00:00'),
+                'datetime64',
+                sc.scalar,
             ),
             'object': (Person('someone'), 'PyObject', sc.scalar),
             'linear-transform': (
@@ -300,12 +319,34 @@ def test_pickling_unbinned_variables(
 
     # Zero-entry test cases
     elif case.startswith('nothing-'):
-        ndim = int(case.rpartition('-')[-1].rstrip('D'))
-        shape = (2,) * (ndim - 1) + (0,)
-        data = np.array([], dtype=float).reshape(shape)
-        var = sc.array(values=data, dims=['x', 'y', 'z'][:ndim])
-        dtype = _DEFAULT_FLOAT_TYPE
-        assert var.ndim == ndim
+        _, shape_str, vartype = case.split('-', 2)
+        shape = tuple(int(s) for s in shape_str.split(','))
+        dims_seq = ['x', 'y', 'z'][: len(shape)]
+        assert len(shape) == len(dims_seq)
+        if vartype == 'float':
+            var = sc.array(
+                values=np.array([], dtype=float).reshape(shape),
+                dims=dims_seq,
+            )
+            dtype = _DEFAULT_FLOAT_TYPE
+        elif vartype == 'affine-transform':
+            var = spatial.affine_transforms(
+                values=np.array([], dtype=float).reshape((0, 4, 4)),
+                dims=['_'],
+            )
+            var = var.fold('_', dims=dims_seq, shape=shape)
+            dtype = 'affine_transform3'
+        elif vartype == 'obj':
+            var = sc.array(
+                values=np.array([], dtype=object).reshape((0,)),
+                dims=['_'],
+            )
+            var = var.fold('_', dims=dims_seq, shape=shape)
+            dtype = 'PyObject'
+        else:
+            raise AssertionError(f'{vartype=!r}')
+        assert var.shape == shape
+        assert var.dtype == getattr(sc.DType, dtype)
 
     # N-D array test cases
     elif case == 'float64s-2D-with-variances':
@@ -313,7 +354,9 @@ def test_pickling_unbinned_variables(
         values_2d = rng.random(shape)
         variances_2d = rng.random(shape)
         var = sc.array(
-            values=values_2d, variances=variances_2d, dims=['x', 'y'],
+            values=values_2d,
+            variances=variances_2d,
+            dims=['x', 'y'],
         )
         dtype = _DEFAULT_FLOAT_TYPE
 
@@ -323,7 +366,9 @@ def test_pickling_unbinned_variables(
         shape = (length,) * ndim
         values, dtype, vals_to_var = {
             'translation': (
-                rng.random((*shape, 3)), 'translation3', spatial.translations,
+                rng.random((*shape, 3)),
+                'translation3',
+                spatial.translations,
             ),
             'rotation': (
                 Rotation.from_rotvec(rng.random((*shape, 3))).as_quat(),
@@ -343,15 +388,16 @@ def test_pickling_unbinned_variables(
         }[vartype]
         # FIXME: why did we not need the cast in the scalar tests above?
         var = cast(Callable[..., sc.Variable], vals_to_var)(
-            values=values, dims=['foo', 'bar', 'baz'][:ndim],
+            values=values,
+            dims=['foo', 'bar', 'baz'][:ndim],
         )
 
     else:
-        if (fold := case.endswith('-folded')):
+        if fold := case.endswith('-folded'):
             case, *_ = case.rpartition('-')
         vartype, _, dims = case.rpartition('-')
         ndim = int(dims.rstrip('D'))
-        nentries = length ** ndim
+        nentries = length**ndim
         shape = (length,) * ndim
         if vartype == 'vecs':
             data = rng.random(nentries * 3)
@@ -361,7 +407,8 @@ def test_pickling_unbinned_variables(
         else:
             if vartype in ('strs', 'objs'):
                 strings = rng.choice(
-                    ['foo', 'bar', 'baz', 'foobar'], nentries,
+                    ['foo', 'bar', 'baz', 'foobar'],
+                    nentries,
                 )
                 if vartype == 'objs':
                     data = np.array([Person(s) for s in strings])
@@ -398,9 +445,15 @@ def test_pickling_unbinned_variables(
 
 @pytest.mark.parametrize(
     'case',
-    # Most of the machineries should be tested to be working via
+    # Most of the machineries should have been tested to be working via
     # `test_pickling_unbinned_variables()`.
     [
+        # Scalars
+        'scalar-float',
+        'scalar-obj',
+        # Empty arrays
+        'nothing-2D',
+        # Normal arrays
         'int-1D',
         'float-1D-with-name',
         'float-2D-with-mask',
@@ -411,7 +464,8 @@ def test_pickling_unbinned_variables(
     ],
 )
 def test_pickling_unbinned_data_arrays(
-    tmp_path: Path, case: str,
+    tmp_path: Path,
+    case: str,
 ) -> None:
     """
     With handpicked examples, test that un-binned :class:`DataArray`s
@@ -422,7 +476,9 @@ def test_pickling_unbinned_data_arrays(
     if case == 'float-1D-with-name':
         da = sc.DataArray(
             data=sc.Variable(
-                values=rng.random((length,)), dims=['t'], unit='J',
+                values=rng.random((length,)),
+                dims=['t'],
+                unit='J',
             ),
             coords={'t': sc.arange('t', 0, length, unit='s')},
             name='name',
@@ -431,11 +487,11 @@ def test_pickling_unbinned_data_arrays(
     elif case == 'float-2D-with-mask':
         da = sc.DataArray(
             data=sc.Variable(
-                values=rng.random((length, length)), dims=['x', 'y'], unit='J',
+                values=rng.random((length, length)),
+                dims=['x', 'y'],
+                unit='J',
             ),
-            coords={
-                xy: sc.arange(xy, 0, length, unit='m') for xy in ['x', 'y']
-            },
+            coords={xy: sc.arange(xy, 0, length, unit='m') for xy in ['x', 'y']},
             masks={
                 'x': sc.Variable(
                     values=rng.choice([True, False], length).astype(bool),
@@ -444,6 +500,31 @@ def test_pickling_unbinned_data_arrays(
             },
         )
         assert da.masks
+
+    elif case.startswith('scalar-'):
+        value = {
+            'float': 42.0,
+            'obj': Person('Marvin'),
+        }[case.partition('-')[-1]]
+        da = sc.DataArray(data=sc.Variable(values=value, dims=()), coords={})
+        assert not da.shape
+        assert not da.coords
+
+    elif case == 'nothing-2D':
+        shape: tuple[int, ...] = (0, 0)
+        da = sc.DataArray(
+            data=sc.Variable(
+                values=np.array([], dtype='<U6').reshape(shape),
+                dims=['x', 'y'],
+                dtype=str,
+            ),
+            coords={xy: sc.Variable(values=[], dims=[xy]) for xy in ['x', 'y']},
+            name='nothing',
+        )
+        assert da.shape == shape
+        assert da.dtype == sc.DType.string
+        assert da.sizes == {'x': 0, 'y': 0}
+
     else:
         assert case.endswith(('-1D', '-2D', '-3D'))
         var_type, _, dim_ = case.rpartition('-')
@@ -456,7 +537,10 @@ def test_pickling_unbinned_data_arrays(
             'int': (sc.Variable, range(20), sc.DType(np.dtype(int)), ()),
             'vec': (sc.vectors, np.linspace(0, 1), sc.DType.vector3, (3,)),
             'string': (
-                sc.Variable, ['foo', 'bar', 'baz'], sc.DType.string, (),
+                sc.Variable,
+                ['foo', 'bar', 'baz'],
+                sc.DType.string,
+                (),
             ),
             'obj': (
                 sc.Variable,
@@ -486,11 +570,13 @@ def test_pickling_unbinned_data_arrays(
         )
         assert da.shape == shape
         assert da.dtype == dtype
+
     _roundtrip(tmp_path, da, sc.identical)
 
 
 @pytest.mark.xfail(
-    reason='TODO: handle binned data', raises=NotImplementedError,
+    reason='TODO: handle binned data',
+    raises=NotImplementedError,
 )
 def test_pickling_binned_data() -> None:
     """
@@ -498,10 +584,13 @@ def test_pickling_binned_data() -> None:
     this should fail with a :class:`NotImplementedError`.
     """
     times = sc.array(
-        values=np.random.default_rng(42).random(100), dims=['t'], unit='ms',
+        values=np.random.default_rng(42).random(100),
+        dims=['t'],
+        unit='ms',
     )
     events = sc.DataArray(
-        data=sc.ones(shape=[100], dims=['t']), coords={'t': times},
+        data=sc.ones(shape=[100], dims=['t']),
+        coords={'t': times},
     )
     pickle.dumps(events.bin(t=10))  # FIXME: NotImplementedError
 
