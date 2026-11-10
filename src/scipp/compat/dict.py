@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Callable, Sequence
+from functools import partial
 from typing import Any, cast
 
 import numpy as np
@@ -78,55 +79,55 @@ def _obj_array_parser(x: Any, shp: object) -> npt.NDArray[Any]:
     return np.array([x[i] for i in range(len(x))])
 
 
-def _create_empty_array(
-    dtype: DType,
-    shape: tuple[int, ...],
-    dtype_specifics: str | None = None,
-) -> npt.NDArray[Any]:
-    """Create an empty array of the requisite shape, compatible with
-    the specified data type.
-
-    Note
-    ----
-    - For an empty array, ``shape and not all(shape)``.
-    - ``dtype_specifics`` (e.g. ``'datetime64[D]'``) is needed for
-      ``DType.datetime64``, otherwise an edge case in
-      :attr:`Variable.values` will cause the property to error out on
-      ``values=np.array([], dtype='datetime64')``.
+def _create_empty_array(var: Variable) -> npt.NDArray[Any]:
+    """Create an empty array with shape and data type compatible with
+    the provided ``var``.
     """
-    str_dtype = str(dtype)
-    # If we don't explicitly pass a dtype for empty arrays, NumPy will
-    # default to float, and we'll run into issues at `Variable`
-    # reconstruction
-    if dtype_specifics is not None:
-        dtype_hint: Any = dtype_specifics
-    elif dtype in (
-        DType.DataArray,
-        DType.DataArrayView,
-        DType.Dataset,
-        DType.DatasetView,
-        DType.PyObject,
-        DType.Variable,
-        DType.VariableView,
-    ):
-        dtype_hint = object
-    elif dtype in (
-        DType.datetime64,
-        DType.float32,
-        DType.float64,
-        DType.int32,
-        DType.int64,
-        DType.uint64,
-    ):
-        dtype_hint = getattr(np, str_dtype)
-    elif dtype == DType.string:
-        dtype_hint = str
-    elif dtype == DType.bool:
-        dtype_hint = bool
-    else:  # E.g. `float32`, `vector3`, ...
-        dtype_hint = float
+    str_dtype = str(var.dtype)
+    shape = var.shape
 
-    # Array dimensions needs adjustment for matrix-/vector-like dtypes
+    # String and object `.values` arrays are in general flat, only later
+    # massaged into N-D objects; supplying otherwise to the constructor
+    # will cause errors
+    if str_dtype in ('string', 'PyObject'):
+        shape = (0,)
+
+    # Corner case: `Variable(values=np.array([], dtype='datetime64'))`,
+    # i.e. a unitless `datetime64` array, results in the
+    # `Variable.values` property erroring out. So just take the unit
+    # from `.values`
+    if str_dtype == 'datetime64':
+        dtype_hint: Any = cast(
+            npt.NDArray[np.datetime64] | np.datetime64,
+            var.values,
+        ).dtype
+    else:
+        dtype_hint = {
+            'string': str,
+            'bool': bool,
+            # NumPy native types
+            'float32': np.float32,
+            'float64': np.float64,
+            'int32': np.int32,
+            'int64': np.int64,
+            'uint64': np.uint64,
+            # Linalg types
+            'vector3': float,
+            'translation3': float,
+            'rotation3': float,
+            'linear_transform3': float,
+            'affine_transform3': float,
+            # ... and the weird stuff
+            'DataArray': object,
+            'DataArrayView': object,
+            'Dataset': object,
+            'DatasetView': object,
+            'PyObject': object,
+            'Variable': object,
+            'VariableView': object,
+        }[str_dtype]
+
+    # Array dimensions need adjustment for matrix-/vector-like dtypes
     item_shape: tuple[int, ...] = {
         str(DType.affine_transform3): (4, 4),
         str(DType.linear_transform3): (3, 3),
@@ -135,6 +136,9 @@ def _create_empty_array(
         str(DType.vector3): (3,),
     }.get(str_dtype, ())
 
+    # If we don't explicitly pass a dtype for empty arrays, NumPy will
+    # default to float, and we'll run into issues at `Variable`
+    # reconstruction
     return np.array([], dtype=dtype_hint).reshape((*shape, *item_shape))
 
 
@@ -149,52 +153,23 @@ def _variable_to_dict(v: Variable) -> dict[str, Any]:
     if not v.aligned:
         out["aligned"] = False
 
-    # Use defaultdict to return the raw values/variances by default
-    dtype_parser: dict[str, Callable[..., Any]] = defaultdict(lambda: lambda x, y: x)
-    # Using raw dtypes as dict keys doesn't appear to work, so we need to
-    # convert to strings.
-    dtype_parser.update(
-        {
-            str(DType.vector3): _vec_parser,
-            str(DType.linear_transform3): _vec_parser,
-            str(DType.string): _vec_parser,
-            str(DType.PyObject): _obj_array_parser,
-        }
-    )
-
-    str_dtype = str(v.dtype)
-
-    # Check if variable is 0D or empty:
-    suffix = "s" if len(out["dims"]) > 0 else ""
-    if v.shape and not all(v.shape):
-        if v.dtype in (DType.string, DType.PyObject):
-            # String and object `.values` arrays are in general flat,
-            # only later massaged into an N-D object
-            shape: tuple[int, ...] = (0,)
-        else:
-            shape = v.shape
-        if v.dtype == DType.datetime64:
-            # `datetime64` without a unit specification causes problems
-            # with `Variable.values`
-            dtype_specifics = str(
-                cast(npt.NDArray[np.datetime64] | np.datetime64, v.values).dtype
-            )
-            out["values"] = _create_empty_array(
-                v.dtype,
-                shape,
-                dtype_specifics,
-            )
-        else:
-            out["values"] = _create_empty_array(v.dtype, shape)
+    if v.shape and not all(v.shape):  # Empty array
+        out["values"] = _create_empty_array(v)
+        # The variances must have the same shape as the data if here
+        out["variances"] = None if v.variances is None else out["values"].copy()
     else:
-        out["values"] = dtype_parser[str_dtype](
-            getattr(v, "value" + suffix),
-            v.shape,
+        # Use defaultdict to return the raw values/variances by default
+        dtype_parsers: dict[str, Callable[..., Any]]
+        dtype_parsers = defaultdict(
+            lambda: lambda x, shp: x,
+            vector3=_vec_parser,
+            linear_transform3=_vec_parser,
+            string=_vec_parser,
+            PyObject=_obj_array_parser,
         )
-        var = getattr(v, "variance" + suffix)
-        out["variances"] = (
-            dtype_parser[str_dtype](var, v.shape) if var is not None else None
-        )
+        parse_dtype = partial(dtype_parsers[str(v.dtype)], shp=v.shape)
+        out["values"] = parse_dtype(v.values)
+        out["variances"] = None if v.variances is None else parse_dtype(v.variances)
     return out
 
 

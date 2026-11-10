@@ -12,7 +12,6 @@ import pytest
 
 import scipp as sc
 from scipp import spatial
-from scipp.compat.dict import _create_empty_array
 
 _ALL_DTYPES: dict[str, sc.DType] = dict(
     getmembers(sc.DType, lambda m: isinstance(m, sc.DType))
@@ -30,13 +29,56 @@ _NORMAL_DTYPES = sorted(
 )
 
 
-def _make_empty_variable(
+def _get_dtype_hint(dtype: str, unit: str | None = None) -> Any:
+    """Get the object suitable for being passed to the ``dtype``
+    argument of NumPy constructors.
+
+    Note
+    ----
+    Datetimes need a concrete unit, or :attr:`Variable.values` will
+    error out trying to come up with one.
+    """
+    if dtype == 'datetime64':
+        assert unit is not None
+        return f'datetime64[{unit}]'
+    if dtype.startswith(('int', 'float', 'uint')):  # Numeric types
+        return getattr(np, dtype)
+    if dtype.endswith('3'):  # Linalg types
+        return float
+    return {
+        'string': str,
+        'bool': bool,
+    }.get(dtype, object)  # Fallback
+
+
+def _make_empty_variable_kwargs(
     dtype: str,
     shape: tuple[int, ...],
     unit: str | None = None,
-) -> sc.Variable:
-    """Create a :class:`Variable` of size zero of the required data
-    type.
+) -> tuple[Callable[..., sc.Variable], bool, list[str], dict[str, Any]]:
+    """Get the keyword args for creatign a :class:`Variable` of size
+    zero of the required data type.
+
+    Returns
+    -------
+    make_var: Callable[..., Variable]
+        Callable to pass ``kwargs`` to, returning a :class:`Variable`.
+    fold: bool
+        Whether the result `Variable` is to be :meth:`.fold`-ed into the
+        wanted shape.
+    dims: list[str]
+        The :attr:`.dims` of the `Variable` (post-folding where
+        appropriate).
+    kwargs: dict[str, Any]
+        Arguments to be passed to ``kwargs``.
+
+    Note
+    ----
+    If ``fold`` is true, the dim ``'_'`` is to be folded into ``dims``.
+
+    See also
+    --------
+    :func:`_make_empty_variable`
     """
     make_var: Callable[..., sc.Variable]
     dims = [f'dim{i}' for i, _ in enumerate(shape, 1)]
@@ -49,35 +91,63 @@ def _make_empty_variable(
         "translation3": spatial.translations,
         "rotation3": spatial.rotations,
     }.get(dtype, sc.array)
-    dtype_obj = _ALL_DTYPES[dtype]
 
     if dtype == 'datetime64':
-        # Note: datetime variables need a concrete unit, or
-        # `Variable.values` will error out
+        # See note on units at `_get_dtype_hint()`
         assert unit is not None
-        empty = _create_empty_array(dtype_obj, shape, f'datetime64[{unit}]')
+        np_dtype = _get_dtype_hint(dtype, unit)
         unit = None
     else:
-        empty = _create_empty_array(dtype_obj, shape)
+        np_dtype = _get_dtype_hint(dtype)
 
-    fold = any(shape) and dtype in ('string', 'PyObject')
+    fold = dtype in ('string', 'PyObject')
     if fold:
         # Note: instantiating from N-D arrays is sketchy for non-native
         # dtypes; just `.fold()` it post-hoc.
-        make_var_kwargs = {"values": empty.flatten(), "dims": '_'}
+        kwargs = {
+            "values": np.array([], dtype=np_dtype),
+            "dims": '_',  # To be massaged into `dims` by folding
+        }
     else:
-        make_var_kwargs = {"values": empty, "dims": dims}
+        # Take care of extra dimensions in linalg objects
+        np_shape = shape + {
+            "vector3": (3,),
+            "affine_transform3": (4, 4),
+            "linear_transform3": (3, 3),
+            "translation3": (3,),
+            "rotation3": (4,),
+        }.get(dtype, ())
+        kwargs = {
+            "values": np.array([], dtype=np_dtype).reshape(np_shape),
+            "dims": dims,
+        }
     if unit is not None:
-        make_var_kwargs["unit"] = unit
+        kwargs["unit"] = unit
     if dtype.startswith(('int', 'float', 'uint')):
-        make_var_kwargs["dtype"] = dtype_obj
+        kwargs["dtype"] = _ALL_DTYPES[dtype]
 
-    var = make_var(**make_var_kwargs)
+    return make_var, fold, dims, kwargs
+
+
+def _make_empty_variable(
+    dtype: str,
+    shape: tuple[int, ...],
+    unit: str | None = None,
+) -> sc.Variable:
+    """Thin wrapper around :func:`_make_empty_variable_kwargs`, using
+    its result to actually create the :class:`Variable`.
+    """
+    make_var, fold, dims, kwargs = _make_empty_variable_kwargs(
+        dtype,
+        shape,
+        unit,
+    )
+    var = make_var(**kwargs)
     if fold:
         var = var.fold('_', dims=dims, shape=shape)
 
     assert var.shape == shape
-    assert var.dtype == dtype_obj
+    assert var.dtype == _ALL_DTYPES[dtype]
     return var
 
 
@@ -129,6 +199,40 @@ def test_empty_variable_to_dict(dtype: str, shape: str) -> None:
         assert var_dict.get('unit') == expected_unit
     else:
         assert var_dict["unit"] == sc.Unit(unit)
+
+
+@pytest.mark.parametrize(
+    'dtype',
+    ['float64', 'float32'],  # Note: only floats can have vars
+)
+@pytest.mark.parametrize(
+    'shape',
+    ['0', '0,0', '2,0', '0,2', '0,0,0', '2,0,0', '0,2,0', '0,0,2'],
+)
+@pytest.mark.parametrize('has_var', [True, False])
+def test_empty_variable_variances_to_dict(
+    dtype: str,
+    shape: str,
+    has_var: bool,
+) -> None:
+    shape_tuple: tuple[int, ...] = tuple(int(s) for s in shape.split(','))
+    var = _make_empty_variable(dtype, (0,))
+    if has_var:
+        var.variances = []
+    var_dict = sc.to_dict(
+        var.fold(
+            var.dims[0],
+            dims=[f'dim{i}' for i, _ in enumerate(shape_tuple, 1)],
+            shape=shape_tuple,
+        )
+    )
+
+    if not has_var:
+        assert var_dict.get('variances') is None
+        return
+    variances = var_dict['variances']
+    assert variances.shape == shape_tuple
+    assert not variances.size
 
 
 def test_variable_0D_to_dict() -> None:
@@ -285,20 +389,14 @@ def test_empty_variable_from_dict(dtype: str, shape: str) -> None:
     dims = tuple(f'dim{i}' for i, _ in enumerate(shape_tuple))
     unit: str | None
     time_unit = 's'
-    if dtype == 'datetime64':
-        # See note in `_make_empty_variable()`: datetimes should come
-        # with a unit
-        empty = _create_empty_array(
-            _ALL_DTYPES[dtype],
-            shape_tuple,
-            f'datetime64[{time_unit}]',
-        )
-    elif dtype in ('string', 'PyObject'):
-        # See note in `_make_empty_variable()`: string/object arrays
-        # must be flat
-        empty = _create_empty_array(_ALL_DTYPES[dtype], (0,))
-    else:
-        empty = _create_empty_array(_ALL_DTYPES[dtype], shape_tuple)
+    *_, kwargs = _make_empty_variable_kwargs(
+        dtype,
+        shape_tuple,
+        # See note in `_get_dtype_hint()`: datetimes should come with a
+        # unit
+        unit=time_unit if dtype == 'datetime64' else None,
+    )
+    empty = kwargs['values']
     unit = {'int64': '1E6 m', 'affine_transform3': '2'}.get(dtype)
     var_dict = {
         "dims": dims,
@@ -324,6 +422,37 @@ def test_empty_variable_from_dict(dtype: str, shape: str) -> None:
         assert var.unit == expected_unit
     else:
         assert var.unit == sc.Unit(unit)
+
+
+@pytest.mark.parametrize('dtype', ['float64', 'float32'])
+@pytest.mark.parametrize(
+    'shape',
+    ['0', '0,0', '2,0', '0,2', '0,0,0', '2,0,0', '0,2,0', '0,0,2'],
+)
+@pytest.mark.parametrize('has_var', [True, False])
+def test_empty_variable_variances_from_dict(
+    dtype: str,
+    shape: str,
+    has_var: bool,
+) -> None:
+    shape_tuple: tuple[int, ...] = tuple(int(s) for s in shape.split(','))
+    empty = np.array([], dtype=dtype).reshape(shape_tuple)
+    var_dict = {
+        "dims": [f'dim{i}' for i, _ in enumerate(shape_tuple, 1)],
+        "shape": shape_tuple,
+        "values": empty,
+        "dtype": dtype,
+        "variances": empty.copy() if has_var else None,
+    }
+    var = sc.from_dict(var_dict)
+    assert isinstance(var, sc.Variable)
+    variances = var.variances
+
+    if not has_var:
+        assert variances is None
+        return
+    assert variances.shape == shape_tuple
+    assert not variances.size
 
 
 def test_variable_0D_from_dict() -> None:
@@ -492,6 +621,39 @@ def test_empty_variable_round_trip(dtype: str, shape: str) -> None:
     }.get(dtype)
     var = _make_empty_variable(dtype, shape_tuple, unit)
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
+
+
+@pytest.mark.parametrize('dtype', ['float64', 'float32'])
+@pytest.mark.parametrize(
+    'shape',
+    ['0', '0,0', '2,0', '0,2', '0,0,0', '2,0,0', '0,2,0', '0,0,2'],
+)
+@pytest.mark.parametrize('has_var', [True, False])
+def test_empty_variable_variances_round_trip(
+    dtype: str,
+    shape: str,
+    has_var: bool,
+) -> None:
+    shape_tuple: tuple[int, ...] = tuple(int(s) for s in shape.split(','))
+    var = _make_empty_variable(dtype, (0,))
+    if has_var:
+        var.variances = []
+    var_1 = var.fold(
+        var.dims[0],
+        dims=[f'dim{i}' for i, _ in enumerate(shape_tuple, 1)],
+        shape=shape_tuple,
+    )
+
+    variances_1 = var_1.variances
+    var_2 = sc.from_dict(sc.to_dict(var_1))
+    assert isinstance(var_2, sc.Variable)
+    variances_2 = var_2.variances
+    if has_var:
+        assert variances_1.shape == shape_tuple
+        assert not variances_1.size
+        assert np.array_equal(variances_1, variances_2)
+    else:
+        assert variances_1 is None is variances_2
 
 
 def test_variable_0D_round_trip() -> None:
