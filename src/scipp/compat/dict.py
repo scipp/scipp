@@ -99,7 +99,7 @@ def _create_empty_array(
     # default to float, and we'll run into issues at `Variable`
     # reconstruction
     if dtype_specifics is not None:
-        dtype_hint = dtype_specifics
+        dtype_hint: Any = dtype_specifics
     elif dtype in (
         DType.DataArray,
         DType.DataArrayView,
