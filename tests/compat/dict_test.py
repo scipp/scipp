@@ -3,12 +3,82 @@
 # @file
 # @author Neil Vaytet
 
+from collections.abc import Callable
+from inspect import getmembers
 from typing import Any, Literal
 
 import numpy as np
 import pytest
 
 import scipp as sc
+from scipp import spatial
+from scipp.compat.dict import _create_empty_array
+
+_ALL_DTYPES: dict[str, sc.DType] = dict(
+    getmembers(sc.DType, lambda m: isinstance(m, sc.DType))
+)
+_NORMAL_DTYPES = sorted(
+    set(_ALL_DTYPES)
+    - {
+        'DataArray',
+        'DataArrayView',
+        'Dataset',
+        'DatasetView',
+        'Variable',
+        'VariableView',
+    }
+)
+
+
+def _make_empty_variable(
+    dtype: str,
+    shape: tuple[int, ...],
+    unit: str | None = None,
+) -> sc.Variable:
+    """Create a :class:`Variable` of size zero of the required data
+    type.
+    """
+    make_var: Callable[..., sc.Variable]
+    dims = [f'dim{i}' for i, _ in enumerate(shape, 1)]
+    make_var = {
+        "int64": sc.array,
+        "int32": sc.array,
+        "vector3": sc.vectors,
+        "affine_transform3": spatial.affine_transforms,
+        "linear_transform3": spatial.linear_transforms,
+        "translation3": spatial.translations,
+        "rotation3": spatial.rotations,
+    }.get(dtype, sc.array)
+    dtype_obj = _ALL_DTYPES[dtype]
+
+    if dtype == 'datetime64':
+        # Note: datetime variables need a concrete unit, or
+        # `Variable.values` will error out
+        assert unit is not None
+        empty = _create_empty_array(dtype_obj, shape, f'datetime64[{unit}]')
+        unit = None
+    else:
+        empty = _create_empty_array(dtype_obj, shape)
+
+    fold = any(shape) and dtype in ('string', 'PyObject')
+    if fold:
+        # Note: instantiating from N-D arrays is sketchy for non-native
+        # types; just `.fold()` it post-hoc.
+        make_var_kwargs = {"values": empty.flatten(), "dims": '_'}
+    else:
+        make_var_kwargs = {"values": empty, "dims": dims}
+    if unit is not None:
+        make_var_kwargs["unit"] = unit
+    if dtype.startswith(('int', 'float', 'uint')):
+        make_var_kwargs["dtype"] = dtype_obj
+
+    var = make_var(**make_var_kwargs)
+    if fold:
+        var = var.fold('_', dims=dims, shape=shape)
+
+    assert var.shape == shape
+    assert var.dtype == dtype_obj
+    return var
 
 
 @pytest.mark.parametrize('ndim', [1, 2])
@@ -28,6 +98,37 @@ def test_variable_to_dict(ndim: Literal[1, 2]) -> None:
     assert np.array_equal(var_dict["variances"], var.variances)
     assert var_dict["unit"] == var.unit
     assert var_dict["dtype"] == var.dtype
+
+
+@pytest.mark.parametrize('dtype', _NORMAL_DTYPES)
+@pytest.mark.parametrize(
+    'shape',
+    ['0', '0,0', '2,0', '0,2', '0,0,0', '2,0,0', '0,2,0', '0,0,2'],
+)
+def test_empty_variable_to_dict(dtype: str, shape: str) -> None:
+    shape_tuple: tuple[int, ...] = tuple(int(s) for s in shape.split(','))
+    unit: str | None = {
+        'int64': '1E5 s',
+        'vector3': 'm',
+        'translation3': '5',
+        'datetime64': 's',
+    }.get(dtype)
+    var = _make_empty_variable(dtype, shape_tuple, unit)
+
+    var_dict = sc.to_dict(var)
+    assert var_dict["dims"] == var.dims
+    assert var_dict["shape"] == var.shape
+    assert np.array_equal(var_dict["values"], var.values)
+    assert var_dict["dtype"] == var.dtype
+    if unit is None:
+        expected_unit = {
+            'PyObject': None,
+            'string': None,
+            'bool': None,
+        }.get(dtype, sc.Unit('1'))
+        assert var_dict.get('unit') == expected_unit
+    else:
+        assert var_dict["unit"] == sc.Unit(unit)
 
 
 def test_variable_0D_to_dict() -> None:
@@ -172,6 +273,57 @@ def test_variable_from_dict(ndim: Literal[1, 2]) -> None:
     assert np.array_equal(var.values, var_dict["values"])  # type: ignore[arg-type]
     assert np.array_equal(var.variances, var_dict["variances"])  # type: ignore[arg-type]
     assert var.unit == sc.units.one
+
+
+@pytest.mark.parametrize('dtype', _NORMAL_DTYPES)
+@pytest.mark.parametrize(
+    'shape',
+    ['0', '0,0', '2,0', '0,2', '0,0,0', '2,0,0', '0,2,0', '0,0,2'],
+)
+def test_empty_variable_from_dict(dtype: str, shape: str) -> None:
+    shape_tuple: tuple[int, ...] = tuple(int(s) for s in shape.split(','))
+    dims = tuple(f'dim{i}' for i, _ in enumerate(shape_tuple))
+    unit: str | None
+    time_unit = 's'
+    if dtype == 'datetime64':
+        # See note in `_make_empty_variable()`: datetimes should come
+        # with a unit
+        empty = _create_empty_array(
+            _ALL_DTYPES[dtype],
+            shape_tuple,
+            f'datetime64[{time_unit}]',
+        )
+    elif dtype in ('string', 'PyObject'):
+        # See note in `_make_empty_variable()`: string/object arrays
+        # must be flat
+        empty = _create_empty_array(_ALL_DTYPES[dtype], (0,))
+    else:
+        empty = _create_empty_array(_ALL_DTYPES[dtype], shape_tuple)
+    unit = {'int64': '1E6 m', 'affine_transform3': '2'}.get(dtype)
+    var_dict = {
+        "dims": dims,
+        "shape": shape_tuple,
+        "values": empty,
+        "dtype": dtype,
+    }
+    if unit:
+        var_dict['unit'] = unit
+
+    var = sc.from_dict(var_dict)
+    assert isinstance(var, sc.Variable)
+    assert var.dims == var_dict["dims"]
+    assert var.shape == shape_tuple
+    assert np.array_equal(var.values, empty)
+    if unit is None:
+        expected_unit = {
+            'datetime64': sc.Unit(time_unit),
+            'PyObject': None,
+            'string': None,
+            'bool': None,
+        }.get(dtype, sc.Unit('1'))
+        assert var.unit == expected_unit
+    else:
+        assert var.unit == sc.Unit(unit)
 
 
 def test_variable_0D_from_dict() -> None:
@@ -324,6 +476,21 @@ def test_variable_round_trip(ndim: Literal[1, 2]) -> None:
     )
     if ndim > 1:
         var = var.fold('x', sizes={'x': 2, 'y': 5})
+    assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
+
+
+@pytest.mark.parametrize('dtype', _NORMAL_DTYPES)
+@pytest.mark.parametrize(
+    'shape',
+    ['0', '0,0', '2,0', '0,2', '0,0,0', '2,0,0', '0,2,0', '0,0,2'],
+)
+def test_empty_variable_round_trip(dtype: str, shape: str) -> None:
+    shape_tuple: tuple[int, ...] = tuple(int(s) for s in shape.split(','))
+    unit: str | None = {
+        'vector3': 'm*s**-1',
+        'datetime64': 'D',
+    }.get(dtype)
+    var = _make_empty_variable(dtype, shape_tuple, unit)
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 
