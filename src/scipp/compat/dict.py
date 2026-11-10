@@ -78,6 +78,67 @@ def _obj_array_parser(x: Any, shp: object) -> npt.NDArray[Any]:
     return np.array([x[i] for i in range(len(x))])
 
 
+def _create_empty_array(
+    dtype: DType,
+    shape: tuple[int, ...],
+    dtype_specifics: str | None = None,
+) -> npt.NDArray[Any]:
+    """Create an empty array of the requisite shape, compatible with
+    the specified data type.
+
+    Note
+    ----
+    - For an empty array, ``shape and not all(shape)``.
+    - ``dtype_specifics`` (e.g. ``'datetime64[D]'``) is needed for
+      ``DType.datetime64``, otherwise an edge case in
+      :attr:`Variable.values` will cause the property to error out on
+      ``values=np.array([], dtype='datetime64')``.
+    """
+    str_dtype = str(dtype)
+    # If we don't explicitly pass a dtype for empty arrays, NumPy will
+    # default to float, and we'll run into issues at `Variable`
+    # reconstruction
+    if dtype_specifics is not None:
+        dtype_hint = dtype_specifics
+    elif dtype in (
+        DType.DataArray,
+        DType.DataArrayView,
+        DType.Dataset,
+        DType.DatasetView,
+        DType.PyObject,
+        DType.Variable,
+        DType.VariableView,
+    ):
+        dtype_hint = object
+    elif dtype in (
+        DType.datetime64,
+        DType.float32,
+        DType.float64,
+        DType.int32,
+        DType.int64,
+        DType.uint64,
+    ):
+        dtype_hint = getattr(np, str_dtype)
+    elif dtype == DType.string:
+        dtype_hint = str
+    elif dtype == DType.bool:
+        dtype_hint = bool
+    else:  # E.g. `float32`, `vector3`, ...
+        dtype_hint = float
+
+    # Array dimensions needs adjustment for matrix-/vector-like data
+    # types
+    item_shape: tuple[int, ...] = {
+        str(DType.affine_transform3): (4, 4),
+        str(DType.linear_transform3): (3, 3),
+        str(DType.rotation3): (4,),  # Quaternion
+        str(DType.translation3): (3,),
+        str(DType.vector3): (3,),
+    }.get(str_dtype, ())
+
+    return np.array([], dtype=dtype_hint).reshape((*shape, *item_shape))
+
+
 def _variable_to_dict(v: Variable) -> dict[str, Any]:
     """Convert a Scipp Variable to a python dict."""
     out: dict[str, Any] = {
@@ -104,13 +165,37 @@ def _variable_to_dict(v: Variable) -> dict[str, Any]:
 
     str_dtype = str(v.dtype)
 
-    # Check if variable is 0D:
+    # Check if variable is 0D or empty:
     suffix = "s" if len(out["dims"]) > 0 else ""
-    out["values"] = dtype_parser[str_dtype](getattr(v, "value" + suffix), v.shape)
-    var = getattr(v, "variance" + suffix)
-    out["variances"] = (
-        dtype_parser[str_dtype](var, v.shape) if var is not None else None
-    )
+    if v.shape and not all(v.shape):
+        if v.dtype in (DType.string, DType.PyObject):
+            # String and object `.values` arrays are in general flat,
+            # only later massaged into an N-D object
+            shape: tuple[int, ...] = (0,)
+        else:
+            shape = v.shape
+        if v.dtype == DType.datetime64:
+            # `datetime64` without a unit specification causes problems
+            # with `Variable.values`
+            dtype_specifics = str(
+                cast(npt.NDArray[np.datetime64] | np.datetime64, v.values).dtype
+            )
+            out["values"] = _create_empty_array(
+                v.dtype,
+                shape,
+                dtype_specifics,
+            )
+        else:
+            out["values"] = _create_empty_array(v.dtype, shape)
+    else:
+        out["values"] = dtype_parser[str_dtype](
+            getattr(v, "value" + suffix),
+            v.shape,
+        )
+        var = getattr(v, "variance" + suffix)
+        out["variances"] = (
+            dtype_parser[str_dtype](var, v.shape) if var is not None else None
+        )
     return out
 
 
