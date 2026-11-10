@@ -7,6 +7,8 @@ TL;DR
 Standard setup
 ~~~~~~~~~~~~~~
 
+Run these commands to set up a development build:
+
 .. code-block:: bash
 
   # Get the code
@@ -20,10 +22,9 @@ Standard setup
   # Run code formatting / static analysis checks
   pixi run -e lint static
 
-  # Build and run tests
-  pixi run test
-
-You should now also be able to run ``pixi run import-minimal``.
+  # Build C++ extension module
+  pixi run -e dev configure-debug
+  pixi run -e dev build-debug
 
 Common tasks
 ~~~~~~~~~~~~
@@ -34,7 +35,13 @@ Run the Python tests:
 
 .. code-block:: bash
 
-   pixi run test
+   pixi run -e dev test
+
+Run the C++ tests:
+
+.. code-block:: bash
+
+   pixi run cpp-test-debug
 
 Build the docs:
 
@@ -96,20 +103,30 @@ Building Scipp
 For most development tasks, pixi handles building automatically.
 When you run ``pixi run test`` or ``pixi run docs``, pixi-build-cmake builds the C++ extension
 and installs it as a conda package in the environment.
-
-For **incremental C++ development** (editing C++ code and rebuilding quickly), use the ``dev`` environment:
+However, this does not configure the CMake project, you need to do that separately, see below.
+This is important to cache build artifacts across runs.
 
 .. code-block:: bash
 
-  # Configure, build, and run C++ tests
-  pixi run -e dev cpp-test
-
-  # Or step by step:
+  # For a release build:
   pixi run -e dev configure
-  pixi run -e dev build
+  # For a debug build:
+  pixi run -e dev configure-debug
 
-The dev environment uses cmake presets (``ci-linux``, ``ci-macos``, ``ci-windows``), builds
-in ``build/dev``, and installs into ``install/dev``.
+This prepares the ``build/dev`` and ``build-debug/dev`` folders, respectively.
+
+After configuring, run any command that triggers a build, or build the module explicitly:
+
+.. code-block:: bash
+
+  # For a release build:
+  pixi run -d build
+  # For a debug build:
+  pixi run -d build-debug
+
+You need to re-run the build every time you change C++ code.
+When you **only change Python code**, you do not need to re-build.
+Any changes to Python code are immediately reflected in the dev environment.
 
 To use the ``scipp`` Python module from a dev build:
 
@@ -117,14 +134,6 @@ To use the ``scipp`` Python module from a dev build:
 
   pixi shell -e dev
   python -c 'import scipp as sc'
-
-The dev environment sets ``PYTHONPATH`` to the install directory automatically.
-
-When making changes to the C++ side of Scipp, rebuild with:
-
-.. code-block:: bash
-
-  pixi run -e dev build
 
 
 Additional build options
