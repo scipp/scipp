@@ -40,7 +40,7 @@ def _make_empty_variable(
     """
     make_var: Callable[..., sc.Variable]
     dims = [f'dim{i}' for i, _ in enumerate(shape, 1)]
-    make_var = {
+    make_var = {  # type: ignore[assignment]
         "int64": sc.array,
         "int32": sc.array,
         "vector3": sc.vectors,
