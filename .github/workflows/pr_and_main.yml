@@ -79,6 +79,8 @@ jobs:
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
 
+      - run: pixi run -e dev configure
+
       # C++ tests via the dev env (manual cmake; pixi-build-cmake does not build
       # the C++ test suite). Python tests via the test env (pixi-build-cmake).
       - run: pixi run -e dev cpp-test
