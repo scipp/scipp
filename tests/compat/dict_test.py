@@ -63,7 +63,7 @@ def _make_empty_variable(
     fold = any(shape) and dtype in ('string', 'PyObject')
     if fold:
         # Note: instantiating from N-D arrays is sketchy for non-native
-        # types; just `.fold()` it post-hoc.
+        # dtypes; just `.fold()` it post-hoc.
         make_var_kwargs = {"values": empty.flatten(), "dims": '_'}
     else:
         make_var_kwargs = {"values": empty, "dims": dims}
