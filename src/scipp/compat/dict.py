@@ -126,8 +126,7 @@ def _create_empty_array(
     else:  # E.g. `float32`, `vector3`, ...
         dtype_hint = float
 
-    # Array dimensions needs adjustment for matrix-/vector-like data
-    # types
+    # Array dimensions needs adjustment for matrix-/vector-like dtypes
     item_shape: tuple[int, ...] = {
         str(DType.affine_transform3): (4, 4),
         str(DType.linear_transform3): (3, 3),
