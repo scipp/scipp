@@ -22,7 +22,7 @@ from collections.abc import Callable
 from copyreg import pickle
 from functools import partial
 from operator import methodcaller
-from typing import Any, ClassVar, final
+from typing import Any, ClassVar, cast, final
 
 from . import __version__ as _scipp_version
 from .compat.dict import from_dict, to_dict
@@ -193,10 +193,19 @@ def _pickle_dataset(
         raise NotImplementedError('FIXME: handle binned data')
     # FIXME: before we resolve #4012, let's decouple from `to_dict()`
     # for the time being
-    result: dict[str, Any] = {
-        'data': {name: to_dict(d) for name, d in dataset.items()},
-        'coords': {name: to_dict(c) for name, c in dataset.coords.items()},
-    }
+    result: dict[str, Any] = {}
+    result['coords'] = {name: to_dict(c) for name, c in dataset.coords.items()}
+    # We only need the data proper and the masks (if any); the coords
+    # are stored above and the names are the same as the dict keys
+    result['data'] = {}
+    for name, d in dataset.items():
+        d_dct = to_dict(d)
+        pop_keys = {'name', 'coords'}
+        if not d_dct.get('masks'):
+            pop_keys.add('masks')
+        for key in pop_keys:
+            d_dct.pop(key, None)
+        result['data'][name] = d_dct
     return result, None
 
 
@@ -206,11 +215,22 @@ def _unpickle_dataset(
     dct, bins = serialization
     if bins is not None:
         raise NotImplementedError('FIXME: handle binned data')
-    kwargs: dict[str, Any] = {
-        key: {name: from_dict(d) for name, d in subdct.items()}
-        for key, subdct in dct.items()
+    coords: dict[str, Variable] = {
+        name: cast(Variable, from_dict(d)) for name, d in dct['coords'].items()
     }
-    return Dataset(**kwargs)
+    data: dict[str, Variable | DataArray] = {}
+    # Only explicitly create `DataArray`s if masks are needed
+    for name, d in dct['data'].items():
+        var = cast(Variable, from_dict(d['data']))
+        if 'masks' in d:
+            data[name] = DataArray(
+                data=var,
+                masks={name: from_dict(m) for name, m in d['masks'].items()},
+                coords=coords,
+            )
+        else:
+            data[name] = var
+    return Dataset(data, coords=coords)
 
 
 _VAR_HELPER = _PickleHelper[

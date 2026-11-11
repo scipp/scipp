@@ -574,6 +574,95 @@ def test_pickling_unbinned_data_arrays(
     _roundtrip(tmp_path, da, sc.identical)
 
 
+@pytest.mark.parametrize(
+    'case',
+    [
+        'implicit-coords-and-arrays',
+        'explicit-coords-and-variables',
+        'masked-entries',
+        'renamed-entries',
+        'empty-with-coords',
+        'empty-without-coords',
+    ],
+)
+def test_pickling_unbinned_datasets(tmp_path: Path, case: str) -> None:
+    """
+    With handpicked examples, test that un-binned :class:`Dataset`s
+    can be roundtripped in- and cross-process.
+    """
+
+    def cmp_datasets(ds1: sc.Dataset, ds2: sc.Dataset) -> bool:
+        if (keys := set(ds1)) != set(ds2):
+            return False
+        return all(sc.identical(ds1[key], ds2[key]) for key in keys)
+
+    rng = np.random.default_rng(42)
+
+    n = 100
+    t = sc.linspace(start=0, stop=10, num=n, dim='t', unit='s')
+    x = t * sc.Unit('50 m*s**-1')
+    foo_var = sc.array(values=rng.random(n), dims=['t'])
+    bar_var = sc.array(values=rng.random(n), dims=['t'])
+
+    # Basic cases
+    if case == 'implicit-coords-and-arrays':
+        foo_da = sc.DataArray(data=foo_var, coords={'t': t})
+        bar_da = sc.DataArray(data=bar_var, coords={'x': x})
+        ds = sc.Dataset({'foo': foo_da, 'bar': bar_da})
+        assert set(ds.coords) == {'x', 't'}
+        assert set(ds) == {'foo', 'bar'}
+    elif case == 'explicit-coords-and-variables':
+        ds = sc.Dataset({'foo': foo_var, 'bar': bar_var}, coords={'x': x, 't': t})
+        assert set(ds.coords) == {'x', 't'}
+        assert set(ds) == {'foo', 'bar'}
+
+    # Edge case: empty datasets
+    elif case in ('empty-with-coords', 'empty-without-coords'):
+        if 'without' in case:
+            ds = sc.Dataset({})
+            assert not ds.coords
+        else:
+            ds = sc.Dataset({}, coords={'x': x, 't': t})
+            assert set(ds.coords) == {'x', 't'}
+        assert not len(ds)
+
+    # Misc. cases
+    elif case == 'masked-entries':
+        foo_da = sc.DataArray(
+            data=foo_var,
+            coords={'t': t},
+            masks={'t': t < sc.scalar(value=5.0, unit='s')},
+        )
+        ds = sc.Dataset(  # Mixed coords source
+            cast(dict[str, Any], {'foo': foo_da, 'bar': bar_var}),
+            coords={'x': x},
+        )
+        assert set(ds.coords) == {'x', 't'}
+        assert set(ds) == {'foo', 'bar'}
+        mask = ds['foo'].masks['t']
+        assert (mask['t', 0].value, mask['t', -1].value) == (True, False)
+        assert not ds['bar'].masks
+    elif case == 'renamed-entries':
+        foo_da = sc.DataArray(
+            data=foo_var,
+            coords={'t': t},
+            name='baz',  # Overwritten
+        )
+        ds = sc.Dataset(  # Mixed coords source
+            cast(dict[str, Any], {'foo': foo_da, 'bar': bar_var}),
+            coords={'x': x},
+        )
+        assert set(ds.coords) == {'x', 't'}
+        assert set(ds) == {'foo', 'bar'}
+        assert ds['foo'].name == 'foo'
+        assert ds['bar'].name == 'bar'
+
+    else:
+        raise AssertionError(f'{case=!r}')
+
+    _roundtrip(tmp_path, ds, cmp_datasets)
+
+
 @pytest.mark.xfail(
     reason='TODO: handle binned data',
     raises=NotImplementedError,
