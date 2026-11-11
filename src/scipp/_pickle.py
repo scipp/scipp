@@ -38,7 +38,7 @@ from .core import (
 class VersionError(RuntimeError):
     """Guard against unpickling potentially incompatible blobs.
 
-    Our (de-)serialization implementaions make use of :func:`to_dict`
+    Our (de-)serialization implementations make use of :func:`to_dict`
     and :func:`from_dict`, which are not necessary consistent between
     versions. Hence, fail loudly if the versions aren't consistent.
     """
