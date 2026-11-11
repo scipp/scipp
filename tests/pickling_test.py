@@ -9,7 +9,7 @@ import re
 import subprocess
 import sys
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from functools import partial
 from operator import eq
 from pathlib import Path
 from textwrap import dedent
@@ -27,13 +27,6 @@ from scipp._pickle import VersionError
 _64_BIT = sys.maxsize > (2 << 32)
 _DEFAULT_INT_TYPE = str(np.dtype(int))
 _DEFAULT_FLOAT_TYPE = str(np.dtype(float))
-
-
-@dataclass(eq=True)
-class Person:
-    """Dummy hashable class which is resolved to a ``PyObject``."""
-
-    name: str
 
 
 def _roundtrip[T](
@@ -299,7 +292,8 @@ def test_pickling_unbinned_variables(
         shape = ()
     elif case.startswith('scalar-'):
         value: Any
-        value, dtype, val_to_var = {
+        val_to_var: Callable[..., sc.Variable]
+        value, dtype, val_to_var = {  # type: ignore[assignment]
             'int': (42, _DEFAULT_INT_TYPE, sc.scalar),
             'str': ('foo', 'string', sc.scalar),
             'datetime': (
@@ -307,7 +301,11 @@ def test_pickling_unbinned_variables(
                 'datetime64',
                 sc.scalar,
             ),
-            'object': (Person('someone'), 'PyObject', sc.scalar),
+            'object': (
+                'string',
+                'PyObject',
+                partial(sc.scalar, dtype=object),
+            ),
             'linear-transform': (
                 [[-2, 1, 1], [1, -2, 1], [1, 1, -2]],
                 'linear_transform3',
@@ -411,7 +409,7 @@ def test_pickling_unbinned_variables(
                     nentries,
                 )
                 if vartype == 'objs':
-                    data = np.array([Person(s) for s in strings])
+                    data = strings.astype(object)
                     dtype = 'PyObject'
                 else:
                     data = strings
@@ -502,11 +500,15 @@ def test_pickling_unbinned_data_arrays(
         assert da.masks
 
     elif case.startswith('scalar-'):
-        value = {
-            'float': 42.0,
-            'obj': Person('Marvin'),
+        dtype_hint: Any
+        value, dtype_hint = {
+            'float': (5.0, None),
+            'obj': ('some obj', object),
         }[case.partition('-')[-1]]
-        da = sc.DataArray(data=sc.Variable(values=value, dims=()), coords={})
+        da = sc.DataArray(
+            data=sc.Variable(values=value, dims=(), dtype=dtype_hint),
+            coords={},
+        )
         assert not da.shape
         assert not da.coords
 
@@ -533,30 +535,28 @@ def test_pickling_unbinned_data_arrays(
         shape = (length,) * ndim
         choices: Sequence[Any] | npt.NDArray[Any]
         extra_shape: tuple[int, ...]
-        make_var, choices, dtype, extra_shape = {  # type: ignore[assignment]
-            'int': (sc.Variable, range(20), sc.DType(np.dtype(int)), ()),
-            'vec': (sc.vectors, np.linspace(0, 1), sc.DType.vector3, (3,)),
-            'string': (
-                sc.Variable,
-                ['foo', 'bar', 'baz'],
-                sc.DType.string,
-                (),
-            ),
-            'obj': (
-                sc.Variable,
-                [Person('Alice'), Person('Bob'), Person('Chris')],
-                sc.DType.PyObject,
-                (),
-            ),
+        make_var, choices, dtype = {  # type: ignore[assignment]
+            'int': (sc.Variable, range(20), sc.DType(np.dtype(int))),
+            'vec': (sc.vectors, np.linspace(0, 1), sc.DType.vector3),
+            'string': (sc.Variable, ['foo', 'bar', 'baz'], sc.DType.string),
+            'obj': (sc.Variable, ['foo', 'bar', 'baz'], sc.DType.PyObject),
             'linear-transform': (
                 spatial.linear_transforms,
                 np.linspace(0, 10),
                 sc.DType.linear_transform3,
-                (3, 3),
             ),
         }[var_type]
+        extra_shape = {
+            'vec': (3,),
+            'linear-transform': (3, 3),
+        }.get(var_type, ())
 
-        flat_data = rng.choice(choices, (np.prod(shape), *extra_shape))
+        flat_data = rng.choice(
+            choices,
+            (np.prod(shape), *extra_shape),
+        )
+        if var_type == 'obj':  # `numpy.str_` -> `str`
+            flat_data = flat_data.astype(object)
         var = make_var(
             values=flat_data,  # type: ignore[arg-type]
             dims=['_'],
@@ -578,7 +578,8 @@ def test_pickling_unbinned_data_arrays(
     reason='TODO: handle binned data',
     raises=NotImplementedError,
 )
-def test_pickling_binned_data() -> None:
+@pytest.mark.parametrize('case', ['DataArray', 'Dataset'])
+def test_pickling_binned_data(case: str) -> None:
     """
     Test trying to pickle a binned :class:`DataArray`. At the moment
     this should fail with a :class:`NotImplementedError`.
@@ -592,7 +593,16 @@ def test_pickling_binned_data() -> None:
         data=sc.ones(shape=[100], dims=['t']),
         coords={'t': times},
     )
-    pickle.dumps(events.bin(t=10))  # FIXME: NotImplementedError
+    binned = events.bin(t=10)
+    if case == 'Dataset':
+        binned.name = 'data'
+        pickled: sc.Dataset | sc.DataArray = sc.Dataset({'data': binned})
+    elif case == 'DataArray':
+        pickled = binned
+    else:
+        raise AssertionError(f'{case=!r}')
+    assert pickled.is_binned
+    pickle.dumps(pickled)  # FIXME: NotImplementedError
 
 
 def test_unpickling_wrong_scipp_version(tmp_path: Path) -> None:
