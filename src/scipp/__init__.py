@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-# ruff: noqa: E402, F401, F821
+# ruff: noqa: E402, F821
 # Suppress errors from assigning methods, MyPy gets the correct types from the stub.
 # mypy: disable-error-code="assignment, method-assign"
 """Multi-dimensional data arrays with labeled dimensions.

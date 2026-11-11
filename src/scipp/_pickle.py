@@ -26,7 +26,7 @@ from typing import Any, ClassVar, final
 
 from . import __version__ as _scipp_version
 from .compat.dict import from_dict, to_dict
-from .core import (  # noqa: F401
+from .core import (
     DataArray,
     Dataset,
     DType,
@@ -183,6 +183,36 @@ def _unpickle_data(
     return from_dict(dct)
 
 
+def _pickle_dataset(
+    dataset: Dataset,
+) -> tuple[
+    dict[str, Any],
+    dict[str, Any] | None,
+]:
+    if dataset.is_binned:
+        raise NotImplementedError('FIXME: handle binned data')
+    # FIXME: before we resolve #4012, let's decouple from `to_dict()`
+    # for the time being
+    result: dict[str, Any] = {
+        'data': {name: to_dict(d) for name, d in dataset.items()},
+        'coords': {name: to_dict(c) for name, c in dataset.coords.items()},
+    }
+    return result, None
+
+
+def _unpickle_dataset(
+    serialization: tuple[dict[str, Any], dict[str, Any] | None],
+) -> Dataset:
+    dct, bins = serialization
+    if bins is not None:
+        raise NotImplementedError('FIXME: handle binned data')
+    kwargs: dict[str, Any] = {
+        key: {name: from_dict(d) for name, d in subdct.items()}
+        for key, subdct in dct.items()
+    }
+    return Dataset(**kwargs)
+
+
 _VAR_HELPER = _PickleHelper[
     Variable,
     tuple[dict[str, Any], dict[str, Any] | None],
@@ -191,3 +221,7 @@ _DA_HELPER = _PickleHelper[
     DataArray,
     tuple[dict[str, Any], dict[str, Any] | None],
 ](DataArray, _pickle_data, _unpickle_data)
+_DS_HELPER = _PickleHelper[
+    Dataset,
+    tuple[dict[str, Any], dict[str, Any] | None],
+](Dataset, _pickle_dataset, _unpickle_dataset)
