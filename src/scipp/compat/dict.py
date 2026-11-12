@@ -5,8 +5,9 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Callable
-from typing import Any
+from collections.abc import Callable, Sequence
+from functools import partial
+from typing import Any, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -19,7 +20,12 @@ from ..core import (
     vector,
     vectors,
 )
-from ..spatial import linear_transform, linear_transforms
+from ..spatial import (
+    affine_transform,
+    affine_transforms,
+    linear_transform,
+    linear_transforms,
+)
 from ..typing import VariableLike
 
 
@@ -59,9 +65,76 @@ def to_dict(scipp_obj: VariableLike) -> dict[str, Any]:
         raise NotImplementedError("Unsupported type for to_dict")
 
 
-def _vec_parser(x: Any, shp: object) -> npt.NDArray[Any]:
-    """Parse vector_3_float to 2D NumPy array."""
+def _generic_array_parser(shape: tuple[int, ...], x: Any) -> npt.NDArray[Any]:
+    """Parse a generic :attr:`Variable.values` to a NumPy array."""
     return np.array(x)
+
+
+def _obj_array_parser(shape: tuple[int, ...], x: Any) -> npt.NDArray[Any]:
+    """Coerce ElementArrayView_PyObject into a flattened NumPy array."""
+    if not shape:
+        return np.array(x)
+    # Probably an ElementArrayView_PyObject, which cannot be iterated
+    # over normally (despite having an `.__iter__()`)
+    return np.array([x[i] for i in range(len(x))])
+
+
+def _create_empty_array(var: Variable) -> npt.NDArray[Any]:
+    """Create an empty array with shape and data type compatible with
+    the provided ``var``.
+    """
+    str_dtype = str(var.dtype)
+    shape = var.shape
+
+    # String and object `.values` arrays are in general flat, only later
+    # massaged into N-D objects; supplying otherwise to the constructor
+    # will cause errors
+    if str_dtype in ('string', 'PyObject'):
+        shape = (0,)
+
+    # Notes:
+    # - Corner case:
+    #   `Variable(values=np.array([], dtype='datetime64'))`, i.e. a
+    #   unitless `datetime64` array, results in the `Variable.values`
+    #   property erroring out. So just take the unit from `.values`.
+    # - Matrix-/Vector-like (i.e. linear-algebra) dtypes requires
+    #   adjustments to the shape.
+    if str_dtype == 'datetime64':
+        dtype_hint: Any = cast(
+            npt.NDArray[np.datetime64] | np.datetime64,
+            var.values,
+        ).dtype
+        item_shape: tuple[int, ...] = ()
+    else:
+        dtype_hint, item_shape = {
+            'string': (str, ()),
+            'bool': (bool, ()),
+            # NumPy native types
+            'float32': (np.float32, ()),
+            'float64': (np.float64, ()),
+            'int32': (np.int32, ()),
+            'int64': (np.int64, ()),
+            'uint64': (np.uint64, ()),
+            # Linalg types
+            'vector3': (float, (3,)),
+            'translation3': (float, (3,)),
+            'rotation3': (float, (4,)),  # Quaternion
+            'linear_transform3': (float, (3, 3)),
+            'affine_transform3': (float, (4, 4)),
+            # ... and the weird stuff
+            'DataArray': (object, ()),
+            'DataArrayView': (object, ()),
+            'Dataset': (object, ()),
+            'DatasetView': (object, ()),
+            'PyObject': (object, ()),
+            'Variable': (object, ()),
+            'VariableView': (object, ()),
+        }[str_dtype]
+
+    # If we don't explicitly pass a dtype for empty arrays, NumPy will
+    # default to float, and we'll run into issues at `Variable`
+    # reconstruction
+    return np.array([], dtype=dtype_hint).reshape((*shape, *item_shape))
 
 
 def _variable_to_dict(v: Variable) -> dict[str, Any]:
@@ -75,27 +148,23 @@ def _variable_to_dict(v: Variable) -> dict[str, Any]:
     if not v.aligned:
         out["aligned"] = False
 
-    # Use defaultdict to return the raw values/variances by default
-    dtype_parser: dict[str, Callable[..., Any]] = defaultdict(lambda: lambda x, y: x)
-    # Using raw dtypes as dict keys doesn't appear to work, so we need to
-    # convert to strings.
-    dtype_parser.update(
-        {
-            str(DType.vector3): _vec_parser,
-            str(DType.linear_transform3): _vec_parser,
-            str(DType.string): _vec_parser,
-        }
-    )
-
-    str_dtype = str(v.dtype)
-
-    # Check if variable is 0D:
-    suffix = "s" if len(out["dims"]) > 0 else ""
-    out["values"] = dtype_parser[str_dtype](getattr(v, "value" + suffix), v.shape)
-    var = getattr(v, "variance" + suffix)
-    out["variances"] = (
-        dtype_parser[str_dtype](var, v.shape) if var is not None else None
-    )
+    if v.shape and not all(v.shape):  # Empty array
+        out["values"] = _create_empty_array(v)
+        # The variances must have the same shape as the data if here
+        out["variances"] = None if v.variances is None else out["values"].copy()
+    else:
+        # Use defaultdict to return the raw values/variances by default
+        dtype_parsers: dict[str, Callable[[tuple[int, ...], Any], Any]]
+        dtype_parsers = defaultdict(
+            lambda: lambda shape, x: x,
+            vector3=_generic_array_parser,
+            linear_transform3=_generic_array_parser,
+            string=_generic_array_parser,
+            PyObject=_obj_array_parser,
+        )
+        parse_dtype = partial(dtype_parsers[str(v.dtype)], v.shape)
+        out["values"] = parse_dtype(v.values)
+        out["variances"] = None if v.variances is None else parse_dtype(v.variances)
     return out
 
 
@@ -166,15 +235,25 @@ def _dict_to_variable(d: dict[str, Any]) -> Variable:
             out[key] = getattr(DType, d[key])
         else:
             out[key] = d[key]
+
     # Hack for types that cannot be directly constructed using Variable()
     if out['dims']:
         init: dict[str, Callable[..., Variable]] = {
             'vector3': vectors,
             'linear_transform3': linear_transforms,
+            # Note: while one can technically directly construct a
+            # Variable of this .dtype, it is error prone due to the
+            # different data layouts in numpy/scipy and in the Eigen
+            # matrices, so just use the helper function
+            'affine_transform3': affine_transforms,
         }
     else:
-        init = {'vector3': vector, 'linear_transform3': linear_transform}
-    make_var = init.get(str(out.get('dtype', None)), Variable)
+        init = {
+            'vector3': vector,
+            'linear_transform3': linear_transform,
+            'affine_transform3': affine_transform,
+        }
+    make_var = init.get(dtype := str(out.get('dtype', None)), Variable)
     if make_var != Variable:
         if not out['dims']:
             out['value'] = out['values']
@@ -182,7 +261,20 @@ def _dict_to_variable(d: dict[str, Any]) -> Variable:
             del out['dims']
         for key in ['dtype', 'variance', 'variances']:
             out.pop(key, None)
-    var = make_var(**out)
+
+    # Note: N-D string/object variables are stored as 1-D arrays
+    # internally; recover the dimensionality info where appropriate
+    if (
+        dtype in ('string', 'PyObject')
+        and d.get('dims')
+        and len(cast(Sequence[str], d['dims'])) > 1
+        and d.get('shape') is not None
+    ):
+        var = make_var(**{**out, 'dims': ['_']}).fold(
+            '_', dims=d['dims'], shape=d['shape']
+        )
+    else:
+        var = make_var(**out)
     return var
 
 
