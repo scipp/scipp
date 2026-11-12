@@ -22,7 +22,6 @@ from scipy.spatial.transform import Rotation
 
 import scipp as sc
 from scipp import spatial
-from scipp._pickle import VersionError
 
 _64_BIT = sys.maxsize > (2 << 32)
 _DEFAULT_INT_TYPE = str(np.dtype(int))
@@ -708,11 +707,11 @@ def test_unpickling_wrong_scipp_version(tmp_path: Path) -> None:
         pickle.dump(unit, fobj)
 
     with pytest.MonkeyPatch.context() as mp:
-        mp.setattr('scipp._pickle._scipp_version', version_at_unpickling)
-        msg = (
-            f'expected version {version_at_unpickling}; '
-            f'got version {version_at_pickling}'
+        mp.setattr('scipp._pickling._SCIPP_VERSION', version_at_unpickling)
+        msg = 'version mismatch: .*' + re.escape(
+            f'package version = {version_at_unpickling}, '
+            f'pickled version = {version_at_pickling}; '
         )
-        with pytest.raises(VersionError, match=re.escape(msg)):
+        with pytest.raises(RuntimeError, match=msg):
             with fname.open(mode='rb') as fobj:
                 pickle.load(fobj)
