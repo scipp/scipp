@@ -65,14 +65,14 @@ def to_dict(scipp_obj: VariableLike) -> dict[str, Any]:
         raise NotImplementedError("Unsupported type for to_dict")
 
 
-def _vec_parser(x: Any, shp: object) -> npt.NDArray[Any]:
-    """Parse vector_3_float to 2D NumPy array."""
+def _generic_array_parser(shape: tuple[int, ...], x: Any) -> npt.NDArray[Any]:
+    """Parse a generic :attr:`Variable.values` to a NumPy array."""
     return np.array(x)
 
 
-def _obj_array_parser(x: Any, shp: object) -> npt.NDArray[Any]:
+def _obj_array_parser(shape: tuple[int, ...], x: Any) -> npt.NDArray[Any]:
     """Coerce ElementArrayView_PyObject into a flattened NumPy array."""
-    if not shp:
+    if not shape:
         return np.array(x)
     # Probably an ElementArrayView_PyObject, which cannot be iterated
     # over normally (despite having an `.__iter__()`)
@@ -92,49 +92,44 @@ def _create_empty_array(var: Variable) -> npt.NDArray[Any]:
     if str_dtype in ('string', 'PyObject'):
         shape = (0,)
 
-    # Corner case: `Variable(values=np.array([], dtype='datetime64'))`,
-    # i.e. a unitless `datetime64` array, results in the
-    # `Variable.values` property erroring out. So just take the unit
-    # from `.values`
+    # Notes:
+    # - Corner case:
+    #   `Variable(values=np.array([], dtype='datetime64'))`, i.e. a
+    #   unitless `datetime64` array, results in the `Variable.values`
+    #   property erroring out. So just take the unit from `.values`.
+    # - Matrix-/Vector-like (i.e. linear-algebra) dtypes requires
+    #   adjustments to the shape.
     if str_dtype == 'datetime64':
         dtype_hint: Any = cast(
             npt.NDArray[np.datetime64] | np.datetime64,
             var.values,
         ).dtype
+        item_shape: tuple[int, ...] = ()
     else:
-        dtype_hint = {
-            'string': str,
-            'bool': bool,
+        dtype_hint, item_shape = {
+            'string': (str, ()),
+            'bool': (bool, ()),
             # NumPy native types
-            'float32': np.float32,
-            'float64': np.float64,
-            'int32': np.int32,
-            'int64': np.int64,
-            'uint64': np.uint64,
+            'float32': (np.float32, ()),
+            'float64': (np.float64, ()),
+            'int32': (np.int32, ()),
+            'int64': (np.int64, ()),
+            'uint64': (np.uint64, ()),
             # Linalg types
-            'vector3': float,
-            'translation3': float,
-            'rotation3': float,
-            'linear_transform3': float,
-            'affine_transform3': float,
+            'vector3': (float, (3,)),
+            'translation3': (float, (3,)),
+            'rotation3': (float, (4,)),  # Quaternion
+            'linear_transform3': (float, (3, 3)),
+            'affine_transform3': (float, (4, 4)),
             # ... and the weird stuff
-            'DataArray': object,
-            'DataArrayView': object,
-            'Dataset': object,
-            'DatasetView': object,
-            'PyObject': object,
-            'Variable': object,
-            'VariableView': object,
+            'DataArray': (object, ()),
+            'DataArrayView': (object, ()),
+            'Dataset': (object, ()),
+            'DatasetView': (object, ()),
+            'PyObject': (object, ()),
+            'Variable': (object, ()),
+            'VariableView': (object, ()),
         }[str_dtype]
-
-    # Array dimensions need adjustment for matrix-/vector-like dtypes
-    item_shape: tuple[int, ...] = {
-        str(DType.affine_transform3): (4, 4),
-        str(DType.linear_transform3): (3, 3),
-        str(DType.rotation3): (4,),  # Quaternion
-        str(DType.translation3): (3,),
-        str(DType.vector3): (3,),
-    }.get(str_dtype, ())
 
     # If we don't explicitly pass a dtype for empty arrays, NumPy will
     # default to float, and we'll run into issues at `Variable`
@@ -159,15 +154,15 @@ def _variable_to_dict(v: Variable) -> dict[str, Any]:
         out["variances"] = None if v.variances is None else out["values"].copy()
     else:
         # Use defaultdict to return the raw values/variances by default
-        dtype_parsers: dict[str, Callable[..., Any]]
+        dtype_parsers: dict[str, Callable[[tuple[int, ...], Any], Any]]
         dtype_parsers = defaultdict(
-            lambda: lambda x, shp: x,
-            vector3=_vec_parser,
-            linear_transform3=_vec_parser,
-            string=_vec_parser,
+            lambda: lambda shape, x: x,
+            vector3=_generic_array_parser,
+            linear_transform3=_generic_array_parser,
+            string=_generic_array_parser,
             PyObject=_obj_array_parser,
         )
-        parse_dtype = partial(dtype_parsers[str(v.dtype)], shp=v.shape)
+        parse_dtype = partial(dtype_parsers[str(v.dtype)], v.shape)
         out["values"] = parse_dtype(v.values)
         out["variances"] = None if v.variances is None else parse_dtype(v.variances)
     return out
