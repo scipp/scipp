@@ -17,6 +17,10 @@ def test_installed_package_matches_checkout():
             if not path.is_file():
                 continue
             relative = path.relative_to(source)
+            # setuptools-scm generates this build artifact for wheels; it is
+            # not source code and need not match the installed package.
+            if relative == Path('_version.py'):
+                continue
             target = installed / relative
             if not target.is_file() or target.read_bytes() != path.read_bytes():
                 mismatches.append(str(relative))
