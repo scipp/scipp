@@ -242,6 +242,8 @@ _binding.bind_functions_as_methods(
 _binding.bind_functions_as_methods(Dataset, globals(), ('hist', 'rebin'))
 del _binding
 
+from . import _pickling  # Set up the pickling hooks
+
 from . import data
 from . import spatial
 from .operations import elemwise_func
