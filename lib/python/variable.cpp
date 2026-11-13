@@ -120,6 +120,28 @@ Setting values via indexing:
 See Also
 --------
 scipp.array, scipp.scalar
+
+Caveats
+-------
+Due to differences in C(++)-level data layouts between :mod:`scipp`
+and :mod:`numpy`/:mod:`scipy`, directly instantiating :class:`Variable`s
+with the data types :attr:`scipp.DType.linear_transform3` and
+:attr:`scipp.DType.affine_transform3` may result in the
+:attr:`Variable.values` being transposed relative to what is expected;
+this behevior may change in the future with notice.
+
+The following constructor functions in :func:`scipp.spatial` however
+behave in the expected way
+(``(Variable(values=v, ...).values == v).all()``) as-is, and will remain
+so:
+
+- :func:`scipp.spatial.affine_transform`
+
+- :func:`scipp.spatial.affine_transforms`
+
+- :func:`scipp.spatial.linear_transform`
+
+- :func:`scipp.spatial.linear_transforms`
 )");
 
   bind_init(variable);
