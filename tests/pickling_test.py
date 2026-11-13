@@ -46,7 +46,7 @@ def _roundtrip[T](
     Notes
     -----
     - ``cmp=<callable>`` compares the two arguments (``obj`` and the
-      roundtripped object) and should return true(y) for success.
+      round-tripped object) and should return true(y) for success.
     - ``cmp=True`` is an alias for ``cmp=operator.eq``.
     - ``cmp=False`` skips re-pickling in the child process and the
       subsequent comparison of the values, only checking that the child
@@ -101,11 +101,65 @@ def _roundtrip[T](
     cmd = [sys.executable, '-c', python_script, str(obj), str(src), str(dest)]
     subprocess.run(cmd, check=True)  # noqa: S603
 
-    # Check the cross-process-roundtripped object, if necessary
+    # Check the cross-process-round-tripped object, if necessary
     if comparator is not None:
         with open(dest, mode='rb') as fobj:
             deserialized = pickle.load(fobj)
         assert comparator(obj, deserialized)
+
+
+def _cmp_vars(v1: sc.Variable, v2: sc.Variable) -> bool:
+    """
+    :func:`scipp.identical()` doesn't check user-assigned attributes, so
+    do it here.
+
+    Example
+    -------
+    >>> from operator import is_
+    >>> from scipp import identical, scalar
+
+    >>> v1 = scalar(5)
+    >>> v2 = v1.copy()
+    >>> identical(v1, v2), is_(v1, v2), _cmp_vars(v1, v2)
+    (True, False, True)
+
+    >>> v1.foo = 6
+    >>> v1.foo
+    6
+    >>> identical(v1, v2), is_(v1, v2), _cmp_vars(v1, v2)
+    (True, False, False)
+    """
+    return vars(v1) == vars(v2) and sc.identical(v1, v2)
+
+
+def _cmp_arrays(a1: sc.DataArray, a2: sc.DataArray) -> bool:
+    """
+    :func:`scipp.identical()` doesn't check the array names, so do it
+    here.
+
+    Example
+    -------
+    >>> from operator import is_
+    >>> from scipp import DataArray, array, identical
+
+    >>> a1 = DataArray(data=array(values=[5], dims=['_']), name='foo')
+    >>> a2 = a1.copy()
+    >>> identical(a1, a2), is_(a1, a2), _cmp_arrays(a1, a2)
+    (True, False, True)
+
+    >>> a2.name = 'bar'
+    >>> a2.name
+    'bar'
+    >>> identical(a1, a2), is_(a1, a2), _cmp_arrays(a1, a2)
+    (True, False, False)
+    """
+    return a1.name == a2.name and sc.identical(a1, a2)
+
+
+def _cmp_datasets(ds1: sc.Dataset, ds2: sc.Dataset) -> bool:
+    if (keys := set(ds1)) != set(ds2):
+        return False
+    return all(sc.identical(ds1[key], ds2[key]) for key in keys)
 
 
 @pytest.mark.parametrize(
@@ -148,7 +202,7 @@ def test_pickling_dtypes(
     dtypes: list[Any] | None,
 ) -> None:
     """
-    Test that :class:`DType`s can be roundtripped in- and cross-process.
+    Test that :class:`DType`s can be round-tripped in- and cross-process.
     """
     # Set up the dtype
     if dtypes is None:
@@ -180,7 +234,7 @@ def test_pickling_dtypes(
 )
 def test_pickling_units(tmp_path: Path, unit: str) -> None:
     """
-    Test that :class:`Unit`s can be roundtripped in- and cross-process.
+    Test that :class:`Unit`s can be round-tripped in- and cross-process.
     """
 
     def cmp_units(u1: sc.Unit, u2: sc.Unit) -> bool:
@@ -208,6 +262,7 @@ def test_pickling_units(tmp_path: Path, unit: str) -> None:
         'scalar-object',
         'scalar-float-with-variance',
         'scalar-vector-with-unit',
+        'scalar-variable-with-attributes',
         # Scalars (linalg types)
         'scalar-translation',
         'scalar-rotation',
@@ -258,7 +313,7 @@ def test_pickling_unbinned_variables(
 ) -> None:
     """
     With handpicked examples, test that un-binned :class:`Variable`s can
-    be roundtripped in- and cross-process.
+    be round-tripped in- and cross-process.
     """
     rng = np.random.default_rng(42)
     length = 5  # Size along multidim-array dimensions
@@ -289,6 +344,11 @@ def test_pickling_unbinned_variables(
             'affine-transform': (tr * rot, 'affine_transform3'),
         }[case.removeprefix('scalar-')]
         shape = ()
+    elif case == 'scalar-variable-with-attributes':
+        inner_var = sc.arange('x', 0, 10)
+        var, dtype, shape = sc.scalar(inner_var), 'Variable', ()
+        var.foo, var.bar, var.baz = None, 1, []  # type: ignore[attr-defined]
+        assert vars(var) == {'foo': None, 'bar': 1, 'baz': []}
     elif case.startswith('scalar-'):
         value: Any
         val_to_var: Callable[..., sc.Variable]
@@ -342,8 +402,6 @@ def test_pickling_unbinned_variables(
             dtype = 'PyObject'
         else:
             raise AssertionError(f'{vartype=!r}')
-        assert var.shape == shape
-        assert var.dtype == getattr(sc.DType, dtype)
 
     # N-D array test cases
     elif case == 'float64s-2D-with-variances':
@@ -437,7 +495,7 @@ def test_pickling_unbinned_variables(
 
     assert var.dtype == getattr(sc.DType, dtype)
     assert var.shape == shape
-    _roundtrip(tmp_path, var, sc.identical)
+    _roundtrip(tmp_path, var, _cmp_vars)
 
 
 @pytest.mark.parametrize(
@@ -466,7 +524,7 @@ def test_pickling_unbinned_data_arrays(
 ) -> None:
     """
     With handpicked examples, test that un-binned :class:`DataArray`s
-    can be roundtripped in- and cross-process.
+    can be round-tripped in- and cross-process.
     """
     rng = np.random.default_rng(42)
     length = 10
@@ -570,7 +628,7 @@ def test_pickling_unbinned_data_arrays(
         assert da.shape == shape
         assert da.dtype == dtype
 
-    _roundtrip(tmp_path, da, sc.identical)
+    _roundtrip(tmp_path, da, _cmp_arrays)
 
 
 @pytest.mark.parametrize(
@@ -587,14 +645,8 @@ def test_pickling_unbinned_data_arrays(
 def test_pickling_unbinned_datasets(tmp_path: Path, case: str) -> None:
     """
     With handpicked examples, test that un-binned :class:`Dataset`s
-    can be roundtripped in- and cross-process.
+    can be round-tripped in- and cross-process.
     """
-
-    def cmp_datasets(ds1: sc.Dataset, ds2: sc.Dataset) -> bool:
-        if (keys := set(ds1)) != set(ds2):
-            return False
-        return all(sc.identical(ds1[key], ds2[key]) for key in keys)
-
     rng = np.random.default_rng(42)
 
     n = 100
@@ -659,18 +711,14 @@ def test_pickling_unbinned_datasets(tmp_path: Path, case: str) -> None:
     else:
         raise AssertionError(f'{case=!r}')
 
-    _roundtrip(tmp_path, ds, cmp_datasets)
+    _roundtrip(tmp_path, ds, _cmp_datasets)
 
 
-@pytest.mark.xfail(
-    reason='TODO: handle binned data',
-    raises=NotImplementedError,
-)
-@pytest.mark.parametrize('case', ['DataArray', 'Dataset'])
-def test_pickling_binned_data(case: str) -> None:
+@pytest.mark.parametrize('case', ['Variable', 'DataArray', 'Dataset'])
+def test_pickling_binned_data(tmp_path: Path, case: str) -> None:
     """
-    Test trying to pickle a binned :class:`DataArray`. At the moment
-    this should fail with a :class:`NotImplementedError`.
+    With handpicked examples, test that binned data can be round-tripped
+    in- and cross-process.
     """
     times = sc.array(
         values=np.random.default_rng(42).random(100),
@@ -682,15 +730,22 @@ def test_pickling_binned_data(case: str) -> None:
         coords={'t': times},
     )
     binned = events.bin(t=10)
+
+    pickled: sc.Dataset | sc.DataArray | sc.Variable
+    cmp: Callable[[Any, Any], bool]
     if case == 'Dataset':
         binned.name = 'data'
-        pickled: sc.Dataset | sc.DataArray = sc.Dataset({'data': binned})
+        pickled, cmp = sc.Dataset({'data': binned}), _cmp_datasets
     elif case == 'DataArray':
-        pickled = binned
+        pickled, cmp = binned, _cmp_arrays
+    elif case == 'Variable':
+        pickled, cmp = binned.data, _cmp_vars
     else:
         raise AssertionError(f'{case=!r}')
+
+    assert type(pickled), __name__ == case
     assert pickled.is_binned
-    pickle.dumps(pickled)  # FIXME: NotImplementedError
+    _roundtrip(tmp_path, pickled, cast(Callable[..., bool], cmp))
 
 
 def test_unpickling_wrong_scipp_version(tmp_path: Path) -> None:
