@@ -10,6 +10,7 @@ import re
 import subprocess
 import sys
 from collections.abc import Callable, Sequence
+from datetime import datetime
 from functools import partial
 from operator import eq
 from pathlib import Path
@@ -238,244 +239,202 @@ def test_pickling_units(unit: str) -> None:
     _roundtrip(sc.Unit(unit), _cmp_units)
 
 
+def _get_var_with_attrs() -> sc.Variable:
+    inner_var = sc.arange('x', 0, 10)
+    var, dtype, shape = sc.scalar(inner_var), 'Variable', ()
+    var.foo, var.bar, var.baz = None, 1, []  # type: ignore[attr-defined]
+    assert vars(var) == {'foo': None, 'bar': 1, 'baz': []}
+    return var
+
+
+def _get_translation() -> sc.Variable:
+    return spatial.translation(value=np.array([3.0, 2.0, 1.0]), unit='m')
+
+
+def _get_rotation() -> sc.Variable:
+    return spatial.rotation(
+        value=Rotation.from_rotvec([1.0, 2.0, 3.0]).as_quat(),
+    )
+
+
 @pytest.mark.parametrize(
-    'case',
+    ('var', 'dtype', 'shape'),
     [
         # Scalars
-        'scalar-int',
-        'scalar-str',
-        'scalar-datetime',
-        'scalar-object',
-        'scalar-float-with-variance',
-        'scalar-vector-with-unit',
-        'scalar-variable-with-attributes',
+        pytest.param(sc.scalar(5), _DEFAULT_INT_TYPE, (), id='scalar-int'),
+        pytest.param(sc.scalar('foo'), 'string', (), id='scalar-str'),
+        pytest.param(
+            sc.scalar(np.datetime64(datetime.now().isoformat())),
+            'datetime64',
+            (),
+            id='scalar-datetime',
+        ),
+        pytest.param(
+            sc.scalar('foo', dtype=object),
+            'PyObject',
+            (),
+            id='scalar-object',
+        ),
+        pytest.param(
+            sc.scalar(5.0, variance=0.25),
+            _DEFAULT_FLOAT_TYPE,
+            (),
+            id='scalar-float-with-variance',
+        ),
+        pytest.param(
+            sc.vector([1.0, 2.0, 3.0], unit='m'),
+            'vector3',
+            (),
+            id='scalar-vector-with-unit',
+        ),
+        pytest.param(
+            _get_var_with_attrs(),
+            'Variable',
+            (),
+            id='scalar-variable-with-attributes',
+        ),
         # Scalars (linalg types)
-        'scalar-translation',
-        'scalar-rotation',
-        'scalar-linear-transform',
-        'scalar-affine-transform',
-        # Zero-entry arrays
-        'nothing-0-float',
-        'nothing-10,0-affine-transform',
-        'nothing-0,0,0-obj',
-        # N-D arrays
-        'ints-1D',
-        'ints-2D',
-        'ints-3D',
-        'ints-1D-folded',
-        'ints-2D-folded',
-        'ints-3D-folded',
-        'float32s-1D',
-        'float64s-1D',
-        'float64s-2D-with-variances',
-        'float64s-3D',
-        'vecs-1D',
-        'vecs-2D',
-        'vecs-3D',
-        'strs-1D',
-        'strs-2D-folded',
-        'strs-3D-folded',
-        'objs-1D',
-        'objs-2D-folded',
-        'objs-3D-folded',
-        # N-D arrays (linalg types)
-        'translation-1D',
-        'translation-2D',
-        'translation-3D',
-        'rotation-1D',
-        'rotation-2D',
-        'rotation-3D',
-        'lintr-1D',
-        'lintr-2D',
-        'lintr-3D',
-        'afftr-1D',
-        'afftr-2D',
-        'afftr-3D',
+        pytest.param(
+            _get_translation(),
+            'translation3',
+            (),
+            id='scalar-translation',
+        ),
+        pytest.param(
+            _get_rotation(),
+            'rotation3',
+            (),
+            id='scalar-rotation',
+        ),
+        pytest.param(
+            _get_translation() * _get_rotation(),
+            'affine_transform3',
+            (),
+            id='scalar-affine-transformation',
+        ),
+    ]
+    # N-D arrays
+    + [
+        pytest.param(
+            sc.Variable(
+                values=np.random.random(shape := (10, 10)),
+                variances=np.random.random(shape),
+                dtype=sc.DType.float64,
+                dims=['x', 'y'],
+            ),
+            'float64',
+            shape,
+            id='float64s-2D-with-variances',
+        ),
+    ]
+    + [
+        pytest.param(
+            sc.Variable(
+                values=np.random.choice(range(10), (shape := (10,) * ndim)),
+                dims=['x', 'y', 'z'][:ndim],
+            ),
+            _DEFAULT_INT_TYPE,
+            shape,
+            id=f'ints-{ndim}D',
+        )
+        for ndim in [1, 2, 3]
+    ]
+    + [
+        pytest.param(
+            sc.Variable(
+                values=np.random.choice(range(10), (size := 10) ** ndim),
+                dims=['_'],
+            ).fold(
+                '_',
+                shape=(shape := (size,) * ndim),
+                dims=['x', 'y', 'z'][:ndim],
+            ),
+            _DEFAULT_INT_TYPE,
+            shape,
+            id=f'ints-{ndim}D-folded',
+        )
+        for ndim in [1, 2, 3]
+    ]
+    + [
+        pytest.param(
+            sc.array(
+                values=np.random.random(shape := (10,) * ndim),
+                dims=['x', 'y', 'z'][:ndim],
+                dtype=getattr(sc.DType, dtype),
+            ),
+            dtype,
+            shape,
+            id=f'{dtype}s-{ndim}D',
+        )
+        for dtype, ndim in [('float32', 1), ('float64', 1), ('float64', 3)]
+    ]
+    # N-D arrays (linalg types)
+    + [
+        pytest.param(
+            constructor(
+                values=np.random.random((shape := (10,) * ndim) + item_shape),
+                dims=['x', 'y', 'z'][:ndim],
+            ),
+            dtype,
+            shape,
+            id=f'{name}-{ndim}D',
+        )
+        for name, dtype, item_shape, constructor in [
+            ('vecs', 'vector3', (3,), spatial.vectors),
+            ('translations', 'translation3', (3,), spatial.translations),
+            ('lintr', 'linear_transform3', (3, 3), spatial.linear_transforms),
+            ('afftr', 'affine_transform3', (4, 4), spatial.affine_transforms),
+        ]
+        for ndim in [1, 2, 3]
+    ]
+    + [
+        pytest.param(
+            spatial.rotations(
+                values=Rotation.from_rotvec(
+                    np.random.random((shape := (10,) * ndim) + (3,)),
+                ).as_quat(),
+                dims=['x', 'y', 'z'][:ndim],
+            ),
+            'rotation3',
+            shape,
+            id=f'rotations-{ndim}D',
+        )
+        for ndim in [1, 2, 3]
+    ]
+    # N-D arrays (non-native types)
+    + [
+        pytest.param(
+            sc.array(
+                values=np.random.choice(
+                    ['foo', 'bar', 'baz'],
+                    (size := 10) ** ndim,
+                ).astype(hint),
+                dims=['_'],
+            ).fold(
+                '_',
+                shape=(shape := (size,) * ndim),
+                dims=['x', 'y', 'z'][:ndim],
+            ),
+            dtype,
+            shape,
+            id=f'{name}s-{ndim}D',
+        )
+        for name, dtype, hint in [
+            ('str', 'string', str),
+            ('obj', 'PyObject', object),
+        ]
+        for ndim in [1, 2, 3]
     ],
 )
-def test_pickling_unbinned_variables(case: str) -> None:
+def test_pickling_unbinned_variables(
+    var: sc.Variable,
+    dtype: str,
+    shape: tuple[int, ...],
+) -> None:
     """
     With handpicked examples, test that un-binned :class:`Variable`s can
     be round-tripped in-process.
     """
-    rng = np.random.default_rng(42)
-    length = 5  # Size along multidim-array dimensions
-
-    # Scalar test cases
-    if case == 'scalar-float-with-variance':
-        var = sc.scalar(value=5.0, variance=1.0)
-        dtype = _DEFAULT_FLOAT_TYPE
-        shape: tuple[int, ...] = ()
-    elif case == 'scalar-vector-with-unit':
-        var, dtype, shape = sc.vector([1, 2, 3], unit='m'), 'vector3', ()
-
-    elif case in (
-        'scalar-translation',
-        'scalar-rotation',
-        'scalar-affine-transform',
-    ):
-        # FIXME: direct instantiation from a `Sequence[int]` appears in
-        # the docs, but doesn't type-check because Python `float`s are
-        # neither numpy `float32`s nor `float64`s.
-        tr = spatial.translation(value=np.array([3.0, 2.0, 1.0]), unit='m')
-        rot = spatial.rotation(
-            value=Rotation.from_rotvec([1.0, 2.0, 3.0]).as_quat(),
-        )
-        var, dtype = {
-            'translation': (tr, 'translation3'),
-            'rotation': (rot, 'rotation3'),
-            'affine-transform': (tr * rot, 'affine_transform3'),
-        }[case.removeprefix('scalar-')]
-        shape = ()
-    elif case == 'scalar-variable-with-attributes':
-        inner_var = sc.arange('x', 0, 10)
-        var, dtype, shape = sc.scalar(inner_var), 'Variable', ()
-        var.foo, var.bar, var.baz = None, 1, []  # type: ignore[attr-defined]
-        assert vars(var) == {'foo': None, 'bar': 1, 'baz': []}
-    elif case.startswith('scalar-'):
-        value: Any
-        val_to_var: Callable[..., sc.Variable]
-        value, dtype, val_to_var = {  # type: ignore[assignment]
-            'int': (42, _DEFAULT_INT_TYPE, sc.scalar),
-            'str': ('foo', 'string', sc.scalar),
-            'datetime': (
-                np.datetime64('1970-01-01T00:00:00'),
-                'datetime64',
-                sc.scalar,
-            ),
-            'object': (
-                'string',
-                'PyObject',
-                partial(sc.scalar, dtype=object),
-            ),
-            'linear-transform': (
-                [[-2, 1, 1], [1, -2, 1], [1, 1, -2]],
-                'linear_transform3',
-                spatial.linear_transform,
-            ),
-        }[case.removeprefix('scalar-')]
-        var = val_to_var(value=value)
-        shape = ()
-
-    # Zero-entry test cases
-    elif case.startswith('nothing-'):
-        _, shape_str, vartype = case.split('-', 2)
-        shape = tuple(int(s) for s in shape_str.split(','))
-        dims_seq = ['x', 'y', 'z'][: len(shape)]
-        assert len(shape) == len(dims_seq)
-        if vartype == 'float':
-            var = sc.array(
-                values=np.array([], dtype=float).reshape(shape),
-                dims=dims_seq,
-            )
-            dtype = _DEFAULT_FLOAT_TYPE
-        elif vartype == 'affine-transform':
-            var = spatial.affine_transforms(
-                values=np.array([], dtype=float).reshape((0, 4, 4)),
-                dims=['_'],
-            )
-            var = var.fold('_', dims=dims_seq, shape=shape)
-            dtype = 'affine_transform3'
-        elif vartype == 'obj':
-            var = sc.array(
-                values=np.array([], dtype=object).reshape((0,)),
-                dims=['_'],
-            )
-            var = var.fold('_', dims=dims_seq, shape=shape)
-            dtype = 'PyObject'
-        else:
-            raise AssertionError(f'{vartype=!r}')
-
-    # N-D array test cases
-    elif case == 'float64s-2D-with-variances':
-        shape = (10, 10)
-        values_2d = rng.random(shape)
-        variances_2d = rng.random(shape)
-        var = sc.array(
-            values=values_2d,
-            variances=variances_2d,
-            dims=['x', 'y'],
-        )
-        dtype = _DEFAULT_FLOAT_TYPE
-
-    elif case.startswith(('translation-', 'rotation-', 'lintr-', 'afftr-')):
-        vartype, _, dims = case.rpartition('-')
-        ndim = int(dims.rstrip('D'))
-        shape = (length,) * ndim
-        values, dtype, vals_to_var = {
-            'translation': (
-                rng.random((*shape, 3)),
-                'translation3',
-                spatial.translations,
-            ),
-            'rotation': (
-                Rotation.from_rotvec(rng.random((*shape, 3))).as_quat(),
-                'rotation3',
-                spatial.rotations,
-            ),
-            'lintr': (
-                rng.random((*shape, 3, 3)),
-                'linear_transform3',
-                spatial.linear_transforms,
-            ),
-            'afftr': (
-                rng.random((*shape, 4, 4)),
-                'affine_transform3',
-                spatial.affine_transforms,
-            ),
-        }[vartype]
-        # FIXME: why did we not need the cast in the scalar tests above?
-        var = cast(Callable[..., sc.Variable], vals_to_var)(
-            values=values,
-            dims=['foo', 'bar', 'baz'][:ndim],
-        )
-
-    else:
-        if fold := case.endswith('-folded'):
-            case, *_ = case.rpartition('-')
-        vartype, _, dims = case.rpartition('-')
-        ndim = int(dims.rstrip('D'))
-        nentries = length**ndim
-        shape = (length,) * ndim
-        if vartype == 'vecs':
-            data = rng.random(nentries * 3)
-            data = data.reshape((*shape, 3))
-            var = sc.vectors(values=data, dims=['x', 'y', 'z'][:ndim])
-            dtype = 'vector3'
-        else:
-            if vartype in ('strs', 'objs'):
-                strings = rng.choice(
-                    ['foo', 'bar', 'baz', 'foobar'],
-                    nentries,
-                )
-                if vartype == 'objs':
-                    data = strings.astype(object)
-                    dtype = 'PyObject'
-                else:
-                    data = strings
-                    dtype = 'string'
-            elif vartype == 'ints':
-                data = rng.choice(range(50), nentries)
-                dtype = _DEFAULT_INT_TYPE
-            else:
-                assert vartype.startswith('float')
-                dtype = vartype.rstrip('s')
-                data = rng.random(nentries).astype(dtype)
-
-            dtype_obj = getattr(sc.DType, dtype)
-            dims_seq = ['x', 'y', 'z'][:ndim]
-            if fold:
-                # Directly converting multi-dim numpy arrays of strings
-                # and non-native types can be problematic (see issues
-                # #3902 and #4003), so just `.fold()` a 1-D array
-                # (Also do so for some native types just to make sure
-                # everything is in order)
-                var = sc.array(values=data, dims=['_'], dtype=dtype_obj)
-                var = var.fold('_', dims=dims_seq, shape=shape)
-            else:
-                data_nd = data.reshape(shape)
-                var = sc.array(values=data_nd, dims=dims_seq, dtype=dtype_obj)
-
     assert var.dtype == getattr(sc.DType, dtype)
     assert var.shape == shape
     _roundtrip(var, _cmp_vars)
