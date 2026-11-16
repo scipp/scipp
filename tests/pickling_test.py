@@ -5,6 +5,7 @@ try:
 except ImportError:
     import pickle  # type: ignore[no-redef]
 
+import multiprocessing.dummy
 import re
 import subprocess
 import sys
@@ -29,44 +30,36 @@ _DEFAULT_FLOAT_TYPE = str(np.dtype(float))
 
 
 def _roundtrip[T](
-    tmpdir: Path,
     obj: T,
-    cmp: Callable[[T, T], bool] | bool = True,
+    cmp: Callable[[T, T], bool] = eq,
+    *,
+    cross_proc: bool = False,
+    tmpdir: Path | None = None,
 ) -> None:
     """
     Test round-tripping ``obj`` via :mod:`pickle`.
 
     Tests:
     - Round-tripping inside the process
-    - Unpickling in a subprocess
-    - Optionally, re-pickling in said subprocess, unpickling in this
-      main process, and comparison with the ``obj`` via ``cmp`` (see
-      below).
-
-    Notes
-    -----
-    - ``cmp=<callable>`` compares the two arguments (``obj`` and the
-      round-tripped object) and should return true(y) for success.
-    - ``cmp=True`` is an alias for ``cmp=operator.eq``.
-    - ``cmp=False`` skips re-pickling in the child process and the
-      subsequent comparison of the values, only checking that the child
-      can unpickle what this main process has pickled.
+    - Optionally (if ``cross_proc``):
+      - Unpickling in a subprocess
+      - Re-pickling in said subprocess,
+      - Unpickling said pickle in this main process, and
+      - Comparison with the ``obj`` via ``cmp``.
     """
-    comparator: Callable[[T, T], bool]
-    if cmp in (True, False):
-        comparator = eq
-        cross_proc_roundtrip = cmp
-    else:
-        comparator, cross_proc_roundtrip = cast(Callable[..., bool], cmp), True
 
     # Test in-process roundtripping
     serialized = pickle.dumps(obj)
     deserialized = pickle.loads(serialized)
     assert deserialized is not obj
-    assert comparator(obj, deserialized)
+    assert cmp(obj, deserialized)
 
     cls = type(obj)
     assert cls is getattr(sc, cls.__name__)
+
+    if not cross_proc:
+        return
+    assert tmpdir is not None
 
     # Test that other processes using the same Python can also
     # (de-)serialize it (i.e. the hooks are set up correctly on
@@ -90,22 +83,32 @@ def _roundtrip[T](
     # automatically
     from scipp import {cls.__name__}
     assert isinstance(deserialized, {cls.__name__})
+
+    # Re-pickle the loaded object so that the calling process can
+    # reuse it for whatever (e.g. comparison)
+    with open(dest, mode='wb') as fobj:
+        pickle.dump(deserialized, fobj)
     """)
-    if cross_proc_roundtrip:
-        python_script += '\n' + dedent("""
-        # Re-pickle the loaded object so that the calling process can
-        # reuse it for whatever (e.g. comparison)
-        with open(dest, mode='wb') as fobj:
-            pickle.dump(deserialized, fobj)
-        """)
     cmd = [sys.executable, '-c', python_script, str(obj), str(src), str(dest)]
     subprocess.run(cmd, check=True)  # noqa: S603
 
-    # Check the cross-process-round-tripped object, if necessary
-    if comparator is not None:
-        with open(dest, mode='rb') as fobj:
-            deserialized = pickle.load(fobj)
-        assert comparator(obj, deserialized)
+    # Check the cross-process-round-tripped object
+    with open(dest, mode='rb') as fobj:
+        deserialized = pickle.load(fobj)
+    assert cmp(obj, deserialized)
+
+
+def _cmp_units(u1: sc.Unit, u2: sc.Unit) -> bool:
+    if u1 == u2:
+        return True
+    # Assure the typechecker that the mults are numbers or it will
+    # complain about the `isnan()` calls
+    mult1 = cast(float, (d1 := u1.to_dict()).pop('multiplier', 1))
+    mult2 = cast(float, (d2 := u2.to_dict()).pop('multiplier', 1))
+    if d1 != d2:
+        return False
+    # Coerce to Python bools to appease the typechecker
+    return bool(np.isnan(mult1) and np.isnan(mult2))
 
 
 def _cmp_vars(v1: sc.Variable, v2: sc.Variable) -> bool:
@@ -196,13 +199,9 @@ def _cmp_datasets(ds1: sc.Dataset, ds2: sc.Dataset) -> bool:
         ]
     ],
 )
-def test_pickling_dtypes(
-    tmp_path: Path,
-    expected: str,
-    dtypes: list[Any] | None,
-) -> None:
+def test_pickling_dtypes(expected: str, dtypes: list[Any] | None) -> None:
     """
-    Test that :class:`DType`s can be round-tripped in- and cross-process.
+    Test that :class:`DType`s can be round-tripped in-process.
     """
     # Set up the dtype
     if dtypes is None:
@@ -216,7 +215,7 @@ def test_pickling_dtypes(
         else:
             assert dt == getattr(sc.DType, expected)
         # Actual comparison
-        _roundtrip(tmp_path, dt)
+        _roundtrip(dt)
 
 
 @pytest.mark.parametrize(
@@ -232,24 +231,11 @@ def test_pickling_dtypes(
         'nan m',
     ],
 )
-def test_pickling_units(tmp_path: Path, unit: str) -> None:
+def test_pickling_units(unit: str) -> None:
     """
-    Test that :class:`Unit`s can be round-tripped in- and cross-process.
+    Test that :class:`Unit`s can be round-tripped in-process.
     """
-
-    def cmp_units(u1: sc.Unit, u2: sc.Unit) -> bool:
-        if u1 == u2:
-            return True
-        # Assure the typechecker that the mults are numbers or it will
-        # complain about the `isnan()` calls
-        mult1 = cast(float, (d1 := u1.to_dict()).pop('multiplier', 1))
-        mult2 = cast(float, (d2 := u2.to_dict()).pop('multiplier', 1))
-        if d1 != d2:
-            return False
-        # Coerce to Python bools to appease the typechecker
-        return bool(np.isnan(mult1) and np.isnan(mult2))
-
-    _roundtrip(tmp_path, sc.Unit(unit), cmp_units)
+    _roundtrip(sc.Unit(unit), _cmp_units)
 
 
 @pytest.mark.parametrize(
@@ -307,13 +293,10 @@ def test_pickling_units(tmp_path: Path, unit: str) -> None:
         'afftr-3D',
     ],
 )
-def test_pickling_unbinned_variables(
-    tmp_path: Path,
-    case: str,
-) -> None:
+def test_pickling_unbinned_variables(case: str) -> None:
     """
     With handpicked examples, test that un-binned :class:`Variable`s can
-    be round-tripped in- and cross-process.
+    be round-tripped in-process.
     """
     rng = np.random.default_rng(42)
     length = 5  # Size along multidim-array dimensions
@@ -495,7 +478,41 @@ def test_pickling_unbinned_variables(
 
     assert var.dtype == getattr(sc.DType, dtype)
     assert var.shape == shape
-    _roundtrip(tmp_path, var, _cmp_vars)
+    _roundtrip(var, _cmp_vars)
+
+
+@pytest.mark.parametrize(
+    'shape',
+    [
+        '0',
+        '0,1',
+        '0,2',
+        '1,0',
+        '2,0',
+        '0,0,1',
+        '0,0,2',
+        '0,1,0',
+        '0,2,0',
+        '1,0,0',
+        '2,0,0',
+    ],
+)
+def test_pickling_empty_variables(shape: str) -> None:
+    """
+    With handpicked examples, test that empty :class:`Variable`s (i.e.
+    those with one or more dimensions being zero-sized) can be
+    round-tripped in-process.
+
+    See also
+    --------
+    tests/compat/dict_test.py::test_empty_variable_to_dict()
+    """
+    shape_tuple = tuple(int(i) for i in shape.split(','))
+    dims = tuple(f'dim{i}' for i, _ in enumerate(shape_tuple))
+    var = sc.empty(shape=(0,), dims=('_',))
+    var = var.fold('_', shape=shape_tuple, dims=dims)
+    assert var.shape == shape_tuple
+    _roundtrip(var, _cmp_vars)
 
 
 @pytest.mark.parametrize(
@@ -518,13 +535,10 @@ def test_pickling_unbinned_variables(
         'linear-transform-1D',
     ],
 )
-def test_pickling_unbinned_data_arrays(
-    tmp_path: Path,
-    case: str,
-) -> None:
+def test_pickling_unbinned_data_arrays(case: str) -> None:
     """
     With handpicked examples, test that un-binned :class:`DataArray`s
-    can be round-tripped in- and cross-process.
+    can be round-tripped in-process.
     """
     rng = np.random.default_rng(42)
     length = 10
@@ -628,7 +642,7 @@ def test_pickling_unbinned_data_arrays(
         assert da.shape == shape
         assert da.dtype == dtype
 
-    _roundtrip(tmp_path, da, _cmp_arrays)
+    _roundtrip(da, _cmp_arrays)
 
 
 @pytest.mark.parametrize(
@@ -642,10 +656,10 @@ def test_pickling_unbinned_data_arrays(
         'empty-without-coords',
     ],
 )
-def test_pickling_unbinned_datasets(tmp_path: Path, case: str) -> None:
+def test_pickling_unbinned_datasets(case: str) -> None:
     """
     With handpicked examples, test that un-binned :class:`Dataset`s
-    can be round-tripped in- and cross-process.
+    can be round-tripped in-process.
     """
     rng = np.random.default_rng(42)
 
@@ -711,14 +725,14 @@ def test_pickling_unbinned_datasets(tmp_path: Path, case: str) -> None:
     else:
         raise AssertionError(f'{case=!r}')
 
-    _roundtrip(tmp_path, ds, _cmp_datasets)
+    _roundtrip(ds, _cmp_datasets)
 
 
 @pytest.mark.parametrize('case', ['Variable', 'DataArray', 'Dataset'])
-def test_pickling_binned_data(tmp_path: Path, case: str) -> None:
+def test_pickling_binned_data(case: str) -> None:
     """
     With handpicked examples, test that binned data can be round-tripped
-    in- and cross-process.
+    in-process.
     """
     times = sc.array(
         values=np.random.default_rng(42).random(100),
@@ -745,7 +759,89 @@ def test_pickling_binned_data(tmp_path: Path, case: str) -> None:
 
     assert type(pickled), __name__ == case
     assert pickled.is_binned
-    _roundtrip(tmp_path, pickled, cast(Callable[..., bool], cmp))
+    _roundtrip(pickled, cast(Callable[..., bool], cmp))
+
+
+@pytest.mark.parametrize(
+    ('obj', 'cmp'),
+    [
+        pytest.param(sc.DType.PyObject, eq, id='DType'),
+        pytest.param(sc.Unit('5 cm'), _cmp_units, id='Unit'),
+        pytest.param(
+            sc.array(values=[1, 2, 3], dims=['x'], unit='J'),
+            _cmp_vars,
+            id='Variable',
+        ),
+        pytest.param(
+            sc.array(
+                values=np.random.default_rng(42).random(100),
+                dims=['x'],
+                unit='m',
+            ).bin(x=10),
+            _cmp_arrays,
+            id='Array-binned',
+        ),
+        pytest.param(
+            sc.Dataset(
+                {'b': sc.array(values=[True, False, True], dims=['foo'])},
+                coords={'foo': sc.array(values=[0.0, 4.0, 9.0], dims=['foo'])},
+            ),
+            _cmp_datasets,
+            id='Dataset',
+        ),
+    ],
+)
+def test_cross_process_round_tripping[T](
+    tmp_path: Path,
+    obj: T,
+    cmp: Callable[[T, T], bool],
+) -> None:
+    """
+    Test that various :mod:`scipp` types can be round-tripped
+    cross-process via :mod:`pickle`.
+    """
+    _roundtrip(obj, cmp, tmpdir=tmp_path, cross_proc=True)
+
+
+@pytest.mark.parametrize(
+    'pool',
+    [
+        pytest.param(multiprocessing.dummy.Pool(), id='dummy'),
+        pytest.param(
+            multiprocessing.get_context('spawn').Pool(4),
+            id='spawn-4',
+        ),
+    ],
+)
+def test_multiproc_worker_communication(
+    pool: multiprocessing.pool.Pool,
+) -> None:
+    """
+    Integration test: :mod:`scipp` types can be sent to and from
+    spawned :mod:`multiprocessing` worker processes.
+    """
+    base = sc.Dataset(
+        {
+            'f': sc.array(
+                values=np.random.default_rng(42).random(100),
+                dims=['x'],
+            ),
+            'v': sc.array(
+                values=np.random.default_rng(42).random((100, 3)),
+                dims=['x'],
+                dtype=sc.DType.vector3,
+            ),
+        },
+        coords={
+            'x': sc.linspace(start=0, stop=1, num=100, dim='x'),
+        },
+    )
+    with pool:
+        n = 4
+        workloads = [base['x', start::n] for start in range(n)]
+        results = pool.map(sc.sum, workloads)
+    for workload, result in zip(workloads, results, strict=True):
+        assert _cmp_datasets(workload.sum(), result)
 
 
 def test_unpickling_wrong_scipp_version(tmp_path: Path) -> None:
