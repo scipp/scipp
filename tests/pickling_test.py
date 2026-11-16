@@ -11,7 +11,6 @@ import subprocess
 import sys
 from collections.abc import Callable, Sequence
 from datetime import datetime
-from functools import partial
 from operator import eq
 from pathlib import Path
 from textwrap import dedent
@@ -163,7 +162,31 @@ def _cmp_arrays(a1: sc.DataArray, a2: sc.DataArray) -> bool:
 def _cmp_datasets(ds1: sc.Dataset, ds2: sc.Dataset) -> bool:
     if (keys := set(ds1)) != set(ds2):
         return False
-    return all(sc.identical(ds1[key], ds2[key]) for key in keys)
+    return all(_cmp_arrays(ds1[key], ds2[key]) for key in keys)
+
+
+def _cmp_groups(g1: sc.DataGroup[Any], g2: sc.DataGroup[Any]) -> bool:
+    if (keys := set(g1)) != set(g2):
+        return False
+    for key in keys:
+        value_1 = g1[key]
+        value_2 = g2[key]
+        for Class, cmp in [
+            (sc.DataGroup, _cmp_groups),
+            (sc.Dataset, _cmp_datasets),
+            (sc.DataArray, _cmp_arrays),
+            (sc.Variable, _cmp_vars),
+        ]:
+            if not (isinstance(value_1, Class) and isinstance(value_2, Class)):
+                continue
+            if cast(Callable[[Any, Any], bool], cmp)(value_1, value_2):
+                break
+            else:
+                return False
+        else:
+            if not sc.identical(value_1, value_2):
+                return False
+    return True
 
 
 @pytest.mark.parametrize(
@@ -241,7 +264,7 @@ def test_pickling_units(unit: str) -> None:
 
 def _get_var_with_attrs() -> sc.Variable:
     inner_var = sc.arange('x', 0, 10)
-    var, dtype, shape = sc.scalar(inner_var), 'Variable', ()
+    var = sc.scalar(inner_var)
     var.foo, var.bar, var.baz = None, 1, []  # type: ignore[attr-defined]
     assert vars(var) == {'foo': None, 'bar': 1, 'baz': []}
     return var
@@ -264,7 +287,7 @@ def _get_rotation() -> sc.Variable:
         pytest.param(sc.scalar(5), _DEFAULT_INT_TYPE, (), id='scalar-int'),
         pytest.param(sc.scalar('foo'), 'string', (), id='scalar-str'),
         pytest.param(
-            sc.scalar(np.datetime64(datetime.now().isoformat())),
+            sc.scalar(np.datetime64(datetime.fromtimestamp(0.0).isoformat())),
             'datetime64',
             (),
             id='scalar-datetime',
@@ -317,7 +340,9 @@ def _get_rotation() -> sc.Variable:
     + [
         pytest.param(
             sc.Variable(
-                values=np.random.random(shape := (10, 10)),
+                values=np.random.random(
+                    shape := cast(tuple[int, ...], (10, 10)),
+                ),
                 variances=np.random.random(shape),
                 dtype=sc.DType.float64,
                 dims=['x', 'y'],
@@ -371,7 +396,7 @@ def _get_rotation() -> sc.Variable:
     # N-D arrays (linalg types)
     + [
         pytest.param(
-            constructor(
+            cast(Callable[..., sc.Variable], constructor)(
                 values=np.random.random((shape := (10,) * ndim) + item_shape),
                 dims=['x', 'y', 'z'][:ndim],
             ),
@@ -380,7 +405,7 @@ def _get_rotation() -> sc.Variable:
             id=f'{name}-{ndim}D',
         )
         for name, dtype, item_shape, constructor in [
-            ('vecs', 'vector3', (3,), spatial.vectors),
+            ('vecs', 'vector3', (3,), sc.vectors),
             ('translations', 'translation3', (3,), spatial.translations),
             ('lintr', 'linear_transform3', (3, 3), spatial.linear_transforms),
             ('afftr', 'affine_transform3', (4, 4), spatial.affine_transforms),
@@ -458,9 +483,8 @@ def test_pickling_unbinned_variables(
 )
 def test_pickling_empty_variables(shape: str) -> None:
     """
-    With handpicked examples, test that empty :class:`Variable`s (i.e.
-    those with one or more dimensions being zero-sized) can be
-    round-tripped in-process.
+    Test that empty :class:`Variable`s (i.e. those with one or more
+    dimensions being zero-sized) can be round-tripped in-process.
 
     See also
     --------
@@ -687,22 +711,64 @@ def test_pickling_unbinned_datasets(case: str) -> None:
     _roundtrip(ds, _cmp_datasets)
 
 
+@pytest.mark.parametrize('case', ['empty', 'homogenous', 'inhomogenous'])
+def test_pickling_data_groups(case: str) -> None:
+    """
+    With handpicked examples, test that :class:`DataGroup`s can be
+    round-tripped in-process.
+    """
+    rng = np.random.default_rng(42)
+
+    if case == 'empty':
+        group = sc.DataGroup[Any]()
+        assert not group
+        assert not group.dims
+    elif case in ('homogenous', 'inhomogenous'):
+        n = 100
+        t = sc.linspace(start=0, stop=1, num=n, dim='t')
+        v = sc.vectors(values=rng.random((n, 3)), dims=['t'])
+        y = sc.array(values=rng.random(n), unit='MeV', dims=['t'])
+        group = sc.DataGroup(
+            v=sc.DataArray(data=v, coords={'t': t}),
+            y=sc.Dataset({'y': y}, coords={'t': t}),
+        )
+        if case == 'homogenous':
+            assert len(group) == 2
+            assert group.dims == ('t',)
+        else:
+            group['z'] = sc.array(values=[True], dims=['z'])
+            assert len(group) == 3
+            assert group.dims == ('t', 'z')
+    else:
+        raise AssertionError(f'{case=!r}')
+
+    _roundtrip(group, _cmp_groups)
+
+
+def _get_binned_data(
+    seed: Any = 42,
+    n: int = 100,
+    nbins: int = 10,
+) -> sc.DataArray:
+    times = sc.array(
+        values=np.random.default_rng(seed).random(n),
+        dims=['t'],
+        unit='ms',
+    )
+    events = sc.DataArray(
+        data=sc.ones(shape=[n], dims=['t']),
+        coords={'t': times},
+    )
+    return events.bin(t=nbins)
+
+
 @pytest.mark.parametrize('case', ['Variable', 'DataArray', 'Dataset'])
 def test_pickling_binned_data(case: str) -> None:
     """
     With handpicked examples, test that binned data can be round-tripped
     in-process.
     """
-    times = sc.array(
-        values=np.random.default_rng(42).random(100),
-        dims=['t'],
-        unit='ms',
-    )
-    events = sc.DataArray(
-        data=sc.ones(shape=[100], dims=['t']),
-        coords={'t': times},
-    )
-    binned = events.bin(t=10)
+    binned = _get_binned_data()
 
     pickled: sc.Dataset | sc.DataArray | sc.Variable
     cmp: Callable[[Any, Any], bool]
@@ -719,6 +785,36 @@ def test_pickling_binned_data(case: str) -> None:
     assert type(pickled), __name__ == case
     assert pickled.is_binned
     _roundtrip(pickled, cast(Callable[..., bool], cmp))
+
+
+@pytest.mark.parametrize(
+    ('slice', 'should_reduce'),
+    [
+        pytest.param(slice(None), False, id='100%'),
+        pytest.param(slice(None, -2), False, id='80%'),
+        pytest.param(slice(5, 7), True, id='20%'),
+    ],
+)
+def test_pickling_binned_and_sliced_var(
+    slice: slice,
+    should_reduce: bool,
+) -> None:
+    """
+    Test that pickling a binned and sliced variable results in reduction
+    and reindexing of the underlying array where appropriate.
+    """
+    binned = _get_binned_data()
+    sliced = binned['t', slice]
+    round_tripped = pickle.loads(pickle.dumps(sliced))
+
+    assert isinstance(round_tripped, sc.DataArray)
+    assert _cmp_arrays(sliced, round_tripped)
+    assert sliced.is_binned
+    assert round_tripped.is_binned
+
+    size_before = sliced.bins.constituents['data'].__sizeof__()
+    size_after = round_tripped.bins.constituents['data'].__sizeof__()
+    assert (size_before == size_after) != should_reduce
 
 
 @pytest.mark.parametrize(
@@ -747,6 +843,15 @@ def test_pickling_binned_data(case: str) -> None:
             ),
             _cmp_datasets,
             id='Dataset',
+        ),
+        pytest.param(
+            sc.DataGroup(
+                foo=sc.array(values=np.random.random(100), dims=['x']),
+                bar=sc.vector([1.0, 2.0, 3.0], unit='m'),
+                baz=sc.scalar(42.0, unit='uC'),
+            ),
+            _cmp_groups,
+            id='DataGroup',
         ),
     ],
 )
