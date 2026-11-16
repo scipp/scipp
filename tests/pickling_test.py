@@ -10,7 +10,7 @@ import re
 import subprocess
 import sys
 from collections.abc import Callable, Sequence
-from datetime import datetime
+from datetime import datetime, timezone
 from operator import eq
 from pathlib import Path
 from textwrap import dedent
@@ -287,7 +287,14 @@ def _get_rotation() -> sc.Variable:
         pytest.param(sc.scalar(5), _DEFAULT_INT_TYPE, (), id='scalar-int'),
         pytest.param(sc.scalar('foo'), 'string', (), id='scalar-str'),
         pytest.param(
-            sc.scalar(np.datetime64(datetime.fromtimestamp(0.0).isoformat())),
+            sc.scalar(
+                np.datetime64(
+                    datetime.fromtimestamp(
+                        0.0,
+                        tz=timezone.utc,
+                    ).isoformat(),
+                ),
+            ),
             'datetime64',
             (),
             id='scalar-datetime',
