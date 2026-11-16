@@ -42,6 +42,8 @@ jobs:
           frozen: true
           cache: true
 
+      - run: pixi run -e dev configure
+
       - run: pixi run -e dev cpp-test
 
       - name: Install nightly dependencies and run tests
