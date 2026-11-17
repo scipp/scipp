@@ -2,33 +2,36 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # @author Terence Tsang
 
-"""Basic implementation for (un-)pickling `scipp` objects.
+"""Basic implementation for (un-)pickling :mod:`scipp` objects.
 
-This is for the benefit of e.g. interoperability with `multiprocessing`.
+This is mainly for the benefit of e.g. interoperability with
+:mod:`multiprocessing`.
 
 Caveats
 -------
 - This is NOT meant for persisting data; users are directed to either
-  `scippnexus` or the HDF5-based scheme (`scipp.serialization`) for
-  that purpose.
+  :mod:`scippnexus` or the HDF5-based scheme (see e.g.
+  :func:`scipp.io.save_hdf5` and :func:`scipp.io.load_hdf5`) for that
+  purpose.
+
 - There is no special provision for subclasses.
+
 - The pickle serialization should be considered opaque; the schemas'
-  consistency should NOT be relied upon, esp. between `scipp` versions.
+  consistency should NOT be relied upon. In fact, attempting to unpickle
+  a pickle prepared by another :mod:`scipp` version will result in a
+  :class:`RuntimeError`.
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable
 from copyreg import pickle
-from functools import partial
-from typing import Any, Literal, NewType, TypedDict, cast
+from typing import Any, cast
 
 import numpy as np
-from numpy.typing import NDArray
 
-from . import __version__ as _version
+from . import __version__ as _VERSION
 from .core import (
-    Bins,  # noqa: F401
     DataArray,
     Dataset,
     DType,
@@ -37,15 +40,9 @@ from .core import (
     bins,
     empty,
 )
+from .utils.serialization_commons import should_reduce_binned_data
 
-_Version = NewType('_Version', str)
-_SCIPP_VERSION = _Version(_version)
-_FOLDED_DTYPES = (
-    # These cannot be natively N-D, and are stored as 1-D arrays and
-    # `.fold()`-ed into shape. The exception is when the `Variable` was
-    # constructed with a quasi-1D array of shape e.g. `(10, 1, 1)`; this
-    # permitted by the `Variable` constructor, but indexing for such
-    # cases is botched anyway (issue #4018).
+_FOLDED_DTYPES = (  # These cannot be natively multi-dimensional.
     DType.DataArray,
     DType.DataArrayView,
     DType.Dataset,
@@ -62,104 +59,21 @@ _LINALG_TYPES = (  # These are always represented as float arrays.
     DType.vector3,
 )
 
-# --------------------------- Infrastructure ---------------------------
+
+# -------------------------- Helper functions --------------------------
 
 
-class _VarDict[T: Any](TypedDict):
-    dtype: DType
-    dims: tuple[str, ...]
-    shape: tuple[int, ...]
-    values: NDArray[T] | T
-    variances: NDArray[T] | T | None
-    unit: Unit | None
-    aligned: bool
-    folding_required: bool
-
-
-class _BinsDict(TypedDict):
-    data: Variable | DataArray
-    dim: str
-    begin: Variable
-    end: Variable
-
-
-class _ArrayDict[T: Any](TypedDict):
-    data: Variable
-    coords: dict[str, Variable]
-    masks: dict[str, Variable]
-    name: str
-
-
-class _DatasetDict(TypedDict):
-    # We should be able to just store each `DataArray`'s `.data` and
-    # `.masks` (if any) -- the `.name` is always the same as the
-    # `Dataset` key and the `.coords` as `Dataset.coords`.
-    # TODO: check if this is safe with binned data.
-    data: dict[
-        str,
-        tuple[
-            Variable,  # `.data`
-            dict[str, Variable],  # `.masks`
-        ],
-    ]
-    coords: dict[str, Variable]
-
-
-_UnitSerialization = NewType(
-    '_UnitSerialization',
-    tuple[_Version, dict[str, Any]],
-)
-_DTypeSerialization = NewType('_DTypeSerialization', tuple[_Version, str])
-_VariableSerialization = NewType(
-    '_VariableSerialization',
-    tuple[
-        _Version,
-        tuple[Literal[False], _VarDict[Any], dict[str, Any]]
-        | tuple[Literal[True], _BinsDict, dict[str, Any]],
-    ],
-)
-_DataArraySerialization = NewType(
-    '_DataArraySerialization',
-    tuple[_Version, _ArrayDict[Any]],
-)
-_DatasetSerialization = NewType(
-    '_DatasetSerialization',
-    tuple[_Version, _DatasetDict],
-)
-
-
-def _check_and_strip_version[T](versioned_tuple: tuple[_Version, T]) -> T:
-    version, result = versioned_tuple
-    if version == _SCIPP_VERSION:
-        return result
+def _check_version(version: str) -> None:
+    if version == _VERSION:
+        return
     raise RuntimeError(
         'version mismatch: '
-        f'`scipp` package version = {_SCIPP_VERSION}, '
-        f'pickled version = {version}; '
+        f'`scipp` package version = {_VERSION!r}, pickled {version = !r}; '
         'note that pickling is only meant for processes '
         '(e.g. `multiprocessing` workers) using the same Python and '
-        'the same `scipp`, and users should use e.g. HDF5 (`scipp.serialize`)'
+        'the same `scipp`, and users should use e.g. `.save_hdf5()` '
         'for actual data storage.'
     )
-
-
-def _get_reconstructor_and_args[T, A](
-    pickler: Callable[[T], A],
-    unpickler: Callable[[A], T],
-    obj: T,
-) -> tuple[Callable[[A], T], tuple[A]]:
-    return unpickler, (pickler(obj),)
-
-
-def _register[T, A](
-    cls: type[T],
-    pickler: Callable[[T], A],
-    unpickler: Callable[[A], T],
-) -> None:
-    pickle(cls, partial(_get_reconstructor_and_args, pickler, unpickler))
-
-
-# ------------------------ `Variable` handling -------------------------
 
 
 def _normalize_var_values(var: Variable, field: str = 'values') -> Any:
@@ -180,10 +94,11 @@ def _normalize_var_values(var: Variable, field: str = 'values') -> Any:
       despite its having a :meth:`.__len__` and a :meth:`.__iter__`, the
       latter of which doesn't seem to work.
 
-    - They are also often backed by 1-D arrays even when
-      multi-dimensional, because the constructor doesn't take
-      multi-D arrays (save for the edge case of ), and must be formed
-      by :meth:`Variable.fold`-ing a flat instance.
+    - They are in most cases often backed by 1-D arrays even when
+      multi-dimensional, because the `Variable` constructor doesn't take
+      multi-D arrays (save for the corner case of quasi 1-D arrays, e.g.
+      `.shape=(10, 1, 1)`; see however issue #4018), and thus they must
+      be :meth:`Variable.fold`-ed into shape from a flat instance.
 
     - The one exception to the multi-dimensional rule above is when the
       trailing dimensions all have size 1, for some reason.
@@ -228,37 +143,123 @@ def _normalize_var_values(var: Variable, field: str = 'values') -> Any:
 def _reduce_bins_constituents(
     binned: Variable,
     reduction_threshold: float = 1.5,
-) -> _BinsDict:
-    # Sliced binned data contains a copy of the original bins, which
-    # is re-indexed and reduced on `.copy()`; see a similar heuristic in
-    # `scipp.io.hdf5` to avoid hauling big unused data sections around
-    bins_dict = binned.bins.constituents
-    underlying_size = bins_dict['data'].sizes[bins_dict['dim']]
-    used_size = binned.bins.size().sum().value
-    if underlying_size > reduction_threshold * used_size:
-        bins_dict = binned.copy().bins.constituents
-    return _BinsDict(**bins_dict)  # type: ignore[typeddict-item]
+) -> dict[str, Any]:
+    if should_reduce_binned_data(binned.bins, reduction_threshold):
+        binned = binned.copy()
+    return dict(binned.bins.constituents)
 
 
-def _var_dict_to_var(v: _VarDict[Any]) -> Variable:
-    if fold := v['folding_required']:
-        values = cast(np.ndarray, v['values']).flatten()
-        shape: tuple[int, ...] = (int(np.prod(v['shape'])),)
-        dims: tuple[str, ...] = ('_',)
-        if (variances := v['variances']) is not None:
-            variances = cast(np.ndarray, variances).flatten()
+# ------------------------- Pickling functions -------------------------
+
+# Note: all these type aliases would otherwise have to be inlined twice
+# in the return annotation of each of the `_pickle_*()` functions...
+# so just define them here
+
+_Us = tuple[str, dict[str, Any]]  # For `Unit`: version, `.to_dict()`
+_DTs = tuple[str, str]  # For `DType`: version, `str()`
+_Vs = tuple[  # For `Variable`
+    str,
+    DType,
+    tuple[str, ...],  # `.dims`
+    tuple[int, ...],  # `.shape`
+    Any,  # `.values`
+    Any | None,  # `.variances`
+    Unit | None,
+    bool,  # `.aligned`
+    dict[str, Any] | None,  # `.bins.constituents`
+]
+_DAs = tuple[  # For `DataArray`
+    str,
+    Variable,  # `.data`
+    dict[str, Variable],  # `.coords`
+    dict[str, Variable],  # `.masks`
+    str,  # `.name`
+]
+_DSs = tuple[  # For `Dataset`
+    str,
+    dict[
+        str,  # `<item>.name`
+        tuple[
+            Variable,  # `<item>.data`
+            dict[str, Variable],  # `<item>.masks`
+        ],
+    ],
+    dict[str, Variable],  # `.coords`
+]
+
+
+def _pickle_unit(unit: Unit) -> tuple[Callable[[*_Us], Unit], _Us]:
+    return _unpickle_unit, (_VERSION, unit.to_dict())
+
+
+def _unpickle_unit(version: str, unit: dict[str, Any]) -> Unit:
+    _check_version(version)
+    return Unit.from_dict(unit)
+
+
+def _pickle_dtype(dtype: DType) -> tuple[Callable[[*_DTs], DType], _DTs]:
+    return _unpickle_dtype, (_VERSION, str(dtype))
+
+
+def _unpickle_dtype(version: str, dtype: str) -> DType:
+    _check_version(version)
+    return cast(DType, getattr(DType, dtype))
+
+
+def _pickle_variable(var: Variable) -> tuple[Callable[[*_Vs], Variable], _Vs]:
+    args: _Vs
+    if var.is_binned:
+        # All args except the first and the last are ignored for binned
+        # cases
+        bins = _reduce_bins_constituents(var)
+        args = (_VERSION, var.dtype, (), (), None, None, None, True, bins)
     else:
-        values = v['values']
-        shape = v['shape']
-        dims = v['dims']
-        variances = v['variances']
+        if (variances := var.variances) is not None:
+            variances = _normalize_var_values(var, 'variances')
+        args = (
+            _VERSION,
+            var.dtype,
+            var.dims,
+            var.shape,
+            _normalize_var_values(var),
+            variances,
+            var.unit,
+            var.aligned,
+            None,
+        )
+    return _unpickle_variable, args
+
+
+def _unpickle_variable(
+    version: str,
+    dtype: DType,
+    dims: tuple[str, ...],
+    shape: tuple[int, ...],
+    values: Any,
+    variances: Any | None,
+    unit: Unit | None,
+    aligned: bool,
+    bins_kwargs: dict[str, Any] | None,
+) -> Variable:
+    _check_version(version)
+
+    if bins_kwargs is not None:
+        return bins(**bins_kwargs)
+
+    refold_kwargs: dict[str, Any] = {}
+    if dtype in _FOLDED_DTYPES and len(shape) > 1:
+        values = cast(np.ndarray, values).flatten()
+        refold_kwargs['shape'], shape = shape, (int(np.prod(shape)),)
+        refold_kwargs['dims'], dims = dims, ('_',)
+        if variances is not None:
+            variances = cast(np.ndarray, variances).flatten()
 
     var = empty(
-        dtype=v['dtype'],
+        dtype=dtype,
         dims=dims,
         shape=shape,
-        unit=v['unit'],
-        aligned=v['aligned'],
+        unit=unit,
+        aligned=aligned,
         with_variances=variances is not None,
     )
 
@@ -266,111 +267,50 @@ def _var_dict_to_var(v: _VarDict[Any]) -> Variable:
     if variances is not None:
         setattr(var, 'variances' if shape else 'variance', variances)
 
-    if fold:
-        return var.fold('_', shape=v['shape'], dims=v['dims'])
-
+    if refold_kwargs:
+        return var.fold('_', **refold_kwargs)
     return var
 
 
-# ------------------------- Pickling functions -------------------------
+def _pickle_array(da: DataArray) -> tuple[Callable[[*_DAs], DataArray], _DAs]:
+    args = (_VERSION, da.data, dict(da.coords), dict(da.masks), da.name)
+    return _unpickle_array, args
 
 
-def _pickle_unit(unit: Unit) -> _UnitSerialization:
-    return _UnitSerialization((_SCIPP_VERSION, unit.to_dict()))
+def _unpickle_array(
+    version: str,
+    data: Variable,
+    coords: dict[str, Variable],
+    masks: dict[str, Variable],
+    name: str,
+) -> DataArray:
+    _check_version(version)
+    return DataArray(data=data, coords=coords, masks=masks, name=name)
 
 
-def _unpickle_unit(unit: _UnitSerialization) -> Unit:
-    unit_dict = _check_and_strip_version(unit)
-    return Unit.from_dict(unit_dict)
-
-
-def _pickle_dtype(dtype: DType) -> _DTypeSerialization:
-    return _DTypeSerialization((_SCIPP_VERSION, str(dtype)))
-
-
-def _unpickle_dtype(dtype: _DTypeSerialization) -> DType:
-    dtype_name = _check_and_strip_version(dtype)
-    return cast(DType, getattr(DType, dtype_name))
-
-
-def _pickle_variable(var: Variable) -> _VariableSerialization:
-    inst_dict = dict(var.__dict__)
-
-    if var.is_binned:
-        bins_dict = _reduce_bins_constituents(var)
-        return _VariableSerialization(
-            (_SCIPP_VERSION, (True, bins_dict, inst_dict)),
-        )
-
-    var_dict = _VarDict[Any](
-        dtype=var.dtype,
-        dims=var.dims,
-        shape=var.shape,
-        values=_normalize_var_values(var),
-        variances=(
-            None if var.variances is None else _normalize_var_values(var, 'variances')
-        ),
-        unit=var.unit,
-        aligned=var.aligned,
-        folding_required=(var.dtype in _FOLDED_DTYPES and var.ndim > 1),
-    )
-    return _VariableSerialization(
-        (_SCIPP_VERSION, (False, var_dict, inst_dict)),
-    )
-
-
-def _unpickle_variable(var: _VariableSerialization) -> Variable:
-    is_binned_and_kwargs_and_attrs = _check_and_strip_version(var)
-
-    # Note: indexing the result tuple is clunky, but it helps `mypy`
-    # with narrowing (see `mypy` issue #13218)
-    if is_binned_and_kwargs_and_attrs[0]:  # Binned
-        var_obj = bins(**is_binned_and_kwargs_and_attrs[1])
-    else:  # Regular
-        var_obj = _var_dict_to_var(is_binned_and_kwargs_and_attrs[1])
-
-    # Restore free (user-assigned) attributes, if any
-    for attr, value in is_binned_and_kwargs_and_attrs[2].items():
-        setattr(var_obj, attr, value)
-
-    return var_obj
-
-
-def _pickle_array(da: DataArray) -> _DataArraySerialization:
-    da_dict = _ArrayDict(
-        data=da.data,
-        coords=dict(da.coords),
-        masks=dict(da.masks),
-        name=da.name,
-    )
-    return _DataArraySerialization((_SCIPP_VERSION, da_dict))
-
-
-def _unpickle_array(da: _DataArraySerialization) -> DataArray:
-    return DataArray(**_check_and_strip_version(da))
-
-
-def _pickle_dataset(ds: Dataset) -> _DatasetSerialization:
-    data: dict[str, tuple[Variable, dict[str, Variable]]]
+def _pickle_dataset(ds: Dataset) -> tuple[Callable[[*_DSs], Dataset], _DSs]:
     data = {name: (da.data, dict(da.masks)) for name, da in ds.items()}
-    ds_dict = _DatasetDict(data=data, coords=dict(ds.coords))
-    return _DatasetSerialization((_SCIPP_VERSION, ds_dict))
+    return _unpickle_dataset, (_VERSION, data, dict(ds.coords))
 
 
-def _unpickle_dataset(ds: _DatasetSerialization) -> Dataset:
-    ds_dict = _check_and_strip_version(ds)
-    data: dict[str, Variable | DataArray] = {}
-    coords = ds_dict['coords']
-    for name, (var, masks) in ds_dict['data'].items():
+def _unpickle_dataset(
+    version: str,
+    data: dict[str, tuple[Variable, dict[str, Variable]]],
+    coords: dict[str, Variable],
+) -> Dataset:
+    _check_version(version)
+
+    repacked: dict[str, Variable | DataArray] = {}
+    for name, (var, masks) in data.items():
         if masks:
-            data[name] = DataArray(data=var, coords=coords, masks=masks)
+            repacked[name] = DataArray(data=var, coords=coords, masks=masks)
         else:
-            data[name] = var
-    return Dataset(data=data, coords=coords)
+            repacked[name] = var
+    return Dataset(data=repacked, coords=coords)
 
 
-_register(Unit, _pickle_unit, _unpickle_unit)
-_register(DType, _pickle_dtype, _unpickle_dtype)
-_register(Variable, _pickle_variable, _unpickle_variable)
-_register(DataArray, _pickle_array, _unpickle_array)
-_register(Dataset, _pickle_dataset, _unpickle_dataset)
+pickle(Unit, _pickle_unit)
+pickle(DType, _pickle_dtype)
+pickle(Variable, _pickle_variable)
+pickle(DataArray, _pickle_array)
+pickle(Dataset, _pickle_dataset)
