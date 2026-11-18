@@ -99,9 +99,6 @@ def _normalize_var_values(var: Variable, field: str = 'values') -> Any:
       multi-D arrays (save for the corner case of quasi 1-D arrays, e.g.
       `.shape=(10, 1, 1)`; see however issue #4018), and thus they must
       be :meth:`Variable.fold`-ed into shape from a flat instance.
-
-    - The one exception to the multi-dimensional rule above is when the
-      trailing dimensions all have size 1, for some reason.
     """
     data = getattr(var, field)
 
@@ -151,44 +148,8 @@ def _reduce_bins_constituents(
 
 # ------------------------- Pickling functions -------------------------
 
-# Note: all these type aliases would otherwise have to be inlined twice
-# in the return annotation of each of the `_pickle_*()` functions...
-# so just define them here
 
-_Us = tuple[str, dict[str, Any]]  # For `Unit`: version, `.to_dict()`
-_DTs = tuple[str, str]  # For `DType`: version, `str()`
-_Vs = tuple[  # For `Variable`
-    str,
-    DType,
-    tuple[str, ...],  # `.dims`
-    tuple[int, ...],  # `.shape`
-    Any,  # `.values`
-    Any | None,  # `.variances`
-    Unit | None,
-    bool,  # `.aligned`
-    dict[str, Any] | None,  # `.bins.constituents`
-]
-_DAs = tuple[  # For `DataArray`
-    str,
-    Variable,  # `.data`
-    dict[str, Variable],  # `.coords`
-    dict[str, Variable],  # `.masks`
-    str,  # `.name`
-]
-_DSs = tuple[  # For `Dataset`
-    str,
-    dict[
-        str,  # `<item>.name`
-        tuple[
-            Variable,  # `<item>.data`
-            dict[str, Variable],  # `<item>.masks`
-        ],
-    ],
-    dict[str, Variable],  # `.coords`
-]
-
-
-def _pickle_unit(unit: Unit) -> tuple[Callable[[*_Us], Unit], _Us]:
+def _pickle_unit(unit: Unit) -> tuple[Callable[..., Unit], tuple[Any, ...]]:
     return _unpickle_unit, (_VERSION, unit.to_dict())
 
 
@@ -197,7 +158,7 @@ def _unpickle_unit(version: str, unit: dict[str, Any]) -> Unit:
     return Unit.from_dict(unit)
 
 
-def _pickle_dtype(dtype: DType) -> tuple[Callable[[*_DTs], DType], _DTs]:
+def _pickle_dtype(dtype: DType) -> tuple[Callable[..., DType], tuple[Any, ...]]:
     return _unpickle_dtype, (_VERSION, str(dtype))
 
 
@@ -206,31 +167,30 @@ def _unpickle_dtype(version: str, dtype: str) -> DType:
     return cast(DType, getattr(DType, dtype))
 
 
-def _pickle_variable(var: Variable) -> tuple[Callable[[*_Vs], Variable], _Vs]:
-    args: _Vs
+def _pickle_variable(
+    var: Variable,
+) -> tuple[Callable[..., Variable], tuple[Any, ...]]:
     if var.is_binned:
         # All args except the first and the last are ignored for binned
         # cases
-        bins = _reduce_bins_constituents(var)
-        args = (_VERSION, var.dtype, (), (), None, None, None, True, bins)
-    else:
-        if (variances := var.variances) is not None:
-            variances = _normalize_var_values(var, 'variances')
-        args = (
-            _VERSION,
-            var.dtype,
-            var.dims,
-            var.shape,
-            _normalize_var_values(var),
-            variances,
-            var.unit,
-            var.aligned,
-            None,
-        )
-    return _unpickle_variable, args
+        constituents = _reduce_bins_constituents(var)
+        return _unpickle_binned_variable, (_VERSION, constituents)
+    if (variances := var.variances) is not None:
+        variances = _normalize_var_values(var, 'variances')
+    args = (
+        _VERSION,
+        var.dtype,
+        var.dims,
+        var.shape,
+        _normalize_var_values(var),
+        variances,
+        var.unit,
+        var.aligned,
+    )
+    return _unpickle_unbinned_variable, args
 
 
-def _unpickle_variable(
+def _unpickle_unbinned_variable(
     version: str,
     dtype: DType,
     dims: tuple[str, ...],
@@ -239,12 +199,8 @@ def _unpickle_variable(
     variances: Any | None,
     unit: Unit | None,
     aligned: bool,
-    bins_kwargs: dict[str, Any] | None,
 ) -> Variable:
     _check_version(version)
-
-    if bins_kwargs is not None:
-        return bins(**bins_kwargs)
 
     refold_kwargs: dict[str, Any] = {}
     if dtype in _FOLDED_DTYPES and len(shape) > 1:
@@ -272,7 +228,17 @@ def _unpickle_variable(
     return var
 
 
-def _pickle_array(da: DataArray) -> tuple[Callable[[*_DAs], DataArray], _DAs]:
+def _unpickle_binned_variable(
+    version: str,
+    constituents: dict[str, Any],
+) -> Variable:
+    _check_version(version)
+    return bins(**constituents)
+
+
+def _pickle_array(
+    da: DataArray,
+) -> tuple[Callable[..., DataArray], tuple[Any, ...]]:
     args = (_VERSION, da.data, dict(da.coords), dict(da.masks), da.name)
     return _unpickle_array, args
 
@@ -288,7 +254,9 @@ def _unpickle_array(
     return DataArray(data=data, coords=coords, masks=masks, name=name)
 
 
-def _pickle_dataset(ds: Dataset) -> tuple[Callable[[*_DSs], Dataset], _DSs]:
+def _pickle_dataset(
+    ds: Dataset,
+) -> tuple[Callable[..., Dataset], tuple[Any, ...]]:
     data = {name: (da.data, dict(da.masks)) for name, da in ds.items()}
     return _unpickle_dataset, (_VERSION, data, dict(ds.coords))
 

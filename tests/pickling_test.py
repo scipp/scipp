@@ -4,7 +4,7 @@
 
 # ruff: noqa: S301
 
-import multiprocessing.dummy
+import multiprocessing
 import pickle
 import re
 import sys
