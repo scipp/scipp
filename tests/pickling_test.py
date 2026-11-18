@@ -13,15 +13,8 @@ from datetime import datetime
 from functools import partial
 from operator import eq
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, cast
 
-if TYPE_CHECKING:
-    from _pytest.mark import ParameterSet
-else:
-    try:
-        from pytest import ParameterSet  # noqa: PT013
-    except ImportError:  # < 9.2
-        from _pytest.mark import ParameterSet
 import numpy as np
 import pytest
 from scipy.spatial.transform import Rotation
@@ -677,7 +670,7 @@ def test_pickling_unbinned_datasets(
 def _get_data_group(
     rng: Any = 42,
     n: int = 100,
-    homogenous: bool = True,
+    homogeneous: bool = True,
 ) -> sc.DataGroup[Any]:
     rng = _get_rng(rng)
 
@@ -689,7 +682,7 @@ def _get_data_group(
         v=sc.DataArray(data=v, coords={'t': t}),
         y=sc.Dataset({'y': y}, coords={'t': t}),
     )
-    if homogenous:
+    if homogeneous:
         assert len(group) == 2
         assert group.dims == ('t',)
     else:
@@ -702,8 +695,8 @@ def _get_data_group(
 @_named_parametrizations(
     'group',
     empty=sc.DataGroup[Any](),
-    homogenous=_get_data_group(),
-    inhomogenous=_get_data_group(homogenous=False),
+    homogeneous=_get_data_group(),
+    inhomogeneous=_get_data_group(homogeneous=False),
 )
 def test_pickling_data_groups(group: sc.DataGroup[Any]) -> None:
     """
