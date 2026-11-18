@@ -130,7 +130,7 @@ class _BinDataIO:
             raise DTypeError("Expected binned data")
         if should_reduce_binned_data(data.bins):
             data = data.copy()
-            bins = data.bins.constituents
+        bins = data.bins.constituents
         values = group.create_group('values')
         _VariableIO.write(values.create_group('begin'), var=bins['begin'])
         _VariableIO.write(values.create_group('end'), var=bins['end'])
