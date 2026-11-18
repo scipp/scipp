@@ -249,26 +249,22 @@ template <class T, class Elem, int... N>
 Variable make_structured_variable(const py::object &dim_labels,
                                   const py::object &values_,
                                   const py::object &variances,
-                                  const std::optional<sc_units::Unit> &unit_,
-                                  const bool transpose) {
+                                  const std::optional<sc_units::Unit> &unit_) {
   if (!variances.is_none())
     throw except::VariancesError("Variances not supported for dtype " +
                                  to_string(dtype<Elem>));
 
-  const auto values = [values_, transpose]() {
-    auto arr = py::array(values_);
-    /* It's probably quicker to directly call `PyArray_SwapAxes()`
-     * instead, but mixing that (which works with bare `PyArrayObject*`)
-     * and memory-managed code may be dangerous.
-     */
-    if (transpose)
-      return arr.attr("swapaxes")(-1, -2).cast<py::array>();
-    else
-      return arr;
-  }();
+  auto values = py::array(values_);
   const auto unit = unit_.value_or(variable::default_unit_for(dtype<Elem>));
   const auto dims =
       build_dimensions(dim_labels, values, py::none(), sizeof...(N));
+  /* `numpy`and `scipp` use row-major, but `Eigen` matrices use
+   * column-major; so transpose the trailing axes for copying values. We
+   * perform the transpose after the initialization of `dims` above;
+   * that way we catch dimensionality errors, instead of `numpy`.
+   */
+  if constexpr (sizeof...(N) == 2)
+    values = values.attr("swapaxes")(-1, -2).cast<py::array>();
   const auto padded_dims = pad_structure_dimensions<N...>(dims);
 
   auto var = variable::make_structures<T, Elem>(
@@ -293,26 +289,23 @@ void bind_init(py::class_<Variable> &cls) {
         const auto [scipp_dtype, actual_unit] =
             cast_dtype_and_unit(dtype, unit);
 
-        /* Numpy and scipp use row-major, but Eigen matrices use
-         * column-major, transpose matrix axes for copying values.
-         */
         auto var = [&, c_scipp_dtype = scipp_dtype,
                     c_actual_unit = actual_unit]() {
           if (c_scipp_dtype == ::dtype<Eigen::Vector3d>)
             return make_structured_variable<Eigen::Vector3d, double, 3>(
-                dim_labels, values, variances, c_actual_unit, false);
+                dim_labels, values, variances, c_actual_unit);
           if (c_scipp_dtype == ::dtype<Eigen::Matrix3d>)
             return make_structured_variable<Eigen::Matrix3d, double, 3, 3>(
-                dim_labels, values, variances, c_actual_unit, true);
+                dim_labels, values, variances, c_actual_unit);
           if (c_scipp_dtype == ::dtype<Eigen::Affine3d>)
             return make_structured_variable<Eigen::Affine3d, double, 4, 4>(
-                dim_labels, values, variances, c_actual_unit, true);
+                dim_labels, values, variances, c_actual_unit);
           if (c_scipp_dtype == ::dtype<core::Quaternion>)
             return make_structured_variable<core::Quaternion, double, 4>(
-                dim_labels, values, variances, c_actual_unit, false);
+                dim_labels, values, variances, c_actual_unit);
           if (c_scipp_dtype == ::dtype<core::Translation>)
             return make_structured_variable<core::Translation, double, 3>(
-                dim_labels, values, variances, c_actual_unit, false);
+                dim_labels, values, variances, c_actual_unit);
 
           return make_variable(dim_labels, values, variances, c_actual_unit,
                                c_scipp_dtype);

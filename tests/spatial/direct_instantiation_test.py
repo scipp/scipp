@@ -9,25 +9,21 @@ from functools import partial
 
 import numpy as np
 import pytest
-from scipy.spatial.transform import Rotation
 
-from scipp import DType, Variable, allclose, array, vectors
+from scipp import DType, Variable, array, vectors
 from scipp.spatial import (
     affine_transforms,
     linear_transforms,
     rotations,
     translations,
 )
+from scipp.testing import assert_identical
 
 _RNG = np.random.default_rng(42)
 
 
 def _sample(item: tuple[int, ...], shape: tuple[int, ...]) -> np.ndarray:
     return _RNG.random((*shape, *item))
-
-
-def _sample_rotations(shape: tuple[int, ...]) -> np.ndarray:
-    return Rotation.from_rotvec(_RNG.random((*shape, 3)) * 2 * np.pi).as_quat()
 
 
 _SHAPE_CASES = [pytest.param((5,) * ndim, id=f'{ndim}D') for ndim in range(4)]
@@ -52,7 +48,10 @@ _DTYPE_CASES = [  # dtype, sampler, constructor
     ),
     pytest.param(
         DType.rotation3,
-        _sample_rotations,
+        # This isn't normed and thus wouldn't represent a proper
+        # rotation... but we don't really care about that, just that the
+        # quaternion components are preserved.
+        partial(_sample, (4,)),
         rotations,
         id='rotation3',
     ),
@@ -94,6 +93,6 @@ def test_values_consistent_with_input(
     assert direct.shape == indirect.shape == shape
     assert direct.dtype == indirect.dtype == dtype
 
-    assert allclose(direct, indirect)
-    assert np.allclose(direct.values, array_obj)
-    assert np.allclose(indirect.values, array_obj)
+    assert_identical(direct, indirect)
+    assert (direct.values == array_obj).all()
+    assert (indirect.values == array_obj).all()
