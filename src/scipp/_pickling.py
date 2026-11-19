@@ -171,8 +171,6 @@ def _pickle_variable(
     var: Variable,
 ) -> tuple[Callable[..., Variable], tuple[Any, ...]]:
     if var.is_binned:
-        # All args except the first and the last are ignored for binned
-        # cases
         constituents = _reduce_bins_constituents(var)
         return _unpickle_binned_variable, (_VERSION, constituents)
     if (variances := var.variances) is not None:
