@@ -30,17 +30,19 @@ jobs:
       - uses: egor-tensin/vs-shell@v2  # MSVC dev environment for the dev env's Ninja C++ build.
 
       - name: ccache  # serves the dev env build; see pr_and_main.yml
-        uses: hendrikmuhs/ccache-action@v1.2.24
+        uses: hendrikmuhs/ccache-action@v1.2.25
         with:
           key: ${{ matrix.variant.os }}
           max-size: 1G
 
-      - uses: prefix-dev/setup-pixi@v0.11.2
+      - uses: prefix-dev/setup-pixi@v0.11.3
         with:
           pixi-version: v0.82.1
           environments: dev test
           frozen: true
           cache: true
+
+      - run: pixi run -e dev configure
 
       - run: pixi run -e dev cpp-test
 

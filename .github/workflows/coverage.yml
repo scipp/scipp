@@ -26,12 +26,12 @@ jobs:
           fetch-depth: 0 # history required so cmake can determine version
 
       - name: ccache  # serves the coverage cmake build; see pr_and_main.yml
-        uses: hendrikmuhs/ccache-action@v1.2.24
+        uses: hendrikmuhs/ccache-action@v1.2.25
         with:
           key: coverage
           max-size: 1G
 
-      - uses: prefix-dev/setup-pixi@v0.11.2
+      - uses: prefix-dev/setup-pixi@v0.11.3
         with:
           pixi-version: v0.82.1
           environments: dev test
