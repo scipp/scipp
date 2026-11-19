@@ -26,6 +26,7 @@ from ..core import (
 )
 from ..logging import get_logger
 from ..typing import VariableLike
+from ..utils.serialization_commons import should_reduce_binned_data
 
 if TYPE_CHECKING:
     import h5py as h5
@@ -127,16 +128,9 @@ class _BinDataIO:
     def write(group: h5.Group, data: Variable) -> h5.Group:
         if not data.is_binned:
             raise DTypeError("Expected binned data")
-        bins = data.bins.constituents
-        buffer_len = bins['data'].sizes[bins['dim']]
-        # Crude mechanism to avoid writing large buffers, e.g., from
-        # overallocation or when writing a slice of a larger variable. The
-        # copy causes some overhead, but so would the (much more complicated)
-        # solution to extract contents bin-by-bin. This approach will likely
-        # need to be revisited in the future.
-        if buffer_len > 1.5 * data.bins.size().sum().value:
+        if should_reduce_binned_data(data.bins):
             data = data.copy()
-            bins = data.bins.constituents
+        bins = data.bins.constituents
         values = group.create_group('values')
         _VariableIO.write(values.create_group('begin'), var=bins['begin'])
         _VariableIO.write(values.create_group('end'), var=bins['end'])
