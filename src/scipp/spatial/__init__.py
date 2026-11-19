@@ -37,12 +37,6 @@ _Float = TypeVar('_Float', bound=np.float64 | np.float32, covariant=True)
 _Precision = TypeVar('_Precision', bound=npt.NBitBase)
 
 
-def _to_eigen_layout(a: npt.NDArray[_Float] | Sequence[Any]) -> npt.NDArray[_Float]:
-    # Numpy and scipp use row-major, but Eigen matrices use column-major,
-    # transpose matrix axes for copying values.
-    return np.moveaxis(a, -1, -2)  # type: ignore[arg-type]
-
-
 def as_vectors(x: Variable, y: Variable, z: Variable) -> Variable:
     """Return inputs combined into vectors.
 
@@ -562,7 +556,7 @@ def affine_transforms(
     return Variable(
         dims=dims,
         unit=unit,
-        values=_to_eigen_layout(values),
+        values=values,
         dtype=DType.affine_transform3,
     )
 
@@ -663,7 +657,7 @@ def linear_transforms(
     return Variable(
         dims=dims,
         unit=unit,
-        values=_to_eigen_layout(values),
+        values=values,
         dtype=DType.linear_transform3,
     )
 

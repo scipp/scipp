@@ -254,10 +254,17 @@ Variable make_structured_variable(const py::object &dim_labels,
     throw except::VariancesError("Variances not supported for dtype " +
                                  to_string(dtype<Elem>));
 
-  const auto values = py::array(values_);
+  auto values = py::array(values_);
   const auto unit = unit_.value_or(variable::default_unit_for(dtype<Elem>));
   const auto dims =
       build_dimensions(dim_labels, values, py::none(), sizeof...(N));
+  /* `numpy`and `scipp` use row-major, but `Eigen` matrices use
+   * column-major; so transpose the trailing axes for copying values. We
+   * perform the transpose after the initialization of `dims` above;
+   * that way we catch dimensionality errors, instead of `numpy`.
+   */
+  if constexpr (sizeof...(N) == 2)
+    values = values.attr("swapaxes")(-1, -2).cast<py::array>();
   const auto padded_dims = pad_structure_dimensions<N...>(dims);
 
   auto var = variable::make_structures<T, Elem>(
