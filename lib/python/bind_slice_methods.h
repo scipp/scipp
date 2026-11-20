@@ -6,8 +6,8 @@
 
 #include <optional>
 
+#include "nanobind.h"
 #include "numpy.h"
-#include "pybind11.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/tag_util.h"
@@ -20,7 +20,7 @@
 #include "scipp/variable/variable.h"
 #include "slice_utils.h"
 
-namespace py = pybind11;
+namespace nb = nanobind;
 using namespace scipp;
 using namespace scipp::variable;
 using namespace scipp::dataset;
@@ -38,12 +38,11 @@ template <class T> auto dim_extent(const T &object, const Dim dim) {
 
 template <class T>
 auto from_py_slice(const T &source,
-                   const std::tuple<Dim, const py::slice> &index) {
+                   const std::tuple<Dim, const nb::slice> &index) {
   const auto &[dim, indices] = index;
-  size_t start, stop, step, slicelength;
   const auto size = dim_extent(source, dim);
-  if (!indices.compute(size, &start, &stop, &step, &slicelength))
-    throw py::error_already_set();
+  auto [start, stop, step, slicelength] =
+      indices.compute(static_cast<size_t>(size));
   if (slicelength == 0) {
     stop = start; // Propagate vanishing slice length downstream.
   }
@@ -52,7 +51,7 @@ auto from_py_slice(const T &source,
 
 template <class View> struct SetData {
   template <class T> struct Impl {
-    static void apply(View &slice, const py::object &obj) {
+    static void apply(View &slice, const nb::object &obj) {
       if (slice.has_variances())
         throw std::runtime_error("Data object contains variances, to set data "
                                  "values use the `values` property or provide "
@@ -84,18 +83,18 @@ auto get_slice(T &self, const std::tuple<Dim, scipp::index> &index) {
 }
 
 template <class T>
-auto get_slice_range(T &self, const std::tuple<Dim, const py::slice> &index) {
+auto get_slice_range(T &self, const std::tuple<Dim, const nb::slice> &index) {
   auto [dim, py_slice] = index;
   if constexpr (std::is_same_v<T, DataArray> || std::is_same_v<T, Dataset>) {
-    auto start = py::getattr(py_slice, "start");
-    auto stop = py::getattr(py_slice, "stop");
+    auto start = nb::getattr(py_slice, "start");
+    auto stop = nb::getattr(py_slice, "stop");
     if (!start.is_none() || !stop.is_none()) { // Means default slice : is
                                                // treated as index slice
       try {
         auto [start_var, stop_var] = label_bounds_from_pyslice(py_slice);
         return std::make_from_tuple<Slice>(
             get_slice_params(self, dim, start_var, stop_var));
-      } catch (const py::cast_error &) {
+      } catch (const nb::cast_error &) {
       }
     }
   }
@@ -108,11 +107,11 @@ auto getitem(T &self, const std::tuple<Dim, scipp::index> &index) {
 }
 
 template <class T>
-auto getitem(T &self, const std::tuple<Dim, py::slice> &index) {
+auto getitem(T &self, const std::tuple<Dim, nb::slice> &index) {
   return self.slice(get_slice_range(self, index));
 }
 
-template <class T> auto getitem(T &self, const py::ellipsis &) {
+template <class T> auto getitem(T &self, const nb::ellipsis &) {
   return self.slice({});
 }
 
@@ -124,7 +123,7 @@ template <class T> struct slicer {
     return slice(self, Dim{dim}, val);
   }
 
-  static void set_from_numpy(T &&slice, const py::object &obj) {
+  static void set_from_numpy(T &&slice, const nb::object &obj) {
     core::CallDType<double, float, int64_t, int32_t,
                     bool>::apply<SetData<T>::template Impl>(slice.dtype(),
                                                             slice, obj);
@@ -138,13 +137,13 @@ template <class T> struct slicer {
 
   template <class Other>
   static void set_from_view(T &self,
-                            const std::tuple<Dim, const py::slice> &index,
+                            const std::tuple<Dim, const nb::slice> &index,
                             const Other &data) {
     self.setSlice(get_slice_range(self, index), data);
   }
 
   template <class Other>
-  static void set_from_view(T &self, const py::ellipsis &, const Other &data) {
+  static void set_from_view(T &self, const nb::ellipsis &, const Other &data) {
     self.setSlice(Slice{}, data);
   }
 
@@ -163,25 +162,25 @@ template <class T> struct slicer {
   // This needs to happen partly based on the dtype which cannot be encoded
   // in the Python bindings directly.
   template <class IndexOrRange>
-  static void set(T &self, const IndexOrRange &index, const py::object &data) {
+  static void set(T &self, const IndexOrRange &index, const nb::object &data) {
     if constexpr (std::is_same_v<T, Dataset>)
-      if (py::isinstance<Dataset>(data))
-        return set_from_view(self, index, py::cast<Dataset>(data));
+      if (nb::isinstance<Dataset>(data))
+        return set_from_view(self, index, nb::cast<Dataset>(data));
 
     if constexpr (!std::is_same_v<T, Variable>)
-      if (py::isinstance<DataArray>(data))
-        return set_from_view(self, index, py::cast<DataArray>(data));
+      if (nb::isinstance<DataArray>(data))
+        return set_from_view(self, index, nb::cast<DataArray>(data));
 
-    if (py::isinstance<Variable>(data))
-      return set_from_view(self, index, py::cast<Variable>(data));
+    if (nb::isinstance<Variable>(data))
+      return set_from_view(self, index, nb::cast<Variable>(data));
 
     if constexpr (!std::is_same_v<T, Dataset>)
       return set_from_numpy(getitem(self, index), data);
 
     std::ostringstream oss;
-    oss << "Cannot to assign a " << py::str(py::type::of(data))
-        << " to a slice of a " << py::type_id<T>();
-    throw py::type_error(oss.str());
+    oss << "Cannot to assign a " << nb::str(data.type()).c_str()
+        << " to a slice of a " << nb::type_name(nb::type<T>()).c_str();
+    throw nb::type_error(oss.str().c_str());
   }
 };
 
@@ -200,14 +199,14 @@ void expect_implicit_dimension(const Sizes &dims) {
   }
 }
 
-void expect_positional_index(const py::slice &py_slice) {
+void expect_positional_index(const nb::slice &py_slice) {
   for (const auto &key : {"start", "stop"}) {
-    if (const auto index = py::getattr(py_slice, key); !index.is_none()) {
+    if (const auto index = nb::getattr(py_slice, key); !index.is_none()) {
       try {
-        static_cast<void>(index.cast<Variable>());
+        static_cast<void>(nb::cast<Variable>(index));
         throw except::DimensionError(
             "Dimension must be specified when indexing with a label.");
-      } catch (const py::cast_error &) {
+      } catch (const nb::cast_error &) {
       }
     }
   }
@@ -245,10 +244,10 @@ T slice_by_list(const T &obj,
                         obj, dim);
 }
 
-template <class C> std::optional<C> try_cast(const py::object &obj) {
+template <class C> std::optional<C> try_cast(const nb::object &obj) {
   try {
-    return py::cast<C>(obj);
-  } catch (const py::cast_error &) {
+    return nb::cast<C>(obj);
+  } catch (const nb::cast_error &) {
     return std::nullopt;
   }
 }
@@ -263,11 +262,11 @@ struct ParsedDictIndex {
 };
 
 // Accepts the same key types as the tuple-based overloads, which rely on
-// pybind11 casting the first tuple element to std::string.
-Dim parse_dict_key_as_dim(const py::handle &key) {
+// nanobind casting the first tuple element to std::string.
+Dim parse_dict_key_as_dim(const nb::handle &key) {
   try {
-    return Dim{py::cast<std::string>(key)};
-  } catch (const py::cast_error &) {
+    return Dim{nb::cast<std::string>(key)};
+  } catch (const nb::cast_error &) {
     throw except::TypeError(
         "Dict-based indexing requires string keys (dimension labels).");
   }
@@ -278,22 +277,22 @@ Dim parse_dict_key_as_dim(const py::handle &key) {
 // neither the extent of the others nor the (1-D) coords used for label-based
 // lookup along them.
 template <class T>
-ParsedDictIndex parse_dict_index(T &self, const py::dict &index) {
+ParsedDictIndex parse_dict_index(T &self, const nb::dict &index) {
   ParsedDictIndex parsed;
   for (const auto &item : index) {
     const Dim dim = parse_dict_key_as_dim(item.first);
-    const auto val = py::reinterpret_borrow<py::object>(item.second);
-    if (py::isinstance<py::slice>(val))
+    const auto val = nb::borrow<nb::object>(item.second);
+    if (nb::isinstance<nb::slice>(val))
       parsed.slices.push_back(
-          get_slice_range(self, {dim, py::cast<py::slice>(val)}));
-    else if (py::isinstance<Variable>(val)) {
+          get_slice_range(self, {dim, nb::borrow<nb::slice>(val)}));
+    else if (nb::isinstance<Variable>(val)) {
       if constexpr (std::is_same_v<T, Variable>)
         throw except::DimensionError(
             "Label-based indexing requires coordinates and is not supported "
             "for Variable. Use positional indices instead.");
       else
         parsed.slices.push_back(std::make_from_tuple<Slice>(
-            get_slice_params(self, dim, py::cast<Variable>(val))));
+            get_slice_params(self, dim, nb::cast<Variable>(val))));
     } else if (auto arr = try_cast<std::vector<scipp::index>>(val))
       parsed.int_arrays.emplace_back(dim, std::move(*arr));
     else if (auto i = try_cast<scipp::index>(val)) // int or, e.g., numpy int
@@ -301,7 +300,7 @@ ParsedDictIndex parse_dict_index(T &self, const py::dict &index) {
     else
       throw except::TypeError(
           "Unsupported index value for dimension '" + dim.name() +
-          "': " + py::cast<std::string>(py::str(py::type::of(val))));
+          "': " + nb::str(val.type()).c_str());
   }
   return parsed;
 }
@@ -309,18 +308,18 @@ ParsedDictIndex parse_dict_index(T &self, const py::dict &index) {
 } // namespace
 
 template <class T, class... Ignored>
-void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
+void bind_slice_methods(nanobind::class_<T, Ignored...> &c) {
   // Slice with implicit dim possible only if there is exactly one dimension. We
   // do *not* use the numpy/xarray mechanism which slices the outer dimension in
   // this case, since we consider it dangerous, leading to hard to find bugs.
   c.def("__getitem__", [](T &self, const scipp::index &index) {
     expect_implicit_dimension(self.dims());
-    return getitem(self, {self.dim(), index});
+    return getitem(self, std::tuple{self.dim(), index});
   });
-  c.def("__getitem__", [](T &self, const py::slice &index) {
+  c.def("__getitem__", [](T &self, const nb::slice &index) {
     expect_implicit_dimension(self.dims());
     expect_positional_index(index);
-    return getitem(self, {self.dim(), index});
+    return getitem(self, std::tuple{self.dim(), index});
   });
   // Note the order of overloads: For some reason pybind11(?) calls `len()` on
   // __getitem__ arguments when there is an overload accepting std::tuple. This
@@ -330,7 +329,7 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
       [](T &self, const Variable &condition) {
         return extract(self, condition);
       },
-      py::call_guard<py::gil_scoped_release>());
+      nb::call_guard<nb::gil_scoped_release>());
   // These overloads must also be placed before the ones accepting std::tuple.
   // Otherwise, pybind11 would call `int()` on the 2nd tuple element
   // because of `Variable.__int__`.
@@ -341,14 +340,20 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
   // This may be too confusing, so we do not implement this for now. Note that
   // the objection to this is not absolute (unlike in the case of slicing outer
   // dimension above).
+  //
+  // nanobind skips an overload for a None argument before loading the others.
+  // Accept None here so that the key is loaded first, as it was by pybind11.
   if constexpr (std::is_same_v<T, DataArray>) {
     c.def("__getitem__", &slicer<T>::get_by_value);
-    c.def("__setitem__", &slicer<T>::template set_by_value<Variable>);
-    c.def("__setitem__", &slicer<T>::template set_by_value<DataArray>);
+    c.def("__setitem__", &slicer<T>::template set_by_value<Variable>,
+          nb::arg(), nb::arg().none());
+    c.def("__setitem__", &slicer<T>::template set_by_value<DataArray>,
+          nb::arg(), nb::arg().none());
   }
   if constexpr (std::is_same_v<T, Dataset>) {
     c.def("__getitem__", &slicer<T>::get_by_value);
-    c.def("__setitem__", &slicer<T>::template set_by_value<Dataset>);
+    c.def("__setitem__", &slicer<T>::template set_by_value<Dataset>,
+          nb::arg(), nb::arg().none());
   } else {
     c.def("__len__", [](const T &self) {
       if (self.dims().ndim() == 0)
@@ -356,7 +361,7 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
       return self.dims().size(0);
     });
     c.def("_ipython_key_completions_", [](T &self) {
-      py::typing::List<py::str> out;
+      nb::typed<nb::list, nb::str> out;
       for (const auto &dim : self.dims()) {
         out.append(dim.name());
       }
@@ -367,54 +372,57 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
         [](T &self, std::tuple<std::string, scipp::index> index) {
           return getitem(self, to_dim_type(std::move(index)));
         });
-  c.def("__getitem__", [](T &self, std::tuple<std::string, py::slice> index) {
+  c.def("__getitem__", [](T &self, std::tuple<std::string, nb::slice> index) {
     return getitem(self, to_dim_type(std::move(index)));
   });
-  c.def("__getitem__", [](T &self, const py::ellipsis &index) {
+  c.def("__getitem__", [](T &self, const nb::ellipsis &index) {
     return getitem(self, index);
   });
   c.def("__setitem__",
-        [](T &self, const scipp::index &index, const py::object &data) {
+        [](T &self, const scipp::index &index, const nb::object &data) {
           expect_implicit_dimension(self.dims());
           slicer<T>::template set<std::tuple<Dim, scipp::index>>(
               self, {self.dim(), index}, data);
-        });
+        },
+        nb::arg(), nb::arg().none());
   c.def("__setitem__",
-        [](T &self, const py::slice &index, const py::object &data) {
+        [](T &self, const nb::slice &index, const nb::object &data) {
           expect_implicit_dimension(self.dims());
           expect_positional_index(index);
-          slicer<T>::template set<std::tuple<Dim, py::slice>>(
+          slicer<T>::template set<std::tuple<Dim, nb::slice>>(
               self, {self.dim(), index}, data);
-        });
+        },
+        nb::arg(), nb::arg().none());
   c.def("__setitem__", [](T &self, std::tuple<std::string, scipp::index> index,
-                          const py::object &data) {
+                          const nb::object &data) {
     slicer<T>::template set<std::tuple<Dim, scipp::index>>(
         self, to_dim_type(std::move(index)), data);
-  });
-  c.def("__setitem__", [](T &self, std::tuple<std::string, py::slice> index,
-                          const py::object &data) {
-    slicer<T>::template set<std::tuple<Dim, py::slice>>(
+  }, nb::arg(), nb::arg().none());
+  c.def("__setitem__", [](T &self, std::tuple<std::string, nb::slice> index,
+                          const nb::object &data) {
+    slicer<T>::template set<std::tuple<Dim, nb::slice>>(
         self, to_dim_type(std::move(index)), data);
-  });
-  c.def("__setitem__", &slicer<T>::template set<py::ellipsis>);
+  }, nb::arg(), nb::arg().none());
+  c.def("__setitem__", &slicer<T>::template set<nb::ellipsis>, nb::arg(),
+        nb::arg().none());
   c.def(
       "__getitem__",
       [](T &self, const std::vector<scipp::index> &indices) {
         expect_implicit_dimension(self.dims());
         return slice_by_list(self, {self.dim(), indices});
       },
-      py::call_guard<py::gil_scoped_release>());
+      nb::call_guard<nb::gil_scoped_release>());
   c.def(
       "__getitem__",
       [](T &self, std::tuple<std::string, std::vector<scipp::index>> indices) {
         return slice_by_list<T>(self, to_dim_type(std::move(indices)));
       },
-      py::call_guard<py::gil_scoped_release>());
+      nb::call_guard<nb::gil_scoped_release>());
   // Dict-based indexing: obj[{'x': 0, 'y': 1:3}] is equivalent to
   // obj['x', 0]['y', 1:3]. The result is independent of the dict's order.
-  c.def("__getitem__", [](T &self, const py::dict &index) {
+  c.def("__getitem__", [](T &self, const nb::dict &index) {
     const auto parsed = parse_dict_index(self, index);
-    const py::gil_scoped_release release;
+    const nb::gil_scoped_release release;
     T out = self.slice({});
     for (const auto &s : parsed.slices)
       out = out.slice(s);
@@ -423,7 +431,7 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
     return out;
   });
   c.def("__setitem__",
-        [](T &self, const py::dict &index, const py::object &data) {
+        [](T &self, const nb::dict &index, const nb::object &data) {
           const auto parsed = parse_dict_index(self, index);
           // Integer-array indexing returns a copy, so assigning through it
           // would silently discard the values.
@@ -434,6 +442,7 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
           T target = self.slice({});
           for (const auto &s : parsed.slices)
             target = target.slice(s);
-          slicer<T>::set(target, py::ellipsis{}, data);
-        });
+          slicer<T>::set(target, nb::ellipsis{}, data);
+        },
+        nb::arg(), nb::arg().none());
 }

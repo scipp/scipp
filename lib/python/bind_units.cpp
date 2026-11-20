@@ -6,19 +6,20 @@
 
 #include "scipp/core/tag_util.h"
 #include "scipp/units/unit.h"
+#include "scipp/variable/variable.h"
 
-#include "pybind11.h"
+#include "checked_cast.h"
+#include "nanobind.h"
 #include "unit.h"
 
 using namespace scipp;
-namespace py = pybind11;
+namespace nb = nanobind;
 
 constexpr int UNIT_DICT_VERSION = 2;
 constexpr std::array SUPPORTED_UNIT_DICT_VERSIONS = {1, 2};
 
-using UnitDictValue =
-    py::typing::Union<int, double, bool, py::typing::Dict<py::str, double>>;
-using UnitDict = py::typing::Dict<py::str, UnitDictValue>;
+// Rendered type of the dict used by to_dict / from_dict (see nb::sig below):
+//   dict[str, int | float | bool | dict[str, float]]
 
 namespace {
 
@@ -40,7 +41,7 @@ void assert_supported_unit_for_dict(const sc_units::Unit &unit) {
 auto to_dict(const sc_units::Unit &unit) {
   assert_supported_unit_for_dict(unit);
 
-  UnitDict dict;
+  nb::dict dict;
   dict["__version__"] = UNIT_DICT_VERSION;
   dict["multiplier"] = unit.underlying().multiplier();
 
@@ -50,7 +51,7 @@ auto to_dict(const sc_units::Unit &unit) {
     }
   });
 
-  py::dict powers;
+  nb::dict powers;
   unit.map_over_bases(
       [&powers](const char *const base, const auto power) mutable {
         if (power != 0) {
@@ -63,15 +64,18 @@ auto to_dict(const sc_units::Unit &unit) {
   return dict;
 }
 
-template <class T = int> T get(const py::dict &dict, const char *const name) {
+template <class T = int> T get(const nb::dict &dict, const char *const name) {
   if (dict.contains(name)) {
-    return dict[name].cast<T>();
+    // nanobind's bool caster only accepts True and False.
+    using Cast =
+        std::conditional_t<std::is_same_v<T, bool>, python::bool_arg, T>;
+    return python::checked_cast<Cast>(dict[name]);
   }
   return T{};
 }
 
-void assert_dict_version_supported(const py::dict &dict) {
-  if (const auto ver = dict["__version__"].cast<int>();
+void assert_dict_version_supported(const nb::dict &dict) {
+  if (const auto ver = python::checked_cast<int>(dict["__version__"]);
       std::find(SUPPORTED_UNIT_DICT_VERSIONS.cbegin(),
                 SUPPORTED_UNIT_DICT_VERSIONS.cend(),
                 ver) == SUPPORTED_UNIT_DICT_VERSIONS.cend()) {
@@ -85,11 +89,12 @@ void assert_dict_version_supported(const py::dict &dict) {
   }
 }
 
-sc_units::Unit from_dict(const UnitDict &dict) {
+sc_units::Unit from_dict(const nb::dict &dict) {
   assert_dict_version_supported(dict);
 
-  const py::dict powers = dict.contains("powers") ? dict["powers"] : py::dict();
-  const double multiplier = dict["multiplier"].cast<double>();
+  const nb::dict powers =
+      dict.contains("powers") ? python::to_pydict(dict["powers"]) : nb::dict();
+  const double multiplier = python::checked_cast<double>(dict["multiplier"]);
   const auto unit_data = units::detail::unit_data{get(powers, "m"),
                                                   get(powers, "kg"),
                                                   get(powers, "s"),
@@ -155,41 +160,63 @@ std::string repr_html(const sc_units::Unit &unit) {
          unit.name() + "</pre>";
 }
 
-void repr_pretty(const sc_units::Unit &unit, py::object &p,
-                 [[maybe_unused]] const bool cycle) {
+void repr_pretty(const sc_units::Unit &unit, nb::object &p,
+                 [[maybe_unused]] const python::bool_arg cycle) {
   p.attr("text")(unit.name());
+}
+
+nb::object scalar_with_unit(nb::handle unit, nb::handle value) {
+  return nb::type<Variable>()(nb::arg("dims") = nb::tuple(),
+                              nb::arg("values") = value,
+                              nb::arg("unit") = unit);
 }
 
 } // namespace
 
-void init_units(py::module &m) {
-  py::class_<DefaultUnit>(m, "DefaultUnit")
+void init_units(nb::module_ &m) {
+  nb::class_<DefaultUnit>(m, "DefaultUnit", nb::is_weak_referenceable())
       .def("__repr__",
            [](const DefaultUnit &) { return "<automatically deduced unit>"; });
-  py::class_<sc_units::Unit>(m, "Unit", "A physical unit.")
-      .def(py::init<const std::string &>())
+  auto unit_class =
+      nb::class_<sc_units::Unit>(m, "Unit", nb::is_weak_referenceable(), "A physical unit.");
+  // Let NumPy scalars dispatch to Unit's reflected operators.
+  unit_class.attr("__array_ufunc__") = nb::none();
+  unit_class.def(nb::init<const std::string &>())
       .def("__copy__", [](const sc_units::Unit &self) { return self; })
       .def("__deepcopy__",
-           [](const sc_units::Unit &self, const py::dict &) { return self; })
+           [](const sc_units::Unit &self, const nb::dict &) { return self; })
       .def("__str__", [](const sc_units::Unit &u) { return u.name(); })
       .def("__repr__", repr)
       .def("_repr_html_", repr_html)
-      .def("_repr_pretty_", repr_pretty)
-      .def_property_readonly("name", &sc_units::Unit::name,
-                             "A read-only string describing the "
-                             "type of unit.")
-      .def(py::self + py::self)
-      .def(py::self - py::self)
-      .def(py::self * py::self)
+      .def("_repr_pretty_", repr_pretty, nb::arg().none(), nb::arg().none())
+      .def_prop_ro("name", &sc_units::Unit::name,
+                   "A read-only string describing the "
+                   "type of unit.")
+      .def(nb::self + nb::self)
+      .def(nb::self - nb::self)
+      .def(nb::self * nb::self)
+      .def("__rmul__", scalar_with_unit, nb::arg("value").none())
+      .def(
+          "__rtruediv__",
+          [](nb::handle self, nb::handle value) {
+            auto inverse = nb::steal(
+                PyNumber_Power(self.ptr(), nb::int_(-1).ptr(), Py_None));
+            if (!inverse.is_valid())
+              throw nb::python_error();
+            return scalar_with_unit(inverse, value);
+          },
+          nb::arg("value").none())
       // cppcheck-suppress duplicateExpression
-      .def(py::self / py::self)
+      .def(nb::self / nb::self)
       .def("__pow__", [](const sc_units::Unit &self,
                          const int64_t power) { return pow(self, power); })
       .def("__abs__", [](const sc_units::Unit &self) { return abs(self); })
-      .def(py::self == py::self)
-      .def(py::self != py::self)
-      .def(hash(py::self))
+      .def(nb::self == nb::self)
+      .def(nb::self != nb::self)
+      .def(hash(nb::self))
       .def("to_dict", to_dict,
+           nb::sig("def to_dict(self) -> dict[str, int | float | bool | "
+                   "dict[str, float]]"),
            "Serialize a unit to a dict.\n\nThis function is meant to be used "
            "with :meth:`scipp.Unit.from_dict` to serialize units.\n\n"
            "Warning\n"
@@ -199,6 +226,8 @@ void init_units(py::module &m) {
            "It should not be used to access the internal representation of "
            "``Unit``.")
       .def("from_dict", from_dict,
+           nb::sig("def from_dict(arg: dict[str, int | float | bool | "
+                   "dict[str, float]], /) -> Unit"),
            "Deserialize a unit from a dict.\n\nThis function is meant to be "
            "used in combination with :meth:`scipp.Unit.to_dict`.");
 
@@ -213,7 +242,7 @@ void init_units(py::module &m) {
         [](const sc_units::Unit &u) { return sc_units::one / u; });
   m.def("sqrt", [](const sc_units::Unit &u) { return sqrt(u); });
 
-  py::implicitly_convertible<std::string, sc_units::Unit>();
+  nb::implicitly_convertible<std::string, sc_units::Unit>();
 
   auto units = m.def_submodule("units");
   units.attr("angstrom") = sc_units::angstrom;
@@ -235,7 +264,8 @@ void init_units(py::module &m) {
   units.attr("default_unit") = DefaultUnit{};
 
   m.def("to_numpy_time_string",
-        py::overload_cast<const ProtoUnit &>(to_numpy_time_string))
+        nb::overload_cast<const ProtoUnit &>(to_numpy_time_string),
+        nb::arg().none())
       .def(
           "units_identical",
           [](const sc_units::Unit &a, const sc_units::Unit &b) {
@@ -245,7 +275,7 @@ void init_units(py::module &m) {
           "The regular equality operator allows for small differences "
           "in the unit's floating point multiplier. ``units_identical`` "
           "checks for exact identity.")
-      .def("add_unit_alias", scipp::sc_units::add_unit_alias, py::kw_only(),
-           py::arg("name"), py::arg("unit"))
+      .def("add_unit_alias", scipp::sc_units::add_unit_alias, nb::kw_only(),
+           nb::arg("name"), nb::arg("unit").none())
       .def("clear_unit_aliases", scipp::sc_units::clear_unit_aliases);
 }

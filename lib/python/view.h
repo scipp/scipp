@@ -4,12 +4,15 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <algorithm>
+
 #include "scipp/dataset/dataset.h"
 
 /// Helper to provide equivalent of the `items()` method of a Python dict.
 template <class T> class items_view {
 public:
   explicit items_view(T &obj) : m_obj(&obj) {}
+  T &mapping() const { return *m_obj; }
   auto size() const noexcept { return m_obj->size(); }
   auto begin() const { return m_obj->items_begin(); }
   auto end() const { return m_obj->items_end(); }
@@ -27,6 +30,7 @@ template <class T> items_view(T &) -> items_view<T>;
 template <class T> class values_view {
 public:
   explicit values_view(T &obj) : m_obj(&obj) {}
+  T &mapping() const { return *m_obj; }
   auto size() const noexcept { return m_obj->size(); }
   auto begin() const {
     if constexpr (std::is_same_v<typename T::mapped_type, scipp::DataArray>)

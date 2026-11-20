@@ -57,6 +57,21 @@ class Lookup:
         self.fill_value = fill_value
         self.__transform_coords_input_keys__ = (dim,)  # for transform_coords
 
+    def __getstate__(self) -> dict[str, object]:
+        state = vars(self).copy()
+        # Native functions are stable module attributes, but cannot be pickled.
+        if self.op is _cpp.buckets.map or self.op is _cpp.lookup_previous:
+            state['op'] = self.op.__name__
+        return state
+
+    def __setstate__(self, state: dict[str, object]) -> None:
+        self.__dict__.update(state)
+        if isinstance(op := state['op'], str):
+            self.op = {
+                'map': _cpp.buckets.map,
+                'lookup_previous': _cpp.lookup_previous,
+            }[op]
+
     def __call__(self, var: Variable) -> Variable:
         """Return table values for the given points."""
         return self.op(self.func, var, self.dim, self.fill_value)

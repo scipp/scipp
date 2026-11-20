@@ -3,11 +3,15 @@
 # Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 # ~~~
 
-# Use Python_add_library since pybind11_add_module causes linking to libpython,
-# which should be avoided on Linux and OSX.
-python_add_library(
+# Keep Release optimizations for hot bindings and enable free-threaded Python.
+nanobind_add_module(
   _scipp
-  MODULE
+  NOMINSIZE
+  NB_SUPPRESS_WARNINGS
+  # Keep Scipp's type registry and warning settings private to this module.
+  NB_DOMAIN
+  scipp
+  FREE_THREADED
   bind_units.cpp
   bins.cpp
   comparison.cpp
@@ -22,6 +26,7 @@ python_add_library(
   groupby.cpp
   histogram.cpp
   numpy.cpp
+  numpy_c_api.cpp
   operations.cpp
   py_object.cpp
   scipp.cpp
@@ -38,18 +43,31 @@ python_add_library(
   ${python_SRC_FILES}
 )
 
+if(CMAKE_CXX_CPPCHECK)
+  # CMake omits system includes when running cppcheck. Skip nanobind's member
+  # declarations so the checker still analyzes Scipp's caster and its callers.
+  set_property(
+    TARGET _scipp
+    APPEND
+    PROPERTY CXX_CPPCHECK "-DNB_TYPE_CASTER(T,descr)="
+  )
+  foreach(runtime IN ITEMS nanobind-static nanobind-static-ft)
+    if(TARGET ${runtime})
+      set_property(TARGET ${runtime} PROPERTY CXX_CPPCHECK "")
+    endif()
+  endforeach()
+endif()
+
 target_include_directories(
   _scipp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
 )
-target_link_libraries(_scipp LINK_PRIVATE scipp-dataset pybind11::headers)
-target_compile_definitions(_scipp PUBLIC PYBIND11_DETAILED_ERROR_MESSAGES)
+target_link_libraries(_scipp LINK_PRIVATE scipp-dataset Python::NumPy)
 
 # SCIPP_EXPORT is used in macros defined in variable/
-target_compile_definitions(_scipp PRIVATE SCIPP_EXPORT=)
+target_compile_definitions(
+  _scipp PRIVATE SCIPP_EXPORT= NPY_NO_DEPRECATED_API=NPY_2_0_API_VERSION
+)
 
-# Set symbol visibility to hidden to reduce binary size, as recommended in
-# pybind11 FAQ.
-set_target_properties(_scipp PROPERTIES CXX_VISIBILITY_PRESET hidden)
 set_target_properties(
   _scipp
   PROPERTIES INSTALL_RPATH
@@ -64,7 +82,7 @@ set_source_files_properties(
 )
 
 if(PRECOMPILED_HEADERS)
-  target_precompile_headers(_scipp PRIVATE pybind11.h)
+  target_precompile_headers(_scipp PRIVATE nanobind.h)
 endif()
 
 if(SANITIZERS)

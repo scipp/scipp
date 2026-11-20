@@ -33,8 +33,17 @@ endif()
 find_package(GTest CONFIG REQUIRED)
 # libpython is not available on `manylinux` images, use `Development.Module`
 # instead of `Development`
-find_package(Python 3.12 REQUIRED COMPONENTS Interpreter Development.Module)
-find_package(pybind11 CONFIG REQUIRED)
+find_package(
+  Python 3.12 REQUIRED COMPONENTS Interpreter Development.Module NumPy
+)
+# Locate nanobind via its Python package, which works for both pip and conda
+# installs without requiring CMAKE_PREFIX_PATH to be set.
+execute_process(
+  COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  OUTPUT_VARIABLE nanobind_ROOT COMMAND_ERROR_IS_FATAL ANY
+)
+find_package(nanobind 3.1 CONFIG REQUIRED)
 
 # Generate files for free scipp API functions
 include(scipp-functions)
@@ -122,28 +131,25 @@ endif()
 
 if(NOT WIN32)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
-  add_compile_options(
-    -Wall
-    -Wextra
-    -Wpedantic
-    -Wunused
-    -Wshadow
-    -Winit-self
-    -Wpointer-arith
-    -Woverloaded-virtual
-    -Wold-style-cast
-    -Wcast-qual
-    -Wcast-align
-    -Wno-unknown-warning-option # Avoiding clang warnings about unknown warning
-    -Werror=attributes
-    -Werror=maybe-uninitialized
-    -Werror=uninitialized
-    -Werror=return-type
+  set(scipp_warnings
+      -Wall
+      -Wextra
+      -Wpedantic
+      -Wunused
+      -Wshadow
+      -Winit-self
+      -Wpointer-arith
+      -Woverloaded-virtual
+      -Wold-style-cast
+      -Wcast-qual
+      -Wcast-align
+      -Wno-unknown-warning-option # For GCC-only flags on Clang.
+      -Werror=attributes
+      -Werror=maybe-uninitialized
+      -Werror=uninitialized
+      -Werror=return-type
   )
-  add_compile_options(
-    $<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
-    $<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>
-  )
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>)
 else()
   add_compile_options(
     $<$<COMPILE_LANGUAGE:CXX>:/bigobj> /EHsc /constexpr:steps2000000
@@ -261,6 +267,10 @@ option(FULL_BUILD
 )
 
 add_subdirectory(common)
+# Keep Scipp warnings on first-party targets, including the Python bindings.
+target_compile_options(
+  scipp-common INTERFACE "$<BUILD_LOCAL_INTERFACE:${scipp_warnings}>"
+)
 if(BENCHMARK)
   if(FULL_BUILD)
     add_subdirectory(benchmark)

@@ -2,46 +2,51 @@
 // Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "pybind11.h"
+#include "nanobind.h"
 
-namespace py = pybind11;
+#define SCIPP_IMPORT_NUMPY
+#include "numpy_c_api.h"
 
-void init_buckets(py::module &);
-void init_comparison(py::module &);
-void init_counts(py::module &);
-void init_creation(py::module &);
-void init_cumulative(py::module &);
-void init_dataset(py::module &);
-void init_dtype(py::module &);
-void init_element_array_view(py::module &);
-void init_exceptions(py::module &);
-void init_groupby(py::module &);
-void init_geometry(py::module &);
-void init_histogram(py::module &);
-void init_operations(py::module &);
-void init_shape(py::module &);
-void init_trigonometry(py::module &);
-void init_unary(py::module &);
-void init_units(py::module &);
-void init_variable(py::module &);
-void init_transform(py::module &);
+namespace nb = nanobind;
 
-void init_generated_arithmetic(py::module &);
-void init_generated_bins(py::module &);
-void init_generated_comparison(py::module &);
-void init_generated_hyperbolic(py::module &);
-void init_generated_logical(py::module &);
-void init_generated_math(py::module &);
-void init_generated_reduction(py::module &);
-void init_generated_trigonometry(py::module &);
-void init_generated_util(py::module &);
-void init_generated_special_values(py::module &);
-void init_generated_vector(py::module &);
+void init_buckets(nb::module_ &);
+void init_comparison(nb::module_ &);
+void init_counts(nb::module_ &);
+void init_creation(nb::module_ &);
+void init_cumulative(nb::module_ &);
+void init_dataset(nb::module_ &);
+void init_dtype(nb::module_ &);
+void init_element_array_view(nb::module_ &);
+void init_exceptions(nb::module_ &);
+void init_groupby(nb::module_ &);
+void init_geometry(nb::module_ &);
+void init_histogram(nb::module_ &);
+void init_operations(nb::module_ &);
+void init_shape(nb::module_ &);
+void init_trigonometry(nb::module_ &);
+void init_unary(nb::module_ &);
+void init_units(nb::module_ &);
+void init_variable(nb::module_ &);
+void init_transform(nb::module_ &);
 
-void init_core(py::module &m) {
+void init_generated_arithmetic(nb::module_ &);
+void init_generated_bins(nb::module_ &);
+void init_generated_comparison(nb::module_ &);
+void init_generated_hyperbolic(nb::module_ &);
+void init_generated_logical(nb::module_ &);
+void init_generated_math(nb::module_ &);
+void init_generated_reduction(nb::module_ &);
+void init_generated_trigonometry(nb::module_ &);
+void init_generated_util(nb::module_ &);
+void init_generated_special_values(nb::module_ &);
+void init_generated_vector(nb::module_ &);
+
+void init_core(nb::module_ &m) {
   auto core = m.def_submodule("core");
+  // nanobind creates iterator types on first use. Give them a private scope.
+  core.def_submodule("_iterators");
   // Bind classes before any functions that use them to make sure that
-  // pybind11 puts proper type annotations into the docstrings.
+  // nanobind puts proper type annotations into the docstrings.
   init_units(core);
   init_exceptions(core);
   init_dtype(core);
@@ -76,16 +81,20 @@ void init_core(py::module &m) {
   init_generated_vector(core);
 }
 
-PYBIND11_MODULE(_scipp, m, py::mod_gil_not_used()) {
+NB_MODULE(_scipp, m) {
+  if (PyArray_ImportNumPyAPI() < 0)
+    throw nb::python_error();
 #ifdef SCIPP_VERSION
-  m.attr("__version__") = py::str(SCIPP_VERSION);
+  m.attr("__version__") = nb::str(SCIPP_VERSION);
 #else
-  m.attr("__version__") = py::str("unknown version");
+  m.attr("__version__") = nb::str("unknown version");
 #endif
 #ifdef NDEBUG
-  m.attr("_debug_") = py::cast(false);
+  m.attr("_debug_") = nb::cast(false);
 #else
-  m.attr("_debug_") = py::cast(true);
+  m.attr("_debug_") = nb::cast(true);
 #endif
+  // Failed implicit conversions are normal during operator dispatch.
+  nb::set_implicit_cast_warnings(false);
   init_core(m);
 }

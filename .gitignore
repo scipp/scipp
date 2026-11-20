@@ -39,6 +39,7 @@ src/lib/
 src/lib64/
 src/scipp/_scipp.cpython*
 src/scipp/_scipp.so
+src/scipp/_scipp*.pyd
 *.so
 
 # Created by setuptools_scm for wheel builds

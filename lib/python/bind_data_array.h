@@ -4,20 +4,27 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <pybind11/typing.h>
+#include <utility>
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/variable/variable_factory.h"
 
 #include "bind_operators.h"
-#include "pybind11.h"
+#include "checked_cast.h"
+#include "nanobind.h"
 #include "view.h"
 
-namespace py = pybind11;
+namespace nb = nanobind;
 using namespace scipp;
 
-template <template <class> class View, class T>
-void bind_helper_view(py::module &m, const std::string &name) {
+inline constexpr auto view_range = [](const auto &view) {
+  return std::pair(view.begin(), view.end());
+};
+
+template <template <class> class View, class T,
+          class Range = decltype(view_range)>
+void bind_helper_view(nb::module_ &m, const std::string &name,
+                      Range range = view_range) {
   std::string suffix;
   if constexpr (std::is_same_v<View<T>, items_view<T>> ||
                 std::is_same_v<View<T>, str_items_view<T>>)
@@ -28,46 +35,52 @@ void bind_helper_view(py::module &m, const std::string &name) {
                 std::is_same_v<View<T>, str_keys_view<T>>)
     suffix = "_keys_view";
   auto cls =
-      py::class_<View<T>>(m, (name + suffix).c_str())
+      nb::class_<View<T>>(m, (name + suffix).c_str(),
+                          nb::is_weak_referenceable())
           .def("__len__", &View<T>::size)
           .def("__repr__", [](const View<T> &self) { return self.tostring(); })
           .def("__str__", [](const View<T> &self) { return self.tostring(); })
           .def(
               "__iter__",
-              [](const View<T> &self) {
-                return py::make_iterator(self.begin(), self.end(),
-                                         py::return_value_policy::move);
+              [scope = nb::getattr(m, "_iterators"),
+               range](const View<T> &self) {
+                auto [begin, end] = range(self);
+                return nb::make_iterator(scope, "iterator", std::move(begin),
+                                         std::move(end));
               },
-              py::return_value_policy::move, py::keep_alive<0, 1>());
-  if constexpr (!std::is_same_v<View<T>, values_view<T>>)
+              nb::keep_alive<0, 1>());
+  if constexpr (!std::is_same_v<View<T>, values_view<T>>) {
     cls.def("__eq__", [](const View<T> &self, const View<T> &other) {
       return self == other;
     });
-}
-
-template <class D> auto cast_to_dict_key(const py::handle &obj) {
-  using key_type = typename D::key_type;
-  if constexpr (std::is_same_v<key_type, std::string>) {
-    return obj.cast<std::string>();
-  } else {
-    return key_type{obj.cast<std::string>()};
+    // pybind11 did this for every class binding __eq__ without __hash__.
+    cls.attr("__hash__") = nb::none();
   }
 }
 
-template <class D> auto cast_to_dict_value(const py::handle &obj) {
+template <class D> auto cast_to_dict_key(const nb::handle &obj) {
+  using key_type = typename D::key_type;
+  if constexpr (std::is_same_v<key_type, std::string>) {
+    return scipp::python::checked_cast<std::string>(obj);
+  } else {
+    return key_type{scipp::python::checked_cast<std::string>(obj)};
+  }
+}
+
+template <class D> auto cast_to_dict_value(const nb::handle &obj) {
   using val_type = typename D::mapped_type;
-  return obj.cast<val_type>();
+  return scipp::python::checked_cast<val_type>(obj);
 }
 
 template <class T, class... Ignored>
-void bind_common_mutable_view_operators(pybind11::class_<T, Ignored...> &view) {
+void bind_common_mutable_view_operators(nanobind::class_<T, Ignored...> &view) {
   view.def("__len__", &T::size)
       .def(
           "__getitem__",
           [](const T &self, const std::string &key) {
             return self[typename T::key_type{key}];
           },
-          py::return_value_policy::copy)
+          nb::rv_policy::copy)
       .def("__setitem__",
            [](T &self, const std::string &key, const Variable &var) {
              self.set(typename T::key_type{key}, var);
@@ -77,23 +90,25 @@ void bind_common_mutable_view_operators(pybind11::class_<T, Ignored...> &view) {
           [](T &self, const std::string &key) {
             self.erase(typename T::key_type{key});
           },
-          py::call_guard<py::gil_scoped_release>())
-      .def("__contains__", [](const T &self, const py::handle &key) {
-        try {
-          return self.contains(cast_to_dict_key<T>(key));
-        } catch (py::cast_error &) {
-          return false; // if `key` is not a string, it cannot be contained
-        }
-      });
+          nb::call_guard<nb::gil_scoped_release>())
+      .def(
+          "__contains__",
+          [](const T &self, const nb::handle &key) {
+            std::string name;
+            if (!nb::try_cast(key, name))
+              return false; // if `key` is not a string, it cannot be contained
+            return self.contains(typename T::key_type{name});
+          },
+          nb::arg().none());
 }
 
 template <class T, class... Ignored, class Set>
-void bind_dict_update(pybind11::class_<T, Ignored...> &view, Set &&set_item) {
+void bind_dict_update(nanobind::class_<T, Ignored...> &view, Set &&set_item) {
   view.def(
       "update",
-      [set_item](T &self, const py::object &other, const py::kwargs &kwargs) {
+      [set_item](T &self, const nb::object &other, const nb::kwargs &kwargs) {
         // Piggyback on dict to implement argument handling.
-        py::dict args;
+        nb::dict args;
         if (!other.is_none()) {
           args.attr("update")(other, **kwargs);
         } else {
@@ -108,7 +123,13 @@ void bind_dict_update(pybind11::class_<T, Ignored...> &view, Set &&set_item) {
           set_item(self, cast_to_dict_key<T>(key), cast_to_dict_value<T>(val));
         }
       },
-      py::arg("other") = py::none(), py::pos_only(),
+      // An unnamed nb::arg() makes `other` positional-only. nanobind
+      // requires an annotation for every parameter (including **kwargs)
+      // once any annotation is present. nb::sig restores the `other` name
+      // and the '/' marker in rendered docs, which the unnamed arg loses.
+      nb::arg() = nb::none(), nb::arg("kwargs"),
+      nb::sig("def update(self, other: object | None = None, /, **kwargs) -> "
+              "None"),
       R"doc(Update items from dict-like or iterable.
 
 If ``other`` has a .keys() method, then update does:
@@ -127,24 +148,25 @@ dict.update
 }
 
 template <class T, class... Ignored>
-void bind_pop(pybind11::class_<T, Ignored...> &view) {
+void bind_pop(nanobind::class_<T, Ignored...> &view) {
   view.def(
       "_pop",
       [](T &self, const std::string &key) {
         return self.extract(typename T::key_type{key});
       },
-      py::arg("k"));
+      nb::arg("k"));
 }
 
 template <class T, class... Ignored>
-void bind_set_aligned(pybind11::class_<T, Ignored...> &view) {
+void bind_set_aligned(nanobind::class_<T, Ignored...> &view) {
   view.def(
       "set_aligned",
       // cppcheck-suppress constParameter  # False positive.
-      [](T &self, const std::string &key, const bool aligned) {
+      [](T &self, const std::string &key,
+         const scipp::python::bool_arg aligned) {
         self.set_aligned(typename T::key_type{key}, aligned);
       },
-      py::arg("key"), py::arg("aligned"),
+      nb::arg("key"), nb::arg("aligned").none(),
       R"(Set the alignment flag for a coordinate.
 
 Aligned coordinates (the default) are compared in binary operations and
@@ -176,7 +198,7 @@ Unaligned coordinates are shown without the '*' prefix in the repr.
 }
 
 template <class T, class... Ignored>
-void bind_dict_clear(pybind11::class_<T, Ignored...> &view) {
+void bind_dict_clear(nanobind::class_<T, Ignored...> &view) {
   view.def("clear", [](T &self) {
     std::vector<typename T::key_type> keys;
     for (const auto &key : keys_view(self))
@@ -187,33 +209,32 @@ void bind_dict_clear(pybind11::class_<T, Ignored...> &view) {
 }
 
 template <class T, class... Ignored>
-void bind_dict_popitem(pybind11::class_<T, Ignored...> &view) {
+void bind_dict_popitem(nanobind::class_<T, Ignored...> &view) {
   view.def("popitem", [](T &self) {
     typename T::key_type key;
     for (const auto &k : keys_view(self))
       key = k;
-    const auto item = py::cast(self.extract(key));
+    const auto item = nb::cast(self.extract(key));
 
-    using Pair =
-        py::typing::Tuple<py::str, std::decay_t<decltype(self.extract(key))>>;
-    Pair result(2);
+    // nb::tuple is immutable, so build the result via nb::make_tuple.
+    using Pair = nb::typed<nb::tuple, nb::str,
+                           std::decay_t<decltype(self.extract(key))>>;
     if constexpr (std::is_same_v<typename T::key_type, Dim>)
-      result[0] = key.name();
+      return Pair(nb::make_tuple(key.name(), item));
     else
-      result[0] = key;
-    result[1] = item;
-    return result;
+      return Pair(nb::make_tuple(key, item));
   });
 }
 
 template <class T, class... Ignored>
-void bind_dict_copy(pybind11::class_<T, Ignored...> &view) {
+void bind_dict_copy(nanobind::class_<T, Ignored...> &view) {
   view.def(
           "copy",
-          [](const T &self, const bool deep) {
+          [](const T &self, const scipp::python::bool_arg deep) {
             return deep ? copy(self) : self;
           },
-          py::arg("deep") = true, py::call_guard<py::gil_scoped_release>(),
+          nb::arg("deep").none() = true,
+          nb::call_guard<nb::gil_scoped_release>(),
           R"(
       Return a (by default deep) copy.
 
@@ -222,17 +243,17 @@ void bind_dict_copy(pybind11::class_<T, Ignored...> &view) {
       of the data and meta data values of this object.)")
       .def(
           "__copy__", [](const T &self) { return self; },
-          py::call_guard<py::gil_scoped_release>(), "Return a (shallow) copy.")
+          nb::call_guard<nb::gil_scoped_release>(), "Return a (shallow) copy.")
       .def(
           "__deepcopy__",
-          [](const T &self, const py::typing::Dict<py::object, py::object> &) {
+          [](const T &self, const nb::typed<nb::dict, nb::object, nb::object> &) {
             return copy(self);
           },
-          py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
+          nb::call_guard<nb::gil_scoped_release>(), "Return a (deep) copy.");
 }
 
 template <class T, class... Ignored>
-void bind_is_edges(py::class_<T, Ignored...> &view) {
+void bind_is_edges(nb::class_<T, Ignored...> &view) {
   view.def(
       "is_edges",
       [](const T &self, const std::string &key,
@@ -241,7 +262,7 @@ void bind_is_edges(py::class_<T, Ignored...> &view) {
                              dim.has_value() ? std::optional{Dim(*dim)}
                                              : std::optional<Dim>{});
       },
-      py::arg("key"), py::arg("dim") = std::nullopt,
+      nb::arg("key"), nb::arg("dim") = nb::none(),
       R"(Return True if the given key contains bin-edges in the given dim.
 
 Bin-edge coordinates have one more element than the corresponding dimension
@@ -283,9 +304,9 @@ Point coordinates have the same size as the dimension:
 }
 
 template <class T>
-void bind_mutable_view(py::module &m, const std::string &name,
+void bind_mutable_view(nb::module_ &m, const std::string &name,
                        const std::string &docs) {
-  py::class_<T> view(m, name.c_str(), docs.c_str());
+  nb::class_<T> view(m, name.c_str(), nb::is_weak_referenceable(), docs.c_str());
   bind_common_mutable_view_operators(view);
   bind_inequality_to_operator<T>(view);
   bind_dict_update(view, [](T &self, const std::string &key,
@@ -297,24 +318,24 @@ void bind_mutable_view(py::module &m, const std::string &name,
   bind_is_edges(view);
   view.def(
           "__iter__",
-          [](const T &self) {
-            return py::make_iterator(self.keys_begin(), self.keys_end(),
-                                     py::return_value_policy::move);
+          [scope = nb::getattr(m, "_iterators")](const T &self) {
+            return nb::make_iterator(scope, "iterator", self.keys_begin(),
+                                     self.keys_end());
           },
-          py::keep_alive<0, 1>())
+          nb::keep_alive<0, 1>())
       .def(
           "keys", [](T &self) { return keys_view(self); },
-          py::keep_alive<0, 1>(), R"(view on self's keys)")
+          nb::keep_alive<0, 1>(), R"(view on self's keys)")
       .def(
           "values", [](T &self) { return values_view(self); },
-          py::keep_alive<0, 1>(), R"(view on self's values)")
+          nb::keep_alive<0, 1>(), R"(view on self's values)")
       .def(
           "items", [](T &self) { return items_view(self); },
-          py::return_value_policy::move, py::keep_alive<0, 1>(),
+          nb::rv_policy::move, nb::keep_alive<0, 1>(),
           R"(view on self's items)")
       .def("_ipython_key_completions_",
            [](const T &self) {
-             py::typing::List<py::str> out;
+             nb::typed<nb::list, nb::str> out;
              const auto end = self.keys_end();
              for (auto it = self.keys_begin(); it != end; ++it) {
                out.append(*it);
@@ -326,9 +347,9 @@ void bind_mutable_view(py::module &m, const std::string &name,
 }
 
 template <class T>
-void bind_mutable_view_no_dim(py::module &m, const std::string &name,
+void bind_mutable_view_no_dim(nb::module_ &m, const std::string &name,
                               const std::string &docs) {
-  py::class_<T> view(m, name.c_str(), docs.c_str());
+  nb::class_<T> view(m, name.c_str(), nb::is_weak_referenceable(), docs.c_str());
   bind_common_mutable_view_operators(view);
   bind_inequality_to_operator<T>(view);
   bind_dict_update(view, [](T &self, const sc_units::Dim &key,
@@ -341,25 +362,25 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name,
   bind_is_edges(view);
   view.def(
           "__iter__",
-          [](T &self) {
+          [scope = nb::getattr(m, "_iterators")](T &self) {
             auto keys_view = str_keys_view(self);
-            return py::make_iterator(keys_view.begin(), keys_view.end(),
-                                     py::return_value_policy::move);
+            return nb::make_iterator(scope, "iterator", keys_view.begin(),
+                                     keys_view.end());
           },
-          py::keep_alive<0, 1>())
+          nb::keep_alive<0, 1>())
       .def(
           "keys", [](T &self) { return str_keys_view(self); },
-          py::keep_alive<0, 1>(), R"(view on self's keys)")
+          nb::keep_alive<0, 1>(), R"(view on self's keys)")
       .def(
           "values", [](T &self) { return values_view(self); },
-          py::keep_alive<0, 1>(), R"(view on self's values)")
+          nb::keep_alive<0, 1>(), R"(view on self's values)")
       .def(
           "items", [](T &self) { return str_items_view(self); },
-          py::return_value_policy::move, py::keep_alive<0, 1>(),
+          nb::rv_policy::move, nb::keep_alive<0, 1>(),
           R"(view on self's items)")
       .def("_ipython_key_completions_",
            [](const T &self) {
-             py::typing::List<py::str> out;
+             nb::typed<nb::list, nb::str> out;
              const auto end = self.keys_end();
              for (auto it = self.keys_begin(); it != end; ++it) {
                out.append(it->name());
@@ -371,10 +392,10 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name,
 }
 
 template <class T, class... Ignored>
-void bind_data_array_properties(py::class_<T, Ignored...> &c) {
+void bind_data_array_properties(nb::class_<T, Ignored...> &c) {
   if constexpr (std::is_same_v<T, DataArray>)
-    c.def_property("name", &T::name, &T::setName,
-                   R"(The name of the held data.
+    c.def_prop_rw("name", &T::name, &T::setName,
+                  R"(The name of the held data.
 
 Examples
 --------
@@ -394,12 +415,11 @@ The name is preserved through operations:
   'temperature'
 )");
   else
-    c.def_property_readonly("name", &T::name, R"(The name of the held data.)");
-  c.def_property(
-      "data",
-      py::cpp_function([](T &self) { return self.data(); },
-                       py::return_value_policy::copy),
+    c.def_prop_ro("name", &T::name, R"(The name of the held data.)");
+  c.def_prop_rw(
+      "data", [](T &self) { return self.data(); },
       [](T &self, const Variable &data) { self.setData(data); },
+      nb::for_getter(nb::rv_policy::copy),
       R"(Underlying data Variable.
 
 The data property provides access to the data values of a DataArray as a
@@ -422,7 +442,7 @@ The data can be replaced entirely:
   >>> da.data
   <scipp.Variable> (x: 3)    float64              [m]  [10, 20, 30]
 )");
-  c.def_property_readonly(
+  c.def_prop_ro(
       "coords", [](T &self) -> decltype(auto) { return self.coords(); },
       R"(Dict of coordinates.
 
@@ -456,7 +476,7 @@ List coordinate names:
   >>> da.coords.keys()
   <scipp.Dict.keys {x, y}>
 )");
-  c.def_property_readonly(
+  c.def_prop_ro(
       "masks", [](T &self) -> decltype(auto) { return self.masks(); },
       R"(Dict of masks.
 
@@ -494,7 +514,7 @@ Masked values are excluded from reductions:
         std::vector<scipp::Dim> coord_names_c = {scipp::Dim{coord_name}};
         return self.drop_coords(coord_names_c);
       },
-      py::arg("coord_names"),
+      nb::arg("coord_names"),
       R"(Return new object with specified coordinate(s) removed.
 
 Parameters
@@ -547,13 +567,13 @@ Remove multiple coordinates:
                        [](const auto &name) { return scipp::Dim{name}; });
         return self.drop_coords(coord_names_c);
       },
-      py::arg("coord_names"));
+      nb::arg("coord_names"));
   c.def(
       "drop_masks",
       [](T &self, const std::string &mask_name) {
         return self.drop_masks(std::vector({mask_name}));
       },
-      py::arg("mask_names"),
+      nb::arg("mask_names"),
       R"(Return new object with specified mask(s) removed.
 
 Parameters
@@ -604,5 +624,5 @@ Remove multiple masks:
       [](T &self, std::vector<std::string> &mask_names) {
         return self.drop_masks(mask_names);
       },
-      py::arg("mask_names"));
+      nb::arg("mask_names"));
 }

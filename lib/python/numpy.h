@@ -5,18 +5,24 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 
 #include "scipp/common/index_composition.h"
 #include "scipp/core/parallel.h"
 #include "scipp/variable/variable.h"
 
+#include "nanobind.h"
+#include "numpy_c_api.h"
 #include "py_object.h"
-#include "pybind11.h"
 
-namespace py = pybind11;
+namespace nb = nanobind;
 
 using namespace scipp;
+
+/// Typed view over a numpy array; strides are in elements, not bytes.
+template <class T>
+using py_array_t = nb::ndarray<const T, nb::numpy, nb::device::cpu>;
 
 /// Map C++ types to Python types to perform conversion between scipp containers
 /// and numpy arrays.
@@ -24,55 +30,67 @@ template <class T> struct ElementTypeMap {
   using PyType = T;
   constexpr static bool convert = false;
 
-  static void check_assignable(const py::object &, const sc_units::Unit &) {}
+  static void check_assignable(const nb::object &, const sc_units::Unit &) {}
 };
 
 template <> struct ElementTypeMap<scipp::core::time_point> {
   using PyType = int64_t;
   constexpr static bool convert = true;
 
-  static void check_assignable(const py::object &obj, sc_units::Unit unit);
+  static void check_assignable(const nb::object &obj, sc_units::Unit unit);
 };
 
 template <> struct ElementTypeMap<scipp::python::PyObject> {
-  using PyType = py::object;
+  using PyType = nb::object;
   constexpr static bool convert = true;
 
-  static void check_assignable(const py::object &, const sc_units::Unit &) {}
+  static void check_assignable(const nb::object &, const sc_units::Unit &) {}
 };
 
-/// Cast a py::object referring to an array to py::array_t<auto> if supported.
+/// Cast a nb::object referring to an array to a typed ndarray if supported.
 /// Otherwise, copies the contents into a std::vector<auto>.
 template <class T>
-auto cast_to_array_like(const py::object &obj, const sc_units::Unit unit) {
+auto cast_to_array_like(const nb::object &obj, const sc_units::Unit unit) {
   using TM = ElementTypeMap<T>;
   using PyType = typename TM::PyType;
   TM::check_assignable(obj, unit);
   if constexpr (std::is_same_v<T, core::time_point>) {
-    // pbj.cast<py::array_t<PyType> does not always work because
-    // numpy.datetime64.__int__ delegates to datetime.datetime if the unit is
-    // larger than ns and that cannot be converted to long.
-    return obj.cast<py::array>()
-        .attr("astype")(py::dtype::of<PyType>())
-        .template cast<py::array_t<PyType>>();
+    // Convert to int64 via astype because numpy.datetime64.__int__
+    // delegates to datetime.datetime if the unit is larger than ns and
+    // that cannot be converted to long. astype returns a (C-contiguous)
+    // copy which the ndarray caster keeps alive.
+    return nb::cast<py_array_t<PyType>>(
+        scipp::python::as_numpy_array(obj).attr("astype")("int64"));
   } else if constexpr (std::is_standard_layout_v<T> && std::is_trivial_v<T>) {
-    // Casting to py::array_t applies all sorts of automatic conversions
-    // such as integer to double, if required.
-    return obj.cast<py::array_t<PyType>>();
+    // Other buffer exporters may omit strides. Let NumPy normalize those and
+    // packed fields whose byte strides cannot be expressed in elements.
+    if (py_array_t<PyType> array;
+        PyArray_Check(obj.ptr()) &&
+        PyArray_ISALIGNED(reinterpret_cast<const PyArrayObject *>(obj.ptr())) &&
+        nb::try_cast(obj, array, /*convert=*/false) &&
+        reinterpret_cast<std::uintptr_t>(array.data()) % alignof(PyType) == 0)
+      return array;
+    return nb::cast<py_array_t<PyType>>(scipp::python::as_numpy_array(
+        obj, scipp::python::numpy_typenum<PyType>(), NPY_ARRAY_CARRAY_RO));
   } else {
-    // py::array only supports POD types. Use a simple but expensive
+    // nb::ndarray only supports arithmetic dtypes. Use a simple but expensive
     // solution for other types.
     // TODO Related to #290, we should properly support
     //  multi-dimensional input, and ignore bad shapes.
+    // pybind11 caught both of these as std::runtime_error.
+    std::optional<std::vector<PyType>> values;
     try {
-      return obj.cast<const std::vector<PyType>>();
-    } catch (std::runtime_error &) {
-      const auto &array = obj.cast<py::array>();
-      std::ostringstream oss;
-      oss << "Unable to assign object of dtype " << py::str(array.dtype())
-          << " to " << scipp::core::dtype<T>;
-      throw std::invalid_argument(oss.str());
+      values = nb::cast<std::vector<PyType>>(obj);
+    } catch (const nb::cast_error &) {
+    } catch (const nb::python_error &) {
     }
+    if (values)
+      return std::move(*values);
+    const nb::object dtype = scipp::python::as_numpy_array(obj).attr("dtype");
+    std::ostringstream oss;
+    oss << "Unable to assign object of dtype " << nb::str(dtype).c_str()
+        << " to " << scipp::core::dtype<T>;
+    throw std::invalid_argument(oss.str());
   }
 }
 
@@ -80,13 +98,14 @@ namespace scipp::detail {
 namespace {
 constexpr static size_t grainsize_1d = 10000;
 
-template <class T> bool is_c_contiguous(const py::array_t<T> &array) {
-  Py_buffer buffer;
-  if (PyObject_GetBuffer(array.ptr(), &buffer, PyBUF_C_CONTIGUOUS) != 0) {
-    PyErr_Clear();
-    return false;
+template <class T> bool is_c_contiguous(const py_array_t<T> &array) {
+  // Strides of dimensions with extent 0 or 1 are arbitrary, ignore them.
+  int64_t expected = 1;
+  for (auto i = static_cast<int64_t>(array.ndim()); i-- > 0;) {
+    if (static_cast<int64_t>(array.shape(i)) > 1 && array.stride(i) != expected)
+      return false;
+    expected *= static_cast<int64_t>(array.shape(i));
   }
-  PyBuffer_Release(&buffer);
   return true;
 }
 
@@ -100,15 +119,13 @@ void copy_element(const Source &src, Destination &&dst) {
 }
 
 template <bool convert, class T, class Dst>
-void copy_array_0d(const py::array_t<T> &src_array, Dst &dst) {
-  const auto src = src_array.template unchecked<0>();
-  auto it = dst.begin();
-  copy_element<convert>(src(), *it);
+void copy_array_0d(const py_array_t<T> &src_array, Dst &dst) {
+  copy_element<convert>(*src_array.data(), *dst.begin());
 }
 
 template <bool convert, class T, class Dst>
-void copy_array_1d(const py::array_t<T> &src_array, Dst &dst) {
-  const auto src = src_array.template unchecked<1>();
+void copy_array_1d(const py_array_t<T> &src_array, Dst &dst) {
+  const auto src = src_array.template view<nb::ndim<1>>();
   const auto begin = dst.begin();
   core::parallel::parallel_for(
       core::parallel::blocked_range(0, src.shape(0), grainsize_1d),
@@ -121,90 +138,104 @@ void copy_array_1d(const py::array_t<T> &src_array, Dst &dst) {
 }
 
 template <bool convert, class T, class Dst>
-void copy_array_2d(const py::array_t<T> &src_array, Dst &dst) {
-  const auto src = src_array.template unchecked<2>();
+void copy_array_2d(const py_array_t<T> &src_array, Dst &dst) {
+  const auto src = src_array.template view<nb::ndim<2>>();
+  const auto shape = [&src](const size_t i) {
+    return static_cast<scipp::index>(src.shape(i));
+  };
   const auto begin = dst.begin();
   core::parallel::parallel_for(
       core::parallel::blocked_range(0, src.shape(0)), [&](const auto &range) {
-        auto it = begin + range.begin() * src.shape(1);
+        auto it = begin + range.begin() * shape(1);
         for (scipp::index i = range.begin(); i < range.end(); ++i)
-          for (scipp::index j = 0; j < src.shape(1); ++j, ++it)
+          for (scipp::index j = 0; j < shape(1); ++j, ++it)
             copy_element<convert>(src(i, j), *it);
       });
 }
 
 template <bool convert, class T, class Dst>
-void copy_array_3d(const py::array_t<T> &src_array, Dst &dst) {
-  const auto src = src_array.template unchecked<3>();
+void copy_array_3d(const py_array_t<T> &src_array, Dst &dst) {
+  const auto src = src_array.template view<nb::ndim<3>>();
+  const auto shape = [&src](const size_t i) {
+    return static_cast<scipp::index>(src.shape(i));
+  };
   const auto begin = dst.begin();
   core::parallel::parallel_for(
       core::parallel::blocked_range(0, src.shape(0)), [&](const auto &range) {
-        auto it = begin + range.begin() * src.shape(1) * src.shape(2);
+        auto it = begin + range.begin() * shape(1) * shape(2);
         for (scipp::index i = range.begin(); i < range.end(); ++i)
-          for (scipp::index j = 0; j < src.shape(1); ++j)
-            for (scipp::index k = 0; k < src.shape(2); ++k, ++it)
+          for (scipp::index j = 0; j < shape(1); ++j)
+            for (scipp::index k = 0; k < shape(2); ++k, ++it)
               copy_element<convert>(src(i, j, k), *it);
       });
 }
 
 template <bool convert, class T, class Dst>
-void copy_array_4d(const py::array_t<T> &src_array, Dst &dst) {
-  const auto src = src_array.template unchecked<4>();
+void copy_array_4d(const py_array_t<T> &src_array, Dst &dst) {
+  const auto src = src_array.template view<nb::ndim<4>>();
+  const auto shape = [&src](const size_t i) {
+    return static_cast<scipp::index>(src.shape(i));
+  };
   const auto begin = dst.begin();
   core::parallel::parallel_for(
       core::parallel::blocked_range(0, src.shape(0)), [&](const auto &range) {
-        auto it =
-            begin + range.begin() * src.shape(1) * src.shape(2) * src.shape(3);
+        auto it = begin + range.begin() * shape(1) * shape(2) * shape(3);
         for (scipp::index i = range.begin(); i < range.end(); ++i)
-          for (scipp::index j = 0; j < src.shape(1); ++j)
-            for (scipp::index k = 0; k < src.shape(2); ++k)
-              for (scipp::index l = 0; l < src.shape(3); ++l, ++it)
+          for (scipp::index j = 0; j < shape(1); ++j)
+            for (scipp::index k = 0; k < shape(2); ++k)
+              for (scipp::index l = 0; l < shape(3); ++l, ++it)
                 copy_element<convert>(src(i, j, k, l), *it);
       });
 }
 
 template <bool convert, class T, class Dst>
-void copy_array_5d(const py::array_t<T> &src_array, Dst &dst) {
-  const auto src = src_array.template unchecked<5>();
+void copy_array_5d(const py_array_t<T> &src_array, Dst &dst) {
+  const auto src = src_array.template view<nb::ndim<5>>();
+  const auto shape = [&src](const size_t i) {
+    return static_cast<scipp::index>(src.shape(i));
+  };
   const auto begin = dst.begin();
   core::parallel::parallel_for(
       core::parallel::blocked_range(0, src.shape(0)), [&](const auto &range) {
-        auto it = begin + range.begin() * src.shape(1) * src.shape(2) *
-                              src.shape(3) * src.shape(4);
+        auto it =
+            begin + range.begin() * shape(1) * shape(2) * shape(3) * shape(4);
         for (scipp::index i = range.begin(); i < range.end(); ++i)
-          for (scipp::index j = 0; j < src.shape(1); ++j)
-            for (scipp::index k = 0; k < src.shape(2); ++k)
-              for (scipp::index l = 0; l < src.shape(3); ++l)
-                for (scipp::index m = 0; m < src.shape(4); ++m, ++it)
+          for (scipp::index j = 0; j < shape(1); ++j)
+            for (scipp::index k = 0; k < shape(2); ++k)
+              for (scipp::index l = 0; l < shape(3); ++l)
+                for (scipp::index m = 0; m < shape(4); ++m, ++it)
                   copy_element<convert>(src(i, j, k, l, m), *it);
       });
 }
 
 template <bool convert, class T, class Dst>
-void copy_array_6d(const py::array_t<T> &src_array, Dst &dst) {
-  const auto src = src_array.template unchecked<6>();
+void copy_array_6d(const py_array_t<T> &src_array, Dst &dst) {
+  const auto src = src_array.template view<nb::ndim<6>>();
+  const auto shape = [&src](const size_t i) {
+    return static_cast<scipp::index>(src.shape(i));
+  };
   const auto begin = dst.begin();
   core::parallel::parallel_for(
       core::parallel::blocked_range(0, src.shape(0)), [&](const auto &range) {
-        auto it = begin + range.begin() * src.shape(1) * src.shape(2) *
-                              src.shape(3) * src.shape(4) * src.shape(5);
+        auto it = begin + range.begin() * shape(1) * shape(2) * shape(3) *
+                              shape(4) * shape(5);
         for (scipp::index i = range.begin(); i < range.end(); ++i)
-          for (scipp::index j = 0; j < src.shape(1); ++j)
-            for (scipp::index k = 0; k < src.shape(2); ++k)
-              for (scipp::index l = 0; l < src.shape(3); ++l)
-                for (scipp::index m = 0; m < src.shape(4); ++m)
-                  for (scipp::index n = 0; n < src.shape(5); ++n, ++it)
+          for (scipp::index j = 0; j < shape(1); ++j)
+            for (scipp::index k = 0; k < shape(2); ++k)
+              for (scipp::index l = 0; l < shape(3); ++l)
+                for (scipp::index m = 0; m < shape(4); ++m)
+                  for (scipp::index n = 0; n < shape(5); ++n, ++it)
                     copy_element<convert>(src(i, j, k, l, m, n), *it);
       });
 }
 
 template <bool convert, class T, class Dst>
-void copy_flattened(const py::array_t<T> &src_array, Dst &dst) {
-  const auto src_buffer = src_array.request();
-  auto src = reinterpret_cast<const T *>(src_buffer.ptr);
+void copy_flattened(const py_array_t<T> &src_array, Dst &dst) {
+  const auto *src = src_array.data();
+  const auto size = static_cast<scipp::index>(src_array.size());
   const auto begin = dst.begin();
   core::parallel::parallel_for(
-      core::parallel::blocked_range(0, src_buffer.size, grainsize_1d),
+      core::parallel::blocked_range(0, size, grainsize_1d),
       [&](const auto &range) {
         auto it = begin + range.begin();
         for (scipp::index i = range.begin(); i < range.end(); ++i, ++it) {
@@ -213,18 +244,20 @@ void copy_flattened(const py::array_t<T> &src_array, Dst &dst) {
       });
 }
 
-template <class T> auto memory_begin_end(const py::buffer_info &info) {
-  auto *begin = static_cast<const T *>(info.ptr);
-  auto *end = static_cast<const T *>(info.ptr);
-  const auto [begin_offset, end_offset] =
-      memory_bounds(info.shape.begin(), info.shape.end(), info.strides.begin());
-  return std::pair{begin + begin_offset, end + end_offset};
+template <class T> auto memory_begin_end(const py_array_t<T> &array) {
+  const auto *begin = reinterpret_cast<const std::byte *>(array.data());
+  const auto *end = begin;
+  // memory_bounds computes offsets in stride units, i.e. elements here.
+  const auto [begin_offset, end_offset] = memory_bounds(
+      array.shape_ptr(), array.shape_ptr() + array.ndim(), array.stride_ptr());
+  const auto itemsize = static_cast<int64_t>(array.itemsize());
+  return std::pair{begin + begin_offset * itemsize,
+                   end + end_offset * itemsize};
 }
 
 template <class T, class View>
-bool memory_overlaps(const py::array_t<T> &data, const View &view) {
-  const auto &buffer_info = data.request();
-  const auto [data_begin, data_end] = memory_begin_end<std::byte>(buffer_info);
+bool memory_overlaps(const py_array_t<T> &data, const View &view) {
+  const auto [data_begin, data_end] = memory_begin_end(data);
   const auto begin = view.begin();
   const auto end = view.end();
   const auto view_begin = reinterpret_cast<const std::byte *>(&*begin);
@@ -256,12 +289,12 @@ bool memory_overlaps(const py::array_t<T> &data, const View &view) {
 /// `dst` if `convert == true`.
 /// Otherwise, elements in src are simply assigned to dst.
 template <bool convert, class T, class Dst>
-void copy_elements(const py::array_t<T> &src, Dst &dst) {
-  if (scipp::size(dst) != src.size())
+void copy_elements(const py_array_t<T> &src, Dst &dst) {
+  if (scipp::size(dst) != static_cast<scipp::index>(src.size()))
     throw std::runtime_error(
         "Numpy data size does not match size of target object.");
 
-  const auto dispatch = [&dst](const py::array_t<T> &src_) {
+  const auto dispatch = [&dst](const py_array_t<T> &src_) {
     if (is_c_contiguous(src_))
       return copy_flattened<convert>(src_, dst);
 
@@ -288,17 +321,24 @@ void copy_elements(const py::array_t<T> &src, Dst &dst) {
           "c-contiguous layout.");
     }
   };
-  dispatch(memory_overlaps(src, dst) ? py::array_t<T>(src.request()) : src);
+  if (memory_overlaps(src, dst)) {
+    const auto copy = scipp::python::as_numpy_array(
+        nb::cast(src, nb::rv_policy::reference), NPY_NOTYPE,
+        NPY_ARRAY_ENSURECOPY | NPY_ARRAY_C_CONTIGUOUS);
+    copy_flattened<convert>(nb::cast<py_array_t<T>>(copy), dst);
+  } else
+    dispatch(src);
 }
 } // namespace
 } // namespace scipp::detail
 
 template <class SourceDType, class Destination>
-void copy_array_into_view(const py::array_t<SourceDType> &src,
-                          Destination &&dst, const Dimensions &dims) {
+void copy_array_into_view(const py_array_t<SourceDType> &src, Destination &&dst,
+                          const Dimensions &dims) {
   const auto &shape = dims.shape();
-  if (!std::equal(shape.begin(), shape.end(), src.shape(),
-                  src.shape() + src.ndim()))
+  if (static_cast<size_t>(src.ndim()) != shape.size() ||
+      !std::equal(shape.begin(), shape.end(), src.shape_ptr(),
+                  src.shape_ptr() + src.ndim()))
     throw except::DimensionError("The shape of the provided data "
                                  "does not match the existing "
                                  "object.");
@@ -314,4 +354,4 @@ void copy_array_into_view(const std::vector<SourceDType> &src, Destination &dst,
   std::copy(begin(src), end(src), dst.begin());
 }
 
-core::time_point make_time_point(const py::buffer &buffer, int64_t scale = 1);
+core::time_point make_time_point(const nb::object &buffer, int64_t scale = 1);
