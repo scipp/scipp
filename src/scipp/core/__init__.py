@@ -151,6 +151,7 @@ from .operations import (
 from .reduction import (
     mean,
     nanmean,
+    inverse_variance_mean,
     median,
     nanmedian,
     std,
@@ -299,6 +300,7 @@ __all__ = [
     'hist',
     'identical',
     'index',
+    'inverse_variance_mean',
     'irreducible_mask',
     'isclose',
     'isfinite',
