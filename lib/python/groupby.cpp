@@ -129,7 +129,8 @@ template <class T> void bind_groupby(nb::module_ &m, const std::string &name) {
         nb::arg("data"), nb::arg("group"), nb::arg("bins"),
         nb::call_guard<nb::gil_scoped_release>());
 
-  nb::class_<GroupBy<T>> groupBy(m, name.c_str(), nb::is_weak_referenceable(), R"(
+  nb::class_<GroupBy<T>> groupBy(m, name.c_str(), nb::is_weak_referenceable(),
+                                 R"(
     GroupBy object implementing split-apply-combine mechanism.)");
 
   BIND_GROUPBY_OP_NUMERIC(groupBy, mean);

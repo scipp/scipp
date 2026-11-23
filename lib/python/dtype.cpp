@@ -150,13 +150,12 @@ scipp::core::DType scipp_dtype(const PyArray_Descr *type) {
   if (type->kind == DTypeKind::Datetime) {
     return scipp::core::dtype<time_point>;
   }
-  throw std::runtime_error(
-      "Unsupported numpy dtype: " +
-      nb::cast<std::string>(
-          nb::str(nb::handle(reinterpret_cast<const ::PyObject *>(type)))) +
-      "\n"
-      "Supported types are: bool, float32, float64,"
-      " int32, int64, string, datetime64, and object");
+  throw std::runtime_error("Unsupported numpy dtype: " +
+                           nb::cast<std::string>(nb::str(nb::handle(
+                               reinterpret_cast<const ::PyObject *>(type)))) +
+                           "\n"
+                           "Supported types are: bool, float32, float64,"
+                           " int32, int64, string, datetime64, and object");
 }
 
 scipp::core::DType dtype_from_scipp_class(const nb::object &type) {

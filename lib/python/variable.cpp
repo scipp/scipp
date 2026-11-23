@@ -72,7 +72,8 @@ void bind_init(nb::class_<Variable> &cls);
 void init_variable(nb::module_ &m) {
   // Needed to let numpy arrays keep alive the scipp buffers.
   // VariableConcept must ALWAYS be passed to Python by its handle.
-  nb::class_<VariableConcept> variable_concept(m, "_VariableConcept", nb::is_weak_referenceable());
+  nb::class_<VariableConcept> variable_concept(m, "_VariableConcept",
+                                               nb::is_weak_referenceable());
 
   nb::class_<Variable> variable(m, "Variable", nb::dynamic_attr(),
                                 nb::is_weak_referenceable(),

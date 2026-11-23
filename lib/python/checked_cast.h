@@ -16,12 +16,12 @@ template <class T> T checked_cast(nanobind::handle obj) {
     return nanobind::cast<T>(obj);
   } catch (const nanobind::cast_error &) {
     const auto type = nanobind::type<std::remove_cvref_t<T>>();
-    PyErr_Format(
-        obj.is_none() && type.is_valid() ? PyExc_TypeError : PyExc_RuntimeError,
-        "Unable to cast Python instance of type %S to C++ type '%s'",
-        obj.type().ptr(),
-        type.is_valid() ? nanobind::type_name(type).c_str()
-                        : nanobind::detail::make_caster<T>::Name.text);
+    PyErr_Format(obj.is_none() && type.is_valid() ? PyExc_TypeError
+                                                  : PyExc_RuntimeError,
+                 "Unable to cast Python instance of type %S to C++ type '%s'",
+                 obj.type().ptr(),
+                 type.is_valid() ? nanobind::type_name(type).c_str()
+                                 : nanobind::detail::make_caster<T>::Name.text);
     throw nanobind::python_error();
   }
 }

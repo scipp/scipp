@@ -177,8 +177,8 @@ void init_units(nb::module_ &m) {
   nb::class_<DefaultUnit>(m, "DefaultUnit", nb::is_weak_referenceable())
       .def("__repr__",
            [](const DefaultUnit &) { return "<automatically deduced unit>"; });
-  auto unit_class =
-      nb::class_<sc_units::Unit>(m, "Unit", nb::is_weak_referenceable(), "A physical unit.");
+  auto unit_class = nb::class_<sc_units::Unit>(
+      m, "Unit", nb::is_weak_referenceable(), "A physical unit.");
   // Let NumPy scalars dispatch to Unit's reflected operators.
   unit_class.attr("__array_ufunc__") = nb::none();
   unit_class.def(nb::init<const std::string &>())

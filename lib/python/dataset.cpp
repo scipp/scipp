@@ -361,9 +361,9 @@ scipp.Variable, scipp.Dataset
       "__init__",
       [](DataArray *self, const Variable &data, const nb::object &coords,
          const nb::object &masks, const std::string &name) {
-        new (self) DataArray{data, to_cpp_dict<Dim, Variable>(to_pydict(coords)),
-                             to_cpp_dict<std::string, Variable>(to_pydict(masks)),
-                             name};
+        new (self) DataArray{
+            data, to_cpp_dict<Dim, Variable>(to_pydict(coords)),
+            to_cpp_dict<std::string, Variable>(to_pydict(masks)), name};
       },
       nb::arg("data"), nb::kw_only(), nb::arg("coords") = nb::dict(),
       nb::arg("masks") = nb::dict(), nb::arg("name") = std::string{},

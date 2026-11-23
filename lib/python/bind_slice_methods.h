@@ -298,9 +298,8 @@ ParsedDictIndex parse_dict_index(T &self, const nb::dict &index) {
     else if (auto i = try_cast<scipp::index>(val)) // int or, e.g., numpy int
       parsed.slices.push_back(get_slice(self, {dim, *i}));
     else
-      throw except::TypeError(
-          "Unsupported index value for dimension '" + dim.name() +
-          "': " + nb::str(val.type()).c_str());
+      throw except::TypeError("Unsupported index value for dimension '" +
+                              dim.name() + "': " + nb::str(val.type()).c_str());
   }
   return parsed;
 }
@@ -345,15 +344,15 @@ void bind_slice_methods(nanobind::class_<T, Ignored...> &c) {
   // Accept None here so that the key is loaded first, as it was by pybind11.
   if constexpr (std::is_same_v<T, DataArray>) {
     c.def("__getitem__", &slicer<T>::get_by_value);
-    c.def("__setitem__", &slicer<T>::template set_by_value<Variable>,
-          nb::arg(), nb::arg().none());
+    c.def("__setitem__", &slicer<T>::template set_by_value<Variable>, nb::arg(),
+          nb::arg().none());
     c.def("__setitem__", &slicer<T>::template set_by_value<DataArray>,
           nb::arg(), nb::arg().none());
   }
   if constexpr (std::is_same_v<T, Dataset>) {
     c.def("__getitem__", &slicer<T>::get_by_value);
-    c.def("__setitem__", &slicer<T>::template set_by_value<Dataset>,
-          nb::arg(), nb::arg().none());
+    c.def("__setitem__", &slicer<T>::template set_by_value<Dataset>, nb::arg(),
+          nb::arg().none());
   } else {
     c.def("__len__", [](const T &self) {
       if (self.dims().ndim() == 0)
@@ -378,31 +377,39 @@ void bind_slice_methods(nanobind::class_<T, Ignored...> &c) {
   c.def("__getitem__", [](T &self, const nb::ellipsis &index) {
     return getitem(self, index);
   });
-  c.def("__setitem__",
-        [](T &self, const scipp::index &index, const nb::object &data) {
-          expect_implicit_dimension(self.dims());
-          slicer<T>::template set<std::tuple<Dim, scipp::index>>(
-              self, {self.dim(), index}, data);
-        },
-        nb::arg(), nb::arg().none());
-  c.def("__setitem__",
-        [](T &self, const nb::slice &index, const nb::object &data) {
-          expect_implicit_dimension(self.dims());
-          expect_positional_index(index);
-          slicer<T>::template set<std::tuple<Dim, nb::slice>>(
-              self, {self.dim(), index}, data);
-        },
-        nb::arg(), nb::arg().none());
-  c.def("__setitem__", [](T &self, std::tuple<std::string, scipp::index> index,
-                          const nb::object &data) {
-    slicer<T>::template set<std::tuple<Dim, scipp::index>>(
-        self, to_dim_type(std::move(index)), data);
-  }, nb::arg(), nb::arg().none());
-  c.def("__setitem__", [](T &self, std::tuple<std::string, nb::slice> index,
-                          const nb::object &data) {
-    slicer<T>::template set<std::tuple<Dim, nb::slice>>(
-        self, to_dim_type(std::move(index)), data);
-  }, nb::arg(), nb::arg().none());
+  c.def(
+      "__setitem__",
+      [](T &self, const scipp::index &index, const nb::object &data) {
+        expect_implicit_dimension(self.dims());
+        slicer<T>::template set<std::tuple<Dim, scipp::index>>(
+            self, {self.dim(), index}, data);
+      },
+      nb::arg(), nb::arg().none());
+  c.def(
+      "__setitem__",
+      [](T &self, const nb::slice &index, const nb::object &data) {
+        expect_implicit_dimension(self.dims());
+        expect_positional_index(index);
+        slicer<T>::template set<std::tuple<Dim, nb::slice>>(
+            self, {self.dim(), index}, data);
+      },
+      nb::arg(), nb::arg().none());
+  c.def(
+      "__setitem__",
+      [](T &self, std::tuple<std::string, scipp::index> index,
+         const nb::object &data) {
+        slicer<T>::template set<std::tuple<Dim, scipp::index>>(
+            self, to_dim_type(std::move(index)), data);
+      },
+      nb::arg(), nb::arg().none());
+  c.def(
+      "__setitem__",
+      [](T &self, std::tuple<std::string, nb::slice> index,
+         const nb::object &data) {
+        slicer<T>::template set<std::tuple<Dim, nb::slice>>(
+            self, to_dim_type(std::move(index)), data);
+      },
+      nb::arg(), nb::arg().none());
   c.def("__setitem__", &slicer<T>::template set<nb::ellipsis>, nb::arg(),
         nb::arg().none());
   c.def(
@@ -430,19 +437,20 @@ void bind_slice_methods(nanobind::class_<T, Ignored...> &c) {
       out = slice_by_list(out, arr);
     return out;
   });
-  c.def("__setitem__",
-        [](T &self, const nb::dict &index, const nb::object &data) {
-          const auto parsed = parse_dict_index(self, index);
-          // Integer-array indexing returns a copy, so assigning through it
-          // would silently discard the values.
-          if (!parsed.int_arrays.empty())
-            throw except::TypeError(
-                "Integer-array indexing is not supported in dict-based "
-                "__setitem__.");
-          T target = self.slice({});
-          for (const auto &s : parsed.slices)
-            target = target.slice(s);
-          slicer<T>::set(target, nb::ellipsis{}, data);
-        },
-        nb::arg(), nb::arg().none());
+  c.def(
+      "__setitem__",
+      [](T &self, const nb::dict &index, const nb::object &data) {
+        const auto parsed = parse_dict_index(self, index);
+        // Integer-array indexing returns a copy, so assigning through it
+        // would silently discard the values.
+        if (!parsed.int_arrays.empty())
+          throw except::TypeError(
+              "Integer-array indexing is not supported in dict-based "
+              "__setitem__.");
+        T target = self.slice({});
+        for (const auto &s : parsed.slices)
+          target = target.slice(s);
+        slicer<T>::set(target, nb::ellipsis{}, data);
+      },
+      nb::arg(), nb::arg().none());
 }

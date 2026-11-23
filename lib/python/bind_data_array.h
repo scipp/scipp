@@ -246,7 +246,8 @@ void bind_dict_copy(nanobind::class_<T, Ignored...> &view) {
           nb::call_guard<nb::gil_scoped_release>(), "Return a (shallow) copy.")
       .def(
           "__deepcopy__",
-          [](const T &self, const nb::typed<nb::dict, nb::object, nb::object> &) {
+          [](const T &self,
+             const nb::typed<nb::dict, nb::object, nb::object> &) {
             return copy(self);
           },
           nb::call_guard<nb::gil_scoped_release>(), "Return a (deep) copy.");
@@ -306,7 +307,8 @@ Point coordinates have the same size as the dimension:
 template <class T>
 void bind_mutable_view(nb::module_ &m, const std::string &name,
                        const std::string &docs) {
-  nb::class_<T> view(m, name.c_str(), nb::is_weak_referenceable(), docs.c_str());
+  nb::class_<T> view(m, name.c_str(), nb::is_weak_referenceable(),
+                     docs.c_str());
   bind_common_mutable_view_operators(view);
   bind_inequality_to_operator<T>(view);
   bind_dict_update(view, [](T &self, const std::string &key,
@@ -349,7 +351,8 @@ void bind_mutable_view(nb::module_ &m, const std::string &name,
 template <class T>
 void bind_mutable_view_no_dim(nb::module_ &m, const std::string &name,
                               const std::string &docs) {
-  nb::class_<T> view(m, name.c_str(), nb::is_weak_referenceable(), docs.c_str());
+  nb::class_<T> view(m, name.c_str(), nb::is_weak_referenceable(),
+                     docs.c_str());
   bind_common_mutable_view_operators(view);
   bind_inequality_to_operator<T>(view);
   bind_dict_update(view, [](T &self, const sc_units::Dim &key,
