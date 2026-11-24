@@ -5,8 +5,8 @@
 #include "scipp/variable/element_array_variable.tcc"
 #include "scipp/variable/string.h"
 
+#include "nanobind.h"
 #include "py_object.h"
-#include "pybind11.h"
 
 namespace scipp::variable {
 

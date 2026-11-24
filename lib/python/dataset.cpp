@@ -12,17 +12,49 @@
 #include "bind_data_array.h"
 #include "bind_operators.h"
 #include "bind_slice_methods.h"
-#include "pybind11.h"
+#include "checked_cast.h"
+#include "nanobind.h"
 #include "rename.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
+using scipp::python::checked_cast;
+using scipp::python::to_pydict;
 
-namespace py = pybind11;
+namespace nb = nanobind;
 
 namespace {
+// Python membership tries identity before equality. These three views share a
+// live Variable per entry, even if the mapping later reallocates its storage.
+template <class Map, bool Items>
+struct MetadataIterator : Map::holder_type::const_iterator {
+  Map &mapping;
+  nb::object owner;
+
+  auto operator*() const {
+    nb::ft_object_guard guard(owner);
+    auto value = nb::cast(mapping.share_item(*this));
+    nb::keep_alive_obj(value, owner);
+    if constexpr (Items)
+      return nb::typed<nb::tuple, nb::str, Variable>(
+          nb::make_tuple(this->operator->()->first, value));
+    else
+      return nb::typed<nb::object, Variable>(value);
+  }
+};
+
+constexpr auto metadata_range = [](const auto &view) {
+  auto &map = view.mapping();
+  using Map = std::decay_t<decltype(map)>;
+  constexpr bool items =
+      std::is_same_v<std::decay_t<decltype(view)>, items_view<Map>>;
+  return std::pair(
+      MetadataIterator<Map, items>{map.items_begin(), map, nb::find(map)},
+      map.items_end());
+};
+
 template <class T, class... Ignored>
-void bind_dataset_properties(py::class_<T, Ignored...> &c) {
+void bind_dataset_properties(nb::class_<T, Ignored...> &c) {
   c.def("drop_coords", [](T &self, const std::string &coord_name) {
     std::vector<scipp::Dim> coord_names_c = {scipp::Dim{coord_name}};
     return self.drop_coords(coord_names_c);
@@ -38,30 +70,31 @@ void bind_dataset_properties(py::class_<T, Ignored...> &c) {
 }
 
 template <class T, class... Ignored>
-void bind_dataset_coord_properties(py::class_<T, Ignored...> &c) {
+void bind_dataset_coord_properties(nb::class_<T, Ignored...> &c) {
   // TODO does this comment still apply?
   // For some reason the return value policy and/or keep-alive policy do not
   // work unless we wrap things in py::cpp_function.
-  c.def_property_readonly(
+  c.def_prop_ro(
       "coords", [](T &self) -> decltype(auto) { return self.coords(); },
       R"(
       Dict of coordinates.)");
 }
 
 template <class... Ignored>
-void bind_dataset_view_methods(py::class_<Dataset, Ignored...> &c) {
+void bind_dataset_view_methods(nb::class_<Dataset, Ignored...> &c,
+                               const nb::object &iterator_scope) {
   bind_common_operators(c);
   c.def("__len__", &Dataset::size);
   c.def(
       "__iter__",
-      [](const Dataset &self) {
-        return py::make_iterator(self.keys_begin(), self.keys_end(),
-                                 py::return_value_policy::move);
+      [iterator_scope](const Dataset &self) {
+        return nb::make_iterator(iterator_scope, "iterator", self.keys_begin(),
+                                 self.keys_end());
       },
-      py::return_value_policy::move, py::keep_alive<0, 1>());
+      nb::keep_alive<0, 1>());
   c.def(
       "keys", [](Dataset &self) { return keys_view(self); },
-      py::return_value_policy::move, py::keep_alive<0, 1>(),
+      nb::rv_policy::move, nb::keep_alive<0, 1>(),
       R"(View of the Dataset's data array names.
 
 Examples
@@ -75,7 +108,7 @@ Examples
 )");
   c.def(
       "values", [](Dataset &self) { return values_view(self); },
-      py::return_value_policy::move, py::keep_alive<0, 1>(),
+      nb::rv_policy::move, nb::keep_alive<0, 1>(),
       R"(View of the Dataset's data arrays.
 
 Examples
@@ -91,7 +124,7 @@ Examples
 )");
   c.def(
       "items", [](Dataset &self) { return items_view(self); },
-      py::return_value_policy::move, py::keep_alive<0, 1>(),
+      nb::rv_policy::move, nb::keep_alive<0, 1>(),
       R"(View of the Dataset's (name, data array) pairs.
 
 Examples
@@ -108,7 +141,7 @@ Examples
   c.def(
       "__getitem__",
       [](const Dataset &self, const std::string &name) { return self[name]; },
-      py::arg("name"),
+      nb::arg("name"),
       R"(Access a data item by name.
 
 Parameters
@@ -139,15 +172,16 @@ Access a data item in the dataset:
   >>> ds['b'].unit
   Unit(m)
 )");
-  c.def("__contains__", [](const Dataset &self, const py::handle &key) {
-    try {
-      return self.contains(key.cast<std::string>());
-    } catch (py::cast_error &) {
-      return false; // if `key` is not a string, it cannot be contained
-    }
-  });
+  c.def(
+      "__contains__",
+      [](const Dataset &self, const nb::handle &key) {
+        std::string name;
+        // if `key` is not a string, it cannot be contained
+        return nb::try_cast<std::string>(key, name) && self.contains(name);
+      },
+      nb::arg().none());
   c.def("_ipython_key_completions_", [](Dataset &self) {
-    py::typing::List<py::str> out;
+    nb::typed<nb::list, nb::str> out;
     const auto end = self.keys_end();
     for (auto it = self.keys_begin(); it != end; ++it) {
       out.append(*it);
@@ -159,7 +193,7 @@ Access a data item in the dataset:
 }
 
 template <class T, class... Ignored>
-void bind_data_array(py::class_<T, Ignored...> &c) {
+void bind_data_array(nb::class_<T, Ignored...> &c) {
   bind_data_array_properties(c);
   bind_common_operators(c);
   bind_data_properties(c);
@@ -180,65 +214,69 @@ void bind_data_array(py::class_<T, Ignored...> &c) {
   bind_boolean_unary(c);
 }
 
-template <class T> void bind_rebin(py::module &m) {
+template <class T> void bind_rebin(nb::module_ &m) {
   m.def(
       "rebin",
       [](const T &x, const std::string &dim, const Variable &bins) {
         return rebin(x, Dim{dim}, bins);
       },
-      py::arg("x"), py::arg("dim"), py::arg("bins"),
-      py::call_guard<py::gil_scoped_release>());
+      nb::arg("x"), nb::arg("dim"), nb::arg("bins"),
+      nb::call_guard<nb::gil_scoped_release>());
 }
 
-template <class Key, class Value> auto to_cpp_dict(const py::dict &dict) {
+template <class Key, class Value> auto to_cpp_dict(const nb::dict &dict) {
   core::Dict<Key, Value> out;
   for (const auto &[key, val] : dict) {
-    out.insert_or_assign(Key{key.template cast<std::string>()},
-                         val.template cast<Value &>());
+    out.insert_or_assign(Key{checked_cast<std::string>(key)},
+                         checked_cast<Value &>(val));
   }
   return out;
 }
 
-auto dataset_from_data_and_coords(const py::dict &data,
-                                  const py::dict &coords) {
+auto dataset_from_data_and_coords(const nb::dict &data,
+                                  const nb::dict &coords) {
   Dataset d;
   for (auto &&[name, item] : data) {
-    if (py::isinstance<DataArray>(item)) {
-      d.setDataInit(name.cast<std::string>(), item.cast<DataArray &>());
+    if (nb::isinstance<DataArray>(item)) {
+      d.setDataInit(checked_cast<std::string>(name),
+                    checked_cast<DataArray &>(item));
     } else {
-      d.setDataInit(name.cast<std::string>(), item.cast<Variable &>());
+      d.setDataInit(checked_cast<std::string>(name),
+                    checked_cast<Variable &>(item));
     }
   }
   if (d.is_valid()) {
     // Need to use dataset_from_coords when there is no data to initialize
     // dimensions properly.
     for (auto &&[dim, coord] : coords)
-      d.setCoord(Dim{dim.cast<std::string>()}, coord.cast<Variable &>());
+      d.setCoord(Dim{checked_cast<std::string>(dim)},
+                 checked_cast<Variable &>(coord));
   }
   return d;
 }
 
-auto dataset_from_coords(const py::dict &py_coords) {
+auto dataset_from_coords(const nb::dict &py_coords) {
   typename Coords::holder_type coords;
   for (auto &&[dim, coord] : py_coords)
-    coords.insert_or_assign(Dim{dim.cast<std::string>()},
-                            coord.cast<Variable &>());
+    coords.insert_or_assign(Dim{checked_cast<std::string>(dim)},
+                            checked_cast<Variable &>(coord));
   return Dataset({}, std::move(coords));
 }
+
 } // namespace
 
-void init_dataset(py::module &m) {
-  static_cast<void>(py::class_<Slice>(m, "Slice"));
+void init_dataset(nb::module_ &m) {
+  static_cast<void>(nb::class_<Slice>(m, "Slice", nb::is_weak_referenceable()));
 
   bind_helper_view<items_view, Dataset>(m, "Dataset");
   bind_helper_view<str_items_view, Coords>(m, "Coords");
-  bind_helper_view<items_view, Masks>(m, "Masks");
+  bind_helper_view<items_view, Masks>(m, "Masks", metadata_range);
   bind_helper_view<keys_view, Dataset>(m, "Dataset");
   bind_helper_view<str_keys_view, Coords>(m, "Coords");
   bind_helper_view<keys_view, Masks>(m, "Masks");
   bind_helper_view<values_view, Dataset>(m, "Dataset");
-  bind_helper_view<values_view, Coords>(m, "Coords");
-  bind_helper_view<values_view, Masks>(m, "Masks");
+  bind_helper_view<values_view, Coords>(m, "Coords", metadata_range);
+  bind_helper_view<values_view, Masks>(m, "Masks", metadata_range);
 
   bind_mutable_view_no_dim<Coords>(m, "Coords",
                                    R"(dict-like collection of coordinates.
@@ -248,7 +286,8 @@ Returned by :py:meth:`DataArray.coords` and :py:meth:`Dataset.coords`.)");
 
 Returned by :py:func:`DataArray.masks`)");
 
-  py::class_<DataArray> dataArray(m, "DataArray", R"(
+  nb::class_<DataArray> dataArray(m, "DataArray", nb::is_weak_referenceable(),
+                                  R"(
 Named variable with associated coords and masks.
 
 DataArrays support rich indexing with dimension labels and coordinate values:
@@ -318,18 +357,23 @@ See Also
 --------
 scipp.Variable, scipp.Dataset
 )");
-  py::options options;
-  options.disable_function_signatures();
   dataArray.def(
-      py::init([](const Variable &data, const py::object &coords,
-                  const py::object &masks, const std::string &name) {
-        return DataArray{data, to_cpp_dict<Dim, Variable>(coords),
-                         to_cpp_dict<std::string, Variable>(masks), name};
-      }),
-      py::arg("data"), py::kw_only(), py::arg("coords") = py::dict(),
-      py::arg("masks") = py::dict(), py::arg("name") = std::string{},
-      R"doc(__init__(self, data: Variable, coords: Union[Mapping[str, Variable], Iterable[tuple[str, Variable]]] = {}, masks: Union[Mapping[str, Variable], Iterable[tuple[str, Variable]]] = {}, name: str = '') -> None
-
+      "__init__",
+      [](DataArray *self, const Variable &data, const nb::object &coords,
+         const nb::object &masks, const std::string &name) {
+        new (self) DataArray{
+            data, to_cpp_dict<Dim, Variable>(to_pydict(coords)),
+            to_cpp_dict<std::string, Variable>(to_pydict(masks)), name};
+      },
+      nb::arg("data"), nb::kw_only(), nb::arg("coords") = nb::dict(),
+      nb::arg("masks") = nb::dict(), nb::arg("name") = std::string{},
+      nb::sig("def __init__(self, data: Variable, *, "
+              "coords: Union[Mapping[str, Variable], "
+              "Iterable[tuple[str, Variable]]] = {}, "
+              "masks: Union[Mapping[str, Variable], "
+              "Iterable[tuple[str, Variable]]] = {}, "
+              "name: str = '') -> None"),
+      R"doc(
           DataArray initializer.
 
           Parameters
@@ -357,11 +401,10 @@ scipp.Variable, scipp.Dataset
             >>> da.unit == sc.Unit('K')
             True
           )doc");
-  options.enable_function_signatures();
 
   bind_data_array(dataArray);
 
-  py::class_<Dataset> dataset(m, "Dataset", R"(
+  nb::class_<Dataset> dataset(m, "Dataset", nb::is_weak_referenceable(), R"(
   Dict of data arrays with aligned dimensions.
 
 A Dataset groups multiple DataArrays that share common coordinates. Operations
@@ -411,21 +454,25 @@ See Also
 --------
 scipp.DataArray, scipp.Variable
 )");
-  options.disable_function_signatures();
   dataset.def(
-      py::init([](const py::object &data, const py::object &coords) {
+      "__init__",
+      [](Dataset *self, const nb::object &data, const nb::object &coords) {
         if (data.is_none() && coords.is_none())
-          throw py::type_error("Dataset needs data or coordinates or both.");
-        const auto data_dict = data.is_none() ? py::dict() : py::dict(data);
+          throw nb::type_error("Dataset needs data or coordinates or both.");
+        const auto data_dict = data.is_none() ? nb::dict() : to_pydict(data);
         const auto coords_dict =
-            coords.is_none() ? py::dict() : py::dict(coords);
+            coords.is_none() ? nb::dict() : to_pydict(coords);
         auto d = dataset_from_data_and_coords(data_dict, coords_dict);
-        return d.is_valid() ? d : dataset_from_coords(coords_dict);
-      }),
-      py::arg("data") = py::none{}, py::kw_only(),
-      py::arg("coords") = py::none{},
-      R"doc(__init__(self, data: Union[Mapping[str, Union[Variable, DataArray]], Iterable[tuple[str, Union[Variable, DataArray]]]] = {}, coords: Union[Mapping[str, Variable], Iterable[tuple[str, Variable]]] = {}) -> None
-
+        new (self) Dataset(d.is_valid() ? d : dataset_from_coords(coords_dict));
+      },
+      nb::arg("data") = nb::none(), nb::kw_only(),
+      nb::arg("coords") = nb::none(),
+      nb::sig("def __init__(self, "
+              "data: Union[Mapping[str, Union[Variable, DataArray]], "
+              "Iterable[tuple[str, Union[Variable, DataArray]]]] = {}, *, "
+              "coords: Union[Mapping[str, Variable], "
+              "Iterable[tuple[str, Variable]]] = {}) -> None"),
+      R"doc(
       Dataset initializer.
 
       Parameters
@@ -454,7 +501,6 @@ scipp.DataArray, scipp.Variable
         >>> ds.coords['x'].unit == sc.Unit('m')
         True
       )doc");
-  options.enable_function_signatures();
 
   dataset
       .def(
@@ -462,7 +508,7 @@ scipp.DataArray, scipp.Variable
           [](Dataset &self, const std::string &name, const Variable &data) {
             self.setData(name, data);
           },
-          py::arg("name"), py::arg("data"),
+          nb::arg("name"), nb::arg("data"),
           R"(Set or add a data item in the dataset.
 
 Parameters
@@ -501,13 +547,13 @@ Add a DataArray with coordinates:
           [](Dataset &self, const std::string &name, const DataArray &data) {
             self.setData(name, data);
           },
-          py::arg("name"), py::arg("data"))
+          nb::arg("name"), nb::arg("data"))
       .def("__delitem__", &Dataset::erase,
-           py::call_guard<py::gil_scoped_release>())
+           nb::call_guard<nb::gil_scoped_release>())
       .def("clear", &Dataset::clear,
            R"(Removes all data, preserving coordinates.)");
 
-  bind_dataset_view_methods(dataset);
+  bind_dataset_view_methods(dataset, nb::getattr(m, "_iterators"));
   bind_dict_update(dataset,
                    [](Dataset &self, const std::string &key,
                       const DataArray &value) { self.setData(key, value); });
@@ -536,21 +582,21 @@ Add a DataArray with coordinates:
       [](const Dataset &lhs, const Dataset &rhs) {
         return dataset::merge(lhs, rhs);
       },
-      py::arg("lhs"), py::arg("rhs"), py::call_guard<py::gil_scoped_release>());
+      nb::arg("lhs"), nb::arg("rhs"), nb::call_guard<nb::gil_scoped_release>());
 
   m.def(
       "irreducible_mask",
       [](const Masks &masks, const std::string &dim) {
-        py::gil_scoped_release release;
+        nb::gil_scoped_release release;
         auto mask = irreducible_mask(masks, Dim{dim});
-        py::gil_scoped_acquire acquire;
-        return mask.is_valid() ? py::cast(mask) : py::none();
+        nb::gil_scoped_acquire acquire;
+        return mask.is_valid() ? nb::cast(mask) : nb::none();
       },
-      py::arg("masks"), py::arg("dim"));
+      nb::arg("masks"), nb::arg("dim"));
 
   m.def(
       "reciprocal", [](const DataArray &self) { return reciprocal(self); },
-      py::arg("x"), py::call_guard<py::gil_scoped_release>());
+      nb::arg("x"), nb::call_guard<nb::gil_scoped_release>());
 
   bind_astype(dataArray);
 

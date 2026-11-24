@@ -65,7 +65,7 @@ function(scipp_function template category function_name)
     set(python_binders_fwd python_${category}_binders_fwd)
     set(python_binders python_${category}_binders)
     set(${python_binders_fwd}
-        "${${python_binders_fwd}}\nvoid init_${OPNAME}(pybind11::module &)ENDL"
+        "${${python_binders_fwd}}\nvoid init_${OPNAME}(nanobind::module_ &)ENDL"
         PARENT_SCOPE
     )
     set(${python_binders}

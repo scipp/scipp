@@ -107,7 +107,12 @@ if(SKBUILD)
   # simply use the source directory directly. C++ libraries get installed into
   # the source dir.
 else()
-  install(DIRECTORY "src/scipp/" DESTINATION ${PYTHONDIR})
+  install(
+    DIRECTORY "src/scipp/"
+    DESTINATION ${PYTHONDIR}
+    PATTERN "_scipp*.so" EXCLUDE
+    PATTERN "_scipp*.pyd" EXCLUDE
+  )
   set(RELATIVE_LIB "..")
 endif()
 

@@ -10,18 +10,27 @@
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 
-#include "pybind11.h"
+#include "nanobind.h"
 
 #include "py_object.h"
 
 using namespace scipp;
 using namespace scipp::core;
 
-namespace py = pybind11;
+namespace nb = nanobind;
 
 namespace {
 template <class T> struct is_bins : std::false_type {};
 template <class T> struct is_bins<core::bin<T>> : std::true_type {};
+
+scipp::index checked_index(const scipp::index i, const scipp::index size) {
+  const auto index = i < 0 ? i + size : i;
+  if (index < 0 || index >= size)
+    throw except::SliceError(std::to_string(i) +
+                             " is out of bounds for array with size " +
+                             std::to_string(size));
+  return index;
+}
 
 template <typename T> decltype(auto) to_python_object(T &&val) {
   if constexpr (std::is_same_v<std::remove_const_t<std::remove_reference_t<T>>,
@@ -34,40 +43,38 @@ template <typename T> decltype(auto) to_python_object(T &&val) {
 } // namespace
 
 template <class T>
-void declare_ElementArrayView(py::module &m, const std::string &suffix) {
-  py::class_<ElementArrayView<T>> view(
-      m, (std::string("ElementArrayView_") + suffix).c_str());
+void declare_ElementArrayView(nb::module_ &m, const std::string &suffix) {
+  nb::class_<ElementArrayView<T>> view(
+      m, (std::string("ElementArrayView_") + suffix).c_str(),
+      nb::is_weak_referenceable());
   view.def(
           "__repr__",
           [](const ElementArrayView<T> &self) { return array_to_string(self); })
       .def("__getitem__",
            [](const ElementArrayView<T> &self, const scipp::index i) {
-             const auto index = i >= 0 ? i : self.size() + i;
-             if (index >= self.size()) {
-               throw except::SliceError(
-                   std::to_string(index) +
-                   " is out of bounds for array with size " +
-                   std::to_string(self.size()));
-             }
-             return to_python_object(self[index]);
+             return to_python_object(self[checked_index(i, self.size())]);
            })
       .def("__len__", &ElementArrayView<T>::size)
       .def(
           "__iter__",
-          [](const ElementArrayView<T> &self) {
-            return py::make_iterator(self.begin(), self.end());
+          [scope =
+               nb::getattr(m, "_iterators")](const ElementArrayView<T> &self) {
+            return nb::make_iterator(scope, "iterator", self.begin(),
+                                     self.end());
           },
-          py::keep_alive<0, 1>());
+          nb::keep_alive<0, 1>());
   if constexpr (std::is_same_v<std::remove_const_t<std::remove_reference_t<T>>,
                                scipp::python::PyObject>) {
-    view.def("__setitem__", [](ElementArrayView<T> &self,
-                               [[maybe_unused]] const scipp::index i,
-                               [[maybe_unused]] const py::object &value) {
-      if constexpr (is_bins<T>::value || std::is_const_v<T>)
-        throw std::invalid_argument("assignment destination is read-only");
-      else
-        to_python_object(self[i]) = value;
-    });
+    view.def(
+        "__setitem__",
+        [](ElementArrayView<T> &self, [[maybe_unused]] const scipp::index i,
+           [[maybe_unused]] const nb::object &value) {
+          if constexpr (is_bins<T>::value || std::is_const_v<T>)
+            throw std::invalid_argument("assignment destination is read-only");
+          else
+            to_python_object(self[checked_index(i, self.size())]) = value;
+        },
+        nb::arg(), nb::arg().none());
   } else {
     view.def("__setitem__", [](ElementArrayView<T> &self,
                                [[maybe_unused]] const scipp::index i,
@@ -75,12 +82,12 @@ void declare_ElementArrayView(py::module &m, const std::string &suffix) {
       if constexpr (is_bins<T>::value || std::is_const_v<T>)
         throw std::invalid_argument("assignment destination is read-only");
       else
-        self[i] = value;
+        self[checked_index(i, self.size())] = value;
     });
   }
 }
 
-void init_element_array_view(py::module &m) {
+void init_element_array_view(nb::module_ &m) {
   declare_ElementArrayView<double>(m, "double");
   declare_ElementArrayView<float>(m, "float");
   declare_ElementArrayView<int64_t>(m, "int64");

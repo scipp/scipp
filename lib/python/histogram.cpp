@@ -3,7 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "docstring.h"
-#include "pybind11.h"
+#include "nanobind.h"
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/histogram.h"
@@ -12,9 +12,9 @@ using namespace scipp;
 using namespace scipp::variable;
 using namespace scipp::dataset;
 
-namespace py = pybind11;
+namespace nb = nanobind;
 
-template <class T> void bind_histogram(py::module &m) {
+template <class T> void bind_histogram(nb::module_ &m) {
   auto doc = Docstring()
                  .description(
                      "Histograms the input event data along the dimensions of "
@@ -26,11 +26,11 @@ template <class T> void bind_histogram(py::module &m) {
   m.def(
       "histogram",
       [](const T &x, const Variable &bins) { return histogram(x, bins); },
-      py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
+      nb::arg("x"), nb::arg("bins"), nb::call_guard<nb::gil_scoped_release>(),
       doc.c_str());
 }
 
-void init_histogram(py::module &m) {
+void init_histogram(nb::module_ &m) {
   bind_histogram<DataArray>(m);
   bind_histogram<Dataset>(m);
 }

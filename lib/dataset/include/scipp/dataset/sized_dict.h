@@ -4,6 +4,9 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <memory>
+#include <unordered_map>
+
 #include "scipp/core/dict.h"
 #include "scipp/core/sizes.h"
 #include "scipp/core/slice.h"
@@ -85,6 +88,9 @@ public:
 
   const mapped_type &operator[](const Key &key) const;
   const mapped_type &at(const Key &key) const;
+  /// Share an entry from this mapping. Erasing its key detaches the handle.
+  std::shared_ptr<const Value>
+  share_item(const typename holder_type::const_iterator &pos);
   // Note that the non-const versions return by value, to avoid breakage of
   // invariants.
   mapped_type operator[](const Key &key);
@@ -157,6 +163,13 @@ protected:
   Sizes m_sizes;
   holder_type m_items;
   bool m_readonly{false};
+
+private:
+  std::shared_ptr<Value> find_shared_item(const Key &key) const;
+  // The dictionary stores Variables by value. Only entries requested by
+  // reference need stable handles across vector growth and erasure.
+  using SharedItems = std::unordered_map<Key, std::weak_ptr<Value>>;
+  std::unique_ptr<SharedItems> m_shared_items;
 };
 
 /// Returns the union of all masks with irreducible dimension `dim`.

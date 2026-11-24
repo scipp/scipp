@@ -22,7 +22,7 @@ python = ["3.12.*", "3.13.*", "3.14.* *_cp314", "3.14.* *_cp314t"]
 [workspace.dependencies]
 eigen = "3.4.*"
 libboost-headers = ">=1.88"
-pybind11 = "3.0.*"
+nanobind = "3.1.*"
 tbb = "2023.0.*"
 tbb-devel = "2023.0.*"
 gtest = "1.15.*"
@@ -84,7 +84,7 @@ python = "*"
 numpy = ">=2"
 eigen = { workspace = true }
 libboost-headers = { workspace = true }
-pybind11 = { workspace = true }
+nanobind = { workspace = true }
 tbb-devel = { workspace = true }
 gtest = { workspace = true }
 gmock = { workspace = true }
@@ -150,7 +150,7 @@ cmake = ">=3.28"
 ninja = "*"
 eigen = { workspace = true }
 libboost-headers = { workspace = true }
-pybind11 = { workspace = true }
+nanobind = { workspace = true }
 tbb = { workspace = true }
 tbb-devel = { workspace = true }
 benchmark = "1.6.*"

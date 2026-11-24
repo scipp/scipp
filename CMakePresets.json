@@ -57,7 +57,10 @@
     {
       "name": "package-linux-64",
       "inherits": "package",
-      "description": "Linux options for package build for x86_64"
+      "description": "Build Linux x86_64 packages without requiring GLIBC_ABI_GNU2_TLS",
+      "cacheVariables": {
+        "NB_HAS_MTLS_GNU2": "OFF"
+      }
     },
     {
       "name": "package-linux-aarch64",

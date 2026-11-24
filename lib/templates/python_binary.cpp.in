@@ -2,22 +2,22 @@
 // Copyright (c) 2023 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "pybind11.h"
+#include "nanobind.h"
 
 #include "scipp/@BASE_INCLUDE@"
 #include "scipp/dataset/@OPNAME@.h"
 
 using namespace scipp;
 
-namespace py = pybind11;
+namespace nb = nanobind;
 
-template <class T1, class T2 = T1> void bind_@OPNAME@(py::module &m) {
+template <class T1, class T2 = T1> void bind_@OPNAME@(nb::module_ &m) {
   m.def(
       "@OPNAME@", [](const T1 &a, const T2 &b) { return @NAME@(a, b); },
-      py::arg("a"), py::arg("b"), py::call_guard<py::gil_scoped_release>());
+      nb::arg("a"), nb::arg("b"), nb::call_guard<nb::gil_scoped_release>());
 }
 
-void init_@OPNAME@(py::module &m) {
+void init_@OPNAME@(nb::module_ &m) {
   bind_@OPNAME@<Variable>(m);
   bind_@OPNAME@<DataArray>(m);
   bind_@OPNAME@<DataArray, Variable>(m);

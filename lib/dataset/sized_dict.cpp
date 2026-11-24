@@ -85,11 +85,19 @@ SizedDict<Key, Value>::SizedDict(const SizedDict &other)
 template <class Key, class Value>
 SizedDict<Key, Value>::SizedDict(SizedDict &&other) noexcept
     : m_sizes(std::move(other.m_sizes)), m_items(std::move(other.m_items)),
-      m_readonly(other.m_readonly) {}
+      m_readonly(other.m_readonly),
+      m_shared_items(std::move(other.m_shared_items)) {}
 
 template <class Key, class Value>
 SizedDict<Key, Value> &
-SizedDict<Key, Value>::operator=(const SizedDict &other) = default;
+SizedDict<Key, Value>::operator=(const SizedDict &other) {
+  if (this != &other) {
+    auto copy = SizedDict(other);
+    copy.m_readonly = other.m_readonly;
+    *this = std::move(copy);
+  }
+  return *this;
+}
 
 template <class Key, class Value>
 SizedDict<Key, Value> &
@@ -157,6 +165,30 @@ template <class Key, class Value>
 const Value &SizedDict<Key, Value>::at(const Key &key) const {
   scipp::expect::contains(*this, key);
   return m_items.at(key);
+}
+
+template <class Key, class Value>
+std::shared_ptr<const Value> SizedDict<Key, Value>::share_item(
+    const typename holder_type::const_iterator &pos) {
+  const auto [key, value] = *pos;
+  if (!m_shared_items)
+    m_shared_items = std::make_unique<SharedItems>();
+  auto &weak = (*m_shared_items)[key];
+  if (auto live = weak.lock())
+    return live;
+  auto live = std::make_shared<Value>(value);
+  weak = live;
+  return live;
+}
+
+template <class Key, class Value>
+std::shared_ptr<Value>
+SizedDict<Key, Value>::find_shared_item(const Key &key) const {
+  if (m_shared_items) {
+    if (const auto it = m_shared_items->find(key); it != m_shared_items->end())
+      return it->second.lock();
+  }
+  return {};
 }
 
 /// The coordinate for given dimension.
@@ -247,6 +279,8 @@ void SizedDict<Key, Value>::set(const key_type &key, mapped_type coord) {
   }
   expect_valid_coord_dims(key, dims, m_sizes);
   m_items.insert_or_assign(key, std::move(coord));
+  if (auto live = find_shared_item(key))
+    *live = m_items.at(key);
 }
 
 template <class Key, class Value>
@@ -257,7 +291,10 @@ void SizedDict<Key, Value>::erase(const key_type &key) {
 template <class Key, class Value>
 Value SizedDict<Key, Value>::extract(const key_type &key) {
   expect_writable(*this);
-  return m_items.extract(key);
+  auto value = m_items.extract(key);
+  if (m_shared_items)
+    m_shared_items->erase(key);
+  return value;
 }
 
 template <class Key, class Value>
@@ -420,6 +457,8 @@ template <class Key, class Value>
 void SizedDict<Key, Value>::set_aligned(const Key &key, const bool aligned) {
   expect_writable(*this);
   m_items.at(key).set_aligned(aligned);
+  if (auto live = find_shared_item(key))
+    live->set_aligned(aligned);
 }
 
 template <class Key, class Value>
