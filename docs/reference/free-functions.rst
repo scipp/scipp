@@ -126,6 +126,7 @@ Reduction operations are operations to remove one or more dimension, e.g., by pe
    all
    any
    cumsum
+   inverse_variance_mean
    max
    mean
    median
