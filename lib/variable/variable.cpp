@@ -335,6 +335,8 @@ Variable Variable::bin_indices() const {
   return out;
 }
 
+Sizes Variable::bin_dims() const { return data().bin_dims(); }
+
 Variable Variable::as_const() const {
   Variable out(*this);
   out.m_readonly = true;

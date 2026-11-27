@@ -102,6 +102,14 @@ public:
 
   [[nodiscard]] Sizes rename_dims(const std::vector<std::pair<Dim, Dim>> &names,
                                   const bool fail_on_unknown = true) const;
+
+  /// Return the volume of the space defined by *this.
+  [[nodiscard]] scipp::index volume() const noexcept {
+    scipp::index volume{1};
+    for (const auto &length : sizes())
+      volume *= length;
+    return volume;
+  }
 };
 
 [[nodiscard]] SCIPP_CORE_EXPORT Sizes concat(const std::span<const Sizes> sizes,
